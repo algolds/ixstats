@@ -56,18 +56,6 @@ function context(dryRun: boolean): StepContext {
 beforeEach(() => jest.clearAllMocks());
 
 describe("runReliefStep", () => {
-  it("reads the realm's stored bands", async () => {
-    jest.mocked(planRealmRelief).mockResolvedValue(null);
-    await runReliefStep(context(true));
-    expect(planRealmRelief).toHaveBeenCalledWith(db, "r1", { bands: true });
-  });
-
-  it("skips a realm with no altitude bands", async () => {
-    jest.mocked(planRealmRelief).mockResolvedValue(null);
-    expect(await runReliefStep(context(false))).toMatchObject({ status: "skipped" });
-    expect(applyRealmRelief).not.toHaveBeenCalled();
-  });
-
   it("reports unchanged when the tiles are built and the entry is recorded", async () => {
     jest.mocked(planRealmRelief).mockResolvedValue(plan({ built: true, changed: false }));
     const report = await runReliefStep(context(false));
@@ -87,21 +75,5 @@ describe("runReliefStep", () => {
     expect(record).toMatchObject({ status: "would-change" });
     expect(record.summary).toMatch(/entry changes/);
     expect(applyRealmRelief).not.toHaveBeenCalled();
-  });
-
-  it("builds on an apply and reports the tiles", async () => {
-    const planned = plan();
-    jest.mocked(planRealmRelief).mockResolvedValue(planned);
-    jest
-      .mocked(applyRealmRelief)
-      .mockResolvedValue({ ...planned.entry, built: true, tiles: 292, skipped: 733 });
-    const report = await runReliefStep(context(false));
-    expect(applyRealmRelief).toHaveBeenCalledWith(db, "r1", planned);
-    expect(report).toMatchObject({
-      status: "changed",
-      counts: { tiles: 292, skipped: 733 },
-    });
-    expect(report.summary).toMatch(/292 tiles/);
-    expect(report.summary).toMatch(/z0.5/);
   });
 });

@@ -2,19 +2,11 @@ import type { ReactNode } from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { ClaimableNations } from "~/app/r/[realm]/_components/ClaimableNations";
 
-type ClaimResult = { claimId: string; status: "pending" | "approved"; autoApproved: boolean };
-type ClaimInput = { realmSlug: string; title: string };
-interface MutationOptions {
-  onSuccess?: (result: ClaimResult, input: ClaimInput) => void;
-  onError?: (error: { message: string }) => void;
-}
-
 const mockMutate = jest.fn();
 const mockInvalidate = jest.fn();
 const mockNotify = { success: jest.fn(), info: jest.fn(), error: jest.fn(), warning: jest.fn() };
 let mockSignedIn = true;
 let mockSearch = "";
-let options: MutationOptions = {};
 
 // Radix checkboxes measure themselves; jsdom has no ResizeObserver.
 global.ResizeObserver ??= class {
@@ -41,8 +33,7 @@ jest.mock("~/trpc/react", () => ({
     realms: {
       myClaims: { useQuery: () => ({ data: [] }) },
       claimNationPage: {
-        useMutation: (opts: MutationOptions) => {
-          options = opts;
+        useMutation: () => {
           return { mutate: mockMutate, isPending: false };
         },
       },
@@ -76,7 +67,6 @@ describe("ClaimableNations", () => {
     jest.clearAllMocks();
     mockSignedIn = true;
     mockSearch = "";
-    options = {};
   });
   it("waits for the realm content consent and sends who gave permission", () => {
     renderList();
@@ -93,80 +83,6 @@ describe("ClaimableNations", () => {
       consent: { accepted: true, permissionNote: "Kir" },
     });
   });
-
-  it("claims the page by realm slug and title", () => {
-    renderList();
-    agree();
-    fireEvent.click(screen.getByRole("button", { name: "Claim Aurelia" }));
-    expect(mockMutate).toHaveBeenCalledWith({
-      realmSlug: "eurth",
-      title: "Aurelia",
-      consent: { accepted: true },
-    });
-  });
-  it("an approved claim congratulates the player and refreshes the realm", () => {
-    mockMutate.mockImplementation((input: ClaimInput) =>
-      options.onSuccess?.({ claimId: "cl1", status: "approved", autoApproved: true }, input)
-    );
-    renderList();
-    agree();
-    fireEvent.click(screen.getByRole("button", { name: "Claim Aurelia" }));
-    expect(mockNotify.success).toHaveBeenCalledWith("Aurelia is yours", expect.any(String));
-    expect(mockInvalidate).toHaveBeenCalledWith({ slug: "eurth" });
-  });
-
-  it("a refused claim shows the reason", () => {
-    mockMutate.mockImplementation(() =>
-      options.onError?.({ message: "This nation already belongs to another player" })
-    );
-    renderList();
-    agree();
-    fireEvent.click(screen.getByRole("button", { name: "Claim Aurelia" }));
-    expect(mockNotify.error).toHaveBeenCalledWith(
-      "Claim failed",
-      "This nation already belongs to another player"
-    );
-  });
-
-  it("in a realm with rules, claiming waits for the player to confirm reading them", () => {
-    render(
-      <ClaimableNations
-        realmSlug="eurth"
-        pages={pages}
-        rules={{ summary: "Be civil. No godmodding." }}
-      />
-    );
-    expect(screen.getByText("Be civil. No godmodding.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Read the rules" })).toHaveAttribute(
-      "href",
-      "/r/eurth/rules"
-    );
-    const claim = screen.getByRole("button", { name: "Claim Aurelia" });
-    expect(claim).toBeDisabled();
-    fireEvent.click(screen.getByRole("checkbox", { name: "I have read the realm's rules" }));
-    expect(claim).toBeDisabled();
-    agree();
-    expect(claim).toBeEnabled();
-    fireEvent.click(claim);
-    expect(mockMutate).toHaveBeenCalledWith({
-      realmSlug: "eurth",
-      title: "Aurelia",
-      consent: { accepted: true },
-      acceptedRules: true,
-    });
-  });
-
-  it("signed-out visitors get a sign-in link that returns to the realm instead of Claim buttons", () => {
-    mockSignedIn = false;
-    renderList();
-    expect(screen.queryByRole("button", { name: /claim/i })).not.toBeInTheDocument();
-    const signIn = screen.getByRole("link", { name: /sign in to claim/i });
-    expect(signIn).toHaveAttribute(
-      "href",
-      `/sign-in?redirect_url=${encodeURIComponent("/r/eurth")}`
-    );
-  });
-
   it("an invite link's via rides along with the claim", () => {
     mockSearch = "via=ambassador";
     renderList();

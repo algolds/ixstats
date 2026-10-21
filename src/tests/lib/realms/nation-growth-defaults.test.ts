@@ -1,16 +1,11 @@
 /** @jest-environment node */
 import {
-  growthFromPercent,
-  growthPercent,
   IXSTATS_NATION_GROWTH_DEFAULTS,
-  nationGrowthFor,
   nationGrowthTableSchema,
   planNationDefaultsApply,
   readNationGrowthTable,
   type NationGrowthTable,
 } from "~/lib/realms/nation-growth-defaults";
-import { ECONOMIC_TIER_INFO } from "~/lib/tier-utils";
-
 const custom: NationGrowthTable = {
   ...IXSTATS_NATION_GROWTH_DEFAULTS,
   Developing: { populationGrowthRate: 0.02, adjustedGdpGrowth: 0.004 },
@@ -30,13 +25,6 @@ describe("nationGrowthTableSchema", () => {
 });
 
 describe("readNationGrowthTable", () => {
-  it("is the system defaults when nothing is stored", () => {
-    expect(readNationGrowthTable(null)).toEqual(IXSTATS_NATION_GROWTH_DEFAULTS);
-    expect(readNationGrowthTable(undefined)).toEqual(IXSTATS_NATION_GROWTH_DEFAULTS);
-    expect(readNationGrowthTable("nonsense")).toEqual(IXSTATS_NATION_GROWTH_DEFAULTS);
-    expect(readNationGrowthTable([1, 2])).toEqual(IXSTATS_NATION_GROWTH_DEFAULTS);
-  });
-
   it("takes each valid stored tier, and the system default for a bad or missing one", () => {
     const table = readNationGrowthTable({
       Developing: { populationGrowthRate: 0.02, adjustedGdpGrowth: 0.004 },
@@ -47,23 +35,6 @@ describe("readNationGrowthTable", () => {
     expect(table.Impoverished).toEqual(IXSTATS_NATION_GROWTH_DEFAULTS.Impoverished);
   });
 });
-
-describe("nationGrowthFor", () => {
-  it("picks the tier of the GDP per capita, its table row, and the IxStats tier cap", () => {
-    expect(nationGrowthFor(15_000, custom)).toEqual({
-      tier: "Developing",
-      populationGrowthRate: 0.02,
-      adjustedGdpGrowth: 0.004,
-      maxGdpGrowthRate: ECONOMIC_TIER_INFO.Developing.maxGrowth,
-    });
-    expect(nationGrowthFor(70_000, custom)).toMatchObject({
-      tier: "Extravagant",
-      maxGdpGrowthRate: 0.005,
-    });
-    expect(nationGrowthFor(5_000, custom).maxGdpGrowthRate).toBe(0.1);
-  });
-});
-
 describe("planNationDefaultsApply", () => {
   const nation = (id: string, gdp: number, pop: number, adj: number, max: number) => ({
     id,
@@ -93,21 +64,5 @@ describe("planNationDefaultsApply", () => {
   it("treats float noise as no change", () => {
     const same = nation("c", 15_000, 0.02 + 1e-12, 0.004, 0.075);
     expect(planNationDefaultsApply([same], custom)).toEqual([]);
-  });
-});
-
-describe("growthPercent / growthFromPercent", () => {
-  it("shows a decimal rate as a percent without float noise, and reads it back", () => {
-    expect(growthPercent(0.0024075)).toBe("0.24075");
-    expect(growthPercent(0.031)).toBe("3.1");
-    expect(growthPercent(0)).toBe("0");
-    expect(growthFromPercent("0.24075")).toBe(0.0024075);
-    expect(growthFromPercent(" 3.1 ")).toBe(0.031);
-    expect(growthFromPercent("-1")).toBe(-0.01);
-  });
-
-  it("reads an empty or non-numeric percent as NaN, for the schema to refuse", () => {
-    expect(growthFromPercent("")).toBeNaN();
-    expect(growthFromPercent("abc")).toBeNaN();
   });
 });

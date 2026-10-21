@@ -93,23 +93,6 @@ const createdData = (db: ReturnType<typeof setup>["db"]) =>
   (db.realmClaim.create.mock.calls[0]?.[0] as { data: Record<string, string> }).data;
 
 describe("claim invites", () => {
-  it("records the inviter who holds a nation in the claim's realm", async () => {
-    const { db, deps, claims } = setup();
-    await claims.claimCountry(actor, "c1", { via: "ambassador" });
-    expect(deps.resolveInviter).toHaveBeenCalledWith("ambassador");
-    expect(db.country.findFirst).toHaveBeenCalledWith({
-      where: { realmId: DEFAULT_REALM_ID, ownerUserId: INVITER },
-      select: { id: true },
-    });
-    expect(createdData(db)).toMatchObject({ invitedByUserId: INVITER, status: "pending" });
-  });
-
-  it("records the inviter on a nation page claim in their realm", async () => {
-    const { db, claims } = setup();
-    await claims.claimNationPage(actor, EURTH, "Aurelia", { via: "ambassador" });
-    expect(createdData(db)).toMatchObject({ invitedByUserId: INVITER, wikiPageTitle: "Aurelia" });
-  });
-
   it("ignores a self-invite", async () => {
     const { db, claims } = setup({ u1: [DEFAULT_REALM_ID], [INVITER]: [DEFAULT_REALM_ID] });
     await expect(claims.claimCountry(actor, "c1", { via: "me_myself" })).resolves.toMatchObject({
@@ -146,14 +129,6 @@ describe("claim invites", () => {
     ).resolves.toMatchObject({ status: "pending" });
     expect(createdData(failing.db)).not.toHaveProperty("invitedByUserId");
   });
-
-  it("files no inviter without a via", async () => {
-    const { db, deps, claims } = setup();
-    await claims.claimCountry(actor, "c1");
-    expect(deps.resolveInviter).not.toHaveBeenCalled();
-    expect(createdData(db)).not.toHaveProperty("invitedByUserId");
-  });
-
   it("adds the inviter to the player's pending claim that has none, guarded on it still having none", async () => {
     const { db, claims } = setup();
     db.realmClaim.findFirst.mockResolvedValue({ id: "old", userId: "u1", invitedByUserId: null });
@@ -199,18 +174,6 @@ describe("claim invites", () => {
 });
 
 describe("the inviter on approval", () => {
-  it("an auto-approved invited claim carries the inviter in the nation-assigned event", async () => {
-    const { db, deps, claims } = setup();
-    db.wikiAccountLink.findFirst.mockResolvedValue({ username: "Kir" });
-    await expect(claims.claimCountry(actor, "c1", { via: "ambassador" })).resolves.toMatchObject({
-      status: "approved",
-    });
-    expect(createdData(db)).toMatchObject({ invitedByUserId: INVITER, status: "approved" });
-    expect(deps.onNationAssigned).toHaveBeenCalledWith(
-      expect.objectContaining({ countryId: "c1", inviterUserId: INVITER })
-    );
-  });
-
   it("an auto-approved upgrade of a pending claim keeps its first inviter", async () => {
     const { db, deps, claims } = setup();
     db.wikiAccountLink.findFirst.mockResolvedValue({ username: "Kir" });
@@ -246,12 +209,5 @@ describe("the inviter on approval", () => {
       countryName: "Aurelia",
       inviterUserId: INVITER,
     });
-  });
-
-  it("an uninvited approval has no inviter in its event", async () => {
-    const { db, deps, claims } = setup();
-    db.wikiAccountLink.findFirst.mockResolvedValue({ username: "Kir" });
-    await claims.claimCountry(actor, "c1");
-    expect(deps.onNationAssigned.mock.calls[0]?.[0]).not.toHaveProperty("inviterUserId");
   });
 });

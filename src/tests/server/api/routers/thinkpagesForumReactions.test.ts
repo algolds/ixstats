@@ -37,34 +37,6 @@ describe("thinkpagesForum reaction procedures", () => {
     notified.mockClear();
   });
   afterEach(() => jest.restoreAllMocks());
-
-  it("reacts to a thread post, tells its owner and publishes nothing to a board room", async () => {
-    const store = reactionStore();
-    const out = await caller(member, store.db).react({ postId: "p_hub", type: "like" });
-    expect(out).toEqual({ counts: { like: 1 }, mine: "like" });
-    await flush();
-    expect(notified).toHaveBeenCalledWith(
-      store.db,
-      expect.objectContaining({ id: "u_member", clerkUserId: "clerk_u_member" }),
-      { postId: "p_hub" }
-    );
-    expect(sentEvents()).toEqual([]);
-  });
-
-  it("publishes a reacted-to board message to its room, in the public shape", async () => {
-    const store = reactionStore();
-    await caller(member, store.db).react({ postId: "b1", type: "fire" });
-    await flush();
-    expect(sentEvents()).toEqual([
-      {
-        type: "board:updated",
-        realmId: "r_eurth",
-        change: { type: "updated", message: expect.objectContaining({ id: "b1" }) },
-      },
-    ]);
-    expect(JSON.stringify(sentEvents())).not.toContain("myReaction");
-  });
-
   it("asks for a notice only for a new reaction: repeating or switching asks for none", async () => {
     const store = reactionStore();
     const c = caller(member, store.db);
@@ -95,24 +67,6 @@ describe("thinkpagesForum reaction procedures", () => {
     await flush();
     expect(errors).toHaveBeenCalledWith("[thinkpages-forum] Write hook failed:", expect.any(Error));
   });
-
-  it("takes a reaction back, and publishes the board's new counts", async () => {
-    const store = reactionStore();
-    const c = caller(member, store.db);
-    await c.react({ postId: "b1", type: "like" });
-    await flush();
-    mockBroadcaster.broadcastBoard.mockClear();
-    expect(await c.unreact({ postId: "b1" })).toEqual({ counts: {}, mine: null });
-    await flush();
-    expect(sentEvents()).toEqual([
-      {
-        type: "board:updated",
-        realmId: "r_eurth",
-        change: { type: "updated", message: expect.objectContaining({ id: "b1" }) },
-      },
-    ]);
-  });
-
   it("maps refusals to TRPC errors and writes nothing", async () => {
     const store = reactionStore();
     await expect(

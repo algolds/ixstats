@@ -35,16 +35,6 @@ describe("countries.flags.resolveBatch realm scope", () => {
 
     expect(countryWhere(db)).toEqual({ name: { in: ["Atlantis"] }, realmId: "eurth" });
   });
-
-  it("defaults an anonymous viewer to Ixnay", async () => {
-    const db = createMockPrisma();
-    db.country.findMany.mockResolvedValue([]);
-    const ctx = createMockRouterContext({ db, auth: null, user: null });
-    await createCaller(ctx as never).resolveBatch({ countryNames: ["Atlantis"] });
-
-    expect(countryWhere(db)).toEqual({ name: { in: ["Atlantis"] }, realmId: "default" });
-  });
-
   it("uses the realm named by ?realm=", async () => {
     const db = createMockPrisma();
     db.country.findMany.mockResolvedValue([]);

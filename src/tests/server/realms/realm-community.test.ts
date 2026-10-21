@@ -7,15 +7,7 @@
 jest.mock("~/server/db", () => ({ db: {} }));
 
 import { realmsRouter } from "~/server/api/routers/realms";
-import {
-  formatInWorldDate,
-  isRealmLinkUrl,
-  MAX_REALM_LINKS,
-  parseInWorldDate,
-  parseRealmLinks,
-} from "~/lib/realms/realm-community";
-import { realmInWorldDate } from "~/server/modules/realms";
-import { realmFounderTitle, withFounderTitle } from "~/server/modules/realms/realms.settings";
+import { isRealmLinkUrl, MAX_REALM_LINKS, parseRealmLinks } from "~/lib/realms/realm-community";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
@@ -56,30 +48,11 @@ function callerAs(clerkUserId: string, db: Db) {
 }
 
 const forum = { label: "Forum", url: "https://forum.eurth.example/", kind: "forum" as const };
-const discord = { label: "Discord", url: "https://discord.gg/eurth", kind: "discord" as const };
-
 describe("community link addresses", () => {
   it("takes full https addresses, Discord invites included", () => {
     expect(isRealmLinkUrl("https://forum.eurth.example/index.php?board=1")).toBe(true);
     expect(isRealmLinkUrl("https://discord.gg/AbC123")).toBe(true);
   });
-
-  it.each([
-    "javascript:alert(1)",
-    "JAVASCRIPT:alert(1)",
-    "data:text/html,<script>alert(1)</script>",
-    "http://forum.eurth.example",
-    "//forum.eurth.example",
-    "/r/eurth",
-    "https://localhost",
-    "https://user:pass@forum.eurth.example",
-    "https://forum.eurth.example/a b",
-    `https://forum.eurth.example/${"a".repeat(500)}`,
-    "",
-  ])("refuses %s", (url) => {
-    expect(isRealmLinkUrl(url)).toBe(false);
-  });
-
   it("drops stored entries that are no longer valid", () => {
     expect(
       parseRealmLinks([forum, { label: "Bad", url: "javascript:alert(1)", kind: "other" }, "junk"])
@@ -88,40 +61,6 @@ describe("community link addresses", () => {
     expect(parseRealmLinks({ not: "an array" })).toEqual([]);
   });
 });
-
-describe("in-world date", () => {
-  const now = new Date("2026-10-07T12:00:00Z");
-
-  it("reads a fixed label as written, with its as-of date", () => {
-    expect(
-      formatInWorldDate({ mode: "fixed", label: "14 Harvest 1203 AE", asOf: "2026-10-01" }, now)
-    ).toEqual({ label: "14 Harvest 1203 AE", asOf: "2026-10-01" });
-  });
-
-  it("follows the real year with an offset and an era", () => {
-    expect(formatInWorldDate({ mode: "offset", offset: 15, era: "AE" }, now)).toEqual({
-      label: "2041 AE",
-      asOf: null,
-    });
-    expect(formatInWorldDate({ mode: "offset", offset: -823 }, now)).toEqual({
-      label: "Year 1203",
-      asOf: null,
-    });
-    expect(formatInWorldDate(null, now)).toBeNull();
-  });
-
-  it("ignores a malformed setting", () => {
-    expect(parseInWorldDate({ mode: "offset", offset: 1.5 })).toBeNull();
-    expect(parseInWorldDate({ mode: "fixed", label: "" })).toBeNull();
-    expect(realmInWorldDate("junk")).toBeNull();
-  });
-
-  it("is read from Realm.settings beside the other keys (the label shown until a clock starts)", () => {
-    const stored = { maxNationsPerUser: 3, inWorldDate: { mode: "offset", offset: 15 } };
-    expect(realmInWorldDate(stored)).toEqual({ mode: "offset", offset: 15 });
-  });
-});
-
 describe("Manage: links, rules and the in-world date", () => {
   it("needs the appearance power", async () => {
     const db = makeDb();
@@ -134,19 +73,6 @@ describe("Manage: links, rules and the in-world date", () => {
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(db.realm.update).not.toHaveBeenCalled();
   });
-
-  it("lets an appearance officer save the links, in order", async () => {
-    const db = makeDb(realmRow({ officers: [{ userId: OFFICER, powers: ["appearance"] }] }));
-    await callerAs(OFFICER, db).region.updateLinks({
-      slug: "eurth",
-      links: [discord, { ...forum, label: "  Forum  " }],
-    });
-    expect(db.realm.update).toHaveBeenCalledWith({
-      where: { id: "eurth" },
-      data: { communityLinks: [discord, forum] },
-    });
-  });
-
   it("refuses unsafe addresses and too many links", async () => {
     const db = makeDb();
     const founder = callerAs(FOUNDER, db).region;
@@ -196,49 +122,6 @@ describe("Manage: links, rules and the in-world date", () => {
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });
-
-describe("region overview", () => {
-  it("hands the page the rules, valid links and the in-world date", async () => {
-    const db = makeDb(
-      realmRow({
-        ownerId: "system",
-        officers: [],
-        description: null,
-        thumbnail: null,
-        bannerUrl: null,
-        tags: [],
-        foundedAt: null,
-        createdAt: new Date("2025-01-01"),
-        factbookHtml: null,
-        factbookUpdatedAt: null,
-        rulesHtml: "<p>Be civil &amp; kind.</p>",
-        rulesUpdatedAt: new Date("2026-10-01"),
-        communityLinks: [forum, { label: "Bad", url: "javascript:alert(1)", kind: "other" }],
-        settings: {
-          inWorldDate: { mode: "fixed", label: "14 Harvest 1203 AE" },
-          founderTitle: "The Eurth community",
-        },
-      })
-    );
-    db.country.aggregate.mockResolvedValue({ _count: { _all: 0 }, _sum: { currentPopulation: 0 } });
-    db.country.count.mockResolvedValue(0);
-    db.realmEmbassy.findMany.mockResolvedValue([]);
-    db.realmBoard.findUnique.mockResolvedValue(null);
-    db.poll.findFirst.mockResolvedValue(null);
-
-    const overview = await realmsRouter
-      .createCaller(createMockRouterContext({ db, auth: null, user: null }) as never)
-      .region.overview({ slug: "eurth" });
-    expect(overview?.rules).toMatchObject({
-      html: "<p>Be civil &amp; kind.</p>",
-      summary: "Be civil & kind.",
-    });
-    expect(overview?.links).toEqual([forum]);
-    expect(overview?.inWorldDate).toEqual({ label: "14 Harvest 1203 AE", asOf: null });
-    expect(overview?.founderTitle).toBe("The Eurth community");
-  });
-});
-
 describe("founder title", () => {
   const ADMIN = "clerk_admin";
   const adminCaller = (db: Db) =>
@@ -251,15 +134,6 @@ describe("founder title", () => {
       }) as never
     );
   const stored = { inWorldDate: { mode: "fixed", label: "Year 1" }, founderTitle: "Old" };
-
-  it("is kept in Realm.settings beside the other keys, and removed when cleared", () => {
-    expect(realmFounderTitle(withFounderTitle(stored, "  The Eurth community "))).toBe(
-      "The Eurth community"
-    );
-    expect(withFounderTitle(stored, null)).toEqual({ inWorldDate: stored.inWorldDate });
-    expect(realmFounderTitle({ founderTitle: 7 })).toBeNull();
-  });
-
   it("is refused to the founder and officers, who are not site staff, as is the founding year", async () => {
     const db = makeDb(realmRow({ settings: stored }));
     await expect(

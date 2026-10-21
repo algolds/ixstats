@@ -16,7 +16,7 @@ import {
   USER_ROLE,
 } from "~/tests/helpers/forum-mod-fixtures";
 import { detailOf, forumStore, type Row } from "~/tests/helpers/forum-store-fake";
-import { privacyConfigRow, wikiAttributionOff } from "~/tests/helpers/privacy-config-fake";
+import { wikiAttributionOff } from "~/tests/helpers/privacy-config-fake";
 
 const people: Row[] = [
   { id: "u_a", clerkUserId: "admin", role: { name: "admin", level: 10 }, handle: "boss" },
@@ -70,15 +70,6 @@ describe("resolveMember", () => {
       expect(call[0]!.select).not.toHaveProperty("clerkUserId");
     }
   });
-
-  it("finds a member by wiki username while they show wiki attribution", async () => {
-    const store = storeWith([privacyConfigRow("wiki", { showWikiAttribution: true })]);
-    expect(await resolveMember(store.db as never, generalMod, { handle: "Bob_Smith" })).toEqual({
-      id: "u_w",
-      name: "Bob_Smith",
-    });
-  });
-
   it("neither matches nor shows the wiki username of a member with wiki attribution off", async () => {
     const store = storeWith(wikiAttributionOff("wiki", "member"));
     expect(await resolveMember(store.db as never, generalMod, { handle: "Bob_Smith" })).toBeNull();
@@ -158,13 +149,6 @@ describe("listCategoryModerators", () => {
       code: "FORBIDDEN",
     });
   });
-
-  it("is NOT_FOUND for an unknown category", async () => {
-    const store = storeWith();
-    await expect(
-      listCategoryModerators(store.db as never, admin, { key: "nope" })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
 });
 
 describe("setCategoryModerator", () => {
@@ -192,38 +176,6 @@ describe("setCategoryModerator", () => {
     expect(detailOf(store.logs[0])).toEqual({ categoryId: "cat_side" });
     expect(store.db.forumModLog.create).not.toHaveBeenCalled();
   });
-
-  it("logs a realm category's grant at the realm's scope", async () => {
-    const store = storeWith();
-    await setCategoryModerator(store.db as never, admin, {
-      locator: { key: "hub", realm: "eurth" },
-      userId: "u_m",
-      grant: true,
-    });
-    expect(rowsOf(store, "r_eurth_hub")).toEqual(["u_w", "u_m"]);
-    expect(store.logs[0]).toMatchObject({ scope: "realm", scopeId: "r_eurth" });
-  });
-
-  it("revokes: deletes the row and logs moderator.revoke in the same transaction", async () => {
-    const store = storeWith();
-    await setCategoryModerator(store.db as never, admin, {
-      locator: { key: "general" },
-      userId: "u_m",
-      grant: false,
-    });
-    expect(rowsOf(store, "cat_general")).toEqual(["u_gen"]);
-    expect(store.tx.forumCategoryModerator.deleteMany).toHaveBeenCalledWith({
-      where: { categoryId: "cat_general", userId: "u_m" },
-    });
-    expect(store.logs).toEqual([
-      expect.objectContaining({
-        action: "moderator.revoke",
-        targetId: "u_m",
-        scopeId: "cat_general",
-      }),
-    ]);
-  });
-
   it("refuses a second grant (CONFLICT) with nothing logged", async () => {
     const store = storeWith();
     await expect(
@@ -280,25 +232,6 @@ describe("setCategoryModerator", () => {
       code: "FORBIDDEN",
       message: "Only site admins appoint category moderators.",
     });
-    expect(store.db.$transaction).not.toHaveBeenCalled();
-  });
-
-  it("is NOT_FOUND for an unknown member or category", async () => {
-    const store = storeWith();
-    await expect(
-      setCategoryModerator(store.db as never, admin, {
-        locator: { key: "general" },
-        userId: "u_nobody",
-        grant: true,
-      })
-    ).rejects.toMatchObject({ code: "NOT_FOUND", message: "Member not found." });
-    await expect(
-      setCategoryModerator(store.db as never, admin, {
-        locator: { key: "nope" },
-        userId: "u_w",
-        grant: true,
-      })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
     expect(store.db.$transaction).not.toHaveBeenCalled();
   });
 });

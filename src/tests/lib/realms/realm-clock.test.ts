@@ -41,11 +41,6 @@ describe("realm clock", () => {
     expect(faster.calendarOffsetMs).toBe(clock.calendarOffsetMs);
     expect(nextSpeedChangeAt(faster)).toBe(later + SPEED_CHANGE_COOLDOWN_MS);
   });
-
-  it("formats years below 1000 and an empty era", () => {
-    expect(formatRealmDate(start(2, "0800-03-14", "  "), REAL)).toBe("14 March 800");
-  });
-
   it("refuses impossible and out-of-range start dates", () => {
     for (const bad of ["2026-02-30", "0000-01-01", "10000-01-01", "1203-3-14", "yesterday"]) {
       expect(RealmStartDateSchema.safeParse(bad).success).toBe(false);

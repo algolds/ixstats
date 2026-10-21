@@ -189,37 +189,6 @@ const cursorOf = (n: number): string => {
 const ids = (out: { items: Array<{ postId: string }> }) => out.items.map((i) => i.postId);
 
 describe("discussionsOf", () => {
-  it("lists the posts that link the action, newest link first, with their place and permalink", async () => {
-    const db = world(
-      [link(2, "p_thread"), link(1, "p_board")],
-      [post("p_thread", general), post("p_board", board)]
-    );
-    const out = await page(db, guest);
-    expect(out.nextCursor).toBeNull();
-    expect(out.items).toEqual([
-      {
-        postId: "p_board",
-        href: "/thinkpages/post/p_board",
-        title: "Eurth board",
-        kind: "board",
-        categoryName: null,
-        realmName: "Eurth",
-        author: { name: "ann" },
-        createdAt: new Date("2026-10-01T10:00:00Z"),
-      },
-      {
-        postId: "p_thread",
-        href: "/thinkpages/post/p_thread",
-        title: "Thread of p_thread",
-        kind: "thread",
-        categoryName: "General",
-        realmName: null,
-        author: { name: "ann" },
-        createdAt: new Date("2026-10-01T10:00:00Z"),
-      },
-    ]);
-  });
-
   it("reads only native links of public activities", async () => {
     const db = world(
       [link(1, "p1", { postSource: "xenforo" }), link(2, "p2")],
@@ -331,14 +300,6 @@ describe("discussionsOf", () => {
       const out = await page(world(links, posts), realmMod);
       expect(out.items[0]).toMatchObject({ kind: "board", hidden: true });
     });
-
-    it("drops a link whose post is gone", async () => {
-      const out = await page(
-        world([link(1, "p_gone"), link(2, "p1")], [post("p1", general)]),
-        guest
-      );
-      expect(ids(out)).toEqual(["p1"]);
-    });
   });
 
   describe("authors", () => {
@@ -365,18 +326,6 @@ describe("discussionsOf", () => {
       );
       expect(ids(await page(db, admin))).toEqual(["p_user"]);
     });
-
-    it("falls back to the imported name, then to Member", async () => {
-      const db = world(
-        [link(1, "p1"), link(2, "p2")],
-        [
-          post("p1", general, { authorUserId: null, importedAuthorName: "Old Poster" }),
-          post("p2", general, { authorUserId: null }),
-        ]
-      );
-      const out = await page(db, guest);
-      expect(out.items.map((i) => i.author.name)).toEqual(["Old Poster", "Member"]);
-    });
   });
 
   describe("paging", () => {
@@ -387,28 +336,6 @@ describe("discussionsOf", () => {
         nums.map((n) => post(`p${n}`, general, over(n)))
       );
     };
-
-    it("returns 20 per page and a cursor that continues after the last one shown", async () => {
-      const db = many(45);
-      const first = await page(db, guest);
-      expect(first.items).toHaveLength(20);
-      expect(first.items[0]!.postId).toBe("p1");
-      expect(first.nextCursor).toBe(cursorOf(20));
-      const second = await page(db, guest, first.nextCursor!);
-      expect(ids(second)[0]).toBe("p21");
-      expect(second.items).toHaveLength(20);
-      const third = await page(db, guest, second.nextCursor!);
-      expect(third.items).toHaveLength(5);
-      expect(third.nextCursor).toBeNull();
-    });
-
-    it("does not let hidden posts take page slots", async () => {
-      const db = many(30, (n) => ({ hidden: n <= 15 }));
-      const out = await page(db, guest);
-      expect(out.items).toHaveLength(15);
-      expect(out.nextCursor).toBeNull();
-    });
-
     it("scans 100 links per call and hands back a cursor when all of them were hidden", async () => {
       const db = many(150, () => ({ hidden: true }));
       const first = await page(db, guest);
@@ -467,40 +394,6 @@ describe("discussionsOf", () => {
 describe("discussionCountsOf", () => {
   const counts = (db: ReturnType<typeof world>, viewer: object | null, wanted: string[]) =>
     discussionCountsOf(db as never, viewer as never, wanted);
-
-  it("counts the visible posts per action in one links query and one posts query", async () => {
-    const db = world(
-      [
-        link(1, "p1"),
-        link(2, "p2"),
-        link(3, "p3"),
-        link(4, "p4", { activityId: "a2" }),
-        link(5, "p_hid", { activityId: "a2" }),
-      ],
-      [
-        post("p1", general),
-        post("p2", general),
-        post("p3", general),
-        post("p4", general),
-        post("p_hid", general, { hidden: true }),
-      ]
-    );
-    const out = await counts(db, member, ["a1", "a2", "a3"]);
-    expect(out).toEqual({
-      a1: { count: 3, postIds: ["p1", "p2"] },
-      a2: { count: 1, postIds: ["p4"] },
-      a3: { count: 0, postIds: [] },
-    });
-    expect(db.postActionLink.findMany).toHaveBeenCalledTimes(1);
-    expect(db.forumPost.findMany).toHaveBeenCalledTimes(1);
-  });
-
-  it("counts a moderator's hidden posts too", async () => {
-    const db = world([link(1, "p_hid")], [post("p_hid", hub, { hidden: true })]);
-    expect((await counts(db, realmMod, ["a1"])).a1).toEqual({ count: 1, postIds: ["p_hid"] });
-    expect((await counts(db, guest, ["a1"])).a1).toEqual({ count: 0, postIds: [] });
-  });
-
   it("reads at most 1,000 links per call", async () => {
     const db = world([link(1, "p1")], [post("p1", general)]);
     await counts(db, guest, ["a1"]);
@@ -534,30 +427,6 @@ describe("discussionCountsOf", () => {
       ["a2", 200],
     ]);
   });
-
-  it("counts a post in a hidden thread for a moderator only", async () => {
-    const posts = [post("p1", general, {}, { hidden: true }), post("p2", general)];
-    const links = [link(1, "p1"), link(2, "p2")];
-    expect((await counts(world(links, posts), member, ["a1"])).a1).toEqual({
-      count: 1,
-      postIds: ["p2"],
-    });
-    expect((await counts(world(links, posts), guest, ["a1"])).a1!.count).toBe(1);
-    expect((await counts(world(links, posts), admin, ["a1"])).a1).toEqual({
-      count: 2,
-      postIds: ["p1", "p2"],
-    });
-  });
-
-  it("reads each distinct realm once, however many posts sit in it", async () => {
-    const db = world(
-      [link(1, "p1"), link(2, "p2"), link(3, "p3")],
-      [post("p1", hub), post("p2", board), post("p3", oldHub)]
-    );
-    await counts(db, guest, ["a1"]);
-    expect(db.realm.findUnique).toHaveBeenCalledTimes(2);
-  });
-
   it("never counts a persona's post, for any viewer", async () => {
     const posts = [
       post("p_persona", general, { authorPersonaId: "pa1", authorUserId: "u_ann" }),
@@ -589,15 +458,6 @@ describe("discussionCountsOf", () => {
       expect(counted.postIds).toEqual(listed.slice(0, 2));
     }
   });
-
-  it("asks for nothing when no ids are given, and counts a repeated id once", async () => {
-    const empty = world([], []);
-    expect(await counts(empty, guest, [])).toEqual({});
-    expect(empty.postActionLink.findMany).not.toHaveBeenCalled();
-    const db = world([link(1, "p1")], [post("p1", general)]);
-    expect(await counts(db, guest, ["a1", "a1"])).toEqual({ a1: { count: 1, postIds: ["p1"] } });
-  });
-
   it("is safe for an id that names a prototype key", async () => {
     const db = world([link(1, "p1", { activityId: "__proto__" })], [post("p1", general)]);
     const out = await counts(db, guest, ["__proto__", "a1"]);

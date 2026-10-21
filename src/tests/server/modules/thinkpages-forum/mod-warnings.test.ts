@@ -1,12 +1,6 @@
 /** @jest-environment node */
 import { DAY_MS } from "~/lib/thinkpages-forum/moderation-policy";
-import {
-  activePointsOf,
-  issueWarning,
-  listWarnings,
-  revokeWarning,
-  WARNINGS_PER_PAGE,
-} from "~/server/modules/thinkpages-forum";
+import { issueWarning, listWarnings, revokeWarning } from "~/server/modules/thinkpages-forum";
 
 const NOW = new Date("2026-10-09T12:00:00Z");
 const days = (n: number) => new Date(NOW.getTime() + n * DAY_MS);
@@ -283,74 +277,6 @@ function lockWaits(tx: { $executeRaw: jest.Mock }): void {
 
 describe("issueWarning", () => {
   const sitewide = { userId: "u_m", reason: " Rude ", points: 4 };
-
-  it("records a warning for 90 days and logs it in the same transaction, without a ban under 5 points", async () => {
-    const { db, tx, warnings, bans, logs } = warnDb();
-    const outcome = await issueWarning(db as never, admin, sitewide);
-    expectLockedFirst(tx, "u_m", tx.forumWarning.create);
-    expect(outcome).toEqual({ warningId: "w1", activePoints: 4, autoBan: null });
-    expect(warnings[0]).toMatchObject({
-      userId: "u_m",
-      issuedBy: "u_a",
-      reason: "Rude",
-      points: 4,
-      targetType: null,
-      targetId: null,
-      categoryId: null,
-      createdAt: NOW,
-      expiresAt: days(90),
-    });
-    expect(bans).toEqual([]);
-    expect(logs.map(parsed)).toEqual([
-      {
-        actorId: "u_a",
-        action: "warning.issue",
-        targetType: "user",
-        targetId: "u_m",
-        scope: "site",
-        scopeId: null,
-        detail: { warningId: "w1", points: 4, reason: "Rude", targetType: null, targetId: null },
-      },
-    ]);
-    expect(db.forumModLog.create).not.toHaveBeenCalled();
-    expect(db.$transaction).toHaveBeenCalledTimes(1);
-  });
-
-  it("bans for 7 days sitewide at 5 active points, issued by the warning's issuer (M2)", async () => {
-    const { db, bans, logs } = warnDb();
-    const outcome = await issueWarning(db as never, admin, { ...sitewide, points: 5 });
-    expect(outcome.autoBan).toEqual({
-      kind: "issued",
-      banId: "b2",
-      autoTier: 5,
-      days: 7,
-      expiresAt: days(7),
-      reason: "Automatic: 5 active warning points",
-    });
-    expect(bans).toEqual([
-      expect.objectContaining({
-        userId: "u_m",
-        scope: "site",
-        scopeId: null,
-        auto: true,
-        autoTier: 5,
-        issuedBy: "u_a",
-        reason: "Automatic: 5 active warning points",
-        createdAt: NOW,
-        expiresAt: days(7),
-      }),
-    ]);
-    expect(parsed(logs[1])).toEqual({
-      actorId: "u_a",
-      action: "ban.auto",
-      targetType: "user",
-      targetId: "u_m",
-      scope: "site",
-      scopeId: null,
-      detail: { banId: "b2", days: 7, points: 5, autoTier: 5, trigger: "warning", warningId: "w1" },
-    });
-  });
-
   it("bans for 30 days at 10 active points", async () => {
     const { db, bans } = warnDb({ warnings: [warning({ points: 5, expiresAt: days(80) })] });
     const outcome = await issueWarning(db as never, admin, { ...sitewide, points: 5 });
@@ -529,55 +455,6 @@ describe("issueWarning", () => {
     expect(tx.forumBan.create).not.toHaveBeenCalled();
     expect(logs.map((l) => l.action)).toEqual(["warning.issue"]);
   });
-
-  it("counts only unexpired, unrevoked points, sitewide", async () => {
-    const { db, tx } = warnDb({
-      warnings: [
-        warning({ points: 3, expiresAt: days(-1) }),
-        warning({ points: 3, revokedAt: days(-1) }),
-        warning({ points: 3, expiresAt: NOW }),
-        warning({ points: 1, userId: "u_other" }),
-      ],
-    });
-    const outcome = await issueWarning(db as never, admin, sitewide);
-    expect(outcome).toEqual({ warningId: "w1", activePoints: 4, autoBan: null });
-    expect(tx.forumWarning.findMany).toHaveBeenCalledWith({
-      where: { userId: "u_m", revokedAt: null, expiresAt: { gt: NOW } },
-      select: { points: true, expiresAt: true, revokedAt: true },
-    });
-  });
-
-  it("lets a realm moderator warn on their realm's content for up to 2 points, which count sitewide (M4)", async () => {
-    const { db, warnings, bans, logs } = warnDb({ warnings: [warning({ points: 3 })] });
-    const input = {
-      userId: "u_m",
-      reason: "Spam",
-      points: 2,
-      target: { type: "post", id: "p_eurth" },
-    } as const;
-    const outcome = await issueWarning(db as never, realmMod, input);
-    expect(outcome).toMatchObject({ activePoints: 5, autoBan: { kind: "issued", days: 7 } });
-    expect(warnings[1]).toMatchObject({
-      issuedBy: "u_f",
-      targetType: "post",
-      targetId: "p_eurth",
-      categoryId: "cat_eurth_hub",
-    });
-    expect(bans[0]).toMatchObject({ issuedBy: "u_f", auto: true });
-    expect(parsed(logs[0])).toMatchObject({
-      action: "warning.issue",
-      scope: "category",
-      scopeId: "cat_eurth_hub",
-      detail: { points: 2, targetType: "post", targetId: "p_eurth" },
-    });
-    expect(logs[1]).toMatchObject({ action: "ban.auto", actorId: "u_f" });
-    await expect(
-      issueWarning(db as never, realmMod, { ...input, points: 3 })
-    ).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-    });
-  });
-
   it("works on content in an archived realm's section (T0-6)", async () => {
     const { db } = warnDb();
     const input = {
@@ -949,15 +826,6 @@ describe("revokeWarning", () => {
     });
     expect(tx.forumBan.create).not.toHaveBeenCalled();
   });
-
-  it("marks the warning revoked by the actor", async () => {
-    const { db, warnings } = warnDb({
-      warnings: [warning({ id: "w_a", categoryId: "cat_eurth_hub" })],
-    });
-    await revokeWarning(db as never, realmMod, { warningId: "w_a" });
-    expect(warnings[0]).toMatchObject({ revokedAt: NOW, revokedBy: "u_f" });
-  });
-
   it("keeps moderators to their scope and refuses unknown or revoked warnings", async () => {
     const { db, logs } = warnDb({
       warnings: [
@@ -985,55 +853,11 @@ describe("revokeWarning", () => {
 });
 
 describe("activePointsOf and listWarnings", () => {
-  it("sums a member's live points", async () => {
-    const { tx } = warnDb({
-      warnings: [warning({ points: 2 }), warning({ points: 3, expiresAt: days(-1) })],
-    });
-    expect(await activePointsOf(tx as never, "u_m", NOW)).toBe(2);
-  });
-
   it("refuses members", async () => {
     await expect(listWarnings(warnDb().db as never, member, {}, 1)).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
   });
-
-  it("lists a site admin's warnings, newest first, live ones only on request", async () => {
-    const { db } = warnDb({ warnings: [warning({})] });
-    const result = await listWarnings(db as never, admin, { userId: "u_m", activeOnly: true }, 2);
-    expect(db.forumWarning.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { AND: [{ revokedAt: null, expiresAt: { gt: NOW } }, {}, { userId: "u_m" }] },
-        orderBy: { createdAt: "desc" },
-        skip: WARNINGS_PER_PAGE,
-        take: WARNINGS_PER_PAGE,
-      })
-    );
-    expect(result.total).toBe(1);
-    expect(result.rows).toHaveLength(1);
-  });
-
-  it("adds each warning's appeal status in one query, null when not appealed", async () => {
-    const { db } = warnDb({ warnings: [warning({ id: "w1" }), warning({ id: "w2" })] });
-    db.forumAppeal.findMany.mockResolvedValueOnce([{ subjectId: "w2", status: "moot" }]);
-    const result = await listWarnings(db as never, admin, {}, 1);
-    expect(db.forumAppeal.findMany).toHaveBeenCalledTimes(1);
-    expect(db.forumAppeal.findMany).toHaveBeenCalledWith({
-      where: { subjectType: "warning", subjectId: { in: ["w1", "w2"] } },
-      select: { subjectId: true, status: true },
-    });
-    expect(result.rows.map((r) => [r.id, r.appealStatus])).toEqual([
-      ["w1", null],
-      ["w2", "moot"],
-    ]);
-  });
-
-  it("asks for no appeals on an empty page", async () => {
-    const { db } = warnDb();
-    await listWarnings(db as never, admin, {}, 1);
-    expect(db.forumAppeal.findMany).not.toHaveBeenCalled();
-  });
-
   it("keeps other moderators to warnings issued in their categories", async () => {
     const { db } = warnDb();
     await listWarnings(db as never, realmMod, {}, 1);

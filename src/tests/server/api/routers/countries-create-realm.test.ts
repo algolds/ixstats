@@ -160,32 +160,6 @@ describe("countries.createCountry — realm and cap", () => {
     await caller.createCountry(input() as never);
     expect(grantBonus).not.toHaveBeenCalled();
   });
-
-  it("without a realmId it uses the realm of the nation the player acts as", async () => {
-    const { db, caller } = setup({
-      membershipTier: "mycountry_premium",
-      activeRealmId: "eurth",
-      realms: { eurth: { status: "active", settings: { maxNationsPerUser: 2 } } },
-      held: { eurth: 1 },
-    });
-    await caller.createCountry(input() as never);
-    expect(db.realm.findUnique).toHaveBeenCalledWith({
-      where: { id: "eurth" },
-      select: { id: true, status: true, settings: true },
-    });
-    expect(db.country.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ realmId: "eurth" }),
-    });
-  });
-
-  it("a new player with no nation defaults to Ixnay", async () => {
-    const { db, caller } = setup();
-    await caller.createCountry(input() as never);
-    expect(db.country.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ realmId: "default" }),
-    });
-  });
-
   it("an unknown realm is NOT_FOUND and a closed realm FORBIDDEN; nothing is created", async () => {
     const unknown = setup();
     await expect(

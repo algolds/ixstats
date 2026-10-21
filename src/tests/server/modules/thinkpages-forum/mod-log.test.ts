@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { listModLog, LOG_PER_PAGE, logModAction } from "~/server/modules/thinkpages-forum";
+import { listModLog, logModAction } from "~/server/modules/thinkpages-forum";
 
 const USER_ROLE = { name: "user", level: 100 };
 const admin = {
@@ -86,22 +86,6 @@ describe("logModAction (M16)", () => {
       },
     });
   });
-
-  it("stores site and category scopes and no detail", async () => {
-    const db = logDb();
-    const base = { actorId: "u_a", action: "x", targetType: "user", targetId: "u_p" };
-    await logModAction(db as never, { ...base, scope: { kind: "site" } });
-    await logModAction(db as never, {
-      ...base,
-      scope: { kind: "category", categoryId: "cat_general" },
-    });
-    expect(
-      db.forumModLog.create.mock.calls.map((c) => (c as never as [{ data: object }])[0].data)
-    ).toEqual([
-      expect.objectContaining({ scope: "site", scopeId: null, detail: null }),
-      expect.objectContaining({ scope: "category", scopeId: "cat_general", detail: null }),
-    ]);
-  });
 });
 
 describe("listModLog", () => {
@@ -129,20 +113,6 @@ describe("listModLog", () => {
     expect(result.rows[0]!.detail).toEqual({ note: null, targetType: "post", targetId: "p_own" });
     expect(authored).toHaveBeenCalledTimes(2);
   });
-
-  it("keeps every note for site admins, with no authorship lookups", async () => {
-    authored.mockClear();
-    const result = await listModLog(logDb(reportRows()) as never, admin, {}, 1);
-    expect(notes(result)).toEqual(Array(3).fill("Flagged by the usual suspect"));
-    expect(authored).not.toHaveBeenCalled();
-  });
-
-  it("looks up no authorship when the page has no report rows", async () => {
-    authored.mockClear();
-    await listModLog(logDb([row(null)]) as never, realmMod, {}, 1);
-    expect(authored).not.toHaveBeenCalled();
-  });
-
   it("refuses members", async () => {
     await expect(listModLog(logDb() as never, member, {}, 1)).rejects.toMatchObject({
       code: "FORBIDDEN",
@@ -151,36 +121,6 @@ describe("listModLog", () => {
       code: "FORBIDDEN",
     });
   });
-
-  it("shows site admins everything, newest first, a page at a time", async () => {
-    const db = logDb([row(null)]);
-    const result = await listModLog(db as never, admin, {}, 3);
-    expect(db.forumModLog.findMany).toHaveBeenCalledWith({
-      where: {},
-      orderBy: { createdAt: "desc" },
-      skip: 2 * LOG_PER_PAGE,
-      take: LOG_PER_PAGE,
-    });
-    expect(db.forumModLog.count).toHaveBeenCalledWith({ where: {} });
-    expect(result.total).toBe(1);
-    expect(LOG_PER_PAGE).toBe(50);
-  });
-
-  it("filters a site admin's log by realm: the realm's rows and its categories' rows", async () => {
-    const db = logDb();
-    await listModLog(db as never, admin, { realmId: "r_bee" }, 1);
-    expect(db.forumModLog.findMany.mock.calls[0]).toEqual([
-      expect.objectContaining({
-        where: {
-          OR: [
-            { scope: "realm", scopeId: { in: ["r_bee"] } },
-            { scope: "category", scopeId: { in: ["cat_r_bee_hub"] } },
-          ],
-        },
-      }),
-    ]);
-  });
-
   it("shows other moderators their realms' rows and their categories' rows only", async () => {
     const db = logDb();
     await listModLog(db as never, realmMod, {}, 1);

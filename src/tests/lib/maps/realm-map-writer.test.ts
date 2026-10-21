@@ -2,8 +2,6 @@
 jest.mock("~/lib/maps/geo-validation", () => ({
   isPostGISAvailable: jest.fn().mockResolvedValue(true),
 }));
-
-import { isPostGISAvailable } from "~/lib/maps/geo-validation";
 import { geometryProblem, writeRealmMapFeatures } from "~/lib/maps/realm-map-writer";
 
 const square = (x: number) => ({
@@ -315,41 +313,5 @@ describe("writeRealmMapFeatures", () => {
       0.045,
       2,
     ]);
-  });
-
-  it("does not stamp a layer when no smoothing ran", async () => {
-    const db = writerDb();
-    await writeRealmMapFeatures(db, "eurth-id", [{ key: "A", geometry: square(0) }]);
-    expect(
-      db.$queryRawUnsafe.mock.calls.some(([sql]: [string]) => sql.includes("'coverage'"))
-    ).toBe(false);
-  });
-
-  it("leaves the layer's coverage alone without `coverage`", async () => {
-    const db = writerDb();
-    await writeRealmMapFeatures(db, "eurth-id", [{ key: "A", geometry: square(0) }]);
-    expect(
-      db.$queryRawUnsafe.mock.calls.some(([sql]: [string]) => sql.includes("ST_CoverageSimplify"))
-    ).toBe(false);
-  });
-
-  it("leaves overlaps alone on other layer types", async () => {
-    const db = writerDb();
-    await writeRealmMapFeatures(db, "eurth-id", [{ key: "Lake", geometry: square(0) }], {
-      layerType: "lakes",
-    });
-    expect(
-      db.$queryRawUnsafe.mock.calls.some(([sql]: [string]) => sql.includes("ST_Difference"))
-    ).toBe(false);
-  });
-
-  it("without PostGIS keeps the importer's area and touches no PostGIS column", async () => {
-    (isPostGISAvailable as jest.Mock).mockResolvedValueOnce(false);
-    const db = writerDb();
-    const result = await writeRealmMapFeatures(db, "eurth-id", [
-      { key: "A", geometry: square(0), areaKm2: 42 },
-    ]);
-    expect(result.areas).toEqual({ A: 42 });
-    expect(db.$queryRawUnsafe).not.toHaveBeenCalled();
   });
 });

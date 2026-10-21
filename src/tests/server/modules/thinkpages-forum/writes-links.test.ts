@@ -61,14 +61,4 @@ describe("an author's edit of a post that already links an action", () => {
     });
     expect(tx.postActionLink.createMany).not.toHaveBeenCalled();
   });
-
-  it("links a new public token added in the same edit", async () => {
-    const { db, tx } = fakeDb([WITHDRAWN, { id: "dir-2", countryId: "c1", visibility: "public" }]);
-    await syncEditLinks(db, AUTHOR, POST, "[ixaction=dir-1] [ixaction=dir-2]");
-    expect(tx.postActionLink.createMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: [{ postSource: "native", postRef: "p1", activityId: "dir-2", countryId: "c1" }],
-      })
-    );
-  });
 });

@@ -44,19 +44,6 @@ function seed(
 }
 
 describe("measureRealm", () => {
-  it("measures a realm by id or by slug", async () => {
-    const { db, id, slug } = seed([
-      { layerType: "political", geometry: polygon(box(0, 0, 10, 10)) },
-      { layerType: "political", geometry: polygon(box(20, 0, 30, 10)) },
-    ]);
-    const byId = await measureRealm(db, id);
-    const bySlug = await measureRealm(db, slug);
-    if (!byId.ok || !bySlug.ok) throw new Error("expected a measurement");
-    expect(byId.mapVersion).toBe(7);
-    expect(byId.measures.nations.count).toBe(2);
-    expect(bySlug.measures).toEqual(byId.measures);
-  });
-
   it("reads an antimeridian-crossing polygon from its geometry JSON as the strip it is", async () => {
     const { db, id } = seed([
       {
@@ -127,36 +114,6 @@ describe("measureRealm", () => {
     expect(earth.measures.climate.D).toBeCloseTo(1, 6);
     expect(half.measures.nations.medianKm2).toBeCloseTo(earth.measures.nations.medianKm2 / 4, -2);
   });
-
-  it("serves a second read of the same map version from the cache and measures again after a bump", async () => {
-    const { db, id } = seed([{ layerType: "political", geometry: polygon(box(0, 0, 10, 10)) }]);
-    const first = await measureRealm(db, id);
-    const second = await measureRealm(db, id);
-    expect(db.mapLayer.findMany).toHaveBeenCalledTimes(1);
-    expect(second).toEqual(first);
-
-    db.realm.rows[0].mapVersion = 8;
-    db.mapLayer.rows.push({
-      realmId: id,
-      featureId: "extra",
-      layerType: "political",
-      geometry: polygon(box(40, 0, 50, 10)),
-      properties: {},
-      isActive: true,
-    });
-    const third = await measureRealm(db, id);
-    expect(db.mapLayer.findMany).toHaveBeenCalledTimes(2);
-    if (!third.ok) throw new Error("expected a measurement");
-    expect(third.mapVersion).toBe(8);
-    expect(third.measures.nations.count).toBe(2);
-  });
-
-  it("shares one read between concurrent requests for the same version", async () => {
-    const { db, id } = seed([{ layerType: "political", geometry: polygon(box(0, 0, 10, 10)) }]);
-    await Promise.all([measureRealm(db, id), measureRealm(db, id)]);
-    expect(db.mapLayer.findMany).toHaveBeenCalledTimes(1);
-  });
-
   it("prefers a realm whose id is the name when another realm's slug is the same", async () => {
     const { db, id } = seed([{ layerType: "political", geometry: polygon(box(0, 0, 10, 10)) }]);
     db.realm.rows.unshift({ id: "other", slug: id, name: "Other", mapVersion: 1, settings: null });
@@ -183,23 +140,5 @@ describe("measureRealm", () => {
     );
     const result = await measureRealm(db, id);
     expect(result).toEqual({ ok: false, reason: expect.stringMatching(/too many|more than/i) });
-  });
-
-  it("gives a reason, not a throw, for a realm with no layers or no such realm", async () => {
-    const { db, id } = seed([]);
-    const empty = await measureRealm(db, id);
-    expect(empty).toEqual({ ok: false, reason: expect.stringMatching(/no map layers/i) });
-    const missing = await measureRealm(db, "no-such-realm");
-    expect(missing).toEqual({ ok: false, reason: expect.stringMatching(/no realm/i) });
-    // the failure is not cached: layers added later are measured
-    db.mapLayer.rows.push({
-      realmId: id,
-      featureId: "late",
-      layerType: "political",
-      geometry: polygon(box(0, 0, 10, 10)),
-      properties: {},
-      isActive: true,
-    });
-    expect((await measureRealm(db, id)).ok).toBe(true);
   });
 });

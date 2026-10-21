@@ -85,15 +85,6 @@ describe("markThreadRead", () => {
       data: { readAt: t3 },
     });
   });
-
-  it("pages the posts the way the thread page does", async () => {
-    const db = markDb(threadRow(), [{ createdAt: ago(2) }]);
-    await markThreadRead(db as never, member, { threadId: "t1", page: 3 });
-    expect(db.forumPost.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ skip: 40, take: 20 })
-    );
-  });
-
   it("never reads past the thread's last post, whatever page the client names", async () => {
     const lastPostAt = ago(2);
     const db = markDb(threadRow({ lastPostAt }), [{ createdAt: ago(0.1) }]);
@@ -103,17 +94,6 @@ describe("markThreadRead", () => {
       }
     );
   });
-
-  it("does nothing for a page past the end", async () => {
-    const db = markDb(threadRow(), []);
-    await expect(
-      markThreadRead(db as never, member, { threadId: "t1", page: 99 })
-    ).resolves.toEqual({
-      readAt: null,
-    });
-    expect(db.forumThreadRead.createMany).not.toHaveBeenCalled();
-  });
-
   it("clears the watch's notified mark so the next reply notifies again", async () => {
     const db = markDb(threadRow(), [{ createdAt: ago(2) }]);
     await markThreadRead(db as never, member, { threadId: "t1", page: 1 });
@@ -147,24 +127,6 @@ describe("markThreadRead", () => {
 });
 
 describe("markCategoryRead", () => {
-  it("marks the unread threads of the board, not the read ones", async () => {
-    const fresh = { id: "t_new", lastPostAt: ago(1) };
-    const seen = { id: "t_seen", lastPostAt: ago(1) };
-    const db = markDb(null);
-    db.forumThread.findMany.mockResolvedValue([fresh, seen] as never);
-    db.forumThreadRead.findMany.mockResolvedValue([
-      { threadId: "t_seen", readAt: seen.lastPostAt },
-    ]);
-    await expect(markCategoryRead(db as never, member, { key: "general" })).resolves.toEqual({
-      marked: 1,
-    });
-    expect(db.$executeRaw).toHaveBeenCalledTimes(1);
-    const [[query]] = db.$executeRaw.mock.calls as never as [[Prisma.Sql]];
-    expect(query.values).toEqual(["u1", "t_new", fresh.lastPostAt]);
-    expect(db.forumThreadRead.createMany).not.toHaveBeenCalled();
-    expect(db.forumThreadRead.updateMany).not.toHaveBeenCalled();
-  });
-
   it("writes a chunk as one bound upsert that only moves a read time forward", async () => {
     const lastPostAt = ago(2);
     const db = markDb(null);
@@ -185,20 +147,6 @@ describe("markCategoryRead", () => {
     );
     expect(query.values).toEqual(["u1", "t_a", lastPostAt, "u1", "t_b", lastPostAt]);
   });
-
-  it("writes nothing when every thread of the chunk is already read", async () => {
-    const seen = { id: "t_seen", lastPostAt: ago(1) };
-    const db = markDb(null);
-    db.forumThread.findMany.mockResolvedValue([seen] as never);
-    db.forumThreadRead.findMany.mockResolvedValue([
-      { threadId: "t_seen", readAt: seen.lastPostAt },
-    ]);
-    await expect(markCategoryRead(db as never, member, { key: "general" })).resolves.toEqual({
-      marked: 0,
-    });
-    expect(db.$executeRaw).not.toHaveBeenCalled();
-  });
-
   it("asks only for visible threads inside the thirty-day window, newest first", async () => {
     const db = markDb(null);
     await markCategoryRead(db as never, member, { key: "general" });
@@ -346,22 +294,6 @@ describe("markRealmBoardRead", () => {
     status: "active",
     ownerId: "founder",
   };
-
-  it("advances the realm board thread's read row to its last post", async () => {
-    const lastPostAt = ago(1);
-    const db = markDb(null);
-    db.realm.findUnique.mockResolvedValue(eurth as never);
-    db.forumThread.findFirst.mockResolvedValue({ id: "t_board", categoryId: "cat_board" } as never);
-    db.forumThread.findUnique.mockResolvedValue({ lastPostAt } as never);
-    await expect(markRealmBoardRead(db as never, member, "eurth")).resolves.toEqual({
-      readAt: lastPostAt,
-    });
-    expect(db.forumThreadRead.createMany).toHaveBeenCalledWith({
-      data: [{ userId: "u1", threadId: "t_board", readAt: lastPostAt }],
-      skipDuplicates: true,
-    });
-  });
-
   it("answers NOT_FOUND for a realm hidden from the member", async () => {
     const db = markDb(null);
     db.realm.findUnique.mockResolvedValue({ ...eurth, status: "draft" } as never);

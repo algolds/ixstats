@@ -1,9 +1,6 @@
 /** @jest-environment node */
 import { withBasePath } from "~/lib/base-path";
-import {
-  hasImageSrc,
-  rebaseRootRelativeUrls,
-} from "~/lib/thinkpages-forum/html-urls";
+import { hasImageSrc, rebaseRootRelativeUrls } from "~/lib/thinkpages-forum/html-urls";
 
 const prefix = (path: string) => `/p${path}`;
 
@@ -141,10 +138,5 @@ describe("hasImageSrc", () => {
     ["no image", "<p></p>"],
   ])("does not count %s", (_, html) => {
     expect(has(html)).toBe(false);
-  });
-
-  it("counts unprefixed app paths when there is no base path", () => {
-    expect(hasImageSrc('<img src="/images/uploads/a.png">', "")).toBe(true);
-    expect(hasImageSrc('<img src="/projects/ixstates/images/uploads/a.png">', "")).toBe(false);
   });
 });

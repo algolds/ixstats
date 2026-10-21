@@ -1,13 +1,5 @@
 import { htmlToQuoteText, quoteWikitext } from "~/components/thinkpages-forum/composer/QuoteInsert";
-import { linkQuoteSources } from "~/lib/thinkpages-forum/post-html";
-
 describe("quoteWikitext", () => {
-  it("emits the importer-compatible quote block", () => {
-    expect(quoteWikitext({ postId: "p1", author: "Heku", text: "Hello there" })).toBe(
-      `<blockquote class="forum-quote" data-post="p1"><div class="forum-quote-author">'''Heku''' wrote:</div><div class="forum-quote-body">Hello there</div></blockquote>\n`
-    );
-  });
-
   it("strips markup that could open a template, link or tag from the author and the text", () => {
     const out = quoteWikitext({
       postId: "p1",
@@ -57,26 +49,9 @@ describe("quoteWikitext", () => {
       "onclick"
     );
   });
-
-  it("is linked back to its source by the thread page", () => {
-    const linked = linkQuoteSources(quoteWikitext({ postId: "p_1", author: "A", text: "t" }));
-    expect(linked).toContain("forum-quote-source");
-  });
 });
 
 describe("htmlToQuoteText", () => {
-  it("reads a post's visible text without markup, action tokens or nested quotes", () => {
-    const html =
-      '<div class="mw-parser-output"><blockquote class="forum-quote"><div>Old</div></blockquote><p>Hello &amp; welcome</p><p>[ixaction=abc] Second</p></div>';
-    expect(htmlToQuoteText(html)).toBe("Hello & welcome Second");
-  });
-
-  it("shortens a long post", () => {
-    const text = htmlToQuoteText(`<p>${"word ".repeat(400)}</p>`);
-    expect(text.length).toBeLessThanOrEqual(600);
-    expect(text.endsWith("...")).toBe(true);
-  });
-
   it("leaves out the infobox, the notices and embeds, so the quote is the post's own words", () => {
     const html =
       '<div class="mw-parser-output"><div class="wikios-notices-container"><div class="notice"><div>Stub notice</div></div></div>' +

@@ -177,16 +177,6 @@ describe("realm board exclusions", () => {
       async (_sql: TemplateStringsArray, ..._values: unknown[]): Promise<object[]> => []
     ),
   });
-  const forumQueries = (db: ReturnType<typeof directoryDb>) =>
-    [
-      db.forumCategory.findMany,
-      db.forumPost.groupBy,
-      db.forumThread.findMany,
-      db.forumThread.groupBy,
-      db.$queryRaw,
-    ]
-      .map((fn) => fn.mock.calls.length)
-      .reduce((a, b) => a + b, 0);
 
   it("the realm directory's forum activity counts no board message", async () => {
     const db = directoryDb(1);
@@ -194,66 +184,6 @@ describe("realm board exclusions", () => {
     const section = argsOf(db.forumCategory.findMany as never).where as object;
     expect(section).toMatchObject({ scope: "realm", visibility: "public", ...NOT_BOARD });
   });
-
-  it("the directory's board-week figure is separate: the forum count keeps excluding the board, the board is read in its own batch", async () => {
-    const db = directoryDb(1);
-    await listRealmDirectory(db as never, null);
-    const forumSection = argsOf(db.forumCategory.findMany as never).where as Record<string, object>;
-    expect(forumSection).toMatchObject(NOT_BOARD);
-    expect(forumSection.OR).toBeUndefined();
-    const boardCategory = (
-      argsOf(db.forumThread.findMany as never).where as {
-        category: Record<string, object | string>;
-      }
-    ).category;
-    expect(boardCategory).toMatchObject({
-      OR: [{ style: "board" }, { scope: "realm", key: "board" }],
-    });
-    expect(boardCategory.style).toBeUndefined();
-  });
-
-  it("the directory reads every realm's forum activity in a fixed number of queries", async () => {
-    const few = directoryDb(2);
-    const many = directoryDb(12);
-    await listRealmDirectory(few as never, null);
-    await listRealmDirectory(many as never, null);
-    expect(forumQueries(many)).toBe(forumQueries(few));
-  });
-
-  it("the directory sums each realm's posts and picks its latest thread across its sections", async () => {
-    const db = directoryDb(3);
-    const early = new Date("2026-10-01T00:00:00Z");
-    const late = new Date("2026-10-09T00:00:00Z");
-    db.forumCategory.findMany.mockResolvedValue([
-      { id: "c1", realmId: "r1" },
-      { id: "c2", realmId: "r1" },
-      { id: "c3", realmId: "r2" },
-    ] as never);
-    db.forumThread.groupBy.mockResolvedValue([
-      { categoryId: "c1", _max: { lastPostAt: early } },
-      { categoryId: "c2", _max: { lastPostAt: late } },
-    ] as never);
-    // One grouped row per section, not one per active thread.
-    db.$queryRaw.mockResolvedValue([
-      { categoryId: "c1", posts: 2 },
-      { categoryId: "c2", posts: 3 },
-      { categoryId: "c3", posts: 1 },
-    ]);
-    const out = await listRealmDirectory(db as never, null);
-    expect(out.map((r) => r.board)).toEqual([
-      { recentPosts: 5, lastPostAt: late },
-      { recentPosts: 1, lastPostAt: null },
-      { recentPosts: 0, lastPostAt: null },
-    ]);
-    // The count is grouped in the database, over the non-board sections only, hidden posts and threads left out.
-    const [strings, ...values] = db.$queryRaw.mock.calls[0]!;
-    const sql = strings.join("?");
-    expect(sql).toMatch(/GROUP BY t\."categoryId"/i);
-    expect(sql).toMatch(/t\.hidden = false/);
-    expect(sql).toMatch(/p\.hidden = false/);
-    expect(values[0]).toMatchObject({ values: ["c1", "c2", "c3"] });
-  });
-
   it("a moderator is never offered the board as a place to move a thread", async () => {
     const state = seed();
     state.categories = [

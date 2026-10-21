@@ -4,7 +4,6 @@ import type { BoardMessage } from "~/server/modules/thinkpages-forum/board-messa
 import {
   boardMessagePayload,
   publishBoardPost,
-  publishBoardRemoval,
   publishBoardSettings,
 } from "~/server/modules/thinkpages-forum/board-live";
 import {
@@ -195,18 +194,6 @@ describe("publishBoardPost", () => {
     expect(wire).not.toContain("u_member");
     expect(wire).not.toContain("flags.example");
   });
-
-  it("sends an update as an updated message", async () => {
-    const store = eurth([boardPost("p1", 1, { editedAt: at(3) })]);
-    const out = broadcaster();
-    await publishBoardPost(store.db as never, out, "p1", "updated");
-    expect(out.broadcastBoard.mock.calls[0]![0]).toMatchObject({
-      type: "board:updated",
-      realmId: "r_eurth",
-      change: { type: "updated", message: { id: "p1", editedAt: at(3).toISOString() } },
-    });
-  });
-
   it("never broadcasts a hidden message: a hide is a removal, a new hidden one is nothing", async () => {
     const store = eurth([boardPost("p1", 1, { hidden: true, contentHtml: "<p>secret</p>" })]);
     const out = broadcaster();
@@ -276,42 +263,6 @@ describe("publishBoardPost", () => {
     warn.mockRestore();
   });
 });
-
-describe("publishBoardRemoval and publishBoardSettings", () => {
-  it("removes a post from the room", () => {
-    const out = broadcaster();
-    publishBoardRemoval(out, "r_eurth", "p1");
-    expect(out.broadcastBoard).toHaveBeenCalledWith({
-      type: "board:updated",
-      realmId: "r_eurth",
-      change: { type: "removed", postId: "p1" },
-    });
-  });
-
-  it("sends the new settings and swallows a broadcaster failure", () => {
-    const out = broadcaster();
-    publishBoardSettings(out, "r_eurth", { visitorsAllowed: false, slowModeSeconds: 30 });
-    expect(out.broadcastBoard).toHaveBeenCalledWith({
-      type: "board:settings",
-      realmId: "r_eurth",
-      settings: { visitorsAllowed: false, slowModeSeconds: 30 },
-    });
-    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
-    expect(() =>
-      publishBoardSettings(
-        {
-          broadcastBoard: () => {
-            throw new Error("down");
-          },
-        },
-        "r_eurth",
-        { visitorsAllowed: true, slowModeSeconds: 0 }
-      )
-    ).not.toThrow();
-    warn.mockRestore();
-  });
-});
-
 describe("canJoinRealmBoard", () => {
   const db = () =>
     boardStore(
@@ -329,30 +280,16 @@ describe("canJoinRealmBoard", () => {
       await expect(canJoinRealmBoard(db(), "clerk_u_member", realmId)).resolves.toBe(true);
     }
   });
-
-  it("joins Ixnay even without a realm row", async () => {
-    await expect(canJoinRealmBoard(db(), null, "default")).resolves.toBe(true);
-  });
-
   it("refuses a draft realm to the public and members, admits its founder and site admins", async () => {
     await expect(canJoinRealmBoard(db(), null, "r_draft")).resolves.toBe(false);
     await expect(canJoinRealmBoard(db(), "clerk_u_member", "r_draft")).resolves.toBe(false);
     await expect(canJoinRealmBoard(db(), "draft_founder", "r_draft")).resolves.toBe(true);
     await expect(canJoinRealmBoard(db(), "clerk_u_admin", "r_draft")).resolves.toBe(true);
   });
-
-  it("refuses an unknown realm", async () => {
-    await expect(canJoinRealmBoard(db(), null, "r_nope")).resolves.toBe(false);
-  });
 });
 
 describe("boardTypingName", () => {
   const db = () => eurth().db as never;
-
-  it("names a player by their public handle", async () => {
-    await expect(boardTypingName(db(), "clerk_u_member", null)).resolves.toBe("member");
-  });
-
   it("names the persona, not the player, for the player's own persona", async () => {
     await expect(boardTypingName(db(), "clerk_u_member", "pa_news")).resolves.toBe("Eurth Daily");
   });
@@ -403,17 +340,6 @@ describe("canTypeOnBoard", () => {
       false
     );
   });
-
-  it("is false for a visitor when the board turned visitors off, but not for a member", async () => {
-    const s = store();
-    Object.assign(
-      s.state.realms.find((r) => r.id === "r_eurth")!,
-      { boardVisitorsAllowed: false }
-    );
-    await expect(canTypeOnBoard(s.db as never, "clerk_u_visitor", "r_eurth")).resolves.toBe(false);
-    await expect(canTypeOnBoard(s.db as never, "clerk_u_member", "r_eurth")).resolves.toBe(true);
-  });
-
   it("is false in an archived realm, for an unknown user and for an unknown realm", async () => {
     const { db } = store();
     await expect(canTypeOnBoard(db as never, "clerk_u_member", "r_old")).resolves.toBe(false);

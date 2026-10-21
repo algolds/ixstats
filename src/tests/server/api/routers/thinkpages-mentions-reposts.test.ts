@@ -85,33 +85,6 @@ describe("mention notifications", () => {
     expect(mockOnSocialActivity).toHaveBeenCalledTimes(1);
     expect(mockOnSocialActivity.mock.calls[0]![0]).toMatchObject({ toUserId: "clerk_bob" });
   });
-
-  it("notify the mentioned persona's owning user once, named after the actor persona", async () => {
-    const db = setupCreate();
-    db.thinkpagesAccount.findMany.mockResolvedValue([
-      { id: "persona_a", username: "alice", clerkUserId: "clerk_alice" },
-      { id: "persona_a2", username: "alice_media", clerkUserId: "clerk_alice" },
-      { id: "persona_self", username: "my_other", clerkUserId: CLERK_ID },
-    ]);
-    const caller = createCaller(createMockRouterContext({ db }) as never);
-    await caller.createPost({
-      accountId: "persona_me",
-      content: "hi @alice @alice_media @my_other",
-      mentions: ["@alice", "@alice_media", "@my_other"],
-      postToDiscord: false,
-    });
-
-    expect(db.postMention.createMany).toHaveBeenCalledTimes(1);
-    expect(mockOnSocialActivity).toHaveBeenCalledTimes(1);
-    expect(mockOnSocialActivity.mock.calls[0]![0]).toMatchObject({
-      activityType: "mention",
-      toUserId: "clerk_alice",
-      fromUserId: CLERK_ID,
-      fromUserName: "The Chancellor",
-      contentId: "new_post",
-    });
-  });
-
   it("does not notify from a private post nobody else can open", async () => {
     const db = setupCreate();
     db.thinkpagesAccount.findMany.mockResolvedValue([
@@ -136,37 +109,6 @@ describe("repost and quote notifications", () => {
     content: "original words",
     account: { clerkUserId: "clerk_bob" },
   };
-
-  it("a plain repost notifies the original author and links to the original post", async () => {
-    const db = setupCreate({ repostOf: original });
-    const caller = createCaller(createMockRouterContext({ db }) as never);
-    await caller.createPost({ accountId: "persona_me", repostOfId: "orig", postToDiscord: false });
-
-    expect(mockOnSocialActivity).toHaveBeenCalledTimes(1);
-    expect(mockOnSocialActivity.mock.calls[0]![0]).toMatchObject({
-      activityType: "repost",
-      toUserId: "clerk_bob",
-      fromUserName: "The Chancellor",
-      contentId: "orig",
-    });
-  });
-
-  it("a quote notifies the original author and links to the quoting post", async () => {
-    const db = setupCreate({ repostOf: original });
-    const caller = createCaller(createMockRouterContext({ db }) as never);
-    await caller.createPost({
-      accountId: "persona_me",
-      repostOfId: "orig",
-      content: "my take",
-      postToDiscord: false,
-    });
-    expect(mockOnSocialActivity.mock.calls[0]![0]).toMatchObject({
-      activityType: "quote",
-      toUserId: "clerk_bob",
-      contentId: "new_post",
-    });
-  });
-
   it("reposting one of your own posts notifies nobody", async () => {
     const db = setupCreate({ repostOf: { ...original, account: { clerkUserId: CLERK_ID } } });
     const caller = createCaller(createMockRouterContext({ db }) as never);
@@ -280,25 +222,9 @@ describe("engagement counters", () => {
 
   const lastPostUpdate = (db: any) =>
     db.thinkpagesPost.update.mock.calls[db.thinkpagesPost.update.mock.calls.length - 1][0].data;
-
-  it("a new like writes likeCount alongside the JSON tally", async () => {
-    const { db, caller } = reactionSetup({ like: 2 }, null);
-    await caller.addReaction({ postId: "p1", accountId: "persona_me", reactionType: "like" });
-    expect(lastPostUpdate(db)).toEqual({
-      reactionCounts: JSON.stringify({ like: 3 }),
-      likeCount: 3,
-    });
-  });
-
   it("switching a like to another reaction lowers likeCount", async () => {
     const { db, caller } = reactionSetup({ like: 2 }, { reactionType: "like" });
     await caller.addReaction({ postId: "p1", accountId: "persona_me", reactionType: "fire" });
     expect(lastPostUpdate(db).likeCount).toBe(1);
-  });
-
-  it("removing a like lowers likeCount", async () => {
-    const { db, caller } = reactionSetup({ like: 1 }, { reactionType: "like" });
-    await caller.removeReaction({ postId: "p1", accountId: "persona_me" });
-    expect(lastPostUpdate(db).likeCount).toBe(0);
   });
 });

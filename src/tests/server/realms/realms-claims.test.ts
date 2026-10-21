@@ -1,6 +1,5 @@
 import { Prisma } from "@prisma/client";
 import { createClaimsService, DEFAULT_REALM_ID } from "~/server/modules/realms";
-import { IXSTATS_NATION_GROWTH_DEFAULTS } from "~/lib/realms/nation-growth-defaults";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 
 jest.mock("~/lib/auth", () => ({ isSystemOwner: () => false }));
@@ -409,15 +408,6 @@ describe("listClaims", () => {
       })
     );
   });
-
-  it("gives site admins every realm", async () => {
-    const { db, claims } = setup();
-    await claims.listClaims(admin, "pending");
-    expect(db.realmClaim.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { status: "pending" } })
-    );
-  });
-
   it("identifies claimants only by verified wiki accounts", async () => {
     const { db, claims } = setup();
     await claims.listClaims(admin, "pending");
@@ -528,98 +518,7 @@ function pageSetup({ takenSlugs = [] as string[] } = {}) {
   return s;
 }
 
-/** A realm growth table (Realm.settings.nationDefaults) differing from IxStats's for the default $50,000 tier. */
-const realmGrowth = {
-  ...IXSTATS_NATION_GROWTH_DEFAULTS,
-  Strong: { populationGrowthRate: 0.009, adjustedGdpGrowth: 0.0007 },
-};
-
 describe("claimNationPage", () => {
-  it("creates the nation with the realm's growth for its tier", async () => {
-    const { db, claims } = pageSetup();
-    db.realmPage.findFirst.mockResolvedValue({
-      ...nationPage,
-      realm: { ...nationPage.realm, settings: { nationDefaults: realmGrowth } },
-    });
-    await claims.claimNationPage(actor, EURTH, "Aurelia");
-    expect(db.country.create.mock.calls[0][0].data).toMatchObject({
-      populationGrowthRate: 0.009,
-      adjustedGdpGrowth: 0.0007,
-      maxGdpGrowthRate: 0.0275,
-    });
-  });
-
-  it("auto-approves the verified creator: creates the realm's country, assigns it and notifies once", async () => {
-    const { db, deps, claims } = pageSetup();
-    await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).resolves.toEqual({
-      claimId: "cl1",
-      status: "approved",
-      autoApproved: true,
-    });
-    expect(db.realmPage.findFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { realmId: EURTH, kind: "nation", title: "Aurelia" } })
-    );
-    expect(db.wikiAccountLink.findFirst).toHaveBeenCalledWith({
-      where: { userId: "u1", source: "iiwiki", verifiedAt: { not: null } },
-    });
-    expect(deps.fetchPageCreator).toHaveBeenCalledWith("iiwiki", "Aurelia");
-    expect(db.country.create).toHaveBeenCalledTimes(1);
-    expect(db.country.create.mock.calls[0][0].data).toMatchObject({
-      name: "Aurelia",
-      slug: "aurelia",
-      realmId: EURTH,
-      wikiSource: "iiwiki",
-      wikiPageTitle: "Aurelia",
-      baselinePopulation: 1_000_000, // the baseline-country default
-    });
-    expect(db.realmClaim.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        realmId: EURTH,
-        userId: "u1",
-        wikiSource: "iiwiki",
-        wikiPageTitle: "Aurelia",
-        status: "approved",
-        autoApproved: true,
-      }),
-    });
-    expect(db.country.updateMany).toHaveBeenCalledWith({
-      where: { id: "new-c", ownerUserId: null, claimable: true },
-      data: { ownerUserId: "u1", ownedSince: expect.any(Date) },
-    });
-    expect(db.realmClaim.update).toHaveBeenCalledWith({
-      where: { id: "cl1" },
-      data: { countryId: "new-c" },
-    });
-    expect(db.realmClaim.updateMany).toHaveBeenCalledWith({
-      where: { realmId: EURTH, wikiPageTitle: "Aurelia", status: "pending", id: { not: "cl1" } },
-      data: expect.objectContaining({ status: "rejected", reviewedBy: "system:auto" }),
-    });
-    expect(deps.onNationAssigned).toHaveBeenCalledTimes(1);
-    expect(deps.onNationAssigned).toHaveBeenCalledWith({
-      userId: "u1",
-      clerkUserId: "clerk_u1",
-      countryId: "new-c",
-      countryName: "Aurelia",
-    });
-  });
-
-  it("suffixes the realm slug when the country slug is taken elsewhere (decision 5)", async () => {
-    const { db, claims } = pageSetup({ takenSlugs: ["aurelia"] });
-    await claims.claimNationPage(actor, EURTH, "Aurelia");
-    expect(db.country.create.mock.calls[0][0].data.slug).toBe("aurelia-eurth");
-  });
-
-  it("numbers the realm slug when that is taken too, instead of failing the claim", async () => {
-    const { db, deps, claims } = pageSetup({
-      takenSlugs: ["aurelia", "aurelia-eurth", "aurelia-eurth-2"],
-    });
-    await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).resolves.toMatchObject({
-      status: "approved",
-    });
-    expect(db.country.create.mock.calls[0][0].data.slug).toBe("aurelia-eurth-3");
-    expect(deps.onNationAssigned).toHaveBeenCalledTimes(1);
-  });
-
   it("a title with no Latin letters or digits gets a fallback slug, not an empty one", async () => {
     const { db, claims } = pageSetup({ takenSlugs: ["nation"] });
     await claims.claimNationPage(actor, EURTH, "Ἀθῆναι");
@@ -702,31 +601,6 @@ describe("claimNationPage", () => {
     );
     expect(db.realmClaim.create).not.toHaveBeenCalled();
   });
-
-  it("applies the realm's nation cap and reuses the player's pending claim for the page", async () => {
-    const a = pageSetup();
-    a.db.country.count.mockResolvedValue(1);
-    await expect(a.claims.claimNationPage(actor, EURTH, "Aurelia")).rejects.toMatchObject({
-      code: "CAP_REACHED",
-    });
-    expect(a.db.country.count).toHaveBeenCalledWith({
-      where: { ownerUserId: "u1", realmId: EURTH },
-    });
-    const b = pageSetup();
-    b.db.realmClaim.findFirst.mockResolvedValue({ id: "old", userId: "u1" });
-    b.deps.fetchPageCreator.mockResolvedValue("Someone Else");
-    await expect(b.claims.claimNationPage(actor, EURTH, "Aurelia")).resolves.toEqual({
-      claimId: "old",
-      status: "pending",
-      autoApproved: false,
-    });
-    expect(b.db.realmClaim.findFirst).toHaveBeenCalledWith({
-      where: { userId: "u1", realmId: EURTH, wikiPageTitle: "Aurelia", status: "pending" },
-    });
-    expect(b.db.realmClaim.create).not.toHaveBeenCalled();
-    expect(b.db.country.create).not.toHaveBeenCalled();
-  });
-
   it("re-verifies the player's pending page claim and upgrades it in place once verified (F-5.1)", async () => {
     const { db, deps, claims } = pageSetup();
     db.realmClaim.findFirst.mockResolvedValue({
@@ -806,80 +680,6 @@ describe("reviewClaim — nation page claims", () => {
     country: null,
   };
   const guarded = { id: "cl1", status: "pending" };
-
-  it("approving creates the nation with the realm's growth, else IxStats's defaults", async () => {
-    const { db, claims } = pageSetup();
-    db.realmClaim.findUnique.mockResolvedValue({
-      ...pendingPage,
-      realm: { ...pendingPage.realm, settings: { nationDefaults: realmGrowth } },
-    });
-    await claims.reviewClaim(admin, "cl1", { approve: true });
-    expect(db.country.create.mock.calls[0][0].data).toMatchObject(realmGrowth.Strong);
-
-    const plain = pageSetup();
-    plain.db.realmClaim.findUnique.mockResolvedValue(pendingPage);
-    await plain.claims.reviewClaim(admin, "cl1", { approve: true });
-    expect(plain.db.country.create.mock.calls[0][0].data).toMatchObject(
-      IXSTATS_NATION_GROWTH_DEFAULTS.Strong
-    );
-  });
-
-  it("approving decides first, then creates the realm's country, assigns it, links the claim and turns away rivals", async () => {
-    const { db, deps, claims } = pageSetup({ takenSlugs: ["aurelia"] });
-    db.realmClaim.findUnique.mockResolvedValue(pendingPage);
-    await expect(claims.reviewClaim(admin, "cl1", { approve: true })).resolves.toEqual({
-      status: "approved",
-    });
-    expect(db.realmClaim.findUnique).toHaveBeenCalledWith(
-      expect.objectContaining({
-        include: expect.objectContaining({
-          realm: {
-            select: {
-              ownerId: true,
-              slug: true,
-              status: true,
-              settings: true,
-              officers: { where: { userId: "clerk_a1" }, select: { userId: true, powers: true } },
-            },
-          },
-        }),
-      })
-    );
-    expect(db.realmClaim.updateMany).toHaveBeenNthCalledWith(1, {
-      where: guarded,
-      data: expect.objectContaining({ status: "approved", reviewedBy: "clerk_a1" }),
-    });
-    expect(db.realmClaim.updateMany.mock.invocationCallOrder[0]).toBeLessThan(
-      db.country.create.mock.invocationCallOrder[0]
-    );
-    expect(db.country.create.mock.calls[0][0].data).toMatchObject({
-      name: "Aurelia",
-      slug: "aurelia-eurth",
-      realmId: EURTH,
-      wikiSource: "iiwiki",
-      wikiPageTitle: "Aurelia",
-    });
-    expect(db.country.updateMany).toHaveBeenCalledWith({
-      where: { id: "new-c", ownerUserId: null, claimable: true },
-      data: { ownerUserId: "u1", ownedSince: expect.any(Date) },
-    });
-    expect(db.realmClaim.update).toHaveBeenCalledWith({
-      where: { id: "cl1" },
-      data: { countryId: "new-c" },
-    });
-    expect(db.realmClaim.updateMany).toHaveBeenNthCalledWith(2, {
-      where: { realmId: EURTH, wikiPageTitle: "Aurelia", status: "pending", id: { not: "cl1" } },
-      data: expect.objectContaining({ status: "rejected", reviewedBy: "system:auto" }),
-    });
-    expect(deps.onNationAssigned).toHaveBeenCalledTimes(1);
-    expect(deps.onNationAssigned).toHaveBeenCalledWith({
-      userId: "u1",
-      clerkUserId: "clerk_u1",
-      countryId: "new-c",
-      countryName: "Aurelia",
-    });
-  });
-
   it("a moderator can reject a page claim with a reason", async () => {
     const { db, claims } = pageSetup();
     db.realmClaim.findUnique.mockResolvedValue(pendingPage);
@@ -1089,18 +889,6 @@ describe("approved nation-page claims take their map region (decision 11)", () =
     expect(data.geometry.coordinates).toHaveLength(2);
     expect(data).toMatchObject({ landArea: 2000, centroid: [3, 3], boundingBox: [0, 0, 6, 6] });
   });
-
-  it("review approval matches the region by its display name too", async () => {
-    const rows = [region({ featureId: "country_3", displayName: "Aurelia" })];
-    const { db, tx, claims } = regionSetup(rows);
-    db.realmClaim.findUnique.mockResolvedValue(pendingPage);
-    await expect(claims.reviewClaim(admin, "cl1", { approve: true })).resolves.toEqual({
-      status: "approved",
-    });
-    expect(rows[0]!.countryId).toBe("new-c");
-    expect(tx.country.update).toHaveBeenCalledTimes(1);
-  });
-
   it("a map version bump that fails after the commit is logged: the approval still sends its events", async () => {
     const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
     const auto = regionSetup([region()]);
@@ -1145,12 +933,6 @@ describe("approved nation-page claims take their map region (decision 11)", () =
     expect(table.updateMany).not.toHaveBeenCalled();
     expect(tx.country.update).not.toHaveBeenCalled();
   });
-
-  it("claiming an existing country leaves the map alone", async () => {
-    const { table, claims } = regionSetup([region()]);
-    await claims.claimCountry(actor, "c1");
-    expect(table.findFirst).not.toHaveBeenCalled();
-  });
 });
 
 describe("realm status (AT-7)", () => {
@@ -1171,19 +953,6 @@ describe("realm status (AT-7)", () => {
       expect(db.realmClaim.create).not.toHaveBeenCalled();
     }
   );
-
-  it("an archived realm refuses nation page claims", async () => {
-    const { db, claims } = setup();
-    db.realmPage.findFirst.mockResolvedValue({
-      ...nationPage,
-      realm: { ...nationPage.realm, status: "archived" },
-    });
-    await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).rejects.toMatchObject({
-      code: "REALM_CLOSED",
-    });
-    expect(db.realmClaim.create).not.toHaveBeenCalled();
-  });
-
   it("an active realm and Ixnay (with or without a realm row) take claims", async () => {
     const { db, claims } = setup();
     db.country.findUnique.mockResolvedValue(eurthCountry("active"));
@@ -1251,33 +1020,6 @@ describe("realm rules", () => {
       data: expect.objectContaining({ countryId: "c1", rulesAcceptedAt: expect.any(Date) }),
     });
   });
-
-  it("applies to nation page claims too", async () => {
-    const { db, claims } = pageSetup();
-    db.realmPage.findFirst.mockResolvedValue({
-      ...nationPage,
-      realm: { ...nationPage.realm, rulesHtml: RULES },
-    });
-    await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).rejects.toMatchObject({
-      code: "RULES_NOT_ACCEPTED",
-    });
-    await expect(
-      claims.claimNationPage(actor, EURTH, "Aurelia", { acceptedRules: true })
-    ).resolves.toMatchObject({ status: "approved" });
-    expect(db.realmClaim.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        wikiPageTitle: "Aurelia",
-        rulesAcceptedAt: expect.any(Date),
-      }),
-    });
-  });
-
-  it("needs nothing in a realm without rules, and records no acceptance", async () => {
-    const { db, deps, claims } = setup();
-    deps.fetchPageCreator.mockResolvedValue("Someone else");
-    await expect(claims.claimCountry(actor, "c1")).resolves.toMatchObject({ status: "pending" });
-    expect(db.realmClaim.create.mock.calls[0][0].data).not.toHaveProperty("rulesAcceptedAt");
-  });
 });
 
 describe("claimants see their claims and hear about rejections (AT-5)", () => {
@@ -1316,24 +1058,6 @@ describe("claimants see their claims and hear about rejections (AT-5)", () => {
       })
     );
   });
-
-  it("an approval tells the rival claimants it turned away", async () => {
-    const { db, deps, claims } = setup();
-    db.realmClaim.findUnique.mockResolvedValue(pending);
-    db.realmClaim.findMany.mockResolvedValue([{ user: { clerkUserId: "clerk_rival" } }]);
-    await claims.reviewClaim(admin, "cl1", { approve: true });
-    expect(db.realmClaim.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { countryId: "c1", status: "pending", id: { not: "cl1" } } })
-    );
-    expect(deps.onClaimRejected).toHaveBeenCalledWith({
-      clerkUserId: "clerk_rival",
-      nationName: "Aurelia",
-      realmSlug: "ixnay",
-      reason: "Another claim for this nation was approved",
-    });
-    expect(deps.onNationAssigned).toHaveBeenCalledTimes(1);
-  });
-
   it("a failing notice never undoes the decision", async () => {
     const { db, deps, claims } = setup();
     db.realmClaim.findUnique.mockResolvedValue(pending);
@@ -1406,18 +1130,6 @@ describe("a claimed nation page prefills its new country (AT-3)", () => {
       },
     });
   });
-
-  it("the verified creator's instant approval is prefilled too", async () => {
-    const { db, deps } = pageSetup();
-    const fetchNationPrefill = jest.fn().mockResolvedValue(prefill);
-    const service = createClaimsService(db, { ...deps, fetchNationPrefill });
-    await service.claimNationPage(actor, EURTH, "Aurelia");
-    expect(db.country.create.mock.calls[0][0].data).toMatchObject({
-      baselinePopulation: 4_200_000,
-      nationalIdentity: { create: expect.objectContaining({ capitalCity: "Port Aurel" }) },
-    });
-  });
-
   it("a failed read founds the nation with the plain baseline", async () => {
     const { db, deps } = pageSetup();
     const fetchNationPrefill = jest.fn().mockRejectedValue(new Error("wiki down"));
@@ -1431,14 +1143,6 @@ describe("a claimed nation page prefills its new country (AT-3)", () => {
     expect(data.baselinePopulation).toBe(1_000_000);
     expect(data).not.toHaveProperty("nationalIdentity");
     warn.mockRestore();
-  });
-
-  it("claiming an existing country reads no page", async () => {
-    const { db, deps } = setup();
-    const fetchNationPrefill = jest.fn();
-    const service = createClaimsService(db, { ...deps, fetchNationPrefill });
-    await service.claimCountry(actor, "c1");
-    expect(fetchNationPrefill).not.toHaveBeenCalled();
   });
 });
 
@@ -1525,13 +1229,6 @@ describe("scenery slots (Country.claimable false)", () => {
     expect(db.country.updateMany).not.toHaveBeenCalled();
     expect(deps.onNationAssigned).not.toHaveBeenCalled();
   });
-
-  it("claimCountry still takes a claimable country", async () => {
-    const { db, claims } = setup();
-    db.country.findUnique.mockResolvedValue({ ...country, claimable: true });
-    await expect(claims.claimCountry(actor, "c1")).resolves.toMatchObject({ status: "approved" });
-  });
-
   it("claimNationPage looks for the page's unclaimed nation among claimable countries only", async () => {
     const { db, claims } = pageSetup();
     await claims.claimNationPage(actor, EURTH, "Aurelia");

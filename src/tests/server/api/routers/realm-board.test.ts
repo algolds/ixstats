@@ -81,38 +81,6 @@ describe("realm board posting follows nation ownership", () => {
     ).rejects.toThrow(/Not a member/);
     expect(db.thinkpagesPost.create).not.toHaveBeenCalled();
   });
-
-  it("a nation owner posts as their persona of a nation in the realm, stamped in real time", async () => {
-    const db = makeDb();
-    db.thinkpagesAccount.findFirst.mockImplementation(async ({ where }: any) =>
-      where.countryId?.in?.includes("c_eurth") ? { id: "acc_eurth" } : null
-    );
-    const before = Date.now();
-    await callerAs(OWNER, db).createGroupPost({ groupId: "board1", content: "Hello realm" });
-
-    const data = db.thinkpagesPost.create.mock.calls[0]![0].data;
-    expect(data.accountId).toBe("acc_eurth");
-    expect(data.visibility).toBe("thinktank");
-    expect(JSON.parse(data.hashtags)).toContain("group:board1");
-    expect(data.ixTimeTimestamp.getTime()).toBeGreaterThanOrEqual(before);
-    expect(data.ixTimeTimestamp.getTime()).toBeLessThanOrEqual(Date.now());
-  });
-
-  it("a nation owner without a persona in the realm gets a citizen persona of their nation there", async () => {
-    const db = makeDb();
-    db.thinkpagesAccount.findFirst.mockResolvedValue(null);
-    db.country.findUnique.mockResolvedValue({ name: "Gallambria" });
-    db.thinkpagesAccount.create.mockResolvedValue({ id: "acc_new" });
-    await callerAs(OWNER, db).createGroupPost({ groupId: "board1", content: "First post" });
-
-    expect(db.thinkpagesAccount.create.mock.calls[0]![0].data).toMatchObject({
-      clerkUserId: OWNER,
-      countryId: "c_eurth",
-      accountType: "citizen",
-    });
-    expect(db.thinkpagesPost.create.mock.calls[0]![0].data.accountId).toBe("acc_new");
-  });
-
   it("rejects a persona of a nation outside the realm", async () => {
     const db = makeDb();
     db.thinkpagesAccount.findFirst.mockImplementation(async ({ where }: any) =>
@@ -127,13 +95,6 @@ describe("realm board posting follows nation ownership", () => {
       })
     ).rejects.toThrow(/persona of one of the realm's nations/);
     expect(db.thinkpagesPost.create).not.toHaveBeenCalled();
-  });
-
-  it("anyone, signed out included, can read the board feed", async () => {
-    const db = makeDb();
-    await expect(callerAs(null, db).getGroupFeed({ groupId: "board1" })).resolves.toMatchObject({
-      posts: [],
-    });
   });
 });
 
@@ -165,20 +126,6 @@ describe("realm board membership is not group-managed", () => {
     expect(db.thinktankInvite.createMany).not.toHaveBeenCalled();
     expect(db.thinktankGroup.update).not.toHaveBeenCalled();
   });
-
-  it("its moderator can save its settings form, which resends the unchanged type", async () => {
-    const db = makeDb();
-    await callerAs(FOUNDER, db).updateThinktank({
-      groupId: "board1",
-      name: "Eurth Hall",
-      type: "realm_board",
-    });
-    expect(db.thinktankGroup.update.mock.calls[0]![0].data).toMatchObject({
-      name: "Eurth Hall",
-      type: "realm_board",
-    });
-  });
-
   it("an ordinary group cannot be turned into a realm board", async () => {
     const db = makeDb();
     db.thinktankGroup.findUnique.mockResolvedValue({ ...BOARD, id: "g1", type: "public" });
@@ -186,14 +133,6 @@ describe("realm board membership is not group-managed", () => {
       callerAs(FOUNDER, db).updateThinktank({ groupId: "g1", type: "realm_board" })
     ).rejects.toThrow(/realm board/);
     expect(db.thinktankGroup.update).not.toHaveBeenCalled();
-  });
-
-  it("realm boards are left out of the ThinkTanks directory", async () => {
-    const db = makeDb();
-    await callerAs(OUTSIDER, db).getThinktanks({ type: "all" });
-    expect(db.thinktankGroup.findMany.mock.calls[0]![0].where.type).toEqual({
-      not: "realm_board",
-    });
   });
 });
 

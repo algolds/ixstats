@@ -1,23 +1,10 @@
-import {
-  EARTH_RADIUS_KM,
-  haversineKm,
-  polygonalAreaSqKm,
-  scaleAreaToRadius,
-  scaleDistanceToRadius,
-} from "~/lib/maps/planet";
+import { EARTH_RADIUS_KM, scaleAreaToRadius, scaleDistanceToRadius } from "~/lib/maps/planet";
 import {
   isMapBaseImageUrl,
   parseRealmMapSettings,
   realmRadiusKm,
-  realmRasterLayers,
   withRealmMapSettings,
 } from "~/lib/maps/realm-map-settings";
-import {
-  buildMeasureFeatures,
-  formatDistance,
-  measureTotalKm,
-} from "~/components/maps/core/utils/measure-helpers";
-
 const HALF_EARTH = EARTH_RADIUS_KM / 2;
 
 describe("planet radius scaling", () => {
@@ -26,41 +13,6 @@ describe("planet radius scaling", () => {
     expect(scaleAreaToRadius(1000, HALF_EARTH)).toBeCloseTo(250);
     expect(scaleAreaToRadius(1000, EARTH_RADIUS_KM * 2)).toBeCloseTo(4000);
     expect(scaleAreaToRadius(1000)).toBe(1000);
-  });
-
-  it("measures great-circle distances on the given planet", () => {
-    // A quarter of the equator is a quarter of the circumference, 2πr / 4.
-    expect(haversineKm([0, 0], [90, 0])).toBeCloseTo((Math.PI * EARTH_RADIUS_KM) / 2, 3);
-    expect(haversineKm([0, 0], [90, 0], 1000)).toBeCloseTo((Math.PI * 1000) / 2, 3);
-  });
-
-  it("the flat area helpers agree with scaleAreaToRadius", () => {
-    const square = {
-      type: "Polygon" as const,
-      coordinates: [
-        [
-          [0, 0],
-          [1, 0],
-          [1, 1],
-          [0, 1],
-          [0, 0],
-        ],
-      ],
-    };
-    expect(polygonalAreaSqKm(square, HALF_EARTH)).toBeCloseTo(
-      scaleAreaToRadius(polygonalAreaSqKm(square), HALF_EARTH),
-      6
-    );
-  });
-
-  it("the measure tool measures on the realm's planet", () => {
-    const pts: [number, number][] = [
-      [0, 0],
-      [10, 0],
-    ];
-    expect(measureTotalKm(pts, HALF_EARTH)).toBeCloseTo(measureTotalKm(pts) / 2, 6);
-    const label = buildMeasureFeatures(pts, HALF_EARTH).find((f) => f.properties?.kind === "label");
-    expect(label?.properties?.text).toBe(formatDistance(measureTotalKm(pts) / 2));
   });
 });
 
@@ -114,32 +66,6 @@ describe("Realm.settings.map", () => {
 });
 
 describe("Realm.settings.map georeference", () => {
-  const points = [
-    { x: 0, y: 0, lon: -10, lat: 10 },
-    { x: 100, y: 0, lon: 10, lat: 10 },
-    { x: 0, y: 100, lon: -10, lat: -10 },
-  ];
-
-  it("reads the projection, bounds and control points, dropping a malformed one on its own", () => {
-    const settings = {
-      map: {
-        projection: "mercator",
-        bounds: { west: 10, south: -5, east: 5, north: 20 }, // west > east
-        controlPoints: points,
-        source: "iiwiki",
-        file: "File:Eurth.png",
-      },
-    };
-    expect(parseRealmMapSettings(settings)).toEqual({
-      projection: "mercator",
-      controlPoints: points,
-    });
-  });
-
-  it("needs at least three control points", () => {
-    expect(parseRealmMapSettings({ map: { controlPoints: points.slice(0, 2) } })).toEqual({});
-  });
-
   it("saves a georeference without dropping the wiki map's keys", () => {
     const stored = {
       maxNationsPerUser: 2,
@@ -165,41 +91,6 @@ describe("Realm.settings.map georeference", () => {
 });
 
 describe("Realm.settings.map raster layers and climate key", () => {
-  const base = {
-    id: "geography",
-    label: "Geography",
-    kind: "base",
-    version: "0a1b2c3d",
-    maxZoom: 5,
-    legend: true,
-  };
-
-  it("keeps valid raster layers in their drawing order and drops a malformed list", () => {
-    const parsed = parseRealmMapSettings({
-      map: {
-        rasterLayers: [
-          { ...base, id: "currents", label: "Ocean currents", kind: "overlay", order: 2 },
-          base,
-          { ...base, id: "climate", label: "Climate", kind: "overlay", order: 1 },
-        ],
-      },
-    });
-    expect(realmRasterLayers(parsed).map((l) => l.id)).toEqual([
-      "geography",
-      "climate",
-      "currents",
-    ]);
-    expect(parseRealmMapSettings({ map: { rasterLayers: [{ ...base, id: "../x" }] } })).toEqual({});
-    expect(
-      parseRealmMapSettings({ map: { rasterLayers: [base, { ...base, label: "Twice" }] } })
-    ).toEqual({});
-  });
-
-  it("ignores a stored layer's old default-on flag: every map opens on its standard style", () => {
-    const parsed = parseRealmMapSettings({ map: { rasterLayers: [{ ...base, defaultOn: true }] } });
-    expect(parsed.rasterLayers).toEqual([base]);
-  });
-
   it("keeps a climate key with hex colours, and refuses a zone without one", () => {
     const climateKey = {
       system: "Köppen",

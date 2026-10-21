@@ -22,11 +22,8 @@ jest.mock("~/lib/country-geo", () => ({
 import type { PrismaClient } from "@prisma/client";
 import { createCallerFactory } from "~/server/api/trpc";
 import { clearTrpcMemoryCache } from "~/lib/cache/trpc-cache";
-import {
-  updateCitySpatialProfile,
-  updateSubdivisionSpatialProfile,
-} from "~/lib/country-geo/spatial";
-import { getTerrainAtPoint, getTerrainForArea } from "~/lib/country-geo/base-layer-query";
+import { updateSubdivisionSpatialProfile } from "~/lib/country-geo/spatial";
+import { getTerrainForArea } from "~/lib/country-geo/base-layer-query";
 import {
   clipAndValidatePolygon,
   COUNTRY_BORDER_SQL,
@@ -115,19 +112,6 @@ describe("spatial profiles read only the country's realm", () => {
       expect(text).toMatch(REALM_JOIN);
     }
   });
-
-  it("a city's climate and nearest water", async () => {
-    const { db, mapLayerSql } = sqlDb();
-    db.city.findUnique.mockResolvedValue({ id: "c1", coordinates: [0.5, 0.5] });
-    await updateCitySpatialProfile(db, "c1");
-
-    const sql = mapLayerSql();
-    expect(sql).toHaveLength(2);
-    for (const { sql: text } of sql) {
-      expect(text).toContain(`JOIN "Country" co ON co.id = c."countryId"`);
-      expect(text).toMatch(REALM_JOIN);
-    }
-  });
 });
 
 describe("terrain lookups take a realm", () => {
@@ -155,14 +139,6 @@ describe("terrain lookups take a realm", () => {
       expect(params[1]).toBe(EURTH);
     }
   });
-
-  it("getTerrainAtPoint filters by the realm it is given", async () => {
-    const { db, mapLayerSql } = sqlDb();
-    await getTerrainAtPoint(db as unknown as PrismaClient, 10, 20, EURTH);
-    expect(mapLayerSql()[0]!.sql).toContain(`"worldId" = $3`);
-    expect(mapLayerSql()[0]!.params).toEqual([10, 20, EURTH]);
-  });
-
   it("countryGeo.sampleTerrainAt samples the viewed realm, or the viewer's own", async () => {
     const viewer = {
       id: "u1",

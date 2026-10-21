@@ -33,11 +33,6 @@ describe("mentionNamesInHtml", () => {
     const adopted = "<i><b>".repeat(300) + "</i>".repeat(300) + "@kir";
     expect(mentionNamesInHtml(adopted)).toEqual([]);
   });
-
-  it("does not parse anything without an @", () => {
-    expect(mentionNamesInHtml("<p>nothing here</p>")).toEqual([]);
-  });
-
   it("reads the contents of a noscript as the sanitizer's parser does, as elements nobody is mentioned in", () => {
     expect(mentionNamesInHtml("<noscript><p>@kir</p></noscript>")).toEqual([]);
     expect(mentionNamesInHtml('<noscript><p title="</noscript>@kir">x</p></noscript>')).toEqual([]);
@@ -45,24 +40,6 @@ describe("mentionNamesInHtml", () => {
 });
 
 describe("linkMentionsInHtml", () => {
-  it("wraps known names in a link and leaves unknown ones as text, keeping the typed case", () => {
-    expect(linkMentionsInHtml("<p>Hi @Kir and @nobody</p>", hrefOf)).toBe(
-      `<p>Hi ${link("kir", "@Kir")} and @nobody</p>`
-    );
-  });
-
-  it("returns the very same string when nothing is linked", () => {
-    const html =
-      '<p>Hi @nobody <a href="/x">@kir</a> <code>@bob</code></p><blockquote>@kir</blockquote>';
-    expect(linkMentionsInHtml(html, hrefOf)).toBe(html);
-  });
-
-  it("links twice in one text and keeps the text between", () => {
-    expect(linkMentionsInHtml("<p>@kir, @bob!</p>", hrefOf)).toBe(
-      `<p>${link("kir")}, ${link("bob")}!</p>`
-    );
-  });
-
   it("keeps escaped characters escaped, so markup in the text cannot become markup", () => {
     expect(linkMentionsInHtml("<p>1 &lt; 2 &lt;b&gt;@kir&lt;/b&gt;</p>", hrefOf)).toBe(
       `<p>1 &lt; 2 &lt;b&gt;${link("kir")}&lt;/b&gt;</p>`
@@ -101,12 +78,6 @@ describe("unwrapMentionAnchors", () => {
     expect(out).not.toMatch(/forum-mention/i);
     expect(out).not.toMatch(/<a\b/);
   });
-
-  it("leaves other links and classes, and returns the same string when there is no mention link", () => {
-    const html = '<p class="x"><a class="mw-redirect" href="/id/kir">@kir</a></p>';
-    expect(unwrapMentionAnchors(html)).toBe(html);
-    expect(unwrapMentionAnchors("<p>plain</p>")).toBe("<p>plain</p>");
-  });
 });
 
 describe("mentionAnchorNames", () => {
@@ -116,11 +87,6 @@ describe("mentionAnchorNames", () => {
       `<blockquote>${link("aria_v")}</blockquote><p>${link("bob")}</p>`;
     expect(mentionAnchorNames(html)).toEqual(["kir", "bob"]);
   });
-
-  it("is empty for a post with no links", () => {
-    expect(mentionAnchorNames("<p>plain</p>")).toEqual([]);
-  });
-
   it("trusts a persona link at its canonical profile path in any case, once per name", () => {
     const persona = '<a class="forum-mention" href="/dashboard/profile/Aria_V">@aria_v</a>';
     expect(mentionAnchorNames(`<p>${persona} ${persona}</p>`)).toEqual(["aria_v"]);

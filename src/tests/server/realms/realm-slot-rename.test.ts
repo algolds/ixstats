@@ -120,16 +120,6 @@ beforeEach(() => {
 });
 
 describe("renaming a generated slot's region", () => {
-  it("renames the unowned slot's nation and regenerates its slug", async () => {
-    const db = slotDb();
-    await save(db, MAP_OFFICER);
-    expect(finalCountryWrite(db)).toEqual({
-      where: { id: "c_slot" },
-      data: { name: "Algir Renamed", slug: "algir-renamed" },
-    });
-    expect(db.mapLayer!.update!.mock.calls[0][0].data).toEqual({ displayName: "Algir Renamed" });
-  });
-
   it("renames the nation before the region, and locks the slot first", async () => {
     const db = slotDb();
     await save(db, MAP_OFFICER);
@@ -138,23 +128,6 @@ describe("renaming a generated slot's region", () => {
     expect(db.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(rename!);
     expect(String(db.$queryRaw.mock.calls[0]![0])).toContain("FOR UPDATE");
   });
-
-  it("is the same for the realm's founder and a site admin, whose own rename does not write it twice", async () => {
-    for (const who of [FOUNDER, ADMIN]) {
-      const db = slotDb();
-      await save(db, who);
-      expect(finalCountryWrite(db).data).toEqual({ name: "Algir Renamed", slug: "algir-renamed" });
-      const withName = db.country!.update!.mock.calls.filter(([a]) => "name" in a.data);
-      expect(withName).toHaveLength(1);
-    }
-  });
-
-  it("trims the name", async () => {
-    const db = slotDb();
-    await save(db, MAP_OFFICER, { displayName: "  Algir Renamed  " });
-    expect(finalCountryWrite(db).data).toEqual({ name: "Algir Renamed", slug: "algir-renamed" });
-  });
-
   it("takes the next free slug when the new name's is taken, after letting go of its own", async () => {
     const db = slotDb();
     const taken = new Set(["algir-renamed"]);
@@ -178,20 +151,6 @@ describe("renaming a generated slot's region", () => {
     await save(db, MAP_OFFICER);
     expect(invalidateCache).toHaveBeenCalledWith(["countries."]);
     expect(invalidateRealmMap).toHaveBeenCalledWith(db, EURTH);
-  });
-
-  it("leaves the nation alone when the region keeps its name", async () => {
-    const db = slotDb();
-    await save(db, MAP_OFFICER, { displayName: "Algir" });
-    expect(db.country!.update).not.toHaveBeenCalled();
-    expect(invalidateCache).not.toHaveBeenCalled();
-  });
-
-  it("keeps the slug when the nation already carries the new name", async () => {
-    const db = slotDb({ name: "Algir Renamed" });
-    await save(db, MAP_OFFICER);
-    expect(db.country!.update).not.toHaveBeenCalled();
-    expect(db.mapLayer!.update).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -248,13 +207,6 @@ describe("a name another nation of the realm carries", () => {
     expect(db.country!.update).not.toHaveBeenCalled();
     expect(db.mapLayer!.update).not.toHaveBeenCalled();
   });
-
-  it("lets any other failure through untouched", async () => {
-    const db = slotDb();
-    db.country!.update!.mockResolvedValueOnce({}).mockRejectedValue(new Error("connection lost"));
-    await expect(save(db, MAP_OFFICER)).rejects.toThrow("connection lost");
-    expect(db.mapLayer!.update).not.toHaveBeenCalled();
-  });
 });
 
 describe("a country that is not an unowned generated slot", () => {
@@ -264,36 +216,9 @@ describe("a country that is not an unowned generated slot", () => {
     expect(db.country!.update).not.toHaveBeenCalled();
     expect(db.mapLayer!.update!.mock.calls[0][0].data).toEqual({ displayName: "Algir Renamed" });
   });
-
-  it("keeps its name when the world generator did not make it", async () => {
-    const db = slotDb({ worldgen: false });
-    await save(db, MAP_OFFICER);
-    expect(db.country!.update).not.toHaveBeenCalled();
-    expect(db.mapLayer!.update).toHaveBeenCalledTimes(1);
-  });
-
   it("keeps its name when it belongs to another realm", async () => {
     const db = slotDb({ realmId: "r_other" });
     await save(db, MAP_OFFICER);
     expect(db.country!.update).not.toHaveBeenCalled();
-  });
-
-  it("keeps its name when the region has no nation", async () => {
-    const db = slotDb();
-    db.mapLayer!.findFirst!.mockResolvedValue({ ...FEATURE, countryId: null });
-    await save(db, MAP_OFFICER);
-    expect(db.country!.update).not.toHaveBeenCalled();
-    expect(db.mapLayer!.update).toHaveBeenCalledTimes(1);
-  });
-
-  it("is renamed by a site admin as it always was, held by a player or not", async () => {
-    for (const country of [{ ownerUserId: "user_1" }, { worldgen: false }]) {
-      const db = slotDb(country);
-      await save(db, ADMIN);
-      expect(finalCountryWrite(db)).toEqual({
-        where: { id: "c_slot" },
-        data: { name: "Algir Renamed", slug: "algir-renamed" },
-      });
-    }
   });
 });

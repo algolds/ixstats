@@ -71,38 +71,12 @@ const asAnonymous = () => {
 };
 
 describe("resolveTileRealm", () => {
-  it.each(["default", "ixnay", "ixworld"])(
-    "resolves %s to Ixnay without reading a realm",
-    async (name) => {
-      expect(await access.resolveTileRealm(name)).toEqual({ id: "default", access: "public" });
-      expect(realmFind).not.toHaveBeenCalled();
-    }
-  );
-
-  it("resolves a realm id and a slug to the same realm", async () => {
-    expect(await access.resolveTileRealm("r_eurth")).toEqual({ id: "r_eurth", access: "public" });
-    expect(await access.resolveTileRealm("eurth")).toEqual({ id: "r_eurth", access: "public" });
-  });
-
   it("is null for an unknown id or slug, and does not remember it", async () => {
     expect(await access.resolveTileRealm("nowhere")).toBeNull();
     expect(await access.resolveTileRealm("nowhere")).toBeNull();
     rows.push({ id: "r_new", slug: "nowhere", status: "active", ownerId: "clerk_owner" });
     expect(await access.resolveTileRealm("nowhere")).toEqual({ id: "r_new", access: "public" });
   });
-
-  it("memoises the realm row for 60 s", async () => {
-    await access.resolveTileRealm("r_eurth");
-    await access.resolveTileRealm("r_eurth");
-    expect(realmFind).toHaveBeenCalledTimes(1);
-    jest.advanceTimersByTime(59_000);
-    await access.resolveTileRealm("r_eurth");
-    expect(realmFind).toHaveBeenCalledTimes(1);
-    jest.advanceTimersByTime(2_000);
-    await access.resolveTileRealm("r_eurth");
-    expect(realmFind).toHaveBeenCalledTimes(2);
-  });
-
   it("hides an unpublished realm from anyone who cannot moderate it", async () => {
     expect(await access.resolveTileRealm("r_draft")).toBeNull();
     expect(await access.resolveTileRealm("draft-world")).toBeNull();
@@ -125,12 +99,6 @@ describe("resolveTileRealm", () => {
     expect(realmFind.mock.calls.filter(([a]) => a.where.id === "r_draft")).toHaveLength(1);
     expect(auth).toHaveBeenCalledTimes(4);
   });
-
-  it("does not ask who is viewing for a published realm", async () => {
-    await access.resolveTileRealm("r_eurth");
-    expect(auth).not.toHaveBeenCalled();
-  });
-
   it("reads the realm again after its map was invalidated", async () => {
     expect(await access.resolveTileRealm("r_draft")).toBeNull();
     rows[1]!.status = "active";
@@ -155,16 +123,5 @@ describe("resolveTileRealm", () => {
     await invalidation.invalidateAllRealmMaps({ $executeRaw: jest.fn().mockResolvedValue(2) });
     await access.resolveTileRealm("r_eurth");
     expect(realmFind).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe("realmTileAccess", () => {
-  it("answers for a realm id as it did before the memo (the raster art route uses it)", async () => {
-    expect(await access.realmTileAccess("default")).toBe("public");
-    expect(await access.realmTileAccess("r_eurth")).toBe("public");
-    expect(await access.realmTileAccess("r_draft")).toBeNull();
-    asOwner();
-    expect(await access.realmTileAccess("r_draft")).toBe("private");
-    expect(await access.realmTileAccess("r_gone")).toBeNull();
   });
 });

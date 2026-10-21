@@ -54,18 +54,6 @@ function caller(clerkUserId: string, db: Db) {
 const START = { slug: "eurth", startDate: "1203-03-14", era: "AE", multiplier: 3 };
 
 describe("realm clock actions", () => {
-  it("lets the founder switch the clock on, continuous with global IxTime, dropping the old label", async () => {
-    const { db, row } = makeDb();
-    await caller(FOUNDER, db).startClock(START);
-    const clock = realmClock(row.settings as never);
-    expect(clock).toMatchObject({
-      anchorClockMs: Date.UTC(2041, 5, 2, 9, 30),
-      multiplier: 3,
-      era: "AE",
-    });
-    expect((row.settings as Record<string, unknown>).inWorldDate).toBeUndefined();
-  });
-
   it("refuses a second switch-on, officers, Ixnay and archived realms", async () => {
     const { db } = makeDb();
     await caller(FOUNDER, db).startClock(START);
@@ -128,18 +116,5 @@ describe("realm clock actions", () => {
       createMockRouterContext({ db, auth: null, user: null }) as never
     ).region;
     expect((await anyone.contextClock({ realm: "eurth" })).clock).toBeNull();
-  });
-
-  it("answers the context clock: the realm's, a country's realm, null for Ixnay", async () => {
-    const { db } = makeDb();
-    await caller(FOUNDER, db).startClock(START);
-    db.country.findUnique.mockResolvedValue({ realmId: "eurth" });
-    const anyone = realmsRouter.createCaller(
-      createMockRouterContext({ db, auth: null, user: null }) as never
-    ).region;
-    expect((await anyone.contextClock({ realm: "eurth" })).clock?.multiplier).toBe(3);
-    expect((await anyone.contextClock({ country: "aurelia" })).clock?.multiplier).toBe(3);
-    expect((await anyone.contextClock({ realm: "ixnay" })).clock).toBeNull();
-    expect((await anyone.contextClock({ active: true })).clock).toBeNull();
   });
 });

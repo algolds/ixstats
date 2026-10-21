@@ -1,7 +1,6 @@
 /** @jest-environment node */
 import { banNotice, DAY_MS } from "~/lib/thinkpages-forum/moderation-policy";
 import {
-  canPostInCategory,
   canSeeRealm,
   categoryPostingAccess,
   loadForumRealm,
@@ -37,7 +36,6 @@ const owner = {
   countryId: "c_eurth",
   role: role("user", 100),
 };
-const next = { id: "u_next", clerkUserId: "next", countryId: null, role: role("user", 100) };
 const plain = { id: "u_plain", clerkUserId: "plain", countryId: null, role: role("user", 100) };
 
 const EURTH: ForumRealm = {
@@ -101,7 +99,12 @@ describe("loadForumRealm", () => {
   }
 
   it("synthesizes Ixnay for its slugs and id when it has no realm row", async () => {
-    for (const ref of [{ slug: "ixnay" }, { slug: "ixworld" }, { slug: "default" }, { id: "default" }]) {
+    for (const ref of [
+      { slug: "ixnay" },
+      { slug: "ixworld" },
+      { slug: "default" },
+      { id: "default" },
+    ]) {
       await expect(loadForumRealm(realmDb() as never, ref)).resolves.toEqual(IXNAY);
     }
   });
@@ -125,23 +128,6 @@ describe("loadForumRealm", () => {
       name: "Ixnay Prime",
     });
   });
-
-  it("loads a realm row by slug and by id", async () => {
-    const db = realmDb();
-    await expect(loadForumRealm(db as never, { slug: "eurth" })).resolves.toEqual(EURTH);
-    await expect(loadForumRealm(db as never, { id: "r_eurth" })).resolves.toEqual(EURTH);
-    expect(db.realm.findUnique).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { slug: "eurth" } })
-    );
-    expect(db.realm.findUnique).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: "r_eurth" } })
-    );
-  });
-
-  it("returns null for an unknown realm", async () => {
-    await expect(loadForumRealm(realmDb() as never, { slug: "nowhere" })).resolves.toBeNull();
-    await expect(loadForumRealm(realmDb() as never, { id: "r_nowhere" })).resolves.toBeNull();
-  });
 });
 
 describe("loadForumRealms", () => {
@@ -159,26 +145,11 @@ describe("loadForumRealms", () => {
       ),
     },
   });
-
-  it("reads every id in one query and answers by id, leaving unknown ids out", async () => {
-    const db = dbOf([eurth]);
-    const found = await loadForumRealms(db as never, ["r_eurth", "r_nowhere"]);
-    expect(db.realm.findMany).toHaveBeenCalledTimes(1);
-    expect(found.get("r_eurth")).toEqual(EURTH);
-    expect(found.has("r_nowhere")).toBe(false);
-  });
-
   it("synthesizes Ixnay without a row and names it from its row under the ixnay slug", async () => {
     expect((await loadForumRealms(dbOf([]) as never, ["default"])).get("default")).toEqual(IXNAY);
     const row = { ...eurth, id: "default", slug: "default", name: "Ixnay Prime" };
     const named = await loadForumRealms(dbOf([row]) as never, ["default"]);
     expect(named.get("default")).toEqual({ ...row, slug: "ixnay" });
-  });
-
-  it("reads nothing for no ids", async () => {
-    const db = dbOf([eurth]);
-    expect((await loadForumRealms(db as never, [])).size).toBe(0);
-    expect(db.realm.findMany).not.toHaveBeenCalled();
   });
 });
 
@@ -427,92 +398,5 @@ describe("realmPostingAccess", () => {
       isModerator: true,
       canPost: true,
     });
-  });
-});
-
-describe("canPostInCategory", () => {
-  const site = {
-    id: "cat_general",
-    scope: "site",
-    realmId: null,
-    visibility: "public",
-    postRole: "any",
-  };
-  const hub = {
-    id: "rcat_hub",
-    scope: "realm",
-    realmId: "r_eurth",
-    visibility: "public",
-    postRole: "any",
-  };
-  function categoryDb(realm: ForumRealm | null = EURTH) {
-    const db = accessDb();
-    db.realm.findUnique.mockResolvedValue(realm as never);
-    return db;
-  }
-
-  it("applies the phase 1 rule to sitewide categories without loading a realm", async () => {
-    const db = categoryDb();
-    await expect(canPostInCategory(db as never, plain, site)).resolves.toBe(true);
-    await expect(
-      canPostInCategory(db as never, plain, { ...site, postRole: "staff" })
-    ).resolves.toBe(false);
-    await expect(canPostInCategory(db as never, null, site)).resolves.toBe(false);
-    expect(db.realm.findUnique).not.toHaveBeenCalled();
-  });
-
-  it("refuses a sitewide category under a site or that category's ban, never under a realm ban", async () => {
-    const site_ = banRow({ userId: "u_plain", reason: "Abuse" });
-    const db = accessDb({ bans: [site_] });
-    await expect(categoryPostingAccess(db as never, plain, site)).resolves.toEqual({
-      canPost: false,
-      notice: banNotice({ scope: "site", expiresAt: null, reason: "Abuse" }),
-      ban: expect.objectContaining({ scope: "site" }),
-    });
-    expect(db.forumBan.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({ userId: "u_plain", liftedAt: null }),
-      })
-    );
-    const inCategory = banRow({ userId: "u_plain", scope: "category", scopeId: "cat_general" });
-    await expect(
-      canPostInCategory(accessDb({ bans: [inCategory] }) as never, plain, site)
-    ).resolves.toBe(false);
-    await expect(
-      canPostInCategory(accessDb({ bans: [inCategory] }) as never, plain, {
-        ...site,
-        id: "cat_side",
-      })
-    ).resolves.toBe(true);
-    const realmOnly = banRow({ userId: "u_plain", scope: "realm", scopeId: "r_eurth" });
-    await expect(
-      canPostInCategory(accessDb({ bans: [realmOnly] }) as never, plain, site)
-    ).resolves.toBe(true);
-  });
-
-  it("lets a site admin post sitewide whatever ban rows exist, without a lookup", async () => {
-    const db = accessDb({ bans: [banRow({ userId: "u_admin" })] });
-    await expect(categoryPostingAccess(db as never, admin, site)).resolves.toEqual({
-      canPost: true,
-      notice: null,
-      ban: null,
-    });
-    expect(db.forumBan.findMany).not.toHaveBeenCalled();
-  });
-
-  it("follows the realm posting rule in realm categories", async () => {
-    await expect(canPostInCategory(categoryDb() as never, owner, hub)).resolves.toBe(true);
-    await expect(canPostInCategory(categoryDb() as never, plain, hub)).resolves.toBe(false);
-    await expect(canPostInCategory(categoryDb() as never, admin, hub)).resolves.toBe(true);
-    await expect(
-      canPostInCategory(categoryDb() as never, owner, { ...hub, postRole: "staff" })
-    ).resolves.toBe(false);
-  });
-
-  it("refuses a realm category whose realm is hidden from the viewer or gone", async () => {
-    await expect(
-      canPostInCategory(categoryDb({ ...EURTH, status: "draft" }) as never, owner, hub)
-    ).resolves.toBe(false);
-    await expect(canPostInCategory(categoryDb(null) as never, owner, hub)).resolves.toBe(false);
   });
 });

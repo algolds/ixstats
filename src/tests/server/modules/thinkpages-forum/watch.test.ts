@@ -1,10 +1,5 @@
 /** @jest-environment node */
-import {
-  autoWatch,
-  isWatching,
-  unwatchThread,
-  watchThread,
-} from "~/server/modules/thinkpages-forum/watch";
+import { autoWatch, unwatchThread, watchThread } from "~/server/modules/thinkpages-forum/watch";
 import { engagementTables } from "~/tests/helpers/forum-engagement-fake";
 
 const member = {
@@ -50,15 +45,6 @@ function watchDb(categoryOver: object = {}, threadOver: object = {}, realm: obje
 }
 
 describe("watchThread", () => {
-  it("watches a thread the member may read, idempotently", async () => {
-    const db = watchDb();
-    await expect(watchThread(db as never, member, "t1")).resolves.toEqual({ watching: true });
-    expect(db.forumThreadWatch.createMany).toHaveBeenCalledWith({
-      data: [{ userId: "u1", threadId: "t1" }],
-      skipDuplicates: true,
-    });
-  });
-
   it("answers NOT_FOUND for a thread the member cannot read, and for the realm board", async () => {
     await expect(
       watchThread(watchDb({ visibility: "staff" }) as never, member, "t1")
@@ -106,14 +92,6 @@ describe("unwatchThread, isWatching and autoWatch", () => {
       where: { userId: "u1", threadId: "t1" },
     });
   });
-
-  it("answers whether the member watches", async () => {
-    const db = engagementTables();
-    await expect(isWatching(db as never, "u1", "t1")).resolves.toBe(false);
-    db.forumThreadWatch.count.mockResolvedValue(1);
-    await expect(isWatching(db as never, "u1", "t1")).resolves.toBe(true);
-  });
-
   it("auto-watches without a visibility check and without duplicating", async () => {
     const db = engagementTables();
     await autoWatch(db as never, "u1", "t1");

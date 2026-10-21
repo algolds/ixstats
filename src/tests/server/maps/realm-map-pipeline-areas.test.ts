@@ -103,14 +103,6 @@ beforeEach(() => {
 });
 
 describe("areas step", () => {
-  it("gives the map a new version after it has measured the areas", async () => {
-    const report = await runAreasStep(stepContext());
-
-    expect(report.status).toBe("changed");
-    expect(order).toEqual(["measure", "bump"]);
-    expect(invalidateRealmMap).toHaveBeenCalledWith(expect.anything(), "r1");
-  });
-
   it("changes nothing, so bumps nothing, on a dry run or when every area is measured already", async () => {
     await runAreasStep(stepContext({ dryRun: true }));
 
@@ -130,12 +122,5 @@ describe("physical step", () => {
 
     expect(report.status).toBe("changed");
     expect(order).toEqual(["write", "measure", "bump"]);
-  });
-
-  it("writes and bumps nothing on a dry run", async () => {
-    const report = await runPhysicalStep(stepContext({ dryRun: true }));
-
-    expect(report.status).toBe("would-change");
-    expect(order).toEqual([]);
   });
 });

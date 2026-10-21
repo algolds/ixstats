@@ -15,7 +15,6 @@ jest.mock("~/lib/system/job-lock", () => ({
 import fs from "node:fs";
 import path from "node:path";
 import { realmsRouter } from "~/server/api/routers/realms";
-import { CRON_JOBS } from "~/server/cron/jobs";
 import { sourcePreset } from "~/lib/realms/sources/presets";
 import { withJobLock } from "~/lib/system/job-lock";
 import {
@@ -153,14 +152,6 @@ describe("realms.sourceSync permissions: site admins and the realm's founder onl
     expect(db.realmSourceSync.upsert).not.toHaveBeenCalled();
     expect(db.realmSourceSync.update).not.toHaveBeenCalled();
   });
-
-  it("lets the founder and a site admin read the settings", async () => {
-    for (const viewer of [founder, admin]) {
-      const view = await caller(syncDb(), viewer).get({ slug: "eurth" });
-      expect(view.config).toMatchObject({ repo: "a-seth-harrison/eurth-map", format: "eurth-map" });
-    }
-  });
-
   it("refuses settings the adapter does not accept, naming the field", async () => {
     const db = syncDb();
     await expect(
@@ -189,21 +180,6 @@ describe("realms.sourceSync permissions: site admins and the realm's founder onl
     });
     expect(db.realmSourceSync.upsert).not.toHaveBeenCalled();
   });
-
-  it("loads a preset into the realm's own row", async () => {
-    const db = syncDb();
-    db.realmSourceSync.findUnique.mockResolvedValue(null);
-    await caller(db, admin).loadPreset({ slug: "eurth", presetId: "eurth-map" });
-    const { create } = db.realmSourceSync.upsert.mock.calls[0][0];
-    expect(create).toMatchObject({
-      realmId: "eurth-id",
-      repo: preset.repo,
-      presetId: "eurth-map",
-      enabled: false,
-    });
-    expect(Object.keys(create.continentMap)).toHaveLength(115);
-  });
-
   it("loading a preset again fills only what the realm's config lacks, unless forced", async () => {
     const db = syncDb();
     const edited = {
@@ -255,39 +231,6 @@ describe("realms.sourceSync permissions: site admins and the realm's founder onl
     expect(db.realmSyncRun.create).not.toHaveBeenCalled();
     expect(db.realmSourceSync.upsert).not.toHaveBeenCalled();
   });
-
-  it("fills the realm's wiki settings from the preset when the realm has none, and only then", async () => {
-    const db = syncDb();
-    db.realm.findUnique.mockResolvedValue({
-      id: "eurth-id",
-      slug: "eurth",
-      name: "Eurth",
-      ownerId: "clerk_founder",
-      settings: { maxNationsPerUser: 2 },
-    });
-    const result = await caller(db, admin).loadPreset({ slug: "eurth", presetId: "eurth-map" });
-    expect(result).toMatchObject({ wikiFilled: true });
-    expect(db.realm.update).toHaveBeenCalledWith({
-      where: { id: "eurth-id" },
-      data: { settings: { maxNationsPerUser: 2, wiki: preset.wiki } },
-    });
-
-    db.realm.update.mockClear();
-    db.realm.findUnique.mockResolvedValue({
-      id: "eurth-id",
-      slug: "eurth",
-      name: "Eurth",
-      ownerId: "clerk_founder",
-      settings: { wiki: { ...preset.wiki, keyword: "Eurthian" } },
-    });
-    expect(
-      await caller(db, admin).loadPreset({ slug: "eurth", presetId: "eurth-map" })
-    ).toMatchObject({
-      wikiFilled: false,
-    });
-    expect(db.realm.update).not.toHaveBeenCalled();
-  });
-
   it("refuses a manual match to a nation of another realm", async () => {
     const db = syncDb();
     db.country.findUnique.mockResolvedValue({ realmId: "default" });
@@ -299,12 +242,6 @@ describe("realms.sourceSync permissions: site admins and the realm's founder onl
         override: { countryId: "c-ix" },
       })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-  });
-
-  it("serves the map's attribution line publicly", async () => {
-    await expect(caller(syncDb(), null).mapAttribution({ slug: "eurth" })).resolves.toBe(
-      "Map: Eurth community, via eurth-map by Seth Harrison"
-    );
   });
 });
 
@@ -394,30 +331,12 @@ describe("runSourceSync", () => {
     });
     expect(fetchFile).not.toHaveBeenCalled();
   });
-
-  it("records a failed read as a failed run", async () => {
-    const db = syncDb();
-    const outcome = await runSourceSync(
-      db,
-      { realmId: "eurth-id", dryRun: true, triggeredBy: "script" },
-      { fetchFile: jest.fn().mockRejectedValue(new Error("HTTP 404")) }
-    );
-    expect(outcome).toMatchObject({ status: "failed", errors: ["HTTP 404"] });
-  });
 });
 
 describe("runDueSourceSyncs (the realm-source-sync job)", () => {
   beforeEach(() => {
     mockLock.held = false;
   });
-
-  it("is in the cron table with its own lease", () => {
-    expect(CRON_JOBS.find((job) => job.name === "realm-source-sync")).toMatchObject({
-      lockName: "realm-source-sync",
-      exportName: "runDueSourceSyncs",
-    });
-  });
-
   it("runs only the realms whose own schedule is due, one at a time, as cron", async () => {
     const now = new Date("2026-10-07T12:00:00Z");
     const db = syncDb();

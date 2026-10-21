@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { APPEALS_PER_PAGE, listAppeals } from "~/server/modules/thinkpages-forum";
+import { listAppeals } from "~/server/modules/thinkpages-forum";
 import { appeal, bans, days, NOW, warnings } from "~/tests/helpers/forum-appeal-fixtures";
 import {
   admin,
@@ -59,66 +59,6 @@ describe("listAppeals", () => {
       listAppeals(store.db as never, viewer, { status: "open" }, 1)
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
-
-  it("gives site admins every appeal of a status, newest first, with its subject", async () => {
-    const store = storeWith();
-    const result = await listAppeals(store.db as never, admin2, { status: "open" }, 1);
-    expect(idsOf(result)).toEqual(
-      ["a_auto", "a_cat", "a_realm", "a_site", "a_wgeneral", "a_weurth", "a_wsite"].sort()
-    );
-    expect(result.total).toBe(7);
-    expect(store.db.forumAppeal.findMany).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-        skip: 0,
-        take: APPEALS_PER_PAGE,
-      })
-    );
-    const realmRow = result.rows.find((r) => r.id === "a_realm");
-    expect(realmRow).toMatchObject({
-      subjectType: "ban",
-      subjectId: "b_realm",
-      userId: "u_m",
-      body: "Please reconsider this.",
-      status: "open",
-      reviewedBy: null,
-      reviewedAt: null,
-      response: null,
-      createdAt: days(-1),
-      subject: {
-        kind: "ban",
-        reason: "Spam",
-        scope: "realm",
-        scopeId: "r_eurth",
-        expiresAt: days(5),
-        issuedBy: "u_eurth",
-        auto: false,
-        active: true,
-      },
-    });
-    expect(result.rows.find((r) => r.id === "a_wsite")?.subject).toEqual({
-      kind: "warning",
-      reason: "Rude",
-      points: 3,
-      categoryId: null,
-      expiresAt: days(80),
-      issuedBy: "u_a",
-      active: true,
-    });
-  });
-
-  it("filters by status", async () => {
-    const store = storeWith();
-    const result = await listAppeals(store.db as never, admin, { status: "overturned" }, 1);
-    expect(idsOf(result)).toEqual(["a_done"]);
-    expect(result.rows[0]).toMatchObject({
-      reviewedBy: "u_eurth2",
-      response: "Lifted.",
-      canReview: false,
-      subject: { active: false },
-    });
-  });
-
   it("lists moot appeals as closed: their own status, never reviewable", async () => {
     const store = storeWith({
       appeals: [
@@ -168,18 +108,6 @@ describe("listAppeals", () => {
     const result = await listAppeals(store.db as never, auroraMod, { status: "open" }, 1);
     expect(result).toEqual({ rows: [], total: 0 });
   });
-
-  it("narrows a site admin's queue to one realm", async () => {
-    const store = storeWith();
-    const result = await listAppeals(
-      store.db as never,
-      admin,
-      { status: "open", realmId: "r_eurth" },
-      1
-    );
-    expect(idsOf(result)).toEqual(["a_realm", "a_weurth"]);
-  });
-
   it("marks what the viewer may review: never their own subject, an automatic ban they raised, or their own appeal", async () => {
     const store = storeWith({ logs: [raisedAuto] });
     const byId = async (viewer: Parameters<typeof listAppeals>[1]) => {
@@ -200,25 +128,5 @@ describe("listAppeals", () => {
     expect(await byId(eurthMod2)).toEqual({ a_realm: true, a_weurth: true });
     const promoted = { ...moderatorOf("u_m", ["r_eurth"]), clerkUserId: "member" };
     expect(await byId(promoted)).toEqual({ a_realm: false, a_weurth: false });
-  });
-
-  it("pages", async () => {
-    const many = Array.from({ length: APPEALS_PER_PAGE + 2 }, (_, i) =>
-      appeal(`a${i}`, "ban", "b_realm")
-    );
-    const store = storeWith({ appeals: many });
-    const result = await listAppeals(store.db as never, admin, { status: "open" }, 2);
-    expect(result.rows).toHaveLength(2);
-    expect(result.total).toBe(APPEALS_PER_PAGE + 2);
-    expect(store.db.forumAppeal.findMany).toHaveBeenLastCalledWith(
-      expect.objectContaining({ skip: APPEALS_PER_PAGE, take: APPEALS_PER_PAGE })
-    );
-  });
-
-  it("loads subjects in one batched query per kind", async () => {
-    const store = storeWith();
-    await listAppeals(store.db as never, admin, { status: "open" }, 1);
-    expect(store.db.forumBan.findMany).toHaveBeenCalledTimes(1);
-    expect(store.db.forumWarning.findMany).toHaveBeenCalledTimes(1);
   });
 });

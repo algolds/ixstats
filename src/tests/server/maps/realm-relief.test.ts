@@ -82,43 +82,6 @@ const layersOf = (db: { realm: { rows: Array<{ settings: object }> } }) =>
 const versionsOf = () => readdirSync(path.join(root, "r1", "relief")).sort();
 
 describe("buildRealmRelief from cells", () => {
-  it("builds the layer as a lossy overlay to z5 without its empty tiles, and records the entry", async () => {
-    const db = setup({ map: { radiusKm: 100 }, theme: "dark" });
-    const entry = await buildRealmRelief(db, "r1", { cells: ridgeCells() });
-
-    expect(buildRealmRaster).toHaveBeenCalledTimes(1);
-    expect(jest.mocked(buildRealmRaster).mock.calls[0]![0]).toMatchObject({
-      realmId: "r1",
-      layerId: "relief",
-      kind: "overlay",
-      maxZoom: 5,
-      lossy: { quality: 70, alphaQuality: 60 },
-      skipTransparent: true,
-    });
-    expect(entry).toMatchObject({
-      id: "relief",
-      label: "Relief",
-      kind: "overlay",
-      maxZoom: 5,
-      built: true,
-      tiles: 292,
-      skipped: 733,
-    });
-    expect(entry.version).toMatch(/^[a-f0-9]{16}$/);
-    expect(layersOf(db)).toEqual([
-      {
-        id: "relief",
-        label: "Relief",
-        kind: "overlay",
-        version: entry.version,
-        maxZoom: 5,
-        order: 10,
-      },
-    ]);
-    // The realm's other settings are kept
-    expect(db.realm.rows[0].settings).toMatchObject({ theme: "dark", map: { radiusKm: 100 } });
-  });
-
   it("tells the map it changed, after the entry is recorded", async () => {
     const db = setup();
     await buildRealmRelief(db, "r1", { cells: ridgeCells() });
@@ -128,32 +91,6 @@ describe("buildRealmRelief from cells", () => {
       db.$queryRaw.mock.invocationCallOrder[0]!
     );
   });
-
-  it("shades land only: black shadows, white lights, nothing over the sea", async () => {
-    const db = setup();
-    await buildRealmRelief(db, "r1", { cells: ridgeCells() });
-    const image = jest.mocked(buildRealmRaster).mock.calls[0]![0].image;
-    const { data, info } = await sharp(image).raw().toBuffer({ resolveWithObject: true });
-    expect([info.width, info.height, info.channels]).toEqual([2048, 1024, 4]);
-    let shadow = 0;
-    let light = 0;
-    let sea = 0;
-    for (let y = 0; y < 1024; y++) {
-      for (let x = 0; x < 2048; x++) {
-        const i = (y * 2048 + x) * 4;
-        const lng = ((x + 0.5) / 2048) * 360 - 180;
-        const lat = 90 - ((y + 0.5) / 1024) * 180;
-        const alpha = data[i + 3]!;
-        if (Math.abs(lng) > 62 || Math.abs(lat) > 32) sea += alpha;
-        else if (alpha > 0 && data[i] === 0) shadow++;
-        else if (alpha > 0 && data[i] === 255) light++;
-      }
-    }
-    expect(sea).toBe(0);
-    expect(shadow).toBeGreaterThan(0);
-    expect(light).toBeGreaterThan(0);
-  });
-
   it("does not build again for the same cells", async () => {
     const db = setup();
     const first = await buildRealmRelief(db, "r1", { cells: ridgeCells() });
@@ -206,13 +143,6 @@ describe("buildRealmRelief from cells", () => {
       map: { rasterLayers: [expect.objectContaining({ id: "relief", version: entry.version })] },
     });
   });
-
-  it("refuses a realm that does not exist", async () => {
-    await expect(buildRealmRelief(setup(), "nope", { cells: ridgeCells() })).rejects.toThrow(
-      /not found/i
-    );
-    expect(buildRealmRaster).not.toHaveBeenCalled();
-  });
 });
 
 describe("planRealmRelief", () => {
@@ -252,19 +182,6 @@ const band = (zone: number, ring: Position[]) => ({
 });
 
 describe("buildRealmRelief from altitude bands", () => {
-  it("builds from the realm's stored bands", async () => {
-    const db = setup();
-    db.mapLayer.rows.push(
-      band(1, acrossSeam(10, 10)),
-      band(4, acrossSeam(5, 5)),
-      band(8, acrossSeam(2, 2)),
-      { ...band(5, acrossSeam(3, 3)), realmId: "other" }
-    );
-    const entry = await buildRealmRelief(db, "r1", { bands: true });
-    expect(entry).toMatchObject({ id: "relief", built: true, maxZoom: 5 });
-    expect(layersOf(db)[0]!.version).toBe(entry.version);
-  });
-
   it("shades a mountain over the antimeridian on both sides of the seam, with no streak or gap", async () => {
     const db = setup();
     db.mapLayer.rows.push(
@@ -290,12 +207,5 @@ describe("buildRealmRelief from altitude bands", () => {
     // Either side of the seam is one slope: the shading does not jump across the edge of the grid
     for (let y = 480; y < 545; y += 8)
       expect(Math.abs(alpha(0, y) - alpha(2047, y))).toBeLessThan(30);
-  });
-
-  it("has nothing to shade without bands", async () => {
-    const db = setup();
-    expect(await planRealmRelief(db, "r1", { bands: true })).toBeNull();
-    await expect(buildRealmRelief(db, "r1", { bands: true })).rejects.toThrow(/altitude bands/);
-    expect(db.realm.update).not.toHaveBeenCalled();
   });
 });

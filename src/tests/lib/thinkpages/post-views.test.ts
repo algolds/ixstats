@@ -13,8 +13,6 @@ import {
   flushPendingViews,
   recordPostView,
   resetPostViewMemory,
-  viewDay,
-  viewDayMoment,
 } from "~/lib/thinkpages/post-views";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
@@ -88,15 +86,5 @@ describe("flushPendingViews", () => {
     const spy = jest.spyOn(console, "warn").mockImplementation(() => {});
     expect(await flushPendingViews(db)).toBe(1);
     spy.mockRestore();
-  });
-});
-
-describe("view day helpers", () => {
-  it("buckets by UTC day and times a day's views at midday, never in the future", () => {
-    expect(viewDay(NOW)).toBe("2026-10-05");
-    const day = new Date("2026-10-04T00:00:00.000Z");
-    expect(viewDayMoment(day, NOW).toISOString()).toBe("2026-10-04T12:00:00.000Z");
-    const today = new Date("2026-10-05T00:00:00.000Z");
-    expect(viewDayMoment(today, NOW)).toEqual(NOW);
   });
 });

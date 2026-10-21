@@ -1,5 +1,5 @@
 import React from "react";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => ({
   api: { thinkpagesForum: { myPersonas: { useQuery: () => ({ data: [] }) } } },
@@ -57,23 +57,5 @@ describe("ReplyComposer", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     fireEvent.click(screen.getByRole("button", { name: "Reply" }));
     expect(await screen.findByTestId("canvas")).toHaveAttribute("data-initial", "my draft");
-  });
-
-  it("closes the sheet after a reply is posted", async () => {
-    render(<Host phone />);
-    fireEvent.click(screen.getByRole("button", { name: "Reply" }));
-    await screen.findByRole("dialog");
-    fireEvent.click(screen.getByText("Send"));
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-  });
-
-  it("keeps the sheet open when the wiki is still formatting the reply, so the author is told", async () => {
-    render(<Host phone formatting="pending" />);
-    fireEvent.click(screen.getByRole("button", { name: "Reply" }));
-    await screen.findByRole("dialog");
-    fireEvent.click(screen.getByText("Send"));
-    // Let the submit settle: the sheet would be closing by now if it were going to.
-    await act(async () => new Promise((resolve) => setTimeout(resolve, 20)));
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });

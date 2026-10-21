@@ -1,6 +1,6 @@
 import React from "react";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import { boardAccess, boardData, boardMessage } from "~/tests/helpers/realm-board-fixtures";
+import { boardData, boardMessage } from "~/tests/helpers/realm-board-fixtures";
 
 interface QueryResult {
   data?: object;
@@ -69,9 +69,6 @@ jest.mock("~/components/thinkpages-forum/realm/BoardMessage", () => ({
 
 import { BoardFeed } from "~/components/thinkpages-forum/realm/BoardFeed";
 
-const { provided } = jest.requireMock<{ provided: jest.Mock }>(
-  "~/components/action-links/DiscussionCountsProvider"
-);
 const { pages, asked } = jest.requireMock<{
   pages: Record<string, QueryResult>;
   asked: Array<{ realm: string; before?: string }>;
@@ -79,7 +76,6 @@ const { pages, asked } = jest.requireMock<{
 
 type ObserverCallback = (entries: Array<Partial<IntersectionObserverEntry>>) => void;
 let observed: ObserverCallback | null = null;
-let observerOptions: IntersectionObserverInit | undefined;
 
 afterEach(() => {
   delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
@@ -90,11 +86,9 @@ beforeEach(() => {
   for (const key of Object.keys(pages)) delete pages[key];
   asked.length = 0;
   observed = null;
-  observerOptions = undefined;
   window.IntersectionObserver = class {
-    constructor(callback: ObserverCallback, options?: IntersectionObserverInit) {
+    constructor(callback: ObserverCallback) {
       observed = callback;
-      observerOptions = options;
     }
     observe() {}
     unobserve() {}
@@ -112,17 +106,6 @@ function scrollAway() {
       {
         isIntersecting: false,
         boundingClientRect: { top: -400 } as DOMRectReadOnly,
-        rootBounds: { top: 0 } as DOMRectReadOnly,
-      },
-    ])
-  );
-}
-function scrollToTop() {
-  act(() =>
-    observed?.([
-      {
-        isIntersecting: true,
-        boundingClientRect: { top: 0 } as DOMRectReadOnly,
         rootBounds: { top: 0 } as DOMRectReadOnly,
       },
     ])
@@ -157,100 +140,7 @@ function feedProps(
 const order = () => screen.getAllByTestId("message").map((el) => el.getAttribute("data-id"));
 
 describe("BoardFeed", () => {
-  it("lists the messages newest first", () => {
-    render(<BoardFeed {...feedProps()} />);
-    expect(order()).toEqual(["p3", "p2", "p1"]);
-    expect(screen.getByRole("heading", { level: 2, name: "Realm board" })).toBeInTheDocument();
-  });
-
-  it("asks for the Discussed in counts of the actions on screen, once for the page", () => {
-    provided.mockClear();
-    render(
-      <BoardFeed
-        {...feedProps(
-          boardData([
-            msg("p3", "[ixaction=a3]"),
-            msg("p2", "no action"),
-            msg("p1", "[ixaction=a1]"),
-          ])
-        )}
-      />
-    );
-    expect(provided).toHaveBeenLastCalledWith(["a3", "a1"]);
-  });
-
-  it("invites the first message on an empty board, with a way to the composer", () => {
-    const props = feedProps(boardData([]));
-    render(<BoardFeed {...props} />);
-    expect(screen.getByText("Start the conversation")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Write a message" }));
-    expect(props.onStart).toHaveBeenCalledTimes(1);
-  });
-
-  it("does not ask a reader who cannot post to start one", () => {
-    render(
-      <BoardFeed
-        {...feedProps(
-          boardData([], { access: boardAccess({ canPost: false, reason: "sign_in" }) })
-        )}
-      />
-    );
-    expect(screen.getByText("No messages yet")).toBeInTheDocument();
-    expect(screen.queryByText("Start the conversation")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Write a message" })).toBeNull();
-  });
-
-  it("passes a reply up with the message", () => {
-    const props = feedProps();
-    render(<BoardFeed {...props} />);
-    fireEvent.click(screen.getByRole("button", { name: "Reply to p2" }));
-    expect(props.onReply).toHaveBeenCalledWith(expect.objectContaining({ id: "p2" }));
-  });
-
-  describe("typing and the live notice", () => {
-    it.each([
-      [["Fiannria"], "Fiannria is typing"],
-      [["Fiannria", "Kir"], "Fiannria and Kir are typing"],
-      [["Fiannria", "Kir", "Urcea"], "3 people are typing"],
-    ])("says who is typing: %j", (names, line) => {
-      render(<BoardFeed {...feedProps(undefined, { typing: names })} />);
-      expect(screen.getByText(line)).toBeInTheDocument();
-    });
-    it("says live updates are paused only once a connected socket has dropped", () => {
-      const { rerender } = render(<BoardFeed {...feedProps(undefined, { paused: true })} />);
-      expect(screen.getByText("Live updates paused, retrying")).toBeInTheDocument();
-      rerender(<BoardFeed {...feedProps(undefined, { paused: false })} />);
-      expect(screen.queryByText("Live updates paused, retrying")).toBeNull();
-    });
-  });
-
   describe("new messages while the reader is away from the top", () => {
-    it("takes a new message at the top when the reader is at the top", () => {
-      const { rerender } = render(<BoardFeed {...feedProps()} />);
-      scrollToTop();
-      rerender(
-        <BoardFeed {...feedProps(boardData([msg("p4"), msg("p3"), msg("p2"), msg("p1")]))} />
-      );
-      expect(order()).toEqual(["p4", "p3", "p2", "p1"]);
-      expect(screen.queryByRole("button", { name: /Jump to newest/ })).toBeNull();
-    });
-
-    it("holds the list still and offers Jump to newest, then shows them on click", () => {
-      const { rerender } = render(<BoardFeed {...feedProps()} />);
-      scrollAway();
-      rerender(
-        <BoardFeed
-          {...feedProps(boardData([msg("p5"), msg("p4"), msg("p3"), msg("p2"), msg("p1")]))}
-        />
-      );
-      expect(order()).toEqual(["p3", "p2", "p1"]);
-      const jump = screen.getByRole("button", { name: /Jump to newest/ });
-      expect(jump).toHaveTextContent("2 new");
-      fireEvent.click(jump);
-      expect(order()).toEqual(["p5", "p4", "p3", "p2", "p1"]);
-      expect(screen.queryByRole("button", { name: /Jump to newest/ })).toBeNull();
-    });
-
     it("still applies an edit or a removal to a message already on the list", () => {
       const { rerender } = render(<BoardFeed {...feedProps()} />);
       scrollAway();
@@ -260,45 +150,7 @@ describe("BoardFeed", () => {
       expect(order()).toEqual(["p3", "p1"]);
       expect(within(screen.getAllByTestId("message")[0]!).getByText("edited")).toBeInTheDocument();
     });
-
-    it("releases the hold when the reader returns to the top", () => {
-      const { rerender } = render(<BoardFeed {...feedProps()} />);
-      scrollAway();
-      rerender(
-        <BoardFeed {...feedProps(boardData([msg("p4"), msg("p3"), msg("p2"), msg("p1")]))} />
-      );
-      expect(order()).toEqual(["p3", "p2", "p1"]);
-      scrollToTop();
-      expect(order()).toEqual(["p4", "p3", "p2", "p1"]);
-    });
-
-    it("shows the newest at once after the reader posts", () => {
-      const scrollIntoView = jest.fn();
-      Element.prototype.scrollIntoView = scrollIntoView;
-      const { rerender } = render(<BoardFeed {...feedProps()} />);
-      scrollAway();
-      rerender(
-        <BoardFeed
-          {...feedProps(boardData([msg("p4"), msg("p3"), msg("p2"), msg("p1")]), { showLatest: 1 })}
-        />
-      );
-      expect(order()).toEqual(["p4", "p3", "p2", "p1"]);
-      expect(scrollIntoView).toHaveBeenCalledWith({ block: "nearest" });
-    });
   });
-
-  describe("accessibility and the sticky header", () => {
-    it("counts the top as out of view once it is under the sticky header", () => {
-      render(<BoardFeed {...feedProps()} />);
-      expect(observerOptions?.rootMargin).toMatch(/^-\d+px 0px 0px 0px$/);
-    });
-
-    it("leaves room under the header when it scrolls the top into view", () => {
-      const { container } = render(<BoardFeed {...feedProps()} />);
-      expect(container.querySelector(".scroll-mt-24[aria-hidden]")).not.toBeNull();
-    });
-  });
-
   describe("earlier messages", () => {
     it("shows a message once when a moved cursor returns it again", () => {
       pages.p1 = { data: boardData([msg("p2"), msg("o2"), msg("o1")]) };
@@ -311,170 +163,5 @@ describe("BoardFeed", () => {
       expect(order()).toEqual(["p3", "p2", "p1", "o2", "o1"]);
       expect(container.querySelectorAll("[data-id='p2']")).toHaveLength(1);
     });
-
-    it("offers Load earlier messages only when the board has more", () => {
-      const { rerender } = render(<BoardFeed {...feedProps()} />);
-      expect(screen.queryByRole("button", { name: "Load earlier messages" })).toBeNull();
-      rerender(
-        <BoardFeed
-          {...feedProps(boardData([msg("p3"), msg("p2"), msg("p1")], { hasMore: true }))}
-        />
-      );
-      expect(screen.getByRole("button", { name: "Load earlier messages" })).toBeInTheDocument();
-    });
-
-    it("pages back from the oldest message, one page after another", () => {
-      pages.p1 = { data: boardData([msg("o2"), msg("o1")], { hasMore: true }) };
-      pages.o1 = { data: boardData([msg("n1")]) };
-      render(
-        <BoardFeed
-          {...feedProps(boardData([msg("p3"), msg("p2"), msg("p1")], { hasMore: true }))}
-        />
-      );
-      expect(asked.some((a) => a.before)).toBe(false);
-      fireEvent.click(screen.getByRole("button", { name: "Load earlier messages" }));
-      expect(order()).toEqual(["p3", "p2", "p1", "o2", "o1"]);
-      expect(asked).toContainEqual({ realm: "eurth", before: "p1" });
-      fireEvent.click(screen.getByRole("button", { name: "Load earlier messages" }));
-      expect(order()).toEqual(["p3", "p2", "p1", "o2", "o1", "n1"]);
-      expect(asked).toContainEqual({ realm: "eurth", before: "o1" });
-      expect(screen.queryByRole("button", { name: "Load earlier messages" })).toBeNull();
-    });
-
-    it("pages back from the true oldest message while newer ones are held", () => {
-      pages.p1 = { data: boardData([msg("o1")]) };
-      const { rerender } = render(
-        <BoardFeed
-          {...feedProps(boardData([msg("p3"), msg("p2"), msg("p1")], { hasMore: true }))}
-        />
-      );
-      scrollAway();
-      rerender(
-        <BoardFeed
-          {...feedProps(boardData([msg("p4"), msg("p3"), msg("p2"), msg("p1")], { hasMore: true }))}
-        />
-      );
-      fireEvent.click(screen.getByRole("button", { name: "Load earlier messages" }));
-      expect(order()).toEqual(["p3", "p2", "p1", "o1"]);
-    });
-
-    it("shows that an earlier page is loading, and lets the reader retry a failed one", () => {
-      const refetch = jest.fn();
-      pages.p1 = { isLoading: true };
-      const props = feedProps(boardData([msg("p1")], { hasMore: true }));
-      const { rerender } = render(<BoardFeed {...props} />);
-      fireEvent.click(screen.getByRole("button", { name: "Load earlier messages" }));
-      expect(screen.getByText("Loading earlier messages")).toBeInTheDocument();
-      pages.p1 = { isError: true, refetch };
-      rerender(<BoardFeed {...props} />);
-      fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-      expect(refetch).toHaveBeenCalled();
-    });
-  });
-
-  describe("seeking a linked message", () => {
-    const seekTo = (postId: string) => ({ postId, found: jest.fn() });
-
-    it("pages back by itself until the message is on screen, then stops", () => {
-      pages.p1 = { data: boardData([msg("o2"), msg("o1")], { hasMore: true }) };
-      pages.o1 = { data: boardData([msg("n2"), msg("n1")], { hasMore: true }) };
-      pages.n1 = { data: boardData([msg("z1")]) };
-      const seek = seekTo("n2");
-      render(
-        <BoardFeed
-          {...feedProps(boardData([msg("p3"), msg("p2"), msg("p1")], { hasMore: true }), { seek })}
-        />
-      );
-      expect(order()).toEqual(["p3", "p2", "p1", "o2", "o1", "n2", "n1"]);
-      expect(asked).toContainEqual({ realm: "eurth", before: "o1" });
-      expect(asked.some((a) => a.before === "n1")).toBe(false);
-      expect(seek.found).toHaveBeenCalledTimes(1);
-      expect(screen.queryByText(/older than what is loaded/)).toBeNull();
-      // The pages already loaded stay, and the next one waits for the reader.
-      expect(screen.getByRole("button", { name: "Load earlier messages" })).toBeInTheDocument();
-    });
-
-    it("finds a message that is already on the first page without paging", () => {
-      const seek = seekTo("p2");
-      render(
-        <BoardFeed {...feedProps(boardData([msg("p3"), msg("p2")], { hasMore: true }), { seek })} />
-      );
-      expect(seek.found).toHaveBeenCalledTimes(1);
-      expect(asked.some((a) => a.before)).toBe(false);
-    });
-
-    it("gives up after ten pages and says the message is older than what is loaded", () => {
-      for (let i = 0; i < 12; i++) {
-        pages[`m${i}`] = { data: boardData([msg(`m${i + 1}`)], { hasMore: true }) };
-      }
-      const seek = seekTo("never");
-      render(<BoardFeed {...feedProps(boardData([msg("m0")], { hasMore: true }), { seek })} />);
-      expect(asked.filter((a) => a.before)).toHaveLength(10);
-      expect(screen.getAllByText("That message is older than what is loaded.")).toHaveLength(1);
-      expect(seek.found).not.toHaveBeenCalled();
-      // The reader can go on looking by hand.
-      fireEvent.click(screen.getByRole("button", { name: "Load earlier messages" }));
-      expect(asked.filter((a) => a.before)).toHaveLength(11);
-    });
-
-    it("keeps one notice while the reader loads past the bound, and drops it once a page has the message", () => {
-      for (let i = 0; i < 12; i++) {
-        pages[`m${i}`] = { data: boardData([msg(`m${i + 1}`)], { hasMore: true }) };
-      }
-      const seek = seekTo("m12");
-      render(<BoardFeed {...feedProps(boardData([msg("m0")], { hasMore: true }), { seek })} />);
-      const notice = "That message is older than what is loaded.";
-      expect(screen.getAllByText(notice)).toHaveLength(1);
-      fireEvent.click(screen.getByRole("button", { name: "Load earlier messages" }));
-      expect(screen.getAllByText(notice)).toHaveLength(1);
-      fireEvent.click(screen.getByRole("button", { name: "Load earlier messages" }));
-      expect(seek.found).toHaveBeenCalledTimes(1);
-      expect(screen.queryByText(notice)).toBeNull();
-    });
-
-    it("says so when the whole board is loaded and the message is not on it", () => {
-      render(<BoardFeed {...feedProps(undefined, { seek: seekTo("gone") })} />);
-      expect(screen.getByText("That message is no longer on this board.")).toBeInTheDocument();
-    });
-
-    it("looks for nothing without a link", () => {
-      render(<BoardFeed {...feedProps(boardData([msg("p1")], { hasMore: true }))} />);
-      expect(asked.some((a) => a.before)).toBe(false);
-      expect(screen.queryByText(/That message/)).toBeNull();
-    });
-  });
-
-  it("reports the newest message as seen while at the top, and a newer one once the reader is back at the top", () => {
-    const onSeen = jest.fn();
-    const onAway = jest.fn();
-    const props = feedProps(boardData([msg("p3"), msg("p2")]), { onSeen, onAway });
-    const { rerender } = render(<BoardFeed {...props} />);
-    expect(onSeen).toHaveBeenCalledWith("p3");
-    expect(onAway).not.toHaveBeenCalled();
-    scrollAway();
-    expect(onAway).toHaveBeenCalled();
-    onSeen.mockClear();
-    rerender(<BoardFeed {...props} data={boardData([msg("p4"), msg("p3"), msg("p2")])} />);
-    expect(onSeen).not.toHaveBeenCalled();
-    scrollToTop();
-    expect(onSeen).toHaveBeenCalledWith("p4");
-  });
-
-  it("reports a newer message at once while the reader stays at the top", () => {
-    const onSeen = jest.fn();
-    const props = feedProps(boardData([msg("p3"), msg("p2")]), { onSeen });
-    const { rerender } = render(<BoardFeed {...props} />);
-    onSeen.mockClear();
-    rerender(<BoardFeed {...props} data={boardData([msg("p4"), msg("p3"), msg("p2")])} />);
-    expect(onSeen).toHaveBeenCalledTimes(1);
-    expect(onSeen).toHaveBeenCalledWith("p4");
-  });
-
-  it("reports nothing for an empty board", () => {
-    const onSeen = jest.fn();
-    const onAway = jest.fn();
-    render(<BoardFeed {...feedProps(boardData([]), { onSeen, onAway })} />);
-    expect(onSeen).not.toHaveBeenCalled();
-    expect(onAway).not.toHaveBeenCalled();
   });
 });

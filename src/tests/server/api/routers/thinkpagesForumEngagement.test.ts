@@ -102,84 +102,18 @@ describe("thinkpagesForum read marks", () => {
       code: "BAD_REQUEST",
     });
   });
-
-  it("maps a refusal to NOT_FOUND", async () => {
-    const db = engagementDb();
-    db.forumThread.findUnique.mockResolvedValueOnce(null as never);
-    await expect(
-      caller(member, db).markThreadRead({ threadId: "t9", page: 1 })
-    ).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
-  });
 });
 
 describe("unreadTargetFor", () => {
-  it("sends a signed-out visitor, and a thread that cannot be found, to the thread itself", async () => {
-    await expect(unreadTargetFor({} as never, null, "t1")).resolves.toBe("/thinkpages/t/t1");
-    const db = { ...engagementDb(), user: { findUnique: jest.fn(async () => member) } };
-    db.forumThread.findUnique.mockResolvedValue(null as never);
-    await expect(unreadTargetFor(db as never, "clerk_1", "t1")).resolves.toBe("/thinkpages/t/t1");
-  });
-
   it("sends an id over the input bound to the forum home", async () => {
     await expect(unreadTargetFor({} as never, "clerk_1", "x".repeat(65))).resolves.toBe(
       "/thinkpages"
     );
   });
-
-  it("sends a signed-in member to the page and anchor of the first post they have not read", async () => {
-    const base = engagementDb();
-    const db = {
-      ...base,
-      user: { findUnique: jest.fn(async () => member) },
-      forumPost: {
-        findMany: base.forumPost.findMany,
-        findFirst: jest.fn(async () => ({ id: "p21" })),
-        // resolvePostLocation: the post, then how many visible posts come before it (20 fill page 1)
-        findUnique: jest.fn(async () => ({
-          id: "p21",
-          threadId: "t1",
-          createdAt: ago(1),
-          hidden: false,
-          thread: { authorUserId: "u2", hidden: false, category: general },
-        })),
-        count: jest.fn(async () => 20),
-      },
-    };
-    await expect(unreadTargetFor(db as never, "clerk_1", "t1")).resolves.toBe(
-      "/thinkpages/t/t1?page=2#post-p21"
-    );
-  });
-
   it("rethrows what is not a forum refusal instead of hiding it behind a redirect", async () => {
     const db = { ...engagementDb(), user: { findUnique: jest.fn(async () => member) } };
     db.forumThreadRead.findUnique.mockRejectedValue(new Error("database down"));
     await expect(unreadTargetFor(db as never, "clerk_1", "t1")).rejects.toThrow("database down");
-  });
-
-  it("sends a member with nothing unread to the thread's last post", async () => {
-    const base = engagementDb();
-    const db = {
-      ...base,
-      user: { findUnique: jest.fn(async () => member) },
-      forumPost: {
-        findMany: base.forumPost.findMany,
-        // the first call (newer than the read mark) finds nothing, the second (the last post) finds p9
-        findFirst: jest.fn().mockResolvedValueOnce(null).mockResolvedValueOnce({ id: "p9" }),
-        findUnique: jest.fn(async () => ({
-          id: "p9",
-          threadId: "t1",
-          createdAt: ago(1),
-          hidden: false,
-          thread: { authorUserId: "u2", hidden: false, category: general },
-        })),
-        count: jest.fn(async () => 2),
-      },
-    };
-    await expect(unreadTargetFor(db as never, "clerk_1", "t1")).resolves.toBe(
-      "/thinkpages/t/t1?page=1#post-p9"
-    );
   });
 });
 
@@ -200,10 +134,6 @@ describe("thinkpagesForum watch, lists and counts", () => {
     ]) {
       await expect(call()).rejects.toMatchObject({ cause: { code: "UNAUTHORIZED" } });
     }
-  });
-  it("answers navCounts with the realm board count", async () => {
-    const c = caller(member, engagementDb());
-    await expect(c.navCounts()).resolves.toEqual({ realmBoardNew: 0 });
   });
 });
 

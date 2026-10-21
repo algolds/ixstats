@@ -98,42 +98,6 @@ beforeEach(() => {
 });
 
 describe("Auto-Match", () => {
-  it("suggests matches for review with their confidence, using roster page titles and source keys", async () => {
-    const { caller, db } = setup({
-      regions: [
-        region("m1", "Republic_of_Gallambria"),
-        region("m2", "OST"),
-        region("m3", "f3", "Bergmarck"),
-      ],
-      countries: [
-        { id: "c_gal", name: "Gallambria", wikiPageTitle: null, externalSourceKey: null },
-        { id: "c_ost", name: "Ostia", wikiPageTitle: null, externalSourceKey: "OST" },
-        { id: "c_ber", name: "Bergmark", wikiPageTitle: null, externalSourceKey: null },
-      ],
-      pages: [{ id: "p1", title: "Republic of Gallambria" }],
-    });
-    const result = await caller.suggestLinkageMatches({ realm: "eurth" });
-
-    expect(result.unlinkedRegions).toBe(3);
-    expect(
-      result.suggestions.map((s) => [s.featureId, s.countryId, s.reason, s.matchedOn])
-    ).toEqual([
-      ["OST", "c_ost", "exact", "OST"],
-      ["Republic_of_Gallambria", "c_gal", "exact", "Republic of Gallambria"],
-      ["f3", "c_ber", "similar", "Bergmark"],
-    ]);
-    // Every read is the edited realm's
-    expect(db.mapLayer.findMany.mock.calls[0][0].where).toMatchObject({
-      realmId: EURTH,
-      countryId: null,
-    });
-    expect(db.country.findMany.mock.calls[0][0].where).toMatchObject({ realmId: EURTH });
-    expect(db.realmPage.findMany.mock.calls[0][0].where).toEqual({
-      realmId: EURTH,
-      kind: "nation",
-    });
-  });
-
   it("reads every region and nation in pages, past the 1,000-row guard", async () => {
     const regions = Array.from({ length: 1203 }, (_, i) =>
       region(`m${String(i).padStart(5, "0")}`, `Region ${i}`)

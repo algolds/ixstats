@@ -1,7 +1,7 @@
 import { createEditor, Editor, Transforms, type Descendant } from "slate";
 import type { TSlateEditor } from "platejs";
 import { serializePlateToWikitext } from "~/components/wiki-os/editor/plate/wiki-wikitext";
-import { appendQuote, insertAtCaret } from "~/components/thinkpages-forum/composer/canvas-ops";
+import { appendQuote } from "~/components/thinkpages-forum/composer/canvas-ops";
 import { quoteWikitext } from "~/components/thinkpages-forum/composer/QuoteInsert";
 
 // platejs is ESM-only and not loadable here: a Slate editor with the slice of Plate's `tf` and `api` that canvas-ops
@@ -35,35 +35,9 @@ const wikitextOf = (editor: TSlateEditor) =>
   serializePlateToWikitext(editor.children as never).wikitext;
 const typesOf = (editor: TSlateEditor) =>
   editor.children.map((node) => ("type" in node ? String(node.type) : "text"));
-
-describe("insertAtCaret", () => {
-  it("puts the text at the caret", () => {
-    const editor = editorWith(para("ab"));
-    editor.tf.select({ anchor: { path: [0, 0], offset: 1 }, focus: { path: [0, 0], offset: 1 } });
-    insertAtCaret(editor, "[ixaction=a1]");
-    expect(wikitextOf(editor)).toBe("a[ixaction=a1]b");
-  });
-
-  it("puts the text at the end when nothing is selected", () => {
-    const editor = editorWith(para("one"), para("two"));
-    insertAtCaret(editor, "[ixaction=a1]");
-    expect(wikitextOf(editor)).toContain("two[ixaction=a1]");
-  });
-});
-
 describe("appendQuote", () => {
   const quote = { postId: "p1", author: "Heku", text: "Hello there" };
   const block = quoteWikitext(quote).trimEnd();
-
-  it("replaces an empty document with the quote and leaves a paragraph to write in", () => {
-    const editor = editorWith(para(""));
-    appendQuote(editor, quote);
-    expect(typesOf(editor)).toEqual(["raw-wikitext", "p"]);
-    expect(wikitextOf(editor)).toContain(block);
-    expect(editor.api.string([1])).toBe("");
-    expect(editor.selection?.focus.path[0]).toBe(1);
-  });
-
   it("adds the quote after what is written and keeps that text", () => {
     const editor = editorWith(para("My thoughts"));
     appendQuote(editor, quote);

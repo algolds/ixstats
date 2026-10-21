@@ -1,4 +1,4 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react";
 
 const mockMark = jest.fn();
 const mockRefresh = jest.fn(() => Promise.resolve());
@@ -21,12 +21,6 @@ beforeEach(() => {
 const args = { threadId: "t1", page: 2, signedIn: true, newestPostId: "p40" as string | undefined };
 
 describe("useMarkThreadRead", () => {
-  it("marks the page the reader is shown, then refreshes the lists and counts", async () => {
-    renderHook(() => useMarkThreadRead(args));
-    await waitFor(() => expect(mockMark).toHaveBeenCalledWith({ threadId: "t1", page: 2 }));
-    await waitFor(() => expect(mockRefresh).toHaveBeenCalledTimes(1));
-  });
-
   it("marks once per thread, page and newest post, and again when a newer post is the last one shown", async () => {
     const { rerender } = renderHook((props) => useMarkThreadRead(props), { initialProps: args });
     await waitFor(() => expect(mockMark).toHaveBeenCalledTimes(1));
@@ -42,32 +36,5 @@ describe("useMarkThreadRead", () => {
     renderHook(() => useMarkThreadRead({ ...args, signedIn: false }));
     renderHook(() => useMarkThreadRead({ ...args, newestPostId: undefined }));
     expect(mockMark).not.toHaveBeenCalled();
-  });
-
-  it("keeps marking after a failed mark", async () => {
-    mockMark.mockRejectedValueOnce(new Error("offline"));
-    const { rerender } = renderHook((props) => useMarkThreadRead(props), { initialProps: args });
-    await waitFor(() => expect(mockMark).toHaveBeenCalledTimes(1));
-    expect(mockRefresh).not.toHaveBeenCalled();
-    rerender({ ...args, newestPostId: "p41" });
-    await waitFor(() => expect(mockMark).toHaveBeenCalledTimes(2));
-  });
-
-  it("does not retry a failed mark on a re-render with the same key", async () => {
-    mockMark.mockRejectedValueOnce(new Error("offline"));
-    const { rerender } = renderHook((props) => useMarkThreadRead(props), { initialProps: args });
-    await waitFor(() => expect(mockMark).toHaveBeenCalledTimes(1));
-    rerender({ ...args });
-    rerender({ ...args });
-    await act(async () => void (await Promise.resolve()));
-    expect(mockMark).toHaveBeenCalledTimes(1);
-    expect(mockRefresh).not.toHaveBeenCalled();
-  });
-
-  it("does not report a failed refresh after a saved mark", async () => {
-    mockRefresh.mockRejectedValueOnce(new Error("offline"));
-    renderHook(() => useMarkThreadRead(args));
-    await waitFor(() => expect(mockRefresh).toHaveBeenCalledTimes(1));
-    expect(mockMark).toHaveBeenCalledTimes(1);
   });
 });

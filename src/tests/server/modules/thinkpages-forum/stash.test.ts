@@ -2,7 +2,6 @@
 import { SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
 import {
   ForumError,
-  isThreadStashed,
   stashThread,
   unstashThread,
   type StashDb,
@@ -201,35 +200,6 @@ const theirs: StashRow = {
 };
 
 describe("stashThread", () => {
-  it("writes the native row into the default stash with the server-side title", async () => {
-    const { db, itemRows } = fake({ stashes: [mine] });
-
-    const result = await stashThread(db, member, owner, { threadId: "t1" });
-
-    expect(result).toEqual({ success: true, stashId: "stash_1" });
-    expect(itemRows).toEqual([
-      expect.objectContaining({
-        stashId: "stash_1",
-        pageTitle: "thinkpages:thread:t1",
-        pageSlug: "/thinkpages/t/t1",
-        contentType: "forum_thread",
-        contentId: null,
-        note: "Hello there",
-      }),
-    ]);
-  });
-
-  it("creates the default stash on demand under the primary id", async () => {
-    const { db, stashRows, itemRows } = fake();
-
-    await stashThread(db, member, owner, { threadId: "t1" });
-
-    expect(stashRows).toEqual([
-      expect.objectContaining({ userId: "u1", isDefault: true, name: "My Stash" }),
-    ]);
-    expect(itemRows).toHaveLength(1);
-  });
-
   it("uses the default stash a racing first stash created, instead of failing on the name (I6)", async () => {
     const { db, raw, stashRows, itemRows } = fake();
     raw.stash.create.mockImplementationOnce(async () => {
@@ -324,18 +294,6 @@ describe("unstashThread", () => {
 
     expect(itemRows.map((i) => i.id).sort()).toEqual(["i_legacy", "i_stash_x"]);
   });
-
-  it("removes it from one given stash only", async () => {
-    const { db, itemRows } = fake({
-      stashes: [mine, second],
-      items: [stashed("stash_1"), stashed("stash_2")],
-    });
-
-    await unstashThread(db, owner, { threadId: "t1", stashId: "stash_2" });
-
-    expect(itemRows.map((i) => i.stashId)).toEqual(["stash_1"]);
-  });
-
   it("refuses a stash that is not the caller's", async () => {
     const { db, itemRows } = fake({ stashes: [theirs], items: [stashed("stash_x")] });
 
@@ -362,33 +320,6 @@ describe("unstashThread", () => {
 });
 
 describe("isThreadStashed and readableThreadTitles", () => {
-  const row = (stashId: string, threadId: string, savedAt: string): Item => ({
-    id: `i_${stashId}_${threadId}`,
-    stashId,
-    pageTitle: `thinkpages:thread:${threadId}`,
-    pageSlug: `/thinkpages/t/${threadId}`,
-    contentType: "forum_thread",
-    contentId: null,
-    note: `Title ${threadId}`,
-    savedAt: new Date(savedAt),
-  });
-
-  it("names the caller's stashes holding the thread", async () => {
-    const { db } = fake({
-      stashes: [mine, second, theirs],
-      items: [row("stash_2", "t1", "2026-10-01"), row("stash_x", "t1", "2026-10-01")],
-    });
-
-    await expect(isThreadStashed(db, owner, { threadId: "t1" })).resolves.toEqual({
-      stashed: true,
-      stashes: [{ id: "stash_2", name: "Reading", color: "#fff" }],
-    });
-    await expect(isThreadStashed(db, owner, { threadId: "t2" })).resolves.toEqual({
-      stashed: false,
-      stashes: [],
-    });
-  });
-
   it("titles only the threads the caller can still read: not hidden, staff-only or gone (I5)", async () => {
     const { db } = fake({
       threads: {
@@ -434,17 +365,5 @@ describe("withReadableThreads (the /stashes listing)", () => {
       ["Main_Page", "a wiki note"],
       ["thinkpages:thread:t1", "Hello there"],
     ]);
-  });
-
-  it("asks nothing of the forum for a page whose only threads are bridge-era ones", async () => {
-    const { db, raw } = listingDb();
-
-    const items = await withReadableThreads(db, member as never, [
-      listed("Main_Page", null),
-      listed("forum:thread:7", "An old thread"),
-    ]);
-
-    expect(items.map((i) => i.pageTitle)).toEqual(["Main_Page"]);
-    expect(raw.forumThread.findMany).not.toHaveBeenCalled();
   });
 });

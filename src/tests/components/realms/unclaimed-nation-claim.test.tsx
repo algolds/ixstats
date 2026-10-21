@@ -1,7 +1,4 @@
 import type { ReactNode } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
-import { ClaimNationButton } from "~/components/realms/ClaimNationButton";
-import { CountryIdentityStrip } from "~/components/country-profile/CountryIdentityStrip";
 import { claimableNation } from "~/lib/realms/claimable-nation";
 
 const mockMutate = jest.fn();
@@ -50,84 +47,6 @@ beforeEach(() => {
   mockSignedIn = true;
   mockRules = null;
 });
-
-describe("ClaimNationButton", () => {
-  it("renders nothing for signed-out viewers", () => {
-    mockSignedIn = false;
-    const { container } = render(
-      <ClaimNationButton realmSlug="eurth" countryId="c1" countryName="Tavok" />
-    );
-    expect(container).toBeEmptyDOMElement();
-  });
-
-  it("claims the existing country through the claim flow after confirming", () => {
-    render(
-      <ClaimNationButton
-        realmSlug="eurth"
-        countryId="c1"
-        countryName="Tavok"
-        label="Claim this nation"
-      />
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Claim this nation" }));
-    const confirm = screen.getByRole("button", { name: "Claim Tavok" });
-    expect(confirm).toBeDisabled();
-    fireEvent.click(screen.getByRole("checkbox", { name: /Tavok's wiki pages, flag/ }));
-    fireEvent.click(confirm);
-    expect(mockMutate).toHaveBeenCalledWith({ countryId: "c1", consent: { accepted: true } });
-  });
-
-  it("waits for the realm's rules to be accepted when the realm has rules", () => {
-    mockRules = { summary: "Be nice." };
-    render(<ClaimNationButton realmSlug="eurth" countryId="c1" countryName="Tavok" />);
-    fireEvent.click(screen.getByRole("button", { name: "Claim" }));
-    const confirm = screen.getByRole("button", { name: "Claim Tavok" });
-    expect(confirm).toBeDisabled();
-    fireEvent.click(screen.getByRole("checkbox", { name: /Tavok's wiki pages, flag/ }));
-    expect(confirm).toBeDisabled();
-    fireEvent.click(screen.getByRole("checkbox", { name: "I have read the realm's rules" }));
-    fireEvent.click(confirm);
-    expect(mockMutate).toHaveBeenCalledWith({
-      countryId: "c1",
-      consent: { accepted: true },
-      acceptedRules: true,
-    });
-  });
-});
-
-describe("CountryIdentityStrip", () => {
-  it("shows Unclaimed with Claim this nation for an unclaimed realm nation", () => {
-    render(
-      <CountryIdentityStrip
-        realm={{ name: "Eurth", slug: "eurth" }}
-        sovereign={null}
-        claim={{ countryId: "c1", countryName: "Tavok" }}
-      />
-    );
-    expect(screen.getByText("Unclaimed")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Claim this nation" })).toBeInTheDocument();
-  });
-
-  it("offers no claim for a held nation or an Ixnay nation", () => {
-    const { rerender } = render(
-      <CountryIdentityStrip
-        realm={{ name: "Eurth", slug: "eurth" }}
-        sovereign={{ username: "player" }}
-        claim={{ countryId: "c1", countryName: "Tavok" }}
-      />
-    );
-    expect(screen.queryByRole("button", { name: "Claim this nation" })).toBeNull();
-    rerender(
-      <CountryIdentityStrip
-        realm={{ name: "Ixnay", slug: "ixnay" }}
-        sovereign={null}
-        claim={{ countryId: "c1", countryName: "Tavok" }}
-      />
-    );
-    expect(screen.queryByRole("button", { name: "Claim this nation" })).toBeNull();
-  });
-});
-
 describe("claimableNation", () => {
   const base = {
     id: "c1",

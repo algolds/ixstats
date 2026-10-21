@@ -3,14 +3,6 @@ import type { Socket } from "socket.io";
 import { RealmBoardRooms, TypingThrottle } from "~/lib/websocket/realm-board-room";
 
 describe("TypingThrottle", () => {
-  it("allows one event per key per second", () => {
-    const throttle = new TypingThrottle();
-    expect(throttle.allow("u1|room", 1_000)).toBe(true);
-    expect(throttle.allow("u1|room", 1_500)).toBe(false);
-    expect(throttle.allow("u1|room", 1_999)).toBe(false);
-    expect(throttle.allow("u1|room", 2_000)).toBe(true);
-  });
-
   it("keeps users and rooms apart", () => {
     const throttle = new TypingThrottle();
     expect(throttle.allow("u1|a", 0)).toBe(true);

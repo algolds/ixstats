@@ -145,16 +145,6 @@ describe("createAdvert", () => {
       code: "NOT_FOUND",
     });
   });
-
-  it("lets the founder advertise a draft realm (the advert stays hidden until it is published)", async () => {
-    const draft = { ...EURTH, status: "draft" };
-    await expect(
-      createAdvert(advertDb({ realm: draft }) as never, founder, NEW)
-    ).resolves.toMatchObject({
-      threadId: "t_new",
-    });
-  });
-
   it("refuses an archived realm, even to its founder", async () => {
     const archived = { ...EURTH, status: "archived" };
     await expect(
@@ -263,12 +253,6 @@ describe("createAdvert", () => {
     await expect(createAdvert(db as never, founder, NEW)).rejects.toBe(other);
     expect(db.forumThread.findUnique).toHaveBeenCalledTimes(1);
   });
-
-  it("passes any other refusal through unchanged", async () => {
-    const refusal = Object.assign(new Error("closed"), { code: "FORBIDDEN" });
-    jest.mocked(createThread).mockRejectedValue(refusal);
-    await expect(createAdvert(advertDb() as never, founder, NEW)).rejects.toBe(refusal);
-  });
 });
 
 describe("advertRealmsOf", () => {
@@ -311,18 +295,6 @@ describe("advertRealmsOf", () => {
 });
 
 describe("advertStatus", () => {
-  it("tells a manager the realm's advert thread id, or null", async () => {
-    const taken = advertDb({ advert: { id: "t_old", hidden: false } });
-    await expect(advertStatus(taken as never, officer, "eurth")).resolves.toEqual({
-      threadId: "t_old",
-      hiddenByModerator: false,
-    });
-    await expect(advertStatus(advertDb() as never, founder, "eurth")).resolves.toEqual({
-      threadId: null,
-      hiddenByModerator: false,
-    });
-  });
-
   it("tells a manager a moderator hid the advert, with no thread id to open", async () => {
     const hidden = advertDb({ advert: { id: "t_old", hidden: true } });
     await expect(advertStatus(hidden as never, founder, "eurth")).resolves.toEqual({

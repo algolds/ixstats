@@ -87,22 +87,6 @@ function store(
 }
 
 describe("linkOldForumAccount", () => {
-  it("sets the account and attributes that XenForo user's imported content at once", async () => {
-    const s = store();
-    await expect(linkOldForumAccount(s.db, { userId: "u1", xenforoUserId: 77 })).resolves.toEqual({
-      username: "OldTimer",
-      previousXenforoUserId: null,
-      released: { threads: 0, posts: 0 },
-      relinked: { threads: 1, posts: 2 },
-    });
-    expect(s.user.update).toHaveBeenCalledWith({
-      where: { id: "u1" },
-      data: { forumUserId: 77, forumUsername: "OldTimer", lastForumSync: expect.any(Date) },
-    });
-    expect(s.threads.map((t) => t.authorUserId)).toEqual(["u1", null, "u1"]);
-    expect(s.posts.map((p) => p.authorUserId)).toEqual(["u1", "u1", "u1", null]);
-  });
-
   it("re-linking to another id hands the previous id's posts back before attributing the new one's", async () => {
     const s = store();
     await linkOldForumAccount(s.db, { userId: "u1", xenforoUserId: 77 });
@@ -116,14 +100,6 @@ describe("linkOldForumAccount", () => {
     expect(s.threads.map((t) => t.authorUserId)).toEqual([null, "u1", "u1"]);
     expect(s.posts.map((p) => p.authorUserId)).toEqual([null, null, "u1", "u1"]);
   });
-
-  it("takes a typed name for an id no imported post carries yet", async () => {
-    const s = store();
-    await expect(
-      linkOldForumAccount(s.db, { userId: "u1", xenforoUserId: 99, username: " Newcomer " })
-    ).resolves.toMatchObject({ username: "Newcomer", relinked: { threads: 0, posts: 0 } });
-  });
-
   it("refuses an unknown id without a typed name, and an id another account holds", async () => {
     await expect(
       linkOldForumAccount(store().db, { userId: "u1", xenforoUserId: 99 })

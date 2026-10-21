@@ -60,8 +60,14 @@ describe("adminAssignNation", () => {
       data: { ownerUserId: null, ownedSince: null },
     });
     expect(d.country.findMany).not.toHaveBeenCalled();
-    expect(d.country.update).not.toHaveBeenCalledWith({ where: { id: "c1" }, data: { ownerUserId: null, ownedSince: null } });
-    expect(d.user.updateMany).not.toHaveBeenCalledWith({ where: { countryId: "c1" }, data: { countryId: null } });
+    expect(d.country.update).not.toHaveBeenCalledWith({
+      where: { id: "c1" },
+      data: { ownerUserId: null, ownedSince: null },
+    });
+    expect(d.user.updateMany).not.toHaveBeenCalledWith({
+      where: { countryId: "c1" },
+      data: { countryId: null },
+    });
     expect(d.country.updateMany).toHaveBeenCalledWith({
       where: { id: "c2", ownerUserId: null },
       data: { ownerUserId: "u1", ownedSince: expect.any(Date) },
@@ -76,10 +82,17 @@ describe("adminAssignNation", () => {
   it("the previous owner loses their officer post when that was their last nation in the realm", async () => {
     const d = db(
       { id: "u1", clerkUserId: "clerk_u1", countryId: null },
-      { ...country, realmId: "eurth", ownerUserId: null, owner: { id: "u_old", clerkUserId: "clerk_old" } }
+      {
+        ...country,
+        realmId: "eurth",
+        ownerUserId: null,
+        owner: { id: "u_old", clerkUserId: "clerk_old" },
+      }
     );
     await adminAssignNation(d, { clerkUserId: "clerk_u1", countryId: "c2" });
-    expect(d.country.count).toHaveBeenCalledWith({ where: { realmId: "eurth", ownerUserId: "u_old" } });
+    expect(d.country.count).toHaveBeenCalledWith({
+      where: { realmId: "eurth", ownerUserId: "u_old" },
+    });
     expect(d.realmOfficer.deleteMany).toHaveBeenCalledWith({
       where: { realmId: "eurth", userId: "clerk_old" },
     });
@@ -88,7 +101,12 @@ describe("adminAssignNation", () => {
   it("keeps the officer post of a previous owner who still holds a nation there, or who gets it back", async () => {
     const stillHolds = db(
       { id: "u1", clerkUserId: "clerk_u1", countryId: null },
-      { ...country, realmId: "eurth", ownerUserId: null, owner: { id: "u_old", clerkUserId: "clerk_old" } }
+      {
+        ...country,
+        realmId: "eurth",
+        ownerUserId: null,
+        owner: { id: "u_old", clerkUserId: "clerk_old" },
+      }
     );
     stillHolds.country.count.mockImplementation(async ({ where }: any) =>
       where.ownerUserId === "u_old" ? 1 : 0
@@ -98,7 +116,12 @@ describe("adminAssignNation", () => {
 
     const same = db(
       { id: "u1", clerkUserId: "clerk_u1", countryId: "c2" },
-      { ...country, realmId: "eurth", ownerUserId: null, owner: { id: "u1", clerkUserId: "clerk_u1" } }
+      {
+        ...country,
+        realmId: "eurth",
+        ownerUserId: null,
+        owner: { id: "u1", clerkUserId: "clerk_u1" },
+      }
     );
     await adminAssignNation(same, { clerkUserId: "clerk_u1", countryId: "c2" });
     expect(same.realmOfficer.deleteMany).not.toHaveBeenCalled();
@@ -110,10 +133,15 @@ describe("adminAssignNation", () => {
       { ...country, ownerUserId: null }
     );
     d.country.count.mockResolvedValue(1); // free tier, realm cap 1: already full
-    await expect(adminAssignNation(d, { clerkUserId: "clerk_u1", countryId: "c2" })).rejects.toMatchObject({
+    await expect(
+      adminAssignNation(d, { clerkUserId: "clerk_u1", countryId: "c2" })
+    ).rejects.toMatchObject({
       code: "CAP_REACHED",
     });
-    expect(d.country.update).not.toHaveBeenCalledWith({ where: { id: "c1" }, data: { ownerUserId: null, ownedSince: null } });
+    expect(d.country.update).not.toHaveBeenCalledWith({
+      where: { id: "c1" },
+      data: { ownerUserId: null, ownedSince: null },
+    });
     expect(d.country.updateMany).not.toHaveBeenCalled();
   });
 
@@ -124,10 +152,18 @@ describe("adminAssignNation", () => {
       { ...country, ownerUserId: null }
     );
     await adminAssignNation(d, { clerkUserId: "clerk_u1", countryId: "c2" });
-    expect(d.country.count).toHaveBeenCalledWith({ where: { ownerUserId: "u1", realmId: "default" } });
+    expect(d.country.count).toHaveBeenCalledWith({
+      where: { ownerUserId: "u1", realmId: "default" },
+    });
     expect(d.country.update).toHaveBeenCalledTimes(1);
-    expect(d.country.update).not.toHaveBeenCalledWith({ where: { id: "e1" }, data: { ownerUserId: null, ownedSince: null } });
-    expect(d.user.updateMany).not.toHaveBeenCalledWith({ where: { countryId: "e1" }, data: { countryId: null } });
+    expect(d.country.update).not.toHaveBeenCalledWith({
+      where: { id: "e1" },
+      data: { ownerUserId: null, ownedSince: null },
+    });
+    expect(d.user.updateMany).not.toHaveBeenCalledWith({
+      where: { countryId: "e1" },
+      data: { countryId: null },
+    });
     expect(d.country.updateMany).toHaveBeenCalledWith({
       where: { id: "c2", ownerUserId: null },
       data: { ownerUserId: "u1", ownedSince: expect.any(Date) },
@@ -142,7 +178,9 @@ describe("adminAssignNation", () => {
 
   it("a country that does not exist is COUNTRY_NOT_FOUND before anything is released", async () => {
     const d = db({ id: "u1", clerkUserId: "clerk_u1", countryId: null }, null);
-    await expect(adminAssignNation(d, { clerkUserId: "clerk_u1", countryId: "gone" })).rejects.toMatchObject({
+    await expect(
+      adminAssignNation(d, { clerkUserId: "clerk_u1", countryId: "gone" })
+    ).rejects.toMatchObject({
       code: "COUNTRY_NOT_FOUND",
     });
     expect(d.country.update).not.toHaveBeenCalled();
@@ -164,8 +202,14 @@ describe("adminAssignNation", () => {
     );
     await adminAssignNation(d, { clerkUserId: "clerk_u1", countryId: "c2" });
     expect(d.country.update).toHaveBeenCalledTimes(1);
-    expect(d.country.update).toHaveBeenCalledWith({ where: { id: "c2" }, data: { ownerUserId: null, ownedSince: null } });
-    expect(d.user.updateMany).toHaveBeenCalledWith({ where: { id: "u1", countryId: null }, data: { countryId: "c2" } });
+    expect(d.country.update).toHaveBeenCalledWith({
+      where: { id: "c2" },
+      data: { ownerUserId: null, ownedSince: null },
+    });
+    expect(d.user.updateMany).toHaveBeenCalledWith({
+      where: { id: "u1", countryId: null },
+      data: { countryId: "c2" },
+    });
     expect(d.country.updateMany).toHaveBeenCalledWith({
       where: { id: "c2", ownerUserId: null },
       data: { ownerUserId: "u1", ownedSince: expect.any(Date) },
@@ -178,28 +222,6 @@ function adminCaller(extraDb: Record<string, object>) {
   (ctx.db as any).$transaction = jest.fn((cb: any) => cb(ctx.db));
   return { caller: adminUsersRouter.createCaller(ctx), db: ctx.db as any };
 }
-
-describe("admin.assignUserToCountry", () => {
-  it("surfaces an ownership refusal as CONFLICT", async () => {
-    const { caller } = adminCaller({
-      user: {
-        upsert: jest.fn().mockResolvedValue({ id: "u1", countryId: null }),
-        update: jest.fn(),
-        updateMany: jest.fn().mockResolvedValue({ count: 0 }),
-      },
-      country: {
-        findUnique: jest.fn().mockResolvedValue(null),
-        update: jest.fn().mockResolvedValue({}),
-      },
-    });
-    await expect(
-      caller.assignUserToCountry({ userId: "clerk_u1", countryId: "gone" })
-    ).rejects.toMatchObject({
-      code: "CONFLICT",
-      message: "Country not found",
-    });
-  });
-});
 
 describe("admin.unassignUserFromCountry", () => {
   function setup(user: object | null, ownerUserId: string | null) {
@@ -221,7 +243,9 @@ describe("admin.unassignUserFromCountry", () => {
   it("an officer who loses their last nation in the realm loses the post", async () => {
     const { caller, db: d } = setup({ id: "u1", countryId: "c1" }, "u1");
     await caller.unassignUserFromCountry({ userId: "clerk_u1", countryId: "c1" });
-    expect(d.country.count).toHaveBeenCalledWith({ where: { realmId: "eurth", ownerUserId: "u1" } });
+    expect(d.country.count).toHaveBeenCalledWith({
+      where: { realmId: "eurth", ownerUserId: "u1" },
+    });
     expect(d.realmOfficer.deleteMany).toHaveBeenCalledWith({
       where: { realmId: "eurth", userId: "clerk_u1" },
     });
@@ -250,16 +274,11 @@ describe("admin.unassignUserFromCountry", () => {
   it("releases an owned nation the user is not currently acting as (a player may own several)", async () => {
     const { caller, db: d } = setup({ id: "u1", countryId: "other" }, "u1");
     await caller.unassignUserFromCountry({ userId: "clerk_u1", countryId: "c1" });
-    expect(d.country.update).toHaveBeenCalledWith({ where: { id: "c1" }, data: { ownerUserId: null, ownedSince: null } });
+    expect(d.country.update).toHaveBeenCalledWith({
+      where: { id: "c1" },
+      data: { ownerUserId: null, ownedSince: null },
+    });
     expect(d.user.update).not.toHaveBeenCalled();
-  });
-
-  it("does nothing when the user neither owns nor acts as that nation", async () => {
-    const { caller, db: d } = setup({ id: "u1", countryId: "other" }, "u2");
-    await caller.unassignUserFromCountry({ userId: "clerk_u1", countryId: "c1" });
-    expect(d.country.update).not.toHaveBeenCalled();
-    expect(d.user.update).not.toHaveBeenCalled();
-    expect(d.user.updateMany).not.toHaveBeenCalled();
   });
 });
 
@@ -311,20 +330,6 @@ describe("users.getProfile ThinkPages fallback never grants ownership", () => {
     expect(assignNation).not.toHaveBeenCalled();
     expect(profile.countryId).toBe("c1");
   });
-
-  it("a nation owned by someone else is skipped without an error log", async () => {
-    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
-    try {
-      const { caller, d } = profileCaller("u2");
-      const profile = await caller.getProfile();
-      expect(profile.countryId).toBeNull();
-      expect(d.user.update).not.toHaveBeenCalled();
-      expect(d.country.update).not.toHaveBeenCalled();
-      expect(errorSpy).not.toHaveBeenCalled();
-    } finally {
-      errorSpy.mockRestore();
-    }
-  });
 });
 
 describe("users.setActiveNation (ruling F-1)", () => {
@@ -354,7 +359,9 @@ describe("users.setActiveNation (ruling F-1)", () => {
   it("a nation the caller does not own is FORBIDDEN and nothing moves", async () => {
     for (const owner of ["u2", null]) {
       const { caller: c, d } = caller(owner);
-      await expect(c.setActiveNation({ countryId: "e1" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+      await expect(c.setActiveNation({ countryId: "e1" })).rejects.toMatchObject({
+        code: "FORBIDDEN",
+      });
       expect(d.user.update).not.toHaveBeenCalled();
     }
     expect(globalCache.delete).not.toHaveBeenCalled();

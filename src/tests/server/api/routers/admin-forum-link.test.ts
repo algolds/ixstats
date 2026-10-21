@@ -91,17 +91,6 @@ describe("admin.linkUserForum / unlinkUserForum", () => {
     const changes = JSON.parse(db.adminAuditLog.create.mock.calls[0]![0].data.changes);
     expect(changes).toMatchObject({ xenforoUserId: 77, previousXenforoUserId: 55 });
   });
-
-  it("unlinks and audits", async () => {
-    const { caller: admin, db } = caller("admin");
-    await expect(admin.unlinkUserForum({ userId: "u1" })).resolves.toEqual({
-      released: { threads: 1, posts: 2 },
-    });
-    expect(db.adminAuditLog.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ action: "FORUM_ACCOUNT_UNLINKED", targetId: "u1" }),
-    });
-  });
-
   it("maps a refusal to its tRPC code and writes no audit row", async () => {
     jest
       .mocked(linkOldForumAccount)

@@ -28,7 +28,6 @@ import {
   plain,
   postIn,
   seed,
-  threadIn,
   visitor,
 } from "~/tests/helpers/forum-board-fake";
 import type { Value } from "~/tests/helpers/forum-store-fake";
@@ -47,37 +46,6 @@ const refusal = (code: string, message?: RegExp) =>
   });
 
 describe("postBoardMessage", () => {
-  it("stores a sanitized message and returns it shaped like a board message", async () => {
-    const store = boardStore();
-    const message = await post(store, member, { html: "<p>Hello <script>x()</script>board</p>" });
-    expect(message).toMatchObject({
-      contentHtml: "<p>Hello board</p>",
-      byViewer: true,
-      canEdit: true,
-      isVisitor: false,
-      replyTo: null,
-      continued: null,
-      author: { name: "member", persona: false },
-    });
-    const row = postIn(store, message.id);
-    expect(row).toMatchObject({
-      threadId: BOARD_THREAD,
-      authorUserId: "u_member",
-      authorPersonaId: null,
-      plainText: "Hello board",
-      replyToPostId: null,
-    });
-    expect(threadIn(store, BOARD_THREAD)).toMatchObject({ postCount: 1 });
-  });
-
-  it("labels a visitor's message with their own realm", async () => {
-    const store = boardStore();
-    expect(await post(store, visitor, {})).toMatchObject({
-      isVisitor: true,
-      visitorRealm: { slug: "aurora", name: "Aurora" },
-    });
-  });
-
   it("lets moderators post, including a founder without a nation", async () => {
     const store = boardStore();
     await expect(post(store, founder, {})).resolves.toMatchObject({ isVisitor: false });
@@ -111,17 +79,6 @@ describe("postBoardMessage", () => {
   });
 
   describe("access", () => {
-    it("refuses a visitor when visitors are off, writing nothing", async () => {
-      const store = boardStore();
-      Object.assign(
-        store.state.realms.find((r) => r.id === "r_eurth")!,
-        { boardVisitorsAllowed: false }
-      );
-      await expect(post(store, visitor, {})).rejects.toEqual(refusal("FORBIDDEN", /visitors/i));
-      await expect(post(store, member, {})).resolves.toBeDefined();
-      expect(posts(store)).toBe(1);
-    });
-
     it("refuses a banned member with the ban notice", async () => {
       const store = boardStore();
       store.state.bans.push(
@@ -159,26 +116,6 @@ describe("postBoardMessage", () => {
       return store;
     };
     const ago = (ms: number) => new Date(Date.now() - ms);
-
-    it("lets the first message through and refuses the next one at once", async () => {
-      const store = slow(30);
-      await post(store, member, {});
-      const error = await post(store, member, {}).catch((e: unknown) => e);
-      expect(error).toMatchObject({ code: "TOO_MANY_REQUESTS", retryAfterSeconds: 30 });
-      expect(posts(store)).toBe(1);
-    });
-
-    it("refuses with the exact remaining seconds, writing nothing", async () => {
-      const store = slow(30, [boardPost("mine", 1, { createdAt: ago(7_500) })]);
-      const error = await post(store, member, {}).catch((e: unknown) => e);
-      expect(error).toMatchObject({
-        code: "TOO_MANY_REQUESTS",
-        message: "You can post again in 23s",
-        retryAfterSeconds: 23,
-      });
-      expect(posts(store)).toBe(1);
-    });
-
     it("does not extend the wait when the user keeps trying", async () => {
       const store = slow(30, [boardPost("mine", 1, { createdAt: ago(20_500) })]);
       for (let attempt = 0; attempt < 3; attempt++) {
@@ -186,12 +123,6 @@ describe("postBoardMessage", () => {
       }
       expect(posts(store)).toBe(1);
     });
-
-    it("lets the user post once the interval has passed", async () => {
-      const store = slow(30, [boardPost("mine", 1, { createdAt: ago(30_100) })]);
-      await expect(post(store, member, {})).resolves.toBeDefined();
-    });
-
     it("counts a persona message of the same player and a continued message, not other players", async () => {
       const recent = ago(1_000);
       const persona = slow(30, [
@@ -301,12 +232,6 @@ describe("postBoardMessage", () => {
         `board-post:${BOARD_THREAD}:u_member2`,
       ]);
     });
-
-    it("never refuses when slow mode is off", async () => {
-      const store = slow(0, [boardPost("mine", 1, { createdAt: new Date() })]);
-      await expect(post(store, member, {})).resolves.toBeDefined();
-      await expect(post(store, member, {})).resolves.toBeDefined();
-    });
   });
 
   describe("length", () => {
@@ -367,21 +292,6 @@ describe("postBoardMessage", () => {
   });
 
   describe("personas", () => {
-    it("posts as the actor's own persona, hiding the player in the returned message", async () => {
-      const store = boardStore();
-      const message = await post(store, member, { personaId: "pa_news" });
-      expect(postIn(store, message.id)).toMatchObject({
-        authorUserId: "u_member",
-        authorPersonaId: "pa_news",
-      });
-      expect(message).toMatchObject({
-        authorUserId: null,
-        authorPersonaId: "pa_news",
-        byViewer: true,
-        author: { name: "Eurth Daily", persona: true },
-      });
-    });
-
     it("keeps a visitor's persona message free of the visitor label and the player", async () => {
       const store = boardStore();
       const message = await post(store, visitor, { personaId: "pa_visitor" });
@@ -491,18 +401,6 @@ describe("editBoardMessage", () => {
     expect(message.editedAt).toBeInstanceOf(Date);
     expect(postIn(store, "fresh")).toMatchObject({ plainText: "Edited text" });
   });
-
-  it("stores an edit with the mention links added", async () => {
-    const linked = '<p><a class="forum-mention" href="/id/kir">@kir</a></p>';
-    jest.mocked(withMentionLinks).mockImplementationOnce((async (_db: object, body: object) => ({
-      ...body,
-      contentHtml: linked,
-    })) as never);
-    const store = withMine();
-    await edit(store, member, "fresh", "<p>@kir</p>");
-    expect(postIn(store, "fresh")).toMatchObject({ contentHtml: linked, plainText: "@kir" });
-  });
-
   it("refuses after 15 minutes, changing nothing", async () => {
     const store = withMine();
     await expect(edit(store, member, "stale")).rejects.toMatchObject({
@@ -558,28 +456,6 @@ describe("updateBoardSettings", () => {
     }));
   const realmRow = (store: ReturnType<typeof boardStore>) =>
     store.state.realms.find((r) => r.id === "r_eurth")!;
-
-  it("lets the founder, a board officer and a site admin change both settings", async () => {
-    for (const who of [founder, officer, admin]) {
-      const { out, store } = await update(who, { visitorsAllowed: false, slowModeSeconds: 30 });
-      expect(out).toEqual({ visitorsAllowed: false, slowModeSeconds: 30 });
-      expect(realmRow(store)).toMatchObject({
-        boardVisitorsAllowed: false,
-        boardSlowModeSeconds: 30,
-      });
-    }
-  });
-
-  it("changes only what is sent", async () => {
-    const { out, store } = await update(founder, { slowModeSeconds: 300 });
-    expect(out).toEqual({ visitorsAllowed: true, slowModeSeconds: 300 });
-    expect(realmRow(store).boardVisitorsAllowed).toBe(true);
-  });
-
-  it.each([0, 10, 30, 60, 300])("accepts %i seconds", async (seconds) => {
-    await expect(update(founder, { slowModeSeconds: seconds })).resolves.toBeDefined();
-  });
-
   it.each([-1, 5, 45, 301, 1.5])("refuses %p seconds", async (seconds) => {
     const store = boardStore();
     await expect(

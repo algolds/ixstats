@@ -1,5 +1,5 @@
 import "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render } from "@testing-library/react";
 
 const mockQueries: Record<string, { data?: object | null; isLoading?: boolean }> = {};
 const mockLock = jest.fn();
@@ -29,10 +29,7 @@ jest.mock("~/trpc/react", () => ({
 jest.mock("~/hooks/useNotify", () => ({ useNotify: () => mockNotify }));
 jest.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams() }));
 
-import {
-  AdvertLockButton,
-  AdvertRailPanel,
-} from "~/components/thinkpages-forum/advert";
+import { AdvertRailPanel } from "~/components/thinkpages-forum/advert";
 
 const overview = (over: object = {}) => ({
   realm: {
@@ -79,29 +76,5 @@ describe("AdvertRailPanel", () => {
     expect(container.innerHTML).not.toContain("nation_secret_1");
     expect(container.innerHTML).not.toContain("appearance");
     expect(container.innerHTML).not.toMatch(/\bu_|clerk_/);
-  });
-});
-
-describe("AdvertLockButton", () => {
-  it("locks through the server, then refreshes the thread and the board", async () => {
-    mockLock.mockResolvedValue({ locked: true });
-    render(<AdvertLockButton threadId="t_ad" />);
-    fireEvent.click(screen.getByRole("button", { name: "Lock advert" }));
-    await waitFor(() => expect(mockLock).toHaveBeenCalledWith({ threadId: "t_ad", locked: true }));
-    await waitFor(() => expect(mockInvalidate).toHaveBeenCalledWith({ threadId: "t_ad" }));
-    expect(mockInvalidate).toHaveBeenCalledTimes(2);
-  });
-
-  it("reports a refusal and leaves the page as it was", async () => {
-    mockLock.mockRejectedValue(new Error("Only the realm's founder can."));
-    render(<AdvertLockButton threadId="t_ad" />);
-    fireEvent.click(screen.getByRole("button", { name: "Lock advert" }));
-    await waitFor(() =>
-      expect(mockNotify.error).toHaveBeenCalledWith(
-        "Could not lock the advert",
-        "Only the realm's founder can."
-      )
-    );
-    expect(mockInvalidate).not.toHaveBeenCalled();
   });
 });

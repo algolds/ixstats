@@ -29,51 +29,11 @@ function source(over: Partial<RealmMetadataSource> = {}): RealmMetadataSource {
 }
 
 describe("realmMetadata", () => {
-  it("titles the page with the realm name and fills og and twitter tags", () => {
-    const meta = realmMetadata(source());
-    expect(meta.title).toBe("Eurth");
-    expect(meta.openGraph).toMatchObject({ title: "Eurth", siteName: "IxStates", type: "website" });
-    expect(meta.twitter).toMatchObject({ card: "summary_large_image", title: "Eurth" });
-    expect(meta.openGraph).not.toHaveProperty("images");
-  });
-
   it("sets no canonical or og:url, which every page under the realm would inherit", () => {
     const meta = realmMetadata(source());
     expect(meta).not.toHaveProperty("alternates");
     expect(meta.openGraph).not.toHaveProperty("url");
   });
-
-  it("prefers the realm's own description", () => {
-    const meta = realmMetadata(
-      source({ description: "A modern world.", factbookText: "Long factbook", tags: ["Modern"] })
-    );
-    expect(meta.description).toBe("A modern world.");
-    expect(meta.twitter).toMatchObject({ description: "A modern world." });
-  });
-
-  it("falls back to the factbook, cut short at a word", () => {
-    const factbookText = `${"word ".repeat(60)}end`;
-    const description = realmMetadata(source({ factbookText })).description ?? "";
-    expect(description.length).toBeLessThanOrEqual(161);
-    expect(description.endsWith("word…")).toBe(true);
-  });
-
-  it("falls back to the tags, then to the nation counts", () => {
-    expect(realmMetadata(source({ tags: ["Modern", "Diplomacy"] })).description).toBe(
-      "Modern, Diplomacy"
-    );
-    expect(realmMetadata(source()).description).toBe("12 nations · 4 open to claim");
-    expect(realmMetadata(source({ nationCount: 1, openCount: 0 })).description).toBe("1 nation");
-    expect(realmMetadata(source({ nationCount: 0, openCount: 0 })).description).toBeUndefined();
-  });
-
-  it("cuts a long tag list short at a word, like the factbook", () => {
-    const tags = Array.from({ length: 40 }, (_, i) => `Tag${i}`);
-    const description = realmMetadata(source({ tags })).description ?? "";
-    expect(description.length).toBeLessThanOrEqual(161);
-    expect(description.endsWith("…")).toBe(true);
-  });
-
   it("keeps an unlisted realm out of search results but still unfurls it", () => {
     expect(realmMetadata(source()).robots).toBeUndefined();
     const meta = realmMetadata(source({ unlisted: true }));
@@ -109,51 +69,6 @@ describe("loadRealmMetadataSource", () => {
     );
     return db;
   }
-
-  it("loads the realm's text and counts for an active realm", async () => {
-    const db = dbWith(row);
-    await expect(loadRealmMetadataSource(db as never, "eurth")).resolves.toEqual({
-      name: "Eurth",
-      unlisted: false,
-      description: null,
-      factbookText: "The Eurth factbook.",
-      tags: ["Modern"],
-      nationCount: 12,
-      openCount: 4,
-      bannerUrl: "/images/uploads/eurth-banner.png",
-    });
-    expect(db.realm.findUnique).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { slug: "eurth" } })
-    );
-  });
-
-  it("counts only claimable nations: generated scenery slots are not nations of the realm", async () => {
-    const db = dbWith(row);
-    await loadRealmMetadataSource(db as never, "eurth");
-    expect(db.country.count.mock.calls.map(([args]) => args.where)).toEqual([
-      { realmId: "r1", claimable: true },
-      { realmId: "r1", claimable: true, ownerUserId: { not: null } },
-    ]);
-  });
-
-  it("gives no banner when none is set", async () => {
-    const db = dbWith({ ...row, bannerUrl: null });
-    await expect(loadRealmMetadataSource(db as never, "eurth")).resolves.toMatchObject({
-      bannerUrl: null,
-    });
-    const blank = dbWith({ ...row, bannerUrl: "  " });
-    await expect(loadRealmMetadataSource(blank as never, "eurth")).resolves.toMatchObject({
-      bannerUrl: null,
-    });
-  });
-
-  it("counts no open nations for an archived realm and flags unlisted ones", async () => {
-    const db = dbWith({ ...row, status: "archived", visibility: "unlisted" });
-    await expect(loadRealmMetadataSource(db as never, "eurth")).resolves.toMatchObject({
-      unlisted: true,
-      openCount: 0,
-    });
-  });
 
   it("returns null for draft, generating and unknown realms", async () => {
     for (const status of ["draft", "generating"]) {

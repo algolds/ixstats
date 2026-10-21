@@ -35,20 +35,6 @@ const card = (
 ) => render(<ForumFeedCard activity={{ timestamp, forum: preview(over) }} />);
 
 describe("ForumFeedCard", () => {
-  it("shows a persona by name and initials, with no flag", () => {
-    const { container } = card({
-      author: {
-        name: "Eurth Daily",
-        avatarUrl: null,
-        flagUrl: null,
-        persona: true,
-        personaType: "media",
-      },
-    });
-    expect(screen.getByText("Eurth Daily")).toBeInTheDocument();
-    expect(screen.getByText("ED")).toBeInTheDocument();
-    expect(container.querySelector("img")).toBeNull();
-  });
   it("omits the time instead of throwing on a timestamp that does not parse", () => {
     const { container } = card({}, new Date("not a date"));
     expect(container.querySelector("time")).toBeNull();

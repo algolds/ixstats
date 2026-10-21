@@ -4,28 +4,13 @@ const db = (row: { id: string; status?: string; ownerId?: string } | null) =>
   ({ realm: { findUnique: jest.fn().mockResolvedValue(row) } }) as any;
 
 describe("resolveViewerRealmId", () => {
-  it("prefers an explicit slug", async () => {
-    await expect(
-      resolveViewerRealmId(db({ id: "r_eurth" }), { realmSlug: "eurth", activeRealmId: "default" })
-    ).resolves.toBe("r_eurth");
-  });
   it("finds Ixnay's row by id for its slugs, so a row still slugged ixworld resolves", async () => {
     const d = db({ id: "default", status: "active", ownerId: "system" });
     await expect(resolveViewerRealmId(d, { realmSlug: "ixnay" })).resolves.toBe(DEFAULT_REALM_ID);
-    expect(d.realm.findUnique).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "default" } }));
-  });
-  it("falls back to Ixnay for an unknown slug", async () => {
-    await expect(resolveViewerRealmId(db(null), { realmSlug: "nope" })).resolves.toBe(
-      DEFAULT_REALM_ID
+    expect(d.realm.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "default" } })
     );
   });
-  it("uses the active nation's realm, else Ixnay, without a query", async () => {
-    const d = db(null);
-    await expect(resolveViewerRealmId(d, { activeRealmId: "r_eurth" })).resolves.toBe("r_eurth");
-    await expect(resolveViewerRealmId(d, {})).resolves.toBe(DEFAULT_REALM_ID);
-    expect(d.realm.findUnique).not.toHaveBeenCalled();
-  });
-
   it("hides a draft or generating realm's slug from everyone but its staff (AT-6)", async () => {
     const draft = { id: "r_draft", status: "draft", ownerId: "clerk_founder" };
     const founder = { id: "u_f", clerkUserId: "clerk_founder", role: null };

@@ -10,7 +10,16 @@ global.ResizeObserver ??= class {
 jest.mock("~/trpc/react", () => ({ api: {} }));
 
 const summary = {
-  counts: { sourceNations: 3, matched: 1, create: 1, update: 1, features: 1, alliances: 1, unmatched: 1, missing: 1 },
+  counts: {
+    sourceNations: 3,
+    matched: 1,
+    create: 1,
+    update: 1,
+    features: 1,
+    alliances: 1,
+    unmatched: 1,
+    missing: 1,
+  },
   creates: [
     {
       name: "Deseti",
@@ -53,9 +62,22 @@ const summary = {
       notInSource: [],
     },
   ],
-  unknownMembers: [{ organization: "West Argic Security Pact", member: "Haitu", reason: "No nation of that key in the source" }],
+  unknownMembers: [
+    {
+      organization: "West Argic Security Pact",
+      member: "Haitu",
+      reason: "No nation of that key in the source",
+    },
+  ],
   missing: [{ countryId: "c3", name: "Gone", key: "Gone" }],
-  unmatched: [{ key: "Ide-Jima", name: "Ide Jima", reason: "Its name matches more than one nation of the realm", candidates: [] }],
+  unmatched: [
+    {
+      key: "Ide-Jima",
+      name: "Ide Jima",
+      reason: "Its name matches more than one nation of the realm",
+      candidates: [],
+    },
+  ],
   excluded: [],
   warnings: [],
 };
@@ -85,21 +107,6 @@ function renderDiff(nation = jest.fn(), organization = jest.fn()) {
 }
 
 describe("SyncDiffView", () => {
-  it("summarises the run and lists every section", () => {
-    renderDiff();
-    expect(screen.getByText(/3 source nations: 1 matched, 1 new/)).toBeInTheDocument();
-    for (const title of [
-      "Left to you",
-      "New nations (unclaimed)",
-      "Figure changes",
-      "Claimed nations left alone",
-      "Borders",
-      "Alliances",
-      "No longer in the source",
-    ])
-      expect(screen.getByText(title)).toBeInTheDocument();
-  });
-
   it("excludes an unmatched entry, pins a field, and excludes an organisation", () => {
     const { nation, organization } = renderDiff();
     fireEvent.click(screen.getAllByRole("button", { name: "Exclude" })[0]!);

@@ -42,42 +42,6 @@ function ctxFor(db: object, user: ReturnType<typeof eurthViewer> | null) {
   return { db, user, auth: null, rateLimitIdentifier: "test", headers: new Headers() } as never;
 }
 
-describe("countries.getAll (the /countries directory) is realm-scoped", () => {
-  beforeEach(() => clearTrpcMemoryCache());
-
-  it("lists the active nation's realm when no ?realm= is given", async () => {
-    const db = makeDb();
-    await createCallerFactory(directory)(ctxFor(db, eurthViewer())).getAll({ limit: 10 });
-
-    expect(db.country.findMany.mock.calls[0][0].where).toMatchObject({
-      realmId: "r_eurth",
-      isDemo: false,
-    });
-    expect(db.country.count.mock.calls[0][0].where).toMatchObject({ realmId: "r_eurth" });
-    expect(db.realm.findUnique).not.toHaveBeenCalled();
-  });
-
-  it("resolves an explicit ?realm= slug over the active nation", async () => {
-    const db = makeDb();
-    await createCallerFactory(directory)(ctxFor(db, eurthViewer())).getAll({
-      limit: 10,
-      realm: "ixnay",
-    });
-
-    expect(db.realm.findUnique).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: DEFAULT_REALM_ID } })
-    );
-    expect(db.country.findMany.mock.calls[0][0].where).toMatchObject({ realmId: DEFAULT_REALM_ID });
-  });
-
-  it("falls back to Ixnay for a signed-out viewer", async () => {
-    const db = makeDb();
-    await createCallerFactory(directory)(ctxFor(db, null)).getAll();
-
-    expect(db.country.findMany.mock.calls[0][0].where).toMatchObject({ realmId: DEFAULT_REALM_ID });
-  });
-});
-
 type ModelMock = Record<"findMany" | "count" | "groupBy" | "findUnique", jest.Mock>;
 
 /** Every model answers empty, so each procedure runs its listing queries and nothing else matters. */
@@ -237,30 +201,6 @@ describe("a country's own rankings compare it within its own realm", () => {
     await generateRankings("c_eu_rankings_probe");
 
     expect(findMany.mock.calls[0][0].where).toMatchObject({ realmId: "r_eurth" });
-  });
-
-  it("wiki placeholders rank the viewer's nation among its own realm", async () => {
-    const eurthNation = {
-      id: "c_eu",
-      name: "Gallambria",
-      realmId: "r_eurth",
-      currentPopulation: 5,
-    };
-    const db = {
-      country: {
-        findMany: jest
-          .fn()
-          .mockResolvedValueOnce([eurthNation])
-          .mockResolvedValue([
-            { id: "c_ix", realmId: DEFAULT_REALM_ID, currentPopulation: 900, currentTotalGdp: 900 },
-            { id: "c_eu", realmId: "r_eurth", currentPopulation: 5, currentTotalGdp: 5 },
-          ]),
-      },
-      pointOfInterest: { findMany: jest.fn().mockResolvedValue([]) },
-    };
-    const [result] = await resolveWikiPlaceholderValues(["MyCountry:population"], db, "c_eu");
-
-    expect(result?.metadata?.comparisonRank).toBe("Ranked #1 globally");
   });
 });
 

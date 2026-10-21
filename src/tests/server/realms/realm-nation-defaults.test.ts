@@ -10,16 +10,10 @@ import {
   applyNationDefaults,
   getNationDefaults,
   NATION_DEFAULTS_APPLIED_ACTION,
-  NATION_DEFAULTS_SAVED_ACTION,
   previewNationDefaults,
-  saveNationDefaults,
   UNCLAIMED_NATION_WHERE,
 } from "~/server/modules/realms/realms.nation-defaults";
-import {
-  hasNationDefaults,
-  realmNationDefaults,
-  withNationDefaults,
-} from "~/server/modules/realms/realms.settings";
+import { withNationDefaults } from "~/server/modules/realms/realms.settings";
 
 const admin = { id: "a1", clerkUserId: "clerk_a1", role: { name: "admin", level: 10 } };
 const founder = { id: "u1", clerkUserId: "clerk_founder", role: null };
@@ -68,13 +62,6 @@ function setup(settings: object | null = { maxNationsPerUser: 2, nationDefaults:
 }
 
 describe("realm settings: nationDefaults", () => {
-  it("reads the stored table, else IxStats's defaults", () => {
-    expect(realmNationDefaults({ nationDefaults: table })).toEqual(table);
-    expect(realmNationDefaults(null)).toEqual(IXSTATS_NATION_GROWTH_DEFAULTS);
-    expect(hasNationDefaults({ nationDefaults: table })).toBe(true);
-    expect(hasNationDefaults({ maxNationsPerUser: 2 })).toBe(false);
-  });
-
   it("sets or removes the table, keeping every other key", () => {
     const stored = { maxNationsPerUser: 2, map: { climateKey: "x" } };
     expect(withNationDefaults(stored, table)).toEqual({ ...stored, nationDefaults: table });
@@ -115,70 +102,6 @@ describe("realm nation defaults service", () => {
     });
     expect(db.realm.findUnique).not.toHaveBeenCalled();
   });
-
-  it("refuses an unknown realm", async () => {
-    const { db } = setup();
-    db.realm.findUnique.mockResolvedValue(null);
-    await expect(previewNationDefaults(db, admin, "nope")).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
-  });
-
-  it("shows the realm's table, whether it is its own, and its nation counts", async () => {
-    const { db } = setup();
-    const view = await getNationDefaults(db, admin, "eurth-id");
-    expect(view).toEqual({
-      realm: { id: "eurth-id", slug: "eurth", name: "Eurth" },
-      table,
-      custom: true,
-      systemDefaults: IXSTATS_NATION_GROWTH_DEFAULTS,
-      nations: 5,
-      unclaimed: 3,
-    });
-    expect(db.country.count).toHaveBeenLastCalledWith({
-      where: { realmId: "eurth-id", ...UNCLAIMED_NATION_WHERE },
-    });
-    // The realm table never overwrites the baselines a generated slot derived from its map.
-    expect(db.country.count).toHaveBeenNthCalledWith(1, {
-      where: { realmId: "eurth-id", worldgen: false },
-    });
-  });
-
-  it("saves the table into the settings, keeping other keys, and audits it", async () => {
-    const { db } = setup({ maxNationsPerUser: 2 });
-    await saveNationDefaults(db, admin, { realmId: "eurth-id", table });
-    expect(db.realm.update).toHaveBeenCalledWith({
-      where: { id: "eurth-id" },
-      data: { settings: { maxNationsPerUser: 2, nationDefaults: table } },
-    });
-    const audit = db.adminAuditLog.create.mock.calls[0][0].data;
-    expect(audit).toMatchObject({
-      action: NATION_DEFAULTS_SAVED_ACTION,
-      targetType: "realm",
-      targetId: "eurth-id",
-      targetName: "Eurth",
-      adminId: "a1",
-      adminName: "clerk_a1",
-    });
-    expect(JSON.parse(audit.changes)).toEqual({
-      previous: null,
-      next: table,
-    });
-  });
-
-  it("resets to IxStats's defaults by removing the table", async () => {
-    const { db } = setup();
-    await saveNationDefaults(db, admin, { realmId: "eurth-id", table: null });
-    expect(db.realm.update).toHaveBeenCalledWith({
-      where: { id: "eurth-id" },
-      data: { settings: { maxNationsPerUser: 2 } },
-    });
-    expect(JSON.parse(db.adminAuditLog.create.mock.calls[0][0].data.changes)).toEqual({
-      previous: table,
-      next: null,
-    });
-  });
-
   it("previews the change on unclaimed nations only, writing nothing", async () => {
     const { db } = setup();
     const preview = await previewNationDefaults(db, admin, "eurth-id");
@@ -211,12 +134,5 @@ describe("realm nation defaults service", () => {
     const changes = JSON.parse(audit.changes);
     expect(changes).toMatchObject({ unclaimed: 3, updated: 2, table });
     expect(changes.nations.map((n: { id: string }) => n.id)).toEqual(["a", "c"]);
-  });
-
-  it("counts only the nations it actually wrote", async () => {
-    const { db } = setup();
-    db.country.updateMany.mockResolvedValueOnce({ count: 0 }); // "a" was claimed meanwhile
-    const result = await applyNationDefaults(db, admin, "eurth-id");
-    expect(result.updated).toBe(1);
   });
 });

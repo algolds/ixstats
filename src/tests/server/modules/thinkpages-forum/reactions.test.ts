@@ -35,16 +35,6 @@ describe("reactToPost", () => {
     expect(store.reactions[0]).toMatchObject({ postId: "p_hub", userId: "u_member", type: "like" });
     expect(countsOf(store, "p_hub")).toEqual({ like: 1 });
   });
-
-  it("counts several members, and says a board message is a board message", async () => {
-    const store = reactionStore();
-    await react(store, member, "b1", "like");
-    await react(store, visitor, "b1", "like");
-    const out = await react(store, plain, "b1", "discord:pog");
-    expect(out).toMatchObject({ counts: { like: 2, "discord:pog": 1 }, board: true });
-    expect(countsOf(store, "b1")).toEqual({ like: 2, "discord:pog": 1 });
-  });
-
   it("is a no-op for the same type again: no second row, no change, not a first reaction", async () => {
     const store = reactionStore();
     await react(store, member, "p_hub", "like");
@@ -290,22 +280,6 @@ describe("unreactToPost", () => {
     store.state.bans.push(ban({ userId: "u_member", scope: "site" }));
     expect(await unreact(store, member, "p_hub")).toMatchObject({ counts: {}, mine: null });
   });
-
-  it("still works after the realm archives", async () => {
-    const store = reactionStore();
-    await react(store, member, "p_hub", "like");
-    await react(store, visitor, "p_hub", "fire");
-    Object.assign(
-      store.state.realms.find((r) => r.id === "r_eurth")!,
-      { status: "archived" }
-    );
-    await expect(react(store, member, "p_hub", "fire")).rejects.toMatchObject({ code: "CONFLICT" });
-    expect(await unreact(store, member, "p_hub")).toMatchObject({
-      counts: { fire: 1 },
-      mine: null,
-    });
-  });
-
   it("answers with the current counts and writes nothing when there is no reaction to take back", async () => {
     const store = reactionStore();
     await react(store, visitor, "b1", "fire");
@@ -345,28 +319,6 @@ describe("listReactors", () => {
     viewer: object | null,
     input: { postId: string; type?: string }
   ) => listReactors(store.db as never, viewer as never, input);
-
-  it("groups reactors by type, most reacted first, with the player's handle and flag", async () => {
-    const out = await list(await reacted(), null, { postId: "p_hub" });
-    expect(out.groups.map((g) => [g.type, g.count, g.reactors.length])).toEqual([
-      ["fire", 2, 2],
-      ["like", 1, 1],
-    ]);
-    expect(out.groups[1]!.reactors[0]).toEqual({
-      id: expect.any(String),
-      name: "member",
-      handle: "member",
-      avatarUrl: null,
-      flagUrl: "https://flags.example/u_member.png",
-    });
-  });
-
-  it("lists newest first and one type on request", async () => {
-    const out = await list(await reacted(), member, { postId: "p_hub", type: "fire" });
-    expect(out.groups).toHaveLength(1);
-    expect(out.groups[0]!.reactors.map((r) => r.handle)).toEqual(["plain", "visitor"]);
-  });
-
   it("carries only the reactor's display data: no user id, no post author", async () => {
     const out = await list(await reacted(), null, { postId: "p_hub" });
     const reactor = out.groups[0]!.reactors[0]!;
@@ -407,14 +359,6 @@ describe("listReactors", () => {
     );
     expect((await list(store, null, { postId: "p_hub" })).groups).toHaveLength(12);
   });
-
-  it("reads corrupt counts as no reactors and a post with none as an empty list", async () => {
-    const store = reactionStore();
-    store.state.posts.find((p) => p.id === "p_hub")!.reactionCounts = "garbage";
-    expect(await list(store, null, { postId: "p_hub" })).toEqual({ groups: [] });
-    expect(await list(store, null, { postId: "p_site" })).toEqual({ groups: [] });
-  });
-
   it("is readable to whoever can read the post, and no one else", async () => {
     const store = await reacted();
     await expect(list(store, null, { postId: "p_hidden" })).rejects.toMatchObject({

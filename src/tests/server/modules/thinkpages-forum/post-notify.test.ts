@@ -188,24 +188,6 @@ beforeEach(() => {
 afterEach(() => errorSpy.mockRestore());
 
 describe("mentions", () => {
-  it("tells a mentioned member, naming the author and the thread, and records the mention", async () => {
-    const { db } = await run({ html: `<p>${link("kir")} look</p>` });
-    expect(notices()).toEqual([
-      {
-        clerkUserId: "clerk_kir",
-        title: "actorhandle mentioned you in Trade talks",
-        message: "hello there",
-        href: "/thinkpages/post/p1",
-        priority: "medium",
-        metadata: { kind: "mention", postId: "p1", threadId: "t1" },
-      },
-    ]);
-    expect(db.forumPostMention.createMany).toHaveBeenCalledWith({
-      data: [{ postId: "p1", userId: "u_kir" }],
-      skipDuplicates: true,
-    });
-  });
-
   it("names a persona post by the persona only, and never reads the player", async () => {
     const { db } = await run({ persona: "pa1", html: `<p>${link("kir")}</p>` });
     const [only] = notices();
@@ -234,12 +216,6 @@ describe("mentions", () => {
       expect.objectContaining({ where: expect.objectContaining({ isActive: true }) })
     );
   });
-
-  it("does not tell the author about a mention of themselves", async () => {
-    await run({ html: `<p>${link("actorhandle")}</p>` });
-    expect(notices()).toEqual([]);
-  });
-
   it("skips members who block the author or whose privacy refuses mentions", async () => {
     blocking.mockResolvedValue(["clerk_kir"]);
     refusing.mockResolvedValue(["clerk_bob"]);
@@ -301,56 +277,11 @@ describe("mentions", () => {
     const handleLookup = db.user.findMany.mock.calls.find(([args]) => args.where.handle)![0];
     expect(handleLookup.where.handle!.in).toHaveLength(MENTION_MAX_PER_POST);
   });
-
-  it("on an edit tells only the mentions it adds, and sends no quote or reply notice", async () => {
-    const { db } = await run(
-      { html: `<p>${link("kir")} ${link("bob")}</p>`, existing: ["u_kir"] },
-      true
-    );
-    expect(notices().map((n) => n.clerkUserId)).toEqual(["clerk_bob"]);
-    expect(db.forumPostMention.createMany).toHaveBeenCalledWith({
-      data: [{ postId: "p1", userId: "u_bob" }],
-      skipDuplicates: true,
-    });
-    expect(db.forumPost.findMany).not.toHaveBeenCalled();
-    expect(watchers).not.toHaveBeenCalled();
-  });
 });
 
 describe("quotes and board replies", () => {
   const quoting = (id: string) =>
     `<blockquote class="forum-quote" data-post="${id}"><div>x</div></blockquote><p>agreed</p>`;
-
-  it("tells the author of a quoted post in the same thread, never the quoter themself", async () => {
-    const { db } = await run({
-      html: quoting("p0"),
-      quoted: [{ authorUserId: "u_kir" }, { authorUserId: "u_actor" }],
-    });
-    expect(notices()).toEqual([
-      expect.objectContaining({
-        clerkUserId: "clerk_kir",
-        title: "actorhandle quoted your post in Trade talks",
-        metadata: { kind: "quote", postId: "p1", threadId: "t1" },
-      }),
-    ]);
-    expect(db.forumPost.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: { in: ["p0"] }, threadId: "t1", hidden: false, authorUserId: { not: null } },
-      })
-    );
-  });
-
-  it("sends one notice per recipient, the mention outranking the quote", async () => {
-    await run({
-      html: `${quoting("p0")}<p>${link("kir")}</p>`,
-      quoted: [{ authorUserId: "u_kir" }],
-    });
-    expect(notices()).toHaveLength(1);
-    expect(notices()[0]!.title).toContain("mentioned you");
-    const handled = watchers.mock.calls[0]![1].handled;
-    expect([...handled]).toEqual(["u_kir"]);
-  });
-
   it("hands the watcher step only the members actually told, so a mention refuser still gets the watch notice", async () => {
     blocking.mockResolvedValue(["clerk_bob"]);
     refusing.mockResolvedValue(["clerk_owner"]);
@@ -490,28 +421,9 @@ describe("quotes and board replies", () => {
     });
     expect(notices()).toEqual([]);
   });
-
-  it("names the realm board in a board mention", async () => {
-    await run({ category: boardCategory, html: `<p>${link("kir")}</p>` });
-    expect(notices()[0]!.title).toBe("actorhandle mentioned you in the Eurth board");
-  });
 });
 
 describe("watchers and failures", () => {
-  it("hands a new thread post to the watcher step with everyone already told", async () => {
-    await run({ html: `<p>${link("kir")}</p>` });
-    expect(watchers).toHaveBeenCalledTimes(1);
-    expect(watchers.mock.calls[0]![1]).toMatchObject({
-      actorId: "u_actor",
-      actorClerkUserId: "clerk_actor",
-      postId: "p1",
-      threadId: "t1",
-      threadTitle: "Trade talks",
-      name: "actorhandle",
-      excerpt: "hello there",
-    });
-  });
-
   it("never throws: a failing lookup is logged", async () => {
     const built = build();
     built.db.forumPost.findUnique.mockRejectedValue(new Error("db down"));

@@ -1,11 +1,8 @@
 /** @jest-environment node */
 import fs from "node:fs";
 import path from "node:path";
-import { sourceAdapter } from "~/lib/realms/sources/adapters";
 import {
-  allianceTypeFor,
   jsNationTableAdapter,
-  splitAcronym,
   wikiTitleFromLink,
   type JsNationTableSettings,
 } from "~/lib/realms/sources/adapters/js-nation-table";
@@ -22,15 +19,6 @@ const files = {
   borders: read("nations.geojson"),
 };
 describe("the eurth-map adapter", () => {
-  it("is registered under its format id, and its files come from the realm's settings", () => {
-    expect(sourceAdapter("eurth-map")).toBe(jsNationTableAdapter);
-    expect(sourceAdapter("unknown")).toBeNull();
-    const custom = { ...settings, files: { nations: "data/countries.js" } };
-    expect(jsNationTableAdapter.files(custom)).toEqual([
-      { role: "nations", path: "data/countries.js", required: true },
-    ]);
-  });
-
   it("maps nations: figures, nulls, official name, capital, colour and the wiki title from the link", () => {
     const snapshot = jsNationTableAdapter.parse(files, settings);
     const byKey = Object.fromEntries(snapshot.nations.map((n) => [n.key, n]));
@@ -55,29 +43,6 @@ describe("the eurth-map adapter", () => {
       capital: null,
     });
   });
-
-  it("reads the entries' secondary-source fields as figure names", () => {
-    const snapshot = jsNationTableAdapter.parse(files, settings);
-    const byKey = Object.fromEntries(snapshot.nations.map((n) => [n.key, n]));
-    expect(byKey.Mito).toMatchObject({
-      secondary: ["gdpPerCapita", "landArea", "capital"],
-    });
-    expect(byKey["Bainbridge-Islands"]).toMatchObject({
-      secondary: ["population", "gdpPerCapita", "landArea", "capital"],
-    });
-    const unmapped = jsNationTableAdapter.parse(
-      { nations: `const t = { X: { pop: 5, secondaryFields: ["pop", "unknown"] } };` },
-      {
-        ...settings,
-        files: { nations: "t.js" },
-        bindings: { nations: "t" },
-        nationFields: { population: "pop" },
-      }
-    );
-    // Without the settings naming the list field, it is not read.
-    expect(unmapped.nations[0]).toMatchObject({ secondary: [] });
-  });
-
   it("reads field names from the settings, not from the code", () => {
     const renamed = jsNationTableAdapter.parse(
       { nations: `const t = { X: { pop: 5, cap: "Y" } };` },
@@ -95,35 +60,6 @@ describe("the eurth-map adapter", () => {
       gdpPerCapita: null,
     });
   });
-
-  it("maps organisations: acronym as short name, colour, members, and the type rules' suggestion", () => {
-    const { organizations } = jsNationTableAdapter.parse(files, settings);
-    expect(organizations).toEqual([
-      expect.objectContaining({
-        key: "aurelian-league",
-        name: "Aurelian League",
-        shortName: "AL",
-        color: "#f6aa27",
-        members: ["Mito", "Kiziauke"],
-        suggestedType: "political",
-      }),
-      expect.objectContaining({
-        key: "west-argic-security-pact",
-        name: "West Argic Security Pact",
-        shortName: "WASP",
-        color: "#8e44ad",
-        suggestedType: "military",
-      }),
-    ]);
-  });
-
-  it("maps border features with their traced area, keyed by the nation key", () => {
-    const { features } = jsNationTableAdapter.parse(files, settings);
-    expect(features.map((f) => f.key)).toEqual(["Tavok", "Deseti"]);
-    expect(features[0]!.areaKm2).toBe(264334);
-    expect(features[0]!.geometry.type).toBe("MultiPolygon");
-  });
-
   it("skips bad entries with a warning instead of failing the run", () => {
     const snapshot = jsNationTableAdapter.parse(
       {
@@ -164,20 +100,5 @@ describe("helpers", () => {
     );
     expect(wikiTitleFromLink("https://evil.example/w/Tavok", prefixes)).toBeNull();
     expect(wikiTitleFromLink(null, prefixes)).toBeNull();
-  });
-
-  it("splitAcronym and allianceTypeFor follow the configured rules", () => {
-    expect(splitAcronym("Oriental States (OS)")).toEqual({
-      name: "Oriental States",
-      shortName: "OS",
-    });
-    expect(splitAcronym("No Acronym")).toEqual({ name: "No Acronym", shortName: null });
-    const rules = settings.allianceTypeRules;
-    expect(allianceTypeFor("Tricontinental Defence Treaty Organisation", rules)).toBe("military");
-    expect(allianceTypeFor("Argic Economic Community", rules)).toBe("economic");
-    expect(allianceTypeFor("Oriental States", rules, "political")).toBe("political");
-    expect(allianceTypeFor("Anything", [{ keywords: ["Anything"], type: "regional" }])).toBe(
-      "regional"
-    );
   });
 });

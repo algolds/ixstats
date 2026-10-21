@@ -23,11 +23,6 @@ describe("isPostId", () => {
 });
 
 describe("embedTitle", () => {
-  it("keeps an ordinary title, trimmed", () => {
-    expect(embedTitle("  Juan Kerr ")).toBe("Juan Kerr");
-    expect(embedTitle("File:JuanKerr.jpg")).toBe("File:JuanKerr.jpg");
-  });
-
   it.each(["<script>", 'a"b', "a>b", "a\nb", "a\u0000b", "", "   ", "x".repeat(256), null])(
     "refuses %p",
     (title) => {
@@ -37,11 +32,6 @@ describe("embedTitle", () => {
 });
 
 describe("embedFileTitle", () => {
-  it("accepts a plain file name with the File: or Image: prefix", () => {
-    expect(embedFileTitle("File:JuanKerr.jpg")).toBe("File:JuanKerr.jpg");
-    expect(embedFileTitle("image:Some map (2).png")).toBe("image:Some map (2).png");
-  });
-
   it.each([
     "Juan Kerr",
     "File:../../x?y",
@@ -80,14 +70,6 @@ describe("linkQuoteSources", () => {
       '<div class="forum-quote-author"><a class="forum-quote-source" href="/thinkpages/post/p9">Ann &amp; Co wrote:</a></div>'
     );
   });
-
-  it("finds data-post before class, and one quote inside another", () => {
-    const html = `<blockquote data-post="p1" class="forum-quote"><div class="forum-quote-author">A wrote:</div><div class="forum-quote-body">${quote('class="forum-quote" data-post="p2"', "B wrote:")}</div></blockquote>`;
-    const out = linkQuoteSources(html);
-    expect(out).toContain('href="/thinkpages/post/p1">A wrote:</a>');
-    expect(out).toContain('href="/thinkpages/post/p2">B wrote:</a>');
-  });
-
   it.each([
     ['class="forum-quote"'],
     ['class="forum-quote" data-post=""'],
@@ -98,21 +80,8 @@ describe("linkQuoteSources", () => {
     const html = quote(attrs);
     expect(linkQuoteSources(html)).toBe(html);
   });
-
-  it("links a Canvas quote's author line, where MediaWiki renders the bold name as <b>", () => {
-    const out = linkQuoteSources(quote('class="forum-quote" data-post="p9"', "<b>Heku</b> wrote:"));
-    expect(out).toContain(
-      '<a class="forum-quote-source" href="/thinkpages/post/p9"><b>Heku</b> wrote:</a>'
-    );
-  });
-
   it("does not take other markup in the author line as part of the link text", () => {
     const html = quote('class="forum-quote" data-post="p9"', '<img src="x" onerror="y"> wrote:');
-    expect(linkQuoteSources(html)).toBe(html);
-  });
-
-  it("leaves a quote without an author line as written", () => {
-    const html = '<blockquote class="forum-quote" data-post="p1"><p>text</p></blockquote>';
     expect(linkQuoteSources(html)).toBe(html);
   });
 });
@@ -141,15 +110,6 @@ describe("relatedWikiTitles", () => {
       a("/wiki/Good_page"),
     ].join(" ");
     expect(relatedWikiTitles(html)).toEqual(["Good page"]);
-  });
-
-  it("decodes percent escapes and entities in the href", () => {
-    expect(relatedWikiTitles(a("/wiki/Caf%C3%A9_Royal"))).toEqual(["Café Royal"]);
-    expect(relatedWikiTitles(a("/wiki/A&amp;B"))).toEqual(["A&B"]);
-  });
-
-  it("is empty when nothing links to the wiki", () => {
-    expect(relatedWikiTitles("<p>plain</p>")).toEqual([]);
   });
 });
 

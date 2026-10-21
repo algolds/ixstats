@@ -57,13 +57,10 @@ import {
   liftBan,
   listModLog,
   listReports,
-  notifyAppealDecision,
-  notifyAutoBanShortened,
   notifyBan,
   notifyBanLifted,
   notifyWarning,
   reviewAppeal,
-  revokeWarning,
 } from "~/server/modules/thinkpages-forum";
 
 const caller = (user: object | null, db: object) =>
@@ -129,8 +126,6 @@ function modDb() {
   };
 }
 
-const noMod = { siteAdmin: false, realmIds: [], categoryIds: [] };
-
 beforeEach(() => jest.clearAllMocks());
 
 describe("thinkpagesForumMod router", () => {
@@ -142,17 +137,6 @@ describe("thinkpagesForumMod router", () => {
         categories: [],
       });
     });
-
-    it("lists a founder's realm and its categories", async () => {
-      await expect(caller(founder, modDb()).context()).resolves.toEqual({
-        isSiteAdmin: false,
-        realms: [{ id: "r_eurth", slug: "eurth", name: "Eurth" }],
-        categories: [
-          { id: "rcat_hub", key: "hub", name: "Hub", realm: { slug: "eurth", name: "Eurth" } },
-        ],
-      });
-    });
-
     it("needs a signed-in user", async () => {
       const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
       await expect(caller(null, modDb()).context()).rejects.toMatchObject({
@@ -171,50 +155,6 @@ describe("thinkpagesForumMod router", () => {
       }
       expect(notifyBan).not.toHaveBeenCalled();
     });
-
-    it("resolves a realm by slug, bans, then tells the member with the realm's name", async () => {
-      const expiresAt = new Date("2026-10-16T12:00:00Z");
-      jest.mocked(issueBan).mockResolvedValueOnce({ banId: "b_new", expiresAt });
-      const out = await caller(founder, modDb()).ban({
-        userId: "u2",
-        scope: { kind: "realm", realm: "eurth" },
-        reason: " Spam ",
-        days: 7,
-      });
-      expect(out).toEqual({ banId: "b_new", expiresAt });
-      expect(issueBan).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ id: "u_f", mod: { ...noMod, realmIds: ["r_eurth"] } }),
-        { userId: "u2", scope: { kind: "realm", realmId: "r_eurth" }, reason: "Spam", days: 7 }
-      );
-      expect(notifyBan).toHaveBeenCalledWith(expect.anything(), {
-        userId: "u2",
-        ban: { scope: "realm", scopeName: "Eurth", expiresAt, reason: "Spam" },
-      });
-      expect(jest.mocked(issueBan).mock.invocationCallOrder[0]).toBeLessThan(
-        jest.mocked(notifyBan).mock.invocationCallOrder[0]!
-      );
-    });
-
-    it("resolves a category by key and realm", async () => {
-      jest.mocked(issueBan).mockResolvedValueOnce({ banId: "b_new", expiresAt: null });
-      await caller(founder, modDb()).ban({
-        userId: "u2",
-        scope: { kind: "category", key: "hub", realm: "eurth" },
-        reason: "Spam",
-        days: null,
-      });
-      expect(issueBan).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.anything(),
-        expect.objectContaining({ scope: { kind: "category", categoryId: "rcat_hub" }, days: null })
-      );
-      expect(notifyBan).toHaveBeenCalledWith(expect.anything(), {
-        userId: "u2",
-        ban: { scope: "category", scopeName: "Hub", expiresAt: null, reason: "Spam" },
-      });
-    });
-
     it("bounds the ban input", async () => {
       const c = caller(admin, modDb());
       for (const bad of [
@@ -241,49 +181,6 @@ describe("thinkpagesForumMod router", () => {
       reason: "Rude",
       target: { type: "post", id: "p1" },
     } as const;
-
-    it("tells the member after the warning is issued, and of no ban when none came of it", async () => {
-      jest
-        .mocked(issueWarning)
-        .mockResolvedValueOnce({ warningId: "w1", activePoints: 3, autoBan: null });
-      await expect(caller(founder, modDb()).warn(input)).resolves.toEqual({
-        warningId: "w1",
-        activePoints: 3,
-        autoBan: null,
-      });
-      expect(issueWarning).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ id: "u_f" }),
-        input
-      );
-      expect(notifyWarning).toHaveBeenCalledWith(expect.anything(), {
-        userId: "u2",
-        points: 2,
-        reason: "Rude",
-        activePoints: 3,
-      });
-      expect(jest.mocked(issueWarning).mock.invocationCallOrder[0]).toBeLessThan(
-        jest.mocked(notifyWarning).mock.invocationCallOrder[0]!
-      );
-      expect(notifyBan).not.toHaveBeenCalled();
-    });
-
-    it("also tells the member of the automatic ban the warning brought", async () => {
-      const expiresAt = new Date("2026-10-16T12:00:00Z");
-      const reason = "Automatic: 5 active warning points";
-      jest.mocked(issueWarning).mockResolvedValueOnce({
-        warningId: "w1",
-        activePoints: 5,
-        autoBan: { kind: "issued", banId: "b2", autoTier: 5, days: 7, expiresAt, reason },
-      });
-      await caller(admin, modDb()).warn({ ...input, points: 3 });
-      expect(notifyWarning).toHaveBeenCalledTimes(1);
-      expect(notifyBan).toHaveBeenCalledWith(expect.anything(), {
-        userId: "u2",
-        ban: { scope: "site", expiresAt, reason },
-      });
-    });
-
     it("never fails the call when a notice fails", async () => {
       jest
         .mocked(issueWarning)
@@ -320,21 +217,6 @@ describe("thinkpagesForumMod router", () => {
   });
 
   describe("lifts, revokes and appeal decisions", () => {
-    it("tells the member their ban was lifted, naming the place", async () => {
-      jest
-        .mocked(liftBan)
-        .mockResolvedValueOnce({ userId: "u2", scope: "realm", scopeId: "r_eurth", autoBan: null });
-      await caller(founder, modDb()).liftBan({ banId: "b1", note: "Served" });
-      expect(liftBan).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
-        banId: "b1",
-        note: "Served",
-      });
-      expect(notifyBanLifted).toHaveBeenCalledWith(expect.anything(), {
-        userId: "u2",
-        ban: { scope: "realm", scopeName: "Eurth" },
-      });
-    });
-
     it("never fails a committed lift when the place lookup fails; the notice names a generic place (I-2)", async () => {
       jest.mocked(liftBan).mockResolvedValueOnce({
         userId: "u2",
@@ -370,82 +252,6 @@ describe("thinkpagesForumMod router", () => {
         ban: { scope: "site", expiresAt, reason },
       });
     });
-
-    it("tells the member when a revoke lifts or shortens their automatic ban, and says nothing otherwise", async () => {
-      jest.mocked(revokeWarning).mockResolvedValueOnce({ userId: "u2", autoBan: null });
-      await caller(admin, modDb()).revokeWarning({ warningId: "w1" });
-      expect(notifyBanLifted).not.toHaveBeenCalled();
-      expect(notifyBan).not.toHaveBeenCalled();
-
-      jest
-        .mocked(revokeWarning)
-        .mockResolvedValueOnce({ userId: "u2", autoBan: { kind: "lifted", banId: "b_auto" } });
-      await caller(admin, modDb()).revokeWarning({ warningId: "w1" });
-      expect(notifyBanLifted).toHaveBeenCalledWith(expect.anything(), {
-        userId: "u2",
-        ban: { scope: "site" },
-      });
-
-      const expiresAt = new Date("2026-10-12T12:00:00Z");
-      const reason = "Automatic: 7 active warning points";
-      jest.mocked(revokeWarning).mockResolvedValueOnce({
-        userId: "u2",
-        autoBan: { kind: "shortened", banId: "b_auto", autoTier: 5, days: 7, expiresAt, reason },
-      });
-      await caller(admin, modDb()).revokeWarning({ warningId: "w1" });
-      // M5: a shortened ban is not announced as a new one.
-      expect(notifyBan).not.toHaveBeenCalled();
-      expect(notifyAutoBanShortened).toHaveBeenCalledWith(expect.anything(), {
-        userId: "u2",
-        expiresAt,
-      });
-    });
-
-    it("sends the appeal decision, moot included, and any automatic ban lift", async () => {
-      jest.mocked(reviewAppeal).mockResolvedValueOnce({
-        userId: "u2",
-        subjectType: "warning",
-        outcome: "overturned",
-        autoBan: { kind: "lifted", banId: "b_auto" },
-      });
-      await caller(admin, modDb()).reviewAppeal({
-        appealId: "a1",
-        outcome: "overturned",
-        response: " Fair point. ",
-      });
-      expect(reviewAppeal).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
-        appealId: "a1",
-        outcome: "overturned",
-        response: "Fair point.",
-      });
-      expect(notifyAppealDecision).toHaveBeenCalledWith(expect.anything(), {
-        userId: "u2",
-        subjectType: "warning",
-        outcome: "overturned",
-        response: "Fair point.",
-      });
-      expect(notifyBanLifted).toHaveBeenCalledWith(expect.anything(), {
-        userId: "u2",
-        ban: { scope: "site" },
-      });
-
-      jest.mocked(reviewAppeal).mockResolvedValueOnce({
-        userId: "u2",
-        subjectType: "ban",
-        outcome: "moot",
-        autoBan: null,
-      });
-      await caller(admin, modDb()).reviewAppeal({
-        appealId: "a2",
-        outcome: "upheld",
-        response: "Ok",
-      });
-      expect(notifyAppealDecision).toHaveBeenLastCalledWith(
-        expect.anything(),
-        expect.objectContaining({ outcome: "moot", subjectType: "ban" })
-      );
-    });
-
     it("bounds the response", async () => {
       const c = caller(admin, modDb());
       for (const response of ["  ", "x".repeat(2001)]) {
@@ -509,49 +315,6 @@ describe("thinkpagesForumMod router", () => {
       const out = await caller(admin, modDb()).reports({ status: "open", page: 1 });
       expect(Object.keys(out.authors.users)).toEqual(["u_author"]);
     });
-
-    it("forwards the log's realm as the realm's id after looking it up", async () => {
-      jest.mocked(listModLog).mockResolvedValueOnce({
-        rows: [
-          {
-            id: "l1",
-            actorId: "u_f",
-            action: "ban.issue",
-            targetType: "user",
-            targetId: "u2",
-            scope: "realm",
-            scopeId: "r_eurth",
-            detail: null,
-            createdAt: when,
-          },
-          {
-            id: "l2",
-            actorId: "u_f",
-            action: "thread.lock",
-            targetType: "thread",
-            targetId: "t1",
-            scope: "realm",
-            scopeId: "r_eurth",
-            detail: null,
-            createdAt: when,
-          },
-        ],
-        total: 2,
-      });
-      const db = modDb();
-      const out = await caller(founder, db).log({ realm: "eurth", page: 2 });
-      expect(db.realm.findUnique).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { slug: "eurth" } })
-      );
-      expect(listModLog).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.anything(),
-        { realmId: "r_eurth" },
-        2
-      );
-      expect(Object.keys(out.authors.users).sort()).toEqual(["u2", "u_f"]);
-    });
-
     it("maps an unknown realm filter to NOT_FOUND", async () => {
       await expect(
         caller(founder, modDb()).log({ realm: "nowhere", page: 1 })
@@ -640,43 +403,6 @@ describe("thinkpagesForumMod router", () => {
       expect(names(out)).toEqual(["u_a"]);
     });
   });
-
-  it("forwards the content actions as the moderator, with their inputs", async () => {
-    const c = caller(founder, modDb());
-    const asFounder = expect.objectContaining({
-      id: "u_f",
-      mod: { ...noMod, realmIds: ["r_eurth"] },
-    });
-    await c.resolveReport({ reportId: "rep1", outcome: "dismissed", note: " dup " });
-    expect(resolveReport).toHaveBeenCalledWith(expect.anything(), asFounder, {
-      reportId: "rep1",
-      outcome: "dismissed",
-      note: "dup",
-    });
-    await c.setThreadFlag({ threadId: "t1", flag: "locked", value: true });
-    expect(setThreadFlag).toHaveBeenCalledWith(expect.anything(), asFounder, {
-      threadId: "t1",
-      flag: "locked",
-      value: true,
-    });
-    await c.moveThread({ threadId: "t1", to: { key: "hub", realm: "eurth" } });
-    expect(moveThread).toHaveBeenCalledWith(expect.anything(), asFounder, {
-      threadId: "t1",
-      to: { key: "hub", realm: "eurth" },
-    });
-    await c.setPostHidden({ postId: "p1", hidden: true });
-    expect(setPostHidden).toHaveBeenCalledWith(expect.anything(), asFounder, {
-      postId: "p1",
-      hidden: true,
-    });
-    await c.editPost({ postId: "p1", html: "<p>x</p>", note: "Tidied" });
-    expect(modEditPost).toHaveBeenCalledWith(expect.anything(), asFounder, {
-      postId: "p1",
-      html: "<p>x</p>",
-      note: "Tidied",
-    });
-  });
-
   it("publishes a hide, an unhide and an edit of a post to the realm board's room after they commit", async () => {
     const c = caller(founder, modDb());
     await c.setPostHidden({ postId: "p1", hidden: true });

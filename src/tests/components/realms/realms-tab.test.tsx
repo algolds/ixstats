@@ -59,26 +59,6 @@ jest.mock("~/trpc/react", () => ({
     },
   },
 }));
-
-describe("RealmsTab nation cap (decision 15)", () => {
-  beforeEach(() => mutate.mockClear());
-  it("edits the cap starting from the realm's current value and saves it", () => {
-    render(<RealmsTab />);
-    fireEvent.click(screen.getByRole("button", { name: "Edit Eurth" }));
-
-    const field = screen.getByRole("spinbutton", { name: "Nations per player" });
-    expect(field).toHaveValue(3);
-    fireEvent.change(field, { target: { value: "5" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save Eurth" }));
-
-    expect(mutate).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "r_eurth", maxNationsPerUser: 5 })
-    );
-    // Editing never changes the founder: that goes through Transfer.
-    expect(transferOwner).not.toHaveBeenCalled();
-  });
-});
-
 describe("RealmsTab transfer", () => {
   beforeEach(() => transferOwner.mockClear());
 

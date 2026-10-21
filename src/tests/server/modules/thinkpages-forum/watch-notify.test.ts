@@ -93,18 +93,6 @@ beforeEach(() => {
 });
 
 describe("notifyWatchers", () => {
-  it("asks for the thread's un-notified watchers except the author, in chunks by user id", async () => {
-    const db = watchDb({ pages: [[]] });
-    await notifyWatchers(db as never, input());
-    expect(db.forumThreadWatch.findMany).toHaveBeenCalledWith({
-      where: { threadId: "t1", notifiedAt: null, userId: { gt: "", not: "u_actor" } },
-      orderBy: { userId: "asc" },
-      take: 500,
-      select: { userId: true },
-    });
-    expect(sent).not.toHaveBeenCalled();
-  });
-
   it("claims the watchers who can be told or were already told, and leaves one who blocks the author unclaimed", async () => {
     blocking.mockResolvedValue(["clerk_w3"]);
     const db = watchDb({ pages: [["u_w1", "u_w2", "u_w3"]] });

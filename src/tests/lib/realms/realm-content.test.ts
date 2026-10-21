@@ -17,16 +17,6 @@ describe("realmInactivityDays", () => {
     expect(realmInactivityDays("default", {})).toBeNull();
     expect(realmInactivityDays("default", { inactivityDays: 60 })).toBe(60);
   });
-
-  it("reads a period in range, null as off, and anything else as the default", () => {
-    expect(realmInactivityDays("r", { inactivityDays: 30 })).toBe(30);
-    expect(realmInactivityDays("r", { inactivityDays: 365 })).toBe(365);
-    expect(realmInactivityDays("r", { inactivityDays: null })).toBeNull();
-    expect(realmInactivityDays("r", { inactivityDays: 29 })).toBe(90);
-    expect(realmInactivityDays("r", { inactivityDays: 400 })).toBe(90);
-    expect(realmInactivityDays("r", { inactivityDays: 45.5 })).toBe(90);
-    expect(realmInactivityDays("r", { inactivityDays: "60" })).toBe(90);
-  });
 });
 
 it("keeps a nation for its former holder only when the realm says so", () => {

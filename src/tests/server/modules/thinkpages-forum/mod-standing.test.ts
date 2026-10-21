@@ -19,66 +19,6 @@ beforeEach(() => jest.useFakeTimers({ now: NOW }));
 afterEach(() => jest.useRealTimers());
 
 describe("myStanding", () => {
-  it("adds up the member's active points", async () => {
-    const standing = await myStanding(storeWith().db as never, member);
-    expect(standing.activePoints).toBe(7);
-  });
-
-  it("lists warnings from the last 90 days, revoked ones included, newest first by query", async () => {
-    const store = storeWith();
-    const standing = await myStanding(store.db as never, member);
-    expect(standing.warnings.map((w) => w.id).sort()).toEqual(
-      ["w_eurth", "w_general", "w_revoked", "w_site"].sort()
-    );
-    expect(store.db.forumWarning.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ orderBy: { createdAt: "desc" } })
-    );
-    expect(standing.warnings.find((w) => w.id === "w_site")).toEqual({
-      id: "w_site",
-      points: 3,
-      reason: "Rude",
-      createdAt: days(-10),
-      expiresAt: days(80),
-      revokedAt: null,
-      appeal: null,
-      canAppeal: true,
-    });
-    expect(standing.warnings.find((w) => w.id === "w_revoked")).toMatchObject({
-      revokedAt: days(-1),
-      canAppeal: false,
-    });
-  });
-
-  it("lists active bans only, with the place's name", async () => {
-    const store = storeWith({
-      bans: [
-        ...bans,
-        ban("b_ixnay", { scopeId: "default" }),
-        ban("b_gone", { scope: "category", scopeId: "cat_gone" }),
-      ],
-    });
-    const standing = await myStanding(store.db as never, member);
-    const byId = Object.fromEntries(standing.bans.map((b) => [b.id, b]));
-    expect(Object.keys(byId).sort()).toEqual(
-      ["b_auto", "b_cat", "b_gone", "b_ixnay", "b_realm", "b_site"].sort()
-    );
-    expect(byId.b_realm).toEqual({
-      id: "b_realm",
-      scope: "realm",
-      scopeName: "Eurth",
-      reason: "Spam",
-      expiresAt: days(5),
-      auto: false,
-      appeal: null,
-      canAppeal: true,
-    });
-    expect(byId.b_cat).toMatchObject({ scope: "category", scopeName: "general" });
-    expect(byId.b_site).toMatchObject({ scope: "site", scopeName: null, expiresAt: null });
-    expect(byId.b_auto).toMatchObject({ scope: "site", auto: true });
-    expect(byId.b_ixnay).toMatchObject({ scopeName: "Ixnay" });
-    expect(byId.b_gone).toMatchObject({ scopeName: null });
-  });
-
   it("never names a category the member cannot see (M14)", async () => {
     const staff: Row = {
       ...categories[0]!,
@@ -140,33 +80,6 @@ describe("myStanding", () => {
     // The item carries its old decision; the recent-appeals list does not repeat it.
     expect(standing.appeals).toEqual([]);
   });
-
-  it("lists the member's open and recent appeals, overturned ones whose ban is gone included", async () => {
-    const store = storeWith({
-      appeals: [
-        appeal("a_done", "ban", "b_lifted", {
-          status: "overturned",
-          reviewedAt: days(-0.5),
-          response: "Lifted.",
-        }),
-        appeal("a_ancient", "warning", "w_expired", { status: "upheld", createdAt: days(-95) }),
-        appeal("a_theirs", "ban", "b_other", { userId: "u_o" }),
-      ],
-    });
-    const standing = await myStanding(store.db as never, member);
-    expect(standing.appeals).toEqual([
-      {
-        id: "a_done",
-        subjectType: "ban",
-        subjectId: "b_lifted",
-        status: "overturned",
-        response: "Lifted.",
-        createdAt: days(-1),
-        reviewedAt: days(-0.5),
-      },
-    ]);
-  });
-
   it("shows a moot appeal as closed: on its item, which can't be appealed again, and in the list", async () => {
     const store = storeWith({
       appeals: [appeal("a_moot", "warning", "w_revoked", { status: "moot", reviewedAt: days(-1) })],

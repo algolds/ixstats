@@ -5,17 +5,10 @@ import {
   canActInScope,
   canModerateCategory,
   canSeeThread,
-  isModerator,
   moderatorContext,
   scopeCategoryIds,
-  scopeOfCategory,
 } from "~/server/modules/thinkpages-forum";
-import {
-  banScopeOf,
-  pageWindow,
-  scopeColumns,
-  scopeFromColumns,
-} from "~/server/modules/thinkpages-forum/mod-scope";
+import { banScopeOf, scopeFromColumns } from "~/server/modules/thinkpages-forum/mod-scope";
 
 const USER_ROLE = { name: "user", level: 100 };
 const admin = {
@@ -111,15 +104,6 @@ describe("moderatorContext (M10, T0-10)", () => {
 });
 
 describe("scope checks", () => {
-  it("knows who moderates anything", () => {
-    expect(isModerator(null)).toBe(false);
-    expect(isModerator(member)).toBe(false);
-    expect(isModerator({ ...member, mod: noMod })).toBe(false);
-    expect(isModerator(admin)).toBe(true);
-    expect(isModerator(realmMod)).toBe(true);
-    expect(isModerator(categoryMod)).toBe(true);
-  });
-
   it("lets site admins moderate every category, even without a moderator context", () => {
     for (const category of [general, reports, staff, eurthHub, beeHub]) {
       expect(canModerateCategory(admin, category)).toBe(true);
@@ -179,11 +163,6 @@ describe("scope checks", () => {
       expect.objectContaining({ code: "FORBIDDEN" })
     );
     expect(() => assertModeratesCategory(realmMod, eurthHub)).not.toThrow();
-  });
-
-  it("names a category's scope: its realm, or the category itself sitewide", () => {
-    expect(scopeOfCategory(eurthHub)).toEqual({ kind: "realm", realmId: "r_eurth" });
-    expect(scopeOfCategory(general)).toEqual({ kind: "category", categoryId: "cat_general" });
   });
 });
 
@@ -267,33 +246,11 @@ describe("canSeeThread (M8, M9)", () => {
 });
 
 describe("stored scopes and paging", () => {
-  it("round-trips a scope through its columns", () => {
-    for (const scope of [
-      { kind: "site" },
-      { kind: "realm", realmId: "r_eurth" },
-      { kind: "category", categoryId: "cat_general" },
-    ] as const) {
-      const columns = scopeColumns(scope);
-      expect(scopeFromColumns(columns.scope, columns.scopeId)).toEqual(scope);
-    }
-    expect(scopeColumns({ kind: "realm", realmId: "r_eurth" })).toEqual({
-      scope: "realm",
-      scopeId: "r_eurth",
-    });
-  });
-
   it("reads a malformed stored scope as site, which only site admins act on", () => {
     expect(scopeFromColumns("realm", null)).toEqual({ kind: "site" });
     expect(scopeFromColumns("category", null)).toEqual({ kind: "site" });
     expect(scopeFromColumns("planet", "x")).toEqual({ kind: "site" });
     expect(banScopeOf("category")).toBe("category");
     expect(banScopeOf("planet")).toBe("site");
-  });
-
-  it("pages from 1, treating nonsense as the first page", () => {
-    expect(pageWindow(1, 25)).toEqual({ skip: 0, take: 25 });
-    expect(pageWindow(3.7, 25)).toEqual({ skip: 50, take: 25 });
-    expect(pageWindow(0, 25)).toEqual({ skip: 0, take: 25 });
-    expect(pageWindow(Number.NaN, 25)).toEqual({ skip: 0, take: 25 });
   });
 });

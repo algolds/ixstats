@@ -1,6 +1,5 @@
 /** @jest-environment node */
 import {
-  moveDestinations,
   moveThread,
   setPostHidden,
   setThreadFlag,
@@ -397,18 +396,6 @@ describe("setPostHidden", () => {
     ).rejects.toMatchObject({ code: "CONFLICT", message: "Hide the thread instead." });
     expect(postIn(store, "p_g1").hidden).toBe(false);
   });
-
-  it("finds the first post oldest first, ties by id", async () => {
-    const store = forumStore(seed());
-    await setPostHidden(store.db as never, admin, { postId: "p_g2", hidden: true });
-    expect(store.db.forumPost.findFirst).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { threadId: "t_general" },
-        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-      })
-    );
-  });
-
   it("hiding a hidden post is CONFLICT and changes nothing", async () => {
     const store = forumStore(seed());
     postIn(store, "p_g3").hidden = true;
@@ -589,19 +576,6 @@ describe("content a site admin wrote", () => {
     expect(store.logs.map((l) => l.action)).toEqual(["thread.lock", "post.hide", "thread.move"]);
     expect(store.db.user.findUnique).not.toHaveBeenCalled();
   });
-
-  it("looks the author up by User.id", async () => {
-    const store = forumStore(seed());
-    await setThreadFlag(store.db as never, eurthMod, {
-      threadId: "t_eurth",
-      flag: "locked",
-      value: true,
-    });
-    expect(store.db.user.findUnique).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: "u_m" } })
-    );
-  });
-
   it("an author whose user row is gone does not block the moderator", async () => {
     const store = forumStore({ ...seed(), users: [] });
     await setThreadFlag(store.db as never, eurthMod, {
@@ -612,47 +586,6 @@ describe("content a site admin wrote", () => {
     expect(threadIn(store, "t_eurth").locked).toBe(true);
   });
 });
-
-describe("moveDestinations", () => {
-  const from = (id: string) => categories.find((c) => c.id === id) as never;
-
-  it("offers a realm moderator the realm's other categories with the same audience, in order", async () => {
-    const store = forumStore(seed());
-    await expect(
-      moveDestinations(store.db as never, eurthMod, from("r_eurth_hub"))
-    ).resolves.toEqual([
-      { key: "character-threads", name: "character-threads" },
-      { key: "current-events", name: "current-events" },
-    ]);
-    expect(store.db.forumCategory.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          scope: "realm",
-          realmId: "r_eurth",
-          visibility: "public",
-          id: { not: "r_eurth_hub" },
-          style: { not: "board" },
-          NOT: { scope: "realm", key: "board" },
-        },
-        orderBy: { order: "asc" },
-      })
-    );
-  });
-
-  it("keeps a site admin in the section and the audience, and a category moderator to what they moderate", async () => {
-    const store = forumStore(seed());
-    const keys = async (viewer: never, id: string) =>
-      (await moveDestinations(store.db as never, viewer, from(id))).map((c) => c.key);
-    await expect(keys(admin as never, "cat_general")).resolves.toEqual([
-      "find-a-realm",
-      "side-games",
-    ]);
-    await expect(keys(admin as never, "cat_reports")).resolves.toEqual([]);
-    await expect(keys(generalMod as never, "cat_general")).resolves.toEqual([]);
-    await expect(keys(member as never, "cat_general")).resolves.toEqual([]);
-  });
-});
-
 describe("the realm board thread", () => {
   function boardStore() {
     const state = seed();

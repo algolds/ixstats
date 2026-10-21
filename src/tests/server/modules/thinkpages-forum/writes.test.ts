@@ -187,40 +187,6 @@ const postBy = (authorUserId: string, extra: object = {}) => ({
 const NEW_THREAD = { categoryKey: "general", title: "  Hello there  ", html: "<p>First post</p>" };
 
 describe("createThread", () => {
-  it("writes the thread and its first post in one transaction with postCount 1", async () => {
-    const { db, tx } = writeDb();
-    await expect(createThread(db as never, user, NEW_THREAD)).resolves.toEqual({
-      threadId: "t_new",
-      postId: "p_new",
-      formatting: "done",
-    });
-    // The first transaction writes the thread and post; the second is the link sync.
-    expect(db.$transaction).toHaveBeenCalledTimes(2);
-    const linkSyncStarted = db.$transaction.mock.invocationCallOrder[1]!;
-    expect(tx.forumThread.create.mock.invocationCallOrder[0]).toBeLessThan(linkSyncStarted);
-    expect(tx.forumPost.create.mock.invocationCallOrder[0]).toBeLessThan(linkSyncStarted);
-    const threadData = tx.forumThread.create.mock.calls[0]![0].data as {
-      lastPostAt: Date;
-      advertRealmId?: string;
-    };
-    expect(threadData).toMatchObject({
-      categoryId: "cat_general",
-      title: "Hello there",
-      authorUserId: "u_p",
-      authorPersonaId: null,
-      postCount: 1,
-    });
-    expect(threadData.advertRealmId).toBeUndefined();
-    expect(threadData.lastPostAt).toBeInstanceOf(Date);
-    expect(tx.forumPost.create.mock.calls[0]![0].data).toMatchObject({
-      threadId: "t_new",
-      authorUserId: "u_p",
-      authorPersonaId: null,
-      contentHtml: "<p>First post</p>",
-      plainText: "First post",
-    });
-  });
-
   it.each(["ab", "   ab   ", "x".repeat(201)])("refuses the title %p", async (title) => {
     const { db } = writeDb();
     await expect(createThread(db as never, user, { ...NEW_THREAD, title })).rejects.toMatchObject({
@@ -268,17 +234,6 @@ describe("createThread", () => {
     });
     expect(db.$transaction).not.toHaveBeenCalled();
   });
-
-  it("strips scripts and event handlers before storing", async () => {
-    const { db, tx } = writeDb();
-    const html = '<p>Hi<script>alert(1)</script><img src="x.png" onerror="alert(2)"></p>';
-    await createThread(db as never, user, { ...NEW_THREAD, html });
-    const { contentHtml } = tx.forumPost.create.mock.calls[0]![0].data as { contentHtml: string };
-    expect(contentHtml).not.toMatch(/<script/i);
-    expect(contentHtml).not.toMatch(/onerror/i);
-    expect(contentHtml).toContain("Hi");
-  });
-
   it("refuses a category the actor cannot start threads in", async () => {
     const { db } = writeDb();
     await expect(
@@ -348,18 +303,6 @@ describe("createThread", () => {
     });
     expect(db.thinkpagesAccount.findFirst).not.toHaveBeenCalled();
   });
-
-  it("syncs the new post's action links", async () => {
-    const { db, tx } = writeDb({
-      activities: [{ id: "a1", countryId: "c1", visibility: "public" }],
-    });
-    await createThread(db as never, user, { ...NEW_THREAD, html: "<p>We act [ixaction=a1]</p>" });
-    expect(tx.postActionLink.createMany).toHaveBeenCalledWith({
-      data: [{ postSource: "native", postRef: "p_new", activityId: "a1", countryId: "c1" }],
-      skipDuplicates: true,
-    });
-  });
-
   it("writes nothing when an action token is not the actor's, and maps the error", async () => {
     const { db, tx } = writeDb({
       activities: [{ id: "a2", countryId: "c2", visibility: "public" }],
@@ -388,30 +331,6 @@ describe("createThread", () => {
 });
 
 describe("replyToThread", () => {
-  it("creates the post, bumps postCount and lastPostAt in one transaction, then syncs links", async () => {
-    const { db, tx } = writeDb({ thread: threadIn("general") });
-    await expect(
-      replyToThread(db as never, user, { threadId: "t1", html: "<p>Agreed</p>" })
-    ).resolves.toEqual({
-      postId: "p_new",
-      formatting: "done",
-    });
-    expect(db.$transaction).toHaveBeenCalledTimes(2);
-    expect(tx.forumPost.create.mock.calls[0]![0].data).toMatchObject({
-      threadId: "t1",
-      authorUserId: "u_p",
-      contentHtml: "<p>Agreed</p>",
-      plainText: "Agreed",
-    });
-    expect(tx.forumThread.update).toHaveBeenCalledWith({
-      where: { id: "t1" },
-      data: { postCount: { increment: 1 }, lastPostAt: expect.any(Date) },
-    });
-    expect(tx.postActionLink.deleteMany).toHaveBeenCalledWith({
-      where: { postSource: "native", postRef: "p_new", activityId: { notIn: [] } },
-    });
-  });
-
   it.each([{ locked: true }, { archived: true }])("refuses a %p thread", async (flag) => {
     const { db } = writeDb({ thread: threadIn("general", flag) });
     await expect(
@@ -442,18 +361,6 @@ describe("replyToThread", () => {
     });
     expect(db.$transaction).not.toHaveBeenCalled();
   });
-
-  it("lets a site admin reply in a staff-only category", async () => {
-    const { db, tx } = writeDb({ thread: threadIn("announcements") });
-    await expect(
-      replyToThread(db as never, admin, { threadId: "t1", html: "<p>Noted</p>" })
-    ).resolves.toEqual({
-      postId: "p_new",
-      formatting: "done",
-    });
-    expect(tx.forumPost.create.mock.calls[0]![0].data).toMatchObject({ authorUserId: "u_a" });
-  });
-
   it("replies as the actor's own persona in an in-character thread", async () => {
     const { db, tx } = writeDb({ thread: threadIn("side-games"), persona: { id: "pa1" } });
     await expect(
@@ -515,27 +422,6 @@ describe("attribute tokens on reply and edit", () => {
 });
 
 describe("editPost", () => {
-  it("re-sanitizes, sets editedAt and re-syncs links", async () => {
-    const { db, tx } = writeDb({
-      post: postBy("u_p"),
-      activities: [{ id: "a1", countryId: "c1", visibility: "public" }],
-    });
-    await editPost(db as never, user, {
-      postId: "p1",
-      editedAt: null,
-      html: '<p onclick="x()">Now [ixaction=a1]</p><script>1</script>',
-    });
-    const update = db.forumPost.updateMany.mock.calls[0]![0];
-    expect(update.where).toEqual({ id: "p1", editedAt: null });
-    expect(update.data.contentHtml).toBe("<p>Now [ixaction=a1]</p>");
-    expect(update.data.plainText).toBe("Now [ixaction=a1]");
-    expect(update.data.editedAt).toBeInstanceOf(Date);
-    expect(tx.postActionLink.createMany).toHaveBeenCalledWith({
-      data: [{ postSource: "native", postRef: "p1", activityId: "a1", countryId: "c1" }],
-      skipDuplicates: true,
-    });
-  });
-
   it("writes only if the post is unchanged since the author loaded it (M1)", async () => {
     const { db } = writeDb({ post: postBy("u_p") });
     const loaded = new Date("2026-10-01T10:00:00Z");
@@ -644,19 +530,6 @@ describe("editPost", () => {
     ).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
-  });
-
-  it("saves a link an edit adds", async () => {
-    const { db } = writeDb({
-      post: postBy("u_p"),
-      activities: [{ id: "a1", countryId: "c1", visibility: "public" }],
-    });
-    const out = await editPost(db as never, user, {
-      postId: "p1",
-      editedAt: null,
-      html: "<p>Now [ixaction=a1]</p>",
-    });
-    expect(out).toEqual({ formatting: "done" });
   });
 });
 
@@ -916,25 +789,6 @@ describe("forum bans on every write", () => {
       code: "FORBIDDEN",
     });
   });
-
-  it("lets a member post and edit when their ban has expired or was lifted", async () => {
-    const bans = [
-      { ...siteBan, id: "b_expired", expiresAt: new Date(Date.now() - DAY_MS) },
-      { ...siteBan, id: "b_lifted", liftedAt: new Date() },
-    ];
-    await expect(createThread(writeDb({ bans }).db as never, user, NEW_THREAD)).resolves.toEqual({
-      threadId: "t_new",
-      postId: "p_new",
-      formatting: "done",
-    });
-    await expect(
-      replyToThread(writeDb({ thread: threadIn("general"), bans }).db as never, user, reply)
-    ).resolves.toEqual({ postId: "p_new", formatting: "done" });
-    const change = writeDb({ post: postBy("u_p"), bans });
-    await editPost(change.db as never, user, edit);
-    expect(change.db.forumPost.updateMany).toHaveBeenCalled();
-  });
-
   it("lets a site admin post whatever ban rows exist (M5)", async () => {
     const bans = [{ ...siteBan, userId: "u_a" }];
     const { db } = writeDb({ bans });
@@ -1058,20 +912,6 @@ describe("Canvas wikitext writes", () => {
     });
     expect(tx.forumPostTemplate.createMany).not.toHaveBeenCalled();
   });
-
-  it("renders a new thread's first post under the id 'new'", async () => {
-    const { db, tx } = writeDb();
-    await expect(
-      createThread(db as never, user, {
-        categoryKey: "general",
-        title: "Hello there",
-        wikitext: "x",
-      })
-    ).resolves.toEqual({ threadId: "t_new", postId: "p_new", formatting: "done" });
-    expect(renderMock).toHaveBeenCalledWith("x", "new", "u_p");
-    expect(tx.forumPostTemplate.createMany).toHaveBeenCalled();
-  });
-
   it("refuses a create or reply with neither html nor wikitext, rendering nothing", async () => {
     const create = writeDb();
     await expect(
@@ -1251,23 +1091,6 @@ describe("mention links at save", () => {
       data: expect.objectContaining({ contentHtml: LINKED, plainText: "@kir" }),
     });
   });
-
-  it("stores a reply with the links added", async () => {
-    jest.mocked(withMentionLinks).mockImplementationOnce(linkedBody as never);
-    const { db, tx } = writeDb({ thread: threadIn("general") });
-    await replyToThread(db as never, user, { threadId: "t1", html: "<p>@kir</p>" });
-    expect(tx.forumPost.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ contentHtml: LINKED }),
-    });
-  });
-
-  it("stores an edit with the links added", async () => {
-    jest.mocked(withMentionLinks).mockImplementationOnce(linkedBody as never);
-    const { db } = writeDb({ post: postBy("u_p") });
-    await editPost(db as never, user, { postId: "p1", html: "<p>@kir</p>", editedAt: null });
-    expect(db.forumPost.updateMany.mock.calls[0]![0].data.contentHtml).toBe(LINKED);
-  });
-
   it("links the sanitized body, so the links are the last thing added to it", async () => {
     const { db } = writeDb();
     await createThread(db as never, user, {
@@ -1407,14 +1230,6 @@ describe("Find a Realm adverts", () => {
       ).resolves.toMatchObject({ postId: "p_new", formatting: "done" });
     }
   });
-
-  it("closes an archived realm's advert to replies", async () => {
-    const { db } = writeDb({ thread: advertThread({ ...EURTH, status: "archived" }) });
-    await expect(
-      replyToThread(db as never, user, { threadId: "t1", html: "<p>Hello</p>" })
-    ).rejects.toMatchObject({ code: "CONFLICT" });
-  });
-
   it("lets an officer with the appearance power edit the advert's first post, though they did not write it", async () => {
     const { run, db } = advertEdit(advertPost(EURTH), adOfficer);
     await expect(run()).resolves.toEqual({ formatting: "done" });

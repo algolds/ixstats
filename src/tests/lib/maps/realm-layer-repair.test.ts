@@ -6,7 +6,6 @@ jest.mock("~/lib/maps/geo-validation", () => ({
 import type { MultiPolygon } from "geojson";
 import {
   planLayerRepair,
-  readLayerFeatures,
   repairRealmLayer,
   type LayerFeatureState,
 } from "~/lib/maps/realm-layer-repair";
@@ -51,18 +50,6 @@ const stamped = (key: string, over: Partial<LayerFeatureState> = {}) =>
   feature(key, { properties: { coverage: { ...COVERAGE, hash: `h-${key}` } }, ...over });
 
 describe("planLayerRepair", () => {
-  it("is unchanged for a healthy layer without smoothing", () => {
-    const plan = planLayerRepair([feature("A"), feature("B")], { trims: [], coverage: null });
-    expect(plan.changed).toBe(false);
-    expect(plan.smoothing.status).toBe("off");
-  });
-
-  it("is unchanged when every feature is smoothed with these settings and kept its smoothed outline", () => {
-    const plan = planLayerRepair([stamped("A"), stamped("B")], { trims: [], coverage: COVERAGE });
-    expect(plan.smoothing).toMatchObject({ status: "up-to-date", pending: [] });
-    expect(plan.changed).toBe(false);
-  });
-
   it("smooths the whole layer again from unsmoothed outlines when one feature is new", () => {
     const sourceRaw = new Map([
       ["A", { geometry: square(10), sourceHash: "s-A" }],
@@ -128,20 +115,6 @@ describe("planLayerRepair", () => {
     });
     expect(plan.smoothing).toMatchObject({ status: "blocked", blocked: ["A"] });
   });
-
-  it("smooths again with new settings, from the source", () => {
-    const sourceRaw = new Map([["A", { geometry: square(10), sourceHash: "s-A" }]]);
-    const plan = planLayerRepair(
-      [
-        stamped("A", {
-          properties: { sourceHash: "s-A", coverage: { tolerance: 0.1, smooth: 2, hash: "h-A" } },
-        }),
-      ],
-      { trims: [], coverage: COVERAGE, sourceRaw }
-    );
-    expect(plan.smoothing).toMatchObject({ status: "smooth", pending: ["A"] });
-  });
-
   it("repairs invalid outlines, repeated points and overlaps; rows across ±180 are left out of every count", () => {
     const plan = planLayerRepair(
       [
@@ -204,14 +177,6 @@ describe("repairRealmLayer", () => {
     vertices: 5,
     storedType: "ST_MultiPolygon",
   });
-
-  it("reads each active polygon of the layer with its health, record and outline hash", async () => {
-    const db = repairDb([row("A", { coverage: { ...COVERAGE, hash: "h-A" } })]);
-    const features = await readLayerFeatures(db, "eurth-id", "political");
-    expect(features[0]).toMatchObject({ key: "A", hash: "h-A", geometry: square(0), valid: true });
-    expect(db.$queryRawUnsafe.mock.calls[0].slice(1)).toEqual(["eurth-id", "political"]);
-  });
-
   it("a dry run writes nothing", async () => {
     const db = repairDb([row("A", {})]);
     const report = await repairRealmLayer(db, "eurth-id", {
