@@ -42,6 +42,8 @@ const NOT_FOLLOWED: Record<string, string> = {
 };
 const followed = (file: string) => !Object.keys(NOT_FOLLOWED).some((skip) => file.startsWith(skip));
 
+// ponytail: regex over source, not the type checker. A write through a computed delegate (`db[model]`) or a name
+// re-bound at runtime is not seen; an unscannable procedure is caught by the "reads every app mutation" case.
 /** A write to a table that holds IxCredits, Sovereigns or card ownership, through Prisma or raw SQL. */
 const MONEY_WRITE = new RegExp(
   String.raw`\b(vaultTransaction|myVault|cardOwnership|cardTransferEvent|cardDustBalance|cardDustEvent|cardListing|cardAuction|auctionBid|tradeOffer|exchangeWallet|exchangeTransaction|shareholding|shareListing|shareIssuance|companyDividend|sectorPosition|contractBid)\s*\.\s*(create|createMany|update|updateMany|upsert|delete|deleteMany)\b` +
