@@ -3,14 +3,12 @@ global.TextDecoder = TextDecoder as any;
 global.TextEncoder = TextEncoder as any;
 
 import { NextRequest } from "next/server";
-import {
-  GET,
-  POST
-} from "~/app/api/onoma/tts/route";
+import { GET, POST } from "~/app/api/onoma/tts/route";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "~/server/db";
 import { rateLimiter } from "~/lib/cache";
 import { globalCache } from "~/lib/cache";
+import { isSystemOwner } from "~/lib/auth";
 
 // Mock external dependencies
 jest.mock("@clerk/nextjs/server", () => ({
@@ -168,5 +166,61 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
         headers: expect.objectContaining({ Authorization: "Bearer saved-key" }),
       })
     );
+  });
+
+  describe("a signed-in player who is not staff", () => {
+    const enabled = [
+      { key: "onoma.kokoro.enabled", value: "true" },
+      { key: "onoma.kokoro.baseUrl", value: "http://kokoro-service" },
+      { key: "onoma.kokoro.engine", value: "kokoro-web" },
+    ];
+    beforeEach(() => {
+      jest.mocked(isSystemOwner).mockReturnValue(false);
+      mockAuth.mockResolvedValue({ userId: "user_123", sessionClaims: {} });
+      (rateLimiter.check as jest.Mock).mockResolvedValue({ success: true });
+      (db.systemConfig.findMany as jest.Mock).mockResolvedValue(enabled);
+      (globalCache.get as jest.Mock).mockResolvedValue(null);
+      const audio = new TextEncoder().encode("audio");
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        arrayBuffer: async () =>
+          audio.buffer.slice(audio.byteOffset, audio.byteOffset + audio.byteLength),
+        headers: { get: () => "audio/mpeg" },
+      });
+    });
+    afterEach(() => jest.mocked(isSystemOwner).mockReturnValue(true));
+
+    test("is refused the narrator unless a beta tester, and no voice service is called", async () => {
+      const response = await GET(new NextRequest("http://localhost/api/onoma/tts?text=test"));
+      expect(response.status).toBe(403);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test("as a beta tester, never makes the server call a URL or engine of the request's choosing", async () => {
+      (db.user.findUnique as jest.Mock).mockResolvedValue({
+        role: { name: "beta_tester", level: 90 },
+      });
+      const response = await POST(
+        new NextRequest("http://localhost/api/onoma/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: "Imperia",
+            ipa: "/ɪmˈpɛɾia/",
+            engine: "kokoro-fastapi",
+            fastApiUrl: "http://169.254.169.254",
+            baseUrl: "http://internal-admin:8080",
+            apiKey: "attacker-key",
+          }),
+        })
+      );
+      expect(response.status).toBe(200);
+      const urls = (global.fetch as jest.Mock).mock.calls.map(([url]) => String(url));
+      expect(urls.length).toBeGreaterThan(0);
+      expect(urls.every((url) => url.startsWith("http://kokoro-service/"))).toBe(true);
+      for (const [, init] of (global.fetch as jest.Mock).mock.calls) {
+        expect(JSON.stringify(init)).not.toContain("attacker-key");
+      }
+    });
   });
 });
