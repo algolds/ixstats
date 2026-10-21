@@ -8,8 +8,8 @@
  * `createFakeWikiDb({ prisma: true })` (the scenario tests) is closer to Prisma: rows get the schema's column defaults,
  * `select`/`include`, `where` and `orderBy` follow the relations the WikiOS reads use (an article's revisions and
  * categories, a revision's article, a membership's category), `lt`/`lte`/`gte`/`equals` (with `mode`) and the
- * `increment`/`decrement` updates work, an update stamps `updatedAt`, `withJobLock`'s lease and `fillRevisionParents` are
- * modelled, and `onQueryRaw` answers raw queries a test models.
+ * `increment`/`decrement` updates work, an update stamps `updatedAt`, `withJobLock`'s lease, `fillRevisionParents` and the
+ * statements that mark a template's or a file's users stale are modelled, and `onQueryRaw` answers raw queries a test models.
  */
 
 import { AsyncLocalStorage } from "node:async_hooks";
@@ -673,6 +673,18 @@ export function createFakeWikiDb({ prisma = false }: FakeWikiDbOptions = {}) {
         const [name, holder] = values as [string, string];
         if (leases.get(name)?.holder === holder) leases.delete(name);
         return 1;
+      }
+      const users = /UPDATE wiki_articles SET "htmlSyncedAt" = NULL WHERE source = \? AND "htmlSyncedAt" IS NOT NULL AND id IN \(SELECT "articleId" FROM (wiki_template_links|wiki_image_links) WHERE "(templateTitle|fileName)" = \?\)/.exec(sql);
+      if (prisma && users) {
+        // invalidateDependents and the mirror's upload: the pages that transclude a page, or show a file, go stale
+        const [source, name] = values as [string, string];
+        const linked = (users[1] === "wiki_template_links" ? tables.wikiTemplateLink : tables.wikiImageLink).rows;
+        const ids = new Set(linked.filter((row) => row[users[2]!] === name).map((row) => row.articleId));
+        const stale = tables.wikiArticle.rows.filter(
+          (row) => row.source === source && row.htmlSyncedAt && ids.has(row.id)
+        );
+        for (const row of stale) row.htmlSyncedAt = null;
+        return stale.length;
       }
       if (prisma && sql.includes('SET "parentRevisionId" = chain."previousId"')) {
         // fillRevisionParents: each live revision without a parent gets the live one before it, by (createdAt, id)
