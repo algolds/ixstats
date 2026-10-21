@@ -2,8 +2,8 @@
 title: Lore Cards
 description: Cards made from wiki articles, how they're made, and how to suggest one.
 badge: Vault, Cards & Rewards
-prevHref: /help/vault/trading
-prevLabel: Auctions & Trading
+prevHref: /help/vault/crafting
+prevLabel: Dust, fusion and crafting
 nextHref: /help/vault/ns-import
 nextLabel: Importing NationStates Cards
 ---

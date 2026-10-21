@@ -24,6 +24,12 @@ Packs are sold in the Store: [Vault → Store → Packs](/vault/store?view=packs
 
 Every card in a pack rolls its rarity separately against that pack's odds, which you can see in the pack's details before you buy. As a guide, the default odds are Common 65%, Uncommon 25%, Rare 7%, Ultra Rare 2%, Epic 0.9% and Legendary 0.1%; each pack sets its own, and pricier packs have better odds. If a pack guarantees a minimum rarity and none of its cards reach it, the last card is raised to that rarity.
 
+A pack always gives the odds it shows. If it has no cards left of a rarity it shows or guarantees, it isn't sold, and a pack you already own stays unopened until it has them again. Opening a pack needs room in your collection for all its cards.
+
+## Finishes
+
+Each card you pull rolls a finish: Standard, Foil (about 1 in 12) or Holo (about 1 in 50). See [Dust, fusion and crafting](/help/vault/crafting#finishes).
+
 ## Kinds of packs
 
 The seeded line-up (admins can change it) includes:
@@ -33,7 +39,8 @@ The seeded line-up (admins can change it) includes:
 
 ## Other ways to get cards
 
-- The [daily reward](/help/vault/ixcredits#the-daily-reward) card option.
-- [Auctions and trades](/help/vault/trading).
+- The [daily reward](/help/vault/ixcredits#the-daily-reward) card option. The daily card can come from any realm, at its own odds (by default the same as a pack's). It never gives Special, trophy or nation cards, and it needs room in your collection; if yours is full, take the IxCredits instead.
+- [Listings, auctions and trades](/help/vault/trading).
+- [Crafting](/help/vault/crafting#crafting) the cards you're missing.
 - [Importing your NationStates deck](/help/vault/ns-import).
 - Some [achievements](/help/gameplay/achievements) award cards or packs.

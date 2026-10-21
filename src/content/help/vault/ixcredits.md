@@ -23,6 +23,7 @@ IxCredits (IxC) are the platform currency, kept in your [Vault](/vault). You ear
 | Importing a NationStates deck | 50 per new card, up to 5,000, once per NationStates nation | None |
 | Lorewards | 500 / 150 for a daily win / runner-up, 1,500 / 400 weekly, 4,000 / 1,000 monthly | None |
 | Selling cards and trades | The price you get, minus fees | None |
+| Your nation's card changing hands | 2% of a sale or of a trade's IxC, out of the market fee | None |
 
 ## Daily caps
 
@@ -36,7 +37,7 @@ If an earning would take you over a cap, you get whatever's left of the cap. Cap
 Once per UTC day, claim either **IxCredits** or **one random card**:
 
 - The credits option rolls a random amount (usually small, occasionally much larger) and scales it up with your streak and your Vault level. The payout is limited to what's left of your 100 IxC active cap for the day, so claim it before other active earnings if you want the most from it. If the cap is already used up, take the card instead.
-- The card option adds one random card to your collection.
+- The card option adds one random card to your collection. It needs room in your collection.
 - The prompt opens by itself at most once a day. If you dismiss it, claim later from the Vault widget in the Vault or Dashboard sidebar.
 - Claiming on consecutive UTC days builds your streak. Miss a day and it resets to 1.
 
@@ -52,8 +53,9 @@ A login streak raises the activity parts by 5% for each day of streak, up to 10 
 ## Spending IxCredits
 
 - **Card packs** in the Store (seeded packs cost 100 to 15,000 IxC). See [Card Packs](/help/vault/card-packs).
-- **Auctions:** bids and buyouts, plus a listing fee of 5 IxC (10 for featured). See [Auctions & Trading](/help/vault/trading).
-- **Trades:** you can add IxCredits to either side of a trade offer.
+- **Listings and auctions:** buying a listing, bids and buyouts, plus a listing fee of 5 IxC (10 for featured) when you sell. See [Auctions & Trading](/help/vault/trading).
+- **Trades:** you can add IxCredits to either side of a trade offer. The market fee applies to IxCredits that change hands in a trade over 100 IxC.
+- **Crafting** a card costs its realm's dust plus its rarity's floor value in IxCredits. See [Dust, fusion and crafting](/help/vault/crafting).
 - **Lore card suggestions** are free: you can suggest up to 3 wiki articles a day, so there is nothing to refund. See [Lore Cards](/help/vault/lore-cards).
 - **Store items** (cosmetics such as profile glows, frames and badges, card capacity boosts and MyLeague licences) when the shop has them. See [Vault Shop Items](/help/vault/shop-items).
 

@@ -448,9 +448,17 @@ export const helpSections: HelpSection[] = [
       {
         id: "trading",
         title: "Auctions & Trading",
-        description: "Auction cards, bid, buy outright, and trade directly with players.",
+        description: "List cards, run auctions, and trade directly with players.",
         path: "/help/vault/trading",
-        tags: ["auctions", "trading", "marketplace"],
+        tags: ["auctions", "trading", "marketplace", "listings", "wishlist", "royalty"],
+      },
+      {
+        id: "crafting",
+        title: "Dust, fusion and crafting",
+        description:
+          "Break down cards for dust, fuse duplicates, and craft the cards you're missing.",
+        path: "/help/vault/crafting",
+        tags: ["dust", "fusion", "crafting", "finish", "levels", "signing"],
       },
       {
         id: "lore-cards",

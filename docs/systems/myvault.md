@@ -1,13 +1,13 @@
 # 💎 Vault — Metagame Incentives, Social Economy & Collectibles
 
-**Last updated:** 2026-10-17
+**Last updated:** 2026-10-20
 
 **Parent App Suite:** Vault (`IXVAULT_VERSION = 3` → `VERSIONS.apps.ixvault` in `src/lib/buildVersion.ts`, dev codename `IxVault`)  
 **Subsystems:** Wallet, Achievements (`ACHIEVEMENTS_VERSION = 3`) and Lorewards, the cards hub (Mine, Sets, Market, Explore) and showcases, card packs, Atomic Credit Ledger, Store  
 **Primary Action:** `COLLECT` | **Domain Accent:** Raspberry (`APP_TINTS.vault`, `[data-app="vault"]` in `src/styles/facet/tokens.css`)  
 **Routes:** `/vault`, `/vault/achievements`, `/vault/cards/{mine,sets,market,explore}`, `/vault/store`, `/vault/import` (plus the redirects below) | **Status:** Release Candidate (platform 1.5.0 "Lobster Crosby") — see [Known Gaps](#known-gaps)
 
-The Vault is the platform's collectathon hub: achievements, cards and the IxCredits store under one app, in the sidebar for every signed-in player (the `showCardsTab` setting is gone), with Lorewards shared between the Vault and WikiOS. IxCredits are **pure metagame**: they reward platform activity (wiki edits, ThinkPages and forum posts, card activity, Lorewards, achievements, the daily reward). A player's country and MyCountry play no part in the Vault economy; the one exception is the 2% nation-card royalty an auction pays the nation's owner. Design: [the 2026-10-14 spec](../specs/2026-10-14-vault-collectathon-hub-design.md).
+The Vault is the platform's collectathon hub: achievements, cards and the IxCredits store under one app, in the sidebar for every signed-in player (the `showCardsTab` setting is gone), with Lorewards shared between the Vault and WikiOS. IxCredits are **pure metagame**: they reward platform activity (wiki edits, ThinkPages and forum posts, card activity, Lorewards, achievements, the daily reward). A player's country and MyCountry play no part in the Vault economy; the one exception is the 2% nation-card royalty a sale or a trade's IxC pays the nation's owner, out of the market fee. Design: [the 2026-10-14 spec](../specs/2026-10-14-vault-collectathon-hub-design.md).
 
 ---
 
@@ -56,9 +56,9 @@ Administrators can toggle individual economic features at runtime (`VaultConfig`
 - `isStoreEnabled`: Cosmetic and boost purchases (`SPEND_COSMETIC`, `SPEND_BOOST`)
 - `isPacksEnabled`: Card pack purchases (`SPEND_PACKS`)
 - `isTradingEnabled`: P2P card and credit trade offers
-- `isAuctionsEnabled`: Marketplace listing and bidding
+- `isAuctionsEnabled`: the card market switch: auctions and fixed-price listings open and close together (`assertMarketOpen`, `src/lib/cards/market/market-open.ts`); with it off, players can neither list, buy, bid nor cancel their own listings, while expiry and admin cancels still run
 - `isMaintenanceMode`: Emergency master switch blocking all ledger writes
-- Crafting has no switch any more: it is retired and its router is deleted; a leftover `vault_isCraftingEnabled` row is ignored
+- Crafting has no switch: the workshop (break down, fuse, craft; the `crafting` router) is always on, and a leftover `vault_isCraftingEnabled` row is ignored
 - Also tunable: `activeDailyCap` (100), `socialDailyCap` (50; nothing pays `EARN_SOCIAL` any more), `xpPerLevel` (1,000) and `premiumMultiplier` (display-only today). The store item's `yieldBoost` effect is labelled "Dividend boost" in the admin store form and multiplies the nightly Vault dividend. Store prices are each item's `VaultStoreItem.price`, edited in the store-item editor (the old `vault_price*` keys were removed on 2026-10-05)
 
 ---
@@ -68,7 +68,7 @@ Administrators can toggle individual economic features at runtime (`VaultConfig`
 Organized into modular sub-files:
 
 - `vault/index.ts` – Router combination
-- `vault/balance-credits.ts` – Balance, level, today's earnings and user stats (`getUserStats` returns `{ totalCards, deckValue, deckValueExTrophy }`, computed live from the copies (`copyValue`, `src/lib/cards/copy-value.ts`); `deckValue` counts trophy cards and `deckValueExTrophy`, which the dividend and deck-value achievements use, does not). `getBalance` is a plain read (the old missed-day catch-up is gone). It also pays the one-time new-player bonus to an account that never received it (see [ixcredits.md](./ixcredits.md#4-metagame-bonuses-earn_bonus--uncapped)); new accounts are paid at sign-up, with or without a country
+- `vault/balance-credits.ts` – Balance, level, today's earnings and user stats (`getUserStats` returns `{ totalCards, deckValue, deckValueExTrophy }`, computed live from the copies (`loadCopyValues`, `src/lib/cards/copy-value.ts`, the one per-copy value; see [cards.md](./cards.md#values)); `deckValue` counts trophy cards and `deckValueExTrophy`, which the dividend and deck-value achievements use, does not). `getBalance` is a plain read (the old missed-day catch-up is gone). It also pays the one-time new-player bonus to an account that never received it (see [ixcredits.md](./ixcredits.md#4-metagame-bonuses-earn_bonus--uncapped)); new accounts are paid at sign-up, with or without a country
 - `vault/daily-claims.ts` – The daily reward (`claimCombinedDailyClaim`)
 - `vault/store.ts` – Store listing, purchased items, cosmetic equip, `getTransactions` (the statement's feed)
 - `vault/public-cosmetics.ts` – `getEquippedCosmeticsFor`, another player's equipped cosmetics (public)
@@ -96,7 +96,7 @@ it), and the exploit audit charges no shortfall on it. `bun run db:refund-retire
 (`scripts/migrations/refund-retired-store-items.ts`, dry run by default) refunds each purchase once, at what was paid
 net of exploit corrections, as a `REFUND` row keyed `retired_item_refund:<purchase id>`.
 
-Related routers: `cards/`, `card-packs/`, `card-market/` (auctions & bids), `trading/`, `lore-cards/`, `ns-import/`, `achievements/`, `lorewards/`.
+Related routers: `cards/`, `card-packs/`, `card-market/` (listings, auctions, bids and the wishlist), `trading/`, `crafting/` (the card workshop), `lore-cards/`, `ns-import/`, `achievements/`, `lorewards/`.
 
 ---
 

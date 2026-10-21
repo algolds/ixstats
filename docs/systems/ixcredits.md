@@ -1,6 +1,6 @@
 # IxCredits (IxC) Virtual Currency Engine
 
-**Last updated:** 2026-10-17  
+**Last updated:** 2026-10-20  
 **Status:** Release Candidate (platform 1.5.0 "Lobster Crosby")  
 **Hierarchy:** Currency & Earning Engine of **IxVault** (`IXVAULT_VERSION = 3`).
 
@@ -80,15 +80,18 @@ Granted through `grantBonus()` (`src/lib/vault/vault-bonus.ts`), outside the dai
 Both caps are configurable (`activeDailyCap`, `socialDailyCap`); an earn that would exceed the remaining allowance is clamped. The dividend, bonuses and card earnings are outside them.
 
 ### Card sales and trades
-- Selling cards through auctions and trades pays the seller (`EARN_CARDS`). A **nation card** sold at auction pays a 2% royalty to the nation's owner (else the earliest human puller of the card) (`src/lib/economy/auction-service.ts`); it is the only place a country feeds the Vault.
+- Selling a card pays the seller the price less the market fee (`EARN_CARDS`): `card_sale_auction`, `card_sale_buyout` or `card_sale_listing` (`settleCardSaleTx`, `src/lib/cards/market/settle-sale.ts`). The buyer's side is `SPEND_MARKET`: `auction_bid_reserve` (a held bid; `auction_bid_refund` gives it back when the bidder is outbid or an admin cancels), `card_purchase_buyout` or `card_purchase_listing`.
+- A trade's IxC move as one leg each way (`P2P_TRADE`, `src/lib/cards/market/credit-leg.ts`): the payer is charged the amount (`SPEND_MARKET`) and the receiver gets it less the market fee (`EARN_CARDS`). Card-for-card trades pay no fee.
+- **The market fee** is the house rake (`card_system_auction_rake_pct`, default 10%) on an amount over the sale fee threshold (`card_economy_sale_fee_threshold`, 100 IxC), in whole IxC rounded down (`saleFee`, `src/lib/cards/market/fees.ts`). It applies to auction sales and buyouts, listing sales and each trade leg.
+- **The nation card royalty** (`nation_card_royalty`, `EARN_CARDS`; `src/lib/cards/market/royalty.ts`): 2% of the amount (`card_economy_royalty_pct`), paid out of the market fee, so it creates no credits and a deal under the threshold pays none. It goes to the owner of each nation a sold or traded NATION card shows, split evenly, and only when that owner is not the buyer or the seller; there is no fallback recipient. It is the only place a country feeds the Vault. See [cards.md](./cards.md#fees-and-the-royalty).
 
 ---
 
 ## Spending IxCredits
 
 - **Card Packs**: `pack-service.ts` spends through `spendCreditsTx` with type `SPEND_PACKS`, so the ledger's kill switch and idempotency apply to packs. Per-pack `priceCredits` (seeded range 100–15,000 IxC; see [cards.md](./cards.md#pack-tiers))
-- **Card Crafting (`SPEND_CRAFT`)**: retired for now (2026-10-05); nothing spends `SPEND_CRAFT` any more, and old rows stay in the ledger
-- **Marketplace & Trading (`SPEND_MARKET`)**: Listing fee (5 IxC standard, 10 IxC featured; 50% refunded if no bids), marketplace fee (10% on sales $>100$ IxC), P2P credit transfers
+- **Card Crafting (`SPEND_CRAFT`, source `card_craft`)**: a craft spends the card's rarity floor in IxC, plus its realm's dust (dust is not IxC and has its own ledger; see [cards.md](./cards.md#dust-and-crafting))
+- **Marketplace & Trading (`SPEND_MARKET`)**: the listing fee of a fixed-price listing (`listing_fee`) or an auction (`auction_listing_fee`), 5 IxC standard and 10 IxC featured by default (`card_economy_listing_fee`, `card_economy_listing_fee_featured`) and stored on the row; 50% of the stored fee comes back as a `REFUND` (`listing_fee_refund`, `auction_fee_refund`; `card_economy_listing_refund_pct`) when a listing is cancelled or expires, or an auction is cancelled or ends with no bids. Also purchases, bids and buyouts, and a trade's IxC (see [Card sales and trades](#card-sales-and-trades))
 - **Boosts & Cosmetics (`SPEND_BOOST`, `SPEND_COSMETIC`)**: Store items. The seed script `scripts/setup/seed-vault-items.ts` (not run by `db:seed`) creates profile glows, frames and badges (including seasonal ones), card capacity boosts, a MyClub team licence token and a MyLeague franchise pass. It has no lore request token and no dividend boost item, although the dividend reads a `yieldBoost` effect if an owned item has one
 
 ---
