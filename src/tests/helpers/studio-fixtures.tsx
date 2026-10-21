@@ -150,5 +150,3 @@ export function step(name: string, key = "ArrowRight") {
 }
 
 /** Open a rail group that starts folded. */
-export const openGroup = (name: string) =>
-  fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${name}$`) }));

@@ -44,15 +44,6 @@ export const MEASURES: WorldMeasures = {
   coastlineKm: 760_179,
 };
 
-export const IXNAY_MEASURES: WorldMeasures = {
-  landShare: 0.2203,
-  hypsometry: [0.4711, 0.2552, 0.1553, 0.0885, 0.0196, 0.0075, 0.0022, 0.0006, 0],
-  climate: { A: 0.2539, B: 0.1943, C: 0.3052, D: 0.2145, E: 0.02, F: 0.002, H: 0.0101 },
-  unclassifiedShare: 0,
-  nations: { count: 183, medianKm2: 272_569, p90Km2: 1_443_534 },
-  coastlineKm: 668_684,
-};
-
 const noop = () => {};
 
 /** A context value with a ready world and jest.fn()s for everything a tab calls; `over` replaces any part. */
