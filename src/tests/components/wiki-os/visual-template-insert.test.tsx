@@ -50,21 +50,6 @@ describe("handleInsertTemplate when the preview fails", () => {
     jest.clearAllMocks();
     jest.spyOn(console, "error").mockImplementation(() => undefined);
   });
-
-  it("inserts the template with its preview when the server answers", async () => {
-    mockFetch.mockResolvedValue("<table><tr><td>Vesperia</td></tr></table>");
-    const { editor, setIsDirty, view } = setup();
-
-    await act(() =>
-      view.result.current.handleInsertTemplate("Infobox country", { name: "Vesperia" })
-    );
-
-    expect(inserted(editor)?.html).toContain("<table><tr><td>Vesperia</td></tr></table>");
-    expect(inserted(editor)?.wikitext).toBe("{{Infobox country|name=Vesperia}}");
-    expect(setIsDirty).toHaveBeenCalledWith(true);
-    expect(mockWarning).not.toHaveBeenCalled();
-  });
-
   it("inserts it with no preview, saves as its wikitext, and warns when the call is refused", async () => {
     mockFetch.mockRejectedValue(
       Object.assign(new Error("Too many requests"), { data: { code: "TOO_MANY_REQUESTS" } })

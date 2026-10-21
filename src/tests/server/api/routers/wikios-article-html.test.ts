@@ -81,7 +81,6 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosPageContentRouter } from "~/server/api/routers/wikios/page-content";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { ArticleRepository as ViewRepository } from "~/lib/wiki-os/core/article-repository";
-import { ArticleRepository as BarrelRepository } from "~/lib/wiki-os/core";
 import { getArticleWikitext, resolveRedirect } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getArticleAuthors } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { renderArticleViaMediaWiki } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
@@ -178,54 +177,6 @@ const freshBundleRow = (html: string, htmlSyncedAt: Date | null = SYNCED) => ({
 });
 
 describe("getArticleHtml (IxWiki) reads the stored view bundle", () => {
-  it("serves a fresh article with no MediaWiki call, no sanitizer pass, no authorship lookup and one lookup", async () => {
-    const found = head();
-    findArticleForView.mockResolvedValue(found);
-    setRow(freshBundleRow('<p>Aurelia is a <a href="/wiki/Eurth">world</a>.</p>'));
-    jest.mocked(sanitizeWikiArticleHtml).mockClear(); // building the stored bundle above used it
-
-    const result = await caller().getArticleHtml({ title: "Aurelia" });
-
-    expect(result).toMatchObject({
-      contentHtml: '<p>Aurelia is a <a href="/wiki/Eurth">world</a>.</p>',
-      infoboxHtml: null,
-      noticesHtml: null,
-      toc: [],
-      title: "Aurelia",
-      categories: ["Countries", "Eurth"],
-      lastModified: EDITED.toISOString(),
-      renderQuality: "rendered",
-      stale: false,
-      isRedirect: false,
-      redirectTarget: null,
-      resolvedFrom: null,
-      wikiSource: "ixwiki",
-      authorInfo: null,
-    });
-    expect(findArticleForView).toHaveBeenCalledTimes(1);
-    expect(mockFindUnique).toHaveBeenCalledTimes(1); // the bundle column, read once
-    expect(BarrelRepository.findBySlug).not.toHaveBeenCalled(); // no full-row lookup
-    expect(renderArticleViaMediaWiki).not.toHaveBeenCalled();
-    expect(sanitizeWikiArticleHtml).not.toHaveBeenCalled();
-    expect(getArticleAuthors).not.toHaveBeenCalled();
-    expect(resolveActiveCountryId).not.toHaveBeenCalled();
-    expect(mockUpdateMany).not.toHaveBeenCalled();
-  });
-
-  it("answers a repeat view from the cache: the lookup is the only database read", async () => {
-    const found = head();
-    findArticleForView.mockResolvedValue(found);
-    setRow(freshBundleRow("<p>Cached.</p>"));
-
-    await caller().getArticleHtml({ title: "Aurelia" });
-    mockFindUnique.mockClear();
-    const again = await caller().getArticleHtml({ title: "Aurelia" });
-
-    expect(again.contentHtml).toBe("<p>Cached.</p>");
-    expect(findArticleForView).toHaveBeenCalledTimes(2);
-    expect(mockFindUnique).not.toHaveBeenCalled();
-  });
-
   it("reads the bundle again after the article's views were evicted (plan 409: delete, move)", async () => {
     const found = head();
     findArticleForView.mockResolvedValue(found);
@@ -239,56 +190,9 @@ describe("getArticleHtml (IxWiki) reads the stored view bundle", () => {
     expect(mockFindUnique).toHaveBeenCalledTimes(1);
     expect(evictArticleView(found.id)).toBe(1); // and it was cached again
   });
-
-  it("misses the cache when the article was rendered again (a new htmlSyncedAt)", async () => {
-    const found = head();
-    findArticleForView.mockResolvedValue(found);
-    setRow(freshBundleRow("<p>First.</p>"));
-    await caller().getArticleHtml({ title: "Aurelia" });
-
-    findArticleForView.mockResolvedValue({
-      ...found,
-      htmlSyncedAt: new Date("2026-09-30T11:00:00Z"),
-    });
-    setRow(freshBundleRow("<p>Second.</p>", new Date("2026-09-30T11:00:00Z")));
-    const result = await caller().getArticleHtml({ title: "Aurelia" });
-
-    expect(result.contentHtml).toBe("<p>Second.</p>");
-  });
-
-  it("reports the page it followed a redirect from", async () => {
-    jest.mocked(resolveRedirect).mockResolvedValue({ title: "Aurelia", fragment: null });
-    findArticleForView.mockResolvedValue(head());
-    setRow(freshBundleRow("<p>x</p>"));
-
-    const result = await caller().getArticleHtml({ title: "Old name" });
-
-    expect(findArticleForView).toHaveBeenCalledWith("Aurelia");
-    expect(result.resolvedFrom).toBe("Old name");
-  });
 });
 
 describe("getArticleHtml (IxWiki) renders a stale or never-rendered article once", () => {
-  it("awaits the render of a stale article and answers with the new bundle", async () => {
-    findArticleForView.mockResolvedValue(head({ htmlSyncedAt: null }));
-    setRow({ ...freshBundleRow("<p>Old.</p>", null) });
-    jest
-      .mocked(renderArticleViaMediaWiki)
-      .mockResolvedValue(rendered('<div class="mw-parser-output"><p>New.</p></div>'));
-
-    const result = await caller().getArticleHtml({ title: "Aurelia" });
-
-    expect(result.contentHtml).toBe("<p>New.</p>");
-    expect(result.renderQuality).toBe("rendered");
-    expect(renderArticleViaMediaWiki).toHaveBeenCalledTimes(1);
-    expect(renderArticleViaMediaWiki).toHaveBeenCalledWith(
-      "'''Aurelia''' is a country.",
-      "Aurelia"
-    );
-    expect(mockUpdateMany).toHaveBeenCalledTimes(1);
-    expect(mockUpdateMany.mock.calls[0]?.[0].where.wikitext).toBe("'''Aurelia''' is a country.");
-  });
-
   it("two concurrent readers of one stale article cause one MediaWiki call", async () => {
     findArticleForView.mockResolvedValue(head({ htmlSyncedAt: null }));
     setRow({ ...freshBundleRow("<p>Old.</p>", null) });

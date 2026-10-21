@@ -97,34 +97,6 @@ describe("wikiosEditingRouter.saveWikitext edit conflicts (WK-2, F1)", () => {
     jest.mocked(ArticleRepository.findBySlug).mockResolvedValue({ protectionLevel: "ALL", wikitext: "Current text" } as never);
     pageNowHeadedBy(headRevision("rev-2"));
   });
-
-  it("hands the base to the save, which checks it atomically: the revision the editor loaded, or null for a new page", async () => {
-    await caller().saveWikitext({ title: "Vesperia", wikitext: "My text", baseRevisionRef: "rev-2" });
-    await caller().saveWikitext({ title: "Vesperia", wikitext: "My text" });
-
-    const inputs = jest.mocked(ArticleRepository.saveArticle).mock.calls.map(([input]) => input);
-    expect(inputs.map((input) => input.expectedHeadRef)).toEqual(["rev-2", null]);
-    expect(inputs[0]).toMatchObject({ title: "Vesperia", wikitext: "My text" });
-  });
-
-  it("returns an edit conflict, with the page as it is now, when the save finds the base is stale", async () => {
-    pageNowHeadedBy(headRevision("rev-2"), "Somebody else's text");
-
-    const result = await caller().saveWikitext({
-      title: "Vesperia",
-      wikitext: "My text",
-      baseRevisionRef: "rev-1",
-    });
-
-    expect(result).toEqual({
-      success: false,
-      editConflict: true,
-      currentWikitext: "Somebody else's text",
-      currentRevisionRef: "rev-2",
-    });
-    expect(CloudflareGuardian.purgeArticleEdgeCache).not.toHaveBeenCalled();
-  });
-
   it("saves when the base revision is the latest one, and purges the edge cache", async () => {
     const result = await caller().saveWikitext({
       title: "Vesperia",

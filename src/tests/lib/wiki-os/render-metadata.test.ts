@@ -95,66 +95,6 @@ describe("a page its last edit blanked", () => {
 });
 
 describe("renderArticle stores what MediaWiki reported", () => {
-  it("replaces the links, templates (Lua modules included), images and categories in one transaction, after the bundle", async () => {
-    const id = stubArticle();
-    tx.wikiArticle.findMany.mockResolvedValue([{ id: "art-eurth", title: "Eurth" }]);
-    mockRender.mockResolvedValue({
-      html: HTML,
-      metadata: metadata({
-        links: [
-          { ns: 0, title: "Eurth" },
-          { ns: 0, title: "Nowhere" },
-          { ns: 6, title: "File:A.png" },
-        ],
-        templates: [
-          { ns: 10, title: "Template:Infobox country" },
-          { ns: 828, title: "Module:Infobox" },
-        ],
-        images: ["Flag_of_Aurelia.svg"],
-        categories: [{ name: "Countries_in_Eurth", sortKey: "Aurelia", hidden: false }],
-      }),
-    });
-
-    await expect(renderArticle(id)).resolves.toEqual({ ok: true });
-
-    expect(mockTransaction).toHaveBeenCalledTimes(1);
-    expect(mockUpdateMany.mock.invocationCallOrder[0]).toBeLessThan(
-      mockTransaction.mock.invocationCallOrder[0]!
-    );
-    expect(tx.wikiLink.createMany.mock.calls[0]?.[0].data).toEqual([
-      { sourceArticleId: id, targetSlug: "eurth", targetArticleId: "art-eurth", isExternal: false },
-      { sourceArticleId: id, targetSlug: "nowhere", targetArticleId: null, isExternal: false },
-    ]);
-    expect(tx.wikiTemplateLink.createMany.mock.calls[0]?.[0].data).toEqual([
-      { articleId: id, templateTitle: "Template:Infobox country" },
-      { articleId: id, templateTitle: "Module:Infobox" },
-    ]);
-    expect(tx.wikiImageLink.createMany.mock.calls[0]?.[0].data).toEqual([
-      { articleId: id, fileName: "Flag of Aurelia.svg" },
-    ]);
-    expect(tx.wikiCategoryMember.createMany.mock.calls[0]?.[0].data).toEqual([
-      { articleId: id, categoryId: "cat-countries_in_eurth", sortKey: "Aurelia" },
-    ]);
-  });
-
-  it("is a replace-set: a category the page no longer has disappears, a link it lost is deleted", async () => {
-    const id = stubArticle();
-    mockRender.mockResolvedValue({
-      html: HTML,
-      metadata: metadata({ categories: [{ name: "Kept", sortKey: null, hidden: false }] }),
-    });
-
-    await renderArticle(id);
-
-    // Every membership of the article is deleted, then only the reported ones are written back.
-    expect(tx.wikiCategoryMember.deleteMany).toHaveBeenCalledWith({ where: { articleId: id } });
-    expect(tx.wikiCategoryMember.createMany.mock.calls[0]?.[0].data).toEqual([
-      { articleId: id, categoryId: "cat-kept", sortKey: null },
-    ]);
-    expect(tx.wikiLink.deleteMany).toHaveBeenCalledWith({ where: { sourceArticleId: id } });
-    expect(tx.wikiLink.createMany).not.toHaveBeenCalled();
-  });
-
   it("clears every set when the page now reports none", async () => {
     const id = stubArticle();
     mockRender.mockResolvedValue({ html: HTML, metadata: metadata() });

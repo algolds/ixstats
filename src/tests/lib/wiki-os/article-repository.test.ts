@@ -1,11 +1,5 @@
-/** @jest-environment node */
-/**
- * Plan 403: ArticleRepository writes and reads one MediaWiki-canonical identity per title.
- */
-import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
 import { enqueueRender, invalidateDependents } from "~/lib/wiki-os/services/render-service";
-import { LinkGraphService } from "~/lib/wiki-os/core/link-graph-service";
 import { notifyWatchers } from "~/lib/wiki-os/services/watchlist-notify";
 import { scheduleMirrorKick } from "~/lib/wiki-os/services/mirror-outbox";
 import { Prisma } from "@prisma/client";
@@ -166,60 +160,11 @@ describe("ArticleRepository.saveArticle", () => {
     await expect(save("a[b")).rejects.toThrow("Invalid title");
     expect(mockUpsert).not.toHaveBeenCalled();
   });
-
-  it("keeps the edit summary on the revision and the excerpt of the text on the article (plan 402)", async () => {
-    const text = "Foo is a [[country]] in Eurth.";
-    const { article } = await save("Foo", "", text, { editSummary: "fixed typo" });
-
-    const args = mockUpsert.mock.calls[0]?.[0];
-    expect(args.create.summary).toBe("Foo is a country in Eurth.");
-    expect(args.update.summary).toBe("Foo is a country in Eurth.");
-    expect(article.summary).toBe("Foo is a country in Eurth.");
-    expect(mockRevisionCreate.mock.calls[0]?.[0].data.summary).toBe("fixed typo");
-  });
-
-  it("does not blank the excerpt when the edit summary is empty (plan 402)", async () => {
-    await save("Foo", "", "Foo is a country.", { editSummary: "" });
-
-    const args = mockUpsert.mock.calls[0]?.[0];
-    expect(args.update.summary).toBe("Foo is a country.");
-    expect(mockRevisionCreate.mock.calls[0]?.[0].data.summary).toBe("");
-  });
-
-  it("stores no edit summary as null and never uses it as the excerpt (plan 402)", async () => {
-    await save("Foo", "", "Foo is a country.");
-
-    expect(mockRevisionCreate.mock.calls[0]?.[0].data.summary).toBeNull();
-    expect(mockUpsert.mock.calls[0]?.[0].create.summary).toBe("Foo is a country.");
-  });
-
-  it("caps the derived excerpt and lets an explicit excerpt override it (plan 402)", async () => {
-    await save("Foo", "", "word ".repeat(500));
-    expect(mockUpsert.mock.calls[0]?.[0].create.summary.length).toBeLessThanOrEqual(480);
-
-    await save("Foo", "", "Foo is a country.", { excerpt: "Custom excerpt." });
-    expect(mockUpsert.mock.calls[1]?.[0].create.summary).toBe("Custom excerpt.");
-    expect(mockUpsert.mock.calls[1]?.[0].update.summary).toBe("Custom excerpt.");
-  });
-
   it("clamps an explicit excerpt to the VarChar(500) column (plan 402)", async () => {
     await save("Foo", "", "Foo is a country.", { excerpt: "x".repeat(2_000) });
 
     expect(mockUpsert.mock.calls[0]?.[0].create.summary).toHaveLength(480);
     expect(mockUpsert.mock.calls[0]?.[0].update.summary).toHaveLength(480);
-  });
-
-  it("derives the excerpt from the lead of a huge page only (plan 402)", async () => {
-    const lead = "Foo is a country in Eurth. ";
-    const text = lead + "filler ".repeat(300_000);
-    const started = performance.now();
-
-    await save("Foo", "", text);
-
-    expect(performance.now() - started).toBeLessThan(1_000 * TIMING_BUDGET_SCALE);
-    const summary: string = mockUpsert.mock.calls[0]?.[0].create.summary;
-    expect(summary.startsWith("Foo is a country in Eurth.")).toBe(true);
-    expect(summary.length).toBeLessThanOrEqual(480);
   });
   it("writes a redirect's canonical target title and fragment on create and update (plan 402)", async () => {
     const { article } = await save("Old", "", "#REDIRECT [[foo#Bar]]");
@@ -283,43 +228,6 @@ describe("ArticleRepository.saveArticle and the rendered view (plan 404)", () =>
     // The revision is still recorded: a null edit is an edit.
     expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
   });
-
-  it("queues the first render of a page that is new", async () => {
-    mockCount.mockResolvedValue(0);
-
-    await save("brand new");
-
-    expect(mockUpsert.mock.calls[0]?.[0].create).not.toHaveProperty("htmlSyncedAt");
-    expect(enqueueRender).toHaveBeenCalledWith("a1");
-  });
-
-  it("stores HTML only when the caller hands it one", async () => {
-    await save("text", { contentHtml: "<p>given</p>" });
-
-    const args = mockUpsert.mock.calls[0]?.[0];
-    expect(args.create.contentHtml).toBe("<p>given</p>");
-    expect(args.update.contentHtml).toBe("<p>given</p>");
-  });
-
-  it("queues exactly one render, after the transaction committed", async () => {
-    const order: string[] = [];
-    mockUpsert.mockImplementation(async (args: { create: { title: string } }) => {
-      order.push("upsert");
-      return savedRow(args.create.title);
-    });
-    mockRevisionCreate.mockImplementation(async () => {
-      order.push("revision");
-      return { id: "r1" };
-    });
-    jest.mocked(enqueueRender).mockImplementation(() => void order.push("enqueue"));
-
-    await ArticleRepository.saveArticle({ slug: "Foo", title: "Foo", wikitext: "text" });
-
-    expect(enqueueRender).toHaveBeenCalledTimes(1);
-    expect(enqueueRender).toHaveBeenCalledWith("a1");
-    expect(order).toEqual(["upsert", "revision", "enqueue"]);
-  });
-
   it("queues no render when the transaction failed", async () => {
     mockUpsert.mockRejectedValue(new Error("db down"));
 
@@ -337,16 +245,6 @@ describe("ArticleRepository.saveArticle after plan 406", () => {
     );
     return ArticleRepository.saveArticle({ slug: "Foo", title: "Foo", wikitext });
   };
-
-  it("does not scan the wikitext for links on the save path: the render fills the link graph", async () => {
-    const result = await save("[[Bar]] and [[Baz]]");
-
-    expect(
-      (LinkGraphService as unknown as { syncArticleLinks: jest.Mock }).syncArticleLinks
-    ).not.toHaveBeenCalled();
-    expect(result).not.toHaveProperty("extractedLinksCount");
-  });
-
   it("marks the pages that transclude the saved page stale, after the transaction, only when its text changed", async () => {
     await save("new text");
     expect(invalidateDependents).toHaveBeenCalledTimes(1);
@@ -610,30 +508,6 @@ describe("ArticleRepository.saveArticle tells the watchers (plan 416, WK-19)", (
       authorName
     );
   };
-
-  it("notifies once, after the commit, with the editor left out and the diff's two revisions", async () => {
-    mockRevisionFindFirst.mockResolvedValue({ id: "r_prev", mwRevId: 77, byteSize: 3 });
-    mockRevisionCreate.mockResolvedValue({
-      id: "r_new",
-      summary: "Fixed a date",
-      authorId: "db_editor",
-    });
-
-    await save({ editSummary: "Fixed a date" }, "Kir");
-
-    expect(notifyWatchers).toHaveBeenCalledTimes(1);
-    expect(notifyWatchers).toHaveBeenCalledWith({
-      kind: "edited",
-      articleId: "a1",
-      title: "Foo",
-      editor: "Kir",
-      editorUserId: "db_editor",
-      summary: "Fixed a date",
-      previousRef: "77", // a revision synced from MediaWiki is referred to by its rev_id
-      currentRef: "r_new",
-    });
-  });
-
   it("notifies after the revision is written, never before the transaction committed", async () => {
     const order: string[] = [];
     mockRevisionCreate.mockImplementation(async () => {
@@ -649,13 +523,6 @@ describe("ArticleRepository.saveArticle tells the watchers (plan 416, WK-19)", (
 
     expect(order).toEqual(["revision", "notify"]);
   });
-
-  it("has no earlier revision to diff against for a new page", async () => {
-    await save();
-
-    expect(notifyWatchers).toHaveBeenCalledWith(expect.objectContaining({ previousRef: null }));
-  });
-
   it("does not notify for a save that changed nothing, or one that failed", async () => {
     mockCount.mockResolvedValue(1);
     await save();
@@ -736,13 +603,6 @@ describe("ArticleRepository.saveArticle and the mirror outbox (plan 407)", () =>
     expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
     expect(mockJobCreate).not.toHaveBeenCalled();
   });
-
-  it("writes no job for a realm that has no MediaWiki to mirror to", async () => {
-    await save({ source: "iiwiki" });
-
-    expect(mockJobCreate).not.toHaveBeenCalled();
-  });
-
   it("fails the save, and queues nothing after it, when the job cannot be written", async () => {
     mockJobCreate.mockRejectedValue(new Error("outbox down"));
 

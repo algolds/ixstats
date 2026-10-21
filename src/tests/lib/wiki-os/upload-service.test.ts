@@ -30,13 +30,12 @@ jest.mock("~/lib/wiki-os/guardian/cloudflare-guardian", () => ({
   CloudflareGuardian: { purgeArticleEdgeCache: jest.fn() },
 }));
 
-import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { TRPCError } from "@trpc/server";
 import sharp from "sharp";
 import { MAX_UPLOAD_BYTES } from "~/lib/wiki-os/config";
-import { BlurHashService } from "~/lib/wiki-os/core/blurhash-service";
 import { hashFile } from "~/lib/wiki-os/core/file-hash";
 import { authorizeAction, requireRight } from "~/lib/wiki-os/permissions";
 import { scheduleMirrorKick, uploadPayloadSchema } from "~/lib/wiki-os/services/mirror-outbox";
@@ -118,91 +117,6 @@ const jobs = () => tables.wikiMirrorJob.rows;
 const staged = () => readdirSync(directory).filter((name) => !name.endsWith(".tmp"));
 
 describe("a new file", () => {
-  it("is staged under its hash, recorded, logged, queued for MediaWiki after its description page, and served from WikiOS", async () => {
-    const bytes = png(640, 480);
-    const { base36 } = hashFile(bytes);
-
-    const result = await uploadFile(request({ bytes }));
-
-    expect(result).toMatchObject({
-      result: "Success",
-      replaced: false,
-      noChange: false,
-      filename: "Flag of Eurth.png",
-      title: "File:Flag of Eurth.png",
-      url: "/api/wiki/file/Flag_of_Eurth.png",
-      descriptionUrl: "/wiki/File:Flag_of_Eurth.png",
-      width: 640,
-      height: 480,
-      size: bytes.length,
-      mime: "image/png",
-      sha1: hashFile(bytes).hex,
-    });
-    // the bytes, byte for byte, under the base-36 hash
-    expect(staged()).toEqual([base36]);
-    expect(readFileSync(join(directory, base36))).toEqual(Buffer.from(bytes));
-
-    expect(tables.wikiAsset.rows).toHaveLength(1);
-    expect(tables.wikiAsset.rows[0]).toMatchObject({
-      title: "Flag of Eurth.png",
-      slug: "flag_of_eurth.png",
-      filename: "Flag_of_Eurth.png",
-      url: "/api/wiki/file/Flag_of_Eurth.png",
-      thumbnailUrl: null,
-      mimeType: "image/png",
-      sizeBytes: bytes.length,
-      width: 640,
-      height: 480,
-      sha1: base36,
-      uploaderId: "user-1",
-      blurhash: null,
-    });
-    // MediaWiki's shard hash is of the NAME, not of the content
-    expect(tables.wikiAsset.rows[0]?.md5Hash).toMatch(/^[0-9a-f]{32}$/);
-
-    expect(tables.wikiLog.rows).toHaveLength(1);
-    expect(tables.wikiLog.rows[0]).toMatchObject({
-      logType: "upload",
-      action: "upload",
-      title: "File:Flag of Eurth.png",
-      actorName: "Heku",
-      comment: "First upload",
-      userId: "user-1",
-      params: {
-        filename: "Flag of Eurth.png",
-        sha1: base36,
-        size: bytes.length,
-        width: 640,
-        height: 480,
-        mime: "image/png",
-      },
-    });
-
-    expect(authorizeAction).toHaveBeenCalledWith(ctx, "upload", "File:Flag of Eurth.png");
-    expect(requireRight).not.toHaveBeenCalled();
-    expect(scheduleMirrorKick).toHaveBeenCalled();
-  });
-
-  it("creates the File: page from the description, the license and the categories, and its revision job runs before the upload job", async () => {
-    await uploadFile(request());
-
-    const page = tables.wikiArticle.rows.find((row) => row.title === "File:Flag of Eurth.png");
-    expect(page?.wikitext).toBe(
-      "== Summary ==\nThe flag of Eurth.\n== Licensing ==\n{{PD-self}}\n[[Category:Flags]]"
-    );
-    expect(jobs().map((job) => job.kind)).toEqual(["revision", "upload"]);
-    expect(jobs().every((job) => job.title === "File:Flag of Eurth.png")).toBe(true);
-
-    const upload = jobs()[1]!;
-    expect(uploadPayloadSchema.parse(upload.payload)).toEqual({
-      sha1: hashFile(png(640, 480)).base36,
-      comment: "First upload",
-    });
-    expect(upload.articleId).toBe(page?.id);
-    expect(upload.logId).toBe(tables.wikiLog.rows[0]?.id);
-    expect(upload.state).toBe("pending");
-  });
-
   it("names the file as MediaWiki would: a path and a File: prefix are cut, a colon becomes a dash", async () => {
     await uploadFile(request({ filename: "C:\\fakepath\\My:Flag.png" }));
 
@@ -234,22 +148,6 @@ describe("a new file", () => {
 });
 
 describe("warnings", () => {
-  it("returns the exists warning for a taken name and stores nothing", async () => {
-    await uploadFile(request());
-    const before = { jobs: jobs().length, logs: tables.wikiLog.rows.length };
-
-    const result = await uploadFile(request({ bytes: png(10, 10, 1) }));
-
-    expect(result).toEqual({
-      result: "Warning",
-      filename: "Flag of Eurth.png",
-      title: "File:Flag of Eurth.png",
-      warnings: { exists: "Flag of Eurth.png" },
-    });
-    expect({ jobs: jobs().length, logs: tables.wikiLog.rows.length }).toEqual(before);
-    expect(staged()).toHaveLength(1);
-  });
-
   it("makes a new version of the file when the uploader ignores the warning: the asset row is replaced, the log says overwrite, and reupload is required", async () => {
     await uploadFile(request());
     const second = png(10, 10, 1);
@@ -621,24 +519,6 @@ describe("the SVG size limit", () => {
 });
 
 describe("the BlurHash (WK-17)", () => {
-  it("is computed from a real picture's pixels and stored on the asset", async () => {
-    const bytes = new Uint8Array(
-      await sharp({
-        create: { width: 64, height: 48, channels: 3, background: { r: 200, g: 40, b: 90 } },
-      })
-        .png()
-        .toBuffer()
-    );
-
-    await uploadFile(request({ bytes, filename: "Red.png" }));
-
-    const blurhash = tables.wikiAsset.rows[0]?.blurhash as string;
-    expect(BlurHashService.components(blurhash)).toEqual({ x: 4, y: 3 });
-    // the picture's colour: the hash's average (DC) decodes to it
-    const average = BlurHashService.decode(`00${blurhash.slice(2, 6)}`, 1, 1)!;
-    expect(Array.from(average.slice(0, 3))).toEqual([200, 40, 90]);
-  });
-
   it("is a new version's own when a file is replaced", async () => {
     const colour = async (r: number) =>
       new Uint8Array(

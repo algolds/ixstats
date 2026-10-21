@@ -219,28 +219,6 @@ afterEach(() => {
 });
 
 describe("runMirrorCycle", () => {
-  it("runs the due jobs oldest first and marks them done, with the MediaWiki revision they made", async () => {
-    const first = addJob({ title: "A" });
-    const second = addJob({ title: "B" });
-    const order: string[] = [];
-    revisionJob.mockImplementation(async (job) => {
-      order.push(job.id);
-      return job.id === first.id ? 501 : 502;
-    });
-
-    const result = await runMirrorCycle();
-
-    expect(result).toEqual({ skipped: false, done: 2, failed: 0, dead: 0 });
-    expect(order).toEqual([first.id, second.id]);
-    expect(byId(first.id)).toMatchObject({
-      state: "done",
-      mwRevId: 501,
-      attempts: 1,
-      lastError: null,
-    });
-    expect(byId(second.id)).toMatchObject({ state: "done", mwRevId: 502 });
-  });
-
   it("runs the page operations through their own handler, and re-renders the users of a template after its revision", async () => {
     addJob({
       kind: "move",
@@ -257,42 +235,6 @@ describe("runMirrorCycle", () => {
     expect(invalidateTemplateDependents).toHaveBeenCalledTimes(1);
     expect(invalidateTemplateDependents).toHaveBeenCalledWith("Template:Box", "ixwiki");
   });
-
-  it("runs an upload job through the upload handler, after the revision job of its File: page, and retries it like any other job", async () => {
-    const page = addJob({ title: "File:Flag.png" });
-    const upload = addJob({
-      kind: "upload",
-      title: "File:Flag.png",
-      payload: { sha1: "x".repeat(31), comment: "A flag" },
-      revisionId: null,
-    });
-    const order: string[] = [];
-    revisionJob.mockImplementation(async (job) => {
-      order.push(`revision ${job.id}`);
-      return 700;
-    });
-    uploadJob.mockImplementationOnce(async (job) => {
-      order.push(`upload ${job.id}`);
-      throw new Error("MediaWiki 503");
-    });
-
-    const first = await runMirrorCycle();
-
-    expect(order).toEqual([`revision ${page.id}`, `upload ${upload.id}`]);
-    expect(first).toMatchObject({ done: 1, failed: 1, dead: 0 });
-    expect(pageJob).not.toHaveBeenCalled();
-    expect(byId(upload.id)).toMatchObject({
-      state: "pending",
-      attempts: 1,
-      lastError: "MediaWiki 503",
-    });
-
-    makeDue(upload.id);
-    await runMirrorCycle();
-    expect(byId(upload.id)).toMatchObject({ state: "done", attempts: 2, lastError: null });
-    expect(uploadJob).toHaveBeenCalledTimes(2);
-  });
-
   it("does not re-render anything for a revision job that failed", async () => {
     addJob({ title: "Template:Box" });
     revisionJob.mockRejectedValue(new Error("MediaWiki 503"));

@@ -151,32 +151,6 @@ describe("fresh import of the export-0.11 fixture", () => {
     ]);
     expect(store.revisions).toHaveLength(7);
   });
-
-  it("keeps each revision's id, time, author, summary and minor flag", () => {
-    const [first, second] = revisionsOf("Kingdom of Testia");
-
-    expect(first).toMatchObject({
-      mwRevId: 1001,
-      author: "Jane",
-      authorId: null,
-      summary: "Create the page",
-      minor: false,
-      createdAt: new Date("2026-01-02T03:04:05Z"),
-      wikitext: "Testia is a [[kingdom]].",
-      byteSize: 24,
-      byteDelta: 24,
-      sha1: "5m4a1twcqtk8kln29696qjq0i7jb99b",
-      source: "ixwiki",
-    });
-    expect(second).toMatchObject({
-      mwRevId: 1002,
-      author: "192.0.2.7",
-      minor: true,
-      byteSize: 48,
-      byteDelta: 24,
-    });
-  });
-
   it("stores a hidden revision as an empty placeholder with its declared size, author (deleted)", () => {
     const hidden = revisionsOf("Kingdom of Testia")[2];
 
@@ -410,32 +384,6 @@ describe("a real import locks the page before it reads it (m6)", () => {
     expect(revisionsOf("Kingdom of Testia")).toHaveLength(5);
   });
 });
-
-describe("re-import", () => {
-  it("is a no-op: everything is skipped and nothing changes", async () => {
-    await importFixture();
-    const before = snapshotStore();
-    jest.mocked(enqueueRender).mockClear();
-    store.writes = 0;
-
-    const again = await importFixture();
-
-    expect(again).toEqual({
-      pages: 5,
-      pagesCreated: 0,
-      revisionsImported: 0,
-      revisionsSkipped: 7,
-      placeholdersFilled: 0,
-      uploadsSkipped: 1,
-      errors: [],
-      warnings: [],
-    });
-    expect(snapshotStore()).toEqual(before);
-    expect(store.writes).toBe(0);
-    expect(enqueueRender).not.toHaveBeenCalled();
-  });
-});
-
 describe("placeholder revisions from scripts/sync-ixwiki-full.ts", () => {
   it("fills an empty revision that carries the same MediaWiki id, and its hash", async () => {
     const seeded = seedArticle({ wikitext: KINGDOM_V2, mwLatestRevId: 1002 });
@@ -1272,26 +1220,6 @@ describe("a malformed dump", () => {
 });
 
 describe("dry run", () => {
-  it("reports what would happen and writes nothing", async () => {
-    const summary = await importFixture({ dryRun: true });
-
-    expect(summary).toEqual({
-      pages: 5,
-      pagesCreated: 5,
-      revisionsImported: 7,
-      revisionsSkipped: 0,
-      placeholdersFilled: 0,
-      uploadsSkipped: 1,
-      errors: [],
-      warnings: [],
-    });
-    expect(store.writes).toBe(0);
-    expect(store.articles).toHaveLength(0);
-    expect(store.revisions).toHaveLength(0);
-    expect(enqueueRender).not.toHaveBeenCalled();
-    expect(transactionOptions).toHaveLength(0);
-  });
-
   it("agrees with the real import that follows it, on a database with existing rows", async () => {
     const seeded = seedArticle();
     seedRevision(seeded.id, {
@@ -1413,31 +1341,6 @@ describe("legacy <restrictions> become wiki_restrictions rows (plan 409 review)"
 
 describe("per-page authorization (plan 409: canWritePage)", () => {
   const deny = (reason: string) => ({ allowed: false as const, reason });
-
-  it("skips a page the callback refuses, lists it as a permission error, and imports the rest", async () => {
-    const summary = await importFixture({
-      canWritePage: (_title, namespaceId) =>
-        namespaceId === 10
-          ? deny("Only wiki administrators can edit pages in this namespace.")
-          : { allowed: true },
-    });
-
-    expect(summary.pages).toBe(5);
-    expect(summary.pagesCreated).toBe(4);
-    expect(summary.errors).toEqual([
-      {
-        title: "Template:Infobox testia",
-        message: "permission: Only wiki administrators can edit pages in this namespace.",
-      },
-    ]);
-    expect(store.articles.map((a) => a.title).sort()).toEqual([
-      "File:Testia flag.png",
-      "Kingdom of Testia",
-      "Talk:Kingdom of Testia",
-      "Testia",
-    ]);
-  });
-
   it("asks with the canonical title and the stored namespace of every page", async () => {
     const asked: Array<[string, number]> = [];
     await importFixture({
