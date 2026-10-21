@@ -17,8 +17,9 @@ jest.mock("~/server/db", () => ({
 }));
 jest.mock("~/lib/notifications/api", () => ({ notificationAPI: { create: jest.fn() } }));
 jest.mock("~/server/modules/identity/identity.player-names", () => ({
-  loadPlayerNames: jest.fn(async (ids: string[]) =>
-    new Map(ids.map((id) => [id, { displayName: `Player ${id.split("-").at(-1)}`, handle: id }]))
+  loadPlayerNames: jest.fn(
+    async (ids: string[]) =>
+      new Map(ids.map((id) => [id, { displayName: `Player ${id.split("-").at(-1)}`, handle: id }]))
   ),
 }));
 
@@ -69,7 +70,14 @@ async function seed(db: PrismaClient, p: string): Promise<World> {
   const bob = await addPlayer(db, `${p}bob`, 1000);
   const nia = await addPlayer(db, `${p}nia`, 0);
   const { id: countryId } = await addCountry(db, `${p}aurelia`, north, nia.id);
-  await addCard(db, { id: `${p}nation`, realmId: north, rarity: "RARE", cardType: "NATION", title: "Aurelia", countryId });
+  await addCard(db, {
+    id: `${p}nation`,
+    realmId: north,
+    rarity: "RARE",
+    cardType: "NATION",
+    title: "Aurelia",
+    countryId,
+  });
   await addCard(db, { id: `${p}lore`, realmId: north, rarity: "COMMON", title: "North Lore" });
   await addCard(db, { id: `${p}south`, realmId: south, rarity: "RARE", title: "South Lore" });
   const a = [`${p}a1`, `${p}a2`, `${p}a3`, `${p}a4`] as World["a"];
@@ -84,15 +92,21 @@ async function seed(db: PrismaClient, p: string): Promise<World> {
 
 const locks = async (db: PrismaClient, ids: string[]) =>
   Object.fromEntries(
-    (await db.cardOwnership.findMany({ where: { id: { in: ids } }, select: { id: true, isLocked: true } })).map(
-      (c) => [c.id, c.isLocked]
-    )
+    (
+      await db.cardOwnership.findMany({
+        where: { id: { in: ids } },
+        select: { id: true, isLocked: true },
+      })
+    ).map((c) => [c.id, c.isLocked])
   );
 const owners = async (db: PrismaClient, ids: string[]) =>
   Object.fromEntries(
-    (await db.cardOwnership.findMany({ where: { id: { in: ids } }, select: { id: true, ownerId: true } })).map(
-      (c) => [c.id, c.ownerId]
-    )
+    (
+      await db.cardOwnership.findMany({
+        where: { id: { in: ids } },
+        select: { id: true, ownerId: true },
+      })
+    ).map((c) => [c.id, c.ownerId])
   );
 /** The Trades list as a player reads it: each open trade's id and whether it waits on them. */
 const turns = async (db: PrismaClient, player: Player) =>
@@ -127,11 +141,17 @@ async function tradeNegotiation(w: World) {
   expect(await locks(db, [a1, a2, w.b1])).toEqual({ [a1]: false, [a2]: false, [w.b1]: true });
   expect(await turns(db, alice)).toEqual([[offer.id, true]]);
   expect(await turns(db, bob)).toEqual([[offer.id, false]]);
-  expect(create).toHaveBeenCalledWith(expect.objectContaining({ userId: alice.id, title: "Counter-offer" }));
+  expect(create).toHaveBeenCalledWith(
+    expect.objectContaining({ userId: alice.id, title: "Counter-offer" })
+  );
 
   // An answer to the old revision is stale; Alice accepts the one she saw
   await expect(
-    offers(callerContext(db, alice)).respondToTrade({ tradeId: offer.id, action: "ACCEPT", revision: 0 })
+    offers(callerContext(db, alice)).respondToTrade({
+      tradeId: offer.id,
+      action: "ACCEPT",
+      revision: 0,
+    })
   ).rejects.toMatchObject({ code: "CONFLICT" });
   create.mockClear();
   const accepted = await offers(callerContext(db, alice)).respondToTrade({
@@ -140,10 +160,18 @@ async function tradeNegotiation(w: World) {
     revision: 1,
   });
   expect(accepted).toMatchObject({ status: "ACCEPTED", isCrossRealm: true });
-  expect(await owners(db, [a1, a2, w.b1])).toEqual({ [a1]: bob.id, [a2]: bob.id, [w.b1]: alice.id });
+  expect(await owners(db, [a1, a2, w.b1])).toEqual({
+    [a1]: bob.id,
+    [a2]: bob.id,
+    [w.b1]: alice.id,
+  });
   expect(await locks(db, [a1, a2, w.b1])).toEqual({ [a1]: false, [a2]: false, [w.b1]: false });
   // Bob's 250 pays Alice net of the 25 IxC fee; Nia, whose nation card Bob receives, gets 2% out of that fee
-  expect(await creditsOf(db, [alice.id, bob.id, nia.id])).toEqual({ [alice.id]: 1225, [bob.id]: 750, [nia.id]: 5 });
+  expect(await creditsOf(db, [alice.id, bob.id, nia.id])).toEqual({
+    [alice.id]: 1225,
+    [bob.id]: 750,
+    [nia.id]: 5,
+  });
   expect(await ledgerOf(db, nia.id)).toEqual([
     expect.objectContaining({ credits: 5, type: "EARN_CARDS", source: "nation_card_royalty" }),
   ]);
@@ -158,7 +186,11 @@ async function tradeNegotiation(w: World) {
     { source: "CROSS_REALM_TRADE", amount: 50 },
     { source: "CROSS_REALM_TRADE", amount: 50 },
   ]);
-  expect(await db.cardTransferEvent.count({ where: { ownershipId: { in: [a1, a2, w.b1] }, action: "TRADE" } })).toBe(3);
+  expect(
+    await db.cardTransferEvent.count({
+      where: { ownershipId: { in: [a1, a2, w.b1] }, action: "TRADE" },
+    })
+  ).toBe(3);
   expect(create.mock.calls.map(([n]) => [n.userId, n.title])).toEqual([
     [bob.id, "Trade accepted"],
     [nia.id, "Royalty paid"],
@@ -166,19 +198,32 @@ async function tradeNegotiation(w: World) {
   expect(await turns(db, alice)).toEqual([]);
 
   // A second trade is withdrawn: Alice's copy is freed
-  const second = await offers(callerContext(db, alice)).createtradeOffer({ partnerId: bob.id, initiatorCardIds: [a3] });
-  await expect(offers(callerContext(db, bob)).cancelTrade({ tradeId: second.id })).rejects.toMatchObject({
+  const second = await offers(callerContext(db, alice)).createtradeOffer({
+    partnerId: bob.id,
+    initiatorCardIds: [a3],
+  });
+  await expect(
+    offers(callerContext(db, bob)).cancelTrade({ tradeId: second.id })
+  ).rejects.toMatchObject({
     code: "FORBIDDEN",
   });
   await offers(callerContext(db, alice)).cancelTrade({ tradeId: second.id });
   expect(await locks(db, [a3])).toEqual({ [a3]: false });
 
   // A third runs out: it leaves the Trades list once due, and the job ends it and frees the copy
-  const third = await offers(callerContext(db, alice)).createtradeOffer({ partnerId: bob.id, initiatorCardIds: [a4] });
-  await db.tradeOffer.update({ where: { id: third.id }, data: { expiresAt: new Date(Date.now() - 1000) } });
+  const third = await offers(callerContext(db, alice)).createtradeOffer({
+    partnerId: bob.id,
+    initiatorCardIds: [a4],
+  });
+  await db.tradeOffer.update({
+    where: { id: third.id },
+    data: { expiresAt: new Date(Date.now() - 1000) },
+  });
   expect(await turns(db, bob)).toEqual([]);
   expect(await processExpiredTrades()).toMatchObject({ processed: 1, failed: 0 });
-  expect(await db.tradeOffer.findUnique({ where: { id: third.id }, select: { status: true } })).toEqual({
+  expect(
+    await db.tradeOffer.findUnique({ where: { id: third.id }, select: { status: true } })
+  ).toEqual({
     status: "EXPIRED",
   });
   expect(await locks(db, [a4])).toEqual({ [a4]: false });
@@ -208,12 +253,22 @@ describe("cards-trade-negotiation (memory)", () => {
     // The accept claimed its row first, then every vault its credit leg writes at once, then moved the copies
     const log = db.store.log;
     const claim = log.findIndex(
-      (e) => e.kind === "write" && e.model === "TradeOffer" && e.op === "updateMany" && e.where?.id === tradeId && e.where?.revision === 1
+      (e) =>
+        e.kind === "write" &&
+        e.model === "TradeOffer" &&
+        e.op === "updateMany" &&
+        e.where?.id === tradeId &&
+        e.where?.revision === 1
     );
     const vaults = log.findIndex((e, i) => i > claim && e.kind === "vaults");
-    const copies = log.findIndex((e, i) => i > vaults && e.kind === "write" && e.model === "CardOwnership");
+    const copies = log.findIndex(
+      (e, i) => i > vaults && e.kind === "write" && e.model === "CardOwnership"
+    );
     expect(claim).toBeGreaterThanOrEqual(0);
-    expect(log[vaults]).toEqual({ kind: "vaults", userIds: [w.alice.id, w.bob.id, w.nia.id].sort() });
+    expect(log[vaults]).toEqual({
+      kind: "vaults",
+      userIds: [w.alice.id, w.bob.id, w.nia.id].sort(),
+    });
     expect(copies).toBeGreaterThan(vaults);
   });
 
@@ -225,7 +280,11 @@ describe("cards-trade-negotiation (memory)", () => {
       initiatorCardIds: [w.a[0]],
       recipientCardIds: [w.b1],
     });
-    await offers(callerContext(db as never, w.alice)).respondToTrade({ tradeId: next.id, action: "ACCEPT", revision: 0 });
+    await offers(callerContext(db as never, w.alice)).respondToTrade({
+      tradeId: next.id,
+      action: "ACCEPT",
+      revision: 0,
+    });
     expect(
       await db.cardExperienceEvent.findMany({
         where: { ownershipId: w.a[0] },
@@ -258,7 +317,11 @@ describeWithDb("cards-trade-negotiation (Postgres)", () => {
       recipientCardIds: [w.b1],
     });
     const [accept, withdraw] = await Promise.allSettled([
-      offers(callerContext(db, w.bob)).respondToTrade({ tradeId: offer.id, action: "ACCEPT", revision: 0 }),
+      offers(callerContext(db, w.bob)).respondToTrade({
+        tradeId: offer.id,
+        action: "ACCEPT",
+        revision: 0,
+      }),
       offers(callerContext(db, w.alice)).cancelTrade({ tradeId: offer.id }),
     ]);
     expect([accept.status, withdraw.status].sort()).toEqual(["fulfilled", "rejected"]);
@@ -277,7 +340,11 @@ describeWithDb("cards-trade-negotiation (Postgres)", () => {
       recipientCardIds: [w.b1],
     });
     const [accept, counter] = await Promise.allSettled([
-      offers(callerContext(db, w.bob)).respondToTrade({ tradeId: offer.id, action: "ACCEPT", revision: 0 }),
+      offers(callerContext(db, w.bob)).respondToTrade({
+        tradeId: offer.id,
+        action: "ACCEPT",
+        revision: 0,
+      }),
       offers(callerContext(db, w.bob)).counterTrade({
         tradeId: offer.id,
         revision: 0,
@@ -288,7 +355,9 @@ describeWithDb("cards-trade-negotiation (Postgres)", () => {
     expect([accept.status, counter.status].sort()).toEqual(["fulfilled", "rejected"]);
     const trade = await db.tradeOffer.findUniqueOrThrow({ where: { id: offer.id } });
     expect(trade).toMatchObject(
-      accept.status === "fulfilled" ? { status: "ACCEPTED", revision: 0 } : { status: "PENDING", revision: 1 }
+      accept.status === "fulfilled"
+        ? { status: "ACCEPTED", revision: 0 }
+        : { status: "PENDING", revision: 1 }
     );
   });
 
@@ -299,7 +368,11 @@ describeWithDb("cards-trade-negotiation (Postgres)", () => {
       recipientCardIds: [w.b1],
     });
     const [accept, listing] = await Promise.allSettled([
-      offers(callerContext(db, w.bob)).respondToTrade({ tradeId: offer.id, action: "ACCEPT", revision: 0 }),
+      offers(callerContext(db, w.bob)).respondToTrade({
+        tradeId: offer.id,
+        action: "ACCEPT",
+        revision: 0,
+      }),
       listings(callerContext(db, w.bob)).createListing({ ownershipId: w.b1, price: 50 }),
     ]);
     expect([accept.status, listing.status].sort()).toEqual(["fulfilled", "rejected"]);

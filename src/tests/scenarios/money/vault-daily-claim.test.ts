@@ -6,7 +6,8 @@
  * collection the card is refused with the slot kept, so the credits can still be taken. On Postgres: two claims racing
  * one day, and a daily card racing a pack open for the last free slot.
  *
- * Folds vault-daily-claim-face (its "no second daily claim" tombstone is not carried).
+ * Folds vault-daily-claim-face (its "no second daily claim" tombstone is not carried) and daily-claim-mint (the mint
+ * row, the XP, 7334 before 7331 and nothing minted at a full collection).
  */
 let mockDb: unknown;
 jest.mock("~/server/db", () => ({
@@ -76,12 +77,31 @@ async function dailyClaim(w: World) {
   expect(card).toMatchObject({ success: true, rewardType: "card", streak: 1 });
   const ownershipId = card.cardAwarded!.ownershipId;
   expect(card.cardFace).toMatchObject({ copy: { ownershipId }, uncollected: false });
-  expect(await db.cardOwnership.findMany({ where: { ownerId: dee.id }, select: { id: true } })).toEqual([
-    { id: ownershipId },
-  ]);
-  expect(await db.cardTransferEvent.count({ where: { ownershipId, action: "DAILY_CLAIM" } })).toBe(1);
   expect(
-    await db.cardExperienceEvent.findMany({ where: { ownershipId }, select: { source: true, amount: true } })
+    await db.cardOwnership.findMany({ where: { ownerId: dee.id }, select: { id: true } })
+  ).toEqual([{ id: ownershipId }]);
+  // The finish was rolled (none named) and the mint row records it, with the copy's serial
+  const minted = await db.cardOwnership.findUniqueOrThrow({ where: { id: ownershipId } });
+  expect(card.cardAwarded!.finish).toBe(minted.finish);
+  expect(
+    await db.cardTransferEvent.findMany({
+      where: { ownershipId },
+      select: { action: true, cardId: true, serialNumber: true, finish: true, toUserId: true },
+    })
+  ).toEqual([
+    {
+      action: "DAILY_CLAIM",
+      cardId: minted.cardId,
+      serialNumber: minted.serialNumber,
+      finish: minted.finish,
+      toUserId: dee.id,
+    },
+  ]);
+  expect(
+    await db.cardExperienceEvent.findMany({
+      where: { ownershipId },
+      select: { source: true, amount: true },
+    })
   ).toEqual([{ source: "DAILY_CLAIM", amount: 10 }]);
   expect(await ledgerOf(db, dee.id)).toEqual([
     { credits: 0, balanceAfter: 0, type: "EARN_ACTIVE", source: "DAILY_LOGIN_CARD" },
@@ -99,7 +119,12 @@ async function dailyClaim(w: World) {
   const credits = await claim(w, "CREDITS");
   expect(faces).not.toHaveBeenCalled();
   faces.mockRestore();
-  expect(credits).toMatchObject({ success: true, rewardType: "credits", streak: 2, cardFace: null });
+  expect(credits).toMatchObject({
+    success: true,
+    rewardType: "credits",
+    streak: 2,
+    cardFace: null,
+  });
   expect(credits.creditsAwarded).toBeGreaterThan(0);
   expect((await creditsOf(db, [dee.id]))[dee.id]).toBe(credits.creditsAwarded);
   expect((await ledgerOf(db, dee.id)).at(-1)).toEqual({
@@ -131,13 +156,26 @@ describe("vault-daily-claim (memory)", () => {
 
   it("claims the card, refuses a second claim, pays the credits the next day, in the lock order", async () => {
     await dailyClaim(w);
-    // The card claim's slot, then capacity (7334), then the serial (7331), then the copy
+    // The card claim's slot, then the owner's capacity lock (7334), then the card's serial lock (7331), then the copy
+    const [copy] = await db.cardOwnership.findMany({
+      where: { ownerId: w.dee.id },
+      orderBy: { createdAt: "asc" },
+    });
     const order = db.store.log
       .map((e) =>
-        e.kind === "advisory" ? `lock ${e.ns}` : e.kind === "write" ? `${e.model}.${e.op}` : e.kind
+        e.kind === "advisory"
+          ? `lock ${e.ns} ${e.key}`
+          : e.kind === "write"
+            ? `${e.model}.${e.op}`
+            : e.kind
       )
       .filter((e) => /^lock|MyVault.updateMany|CardOwnership.create/.test(e));
-    expect(order.slice(0, 4)).toEqual(["MyVault.updateMany", "lock 7334", "lock 7331", "CardOwnership.create"]);
+    expect(order.slice(0, 4)).toEqual([
+      "MyVault.updateMany",
+      `lock 7334 ${w.dee.id}`,
+      `lock 7331 ${copy!.cardId}`,
+      "CardOwnership.create",
+    ]);
   });
 
   it("keeps the slot at a full collection and says to make room, so the credits can still be taken", async () => {
@@ -153,7 +191,11 @@ describe("vault-daily-claim (memory)", () => {
     jest.spyOn(db.cardOwnership, "findMany").mockRejectedValueOnce(new Error("connection reset"));
     const quiet = jest.spyOn(console, "error").mockImplementation(() => undefined);
     const result = await claim(w, "CARD");
-    expect(result).toMatchObject({ success: true, cardAwarded: { ownershipId: expect.any(String) }, cardFace: null });
+    expect(result).toMatchObject({
+      success: true,
+      cardAwarded: { ownershipId: expect.any(String) },
+      cardFace: null,
+    });
     expect(quiet).toHaveBeenCalledWith(
       "[Cards] A daily card claim committed, but its faces could not be read:",
       expect.any(Error)
@@ -181,13 +223,21 @@ describeWithDb("vault-daily-claim (Postgres)", () => {
     const results = await Promise.allSettled([claim(w, "CARD"), claim(w, "CREDITS")]);
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
     const copies = await db.cardOwnership.count({ where: { ownerId: w.dee.id } });
-    const paid = await db.vaultTransaction.count({ where: { vault: { userId: w.dee.id }, source: "DAILY_LOGIN_CREDITS" } });
+    const paid = await db.vaultTransaction.count({
+      where: { vault: { userId: w.dee.id }, source: "DAILY_LOGIN_CREDITS" },
+    });
     expect(copies + paid).toBe(1);
   });
 
   it("lets only one of a daily card and a pack open take the last free slot", async () => {
     await db.myVault.update({ where: { userId: w.dee.id }, data: { credits: 50 } });
-    await addPack(db, { id: `${w.p}single`, realmId: w.realmId, priceCredits: 50, cardCount: 1, rarity: "COMMON" });
+    await addPack(db, {
+      id: `${w.p}single`,
+      realmId: w.realmId,
+      priceCredits: 50,
+      cardCount: 1,
+      rarity: "COMMON",
+    });
     const bought = await packs(callerContext(db, w.dee)).purchasePack({ packId: `${w.p}single` });
     const room = await db.$transaction((tx) => lockedCopyRoomTx(tx, w.dee.id));
     await db.cardOwnership.createMany({

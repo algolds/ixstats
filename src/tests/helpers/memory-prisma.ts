@@ -151,7 +151,12 @@ const same = (a: Value, b: Value): boolean => {
   return a === b;
 };
 
-const toTime = (v: Value): Value => (isDate(v) ? v.getTime() : typeof v === "string" && /^\d{4}-\d\d-\d\dT/.test(v) ? Date.parse(v) : v);
+const toTime = (v: Value): Value =>
+  isDate(v)
+    ? v.getTime()
+    : typeof v === "string" && /^\d{4}-\d\d-\d\dT/.test(v)
+      ? Date.parse(v)
+      : v;
 
 /** Postgres order for one column: enums by declaration, strings by code unit (C collation), dates by time. */
 function compareValues(field: Field | undefined, a: Value, b: Value): number {
@@ -181,7 +186,10 @@ function clone<T>(v: T): T {
 
 /** A Prisma.sql value (its class is not exported at runtime). */
 const isSql = (v: Value): v is { strings: string[]; values: Value[] } =>
-  typeof v === "object" && v !== null && Array.isArray((v as Args).strings) && Array.isArray((v as Args).values);
+  typeof v === "object" &&
+  v !== null &&
+  Array.isArray((v as Args).strings) &&
+  Array.isArray((v as Args).values);
 
 // --- the store ----------------------------------------------------------------------------------------------------
 
@@ -458,11 +466,27 @@ function scalarFilter(field: Field, value: Value, filter: Value): Truth {
     const isNull = value === null || value === undefined;
     switch (op) {
       case "equals":
-        parts.push(arg === null ? isNull : isNull ? null : insensitive && typeof value === "string" ? value.toLowerCase() === String(arg).toLowerCase() : same(value, arg));
+        parts.push(
+          arg === null
+            ? isNull
+            : isNull
+              ? null
+              : insensitive && typeof value === "string"
+                ? value.toLowerCase() === String(arg).toLowerCase()
+                : same(value, arg)
+        );
         break;
       case "not":
         if (arg === null) parts.push(!isNull);
-        else if (isPlainObject(arg)) parts.push(not3(scalarFilter(field, value, { ...arg, ...(insensitive ? { mode: "insensitive" } : {}) })));
+        else if (isPlainObject(arg))
+          parts.push(
+            not3(
+              scalarFilter(field, value, {
+                ...arg,
+                ...(insensitive ? { mode: "insensitive" } : {}),
+              })
+            )
+          );
         else parts.push(isNull ? null : !same(value, arg));
         break;
       case "in":
@@ -492,10 +516,14 @@ function scalarFilter(field: Field, value: Value, filter: Value): Truth {
         parts.push(isNull ? null : (value as Value[]).some((v) => same(v, arg)));
         break;
       case "hasSome":
-        parts.push(isNull ? null : (arg as Value[]).some((a) => (value as Value[]).some((v) => same(v, a))));
+        parts.push(
+          isNull ? null : (arg as Value[]).some((a) => (value as Value[]).some((v) => same(v, a)))
+        );
         break;
       case "hasEvery":
-        parts.push(isNull ? null : (arg as Value[]).every((a) => (value as Value[]).some((v) => same(v, a))));
+        parts.push(
+          isNull ? null : (arg as Value[]).every((a) => (value as Value[]).some((v) => same(v, a)))
+        );
         break;
       case "isEmpty":
         parts.push(isNull ? null : ((value as Value[]).length === 0) === arg);
@@ -515,7 +543,8 @@ function jsonFilter(value: Value, filter: Args): Truth {
     const missing = at === undefined || at === null;
     switch (op) {
       case "equals":
-        if (arg === Prisma.DbNull || arg === Prisma.JsonNull || arg === Prisma.AnyNull) parts.push(missing);
+        if (arg === Prisma.DbNull || arg === Prisma.JsonNull || arg === Prisma.AnyNull)
+          parts.push(missing);
         else parts.push(missing ? null : same(at, arg));
         break;
       case "not":
@@ -561,7 +590,9 @@ function whereTruth(store: MemoryStore, model: Model, row: Row, where: Args | un
     }
     const compound = model.uniques.find((u) => u.length > 1 && u.join("_") === key);
     if (compound) {
-      parts.push(and3(compound.map((k) => scalarFilter(model.fields.get(k)!, row[k], (cond as Args)[k]))));
+      parts.push(
+        and3(compound.map((k) => scalarFilter(model.fields.get(k)!, row[k], (cond as Args)[k])))
+      );
       continue;
     }
     const rel = model.relations.get(key);
@@ -576,10 +607,17 @@ function whereTruth(store: MemoryStore, model: Model, row: Row, where: Args | un
   return and3(parts);
 }
 
-function relationTruth(store: MemoryStore, model: Model, rel: Relation, row: Row, cond: Value): Truth {
+function relationTruth(
+  store: MemoryStore,
+  model: Model,
+  rel: Relation,
+  row: Row,
+  cond: Value
+): Truth {
   const target = MODELS.get(rel.target)!;
   const rows = related(store, model, rel, row);
-  const hit = (w: Args | null | undefined) => rows.some((r) => whereTruth(store, target, r, w ?? undefined) === true);
+  const hit = (w: Args | null | undefined) =>
+    rows.some((r) => whereTruth(store, target, r, w ?? undefined) === true);
   if (rel.isList) {
     const c = cond as Args;
     const parts: boolean[] = [];
@@ -604,7 +642,12 @@ const matches = (store: MemoryStore, model: Model, row: Row, where: Args | undef
 
 // --- order, page, project -----------------------------------------------------------------------------------------
 
-function sortKey(store: MemoryStore, model: Model, row: Row, spec: Args): { field?: Field; value: Value; dir: "asc" | "desc"; nulls?: string } {
+function sortKey(
+  store: MemoryStore,
+  model: Model,
+  row: Row,
+  spec: Args
+): { field?: Field; value: Value; dir: "asc" | "desc"; nulls?: string } {
   const [key, how] = Object.entries(spec)[0] ?? unsupported("empty orderBy");
   const rel = model.relations.get(key);
   if (rel) {
@@ -614,14 +657,21 @@ function sortKey(store: MemoryStore, model: Model, row: Row, spec: Args): { fiel
     }
     const target = MODELS.get(rel.target)!;
     const other = related(store, model, rel, row)[0];
-    return other ? sortKey(store, target, other, how as Args) : { value: null, dir: Object.values(how as Args)[0] as "asc" };
+    return other
+      ? sortKey(store, target, other, how as Args)
+      : { value: null, dir: Object.values(how as Args)[0] as "asc" };
   }
   const field = model.fields.get(key) ?? unsupported(`orderBy ${model.name}.${key}`);
   if (isPlainObject(how)) return { field, value: row[key], dir: how.sort, nulls: how.nulls };
   return { field, value: row[key], dir: how as "asc" | "desc" };
 }
 
-function sortRows(store: MemoryStore, model: Model, rows: Row[], orderBy: Args | Args[] | undefined): Row[] {
+function sortRows(
+  store: MemoryStore,
+  model: Model,
+  rows: Row[],
+  orderBy: Args | Args[] | undefined
+): Row[] {
   if (!orderBy) return rows;
   const specs = (Array.isArray(orderBy) ? orderBy : [orderBy]).flatMap((o) =>
     Object.entries(o).map(([k, v]) => ({ [k]: v }))
@@ -678,7 +728,9 @@ function countOf(store: MemoryStore, model: Model, row: Row, spec: Args): Record
     const rel = model.relations.get(name) ?? unsupported(`_count ${model.name}.${name}`);
     const target = MODELS.get(rel.target)!;
     const rows = related(store, model, rel, row);
-    out[name] = isPlainObject(how) ? rows.filter((r) => matches(store, target, r, how.where)).length : rows.length;
+    out[name] = isPlainObject(how)
+      ? rows.filter((r) => matches(store, target, r, how.where)).length
+      : rows.length;
   }
   return out;
 }
@@ -689,7 +741,18 @@ function project(store: MemoryStore, model: Model, row: Row, args: Args): Row {
     for (const [key, how] of Object.entries(args.select as Args)) {
       if (!how) continue;
       if (key === "_count") {
-        out._count = countOf(store, model, row, how === true ? { select: Object.fromEntries([...model.relations.values()].filter((r) => r.isList).map((r) => [r.field, true])) } : how);
+        out._count = countOf(
+          store,
+          model,
+          row,
+          how === true
+            ? {
+                select: Object.fromEntries(
+                  [...model.relations.values()].filter((r) => r.isList).map((r) => [r.field, true])
+                ),
+              }
+            : how
+        );
         continue;
       }
       if (model.relations.has(key)) out[key] = projectRelation(store, model, row, key, how);
@@ -708,7 +771,13 @@ function project(store: MemoryStore, model: Model, row: Row, args: Args): Row {
   return out;
 }
 
-function projectRelation(store: MemoryStore, model: Model, row: Row, key: string, how: Value): Value {
+function projectRelation(
+  store: MemoryStore,
+  model: Model,
+  row: Row,
+  key: string,
+  how: Value
+): Value {
   const rel = model.relations.get(key) ?? unsupported(`relation ${model.name}.${key}`);
   const target = MODELS.get(rel.target)!;
   const nested = (how === true ? {} : how) as Args;
@@ -742,11 +811,16 @@ function applyData(store: MemoryStore, model: Model, row: Row, data: Args): void
       else if (op === "decrement") next = cur - (by as number);
       else if (op === "multiply") next = cur * (by as number);
       else if (op === "divide") next = cur / (by as number);
-      else if (op === "push") next = [...((row[key] as Value[]) ?? []), ...(Array.isArray(by) ? by : [by])];
+      else if (op === "push")
+        next = [...((row[key] as Value[]) ?? []), ...(Array.isArray(by) ? by : [by])];
       else unsupported(`update op ${op}`);
     }
     if (field.type === "DateTime" && typeof next === "string") next = new Date(next);
-    if (field.type === "Int" && typeof next === "number" && (next > 2_147_483_647 || next < -2_147_483_648)) {
+    if (
+      field.type === "Int" &&
+      typeof next === "number" &&
+      (next > 2_147_483_647 || next < -2_147_483_648)
+    ) {
       throw known("P2020", `Value out of range for the type: ${model.name}.${key}`);
     }
     row[key] = clone(next);
@@ -754,7 +828,13 @@ function applyData(store: MemoryStore, model: Model, row: Row, data: Args): void
   for (const f of model.scalars) if (f.isUpdatedAt && !(f.name in data)) row[f.name] = new Date();
 }
 
-function applyRelationWrite(store: MemoryStore, model: Model, rel: Relation, row: Row, write: Args): void {
+function applyRelationWrite(
+  store: MemoryStore,
+  model: Model,
+  rel: Relation,
+  row: Row,
+  write: Args
+): void {
   if (!rel.owning) return unsupported(`nested write on ${model.name}.${rel.field}`);
   const target = MODELS.get(rel.target)!;
   if (write.connect) {
@@ -795,7 +875,13 @@ function createRow(store: MemoryStore, model: Model, data: Args): Row {
   for (const [rel, v] of nested) {
     const target = MODELS.get(rel.target)!;
     const link = Object.fromEntries(rel.targetFields.map((k, i) => [k, row[rel.localFields[i]!]]));
-    const creates = v.create ? (Array.isArray(v.create) ? v.create : [v.create]) : v.createMany ? v.createMany.data : unsupported(`nested ${Object.keys(v)} on ${model.name}.${rel.field}`);
+    const creates = v.create
+      ? Array.isArray(v.create)
+        ? v.create
+        : [v.create]
+      : v.createMany
+        ? v.createMany.data
+        : unsupported(`nested ${Object.keys(v)} on ${model.name}.${rel.field}`);
     for (const child of creates as Args[]) createRow(store, target, { ...child, ...link });
   }
   return row;
@@ -812,9 +898,18 @@ function aggregateOf(model: Model, rows: Row[], args: Args): Row {
       if (!on) continue;
       const field = model.fields.get(key)!;
       const vs = rows.map((r) => r[key]).filter((v) => v !== null && v !== undefined);
-      if (op === "_sum") part[key] = vs.length ? vs.reduce((s: number, v) => s + (v as number), 0) : null;
-      else if (op === "_avg") part[key] = vs.length ? (vs as number[]).reduce((s, v) => s + v, 0) / vs.length : null;
-      else part[key] = vs.length ? vs.reduce((m, v) => ((op === "_min" ? compareValues(field, v, m) < 0 : compareValues(field, v, m) > 0) ? v : m)) : null;
+      if (op === "_sum")
+        part[key] = vs.length ? vs.reduce((s: number, v) => s + (v as number), 0) : null;
+      else if (op === "_avg")
+        part[key] = vs.length ? (vs as number[]).reduce((s, v) => s + v, 0) / vs.length : null;
+      else
+        part[key] = vs.length
+          ? vs.reduce((m, v) =>
+              (op === "_min" ? compareValues(field, v, m) < 0 : compareValues(field, v, m) > 0)
+                ? v
+                : m
+            )
+          : null;
     }
     out[op] = part;
   }
@@ -824,7 +919,10 @@ function aggregateOf(model: Model, rows: Row[], args: Args): Row {
       const part: Row = {};
       for (const [key, on] of Object.entries(args._count as Args)) {
         if (!on) continue;
-        part[key] = key === "_all" ? rows.length : rows.filter((r) => r[key] !== null && r[key] !== undefined).length;
+        part[key] =
+          key === "_all"
+            ? rows.length
+            : rows.filter((r) => r[key] !== null && r[key] !== undefined).length;
       }
       out._count = part;
     }
@@ -850,7 +948,8 @@ class Mutex {
   }
 }
 
-const notFound = (model: Model) => known("P2025", `No ${model.name} found`, { modelName: model.name });
+const notFound = (model: Model) =>
+  known("P2025", `No ${model.name} found`, { modelName: model.name });
 
 function delegate(store: MemoryStore, model: Model, guard: <T>(work: () => T) => Promise<T>) {
   const all = () => store.rows(model.name);
@@ -864,7 +963,8 @@ function delegate(store: MemoryStore, model: Model, guard: <T>(work: () => T) =>
     return one({ where: args.where });
   };
   const out = (row: Row | undefined, args: Args) => (row ? project(store, model, row, args) : null);
-  const write = (op: string, where?: Args) => store.log.push({ kind: "write", model: model.name, op, where });
+  const write = (op: string, where?: Args) =>
+    store.log.push({ kind: "write", model: model.name, op, where });
   const updateRow = (row: Row, data: Args) => {
     const before = clone(row);
     applyData(store, model, row, data);
@@ -893,14 +993,17 @@ function delegate(store: MemoryStore, model: Model, guard: <T>(work: () => T) =>
         return project(store, model, row, args);
       }),
     findMany: (args: Args = {}) =>
-      guard(() => page(store, model, filtered(args.where), args).map((r) => project(store, model, r, args))),
+      guard(() =>
+        page(store, model, filtered(args.where), args).map((r) => project(store, model, r, args))
+      ),
     count: (args: Args = {}) =>
       guard(() => {
         const rows = page(store, model, filtered(args.where), args);
         if (!args.select) return rows.length;
         return aggregateOf(model, rows, { _count: args.select })._count;
       }),
-    aggregate: (args: Args) => guard(() => aggregateOf(model, page(store, model, filtered(args.where), args), args)),
+    aggregate: (args: Args) =>
+      guard(() => aggregateOf(model, page(store, model, filtered(args.where), args), args)),
     groupBy: (args: Args) =>
       guard(() => {
         const by: string[] = Array.isArray(args.by) ? args.by : [args.by];
@@ -914,7 +1017,11 @@ function delegate(store: MemoryStore, model: Model, guard: <T>(work: () => T) =>
           ...Object.fromEntries(by.map((f) => [f, clone(rs[0]![f])])),
           ...aggregateOf(model, rs, args),
         }));
-        return page(store, model, rows, { orderBy: args.orderBy, take: args.take, skip: args.skip });
+        return page(store, model, rows, {
+          orderBy: args.orderBy,
+          take: args.take,
+          skip: args.skip,
+        });
       }),
     create: (args: Args) =>
       guard(() => {
@@ -930,7 +1037,12 @@ function delegate(store: MemoryStore, model: Model, guard: <T>(work: () => T) =>
             createRow(store, model, data);
             count++;
           } catch (error) {
-            if (!(args.skipDuplicates && error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")) throw error;
+            if (!(
+              args.skipDuplicates &&
+              error instanceof Prisma.PrismaClientKnownRequestError &&
+              error.code === "P2002"
+            ))
+              throw error;
           }
         }
         return { count };
@@ -938,7 +1050,9 @@ function delegate(store: MemoryStore, model: Model, guard: <T>(work: () => T) =>
     createManyAndReturn: (args: Args) =>
       guard(() => {
         write("createMany");
-        return (args.data as Args[]).map((d) => project(store, model, createRow(store, model, d), args));
+        return (args.data as Args[]).map((d) =>
+          project(store, model, createRow(store, model, d), args)
+        );
       }),
     update: (args: Args) =>
       guard(() => {

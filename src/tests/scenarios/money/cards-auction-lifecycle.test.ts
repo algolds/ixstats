@@ -64,13 +64,22 @@ async function seed(db: PrismaClient, p: string): Promise<World> {
   const nia = await addPlayer(db, `${p}nia`, 0);
   const { id: countryId } = await addCountry(db, `${p}aurelia`, realmId, nia.id);
   const card = `${p}card`;
-  await addCard(db, { id: card, realmId, rarity: "EPIC", cardType: "NATION", title: "Aurelia", countryId });
+  await addCard(db, {
+    id: card,
+    realmId,
+    rarity: "EPIC",
+    cardType: "NATION",
+    title: "Aurelia",
+    countryId,
+  });
   const copies = [`${p}own1`, `${p}own2`, `${p}own3`] as [string, string, string];
-  for (const [i, id] of copies.entries()) await addCopy(db, { id, cardId: card, ownerId: sam.id, serialNumber: i + 1 });
+  for (const [i, id] of copies.entries())
+    await addCopy(db, { id, cardId: card, ownerId: sam.id, serialNumber: i + 1 });
   return { db, p, sam, ann, cy, bob, nia, copies };
 }
 
-const total = (b: Record<string, number>) => Math.round(Object.values(b).reduce((s, v) => s + v, 0) * 100) / 100;
+const total = (b: Record<string, number>) =>
+  Math.round(Object.values(b).reduce((s, v) => s + v, 0) * 100) / 100;
 /**
  * The card notices sent, as [recipient, title, message] in recipient order (the bidders are read without an order),
  * leaving out the routers' own listing and bid notices.
@@ -81,7 +90,8 @@ const cardNotices = () =>
     .filter((n) => n.source === "cards")
     .map((n) => [n.userId, n.title, n.message])
     .sort(([a], [b]) => (a! < b! ? -1 : a! > b! ? 1 : 0));
-const byRecipient = (rows: string[][]) => [...rows].sort(([a], [b]) => (a! < b! ? -1 : a! > b! ? 1 : 0));
+const byRecipient = (rows: string[][]) =>
+  [...rows].sort(([a], [b]) => (a! < b! ? -1 : a! > b! ? 1 : 0));
 const endAuction = (db: PrismaClient, id: string) =>
   db.cardAuction.update({ where: { id }, data: { endTime: new Date(Date.now() - 1000) } });
 
@@ -99,19 +109,30 @@ async function auctionLifecycle(w: World, listingFee: number, refundPct: number)
   });
   expect(auction).toMatchObject({ listingFee, currentBid: 100, status: "ACTIVE" });
   expect(auction.endTime.getTime() - Date.now()).toBeGreaterThan(23.9 * 3_600_000);
-  expect(await db.cardOwnership.findUnique({ where: { id: w.copies[0] }, select: { isLocked: true } })).toEqual({
+  expect(
+    await db.cardOwnership.findUnique({ where: { id: w.copies[0] }, select: { isLocked: true } })
+  ).toEqual({
     isLocked: true,
   });
 
   // A bid must beat the current one by 5%, rounded up; each new bid holds its IxC and refunds the one it beat
-  await expect(market(callerContext(db, ann)).placeBid({ auctionId: auction.id, amount: 104 })).rejects.toMatchObject({
+  await expect(
+    market(callerContext(db, ann)).placeBid({ auctionId: auction.id, amount: 104 })
+  ).rejects.toMatchObject({
     code: "BAD_REQUEST",
   });
   await market(callerContext(db, ann)).placeBid({ auctionId: auction.id, amount: 105 });
-  expect((await ledgerOf(db, ann.id)).at(-1)).toMatchObject({ credits: -105, source: "auction_bid_reserve" });
+  expect((await ledgerOf(db, ann.id)).at(-1)).toMatchObject({
+    credits: -105,
+    source: "auction_bid_reserve",
+  });
   create.mockClear();
   await market(callerContext(db, cy)).placeBid({ auctionId: auction.id, amount: 111 });
-  expect((await ledgerOf(db, ann.id)).at(-1)).toMatchObject({ credits: 105, type: "REFUND", source: "auction_bid_refund" });
+  expect((await ledgerOf(db, ann.id)).at(-1)).toMatchObject({
+    credits: 105,
+    type: "REFUND",
+    source: "auction_bid_refund",
+  });
   expect(cardNotices()).toEqual([
     [ann.id, "You've been outbid", "Someone placed a higher bid of 111 IxC on Aurelia."],
   ]);
@@ -122,7 +143,11 @@ async function auctionLifecycle(w: World, listingFee: number, refundPct: number)
   await market(callerContext(db, bob)).placeBid({ auctionId: auction.id, amount: 117 });
   const held = await db.cardAuction.findUniqueOrThrow({ where: { id: auction.id } });
   expect(held.endTime.getTime()).toBe(late.getTime() + 60_000);
-  expect(await creditsOf(db, [ann.id, cy.id, bob.id])).toEqual({ [ann.id]: 1000, [cy.id]: 1000, [bob.id]: 883 });
+  expect(await creditsOf(db, [ann.id, cy.id, bob.id])).toEqual({
+    [ann.id]: 1000,
+    [cy.id]: 1000,
+    [bob.id]: 883,
+  });
 
   // The completion job settles it: Bob already paid; Sam gets 117 less the 11 IxC fee, Nia 2% out of that fee
   await endAuction(db, auction.id);
@@ -133,9 +158,16 @@ async function auctionLifecycle(w: World, listingFee: number, refundPct: number)
   expect(after[sam.id]).toBe(1000 - listingFee + 106);
   expect(after[nia.id]).toBe(2.34);
   expect(total(after)).toBe(Math.round((start - listingFee - (11 - 2.34)) * 100) / 100);
-  expect((await ledgerOf(db, sam.id)).at(-1)).toMatchObject({ credits: 106, type: "EARN_CARDS", source: "card_sale_auction" });
+  expect((await ledgerOf(db, sam.id)).at(-1)).toMatchObject({
+    credits: 106,
+    type: "EARN_CARDS",
+    source: "card_sale_auction",
+  });
   expect(
-    await db.cardOwnership.findUnique({ where: { id: w.copies[0] }, select: { ownerId: true, isLocked: true } })
+    await db.cardOwnership.findUnique({
+      where: { id: w.copies[0] },
+      select: { ownerId: true, isLocked: true },
+    })
   ).toEqual({ ownerId: bob.id, isLocked: false });
   expect(
     await db.cardTransferEvent.findMany({
@@ -143,15 +175,29 @@ async function auctionLifecycle(w: World, listingFee: number, refundPct: number)
       select: { fromUserId: true, toUserId: true, price: true },
     })
   ).toEqual([{ fromUserId: sam.id, toUserId: bob.id, price: 117 }]);
-  expect(await db.cardExperienceEvent.count({ where: { ownershipId: w.copies[0], source: "AUCTION_WIN" } })).toBe(1);
+  expect(
+    await db.cardExperienceEvent.count({
+      where: { ownershipId: w.copies[0], source: "AUCTION_WIN" },
+    })
+  ).toBe(1);
   // Each player is told once: the winner, the seller, every other bidder, and the royalty's owner; nobody else
-  expect(cardNotices()).toEqual(byRecipient([
-    [bob.id, "You won an auction", "Aurelia is yours for 117 IxC."],
-    [sam.id, "Your auction sold", "Aurelia sold for 117 IxC. You received 106 IxC after the market fee."],
-    [ann.id, "An auction you bid on ended", "Aurelia went for 117 IxC. Your bid was refunded."],
-    [cy.id, "An auction you bid on ended", "Aurelia went for 117 IxC. Your bid was refunded."],
-    [nia.id, "Royalty paid", "A copy of your nation's card, Aurelia, changed hands. You received 2.34 IxC."],
-  ]));
+  expect(cardNotices()).toEqual(
+    byRecipient([
+      [bob.id, "You won an auction", "Aurelia is yours for 117 IxC."],
+      [
+        sam.id,
+        "Your auction sold",
+        "Aurelia sold for 117 IxC. You received 106 IxC after the market fee.",
+      ],
+      [ann.id, "An auction you bid on ended", "Aurelia went for 117 IxC. Your bid was refunded."],
+      [cy.id, "An auction you bid on ended", "Aurelia went for 117 IxC. Your bid was refunded."],
+      [
+        nia.id,
+        "Royalty paid",
+        "A copy of your nation's card, Aurelia, changed hands. You received 2.34 IxC.",
+      ],
+    ])
+  );
   expect(await processExpiredAuctions()).toMatchObject({ processed: 0 });
 
   // An auction with no bids comes back with the refund share of its stored fee, and the notice names it
@@ -164,15 +210,27 @@ async function auctionLifecycle(w: World, listingFee: number, refundPct: number)
   create.mockClear();
   await processExpiredAuctions();
   const refund = Math.floor(listingFee * refundPct) / 100;
-  expect(await db.cardAuction.findUnique({ where: { id: unsold.id }, select: { status: true } })).toEqual({
+  expect(
+    await db.cardAuction.findUnique({ where: { id: unsold.id }, select: { status: true } })
+  ).toEqual({
     status: "CANCELLED",
   });
-  expect((await ledgerOf(db, sam.id)).at(-1)).toMatchObject({ credits: refund, type: "REFUND", source: "auction_fee_refund" });
-  expect(await db.cardOwnership.findUnique({ where: { id: w.copies[1] }, select: { isLocked: true } })).toEqual({
+  expect((await ledgerOf(db, sam.id)).at(-1)).toMatchObject({
+    credits: refund,
+    type: "REFUND",
+    source: "auction_fee_refund",
+  });
+  expect(
+    await db.cardOwnership.findUnique({ where: { id: w.copies[1] }, select: { isLocked: true } })
+  ).toEqual({
     isLocked: false,
   });
   expect(cardNotices()).toEqual([
-    [sam.id, "Your auction ended with no bids", `Aurelia is back in your collection. We refunded ${refund} IxC of the listing fee.`],
+    [
+      sam.id,
+      "Your auction ended with no bids",
+      `Aurelia is back in your collection. We refunded ${refund} IxC of the listing fee.`,
+    ],
   ]);
 
   // A buyout under the fee threshold pays no fee, refunds the high bid, and is named a buyout
@@ -189,13 +247,17 @@ async function auctionLifecycle(w: World, listingFee: number, refundPct: number)
   expect((await creditsOf(db, [sam.id]))[sam.id]).toBe(samBefore + 90);
   expect((await creditsOf(db, [ann.id]))[ann.id]).toBe(1000);
   expect(
-    await db.cardTransferEvent.count({ where: { ownershipId: w.copies[2], action: "AUCTION_BUYOUT", price: 90 } })
+    await db.cardTransferEvent.count({
+      where: { ownershipId: w.copies[2], action: "AUCTION_BUYOUT", price: 90 },
+    })
   ).toBe(1);
-  expect(cardNotices()).toEqual(byRecipient([
-    [cy.id, "You won an auction", "Aurelia is yours for 90 IxC."],
-    [sam.id, "Your auction was bought out", "Aurelia sold for 90 IxC. You received 90 IxC."],
-    [ann.id, "An auction you bid on ended", "Aurelia went for 90 IxC. Your bid was refunded."],
-  ]));
+  expect(cardNotices()).toEqual(
+    byRecipient([
+      [cy.id, "You won an auction", "Aurelia is yours for 90 IxC."],
+      [sam.id, "Your auction was bought out", "Aurelia sold for 90 IxC. You received 90 IxC."],
+      [ann.id, "An auction you bid on ended", "Aurelia went for 90 IxC. Your bid was refunded."],
+    ])
+  );
   return { auctionId: auction.id };
 }
 
@@ -238,7 +300,9 @@ describe("cards-auction-lifecycle (memory)", () => {
     await endAuction(db as never, auction.id);
     create.mockClear();
     await processExpiredAuctions();
-    expect(cardNotices()).toEqual([[w.sam.id, "Your auction ended with no bids", "Aurelia is back in your collection."]]);
+    expect(cardNotices()).toEqual([
+      [w.sam.id, "Your auction ended with no bids", "Aurelia is back in your collection."],
+    ]);
     expect(await ledgerOf(db as never, w.sam.id)).toEqual([]);
   });
 
@@ -252,7 +316,10 @@ describe("cards-auction-lifecycle (memory)", () => {
     const realFind = db.cardAuction.findUnique;
     jest.spyOn(db.cardAuction, "findUnique").mockImplementationOnce(async (args: never) => {
       const read = await realFind(args);
-      await auctionService.placeBid({ userId: w.cy.id, auctionId: auction.id, amount: 105 }, db as never);
+      await auctionService.placeBid(
+        { userId: w.cy.id, auctionId: auction.id, amount: 105 },
+        db as never
+      );
       return read;
     });
     await expect(
@@ -310,7 +377,10 @@ describeWithDb("cards-auction-lifecycle (Postgres)", () => {
       while (Date.now() <= end + 50) await new Promise((r) => setTimeout(r, 5));
       await auctionService.completeAuction(auction.id, db);
     };
-    await Promise.allSettled([market(callerContext(db, w.bob)).executeBuyout({ auctionId: auction.id }), complete()]);
+    await Promise.allSettled([
+      market(callerContext(db, w.bob)).executeBuyout({ auctionId: auction.id }),
+      complete(),
+    ]);
     const sales = await db.cardTransferEvent.findMany({
       where: { ownershipId: w.copies[0], action: { in: ["AUCTION_END", "AUCTION_BUYOUT"] } },
       select: { action: true, toUserId: true },
@@ -318,10 +388,16 @@ describeWithDb("cards-auction-lifecycle (Postgres)", () => {
     expect(sales).toHaveLength(1);
     const { ownerId } = await db.cardOwnership.findUniqueOrThrow({ where: { id: w.copies[0] } });
     expect(ownerId).toBe(sales[0]!.toUserId);
-    expect(await db.vaultTransaction.count({ where: { vault: { userId: w.sam.id }, type: "EARN_CARDS" } })).toBe(1);
+    expect(
+      await db.vaultTransaction.count({
+        where: { vault: { userId: w.sam.id }, type: "EARN_CARDS" },
+      })
+    ).toBe(1);
     const credits = await creditsOf(db, [w.ann.id, w.bob.id]);
     expect(credits).toEqual(
-      sales[0]!.action === "AUCTION_BUYOUT" ? { [w.ann.id]: 1000, [w.bob.id]: 600 } : { [w.ann.id]: 895, [w.bob.id]: 1000 }
+      sales[0]!.action === "AUCTION_BUYOUT"
+        ? { [w.ann.id]: 1000, [w.bob.id]: 600 }
+        : { [w.ann.id]: 895, [w.bob.id]: 1000 }
     );
   });
 

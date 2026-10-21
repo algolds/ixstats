@@ -5,7 +5,8 @@
  * with the races a mock cannot prove: two opens of one pack, a pack open against a break-down over the same cards, two
  * new-copy sources at the last free slot, and a dust credit at the Int ceiling.
  *
- * Folds card-packs-notices, card-packs-open-faces and workshop-numbers.
+ * Folds card-packs-notices, card-packs-open-faces, workshop-numbers and ledger-bypass-routes (the VT-4/5/23
+ * regression: a purchase goes through the ledger, its switches and its counters).
  */
 let mockDb: unknown;
 jest.mock("~/server/db", () => ({
@@ -71,14 +72,34 @@ async function seed(db: PrismaClient, p: string): Promise<World> {
     await addCard(db, { id: `${p}${n}`, realmId, rarity });
   }
   await addPack(db, { id: `${p}epic5`, realmId, priceCredits: 100, cardCount: 5, rarity: "EPIC" });
-  await addPack(db, { id: `${p}ultra1`, realmId, priceCredits: 50, cardCount: 1, rarity: "ULTRA_RARE" });
-  return { db, p, alice, realmId, epicPack: `${p}epic5`, ultraPack: `${p}ultra1`, common: `${p}c1` };
+  await addPack(db, {
+    id: `${p}ultra1`,
+    realmId,
+    priceCredits: 50,
+    cardCount: 1,
+    rarity: "ULTRA_RARE",
+  });
+  return {
+    db,
+    p,
+    alice,
+    realmId,
+    epicPack: `${p}epic5`,
+    ultraPack: `${p}ultra1`,
+    common: `${p}c1`,
+  };
 }
 
 const copiesOf = (db: PrismaClient, ownerId: string) =>
   db.cardOwnership.findMany({
     where: { ownerId },
-    select: { id: true, cardId: true, serialNumber: true, finish: true, cards: { select: { rarity: true } } },
+    select: {
+      id: true,
+      cardId: true,
+      serialNumber: true,
+      finish: true,
+      cards: { select: { rarity: true } },
+    },
     orderBy: { id: "asc" },
   });
 
@@ -105,7 +126,9 @@ async function packToDust(w: World) {
   expect(await ledgerOf(db, alice.id)).toEqual([
     { credits: -100, balanceAfter: 900, type: "SPEND_PACKS", source: "PACK_PURCHASE" },
   ]);
-  expect(await db.myVault.findUnique({ where: { userId: alice.id }, select: { lifetimeSpent: true } })).toEqual({
+  expect(
+    await db.myVault.findUnique({ where: { userId: alice.id }, select: { lifetimeSpent: true } })
+  ).toEqual({
     lifetimeSpent: 100,
   });
   const waiting = await store.getMyPacks({ isOpened: false });
@@ -117,12 +140,16 @@ async function packToDust(w: World) {
   expect(opened).not.toHaveProperty("cards");
   const copies = await copiesOf(db, alice.id);
   expect(copies).toHaveLength(5);
-  expect(opened.faces.map((f) => f.copy?.ownershipId).sort()).toEqual(copies.map((c) => c.id).sort());
+  expect(opened.faces.map((f) => f.copy?.ownershipId).sort()).toEqual(
+    copies.map((c) => c.id).sort()
+  );
   expect(opened.faces.every((f) => f.rarity === "EPIC" && !f.uncollected)).toBe(true);
   const serials = copies.map((c) => `${c.cardId}#${c.serialNumber}`);
   expect(new Set(serials).size).toBe(5);
   expect(
-    await db.cardTransferEvent.count({ where: { ownershipId: { in: copies.map((c) => c.id) }, action: "PACK_OPEN" } })
+    await db.cardTransferEvent.count({
+      where: { ownershipId: { in: copies.map((c) => c.id) }, action: "PACK_OPEN" },
+    })
   ).toBe(5);
   expect(create).toHaveBeenCalledWith(
     expect.objectContaining({
@@ -136,7 +163,9 @@ async function packToDust(w: World) {
   );
 
   // A second open of the same pack is refused and mints nothing
-  await expect(store.openPack({ userPackId: bought.userPack.id })).rejects.toMatchObject({ code: "CONFLICT" });
+  await expect(store.openPack({ userPackId: bought.userPack.id })).rejects.toMatchObject({
+    code: "CONFLICT",
+  });
   expect(await db.cardOwnership.count({ where: { ownerId: alice.id } })).toBe(5);
 
   // A one-card pack's notice is singular, and an Ultra Rare best pull is not high priority
@@ -152,7 +181,8 @@ async function packToDust(w: World) {
   const cfg = await getEconomyConfig(db);
   const burned = copies.slice(0, 2);
   const expected = burned.reduce(
-    (sum, c) => sum + dustYield({ rarity: c.cards.rarity, finish: c.finish, importDiscounted: false }, cfg),
+    (sum, c) =>
+      sum + dustYield({ rarity: c.cards.rarity, finish: c.finish, importDiscounted: false }, cfg),
     0
   );
   const crafting = workshop(callerContext(db, alice));
@@ -164,7 +194,9 @@ async function packToDust(w: World) {
     expect.objectContaining({ realmId: w.realmId, balance: expected }),
   ]);
   expect(
-    await db.cardDustEvent.count({ where: { userId: alice.id, source: "BREAKDOWN", delta: { gt: 0 } } })
+    await db.cardDustEvent.count({
+      where: { userId: alice.id, source: "BREAKDOWN", delta: { gt: 0 } },
+    })
   ).toBe(2);
   expect(await db.cardOwnership.count({ where: { id: { in: burned.map((c) => c.id) } } })).toBe(0);
   expect(
@@ -175,7 +207,12 @@ async function packToDust(w: World) {
     })
   ).toEqual(
     expect.arrayContaining(
-      burned.map((c) => ({ cardId: c.cardId, serialNumber: c.serialNumber, finish: c.finish, toUserId: null }))
+      burned.map((c) => ({
+        cardId: c.cardId,
+        serialNumber: c.serialNumber,
+        finish: c.finish,
+        toUserId: null,
+      }))
     )
   );
 
@@ -193,13 +230,21 @@ async function packToDust(w: World) {
     source: "card_craft",
   });
   expect(
-    await db.cardDustEvent.findFirst({ where: { userId: alice.id, source: "CRAFT" }, select: { delta: true } })
+    await db.cardDustEvent.findFirst({
+      where: { userId: alice.id, source: "CRAFT" },
+      select: { delta: true },
+    })
   ).toEqual({ delta: -quote.dust });
   expect(
-    await db.cardOwnership.findUnique({ where: { id: crafted.ownershipId }, select: { cardId: true, finish: true } })
+    await db.cardOwnership.findUnique({
+      where: { id: crafted.ownershipId },
+      select: { cardId: true, finish: true },
+    })
   ).toEqual({ cardId: w.common, finish: "STANDARD" });
   expect(
-    await db.cardTransferEvent.count({ where: { ownershipId: crafted.ownershipId, action: "CRAFT" } })
+    await db.cardTransferEvent.count({
+      where: { ownershipId: crafted.ownershipId, action: "CRAFT" },
+    })
   ).toBe(1);
   return { numbers, quote };
 }
@@ -256,7 +301,9 @@ describe("cards-pack-to-dust (memory)", () => {
     create.mockRejectedValueOnce(new Error("down"));
     const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
     try {
-      await expect(packs(callerContext(db as never, w.alice)).purchasePack({ packId: w.epicPack })).resolves.toMatchObject({
+      await expect(
+        packs(callerContext(db as never, w.alice)).purchasePack({ packId: w.epicPack })
+      ).resolves.toMatchObject({
         success: true,
       });
     } finally {
@@ -271,7 +318,10 @@ describe("cards-pack-to-dust (memory)", () => {
     jest.spyOn(db.cardOwnership, "findMany").mockRejectedValueOnce(new Error("connection reset"));
     const quiet = jest.spyOn(console, "error").mockImplementation(() => undefined);
     try {
-      expect(await store.openPack({ userPackId: bought.userPack.id })).toMatchObject({ success: true, faces: [] });
+      expect(await store.openPack({ userPackId: bought.userPack.id })).toMatchObject({
+        success: true,
+        faces: [],
+      });
       expect(quiet).toHaveBeenCalledWith(
         "[Cards] A pack open committed, but its faces could not be read:",
         expect.any(Error)
@@ -282,9 +332,67 @@ describe("cards-pack-to-dust (memory)", () => {
     expect(await db.cardOwnership.count({ where: { ownerId: w.alice.id } })).toBe(1);
   });
 
+  // Code audit VT-4/5/23: pack purchases once wrote myVault directly, skipping the ledger's switches and counters
+  it("is closed by maintenance mode and the packs switch, charging nothing and granting no pack", async () => {
+    const buy = () =>
+      packs(callerContext(db as never, w.alice)).purchasePack({ packId: w.epicPack });
+    await db.systemConfig.create({ data: { key: "vault_isMaintenanceMode", value: "true" } });
+    await expect(buy()).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message: expect.stringMatching(/maintenance/),
+    });
+    await db.systemConfig.update({
+      where: { key: "vault_isMaintenanceMode" },
+      data: { value: "false" },
+    });
+    await db.systemConfig.create({ data: { key: "vault_isPacksEnabled", value: "false" } });
+    clearEconomyCaches();
+    await expect(buy()).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message: expect.stringMatching(/disabled/),
+    });
+    expect((await creditsOf(db as never, [w.alice.id]))[w.alice.id]).toBe(1000);
+    expect(await db.userPack.count({ where: { userId: w.alice.id } })).toBe(0);
+    expect(await ledgerOf(db as never, w.alice.id)).toEqual([]);
+  });
+
+  it("never sells a pack whose odds or guarantee name a rarity its pool has no card of", async () => {
+    const buy = (packId: string) =>
+      packs(callerContext(db as never, w.alice)).purchasePack({ packId });
+    // The default odds give every rarity; the realm has no Uncommon, Rare or Legendary card
+    await db.cardPack.create({
+      data: {
+        id: "m-default",
+        name: "Default",
+        packType: "BASIC",
+        priceCredits: 150,
+        cardCount: 5,
+        themeFilter: { realmIds: [w.realmId] },
+      },
+    });
+    await expect(buy("m-default")).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message:
+        "This pack is not on sale right now: it has no Uncommon, Rare and Legendary cards to give.",
+    });
+    // Odds of Epic only, but a Legendary guarantee
+    await db.cardPack.update({
+      where: { id: w.epicPack },
+      data: { guaranteedRarity: "LEGENDARY" },
+    });
+    await expect(buy(w.epicPack)).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message: "This pack is not on sale right now: it has no Legendary cards to give.",
+    });
+    expect((await creditsOf(db as never, [w.alice.id]))[w.alice.id]).toBe(1000);
+    expect(await db.userPack.count({ where: { userId: w.alice.id } })).toBe(0);
+  });
+
   it("refuses a pack the buyer cannot afford, charging nothing and granting no pack", async () => {
     await db.myVault.update({ where: { userId: w.alice.id }, data: { credits: 99 } });
-    await expect(packs(callerContext(db as never, w.alice)).purchasePack({ packId: w.epicPack })).rejects.toMatchObject({
+    await expect(
+      packs(callerContext(db as never, w.alice)).purchasePack({ packId: w.epicPack })
+    ).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
     expect((await creditsOf(db as never, [w.alice.id]))[w.alice.id]).toBe(99);
@@ -309,7 +417,8 @@ describeWithDb("cards-pack-to-dust (Postgres)", () => {
 
   it("lets one of two concurrent opens of one pack mint; the other reads CONFLICT and mints nothing", async () => {
     const bought = await packs(callerContext(db, w.alice)).purchasePack({ packId: w.epicPack });
-    const open = () => packs(callerContext(db, w.alice)).openPack({ userPackId: bought.userPack.id });
+    const open = () =>
+      packs(callerContext(db, w.alice)).openPack({ userPackId: bought.userPack.id });
     const results = await Promise.allSettled([open(), open()]);
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
     const lost = results.find((r): r is PromiseRejectedResult => r.status === "rejected");
@@ -362,7 +471,12 @@ describeWithDb("cards-pack-to-dust (Postgres)", () => {
   it("takes the dust credit that fills the Int column and refuses the one that would pass it", async () => {
     const credit = (amount: number) =>
       db.$transaction((tx) =>
-        creditDustTx(tx, { userId: w.alice.id, realmId: w.realmId, source: "BREAKDOWN", entries: [{ amount }] })
+        creditDustTx(tx, {
+          userId: w.alice.id,
+          realmId: w.realmId,
+          source: "BREAKDOWN",
+          entries: [{ amount }],
+        })
       );
     await credit(MAX_DUST_BALANCE - 10);
     expect(await credit(10)).toBe(MAX_DUST_BALANCE);
