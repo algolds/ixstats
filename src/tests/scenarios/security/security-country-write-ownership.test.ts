@@ -1,0 +1,722 @@
+/**
+ * Every country-scoped mutation (Plan 332), run by seven callers: a signed-out visitor, a member writing another
+ * country's row, the owner, the owner of a nation that is not their active one, an admin on a foreign country, and an
+ * admin playing as the member, on a foreign country and on the member's own. Each row is one mutation: its router, its
+ * call for an own, second or foreign target, and the write it guards. A new country mutation is one row.
+ *
+ * Folds country-idor-government, -meetings, -policies, -quickactions, -transport and -misc, and
+ * multi-nation-write-access: the row matrix, plus each file's own details below it.
+ */
+jest.mock("~/server/db", () => ({
+  __esModule: true,
+  db: {
+    $transaction: jest.fn().mockRejectedValue(new Error("write path reached")),
+    wikiDiscussionThread: { findUnique: jest.fn().mockResolvedValue(null) },
+    wikiAccountLink: { findFirst: jest.fn().mockResolvedValue(null) },
+    wikiUserGroup: { findMany: jest.fn().mockResolvedValue([]) },
+    wikiBlock: { findMany: jest.fn().mockResolvedValue([]) },
+    wikiRevision: { count: jest.fn().mockResolvedValue(0) },
+    wikiArticle: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+    },
+  },
+  isDatabaseReadOnly: false,
+}));
+
+import { db as moduleDb } from "~/server/db";
+import { createCallerFactory } from "~/server/api/trpc";
+import { governmentRouter } from "~/server/api/routers/government";
+import { meetingsRouter } from "~/server/api/routers/meetings";
+import { policiesRouter } from "~/server/api/routers/policies";
+import { quickActionsRouter } from "~/server/api/routers/quickactions";
+import { transportRouteMutationsRouter } from "~/server/api/routers/transport/routeMutations";
+import { legislationRouter } from "~/server/api/routers/legislation";
+import { diplomaticCulturalExchangesCoreMutationsRouter } from "~/server/api/routers/diplomacy/cultural/exchanges/core/mutations";
+import { wikiosDiscussionsRouter } from "~/server/api/routers/wikios/discussions";
+import { securityConflictsRouter } from "~/server/api/routers/security/conflicts";
+import { onomaNameBankRouter } from "~/server/api/routers/onoma/namebank";
+import { electionsPartiesRouter } from "~/server/api/routers/elections/parties";
+import { createMockCallerContext, type MockCallerContext } from "~/tests/helpers/router-context";
+
+const OWN = "country_own";
+const SECOND = "country_second";
+const FOREIGN = "country_foreign";
+const MEMBER = { id: "db_member", clerkUserId: "user_member" };
+const ADMIN = { id: "db_admin", clerkUserId: "user_admin" };
+
+type Target = "own" | "second" | "foreign";
+const COUNTRY: Record<Target, string> = { own: OWN, second: SECOND, foreign: FOREIGN };
+const OWNER: Record<string, string> = {
+  [OWN]: MEMBER.id,
+  [SECOND]: MEMBER.id,
+  [FOREIGN]: "db_someone_else",
+};
+/** `meeting_own`, `route_foreign`...: the country a resource id belongs to, or null for an unknown one. */
+const countryOf = (id: string) => COUNTRY[id.split("_").pop() as Target] ?? null;
+
+const memberUser = { ...MEMBER, countryId: OWN, role: { name: "member", level: 100 } };
+const adminUser = { ...ADMIN, countryId: "country_admin", role: { name: "admin", level: 10 } };
+
+type Db = Record<string, unknown>;
+type Who = "signedOut" | "member" | "admin" | "playAs";
+
+/** The caller's context over `db`, with the user and country lookups the ownership checks read. */
+function context(who: Who, db: Db): MockCallerContext {
+  if (who === "signedOut") return createMockCallerContext({ auth: null, user: null, db });
+  const user = who === "admin" ? adminUser : memberUser;
+  return createMockCallerContext({
+    auth: { userId: user.clerkUserId },
+    user,
+    impersonatorId: who === "playAs" ? ADMIN.clerkUserId : undefined,
+    db: {
+      user: {
+        findUnique: jest.fn(async ({ where }: { where: { clerkUserId?: string } }) =>
+          where.clerkUserId === ADMIN.clerkUserId ? adminUser : memberUser
+        ),
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+      country: {
+        findUnique: jest.fn(async ({ where }: { where: { id: string } }) =>
+          OWNER[where.id]
+            ? { id: where.id, name: "Testland", ownerUserId: OWNER[where.id], cities: [] }
+            : null
+        ),
+      },
+      ...db,
+    },
+  });
+}
+
+const writeReached = () => Promise.reject(new Error("write path reached"));
+const byId = ({ where }: { where: { id: string } }) => {
+  const countryId = countryOf(where.id);
+  return Promise.resolve(countryId ? { id: where.id, countryId } : null);
+};
+const echoCreate = async ({ data }: { data: object }) => ({ id: "row_new", ...data });
+const moduleTransaction = jest.mocked(moduleDb.$transaction);
+
+const governmentData = {
+  structure: {
+    governmentName: "Test Government",
+    governmentType: "Federal Republic" as const,
+    totalBudget: 1000,
+    fiscalYear: "2026",
+    budgetCurrency: "USD",
+  },
+  departments: [],
+  budgetAllocations: [],
+  revenueSources: [],
+};
+const governmentDb = (existing: object | null = null) => ({
+  governmentStructure: {
+    findUnique: jest.fn().mockResolvedValue(existing),
+    create: jest.fn(),
+    update: jest.fn(),
+  },
+  $transaction: jest.fn(writeReached),
+});
+
+const meetingsDb = () => ({
+  cabinetMeeting: {
+    create: jest.fn(async ({ data }: { data: object }) => ({
+      id: "meeting_new",
+      title: "Summit",
+      scheduledDate: new Date(),
+      ...data,
+    })),
+    findUnique: jest.fn(byId),
+  },
+  meetingAgendaItem: { create: jest.fn(echoCreate) },
+  meetingAttendance: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn(echoCreate) },
+  governmentStructure: { findUnique: jest.fn(byId) },
+  governmentDepartment: {
+    findUnique: jest.fn(async ({ where }: { where: { id: string } }) => {
+      const countryId = countryOf(where.id);
+      return countryId ? { governmentStructure: { countryId } } : null;
+    }),
+  },
+  governmentOfficial: {
+    findUnique: jest.fn(async ({ where }: { where: { id: string } }) => {
+      const countryId = countryOf(where.id);
+      return countryId ? { governmentStructure: { countryId }, department: null } : null;
+    }),
+    create: jest.fn(echoCreate),
+    update: jest.fn(echoCreate),
+  },
+});
+const appointment = {
+  name: "A. Minister",
+  title: "Minister",
+  role: "Cabinet Member",
+  appointedDate: new Date("2026-10-01T00:00:00Z"),
+};
+
+const policiesDb = () => ({
+  policy: {
+    create: jest.fn(async ({ data }: { data: object }) => ({ id: "policy_new", ...data })),
+    aggregate: jest.fn().mockResolvedValue({ _sum: { execBandwidthCost: 0 } }),
+  },
+  governmentStructure: {
+    findUnique: jest
+      .fn()
+      .mockResolvedValue({ governmentEffectiveness: 60, departments: [{ category: "finance" }] }),
+  },
+  governmentComponent: { findMany: jest.fn().mockResolvedValue([]) },
+  nationalIssue: { count: jest.fn().mockResolvedValue(0) },
+  intent: { aggregate: jest.fn().mockResolvedValue({ _sum: { execBandwidthCost: 0 } }) },
+  budgetAllocation: {
+    findFirst: jest.fn().mockResolvedValue(null),
+    findMany: jest.fn().mockResolvedValue([]),
+  },
+});
+const policyInput = {
+  userId: "someone_else",
+  name: "Fiscal Discipline Act",
+  description: "Balance the books",
+  policyType: "economic" as const,
+  category: "fiscal",
+};
+
+const quickActionsDb = () => ({
+  cabinetMeeting: {
+    create: jest.fn(async ({ data }: { data: object }) => ({ id: "meeting_new", ...data })),
+  },
+  meetingAttendance: { createMany: jest.fn() },
+  meetingAgendaItem: { createMany: jest.fn() },
+  activitySchedule: { create: jest.fn() },
+});
+const quickMeeting = { title: "Budget review", scheduledDate: new Date("2026-10-01T00:00:00Z") };
+
+const transportDb = () => ({
+  transportRoute: {
+    findFirst: jest.fn(async ({ where }: { where: { id: string; countryId: string } }) =>
+      countryOf(where.id) === where.countryId ? { countryId: where.countryId } : null
+    ),
+    findUnique: jest.fn().mockResolvedValue(null),
+    create: jest.fn(writeReached),
+    update: jest.fn(writeReached),
+    delete: jest.fn(writeReached),
+    deleteMany: jest.fn(writeReached),
+  },
+  countryGeoProfile: { findUnique: jest.fn().mockResolvedValue(null) },
+});
+const geometry = { type: "LineString", coordinates: [] };
+
+const legislationDb = () => ({
+  policy: {
+    create: jest.fn().mockResolvedValue({ id: "bill_new" }),
+    update: jest.fn(),
+    findUnique: jest.fn(async ({ where }: { where: { id: string } }) => ({
+      id: where.id,
+      countryId: countryOf(where.id),
+      policyType: "legislative_bill",
+      status: "in_committee",
+      reviewNotes: JSON.stringify({ ideologyTarget: 0 }),
+    })),
+  },
+  legislature: { findUnique: jest.fn().mockResolvedValue(null) },
+});
+const bill = { name: "Act", description: "An act", ideology: "center" as const };
+
+const exchangeDb = () => ({
+  culturalExchange: {
+    findUnique: jest.fn().mockResolvedValue(null),
+    update: jest.fn().mockResolvedValue({}),
+  },
+  culturalExchangeParticipant: { create: jest.fn().mockResolvedValue({ id: "p_1" }) },
+});
+const thread = { articleTitle: "Page", title: "Thread", content: "Hello" };
+const nameEntry = {
+  type: "saved-name" as const,
+  title: "Name",
+  values: ["A"],
+  stashId: "standalone",
+};
+
+const partiesDb = () => ({
+  politicalParty: {
+    findUnique: jest.fn(byId),
+    delete: jest.fn(async ({ where }: { where: { id: string } }) => ({ id: where.id })),
+  },
+});
+
+interface Row {
+  name: string;
+  run: (ctx: MockCallerContext, target: Target) => Promise<unknown>;
+  db: () => Db;
+  /** The write this mutation guards. */
+  write: (db: Db) => jest.Mock;
+  /** How the call ends once it is past the check: a message it rejects with, or null when it resolves. */
+  reach: string | null;
+  /** False when a later business rule (not the ownership check) stops the call before the write. */
+  reachesWrite?: false;
+}
+
+/* eslint-disable @typescript-eslint/no-explicit-any -- one table over routers of different shapes */
+const caller = (router: any, ctx: MockCallerContext): any => createCallerFactory(router)(ctx);
+const ROWS: Row[] = [
+  ...(["create", "update"] as const).map((procedure) => ({
+    name: `government.${procedure}`,
+    run: (ctx: MockCallerContext, t: Target) =>
+      caller(governmentRouter, ctx)[procedure]({
+        countryId: COUNTRY[t],
+        data: governmentData,
+        skipConflictCheck: true,
+      }),
+    db: () => governmentDb(),
+    write: (db: Db) => db.$transaction as jest.Mock,
+    reach: "write path reached",
+  })),
+  {
+    name: "meetings.createMeeting",
+    run: (ctx, t) =>
+      caller(meetingsRouter, ctx).createMeeting({
+        title: "Summit",
+        scheduledDate: new Date(),
+        userId: "someone_else",
+        countryId: COUNTRY[t],
+      }),
+    db: meetingsDb,
+    write: (db) => (db as ReturnType<typeof meetingsDb>).cabinetMeeting.create,
+    reach: null,
+  },
+  {
+    name: "meetings.addAgendaItem",
+    run: (ctx, t) =>
+      caller(meetingsRouter, ctx).addAgendaItem({
+        meetingId: `meeting_${t}`,
+        title: "Tariffs",
+        order: 0,
+      }),
+    db: meetingsDb,
+    write: (db) => (db as ReturnType<typeof meetingsDb>).meetingAgendaItem.create,
+    reach: null,
+  },
+  {
+    name: "meetings.recordAttendance",
+    run: (ctx, t) =>
+      caller(meetingsRouter, ctx).recordAttendance({
+        meetingId: `meeting_${t}`,
+        attendeeName: "Minister",
+        attendanceStatus: "invited",
+      }),
+    db: meetingsDb,
+    write: (db) => (db as ReturnType<typeof meetingsDb>).meetingAttendance.create,
+    reach: null,
+  },
+  ...(["governmentStructureId", "departmentId"] as const).map((key) => ({
+    name: `meetings.appointOfficial (${key})`,
+    run: (ctx: MockCallerContext, t: Target) =>
+      caller(meetingsRouter, ctx).appointOfficial({
+        ...appointment,
+        [key]: `${key === "departmentId" ? "department" : "structure"}_${t}`,
+      }),
+    db: meetingsDb,
+    write: (db: Db) => (db as ReturnType<typeof meetingsDb>).governmentOfficial.create,
+    reach: null,
+  })),
+  {
+    name: "meetings.removeOfficial",
+    run: (ctx, t) => caller(meetingsRouter, ctx).removeOfficial({ id: `official_${t}` }),
+    db: meetingsDb,
+    write: (db) => (db as ReturnType<typeof meetingsDb>).governmentOfficial.update,
+    reach: null,
+  },
+  {
+    name: "policies.createPolicy",
+    run: (ctx, t) =>
+      caller(policiesRouter, ctx).createPolicy({ ...policyInput, countryId: COUNTRY[t] }),
+    db: policiesDb,
+    write: (db) => (db as ReturnType<typeof policiesDb>).policy.create,
+    reach: null,
+  },
+  {
+    name: "quickActions.createMeeting",
+    run: (ctx, t) =>
+      caller(quickActionsRouter, ctx).createMeeting({
+        countryId: COUNTRY[t],
+        userId: "someone_else",
+        meeting: quickMeeting,
+      }),
+    db: quickActionsDb,
+    write: (db) => (db as ReturnType<typeof quickActionsDb>).cabinetMeeting.create,
+    reach: null,
+  },
+  {
+    name: "transport.generateRoutes",
+    run: (ctx, t) =>
+      caller(transportRouteMutationsRouter, ctx).generateRoutes({ countryId: COUNTRY[t] }),
+    db: transportDb,
+    write: (db) => (db as ReturnType<typeof transportDb>).transportRoute.deleteMany,
+    reach: "Need at least 2 cities",
+    reachesWrite: false,
+  },
+  {
+    name: "transport.createRoute",
+    run: (ctx, t) =>
+      caller(transportRouteMutationsRouter, ctx).createRoute({
+        countryId: COUNTRY[t],
+        routeType: "rail",
+        geometry,
+      }),
+    db: transportDb,
+    write: (db) => (db as ReturnType<typeof transportDb>).transportRoute.create,
+    reach: "write path reached",
+  },
+  ...(
+    [
+      ["deleteRoute", "delete", {}],
+      ["updateRoute", "update", { name: "X" }],
+      ["updateRouteGeometry", "update", { geometry }],
+    ] as const
+  ).map(([procedure, write, extra]) => ({
+    name: `transport.${procedure}`,
+    run: (ctx: MockCallerContext, t: Target) =>
+      caller(transportRouteMutationsRouter, ctx)[procedure]({
+        id: `route_${t}`,
+        countryId: COUNTRY[t],
+        ...extra,
+      }),
+    db: transportDb,
+    write: (db: Db) => (db as ReturnType<typeof transportDb>).transportRoute[write],
+    reach: "write path reached",
+  })),
+  {
+    name: "legislation.proposeBill",
+    run: (ctx, t) => caller(legislationRouter, ctx).proposeBill({ countryId: COUNTRY[t], ...bill }),
+    db: legislationDb,
+    write: (db) => (db as ReturnType<typeof legislationDb>).policy.create,
+    reach: null,
+  },
+  {
+    name: "legislation.holdVote",
+    run: (ctx, t) => caller(legislationRouter, ctx).holdVote({ billId: `bill_${t}` }),
+    db: legislationDb,
+    write: (db) => (db as ReturnType<typeof legislationDb>).legislature.findUnique,
+    reach: "No seated legislature",
+  },
+  {
+    name: "diplomaticCultural.joinCulturalExchange",
+    run: (ctx, t) =>
+      caller(diplomaticCulturalExchangesCoreMutationsRouter, ctx).joinCulturalExchange({
+        exchangeId: "ex_1",
+        countryId: COUNTRY[t],
+        countryName: "X",
+      }),
+    db: exchangeDb,
+    write: (db) => (db as ReturnType<typeof exchangeDb>).culturalExchangeParticipant.create,
+    reach: null,
+  },
+  {
+    name: "wikios.createThread",
+    run: (ctx, t) =>
+      caller(wikiosDiscussionsRouter, ctx).createThread({ ...thread, countryId: COUNTRY[t] }),
+    db: () => ({}),
+    write: () => moduleTransaction,
+    reach: "write path reached",
+  },
+  {
+    name: "onoma.saveToNameBank",
+    run: (ctx, t) =>
+      caller(onomaNameBankRouter, ctx).saveToNameBank({ ...nameEntry, countryId: COUNTRY[t] }),
+    db: () => ({ nameBank: { create: jest.fn(writeReached) } }),
+    write: (db) => (db as { nameBank: { create: jest.Mock } }).nameBank.create,
+    reach: "write path reached",
+  },
+  {
+    name: "elections.deleteParty",
+    run: (ctx, t) => caller(electionsPartiesRouter, ctx).deleteParty({ id: `party_${t}` }),
+    db: partiesDb,
+    write: (db) => (db as ReturnType<typeof partiesDb>).politicalParty.delete,
+    reach: null,
+  },
+];
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+const CALLERS: Array<{
+  who: string;
+  as: Who;
+  target: Target;
+  outcome: "UNAUTHORIZED" | "FORBIDDEN" | "reach";
+}> = [
+  { who: "a signed-out visitor", as: "signedOut", target: "own", outcome: "UNAUTHORIZED" },
+  {
+    who: "a member writing another country's row",
+    as: "member",
+    target: "foreign",
+    outcome: "FORBIDDEN",
+  },
+  { who: "the owner", as: "member", target: "own", outcome: "reach" },
+  {
+    who: "the owner of a nation that is not their active one",
+    as: "member",
+    target: "second",
+    outcome: "reach",
+  },
+  { who: "an admin on a foreign country", as: "admin", target: "foreign", outcome: "reach" },
+  {
+    who: "an admin playing as the member, on a foreign country",
+    as: "playAs",
+    target: "foreign",
+    outcome: "FORBIDDEN",
+  },
+  {
+    who: "an admin playing as the member, on the member's own country",
+    as: "playAs",
+    target: "own",
+    outcome: "reach",
+  },
+];
+
+/** The code a refusal carries: a TRPCError's own, or the AppError a middleware threw. */
+const codeOf = (error: unknown) => {
+  const { code, cause } = error as { code?: string; cause?: { trpcCode?: string } };
+  return cause?.trpcCode ?? code;
+};
+/** Every jest.fn under `value` that was called. */
+const calledMocks = (value: unknown): jest.Mock[] =>
+  jest.isMockFunction(value)
+    ? value.mock.calls.length > 0
+      ? [value]
+      : []
+    : value && typeof value === "object"
+      ? Object.values(value).flatMap(calledMocks)
+      : [];
+
+beforeAll(() => {
+  for (const level of ["info", "log", "warn", "error"] as const)
+    jest.spyOn(console, level).mockImplementation(() => {});
+});
+beforeEach(() => jest.clearAllMocks());
+
+describe.each(ROWS)("$name", (row) => {
+  it.each(CALLERS)("$who: $outcome", async ({ as, target, outcome }) => {
+    const db = row.db();
+    const ctx = context(as, db);
+    const result = row.run(ctx, target);
+    if (outcome === "reach") {
+      if (row.reach === null) await expect(result).resolves.toBeDefined();
+      else await expect(result).rejects.toThrow(row.reach);
+      if (row.reachesWrite !== false) expect(row.write(db)).toHaveBeenCalledTimes(1);
+      return;
+    }
+    const error = await result.then(
+      () => null,
+      (e: unknown) => e
+    );
+    expect(codeOf(error)).toBe(outcome);
+    expect(row.write(db)).not.toHaveBeenCalled();
+    // A signed-out visitor is refused before anything is read
+    if (outcome === "UNAUTHORIZED")
+      expect([...calledMocks(ctx.db), ...calledMocks(moduleDb)]).toEqual([]);
+  });
+});
+
+describe("and the details each country mutation adds", () => {
+  const member = (db: Db) => context("member", db);
+  const admin = (db: Db) => context("admin", db);
+
+  it("government: a refused write reads no structure, and create still answers CONFLICT when one exists", async () => {
+    const db = governmentDb();
+    await expect(
+      createCallerFactory(governmentRouter)(member(db)).create({
+        countryId: FOREIGN,
+        data: governmentData,
+        skipConflictCheck: true,
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(db.governmentStructure.findUnique).not.toHaveBeenCalled();
+
+    const existing = governmentDb({ id: "gs_1", countryId: OWN });
+    await expect(
+      createCallerFactory(governmentRouter)(member(existing)).create({
+        countryId: OWN,
+        data: governmentData,
+        skipConflictCheck: true,
+      })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+
+  it("meetings, policies and quick actions record the caller as organiser or author, whatever userId was sent", async () => {
+    const meetings = meetingsDb();
+    await createCallerFactory(meetingsRouter)(member(meetings)).createMeeting({
+      title: "Summit",
+      scheduledDate: new Date(),
+      userId: "someone_else",
+      countryId: OWN,
+    });
+    expect(meetings.cabinetMeeting.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ countryId: OWN, userId: MEMBER.clerkUserId }),
+    });
+
+    const policies = policiesDb();
+    await createCallerFactory(policiesRouter)(member(policies)).createPolicy({
+      ...policyInput,
+      countryId: OWN,
+    });
+    expect(policies.policy.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ countryId: OWN, userId: MEMBER.clerkUserId }),
+    });
+
+    const quick = quickActionsDb();
+    await createCallerFactory(quickActionsRouter)(member(quick)).createMeeting({
+      countryId: OWN,
+      userId: "someone_else",
+      meeting: quickMeeting,
+    });
+    const organiser = expect.objectContaining({ userId: MEMBER.clerkUserId });
+    expect(quick.cabinetMeeting.create).toHaveBeenCalledWith({ data: organiser });
+    expect(quick.activitySchedule.create).toHaveBeenCalledWith({ data: organiser });
+  });
+
+  it("meetings: an unknown meeting or official is NOT_FOUND, and an official needs an own structure and department", async () => {
+    const db = meetingsDb();
+    const meetings = createCallerFactory(meetingsRouter)(member(db));
+    await expect(
+      meetings.addAgendaItem({ meetingId: "meeting_missing", title: "Tariffs", order: 0 })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(
+      meetings.recordAttendance({
+        meetingId: "meeting_missing",
+        attendeeName: "M",
+        attendanceStatus: "invited",
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(meetings.removeOfficial({ id: "official_missing" })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    await expect(
+      meetings.appointOfficial({
+        ...appointment,
+        governmentStructureId: "structure_own",
+        departmentId: "department_foreign",
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(meetings.appointOfficial(appointment)).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect(db.meetingAgendaItem.create).not.toHaveBeenCalled();
+    expect(db.meetingAttendance.create).not.toHaveBeenCalled();
+    expect(db.governmentOfficial.create).not.toHaveBeenCalled();
+    expect(db.governmentOfficial.update).not.toHaveBeenCalled();
+
+    await createCallerFactory(meetingsRouter)(member(db)).appointOfficial({
+      ...appointment,
+      governmentStructureId: "structure_own",
+      departmentId: "department_own",
+    });
+    expect(db.governmentOfficial.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("transport: another country's route sent with the caller's own countryId is NOT_FOUND", async () => {
+    for (const [procedure, write, extra] of [
+      ["deleteRoute", "delete", {}],
+      ["updateRoute", "update", { name: "X" }],
+      ["updateRouteGeometry", "update", { geometry }],
+    ] as const) {
+      const db = transportDb();
+      await expect(
+        createCallerFactory(transportRouteMutationsRouter)(member(db))[procedure]({
+          id: "route_foreign",
+          countryId: OWN,
+          ...extra,
+        })
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      expect(db.transportRoute[write]).not.toHaveBeenCalled();
+    }
+  });
+
+  it("legislation: a vote on another country's bill updates nothing", async () => {
+    const db = legislationDb();
+    await expect(
+      createCallerFactory(legislationRouter)(member(db)).holdVote({ billId: "bill_foreign" })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(db.policy.update).not.toHaveBeenCalled();
+  });
+
+  it("wikios discussions: a thread with no country is allowed, and a comment as another country is refused", async () => {
+    const discussions = createCallerFactory(wikiosDiscussionsRouter)(member({}));
+    await expect(discussions.createThread(thread)).rejects.toThrow("write path reached");
+    expect(moduleTransaction).toHaveBeenCalledTimes(1);
+    await expect(
+      discussions.postComment({ threadId: "t_1", content: "Hi", countryId: FOREIGN })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(moduleTransaction).toHaveBeenCalledTimes(1);
+  });
+
+  it("security.resolvePvNPCConflict strikes only NPC nations: never a player's, nor the caller's own even when nobody owns it", async () => {
+    for (const [target, holder] of [
+      [FOREIGN, { id: "db_someone_else" }],
+      [OWN, null],
+    ] as const) {
+      const db = {
+        user: {
+          findUnique: jest.fn().mockResolvedValue(memberUser),
+          findFirst: jest.fn().mockResolvedValue(holder),
+        },
+        militaryBranch: { findMany: jest.fn() },
+        storytellerEffect: { createMany: jest.fn() },
+      };
+      const ctx = member(db);
+      ctx.user = { ...ctx.user!, membershipTier: "mycountry_premium" };
+      const strike = createCallerFactory(securityConflictsRouter)(ctx).resolvePvNPCConflict({
+        targetCountryId: target,
+      });
+      await expect(strike).rejects.toMatchObject({ code: "FORBIDDEN" });
+      if (target === FOREIGN) {
+        await expect(strike).rejects.toThrow("NPC");
+        expect(db.user.findFirst).toHaveBeenCalledWith(
+          expect.objectContaining({ where: { ownedCountries: { some: { id: FOREIGN } } } })
+        );
+      }
+      expect(db.militaryBranch.findMany).not.toHaveBeenCalled();
+      expect(db.storytellerEffect.createMany).not.toHaveBeenCalled();
+    }
+  });
+
+  it("onoma.saveToNameBank never updates another player's entry or writes into their stash", async () => {
+    const base = { type: "saved-name" as const, title: "Name", values: ["A"] };
+    const entries = {
+      nameBank: { findFirst: jest.fn().mockResolvedValue(null), update: jest.fn(writeReached) },
+    };
+    await expect(
+      createCallerFactory(onomaNameBankRouter)(member(entries)).saveToNameBank({
+        ...base,
+        stashId: "standalone",
+        id: "someone_elses_entry",
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(entries.nameBank.update).not.toHaveBeenCalled();
+
+    const stashes = {
+      stash: { findFirst: jest.fn().mockResolvedValue(null) },
+      stashItem: { upsert: jest.fn(writeReached), findUnique: jest.fn(writeReached) },
+    };
+    await expect(
+      createCallerFactory(onomaNameBankRouter)(member(stashes)).saveToNameBank({
+        ...base,
+        stashId: "someone_elses_stash",
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    // Ownership accepts the caller's internal User id and (legacy) Clerk id, nobody else's
+    expect(stashes.stash.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          id: "someone_elses_stash",
+          userId: { in: expect.arrayContaining([MEMBER.clerkUserId]) },
+        },
+      })
+    );
+    expect(stashes.stashItem.upsert).not.toHaveBeenCalled();
+  });
+
+  it("an admin adds agenda items and appoints officials on a foreign country", async () => {
+    const db = meetingsDb();
+    const meetings = createCallerFactory(meetingsRouter)(admin(db));
+    await meetings.addAgendaItem({ meetingId: "meeting_foreign", title: "Tariffs", order: 0 });
+    await meetings.appointOfficial({ ...appointment, governmentStructureId: "structure_foreign" });
+    expect(db.meetingAgendaItem.create).toHaveBeenCalledTimes(1);
+    expect(db.governmentOfficial.create).toHaveBeenCalledTimes(1);
+  });
+});
