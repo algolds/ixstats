@@ -398,5 +398,8 @@
     "plugins": [
       "prettier-plugin-tailwindcss"
     ]
+  },
+  "patchedDependencies": {
+    "next@16.3.6": "patches/next@16.3.6.patch"
   }
 }

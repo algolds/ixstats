@@ -1,0 +1,65 @@
+diff --git a/dist/compiled/react-dom/cjs/react-dom-client.development.js b/dist/compiled/react-dom/cjs/react-dom-client.development.js
+index c59b28f1cb1d6f80c2b8c6087e8f95f9e57c959a..28189079067bd39b7b765650e5ca204d70dfaa4a 100644
+--- a/dist/compiled/react-dom/cjs/react-dom-client.development.js
++++ b/dist/compiled/react-dom/cjs/react-dom-client.development.js
+@@ -4522,7 +4522,7 @@
+             addObjectToProperties(fiber.memoizedProps, properties, 0, "");
+           null == debugTask && (debugTask = fiber._debugTask);
+           fiber = {
+-            start: startTime,
++            start: 0 > startTime ? 0 : startTime,
+             end: endTime,
+             detail: {
+               devtools: {
+diff --git a/dist/compiled/react-dom/cjs/react-dom-profiling.development.js b/dist/compiled/react-dom/cjs/react-dom-profiling.development.js
+index ca70d27680d7add846390aefc9286531095a0b47..43ec4171e39535f2466960f32aa9c7cca99da072 100644
+--- a/dist/compiled/react-dom/cjs/react-dom-profiling.development.js
++++ b/dist/compiled/react-dom/cjs/react-dom-profiling.development.js
+@@ -4530,7 +4530,7 @@
+             addObjectToProperties(fiber.memoizedProps, properties, 0, "");
+           null == debugTask && (debugTask = fiber._debugTask);
+           fiber = {
+-            start: startTime,
++            start: 0 > startTime ? 0 : startTime,
+             end: endTime,
+             detail: {
+               devtools: {
+diff --git a/dist/compiled/react-dom-experimental/cjs/react-dom-client.development.js b/dist/compiled/react-dom-experimental/cjs/react-dom-client.development.js
+index 7f10926d2b34351b744dbb0cc73b15cd7e22b08c..fdb2f7c4126fd96ca81c0d821f6fc7702e013fe1 100644
+--- a/dist/compiled/react-dom-experimental/cjs/react-dom-client.development.js
++++ b/dist/compiled/react-dom-experimental/cjs/react-dom-client.development.js
+@@ -4485,7 +4485,7 @@
+             addObjectToProperties(fiber.memoizedProps, properties, 0, "");
+           null == debugTask && (debugTask = fiber._debugTask);
+           fiber = {
+-            start: startTime,
++            start: 0 > startTime ? 0 : startTime,
+             end: endTime,
+             detail: {
+               devtools: {
+diff --git a/dist/compiled/react-dom-experimental/cjs/react-dom-profiling.development.js b/dist/compiled/react-dom-experimental/cjs/react-dom-profiling.development.js
+index b4c1d0e254f1b1958e67117bcc3733b05bbd8304..19e51c8470e7ab777b42af4bace9cedab51a780b 100644
+--- a/dist/compiled/react-dom-experimental/cjs/react-dom-profiling.development.js
++++ b/dist/compiled/react-dom-experimental/cjs/react-dom-profiling.development.js
+@@ -4493,7 +4493,7 @@
+             addObjectToProperties(fiber.memoizedProps, properties, 0, "");
+           null == debugTask && (debugTask = fiber._debugTask);
+           fiber = {
+-            start: startTime,
++            start: 0 > startTime ? 0 : startTime,
+             end: endTime,
+             detail: {
+               devtools: {
+diff --git a/dist/compiled/react-dom-experimental/cjs/react-dom-unstable_testing.development.js b/dist/compiled/react-dom-experimental/cjs/react-dom-unstable_testing.development.js
+index e9c79d2c86a590ddc305c0ee92478fb25e92b5aa..a2fb73d11fdaf826f51ee5d70c7c7ab9c47d2993 100644
+--- a/dist/compiled/react-dom-experimental/cjs/react-dom-unstable_testing.development.js
++++ b/dist/compiled/react-dom-experimental/cjs/react-dom-unstable_testing.development.js
+@@ -4526,7 +4526,7 @@
+             addObjectToProperties(fiber.memoizedProps, properties, 0, "");
+           null == debugTask && (debugTask = fiber._debugTask);
+           fiber = {
+-            start: startTime,
++            start: 0 > startTime ? 0 : startTime,
+             end: endTime,
+             detail: {
+               devtools: {
