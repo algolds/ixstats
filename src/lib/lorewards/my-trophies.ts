@@ -203,7 +203,7 @@ export async function loadMyTrophies(
   if (!wikiUsername) return { wikiUsername: null, verified: false, unmatched: 0, ...NO_TROPHIES };
   const [{ tied, unmatched }, cards] = await Promise.all([
     tiePlaces(db, userId, names),
-    ownedTrophyCards(db, userId, userId),
+    ownedTrophyCards(db, userId),
   ]);
   return {
     wikiUsername,

@@ -105,7 +105,7 @@ describe("listMyShowcases", () => {
       ["s2", false, 0, null],
       ["s3", false, 1, null],
     ]);
-    // A copy leaves its owner's showcases when it changes hands, so every cover is the player's own
+    // A showcase shows off its owner's collection, so every cover is in full colour
     expect(list.map((s) => s.cover?.uncollected ?? null)).toEqual([false, null, false]);
     expect(db.cardCollection.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -154,7 +154,7 @@ describe("getShowcase", () => {
       ownerName: "Caphiria",
       isOwner: false,
       pinned: false,
-      items: [{ itemId: "item-c1", face: { artwork: "https://art/c1.png", uncollected: true } }],
+      items: [{ itemId: "item-c1", face: { artwork: "https://art/c1.png", uncollected: false } }],
     });
     expect(visible.playersOf).toHaveBeenCalledWith(["owner"]);
     expect(db.cardCollection.findUnique).toHaveBeenCalledWith({
@@ -168,19 +168,15 @@ describe("getShowcase", () => {
     });
   });
 
-  it("marks another player's showcase by the viewer's collection, not its owner's", async () => {
+  it("shows another player's showcase in full colour, whatever the viewer holds, reading none of their copies", async () => {
     const db = createMockPrisma();
     db.cardCollection.findUnique.mockResolvedValue({ ...row, items: [item("c1"), item("c3")] });
-    db.cardOwnership.findMany.mockResolvedValue([{ cardId: "c3" }]);
     const view = await getShowcase(db as never, "me", "s1", visible);
     expect(view!.items.map((i) => [i.itemId, i.face.artwork, i.face.uncollected])).toEqual([
-      ["item-c1", "https://art/c1.png", true],
+      ["item-c1", "https://art/c1.png", false],
       ["item-c3", "https://art/c3.png", false],
     ]);
-    expect(db.cardOwnership.findMany.mock.calls[0]![0].where).toEqual({
-      ownerId: "me",
-      cardId: { in: ["c1", "c3"] },
-    });
+    expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
   });
 
   it("leaves another player's retired copies out, and shows its owner their placeholder faces", async () => {
@@ -188,7 +184,6 @@ describe("getShowcase", () => {
     db.cardCollection.findUnique.mockResolvedValue(row);
     const theirs = await getShowcase(db as never, "me", "s1", visible);
     expect(theirs!.items.map((i) => i.itemId)).toEqual(["item-c1"]);
-    db.cardOwnership.findMany.mockResolvedValue([{ cardId: "c1" }, { cardId: "c2" }]);
     const mine = await getShowcase(db as never, "owner", "s1", hidden);
     expect(mine!.items).toMatchObject([
       { itemId: "item-c1", face: { artwork: "https://art/c1.png", uncollected: false } },

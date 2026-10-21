@@ -237,13 +237,6 @@ describe("getPassport enforces privacy server-side", () => {
     expect(passport?.privacy.vaultCards).toBe(false);
   });
 
-  it("marks the vault's faces by the viewer's own copies", async () => {
-    await getPassport(asViewer("someone_else"), forum);
-    expect(resolvePassportVault).toHaveBeenCalledWith(owner.id, "someone_else");
-    await getPassport(asViewer(null), forum);
-    expect(resolvePassportVault).toHaveBeenLastCalledWith(owner.id, null);
-  });
-
   it("never writes to the database (a public read)", async () => {
     await getPassport(asViewer("someone_else"), forum);
     expect((db as unknown as { user: { update: jest.Mock } }).user.update).not.toHaveBeenCalled();
