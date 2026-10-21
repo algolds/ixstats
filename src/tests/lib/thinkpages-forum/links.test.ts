@@ -1,15 +1,9 @@
 /** @jest-environment node */
-import {
-  categoryHref,
-  claimNationHref,
-  modHref,
-  realmBoardAttachHref,
-} from "~/lib/thinkpages-forum/links";
+import { categoryHref, modHref, realmBoardAttachHref } from "~/lib/thinkpages-forum/links";
 
 describe("forum links", () => {
   it("encodes slugs so they cannot add path segments or query parameters", () => {
     expect(categoryHref({ key: "hub", realm: { slug: "../x" } })).toBe("/thinkpages/r/..%2Fx/hub");
-    expect(claimNationHref("a/b")).toBe("/r/a%2Fb/nations");
   });
 
   it("opens the moderation console, encoding the tab and realm", () => {

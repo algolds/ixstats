@@ -2,8 +2,8 @@
 import { banNotice, DAY_MS } from "~/lib/thinkpages-forum/moderation-policy";
 import {
   canSeeRealm,
-  categoryPostingAccess,
   loadForumRealm,
+  postingAccessFor,
   realmPostingAccess,
   type ForumRealm,
 } from "~/server/modules/thinkpages-forum";
@@ -341,13 +341,13 @@ describe("realmPostingAccess", () => {
       visibility: "public",
       postRole: "any",
     };
-    await expect(categoryPostingAccess(db as never, owner, hub)).resolves.toEqual({
+    await expect(postingAccessFor(db as never, owner, hub, EURTH as never)).resolves.toEqual({
       canPost: false,
       notice: banNotice(ban as never),
       ban: expect.objectContaining({ id: "b1", scope: "category", scopeId: "rcat_hub" }),
     });
     await expect(
-      categoryPostingAccess(db as never, owner, { ...hub, id: "rcat_character-threads" })
+      postingAccessFor(db as never, owner, { ...hub, id: "rcat_character-threads" }, EURTH as never)
     ).resolves.toMatchObject({ canPost: true, notice: null, ban: null });
   });
 

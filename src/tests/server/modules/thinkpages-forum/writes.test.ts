@@ -5,7 +5,8 @@ jest.mock("~/server/modules/thinkpages-forum/render", () => ({
 jest.mock("~/server/modules/thinkpages-forum/mention-links", () => ({
   withMentionLinks: jest.fn(async (_db: object, body: object) => body),
 }));
-import { REALM_CATEGORIES, SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
+import { REALM_CATEGORIES } from "~/lib/thinkpages-forum/categories";
+import { SITE_CATEGORIES } from "~/tests/helpers/forum-site-categories";
 import {
   createThread,
   editPost,

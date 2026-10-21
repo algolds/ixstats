@@ -116,7 +116,6 @@ const boardThread = (realmId: string): Row => ({
   createdAt: at(0),
 });
 export const BOARD_THREAD = "t_board_r_eurth";
-export const BOARD_CATEGORY = "cat_r_eurth_board";
 
 export const boardPost = (id: string, minute: number, extra: Row = {}): Row => ({
   id,

@@ -4,9 +4,6 @@ jest.mock("~/server/modules/thinkpages-forum", () => {
   const actual = jest.requireActual("~/server/modules/thinkpages-forum");
   return {
     ...actual,
-    // Spies over the real posting access, so the router's single entry (T0-2) is observable.
-    postingAccessFor: jest.fn(actual.postingAccessFor),
-    canPostInCategory: jest.fn(actual.canPostInCategory),
     createThread: jest.fn(async () => ({
       threadId: "t_new",
       postId: "p_new",
@@ -30,7 +27,8 @@ jest.mock("~/server/modules/thinkpages-forum", () => {
 import { createCallerFactory } from "~/server/api/trpc";
 import { thinkpagesForumRouter } from "~/server/api/routers/thinkpagesForum";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
-import { REALM_CATEGORIES, SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
+import { REALM_CATEGORIES } from "~/lib/thinkpages-forum/categories";
+import { SITE_CATEGORIES } from "~/tests/helpers/forum-site-categories";
 import {
   createThread,
   fileAppeal,

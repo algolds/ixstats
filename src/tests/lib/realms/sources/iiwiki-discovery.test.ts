@@ -135,7 +135,7 @@ describe("map candidates", () => {
   });
 });
 
-describe("runDiscovery: blocked and partial results", () => {
+describe("a discovery step's blocked and partial results", () => {
   it("treats a Cloudflare challenge page as blocked", async () => {
     const challenge = new Response(
       "<html><title>Just a moment...</title><script src=/cdn-cgi/challenge-platform/x></script></html>",

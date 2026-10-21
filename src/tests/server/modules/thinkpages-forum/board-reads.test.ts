@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
+import { SITE_CATEGORIES } from "~/tests/helpers/forum-site-categories";
 import {
   boardTopPosters,
   latestPerCategory,

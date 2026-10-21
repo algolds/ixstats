@@ -8,11 +8,6 @@ import { REALM_HUB_KEY } from "./categories";
 
 export const FORUM_HOME = "/thinkpages";
 
-/** Whether a base-path-free pathname is the forum or under it. */
-export function isForumPath(pathname: string): boolean {
-  return pathname === FORUM_HOME || pathname.startsWith(`${FORUM_HOME}/`);
-}
-
 /** Where a category sits: a realm category carries its realm's slug, a sitewide one none. */
 export interface CategoryPlace {
   key: string;
@@ -94,11 +89,6 @@ export function handleProfileHref(handle: string): string {
 /** A persona's profile (the dashboard owns the feed). */
 export function personaProfileHref(username: string): string {
   return `/dashboard/profile/${seg(username)}`;
-}
-
-/** The realm's Nations tab, where a player claims a nation to post in its section. */
-export function claimNationHref(slug: string): string {
-  return `/r/${seg(slug)}/nations`;
 }
 
 /** The member's standing (warnings, bans, appeals) on the forum home, where ban notices send an appeal. */

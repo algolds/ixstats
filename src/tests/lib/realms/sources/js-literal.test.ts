@@ -5,16 +5,23 @@ import {
   LiteralParseError,
   MAX_LITERAL_DEPTH,
   readBoundLiteral,
-  readLiteral,
 } from "~/lib/realms/sources/js-literal";
 
 const FIXTURES = path.resolve(__dirname, "../../../fixtures/realm-sources/eurth-map");
 const fixture = (name: string) => fs.readFileSync(path.join(FIXTURES, name), "utf8");
+/** One literal as a source file binds it. */
+const readLiteral = (literal: string) => readBoundLiteral(`const value = ${literal};`, "value");
 
 describe("readBoundLiteral: the source's own files", () => {
   it("reads the nation table with comments, quoted keys, nulls, extra fields and trailing commas", () => {
     const nations = readBoundLiteral(fixture("nations.js"), "nations") as Record<string, any>;
-    expect(Object.keys(nations)).toEqual(["Tavok", "Kiziauke", "Mito", "Bainbridge-Islands", "Deseti"]);
+    expect(Object.keys(nations)).toEqual([
+      "Tavok",
+      "Kiziauke",
+      "Mito",
+      "Bainbridge-Islands",
+      "Deseti",
+    ]);
     expect(nations.Tavok).toEqual({
       name: "Republic of Tavok",
       color: "#0a3d2a",
@@ -56,9 +63,11 @@ describe("readBoundLiteral: the source's own files", () => {
   });
 });
 
-describe("readLiteral: values", () => {
+describe("readBoundLiteral: values", () => {
   it("reads escapes, signs, decimals, exponents and single quotes", () => {
-    expect(readLiteral(`{ a: 'it\\'s', b: "\\u00e9\\x41\\n", c: -1.5e3, d: .5, e: 1_000 }`)).toEqual({
+    expect(
+      readLiteral(`{ a: 'it\\'s', b: "\\u00e9\\x41\\n", c: -1.5e3, d: .5, e: 1_000 }`)
+    ).toEqual({
       a: "it's",
       b: "éA\n",
       c: -1500,
@@ -68,7 +77,9 @@ describe("readLiteral: values", () => {
   });
 
   it("gives objects no prototype, so a __proto__ key is an own key and pollutes nothing", () => {
-    const value = readLiteral(`{ "__proto__": { "polluted": true }, constructor: { prototype: { x: 1 } } }`) as any;
+    const value = readLiteral(
+      `{ "__proto__": { "polluted": true }, constructor: { prototype: { x: 1 } } }`
+    ) as any;
     expect(Object.getPrototypeOf(value)).toBeNull();
     expect(Object.keys(value)).toEqual(["__proto__", "constructor"]);
     expect(({} as any).polluted).toBeUndefined();
@@ -76,7 +87,7 @@ describe("readLiteral: values", () => {
   });
 });
 
-describe("readLiteral: hostile input is refused, never run", () => {
+describe("readBoundLiteral: hostile input is refused, never run", () => {
   const refused: Array<[string, string]> = [
     ["a function call", `{ a: fetch("https://evil.example") }`],
     ["an identifier reference", `{ a: process }`],
@@ -96,7 +107,7 @@ describe("readLiteral: hostile input is refused, never run", () => {
     ["a regular expression", `{ a: /x/ }`],
     ["an unterminated string", `{ a: "x }`],
     ["an array hole", `[1,,2]`],
-    ["trailing code", `{ a: 1 } ; alert(1)`],
+    ["code after the literal on its line", `{ a: 1 } + alert(1)`],
   ];
   it.each(refused)("refuses %s", (_label, source) => {
     expect(() => readLiteral(source)).toThrow(LiteralParseError);

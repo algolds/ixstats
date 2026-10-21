@@ -250,25 +250,3 @@ export async function postingAccessFor(
     ban: access.ban,
   };
 }
-
-/** `postingAccessFor` when only the category is at hand: a realm category's realm is loaded by its id. */
-export async function categoryPostingAccess(
-  db: RealmAccessDb & RealmDb,
-  viewer: ForumViewer,
-  category: PostableCategory
-): Promise<PostingAccess> {
-  const realm =
-    category.scope === "realm" && category.realmId
-      ? await loadForumRealm(db, { id: category.realmId })
-      : null;
-  return postingAccessFor(db, viewer, category, realm);
-}
-
-/** The posting rule for any category, bans included: `categoryPostingAccess(...).canPost`. */
-export async function canPostInCategory(
-  db: RealmAccessDb & RealmDb,
-  viewer: ForumViewer,
-  category: PostableCategory
-): Promise<boolean> {
-  return (await categoryPostingAccess(db, viewer, category)).canPost;
-}
