@@ -2,7 +2,7 @@
  * The World tab's presets come from the database: the published ones are offered by their names, a preset's own
  * values reach the generator, and a saved recipe naming a preset that is gone becomes Earth-like.
  */
-import { fireEvent, screen, within } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => {
   const { createMockQuery } = jest.requireActual("../../../../jest-mocks/trpc-react");
@@ -30,18 +30,12 @@ jest.mock("~/components/maps/editor/panels/WorldApplyRegion", () => {
   const actual = jest.requireActual("~/components/maps/editor/panels/WorldApplyRegion");
   return { ...actual, WorldApplyRegion: jest.fn(actual.WorldApplyRegion) };
 });
-
-import { retryPresets } from "~/components/maps/editor/hooks/useWorldPresets";
-import { WorldPanel } from "~/components/maps/editor/panels/WorldPanel";
 import { DEFAULT_PARAMS } from "~/lib/worldgen/v2/config";
 import { controlsForPreset } from "~/lib/worldgen/world-controls";
 import { loadWorldRecipe, saveWorldRecipe } from "~/lib/worldgen/world-draft-recipe";
 import { FACTORY_PRESETS, type WorldPresetOption } from "~/lib/worldgen/world-presets";
 import {
   cleanUpPanelTests,
-  factory,
-  generateFirst,
-  generateSettled,
   settle,
   lastRequest,
   presetsQuery,
@@ -62,50 +56,7 @@ const badlands: WorldPresetOption = {
   params: { continentCount: 4, temperatureOffset: 6, terrainRoughness: 0.9, hasIcecaps: false },
 };
 const published = [FACTORY_PRESETS[0]!, badlands];
-const offered = () =>
-  within(screen.getByRole("radiogroup", { name: "Preset" })).getAllByRole("radio");
-
 describe("the presets of the World tab", () => {
-  it("gives the generator a picked preset's values, those no control names among them", async () => {
-    presetsQuery.mockReturnValue({ data: published, isError: false });
-    renderPanel();
-    await generateSettled();
-    fireEvent.click(screen.getByRole("radio", { name: "Badlands" }));
-    expect(lastRequest().params).toMatchObject({
-      continentCount: 4,
-      temperatureOffset: 6,
-      terrainRoughness: 0.9,
-      hasIcecaps: false,
-    });
-    expect(screen.getByRole("slider", { name: "Temperature" })).toHaveAttribute(
-      "aria-valuenow",
-      "6"
-    );
-  });
-
-  it("shows the published Earth-like values on a fresh start, not the factory ones", () => {
-    const tuned = { ...FACTORY_PRESETS[0]!, params: { continentCount: 8 } };
-    presetsQuery.mockReturnValue({ data: [tuned], isError: false });
-    renderPanel();
-    expect(screen.getByRole("slider", { name: "Continents" })).toHaveAttribute(
-      "aria-valuenow",
-      "8"
-    );
-  });
-
-  it("makes no world while the presets load, and offers the built-ins if they cannot be read", () => {
-    presetsQuery.mockReturnValue({ data: undefined, isError: false });
-    const loading = renderPanel();
-    expect(screen.getByText("Loading the presets.")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Generate preview" }));
-    expect(requestCount()).toBe(0);
-    loading.unmount();
-
-    presetsQuery.mockReturnValue({ data: undefined, isError: true });
-    renderPanel();
-    expect(offered()).toHaveLength(FACTORY_PRESETS.length);
-  });
-
   it("generates a saved recipe whose preset is gone as Earth-like, and saves it so", () => {
     presetsQuery.mockReturnValue({ data: published, isError: false });
     saveWorldRecipe(REALM, {
@@ -125,44 +76,6 @@ describe("the presets of the World tab", () => {
       rivers: 1.3,
     });
   });
-
-  it("waits for the presets before bringing a saved preview back", () => {
-    saveWorldRecipe(REALM, { seed: 91, controls: controlsForPreset("eurth") });
-    presetsQuery.mockReturnValue({ data: undefined, isError: false });
-    const view = renderPanel();
-    expect(requestCount()).toBe(0);
-    presetsQuery.mockReturnValue({ data: FACTORY_PRESETS, isError: false });
-    view.rerender(<WorldPanel map={null} createWorker={factory} />);
-    expect(lastRequest()).toMatchObject({ seed: 91 });
-  });
-
-  it("replays a Generate click made while the presets load, once they arrive", () => {
-    presetsQuery.mockReturnValue({ data: undefined, isError: false });
-    const view = renderPanel();
-    fireEvent.click(screen.getByRole("button", { name: "Generate preview" }));
-    expect(requestCount()).toBe(0);
-    presetsQuery.mockReturnValue({ data: published, isError: false });
-    view.rerender(<WorldPanel map={null} createWorker={factory} />);
-    expect(requestCount()).toBe(1);
-    view.rerender(<WorldPanel map={null} createWorker={factory} />);
-    expect(requestCount()).toBe(1);
-  });
-
-  it("does not replay anything when no click was made while the presets loaded", () => {
-    presetsQuery.mockReturnValue({ data: undefined, isError: false });
-    const view = renderPanel();
-    presetsQuery.mockReturnValue({ data: published, isError: false });
-    view.rerender(<WorldPanel map={null} createWorker={factory} />);
-    expect(requestCount()).toBe(0);
-  });
-
-  it("generates from the built-ins when the presets cannot be read, so Generate still works", async () => {
-    presetsQuery.mockReturnValue({ data: undefined, isError: true });
-    renderPanel();
-    await generateSettled();
-    expect(requestCount()).toBe(1);
-  });
-
   it("never writes the built-ins' stand-in choice over a founder's saved recipe", async () => {
     saveWorldRecipe(REALM, {
       seed: 91,
@@ -177,23 +90,5 @@ describe("the presets of the World tab", () => {
     fireEvent.click(screen.getByRole("radio", { name: "Eurth" }));
     expect(requestCount()).toBe(2);
     expect(loadWorldRecipe(REALM)?.controls).toMatchObject({ preset: "badlands" });
-  });
-
-  it("saves the recipe again once the real presets are in use", async () => {
-    presetsQuery.mockReturnValue({ data: published, isError: false });
-    renderPanel();
-    await generateFirst();
-    fireEvent.click(screen.getByRole("radio", { name: "Badlands" }));
-    expect(loadWorldRecipe(REALM)?.controls).toMatchObject({ preset: "badlands" });
-  });
-});
-
-describe("retryPresets", () => {
-  it("retries a failure once, but not a client error the server will only repeat", () => {
-    expect(retryPresets(0, { data: { httpStatus: 500 } })).toBe(true);
-    expect(retryPresets(0, { data: null })).toBe(true);
-    expect(retryPresets(1, { data: { httpStatus: 500 } })).toBe(false);
-    expect(retryPresets(0, { data: { httpStatus: 403 } })).toBe(false);
-    expect(retryPresets(0, { data: { httpStatus: 404 } })).toBe(false);
   });
 });

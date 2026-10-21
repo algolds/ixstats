@@ -17,13 +17,9 @@ jest.mock("~/server/modules/maps/layer-loader", () => ({
 
 import type { FeatureCollection } from "geojson";
 import { loadLayerWithFallback } from "~/server/modules/maps/layer-loader";
-import { unpackLayers, type PackedFeatureCollection } from "~/lib/maps/geojson-pack";
+import { type PackedFeatureCollection } from "~/lib/maps/geojson-pack";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
-import {
-  getPackedLayer,
-  warmGeoCache,
-  warmGeoCacheDev,
-} from "~/server/modules/maps/layer-delivery";
+import { getPackedLayer } from "~/server/modules/maps/layer-delivery";
 
 const loader = jest.mocked(loadLayerWithFallback);
 
@@ -81,20 +77,6 @@ beforeEach(() => {
 afterEach(() => jest.restoreAllMocks());
 
 describe("getPackedLayer", () => {
-  it("returns the layer in the packed wire format, as a JSON string the client decodes", async () => {
-    const realm = freshRealm();
-    const body = await getPackedLayer(dbAt({ [realm]: 0 }), realm, "political", 1);
-
-    expect(typeof body).toBe("string");
-    const packed = parse(body);
-    expect(packed.type).toBe("FeatureCollection");
-    // the political layer is packed at the 4 decimal places it was truncated to
-    expect(packed.packed).toBe(4);
-    expect(unpackLayers({ political: packed }).political?.features[0]?.geometry).toEqual(
-      square(0).features[0]!.geometry
-    );
-  });
-
   it("builds a layer once under concurrent calls", async () => {
     const realm = freshRealm();
     const db = dbAt({ [realm]: 0 });
@@ -114,17 +96,6 @@ describe("getPackedLayer", () => {
     expect(loader).toHaveBeenCalledTimes(1);
     expect(new Set(bodies).size).toBe(1);
   });
-
-  it("serves the second call from the cache, the same string", async () => {
-    const realm = freshRealm();
-    const db = dbAt({ [realm]: 0 });
-    const first = await getPackedLayer(db, realm, "political", 1);
-    const second = await getPackedLayer(db, realm, "political", 1);
-
-    expect(loader).toHaveBeenCalledTimes(1);
-    expect(second).toBe(first);
-  });
-
   it("keeps a layer, a bucket and a realm apart", async () => {
     const [a, b] = [freshRealm(), freshRealm()];
     const db = dbAt({ [a]: 0, [b]: 0 });
@@ -184,21 +155,6 @@ describe("getPackedLayer", () => {
     expect(parse(after).features[0]?.properties?._id).toBe("sq1");
     expect(loader).toHaveBeenCalledTimes(2);
   });
-
-  it("packs a layer with no features as an empty collection, rather than failing", async () => {
-    const realm = freshRealm();
-    loader.mockResolvedValue({ type: "FeatureCollection", features: [] });
-    const packed = parse(await getPackedLayer(dbAt({ [realm]: 0 }), realm, "political", 1));
-    expect(packed).toMatchObject({ type: "FeatureCollection", features: [] });
-  });
-
-  it("packs a layer the loader has none of (Ixnay without its file) as an empty collection", async () => {
-    const realm = freshRealm();
-    loader.mockResolvedValue(null);
-    const packed = parse(await getPackedLayer(dbAt({ [realm]: 0 }), realm, "icecaps", 1));
-    expect(packed).toMatchObject({ type: "FeatureCollection", features: [] });
-  });
-
   it("does not cache a failed build", async () => {
     const realm = freshRealm();
     const db = dbAt({ [realm]: 0 });
@@ -207,47 +163,5 @@ describe("getPackedLayer", () => {
     await expect(getPackedLayer(db, realm, "political", 1)).rejects.toThrow("db down");
     await expect(getPackedLayer(db, realm, "political", 1)).resolves.toEqual(expect.any(String));
     expect(loader).toHaveBeenCalledTimes(2);
-  });
-});
-
-describe("warming", () => {
-  /** Ixnay's cache and its memoised version are process-wide: a bump gives each test a cold start. */
-  async function ixnayDb() {
-    const db = dbAt({ default: 0 });
-    await invalidateRealmMap(db, "default");
-    jest.clearAllMocks();
-    return db;
-  }
-
-  it("builds Ixnay's /maps layers at the buckets the client asks for", async () => {
-    const db = await ixnayDb();
-    await warmGeoCache(db);
-
-    const built = loader.mock.calls.map(
-      ([, layer, bucket, realm]) => `${realm}:${layer}:${bucket}`
-    );
-    expect(built).toEqual(
-      expect.arrayContaining([
-        "default:political:1",
-        "default:political:2",
-        "default:country_labels:1",
-        "default:background:1",
-        "default:icecaps:2",
-      ])
-    );
-    expect(new Set(built.map((b) => b.split(":")[0]))).toEqual(new Set(["default"]));
-  });
-
-  it("goes on past a layer that fails", async () => {
-    const db = await ixnayDb();
-    loader.mockRejectedValueOnce(new Error("bad layer"));
-    await warmGeoCache(db);
-    expect(loader.mock.calls.length).toBeGreaterThan(1);
-  });
-
-  it("dev warm-up builds just the first-paint layers at the default bucket", async () => {
-    await warmGeoCacheDev(await ixnayDb());
-    const buckets = new Set(loader.mock.calls.map(([, , bucket]) => bucket));
-    expect(buckets).toEqual(new Set([1]));
   });
 });

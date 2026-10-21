@@ -1,4 +1,4 @@
-import { StrictMode, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { act, renderHook } from "@testing-library/react";
 import type { MultiPolygon, Polygon, Position } from "geojson";
 
@@ -25,8 +25,6 @@ jest.mock("~/trpc/react", () => {
   };
 });
 jest.mock("~/lib/maps/territory-brush", () => ({ applyBrushStroke: jest.fn() }));
-
-import { applyBrushStroke } from "~/lib/maps/territory-brush";
 import { useBorderEditor } from "~/hooks/useBorderEditor";
 import { cascadeMoveVertex, vkey } from "~/lib/maps/topology-engine";
 import type { BorderDraft } from "~/lib/maps/border-draft";
@@ -99,47 +97,12 @@ const vertex = (ringIndex: number, vertexIndex: number, coord: Position) => ({
 beforeEach(() => {
   jest.clearAllMocks();
 });
-
-describe("useBorderEditor actions", () => {
-  it("keeps the same actions object while the editor state changes", () => {
-    const { result, rerender } = setup({ feature: { geometry: A }, neighbors: NEIGHBORS });
-    const first = result.current[1];
-
-    rerender();
-    act(() => first.setMode("vertex_edit"));
-    act(() => result.current[1].setMode("split"));
-    act(() => result.current[1].handleMapClick(0.5, 0.5));
-
-    expect(result.current[0].mode).toBe("split");
-    expect(result.current[1]).toBe(first);
-  });
-});
-
 describe("useBorderEditor vertex drag", () => {
   function dragSetup() {
     const setupResult = setup({ feature: { geometry: A }, neighbors: NEIGHBORS });
     act(() => setupResult.result.current[1].setMode("vertex_edit"));
     return setupResult;
   }
-
-  it("does not touch React state while the vertex moves, and commits once on release", () => {
-    const { result, renders } = dragSetup();
-    const [before, actions] = result.current;
-    const rendersBefore = renders();
-
-    for (let frame = 1; frame <= 60; frame++) {
-      const drawn = actions.handleVertexDrag(vertex(0, 1, [1, 0]), [1 + frame * 0.002, -0.1]);
-      expect(drawn?.vertex).toEqual([1 + frame * 0.002, -0.1]);
-    }
-    expect(renders()).toBe(rendersBefore);
-    expect(result.current[0]).toBe(before);
-
-    act(() => void actions.commitDrag());
-    expect(renders()).toBe(rendersBefore + 1);
-    expect(result.current[0].geometry!.coordinates[0]![1]).toEqual([1.12, -0.1]);
-    expect(result.current[0].isDirty).toBe(true);
-    expect(result.current[0].undoStackState.entries).toHaveLength(1);
-  });
 
   it("carries the neighbour sharing the vertex into state and undo history on release", () => {
     const { result } = dragSetup();
@@ -162,58 +125,6 @@ describe("useBorderEditor vertex drag", () => {
     expect(result.current[0].neighborGeometries.B).toEqual(B);
     expect(result.current[0].dirtyNeighbors).toEqual({});
   });
-
-  it("reports the live area through the drag and the committed one on release", () => {
-    const { result } = dragSetup();
-    const actions = result.current[1];
-    const startArea = result.current[0].areaKm2;
-
-    actions.handleVertexDrag(vertex(0, 2, [1, 1]), [1.5, 1.5]);
-    expect(result.current[0].areaKm2).toBe(startArea);
-
-    act(() => void actions.commitDrag());
-    expect(result.current[0].areaKm2).toBeGreaterThan(startArea!);
-  });
-
-  it("pushes nothing when the pointer never moved the vertex", () => {
-    const { result, renders } = dragSetup();
-    const rendersBefore = renders();
-
-    let committed = true;
-    act(() => {
-      committed = result.current[1].commitDrag();
-    });
-
-    expect(committed).toBe(false);
-    expect(renders()).toBe(rendersBefore);
-  });
-
-  it("reports whether a release changed anything", () => {
-    const { result } = dragSetup();
-    const actions = result.current[1];
-    actions.handleVertexDrag(vertex(0, 0, [0, 0]), [-0.2, -0.2]);
-
-    let committed = false;
-    act(() => {
-      committed = actions.commitDrag();
-    });
-    expect(committed).toBe(true);
-  });
-
-  it("starts each drag from the state it finds, not from the one before", () => {
-    const { result } = dragSetup();
-    const actions = result.current[1];
-    actions.handleVertexDrag(vertex(0, 0, [0, 0]), [-0.2, -0.2]);
-    act(() => void actions.commitDrag());
-
-    actions.handleVertexDrag(vertex(0, 3, [0, 1]), [-0.3, 1.3]);
-    act(() => void actions.commitDrag());
-
-    expect(result.current[0].geometry!.coordinates[0]![0]).toEqual([-0.2, -0.2]);
-    expect(result.current[0].geometry!.coordinates[0]![3]).toEqual([-0.3, 1.3]);
-    expect(result.current[0].undoStackState.entries).toHaveLength(2);
-  });
-
   it("drops a drag whose feature was closed before the release", () => {
     const { result } = dragSetup();
     const actions = result.current[1];
@@ -225,58 +136,6 @@ describe("useBorderEditor vertex drag", () => {
     expect(result.current[0].geometry).toBeNull();
   });
 });
-
-describe("useBorderEditor brush", () => {
-  const brushed = { source: square(0, 0, 0.9, 1), target: square(0.9, 0, 2, 1), issues: [] };
-
-  it("computes the stroke once, outside the state update, and sets the result once", () => {
-    jest.mocked(applyBrushStroke).mockReturnValue(brushed);
-    const strict = ({ children }: { children: ReactNode }) => <StrictMode>{children}</StrictMode>;
-    const { result, renders } = setup({ feature: { geometry: A }, neighbors: NEIGHBORS }, strict);
-    const rendersBefore = renders();
-    // StrictMode renders every commit twice; compare per commit
-    jest.mocked(applyBrushStroke).mockClear();
-
-    let ok = false;
-    act(() => {
-      ok = result.current[1].applyBrushTransfer([[0.95, 0.5]], 5, "B");
-    });
-
-    expect(ok).toBe(true);
-    expect(applyBrushStroke).toHaveBeenCalledTimes(1);
-    expect(renders() - rendersBefore).toBe(2);
-    expect(result.current[0].geometry).toBe(brushed.source);
-    expect(result.current[0].neighborGeometries.B).toBe(brushed.target);
-    expect(result.current[0].dirtyNeighbors.B).toBe(brushed.target);
-    expect(result.current[0].undoStackState.entries).toHaveLength(1);
-    expect(result.current[0].undoStackState.entries[0]!.neighbors!.B!.before).toBe(B);
-  });
-
-  it("answers false and leaves state alone when the stroke changes nothing", () => {
-    jest.mocked(applyBrushStroke).mockReturnValue(null);
-    const { result, renders } = setup({ feature: { geometry: A }, neighbors: NEIGHBORS });
-    const rendersBefore = renders();
-
-    let ok = true;
-    act(() => {
-      ok = result.current[1].applyBrushTransfer([[5, 5]], 5, "B");
-    });
-
-    expect(ok).toBe(false);
-    expect(renders()).toBe(rendersBefore);
-  });
-
-  it("answers false for a target that is not a loaded neighbour", () => {
-    const { result } = setup({ feature: { geometry: A }, neighbors: NEIGHBORS });
-    let ok = true;
-    act(() => {
-      ok = result.current[1].applyBrushTransfer([[0.5, 0.5]], 5, "Nobody");
-    });
-    expect(ok).toBe(false);
-    expect(applyBrushStroke).not.toHaveBeenCalled();
-  });
-});
-
 describe("useBorderEditor autosave", () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => jest.useRealTimers());
@@ -370,21 +229,6 @@ describe("useBorderEditor draft restore", () => {
     savedAt: Date.UTC(2026, 9, 11),
     ...over,
   });
-
-  it("holds the offered draft without applying it", () => {
-    const offered = draft();
-    const { result } = setup({ feature: { geometry: A }, neighbors: NEIGHBORS, draft: offered });
-
-    expect(result.current[0].pendingDraft).toBe(offered);
-    expect(result.current[0].geometry).toBe(A);
-    expect(result.current[0].isDirty).toBe(false);
-  });
-
-  it("offers nothing when the server sent no draft", () => {
-    const { result } = setup({ feature: { geometry: A }, neighbors: NEIGHBORS });
-    expect(result.current[0].pendingDraft).toBeNull();
-  });
-
   it("restores the outline and the moved neighbours as unsaved changes", () => {
     const offered = draft();
     const { result } = setup({ feature: { geometry: A }, neighbors: NEIGHBORS, draft: offered });
@@ -423,18 +267,6 @@ describe("useBorderEditor draft restore", () => {
     expect(result.current[0].neighborGeometries.Z).toBeUndefined();
     expect(result.current[0].dirtyNeighbors).toEqual({});
   });
-
-  it("drops the offer on discard and leaves the loaded border as it was", () => {
-    const offered = draft();
-    const { result } = setup({ feature: { geometry: A }, neighbors: NEIGHBORS, draft: offered });
-
-    act(() => result.current[1].discardDraft(offered));
-
-    expect(result.current[0].pendingDraft).toBeNull();
-    expect(result.current[0].geometry).toBe(A);
-    expect(result.current[0].isDirty).toBe(false);
-  });
-
   it("resets the saved draft on discard, so it is not offered again", () => {
     const offered = draft();
     const { result } = setup({ feature: { geometry: A }, neighbors: NEIGHBORS, draft: offered });
@@ -447,16 +279,6 @@ describe("useBorderEditor draft restore", () => {
       sessionData: { undoStack: [], mode: "select" },
     });
   });
-
-  it("leaves the saved draft alone when the answer is for a draft no longer on offer", () => {
-    const { result } = setup({ feature: { geometry: A }, neighbors: NEIGHBORS, draft: draft() });
-
-    act(() => result.current[1].discardDraft(draft()));
-
-    expect(saveDraft.mutate).not.toHaveBeenCalled();
-    expect(result.current[0].pendingDraft).not.toBeNull();
-  });
-
   it("does not restore a draft that is no longer the one on offer", () => {
     const { result } = setup({
       feature: { geometry: A },

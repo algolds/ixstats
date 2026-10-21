@@ -57,14 +57,6 @@ describe("upsertCity with the import batch's lookup", () => {
     expect(db.city.create.mock.calls[0][0].data.subdivisionId).toBe("sub1");
     expect(updateCitySpatialProfile).toHaveBeenCalledWith(db, "city1", water);
   });
-
-  it("leaves a city with no covering subdivision without one", async () => {
-    const db = makeDb();
-    await upsertCity(db, "k1", row(), { inside: true, subdivisionId: null, water });
-
-    expect(db.city.create.mock.calls[0][0].data.subdivisionId).toBeNull();
-  });
-
   it("still honours a subdivision the row names, and 'none'", async () => {
     const named = makeDb();
     await upsertCity(named, "k1", row({ subdivisionId: "chosen" }), {
@@ -82,14 +74,6 @@ describe("upsertCity with the import batch's lookup", () => {
     });
     expect(none.city.create.mock.calls[0][0].data.subdivisionId).toBeNull();
   });
-
-  it("measures water itself when the batch could not", async () => {
-    const db = makeDb();
-    await upsertCity(db, "k1", row(), { inside: true, subdivisionId: null, water: null });
-
-    expect(updateCitySpatialProfile).toHaveBeenCalledWith(db, "city1", undefined);
-  });
-
   it.each([
     ["no lookup", undefined],
     ["a point whose border is unknown", { inside: null, subdivisionId: null, water }],

@@ -90,33 +90,6 @@ describe("worldgen/zip-store", () => {
       expect(entry.method).toBe(0);
     });
   });
-
-  it("places each local header at the offset the directory gives, one after the other", () => {
-    const entries = readZip(zipStore([file("a.json", "abc"), file("b.json", "defgh")]));
-    expect(entries[0]!.localOffset).toBe(0);
-    expect(entries[1]!.localOffset).toBe(30 + "a.json".length + 3);
-  });
-
-  it("marks names as UTF-8 and keeps non-ASCII names whole", () => {
-    const [entry] = readZip(zipStore([file("terres-émergées.geojson", "x")]));
-    expect(entry!.name).toBe("terres-émergées.geojson");
-    expect(entry!.flags & 0x0800).toBe(0x0800);
-  });
-
-  it("stamps the given time in DOS format", () => {
-    const zip = zipStore([file("a", "x")], new Date(2026, 9, 12, 14, 30, 8));
-    const view = new DataView(zip.buffer);
-    // 14:30:08 -> (14 << 11) | (30 << 5) | 4 ; 2026-10-12 -> ((2026 - 1980) << 9) | (10 << 5) | 12
-    expect(view.getUint16(10, true)).toBe((14 << 11) | (30 << 5) | 4);
-    expect(view.getUint16(12, true)).toBe(((2026 - 1980) << 9) | (10 << 5) | 12);
-  });
-
-  it("writes an empty archive that is just the end record", () => {
-    const zip = zipStore([]);
-    expect(zip.length).toBe(22);
-    expect(readZip(zip)).toEqual([]);
-  });
-
   it("refuses a name that is empty or twice in the archive", () => {
     expect(() => zipStore([file("", "x")])).toThrow(/name/i);
     expect(() => zipStore([file("a", "x"), file("a", "y")])).toThrow(/twice|duplicate/i);

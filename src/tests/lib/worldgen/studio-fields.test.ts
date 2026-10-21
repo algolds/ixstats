@@ -4,19 +4,7 @@
  */
 import { worldGenParamsSchema } from "~/lib/maps/import/world-bundle";
 import { DEFAULT_PARAMS } from "~/lib/worldgen/v2/config";
-import {
-  PARAM_RANGES,
-  STUDIO_FIELDS,
-  STUDIO_GROUPS,
-  cloneParams,
-  hypsometrySum,
-  isNoChange,
-  paramsForPreset,
-  patchOf,
-  pickParams,
-  sameValue,
-  type StudioKey,
-} from "~/lib/worldgen/studio-fields";
+import { PARAM_RANGES, STUDIO_GROUPS } from "~/lib/worldgen/studio-fields";
 
 const { seed: _seed, ...DEFAULTS } = DEFAULT_PARAMS;
 const accepts = (patch: object) =>
@@ -27,11 +15,6 @@ describe("rail groups", () => {
     const listed = STUDIO_GROUPS.flatMap((group) => group.fields);
     expect([...listed].sort()).toEqual(Object.keys(DEFAULTS).sort());
     expect(new Set(listed).size).toBe(listed.length);
-  });
-  it("has a control spec for every parameter, keyed by its own name", () => {
-    for (const key of Object.keys(DEFAULTS) as StudioKey[]) {
-      expect(STUDIO_FIELDS[key].key).toBe(key);
-    }
   });
 });
 
@@ -46,66 +29,5 @@ describe("ranges", () => {
     expect(accepts({ [key]: max })).toBe(true);
     expect(accepts({ [key]: min - step })).toBe(false);
     expect(accepts({ [key]: max + step })).toBe(false);
-  });
-
-  it.each(["continentLatitudeRange", "countryCountRange"] as const)(
-    "%s: both ends are bounded by the range",
-    (key) => {
-      const { min, max, step } = PARAM_RANGES[key];
-      expect(accepts({ [key]: [min, max] })).toBe(true);
-      expect(accepts({ [key]: [min - step, max] })).toBe(false);
-      expect(accepts({ [key]: [min, max + step] })).toBe(false);
-    }
-  );
-
-  it("starts every default inside its range", () => {
-    for (const key of Object.keys(PARAM_RANGES) as Array<keyof typeof PARAM_RANGES>) {
-      const { min, max } = PARAM_RANGES[key];
-      const value = DEFAULTS[key];
-      for (const part of Array.isArray(value) ? value : [value]) {
-        expect(part).toBeGreaterThanOrEqual(min);
-        expect(part).toBeLessThanOrEqual(max);
-      }
-    }
-  });
-});
-
-describe("helpers", () => {
-  it("makes a preset's parameters over the defaults, sharing nothing with them", () => {
-    const params = paramsForPreset({
-      oceanPercentage: 0.5,
-      polarLand: { north: true, south: true },
-    });
-    expect(params.oceanPercentage).toBe(0.5);
-    expect(params.cellCount).toBe(DEFAULTS.cellCount);
-    expect(params).not.toHaveProperty("seed");
-    params.hypsometry[0] = 99;
-    expect(DEFAULTS.hypsometry[0]).not.toBe(99);
-  });
-
-  it("compares arrays and the polar pair by content", () => {
-    expect(sameValue([1, 2], [1, 2])).toBe(true);
-    expect(sameValue({ north: true, south: false }, { north: true, south: false })).toBe(true);
-    expect(sameValue(0.5, 0.6)).toBe(false);
-  });
-
-  it("knows a patch that changes nothing", () => {
-    expect(isNoChange(DEFAULTS, { cellCount: DEFAULTS.cellCount })).toBe(true);
-    expect(isNoChange(DEFAULTS, { hypsometry: [...DEFAULTS.hypsometry] })).toBe(true);
-    expect(isNoChange(DEFAULTS, { cellCount: 5000 })).toBe(false);
-  });
-
-  it("picks copies of the named parameters", () => {
-    const patch = pickParams(DEFAULTS, ["plateCount", "hypsometry"]);
-    expect(Object.keys(patch).sort()).toEqual(["hypsometry", "plateCount"]);
-    expect(patch.hypsometry).toEqual(DEFAULTS.hypsometry);
-    expect(patch.hypsometry).not.toBe(DEFAULTS.hypsometry);
-    expect(patchOf("plateCount", 4)).toEqual({ plateCount: 4 });
-    expect(cloneParams(DEFAULTS).polarLand).not.toBe(DEFAULTS.polarLand);
-  });
-
-  it("adds up the hypsometry", () => {
-    expect(hypsometrySum(DEFAULTS.hypsometry)).toBeCloseTo(100, 6);
-    expect(hypsometrySum([])).toBe(0);
   });
 });

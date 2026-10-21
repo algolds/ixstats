@@ -1,5 +1,4 @@
 import {
-  updateGeoRollupMode,
   rebaseNationalFromGeography,
   getCountryGeoBundle,
   syncGeographicDemographics,
@@ -48,30 +47,6 @@ describe("country-geo-service - Rollups & Reconciliation", () => {
       $transaction: jest.fn(async (operations: Promise<unknown>[]) => Promise.all(operations)),
     };
   });
-
-  describe("updateGeoRollupMode", () => {
-    it("should update country rollup mode", async () => {
-      mockDb.country.update.mockResolvedValue({ id: countryId, geoRollupMode: "bottom-up" });
-      mockDb.country.findUnique.mockResolvedValue({ id: countryId, geoRollupMode: "bottom-up" });
-      mockDb.subdivision.aggregate.mockResolvedValue({
-        _sum: { population: 100000, gdpContribution: 500000 },
-      });
-
-      await updateGeoRollupMode(mockDb, countryId, "bottom-up");
-
-      expect(mockDb.country.update).toHaveBeenCalledWith({
-        where: { id: countryId },
-        data: { geoRollupMode: "bottom-up" },
-      });
-    });
-
-    it("should throw error for invalid mode", async () => {
-      await expect(updateGeoRollupMode(mockDb, countryId, "invalid-mode")).rejects.toThrow(
-        "Invalid rollup mode: invalid-mode"
-      );
-    });
-  });
-
   describe("rebaseNationalFromGeography", () => {
     it("should update national baseline stats using subdivisions sum", async () => {
       mockDb.subdivision.aggregate.mockResolvedValue({

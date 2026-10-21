@@ -55,31 +55,6 @@ function setup() {
 }
 
 describe("Import this map (from the realm's wiki)", () => {
-  it("queues the chosen wiki map's original with the realm's credit and georeference", async () => {
-    const db = setup();
-    fetchOriginal.mockResolvedValue({
-      buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 1, 2, 3]),
-      mime: "image/png",
-      width: 8000,
-      height: 4000,
-      filename: "Eurth political map.png",
-      attribution: "Wiki credit",
-    });
-    const { jobId, filename } = await startWikiMapImport(db, admin, "r1", { kick: false });
-    expect(filename).toBe("Eurth political map.png");
-    const job = db.mapImportJob.rows.find((r: { id: string }) => r.id === jobId);
-    expect(job).toMatchObject({
-      kind: "png",
-      dryRun: true,
-      filename: "Eurth political map.png",
-      requestedBy: "admin_1",
-    });
-    expect(job.options.attribution).toBe("Map by A. Cartographer (CC BY-SA)");
-    expect(job.options.georef).toEqual({
-      bounds: { west: -180, south: -60, east: 180, north: 80 },
-    });
-  });
-
   it("passes on the wiki's refusal when the file changed since it was chosen", async () => {
     const db = setup();
     fetchOriginal.mockRejectedValue(

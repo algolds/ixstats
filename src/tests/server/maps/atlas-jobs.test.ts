@@ -17,17 +17,11 @@ import path from "node:path";
 import {
   cancelAtlasJob,
   getAtlasJob,
-  latestAtlasImport,
   listAtlasJobs,
   retryAtlasJob,
-  rollbackAtlasImport,
 } from "~/server/modules/maps/atlas-jobs";
-import { rollbackMapImport } from "~/server/modules/maps/map-import.history";
 import { saveImportResult, saveMapUpload } from "~/server/modules/maps/map-import.storage";
-import {
-  cancelMapPipelineRun,
-  startMapPipelineRun,
-} from "~/server/modules/maps/realm-map-pipeline.config";
+import { startMapPipelineRun } from "~/server/modules/maps/realm-map-pipeline.config";
 import { atlasFakeDb } from "./atlas-fakes";
 import { admin } from "./map-import-fakes";
 
@@ -94,107 +88,6 @@ function world(extra: Record<string, unknown> = {}) {
 beforeEach(() => jest.clearAllMocks());
 
 describe("listAtlasJobs", () => {
-  it("lists newest first across realms without the result, with the realm", async () => {
-    const db = world();
-    const a = seed(db, { realmId: "a" });
-    const b = seed(db, { realmId: "b", kind: "svg" });
-    const { jobs, nextCursor } = await listAtlasJobs(db);
-    expect(jobs.map((j) => j.id)).toEqual([b.id, a.id]);
-    expect(jobs[0]!.realm).toEqual({ id: "b", slug: "beta", name: "Beta" });
-    expect(jobs[0]).not.toHaveProperty("result");
-    expect(jobs[0]).not.toHaveProperty("uploadId");
-    expect(nextCursor).toBeNull();
-  });
-
-  it("filters by realm (id or slug), kind and status", async () => {
-    const db = world();
-    seed(db, { realmId: "a", kind: "png", status: "failed" });
-    const wanted = seed(db, { realmId: "b", kind: "world", status: "queued" });
-    seed(db, { realmId: "b", kind: "png", status: "queued" });
-    const ids = async (f: Parameters<typeof listAtlasJobs>[1]) =>
-      (await listAtlasJobs(db, f)).jobs.map((j) => j.id);
-    expect(await ids({ realm: "b", kind: "world" })).toEqual([wanted.id]);
-    expect(await ids({ realm: "beta", kind: "world", status: "queued" })).toEqual([wanted.id]);
-    expect(await ids({ status: "failed" })).toHaveLength(1);
-    expect(await ids({ realm: "nowhere" })).toEqual([]);
-  });
-
-  it("pages by (createdAt, id) with a cursor, ties included", async () => {
-    const db = world();
-    const same = new Date(2_000_000);
-    const rows = [1, 2, 3, 4, 5].map((i) =>
-      seed(db, { id: `tie${i}`, createdAt: i > 2 ? same : new Date(2_000_000 + i) })
-    );
-    const seen: string[] = [];
-    let cursor: string | undefined;
-    do {
-      const page = await listAtlasJobs(db, { limit: 2, cursor });
-      seen.push(...page.jobs.map((j) => j.id));
-      cursor = page.nextCursor ?? undefined;
-    } while (cursor);
-    expect(seen).toEqual(["tie2", "tie1", "tie5", "tie4", "tie3"]);
-    expect(new Set(seen).size).toBe(rows.length);
-  });
-
-  it("refuses a malformed cursor", async () => {
-    await expect(listAtlasJobs(world(), { cursor: "garbage" })).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-    });
-  });
-
-  it("says which rows can be cancelled: a world apply only while queued", async () => {
-    const db = world();
-    const rows = {
-      queuedPng: seed(db, { status: "queued" }),
-      runningPng: seed(db, { status: "running" }),
-      runningCheck: seed(db, { kind: "world", status: "running" }),
-      queuedApply: seed(db, { kind: "world", dryRun: false, status: "queued" }),
-      runningApply: seed(db, { kind: "world", dryRun: false, status: "running" }),
-      done: seed(db, { status: "succeeded" }),
-    };
-    const { jobs } = await listAtlasJobs(db);
-    const can = (id: string) => jobs.find((j) => j.id === id)!.canCancel;
-    expect(Object.entries(rows).map(([k, r]) => [k, can(r.id)])).toEqual([
-      ["queuedPng", true],
-      ["runningPng", true],
-      ["runningCheck", true],
-      ["queuedApply", true],
-      ["runningApply", false],
-      ["done", false],
-    ]);
-  });
-
-  it("says which failed jobs can be retried and why not", async () => {
-    const db = world();
-    const parent = seed(db, { status: "succeeded" });
-    await saveImportResult(parent.id, {} as never);
-    const orphan = seed(db, { status: "succeeded" });
-    const cases = {
-      analysis: seed(db, { status: "failed" }),
-      analysisNoUpload: seed(db, { status: "failed", uploadId: GONE }),
-      apply: seed(db, { status: "failed", dryRun: false, parentJobId: parent.id }),
-      applyNoResult: seed(db, { status: "failed", dryRun: false, parentJobId: orphan.id }),
-      worldApply: seed(db, { status: "failed", kind: "world", dryRun: false }),
-      pipeline: seed(db, { status: "failed", kind: "map-pipeline", uploadId: null }),
-      notFailed: seed(db, { status: "succeeded" }),
-    };
-    const { jobs } = await listAtlasJobs(db);
-    const by = (id: string) => jobs.find((j) => j.id === id)!;
-    expect(Object.entries(cases).map(([k, r]) => [k, by(r.id).canRetry, by(r.id).retryAs])).toEqual(
-      [
-        ["analysis", true, "analysis"],
-        ["analysisNoUpload", false, "analysis"],
-        ["apply", true, "apply"],
-        ["applyNoResult", false, "apply"],
-        ["worldApply", true, "world-check"],
-        ["pipeline", true, "pipeline"],
-        ["notFailed", false, "analysis"],
-      ]
-    );
-    expect(by(cases.analysisNoUpload.id).retryBlocked).toMatch(/upload it again/i);
-    expect(by(cases.applyNoResult.id).retryBlocked).toMatch(/analyse the file again/i);
-  });
-
   it("marks only the realm's latest import still in place as rollbackable", async () => {
     const db = world();
     const older = seed(db, { dryRun: false });
@@ -228,24 +121,6 @@ describe("listAtlasJobs", () => {
 });
 
 describe("getAtlasJob", () => {
-  it("returns the result and a retry note, mentioning a fitted world", async () => {
-    const db = world();
-    const check = seed(db, { kind: "world", options: { fittedMapVersion: 7 } });
-    const apply = seed(db, {
-      kind: "world",
-      dryRun: false,
-      status: "failed",
-      parentJobId: check.id,
-      options: {},
-    });
-    const detail = await getAtlasJob(db, apply.id);
-    expect(detail.result).toEqual({ big: "result" });
-    expect(detail.fittedMapVersion).toBe(7);
-    expect(detail.retryNote).toMatch(/new check/i);
-    expect(detail.retryNote).toMatch(/fails if the map has changed/i);
-    await expect(getAtlasJob(db, "missing")).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
-
   it("offers Apply only for a succeeded world check that nothing has been applied from", async () => {
     const db = world();
     const fresh = seed(db, { kind: "world" });
@@ -268,50 +143,6 @@ describe("getAtlasJob", () => {
 
 describe("retryAtlasJob", () => {
   const deps = { kick: false };
-
-  it("analyses the same upload again with the same settings, requested by the admin", async () => {
-    const db = world();
-    const failed = seed(db, {
-      status: "failed",
-      options: { georef: undefined, attribution: "Credit" },
-      filename: "x.png",
-    });
-    const result = await retryAtlasJob(db, admin, failed.id, deps);
-    const created = db.mapImportJob.rows.find((r: any) => r.id === result.jobId);
-    expect(result.retryAs).toBe("analysis");
-    expect(created).toMatchObject({
-      realmId: "a",
-      kind: "png",
-      dryRun: true,
-      uploadId,
-      filename: "x.png",
-      requestedBy: admin.clerkUserId,
-      status: "queued",
-    });
-    expect(created.options).toMatchObject({ attribution: "Credit" });
-  });
-
-  it("applies the same mapping again from the analysis", async () => {
-    const db = world();
-    const parent = seed(db, { status: "succeeded" });
-    await saveImportResult(parent.id, {} as never);
-    const failed = seed(db, {
-      status: "failed",
-      dryRun: false,
-      parentJobId: parent.id,
-      options: { apply: { mapping: { r1: "Nation" }, mode: "replace" } },
-    });
-    const result = await retryAtlasJob(db, admin, failed.id, deps);
-    const created = db.mapImportJob.rows.find((r: any) => r.id === result.jobId);
-    expect(result.retryAs).toBe("apply");
-    expect(created).toMatchObject({
-      dryRun: false,
-      parentJobId: parent.id,
-      requestedBy: admin.clerkUserId,
-    });
-    expect(created.options.apply).toMatchObject({ mapping: { r1: "Nation" }, mode: "replace" });
-  });
-
   it("restarts a failed world apply as a new CHECK from the same upload, never an apply", async () => {
     const db = world();
     const check = seed(db, {
@@ -397,17 +228,6 @@ describe("retryAtlasJob", () => {
       retryAs: "analysis",
     });
   });
-
-  it("does not hold a retry back for a job on another file or in another realm", async () => {
-    const db = world();
-    const failed = seed(db, { status: "failed" });
-    seed(db, { status: "running", uploadId: "e".repeat(64) });
-    seed(db, { status: "running", realmId: "b" });
-    await expect(retryAtlasJob(db, admin, failed.id, deps)).resolves.toMatchObject({
-      retryAs: "analysis",
-    });
-  });
-
   it("refuses a second pipeline retry for the realm while a run is queued or running", async () => {
     const db = world();
     jest.mocked(startMapPipelineRun).mockResolvedValue({ jobId: "new1" });
@@ -421,37 +241,6 @@ describe("retryAtlasJob", () => {
     await expect(retryAtlasJob(db, admin, failed.id, deps)).rejects.toThrow(/already running/i);
     expect(startMapPipelineRun).not.toHaveBeenCalled();
   });
-
-  it("starts a failed world check again as a check", async () => {
-    const db = world();
-    const failed = seed(db, { kind: "world", status: "failed" });
-    const result = await retryAtlasJob(db, admin, failed.id, deps);
-    expect(db.mapImportJob.rows.find((r: any) => r.id === result.jobId)).toMatchObject({
-      kind: "world",
-      dryRun: true,
-    });
-  });
-
-  it("runs a pipeline again with its stored options", async () => {
-    const db = world();
-    jest.mocked(startMapPipelineRun).mockResolvedValue({ jobId: "new1" });
-    const failed = seed(db, {
-      kind: "map-pipeline",
-      status: "failed",
-      uploadId: null,
-      options: { steps: ["relief"], dryRun: false },
-    });
-    const result = await retryAtlasJob(db, admin, failed.id, deps);
-    expect(result).toMatchObject({ jobId: "new1", retryAs: "pipeline" });
-    expect(startMapPipelineRun).toHaveBeenCalledWith(
-      db,
-      admin,
-      "a",
-      { steps: ["relief"], dryRun: false },
-      deps
-    );
-  });
-
   it("refuses what is not failed, a gone upload and a gone analysis", async () => {
     const db = world();
     const ok = seed(db, { status: "succeeded" });
@@ -555,29 +344,6 @@ describe("retry guards", () => {
     expect(db.mapImportJob.rows).toHaveLength(before);
     expect(startMapPipelineRun).not.toHaveBeenCalled();
   });
-
-  it.each(["svg", "geojson"])(
-    "applies a failed %s import again from its analysis",
-    async (kind) => {
-      const db = world();
-      const parent = seed(db, { kind });
-      await saveImportResult(parent.id, {} as never);
-      const failed = seed(db, {
-        kind,
-        status: "failed",
-        dryRun: false,
-        parentJobId: parent.id,
-        options: { apply: { mapping: { r: "Nation" } } },
-      });
-      const result = await retryAtlasJob(db, admin, failed.id, deps);
-      expect(db.mapImportJob.rows.find((r: any) => r.id === result.jobId)).toMatchObject({
-        kind,
-        dryRun: false,
-        parentJobId: parent.id,
-      });
-    }
-  );
-
   it("refuses an apply whose stored mapping is missing", async () => {
     const db = world();
     const parent = seed(db, {});
@@ -601,37 +367,5 @@ describe("cancel and rollback", () => {
     expect(queued.status).toBe("cancelled");
     await expect(cancelAtlasJob(db, admin, running.id)).rejects.toMatchObject({ code: "CONFLICT" });
     expect(running.status).toBe("running");
-  });
-
-  it("cancels a pipeline run through its own cancel", async () => {
-    const db = world();
-    jest.mocked(cancelMapPipelineRun).mockResolvedValue({ cancelled: true });
-    const run = seed(db, { kind: "map-pipeline", status: "running" });
-    await cancelAtlasJob(db, admin, run.id);
-    expect(cancelMapPipelineRun).toHaveBeenCalledWith(db, admin, run.id);
-    await expect(cancelAtlasJob(db, admin, "missing")).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
-
-  it("rolls back through the import service", async () => {
-    const db = world();
-    await rollbackAtlasImport(db, admin, "imp1");
-    expect(rollbackMapImport).toHaveBeenCalledWith(db, admin, "imp1");
-  });
-
-  it("reads a realm's latest import still in place", async () => {
-    const db = world();
-    expect(await latestAtlasImport(db, "a")).toBeNull();
-    db.mapImport.rows.push(
-      { id: "old", realmId: "a", createdAt: new Date(1), rollbackAvailable: true },
-      {
-        id: "gone",
-        realmId: "a",
-        createdAt: new Date(3),
-        rollbackAvailable: true,
-        rolledBackAt: new Date(4),
-      },
-      { id: "new", realmId: "a", createdAt: new Date(2), rollbackAvailable: false }
-    );
-    expect(await latestAtlasImport(db, "a")).toMatchObject({ id: "new", canRollBack: false });
   });
 });

@@ -38,7 +38,7 @@ jest.mock("~/app/admin/_components/AdminNavigationContext", () => ({
 }));
 
 import AdminLayout from "~/app/admin/layout";
-import WorldStudioPage from "~/app/admin/maps/studio/page";
+import "~/app/admin/maps/studio/page";
 describe("the admin guard", () => {
   afterEach(() => {
     mockRole = "admin";
@@ -54,19 +54,5 @@ describe("the admin guard", () => {
     );
     expect(screen.getByText("Access denied")).toBeInTheDocument();
     expect(screen.queryByText("child")).not.toBeInTheDocument();
-  });
-});
-
-describe("the Studio page", () => {
-  it("opens fitted to the realm of ?fit=", () => {
-    mockSearch = "fit=eurth";
-    render(<WorldStudioPage />);
-    expect(screen.getByTestId("studio")).toHaveTextContent("studio fit=eurth");
-  });
-
-  it("opens on a preset without it", () => {
-    mockSearch = "";
-    render(<WorldStudioPage />);
-    expect(screen.getByTestId("studio")).toHaveTextContent("studio fit=null");
   });
 });

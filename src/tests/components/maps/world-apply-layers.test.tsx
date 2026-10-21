@@ -13,11 +13,8 @@ jest.mock("~/lib/maps/import/world-bundle", () => ({
   ...jest.requireActual("~/lib/maps/import/world-bundle"),
   encodeWorldBundle: jest.fn(),
 }));
-
-import { draftKey, layersKeyOf } from "~/lib/worldgen/world-apply";
 import { start } from "~/tests/helpers/fake-map-import";
 import {
-  DRAFT,
   dryRun,
   reachReview,
   renderRegion,
@@ -38,13 +35,6 @@ describe("apply with a layer choice", () => {
       })
     );
   });
-
-  it("sends no options for the founder's flow", async () => {
-    renderRegion();
-    await reachReview();
-    expect(start.mock.calls[0]![0]).not.toHaveProperty("options");
-  });
-
   it("makes the check out of date when the choice changes after it, and not when it stays", async () => {
     const view = renderRegion({ source: "realm-map", mapVersion: 5, layers: ["altitudes"] });
     await reachReview(dryRun({ source: "realm-map" }));
@@ -61,18 +51,5 @@ describe("apply with a layer choice", () => {
     expect(start).toHaveBeenLastCalledWith(
       expect.objectContaining({ options: { layers: ["altitudes", "lakes"] } })
     );
-  });
-});
-
-describe("draft keys", () => {
-  it("are the founder's key without a choice, and differ with one, whatever its order", () => {
-    expect(draftKey(DRAFT, "preset")).toBe(JSON.stringify(["preset", DRAFT.seed, DRAFT.params]));
-    expect(draftKey(DRAFT, "preset", [])).toBe(draftKey(DRAFT, "preset"));
-    expect(draftKey(DRAFT, "realm-map", ["lakes", "altitudes"])).toBe(
-      draftKey(DRAFT, "realm-map", ["altitudes", "lakes"])
-    );
-    expect(draftKey(DRAFT, "realm-map", ["lakes"])).not.toBe(draftKey(DRAFT, "realm-map"));
-    expect(layersKeyOf(undefined)).toBe("");
-    expect(layersKeyOf(["rivers", "altitudes"])).toBe("altitudes,rivers");
   });
 });

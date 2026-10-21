@@ -8,7 +8,6 @@ import {
 import {
   isMapBaseImageUrl,
   parseRealmMapSettings,
-  realmGeoreference,
   realmRadiusKm,
   realmRasterLayers,
   withRealmMapSettings,
@@ -135,8 +134,6 @@ describe("Realm.settings.map georeference", () => {
       projection: "mercator",
       controlPoints: points,
     });
-    expect(realmGeoreference(settings)).toEqual({ projection: "mercator", controlPoints: points });
-    expect(realmGeoreference(null)).toEqual({});
   });
 
   it("needs at least three control points", () => {

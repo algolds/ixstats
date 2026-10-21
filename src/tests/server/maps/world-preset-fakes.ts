@@ -192,5 +192,3 @@ export function createPresetDb() {
   db.$transaction.mockImplementation(async (fn: (tx: typeof db) => Promise<unknown>) => fn(db));
   return { db, presets, versions, asClient: (): PrismaClient => db as never };
 }
-
-export type PresetDb = ReturnType<typeof createPresetDb>;

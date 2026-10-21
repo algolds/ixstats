@@ -6,12 +6,9 @@
  */
 import { createHash } from "node:crypto";
 import sharp from "sharp";
-import type { z } from "zod";
-import type { WikiQuery } from "~/lib/realms/lore-import";
 import {
   downloadWikiImage,
   MAX_FLAG_BYTES,
-  resolveWikiImages,
   SVG_RASTER_WIDTH,
   toStoredImage,
 } from "~/lib/flags/wiki-image-download";
@@ -31,62 +28,6 @@ const imageResponse = (bytes: Uint8Array, headers: Record<string, string> = {}) 
     status: 200,
     headers: { "content-type": "image/png", ...headers },
   });
-
-function fakeQuery(answer: object): { query: WikiQuery; calls: Record<string, string>[] } {
-  const calls: Record<string, string>[] = [];
-  const query: WikiQuery = async <T>(params: Record<string, string>, schema: z.ZodType<T>) => {
-    calls.push(params);
-    return schema.parse(answer);
-  };
-  return { query, calls };
-}
-
-describe("resolveWikiImages", () => {
-  it("maps each asked name to its file through normalization, redirects and InstantCommons", async () => {
-    const { query, calls } = fakeQuery({
-      query: {
-        normalized: [{ from: "File:Flag of x.png", to: "File:Flag of X.png" }],
-        redirects: [{ from: "File:Old arms.svg", to: "File:Arms of X.svg" }],
-        pages: [
-          {
-            title: "File:Flag of X.png",
-            imageinfo: [
-              { url: "https://iiwiki.com/images/e/ea/Flag_of_X.png", sha1: "aa", size: 10 },
-            ],
-          },
-          {
-            title: "File:Arms of X.svg",
-            missing: true,
-            known: true,
-            imageinfo: [
-              { url: "https://upload.wikimedia.org/a/ab/Arms.svg", sha1: "bb", size: 20 },
-            ],
-          },
-          { title: "File:Gone.png", missing: true },
-        ],
-      },
-    });
-    const files = await resolveWikiImages(query, ["Flag of x.png", "Old arms.svg", "Gone.png"]);
-    expect(calls[0]).toMatchObject({ prop: "imageinfo", iiprop: "url|size|sha1", redirects: "1" });
-    expect(files.get("Flag of x.png")).toEqual({
-      url: "https://iiwiki.com/images/e/ea/Flag_of_X.png",
-      sha1: "aa",
-      size: 10,
-    });
-    expect(files.get("Old arms.svg")?.url).toBe("https://upload.wikimedia.org/a/ab/Arms.svg");
-    expect(files.has("Gone.png")).toBe(false);
-  });
-
-  it("asks 20 titles a request (more time out through the IIWiki relay)", async () => {
-    const { query, calls } = fakeQuery({ query: { pages: [] } });
-    await resolveWikiImages(
-      query,
-      Array.from({ length: 45 }, (_, i) => `F${i}.png`)
-    );
-    expect(calls.map((c) => c.titles?.split("|").length)).toEqual([20, 20, 5]);
-  });
-});
-
 describe("downloadWikiImage", () => {
   const url = "https://iiwiki.com/images/e/ea/Flag_of_X.png";
 

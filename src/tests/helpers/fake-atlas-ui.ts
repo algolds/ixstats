@@ -55,31 +55,6 @@ export const jobRow = (over: Partial<JobRow> = {}): JobRow => ({
   ...over,
 });
 
-const figure = (bytes: number | null, partial = false) => ({
-  bytes,
-  partial,
-  measuredAt: new Date("2026-10-12T08:00:00Z"),
-});
-
-export const healthSummary = (over: Partial<Health> = {}): Health => ({
-  jobs: { running: 2, queued: 1, failedLast24h: 3 },
-  storage: { tiles: figure(2048), rasters: figure(null), imports: figure(5 * 1024 * 1024, true) },
-  cron: {
-    "map-tiles": {
-      lastRunAt: new Date(Date.now() - 2 * 3600_000).toISOString(),
-      lastStatus: "success",
-      lastSuccessAt: null,
-    },
-    "geo-profiles": null,
-    "map-import": {
-      lastRunAt: new Date(Date.now() - 600_000).toISOString(),
-      lastStatus: "failed",
-      lastSuccessAt: null,
-    },
-  },
-  ...over,
-});
-
 export interface AtlasState {
   health: Health | undefined;
   overview: { realms: RealmRow[]; partial: boolean } | undefined;

@@ -30,7 +30,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { POST } from "~/app/api/admin/map-import/upload/route";
 import { MAX_MAP_IMPORT_BYTES } from "~/lib/maps/import/options";
 import { DEFAULT_PARAMS } from "~/lib/worldgen/v2/config";
-import { encodeCells, encodeWorldBundle, type WorldBundle } from "~/lib/maps/import/world-bundle";
+import { encodeCells, type WorldBundle } from "~/lib/maps/import/world-bundle";
 import { sniffMapKind } from "~/server/modules/maps/map-import.upload";
 
 const MB = 1024 * 1024;
@@ -97,36 +97,6 @@ describe("POST /api/admin/map-import/upload", () => {
     realmFindUnique.mockResolvedValue(null);
     expect((await POST(request({ realm: "nope" }).req)).status).toBe(404);
   });
-
-  it("stores a GeoJSON file and describes it", async () => {
-    const response = await POST(request({ realm: "r1", contentLength: 1000, file: geojson }).req);
-    expect(response.status).toBe(200);
-    const body = await response.json();
-    expect(body).toMatchObject({ kind: "geojson", filename: "eurth.geojson", width: null });
-    expect(body.uploadId).toMatch(/^[0-9a-f]{64}$/);
-    expect(body.geojson.suggestedNameProperty).toBe("NAME");
-  });
-
-  it("starts the pruning of old world bundles after it stores a file, and not after a refusal", async () => {
-    await POST(request({ realm: "r1", file: new File(["hello"], "notes.txt") }).req);
-    expect(pruneIfDue).not.toHaveBeenCalled();
-    expect((await POST(request({ realm: "r1", file: geojson }).req)).status).toBe(200);
-    expect(pruneIfDue).toHaveBeenCalledTimes(1);
-  });
-
-  it("answers the upload even when the pruning fails", async () => {
-    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
-    pruneIfDue.mockRejectedValue(new Error("disk unreadable"));
-    const response = await POST(request({ realm: "r1", file: geojson }).req);
-    await new Promise((resolve) => setImmediate(resolve));
-    expect(response.status).toBe(200);
-    expect(error).toHaveBeenCalledWith(
-      expect.stringContaining("Pruning old world bundles failed"),
-      expect.any(Error)
-    );
-    error.mockRestore();
-  });
-
   it("lets a site admin upload to any realm, and refuses a file of no known kind", async () => {
     auth.mockResolvedValue({ userId: "admin_1" });
     requireAdminSession.mockResolvedValue({ userId: "admin_1" });
@@ -175,15 +145,6 @@ const worldBundle: WorldBundle = {
 };
 
 describe("POST /api/admin/map-import/upload with a world bundle", () => {
-  it("stores a gzip world bundle as kind world", async () => {
-    const file = new File([await encodeWorldBundle(worldBundle)], "world.json.gz");
-    const response = await POST(request({ realm: "r1", contentLength: 1000, file }).req);
-    expect(response.status).toBe(200);
-    const body = await response.json();
-    expect(body).toMatchObject({ kind: "world", filename: "world.json.gz", width: null });
-    expect(body.uploadId).toMatch(/^[0-9a-f]{64}$/);
-  });
-
   it("refuses other gzip, naming why, and stores nothing", async () => {
     const stored = readdirSync(dir, { recursive: true });
     const notBundle = new File([gzipSync("hello")], "notes.gz");

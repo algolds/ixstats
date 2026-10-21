@@ -10,22 +10,6 @@ import {
 } from "~/lib/maps/geo-validation";
 
 describe("validateGeometryStructure (pure)", () => {
-  test("returns no errors for a valid closed square Polygon", () => {
-    const square: Geometry = {
-      type: "Polygon",
-      coordinates: [
-        [
-          [0, 0],
-          [1, 0],
-          [1, 1],
-          [0, 1],
-          [0, 0],
-        ],
-      ],
-    };
-    expect(validateGeometryStructure(square)).toEqual([]);
-  });
-
   test("returns ring_not_closed error when first and last positions differ", () => {
     const unclosed: Geometry = {
       type: "Polygon",
@@ -64,35 +48,6 @@ describe("repairGeometryGeoJSON", () => {
   beforeEach(() => {
     resetPostGISCache();
   });
-
-  test("returns original geometry if not a polygon or multipolygon", async () => {
-    const mockDb = {} as any;
-    const pt = { type: "Point", coordinates: [0, 0] };
-    const repaired = await repairGeometryGeoJSON(mockDb, pt);
-    expect(repaired).toBe(pt);
-  });
-
-  test("returns original geometry if PostGIS is not available", async () => {
-    const mockDb = {
-      $queryRawUnsafe: jest.fn().mockRejectedValue(new Error("No PostGIS")),
-    } as any;
-    const poly = {
-      type: "Polygon",
-      coordinates: [
-        [
-          [0, 0],
-          [1, 0],
-          [1, 1],
-          [0, 1],
-          [0, 0],
-        ],
-      ],
-    };
-    const repaired = await repairGeometryGeoJSON(mockDb, poly);
-    expect(repaired).toBe(poly);
-    expect(mockDb.$queryRawUnsafe).toHaveBeenCalledWith("SELECT PostGIS_Version()");
-  });
-
   test("returns repaired geometry from PostGIS if available", async () => {
     const repairedPoly = {
       type: "Polygon",

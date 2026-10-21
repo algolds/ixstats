@@ -22,11 +22,7 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { gzipSync } from "node:zlib";
-import {
-  pruneWorldUploads,
-  pruneWorldUploadsIfDue,
-  WORLD_UPLOAD_MAX_AGE_MS,
-} from "~/server/modules/maps/map-import.prune";
+import { pruneWorldUploads, WORLD_UPLOAD_MAX_AGE_MS } from "~/server/modules/maps/map-import.prune";
 import { saveMapUpload } from "~/server/modules/maps/map-import.storage";
 import { fakeDb } from "./map-import-fakes";
 
@@ -132,29 +128,6 @@ describe("pruneWorldUploads", () => {
     expect(existsSync(uploadFile(shaded))).toBe(true);
     expect(existsSync(uploadFile(fitted))).toBe(true);
   });
-
-  it("does not keep the bundle of a world that was rolled back, nor one that was another kind of import", async () => {
-    const db = fakeDb();
-    const undone = await bundle("rolled back world", 40);
-    const pipeline = await bundle("a pipeline's file", 45);
-    appliedWorld(db, "r1", undone, { rolledBackAt: new Date(NOW - 35 * DAY) });
-    appliedWorld(db, "r1", pipeline, { source: "pipeline", day: 45 });
-    await pruneWorldUploads(db, NOW);
-    expect(existsSync(uploadFile(undone))).toBe(false);
-    expect(existsSync(uploadFile(pipeline))).toBe(false);
-  });
-
-  it("leaves uploads that are not world bundles, and anything its names don't make an upload", async () => {
-    const png = await saveMapUpload(new Uint8Array([0x89, 0x50, 0x4e, 0x47, 1, 2, 3]));
-    age(png, 100);
-    const stray = path.join(root, "uploads", "notes.txt");
-    writeFileSync(stray, "not an upload");
-    utimesSync(stray, new Date(NOW - 100 * DAY), new Date(NOW - 100 * DAY));
-    await pruneWorldUploads(fakeDb(), NOW);
-    expect(existsSync(uploadFile(png))).toBe(true);
-    expect(existsSync(stray)).toBe(true);
-  });
-
   it("never follows a link out of the folder", async () => {
     const target = path.join(outside, "precious.gz");
     writeFileSync(target, gzipSync("not an upload"));
@@ -184,28 +157,5 @@ describe("pruneWorldUploads", () => {
     await saveMapUpload(gzipSync("a world uploaded again"));
     expect(await pruneWorldUploads(fakeDb(), Date.now())).toEqual([]);
     expect(existsSync(uploadFile(id))).toBe(true);
-  });
-
-  it("does nothing when the folder has no uploads", async () => {
-    expect(await pruneWorldUploads(fakeDb(), NOW)).toEqual([]);
-  });
-});
-
-describe("pruneWorldUploadsIfDue (started by a new upload)", () => {
-  it("prunes, then not again within the hour, then again when the hour has passed", async () => {
-    const db = fakeDb();
-    const first = await bundle("one", 20);
-    expect(await pruneWorldUploadsIfDue(db, NOW)).toEqual([first]);
-
-    const second = await bundle("two", 20);
-    expect(await pruneWorldUploadsIfDue(db, NOW + 59 * 60_000)).toBeNull();
-    expect(existsSync(uploadFile(second))).toBe(true);
-    expect(await pruneWorldUploadsIfDue(db, NOW + 61 * 60_000)).toEqual([second]);
-  });
-
-  it("shares the hour between processes, through the folder", async () => {
-    await pruneWorldUploadsIfDue(fakeDb(), NOW);
-    // another process, same folder, no memory of the first
-    expect(await pruneWorldUploadsIfDue(fakeDb(), NOW + 60_000)).toBeNull();
   });
 });

@@ -200,13 +200,3 @@ export function withRealmMapSettings(
   }
   return { ...stored, map };
 }
-
-/** Just the georeference keys of a realm's map settings. */
-export function realmGeoreference(settings: unknown): MapGeoreference {
-  const { projection, bounds, controlPoints } = parseRealmMapSettings(settings);
-  return {
-    ...(projection && { projection }),
-    ...(bounds && { bounds }),
-    ...(controlPoints && { controlPoints }),
-  };
-}

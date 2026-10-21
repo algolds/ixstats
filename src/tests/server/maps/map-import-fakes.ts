@@ -29,7 +29,8 @@ function pick(row: Row, select?: Row): Row {
   return Object.fromEntries(Object.keys(select).map((k) => [k, row[k]]));
 }
 
-function table(prefix: string, defaults: () => Row = () => ({})) {
+/** One in-memory table with the Prisma calls the map modules make (exported for scenarios that need more tables). */
+export function table(prefix: string, defaults: () => Row = () => ({})) {
   const rows: Row[] = [];
   const api = {
     rows,

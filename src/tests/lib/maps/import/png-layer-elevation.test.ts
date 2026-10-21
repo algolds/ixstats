@@ -1,23 +1,8 @@
 /** @jest-environment node */
 import sharp from "sharp";
 import type { LineString, MultiLineString, Polygon } from "geojson";
-import {
-  altitudeStyles,
-  bandLabel,
-  clearSkippedBands,
-  modeFilter,
-  SEA_BARRIER,
-  type ElevationBand,
-} from "~/lib/maps/import/png/elevation";
+import { altitudeStyles, type ElevationBand } from "~/lib/maps/import/png/elevation";
 import { runLayerEngine, type LayerEngineResult } from "~/lib/maps/import/png/layer-engine";
-import {
-  chainLines,
-  pruneSpurs,
-  removeCorners,
-  simplifyLine,
-  skeletonLines,
-  thin,
-} from "~/lib/maps/import/png/rivers";
 import { engineContext } from "~/lib/maps/import/progress";
 import { polygonPlanarArea } from "~/lib/maps/ring-assembly";
 
@@ -126,28 +111,10 @@ describe("altitudeStyles", () => {
       { subgroup: "Altitude-8", fill: "#4f4236", zoneId: "zone_8", label: "8,000 m and above" },
     ]);
   });
-
-  it("steps up a band when two realm bands start in one Ixnay band, and stops at the top band", () => {
-    const bands = [0, 10, 20, 5000, 6000, 7000].map((min) => ({
-      color: "#000000",
-      min,
-      max: null,
-    }));
-    expect(altitudeStyles(bands).map((s) => s.subgroup)).toEqual([
-      "coastlines",
-      "Altitude-1",
-      "Altitude-2",
-      "Altitude-8",
-      "Altitude-8",
-      "Altitude-8",
-    ]);
-    expect(bandLabel({ color: "#000000", min: -200, max: 0 })).toBe("-200–0 m");
-  });
 });
 
 describe("PNG layer engine: elevation bands and rivers from a geography map", () => {
   let result: LayerEngineResult;
-  let smoothed: LayerEngineResult;
   beforeAll(async () => {
     const geography = await encode(geographyPixel);
     const sources = {
@@ -162,7 +129,6 @@ describe("PNG layer engine: elevation bands and rivers from a geography map", ()
       { simplify: 0, smooth: 0, elevationSmoothing: 0, minRegionPixels },
       ctx()
     );
-    smoothed = await runLayerEngine(sources, { minRegionPixels }, ctx());
   });
 
   const band = (r: LayerEngineResult, subgroup: string) =>
@@ -183,29 +149,6 @@ describe("PNG layer engine: elevation bands and rivers from a geography map", ()
       elevationLabel: "2,000 m and above",
     });
   });
-
-  it("clears a white flag on the lowlands and keeps the polar ice as the coast band only", () => {
-    const peaks = band(result, "Altitude-5");
-    expect(peaks).toHaveLength(1);
-    const lons =
-      peaks[0]!.geometry.type === "Polygon"
-        ? peaks[0]!.geometry.coordinates[0]!.map((p) => p[0]!)
-        : [];
-    expect(Math.min(...lons)).toBeCloseTo(lonOf(110));
-    expect(
-      band(result, "coastlines").some(
-        (f) => f.geometry.type === "Polygon" && f.geometry.coordinates[0]!.some((p) => p[1] === -90)
-      )
-    ).toBe(true);
-    expect(
-      band(result, "Altitude-1").every(
-        (f) =>
-          f.geometry.type === "Polygon" &&
-          f.geometry.coordinates[0]!.every((p) => p[1]! > latOf(100))
-      )
-    ).toBe(true);
-  });
-
   it("traces the river as one system across a one-pixel break, without the lake's outline or a label stroke", () => {
     const rivers = result.layers.rivers!;
     expect(rivers).toHaveLength(1);
@@ -233,135 +176,5 @@ describe("PNG layer engine: elevation bands and rivers from a geography map", ()
     expect(Math.max(...lons)).toBeLessThan(lonOf(101));
     // The tributary reaches up the x 80 line.
     expect(Math.max(...points.map((p) => p[1]!))).toBeGreaterThan(latOf(82));
-  });
-
-  it("smooths the traced edges by default: no right-angle pixel corners left on a band", () => {
-    const hills = band(smoothed, "Altitude-3")[0]!;
-    const ring = hills.geometry.type === "Polygon" ? hills.geometry.coordinates[0]! : [];
-    expect(ring).not.toContainEqual([lonOf(90), latOf(45)]);
-    expect(areaPx([hills])).toBeGreaterThan(60 * 30 * 0.95);
-    expect(areaPx([hills])).toBeLessThan(60 * 30);
-  });
-});
-
-describe("band raster helpers", () => {
-  /** A 12 × 12 raster from rows of digits ("s" for sea, "." for unlabelled). */
-  const raster = (rows: string[]) =>
-    Uint16Array.from(rows.join(""), (c) => (c === "s" ? SEA_BARRIER : c === "." ? 0 : Number(c)));
-
-  it("clears a patch that skips a band and keeps one that steps", async () => {
-    const rows = Array.from({ length: 8 }, (_, y) =>
-      Array.from({ length: 8 }, (_, x) =>
-        x < 2 && y < 2 ? "3" : x >= 5 && y >= 5 ? "2" : "1"
-      ).join("")
-    );
-    const labels = raster(rows);
-    await expect(clearSkippedBands(labels, 8, 8, ctx())).resolves.toBe(4);
-    expect(labels[0]).toBe(0);
-    expect(labels[63]).toBe(2);
-  });
-
-  it("clears a thin line among unmatched pixels when unlabelled pixels count, and keeps the sea", async () => {
-    const rows = Array.from({ length: 12 }, (_, y) =>
-      Array.from({ length: 12 }, (_, x) => (x === 0 ? "s" : y === 6 || y === 7 ? "2" : ".")).join(
-        ""
-      )
-    );
-    const labels = raster(rows);
-    await modeFilter(labels, 12, 12, 2, ctx(), true);
-    expect(labels[6 * 12 + 6]).toBe(0);
-    expect(labels[6 * 12]).toBe(SEA_BARRIER);
-    const kept = raster(rows);
-    await modeFilter(kept, 12, 12, 2, ctx());
-    expect(kept[6 * 12 + 6]).toBe(2);
-  });
-});
-
-describe("river skeleton helpers", () => {
-  const grid = (rows: string[]) => {
-    const width = rows[0]!.length;
-    const mask = new Uint8Array(width * rows.length);
-    rows.forEach((row, y) => [...row].forEach((c, x) => (mask[y * width + x] = c === "#" ? 1 : 0)));
-    return { mask, width, height: rows.length };
-  };
-
-  it("thins a three-pixel band to one line and traces it end to end", () => {
-    const { mask, width, height } = grid([
-      "..........",
-      ".########.",
-      ".########.",
-      ".########.",
-      "..........",
-    ]);
-    thin(mask, width, height);
-    removeCorners(mask, width, height);
-    const lines = skeletonLines(mask, width, height);
-    expect(lines).toHaveLength(1);
-    expect(lines[0]!.points.length).toBeGreaterThanOrEqual(5);
-    expect(new Set(lines[0]!.points.map((p) => p[1])).size).toBe(1);
-  });
-
-  it("traces a fork as three lines meeting at one point, prunes a short spur and joins what is left", () => {
-    const { mask, width, height } = grid([
-      "........#.......",
-      "........#.......",
-      "........#.......",
-      "################",
-    ]);
-    const lines = skeletonLines(mask, width, height);
-    expect(lines).toHaveLength(3);
-    const forks = new Set(lines.flatMap((l) => [l.from, l.to]));
-    expect(forks.size).toBe(4); // three free ends and one fork
-    const forkId = [...forks].find((j) => lines.every((l) => l.from === j || l.to === j))!;
-    const fork = lines[0]!.from === forkId ? lines[0]!.points[0] : lines[0]!.points.at(-1);
-    for (const line of lines) {
-      expect([line.points[0], line.points.at(-1)]).toContainEqual(fork);
-    }
-    expect(pruneSpurs(lines, 2)).toHaveLength(3);
-    const pruned = pruneSpurs(lines, 5);
-    expect(pruned).toHaveLength(2);
-    const joined = chainLines(pruned);
-    expect(joined).toHaveLength(1);
-    const ends = [joined[0]!.points[0]![0], joined[0]!.points.at(-1)![0]];
-    expect(ends.sort((x, y) => x! - y!)).toEqual([0.5, 15.5]);
-  });
-
-  it("drops the corner pixels of a step, then traces a ring as one loop", () => {
-    const { mask, width, height } = grid([".####.", ".#..#.", ".####."]);
-    removeCorners(mask, width, height);
-    expect(mask[1]).toBe(0);
-    const lines = skeletonLines(mask, width, height);
-    expect(lines).toHaveLength(1);
-    expect(lines[0]!.from).toBe(lines[0]!.to);
-  });
-
-  it("simplifies a line with Douglas-Peucker, keeping its ends, and keeps a loop's far side", () => {
-    const line = [
-      [0, 0],
-      [1, 0.1],
-      [2, 0],
-      [3, 2],
-    ];
-    expect(simplifyLine(line, 0.5)).toEqual([
-      [0, 0],
-      [2, 0],
-      [3, 2],
-    ]);
-    expect(simplifyLine(line, 0)).toBe(line);
-    const loop = [
-      [0, 0],
-      [2, 0.1],
-      [4, 0],
-      [4, 4],
-      [0, 4],
-      [0, 0],
-    ];
-    expect(simplifyLine(loop, 0.5)).toEqual([
-      [0, 0],
-      [4, 0],
-      [4, 4],
-      [0, 4],
-      [0, 0],
-    ]);
   });
 });

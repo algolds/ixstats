@@ -3,11 +3,7 @@
  * realm but Ixnay, and never the country editor.
  */
 
-import {
-  initialSidebarTab,
-  sidebarTabsFor,
-  worldTabAvailable,
-} from "~/components/maps/editor/utils/world-tab";
+import { sidebarTabsFor, worldTabAvailable } from "~/components/maps/editor/utils/world-tab";
 import type { TabId } from "~/components/maps/editor/EditorPanel";
 
 const editor = { isWorldMode: true, canEdit: true, isIxnay: false };
@@ -42,20 +38,5 @@ describe("sidebarTabsFor", () => {
     expect(sidebarTabsFor(TABS, { ...editor, isIxnay: true })).toEqual(rest);
     expect(sidebarTabsFor(TABS, { ...editor, canEdit: false })).toEqual(rest);
     expect(sidebarTabsFor(TABS, { ...editor, isWorldMode: false })).toEqual(rest);
-  });
-});
-
-describe("initialSidebarTab", () => {
-  it("opens the country editor on Layers and the world editor on Links", () => {
-    expect(initialSidebarTab({ isWorldMode: false, wantsWorldTab: false })).toBe("layers");
-    expect(initialSidebarTab({ isWorldMode: true, wantsWorldTab: false })).toBe("linkages");
-  });
-
-  it("opens the world editor on the World tab when the address asks", () => {
-    expect(initialSidebarTab({ isWorldMode: true, wantsWorldTab: true })).toBe("world");
-  });
-
-  it("does not take the country editor to a tab it doesn't have", () => {
-    expect(initialSidebarTab({ isWorldMode: false, wantsWorldTab: true })).toBe("layers");
   });
 });

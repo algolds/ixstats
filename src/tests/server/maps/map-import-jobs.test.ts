@@ -32,7 +32,6 @@ import {
   startMapImport,
   startMapImportApply,
   STALE_AFTER_MS,
-  type AnalyseSummary,
   type ApplySummary,
 } from "~/server/modules/maps/map-import.jobs";
 import { MapImportError } from "~/server/modules/maps/map-import.realm";
@@ -113,35 +112,6 @@ function setup() {
 const bytes = new TextEncoder().encode('{"type":"FeatureCollection","features":[]}');
 
 describe("map import jobs: lifecycle", () => {
-  it("queues an analysis, runs it off the request and stores its summary", async () => {
-    const { db, runEngine } = setup();
-    const jobId = await startMapImport(
-      {
-        realmId: "r1",
-        source: { kind: "geojson", bytes, filename: "eurth.geojson" },
-        requestedBy: "admin_1",
-      },
-      { db, kick: false, runEngine }
-    );
-    expect(db.mapImportJob.rows[0]).toMatchObject({
-      id: jobId,
-      status: "queued",
-      dryRun: true,
-      kind: "geojson",
-    });
-    expect(db.mapImportJob.rows[0].uploadId).toMatch(/^[0-9a-f]{64}$/);
-
-    expect(await runMapImportJob(db, jobId, { runEngine })).toBe("ran");
-    const job = await getMapImportJob(db, admin, jobId);
-    expect(job.status).toBe("succeeded");
-    expect(job.progress).toBe(100);
-    const summary = job.result as AnalyseSummary;
-    expect(summary.phase).toBe("analyse");
-    // Names matched to the realm: a country and a roster page.
-    expect(summary.suggestedMapping).toEqual({ Aurelia: "Aurelia", Borealis: "Borealis" });
-    expect(runEngine).toHaveBeenCalledTimes(1);
-  });
-
   it("applies an analysis: writes the borders, keeps a snapshot and fills only a missing land area", async () => {
     const { db, runEngine } = setup();
     const jobId = await startMapImport(

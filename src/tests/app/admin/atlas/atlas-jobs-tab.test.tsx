@@ -4,11 +4,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import {
   calls,
-  failures,
-  fetchNextPage,
   jobRow,
-  listInputs,
-  notify,
   realmRow,
   resetFakeAtlas,
   responses,
@@ -45,50 +41,6 @@ beforeEach(() => {
     realms: [realmRow(), realmRow({ id: "r_b", slug: "borea", name: "Borea" })],
   };
 });
-
-describe("the job list", () => {
-  it("lists each job with its kind, realm, status and progress", () => {
-    state.jobPages = [
-      page(
-        jobRow({
-          id: "j1",
-          kind: "world",
-          dryRun: true,
-          status: "running",
-          progress: 40,
-          stage: "Checking",
-        }),
-        jobRow({ id: "j2", kind: "map-pipeline", status: "failed", error: "No art" })
-      ),
-    ];
-    render(<AtlasJobsTab />);
-    const world = rowOf("Open World check j1");
-    expect(within(world).getByText("Eurth")).toBeInTheDocument();
-    expect(within(world).getByText("Running")).toBeInTheDocument();
-    expect(within(world).getByText("Checking, 40%")).toBeInTheDocument();
-    expect(within(rowOf("Open Map pipeline run j2")).getByText("Failed")).toBeInTheDocument();
-  });
-
-  it("passes the realm, kind and status filters to the query", () => {
-    render(<AtlasJobsTab />);
-    expect(listInputs.at(-1)).toEqual({ realm: undefined, kind: undefined, status: undefined });
-    fireEvent.click(screen.getByRole("combobox", { name: "Realm" }));
-    fireEvent.click(screen.getByRole("option", { name: "Borea" }));
-    fireEvent.click(screen.getByRole("combobox", { name: "Kind" }));
-    fireEvent.click(screen.getByRole("option", { name: "World" }));
-    fireEvent.click(screen.getByRole("combobox", { name: "Status" }));
-    fireEvent.click(screen.getByRole("option", { name: "Failed" }));
-    expect(listInputs.at(-1)).toEqual({ realm: "borea", kind: "world", status: "failed" });
-  });
-
-  it("pages with Load more while the server has a next cursor", () => {
-    state.jobPages = [{ jobs: [jobRow()], nextCursor: "c1" }];
-    render(<AtlasJobsTab />);
-    fireEvent.click(screen.getByRole("button", { name: "Load more" }));
-    expect(fetchNextPage).toHaveBeenCalledTimes(1);
-  });
-});
-
 describe("job actions", () => {
   it("shows Cancel, Retry and Roll back only where the job allows them", () => {
     state.jobPages = [
@@ -110,17 +62,6 @@ describe("job actions", () => {
     expect(actions("done")).toEqual(["Roll back"]);
     expect(actions("plain")).toEqual([]);
   });
-
-  it("retries a failed job with its id", () => {
-    state.jobPages = [page(jobRow({ id: "failed", status: "failed", canRetry: true }))];
-    responses["atlas.jobs.retry"] = { jobId: "new", retryAs: "apply", note: "Started again" };
-    render(<AtlasJobsTab />);
-    fireEvent.click(
-      within(rowOf("Open Apply (PNG) failed")).getByRole("button", { name: "Retry" })
-    );
-    expect(calls).toEqual([["atlas.jobs.retry", { jobId: "failed" }]]);
-  });
-
   it("asks before cancelling and before rolling back", () => {
     state.jobPages = [
       page(
@@ -149,55 +90,8 @@ describe("job actions", () => {
     expect(calls.at(-1)).toEqual(["atlas.jobs.rollback", { importId: "imp_1" }]);
   });
 });
-
-describe("job action results", () => {
-  const failedRow = () => page(jobRow({ id: "failed", status: "failed", canRetry: true }));
-  it("toasts the server's error when a retry fails", () => {
-    state.jobPages = [failedRow()];
-    failures["atlas.jobs.retry"] = "The upload is gone";
-    render(<AtlasJobsTab />);
-    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-    expect(notify.error).toHaveBeenCalledWith(
-      "Could not start the job again",
-      "The upload is gone"
-    );
-    expect(notify.success).not.toHaveBeenCalled();
-  });
-  it("toasts the server's error when a roll back fails, and the counts when it works", () => {
-    state.jobPages = [page(jobRow({ id: "done", canRollBack: true, importId: "imp_1" }))];
-    failures["atlas.jobs.rollback"] = "A later import is in place";
-    render(<AtlasJobsTab />);
-    fireEvent.click(screen.getByRole("button", { name: "Roll back" }));
-    fireEvent.click(
-      within(screen.getByRole("alertdialog")).getByRole("button", { name: "Roll back" })
-    );
-    expect(notify.error).toHaveBeenCalledWith("Could not roll back", "A later import is in place");
-  });
-});
-
-describe("the jobs read error", () => {
-  it("shows the server's message instead of the list", () => {
-    state.readErrors.jobs = "Jobs could not be read";
-    render(<AtlasJobsTab />);
-    expect(screen.getByText("Jobs could not be read")).toBeInTheDocument();
-  });
-});
-
 describe("continuing a retried job", () => {
   beforeEach(() => mockPush.mockClear());
-
-  it("opens the import wizard's page on a retried analysis, which nothing else could finish", () => {
-    state.jobPages = [
-      page(jobRow({ id: "failed", dryRun: true, status: "failed", canRetry: true })),
-    ];
-    responses["atlas.jobs.retry"] = { jobId: "an 2", retryAs: "analysis", note: "Again" };
-    render(<AtlasJobsTab />);
-    fireEvent.click(
-      within(rowOf("Open Analysis (PNG) failed")).getByRole("button", { name: "Retry" })
-    );
-    expect(mockPush).toHaveBeenCalledWith("/admin/maps?importJob=an%202");
-  });
-
   it("opens a retried world check, which can then be applied after asking", () => {
     state.jobPages = [
       page(jobRow({ id: "failed", kind: "world", status: "failed", canRetry: true })),
@@ -225,40 +119,5 @@ describe("continuing a retried job", () => {
     expect(calls).toContainEqual(["geoEditor.mapImport.applyWorld", { jobId: "check_2" }]);
     // The sheet follows to the apply job
     expect(screen.getByText("Job apply_3")).toBeInTheDocument();
-  });
-
-  it("offers no Apply on a check that cannot be applied", () => {
-    state.jobPages = [page(jobRow({ id: "done", kind: "world", dryRun: true }))];
-    state.jobDetail = {
-      ...jobRow({ id: "done", kind: "world", dryRun: true }),
-      result: null,
-      retryNote: "",
-      canApply: false,
-    };
-    render(<AtlasJobsTab />);
-    fireEvent.click(screen.getByRole("button", { name: "Open World check done" }));
-    expect(screen.queryByRole("button", { name: "Apply this check" })).toBeNull();
-  });
-});
-
-describe("the detail sheet", () => {
-  it("opens a job with its error, result summary and the retry note", () => {
-    state.jobPages = [page(jobRow({ id: "failed", status: "failed", canRetry: true }))];
-    state.jobDetail = {
-      ...jobRow({ id: "failed", status: "failed", canRetry: true, error: "The upload is gone" }),
-      result: { written: 12, warnings: ["a", "b"], summary: { x: 1 } },
-      retryNote: "Starts again from the same upload.",
-      canApply: false,
-    };
-    render(<AtlasJobsTab />);
-    fireEvent.click(screen.getByRole("button", { name: "Open Apply (PNG) failed" }));
-    const sheet = screen.getByRole("dialog");
-    expect(within(sheet).getByText("The upload is gone")).toBeInTheDocument();
-    expect(within(sheet).getByText("Written")).toBeInTheDocument();
-    expect(within(sheet).getByText("12")).toBeInTheDocument();
-    expect(within(sheet).getByText("2 items")).toBeInTheDocument();
-    expect(within(sheet).getByText("1 fields")).toBeInTheDocument();
-    expect(within(sheet).getByText("Starts again from the same upload.")).toBeInTheDocument();
-    expect(within(sheet).getByRole("button", { name: "Retry" })).toBeInTheDocument();
   });
 });

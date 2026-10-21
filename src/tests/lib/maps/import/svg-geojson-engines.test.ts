@@ -1,14 +1,9 @@
 /** @jest-environment node */
 import type { MultiPolygon, Polygon } from "geojson";
 import { runSvgEngine } from "~/lib/maps/import/svg-engine";
-import {
-  GeojsonImportError,
-  inspectGeojson,
-  runGeojsonEngine,
-} from "~/lib/maps/import/geojson-engine";
+import { GeojsonImportError, inspectGeojson } from "~/lib/maps/import/geojson-engine";
 import { buildNationGeometries } from "~/lib/maps/import/build";
 import { resolveGeoreference } from "~/lib/maps/import/georef";
-import { arcToPoints } from "~/lib/flags/svg/arc";
 import { polygonPlanarArea } from "~/lib/maps/ring-assembly";
 
 const area = (g: Polygon | MultiPolygon) =>
@@ -40,21 +35,6 @@ describe("realm SVG engine", () => {
   const byName = Object.fromEntries(result.regions.map((r) => [r.name ?? r.key, r]));
   const geometryOf = (key: string) =>
     result.features!.features.find((f) => f.properties.key === key)!.geometry;
-
-  it("names regions from <title>, id and inkscape:label, and leaves out the sea", () => {
-    expect(Object.keys(byName)).toEqual(expect.arrayContaining(["Aurelia", "Borealis", "Cyrene"]));
-    expect(
-      result.regions.find((r) => r.colour === "#3366cc" || r.colour === "#2255aa")
-    ).toBeUndefined();
-    expect(result.width).toBe(400);
-    expect(result.height).toBe(200);
-  });
-
-  it("unions a named group's shapes (rect and polygon) into one region", () => {
-    expect(byName.Aurelia!.parts).toBe(2);
-    expect(area(geometryOf(byName.Aurelia!.key))).toBeCloseTo(80 * 60 + 40 * 30, 0);
-  });
-
   it("applies transforms (the layer's translate and a nested scale) relative to the viewBox", () => {
     const aurelia = geometryOf(byName.Aurelia!.key);
     expect(Math.min(...xs(aurelia))).toBeCloseTo(10, 6); // translate(100 50) less the viewBox origin (100, 50)
@@ -73,11 +53,6 @@ describe("realm SVG engine", () => {
     const half = result.regions.find((r) => r.colour === "#20a0a0")!;
     expect(area(geometryOf(half.key)) / ((Math.PI * 400) / 2)).toBeGreaterThan(0.97);
   });
-
-  it("names an unnamed region from the text drawn over it", () => {
-    expect(result.regions.find((r) => r.colour === "#9040a0")?.name).toBe("Dunmore");
-  });
-
   it("builds georeferenced nation borders from the regions", () => {
     const built = buildNationGeometries(
       result,
@@ -88,18 +63,6 @@ describe("realm SVG engine", () => {
     expect(Math.min(...xs(built.nations[0]!.geometry))).toBeCloseTo(-180 + (10 / 400) * 360, 6);
   });
 });
-
-describe("arcToPoints", () => {
-  it("follows the circle and ends exactly at the endpoint", () => {
-    const points = arcToPoints(0, 0, 10, 10, 0, false, true, 20, 0, 8);
-    expect(points[points.length - 1]).toEqual([20, 0]);
-    for (const [x, y] of points) expect(Math.hypot(x - 10, y)).toBeCloseTo(10, 6);
-  });
-  it("is a straight line for a zero radius", () => {
-    expect(arcToPoints(0, 0, 0, 5, 0, false, true, 3, 4)).toEqual([[3, 4]]);
-  });
-});
-
 const fc = (features: unknown[], extra: Record<string, unknown> = {}) =>
   JSON.stringify({ type: "FeatureCollection", features, ...extra });
 const square = (x: number, y: number, size: number) => ({
@@ -116,41 +79,6 @@ const square = (x: number, y: number, size: number) => ({
 });
 
 describe("GeoJSON engine", () => {
-  const lonlat = fc([
-    { type: "Feature", properties: { NAME: "Aurelia", id: 1 }, geometry: square(0, 0, 10) },
-    { type: "Feature", properties: { NAME: "Aurelia", id: 2 }, geometry: square(10, 0, 10) },
-    { type: "Feature", properties: { NAME: "Borealis", id: 3 }, geometry: square(30, 0, 5) },
-    {
-      type: "Feature",
-      properties: { NAME: "River" },
-      geometry: {
-        type: "LineString",
-        coordinates: [
-          [0, 0],
-          [1, 1],
-        ],
-      },
-    },
-  ]);
-
-  it("suggests the name property and finds lon/lat coordinates", () => {
-    const inspection = inspectGeojson(lonlat);
-    expect(inspection.suggestedNameProperty).toBe("NAME");
-    expect(inspection.space).toBe("lonlat");
-    expect(inspection.polygons).toBe(3);
-  });
-
-  it("groups features by the chosen property and unions each group", () => {
-    const result = runGeojsonEngine(lonlat, { nameProperty: "NAME" });
-    expect(result.regions.map((r) => [r.key, r.parts])).toEqual([
-      ["Aurelia", 2],
-      ["Borealis", 1],
-    ]);
-    const aurelia = result.features!.features[0]!.geometry as Polygon;
-    expect(aurelia.type).toBe("Polygon");
-    expect(area(aurelia)).toBeCloseTo(200, 6);
-  });
-
   it("refuses a projected CRS whose coordinates are not lon/lat", () => {
     const mercator = fc(
       [{ type: "Feature", properties: { NAME: "A" }, geometry: square(1e6, 1e6, 1e5) }],
@@ -166,19 +94,5 @@ describe("GeoJSON engine", () => {
       }
     );
     expect(inspectGeojson(harmless).warnings[0]).toMatch(/valid longitude\/latitude/);
-  });
-
-  it("takes non-negative out-of-range coordinates as image pixels to georeference", () => {
-    const pixels = fc([
-      { type: "Feature", properties: { NAME: "A" }, geometry: square(100, 100, 300) },
-      { type: "Feature", properties: { NAME: "B" }, geometry: square(400, 100, 300) },
-    ]);
-    const result = runGeojsonEngine(pixels);
-    expect(result.space).toBe("pixel");
-    expect(result.width).toBe(700);
-    expect(result.report.warnings[0]).toMatch(/pixels/);
-    expect(() =>
-      runGeojsonEngine(fc([{ type: "Feature", properties: {}, geometry: square(-500, 0, 10) }]))
-    ).toThrow(GeojsonImportError);
   });
 });

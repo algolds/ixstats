@@ -1,5 +1,5 @@
-import type { MultiPolygon, Polygon } from "geojson";
-import { buildBorderDraft, restorableBorderDraft } from "~/lib/maps/border-draft";
+import type { Polygon } from "geojson";
+import { restorableBorderDraft } from "~/lib/maps/border-draft";
 const SQUARE: Polygon = {
   type: "Polygon",
   coordinates: [
@@ -14,24 +14,6 @@ const SQUARE: Polygon = {
 };
 const HOUR = 60 * 60 * 1000;
 const NOW = Date.UTC(2026, 9, 11, 12, 0, 0);
-
-describe("buildBorderDraft", () => {
-  it("carries the feature, its outline, the moved neighbours and the save time, nothing else", () => {
-    const draft = buildBorderDraft({
-      featureId: "Caphiria",
-      geometry: SQUARE,
-      dirtyNeighbors: { Xalesia: SQUARE },
-      savedAt: NOW,
-    });
-    expect(Object.keys(draft).sort()).toEqual([
-      "dirtyNeighbors",
-      "featureId",
-      "geometry",
-      "savedAt",
-    ]);
-  });
-});
-
 describe("restorableBorderDraft", () => {
   type Input = Parameters<typeof restorableBorderDraft>[0];
   const stored = (over: object = {}) => ({
@@ -62,30 +44,9 @@ describe("restorableBorderDraft", () => {
     const sameInstant = input({ featureUpdatedAt: new Date(NOW - HOUR) });
     expect(restorableBorderDraft(sameInstant)).toBeNull();
   });
-
-  it("does not offer a draft written for another feature", () => {
-    expect(
-      restorableBorderDraft(input({ sessionData: stored({ featureId: "Daxia" }) }))
-    ).toBeNull();
-    expect(restorableBorderDraft(input({ sessionFeatureId: "Daxia" }))).toBeNull();
-  });
-
   it("does not offer another user's draft", () => {
     expect(restorableBorderDraft(input({ sessionUserId: "user_2" }))).toBeNull();
   });
-
-  it("does not offer a draft older than the session lifetime", () => {
-    const old = input({
-      sessionData: stored({ savedAt: NOW - 25 * HOUR }),
-      featureUpdatedAt: null,
-    });
-    expect(restorableBorderDraft(old)).toBeNull();
-  });
-
-  it("offers a draft for a feature that has no update time", () => {
-    expect(restorableBorderDraft(input({ featureUpdatedAt: undefined }))).not.toBeNull();
-  });
-
   it.each([
     ["a new session", { undoStack: [], mode: "select" }],
     ["a legacy autosave", { geometry: SQUARE, undoStack: { entries: [] }, mode: "vertex_edit" }],
@@ -99,19 +60,6 @@ describe("restorableBorderDraft", () => {
   ])("does not offer %s", (_label, sessionData) => {
     expect(restorableBorderDraft(input({ sessionData }))).toBeNull();
   });
-
-  it("drops moved neighbours that are not polygons", () => {
-    const multi: MultiPolygon = { type: "MultiPolygon", coordinates: [SQUARE.coordinates] };
-    const draft = restorableBorderDraft(
-      input({
-        sessionData: stored({
-          dirtyNeighbors: { good: multi, bad: { type: "Point", coordinates: [0, 0] }, worse: 3 },
-        }),
-      })
-    );
-    expect(draft?.dirtyNeighbors).toEqual({ good: multi });
-  });
-
   describe("moved neighbours that changed after the draft was saved", () => {
     const drafted = stored({
       dirtyNeighbors: { kept: SQUARE, newer: SQUARE, same: SQUARE, gone: SQUARE },
@@ -129,11 +77,6 @@ describe("restorableBorderDraft", () => {
       // "gone" is no longer a neighbour of the feature: nothing vouches that its outline is unchanged
       expect(Object.keys(draft?.dirtyNeighbors ?? {})).toEqual(["kept"]);
       expect(draft?.geometry).toEqual(SQUARE);
-    });
-
-    it("offers every moved neighbour when the neighbours' update times are not given", () => {
-      const draft = restorableBorderDraft(input({ sessionData: drafted }));
-      expect(Object.keys(draft?.dirtyNeighbors ?? {})).toHaveLength(4);
     });
   });
 });

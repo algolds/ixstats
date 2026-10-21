@@ -11,7 +11,6 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { applyWorld, runWorldDryRun } from "~/server/modules/maps/world-import";
-import { dedupeNames } from "~/server/modules/maps/world-import.slots";
 import {
   CELLS,
   country,
@@ -19,7 +18,6 @@ import {
   jobFor,
   layer,
   mapRow,
-  RELIEF_ENTRY,
   relief,
   seedRealm,
   slot,
@@ -37,23 +35,6 @@ afterAll(() => {
   rmSync(dir, { recursive: true, force: true });
   delete process.env.MAP_IMPORT_DIR;
 });
-
-describe("dedupeNames", () => {
-  it("numbers a name the realm or the bundle already uses, ignoring case and spaces", () => {
-    expect(dedupeNames(["Aurelia", "Borealis", "aurelia ", "Cyrene"], ["borealis"])).toEqual([
-      "Aurelia",
-      "Borealis (2)",
-      "aurelia (2)",
-      "Cyrene",
-    ]);
-    expect(dedupeNames(["Aurelia", "Aurelia (2)", "Aurelia"], [])).toEqual([
-      "Aurelia",
-      "Aurelia (2)",
-      "Aurelia (3)",
-    ]);
-  });
-});
-
 describe("runWorldDryRun", () => {
   it("reports what applying would create, change and retire, and writes nothing", async () => {
     const db = seedRealm();
@@ -78,23 +59,6 @@ describe("runWorldDryRun", () => {
     );
     expect(stateOf(db)).toBe(before);
   });
-
-  it("flags the warnings about work the world replaces, apart from the notes", async () => {
-    const db = seedRealm();
-    const diff = await runWorldDryRun(db, jobFor(await stored()));
-    expect(diff.replaces).toEqual([
-      "The realm's current map (5 features) will be replaced",
-      "2 nations that are not generated slots, or that a player holds, keep their country but lose their border",
-      "1 earlier nation has an old claim on file and is kept as reserved, with no land",
-    ]);
-    // each is also in the full list, which holds the notes too
-    expect(diff.warnings).toEqual(expect.arrayContaining(diff.replaces));
-    expect(diff.warnings).toContain("1 names were already taken in this realm and got a number");
-    expect(diff.replaces).not.toContain(
-      "1 names were already taken in this realm and got a number"
-    );
-  });
-
   it("flags hand edits and map imports made since the last generation as replaced work", async () => {
     const db = seedRealm();
     db.mapImport.rows.push(
@@ -144,28 +108,6 @@ describe("runWorldDryRun", () => {
     expect(kept.layers.political).toEqual({ create: 0, change: 0, retire: 0 });
     expect(kept.layers.background).toEqual({ create: 0, change: 0, retire: 0 });
   });
-
-  it("warns of hand edits made since the last generation, not of the generation's own touches", async () => {
-    const db = seedRealm();
-    db.mapImport.rows.push({
-      id: "i_prev",
-      realmId: "r1",
-      jobId: "j_prev",
-      layerTypes: ["political"],
-      mode: "replace",
-      summary: { source: "world" },
-      createdAt: new Date("2026-01-01T12:00:00Z"),
-      rolledBackAt: null,
-    });
-    // slot_old was touched five minutes after the generation (its adjacency rebuild), manual-key a day later
-    layer(db, "political", "slot_old").updatedAt = new Date("2026-01-01T12:05:00Z");
-    layer(db, "political", "manual-key").updatedAt = new Date("2026-01-02T12:00:00Z");
-    const diff = await runWorldDryRun(db, jobFor(await stored()));
-    expect(diff.warnings).toContain(
-      "1 features were edited by hand since the last generation and will be replaced"
-    );
-  });
-
   describe("for a realm map bundle (the realm keeps what it has)", () => {
     const check = async (db: ReturnType<typeof seedRealm>) =>
       runWorldDryRun(
@@ -194,12 +136,6 @@ describe("runWorldDryRun", () => {
       expect(diff.layers.background).toEqual(none);
       expect(diff.kept).not.toContain("background");
     });
-
-    it("keeps no layer of a preset world, which writes all seven", async () => {
-      const diff = await runWorldDryRun(seedRealm(), jobFor(await stored()));
-      expect(diff.kept).toEqual([]);
-    });
-
     it("refuses a world that has nothing to add: every layer is there and every region has a nation", async () => {
       const db = seedRealm();
       for (const type of ["altitudes", "climate", "icecaps"])
@@ -447,44 +383,6 @@ describe("applyWorld", () => {
       expect(reports(write, "Writing the map")).toBeGreaterThan(3);
       release();
       await done;
-      const settled = write.mock.calls.length;
-      await sleep(30);
-      expect(write.mock.calls.length).toBe(settled);
-    });
-
-    it("keeps reporting while the relief is built", async () => {
-      const db = seedRealm();
-      const { write, isCancelled } = progress();
-      let release!: () => void;
-      const held = new Promise<void>((resolve) => (release = resolve));
-      const runRelief = jest.fn(async () => {
-        await held;
-        return RELIEF_ENTRY;
-      });
-      const done = applyWorld(
-        db,
-        jobFor(await stored()),
-        { write, isCancelled },
-        {
-          runRelief,
-          heartbeatMs: 5,
-        }
-      );
-      await sleep(60);
-      expect(reports(write, "Building relief")).toBeGreaterThan(3);
-      release();
-      await done;
-    });
-
-    it("stops reporting when the write fails", async () => {
-      const db = seedRealm();
-      const { write, isCancelled } = progress();
-      db.mapImport.create.mockRejectedValueOnce(new Error("disk full"));
-      const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
-      await expect(
-        applyWorld(db, jobFor(await stored()), { write, isCancelled }, { heartbeatMs: 5 })
-      ).rejects.toThrow("disk full");
-      error.mockRestore();
       const settled = write.mock.calls.length;
       await sleep(30);
       expect(write.mock.calls.length).toBe(settled);

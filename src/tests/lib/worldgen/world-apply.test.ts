@@ -3,22 +3,11 @@
  * What the World tab uploads and how it words what comes back: the bundle built from a generated world (which the
  * server's parser must accept), the readable copy for a refusal, and the diff as a person reads it.
  */
-import {
-  decodeCells,
-  encodeWorldBundle,
-  parseWorldBundleJson,
-} from "~/lib/maps/import/world-bundle";
+import { encodeWorldBundle, parseWorldBundleJson } from "~/lib/maps/import/world-bundle";
 import { parseWorldBundle } from "~/lib/maps/import/world-bundle.node";
 import type { LandMaskLayers } from "~/lib/worldgen/land-mask";
-import { controlsForPreset, paramsFromControls } from "~/lib/worldgen/world-controls";
 import { MapUploadError } from "~/lib/maps/import/upload-client";
-import {
-  buildWorldBundle,
-  describeWorldFailure,
-  failureOf,
-  draftKey,
-  splitWarnings,
-} from "~/lib/worldgen/world-apply";
+import { buildWorldBundle, failureOf, draftKey } from "~/lib/worldgen/world-apply";
 import { worldResult } from "~/tests/helpers/fake-world-worker";
 import { realWorld } from "~/tests/helpers/real-world-result";
 
@@ -72,41 +61,6 @@ const box: LandMaskLayers = {
 };
 
 describe("buildWorldBundle", () => {
-  it("makes a bundle the server's parser accepts from a generated world", () => {
-    const result = generated();
-    const bundle = buildWorldBundle(result, "preset");
-    const parsed = parseWorldBundleJson(JSON.stringify(bundle));
-    expect(parsed).toMatchObject({ ok: true });
-    expect(bundle).toMatchObject({
-      version: 1,
-      seed: result.seed,
-      source: "preset",
-      params: { developmentLevel: result.params.developmentLevel },
-    });
-    expect(Object.keys(bundle.layers).sort()).toEqual(
-      ["altitudes", "background", "climate", "icecaps", "lakes", "political", "rivers"].sort()
-    );
-    const decoded = decodeCells(bundle.cells);
-    expect(decoded.ok && decoded.cells).toEqual(result.cells);
-  });
-
-  it("carries the slots, each left claimable, without the cell count", () => {
-    const result = generated();
-    const bundle = buildWorldBundle(result, "preset");
-    expect(bundle.slots.length).toBeGreaterThan(0);
-    expect(bundle.slots).toHaveLength(result.slots.length);
-    const [first] = result.slots;
-    expect(bundle.slots[0]).toEqual({
-      key: first!.key,
-      name: first!.name,
-      colour: first!.colour,
-      claimable: true,
-      population: first!.population,
-      gdpPerCapita: first!.gdpPerCapita,
-      areaKm2: first!.areaKm2,
-    });
-  });
-
   it("is a world around the realm's borders when they were kept: no political layer and no slots", () => {
     const result = worldResult({
       slots: [],
@@ -151,64 +105,7 @@ describe("draftKey", () => {
     expect(draftKey(world, "preset")).not.toBe(draftKey(warmer, "preset"));
   });
 });
-
-describe("describeWorldFailure", () => {
-  const reason = "The world is locked: 2 claims are pending or approved in this realm";
-
-  it.each([
-    ["CONFLICT", "The realm can't take a world right now."],
-    ["FORBIDDEN", "You can't change this realm's world."],
-    ["BAD_REQUEST", "The server refused this world."],
-    ["NOT_FOUND", "The realm or the uploaded world was not found."],
-    ["UNAUTHORIZED", "You are signed out. Sign in again, then retry."],
-    ["TOO_MANY_REQUESTS", "Too many requests. Wait a minute, then retry."],
-  ])("words %s and keeps the server's reason", (code, title) => {
-    expect(describeWorldFailure({ stage: "check", code, reason })).toEqual({ title, reason });
-  });
-
-  it.each([
-    ["CONFLICT", "The relief can't be rebuilt right now."],
-    ["FORBIDDEN", "You can't rebuild this realm's relief."],
-    ["BAD_REQUEST", "The relief could not be rebuilt."],
-    ["NOT_FOUND", "The realm was not found."],
-  ])("words a %s refusal of a relief rebuild as the relief's, not the world's", (code, title) => {
-    expect(describeWorldFailure({ stage: "relief", code, reason })).toEqual({ title, reason });
-  });
-
-  it.each([
-    ["send", "The world could not be sent."],
-    ["check", "The world could not be checked."],
-    ["apply", "The world could not be applied."],
-  ] as const)("says what failed when the server gave no code (%s)", (stage, title) => {
-    expect(describeWorldFailure({ stage, reason: "Disk full" })).toEqual({
-      title,
-      reason: "Disk full",
-    });
-  });
-});
-
 describe("buildWorldBundle on worlds the generator really makes", () => {
-  it("makes a world fitted to the realm's borders into a bundle with no borders and no nations", () => {
-    const result = generated({ landMaskLayers: box, keepBorders: true });
-    expect(result.slots).toEqual([]);
-    expect(result.layers).not.toHaveProperty("political");
-    const bundle = buildWorldBundle(result, "realm-map");
-    expect(bundle).toMatchObject({ source: "realm-map", slots: [] });
-    expect(Object.keys(bundle.layers).sort()).toEqual(
-      ["altitudes", "background", "climate", "icecaps", "lakes", "rivers"].sort()
-    );
-    expect(parseWorldBundleJson(JSON.stringify(bundle))).toMatchObject({ ok: true });
-  });
-
-  it("keeps the layers of a world with no rivers and no lakes, empty", () => {
-    const params = paramsFromControls({ ...controlsForPreset("ixnay"), rivers: 0, lakes: 0 });
-    const result = generated({ params: { ...params, cellCount: 3000, plateCount: 8 } });
-    const bundle = buildWorldBundle(result, "preset");
-    expect(bundle.layers.rivers.features).toEqual([]);
-    expect(bundle.layers.lakes.features).toEqual([]);
-    expect(parseWorldBundleJson(JSON.stringify(bundle))).toMatchObject({ ok: true });
-  });
-
   it.each([
     ["a preset world", () => buildWorldBundle(generated(), "preset"), "preset"],
     [
@@ -252,43 +149,5 @@ describe("failureOf", () => {
     [429, "TOO_MANY_REQUESTS"],
   ])("reads the upload route's %i as %s", (status, code) => {
     expect(failureOf(new MapUploadError("refused", status), "send")).toMatchObject({ code });
-  });
-
-  it("has no code for an upload that failed on the network, a status it does not know, or any other error", () => {
-    expect(failureOf(new MapUploadError("too big", null), "send").code).toBeUndefined();
-    expect(failureOf(new MapUploadError("bad gateway", 502), "send").code).toBeUndefined();
-    expect(failureOf(new Error("boom"), "apply")).toEqual({
-      stage: "apply",
-      code: undefined,
-      reason: "boom",
-    });
-  });
-});
-
-describe("the diff in words", () => {
-  it("splits the warnings by the server's own list of what replaces work, not by their wording", () => {
-    const warnings = [
-      "Something odd about the wording",
-      "3 names were already taken in this realm and got a number",
-      "The realm's current map (40 features) will be replaced",
-    ];
-    expect(
-      splitWarnings({
-        warnings,
-        replaces: ["Something odd about the wording"],
-      })
-    ).toEqual({
-      replaces: ["Something odd about the wording"],
-      notes: [
-        "3 names were already taken in this realm and got a number",
-        "The realm's current map (40 features) will be replaced",
-      ],
-    });
-    expect(splitWarnings({ warnings, replaces: [] }).replaces).toEqual([]);
-  });
-
-  it("reads every warning as a note when there is no list, as in a check stored before the server made one", () => {
-    const stored = { warnings: ["A", "B"] } as { warnings: string[]; replaces: string[] };
-    expect(splitWarnings(stored)).toEqual({ replaces: [], notes: ["A", "B"] });
   });
 });

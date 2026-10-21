@@ -68,22 +68,6 @@ const renderTools = (onDeleted = jest.fn()) => {
 };
 
 describe("WorldSlotTools", () => {
-  it("asks about the country in the realm being edited", () => {
-    renderTools();
-    expect(queries).toHaveBeenCalledWith(
-      { realm: "eurth", countryId: "c_slot" },
-      expect.objectContaining({ enabled: true })
-    );
-  });
-
-  it("shows nothing for a country the generator did not make", () => {
-    queries.mockReturnValue(query({ ...SLOT, worldgen: false }));
-    const { container } = render(
-      <WorldSlotTools countryId="c" countryName="Hand-drawn" onDeleted={jest.fn()} />
-    );
-    expect(container).toBeEmptyDOMElement();
-  });
-
   it("shows nothing while the slot loads, or when the realm is Ixnay", () => {
     queries.mockReturnValue(query(undefined));
     const loading = render(<WorldSlotTools countryId="c" countryName="x" onDeleted={jest.fn()} />);

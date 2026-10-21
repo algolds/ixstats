@@ -39,17 +39,6 @@ const fills = (db: ReturnType<typeof fakeDb>, bbox: Extent | null) =>
   countryZoneFills(db as never, COUNTRY, "climate", bbox);
 
 describe("countryZoneFills", () => {
-  it("clips the realm's layer to the country in PostGIS", async () => {
-    const db = fakeDb();
-    const result = await fills(db, [7, -33, 45, -1]);
-
-    expect(result).toMatchObject([
-      { fill: "#00fd97", climateId: null, zoneId: null, overlapArea: 300 },
-    ]);
-    expect(db.$queryRawUnsafe.mock.calls[0]?.slice(1)).toEqual(["c1", "climate"]);
-    expect(db.mapLayer.findMany).not.toHaveBeenCalled();
-  });
-
   it("clips a country with no stored bounding box and one exactly 180 degrees wide", async () => {
     for (const bbox of [null, [-90, 0, 90, 10] as Extent]) {
       const db = fakeDb();

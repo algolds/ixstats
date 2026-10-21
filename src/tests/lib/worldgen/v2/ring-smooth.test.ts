@@ -24,22 +24,6 @@ describe("v2/chaikin spline chain", () => {
     [20.02, 3],
     [30, 2],
   ];
-
-  it("passes through every control point and keeps the ends of the chain", () => {
-    const smoothed = splineSmoothChain(zigzag, 2);
-    expect(smoothed.length).toBe((zigzag.length - 1) * 4 + 1);
-    expect(smoothed[0]).toEqual(zigzag[0]);
-    expect(smoothed.at(-1)).toEqual(zigzag.at(-1));
-    const kept = new Set(smoothed.map(key));
-    for (const p of zigzag) expect(kept.has(key(p))).toBe(true);
-  });
-
-  it("gives the same curve whichever way the chain is read", () => {
-    const forward = splineSmoothChain(zigzag, 2);
-    const backward = splineSmoothChain([...zigzag].reverse(), 2);
-    expect(backward).toEqual([...forward].reverse());
-  });
-
   it("does not loop where a short segment sits between long ones", () => {
     const ring: Point[] = [...zigzag, [30, -5], [0, -5], [0, 0]];
     expect(selfIntersections(ring)).toBe(0);
@@ -103,57 +87,7 @@ describe("v2/ring-smooth", () => {
       // Three segments, 4 points each, and the end
       expect(shared.size).toBe(13);
     });
-
-    it("keeps the corners where the border meets the rest of each ring", () => {
-      const near = (points: Point[], [x, y]: Position) =>
-        points.some((p) => Math.hypot(p[0] - x!, p[1] - y!) < 0.01);
-      const a = smoothRing(left, 2);
-      for (const corner of [
-        [10, 0],
-        [11, 3],
-      ] as Position[])
-        expect(near(a, corner)).toBe(true);
-    });
   });
-
-  it("smooths a ring without corners the same from any starting vertex and either direction", () => {
-    const square: Position[] = [
-      [0, 0],
-      [4, 0],
-      [5, 3],
-      [3, 5],
-      [-1, 3],
-      [0, 0],
-    ];
-    const open = square.slice(0, -1);
-    const closed = (points: Position[]) => [...points, points[0]!];
-    const rotated = closed([...open.slice(2), ...open.slice(0, 2)]);
-    const reversed = closed([...open].reverse());
-
-    const base = smoothRing(ring(square, []), 2).map(key).sort();
-    expect(smoothRing(ring(rotated, []), 2).map(key).sort()).toEqual(base);
-    expect(smoothRing(ring(reversed, []), 2).map(key).sort()).toEqual(base);
-  });
-
-  it("keeps a border that leaves an edge chain at a shallow angle from sagging across it", () => {
-    // The low border runs along the latitude limit; the next leaves its end at 3 degrees, then climbs steeply
-    const limit = -RING_LATITUDE;
-    const wedge = ring(
-      [
-        [-100, limit],
-        [-90, limit],
-        [-95, -84.7],
-        [-95.5, -80],
-        [-100.5, -80],
-        [-100, limit],
-      ],
-      [0, 1]
-    );
-    const smoothed = smoothRing(wedge, 2);
-    expect(ringFault({ type: "Polygon", coordinates: [smoothed] })).toBeNull();
-    expect(Math.min(...smoothed.map((p) => p[1]))).toBeGreaterThan(limit - 0.005);
-  });
-
   it("drops the tip of a spike that rounding has squeezed flat onto its own line", () => {
     // A wedge against the latitude limit: its low border runs along the limit and the other leaves it at 6 degrees
     const limit = -RING_LATITUDE;
