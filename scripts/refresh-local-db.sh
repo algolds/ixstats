@@ -45,6 +45,13 @@ echo "🚀 Syncing database schema with codebase..."
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261023120000_atlas_studio/migration.sql
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261024120000_vault_hub/migration.sql
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261027120000_drop_forum_readers/migration.sql
+# The cards refresh SQL, in the deploy's order (Phase 1's backfill between its SQL and its constraints)
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261027120000_cards_foundations/migration.sql
+bun scripts/cards/backfill-cards-refresh.ts --apply
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261027120001_cards_foundations_constraints/migration.sql
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261028120000_cards_admin/migration.sql
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261031120000_cards_face_hub/migration.sql
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261101120000_cards_economy/migration.sql
 bun run db:push:force
 
 # Verify and auto-heal WikiOS articles and categories in PostgreSQL

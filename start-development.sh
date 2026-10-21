@@ -227,7 +227,9 @@ if [ "${DATABASE_READONLY:-}" != "true" ] && [ "${SKIP_DB_PUSH:-}" != "1" ] && [
         echo -e "${CYAN}🔄 Schema modification detected.${RESET} Syncing database schema..."
         # The Atlas Studio SQL drops the dead procedural_worlds table, which db push refuses to do when it has rows
         # (idempotent; see scripts/deploy-production.sh)
-        if bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261023120000_atlas_studio/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261024120000_vault_hub/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261027120000_drop_forum_readers/migration.sql && bun run db:push:force; then
+        # The cards refresh SQL (Phases 1-4, with Phase 1's backfill) runs before the push in the deploy's order: it converts
+        # columns in place that db push would drop and re-add. Every step is a no-op once applied.
+        if bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261023120000_atlas_studio/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261024120000_vault_hub/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261027120000_drop_forum_readers/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261027120000_cards_foundations/migration.sql && bun scripts/cards/backfill-cards-refresh.ts --apply && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261027120001_cards_foundations_constraints/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261028120000_cards_admin/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261031120000_cards_face_hub/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261101120000_cards_economy/migration.sql && bun run db:push:force; then
             touch "$STAMP_FILE"
             echo -e "   ${EMERALD}✓ Schema synchronized successfully${RESET}"
         fi
