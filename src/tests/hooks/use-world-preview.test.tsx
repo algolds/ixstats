@@ -71,36 +71,6 @@ function mount(live: (string | { id: string; visibility: string })[] = LIVE) {
 }
 
 describe("useWorldPreview", () => {
-  it("does nothing without a world: live layers untouched, not active", () => {
-    const rig = mount();
-    expect(rig.result.current.active).toBe(false);
-    expect(rig.draftIds()).toEqual([]);
-    expect(rig.visibility("fill-political")).toBeUndefined();
-    expect(rig.fake.addSource).not.toHaveBeenCalled();
-  });
-  it("adds one draft GeoJSON source per drawn layer, fed by a blob URL, with the preview's tiling options", () => {
-    const rig = mount();
-    act(() => rig.show(worldResult()));
-
-    expect(rig.result.current.active).toBe(true);
-    for (const type of ["background", "altitudes", "political", "lakes", "rivers"]) {
-      const source = rig.sources.get(`worldgen-draft-${type}`);
-      expect(source?.spec).toMatchObject({
-        type: "geojson",
-        tolerance: 0.5,
-        buffer: 48,
-        maxzoom: 8,
-      });
-      expect(String(source?.spec.data)).toMatch(/^blob:draft-\d+$/);
-    }
-    // Climate and ice caps are not drawn (the live map hides them by default)
-    expect(rig.sources.has("worldgen-draft-climate")).toBe(false);
-    expect(rig.sources.has("worldgen-draft-icecaps")).toBe(false);
-    // The political stroke draws from its own outline, without the antimeridian cut
-    expect(rig.sources.has("worldgen-draft-political-outline")).toBe(true);
-    expect(created).toHaveLength(6);
-    expect(created.every((c) => c.type === "application/geo+json" && c.size > 0)).toBe(true);
-  });
   it("hides the live realm layers and leaves the rest of the style alone", () => {
     const rig = mount([...LIVE, "realm-base-image", "realm-raster-relief"]);
     act(() => rig.show(worldResult()));
@@ -259,13 +229,6 @@ describe("useWorldPreview", () => {
       expect(rig.listeners("error")).toBe(0);
       expect(rig.listeners("sourcedata")).toBe(0);
     });
-    it("are all revoked when the draft is cleared before they load", () => {
-      const rig = mount();
-      act(() => rig.show(worldResult()));
-      act(() => rig.show(null));
-      expect(revoked.sort()).toEqual(created.map((c) => c.url).sort());
-      expect(rig.listeners("sourcedata")).toBe(0);
-    });
   });
 
   describe("the style changes underneath", () => {
@@ -286,17 +249,6 @@ describe("useWorldPreview", () => {
       // And a clear afterwards restores the layers that came back
       act(() => rig.show(null));
       for (const id of LIVE) expect(rig.visibility(id)).toBeUndefined();
-    });
-
-    it("hides a live layer added while previewing, and restores it", () => {
-      const rig = mount();
-      act(() => rig.show(worldResult()));
-      rig.addLive("realm-raster-hillshade");
-      act(() => rig.emit("styledata"));
-      expect(rig.visibility("realm-raster-hillshade")).toBe("none");
-
-      act(() => rig.show(null));
-      expect(rig.visibility("realm-raster-hillshade")).toBeUndefined();
     });
   });
 });

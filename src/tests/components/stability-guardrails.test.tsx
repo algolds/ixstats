@@ -1,67 +1,23 @@
+/**
+ * The NationStates client used by the card import and sync: a refusal (429) or an outage (503) raises, so a run never
+ * reads it as an empty deck; only a nation NationStates does not have (404) is no deck.
+ */
 import { nsApiClient } from "~/lib/nationstates/api-client";
-import { useToastQueueStore } from "~/stores/toastQueueStore";
-describe("Stability Guardrails", () => {
-  let warnSpy: any;
-  let errorSpy: any;
-  let logSpy: any;
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    useToastQueueStore.setState({ queue: [] });
-    warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
-    errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
-    logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
-  });
+const originalFetch = global.fetch;
+afterEach(() => {
+  global.fetch = originalFetch;
+  jest.restoreAllMocks();
+});
 
-  afterEach(() => {
-    warnSpy?.mockRestore();
-    errorSpy?.mockRestore();
-    logSpy?.mockRestore();
-  });
-
-  // ─── WebGL / Graphics Error Safety ───
-  // ─── AI Personality Resilience ───
-  // ─── Cards & Sync Fallbacks ───
-  describe("NationStates API Client Error Propagation", () => {
-    const originalFetch = global.fetch;
-
-    beforeEach(() => {
-      global.fetch = jest.fn();
-    });
-
-    afterEach(() => {
-      global.fetch = originalFetch;
-    });
-
-    it("should propagate RATE_LIMIT errors when API returns HTTP 429", async () => {
-      (global.fetch as jest.Mock).mockResolvedValue({
-        ok: false,
-        status: 429,
-        statusText: "Too Many Requests",
-      });
-
-      await expect(nsApiClient.fetchDeck("testnation")).rejects.toThrow("RATE_LIMIT");
-    });
-
-    it("should propagate SERVER_ERROR errors when API returns HTTP 503", async () => {
-      (global.fetch as jest.Mock).mockResolvedValue({
-        ok: false,
-        status: 503,
-        statusText: "Service Unavailable",
-      });
-
-      await expect(nsApiClient.fetchDeck("testnation")).rejects.toThrow("SERVER_ERROR");
-    });
-
-    it("should return null for expected HTTP 404 nation not found errors", async () => {
-      (global.fetch as jest.Mock).mockResolvedValue({
-        ok: false,
-        status: 404,
-        statusText: "Not Found",
-      });
-
-      const deck = await nsApiClient.fetchDeck("unknown_nation_xyz");
-      expect(deck).toBeNull();
-    });
-  });
+it.each([
+  [429, "Too Many Requests", "raises RATE_LIMIT", "RATE_LIMIT"],
+  [503, "Service Unavailable", "raises SERVER_ERROR", "SERVER_ERROR"],
+  [404, "Not Found", "is no deck", null],
+])("fetchDeck on HTTP %d (%s) %s", async (status, statusText, _outcome, error) => {
+  jest.spyOn(console, "warn").mockImplementation(() => {});
+  jest.spyOn(console, "error").mockImplementation(() => {});
+  global.fetch = jest.fn().mockResolvedValue({ ok: false, status, statusText }) as never;
+  if (error) await expect(nsApiClient.fetchDeck("testnation")).rejects.toThrow(error);
+  else expect(await nsApiClient.fetchDeck("unknown_nation_xyz")).toBeNull();
 });

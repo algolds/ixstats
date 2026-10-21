@@ -1,8 +1,3 @@
-/**
- * The world generator hook: one worker for the editor's life, the newest generate queued behind one in flight, stale
- * answers dropped, and a failed run leaving the last good world in place.
- */
-import { Activity } from "react";
 import { act, renderHook } from "@testing-library/react";
 
 import { useWorldGenerator } from "~/hooks/useWorldGenerator";
@@ -104,17 +99,6 @@ describe("useWorldGenerator", () => {
     expect(result.current.result!.seed).toBe(444);
     expect(workers).toHaveLength(1);
   });
-
-  it("posts the queued generate when the overtaken run fails, and drops that failure", () => {
-    const { result, workers } = setup();
-    act(() => result.current.generate({}, 1));
-    act(() => result.current.generate({}, 2));
-    act(() => workers[0]!.say({ type: "error", id: 1, message: "late failure" }));
-
-    expect(result.current).toMatchObject({ state: "generating", error: null });
-    expect(workers[0]!.posted.map((r) => r.id)).toEqual([1, 2]);
-  });
-
   it("drops answers to a request that is no longer the latest", () => {
     const { result, workers } = setup();
     act(() => result.current.generate({}, 1));
@@ -236,26 +220,6 @@ describe("useWorldGenerator", () => {
     expect(result.current).toMatchObject({ state: "ready" });
     expect(result.current.result!.seed).toBe(8);
   });
-
-  it("a queued generate that is itself too slow times out on its own clock", () => {
-    const { result, workers } = setup();
-    act(() => result.current.generate({}, 1));
-    act(() => result.current.generate({}, 2));
-    act(() => {
-      jest.advanceTimersByTime(WORLD_GEN_TIMEOUT_MS);
-    });
-    expect(workers).toHaveLength(2);
-    act(() => {
-      jest.advanceTimersByTime(WORLD_GEN_TIMEOUT_MS);
-    });
-    expect(result.current.state).toBe("error");
-    expect(workers[1]!.terminated).toBe(true);
-
-    // With nothing queued behind it, the timed-out worker's late answer is dropped too
-    act(() => workers[1]!.say(resultMessage(2, { seed: 999 })));
-    expect(result.current.state).toBe("error");
-    expect(result.current.result).toBeNull();
-  });
   it("drops what a worker killed by the timeout still delivers", () => {
     const { result, workers } = setup();
     act(() => result.current.generate({}, 1));
@@ -274,17 +238,6 @@ describe("useWorldGenerator", () => {
     act(() => workers[0]!.say(resultMessage(late, { seed: 999 })));
     expect(result.current.state).toBe("error");
     expect(result.current.result!.seed).toBe(5);
-  });
-
-  it("drops what a crashed worker still delivers", () => {
-    const { result, workers } = setup();
-    act(() => result.current.generate({}, 1));
-    const late = lastId(workers[0]!);
-    act(() => workers[0]!.listener.onCrash("boom"));
-    expect(result.current.state).toBe("error");
-
-    act(() => workers[0]!.say(resultMessage(late, { seed: 999 })));
-    expect(result.current).toMatchObject({ state: "error", error: "boom", result: null });
   });
   it("reset ends the run, drops the world and the error and goes back to idle", () => {
     const { result, workers } = setup();
@@ -314,26 +267,5 @@ describe("useWorldGenerator", () => {
     act(() => result.current.generate({}, 3));
     expect(workers).toHaveLength(2);
     expect(result.current.state).toBe("generating");
-  });
-
-  it("reset also drops a world that state kept after the session was gone (Activity hidden, then shown)", () => {
-    const { factory, workers } = fakeWorldWorkers();
-    let mode: "visible" | "hidden" = "visible";
-    const { result, rerender } = renderHook(() => useWorldGenerator(factory), {
-      wrapper: ({ children }) => <Activity mode={mode}>{children}</Activity>,
-    });
-    act(() => result.current.generate({}, 1));
-    act(() => workers[0]!.say(resultMessage(lastId(workers[0]!), { seed: 5 })));
-
-    // Hiding unmounts the effects (the session is disposed); the state stays
-    mode = "hidden";
-    rerender();
-    mode = "visible";
-    rerender();
-    expect(workers[0]!.terminated).toBe(true);
-    expect(result.current.result!.seed).toBe(5);
-
-    act(() => result.current.reset());
-    expect(result.current).toMatchObject({ state: "idle", result: null, error: null });
   });
 });

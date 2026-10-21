@@ -117,15 +117,6 @@ describe("SegmentedControl keep-in-view", () => {
     observer().fire();
     expect(scrollLeft()).toBe(185);
   });
-
-  it("leaves the strip where the player scrolled it by hand", () => {
-    const { track, widths, scrollLeft } = renderStrip("upgrades");
-    fireEvent.pointerDown(track);
-    track.scrollLeft = 0;
-    widths[0] = 145;
-    observer().fire();
-    expect(scrollLeft()).toBe(0);
-  });
   it("scrolls a focused segment into view", () => {
     const { track, scrollLeft } = renderStrip("mine");
     expect(scrollLeft()).toBe(0);

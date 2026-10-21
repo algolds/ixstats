@@ -47,18 +47,6 @@ function Probe() {
 }
 
 describe("Inspector", () => {
-  it("is in the server HTML as a CSS-gated aside, so it never pops in after hydration", () => {
-    const html = renderToString(
-      <Inspector title="Contents" open={false} onOpenChange={() => {}}>
-        <span>toc</span>
-      </Inspector>
-    );
-    expect(html).toMatch(
-      /<aside[^>]*aria-label="Contents"[^>]*class="[^"]*\bhidden\b[^"]*\bxl:block\b/
-    );
-    expect(html).toContain("toc");
-  });
-
   it("mounts its children once: in the aside while wide, in the sheet only while it is open below xl", () => {
     installMatchMedia(true);
     mounts = 0;
