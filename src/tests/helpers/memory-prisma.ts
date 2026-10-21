@@ -649,6 +649,14 @@ function sortKey(
   spec: Args
 ): { field?: Field; value: Value; dir: "asc" | "desc"; nulls?: string } {
   const [key, how] = Object.entries(spec)[0] ?? unsupported("empty orderBy");
+  if (/^_(count|sum|avg|min|max)$/.test(key) && isPlainObject(how)) {
+    // A groupBy ordered by an aggregate it selects: the group row carries the value
+    const [field, dir] = Object.entries(how)[0] ?? unsupported(`orderBy ${key}`);
+    const aggregate = row[key];
+    if (!isPlainObject(aggregate) || !(field in aggregate))
+      return unsupported(`orderBy ${key}.${field} that the groupBy does not select`);
+    return { value: aggregate[field], dir: dir as "asc" | "desc" };
+  }
   const rel = model.relations.get(key);
   if (rel) {
     if (rel.isList) {
