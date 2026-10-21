@@ -51,7 +51,7 @@ const card = (cardId: string, title: string, rarity: CardFaceData["rarity"]): Ca
   cardType: "LORE",
   realm: { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false },
   artwork: `/art/${cardId}.png`,
-  silhouette: false,
+  uncollected: false,
   number: 1,
   season: null,
   isRetired: false,

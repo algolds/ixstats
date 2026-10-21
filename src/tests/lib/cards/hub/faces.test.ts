@@ -1,5 +1,8 @@
 /** @jest-environment node */
-/** toCardFace applies the silhouette rule (spec §2.3 Discovery); ownedFaces serves cards the viewer just received. */
+/**
+ * toCardFace shows every card's art (the owner's decision of 2026-10-21) and marks the ones the viewer has not
+ * collected; ownedFaces serves cards the viewer just received.
+ */
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 import { ownedFaces, toCardFace, type CardFaceRow } from "~/lib/cards/hub/faces";
 
@@ -20,15 +23,15 @@ const row = (overrides: Partial<CardFaceRow> = {}): CardFaceRow => ({
 const copy = { id: "o1", finish: "FOIL" as const, serialNumber: 3, level: 2 };
 
 describe("toCardFace", () => {
-  it("shows the art it may reveal, with the copy's facts", () => {
-    expect(toCardFace(row(), { revealArt: true, copy })).toEqual({
+  it("shows a collected card's art, with the copy's facts", () => {
+    expect(toCardFace(row(), { collected: true, copy })).toEqual({
       cardId: "c1",
       title: "Caphiria",
       rarity: "EPIC",
       cardType: "LORE",
       realm: { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false },
       artwork: "https://ixwiki.com/images/a.png",
-      silhouette: false,
+      uncollected: false,
       number: 42,
       season: null,
       isRetired: false,
@@ -36,47 +39,50 @@ describe("toCardFace", () => {
     });
   });
 
-  it("strips the art of a card the viewer may not see", () => {
-    const face = toCardFace(row(), { revealArt: false });
-    expect(face).toMatchObject({ artwork: null, silhouette: true, copy: null, number: 42 });
-    expect(JSON.stringify(face)).not.toContain("ixwiki.com/images");
+  it("shows the art of a card the viewer has not collected, and marks it", () => {
+    expect(toCardFace(row(), { collected: false })).toMatchObject({
+      artwork: "https://ixwiki.com/images/a.png",
+      uncollected: true,
+      copy: null,
+      number: 42,
+    });
   });
 
-  it("never hides NationStates flags, and gives NS and Nation cards their season", () => {
-    expect(toCardFace(row({ cardType: "NS", nsSeason: 3 }), { revealArt: false })).toMatchObject({
+  it("marks a NationStates card the viewer does not hold too, and gives NS and Nation cards their season", () => {
+    expect(toCardFace(row({ cardType: "NS", nsSeason: 3 }), { collected: false })).toMatchObject({
       artwork: "https://ixwiki.com/images/a.png",
-      silhouette: false,
+      uncollected: true,
       season: 3,
     });
-    expect(toCardFace(row({ cardType: "NS" }), { revealArt: true }).season).toBe(2);
-    expect(toCardFace(row({ cardType: "NATION", season: 5 }), { revealArt: true }).season).toBe(5);
+    expect(toCardFace(row({ cardType: "NS" }), { collected: true }).season).toBe(2);
+    expect(toCardFace(row({ cardType: "NATION", season: 5 }), { collected: true }).season).toBe(5);
   });
 
-  it("gives a retired card the placeholder face, even on a copy the viewer owns", () => {
-    expect(toCardFace(row({ isRetired: true }), { revealArt: true, copy })).toMatchObject({
+  it("gives a retired card the placeholder face, held or not", () => {
+    expect(toCardFace(row({ isRetired: true }), { collected: true, copy })).toMatchObject({
       artwork: null,
-      silhouette: false,
+      uncollected: false,
       isRetired: true,
       copy: { ownershipId: "o1" },
     });
     expect(
-      toCardFace(row({ isRetired: true, cardType: "NS" }), { revealArt: false })
+      toCardFace(row({ isRetired: true, cardType: "NS" }), { collected: false })
     ).toMatchObject({
       artwork: null,
-      silhouette: false,
+      uncollected: true,
     });
-    expect(toCardFace(row({ isRetired: true }), { revealArt: false })).toMatchObject({
-      artwork: null,
-      silhouette: true,
-    });
+    const face = toCardFace(row({ isRetired: true }), { collected: false });
+    expect(face).toMatchObject({ artwork: null, uncollected: true });
+    // A takedown, a restricted licence or a Library hide retires the card: nothing in the face names its file.
+    expect(JSON.stringify(face)).not.toContain("ixwiki.com/images");
   });
 
   it("treats a stored placeholder as no art", () => {
     expect(
-      toCardFace(row({ artwork: "/images/placeholder-flag.svg" }), { revealArt: true })
+      toCardFace(row({ artwork: "/images/placeholder-flag.svg" }), { collected: false })
     ).toMatchObject({
       artwork: null,
-      silhouette: false,
+      uncollected: true,
     });
   });
 });
@@ -90,7 +96,10 @@ describe("ownedFaces", () => {
     ]);
     const faces = await ownedFaces(db as never, ["o1", "missing", "o2"]);
     expect(faces.map((f) => f.copy?.ownershipId)).toEqual(["o1", "o2"]);
-    expect(faces.every((f) => f.artwork !== null)).toBe(true);
+    expect(faces.map((f) => [f.artwork !== null, f.uncollected])).toEqual([
+      [true, false],
+      [true, false],
+    ]);
     expect(db.cardOwnership.findMany).toHaveBeenCalledTimes(1);
     expect(db.cardOwnership.findMany.mock.calls[0]![0]).toMatchObject({
       where: { id: { in: ["o1", "missing", "o2"] } },

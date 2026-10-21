@@ -6,7 +6,7 @@ import { normalizeArtwork } from "~/lib/cards/face/artwork";
 import { EXPLORE_SORTS, OWNED_FILTERS, type ExploreSort } from "~/lib/cards/face/explore-options";
 import type { CardFaceData, CardRealmBadge } from "~/lib/cards/face/types";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
-import { cardsWithVisibleArt, facesFor, type ArtDb } from "./art-visibility";
+import { cardsCollectedBy, facesFor, type CollectionDb } from "./art-visibility";
 import { CATALOGUE_WHERE } from "./catalogue";
 import { CARD_FACE_SELECT, toCardFace, toRealmBadge } from "./faces";
 import { likeLiteral } from "~/lib/utils/like-literal";
@@ -77,9 +77,9 @@ export interface ExplorePage {
   nextCursor: number | null;
 }
 
-/** The filtered grid: every approved card, silhouettes for the ones the viewer has not collected. */
+/** The filtered grid: every approved card with its art, the ones the viewer has not collected marked. */
 export async function exploreGrid(
-  db: Pick<PrismaClient, "card"> & ArtDb,
+  db: Pick<PrismaClient, "card"> & CollectionDb,
   viewerId: string,
   query: ExploreQuery
 ): Promise<ExplorePage> {
@@ -178,7 +178,7 @@ async function shelfStrips(
  * most wanted, for the top twelve realms; and every realm with cards, for the realm filters.
  */
 export async function exploreShelves(
-  db: Pick<PrismaClient, "card" | "realm"> & ArtDb,
+  db: Pick<PrismaClient, "card" | "realm"> & CollectionDb,
   viewerId: string
 ): Promise<ExploreShelves> {
   const groups = await db.card.groupBy({
@@ -205,13 +205,13 @@ export async function exploreShelves(
     }),
     Promise.all(shelved.map((g) => shelfStrips(db, g.realmId))),
   ]);
-  const visible = await cardsWithVisibleArt(
+  const collected = await cardsCollectedBy(
     db,
     viewerId,
     strips.flatMap((s) => [...s.newest, ...s.wanted].map((c) => c.id))
   );
   const shelfCard = (row: ShelfRow): ShelfCard => ({
-    face: toCardFace(row, { revealArt: visible.has(row.id) }),
+    face: toCardFace(row, { collected: collected.has(row.id) }),
     wanted: row._count.watchlist,
   });
   const realmById = new Map(realmRows.map((r) => [r.id, r]));

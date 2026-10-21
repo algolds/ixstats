@@ -1,5 +1,8 @@
 // src/lib/cards/face/sheet-link.ts
-/** Where a sheet was opened from, when that place shows art the viewer does not own (spec §2.3 Discovery). */
+/**
+ * Where a sheet was opened from, when that place shows the card: it opens a card outside the catalogue, and a signed-out
+ * visitor's sheet.
+ */
 export type SheetFrom =
   | { kind: "showcase"; id: string }
   | { kind: "offer"; id: string }

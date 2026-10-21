@@ -115,7 +115,7 @@ interface ExplorePaneProps {
   onSuggestingChange: (open: boolean) => void;
 }
 
-/** Explore: every realm's shelf, then every card in a filtered grid, with silhouettes for the ones not collected. */
+/** Explore: every realm's shelf, then every card in a filtered grid, each with its art, the ones not collected marked. */
 export function ExplorePane({
   onOpenCard,
   initialRealmSlug,

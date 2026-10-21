@@ -32,7 +32,7 @@ const trophy: TrophyCardSummary = {
     cardType: "TROPHY",
     realm: { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false },
     artwork: "https://art/t1.png",
-    silhouette: false,
+    uncollected: false,
     number: 3,
     season: null,
     isRetired: false,

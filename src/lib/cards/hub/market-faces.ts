@@ -1,19 +1,16 @@
 // src/lib/cards/hub/market-faces.ts
 import type { CardFaceData } from "~/lib/cards/face/types";
-import { cardsWithVisibleArt, type ArtDb } from "./art-visibility";
+import { cardsCollectedBy, type CollectionDb } from "./art-visibility";
 import { CARD_FACE_SELECT, COPY_FACE_SELECT, toCardFace } from "./faces";
 
-type FaceDb = ArtDb;
-
 /**
- * Faces for copies on a market screen, by copy id. `revealAll`: the place shows every copy's art (live listings, an
- * offer made to the viewer); otherwise the viewer sees the art of what they hold and of what is listed live.
+ * Faces for copies on a market screen, by copy id, each marked by whether the viewer holds a copy of its card (theirs
+ * or another player's copy alike).
  */
 export async function copyFaces(
-  db: FaceDb,
+  db: CollectionDb,
   viewerId: string,
-  ownershipIds: readonly string[],
-  revealAll: boolean
+  ownershipIds: readonly string[]
 ): Promise<Map<string, CardFaceData>> {
   const ids = [...new Set(ownershipIds)];
   if (ids.length === 0) return new Map();
@@ -21,18 +18,13 @@ export async function copyFaces(
     where: { id: { in: ids } },
     select: { ...COPY_FACE_SELECT, cards: { select: CARD_FACE_SELECT } },
   });
-  const visible = revealAll
-    ? new Set<string>()
-    : await cardsWithVisibleArt(
-        db,
-        viewerId,
-        rows.map((r) => r.cards.id)
-      );
+  const collected = await cardsCollectedBy(
+    db,
+    viewerId,
+    rows.map((r) => r.cards.id)
+  );
   return new Map(
-    rows.map((r) => [
-      r.id,
-      toCardFace(r.cards, { revealArt: revealAll || visible.has(r.cards.id), copy: r }),
-    ])
+    rows.map((r) => [r.id, toCardFace(r.cards, { collected: collected.has(r.cards.id), copy: r })])
   );
 }
 
@@ -47,21 +39,19 @@ function withoutArt<C extends RawCard>(cards: C): C {
 }
 
 /**
- * Auction rows with their card's face; null when the copy no longer exists. `live`: every auction is running (active,
- * ending in the future), so its art shows to all. The raw card follows the face, so a retired card ships no art.
+ * Auction rows with their card's face; null when the copy no longer exists. The raw card follows the face, so a retired
+ * card, and a copy gone since, ships no art.
  */
 export async function withAuctionFaces<T extends AuctionRow>(
-  db: FaceDb,
+  db: CollectionDb,
   viewerId: string,
-  auctions: readonly T[],
-  live: boolean
+  auctions: readonly T[]
 ): Promise<Array<T & { face: CardFaceData | null }>> {
   const rows: readonly AuctionRow[] = auctions;
   const faces = await copyFaces(
     db,
     viewerId,
-    rows.flatMap((a) => (a.cardInstanceId === null ? [] : [a.cardInstanceId])),
-    live
+    rows.flatMap((a) => (a.cardInstanceId === null ? [] : [a.cardInstanceId]))
   );
   return auctions.map((a) => {
     const { cardInstanceId, CardOwnership: copy }: AuctionRow = a;

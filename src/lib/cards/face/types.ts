@@ -24,17 +24,17 @@ export interface CardCopyFacts {
   level: number;
 }
 
-/** The one card shape the UI renders. The server builds it with `toCardFace`, which applies the silhouette rule. */
+/** The one card shape the UI renders. The server builds it with `toCardFace`, which marks what the viewer lacks. */
 export interface CardFaceData {
   cardId: string;
   title: string;
   rarity: CardRarity;
   cardType: CardType;
   realm: CardRealmBadge;
-  /** Raw artwork URL (the face proxies it); null when the card has none or this viewer may not see it. */
+  /** Raw artwork URL (the face proxies it); null when the card has none or is retired. */
   artwork: string | null;
-  /** True when this viewer may not see the card's art: they hold no copy and nothing on screen reveals it. */
-  silhouette: boolean;
+  /** True when the viewer holds no copy of this card; the face still shows its art, muted. */
+  uncollected: boolean;
   /** Collector number within the home realm; null until it is numbered. */
   number: number | null;
   /** NS season for NS cards, edition season for Nation cards; null for every other type. */

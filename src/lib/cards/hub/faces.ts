@@ -46,15 +46,15 @@ function faceSeason(row: CardFaceRow): number | null {
 }
 
 /**
- * The face a browser may receive. Art the viewer may not see is stripped here, not hidden in the client (spec §2.3
- * Discovery); NationStates flags are public on NationStates itself, so they always show. A retired card never shows
- * its art (the placeholder face): a Library hide retires a card without clearing its artwork.
+ * The face a browser may receive. Every card's art shows to everyone (the owner's decision of 2026-10-21, which dropped
+ * spec §2.3 Discovery); `collected` says whether the viewer holds a copy, and the face marks the card when they do not.
+ * A retired card never shows its art (the placeholder face): a takedown, a restricted licence and a Library hide each
+ * retire a card without clearing its artwork.
  */
 export function toCardFace(
   row: CardFaceRow,
-  options: { revealArt: boolean; copy?: CopyFaceRow | null }
+  options: { collected: boolean; copy?: CopyFaceRow | null }
 ): CardFaceData {
-  const reveal = options.revealArt || row.cardType === "NS";
   const copy = options.copy ?? null;
   return {
     cardId: row.id,
@@ -62,8 +62,8 @@ export function toCardFace(
     rarity: row.rarity,
     cardType: row.cardType,
     realm: toRealmBadge(row.realm),
-    artwork: reveal && !row.isRetired ? normalizeArtwork(row.artwork) : null,
-    silhouette: !reveal,
+    artwork: row.isRetired ? null : normalizeArtwork(row.artwork),
+    uncollected: !options.collected,
     number: row.collectorNumber,
     season: faceSeason(row),
     isRetired: row.isRetired,
@@ -78,7 +78,7 @@ export function toCardFace(
   };
 }
 
-/** Faces of copies the viewer holds (a pack just opened, the daily card, an import): their art always shows. */
+/** Faces of copies the viewer holds (a pack just opened, the daily card, an import): collected, by definition. */
 export async function ownedFaces(
   db: Pick<PrismaClient, "cardOwnership">,
   ownershipIds: readonly string[]
@@ -91,6 +91,6 @@ export async function ownedFaces(
   const byId = new Map(rows.map((r) => [r.id, r]));
   return ownershipIds.flatMap((id) => {
     const found = byId.get(id);
-    return found ? [toCardFace(found.cards, { revealArt: true, copy: found })] : [];
+    return found ? [toCardFace(found.cards, { collected: true, copy: found })] : [];
   });
 }

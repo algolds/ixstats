@@ -17,7 +17,7 @@ export async function vaultVisible(userId: string): Promise<boolean> {
 /**
  * The user a `from=holder.<handle>` names: the stored handle, else the wiki name, forum name or Clerk id that
  * `passportHandleOf` falls back to (it only emits a name that resolves back to its user). Null when it names nobody
- * or the lookup fails, so the sheet keeps its silhouette.
+ * or the lookup fails, so that context opens no sheet.
  */
 export async function holderOf(handle: string): Promise<string | null> {
   const user = await resolveHandleUser(handle).catch(() => null);

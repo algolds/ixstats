@@ -9,7 +9,7 @@ export interface TrophyCardSummary {
   title: string;
   contest: LorewardType;
   place: LorewardPlace;
-  /** The trophy's face. A player's trophies are their showcase, so the art always shows. */
+  /** The trophy's face. A player's trophies are their showcase, so it is in full colour to everyone. */
   face: CardFaceData;
 }
 
@@ -69,7 +69,7 @@ export async function ownedTrophyCards(
     const contest = contestOf(card.metadata);
     const place = placeOf(card.lorewardEdition);
     if (!contest || !place) continue;
-    const face = toCardFace(card, { revealArt: true, copy: row });
+    const face = toCardFace(card, { collected: true, copy: row });
     summaries.push({ id: card.id, title: card.title, contest, place, face });
   }
   return summaries;

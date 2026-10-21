@@ -51,7 +51,8 @@ type CardFaceProps = ButtonFaceProps | LinkFaceProps | PictureFaceProps;
 
 /**
  * The one card face: full-bleed art, title and realm crest at the bottom, rarity as edge and gem, finish as sheen, a
- * season chip for NS and Nation cards, and level and serial at size L. Nothing else goes on the front.
+ * season chip for NS and Nation cards, and level and serial at size L. Nothing else goes on the front. A card the
+ * viewer has not collected shows its art muted (`card-face-uncollected`), with its number.
  * `data-card-face` and `data-card-finish` sit on the root because card-art.css finds the sheen through them.
  */
 export function CardFace({ face, size = "M", onOpen, href, selected, className }: CardFaceProps) {
@@ -116,14 +117,17 @@ function FaceBody({
           loading="lazy"
           decoding="async"
           onError={() => setFailedArt(face.artwork)}
-          className="absolute inset-0 size-full object-cover"
+          className={cn(
+            "absolute inset-0 size-full object-cover",
+            face.uncollected && "card-face-uncollected"
+          )}
         />
       ) : (
         <span className="card-face-tint absolute inset-0 grid place-items-center">
           <RealmCrest
             realm={face.realm}
             size={size === "S" ? "md" : "lg"}
-            muted={face.silhouette}
+            muted={face.uncollected}
           />
         </span>
       )}
@@ -140,7 +144,8 @@ function FaceBody({
       )}
       <span className="card-face-scrim absolute inset-x-0 bottom-0 flex flex-col gap-1 p-2 pt-10 text-white">
         <span className="flex items-end gap-1">
-          <RealmCrest realm={face.realm} size="sm" muted={face.silhouette} />
+          {/* With art, the art carries the mark, so the crest stays in colour. */}
+          <RealmCrest realm={face.realm} size="sm" muted={face.uncollected && !art} />
           <span className={cn("line-clamp-2 min-w-0 flex-1 font-semibold", TITLE_TEXT[size])}>
             {face.title}
           </span>
@@ -152,10 +157,10 @@ function FaceBody({
   );
 }
 
-/** Under the title: a silhouette's number, a retired card's note, and at size L the copy's level and serial. */
+/** Under the title: an uncollected card's number, a retired card's note, and at size L the copy's level and serial. */
 function FaceFootnote({ face, size }: { face: CardFaceData; size: CardFaceSize }) {
   const notes: string[] = [];
-  if (face.silhouette && face.number !== null) notes.push(`No. ${face.number}`);
+  if (face.uncollected && face.number !== null) notes.push(`No. ${face.number}`);
   if (face.isRetired) notes.push("Retired");
   if (size === "L" && face.copy) {
     notes.push(`Level ${face.copy.level} · #${face.copy.serialNumber}`);

@@ -57,9 +57,12 @@ const ITEM_SELECT = {
 } satisfies Prisma.CardCollectionItemSelect;
 type ItemRow = Prisma.CardCollectionItemGetPayload<{ select: typeof ITEM_SELECT }>;
 
-/** A showcase shows its cards' art to anyone allowed to see it (spec §2.3 Discovery); a retired card shows none. */
+/**
+ * A showcase shows off its owner's collection, so its faces are in full colour to anyone allowed to see it, whatever
+ * they hold; a retired card shows no art.
+ */
 const itemFace = (item: ItemRow) =>
-  toCardFace(item.cardOwnership.cards, { revealArt: true, copy: item.cardOwnership });
+  toCardFace(item.cardOwnership.cards, { collected: true, copy: item.cardOwnership });
 
 /** A pin counts only on a public showcase: a private one is never shown to others (`displayedCopies`). */
 const pinTime = (row: { isPublic: boolean; pinnedAt: Date | null }) =>
@@ -272,6 +275,6 @@ export async function myDisplay(
   const shown = await displayedCopies(db, userId, DISPLAY_SIZE);
   return {
     showcase: shown.showcase,
-    faces: shown.copies.map(({ card, copy }) => toCardFace(card, { revealArt: true, copy })),
+    faces: shown.copies.map(({ card, copy }) => toCardFace(card, { collected: true, copy })),
   };
 }

@@ -139,6 +139,15 @@
     border: 2px solid var(--card-rarity-paint);
     background-color: var(--color-surface-secondary);
   }
+  /* A card the viewer has not collected: its art, muted. Only the picture is filtered; the rarity edge and gem, the
+     scrim and the title keep their colour, so every rarity still reads as itself. The dark theme also dims it a little,
+     since muted art still stands out on a dark page. */
+  .card-face-uncollected {
+    filter: saturate(0.4);
+    @variant dark {
+      filter: saturate(0.4) brightness(0.85);
+    }
+  }
   /* A card with no art: the realm crest on the rarity tint. */
   .card-face-tint {
     background-color: color-mix(in oklab, var(--card-rarity) 24%, var(--color-surface-secondary));

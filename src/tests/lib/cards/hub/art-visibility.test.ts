@@ -1,12 +1,12 @@
 /** @jest-environment node */
-/** Who sees a card's art: holders, anyone looking at a live listing, and the showcase and offer contexts. */
+/** Which cards a viewer has collected, and the places that show a card (the sheet's showcase, offer and holder contexts). */
 jest.mock("~/lib/cards/copy-value", () => ({ topCopiesByValue: jest.fn() }));
 
 import { topCopiesByValue } from "~/lib/cards/copy-value";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 import {
-  cardsWithVisibleArt,
-  contextRevealsArt,
+  cardsCollectedBy,
+  contextShowsCard,
   copyIdsOf,
   facesFor,
 } from "~/lib/cards/hub/art-visibility";
@@ -54,75 +54,43 @@ beforeEach(() => {
   jest.mocked(topCopiesByValue).mockResolvedValue([]);
 });
 
-describe("cardsWithVisibleArt", () => {
-  it("joins the viewer's copies with the cards on a live auction", async () => {
+describe("cardsCollectedBy", () => {
+  it("reads the viewer's copies once, asking about each card once", async () => {
     const db = createMockPrisma();
     db.cardOwnership.findMany.mockResolvedValue([{ cardId: "a" }]);
-    db.cardAuction.findMany.mockResolvedValue([{ cardId: "b" }]);
-    const set = await cardsWithVisibleArt(db as never, "me", ["a", "b", "c", "a"]);
-    expect([...set].sort()).toEqual(["a", "b"]);
+    const set = await cardsCollectedBy(db as never, "me", ["a", "b", "c", "a"]);
+    expect([...set]).toEqual(["a"]);
+    expect(db.cardOwnership.findMany).toHaveBeenCalledTimes(1);
     expect(db.cardOwnership.findMany).toHaveBeenCalledWith({
       where: { ownerId: "me", cardId: { in: ["a", "b", "c"] } },
       select: { cardId: true },
       distinct: ["cardId"],
     });
-    // The auction's own card, not its copy's (an ended auction can outlive its copy)
-    expect(db.cardAuction.findMany).toHaveBeenCalledWith({
-      where: {
-        status: "ACTIVE",
-        endTime: { gt: expect.any(Date) },
-        cardId: { in: ["a", "b", "c"] },
-      },
-      select: { cardId: true },
-      distinct: ["cardId"],
-    });
   });
 
-  it("reveals only listed art to a signed-out viewer, and asks nothing for no cards", async () => {
+  it("counts only the viewer's copies: a card on a live listing or auction is not collected", async () => {
     const db = createMockPrisma();
-    db.cardAuction.findMany.mockResolvedValue([{ cardId: "a" }]);
-    await expect(cardsWithVisibleArt(db as never, null, ["a"])).resolves.toEqual(new Set(["a"]));
-    expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
-    const empty = createMockPrisma();
-    await expect(cardsWithVisibleArt(empty as never, "me", [])).resolves.toEqual(new Set());
-    expect(empty.cardAuction.findMany).not.toHaveBeenCalled();
-    expect(empty.cardListing.findMany).not.toHaveBeenCalled();
-  });
-
-  it("shows the art of a card on a live fixed-price listing to someone who owns none", async () => {
-    const db = createMockPrisma();
-    db.cardListing.findMany.mockResolvedValue([{ cardId: "c2" }]);
-    expect(await cardsWithVisibleArt(db as never, "viewer", ["c1", "c2"])).toEqual(new Set(["c2"]));
-    // The listing's own card, which it keeps when a finished listing outlives its copy
-    expect(db.cardListing.findMany).toHaveBeenCalledWith({
-      where: {
-        status: "ACTIVE",
-        expiresAt: { gt: expect.any(Date) },
-        cardId: { in: ["c1", "c2"] },
-      },
-      select: { cardId: true },
-      distinct: ["cardId"],
-    });
-    const signedOut = createMockPrisma();
-    signedOut.cardListing.findMany.mockResolvedValue([{ cardId: "c1" }]);
-    await expect(cardsWithVisibleArt(signedOut as never, null, ["c1"])).resolves.toEqual(
-      new Set(["c1"])
+    db.cardOwnership.findMany.mockResolvedValue([]);
+    db.cardListing.findMany.mockResolvedValue([{ cardId: "listed" }]);
+    db.cardAuction.findMany.mockResolvedValue([{ cardId: "auctioned" }]);
+    await expect(cardsCollectedBy(db as never, "me", ["listed", "auctioned"])).resolves.toEqual(
+      new Set()
     );
+    expect(db.cardListing.findMany).not.toHaveBeenCalled();
+    expect(db.cardAuction.findMany).not.toHaveBeenCalled();
   });
 
-  it("reads the listings and auctions that are live now", async () => {
-    const now = new Date("2026-11-02T12:00:00Z");
-    jest.useFakeTimers({ now });
+  it("holds nothing for a signed-out viewer, and asks nothing for no cards", async () => {
     const db = createMockPrisma();
-    await cardsWithVisibleArt(db as never, "viewer", ["c1"]);
-    jest.useRealTimers();
-    expect(db.cardListing.findMany.mock.calls[0]![0].where.expiresAt).toEqual({ gt: now });
-    expect(db.cardAuction.findMany.mock.calls[0]![0].where.endTime).toEqual({ gt: now });
+    db.cardOwnership.findMany.mockResolvedValue([{ cardId: "a" }]);
+    await expect(cardsCollectedBy(db as never, null, ["a"])).resolves.toEqual(new Set());
+    await expect(cardsCollectedBy(db as never, "me", [])).resolves.toEqual(new Set());
+    expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
   });
 });
 
 describe("facesFor", () => {
-  it("strips the art of every card the viewer may not see", async () => {
+  it("shows every card's art, marking the ones the viewer holds no copy of, NationStates cards included", async () => {
     const db = createMockPrisma();
     db.cardOwnership.findMany.mockResolvedValue([{ cardId: "mine" }]);
     const faces = await facesFor(db as never, "me", [
@@ -130,12 +98,22 @@ describe("facesFor", () => {
       { card: card("theirs") },
       { card: card("flag", "NS") },
     ]);
-    expect(faces.map((f) => [f.cardId, f.artwork !== null, f.silhouette])).toEqual([
-      ["mine", true, false],
-      ["theirs", false, true],
-      ["flag", true, false],
+    expect(faces.map((f) => [f.cardId, f.artwork, f.uncollected])).toEqual([
+      ["mine", "https://art/mine.png", false],
+      ["theirs", "https://art/theirs.png", true],
+      ["flag", "https://art/flag.png", true],
     ]);
     expect(faces.map((f) => f.copy?.ownershipId ?? null)).toEqual(["o-mine", null, null]);
+    expect(db.cardOwnership.findMany.mock.calls[0]![0].where).toEqual({
+      ownerId: "me",
+      cardId: { in: ["mine", "theirs", "flag"] },
+    });
+  });
+
+  it("marks every card for a signed-out viewer", async () => {
+    const db = createMockPrisma();
+    const faces = await facesFor(db as never, null, [{ card: card("c1"), copy: copyOf("c1") }]);
+    expect(faces.map((f) => [f.artwork, f.uncollected])).toEqual([["https://art/c1.png", true]]);
   });
 });
 
@@ -188,30 +166,30 @@ const offerRow = (over: Partial<OfferRow> = {}): OfferRow => ({
   ...over,
 });
 
-describe("contextRevealsArt", () => {
-  it("reveals an offer's cards to the party it waits on, whichever side they are, while it is live", async () => {
+describe("contextShowsCard", () => {
+  it("shows an offer's cards to the party it waits on, whichever side they are, while it is live", async () => {
     const db = createMockPrisma();
     db.cardOwnership.count.mockResolvedValue(1);
-    const reveals = (viewer: string) =>
-      contextRevealsArt(db as never, viewer, "c1", { kind: "offer", id: "t1" }, visible);
+    const shows = (viewer: string) =>
+      contextShowsCard(db as never, viewer, "c1", { kind: "offer", id: "t1" }, visible);
 
     offersIn(db, [offerRow()]);
-    await expect(reveals("me")).resolves.toBe(true);
-    // The proposer sees their own table by the silhouette rule
-    await expect(reveals("them")).resolves.toBe(false);
+    await expect(shows("me")).resolves.toBe(true);
+    // Not to the proposer: the table waits on the other party
+    await expect(shows("them")).resolves.toBe(false);
     // A counter-offer from the recipient waits on the initiator
     offersIn(db, [offerRow({ proposerId: "me" })]);
-    await expect(reveals("them")).resolves.toBe(true);
-    await expect(reveals("me")).resolves.toBe(false);
+    await expect(shows("them")).resolves.toBe(true);
+    await expect(shows("me")).resolves.toBe(false);
     // Nobody outside the trade, and nothing once it ended or expired
-    await expect(reveals("carol")).resolves.toBe(false);
+    await expect(shows("carol")).resolves.toBe(false);
     offersIn(db, [offerRow({ status: "ACCEPTED" })]);
-    await expect(reveals("me")).resolves.toBe(false);
+    await expect(shows("me")).resolves.toBe(false);
     offersIn(db, [offerRow({ expiresAt: new Date(Date.now() - 1) })]);
-    await expect(reveals("me")).resolves.toBe(false);
+    await expect(shows("me")).resolves.toBe(false);
   });
 
-  it("reveals only the offer's own cards, and nothing for an unknown offer or a signed-out viewer", async () => {
+  it("shows only the offer's own cards, and nothing for an unknown offer or a signed-out viewer", async () => {
     const db = createMockPrisma();
     db.tradeOffer.findFirst.mockResolvedValue({
       initiatorCardIds: ["o1", 5],
@@ -219,7 +197,7 @@ describe("contextRevealsArt", () => {
     });
     db.cardOwnership.count.mockResolvedValue(1);
     await expect(
-      contextRevealsArt(db as never, "me", "c1", { kind: "offer", id: "t1" }, visible)
+      contextShowsCard(db as never, "me", "c1", { kind: "offer", id: "t1" }, visible)
     ).resolves.toBe(true);
     expect(db.tradeOffer.findFirst.mock.calls[0]![0].where).toEqual({
       id: "t1",
@@ -234,15 +212,15 @@ describe("contextRevealsArt", () => {
 
     db.cardOwnership.count.mockResolvedValue(0);
     await expect(
-      contextRevealsArt(db as never, "me", "c2", { kind: "offer", id: "t1" }, visible)
+      contextShowsCard(db as never, "me", "c2", { kind: "offer", id: "t1" }, visible)
     ).resolves.toBe(false);
 
     db.tradeOffer.findFirst.mockResolvedValue(null);
     await expect(
-      contextRevealsArt(db as never, "me", "c1", { kind: "offer", id: "t2" }, visible)
+      contextShowsCard(db as never, "me", "c1", { kind: "offer", id: "t2" }, visible)
     ).resolves.toBe(false);
     await expect(
-      contextRevealsArt(db as never, null, "c1", { kind: "offer", id: "t1" }, visible)
+      contextShowsCard(db as never, null, "c1", { kind: "offer", id: "t1" }, visible)
     ).resolves.toBe(false);
     expect(db.tradeOffer.findFirst).toHaveBeenCalledTimes(3);
   });
@@ -251,16 +229,16 @@ describe("contextRevealsArt", () => {
     const db = createMockPrisma();
     db.tradeOffer.findFirst.mockResolvedValue({ initiatorCardIds: [], recipientCardIds: "o1" });
     await expect(
-      contextRevealsArt(db as never, "me", "c1", { kind: "offer", id: "t1" }, visible)
+      contextShowsCard(db as never, "me", "c1", { kind: "offer", id: "t1" }, visible)
     ).resolves.toBe(false);
     expect(db.cardOwnership.count).not.toHaveBeenCalled();
   });
 
-  it("reveals a card in another player's public showcase, unless they hide their Vault cards", async () => {
+  it("shows a card in another player's public showcase, unless they hide their Vault cards", async () => {
     const db = createMockPrisma();
     db.cardCollection.findFirst.mockResolvedValue({ userId: "owner", items: [{ id: "i1" }] });
     await expect(
-      contextRevealsArt(db as never, "me", "c1", { kind: "showcase", id: "s1" }, visible)
+      contextShowsCard(db as never, "me", "c1", { kind: "showcase", id: "s1" }, visible)
     ).resolves.toBe(true);
     expect(db.cardCollection.findFirst.mock.calls[0]![0].where).toEqual({
       id: "s1",
@@ -269,23 +247,23 @@ describe("contextRevealsArt", () => {
     });
     expect(visible.vaultVisible).toHaveBeenLastCalledWith("owner");
     await expect(
-      contextRevealsArt(db as never, "me", "c1", { kind: "showcase", id: "s1" }, hidden)
+      contextShowsCard(db as never, "me", "c1", { kind: "showcase", id: "s1" }, hidden)
     ).resolves.toBe(false);
     db.cardCollection.findFirst.mockResolvedValue(null);
     await expect(
-      contextRevealsArt(db as never, "me", "c1", { kind: "showcase", id: "s2" }, visible)
+      contextShowsCard(db as never, "me", "c1", { kind: "showcase", id: "s2" }, visible)
     ).resolves.toBe(false);
   });
 
-  it("reveals a retired copy in a showcase to its owner only, as the showcase lists it", async () => {
+  it("shows a retired copy in a showcase to its owner only, as the showcase lists it", async () => {
     const db = createMockPrisma();
     // The showcase holds the card, but no copy of it that is not retired.
     db.cardCollection.findFirst.mockResolvedValue({ userId: "owner", items: [] });
     const from = { kind: "showcase" as const, id: "s1" };
-    await expect(contextRevealsArt(db as never, "me", "c1", from, visible)).resolves.toBe(false);
-    await expect(contextRevealsArt(db as never, null, "c1", from, visible)).resolves.toBe(false);
+    await expect(contextShowsCard(db as never, "me", "c1", from, visible)).resolves.toBe(false);
+    await expect(contextShowsCard(db as never, null, "c1", from, visible)).resolves.toBe(false);
     expect(visible.vaultVisible).not.toHaveBeenCalled();
-    await expect(contextRevealsArt(db as never, "owner", "c1", from, visible)).resolves.toBe(true);
+    await expect(contextShowsCard(db as never, "owner", "c1", from, visible)).resolves.toBe(true);
     expect(db.cardCollection.findFirst.mock.calls[0]![0].select.items).toEqual({
       where: { cardOwnership: { cardId: "c1", cards: { isRetired: false } } },
       take: 1,
@@ -293,11 +271,11 @@ describe("contextRevealsArt", () => {
     });
   });
 
-  it("reveals a holder's trophy, or a card they display, when they show their Vault cards", async () => {
+  it("shows a holder's trophy, or a card they display, when they show their Vault cards", async () => {
     const db = createMockPrisma();
     db.cardOwnership.findFirst.mockResolvedValue({ id: "trophy-copy" });
     await expect(
-      contextRevealsArt(db as never, "me", "t1", { kind: "holder", handle: "ann" }, visible)
+      contextShowsCard(db as never, "me", "t1", { kind: "holder", handle: "ann" }, visible)
     ).resolves.toBe(true);
     expect(holderOf).toHaveBeenCalledWith("ann");
     expect(db.user.findUnique).not.toHaveBeenCalled();
@@ -312,13 +290,13 @@ describe("contextRevealsArt", () => {
     jest.mocked(topCopiesByValue).mockResolvedValue(ranked("c9"));
     db.cardOwnership.findMany.mockResolvedValue([{ ...copyOf("c9"), cards: card("c9") }]);
     await expect(
-      contextRevealsArt(db as never, "me", "c9", { kind: "holder", handle: "ann" }, visible)
+      contextShowsCard(db as never, "me", "c9", { kind: "holder", handle: "ann" }, visible)
     ).resolves.toBe(true);
     await expect(
-      contextRevealsArt(db as never, "me", "c8", { kind: "holder", handle: "ann" }, visible)
+      contextShowsCard(db as never, "me", "c8", { kind: "holder", handle: "ann" }, visible)
     ).resolves.toBe(false);
     await expect(
-      contextRevealsArt(db as never, "me", "c9", { kind: "holder", handle: "ann" }, hidden)
+      contextShowsCard(db as never, "me", "c9", { kind: "holder", handle: "ann" }, hidden)
     ).resolves.toBe(false);
     expect(hidden.vaultVisible).toHaveBeenLastCalledWith("holder");
   });
@@ -327,17 +305,17 @@ describe("contextRevealsArt", () => {
     const db = createMockPrisma();
     db.cardOwnership.findFirst.mockResolvedValue({ id: "trophy-copy" });
     await expect(
-      contextRevealsArt(db as never, "me", "t1", { kind: "holder", handle: "Takatta Loa" }, visible)
+      contextShowsCard(db as never, "me", "t1", { kind: "holder", handle: "Takatta Loa" }, visible)
     ).resolves.toBe(true);
     expect(holderOf).toHaveBeenCalledWith("Takatta Loa");
     expect(visible.vaultVisible).toHaveBeenCalledWith("holder");
     expect(db.cardOwnership.findFirst.mock.calls[0]![0].where).toMatchObject({ ownerId: "holder" });
   });
 
-  it("reveals nothing for a handle no player has", async () => {
+  it("shows nothing for a handle no player has", async () => {
     const db = createMockPrisma();
     await expect(
-      contextRevealsArt(db as never, "me", "c1", { kind: "holder", handle: "nobody" }, visible)
+      contextShowsCard(db as never, "me", "c1", { kind: "holder", handle: "nobody" }, visible)
     ).resolves.toBe(false);
     expect(visible.vaultVisible).not.toHaveBeenCalled();
     expect(db.cardOwnership.findFirst).not.toHaveBeenCalled();

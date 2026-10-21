@@ -20,7 +20,7 @@ const face = (finish: CardFinish = "FOIL"): CardFaceData => ({
   cardType: "LORE",
   realm: { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false },
   artwork: null,
-  silhouette: false,
+  uncollected: false,
   number: 9,
   season: null,
   isRetired: false,

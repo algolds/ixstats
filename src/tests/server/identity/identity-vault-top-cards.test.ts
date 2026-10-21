@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
  * The Passport's collection highlight is the holder's display (`displayedCopies`): their pinned public showcase, else
- * their most valuable live copies, as faces that show their art.
+ * their most valuable live copies, as faces that show their art in full colour to every visitor.
  */
 jest.mock("~/server/db", () => ({
   __esModule: true,
@@ -54,7 +54,7 @@ const faceOf = (n: number) => ({
   cardType: "LORE",
   realm: { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false },
   artwork: `/art/c${n}.png`,
-  silhouette: false,
+  uncollected: false,
   number: n,
   season: null,
   isRetired: false,
@@ -120,6 +120,13 @@ describe("resolvePassportVault topCards", () => {
     expect(faceRead()).toMatchObject({
       where: { id: { in: ["own-2", "own-1"] }, ownerId: "u1", cards: { isRetired: false } },
     });
+  });
+
+  it("shows the display in full colour to every visitor, reading none of the visitor's copies", async () => {
+    const vault = await resolvePassportVault("u1");
+    expect(vault.topCards.map((face) => face.uncollected)).toEqual([false, false]);
+    const reads = jest.mocked(db.cardOwnership.findMany).mock.calls.map(([args]) => args?.where);
+    expect(reads.some((where) => where && "cardId" in where)).toBe(false);
   });
 
   it("values the deck by the shared copy value and counts the live copies", async () => {

@@ -47,7 +47,7 @@ const row = (id: string, cardId: string) => ({
   inscription: id === "o1" ? "gg" : null,
 });
 const face = (cardId: string, artwork: string | null) =>
-  ({ cardId, title: cardId, artwork, silhouette: artwork === null }) as never as CardFaceData;
+  ({ cardId, title: cardId, artwork, uncollected: true }) as never as CardFaceData;
 
 type UserOfHandle = PartnerRules["userOfHandle"];
 type NamesOf = PartnerRules["namesOf"];
@@ -380,8 +380,8 @@ describe("getTradeables", () => {
       take: 2,
     });
     expect(wishlistCardIds).toHaveBeenCalledWith(db, "alice");
-    // Faces follow the silhouette rule (owned or live-listed art only): never the "offer made to you" exemption.
-    expect(copyFaces).toHaveBeenCalledWith(db, "alice", ["o1"], false);
+    // Faces are marked by the viewer's own copies, not the partner's
+    expect(copyFaces).toHaveBeenCalledWith(db, "alice", ["o1"]);
     // The shared copy value, where a retired card's copy is 0
     expect(loadCopyValues).toHaveBeenCalledWith(db, { ownershipIds: ["o1"] });
     expect(page).toEqual({

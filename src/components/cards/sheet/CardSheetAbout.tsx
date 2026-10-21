@@ -92,7 +92,7 @@ function Takedown({ card, signedIn }: { card: CardSheetData["card"]; signedIn: b
 
 interface CardSheetAboutProps {
   card: CardSheetData["card"];
-  /** The viewer may not see the card's art (a silhouette or a retired card): nothing here may show or link it. */
+  /** The card is retired, so its art shows nowhere and nothing here may show or link it; shown art is credited. */
   artHidden: boolean;
   /** Only a signed-in player can request a takedown here. */
   signedIn: boolean;

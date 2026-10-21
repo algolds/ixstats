@@ -36,7 +36,7 @@ export interface PassportVaultSummary {
   focus: PassportVaultFocus | null;
   /**
    * Collection highlight: the holder's display (`displayedCopies`), their pinned public showcase, else their most
-   * valuable live cards. A player's display is shown off, so the faces show their art.
+   * valuable live cards. A player's display shows off their collection, so its faces are in full colour to everyone.
    */
   topCards: CardFaceData[];
 }
@@ -101,7 +101,7 @@ export async function resolvePassportVault(
     summary.deckValue = deck.total;
     summary.focus = toVaultFocus(liveOwnerships.map((o) => o.cards.category));
     summary.topCards = displayed.copies.map(({ card, copy }) =>
-      toCardFace(card, { revealArt: true, copy })
+      toCardFace(card, { collected: true, copy })
     );
   } catch (err) {
     console.warn("[PassportVault] Failed to resolve vault summary for user", userId, err);

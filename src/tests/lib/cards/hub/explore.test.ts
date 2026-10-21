@@ -1,5 +1,5 @@
 /** @jest-environment node */
-/** Explore (spec §2.3): realm shelves first, then a filtered grid, with silhouettes for unowned art. */
+/** Explore (spec §2.3): realm shelves first, then a filtered grid, every card with its art, the uncollected marked. */
 import type { Prisma } from "@prisma/client";
 import type { z } from "zod";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
@@ -125,16 +125,20 @@ describe("exploreWhere", () => {
 });
 
 describe("exploreGrid", () => {
-  it("pages the catalogue and strips art the viewer has not collected", async () => {
+  it("pages the catalogue, showing every card's art and marking the ones the viewer has not collected", async () => {
     const db = createMockPrisma();
     db.card.count.mockResolvedValue(3);
     db.card.findMany.mockResolvedValue([card("mine"), card("theirs")]);
     db.cardOwnership.findMany.mockResolvedValue([{ cardId: "mine" }]);
     const page = await exploreGrid(db as never, "me", query({ limit: 2 }));
-    expect(page.faces.map((f) => [f.cardId, f.silhouette, f.artwork])).toEqual([
+    expect(page.faces.map((f) => [f.cardId, f.uncollected, f.artwork])).toEqual([
       ["mine", false, "https://art/mine.png"],
-      ["theirs", true, null],
+      ["theirs", true, "https://art/theirs.png"],
     ]);
+    expect(db.cardOwnership.findMany.mock.calls[0]![0].where).toEqual({
+      ownerId: "me",
+      cardId: { in: ["mine", "theirs"] },
+    });
     expect(page).toMatchObject({ total: 3, nextCursor: 2 });
     expect(db.card.findMany.mock.calls[0]![0]).toMatchObject({ skip: 0, take: 2 });
   });
@@ -188,8 +192,8 @@ describe("exploreShelves", () => {
     expect(shelves[1]).toMatchObject({ cardCount: 50, bannerUrl: "https://art/banner.png" });
     expect(shelves[0]!.newest[0]!.face).toMatchObject({
       cardId: "new",
-      silhouette: true,
-      artwork: null,
+      uncollected: true,
+      artwork: "https://art/new.png",
     });
     expect(shelves[0]!.mostWanted[0]).toMatchObject({ wanted: 2 });
   });
@@ -260,18 +264,29 @@ describe("exploreShelves", () => {
     expect(realms.map((r) => r.id)).toEqual(["default"]);
   });
 
-  it("shows art on the shelves for cards the viewer holds", async () => {
+  it("marks the shelves' cards by the viewer's own copies, asking once for every strip", async () => {
     const db = createMockPrisma();
     db.card.groupBy.mockResolvedValue([{ realmId: "default", _count: { _all: 1 } }]);
     db.realm.findMany.mockResolvedValue([{ ...realm("default", "Ixnay"), bannerUrl: null }]);
-    db.card.findMany.mockResolvedValue([card("mine")]);
+    db.card.findMany.mockImplementation(async (args: { where: { watchlist?: object } }) =>
+      args.where.watchlist ? [card("wanted")] : [card("mine")]
+    );
     db.cardOwnership.findMany.mockResolvedValue([{ cardId: "mine" }]);
     const {
       shelves: [shelf],
     } = await exploreShelves(db as never, "me");
     expect(shelf!.newest[0]!.face).toMatchObject({
-      silhouette: false,
+      uncollected: false,
       artwork: "https://art/mine.png",
+    });
+    expect(shelf!.mostWanted[0]!.face).toMatchObject({
+      uncollected: true,
+      artwork: "https://art/wanted.png",
+    });
+    expect(db.cardOwnership.findMany).toHaveBeenCalledTimes(1);
+    expect(db.cardOwnership.findMany.mock.calls[0]![0].where).toEqual({
+      ownerId: "me",
+      cardId: { in: ["mine", "wanted"] },
     });
   });
 

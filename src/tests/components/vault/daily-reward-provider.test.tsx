@@ -99,7 +99,7 @@ const CAPHIRIA_FACE = {
   cardType: "LORE",
   realm: { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false },
   artwork: null,
-  silhouette: false,
+  uncollected: false,
   number: 1,
   season: null,
   isRetired: false,

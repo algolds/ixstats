@@ -105,6 +105,8 @@ describe("listMyShowcases", () => {
       ["s2", false, 0, null],
       ["s3", false, 1, null],
     ]);
+    // A showcase shows off its owner's collection, so every cover is in full colour
+    expect(list.map((s) => s.cover?.uncollected ?? null)).toEqual([false, null, false]);
     expect(db.cardCollection.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { userId: "u1" },
@@ -144,7 +146,7 @@ describe("getShowcase", () => {
     items: [item("c1"), item("c2", true)],
   };
 
-  it("shows a public showcase's art to anyone while its owner shows Vault cards, with the owner's name", async () => {
+  it("shows a public showcase to anyone while its owner shows Vault cards, with the owner's name", async () => {
     const db = createMockPrisma();
     db.cardCollection.findUnique.mockResolvedValue(row);
     const view = await getShowcase(db as never, "me", "s1", visible);
@@ -152,7 +154,7 @@ describe("getShowcase", () => {
       ownerName: "Caphiria",
       isOwner: false,
       pinned: false,
-      items: [{ itemId: "item-c1", face: { artwork: "https://art/c1.png", silhouette: false } }],
+      items: [{ itemId: "item-c1", face: { artwork: "https://art/c1.png", uncollected: false } }],
     });
     expect(visible.playersOf).toHaveBeenCalledWith(["owner"]);
     expect(db.cardCollection.findUnique).toHaveBeenCalledWith({
@@ -166,6 +168,17 @@ describe("getShowcase", () => {
     });
   });
 
+  it("shows another player's showcase in full colour, whatever the viewer holds, reading none of their copies", async () => {
+    const db = createMockPrisma();
+    db.cardCollection.findUnique.mockResolvedValue({ ...row, items: [item("c1"), item("c3")] });
+    const view = await getShowcase(db as never, "me", "s1", visible);
+    expect(view!.items.map((i) => [i.itemId, i.face.artwork, i.face.uncollected])).toEqual([
+      ["item-c1", "https://art/c1.png", false],
+      ["item-c3", "https://art/c3.png", false],
+    ]);
+    expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
+  });
+
   it("leaves another player's retired copies out, and shows its owner their placeholder faces", async () => {
     const db = createMockPrisma();
     db.cardCollection.findUnique.mockResolvedValue(row);
@@ -173,8 +186,8 @@ describe("getShowcase", () => {
     expect(theirs!.items.map((i) => i.itemId)).toEqual(["item-c1"]);
     const mine = await getShowcase(db as never, "owner", "s1", hidden);
     expect(mine!.items).toMatchObject([
-      { itemId: "item-c1", face: { artwork: "https://art/c1.png" } },
-      { itemId: "item-c2", face: { artwork: null, isRetired: true } },
+      { itemId: "item-c1", face: { artwork: "https://art/c1.png", uncollected: false } },
+      { itemId: "item-c2", face: { artwork: null, isRetired: true, uncollected: false } },
     ]);
   });
 
@@ -466,7 +479,7 @@ describe("myDisplay", () => {
         {
           cardId: "c1",
           artwork: "https://art/c1.png",
-          silhouette: false,
+          uncollected: false,
           copy: { ownershipId: "o-c1" },
         },
       ],
@@ -489,7 +502,7 @@ describe("myDisplay", () => {
     db.cardOwnership.findMany.mockResolvedValue([copy("c3")]);
     await expect(myDisplay(db as never, "u1")).resolves.toMatchObject({
       showcase: null,
-      faces: [{ cardId: "c3", silhouette: false }],
+      faces: [{ cardId: "c3", uncollected: false }],
     });
     expect(jest.mocked(topCopiesByValue)).toHaveBeenCalledWith(db, "u1", 6);
   });

@@ -48,8 +48,13 @@ jest.mock("~/hooks/useCardsRefresh", () => {
 });
 jest.mock("@clerk/nextjs", () => ({ useAuth: () => ({ userId: "clerk_me" }) }));
 jest.mock("~/components/cards/trade/TradeBuilderHost", () => ({
-  TradeBuilderHost: ({ address, onClose }: { address: { trade: string } | null; onClose: () => void }) =>
-    address ? <button onClick={onClose}>Close trade {address.trade}</button> : null,
+  TradeBuilderHost: ({
+    address,
+    onClose,
+  }: {
+    address: { trade: string } | null;
+    onClose: () => void;
+  }) => (address ? <button onClick={onClose}>Close trade {address.trade}</button> : null),
 }));
 jest.mock("next/link", () => ({
   __esModule: true,
@@ -88,7 +93,7 @@ const face = {
   cardType: "LORE" as const,
   realm,
   artwork: "https://art/c1.png",
-  silhouette: false,
+  uncollected: false,
   number: 1,
   season: null,
   isRetired: false,

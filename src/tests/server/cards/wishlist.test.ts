@@ -1,18 +1,5 @@
 /** @jest-environment node */
 /** The wishlist (spec §2.3 Wishlist): the player's own wished cards, with what is on sale for each. */
-jest.mock("~/lib/cards/hub/art-visibility", () => ({
-  facesFor: jest.fn(
-    async (_db: object, _viewer: string, sources: Array<{ card: { id: string; title: string } }>) =>
-      sources.map((s) => ({
-        cardId: s.card.id,
-        title: s.card.title,
-        artwork: null,
-        silhouette: true,
-      }))
-  ),
-}));
-
-import { facesFor } from "~/lib/cards/hub/art-visibility";
 import { CATALOGUE_WHERE } from "~/lib/cards/hub/catalogue";
 import { CARD_FACE_SELECT } from "~/lib/cards/hub/faces";
 import {
@@ -26,11 +13,27 @@ import {
 const NOW = new Date("2026-11-02T12:00:00Z");
 const EARLIER = new Date("2026-11-01T12:00:00Z");
 
+const realm = { id: "default", slug: "ixnay", name: "Ixnay", emblemUrl: null, isSystem: false };
+const card = (id: string, title: string) => ({
+  id,
+  title,
+  rarity: "RARE",
+  cardType: "LORE",
+  artwork: `https://art/${id}.png`,
+  isRetired: false,
+  collectorNumber: 1,
+  season: 1,
+  nsSeason: null,
+  realm,
+});
 const wish = (cardId: string, title: string, createdAt = NOW) => ({
   cardId,
   createdAt,
-  card: { id: cardId, title },
+  card: card(cardId, title),
 });
+/** The face a wished card shows: its art, marked when the player holds no copy. */
+const faceOf = (cardId: string, title: string, uncollected: boolean) =>
+  expect.objectContaining({ cardId, title, artwork: `https://art/${cardId}.png`, uncollected });
 
 function makeDb(card: { isBound: boolean } | null = { isBound: false }, size = 0) {
   return {
@@ -132,11 +135,11 @@ describe("wishlistCardIds", () => {
 });
 
 describe("listWishlist", () => {
-  it("lists the wishlist with what is on sale now, and faces by the silhouette rule", async () => {
+  it("lists the wishlist with what is on sale now, and every card's art, marked when not held", async () => {
     const db = makeDb();
     expect(await listWishlist(db as never, "u1", NOW)).toEqual([
       {
-        face: { cardId: "c1", title: "Aurelia", artwork: null, silhouette: true },
+        face: faceOf("c1", "Aurelia", true),
         addedAt: NOW,
         owned: 0,
         listings: 2,
@@ -144,7 +147,6 @@ describe("listWishlist", () => {
         auctions: 1,
       },
     ]);
-    expect(facesFor).toHaveBeenCalledWith(db, "u1", [{ card: { id: "c1", title: "Aurelia" } }]);
   });
 
   it("reads the player's own wishes, newest first, and only live listings and auctions", async () => {
@@ -175,7 +177,7 @@ describe("listWishlist", () => {
     });
   });
 
-  it("gives each wished card its own counts, and none for a card not on sale", async () => {
+  it("gives each wished card its own counts, none for a card not on sale, and marks it by the player's copies", async () => {
     const db = makeDb();
     db.cardWatchlist.findMany.mockResolvedValue([
       wish("c1", "Aurelia"),
@@ -184,6 +186,7 @@ describe("listWishlist", () => {
     db.cardOwnership.groupBy.mockResolvedValue([{ cardId: "c2", _count: { _all: 3 } }]);
     expect(await listWishlist(db as never, "u1", NOW)).toEqual([
       expect.objectContaining({
+        face: faceOf("c1", "Aurelia", true),
         addedAt: NOW,
         owned: 0,
         listings: 2,
@@ -191,7 +194,7 @@ describe("listWishlist", () => {
         auctions: 1,
       }),
       {
-        face: { cardId: "c2", title: "Burgundie", artwork: null, silhouette: true },
+        face: faceOf("c2", "Burgundie", false),
         addedAt: EARLIER,
         owned: 3,
         listings: 0,
@@ -205,7 +208,6 @@ describe("listWishlist", () => {
     const db = makeDb();
     db.cardWatchlist.findMany.mockResolvedValue([]);
     expect(await listWishlist(db as never, "u1", NOW)).toEqual([]);
-    expect(facesFor).not.toHaveBeenCalled();
     expect(db.cardOwnership.groupBy).not.toHaveBeenCalled();
     expect(db.cardListing.groupBy).not.toHaveBeenCalled();
     expect(db.cardAuction.groupBy).not.toHaveBeenCalled();

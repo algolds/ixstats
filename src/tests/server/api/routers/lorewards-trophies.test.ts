@@ -98,7 +98,7 @@ const trophyRow = (
   },
 });
 
-/** The summary of a trophy row, its face showing its art. */
+/** The summary of a trophy row, its face showing its art in full colour: the holder's showcase. */
 const summary = (id: string, title: string, contest: string, place: string) => ({
   id,
   title,
@@ -111,7 +111,7 @@ const summary = (id: string, title: string, contest: string, place: string) => (
     cardType: "TROPHY",
     realm: { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false },
     artwork: `https://art/${id}.png`,
-    silhouette: false,
+    uncollected: false,
     number: 4,
     season: null,
     isRetired: false,
@@ -344,6 +344,16 @@ describe("lorewards.getTrophies", () => {
     expect(theirs.cards[0]!.face.cardId).toBe("card1");
     expect(loadPassportHandleById).toHaveBeenCalledWith("u1");
     expect(db.vaultTransaction.aggregate).not.toHaveBeenCalled();
+  });
+
+  it("shows the trophies in full colour to any viewer: they are the holder's showcase", async () => {
+    // u1 verified the name "Ada" and holds its trophies; u2 holds none of them
+    expect((await viewer().getTrophies({ username: "Ada" })).cards).toEqual(CARD_SUMMARIES);
+    const other = viewer({
+      auth: { userId: "clerk_2" },
+      user: { id: "u2", clerkUserId: "clerk_2" },
+    });
+    expect((await other.getTrophies({ username: "Ada" })).cards).toEqual(CARD_SUMMARIES);
   });
 
   it("reads each trophy with the fields of its face and of the copy held", async () => {

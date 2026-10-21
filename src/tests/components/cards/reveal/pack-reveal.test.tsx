@@ -50,7 +50,7 @@ const face = (n: number, rarity: CardFaceData["rarity"]): CardFaceData => ({
   cardType: "LORE",
   realm,
   artwork: null,
-  silhouette: false,
+  uncollected: false,
   number: n,
   season: null,
   isRetired: false,

@@ -9,7 +9,7 @@ import type { CardFaceData, CardFinish, CardRarity, CardType } from "~/lib/cards
 import { isJsonObject } from "~/lib/cards/ns-facts";
 import { listCardSales } from "~/lib/cards/transfer-events";
 import { renderFileLinks } from "~/lib/wiki-os/transformers/wikitext-files";
-import { contextRevealsArt, type HolderRules } from "./art-visibility";
+import { contextShowsCard, type HolderRules } from "./art-visibility";
 import { CATALOGUE_WHERE } from "./catalogue";
 import { CARD_FACE_SELECT, COPY_FACE_SELECT, toCardFace } from "./faces";
 import type { HubPlayer, PlayerRules } from "./players";
@@ -29,7 +29,7 @@ type SheetDb = Pick<
   | "$queryRaw"
 >;
 
-/** The router's rules: the places that show a card's art, and the players the sheet names. */
+/** The router's rules: the places that show a card, and the players the sheet names. */
 export type SheetRules = HolderRules & PlayerRules;
 
 const SHEET_CARD_SELECT = {
@@ -102,7 +102,7 @@ export interface SheetListing {
 }
 
 export interface CardSheetData {
-  /** The big card: art by the silhouette rule, with the viewer's first copy when they hold one. */
+  /** The big card, marked uncollected when the viewer holds no copy, else with their first copy. */
   face: CardFaceData;
   /** False for a signed-out visitor, who has no copies and no market history to ask for. */
   signedIn: boolean;
@@ -380,7 +380,7 @@ function toSheetCopy(
   naming: SheetNamer
 ): SheetCopy {
   return {
-    face: toCardFace(card, { revealArt: true, copy }),
+    face: toCardFace(card, { collected: true, copy }),
     experience: copy.experience,
     acquiredAt: copy.acquiredAt,
     isLocked: copy.isLocked,
@@ -409,12 +409,13 @@ function sheetValue(card: SheetCardRow, values: readonly CopyValue[]): number {
 const withoutFileLinks = (excerpt: string) => renderFileLinks(excerpt, "ixwiki", false);
 
 /**
- * The sheet's facts about the card itself: about, provenance and value (spec §2.3 Detail sheet). When the art is
- * hidden (a silhouette, or a retired card, often a takedown or a restricted licence) nothing may name or link the
- * image: the art credit and the file page go, the excerpt loses its file links, and a Commons card loses its title (the
- * file's). The article link stays.
+ * The sheet's facts about the card itself: about, provenance and value (spec §2.3 Detail sheet). Wherever the art shows
+ * it is credited: the art credit, licence and file page. A retired card (a takedown, a restricted licence or a Library
+ * hide) shows no art, so nothing may name or link the image: the art credit and the file page go, the excerpt loses its
+ * file links, and a Commons card loses its title (the file's). The article link stays.
  */
-function toSheetCard(card: SheetCardRow, artHidden: boolean, value: number): CardSheetData["card"] {
+function toSheetCard(card: SheetCardRow, value: number): CardSheetData["card"] {
+  const artHidden = card.isRetired;
   const excerpt = storedExcerpt(card);
   return {
     id: card.id,
@@ -437,11 +438,11 @@ function toSheetCard(card: SheetCardRow, artHidden: boolean, value: number): Car
 }
 
 /**
- * The sheet a `?card=` link opens. Art shows to a holder, while the card is on a live listing (at a fixed price or at
- * auction), or when the sheet was opened from another player's showcase or an offer made to the viewer (spec §2.3
- * Discovery). A card outside the catalogue (in review, hidden, or in an unpublished realm) opens only in those same
- * places, so a bare link to one is null, as is a card that does not exist. A retired card still shows no art
- * (`toCardFace`).
+ * The sheet a `?card=` link opens, with the card's art (none for a retired card, `toCardFace`), marked uncollected when
+ * the viewer holds no copy. A signed-in viewer opens any catalogue card. A card outside the catalogue (in review,
+ * hidden, or in an unpublished realm) opens only for a holder, while it is on a live listing (at a fixed price or at
+ * auction), or from another player's showcase, a holder's display or an offer made to the viewer, so a bare link to one
+ * is null, as is a card that does not exist.
  *
  * A signed-out visitor (`viewerId` null) has no copies to read, and sees the sheet only where a player shows the card
  * publicly: a live listing, a public showcase, or a holder's passport display. Everywhere else, a card that does not
@@ -468,29 +469,32 @@ export async function loadCardSheet(
   ]);
   if (!card) return viewerId ? null : SIGN_IN;
 
-  // Held or listed (at a fixed price or at auction) already shows the art, so the opening place is asked only otherwise.
-  const shown = copies.length > 0 || listings.fixed.length > 0 || listings.auctions.length > 0;
+  // Held, listed (at a fixed price or at auction), or a catalogue card to a signed-in viewer already opens, so the
+  // opening place is asked only otherwise.
+  const opens =
+    copies.length > 0 ||
+    listings.fixed.length > 0 ||
+    listings.auctions.length > 0 ||
+    (viewerId !== null && catalogued > 0);
   const [shownThere, events, recentSales, wantedBy, values] = await Promise.all([
-    !shown && options.from !== null
-      ? contextRevealsArt(db, viewerId, cardId, options.from, options.rules)
+    !opens && options.from !== null
+      ? contextShowsCard(db, viewerId, cardId, options.from, options.rules)
       : false,
     loadTrailEvents(db, copies),
     listCardSales(db, cardId, RECENT_SALES),
     db.cardWatchlist.count({ where: { cardId } }),
     loadCopyValues(db, { ownershipIds: copies.map((c) => c.id) }),
   ]);
-  const revealArt = shown || shownThere;
-  if (!revealArt && !viewerId) return SIGN_IN;
-  if (!revealArt && catalogued === 0) return null;
+  if (!opens && !shownThere) return viewerId ? null : SIGN_IN;
 
   const players = await playersNamed(options.rules, namedPlayers(listings, events, copies));
   const naming = namer(players, viewerId);
-  const face = toCardFace(card, { revealArt, copy: copies[0] ?? null });
+  const face = toCardFace(card, { collected: copies.length > 0, copy: copies[0] ?? null });
   const trail = trailOf(events, naming.nameOf);
   return {
     face,
     signedIn: viewerId !== null,
-    card: toSheetCard(card, face.silhouette || card.isRetired, sheetValue(card, values)),
+    card: toSheetCard(card, sheetValue(card, values)),
     copies: copies.map((copy) => toSheetCopy(card, copy, trail, naming)),
     market: {
       listings: toSheetListings(listings, viewerId, naming),

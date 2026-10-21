@@ -212,7 +212,7 @@ describe("selectMine", () => {
 
   it("shows the art of the player's own copies", () => {
     const page = selectMine([entry({ artwork: "https://art/x.png" })], query());
-    expect(page.rows[0]!.face).toMatchObject({ artwork: "https://art/x.png", silhouette: false });
+    expect(page.rows[0]!.face).toMatchObject({ artwork: "https://art/x.png", uncollected: false });
   });
 });
 

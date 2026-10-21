@@ -6,44 +6,25 @@ import type { SheetFrom } from "~/lib/cards/face/sheet-link";
 import { toCardFace, type CardFaceRow, type CopyFaceRow } from "./faces";
 import { displayedCopies } from "./displayed";
 
-/** What the art rule reads: the viewer's copies, live auctions and live fixed-price listings. */
-export type ArtDb = Pick<PrismaClient, "cardOwnership" | "cardAuction" | "cardListing">;
+/** What the collected mark reads: the viewer's copies. */
+export type CollectionDb = Pick<PrismaClient, "cardOwnership">;
 /** The holder context reads their display, which ranks their copies by the shared copy value. */
 type ContextDb = Pick<PrismaClient, "cardOwnership" | "cardCollection" | "tradeOffer"> & ValueDb;
 
-/**
- * Cards whose art this viewer may see in any list: those they hold a copy of, and those on a live auction or
- * fixed-price listing.
- */
-export async function cardsWithVisibleArt(
-  db: ArtDb,
+/** The cards among `cardIds` the viewer holds a copy of; none for a signed-out viewer, who holds nothing. */
+export async function cardsCollectedBy(
+  db: CollectionDb,
   viewerId: string | null,
   cardIds: readonly string[]
 ): Promise<Set<string>> {
   const ids = [...new Set(cardIds)];
-  if (ids.length === 0) return new Set();
-  const now = new Date();
-  const [owned, auctioned, listed] = await Promise.all([
-    viewerId
-      ? db.cardOwnership.findMany({
-          where: { ownerId: viewerId, cardId: { in: ids } },
-          select: { cardId: true },
-          distinct: ["cardId"],
-        })
-      : Promise.resolve([]),
-    // The auction's and the listing's own card, which each keeps when it outlives its copy
-    db.cardAuction.findMany({
-      where: { status: "ACTIVE", endTime: { gt: now }, cardId: { in: ids } },
-      select: { cardId: true },
-      distinct: ["cardId"],
-    }),
-    db.cardListing.findMany({
-      where: { status: "ACTIVE", expiresAt: { gt: now }, cardId: { in: ids } },
-      select: { cardId: true },
-      distinct: ["cardId"],
-    }),
-  ]);
-  return new Set([...owned, ...auctioned, ...listed].map((row) => row.cardId));
+  if (!viewerId || ids.length === 0) return new Set();
+  const owned = await db.cardOwnership.findMany({
+    where: { ownerId: viewerId, cardId: { in: ids } },
+    select: { cardId: true },
+    distinct: ["cardId"],
+  });
+  return new Set(owned.map((row) => row.cardId));
 }
 
 export interface FaceSource {
@@ -51,19 +32,19 @@ export interface FaceSource {
   copy?: CopyFaceRow | null;
 }
 
-/** Faces for a list a viewer browses, with silhouettes for what they may not see. */
+/** Faces for a list a viewer browses, in the order given, each marked by whether the viewer holds a copy. */
 export async function facesFor(
-  db: ArtDb,
+  db: CollectionDb,
   viewerId: string | null,
   sources: readonly FaceSource[]
 ): Promise<CardFaceData[]> {
-  const visible = await cardsWithVisibleArt(
+  const collected = await cardsCollectedBy(
     db,
     viewerId,
     sources.map((s) => s.card.id)
   );
   return sources.map((s) =>
-    toCardFace(s.card, { revealArt: visible.has(s.card.id), copy: s.copy ?? null })
+    toCardFace(s.card, { collected: collected.has(s.card.id), copy: s.copy ?? null })
   );
 }
 
@@ -86,10 +67,10 @@ export function copyIdsOf(value: Prisma.JsonValue): string[] {
 }
 
 /**
- * An offer shows its cards' art to the party it waits on (the one who did not write the current table, so either side
- * after a counter-offer), while it is pending and unexpired (spec §2.3 Discovery).
+ * An offer shows its cards to the party it waits on (the one who did not write the current table, so either side after
+ * a counter-offer), while it is pending and unexpired: the sheet opens one of them from there.
  */
-export function liveOfferTo(viewerId: string) {
+function liveOfferTo(viewerId: string) {
   return {
     status: "PENDING",
     expiresAt: { gt: new Date() },
@@ -157,8 +138,11 @@ async function holderShowsCard(
   return shown.copies.some((c) => c.card.id === cardId);
 }
 
-/** Whether the place a sheet was opened from shows this card's art: a showcase, a display, or an offer to the viewer. */
-export async function contextRevealsArt(
+/**
+ * Whether the place a sheet was opened from shows this card: a showcase, a display, or an offer to the viewer. It opens
+ * the sheet of a card outside the catalogue, and a signed-out visitor's sheet.
+ */
+export async function contextShowsCard(
   db: ContextDb,
   viewerId: string | null,
   cardId: string,

@@ -35,7 +35,7 @@ const face = {
   rarity: "RARE" as const,
   cardType: "LORE" as const,
   artwork: null,
-  silhouette: false,
+  uncollected: false,
   number: 1,
   season: null,
   isRetired: false,

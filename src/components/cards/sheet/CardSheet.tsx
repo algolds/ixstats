@@ -237,11 +237,7 @@ function SheetBody({ sheet }: { sheet: CardSheetData }) {
           market={sheet.market}
           signedIn={sheet.signedIn}
         />
-        <CardSheetAbout
-          card={card}
-          artHidden={face.silhouette || card.isRetired}
-          signedIn={sheet.signedIn}
-        />
+        <CardSheetAbout card={card} artHidden={card.isRetired} signedIn={sheet.signedIn} />
       </div>
       <AddToShowcaseDialog
         open={showcasing !== null}

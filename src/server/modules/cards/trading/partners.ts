@@ -314,8 +314,8 @@ export interface TradeablesInput {
 }
 
 /**
- * One page of a side's tradeable copies, by card title. Art follows the silhouette rule (the viewer's own copies and
- * live-listed cards show it), values are the shared copy value, and a copy that is gone is left out.
+ * One page of a side's tradeable copies, by card title. Every face shows its art, marked by the viewer's own copies
+ * (the partner's side too), values are the shared copy value, and a copy that is gone is left out.
  */
 export async function getTradeables(
   db: PartnerDb,
@@ -338,7 +338,7 @@ export async function getTradeables(
   const [wished, values, faces] = await Promise.all([
     highlightedCards(db, viewer, partner, mine),
     loadCopyValues(db, { ownershipIds: ids }),
-    copyFaces(db, viewer.id, ids, false),
+    copyFaces(db, viewer.id, ids),
   ]);
   const valueOf = new Map(values.map((v) => [v.ownershipId, v.value]));
   const items = page.flatMap((r): TradeableCopy[] => {

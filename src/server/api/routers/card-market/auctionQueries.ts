@@ -42,8 +42,8 @@ export const cardMarketAuctionQueriesRouter = createTRPCRouter({
         orderBy: { endTime: "asc" },
       });
 
-      // An ended listing stays here until it is settled, so the rule decides (the seller holds the copy)
-      return { auctions: await withAuctionFaces(ctx.db, ctx.user.id, auctions, false) };
+      // An ended listing stays here until it is settled
+      return { auctions: await withAuctionFaces(ctx.db, ctx.user.id, auctions) };
     } catch (error) {
       console.error("[Card Market Router] Error getting user auctions:", error);
       if (error instanceof TRPCError) {

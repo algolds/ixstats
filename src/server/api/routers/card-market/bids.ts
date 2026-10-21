@@ -135,7 +135,7 @@ export const cardMarketBidsRouter = createTRPCRouter({
     try {
       assertAuthUserId(ctx);
 
-      // Running only: an ended one awaits settlement, then shows in history. The live faces below rely on it.
+      // Running only: an ended one awaits settlement, then shows in history.
       const auctions = await ctx.db.cardAuction.findMany({
         where: {
           AuctionBid: { some: { bidderId: ctx.user.id } },
@@ -146,7 +146,7 @@ export const cardMarketBidsRouter = createTRPCRouter({
         orderBy: { endTime: "asc" },
       });
 
-      const withFaces = await withAuctionFaces(ctx.db, ctx.user.id, auctions, true);
+      const withFaces = await withAuctionFaces(ctx.db, ctx.user.id, auctions);
       return {
         auctions: withFaces.map((auction) => ({
           ...auction,
@@ -233,7 +233,7 @@ export const cardMarketBidsRouter = createTRPCRouter({
         });
 
         return {
-          auctions: await withAuctionFaces(ctx.db, userId, enriched, false),
+          auctions: await withAuctionFaces(ctx.db, userId, enriched),
           total,
           hasMore: input.offset + input.limit < total,
         };

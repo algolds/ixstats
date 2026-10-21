@@ -91,7 +91,7 @@ const face = {
   cardType: "LORE" as const,
   realm,
   artwork: null,
-  silhouette: false,
+  uncollected: false,
   number: 9,
   season: null,
   isRetired: false,
@@ -391,7 +391,7 @@ describe("CardSheet about", () => {
       expect.objectContaining({ enabled: false })
     );
   });
-  it("tells the excerpt to hide the art for a silhouette or a retired card, but not for a held one", () => {
+  it("tells the excerpt to hide the art for a retired card only, not for one the viewer does not hold", () => {
     const commons = {
       ...card,
       wikiSource: "commons",
@@ -399,10 +399,10 @@ describe("CardSheet about", () => {
     };
     const page = "https://commons.wikimedia.org/wiki/File:Flag_of_Ireland.svg";
     showSheet(
-      sheet({ card: commons, copies: [], face: { ...face, copy: null, silhouette: true } })
+      sheet({ card: commons, copies: [], face: { ...face, copy: null, uncollected: true } })
     );
     const view = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    expect(screen.getByText(`Excerpt ${page} without art`)).toBeInTheDocument();
+    expect(screen.getByText(`Excerpt ${page}`)).toBeInTheDocument();
     view.unmount();
     showSheet(sheet({ card: { ...card, isRetired: true }, face: { ...face, isRetired: true } }));
     const retired = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
@@ -412,6 +412,24 @@ describe("CardSheet about", () => {
     render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
     expect(screen.getByText(`Excerpt ${page}`)).toBeInTheDocument();
   });
+
+  it("adds the licence to the art credit when the line does not name it, held or not, since the art shows", () => {
+    showSheet(
+      sheet({
+        card: {
+          ...card,
+          cardType: "SPECIAL",
+          artCredit: { line: "Photo by Ann", licence: "CC BY 4.0", sourceUrl: null },
+        },
+        copies: [],
+        face: { ...face, copy: null, uncollected: true },
+      })
+    );
+    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
+    const about = screen.getByRole("region", { name: "About" });
+    expect(within(about).getByText("Art: Photo by Ann · CC BY 4.0")).toBeInTheDocument();
+  });
+
   it("offers a signed-in player a takedown request for a wiki card, and points a visitor to the help", () => {
     showSheet();
     const { unmount } = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
