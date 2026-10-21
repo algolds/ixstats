@@ -97,8 +97,8 @@ describe.each([
   });
 });
 
+// A radio group moves focus with Home and End but checks only on the arrows (Radix), so only the tab lists select.
 describe.each([
-  { control: "SegmentedControl", Ui: SegmentedRadios, item: "radio", state: "aria-checked" },
   { control: "SegmentedControl asTabs", Ui: SegmentedTabs, item: "tab", state: "aria-selected" },
   { control: "Tabs", Ui: TabsChoice, item: "tab", state: "aria-selected" },
 ] as const)("$control Home and End", ({ Ui, item, state }) => {
@@ -107,6 +107,7 @@ describe.each([
     const choice = (name: string) => screen.getByRole(item, { name });
     choice("One").focus();
     fireEvent.keyDown(choice("One"), { key: "ArrowRight" });
+    fireEvent.keyUp(choice("One"), { key: "ArrowRight" });
     await waitFor(() => expect(choice("Three")).toHaveFocus());
     fireEvent.keyDown(choice("Three"), { key: "Home" });
     await waitFor(() => expect(choice("One")).toHaveAttribute(state, "true"));
