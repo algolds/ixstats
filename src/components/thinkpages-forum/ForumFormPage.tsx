@@ -17,7 +17,7 @@ export function ForumFormPage({
 }) {
   return (
     <ForumPage title={title} breadcrumbs={breadcrumbs} back={back}>
-      <div className="flex max-w-3xl min-w-0 flex-col gap-4">{children}</div>
+      <div className="flex min-w-0 flex-col gap-4">{children}</div>
     </ForumPage>
   );
 }
