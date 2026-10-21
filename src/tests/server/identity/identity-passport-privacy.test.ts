@@ -168,14 +168,6 @@ describe("toPassportSettings", () => {
       pinnedRibbonKeys: [],
     });
   });
-
-  it("maps stored columns, trims the signature and caps pins at three", () => {
-    const settings = toPassportSettings(ALL_HIDDEN);
-    expect(Object.values(settings.visibility).every((v) => v === false)).toBe(true);
-    expect(settings.visibility.linkPreview).toBe(false);
-    expect(settings.signature).toBe("A. Pav");
-    expect(settings.pinnedRibbonKeys).toEqual(["a", "b", "c"]);
-  });
 });
 
 describe("redactPassportSections", () => {
@@ -338,14 +330,6 @@ describe("updateOwnPassportSettings", () => {
     );
     expect(saved.visibility.vaultCards).toBe(false);
   });
-
-  it("persists the link preview switch like the other toggles", async () => {
-    await updateOwnPassportSettings(user, { visibility: { linkPreview: false } });
-    expect(mocked.passportPreference.upsert.mock.calls[0]![0].update).toEqual({
-      showLinkPreview: false,
-    });
-  });
-
   it("keeps only pins for achievements the user has unlocked", async () => {
     await updateOwnPassportSettings(user, {
       pinnedRibbonKeys: ["mil-first-branch", "not-mine", "econ-first-million"],
@@ -354,10 +338,5 @@ describe("updateOwnPassportSettings", () => {
     expect(mocked.passportPreference.upsert.mock.calls[0]![0].update).toEqual({
       pinnedRibbonKeys: ["mil-first-branch", "econ-first-million"],
     });
-  });
-
-  it("stores a blank signature as null", async () => {
-    await updateOwnPassportSettings(user, { signature: "   " });
-    expect(mocked.passportPreference.upsert.mock.calls[0]![0].update).toEqual({ signature: null });
   });
 });

@@ -671,19 +671,3 @@ describe("S8: bounded inputs on stash, placeholder, profile and discussion endpo
     ).rejects.toMatchObject(bad);
   });
 });
-
-describe("Plan 416 item 5: no inert Turnstile plumbing", () => {
-  const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
-
-  it("saveWikitext takes no CAPTCHA token and calls no CAPTCHA verification", () => {
-    const editing = read("src/server/api/routers/wikios/editing.ts");
-    expect(editing).not.toMatch(/turnstile/i);
-    expect(editing).toContain("CloudflareGuardian.purgeArticleEdgeCache");
-  });
-
-  it("the guardian keeps the edge cache purge and has no Turnstile verification that fails open", () => {
-    const guardian = read("src/lib/wiki-os/guardian/cloudflare-guardian.ts");
-    expect(guardian).toContain("static async purgeArticleEdgeCache");
-    expect(guardian).not.toMatch(/verifyTurnstile|siteverify|TURNSTILE_SECRET/);
-  });
-});

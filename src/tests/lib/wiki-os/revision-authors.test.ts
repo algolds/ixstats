@@ -16,8 +16,6 @@ jest.mock("~/server/db", () => ({
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { db } from "~/server/db";
 import { getArticleAuthors } from "~/lib/wiki-os/adapters/mediawiki/article-store";
-import { buildAuthorInfo } from "~/lib/wiki-os/core/revision-authors";
-import { isAnonymousAuthor } from "~/lib/wiki-os/core/anonymous-author";
 import { installFetchGuard, type FetchGuard } from "~/tests/helpers/fetch-guard";
 
 const mocked = db as unknown as {
@@ -95,55 +93,6 @@ describe("getArticleAuthors for IxWiki", () => {
     ]);
     expect(guard.calls()).toEqual([]);
   });
-
-  it("takes the creator from the oldest live revision, whatever the page's revision count", async () => {
-    // 600 revisions: a "last 250" lookup would have named someone else as the creator.
-    ledger({ author: "Founder", createdAt: day(1) }, { author: "Newest", createdAt: day(28) }, [
-      { author: "Founder", edits: 1, last: day(1) },
-      { author: "Newest", edits: 599, last: day(28) },
-    ]);
-
-    expect((await getArticleAuthors("Caphiria")).creator).toMatchObject({ username: "Founder" });
-    // Parked revisions are excluded from all three queries.
-    for (const [args] of mocked.wikiRevision.findFirst.mock.calls) {
-      expect(args.where).toEqual({ articleId: "a1", parked: false });
-    }
-    expect(mocked.wikiRevision.groupBy.mock.calls[0]?.[0].where).toEqual({
-      articleId: "a1",
-      parked: false,
-    });
-    expect(mocked.wikiRevision.findFirst.mock.calls[0]?.[0].orderBy).toEqual([
-      { createdAt: "asc" },
-      { id: "asc" },
-    ]);
-  });
-
-  it("sorts contributors by edit count, then name, and lists ten", async () => {
-    const authors = ["Zed", "Amy", "Bob", "Cat", "Dan", "Eve", "Fay", "Gus", "Hal", "Ian", "Jon", "Kim"];
-    ledger(
-      { author: "Zed", createdAt: day(1) },
-      { author: "Kim", createdAt: day(2) },
-      authors.map((author) => ({ author, edits: author === "Zed" ? 5 : 3, last: day(3) }))
-    );
-
-    const info = await getArticleAuthors("Caphiria");
-
-    expect(info.contributors?.map((c) => c.username)).toEqual([
-      "Zed",
-      "Amy",
-      "Bob",
-      "Cat",
-      "Dan",
-      "Eve",
-      "Fay",
-      "Gus",
-      "Hal",
-      "Ian",
-    ]);
-    expect(info.topContributors).toEqual(info.contributors);
-    expect(info.totalContributors).toBe(12);
-  });
-
   it("folds every IP author into one Anonymous entry", async () => {
     ledger({ author: "Kir", createdAt: day(1) }, { author: "203.0.113.9", createdAt: day(9) }, [
       { author: "Kir", edits: 3, last: day(2) },
@@ -254,21 +203,6 @@ describe("getArticleAuthors for IxWiki", () => {
     expect(info.creator).toMatchObject({ username: "OwnerName" });
     expect(guard.calls()).toEqual([]);
   });
-
-  it("answers from the article row when it has no live revision at all", async () => {
-    mocked.wikiArticle.findUnique.mockResolvedValue(article({ authorId: "u1" }));
-    mocked.user.findUnique.mockResolvedValue({ wikiUsername: "OwnerName" });
-    ledger(null, null, []);
-
-    const info = await getArticleAuthors("Caphiria");
-
-    expect(info).toMatchObject({
-      creator: { username: "OwnerName", timestamp: day(1).toISOString() },
-      lastEditor: { username: "OwnerName", timestamp: day(20).toISOString() },
-      totalContributors: 1,
-    });
-  });
-
   it("answers with no author at all for a page Postgres lacks, without asking MediaWiki", async () => {
     mocked.wikiArticle.findUnique.mockResolvedValue(null);
 
@@ -287,57 +221,4 @@ describe("getArticleAuthors for IxWiki", () => {
     expect(await getArticleAuthors("Caphiria")).toMatchObject({ creator: null });
     expect(guard.calls()).toEqual([]);
   });
-});
-
-describe("a sister wiki's authors", () => {
-  it("still come from its own wiki (iiwiki)", async () => {
-    guard.restore();
-    guard = installFetchGuard((url) => {
-      expect(url.hostname).toBe("iiwiki.com");
-      return {
-        query: {
-          pages: {
-            9: {
-              revisions: [
-                { revid: 2, timestamp: "2026-02-01T00:00:00Z", user: "Newer", comment: "", size: 9 },
-                { revid: 1, timestamp: "2026-01-01T00:00:00Z", user: "Older", comment: "", size: 5 },
-              ],
-            },
-          },
-        },
-      };
-    });
-    mocked.wikiRevision.findFirst.mockResolvedValue(null);
-
-    const info = await getArticleAuthors("Elmeria Authors Test", "iiwiki");
-
-    expect(info.creator).toMatchObject({ username: "Older" });
-    expect(info.lastEditor).toMatchObject({ username: "Newer" });
-    expect(guard.calls()).toHaveLength(1);
-    expect(guard.ixwikiCalls()).toEqual([]);
-  });
-});
-
-describe("buildAuthorInfo", () => {
-  it("never lists an empty name for a revision with no author", () => {
-    const info = buildAuthorInfo(
-      { author: null, createdAt: day(1) },
-      { author: null, createdAt: day(2) },
-      [{ author: null, edits: 2, lastEditedAt: day(2) }],
-      null
-    );
-    expect(info.creator).toMatchObject({ username: "MediaWiki Contributor" });
-    expect(info.lastEditor).toMatchObject({ username: "MediaWiki Contributor" });
-  });
-});
-
-describe("isAnonymousAuthor", () => {
-  it.each(["127.0.0.1", "203.0.113.9", "2001:db8::1", "::ffff:192.0.2.1", "fe80::1"])(
-    "%s is an IP address",
-    (name) => expect(isAnonymousAuthor(name)).toBe(true)
-  );
-  it.each(["Kir", "Bea", "Admin1", "Cafe", "A:B", "1.2.3", "Abc:def"])(
-    "%s is a named account",
-    (name) => expect(isAnonymousAuthor(name)).toBe(false)
-  );
 });

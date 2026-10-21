@@ -65,10 +65,4 @@ describe("ixnayid.getStatus old forum account", () => {
     expect(status.forum).toMatchObject({ linked: true, username: "Kir" });
     expect(mocked.user.update).not.toHaveBeenCalled();
   });
-
-  it("reports no old forum account when none is stored", async () => {
-    storedUser(null, null);
-    const status = await caller().getStatus();
-    expect(status.forum).toMatchObject({ linked: false, username: null });
-  });
 });

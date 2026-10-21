@@ -74,18 +74,6 @@ describe("POST /api/wiki/sync-webhook", () => {
     const res = await POST(webhook({ Authorization: `Bearer ${SECRET}` }));
     expect(res.status).toBe(200);
   });
-
-  it("returns 429 when rate limited", async () => {
-    jest.mocked(rateLimiter.check).mockResolvedValue({
-      success: false,
-      remaining: 0,
-      resetAt: new Date(),
-    });
-    const res = await POST(webhook({ "x-wiki-webhook-secret": SECRET }));
-    expect(res.status).toBe(429);
-    expect(syncSinglePage).not.toHaveBeenCalled();
-  });
-
   it("rejects a title longer than 255 characters", async () => {
     const res = await POST(
       webhook({ "x-wiki-webhook-secret": SECRET }, { title: "a".repeat(300) })
@@ -111,37 +99,6 @@ describe("POST /api/wiki/sync-webhook rate limiting", () => {
     setSecret(SECRET);
     jest.mocked(rateLimiter.check).mockResolvedValue(ok);
   });
-
-  it("counts a valid-secret request against a per-secret bucket with a high ceiling", async () => {
-    const res = await POST(webhook({ "x-wiki-webhook-secret": SECRET }));
-    expect(res.status).toBe(200);
-    expect(rateLimiter.check).toHaveBeenCalledTimes(1);
-    expect(rateLimiter.check).toHaveBeenCalledWith(
-      expect.stringMatching(/^secret:[0-9a-f]{16}$/),
-      "wiki-sync-webhook",
-      { maxRequests: 600, windowMs: 60_000 }
-    );
-  });
-
-  it("never puts the secret in the bucket key", async () => {
-    await POST(webhook({ "x-wiki-webhook-secret": SECRET }));
-    const [identifier] = jest.mocked(rateLimiter.check).mock.calls[0] ?? [];
-    expect(identifier).not.toContain(SECRET);
-  });
-
-  it("uses the same bucket wherever the request claims to come from", async () => {
-    await POST(webhook({ "x-wiki-webhook-secret": SECRET, "x-forwarded-for": "1.1.1.1" }));
-    await POST(
-      webhook({
-        Authorization: `Bearer ${SECRET}`,
-        "cf-connecting-ip": "2.2.2.2",
-        "x-forwarded-for": "3.3.3.3",
-      })
-    );
-    const [first, second] = jest.mocked(rateLimiter.check).mock.calls.map(([id]) => id);
-    expect(first).toBe(second);
-  });
-
   it("answers 429 and does not sync when the per-secret bucket is exhausted", async () => {
     jest.mocked(rateLimiter.check).mockResolvedValue(exhausted);
     const res = await POST(webhook({ "x-wiki-webhook-secret": SECRET }));

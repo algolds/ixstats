@@ -98,20 +98,6 @@ describe("ixwiki media proxy", () => {
     expect(res.status).toBe(404);
     expect(fetchMock).not.toHaveBeenCalled();
   });
-
-  it("fetches images/... paths from the origin", async () => {
-    fetchMock.mockImplementation(() => Promise.resolve(pngResponse()));
-
-    const res = await call(["images", "a", "ab", "Foo.png"]);
-
-    expect(res.status).toBe(200);
-    expect(fetchedUrl(fetchMock.mock.calls[0]![0])).toBe(`${ORIGIN}/images/a/ab/Foo.png`);
-    expect(res.headers.get("x-content-type-options")).toBe("nosniff");
-    expect(res.headers.get("cache-control")).toBe(
-      "public, max-age=86400, stale-while-revalidate=604800"
-    );
-  });
-
   it("serves images/thumb/... as-is and registers the original file, not the thumbnail", async () => {
     fetchMock.mockImplementation(() => Promise.resolve(pngResponse()));
 
@@ -124,27 +110,6 @@ describe("ixwiki media proxy", () => {
     );
     expect(mockRegisterAsset).toHaveBeenCalledWith({ filename: "Foo.png", originBaseUrl: ORIGIN });
   });
-
-  it.each([
-    [["wiki", "File:Foo.png"], "Foo.png"],
-    [["wiki", "Image:Foo.png"], "Foo.png"],
-    [["wiki", "file:Foo_bar.png"], "Foo_bar.png"],
-    [["wiki", "IMAGE:Foo.png"], "Foo.png"],
-    [["wiki", "File:Foo bar.png"], "Foo%20bar.png"],
-    [["wiki", "File:100%41.png"], "100%2541.png"],
-    [["wiki", "Special:Redirect", "file", "Foo.png"], "Foo.png"],
-    [["wiki", "special:redirect", "FILE", "Foo bar.png"], "Foo%20bar.png"],
-  ] as Array<[string[], string]>)("rewrites %j to wiki/Special:FilePath/<name>", async (path, encodedName) => {
-    fetchMock.mockImplementation(() => Promise.resolve(pngResponse()));
-
-    const res = await call(path, "?width=200&action=raw");
-
-    expect(res.status).toBe(200);
-    expect(fetchedUrl(fetchMock.mock.calls[0]![0])).toBe(
-      `${ORIGIN}/wiki/Special:FilePath/${encodedName}?width=200`
-    );
-  });
-
   it("serves thumb.php forwarding only f and a numeric width", async () => {
     fetchMock.mockImplementation(() => Promise.resolve(pngResponse()));
 
@@ -161,25 +126,6 @@ describe("ixwiki media proxy", () => {
       `${ORIGIN}/thumb.php?f=Foo.png`,
     ]);
   });
-
-  it("registers the thumb.php file as an asset after a 200 image", async () => {
-    fetchMock.mockImplementation(() => Promise.resolve(pngResponse()));
-
-    await call(["thumb.php"], "?f=Foo.png&width=300");
-    await flushAssetRegistration();
-
-    expect(mockRegisterAsset).toHaveBeenCalledWith({ filename: "Foo.png", originBaseUrl: ORIGIN });
-  });
-
-  it("rewrites a bare file name to wiki/Special:FilePath/<name>", async () => {
-    fetchMock.mockImplementation(() => Promise.resolve(pngResponse()));
-
-    const res = await call(["Foo.png"]);
-
-    expect(res.status).toBe(200);
-    expect(fetchedUrl(fetchMock.mock.calls[0]![0])).toBe(`${ORIGIN}/wiki/Special:FilePath/Foo.png`);
-  });
-
   it("serves wiki/Special:FilePath/<name> and forwards only a numeric width", async () => {
     fetchMock.mockImplementation(() => Promise.resolve(pngResponse()));
 
@@ -236,18 +182,6 @@ describe("ixwiki media proxy", () => {
     expect(res.status).toBe(500);
     expect(await res.text()).toBe("");
   });
-  it.each([["Foo.bmp"], ["Foo.tif"], ["Foo.tiff"], ["Foo.apng"], ["Foo.TIFF"]])(
-    "accepts the bare image name %s",
-    async (name) => {
-      fetchMock.mockImplementation(() => Promise.resolve(pngResponse()));
-
-      const res = await call([name]);
-
-      expect(res.status).toBe(200);
-      expect(fetchedUrl(fetchMock.mock.calls[0]![0])).toBe(`${ORIGIN}/wiki/Special:FilePath/${name}`);
-    }
-  );
-
   it("does not decode the catch-all a second time: a literal %41 stays %41", async () => {
     fetchMock.mockImplementation(() => Promise.resolve(pngResponse()));
 

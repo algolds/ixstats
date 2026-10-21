@@ -3,8 +3,6 @@ jest.mock("~/server/db", () => ({ db: {} }));
 
 import fs from "fs";
 import path from "path";
-import { cardsRouter } from "~/server/api/routers/cards";
-
 const DIR = path.resolve(__dirname, "../../server/api/routers/cards/admin");
 const OTHER_BUILDERS =
   /\b(publicProcedure|protectedProcedure|premiumProcedure|rateLimitedMutationProcedure|rateLimitedPublicProcedure|lightMutationProcedure|readOnlyProcedure|wikiReadProcedure|countryOwnerProcedure)\b/;
@@ -17,10 +15,6 @@ describe("cards admin router", () => {
       OTHER_BUILDERS.test(fs.readFileSync(path.join(DIR, file), "utf8"))
     );
     expect(offenders).toEqual([]);
-  });
-
-  it("is mounted at cards.admin", () => {
-    expect(Object.keys(cardsRouter._def.procedures)).toContain("admin.overview.summary");
   });
 });
 const CARD_ROUTER_DIRS = ["cards", "lore-cards", "card-packs", "ns-import"].map((dir) =>

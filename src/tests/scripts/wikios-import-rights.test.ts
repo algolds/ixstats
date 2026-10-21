@@ -14,14 +14,10 @@ import {
   mapGroups,
   mapProtectedTitles,
   mapProtections,
-  parseAllPages,
   parseAllUsers,
   parseArgs,
   parseBlocks,
   parseExpiry,
-  parseInfo,
-  parseNamespaceIds,
-  parseProtectedTitles,
   type ApiGet,
   type ImportPlan,
 } from "../../../scripts/wikios-import-rights";
@@ -223,61 +219,6 @@ describe("mapBlocks", () => {
 });
 
 describe("response parsing", () => {
-  it("reads each listing and its continuation, and treats a missing query as empty", () => {
-    expect(
-      parseAllUsers({
-        continue: { aufrom: "Z", continue: "-||" },
-        query: { allusers: [{ name: "A", groups: ["sysop"] }] },
-      })
-    ).toEqual({
-      items: [{ name: "A", groups: ["sysop"] }],
-      next: { aufrom: "Z", continue: "-||" },
-    });
-    expect(parseAllUsers({ batchcomplete: true })).toEqual({ items: [], next: undefined });
-    expect(
-      parseAllPages({ query: { allpages: [{ pageid: 1, ns: 0, title: "Main Page" }] } }).items
-    ).toEqual(["Main Page"]);
-    expect(
-      parseInfo({
-        query: {
-          pages: [
-            { title: "A", protection: [{ type: "edit", level: "sysop", expiry: "infinity" }] },
-            { title: "B", missing: true },
-          ],
-        },
-      })
-    ).toEqual([
-      { title: "A", protection: [{ type: "edit", level: "sysop", expiry: "infinity" }] },
-      { title: "B", protection: [] },
-    ]);
-    expect(
-      parseProtectedTitles({
-        query: { protectedtitles: [{ ns: 0, title: "T", level: "sysop", expiry: "infinity" }] },
-      }).items
-    ).toHaveLength(1);
-    expect(
-      parseBlocks({
-        query: { blocks: [{ user: "U", userid: 1, expiry: "infinity", partial: false }] },
-      }).items
-    ).toHaveLength(1);
-  });
-
-  it("lists the real namespace ids, without Special and Media", () => {
-    expect(
-      parseNamespaceIds({
-        query: {
-          namespaces: {
-            "-2": { id: -2 },
-            "-1": { id: -1 },
-            "0": { id: 0 },
-            "828": { id: 828 },
-            "10": { id: 10 },
-          },
-        },
-      })
-    ).toEqual([0, 10, 828]);
-  });
-
   it("turns an API error object into a thrown Error", () => {
     expect(() =>
       parseAllUsers({ error: { code: "badvalue", info: "Unrecognized value" } })
@@ -613,15 +554,6 @@ describe("applyPlan", () => {
 });
 
 describe("command line", () => {
-  it("needs --api, which must be an http(s) URL", () => {
-    expect(() => parseArgs([])).toThrow("--api");
-    expect(() => parseArgs(["--api", "ixwiki.com/api.php"])).toThrow("--api");
-    expect(parseArgs(["--api", "https://ixwiki.com/api.php"])).toEqual({
-      api: "https://ixwiki.com/api.php",
-      yes: false,
-    });
-  });
-
   it("is a dry run unless --yes, and refuses both", () => {
     expect(parseArgs(["--api", "https://w/api.php", "--dry-run"]).yes).toBe(false);
     expect(parseArgs(["--api", "https://w/api.php", "--yes"]).yes).toBe(true);

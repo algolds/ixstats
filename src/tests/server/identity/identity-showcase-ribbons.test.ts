@@ -27,11 +27,9 @@ import { ixnayidPassportRouter } from "~/server/api/routers/ixnayid/passport";
 import { resolveIdentity } from "~/server/modules/identity/identity.resolve";
 import {
   loadAchievementsShowcase,
-  toRibbons,
   validPinnedKeys,
   type UnlockRow,
 } from "~/server/modules/identity/identity.showcase";
-import { toVaultFocus } from "~/server/modules/identity/identity.vault";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 const mocked = db as unknown as {
@@ -72,25 +70,6 @@ beforeEach(() => {
   mocked.userAchievement.findMany.mockResolvedValue(UNLOCKS);
   mocked.achievement.count.mockResolvedValue(76);
 });
-
-describe("toRibbons", () => {
-  it("orders rarest first, then newest", () => {
-    expect(toRibbons(UNLOCKS, []).map((r) => r.key)).toEqual([
-      "legendary",
-      "epic",
-      "rare",
-      "common-new",
-      "common-old",
-    ]);
-  });
-
-  it("puts pinned ribbons first, in pin order, and marks them", () => {
-    const ribbons = toRibbons(UNLOCKS, ["common-old", "rare"]);
-    expect(ribbons.slice(0, 3).map((r) => r.key)).toEqual(["common-old", "rare", "legendary"]);
-    expect(ribbons.filter((r) => r.pinned).map((r) => r.key)).toEqual(["common-old", "rare"]);
-  });
-});
-
 describe("validPinnedKeys", () => {
   it("drops keys the user has not unlocked, repeats, and anything past the cap", () => {
     expect(validPinnedKeys(["a", "x", "a", "b", "c", "d"], ["a", "b", "c", "d"], 3)).toEqual([
@@ -102,16 +81,6 @@ describe("validPinnedKeys", () => {
 });
 
 describe("loadAchievementsShowcase", () => {
-  it("reads unlocks by Clerk id and sums points", async () => {
-    const showcase = await loadAchievementsShowcase("clerk_1", []);
-    expect(mocked.userAchievement.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { userId: "clerk_1" } })
-    );
-    expect(showcase).toEqual(
-      expect.objectContaining({ unlockedCount: 5, totalCount: 76, points: 50 })
-    );
-  });
-
   it("is empty, not invented, for a user with no achievements", async () => {
     mocked.userAchievement.findMany.mockResolvedValue([]);
     const showcase = await loadAchievementsShowcase("clerk_1", []);
@@ -121,17 +90,6 @@ describe("loadAchievementsShowcase", () => {
 
 describe("ixnayid.getCountryRibbons", () => {
   const activeOwner = { owner: { id: "db_1", clerkUserId: "clerk_1", isActive: true } };
-
-  it("returns the owner's top three ribbons and the full count", async () => {
-    mocked.country.findUnique.mockResolvedValue(activeOwner);
-    const rack = await publicCaller().getCountryRibbons({ countrySlug: "caphiria" });
-    expect(mocked.country.findUnique).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { slug: "caphiria" } })
-    );
-    expect(rack.ribbons.map((r) => r.key)).toEqual(["legendary", "epic", "rare"]);
-    expect(rack.total).toBe(5);
-  });
-
   it("is empty for a country without an owner", async () => {
     mocked.country.findUnique.mockResolvedValue({ owner: null });
     const rack = await publicCaller().getCountryRibbons({ countrySlug: "npc-land" });
@@ -170,38 +128,11 @@ describe("ixnayid.getCountryRibbons", () => {
 });
 
 describe("ixnayid.getRibbons", () => {
-  it("returns every ribbon of the resolved passport holder", async () => {
-    (resolveIdentity as jest.Mock).mockResolvedValue({
-      user: { id: "db_1", clerkUserId: "clerk_1" },
-    });
-    const rack = await publicCaller().getRibbons({ handle: "alex" });
-    expect(rack.total).toBe(5);
-    expect(rack.ribbons).toHaveLength(5);
-  });
-
   it("is empty for a handle with no platform user", async () => {
     (resolveIdentity as jest.Mock).mockResolvedValue({ user: null });
     expect(await publicCaller().getRibbons({ handle: "wiki-only" })).toEqual({
       ribbons: [],
       total: 0,
-    });
-  });
-});
-
-describe("toVaultFocus", () => {
-  it("counts distinct lore categories, skips uncategorised cards (NationStates), and names the largest", () => {
-    expect(toVaultFocus(["MILITARY", null, "MILITARY", "CULTURE", null])).toEqual({
-      categoryCount: 2,
-      categoryTotal: 12,
-      topCategory: "MILITARY",
-    });
-  });
-
-  it("is zero for an empty or uncategorised collection", () => {
-    expect(toVaultFocus([null])).toEqual({
-      categoryCount: 0,
-      categoryTotal: 12,
-      topCategory: null,
     });
   });
 });

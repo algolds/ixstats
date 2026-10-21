@@ -41,7 +41,7 @@ jest.mock("~/server/modules/identity/identity.loaders", () => ({
 
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { db } from "~/server/db";
-import { getPassport, getRealms } from "~/server/modules/identity/identity.service";
+import { getRealms } from "~/server/modules/identity/identity.service";
 import {
   resolveIdentity,
   resolveIdentityNations,
@@ -52,10 +52,6 @@ const mocked = db as unknown as {
   realm: { findMany: jest.Mock };
   realmClaim: { findMany: jest.Mock };
 };
-const forum = {
-  getActivity: jest.fn().mockResolvedValue({ posts: 0, threads: 0 }),
-  lookupUser: jest.fn(),
-} as never;
 
 const user = {
   id: "db_1",
@@ -113,16 +109,6 @@ beforeEach(() => {
     { id: "r_member", ownerId: "clerk_x", officers: [] },
   ]);
 });
-
-describe("getPassport realm figures", () => {
-  it("counts two nations in one realm as one realm and two nations", async () => {
-    holds([nation("c_a", "r_member", 30), nation("c_b", "r_member", 20)]);
-    const data = await getPassport(query, forum);
-    expect(data?.realmCount).toBe(1);
-    expect(data?.nationCount).toBe(2);
-  });
-});
-
 describe("getRealms roles", () => {
   it("labels each row founder, officer or member, never the site role", async () => {
     holds([

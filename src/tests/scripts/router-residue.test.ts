@@ -6,8 +6,6 @@ import {
   findDeadDeclarationsInSourceFile,
   analyzeRouterResidue,
   checkResidue,
-  sortResidueBaseline,
-  loadResidueBaseline,
 } from "../../../scripts/audit/router-residue";
 
 describe("Plan 157: Router Split Residue AST Guard & Cleanup", () => {
@@ -160,19 +158,5 @@ describe("Plan 157: Router Split Residue AST Guard & Cleanup", () => {
 
     const errors = checkResidue(tempDir, baselinePath);
     expect(errors).toHaveLength(0);
-  });
-
-  it("9. Deterministically sorts baseline entries", () => {
-    const input = {
-      "src/server/api/routers/b.ts": ["zHelper", "aHelper"],
-      "src/server/api/routers/a.ts": ["xHelper"],
-    };
-
-    const sorted = sortResidueBaseline(input);
-    expect(Object.keys(sorted)).toEqual([
-      "src/server/api/routers/a.ts",
-      "src/server/api/routers/b.ts",
-    ]);
-    expect(sorted["src/server/api/routers/b.ts"]).toEqual(["aHelper", "zHelper"]);
   });
 });

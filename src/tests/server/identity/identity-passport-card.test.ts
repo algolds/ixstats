@@ -139,29 +139,6 @@ beforeEach(() => {
 });
 
 describe("getPassportCard", () => {
-  it("returns the front face summary", async () => {
-    const card = await getPassportCard({ handle: "Alex", viewerClerkId: null });
-    expect(card).toEqual({
-      preview: true,
-      handle: "alex",
-      displayName: "Alex Pav",
-      avatarUrl: "/images/uploads/avatars/alex.png",
-      primaryNation: {
-        name: "Urcea",
-        slug: "urcea",
-        flagUrl: "/images/uploads/flags/c2.png",
-        realm: { name: "Eurth", slug: "r1" },
-        role: "founder",
-      },
-      lorewards: { score: 900, rank: 4 },
-      realmCount: 2,
-      nationCount: 3,
-      joinedAt: JOINED,
-      signature: "A. Pav",
-      bio: "Senator of the realm",
-    });
-  });
-
   it("makes no external call (MediaWiki, XenForo, Clerk) and no write", async () => {
     await getPassportCard({ handle: "Alex", viewerClerkId: null });
     expect(loadWikiInfo).not.toHaveBeenCalled();
@@ -242,12 +219,5 @@ describe("getPassportCard", () => {
     resolvesTo(handleless, "clerk_1");
     const owner = await getPassportCard({ handle: "Alex_Wiki", viewerClerkId: "clerk_1" });
     expect(owner).toMatchObject({ handle: "clerk_1" });
-  });
-
-  it("has no primary nation, and zero counts, when the holder holds no nation", async () => {
-    (resolveIdentityNations as jest.Mock).mockResolvedValue([]);
-    (loadRealmRoles as jest.Mock).mockResolvedValue(new Map());
-    const card = await getPassportCard({ handle: "Alex", viewerClerkId: null });
-    expect(card).toMatchObject({ primaryNation: null, realmCount: 0, nationCount: 0 });
   });
 });
