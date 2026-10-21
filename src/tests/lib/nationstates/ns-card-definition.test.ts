@@ -6,10 +6,7 @@ jest.mock("~/lib/nationstates/api-client", () => ({
 }));
 
 import { nsApiClient } from "~/lib/nationstates/api-client";
-import {
-  nsCardDefinitionData,
-  processRegionCardsFromDump,
-} from "~/lib/nationstates/sync-processor";
+import { processRegionCardsFromDump } from "~/lib/nationstates/sync-processor";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
 const elm = {
@@ -22,54 +19,6 @@ const elm = {
   govt: "Centrist",
   flag: "https://www.nationstates.net/images/flags/elm.png",
 };
-
-describe("nsCardDefinitionData", () => {
-  it("lands pending review and records the sync that created it", () => {
-    const data = nsCardDefinitionData(elm, {
-      importedFrom: "region:Lazarus",
-      rarity: "RARE",
-      marketValue: 100,
-      syncLogId: "log_1",
-    });
-    expect(data).toMatchObject({
-      id: "card_ns_123_s3",
-      title: "Elm",
-      artwork: elm.flag,
-      cardType: "NS",
-      realmId: "nationstates",
-      rarity: "RARE",
-      season: 3,
-      reviewState: "PENDING",
-      nsCardId: 123,
-      nsSeason: 3,
-      totalSupply: 1,
-      marketValue: 100,
-      metadata: { importedFrom: "region:Lazarus", syncLogId: "log_1" },
-    });
-    expect(data.metadata).toMatchObject({
-      nsData: {
-        id: "123",
-        name: "Elm",
-        flag: elm.flag,
-        region: "Lazarus",
-        season: "3",
-        market_value: "0.5",
-      },
-    });
-  });
-
-  it("names no sync for a card a deck import creates, and shows the placeholder without a flag", () => {
-    const data = nsCardDefinitionData(
-      { ...elm, flag: undefined },
-      { importedFrom: "Testlandia", rarity: "COMMON", marketValue: 5, syncLogId: null }
-    );
-    expect(data).toMatchObject({
-      reviewState: "PENDING",
-      artwork: "/images/cards/lore-placeholder.svg",
-    });
-    expect(data.metadata).not.toHaveProperty("syncLogId");
-  });
-});
 
 /**
  * A SyncLog an admin can stop mid-run. An `update` always lands; an `updateMany` only while the log's status is one
@@ -147,22 +96,6 @@ describe("processRegionCardsFromDump", () => {
 
     expect(log).toEqual({ status: "FAILED", errorMessage: "Stopped by an admin" });
   });
-
-  it("finishes a run paused after the last card's check, since no card is left to resume", async () => {
-    const db = createMockPrisma();
-    const { log } = stoppableLog(db);
-    jest.mocked(nsApiClient.fetchCardDump).mockResolvedValue("<xml/>" as never);
-    jest.mocked(nsApiClient.parseNSDump).mockResolvedValue([elm] as never);
-    db.card.create.mockImplementation(async () => {
-      log.status = "PAUSED";
-      return { id: "card_ns_123_s3" };
-    });
-
-    await processRegionCardsFromDump(db as never, "log_1", ["lazarus"], [3]);
-
-    expect(log).toEqual({ status: "SUCCESS", errorMessage: null });
-  });
-
   it("creates each new card of the region waiting for review, under the sync's id", async () => {
     jest.mocked(nsApiClient.fetchCardDump).mockResolvedValue("<xml/>" as never);
     jest

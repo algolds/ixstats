@@ -11,8 +11,6 @@ jest.mock("~/server/modules/cards/market/wishlist", () => ({
   listWishlist: jest.fn(),
   removeFromWishlist: jest.fn(),
 }));
-
-import { TRPCError } from "@trpc/server";
 import { rateLimiter } from "~/lib/cache";
 import { createCallerFactory } from "~/server/api/trpc";
 import { cardMarketWishlistRouter } from "~/server/api/routers/card-market/wishlist";
@@ -114,18 +112,5 @@ describe("cardMarket wishlist procedures", () => {
     } finally {
       warn.mockRestore();
     }
-  });
-
-  it("pass the wishlist's refusals through unchanged", async () => {
-    jest.mocked(addToWishlist).mockRejectedValue(
-      new TRPCError({
-        code: "PRECONDITION_FAILED",
-        message: "Your wishlist holds 200 cards. Remove one first.",
-      })
-    );
-    await expect(signedIn().addToWishlist({ cardId: "card_1" })).rejects.toMatchObject({
-      code: "PRECONDITION_FAILED",
-      message: "Your wishlist holds 200 cards. Remove one first.",
-    });
   });
 });

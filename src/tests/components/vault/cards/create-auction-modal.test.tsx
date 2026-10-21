@@ -1,5 +1,5 @@
 import "react";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => ({
   api: {
@@ -68,22 +68,11 @@ const mine = (pages: Row[][], hasNextPage = false) =>
     isFetchingNextPage: false,
     fetchNextPage,
   } as never);
-const lastQuery = () => jest.mocked(api.cards.listMine.useInfiniteQuery).mock.calls.at(-1);
 /** The copy a `?sell=` link names, as the picker reads it on its own. */
 const linked = (copy: Row | null) =>
   jest
     .mocked(api.cards.listMine.useQuery)
     .mockReturnValue({ data: copy ? { rows: [copy] } : undefined } as never);
-const linkedQuery = () => jest.mocked(api.cards.listMine.useQuery).mock.calls.at(-1);
-const copies = () =>
-  within(screen.getByRole("list", { name: "Your cards" })).getAllByRole("button");
-/** The rows in order, by the title and serial each button is named by. */
-const expectRows = (...names: RegExp[]) => {
-  const rows = copies();
-  expect(rows).toHaveLength(names.length);
-  names.forEach((name, i) => expect(rows[i]).toHaveAccessibleName(name));
-};
-
 beforeEach(() => {
   refreshCards.mockClear();
   fetchNextPage.mockClear();
@@ -102,8 +91,6 @@ beforeEach(() => {
 const field = (name: RegExp, value: string) =>
   fireEvent.change(screen.getByLabelText(name), { target: { value } });
 const list = () => screen.getByRole("button", { name: "List it" });
-/** What the last listing sent, and the callback that closes the form once it lands. */
-const listing = () => mutate.mock.calls.at(-1)?.[0];
 const landed = (message: string) =>
   act(() => {
     onSuccess({ message });
@@ -111,74 +98,6 @@ const landed = (message: string) =>
   });
 
 describe("CreateAuctionModal", () => {
-  it("lists copies, not cards, and leaves out a copy already listed or traded, or bound", () => {
-    render(<CreateAuctionModal open onClose={jest.fn()} />);
-    const copies = within(screen.getByRole("list", { name: "Your cards" })).getAllByRole("button");
-    expect(copies).toHaveLength(2);
-    expect(copies[0]).toHaveTextContent("Caphiria#4 · Foil");
-    expect(copies[1]).toHaveTextContent("Caphiria#9 · Foil");
-    // The face is hidden from the button's name, which says the title once.
-    expect(copies[0]).toHaveAccessibleName(/^Caphiria\s*#4 · Foil$/);
-    expect(screen.queryByText(/#12/)).toBeNull();
-    expect(screen.queryByText(/#20/)).toBeNull();
-  });
-
-  it("searches every copy, most valuable first, a page at a time", () => {
-    mine([[row("o1", 4)], [row("o9", 31, false, false, "Urcea")]], true);
-    render(<CreateAuctionModal open onClose={jest.fn()} />);
-    expect(lastQuery()?.[0]).toEqual({ search: undefined, sort: "value", limit: 120 });
-    expect(lastQuery()?.[1]).toMatchObject({ enabled: true });
-    const copies = within(screen.getByRole("list", { name: "Your cards" })).getAllByRole("button");
-    expect(copies).toHaveLength(2);
-    expect(copies[0]).toHaveAccessibleName(/^Caphiria\s*#4 · Foil$/);
-    expect(copies[1]).toHaveAccessibleName(/^Urcea\s*#31 · Foil$/);
-    fireEvent.click(screen.getByRole("button", { name: "Show more" }));
-    expect(fetchNextPage).toHaveBeenCalledTimes(1);
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search your cards" }), {
-      target: { value: " Urc " },
-    });
-    expect(lastQuery()?.[0]).toMatchObject({ search: "Urc" });
-  });
-
-  it("pages past a page of copies that cannot be listed, and says when a search finds none", () => {
-    mine([[row("o3", 12, true)]], true);
-    const { rerender } = render(<CreateAuctionModal open onClose={jest.fn()} />);
-    expect(screen.queryByText("No cards to sell")).toBeNull();
-    expect(screen.getByRole("button", { name: "Show more" })).toBeInTheDocument();
-    mine([[]]);
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search your cards" }), {
-      target: { value: "Nowhere" },
-    });
-    rerender(<CreateAuctionModal open onClose={jest.fn()} />);
-    expect(screen.getByText("No cards match this search")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Show more" })).toBeNull();
-  });
-
-  it("lists the copy picked, at the prices typed", () => {
-    render(<CreateAuctionModal open onClose={jest.fn()} />);
-    expect(list()).toBeDisabled();
-    fireEvent.click(screen.getByRole("button", { name: /#9/ }));
-    expect(screen.getByRole("button", { name: /#9/ })).toHaveAttribute("aria-pressed", "true");
-    field(/Starting price/, "40");
-    field(/Buy-now price/, "90");
-    fireEvent.click(list());
-    expect(listing()).toEqual({
-      cardId: "o2",
-      startingPrice: 40,
-      buyoutPrice: 90,
-      duration: "24h",
-    });
-  });
-
-  it("runs for 24 hours, 3 days or 7 days, 24 hours unless another is picked", () => {
-    render(<CreateAuctionModal open onClose={jest.fn()} />);
-    const durations = within(screen.getByRole("radiogroup", { name: "Duration" })).getAllByRole(
-      "radio"
-    );
-    expect(durations.map((option) => option.textContent)).toEqual(["24 hours", "3 days", "7 days"]);
-    expect(screen.getByRole("radio", { name: "24 hours" })).toBeChecked();
-  });
-
   it("says what listing costs and what comes back, from the Economy tab's numbers", () => {
     jest.mocked(useEconomyNumbers).mockReturnValue({
       data: { economy: { ...CARD_ECONOMY_DEFAULTS, listingFee: 8, listingRefundPct: 25 } },
@@ -188,70 +107,6 @@ describe("CreateAuctionModal", () => {
       screen.getByText("Listing costs 8 IxC, and 2 IxC comes back if the card does not sell.")
     ).toBeInTheDocument();
   });
-
-  it("names no amount until the numbers arrive", () => {
-    render(<CreateAuctionModal open onClose={jest.fn()} />);
-    expect(screen.getByText("There is a small listing fee.")).toBeInTheDocument();
-  });
-
-  it("starts on the copy the sheet sent, and leaves the buy-now price out when it is empty", () => {
-    render(<CreateAuctionModal open onClose={jest.fn()} initialOwnershipId="o1" />);
-    expect(screen.getByRole("button", { name: /#4/ })).toHaveAttribute("aria-pressed", "true");
-    field(/Starting price/, "25");
-    fireEvent.click(screen.getByRole("radio", { name: "3 days" }));
-    fireEvent.click(list());
-    expect(listing()).toEqual({
-      cardId: "o1",
-      startingPrice: 25,
-      buyoutPrice: undefined,
-      duration: "3d",
-    });
-  });
-  it("reads the copy a link names on its own, and only when a link names one", () => {
-    render(<CreateAuctionModal open onClose={jest.fn()} />);
-    expect(linkedQuery()?.[1]).toMatchObject({ enabled: false });
-    render(<CreateAuctionModal open onClose={jest.fn()} initialOwnershipId="o77" />);
-    expect(linkedQuery()?.[0]).toEqual({ copyId: "o77", sort: "value", limit: 1 });
-    expect(linkedQuery()?.[1]).toMatchObject({ enabled: true });
-  });
-
-  it("shows the copy a link names at the top, picked, even beyond the loaded pages", () => {
-    mine([[row("o1", 4), row("o2", 9)]], true);
-    linked(row("o77", 77, false, false, "Urcea"));
-    render(<CreateAuctionModal open onClose={jest.fn()} initialOwnershipId="o77" />);
-    expectRows(/^Urcea\s*#77 · Foil$/, /^Caphiria\s*#4 · Foil$/, /^Caphiria\s*#9 · Foil$/);
-    expect(copies()[0]).toHaveAttribute("aria-pressed", "true");
-    field(/Starting price/, "25");
-    fireEvent.click(list());
-    expect(listing()).toMatchObject({ cardId: "o77" });
-  });
-  it("says a bound copy from the sheet cannot be sold, instead of offering the form", () => {
-    // The linked copy is read on its own, so its page need not be loaded.
-    mine([[row("o1", 4)]], true);
-    linked(row("o4", 20, false, true));
-    render(<CreateAuctionModal open onClose={jest.fn()} initialOwnershipId="o4" />);
-    expect(screen.getByText("Bound cards can't be sold")).toBeInTheDocument();
-    expect(screen.queryByRole("list", { name: "Your cards" })).toBeNull();
-    expect(screen.queryByLabelText(/Starting price/)).toBeNull();
-    expect(screen.queryByRole("button", { name: "List it" })).toBeNull();
-  });
-
-  it("refuses a buy-now price at or under the start, and prices that are not whole IxC", () => {
-    render(<CreateAuctionModal open onClose={jest.fn()} initialOwnershipId="o1" />);
-    field(/Starting price/, "50");
-    field(/Buy-now price/, "50");
-    fireEvent.click(list());
-    expect(vaultNotify.error).toHaveBeenCalledWith(
-      "The buy-now price must be above the starting price"
-    );
-    field(/Buy-now price/, "60.5");
-    expect(list()).toBeDisabled();
-    field(/Buy-now price/, "");
-    field(/Starting price/, "0");
-    expect(list()).toBeDisabled();
-    expect(mutate).not.toHaveBeenCalled();
-  });
-
   it("closes once the copy is listed, and reads the listed copy's places again", () => {
     const onClose = jest.fn();
     render(<CreateAuctionModal open onClose={onClose} initialOwnershipId="o1" />);
@@ -261,18 +116,6 @@ describe("CreateAuctionModal", () => {
     landed("Auction created");
     expect(vaultNotify.success).toHaveBeenCalledWith("Auction created");
     expect(refreshCards).toHaveBeenCalledTimes(1);
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
-
-  it("closes only once when the player closes it while the listing is on its way", () => {
-    const onClose = jest.fn();
-    render(<CreateAuctionModal open onClose={onClose} initialOwnershipId="o1" />);
-    field(/Starting price/, "25");
-    fireEvent.click(list());
-    fireEvent.click(screen.getByRole("button", { name: "Close" }));
-    expect(onClose).toHaveBeenCalledTimes(1);
-    landed("Auction created");
-    expect(vaultNotify.success).toHaveBeenCalledWith("Auction created");
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

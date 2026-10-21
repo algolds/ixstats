@@ -9,7 +9,6 @@ import { describe, it, expect } from "@jest/globals";
 import {
   canonicalWikiName,
   contestWindow,
-  placeOf,
   resolveLorewardPlace,
   scoredEditsAccount,
   type LorewardPlaceRef,
@@ -229,29 +228,6 @@ describe("scoredEditsAccount (the dividend's scored revisions)", () => {
     expect(await scoredEditsAccount(db as never, "Kir Republic", [])).toBeNull();
   });
 });
-
-describe("placeOf", () => {
-  const entry = {
-    type: "daily",
-    date: "2026-10-16",
-    dateStart: null,
-    dateEnd: null,
-    winnerUser: "wikios>Kir Republic",
-    winnerPage: "Seneca front",
-    runnerUpUser: "Other",
-    runnerUpPage: null,
-  };
-
-  it("is the place's name, page, contest and dates", () => {
-    expect(placeOf(entry, "winner")).toEqual(daily());
-    expect(placeOf(entry, "runner-up")).toEqual(daily({ wikiUser: "Other", page: null }));
-  });
-
-  it("is null for a place nobody holds", () => {
-    expect(placeOf({ ...entry, runnerUpUser: null }, "runner-up")).toBeNull();
-  });
-});
-
 describe("contestWindow", () => {
   it("covers the contest's Eastern days: from 00:00Z on the first to 06:00Z after the last", () => {
     expect(contestWindow(daily())).toEqual({

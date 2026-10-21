@@ -40,7 +40,7 @@ export interface PublicCosmetics {
   neonFrame: NeonFrameDisplay;
 }
 
-export function noPublicCosmetics(): PublicCosmetics {
+function noPublicCosmetics(): PublicCosmetics {
   return {
     equipped: [],
     avatarGlow: { enabled: false, color: "rgba(245,158,11,0.65)", intensity: "15px" },

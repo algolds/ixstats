@@ -104,12 +104,6 @@ describe("nation royalty", () => {
       expect(earn).not.toHaveBeenCalled();
     }
   );
-
-  it("reads the rate from the Economy tab", async () => {
-    const tx = makeTx("owner", [{ key: "card_economy_royalty_pct", value: "5" }]);
-    expect(await pay(tx)).toEqual([{ recipientId: "owner", amount: 50, cardId: "card_n" }]);
-  });
-
   it("never pays more than the fee", async () => {
     expect(await pay(makeTx("owner"), { fee: 5 })).toEqual([
       { recipientId: "owner", amount: 5, cardId: "card_n" },

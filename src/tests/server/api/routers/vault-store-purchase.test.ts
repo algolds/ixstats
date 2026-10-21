@@ -21,7 +21,7 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { vaultRouter } from "~/server/api/routers/vault";
 import { vaultStoreRouter } from "~/server/api/routers/vault/store";
 import { getOrCreateVault, LedgerError, spendCreditsTx } from "~/lib/vault/vault-ledger";
-import { countStorePurchases, storePrerequisiteMet } from "~/lib/vault/store-purchases";
+import { countStorePurchases } from "~/lib/vault/store-purchases";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockDb, type MockPrismaProxy } from "~/tests/helpers/transactional-mock-db";
 
@@ -245,15 +245,5 @@ describe("store purchase helpers", () => {
         { metadata: { other: 1 } },
       ])
     ).toEqual({ a: 2, b: 1 });
-  });
-
-  it("checks prerequisites only for items that have one", () => {
-    expect(storePrerequisiteMet("frame_gold", undefined)).toBe(true);
-    expect(storePrerequisiteMet("upgrade_card_capacity_mega", { upgrade_card_capacity: 4 })).toBe(
-      false
-    );
-    expect(storePrerequisiteMet("upgrade_card_capacity_mega", { upgrade_card_capacity: 5 })).toBe(
-      true
-    );
   });
 });

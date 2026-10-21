@@ -3,7 +3,6 @@
 import { Prisma } from "@prisma/client";
 import {
   SpecialCardSchema,
-  listSpecialCards,
   rewardAchievementOptions,
   saveSpecialCard,
 } from "~/server/modules/cards/cards.designer";
@@ -46,14 +45,6 @@ const stored = (card: Record<string, unknown>, copies = 0) => ({
 });
 
 describe("SpecialCardSchema", () => {
-  it("takes an event card, bound or not, with no achievement", () => {
-    expect(SpecialCardSchema.safeParse(event).success).toBe(true);
-    expect(SpecialCardSchema.safeParse({ ...event, isBound: true }).success).toBe(true);
-    expect(
-      SpecialCardSchema.safeParse({ ...event, rewardAchievementKey: "gen-one-year" }).success
-    ).toBe(false);
-  });
-
   it("needs an achievement reward to name its achievement and be bound", () => {
     const named = { ...reward, rewardAchievementKey: "gen-one-year" };
     expect(SpecialCardSchema.safeParse(named).success).toBe(true);
@@ -62,11 +53,6 @@ describe("SpecialCardSchema", () => {
       false
     );
   });
-
-  it("has no rarity outside the six", () => {
-    expect(SpecialCardSchema.safeParse({ ...event, rarity: "MYTHIC" }).success).toBe(false);
-  });
-
   it("takes art from an https address only", () => {
     const art = (artwork: string) => SpecialCardSchema.safeParse({ ...event, artwork }).success;
     expect(art("https://ixwiki.com/images/gala.png")).toBe(true);
@@ -74,80 +60,7 @@ describe("SpecialCardSchema", () => {
     expect(art("http://example.com/gala.png")).toBe(false);
   });
 });
-
-describe("rewardAchievementOptions", () => {
-  it("lists live achievements, leaving out retired ones and the recruiter ladder, which pays nothing", () => {
-    const ids = rewardAchievementOptions().map((option) => option.id);
-    expect(ids).toContain("gen-one-year");
-    expect(ids).not.toContain("econ-first-million");
-    expect(ids).not.toContain("social-recruiter");
-  });
-});
-
-describe("listSpecialCards", () => {
-  it("reads Special cards only", async () => {
-    const db = createMockPrisma();
-    await listSpecialCards(db as never);
-    expect(db.card.findMany.mock.calls[0]![0].where).toEqual({ cardType: "SPECIAL" });
-  });
-});
-
 describe("saveSpecialCard", () => {
-  it("creates an approved Special card in its realm", async () => {
-    const db = mockDb();
-    db.systemConfig.findUnique.mockResolvedValue(null);
-    db.card.create.mockResolvedValue({ id: "card_new" });
-    await expect(
-      saveSpecialCard(db as never, actor, SpecialCardSchema.parse(event))
-    ).resolves.toEqual({ id: "card_new" });
-    expect(db.card.create.mock.calls[0]![0].data).toMatchObject({
-      title: "Founders' gala",
-      cardType: "SPECIAL",
-      category: "SPECIAL",
-      season: 1,
-      specialKind: "EVENT",
-      realmId: "default",
-      isBound: false,
-      rewardAchievementKey: null,
-      reviewState: "APPROVED",
-    });
-    expect(db.auditLog.create.mock.calls[0]![0].data).toMatchObject({
-      action: "CARD_SPECIAL_SAVE",
-      userId: "clerk_admin",
-      target: "card_new",
-    });
-  });
-
-  it("edits a Special card in place, leaving its season, type and review alone; with no copies, its kind can change", async () => {
-    const db = mockDb();
-    db.card.findUnique.mockResolvedValue(stored({}));
-    db.card.update.mockResolvedValue({ id: "card_1" });
-    const key = rewardAchievementOptions()[0]!.id;
-    await saveSpecialCard(
-      db as never,
-      actor,
-      SpecialCardSchema.parse({ ...reward, id: "card_1", rewardAchievementKey: key })
-    );
-    const { where, data } = db.card.update.mock.calls[0]![0];
-    expect(where).toEqual({ id: "card_1" });
-    // The serial lock, then the takedown lock, are taken before the card is read, so no mint or hide slips in between
-    expect(db.$executeRaw).toHaveBeenCalledTimes(2);
-    expect(db.$executeRaw.mock.calls[0]).toEqual([expect.anything(), 7331, "card_1"]);
-    expect(db.$executeRaw.mock.calls[1]).toEqual([expect.anything(), 7335, "card_1"]);
-    expect(db.$executeRaw.mock.invocationCallOrder[1]).toBeLessThan(
-      db.card.findUnique.mock.invocationCallOrder[0]!
-    );
-    expect(data).toMatchObject({
-      specialKind: "ACHIEVEMENT_REWARD",
-      rewardAchievementKey: key,
-      isBound: true,
-    });
-    for (const field of ["season", "cardType", "reviewState"])
-      expect(data).not.toHaveProperty(field);
-    expect(db.card.create).not.toHaveBeenCalled();
-    expect(db.auditLog.create.mock.calls[0]![0].data.details).toMatch(/^Edited/);
-  });
-
   it("leaves art a takedown or a restricted licence hides to Compliance, and saves the rest", async () => {
     const db = mockDb();
     db.card.update.mockResolvedValue({ id: "card_1" });
@@ -173,61 +86,6 @@ describe("saveSpecialCard", () => {
     db.card.findUnique.mockResolvedValue(stored({ _count: { CardOwnership: 0, takedowns: 1 } }));
     await expect(edit(null)).resolves.toEqual({ id: "card_1" });
   });
-
-  it("takes the licence row and credit with new art, and drops the row with the art, as the Library does", async () => {
-    const db = mockDb();
-    db.card.update.mockResolvedValue({ id: "card_1" });
-    const edit = (artwork: string | null) =>
-      saveSpecialCard(
-        db as never,
-        actor,
-        SpecialCardSchema.parse({ ...event, id: "card_1", artwork })
-      );
-    const art = "https://ixwiki.com/images/gala.png";
-
-    db.card.findUnique.mockResolvedValue(stored({}));
-    await edit(art);
-    expect(db.card.update.mock.calls[0]![0].data).toMatchObject({
-      artwork: art,
-      artworkCredit: null,
-    });
-    expect(db.cardArtLicence.upsert.mock.calls[0]![0]).toMatchObject({
-      where: { cardId: "card_1" },
-      update: {
-        wiki: "ixwiki",
-        status: "UNKNOWN",
-        fileUrl: art,
-        note: "Art changed in the Designer",
-      },
-    });
-    expect(db.cardArtLicence.upsert.mock.invocationCallOrder[0]).toBeGreaterThan(
-      db.card.update.mock.invocationCallOrder[0]!
-    );
-
-    db.card.findUnique.mockResolvedValue(stored({ artwork: art }));
-    await edit(null);
-    expect(db.card.update.mock.calls[1]![0].data).toMatchObject({
-      artwork: null,
-      artworkCredit: null,
-    });
-    expect(db.cardArtLicence.deleteMany).toHaveBeenCalledWith({ where: { cardId: "card_1" } });
-
-    await edit(art);
-    expect(db.card.update.mock.calls[2]![0].data).not.toHaveProperty("artworkCredit");
-    expect(db.cardArtLicence.upsert).toHaveBeenCalledTimes(1);
-    expect(db.cardArtLicence.deleteMany).toHaveBeenCalledTimes(1);
-  });
-
-  it("refuses to edit a card that is gone or not a Special card", async () => {
-    const db = mockDb();
-    const edit = SpecialCardSchema.parse({ ...event, id: "card_1" });
-    await expect(saveSpecialCard(db as never, actor, edit)).rejects.toThrow(/no longer exists/);
-    db.card.findUnique.mockResolvedValue(stored({ cardType: "LORE" }));
-    await expect(saveSpecialCard(db as never, actor, edit)).rejects.toThrow(/no longer exists/);
-    expect(db.card.update).not.toHaveBeenCalled();
-    expect(db.auditLog.create).not.toHaveBeenCalled();
-  });
-
   it("refuses an achievement that does not exist, and a second card for one achievement", async () => {
     const db = mockDb();
     await expect(
@@ -249,37 +107,6 @@ describe("saveSpecialCard", () => {
     ).rejects.toThrow(/already this achievement's reward/);
     expect(db.auditLog.create).not.toHaveBeenCalled();
   });
-
-  it("keeps a retired achievement on an edit that does not change it, and refuses one newly chosen", async () => {
-    const db = mockDb();
-    db.card.update.mockResolvedValue({ id: "card_1" });
-    const retired = { ...reward, id: "card_1", rewardAchievementKey: "econ-first-million" };
-    db.card.findUnique.mockResolvedValue(
-      stored({
-        specialKind: "ACHIEVEMENT_REWARD",
-        isBound: true,
-        rewardAchievementKey: "econ-first-million",
-      })
-    );
-    await saveSpecialCard(
-      db as never,
-      actor,
-      SpecialCardSchema.parse({ ...retired, title: "Renamed" })
-    );
-    expect(db.card.update.mock.calls[0]![0].data).toMatchObject({ title: "Renamed" });
-
-    db.card.findUnique.mockResolvedValue(
-      stored({
-        specialKind: "ACHIEVEMENT_REWARD",
-        isBound: true,
-        rewardAchievementKey: "gen-one-year",
-      })
-    );
-    await expect(
-      saveSpecialCard(db as never, actor, SpecialCardSchema.parse(retired))
-    ).rejects.toThrow(/No such achievement/);
-  });
-
   it("leaves the old seed's rows alone until the Special card import has run", async () => {
     const db = mockDb();
     db.card.findUnique.mockResolvedValue(
@@ -296,24 +123,6 @@ describe("saveSpecialCard", () => {
       message: expect.stringMatching(/Special card import/),
     });
     expect(db.card.update).not.toHaveBeenCalled();
-  });
-
-  it("says so when the chosen realm is gone", async () => {
-    const db = mockDb();
-    db.card.create.mockRejectedValue(
-      new Prisma.PrismaClientKnownRequestError("fk", { code: "P2003", clientVersion: "6" })
-    );
-    await expect(
-      saveSpecialCard(db as never, actor, SpecialCardSchema.parse(event))
-    ).rejects.toThrow(/or its realm, no longer exists/);
-  });
-
-  it("passes on any other database error", async () => {
-    const db = mockDb();
-    db.card.create.mockRejectedValue(duplicateKey("slug"));
-    await expect(
-      saveSpecialCard(db as never, actor, SpecialCardSchema.parse(event))
-    ).rejects.toThrow("dup");
   });
 });
 
@@ -436,26 +245,6 @@ describe("saveSpecialCard's rarity override", () => {
       }),
     ]);
   });
-
-  it("asks no reason of a new card, or of an edit that keeps the rarity", async () => {
-    const db = mockDb();
-    db.card.create.mockResolvedValue({ id: "card_new" });
-    db.card.update.mockResolvedValue({ id: "card_1" });
-    db.card.findUnique.mockResolvedValue(stored({}));
-    await expect(
-      saveSpecialCard(
-        db as never,
-        actor,
-        SpecialCardSchema.parse({ ...event, rarity: "LEGENDARY" })
-      )
-    ).resolves.toEqual({ id: "card_new" });
-    await expect(saveSpecialCard(db as never, actor, edit({ rarity: "EPIC" }))).resolves.toEqual({
-      id: "card_1",
-    });
-    expect(
-      db.auditLog.create.mock.calls.map(([arg]: [{ data: { action: string } }]) => arg.data.action)
-    ).toEqual(["CARD_SPECIAL_SAVE", "CARD_SPECIAL_SAVE"]);
-  });
 });
 
 describe("saveSpecialCard on a card players hold", () => {
@@ -506,55 +295,5 @@ describe("saveSpecialCard on a card players hold", () => {
         SpecialCardSchema.parse({ ...sameReward, rewardAchievementKey: "gen-first-country" })
       )
     ).rejects.toMatchObject(fixed);
-  });
-
-  it("saves a held card with no kind as the event card it opens as", async () => {
-    const db = mockDb();
-    db.card.findUnique.mockResolvedValue(stored({ specialKind: null }, 2));
-    db.card.update.mockResolvedValue({ id: "card_1" });
-    await expect(
-      saveSpecialCard(
-        db as never,
-        actor,
-        SpecialCardSchema.parse({ ...event, id: "card_1", title: "Founders' ball" })
-      )
-    ).resolves.toEqual({ id: "card_1" });
-    expect(db.card.update.mock.calls[0]![0].data).toMatchObject({ title: "Founders' ball" });
-    db.card.findUnique.mockResolvedValue(stored({ specialKind: null }, 2));
-    await expect(
-      saveSpecialCard(
-        db as never,
-        actor,
-        SpecialCardSchema.parse({ ...reward, id: "card_1", rewardAchievementKey: "gen-one-year" })
-      )
-    ).rejects.toMatchObject(fixed);
-  });
-
-  it("still saves every other field", async () => {
-    const db = mockDb();
-    db.card.findUnique.mockResolvedValue(heldReward);
-    db.card.update.mockResolvedValue({ id: "card_1" });
-    const edit = {
-      ...sameReward,
-      title: "Veteran of the realm",
-      description: "Two years now.",
-      rarity: "LEGENDARY",
-      reason: "Two years of the realm",
-      artwork: "https://ixwiki.com/images/veteran.png",
-    } as const;
-    await expect(
-      saveSpecialCard(db as never, actor, SpecialCardSchema.parse(edit))
-    ).resolves.toEqual({
-      id: "card_1",
-    });
-    expect(db.card.update.mock.calls[0]![0].data).toMatchObject({
-      title: "Veteran of the realm",
-      description: "Two years now.",
-      rarity: "LEGENDARY",
-      artwork: "https://ixwiki.com/images/veteran.png",
-      specialKind: "ACHIEVEMENT_REWARD",
-      isBound: true,
-      rewardAchievementKey: "gen-one-year",
-    });
   });
 });

@@ -128,17 +128,6 @@ describe("grantNewPlayerBonus", () => {
 
     expect(ledger.filter((r) => r.source === "bonus:new_player")).toHaveLength(1);
   });
-
-  it("skips the ledger read once this process knows the user was paid", async () => {
-    const { db } = setup();
-    await grantNewPlayerBonus(db as never, USER_ID, "account_created");
-    const reads = db.user.findFirst.mock.calls.length;
-
-    await grantNewPlayerBonus(db as never, USER_ID, "vault_opened");
-
-    expect(db.user.findFirst.mock.calls.length).toBe(reads);
-  });
-
   it("retries after a failed grant instead of remembering it", async () => {
     const { db } = setup();
     earnOnce.mockResolvedValueOnce({

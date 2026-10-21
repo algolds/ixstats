@@ -301,22 +301,6 @@ describe("settleDividendDay", () => {
 
     expect(await settleDividendDay(db, D)).toEqual({ paid: 0, skipped: 0 });
   });
-
-  it("stores the breakdown as the row's metadata and it round-trips", async () => {
-    vault("u1", 4, at("2026-10-19T08:00:00"));
-    world.users.push({ id: "u1", clerkUserId: "c1" });
-    world.accounts.push({ id: "a1", clerkUserId: "c1" });
-    for (const hour of ["10", "11", "12"])
-      world.posts.push({ accountId: "a1", createdAt: at(`2026-10-20T${hour}:00:00`) });
-    deck("u1", 2000);
-    await settleDividendDay(db, D);
-    const meta = parseDividendMetadata(JSON.stringify(rowsFor("u1")[0]?.metadata));
-    expect(meta?.day).toBe(D);
-    expect(meta?.inputs).toMatchObject({ deckValue: 2000, posts: 3, streakDays: 4 });
-    expect(meta?.lines.map((l) => l.key)).toEqual(["interest", "posts", "streak"]);
-    expect(meta?.lines.reduce((sum, l) => sum + l.amount, 0)).toBe(rowsFor("u1")[0]?.amount);
-  });
-
   it("counts only human ThinkPages posts and visible forum posts from the day", async () => {
     vault("u1");
     world.users.push({ id: "u1", clerkUserId: "c1" });

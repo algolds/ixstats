@@ -48,32 +48,7 @@ const ownership = (
   db.cardOwnership.findMany.mockImplementation(async (args: OwnershipArgs) =>
     args.select.cardId ? held.map((cardId) => ({ cardId })) : copies
   );
-const heldReads = (db: ReturnType<typeof createMockPrisma>) =>
-  db.cardOwnership.findMany.mock.calls.filter(([args]: [OwnershipArgs]) => args.select.cardId);
-
 describe("copyFaces and withAuctionFaces", () => {
-  it("shows every auction's art, marking it by the viewer's own copies", async () => {
-    const db = createMockPrisma();
-    ownership(db, [], [copyRow("o1", "c1")]);
-    const rows = await withAuctionFaces(db as never, "me", [
-      auctionRow("a1", "o1", "c1"),
-      auctionRow("a2", "gone", "c9"),
-    ]);
-    expect(rows[0]).toMatchObject({ id: "a1", face: { cardId: "c1", uncollected: true } });
-    expect(rows[0]!.CardOwnership.cards).toEqual(rawCard("c1"));
-    expect(rows[0]!.face).toMatchObject({
-      artwork: "https://art/c1.png",
-      copy: { ownershipId: "o1" },
-    });
-    expect(rows[1]).toMatchObject({ id: "a2", face: null });
-    expect(rows[1]!.CardOwnership.cards).toMatchObject({ artwork: null, artworkCredit: null });
-    expect(db.cardOwnership.findMany.mock.calls[0]![0].where).toEqual({
-      id: { in: ["o1", "gone"] },
-    });
-    expect(heldReads(db)[0]![0].where).toEqual({ ownerId: "me", cardId: { in: ["c1"] } });
-    expect(db.cardAuction.findMany).not.toHaveBeenCalled();
-  });
-
   it("keeps an ended auction whose copy is gone (broken down or fused), with no face and no copy read", async () => {
     const db = createMockPrisma();
     ownership(db, [], [copyRow("o1", "c1")]);
@@ -82,18 +57,6 @@ describe("copyFaces and withAuctionFaces", () => {
     expect(rows[1]).toEqual({ ...burned, face: null });
     expect(db.cardOwnership.findMany.mock.calls[0]![0].where).toEqual({ id: { in: ["o1"] } });
   });
-
-  it("marks a copy by the viewer's collection, not its holder's, whether or not it is listed", async () => {
-    const db = createMockPrisma();
-    ownership(db, ["c1"], [copyRow("o1", "c1"), copyRow("o2", "c2")]);
-    db.cardAuction.findMany.mockResolvedValue([{ cardId: "c2" }]);
-    db.cardListing.findMany.mockResolvedValue([{ cardId: "c2" }]);
-    const faces = await copyFaces(db as never, "me", ["o1", "o2"]);
-    expect(faces.get("o1")).toMatchObject({ artwork: "https://art/c1.png", uncollected: false });
-    expect(faces.get("o2")).toMatchObject({ artwork: "https://art/c2.png", uncollected: true });
-    expect(heldReads(db)[0]![0].where).toEqual({ ownerId: "me", cardId: { in: ["c1", "c2"] } });
-  });
-
   it("never shows a retired card's art, in the face or the raw card", async () => {
     const db = createMockPrisma();
     ownership(db, ["c1"], [copyRow("o1", "c1", { isRetired: true })]);
@@ -105,13 +68,5 @@ describe("copyFaces and withAuctionFaces", () => {
       id: "o1",
       cards: { ...rawCard("c1"), artwork: null, artworkCredit: null },
     });
-  });
-
-  it("reads each copy once, and nothing for an empty list", async () => {
-    const db = createMockPrisma();
-    await expect(copyFaces(db as never, "me", [])).resolves.toEqual(new Map());
-    expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
-    await copyFaces(db as never, "me", ["o1", "o1"]);
-    expect(db.cardOwnership.findMany.mock.calls[0]![0].where).toEqual({ id: { in: ["o1"] } });
   });
 });

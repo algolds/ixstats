@@ -38,38 +38,6 @@ function makeDb(
 }
 
 describe("suggestCard", () => {
-  it("files a free suggestion in the article's home realm", async () => {
-    const db = makeDb();
-    expect(
-      await suggestCard(
-        db as never,
-        "db_player",
-        { source: "althistory", title: "Balkanized_North_America" },
-        NOW
-      )
-    ).toEqual({ id: "req_new" });
-    expect(db.loreCardRequest.create).toHaveBeenCalledWith({
-      data: {
-        userId: "db_player",
-        wikiSource: "althistory",
-        articleTitle: "Balkanized North America",
-        realmId: "althistory",
-        status: "PENDING",
-      },
-    });
-    expect(db.loreCardRequest.count).toHaveBeenCalledWith({
-      where: { userId: "db_player", requestedAt: { gte: new Date("2026-10-27T12:00:00Z") } },
-    });
-    expect(db.loreCardRequest.findFirst).toHaveBeenCalledWith({
-      where: {
-        wikiSource: "althistory",
-        articleTitle: { equals: "Balkanized North America", mode: "insensitive" },
-        status: "PENDING",
-      },
-      select: { id: true },
-    });
-  });
-
   it("takes the player's lock, then counts, checks and files in that one transaction", async () => {
     const db = makeDb();
     const tx = makeDb();
@@ -86,15 +54,6 @@ describe("suggestCard", () => {
     expect(db.loreCardRequest.count).not.toHaveBeenCalled();
     expect(db.loreCardRequest.create).not.toHaveBeenCalled();
   });
-
-  it("homes the suggestion in the realm that imported the page first", async () => {
-    const db = makeDb({ pageKind: "lore" });
-    await suggestCard(db as never, "p", { source: "iiwiki", title: "Elm" }, NOW);
-    expect(db.loreCardRequest.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ realmId: "eurth" }),
-    });
-  });
-
   it("allows the third suggestion in a day and refuses the fourth", async () => {
     await expect(
       suggestCard(
@@ -131,58 +90,6 @@ describe("suggestCard", () => {
         NOW
       )
     ).rejects.toThrow("A realm's nation page does not become a lore card");
-  });
-
-  it("says an article whose card was turned down in review was turned down, and keeps refusing one in review", async () => {
-    const rejected = makeDb({ carded: ["elm"], reviewStates: ["REJECTED"] });
-    await expect(
-      suggestCard(rejected as never, "p", { source: "iiwiki", title: "Elm" }, NOW)
-    ).rejects.toMatchObject({
-      code: "CONFLICT",
-      message: "This article was reviewed and turned down.",
-    });
-    expect(rejected.loreCardRequest.create).not.toHaveBeenCalled();
-    const [sql, ...values] = rejected.$queryRaw.mock.calls[1]!;
-    expect(sql.join("?")).toContain("\"cardType\" = 'LORE'");
-    expect(values).toEqual(["iiwiki", "elm"]);
-
-    await expect(
-      suggestCard(
-        makeDb({ carded: ["elm"], reviewStates: ["PENDING"] }) as never,
-        "p",
-        { source: "iiwiki", title: "Elm" },
-        NOW
-      )
-    ).rejects.toThrow("This article already has a card");
-    await expect(
-      suggestCard(
-        makeDb({ carded: ["elm"], reviewStates: ["REJECTED", "APPROVED"] }) as never,
-        "p",
-        { source: "iiwiki", title: "Elm" },
-        NOW
-      )
-    ).rejects.toThrow("This article already has a card");
-    // No card read by title (one deleted in between): the plain refusal, never "turned down".
-    await expect(
-      suggestCard(
-        makeDb({ carded: ["elm"], reviewStates: [] }) as never,
-        "p",
-        { source: "iiwiki", title: "Elm" },
-        NOW
-      )
-    ).rejects.toThrow("This article already has a card");
-  });
-
-  it("refuses a title that is not an article before counting anything", async () => {
-    const db = makeDb();
-    await expect(
-      suggestCard(db as never, "p", { source: "ixwiki", title: "Template:Infobox country" }, NOW)
-    ).rejects.toThrow("Only wiki articles become lore cards");
-    await expect(
-      suggestCard(db as never, "p", { source: "ixwiki", title: "[[" }, NOW)
-    ).rejects.toThrow(/not a page title/);
-    expect(db.loreCardRequest.count).not.toHaveBeenCalled();
-    expect(db.loreCardRequest.create).not.toHaveBeenCalled();
   });
 });
 

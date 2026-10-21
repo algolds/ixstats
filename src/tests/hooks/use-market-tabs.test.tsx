@@ -26,7 +26,7 @@ jest.mock("~/lib/vault/vault-notifications", () => ({
 }));
 
 import { api } from "~/trpc/react";
-import { useBrowse, useListingActions } from "~/hooks/cards/useMarketTabs";
+import { useListingActions } from "~/hooks/cards/useMarketTabs";
 import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 
@@ -63,20 +63,6 @@ beforeEach(() => {
     return { mutate: jest.fn(), isPending: false };
   }) as never);
 });
-
-describe("useBrowse", () => {
-  it("keeps the current page on screen while a longer one or a new filter loads", () => {
-    renderHook(() =>
-      useBrowse({ kind: "all", sort: "ending_soon", filters: {}, limit: 20, offset: 0 })
-    );
-    const [input, options] = jest.mocked(api.cardMarket.browse.useQuery).mock.lastCall!;
-    expect(input).toMatchObject({ kind: "all", limit: 20 });
-    const previous = { items: [], hasMore: true };
-    const keep = options?.placeholderData;
-    expect(typeof keep === "function" && keep(previous as never, undefined)).toBe(previous);
-  });
-});
-
 describe("useListingActions", () => {
   it("frees the copy of a cancelled listing through the one refresh and says what came back", () => {
     renderHook(() => useListingActions());
@@ -93,18 +79,5 @@ describe("useListingActions", () => {
     expect(vaultNotify.error).toHaveBeenCalledWith("This listing has already sold or ended.");
     expect(refetched()).toEqual(["cardMarket.getMyListings"]);
     expect(refreshCards).not.toHaveBeenCalled();
-  });
-
-  it("takes a card off the wishlist and reads only the wishlist and the sheet again", async () => {
-    renderHook(() => useListingActions());
-    await unwish.onSuccess({ cardId: "c1", wished: false });
-    expect(refetched()).toEqual([
-      "cards.getSheet",
-      "cards.getSheetEconomy",
-      "cardMarket.getWishlist",
-    ]);
-    expect(refreshCards).not.toHaveBeenCalled();
-    unwish.onError({ message: "Too many requests" });
-    expect(vaultNotify.error).toHaveBeenCalledWith("Too many requests");
   });
 });

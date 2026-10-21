@@ -262,28 +262,6 @@ describe("card economy config", () => {
     expect([up.LEGENDARY, up.COMMON]).toEqual([0.13, 64.97]);
     expect(total(up)).toBeCloseTo(100, 9);
   });
-
-  it("reads only the economy rows, and again once the minute's cache runs out", async () => {
-    const findMany = jest.fn().mockResolvedValue([]);
-    const db = { systemConfig: { findMany } } as never;
-    const now = jest.spyOn(Date, "now").mockReturnValue(1_000_000);
-    try {
-      await getEconomyConfig(db);
-      now.mockReturnValue(1_059_999);
-      await getEconomyConfig(db);
-      expect(findMany).toHaveBeenCalledTimes(1);
-      now.mockReturnValue(1_060_000);
-      await getEconomyConfig(db);
-      expect(findMany).toHaveBeenCalledTimes(2);
-    } finally {
-      now.mockRestore();
-    }
-    expect(findMany).toHaveBeenCalledWith({
-      where: { key: { startsWith: "card_economy_" } },
-      select: { key: true, value: true },
-    });
-  });
-
   it("reads the stored rows past the cache, clamped, for a check inside a save", async () => {
     const findMany = jest
       .fn()

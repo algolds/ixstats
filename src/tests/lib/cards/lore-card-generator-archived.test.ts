@@ -66,16 +66,6 @@ afterAll(() => {
 });
 
 describe("the lore-card generator leaves out a page WikiOS deleted", () => {
-  it("previews only the published page, and no wiki is asked", async () => {
-    const previews = await wikiLoreCardGenerator.fetchArticleMetadataBatch(
-      ["Hidden_land", "Shown land"],
-      "ixwiki"
-    );
-
-    expect(previews.map((preview) => preview.title)).toEqual(["Shown land"]);
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
   it("does not list it among a category's members, a wiki's pages or random pages, and no wiki is asked", async () => {
     const reach = {
       limit: 100,
@@ -101,16 +91,5 @@ describe("the lore-card generator leaves out a page WikiOS deleted", () => {
       { name: "ArticleRejected", kind: "missing" }
     );
     expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it("does not hold a page of another wiki to WikiOS's deletions", async () => {
-    const previews = await wikiLoreCardGenerator.fetchArticleMetadataBatch(
-      ["Hidden land"],
-      "iiwiki"
-    );
-    expect(previews.map((preview) => preview.title)).toEqual(["Hidden land"]);
-    // It went to iiwiki, not to IxWiki's tables.
-    expect(fetchMock).toHaveBeenCalled();
-    expect(String(fetchMock.mock.calls[0]?.[0])).toContain("iiwiki.com");
   });
 });

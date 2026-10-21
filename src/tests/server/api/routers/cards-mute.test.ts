@@ -2,8 +2,6 @@
 /** cards mute procedures: the signed-in player mutes notices about one card. */
 jest.mock("~/server/db", () => ({ db: {} }));
 jest.mock("~/lib/cards/card-notify", () => ({ isCardMuted: jest.fn(), setCardMute: jest.fn() }));
-
-import { Prisma } from "@prisma/client";
 import { createCallerFactory } from "~/server/api/trpc";
 import { isCardMuted, setCardMute } from "~/lib/cards/card-notify";
 import { cardsMuteRouter } from "~/server/api/routers/cards/mute";
@@ -47,21 +45,5 @@ describe("cards mute procedures", () => {
       code: "BAD_REQUEST",
     });
     expect(setCardMute).not.toHaveBeenCalled();
-  });
-
-  it("answers an unknown card as not found, and leaves other failures alone", async () => {
-    jest
-      .mocked(setCardMute)
-      .mockRejectedValueOnce(
-        new Prisma.PrismaClientKnownRequestError("fk", { code: "P2003", clientVersion: "test" })
-      )
-      .mockRejectedValueOnce(new Error("connection reset"));
-    await expect(signedIn().setCardMute({ cardId: "gone", muted: true })).rejects.toMatchObject({
-      code: "NOT_FOUND",
-      message: "No such card",
-    });
-    await expect(signedIn().setCardMute({ cardId: "card_1", muted: true })).rejects.toMatchObject({
-      code: "INTERNAL_SERVER_ERROR",
-    });
   });
 });

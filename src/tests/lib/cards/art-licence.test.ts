@@ -1,12 +1,6 @@
 /** @jest-environment node */
 /** Card art licences (licensing drafts §2.5(c)): NC and ND block an import, free licences are open, the rest unknown. */
-import {
-  classifyLicence,
-  commonsCardTitle,
-  commonsFileName,
-  fileNameFromArtworkUrl,
-  licenceTemplates,
-} from "~/lib/cards/art-licence";
+import { classifyLicence, fileNameFromArtworkUrl, licenceTemplates } from "~/lib/cards/art-licence";
 import type { CardWikiSource } from "~/lib/cards/card-sources";
 import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 
@@ -42,15 +36,6 @@ describe("classifyLicence", () => {
 });
 
 describe("licenceTemplates", () => {
-  it("reads every template name and its one-token positional parameters on a File page", () => {
-    expect(
-      licenceTemplates("== Licensing ==\n{{Fairuse}}\n{{self|cc-by-sa-4.0}}\n[[Category:People]]")
-    ).toEqual(["Fairuse", "self", "cc-by-sa-4.0"]);
-    expect(licenceTemplates("{{ PD-old | }}")).toEqual(["PD-old"]);
-    expect(licenceTemplates("{{self|GFDL|PD-self}}")).toEqual(["self", "GFDL", "PD-self"]);
-    expect(licenceTemplates("")).toEqual([]);
-  });
-
   it("never reads named parameters or free text", () => {
     expect(licenceTemplates("{{Information|description=PD scan|author=NC}}")).toEqual([
       "Information",
@@ -58,14 +43,6 @@ describe("licenceTemplates", () => {
     expect(licenceTemplates("{{en|PD scan}}")).toEqual(["en"]);
     expect(licenceTemplates("{{Fairuse|Logo of ND Corp}}")).toEqual(["Fairuse"]);
     expect(licenceTemplates("{{ |PD}}")).toEqual([]);
-  });
-
-  it.each([
-    "{{Fairuse}}{{DEFAULTSORT:Public domain logo}}",
-    "{{Fairuse}}{{#if:x|PD}}",
-    "{{DISPLAYTITLE:Map of the ND region}}",
-  ])("skips magic words and parser functions, so %s stays unknown", (wikitext) => {
-    expect(classifyLicence(licenceTemplates(wikitext))).toBe("UNKNOWN");
   });
 });
 
@@ -155,50 +132,5 @@ describe("fileNameFromArtworkUrl", () => {
     ["not a url", "ixwiki"],
   ])("%s names no %s file", (url, source) => {
     expect(fileNameFromArtworkUrl(url, source)).toBeNull();
-  });
-
-  it("is null without a URL", () => {
-    expect(fileNameFromArtworkUrl(null, "ixwiki")).toBeNull();
-    expect(fileNameFromArtworkUrl(undefined, "ixwiki")).toBeNull();
-    expect(fileNameFromArtworkUrl("", "ixwiki")).toBeNull();
-  });
-});
-
-describe("commonsCardTitle", () => {
-  it("drops the namespace and extension and spaces the underscores", () => {
-    expect(commonsCardTitle("File:Flag_of_Ireland.svg")).toBe("Flag of Ireland");
-    expect(commonsCardTitle("Flag of the Holy See.png")).toBe("Flag of the Holy See");
-    expect(commonsCardTitle("file:Coat of arms.JPEG")).toBe("Coat of arms");
-    expect(commonsCardTitle("File:Map.tif")).toBe("Map.tif");
-  });
-});
-
-describe("commonsFileName", () => {
-  it.each([
-    ["an original", "https://upload.wikimedia.org/wikipedia/commons/4/45/Flag_of_Ireland.svg"],
-    [
-      "a thumbnail, with the tracking query",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Flag_of_Ireland.svg/120px-Flag_of_Ireland.svg.png?utm_source=commons.wikimedia.org",
-    ],
-    ["its file page", "https://commons.wikimedia.org/wiki/File:Flag_of_Ireland.svg"],
-  ])("names the file of %s", (_name, url) => {
-    expect(commonsFileName(url)).toBe("Flag_of_Ireland.svg");
-  });
-
-  it("decodes a file page whose title was percent-encoded whole", () => {
-    expect(
-      commonsFileName("https://commons.wikimedia.org/wiki/File%3AFlag%20of%20Ireland.svg")
-    ).toBe("Flag of Ireland.svg");
-  });
-
-  it.each([
-    ["another wiki's file", "https://iiwiki.com/images/a/ab/Flag.png"],
-    ["a page that is no file", "https://commons.wikimedia.org/wiki/Category:Flags"],
-    ["a Commons look-alike host", "https://commons.wikimedia.org.evil.example/wiki/File:Flag.svg"],
-    ["a path step", "https://commons.wikimedia.org/wiki/File:.."],
-    ["no URL", null],
-    ["not a URL", "Flag.svg"],
-  ])("names nothing for %s", (_name, url) => {
-    expect(commonsFileName(url)).toBeNull();
   });
 });

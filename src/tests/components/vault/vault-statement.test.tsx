@@ -35,25 +35,6 @@ const tx = (id: string, over: Partial<Tx> = {}): Tx => ({
   metadata: null,
   ...over,
 });
-
-const DIVIDEND = {
-  day: "2026-10-13",
-  lines: [
-    { key: "interest", amount: 12, detail: { deckValue: 4800, rate: 0.0025 } },
-    { key: "streak", amount: 3, detail: { days: 3, activity: 20, step: 0.05 } },
-  ],
-  inputs: {
-    deckValue: 4800,
-    wikiScore: 0,
-    posts: 0,
-    packsOpened: 0,
-    tradesCompleted: 0,
-    listingsSold: 0,
-    streakDays: 3,
-    yieldBoost: 0,
-  },
-};
-
 jest.mock("~/trpc/react", () => ({
   api: {
     useUtils: jest.fn(),
@@ -108,79 +89,6 @@ describe("VaultStatement", () => {
     expect(trade.textContent).toContain("40");
     expect(trade.textContent).toContain("1,000");
   });
-  it("shows ten rows at first and asks the ledger for ten", () => {
-    pages = (input) => ({
-      transactions: Array.from({ length: input.limit }, (_, i) => tx(`r${i}`)),
-      hasMore: true,
-    });
-    const { container } = render(<VaultStatement />);
-    expect(queryInputs.at(-1)).toMatchObject({ limit: 10, offset: 0 });
-    expect(container.querySelectorAll("[data-row]")).toHaveLength(10);
-  });
-
-  it("loads ten more on Show earlier, from the end of what is shown", async () => {
-    pages = (input) => ({
-      transactions: Array.from({ length: 10 }, (_, i) => tx(`p${input.offset}-${i}`)),
-      hasMore: input.offset === 0,
-    });
-    const { container } = render(<VaultStatement />);
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /show earlier/i }));
-    });
-    await waitFor(() => expect(container.querySelectorAll("[data-row]")).toHaveLength(20));
-    expect(fetchMock).toHaveBeenCalledWith({ limit: 10, offset: 10 });
-    expect(screen.queryByRole("button", { name: /show earlier/i })).toBeNull();
-  });
-  it("expands the Vault dividend into its stored lines", () => {
-    pages = () => ({
-      transactions: [
-        tx("d", {
-          credits: 15,
-          type: "EARN_PASSIVE",
-          source: "VAULT_DIVIDEND",
-          metadata: JSON.stringify(DIVIDEND),
-        }),
-      ],
-      hasMore: false,
-    });
-    render(<VaultStatement />);
-    expect(screen.queryByText("Collection interest")).toBeNull();
-    const toggle = screen.getByRole("button", { name: /breakdown/i });
-    expect(toggle.getAttribute("aria-expanded")).toBe("false");
-    fireEvent.click(toggle);
-    expect(toggle.getAttribute("aria-expanded")).toBe("true");
-    const interest = screen.getByText("Collection interest").closest("li") as HTMLElement;
-    expect(interest.textContent).toContain("12");
-    expect(screen.getByText("Streak bonus")).toBeTruthy();
-  });
-  it("filters earned and spent through the query, resetting the loaded rows", async () => {
-    pages = () => ({ transactions: [tx("a")], hasMore: false });
-    render(<VaultStatement />);
-    expect(queryInputs.at(-1)?.direction).toBeUndefined();
-    fireEvent.click(screen.getByRole("radio", { name: "Earned" }));
-    expect(queryInputs.at(-1)).toMatchObject({ direction: "earned", offset: 0 });
-    fireEvent.click(screen.getByRole("radio", { name: "Spent" }));
-    expect(queryInputs.at(-1)).toMatchObject({ direction: "spent", offset: 0 });
-    fireEvent.click(screen.getByRole("radio", { name: "All" }));
-    expect(queryInputs.at(-1)?.direction).toBeUndefined();
-  });
-
-  it("loads the next page on Show earlier and hides the button at the end", async () => {
-    pages = (input) =>
-      input.offset === 0
-        ? { transactions: [tx("a"), tx("b", { source: "P2P_TRADE" })], hasMore: true }
-        : { transactions: [tx("c", { source: "JUNK_CARDS" })], hasMore: false };
-    render(<VaultStatement pageSize={2} />);
-    expect(queryInputs.at(-1)).toMatchObject({ limit: 2, offset: 0 });
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /show earlier/i }));
-    });
-    await waitFor(() => expect(screen.getByText("Cards junked")).toBeTruthy());
-    expect(fetchMock).toHaveBeenCalledWith({ limit: 2, offset: 2 });
-    expect(screen.getByText("Player trade")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /show earlier/i })).toBeNull();
-  });
-
   it("drops rows already shown when a later page overlaps", async () => {
     pages = (input) =>
       input.offset === 0

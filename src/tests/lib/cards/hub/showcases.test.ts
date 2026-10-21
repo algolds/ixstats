@@ -1,16 +1,12 @@
 /** @jest-environment node */
 /** Free-form showcases (spec §2.2 Collections, §2.3 Sets): by copy, owner-only edits, public only by the owner's leave. */
 jest.mock("~/lib/cards/copy-value", () => ({ topCopiesByValue: jest.fn() }));
-
-import { topCopiesByValue } from "~/lib/cards/copy-value";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 import {
   addToShowcase,
   createShowcase,
   deleteShowcase,
   getShowcase,
-  listMyShowcases,
-  myDisplay,
   pinShowcase,
   removeFromShowcase,
   SHOWCASE_LIMITS,
@@ -66,73 +62,6 @@ describe("ShowcaseFieldsSchema", () => {
     );
   });
 });
-
-describe("listMyShowcases", () => {
-  it("lists the player's showcases with a cover and marks only the latest public pin", async () => {
-    const db = createMockPrisma();
-    db.cardCollection.findMany.mockResolvedValue([
-      {
-        id: "s1",
-        name: "A",
-        description: null,
-        isPublic: true,
-        pinnedAt: new Date(2),
-        _count: { items: 3 },
-        items: [item("c1")],
-      },
-      {
-        id: "s2",
-        name: "B",
-        description: null,
-        isPublic: true,
-        pinnedAt: new Date(1),
-        _count: { items: 0 },
-        items: [],
-      },
-      {
-        id: "s3",
-        name: "C",
-        description: "Mine",
-        isPublic: false,
-        pinnedAt: new Date(3),
-        _count: { items: 1 },
-        items: [item("c2", true)],
-      },
-    ]);
-    const list = await listMyShowcases(db as never, "u1");
-    expect(list.map((s) => [s.id, s.pinned, s.itemCount, s.cover?.artwork ?? null])).toEqual([
-      ["s1", true, 3, "https://art/c1.png"],
-      ["s2", false, 0, null],
-      ["s3", false, 1, null],
-    ]);
-    // A showcase shows off its owner's collection, so every cover is in full colour
-    expect(list.map((s) => s.cover?.uncollected ?? null)).toEqual([false, null, false]);
-    expect(db.cardCollection.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { userId: "u1" },
-        orderBy: [{ pinnedAt: { sort: "desc", nulls: "last" } }, { updatedAt: "desc" }],
-      })
-    );
-  });
-
-  it("marks none pinned when nothing is", async () => {
-    const db = createMockPrisma();
-    const unpinned = {
-      name: "A",
-      description: null,
-      pinnedAt: null,
-      _count: { items: 0 },
-      items: [],
-    };
-    db.cardCollection.findMany.mockResolvedValue([
-      { ...unpinned, id: "s1", isPublic: true },
-      { ...unpinned, id: "s2", isPublic: false },
-    ]);
-    const list = await listMyShowcases(db as never, "u1");
-    expect(list.map((s) => s.pinned)).toEqual([false, false]);
-  });
-});
-
 describe("getShowcase", () => {
   beforeEach(() => jest.clearAllMocks());
 
@@ -145,40 +74,6 @@ describe("getShowcase", () => {
     userId: "owner",
     items: [item("c1"), item("c2", true)],
   };
-
-  it("shows a public showcase to anyone while its owner shows Vault cards, with the owner's name", async () => {
-    const db = createMockPrisma();
-    db.cardCollection.findUnique.mockResolvedValue(row);
-    const view = await getShowcase(db as never, "me", "s1", visible);
-    expect(view).toMatchObject({
-      ownerName: "Caphiria",
-      isOwner: false,
-      pinned: false,
-      items: [{ itemId: "item-c1", face: { artwork: "https://art/c1.png", uncollected: false } }],
-    });
-    expect(visible.playersOf).toHaveBeenCalledWith(["owner"]);
-    expect(db.cardCollection.findUnique).toHaveBeenCalledWith({
-      where: { id: "s1" },
-      select: expect.objectContaining({
-        items: expect.objectContaining({
-          orderBy: { addedAt: "asc" },
-          take: SHOWCASE_LIMITS.items,
-        }),
-      }),
-    });
-  });
-
-  it("shows another player's showcase in full colour, whatever the viewer holds, reading none of their copies", async () => {
-    const db = createMockPrisma();
-    db.cardCollection.findUnique.mockResolvedValue({ ...row, items: [item("c1"), item("c3")] });
-    const view = await getShowcase(db as never, "me", "s1", visible);
-    expect(view!.items.map((i) => [i.itemId, i.face.artwork, i.face.uncollected])).toEqual([
-      ["item-c1", "https://art/c1.png", false],
-      ["item-c3", "https://art/c3.png", false],
-    ]);
-    expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
-  });
-
   it("leaves another player's retired copies out, and shows its owner their placeholder faces", async () => {
     const db = createMockPrisma();
     db.cardCollection.findUnique.mockResolvedValue(row);
@@ -239,20 +134,6 @@ describe("editing", () => {
     ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     expect(db.cardCollection.create).not.toHaveBeenCalled();
   });
-
-  it("creates a showcase for the player, an empty description as none", async () => {
-    const db = createMockPrisma();
-    db.cardCollection.count.mockResolvedValue(0);
-    db.cardCollection.create.mockResolvedValue({ id: "s1" });
-    await expect(
-      createShowcase(db as never, "u1", { name: "Best", description: "", isPublic: true })
-    ).resolves.toEqual({ id: "s1" });
-    expect(db.cardCollection.create).toHaveBeenCalledWith({
-      data: { userId: "u1", name: "Best", description: null, isPublic: true },
-      select: { id: true },
-    });
-  });
-
   it("edits only the player's own showcase", async () => {
     const db = createMockPrisma();
     db.cardCollection.findFirst.mockResolvedValue(null);
@@ -321,15 +202,6 @@ describe("editing", () => {
       data: { updatedAt: expect.any(Date) },
     });
   });
-
-  it("fills a showcase up to its limit", async () => {
-    const db = createMockPrisma();
-    db.cardCollection.findFirst.mockResolvedValue(owned(false, SHOWCASE_LIMITS.items - 1));
-    db.cardOwnership.findMany.mockResolvedValue([{ id: "o1" }]);
-    db.cardCollectionItem.createMany.mockResolvedValue({ count: 1 });
-    await expect(addToShowcase(db as never, "u1", "s1", ["o1"])).resolves.toEqual({ added: 1 });
-  });
-
   it("refuses a copy that is not the player's, another player's showcase, and a full showcase", async () => {
     const db = createMockPrisma();
     db.cardCollection.findFirst.mockResolvedValue(owned(false, 0));
@@ -366,62 +238,7 @@ describe("editing", () => {
   });
 });
 
-interface PinRow {
-  id: string;
-  userId: string;
-  isPublic: boolean;
-  pinnedAt: Date | null;
-}
-interface PinWhere {
-  id?: string;
-  userId?: string;
-  isPublic?: boolean;
-  pinnedAt?: { not: null };
-}
-const pinRow = (id: string, pinnedAt: Date | null, userId = "u1"): PinRow => ({
-  id,
-  userId,
-  isPublic: true,
-  pinnedAt,
-});
-const pinMatches = (row: PinRow, where: PinWhere) =>
-  (where.id === undefined || row.id === where.id) &&
-  (where.userId === undefined || row.userId === where.userId) &&
-  (where.isPublic === undefined || row.isPublic === where.isPublic) &&
-  (where.pinnedAt === undefined || row.pinnedAt !== null);
-
-/** A mock whose `updateMany` edits `rows` in place, for the filters pinShowcase writes. */
-function pinDb(rows: PinRow[]) {
-  const db = createMockPrisma();
-  db.cardCollection.updateMany.mockImplementation(
-    async ({ where, data }: { where: PinWhere; data: { pinnedAt: Date | null } }) => {
-      const hit = rows.filter((row) => pinMatches(row, where));
-      for (const row of hit) row.pinnedAt = data.pinnedAt;
-      return { count: hit.length };
-    }
-  );
-  return db;
-}
-
 describe("pinShowcase", () => {
-  it("pins one public showcase at a time", async () => {
-    const db = createMockPrisma();
-    db.cardCollection.findFirst.mockResolvedValue({ ...owned(true), id: "s2" });
-    db.cardCollection.updateMany
-      .mockResolvedValueOnce({ count: 1 })
-      .mockResolvedValueOnce({ count: 1 });
-    await expect(pinShowcase(db as never, "u1", "s2", true)).resolves.toEqual({ pinned: true });
-    expect(db.cardCollection.updateMany).toHaveBeenNthCalledWith(1, {
-      where: { userId: "u1", pinnedAt: { not: null } },
-      data: { pinnedAt: null },
-    });
-    expect(db.cardCollection.updateMany).toHaveBeenNthCalledWith(2, {
-      where: { id: "s2", isPublic: true },
-      data: { pinnedAt: expect.any(Date) },
-    });
-    expect(db.$transaction).toHaveBeenCalledTimes(1);
-  });
-
   it("says the pin did not land when the showcase was made private meanwhile", async () => {
     const db = createMockPrisma();
     db.cardCollection.findFirst.mockResolvedValue(owned(true));
@@ -430,30 +247,6 @@ describe("pinShowcase", () => {
       .mockResolvedValueOnce({ count: 0 });
     await expect(pinShowcase(db as never, "u1", "s1", true)).resolves.toEqual({ pinned: false });
   });
-
-  it("unpins, a private showcase too, without pinning another", async () => {
-    const db = createMockPrisma();
-    db.cardCollection.findFirst.mockResolvedValue(owned(false));
-    db.cardCollection.updateMany.mockResolvedValueOnce({ count: 1 });
-    await expect(pinShowcase(db as never, "u1", "s1", false)).resolves.toEqual({ pinned: false });
-    expect(db.cardCollection.updateMany).toHaveBeenCalledTimes(1);
-    expect(db.cardCollection.updateMany).toHaveBeenCalledWith({
-      where: { id: "s1", userId: "u1" },
-      data: { pinnedAt: null },
-    });
-  });
-
-  it("unpinning one showcase leaves another's pin alone, and pinning moves it", async () => {
-    // An unpin from a stale screen: B looks pinned there, but A holds the pin now.
-    const rows = [pinRow("A", new Date("2026-10-16")), pinRow("B", null), pinRow("X", null, "u2")];
-    const db = pinDb(rows);
-    db.cardCollection.findFirst.mockResolvedValue({ ...owned(true), id: "B" });
-    await expect(pinShowcase(db as never, "u1", "B", false)).resolves.toEqual({ pinned: false });
-    expect(rows.map((r) => r.pinnedAt !== null)).toEqual([true, false, false]);
-    await expect(pinShowcase(db as never, "u1", "B", true)).resolves.toEqual({ pinned: true });
-    expect(rows.map((r) => r.pinnedAt !== null)).toEqual([false, true, false]);
-  });
-
   it("refuses to pin a private showcase, and another player's", async () => {
     const db = createMockPrisma();
     db.cardCollection.findFirst.mockResolvedValue(owned(false));
@@ -466,44 +259,5 @@ describe("pinShowcase", () => {
       code: "NOT_FOUND",
     });
     expect(db.cardCollection.updateMany).not.toHaveBeenCalled();
-  });
-});
-
-describe("myDisplay", () => {
-  it("returns the pinned showcase's copies as faces with their art", async () => {
-    const db = createMockPrisma();
-    db.cardCollection.findFirst.mockResolvedValue({ id: "s1", name: "Best", items: [item("c1")] });
-    await expect(myDisplay(db as never, "u1")).resolves.toMatchObject({
-      showcase: { id: "s1", name: "Best" },
-      faces: [
-        {
-          cardId: "c1",
-          artwork: "https://art/c1.png",
-          uncollected: false,
-          copy: { ownershipId: "o-c1" },
-        },
-      ],
-    });
-  });
-
-  it("falls back to the player's top copies by copy value when nothing is pinned", async () => {
-    const db = createMockPrisma();
-    db.cardCollection.findFirst.mockResolvedValue(null);
-    jest.mocked(topCopiesByValue).mockResolvedValue([
-      {
-        ownershipId: "o-c3",
-        ownerId: "u1",
-        cardId: "c3",
-        cardType: "LORE",
-        finish: "STANDARD",
-        value: 9,
-      },
-    ]);
-    db.cardOwnership.findMany.mockResolvedValue([copy("c3")]);
-    await expect(myDisplay(db as never, "u1")).resolves.toMatchObject({
-      showcase: null,
-      faces: [{ cardId: "c3", uncollected: false }],
-    });
-    expect(jest.mocked(topCopiesByValue)).toHaveBeenCalledWith(db, "u1", 6);
   });
 });

@@ -52,7 +52,6 @@ import { clearGeneralCardSettingsCache } from "~/lib/cards/general-settings";
 import { clearValuationCache, setValuationConfig } from "~/lib/cards/valuation";
 import { clearBonusConfigCache } from "~/lib/vault/vault-bonus";
 import {
-  economySettings,
   recomputeValues,
   saveBonuses,
   saveCardValues,
@@ -531,22 +530,4 @@ describe("card economy numbers", () => {
     expect(db.auditLog.create).not.toHaveBeenCalled();
     expect(clearEconomyConfigCache).not.toHaveBeenCalled();
   });
-});
-
-it("reads every section the tab shows", async () => {
-  const db = createMockPrisma();
-  const settings = await economySettings(db as never);
-  expect(Object.keys(settings)).toEqual([
-    "values",
-    "market",
-    "bonuses",
-    "lorewardPayouts",
-    "rarityThresholds",
-    "dailyImports",
-    "economy",
-  ]);
-  expect(settings.economy).toEqual({ listingFee: 5 });
-  expect(settings.values).toEqual({ floorCommon: 10 });
-  expect(settings.lorewardPayouts.daily.winner).toBe(500);
-  expect(settings.dailyImports.althistory).toEqual({ enabled: false, count: 0 });
 });

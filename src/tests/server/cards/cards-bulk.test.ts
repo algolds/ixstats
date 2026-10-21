@@ -3,7 +3,7 @@
  * The contract curation's filter review and the Library's bulk hide share: a change acts on exactly the cards the
  * admin's read counted, as of a read that has happened, and at most MAX_FILTER_REVIEW of them.
  */
-import { cardCount, MAX_FILTER_REVIEW } from "~/lib/cards/curation-limits";
+import { MAX_FILTER_REVIEW } from "~/lib/cards/curation-limits";
 import { assertBulkRead, assertBulkRecountTx } from "~/server/modules/cards/cards.bulk";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
@@ -57,13 +57,5 @@ describe("assertBulkRecountTx", () => {
     await expect(
       assertBulkRecountTx(tx as never, where, 7, (matching) => `${matching} match now`)
     ).rejects.toMatchObject({ code: "CONFLICT", message: "9 match now" });
-  });
-});
-
-describe("cardCount", () => {
-  it("counts cards as the bulk changes word them", () => {
-    expect(cardCount(1)).toBe("1 card");
-    expect(cardCount(0)).toBe("0 cards");
-    expect(cardCount(2000)).toBe("2,000 cards");
   });
 });

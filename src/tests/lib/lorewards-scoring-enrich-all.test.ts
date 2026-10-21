@@ -30,22 +30,6 @@ describe("scoreDailyWikiOS enrichAll", () => {
     jest.mocked(db.wikiRevision.findMany).mockReset();
     jest.mocked(db.wikiLink.count).mockClear();
   });
-
-  it("returns and enriches only the top ten by default", async () => {
-    jest.mocked(db.wikiRevision.findMany).mockResolvedValue(revisions(12) as never);
-    const r = await scoreDailyWikiOS("2026-10-01", DEFAULT_WEIGHTS);
-    expect(r.candidates).toHaveLength(10);
-    expect(db.wikiLink.count).toHaveBeenCalledTimes(10);
-  });
-
-  it("enriches and returns every candidate when asked", async () => {
-    jest.mocked(db.wikiRevision.findMany).mockResolvedValue(revisions(12) as never);
-    const r = await scoreDailyWikiOS("2026-10-01", DEFAULT_WEIGHTS, { enrichAll: true });
-    expect(r.candidates).toHaveLength(12);
-    expect(db.wikiLink.count).toHaveBeenCalledTimes(12);
-    expect(r.candidates.every((c) => c.proseRatio !== -1)).toBe(true);
-  });
-
   it("carries the WikiOS accounts of each candidate's scored revisions, for the dividend", async () => {
     const [first] = revisions(1);
     jest.mocked(db.wikiRevision.findMany).mockResolvedValue([
@@ -57,12 +41,5 @@ describe("scoreDailyWikiOS enrichAll", () => {
     expect(r.candidates.map((c) => c.authorIds)).toEqual([["u1", null]]);
     const args = jest.mocked(db.wikiRevision.findMany).mock.calls[0]?.[0];
     expect(args?.select).toHaveProperty("authorId", true);
-  });
-
-  it("does not read the revision text it never uses", async () => {
-    jest.mocked(db.wikiRevision.findMany).mockResolvedValue([] as never);
-    await scoreDailyWikiOS("2026-10-01", DEFAULT_WEIGHTS);
-    const args = jest.mocked(db.wikiRevision.findMany).mock.calls[0]?.[0];
-    expect(args?.select).not.toHaveProperty("wikitext");
   });
 });

@@ -45,11 +45,6 @@ function aimsAtCard(event: KeyboardEvent): boolean {
   return event.key === " " && !target?.closest(SPACE_CONTROL);
 }
 
-/** Space or F flips the card, unless the user is typing or Space would press another control. */
-export function isFlipKey(event: KeyboardEvent): boolean {
-  return !event.repeat && aimsAtCard(event);
-}
-
 /** A key pressed in a dialog stacked over the card (or a popover beside it) belongs to that layer. */
 function inOtherDialog(target: EventTarget | null, own: Element | null): boolean {
   const dialog = target instanceof Element ? target.closest(DIALOG) : null;

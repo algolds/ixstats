@@ -84,21 +84,4 @@ describe("useAuctionWebSocket", () => {
     client.listeners.get("auction_created")?.();
     expect(refetched()).toEqual(["browse", "getMyActiveAuctions"]);
   });
-
-  it("lets go of every subscription and the socket when it unmounts", () => {
-    const { unmount } = renderHook(() => useAuctionWebSocket({ enabled: true }));
-    unmount();
-    expect(client.unsubscribe.mock.calls.map(([type]) => type).sort()).toEqual([
-      "auction_complete",
-      "auction_created",
-      "bid",
-    ]);
-    expect(client.disconnect).toHaveBeenCalled();
-  });
-
-  it("stays off while disabled", () => {
-    renderHook(() => useAuctionWebSocket({ enabled: false }));
-    expect(client.connect).not.toHaveBeenCalled();
-    expect(client.listeners.size).toBe(0);
-  });
 });

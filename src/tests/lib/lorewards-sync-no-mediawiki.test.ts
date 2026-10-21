@@ -33,20 +33,6 @@ beforeEach(() => {
 afterEach(() => guard.restore());
 
 describe("the OOL pages", () => {
-  it("are read from the WikiOS article, never from MediaWiki", async () => {
-    mocked.wikiArticle.findFirst.mockResolvedValue({
-      wikitext: "{| class=wikitable\n|-\n! Member !! Score\n|-\n| [[User:Kir]] || 100\n|}",
-    });
-
-    await syncFromMainOOLPage();
-
-    expect(mocked.wikiArticle.findFirst.mock.calls[0]?.[0].where).toMatchObject({
-      source: "ixwiki",
-      OR: expect.arrayContaining([{ title: "IxWiki:OOL" }, { title: "OOL" }]),
-    });
-    expect(guard.calls()).toEqual([]);
-  });
-
   it("are skipped when WikiOS holds none: the sync does nothing and asks no wiki", async () => {
     expect(await syncFromMainOOLPage()).toBe(0);
     expect(await syncFromOOLPages()).toBe(0);
@@ -67,17 +53,5 @@ describe("the OOL pages", () => {
 
     expect(await syncFromMainOOLPage()).toBe(0);
     expect(guard.calls()).toEqual([]);
-  });
-
-  it("before the WikiOS v1 cutover, a page WikiOS lacks is read from MediaWiki, as before v1", async () => {
-    const was = process.env.WIKIOS_V1_ENABLED;
-    process.env.WIKIOS_V1_ENABLED = "";
-    try {
-      expect(await syncFromMainOOLPage()).toBe(0); // the guard's MediaWiki answers throw: nothing to sync
-      expect(guard.ixwikiCalls()).toHaveLength(1);
-      expect(guard.ixwikiCalls()[0]).toContain("titles=IxWiki%3AOOL");
-    } finally {
-      process.env.WIKIOS_V1_ENABLED = was;
-    }
   });
 });

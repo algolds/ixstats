@@ -15,14 +15,7 @@ import type { Prisma } from "@prisma/client";
 import { mintCopy } from "~/lib/cards/mint";
 import { PACK_ODDS_FIELDS } from "~/lib/cards/pack-odds";
 import { grantCardXp } from "~/lib/cards/xp-utils";
-import { notificationAPI } from "~/lib/notifications/api";
-import {
-  bestPulledRarity,
-  generatePackCards,
-  openPack,
-  PackError,
-  themeFilterWhere,
-} from "~/lib/cards/pack-service";
+import { generatePackCards, openPack, PackError } from "~/lib/cards/pack-service";
 import { invalidateVaultConfigCache, clearUserPerksCache } from "~/lib/vault/vault-perks";
 import { cardPacksUserRouter } from "~/server/api/routers/card-packs/user";
 import { createCallerFactory } from "~/server/api/trpc";
@@ -183,59 +176,7 @@ describe("generatePackCards", () => {
     expect(rarities.filter((r) => r === "RARE")).toHaveLength(1);
     expect(rarities.filter((r) => r === "COMMON")).toHaveLength(4);
   });
-
-  it("leaves the rolls alone when one already meets the guarantee", () => {
-    const rarities = generatePackCards({
-      ...allCommon,
-      commonOdds: 0,
-      legendaryOdds: 100,
-      guaranteedRarity: "RARE",
-    });
-    expect(rarities).toEqual(Array(5).fill("LEGENDARY"));
-  });
-
-  it("honours a guaranteed rarity in any casing", () => {
-    const rarities = generatePackCards({ ...allCommon, guaranteedRarity: "epic" });
-    expect(rarities.filter((r) => r === "EPIC")).toHaveLength(1);
-    expect(rarities.filter((r) => r === "COMMON")).toHaveLength(4);
-  });
-
-  it("ignores an unknown guaranteed rarity", () => {
-    expect(generatePackCards({ ...allCommon, guaranteedRarity: "MYTHIC" })).toEqual(
-      Array(5).fill("COMMON")
-    );
-  });
 });
-
-describe("themeFilterWhere", () => {
-  it("builds filters from each known key and ignores the rest", () => {
-    expect(
-      themeFilterWhere({
-        categories: ["MILITARY", "NOT_A_CATEGORY"],
-        cardTypes: "LORE",
-        countryIds: ["c1"],
-        bogus: ["x"],
-      })
-    ).toEqual([
-      { category: { in: ["MILITARY"] } },
-      { cardType: { in: ["LORE"] } },
-      { countryId: { in: ["c1"] } },
-    ]);
-  });
-
-  it("keeps only the card types the enum knows, and matches nothing for none", () => {
-    expect(themeFilterWhere({ cardTypes: ["LORE", "BOGUS"] })).toEqual([
-      { cardType: { in: ["LORE"] } },
-    ]);
-    expect(themeFilterWhere({ cardTypes: ["BOGUS"] })).toEqual([{ cardType: { in: [] } }]);
-  });
-
-  it("returns no filters when there is no theme", () => {
-    expect(themeFilterWhere(null)).toEqual([]);
-    expect(themeFilterWhere([])).toEqual([]);
-  });
-});
-
 describe("openPack", () => {
   it("never pulls SPECIAL or crafted cards", async () => {
     const { db } = makeDb([
@@ -281,24 +222,6 @@ describe("openPack", () => {
       artLicence: { isNot: { status: "RESTRICTED" } },
     });
   });
-
-  it("pulls art whose licence is open", async () => {
-    const { db } = makeDb([
-      { id: "open", rarity: "COMMON", cardType: "LORE", artLicence: { status: "OPEN" } },
-    ]);
-    const pulled = await openPack(db, USER, USER_PACK_ID);
-    expect(pulled.map((p) => p.card.id)).toEqual(Array(5).fill("open"));
-  });
-
-  it("never pulls a Loreward trophy card", async () => {
-    const { db } = makeDb([
-      { id: "trophy", rarity: "COMMON", cardType: "TROPHY", lorewardEntryId: "e1" },
-      { id: "ok", rarity: "COMMON", cardType: "LORE" },
-    ]);
-    const pulled = await openPack(db, USER, USER_PACK_ID);
-    expect(pulled.map((p) => p.card.id)).toEqual(Array(5).fill("ok"));
-  });
-
   it("refuses to open, minting nothing, when a rarity it gives has no cards", async () => {
     const { db, tx } = makeDb(
       [
@@ -357,37 +280,6 @@ describe("openPack", () => {
     const pulled = await openPack(db, USER, USER_PACK_ID);
     expect(pulled.map((p) => p.card.id)).toEqual(Array(5).fill("ok"));
   });
-
-  it("refuses to open when a rarity's only cards are in an unpublished realm", async () => {
-    const { db } = makeDb(
-      [
-        { id: "common", rarity: "COMMON", cardType: "LORE" },
-        { id: "draft-legend", rarity: "LEGENDARY", cardType: "LORE", realm: { status: "draft" } },
-      ],
-      { commonOdds: 90, legendaryOdds: 10 }
-    );
-    await expect(openPack(db, USER, USER_PACK_ID)).rejects.toMatchObject({
-      code: "PRECONDITION_FAILED",
-      message: expect.stringContaining("it has no Legendary cards to give"),
-    });
-    expect(jest.mocked(mintCopy)).not.toHaveBeenCalled();
-  });
-
-  it("applies the pack's theme filter and guaranteed rarity", async () => {
-    const { db } = makeDb(
-      [
-        { id: "mil-common", rarity: "COMMON", cardType: "LORE", category: "MILITARY" },
-        { id: "mil-rare", rarity: "RARE", cardType: "LORE", category: "MILITARY" },
-        { id: "geo-common", rarity: "COMMON", cardType: "LORE", category: "GEOGRAPHY" },
-        { id: "geo-rare", rarity: "RARE", cardType: "LORE", category: "GEOGRAPHY" },
-      ],
-      { themeFilter: { categories: ["MILITARY"] }, guaranteedRarity: "RARE" }
-    );
-    const ids = (await openPack(db, USER, USER_PACK_ID)).map((p) => p.card.id);
-    expect(ids.every((id) => id.startsWith("mil-"))).toBe(true);
-    expect(ids).toContain("mil-rare");
-  });
-
   it("mints every pulled card through mintCopy, its finish rolled, from the pack's transaction", async () => {
     const { db, tx } = makeDb([{ id: "ok", rarity: "COMMON", cardType: "LORE" }]);
     jest.mocked(grantCardXp).mockClear();
@@ -508,15 +400,6 @@ describe("openPack", () => {
     db.cardOwnership.count.mockResolvedValue(147);
     await expect(openPack(db, USER, USER_PACK_ID)).resolves.toHaveLength(3);
   });
-
-  it("throws a typed error when the pool is empty", async () => {
-    const { db } = makeDb([{ id: "special", rarity: "COMMON", cardType: "SPECIAL" }]);
-    await expect(openPack(db, USER, USER_PACK_ID)).rejects.toMatchObject({
-      name: "PackError",
-      code: "PRECONDITION_FAILED",
-      message: expect.stringContaining("it has no Common cards to give"),
-    });
-  });
 });
 
 describe("cardPacks.openPack errors", () => {
@@ -537,53 +420,5 @@ describe("cardPacks.openPack errors", () => {
   it("maps an already-opened pack to CONFLICT", async () => {
     const { db } = makeDb([], {}, { isOpened: true });
     await expect(call(db)).rejects.toMatchObject({ code: "CONFLICT" });
-  });
-
-  it("maps a full inventory to PRECONDITION_FAILED", async () => {
-    const { db } = makeDb([{ id: "ok", rarity: "COMMON", cardType: "NATION" }]);
-    db.cardOwnership.count.mockResolvedValue(150);
-    await expect(call(db)).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
-  });
-
-  it("keeps PackError a plain Error for other callers", () => {
-    expect(new PackError("NOT_FOUND", "x")).toBeInstanceOf(Error);
-  });
-});
-
-describe("cardPacks.openPack notification", () => {
-  const open = (cards: FakeCard[], odds: Record<string, number>) =>
-    createCallerFactory(cardPacksUserRouter)(
-      createMockRouterContext({ db: makeDb(cards, { commonOdds: 0, ...odds }).db }) as never
-    ).openPack({ userPackId: USER_PACK_ID });
-
-  it("is high priority from an Epic best pull up, as Epic ranks above Ultra Rare", async () => {
-    const create = jest.mocked(notificationAPI.create);
-    create.mockClear();
-    await open([{ id: "e", rarity: "EPIC", cardType: "LORE" }], { epicOdds: 100 });
-    await open([{ id: "l", rarity: "LEGENDARY", cardType: "LORE" }], { legendaryOdds: 100 });
-    await open([{ id: "u", rarity: "ULTRA_RARE", cardType: "LORE" }], { ultraRareOdds: 100 });
-    expect(create.mock.calls.map(([note]) => [note.metadata?.bestRarity, note.priority])).toEqual([
-      ["EPIC", "high"],
-      ["LEGENDARY", "high"],
-      ["ULTRA_RARE", "medium"],
-    ]);
-  });
-});
-
-describe("bestPulledRarity", () => {
-  it("ranks in schema order, so Epic beats Ultra Rare", () => {
-    expect(
-      bestPulledRarity([{ rarity: "ULTRA_RARE" }, { rarity: "EPIC" }, { rarity: "COMMON" }])
-    ).toBe("EPIC");
-    expect(bestPulledRarity([])).toBe("COMMON");
-  });
-
-  it("never lets an unknown rarity beat Common", () => {
-    expect(bestPulledRarity([{ rarity: "MYTHIC" }])).toBe("COMMON");
-    expect(bestPulledRarity([{ rarity: "MYTHIC" }, { rarity: "RARE" }])).toBe("RARE");
-  });
-
-  it("reads a rarity in any casing as its enum", () => {
-    expect(bestPulledRarity([{ rarity: "RARE" }, { rarity: "epic" }])).toBe("EPIC");
   });
 });

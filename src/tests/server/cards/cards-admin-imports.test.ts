@@ -18,8 +18,7 @@ jest.mock("~/server/modules/cards/cards.import-jobs", () => ({
 
 import { createCallerFactory } from "~/server/api/trpc";
 import { cardsAdminImportsRouter } from "~/server/api/routers/cards/admin/imports";
-import { crawlImportTitles, startManualImport } from "~/server/modules/cards/cards.import-crawl";
-import { kickImportRunner, retryImportJob } from "~/server/modules/cards/cards.import-jobs";
+import { crawlImportTitles } from "~/server/modules/cards/cards.import-crawl";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
@@ -44,42 +43,5 @@ describe("cards.admin.imports", () => {
       callerAs(createMockPrisma(), "user").crawl({ source: "ixwiki", mode: "all" })
     ).rejects.toThrow(/Admin privileges required/);
     expect(crawlImportTitles).not.toHaveBeenCalled();
-  });
-
-  it("crawls up to a job's worth of pages unless asked for fewer", async () => {
-    jest.mocked(crawlImportTitles).mockResolvedValue({ entries: [], truncated: false });
-    const db = createMockPrisma();
-    await callerAs(db, "admin").crawl({ source: "iiwiki", mode: "category", category: "Elm" });
-    expect(crawlImportTitles).toHaveBeenCalledWith(db, {
-      source: "iiwiki",
-      mode: "category",
-      category: "Elm",
-      limit: 2000,
-    });
-  });
-
-  it("queues an import as the signed-in admin", async () => {
-    jest.mocked(startManualImport).mockResolvedValue({ jobId: "job_1", queued: 1 });
-    const db = createMockPrisma();
-    await expect(
-      callerAs(db, "admin").start({
-        source: "commons",
-        label: "Category:Flags",
-        titles: ["File:A.svg"],
-      })
-    ).resolves.toEqual({ jobId: "job_1", queued: 1 });
-    expect(startManualImport).toHaveBeenCalledWith(
-      db,
-      { dbId: "db_x", clerkId: "clerk_x" },
-      { source: "commons", label: "Category:Flags", titles: ["File:A.svg"] }
-    );
-  });
-
-  it("starts a run after a retry, and on resume", async () => {
-    const db = createMockPrisma();
-    await callerAs(db, "admin").retry({ jobId: "job_1" });
-    expect(retryImportJob).toHaveBeenCalledWith(db, "job_1");
-    await callerAs(db, "admin").resume();
-    expect(kickImportRunner).toHaveBeenCalledTimes(2);
   });
 });

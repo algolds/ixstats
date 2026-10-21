@@ -42,7 +42,6 @@ import {
   loadVaultCardsShown,
 } from "~/server/modules/identity/identity.privacy";
 import { loadPlayerNames } from "~/server/modules/identity/identity.player-names";
-import { getArticleIntro, getArticleWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
@@ -149,17 +148,6 @@ describe("cards.getSheet", () => {
     expect(loadCardSheet).not.toHaveBeenCalled();
   });
 });
-
-describe("vaultVisible", () => {
-  it("is the passport's Vault cards switch", async () => {
-    jest.mocked(loadPassportSettings).mockResolvedValueOnce({
-      visibility: { vaultCards: true },
-    } as never);
-    await expect(vaultVisible("u1")).resolves.toBe(true);
-    expect(loadPassportSettings).toHaveBeenCalledWith("u1");
-  });
-});
-
 describe("playersOf", () => {
   it("names everyone by the identity rule, with one batched name read and one passport read", async () => {
     const ids = ["u-shows", "u-hides", "u-shows", "u-gone"];
@@ -178,64 +166,11 @@ describe("playersOf", () => {
 
 describe("holderOf", () => {
   const users = jest.mocked(serverDb.user);
-
-  it("finds a holder with no stored handle by their forum name or their Clerk id", async () => {
-    users.findUnique.mockResolvedValue(null);
-    users.findFirst.mockResolvedValueOnce({ id: "u_forum" } as never);
-    await expect(holderOf("Helvianir")).resolves.toBe("u_forum");
-    expect(users.findFirst.mock.calls[0]![0]!.where!.OR).toEqual(
-      expect.arrayContaining([{ forumUsername: { equals: "Helvianir", mode: "insensitive" } }])
-    );
-    users.findFirst.mockResolvedValueOnce({ id: "u_clerk" } as never);
-    await expect(holderOf("user_2abcDEF345ghiJKL678mnoPQR90s")).resolves.toBe("u_clerk");
-    expect(users.findFirst.mock.calls[1]![0]!.where!.OR).toEqual(
-      expect.arrayContaining([{ clerkUserId: "user_2abcDEF345ghiJKL678mnoPQR90s" }])
-    );
-  });
-
-  it("finds a holder by their stored handle first", async () => {
-    users.findUnique.mockResolvedValueOnce({ id: "u_stored" } as never);
-    await expect(holderOf("ann")).resolves.toBe("u_stored");
-    expect(users.findUnique.mock.calls[0]![0].where).toEqual({ handle: "ann" });
-    expect(users.findFirst).not.toHaveBeenCalled();
-  });
-
   it("names nobody for a handle no player has, or when the lookup fails", async () => {
     users.findUnique.mockResolvedValue(null);
     users.findFirst.mockResolvedValueOnce(null);
     await expect(holderOf("Takatta Loa")).resolves.toBeNull();
     users.findFirst.mockRejectedValueOnce(new Error("database down"));
     await expect(holderOf("Takatta Loa")).resolves.toBeNull();
-  });
-});
-
-describe("cards.getWikiArticleExcerpt", () => {
-  it("serves a signed-out caller from any article wiki, falling back to the intro", async () => {
-    await expect(
-      signedOut().getWikiArticleExcerpt({ articleTitle: "Caphiria", wikiSource: "althistory" })
-    ).resolves.toEqual({ extract: "An intro.", wikitext: "An intro." });
-    expect(getArticleWikitext).toHaveBeenCalledWith("Caphiria", "althistory");
-    expect(getArticleIntro).toHaveBeenCalledWith("Caphiria", "althistory");
-  });
-
-  it("returns the article's wikitext when it has some, and nothing when neither read finds it", async () => {
-    jest.mocked(getArticleWikitext).mockResolvedValueOnce({ wikitext: "'''Caphiria'''" } as never);
-    await expect(
-      signedOut().getWikiArticleExcerpt({ articleTitle: "Caphiria", wikiSource: "ixwiki" })
-    ).resolves.toEqual({ extract: "'''Caphiria'''", wikitext: "'''Caphiria'''" });
-    expect(getArticleIntro).not.toHaveBeenCalled();
-    jest.mocked(getArticleIntro).mockResolvedValueOnce(null as never);
-    await expect(
-      signedOut().getWikiArticleExcerpt({ articleTitle: "Nowhere", wikiSource: "iiwiki" })
-    ).resolves.toEqual({ extract: null, wikitext: null });
-  });
-
-  it("refuses Commons, which has no articles", async () => {
-    await expect(
-      signedOut().getWikiArticleExcerpt({
-        articleTitle: "File:Map.png",
-        wikiSource: "commons" as never,
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 });

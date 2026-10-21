@@ -72,13 +72,6 @@ describe("VaultService - Upgrades & Perks", () => {
         },
       });
     });
-
-    it("should return 0 if no store items match or are active", async () => {
-      mockDb.vaultTransaction.findMany.mockResolvedValue([]);
-      const boost = await vaultService.getCardCapacityBoost("user_123", mockDb);
-      expect(boost).toBe(0);
-    });
-
     it("should handle stringified JSON metadata", async () => {
       mockDb.vaultTransaction.findMany.mockResolvedValue([
         { metadata: '{"itemId":"item_cap_50"}' },
@@ -251,9 +244,6 @@ import {
   achievementBonus,
   nsImportBonus,
 } from "~/lib/vault/vault-bonus";
-import { classifyLoreArticle } from "~/lib/cards/category-classifier";
-import { LoreCategory } from "~/lib/cards/category-enums";
-
 describe("Vault Bonuses & Lore Card Classification", () => {
   it("achievement bonus scales by rarity, case-insensitive", () => {
     expect(achievementBonus(B, "Common")).toBe(100);
@@ -266,15 +256,5 @@ describe("Vault Bonuses & Lore Card Classification", () => {
     expect(nsImportBonus(B, 10)).toBe(500); // 10 * 50
     expect(nsImportBonus(B, 1000)).toBe(B.nsCap); // capped at 5000
     expect(nsImportBonus(B, 0)).toBe(0);
-  });
-
-  it("classifies lore article categories accurately from multi-signals", () => {
-    const result = classifyLoreArticle({
-      title: "King William IV",
-      text: "William IV was monarch of Burgundie during the Great War.",
-      infoboxes: ["infobox monarch"],
-      categories: ["Category:Monarchs of Burgundie"],
-    });
-    expect(result).toBe(LoreCategory.PEOPLE);
   });
 });

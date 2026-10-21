@@ -1,11 +1,8 @@
-/** @jest-environment node */
-import type { Prisma } from "@prisma/client";
 import { describe, it, expect } from "@jest/globals";
 import {
   DIVIDEND,
   computeDividend,
   dividendKey,
-  parseDividendMetadata,
   type DividendInputs,
   type DividendLine,
 } from "~/lib/vault/vault-dividend";
@@ -124,27 +121,5 @@ describe("computeDividend", () => {
 describe("dividendKey", () => {
   it("keys one payout per user per day", () => {
     expect(dividendKey("u1", "2026-10-20")).toBe("dividend:u1:2026-10-20");
-  });
-});
-
-describe("parseDividendMetadata", () => {
-  const inputs: DividendInputs = { ...ZERO, deckValue: 2000, posts: 2, streakDays: 3 };
-  const result = computeDividend(inputs);
-  const meta = { day: "2026-10-20", lines: result.lines, inputs };
-
-  it("round-trips an object", () => {
-    // `meta` is plain JSON, but its interface types carry no index signature, so it is not a Prisma.JsonObject
-    expect(parseDividendMetadata(meta as unknown as Prisma.JsonObject)).toEqual(meta);
-  });
-
-  it("reads the JSON string the ledger stores", () => {
-    expect(parseDividendMetadata(JSON.stringify(meta))).toEqual(meta);
-  });
-
-  it("returns null for anything else", () => {
-    expect(parseDividendMetadata(null)).toBeNull();
-    expect(parseDividendMetadata("not json")).toBeNull();
-    expect(parseDividendMetadata({ day: "2026-10-20" })).toBeNull();
-    expect(parseDividendMetadata(JSON.stringify({ ...meta, lines: [{ key: "sets" }] }))).toBeNull();
   });
 });

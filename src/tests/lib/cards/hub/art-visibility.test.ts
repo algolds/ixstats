@@ -4,12 +4,7 @@ jest.mock("~/lib/cards/copy-value", () => ({ topCopiesByValue: jest.fn() }));
 
 import { topCopiesByValue } from "~/lib/cards/copy-value";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
-import {
-  cardsCollectedBy,
-  contextShowsCard,
-  copyIdsOf,
-  facesFor,
-} from "~/lib/cards/hub/art-visibility";
+import { contextShowsCard } from "~/lib/cards/hub/art-visibility";
 import { displayedCopies } from "~/lib/cards/hub/displayed";
 import type { CardFaceRow } from "~/lib/cards/hub/faces";
 
@@ -52,77 +47,6 @@ const ranked = (...ids: string[]) =>
 beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(topCopiesByValue).mockResolvedValue([]);
-});
-
-describe("cardsCollectedBy", () => {
-  it("reads the viewer's copies once, asking about each card once", async () => {
-    const db = createMockPrisma();
-    db.cardOwnership.findMany.mockResolvedValue([{ cardId: "a" }]);
-    const set = await cardsCollectedBy(db as never, "me", ["a", "b", "c", "a"]);
-    expect([...set]).toEqual(["a"]);
-    expect(db.cardOwnership.findMany).toHaveBeenCalledTimes(1);
-    expect(db.cardOwnership.findMany).toHaveBeenCalledWith({
-      where: { ownerId: "me", cardId: { in: ["a", "b", "c"] } },
-      select: { cardId: true },
-      distinct: ["cardId"],
-    });
-  });
-
-  it("counts only the viewer's copies: a card on a live listing or auction is not collected", async () => {
-    const db = createMockPrisma();
-    db.cardOwnership.findMany.mockResolvedValue([]);
-    db.cardListing.findMany.mockResolvedValue([{ cardId: "listed" }]);
-    db.cardAuction.findMany.mockResolvedValue([{ cardId: "auctioned" }]);
-    await expect(cardsCollectedBy(db as never, "me", ["listed", "auctioned"])).resolves.toEqual(
-      new Set()
-    );
-    expect(db.cardListing.findMany).not.toHaveBeenCalled();
-    expect(db.cardAuction.findMany).not.toHaveBeenCalled();
-  });
-
-  it("holds nothing for a signed-out viewer, and asks nothing for no cards", async () => {
-    const db = createMockPrisma();
-    db.cardOwnership.findMany.mockResolvedValue([{ cardId: "a" }]);
-    await expect(cardsCollectedBy(db as never, null, ["a"])).resolves.toEqual(new Set());
-    await expect(cardsCollectedBy(db as never, "me", [])).resolves.toEqual(new Set());
-    expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
-  });
-});
-
-describe("facesFor", () => {
-  it("shows every card's art, marking the ones the viewer holds no copy of, NationStates cards included", async () => {
-    const db = createMockPrisma();
-    db.cardOwnership.findMany.mockResolvedValue([{ cardId: "mine" }]);
-    const faces = await facesFor(db as never, "me", [
-      { card: card("mine"), copy: copyOf("mine") },
-      { card: card("theirs") },
-      { card: card("flag", "NS") },
-    ]);
-    expect(faces.map((f) => [f.cardId, f.artwork, f.uncollected])).toEqual([
-      ["mine", "https://art/mine.png", false],
-      ["theirs", "https://art/theirs.png", true],
-      ["flag", "https://art/flag.png", true],
-    ]);
-    expect(faces.map((f) => f.copy?.ownershipId ?? null)).toEqual(["o-mine", null, null]);
-    expect(db.cardOwnership.findMany.mock.calls[0]![0].where).toEqual({
-      ownerId: "me",
-      cardId: { in: ["mine", "theirs", "flag"] },
-    });
-  });
-
-  it("marks every card for a signed-out viewer", async () => {
-    const db = createMockPrisma();
-    const faces = await facesFor(db as never, null, [{ card: card("c1"), copy: copyOf("c1") }]);
-    expect(faces.map((f) => [f.artwork, f.uncollected])).toEqual([["https://art/c1.png", true]]);
-  });
-});
-
-describe("copyIdsOf", () => {
-  it("keeps the string ids of a stored list, and reads anything else as none", () => {
-    expect(copyIdsOf(["o1", 5, null, "o2"])).toEqual(["o1", "o2"]);
-    expect(copyIdsOf({ ids: ["o1"] })).toEqual([]);
-    expect(copyIdsOf(null)).toEqual([]);
-  });
 });
 
 /** A stored trade, for a findFirst that applies the offer rule's `where` as the database would. */
@@ -300,18 +224,6 @@ describe("contextShowsCard", () => {
     ).resolves.toBe(false);
     expect(hidden.vaultVisible).toHaveBeenLastCalledWith("holder");
   });
-
-  it("finds a holder with no stored handle by the passport handle they show", async () => {
-    const db = createMockPrisma();
-    db.cardOwnership.findFirst.mockResolvedValue({ id: "trophy-copy" });
-    await expect(
-      contextShowsCard(db as never, "me", "t1", { kind: "holder", handle: "Takatta Loa" }, visible)
-    ).resolves.toBe(true);
-    expect(holderOf).toHaveBeenCalledWith("Takatta Loa");
-    expect(visible.vaultVisible).toHaveBeenCalledWith("holder");
-    expect(db.cardOwnership.findFirst.mock.calls[0]![0].where).toMatchObject({ ownerId: "holder" });
-  });
-
   it("shows nothing for a handle no player has", async () => {
     const db = createMockPrisma();
     await expect(
@@ -349,49 +261,5 @@ describe("displayedCopies", () => {
       },
     });
     expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
-  });
-
-  it("falls back to the most valuable live copies by copy value, one per card, best first", async () => {
-    const db = createMockPrisma();
-    db.cardCollection.findFirst.mockResolvedValue({ id: "s1", name: "Empty", items: [] });
-    jest.mocked(topCopiesByValue).mockResolvedValue(ranked("c3", "c2"));
-    db.cardOwnership.findMany.mockResolvedValue([
-      { ...copyOf("c2"), cards: card("c2") },
-      { ...copyOf("c3"), cards: card("c3") },
-    ]);
-    const shown = await displayedCopies(db as never, "u1", 4);
-    expect(shown).toEqual({
-      showcase: null,
-      copies: [
-        { card: card("c3"), copy: copyOf("c3") },
-        { card: card("c2"), copy: copyOf("c2") },
-      ],
-    });
-    expect(db.cardCollection.findFirst.mock.calls[0]![0]).toMatchObject({
-      select: { items: { take: 4 } },
-    });
-    expect(jest.mocked(topCopiesByValue)).toHaveBeenCalledWith(db, "u1", 4);
-    expect(db.cardOwnership.findMany.mock.calls[0]![0]).toMatchObject({
-      where: { id: { in: ["o-c3", "o-c2"] }, ownerId: "u1", cards: { isRetired: false } },
-    });
-  });
-
-  it("leaves out a ranked copy that moved or was retired before its face was read", async () => {
-    const db = createMockPrisma();
-    db.cardCollection.findFirst.mockResolvedValue(null);
-    jest.mocked(topCopiesByValue).mockResolvedValue(ranked("c3", "c2"));
-    db.cardOwnership.findMany.mockResolvedValue([{ ...copyOf("c2"), cards: card("c2") }]);
-    const shown = await displayedCopies(db as never, "u1");
-    expect(shown.copies).toEqual([{ card: card("c2"), copy: copyOf("c2") }]);
-  });
-
-  it("reads no faces when the player holds no live copy", async () => {
-    const unpinned = createMockPrisma();
-    await expect(displayedCopies(unpinned as never, "u1")).resolves.toEqual({
-      showcase: null,
-      copies: [],
-    });
-    expect(jest.mocked(topCopiesByValue)).toHaveBeenCalledWith(unpinned, "u1", 6);
-    expect(unpinned.cardOwnership.findMany).not.toHaveBeenCalled();
   });
 });

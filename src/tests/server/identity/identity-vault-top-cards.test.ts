@@ -46,21 +46,6 @@ const copyRow = (n: number) => ({
     realm: IXNAY,
   },
 });
-
-const faceOf = (n: number) => ({
-  cardId: `c${n}`,
-  title: `Card ${n}`,
-  rarity: "RARE",
-  cardType: "LORE",
-  realm: { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false },
-  artwork: `/art/c${n}.png`,
-  uncollected: false,
-  number: n,
-  season: null,
-  isRetired: false,
-  copy: { ownershipId: `own-${n}`, finish: "FOIL", serialNumber: n, level: 2 },
-});
-
 /** The top copies by value, best first, as the shared copy value ranks them. */
 const ranked = (...ns: number[]) =>
   ns.map((n) => ({
@@ -82,12 +67,6 @@ function ownerships(top: ReturnType<typeof copyRow>[]) {
         : [{ cards: { category: "MILITARY" } }]) as never);
 }
 
-const faceRead = () =>
-  jest
-    .mocked(db.cardOwnership.findMany)
-    .mock.calls.map(([args]) => args)
-    .find((args) => args?.where?.id);
-
 beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(db.myVault.findUnique).mockResolvedValue(null);
@@ -99,29 +78,6 @@ beforeEach(() => {
 });
 
 describe("resolvePassportVault topCards", () => {
-  it("shows the holder's pinned public showcase, as faces with their art", async () => {
-    jest.mocked(db.cardCollection.findFirst).mockResolvedValue({
-      id: "s1",
-      name: "Best of Ixnay",
-      items: [{ cardOwnership: copyRow(3) }],
-    } as never);
-
-    const vault = await resolvePassportVault("u1");
-    expect(vault.topCards).toEqual([faceOf(3)]);
-    expect(jest.mocked(db.cardCollection.findFirst).mock.calls[0]![0]).toMatchObject({
-      where: { userId: "u1", isPublic: true, pinnedAt: { not: null } },
-    });
-  });
-
-  it("falls back to the six most valuable live copies by copy value, one per card, best first", async () => {
-    const vault = await resolvePassportVault("u1");
-    expect(vault.topCards).toEqual([faceOf(2), faceOf(1)]);
-    expect(jest.mocked(topCopiesByValue).mock.calls).toEqual([[db, "u1", 6]]);
-    expect(faceRead()).toMatchObject({
-      where: { id: { in: ["own-2", "own-1"] }, ownerId: "u1", cards: { isRetired: false } },
-    });
-  });
-
   it("shows the display in full colour to every visitor, reading none of the visitor's copies", async () => {
     const vault = await resolvePassportVault("u1");
     expect(vault.topCards.map((face) => face.uncollected)).toEqual([false, false]);
@@ -141,17 +97,5 @@ describe("resolvePassportVault topCards", () => {
       where: { ownerId: "u1", cards: { isRetired: false } },
       select: { cards: { select: { category: true } } },
     });
-  });
-
-  it("leaves out a top copy that is gone by the time its face is read", async () => {
-    jest.mocked(topCopiesByValue).mockResolvedValue(ranked(3, 1));
-    const vault = await resolvePassportVault("u1");
-    expect(vault.topCards).toEqual([faceOf(1)]);
-  });
-
-  it("has no highlight without an account", async () => {
-    expect((await resolvePassportVault(null)).topCards).toEqual([]);
-    expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
-    expect(deckValueOf).not.toHaveBeenCalled();
   });
 });

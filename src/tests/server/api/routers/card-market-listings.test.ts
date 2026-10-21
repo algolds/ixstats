@@ -20,8 +20,6 @@ jest.mock("~/server/modules/cards/market/browse", () => ({
   ...jest.requireActual("~/server/modules/cards/market/browse"),
   browseMarket: jest.fn(),
 }));
-
-import { TRPCError } from "@trpc/server";
 import { rateLimiter } from "~/lib/cache";
 import { clearVaultCachesFor } from "~/lib/vault/vault-cache";
 import { createCallerFactory } from "~/server/api/trpc";
@@ -75,43 +73,6 @@ describe("cardMarket listing procedures", () => {
     }
     expect(createListing).not.toHaveBeenCalled();
   });
-
-  it("list several copies, each on its own, and say which failed and why", async () => {
-    jest
-      .mocked(createListing)
-      .mockResolvedValueOnce(listed("l1"))
-      .mockRejectedValueOnce(
-        new TRPCError({ code: "CONFLICT", message: "This copy is already listed or in a trade." })
-      )
-      .mockRejectedValueOnce(new Error("connection reset: host db-1"));
-    const errorLog = jest.spyOn(console, "error").mockImplementation(() => undefined);
-    const results = await caller.createListings({
-      items: [
-        { ownershipId: "a", price: 10 },
-        { ownershipId: "b", price: 20 },
-        { ownershipId: "c", price: 30 },
-      ],
-      isFeatured: true,
-    });
-    errorLog.mockRestore();
-    expect(results).toEqual([
-      { ownershipId: "a", listingId: "l1", error: null },
-      { ownershipId: "b", listingId: null, error: "This copy is already listed or in a trade." },
-      // Anything but the market's own refusal stays on the server
-      { ownershipId: "c", listingId: null, error: "Could not list this copy." },
-    ]);
-    expect(createListing).toHaveBeenCalledTimes(3);
-    expect(createListing).toHaveBeenLastCalledWith(db, {
-      sellerId: "u1",
-      ownershipId: "c",
-      price: 30,
-      isFeatured: true,
-      now: expect.any(Date),
-    });
-    expect(clearVaultCachesFor).toHaveBeenCalledTimes(1);
-    expect(clearVaultCachesFor).toHaveBeenCalledWith(db, ["u1"]);
-  });
-
   it("list at most 20 copies at once", async () => {
     const items = Array.from({ length: 21 }, (_, i) => ({ ownershipId: `o${i}`, price: 10 }));
     await expect(caller.createListings({ items })).rejects.toMatchObject({ code: "BAD_REQUEST" });

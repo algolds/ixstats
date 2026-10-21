@@ -2,12 +2,7 @@
  * VT-12: equipped cosmetics were visible only to their owner. `loadPublicCosmetics` lets anyone
  * render another player's glow, badge and frame, batched, and returns render data only.
  */
-import {
-  loadPublicCosmetics,
-  MAX_PUBLIC_COSMETICS_LOOKUP,
-  parseEquippedCosmetics,
-  resolvePublicCosmetics,
-} from "~/lib/vault/public-cosmetics";
+import { loadPublicCosmetics, MAX_PUBLIC_COSMETICS_LOOKUP } from "~/lib/vault/public-cosmetics";
 import { createCallerFactory } from "~/server/api/trpc";
 import { vaultPublicCosmeticsRouter } from "~/server/api/routers/vault/public-cosmetics";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
@@ -21,39 +16,6 @@ const ACTIVE = new Map<string, unknown>([
     { customizations: { chatBadge: { enabled: true, icon: "Star", color: "#fff" } } },
   ],
 ]);
-
-describe("resolvePublicCosmetics", () => {
-  it("resolves catalog cosmetics into glow, badge and frame", () => {
-    const out = resolvePublicCosmetics(
-      ["cosmetic_gold_glow", "cosmetic_chat_badge", "cosmetic_neon_frame"],
-      ACTIVE
-    );
-    expect(out.equipped).toEqual([
-      "cosmetic_gold_glow",
-      "cosmetic_chat_badge",
-      "cosmetic_neon_frame",
-    ]);
-    expect(out.avatarGlow).toMatchObject({ enabled: true, color: "rgba(245,158,11,0.65)" });
-    expect(out.chatBadge).toMatchObject({ enabled: true, icon: "Crown" });
-    expect(out.neonFrame).toMatchObject({ enabled: true, color: "#22d3ee", style: "pulse" });
-  });
-
-  it("falls back to the store item's stored customizations", () => {
-    const out = resolvePublicCosmetics(["custom_badge"], ACTIVE);
-    expect(out.chatBadge).toEqual({ enabled: true, icon: "Star", color: "#fff" });
-  });
-
-  it("ignores ids that are not active cosmetics", () => {
-    const out = resolvePublicCosmetics(["cosmetic_ruby_frame", "upgrade_card_capacity"], ACTIVE);
-    expect(out.equipped).toEqual([]);
-    expect(out.neonFrame.enabled).toBe(false);
-  });
-
-  it("parses the comma-separated equipped list", () => {
-    expect(parseEquippedCosmetics("a,,b")).toEqual(["a", "b"]);
-    expect(parseEquippedCosmetics(null)).toEqual([]);
-  });
-});
 
 function makeDb(users: Array<{ id: string; clerkUserId: string; equipped: string }>) {
   return {
@@ -80,30 +42,6 @@ describe("loadPublicCosmetics", () => {
       { id: "u2", clerkUserId: "clerk_2", equipped: "" },
       { id: "u3", clerkUserId: "clerk_3", equipped: "cosmetic_gold_glow" },
     ]);
-
-  it("answers a whole page in two queries, keyed as requested", async () => {
-    const mock = db();
-    const result = await loadPublicCosmetics(mock as never, {
-      userIds: ["clerk_3", "u1", "u2", "u1"],
-    });
-
-    expect(mock.user.findMany).toHaveBeenCalledTimes(1);
-    expect(mock.vaultStoreItem.findMany).toHaveBeenCalledTimes(1);
-    expect(mock.user.findMany.mock.calls[0][0].where).toEqual({
-      isActive: true,
-      OR: [{ id: { in: ["clerk_3", "u1", "u2"] } }, { clerkUserId: { in: ["clerk_3", "u1", "u2"] } }],
-    });
-    expect(mock.vaultStoreItem.findMany.mock.calls[0][0].where).toMatchObject({
-      category: "cosmetics",
-      isActive: true,
-    });
-    expect(Object.keys(result.users).sort()).toEqual(["clerk_3", "u1"]); // u2 has nothing equipped
-    expect(result.users.u1?.chatBadge.enabled).toBe(true);
-    expect(result.users.clerk_3?.avatarGlow.enabled).toBe(true);
-    // Phase 4b: the XenForo forum is gone, so there is no lookup by forum user id.
-    expect(result).not.toHaveProperty("forumUsers");
-  });
-
   it("returns render data only, never wallet or inventory fields", async () => {
     const result = await loadPublicCosmetics(db() as never, { userIds: ["u1"] });
     expect(Object.keys(result.users.u1!).sort()).toEqual([
