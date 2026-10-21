@@ -15,8 +15,8 @@ import { parseInertOnServer } from "./server-dom";
 
 /**
  * MediaWiki's and its citation templates' own classes: no WikiOS stylesheet has a rule for them and
- * no WikiOS code selects them (src/tests/lib/wiki-os/slim-html.test.ts checks both, so a stylesheet
- * that starts using one fails there before it quietly loses its styling).
+ * no WikiOS code selects them. A stylesheet or selector that starts using one must take it out of this
+ * list, or it quietly loses its styling (nothing checks this automatically any more).
  */
 export const UNUSED_MEDIAWIKI_CLASSES: ReadonlySet<string> = new Set([
   "mw-redirect",
