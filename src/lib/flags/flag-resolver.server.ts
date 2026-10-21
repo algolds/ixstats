@@ -50,19 +50,6 @@ export class ServerFlagResolver implements FlagResolver {
     return withBasePath(PLACEHOLDER_PATH);
   }
 
-  public peek(countryName: string): FlagResolution | null {
-    const normalized = normalizeCountryName(countryName);
-    if (!normalized) return null;
-
-    // Check with default policy
-    const key = this.getCacheKey(normalized, "commons-only");
-    const entry = this.memoryCache.get(key);
-    if (entry && entry.expiresAt > Date.now()) {
-      return entry.resolution;
-    }
-    return null;
-  }
-
   public async resolve(
     countryName: string,
     options?: FlagResolverOptions

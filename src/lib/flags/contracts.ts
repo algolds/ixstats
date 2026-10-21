@@ -42,7 +42,6 @@ export interface FlagResolver {
     countryNames: readonly string[],
     options?: { fallbackPolicy?: FlagFallbackPolicy }
   ): Promise<ReadonlyMap<string, FlagResolution>>;
-  peek(countryName: string): FlagResolution | null;
   prefetch(
     countryNames: readonly string[],
     options?: { fallbackPolicy?: FlagFallbackPolicy }
