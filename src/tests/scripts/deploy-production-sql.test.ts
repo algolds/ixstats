@@ -60,4 +60,58 @@ describe("deploy-production.sh applies the SQL db push cannot", () => {
     expect(drop).toBeGreaterThan(vault);
     expect(push).toBeGreaterThan(drop);
   });
+
+  it("runs the cards additive SQL, the cards backfill and the cards constraints, in order, after the Vault hub SQL and before the push", () => {
+    const vault = script.indexOf("prisma/migrations/20261024120000_vault_hub/migration.sql");
+    const additive = script.indexOf(
+      "bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261027120000_cards_foundations/migration.sql || exit 1"
+    );
+    const backfill = script.indexOf(
+      "bun scripts/cards/backfill-cards-refresh.ts --apply || exit 1"
+    );
+    const constraints = script.indexOf(
+      "bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261027120001_cards_foundations_constraints/migration.sql || exit 1"
+    );
+    const push = script.indexOf("bun run db:push:force");
+    expect(vault).toBeGreaterThan(0);
+    expect(additive).toBeGreaterThan(vault);
+    expect(backfill).toBeGreaterThan(additive);
+    expect(constraints).toBeGreaterThan(backfill);
+    expect(push).toBeGreaterThan(constraints);
+  });
+
+  it("runs the cards admin SQL right after the cards constraints, before the push, and stops the deploy if it fails", () => {
+    const constraints = script.indexOf(
+      "prisma/migrations/20261027120001_cards_foundations_constraints/migration.sql || exit 1"
+    );
+    const admin = script.indexOf(
+      "bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261028120000_cards_admin/migration.sql || exit 1"
+    );
+    const push = script.indexOf("bun run db:push:force");
+    expect(constraints).toBeGreaterThan(0);
+    expect(admin).toBeGreaterThan(constraints);
+    expect(push).toBeGreaterThan(admin);
+  });
+
+  it("runs the cards face-hub SQL after the cards admin SQL, before the economy SQL, and stops the deploy if it fails", () => {
+    const run =
+      "bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261031120000_cards_face_hub/migration.sql || exit 1";
+    const faceHub = script.indexOf(run);
+    expect(faceHub).toBeGreaterThan(script.indexOf("bun run db:backup"));
+    expect(faceHub).toBeGreaterThan(
+      script.indexOf("20261028120000_cards_admin/migration.sql || exit 1")
+    );
+    expect(faceHub).toBeLessThan(script.indexOf("_cards_economy/migration.sql"));
+  });
+
+  it("runs the cards economy SQL as the last SQL before the schema push, and stops the deploy if it fails", () => {
+    const run =
+      "bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261101120000_cards_economy/migration.sql || exit 1";
+    const push = script.indexOf("bun run db:push:force");
+    const economy = script.indexOf(run);
+    expect(economy).toBeGreaterThan(
+      script.indexOf("20261031120000_cards_face_hub/migration.sql || exit 1")
+    );
+    expect(economy).toBe(script.lastIndexOf("bunx prisma db execute", push));
+  });
 });

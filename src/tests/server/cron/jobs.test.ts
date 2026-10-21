@@ -11,7 +11,7 @@ import {
   resolveSchedule,
   summarizeResult,
 } from "~/server/cron/jobs";
-import { isValidCronPattern } from "~/server/cron/scheduler";
+import { isValidCronPattern, matchesCron } from "~/server/cron/scheduler";
 
 const rootDir = path.resolve(__dirname, "../../../..");
 const moduleFile = (modulePath: string): string =>
@@ -60,6 +60,55 @@ describe("CRON_JOBS", () => {
       exportName: "runMapTilePrerender",
     });
     expect(job?.timeoutMs).toBeGreaterThan(15 * 60_000);
+  });
+
+  it("queues the daily lore import, and works card imports every minute under the lease the admin's Start shares", () => {
+    expect(CRON_JOBS.find((j) => j.name === "lore-card-generation")).toMatchObject({
+      defaultSchedule: "0 2 * * *",
+      modulePath: "~/server/modules/cards/cards.daily-import",
+      exportName: "queueDailyLoreImports",
+    });
+    expect(CRON_JOBS.find((j) => j.name === "card-import-jobs")).toMatchObject({
+      defaultSchedule: "* * * * *",
+      lockName: "card-import-jobs",
+      timeoutMs: 5 * 60_000,
+      exportName: "runQueuedCardImports",
+    });
+  });
+
+  it("ticks card holding XP at 03:30 UTC under its own lease, retrying hourly for the rest of the day", () => {
+    const job = CRON_JOBS.find((j) => j.name === "card-holding-xp");
+    expect(job).toMatchObject({
+      defaultSchedule: "30 3-23 * * *",
+      lockName: "card-holding-xp",
+      modulePath: "~/server/modules/cards/holding-xp",
+      exportName: "runHoldingXpTick",
+    });
+    const firesAt = (time: string) =>
+      matchesCron(job?.defaultSchedule ?? "", new Date(`2026-11-02T${time}Z`));
+    expect(["03:30", "04:30", "23:30"].map(firesAt)).toEqual([true, true, true]);
+    expect(["02:30", "03:00", "00:30"].map(firesAt)).toEqual([false, false, false]);
+  });
+
+  it("expires listings every 10 minutes under its own lease", () => {
+    expect(CRON_JOBS.find((j) => j.name === "listing-expiry")).toMatchObject({
+      defaultSchedule: "*/10 * * * *",
+      lockName: "listing-expiry",
+      timeoutMs: 5 * 60_000,
+      modulePath: "~/server/modules/cards/market/listing-expiry-cron",
+      exportName: "processExpiredListings",
+    });
+  });
+
+  it("rebuilds market medians and card values every 6 hours under the card-value lease", () => {
+    expect(CRON_JOBS.find((j) => j.name === "card-values")).toMatchObject({
+      defaultSchedule: "0 */6 * * *",
+      scheduleConfigKey: "cronSchedule_cardValue",
+      lockName: "card-value",
+      timeoutMs: 30 * 60_000,
+      modulePath: "~/server/modules/cards/market-values",
+      exportName: "runCardMarketValues",
+    });
   });
 
   it.each(CRON_JOBS.map((job) => [job.name, job] as const))(

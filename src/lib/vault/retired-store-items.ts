@@ -10,6 +10,7 @@
  * Keep the store item row (the ledger and the exploit audit look purchases up by item id).
  */
 import type { Prisma } from "@prisma/client";
+import { isJsonObject } from "~/lib/cards/ns-facts";
 
 export const RETIRED_STORE_ITEM_IDS: readonly string[] = ["upgrade_archetype_proposal"];
 
@@ -24,14 +25,14 @@ export interface StorePurchaseRow {
   id: string;
   vaultId: string;
   credits: number;
-  metadata: unknown;
+  metadata: Prisma.JsonValue | null;
   vault: { userId: string };
 }
 
 /** An `exploit_correction:*` adjustment, which names the purchase it corrected. */
 export interface LedgerCorrectionRow {
   credits: number;
-  metadata: unknown;
+  metadata: Prisma.JsonValue | null;
 }
 
 export interface RetiredItemRefund {
@@ -46,21 +47,33 @@ export interface RetiredItemRefund {
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
-/** Ledger metadata is stored as a JSON string (older rows: an object). */
-function metadataOf(metadata: unknown): Record<string, unknown> {
-  let meta = metadata;
-  if (typeof meta === "string") {
-    try {
-      meta = JSON.parse(meta);
-    } catch {
-      return {};
-    }
+/** Ledger metadata is stored as a JSON string (older rows: an object); anything unreadable reads as empty. */
+export function ledgerMetadata(metadata: Prisma.JsonValue | null): Prisma.JsonObject {
+  if (typeof metadata !== "string") return isJsonObject(metadata) ? metadata : {};
+  try {
+    const parsed = JSON.parse(metadata) as Prisma.JsonValue;
+    return isJsonObject(parsed) ? parsed : {};
+  } catch {
+    return {};
   }
-  return meta && typeof meta === "object" ? (meta as Record<string, unknown>) : {};
 }
 
 export function retiredItemRefundKey(sourceTransactionId: string): string {
   return `retired_item_refund:${sourceTransactionId}`;
+}
+
+/** The exploit corrections applied to each purchase, summed by purchase id (signed, as booked). */
+export function correctionsByPurchase(
+  corrections: readonly LedgerCorrectionRow[]
+): Map<string, number> {
+  const correctedBy = new Map<string, number>();
+  for (const row of corrections) {
+    const source = ledgerMetadata(row.metadata).sourceTransactionId;
+    if (typeof source === "string") {
+      correctedBy.set(source, (correctedBy.get(source) ?? 0) + row.credits);
+    }
+  }
+  return correctedBy;
 }
 
 /**
@@ -71,17 +84,11 @@ export function planRetiredItemRefunds(
   purchases: readonly StorePurchaseRow[],
   corrections: readonly LedgerCorrectionRow[]
 ): RetiredItemRefund[] {
-  const correctedBy = new Map<string, number>();
-  for (const row of corrections) {
-    const source = metadataOf(row.metadata).sourceTransactionId;
-    if (typeof source === "string") {
-      correctedBy.set(source, (correctedBy.get(source) ?? 0) + row.credits);
-    }
-  }
+  const correctedBy = correctionsByPurchase(corrections);
 
   const refunds: RetiredItemRefund[] = [];
   for (const row of purchases) {
-    const itemId = metadataOf(row.metadata).itemId;
+    const itemId = ledgerMetadata(row.metadata).itemId;
     if (typeof itemId !== "string" || !isRetiredStoreItem(itemId)) continue;
     const amount = round2(-row.credits - (correctedBy.get(row.id) ?? 0));
     if (amount <= 0) continue;

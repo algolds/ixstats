@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { invalidateConfigCache } from "~/lib/config-service";
 import { generateSlug } from "~/lib/utils";
@@ -13,6 +12,10 @@ import {
 } from "~/lib/lorewards";
 import { categorizeTemplate } from "~/lib/wiki-os/templates/template-registry";
 import { fetchTemplateData } from "~/lib/wiki-os/templates/template-engine.server";
+import { tellBotOfOverride } from "~/lib/lorewards/bot-client";
+import { overrideDateSchema } from "~/lib/lorewards/override-form";
+import { adminActor } from "~/server/shared/admin-actor";
+import { overrideLorewardEntry } from "~/server/modules/cards/cards.trophies";
 import { writeConfigKeys } from "./_config-kv";
 
 /** The scorer's tunable weights (WK-8): prose weight is a 0-1 blend, the rest bonuses/multipliers. */
@@ -126,7 +129,7 @@ export const adminWikiRouter = createTRPCRouter({
   saveLorewardWinnerOverride: adminProcedure
     .input(
       z.object({
-        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        date: overrideDateSchema,
         type: z.enum(["daily", "weekly", "monthly"]).default("daily"),
         winnerUser: z.string(),
         winnerPage: z.string(),
@@ -139,98 +142,20 @@ export const adminWikiRouter = createTRPCRouter({
         status: z.string().default("approved"),
       })
     )
+    // The scored result is an override like any other: its places' trophies follow, no sync writes over it, and the
+    // bot is told, to announce it, as `lorewards.overrideWinner` tells it (`botSynced` false when it could not be;
+    // the override stands)
     .mutation(async ({ ctx, input }) => {
-      const entry = await ctx.db.lorewardEntry.upsert({
-        where: {
-          date_type: {
-            date: input.date,
-            type: input.type,
-          },
-        },
-        create: {
-          date: input.date,
-          type: input.type,
-          winnerUser: input.winnerUser,
-          winnerPage: input.winnerPage,
-          winnerScore: input.winnerScore ?? null,
-          winnerBytes: input.winnerBytes ?? null,
-          runnerUpUser: input.runnerUpUser ?? null,
-          runnerUpPage: input.runnerUpPage ?? null,
-          runnerUpScore: input.runnerUpScore ?? null,
-          runnerUpBytes: input.runnerUpBytes ?? null,
-          status: input.status,
-        },
-        update: {
-          winnerUser: input.winnerUser,
-          winnerPage: input.winnerPage,
-          winnerScore: input.winnerScore ?? null,
-          winnerBytes: input.winnerBytes ?? null,
-          runnerUpUser: input.runnerUpUser ?? null,
-          runnerUpPage: input.runnerUpPage ?? null,
-          runnerUpScore: input.runnerUpScore ?? null,
-          runnerUpBytes: input.runnerUpBytes ?? null,
-          status: input.status,
-          syncedAt: new Date(),
-        },
+      const { date, type, status, ...fields } = input;
+      const result = await overrideLorewardEntry(ctx.db, adminActor(ctx), {
+        date,
+        type,
+        fields,
+        status,
       });
       await invalidateCache(["lorewards."]);
-      return entry;
-    }),
-
-  pushLorewardToBot: adminProcedure
-    .input(
-      z.object({
-        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-        winner: z.object({
-          user: z.string(),
-          page: z.string(),
-          score: z.number(),
-          bytesAdded: z.number(),
-        }),
-        runnerUp: z
-          .object({
-            user: z.string(),
-            page: z.string(),
-            score: z.number(),
-            bytesAdded: z.number(),
-          })
-          .optional()
-          .nullable(),
-        candidates: z
-          .array(
-            z.object({
-              user: z.string(),
-              page: z.string(),
-              score: z.number(),
-              bytesAdded: z.number(),
-            })
-          )
-          .optional(),
-        editCount: z.number().optional(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const botUrl = process.env.IXTIME_BOT_URL || "http://localhost:3001";
-      try {
-        const response = await fetch(`${botUrl}/bot/lorewards/announce`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(input),
-        });
-        if (!response.ok) {
-          throw new Error(`Bot API returned HTTP ${response.status}`);
-        }
-        const data = await response.json();
-        return { success: true, data };
-      } catch (error) {
-        console.error("Failed to push loreward to bot:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `Failed to notify bot: ${error instanceof Error ? error.message : "Unknown error"}`,
-        });
-      }
+      const botSynced = await tellBotOfOverride({ date: result.day, type, ...result.written });
+      return { ...result, botSynced };
     }),
 
   purgeWikiCache: adminProcedure

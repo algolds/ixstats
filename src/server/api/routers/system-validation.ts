@@ -330,7 +330,6 @@ export const systemValidationRouter = createTRPCRouter({
       "cardMarket",
       "cardAnalytics",
       "autosaveMonitoring",
-      "crafting",
       "trading",
       "cardImages",
       "elections",

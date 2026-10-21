@@ -21,6 +21,7 @@ function addRealm(db: Fake, id: string, extra: Record<string, unknown> = {}) {
     name: `Realm ${id}`,
     status: "active",
     visibility: "public",
+    isSystem: false,
     mapVersion: 3,
     settings: { map: { rasterLayers: [{ ...reliefEntry, version: version(id) }] } },
     ...extra,
@@ -136,6 +137,14 @@ describe("realmOverview figures", () => {
         flags: ["unlinked"],
       }),
     ]);
+  });
+
+  it("leaves system realms out (they have no map)", async () => {
+    const db = atlasFakeDb();
+    addRealm(db, "a");
+    addRealm(db, "nationstates", { isSystem: true });
+    const { realms } = await realmOverview(db, {}, { folderExists: exists([]) });
+    expect(realms.map((realm) => realm.id)).toEqual(["a"]);
   });
 
   it("uses finishedAt for a finished last job", async () => {

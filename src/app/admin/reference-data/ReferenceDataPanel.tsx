@@ -11,7 +11,6 @@ import { api } from "~/trpc/react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
 import {
-  Database,
   WhiteFlag as Flag,
   Emoji as Drama,
   Rocket,
@@ -19,14 +18,11 @@ import {
   Journal as Newspaper,
   Building,
   StatUp as TrendingUp,
-  CreditCard,
-  OpenBook as BookOpen,
   Component as Layers,
   Page as FileText,
   Tournament as Swords,
   Brain,
   OpenNewWindow as ExternalLink,
-  Refresh as RefreshCw,
 } from "iconoir-react";
 
 /** Category icon colours (static class names so Tailwind generates them). */
@@ -49,7 +45,7 @@ interface DataTypeConfig {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   description: string;
-  category: "diplomacy" | "military" | "governance" | "economy" | "content" | "system";
+  category: "diplomacy" | "military" | "governance" | "economy" | "content";
   color: string;
 }
 
@@ -144,35 +140,6 @@ const DATA_TYPES: DataTypeConfig[] = [
     category: "content",
     color: "amber",
   },
-  {
-    key: "card-packs",
-    label: "Card packs",
-    href: "/admin/cards?tab=packs",
-    icon: CreditCard,
-    description: "Pack configurations and rarity distributions",
-    category: "content",
-    color: "amber",
-  },
-  {
-    key: "lore-cards",
-    label: "Lore cards",
-    href: "/admin/cards?tab=lore",
-    icon: BookOpen,
-    description: "Wiki-based lore card generation and management",
-    category: "content",
-    color: "amber",
-  },
-
-  // System
-  {
-    key: "ns-sync",
-    label: "NS Sync",
-    href: "/admin/cards?tab=sync",
-    icon: RefreshCw,
-    description: "NationStates data synchronization and imports",
-    category: "system",
-    color: "blue",
-  },
 ];
 
 const CATEGORIES = [
@@ -205,12 +172,6 @@ const CATEGORIES = [
     label: "Content & intelligence",
     icon: Brain,
     color: "amber",
-  },
-  {
-    key: "system" as const,
-    label: "System & sync",
-    icon: Database,
-    color: "blue",
   },
 ];
 

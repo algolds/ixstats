@@ -149,20 +149,19 @@ version until then).
 | **Glow**       | `text-cyan-400`                                                                                                                               |
 | **PWA**        | `IxCards - Trading Card Game` manifest with 8 icon sizes, 3 shortcuts                                                                         |
 | **Prisma**     | `cards.prisma` (MyVault, Card, VaultTransaction, CardValueHistory, etc.)                                                                      |
-| **Key routes** | `/vault/{cards,collections,create,import,inventory,lore-gallery,lore-generator,market,marketplace,ns-deck,ns-library,packs,trading}` |
+| **Key routes** | `/vault/cards/{mine,sets,market,explore}`, `/vault/store`, `/vault/import`, `/vault/achievements` |
 
 #### Sub-systems
 
 | Sub-system           | Description                                                                                               |
 | -------------------- | --------------------------------------------------------------------------------------------------------- |
-| **IxCards**          | Trading card game — Phase 1, replaces legacy IxBank. Card types: Nation, Lore, NS Import, Special.        |
+| **IxCards**          | Trading card game — Phase 1, replaces legacy IxBank. Card types: Nation, Lore, NS, Special, Trophy.       |
 | **IxCredits**        | Virtual currency (`src/components/vault/IxCreditsSymbol.tsx`)       |
-| **Card Crafting**    | Retired for now (2026-10-05); every call refuses. Prisma: `CraftingRecipe`, `CraftingHistory` (kept). tRPC: `crafting/`. |
-| **Card Trading**     | Peer-to-peer trades. Prisma: `CardTrade`, `TradeOffer`. tRPC: `trading/`.                               |
+| **Card Trading**     | Peer-to-peer trades. Prisma: `TradeOffer`. tRPC: `trading/`.                                             |
 | **Card Marketplace** | Auction & trading platform. Prisma: `CardAuction`, `AuctionBid`. tRPC: `card-market/`.                  |
 | **Card Packs**       | Pack purchase & animated opening. tRPC: `card-packs/`. 🎁 emoji.                                        |
 | **Lore Cards**       | Wiki-generated narrative cards. Prisma: `LoreCardRequest`. tRPC: `lore-cards/`.                         |
-| **NS Import / Sync** | NationStates data import and synchronization. Prisma: `NSImport`, `SyncLog`, `SyncCheckpoint`.            |
+| **NS Import / Sync** | NationStates data import and synchronization. Prisma: `SyncLog`, `NSImportLedger`.                         |
 
 #### Vault Sidebar Sections
 

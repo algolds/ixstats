@@ -65,9 +65,30 @@ export const categories: Row[] = [
   realmCat("r_old", "hub"),
 ];
 export const realms: Row[] = [
-  { id: "r_eurth", slug: "eurth", name: "Eurth", status: "active", ownerId: "founder" },
-  { id: "r_aurora", slug: "aurora", name: "Aurora", status: "active", ownerId: "aurora_founder" },
-  { id: "r_old", slug: "old", name: "Old", status: "archived", ownerId: "old_founder" },
+  {
+    id: "r_eurth",
+    slug: "eurth",
+    name: "Eurth",
+    isSystem: false,
+    status: "active",
+    ownerId: "founder",
+  },
+  {
+    id: "r_aurora",
+    slug: "aurora",
+    name: "Aurora",
+    isSystem: false,
+    status: "active",
+    ownerId: "aurora_founder",
+  },
+  {
+    id: "r_old",
+    slug: "old",
+    name: "Old",
+    isSystem: false,
+    status: "archived",
+    ownerId: "old_founder",
+  },
 ];
 
 export const thread = (id: string, categoryId: string, extra: Row = {}): Row => ({

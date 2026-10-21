@@ -169,6 +169,22 @@ echo "🔄 Applying the Atlas Studio SQL..."
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261023120000_atlas_studio/migration.sql || exit 1
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261024120000_vault_hub/migration.sql || exit 1
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261027120000_drop_forum_readers/migration.sql || exit 1
+# Cards refresh Phase 1 (docs/specs/2026-10-15-cards-refresh-design.md §5.5): the additive SQL, the backfill, then the
+# constraints, all BEFORE the push. The constraints convert cards.rarity and cardType to enums in place (db push would
+# drop and re-add those columns) and refuse to run until the backfill has. Stop the app before this deploy (plan
+# 2026-10-15-cards-refresh-phase-1-foundations, owner runbook). Re-runs are no-ops.
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261027120000_cards_foundations/migration.sql || exit 1
+bun scripts/cards/backfill-cards-refresh.ts --apply || exit 1
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261027120001_cards_foundations_constraints/migration.sql || exit 1
+# Cards refresh Phase 2 (docs/specs/2026-10-15-cards-refresh-design.md §2.4): review state, import jobs, licences,
+# takedowns, Special card fields, a SET NULL transfer-event FK, the legacy Commons tag. Idempotent.
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261028120000_cards_admin/migration.sql || exit 1
+# Cards refresh Phase 3 (docs/specs/2026-10-15-cards-refresh-design.md §2.3): collector numbers, the showcase pin and its
+# detach trigger, and the drop of collection likes and comments (BEFORE the push, which cannot drop them). Idempotent.
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261031120000_cards_face_hub/migration.sql || exit 1
+# Cards refresh Phase 4 (docs/specs/2026-10-15-cards-refresh-design.md §2.2): listings, dust, market prices, mutes,
+# inscription reports, and the trade and auction status enums converted in place (BEFORE the push). Idempotent.
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261101120000_cards_economy/migration.sql || exit 1
 
 # Sync production database with schema
 echo "🔄 Syncing production database schema..."

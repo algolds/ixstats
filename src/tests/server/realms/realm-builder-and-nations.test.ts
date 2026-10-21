@@ -51,7 +51,7 @@ describe("listBuilderRealms", () => {
     });
   });
 
-  it("offers Ixnay and active realms that are public, founded by the player, or where they hold a nation", async () => {
+  it("offers Ixnay and active, non-system realms that are public, founded by the player, or where they hold a nation", async () => {
     const db = builderDb({ realms: [] });
     await listBuilderRealms(db, user);
     expect(db.realm.findMany).toHaveBeenCalledWith({
@@ -60,6 +60,7 @@ describe("listBuilderRealms", () => {
           { id: "default" },
           {
             status: "active",
+            isSystem: false,
             OR: [
               { visibility: "public" },
               { ownerId: "clerk_u1" },

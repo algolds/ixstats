@@ -7,7 +7,7 @@ import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 import { cn } from "~/lib/utils";
 import { currentProfileHref } from "~/lib/wiki-os/legacy-profile-links";
 import { entityKinds, mentionQueries } from "~/lib/wiki-os/mention-target";
-import { wikiReaderPath } from "~/lib/wiki-os/config";
+import { wikiReaderPath, type WikiSource } from "~/lib/wiki-os/config";
 import {
   HoverCard,
   HoverCardTrigger,
@@ -18,7 +18,7 @@ import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 
 interface WikiLinkPreviewProps {
   title: string;
-  wiki?: "ixwiki" | "iiwiki";
+  wiki?: WikiSource;
   children: React.ReactNode;
 }
 

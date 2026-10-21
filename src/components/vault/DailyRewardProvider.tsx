@@ -6,18 +6,22 @@ import { useAuth } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "motion/react";
 import { Trophy, SystemRestart as Loader } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { Badge } from "~/components/ui/badge";
+import { useCardSheetOpen } from "~/hooks/useCardSheet";
+import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Progress } from "~/components/ui/progress";
 import { Stat } from "~/components/ui/stat";
-import { CutoutCard } from "~/components/ui/cutout-card";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "~/components/ui/dialog";
-import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
-import { CardBack } from "~/components/cards/display/CardBack";
+import { CardFace } from "~/components/cards/face/CardFace";
+import { CardFaceDown } from "~/components/cards/face/CardFaceDown";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { StreakPill } from "~/components/vault/StreakPill";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
+import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
+import { cardSheetHref } from "~/lib/cards/face/sheet-link";
+import { CARD_HUB_PATHS } from "~/lib/cards/hub-routes";
+import type { CardFaceData } from "~/lib/cards/face/types";
 import { soundCues } from "~/lib/sound/cuelume";
 import { springGentle, springSmooth } from "~/lib/design/motion";
 import { STREAK_BOOST_FULL_DAYS, levelMultiplier, streakMultiplier } from "~/lib/vault/daily-roll";
@@ -27,7 +31,10 @@ type ClaimChoice = "CREDITS" | "CARD";
 
 interface ClaimResult {
   creditsAwarded?: number;
-  cardAwarded?: { id: string; title: string; rarity: string; artwork: string };
+  /** The pulled card, kept for when its face could not be read after the claim committed. */
+  cardAwarded?: { id: string; title: string };
+  /** The pulled copy's face; null for a credits claim. */
+  cardFace?: CardFaceData | null;
   streak: number;
   message?: string;
 }
@@ -128,16 +135,12 @@ function ChoiceTile({
   );
 }
 
-/** The real card back, face down and tilted in its socket: the pull is a card you have not seen. */
+/**
+ * A card face down and tilted in its socket: the pull is a card you have not seen. The socket is 128px tall, so the
+ * card is narrower than size S to fit it.
+ */
 function FaceDownCard() {
-  return (
-    <span className="rounded-control shadow-card relative block h-28 w-20 -rotate-2 overflow-hidden">
-      {/* CardBack is laid out for a full-size card, so it renders at 160×224 and scales to fit. */}
-      <span className="absolute top-0 left-0 block h-56 w-40 origin-top-left scale-50">
-        <CardBack size="small" performanceMode className="h-full w-full" />
-      </span>
-    </span>
-  );
+  return <CardFaceDown size="S" className="w-20 -rotate-2" />;
 }
 
 /** Progress toward the full streak boost, in a well under the choices. */
@@ -182,32 +185,15 @@ function CreditsReveal({ amount }: { amount: number }) {
   );
 }
 
-/** The pulled card as a collectible: a cutout pane whose art keeps its own palette. */
-function CardReveal({ card }: { card: NonNullable<ClaimResult["cardAwarded"]> }) {
+/** The pulled copy's own face, turned over. */
+function CardReveal({ face }: { face: CardFaceData }) {
   return (
     <motion.div
       initial={{ y: 12, rotate: -2, opacity: 0 }}
       animate={{ y: 0, rotate: 0, opacity: 1 }}
       transition={springGentle}
     >
-      <CutoutCard className="shadow-floating w-44 text-left">
-        <div className="relative aspect-[5/7] overflow-hidden">
-          <CardHolographicCover cardType="LORE" rarity={card.rarity} title={card.title} />
-          {card.artwork && (
-            <img
-              src={card.artwork}
-              alt={card.title}
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-          )}
-        </div>
-        <div className="space-y-2 p-3">
-          <p className="text-headline text-label truncate">{card.title}</p>
-          <Badge variant="secondary" className="capitalize">
-            {card.rarity.toLowerCase().replace(/_/g, " ")}
-          </Badge>
-        </div>
-      </CutoutCard>
+      <CardFace face={face} size="M" />
     </motion.div>
   );
 }
@@ -223,6 +209,22 @@ function ClaimFacts({ streak }: { streak: number }) {
         value={`${streak} ${streak === 1 ? "day" : "days"}`}
       />
       <Stat size="sm" className="p-4" label="Next reward" value={`in ${untilNextClaim()}`} />
+    </div>
+  );
+}
+
+/** Today's reward, already taken (here or on another device): the streak and when the next opens, and no claim. */
+function ClaimedToday({ streak, onDone }: { streak: number; onDone: () => void }) {
+  return (
+    <div className="flex flex-col items-center gap-5 px-6 pt-8 pb-6 text-center">
+      <DialogTitle className="text-title-3 text-label">Daily reward</DialogTitle>
+      <DialogDescription className="text-body text-label-secondary">
+        You claimed today&apos;s reward.
+      </DialogDescription>
+      <ClaimFacts streak={streak} />
+      <Button className="w-full" onClick={onDone}>
+        Done
+      </Button>
     </div>
   );
 }
@@ -258,6 +260,7 @@ function DailyRewardDialog({
   autoOpen: boolean;
 }) {
   const utils = api.useUtils();
+  const refreshCards = useCardsRefresh();
 
   const [claiming, setClaiming] = useState<ClaimChoice | null>(null);
   const [claimResult, setClaimResult] = useState<ClaimResult | null>(null);
@@ -265,18 +268,24 @@ function DailyRewardDialog({
   const { data: balanceData } = api.vault.getBalance.useQuery(undefined);
 
   const canClaim = balanceData?.canClaimDailyBonus ?? false;
+  // Known to be taken, not merely loading: reopened after a claim, the dialog offers no second one.
+  const claimedToday = balanceData !== undefined && !canClaim;
   const streak = balanceData?.loginStreak ?? 0;
   const claimStreak = balanceData?.claimStreak ?? streak;
   const levelBoost = levelMultiplier(balanceData?.vaultLevel ?? 1);
   const streakBoost = streakMultiplier(claimStreak);
 
+  // A card sheet in the address is what the visitor came for (a shared link, or signing in to reach it).
+  const sheetOpen = useCardSheetOpen();
+
   // Auto-open at most once per user per UTC day, not on every page load or navigation. Routes
-  // without chrome (maps, full-screen editors) opt out, and do not spend the day's auto-open.
+  // without chrome (maps, full-screen editors) opt out, and do not spend the day's auto-open. Over
+  // an open card sheet it waits, and opens once the sheet closes.
   useEffect(() => {
-    if (!autoOpen || !canClaim || hasAutoOpenedToday(userId)) return;
+    if (!autoOpen || sheetOpen || !canClaim || hasAutoOpenedToday(userId)) return;
     markAutoOpenedToday(userId);
     setIsOpen(true);
-  }, [autoOpen, userId, canClaim, setIsOpen]);
+  }, [autoOpen, sheetOpen, userId, canClaim, setIsOpen]);
 
   // A claim (or a refused one) moves the balance, the statement and today's earnings.
   const refreshVault = () => {
@@ -291,7 +300,8 @@ function DailyRewardDialog({
       setClaimResult(data);
       soundCues?.reveal?.();
       refreshVault();
-      void utils.cards.getMyCards.invalidate();
+      // A card pull is a new copy: Mine, the display and Explore read it.
+      refreshCards();
     },
     onError: (err) => {
       setClaiming(null);
@@ -319,6 +329,8 @@ function DailyRewardDialog({
     [claiming, setIsOpen]
   );
 
+  const pulledCardId = claimResult?.cardFace?.cardId ?? claimResult?.cardAwarded?.id;
+
   // Transforms are dropped for reduced-motion users by the root <MotionConfig>.
   const fade = {
     initial: { opacity: 0, y: 8 },
@@ -334,16 +346,21 @@ function DailyRewardDialog({
         className="isolate max-w-[calc(100%-2rem)] gap-0 overflow-hidden p-0 sm:max-w-md"
       >
         {/* The reveal's art stage: the pulled card's art, full bleed behind the overlay's content. */}
-        {claimResult?.cardAwarded?.artwork && (
+        {claimResult?.cardFace?.artwork && (
           <img
             aria-hidden
             alt=""
-            src={claimResult.cardAwarded.artwork}
+            src={proxyCardArtwork(claimResult.cardFace.artwork)}
             className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover opacity-20"
           />
         )}
         <AnimatePresence mode="wait" initial={false}>
-          {!claimResult ? (
+          {!claimResult && claimedToday && (
+            <motion.div key="claimed" {...fade} transition={springSmooth}>
+              <ClaimedToday streak={claimStreak} onDone={() => handleOpenChange(false)} />
+            </motion.div>
+          )}
+          {!claimResult && !claimedToday && (
             <motion.div key="choice" {...fade} transition={springSmooth} className="space-y-4 p-6">
               <div className="flex items-center gap-3 pr-8">
                 <span
@@ -379,7 +396,8 @@ function DailyRewardDialog({
               </div>
               <StreakBoostWell claimStreak={claimStreak} />
             </motion.div>
-          ) : (
+          )}
+          {claimResult && (
             <motion.div
               key="reveal"
               data-content="reveal"
@@ -395,7 +413,10 @@ function DailyRewardDialog({
               {claimResult.creditsAwarded != null && (
                 <CreditsReveal amount={claimResult.creditsAwarded} />
               )}
-              {claimResult.cardAwarded && <CardReveal card={claimResult.cardAwarded} />}
+              {claimResult.cardFace && <CardReveal face={claimResult.cardFace} />}
+              {!claimResult.cardFace && claimResult.cardAwarded && (
+                <p className="text-headline text-label">{claimResult.cardAwarded.title}</p>
+              )}
 
               <ClaimFacts streak={claimResult.streak} />
 
@@ -403,10 +424,13 @@ function DailyRewardDialog({
                 <Button className="sm:flex-1" onClick={() => handleOpenChange(false)}>
                   Collect
                 </Button>
-                {claimResult.cardAwarded && (
+                {pulledCardId && (
                   <Button variant="outline" className="sm:flex-1" asChild>
-                    <Link href="/vault/inventory" onClick={() => handleOpenChange(false)}>
-                      View collection
+                    <Link
+                      href={cardSheetHref(CARD_HUB_PATHS.mine, pulledCardId)}
+                      onClick={() => handleOpenChange(false)}
+                    >
+                      View card
                     </Link>
                   </Button>
                 )}
@@ -484,7 +508,7 @@ export function DailyRewardStatus() {
         className="bg-tint-fill text-tint-ink hover:bg-tint-fill hover:text-tint active:bg-tint-fill text-footnote w-full justify-start gap-2 px-3 font-semibold"
       >
         <Trophy aria-hidden className="size-3.5 shrink-0" />
-        <span className="flex-1 text-left">Daily reward</span>
+        <span className="min-w-0 flex-1 truncate text-left">Daily reward</span>
         {streak > 0 && <StreakPill streak={streak} />}
       </Button>
     </div>

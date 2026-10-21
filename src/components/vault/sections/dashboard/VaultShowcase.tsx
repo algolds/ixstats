@@ -1,33 +1,26 @@
 "use client";
 
-import { useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
-import { MultiplePages, Search } from "iconoir-react";
+import { MultiplePages, Pin, Search } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button, focusRing } from "~/components/ui/button";
-import { Card, CardTitle } from "~/components/ui/card";
+import { Card, CardDescription, CardTitle } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { CardDisplay } from "~/components/cards/display/CardDisplay";
+import { CardFace } from "~/components/cards/face/CardFace";
 import { PackHolographicCover } from "~/components/cards/pack-opening/PackHolographicCover";
+import { useCardSheet } from "~/hooks/useCardSheet";
+import { DISPLAY_SIZE } from "~/lib/cards/face/showcase-limits";
+import { CARD_HUB_PATHS } from "~/lib/cards/hub-routes";
 import { IconWell } from "./IconWell";
-import { ownedCardToInstance } from "~/lib/cards/ownership-card";
 import { cn } from "~/lib/utils/cn";
 import { springGentle, tweenFast } from "~/lib/design/motion";
-import type { CardInstance } from "~/types/cards-display";
 
-const CardDetailsModal = dynamic(
-  () => import("~/components/cards/display/CardDetailsModal").then((m) => m.CardDetailsModal),
-  { ssr: false }
-);
-
-const SHOWCASE_SIZE = 4;
-const MY_PACKS_HREF = "/vault/store?tab=store&view=my-packs";
-// The pack tile is as big as the gallery's medium card (`w-48`, 269px tall) so the strip is even.
-const TILE_BOX = "w-48 h-[269px] shrink-0";
+const MY_PACKS_HREF = "/vault/store?view=my-packs";
+// The pack and Explore tiles are the size of an M face (`w-48` at 5:7), so the strip is even.
+const TILE_BOX = "aspect-[5/7] w-48 shrink-0";
 
 interface WaitingPack {
   name: string;
@@ -65,43 +58,13 @@ function PackTile({ count, pack }: { count: number; pack: WaitingPack }) {
   );
 }
 
-/**
- * Makes a gallery tile keyboard-operable. `CardDisplay` opens on click only and its lore excerpt can
- * hold links, so the wrapper is a `div` with a button role, not a `<button>`. Clicks stay with the
- * tile (one handler owns opening); the wrapper adds only Enter and Space.
- */
-function KeyboardTile({
-  card,
-  onOpen,
-  children,
-}: {
-  card: CardInstance;
-  onOpen: (card: CardInstance) => void;
-  children: ReactNode;
-}) {
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.target !== event.currentTarget) return;
-    if (event.key !== "Enter" && event.key !== " ") return;
-    event.preventDefault();
-    onOpen(card);
-  };
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      aria-label={`View ${card.title}`}
-      onKeyDown={onKeyDown}
-      className={cn(focusRing, "rounded-card shrink-0 snap-start")}
-    >
-      {children}
-    </div>
-  );
-}
-
 /** Ends a short strip: a quiet tile, the size of a card, that points to where more cards come from. */
 function MoreCardsTile() {
   return (
-    <Link href="/vault/store" className={cn(focusRing, "rounded-row block snap-start", TILE_BOX)}>
+    <Link
+      href={CARD_HUB_PATHS.explore}
+      className={cn(focusRing, "rounded-row block snap-start", TILE_BOX)}
+    >
       <Card
         interactive
         padding="sm"
@@ -113,9 +76,7 @@ function MoreCardsTile() {
         </IconWell>
         <span className="relative flex flex-col gap-0.5">
           <span className="text-callout">Find more cards</span>
-          <span className="text-footnote text-label-secondary">
-            Packs and listings in the Store
-          </span>
+          <span className="text-footnote text-label-secondary">Every realm's cards in Explore</span>
         </span>
       </Card>
     </Link>
@@ -125,37 +86,54 @@ function MoreCardsTile() {
 function ShowcaseSkeleton() {
   return (
     <div className="flex gap-3 overflow-x-auto">
-      {Array.from({ length: SHOWCASE_SIZE }, (_, i) => (
+      {Array.from({ length: DISPLAY_SIZE }, (_, i) => (
         <Skeleton key={i} className={cn("rounded-card", TILE_BOX)} />
       ))}
     </div>
   );
 }
 
-/** Your best cards by market value, as the Cards gallery draws them, and while any wait, your unopened packs. */
+/**
+ * The player's display: their pinned showcase, else their most valuable cards, as card faces that open the sheet,
+ * and while any wait, their unopened packs.
+ */
 export function VaultShowcase() {
   const reduceMotion = useReducedMotion();
-  const [opened, setOpened] = useState<CardInstance | null>(null);
-  const top = api.cards.getMyTopCards.useQuery({ limit: SHOWCASE_SIZE });
+  const sheet = useCardSheet();
+  const display = api.cards.getMyDisplay.useQuery();
   const packs = api.cardPacks.getMyPacks.useQuery({ isOpened: false });
 
-  const cards = useMemo(() => (top.data ?? []).map(ownedCardToInstance), [top.data]);
+  const faces = display.data?.faces ?? [];
+  const pinned = display.data?.showcase ?? null;
   const waiting = packs.data?.packs ?? [];
   const firstPack = waiting[0]?.pack;
-  const hasCards = cards.length > 0;
+  const hasCards = faces.length > 0;
   // Without cards, the packs decide what there is to show: wait for them, and never call the
   // collection empty when they could not be read.
-  const unavailable = top.isError || (!hasCards && packs.isError);
-  const loading = top.isLoading || (!hasCards && packs.isLoading);
+  const unavailable = display.isError || (!hasCards && packs.isError);
+  const loading = display.isLoading || (!hasCards && packs.isLoading);
   const empty = !hasCards && !firstPack;
 
   return (
     <Card content="collectible" padding="md" data-slot="vault-showcase" className="overflow-hidden">
       <TextureOverlay texture="paperGrain" />
       <div className="relative mb-3 flex items-center justify-between gap-3">
-        <CardTitle icon={<MultiplePages />}>Showcase</CardTitle>
+        <div className="min-w-0 space-y-1">
+          <CardTitle icon={<MultiplePages />}>Showcase</CardTitle>
+          {hasCards && (
+            <CardDescription className="text-footnote flex min-w-0 items-center gap-1">
+              {pinned && (
+                <>
+                  <Pin aria-hidden className="size-3.5 shrink-0" />
+                  <span className="sr-only">Pinned: </span>
+                </>
+              )}
+              <span className="truncate">{pinned ? pinned.name : "Your most valuable cards"}</span>
+            </CardDescription>
+          )}
+        </div>
         <Button asChild variant="ghost" size="sm">
-          <Link href="/vault/cards">All cards</Link>
+          <Link href={CARD_HUB_PATHS.mine}>All cards</Link>
         </Button>
       </div>
       <div className="relative">
@@ -167,10 +145,10 @@ export function VaultShowcase() {
           <EmptyState
             compact
             title="No cards yet"
-            message="Open a pack or import a deck to start your collection."
+            message="Explore every realm's cards, or open a pack from the Store."
             action={
               <Button asChild variant="outline" size="sm">
-                <Link href="/vault/store">Visit the Store</Link>
+                <Link href={CARD_HUB_PATHS.explore}>Explore cards</Link>
               </Button>
             }
           />
@@ -182,23 +160,20 @@ export function VaultShowcase() {
             animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
             transition={reduceMotion ? tweenFast : springGentle}
           >
-            {cards.map((card) => (
-              <KeyboardTile key={card.ownershipId ?? card.id} card={card} onOpen={setOpened}>
-                <CardDisplay
-                  card={card}
-                  size="medium"
-                  enable3D={true}
-                  performanceMode={false}
-                  onClick={setOpened}
-                />
-              </KeyboardTile>
+            {faces.map((face) => (
+              <CardFace
+                key={face.copy?.ownershipId ?? face.cardId}
+                face={face}
+                size="M"
+                className="snap-start"
+                onOpen={() => sheet.open(face.cardId)}
+              />
             ))}
             {firstPack && <PackTile count={waiting.length} pack={firstPack} />}
-            {cards.length < SHOWCASE_SIZE && <MoreCardsTile />}
+            {faces.length < DISPLAY_SIZE && <MoreCardsTile />}
           </motion.div>
         )}
       </div>
-      <CardDetailsModal card={opened} open={opened !== null} onClose={() => setOpened(null)} />
     </Card>
   );
 }

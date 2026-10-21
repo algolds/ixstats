@@ -7,13 +7,12 @@ jest.mock("~/server/db", () => ({
   __esModule: true,
   db: {
     wikiArticle: { findFirst: jest.fn(), findMany: jest.fn() },
-    wikiRevision: { findFirst: jest.fn(), groupBy: jest.fn() },
+    wikiRevision: { groupBy: jest.fn() },
     wikiCategory: { findMany: jest.fn() },
     wikiCategoryMember: { findMany: jest.fn() },
     wikiImageLink: { findMany: jest.fn() },
     wikiLink: { count: jest.fn() },
     wikiAsset: { findMany: jest.fn() },
-    card: { findFirst: jest.fn() },
     systemConfig: { findMany: jest.fn() },
     $queryRaw: jest.fn(),
   },
@@ -23,23 +22,26 @@ jest.mock("~/server/db", () => ({
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { db } from "~/server/db";
 import { wikiLoreCardGenerator } from "~/lib/cards/lore-card-generator";
+import { loreCardDiscovery } from "~/lib/cards/lore-card-discovery";
+import type { Pace } from "~/lib/realms/sources/wiki-discovery-client";
 import { installFetchGuard, type FetchGuard } from "~/tests/helpers/fetch-guard";
 
 /** The generator's private readers these tests call directly. */
 const generatorInternals = wikiLoreCardGenerator as unknown as {
-  getImageUrl(filename: string, wikiSource: string): Promise<string | null>;
+  getImageUrl(filename: string, wikiSource: string, pace: Pace): Promise<string | null>;
   fetchArticleData(title: string, wikiSource: string): Promise<unknown>;
 };
+/** Reads at once, as a caller outside an import run does. */
+const unpaced: Pace = (read) => read();
 
 const mocked = db as unknown as {
   wikiArticle: Record<"findFirst" | "findMany", jest.Mock>;
-  wikiRevision: Record<"findFirst" | "groupBy", jest.Mock>;
+  wikiRevision: { groupBy: jest.Mock };
   wikiCategory: { findMany: jest.Mock };
   wikiCategoryMember: { findMany: jest.Mock };
   wikiImageLink: { findMany: jest.Mock };
   wikiLink: { count: jest.Mock };
   wikiAsset: { findMany: jest.Mock };
-  card: { findFirst: jest.Mock };
   systemConfig: { findMany: jest.Mock };
   $queryRaw: jest.Mock;
 };
@@ -79,14 +81,12 @@ beforeEach(() => {
   titles = [];
   mocked.wikiArticle.findFirst.mockResolvedValue(null);
   mocked.wikiArticle.findMany.mockResolvedValue([]);
-  mocked.wikiRevision.findFirst.mockResolvedValue(null);
   mocked.wikiRevision.groupBy.mockResolvedValue([]);
   mocked.wikiCategory.findMany.mockResolvedValue([]);
   mocked.wikiCategoryMember.findMany.mockResolvedValue([]);
   mocked.wikiImageLink.findMany.mockResolvedValue([]);
   mocked.wikiLink.count.mockResolvedValue(0);
   mocked.wikiAsset.findMany.mockResolvedValue([]);
-  mocked.card.findFirst.mockResolvedValue(null);
   mocked.systemConfig.findMany.mockResolvedValue([]);
   mocked.$queryRaw.mockImplementation(async (strings: TemplateStringsArray) => {
     const sql = strings.join("?");
@@ -104,7 +104,6 @@ describe("generateCard for IxWiki", () => {
       id: "a1",
       title: "Caphiria",
       wikitext: WIKITEXT,
-      updatedAt: day(20),
     });
     mocked.wikiCategoryMember.findMany.mockResolvedValue([
       { category: { name: "Countries" } },
@@ -112,7 +111,6 @@ describe("generateCard for IxWiki", () => {
     ]);
     mocked.wikiImageLink.findMany.mockResolvedValue([{ fileName: "Caphiria map.png" }]);
     mocked.wikiLink.count.mockResolvedValue(4);
-    mocked.wikiRevision.findFirst.mockResolvedValue({ createdAt: day(18) });
     early = [
       { articleId: "a1", author: "WikiBot", createdAt: day(1) },
       { articleId: "a1", author: "Kir", createdAt: day(2) },
@@ -136,8 +134,8 @@ describe("generateCard for IxWiki", () => {
       wikiSource: "ixwiki",
       wikiArticleTitle: "Caphiria",
       artwork: asset.url,
-      // (two references * 10 + four inbound links * 5) / 2, and four inbound links * 10: the facts Postgres holds.
-      loreStats: { historicalSignificance: 20, culturalImpact: 40 },
+      imageFile: "Caphiria map.png",
+      signals: { inboundLinks: 4, referenceCount: 2, categoryCount: 2, hasInfobox: true },
       authorInfo: {
         creator: "Kir",
         primaryContributor: "Bea",
@@ -166,7 +164,6 @@ describe("generateCard for IxWiki", () => {
       id: "a1",
       title: "Caphiria",
       wikitext: `'''Caphiria''' ${BODY}`,
-      updatedAt: day(20),
     });
     mocked.wikiImageLink.findMany.mockResolvedValue([
       { fileName: "Caphiria logo.png" },
@@ -211,12 +208,13 @@ describe("generateCard for IxWiki", () => {
     ).toBe(true);
   });
 
-  it("uses the placeholder when every picture of the page was deleted", async () => {
+  it("reads no artwork when every picture of the page was deleted", async () => {
     archiveFilePages("Caphiria map.png");
 
     const card = await wikiLoreCardGenerator.generateCard("Caphiria", "ixwiki");
 
-    expect(card?.artwork).toBe("/images/cards/lore-placeholder.svg");
+    expect(card.artwork).toBeNull();
+    expect(card.imageFile).toBeNull();
   });
 
   it("names the file's own URL when WikiOS holds no asset for it", async () => {
@@ -232,9 +230,11 @@ describe("generateCard for IxWiki", () => {
   it("refuses a page Postgres lacks or has deleted, without asking a wiki", async () => {
     mocked.wikiArticle.findFirst.mockResolvedValue(null);
 
-    await expect(wikiLoreCardGenerator.generateCard("Nowhere", "ixwiki")).rejects.toThrow(
-      "was not found"
-    );
+    await expect(wikiLoreCardGenerator.generateCard("Nowhere", "ixwiki")).rejects.toMatchObject({
+      name: "ArticleRejected",
+      kind: "missing",
+      message: '"Nowhere" was not found on IxWiki.',
+    });
     expect(guard.calls()).toEqual([]);
   });
 });
@@ -414,39 +414,41 @@ describe("credits skip a user whose revisions were hidden", () => {
   });
 });
 
+/** A list's reach: as far as `limit`, a minute to read, each request at once. */
+const reach = (limit: number) => ({ limit, deadline: Date.now() + 60_000, pace: unpaced });
+
 describe("lists for IxWiki", () => {
-  it("lists a category's pages and files from its members, never asking a wiki", async () => {
-    titles = [{ title: "Caphiria" }, { title: "File:Map.png" }];
+  it("lists a category's articles (the main namespace) from its members, never asking a wiki", async () => {
+    titles = [{ title: "Caphiria" }, { title: "Urcea" }];
 
     expect(
-      await wikiLoreCardGenerator.fetchCategoryMembers("Category:Nations", "ixwiki", 100)
-    ).toEqual(["Caphiria", "File:Map.png"]);
+      await loreCardDiscovery.fetchCategoryMembers("Category:Nations", "ixwiki", reach(100))
+    ).toEqual({ titles: ["Caphiria", "Urcea"], truncated: false });
     const call = mocked.$queryRaw.mock.calls[0]!;
     expect(sqlOf(call)).toContain(`a."status" = 'PUBLISHED'`);
     const kinds = JSON.stringify(call);
-    expect(kinds).toContain(`a.\\"namespace\\" NOT IN (6, 14)`);
-    expect(kinds).toContain(`a.\\"namespace\\" = 6`);
+    expect(kinds).toContain(`a.\\"namespace\\" = 0`);
+    expect(kinds).not.toContain("NOT IN (6, 14)");
+    // One row past the limit is asked for, so a cut list says so.
+    expect(call).toContain(101);
     expect(guard.calls()).toEqual([]);
   });
 
-  it("lists only a category's files, or only its pages, when asked", async () => {
-    await wikiLoreCardGenerator.fetchCategoryMembers("Nations", "ixwiki", 100, "file");
-    await wikiLoreCardGenerator.fetchCategoryMembers("Nations", "ixwiki", 100, "page");
-
-    const [files, pages] = mocked.$queryRaw.mock.calls.map((call) => JSON.stringify(call));
-    expect(files).toContain(`a.\\"namespace\\" = 6`);
-    expect(files).not.toContain("NOT IN (6, 14)");
-    expect(pages).toContain("NOT IN (6, 14)");
-    expect(pages).not.toContain(`a.\\"namespace\\" = 6`);
+  it("says when a category has more articles than the limit", async () => {
+    titles = [{ title: "A" }, { title: "B" }, { title: "C" }];
+    expect(await loreCardDiscovery.fetchCategoryMembers("Nations", "ixwiki", reach(2))).toEqual({
+      titles: ["A", "B"],
+      truncated: true,
+    });
   });
 
   it("lists the main namespace's pages that are not redirects, by title", async () => {
     titles = [{ title: "Alpha" }, { title: "Beta" }];
 
-    expect(await wikiLoreCardGenerator.fetchAllMainNamespacePages("ixwiki", 500)).toEqual([
-      "Alpha",
-      "Beta",
-    ]);
+    expect(await loreCardDiscovery.fetchAllMainNamespacePages("ixwiki", reach(500))).toEqual({
+      titles: ["Alpha", "Beta"],
+      truncated: false,
+    });
     const sql = sqlOf(mocked.$queryRaw.mock.calls[0]!);
     expect(sql).toContain(`a."namespace" = 0`);
     expect(sql).toContain(`"redirectTargetSlug" IS NULL`);
@@ -454,29 +456,25 @@ describe("lists for IxWiki", () => {
     expect(guard.calls()).toEqual([]);
   });
 
-  it("picks random pages in the database, and with images only those whose text names a lead picture", async () => {
+  it("picks random pages in the database, only those whose text names a lead picture", async () => {
     titles = [
       { title: "No picture", head: "Just text." },
       { title: "Has picture", head: "[[File:Pic.png|thumb]] text" },
     ];
 
-    expect(await wikiLoreCardGenerator.fetchRandomArticles(5, "ixwiki")).toEqual([
-      "No picture",
-      "Has picture",
-    ]);
-    expect(await wikiLoreCardGenerator.fetchRandomArticlesWithImages(5, "ixwiki")).toEqual([
+    expect(await loreCardDiscovery.fetchRandomArticlesWithImages(5, "ixwiki")).toEqual([
       "Has picture",
     ]);
     expect(sqlOf(mocked.$queryRaw.mock.calls[0]!)).toContain('random() AS "r"');
     // Image pages are looked for among a few times as many random candidates.
-    expect(mocked.$queryRaw.mock.calls[1]).toContain(15);
+    expect(mocked.$queryRaw.mock.calls[0]).toContain(15);
     expect(guard.calls()).toEqual([]);
   });
 
   it("picks the random pages on ids alone and reads the start of the text of the picked ones only", async () => {
     titles = [{ title: "Has picture", head: "[[File:Pic.png|thumb]] text" }];
 
-    await wikiLoreCardGenerator.fetchRandomArticlesWithImages(5, "ixwiki");
+    await loreCardDiscovery.fetchRandomArticlesWithImages(5, "ixwiki");
 
     // The query with its embedded fragments (`Prisma.sql`) written out.
     const [strings, ...values] = mocked.$queryRaw.mock.calls[0]! as [
@@ -505,9 +503,7 @@ describe("lists for IxWiki", () => {
   it("searches categories by prefix and counts their members, never asking a wiki", async () => {
     mocked.wikiCategory.findMany.mockResolvedValue([{ name: "Countries" }]);
 
-    expect(await wikiLoreCardGenerator.searchCategories("Count", "ixwiki", 10)).toEqual([
-      "Countries",
-    ]);
+    expect(await loreCardDiscovery.searchCategories("Count", "ixwiki", 10)).toEqual(["Countries"]);
     expect(mocked.wikiCategory.findMany.mock.calls[0]?.[0]).toMatchObject({
       where: { hidden: false, name: { startsWith: "Count", mode: "insensitive" } },
       take: 10,
@@ -517,19 +513,19 @@ describe("lists for IxWiki", () => {
     mocked.$queryRaw.mockResolvedValueOnce([
       { slug: "countries", name: "Countries", pages: 30n, subcats: 4n, files: 2n },
     ]);
-    expect(await wikiLoreCardGenerator.getCategoriesInfo(["Category:Countries"], "ixwiki")).toEqual(
-      {
-        Countries: { size: 36, pages: 30, files: 2, subcats: 4 },
-        "Category:Countries": { size: 36, pages: 30, files: 2, subcats: 4 },
-      }
-    );
+    expect(await loreCardDiscovery.getCategoriesInfo(["Category:Countries"], "ixwiki")).toEqual({
+      Countries: { size: 36, pages: 30, files: 2, subcats: 4 },
+      "Category:Countries": { size: 36, pages: 30, files: 2, subcats: 4 },
+    });
     expect(guard.calls()).toEqual([]);
   });
 
   it("gives the URL of a file from the asset WikiOS holds", async () => {
     mocked.wikiAsset.findMany.mockResolvedValue([asset]);
 
-    expect(await generatorInternals.getImageUrl("File:Caphiria map.png", "ixwiki")).toBe(asset.url);
+    expect(await generatorInternals.getImageUrl("File:Caphiria map.png", "ixwiki", unpaced)).toBe(
+      asset.url
+    );
     expect(guard.calls()).toEqual([]);
   });
 });
@@ -557,18 +553,20 @@ describe("a sister wiki's pages (iiwiki) are still read from that wiki", () => {
       "fetchArticleAuthorInfoBatch",
       () => wikiLoreCardGenerator.fetchArticleAuthorInfoBatch(["Elm"], "iiwiki"),
     ],
-    ["fetchCategoryMembers", () => wikiLoreCardGenerator.fetchCategoryMembers("Elms", "iiwiki")],
-    ["searchCategories", () => wikiLoreCardGenerator.searchCategories("El", "iiwiki")],
-    ["getCategoriesInfo", () => wikiLoreCardGenerator.getCategoriesInfo(["Elms"], "iiwiki")],
+    [
+      "fetchCategoryMembers",
+      () => loreCardDiscovery.fetchCategoryMembers("Elms", "iiwiki", reach(10)),
+    ],
+    ["searchCategories", () => loreCardDiscovery.searchCategories("El", "iiwiki")],
+    ["getCategoriesInfo", () => loreCardDiscovery.getCategoriesInfo(["Elms"], "iiwiki")],
     [
       "fetchAllMainNamespacePages",
-      () => wikiLoreCardGenerator.fetchAllMainNamespacePages("iiwiki"),
+      () => loreCardDiscovery.fetchAllMainNamespacePages("iiwiki", reach(10)),
     ],
-    ["getImageUrl", () => generatorInternals.getImageUrl("Elm.png", "iiwiki")],
-    ["fetchRandomArticles", () => wikiLoreCardGenerator.fetchRandomArticles(3, "iiwiki")],
+    ["getImageUrl", () => generatorInternals.getImageUrl("Elm.png", "iiwiki", unpaced)],
     [
       "fetchRandomArticlesWithImages",
-      () => wikiLoreCardGenerator.fetchRandomArticlesWithImages(3, "iiwiki"),
+      () => loreCardDiscovery.fetchRandomArticlesWithImages(3, "iiwiki"),
     ],
   ];
 
@@ -586,4 +584,45 @@ describe("a sister wiki's pages (iiwiki) are still read from that wiki", () => {
     expect(mocked.$queryRaw).not.toHaveBeenCalled();
     expect(mocked.wikiArticle.findFirst).not.toHaveBeenCalled();
   });
+});
+
+describe("a page outside the main namespace", () => {
+  it("is refused on IxWiki by the namespace WikiOS stores", async () => {
+    mocked.wikiArticle.findFirst.mockResolvedValue({
+      id: "a1",
+      title: "IxWiki:About",
+      namespace: 4,
+      wikitext: WIKITEXT,
+    });
+    await expect(
+      wikiLoreCardGenerator.generateCard("IxWiki:About", "ixwiki")
+    ).rejects.toMatchObject({
+      name: "ArticleRejected",
+      kind: "not-article",
+      message: "Not an article",
+    });
+    expect(mocked.wikiArticle.findFirst.mock.calls[0]?.[0]).toMatchObject({
+      select: { namespace: true },
+    });
+  });
+
+  it.each([
+    ["iiwiki", "Portal:Eurth", 100, "iiwiki.com"],
+    ["althistory", "User blog:Elm/Post", 500, "althistory.fandom.com"],
+  ] as const)(
+    "is refused on %s (%s, namespace %s) by the namespace the wiki reports, before its image or backlinks are read",
+    async (source, title, ns, host) => {
+      guard.restore();
+      guard = installFetchGuard(() => ({
+        query: { pages: { "5": { pageid: 5, ns, title, revisions: [{ "*": BODY }] } } },
+      }));
+      await expect(wikiLoreCardGenerator.generateCard(title, source)).rejects.toMatchObject({
+        name: "ArticleRejected",
+        kind: "not-article",
+        message: "Not an article",
+      });
+      expect(guard.calls()).toHaveLength(1);
+      expect(new URL(guard.calls()[0]!).hostname).toBe(host);
+    }
+  );
 });

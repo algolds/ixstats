@@ -206,10 +206,6 @@ export function getWikiBaseUrl(source: WikiSource = "ixwiki"): string {
   return WIKI_SOURCES[source]?.baseUrl ?? wikiosConfig.publicBaseUrl;
 }
 
-export function getWikiUserAgent(_source: WikiSource = "ixwiki"): string {
-  return DEFAULT_USER_AGENT;
-}
-
 function isWikiSource(value: string): value is WikiSource {
   return Object.hasOwn(WIKI_SOURCES, value);
 }

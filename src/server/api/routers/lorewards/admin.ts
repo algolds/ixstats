@@ -1,9 +1,13 @@
 import type { LorewardEntry } from "@prisma/client";
 import { z } from "zod/v4";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
+import { adminActor } from "~/server/shared/admin-actor";
 import { db } from "~/server/db";
 import * as fs from "fs";
 import { fullSync, scoreDailyWikiOS } from "~/lib/lorewards";
+import { postToBot, tellBotOfOverride } from "~/lib/lorewards/bot-client";
+import { overrideDateSchema } from "~/lib/lorewards/override-form";
+import { overrideLorewardEntry } from "~/server/modules/cards/cards.trophies";
 
 const OVERRIDE_FIELDS = {
   winnerUser: z.string().nullable().optional(),
@@ -15,31 +19,6 @@ const OVERRIDE_FIELDS = {
   runnerUpScore: z.number().nullable().optional(),
   runnerUpBytes: z.number().nullable().optional(),
 };
-
-/** POSTs to the Discord bot; `failure` prefixes the error raised when the bot or the call fails. */
-async function postToBot<T>(
-  path: string,
-  body: unknown,
-  failure: string,
-  onOk: (res: Response) => T | Promise<T>
-): Promise<T> {
-  const botUrl = process.env.IXTIME_BOT_URL || "http://localhost:3001";
-  try {
-    const res = await fetch(`${botUrl}${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      throw new Error(`Bot returned status ${res.status}`);
-    }
-    return await onOk(res);
-  } catch (err) {
-    throw new Error(`${failure}: ${err instanceof Error ? err.message : String(err)}`, {
-      cause: err,
-    });
-  }
-}
 
 type WikiOsDaily = Awaited<ReturnType<typeof scoreDailyWikiOS>>;
 
@@ -177,33 +156,27 @@ export const lorewardsAdminRouter = createTRPCRouter({
       )
     ),
 
-  /** Override past winner or runner-up */
+  /**
+   * Override a past winner or runner-up; the place's trophy is reassigned or voided to match. The bot is told after the
+   * override commits: `botSynced` is false when it could not be, and the override stands.
+   */
   overrideWinner: adminProcedure
     .input(
       z.object({
-        date: z.string().min(1),
+        date: overrideDateSchema,
         type: z.enum(["daily", "weekly", "monthly"]),
         ...OVERRIDE_FIELDS,
       })
     )
-    .mutation(async ({ input }) => {
-      const fields = Object.fromEntries(
-        Object.keys(OVERRIDE_FIELDS).map((key) => [
-          key,
-          input[key as keyof typeof OVERRIDE_FIELDS] || null,
-        ])
-      ) as { [K in keyof typeof OVERRIDE_FIELDS]: NonNullable<(typeof input)[K]> | null };
-      await db.lorewardEntry.upsert({
-        where: { date_type: { date: input.date, type: input.type } },
-        create: { date: input.date, type: input.type, ...fields, status: "approved" },
-        update: fields,
+    .mutation(async ({ ctx, input }) => {
+      const { date, type, ...fields } = input;
+      const { written, day, ...trophies } = await overrideLorewardEntry(ctx.db, adminActor(ctx), {
+        date,
+        type,
+        fields,
       });
-
-      return postToBot(
-        "/lorewards/override",
-        input,
-        "Failed to sync override with Discord bot",
-        () => ({ success: true })
-      );
+      // The bot is told what the database now holds, not only the fields the admin typed
+      const botSynced = await tellBotOfOverride({ date: day, type, ...written });
+      return { success: true, trophies, botSynced };
     }),
 });

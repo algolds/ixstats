@@ -498,10 +498,18 @@ export function extractCoordsFromFields(fields: InfoboxField[]): [number, number
  */
 const MAX_INFOBOX_ROWS = 1_000;
 
+/** `images: false` leaves out the lead image, for a card sheet that hides a card's art. */
+interface InfoboxHtmlOptions {
+  images?: boolean;
+}
+
 /**
  * Renders a parsed infobox into a clean, styled MediaWiki-compatible HTML table.
  */
-export function renderInfoboxHtml(parsed: ParsedInfobox): string {
+export function renderInfoboxHtml(
+  parsed: ParsedInfobox,
+  { images = true }: InfoboxHtmlOptions = {}
+): string {
   if (!parsed || parsed.fields.length === 0) return "";
 
   const titleField = parsed.fields.find(
@@ -525,7 +533,7 @@ export function renderInfoboxHtml(parsed: ParsedInfobox): string {
   let rows = "";
 
   // If there is an image field, render lead image
-  if (imageField && imageField.cleanValue) {
+  if (images && imageField && imageField.cleanValue) {
     const cleanImgName = imageField.cleanValue
       .replace(/^\[\[(?:File|Image):/i, "")
       .replace(/\|.*$/i, "")
@@ -565,7 +573,7 @@ export function renderInfoboxHtml(parsed: ParsedInfobox): string {
 /**
  * Helper that extracts the infobox from wikitext and converts it directly to HTML.
  */
-export function parseInfoboxToHtml(wikitext: string): string {
+export function parseInfoboxToHtml(wikitext: string, options: InfoboxHtmlOptions = {}): string {
   const parsed = parseInfobox(wikitext);
-  return parsed ? renderInfoboxHtml(parsed) : "";
+  return parsed ? renderInfoboxHtml(parsed, options) : "";
 }

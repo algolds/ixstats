@@ -225,6 +225,70 @@ describe("Table (Facet 3)", () => {
     expect(cls).toContain("in-data-[slot=card]:border-0");
     expect(cls).toContain("in-data-[slot=card]:bg-transparent");
   });
+
+  describe("a pinned actions column", () => {
+    function Pinned({ pinned = true }: { pinned?: boolean }) {
+      return (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Country</TableHead>
+              <TableHead pinned={pinned}>
+                <span className="sr-only">Actions</span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              <TableCell>Ixnay</TableCell>
+              <TableCell pinned={pinned}>Edit</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      );
+    }
+
+    /** Lays every element out `scrollWidth` wide in `clientWidth`, since jsdom lays nothing out. */
+    function layOut(scrollWidth: number, clientWidth: number) {
+      jest.spyOn(Element.prototype, "scrollWidth", "get").mockReturnValue(scrollWidth);
+      jest.spyOn(Element.prototype, "clientWidth", "get").mockReturnValue(clientWidth);
+    }
+    const scroller = (container: HTMLElement) =>
+      container.querySelector('[data-slot="table-scroll"]')!;
+
+    afterEach(() => jest.restoreAllMocks());
+
+    it("sticks to the end edge while a table too wide for a phone scrolls, and that edge does not fade", () => {
+      layOut(658, 308);
+      const { container } = render(<Pinned />);
+      expect(scroller(container)).toHaveAttribute("data-scrolls");
+      expect(scroller(container)).toHaveAttribute("data-overflow", "none");
+      for (const cell of [
+        screen.getByRole("cell", { name: "Edit" }),
+        screen.getByRole("columnheader", { name: "Actions" }),
+      ]) {
+        expect(cell).toHaveAttribute("data-pinned");
+        expect(classOf(cell)).toContain("in-data-[scrolls]:sticky");
+        expect(classOf(cell)).toContain("in-data-[scrolls]:right-0");
+        expect(classOf(cell)).toContain("in-data-[scrolls]:bg-surface");
+      }
+    });
+
+    it("still fades the end edge of a scrolling table with no pinned column", () => {
+      layOut(658, 308);
+      const { container } = render(<Pinned pinned={false} />);
+      expect(scroller(container)).toHaveAttribute("data-overflow", "end");
+      expect(screen.getByRole("cell", { name: "Edit" })).not.toHaveAttribute("data-pinned");
+      expect(classOf(screen.getByRole("cell", { name: "Edit" }))).not.toContain("sticky");
+    });
+
+    it("leaves a table that fits as it was", () => {
+      layOut(300, 308);
+      const { container } = render(<Pinned />);
+      expect(scroller(container)).not.toHaveAttribute("data-scrolls");
+      expect(scroller(container)).toHaveAttribute("data-overflow", "none");
+    });
+  });
 });
 
 describe("Slider naming", () => {

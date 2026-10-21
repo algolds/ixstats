@@ -14,9 +14,15 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault/vault-service";
 import { getVaultConfig } from "~/lib/vault/vault-perks";
 import { grantNewPlayerBonus, NEW_PLAYER_BONUS_ON_VAULT_OPEN } from "~/lib/vault/vault-bonus";
-import { isTrophyCard } from "~/lib/lorewards/trophy-cards";
+import { deckValueOf } from "~/lib/cards/copy-value";
 import { globalCache } from "~/lib/cache";
 import { sentenceCase } from "~/lib/format/sentence-case";
+
+interface VaultUserStats {
+  totalCards: number;
+  deckValue: number;
+  deckValueExTrophy: number;
+}
 
 export const vaultBalanceCreditsRouter = createTRPCRouter({
   /**
@@ -52,7 +58,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
       // Guaranteed non-null by protectedProcedure's authMiddleware.
       const userId = ctx.auth.userId;
       const balance = await vaultService.getBalance(userId, ctx.db as any);
-      // Same curve as the ledger and the crafting gate: configured XP per level.
+      // Same curve as the ledger: configured XP per level.
       const { xpPerLevel } = await getVaultConfig(ctx.db);
       const vaultLevel = Math.floor(balance.vaultXp / xpPerLevel) + 1;
 
@@ -110,62 +116,27 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
   }),
 
   /**
-   * Admin: Adjust a user's login streak (absolute delta applied)
+   * The caller's card figures: copies held and their value (the shared per-copy value), with and without trophy cards
+   * (cached 30 s). Every copy counts, a hidden (retired) card's too, as the inventory lists them; a retired card is
+   * not valued, as in the dividend.
    */
   getUserStats: protectedProcedure.query(async ({ ctx }) => {
     try {
-      if (!ctx.user?.id) {
-        throw new Error("User not found in authentication context");
-      }
-
       const cacheKey = `user_vault_stats:${ctx.user.id}`;
-      const cached = await globalCache.get<any>(cacheKey);
+      const cached = await globalCache.get<VaultUserStats>(cacheKey);
       if (cached) return cached;
 
-      // Count owned card instances live (excluding retired cards)
-      const totalCards = await ctx.db.cardOwnership.count({
-        where: {
-          ownerId: ctx.user.id,
-          cards: { isRetired: false },
-        },
-      });
-
-      // Sum of market values for all owned card instances live (excluding retired cards)
-      const ownerships = await ctx.db.cardOwnership.findMany({
-        where: {
-          ownerId: ctx.user.id,
-          cards: { isRetired: false },
-        },
-        include: {
-          cards: {
-            select: {
-              marketValue: true,
-              lorewardEntryId: true,
-            },
-          },
-        },
-      });
-
-      const deckValue = ownerships.reduce((sum, own) => {
-        return sum + (own.cards?.marketValue ?? 0) * own.quantity;
-      }, 0);
-      // The figure the economy and deck-value achievements read: Loreward trophy cards do not count.
-      const deckValueExTrophy = ownerships.reduce((sum, own) => {
-        return own.cards && !isTrophyCard(own.cards)
-          ? sum + own.cards.marketValue * own.quantity
-          : sum;
-      }, 0);
-
-      const stats = {
-        totalCards,
-        deckValue,
-        deckValueExTrophy,
-        collectorLevel: ctx.user.collectorLevel ?? 1,
-        collectorXp: ctx.user.collectorXp ?? 0,
+      const [held, deck] = await Promise.all([
+        ctx.db.cardOwnership.count({ where: { ownerId: ctx.user.id } }),
+        deckValueOf(ctx.db, ctx.user.id),
+      ]);
+      const stats: VaultUserStats = {
+        totalCards: held,
+        deckValue: deck.total,
+        // The figure the economy and the deck-value achievements read: trophy cards do not count.
+        deckValueExTrophy: deck.exTrophy,
       };
-
       await globalCache.set(cacheKey, stats, { ttl: 30 });
-
       return stats;
     } catch (error) {
       console.error("[Vault Router] Error getting user stats:", error);

@@ -67,6 +67,14 @@ describe("AchievementsTabs", () => {
     ]);
   });
 
+  // At 320px the four tabs are wider than the page: the track scrolls inside itself, so the page never pans sideways.
+  it("scrolls its tab row in its own track rather than widening the page", () => {
+    renderTabs({ lorewardsPanel: <div data-testid="lorewards" /> });
+    const list = screen.getByRole("tablist", { name: "Achievements sections" });
+    expect(list).toHaveClass("max-w-full", "overflow-x-auto");
+    for (const tab of within(list).getAllByRole("tab")) expect(tab).toHaveClass("shrink-0");
+  });
+
   it("leaves the Lorewards tab out until a panel is passed", () => {
     renderTabs();
     expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual([

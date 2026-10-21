@@ -522,6 +522,8 @@ model LorewardEntry {
   year          Int?
   metadata      String?
   syncedAt      DateTime @default(now())
+  /// Set when an admin override wrote the places (cards refresh §2.4); no sync writes them again.
+  overriddenAt  DateTime?
 
   @@unique([date, type])
   @@index([winnerUser])

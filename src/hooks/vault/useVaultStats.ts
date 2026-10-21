@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { api } from "~/trpc/react";
 import { useAuth } from "@clerk/nextjs";
 
@@ -9,52 +8,12 @@ interface VaultStats {
   deckValue: number;
 }
 
-/**
- * Hook to fetch vault dashboard statistics.
- * Automatically refreshes card values from NS API if deck value is 0 but user has cards.
- */
+/** The wallet's card figures: copies held and their value (cards refresh §3: computed live, one copy value). */
 export function useVaultStats() {
   const { userId } = useAuth();
-  const hasTriedRefresh = useRef(false);
-
-  const {
-    data: userData,
-    isLoading: userLoading,
-    isError: userError,
-    refetch: refetchStats,
-  } = api.vault.getUserStats.useQuery(undefined, { enabled: !!userId });
-
-  const refreshMutation = api.nsImport.refreshCardValues.useMutation({
-    onSuccess: () => {
-      void refetchStats();
-    },
+  const { data, isLoading, isError, refetch } = api.vault.getUserStats.useQuery(undefined, {
+    enabled: !!userId,
   });
-
-  // Auto-refresh if user has cards but 0 deck value (stale data)
-  useEffect(() => {
-    if (
-      !hasTriedRefresh.current &&
-      userData &&
-      userData.totalCards > 0 &&
-      userData.deckValue === 0 &&
-      !refreshMutation.isPending
-    ) {
-      hasTriedRefresh.current = true;
-      refreshMutation.mutate();
-    }
-  }, [userData, refreshMutation]);
-
-  const stats: VaultStats = {
-    totalCards: userData?.totalCards ?? 0,
-    deckValue: userData?.deckValue ?? 0,
-  };
-
-  return {
-    stats,
-    loading: userLoading,
-    error: userError,
-    refreshing: refreshMutation.isPending,
-    refetch: refetchStats,
-    refreshCardValues: () => refreshMutation.mutate(),
-  };
+  const stats: VaultStats = { totalCards: data?.totalCards ?? 0, deckValue: data?.deckValue ?? 0 };
+  return { stats, loading: isLoading, error: isError, refetch };
 }

@@ -55,6 +55,15 @@ afterEach(() => {
 const IXNAY: Realm = { id: "default", status: "active", mapVersion: 4 };
 
 describe("runMapTilePrerender", () => {
+  it("never renders a system realm (they have no map)", async () => {
+    const findMany = jest.fn().mockResolvedValue([IXNAY]);
+    await runMapTilePrerender({ realm: { findMany }, $queryRawUnsafe: jest.fn() } as never);
+    expect(findMany).toHaveBeenCalledWith({
+      where: { isSystem: false },
+      select: { id: true, status: true, mapVersion: true },
+    });
+  });
+
   it("renders z0-3 of altitudes, rivers and lakes for a realm's version, then marks it done", async () => {
     const result = await runMapTilePrerender(fakeDb([IXNAY]));
     expect(buildTile).toHaveBeenCalledTimes(LOW_ZOOM_TILES);

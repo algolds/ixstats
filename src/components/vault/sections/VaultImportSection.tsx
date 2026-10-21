@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { WarningCircle as AlertCircle, SystemRestart as Loader2, Xmark as X } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { Card, CardContent } from "~/components/ui/card";
 import { Alert, AlertDescription } from "~/components/ui/alert";
@@ -18,7 +19,6 @@ import {
   type ImportResult,
 } from "./import/ImportConfirmStep";
 import { Button } from "~/components/ui/button";
-import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
 
 interface VaultImportSectionProps {
   initialTab?: string | null;
@@ -26,6 +26,8 @@ interface VaultImportSectionProps {
 
 function ImportDeckTab() {
   const notify = useNotify();
+  const utils = api.useUtils();
+  const refreshCards = useCardsRefresh();
   const [currentStep, setCurrentStep] = useState<WizardStep>("intro");
   const [nationName, setNationName] = useState("");
   const [showNameInput, setShowNameInput] = useState(false);
@@ -70,17 +72,13 @@ function ImportDeckTab() {
         cardsImported: data.cardsImported,
         bonusCredits: data.bonusCredits,
         nation: data.nation,
-        cards: (data.cards ?? []).map((c: any) => ({
-          id: c.id,
-          title: c.title ?? "Unknown card",
-          artwork: c.artwork ?? CARD_ARTWORK_PLACEHOLDER,
-          rarity: c.rarity ?? "COMMON",
-          season: c.season ?? 1,
-          marketValue: c.marketValue ?? 0,
-        })),
+        faces: data.faces,
       });
       setCurrentStep("complete");
       vaultNotify.cardsImported(data.cardsImported, data.nation);
+      // So Mine, the display, Explore and the Settings NS panel list the new copies
+      refreshCards();
+      void utils.nsImport.getMyNSCards.invalidate();
     },
     onError: (error) => {
       setErrorMessage(error.message);

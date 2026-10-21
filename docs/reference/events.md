@@ -1,6 +1,6 @@
 # Events & Realtime Channels
 
-**Last updated:** 2026-10-07
+**Last updated:** 2026-10-20
 
 This reference summarises realtime channels, notification payloads, and scheduled jobs used across IxStates (IxStats).
 
@@ -49,14 +49,17 @@ Both servers attach to a raw HTTP server's `upgrade` event. They are hosted by:
 
 ## Scheduled & Batch Jobs
 
-`cron-runner.mjs` (PM2 app `ixstats-cron`, Bun) is the **only** scheduler; the web app, `server.mjs` and `ws-backend.mjs` schedule nothing. Jobs are defined in `src/server/cron/jobs.ts` (27 jobs, two of them WikiOS jobs not listed here); only those named in `CRON_ENABLED_JOBS` (comma list or `*`) run, each under a lease row in `job_leases` (`withJobLock`, `src/lib/system/job-lock.ts`) that expires after the job's timeout, so a crashed run never blocks the next. Every run is recorded as a `CronRun` row (success, skipped or failed) and a failure alerts the Discord webhook; see [monitoring.md](../operations/monitoring.md#scheduled-jobs). Schedules with a `SystemConfig` override key are read once at startup.
+`cron-runner.mjs` (PM2 app `ixstats-cron`, Bun) is the **only** scheduler; the web app, `server.mjs` and `ws-backend.mjs` schedule nothing. Jobs are defined in `src/server/cron/jobs.ts` (35 jobs; five are not listed here: `wiki-mirror`, `wiki-render-stale`, `forum-render-stale`, `story-chain-wiki-sync` and `realm-inactivity`); only those named in `CRON_ENABLED_JOBS` (comma list or `*`) run, each under a lease row in `job_leases` (`withJobLock`, `src/lib/system/job-lock.ts`) that expires after the job's timeout, so a crashed run never blocks the next. Every run is recorded as a `CronRun` row (success, skipped or failed) and a failure alerts the Discord webhook; see [monitoring.md](../operations/monitoring.md#scheduled-jobs). Schedules with a `SystemConfig` override key are read once at startup.
 
 | Job | Default schedule | Override key |
 | --- | --- | --- |
 | `auction-completion` | `* * * * *` | — |
+| `listing-expiry` | `*/10 * * * *` | — |
 | `vault-dividend` | `0 0 * * *` | `cronSchedule_vaultDividend` |
 | `card-values` | `0 */6 * * *` | `cronSchedule_cardValue` |
+| `card-holding-xp` | `30 3-23 * * *` | — |
 | `lore-card-generation` | `0 2 * * *` | — |
+| `card-import-jobs` | `* * * * *` | — |
 | `lorewards-full-sync` | `0 6 * * *` | `cronSchedule_lorewardsScoring` |
 | `lorewards-state-sync` | `*/10 * * * *` | — |
 | `trade-expiry` | `*/5 * * * *` | — |
@@ -81,6 +84,9 @@ Both servers attach to a raw HTTP server's `upgrade` event. They are hosted by:
 | `geo-profiles` | `*/5 * * * *` | — |
 | `map-tiles` | `*/5 * * * *` | — |
 
+- `auction-completion` settles ended auctions; `listing-expiry` ends fixed-price listings past their 14 days, unlocks their copies and refunds the listing refund share of the fee; `trade-expiry` ends trade offers past their 24 hours ([cards.md](../systems/cards.md#card-economy)).
+- `card-values` rebuilds the card market medians (`CardMarketPrice`) from recent priced sales, then writes every card's reference value (`Card.marketValue`) and a `CardValueHistory` row when it moved (`src/server/modules/cards/market-values.ts`); the Economy tab's Revalue runs the same work.
+- `card-holding-xp` gives every copy held a day or more its daily holding XP within the copy's daily cap, once per UTC day (03:30, with the later hours retrying a failed or missed run); it writes no event rows.
 - `stat-progression` persists the economic projection into each country's stored `current*` stats and writes one `HistoricalDataPoint` per IxTime month; the admin `forceRecalculation` takes the same lease.
 - `thinkpages-trending` scores posts with engagement decay, writes `TrendingTopic` and reconciles the like/reply/repost counters.
 - `achievements-evaluate` evaluates account-level and active-country achievements for recently seen users.
@@ -105,13 +111,13 @@ Manual scripts under `scripts/`:
 
 ## Event Producers
 - **ThinkShare messages** – `messages` router (`messaging.ts`, `conversations.ts`, `participants.ts`) → `getThinkPagesBroadcaster().broadcastMessage()`
-- **Marketplace auctions** – `src/lib/economy/auction-service.ts` (card-market router and `auction-completion` job) → Market WS broadcasts
+- **Marketplace auctions** – `src/lib/economy/auction-service.ts` (card-market router and `auction-completion` job) → Market WS broadcasts. Fixed-price listings broadcast nothing; the Market reads them again after a change.
 - **Achievements** – `achievements.unlock` admin mutation (awards 5 credits on first unlock); collector achievements resync via `syncMyCollectorAchievements`
 - **Cron jobs** – economy, politics, diplomacy, national-issue, stats, social and wiki jobs listed above
 
 ## Consumers
 - Messaging (`useThinkPagesWebSocket` in `src/hooks/useThinkPagesWebSocket.ts`, used by `MessagesRouter.tsx`)
-- Vault auctions (`useAuctionWebSocket` in `src/hooks/marketplace/`, used by `VaultAuctionsTab.tsx`)
+- Vault auctions (`useAuctionWebSocket` in `src/hooks/marketplace/`, used by the cards hub's Market, `src/components/vault/cards/market/MarketPane.tsx`)
 - Compliance modal (`MyCountryComplianceModal.tsx`)
 - External monitoring channels (Discord webhooks)
 

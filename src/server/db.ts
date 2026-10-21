@@ -16,12 +16,14 @@ const trackSlowQueries = !isDevMode;
 const WRITABLE_MODELS_IN_READONLY = new Set(
   [
     // Vault / card system
-    `Card CardOwnership CardPack CardPackOpening UserPack MyVault VaultTransaction
-    NSVerification CardTrade CardTradeOffer TradeOffer CardAuction CardBid CardCollection
-    CardCollectionItem CraftingRecipe VaultStoreItem VaultStorePriceHistory CardWatchlist
-    CardTransferEvent`,
+    `Card CardOwnership CardPack UserPack MyVault VaultTransaction
+    NSVerification NSImportLedger TradeOffer CardAuction CardCollection
+    CardCollectionItem VaultStoreItem VaultStorePriceHistory CardWatchlist
+    CardTransferEvent CardArtLicence CardImportJob CardImportItem CardTakedown LoreCardRequest
+    CardListing CardDustBalance CardDustEvent CardMarketPrice CardNotificationMute CardInscriptionReport
+    CardExperienceEvent CardValueHistory`,
     // NS sync management
-    `SyncLog SyncCheckpoint`,
+    `SyncLog`,
     // Country stats & economic calculations
     `Country EconomicProfile LaborMarket FiscalSystem IncomeDistribution GovernmentBudget
     Demographics HistoricalDataPoint CalculationLog NationalIdentity AuditLog

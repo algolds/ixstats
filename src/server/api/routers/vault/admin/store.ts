@@ -1,7 +1,11 @@
+import { Prisma } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
+import { LORE_TOKEN_ITEM_IDS } from "~/lib/vault/lore-token-refunds";
 import { getVaultConfig, invalidateVaultConfigCache } from "~/lib/vault/vault-service";
-import { getCurrentIxCardSeason, setCurrentIxCardSeason } from "~/lib/cards/season";
+
+const WITHDRAWN_ITEM_MESSAGE = "This item was withdrawn and cannot be put back on sale.";
 
 export const vaultAdminStoreRouter = createTRPCRouter({
   /**
@@ -18,7 +22,6 @@ export const vaultAdminStoreRouter = createTRPCRouter({
         activeDailyCap: z.number().min(1).max(10000),
         socialDailyCap: z.number().min(1).max(10000),
         xpPerLevel: z.number().min(100).max(100000),
-        maxStreakBonus: z.number().min(1).max(365),
         premiumMultiplier: z.number().min(0.1).max(10),
         isEarningEnabled: z.boolean(),
         isTradingEnabled: z.boolean(),
@@ -36,7 +39,6 @@ export const vaultAdminStoreRouter = createTRPCRouter({
           { key: "vault_activeDailyCap", value: input.activeDailyCap.toString() },
           { key: "vault_socialDailyCap", value: input.socialDailyCap.toString() },
           { key: "vault_xpPerLevel", value: input.xpPerLevel.toString() },
-          { key: "vault_maxStreakBonus", value: input.maxStreakBonus.toString() },
           { key: "vault_premiumMultiplier", value: input.premiumMultiplier.toString() },
           { key: "vault_isEarningEnabled", value: input.isEarningEnabled.toString() },
           { key: "vault_isTradingEnabled", value: input.isTradingEnabled.toString() },
@@ -160,6 +162,10 @@ export const vaultAdminStoreRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Lore tokens went with paid lore requests (cards refresh spec §2.2). An omitted isActive reads as true.
+      if (input.isActive && LORE_TOKEN_ITEM_IDS.includes(input.id)) {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: WITHDRAWN_ITEM_MESSAGE });
+      }
       try {
         if (!ctx.auth?.userId) {
           throw new Error("Unauthorized");
@@ -185,7 +191,10 @@ export const vaultAdminStoreRouter = createTRPCRouter({
             badgeText: input.badgeText ?? "Custom Item",
             category: input.category,
             isActive: input.isActive,
-            ...(input.effects !== undefined && { effects: input.effects }),
+            // A Json column takes DbNull, not null, to clear it.
+            ...(input.effects !== undefined && {
+              effects: input.effects === null ? Prisma.DbNull : input.effects,
+            }),
           },
         });
 
@@ -251,16 +260,5 @@ export const vaultAdminStoreRouter = createTRPCRouter({
         console.error("[Vault Router] adminGetPriceHistory error:", error);
         throw new Error("Failed to retrieve price history", { cause: error });
       }
-    }),
-
-  adminGetIxCardSeason: adminProcedure.query(async ({ ctx }) => {
-    return getCurrentIxCardSeason(ctx.db);
-  }),
-
-  adminSetIxCardSeason: adminProcedure
-    .input(z.object({ season: z.number().int().min(1).max(100) }))
-    .mutation(async ({ ctx, input }) => {
-      await setCurrentIxCardSeason(ctx.db, input.season);
-      return { success: true, season: input.season };
     }),
 });

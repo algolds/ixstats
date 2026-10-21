@@ -76,8 +76,8 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
       },
       {
         icon: Package,
-        label: "Card settings",
-        description: "Sync, packs, lore & seasons",
+        label: "Cards",
+        description: "Library, imports, curation and economy",
         href: "/admin/cards",
         section: "cards",
         color: "amber",

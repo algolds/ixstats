@@ -1,11 +1,17 @@
-/** Plan 331: per-card advisory lock taken before max(serial) is read. */
+/** Plan 331: per-card advisory lock taken before max(serial) is read; a removed copy's serial is never reissued. */
 
-import { allocateSerialNumberTx } from "~/lib/cards/serial-number";
+import {
+  allocateSerialNumberTx,
+  bySerialLockOrder,
+  highestIssuedSerialTx,
+  serialLockOrder,
+} from "~/lib/cards/serial-number";
 
 function makeTx() {
   return {
     $executeRaw: jest.fn().mockResolvedValue(1),
     cardOwnership: { findFirst: jest.fn() },
+    cardTransferEvent: { findFirst: jest.fn() },
   };
 }
 const asTx = (tx: ReturnType<typeof makeTx>) => tx as never;
@@ -41,10 +47,62 @@ describe("allocateSerialNumberTx", () => {
     });
   });
 
+  it("counts the serials in the card's trail, so a removed copy's serial is never issued again", async () => {
+    const tx = makeTx();
+    tx.cardOwnership.findFirst.mockResolvedValue({ serialNumber: 4 });
+    tx.cardTransferEvent.findFirst.mockResolvedValue({ serialNumber: 7 });
+
+    await expect(allocateSerialNumberTx(asTx(tx), "card_1")).resolves.toBe(8);
+    expect(tx.cardTransferEvent.findFirst).toHaveBeenCalledWith({
+      where: { cardId: "card_1", serialNumber: { not: null } },
+      orderBy: { serialNumber: "desc" },
+      select: { serialNumber: true },
+    });
+    expect(tx.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      tx.cardTransferEvent.findFirst.mock.invocationCallOrder[0]
+    );
+  });
+
   it("returns 1 when the card has no ownership rows yet", async () => {
     const tx = makeTx();
     tx.cardOwnership.findFirst.mockResolvedValue(null);
 
     await expect(allocateSerialNumberTx(asTx(tx), "card_new")).resolves.toBe(1);
+  });
+});
+
+describe("highestIssuedSerialTx", () => {
+  it("is the card's high-water mark over its copies and its trail, 0 for none, and takes no lock of its own", async () => {
+    const tx = makeTx();
+    tx.cardOwnership.findFirst.mockResolvedValue(null);
+    tx.cardTransferEvent.findFirst.mockResolvedValue({ serialNumber: 1 });
+    await expect(highestIssuedSerialTx(asTx(tx), "trophy")).resolves.toBe(1);
+
+    tx.cardTransferEvent.findFirst.mockResolvedValue(null);
+    await expect(highestIssuedSerialTx(asTx(tx), "fresh")).resolves.toBe(0);
+    expect(tx.$executeRaw).not.toHaveBeenCalled();
+  });
+});
+
+/** NS ids where a locale's order and code-unit order disagree: ICU sorts "_" before digits, code units after. */
+const NS_LONG = "card_ns_1086420_s4";
+const NS_SHORT = "card_ns_108642_s4";
+
+describe("serialLockOrder", () => {
+  it("lists each card once, by UTF-16 code unit, whatever the locale would say", () => {
+    expect(serialLockOrder([NS_SHORT, "card_b", NS_LONG, "Card_z", NS_SHORT, "card_b"])).toEqual([
+      "Card_z",
+      "card_b",
+      NS_LONG,
+      NS_SHORT,
+    ]);
+    expect(serialLockOrder(new Set(["b", "a"]))).toEqual(["a", "b"]);
+    expect(serialLockOrder([])).toEqual([]);
+  });
+
+  it("compares two ids the same way, so a caller can sort its own rows by card", () => {
+    expect(bySerialLockOrder(NS_LONG, NS_SHORT)).toBe(-1);
+    expect(bySerialLockOrder(NS_SHORT, NS_LONG)).toBe(1);
+    expect(bySerialLockOrder(NS_SHORT, NS_SHORT)).toBe(0);
   });
 });

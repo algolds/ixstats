@@ -10,6 +10,7 @@
  */
 
 import { z } from "zod";
+import type { CardAuctionStatus } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import {
   createTRPCRouter,
@@ -19,6 +20,8 @@ import {
 import { auctionService } from "~/lib/economy/auction-service";
 import { notificationAPI } from "~/lib/notifications/api";
 import { globalCache } from "~/lib/cache";
+import { withAuctionFaces } from "~/lib/cards/hub/market-faces";
+import { INSCRIPTION_OMIT } from "~/lib/cards/inscription";
 import { assertAuthUserId, AUCTION_WITH_SELLER_INCLUDE } from "./_shared";
 
 /**
@@ -126,24 +129,30 @@ export const cardMarketBidsRouter = createTRPCRouter({
     }),
 
   /**
-   * Get user's active bids
-   * Admin-only endpoint
+   * Every running auction the player has bid on, each marked winning (theirs is the top bid) or outbid
    */
   getMyActiveBids: protectedProcedure.query(async ({ ctx }) => {
     try {
       assertAuthUserId(ctx);
 
-      // Get auctions where user is current bidder
+      // Running only: an ended one awaits settlement, then shows in history. The live faces below rely on it.
       const auctions = await ctx.db.cardAuction.findMany({
         where: {
-          currentBidderId: ctx.user.id,
+          AuctionBid: { some: { bidderId: ctx.user.id } },
           status: "ACTIVE",
+          endTime: { gt: new Date() },
         },
         include: AUCTION_WITH_SELLER_INCLUDE,
         orderBy: { endTime: "asc" },
       });
 
-      return { auctions };
+      const withFaces = await withAuctionFaces(ctx.db, ctx.user.id, auctions, true);
+      return {
+        auctions: withFaces.map((auction) => ({
+          ...auction,
+          winning: auction.currentBidderId === ctx.user.id,
+        })),
+      };
     } catch (error) {
       console.error("[Card Market Router] Error getting user bids:", error);
       if (error instanceof TRPCError) {
@@ -172,7 +181,7 @@ export const cardMarketBidsRouter = createTRPCRouter({
         const userId = ctx.user.id;
 
         const where = {
-          status: { in: ["COMPLETED", "CANCELLED"] as string[] },
+          status: { in: ["COMPLETED", "CANCELLED"] satisfies CardAuctionStatus[] },
           OR: [
             { sellerId: userId },
             { winnerId: userId },
@@ -186,12 +195,12 @@ export const cardMarketBidsRouter = createTRPCRouter({
             where,
             include: {
               CardOwnership: {
+                omit: INSCRIPTION_OMIT,
                 include: {
                   cards: {
                     select: {
                       id: true,
                       title: true,
-                      artwork: true,
                       rarity: true,
                       cardType: true,
                     },
@@ -224,7 +233,7 @@ export const cardMarketBidsRouter = createTRPCRouter({
         });
 
         return {
-          auctions: enriched,
+          auctions: await withAuctionFaces(ctx.db, userId, enriched, false),
           total,
           hasMore: input.offset + input.limit < total,
         };

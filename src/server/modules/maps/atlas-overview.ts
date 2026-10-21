@@ -175,7 +175,8 @@ export async function realmOverview(
   const matchedId = match ? await atlasRealmId(db, match) : undefined;
   if (matchedId === null) throw new MapImportError("NOT_FOUND", "Realm not found");
   const realms = await db.realm.findMany({
-    where: matchedId ? { id: matchedId } : undefined,
+    // A system realm has no map, so the Atlas leaves it out even when asked for by name.
+    where: { isSystem: false, ...(matchedId ? { id: matchedId } : {}) },
     orderBy: { name: "asc" },
     select: {
       id: true,
@@ -187,6 +188,7 @@ export async function realmOverview(
       settings: true,
     },
   });
+  if (matchedId && realms.length === 0) throw new MapImportError("NOT_FOUND", "Realm not found");
   const ids = realms.map((realm) => realm.id);
   const active = { isActive: true, realmId: { in: ids } };
 

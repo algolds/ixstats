@@ -17,18 +17,23 @@ interface VaultSubTabNavProps<T extends string> {
   maxWidthClass?: string;
 }
 
-/** The vault's in-page section switcher: a full-width `SegmentedControl` exposed as tabs. */
+/**
+ * The vault's in-page section switcher: a full-width `SegmentedControl` exposed as tabs. No tab is narrower than its
+ * label; where they do not all fit (a phone), the track scrolls rather than clipping them.
+ */
 export function VaultSubTabNav<T extends string>({
   tabs,
   activeTab,
   onTabChange,
   className,
-  maxWidthClass = "sm:max-w-md",
+  maxWidthClass = "sm:max-w-xl",
 }: VaultSubTabNavProps<T>) {
   return (
     <SegmentedControl<T>
       asTabs
       fullWidth
+      scrollable
+      itemClassName="min-w-max"
       aria-label="Sections"
       value={activeTab}
       onValueChange={onTabChange}

@@ -3,43 +3,39 @@
  * Every transition is a conditional updateMany checked through `count`.
  */
 
-jest.mock("~/lib/vault/vault-ledger", () => ({
-  ...jest.requireActual("~/lib/vault/vault-ledger"),
-  earnCreditsTx: jest.fn(),
-  spendCreditsTx: jest.fn(),
-}));
-
-import { TradeStatus } from "@prisma/client";
-import { earnCreditsTx, LedgerError, spendCreditsTx } from "~/lib/vault/vault-ledger";
 import {
   claimPendingTradeTx,
   lockCardsTx,
+  recordTradeTransfersTx,
   transferCardsTx,
-  transferCreditsTx,
   unlockCardsTx,
 } from "~/lib/vault/trade-settlement";
-
-const spendMock = jest.mocked(spendCreditsTx);
-const earnMock = jest.mocked(earnCreditsTx);
 
 const NOW = new Date("2026-09-25T12:00:00.000Z");
 
 function makeTx() {
   return {
     tradeOffer: { updateMany: jest.fn() },
-    cardOwnership: { updateMany: jest.fn() },
+    cardOwnership: { count: jest.fn().mockResolvedValue(0), updateMany: jest.fn() },
   };
 }
 const asTx = (tx: ReturnType<typeof makeTx>) => tx as never;
 
 describe("claimPendingTradeTx", () => {
+  it("takes the status from the TradeOfferStatus enum, with no string stand-in left", async () => {
+    expect(await import("~/lib/vault/trade-settlement")).not.toHaveProperty("TradeStatus");
+  });
+
   it("throws CONFLICT when the trade is no longer PENDING (count 0)", async () => {
     const tx = makeTx();
     tx.tradeOffer.updateMany.mockResolvedValue({ count: 0 });
 
     await expect(
-      claimPendingTradeTx(asTx(tx), "trade_1", TradeStatus.REJECTED, NOW)
-    ).rejects.toMatchObject({ code: "CONFLICT" });
+      claimPendingTradeTx(asTx(tx), { tradeId: "trade_1", next: "REJECTED", now: NOW })
+    ).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "This trade changed. Review the latest table.",
+    });
   });
 
   it("resolves when exactly one row moved, writing the new status and respondedAt", async () => {
@@ -47,24 +43,57 @@ describe("claimPendingTradeTx", () => {
     tx.tradeOffer.updateMany.mockResolvedValue({ count: 1 });
 
     await expect(
-      claimPendingTradeTx(asTx(tx), "trade_1", TradeStatus.CANCELLED, NOW)
+      claimPendingTradeTx(asTx(tx), { tradeId: "trade_1", next: "CANCELLED", now: NOW })
     ).resolves.toBeUndefined();
 
     const call = tx.tradeOffer.updateMany.mock.calls[0][0];
-    expect(call.where).toEqual({ id: "trade_1", status: TradeStatus.PENDING });
-    expect(call.data).toEqual({ status: TradeStatus.CANCELLED, respondedAt: NOW });
+    expect(call.where).toEqual({ id: "trade_1", status: "PENDING" });
+    expect(call.data).toEqual({ status: "CANCELLED", respondedAt: NOW });
   });
 
   it("requires expiresAt > now only for ACCEPTED", async () => {
     const tx = makeTx();
     tx.tradeOffer.updateMany.mockResolvedValue({ count: 1 });
 
-    await claimPendingTradeTx(asTx(tx), "trade_1", TradeStatus.ACCEPTED, NOW);
+    await claimPendingTradeTx(asTx(tx), { tradeId: "trade_1", next: "ACCEPTED", now: NOW });
 
     expect(tx.tradeOffer.updateMany.mock.calls[0][0].where).toEqual({
       id: "trade_1",
-      status: TradeStatus.PENDING,
+      status: "PENDING",
       expiresAt: { gt: NOW },
+    });
+  });
+
+  it("guards the revision when one is given", async () => {
+    const tx = makeTx();
+    tx.tradeOffer.updateMany.mockResolvedValue({ count: 1 });
+    await claimPendingTradeTx(asTx(tx), {
+      tradeId: "trade_1",
+      next: "ACCEPTED",
+      now: NOW,
+      revision: 4,
+    });
+    expect(tx.tradeOffer.updateMany.mock.calls[0][0].where).toEqual({
+      id: "trade_1",
+      status: "PENDING",
+      revision: 4,
+      expiresAt: { gt: NOW },
+    });
+  });
+
+  it("guards revision 0 too, the first table", async () => {
+    const tx = makeTx();
+    tx.tradeOffer.updateMany.mockResolvedValue({ count: 1 });
+    await claimPendingTradeTx(asTx(tx), {
+      tradeId: "trade_1",
+      next: "REJECTED",
+      now: NOW,
+      revision: 0,
+    });
+    expect(tx.tradeOffer.updateMany.mock.calls[0][0].where).toEqual({
+      id: "trade_1",
+      status: "PENDING",
+      revision: 0,
     });
   });
 });
@@ -121,13 +150,7 @@ describe("transferCardsTx", () => {
 
     expect(tx.cardOwnership.updateMany.mock.calls[0][0]).toEqual({
       where: { id: { in: ["c1", "c2"] }, ownerId: "from_1", isLocked: false },
-      data: {
-        ownerId: "to_1",
-        userId: "to_1",
-        isLocked: false,
-        acquiredAt: NOW,
-        lastSaleDate: NOW,
-      },
+      data: { ownerId: "to_1", isLocked: false, acquiredAt: NOW },
     });
   });
 
@@ -149,85 +172,123 @@ describe("transferCardsTx", () => {
       isLocked: true,
     });
   });
+
+  it("with a table time, moves only copies unsigned or signed by then, so a later signature is a CONFLICT", async () => {
+    const tx = makeTx();
+    const tableAt = new Date("2026-09-25T11:00:00.000Z");
+    // One of the two copies was signed after the table: the CAS matches only the other
+    tx.cardOwnership.updateMany.mockResolvedValue({ count: 1 });
+
+    await expect(
+      transferCardsTx(asTx(tx), {
+        ids: ["c1", "c2"],
+        fromId: "from_1",
+        toId: "to_1",
+        expectLocked: false,
+        now: NOW,
+        notSignedAfter: tableAt,
+      })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+
+    expect(tx.cardOwnership.updateMany.mock.calls[0][0]).toEqual({
+      where: {
+        id: { in: ["c1", "c2"] },
+        ownerId: "from_1",
+        isLocked: false,
+        OR: [{ inscribedAt: null }, { inscribedAt: { lte: tableAt } }],
+      },
+      data: { ownerId: "to_1", isLocked: false, acquiredAt: NOW },
+    });
+  });
 });
 
-describe("transferCreditsTx", () => {
-  beforeEach(() => {
-    spendMock.mockReset();
-    earnMock.mockReset();
-    spendMock.mockResolvedValue({ newBalance: 50, amount: 50 });
-    earnMock.mockResolvedValue({ newBalance: 150, amount: 50 });
-  });
+describe("recordTradeTransfersTx", () => {
+  it("writes one row per moved copy, stamped with its card, serial, finish and the move's action", async () => {
+    const tx = {
+      cardOwnership: {
+        findMany: jest.fn().mockResolvedValue([
+          { id: "c1", cardId: "card_a", serialNumber: 4, finish: "HOLO" },
+          { id: "c2", cardId: "card_b", serialNumber: 9, finish: "STANDARD" },
+        ]),
+      },
+      cardTransferEvent: { createMany: jest.fn().mockResolvedValue({ count: 2 }) },
+    };
 
-  it("is a no-op when amount <= 0", async () => {
-    await transferCreditsTx(asTx(makeTx()), {
-      fromUserId: "a",
-      toUserId: "b",
-      amount: 0,
-      tradeId: "trade_1",
+    await recordTradeTransfersTx(tx as never, {
+      ids: ["c1", "c2"],
+      fromId: "from_1",
+      toId: "to_1",
+      action: "TRADE",
     });
 
-    expect(spendMock).not.toHaveBeenCalled();
-    expect(earnMock).not.toHaveBeenCalled();
+    expect(tx.cardOwnership.findMany).toHaveBeenCalledWith({
+      where: { id: { in: ["c1", "c2"] } },
+      select: { id: true, cardId: true, serialNumber: true, finish: true },
+    });
+    expect(tx.cardTransferEvent.createMany).toHaveBeenCalledWith({
+      data: [
+        {
+          ownershipId: "c1",
+          cardId: "card_a",
+          serialNumber: 4,
+          finish: "HOLO",
+          fromUserId: "from_1",
+          toUserId: "to_1",
+          action: "TRADE",
+        },
+        {
+          ownershipId: "c2",
+          cardId: "card_b",
+          serialNumber: 9,
+          finish: "STANDARD",
+          fromUserId: "from_1",
+          toUserId: "to_1",
+          action: "TRADE",
+        },
+      ],
+    });
   });
 
-  it("throws BAD_REQUEST on a guarded-debit failure and never credits the other side", async () => {
-    spendMock.mockRejectedValue(
-      new LedgerError("INSUFFICIENT_CREDITS", "Insufficient credits for transaction.", 10)
-    );
-
-    await expect(
-      transferCreditsTx(asTx(makeTx()), {
-        fromUserId: "a",
-        toUserId: "b",
-        amount: 50,
-        tradeId: "trade_1",
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-
-    expect(earnMock).not.toHaveBeenCalled();
+  it("logs a gift's copies as GIFT", async () => {
+    const tx = {
+      cardOwnership: {
+        findMany: jest
+          .fn()
+          .mockResolvedValue([{ id: "c1", cardId: "card_a", serialNumber: 4, finish: "FOIL" }]),
+      },
+      cardTransferEvent: { createMany: jest.fn().mockResolvedValue({ count: 1 }) },
+    };
+    await recordTradeTransfersTx(tx as never, {
+      ids: ["c1"],
+      fromId: "from_1",
+      toId: "to_1",
+      action: "GIFT",
+    });
+    expect(tx.cardTransferEvent.createMany.mock.calls[0][0].data).toEqual([
+      expect.objectContaining({ ownershipId: "c1", action: "GIFT" }),
+    ]);
   });
 
-  it("debits the sender as SPEND_MARKET and credits the receiver as EARN_CARDS, both tagged P2P_TRADE", async () => {
-    const tx = makeTx();
+  it("writes nothing for a side that gave no cards", async () => {
+    const tx = {
+      cardOwnership: { findMany: jest.fn() },
+      cardTransferEvent: { createMany: jest.fn() },
+    };
 
-    await transferCreditsTx(asTx(tx), {
-      fromUserId: "a",
-      toUserId: "b",
-      amount: 50,
-      tradeId: "trade_1",
+    await recordTradeTransfersTx(tx as never, {
+      ids: [],
+      fromId: "from_1",
+      toId: "to_1",
+      action: "TRADE",
     });
 
-    expect(spendMock).toHaveBeenCalledWith(tx, {
-      userId: "a",
-      amount: 50,
-      type: "SPEND_MARKET",
-      source: "P2P_TRADE",
-      metadata: { tradeId: "trade_1" },
-    });
-    expect(earnMock).toHaveBeenCalledWith(tx, {
-      userId: "b",
-      amount: 50,
-      type: "EARN_CARDS",
-      source: "P2P_TRADE",
-      metadata: { tradeId: "trade_1" },
-    });
-    expect(spendMock.mock.invocationCallOrder[0]).toBeLessThan(
-      earnMock.mock.invocationCallOrder[0]
-    );
+    expect(tx.cardOwnership.findMany).not.toHaveBeenCalled();
+    expect(tx.cardTransferEvent.createMany).not.toHaveBeenCalled();
   });
+});
 
-  it("rethrows non-ledger errors unchanged", async () => {
-    const boom = new Error("connection reset");
-    spendMock.mockRejectedValue(boom);
-
-    await expect(
-      transferCreditsTx(asTx(makeTx()), {
-        fromUserId: "a",
-        toUserId: "b",
-        amount: 5,
-        tradeId: "trade_1",
-      })
-    ).rejects.toBe(boom);
+describe("the credit transfer", () => {
+  it("is gone: a trade's credits move through its credit legs (fee and royalty)", async () => {
+    expect(await import("~/lib/vault/trade-settlement")).not.toHaveProperty("transferCreditsTx");
   });
 });

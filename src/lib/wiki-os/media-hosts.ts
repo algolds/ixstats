@@ -4,7 +4,10 @@
  * images (`src/lib/og`) fetch wiki files only from these hosts.
  */
 import { mediaWikiOrigin } from "./config";
-import { SISTER_WIKI_HOSTS, sisterWikiFileHosts } from "./wiki-hosts";
+import { SISTER_WIKI_HOSTS, sisterWikiFileHosts, type SisterWikiId } from "./wiki-hosts";
+
+/** A wiki whose files are read: IxWiki or a sister wiki (Commons included). */
+export type FileWiki = "ixwiki" | SisterWikiId;
 
 const ALLOWED_MEDIA_HOSTS: ReadonlySet<string> = new Set([
   new URL(mediaWikiOrigin()).hostname,
@@ -16,9 +19,22 @@ export function isAllowedMediaUrl(rawUrl: string): boolean {
   try {
     const url = new URL(rawUrl);
     return (
-      (url.protocol === "https:" || url.protocol === "http:") && ALLOWED_MEDIA_HOSTS.has(url.hostname)
+      (url.protocol === "https:" || url.protocol === "http:") &&
+      ALLOWED_MEDIA_HOSTS.has(url.hostname)
     );
   } catch {
     return false;
   }
+}
+
+/**
+ * The hosts one wiki's files come from: a sister wiki's own host and upload CDNs; for IxWiki, its own host and
+ * Commons' (IxWiki shows Commons files through InstantCommons).
+ */
+export function wikiFileHosts(wiki: FileWiki): ReadonlySet<string> {
+  if (wiki !== "ixwiki") return new Set(sisterWikiFileHosts(SISTER_WIKI_HOSTS[wiki]));
+  return new Set([
+    new URL(mediaWikiOrigin()).hostname,
+    ...sisterWikiFileHosts(SISTER_WIKI_HOSTS.commons),
+  ]);
 }

@@ -21,7 +21,6 @@ import {
   getEarningsSummary as ledgerGetEarningsSummary,
 } from "./vault-ledger";
 import {
-  claimDailyBonus as bonusClaimDailyBonus,
   claimCombinedDailyClaim as bonusClaimCombinedDailyClaim,
   updateLoginStreak as bonusUpdateLoginStreak,
 } from "./vault-daily-bonus";
@@ -30,9 +29,9 @@ import {
   clearUserPerksCache as perksClearUserPerksCache,
   getCardCapacityBoost as perksGetCardCapacityBoost,
   getYieldBoostMultiplier as perksGetYieldBoostMultiplier,
-  getLoreTokensBalance as perksGetLoreTokensBalance,
   getVaultConfig,
   invalidateVaultConfigCache,
+  type PerksDb,
 } from "./vault-perks";
 export { getVaultConfig, invalidateVaultConfigCache };
 export { LedgerError };
@@ -162,10 +161,6 @@ export class VaultService {
     return ledgerGetTransactionHistory(userId, db, limit, offset, type, direction);
   }
 
-  claimDailyBonus(userId: string, db: PrismaClient) {
-    return bonusClaimDailyBonus(userId, db);
-  }
-
   claimCombinedDailyClaim(userId: string, choice: "CREDITS" | "CARD", db: PrismaClient) {
     return bonusClaimCombinedDailyClaim(userId, choice, db);
   }
@@ -178,7 +173,7 @@ export class VaultService {
     return ledgerGetEarningsSummary(userId, db);
   }
 
-  getPurchasedItemsEffects(userId: string, db: PrismaClient) {
+  getPurchasedItemsEffects(userId: string, db: PerksDb) {
     return perksGetPurchasedItemsEffects(userId, db);
   }
 
@@ -186,16 +181,12 @@ export class VaultService {
     perksClearUserPerksCache(userId);
   }
 
-  getCardCapacityBoost(userId: string, db: PrismaClient) {
+  getCardCapacityBoost(userId: string, db: PerksDb) {
     return perksGetCardCapacityBoost(userId, db);
   }
 
   getYieldBoostMultiplier(userId: string, db: PrismaClient) {
     return perksGetYieldBoostMultiplier(userId, db);
-  }
-
-  getLoreTokensBalance(userId: string, db: PrismaClient) {
-    return perksGetLoreTokensBalance(userId, db);
   }
 }
 

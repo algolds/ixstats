@@ -77,11 +77,11 @@
     scroll-behavior: auto !important;
   }
 
-  /* ─── Reduce Motion: stop looping card-cover layers ─────────────────────
-     PackHolographicCover / LoreCardHolographicCover set `animation` inline,
-     so only an important declaration can stop them. */
+  /* ─── Reduce Motion: stop looping pack-cover layers ─────────────────────
+     PackHolographicCover sets `animation` inline, so only an important
+     declaration can stop them. */
 
-  :is(.pack-holo-drift, .pack-foil-sweep, .pack-geo-spin, .lore-ink-flow) {
+  :is(.pack-holo-drift, .pack-foil-sweep, .pack-geo-spin) {
     @variant motion-reduce {
       animation: none !important;
     }

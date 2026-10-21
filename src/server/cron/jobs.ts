@@ -47,6 +47,17 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
       (await import("~/lib/economy/auction-completion-cron")).processExpiredAuctions,
   },
   {
+    // Every 10 minutes: due listings end, their copies unlock and a share of the listing fee comes back.
+    name: "listing-expiry",
+    defaultSchedule: "*/10 * * * *",
+    lockName: "listing-expiry",
+    timeoutMs: 5 * MINUTE,
+    modulePath: "~/server/modules/cards/market/listing-expiry-cron",
+    exportName: "processExpiredListings",
+    load: async () =>
+      (await import("~/server/modules/cards/market/listing-expiry-cron")).processExpiredListings,
+  },
+  {
     // Midnight UTC: the Vault dividend for the day just ended, plus any of the last 7 days still unsettled.
     name: "vault-dividend",
     defaultSchedule: "0 0 * * *",
@@ -58,23 +69,54 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     load: async () => (await import("~/server/cron/vault-dividend-cron")).runVaultDividend,
   },
   {
+    // Every 6 h: market medians per card and finish, then each card's reference value.
     name: "card-values",
     defaultSchedule: "0 */6 * * *",
     scheduleConfigKey: "cronSchedule_cardValue",
     lockName: "card-value",
     timeoutMs: 30 * MINUTE,
-    modulePath: "~/lib/lorewards/card-value-cron",
-    exportName: "updateCardValues",
-    load: async () => (await import("~/lib/lorewards/card-value-cron")).updateCardValues,
+    modulePath: "~/server/modules/cards/market-values",
+    exportName: "runCardMarketValues",
+    load: async () => (await import("~/server/modules/cards/market-values")).runCardMarketValues,
   },
   {
+    // The holding XP tick for every copy held a day or more (no event rows), once per UTC day at 03:30. The later
+    // hours retry a failed or missed run; once the day is claimed, each is one SystemConfig read that skips.
+    name: "card-holding-xp",
+    defaultSchedule: "30 3-23 * * *",
+    lockName: "card-holding-xp",
+    timeoutMs: 10 * MINUTE,
+    modulePath: "~/server/modules/cards/holding-xp",
+    exportName: "runHoldingXpTick",
+    load: async () => {
+      const [{ runHoldingXpTick }, { db }] = await Promise.all([
+        import("~/server/modules/cards/holding-xp"),
+        import("~/server/db"),
+      ]);
+      return () => runHoldingXpTick(db);
+    },
+  },
+  {
+    // Queues the daily lore import per switched-on wiki; the card-import-jobs run works the items.
     name: "lore-card-generation",
     defaultSchedule: "0 2 * * *",
     lockName: "lore-card-generation",
-    timeoutMs: 60 * MINUTE,
-    modulePath: "~/lib/lorewards/generation-cron",
-    exportName: "generateDailyLoreCards",
-    load: async () => (await import("~/lib/lorewards/generation-cron")).generateDailyLoreCards,
+    timeoutMs: 10 * MINUTE,
+    modulePath: "~/server/modules/cards/cards.daily-import",
+    exportName: "queueDailyLoreImports",
+    load: async () =>
+      (await import("~/server/modules/cards/cards.daily-import")).queueDailyLoreImports,
+  },
+  {
+    // Card imports (the cards admin's Imports tab and the daily import). The admin's Start also kicks a run.
+    name: "card-import-jobs",
+    defaultSchedule: "* * * * *",
+    lockName: "card-import-jobs",
+    timeoutMs: 5 * MINUTE,
+    modulePath: "~/server/modules/cards/cards.import-jobs",
+    exportName: "runQueuedCardImports",
+    load: async () =>
+      (await import("~/server/modules/cards/cards.import-jobs")).runQueuedCardImports,
   },
   {
     name: "lorewards-full-sync",

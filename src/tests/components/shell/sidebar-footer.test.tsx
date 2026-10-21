@@ -174,7 +174,10 @@ describe("SidebarVaultCard disclosure", () => {
 
   it("links into the Vault", () => {
     open();
-    expect(screen.getByRole("link", { name: "Cards" })).toHaveAttribute("href", "/vault/cards");
+    expect(screen.getByRole("link", { name: "Cards" })).toHaveAttribute(
+      "href",
+      "/vault/cards/mine"
+    );
     expect(screen.getByRole("link", { name: "Store" })).toHaveAttribute("href", "/vault/store");
     expect(screen.getByRole("link", { name: "Achievements" })).toHaveAttribute(
       "href",

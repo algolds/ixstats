@@ -7,6 +7,7 @@ import { motion } from "motion/react";
 import { cn } from "~/lib/utils/cn";
 import { springSnappy } from "~/lib/design/motion";
 import { useControllableState } from "~/hooks/useControllableState";
+import { useKeepSelectedInView } from "~/hooks/useKeepSelectedInView";
 
 /**
  * A single choice among 2-5 peer options (view switchers, periods, filters), skinned over Radix
@@ -61,6 +62,12 @@ interface SegmentedControlProps<T extends string = string> extends Omit<
   asTabs?: boolean;
   /** With `asTabs`: the id of the panel each tab controls. */
   getTabPanelId?: (value: T) => string;
+  /**
+   * With `asTabs`: `automatic` selects a tab as the arrow keys focus it; `manual` only moves focus, and Enter or Space
+   * selects (for tabs whose switch is costly, such as a new address).
+   * @default "automatic"
+   */
+  activationMode?: "automatic" | "manual";
   /** Class for each segment button. */
   itemClassName?: string;
   /**
@@ -97,6 +104,7 @@ export function SegmentedControl<T extends string = string>({
   disabled = false,
   asTabs = false,
   getTabPanelId,
+  activationMode,
   itemClassName,
   scrollable: scrollableProp,
   className,
@@ -108,7 +116,6 @@ export function SegmentedControl<T extends string = string>({
     defaultProp: defaultValue,
   });
   const thumbId = `${React.useId()}-segment-thumb`;
-  const refs = React.useRef<(HTMLButtonElement | null)[]>([]);
   const metrics = sizes[size];
 
   // A segmented control always has a choice: re-selecting the current segment is a no-op.
@@ -120,16 +127,11 @@ export function SegmentedControl<T extends string = string>({
 
   // Keep the selected segment visible when the track scrolls (the track only, never the page).
   const trackRef = React.useRef<HTMLDivElement>(null);
-  const selectedIndex = options.findIndex((o) => o.value === value);
-  React.useEffect(() => {
-    const track = trackRef.current;
-    const item = refs.current[selectedIndex];
-    if (!scrollable || !track || !item) return;
-    const start = item.offsetLeft;
-    const end = start + item.offsetWidth;
-    if (start < track.scrollLeft) track.scrollLeft = start;
-    else if (end > track.scrollLeft + track.clientWidth) track.scrollLeft = end - track.clientWidth;
-  }, [scrollable, selectedIndex]);
+  useKeepSelectedInView(trackRef, {
+    enabled: scrollable,
+    selected: value,
+    itemsKey: options.map((o) => o.value).join(" "),
+  });
 
   const trackClassName = cn(
     "bg-fill-3 relative items-stretch gap-0.5 p-0.5 select-none",
@@ -141,7 +143,7 @@ export function SegmentedControl<T extends string = string>({
     className
   );
 
-  const segments = options.map((option, index) => {
+  const segments = options.map((option) => {
     const selected = option.value === value;
     const hasBadge = option.badge !== undefined && option.badge !== null && option.badge !== false;
     const badgeLabel =
@@ -150,9 +152,6 @@ export function SegmentedControl<T extends string = string>({
         ? String(option.badge)
         : undefined);
     const segment = {
-      ref: (el: HTMLButtonElement | null) => {
-        refs.current[index] = el;
-      },
       value: option.value,
       disabled: disabled || option.disabled,
       "aria-label":
@@ -225,7 +224,11 @@ export function SegmentedControl<T extends string = string>({
 
   if (asTabs) {
     return (
-      <TabsPrimitive.Root value={value ?? ""} onValueChange={select}>
+      <TabsPrimitive.Root
+        value={value ?? ""}
+        onValueChange={select}
+        activationMode={activationMode}
+      >
         <TabsPrimitive.List
           ref={trackRef}
           data-slot="segmented-control"

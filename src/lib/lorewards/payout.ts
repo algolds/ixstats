@@ -22,8 +22,8 @@ import {
   type Contest,
 } from "./contest-identity";
 import {
-  contestEntryIds,
   findContestEntries,
+  holderStillRecordedTx,
   lockContestPlace,
   type StoredContestEntry,
 } from "./contest-store";
@@ -100,7 +100,7 @@ async function payPlace(
   const holder = contestHolder(contest, place);
   if ("conflict" in holder) {
     console.warn(
-      `[Lorewards] Not paying ${describeConflict(holder.conflict, place)}: the entries disagree. Settle it at the source (the bot's state file or the OOL page); an overrideWinner on one copy is rewritten by the next sync.`
+      `[Lorewards] Not paying ${describeConflict(holder.conflict, place)}: the entries disagree. Settle it at the source (the bot's state file or the OOL page), or with an override, which writes every entry of the contest.`
     );
     return "unpaid";
   }
@@ -124,7 +124,9 @@ async function payPlace(
   try {
     const paid = await db.$transaction(async (tx) => {
       await lockContestPlace(tx, contestPlaceKey(e, place));
-      if (await contestPlacePaid(tx, await contestEntryIds(tx, e), place)) return false;
+      // An override that wrote the place while this run waited leaves the resolved holder unrecorded: pay nobody
+      const entryIds = await holderStillRecordedTx(tx, e, place, recorded);
+      if (!entryIds || (await contestPlacePaid(tx, entryIds, place))) return false;
       return grantBonusTx(tx, userId, lorewardBonusKey(e.id, place), amount, metadata);
     });
     return paid ? "paid" : "unpaid";

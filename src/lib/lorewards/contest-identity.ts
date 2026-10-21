@@ -19,10 +19,13 @@ export interface ContestEntry {
 /** The entries of one contest, in id order: never empty. */
 export type Contest<T> = [T, ...T[]];
 
+/** A contest's first day: a weekly's or monthly's `dateStart` (its date when stored by that day), a daily's date. */
+export const contestDay = (entry: Pick<ContestEntry, "type" | "date" | "dateStart">): string =>
+  entry.type === "daily" ? entry.date : (entry.dateStart ?? entry.date);
+
 /** A contest's identity: a weekly's or monthly's type and first day, a daily's type and date. */
 export function contestIdentity(entry: Pick<ContestEntry, "type" | "date" | "dateStart">): string {
-  const day = entry.type === "daily" ? entry.date : (entry.dateStart ?? entry.date);
-  return `${entry.type}:${day}`;
+  return `${entry.type}:${contestDay(entry)}`;
 }
 
 /**
@@ -33,8 +36,25 @@ export function contestEntriesWhere(
   entry: Pick<ContestEntry, "type" | "date" | "dateStart">
 ): Prisma.LorewardEntryWhereInput {
   if (entry.type === "daily") return { type: entry.type, date: entry.date };
-  const day = entry.dateStart ?? entry.date;
+  const day = contestDay(entry);
   return { type: entry.type, OR: [{ dateStart: day }, { dateStart: null, date: day }] };
+}
+
+/** `day` (YYYY-MM-DD) moved by `days`. */
+const shiftDay = (day: string, days: number): string =>
+  new Date(Date.parse(`${day}T00:00:00.000Z`) + days * 86_400_000).toISOString().slice(0, 10);
+
+/**
+ * The `where` of the entries of the weekly or monthly contests that hold `day` (YYYY-MM-DD), under either key as in
+ * `contestEntriesWhere`: a monthly's first day is the first of `day`'s month (as the state file's months run), and a
+ * weekly's is one of the seven days ending on `day`.
+ */
+export function contestsHoldingDayWhere(
+  type: "weekly" | "monthly",
+  day: string
+): Prisma.LorewardEntryWhereInput {
+  const first = type === "monthly" ? `${day.slice(0, 7)}-01` : { gte: shiftDay(day, -6), lte: day };
+  return { type, OR: [{ dateStart: first }, { dateStart: null, date: first }] };
 }
 
 /** The key of one place of one contest (`<type>:<first day>:<place>`): its advisory lock, and its log name. */

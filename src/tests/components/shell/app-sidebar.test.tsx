@@ -66,6 +66,20 @@ describe("AppSidebar", () => {
     expect(screen.queryByRole("button", { name: /Switch app/ })).toBeNull();
   });
 
+  // A flex item is never narrower than its content by default, so a row that cannot shrink (the claimable
+  // "Daily reward" with its streak pill) widened the panel past its column and over the page's left edge.
+  it("keeps the panel inside its column while a row is wider than it, the row truncating instead", () => {
+    const { container } = renderSidebar({
+      pathname: "/vault",
+      badges: { "daily-reward": { kind: "action", label: "Ready", streak: 12 } },
+    });
+    const panel = container.querySelector('[data-slot="app-sidebar-panel"]');
+    expect(panel).toHaveClass("min-w-0", "flex-1");
+    const nav = screen.getByRole("navigation", { name: "App navigation" });
+    const reward = within(nav).getByRole("button", { name: /Daily reward/ });
+    expect(within(reward).getByText("Daily reward")).toHaveClass("min-w-0", "truncate");
+  });
+
   it("lists Settings through the source list instead of a separate link", () => {
     renderSidebar({ pathname: "/vault" });
     const nav = screen.getByRole("navigation", { name: "App navigation" });

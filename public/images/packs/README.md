@@ -65,11 +65,13 @@ You can create pack artwork using:
 
 ## Implementation Notes
 
-The pack opening components automatically detect missing images:
-- `PackPurchaseModal.tsx` shows fallback gradient
-- `Stage1_PackReveal.tsx` displays text-based pack
-- No errors shown to users
-- Console warnings for developers
+Every pack cover is drawn by `PackHolographicCover` (`src/components/cards/pack-opening/`), in the Store's Packs
+and My packs tabs, the wallet's waiting-packs tile and the pack reveal:
+- A pack with a `CardPack.artwork` path shows that image (an `.svg` path also layers its `_foil.svg` and `_glow.svg`
+  files); the seed names `/images/packs/pack_<name>.svg` files, which are not in the repo, and a missing file leaves
+  the cover with no base image
+- A pack with no artwork shows a cover drawn from its pack type
+- No errors are shown to users
 
 ## Adding Pack Images
 

@@ -27,6 +27,7 @@ beforeEach(() => {
 });
 
 const storedHref = () => (create.mock.calls[0]![0] as { data: { href: string | null } }).data.href;
+const storedTitle = () => (create.mock.calls[0]![0] as { data: { title: string } }).data.title;
 
 describe("achievement unlock notification link", () => {
   it("links the API notification to the achievement in the Vault", async () => {
@@ -58,5 +59,17 @@ describe("achievement unlock notification link", () => {
       category: "General",
     });
     expect(storedHref()).toBe("/vault/achievements?a=pop-giant");
+  });
+
+  // An Uncommon achievement (First Loreward) had no glyph in the hook's rarity table, so it read "undefined".
+  it("titles the unlock by the achievement's name alone, with no rarity glyph to go missing", async () => {
+    await notificationHooks.onAchievementUnlock({
+      userId: "u1",
+      achievementId: "lorewards-first",
+      name: "First Loreward",
+      description: "Win a daily, weekly or monthly Loreward",
+      category: "Lorewards",
+    });
+    expect(storedTitle()).toBe("🏆 Achievement Unlocked: First Loreward");
   });
 });

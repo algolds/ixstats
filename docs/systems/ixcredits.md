@@ -1,6 +1,6 @@
 # IxCredits (IxC) Virtual Currency Engine
 
-**Last updated:** 2026-10-14  
+**Last updated:** 2026-10-20  
 **Status:** Release Candidate (platform 1.5.0 "Lobster Crosby")  
 **Hierarchy:** Currency & Earning Engine of **IxVault** (`IXVAULT_VERSION = 3`).
 
@@ -62,7 +62,6 @@ One payout per user per UTC day, written at midnight UTC by the `vault-dividend`
 - **Admin:** the cron and tuning widgets point at `vault-dividend`. The store item effect `yieldBoost` is labelled "Dividend boost".
 
 ### 2. Active Gameplay (`EARN_ACTIVE`) — 100 IxC Daily Cap
-- **Login Streak** (`vault.claimDailyBonus`): 1 to 7 IxC daily (`min(streak, maxStreakBonus)`)
 - **Combined Daily Claim** (`vault.claimCombinedDailyClaim`): choose a randomized credit roll (10–10,000 IxC before the cap) or a random card of the day. The claim dialog (`DailyRewardProvider.tsx`) describes the roll as paid up to the daily earning cap (the 100 IxC active cap always applies). It auto-opens at most once per user per UTC day (tracked in `localStorage`); after that it stays available from the sidebar "Daily reward" row and the Wallet's `DailyRewardStatus` until claimed
 - Removed: diplomatic action rewards (embassies, cultural exchanges), diplomatic scenario responses, the per-post ThinkPages reward and the forum action reward. No country action pays IxCredits any more.
 
@@ -70,10 +69,10 @@ One payout per user per UTC day, written at midnight UTC by the `vault-dividend`
 Nothing pays `EARN_SOCIAL` now. ThinkPages and forum posts are paid through the dividend's posts part. The type, its 50 IxC cap (`socialDailyCap`) and its label stay so old statement rows read correctly.
 
 ### 4. Metagame Bonuses (`EARN_BONUS`) — Uncapped
-Granted through `grantBonus()` (`src/lib/vault/vault-bonus.ts`), outside the daily caps and the `isEarningEnabled` gate; amounts are admin-tunable (`vault_bonus_*` SystemConfig):
+Granted through `grantBonus()` (`src/lib/vault/vault-bonus.ts`), outside the daily caps and the `isEarningEnabled` gate; amounts are admin-tunable (`vault_bonus_*` SystemConfig) in `/admin/cards` → Economy (Bonuses, and the Loreward payout grid):
 - **Achievement Unlocks** (one-time each): Common 100, Uncommon 250, Rare 500, Epic 1,000, Legendary 2,500 IxC. Account-level achievements (62 of the 114 active ones: tenure, wiki, community, cards, Lorewards and others) unlock without a country; see [achievements.md](./achievements.md)
 - **New Player** 5,000 IxC.
-- **Loreward payouts** by contest and place, for entries from `LOREWARD_PAYOUT_START` (2026-10-15) on: daily 500 winner / 150 runner-up, weekly 1,500 / 400, monthly 4,000 / 1,000 (`LOREWARD_PAYOUTS` in `vault-bonus.ts`; a `vault_bonus_loreward_<type>_<winner|runner_up>` SystemConfig row overrides a cell). Keys `bonus:loreward:<entryId>` (winner, unchanged) and `bonus:loreward:<entryId>:runner-up`. Entries before the start keep what was paid; the single `vault_bonus_loreward` setting is gone. Weekly and monthly runner-ups are not recorded in the Lorewards data today, so only recorded places pay. Each place also mints a trophy card (see [cards.md](./cards.md#loreward-trophy-cards)), which pays nothing.
+- **Loreward payouts** by contest and place, for entries from `LOREWARD_PAYOUT_START` (2026-10-15) on: daily 500 winner / 150 runner-up, weekly 1,500 / 400, monthly 4,000 / 1,000 (`LOREWARD_PAYOUTS` in `vault-bonus.ts`; a `vault_bonus_loreward_<type>_<winner|runner_up>` SystemConfig row overrides a cell, set in `/admin/cards` → Economy → Loreward payouts). Keys `bonus:loreward:<entryId>` (winner, unchanged) and `bonus:loreward:<entryId>:runner-up`. Entries before the start keep what was paid; the single `vault_bonus_loreward` setting is gone. Weekly and monthly runner-ups are not recorded in the Lorewards data today, so only recorded places pay. Each place also mints a trophy card (see [cards.md](./cards.md#loreward-trophy-cards)), which pays nothing.
 - **Removed:** the Wiki Country Import bonus (it fired on country founding).
 - **New Player bonus is an IxnayID bonus.** `grantNewPlayerBonus()` pays it when the account is created (`UserManagementService.getOrCreateUser`), with no country needed. Accounts that predate this get it the first time they open the Vault (`vault.getBalance`; switch off with `NEW_PLAYER_BONUS_ON_VAULT_OPEN` in `vault-bonus.ts`). Country creation and realm claims no longer trigger it. The source is `bonus:new_player` with `oneTime`, so the ledger check plus the idempotency key `bonus:new_player:<User.id>` pay it once per account
 - **NS Deck Import**: 50 IxC per newly imported card, capped at 5,000 IxC, paid **once per nation, whichever account imports it** (`onceKey` on the nation name, `ns-import/decks.ts`)
@@ -81,16 +80,19 @@ Granted through `grantBonus()` (`src/lib/vault/vault-bonus.ts`), outside the dai
 Both caps are configurable (`activeDailyCap`, `socialDailyCap`); an earn that would exceed the remaining allowance is clamped. The dividend, bonuses and card earnings are outside them.
 
 ### Card sales and trades
-- Selling cards through auctions and trades pays the seller (`EARN_CARDS`), and junking a card pays its junk value. A **nation card** sold at auction pays a 2% royalty to the nation's owner (else the earliest human puller of the card) (`src/lib/economy/auction-service.ts`); it is the only place a country feeds the Vault.
+- Selling a card pays the seller the price less the market fee (`EARN_CARDS`): `card_sale_auction`, `card_sale_buyout` or `card_sale_listing` (`settleCardSaleTx`, `src/lib/cards/market/settle-sale.ts`). The buyer's side is `SPEND_MARKET`: `auction_bid_reserve` (a held bid; `auction_bid_refund` gives it back when the bidder is outbid or an admin cancels), `card_purchase_buyout` or `card_purchase_listing`.
+- A trade's IxC move as one leg each way (`P2P_TRADE`, `src/lib/cards/market/credit-leg.ts`): the payer is charged the amount (`SPEND_MARKET`) and the receiver gets it less the market fee (`EARN_CARDS`). Card-for-card trades pay no fee.
+- **The market fee** is the house rake (`card_system_auction_rake_pct`, default 10%) on an amount over the sale fee threshold (`card_economy_sale_fee_threshold`, 100 IxC), in whole IxC rounded down (`saleFee`, `src/lib/cards/market/fees.ts`). It applies to auction sales and buyouts, listing sales and each trade leg.
+- **The nation card royalty** (`nation_card_royalty`, `EARN_CARDS`; `src/lib/cards/market/royalty.ts`): 2% of the amount (`card_economy_royalty_pct`), paid out of the market fee, so it creates no credits and a deal under the threshold pays none. It goes to the owner of each nation a sold or traded NATION card shows, split evenly, and only when that owner is not the buyer or the seller; there is no fallback recipient. It is the only place a country feeds the Vault. See [cards.md](./cards.md#fees-and-the-royalty).
 
 ---
 
 ## Spending IxCredits
 
 - **Card Packs**: `pack-service.ts` spends through `spendCreditsTx` with type `SPEND_PACKS`, so the ledger's kill switch and idempotency apply to packs. Per-pack `priceCredits` (seeded range 100–15,000 IxC; see [cards.md](./cards.md#pack-tiers))
-- **Card Crafting (`SPEND_CRAFT`)**: retired for now (2026-10-05); nothing spends `SPEND_CRAFT` any more, and old rows stay in the ledger
-- **Marketplace & Trading (`SPEND_MARKET`)**: Listing fee (5 IxC standard, 10 IxC featured; 50% refunded if no bids), marketplace fee (10% on sales $>100$ IxC), P2P credit transfers
-- **Boosts & Cosmetics (`SPEND_BOOST`, `SPEND_COSMETIC`)**: Vault Shop items. The seed script `scripts/setup/seed-vault-items.ts` (not run by `db:seed`) creates profile glows, frames and badges (including seasonal ones), card capacity boosts, a MyClub team licence token and a MyLeague franchise pass. It has no lore request token and no dividend boost item, although the dividend reads a `yieldBoost` effect if an owned item has one
+- **Card Crafting (`SPEND_CRAFT`, source `card_craft`)**: a craft spends the card's rarity floor in IxC, plus its realm's dust (dust is not IxC and has its own ledger; see [cards.md](./cards.md#dust-and-crafting))
+- **Marketplace & Trading (`SPEND_MARKET`)**: the listing fee of a fixed-price listing (`listing_fee`) or an auction (`auction_listing_fee`), 5 IxC standard and 10 IxC featured by default (`card_economy_listing_fee`, `card_economy_listing_fee_featured`) and stored on the row; 50% of the stored fee comes back as a `REFUND` (`listing_fee_refund`, `auction_fee_refund`; `card_economy_listing_refund_pct`) when a listing is cancelled or expires, or an auction is cancelled or ends with no bids. Also purchases, bids and buyouts, and a trade's IxC (see [Card sales and trades](#card-sales-and-trades))
+- **Boosts & Cosmetics (`SPEND_BOOST`, `SPEND_COSMETIC`)**: Store items. The seed script `scripts/setup/seed-vault-items.ts` (not run by `db:seed`) creates profile glows, frames and badges (including seasonal ones), card capacity boosts, a MyClub team licence token and a MyLeague franchise pass. It has no lore request token and no dividend boost item, although the dividend reads a `yieldBoost` effect if an owned item has one
 
 ---
 
@@ -116,10 +118,9 @@ try {
 
 ### Client React Hooks (`src/hooks/vault/`)
 - `useVaultBalance()` – Reads current balance, XP, level, today's earnings, and premium multiplier
-- `useVaultStats()` – Aggregate vault statistics (card count, deck value, waiting packs)
-- `useCollections()` – Collection list
+- `useVaultStats()` – The card count and deck value
 
-There is no client-side earn hook: credits are only awarded server-side. Daily claims call `api.vault.claimDailyBonus` / `claimCombinedDailyClaim` directly (e.g. `DailyRewardProvider`).
+There is no client-side earn hook: credits are only awarded server-side. The daily claim calls `api.vault.claimCombinedDailyClaim` directly (`DailyRewardProvider`); a card claim returns the minted copy's face (`cardFace`).
 
 ---
 

@@ -1,12 +1,13 @@
 import type { PrismaClient } from "@prisma/client";
 import { DEFAULT_REALM_ID, isIxnaySlug, realmSlugWhere } from "~/lib/realms/realm-ids";
-import { isRealmHiddenFrom, type RealmActor } from "./realms.access";
+import { isRealmHiddenFrom, isSystemRealm, type RealmActor } from "./realms.access";
 
 export { DEFAULT_REALM_ID };
 
 /**
  * The realm a slug names, for `viewer`: null for an unknown slug, and for a draft or generating realm's slug
- * unless the viewer is its staff (AT-6). Ixnay's slugs name Ixnay even when it has no realm row.
+ * unless the viewer is its staff (AT-6). A system realm's slug resolves to nothing: it is never a place to view.
+ * Ixnay's slugs name Ixnay even when it has no realm row.
  */
 export async function findRealmIdBySlug(
   db: Pick<PrismaClient, "realm">,
@@ -17,7 +18,7 @@ export async function findRealmIdBySlug(
     where: realmSlugWhere(realmSlug),
     select: { id: true, status: true, ownerId: true },
   });
-  if (realm) return isRealmHiddenFrom(viewer, realm) ? null : realm.id;
+  if (realm) return isRealmHiddenFrom(viewer, realm) || isSystemRealm(realm) ? null : realm.id;
   return isIxnaySlug(realmSlug) ? DEFAULT_REALM_ID : null;
 }
 

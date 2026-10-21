@@ -10,4 +10,3 @@ export * from "./sync";
 export * from "./upsert";
 export * from "./compliance";
 export * from "./base-layer-query";
-export * from "./special-stats-populator";

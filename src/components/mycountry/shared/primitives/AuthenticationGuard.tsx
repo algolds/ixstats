@@ -6,11 +6,12 @@ import { useEffect } from "react";
 import { Crown, Globe, Activity } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { createAbsoluteUrl } from "~/lib/utils";
+import { createAbsoluteUrl, createUrl } from "~/lib/utils";
 
 interface AuthenticationGuardProps {
   children: React.ReactNode;
-  redirectPath: string;
+  /** Where signing in returns to. Omitted, it is the address the visitor opened: its path and query. */
+  redirectPath?: string;
 }
 
 // Check if Clerk is configured
@@ -24,7 +25,9 @@ export function AuthenticationGuard({ children, redirectPath }: AuthenticationGu
 
   useEffect(() => {
     if (isLoaded && !user && isClerkConfigured) {
-      const returnUrl = encodeURIComponent(createAbsoluteUrl(redirectPath));
+      const back = redirectPath ?? `${window.location.pathname}${window.location.search}`;
+      // createUrl: the redirect_url is a plain URL, so it carries the base path.
+      const returnUrl = encodeURIComponent(createUrl(back));
       const signInUrl = createAbsoluteUrl("/sign-in");
       window.location.href = `${signInUrl}?redirect_url=${returnUrl}`;
     }

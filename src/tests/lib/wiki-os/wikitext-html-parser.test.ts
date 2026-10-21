@@ -1,4 +1,6 @@
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
+import { proxiedFileUrl } from "~/lib/realms/sources/wiki-file-info";
+import { IIWIKI_EXCERPT } from "~/tests/fixtures/cards/iiwiki-excerpt";
 
 describe("wikitext-parser — template stripping", () => {
   it("strips unknown templates", () => {
@@ -75,4 +77,71 @@ describe("wikitext-parser — wikitable and image parsing", () => {
   });
 });
 
+describe("wikitext-parser — images left out", () => {
+  const article = `{{Infobox country
+| name = Velarc
+| image_flag = Flag of Velarc.svg
+| capital = [[Kirav]]
+}}
+'''Velarc''' is a country. [[File:Velarc coast.jpg|thumb|The [[Kirav]] coast]] It borders the sea. [[Image:Map.png|200px]]`;
 
+  it("draws the article's images by default", () => {
+    const html = parseWikitextToHtml(article, "ixwiki");
+    expect(html).toContain("<img");
+    expect(html).toContain("infobox-image-row");
+  });
+
+  it("leaves out file links and the infobox image, keeping the text and the rest of the infobox", () => {
+    const html = parseWikitextToHtml(article, "ixwiki", { images: false });
+    expect(html).not.toContain("<img");
+    expect(html).not.toContain("<figure");
+    expect(html).not.toContain("infobox-image-row");
+    expect(html).not.toContain("Velarc coast");
+    expect(html).not.toContain("Flag of Velarc");
+    expect(html).toContain("It borders the sea.");
+    expect(html).toContain("Capital");
+  });
+
+  it("reads a link to a file page as its plain words", () => {
+    const links =
+      "See [[:File:Flag of Velarc.svg|the flag]], [[:Image:Map.png]] and [[:media:Anthem.ogg|the anthem]].";
+    const html = parseWikitextToHtml(links, "ixwiki", { images: false });
+    expect(html).toContain("See the flag, Image:Map.png and the anthem.");
+    expect(html).not.toContain("<a");
+    expect(html).not.toMatch(/File|Anthem\.ogg/);
+  });
+
+  it("keeps links to file pages as links by default", () => {
+    const html = parseWikitextToHtml("See [[:File:Flag of Velarc.svg|the flag]].", "ixwiki");
+    expect(html).toContain('<a href="/wiki/%3AFile%3AFlag_of_Velarc.svg"');
+  });
+});
+
+describe("wikitext-parser — another wiki's article", () => {
+  it("leaves out an infobox it cannot draw for that wiki, keeping the lead text", () => {
+    const html = parseWikitextToHtml(IIWIKI_EXCERPT, "iiwiki");
+    expect(html).not.toContain("infobox");
+    expect(html).not.toMatch(/Logo Size|Logo Caption|Map Alt|200px|Abbreviation/);
+    expect(html).toContain("is a multinational organization that maintains the Manamana Canal.");
+    expect(html).toContain("It was formed to bring stability to the area.");
+  });
+
+  it("draws its file links through that wiki's proxy, as the card art does, never IxWiki's", () => {
+    const html = parseWikitextToHtml(IIWIKI_EXCERPT, "iiwiki");
+    expect(html).toContain(`src="${proxiedFileUrl("iiwiki", null, "Manamana Canal.jpg")}"`);
+    expect(html).not.toContain("/api/mediawiki/ixwiki/");
+  });
+
+  it("draws no image at all with images off", () => {
+    const html = parseWikitextToHtml(IIWIKI_EXCERPT, "iiwiki", { images: false });
+    expect(html).not.toContain("<img");
+    expect(html).not.toContain("<figure");
+    expect(html).toContain("It was formed to bring stability to the area.");
+  });
+
+  it("still draws an IxWiki article's infobox", () => {
+    const html = parseWikitextToHtml(IIWIKI_EXCERPT, "ixwiki");
+    expect(html).toContain("wikios-infobox");
+    expect(html).toContain("Abbreviation");
+  });
+});

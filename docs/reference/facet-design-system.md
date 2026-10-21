@@ -143,6 +143,13 @@ Enforced by `layers.css` today, and nothing more:
 
 Everything else in the table is enforced by the primitive that owns the type (`EntityHeader`, `Signal`, `RevealStage`, `CutoutCard`, `Stat`) or by the per-app sweep, not by CSS: the prose heading scale (`text-title-2` and `text-title-3`), the 36px and 44px data rows, right-aligned figures, the "–" empty cell, units, sortable headers, chart colours, the Well grid for facts, and the input field rhythm.
 
+**Card faces.** Trading cards are content art (`collectible`): one face component, `CardFace`
+(`src/components/cards/face/`), in sizes S, M and L at 5:7. Rarity is the edge colour plus a gem, from the one palette
+`--color-rarity-{common,uncommon,rare,ultra-rare,epic,legendary}` (the same in both themes, mirrored in
+`CARD_RARITY_HEX`); finish is a sheen (`data-card-finish`); `src/styles/card-art.css` owns both. Grids are still: the sheen
+drifts only under a resting pointer, and 3D tilt and holo appear only in the card sheet and the pack reveal. Under
+Reduce Motion there is no drift, tilt or holo.
+
 Embed rule: live data embedded in another type (stat cards in a post) is always a Well.
 
 Three rules for every type:

@@ -174,7 +174,12 @@ export function YourLorewards({ username, highlightCardId, trophiesOnly }: YourL
           todayRank={mine.data && !username ? mine.data.todayRank : undefined}
         />
         {trophies.cards.length > 0 ? (
-          <TrophyCards cards={trophies.cards} highlightCardId={highlightCardId} />
+          <TrophyCards
+            cards={trophies.cards}
+            highlightCardId={highlightCardId}
+            holderHandle={trophies.holderHandle}
+            own={!username}
+          />
         ) : (
           <Card variant="well" padding="sm">
             <p className="text-label-secondary text-callout">

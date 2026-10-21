@@ -25,8 +25,7 @@ import { wikiosUserTalkRouter } from "~/server/api/routers/wikios/user-talk";
 import { wikiProcedures } from "~/server/api/routers/countries/wiki";
 import { geoWikiRouter } from "~/server/api/routers/geo/wiki";
 import { wikiCacheRouter } from "~/server/api/routers/wikiCache";
-import { loreCardsWikiRouter } from "~/server/api/routers/lore-cards/wiki";
-import { cardsCollectionsRouter } from "~/server/api/routers/cards/collections";
+import { cardsSheetRouter } from "~/server/api/routers/cards/sheet";
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import {
@@ -165,25 +164,9 @@ const READERS: Array<[string, (role: string | null, title: string) => Promise<un
   [
     "cards.getWikiArticleExcerpt",
     (r, t) =>
-      createCallerFactory(cardsCollectionsRouter)(ctxOf(r)).getWikiArticleExcerpt({
+      createCallerFactory(cardsSheetRouter)(ctxOf(r)).getWikiArticleExcerpt({
         articleTitle: t,
         wikiSource: "ixwiki",
-      }),
-  ],
-  [
-    "loreCards.fetchLoreMetadata",
-    (r, t) =>
-      createCallerFactory(loreCardsWikiRouter)(ctxOf(r)).fetchLoreMetadata({
-        source: "ixwiki",
-        pageTitle: t,
-      }),
-  ],
-  [
-    "loreCards.searchLoreArchive",
-    (r) =>
-      createCallerFactory(loreCardsWikiRouter)(ctxOf(r)).searchLoreArchive({
-        source: "wikios",
-        query: "land",
       }),
   ],
 ];
@@ -221,17 +204,6 @@ describe("the same readers still serve a published page", () => {
     ],
   ])("%s", async (_name, read) => {
     expect(JSON.stringify(await read())).toContain(SHOWN);
-  });
-});
-
-describe("searchLoreArchive", () => {
-  it("lists published pages and leaves deleted ones out", async () => {
-    const found = await createCallerFactory(loreCardsWikiRouter)(ctxOf(null)).searchLoreArchive({
-      source: "wikios",
-      query: "land",
-    });
-    expect(JSON.stringify(found)).toContain("Shown land");
-    expect(JSON.stringify(found)).not.toContain("Hidden land");
   });
 });
 

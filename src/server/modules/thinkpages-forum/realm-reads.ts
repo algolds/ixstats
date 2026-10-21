@@ -28,10 +28,14 @@ import { seedRealmCategories } from "./realm-seed";
 
 export type RealmReadsDb = ReadsDb & RealmDb & RealmAccessDb;
 
-/** Ixnay, public active realms, and realms the viewer holds a nation in, founded or serves; all for site admins. */
+/**
+ * Ixnay, public active realms, and realms the viewer holds a nation in, founded or serves; all for site admins.
+ * Never a system realm: it has no forum.
+ */
 function switcherWhere(viewer: ForumViewer): Prisma.RealmWhereInput {
-  if (viewer && isSiteAdmin(viewer)) return {};
+  if (viewer && isSiteAdmin(viewer)) return { isSystem: false };
   return {
+    isSystem: false,
     OR: [
       { id: DEFAULT_REALM_ID },
       { status: "active", visibility: "public" },

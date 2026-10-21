@@ -1,0 +1,1 @@
+export { CurationTab } from "./CurationTab";

@@ -1,16 +1,25 @@
 /**
- * The throttled api.php reader world discovery uses (`iiwiki-discovery.ts`). One request at a time, a pause
- * between requests, Retry-After honoured, a request cap, and no exception for a refusal: when the wiki blocks
- * (HTTP 403, a Cloudflare challenge page) or keeps rate-limiting, the client stops and records why, and every
- * later query stops at once, so the caller returns what it gathered with `blocked` set.
+ * The throttled api.php reader world discovery (`iiwiki-discovery.ts`) and card art licence capture use. One
+ * request at a time, a pause between requests, Retry-After honoured, a request cap, and no exception for a refusal:
+ * when the wiki blocks (HTTP 403, a Cloudflare challenge page) or keeps rate-limiting, the client stops and records
+ * why, and every later query stops at once, so the caller returns what it gathered with `blocked` set. A card import
+ * run also sends the lore-card generator's own article reads through `pace`, so one client paces all of its reads.
  *
  * It never marks the host offline for the rest of the app (the bridge reader's `markExternalHostOffline` does,
  * for five minutes): a refused discovery says nothing about whether readers can see the wiki's pages.
  */
 import type { z } from "zod";
-import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
+import { DEFAULT_USER_AGENT, getMediaWikiApiUrl, type WikiSource } from "~/lib/wiki-os/config";
+import { SISTER_WIKI_HOSTS, sisterWikiApiUrl, type SisterWikiId } from "~/lib/wiki-os/wiki-hosts";
 import type { RealmWikiSource } from "~/lib/realms/realm-wiki-settings";
 import type { WikiQuery } from "~/lib/realms/lore-import";
+
+/** The wikis a discovery client reads: the WikiOS sources and every sister wiki, Commons included. */
+export type DiscoveryWiki = WikiSource | SisterWikiId;
+
+/** A wiki's api.php: the WikiOS sources' as configured (iiwiki's development proxy when set), and Commons'. */
+export const defaultApiUrl = (source: DiscoveryWiki): string =>
+  source === "commons" ? sisterWikiApiUrl(SISTER_WIKI_HOSTS.commons) : getMediaWikiApiUrl(source);
 
 /** Why a discovery stopped before it finished. */
 export type DiscoveryStopKind = "blocked" | "rate-limited" | "unreachable" | "error" | "cap";
@@ -36,6 +45,8 @@ export interface DiscoveryClientOptions {
   sleep?: (ms: number) => Promise<void>;
   /** The pause before every request but the first. */
   delayMs?: number;
+  /** Pause before the first request too: a client that takes over from one whose wiki just failed a request. */
+  pauseFirst?: boolean;
   /** The most requests one client makes. */
   maxRequests?: number;
   /** The longest Retry-After the client waits out; a longer one stops it as rate-limited. */
@@ -53,10 +64,21 @@ export const DISCOVERY_MAX_RETRY_AFTER_MS = 20_000;
 const DEFAULT_RETRY_AFTER_MS = 5_000;
 const DEFAULT_TIMEOUT_MS = 15_000;
 
-export interface DiscoveryClient {
-  source: RealmWikiSource;
+/**
+ * Runs a read in a client's turn (see DiscoveryClient.pace). A query or pace call made inside the callback deadlocks:
+ * it waits for the turn the callback holds.
+ */
+export type Pace = <T>(read: () => Promise<T>) => Promise<T>;
+
+export interface DiscoveryClient<S extends DiscoveryWiki = RealmWikiSource> {
+  source: S;
   /** An `action=query` read (formatversion 2), parsed by `schema`. Throws DiscoveryStopped once stopped. */
   query: WikiQuery;
+  /**
+   * A request the caller sends and reads itself, in the client's turn: one at a time with its queries, after its
+   * pause and counted against its cap. Throws DiscoveryStopped once stopped; its own answer never stops the client.
+   */
+  pace: Pace;
   requests(): number;
   stopped(): DiscoveryStop | null;
 }
@@ -74,18 +96,19 @@ export function retryAfterMs(header: string | null, now: number = Date.now()): n
 
 const CLOUDFLARE_PAGE = /cloudflare|cf-chl|challenge-platform|just a moment/i;
 
-export function createDiscoveryClient(
-  source: RealmWikiSource,
+export function createDiscoveryClient<S extends DiscoveryWiki>(
+  source: S,
   options: DiscoveryClientOptions = {}
-): DiscoveryClient {
+): DiscoveryClient<S> {
   const fetchImpl = options.fetchImpl ?? fetch;
   const sleep = options.sleep ?? realSleep;
   const delayMs = options.delayMs ?? DISCOVERY_DELAY_MS;
   const maxRequests = options.maxRequests ?? DISCOVERY_MAX_REQUESTS;
   const maxRetryAfterMs = options.maxRetryAfterMs ?? DISCOVERY_MAX_RETRY_AFTER_MS;
   const maxRetries = options.maxRetries ?? 2;
+  const pauseFirst = options.pauseFirst ?? false;
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-  const apiUrl = options.apiUrl ?? getMediaWikiApiUrl(source);
+  const apiUrl = options.apiUrl ?? defaultApiUrl(source);
   let count = 0;
   let stop: DiscoveryStop | null = null;
 
@@ -94,15 +117,28 @@ export function createDiscoveryClient(
     throw new DiscoveryStopped(next);
   };
 
-  async function send(url: URL): Promise<Response> {
+  /** The cap, then the pause before every request but the first (and the first too, with `pauseFirst`). */
+  async function takeTurn(): Promise<void> {
     if (count >= maxRequests) {
-      halt({ kind: "cap", status: null, message: `Stopped after ${maxRequests} requests (the discovery cap)` });
+      halt({
+        kind: "cap",
+        status: null,
+        message: `Stopped after ${maxRequests} requests (the discovery cap)`,
+      });
     }
-    if (count > 0 && delayMs > 0) await sleep(delayMs);
+    if ((count > 0 || pauseFirst) && delayMs > 0) await sleep(delayMs);
     count++;
+  }
+
+  async function send(url: URL): Promise<Response> {
+    await takeTurn();
     try {
       return await fetchImpl(url.toString(), {
-        headers: { "User-Agent": DEFAULT_USER_AGENT, "Api-User-Agent": DEFAULT_USER_AGENT, Accept: "application/json" },
+        headers: {
+          "User-Agent": DEFAULT_USER_AGENT,
+          "Api-User-Agent": DEFAULT_USER_AGENT,
+          Accept: "application/json",
+        },
         signal: AbortSignal.timeout(timeoutMs),
       });
     } catch (error) {
@@ -155,18 +191,31 @@ export function createDiscoveryClient(
     }
   }
 
-  /** Queries run one after another even when a caller starts several at once. */
+  /** Queries and paced reads run one after another even when a caller starts several at once. */
   let queue: Promise<unknown> = Promise.resolve();
-  const query: WikiQuery = <T>(params: Record<string, string>, schema: z.ZodType<T>): Promise<T> => {
-    const run = queue.then(() => readOne(params, schema));
+  const inTurn = <T>(work: () => Promise<T>): Promise<T> => {
+    const run = queue.then(work);
     queue = run.catch(() => undefined);
     return run;
   };
+  const query: WikiQuery = <T>(params: Record<string, string>, schema: z.ZodType<T>): Promise<T> =>
+    inTurn(() => readOne(params, schema));
+  const pace: Pace = <T>(read: () => Promise<T>): Promise<T> =>
+    inTurn(async () => {
+      if (stop) throw new DiscoveryStopped(stop);
+      await takeTurn();
+      return read();
+    });
 
   async function readOne<T>(params: Record<string, string>, schema: z.ZodType<T>): Promise<T> {
     if (stop) throw new DiscoveryStopped(stop);
     const url = new URL(apiUrl);
-    for (const [key, value] of Object.entries({ action: "query", format: "json", formatversion: "2", ...params })) {
+    for (const [key, value] of Object.entries({
+      action: "query",
+      format: "json",
+      formatversion: "2",
+      ...params,
+    })) {
       url.searchParams.set(key, value);
     }
     const data = await fetchJson(url);
@@ -176,11 +225,14 @@ export function createDiscoveryClient(
       return halt({
         kind: "error",
         status: null,
-        message: typeof apiError === "string" ? `${source}: ${apiError}` : `${source} returned an unexpected response`,
+        message:
+          typeof apiError === "string"
+            ? `${source}: ${apiError}`
+            : `${source} returned an unexpected response`,
       });
     }
     return parsed.data;
   }
 
-  return { source, query, requests: () => count, stopped: () => stop };
+  return { source, query, pace, requests: () => count, stopped: () => stop };
 }

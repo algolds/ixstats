@@ -155,7 +155,7 @@ describe("recruiter achievement definitions", () => {
         operator: ">=",
         value: threshold,
       });
-      expect(JSON.parse(row?.rewardsJson ?? "{}")).toEqual({ credits: 0, cardIds: [] });
+      expect(JSON.parse(row?.rewardsJson ?? "{}")).toEqual({ credits: 0 });
     }
   });
 });

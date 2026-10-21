@@ -19,7 +19,6 @@ export interface AuctionListing {
   bidCount: number;
   isExpired: boolean;
   isFeatured: boolean;
-  isExpress: boolean; // 30min express auction
   cardInstance: CardInstance;
   createdAt: Date;
   updatedAt: Date;

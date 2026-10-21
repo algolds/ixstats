@@ -47,6 +47,7 @@ type NotificationCategory =
   | "crisis"
   | "opportunity"
   | "cards"
+  | "packs"
   | "policy"
   | "intelligence"
   | "global"

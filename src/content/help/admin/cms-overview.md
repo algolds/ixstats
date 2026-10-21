@@ -28,7 +28,7 @@ Assign roles at `/admin/user-roles`. Membership tiers (such as [Premium](/help/g
 | Players and nations | Users, User roles, Membership, Countries (data, roster import, audit, announcements), Realms (realms and the nation-claim queue), Rings audit |
 | The living world | Storyteller (world events and event chains), National issues templates, Maps (World Studio, world editor, style editor) |
 | Reference data | Government components, Economic components (incl. tax impact), Economic archetypes, Diplomatic options, Diplomatic scenarios, Military equipment, NPC personalities, Intelligence templates. See [Reference Data](/help/admin/reference-data) |
-| Vault | Cards (incl. NationStates card import and lore card batches), Vault, Achievements and article awards |
+| Vault | Cards (nine tabs: Overview, Library, Imports, Curation, Packs, Economy, Seasons, Compliance and Designer), Vault, Achievements and article awards |
 | Community and wiki | ThinkPages, Polls, Blurbs, Stash, WikiOS settings (incl. Loreward weights), Lore scanner, Image repository |
 | Labs | MyLeague, Onoma |
 

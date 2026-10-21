@@ -2,8 +2,8 @@
    ANIMATIONS — SHARED KEYFRAMES & ANIMATION CLASSES
 
    Keyframes stay top-level; classes are layered. Reduced-motion guards for the inline-animated
-   card layers (.pack-*, .lore-ink-flow) live in facet/interaction.css because they must beat
-   inline `animation` styles.
+   pack cover layers (.pack-*) live in facet/interaction.css because they must beat inline
+   `animation` styles.
    ========================================================================== */
 
 @layer components {
@@ -47,67 +47,55 @@
 }
 
 @keyframes di-critical-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); transform: scale(1); }
-  20% { box-shadow: 0 0 25px 6px rgba(239, 68, 68, 0.4); transform: scale(1.02); }
-  50% { box-shadow: 0 0 12px 2px rgba(239, 68, 68, 0.15); transform: scale(1); }
-  70% { box-shadow: 0 0 18px 4px rgba(239, 68, 68, 0.3); transform: scale(1.01); }
-  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); transform: scale(1); }
-}
-
-/* Shimmer sweep (referenced by inline animation strings) */
-@keyframes shimmer {
   0% {
-    background-position: -200% 0;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+    transform: scale(1);
   }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-/* Holographic shimmer (lib/themes/holographic-effects) */
-@keyframes holographic-shimmer {
-  0% {
-    background-position: -200% -200%;
-    opacity: 0.3;
+  20% {
+    box-shadow: 0 0 25px 6px rgba(239, 68, 68, 0.4);
+    transform: scale(1.02);
   }
   50% {
-    opacity: 0.8;
+    box-shadow: 0 0 12px 2px rgba(239, 68, 68, 0.15);
+    transform: scale(1);
+  }
+  70% {
+    box-shadow: 0 0 18px 4px rgba(239, 68, 68, 0.3);
+    transform: scale(1.01);
   }
   100% {
-    background-position: 200% 200%;
-    opacity: 0.3;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    transform: scale(1);
   }
 }
 
-/* ── Pack & lore card holographic covers (inline `animation` styles) ── */
+/* ── Pack holographic cover (inline `animation` styles) ── */
 
 @keyframes holo-drift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 @keyframes foil-sweep {
-  0% { transform: translateX(-100%) skewX(-20deg); }
-  100% { transform: translateX(320%) skewX(-20deg); }
+  0% {
+    transform: translateX(-100%) skewX(-20deg);
+  }
+  100% {
+    transform: translateX(320%) skewX(-20deg);
+  }
 }
 
 @keyframes geo-spin {
-  from { rotate: 0deg; }
-  to { rotate: 360deg; }
-}
-
-@keyframes lore-ink-flow {
-  0%, 100% { background-position: 0% 0%; opacity: 0.3; }
-  50% { background-position: 100% 100%; opacity: 0.6; }
-}
-
-/* Rainbow sweep (HolographicOverlay, comet-card, rarity materials) */
-@keyframes rainbow {
-  0% {
-    background-position: 0%;
+  from {
+    rotate: 0deg;
   }
-  100% {
-    background-position: 200%;
+  to {
+    rotate: 360deg;
   }
 }
 

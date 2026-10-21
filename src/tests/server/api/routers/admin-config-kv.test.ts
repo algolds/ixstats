@@ -1,7 +1,7 @@
 /** Plan 345 Step 6: the shared SystemConfig read/write used by the admin config procedures. */
 import { describe, it, expect, jest } from "@jest/globals";
 import type { PrismaClient } from "@prisma/client";
-import { readConfigKeys, writeConfigKeys } from "~/server/shared/config-kv";
+import { readConfigKeys, writeConfigKey, writeConfigKeys } from "~/server/shared/config-kv";
 
 function makeDb(rows: { key: string; value: string }[] = []) {
   const db = {
@@ -29,6 +29,16 @@ describe("admin _config-kv", () => {
       where: { key: "a" },
       update: { value: "1" },
       create: { key: "a", value: "1", description: "about a" },
+    });
+  });
+
+  it("upserts one key through the client it is given, which may be a transaction's", async () => {
+    const upsert = jest.fn(async (args: object) => args);
+    await writeConfigKey({ systemConfig: { upsert } } as never, "c", "2", "about c");
+    expect(upsert).toHaveBeenCalledWith({
+      where: { key: "c" },
+      update: { value: "2" },
+      create: { key: "c", value: "2", description: "about c" },
     });
   });
 

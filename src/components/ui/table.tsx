@@ -14,24 +14,40 @@ import { cn } from "~/lib/utils/cn";
  *   (pass it on its `TableHead` too).
  * - A selected row (`data-state="selected"` or `aria-selected`) takes the `tint-fill`.
  * - Wide tables scroll horizontally; the clipped edge fades out only while there is more to scroll to.
+ * - `pinned` on the last column's head and cells (a row's actions) keeps it in view at the end edge while a table
+ *   too wide for its container scrolls, as on a phone, on the table's surface with a hairline; that edge then does
+ *   not fade. A table that fits shows it as any other column.
  */
 
 type OverflowEdge = "none" | "start" | "end" | "both";
 
-function useHorizontalOverflow(ref: React.RefObject<HTMLDivElement | null>): OverflowEdge {
+/** The edges hiding more of the table: the start once scrolled from it, the end until scrolled to it. */
+function fadingEdge(hiddenStart: boolean, hiddenEnd: boolean): OverflowEdge {
+  if (hiddenStart && hiddenEnd) return "both";
+  if (hiddenStart) return "start";
+  return hiddenEnd ? "end" : "none";
+}
+
+/** Which edges fade, and whether the table is wider than its container at all. */
+function useHorizontalOverflow(ref: React.RefObject<HTMLDivElement | null>): {
+  edge: OverflowEdge;
+  scrolls: boolean;
+} {
   const [edge, setEdge] = React.useState<OverflowEdge>("none");
+  const [scrolls, setScrolls] = React.useState(false);
 
   React.useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const update = () => {
       const max = el.scrollWidth - el.clientWidth;
+      setScrolls(max > 1);
       if (max <= 1) return setEdge("none");
       // RTL scrollers report negative scrollLeft; the magnitude is what matters.
       const left = Math.abs(el.scrollLeft);
-      const atStart = left <= 1;
-      const atEnd = left >= max - 1;
-      setEdge(atStart ? "end" : atEnd ? "start" : "both");
+      // A pinned column stays at the end edge, so that edge never hides anything.
+      const pinned = el.querySelector("[data-pinned]") !== null;
+      setEdge(fadingEdge(left > 1, !pinned && left < max - 1));
     };
     update();
     el.addEventListener("scroll", update, { passive: true });
@@ -45,7 +61,7 @@ function useHorizontalOverflow(ref: React.RefObject<HTMLDivElement | null>): Ove
     };
   }, [ref]);
 
-  return edge;
+  return { edge, scrolls };
 }
 
 interface TableProps extends React.ComponentProps<"table"> {
@@ -55,7 +71,7 @@ interface TableProps extends React.ComponentProps<"table"> {
 
 function Table({ className, containerClassName, ...props }: TableProps) {
   const scrollRef = React.useRef<HTMLDivElement>(null);
-  const overflow = useHorizontalOverflow(scrollRef);
+  const { edge: overflow, scrolls } = useHorizontalOverflow(scrollRef);
 
   return (
     <div
@@ -71,6 +87,7 @@ function Table({ className, containerClassName, ...props }: TableProps) {
         ref={scrollRef}
         data-slot="table-scroll"
         data-overflow={overflow}
+        data-scrolls={scrolls || undefined}
         className={cn(
           "min-h-0 w-full flex-1 overflow-auto overscroll-x-contain",
           "data-[overflow=end]:[mask-image:linear-gradient(to_right,black_calc(100%_-_2rem),transparent)]",
@@ -140,19 +157,29 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
 interface NumericCellProps {
   /** A figures column: right-aligned. */
   numeric?: boolean;
+  /** The last column (a row's actions): kept in view at the end edge while the table scrolls sideways. */
+  pinned?: boolean;
 }
+
+// Only while the table scrolls (`data-scrolls`), so a table that fits is unchanged. Collapsed borders do not travel
+// with sticky cells, so the hairline is an inset shadow, as on the sticky header.
+const pinnedCellClassName =
+  "in-data-[scrolls]:bg-surface in-data-[scrolls]:sticky in-data-[scrolls]:right-0 in-data-[scrolls]:shadow-[inset_1px_0_0_var(--color-separator)]";
 
 function TableHead({
   className,
   numeric,
+  pinned,
   ...props
 }: React.ComponentProps<"th"> & NumericCellProps) {
   return (
     <th
       data-slot="table-head"
+      data-pinned={pinned || undefined}
       className={cn(
         "text-footnote text-label-secondary h-10 px-3 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         numeric && "text-right",
+        pinned && pinnedCellClassName,
         className
       )}
       {...props}
@@ -163,14 +190,17 @@ function TableHead({
 function TableCell({
   className,
   numeric,
+  pinned,
   ...props
 }: React.ComponentProps<"td"> & NumericCellProps) {
   return (
     <td
       data-slot="table-cell"
+      data-pinned={pinned || undefined}
       className={cn(
         "text-callout px-3 py-3 align-middle whitespace-nowrap tabular-nums [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         numeric && "text-right",
+        pinned && pinnedCellClassName,
         className
       )}
       {...props}

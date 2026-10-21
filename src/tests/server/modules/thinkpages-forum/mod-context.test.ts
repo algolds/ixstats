@@ -69,6 +69,14 @@ describe("moderationContext", () => {
     });
   });
 
+  it("leaves system realms out of a site admin's realms", async () => {
+    const store = forumStore(seed());
+    await moderationContext(store.db as never, admin);
+    expect(store.db.realm.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { isSystem: false } })
+    );
+  });
+
   it("gives a site admin every realm by name, Ixnay included without a row, and sitewide categories first", async () => {
     const store = forumStore(seed());
     const context = await moderationContext(store.db as never, admin);
@@ -91,7 +99,10 @@ describe("moderationContext", () => {
       "r_old_hub",
     ]);
     expect(store.db.forumCategory.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { style: { not: "board" }, NOT: { scope: "realm", key: "board" } }, orderBy: { order: "asc" } })
+      expect.objectContaining({
+        where: { style: { not: "board" }, NOT: { scope: "realm", key: "board" } },
+        orderBy: { order: "asc" },
+      })
     );
   });
 

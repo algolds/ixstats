@@ -334,7 +334,6 @@ class AchievementService {
                     achievement.description ||
                     `You've unlocked a ${achievement.rarity} achievement!`,
                   category: achievement.category,
-                  rarity: (achievement.rarity.toLowerCase() as any) || "common",
                 });
               } catch (error) {
                 console.error("[Achievements] Failed to send achievement notification:", error);

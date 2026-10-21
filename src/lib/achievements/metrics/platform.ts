@@ -12,9 +12,13 @@
  *
  * Loader budget: at most 3 indexed queries each, and never a row list that grows with the user's
  * history. Sums, distinct counts and "is there a week with all three" are single aggregate raw
- * queries (parameterised), and the verified wiki username is resolved once per evaluation.
+ * queries (parameterised), and the verified wiki username is resolved once per evaluation. The one
+ * exception is the deck value, the shared per-copy value (src/lib/cards/copy-value.ts): it reads the
+ * player's live copies in a fixed number of batched reads, a list bounded by their card capacity.
  */
+import type { Prisma } from "@prisma/client";
 import { weekKey } from "~/lib/achievements/time-buckets";
+import { deckValueOf } from "~/lib/cards/copy-value";
 import { EXCLUDE_TROPHY_CARDS } from "~/lib/lorewards/trophy-cards";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import type { MetricContext, MetricLoader } from "./registry";
@@ -183,10 +187,11 @@ export const postingStreakLoader: MetricLoader = {
   },
 };
 
-const tradesOf = (userId: string) => ({
-  status: "ACCEPTED",
-  OR: [{ initiatorId: userId }, { recipientId: userId }],
-});
+const tradesOf = (userId: string) =>
+  ({
+    status: "ACCEPTED",
+    OR: [{ initiatorId: userId }, { recipientId: userId }],
+  }) satisfies Prisma.TradeOfferWhereInput;
 
 export const cardsActivityLoader: MetricLoader = {
   id: "platform-cards-activity",
@@ -204,8 +209,8 @@ export const cardsActivityLoader: MetricLoader = {
 
 /**
  * Deck standing. A Legendary counts when it came from a pack or a trade (an NS import, a daily
- * claim or an achievement reward does not). Trophy cards are out of the deck value, which is summed
- * in the database (market value x quantity of every live card).
+ * claim or an achievement reward does not). Trophy cards are out of the deck value, the shared
+ * per-copy value of every live copy.
  */
 export const cardsDeckLoader: MetricLoader = {
   id: "platform-cards-deck",
@@ -222,11 +227,7 @@ export const cardsDeckLoader: MetricLoader = {
           },
         },
       }),
-      db.$queryRaw<Array<{ value: number }>>`
-        SELECT COALESCE(SUM(c."marketValue" * o.quantity), 0)::float8 AS value
-        FROM "CardOwnership" o
-        JOIN cards c ON c.id = o."cardId"
-        WHERE o."ownerId" = ${userId} AND c."isRetired" = false AND c."lorewardEntryId" IS NULL`,
+      deckValueOf(db, userId),
       db.myVault.findUnique({
         where: { userId },
         select: { loginStreak: true, lastLoginDate: true },
@@ -234,7 +235,7 @@ export const cardsDeckLoader: MetricLoader = {
     ]);
     return {
       legendaryOwned,
-      deckValueExTrophy: deck[0]?.value ?? 0,
+      deckValueExTrophy: deck.exTrophy,
       claimStreakDays: effectiveClaimStreak(vault, now),
     };
   },

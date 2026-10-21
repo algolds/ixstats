@@ -24,7 +24,7 @@ The sidebar on the left lists the areas ("apps") of IxStats. Selecting one opens
 | **Home** | [Dashboard](/dashboard), [Messages](/messages), ThinkTanks, ThinkPages, and What's new when there's an update |
 | **MyCountry** | Your nation: Overview, Directives, Economy, Diplomacy, Politics and Defense (Defense with [Premium](/help/getting-started/premium)) |
 | **Maps** | The world map |
-| **Vault** | Your wallet, daily reward, achievements, cards (with collections and import) and the store |
+| **Vault** | Your wallet, daily reward, achievements, cards (Mine, Sets, Market, Explore and import) and the store |
 | **Wiki** | The wiki, search, recent changes, categories, your watchlist and contributions, Stashes, the media repository and [Blurbs](/help/social/blurbs) |
 | **Realms** | My realm ([/countries](/countries)) and Explore ([/realms](/realms)) |
 | **Labs** | Onoma, Vexel, MyLeague, MyClub and the Exchange |

@@ -2,10 +2,12 @@ import { type PrismaClient } from "@prisma/client";
 import { Cache } from "~/lib/cache";
 import { countStorePurchases } from "./store-purchases";
 
+/** What purchased-perk lookups read: a client, an extended client or a transaction client all fit. */
+export type PerksDb = Pick<PrismaClient, "vaultTransaction" | "vaultStoreItem">;
+
 interface VaultEffectPerks {
   cardCapacity?: number;
   yieldBoost?: number;
-  loreTokens?: number;
   [key: string]: unknown;
 }
 
@@ -19,7 +21,6 @@ export interface VaultConfig {
   activeDailyCap: number;
   socialDailyCap: number;
   xpPerLevel: number;
-  maxStreakBonus: number;
   premiumMultiplier: number;
   isEarningEnabled: boolean;
   isTradingEnabled: boolean;
@@ -36,7 +37,6 @@ export const VAULT_CONFIG_DEFAULTS: VaultConfig = {
   activeDailyCap: 100,
   socialDailyCap: 50,
   xpPerLevel: 1000,
-  maxStreakBonus: 7,
   premiumMultiplier: 1.0,
   isEarningEnabled: true,
   isTradingEnabled: true,
@@ -52,7 +52,6 @@ const VAULT_CONFIG_KEYS: Record<keyof VaultConfig, string> = {
   activeDailyCap: "vault_activeDailyCap",
   socialDailyCap: "vault_socialDailyCap",
   xpPerLevel: "vault_xpPerLevel",
-  maxStreakBonus: "vault_maxStreakBonus",
   premiumMultiplier: "vault_premiumMultiplier",
   isEarningEnabled: "vault_isEarningEnabled",
   isTradingEnabled: "vault_isTradingEnabled",
@@ -119,9 +118,6 @@ export async function getVaultConfig(db: {
         m.vault_socialDailyCap ?? String(VAULT_CONFIG_DEFAULTS.socialDailyCap)
       ),
       xpPerLevel: parseFloat(m.vault_xpPerLevel ?? String(VAULT_CONFIG_DEFAULTS.xpPerLevel)),
-      maxStreakBonus: parseFloat(
-        m.vault_maxStreakBonus ?? String(VAULT_CONFIG_DEFAULTS.maxStreakBonus)
-      ),
       premiumMultiplier: parseFloat(
         m.vault_premiumMultiplier ?? String(VAULT_CONFIG_DEFAULTS.premiumMultiplier)
       ),
@@ -172,7 +168,7 @@ export async function getVaultConfig(db: {
  */
 export async function getPurchasedItemsEffects(
   userId: string,
-  db: PrismaClient
+  db: PerksDb
 ): Promise<VaultEffectItem[]> {
   const cacheKey = `user_perks:${userId}`;
   const cached = userPerksCache.get(cacheKey);
@@ -231,7 +227,7 @@ export async function getPurchasedItemsEffects(
 /**
  * Calculate total card capacity boost from store upgrades
  */
-export async function getCardCapacityBoost(userId: string, db: PrismaClient): Promise<number> {
+export async function getCardCapacityBoost(userId: string, db: PerksDb): Promise<number> {
   const effects = await getPurchasedItemsEffects(userId, db);
   let totalBoost = 0;
   for (const eff of effects) {
@@ -256,71 +252,4 @@ export async function getYieldBoostMultiplier(userId: string, db: PrismaClient):
     }
   }
   return totalBoost;
-}
-
-/**
- * Calculate current lore request tokens balance
- */
-export async function getLoreTokensBalance(userId: string, db: PrismaClient): Promise<number> {
-  const effects = await getPurchasedItemsEffects(userId, db);
-  let totalGranted = 0;
-  for (const eff of effects) {
-    const perks = eff.perks;
-    if (perks && typeof perks.loreTokens === "number") {
-      totalGranted += perks.loreTokens;
-    }
-  }
-
-  const vault = await db.myVault.findUnique({
-    where: { userId },
-    select: { id: true },
-  });
-  if (!vault) return 0;
-
-  const transactions = await db.vaultTransaction.findMany({
-    where: {
-      vaultId: vault.id,
-      source: "LORE_CARD_REQUEST",
-    },
-    select: {
-      metadata: true,
-    },
-  });
-
-  let usedTokenCount = 0;
-  for (const tx of transactions) {
-    let meta = tx.metadata;
-    if (typeof meta === "string") {
-      try {
-        meta = JSON.parse(meta);
-      } catch {
-        // non-JSON metadata — treated as no item match
-      }
-    }
-    if (meta && typeof meta === "object") {
-      const metaObj = meta as Record<string, unknown>;
-      if (metaObj.useToken === true) {
-        usedTokenCount++;
-      } else if (metaObj.tokenRefund === true) {
-        // A rejected request gives its token back
-        usedTokenCount--;
-      }
-    }
-  }
-
-  return Math.max(0, totalGranted - usedTokenCount);
-}
-
-/**
- * The player's Vault level, derived from lifetime Vault XP (1 XP per IxC earned) and the
- * configured XP-per-level. This is the real progression level used to gate crafting;
- * `User.collectorLevel` is never written by anything.
- */
-export async function getVaultLevel(userId: string, db: PrismaClient): Promise<number> {
-  const vault = await db.myVault.findUnique({
-    where: { userId },
-    select: { vaultXp: true },
-  });
-  const cfg = await getVaultConfig(db);
-  return Math.floor((vault?.vaultXp ?? 0) / cfg.xpPerLevel) + 1;
 }

@@ -11,12 +11,16 @@ jest.mock("~/server/db", () => ({ db: {} }));
 jest.mock("~/server/modules/identity/identity.privacy", () => ({
   loadPassportSettings: jest.fn(),
 }));
+jest.mock("~/server/modules/identity/identity.passport-handle", () => ({
+  loadPassportHandleById: jest.fn(),
+}));
 
 import { createCallerFactory } from "~/server/api/trpc";
 import { lorewardsTrophiesRouter } from "~/server/api/routers/lorewards/trophies";
 import { lorewardsLeaderboardsRouter } from "~/server/api/routers/lorewards/leaderboards";
 import { getTodayRace } from "~/lib/lorewards/today-race";
 import { loadPassportSettings } from "~/server/modules/identity/identity.privacy";
+import { loadPassportHandleById } from "~/server/modules/identity/identity.passport-handle";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
@@ -65,6 +69,61 @@ const ADA_PLACES = [
   entry("2026-10-18", { runnerUpUser: "Ada" }),
 ];
 
+const IXNAY = { id: "default", slug: "ixnay", name: "Ixnay", emblemUrl: null, isSystem: false };
+
+/** A trophy copy the account holds, with the fields its face reads. */
+const trophyRow = (
+  id: string,
+  title: string,
+  lorewardEdition: string,
+  metadata: Record<string, string> | null
+) => ({
+  id: `own-${id}`,
+  finish: "SERIALISED",
+  serialNumber: 1,
+  level: 1,
+  cards: {
+    id,
+    title,
+    rarity: "LEGENDARY",
+    cardType: "TROPHY",
+    artwork: `https://art/${id}.png`,
+    isRetired: false,
+    collectorNumber: 4,
+    season: null,
+    nsSeason: null,
+    realm: IXNAY,
+    lorewardEdition,
+    metadata,
+  },
+});
+
+/** The summary of a trophy row, its face showing its art. */
+const summary = (id: string, title: string, contest: string, place: string) => ({
+  id,
+  title,
+  contest,
+  place,
+  face: {
+    cardId: id,
+    title,
+    rarity: "LEGENDARY",
+    cardType: "TROPHY",
+    realm: { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false },
+    artwork: `https://art/${id}.png`,
+    silhouette: false,
+    number: 4,
+    season: null,
+    isRetired: false,
+    copy: { ownershipId: `own-${id}`, finish: "SERIALISED", serialNumber: 1, level: 1 },
+  },
+});
+
+const CARD_SUMMARIES = [
+  summary("card1", "Seastead Law", "weekly", "winner"),
+  summary("card2", "Tide Charts", "daily", "runner-up"),
+];
+
 const settings = (vaultCards: boolean) =>
   ({ visibility: { vaultCards }, signature: null, pinnedRibbonKeys: [] }) as never;
 
@@ -97,23 +156,11 @@ beforeEach(() => {
   );
   db.lorewardUserStats.findFirst.mockResolvedValue(STATS);
   db.cardOwnership.findMany.mockResolvedValue([
-    {
-      cards: {
-        id: "card1",
-        title: "Seastead Law",
-        lorewardEdition: "winner",
-        metadata: { contest: "weekly" },
-      },
-    },
-    {
-      cards: {
-        id: "card2",
-        title: "Tide Charts",
-        lorewardEdition: "runner-up",
-        metadata: { contest: "daily" },
-      },
-    },
+    trophyRow("card1", "Seastead Law", "winner", { contest: "weekly" }),
+    trophyRow("card2", "Tide Charts", "runner-up", { contest: "daily" }),
   ]);
+  // The holder's passport handle: here the verified wiki name, as for a player with no stored handle.
+  jest.mocked(loadPassportHandleById).mockClear().mockResolvedValue("Ada");
   db.vaultTransaction.aggregate.mockResolvedValue({ _sum: { credits: 2150 } });
 });
 
@@ -130,12 +177,12 @@ describe("lorewards.getMyTrophies", () => {
       runnerUps: 1,
       streak: expect.any(Number),
       paid: 2150,
-      cards: [
-        { id: "card1", title: "Seastead Law", contest: "weekly", place: "winner" },
-        { id: "card2", title: "Tide Charts", contest: "daily", place: "runner-up" },
-      ],
+      cards: CARD_SUMMARIES,
+      // The viewer's own trophies open in Mine, through no holder.
+      holderHandle: null,
       todayRank: 2,
     });
+    expect(loadPassportHandleById).not.toHaveBeenCalled();
   });
 
   it("reads the cards the viewer's account owns, and the payouts of their Loreward bonuses", async () => {
@@ -261,6 +308,7 @@ describe("lorewards.getMyTrophies", () => {
       streak: 0,
       paid: 0,
       cards: [],
+      holderHandle: null,
       todayRank: null,
     });
     expect(db.lorewardUserStats.findFirst).not.toHaveBeenCalled();
@@ -290,12 +338,53 @@ describe("lorewards.getTrophies", () => {
       wins: { daily: 6, weekly: 1, monthly: 0 },
       runnerUps: 2,
       streak: 3,
-      cards: [
-        { id: "card1", title: "Seastead Law", contest: "weekly", place: "winner" },
-        { id: "card2", title: "Tide Charts", contest: "daily", place: "runner-up" },
-      ],
+      cards: CARD_SUMMARIES,
+      holderHandle: "Ada",
     });
+    expect(theirs.cards[0]!.face.cardId).toBe("card1");
+    expect(loadPassportHandleById).toHaveBeenCalledWith("u1");
     expect(db.vaultTransaction.aggregate).not.toHaveBeenCalled();
+  });
+
+  it("reads each trophy with the fields of its face and of the copy held", async () => {
+    await signedOut().getTrophies({ username: "Ada" });
+    const { select } = db.cardOwnership.findMany.mock.calls[0]![0];
+    expect(select).toMatchObject({ id: true, finish: true, serialNumber: true, level: true });
+    expect(select.cards.select).toMatchObject({
+      id: true,
+      title: true,
+      rarity: true,
+      artwork: true,
+      isRetired: true,
+      lorewardEdition: true,
+      metadata: true,
+      realm: expect.anything(),
+    });
+  });
+
+  it("keeps a retired trophy on the shelf with the placeholder face", async () => {
+    const retired = trophyRow("card3", "Old Charter", "winner", { contest: "monthly" });
+    db.cardOwnership.findMany.mockResolvedValue([
+      { ...retired, cards: { ...retired.cards, isRetired: true } },
+    ]);
+    const [card] = (await signedOut().getTrophies({ username: "Ada" })).cards;
+    expect(card!.face).toMatchObject({ cardId: "card3", artwork: null, isRetired: true });
+  });
+
+  it("keeps the cards and the holder's handle for a name with no stats row", async () => {
+    db.lorewardUserStats.findFirst.mockResolvedValue(null);
+    expect(await signedOut().getTrophies({ username: "Ada" })).toEqual({
+      wins: { daily: 0, weekly: 0, monthly: 0 },
+      runnerUps: 0,
+      streak: 0,
+      cards: CARD_SUMMARIES,
+      holderHandle: "Ada",
+    });
+  });
+
+  it("has a holder handle of null when the account that verified the name is gone", async () => {
+    jest.mocked(loadPassportHandleById).mockResolvedValue(null);
+    expect((await signedOut().getTrophies({ username: "Ada" })).holderHandle).toBeNull();
   });
 
   it("returns the counts but no cards when the owner hides Vault cards on their passport", async () => {
@@ -309,13 +398,16 @@ describe("lorewards.getTrophies", () => {
       streak: 3,
     });
     expect(theirs.cards).toEqual([]);
+    expect(theirs.holderHandle).toBeNull();
     expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
+    expect(loadPassportHandleById).not.toHaveBeenCalled();
   });
 
   it("shows no cards for a wiki name with no verified link", async () => {
     db.wikiAccountLink.findFirst.mockResolvedValue(null);
     const theirs = await signedOut().getTrophies({ username: "Ada" });
     expect(theirs.cards).toEqual([]);
+    expect(theirs.holderHandle).toBeNull();
     expect(theirs.wins.daily).toBe(6);
   });
 
@@ -337,9 +429,7 @@ describe("lorewards.getTrophies", () => {
   });
 
   it("skips a trophy card whose contest was not recorded", async () => {
-    db.cardOwnership.findMany.mockResolvedValue([
-      { cards: { id: "c9", title: "Odd", lorewardEdition: "winner", metadata: null } },
-    ]);
+    db.cardOwnership.findMany.mockResolvedValue([trophyRow("c9", "Odd", "winner", null)]);
     expect((await signedOut().getTrophies({ username: "Ada" })).cards).toEqual([]);
   });
 });

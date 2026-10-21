@@ -15,6 +15,7 @@ import {
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useVaultBalance } from "~/hooks/vault/useVaultBalance";
+import { useDailyReward } from "~/components/vault/DailyRewardProvider";
 import { SettingsHeader } from "../SettingsHeader";
 import { SettingsGroup, SettingsRow } from "../primitives";
 import { soundEffects } from "~/lib/sound/cuelume";
@@ -35,18 +36,7 @@ export function VaultStatusPanel() {
     refresh: refreshBalance,
   } = useVaultBalance();
 
-  const claimBonusMutation = api.vault.claimDailyBonus.useMutation({
-    onSuccess: (data) => {
-      soundEffects.bloom();
-      notify.success(`Claimed ${data.bonus} IxC daily bonus`);
-      void refreshBalance();
-      void utils.vault.getBalance.invalidate();
-    },
-    onError: (err) => {
-      soundEffects.error();
-      notify.error(err.message || "Failed to claim bonus");
-    },
-  });
+  const { open: openDailyReward } = useDailyReward();
 
   const handleRefresh = async () => {
     soundEffects.press();
@@ -60,7 +50,7 @@ export function VaultStatusPanel() {
       <SettingsHeader
         title="Vault status"
         category="Vault"
-        description="Your IxCredits balance, daily login bonus and Vault level."
+        description="Your IxCredits balance, daily reward and Vault level."
         actions={
           <div className="flex items-center gap-2">
             <Button asChild variant="secondary" size="sm">
@@ -84,7 +74,7 @@ export function VaultStatusPanel() {
         }
       />
 
-      {/* Balance and daily bonus */}
+      {/* Balance and daily reward */}
       <SettingsGroup title="Balance and rewards" description="Your credits and daily streak.">
         <SettingsRow
           label="Available IxCredits"
@@ -100,20 +90,19 @@ export function VaultStatusPanel() {
         </SettingsRow>
 
         <SettingsRow
-          label="Daily login bonus"
-          description={`Claim every day to keep your streak (${loginStreak} ${loginStreak === 1 ? "day" : "days"} so far)`}
+          label="Daily reward"
+          description={`Claim credits or a card once a day (${loginStreak} ${loginStreak === 1 ? "day" : "days"} in a row so far)`}
           icon={Gift}
           glyphClass="bg-muted/60 text-foreground"
         >
           <Button
             type="button"
-            onClick={() => claimBonusMutation.mutate()}
-            disabled={claimBonusMutation.isPending}
+            onClick={openDailyReward}
             data-cuelume-press="soft"
-            variant="default"
+            variant="secondary"
             size="sm"
           >
-            {claimBonusMutation.isPending ? "Claiming..." : "Claim daily bonus"}
+            Open daily reward
           </Button>
         </SettingsRow>
       </SettingsGroup>

@@ -21,9 +21,16 @@ export function StoreCategoryHeader<T extends string>({
     badgeCount: tab.id === "my-packs" ? myPacksCount : undefined,
   }));
 
+  // A block, not a flex row: a row sized the tabs to their content and centred them past both edges of a phone's
+  // window. In a block the track takes the window's width (up to max-w-xl, where all four fit) and scrolls below it.
   return (
-    <div className="mb-6 flex justify-center">
-      <VaultSubTabNav tabs={formattedTabs} activeTab={activeTab} onTabChange={onTabChange} />
+    <div className="mb-6">
+      <VaultSubTabNav
+        tabs={formattedTabs}
+        activeTab={activeTab}
+        onTabChange={onTabChange}
+        className="mx-auto"
+      />
     </div>
   );
 }

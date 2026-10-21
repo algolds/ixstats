@@ -1,6 +1,6 @@
 # Notifications
 
-**Last updated:** 2026-10-06
+**Last updated:** 2026-10-20
 **Status:** Live. In-app notifications, plus email and Web Push delivery of single-user notifications when the server
 configures them (both off by default, 2026-10-06, SL-5). Per-user category and minimum-urgency preferences are
 enforced for single-user notifications (2026-10-05, SL-5). There is no Discord delivery.
@@ -41,20 +41,20 @@ The list query and single-row `markAsRead` / `dismissNotification` do not (see [
 ## 2. Categories and events
 
 **Categories.** The router's `NotificationCategory` enum is: economic, diplomatic, governance, social, security, system,
-achievement, crisis, opportunity, intelligence, policy, global, military. `notificationAPI` also accepts `cards`.
+achievement, crisis, opportunity, intelligence, policy, global, military. `notificationAPI` also accepts `cards` and `packs`.
 A few writers use other strings directly (`lib/sports/club-notify.ts` writes `category: "sports"`).
 
-**Event registry.** `NOTIFICATION_EVENTS` (`src/lib/notifications/events-registry.ts`) lists 13 admin-switchable
+**Event registry.** `NOTIFICATION_EVENTS` (`src/lib/notifications/events-registry.ts`) lists 15 admin-switchable
 events:
 
 | Category | Event keys |
 | :--- | :--- |
-| economic | `budgetYearNotification`, `onTaxSystemChange` |
+| economic | `budgetYearNotification`, `onTaxSystemChange`, `cardsNotification` |
 | diplomatic | `onDiplomaticEvent` |
 | governance | `onGovernmentStructureChange`, `onQuickActionComplete`, `onMeetingEvent`, `onVitalityScoreChange` |
 | achievement | `onAchievementUnlock` |
 | social | `onThinkPageActivity`, `onSocialActivity`, `onThinktankActivity` |
-| system | `onUserAccountChange`, `systemNotification` |
+| system | `onUserAccountChange`, `realmsNotification`, `systemNotification` |
 
 **The guard.** `isNotificationEventEnabled(eventKey)` (`guard.ts`) reads `NotificationEventConfig` through a 30-second
 cache. An event with no config row is enabled. Two places check it:
@@ -65,6 +65,15 @@ cache. An event with no config row is enabled. Two places check it:
 
 A suppressed `create` throws; callers wrap it in try/catch.
 
+**Card notices.** `notifyCard` / `notifyCards` (`src/lib/cards/card-notify.ts`) send every card and pack notice
+through `notificationAPI.create` with `source: "cards"` (the `cardsNotification` registry switch), after the money has
+moved, and log a failure instead of failing the caller. They use the `cards` category, or `packs` for "Pack bought"
+and "Cards revealed"; both follow the Economic events switch. A notice about one card is dropped for a player who muted
+that card (`CardNotificationMute`, `card_notification_mutes`; the sheet's Mute, `cards.setCardMute`). The card notices
+include "Your listing sold", "Your listing expired", "You've been outbid", the auction-end notices (the winner, the
+seller and every other bidder; "Your auction ended with no bids" with the refund), "New trade offer",
+"Counter-offer", "Trade accepted" and "Royalty paid". See [cards.md](./cards.md#the-daily-card-capacity-and-notices).
+
 ## 3. Recipient preferences
 
 Settings → Notifications (`NotificationSettingsPanel`) saves four category switches and a minimum urgency to
@@ -73,7 +82,7 @@ Settings → Notifications (`NotificationSettingsPanel`) saves four category swi
 
 | Switch | Field | Categories it governs |
 | :--- | :--- | :--- |
-| Economic events | `economicAlerts` | `economic`, `cards` |
+| Economic events | `economicAlerts` | `economic`, `cards`, `packs` |
 | Crisis and security | `crisisAlerts` | `crisis`, `security`, `military` |
 | Diplomacy | `diplomaticAlerts` | `diplomatic` |
 | Platform notices | `systemAlerts` | `system` |

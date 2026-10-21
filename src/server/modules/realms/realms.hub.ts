@@ -2,10 +2,16 @@
  * The public realm page (/r/[realm]): its nations, the nation pages of its lore index that no country has taken
  * yet (claimable — decision 8), and the size and wiki of that index (ruling E-a). Nations the signed-in viewer
  * owns are marked `mine` so the page can offer "Play as" (ruling F-1). A draft or generating realm is shown only
- * to its moderators; an archived realm stays readable but `claimsOpen` is false (AT-7).
+ * to its moderators; an archived realm stays readable but `claimsOpen` is false (AT-7). A system realm has no hub.
  */
 import type { PrismaClient } from "@prisma/client";
-import { canModerateRealm, isRealmOpen, isRealmPublished, type RealmActor } from "./realms.access";
+import {
+  canModerateRealm,
+  isRealmOpen,
+  isRealmPublished,
+  isSystemRealm,
+  type RealmActor,
+} from "./realms.access";
 import { nationPageTaken } from "./realms.handover";
 import { isUnclaimable } from "./realms.ownership";
 import { realmSlugWhere } from "~/lib/realms/realm-ids";
@@ -45,7 +51,7 @@ export async function getRealmHub(db: HubDb, slug: string, viewer: RealmActor | 
       _count: { select: { pages: true } },
     },
   });
-  if (!realm) return null;
+  if (!realm || isSystemRealm(realm)) return null;
   const { countries, pages, _count, ownerId, ...rest } = realm;
   const published = isRealmPublished(realm.id, realm.status);
   if (!published && !(viewer && canModerateRealm(viewer, { ownerId }))) return null;

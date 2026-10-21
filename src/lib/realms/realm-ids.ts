@@ -41,3 +41,12 @@ export function isIxnayView(realmSlug?: string | null, activeRealmId?: string | 
   if (realmSlug) return isIxnaySlug(realmSlug);
   return !activeRealmId || activeRealmId === DEFAULT_REALM_ID;
 }
+
+/** The NationStates system realm (cards refresh §2.1): NS cards' home realm, a card shelf only. */
+export const NS_REALM_ID = "nationstates";
+/** The IIWiki system realm: IIWiki lore that no realm imported. */
+export const IIWIKI_REALM_ID = "iiwiki";
+/** The AltHistory system realm: AltHistory lore that no realm imported. */
+export const ALTHISTORY_REALM_ID = "althistory";
+/** Every system realm (`Realm.isSystem`): never listed, claimable, mapped or deleted. Ixnay is not one. */
+export const SYSTEM_REALM_IDS = [NS_REALM_ID, IIWIKI_REALM_ID, ALTHISTORY_REALM_ID] as const;

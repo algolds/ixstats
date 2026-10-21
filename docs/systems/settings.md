@@ -1,6 +1,6 @@
 # Settings
 
-**Last updated:** 2026-10-06
+**Last updated:** 2026-10-20
 **Status:** Live. Every privacy control is enforced (2026-10-06, SL-4); email and push switches appear when the server
 has those channels configured (SL-5). A few other controls are saved but nothing reads them yet; they are marked
 **display-only** below.
@@ -72,9 +72,10 @@ The Halo quick-settings view (`components/halo/views/SettingsView.tsx`) has the 
 
 ### Notifications (`notifications`) — `NotificationSettingsPanel`
 
-Four category switches (Economic events, Crisis and security, Diplomacy, Platform notices) and a **Priority
-threshold** select. Each change calls `notifications.upsertPreferences`, which writes `UserPreferences`
-(`economicAlerts`, `crisisAlerts`, `diplomaticAlerts`, `systemAlerts`, `notificationLevel`).
+Four category switches (Economic events, which also covers card and pack notices; Crisis and security; Diplomacy;
+Platform notices) and a **Priority threshold** select. A single card's notices are muted from its sheet instead. Each
+change calls `notifications.upsertPreferences`, which writes `UserPreferences` (`economicAlerts`, `crisisAlerts`,
+`diplomaticAlerts`, `systemAlerts`, `notificationLevel`).
 
 They are enforced when a notification is created for **one user** through `notificationAPI.create` / `createMany`
 (`src/lib/notifications/recipient-preferences.ts`): a notification whose category is switched off, or whose priority
@@ -118,7 +119,7 @@ failed settings read hides it too.
 | Direct messages (everyone, people you follow, nobody) | `directMessages`. Someone outside your audience can't start a conversation with you (including a group or diplomatic one) or send messages in a direct conversation with you (`MessagingBlockedError` → `FORBIDDEN`, "not accepting direct messages"), unless Message requests is on (below). "Nobody" always refuses. Group conversations you are already in are unaffected. A stored `verified` value (no longer offered) means the sender owns a verified ThinkPages persona |
 | Message requests | `messageRequestFiltering`. On: what Direct messages would refuse goes to your **Requests** folder instead (`ConversationParticipant.requestStatus = "pending"`; `messages.getConversationsByFolder({ folder: "requests" })`, counted as `getFolderCounts().requests` and nowhere else). Requests send no notification or push. Accept (`messages.respondToRequest`) moves it to Messages and lets that person keep messaging you there; Decline leaves the conversation and refuses further messages in it. The sender sees "waiting in their Requests" until you answer. Off: such messages are refused |
 | Mentions (everyone, people you follow, nobody) | `mentions`. An @mention from outside your audience, or from someone you blocked, is still recorded on the post but doesn't notify you (`thinkpages.createPost`) |
-| Card trade offers (everyone, people you follow, nobody) | `tradeOffers`. Someone outside your audience, or someone you blocked, can't send you a trade offer (`trading.createtradeOffer` → `FORBIDDEN`) |
+| Card trade offers (everyone, people you follow, nobody) | `tradeOffers`. Someone outside your audience, or someone you blocked, can't send you a trade offer (`trading.createtradeOffer` → `FORBIDDEN`). The trade builder tells them before they build one (`trading.findPartner` / `searchPartners`), and someone you blocked reads your audience as nobody |
 | ThinkTank invites (everyone, followers, nobody) | Enforced by `filterInvitableUserIds` when someone invites you |
 | Online status | `showOnlineStatus`. Signed-in tabs send `users.heartbeat` about once a minute while visible (`usePresenceHeartbeat` in `GameSidecar`); the last time is kept in Redis (`presence:<clerkId>`, 10-minute expiry) or, without Redis, in process memory. Nothing is written to the database. You show as online for two minutes after a heartbeat: a green dot on direct conversations in Messages and an "Online" badge on your passport. Off: nobody sees it |
 | Read receipts | `dmReadReceipts`. Opening a conversation records your read time (`ConversationParticipant.lastReadAt`, `messages.markMessagesAsRead`). In direct conversations the sender sees "Seen" under their newest message sent before it (`messages.getSeenState`, polled every 20 seconds) only when both of you have receipts on, and not while you hold it as an unanswered request. Group conversations never show it |
@@ -139,8 +140,8 @@ chronological or trending for everyone). Stored values for them are ignored and 
 
 ### Vault status (`vault`) — `VaultStatusPanel`
 
-Balance, streak, level and lifetime totals from the Vault. **Claim** calls `vault.claimDailyBonus`. **Sync with
-server** refetches.
+Balance, streak, level and lifetime totals from the Vault. **Open daily reward** opens the one daily reward dialog
+(`useDailyReward`, `vault.claimCombinedDailyClaim`). **Sync with server** refetches.
 
 ### Cosmetics (`cosmetics`) — `CosmeticsUpgradesPanel`
 
@@ -170,7 +171,7 @@ verification checksum; `nsImport.getVerificationUrl` gives the verification link
 | `countries.update` | protected + `assertCountryWriteAccess` |
 | `countryGeo.updateGeoRollupMode`, `countryGeo.rebaseNationalFromGeography` | country owner, standard mutation rate limit |
 | `thinkpages.updateAccount` | protected |
-| `vault.claimDailyBonus`, `vault.toggleEquipCosmetic` | protected |
+| `vault.toggleEquipCosmetic` | protected |
 | `ixnayid.*` link and unlink procedures | protected (verification starts are light rate limited) |
 | `nsImport.hideMyCard` | protected |
 | `nsImport.requestSelfServiceTakedown` | public, rate limited |
@@ -186,7 +187,7 @@ no consumer were removed or hidden; these are now read by the game:
 
 | Admin setting | Key(s) | Read by |
 | :--- | :--- | :--- |
-| Cards: house rake, base card capacity, junk batch limit | `card_system_auction_rake_pct` (default 10), `card_system_max_inventory_cards` (150), `card_system_max_junk_batch_size` (100) | `lib/cards/general-settings.ts`: the marketplace fee (auction sales and buyouts), pack opening, NS deck import and the Vault dashboard, and `cards.junkCards`. Trading kill-switch, daily free packs, player minting and lore thumbnails are hidden |
+| Cards: house rake, base card capacity | `card_system_auction_rake_pct` (default 10), `card_system_max_inventory_cards` (150) | `lib/cards/general-settings.ts`: the marketplace fee (auction sales and buyouts, listing sales and the IxC legs of trades, over the sale fee threshold), the capacity of every new-copy source (packs, the daily card, NS deck import, crafting, admin grants) and the Vault dashboard. Trading kill-switch, daily free packs, player minting and lore thumbnails are hidden |
 | ThinkPages: accounts per user | `thinkpages_maxAccountsPerUser` (default 25) | `thinkpages.createAccount`; the public `thinkpages.getAccountLimit` feeds the account manager's counter. Character cap, auto-news and attachment switches are hidden |
 | ThinkPages: Discord feed | `ThinkpagesDiscordFeedConfig` row | `admin.getThinkpagesDiscordFeedConfig` / `saveThinkpagesDiscordFeedConfig` (admin) behind the Discord tab's feed card |
 | Lorewards: scoring weights | `lorewardWeight_<field>` for `proseWeight`, `depthMaxBonus`, `noveltyBonus`, `importanceMaxBonus`, `listPenalty`, `minorOnlyPenalty` | `loadScoringWeights()` in `lib/lorewards/scoring.ts`, used by the daily scorer and the admin preview. The older keys are ignored |

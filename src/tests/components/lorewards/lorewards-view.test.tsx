@@ -30,18 +30,47 @@ jest.mock("~/context/auth-context", () => ({
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { LorewardsView } from "~/components/lorewards/LorewardsView";
+import type { CardFaceData } from "~/lib/cards/face/types";
 
 const lore = api.lorewards;
 const ok = <T,>(data: T) => ({ data, isLoading: false, isError: false });
+
+/** A trophy's face, as the server builds it: its art shows. */
+const face = (cardId: string, title: string): CardFaceData => ({
+  cardId,
+  title,
+  rarity: "LEGENDARY",
+  cardType: "TROPHY",
+  realm: { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false },
+  artwork: `/art/${cardId}.png`,
+  silhouette: false,
+  number: null,
+  season: null,
+  isRetired: false,
+  copy: { ownershipId: `own-${cardId}`, finish: "SERIALISED", serialNumber: 1, level: 1 },
+});
 
 const TROPHIES = {
   wins: { daily: 6, weekly: 1, monthly: 0 },
   runnerUps: 2,
   streak: 3,
   cards: [
-    { id: "card1", title: "Seastead Law", contest: "weekly" as const, place: "winner" as const },
-    { id: "card2", title: "Tide Charts", contest: "daily" as const, place: "runner-up" as const },
+    {
+      id: "card1",
+      title: "Seastead Law",
+      contest: "weekly" as const,
+      place: "winner" as const,
+      face: face("card1", "Seastead Law"),
+    },
+    {
+      id: "card2",
+      title: "Tide Charts",
+      contest: "daily" as const,
+      place: "runner-up" as const,
+      face: face("card2", "Tide Charts"),
+    },
   ],
+  holderHandle: "ada",
 };
 
 beforeEach(() => {
@@ -91,6 +120,7 @@ beforeEach(() => {
       verified: true,
       unmatched: 0,
       ...TROPHIES,
+      holderHandle: null,
       paid: 2150,
       todayRank: 2,
     }) as never
@@ -195,6 +225,14 @@ describe("you focus", () => {
     expect(within(shelf).getByText("Seastead Law")).toBeInTheDocument();
     expect(within(shelf).getByText("Weekly winner")).toBeInTheDocument();
     expect(within(shelf).getByText("Daily runner-up")).toBeInTheDocument();
+  });
+
+  it("opens the viewer's own trophy cards in Mine", () => {
+    render(<LorewardsView focus="you" />);
+    const shelf = within(screen.getByRole("region", { name: "Your trophies" }));
+    expect(
+      shelf.getByRole("link", { name: "Seastead Law, Legendary, Serialised, Ixnay" })
+    ).toHaveAttribute("href", "/vault/cards/mine?card=card1");
   });
 
   it("links to today's race and standings in WikiOS", () => {
@@ -356,6 +394,10 @@ describe("you focus", () => {
     const shelf = screen.getByRole("region", { name: "Trophies of Ada" });
     expect(screen.queryByText("IxCredits paid")).toBeNull();
     expect(within(shelf).getByText("Seastead Law")).toBeInTheDocument();
+    // Another player's trophy opens through their display, which shows its art.
+    expect(
+      within(shelf).getByRole("link", { name: "Seastead Law, Legendary, Serialised, Ixnay" })
+    ).toHaveAttribute("href", "/vault/cards/explore?card=card1&from=holder.ada");
   });
 
   it("lists the streak calendar and the history of the wiki account", () => {

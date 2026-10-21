@@ -167,7 +167,8 @@ export const helpSections: HelpSection[] = [
       {
         id: "editor",
         title: "The Country Editor",
-        description: "Change your nation's name, identity, government and size, section by section.",
+        description:
+          "Change your nation's name, identity, government and size, section by section.",
         path: "/help/mycountry/editor",
         tags: ["editor", "builder", "edit", "identity"],
       },
@@ -447,14 +448,22 @@ export const helpSections: HelpSection[] = [
       {
         id: "trading",
         title: "Auctions & Trading",
-        description: "Auction cards, bid, buy outright, and trade directly with players.",
+        description: "List cards, run auctions, and trade directly with players.",
         path: "/help/vault/trading",
-        tags: ["auctions", "trading", "marketplace"],
+        tags: ["auctions", "trading", "marketplace", "listings", "wishlist", "royalty"],
+      },
+      {
+        id: "crafting",
+        title: "Dust, fusion and crafting",
+        description:
+          "Break down cards for dust, fuse duplicates, and craft the cards you're missing.",
+        path: "/help/vault/crafting",
+        tags: ["dust", "fusion", "crafting", "finish", "levels", "signing"],
       },
       {
         id: "lore-cards",
         title: "Lore Cards",
-        description: "Cards made from wiki articles, and requesting a new one.",
+        description: "Cards made from wiki articles, and suggesting a new one.",
         path: "/help/vault/lore-cards",
         tags: ["lore", "wiki", "cards"],
       },

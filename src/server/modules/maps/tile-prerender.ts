@@ -106,7 +106,11 @@ export async function runMapTilePrerender(
     removedVersions: 0,
   };
   const deadline = now() + budgetMs;
-  const realms = await db.realm.findMany({ select: { id: true, status: true, mapVersion: true } });
+  // A system realm has no map.
+  const realms = await db.realm.findMany({
+    where: { isSystem: false },
+    select: { id: true, status: true, mapVersion: true },
+  });
   for (const { id, status, mapVersion } of ixnayFirst(realms)) {
     const published = id === DEFAULT_REALM_ID || !isUnpublishedStatus(status);
     if (published && !(await isTileVersionDone(id, mapVersion))) {

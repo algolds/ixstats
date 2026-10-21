@@ -1,4 +1,4 @@
-import { type PrismaClient } from "@prisma/client";
+import { type PrismaClient, type Prisma as PrismaTypes } from "@prisma/client";
 import { IxTime } from "../ixtime";
 import { getPreset, getSportEmoji, type SportPresetKey } from "./presets";
 import { processAging } from "./aging";
@@ -8,6 +8,10 @@ import { resolveMatch, type TeamRatingVector } from "./resolver";
 import { teamWageBill } from "./team-rating";
 import { clamp } from "~/lib/utils";
 import { mediaWikiImageUrl } from "~/lib/wiki-os/config";
+import { CardFinish, CardType, type CardRarity } from "~/lib/cards/enums";
+import { mintCopy } from "~/lib/cards/mint";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { seasonChampionsTitle, worldCupChampionsTitle } from "./trophy-titles";
 
 type Prisma =
   | PrismaClient
@@ -63,54 +67,39 @@ async function postSportsBulletin(
   }
 }
 
-/** Finds-or-creates a one-off trophy card and grants a locked copy to its owner. */
-async function mintTrophyCard(
-  tx: any,
-  opts: {
-    ownerUserId: string;
-    ownershipId: string;
-    nextSerial: boolean;
-    card: {
-      title: string;
-      description: string;
-      artwork: string;
-      rarity: string;
-      season: number;
-      stats: Record<string, unknown>;
-      marketValue: number;
-    };
-  }
-) {
+export interface TrophyTemplate {
+  title: string;
+  description: string;
+  artwork: string;
+  rarity: CardRarity;
+  season: number;
+  marketValue: number;
+}
+
+/**
+ * Finds or creates a one-off Trophy card (bound, in Ixnay; cards refresh §2.1) and mints its owner's Serialised copy
+ * through `mintCopy`, which also fixes the World Cup's old serial 1 for every copy.
+ */
+export async function mintTrophyCard(
+  tx: PrismaTypes.TransactionClient,
+  opts: { ownerUserId: string; card: TrophyTemplate }
+): Promise<void> {
   const template =
-    (await tx.card.findFirst({ where: { title: opts.card.title } })) ??
-    (await tx.card.create({ data: { ...opts.card, cardType: "SPECIAL", totalSupply: 1 } }));
-
-  let serialNumber = 1;
-  if (opts.nextSerial) {
-    const last = await tx.cardOwnership.findFirst({
-      where: { cardId: template.id },
-      orderBy: { serialNumber: "desc" },
-      select: { serialNumber: true },
-    });
-    serialNumber = (last?.serialNumber || 0) + 1;
-  }
-
-  const now = new Date();
-  await tx.cardOwnership.create({
-    data: {
-      id: opts.ownershipId,
-      userId: opts.ownerUserId,
-      ownerId: opts.ownerUserId,
-      cardId: template.id,
-      serialNumber,
-      quantity: 1,
-      level: 1,
-      experience: 0,
-      isLocked: true,
-      acquiredAt: now,
-      createdAt: now,
-      updatedAt: now,
-    },
+    (await tx.card.findFirst({ where: { title: opts.card.title, cardType: CardType.TROPHY } })) ??
+    (await tx.card.create({
+      data: {
+        ...opts.card,
+        cardType: CardType.TROPHY,
+        isBound: true,
+        realmId: DEFAULT_REALM_ID,
+        totalSupply: 1,
+      },
+    }));
+  await mintCopy(tx, {
+    cardId: template.id,
+    ownerId: opts.ownerUserId,
+    finish: CardFinish.SERIALISED,
+    source: "SPORTS",
   });
 }
 
@@ -641,16 +630,13 @@ async function mintSeasonTrophy(tx: any, season: LoadedSeason, championTeamId: s
   try {
     await mintTrophyCard(tx, {
       ownerUserId: champTeam.ownerUserId,
-      ownershipId: `trophy_${Date.now()}_${crypto.randomUUID()}`,
-      nextSerial: true,
       card: {
-        title: `${champTeam.name} Season ${season.seasonNumber} Champions`,
+        title: seasonChampionsTitle(champTeam.name, season.seasonNumber),
         description: `Commemorative trophy card awarded for winning the ${champTeam.league.name} Championship in Season ${season.seasonNumber}.`,
         artwork:
           "https://upload.wikimedia.org/wikipedia/commons/e/e6/Stade_V%C3%A9lodrome_interior_2018.jpg",
         rarity: "EPIC",
         season: season.seasonNumber,
-        stats: { champion: 100, division: "Gold" },
         marketValue: 250.0,
       },
     });
@@ -767,15 +753,12 @@ async function recordWorldCupFinal(
   try {
     await mintTrophyCard(tx, {
       ownerUserId: managerUserId,
-      ownershipId: `wc_trophy_${Date.now()}`,
-      nextSerial: false,
       card: {
-        title: `${winnerName} World Cup Season ${seasonNumber} Champions`,
+        title: worldCupChampionsTitle(winnerName, seasonNumber),
         description: `Commemorative trophy card awarded for winning the WAFF World Cup in Season ${seasonNumber}.`,
         artwork: mediaWikiImageUrl("/worldcup-trophy.png"),
         rarity: "LEGENDARY",
         season: seasonNumber,
-        stats: { champion: 100, worldcup: 1 },
         marketValue: 1000.0,
       },
     });

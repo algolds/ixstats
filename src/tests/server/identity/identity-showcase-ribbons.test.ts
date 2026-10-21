@@ -201,16 +201,16 @@ describe("ixnayid.getRibbons", () => {
 });
 
 describe("toVaultFocus", () => {
-  it("counts distinct lore categories, skips NationStates imports, and names the largest", () => {
-    expect(toVaultFocus(["MILITARY", "NS_IMPORT", "MILITARY", "CULTURE", null])).toEqual({
+  it("counts distinct lore categories, skips uncategorised cards (NationStates), and names the largest", () => {
+    expect(toVaultFocus(["MILITARY", null, "MILITARY", "CULTURE", null])).toEqual({
       categoryCount: 2,
       categoryTotal: 12,
       topCategory: "MILITARY",
     });
   });
 
-  it("is zero for an empty or NS-only collection", () => {
-    expect(toVaultFocus(["NS_IMPORT"])).toEqual({
+  it("is zero for an empty or uncategorised collection", () => {
+    expect(toVaultFocus([null])).toEqual({
       categoryCount: 0,
       categoryTotal: 12,
       topCategory: null,

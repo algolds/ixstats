@@ -508,7 +508,7 @@ export const usersPreferencesRouter = createTRPCRouter({
 
     const cardCount = user?.id
       ? await ctx.db.cardOwnership.count({
-          where: { userId: user.id },
+          where: { ownerId: user.id },
         })
       : 0;
 

@@ -1,14 +1,20 @@
 // src/lib/card-pack-service.ts
 // Card pack service for IxCards system
 
-import { LoreCategory } from "@prisma/client";
+import { CardType, LoreCategory } from "@prisma/client";
 import type { CardRarity, Prisma, PrismaClient } from "@prisma/client";
-import { getVaultConfig, vaultService } from "~/lib/vault/vault-service";
 import { spendCreditsTx } from "~/lib/vault/vault-ledger";
-import { EXCLUDE_TROPHY_CARDS } from "~/lib/lorewards/trophy-cards";
+import { EXCLUDE_RESTRICTED_ART } from "./art-licence";
+import { assertCapacityTx, CapacityError } from "./capacity";
+import { parseCardRarity } from "./enums";
+import { rarityRank } from "./face/labels";
+import { CATALOGUE_WHERE } from "./hub/catalogue";
+import { mintCopy } from "./mint";
+import { isJsonObject } from "./ns-facts";
+import { rarityList, undeliverableRarities, type PackOdds } from "./pack-odds";
+import { createPoolDrawer, rollRarity, tierCounts, type RarityOdds } from "./pool-draw";
+import { bySerialLockOrder } from "./serial-number";
 import { grantCardXp } from "./xp-utils";
-import { newCardOwnershipId } from "./ownership-id";
-import { baseCardCapacity } from "./general-settings";
 
 /**
  * A pack-service failure the caller can act on. `code` is the tRPC error code the router
@@ -16,7 +22,7 @@ import { baseCardCapacity } from "./general-settings";
  */
 export class PackError extends Error {
   constructor(
-    public readonly code: "NOT_FOUND" | "BAD_REQUEST" | "PRECONDITION_FAILED",
+    public readonly code: "NOT_FOUND" | "BAD_REQUEST" | "PRECONDITION_FAILED" | "CONFLICT",
     message: string
   ) {
     super(message);
@@ -27,76 +33,108 @@ export class PackError extends Error {
 /**
  * Optional `CardPack.themeFilter` shape. Each listed key narrows the pool (keys combine with
  * AND, values within a key with OR); unknown keys are ignored.
- *   { "categories": ["MILITARY"], "subcategories": [...], "cardTypes": ["LORE"], "countryIds": [...] }
+ *   { "realmIds": ["iiwiki"], "categories": ["MILITARY"], "subcategories": [...],
+ *     "cardTypes": ["LORE"], "countryIds": [...] }
  */
 export interface PackThemeFilter {
+  realmIds?: string[];
   categories?: string[];
   subcategories?: string[];
   cardTypes?: string[];
   countryIds?: string[];
 }
 
-function stringList(value: unknown): string[] {
+function stringList(value: Prisma.JsonValue | undefined): string[] {
   if (typeof value === "string") return value ? [value] : [];
   return Array.isArray(value)
     ? value.filter((v): v is string => typeof v === "string" && v !== "")
     : [];
 }
 
+/** The listed values that the enum knows. */
+function known<T extends string>(values: string[], allowed: readonly T[]): T[] {
+  return values.filter((value): value is T => (allowed as readonly string[]).includes(value));
+}
+
 /** Card filters for a pack's `themeFilter` JSON (an empty list when there is no theme). */
-export function themeFilterWhere(themeFilter: unknown): Prisma.CardWhereInput[] {
-  if (!themeFilter || typeof themeFilter !== "object" || Array.isArray(themeFilter)) return [];
-  const theme = themeFilter as Record<string, unknown>;
+export function themeFilterWhere(themeFilter: Prisma.JsonValue | null): Prisma.CardWhereInput[] {
+  if (!isJsonObject(themeFilter)) return [];
   const where: Prisma.CardWhereInput[] = [];
 
-  const validCategories = new Set<string>(Object.values(LoreCategory));
-  const categories = stringList(theme.categories).filter((c) => validCategories.has(c));
-  if (stringList(theme.categories).length > 0) {
-    // A theme naming only unknown categories matches nothing rather than everything
-    where.push({ category: { in: categories as LoreCategory[] } });
+  // A theme naming only unknown categories or types matches nothing rather than everything
+  const categories = stringList(themeFilter.categories);
+  if (categories.length > 0) {
+    where.push({ category: { in: known(categories, Object.values(LoreCategory)) } });
   }
-  const subcategories = stringList(theme.subcategories);
+  const subcategories = stringList(themeFilter.subcategories);
   if (subcategories.length > 0) where.push({ subcategory: { in: subcategories } });
-  const cardTypes = stringList(theme.cardTypes);
-  if (cardTypes.length > 0) where.push({ cardType: { in: cardTypes } });
-  const countryIds = stringList(theme.countryIds);
+  const cardTypes = stringList(themeFilter.cardTypes);
+  if (cardTypes.length > 0) {
+    where.push({ cardType: { in: known(cardTypes, Object.values(CardType)) } });
+  }
+  const countryIds = stringList(themeFilter.countryIds);
   if (countryIds.length > 0) where.push({ countryId: { in: countryIds } });
+  const realmIds = stringList(themeFilter.realmIds);
+  if (realmIds.length > 0) where.push({ realmId: { in: realmIds } });
 
   return where;
 }
 
-interface PackOdds {
-  commonOdds: number;
-  uncommonOdds: number;
-  rareOdds: number;
-  ultraRareOdds: number;
-  epicOdds: number;
-  legendaryOdds: number;
+/** The theme keys the pack editor shows (realms, categories, types); other keys stay as stored. */
+export function packThemePool(themeFilter: Prisma.JsonValue | null): {
+  realmIds: string[];
+  categories: LoreCategory[];
+  cardTypes: CardType[];
+} {
+  if (!isJsonObject(themeFilter)) return { realmIds: [], categories: [], cardTypes: [] };
+  return {
+    realmIds: stringList(themeFilter.realmIds),
+    categories: known(stringList(themeFilter.categories), Object.values(LoreCategory)),
+    cardTypes: known(stringList(themeFilter.cardTypes), Object.values(CardType)),
+  };
 }
 
-const RARITY_DISTRIBUTION: readonly [CardRarity, keyof PackOdds][] = [
-  ["COMMON", "commonOdds"],
-  ["UNCOMMON", "uncommonOdds"],
-  ["RARE", "rareOdds"],
-  ["ULTRA_RARE", "ultraRareOdds"],
-  ["EPIC", "epicOdds"],
-  ["LEGENDARY", "legendaryOdds"],
-] as const;
+/** The stored values outside the enum, which the pack editor cannot carry. */
+function unknownValues(value: Prisma.JsonValue | undefined, allowed: readonly string[]): string[] {
+  return stringList(value).filter((item) => !allowed.includes(item));
+}
 
 /**
- * Weighted random selection based on rarity odds
+ * The stored theme with the editor's pool written over it. Keys the editor does not show stay, and so do stored
+ * categories and types outside the enums: a theme naming only those matches nothing, so dropping them would widen it.
  */
-function selectRarityByOdds(odds: PackOdds): CardRarity {
-  const random = Math.random() * 100;
-  let cumulative = 0;
-
-  for (const [rarity, key] of RARITY_DISTRIBUTION) {
-    cumulative += odds[key] ?? 0;
-    if (random < cumulative) return rarity;
-  }
-
-  return "COMMON";
+export function mergePackTheme(
+  existing: Prisma.JsonValue | null,
+  pool: { realmIds: readonly string[]; categories: readonly string[]; cardTypes: readonly string[] }
+): Prisma.JsonObject {
+  const stored: Prisma.JsonObject = isJsonObject(existing) ? existing : {};
+  return {
+    ...stored,
+    realmIds: [...pool.realmIds],
+    categories: [
+      ...pool.categories,
+      ...unknownValues(stored.categories, Object.values(LoreCategory)),
+    ],
+    cardTypes: [...pool.cardTypes, ...unknownValues(stored.cardTypes, Object.values(CardType))],
+  };
 }
+
+/** A pack's odds columns as percent odds by rarity. */
+function packRarityOdds(pack: PackOdds): RarityOdds {
+  return {
+    COMMON: pack.commonOdds,
+    UNCOMMON: pack.uncommonOdds,
+    RARE: pack.rareOdds,
+    ULTRA_RARE: pack.ultraRareOdds,
+    EPIC: pack.epicOdds,
+    LEGENDARY: pack.legendaryOdds,
+  };
+}
+
+const cannotOpen = (rarities: string) =>
+  `This pack can't be opened right now: it has no ${rarities} cards to give. It stays unopened; try again later.`;
+const notOnSale = (rarities: string) =>
+  `This pack is not on sale right now: it has no ${rarities} cards to give.`;
 
 /**
  * Purchase pack with IxCredits deduction
@@ -151,6 +189,9 @@ export async function purchasePack(db: PrismaClient, userId: string, packId: str
       }
     }
 
+    // A pack that can't give a rarity it shows or guarantees would never open, so it is not sold
+    await deliverablePool(tx, pack, notOnSale);
+
     // 3. Charge through the ledger (lifetime counters, kill switches, maintenance mode,
     //    row-locked conditional decrement). Throws LedgerError, rolling this transaction back.
     if (pack.priceCredits > 0) {
@@ -181,13 +222,6 @@ export async function purchasePack(db: PrismaClient, userId: string, packId: str
   });
 }
 
-/** Pack rarity tiers, lowest first (the order of the odds table). */
-const RARITY_ORDER: readonly CardRarity[] = RARITY_DISTRIBUTION.map(([rarity]) => rarity);
-
-function rarityRank(rarity: string | null | undefined): number {
-  return RARITY_ORDER.indexOf(rarity as CardRarity);
-}
-
 /**
  * Generate cards for pack based on rarity distribution
  * Returns array of card rarities to be pulled from card pool. When the pack has a
@@ -204,26 +238,19 @@ export function generatePackCards(pack: {
   guaranteedRarity?: string | null;
 }): CardRarity[] {
   const rarities: CardRarity[] = [];
-  const odds = {
-    commonOdds: pack.commonOdds,
-    uncommonOdds: pack.uncommonOdds,
-    rareOdds: pack.rareOdds,
-    ultraRareOdds: pack.ultraRareOdds,
-    epicOdds: pack.epicOdds,
-    legendaryOdds: pack.legendaryOdds,
-  };
+  const odds = packRarityOdds(pack);
 
   for (let i = 0; i < pack.cardCount; i++) {
-    rarities.push(selectRarityByOdds(odds));
+    rarities.push(rollRarity(odds));
   }
 
-  const guaranteedRank = rarityRank(pack.guaranteedRarity);
+  const guaranteed = parseCardRarity(pack.guaranteedRarity);
   if (
-    guaranteedRank >= 0 &&
+    guaranteed &&
     rarities.length > 0 &&
-    !rarities.some((r) => rarityRank(r) >= guaranteedRank)
+    !rarities.some((r) => rarityRank(r) >= rarityRank(guaranteed))
   ) {
-    rarities[rarities.length - 1] = RARITY_ORDER[guaranteedRank]!;
+    rarities[rarities.length - 1] = guaranteed;
   }
 
   return rarities;
@@ -231,15 +258,17 @@ export function generatePackCards(pack: {
 
 /**
  * The pack's card pool, before rarity: active cards matching the pack's type, season and
- * theme, never SPECIAL (achievement / event rewards), never crafted and never a Loreward trophy.
+ * theme, never Special or Trophy (achievement, event and trophy rewards) and never crafted;
+ * only catalogue cards (approved, as imports wait in review, and homed in a published realm,
+ * so a draft or generating realm's cards never drop), and never restricted-licence art.
  */
-async function packPoolWhere(
+export async function packPoolWhere(
   tx: Prisma.TransactionClient,
-  pack: { cardType: string | null; season: number | null; themeFilter: unknown }
+  pack: { cardType: CardType | null; season: number | null; themeFilter: Prisma.JsonValue | null }
 ): Promise<Prisma.CardWhereInput> {
-  // Crafted cards carry CRAFTED_CARD_MARKER (crafting-rules.ts). Matched positively, as a NOT
-  // on a JSON path would also drop every card without metadata. Legacy crafts carry no
-  // marker, only the generic "Crafted via <recipe>" description.
+  // Cards crafted before crafting was retired carry `metadata.crafted` (or the old "Crafted via"
+  // description); they stay out of packs. Matched positively, as a NOT on a JSON path would also
+  // drop every card without metadata.
   const crafted = await tx.card.findMany({
     where: {
       OR: [
@@ -251,9 +280,10 @@ async function packPoolWhere(
   });
 
   const and: Prisma.CardWhereInput[] = [
-    { isRetired: false },
-    { cardType: { not: "SPECIAL" } },
-    EXCLUDE_TROPHY_CARDS,
+    CATALOGUE_WHERE,
+    // Special and Trophy cards never drop from packs (achievement and event rewards, Loreward and sports trophies)
+    { cardType: { notIn: [CardType.SPECIAL, CardType.TROPHY] } },
+    EXCLUDE_RESTRICTED_ART,
     ...themeFilterWhere(pack.themeFilter),
   ];
   if (pack.cardType) and.push({ cardType: pack.cardType });
@@ -262,154 +292,114 @@ async function packPoolWhere(
   return { AND: and };
 }
 
+/** Why a pack could not be claimed: missing or someone else's reads NOT_FOUND (ids can't be probed); else opened. */
+async function unclaimedPackError(
+  tx: Prisma.TransactionClient,
+  userPackId: string,
+  userId: string
+) {
+  const own = await tx.userPack.findFirst({
+    where: { id: userPackId, userId },
+    select: { id: true },
+  });
+  return own
+    ? new PackError("CONFLICT", "This pack has already been opened")
+    : new PackError("NOT_FOUND", "Pack not found");
+}
+
+type PoolPack = Parameters<typeof packPoolWhere>[1] &
+  PackOdds & { guaranteedRarity: string | null };
+
 /**
- * Open pack and generate card ownership records
- * Returns array of cards pulled from pack
+ * The pack's pool and its cards of each rarity, read in `tx`, with the rarities it gives odds for or guarantees that
+ * have no card. A pack never falls back to another rarity, so while any are missing it is not sold, put on sale,
+ * awarded or opened: it never undercuts its shown odds.
+ */
+export async function missingRarities(tx: Prisma.TransactionClient, pack: PoolPack) {
+  const where = await packPoolWhere(tx, pack);
+  const counts = await tierCounts(tx, where);
+  const missing = undeliverableRarities(pack, parseCardRarity(pack.guaranteedRarity), counts);
+  return { where, counts, missing };
+}
+
+/** The pack's pool and its cards of each rarity, refused (`refusal`) while a rarity it shows has no card (Q3). */
+async function deliverablePool(
+  tx: Prisma.TransactionClient,
+  pack: PoolPack,
+  refusal: (rarities: string) => string
+) {
+  const { where, counts, missing } = await missingRarities(tx, pack);
+  if (missing.length > 0) throw new PackError("PRECONDITION_FAILED", refusal(rarityList(missing)));
+  return { where, counts };
+}
+
+/**
+ * Opens a pack: claims it first (only one open can flip `isOpened`, so a second, concurrent open throws CONFLICT
+ * before anything is minted; cards refresh §5.4), checks capacity under the owner's lock, refuses a pool that can't
+ * give a rarity the pack shows, draws the whole pack, then mints each pulled card through `mintCopy`, which rolls its
+ * finish. One transaction: any failure, a full collection or an empty rarity included, leaves the pack unopened.
  */
 export async function openPack(db: PrismaClient, userId: string, userPackId: string) {
   return db.$transaction(async (tx) => {
-    // 1. Get UserPack with pack details
-    const userPack = await tx.userPack.findUnique({
+    const claimed = await tx.userPack.updateMany({
+      where: { id: userPackId, userId, isOpened: false },
+      data: { isOpened: true, openedAt: new Date() },
+    });
+    if (claimed.count !== 1) throw await unclaimedPackError(tx, userPackId, userId);
+    const { pack } = await tx.userPack.findUniqueOrThrow({
       where: { id: userPackId },
       include: { pack: true },
     });
 
-    // 2. Verify ownership (another user's pack reads as missing, so ids can't be probed)
-    if (!userPack || userPack.userId !== userId) {
-      throw new PackError("NOT_FOUND", "Pack not found");
-    }
-
-    // 3. Check if already opened
-    if (userPack.isOpened) {
-      throw new PackError("BAD_REQUEST", "Pack has already been opened");
-    }
-
-    // 3.5 Check inventory capacity limits
-    const config = await getVaultConfig(tx as any);
-    const user = await tx.user.findUnique({
-      where: { id: userId },
-      include: { role: true },
-    });
-    const userRoleLevel = user?.role?.level ?? 100;
-    const isExempt = config.exemptStaffFromLimit && userRoleLevel <= 20;
-
-    if (!isExempt) {
-      const capacityBoost = await vaultService.getCardCapacityBoost(userId, tx as any);
-      const maxCards = (await baseCardCapacity(tx)) + capacityBoost;
-      const currentCardsCount = await tx.cardOwnership.count({
-        where: { userId },
-      });
-      if (currentCardsCount + userPack.pack.cardCount > maxCards) {
+    try {
+      await assertCapacityTx(tx, userId, pack.cardCount);
+    } catch (error) {
+      if (error instanceof CapacityError) {
         throw new PackError(
           "PRECONDITION_FAILED",
-          `Your inventory is full. Maximum capacity is ${maxCards} cards. Purchase a Card Capacity Upgrade in the Store to hold more.`
+          "Your inventory is full. Purchase a Card Capacity Upgrade in the Store to hold more."
         );
       }
+      throw error;
     }
 
-    // 4. Generate card rarities based on pack odds
-    const rarities = generatePackCards(userPack.pack);
+    const { where, counts } = await deliverablePool(tx, pack, cannotOpen);
+    const drawer = createPoolDrawer(tx, where, counts);
+    const cards = [];
+    for (const rarity of generatePackCards(pack)) {
+      const card = await drawer.draw(rarity);
+      if (!card) throw new PackError("PRECONDITION_FAILED", cannotOpen(rarityList([rarity])));
+      cards.push(card);
+    }
 
-    // 5. Select actual cards from pool based on rarities
-    const poolWhere = await packPoolWhere(tx, userPack.pack);
-    const tierCounts = new Map<CardRarity, number>();
-    const countTier = async (rarity: CardRarity) => {
-      let count = tierCounts.get(rarity);
-      if (count === undefined) {
-        count = await tx.card.count({ where: { AND: [poolWhere, { rarity }] } });
-        tierCounts.set(rarity, count);
-      }
-      return count;
-    };
-
-    const cardsWithOwnership = [];
-    for (const rolled of rarities) {
-      // An empty tier falls back to the next-lower rarity; only when every lower tier is
-      // empty too does it reach upward, so a thin pool still opens.
-      const rank = rarityRank(rolled);
-      const tiers = [...RARITY_ORDER.slice(0, rank + 1).reverse(), ...RARITY_ORDER.slice(rank + 1)];
-      let rarity: CardRarity | null = null;
-      let cardCount = 0;
-      for (const tier of tiers) {
-        cardCount = await countTier(tier);
-        if (cardCount > 0) {
-          rarity = tier;
-          break;
-        }
-      }
-
-      if (!rarity) {
-        throw new PackError(
-          "PRECONDITION_FAILED",
-          "This pack has no cards available right now. Please try again later."
-        );
-      }
-
-      // Random offset for variety
-      const randomOffset = Math.floor(Math.random() * cardCount);
-
-      const card = await tx.card.findFirst({
-        where: { AND: [poolWhere, { rarity }] },
-        skip: randomOffset,
-        take: 1,
-      });
-
-      if (!card) {
-        throw new PackError("PRECONDITION_FAILED", `Failed to select a ${rarity} card`);
-      }
-
-      // 6. Create CardOwnership record
-      const maxSerial = await tx.cardOwnership.findFirst({
-        where: { cardId: card.id },
-        orderBy: { serialNumber: "desc" },
-        select: { serialNumber: true },
-      });
-      const nextSerial = (maxSerial?.serialNumber || 0) + 1;
-
-      const ownership = await tx.cardOwnership.create({
-        data: {
-          id: newCardOwnershipId(),
-          userId,
-          cardId: card.id,
-          ownerId: userId,
-          serialNumber: nextSerial,
-          level: 1,
-          experience: 0,
-        },
-      });
-
-      // Log provenance
-      const txAny = tx as any;
-      await txAny.cardTransferEvent.create({
-        data: {
-          ownershipId: ownership.id,
-          toUserId: userId,
-          action: "PACK_OPEN",
-        },
-      });
-
+    // mintCopy holds its per-card serial lock until commit, so mint in serial-lock order (`bySerialLockOrder`, as a
+    // deck import and a break-down lock): two transactions over the same cards in different orders would deadlock.
+    const pulled: Array<{ card: (typeof cards)[number]; ownershipId: string }> = new Array(
+      cards.length
+    );
+    const mintOrder = cards
+      .map((card, index) => ({ card, index }))
+      .sort((a, b) => bySerialLockOrder(a.card.id, b.card.id));
+    for (const { card, index } of mintOrder) {
+      const copy = await mintCopy(tx, { cardId: card.id, ownerId: userId, source: "PACK_OPEN" });
       await grantCardXp(
-        tx as any,
-        ownership.id,
-        10,
+        tx,
+        copy.id,
         "PACK_OPEN",
-        JSON.stringify({ packId: userPack.pack.id, packName: userPack.pack.name })
+        JSON.stringify({ packId: pack.id, packName: pack.name })
       );
-
-      cardsWithOwnership.push({ card, ownershipId: ownership.id });
+      pulled[index] = { card, ownershipId: copy.id };
     }
-
-    // 7. Mark pack as opened
-    await tx.userPack.update({
-      where: { id: userPackId },
-      data: {
-        isOpened: true,
-        openedAt: new Date(),
-      },
-    });
-
-    return cardsWithOwnership;
+    return pulled;
   });
+}
+
+/** The best rarity a pack pulled, in schema order (Epic above Ultra Rare); Common for none. */
+export function bestPulledRarity(cards: ReadonlyArray<{ rarity: string }>): CardRarity {
+  return cards.reduce<CardRarity>((best, card) => {
+    const rarity = parseCardRarity(card.rarity);
+    return rarity && rarityRank(rarity) > rarityRank(best) ? rarity : best;
+  }, "COMMON");
 }
 
 /**
@@ -428,7 +418,7 @@ export async function getAvailablePacks(db: PrismaClient) {
 }
 
 /**
- * Get user's packs (default: unopened only)
+ * A user's packs, newest first: every pack, opened or not, unless `isOpened` picks one side.
  */
 export async function getUserPacks(db: PrismaClient, userId: string, isOpened?: boolean) {
   return db.userPack.findMany({

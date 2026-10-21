@@ -191,8 +191,8 @@ describe("VaultHoldings (Your Vault)", () => {
   it("links Cards to the card hub with no figures", () => {
     render(<VaultHoldings />);
     const link = row(/^Cards/);
-    expect(link.getAttribute("href")).toBe("/vault/cards");
-    expect(link.textContent).toContain("Gallery, inventory and collections");
+    expect(link.getAttribute("href")).toBe("/vault/cards/mine");
+    expect(link.textContent).toContain("Mine, sets, market and explore");
     expect(link.textContent).not.toMatch(/\d/);
   });
 

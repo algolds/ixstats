@@ -1,17 +1,18 @@
 /**
  * Site-admin realm actions that end a realm (AT-8). Deleting is for realms created by mistake: it refuses Ixnay,
  * and any realm that still has nations or map regions. It never releases or moves a nation; a realm with nations
- * is archived instead (read-only, closed to claims). The one exception is a generated slot (`worldgen`) nobody
+ * is archived instead (read-only, closed to claims). It refuses system realms, and any realm that still has cards
+ * (`cards.realmId` restricts). The one exception is a generated slot (`worldgen`) nobody
  * owns or has a claim in play for: it goes with the realm.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
-import { isSiteAdmin, type RealmActor } from "./realms.access";
+import { isSiteAdmin, isSystemRealm, type RealmActor } from "./realms.access";
 import { RealmRegionError } from "./realms.region";
 
 type AdminDb = Pick<
   PrismaClient,
-  "realm" | "mapLayer" | "realmBoard" | "thinktankGroup" | "forumCategory" | "$transaction"
+  "realm" | "card" | "mapLayer" | "realmBoard" | "thinktankGroup" | "forumCategory" | "$transaction"
 >;
 
 const CLAIM_IN_PLAY = {
@@ -48,6 +49,8 @@ export async function deleteRealm(
     throw new RealmRegionError("FORBIDDEN", "Only site admins delete realms");
   if (input.realmId === DEFAULT_REALM_ID)
     throw new RealmRegionError("BAD_REQUEST", "Ixnay can't be deleted");
+  if (isSystemRealm({ id: input.realmId }))
+    throw new RealmRegionError("BAD_REQUEST", "System realms can't be deleted");
   const realm = await db.realm.findUnique({
     where: { id: input.realmId },
     select: {
@@ -74,6 +77,12 @@ export async function deleteRealm(
       "CONFLICT",
       `${realm.name} still has ${plural(regions, "map region", "map regions")}. Archive the realm instead, ` +
         "or remove its map first."
+    );
+  const cards = await db.card.count({ where: { realmId: realm.id } });
+  if (cards > 0)
+    throw new RealmRegionError(
+      "CONFLICT",
+      `${realm.name} still has ${plural(cards, "card", "cards")}. Archive the realm instead.`
     );
 
   await db.$transaction(async (tx) => {

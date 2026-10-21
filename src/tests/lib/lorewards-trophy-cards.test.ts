@@ -1,18 +1,27 @@
 /** @jest-environment node */
 /**
- * Loreward trophy cards: one one-of-one lore card per recorded place, held unowned until the place's account
- * can be told (a plain name's verified wiki link, or for a `wikios>` name the WikiOS account behind its edits).
- * Minting, granting and the backfill never write IxCredits.
+ * Loreward trophy cards: one one-of-one, bound Trophy card per recorded place, its copy Serialised, held unowned
+ * until the place's account can be told (a plain name's verified wiki link, or for a `wikios>` name the WikiOS
+ * account behind its edits). Minting, granting and the backfill never write IxCredits.
  */
+// `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factories rely on the ambient global.
+jest.mock("~/lib/cards/mint", () => ({ mintCopy: jest.fn() }));
+jest.mock("~/lib/cards/home-realm", () => ({
+  articleHomeRealm: jest.fn().mockResolvedValue("default"),
+}));
+
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { ConflictError } from "~/lib/app-error";
+import { mintCopy } from "~/lib/cards/mint";
 import { matches, storedEntry } from "~/tests/helpers/loreward-entry-store";
 import {
   backfillTrophyCards,
+  EXCLUDE_TROPHY_CARDS,
   grantUnownedTrophyCards,
   isTrophyCard,
   mintTrophyCards,
+  trophyCardText,
   trophyRarity,
 } from "~/lib/lorewards/trophy-cards";
 
@@ -43,16 +52,15 @@ interface CardRow {
 interface OwnershipRow {
   id: string;
   cardId: string;
-  userId: string;
   ownerId: string;
   serialNumber: number;
-  isLocked: boolean;
-  quantity: number;
 }
 
 let entries: EntryRow[];
 let cards: CardRow[];
 let ownerships: OwnershipRow[];
+/** The serials each card's transfer events record (they outlive a voided copy). */
+let trail: Array<{ cardId: string; serialNumber: number }>;
 let links: Map<string, string>;
 /** The authorIds of each page's edits under the queried label, by page title, as the place query groups them. */
 let winningEdits: Map<string, Array<string | null>>;
@@ -141,11 +149,16 @@ function buildDb(): PrismaClient {
     },
     card: {
       findMany: jest.fn(
-        async ({ where }: { where: CardWhere & { CardOwnership?: { none: object } } }) =>
+        async ({
+          where,
+        }: {
+          where: CardWhere & { CardOwnership?: { none: object }; isRetired?: boolean };
+        }) =>
           cards.filter(
             (c) =>
               c.lorewardEntryId !== null &&
               inContestPlace(c, where) &&
+              (where.isRetired === undefined || (c.isRetired ?? false) === where.isRetired) &&
               (!where.CardOwnership || !ownerships.some((o) => o.cardId === c.id))
           )
       ),
@@ -197,12 +210,14 @@ function buildDb(): PrismaClient {
           }).length
       ),
       findFirst: jest.fn(async ({ where }: { where: { cardId: string } }) => {
-        const mine = ownerships.filter((o) => o.cardId === where.cardId);
-        return mine.length ? { serialNumber: Math.max(...mine.map((o) => o.serialNumber)) } : null;
+        const serials = ownersOf(where.cardId).map((o) => o.serialNumber);
+        return serials.length > 0 ? { serialNumber: Math.max(...serials) } : null;
       }),
-      create: jest.fn(async ({ data }: { data: OwnershipRow }) => {
-        ownerships.push(data);
-        return data;
+    },
+    cardTransferEvent: {
+      findFirst: jest.fn(async ({ where }: { where: { cardId: string } }) => {
+        const serials = trail.filter((t) => t.cardId === where.cardId).map((t) => t.serialNumber);
+        return serials.length > 0 ? { serialNumber: Math.max(...serials) } : null;
       }),
     },
     vaultTransaction: { create: credit("vaultTransaction.create") },
@@ -218,10 +233,27 @@ function buildDb(): PrismaClient {
 let db: PrismaClient;
 const ownersOf = (cardId: string) => ownerships.filter((o) => o.cardId === cardId);
 
+/**
+ * Runs every transaction on a client distinct from `db`, sharing its cards and copies but with its own entry reads
+ * (and any `delegates` given): they see `inLock`, what an override wrote while the run waited for the lock, while the
+ * run's listing through `db` still sees `entries`. A re-check made on `db` would read the listing and miss the change.
+ */
+function distinctTx(inLock: EntryRow[], delegates: Record<string, object> = {}) {
+  const reread = jest.fn(async ({ where }: { where: Parameters<typeof matches>[1] }) =>
+    inLock.filter((e) => matches(storedEntry(e), where))
+  );
+  const tx = Object.assign({}, db, { lorewardEntry: { findMany: reread } }, delegates);
+  (db as unknown as { $transaction: jest.Mock }).$transaction.mockImplementation(
+    async <T>(fn: (client: typeof tx) => Promise<T>) => fn(tx)
+  );
+  return { reread, listing: db.lorewardEntry.findMany as unknown as jest.Mock };
+}
+
 beforeEach(() => {
   entries = [entry()];
   cards = [];
   ownerships = [];
+  trail = [];
   links = new Map();
   winningEdits = new Map();
   placeQueries = [];
@@ -229,12 +261,25 @@ beforeEach(() => {
   failNextCardCreate = false;
   failNextCardCreateAsConflict = false;
   db = buildDb();
+  // The real mintCopy (Task 4) is tested on its own; here it records the copy it would create.
+  jest.mocked(mintCopy).mockReset();
+  jest.mocked(mintCopy).mockImplementation(async (_tx, input) => {
+    const serialNumber = ownersOf(input.cardId).length + 1;
+    ownerships.push({
+      id: `o${ownerships.length + 1}`,
+      cardId: input.cardId,
+      ownerId: input.ownerId,
+      serialNumber,
+    });
+    return { id: `o${ownerships.length}` } as Awaited<ReturnType<typeof mintCopy>>;
+  });
 });
 
-describe("isTrophyCard", () => {
-  it("is true for a card stamped with a Loreward entry and false otherwise", () => {
-    expect(isTrophyCard({ lorewardEntryId: "e1" })).toBe(true);
-    expect(isTrophyCard({ lorewardEntryId: null })).toBe(false);
+describe("trophy exclusion", () => {
+  it("leaves every trophy out, Loreward or sports, by type", () => {
+    expect(EXCLUDE_TROPHY_CARDS).toEqual({ cardType: { not: "TROPHY" } });
+    expect(isTrophyCard({ cardType: "TROPHY" })).toBe(true);
+    expect(isTrophyCard({ cardType: "LORE" })).toBe(false);
   });
 });
 
@@ -249,8 +294,23 @@ describe("trophyRarity", () => {
   });
 });
 
+describe("trophyCardText", () => {
+  it("names the card after the page, or the contest when there is none", () => {
+    expect(trophyCardText("weekly", "2026-10-20", "winner", "Amy", "Elm_Republic")).toEqual({
+      title: "Elm_Republic",
+      description: "Weekly Loreward winner, 2026-10-20. Won by Amy with Elm_Republic.",
+      wikiArticleTitle: "Elm Republic",
+    });
+    expect(trophyCardText("daily", "2026-10-20", "runner-up", "Bee", null)).toEqual({
+      title: "Daily Loreward 2026-10-20",
+      description: "Daily Loreward runner-up, 2026-10-20. Won by Bee.",
+      wikiArticleTitle: null,
+    });
+  });
+});
+
 describe("mintTrophyCards", () => {
-  it("mints one one-of-one lore card per recorded place of the entry", async () => {
+  it("mints one one-of-one, bound Trophy card per recorded place of the entry", async () => {
     entries = [entry({ runnerUpUser: "Urcea", runnerUpPage: "Caballian Wars" })];
 
     expect(await mintTrophyCards(db)).toEqual({ minted: 2 });
@@ -261,7 +321,9 @@ describe("mintTrophyCards", () => {
     ]);
     expect(cards[0]).toMatchObject({
       title: "Seneca front",
-      cardType: "LORE",
+      cardType: "TROPHY",
+      isBound: true,
+      realmId: "default",
       rarity: "RARE",
       totalSupply: 1,
       season: 3,
@@ -324,7 +386,7 @@ describe("mintTrophyCards", () => {
     entries = [entry({ winnerUser: "wikios>Kir_Republic" })];
     winningEdits.set("Seneca front", ["u2"]);
     await mintTrophyCards(db);
-    expect(ownersOf("c1")).toEqual([expect.objectContaining({ userId: "u2", serialNumber: 1 })]);
+    expect(ownersOf("c1")).toEqual([expect.objectContaining({ ownerId: "u2", serialNumber: 1 })]);
     expect(placeQueries).toEqual([{ author: "Kir_Republic", title: "Seneca front" }]);
   });
 
@@ -334,20 +396,18 @@ describe("mintTrophyCards", () => {
     expect(ownersOf("c1")).toEqual([]);
   });
 
-  it("gives a linked winner an unlocked, tradeable copy as serial 1", async () => {
+  it("gives a linked winner a Serialised copy through mintCopy", async () => {
     links.set("Kir Republic", "u1");
 
     await mintTrophyCards(db);
 
-    expect(ownersOf("c1")).toEqual([
-      expect.objectContaining({
-        userId: "u1",
-        ownerId: "u1",
-        serialNumber: 1,
-        quantity: 1,
-        isLocked: false,
-      }),
-    ]);
+    expect(jest.mocked(mintCopy)).toHaveBeenCalledWith(expect.anything(), {
+      cardId: "c1",
+      ownerId: "u1",
+      finish: "SERIALISED",
+      source: "TROPHY",
+    });
+    expect(ownersOf("c1")).toEqual([expect.objectContaining({ ownerId: "u1", serialNumber: 1 })]);
     expect(cards[0]?.metadata).toMatchObject({ grantedTo: "u1" });
   });
 
@@ -382,13 +442,32 @@ describe("grantUnownedTrophyCards", () => {
     expect(ownerships).toEqual([]);
   });
 
+  it("takes the per-card lock, after the contest place's, before it looks at the card or its owners", async () => {
+    links.set("Kir Republic", "u1");
+
+    await grantUnownedTrophyCards(db);
+
+    const raw = jest.mocked(db.$executeRaw as unknown as jest.Mock);
+    const serialLock = raw.mock.calls.findIndex(([, space, key]) => space === 7331 && key === "c1");
+    const cardLock = raw.mock.invocationCallOrder[serialLock];
+    expect(cardLock).toBeDefined();
+    // The grant's contest-place lock (7332) is taken first; the card's serial lock (7331) never before it.
+    expect(contestLockOrder(db)[1]).toBeLessThan(cardLock!);
+    expect(cardLock).toBeLessThan(firstCall(db.cardOwnership.count)!);
+    expect(cardLock).toBeLessThan(firstCall(db.card.findUnique)!);
+  });
+
   it("grants the card once after a link appears", async () => {
     links.set("Kir Republic", "u1");
 
     expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 1 });
-    expect(ownersOf("c1")).toEqual([
-      expect.objectContaining({ userId: "u1", ownerId: "u1", serialNumber: 1, isLocked: false }),
-    ]);
+    expect(jest.mocked(mintCopy)).toHaveBeenCalledWith(expect.anything(), {
+      cardId: "c1",
+      ownerId: "u1",
+      finish: "SERIALISED",
+      source: "TROPHY",
+    });
+    expect(ownersOf("c1")).toEqual([expect.objectContaining({ ownerId: "u1", serialNumber: 1 })]);
 
     expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
     expect(ownersOf("c1")).toHaveLength(1);
@@ -399,7 +478,7 @@ describe("grantUnownedTrophyCards", () => {
     winningEdits.set("Seneca front", ["u2", "u2"]);
 
     expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 1 });
-    expect(ownersOf("c1")).toEqual([expect.objectContaining({ userId: "u2", serialNumber: 1 })]);
+    expect(ownersOf("c1")).toEqual([expect.objectContaining({ ownerId: "u2", serialNumber: 1 })]);
   });
 
   it("grants nothing for a plain name without a link, or for a label two accounts share", async () => {
@@ -438,15 +517,7 @@ describe("grantUnownedTrophyCards", () => {
     const original = findMany;
     findMany.mockImplementationOnce(async (args) => {
       const listed = await original(args);
-      ownerships.push({
-        id: "o",
-        cardId: "c1",
-        userId: "u9",
-        ownerId: "u9",
-        serialNumber: 1,
-        isLocked: false,
-        quantity: 1,
-      });
+      ownerships.push({ id: "o", cardId: "c1", ownerId: "u9", serialNumber: 1 });
       return listed;
     });
 
@@ -458,6 +529,29 @@ describe("grantUnownedTrophyCards", () => {
     links.set("Kir Republic", "u1");
     await grantUnownedTrophyCards(db);
     expect(creditWrites).toEqual([]);
+  });
+
+  it("grants a trophy its place gave up again under its serial, reissued, never a second one", async () => {
+    // An override voided the copy (serial 1 lives on in the trail) and cleared the grant
+    trail.push({ cardId: "c1", serialNumber: 1 });
+    links.set("Kir Republic", "u1");
+
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 1 });
+    expect(jest.mocked(mintCopy)).toHaveBeenCalledWith(expect.anything(), {
+      cardId: "c1",
+      ownerId: "u1",
+      finish: "SERIALISED",
+      source: "TROPHY",
+      serialNumber: 1,
+    });
+  });
+
+  it("grants no retired trophy: a voided place waits for an override to fill it again", async () => {
+    cards[0]!.isRetired = true;
+    links.set("Kir Republic", "u1");
+
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
+    expect(ownerships).toEqual([]);
   });
 });
 
@@ -482,7 +576,7 @@ const legacyCard = (id: string, entryId: string): CardRow =>
     lorewardEdition: "winner",
     title: "Seneca front",
     rarity: "EPIC",
-    cardType: "LORE",
+    cardType: "TROPHY",
     totalSupply: 1,
     wikiArticleTitle: "Seneca front",
     metadata: { contest: "weekly", place: "winner", entryId, wikiUser: "Kir_Republic" },
@@ -527,6 +621,72 @@ describe("trophy cards of a contest stored twice", () => {
   });
 });
 
+describe("trophy cards when an override writes the place while a run waits", () => {
+  it("mints nothing for a holder the place no longer records once the lock is held", async () => {
+    links.set("Kir Republic", "u1");
+    const { reread } = distinctTx([entry({ winnerUser: "Cy" })]);
+
+    expect(await mintTrophyCards(db)).toEqual({ minted: 0 });
+    expect(cards).toEqual([]);
+    expect(reread).toHaveBeenCalledTimes(1);
+  });
+
+  it("mints when the transaction's re-read still records the listed holder", async () => {
+    links.set("Kir Republic", "u1");
+    const { reread, listing } = distinctTx([entry()]);
+
+    expect(await mintTrophyCards(db)).toEqual({ minted: 1 });
+    expect(ownersOf("c1")).toEqual([expect.objectContaining({ ownerId: "u1" })]);
+    expect(reread).toHaveBeenCalledTimes(1);
+    // The root client only listed the contests
+    expect(listing).toHaveBeenCalledTimes(1);
+  });
+
+  it("grants nothing to the listed holder once the place records another", async () => {
+    await mintTrophyCards(db);
+    links.set("Kir Republic", "u1");
+    const { reread } = distinctTx([entry({ winnerUser: "Cy" })]);
+
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
+    expect(ownerships).toEqual([]);
+    expect(reread).toHaveBeenCalledTimes(1);
+  });
+
+  it("grants nothing once the place records nobody", async () => {
+    await mintTrophyCards(db);
+    links.set("Kir Republic", "u1");
+    const { reread } = distinctTx([entry({ winnerUser: null, winnerPage: null })]);
+
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
+    expect(ownerships).toEqual([]);
+    expect(reread).toHaveBeenCalledTimes(1);
+  });
+
+  it("grants nothing for a card retired after it was listed", async () => {
+    await mintTrophyCards(db);
+    links.set("Kir Republic", "u1");
+    // Only the transaction's read sees the card retired
+    const retiredRead = jest.fn(async (_args: object) => ({ ...cards[0], isRetired: true }));
+    distinctTx([entry()], { card: { ...db.card, findUnique: retiredRead } });
+
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
+    expect(ownerships).toEqual([]);
+    expect(retiredRead).toHaveBeenCalledWith({
+      where: { id: "c1" },
+      select: { metadata: true, isRetired: true },
+    });
+  });
+
+  it("grants when the transaction's re-read still records the listed holder", async () => {
+    await mintTrophyCards(db);
+    links.set("Kir Republic", "u1");
+    const { reread } = distinctTx([entry()]);
+
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 1 });
+    expect(reread).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("trophy cards under the contest place lock", () => {
   it("takes the contest place's lock, by its identity key, before each re-check", async () => {
     await mintTrophyCards(db);
@@ -539,6 +699,23 @@ describe("trophy cards under the contest place lock", () => {
     expect(contestLocks(db)).toEqual(["daily:2026-10-16:winner", "daily:2026-10-16:winner"]);
     // The grant's in-lock re-check (is a card of the place owned?) runs after its lock.
     expect(contestLockOrder(db)[1]).toBeLessThan(firstCall(db.cardOwnership.count)!);
+  });
+
+  it("mints a linked winner's copy through mintCopy only after the lock and its re-check", async () => {
+    links.set("Kir Republic", "u1");
+    await mintTrophyCards(db);
+    const [copy] = jest.mocked(mintCopy).mock.invocationCallOrder;
+    expect(contestLockOrder(db)[0]).toBeLessThan(firstCall(db.card.count)!);
+    expect(firstCall(db.card.count)!).toBeLessThan(copy!);
+  });
+
+  it("grants the copy through mintCopy only after the lock and its re-check", async () => {
+    await mintTrophyCards(db);
+    links.set("Kir Republic", "u1");
+    await grantUnownedTrophyCards(db);
+    const [copy] = jest.mocked(mintCopy).mock.invocationCallOrder;
+    expect(contestLockOrder(db)[1]).toBeLessThan(firstCall(db.cardOwnership.count)!);
+    expect(firstCall(db.cardOwnership.count)!).toBeLessThan(copy!);
   });
 
   it("mints nothing when the lock's re-read finds a twin's card this run never listed", async () => {
@@ -569,15 +746,7 @@ describe("trophy cards under the contest place lock", () => {
     const findMany = db.card.findMany as unknown as jest.Mock;
     findMany.mockImplementationOnce(async () => {
       const listed = cards.map((card) => ({ ...card }));
-      ownerships.push({
-        id: "o-other",
-        cardId: "c-ool",
-        userId: "u1",
-        ownerId: "u1",
-        serialNumber: 1,
-        isLocked: false,
-        quantity: 1,
-      });
+      ownerships.push({ id: "o-other", cardId: "c-ool", ownerId: "u1", serialNumber: 1 });
       return listed;
     });
     expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
@@ -618,7 +787,7 @@ describe("backfillTrophyCards", () => {
 
     expect(report).toMatchObject({ minted: 4, granted: 0 });
     expect(cards).toHaveLength(4);
-    expect(ownerships.map((o) => o.userId)).toEqual(["u1", "u1", "u1"]);
+    expect(ownerships.map((o) => o.ownerId)).toEqual(["u1", "u1", "u1"]);
     expect(creditWrites).toEqual([]);
   });
 

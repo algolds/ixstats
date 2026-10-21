@@ -107,8 +107,8 @@ export function VaultHoldings() {
         <FacetListSection aria-label="Your Vault">
           <AchievementsHome />
           <LorewardsHome />
-          <Home href="/vault/cards" title="Cards" icon={<MultiplePages />}>
-            <span>Gallery, inventory and collections</span>
+          <Home href="/vault/cards/mine" title="Cards" icon={<MultiplePages />}>
+            <span>Mine, sets, market and explore</span>
           </Home>
           <StoreHome />
         </FacetListSection>

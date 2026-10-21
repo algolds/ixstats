@@ -11,6 +11,12 @@ describe("activitySourceLabel", () => {
     ["DAILY_LOGIN_CREDITS", "Daily reward"],
     ["P2P_TRADE", "Player trade"],
     ["auction_bid_reserve", "Auction bid reserved"],
+    ["card_sale_listing", "Card sold by listing"],
+    ["card_purchase_listing", "Card bought from a listing"],
+    ["listing_fee", "Listing fee"],
+    ["listing_fee_refund", "Listing fee refund"],
+    ["card_craft", "Card crafted"],
+    ["nation_card_royalty", "Nation card royalty"],
     ["forum_action", "Action posted in the forum"],
     ["exploit_correction:repeat_one_time_bonus", "Balance correction"],
   ])("maps %s to %s", (source, label) => {

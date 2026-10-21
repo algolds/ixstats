@@ -45,6 +45,11 @@ describe("isAllowedByPreferences", () => {
     expect(isAllowedByPreferences(p, "diplomatic", "high")).toBe(true);
   });
 
+  it("files pack notices under the economic alerts switch", () => {
+    expect(isAllowedByPreferences(prefs({ economicAlerts: false }), "packs", "high")).toBe(false);
+    expect(isAllowedByPreferences(DEFAULT_RECIPIENT_PREFERENCES, "packs", "high")).toBe(true);
+  });
+
   it("does not filter categories without a toggle", () => {
     const p = prefs({ economicAlerts: false, systemAlerts: false });
     expect(isAllowedByPreferences(p, "social", "low")).toBe(true);

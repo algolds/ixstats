@@ -10,7 +10,7 @@ nextLabel: Auctions & Trading
 
 ## What the shop sells
 
-Besides [card packs](/help/vault/card-packs), the **Vault Shop** sells items for [IxCredits](/help/vault/ixcredits). Open [Vault → Store](/vault/store?tab=store) → **Vault Shop**. Items are on two tabs:
+Besides [card packs](/help/vault/card-packs), the Vault's **Store** sells items for [IxCredits](/help/vault/ixcredits). Open [Vault → Store](/vault/store?view=cosmetics). Items are on two of its tabs:
 
 - **Cosmetics**: profile decorations such as glows, frames and badges. You buy each one once.
 - **Account upgrades**: permanent upgrades and tokens. Upgrades can be bought more than once; the card shows how many you own ("Owned x2").
@@ -40,7 +40,7 @@ The **Archetype Proposal Token** has been retired: it never did anything in the 
 
 ### Card capacity
 
-You can hold 150 cards by default, plus any capacity boosts. Your Vault dashboard shows your count against your capacity. When a pack would take you over it, the pack won't open until you make room (recycle, auction or trade cards) or buy a boost. Staff accounts may be exempt.
+You can hold 150 cards by default, plus any capacity boosts. Your Vault dashboard shows your count against your capacity. When a pack would take you over it, the pack won't open until you make room (sell, trade or break down cards) or buy a boost. The daily card and crafting need room too. Staff accounts may be exempt.
 
 ## Cosmetics
 

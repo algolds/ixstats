@@ -238,7 +238,7 @@ describe("Vault app", () => {
       ["daily-reward", "Daily reward", "/vault"],
       ["achievements", "Achievements", "/vault/achievements"],
       ["leaderboards", "Leaderboards", "/leaderboards"],
-      ["cards", "Cards", "/vault/cards"],
+      ["cards", "Cards", "/vault/cards/mine"],
       ["store", "Store", "/vault/store"],
     ]);
   });
@@ -248,19 +248,16 @@ describe("Vault app", () => {
       getApp("vault").sections.map((section) => [section.id, section.match])
     );
     expect(matches.achievements).toEqual(["/vault/achievements"]);
-    expect(matches.cards).toEqual([
-      "/vault/inventory",
-      "/vault/collections",
-      "/vault/lore-gallery",
-      "/vault/ns-library",
-      "/vault/ns-deck",
-      "/vault/import",
-    ]);
+    // The old card and Store addresses redirect in src/proxy.ts, so no row needs to match them.
+    expect(matches.cards).toEqual(["/vault/cards", "/vault/import"]);
     expect(matches.store).toBeUndefined();
   });
 
   it.each([
-    ["/vault/collections", "cards"],
+    ["/vault/cards/mine", "cards"],
+    ["/vault/cards/sets", "cards"],
+    ["/vault/cards/market", "cards"],
+    ["/vault/cards/explore", "cards"],
     ["/vault/import", "cards"],
     ["/vault/store", "store"],
     ["/vault/achievements", "achievements"],
@@ -335,7 +332,8 @@ describe("app section map resolvers", () => {
     expect(getActiveSectionId(mycountry, "/mycountry", null)).toBe("overview");
     expect(getActiveSectionId(mycountry, "/mycountry/economy", null)).toBe("economy");
     const vault = getApp("vault");
-    expect(getActiveSectionId(vault, "/vault/inventory", null)).toBe("cards");
+    expect(getActiveSectionId(vault, "/vault/cards/market", null)).toBe("cards");
+    expect(getActiveSectionId(vault, "/vault/store", null)).toBe("store");
   });
 
   it("resolves wiki aliases", () => {

@@ -47,7 +47,7 @@ const NO_LEDGER_WRITES = [
   "src/server/api/routers/realms/index.ts",
   "src/server/modules/thinkpages-forum/writes.ts",
   "src/server/modules/thinkpages-forum/board-writes.ts",
-  "src/lib/lorewards/card-value-cron.ts",
+  "src/server/modules/cards/market-values.ts",
   "src/lib/exchange/queries.ts",
 ];
 const LEDGER_USE =

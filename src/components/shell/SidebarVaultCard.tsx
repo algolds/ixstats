@@ -26,7 +26,7 @@ import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 const formatCredits = (amount: number) => Math.round(amount).toLocaleString();
 
 const VAULT_LINKS = [
-  { href: "/vault/cards", label: "Cards" },
+  { href: "/vault/cards/mine", label: "Cards" },
   { href: "/vault/store", label: "Store" },
   { href: "/vault/achievements", label: "Achievements" },
 ] as const;

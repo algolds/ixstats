@@ -106,22 +106,14 @@ async function onAchievementUnlock(params: {
   name: string;
   description: string;
   category: string;
-  rarity?: "common" | "rare" | "epic" | "legendary";
 }) {
   if (!(await guardNotificationEvent("onAchievementUnlock"))) return;
-  const rarityEmojis = {
-    common: "🥉",
-    rare: "🥈",
-    epic: "🥇",
-    legendary: "💎",
-  };
 
-  const emoji = rarityEmojis[params.rarity || "common"];
-
+  // Named by its title alone, with no rarity glyph to go missing for a rarity a table leaves out.
   await notificationAPI.trigger({
     achievement: {
       key: params.achievementId,
-      name: `${emoji} ${params.name}`,
+      name: params.name,
       description: params.description,
       category: params.category,
       userId: params.userId,

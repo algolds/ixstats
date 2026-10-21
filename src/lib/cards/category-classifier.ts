@@ -287,7 +287,6 @@ const SPECIFICITY_RANK: Record<LoreCategoryType, number> = {
   [LoreCategory.HISTORY]: 10,
   [LoreCategory.NATION]: 11,
   [LoreCategory.SPECIAL]: 12,
-  [LoreCategory.NS_IMPORT]: 99,
 };
 
 /**
@@ -365,7 +364,6 @@ export function classifyLoreArticle(input: ArticleClassificationInput): LoreCate
 
   for (const [catStr, synonyms] of Object.entries(CATEGORY_SYNONYMS)) {
     const cat = catStr as LoreCategoryType;
-    if (cat === LoreCategory.NS_IMPORT) continue;
 
     let synHits = 0;
     for (const word of synonyms) {
@@ -410,19 +408,4 @@ export function classifyLoreArticle(input: ArticleClassificationInput): LoreCate
 
   // If no signals scored at all, default to NATION
   return highestScore > 0 ? highestCategory : LoreCategory.NATION;
-}
-
-/**
- * Fast one-line classification helper from wikitext string.
- */
-export function classifyFromWikitext(
-  wikitext: string | null | undefined,
-  title?: string | null,
-  categories?: string[]
-): LoreCategoryType {
-  return classifyLoreArticle({
-    text: wikitext,
-    title,
-    categories,
-  });
 }

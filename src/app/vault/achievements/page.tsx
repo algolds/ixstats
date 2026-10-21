@@ -36,7 +36,8 @@ export default function VaultAchievementsPage() {
   }, [hasProfile, userProfile?.countryId, syncAchievements]);
 
   return (
-    <div className="space-y-6">
+    // pt-14: the tabs are the first row and the page has no header toolbar, so it clears Halo's floating band itself.
+    <div className="space-y-6 pt-14">
       {/* The page's title for assistive tech; the sidebar's Achievements row names it on screen. */}
       <h1 className="sr-only">Achievements</h1>
       <AchievementsTabs

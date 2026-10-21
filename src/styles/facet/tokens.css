@@ -282,12 +282,13 @@
   --color-theme-amethyst: #7e22ce;
   --color-theme-slate: #334155;
 
-  --color-rarity-common: #60a5fa;
-  --color-rarity-uncommon: #34d399;
-  --color-rarity-rare: #a855f7;
-  --color-rarity-ultra-rare: #c084fc;
-  --color-rarity-epic: #fbbf24;
-  --color-rarity-legendary: #ffd700;
+  /* Card rarity: content art, the same in both themes (CARD_RARITY_HEX in src/lib/design/tokens.ts). */
+  --color-rarity-common: #94a3b8;
+  --color-rarity-uncommon: #10b981;
+  --color-rarity-rare: #3b82f6;
+  --color-rarity-ultra-rare: #06b6d4;
+  --color-rarity-epic: #a855f7;
+  --color-rarity-legendary: #eab308;
 
   --color-gold-50: #fffbeb;
   --color-gold-100: #fef3c7;
@@ -518,12 +519,6 @@
     --color-theme-crimson: #dc2626;
     --color-theme-amethyst: #9333ea;
     --color-theme-slate: #475569;
-    --color-rarity-common: #3b82f6;
-    --color-rarity-uncommon: #10b981;
-    --color-rarity-rare: #8b5cf6;
-    --color-rarity-ultra-rare: #a855f7;
-    --color-rarity-epic: #d97706;
-    --color-rarity-legendary: #b45309;
   }
 
   /* App tints. Each scope sets its palette; the generic rules below derive

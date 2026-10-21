@@ -1,7 +1,7 @@
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { scoredEditsAccount } from "~/lib/lorewards/resolve-user";
 import { scoreDailyWikiOS } from "~/lib/lorewards/scoring";
-import { EXCLUDE_TROPHY_CARDS } from "~/lib/lorewards/trophy-cards";
+import { deckValuesByOwner } from "~/lib/cards/copy-value";
 import {
   DIVIDEND,
   computeDividend,
@@ -18,7 +18,7 @@ import { readConfigKeys, writeConfigKeys } from "~/server/shared/config-kv";
 type Counts = Map<string, number>;
 type DayRange = { gte: Date; lt: Date };
 
-const CARD_SALE_SOURCES = ["card_sale_auction", "card_sale_buyout"];
+const CARD_SALE_SOURCES = ["card_sale_auction", "card_sale_buyout", "card_sale_listing"];
 const DIVIDEND_SOURCE = "VAULT_DIVIDEND";
 /** SystemConfig key holding the first day the dividend settled (`yyyy-mm-dd`); no earlier day is ever settled. */
 const DIVIDEND_START_KEY = "vault_dividend_started_on";
@@ -94,7 +94,7 @@ async function loadPacksOpened(db: PrismaClient, range: DayRange): Promise<Count
 /** An accepted trade counts for both sides. */
 async function loadTradesCompleted(db: PrismaClient, range: DayRange): Promise<Counts> {
   const counts: Counts = new Map();
-  const where = { status: "ACCEPTED", respondedAt: range };
+  const where: Prisma.TradeOfferWhereInput = { status: "ACCEPTED", respondedAt: range };
   const asInitiator = await db.tradeOffer.groupBy({
     by: ["initiatorId"],
     where,
@@ -121,15 +121,9 @@ async function loadListingsSold(db: PrismaClient, range: DayRange): Promise<Coun
   return counts;
 }
 
-/** Each owner's card deck value now (market value x quantity; retired and Loreward trophy cards excluded). */
+/** Each owner's deck value now: per-copy values over every live copy (retired and trophy cards excluded). */
 async function loadDeckValues(db: PrismaClient): Promise<Counts> {
-  const owned = await db.cardOwnership.findMany({
-    where: { cards: { isRetired: false, ...EXCLUDE_TROPHY_CARDS } },
-    select: { ownerId: true, quantity: true, cards: { select: { marketValue: true } } },
-  });
-  const values: Counts = new Map();
-  for (const o of owned) add(values, o.ownerId, o.cards.marketValue * o.quantity);
-  return values;
+  return deckValuesByOwner(db, { excludeTypes: ["TROPHY"] });
 }
 
 /** The streak still in force on `day`: a login the day before or later keeps it, otherwise it has lapsed. */

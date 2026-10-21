@@ -41,7 +41,7 @@ All routes below render `AdminRouter`; the section panel is chosen by `AdminRout
 | `military-equipment/` | Equipment catalog (`MilitaryEquipmentPanel`) |
 | `npc-personalities/` | NPC personality traits / archetypes |
 | `intelligence-templates/` | Intelligence briefing templates |
-| `cards/` | Vault card management, NS card import (`CardImportStudio`), lore card batch generator (`LoreCardBatchAdmin`) |
+| `cards/` | The card admin's tabs (`CardsPanel`): library, imports (the wiki importer and NationStates), curation, packs, economy, seasons, compliance and the designer |
 | `vault/` | IxVault administration |
 | `stash/` | Stash settings |
 | `polls/` | Polls management |

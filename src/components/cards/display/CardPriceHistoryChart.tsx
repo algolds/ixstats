@@ -53,17 +53,17 @@ export const CardPriceHistoryChart: React.FC<CardPriceHistoryChartProps> = ({ ca
     <div className="h-48 w-full pr-4 select-none">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-separator)" vertical={false} />
           <XAxis
             dataKey="date"
-            stroke="#94a3b8"
+            stroke="var(--color-label-secondary)"
             fontSize={9}
             tickLine={false}
             axisLine={false}
             dy={8}
           />
           <YAxis
-            stroke="#94a3b8"
+            stroke="var(--color-label-secondary)"
             fontSize={9}
             tickLine={false}
             axisLine={false}
@@ -72,13 +72,17 @@ export const CardPriceHistoryChart: React.FC<CardPriceHistoryChartProps> = ({ ca
           />
           <Tooltip
             contentStyle={{
-              background: "rgba(15, 23, 42, 0.9)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              borderRadius: "8px",
-              boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.3)",
+              background: "var(--color-surface-elevated)",
+              border: "1px solid var(--color-separator)",
+              borderRadius: "var(--radius-control-sm)",
+              boxShadow: "var(--shadow-floating)",
             }}
-            labelStyle={{ color: "var(--color-text-muted)", fontSize: "10px", fontWeight: "bold" }}
-            itemStyle={{ color: "var(--color-info-light)", fontSize: "11px", fontWeight: "black" }}
+            labelStyle={{
+              color: "var(--color-label-secondary)",
+              fontSize: "10px",
+              fontWeight: 600,
+            }}
+            itemStyle={{ color: "var(--color-label)", fontSize: "11px", fontWeight: 600 }}
             formatter={(value) => [`${value} Credits`, "Value"]}
           />
           <Line
@@ -90,11 +94,11 @@ export const CardPriceHistoryChart: React.FC<CardPriceHistoryChartProps> = ({ ca
               r: 3,
               stroke: "var(--color-warning)",
               strokeWidth: 1,
-              fill: "var(--color-bg-primary)",
+              fill: "var(--color-surface-elevated)",
             }}
             activeDot={{
               r: 5,
-              stroke: "var(--color-warning-light)",
+              stroke: "var(--color-surface-elevated)",
               strokeWidth: 2,
               fill: "var(--color-warning)",
             }}

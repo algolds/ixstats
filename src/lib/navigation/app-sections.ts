@@ -292,26 +292,15 @@ export const APPS: readonly AppDefinition[] = [
       },
       // The nation boards (GDP, population, density, growth); achievement points rank on Achievements.
       { id: "leaderboards", label: "Leaderboards", href: "/leaderboards", icon: Leaderboard },
+      // The hub's four tabs and the NationStates import; the old card and Store addresses redirect in src/proxy.ts.
       {
         id: "cards",
         label: "Cards",
-        href: "/vault/cards",
+        href: "/vault/cards/mine",
         icon: MultiplePages,
-        match: [
-          "/vault/inventory",
-          "/vault/collections",
-          "/vault/lore-gallery",
-          "/vault/ns-library",
-          "/vault/ns-deck",
-          "/vault/import",
-        ],
+        match: ["/vault/cards", "/vault/import"],
       },
-      {
-        id: "store",
-        label: "Store",
-        href: "/vault/store",
-        icon: Cart,
-      },
+      { id: "store", label: "Store", href: "/vault/store", icon: Cart },
     ],
   },
   {
@@ -476,7 +465,7 @@ export const APPS: readonly AppDefinition[] = [
         ["image-repo", "Image repository", "/admin/image-repo", MediaImage],
         ["stash", "Stash", "/admin/stash", Folder],
         ["vault", "Vault & IxCredits", "/admin/vault", Coins],
-        ["cards", "Card packs & lore", "/admin/cards", Package],
+        ["cards", "Cards", "/admin/cards", Package],
         ["achievements", "Achievements", "/admin/achievements", Medal],
         ["thinkpages", "ThinkPages", "/admin/thinkpages", ChatLines],
         ["blurbs", "Blurbs & prompts", "/admin/blurbs", ChatBubble],

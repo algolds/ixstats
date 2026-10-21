@@ -11,9 +11,19 @@
  * Dumps rather than dozens/hundreds/thousands of real-time API requests."
  */
 
-import { type PrismaClient } from "@prisma/client";
+import type { Card, Prisma, PrismaClient } from "@prisma/client";
 import { nsApiClient, type NSCard } from "./api-client";
-import { computeCardValue, getValuationConfig } from "~/lib/cards/valuation";
+import { getValuationConfig, referenceValue } from "~/lib/cards/valuation";
+import { CardRarity, CardType, parseCardRarity } from "~/lib/cards/enums";
+import {
+  isJsonObject,
+  nsBankValue,
+  nsFactsFromApi,
+  nsFactsOf,
+  pickNsFacts,
+  withNsFacts,
+} from "~/lib/cards/ns-facts";
+import { NS_REALM_ID } from "~/lib/realms/realm-ids";
 import { generateNSImportDescription } from "./import-service";
 
 /**
@@ -27,94 +37,100 @@ interface SyncCounts {
   errors: string[];
 }
 
+/** The definition an NS card creates: it waits for review; a region sync's card names its sync. */
+export function nsCardDefinitionData(
+  nsCard: NSCard & { name: string },
+  context: {
+    importedFrom: string;
+    rarity: CardRarity;
+    marketValue: number;
+    syncLogId: string | null;
+  }
+): Prisma.CardUncheckedCreateInput {
+  const nsSeason = parseInt(nsCard.season, 10);
+  return {
+    id: `card_ns_${nsCard.id}_s${nsCard.season}`,
+    title: nsCard.name,
+    description: generateNSImportDescription(nsCard),
+    artwork: nsCard.flag || "/images/cards/lore-placeholder.svg",
+    cardType: CardType.NS,
+    realmId: NS_REALM_ID,
+    rarity: context.rarity,
+    season: nsSeason,
+    nsCardId: parseInt(nsCard.id, 10),
+    nsSeason,
+    totalSupply: 1,
+    reviewState: "PENDING",
+    marketValue: context.marketValue,
+    metadata: {
+      nsData: nsFactsFromApi(nsCard),
+      importedFrom: context.importedFrom,
+      importedAt: new Date().toISOString(),
+      ...(context.syncLogId ? { syncLogId: context.syncLogId } : {}),
+    },
+  };
+}
+
 /**
- * Upsert a single NSCard definition into the DB.
- * Returns flags describing what happened.
+ * The one NS card definition upsert (the region sync, which passes its SyncLog id, and the deck import, which passes
+ * null): finds the card, refreshing its region and NS bank value facts, or creates it waiting for review and valued by
+ * the formula. An existing card's value is the card-values cron's to write. A taken-down (retired) card is returned
+ * untouched. Null for a card without a valid id or a name, which writes nothing. `db` may be a transaction client.
  */
-async function upsertNSCardDefinition(
-  db: PrismaClient,
+export async function upsertNSCardDefinition(
+  db: Pick<Prisma.TransactionClient, "card">,
   nsCard: NSCard,
   importedFrom: string,
-  valCfg: Awaited<ReturnType<typeof getValuationConfig>>
-): Promise<{ created: boolean; updated: boolean }> {
+  valCfg: Awaited<ReturnType<typeof getValuationConfig>>,
+  syncLogId: string | null
+): Promise<{ card: Card; created: boolean; updated: boolean } | null> {
   const nsCardId = parseInt(nsCard.id);
   const nsSeason = parseInt(nsCard.season);
-  if (isNaN(nsCardId) || isNaN(nsSeason)) return { created: false, updated: false };
-  if (!nsCard.name) return { created: false, updated: false };
+  if (isNaN(nsCardId) || isNaN(nsSeason)) return null;
+  if (!nsCard.name) return null;
 
   const existing = await db.card.findFirst({
     where: { nsCardId, nsSeason },
   });
 
-  const recomputedMarketValue = computeCardValue(
-    {
-      rarity: nsCard.rarity || existing?.rarity || "COMMON",
-      cardType: "NS_IMPORT",
-      nsMarketValue: parseFloat(nsCard.market_value || "0"),
-    },
-    valCfg
-  );
-
   if (existing) {
     // A card hidden via takedown (flag-owner opt-out) must not have its
-    // artwork or value silently restored by a re-sync.
-    if (existing.isRetired) return { created: false, updated: false };
-    if (Math.abs(existing.marketValue - recomputedMarketValue) > 0.01) {
-      await db.card.update({
-        where: { id: existing.id },
-        data: {
-          marketValue: recomputedMarketValue,
-          stats: {
-            ...((existing.stats as Record<string, unknown>) || {}),
-            region: nsCard.region || (existing.stats as any)?.region,
-            marketValue: nsCard.market_value,
-          },
-        },
-      });
-      return { created: false, updated: true };
+    // artwork or facts silently restored by a re-sync.
+    if (existing.isRetired) return { card: existing, created: false, updated: false };
+    const stored = nsFactsOf(existing.metadata);
+    const facts = pickNsFacts(
+      nsFactsFromApi({ region: nsCard.region, market_value: nsCard.market_value }),
+      stored
+    );
+    if (facts.region === stored.region && facts.market_value === stored.market_value) {
+      return { card: existing, created: false, updated: false };
     }
-    return { created: false, updated: false };
+    const card = await db.card.update({
+      where: { id: existing.id },
+      data: { metadata: withNsFacts(existing.metadata, facts) },
+    });
+    return { card, created: false, updated: true };
   }
 
-  await db.card.create({
-    data: {
-      id: `card_ns_${nsCard.id}_s${nsCard.season}`,
-      title: nsCard.name,
-      description: generateNSImportDescription(nsCard),
-      artwork: nsCard.flag || "/images/cards/lore-placeholder.svg",
-      artworkVariants: nsCard.flag
-        ? {
-            original: nsCard.flag,
-            thumbnail: nsCard.flag,
-            large: nsCard.flag,
-            flagUrl: nsCard.flag,
-          }
-        : undefined,
-      cardType: "NS_IMPORT",
-      rarity: nsCard.rarity || "COMMON",
-      season: nsSeason,
-      nsCardId,
-      nsSeason,
-      stats: {
-        region: nsCard.region,
-        category: nsCard.category,
-        govt: nsCard.govt,
-        cardcategory: nsCard.cardcategory,
-        marketValue: nsCard.market_value,
-        badge: nsCard.badge,
-        trophies: nsCard.trophies,
-      },
-      metadata: {
-        nsData: { ...nsCard },
-        importedFrom,
-        importedAt: new Date().toISOString(),
-      },
-      marketValue: recomputedMarketValue,
-      totalSupply: 1,
-      level: 1,
+  const rarity = parseCardRarity(nsCard.rarity) ?? CardRarity.COMMON;
+  const marketValue = referenceValue(
+    {
+      rarity,
+      cardType: CardType.NS,
+      firstSoldAt: null,
+      nsBankValue: nsBankValue({ nsData: nsFactsFromApi(nsCard) }),
+      isRetired: false,
     },
+    null,
+    valCfg
+  );
+  const card = await db.card.create({
+    data: nsCardDefinitionData(
+      { ...nsCard, name: nsCard.name },
+      { importedFrom, rarity, marketValue, syncLogId }
+    ),
   });
-  return { created: true, updated: false };
+  return { card, created: true, updated: false };
 }
 
 /**
@@ -123,7 +139,8 @@ async function upsertNSCardDefinition(
  */
 async function loadRegionCardsFromDumps(
   regionNames: string[],
-  seasons: number[]
+  seasons: number[],
+  onSeasonRead: () => Promise<void>
 ): Promise<Array<{ id: number; season: number; card: NSCard }>> {
   const norm = (str: string) =>
     str
@@ -160,10 +177,44 @@ async function loadRegionCardsFromDumps(
       // A missing/older season dump must not abort the whole sync — log and continue.
       console.error(`[NS Import] Failed to process season ${season} dump:`, err);
     }
+    await onSeasonRead();
   }
 
   return matches;
 }
+
+/**
+ * Marks a sync alive while it reads the season dumps, which can take minutes each. It merges into the stored
+ * metadata, which still holds what a resume needs (the region list and the last card worked).
+ */
+/** Who started a sync, read once from its log, so the progress writes that replace its metadata keep it. */
+async function startedByOf(db: PrismaClient, syncLogId: string): Promise<{ startedBy?: string }> {
+  const log = await db.syncLog.findUnique({ where: { id: syncLogId }, select: { metadata: true } });
+  const meta = log?.metadata;
+  return isJsonObject(meta) && typeof meta.startedBy === "string"
+    ? { startedBy: meta.startedBy }
+    : {};
+}
+
+async function beatHeartbeat(db: PrismaClient, syncLogId: string): Promise<void> {
+  const log = await db.syncLog.findUnique({ where: { id: syncLogId }, select: { metadata: true } });
+  const metadata = log?.metadata;
+  await db.syncLog.update({
+    where: { id: syncLogId },
+    data: {
+      metadata: {
+        ...(isJsonObject(metadata) ? metadata : {}),
+        heartbeatAt: new Date().toISOString(),
+      },
+    },
+  });
+}
+
+/**
+ * A run's final status write lands only while its sync is still open (running or paused), so it never writes over a
+ * stop an admin has already recorded.
+ */
+const STILL_OPEN = { in: ["IN_PROGRESS", "PAUSED"] } satisfies Prisma.StringFilter;
 
 /**
  * Process cards for one or more regions in the background, sourced from the
@@ -183,14 +234,17 @@ export async function processRegionCardsFromDump(
   activeRunningJobs.add(syncLogId);
   try {
     const valCfg = await getValuationConfig(db);
-    const matches = await loadRegionCardsFromDumps(regionNames, seasons);
+    const keep = await startedByOf(db, syncLogId);
+    const matches = await loadRegionCardsFromDumps(regionNames, seasons, () =>
+      beatHeartbeat(db, syncLogId)
+    );
 
     if (matches.length === 0) {
       console.warn(
         `[NS Import] No cards matched regions ${regionNames.join(", ")} in seasons ${seasons.join(",")}`
       );
-      await db.syncLog.update({
-        where: { id: syncLogId },
+      await db.syncLog.updateMany({
+        where: { id: syncLogId, status: STILL_OPEN },
         data: {
           status: "FAILED",
           errorMessage: "No cards matched the requested region(s) in the card dumps.",
@@ -229,10 +283,11 @@ export async function processRegionCardsFromDump(
           db,
           nsCard,
           `region:${regionNames.join(",")}`,
-          valCfg
+          valCfg,
+          syncLogId
         );
-        if (result.created) cardsCreated++;
-        else if (result.updated) cardsUpdated++;
+        if (result?.created) cardsCreated++;
+        else if (result?.updated) cardsUpdated++;
       } catch (cardError) {
         const msg = cardError instanceof Error ? cardError.message : String(cardError);
         if (!msg.includes("Unique constraint")) {
@@ -251,6 +306,7 @@ export async function processRegionCardsFromDump(
           cardsCreated,
           cardsUpdated,
           metadata: {
+            ...keep,
             regionNames,
             seasons,
             totalCards: matches.length,
@@ -259,14 +315,15 @@ export async function processRegionCardsFromDump(
             cardsUpdated,
             errorCount: errors.length,
             lastProcessedIndex: i,
+            heartbeatAt: new Date().toISOString(),
           },
         },
       });
     }
 
     // Final update — mark complete
-    await db.syncLog.update({
-      where: { id: syncLogId },
+    await db.syncLog.updateMany({
+      where: { id: syncLogId, status: STILL_OPEN },
       data: {
         status: errors.length > matches.length / 2 ? "FAILED" : "SUCCESS",
         itemsProcessed: matches.length,
@@ -277,6 +334,7 @@ export async function processRegionCardsFromDump(
         errorMessage: errors.length > 0 ? errors.slice(0, 20).join("; ") : null,
         completedAt: new Date(),
         metadata: {
+          ...keep,
           regionNames,
           seasons,
           totalCards: matches.length,
@@ -295,48 +353,74 @@ export async function processRegionCardsFromDump(
   }
 }
 
+const CTE_BATCH = 500;
+
 /**
- * Filter imported NS cards by active vs. CTE'd nation status.
- * Ingests nations.xml.gz and tags all NS_IMPORT cards with metadata.isCTE.
+ * The fewest active nations a whole dump can hold: a floor, and a share of the nations the last successful run read.
+ * A smaller set (an empty or cut-off read) would mark nearly every card ceased, so the filter refuses it.
  */
-export async function processCTENationFilter(db: PrismaClient): Promise<{
+export const CTE_DUMP_SANITY = { minNations: 1_000, minShareOfLastRun: 0.5 } as const;
+
+const count = (n: number) => n.toLocaleString("en-US");
+
+/** Refuses an active-nations set too small to be the whole dump, before any card is read or written. */
+async function assertWholeDump(db: PrismaClient, nations: number): Promise<void> {
+  const last = await db.syncLog.findFirst({
+    where: { syncType: "NS_CTE_FILTER", status: "SUCCESS" },
+    orderBy: { startedAt: "desc" },
+    select: { metadata: true },
+  });
+  const meta = last?.metadata;
+  const lastNations =
+    isJsonObject(meta) && typeof meta.activeNations === "number" ? meta.activeNations : null;
+  const needed = Math.ceil(
+    Math.max(CTE_DUMP_SANITY.minNations, (lastNations ?? 0) * CTE_DUMP_SANITY.minShareOfLastRun)
+  );
+  if (nations >= needed) return;
+  const lastRun = lastNations === null ? "" : `; the last run read ${count(lastNations)}`;
+  throw new Error(
+    `The active-nations dump listed ${count(nations)} nations, too few to be whole (at least ${count(needed)}${lastRun}). No card was changed.`
+  );
+}
+
+export interface CteCounts {
   totalProcessed: number;
   cteCount: number;
   activeCount: number;
-}> {
-  console.log("[NS Import] Starting CTE nation status filter job...");
+}
+
+/**
+ * Tags every NationStates card with `metadata.isCTE` (its nation has ceased to exist) against the daily
+ * active-nations dump, a page of cards at a time, writing its progress to its SyncLog. Pages by `id > last`, so a
+ * card deleted mid-run never ends the walk early. Throws, changing nothing, on a dump too small to be whole.
+ */
+export async function processCTENationFilter(
+  db: PrismaClient,
+  syncLogId: string
+): Promise<CteCounts> {
   const activeNations = await nsApiClient.fetchActiveNationsDump();
-
-  const cards = await db.card.findMany({
-    where: { cardType: "NS_IMPORT" },
-    select: { id: true, title: true, metadata: true },
-  });
-
-  let cteCount = 0;
-  let activeCount = 0;
-
-  const BATCH_SIZE = 100;
-  for (let i = 0; i < cards.length; i += BATCH_SIZE) {
-    const chunk = cards.slice(i, i + BATCH_SIZE);
+  await assertWholeDump(db, activeNations.size);
+  const keep = await startedByOf(db, syncLogId);
+  const counts: CteCounts = { totalProcessed: 0, cteCount: 0, activeCount: 0 };
+  let last: string | null = null;
+  for (;;) {
+    const cards: Array<Pick<Card, "id" | "title" | "metadata">> = await db.card.findMany({
+      where: { cardType: CardType.NS, ...(last ? { id: { gt: last } } : {}) },
+      select: { id: true, title: true, metadata: true },
+      orderBy: { id: "asc" },
+      take: CTE_BATCH,
+    });
+    if (cards.length === 0) break;
     await Promise.all(
-      chunk.map(async (card) => {
-        const meta = (card.metadata as Record<string, any>) || {};
-        const nsName = (meta.nsData?.name || card.title || "").trim().toLowerCase();
-
-        const isActive = activeNations.has(nsName);
-        const isCTE = !isActive;
-
-        if (isCTE) {
-          cteCount++;
-        } else {
-          activeCount++;
-        }
-
-        await db.card.update({
+      cards.map((card) => {
+        const nation = (nsFactsOf(card.metadata).name ?? card.title).trim().toLowerCase();
+        const isCTE = !activeNations.has(nation);
+        counts[isCTE ? "cteCount" : "activeCount"]++;
+        return db.card.update({
           where: { id: card.id },
           data: {
             metadata: {
-              ...meta,
+              ...(isJsonObject(card.metadata) ? card.metadata : {}),
               isCTE,
               cteCheckedAt: new Date().toISOString(),
             },
@@ -344,15 +428,24 @@ export async function processCTENationFilter(db: PrismaClient): Promise<{
         });
       })
     );
+    counts.totalProcessed += cards.length;
+    last = cards[cards.length - 1]!.id;
+    await db.syncLog.update({
+      where: { id: syncLogId },
+      data: { itemsProcessed: counts.totalProcessed },
+    });
   }
-
+  await db.syncLog.update({
+    where: { id: syncLogId },
+    data: {
+      status: "SUCCESS",
+      completedAt: new Date(),
+      itemsProcessed: counts.totalProcessed,
+      metadata: { ...keep, ...counts, activeNations: activeNations.size },
+    },
+  });
   console.log(
-    `[NS Import] CTE filter complete: ${cards.length} processed (${activeCount} active, ${cteCount} CTE'd)`
+    `[NS Import] CTE filter complete: ${counts.totalProcessed} processed (${counts.activeCount} active, ${counts.cteCount} CTE'd)`
   );
-
-  return {
-    totalProcessed: cards.length,
-    cteCount,
-    activeCount,
-  };
+  return counts;
 }

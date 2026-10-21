@@ -8,6 +8,25 @@ import { NationStatesLogo } from "./NationStatesLogo";
 import { ShieldAlert } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 
+/** The attribution every surface with NationStates card data shows: the data's source and the disclaimer. */
+export function NationStatesDataCredit({ linkClassName }: { linkClassName?: string }) {
+  return (
+    <>
+      Data via official{" "}
+      <a
+        href="https://www.nationstates.net/pages/api.html#cards"
+        target="_blank"
+        rel="noopener noreferrer"
+        className={linkClassName}
+      >
+        NationStates API
+      </a>
+      . Not affiliated with or endorsed by NationStates. All artwork, flags, and logos remain the
+      copyright of their respective owners.
+    </>
+  );
+}
+
 export function NationStatesAttribution({
   className,
   onRequestTakedown,
@@ -22,17 +41,7 @@ export function NationStatesAttribution({
       <div className="flex min-w-0 flex-1 items-start gap-2">
         <NationStatesLogo size="xs" className="mt-0.5 shrink-0" />
         <p className="min-w-0 flex-1">
-          Data via official{" "}
-          <a
-            href="https://www.nationstates.net/pages/api.html#cards"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue font-medium hover:underline"
-          >
-            NationStates API
-          </a>
-          . Not affiliated with or endorsed by NationStates. All artwork, flags, and logos remain
-          the copyright of their respective owners.
+          <NationStatesDataCredit linkClassName="text-blue font-medium hover:underline" />
         </p>
       </div>
 

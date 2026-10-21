@@ -1,18 +1,18 @@
 # Complete tRPC API Reference
 
-**Last updated:** 2026-10-05
+**Last updated:** 2026-10-20
 
 The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
 <!-- BEGIN_DOCS:API_INVENTORY -->
-### Live tRPC API Inventory (78 Routers, 1088 Endpoints)
+### Live tRPC API Inventory (78 Routers, 1041 Endpoints)
 
 | Router Namespace | Q | M | Sub | Total | Primary Source |
 | :--- | :---: | :---: | :---: | :---: | :--- |
-| **`api.achievements`** | 7 | 2 | 0 | **9** | `src/server/api/routers/achievements/index.ts` |
+| **`api.achievements`** | 8 | 2 | 0 | **10** | `src/server/api/routers/achievements/index.ts` |
 | **`api.actionLinks`** | 7 | 5 | 0 | **12** | `src/server/api/routers/actionLinks.ts` |
 | **`api.activities`** | 6 | 3 | 0 | **9** | `src/server/api/routers/activities/index.ts` |
-| **`api.admin`** | 36 | 48 | 0 | **84** | `src/server/api/routers/admin/index.ts` |
+| **`api.admin`** | 36 | 47 | 0 | **83** | `src/server/api/routers/admin/index.ts` |
 | **`api.atlas`** | 0 | 0 | 0 | **5** | `src/server/api/routers/atlas/index.ts` |
 | **`api.atomicGovernment`** | 1 | 0 | 0 | **1** | `src/server/api/routers/atomicGovernment.ts` |
 | **`api.autosaveMonitoring`** | 5 | 0 | 0 | **5** | `src/server/api/routers/autosaveMonitoring.ts` |
@@ -20,13 +20,13 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.builderDraft`** | 1 | 2 | 0 | **3** | `src/server/api/routers/builderDraft.ts` |
 | **`api.cache`** | 1 | 0 | 0 | **1** | `src/server/api/routers/cache.ts` |
 | **`api.cardImages`** | 2 | 2 | 0 | **4** | `src/server/api/routers/cardImages.ts` |
-| **`api.cardMarket`** | 7 | 4 | 0 | **11** | `src/server/api/routers/card-market/index.ts` |
-| **`api.cardPacks`** | 3 | 6 | 0 | **9** | `src/server/api/routers/card-packs/index.ts` |
-| **`api.cards`** | 14 | 11 | 0 | **25** | `src/server/api/routers/cards/index.ts` |
+| **`api.cardMarket`** | 7 | 10 | 0 | **17** | `src/server/api/routers/card-market/index.ts` |
+| **`api.cardPacks`** | 2 | 2 | 0 | **4** | `src/server/api/routers/card-packs/index.ts` |
+| **`api.cards`** | 12 | 11 | 0 | **23** | `src/server/api/routers/cards/index.ts` |
 | **`api.commons`** | 6 | 0 | 0 | **6** | `src/server/api/routers/commons.ts` |
 | **`api.countries`** | 0 | 0 | 0 | **1** | `src/server/api/routers/countries/index.ts` |
 | **`api.countryGeo`** | 3 | 6 | 0 | **9** | `src/server/api/routers/countryGeo.ts` |
-| **`api.crafting`** | 2 | 1 | 0 | **3** | `src/server/api/routers/crafting/index.ts` |
+| **`api.crafting`** | 2 | 3 | 0 | **5** | `src/server/api/routers/crafting/index.ts` |
 | **`api.crisisEvents`** | 2 | 0 | 0 | **2** | `src/server/api/routers/crisis-events.ts` |
 | **`api.demoMode`** | 1 | 0 | 0 | **1** | `src/server/api/routers/demo-mode.ts` |
 | **`api.diplomaticCore`** | 4 | 3 | 0 | **7** | `src/server/api/routers/diplomacy/core/index.ts` |
@@ -55,7 +55,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.intent`** | 5 | 3 | 0 | **8** | `src/server/api/routers/intent.ts` |
 | **`api.ixnayid`** | 9 | 7 | 0 | **16** | `src/server/api/routers/ixnayid/index.ts` |
 | **`api.legislation`** | 2 | 2 | 0 | **4** | `src/server/api/routers/legislation.ts` |
-| **`api.loreCards`** | 14 | 9 | 0 | **23** | `src/server/api/routers/lore-cards/index.ts` |
+| **`api.loreCards`** | 0 | 0 | 0 | **0** | `src/server/api/routers/lore-cards/index.ts` |
 | **`api.lorewards`** | 11 | 4 | 0 | **15** | `src/server/api/routers/lorewards/index.ts` |
 | **`api.meetings`** | 2 | 6 | 0 | **8** | `src/server/api/routers/meetings/index.ts` |
 | **`api.messages`** | 6 | 14 | 0 | **20** | `src/server/api/routers/messages/index.ts` |
@@ -64,7 +64,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.nationalIssues`** | 11 | 10 | 0 | **21** | `src/server/api/routers/national-issues/index.ts` |
 | **`api.notifications`** | 7 | 14 | 0 | **21** | `src/server/api/routers/notifications/index.ts` |
 | **`api.npcPersonalities`** | 1 | 4 | 0 | **5** | `src/server/api/routers/npcPersonalities/index.ts` |
-| **`api.nsImport`** | 8 | 14 | 0 | **22** | `src/server/api/routers/ns-import/index.ts` |
+| **`api.nsImport`** | 2 | 5 | 0 | **7** | `src/server/api/routers/ns-import/index.ts` |
 | **`api.onoma`** | 17 | 26 | 0 | **43** | `src/server/api/routers/onoma/index.ts` |
 | **`api.policies`** | 2 | 2 | 0 | **4** | `src/server/api/routers/policies/index.ts` |
 | **`api.polls`** | 2 | 5 | 0 | **7** | `src/server/api/routers/polls/index.ts` |
@@ -78,19 +78,19 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.systemValidation`** | 6 | 0 | 0 | **6** | `src/server/api/routers/system-validation.ts` |
 | **`api.taxSystem`** | 1 | 4 | 0 | **5** | `src/server/api/routers/taxSystem/index.ts` |
 | **`api.thinkpages`** | 20 | 28 | 0 | **48** | `src/server/api/routers/thinkpages/index.ts` |
-| **`api.thinkpagesForum`** | 24 | 22 | 0 | **46** | `src/server/api/routers/thinkpagesForum/index.ts` |
+| **`api.thinkpagesForum`** | 23 | 22 | 0 | **45** | `src/server/api/routers/thinkpagesForum/index.ts` |
 | **`api.thinkpagesForumMod`** | 8 | 11 | 0 | **19** | `src/server/api/routers/thinkpagesForum/mod.ts` |
-| **`api.trading`** | 4 | 3 | 0 | **7** | `src/server/api/routers/trading/index.ts` |
+| **`api.trading`** | 7 | 4 | 0 | **11** | `src/server/api/routers/trading/index.ts` |
 | **`api.transport`** | 5 | 5 | 0 | **10** | `src/server/api/routers/transport/index.ts` |
 | **`api.userLogging`** | 0 | 1 | 0 | **1** | `src/server/api/routers/user-logging.ts` |
 | **`api.users`** | 10 | 12 | 0 | **22** | `src/server/api/routers/users/index.ts` |
-| **`api.vault`** | 23 | 19 | 0 | **42** | `src/server/api/routers/vault/index.ts` |
+| **`api.vault`** | 17 | 12 | 0 | **29** | `src/server/api/routers/vault/index.ts` |
 | **`api.wikiCache`** | 1 | 1 | 0 | **2** | `src/server/api/routers/wikiCache.ts` |
 | **`api.wikios`** | 72 | 33 | 0 | **107** | `src/server/api/routers/wikios/index.ts` |
-| **TOTALS** | **519** | **555** | **0** | **1088** | **78 registered namespaces** |
+| **TOTALS** | **493** | **534** | **0** | **1041** | **78 registered namespaces** |
 <!-- END_DOCS:API_INVENTORY -->
 
-> **Generator caveat (2026-09-29):** `docs:sync` counts procedures by static analysis and misses routers built by spreading procedure objects or `mergeRouters`. Counting `appRouter._def.procedures` at runtime gives **77 namespaces / 958 procedures** — the table undercounts `countries` (29, shown as 1), `geoCore` (23, shown as 0), `intelligence` (4, shown as 0) and `sports` (63, shown as 61). Fix the generator rather than editing the table by hand.
+> **Generator caveat (2026-09-29):** `docs:sync` counts procedures by static analysis and misses routers built by spreading procedure objects or `mergeRouters`. Counting `appRouter._def.procedures` at runtime gives **77 namespaces / 958 procedures** — the table undercounts `countries` (29, shown as 1), `geoCore` (23, shown as 0), `intelligence` (4, shown as 0) and `sports` (63, shown as 61). Fix the generator rather than editing the table by hand. It also does not follow a router nested inside `mergeRouters` (2026-10-17): `cards` shows 23, and its 64 `cards.admin.*` procedures are listed under [cards Router](#cards-router-87-procedures). It does not follow a re-exported router either: `loreCards` shows 0 for its one procedure, `getCardAuthorInfo`.
 
 ---
 
@@ -249,7 +249,6 @@ api.admin.bulkSetWikiLinks.useMutation() // { links }
 api.admin.deleteWikiArticleAward.useMutation() // { id }
 api.admin.triggerLorewardScoring.useMutation() // { date }
 api.admin.saveLorewardWinnerOverride.useMutation() // { date, type?, winnerUser, winnerPage, winnerScore?, winnerBytes?, runnerUpUser?, runnerUpPage?, runnerUpScore?, runnerUpBytes?, status? }
-api.admin.pushLorewardToBot.useMutation() // { date, winner, runnerUp?, candidates?, editCount? }
 api.admin.purgeWikiCache.useMutation() // { pageTitle }
 api.admin.purgeAllWikiCache.useMutation()
 api.admin.saveLorewardWeights.useMutation() // { proseWeight, depthMaxBonus, noveltyBonus, importanceMaxBonus, listPenalty, minorOnlyPenalty } (stored as lorewardWeight_<field>)
@@ -614,12 +613,12 @@ api.geoEditor.rebuildAdjacency.useMutation() // { realmId? }
 
 ## IxVault (Cards & Credits)
 
-### vault Router (42 procedures)
+### vault Router (29 procedures)
 
 Balance, level and transaction reads use the signed-in user (no `userId` input).
 
 ```typescript
-// Queries (22)
+// Queries (17)
 api.vault.getBalance.useQuery()
 api.vault.getVaultLevel.useQuery()
 api.vault.getTodayEarnings.useQuery()
@@ -628,122 +627,180 @@ api.vault.getTransactions.useQuery({ limit?, offset?, type?, direction? }) // di
 api.vault.getPurchasedItems.useQuery()
 api.vault.listStoreItems.useQuery()
 api.vault.getEquippedCosmetics.useQuery()
-api.vault.getMyCollections.useQuery({ limit?, offset? })
-api.vault.getPublicCollections.useQuery({ limit?, offset?, sortBy? })
-api.vault.getCollectionLeaderboard.useQuery({ category, limit? })
-api.vault.getCollectionComments.useQuery({ collectionId, limit?, offset? })
-api.vault.getCollectionDetails.useQuery({ collectionId })
+api.vault.getEquippedCosmeticsFor.useQuery({ userIds? }) // public, rate limited: other players' equipped cosmetics
 api.vault.adminListUserTransactions.useQuery({ userId, limit?, offset?, type? })
 api.vault.adminListVaults.useQuery({ search?, limit?, offset? })
 api.vault.adminGetVaultConfig.useQuery()
 api.vault.adminListStoreItemsAll.useQuery()
 api.vault.adminGetPriceHistory.useQuery({ itemId })
-api.vault.adminGetIxCardSeason.useQuery()
 api.vault.adminGetPurchaseLogs.useQuery()
 api.vault.adminGetPurchasedItems.useQuery({ userId })
 api.vault.adminGetEquippedCosmetics.useQuery({ userId })
 
-// Mutations (19)
-api.vault.spendCredits.useMutation() // { amount, type, source, metadata? }
-api.vault.claimDailyBonus.useMutation()
-api.vault.claimCombinedDailyClaim.useMutation() // { choice }
-api.vault.adminAdjustStreak.useMutation() // { targetUserId, delta }
+// Mutations (12)
+api.vault.purchaseStoreItem.useMutation() // { itemId }
 api.vault.toggleEquipCosmetic.useMutation() // { itemId }
-api.vault.createCollection.useMutation() // { name, description?, isPublic? }
-api.vault.updateCollection.useMutation() // { collectionId, name?, description?, isPublic? }
-api.vault.deleteCollection.useMutation() // { collectionId }
-api.vault.likeCollection.useMutation() // { collectionId, unlike? }
-api.vault.addCollectionComment.useMutation() // { collectionId, content }
+api.vault.claimCombinedDailyClaim.useMutation() // { choice: "CREDITS" | "CARD" }; a card claim returns the copy's face
+api.vault.adminAdjustStreak.useMutation() // { targetUserId, delta }
 api.vault.adminAdjustCredits.useMutation() // { targetUserId, amount, type?, source, reason, sendNotification? }
-api.vault.adminSaveVaultConfig.useMutation() // { activeDailyCap, socialDailyCap, xpPerLevel, maxStreakBonus, premiumMultiplier, priceGoldenProfileGlow, priceNeonCyberFrame, priceEliteChatBadge, priceLoreRequestToken, priceCardCapacity, pricePassiveYieldBoost, isEarningEnabled, isTradingEnabled, isAuctionsEnabled, isStoreEnabled, isCraftingEnabled, isPacksEnabled, isMaintenanceMode, exemptStaffFromLimit }
+api.vault.adminSaveVaultConfig.useMutation() // { activeDailyCap, socialDailyCap, xpPerLevel, premiumMultiplier, isEarningEnabled, isTradingEnabled, isAuctionsEnabled, isStoreEnabled, isPacksEnabled, isMaintenanceMode, exemptStaffFromLimit, isExchangeEnabled }
 api.vault.adminCreateStoreItem.useMutation() // { name, description?, price, icon?, glowColor?, quality?, badgeText?, category?, effects? }
 api.vault.adminUpdateStoreItem.useMutation() // { id, name, description?, price, icon?, glowColor?, quality?, badgeText?, category?, isActive?, effects? }
 api.vault.adminDeleteStoreItem.useMutation() // { id, hardDelete? }
-api.vault.adminSetIxCardSeason.useMutation() // { season }
 api.vault.adminGrantStoreItem.useMutation() // { userId, itemId }
 api.vault.adminRevokeStoreItem.useMutation() // { userId, itemId }
 api.vault.adminToggleEquipCosmetic.useMutation() // { userId, itemId }
 ```
 
-### cards Router (24 procedures)
+Showcases replaced the `vault.*` collection procedures, and the daily reward is `claimCombinedDailyClaim` only (cards refresh Phase 3; see [cards.md](../systems/cards.md#removed-in-the-cards-refresh-2026-10-15)).
+
+### cards Router (87 procedures)
+
+23 player procedures at `api.cards.*`, and 64 admin procedures under `api.cards.admin.<tab>.*`, one sub-router per
+`/admin/cards` tab plus NationStates imports and the player tools (all `adminProcedure`; the inventory above counts
+only the 23). Wiki and Commons imports are queued from `api.cards.admin.imports.*`. Every card face these return
+follows the silhouette rules ([cards.md](../systems/cards.md#silhouettes)).
 
 ```typescript
-// Queries (13)
-api.cards.getMyCards.useQuery({ sortBy?, filterRarity? })
-api.cards.getUserCards.useQuery({ userId, sortBy?, filterRarity?, limit? })
-api.cards.getLoreStats.useQuery()
-api.cards.getNSCards.useQuery({ limit?, offset?, search?, season?, rarity?, region?, categoryFilter?, cardTypeFilter?, cteFilter?, isRetired?, includeRetired?, sortBy? })
-api.cards.getNSLibraryStats.useQuery()
-api.cards.getValuationConfig.useQuery()
-api.cards.getBonusConfig.useQuery()
-api.cards.getGeneralConfig.useQuery()
-api.cards.fetchCommonsCategoryMembers.useQuery({ category, limit? })
-api.cards.getMyCollections.useQuery()
-api.cards.getCollectionCards.useQuery({ collectionId })
-api.cards.getWikiArticleExcerpt.useQuery({ articleTitle, wikiSource })
-api.cards.getUnifiedAuditLogs.useQuery({ category?, limit?, offset?, search? })
+// Queries (12)
+api.cards.listMine.useQuery({ copyId?, realmId?, rarities?, finishes?, types?, categories?, duplicates?, search?, sort?, cursor?, limit? }) // Mine; a copy named in a pending offer is marked inOffer
+api.cards.exploreShelves.useQuery() // Explore's realm shelves (top 12) and realms: every public realm with cards other than trophies, for the realm filters
+api.cards.exploreGrid.useQuery({ realmId?, rarities?, types?, categories?, region?, season?, owned?, search?, sort?, cursor?, limit? })
+api.cards.exploreRegions.useQuery({ search? }) // NationStates regions with cards, at most 60
+api.cards.getSheet.useQuery({ cardId, from? }) // the card sheet, public (read-only rate limit); from: "showcase.<id>" | "offer.<id>" | "holder.<handle>"; signed out, only cards shown in public open, any other asks to sign in
+api.cards.getSheetEconomy.useQuery({ cardId }) // signed in: your copies' values and actions, fusion groups, the craft offer, the wishlist state and your signer name
+api.cards.getWikiArticleExcerpt.useQuery({ articleTitle, wikiSource }) // public
+api.cards.listMyShowcases.useQuery()
+api.cards.getShowcase.useQuery({ showcaseId })
+api.cards.getMyDisplay.useQuery() // the pinned public showcase, else the top cards
+api.cards.getCardMute.useQuery({ cardId })
+api.cards.mySuggestions.useQuery()
 
 // Mutations (11)
-api.cards.junkCards.useMutation() // { ownershipIds }
-api.cards.setValuationConfig.useMutation() // { floorCommon?, floorUncommon?, floorRare?, floorUltraRare?, floorEpic?, floorLegendary?, nsPremium?, multSpecial?, multNation?, junkRate? }
-api.cards.setBonusConfig.useMutation() // { enabled?, newPlayer?, nsPerCard?, nsCap?, achievementCommon?, achievementUncommon?, achievementRare?, achievementEpic?, achievementLegendary? }
-api.cards.setGeneralConfig.useMutation() // { tradingEnabled?, auctionHouseRakePct?, dailyFreePacks?, dailyPackCooldownHours?, allowPlayerMinting?, maxInventoryCards?, maxJunkBatchSize?, autoGenerateLoreThumbnails? }
-api.cards.updateCardDetails.useMutation() // { cardId, title?, marketValue?, isRetired?, category?, cardType?, rarity?, artworkUrl?, artworkSource?, description? }
-api.cards.bulkToggleVisibility.useMutation() // { isRetired, cardTypeFilter?, cteFilter?, categoryFilter?, season?, rarity? }
-api.cards.importCommonsFlags.useMutation() // { items, defaultRarity?, season? }
-api.cards.recomputeCardValues.useMutation()
-api.cards.createCollection.useMutation() // { name, description?, isPublic? }
-api.cards.addToCollection.useMutation() // { collectionId, cardOwnershipId }
-api.cards.deleteCollection.useMutation() // { collectionId }
+api.cards.createShowcase.useMutation() // { name, description?, isPublic? }
+api.cards.updateShowcase.useMutation() // { showcaseId, name, description?, isPublic }; making it private unpins it
+api.cards.deleteShowcase.useMutation() // { showcaseId }
+api.cards.addToShowcase.useMutation() // { showcaseId, ownershipIds }
+api.cards.removeFromShowcase.useMutation() // { showcaseId, ownershipId }
+api.cards.pinShowcase.useMutation() // { showcaseId, pinned }; only a public showcase pins
+api.cards.suggestCard.useMutation() // { source, title }; free, 3 in any 24 hours
+api.cards.setCardMute.useMutation() // { cardId, muted }; no notices about a muted card
+api.cards.inscribe.useMutation() // { ownershipId, text }; once per copy, 60 characters after cleaning, the signer's display name frozen with it
+api.cards.reportInscription.useMutation() // { ownershipId, reason }; once per copy, at most 5 waiting per player
+api.cards.requestTakedown.useMutation() // { cardId, reason, contact? }; cards not from NationStates, one active request per card, at most 5 waiting per player
 ```
 
-### cardPacks Router (9 procedures)
+| `api.cards.admin.*` | Queries | Mutations |
+| :--- | :--- | :--- |
+| `overview` | `summary`, `activity`, `realms`, `findCards` | |
+| `library` | `list` | `update`, `bulkSetRetired` |
+| `imports` | `searchCategories`, `categoryCounts`, `jobs`, `items` | `crawl`, `start`, `cancel`, `retry`, `resume` |
+| `nationstates` | `logs`, `logCards`, `active` | `start`, `pause`, `resume`, `stop`, `discoverRegions`, `filterCte` |
+| `curation` | `queue`, `suggestions` | `review`, `acceptSuggestion`, `declineSuggestion` |
+| `packs` | `list`, `preview` | `save`, `setActive` |
+| `economy` | `get` | `saveValues`, `recomputeValues`, `saveMarket`, `saveEconomy`, `saveBonuses`, `saveLorewardPayouts`, `saveRarityThresholds`, `saveDailyImport` |
+| `seasons` | `get` | `set` |
+| `compliance` | `takedowns`, `licences`, `inscriptionReports` | `file`, `hide`, `decline`, `restore`, `setLicence`, `resolveInscriptionReport` |
+| `designer` | `list`, `achievements` | `save` |
+| `tools` | `playerCards` | `grant`, `revoke`, `cancelAuction`, `cancelListing`, `voidTrade`, `awardPack` |
+
+### cardPacks Router (4 procedures)
+
+Packs are created and edited in the card admin (`api.cards.admin.packs.*`) and awarded to a player with
+`api.cards.admin.tools.awardPack`. A pack whose pool has no card of a rarity it shows or guarantees is not sold and
+does not open ([cards.md](../systems/cards.md#packs-and-the-reveal)).
 
 ```typescript
-// Queries (3)
+// Queries (2)
 api.cardPacks.getAvailablePacks.useQuery()
-api.cardPacks.getAllPacks.useQuery()
 api.cardPacks.getMyPacks.useQuery({ isOpened? })
 
-// Mutations (6)
+// Mutations (2)
 api.cardPacks.purchasePack.useMutation() // { packId }
-api.cardPacks.openPack.useMutation() // { userPackId }
-api.cardPacks.createPack.useMutation() // { name, description?, artwork?, packType, priceCredits, cardCount?, guaranteedRarity?, isActive? }
-api.cardPacks.updatePack.useMutation() // { packId, updates }
-api.cardPacks.deactivatePack.useMutation() // { packId }
-api.cardPacks.adminAwardPack.useMutation() // { targetUserId, packId, acquiredMethod?, sendNotification? }
+api.cardPacks.openPack.useMutation() // { userPackId }; needs room for the whole pack
 ```
 
-### nsImport Router (22 procedures)
+### cardMarket Router (17 procedures)
 
-Replaces the former `nsIntegration` router (NationStates deck verification, import and sync).
+The cards hub's Market (`/vault/cards/market`): fixed-price listings, auctions and the wishlist
+([cards.md](../systems/cards.md#card-economy)). Card faces in these payloads follow the silhouette rules.
 
 ```typescript
-// Queries (8)
-api.nsImport.fetchPublicDeck.useQuery({ nationName })
-api.nsImport.getSyncHealth.useQuery()
-api.nsImport.getSyncLogs.useQuery({ syncTypeFilter?, limit? })
-api.nsImport.getSyncLogCards.useQuery({ syncLogId, limit?, offset?, search? })
-api.nsImport.getActiveJobs.useQuery()
+// Queries (7)
+api.cardMarket.browse.useQuery({ kind?, sort?, filters?: { realmId?, rarity?, finish?, cardType?, cardId?, search? }, limit?, offset? }) // live listings and auctions, featured first; kind: "all" | "listings" | "auctions"; sort: "ending_soon" | "newest" | "price_low" | "price_high"
+api.cardMarket.getMyListings.useQuery()
+api.cardMarket.getWishlist.useQuery() // your wished cards with their live listings and lowest price
+api.cardMarket.getMyActiveAuctions.useQuery()
+api.cardMarket.getMyActiveBids.useQuery() // every running auction the viewer has bid on, winning or outbid
+api.cardMarket.getMyAuctionParticipation.useQuery({ limit?, offset? })
+api.cardMarket.getCardValueHistory.useQuery({ cardId }) // the newest 100 value points, oldest first
+
+// Mutations (10)
+api.cardMarket.createListing.useMutation() // { ownershipId, price, isFeatured? }; a whole price from 1 to 1,000,000 IxC, for 14 days
+api.cardMarket.createListings.useMutation() // { items: [{ ownershipId, price }], isFeatured? }; up to 20, each its own listing, with a result per copy
+api.cardMarket.cancelListing.useMutation() // { listingId }; refunds the listing refund share of the fee
+api.cardMarket.buyListing.useMutation() // { listingId }
+api.cardMarket.addToWishlist.useMutation() // { cardId }
+api.cardMarket.removeFromWishlist.useMutation() // { cardId }
+api.cardMarket.createAuction.useMutation() // { cardId, startingPrice, buyoutPrice?, duration: "24h" | "3d" | "7d", isFeatured? }; cardId is the copy's id
+api.cardMarket.placeBid.useMutation() // { auctionId, amount }
+api.cardMarket.executeBuyout.useMutation() // { auctionId }
+api.cardMarket.cancelAuction.useMutation() // { auctionId }; only before any bid
+```
+
+### trading Router (11 procedures)
+
+The trade builder ([cards.md](../systems/cards.md#trades)): one table per trade, countered in place. The builder's
+reads run on the read-only rate limiter.
+
+```typescript
+// Queries (7)
+api.trading.getActiveTrades.useQuery() // open trades, each with myTurn
+api.trading.getTradeHistory.useQuery({ limit?, offset? })
+api.trading.getTradeById.useQuery({ tradeId })
+api.trading.findPartner.useQuery({ handle }) // a player by any passport handle, with whether they take offers from you
+api.trading.searchPartners.useQuery({ query })
+api.trading.getTradeables.useQuery({ partnerId, side: "mine" | "theirs", filters?: { realmId?, rarity?, finish?, cardType?, search? }, cursor?, limit? })
+api.trading.getPartnerWishlist.useQuery({ partnerId })
+
+// Mutations (4)
+api.trading.createtradeOffer.useMutation() // { partnerId, initiatorCardIds?, recipientCardIds?, initiatorCredits?, recipientCredits?, message? }; at least one card in all
+api.trading.counterTrade.useMutation() // { tradeId, revision, initiatorCardIds?, recipientCardIds?, initiatorCredits?, recipientCredits?, message? }; edits the same table
+api.trading.respondToTrade.useMutation() // { tradeId, action: "ACCEPT" | "REJECT", revision }
+api.trading.cancelTrade.useMutation() // { tradeId }
+```
+
+### crafting Router (5 procedures)
+
+The card workshop ([cards.md](../systems/cards.md#dust-and-crafting)).
+
+```typescript
+// Queries (2)
+api.crafting.getNumbers.useQuery() // public (read-only rate limit): the economy numbers card screens preview with
+api.crafting.getDust.useQuery() // your dust per realm
+
+// Mutations (3)
+api.crafting.breakDown.useMutation() // { ownershipIds }; up to 100 copies, dust to each card's realm
+api.crafting.fuse.useMutation() // { ownershipIds }; copies of one card at one finish become one at the next
+api.crafting.craft.useMutation() // { cardId }; a Standard copy for realm dust plus the rarity floor in IxC
+```
+
+### nsImport Router (7 procedures)
+
+NationStates deck verification and import, and the flag owner's takedowns (they file and hide through the cards
+admin's Compliance queue). Region syncs and the CTE filter are `api.cards.admin.nationstates.*`.
+
+```typescript
+// Queries (2)
 api.nsImport.getVerificationUrl.useQuery({ nationName })
-api.nsImport.listHiddenNSCards.useQuery()
 api.nsImport.getMyNSCards.useQuery()
 
-// Mutations (14)
+// Mutations (5)
 api.nsImport.requestVerification.useMutation() // { nationName }
 api.nsImport.checkVerification.useMutation() // { verificationId, checksum }
 api.nsImport.importDeck.useMutation() // { verificationId }
-api.nsImport.fetchRegionCards.useMutation() // { regionNames, seasons? }
-api.nsImport.pauseRegionFetch.useMutation() // { syncLogId }
-api.nsImport.resumeRegionFetch.useMutation() // { syncLogId }
-api.nsImport.stopRegionFetch.useMutation() // { syncLogId }
-api.nsImport.discoverTopRegions.useMutation() // { limit?, tag? }
 api.nsImport.requestSelfServiceTakedown.useMutation() // { cardId, nationName, checksum, reason? }
-api.nsImport.hideNSCard.useMutation() // { nsCardId, nsSeason, reason? }
-api.nsImport.restoreNSCard.useMutation() // { nsCardId, nsSeason }
-api.nsImport.filterCTECards.useMutation()
 api.nsImport.hideMyCard.useMutation() // { nsCardId, nsSeason, reason? }
-api.nsImport.refreshCardValues.useMutation()
 ```
 
 ---

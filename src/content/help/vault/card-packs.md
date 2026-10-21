@@ -1,6 +1,6 @@
 ---
 title: Card Packs
-description: Buying packs in the Vault Shop, opening them, and how pack odds work.
+description: Buying packs in the Store, opening them, and how pack odds work.
 badge: Vault, Cards & Rewards
 prevHref: /help/vault/ixcredits
 prevLabel: IxCredits
@@ -10,18 +10,25 @@ nextLabel: Vault Shop Items
 
 ## Where packs are
 
-Packs are sold in the **Vault Shop**: [Vault → Store](/vault/store?tab=store) → **Vault Shop**. The shop has four tabs: **Marketplace** (packs for sale), **My Packs** (packs you own but haven't opened), **Cosmetics** and **Account Upgrades**. Packs are bought with [IxCredits](/help/vault/ixcredits).
+Packs are sold in the Store: [Vault → Store → Packs](/vault/store?view=packs). The Store has four tabs: **My packs** (packs you own but haven't opened), **Packs** (packs for sale), **Cosmetics** and **Account upgrades**. Packs are bought with [IxCredits](/help/vault/ixcredits).
 
 ## How to buy and open a pack
 
-1. Open the Vault Shop's **Marketplace** tab and select a pack to see its price, card count and odds.
-2. Buy it. The IxCredits are taken straight away and the pack goes to **My Packs**. (If you don't have enough IxCredits, you can't buy it.)
-3. Open it from **My Packs**. Tap the pack to open it, then reveal each card in turn.
-4. At the end, choose what to do with each card. **Keep** leaves it in your collection; **Junk** recycles it for IxCredits right away.
+1. Open the Store's **Packs** tab. Each pack shows its price; choose its **Pack details and odds** button to see its card count and the chance of each rarity.
+2. Buy it. The IxCredits are taken straight away and the pack is yours. (If you don't have enough IxCredits, you can't buy it.)
+3. Open it straight away, or later from **My packs**: choose **Open pack** and the pack tears open.
+4. The cards fan out face down. Tap a card, swipe, or press the Right or Down arrow key to turn the next one; rarer cards stay in the spotlight a little longer, and from Rare up a card plays the reveal sound (with sound on). **Reveal all** or the Escape key turns the rest, and **Skip** goes straight to the summary.
+5. The summary lists what you pulled, and its Rare and rarer cards lean toward your pointer and shimmer (not with Reduce Motion on). Every card is already in your collection: choose a card to open it, **Go to Mine** to see your cards, or open your next pack.
 
 ## Odds
 
-Every card in a pack rolls its rarity separately against that pack's odds. As a guide, the default odds are Common 65%, Uncommon 25%, Rare 7%, Ultra Rare 2%, Epic 0.9% and Legendary 0.1%; each pack sets its own, and pricier packs have better odds. If a pack guarantees a minimum rarity and none of its cards reach it, the last card is raised to that rarity.
+Every card in a pack rolls its rarity separately against that pack's odds, which you can see in the pack's details before you buy. As a guide, the default odds are Common 65%, Uncommon 25%, Rare 7%, Ultra Rare 2%, Epic 0.9% and Legendary 0.1%; each pack sets its own, and pricier packs have better odds. If a pack guarantees a minimum rarity and none of its cards reach it, the last card is raised to that rarity.
+
+A pack always gives the odds it shows. If it has no cards left of a rarity it shows or guarantees, it isn't sold, and a pack you already own stays unopened until it has them again. Opening a pack needs room in your collection for all its cards.
+
+## Finishes
+
+Each card you pull rolls a finish: Standard, Foil (about 1 in 12) or Holo (about 1 in 50). See [Dust, fusion and crafting](/help/vault/crafting#finishes).
 
 ## Kinds of packs
 
@@ -32,7 +39,8 @@ The seeded line-up (admins can change it) includes:
 
 ## Other ways to get cards
 
-- The [daily reward](/help/vault/ixcredits#the-daily-reward) card option.
-- [Auctions and trades](/help/vault/trading).
+- The [daily reward](/help/vault/ixcredits#the-daily-reward) card option. The daily card can come from any realm, at its own odds (by default the same as a pack's). It never gives Special, trophy or nation cards, and it needs room in your collection; if yours is full, take the IxCredits instead.
+- [Listings, auctions and trades](/help/vault/trading).
+- [Crafting](/help/vault/crafting#crafting) the cards you're missing.
 - [Importing your NationStates deck](/help/vault/ns-import).
 - Some [achievements](/help/gameplay/achievements) award cards or packs.

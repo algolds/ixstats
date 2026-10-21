@@ -7,20 +7,33 @@
  * Features:
  * - Atomic transactions for race condition protection
  * - IxCredits integration via vault-service
- * - real-time auction timing
+ * - real-time auction timing: 24 hours, 3 days or 7 days
  * - Auto-extension for last-minute bids
  * - Market fee calculation (admin house rake, default 10%, on sales >100 IxC)
- * - Listing fees (5 IxC standard, 10 IxC featured)
+ * - Listing fees and the unsold refund from the Economy tab; the fee paid is stored on the auction
  * - Bid validation (5% minimum increment)
+ * - Notices after the commit
  */
 
-import { vaultService, getVaultConfig, LedgerError } from "~/lib/vault/vault-service";
+import { vaultService, LedgerError } from "~/lib/vault/vault-service";
+import { lockVaultsTx, vaultsBusyError } from "~/lib/vault/vault-locks";
 import { TRPCError } from "@trpc/server";
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { notificationAPI } from "~/lib/notifications/api";
 import { grantCardXp } from "~/lib/cards/xp-utils";
-import { marketplaceFee } from "~/lib/cards/general-settings";
-import { SYSTEM_OWNER_IDS } from "~/lib/auth";
+import { boundCopyError } from "~/lib/cards/bound";
+import { notifyCard, notifyCards } from "~/lib/cards/card-notify";
+import { getEconomyConfig } from "~/lib/cards/economy-config";
+import { AUCTION_DURATION_MS, type AuctionDuration } from "~/lib/cards/market/auction-timing";
+import { listingRefund } from "~/lib/cards/market/fees";
+import { assertMarketOpen } from "~/lib/cards/market/market-open";
+import { royaltyNotices } from "~/lib/cards/market/royalty";
+import {
+  lockSaleVaultsTx,
+  settleCardSaleTx,
+  type CardSale,
+  type SaleSettlement,
+} from "~/lib/cards/market/settle-sale";
+import { auctionEndNotices, type AuctionEnd } from "~/lib/economy/auction-notices";
 import {
   publishMarketEvent,
   type MarketBroadcastMessage,
@@ -42,140 +55,152 @@ async function getMarketWs(): Promise<MarketBroadcastTarget | null> {
   return _marketWs?.getMarketWebSocketServer() ?? null;
 }
 
+/** Every broadcast follows a commit, so a failure is logged and never fails the call or skips its notices. */
 async function broadcastMarket(message: MarketBroadcastMessage): Promise<void> {
-  publishMarketEvent(message, await getMarketWs());
+  try {
+    publishMarketEvent(message, await getMarketWs());
+  } catch (error) {
+    console.warn(`[Auction Service] The ${message.type} broadcast failed:`, error);
+  }
 }
 
 const broadcastComplete = (auctionId: string, winnerId: string | null, finalPrice: number) =>
   broadcastMarket({ type: "auction_complete", data: { auctionId, winnerId, finalPrice } });
 
-type AuctionWithCard = Prisma.CardAuctionGetPayload<{
-  include: { CardOwnership: { include: { cards: true } } };
-}>;
+/** An auction as a sale reads it: its copy (null once gone) and its card's title, stored with the auction. */
+const AUCTION_READ = {
+  CardOwnership: { include: { cards: true } },
+  card: { select: { title: true } },
+} satisfies Prisma.CardAuctionInclude;
 
-/** Fire-and-forget notification: a failure is logged, never thrown. */
-async function notifyQuietly(
-  label: string,
-  auctionId: string,
-  payload: Parameters<typeof notificationAPI.create>[0]
-) {
+type AuctionWithCard = Prisma.CardAuctionGetPayload<{ include: typeof AUCTION_READ }>;
+
+/** An auction whose copy is still there. */
+type LiveAuction = AuctionWithCard & {
+  CardOwnership: NonNullable<AuctionWithCard["CardOwnership"]>;
+};
+
+/** A running auction's copy is locked, so nothing burns it: a copy gone is refused before anything moves. */
+function assertCopyOnSale(auction: AuctionWithCard): asserts auction is LiveAuction {
+  if (auction.CardOwnership === null) {
+    throw new TRPCError({ code: "CONFLICT", message: "This auction's card no longer exists" });
+  }
+}
+
+/** The sale of an auction's copy to `buyerId` at `price`. */
+function auctionSale(
+  auction: LiveAuction,
+  buyerId: string,
+  price: number,
+  kind: "AUCTION_END" | "AUCTION_BUYOUT"
+): CardSale {
+  const copy = auction.CardOwnership;
+  return {
+    ownershipId: copy.id,
+    cardId: copy.cards.id,
+    serialNumber: copy.serialNumber,
+    finish: copy.finish,
+    cardType: copy.cards.cardType,
+    countryId: copy.cards.countryId,
+    sellerId: auction.sellerId,
+    buyerId,
+    price,
+    action: kind,
+    sellerSource: kind === "AUCTION_END" ? "card_sale_auction" : "card_sale_buyout",
+    context: { auctionId: auction.id },
+    now: new Date(),
+  };
+}
+
+/**
+ * Runs an auction call: a ledger refusal is the player's to fix (BAD_REQUEST), a lost deadlock a CONFLICT to retry, a
+ * TRPCError passes through, and anything else is logged and becomes a 500 with `fallback` as its message.
+ */
+async function auctionCall<T>(fallback: string, work: () => Promise<T>): Promise<T> {
   try {
-    await notificationAPI.create(payload);
-  } catch (err) {
-    console.warn(`[Auction Service] ${label} notification failed for auction`, auctionId, err);
+    return await work();
+  } catch (error) {
+    if (error instanceof LedgerError) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
+    }
+    if (error instanceof TRPCError) throw error;
+    const busy = error instanceof Error ? vaultsBusyError(error) : null;
+    if (busy) throw busy;
+    console.error(`[Auction Service] ${fallback}:`, error);
+    throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: fallback });
+  }
+}
+
+/** Everyone who bid on an auction. */
+async function biddersOf(db: PrismaClient, auctionId: string): Promise<string[]> {
+  const bids = await db.auctionBid.findMany({
+    where: { auctionId },
+    select: { bidderId: true },
+    distinct: ["bidderId"],
+  });
+  return bids.map((bid) => bid.bidderId);
+}
+
+/**
+ * The end-of-auction and royalty notices, sent after the commit. A failure, the bidder read included, is logged and
+ * never fails the sale that has committed.
+ */
+async function notifyEnd(
+  db: PrismaClient,
+  auction: AuctionWithCard,
+  end: Pick<AuctionEnd, "winnerId" | "price" | "refund" | "byBuyout">,
+  settlement: SaleSettlement | null
+): Promise<void> {
+  try {
+    const bidderIds = end.winnerId ? await biddersOf(db, auction.id) : [];
+    await notifyCards(db, [
+      ...auctionEndNotices({
+        ...end,
+        auctionId: auction.id,
+        cardId: auction.cardId,
+        cardTitle: auction.card.title,
+        sellerId: auction.sellerId,
+        sellerNet: settlement?.sellerNet ?? 0,
+        bidderIds,
+      }),
+      ...royaltyNotices(
+        settlement?.royalties ?? [],
+        new Map([[auction.cardId, auction.card.title]])
+      ),
+    ]);
+  } catch (error) {
+    console.warn(`[Auction Service] End notices failed for auction ${auction.id}:`, error);
   }
 }
 
 /**
- * Nation-card royalty: 2% of the sale to the nation's owner, else the earliest human puller of
- * the card (never the seller, the buyer or a system account). Optional: must not block the sale.
+ * The seller's share of the listing fee back when an auction ends unsold: the seller or an admin cancels it, or it
+ * expires with no bids. The share is the Economy tab's refund percent of the fee the auction stored, so a free
+ * listing refunds nothing. REFUND is never capped. Returns the amount refunded.
  */
-async function payNationRoyalty(
+export async function refundListingFeeTx(
   tx: Prisma.TransactionClient,
-  auction: AuctionWithCard,
-  buyerId: string,
-  price: number
-) {
-  const card = auction.CardOwnership?.cards;
-  if (card?.cardType !== "NATION" || !card.countryId) return;
-
-  const royaltyAmount = Math.round(price * 0.02 * 100) / 100;
-  const isParty = (clerkId: string | null | undefined) =>
-    clerkId === auction.sellerId || clerkId === buyerId;
-
-  const nationOwner = await tx.user.findFirst({
-    where: { ownedCountries: { some: { id: card.countryId } } },
-  });
-  let recipient: string | null = null;
-  if (nationOwner && !isParty(nationOwner.clerkUserId)) {
-    recipient = nationOwner.clerkUserId;
-  } else {
-    const earliestOwnerships = await tx.cardOwnership.findMany({
-      where: { cardId: card.id },
-      orderBy: { createdAt: "asc" },
-      include: { User: true },
-    });
-    const firstHuman = earliestOwnerships.find((o) => {
-      const clerkId = o.User.clerkUserId;
-      return (
-        clerkId &&
-        clerkId.startsWith("user_") &&
-        !SYSTEM_OWNER_IDS.includes(clerkId) &&
-        !isParty(clerkId)
-      );
-    });
-    recipient = firstHuman?.User.clerkUserId ?? null;
-  }
-  if (!recipient) return;
-
-  try {
+  auction: { id: string; sellerId: string; listingFee: number },
+  reason: "cancelled" | "no_bids" | "admin_cancel"
+): Promise<number> {
+  const refund = listingRefund(auction.listingFee, (await getEconomyConfig(tx)).listingRefundPct);
+  if (refund > 0) {
     await vaultService.earnCreditsTx(tx, {
-      userId: recipient,
-      amount: royaltyAmount,
-      type: "EARN_PASSIVE",
-      source: "nation_card_royalty",
-      metadata: {
-        auctionId: auction.id,
-        cardId: card.id,
-        countryId: card.countryId,
-        salePrice: price,
-        royaltyRate: 0.02,
-      },
-    });
-    console.log(
-      `[Auction Service] Awarded ${royaltyAmount} IxC royalty to ${recipient} for nation card sale`
-    );
-  } catch (e) {
-    if (!(e instanceof LedgerError)) throw e;
-    console.warn("[Auction Service] Royalty skipped:", e.message);
-  }
-}
-
-/** Pays the seller (net of the marketplace fee) and royalty, hands the card to the buyer, records the price. */
-async function settleSale(
-  tx: Prisma.TransactionClient,
-  auction: AuctionWithCard,
-  sale: { buyerId: string; price: number; sellerSource: string }
-) {
-  const { buyerId, price } = sale;
-  const fee = await marketplaceFee(tx, price);
-  await vaultService.earnCreditsTx(tx, {
-    userId: auction.sellerId,
-    amount: price - fee,
-    type: "EARN_CARDS",
-    source: sale.sellerSource,
-    metadata: {
-      auctionId: auction.id,
-      cardInstanceId: auction.cardInstanceId,
-      marketplaceFee: fee,
-      grossSale: price,
-    },
-  });
-  await payNationRoyalty(tx, auction, buyerId, price);
-
-  await tx.cardOwnership.update({
-    where: { id: auction.cardInstanceId },
-    data: {
-      ownerId: buyerId,
-      userId: buyerId,
-      isLocked: false,
-      lastSalePrice: price,
-      lastSaleDate: new Date(),
-    },
-  });
-  if (auction.CardOwnership?.cards) {
-    await tx.card.update({
-      where: { id: auction.CardOwnership.cards.id },
-      data: { marketValue: price },
+      userId: auction.sellerId,
+      amount: refund,
+      type: "REFUND",
+      source: "auction_fee_refund",
+      metadata: { auctionId: auction.id, reason },
     });
   }
+  return refund;
 }
 
 export class AuctionService {
   /**
    * Create new auction listing
    *
-   * Validates ownership, deducts listing fee, creates auction, locks card
+   * Locks the copy, charges the Economy tab's listing fee and creates the auction, in one transaction
    *
    * @param params Auction creation parameters
    * @param db Prisma client
@@ -187,126 +212,80 @@ export class AuctionService {
       cardId: string;
       startingPrice: number;
       buyoutPrice?: number;
-      duration: 30 | 60; // minutes (30 = express, 60 = standard)
+      duration: AuctionDuration;
       isFeatured?: boolean;
     },
     db: PrismaClient
   ) {
-    const config = await getVaultConfig(db);
-    if (config.isMaintenanceMode) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "Vault economy is currently in maintenance mode.",
-      });
-    }
-    if (!config.isAuctionsEnabled) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "P2P card auctions are currently disabled globally.",
-      });
-    }
-
-    // 1. Validate card ownership
-    const ownership = await db.cardOwnership.findFirst({
-      where: {
-        id: params.cardId,
-        ownerId: params.userId,
-        isLocked: false,
-      },
-      include: {
-        cards: true,
-      },
-    });
-
-    if (!ownership) {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: "You do not own this card or it is already locked",
-      });
-    }
-
-    // 2. Validate pricing
-    if (params.startingPrice < 1) {
+    await assertMarketOpen(db);
+    if (!Number.isInteger(params.startingPrice) || params.startingPrice < 1) {
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: "Starting price must be at least 1 IxC",
       });
     }
-
-    if (params.buyoutPrice && params.buyoutPrice <= params.startingPrice) {
+    if (params.buyoutPrice !== undefined && params.buyoutPrice <= params.startingPrice) {
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: "Buyout price must be higher than starting price",
       });
     }
+    const cfg = await getEconomyConfig(db);
+    const isFeatured = params.isFeatured ?? false;
+    const listingFee = isFeatured ? cfg.listingFeeFeatured : cfg.listingFee;
+    // Real-world wall clock: auctions run in real time
+    const endTime = new Date(Date.now() + AUCTION_DURATION_MS[params.duration]);
 
-    // 3. Calculate listing fees
-    const listingFee = params.isFeatured ? 10 : 5; // Featured costs 10 IxC, standard 5 IxC
-    const balanceResult = await vaultService.getBalance(params.userId, db);
-
-    if (balanceResult.credits < listingFee) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: `Insufficient balance for listing fee. Need ${listingFee} IxC, have ${balanceResult.credits} IxC`,
-      });
-    }
-
-    // 4. Deduct listing fee
-    const spendResult = await vaultService.spendCredits(
-      params.userId,
-      listingFee,
-      "SPEND_MARKET",
-      "auction_listing_fee",
-      db,
-      {
-        cardId: params.cardId,
-        isFeatured: params.isFeatured ?? false,
-        duration: params.duration,
-      }
-    );
-
-    if (!spendResult.success) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: spendResult.message ?? "Failed to deduct listing fee",
-      });
-    }
-
-    // 5. Calculate end time (real-world wall clock — auctions run in real time)
-    const now = Date.now();
-    const endTime = now + params.duration * 60 * 1000; // Convert minutes to ms
-
-    // 6. Create auction and lock card (atomic transaction)
-    try {
+    return auctionCall("Failed to create auction", async () => {
       const auction = await db.$transaction(async (tx) => {
-        // Lock the card ownership first, only if it is still unlocked and ours. Two
-        // concurrent listings of one card both pass the check above; only one wins here.
+        const copy = await tx.cardOwnership.findFirst({
+          where: { id: params.cardId, ownerId: params.userId },
+          select: {
+            id: true,
+            cardId: true,
+            serialNumber: true,
+            cards: { select: { isBound: true } },
+          },
+        });
+        if (!copy) throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this card" });
+        // Bound cards (trophies, achievement rewards) can't be listed
+        if (copy.cards.isBound) throw boundCopyError();
+        // Two listings of one copy both pass the read above; only one wins the lock, and only it pays
         const locked = await tx.cardOwnership.updateMany({
-          where: { id: ownership.id, ownerId: params.userId, isLocked: false },
+          where: { id: copy.id, ownerId: params.userId, isLocked: false },
           data: { isLocked: true },
         });
         if (locked.count !== 1) {
           throw new TRPCError({
             code: "CONFLICT",
-            message: "This card is already listed or locked",
+            message: "This card is already listed or in a trade",
           });
         }
-
-        const newAuction = await tx.cardAuction.create({
+        if (listingFee > 0) {
+          await vaultService.spendCreditsTx(tx, {
+            userId: params.userId,
+            amount: listingFee,
+            type: "SPEND_MARKET",
+            source: "auction_listing_fee",
+            metadata: { cardId: params.cardId, isFeatured, duration: params.duration },
+          });
+        }
+        return tx.cardAuction.create({
           data: {
             id: `auction_${Date.now()}_${crypto.randomUUID()}`,
-            cardInstanceId: ownership.id,
+            cardInstanceId: copy.id,
+            cardId: copy.cardId,
+            serialNumber: copy.serialNumber,
             sellerId: params.userId,
             startingPrice: params.startingPrice,
             currentBid: params.startingPrice,
             buyoutPrice: params.buyoutPrice,
-            endTime: new Date(endTime),
-            isFeatured: params.isFeatured ?? false,
+            endTime,
+            isFeatured,
+            listingFee,
             status: "ACTIVE",
           },
         });
-
-        return newAuction;
       });
 
       console.log(
@@ -315,67 +294,8 @@ export class AuctionService {
 
       await broadcastMarket({ type: "auction_created", data: auction });
 
-      // Trigger watchlist price alerts (fire-and-forget)
-      try {
-        const watchlists = await db.cardWatchlist.findMany({
-          where: {
-            cardId: params.cardId,
-            userId: { not: params.userId }, // Don't notify the seller
-            OR: [
-              { targetPrice: null },
-              { targetPrice: { gte: params.startingPrice } },
-              params.buyoutPrice ? { targetPrice: { gte: params.buyoutPrice } } : {},
-            ],
-          },
-          include: {
-            user: {
-              select: { clerkUserId: true },
-            },
-          },
-        });
-
-        const cardTitle = ownership.cards.title;
-        for (const watch of watchlists) {
-          if (watch.user?.clerkUserId) {
-            await notificationAPI.create({
-              userId: watch.user.clerkUserId,
-              title: "Watchlist Card Listed!",
-              message: `A card on your watchlist (${cardTitle}) has been listed for auction starting at ${params.startingPrice} IxC!`,
-              type: "info",
-              category: "cards",
-              priority: "medium",
-              metadata: { auctionId: auction.id, cardId: params.cardId },
-            });
-          }
-        }
-      } catch (e) {
-        console.error("[Auction Service] Failed to trigger watchlist alerts:", e);
-      }
-
       return auction;
-    } catch (error) {
-      // Refund listing fee if auction creation fails
-      await vaultService.earnCredits(
-        params.userId,
-        listingFee,
-        "REFUND",
-        "auction_listing_fee_refund",
-        db,
-        { error: String(error) }
-      );
-
-      if (error instanceof TRPCError) {
-        throw new TRPCError({
-          code: error.code,
-          message: `${error.message}. Listing fee has been refunded.`,
-        });
-      }
-      console.error("[Auction Service] Failed to create auction:", error);
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to create auction. Listing fee has been refunded.",
-      });
-    }
+    });
   }
 
   /**
@@ -395,30 +315,12 @@ export class AuctionService {
     },
     db: PrismaClient
   ) {
-    const config = await getVaultConfig(db);
-    if (config.isMaintenanceMode) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "Vault economy is currently in maintenance mode.",
-      });
-    }
-    if (!config.isAuctionsEnabled) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "P2P card auctions are currently disabled globally.",
-      });
-    }
+    await assertMarketOpen(db);
 
     // 1. Fetch auction with current bid info
     const auction = await db.cardAuction.findUnique({
       where: { id: params.auctionId },
-      include: {
-        CardOwnership: {
-          include: {
-            cards: true,
-          },
-        },
-      },
+      include: { card: { select: { title: true } } },
     });
 
     if (!auction) {
@@ -479,7 +381,7 @@ export class AuctionService {
     }
 
     // 4. Execute bid in atomic transaction
-    try {
+    return auctionCall("Failed to place bid", async () => {
       await db.$transaction(async (tx) => {
         // 4a. Extend auction by 1 minute if <5min remaining
         const timeRemaining = new Date(auction.endTime).getTime() - now;
@@ -508,9 +410,11 @@ export class AuctionService {
         if (claimed.count !== 1) {
           throw new TRPCError({
             code: "CONFLICT",
-            message: "Auction changed while you were bidding — refresh and try again",
+            message: "This auction changed. Reload and try again.",
           });
         }
+        // The new and the outbid bidder's vaults, in user-id order, before either moves
+        await lockVaultsTx(tx, [params.userId, auction.currentBidderId]);
 
         // 5. Reserve from new bidder (LedgerError rolls the transaction back)
         await vaultService.spendCreditsTx(tx, {
@@ -573,43 +477,32 @@ export class AuctionService {
         });
       }
 
-      // 9. Notify previous bidder if outbid (fire-and-forget)
+      // 9. Tell the outbid bidder (a failed notice is logged; a muted card sends none)
       if (auction.currentBidderId) {
-        await notifyQuietly("Outbid", params.auctionId, {
+        await notifyCard(db, {
           userId: auction.currentBidderId,
-          title: "You've Been Outbid!",
-          message: `Someone placed a higher bid of ${params.amount} IxC on ${auction.CardOwnership?.cards?.title ?? "Unknown Card"}`,
+          cardId: auction.cardId,
+          title: "You've been outbid",
+          message: `Someone placed a higher bid of ${params.amount} IxC on ${auction.card.title}.`,
           type: "warning",
-          category: "cards",
           priority: "high",
           metadata: { auctionId: params.auctionId, newBid: params.amount },
         });
       }
 
       return { success: true };
-    } catch (error) {
-      console.error("[Auction Service] Failed to place bid:", error);
-      if (error instanceof LedgerError) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
-      }
-      if (error instanceof TRPCError) {
-        throw error;
-      }
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to place bid",
-      });
-    }
+    });
   }
 
   /**
    * Execute instant buyout
    *
-   * Transfers IxCredits and card ownership immediately, ends auction
+   * Transfers IxCredits and card ownership immediately, ends auction, and grants the buyer's card XP, in one
+   * transaction
    *
    * @param params Buyout parameters
    * @param db Prisma client
-   * @returns Success result
+   * @returns Success result, with the XP granted
    */
   async executeBuyout(
     params: {
@@ -618,29 +511,11 @@ export class AuctionService {
     },
     db: PrismaClient
   ) {
-    const config = await getVaultConfig(db);
-    if (config.isMaintenanceMode) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "Vault economy is currently in maintenance mode.",
-      });
-    }
-    if (!config.isAuctionsEnabled) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "P2P card auctions are currently disabled globally.",
-      });
-    }
+    await assertMarketOpen(db);
 
     const auction = await db.cardAuction.findUnique({
       where: { id: params.auctionId },
-      include: {
-        CardOwnership: {
-          include: {
-            cards: true,
-          },
-        },
-      },
+      include: AUCTION_READ,
     });
 
     if (!auction || !auction.buyoutPrice) {
@@ -664,6 +539,7 @@ export class AuctionService {
       });
     }
 
+    assertCopyOnSale(auction);
     // Extract buyoutPrice for use throughout function
     const buyoutPrice = auction.buyoutPrice;
 
@@ -676,17 +552,18 @@ export class AuctionService {
       });
     }
 
-    // Execute buyout transaction
-    try {
-      await db.$transaction(async (tx) => {
-        // 1. Settle the auction (compare-and-swap on the state read above). If a bid,
-        // another buyout or the expiry cron got there first, nothing below runs.
+    return auctionCall("Failed to execute buyout", async () => {
+      const { settlement, xp } = await db.$transaction(async (tx) => {
+        // 1. Settle the auction (compare-and-swap on the state read above, while it still runs). If a bid,
+        // another buyout or the end got there first, nothing below runs: an ended auction is the high bidder's,
+        // even before the cron settles it.
         const claimed = await tx.cardAuction.updateMany({
           where: {
             id: params.auctionId,
             status: "ACTIVE",
             currentBid: auction.currentBid,
             currentBidderId: auction.currentBidderId,
+            endTime: { gt: new Date() },
           },
           data: {
             status: "COMPLETED",
@@ -697,6 +574,9 @@ export class AuctionService {
         if (claimed.count !== 1) {
           throw new TRPCError({ code: "CONFLICT", message: "Auction is no longer available" });
         }
+        const sale = auctionSale(auction, params.userId, buyoutPrice, "AUCTION_BUYOUT");
+        // Every vault the buyout writes, in user-id order, before any credit or copy moves
+        await lockSaleVaultsTx(tx, sale, [auction.currentBidderId]);
 
         // 2. Refund current bidder (if any) — REFUND is never capped
         if (auction.currentBidderId) {
@@ -712,23 +592,23 @@ export class AuctionService {
           });
         }
 
-        // 3. Buyer pays the full price (LedgerError rolls the transaction back); seller, royalty, card follow
+        // 3. Buyer pays the full price (LedgerError rolls the transaction back); the copy, seller and royalty follow
         await vaultService.spendCreditsTx(tx, {
           userId: params.userId,
           amount: buyoutPrice,
           type: "SPEND_MARKET",
           source: "card_purchase_buyout",
-          metadata: {
-            auctionId: params.auctionId,
-            cardInstanceId: auction.cardInstanceId,
-            marketplaceFee: await marketplaceFee(tx, buyoutPrice),
-          },
+          metadata: { auctionId: params.auctionId, cardInstanceId: auction.cardInstanceId },
         });
-        await settleSale(tx, auction, {
-          buyerId: params.userId,
-          price: buyoutPrice,
-          sellerSource: "card_sale_buyout",
-        });
+        const settled = await settleCardSaleTx(tx, sale);
+        // 4. Card XP for the bought copy, as for an auction win
+        const granted = await grantCardXp(
+          tx,
+          sale.ownershipId,
+          "AUCTION_WIN",
+          JSON.stringify({ auctionId: params.auctionId })
+        );
+        return { settlement: settled, xp: granted };
       });
 
       console.log(
@@ -736,21 +616,15 @@ export class AuctionService {
       );
 
       await broadcastComplete(params.auctionId, params.userId, buyoutPrice);
+      await notifyEnd(
+        db,
+        auction,
+        { winnerId: params.userId, price: buyoutPrice, refund: 0, byBuyout: true },
+        settlement
+      );
 
-      return { success: true };
-    } catch (error) {
-      console.error("[Auction Service] Failed to execute buyout:", error);
-      if (error instanceof LedgerError) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
-      }
-      if (error instanceof TRPCError) {
-        throw error;
-      }
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to execute buyout",
-      });
-    }
+      return { success: true as const, xp };
+    });
   }
 
   /**
@@ -765,13 +639,7 @@ export class AuctionService {
   async completeAuction(auctionId: string, db: PrismaClient) {
     const auction = await db.cardAuction.findUnique({
       where: { id: auctionId },
-      include: {
-        CardOwnership: {
-          include: {
-            cards: true,
-          },
-        },
-      },
+      include: AUCTION_READ,
     });
 
     if (!auction || auction.status !== "ACTIVE") {
@@ -785,9 +653,11 @@ export class AuctionService {
     }
 
     const finalPrice = auction.currentBid ?? auction.startingPrice;
+    const winnerId = auction.currentBidderId;
 
     try {
-      await db.$transaction(async (tx) => {
+      // Only money and copies move inside; the broadcast and the notices follow the commit
+      const outcome = await db.$transaction(async (tx) => {
         // Settle the auction first (compare-and-swap on the state read above). A buyout,
         // a cancel or another cron run that got there first leaves nothing to do.
         const claimed = await tx.cardAuction.updateMany({
@@ -797,95 +667,46 @@ export class AuctionService {
             currentBidderId: auction.currentBidderId,
             currentBid: auction.currentBid,
           },
-          data: auction.currentBidderId
-            ? { status: "COMPLETED", winnerId: auction.currentBidderId, finalPrice }
-            : { status: "CANCELLED" },
+          data: winnerId ? { status: "COMPLETED", winnerId, finalPrice } : { status: "CANCELLED" },
         });
         if (claimed.count !== 1) {
-          return;
+          return null;
         }
 
-        if (auction.currentBidderId) {
+        if (winnerId) {
           // Credits were reserved from the bidder at bid time; pay the seller and hand over the card
-          await settleSale(tx, auction, {
-            buyerId: auction.currentBidderId,
-            price: finalPrice,
-            sellerSource: "card_sale_auction",
-          });
+          assertCopyOnSale(auction);
+          const sale = auctionSale(auction, winnerId, finalPrice, "AUCTION_END");
+          await lockSaleVaultsTx(tx, sale);
+          const settlement = await settleCardSaleTx(tx, sale);
+          // Card XP for the winner's copy (the Economy tab's auction-win amount)
+          await grantCardXp(tx, sale.ownershipId, "AUCTION_WIN", JSON.stringify({ auctionId }));
+          return { settlement, refund: 0 };
+        }
 
-          // Grant 50 XP to the winner's card instance
-          await grantCardXp(
-            tx as any,
-            auction.cardInstanceId,
-            50,
-            "AUCTION_COMPLETE",
-            JSON.stringify({ auctionId })
-          );
-
-          console.log(
-            `[Auction Service] Completed auction ${auctionId} - Winner: ${auction.currentBidderId} for ${finalPrice} IxC`
-          );
-
-          await broadcastComplete(auctionId, auction.currentBidderId, finalPrice);
-
-          const cardTitle = auction.CardOwnership?.cards?.title ?? "Unknown Card";
-          await notifyQuietly("Winner", auctionId, {
-            userId: auction.currentBidderId,
-            title: "You Won an Auction!",
-            message: `Congratulations! You won ${cardTitle} for ${finalPrice} IxC`,
-            type: "success",
-            category: "cards",
-            priority: "high",
-            metadata: { auctionId, cardInstanceId: auction.cardInstanceId, finalPrice },
-          });
-          await notifyQuietly("Seller", auctionId, {
-            userId: auction.sellerId,
-            title: "Card Sold!",
-            message: `Your ${cardTitle} sold for ${finalPrice} IxC`,
-            type: "success",
-            category: "cards",
-            priority: "high",
-            metadata: { auctionId, buyerId: auction.currentBidderId, finalPrice },
-          });
-        } else {
-          // No bids - return card to seller, refund 50% of listing fee
-          await tx.cardOwnership.update({
-            where: {
-              id: auction.cardInstanceId,
-            },
+        // No bids: the copy goes back to the seller (unless it is gone) with their share of the listing fee
+        if (auction.cardInstanceId !== null) {
+          await tx.cardOwnership.updateMany({
+            where: { id: auction.cardInstanceId, ownerId: auction.sellerId },
             data: { isLocked: false },
           });
-
-          const refund = auction.isFeatured ? 5 : 2.5; // 50% refund
-          await vaultService.earnCreditsTx(tx, {
-            userId: auction.sellerId,
-            amount: refund,
-            type: "REFUND",
-            source: "auction_fee_refund",
-            metadata: {
-              auctionId,
-              reason: "no_bids",
-            },
-          });
-
-          console.log(
-            `[Auction Service] Expired auction ${auctionId} with no bids - Refunded ${refund} IxC to seller`
-          );
-
-          // No bids expired — treat as complete/cancelled for WS
-          await broadcastComplete(auctionId, auction.sellerId, 0);
-
-          await notifyQuietly("No-bid", auctionId, {
-            userId: auction.sellerId,
-            title: "Auction Ended — No Bids",
-            message: `Your auction for ${auction.CardOwnership?.cards?.title ?? "Unknown Card"} ended without any bids`,
-            type: "info",
-            category: "cards",
-            priority: "low",
-            metadata: { auctionId },
-          });
         }
+        return { settlement: null, refund: await refundListingFeeTx(tx, auction, "no_bids") };
       });
+      if (!outcome) return;
+
+      console.log(
+        `[Auction Service] Completed auction ${auctionId}: ${winnerId ? `won by ${winnerId} for ${finalPrice} IxC` : `no bids, ${outcome.refund} IxC refunded`}`
+      );
+
+      // An unsold auction goes out as complete, with the seller and 0, as before
+      await broadcastComplete(auctionId, winnerId ?? auction.sellerId, winnerId ? finalPrice : 0);
+      await notifyEnd(
+        db,
+        auction,
+        { winnerId, price: winnerId ? finalPrice : 0, refund: outcome.refund, byBuyout: false },
+        outcome.settlement
+      );
     } catch (error) {
       console.error(`[Auction Service] Failed to complete auction ${auctionId}:`, error);
       throw error;
@@ -899,7 +720,7 @@ export class AuctionService {
    *
    * @param params Cancel parameters
    * @param db Prisma client
-   * @returns Success result
+   * @returns Success result, with the listing fee refunded
    */
   async cancelAuction(
     params: {
@@ -908,19 +729,7 @@ export class AuctionService {
     },
     db: PrismaClient
   ) {
-    const config = await getVaultConfig(db);
-    if (config.isMaintenanceMode) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "Vault economy is currently in maintenance mode.",
-      });
-    }
-    if (!config.isAuctionsEnabled) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "P2P card auctions are currently disabled globally.",
-      });
-    }
+    await assertMarketOpen(db);
 
     const auction = await db.cardAuction.findUnique({
       where: { id: params.auctionId },
@@ -950,8 +759,8 @@ export class AuctionService {
       });
     }
 
-    try {
-      await db.$transaction(async (tx) => {
+    return auctionCall("Failed to cancel auction", async () => {
+      const refund = await db.$transaction(async (tx) => {
         // Cancel auction (compare-and-swap: still ACTIVE, still ours, still no bids)
         const claimed = await tx.cardAuction.updateMany({
           where: {
@@ -966,140 +775,24 @@ export class AuctionService {
           throw new TRPCError({ code: "CONFLICT", message: "Auction can no longer be cancelled" });
         }
 
-        // Unlock card
-        await tx.cardOwnership.update({
-          where: {
-            id: auction.cardInstanceId,
-          },
-          data: { isLocked: false },
-        });
+        // Unlock the seller's copy (unless it is gone)
+        if (auction.cardInstanceId !== null) {
+          await tx.cardOwnership.updateMany({
+            where: { id: auction.cardInstanceId, ownerId: auction.sellerId },
+            data: { isLocked: false },
+          });
+        }
 
-        // Refund 50% of listing fee — REFUND is never capped
-        const refund = auction.isFeatured ? 5 : 2.5;
-        await vaultService.earnCreditsTx(tx, {
-          userId: params.userId,
-          amount: refund,
-          type: "REFUND",
-          source: "auction_fee_refund",
-          metadata: {
-            auctionId: params.auctionId,
-            reason: "cancelled",
-          },
-        });
+        // The seller check above makes auction.sellerId the caller
+        return refundListingFeeTx(tx, auction, "cancelled");
       });
 
       console.log(`[Auction Service] User ${params.userId} cancelled auction ${params.auctionId}`);
 
       await broadcastComplete(params.auctionId, params.userId, 0);
 
-      return { success: true };
-    } catch (error) {
-      console.error("[Auction Service] Failed to cancel auction:", error);
-      if (error instanceof LedgerError) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
-      }
-      if (error instanceof TRPCError) {
-        throw error;
-      }
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to cancel auction",
-      });
-    }
-  }
-
-  /**
-   * Get active auctions with filters
-   *
-   * @param params Query parameters
-   * @param db Prisma client
-   * @returns Paginated auction results
-   */
-  async getActiveAuctions(
-    params: {
-      cardId?: string;
-      sellerId?: string;
-      isFeatured?: boolean;
-      rarity?: string;
-      cardType?: string;
-      minPrice?: number;
-      maxPrice?: number;
-      sortBy?: "ending_soon" | "newest" | "price_low" | "price_high";
-      limit?: number;
-      offset?: number;
-    },
-    db: PrismaClient
-  ) {
-    const limit = Math.min(params.limit ?? 20, 100);
-    const offset = params.offset ?? 0;
-
-    const where: any = {
-      status: "ACTIVE",
-      endTime: { gt: new Date() },
-      ...(params.sellerId ? { sellerId: params.sellerId } : {}),
-      ...(params.isFeatured !== undefined ? { isFeatured: params.isFeatured } : {}),
-    };
-
-    // Card-owned filters (rarity + cardType are on Card model through CardOwnership)
-    const cardsFilter: any = {};
-    if (params.rarity) cardsFilter.rarity = params.rarity;
-    if (params.cardType) cardsFilter.cardType = params.cardType;
-    if (Object.keys(cardsFilter).length > 0) {
-      where.CardOwnership = { cards: cardsFilter };
-    }
-
-    // Price range filters (currentBid is on the auction)
-    if (params.minPrice !== undefined || params.maxPrice !== undefined) {
-      where.currentBid = {};
-      if (params.minPrice !== undefined) where.currentBid.gte = params.minPrice;
-      if (params.maxPrice !== undefined) where.currentBid.lte = params.maxPrice;
-    }
-
-    // Sorting
-    // eslint-disable-next-line prefer-const
-    let orderBy: any[] = [{ isFeatured: "desc" }];
-    if (params.sortBy === "newest") {
-      orderBy.push({ createdAt: "desc" });
-    } else if (params.sortBy === "price_low") {
-      orderBy.push({ currentBid: "asc" });
-    } else if (params.sortBy === "price_high") {
-      orderBy.push({ currentBid: "desc" });
-    } else {
-      // Default: ending soon
-      orderBy.push({ endTime: "asc" });
-    }
-
-    const [total, auctions] = await Promise.all([
-      db.cardAuction.count({ where }),
-      db.cardAuction.findMany({
-        where,
-        include: {
-          CardOwnership: {
-            include: {
-              cards: true,
-            },
-          },
-          AuctionBid: {
-            orderBy: { createdAt: "desc" },
-            take: 1,
-          },
-        },
-        orderBy,
-        take: limit,
-        skip: offset,
-      }),
-    ]);
-
-    // Filter by cardId if provided (post-query since it's on related model)
-    const filteredAuctions = params.cardId
-      ? auctions.filter((a) => a.CardOwnership?.cards?.id === params.cardId)
-      : auctions;
-
-    return {
-      auctions: filteredAuctions,
-      total: filteredAuctions.length,
-      hasMore: offset + limit < total,
-    };
+      return { success: true as const, refund };
+    });
   }
 }
 

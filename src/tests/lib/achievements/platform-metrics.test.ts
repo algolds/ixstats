@@ -4,6 +4,10 @@
  * counts, the posting and claim streaks, card activity (trophy cards out of deck value), Lorewards
  * through the link, and the Renaissance week (wiki edit, post and card activity in one ISO week).
  */
+jest.mock("~/lib/cards/copy-value", () => ({
+  deckValueOf: jest.fn(async () => ({ total: 0, exTrophy: 0 })),
+}));
+
 import type { MetricContext } from "~/lib/achievements/metrics/registry";
 import {
   PLATFORM_LOADERS,
@@ -20,6 +24,7 @@ import {
   wikiLoader,
 } from "~/lib/achievements/metrics/platform";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
+import { deckValueOf } from "~/lib/cards/copy-value";
 
 const DAY = 86_400_000;
 // A Wednesday in ISO week 2026-W42 (Monday 2026-10-12).
@@ -53,7 +58,6 @@ const unlinked = (db: Db) => db.wikiAccountLink.findFirst.mockResolvedValue(null
 /** What each raw-query loader's single aggregate returns in the declared-keys check. */
 const RAW_ROWS: Record<string, unknown[]> = {
   "platform-wiki": [{ edits: 0, created: 0, pages: 0 }],
-  "platform-cards-deck": [{ value: 0 }],
   "platform-renaissance": [{ weeks: 0 }],
 };
 
@@ -71,8 +75,18 @@ describe("registry shape", () => {
     expect(keys).not.toContain("mapEditsApproved");
   });
 
-  it("each loader returns exactly its declared keys, in at most 3 queries and no row lists", async () => {
+  /**
+   * The one loader allowed reads past the 3-query budget, and why (the header of metrics/platform.ts). Its deck value
+   * is the shared per-copy value, mocked in this file, so its reads are not counted here: no other loader may reach it.
+   */
+  const BUDGET_EXEMPT: Record<string, string> = {
+    "platform-cards-deck":
+      "deckValueOf (src/lib/cards/copy-value.ts): batched reads of the player's live copies, bounded by card capacity",
+  };
+
+  it("each loader returns exactly its declared keys, in at most 3 queries and no row lists, bar the named exemption", async () => {
     for (const loader of PLATFORM_LOADERS) {
+      jest.mocked(deckValueOf).mockClear();
       const db = rawDb(RAW_ROWS[loader.id] ?? []);
       linked(db);
       for (const model of [
@@ -102,6 +116,11 @@ describe("registry shape", () => {
       );
       const calls = queries.reduce((n, fn) => n + (fn.mock?.calls.length ?? 0), 0);
       expect(calls).toBeLessThanOrEqual(3);
+      // Only the exempt loader reads through the mocked (uncounted) deck value.
+      expect([loader.id, jest.mocked(deckValueOf).mock.calls.length > 0]).toEqual([
+        loader.id,
+        loader.id in BUDGET_EXEMPT,
+      ]);
       for (const model of ["wikiRevision", "thinkpagesPost"]) {
         expect(db[model]?.findMany?.mock.calls.length ?? 0).toBe(0);
         expect(db[model]?.groupBy?.mock.calls.length ?? 0).toBe(0);
@@ -297,15 +316,16 @@ describe("cards activity loader", () => {
 });
 
 describe("cards deck loader", () => {
-  function setup(deck: unknown = [{ value: 0 }]) {
-    const db = rawDb(deck);
+  function setup(exTrophy = 0) {
+    const db = rawDb();
     db.cardOwnership.count.mockResolvedValue(1);
     db.myVault.findUnique.mockResolvedValue({ loginStreak: 7, lastLoginDate: day(14, 2) });
+    jest.mocked(deckValueOf).mockResolvedValue({ total: exTrophy + 500, exTrophy });
     return db;
   }
 
   it("reads Legendaries, the trophy-excluding deck value and the effective claim streak", async () => {
-    const db = setup([{ value: 10_000 }]);
+    const db = setup(10_000);
     expect(await cardsDeckLoader.load(ctx(db))).toEqual({
       legendaryOwned: 1,
       deckValueExTrophy: 10_000,
@@ -318,24 +338,20 @@ describe("cards deck loader", () => {
     await cardsDeckLoader.load(ctx(db));
     expect(db.cardOwnership.count.mock.calls[0]![0].where).toEqual({
       ownerId: "u1",
-      cards: { rarity: "LEGENDARY", isRetired: false, lorewardEntryId: null },
+      cards: { rarity: "LEGENDARY", isRetired: false, cardType: { not: "TROPHY" } },
       transferEvents: { some: { toUserId: "u1", action: { in: ["PACK_OPEN", "TRADE"] } } },
     });
   });
 
-  it("sums deck value in the database over live, non-trophy cards, with the user id bound", async () => {
-    const db = setup([{ value: 9800 }]);
+  it("values the player's deck by the shared copy value, trophies left out", async () => {
+    const db = setup(9800);
     await cardsDeckLoader.load(ctx(db));
-    expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
-    const { sql, params } = sqlOf(db);
-    expect(params).toEqual(["u1"]);
-    expect(sql).toContain('SUM(c."marketValue" * o.quantity)');
-    expect(sql).toContain('c."isRetired" = false');
-    expect(sql).toContain('c."lorewardEntryId" IS NULL');
+    expect(jest.mocked(deckValueOf)).toHaveBeenCalledWith(db, "u1");
+    expect(db.$queryRaw).not.toHaveBeenCalled();
   });
 
-  it("deck value is 0 when the aggregate returns no row, and the claim streak is 0 without a vault", async () => {
-    const db = setup([]);
+  it("deck value is 0 for an empty deck, and the claim streak is 0 without a vault", async () => {
+    const db = setup(0);
     db.myVault.findUnique.mockResolvedValue(null);
     const result = await cardsDeckLoader.load(ctx(db));
     expect(result.deckValueExTrophy).toBe(0);

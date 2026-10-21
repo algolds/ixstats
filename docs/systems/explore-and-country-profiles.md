@@ -2,9 +2,9 @@
 
 **Last updated:** 2026-10-17
 **Status:** Live and public: signed-out visitors can browse every directory and profile.
-**Routes:** `/countries` · `/explore/collections` · `/countries/[slug]` and its `factbook/**`, `dossier`,
+**Routes:** `/countries` · `/countries/[slug]` and its `factbook/**`, `dossier`,
 `activity` and `modeling` sub-routes
-**Code:** `src/app/countries/`, `src/app/explore/`, `src/components/country-profile/`,
+**Code:** `src/app/countries/`, `src/components/country-profile/`,
 `src/server/api/routers/countries/` (`list.ts`, `economy.ts`, `public-record.ts`), `src/lib/country/public-record.ts`
 **Detailed route and component map:** [`src/app/countries/README.md`](../../src/app/countries/README.md)
 
@@ -25,9 +25,8 @@ and is scoped to one realm (`realmWhere`):
 - with no `realm`, it uses the realm of the viewer's active nation, or Ixnay when signed out;
 - `realm: "*"` (`ALL_REALMS`) returns every realm for site admins; anyone else gets their own realm.
 
-`/explore/collections` is a different thing: the public Vault card collection gallery (`CollectionGallery`,
-`vault.getPublicCollections` and `vault.getCollectionLeaderboard`). It has search, sorting by newest, most valuable,
-most cards or top rated, and a leaderboard.
+The public Vault card collection gallery that once sat at `/explore/collections` is gone: players' showcases live in
+the cards hub's Sets tab ([cards.md](./cards.md#showcases)), and its old address redirects there.
 
 ## 2. The country profile
 
@@ -88,7 +87,6 @@ directive counts from their own owner queries.
 | `countries.getByIdWithEconomicData` | public, rate limited | Profile shell, modeling |
 | `countries.getPublicRecord` | public | Profile directives and issue outcomes |
 | `countries.getActivityRingsData` | public, rate limited | Vitality rings |
-| `vault.getPublicCollections`, `vault.getCollectionLeaderboard` | public | `/explore/collections` |
 
 ## 5. Jobs
 
