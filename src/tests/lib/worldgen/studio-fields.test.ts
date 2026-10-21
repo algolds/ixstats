@@ -4,10 +4,7 @@
  */
 import { worldGenParamsSchema } from "~/lib/maps/import/world-bundle";
 import { DEFAULT_PARAMS } from "~/lib/worldgen/v2/config";
-import {
-  PARAM_RANGES,
-  STUDIO_GROUPS
-} from "~/lib/worldgen/studio-fields";
+import { PARAM_RANGES, STUDIO_GROUPS } from "~/lib/worldgen/studio-fields";
 
 const { seed: _seed, ...DEFAULTS } = DEFAULT_PARAMS;
 const accepts = (patch: object) =>

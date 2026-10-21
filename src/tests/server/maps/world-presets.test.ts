@@ -9,7 +9,7 @@ import {
   restoreWorldPresetVersion,
   saveWorldPresetDraft,
   seedWorldPresets,
-  setWorldPresetArchived
+  setWorldPresetArchived,
 } from "~/server/modules/maps/world-presets";
 import { createPresetDb } from "./world-preset-fakes";
 
@@ -194,7 +194,7 @@ describe("concurrent edits", () => {
     const { client, db, presets } = setup();
     await listWorldPresets(client);
     const realCreate = db.worldPreset.create.getMockImplementation()!;
-    db.worldPreset.create.mockImplementationOnce(async (args) => {
+    db.worldPreset.create.mockImplementationOnce(async () => {
       await realCreate({ data: { slug: "racy", name: "Other admin's" } });
       throw Object.assign(new Error("Unique constraint failed on slug"), { code: "P2002" });
     });

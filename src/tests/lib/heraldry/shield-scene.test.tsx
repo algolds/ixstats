@@ -1,9 +1,5 @@
 import type { HeraldryComposition } from "~/lib/heraldry";
-import {
-  buildShieldScene,
-  innerSvgMarkup,
-  serializeShieldSvg
-} from "~/lib/heraldry/shield-scene";
+import { buildShieldScene, innerSvgMarkup, serializeShieldSvg } from "~/lib/heraldry/shield-scene";
 import "~/components/maps/vexel/renderer/ShieldRenderer";
 
 const CUSTOM_ID = "6f1c2a52-6a8e-4b8e-9d55-0c1f7c1d2a11";

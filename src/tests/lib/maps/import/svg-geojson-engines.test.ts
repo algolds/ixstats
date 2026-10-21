@@ -1,10 +1,7 @@
 /** @jest-environment node */
 import type { MultiPolygon, Polygon } from "geojson";
 import { runSvgEngine } from "~/lib/maps/import/svg-engine";
-import {
-  GeojsonImportError,
-  inspectGeojson
-} from "~/lib/maps/import/geojson-engine";
+import { GeojsonImportError, inspectGeojson } from "~/lib/maps/import/geojson-engine";
 import { buildNationGeometries } from "~/lib/maps/import/build";
 import { resolveGeoreference } from "~/lib/maps/import/georef";
 import { polygonPlanarArea } from "~/lib/maps/ring-assembly";
@@ -82,22 +79,6 @@ const square = (x: number, y: number, size: number) => ({
 });
 
 describe("GeoJSON engine", () => {
-  const lonlat = fc([
-    { type: "Feature", properties: { NAME: "Aurelia", id: 1 }, geometry: square(0, 0, 10) },
-    { type: "Feature", properties: { NAME: "Aurelia", id: 2 }, geometry: square(10, 0, 10) },
-    { type: "Feature", properties: { NAME: "Borealis", id: 3 }, geometry: square(30, 0, 5) },
-    {
-      type: "Feature",
-      properties: { NAME: "River" },
-      geometry: {
-        type: "LineString",
-        coordinates: [
-          [0, 0],
-          [1, 1],
-        ],
-      },
-    },
-  ]);
   it("refuses a projected CRS whose coordinates are not lon/lat", () => {
     const mercator = fc(
       [{ type: "Feature", properties: { NAME: "A" }, geometry: square(1e6, 1e6, 1e5) }],

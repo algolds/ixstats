@@ -1,8 +1,5 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
-import {
-  applyVectorTiles,
-  tileUrlTemplate,
-} from "~/lib/maps/decorative-tiles";
+import { applyVectorTiles, tileUrlTemplate } from "~/lib/maps/decorative-tiles";
 
 type Source = { type: string; tiles?: string[]; setTiles?: jest.Mock };
 type Layer = { id: string; type: string; source?: string; [key: string]: unknown };

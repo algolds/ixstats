@@ -1,10 +1,7 @@
 /** @jest-environment node */
 import sharp from "sharp";
 import type { LineString, MultiLineString, Polygon } from "geojson";
-import {
-  altitudeStyles,
-  type ElevationBand,
-} from "~/lib/maps/import/png/elevation";
+import { altitudeStyles, type ElevationBand } from "~/lib/maps/import/png/elevation";
 import { runLayerEngine, type LayerEngineResult } from "~/lib/maps/import/png/layer-engine";
 import { engineContext } from "~/lib/maps/import/progress";
 import { polygonPlanarArea } from "~/lib/maps/ring-assembly";
@@ -118,7 +115,6 @@ describe("altitudeStyles", () => {
 
 describe("PNG layer engine: elevation bands and rivers from a geography map", () => {
   let result: LayerEngineResult;
-  let smoothed: LayerEngineResult;
   beforeAll(async () => {
     const geography = await encode(geographyPixel);
     const sources = {
@@ -133,7 +129,6 @@ describe("PNG layer engine: elevation bands and rivers from a geography map", ()
       { simplify: 0, smooth: 0, elevationSmoothing: 0, minRegionPixels },
       ctx()
     );
-    smoothed = await runLayerEngine(sources, { minRegionPixels }, ctx());
   });
 
   const band = (r: LayerEngineResult, subgroup: string) =>

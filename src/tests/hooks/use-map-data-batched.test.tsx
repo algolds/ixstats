@@ -14,7 +14,6 @@ let mockCritical: LayerResult;
 let mockExtra: LayerResult;
 let mockMarkers: { data?: { features: unknown; capitals: unknown; realmId: string } };
 let mockDetail: { data?: { cities: unknown; subdivisions: unknown } };
-let mockDetailEnabled: boolean | undefined;
 /** The map version the realm answers (undefined until its query does), and what the two overlay queries were given. */
 let mockVersion: { realmId: string; version: number } | undefined;
 let mockMarkersCall: { input: unknown; enabled?: boolean };
@@ -47,9 +46,8 @@ jest.mock("~/trpc/react", () => ({
         },
       },
       getMapBundleDetail: {
-        useQuery: (input: unknown, opts: { enabled?: boolean }) => {
+        useQuery: (input: unknown) => {
           mockDetailInput = input;
-          mockDetailEnabled = opts.enabled;
           return mockDetail;
         },
       },
@@ -80,7 +78,6 @@ beforeEach(() => {
   mockMarkers = {};
   mockDetail = {};
   mockDropStaleOverlays.mockClear();
-  mockDetailEnabled = undefined;
   mockVersion = { realmId: "default", version: 1 };
   mockMarkersCall = { input: undefined };
   mockDetailInput = undefined;

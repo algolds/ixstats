@@ -2,7 +2,7 @@ import {
   draftPipeline,
   stableJson,
   toDraft,
-  validateDraft
+  validateDraft,
 } from "~/app/admin/realms/_components/map-pipeline/pipeline-draft";
 import type { RealmMapPipeline } from "~/lib/maps/realm-map-pipeline";
 import { sourcePreset } from "~/lib/realms/sources/presets";

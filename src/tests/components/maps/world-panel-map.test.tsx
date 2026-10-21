@@ -59,7 +59,6 @@ beforeEach(resetPanelTests);
 afterEach(cleanUpPanelTests);
 
 describe("this realm's map", () => {
-  const sourceControl = () => screen.getByRole("radiogroup", { name: "Source" });
   it("makes no world from a map still arriving, and uses the latest controls once it has settled", () => {
     saveWorldRecipe(REALM, {
       seed: 9,

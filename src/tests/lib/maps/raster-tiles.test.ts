@@ -10,7 +10,7 @@ import {
   rasterTilePath,
   remapRows,
   sameRasterLayer,
-  tileSourceRows
+  tileSourceRows,
 } from "~/lib/maps/raster-tiles";
 import { type RealmRasterLayer } from "~/lib/maps/realm-map-settings";
 describe("Mercator rows", () => {

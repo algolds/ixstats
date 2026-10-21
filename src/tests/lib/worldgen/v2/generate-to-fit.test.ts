@@ -161,7 +161,6 @@ describe("v2 MeshCache", () => {
 
 describe("v2 nation slots", () => {
   const world = generateWorld({ ...PARAMS, cellCount: 8000 });
-  const { states } = world.graph!;
   it("carries a derived baseline inside the development band", () => {
     for (const slot of world.slots) {
       expect(Number.isInteger(slot.population)).toBe(true);

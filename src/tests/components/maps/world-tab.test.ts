@@ -3,10 +3,7 @@
  * realm but Ixnay, and never the country editor.
  */
 
-import {
-  sidebarTabsFor,
-  worldTabAvailable,
-} from "~/components/maps/editor/utils/world-tab";
+import { sidebarTabsFor, worldTabAvailable } from "~/components/maps/editor/utils/world-tab";
 import type { TabId } from "~/components/maps/editor/EditorPanel";
 
 const editor = { isWorldMode: true, canEdit: true, isIxnay: false };

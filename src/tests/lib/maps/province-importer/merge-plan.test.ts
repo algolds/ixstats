@@ -1,6 +1,4 @@
-import {
-  buildProvinceMergePlan
-} from "~/lib/maps/province-importer/merge-plan";
+import { buildProvinceMergePlan } from "~/lib/maps/province-importer/merge-plan";
 
 describe("buildProvinceMergePlan", () => {
   it("merges a name collision and creates the rest (regression)", () => {

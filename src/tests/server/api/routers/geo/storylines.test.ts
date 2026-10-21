@@ -16,9 +16,7 @@ jest.mock("~/lib/maps/geo-validation", () => ({
 }));
 
 import { createCallerFactory } from "~/server/api/trpc";
-import {
-  geoFeaturesStorylinesRouter,
-} from "~/server/api/routers/geo/features/storylines";
+import { geoFeaturesStorylinesRouter } from "~/server/api/routers/geo/features/storylines";
 import { geoFeaturesStoryPinsRouter } from "~/server/api/routers/geo/features/storyPins";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 

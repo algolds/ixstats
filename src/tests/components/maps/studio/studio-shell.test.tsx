@@ -30,7 +30,7 @@ import {
   renderStudio,
   requests,
   resetStudioTests,
-  step
+  step,
 } from "~/tests/helpers/studio-fixtures";
 
 beforeAll(stubResizeObserver);

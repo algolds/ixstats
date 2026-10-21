@@ -73,7 +73,7 @@ const STAGES: Array<[string, (w: GeneratedWorld) => void, earthlikeOnly?: boolea
   [
     "terrain makes land exactly where the height is above the sea, near the asked share, with mountains",
     (w) => {
-      const { cells, plates } = w.graph!;
+      const { cells } = w.graph!;
       expect(range(cells.n).every((i) => cells.h[i]! >= 0 === (cells.isLand[i] === 1))).toBe(true);
       const land = range(cells.n).filter((i) => cells.isLand[i]);
       expect(Math.abs(land.length / cells.n - (1 - w.params.oceanPercentage))).toBeLessThan(0.1);

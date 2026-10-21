@@ -1,7 +1,4 @@
-import {
-  AUTO_LINK_MIN_CONFIDENCE,
-  suggestRegionMatches,
-} from "~/lib/maps/nation-name-matching";
+import { AUTO_LINK_MIN_CONFIDENCE, suggestRegionMatches } from "~/lib/maps/nation-name-matching";
 describe("suggesting region matches", () => {
   const nations = [
     { id: "c_gal", name: "Gallambria", aliases: ["Republic of Gallambria", "GAL"] },

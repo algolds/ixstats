@@ -3,18 +3,11 @@
  * What the World tab uploads and how it words what comes back: the bundle built from a generated world (which the
  * server's parser must accept), the readable copy for a refusal, and the diff as a person reads it.
  */
-import {
-  encodeWorldBundle,
-  parseWorldBundleJson,
-} from "~/lib/maps/import/world-bundle";
+import { encodeWorldBundle, parseWorldBundleJson } from "~/lib/maps/import/world-bundle";
 import { parseWorldBundle } from "~/lib/maps/import/world-bundle.node";
 import type { LandMaskLayers } from "~/lib/worldgen/land-mask";
 import { MapUploadError } from "~/lib/maps/import/upload-client";
-import {
-  buildWorldBundle,
-  failureOf,
-  draftKey
-} from "~/lib/worldgen/world-apply";
+import { buildWorldBundle, failureOf, draftKey } from "~/lib/worldgen/world-apply";
 import { worldResult } from "~/tests/helpers/fake-world-worker";
 import { realWorld } from "~/tests/helpers/real-world-result";
 

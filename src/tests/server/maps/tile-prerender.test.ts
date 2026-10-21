@@ -4,12 +4,7 @@
  * altitudes, rivers and lakes once, mark the version done, and remove folders of versions a day after a newer
  * one was ready.
  */
-import {
-  existsSync,
-  mkdtempSync,
-  readdirSync,
-  rmSync
-} from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 

@@ -19,9 +19,7 @@ import type { FeatureCollection } from "geojson";
 import { loadLayerWithFallback } from "~/server/modules/maps/layer-loader";
 import { type PackedFeatureCollection } from "~/lib/maps/geojson-pack";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
-import {
-  getPackedLayer
-} from "~/server/modules/maps/layer-delivery";
+import { getPackedLayer } from "~/server/modules/maps/layer-delivery";
 
 const loader = jest.mocked(loadLayerWithFallback);
 

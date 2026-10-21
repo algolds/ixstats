@@ -1,8 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
-import {
-  pathCommandsToRings,
-  type SvgPathCommand,
-} from "~/lib/flags/svg/command-evaluator";
+import { pathCommandsToRings, type SvgPathCommand } from "~/lib/flags/svg/command-evaluator";
 import { createConfigFromCalibration, svgToWgs84 } from "~/lib/flags/svg-coordinate-config";
 
 describe("SVG Geometry & Command Evaluator", () => {

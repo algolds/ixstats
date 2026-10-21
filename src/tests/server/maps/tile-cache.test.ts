@@ -258,13 +258,6 @@ describe("removeStaleTileVersions", () => {
 });
 
 describe("removeStaleTileVersions and other tile formats", () => {
-  const format = (realm: string, n: number, ageMs: number) => {
-    const dir = path.join(root, realm, `f${n}`, "3", "rivers", "0", "0");
-    mkdirSync(dir, { recursive: true });
-    writeFileSync(path.join(dir, "0.pbf"), "x");
-    const stamp = new Date(NOW - ageMs);
-    utimesSync(path.join(root, realm, `f${n}`), stamp, stamp);
-  };
   it("never removes the current format's folder, whatever its age, nor files and folders that are not formats", async () => {
     version("default", 2, 9 * DAY);
     mkdirSync(path.join(root, "default", "notes"), { recursive: true });
@@ -275,7 +268,6 @@ describe("removeStaleTileVersions and other tile formats", () => {
 });
 
 describe("sweepStaleTileVersions (the web process's own cleanup, when no cron job runs)", () => {
-  const HOUR = 60 * 60 * 1000;
   it("never reaches outside the cache root", async () => {
     mkdirSync(path.join(root, "..", "map-tiles-escape-check", "f1", "1"), { recursive: true });
     expect(await cache.sweepStaleTileVersions("../map-tiles-escape-check", 2, NOW)).toBe(0);

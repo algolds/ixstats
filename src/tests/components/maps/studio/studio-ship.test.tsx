@@ -17,11 +17,7 @@ jest.mock("~/lib/maps/import/world-bundle", () => ({
 }));
 import { StudioShipTab } from "~/components/maps/studio/StudioShipTab";
 import { start } from "~/tests/helpers/fake-map-import";
-import {
-  applyStatusQuery,
-  createRealm,
-  resetStudioTrpc,
-} from "~/tests/helpers/fake-studio-trpc";
+import { applyStatusQuery, createRealm, resetStudioTrpc } from "~/tests/helpers/fake-studio-trpc";
 import { renderTab, studioValue } from "~/tests/helpers/studio-tab-fixtures";
 import {
   STATUS,

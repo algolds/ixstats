@@ -73,8 +73,6 @@ describe("deriveBaseline population", () => {
 });
 
 describe("deriveBaseline GDP per capita", () => {
-  const best = { climateMix: { D: 1 }, coastShare: 1, riverShare: 1 };
-  const worst = { climateMix: { F: 1 }, coastShare: 0, riverShare: 0 };
   it("always lands inside the band for any geography", () => {
     for (const group of ["A", "B", "C", "D", "E", "F", "H"]) {
       for (const coastShare of [0, 0.5, 1]) {

@@ -4,10 +4,7 @@
  */
 
 import type { Polygon } from "geojson";
-import {
-  featuresToGeoJSON,
-  planGeoJSONImport
-} from "~/hooks/map-editor/editor-geo-ops";
+import { featuresToGeoJSON, planGeoJSONImport } from "~/hooks/map-editor/editor-geo-ops";
 import type { EditorFeature } from "~/hooks/map-editor/editor-types";
 
 const square: Polygon = {

@@ -1,8 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
-import {
-  localImageFileName,
-  parseWikiImageRef
-} from "~/lib/flags/wiki-image-ref";
+import { localImageFileName, parseWikiImageRef } from "~/lib/flags/wiki-image-ref";
 describe("parseWikiImageRef", () => {
   it("refuses anything that is not a wiki file it can name", () => {
     for (const value of [

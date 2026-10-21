@@ -153,24 +153,6 @@ describe("getCrisisRiskMap", () => {
     };
   };
 
-  function makeProfile(countryId: string) {
-    return {
-      countryId,
-      climateDistribution: null,
-      elevationProfile: null,
-      arableLandPercent: 40,
-      coastlineKm: 500,
-      isLandlocked: false,
-      neighborCount: 3,
-      terrainRoughness: 0.2,
-      meanElevation: 300,
-      country: {
-        name: `Country ${countryId}`,
-        slug: countryId,
-      },
-    };
-  }
-
   function makeCrisis(id: string, affectedCountries: string | null) {
     return {
       id,

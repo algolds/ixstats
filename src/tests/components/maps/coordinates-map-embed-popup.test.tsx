@@ -1,6 +1,4 @@
-import {
-  buildPopupTitleNode
-} from "~/components/maps/widgets/CoordinatesMapEmbed";
+import { buildPopupTitleNode } from "~/components/maps/widgets/CoordinatesMapEmbed";
 
 describe("buildPopupTitleNode", () => {
   it("renders a wiki-supplied title as text, never as HTML", () => {

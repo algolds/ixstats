@@ -22,10 +22,7 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { gzipSync } from "node:zlib";
-import {
-  pruneWorldUploads,
-  WORLD_UPLOAD_MAX_AGE_MS,
-} from "~/server/modules/maps/map-import.prune";
+import { pruneWorldUploads, WORLD_UPLOAD_MAX_AGE_MS } from "~/server/modules/maps/map-import.prune";
 import { saveMapUpload } from "~/server/modules/maps/map-import.storage";
 import { fakeDb } from "./map-import-fakes";
 

@@ -17,12 +17,7 @@ jest.mock("~/lib/maps/import/world-bundle", () => ({
 
 import { draftKey } from "~/lib/worldgen/world-apply";
 import { loadWorldJob, saveWorldJob } from "~/lib/worldgen/world-draft-recipe";
-import {
-  applyWorld,
-  invalidated,
-  setJob,
-  start,
-} from "~/tests/helpers/fake-map-import";
+import { applyWorld, invalidated, setJob, start } from "~/tests/helpers/fake-map-import";
 import { worldResult } from "~/tests/helpers/fake-world-worker";
 import {
   CHECKED_MAP,

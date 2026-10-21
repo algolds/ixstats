@@ -7,9 +7,7 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { clearTrpcMemoryCache } from "~/lib/cache/trpc-cache";
 import { pointQueryProcedures } from "~/server/api/routers/geo/core/point-queries";
 import { geoProfileProcedures } from "~/server/api/routers/geo/core/geo-profile";
-import {
-  buildClimateZones
-} from "~/server/api/routers/geo/core/profile-zones";
+import { buildClimateZones } from "~/server/api/routers/geo/core/profile-zones";
 import { climateMetadataType, getAgricultureFactor } from "~/lib/maps/geo-analytics";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import type { ClimateKey } from "~/lib/maps/realm-map-settings";
