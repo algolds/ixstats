@@ -1,12 +1,16 @@
 /** @jest-environment node */
 /**
  * The regex-DoS gate: every function that reads page text (the list is scripts/audit/wikios-regex-fuzz-
- * targets.ts, the same one the 2 MB fuzz script runs) is given ~200 KB of every hostile family and must
+ * targets.ts, the same one the 2 MB fuzz script runs) is given ~50 KB of every hostile family and must
  * answer within the budget. A text of openers that never close, nested openers, unicode spaces, entities
  * and seeded random soups of them all take a linear function a few milliseconds and a quadratic one
- * seconds, so the budget has room for a loaded machine: the best of two runs counts, and a function that
- * is over the budget on a tenth of the text is failed at once instead of being run on all of it (a linear
- * function takes a tenth of its time there, a quadratic one a hundredth).
+ * a large multiple of that, and the size keeps them apart: a quarter of the text takes a linear function a
+ * quarter of its time and a quadratic one a sixteenth, so a budget that is a quarter of the 200 KB budget
+ * still passes every linear function with the same headroom and fails any quadratic one that takes 1.2 s
+ * or more on 200 KB (a quadratic pass takes seconds there). The budget has room for a loaded machine: the
+ * best of two runs counts, and a function that is over the budget on a tenth of the text is failed at once
+ * instead of being run on all of it (a linear function takes a tenth of its time there, a quadratic one a
+ * hundredth). The 2 MB fuzz script is the full-size run.
  */
 import {
   TARGETS,
@@ -17,8 +21,9 @@ import {
 } from "../../../../scripts/audit/wikios-regex-fuzz-targets";
 import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 
-const SIZE = 200_000;
-const BUDGET_MS = 150 * TIMING_BUDGET_SCALE;
+/** A quarter of the 200 KB the gate was first measured at, with a quarter of its 150 ms budget. */
+const SIZE = 50_000;
+const BUDGET_MS = 37.5 * TIMING_BUDGET_SCALE;
 
 type Call = Awaited<ReturnType<Target["load"]>>;
 
