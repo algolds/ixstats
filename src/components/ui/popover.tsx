@@ -32,14 +32,6 @@ function PopoverTrigger({
 }
 
 /**
- * Positions the popover against an element other than its trigger (e.g. a button whose own click
- * must not toggle the popover). The popover opens from `open`/`onOpenChange` state.
- */
-function PopoverAnchor({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Anchor>) {
-  return <PopoverPrimitive.Anchor data-slot="popover-anchor" {...props} />;
-}
-
-/**
  * Anything a popover can be anchored to without a React element: a DOM element (a link found by
  * event delegation), a `Range` (a text selection), a fixed `DOMRect`, or any object with
  * `getBoundingClientRect()` (floating-ui's virtual element; `contextElement` lets it follow scroll
@@ -220,7 +212,6 @@ function PopoverDescription({ className, ...props }: React.ComponentProps<"p">) 
 export {
   Popover,
   PopoverTrigger,
-  PopoverAnchor,
   PopoverVirtualAnchor,
   VirtualAnchorPopover,
   PopoverContent,

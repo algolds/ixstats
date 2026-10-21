@@ -7,11 +7,9 @@
 
 import {
   type CreateConversationInput,
-  type CreateConversationByCountriesInput,
   type AddParticipantInput,
   type LeaveConversationInput,
   type RespondToRequestInput,
-  type UpdatePresenceInput,
   type SendAdminBroadcastInput,
   type SendAdminMessageInput,
   type MessagingDependencies,
@@ -101,25 +99,6 @@ export class MessagingConversationOperations {
     });
   }
 
-  public async createConversationByCountries(
-    actorId: string,
-    input: CreateConversationByCountriesInput
-  ) {
-    const users = await this.db.user.findMany({
-      where: { ownedCountries: { some: { id: { in: input.countryIds } } } },
-      select: { clerkUserId: true },
-    });
-
-    const targetUserIds = users.map((u: any) => u.clerkUserId).filter(Boolean);
-    return await this.createConversation(actorId, {
-      participantIds: targetUserIds,
-      subject: input.subject,
-      initialMessage: input.initialMessage,
-      source: input.source || "diplomatic",
-      conversationType: "diplomatic",
-    });
-  }
-
   public async addParticipant(actorId: string, input: AddParticipantInput) {
     const conv = await this.db.thinkshareConversation.findUnique({
       where: { id: input.conversationId },
@@ -191,27 +170,6 @@ export class MessagingConversationOperations {
     await this.db.notification.deleteMany({
       where: { userId: actorId },
     });
-    return { success: true };
-  }
-
-  public async updatePresence(actorId: string, input: UpdatePresenceInput) {
-    await this.db.userPresence.upsert({
-      where: { userId: actorId },
-      create: {
-        userId: actorId,
-        status: input.status,
-        currentCountryId: input.currentCountryId,
-        customStatus: input.customStatus,
-        lastSeenAt: new Date(),
-      },
-      update: {
-        status: input.status,
-        currentCountryId: input.currentCountryId,
-        customStatus: input.customStatus,
-        lastSeenAt: new Date(),
-      },
-    });
-
     return { success: true };
   }
 

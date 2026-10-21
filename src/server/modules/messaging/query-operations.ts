@@ -7,13 +7,12 @@
 
 import {
   type GetConversationsByFolderInput,
-  type GetConversationsLegacyInput,
   type GetConversationMessagesInput,
   type SearchUsersInput,
   type MessagingDependencies,
 } from "./contracts";
 import { MessagingForbiddenError, MessagingNotFoundError } from "./errors";
-import { formatMessagesConversation, formatThinkpagesConversation } from "./formatters";
+import { formatMessagesConversation } from "./formatters";
 import { recordMessagingTelemetry } from "./telemetry";
 import { batchResolveMessagingAccounts } from "./account-resolver";
 import { blockedUserClerkIds } from "~/server/shared/user-blocks";
@@ -405,50 +404,6 @@ export class MessagingQueryOperations {
     ]);
 
     return formatMessagesConversation(conv, actorId, accountMap, unreadCount, online);
-  }
-
-  public getConversationsLegacy(actorId: string, input: GetConversationsLegacyInput) {
-    return this.withTelemetry("thinkpages", "getConversations", actorId, async () => {
-      const limit = input.limit ?? 20;
-      const where: any = {
-        participants: {
-          some: { userId: actorId, isActive: true, requestStatus: { not: "pending" } },
-        },
-        source: { not: "thinktank" },
-      };
-
-      if (input.cursor) {
-        where.lastActivity = { lt: new Date(input.cursor) };
-      }
-
-      const conversations = await this.db.thinkshareConversation.findMany({
-        where,
-        take: limit + 1,
-        orderBy: { lastActivity: "desc" },
-        include: {
-          participants: { where: { isActive: true } },
-          messages: {
-            take: 1,
-            orderBy: { ixTimeTimestamp: "desc" },
-          },
-        },
-      });
-
-      const nextCursor = this.popNextCursor(conversations, limit);
-
-      const accountMap = await this.resolveListAccounts(conversations, actorId);
-      const unreadMap = await this.unreadCounts(
-        conversations.map((c: any) => c.id),
-        actorId
-      );
-
-      return {
-        conversations: conversations.map((conv: any) =>
-          formatThinkpagesConversation(conv, actorId, accountMap, unreadMap.get(conv.id) ?? 0)
-        ),
-        nextCursor,
-      };
-    });
   }
 
   public async getConversationMessages(actorId: string, input: GetConversationMessagesInput) {

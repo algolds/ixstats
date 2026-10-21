@@ -92,11 +92,6 @@ export interface GetConversationsByFolderInput {
   cursor?: string;
 }
 
-export interface GetConversationsLegacyInput {
-  limit?: number;
-  cursor?: string;
-}
-
 export interface GetConversationMessagesInput {
   conversationId: string;
   limit?: number;
@@ -114,13 +109,6 @@ export interface CreateConversationInput {
   diplomaticClassification?: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL" | "SECRET" | "TOP_SECRET";
   priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT" | "CRITICAL";
   channelType?: "BILATERAL" | "MULTILATERAL" | "EMERGENCY";
-}
-
-export interface CreateConversationByCountriesInput {
-  countryIds: string[];
-  subject?: string;
-  initialMessage?: string;
-  source?: MessageSource;
 }
 
 export interface SendMessageInput {
@@ -186,12 +174,6 @@ export interface SearchUsersInput {
   query: string;
   limit?: number;
   excludeCurrent?: boolean;
-}
-
-export interface UpdatePresenceInput {
-  status: "online" | "away" | "offline";
-  currentCountryId?: string;
-  customStatus?: string;
 }
 
 export interface SendAdminBroadcastInput {
