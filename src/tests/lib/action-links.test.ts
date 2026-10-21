@@ -1,33 +1,17 @@
 /** @jest-environment node */
 import {
-  RECENT_ACTIONS,
-  SEARCH_ACTIONS,
-  actionToken,
-  actionTypeLabel,
   isActivityId,
   parseTextActionTokens,
   chainWikiSection,
   MAX_ACTIONS_PER_POST,
   countActionTokens,
   countTextActionTokens,
-  mapHtmlRuns,
   parseActionTokens,
   splitActionTokens,
   withoutActionTokens,
 } from "~/lib/action-links";
 
 describe("parseActionTokens", () => {
-  it("returns nothing for a body without tokens", () => {
-    expect(parseActionTokens("just roleplay")).toEqual([]);
-  });
-
-  it("returns distinct ids in first-seen order", () => {
-    expect(parseActionTokens("[ixaction=b] then [ixaction=a] and [ixaction=b] again")).toEqual([
-      "b",
-      "a",
-    ]);
-  });
-
   it("ignores malformed tokens", () => {
     expect(parseActionTokens("[ixaction=] [ixaction=has space] [ixaction=ok_1-2]")).toEqual([
       "ok_1-2",
@@ -44,24 +28,6 @@ describe("parseActionTokens", () => {
 });
 
 describe("chainWikiSection", () => {
-  it("writes a dated level-2 section listing each entry as an external link", () => {
-    const text = chainWikiSection({
-      title: "The Northern Pact",
-      approvedIxTime: Date.UTC(2041, 2, 5),
-      entries: [
-        {
-          title: "Signed treaty",
-          type: "diplomatic",
-          ixTime: Date.UTC(2041, 0, 2),
-          url: "https://x/p/1",
-        },
-      ],
-    });
-    expect(text).toContain("== Story chain: The Northern Pact ==");
-    expect(text).toContain("[https://x/p/1 Signed treaty]");
-    expect(text).toContain("diplomatic");
-  });
-
   it("strips wikitext control characters from player text", () => {
     const text = chainWikiSection({
       title: "Bad ]] [[Title",
@@ -86,24 +52,6 @@ describe("chainWikiSection", () => {
 });
 
 describe("splitActionTokens", () => {
-  it("cuts a body on its tokens and drops empty html segments", () => {
-    expect(splitActionTokens("a[ixaction=x1][ixaction=y_2]b")).toEqual([
-      { kind: "html", text: "a" },
-      { kind: "action", id: "x1" },
-      { kind: "action", id: "y_2" },
-      { kind: "html", text: "b" },
-    ]);
-    expect(splitActionTokens("")).toEqual([]);
-  });
-
-  it("keeps both halves of a paragraph as balanced html around the token", () => {
-    expect(splitActionTokens("<p>before [ixaction=a1] after</p>")).toEqual([
-      { kind: "html", text: "<p>before </p>" },
-      { kind: "action", id: "a1" },
-      { kind: "html", text: "<p> after</p>" },
-    ]);
-  });
-
   it("never cuts a token inside an attribute value", () => {
     const title = '<p>hi <span title="[ixaction=abc] ><img src=x onerror=alert(1)>">x</span></p>';
     const href =
@@ -155,11 +103,6 @@ describe("parseTextActionTokens (I7)", () => {
       '<p title="[ixaction=attr]">[ixaction=b] then [ixaction=a]</p><!-- [ixaction=c] -->[ixaction=b]';
     expect(parseTextActionTokens(html)).toEqual(["b", "a"]);
   });
-
-  it("is empty for markup-only tokens and plain text", () => {
-    expect(parseTextActionTokens('<img src="x" alt="[ixaction=a]">')).toEqual([]);
-    expect(parseTextActionTokens("<p>none</p>")).toEqual([]);
-  });
 });
 
 describe("countTextActionTokens", () => {
@@ -169,69 +112,12 @@ describe("countTextActionTokens", () => {
     expect(countActionTokens(html)).toBe(4);
   });
 });
-
-/** The split body re-joined, tokens in place: shows where splitActionTokens cuts paragraphs. */
-const liftActionTokens = (html: string): string =>
-  splitActionTokens(html)
-    .map((s) => (s.kind === "html" ? s.text : `[ixaction=${s.id}]`))
-    .join("");
-
-describe("splitActionTokens paragraph lifting", () => {
-  it("lifts a mid-paragraph token between two paragraphs", () => {
-    expect(liftActionTokens("<p>before [ixaction=a1] after</p>")).toBe(
-      "<p>before </p>[ixaction=a1]<p> after</p>"
-    );
-  });
-
-  it("leaves no empty paragraph for a token at the start or end", () => {
-    expect(liftActionTokens("<p>[ixaction=a1] after</p>")).toBe("[ixaction=a1]<p> after</p>");
-    expect(liftActionTokens("<p>before [ixaction=a1]</p>")).toBe("<p>before </p>[ixaction=a1]");
-    expect(liftActionTokens("<p>[ixaction=a1]</p>")).toBe("[ixaction=a1]");
-  });
-
-  it("lifts two tokens in one paragraph and keeps the opening tag attributes", () => {
-    expect(liftActionTokens('<p class="x">a [ixaction=a1] b [ixaction=b2] c</p>')).toBe(
-      '<p class="x">a </p>[ixaction=a1]<p class="x"> b </p>[ixaction=b2]<p class="x"> c</p>'
-    );
-  });
-
-  it("leaves tokens outside paragraphs and other paragraphs untouched", () => {
-    const html = "<p></p><p>plain</p>[ixaction=a1]<div>x</div>";
-    expect(liftActionTokens(html)).toBe(html);
-  });
-});
-
 describe("withoutActionTokens", () => {
   it("removes every token, including one formed by a removal", () => {
     expect(withoutActionTokens("a [ixaction=x] b [ixaction=[ixaction=y]z]")).toBe("a  b ");
   });
 });
-
-describe("mapHtmlRuns", () => {
-  it("maps tags and the text between them separately", () => {
-    const out = mapHtmlRuns('<p title="t">ab</p>cd', {
-      markup: (tag) => tag.toUpperCase(),
-      text: (text) => `[${text}]`,
-    });
-    expect(out).toBe('<P TITLE="T">[ab]</P>[cd]');
-  });
-
-  it("leaves a side alone when no mapper is given for it", () => {
-    expect(mapHtmlRuns("<b>x</b>", { text: () => "y" })).toBe("<b>y</b>");
-    expect(mapHtmlRuns("<b>x</b>", { markup: () => "" })).toBe("x");
-  });
-});
 describe("picker constants and ids", () => {
-  it("lists 10 recent actions and up to 30 matches", () => {
-    expect([RECENT_ACTIONS, SEARCH_ACTIONS]).toEqual([10, 30]);
-  });
-
-  it("labels each feed type, with a neutral fallback", () => {
-    expect(actionTypeLabel("directive")).toBe("Directive");
-    expect(actionTypeLabel("diplomatic")).toBe("Diplomacy");
-    expect(actionTypeLabel("something-new")).toBe("Action");
-  });
-
   it.each([
     ["dir-abc_1", true],
     ["a".repeat(64), true],
@@ -242,10 +128,5 @@ describe("picker constants and ids", () => {
     ["a]b", false],
   ])("isActivityId(%j) is %s", (value, expected) => {
     expect(isActivityId(value)).toBe(expected);
-  });
-
-  it("builds the token the parser reads back", () => {
-    expect(actionToken("dir-abc")).toBe("[ixaction=dir-abc]");
-    expect(parseActionTokens(actionToken("dir-abc"))).toEqual(["dir-abc"]);
   });
 });

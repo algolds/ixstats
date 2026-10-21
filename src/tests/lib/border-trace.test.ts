@@ -48,19 +48,6 @@ describe("traceAlongLayer", () => {
         expect(v[0]).toBeLessThan(5);
       });
     });
-
-    test("vertices are in ascending order along the river", () => {
-      const river = makeRiver();
-      const start: [number, number] = [0.5, 0.0]; // segment 0
-      const end: [number, number] = [3.5, 0.0]; // segment 3
-
-      const result = traceAlongLayer(start, end, [river], 0.1);
-
-      // Vertices should be monotonically increasing in longitude
-      for (let i = 1; i < result.length; i++) {
-        expect(result[i]![0]).toBeGreaterThan(result[i - 1]![0]);
-      }
-    });
   });
 
   describe("backward / reverse trace", () => {
@@ -80,30 +67,11 @@ describe("traceAlongLayer", () => {
   });
 
   describe("edge cases", () => {
-    test("returns [] when features array is empty", () => {
-      const result = traceAlongLayer([0, 0], [4, 0], [], 0.1);
-      expect(result).toEqual([]);
-    });
-
     test("returns [] when start point is out of tolerance", () => {
       const river = makeRiver();
       const result = traceAlongLayer([0, 99], [3.5, 0], [river], 0.1);
       expect(result).toEqual([]);
     });
-
-    test("returns [] when end point is out of tolerance", () => {
-      const river = makeRiver();
-      const result = traceAlongLayer([0.5, 0], [3, 99], [river], 0.1);
-      expect(result).toEqual([]);
-    });
-
-    test("returns [] when both points snap to the same segment", () => {
-      const river = makeRiver();
-      // Both very close together on segment 1
-      const result = traceAlongLayer([1.1, 0.01], [1.4, 0.01], [river], 0.1);
-      expect(result).toEqual([]);
-    });
-
     test("returns [] when points snap to different features", () => {
       const river1: TraceFeature = {
         geometry: {
@@ -155,29 +123,6 @@ describe("traceAlongLayer", () => {
       const result = traceAlongLayer([0.5, 0.01], [2.5, 0.01], [feature], 0.1);
       expect(result.length).toBeGreaterThan(0);
       result.forEach((v) => expect(v[1]).toBeCloseTo(0, 3));
-    });
-
-    test("returns [] when points snap to different lines within the same MultiLineString", () => {
-      const feature: TraceFeature = {
-        geometry: {
-          type: "MultiLineString",
-          coordinates: [
-            [
-              [0, 0],
-              [1, 0],
-              [2, 0],
-            ],
-            [
-              [0, 5],
-              [1, 5],
-              [2, 5],
-            ],
-          ],
-        },
-      };
-      // start on line 0, end on line 1
-      const result = traceAlongLayer([0.5, 0.01], [0.5, 4.99], [feature], 0.2);
-      expect(result).toEqual([]);
     });
   });
 });

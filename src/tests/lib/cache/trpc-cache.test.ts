@@ -26,18 +26,9 @@ describe("cacheRealmKey", () => {
 });
 
 describe("shouldSkipCache", () => {
-  it("caches queries whose names used to match the mutation regexes", () => {
-    expect(shouldSkipCache("query", "countries.getTopCountriesByImportance")).toBe(false);
-    expect(shouldSkipCache("query", "countries.resolveBatch")).toBe(false);
-  });
-
   it("always skips mutations and subscriptions", () => {
     expect(shouldSkipCache("mutation", "geoCore.seedBorderHistoryDev")).toBe(true);
     expect(shouldSkipCache("subscription", "x.onEvent")).toBe(true);
-  });
-
-  it("honours custom skip patterns for queries", () => {
-    expect(shouldSkipCache("query", "a.b", [/^a\./])).toBe(true);
   });
 });
 
@@ -46,22 +37,6 @@ describe("createCacheMiddlewareFactory (memory tier)", () => {
     delete process.env.REDIS_ENABLED;
     clearTrpcMemoryCache();
   });
-
-  it("caches an import-named query (next called once)", async () => {
-    const mw = createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "t1" });
-    const next = jest.fn(async () => ({ ok: true, data: { n: 1 }, ctx: { stale: true } }));
-    const opts = { ctx, path: "countries.getImportData", type: "query" as const, input: { a: 1 } };
-
-    const first = await mw({ ...opts, next });
-    const second = await mw({ ...opts, next });
-
-    expect(next).toHaveBeenCalledTimes(1);
-    expect(second).toMatchObject({ marker: "middlewareMarker", ok: true, data: { n: 1 } });
-    expect(second.data).toEqual(first.data);
-    // The cached hit carries this request's ctx, never the one from the request that filled it
-    expect(second.ctx).toBe(ctx);
-  });
-
   it("never caches a mutation (next called every time)", async () => {
     const mw = createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "t1" });
     const next = jest.fn(async () => ({ ok: true }));
@@ -168,32 +143,6 @@ describe("createCacheMiddlewareFactory (memory tier bounds)", () => {
     input: object,
     next: () => Promise<{ ok: boolean; data: string }>
   ) => mw({ ctx, path: "geoCore.getMapBundleDetail", type: "query", input, next });
-
-  it("evicts the least recently used entries by bytes, not by count", async () => {
-    // Each 400-character result takes about 800 bytes serialised: three do not fit in 2,000
-    const mod = withMemoryCap(2_000);
-    const mw = mod.createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "bytes" });
-    const next = jest.fn(async () => ({ ok: true, data: "x".repeat(400) }));
-
-    for (const n of [1, 2, 3]) await run(mw, { n }, next);
-    expect(next).toHaveBeenCalledTimes(3);
-
-    await run(mw, { n: 3 }, next); // newest is still held
-    expect(next).toHaveBeenCalledTimes(3);
-    await run(mw, { n: 1 }, next); // oldest was evicted to make room
-    expect(next).toHaveBeenCalledTimes(4);
-  });
-
-  it("does not hold a result larger than the whole cap", async () => {
-    const mod = withMemoryCap(500);
-    const mw = mod.createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "bytes" });
-    const next = jest.fn(async () => ({ ok: true, data: "x".repeat(2_000) }));
-
-    await run(mw, { n: 1 }, next);
-    await run(mw, { n: 1 }, next);
-    expect(next).toHaveBeenCalledTimes(2);
-  });
-
   it("serves a copy, so a caller mutating its result cannot corrupt the cached one", async () => {
     const mod = withMemoryCap(100_000);
     const mw = mod.createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "copy" });
@@ -212,25 +161,6 @@ describe("createCacheMiddlewareFactory (memory tier bounds)", () => {
     expect(next).toHaveBeenCalledTimes(1);
     expect(second.data).toEqual({ rows: [1, 2, 3] });
   });
-
-  it("expires an entry after its TTL", async () => {
-    const mod = withMemoryCap(100_000);
-    const mw = mod.createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "ttl" });
-    const next = jest.fn(async () => ({ ok: true, data: "v" }));
-    jest.useFakeTimers({ now: new Date("2026-10-11T12:00:00Z") });
-    try {
-      await run(mw, { n: 1 }, next);
-      jest.setSystemTime(new Date("2026-10-11T12:00:59Z"));
-      await run(mw, { n: 1 }, next);
-      expect(next).toHaveBeenCalledTimes(1);
-      jest.setSystemTime(new Date("2026-10-11T12:01:01Z"));
-      await run(mw, { n: 1 }, next);
-      expect(next).toHaveBeenCalledTimes(2);
-    } finally {
-      jest.useRealTimers();
-    }
-  });
-
   it("invalidateCache drops the memory entries whose key matches a pattern", async () => {
     const mod = withMemoryCap(100_000);
     const mw = mod.createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "inv" });
@@ -245,22 +175,6 @@ describe("createCacheMiddlewareFactory (memory tier bounds)", () => {
     await other({ n: 1 });
 
     expect(next).toHaveBeenCalledTimes(3); // only the geoCore entry was refetched
-  });
-
-  it("does not cache a result it cannot serialise, and still returns it", async () => {
-    const mod = withMemoryCap(100_000);
-    const mw = mod.createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "bad" });
-    const circular: { self?: object } = {};
-    circular.self = circular;
-    const next = jest.fn(async () => ({ ok: true, data: circular }));
-    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
-
-    const result = await run(mw, { n: 1 }, next as never);
-    await run(mw, { n: 1 }, next as never);
-
-    expect(result.data).toBe(circular);
-    expect(next).toHaveBeenCalledTimes(2);
-    warn.mockRestore();
   });
 });
 

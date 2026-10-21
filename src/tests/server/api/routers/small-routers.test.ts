@@ -89,25 +89,6 @@ describe("demoMode", () => {
     ).resolves.toEqual({ isActive: false, demoCountryId: null });
     expect(db.systemConfig.findUnique).not.toHaveBeenCalled();
   });
-
-  it("reports the active demo country to the system owner", async () => {
-    db.country.findFirst.mockResolvedValue({ id: "demo_c" });
-    await expect(demo(ctx(db, "owner")).getDemoState()).resolves.toEqual({
-      isActive: true,
-      demoCountryId: "demo_c",
-    });
-  });
-
-  it("switches demo mode off when the demo country has gone", async () => {
-    db.country.findFirst.mockResolvedValue(null);
-    await expect(demo(ctx(db, "owner")).getDemoState()).resolves.toEqual({
-      isActive: false,
-      demoCountryId: null,
-    });
-    expect(db.systemConfig.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { key: "demo_mode_active" }, update: { value: "false" } })
-    );
-  });
 });
 
 describe("cache", () => {

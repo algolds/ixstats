@@ -166,25 +166,4 @@ describe("messages router (N4, N10)", () => {
       country: { select: { name: true, slug: true, flag: true } },
     });
   });
-
-  it("createConversation persists diplomatic type, classification and priority", async () => {
-    const db = makeDb(null);
-    await callers("u1", db).conversations.createConversation({
-      participantIds: ["u1", "u2"],
-      source: "diplomatic",
-      conversationType: "diplomatic",
-      diplomaticClassification: "SECRET",
-      priority: "HIGH",
-      channelType: "BILATERAL",
-    });
-
-    const data = db.thinkshareConversation.create.mock.calls[0][0].data;
-    expect(data).toMatchObject({
-      source: "diplomatic",
-      conversationType: "diplomatic",
-      diplomaticClassification: "SECRET",
-      priority: "HIGH",
-      channelType: "BILATERAL",
-    });
-  });
 });

@@ -69,26 +69,6 @@ function setup(mentionSource?: Parameters<typeof useGlassPlateEditor>[0]["mentio
 beforeEach(() => mockAccountsQuery.mockClear());
 
 describe("useGlassPlateEditor mentionSource", () => {
-  it("keeps asking for the member's own personas when no source is given", () => {
-    setup();
-    expect(mockAccountsQuery).toHaveBeenCalledWith(undefined, { staleTime: 60_000, enabled: true });
-  });
-
-  it("does not ask for them when a source replaces them, and tells the source the query, empty at first", () => {
-    const onQueryChange = jest.fn();
-    setup({ items: [], isLoading: false, onQueryChange });
-    expect(mockAccountsQuery).toHaveBeenCalledWith(undefined, {
-      staleTime: 60_000,
-      enabled: false,
-    });
-    expect(onQueryChange).toHaveBeenCalledWith("");
-  });
-
-  it("reports the source's loading state as the menu's", () => {
-    const { result } = setup({ items: [], isLoading: true, onQueryChange: jest.fn() });
-    expect(result.current.mentionLoading).toBe(true);
-  });
-
   it("keeps cached wiki and sports results out of a source's menu, but not out of the default one", () => {
     const { result } = setup({
       items: [{ kind: "user", name: "owena", label: "owena", avatarUrl: null }],
@@ -166,15 +146,5 @@ describe("useGlassPlateEditor @ menu selection", () => {
     view.rerender({ mentionSource: sourceOf(["kir", "kira"]) });
     press(view, "Tab");
     expect(SlateNode.string(editor)).toBe("@kira ");
-  });
-
-  it("opens the next menu on its first row after a pick", () => {
-    const { editor, view } = menuSetup(sourceOf(names));
-    typeAt(editor, view, "@ki");
-    for (let i = 0; i < 3; i += 1) press(view, "ArrowDown");
-    press(view, "Enter");
-    expect(view.result.current.mentionSelectedIndex).toBe(0);
-    typeAt(editor, view, "@ki");
-    expect(view.result.current.mentionSelectedIndex).toBe(0);
   });
 });

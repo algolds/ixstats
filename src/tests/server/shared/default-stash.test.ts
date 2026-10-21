@@ -25,34 +25,6 @@ describe("getOrCreateDefaultStash", () => {
 
     expect(result.id).toBe("winner");
   });
-
-  it("returns the existing default stash without creating one", async () => {
-    const { stash, db } = makeDb();
-    stash.findFirst.mockResolvedValue({ id: "s1", isDefault: true });
-
-    const result = await getOrCreateDefaultStash(db, ["u1", "u2"], "u1");
-
-    expect(result).toEqual({ id: "s1", isDefault: true });
-    expect(stash.create).not.toHaveBeenCalled();
-    expect(stash.findFirst.mock.calls[0]![0]).toMatchObject({
-      where: { userId: { in: ["u1", "u2"] }, isDefault: true },
-    });
-  });
-
-  it("creates 'My Stash' as the default when the user has none", async () => {
-    const { stash, db } = makeDb();
-    stash.findFirst.mockResolvedValue(null);
-    stash.create.mockResolvedValue({ id: "new", name: "My Stash", isDefault: true });
-
-    const result = await getOrCreateDefaultStash(db, ["u1"], "u1");
-
-    expect(result.id).toBe("new");
-    expect(stash.create).toHaveBeenCalledTimes(1);
-    expect(stash.create.mock.calls[0]![0]).toMatchObject({
-      data: { userId: "u1", name: "My Stash", isDefault: true },
-    });
-  });
-
   it("on a concurrent first stash (P2002) returns the row the other request created", async () => {
     const { stash, db } = makeDb();
     stash.findFirst

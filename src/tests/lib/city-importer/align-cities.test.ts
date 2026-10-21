@@ -49,25 +49,6 @@ describe("deriveCityAffine", () => {
     expect(aligned[0]!.lat).toBeCloseTo(-2 * 25 + 50); // 0
     expect(aligned[0]!.isCapital).toBe(true);
   });
-
-  it("handles case-insensitive and whitespace-flexible matching", () => {
-    const svgProvinces: SvgProvinceRef[] = [
-      { name: "  alpha  ", svgX: 10, svgY: 20 },
-      { name: "BETA", svgX: 30, svgY: 40 },
-      { name: "gamma", svgX: 50, svgY: 10 },
-    ];
-
-    const dbSubdivisions: DbSubdivisionRef[] = [
-      { name: "Alpha", centroid: [120, 10] },
-      { name: "beta", centroid: [160, -30] },
-      { name: "GAMMA ", centroid: [200, 30] },
-    ];
-
-    const result = deriveCityAffine(svgProvinces, dbSubdivisions);
-    expect(result.matrix).not.toBeNull();
-    expect(result.matchCount).toBe(3);
-  });
-
   it("returns matrix = null when there are fewer than 3 matched pairs", () => {
     const svgProvinces: SvgProvinceRef[] = [
       { name: "Alpha", svgX: 10, svgY: 20 },

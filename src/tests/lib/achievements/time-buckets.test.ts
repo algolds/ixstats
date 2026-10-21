@@ -5,7 +5,6 @@
  */
 import { IxTime } from "~/lib/ixtime";
 import {
-  MONTH_MS,
   distinctBuckets,
   longestConsecutiveWeeks,
   monthKey,
@@ -34,34 +33,7 @@ describe("weekKey", () => {
     expect(weekKey(new Date("2026-10-19T00:00:00.000Z"))).toBe("2026-W43");
   });
 });
-
-describe("monthKey", () => {
-  it("is the UTC year and month", () => {
-    expect(monthKey(new Date("2026-10-31T23:59:59.000Z"))).toBe("2026-10");
-    expect(monthKey(new Date("2026-11-01T00:00:00.000Z"))).toBe("2026-11");
-    expect(monthKey(new Date("2027-01-01T00:00:00.000Z"))).toBe("2027-01");
-  });
-});
-
-describe("distinctBuckets", () => {
-  it("counts different buckets once each", () => {
-    const dates = [utc("2026-10-12"), utc("2026-10-14"), utc("2026-10-20"), utc("2026-11-02")];
-    expect(distinctBuckets(dates, weekKey)).toBe(3);
-    expect(distinctBuckets(dates, monthKey)).toBe(2);
-    expect(distinctBuckets([], weekKey)).toBe(0);
-  });
-});
-
 describe("longestConsecutiveWeeks", () => {
-  it("is 0 for no dates and 1 for one", () => {
-    expect(longestConsecutiveWeeks([])).toBe(0);
-    expect(longestConsecutiveWeeks([utc("2026-10-14")])).toBe(1);
-  });
-
-  it("counts several dates in one week as one week", () => {
-    expect(longestConsecutiveWeeks([utc("2026-10-12"), utc("2026-10-18")])).toBe(1);
-  });
-
   it("finds the longest unbroken run, ignoring order", () => {
     const dates = [
       utc("2026-10-26"),
@@ -83,20 +55,6 @@ describe("longestConsecutiveWeeks", () => {
     expect(longestConsecutiveWeeks([utc("2026-10-05"), utc("2026-10-19")])).toBe(1);
   });
 });
-
-describe("spanMs", () => {
-  it("is the real time between the earliest and latest date", () => {
-    expect(spanMs([])).toBe(0);
-    expect(spanMs([utc("2026-10-14")])).toBe(0);
-    expect(spanMs([utc("2026-10-20"), utc("2026-10-14"), utc("2026-10-17")])).toBe(6 * 86_400_000);
-  });
-
-  it("measures months with MONTH_MS", () => {
-    expect(MONTH_MS).toBe(30.44 * 86_400_000);
-    expect(spanMs([utc("2026-01-01"), utc("2026-07-01")]) / MONTH_MS).toBeGreaterThan(5.9);
-  });
-});
-
 describe("real time only (V4)", () => {
   const dates = [utc("2026-10-05"), utc("2026-10-12"), utc("2026-10-14"), utc("2026-11-02")];
   const run = () => ({

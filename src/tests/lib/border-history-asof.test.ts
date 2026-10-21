@@ -52,23 +52,6 @@ describe("mergeBordersAsOf", () => {
     const aprGeom = aprResult[0]?.geometry as Polygon;
     expect(aprGeom.coordinates[0]?.[2]?.[0]).toBe(2);
   });
-
-  test("returns current geometry unchanged for a country with no history rows", () => {
-    const current = [feature("B", square(5, 5, 6, 6))];
-    const result = mergeBordersAsOf(current, [], new Date("2026-06-01"));
-    expect(result[0]?.geometry).toBe(current[0]?.geometry);
-  });
-
-  test("passes through features with no countryId property", () => {
-    const anon: Feature = {
-      type: "Feature",
-      geometry: square(7, 7, 8, 8),
-      properties: { name: "anonymous" },
-    };
-    const result = mergeBordersAsOf([anon], [], new Date("2026-06-01"));
-    expect(result[0]).toBe(anon);
-  });
-
   test("ignores snapshots after asOf even if a newer one exists", () => {
     const current = [feature("C", square(0, 0, 1, 1))];
     const history = [

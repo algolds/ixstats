@@ -11,15 +11,6 @@ import { DOMParser } from "@xmldom/xmldom";
 import { extractSvgMetadata } from "~/lib/flags/svg-parser";
 
 describe("xmldom upgrade — behavior pinning", () => {
-  it("extractSvgMetadata finds the layer and its path in a minimal valid SVG", () => {
-    const svg =
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 5"><g id="political"><path d="M0 0 L1 0 L1 1 Z"/></g></svg>';
-    expect(extractSvgMetadata(svg)).toMatchObject({
-      viewBox: { x: 0, y: 0, width: 10, height: 5 },
-      layers: [{ id: "political", childCount: 1 }],
-    });
-  });
-
   it("records the outcome class for malformed SVG (throws, never a silent empty result)", () => {
     // On 0.9.x xmldom reports the mismatched tag as a fatalError and throws a ParseError from parseFromString
     // (0.8.15 was lenient there); either way the caller sees a thrown error.

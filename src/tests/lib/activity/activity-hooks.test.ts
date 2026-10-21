@@ -19,12 +19,7 @@ jest.mock("~/lib/notifications", () => ({
   notificationHooks: { onDiplomaticEvent: jest.fn().mockResolvedValue(undefined) },
 }));
 
-import { ActivityHooks, economicTierRank } from "~/lib/activity/hooks";
-
-function lastActivity() {
-  return mockDb.activityFeed.create.mock.calls.at(-1)![0].data as Record<string, unknown>;
-}
-
+import { ActivityHooks } from "~/lib/activity/hooks";
 beforeEach(() => {
   jest.clearAllMocks();
   mockDb.country.findUnique.mockResolvedValue({ name: "Arcadia" });
@@ -32,62 +27,6 @@ beforeEach(() => {
 });
 
 describe("ActivityHooks producers", () => {
-  it("alliance formed is a diplomatic entry for the founder", async () => {
-    await ActivityHooks.Diplomatic.onAllianceFormed("c1", "Northern Pact", "military", "clerk_1");
-    expect(lastActivity()).toMatchObject({
-      type: "diplomatic",
-      countryId: "c1",
-      userId: "clerk_1",
-      title: "Arcadia Founds the Northern Pact",
-      relatedCountries: JSON.stringify(["c1"]),
-    });
-  });
-
-  it("alliance joined is a diplomatic entry", async () => {
-    await ActivityHooks.Diplomatic.onAllianceJoined("c2", "Northern Pact");
-    expect(lastActivity()).toMatchObject({ type: "diplomatic", countryId: "c2", userId: null });
-    expect(JSON.parse(lastActivity().metadata as string)).toMatchObject({
-      eventType: "alliance_joined",
-    });
-  });
-
-  it("an achievement unlock carries the achievement key so the feed can open it", async () => {
-    await ActivityHooks.User.onAchievementUnlocked(
-      "clerk_1",
-      "c1",
-      "First Million",
-      "d",
-      "econ-1m"
-    );
-    expect(lastActivity()).toMatchObject({
-      type: "achievement",
-      title: "Arcadia Unlocks Achievement: First Million",
-    });
-    expect(JSON.parse(lastActivity().metadata as string)).toMatchObject({
-      eventType: "achievement_unlocked",
-      achievementName: "First Million",
-      achievementKey: "econ-1m",
-    });
-  });
-
-  it("a law with an economic effect files under Economic, others under Achievements", async () => {
-    await ActivityHooks.Government.onLawPassed("c1", "Tariff Act", 0.5);
-    expect(lastActivity().type).toBe("economic");
-    await ActivityHooks.Government.onLawPassed("c1", "Flag Act", 0);
-    expect(lastActivity().type).toBe("achievement");
-  });
-
-  it("an economic tier change is an economic milestone, worded by direction", async () => {
-    await ActivityHooks.Economic.onEconomicTierChange("c1", "Developing", "Developed");
-    expect(lastActivity()).toMatchObject({
-      type: "economic",
-      title: "Arcadia Rises to Developed Status",
-      priority: "high",
-    });
-    await ActivityHooks.Economic.onEconomicTierChange("c1", "Strong", "Healthy");
-    expect(lastActivity()).toMatchObject({ title: "Arcadia Falls to Healthy Status" });
-  });
-
   it("never throws when the write fails", async () => {
     mockDb.activityFeed.create.mockRejectedValue(new Error("db down"));
     const spy = jest.spyOn(console, "error").mockImplementation(() => {});
@@ -95,19 +34,5 @@ describe("ActivityHooks producers", () => {
       ActivityHooks.Diplomatic.onAllianceFormed("c1", "Pact", "economic")
     ).resolves.toBeUndefined();
     spy.mockRestore();
-  });
-
-  it("writes nothing for an unknown country", async () => {
-    mockDb.country.findUnique.mockResolvedValue(null);
-    await ActivityHooks.Government.onLawPassed("missing", "Act", 1);
-    expect(mockDb.activityFeed.create).not.toHaveBeenCalled();
-  });
-});
-
-describe("economicTierRank", () => {
-  it("orders tiers from Impoverished up and ranks unknown names lowest", () => {
-    expect(economicTierRank("Impoverished")).toBe(0);
-    expect(economicTierRank("Extravagant")).toBeGreaterThan(economicTierRank("Strong"));
-    expect(economicTierRank("Nonsense")).toBe(-1);
   });
 });

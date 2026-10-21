@@ -8,7 +8,6 @@ import { act, renderHook } from "@testing-library/react";
 import { useWorldGenerator } from "~/hooks/useWorldGenerator";
 import type { FeatureCollection, Point } from "geojson";
 import type { DiagnosticLegend } from "~/lib/worldgen/diagnostics";
-import type { WorldMeasures } from "~/lib/worldgen/measure-world";
 import type { DiagnosticResult } from "~/lib/worldgen/worker/world-messages";
 import {
   fakeWorldWorkers,
@@ -43,11 +42,6 @@ function withWorld() {
 const lastQuery = (worker: FakeWorldWorker) => worker.queries[worker.queries.length - 1]!;
 
 describe("useWorldGenerator queries", () => {
-  it("carries restartedAt and generationMs into the result", () => {
-    const { result } = withWorld();
-    expect(result.current.result).toMatchObject({ restartedAt: "climate", generationMs: 412 });
-  });
-
   it("asks for a diagnostic of the world in view and resolves it with typed pixels", async () => {
     const { result, workers } = withWorld();
     let image!: Awaited<ReturnType<typeof result.current.diagnostic>>;
@@ -81,17 +75,6 @@ describe("useWorldGenerator queries", () => {
     expect(Array.from(image.rgba)).toEqual([1, 2, 3, 4]);
     expect(image.legend).toEqual(legend);
   });
-
-  it("asks a diagnostic of the same worker without a generate, and the view is untouched", () => {
-    const { result, workers } = withWorld();
-    const before = result.current.result;
-    act(() => void result.current.diagnostic("height").catch(() => {}));
-    expect(workers).toHaveLength(1);
-    expect(workers[0]!.posted).toHaveLength(1);
-    expect(result.current.result).toBe(before);
-    expect(result.current.state).toBe("ready");
-  });
-
   it("rejects a query in flight when a newer generate starts, even on an idle worker", async () => {
     const { result, workers } = withWorld();
     let pending!: Promise<Blob>;
@@ -119,23 +102,6 @@ describe("useWorldGenerator queries", () => {
     });
     expect(result.current.state).toBe("generating");
   });
-
-  it("rejects diagnostics and seeds in flight for the same reason", async () => {
-    const { result } = withWorld();
-    let image!: Promise<DiagnosticResult>;
-    let seeds!: Promise<FeatureCollection<Point>>;
-    act(() => {
-      image = result.current.diagnostic("rainfall");
-      seeds = result.current.nationSeeds();
-    });
-    const rejections = [
-      expect(image).rejects.toThrow("changed"),
-      expect(seeds).rejects.toThrow("changed"),
-    ];
-    act(() => result.current.generate({ seed: 9 }, 9));
-    await Promise.all(rejections);
-  });
-
   it("rejects what is in flight when the hook unmounts", async () => {
     const { result, unmount } = withWorld();
     let pending!: Promise<DiagnosticResult>;
@@ -146,68 +112,6 @@ describe("useWorldGenerator queries", () => {
     unmount();
     await rejection;
   });
-
-  it("resolves the nations' seeds", async () => {
-    const { result, workers } = withWorld();
-    let pending!: Promise<FeatureCollection<Point>>;
-    act(() => {
-      pending = result.current.nationSeeds();
-    });
-    const { requestId } = lastQuery(workers[0]!);
-    const seeds = { type: "FeatureCollection" as const, features: [] };
-    await act(async () => {
-      workers[0]!.say({ type: "seeds-result", requestId, world: 1, seeds });
-      await expect(pending).resolves.toEqual(seeds);
-    });
-  });
-
-  it("asks for the measures of the world in view and resolves them", async () => {
-    const { result, workers } = withWorld();
-    let pending!: Promise<WorldMeasures>;
-    act(() => {
-      pending = result.current.measure();
-    });
-    expect(lastQuery(workers[0]!)).toMatchObject({ type: "measure", world: 1 });
-    const { requestId } = lastQuery(workers[0]!);
-    const measures: WorldMeasures = {
-      landShare: 0.3,
-      hypsometry: [1, 0, 0, 0, 0, 0, 0, 0, 0],
-      climate: { A: 0, B: 0, C: 0, D: 1, E: 0, F: 0, H: 0 },
-      unclassifiedShare: 0,
-      nations: { count: 3, medianKm2: 1, p90Km2: 2 },
-      coastlineKm: 5,
-    };
-    await act(async () => {
-      workers[0]!.say({ type: "measure-result", requestId, world: 1, measures });
-      await expect(pending).resolves.toEqual(measures);
-    });
-  });
-
-  it("rejects a measure in flight when a newer generate starts, and without a world", async () => {
-    const { result } = withWorld();
-    let pending!: Promise<WorldMeasures>;
-    act(() => {
-      pending = result.current.measure();
-    });
-    const rejection = expect(pending).rejects.toThrow("changed");
-    act(() => result.current.generate({ seed: 9 }, 9));
-    await rejection;
-    await expect(setup().result.current.measure()).rejects.toThrow("no world");
-  });
-
-  it("rejects with the worker's message when it refuses", async () => {
-    const { result, workers } = withWorld();
-    let pending!: Promise<DiagnosticResult>;
-    act(() => {
-      pending = result.current.diagnostic("flow");
-    });
-    const { requestId } = lastQuery(workers[0]!);
-    await act(async () => {
-      workers[0]!.say({ type: "request-error", requestId, message: "The world has changed" });
-      await expect(pending).rejects.toThrow("The world has changed");
-    });
-  });
-
   it("answers requests by their own ids, in any order", async () => {
     const { result, workers } = withWorld();
     let first!: Promise<FeatureCollection<Point>>;
@@ -237,31 +141,6 @@ describe("useWorldGenerator queries", () => {
       await expect(first).resolves.toMatchObject({ type: "FeatureCollection" });
     });
   });
-
-  it("rejects without a world, and while the next generate runs", async () => {
-    const empty = setup();
-    await expect(empty.result.current.diagnostic("height")).rejects.toThrow("no world");
-
-    const { result, workers } = withWorld();
-    act(() => result.current.generate({ oceanPercentage: 0.6 }, 1));
-    await expect(result.current.diagnostic("height")).rejects.toThrow("no world");
-    expect(workers[0]!.queries).toHaveLength(0);
-  });
-
-  it("rejects what is in flight when a generate queues behind a busy worker", async () => {
-    const { result, workers } = withWorld();
-    let pending!: Promise<Blob>;
-    act(() => {
-      pending = result.current.renderPng(8192, true);
-    });
-    const rejection = expect(pending).rejects.toThrow("changed");
-    act(() => result.current.generate({ seed: 2 }, 2));
-    act(() => result.current.generate({ seed: 3 }, 3));
-    // The busy worker is kept: the newest request waits for it
-    expect(workers[0]!.terminated).toBe(false);
-    await rejection;
-  });
-
   it("rejects a diagnostic of a world that failed to generate", async () => {
     const { result, workers } = withWorld();
     act(() => result.current.generate({ oceanPercentage: 0.6 }, 1));

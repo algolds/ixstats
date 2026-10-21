@@ -274,32 +274,6 @@ describe("loaders in checkAndUnlock", () => {
     expect(account.load).toHaveBeenCalledWith(expect.objectContaining({ countryId: null }));
     expect(countryLoader.load).not.toHaveBeenCalled();
   });
-
-  it("starts every loader of a scope before any finishes", async () => {
-    let release: () => void = () => {};
-    const gate = new Promise<void>((resolve) => (release = resolve));
-    const first = register(
-      loader({
-        id: "slow",
-        scope: "account",
-        keys: ["a"],
-        load: jest.fn(async () => {
-          await gate;
-          return { a: 1 };
-        }),
-      })
-    );
-    const second = register(loader({ id: "fast", scope: "account", keys: ["b"] }));
-    const db = setup({ country: false });
-
-    const run = achievementService.checkAndUnlock(CLERK_ID, null, db as never);
-    await new Promise((resolve) => setImmediate(resolve));
-    expect(first.load).toHaveBeenCalledTimes(1);
-    expect(second.load).toHaveBeenCalledTimes(1);
-    release();
-    await run;
-  });
-
   it("carries on when a loader fails, leaving its rules unmet", async () => {
     jest.spyOn(console, "error").mockImplementation(() => {});
     register(

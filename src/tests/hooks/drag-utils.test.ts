@@ -1,109 +1,55 @@
-import { describe, it, expect } from "@jest/globals";
+/**
+ * The maps editor's drag helpers: a drag starts past 4px, Shift-drags lock to the dominant axis (the vertex lands
+ * on that line), editor shortcuts never fire while the user types (a Delete in a text box must not delete the
+ * selected feature), and the neighbours a region edit snaps to are the other regions only.
+ */
+import type { Polygon } from "geojson";
 import {
-  exceedsHysteresis,
-  detectAxis,
   axisLock,
+  detectAxis,
+  exceedsHysteresis,
   isKeyboardInputTarget,
 } from "~/components/maps/editor/hooks/drag-utils";
-import {
-  buildNeighborGeometries,
-  buildMidpointFeatures,
-  calculateSnapTarget,
-} from "~/components/maps/editor/hooks/vertex-edit-geometry";
+import { buildNeighborGeometries } from "~/components/maps/editor/hooks/vertex-edit-geometry";
 import type { EditorFeature } from "~/hooks/useMapEditor";
-import type { Polygon } from "geojson";
 
-describe("drag-utils", () => {
-  describe("exceedsHysteresis", () => {
-    it("returns false for displacements under threshold", () => {
-      const start = { x: 100, y: 100 };
-      expect(exceedsHysteresis(start, { x: 100, y: 100 })).toBe(false);
-      expect(exceedsHysteresis(start, { x: 102, y: 100 })).toBe(false);
-      expect(exceedsHysteresis(start, { x: 102, y: 102 })).toBe(false); // sqrt(8) ~ 2.82px < 4px
-    });
-
-    it("returns true for displacements at or above threshold", () => {
-      const start = { x: 100, y: 100 };
-      expect(exceedsHysteresis(start, { x: 104, y: 100 })).toBe(true); // exactly 4px
-      expect(exceedsHysteresis(start, { x: 100, y: 105 })).toBe(true); // 5px
-      expect(exceedsHysteresis(start, { x: 103, y: 103 })).toBe(true); // sqrt(18) ~ 4.24px >= 4px
-    });
-  });
-
-  describe("detectAxis", () => {
-    it("detects horizontal axis when dx dominates", () => {
-      expect(detectAxis(20, 2)).toBe("h");
-      expect(detectAxis(-30, 5)).toBe("h");
-    });
-
-    it("detects vertical axis when dy dominates", () => {
-      expect(detectAxis(2, 20)).toBe("v");
-      expect(detectAxis(4, -35)).toBe("v");
-    });
-
-    it("detects diagonal axis for roughly 45° angles", () => {
-      expect(detectAxis(10, 10)).toBe("d");
-      expect(detectAxis(-15, 15)).toBe("d");
-      expect(detectAxis(20, 15)).toBe("d"); // ratio 0.75 > 0.414
-    });
-  });
-
-  describe("axisLock", () => {
-    const start: [number, number] = [10, 20];
-
-    it("returns unconstrained coordinates when axis is null", () => {
-      expect(axisLock(start, [15, 25], null)).toEqual([15, 25]);
-    });
-
-    it("locks to horizontal axis (keeps start latitude)", () => {
-      expect(axisLock(start, [15, 25], "h")).toEqual([15, 20]);
-    });
-
-    it("locks to vertical axis (keeps start longitude)", () => {
-      expect(axisLock(start, [15, 25], "v")).toEqual([10, 25]);
-    });
-
-    it("locks to 45° diagonal axis", () => {
-      const locked = axisLock(start, [14, 26], "d"); // dLng=4, dLat=6, avg=5
-      expect(locked).toEqual([15, 25]);
-    });
-  });
-
-  describe("isKeyboardInputTarget", () => {
-    it("returns false for null or undefined target", () => {
-      expect(isKeyboardInputTarget(null)).toBe(false);
-      expect(isKeyboardInputTarget(undefined as unknown as EventTarget)).toBe(false);
-    });
-
-    it("identifies input elements as input targets", () => {
-      const input = document.createElement("input");
-      expect(isKeyboardInputTarget(input)).toBe(true);
-
-      const textarea = document.createElement("textarea");
-      expect(isKeyboardInputTarget(textarea)).toBe(true);
-
-      const select = document.createElement("select");
-      expect(isKeyboardInputTarget(select)).toBe(true);
-    });
-
-    it("identifies contenteditable elements as input targets", () => {
-      const div = document.createElement("div");
-      div.setAttribute("contenteditable", "true");
-      expect(isKeyboardInputTarget(div)).toBe(true);
-    });
-
-    it("returns false for standard canvas or non-input elements", () => {
-      const canvas = document.createElement("canvas");
-      expect(isKeyboardInputTarget(canvas)).toBe(false);
-
-      const div = document.createElement("div");
-      expect(isKeyboardInputTarget(div)).toBe(false);
-    });
-  });
+it.each([
+  [{ x: 100, y: 100 }, false],
+  [{ x: 102, y: 102 }, false], // 2.83px
+  [{ x: 104, y: 100 }, true], // exactly 4px
+  [{ x: 103, y: 103 }, true], // 4.24px
+])("a pointer at %o has started a drag: %s", (to, started) => {
+  expect(exceedsHysteresis({ x: 100, y: 100 }, to)).toBe(started);
 });
 
-describe("vertex-edit-geometry", () => {
-  const samplePolygon: Polygon = {
+it.each([
+  [20, 2, "h", [15, 20]],
+  [-30, 5, "h", [15, 20]],
+  [2, 20, "v", [10, 25]],
+  [4, -35, "v", [10, 25]],
+  [10, 10, "d", [15, 25]],
+  [20, 15, "d", [15, 25]],
+] as const)("a drag of (%d, %d) locks to axis %s and lands on it", (dx, dy, axis, locked) => {
+  expect(detectAxis(dx, dy)).toBe(axis);
+  expect(axisLock([10, 20], axis === "d" ? [14, 26] : [15, 25], axis)).toEqual(locked);
+});
+
+it("leaves the pointer unconstrained without an axis", () => {
+  expect(axisLock([10, 20], [15, 25], null)).toEqual([15, 25]);
+});
+
+it("treats inputs, textareas, selects and contenteditable as typing, and the map canvas as not", () => {
+  const editable = document.createElement("div");
+  editable.setAttribute("contenteditable", "true");
+  const typing = [document.createElement("input"), document.createElement("textarea"), document.createElement("select"), editable];
+  for (const el of typing) expect(isKeyboardInputTarget(el)).toBe(true);
+  for (const el of [document.createElement("canvas"), document.createElement("div"), null]) {
+    expect(isKeyboardInputTarget(el)).toBe(false);
+  }
+});
+
+it("snaps a region edit to the other regions only, never to itself or to points", () => {
+  const square: Polygon = {
     type: "Polygon",
     coordinates: [
       [
@@ -115,68 +61,12 @@ describe("vertex-edit-geometry", () => {
       ],
     ],
   };
-
-  describe("buildNeighborGeometries", () => {
-    it("extracts other subdivision geometries while excluding editing feature and non-subdivisions", () => {
-      const features: EditorFeature[] = [
-        {
-          id: "sub-1",
-          name: "Editing Sub",
-          type: "subdivision",
-          geometry: samplePolygon,
-          properties: {},
-        },
-        {
-          id: "sub-2",
-          name: "Neighbor Sub",
-          type: "subdivision",
-          geometry: samplePolygon,
-          properties: {},
-        },
-        {
-          id: "city-1",
-          name: "City",
-          type: "city",
-          coordinates: [5, 5],
-          properties: {},
-        },
-      ];
-
-      const neighbors = buildNeighborGeometries(features, "sub-1");
-      expect(neighbors).toHaveLength(1);
-      expect(neighbors[0]!.id).toBe("sub-2");
-      expect(neighbors[0]!.geometry).toEqual(samplePolygon);
-    });
-  });
-
-  describe("buildMidpointFeatures", () => {
-    it("generates midpoints for polygon ring segments", () => {
-      const midpoints = buildMidpointFeatures(samplePolygon);
-      expect(midpoints).toHaveLength(4);
-      expect(midpoints[0]!.geometry).toEqual({
-        type: "Point",
-        coordinates: [5, 0],
-      });
-      expect(midpoints[1]!.geometry).toEqual({
-        type: "Point",
-        coordinates: [10, 5],
-      });
-    });
-  });
-
-  describe("calculateSnapTarget", () => {
-    it("returns target clamped to border when border is supplied", () => {
-      const result = calculateSnapTarget({
-        coords: [5, 5],
-        snapEnabled: false,
-        snapTolerance: 0.015,
-        border: samplePolygon,
-        features: [],
-        editingFeatureId: "sub-1",
-      });
-
-      expect(result.target).toEqual([5, 5]);
-      expect(result.didSnap).toBe(false);
-    });
-  });
+  const features: EditorFeature[] = [
+    { id: "sub-1", name: "Editing", type: "subdivision", geometry: square, properties: {} },
+    { id: "sub-2", name: "Neighbour", type: "subdivision", geometry: square, properties: {} },
+    { id: "city-1", name: "City", type: "city", coordinates: [5, 5], properties: {} },
+  ];
+  const neighbours = buildNeighborGeometries(features, "sub-1");
+  expect(neighbours.map((n) => n.id)).toEqual(["sub-2"]);
+  expect(neighbours[0]!.geometry).toEqual(square);
 });

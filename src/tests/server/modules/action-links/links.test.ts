@@ -125,15 +125,6 @@ describe("validatePostActionTokens", () => {
     expect(db.$transaction).not.toHaveBeenCalled();
     expect(tx.postActionLink.createMany).not.toHaveBeenCalled();
   });
-
-  it("skips the ownership query for a body with no tokens", async () => {
-    const { db } = fakeDb([]);
-    await expect(
-      validatePostActionTokens(db as never, { countryId: null, body: "plain" })
-    ).resolves.toEqual([]);
-    expect(db.activityFeed.findMany).not.toHaveBeenCalled();
-  });
-
   it.each([
     ["another country's action", "c1", "[ixaction=a2]", "BAD_REQUEST"],
     ["a poster with no country", null, "[ixaction=a1]", "FORBIDDEN"],

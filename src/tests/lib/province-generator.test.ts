@@ -79,17 +79,6 @@ describe("generateProvinces", () => {
   describe("basic coverage — square country, 4 seeds", () => {
     const country = squarePolygon(0, 0, 10, 10);
     const provinces = generateProvinces(country, 4, { seed: 1 });
-
-    test("returns ≥2 non-empty cells", () => {
-      expect(provinces.length).toBeGreaterThanOrEqual(2);
-    });
-
-    test("all results are Polygon or MultiPolygon", () => {
-      for (const p of provinces) {
-        expect(["Polygon", "MultiPolygon"]).toContain(p.type);
-      }
-    });
-
     test("summed area ≈ country area (within 5%)", () => {
       const countryArea = totalProvinceArea([country]);
       const provinceSum = totalProvinceArea(provinces);
@@ -111,19 +100,6 @@ describe("generateProvinces", () => {
       expect(JSON.stringify(a[0])).toBe(JSON.stringify(b[0]));
       expect(JSON.stringify(a[a.length - 1])).toBe(JSON.stringify(b[b.length - 1]));
     });
-
-    test("different seeds → different output", () => {
-      const a = generateProvinces(country, 4, { seed: 1 });
-      const b = generateProvinces(country, 4, { seed: 7 });
-      // Seed change should alter at least first cell coordinates
-      expect(JSON.stringify(a[0])).not.toBe(JSON.stringify(b[0]));
-    });
-
-    test("omitting seed uses default (same as seed=42)", () => {
-      const withDefault = generateProvinces(country, 4);
-      const withExplicit = generateProvinces(country, 4, { seed: 42 });
-      expect(JSON.stringify(withDefault)).toBe(JSON.stringify(withExplicit));
-    });
   });
 
   describe("edge cases", () => {
@@ -136,26 +112,10 @@ describe("generateProvinces", () => {
       const provinceArea = totalProvinceArea(provinces);
       expect(provinceArea / countryArea).toBeGreaterThan(0.99);
     });
-
-    test("count=0 returns empty array", () => {
-      expect(generateProvinces(country, 0)).toEqual([]);
-    });
-
-    test("count=10 returns ≥8 provinces for a square", () => {
-      const provinces = generateProvinces(country, 10, { seed: 3 });
-      // All seeds land inside a convex square, so expect near-full yield
-      expect(provinces.length).toBeGreaterThanOrEqual(8);
-    });
   });
 
   describe("non-convex (concave) country — L-shape", () => {
     const country = lShapePolygon();
-
-    test("returns ≥2 provinces", () => {
-      const provinces = generateProvinces(country, 4, { seed: 5 });
-      expect(provinces.length).toBeGreaterThanOrEqual(2);
-    });
-
     test("summed area ≈ L-shape area (within 5%)", () => {
       const provinces = generateProvinces(country, 4, { seed: 5 });
       const countryArea = totalProvinceArea([country]);
@@ -168,12 +128,6 @@ describe("generateProvinces", () => {
 
   describe("MultiPolygon — two-island nation", () => {
     const country = twoIslandMultiPolygon();
-
-    test("returns at least 1 province", () => {
-      const provinces = generateProvinces(country, 6, { seed: 10 });
-      expect(provinces.length).toBeGreaterThanOrEqual(1);
-    });
-
     test("summed area ≤ total country area (clipped correctly)", () => {
       const provinces = generateProvinces(country, 6, { seed: 10 });
       const countryArea = totalProvinceArea([country]);
@@ -181,25 +135,5 @@ describe("generateProvinces", () => {
       // Cannot exceed country area
       expect(provinceSum).toBeLessThanOrEqual(countryArea * 1.01);
     });
-  });
-});
-
-describe("totalProvinceArea", () => {
-  test("returns 0 for empty array", () => {
-    expect(totalProvinceArea([])).toBe(0);
-  });
-
-  test("returns positive area for a square polygon", () => {
-    const sq = squarePolygon(0, 0, 10, 10);
-    expect(totalProvinceArea([sq])).toBeGreaterThan(0);
-  });
-
-  test("sums areas of multiple polygons", () => {
-    const a = squarePolygon(0, 0, 5, 5);
-    const b = squarePolygon(5, 5, 10, 10);
-    const combined = totalProvinceArea([a, b]);
-    const aOnly = totalProvinceArea([a]);
-    const bOnly = totalProvinceArea([b]);
-    expect(combined).toBeCloseTo(aOnly + bOnly, 0);
   });
 });

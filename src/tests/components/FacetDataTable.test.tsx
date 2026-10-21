@@ -1,172 +1,86 @@
-import "react";
-// @ts-ignore
-import { render, fireEvent } from "@testing-library/react";
-import { describe, it, expect, jest } from "@jest/globals";
+/**
+ * The Facet data table every admin and MyCountry list uses: search narrows the rows, sortable headers are buttons
+ * that report aria-sort, paging is a named nav that marks the current page, mobile cards are pressable from the
+ * keyboard, and loading is announced as busy.
+ */
+import { fireEvent, render, screen } from "@testing-library/react";
 import { FacetDataTable } from "~/components/ui/data-table/FacetDataTable";
+import { FacetTablePagination } from "~/components/ui/data-table/FacetTablePagination";
 import type { FacetColumn } from "~/components/ui/data-table/types";
 
-interface TestPerson {
+interface Person {
   id: string;
   name: string;
   role: string;
-  department: string;
   salary: number;
-  status: "Active" | "Inactive";
 }
 
-const mockData: TestPerson[] = [
-  {
-    id: "1",
-    name: "Alice Wonderland",
-    role: "Chancellor",
-    department: "Executive",
-    salary: 120000,
-    status: "Active",
-  },
-  {
-    id: "2",
-    name: "Bob Builder",
-    role: "Minister of Labor",
-    department: "Infrastructure",
-    salary: 95000,
-    status: "Active",
-  },
-  {
-    id: "3",
-    name: "Charlie Chaplin",
-    role: "Cultural Envoy",
-    department: "Diplomacy",
-    salary: 80000,
-    status: "Inactive",
-  },
-  {
-    id: "4",
-    name: "Diana Prince",
-    role: "Defense Strategist",
-    department: "Security",
-    salary: 110000,
-    status: "Active",
-  },
+const people: Person[] = [
+  { id: "1", name: "Alice Wonderland", role: "Chancellor", salary: 120000 },
+  { id: "2", name: "Bob Builder", role: "Minister of Labor", salary: 95000 },
+  { id: "3", name: "Charlie Chaplin", role: "Cultural Envoy", salary: 80000 },
+  { id: "4", name: "Diana Prince", role: "Defense Strategist", salary: 110000 },
 ];
 
-const mockColumns: FacetColumn<TestPerson>[] = [
-  {
-    key: "name",
-    header: "Full Name",
-    sortable: true,
-    mobileRole: "hero",
-  },
-  {
-    key: "role",
-    header: "Role",
-    mobileRole: "subtitle",
-  },
-  {
-    key: "status",
-    header: "Status",
-    mobileRole: "badge",
-    render: (val: unknown) => <span data-testid="status-badge">{String(val)}</span>,
-  },
-  {
-    key: "department",
-    header: "Department",
-    mobileRole: "field",
-    mobileLabel: "Dept",
-  },
-  {
-    key: "salary",
-    header: "Compensation",
-    sortable: true,
-    mobileRole: "field",
-    render: (val: unknown) => `$${Number(val).toLocaleString()}`,
-    mobileRender: (val: unknown) => `$${Number(val) / 1000}k`,
-  },
-  {
-    key: "id",
-    header: "System ID",
-    hideOnMobile: true,
-  },
+const columns: FacetColumn<Person>[] = [
+  { key: "name", header: "Full Name", sortable: true, mobileRole: "hero" },
+  { key: "role", header: "Role", mobileRole: "subtitle" },
+  { key: "salary", header: "Compensation", sortable: true, mobileRole: "field" },
 ];
 
-describe("FacetDataTable Component", () => {
-  it("filters data based on search input", () => {
-    const { getByText, getByPlaceholderText, queryByText } = render(
-      <FacetDataTable
-        data={mockData}
-        columns={mockColumns}
-        searchable
-        searchPlaceholder="Search leaders..."
-        layoutMode="table"
-      />
+const firstRow = () => screen.getAllByRole("row")[1]?.textContent;
+
+describe("FacetDataTable", () => {
+  it("narrows the rows to a search", () => {
+    render(
+      <FacetDataTable data={people} columns={columns} searchable searchPlaceholder="Search leaders..." layoutMode="table" />
     );
-
-    const searchInput = getByPlaceholderText("Search leaders...");
-    expect(getByText("Alice Wonderland")).toBeTruthy();
-    expect(getByText("Bob Builder")).toBeTruthy();
-
-    fireEvent.change(searchInput, { target: { value: "Charlie" } });
-
-    expect(queryByText("Alice Wonderland")).toBeNull();
-    expect(getByText("Charlie Chaplin")).toBeTruthy();
+    fireEvent.change(screen.getByPlaceholderText("Search leaders..."), { target: { value: "Charlie" } });
+    expect(screen.queryByText("Alice Wonderland")).toBeNull();
+    expect(screen.getByText("Charlie Chaplin")).toBeInTheDocument();
   });
 
-  it("sorts data when clicking sortable column headers", () => {
-    const { getByText, getAllByRole } = render(
-      <FacetDataTable data={mockData} columns={mockColumns} layoutMode="table" />
-    );
-
-    const nameHeader = getByText("Full Name");
-
-    // First click: Sort Ascending (Alice, Bob, Charlie, Diana)
-    fireEvent.click(nameHeader);
-    const rowsAsc = getAllByRole("row");
-    expect(rowsAsc[1]?.textContent).toContain("Alice Wonderland");
-
-    // Second click: Sort Descending (Diana, Charlie, Bob, Alice)
-    fireEvent.click(nameHeader);
-    const rowsDesc = getAllByRole("row");
-    expect(rowsDesc[1]?.textContent).toContain("Diana Prince");
+  it("sorts from a header button that reports aria-sort, ascending then descending", () => {
+    render(<FacetDataTable data={people} columns={columns} layoutMode="table" />);
+    const header = screen.getByRole("columnheader", { name: "Full Name" });
+    expect(header).toHaveAttribute("aria-sort", "none");
+    fireEvent.click(screen.getByRole("button", { name: "Full Name" }));
+    expect(header).toHaveAttribute("aria-sort", "ascending");
+    expect(firstRow()).toContain("Alice Wonderland");
+    fireEvent.click(screen.getByRole("button", { name: "Full Name" }));
+    expect(header).toHaveAttribute("aria-sort", "descending");
+    expect(firstRow()).toContain("Diana Prince");
   });
 
-  it("paginates records correctly", () => {
-    const { getByText, getByLabelText, queryByText } = render(
-      <FacetDataTable
-        data={mockData}
-        columns={mockColumns}
-        paginated
-        pageSize={2}
-        layoutMode="table"
-      />
-    );
-
-    expect(getByText("Alice Wonderland")).toBeTruthy();
-    expect(getByText("Bob Builder")).toBeTruthy();
-    expect(queryByText("Charlie Chaplin")).toBeNull();
-
-    // Go to page 2
-    const nextBtn = getByLabelText("Next Page");
-    fireEvent.click(nextBtn);
-
-    expect(queryByText("Alice Wonderland")).toBeNull();
-    expect(getByText("Charlie Chaplin")).toBeTruthy();
-    expect(getByText("Diana Prince")).toBeTruthy();
+  it("pages the rows", () => {
+    render(<FacetDataTable data={people} columns={columns} paginated pageSize={2} layoutMode="table" />);
+    expect(screen.queryByText("Charlie Chaplin")).toBeNull();
+    fireEvent.click(screen.getByLabelText("Next Page"));
+    expect(screen.queryByText("Alice Wonderland")).toBeNull();
+    expect(screen.getByText("Diana Prince")).toBeInTheDocument();
   });
 
-  it("handles onRowClick event on cards", () => {
-    const handleRowClick = jest.fn();
-
-    const { getByText } = render(
-      <FacetDataTable
-        data={mockData}
-        columns={mockColumns}
-        layoutMode="cards"
-        onRowClick={handleRowClick}
-      />
+  it("opens a row from its mobile card by click and by keyboard", () => {
+    const onRowClick = jest.fn();
+    const { container } = render(
+      <FacetDataTable data={people} columns={columns} layoutMode="cards" onRowClick={onRowClick} />
     );
-
-    const firstHero = getByText("Alice Wonderland");
-    fireEvent.click(firstHero);
-
-    expect(handleRowClick).toHaveBeenCalledWith(mockData[0]);
+    fireEvent.click(screen.getByText("Alice Wonderland"));
+    const card = container.querySelectorAll('[data-slot="facet-mobile-card"]')[1]!;
+    fireEvent.keyDown(card, { key: "Enter" });
+    expect(onRowClick.mock.calls).toEqual([[people[0]], [people[1]]]);
   });
+
+  it("marks itself busy while loading", () => {
+    const { container } = render(<FacetDataTable data={[]} columns={columns} loading />);
+    expect(container.querySelector('[aria-busy="true"]')).toBeInTheDocument();
+  });
+});
+
+test("pagination is a named nav with the current page marked", () => {
+  render(
+    <FacetTablePagination currentPage={2} totalPages={3} totalItems={30} pageSize={10} onPageChange={() => {}} />
+  );
+  expect(screen.getByRole("navigation", { name: "Pagination" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Page 2" })).toHaveAttribute("aria-current", "page");
 });

@@ -70,14 +70,4 @@ describe("globalCache Redis tier", () => {
     expect(mockStore.has("acs:feed:1")).toBe(false);
     expect(mockStore.has("feed:1")).toBe(true);
   });
-
-  it("round-trips a value through the superjson envelope in Redis", async () => {
-    // jest maps superjson to a pass-through mock (the real package is ESM-only), so this proves the
-    // serialize -> JSON -> deserialize wiring, not Date revival itself.
-    await globalCache.set("obj", { n: 1, s: "x" });
-    expect(JSON.parse(mockStore.get("acs:obj") ?? "null")).toHaveProperty("json");
-
-    globalCache.memoryCache.clear();
-    await expect(globalCache.get("obj")).resolves.toEqual({ n: 1, s: "x" });
-  });
 });

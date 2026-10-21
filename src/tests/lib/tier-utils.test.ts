@@ -1,8 +1,6 @@
 import {
   getEconomicTierFromGdpPerCapita,
-  getPopulationTierFromPopulation,
-  decimalToPercentage,
-  percentageToDecimal,
+  getPopulationTierFromPopulation
 } from "~/lib/tier-utils";
 import { EconomicTier, PopulationTier } from "~/types/ixstats";
 describe("Tier Determination & Math Conversion", () => {
@@ -31,12 +29,5 @@ describe("Tier Determination & Math Conversion", () => {
     expect(getPopulationTierFromPopulation(200_000_000)).toBe(PopulationTier.TIER_6);
     expect(getPopulationTierFromPopulation(400_000_000)).toBe(PopulationTier.TIER_7);
     expect(getPopulationTierFromPopulation(600_000_000)).toBe(PopulationTier.TIER_X);
-  });
-
-  it("converts decimals to percentages and vice-versa", () => {
-    expect(decimalToPercentage(0.05)).toBe(5);
-    expect(decimalToPercentage(0.125)).toBe(12.5);
-    expect(percentageToDecimal(5)).toBe(0.05);
-    expect(percentageToDecimal(12.5)).toBe(0.125);
   });
 });

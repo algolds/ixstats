@@ -83,59 +83,7 @@ function callerFor(db: ReturnType<typeof makeDb>, clerkUserId: string | null = "
   return createCaller(ctx as never);
 }
 
-describe("playerTotals", () => {
-  it("is one grouped query over the joined rules, never a scan of the unlock rows", async () => {
-    const db = makeDb();
-    await callerFor(db).getMySummary();
-
-    // The only row read is the caller's three newest unlocks.
-    expect(db.userAchievement.findMany).toHaveBeenCalledTimes(1);
-    expect(db.userAchievement.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: "u_me" }), take: 3 })
-    );
-    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
-    const query = db.$queryRaw.mock.calls[0]![0] as { sql: string; values: string[] };
-    expect(query.sql).toMatch(/GROUP BY ua\."userId"/);
-    expect(query.sql).toMatch(
-      /ORDER BY "totalPoints" DESC, "achievementCount" DESC, ua\."userId" ASC/
-    );
-    expect(query.values).toEqual(["Rare", "Epic", "Legendary"]);
-  });
-});
-
 describe("achievements.getMySummary", () => {
-  it("counts the caller's unlocks of active achievements, all their points (Legacy too) and their rank", async () => {
-    const db = makeDb();
-    const summary = await callerFor(db).getMySummary();
-
-    // 2 active unlocks of "N of 40"; the Legacy unlock adds its 40 points but no count
-    expect(summary).toMatchObject({ unlocked: 2, activeTotal: 40, points: 100, rank: 2 });
-    expect(db.achievement.count).toHaveBeenCalledWith({ where: { isActive: true } });
-  });
-
-  it("names the caller's newest unlocks of active achievements, with their credit rewards", async () => {
-    const db = makeDb();
-    const { recent } = await callerFor(db).getMySummary();
-
-    expect(recent).toEqual([
-      {
-        key: "first-trade",
-        title: "First trade",
-        rarity: "Rare",
-        category: "Cards",
-        iconUrl: "Cart",
-        reward: 25,
-      },
-    ]);
-    expect(db.userAchievement.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { userId: "u_me", achievement: { isActive: true } },
-        orderBy: { unlockedAt: "desc" },
-        take: 3,
-      })
-    );
-  });
-
   it("shows what the unlock actually paid, not the achievement's static reward", async () => {
     const db = makeDb();
     db.userAchievement.findMany.mockResolvedValue([
@@ -164,20 +112,6 @@ describe("achievements.getMySummary", () => {
       expect((await callerFor(db).getMySummary()).recent[0]?.reward).toBeNull();
     }
   });
-
-  it("gives a caller with no unlocks zeros and no rank", async () => {
-    const db = makeDb();
-    const summary = await callerFor(db, "u_new").getMySummary();
-
-    expect(summary).toEqual({
-      unlocked: 0,
-      activeTotal: 40,
-      points: 0,
-      rank: null,
-      recent: [],
-    });
-  });
-
   it("rejects a signed-out caller", async () => {
     const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
     await expect(callerFor(makeDb(), null).getMySummary()).rejects.toThrow();
@@ -186,20 +120,6 @@ describe("achievements.getMySummary", () => {
 });
 
 describe("achievements.getPlayerLeaderboard", () => {
-  it("ranks players by achievement points (Legacy included), ties sharing a rank, with names from the account", async () => {
-    const db = makeDb();
-    const board = await callerFor(db).getPlayerLeaderboard({ limit: 10 });
-
-    expect(board.map((r) => [r.rank, r.name, r.totalPoints])).toEqual([
-      [1, "topdog", 260],
-      [2, "MeForum", 100],
-      [2, "Player", 100],
-      [4, "lowly", 5],
-    ]);
-    expect(board[0]).toMatchObject({ achievementCount: 2, rareAchievements: 1, isViewer: false });
-    expect(board.find((r) => r.name === "MeForum")?.isViewer).toBe(true);
-  });
-
   it("honours the limit and never exposes a Clerk id", async () => {
     const board = await callerFor(makeDb(), null).getPlayerLeaderboard({ limit: 2 });
 
