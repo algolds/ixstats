@@ -83,6 +83,45 @@ export function decidePlayAs(input: DecidePlayAsInput): PlayAsDecision {
   return { kind: "granted", targetUserId: requestedUserId };
 }
 
+/**
+ * Mutations that move IxCredits, Sovereigns or card copies: a whole router (every mutation under it)
+ * or one procedure path. While playing as another user these refuse (`playAsMoneyMiddleware`), so
+ * play-as never spends, sells, trades or claims with the target's money; reads stay allowed.
+ * `src/tests/architecture/play-as-money.test.ts` finds money mutations by what they write and fails
+ * when one is not covered here.
+ */
+export const PLAY_AS_MONEY_ROUTES = [
+  // The wallet and store, cards, packs, the market, the workshop, trades, the Exchange, NS deck imports
+  "vault",
+  "cards",
+  "cardPacks",
+  "cardMarket",
+  "crafting",
+  "trading",
+  "exchange",
+  "nsImport",
+  // Achievement payouts (IxCredits, reward cards and packs)
+  "achievements.syncMyCollectorAchievements",
+  // Sovereign spends and payouts in sports, and the season trophies it mints
+  "sports.claimTeam",
+  "sports.createLeague",
+  "sports.upgradeStadium",
+  "sports.invokePatronSaint",
+  "sports.trainPlayer",
+  "sports.teamTraining",
+  "sports.placeTransferBid",
+  "sports.respondToTransferBid",
+  "sports.placePrediction",
+  "sports.simulateMatchDay",
+  "sports.simulateSingleMatch",
+  "sports.simulateFullSeason",
+  "sports.transitionToNextSeason",
+] as const;
+
+export function isPlayAsMoneyPath(path: string): boolean {
+  return PLAY_AS_MONEY_ROUTES.some((route) => path === route || path.startsWith(`${route}.`));
+}
+
 interface RecordPlayAsAuditEntry {
   realUserId: string;
   requestedUserId: string;

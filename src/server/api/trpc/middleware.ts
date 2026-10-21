@@ -10,6 +10,7 @@ import { isSystemOwner } from "~/lib/auth";
 import { hasPremiumTier, isBetaTesterRole } from "~/lib/auth/premium";
 import { getRoleName, isPrivilegedCountryWriter } from "~/server/shared/country-authorization";
 import { touchLastSeen } from "./last-seen";
+import { isPlayAsMoneyPath } from "./impersonation";
 import {
   UnauthorizedError,
   ForbiddenError,
@@ -402,6 +403,20 @@ export const adminMiddleware = t.middleware(async ({ ctx, next }) => {
       isAdmin: true,
     },
   });
+});
+
+/**
+ * Money and card moves are refused while playing as another user (owner decision 2026-10-21): a
+ * mutation on a `PLAY_AS_MONEY_ROUTES` path never runs with the target's IxCredits, Sovereigns or
+ * cards. Every procedure builder starts with this check, before input parsing; reads stay allowed.
+ */
+export const playAsMoneyMiddleware = t.middleware(({ ctx, next, path, type }) => {
+  if (ctx.impersonatorId && type === "mutation" && isPlayAsMoneyPath(path)) {
+    throw new ForbiddenError(
+      "Money and card actions are disabled while playing as another user. Exit play-as mode first."
+    );
+  }
+  return next();
 });
 
 export const inputValidationMiddleware = t.middleware(async ({ ctx, next, input, path }) => {

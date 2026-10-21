@@ -11,6 +11,7 @@ import {
   premiumMiddleware,
   adminMiddleware,
   auditLogMiddleware,
+  playAsMoneyMiddleware,
   inputValidationMiddleware,
   rateLimitMiddleware,
   standardMutationRateLimit,
@@ -24,29 +25,30 @@ import {
 } from "./middleware";
 import { userLoggingMiddleware } from "~/lib/logging";
 
-// Base procedures
-export const publicProcedure = t.procedure
-  .use(timingMiddleware)
-  .use(userLoggingMiddleware.standard);
+// Every builder starts here, so a money mutation refuses in play-as whichever builder it is on.
+const procedure = t.procedure.use(playAsMoneyMiddleware);
 
-export const protectedProcedure = t.procedure
+// Base procedures
+export const publicProcedure = procedure.use(timingMiddleware).use(userLoggingMiddleware.standard);
+
+export const protectedProcedure = procedure
   .use(timingMiddleware)
   .use(authMiddleware)
   .use(userLoggingMiddleware.standard);
 
-export const premiumProcedure = t.procedure
+export const premiumProcedure = procedure
   .use(timingMiddleware)
   .use(authMiddleware)
   .use(premiumMiddleware)
   .use(userLoggingMiddleware.withPerformance);
 
-export const countryOwnerProcedure = t.procedure
+export const countryOwnerProcedure = procedure
   .use(timingMiddleware)
   .use(authMiddleware)
   .use(countryOwnerMiddleware)
   .use(userLoggingMiddleware.standard);
 
-export const adminProcedure = t.procedure
+export const adminProcedure = procedure
   .use(authMiddleware)
   .use(adminMiddleware)
   .use(inputValidationMiddleware)
