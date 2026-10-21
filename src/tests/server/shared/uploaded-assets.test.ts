@@ -145,20 +145,6 @@ describe("registerUploadedAsset", () => {
 });
 
 describe("listUploadedAssets", () => {
-  const row = (id: string, iso: string) => ({
-    id,
-    url: `/u/${id}.png`,
-    thumbUrl: null,
-    title: id,
-    mimeType: "image/png",
-    width: 1,
-    height: 1,
-    sizeBytes: 1,
-    blurhash: null,
-    source: "upload",
-    visibility: "public",
-    createdAt: new Date(iso),
-  });
   it("lists only public assets for the forum source", async () => {
     mockFindMany.mockResolvedValueOnce([]);
     await listUploadedAssets({ source: "forum", limit: 5 });

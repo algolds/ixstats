@@ -15,9 +15,6 @@ import {
 
 const ORIGIN = new URL("https://ixwiki.com");
 const PNG = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
-const JPEG = Uint8Array.from([0xff, 0xd8, 0xff, 0xe0, 0, 0]);
-const GIF = new TextEncoder().encode("GIF89a....");
-const WEBP = new TextEncoder().encode("RIFF....WEBPVP8 ");
 describe("absoluteAssetUrl", () => {
   const original = process.env.NEXT_PUBLIC_BASE_PATH;
   afterEach(() => {
