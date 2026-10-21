@@ -1,6 +1,5 @@
 /**
- * Policy presets (spec §4): every one of the 55 templates is offered, named in sentence case,
- * and replaces the selection with its whole set; replacing the player's own choices asks first.
+ * Policy presets (spec §4): replacing the player's own, different choices asks first.
  */
 import {
   getPolicyPreset,

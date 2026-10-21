@@ -1,6 +1,6 @@
 /**
- * Government policy presets: every template references only defined components, and
- * applying one sets the whole selection (spec §4; the old loop kept only the last pick).
+ * Government templates: applying one sets the whole selection (spec §4; the old loop kept only
+ * the last pick).
  */
 
 import {

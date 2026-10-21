@@ -1,9 +1,6 @@
 /**
- * The founding flow at /builder: the saved draft restores its step, deep links to a step whose
- * prerequisites are missing redirect, the draft saves two seconds after the last change,
- * Continue focuses the first invalid field, switching archetype asks first and keeps identity,
- * a policy preset replaces the institutions (asking first when the player chose their own), and
- * Found nation needs a confirm and sends none of the explicit payloads.
+ * The founding flow at /builder: the draft saves two seconds after the last change, and founding
+ * the nation needs a confirm (no keyboard shortcut founds) and sends none of the explicit payloads.
  */
 import "react";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";

@@ -1,6 +1,5 @@
 /**
- * Government picker validation (spec §1 Step 3, D7): conflicts warn, an empty selection is
- * fine, and only defined components count toward the cap.
+ * Government picker validation (spec §1 Step 3, D7): only defined components count toward the cap.
  */
 
 import type { ComponentType } from "@prisma/client";

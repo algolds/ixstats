@@ -1,8 +1,6 @@
 /**
- * Render tests for the country profile (`CommandProfileView`): it renders the layer from real
- * data only, reads directives and outcomes from the server-filtered public record (signed out
- * too), restores the Sovereign Command OS pieces only where there is data, and reveals the
- * owner strip only to the owner.
+ * The country profile (`CommandProfileView`) shows a visitor the server-filtered public record,
+ * never the owner's intent tree, drafts or owner strip.
  */
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { render, screen } from "@testing-library/react";

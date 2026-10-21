@@ -1,12 +1,11 @@
 /**
- * MC-1 follow-up: `government.startBudgetYear` copies the budget in effect into the current
- * IxTime year, and only for a country the caller may write to.
+ * MC-1 follow-up: `government.startBudgetYear` refuses a country the caller may not write to (the
+ * owner's copy is asserted in tests/scenarios/engines/budget-year-rollover.test.ts).
  */
 import { describe, expect, it } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { governmentRouter } from "~/server/api/routers/government";
 import {
-  CALLER_COUNTRY,
   FOREIGN_COUNTRY,
   createIdorContext,
 } from "~/tests/helpers/country-idor-context";
@@ -40,17 +39,5 @@ describe("government.startBudgetYear", () => {
       code: "FORBIDDEN",
     });
     expect(db.budgetAllocation.createMany).not.toHaveBeenCalled();
-  });
-
-  it("copies the budget in effect for the caller's own country", async () => {
-    const db = budgetDb();
-    const caller = createCaller(createIdorContext(db) as never);
-
-    const result = await caller.startBudgetYear({ countryId: CALLER_COUNTRY });
-
-    expect(result).toMatchObject({ fromYear: 2000, created: 1 });
-    expect(db.budgetAllocation.createMany).toHaveBeenCalledWith(
-      expect.objectContaining({ skipDuplicates: true })
-    );
   });
 });

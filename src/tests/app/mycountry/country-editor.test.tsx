@@ -1,8 +1,7 @@
 /**
- * The country editor page: one list drives the grouped nav and the sections, each section saves
- * on its own button (disabled until something changed) and sends only what changed with the values
- * it loaded for them, a conflict reloads only that section, a policy preset replaces the
- * institutions after a confirm, and the leave guard names the sections with unsaved changes.
+ * The country editor page: each section saves on its own button (disabled until something
+ * changed) and sends only what changed with the values it loaded for them, a conflict reloads only
+ * that section, and the leave guard names the sections with unsaved changes.
  */
 import "react";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";

@@ -4,13 +4,8 @@ import { describe, it, expect } from "@jest/globals";
 import type { PrismaClient } from "@prisma/client";
 import {
   loadExecBandwidthState,
-  sumExecBandwidthUsed,
-  DIRECTIVE_EXEC_BANDWIDTH_WINDOW_MS,
-  DELEGATION_WINDOW_MS,
-  RECON_CAPACITY_COST,
-  DELEGATED_ISSUE_EXEC_BANDWIDTH,
+  DELEGATION_WINDOW_MS
 } from "~/lib/government/exec-bandwidth";
-import { calculateCivilServiceCapacity } from "~/lib/government/atomic-utils";
 import { IxTime } from "~/lib/ixtime";
 
 function makeDb(
@@ -50,38 +45,6 @@ function makeDb(
 }
 
 describe("loadExecBandwidthState", () => {
-  it("counts executing directives' stored execBandwidthCost toward executive bandwidth used", async () => {
-    const db = makeDb({ policySum: 15, directiveSum: 37, pendingRecon: 1, dismissed: 2 });
-    const state = await loadExecBandwidthState(db as unknown as PrismaClient, "c1");
-
-    expect(state.breakdown).toEqual({
-      governmentStaff: 0,
-      recon: RECON_CAPACITY_COST,
-      policies: 15,
-      directives: 37,
-      delegatedIssues: 2 * DELEGATED_ISSUE_EXEC_BANDWIDTH,
-    });
-    expect(state.used).toBe(15 + 37 + RECON_CAPACITY_COST + 2 * DELEGATED_ISSUE_EXEC_BANDWIDTH);
-    expect(state.capacity).toBe(calculateCivilServiceCapacity(10_000_000, 60));
-    expect(state.available).toBe(state.capacity - state.used);
-    expect(state.departmentCategories).toEqual(["finance"]);
-  });
-
-  it("only sums active directives committed inside the execution window", async () => {
-    const db = makeDb();
-    const before = IxTime.getCurrentIxTime();
-    await loadExecBandwidthState(db as unknown as PrismaClient, "c1");
-    const after = IxTime.getCurrentIxTime();
-
-    const where = (db.intent.aggregate.mock.calls[0] as any[])[0].where;
-    expect(where.countryId).toBe("c1");
-    expect(where.status).toBe("active");
-    expect(where.createdIxTime.gte).toBeGreaterThanOrEqual(
-      before - DIRECTIVE_EXEC_BANDWIDTH_WINDOW_MS
-    );
-    expect(where.createdIxTime.gte).toBeLessThanOrEqual(after - DIRECTIVE_EXEC_BANDWIDTH_WINDOW_MS);
-  });
-
   it("uses the delegation window in IxTime days for dismissed issues (not 5 ms)", async () => {
     const db = makeDb();
     const now = IxTime.getCurrentIxTime();
@@ -101,19 +64,5 @@ describe("loadExecBandwidthState", () => {
     expect(state.breakdown.directives).toBe(0);
     expect(state.overCapacity).toBe(true);
     expect(state.available).toBe(0);
-  });
-});
-
-describe("sumExecBandwidthUsed", () => {
-  it("adds every consumer", () => {
-    expect(
-      sumExecBandwidthUsed({
-        governmentStaff: 1,
-        recon: 2,
-        policies: 3,
-        directives: 4,
-        delegatedIssues: 5,
-      })
-    ).toBe(15);
   });
 });

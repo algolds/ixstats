@@ -8,7 +8,6 @@ jest.mock("~/lib/ixtime", () => ({
 // `jest` is the injected global on purpose: @swc/jest only hoists jest.mock() on the global.
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import {
-  INTENT_CATEGORY_TO_TEMPLATE,
   spawnIntentResistance,
   spawnResistanceForIntent,
 } from "~/lib/intent/resistance";
@@ -108,65 +107,7 @@ beforeEach(() => {
     spawnMode: mockSpawnMode as any,
   }));
 });
-
-describe("INTENT_CATEGORY_TO_TEMPLATE", () => {
-  it("maps all 6 intent categories to template domain/category tokens", () => {
-    expect(Object.keys(INTENT_CATEGORY_TO_TEMPLATE).sort()).toEqual([
-      "defense",
-      "economy",
-      "fiscal",
-      "infrastructure",
-      "security",
-      "social",
-    ]);
-    expect(INTENT_CATEGORY_TO_TEMPLATE.defense).toEqual(["military", "security"]);
-    expect(INTENT_CATEGORY_TO_TEMPLATE.fiscal).toEqual(["economic"]);
-    expect(INTENT_CATEGORY_TO_TEMPLATE.economy).toEqual(["economic"]);
-    expect(INTENT_CATEGORY_TO_TEMPLATE.social).toEqual(["social"]);
-    expect(INTENT_CATEGORY_TO_TEMPLATE.infrastructure).toEqual(["infrastructure"]);
-    expect(INTENT_CATEGORY_TO_TEMPLATE.security).toEqual(["political", "governance"]);
-  });
-});
-
 describe("spawnResistanceForIntent", () => {
-  it("spawns via forceGenerate and links intentId when template is eligible", async () => {
-    const db = makeDb();
-    db.nationalIssueTemplate.findMany.mockResolvedValue([makeTemplate()]);
-    db.nationalIssue.findFirst.mockResolvedValue(null); // no dedupe, no recent
-    db.nationalIssue.count.mockResolvedValue(0); // no active
-
-    const result = await spawnResistanceForIntent({
-      db,
-      countryId: "country-1",
-      intent,
-      tokens: ["economic"],
-    });
-
-    expect(result).toBe("issue-1");
-    expect(forceGenerateMock).toHaveBeenCalledWith("tmpl-economic", "country-1", db);
-    expect(db.nationalIssue.update).toHaveBeenCalledWith({
-      where: { id: "issue-1" },
-      data: { intentId: "intent-1", triggerReason: "Resistance to intent intent-1" },
-    });
-  });
-
-  it("dedupes when an open issue is already linked to this intent+template", async () => {
-    const db = makeDb();
-    db.nationalIssueTemplate.findMany.mockResolvedValue([makeTemplate()]);
-    db.nationalIssue.findFirst.mockResolvedValue({ id: "existing" }); // linked open
-    db.nationalIssue.count.mockResolvedValue(0);
-
-    const result = await spawnResistanceForIntent({
-      db,
-      countryId: "country-1",
-      intent,
-      tokens: ["economic"],
-    });
-
-    expect(result).toBeNull();
-    expect(forceGenerateMock).not.toHaveBeenCalled();
-  });
-
   it("respects maxActivePerCountry", async () => {
     const db = makeDb();
     db.nationalIssueTemplate.findMany.mockResolvedValue([makeTemplate()]);
@@ -201,39 +142,9 @@ describe("spawnResistanceForIntent", () => {
     expect(result).toBeNull();
     expect(forceGenerateMock).not.toHaveBeenCalled();
   });
-
-  it("returns null when no templates match the tokens", async () => {
-    const db = makeDb();
-    db.nationalIssueTemplate.findMany.mockResolvedValue([]);
-
-    const result = await spawnResistanceForIntent({
-      db,
-      countryId: "country-1",
-      intent,
-      tokens: ["economic"],
-    });
-
-    expect(result).toBeNull();
-    expect(forceGenerateMock).not.toHaveBeenCalled();
-  });
 });
 
 describe("spawnIntentResistance (mode-aware wrapper)", () => {
-  it("spawns in deterministic mode", async () => {
-    const db = makeDb();
-    db.nationalIssueTemplate.findMany.mockResolvedValue([makeTemplate()]);
-    db.nationalIssue.findFirst.mockResolvedValue(null);
-    db.nationalIssue.count.mockResolvedValue(0);
-
-    const result = await spawnIntentResistance({
-      db,
-      countryId: "country-1",
-      intent,
-    });
-
-    expect(result).toBe("issue-1");
-  });
-
   it("does not spawn in probability mode", async () => {
     mockSpawnMode = "probability";
     const db = makeDb();

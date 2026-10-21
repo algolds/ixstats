@@ -1,5 +1,6 @@
 /** @jest-environment node */
-// `jest` is deliberately NOT imported from "@jest/globals" (see intent-commit-effects.test.ts).
+// `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factories rely
+// on the ambient global.
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: { user: { findUnique: jest.fn() }, auditLog: { create: jest.fn() } },

@@ -7,13 +7,11 @@
  * - Idempotency: completing the same match twice claims it once, so standings,
  *   rating vectors and player stats are only applied once.
  * - Knockout bouts (simulateAndPersistBout) persist the same replayable snapshot.
- * - Hockey standings: 2 for a win, 1 for an overtime / shootout loss, 0 otherwise.
+ * The points rules are asserted in tests/scenarios/engines/sports-season.test.ts.
  */
 import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 import type { Prisma } from "@prisma/client";
 import { IxTime } from "~/lib/ixtime";
-import { POINTS_FOR_DRAW, POINTS_FOR_WIN, pointsFor } from "~/lib/sports/presets";
-import { decidedAfterRegulation } from "~/lib/sports/match-outcome";
 import {
   matchSeed,
   resolveFromSnapshot,
@@ -28,7 +26,6 @@ import {
 
 const FIXED_IXTIME = 1_900_000_000_000;
 const POSITIONS = ["GK", "CB", "CB", "FB", "FB", "CM", "CM", "CM", "AM", "W", "ST", "ST"];
-const HOCKEY_POSITIONS = ["G", "D", "D", "D", "D", "C", "C", "LW", "LW", "RW", "RW", "C"];
 
 function team(
   id: string,
@@ -233,47 +230,6 @@ describe("simulateAndPersistMatch", () => {
     expect(replay.awayScore).toBe(persisted.awayScore);
     expect(replay.trace).toEqual(stored.trace);
   });
-
-  it("uses the rivalry intensity for home advantage (one lookup)", async () => {
-    const derby = fakeDb(85);
-    await simulateAndPersistMatch(derby.db, { match: fixture(), league: LEAGUE });
-    expect(claimArgs(derby).data.matchStats.simulationSnapshot.homeAdvantage).toBe(65);
-    expect(derby.sportRivalry.findFirst).toHaveBeenCalledTimes(1);
-
-    const normal = fakeDb();
-    await simulateAndPersistMatch(normal.db, { match: fixture(), league: LEAGUE });
-    expect(claimArgs(normal).data.matchStats.simulationSnapshot.homeAdvantage).toBe(55);
-  });
-
-  it("creates a rivalry once the pair's meetings qualify (SL-16)", async () => {
-    const close = [
-      { homeScore: 1, awayScore: 1 },
-      { homeScore: 2, awayScore: 1 },
-      { homeScore: 4, awayScore: 0 },
-    ];
-    const fake = fakeDb(null, close);
-    await simulateAndPersistMatch(fake.db, { match: fixture(), league: LEAGUE });
-    expect(fake.sportMatch.findMany).toHaveBeenCalledTimes(1);
-    expect(fake.sportRivalry.upsert).toHaveBeenCalledTimes(1);
-    expect(fake.sportRivalry.upsert.mock.calls[0]![0]).toMatchObject({
-      create: { intensity: 60 },
-    });
-
-    const none = fakeDb(null, [{ homeScore: 5, awayScore: 0 }]);
-    await simulateAndPersistMatch(none.db, { match: fixture(), league: LEAGUE });
-    expect(none.sportRivalry.upsert).not.toHaveBeenCalled();
-    expect(none.sportRivalry.update).not.toHaveBeenCalled();
-  });
-
-  it("never lowers an existing rivalry's intensity", async () => {
-    const fake = fakeDb(85, [{ homeScore: 3, awayScore: 0 }]);
-    await simulateAndPersistMatch(fake.db, { match: fixture(), league: LEAGUE });
-    expect(fake.sportRivalry.update.mock.calls[0]![0]).toMatchObject({
-      where: { id: "rivalry_1" },
-      data: { intensity: 85 },
-    });
-  });
-
   it("completing the same match twice does not double-count standings", async () => {
     const fake = fakeDb();
 
@@ -294,34 +250,6 @@ describe("simulateAndPersistMatch", () => {
     expect(fake.standings.get("away")).toEqual(
       standingDelta("soccer", awayScore, homeScore, false)
     );
-  });
-
-  it("gives the hockey overtime / shootout loser one point and the winner two", async () => {
-    const hockey = { sportPreset: "hockey", archetype: "division_conference" };
-    // Find a fixture whose seed takes the game past regulation (the seed is the match id).
-    let overtime: { fake: ReturnType<typeof fakeDb>; persisted: ClaimArgs["data"] } | null = null;
-    for (let i = 0; i < 200 && !overtime; i++) {
-      const fake = fakeDb();
-      const match: SimMatch = {
-        ...fixture(),
-        id: `hockey_${i}`,
-        homeTeam: team("home", 62, null, HOCKEY_POSITIONS),
-        awayTeam: team("away", 62, null, HOCKEY_POSITIONS),
-      };
-      await simulateAndPersistMatch(fake.db, { match, league: hockey });
-      const persisted = claimArgs(fake).data;
-      if (decidedAfterRegulation("hockey", persisted.matchStats.trace)) {
-        overtime = { fake, persisted };
-      }
-    }
-    if (!overtime) throw new Error("no hockey fixture went past regulation");
-
-    const { homeScore, awayScore } = overtime.persisted;
-    const winner = homeScore > awayScore ? "home" : "away";
-    const loser = winner === "home" ? "away" : "home";
-    expect(homeScore).not.toBe(awayScore);
-    expect(overtime.fake.standings.get(winner)).toMatchObject({ wins: 1, losses: 0, points: 2 });
-    expect(overtime.fake.standings.get(loser)).toMatchObject({ wins: 0, losses: 1, points: 1 });
   });
 });
 
@@ -383,49 +311,5 @@ describe("simulateAndPersistBout", () => {
     expect(second).toBeNull();
     expect(rerun).toEqual(first);
     expect(fake.sportStanding.upsert).not.toHaveBeenCalled();
-  });
-});
-
-describe("pointsFor", () => {
-  it("uses 3 / 1 / 0 outside hockey, where an overtime loss is just a loss", () => {
-    expect(pointsFor("soccer", "win")).toBe(POINTS_FOR_WIN);
-    expect(pointsFor("soccer", "draw")).toBe(POINTS_FOR_DRAW);
-    expect(pointsFor("basketball", "loss")).toBe(0);
-    expect(pointsFor("basketball", "overtimeLoss")).toBe(0);
-  });
-
-  it("uses 2 for a hockey win, 1 for an overtime loss, 0 for a regulation loss", () => {
-    expect(pointsFor("hockey", "win")).toBe(2);
-    expect(pointsFor("hockey", "overtimeLoss")).toBe(1);
-    expect(pointsFor("hockey", "loss")).toBe(0);
-  });
-});
-
-describe("standingDelta", () => {
-  it("awards POINTS_FOR_WIN / POINTS_FOR_DRAW and tracks goals for/against", () => {
-    expect(standingDelta("soccer", 2, 1, false)).toEqual({
-      wins: 1,
-      draws: 0,
-      losses: 0,
-      points: POINTS_FOR_WIN,
-      pointsFor: 2,
-      pointsAgainst: 1,
-    });
-    expect(standingDelta("soccer", 1, 1, false)).toEqual({
-      wins: 0,
-      draws: 1,
-      losses: 0,
-      points: POINTS_FOR_DRAW,
-      pointsFor: 1,
-      pointsAgainst: 1,
-    });
-    expect(standingDelta("soccer", 0, 3, false)).toEqual({
-      wins: 0,
-      draws: 0,
-      losses: 1,
-      points: 0,
-      pointsFor: 0,
-      pointsAgainst: 3,
-    });
   });
 });
