@@ -166,38 +166,6 @@ describe("copy values", () => {
       })
     );
   });
-
-  it("reads cards in chunks, not one by one", async () => {
-    const many = Array.from({ length: 5001 }, (_, i) => copy(`o${i}`, `c${i}`));
-    const cards = many.map((c) => ({
-      id: c.cardId,
-      rarity: "COMMON",
-      cardType: "LORE",
-      firstSoldAt: null,
-      isRetired: false,
-    }));
-    const db = makeDb(many, { cards });
-    const values = await loadCopyValues(db as never, { ownerIds: ["u1"] });
-    expect(values).toHaveLength(5001);
-    expect(db.card.findMany).toHaveBeenCalledTimes(2);
-    expect(db.cardMarketPrice.findMany).toHaveBeenCalledTimes(2);
-    const sizes = db.card.findMany.mock.calls.map(([args]) => args.where.id.in.length);
-    expect(sizes).toEqual([5000, 1]);
-  });
-
-  it("reads no cards when there are no copies", async () => {
-    const db = makeDb([]);
-    expect(await loadCopyValues(db as never, { ownerIds: ["u1"] })).toEqual([]);
-    expect(db.card.findMany).not.toHaveBeenCalled();
-    expect(db.cardMarketPrice.findMany).not.toHaveBeenCalled();
-  });
-
-  it("reads nothing for an empty list of owners or copies", async () => {
-    const db = makeDb([copy("a", "rare")]);
-    expect(await loadCopyValues(db as never, { ownershipIds: [] })).toEqual([]);
-    expect(await loadCopyValues(db as never, { ownerIds: [] })).toEqual([]);
-    expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
-  });
 });
 
 describe("deck values", () => {

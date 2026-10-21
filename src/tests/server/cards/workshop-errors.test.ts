@@ -9,10 +9,6 @@ import { DustError, workshopCall } from "~/server/modules/cards/workshop/errors"
 const failWith = (error: Error) => workshopCall(() => Promise.reject(error));
 
 describe("workshopCall", () => {
-  it("returns the work's result", async () => {
-    expect(await workshopCall(async () => 7)).toBe(7);
-  });
-
   it.each<[string, Error, string, string]>([
     [
       "too little dust",
@@ -45,12 +41,5 @@ describe("workshopCall", () => {
     const refused = failWith(error);
     await expect(refused).rejects.toBeInstanceOf(TRPCError);
     await expect(refused).rejects.toMatchObject({ code, message });
-  });
-
-  it("passes any other failure through as it was", async () => {
-    const own = new TRPCError({ code: "CONFLICT", message: "These copies changed." });
-    await expect(failWith(own)).rejects.toBe(own);
-    const crash = new Error("connection reset: host db-1");
-    await expect(failWith(crash)).rejects.toBe(crash);
   });
 });

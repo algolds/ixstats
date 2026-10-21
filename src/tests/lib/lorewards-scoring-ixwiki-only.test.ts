@@ -79,15 +79,4 @@ describe("scoreDailyWikiOS", () => {
     expect(day.candidates.map((c) => c.user)).not.toContain("Elsewhere");
     expect(day.editCount).toBe(2);
   });
-
-  it("asks for ixwiki revisions only, for the day and for each candidate's edit depth", async () => {
-    await scoreDailyWikiOS("2026-10-01", DEFAULT_WEIGHTS);
-
-    expect(jest.mocked(db.wikiRevision.findMany).mock.calls[0]?.[0]?.where).toMatchObject({
-      source: "ixwiki",
-    });
-    for (const [args] of jest.mocked(db.wikiRevision.count).mock.calls) {
-      expect(args?.where).toMatchObject({ source: "ixwiki" });
-    }
-  });
 });

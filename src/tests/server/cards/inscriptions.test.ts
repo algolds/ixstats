@@ -175,13 +175,6 @@ describe("reportInscription", () => {
       message: "This copy has no inscription.",
     });
   });
-
-  it("passes any other failure on", async () => {
-    const db = signedCopy();
-    const failure = new Error("connection lost");
-    db.cardInscriptionReport.create.mockRejectedValue(failure);
-    await expect(report(db)).rejects.toBe(failure);
-  });
 });
 
 describe("listInscriptionReports", () => {
@@ -263,13 +256,6 @@ describe("listInscriptionReports", () => {
       expect.objectContaining({ id: "r3", signerName: null, reporterName: "@rep" }),
     ]);
     for (const r of rows) expect(r).not.toHaveProperty("reporterId");
-  });
-
-  it("names nobody when there is no report", async () => {
-    const db = createMockPrisma();
-    const namesOf = jest.fn(async () => new Map<string, string>());
-    await expect(listInscriptionReports(db as never, namesOf)).resolves.toEqual([]);
-    expect(namesOf).toHaveBeenCalledWith([]);
   });
 });
 

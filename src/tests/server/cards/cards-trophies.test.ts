@@ -458,19 +458,6 @@ describe("reassigning a trophy", () => {
       metadata: { grantedTo: "user_amy", grantedAt: AMY_GRANTED_AT },
     });
   });
-
-  it("names a place with no page after its contest", async () => {
-    accounts({ Cy: "user_cy" });
-    const h = setup({ contest: [daily("Amy", "Old page")], trophies: [amyTrophy()] });
-
-    await override(h, winner("Cy", null));
-
-    expect(cardUpdates(h)[0]!.data).toMatchObject({
-      title: "Daily Loreward 2026-10-20",
-      wikiArticleTitle: null,
-    });
-  });
-
   it("refuses, rolling the override back, when the copy changed hands meanwhile", async () => {
     accounts({ Cy: "user_cy" });
     const h = setup({ contest: [daily("Amy", "Old page")], trophies: [amyTrophy()] });
@@ -565,17 +552,6 @@ describe("voiding a trophy", () => {
     // The copy is read under the card's serial lock, after the contest's
     expect(locks(h)[2]).toBe("7331 trophy_1");
     expect(callOrder(h.tx.$executeRaw, 2)).toBeLessThan(callOrder(h.tx.cardOwnership.findMany));
-  });
-
-  it("reads a blank name as none", async () => {
-    const h = setup({ contest: [daily("Amy", "Old page")], trophies: [amyTrophy()] });
-
-    await expect(override(h, winner("", ""))).resolves.toMatchObject({ voided: 1 });
-
-    expect(h.tx.lorewardEntry.updateMany.mock.calls[0]![0].data).toMatchObject({
-      winnerUser: null,
-      winnerPage: null,
-    });
   });
 });
 

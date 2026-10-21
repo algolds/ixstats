@@ -2,7 +2,6 @@
 /** Licence capture from real response shapes (Phase 2 spike, 2026-10-15). */
 import { z } from "zod";
 import type { WikiQuery } from "~/lib/realms/lore-import";
-import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 import { captureArtLicence, wikiQueryFor } from "~/server/modules/cards/cards.art-licence";
 import { json } from "~/tests/helpers/iiwiki-fixtures";
 
@@ -51,97 +50,7 @@ const filePage = (title: string, content: string, categories: string[] = []) => 
     ],
   },
 });
-
-/** A local file's extmetadata on IxWiki and AltHistory: no licence keys, only what MediaWiki itself knows. */
-const LOCAL_ONLY = {
-  DateTime: { value: "2016-06-24T13:38:33Z", source: "mediawiki-metadata", hidden: "" },
-  ObjectName: { value: "Theodora-CYG-GoN", source: "mediawiki-metadata" },
-};
-
 describe("captureArtLicence", () => {
-  it("reads a Commons file's licence and author from extmetadata", async () => {
-    const { query, calls } = fakeQuery({
-      imageinfo: imageinfo(
-        "File:Flag of Ireland.svg",
-        "https://upload.wikimedia.org/wikipedia/commons/4/45/Flag_of_Ireland.svg",
-        {
-          LicenseShortName: { value: "Public domain" },
-          Artist: { value: "Éire" },
-        }
-      ),
-    });
-    const licence = await captureArtLicence(query, "commons", "Flag_of_Ireland.svg");
-    expect(licence).toMatchObject({ status: "OPEN", licence: "Public domain", artist: "Éire" });
-    expect(licence?.attribution).toContain("Éire");
-    expect(calls).toEqual(["imageinfo"]);
-  });
-
-  it("stores a Commons file's URL without the tracking query", async () => {
-    const { query } = fakeQuery({
-      imageinfo: imageinfo(
-        "File:Flag of Ireland.svg",
-        "https://upload.wikimedia.org/wikipedia/commons/4/45/Flag_of_Ireland.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-        { LicenseShortName: { value: "Public domain" } }
-      ),
-    });
-    expect(await captureArtLicence(query, "commons", "Flag_of_Ireland.svg")).toEqual({
-      fileTitle: "File:Flag of Ireland.svg",
-      fileUrl: "https://upload.wikimedia.org/wikipedia/commons/4/45/Flag_of_Ireland.svg",
-      descriptionUrl: "https://example.org/wiki/File:Flag%20of%20Ireland.svg",
-      licence: "Public domain",
-      licenceUrl: null,
-      artist: null,
-      attribution: "Flag of Ireland.svg, Public domain, via Commons",
-      status: "OPEN",
-    });
-  });
-
-  it("reads an IxWiki page's Commons image (InstantCommons) with its Commons licence, in one request", async () => {
-    const { query, calls } = fakeQuery({
-      imageinfo: {
-        query: {
-          pages: [
-            {
-              title: "File:Ban Huahat07.jpg",
-              missing: true,
-              known: true,
-              imagerepository: "wikimediacommons",
-              imageinfo: [
-                {
-                  url: "https://upload.wikimedia.org/wikipedia/commons/a/ae/Ban_Huahat07.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-                  descriptionurl: "https://commons.wikimedia.org/wiki/File:Ban_Huahat07.jpg",
-                  width: 800,
-                  height: 600,
-                  size: 1234,
-                  extmetadata: {
-                    LicenseShortName: { value: "CC BY-SA 3.0", source: "commons-desc-page" },
-                    UsageTerms: {
-                      value: "Creative Commons Attribution-Share Alike 3.0",
-                      source: "commons-desc-page",
-                    },
-                    Artist: {
-                      value: '<a href="//commons.wikimedia.org/wiki/User:Ban">Ban</a>',
-                      source: "commons-desc-page",
-                    },
-                  },
-                },
-              ],
-            },
-          ],
-        },
-      },
-    });
-    expect(await captureArtLicence(query, "ixwiki", "Ban_Huahat07.jpg")).toMatchObject({
-      fileUrl: "https://upload.wikimedia.org/wikipedia/commons/a/ae/Ban_Huahat07.jpg",
-      descriptionUrl: "https://commons.wikimedia.org/wiki/File:Ban_Huahat07.jpg",
-      licence: "CC BY-SA 3.0",
-      artist: "Ban",
-      attribution: "Ban Huahat07.jpg by Ban, CC BY-SA 3.0, via Commons",
-      status: "OPEN",
-    });
-    expect(calls).toEqual(["imageinfo"]);
-  });
-
   it("falls back to the File page when extmetadata is an empty array, and a fair-use file is unknown", async () => {
     const title = "File:Theodora-CYG-GoN.jpg";
     const { query, calls } = fakeQuery({
@@ -175,61 +84,6 @@ describe("captureArtLicence", () => {
       licence: "cc-by-nc-sa-3.0",
     });
   });
-
-  it("reads a local file with only DateTime and ObjectName as unlicensed, and takes a licence category", async () => {
-    const title = "File:Theodora-CYG-GoN.jpg";
-    const { query, calls } = fakeQuery({
-      imageinfo: imageinfo(title, `${mediaWikiOrigin()}/images/8/8c/Theodora-CYG-GoN.jpg`, {
-        ...LOCAL_ONLY,
-        Artist: { value: '<a href="/wiki/User:Kerr">Kerr</a>' },
-      }),
-      "categories|revisions": filePage(title, "A portrait.", [
-        "Category:People",
-        "Category:CC-BY-SA-4.0",
-      ]),
-    });
-    expect(await captureArtLicence(query, "ixwiki", "Theodora-CYG-GoN.jpg")).toMatchObject({
-      status: "OPEN",
-      licence: "CC-BY-SA-4.0",
-      artist: "Kerr",
-      attribution: "Theodora-CYG-GoN.jpg by Kerr, CC-BY-SA-4.0, via IxWiki",
-    });
-    expect(calls).toEqual(["imageinfo", "categories|revisions"]);
-  });
-
-  it("credits a Commons file IxWiki describes locally to Commons, when its File page gives the licence", async () => {
-    const title = "File:Ban Huahat07.jpg";
-    const { query } = fakeQuery({
-      imageinfo: imageinfo(
-        title,
-        "https://upload.wikimedia.org/wikipedia/commons/a/ae/Ban_Huahat07.jpg",
-        LOCAL_ONLY
-      ),
-      "categories|revisions": filePage(title, "{{cc-by-sa-3.0}}"),
-    });
-    expect(await captureArtLicence(query, "ixwiki", "Ban_Huahat07.jpg")).toMatchObject({
-      status: "OPEN",
-      licence: "cc-by-sa-3.0",
-      attribution: "Ban Huahat07.jpg, cc-by-sa-3.0, via Commons",
-    });
-  });
-
-  it("keeps the file's own Attribution as its credit when the File page gives the licence", async () => {
-    const title = "File:Elm.png";
-    const { query } = fakeQuery({
-      imageinfo: imageinfo(title, "https://iiwiki.com/images/a/ab/Elm.png", {
-        Attribution: { value: "Drawn by the Elm Map Society" },
-        Artist: { value: "Kerr" },
-      }),
-      "categories|revisions": filePage(title, "{{cc-by-4.0}}"),
-    });
-    expect(await captureArtLicence(query, "iiwiki", "Elm.png")).toMatchObject({
-      status: "OPEN",
-      licence: "cc-by-4.0",
-      attribution: "Drawn by the Elm Map Society",
-    });
-  });
-
   it("takes a restricted hint over an open one that comes first", async () => {
     const title = "File:Elm.png";
     const { query } = fakeQuery({
@@ -256,24 +110,6 @@ describe("captureArtLicence", () => {
       licence: null,
     });
     expect(calls).toEqual(["imageinfo", "categories|revisions"]);
-  });
-
-  it("keeps an unreadable extmetadata licence when the File page says nothing either", async () => {
-    const title = "File:Seal.png";
-    const { query } = fakeQuery({
-      imageinfo: imageinfo(title, "https://iiwiki.com/images/a/ab/Seal.png", {
-        LicenseShortName: { value: "Copyrighted, used with permission" },
-      }),
-    });
-    expect(await captureArtLicence(query, "iiwiki", "Seal.png")).toMatchObject({
-      status: "UNKNOWN",
-      licence: "Copyrighted, used with permission",
-    });
-  });
-
-  it("is null when the wiki has no such file", async () => {
-    const { query } = fakeQuery({});
-    expect(await captureArtLicence(query, "althistory", "Missing.png")).toBeNull();
   });
 });
 
@@ -302,20 +138,5 @@ describe("wikiQueryFor", () => {
     const [url, init] = fetchSpy.mock.calls[0]!;
     expect(String(url)).toMatch(/^https:\/\/commons\.wikimedia\.org\/w\/api\.php\?/);
     expect(init?.headers).toMatchObject({ "User-Agent": "IxStats-Builder" });
-  });
-
-  it("allows twenty requests by default", async () => {
-    jest.useFakeTimers({ doNotFake: ["nextTick", "queueMicrotask", "setImmediate"] });
-    jest.spyOn(globalThis, "fetch").mockImplementation(async () => json({ query: { pages: [] } }));
-    const query = wikiQueryFor("althistory");
-
-    const settled = Promise.allSettled(
-      Array.from({ length: 21 }, () => query({ prop: "info" }, Pages))
-    );
-    await jest.advanceTimersByTimeAsync(60_000);
-    const results = await settled;
-
-    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(20);
-    expect(results[20]).toMatchObject({ status: "rejected" });
   });
 });

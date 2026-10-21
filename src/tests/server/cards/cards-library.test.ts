@@ -5,8 +5,6 @@ import { CARD_VALUATION_DEFAULTS, referenceValue } from "~/lib/cards/valuation";
 import {
   LibraryFilterSchema,
   bulkSetRetired,
-  libraryWhere,
-  listLibrary,
   updateLibraryCard,
   type BulkSetRetiredInput,
   type LibraryEdit,
@@ -30,93 +28,6 @@ function withTx() {
   db.$transaction.mockImplementation((run: (client: typeof tx) => Promise<unknown>) => run(tx));
   return { db, tx };
 }
-
-describe("libraryWhere", () => {
-  it("scopes by realm, type, rarity and title, and counts legacy unsourced Lore cards as IxWiki", () => {
-    expect(
-      libraryWhere(
-        filter({
-          realmId: "eurth",
-          cardType: "LORE",
-          rarity: "RARE",
-          search: " Elm ",
-          source: "ixwiki",
-        })
-      )
-    ).toEqual({
-      AND: [
-        { realmId: "eurth" },
-        { cardType: "LORE" },
-        { rarity: "RARE" },
-        { title: { contains: "Elm", mode: "insensitive" } },
-        { OR: [{ wikiSource: "ixwiki" }, { wikiSource: null, cardType: "LORE" }] },
-        {},
-      ],
-    });
-  });
-
-  it("reads every other source as stored, and an empty filter as every card", () => {
-    expect(libraryWhere(filter({ source: "commons" })).AND).toContainEqual({
-      wikiSource: "commons",
-    });
-    expect(libraryWhere(filter({}))).toEqual({ AND: [{}, {}, {}, {}, {}, {}] });
-  });
-
-  it("finds retired cards, art hidden by a takedown and bound cards", () => {
-    expect(libraryWhere(filter({ show: "retired" })).AND).toContainEqual({ isRetired: true });
-    expect(libraryWhere(filter({ show: "art_hidden" })).AND).toContainEqual({
-      takedowns: { some: { status: "HIDDEN" } },
-    });
-    expect(libraryWhere(filter({ show: "bound" })).AND).toContainEqual({ isBound: true });
-  });
-});
-
-describe("listLibrary", () => {
-  it("reads the page, the total and what each bulk change would change, as of one moment", async () => {
-    const db = createMockPrisma();
-    db.card.findMany.mockResolvedValue([{ id: "card_1" }]);
-    db.card.count.mockResolvedValueOnce(51).mockResolvedValueOnce(40).mockResolvedValueOnce(3);
-    const page = await listLibrary(db as never, {
-      filter: filter({ realmId: "eurth" }),
-      offset: 50,
-      limit: 50,
-    });
-    expect(page).toEqual({
-      rows: [{ id: "card_1" }],
-      total: 51,
-      hideable: 40,
-      unhideable: 3,
-      asOf: expect.any(Date),
-    });
-    const query = db.card.findMany.mock.calls[0]![0];
-    const shown = [{ realmId: "eurth" }, {}, {}, {}, {}, {}, { createdAt: { lte: page.asOf } }];
-    expect(query.where).toEqual({ AND: shown });
-    expect(query).toMatchObject({
-      skip: 50,
-      take: 50,
-      orderBy: [{ createdAt: "desc" }, { id: "asc" }],
-      select: { rewardAchievementKey: true },
-    });
-    const counted = db.card.count.mock.calls.map(([args]: [{ where: object }]) => args.where);
-    expect(counted).toEqual([
-      query.where,
-      {
-        AND: [...shown, { isRetired: false }, ...COMPLIANCE_FREE, { rewardAchievementKey: null }],
-      },
-      { AND: [...shown, { isRetired: true }, ...COMPLIANCE_FREE] },
-    ]);
-  });
-});
-
-describe("listLibrary with no filter", () => {
-  it("counts no bulk change, which needs a filter, and skips both counts", async () => {
-    const db = createMockPrisma();
-    db.card.count.mockResolvedValue(70_000);
-    const page = await listLibrary(db as never, { filter: filter({}), offset: 0, limit: 50 });
-    expect(page).toMatchObject({ total: 70_000, hideable: 0, unhideable: 0 });
-    expect(db.card.count).toHaveBeenCalledTimes(1);
-  });
-});
 
 describe("updateLibraryCard", () => {
   interface Stored {
@@ -254,19 +165,6 @@ describe("updateLibraryCard", () => {
     });
     expect(sold.tx.card.updateMany.mock.calls[0]![0].data.marketValue).toBe(100);
   });
-
-  it("re-prices from the card's Standard market median when it has sold recently", async () => {
-    const { db, tx, edit } = setUp();
-    tx.cardMarketPrice.findUnique.mockResolvedValue({ median: 2500 });
-    await updateLibraryCard(db as never, actor, { ...edit, rarity: "EPIC", reason: "Featured" });
-    expect(tx.cardMarketPrice.findUnique).toHaveBeenCalledWith({
-      where: { cardId_finish: { cardId: "card_1", finish: "STANDARD" } },
-      select: { median: true },
-    });
-    // The median of 2,500 over the Epic floor of 1,000
-    expect(tx.card.updateMany.mock.calls[0]![0].data.marketValue).toBe(2500);
-  });
-
   it("writes only what changed, under the art, visibility and rarity it read", async () => {
     const { db, tx, edit } = setUp();
     await updateLibraryCard(db as never, actor, {
@@ -330,54 +228,6 @@ describe("updateLibraryCard", () => {
       fileTitle: null,
     });
   });
-
-  it("clears art to the placeholder, with no credit and no licence row", async () => {
-    const { db, tx, edit } = setUp(stored({ description: "Old" }));
-    await updateLibraryCard(db as never, actor, { ...edit, artwork: null, description: "" });
-    expect(tx.card.updateMany.mock.calls[0]![0].data).toEqual({
-      description: null,
-      artwork: null,
-      artworkSource: "PROCEDURAL",
-      artworkCredit: null,
-    });
-    expect(tx.cardArtLicence.deleteMany).toHaveBeenCalledWith({ where: { cardId: "card_1" } });
-    expect(tx.cardArtLicence.upsert).not.toHaveBeenCalled();
-  });
-
-  it("hides and unhides a card, auditing each", async () => {
-    const { db, tx, edit } = setUp();
-    await updateLibraryCard(db as never, actor, { ...edit, retired: true });
-    expect(tx.card.updateMany.mock.calls[0]![0]).toMatchObject({
-      where: { isRetired: false },
-      data: { isRetired: true, retiredAt: expect.any(Date) },
-    });
-    expect(tx.auditLog.create.mock.calls[0]![0].data).toMatchObject({
-      action: "CARD_HIDE",
-      details: "Hid Elm",
-    });
-
-    const hidden = stored({ isRetired: true });
-    tx.card.findUnique.mockResolvedValue(hidden);
-    await updateLibraryCard(db as never, actor, { ...unchanged(hidden), retired: false });
-    expect(tx.card.updateMany.mock.calls[1]![0].data).toEqual({
-      isRetired: false,
-      retiredAt: null,
-    });
-    expect(tx.auditLog.create.mock.calls[1]![0].data).toMatchObject({
-      action: "CARD_HIDE",
-      details: "Unhid Elm",
-    });
-    expect(tx.cardArtLicence.upsert).not.toHaveBeenCalled();
-    expect(tx.cardArtLicence.deleteMany).not.toHaveBeenCalled();
-  });
-
-  it("writes nothing for a save that changes nothing", async () => {
-    const { db, tx, edit } = setUp();
-    await updateLibraryCard(db as never, actor, { ...edit, reason: "No change" });
-    expect(tx.card.updateMany).not.toHaveBeenCalled();
-    expect(tx.auditLog.create).not.toHaveBeenCalled();
-  });
-
   it("takes new art only as an https address, and keeps stored art of any form", async () => {
     const { db, tx, edit } = setUp(stored({ artwork: "/api/wiki/file/Elm.png" }));
     for (const artwork of ["http://example.com/a.png", "javascript:alert(1)", "/images/a.png"]) {

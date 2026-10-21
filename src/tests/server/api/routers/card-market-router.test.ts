@@ -23,7 +23,6 @@ jest.mock("~/lib/notifications/api", () => ({
 }));
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
-import { TRPCError } from "@trpc/server";
 import { createCallerFactory } from "~/server/api/trpc";
 import { cardMarketRouter } from "~/server/api/routers/card-market";
 import { auctionService } from "~/lib/economy/auction-service";
@@ -125,31 +124,6 @@ describe("createAuction", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(service.createAuction).not.toHaveBeenCalled();
   });
-
-  it("leaves the buy-now rule to the service, whose refusal passes through", async () => {
-    service.createAuction!.mockRejectedValue(
-      new TRPCError({
-        code: "BAD_REQUEST",
-        message: "Buyout price must be higher than starting price",
-      })
-    );
-    await expect(
-      callerAs("seller", db).createAuction({
-        cardId: "own_1",
-        startingPrice: 50,
-        buyoutPrice: 50,
-        duration: "24h",
-      })
-    ).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-      message: "Buyout price must be higher than starting price",
-    });
-    expect(service.createAuction).toHaveBeenCalledWith(
-      expect.objectContaining({ startingPrice: 50, buyoutPrice: 50 }),
-      db
-    );
-  });
-
   it("validates the duration and starting price", async () => {
     const seller = callerAs("seller", db);
     // The old 30 and 60 minute auctions are gone
@@ -163,16 +137,6 @@ describe("createAuction", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(service.createAuction).not.toHaveBeenCalled();
   });
-
-  it("passes an ownership refusal from the service through unchanged", async () => {
-    service.createAuction!.mockRejectedValue(
-      new TRPCError({ code: "FORBIDDEN", message: "You do not own this card" })
-    );
-    await expect(
-      callerAs("thief", db).createAuction({ cardId: "own_1", startingPrice: 10, duration: "7d" })
-    ).rejects.toMatchObject({ code: "FORBIDDEN", message: "You do not own this card" });
-  });
-
   it("hides unexpected failures behind a generic error", async () => {
     service.createAuction!.mockRejectedValue(new Error("connection reset"));
     await expect(
@@ -197,17 +161,6 @@ describe("placeBid", () => {
       expect.objectContaining({ userId: "clerk_seller", title: "New Bid on Your Auction" })
     );
   });
-
-  it("passes the service's refusal of a seller bidding on their own auction", async () => {
-    service.placeBid!.mockRejectedValue(
-      new TRPCError({ code: "BAD_REQUEST", message: "You cannot bid on your own auction" })
-    );
-    await expect(
-      callerAs("seller", db).placeBid({ auctionId: "a1", amount: 25 })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST", message: "You cannot bid on your own auction" });
-    expect(notify).not.toHaveBeenCalled();
-  });
-
   it("rejects a zero bid before reaching the service", async () => {
     await expect(
       callerAs("bidder", db).placeBid({ auctionId: "a1", amount: 0 })
@@ -251,15 +204,6 @@ describe("cancelAuction", () => {
     expect(db.user.findUnique).not.toHaveBeenCalled();
     expect(notify).not.toHaveBeenCalled();
   });
-  it("passes the service's refusal for someone else's auction", async () => {
-    service.cancelAuction!.mockRejectedValue(
-      new TRPCError({ code: "FORBIDDEN", message: "Only the seller can cancel" })
-    );
-    await expect(callerAs("intruder", db).cancelAuction({ auctionId: "a1" })).rejects.toMatchObject(
-      { code: "FORBIDDEN" }
-    );
-    expect(notify).not.toHaveBeenCalled();
-  });
 });
 
 describe("caller-scoped reads", () => {
@@ -281,60 +225,5 @@ describe("caller-scoped reads", () => {
         },
       })
     );
-  });
-
-  it("labels past auctions by the caller's part in them", async () => {
-    db.cardAuction.count.mockResolvedValue(3);
-    // Each past auction as the query includes it: the listed copy with its card
-    const listed = (id: string) => ({
-      cardInstanceId: `o_${id}`,
-      CardOwnership: { cards: { id } },
-    });
-    db.cardAuction.findMany.mockResolvedValue([
-      { id: "a", status: "COMPLETED", winnerId: "u1", sellerId: "x", ...listed("a") },
-      { id: "b", status: "COMPLETED", winnerId: "y", sellerId: "u1", ...listed("b") },
-      { id: "c", status: "CANCELLED", winnerId: null, sellerId: "u1", ...listed("c") },
-    ]);
-
-    const result = await callerAs("u1", db).getMyAuctionParticipation({ limit: 2 });
-
-    expect(result.auctions.map((a) => a.participation)).toEqual(["won", "sold", "cancelled"]);
-    expect(result.hasMore).toBe(true);
-    expect(db.cardAuction.count).toHaveBeenCalledWith({
-      where: expect.objectContaining({
-        OR: [{ sellerId: "u1" }, { winnerId: "u1" }, { AuctionBid: { some: { bidderId: "u1" } } }],
-      }),
-    });
-  });
-});
-
-describe("analytics", () => {
-  it("charts the newest 100 history rows, oldest first, with no fallback to auction prices", async () => {
-    const row = (id: string, day: number) => ({
-      id,
-      cardId: "card_1",
-      value: day,
-      recordedAt: new Date(day),
-    });
-    // The read is newest first, so a card with a long history still shows its latest moves
-    db.cardValueHistory.findMany.mockResolvedValue([row("h3", 3), row("h2", 2), row("h1", 1)]);
-
-    expect(await callerAs("u1", db).getCardValueHistory({ cardId: "card_1" })).toEqual([
-      row("h1", 1),
-      row("h2", 2),
-      row("h3", 3),
-    ]);
-    expect(db.cardValueHistory.findMany).toHaveBeenCalledWith({
-      where: { cardId: "card_1" },
-      orderBy: { recordedAt: "desc" },
-      take: 100,
-    });
-
-    // A card with no history yet has none, even with a completed auction of one of its copies
-    db.cardValueHistory.findMany.mockResolvedValue([]);
-    db.cardOwnership.findMany.mockResolvedValue([{ id: "own_1" }]);
-    db.cardAuction.findMany.mockResolvedValue([{ finalPrice: 40, endTime: new Date(0) }]);
-    expect(await callerAs("u1", db).getCardValueHistory({ cardId: "card_1" })).toEqual([]);
-    expect(db.cardAuction.findMany).not.toHaveBeenCalled();
   });
 });

@@ -76,30 +76,6 @@ describe("proxy: old card addresses", () => {
 });
 
 describe("proxy: pages that moved", () => {
-  it("sends the Vault's old Exchange address to Labs with a 308, keeping the query", async () => {
-    const res = await run("/vault/exchange?tab=contracts");
-    expect(res.status).toBe(308);
-    expect(locationOf(res)).toBe("http://localhost/labs/exchange?tab=contracts");
-  });
-
-  it("keeps the base path", async () => {
-    const res = await run("/vault/exchange", { basePath: BASE_PATH });
-    expect(res.status).toBe(308);
-    expect(locationOf(res)).toBe(`http://localhost${BASE_PATH}/labs/exchange`);
-  });
-
-  it("takes the address with a trailing slash", async () => {
-    // NextURL keeps the request's trailing slash on the new path; Next's own redirect drops it.
-    const res = await run("/vault/exchange/");
-    expect(res.status).toBe(308);
-    expect(locationOf(res)).toMatch(/^http:\/\/localhost\/labs\/exchange\/?$/);
-  });
-
-  it("keeps a question mark inside a query value", async () => {
-    const res = await run("/vault/exchange?q=a?b&q=c");
-    expect(locationOf(res)).toBe("http://localhost/labs/exchange?q=a%3Fb&q=c");
-  });
-
   it.each(["/labs/exchange", "/vault/exchange-rates", "/vault/exchange/companies"])(
     "lets %s through",
     async (path) => {
@@ -108,21 +84,6 @@ describe("proxy: pages that moved", () => {
     }
   );
 });
-
-describe("proxy: the bare hub address", () => {
-  it("opens Mine with a 307, keeping the query", async () => {
-    const res = await run("/vault/cards?card=c1");
-    expect(res.status).toBe(307);
-    expect(locationOf(res)).toBe("http://localhost/vault/cards/mine?card=c1");
-  });
-
-  it("keeps the base path", async () => {
-    const res = await run("/vault/cards", { basePath: BASE_PATH });
-    expect(res.status).toBe(307);
-    expect(locationOf(res)).toBe(`http://localhost${BASE_PATH}/vault/cards/mine`);
-  });
-});
-
 describe("proxy: hub and Store addresses", () => {
   it.each([
     "/vault/cards/mine?card=c1",

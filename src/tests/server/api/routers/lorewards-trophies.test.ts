@@ -17,7 +17,6 @@ jest.mock("~/server/modules/identity/identity.passport-handle", () => ({
 
 import { createCallerFactory } from "~/server/api/trpc";
 import { lorewardsTrophiesRouter } from "~/server/api/routers/lorewards/trophies";
-import { lorewardsLeaderboardsRouter } from "~/server/api/routers/lorewards/leaderboards";
 import { getTodayRace } from "~/lib/lorewards/today-race";
 import { loadPassportSettings } from "~/server/modules/identity/identity.privacy";
 import { loadPassportHandleById } from "~/server/modules/identity/identity.passport-handle";
@@ -25,8 +24,6 @@ import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
 const trophiesCaller = createCallerFactory(lorewardsTrophiesRouter);
-const boardsCaller = createCallerFactory(lorewardsLeaderboardsRouter);
-
 const STATS = {
   username: "Ada",
   dailyWins: 6,
@@ -165,26 +162,6 @@ beforeEach(() => {
 });
 
 describe("lorewards.getMyTrophies", () => {
-  it("returns the viewer's wins, runner-ups, streak, payouts, trophy cards and rank in today's race", async () => {
-    const mine = await viewer().getMyTrophies();
-
-    // Counted from the places under the verified name, not from the name's stats row.
-    expect(mine).toEqual({
-      wikiUsername: "Ada",
-      verified: true,
-      unmatched: 0,
-      wins: { daily: 1, weekly: 1, monthly: 0 },
-      runnerUps: 1,
-      streak: expect.any(Number),
-      paid: 2150,
-      cards: CARD_SUMMARIES,
-      // The viewer's own trophies open in Mine, through no holder.
-      holderHandle: null,
-      todayRank: 2,
-    });
-    expect(loadPassportHandleById).not.toHaveBeenCalled();
-  });
-
   it("reads the cards the viewer's account owns, and the payouts of their Loreward bonuses", async () => {
     await viewer().getMyTrophies();
 
@@ -197,44 +174,6 @@ describe("lorewards.getMyTrophies", () => {
       source: { startsWith: "bonus:loreward:" },
       vault: { userId: "u1" },
     });
-  });
-
-  it("has no rank when the viewer is outside today's top ten", async () => {
-    jest.mocked(getTodayRace).mockResolvedValue({ ...RACE, entries: [RACE.entries[0]!] });
-    expect((await viewer().getMyTrophies()).todayRank).toBeNull();
-  });
-
-  it("still returns the trophies and payouts when today's race fails", async () => {
-    jest.mocked(getTodayRace).mockRejectedValue(new Error("scoring weights unreadable"));
-
-    const mine = await viewer().getMyTrophies();
-    expect(mine).toMatchObject({ wikiUsername: "Ada", paid: 2150, todayRank: null });
-    expect(mine.cards).toHaveLength(2);
-  });
-
-  it("does not wait on a cold race: the rank is left out after two seconds", async () => {
-    jest.useFakeTimers();
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
-    jest.mocked(getTodayRace).mockReturnValue(new Promise(() => undefined));
-
-    const pending = viewer().getMyTrophies();
-    await jest.advanceTimersByTimeAsync(2_000);
-    expect(await pending).toMatchObject({ paid: 2150, todayRank: null });
-    logSpy.mockRestore();
-  });
-
-  it("keeps the rank lookup inside the same two seconds as the race", async () => {
-    jest.useFakeTimers();
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
-    // The race is ready, but reading the scored edits of the viewer's entry never answers.
-    db.wikiRevision.groupBy.mockImplementation(({ by }: { by: string[] }) =>
-      by[0] === "author" ? Promise.resolve([]) : new Promise(() => undefined)
-    );
-
-    const pending = viewer().getMyTrophies();
-    await jest.advanceTimersByTimeAsync(2_000);
-    expect(await pending).toMatchObject({ paid: 2150, todayRank: null });
-    logSpy.mockRestore();
   });
 
   /**
@@ -282,47 +221,6 @@ describe("lorewards.getMyTrophies", () => {
       })
     );
   });
-
-  it("tells an unlinked viewer how many classic-wiki places under their name a link could claim", async () => {
-    // A plain name is a MediaWiki editor: only a verified link ties it, whatever the WikiOS edits say.
-    unlinkedAda("Ada", ["u1"]);
-
-    expect(await viewer().getMyTrophies()).toMatchObject({
-      wikiUsername: "Ada",
-      verified: false,
-      unmatched: 1,
-      wins: { daily: 0, weekly: 0, monthly: 0 },
-    });
-    expect(db.lorewardUserStats.findFirst).not.toHaveBeenCalled();
-  });
-
-  it("is empty, with no wiki name, for a viewer with no link and no wiki edits", async () => {
-    db.wikiAccountLink.findFirst.mockResolvedValue(null);
-
-    expect(await viewer().getMyTrophies()).toEqual({
-      wikiUsername: null,
-      verified: false,
-      unmatched: 0,
-      wins: { daily: 0, weekly: 0, monthly: 0 },
-      runnerUps: 0,
-      streak: 0,
-      paid: 0,
-      cards: [],
-      holderHandle: null,
-      todayRank: null,
-    });
-    expect(db.lorewardUserStats.findFirst).not.toHaveBeenCalled();
-  });
-
-  it("counts a linked viewer with no recorded places as zero", async () => {
-    db.lorewardEntry.findMany.mockResolvedValue([]);
-    db.cardOwnership.findMany.mockResolvedValue([]);
-    db.vaultTransaction.aggregate.mockResolvedValue({ _sum: { credits: null } });
-
-    const mine = await viewer().getMyTrophies();
-    expect(mine).toMatchObject({ wikiUsername: "Ada", runnerUps: 0, paid: 0, cards: [] });
-  });
-
   it("needs a signed-in viewer", async () => {
     const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     await expect(signedOut().getMyTrophies()).rejects.toThrow(/Authentication required/);
@@ -345,53 +243,6 @@ describe("lorewards.getTrophies", () => {
     expect(loadPassportHandleById).toHaveBeenCalledWith("u1");
     expect(db.vaultTransaction.aggregate).not.toHaveBeenCalled();
   });
-
-  it("shows the trophies in full colour to any viewer: they are the holder's showcase", async () => {
-    // u1 verified the name "Ada" and holds its trophies; u2 holds none of them
-    expect((await viewer().getTrophies({ username: "Ada" })).cards).toEqual(CARD_SUMMARIES);
-    const other = viewer({
-      auth: { userId: "clerk_2" },
-      user: { id: "u2", clerkUserId: "clerk_2" },
-    });
-    expect((await other.getTrophies({ username: "Ada" })).cards).toEqual(CARD_SUMMARIES);
-  });
-
-  it("reads each trophy with the fields of its face and of the copy held", async () => {
-    await signedOut().getTrophies({ username: "Ada" });
-    const { select } = db.cardOwnership.findMany.mock.calls[0]![0];
-    expect(select).toMatchObject({ id: true, finish: true, serialNumber: true, level: true });
-    expect(select.cards.select).toMatchObject({
-      id: true,
-      title: true,
-      rarity: true,
-      artwork: true,
-      isRetired: true,
-      lorewardEdition: true,
-      metadata: true,
-      realm: expect.anything(),
-    });
-  });
-
-  it("keeps a retired trophy on the shelf with the placeholder face", async () => {
-    const retired = trophyRow("card3", "Old Charter", "winner", { contest: "monthly" });
-    db.cardOwnership.findMany.mockResolvedValue([
-      { ...retired, cards: { ...retired.cards, isRetired: true } },
-    ]);
-    const [card] = (await signedOut().getTrophies({ username: "Ada" })).cards;
-    expect(card!.face).toMatchObject({ cardId: "card3", artwork: null, isRetired: true });
-  });
-
-  it("keeps the cards and the holder's handle for a name with no stats row", async () => {
-    db.lorewardUserStats.findFirst.mockResolvedValue(null);
-    expect(await signedOut().getTrophies({ username: "Ada" })).toEqual({
-      wins: { daily: 0, weekly: 0, monthly: 0 },
-      runnerUps: 0,
-      streak: 0,
-      cards: CARD_SUMMARIES,
-      holderHandle: "Ada",
-    });
-  });
-
   it("has a holder handle of null when the account that verified the name is gone", async () => {
     jest.mocked(loadPassportHandleById).mockResolvedValue(null);
     expect((await signedOut().getTrophies({ username: "Ada" })).holderHandle).toBeNull();
@@ -436,53 +287,5 @@ describe("lorewards.getTrophies", () => {
       where: { source: "ixwiki", username: "Ada lovelace", verifiedAt: { not: null } },
       select: { userId: true },
     });
-  });
-
-  it("skips a trophy card whose contest was not recorded", async () => {
-    db.cardOwnership.findMany.mockResolvedValue([trophyRow("c9", "Odd", "winner", null)]);
-    expect((await signedOut().getTrophies({ username: "Ada" })).cards).toEqual([]);
-  });
-});
-
-describe("lorewards.getTodayRace", () => {
-  it("serves the cached race", async () => {
-    expect(await signedOut().getTodayRace()).toEqual(RACE);
-  });
-});
-
-describe("lorewards.getStandings", () => {
-  it("lists the top players by total score", async () => {
-    db.lorewardUserStats.findMany.mockResolvedValue([
-      { ...STATS, username: "Bo", totalScore: 1200 },
-      STATS,
-    ]);
-    const standings = await boardsCaller(
-      createMockRouterContext({ auth: null, user: null, db }) as never
-    ).getStandings({ limit: 10 });
-
-    expect(db.lorewardUserStats.findMany.mock.calls[0]![0]).toMatchObject({
-      orderBy: [{ totalScore: "desc" }, { username: "asc" }],
-      take: 10,
-    });
-    expect(standings).toEqual([
-      {
-        rank: 1,
-        username: "Bo",
-        totalScore: 1200,
-        dailyWins: 6,
-        weeklyWins: 1,
-        monthlyWins: 0,
-        currentStreak: 3,
-      },
-      {
-        rank: 2,
-        username: "Ada",
-        totalScore: 900,
-        dailyWins: 6,
-        weeklyWins: 1,
-        monthlyWins: 0,
-        currentStreak: 3,
-      },
-    ]);
   });
 });

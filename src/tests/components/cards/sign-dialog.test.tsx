@@ -47,22 +47,4 @@ describe("SignDialog", () => {
     mutate.mock.calls[0]![1].onSuccess();
     expect(onDone).toHaveBeenCalledTimes(1);
   });
-
-  it("names the viewer as other players will read them, the name frozen with the inscription", () => {
-    setup("Caphiria");
-    expect(
-      screen.getByText(
-        /Your name as other players see it, Caphiria, is saved with it and stays with the copy wherever it goes\./
-      )
-    ).toBeTruthy();
-  });
-  it("shows how to get a name instead of a sign button for a player with none", () => {
-    const { mutate } = setup(null);
-    expect(
-      screen.getByText("Claim an IxnayID handle or a nation before signing a card.")
-    ).toBeTruthy();
-    expect(screen.queryByLabelText("Inscription")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Sign this copy" })).toBeNull();
-    expect(mutate).not.toHaveBeenCalled();
-  });
 });

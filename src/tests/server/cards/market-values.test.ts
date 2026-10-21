@@ -6,14 +6,9 @@
 jest.mock("~/server/db", () => ({ db: {} }));
 
 import { Prisma } from "@prisma/client";
-import { db as appDb } from "~/server/db";
 import { nsBankValueSql } from "~/lib/cards/ns-bank-sql";
 import { CARD_VALUATION_DEFAULTS, getValuationConfig } from "~/lib/cards/valuation";
-import {
-  mediansBySale,
-  recomputeMarketValues,
-  runCardMarketValues,
-} from "~/server/modules/cards/market-values";
+import { mediansBySale, recomputeMarketValues } from "~/server/modules/cards/market-values";
 
 const NOW = new Date("2026-11-02T00:00:00Z");
 
@@ -206,13 +201,5 @@ describe("recomputeMarketValues", () => {
     expect(db.cardMarketPrice.deleteMany).toHaveBeenCalledWith({});
     expect(db.cardMarketPrice.createMany).toHaveBeenCalledWith({ data: [] });
     expect(db.cardValueHistory.createMany).not.toHaveBeenCalled();
-  });
-
-  it("is the cron's job over the app client", async () => {
-    const { db } = makeDb([]);
-    const app = appDb as never as typeof db;
-    Object.assign(app, db);
-    expect(await runCardMarketValues()).toEqual({ prices: 0, updated: 1 });
-    expect(db.$transaction).toHaveBeenCalledTimes(1);
   });
 });

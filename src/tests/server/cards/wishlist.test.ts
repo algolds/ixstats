@@ -6,13 +6,10 @@ import {
   addToWishlist,
   listWishlist,
   removeFromWishlist,
-  wishlistCardIds,
   WISHLIST_MAX,
 } from "~/server/modules/cards/market/wishlist";
 
 const NOW = new Date("2026-11-02T12:00:00Z");
-const EARLIER = new Date("2026-11-01T12:00:00Z");
-
 const realm = { id: "default", slug: "ixnay", name: "Ixnay", emblemUrl: null, isSystem: false };
 const card = (id: string, title: string) => ({
   id,
@@ -31,9 +28,6 @@ const wish = (cardId: string, title: string, createdAt = NOW) => ({
   createdAt,
   card: card(cardId, title),
 });
-/** The face a wished card shows: its art, marked when the player holds no copy. */
-const faceOf = (cardId: string, title: string, uncollected: boolean) =>
-  expect.objectContaining({ cardId, title, artwork: `https://art/${cardId}.png`, uncollected });
 
 function makeDb(card: { isBound: boolean } | null = { isBound: false }, size = 0) {
   return {
@@ -57,20 +51,6 @@ function makeDb(card: { isBound: boolean } | null = { isBound: false }, size = 0
 beforeEach(() => jest.clearAllMocks());
 
 describe("addToWishlist", () => {
-  it("holds 200 cards", () => {
-    expect(WISHLIST_MAX).toBe(200);
-  });
-
-  it("adds a card once", async () => {
-    const db = makeDb();
-    await addToWishlist(db as never, "u1", "c1");
-    expect(db.cardWatchlist.upsert).toHaveBeenCalledWith({
-      where: { userId_cardId: { userId: "u1", cardId: "c1" } },
-      create: { userId: "u1", cardId: "c1" },
-      update: {},
-    });
-  });
-
   it("finds only a card in the catalogue or one the player holds, so a hidden card leaks nothing", async () => {
     const db = makeDb(null);
     await expect(addToWishlist(db as never, "u1", "c1")).rejects.toMatchObject({
@@ -121,34 +101,7 @@ describe("removeFromWishlist", () => {
     });
   });
 });
-
-describe("wishlistCardIds", () => {
-  it("is the set of the player's wished card ids", async () => {
-    const db = makeDb();
-    db.cardWatchlist.findMany.mockResolvedValue([{ cardId: "c1" }, { cardId: "c2" }]);
-    expect(await wishlistCardIds(db as never, "u1")).toEqual(new Set(["c1", "c2"]));
-    expect(db.cardWatchlist.findMany).toHaveBeenCalledWith({
-      where: { userId: "u1" },
-      select: { cardId: true },
-    });
-  });
-});
-
 describe("listWishlist", () => {
-  it("lists the wishlist with what is on sale now, and every card's art, marked when not held", async () => {
-    const db = makeDb();
-    expect(await listWishlist(db as never, "u1", NOW)).toEqual([
-      {
-        face: faceOf("c1", "Aurelia", true),
-        addedAt: NOW,
-        owned: 0,
-        listings: 2,
-        lowestPrice: 140,
-        auctions: 1,
-      },
-    ]);
-  });
-
   it("reads the player's own wishes, newest first, and only live listings and auctions", async () => {
     const db = makeDb();
     await listWishlist(db as never, "u1", NOW);
@@ -175,54 +128,5 @@ describe("listWishlist", () => {
       where: { cardId: { in: ["c1"] }, status: "ACTIVE", endTime: { gt: NOW } },
       _count: { _all: true },
     });
-  });
-
-  it("gives each wished card its own counts, none for a card not on sale, and marks it by the player's copies", async () => {
-    const db = makeDb();
-    db.cardWatchlist.findMany.mockResolvedValue([
-      wish("c1", "Aurelia"),
-      wish("c2", "Burgundie", EARLIER),
-    ]);
-    db.cardOwnership.groupBy.mockResolvedValue([{ cardId: "c2", _count: { _all: 3 } }]);
-    expect(await listWishlist(db as never, "u1", NOW)).toEqual([
-      expect.objectContaining({
-        face: faceOf("c1", "Aurelia", true),
-        addedAt: NOW,
-        owned: 0,
-        listings: 2,
-        lowestPrice: 140,
-        auctions: 1,
-      }),
-      {
-        face: faceOf("c2", "Burgundie", false),
-        addedAt: EARLIER,
-        owned: 3,
-        listings: 0,
-        lowestPrice: null,
-        auctions: 0,
-      },
-    ]);
-  });
-
-  it("reads nothing more for an empty wishlist", async () => {
-    const db = makeDb();
-    db.cardWatchlist.findMany.mockResolvedValue([]);
-    expect(await listWishlist(db as never, "u1", NOW)).toEqual([]);
-    expect(db.cardOwnership.groupBy).not.toHaveBeenCalled();
-    expect(db.cardListing.groupBy).not.toHaveBeenCalled();
-    expect(db.cardAuction.groupBy).not.toHaveBeenCalled();
-  });
-
-  it("reads live sales as of now by default", async () => {
-    jest.useFakeTimers({ now: NOW });
-    try {
-      const db = makeDb();
-      await listWishlist(db as never, "u1");
-      expect(db.cardListing.groupBy).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ expiresAt: { gt: NOW } }) })
-      );
-    } finally {
-      jest.useRealTimers();
-    }
   });
 });

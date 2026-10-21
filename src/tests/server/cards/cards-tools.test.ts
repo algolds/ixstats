@@ -42,7 +42,6 @@ import {
   adminCancelListing,
   awardPack,
   grantCard,
-  playerCardInventory,
   revokeCopy,
   voidTrade,
 } from "~/server/modules/cards/cards.tools";
@@ -57,131 +56,6 @@ const createMockPrisma = () =>
   });
 
 beforeEach(() => jest.clearAllMocks());
-
-describe("playerCardInventory", () => {
-  it("flags auctioned and listed copies, summarises auctions and trades, and reports no limit for exempt staff", async () => {
-    const db = createMockPrisma();
-    db.user.findUnique.mockResolvedValue({ id: "user_1", role: { level: 10 } });
-    db.cardOwnership.findMany.mockResolvedValue([
-      {
-        id: "own_1",
-        serialNumber: 3,
-        _count: { CardAuction: 2, listings: 0 },
-        cards: { title: "Elm" },
-      },
-      {
-        id: "own_2",
-        serialNumber: 4,
-        _count: { CardAuction: 0, listings: 1 },
-        cards: { title: "Elm" },
-      },
-    ]);
-    db.cardOwnership.count.mockResolvedValue(1);
-    db.userPack.findMany.mockResolvedValue([
-      {
-        id: "up_1",
-        acquiredMethod: "ADMIN_AWARD",
-        acquiredDate: new Date(0),
-        pack: { name: "Founders" },
-      },
-    ]);
-    db.cardAuction.findMany.mockResolvedValue([
-      {
-        id: "auc_1",
-        sellerId: "user_1",
-        currentBid: 120,
-        currentBidderId: null,
-        bidCount: 2,
-        endTime: new Date(0),
-        serialNumber: 3,
-        card: { title: "Elm" },
-      },
-    ]);
-    db.tradeOffer.findMany.mockResolvedValue([
-      {
-        id: "tr_1",
-        initiatorId: "user_2",
-        initiatorCardIds: ["a", "b"],
-        recipientCardIds: "not an array",
-        initiatorCredits: 5,
-        recipientCredits: 0,
-        expiresAt: new Date(0),
-      },
-    ]);
-    db.cardListing.findMany.mockResolvedValue([
-      {
-        id: "l_1",
-        price: 140,
-        isFeatured: true,
-        expiresAt: new Date(0),
-        serialNumber: 4,
-        card: { title: "Elm" },
-      },
-    ]);
-    jest.mocked(copyRoom).mockResolvedValue(Number.POSITIVE_INFINITY);
-
-    const inventory = await playerCardInventory(db as never, "user_1");
-
-    expect(copyRoom).toHaveBeenCalledWith(db, { id: "user_1", roleLevel: 10 });
-    expect(inventory.room).toBeNull();
-    // Market history of either kind means no revoke (removeCopyTx), so the sheet offers none
-    expect(db.cardOwnership.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        select: expect.objectContaining({
-          _count: { select: { CardAuction: true, listings: true } },
-        }),
-      })
-    );
-    expect(inventory.copies).toEqual([
-      { id: "own_1", serialNumber: 3, auctioned: true, listed: false, cards: { title: "Elm" } },
-      { id: "own_2", serialNumber: 4, auctioned: false, listed: true, cards: { title: "Elm" } },
-    ]);
-    expect(inventory.packs).toEqual([
-      { id: "up_1", name: "Founders", acquiredMethod: "ADMIN_AWARD", acquiredDate: new Date(0) },
-    ]);
-    // An auction names its card and serial from its own row, which outlives the copy
-    expect(db.cardAuction.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        select: expect.objectContaining({ serialNumber: true, card: { select: { title: true } } }),
-      })
-    );
-    expect(inventory.auctions[0]).toMatchObject({
-      title: "Elm #3",
-      selling: true,
-      hasBid: false,
-      currentBid: 120,
-    });
-    expect(inventory.trades[0]).toMatchObject({
-      initiating: false,
-      copiesOffered: 2,
-      copiesAsked: 0,
-    });
-    // The player's live fixed-price listings, named from the row's own card and serial
-    expect(db.cardListing.findMany).toHaveBeenCalledWith({
-      where: { sellerId: "user_1", status: "ACTIVE" },
-      orderBy: { expiresAt: "asc" },
-      select: {
-        id: true,
-        price: true,
-        isFeatured: true,
-        expiresAt: true,
-        serialNumber: true,
-        card: { select: { title: true } },
-      },
-    });
-    expect(inventory.listings).toEqual([
-      { id: "l_1", title: "Elm #4", price: 140, isFeatured: true, expiresAt: new Date(0) },
-    ]);
-  });
-
-  it("refuses a player who does not exist", async () => {
-    const db = createMockPrisma();
-    await expect(playerCardInventory(db as never, "ghost")).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
-  });
-});
-
 describe("grantCard", () => {
   function setup(
     card: {

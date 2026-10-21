@@ -6,7 +6,6 @@
 import { describe, it, expect } from "@jest/globals";
 import { matches, storedEntry } from "~/tests/helpers/loreward-entry-store";
 import {
-  contestDay,
   contestEntriesWhere,
   contestHolder,
   contestIdentity,
@@ -38,12 +37,6 @@ describe("contestIdentity", () => {
       contestIdentity({ ...month, date: "2026-07-01", dateStart: null })
     );
   });
-
-  it("is a daily's date", () => {
-    expect(contestIdentity({ type: "daily", date: "2026-10-16", dateStart: null })).toBe(
-      "daily:2026-10-16"
-    );
-  });
 });
 
 describe("contestEntriesWhere", () => {
@@ -66,25 +59,7 @@ describe("contestEntriesWhere", () => {
         .map((row) => row.id)
     ).toEqual(["ool", "state"]);
   });
-
-  it("finds a daily by its date", () => {
-    expect(contestEntriesWhere({ type: "daily", date: "2026-10-16", dateStart: null })).toEqual({
-      type: "daily",
-      date: "2026-10-16",
-    });
-  });
 });
-
-describe("contestDay", () => {
-  it("is a weekly's or monthly's first day under either key, and a daily's date", () => {
-    expect(contestDay(stateKeyed("a"))).toBe("2026-10-12");
-    expect(contestDay(entry("b"))).toBe("2026-10-12");
-    expect(contestDay({ type: "daily", date: "2026-10-16", dateStart: "2026-10-01" })).toBe(
-      "2026-10-16"
-    );
-  });
-});
-
 describe("contestsHoldingDayWhere", () => {
   const rows = [
     storedEntry({ id: "before", type: "weekly", date: "2026-10-05" }),

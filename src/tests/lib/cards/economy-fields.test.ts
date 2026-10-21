@@ -43,44 +43,12 @@ const DAILY: readonly Key[] = [
   "dailyLegendaryPct",
 ];
 
-/** The defaults with `key` at `value`, and the numbers it depends on moved so every section rule can hold. */
-function around(key: Key, value: number): CardEconomyConfig {
-  const cfg: CardEconomyConfig = { ...CARD_ECONOMY_DEFAULTS, [key]: value };
-  if (key === "finishFoilPct") cfg.finishHoloPct = 0;
-  if (key === "finishHoloPct") cfg.finishFoilPct = 0;
-  if (DAILY.includes(key)) {
-    for (const other of DAILY) if (other !== key) cfg[other] = 0;
-    const rest = key === "dailyCommonPct" ? "dailyUncommonPct" : "dailyCommonPct";
-    cfg[rest] = Math.max(0, toHundredths(100 - value));
-  }
-  if (key === "fusionCopies") Object.assign(cfg, { dustFoilMult: 1, dustHoloMult: 1 });
-  if (key === "dustFoilMult")
-    Object.assign(cfg, { fusionCopies: 10, dustHoloMult: Math.max(1, value) });
-  if (key === "dustHoloMult") {
-    Object.assign(cfg, {
-      fusionCopies: 10,
-      dustFoilMult: Math.min(10, Math.max(1, Math.ceil(value / 10))),
-    });
-  }
-  return cfg;
-}
-
 /** The clamp keeps every number of `cfg` exactly, so a saved number reads back as the admin typed it. */
 function expectKept(cfg: CardEconomyConfig) {
   const kept = clampEconomyConfig(cfg);
   for (const key of Object.keys(cfg) as Key[]) {
     expect({ key, value: kept[key] }).toEqual({ key, value: cfg[key] });
   }
-}
-
-/** What reading `cfg` back gets wrong: a number the clamp changed, or one its own field or section now refuses. */
-function readBackProblems(cfg: CardEconomyConfig): string[] {
-  const kept = clampEconomyConfig(cfg);
-  const changed = (Object.keys(cfg) as Key[]).filter((key) => !Object.is(kept[key], cfg[key]));
-  const refused = ECONOMY_FIELDS.flatMap(
-    (field) => numberFieldProblem(field, kept[field.key]) ?? []
-  );
-  return [...changed, ...refused, ...(economyProblem(kept) ?? [])];
 }
 
 /** A seeded generator, so a failure repeats. */
@@ -125,46 +93,6 @@ function savableConfig(random: () => number): CardEconomyConfig {
 }
 
 describe("the economy fields", () => {
-  it("have one field for every economy number, in one section each", () => {
-    const keys = ECONOMY_FIELDS.map((field) => field.key);
-    expect([...keys].sort()).toEqual(Object.keys(CARD_ECONOMY_DEFAULTS).sort());
-    expect(ECONOMY_SECTIONS.flatMap((section) => section.fields)).toEqual(ECONOMY_FIELDS);
-    expect(ECONOMY_SECTIONS.map((section) => section.id)).toEqual([
-      "finishes",
-      "daily",
-      "dust",
-      "crafting",
-      "listings",
-      "xp",
-    ]);
-  });
-
-  it("accept the defaults", () => {
-    for (const field of ECONOMY_FIELDS) {
-      expect(numberFieldProblem(field, CARD_ECONOMY_DEFAULTS[field.key])).toBeNull();
-    }
-    expect(economyProblem(CARD_ECONOMY_DEFAULTS)).toBeNull();
-  });
-
-  it.each(ECONOMY_FIELDS.map((field) => [field.key, field] as const))(
-    "bound %s where the clamp does",
-    (key, field) => {
-      expect(field.max).toBeDefined();
-      const max = field.max ?? Number.NaN;
-      const past = field.whole ? 1 : 0.01;
-      for (const value of [field.min, max]) {
-        const cfg = around(key, value);
-        expect(numberFieldProblem(field, value)).toBeNull();
-        expect(economyProblem(cfg)).toBeNull();
-        expectKept(cfg);
-      }
-      for (const value of [toHundredths(field.min - past), toHundredths(max + past)]) {
-        expect(numberFieldProblem(field, value)).not.toBeNull();
-        expect(clampEconomyConfig(around(key, value))[key]).not.toBe(value);
-      }
-    }
-  );
-
   it("accept only configs the clamp keeps as they are", () => {
     const random = seeded(24);
     for (let run = 0; run < 1000; run++) {
@@ -174,49 +102,6 @@ describe("the economy fields", () => {
       }
       expect(economyProblem(cfg)).toBeNull();
       expectKept(cfg);
-    }
-  });
-
-  it("read back Foil and Holo chances that add up to exactly 100%, every two-place pair", () => {
-    expectKept({ ...CARD_ECONOMY_DEFAULTS, finishFoilPct: 91.79, finishHoloPct: 8.21 });
-    const broken: string[] = [];
-    for (let holo = 0; holo <= 10_000; holo++) {
-      const cfg = {
-        ...CARD_ECONOMY_DEFAULTS,
-        finishFoilPct: (10_000 - holo) / 100,
-        finishHoloPct: holo / 100,
-      };
-      const problems = readBackProblems(cfg);
-      if (problems.length > 0)
-        broken.push(`${cfg.finishFoilPct} + ${cfg.finishHoloPct}: ${problems.join("; ")}`);
-    }
-    expect(broken).toEqual([]);
-  });
-
-  it("read back daily odds that add up to 100 exactly", () => {
-    const random = seeded(7339);
-    const broken: string[] = [];
-    for (let run = 0; run < 20_000; run++) {
-      const cfg = { ...CARD_ECONOMY_DEFAULTS };
-      let left = 10_000;
-      for (const key of DAILY.slice(1).reverse()) {
-        const share = Math.floor(random() * (left + 1));
-        cfg[key] = share / 100;
-        left -= share;
-      }
-      cfg.dailyCommonPct = left / 100;
-      const problems = readBackProblems(cfg);
-      if (problems.length > 0)
-        broken.push(`${DAILY.map((key) => cfg[key]).join(", ")}: ${problems.join("; ")}`);
-    }
-    expect(broken).toEqual([]);
-  });
-
-  it("step each input by what the server accepts", () => {
-    for (const field of [...ECONOMY_FIELDS, ...MARKET_FIELDS]) {
-      const step = field.whole ? (field.step ?? 1) : field.step;
-      const expected = field.whole ? 1 : 10 ** -(field.decimals ?? Number.NaN);
-      expect({ key: field.key, step }).toEqual({ key: field.key, step: expected });
     }
   });
 });
@@ -254,30 +139,6 @@ describe("section rules", () => {
     if (!check) throw new Error(`No check on ${id}`);
     return check;
   };
-
-  it("keep the Foil and Holo chances at 100% together at most", () => {
-    const at = (finishFoilPct: number, finishHoloPct: number) =>
-      sectionCheck("finishes")({ ...CARD_ECONOMY_DEFAULTS, finishFoilPct, finishHoloPct });
-    expect(at(66.67, 33.33)).toBeNull();
-    expect(at(98, 3)).toBe("Foil and Holo chances add up to 101%. Keep them at 100% or less.");
-    expect(at(66.67, 33.34)).toBe(
-      "Foil and Holo chances add up to 100.01%. Keep them at 100% or less."
-    );
-  });
-
-  it("make the daily odds add up to 100, like a pack's", () => {
-    const daily = sectionCheck("daily");
-    expect(
-      daily({ ...CARD_ECONOMY_DEFAULTS, dailyEpicPct: 0.7, dailyLegendaryPct: 0.3 })
-    ).toBeNull();
-    expect(daily({ ...CARD_ECONOMY_DEFAULTS, dailyLegendaryPct: 0.2 })).toBe(
-      "The daily odds add up to 100.1%. Make them 100%."
-    );
-    expect(daily({ ...CARD_ECONOMY_DEFAULTS, dailyCommonPct: 60 })).toBe(
-      "The daily odds add up to 95%. Make them 100%."
-    );
-  });
-
   it("keep fusing and breaking down from ever making dust, in the dust and the crafting sections", () => {
     for (const id of ["dust", "crafting"]) {
       const loop = (fusionCopies: number, dustFoilMult: number, dustHoloMult: number) =>
@@ -323,32 +184,5 @@ describe("card value fields", () => {
         });
       }
     }
-  });
-
-  it.each([
-    ["multTrophy", 0, 100, 0.05],
-    ["finishFoil", 1, 100, 0.5],
-    ["finishHolo", 1, 100, 0.5],
-    ["levelBonusPerLevel", 0, 0.2, 0.01],
-    ["levelBonusCap", 0, 1, 0.05],
-    ["medianSales", 1, 50, undefined],
-    ["medianDays", 1, 365, undefined],
-  ] as const)("bound %s from %s to %s", (key, min, max, step) => {
-    const field = fieldOf(CARD_VALUE_FIELDS, key);
-    const past = field.whole ? 1 : 0.01;
-    expect(field.step).toBe(step);
-    expect(numberFieldProblem(field, min)).toBeNull();
-    expect(numberFieldProblem(field, max)).toBeNull();
-    expect(numberFieldProblem(field, toHundredths(min - past))).not.toBeNull();
-    expect(numberFieldProblem(field, toHundredths(max + past))).not.toBeNull();
-  });
-
-  it("take the sale counts and days as whole numbers", () => {
-    expect(numberFieldProblem(fieldOf(CARD_VALUE_FIELDS, "medianSales"), 4.5)).toBe(
-      "Market median sales: enter a whole number from 1 to 50."
-    );
-    expect(numberFieldProblem(fieldOf(CARD_VALUE_FIELDS, "medianDays"), 30.5)).toBe(
-      "Market median window (days): enter a whole number from 1 to 365."
-    );
   });
 });

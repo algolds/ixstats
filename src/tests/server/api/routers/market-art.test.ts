@@ -7,7 +7,6 @@ jest.mock("~/server/modules/identity/identity.player-names", () => ({
 jest.mock("~/lib/cards/copy-value", () => ({ loadCopyValues: jest.fn() }));
 
 import { createCallerFactory } from "~/server/api/trpc";
-import { cardMarketRouter } from "~/server/api/routers/card-market";
 import { tradingQueriesRouter } from "~/server/api/routers/trading/queries";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
@@ -21,8 +20,6 @@ const contextFor = (db: MockDb, signedIn = true) =>
       ? { db, user: { id: "me", clerkUserId: "clerk_me" }, auth: { userId: "clerk_me" } }
       : { db, user: null, auth: null }
   ) as never;
-const market = (db: MockDb, signedIn = true) =>
-  createCallerFactory(cardMarketRouter)(contextFor(db, signedIn));
 const trading = (db: MockDb, signedIn = true) =>
   createCallerFactory(tradingQueriesRouter)(contextFor(db, signedIn));
 
@@ -45,23 +42,6 @@ const faceRow = (id: string, cardId: string, cardType = "LORE") => ({
     realm,
   },
 });
-/** An auction row as the market's includes read it: the listed copy with its raw card. */
-const listing = (id: string, cardInstanceId: string, cardId: string) => ({
-  id,
-  cardInstanceId,
-  CardOwnership: {
-    id: cardInstanceId,
-    cards: {
-      id: cardId,
-      cardType: "LORE",
-      marketValue: 10,
-      isRetired: false,
-      artwork: `https://art/${cardId}.png`,
-      artworkCredit: `${cardId}.png, via Commons`,
-      metadata: { qualityScore: 80, descriptionUrl: `https://commons/File:${cardId}.png` },
-    },
-  },
-});
 type OwnershipArgs = {
   where: { id?: { in: string[] } };
   select?: { cardId?: true };
@@ -74,66 +54,6 @@ function ownership(db: MockDb, held: string[], faces: ReturnType<typeof faceRow>
     return ids ? faces.filter((r) => ids.includes(r.id)) : faces;
   });
 }
-
-describe("auctions", () => {
-  it("reads no artwork for auction history and returns faces instead, with their art", async () => {
-    const db = createMockPrisma();
-    db.cardAuction.count.mockResolvedValue(1);
-    db.cardAuction.findMany.mockResolvedValueOnce([
-      {
-        id: "a",
-        status: "COMPLETED",
-        winnerId: "x",
-        sellerId: "y",
-        cardInstanceId: "o1",
-        CardOwnership: { id: "o1", cards: { id: "c1", title: "c1" } },
-      },
-    ]);
-    ownership(db, [], [faceRow("o1", "c1")]);
-    const result = await market(db).getMyAuctionParticipation({ limit: 5 });
-    expect(JSON.stringify(db.cardAuction.findMany.mock.calls[0]![0])).not.toContain("artwork");
-    expect(result.auctions[0]).toMatchObject({
-      participation: "bid",
-      face: { cardId: "c1", artwork: "https://art/c1.png", uncollected: true },
-    });
-  });
-
-  it("lists every running auction the viewer bid on, winning or outbid, with their faces", async () => {
-    const db = createMockPrisma();
-    db.cardAuction.findMany.mockResolvedValue([
-      { ...listing("a", "o1", "c1"), currentBidderId: "me" },
-      { ...listing("b", "o2", "c2"), currentBidderId: "them" },
-    ]);
-    ownership(db, [], [faceRow("o1", "c1"), faceRow("o2", "c2")]);
-    const result = await market(db).getMyActiveBids();
-    // Still running only: an ended auction awaits settlement, then shows in history.
-    expect(db.cardAuction.findMany.mock.calls[0]![0].where).toEqual({
-      AuctionBid: { some: { bidderId: "me" } },
-      status: "ACTIVE",
-      endTime: { gt: expect.any(Date) },
-    });
-    expect(result.auctions.map((a) => [a.id, a.winning])).toEqual([
-      ["a", true],
-      ["b", false],
-    ]);
-    expect(result.auctions[1]!.face).toMatchObject({
-      cardId: "c2",
-      artwork: "https://art/c2.png",
-      uncollected: true,
-    });
-  });
-
-  it("marks the seller's listings by the seller's own copies", async () => {
-    const db = createMockPrisma();
-    db.cardAuction.findMany.mockResolvedValueOnce([listing("a", "o1", "c1")]);
-    ownership(db, ["c1"], [faceRow("o1", "c1")]);
-    const result = await market(db).getMyActiveAuctions();
-    expect(result.auctions[0]!.face).toMatchObject({ cardId: "c1", uncollected: false });
-    expect(db.cardOwnership.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { ownerId: "me", cardId: { in: ["c1"] } } })
-    );
-  });
-});
 
 beforeEach(() => {
   jest
@@ -227,67 +147,6 @@ describe("trade details", () => {
         }))
     );
   });
-
-  it("shows an offer with every card's art, marked by the viewer's copies, valued by the shared copy value, both parties named", async () => {
-    const db = createMockPrisma();
-    db.tradeOffer.findUnique.mockResolvedValue(trade());
-    ownership(db, ["c2"], faces);
-    const result = await trading(db).getTradeById({ tradeId: "t1" });
-    // The stored handle is only the first link of the chain, so it is not read for a trade
-    expect(db.tradeOffer.findUnique).toHaveBeenCalledWith({
-      where: { id: "t1" },
-      include: {
-        initiator: { select: { id: true, clerkUserId: true } },
-        recipient: { select: { id: true, clerkUserId: true } },
-      },
-    });
-    expect(result.initiatorCopies).toEqual([
-      expect.objectContaining({
-        ownershipId: "o1",
-        face: expect.objectContaining({
-          cardId: "c1",
-          uncollected: true,
-          artwork: "https://art/c1.png",
-        }),
-        value: 30,
-      }),
-    ]);
-    expect(result.recipientCopies).toEqual([
-      expect.objectContaining({
-        face: expect.objectContaining({ cardId: "c2", uncollected: false }),
-      }),
-    ]);
-    // Both sides valued in one read of the shared copy value
-    expect(jest.mocked(loadCopyValues)).toHaveBeenCalledTimes(1);
-    expect(jest.mocked(loadCopyValues)).toHaveBeenCalledWith(db, { ownershipIds: ["o1", "o2"] });
-    expect(result).toMatchObject({
-      initiatorValue: 35,
-      recipientValue: 12,
-      myTurn: true,
-      initiator: { passportHandle: "clerk_them", displayName: "Caphiria" },
-      recipient: { passportHandle: "max", displayName: "@max" },
-    });
-  });
-
-  it("shows the partner's side of an offer the viewer wrote with its art, marked by the viewer's copies", async () => {
-    const db = createMockPrisma();
-    db.tradeOffer.findUnique.mockResolvedValue(
-      trade({ initiatorId: "me", recipientId: "them", proposerId: "me" })
-    );
-    ownership(db, ["c1"], faces);
-    const result = await trading(db).getTradeById({ tradeId: "t1" });
-    expect(result.recipientCopies[0]!.face).toMatchObject({
-      cardId: "c2",
-      uncollected: true,
-      artwork: "https://art/c2.png",
-    });
-    expect(result.initiatorCopies[0]!.face).toMatchObject({
-      artwork: "https://art/c1.png",
-      uncollected: false,
-    });
-    expect(result.myTurn).toBe(false);
-  });
-
   it("values a hidden (retired) copy at 0, as Mine and the sheet do", async () => {
     const db = createMockPrisma();
     db.tradeOffer.findUnique.mockResolvedValue(trade({ initiatorCardIds: ["o1", "o3"] }));

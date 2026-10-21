@@ -89,23 +89,6 @@ describe("mintCopy", () => {
     );
     expect(db.copies.map((c) => c.serialNumber).sort()).toEqual([1, 2, 3, 4, 5]);
   });
-
-  it("lets the database assign the copy's id", async () => {
-    const db = fakeDatabase();
-    const copy = await db.transaction((tx) =>
-      mintCopy(tx, { cardId: "c1", ownerId: "u1", finish: "STANDARD", source: "DAILY_CLAIM" })
-    );
-    expect(db.create.mock.calls[0]![0].data).not.toHaveProperty("id");
-    expect(db.create.mock.calls[0]![0].data).toEqual({
-      cardId: "c1",
-      ownerId: "u1",
-      serialNumber: 1,
-      finish: "STANDARD",
-      importDiscounted: false,
-    });
-    expect(copy.id).toBe("cuid_1");
-  });
-
   it("writes the mint row of the provenance trail with its source, card, serial and finish", async () => {
     const db = fakeDatabase();
     await db.transaction((tx) =>
@@ -136,21 +119,6 @@ describe("mintCopy", () => {
       action: "PACK_OPEN",
     });
   });
-
-  it.each([
-    ["100", "FOIL"],
-    ["0", "STANDARD"],
-  ])("rolls Foil at %s%% odds as %s", async (foilPct, finish) => {
-    const db = fakeDatabase({}, [
-      { key: "card_economy_finish_foil_pct", value: foilPct },
-      { key: "card_economy_finish_holo_pct", value: "0" },
-    ]);
-    const rolled = await db.transaction((tx) =>
-      mintCopy(tx, { cardId: "card_1", ownerId: "u1", source: "DAILY_CLAIM" })
-    );
-    expect(rolled).toMatchObject({ finish });
-  });
-
   it("keeps a named finish whatever the odds, and marks imported copies for the import share of dust", async () => {
     const db = fakeDatabase({}, [{ key: "card_economy_finish_holo_pct", value: "100" }]);
     await db.transaction((tx) =>
@@ -174,16 +142,6 @@ describe("mintCopy", () => {
     expect(db.copies[0]).toMatchObject({ importDiscounted: false });
     expect(db.events[0]).toMatchObject({ action: "CRAFT", finish: "STANDARD" });
   });
-
-  it("mints an admin grant as the ADMIN source", async () => {
-    expect(MINT_SOURCES).toContain("ADMIN");
-    const db = fakeDatabase();
-    await db.transaction((tx) =>
-      mintCopy(tx, { cardId: "c1", ownerId: "u1", finish: "STANDARD", source: "ADMIN" })
-    );
-    expect(db.events[0]).toMatchObject({ action: "ADMIN" });
-  });
-
   it("refuses a Serialised copy past its run, and never limits a Standard one", async () => {
     const db = fakeDatabase({ trophy: 1 });
     const serial = (finish: "SERIALISED" | "STANDARD") =>

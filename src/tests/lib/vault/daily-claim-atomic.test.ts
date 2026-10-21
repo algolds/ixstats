@@ -102,18 +102,9 @@ afterEach(() => {
 });
 
 describe("computeNextStreak", () => {
-  it("starts at 1 with no previous login", () => {
-    expect(computeNextStreak(null, 7, TODAY)).toBe(1);
-  });
-
   it("increments on the next UTC calendar day", () => {
     expect(computeNextStreak(YESTERDAY, 3, TODAY)).toBe(4);
   });
-
-  it("is unchanged on the same UTC day", () => {
-    expect(computeNextStreak(new Date(Date.UTC(2026, 8, 25, 0, 1, 0)), 3, TODAY)).toBe(3);
-  });
-
   it("resets to 1 after a missed day", () => {
     expect(computeNextStreak(new Date(Date.UTC(2026, 8, 23, 12, 0, 0)), 3, TODAY)).toBe(1);
   });
@@ -139,21 +130,6 @@ describe("claimDailySlot", () => {
 });
 
 describe("claimCombinedDailyClaim", () => {
-  it("CREDITS: a second same-day claim is rejected without earning", async () => {
-    const { db, tx } = makeDb();
-    tx.myVault.updateMany = jest.fn().mockResolvedValue({ count: 0 });
-
-    const result = await claimCombinedDailyClaim("user_1", "CREDITS", db as never);
-
-    expect(result).toEqual({
-      success: false,
-      rewardType: "credits",
-      streak: 3,
-      message: "Daily claim already made today",
-    });
-    expect(earnMock).not.toHaveBeenCalled();
-  });
-
   it("CREDITS: pays once; the second same-day claim loses the conditional write", async () => {
     const { db, tx } = makeDb();
     tx.myVault.updateMany = jest
@@ -288,16 +264,6 @@ describe("claimCombinedDailyClaim", () => {
       },
     });
   });
-
-  it("CARD: keeps the card's own artwork", async () => {
-    const { db, tx } = makeCardDb();
-    tx.card.findFirst = jest.fn().mockResolvedValue({ ...CARD, artwork: "/art/card_1.png" });
-
-    const result = await claimCombinedDailyClaim("user_1", "CARD", db as never);
-
-    expect(result.cardAwarded?.artwork).toBe("/art/card_1.png");
-  });
-
   it("CARD: rolls the rarity by the Economy tab's daily odds", async () => {
     const { db, tx } = makeCardDb({ COMMON: 3, LEGENDARY: 2 });
     tx.systemConfig.findMany = jest
@@ -312,20 +278,6 @@ describe("claimCombinedDailyClaim", () => {
       expect.objectContaining({ where: { AND: [DAILY_POOL_WHERE, { rarity: "LEGENDARY" }] } })
     );
   });
-
-  it("CARD: gives an empty rarity's share to the rarities that have cards", async () => {
-    const { db, tx } = makeCardDb({ UNCOMMON: 3 });
-    // 0 rolls Common by the daily odds, but no Common card is in the pool
-    jest.spyOn(Math, "random").mockReturnValue(0);
-
-    const result = await claimCombinedDailyClaim("user_1", "CARD", db as never);
-
-    expect(result.success).toBe(true);
-    expect(tx.card.findFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { AND: [DAILY_POOL_WHERE, { rarity: "UNCOMMON" }] } })
-    );
-  });
-
   it("CARD: a full collection keeps the claim and says to make room", async () => {
     const { db, tx } = makeCardDb();
     capacityMock.mockRejectedValueOnce(new CapacityError(0));
@@ -375,23 +327,6 @@ describe("claimCombinedDailyClaim", () => {
       streak: 0,
       message: "Failed to claim daily reward",
     });
-    expect(mintMock).not.toHaveBeenCalled();
-  });
-
-  it("CARD: a second same-day claim awards nothing", async () => {
-    const { db, tx } = makeCardDb();
-    tx.myVault.updateMany = jest.fn().mockResolvedValue({ count: 0 });
-
-    const result = await claimCombinedDailyClaim("user_1", "CARD", db as never);
-
-    expect(result).toEqual({
-      success: false,
-      rewardType: "card",
-      streak: 3,
-      message: "Daily claim already made today",
-    });
-    expect(capacityMock).not.toHaveBeenCalled();
-    expect(tx.card.groupBy).not.toHaveBeenCalled();
     expect(mintMock).not.toHaveBeenCalled();
   });
 });

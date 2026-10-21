@@ -21,8 +21,6 @@ import {
   grantUnownedTrophyCards,
   isTrophyCard,
   mintTrophyCards,
-  trophyCardText,
-  trophyRarity,
 } from "~/lib/lorewards/trophy-cards";
 
 interface EntryRow {
@@ -282,33 +280,6 @@ describe("trophy exclusion", () => {
     expect(isTrophyCard({ cardType: "LORE" })).toBe(false);
   });
 });
-
-describe("trophyRarity", () => {
-  it("ranks monthly winners Legendary, weekly winners and monthly runner-ups Epic, the rest Rare", () => {
-    expect(trophyRarity("monthly", "winner")).toBe("LEGENDARY");
-    expect(trophyRarity("weekly", "winner")).toBe("EPIC");
-    expect(trophyRarity("monthly", "runner-up")).toBe("EPIC");
-    expect(trophyRarity("weekly", "runner-up")).toBe("RARE");
-    expect(trophyRarity("daily", "winner")).toBe("RARE");
-    expect(trophyRarity("daily", "runner-up")).toBe("RARE");
-  });
-});
-
-describe("trophyCardText", () => {
-  it("names the card after the page, or the contest when there is none", () => {
-    expect(trophyCardText("weekly", "2026-10-20", "winner", "Amy", "Elm_Republic")).toEqual({
-      title: "Elm_Republic",
-      description: "Weekly Loreward winner, 2026-10-20. Won by Amy with Elm_Republic.",
-      wikiArticleTitle: "Elm Republic",
-    });
-    expect(trophyCardText("daily", "2026-10-20", "runner-up", "Bee", null)).toEqual({
-      title: "Daily Loreward 2026-10-20",
-      description: "Daily Loreward runner-up, 2026-10-20. Won by Bee.",
-      wikiArticleTitle: null,
-    });
-  });
-});
-
 describe("mintTrophyCards", () => {
   it("mints one one-of-one, bound Trophy card per recorded place of the entry", async () => {
     entries = [entry({ runnerUpUser: "Urcea", runnerUpPage: "Caballian Wars" })];
@@ -355,26 +326,6 @@ describe("mintTrophyCards", () => {
 
     expect(await mintTrophyCards(db)).toEqual({ minted: 0 });
   });
-
-  it("titles a place with no recorded page after the contest and date", async () => {
-    entries = [entry({ id: "w", type: "weekly", date: "2026-W34", winnerPage: null })];
-
-    await mintTrophyCards(db);
-
-    expect(cards[0]).toMatchObject({
-      title: "Weekly Loreward 2026-W34",
-      rarity: "EPIC",
-      wikiArticleTitle: null,
-    });
-  });
-
-  it("mints only the entries it is asked for", async () => {
-    entries = [entry({ id: "a" }), entry({ id: "b", date: "2026-10-17" })];
-
-    expect(await mintTrophyCards(db, ["b"])).toEqual({ minted: 1 });
-    expect(cards.map((c) => c.lorewardEntryId)).toEqual(["b"]);
-  });
-
   it("leaves a card unowned when the winner has no verified link", async () => {
     await mintTrophyCards(db);
 

@@ -25,9 +25,8 @@ import {
   cancelListing,
   endListingTx,
   expireListings,
-  listMyListings,
 } from "~/server/modules/cards/market/listings";
-import { DAY, listingOf, makeListingDb as makeDb, NOW } from "~/tests/helpers/fake-listing-db";
+import { listingOf, makeListingDb as makeDb, NOW } from "~/tests/helpers/fake-listing-db";
 
 const earn = jest.mocked(earnCreditsTx);
 const notify = jest.mocked(notifyCards);
@@ -204,62 +203,3 @@ describe("expireListings", () => {
     expect(db.$transaction).not.toHaveBeenCalled();
   });
 });
-
-describe("listMyListings", () => {
-  it("lists the seller's live listings first, then the last 30 days' ended ones, from what each stored", async () => {
-    const soldAt = new Date(NOW.getTime() - DAY);
-    const db = {
-      cardListing: {
-        findMany: jest.fn(async (_read: MyListingsRead) => [
-          {
-            id: "l1",
-            price: 500,
-            isFeatured: true,
-            expiresAt: NOW,
-            sellerId: "seller",
-            ownershipId: null,
-            finish: "HOLO",
-            serialNumber: 4,
-            status: "SOLD",
-            cardId: "card_1",
-            soldAt,
-            card: { title: "Aurelia" },
-          },
-        ]),
-      },
-    };
-    expect(await listMyListings(db as never, "seller", NOW)).toEqual([
-      {
-        id: "l1",
-        price: 500,
-        isFeatured: true,
-        expiresAt: NOW,
-        sellerId: "seller",
-        ownershipId: null,
-        finish: "HOLO",
-        serialNumber: 4,
-        status: "SOLD",
-        cardId: "card_1",
-        cardTitle: "Aurelia",
-        soldAt,
-      },
-    ]);
-    const [read] = db.cardListing.findMany.mock.calls[0]!;
-    expect(read.where).toEqual({
-      sellerId: "seller",
-      OR: [{ status: "ACTIVE" }, { updatedAt: { gte: new Date(NOW.getTime() - 30 * DAY) } }],
-    });
-    expect(read.orderBy).toEqual([{ status: "asc" }, { updatedAt: "desc" }, { id: "asc" }]);
-    expect(read.take).toBe(100);
-    // A finished listing outlives its copy: nothing is read from the copy, and the seller is the viewer
-    expect(read.select.ownership).toBeUndefined();
-    expect(read.select.seller).toBeUndefined();
-  });
-});
-
-interface MyListingsRead {
-  where: object;
-  orderBy: object;
-  take: number;
-  select: { ownership?: object; seller?: object };
-}

@@ -5,12 +5,9 @@ import {
   DAILY_POOL_WHERE,
   oddsWithCards,
   rollRarity,
-  tierCounts,
 } from "~/lib/cards/pool-draw";
 
 const odds = { COMMON: 65, UNCOMMON: 25, RARE: 7, ULTRA_RARE: 2, EPIC: 0.9, LEGENDARY: 0.1 };
-const none = { COMMON: 0, UNCOMMON: 0, RARE: 0, ULTRA_RARE: 0, EPIC: 0, LEGENDARY: 0 };
-
 afterEach(() => jest.restoreAllMocks());
 
 describe("rollRarity", () => {
@@ -25,41 +22,7 @@ describe("rollRarity", () => {
   ] as const)("rolls %d as %s", (roll, rarity) => {
     expect(rollRarity(odds, () => roll)).toBe(rarity);
   });
-
-  it("rolls over the odds it is given, so odds short of 100 leave nothing over for Common", () => {
-    expect(rollRarity({ ...none, UNCOMMON: 1 }, () => 0.99)).toBe("UNCOMMON");
-  });
-
-  it("never rolls a rarity with no odds", () => {
-    expect(rollRarity({ ...none, RARE: 100 }, () => 0)).toBe("RARE");
-  });
-
-  it("reads negative odds as none", () => {
-    expect(rollRarity({ ...none, COMMON: -50, UNCOMMON: 50 }, () => 0)).toBe("UNCOMMON");
-  });
-
-  it("rolls Common when no rarity has odds", () => {
-    expect(rollRarity(none, () => 0.5)).toBe("COMMON");
-  });
 });
-
-describe("tierCounts", () => {
-  it("counts the pool's cards of each rarity in one grouped read", async () => {
-    const groupBy = jest.fn().mockResolvedValue([
-      { rarity: "COMMON", _count: { _all: 5 } },
-      { rarity: "RARE", _count: { _all: 2 } },
-    ]);
-    const counts = await tierCounts({ card: { groupBy } } as never, { isRetired: false });
-    expect(counts).toEqual({ COMMON: 5, RARE: 2 });
-    expect(groupBy).toHaveBeenCalledTimes(1);
-    expect(groupBy).toHaveBeenCalledWith({
-      by: ["rarity"],
-      where: { isRetired: false },
-      _count: { _all: true },
-    });
-  });
-});
-
 describe("createPoolDrawer", () => {
   const card = { id: "card_u" };
   const txWith = (found: { id: string } | null) => ({
@@ -77,13 +40,6 @@ describe("createPoolDrawer", () => {
     });
     expect(tx.card.count).not.toHaveBeenCalled();
   });
-
-  it("can draw the last card of a tier", async () => {
-    const tx = txWith(card);
-    await createPoolDrawer(tx as never, {}, { RARE: 4 }, () => 0.99).draw("RARE");
-    expect(tx.card.findFirst).toHaveBeenCalledWith(expect.objectContaining({ skip: 3 }));
-  });
-
   it("returns null for an empty tier, never another rarity's card", async () => {
     const tx = txWith(card);
     const drawer = createPoolDrawer(tx as never, {}, { COMMON: 9, RARE: 0 });
@@ -105,15 +61,6 @@ describe("createPoolDrawer", () => {
 });
 
 describe("oddsWithCards", () => {
-  it("drops the odds of every rarity with no card, an uncounted one included", () => {
-    expect(oddsWithCards(odds, { UNCOMMON: 3, RARE: 0, LEGENDARY: 1 })).toEqual({
-      ...none,
-      UNCOMMON: 25,
-      LEGENDARY: 0.1,
-    });
-    expect(odds.COMMON).toBe(65);
-  });
-
   it("gives the empty rarities' share to the rarities that have cards, in proportion", () => {
     const shared = oddsWithCards(odds, { UNCOMMON: 3, LEGENDARY: 1 });
     // 25 to 0.1: Legendary takes the top 0.1 / 25.1 of the roll

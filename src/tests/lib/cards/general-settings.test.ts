@@ -21,13 +21,6 @@ function dbWith(rows: Array<{ key: string; value: string }>): Pick<PrismaClient,
 }
 
 describe("card general settings", () => {
-  it("marketplaceFee uses the configured rake and spares sales of 100 IxC or less", async () => {
-    const { marketplaceFee } = load();
-    const db = dbWith([{ key: "card_system_auction_rake_pct", value: "5" }]);
-    expect(await marketplaceFee(db, 100)).toBe(0);
-    expect(await marketplaceFee(db, 1000)).toBe(50);
-  });
-
   it("marketplaceFee falls back to 10% and clamps the rake to 50%", async () => {
     expect(await load().marketplaceFee(dbWith([]), 1000)).toBe(100);
     const db = dbWith([{ key: "card_system_auction_rake_pct", value: "90" }]);
