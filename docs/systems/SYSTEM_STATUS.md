@@ -141,7 +141,7 @@ found several that are partly built, read-only, or broken, so each row now carri
   Still open: rate limits on the remaining protected mutations, removing the nginx CSP override (the nonce itself is
   fixed), and
   these ops steps (besides the password rotation below): run `db:backup` and test a restore; run
-  `db:mark-match-revenue-collected` right after the schema push; run `db:remap-budget-years`;
+  `db:mark-match-revenue-collected` right after the schema push; run the budget-year remap (`db:remap-budget-years`, retired 2026-10-21: restore it from git first, see the release guide's B4);
   review `audit:vault-exploits` and run `audit:vault-exploits:apply`; review `audit:forum-links`; enable `db-backup`,
   `log-retention` and `budget-year-rollover` in `CRON_ENABLED_JOBS`; set `DISCORD_GUILD_ID`. Plan: [ROADMAP M0](../roadmap/ROADMAP.md#m0--integrity-security--economy-exploits).
 - **`audit:arch` is still non-blocking in CI, and fails.** Its baseline was rebuilt on 2026-10-05 with real line

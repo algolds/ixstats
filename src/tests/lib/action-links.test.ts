@@ -14,7 +14,6 @@ import {
   parseActionTokens,
   splitActionTokens,
   withoutActionTokens,
-  withoutTokensInTags,
 } from "~/lib/action-links";
 
 describe("parseActionTokens", () => {
@@ -199,25 +198,6 @@ describe("splitActionTokens paragraph lifting", () => {
   it("leaves tokens outside paragraphs and other paragraphs untouched", () => {
     const html = "<p></p><p>plain</p>[ixaction=a1]<div>x</div>";
     expect(liftActionTokens(html)).toBe(html);
-  });
-});
-
-describe("withoutTokensInTags", () => {
-  it("cuts tokens out of tags and attribute values and leaves the text's tokens", () => {
-    expect(
-      withoutTokensInTags('<p><a href="https://x.test/[ixaction=a1]">x [ixaction=b2]</a></p>')
-    ).toBe('<p><a href="https://x.test/">x [ixaction=b2]</a></p>');
-  });
-
-  it("never leaves a token that a cut formed inside a tag", () => {
-    const out = withoutTokensInTags('<a href="[ixaction=[ixaction=a]b]">x</a>');
-    expect(countActionTokens(out)).toBe(countTextActionTokens(out));
-    expect(out).toBe('<a href="">x</a>');
-  });
-
-  it("leaves html without tokens unchanged", () => {
-    const html = '<p class="a">one</p><img src="/a.png" alt="">';
-    expect(withoutTokensInTags(html)).toBe(html);
   });
 });
 

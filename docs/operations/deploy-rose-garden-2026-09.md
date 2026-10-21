@@ -583,7 +583,8 @@ The `scheduled-changes` job was deleted on 2026-10-06 (D11). If it is still list
 before deploying: the runner exits on an unknown job name.
 
 Enable `db-backup` (daily dump to `backups/`) and `log-retention` (prunes old logs and `CronRun` rows) with the
-first cycle, and `budget-year-rollover` (new-fiscal-year reminders) once the budget-year remap in step 8 is applied.
+first cycle, and `budget-year-rollover` (new-fiscal-year reminders) once the budget-year remap in step 8 is applied (its tool is
+retired; step 8 says how to restore it).
 
 PR #49 added three more jobs; enable them after the list above, one per cycle: `thinkpages-trending` (trending and
 post counters) → `achievements-evaluate` → `stat-progression`. `stat-progression` writes every country's stored
@@ -655,11 +656,14 @@ bun run db:mark-match-revenue-collected             # dry run: prints how many m
 bun run db:mark-match-revenue-collected -- --apply
 ```
 
-The M0 fixes add three more, each a dry run first (take `bun run db:backup` before the first `--apply`):
+The M0 fixes add more, each a dry run first (take `bun run db:backup` before the first `--apply`). The first was the
+budget-year remap (real-calendar budget years → IxTime years, MC-1, `db:remap-budget-years`). **Its tool was retired
+on 2026-10-21 (owner ruling).** If production has not run it, bring it back from git first (`git log --diff-filter=D
+--oneline -- scripts/migrations/remap-budget-years.ts` names the commit that deleted it; restore
+`scripts/migrations/remap-budget-years.ts` and `budget-year-remap-plan.ts` with `git checkout <commit>^ -- <path>`),
+then run `bun scripts/migrations/remap-budget-years.ts` and again with `--apply`. The others:
 
 ```bash
-bun run db:remap-budget-years               # real-calendar budget years → IxTime years (MC-1)
-bun run db:remap-budget-years -- --apply
 bun run audit:vault-exploits                # exploit rows and the corrections it would make (VT-1/2/6/11)
 bun run audit:vault-exploits:apply
 bun run audit:forum-links                   # read-only: forum links made without proof (WK-1)

@@ -261,10 +261,13 @@ routine deploys.
 
 ### B4. Data fixes (after A5), each a dry run first
 
-```bash
-bun run db:remap-budget-years                     # budget years: real calendar → IxTime (MC-1); resolve any CONFLICT lines by hand
-bun run db:remap-budget-years -- --apply
+The budget-year remap (real calendar → IxTime, MC-1, `db:remap-budget-years`) was the first of these. **Its tool was
+retired on 2026-10-21 (owner ruling).** If production has not run it, bring it back from git first (`git log
+--diff-filter=D --oneline -- scripts/migrations/remap-budget-years.ts` names the commit that deleted it; restore
+`scripts/migrations/remap-budget-years.ts` and `budget-year-remap-plan.ts` with `git checkout <commit>^ -- <path>`),
+then run `bun scripts/migrations/remap-budget-years.ts` and again with `--apply`, resolving any CONFLICT lines by hand.
 
+```bash
 bun run audit:vault-exploits                      # exploit rows + the corrections it would make (VT-1/2/6/11)
 bun run audit:vault-exploits:apply                # writes idempotent ADMIN_ADJUSTMENT rows; never below a zero balance
 
@@ -278,7 +281,8 @@ bun scripts/fix-storyteller-effect-timestamps.ts --apply
 
 Start with `db-backup` (daily dump) and `log-retention`. Then follow the
 [runbook's order](deploy-rose-garden-2026-09.md#7-turn-cron-jobs-on-one-per-cycle), and add
-`budget-year-rollover` (new-fiscal-year reminders) once B4's remap is applied. The #49 jobs come last:
+`budget-year-rollover` (new-fiscal-year reminders) once B4's remap is applied (its tool is retired; B4 says how to
+restore it). The #49 jobs come last:
 `thinkpages-trending`, `achievements-evaluate`, then `stat-progression` (take a `db:backup` first). Before the money jobs
 (`auction-completion`, `trade-expiry`, `policy-maintenance`, `vault-dividend`), size their backlogs as the
 runbook describes.

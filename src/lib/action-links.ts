@@ -134,15 +134,6 @@ export function withoutActionTokens(text: string): string {
   return out;
 }
 
-/**
- * `html` with every action token cut out of its tags, comments and attribute values; tokens in text stay. Callers
- * sanitize after this (never before): cutting a token out of an attribute can form a new URL
- * (`java[ixaction=a]script:`), which only a later pass refuses.
- */
-export function withoutTokensInTags(html: string): string {
-  return mapHtmlRuns(html, { markup: withoutActionTokens });
-}
-
 /** A text run that may be cut: one holding a stray `<` never is, so no half-tag can reach the page. */
 const cuttable = (run: HtmlRun): boolean => !run.markup && !run.text.includes("<");
 

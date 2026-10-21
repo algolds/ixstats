@@ -326,8 +326,11 @@ dimensions and file name, checked the same way, and refuses (`CONFLICT`) a file 
 ## 6. Map and transport isolation
 
 - Transport routes and hubs take their owning country's `realmId` when created (AT-1). Rows created before this
-  were all saved to Ixnay: run `bun run db:backfill-transport-realm` (dry run) and then with `-- --apply`. It is
-  idempotent and leaves rows with no owning country where they are.
+  were all saved to Ixnay; the one-off `db:backfill-transport-realm` moves them to their country's realm (idempotent;
+  rows with no owning country stay where they are). It was retired on 2026-10-21: if a database has not run it,
+  restore `scripts/realms/backfill-transport-realm.ts` and `transport-realm-plan.ts` from git
+  (`git log --diff-filter=D --oneline -- scripts/realms/backfill-transport-realm.ts` names the commit;
+  `git checkout <commit>^ -- <path>`), then run `bun scripts/realms/backfill-transport-realm.ts` and again with `--apply`.
 - The flag lookup by country name (`countries.flags.resolveBatch`) is scoped to the viewer's realm, or `?realm=` (AT-18).
 - Ixnay's ocean labels and guided tour show only on Ixnay's map (AT-2).
 - Map wiki lookups (`geoWiki.*`) use the wiki the realm's lore index was imported from (its `RealmPage.wikiSource`),
