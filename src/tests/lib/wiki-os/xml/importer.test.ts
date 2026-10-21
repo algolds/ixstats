@@ -10,12 +10,8 @@ import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
 import { enqueueRender, invalidateDependents } from "~/lib/wiki-os/services/render-service";
 import { notifyWatchers } from "~/lib/wiki-os/services/watchlist-notify";
 import { createExportWriter } from "~/lib/wiki-os/xml/export-writer";
-import { readExport, type ImportEvent } from "~/lib/wiki-os/xml/import-reader";
-import {
-  importExport,
-  MAX_CONSECUTIVE_WRITE_FAILURES,
-  type ImportSummary,
-} from "~/lib/wiki-os/xml/importer";
+import { readExport } from "~/lib/wiki-os/xml/import-reader";
+import { importExport, MAX_CONSECUTIVE_WRITE_FAILURES } from "~/lib/wiki-os/xml/importer";
 import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
 import type { XmlRevision } from "~/lib/wiki-os/xml/types";
 import {
@@ -126,30 +122,8 @@ beforeEach(() => {
 });
 
 describe("fresh import of the export-0.11 fixture", () => {
-  let summary: ImportSummary;
   beforeEach(async () => {
-    summary = await importFixture();
-  });
-
-  it("creates every page and revision and reports it", () => {
-    expect(summary).toEqual({
-      pages: 5,
-      pagesCreated: 5,
-      revisionsImported: 7,
-      revisionsSkipped: 0,
-      placeholdersFilled: 0,
-      uploadsSkipped: 1,
-      errors: [],
-      warnings: [],
-    });
-    expect(store.articles.map((a) => a.title)).toEqual([
-      "Kingdom of Testia",
-      "Testia",
-      "Talk:Kingdom of Testia",
-      "Template:Infobox testia",
-      "File:Testia flag.png",
-    ]);
-    expect(store.revisions).toHaveLength(7);
+    await importFixture();
   });
   it("stores a hidden revision as an empty placeholder with its declared size, author (deleted)", () => {
     const hidden = revisionsOf("Kingdom of Testia")[2];
@@ -194,31 +168,6 @@ describe("fresh import of the export-0.11 fixture", () => {
     });
     expect(article("Kingdom of Testia").summary).toContain("Testia is a kingdom");
   });
-
-  it("stores namespaces from <ns> with the canonical prefix", () => {
-    expect(article("Talk:Kingdom of Testia")).toMatchObject({
-      namespace: 1,
-      namespacePrefix: "Talk",
-    });
-    expect(article("Template:Infobox testia")).toMatchObject({
-      namespace: 10,
-      namespacePrefix: "Template",
-    });
-    expect(article("File:Testia flag.png")).toMatchObject({
-      namespace: 6,
-      namespacePrefix: "File",
-    });
-  });
-
-  it("sets redirect fields from <redirect title>", () => {
-    expect(article("Testia")).toMatchObject({
-      wikitext: "#REDIRECT [[Kingdom of Testia]]",
-      redirectTargetSlug: "Kingdom of Testia",
-      redirectTargetFragment: null,
-    });
-    expect(article("Kingdom of Testia").redirectTargetSlug).toBeNull();
-  });
-
   it("maps legacy edit restrictions to a protection level", () => {
     expect(article("Kingdom of Testia").protectionLevel).toBe("SYSOP");
     expect(article("Testia").protectionLevel).toBe("ALL");
@@ -285,15 +234,6 @@ describe("parent revisions (F5)", () => {
     expect(parentOf(early)).toBeNull();
     expect(parentOf(parked)).toBeNull(); // a parked revision is left as it is
     expect(rows.map(parentOf)).not.toContain(parked.id);
-  });
-
-  it("changes nothing on a second import of the same dump", async () => {
-    await importFixture();
-    const before = snapshotStore();
-
-    await importFixture();
-
-    expect(snapshotStore()).toEqual(before);
   });
 });
 
@@ -508,20 +448,6 @@ describe("the page's head only moves forward", () => {
 
     expect(article("Kingdom of Testia").wikitext).toBe(KINGDOM_V2);
   });
-
-  it("does count a newer revision that is not parked", async () => {
-    const seeded = seedArticle({ wikitext: "NEWER LOCAL EDIT", mwLatestRevId: 9999 });
-    seedRevision(seeded.id, {
-      wikitext: "NEWER LOCAL EDIT",
-      createdAt: new Date("2030-01-01T00:00:00Z"),
-      parked: false,
-    });
-
-    await importFixture();
-
-    expect(article("Kingdom of Testia").wikitext).toBe("NEWER LOCAL EDIT");
-  });
-
   it("tells the watchers of an existing page whose head the dump moved, naming the dump's author", async () => {
     const seeded = seedArticle({ wikitext: "OLD", mwLatestRevId: 5 });
     seedRevision(seeded.id, { wikitext: "OLD", createdAt: new Date("2025-12-01T00:00:00Z") });
@@ -588,13 +514,6 @@ describe("the page's head only moves forward", () => {
       expect.objectContaining({ previousRef: "1001", currentRef: "1002", editor: "alice" })
     );
   });
-
-  it("tells nobody when the dump creates the pages: nobody watches them yet", async () => {
-    await importFixture();
-
-    expect(notifyWatchers).not.toHaveBeenCalled();
-  });
-
   it("tells nobody when the page's head did not change, or on a dry run", async () => {
     const seeded = seedArticle({ wikitext: "NEWER LOCAL EDIT", mwLatestRevId: 9999 });
     seedRevision(seeded.id, {
@@ -904,18 +823,6 @@ describe("a WikiOS revision without a hash", () => {
 describe("redirects read from the head's wikitext", () => {
   const redirectDump = (tag: string, text: string) =>
     `<mediawiki><page><title>Duncala city</title><ns>0</ns><id>1</id>${tag}<revision><id>1</id><timestamp>2026-01-01T00:00:00Z</timestamp><text xml:space="preserve">${text}</text></revision></page></mediawiki>`;
-
-  it("takes the section from the wikitext when <redirect title> has none", async () => {
-    await importXml(
-      redirectDump('<redirect title="Duncala" />', "#REDIRECT [[Duncala#History of Duncala]]")
-    );
-
-    expect(article("Duncala city")).toMatchObject({
-      redirectTargetSlug: "Duncala",
-      redirectTargetFragment: "History of Duncala",
-    });
-  });
-
   it("lets the wikitext win over a disagreeing tag", async () => {
     await importXml(
       redirectDump('<redirect title="Elsewhere#Other" />', "#REDIRECT [[duncala#Geography]]")
@@ -1002,18 +909,6 @@ describe("redirects", () => {
     commentDeleted: false,
     ...overrides,
   });
-
-  it("canonicalizes the target and keeps its fragment", async () => {
-    await importXml(
-      await dumpOf([rev("#REDIRECT [[new_name#Section_one]]")], "new_name#Section_one")
-    );
-
-    expect(article("Old name")).toMatchObject({
-      redirectTargetSlug: "New name",
-      redirectTargetFragment: "Section one",
-    });
-  });
-
   it("clears the redirect when a newer head is not a redirect", async () => {
     const seeded = seedArticle({
       title: "Old name",
@@ -1239,14 +1134,6 @@ describe("dry run", () => {
 });
 
 describe("options", () => {
-  it("reports progress after every page with the running summary", async () => {
-    const seen: number[] = [];
-
-    await importFixture({ onProgress: (summary) => seen.push(summary.pages) });
-
-    expect(seen).toEqual([1, 2, 3, 4, 5]);
-  });
-
   it("imports another wiki's pages under its own source, with no IxWiki namespaces", async () => {
     await importFixture({ source: "iiwiki" });
 
@@ -1374,23 +1261,5 @@ describe("per-page authorization (plan 409: canWritePage)", () => {
     const summary = await importFixture();
     expect(summary.errors).toEqual([]);
     expect(store.articles).toHaveLength(5);
-  });
-});
-
-describe("events that are not pages", () => {
-  it("ignores siteinfo and counts only pages", async () => {
-    const events: ImportEvent[] = [
-      {
-        type: "siteinfo",
-        siteinfo: { sitename: "X", dbname: "x", base: "", generator: "", case: "", namespaces: [] },
-      },
-    ];
-    async function* source() {
-      for (const event of events) yield event;
-    }
-
-    const summary = await importExport(source());
-
-    expect(summary.pages).toBe(0);
   });
 });

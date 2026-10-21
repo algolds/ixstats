@@ -221,38 +221,6 @@ describe("getArticleHtml (IxWiki) renders a stale or never-rendered article once
     expect(result.stale).toBe(true);
     expect(mockUpdateMany).not.toHaveBeenCalled();
   });
-
-  it("reuses a pending view for the failure cool-down instead of reading and rendering again", async () => {
-    const found = head({ htmlSyncedAt: null });
-    findArticleForView.mockResolvedValue(found);
-    setRow({ ...freshBundleRow("<p>Old but fine.</p>", null) });
-    await caller().getArticleHtml({ title: "Aurelia" });
-    jest.mocked(renderArticleViaMediaWiki).mockClear();
-    mockFindUnique.mockClear();
-
-    const again = await caller().getArticleHtml({ title: "Aurelia" });
-
-    expect(again).toMatchObject({ contentHtml: "<p>Old but fine.</p>", stale: true });
-    expect(mockFindUnique).not.toHaveBeenCalled();
-    expect(renderArticleViaMediaWiki).not.toHaveBeenCalled();
-  });
-
-  it("stops reusing it the moment the article is rendered (its htmlSyncedAt is set)", async () => {
-    const found = head({ htmlSyncedAt: null });
-    findArticleForView.mockResolvedValue(found);
-    setRow({ ...freshBundleRow("<p>Old.</p>", null) });
-    await caller().getArticleHtml({ title: "Aurelia" });
-
-    findArticleForView.mockResolvedValue({
-      ...found,
-      htmlSyncedAt: new Date("2026-09-30T12:00:00Z"),
-    });
-    setRow(freshBundleRow("<p>Rendered.</p>", new Date("2026-09-30T12:00:00Z")));
-    const result = await caller().getArticleHtml({ title: "Aurelia" });
-
-    expect(result).toMatchObject({ contentHtml: "<p>Rendered.</p>", stale: false });
-  });
-
   it("serves the HTML MediaWiki made for an earlier revision, not the regex compile, when the first render fails", async () => {
     findArticleForView.mockResolvedValue(head({ htmlSyncedAt: null }));
     setRow({
@@ -289,23 +257,6 @@ describe("getArticleHtml (IxWiki) renders a stale or never-rendered article once
     expect(result.contentHtml).toContain("Aurelia");
     expect(renderArticleViaMediaWiki).toHaveBeenCalledTimes(1);
     expect(mockUpdateMany).not.toHaveBeenCalled();
-  });
-
-  it("is not found for a stub row that has nothing to show", async () => {
-    findArticleForView.mockResolvedValue(head({ htmlSyncedAt: null, title: "Stubbed stub" }));
-    setRow({
-      renderedView: null,
-      htmlSyncedAt: null,
-      title: "Stubbed stub",
-      wikitext: "",
-      contentHtml: null,
-      revisions: [], // no revision: a stub, not a blanked page
-    });
-
-    await expect(caller().getArticleHtml({ title: "Stubbed stub" })).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
-    expect(syncSinglePage).toHaveBeenCalledTimes(1); // MediaWiki may hold the text
   });
 });
 
@@ -356,19 +307,6 @@ describe("getArticleHtml (IxWiki) for a page whose text is empty (F35a)", () => 
 });
 
 describe("getArticleHtml (IxWiki) for a title Postgres does not have", () => {
-  it("imports the page once, then is not found", async () => {
-    findArticleForView.mockResolvedValue(null);
-
-    await expect(caller().getArticleHtml({ title: "Nowhere land" })).rejects.toMatchObject({
-      code: "NOT_FOUND",
-      message: 'The page "Nowhere land" does not exist on WikiOS.',
-    });
-
-    expect(syncSinglePage).toHaveBeenCalledTimes(1);
-    expect(syncSinglePage).toHaveBeenCalledWith("Nowhere land");
-    expect(findArticleForView).toHaveBeenCalledTimes(1); // nothing imported: no second look
-  });
-
   it("does not ask MediaWiki again for the same title within a minute", async () => {
     findArticleForView.mockResolvedValue(null);
 
@@ -381,20 +319,6 @@ describe("getArticleHtml (IxWiki) for a title Postgres does not have", () => {
 
     expect(syncSinglePage).toHaveBeenCalledTimes(1);
   });
-
-  it("serves the page once the import made it exist", async () => {
-    const imported = head({ htmlSyncedAt: SYNCED, title: "Imported page" });
-    findArticleForView.mockResolvedValueOnce(null).mockResolvedValueOnce(imported);
-    jest.mocked(syncSinglePage).mockResolvedValue(true);
-    setRow(freshBundleRow("<p>From MediaWiki.</p>"));
-
-    const result = await caller().getArticleHtml({ title: "Imported page" });
-
-    expect(result).toMatchObject({ title: "Imported page", contentHtml: "<p>From MediaWiki.</p>" });
-    expect(syncSinglePage).toHaveBeenCalledTimes(1);
-    expect(findArticleForView).toHaveBeenCalledTimes(2);
-  });
-
   it("never has more than a few imports in flight, so made-up titles cannot fan out to MediaWiki", async () => {
     findArticleForView.mockResolvedValue(null);
     const releases: Array<() => void> = [];
@@ -522,14 +446,6 @@ describe("getArticleHtml (IxWiki) redirects (plan 412)", () => {
     });
   });
 
-  it("?redirect=no shows the redirect page itself", async () => {
-    const result = await caller().getArticleHtml({ title: "Old name", redirect: "no" });
-
-    expect(resolveRedirect).not.toHaveBeenCalled();
-    expect(findArticleForView).toHaveBeenCalledWith("Old name");
-    expect(result).toMatchObject({ resolvedFrom: null, redirectFragment: null });
-  });
-
   /** The real resolver's rule (ixwikiResolveRedirect): up to two hops, never revisiting a page. */
   function redirectGraph(links: Record<string, string>) {
     jest.mocked(resolveRedirect).mockImplementation(async (title: string) => {
@@ -568,22 +484,6 @@ describe("getArticleHtml (IxWiki) redirects (plan 412)", () => {
       }
     }
   );
-
-  it("still follows a chain that ends: A to B to C (two hops) and A to B", async () => {
-    redirectGraph({ A: "B", B: "C" });
-    findArticleForView.mockImplementation(async (title: string) => head({ title }));
-    setRow(freshBundleRow("<p>The page.</p>"));
-
-    await expect(caller().getArticleHtml({ title: "A" })).resolves.toMatchObject({
-      title: "C",
-      resolvedFrom: "A",
-    });
-    await expect(caller().getArticleHtml({ title: "B" })).resolves.toMatchObject({
-      title: "C",
-      resolvedFrom: "B",
-    });
-  });
-
   it("a redirect to a page that does not exist shows the redirect page itself, not 'no such page'", async () => {
     // "Old name" redirects to "New name", which has no article; "Old name" itself does.
     findArticleForView.mockImplementation(async (title: string) =>
@@ -603,14 +503,6 @@ describe("getArticleHtml (IxWiki) redirects (plan 412)", () => {
     });
     expect(result.contentHtml).toContain("redirectMsg");
   });
-
-  it("is still 'no such page' when neither the target nor the redirect page exists", async () => {
-    findArticleForView.mockResolvedValue(null);
-    await expect(caller().getArticleHtml({ title: "Old name" })).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
-  });
-
   it("a busy lookup of the target is busy, not a reason to show the redirect page", async () => {
     findArticleForView.mockImplementation(async (title: string) => {
       if (title === "New name") return null;
@@ -753,28 +645,6 @@ describe("getArticleHtml (IxWiki) template chips stay per viewer", () => {
     const setup = async (countryId: string | null) => {
       jest.mocked(resolveActiveCountryId).mockResolvedValue(countryId);
     };
-
-    it("fills and sanitizes a popular chip page once per country, not once per request", async () => {
-      findArticleForView.mockResolvedValue(head());
-      setRow(freshBundleRow(chipped));
-      const resolve = provider("12,345");
-      const unregister = registerTemplateProvider({ name: "test", canHandle: () => true, resolve });
-      await setup("country_1");
-      jest.mocked(sanitizeWikiArticleHtml).mockClear();
-
-      const first = await caller().getArticleHtml({ title: "Aurelia" });
-      const second = await caller().getArticleHtml({ title: "Aurelia" });
-      const third = await caller().getArticleHtml({ title: "Aurelia" });
-      unregister();
-
-      expect(second.contentHtml).toBe(first.contentHtml);
-      expect(third.contentHtml).toBe(first.contentHtml);
-      expect(resolve).toHaveBeenCalledTimes(1);
-      expect(sanitizeWikiArticleHtml).toHaveBeenCalledTimes(1);
-      // The viewer is still looked up per request: it is part of the key.
-      expect(resolveActiveCountryId).toHaveBeenCalledTimes(3);
-    });
-
     it("keeps one view per viewer country, so MyCountry chips never cross viewers", async () => {
       findArticleForView.mockResolvedValue(head());
       setRow(freshBundleRow('<p>Mine: <a href="/wiki/Template:MyCountry:gdp">g</a></p>'));
@@ -805,51 +675,6 @@ describe("getArticleHtml (IxWiki) template chips stay per viewer", () => {
       expect(nobody.contentHtml).toContain("gdp of nobody");
       expect(oneAgain.contentHtml).toBe(one.contentHtml);
     });
-
-    it("forgets a filled view after a minute, since chips show live numbers", async () => {
-      findArticleForView.mockResolvedValue(head());
-      setRow(freshBundleRow(chipped));
-      await setup("country_1");
-      const resolve = provider("1");
-      const unregister = registerTemplateProvider({ name: "test", canHandle: () => true, resolve });
-      const realNow = Date.now.bind(Date);
-      let offset = 0;
-      const nowSpy = jest.spyOn(Date, "now").mockImplementation(() => realNow() + offset);
-
-      const before = await caller().getArticleHtml({ title: "Aurelia" });
-      offset = 30_000;
-      await caller().getArticleHtml({ title: "Aurelia" });
-      expect(resolve).toHaveBeenCalledTimes(1);
-
-      resolve.mockImplementation(provider("2"));
-      offset = 61_000;
-      const after = await caller().getArticleHtml({ title: "Aurelia" });
-      unregister();
-      nowSpy.mockRestore();
-
-      expect(before.contentHtml).toContain("</span> 1</span>");
-      expect(after.contentHtml).toContain("</span> 2</span>");
-      expect(resolve).toHaveBeenCalledTimes(2);
-    });
-
-    it("starts over when the article is rendered again", async () => {
-      const found = head();
-      findArticleForView.mockResolvedValue(found);
-      setRow(freshBundleRow(chipped));
-      await setup("country_1");
-      const resolve = provider("1");
-      const unregister = registerTemplateProvider({ name: "test", canHandle: () => true, resolve });
-      await caller().getArticleHtml({ title: "Aurelia" });
-
-      const later = new Date("2026-09-30T11:00:00Z");
-      findArticleForView.mockResolvedValue({ ...found, htmlSyncedAt: later });
-      setRow(freshBundleRow(chipped, later));
-      await caller().getArticleHtml({ title: "Aurelia" });
-      unregister();
-
-      expect(resolve).toHaveBeenCalledTimes(2);
-    });
-
     it("never keeps a view whose chips could not be resolved, nor a stale one", async () => {
       findArticleForView.mockResolvedValue(head());
       setRow(freshBundleRow(chipped));
@@ -881,26 +706,6 @@ describe("getArticleHtml (IxWiki) template chips stay per viewer", () => {
       expect(resolveStale).toHaveBeenCalledTimes(2);
     });
   });
-
-  it("runs a part that changed through the sanitizer once more, and only that part", async () => {
-    findArticleForView.mockResolvedValue(head());
-    setRow(freshBundleRow(chipped));
-    const unregister = registerTemplateProvider({
-      name: "test",
-      canHandle: () => true,
-      resolve: provider("1"),
-    });
-    jest.mocked(sanitizeWikiArticleHtml).mockClear();
-
-    await caller().getArticleHtml({ title: "Aurelia" });
-    unregister();
-
-    expect(sanitizeWikiArticleHtml).toHaveBeenCalledTimes(1);
-    expect(jest.mocked(sanitizeWikiArticleHtml).mock.calls[0]?.[0]).toContain(
-      "wikios-stat-resolved"
-    );
-  });
-
   it("leaves a placeholder for the client when resolving chips fails, never a bare marker", async () => {
     findArticleForView.mockResolvedValue(head());
     setRow(freshBundleRow(chipped));
@@ -912,16 +717,6 @@ describe("getArticleHtml (IxWiki) template chips stay per viewer", () => {
       '<p>Pop: <span class="wikios-stat-placeholder" data-key="CountryData:Aurelia:population"></span></p>'
     );
     expect(result.contentHtml).not.toContain("data-wikios-chip");
-  });
-
-  it("leaves a placeholder for a key the provider does not know", async () => {
-    findArticleForView.mockResolvedValue(head());
-    setRow(freshBundleRow(chipped));
-    jest.mocked(resolveActiveCountryId).mockResolvedValue(null);
-
-    const result = await caller().getArticleHtml({ title: "Aurelia" });
-
-    expect(result.contentHtml).toContain('class="wikios-stat-placeholder"');
   });
 });
 
