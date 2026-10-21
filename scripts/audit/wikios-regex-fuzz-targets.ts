@@ -5,7 +5,7 @@
  * processing of it. Every function listed in TARGETS takes such text (wikitext, HTML or an XML dump)
  * and must be linear, or bounded, on hostile input. Two runners use this file:
  *   - scripts/audit/wikios-regex-fuzz.ts       2 MB inputs, a worker per function, a 200 ms budget
- *   - src/tests/lib/wiki-os/regex-dos.test.ts  ~200 KB inputs, in the Jest process, a 150 ms budget
+ *   - src/tests/lib/wiki-os/regex-dos.test.ts  ~50 KB inputs, in the Jest process, a 37.5 ms budget (x TIMING_BUDGET_SCALE)
  *
  * Importing a target loads its module lazily (so a worker only loads what it measures), and none of
  * them reaches the database or the network: the modules that do (render-service, native-search-service,
