@@ -5,7 +5,7 @@
  */
 import { stripBasePath } from "~/lib/base-path";
 import { NS_REALM_ID } from "~/lib/realms/realm-ids";
-import { withQuery, type PageQuery } from "~/lib/thinkpages-forum/links";
+import { withQuery, type PageQuery } from "~/lib/utils/with-query";
 
 /** The cards hub's four tabs (spec §2.3 Hub), each its own address. */
 export const CARD_HUB_TABS = ["mine", "sets", "market", "explore"] as const;

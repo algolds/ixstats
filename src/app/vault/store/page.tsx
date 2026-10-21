@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { PageQuery } from "~/lib/thinkpages-forum/links";
+import type { PageQuery } from "~/lib/utils/with-query";
 import { VaultStoreTab } from "~/components/vault/sections/marketplace/VaultStoreTab";
 
 export const metadata: Metadata = { title: "Store - IxStates" };
