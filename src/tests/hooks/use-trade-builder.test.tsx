@@ -56,7 +56,8 @@ interface Options {
 type Kind = "create" | "counter" | "respond" | "cancel";
 
 const refreshCards = jest.mocked(useCardsRefresh());
-const lastCall = (procedure: { useQuery: jest.Mock }) => procedure.useQuery.mock.calls.at(-1);
+const lastCall = (procedure: { useQuery: object }) =>
+  (procedure.useQuery as jest.Mock).mock.calls.at(-1);
 
 function optionsOf(kind: Kind): Options {
   const { result } = renderHook(() => useTradeMutations());
@@ -77,7 +78,10 @@ describe("trade builder reads", () => {
     rerender({ q: " @bo " });
     expect(lastCall(search)?.[0]).toEqual({ query: "@b" });
     act(() => jest.advanceTimersByTime(300));
-    expect(lastCall(search)).toEqual([{ query: "@bo" }, expect.objectContaining({ enabled: true })]);
+    expect(lastCall(search)).toEqual([
+      { query: "@bo" },
+      expect.objectContaining({ enabled: true }),
+    ]);
   });
 
   it("finds a partner only for a handle, and reads a trade only for an id", () => {
@@ -117,8 +121,13 @@ describe("trade builder reads", () => {
       limit: 60,
     });
     // A new search keeps the last page on screen while it loads.
-    const keep = lastCall(api.trading.getTradeables)?.[1].placeholderData;
-    expect(keep({ items: [], nextCursor: null })).toEqual({ items: [], nextCursor: null });
+    const options: { placeholderData: <T>(previous: T) => T } | undefined = lastCall(
+      api.trading.getTradeables
+    )?.[1];
+    expect(options?.placeholderData({ items: [], nextCursor: null })).toEqual({
+      items: [],
+      nextCursor: null,
+    });
 
     renderHook(() => usePartnerWishlist(null));
     expect(lastCall(api.trading.getPartnerWishlist)?.[1]).toMatchObject({ enabled: false });
