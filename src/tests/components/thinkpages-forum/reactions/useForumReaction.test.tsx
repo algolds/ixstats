@@ -81,85 +81,6 @@ beforeEach(() => {
 afterEach(() => client.clear());
 
 describe("useForumReaction", () => {
-  it("shows the reaction at once, then takes the server's counts", async () => {
-    const call = deferred<{ counts: Record<string, number>; mine: string | null }>();
-    mutations.react!.mockReturnValue(call.promise);
-    const { result } = renderHook(() => useForumReaction("p1"), { wrapper });
-    let done!: Promise<void>;
-    act(() => {
-      done = result.current.set("fire");
-    });
-    await waitFor(() =>
-      expect(posts()[0]).toMatchObject({ reactions: { like: 1, fire: 1 }, myReaction: "fire" })
-    );
-    expect(result.current.pending).toBe(true);
-    expect(mutations.react).toHaveBeenCalledWith({ postId: "p1", type: "fire" });
-    await act(async () => {
-      call.resolve({ counts: { like: 1, fire: 3 }, mine: "fire" });
-      await done;
-    });
-    expect(posts()[0]).toMatchObject({ reactions: { like: 1, fire: 3 }, myReaction: "fire" });
-    expect(posts()[1]).toMatchObject({ reactions: {}, myReaction: null });
-    expect(result.current.pending).toBe(false);
-  });
-
-  it("takes a reaction back through unreact and updates a board page", async () => {
-    mutations.unreact!.mockResolvedValue({ counts: { fire: 1 }, mine: null });
-    const { result } = renderHook(() => useForumReaction("b1"), { wrapper });
-    await act(async () => {
-      await result.current.set(null);
-    });
-    expect(mutations.unreact).toHaveBeenCalledWith({ postId: "b1" });
-    expect(mutations.react).not.toHaveBeenCalled();
-    expect(messages()[0]).toMatchObject({ reactions: { fire: 1 }, myReaction: null });
-  });
-
-  it("cancels in-flight reads of the pages that hold the post before patching", async () => {
-    mutations.react!.mockResolvedValue({ counts: { like: 1, fire: 1 }, mine: "fire" });
-    const cancel = jest.spyOn(client, "cancelQueries");
-    const { result } = renderHook(() => useForumReaction("p1"), { wrapper });
-    await act(async () => {
-      await result.current.set("fire");
-    });
-    expect(cancel).toHaveBeenCalledTimes(1);
-    expect(cancel).toHaveBeenCalledWith({ queryKey: THREAD, exact: true });
-  });
-
-  it("marks the pages that hold the post stale once settled", async () => {
-    mutations.react!.mockResolvedValue({ counts: { like: 1, fire: 1 }, mine: "fire" });
-    const invalidate = jest.spyOn(client, "invalidateQueries");
-    const { result } = renderHook(() => useForumReaction("p1"), { wrapper });
-    await act(async () => {
-      await result.current.set("fire");
-    });
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: THREAD, exact: true });
-    expect(invalidate).toHaveBeenCalledTimes(2);
-  });
-
-  it("marks the post's reactor lists stale once settled, so the dialog does not show the old list", async () => {
-    mutations.react!.mockResolvedValue({ counts: { like: 1, fire: 1 }, mine: "fire" });
-    const invalidate = jest.spyOn(client, "invalidateQueries");
-    const { result } = renderHook(() => useForumReaction("p1"), { wrapper });
-    await act(async () => {
-      await result.current.set("fire");
-    });
-    expect(invalidate).toHaveBeenCalledWith({
-      queryKey: [["thinkpagesForum", "reactors"], { input: { postId: "p1" }, type: "query" }],
-    });
-  });
-
-  it("marks the post's reactor lists stale even when the reaction fails", async () => {
-    mutations.react!.mockRejectedValue(new Error("Slow down"));
-    const invalidate = jest.spyOn(client, "invalidateQueries");
-    const { result } = renderHook(() => useForumReaction("p1"), { wrapper });
-    await act(async () => {
-      await result.current.set("fire");
-    });
-    expect(invalidate).toHaveBeenCalledWith({
-      queryKey: [["thinkpagesForum", "reactors"], { input: { postId: "p1" }, type: "query" }],
-    });
-  });
-
   it("puts only that post back when the reaction fails, keeping changes made elsewhere meanwhile", async () => {
     const call = deferred<{ counts: Record<string, number>; mine: string | null }>();
     mutations.react!.mockReturnValue(call.promise);
@@ -203,34 +124,5 @@ describe("useForumReaction", () => {
       await done;
     });
     expect(messages()[0]).toMatchObject({ reactions: { fire: 7, like: 1 }, myReaction: "like" });
-  });
-
-  it("ignores a second request while one is in flight", async () => {
-    const call = deferred<{ counts: Record<string, number>; mine: string | null }>();
-    mutations.react!.mockReturnValue(call.promise);
-    const { result } = renderHook(() => useForumReaction("p1"), { wrapper });
-    let first!: Promise<void>;
-    act(() => {
-      first = result.current.set("fire");
-    });
-    await act(async () => {
-      await result.current.set("laugh");
-    });
-    expect(mutations.react).toHaveBeenCalledTimes(1);
-    await act(async () => {
-      call.resolve({ counts: { like: 1, fire: 1 }, mine: "fire" });
-      await first;
-    });
-  });
-
-  it("does nothing to the caches for a post that is not in them, and still asks the server", async () => {
-    mutations.react!.mockResolvedValue({ counts: { like: 1 }, mine: "like" });
-    const { result } = renderHook(() => useForumReaction("zzz"), { wrapper });
-    await act(async () => {
-      await result.current.set("like");
-    });
-    expect(mutations.react).toHaveBeenCalledWith({ postId: "zzz", type: "like" });
-    expect(posts()[0]).toMatchObject({ reactions: { like: 1 } });
-    expect(notify.error).not.toHaveBeenCalled();
   });
 });

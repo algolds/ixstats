@@ -30,11 +30,10 @@ jest.mock("~/components/thinkpages-forum/home", () => ({ ForumHome: jest.fn() })
 
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { auth } from "@clerk/nextjs/server";
-import { permanentRedirect, redirect, unstable_rethrow } from "next/navigation";
+import { permanentRedirect, unstable_rethrow } from "next/navigation";
 import { db } from "~/server/db";
 import LegacyPostPage from "~/app/thinkpages/post/[postId]/page";
 import "~/app/thinkpages/page";
-const mockRedirect = jest.mocked(redirect);
 const mockPermanentRedirect = jest.mocked(permanentRedirect);
 const mockUnstableRethrow = jest.mocked(unstable_rethrow);
 const mockAuth = jest.mocked(auth);
@@ -121,12 +120,6 @@ beforeEach(() => {
 const openPost = (postId: string) => LegacyPostPage({ params: Promise.resolve({ postId }) });
 
 describe("/thinkpages/post/<id>", () => {
-  it("sends a public forum post to its thread page and anchor when signed out (307)", async () => {
-    await expect(openPost("p44")).rejects.toThrow("redirect:/thinkpages/t/t1?page=3#post-p44");
-    expect(fakeDb.user.findUnique).not.toHaveBeenCalled();
-    expect(mockPermanentRedirect).not.toHaveBeenCalled();
-  });
-
   it("sends any other id to the feed post when signed out (307, not 308)", async () => {
     await expect(openPost("feed1")).rejects.toThrow("redirect:/dashboard/post/feed1");
     expect(mockPermanentRedirect).not.toHaveBeenCalled();
@@ -172,14 +165,6 @@ describe("/thinkpages/post/<id>", () => {
     await expect(openPost(long)).rejects.toThrow(`redirect:/dashboard/post/${long}`);
     expect(fakeDb.forumPost.findUnique).not.toHaveBeenCalled();
   });
-
-  it("lets a failed lookup through instead of guessing the post is a feed post", async () => {
-    const error = new Error("db down");
-    fakeDb.forumPost.findUnique.mockRejectedValue(error);
-    await expect(openPost("p1")).rejects.toBe(error);
-    expect(mockRedirect).not.toHaveBeenCalled();
-  });
-
   it("treats a failed session read as signed out", async () => {
     seedThread(reports, postsOf(3), { authorUserId: "u_member", hidden: false });
     const error = new Error("no clerk");

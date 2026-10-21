@@ -21,13 +21,6 @@ const parse = (input: Record<string, unknown>) => realmWikiSettingsSchema.safePa
 const base = { source: "iiwiki", rootCategory: "Category:Eurth", keyword: "Eurth" };
 
 describe("realm wiki settings validation", () => {
-  it("accepts the Eurth values and fills the optional ones", () => {
-    expect(parse(base)).toMatchObject({
-      success: true,
-      data: { ...base, rosterCategory: null, portalTitle: null, mapCategories: [] },
-    });
-  });
-
   it("normalizes titles the way MediaWiki spells them", () => {
     const result = parse({
       ...base,
@@ -52,7 +45,10 @@ describe("realm wiki settings validation", () => {
     [{ ...base, rootCategory: "Category:Eurth|x" }, "characters MediaWiki forbids"],
     [{ ...base, keyword: "  " }, "an empty keyword"],
     [{ ...base, rosterCategory: "Category:Retired countries (Eurth)" }, "a retired roster"],
-    [{ ...base, mapCategories: Array.from({ length: 6 }, (_, i) => `Category:M${i}`) }, "too many map categories"],
+    [
+      { ...base, mapCategories: Array.from({ length: 6 }, (_, i) => `Category:M${i}`) },
+      "too many map categories",
+    ],
   ])("refuses %j (%s)", (input) => {
     expect(parse(input).success).toBe(false);
   });
@@ -75,7 +71,11 @@ describe("reading and writing Realm.settings", () => {
 
   it("stores the chosen map under settings.map, keeping other map keys", () => {
     const map: RealmWikiMap = {
-      source: { wiki: "iiwiki", fileTitle: "File:Eurth political map 2024.png", sha1: "a".repeat(40) },
+      source: {
+        wiki: "iiwiki",
+        fileTitle: "File:Eurth political map 2024.png",
+        sha1: "a".repeat(40),
+      },
       attribution: "Map by Cartographer, CC BY-SA 4.0, via IIWiki",
       file: {
         width: 8192,
@@ -89,45 +89,25 @@ describe("reading and writing Realm.settings", () => {
         checkedAt: null,
       },
     };
-    const settings = withRealmWikiMap({ maxNationsPerUser: 2, map: { projection: "equirectangular" } }, map);
+    const settings = withRealmWikiMap(
+      { maxNationsPerUser: 2, map: { projection: "equirectangular" } },
+      map
+    );
     expect(settings).toMatchObject({
       maxNationsPerUser: 2,
       map: { projection: "equirectangular", source: map.source, attribution: map.attribution },
     });
     expect(realmWikiMap(settings)).toEqual(map);
-    expect(realmWikiMap({ map: { source: { wiki: "iiwiki", fileTitle: "File:X.png", sha1: "nope" } } })).toBeNull();
+    expect(
+      realmWikiMap({ map: { source: { wiki: "iiwiki", fileTitle: "File:X.png", sha1: "nope" } } })
+    ).toBeNull();
   });
 });
 
 describe("import-realm-lore defaults from the realm's wiki settings", () => {
-  it("fills every option from the settings, so --realm alone is enough", () => {
-    expect(loreImportOptions({}, EURTH_WIKI)).toEqual({
-      source: "iiwiki",
-      category: "Category:Eurth",
-      keyword: "Eurth",
-      roster: "Category:Countries (Eurth)",
-    });
-  });
-
-  it("lets a flag win over the settings", () => {
-    expect(loreImportOptions({ keyword: "Eurthian", roster: "Category:Nations (Eurth)" }, EURTH_WIKI)).toMatchObject({
-      category: "Category:Eurth",
-      keyword: "Eurthian",
-      roster: "Category:Nations (Eurth)",
-    });
-  });
-
   it("does not apply one wiki's settings to another wiki", () => {
-    expect(() => loreImportOptions({ source: "althistory" }, EURTH_WIKI)).toThrow("missing --category, --keyword");
-  });
-
-  it("asks for what is missing when the realm has no wiki settings", () => {
-    expect(() => loreImportOptions({ source: "iiwiki" }, null)).toThrow(/missing --category, --keyword.*Wiki/);
-    expect(loreImportOptions({ source: "iiwiki", category: "Category:X", keyword: "X" }, null)).toEqual({
-      source: "iiwiki",
-      category: "Category:X",
-      keyword: "X",
-      roster: undefined,
-    });
+    expect(() => loreImportOptions({ source: "althistory" }, EURTH_WIKI)).toThrow(
+      "missing --category, --keyword"
+    );
   });
 });

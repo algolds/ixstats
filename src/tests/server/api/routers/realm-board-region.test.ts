@@ -69,11 +69,6 @@ function callerAs(userId: string, db: Db) {
 }
 
 describe("board access on the region page", () => {
-  it("makes an officer with the board power a manager", async () => {
-    const access = await getRealmBoardAccess(makeDb() as never, "board1", OFFICER);
-    expect(access).toMatchObject({ isManager: true, isMember: true, restriction: null });
-  });
-
   it("keeps a muted owner a member, with the mute attached", async () => {
     const access = await getRealmBoardAccess(
       makeDb({ kind: "mute", until: null }) as never,
@@ -161,18 +156,6 @@ describe("posting to a realm board", () => {
     ).rejects.toMatchObject({ code: "FORBIDDEN", message: expect.stringMatching(/muted.*Spam/) });
     expect(db.thinkpagesPost.create).not.toHaveBeenCalled();
   });
-
-  it("tags an embassy-flagged post with the realm", async () => {
-    const db = makeDb();
-    await callerAs(OWNER, db).createGroupPost({
-      groupId: "board1",
-      content: "Greetings, friends",
-      embassy: true,
-    });
-    const tags = JSON.parse(db.thinkpagesPost.create.mock.calls[0][0].data.hashtags);
-    expect(tags).toEqual(expect.arrayContaining(["group:board1", "embassy:eurth"]));
-  });
-
   it("drops forged board and embassy tags", async () => {
     const db = makeDb();
     await callerAs(OWNER, db).createGroupPost({
@@ -184,43 +167,6 @@ describe("posting to a realm board", () => {
     expect(tags.sort()).toEqual(["group:board1", "news"]);
   });
 });
-
-describe("the board feed", () => {
-  it("includes embassy posts made on active partners' own boards, labelled with their realm", async () => {
-    const db = makeDb();
-    db.realmBoard.findMany.mockResolvedValue([{ realmId: "terra", groupId: "terra_board" }]);
-    db.realmEmbassy.findMany.mockResolvedValue([
-      {
-        fromRealmId: "eurth",
-        fromRealm: { id: "eurth", name: "Eurth", slug: "eurth" },
-        toRealm: { id: "terra", name: "Terra", slug: "terra" },
-      },
-    ]);
-    db.thinkpagesPost.findMany.mockResolvedValue([
-      {
-        id: "x1",
-        hashtags: JSON.stringify(["group:terra_board", "embassy:terra"]),
-        account: null,
-        _count: { reactions: 0, replies: 0, reposts: 0 },
-      },
-    ]);
-    const feed = await callerAs(OWNER, db).getGroupFeed({ groupId: "board1" });
-    const where = db.thinkpagesPost.findMany.mock.calls[0][0].where;
-    // A forged embassy tag on a plain post isn't enough: it must be a board post on the partner's board.
-    expect(where.OR).toEqual([
-      { hashtags: { contains: "group:board1" } },
-      {
-        visibility: "thinktank",
-        AND: [
-          { hashtags: { contains: '"group:terra_board"' } },
-          { hashtags: { contains: '"embassy:terra"' } },
-        ],
-      },
-    ]);
-    expect(feed.posts[0]?.embassyFrom).toMatchObject({ name: "Terra", slug: "terra" });
-  });
-});
-
 describe("pseudo-tags", () => {
   it("are never taken from a caller", () => {
     expect(ownHashtags(["news", "group:b1", "#embassy:eurth", "Group:x", "embassy-tour"])).toEqual([

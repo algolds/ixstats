@@ -220,9 +220,7 @@ export {
   type ReadsDb,
 } from "./reads";
 export {
-  canPostInCategory,
   canSeeRealm,
-  categoryPostingAccess,
   loadForumRealm,
   postingAccessFor,
   realmPostingAccess,

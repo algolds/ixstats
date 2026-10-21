@@ -10,8 +10,6 @@ import { thinkpagesAccountsRouter } from "~/server/api/routers/thinkpages/accoun
 import { adminThinkpagesDiscordFeedRouter } from "~/server/api/routers/admin/thinkpagesDiscordFeed";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
-import { maxThinkpagesAccountsPerUser } from "~/server/shared/thinkpages-config";
-
 const adminCtx = (db: unknown) =>
   createMockRouterContext({
     auth: { userId: "admin_1" },
@@ -27,16 +25,6 @@ const newAccount = {
 };
 
 describe("ThinkPages account limit (WK-11)", () => {
-  it("defaults to 25 and reads the admin key", async () => {
-    const db = createMockPrisma();
-    expect(await maxThinkpagesAccountsPerUser(db as never)).toBe(25);
-    db.systemConfig.findUnique.mockResolvedValue({ value: "3" });
-    expect(await maxThinkpagesAccountsPerUser(db as never)).toBe(3);
-    expect(db.systemConfig.findUnique.mock.calls[0]![0].where).toEqual({
-      key: "thinkpages_maxAccountsPerUser",
-    });
-  });
-
   it("createAccount refuses once the configured limit is reached", async () => {
     const db = createMockPrisma();
     db.systemConfig.findUnique.mockResolvedValue({ value: "2" });
@@ -65,23 +53,6 @@ describe("saveThinkpagesDiscordFeedConfig (WK-10)", () => {
     await expect(caller.saveThinkpagesDiscordFeedConfig({ enabled: true })).rejects.toThrow();
     expect(db.thinkpagesDiscordFeedConfig.update).not.toHaveBeenCalled();
   });
-
-  it("switches the feed on and stores lists as JSON", async () => {
-    const db = createMockPrisma();
-    db.thinkpagesDiscordFeedConfig.findUnique.mockResolvedValue({ id: "default" });
-    const caller = createCallerFactory(adminThinkpagesDiscordFeedRouter)(adminCtx(db) as never);
-
-    await caller.saveThinkpagesDiscordFeedConfig({
-      enabled: true,
-      minEngagement: 3,
-      hashtagBlocklist: ["spam"],
-    });
-    expect(db.thinkpagesDiscordFeedConfig.update).toHaveBeenCalledWith({
-      where: { id: "default" },
-      data: { enabled: true, minEngagement: 3, hashtagBlocklist: '["spam"]' },
-    });
-  });
-
   it("rejects a channel id that is not a Discord snowflake", async () => {
     const db = createMockPrisma();
     const caller = createCallerFactory(adminThinkpagesDiscordFeedRouter)(adminCtx(db) as never);

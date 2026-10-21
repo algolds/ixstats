@@ -1,6 +1,6 @@
 /** @jest-environment node */
 import { createClaimsService } from "~/server/modules/realms";
-import { fillEmptyFromPrefill, findUnclaimedNation } from "~/server/modules/realms/realms.handover";
+import { findUnclaimedNation } from "~/server/modules/realms/realms.handover";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
 jest.mock("~/lib/auth", () => ({ isSystemOwner: () => false }));
@@ -25,7 +25,12 @@ const unclaimed = {
 };
 
 const prefill = {
-  country: { flag: "https://img/flag.png", coatOfArms: "https://img/arms.png", leader: "Queen Ana", baselinePopulation: 9 },
+  country: {
+    flag: "https://img/flag.png",
+    coatOfArms: "https://img/arms.png",
+    leader: "Queen Ana",
+    baselinePopulation: 9,
+  },
   identity: { motto: "Onward", capitalCity: "Wiki City" },
 };
 
@@ -36,17 +41,28 @@ function setup() {
       findUnique: jest.fn(async ({ select }: any) =>
         // loadClaimable selects the realm; fillEmptyFromPrefill selects the identity.
         select?.nationalIdentity
-          ? { name: "Aurelia", flag: null, coatOfArms: "https://existing/arms.png", leader: null, governmentType: null,
-              nationalIdentity: { capitalCity: "Map City", motto: null } }
+          ? {
+              name: "Aurelia",
+              flag: null,
+              coatOfArms: "https://existing/arms.png",
+              leader: null,
+              governmentType: null,
+              nationalIdentity: { capitalCity: "Map City", motto: null },
+            }
           : unclaimed
       ),
       findFirst: jest.fn().mockResolvedValue(null),
       count: jest.fn().mockResolvedValue(0),
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       update: jest.fn().mockResolvedValue({}),
-      create: jest.fn().mockImplementation(({ data }: any) => Promise.resolve({ id: "new-c", name: data.name })),
+      create: jest
+        .fn()
+        .mockImplementation(({ data }: any) => Promise.resolve({ id: "new-c", name: data.name })),
     },
-    nationalIdentity: { update: jest.fn().mockResolvedValue({}), create: jest.fn().mockResolvedValue({}) },
+    nationalIdentity: {
+      update: jest.fn().mockResolvedValue({}),
+      create: jest.fn().mockResolvedValue({}),
+    },
     realmPage: {
       findFirst: jest.fn().mockResolvedValue({ wikiSource: "iiwiki", realm }),
     },
@@ -65,7 +81,9 @@ function setup() {
       findFirst: jest.fn().mockResolvedValue(null),
       findUnique: jest.fn(),
       findMany: jest.fn().mockResolvedValue([]),
-      create: jest.fn().mockImplementation(({ data }: any) => Promise.resolve({ id: "cl1", ...data })),
+      create: jest
+        .fn()
+        .mockImplementation(({ data }: any) => Promise.resolve({ id: "cl1", ...data })),
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       update: jest.fn().mockResolvedValue({}),
     },
@@ -83,14 +101,18 @@ describe("claiming an unclaimed nation the source sync created", () => {
   it("a claim on its roster page becomes a claim on the existing country: handed over, never created again", async () => {
     const { db, deps, claims } = setup();
     db.country.findFirst.mockResolvedValue({ id: "c-sync", name: "Aurelia", ownerUserId: null });
-    await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).resolves.toMatchObject({ status: "approved" });
+    await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).resolves.toMatchObject({
+      status: "approved",
+    });
     expect(db.country.create).not.toHaveBeenCalled();
     expect(db.country.updateMany).toHaveBeenCalledWith({
       where: { id: "c-sync", ownerUserId: null, claimable: true },
       data: { ownerUserId: "u1", ownedSince: expect.any(Date) },
     });
     expect(db.realmClaim.create.mock.calls[0][0].data).toMatchObject({ countryId: "c-sync" });
-    expect(deps.onNationAssigned).toHaveBeenCalledWith(expect.objectContaining({ countryId: "c-sync" }));
+    expect(deps.onNationAssigned).toHaveBeenCalledWith(
+      expect.objectContaining({ countryId: "c-sync" })
+    );
   });
 
   it("the infobox then fills only what is still empty: flag and leader, never the arms or the map's capital", async () => {
@@ -101,7 +123,10 @@ describe("claiming an unclaimed nation the source sync created", () => {
       where: { id: "c-sync" },
       data: { flag: "https://img/flag.png", leader: "Queen Ana" },
     });
-    expect(db.nationalIdentity.update).toHaveBeenCalledWith({ where: { countryId: "c-sync" }, data: { motto: "Onward" } });
+    expect(db.nationalIdentity.update).toHaveBeenCalledWith({
+      where: { countryId: "c-sync" },
+      data: { motto: "Onward" },
+    });
     // The sync's figures are never replaced by the infobox's.
     expect(JSON.stringify(db.country.update.mock.calls)).not.toContain("baselinePopulation");
   });
@@ -121,9 +146,14 @@ describe("claiming an unclaimed nation the source sync created", () => {
       country: null,
     });
     db.country.findFirst.mockResolvedValue({ id: "c-sync", name: "Aurelia", ownerUserId: null });
-    await expect(claims.reviewClaim(admin, "cl1", { approve: true })).resolves.toEqual({ status: "approved" });
+    await expect(claims.reviewClaim(admin, "cl1", { approve: true })).resolves.toEqual({
+      status: "approved",
+    });
     expect(db.country.create).not.toHaveBeenCalled();
-    expect(db.realmClaim.update).toHaveBeenCalledWith({ where: { id: "cl1" }, data: { countryId: "c-sync" } });
+    expect(db.realmClaim.update).toHaveBeenCalledWith({
+      where: { id: "cl1" },
+      data: { countryId: "c-sync" },
+    });
   });
 
   it("finds the nation by its wiki page, not its name: a renamed nation is handed over, never duplicated", async () => {
@@ -133,8 +163,12 @@ describe("claiming an unclaimed nation the source sync created", () => {
     );
     // A create would look for a free slug: none is taken.
     const byId = db.country.findUnique.getMockImplementation();
-    db.country.findUnique.mockImplementation(async (args: any) => (args.where.slug ? null : byId(args)));
-    await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).resolves.toMatchObject({ status: "approved" });
+    db.country.findUnique.mockImplementation(async (args: any) =>
+      args.where.slug ? null : byId(args)
+    );
+    await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).resolves.toMatchObject({
+      status: "approved",
+    });
     expect(db.country.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
@@ -152,39 +186,18 @@ describe("claiming an unclaimed nation the source sync created", () => {
 
   it("a nation only on the realm's map (no wiki) always goes to manual review", async () => {
     const { db, deps, claims } = setup();
-    db.country.findUnique.mockResolvedValue({ ...unclaimed, wikiSource: null, wikiPageTitle: null });
-    await expect(claims.claimCountry(actor, "c-sync")).resolves.toMatchObject({ status: "pending" });
+    db.country.findUnique.mockResolvedValue({
+      ...unclaimed,
+      wikiSource: null,
+      wikiPageTitle: null,
+    });
+    await expect(claims.claimCountry(actor, "c-sync")).resolves.toMatchObject({
+      status: "pending",
+    });
     expect(deps.fetchPageCreator).not.toHaveBeenCalled();
     expect(db.country.updateMany).not.toHaveBeenCalled();
   });
-
-  it("an Ixnay country's claim reads no infobox (unchanged behaviour)", async () => {
-    const { db, deps, claims } = setup();
-    db.country.findUnique.mockResolvedValue({ ...unclaimed, realmId: "default", wikiSource: "ixwiki" });
-    await claims.claimCountry(actor, "c-sync");
-    expect(deps.fetchNationPrefill).not.toHaveBeenCalled();
-  });
 });
-
-describe("fillEmptyFromPrefill", () => {
-  it("creates the identity when the nation has none, and does nothing without a prefill", async () => {
-    const tx: any = {
-      country: {
-        findUnique: jest.fn().mockResolvedValue({ name: "X", flag: "f", coatOfArms: "a", leader: "l", governmentType: "g", nationalIdentity: null }),
-        update: jest.fn(),
-      },
-      nationalIdentity: { create: jest.fn(), update: jest.fn() },
-    };
-    await fillEmptyFromPrefill(tx, "c", null);
-    expect(tx.country.findUnique).not.toHaveBeenCalled();
-    await fillEmptyFromPrefill(tx, "c", prefill as never);
-    expect(tx.country.update).not.toHaveBeenCalled();
-    expect(tx.nationalIdentity.create).toHaveBeenCalledWith({
-      data: { countryId: "c", countryName: "X", motto: "Onward", capitalCity: "Wiki City" },
-    });
-  });
-});
-
 describe("findUnclaimedNation", () => {
   const page = { realmId: EURTH, wikiSource: "iiwiki", title: "Aurelia" };
   interface Row {

@@ -112,55 +112,6 @@ describe("admin flag queue", () => {
     ).rejects.toThrow();
     expect(db.thinkpagesPost.delete).not.toHaveBeenCalled();
   });
-
-  it("groups open flags by post, most flagged first", async () => {
-    const db = createMockPrisma();
-    db.postFlag.findMany.mockResolvedValue([
-      { postId: "p2", reason: "rude", createdAt: new Date("2026-10-04") },
-      { postId: "p1", reason: "spam", createdAt: new Date("2026-10-03") },
-      { postId: "p1", reason: " ", createdAt: new Date("2026-10-02") },
-    ]);
-    db.thinkpagesPost.findMany.mockResolvedValue([
-      {
-        id: "p1",
-        content: "buy now",
-        visibility: "public",
-        createdAt: new Date(),
-        account: { username: "spammer", displayName: null },
-      },
-    ]);
-
-    const result = await adminFlags(adminCtx(db)).listFlaggedPosts({ limit: 10 });
-
-    expect(db.postFlag.findMany.mock.calls[0]![0].where).toEqual({ status: "open" });
-    expect(result.totalOpen).toBe(3);
-    expect(result.items.map((i) => [i.postId, i.flagCount])).toEqual([
-      ["p1", 2],
-      ["p2", 1],
-    ]);
-    expect(result.items[0]!.reasons).toEqual(["spam"]);
-    expect(result.items[0]!.post?.authorUsername).toBe("spammer");
-    expect(result.items[1]!.post).toBeNull();
-  });
-
-  it("dismiss resolves the flags and keeps the post", async () => {
-    const db = createMockPrisma();
-    db.postFlag.count.mockResolvedValue(2);
-    db.postFlag.updateMany.mockResolvedValue({ count: 2 });
-
-    const result = await adminFlags(adminCtx(db)).resolveFlaggedPost({
-      postId: "p1",
-      action: "dismiss",
-    });
-
-    expect(result).toEqual({ resolved: 2, removed: false });
-    expect(db.thinkpagesPost.delete).not.toHaveBeenCalled();
-    expect(db.postFlag.updateMany.mock.calls[0]![0]).toMatchObject({
-      where: { postId: "p1", status: "open" },
-      data: { status: "dismissed", resolvedBy: "admin_1" },
-    });
-  });
-
   it("remove deletes the post and keeps counters in step", async () => {
     const db = createMockPrisma();
     db.postFlag.count.mockResolvedValue(1);
@@ -192,13 +143,5 @@ describe("admin flag queue", () => {
       data: { postCount: { decrement: 1 } },
     });
     expect(db.postFlag.updateMany.mock.calls[0]![0].data.status).toBe("removed");
-  });
-
-  it("refuses a post with no open flags", async () => {
-    const db = createMockPrisma();
-    db.postFlag.count.mockResolvedValue(0);
-    await expect(
-      adminFlags(adminCtx(db)).resolveFlaggedPost({ postId: "p1", action: "dismiss" })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 });

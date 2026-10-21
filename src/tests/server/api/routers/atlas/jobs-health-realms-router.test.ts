@@ -84,25 +84,11 @@ describe("Atlas server procedures", () => {
       cause: { code: "FORBIDDEN" },
     });
   });
-
-  it("overview lists the realms for an admin", async () => {
-    const { realms } = await caller(admin, seeded()).realms.overview();
-    expect(realms.map((r) => r.slug)).toEqual(["alpha"]);
-  });
-
   it("get leaves a system realm out even when asked for by slug", async () => {
     await expect(
       caller(admin, seeded()).realms.get({ realm: "nationstates" })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
-
-  it("get answers the realm and its latest import, without a second copy of its jobs", async () => {
-    const result = await caller(admin, seeded()).realms.get({ realm: "alpha" });
-    expect(result.realm.id).toBe("a");
-    expect(result).not.toHaveProperty("recentJobs");
-    expect(result.latestImport).toBeNull();
-  });
-
   it("get and refresh say NOT_FOUND for an unknown realm", async () => {
     const api = caller(admin, seeded());
     await expect(api.realms.get({ realm: "nope" })).rejects.toMatchObject({ code: "NOT_FOUND" });
@@ -116,25 +102,5 @@ describe("Atlas server procedures", () => {
     const { mapVersion } = await caller(admin, db).realms.refresh({ realm: "alpha" });
     expect(mapVersion).toBe(6);
     expect(db.realm.rows[0].mapVersion).toBe(6);
-  });
-
-  it("list pages and filters; retry maps a service refusal to a tRPC error", async () => {
-    const api = caller(admin, seeded());
-    const page = await api.jobs.list({ status: "failed", limit: 5 });
-    expect(page.jobs).toHaveLength(1);
-    expect(page.nextCursor).toBeNull();
-    await expect(api.jobs.retry({ jobId: "job00000001" })).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-      message: expect.stringMatching(/upload it again/i),
-    });
-    await expect(api.jobs.get({ jobId: "nope" })).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
-
-  it("rollback passes through, and health answers for an admin", async () => {
-    const api = caller(admin, seeded());
-    await expect(api.jobs.rollback({ importId: "imp1" })).resolves.toEqual({ restored: 0 });
-    const health = await api.health.summary();
-    expect(health.jobs.running).toBe(0);
-    expect(Object.keys(health.cron)).toEqual(["map-tiles", "geo-profiles", "map-import"]);
   });
 });

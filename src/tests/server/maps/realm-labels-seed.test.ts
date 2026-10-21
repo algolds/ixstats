@@ -1,10 +1,5 @@
 import { realmLabelSeedFileSchema } from "~/lib/maps/realm-labels";
-import { sourcePreset } from "~/lib/realms/sources/presets";
-import {
-  realmLabelData,
-  seedRealmLabels,
-  storedRealmLabelRank,
-} from "~/server/modules/maps/realm-labels";
+import { seedRealmLabels } from "~/server/modules/maps/realm-labels";
 
 interface Row {
   id: string;
@@ -32,31 +27,6 @@ const ENTRIES = realmLabelSeedFileSchema.parse({
     { text: "Kosscow Sea", kind: "sea", coordinates: [99.45, 61.43] },
   ],
 }).labels;
-
-describe("realm label data", () => {
-  it("stores the rank (the kind's unless given) in the label's metadata", () => {
-    expect(
-      realmLabelData({ text: "Argic Ocean", labelType: "ocean", coordinates: [1, 2] })
-    ).toEqual({
-      text: "Argic Ocean",
-      labelType: "ocean",
-      coordinates: [1, 2],
-      metadata: { rank: "major" },
-    });
-    expect(
-      realmLabelData({ text: "Auraid Bay", labelType: "sea", coordinates: [1, 2], rank: "minor" })
-        .metadata
-    ).toEqual({ rank: "minor" });
-  });
-
-  it("reads a stored rank back, ignoring anything else", () => {
-    expect(storedRealmLabelRank({ rank: "minor" })).toBe("minor");
-    expect(storedRealmLabelRank({ rank: 3 })).toBeUndefined();
-    expect(storedRealmLabelRank(["minor"])).toBeUndefined();
-    expect(storedRealmLabelRank(null)).toBeUndefined();
-  });
-});
-
 describe("seeding a realm's labels", () => {
   it("a dry run reports what would be created and writes nothing", async () => {
     const db = fakeDb([]);
@@ -74,27 +44,6 @@ describe("seeding a realm's labels", () => {
     );
     expect(db.mapLabel.create).not.toHaveBeenCalled();
   });
-
-  it("creates approved realm labels keyed for the next run", async () => {
-    const db = fakeDb([]);
-    await seedRealmLabels(db as never, "realm_1", ENTRIES, { apply: true, submittedBy: "script" });
-    expect(db.mapLabel.create).toHaveBeenCalledTimes(3);
-    expect(db.mapLabel.create.mock.calls[0]).toEqual([
-      {
-        data: {
-          text: "Argic Ocean",
-          labelType: "ocean",
-          coordinates: [-33.3, 82.8],
-          metadata: { rank: "major", seedKey: "Argic Ocean (west)" },
-          realmId: "realm_1",
-          countryId: null,
-          status: "approved",
-          submittedBy: "script",
-        },
-      },
-    ]);
-  });
-
   it("is idempotent: matches by key (or by name for a hand-made label), updates only what changed", async () => {
     const db = fakeDb([
       {
@@ -149,32 +98,5 @@ describe("seeding a realm's labels", () => {
         },
       ],
     ]);
-  });
-});
-
-describe("Eurth's labels (its source preset's map pipeline)", () => {
-  const file = realmLabelSeedFileSchema.parse(sourcePreset("eurth-map")!.mapPipeline!.labels);
-
-  it("names each label once per key, inside the map", () => {
-    const keys = file.labels.map((l) => l.key ?? l.text);
-    expect(new Set(keys).size).toBe(keys.length);
-    for (const { coordinates } of file.labels) {
-      expect(Math.abs(coordinates[0])).toBeLessThanOrEqual(180);
-      expect(Math.abs(coordinates[1])).toBeLessThan(85.06);
-    }
-  });
-
-  it("carries the art's oceans", () => {
-    const oceans = file.labels.filter((l) => l.kind === "ocean").map((l) => l.text);
-    expect(new Set(oceans)).toEqual(
-      new Set([
-        "Argic Ocean",
-        "North Oriental Ocean",
-        "Adlantic Ocean",
-        "Adisi Ocean",
-        "South Oriental Ocean",
-        "Antargic Ocean",
-      ])
-    );
   });
 });

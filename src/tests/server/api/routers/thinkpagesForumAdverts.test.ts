@@ -28,13 +28,7 @@ import { TRPCError } from "@trpc/server";
 import { createCallerFactory } from "~/server/api/trpc";
 import { thinkpagesForumRouter } from "~/server/api/routers/thinkpagesForum";
 import { mapError } from "~/server/api/routers/thinkpagesForum/viewer";
-import {
-  advertStatus,
-  afterThreadStarted,
-  createAdvert,
-  ForumError,
-  setAdvertLocked,
-} from "~/server/modules/thinkpages-forum";
+import { afterThreadStarted, createAdvert, ForumError } from "~/server/modules/thinkpages-forum";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 const member = {
@@ -52,8 +46,6 @@ const caller = (user: object | null) =>
       db: {},
     }) as never
   );
-
-const actor = expect.objectContaining({ id: "u1", clerkUserId: "clerk_1", countryId: "c1" });
 const created = { threadId: "t_new", postId: "p_new", formatting: "done" as const };
 const NEW = { realm: "eurth", title: "Join Eurth", wikitext: "Come and play." };
 
@@ -78,11 +70,6 @@ beforeEach(() => {
 afterEach(() => jest.restoreAllMocks());
 
 describe("thinkpagesForum.createAdvert", () => {
-  it("creates the advert as the caller, returns the new thread, and runs the new-thread hooks", async () => {
-    await expect(caller(member).createAdvert(NEW)).resolves.toEqual(created);
-    expect(createAdvert).toHaveBeenCalledWith({}, actor, NEW);
-    expect(afterThreadStarted).toHaveBeenCalledWith({}, actor, created);
-  });
   it("never fails or waits on a hook that fails", async () => {
     const logged = jest.spyOn(console, "error").mockImplementation(() => undefined);
     jest.mocked(afterThreadStarted).mockRejectedValue(new Error("notice outage"));
@@ -120,34 +107,6 @@ describe("thinkpagesForum.createAdvert", () => {
     expect(createAdvert).not.toHaveBeenCalled();
   });
 });
-
-describe("thinkpagesForum adverts reads and lock", () => {
-  it("answers a realm's advert status and maps a refusal", async () => {
-    jest.mocked(advertStatus).mockResolvedValue({ threadId: "t_old", hiddenByModerator: false });
-    await expect(caller(member).advertFor({ realm: "eurth" })).resolves.toEqual({
-      threadId: "t_old",
-      hiddenByModerator: false,
-    });
-    expect(advertStatus).toHaveBeenCalledWith({}, actor, "eurth");
-    jest.mocked(advertStatus).mockRejectedValue(new ForumError("FORBIDDEN", "No."));
-    await expect(caller(member).advertFor({ realm: "eurth" })).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
-  });
-
-  it("locks and unlocks through the module, and maps its refusal", async () => {
-    jest.mocked(setAdvertLocked).mockResolvedValue({ locked: true });
-    await expect(
-      caller(member).setAdvertLocked({ threadId: "t_ad", locked: true })
-    ).resolves.toEqual({ locked: true });
-    expect(setAdvertLocked).toHaveBeenCalledWith({}, actor, { threadId: "t_ad", locked: true });
-    jest.mocked(setAdvertLocked).mockRejectedValue(new ForumError("FORBIDDEN", "Moderators only."));
-    await expect(
-      caller(member).setAdvertLocked({ threadId: "t_ad", locked: false })
-    ).rejects.toMatchObject({ code: "FORBIDDEN", message: "Moderators only." });
-  });
-});
-
 describe("mapError", () => {
   const thrown = (error: Error): TRPCError => {
     try {

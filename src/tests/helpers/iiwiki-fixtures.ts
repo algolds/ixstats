@@ -9,7 +9,8 @@ import path from "node:path";
 import type { RealmWikiSettings } from "~/lib/realms/realm-wiki-settings";
 
 const DIR = path.resolve(__dirname, "../fixtures/iiwiki-discovery");
-const load = (name: string): unknown => JSON.parse(fs.readFileSync(path.join(DIR, `${name}.json`), "utf8"));
+const load = (name: string): unknown =>
+  JSON.parse(fs.readFileSync(path.join(DIR, `${name}.json`), "utf8"));
 
 export const IIWIKI_FIXTURES = {
   roster1: load("roster-1"),
@@ -40,14 +41,16 @@ export const json = (body: unknown, init: ResponseInit = {}) =>
   });
 
 /** The recorded answer for one api.php request, by its parameters. */
-export function iiwikiAnswer(url: URL): unknown {
+function iiwikiAnswer(url: URL): unknown {
   const p = url.searchParams;
   if (p.get("list") === "categorymembers") {
     const title = p.get("cmtitle");
     if (title === "Category:Countries (Eurth)")
       return p.get("cmcontinue") ? IIWIKI_FIXTURES.roster2 : IIWIKI_FIXTURES.roster1;
-    if (title === "Category:Eurth" && p.get("cmtype") === "subcat") return IIWIKI_FIXTURES.rootSubcats;
-    if (title === "Category:Eurth maps" && p.get("cmtype") === "file") return IIWIKI_FIXTURES.mapFiles;
+    if (title === "Category:Eurth" && p.get("cmtype") === "subcat")
+      return IIWIKI_FIXTURES.rootSubcats;
+    if (title === "Category:Eurth maps" && p.get("cmtype") === "file")
+      return IIWIKI_FIXTURES.mapFiles;
     return EMPTY_MEMBERS;
   }
   const prop = p.get("prop") ?? "";
@@ -69,7 +72,9 @@ export interface FakeWiki {
 export function fakeIiwiki(respond?: (url: URL, index: number) => Response | undefined): FakeWiki {
   const calls: URL[] = [];
   const fetchImpl = (async (input: string | URL | Request) => {
-    const url = new URL(typeof input === "string" ? input : input instanceof URL ? input.href : input.url);
+    const url = new URL(
+      typeof input === "string" ? input : input instanceof URL ? input.href : input.url
+    );
     const index = calls.length;
     calls.push(url);
     return respond?.(url, index) ?? json(iiwikiAnswer(url));

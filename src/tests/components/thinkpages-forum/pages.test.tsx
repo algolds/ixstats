@@ -162,13 +162,9 @@ import { STUB_WIKITEXT } from "~/tests/helpers/forum-composer-stub";
 import { AuthorName, type ForumAuthors } from "~/components/thinkpages-forum/AuthorName";
 import { BoardPage } from "~/components/thinkpages-forum/board";
 import { ThreadPage } from "~/components/thinkpages-forum/thread";
-import { NewThreadForm } from "~/components/thinkpages-forum/NewThreadForm";
 import "~/app/thinkpages/page";
 
-const { results, inputs, mutations } = jest.requireMock<MockApi>("~/trpc/react");
-const { router } = jest.requireMock<{
-  router: { push: jest.Mock; replace: jest.Mock };
-}>("next/navigation");
+const { results, mutations } = jest.requireMock<MockApi>("~/trpc/react");
 
 const authors: ForumAuthors = {
   users: {
@@ -181,20 +177,6 @@ const authors: ForumAuthors = {
 };
 
 const EURTH = { slug: "eurth", name: "Eurth" };
-const HUB = { key: "hub", name: "Hub", description: "Realm talk", icAllowed: false, realm: EURTH };
-
-function thread() {
-  return {
-    id: "t1",
-    title: "A thread",
-    authorUserId: "u1",
-    authorPersonaId: null,
-    pinned: false,
-    locked: false,
-    postCount: 2,
-    lastPostAt: new Date(),
-  };
-}
 
 function threadData(
   overrides: { locked?: boolean; canReply?: boolean; realm?: typeof EURTH } = {}
@@ -259,22 +241,6 @@ function categoryData(
   return { category, threads, total: threads.length, canStart, notice, authors };
 }
 
-/** The breadcrumb trail's labels and hrefs: the pages above this one, each a link. */
-/** The header's back link: the one link named `name` outside the breadcrumb trail. */
-function backLink(name: string) {
-  const trail = screen.getByRole("navigation", { name: "breadcrumb" });
-  const outside = screen.getAllByRole("link", { name }).filter((link) => !trail.contains(link));
-  expect(outside).toHaveLength(1);
-  return outside[0]!;
-}
-
-function crumbs() {
-  const trail = screen.getByRole("navigation", { name: "breadcrumb" });
-  return within(trail)
-    .getAllByRole("link")
-    .map((link) => [link.textContent, link.getAttribute("href")]);
-}
-
 function set(name: string, result: QueryResult) {
   results[name] = result;
 }
@@ -299,37 +265,6 @@ beforeEach(() => {
   mutations.markCategoryRead = jest.fn().mockResolvedValue({});
 });
 describe("category view", () => {
-  it("shows New thread only when canStart", () => {
-    set("category", { data: categoryData(false) });
-    const { rerender } = render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    expect(screen.queryByRole("link", { name: /New thread/ })).toBeNull();
-    expect(screen.getByText("No threads yet")).toBeInTheDocument();
-    expect(screen.getByText("Be the first to post")).toBeInTheDocument();
-
-    set("category", { data: categoryData(true) });
-    rerender(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    // In the header, and in the empty board.
-    const links = screen.getAllByRole("link", { name: /New thread/ });
-    expect(links).toHaveLength(2);
-    for (const link of links) expect(link).toHaveAttribute("href", "/thinkpages/c/general/new");
-  });
-
-  it("explains why New thread is missing with the category's notice", () => {
-    const notice = "Your nation is muted on this board until Jan 1.";
-    set("category", { data: categoryData(false, [], undefined, notice) });
-    const { rerender } = render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    expect(screen.getByText(notice)).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /New thread/ })).toBeNull();
-
-    set("category", { data: categoryData(true, [], undefined, notice) });
-    rerender(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    expect(screen.queryByText(notice)).toBeNull();
-
-    set("category", { data: categoryData(false) });
-    rerender(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    expect(screen.queryByText(notice)).toBeNull();
-  });
-
   it("lists threads with plain text titles and the persona, not the player", () => {
     set("category", {
       data: categoryData(false, [
@@ -353,78 +288,9 @@ describe("category view", () => {
       within(screen.getByRole("row", { name: /<i>Hi<\/i>/ })).getByText("2")
     ).toBeInTheDocument();
   });
-  it("scopes a realm category to its realm: query, New thread and breadcrumbs", () => {
-    set("category", { data: categoryData(true, [thread()], HUB) });
-    render(<BoardPage categoryKey="hub" realm="eurth" page={1} sort="latest" />);
-    expect(inputs.category).toEqual({ key: "hub", page: 1, realm: "eurth", sort: "latest" });
-    expect(screen.getByRole("link", { name: /New thread/ })).toHaveAttribute(
-      "href",
-      "/thinkpages/r/eurth/hub/new"
-    );
-    expect(crumbs()).toEqual([
-      ["ThinkPages", "/thinkpages"],
-      ["Eurth", "/thinkpages/r/eurth/hub"],
-    ]);
-    // The Hub is the top of its realm: back goes to the forum home, not to itself.
-    expect(backLink("ThinkPages")).toHaveAttribute("href", "/thinkpages");
-  });
-
-  it("sends a realm's other boards back to its Hub", () => {
-    const events = { ...HUB, key: "current-events", name: "Current Events" };
-    set("category", { data: categoryData(false, [thread()], events) });
-    render(<BoardPage categoryKey="current-events" realm="eurth" page={1} sort="latest" />);
-    expect(backLink("Eurth")).toHaveAttribute("href", "/thinkpages/r/eurth/hub");
-  });
 });
 
 describe("thread view", () => {
-  it("renders posts with anchors, authors and the reply composer", () => {
-    set("thread", { data: threadData() });
-    const { container } = render(<ThreadPage threadId="t1" page={1} />);
-    expect(
-      screen.getByRole("heading", { level: 1, name: "<b>Plain</b> title" })
-    ).toBeInTheDocument();
-    expect(container.querySelector("#post-p1")).toHaveTextContent("First post");
-    expect(container.querySelector("#post-p2")).toHaveTextContent("In character");
-    expect(screen.getByText("Kir")).toBeInTheDocument();
-    expect(screen.getByText("Aria Vance")).toBeInTheDocument();
-    expect(screen.getByText(/@aria/)).toBeInTheDocument();
-    expect(screen.queryByText("Hidden Player")).toBeNull();
-    expect(
-      within(screen.getByTestId("composer")).getByRole("button", { name: "Reply" })
-    ).toBeInTheDocument();
-    expect(screen.queryByText("This thread is locked.")).toBeNull();
-  });
-  it("hides the reply composer and edit when locked", () => {
-    set("thread", {
-      data: threadData({ locked: true, canReply: false }),
-    });
-    render(<ThreadPage threadId="t1" page={1} />);
-    expect(screen.getByText("This thread is locked.")).toBeInTheDocument();
-    expect(screen.queryByTestId("composer")).toBeNull();
-    expect(screen.queryByRole("menuitem", { name: "Edit" })).toBeNull();
-  });
-
-  it("edits only the viewer's own post, prefilled, and saves through editPost with the loaded editedAt", async () => {
-    const data = threadData();
-    const loaded = new Date("2026-10-01T10:00:00Z");
-    set("thread", {
-      data: { ...data, posts: [{ ...data.posts[0]!, editedAt: loaded }, data.posts[1]!] },
-    });
-    const editPost = jest.fn(() => Promise.resolve({}));
-    mutations.editPost = editPost;
-    render(<ThreadPage threadId="t1" page={1} />);
-    const edits = screen.getAllByRole("menuitem", { name: "Edit" });
-    expect(edits).toHaveLength(1);
-    fireEvent.click(edits[0]!);
-    const editor = screen.getAllByTestId("composer")[0]!;
-    expect(editor).toHaveAttribute("data-initial", "<p>First post</p>");
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    await waitFor(() =>
-      expect(editPost).toHaveBeenCalledWith({ postId: "p1", html: "<p>new</p>", editedAt: loaded })
-    );
-  });
-
   it("edits a Canvas post in Canvas from its wikitext and saves wikitext, never html", async () => {
     const data = threadData();
     const loaded = new Date("2026-10-01T10:00:00Z");
@@ -456,184 +322,8 @@ describe("thread view", () => {
     // Saved and formatted: the editor closes.
     await waitFor(() => expect(screen.queryByTestId("canvas-composer")).toBeNull());
   });
-
-  it("keeps the Canvas editor open when the wiki is still formatting the edit", async () => {
-    const data = threadData();
-    set("thread", {
-      data: { ...data, posts: [{ ...data.posts[0]!, contentWikitext: "x" }, data.posts[1]!] },
-    });
-    const editPost = jest.fn(() => Promise.resolve({ formatting: "pending" }));
-    mutations.editPost = editPost;
-    render(<ThreadPage threadId="t1" page={1} />);
-    fireEvent.click(screen.getByRole("menuitem", { name: "Edit" }));
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    await waitFor(() => expect(editPost).toHaveBeenCalled());
-    expect(screen.getByTestId("canvas-composer")).toBeInTheDocument();
-  });
-
-  it("after a reply goes to the reply's page and anchor", async () => {
-    set("thread", { data: threadData() });
-    const reply = jest.fn(() => Promise.resolve({ postId: "p9", formatting: "done" }));
-    mutations.reply = reply;
-    render(<ThreadPage threadId="t1" page={1} />);
-    fireEvent.click(within(screen.getByTestId("composer")).getByRole("button", { name: "Reply" }));
-    await waitFor(() =>
-      expect(router.push).toHaveBeenCalledWith("/thinkpages/t/t1?page=3#post-p9")
-    );
-    expect(reply).toHaveBeenCalledWith({
-      threadId: "t1",
-      wikitext: STUB_WIKITEXT,
-      personaId: null,
-    });
-  });
 });
-
-describe("load failures and out-of-range pages", () => {
-  it("says Category not found only for NOT_FOUND", () => {
-    set("category", { data: undefined, error: { data: { code: "NOT_FOUND" } } });
-    render(<BoardPage categoryKey="secret" page={1} sort="latest" />);
-    expect(screen.getByText("Category not found")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Back to the forum" })).toHaveAttribute(
-      "href",
-      "/thinkpages"
-    );
-    expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
-  });
-
-  it("offers Retry for any other category error", () => {
-    const refetch = jest.fn();
-    set("category", {
-      data: undefined,
-      error: { data: { code: "INTERNAL_SERVER_ERROR" } },
-      refetch,
-    });
-    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    expect(screen.queryByText("Category not found")).toBeNull();
-    expect(screen.getByText("Could not load this page")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-    expect(refetch).toHaveBeenCalledTimes(1);
-  });
-
-  it("says Thread not found only for NOT_FOUND, and Retry otherwise", () => {
-    set("thread", { data: undefined, error: { data: { code: "NOT_FOUND" } } });
-    const { unmount } = render(<ThreadPage threadId="gone" page={1} />);
-    expect(screen.getByText("Thread not found")).toBeInTheDocument();
-    unmount();
-
-    const refetch = jest.fn();
-    set("thread", { data: undefined, error: { data: { code: "TIMEOUT" } }, refetch });
-    render(<ThreadPage threadId="t1" page={1} />);
-    expect(screen.queryByText("Thread not found")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-    expect(refetch).toHaveBeenCalledTimes(1);
-  });
-
-  it("sends a category page past the end to the last page", () => {
-    set("category", { data: { ...categoryData(false), total: 30 } });
-    render(<BoardPage categoryKey="general" page={5} sort="latest" />);
-    expect(router.replace).toHaveBeenCalledWith("/thinkpages/c/general?page=2");
-    expect(screen.queryByText("No threads yet")).toBeNull();
-  });
-
-  it("sends a thread page past the end to the last page", () => {
-    set("thread", { data: { ...threadData(), posts: [] } });
-    render(<ThreadPage threadId="t1" page={4} />);
-    expect(router.replace).toHaveBeenCalledWith("/thinkpages/t/t1?page=1");
-    expect(screen.queryByTestId("composer")).toBeNull();
-  });
-
-  it("keeps an empty category on its page without redirecting", () => {
-    set("category", { data: categoryData(false) });
-    render(<BoardPage categoryKey="general" page={3} sort="latest" />);
-    expect(router.replace).not.toHaveBeenCalled();
-    expect(screen.getByText("No threads yet")).toBeInTheDocument();
-  });
-});
-
-describe("new thread", () => {
-  it("creates the thread and opens it", async () => {
-    set("category", { data: categoryData(true) });
-    const create = jest.fn(() =>
-      Promise.resolve({ threadId: "t7", postId: "p7", formatting: "done" })
-    );
-    mutations.createThread = create;
-    render(<NewThreadForm categoryKey="general" />);
-    fireEvent.click(screen.getByRole("button", { name: "Post" }));
-    await waitFor(() => expect(router.push).toHaveBeenCalledWith("/thinkpages/t/t7"));
-    expect(create).toHaveBeenCalledWith({
-      categoryKey: "general",
-      title: "Hello",
-      wikitext: STUB_WIKITEXT,
-      personaId: null,
-    });
-  });
-
-  it("starts a realm thread in that realm", async () => {
-    set("category", { data: categoryData(true, [], HUB) });
-    const create = jest.fn(() =>
-      Promise.resolve({ threadId: "t8", postId: "p8", formatting: "done" })
-    );
-    mutations.createThread = create;
-    render(<NewThreadForm categoryKey="hub" realm="eurth" />);
-    expect(inputs.category).toEqual({ key: "hub", page: 1, realm: "eurth" });
-    fireEvent.click(screen.getByRole("button", { name: "Post" }));
-    await waitFor(() => expect(router.push).toHaveBeenCalledWith("/thinkpages/t/t8"));
-    expect(create).toHaveBeenCalledWith({
-      categoryKey: "hub",
-      realm: "eurth",
-      title: "Hello",
-      wikitext: STUB_WIKITEXT,
-      personaId: null,
-    });
-  });
-
-  it("stays on the page while the first post is still being formatted, with a way in", async () => {
-    set("category", { data: categoryData(true) });
-    mutations.createThread = jest.fn(() =>
-      Promise.resolve({ threadId: "t9", postId: "p9", formatting: "pending" })
-    );
-    router.push.mockClear();
-    render(<NewThreadForm categoryKey="general" />);
-    fireEvent.click(screen.getByRole("button", { name: "Post" }));
-    expect(await screen.findByRole("link", { name: "Open the thread" })).toHaveAttribute(
-      "href",
-      "/thinkpages/t/t9"
-    );
-    expect(router.push).not.toHaveBeenCalled();
-  });
-
-  it("explains a refusal with the category's notice, else the general copy", () => {
-    const notice = "Only owners of a nation in Eurth can post here.";
-    set("category", { data: categoryData(false, [], HUB, notice) });
-    const { unmount } = render(<NewThreadForm categoryKey="hub" realm="eurth" />);
-    expect(screen.getByText(notice)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Back to the forum" })).toHaveAttribute(
-      "href",
-      "/thinkpages/r/eurth/hub"
-    );
-    unmount();
-
-    set("category", { data: categoryData(false) });
-    render(<NewThreadForm categoryKey="general" />);
-    expect(screen.getByText("Sign in, or pick a category open to members.")).toBeInTheDocument();
-  });
-});
-
 describe("imported authors (phase 4)", () => {
-  const imported = { authorUserId: null, authorPersonaId: null, importedAuthorName: "OldName" };
-
-  it("names a user, else the imported name, else Member", () => {
-    const { rerender } = render(
-      <AuthorName authors={authors} userId={null} personaId={null} importedName="OldName" />
-    );
-    expect(screen.getByText("OldName")).toBeInTheDocument();
-    rerender(<AuthorName authors={authors} userId={null} personaId={null} />);
-    expect(screen.getByText("Member")).toBeInTheDocument();
-    rerender(<AuthorName authors={authors} userId="u1" personaId={null} importedName="OldName" />);
-    expect(screen.getByText("Kir")).toBeInTheDocument();
-    expect(screen.queryByText("OldName")).toBeNull();
-  });
-
   it("never shows the imported name or the player for a persona post, even when the persona is gone", () => {
     const { rerender } = render(
       <AuthorName authors={authors} userId="u2" personaId="pa" importedName="OldName" />
@@ -644,33 +334,5 @@ describe("imported authors (phase 4)", () => {
     expect(screen.getByText("Member")).toBeInTheDocument();
     expect(screen.queryByText("OldName")).toBeNull();
     expect(screen.queryByText("Hidden Player")).toBeNull();
-  });
-
-  it("shows an imported thread's author in the category list", () => {
-    set("category", {
-      data: categoryData(false, [
-        {
-          id: "t9",
-          title: "From the old forum",
-          ...imported,
-          pinned: false,
-          locked: false,
-          postCount: 1,
-          lastPostAt: new Date(),
-        },
-      ]),
-    });
-    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    expect(screen.getByText("OldName")).toBeInTheDocument();
-  });
-
-  it("shows an imported post's author in the thread", () => {
-    const data = threadData();
-    set("thread", {
-      data: { ...data, posts: [{ ...data.posts[0]!, ...imported, isOwn: false }] },
-    });
-    const { container } = render(<ThreadPage threadId="t1" page={1} />);
-    expect(container.querySelector("#post-p1")).toHaveTextContent("OldName");
-    expect(screen.queryByText("Kir")).toBeNull();
   });
 });

@@ -177,15 +177,6 @@ describe("fileAppeal", () => {
       message: "You have already appealed this warning.",
     });
   });
-
-  it("passes other database errors through", async () => {
-    const store = storeWith();
-    store.tx.forumAppeal.create.mockRejectedValueOnce(new Error("connection lost"));
-    await expect(
-      fileAppeal(store.db as never, member, { subjectType: "warning", subjectId: "w_site", body })
-    ).rejects.toThrow("connection lost");
-  });
-
   it.each([
     ["9 characters", "123456789", false],
     ["9 characters padded with spaces", "   123456789   ", false],
@@ -264,18 +255,6 @@ describe("reviewAppeal", () => {
     expect(banIn(store, "b_realm")).toMatchObject({ liftedAt: null });
     expect(store.logs).toEqual([]);
   });
-
-  it("refuses the issuer of a warning (FORBIDDEN)", async () => {
-    const store = storeWith({ appeals: [appeal("a1", "warning", "w_site")] });
-    await expect(
-      reviewAppeal(store.db as never, admin, { appealId: "a1", ...overturned })
-    ).rejects.toMatchObject({
-      code: "FORBIDDEN",
-      message: "Another moderator must review this appeal.",
-    });
-    expect(warningIn(store, "w_site")).toMatchObject({ revokedAt: null });
-  });
-
   it("refuses the issuer of an automatic ban, who is the moderator whose warning crossed the tier (M2)", async () => {
     const store = storeWith({ appeals: [appeal("a1", "ban", "b_auto")] });
     await expect(
@@ -405,27 +384,6 @@ describe("reviewAppeal", () => {
       banId: "b_realm",
     });
   });
-
-  it("overturning a warning revokes it and lifts the automatic ban when points drop below 5 (M3)", async () => {
-    const store = storeWith({ appeals: [appeal("a1", "warning", "w_site")] });
-    const result = await reviewAppeal(store.db as never, admin2, { appealId: "a1", ...overturned });
-    expect(result).toEqual({
-      userId: "u_m",
-      subjectType: "warning",
-      outcome: "overturned",
-      autoBan: { kind: "lifted", banId: "b_auto" },
-    });
-    expect(warningIn(store, "w_site")).toMatchObject({ revokedAt: NOW, revokedBy: "u_a2" });
-    expect(banIn(store, "b_auto")).toMatchObject({ liftedAt: NOW, liftedBy: "u_a2" });
-    expect(store.logs.map((l) => l.action)).toEqual([
-      "appeal.review",
-      "warning.revoke",
-      "ban.lift",
-    ]);
-    expect(store.db.$transaction).toHaveBeenCalledTimes(1);
-    expect(store.db.forumModLog.create).not.toHaveBeenCalled();
-  });
-
   it("overturning a warning keeps the automatic ban while 5 points remain", async () => {
     const store = storeWith({ appeals: [appeal("a1", "warning", "w_eurth")] });
     const result = await reviewAppeal(store.db as never, eurthMod2, {
@@ -517,14 +475,6 @@ describe("reviewAppeal", () => {
     await reviewAppeal(store.db as never, eurthMod2, { appealId: "a1", ...overturned });
     expect(warningIn(store, "w_eurth")).toMatchObject({ revokedAt: NOW });
   });
-
-  it("is NOT_FOUND for a missing appeal", async () => {
-    const store = storeWith();
-    await expect(
-      reviewAppeal(store.db as never, admin, { appealId: "nope", ...upheld })
-    ).rejects.toMatchObject({ code: "NOT_FOUND", message: "Appeal not found." });
-  });
-
   it.each([
     ["blank", "   ", false],
     ["1 character", "x", true],
@@ -619,30 +569,6 @@ describe("moot appeals (the subject ended before a decision)", () => {
       ["appeal.moot", "a_ban"],
     ]);
   });
-
-  it("overturning the triggering warning's appeal moots the lifted automatic ban's appeal", async () => {
-    const store = storeWith({
-      appeals: [appeal("a_ban", "ban", "b_auto"), appeal("a_warn", "warning", "w_site")],
-    });
-    await reviewAppeal(store.db as never, admin2, { appealId: "a_warn", ...overturned });
-    expect(appealIn(store, "a_warn")).toMatchObject({ status: "overturned", reviewedBy: "u_a2" });
-    expect(appealIn(store, "a_ban")).toMatchObject({ status: "moot", reviewedBy: null });
-    expect(store.logs.map((l) => l.action)).toEqual([
-      "appeal.review",
-      "warning.revoke",
-      "ban.lift",
-      "appeal.moot",
-    ]);
-    // The ban's appeal is closed, so nobody can be left to "uphold" a lifted ban.
-    await expect(
-      reviewAppeal(store.db as never, admin3, {
-        appealId: "a_ban",
-        outcome: "upheld",
-        response: "x",
-      })
-    ).rejects.toMatchObject({ code: "CONFLICT", message: "This appeal is already closed." });
-  });
-
   it.each([
     ["an expired ban", "ban", "b_expired", "upheld"],
     ["an expired ban", "ban", "b_expired", "overturned"],

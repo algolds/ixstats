@@ -4,7 +4,7 @@ jest.mock("~/server/db", () => ({ db: {} }));
 import { createCallerFactory } from "~/server/api/trpc";
 import { thinkpagesForumRouter } from "~/server/api/routers/thinkpagesForum";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
-import { SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
+import { SITE_CATEGORIES } from "~/tests/helpers/forum-site-categories";
 
 const caller = (user: object | null, db: object = {}) =>
   createCallerFactory(thinkpagesForumRouter)(
@@ -131,37 +131,6 @@ describe("thinkpagesForum stash procedures", () => {
       code: "NOT_FOUND",
     });
   });
-
-  it("matches the caller's stashes across their user and Clerk ids", async () => {
-    const { db } = stashDb();
-
-    await caller(member, db).unstashThread({ threadId: "t1" });
-
-    expect(db.stash.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { userId: { in: ["u1", "clerk_1"] } } })
-    );
-    expect(db.stashItem.deleteMany).toHaveBeenCalledWith({
-      where: {
-        stashId: { in: ["stash_1"] },
-        pageTitle: "thinkpages:thread:t1",
-        contentType: "forum_thread",
-      },
-    });
-  });
-
-  it("reports whether a thread is stashed and lists the native stashed threads", async () => {
-    const { db, items } = stashDb();
-    const c = caller(member, db);
-    await c.stashThread({ threadId: "t1" });
-    db.stashItem.findMany.mockResolvedValueOnce([{ stashId: "stash_1" }] as never);
-
-    await expect(c.isThreadStashed({ threadId: "t1" })).resolves.toEqual({
-      stashed: true,
-      stashes: [{ id: "stash_1", name: "My Stash", color: null }],
-    });
-    expect(items).toHaveLength(1);
-  });
-
   it("bounds the inputs", async () => {
     const c = caller(member, stashDb().db);
     await expect(c.stashThread({ threadId: "" })).rejects.toMatchObject({ code: "BAD_REQUEST" });

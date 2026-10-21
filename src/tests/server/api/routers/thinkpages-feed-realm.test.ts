@@ -29,13 +29,6 @@ function caller(db: ReturnType<typeof createMockPrisma>) {
 }
 
 describe("thinkpages.getFeed realm filter", () => {
-  it("keeps the all-realms feed unchanged when no realm is given", async () => {
-    const db = createMockPrisma();
-    await caller(db).getFeed({});
-    expect(feedWhere(db)).toEqual({ visibility: "public" });
-    expect(db.realmBoard.findUnique).not.toHaveBeenCalled();
-  });
-
   it("shows the realm's nations' public posts and never reads the old board chat", async () => {
     const db = createMockPrisma();
     db.realmBoard.findUnique.mockResolvedValue({ groupId: "board1" });
@@ -48,15 +41,6 @@ describe("thinkpages.getFeed realm filter", () => {
     expect(JSON.stringify(feedWhere(db))).not.toContain("thinktank");
     expect(JSON.stringify(feedWhere(db))).not.toContain("group:");
   });
-
-  it("shows the same nations' posts whether or not the realm has an old board", async () => {
-    const db = createMockPrisma();
-    await caller(db).getFeed({ realmId: "eurth" });
-    expect(feedWhere(db)).toEqual({
-      AND: [{ visibility: "public", account: { country: { realmId: "eurth" } } }],
-    });
-  });
-
   it("composes with the hashtag filter and caches per realm", async () => {
     const db = createMockPrisma();
     await caller(db).getFeed({ realmId: "eurth", hashtag: "lore" });

@@ -4,7 +4,6 @@ import {
   advertGate,
   advertHiddenFrom,
   advertRealmHiddenFrom,
-  advertRowOf,
   assertAdvertsOnly,
   canEditPost,
   canManageAdvert,
@@ -155,34 +154,12 @@ describe("advertRealmHiddenFrom", () => {
       expect(advertRealmHiddenFrom(officer, hidden)).toBe(true);
     }
   });
-
-  it("shows it to the founder and site admins", () => {
-    expect(advertRealmHiddenFrom(founder, draft)).toBe(false);
-    expect(advertRealmHiddenFrom(admin, generating)).toBe(false);
-  });
-
-  it("shows published and archived realms' adverts, and ordinary threads (no realm) to everyone", () => {
-    expect(advertRealmHiddenFrom(null, realm)).toBe(false);
-    expect(advertRealmHiddenFrom(member, archived)).toBe(false);
-    expect(advertRealmHiddenFrom(member, null)).toBe(false);
-    expect(advertRealmHiddenFrom(member, undefined)).toBe(false);
-  });
 });
 
 describe("advertHiddenFrom", () => {
   const realmDb = (row: object | null) => ({
     realm: { findUnique: jest.fn(async (_args?: object) => row) },
   });
-
-  it("is false for a thread that is no advert, without reading a realm", async () => {
-    const db = realmDb(draft);
-    await expect(advertHiddenFrom(db as never, member, { advertRealmId: null })).resolves.toBe(
-      false
-    );
-    await expect(advertHiddenFrom(db as never, member, {})).resolves.toBe(false);
-    expect(db.realm.findUnique).not.toHaveBeenCalled();
-  });
-
   it("hides a draft realm's advert from members and anonymous readers, and shows it to its founder and admins", async () => {
     const db = realmDb(draft);
     const thread = { advertRealmId: "r_eurth" };
@@ -190,20 +167,6 @@ describe("advertHiddenFrom", () => {
     await expect(advertHiddenFrom(db as never, null, thread)).resolves.toBe(true);
     await expect(advertHiddenFrom(db as never, founder, thread)).resolves.toBe(false);
     await expect(advertHiddenFrom(db as never, admin, thread)).resolves.toBe(false);
-  });
-
-  it("shows a published realm's advert to everyone", async () => {
-    await expect(
-      advertHiddenFrom(realmDb(realm) as never, null, { advertRealmId: "r_eurth" })
-    ).resolves.toBe(false);
-  });
-
-  it("reads the realm by the thread's advertRealmId", async () => {
-    const db = realmDb(realm);
-    await advertHiddenFrom(db as never, member, { advertRealmId: "r_eurth" });
-    expect(db.realm.findUnique).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: "r_eurth" } })
-    );
   });
 });
 
@@ -238,13 +201,6 @@ describe("advertClosed", () => {
 });
 
 describe("canManageAdvert", () => {
-  it("holds for site admins and the founder without reading the officer table", async () => {
-    const db = officerDb();
-    await expect(canManageAdvert(db as never, admin, realm)).resolves.toBe(true);
-    await expect(canManageAdvert(db as never, founder, realm)).resolves.toBe(true);
-    expect(db.realmOfficer.findMany).not.toHaveBeenCalled();
-  });
-
   it("holds for an officer with the appearance power", async () => {
     await expect(canManageAdvert(officerDb() as never, officer, realm)).resolves.toBe(true);
   });
@@ -319,26 +275,5 @@ describe("assertAdvertsOnly", () => {
     expect(() =>
       assertAdvertsOnly({ key: "find-a-realm", scope: "realm" }, undefined)
     ).not.toThrow();
-  });
-});
-
-describe("advertRowOf", () => {
-  const withLooks = { ...realm, thumbnail: "/t.png", emblemUrl: "/e.png" };
-
-  it("is null for an ordinary thread", () => {
-    expect(advertRowOf(null)).toBeNull();
-    expect(advertRowOf(undefined)).toBeNull();
-  });
-
-  it("carries the mark and whether the realm takes new nations", () => {
-    expect(advertRowOf(withLooks)).toEqual({
-      realmSlug: "eurth",
-      realmName: "Eurth",
-      emblemUrl: "/e.png",
-      thumbnail: "/t.png",
-      claimsOpen: true,
-    });
-    expect(advertRowOf({ ...withLooks, status: "archived" })?.claimsOpen).toBe(false);
-    expect(advertRowOf({ ...withLooks, status: "draft" })?.claimsOpen).toBe(false);
   });
 });

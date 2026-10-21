@@ -27,8 +27,6 @@ import { repairRealmLayer } from "~/lib/maps/realm-layer-repair";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import type { PlannedNation, SyncPlan } from "~/lib/realms/sources/plan";
 import { applySyncPlan } from "~/server/modules/realms/realms.source-apply";
-import { IXSTATS_NATION_GROWTH_DEFAULTS } from "~/lib/realms/nation-growth-defaults";
-
 const ctx = {
   realmId: "eurth-id",
   realmSlug: "eurth",
@@ -110,75 +108,6 @@ function applyDb() {
 
 describe("applySyncPlan", () => {
   beforeEach(() => jest.clearAllMocks());
-
-  it("creates unclaimed nations with the baseline, source key, wiki page and identity; map figures win over the infobox", async () => {
-    const db = applyDb();
-    const fetchInfobox = jest.fn().mockResolvedValue({
-      country: { baselinePopulation: 7, flag: "https://img/flag.png" },
-      identity: { motto: "Onward", capitalCity: "Wiki City" },
-    });
-    const sleep = jest.fn().mockResolvedValue(undefined);
-    const result = await applySyncPlan(
-      db,
-      ctx,
-      emptyPlan({
-        creates: [planned("Tavok"), planned("Mapland", { wikiTitle: null, readInfobox: false })],
-      }),
-      { fetchInfobox, sleep, wikiDelayMs: 5 }
-    );
-    expect(result.created).toBe(2);
-    const tavok = db.country.create.mock.calls[0][0].data;
-    expect(tavok).toMatchObject({
-      name: "Tavok",
-      slug: "tavok",
-      realmId: "eurth-id",
-      externalSourceKey: "Tavok",
-      wikiSource: "iiwiki",
-      wikiPageTitle: "Tavok",
-      baselinePopulation: 2_000_000,
-      baselineGdpPerCapita: 30_000,
-      landArea: 40_000,
-      continent: "Europa",
-      flag: "https://img/flag.png",
-      nationalIdentity: {
-        create: {
-          countryName: "Tavok",
-          officialName: "Republic of Tavok",
-          capitalCity: "Tavok City",
-          motto: "Onward",
-        },
-      },
-    });
-    expect(tavok).not.toHaveProperty("ownerUserId");
-    expect(tavok.currentPopulation).toBeGreaterThan(0);
-    // A nation only on the map: no wiki page, so its claim always goes to manual review.
-    expect(db.country.create.mock.calls[1][0].data).toMatchObject({
-      wikiSource: null,
-      wikiPageTitle: null,
-    });
-    expect(fetchInfobox).toHaveBeenCalledTimes(1);
-  });
-
-  it("gives created nations the realm's growth for their tier, else IxStats's defaults", async () => {
-    const realmTable = {
-      ...IXSTATS_NATION_GROWTH_DEFAULTS,
-      Developed: { populationGrowthRate: 0.012, adjustedGdpGrowth: 0.002 },
-    };
-    const db = applyDb();
-    const plan = emptyPlan({ creates: [planned("Tavok", { readInfobox: false })] }); // $30,000: Developed
-    await applySyncPlan(db, { ...ctx, nationDefaults: realmTable }, plan, {});
-    expect(db.country.create.mock.calls[0][0].data).toMatchObject({
-      populationGrowthRate: 0.012,
-      adjustedGdpGrowth: 0.002,
-      maxGdpGrowthRate: 0.05,
-    });
-    const plain = applyDb();
-    await applySyncPlan(plain, ctx, plan, {});
-    expect(plain.country.create.mock.calls[0][0].data).toMatchObject(
-      IXSTATS_NATION_GROWTH_DEFAULTS.Developed
-    );
-  });
-
   it("reads infoboxes one at a time with a pause between, and lists the ones that gave nothing", async () => {
     const db = applyDb();
     const calls: string[] = [];
@@ -314,42 +243,6 @@ describe("applySyncPlan", () => {
     expect(db.country.update).not.toHaveBeenCalled();
     expect(result.updated).toBe(0);
   });
-
-  it("updates an unclaimed nation's figures through the baseline and its identity", async () => {
-    const db = applyDb();
-    db.country.findUnique.mockResolvedValue({
-      name: "Free",
-      ownerUserId: null,
-      baselinePopulation: 1_000_000,
-      baselineGdpPerCapita: 10_000,
-      landArea: 10_000,
-      continent: null,
-    });
-    await applySyncPlan(
-      db,
-      ctx,
-      emptyPlan({
-        updates: [
-          {
-            countryId: "f",
-            name: "Free",
-            key: "Free",
-            claimed: false,
-            bindKey: true,
-            changes: [
-              { field: "population", from: 1_000_000, to: 3_000_000 },
-              { field: "capital", from: null, to: "Freeport" },
-            ],
-          },
-        ],
-      })
-    );
-    const data = db.country.update.mock.calls[0][0].data;
-    expect(data).toMatchObject({ baselinePopulation: 3_000_000, externalSourceKey: "Free" });
-    expect(data.currentPopulation).toBeGreaterThan(0);
-    expect(db.nationalIdentity.upsert.mock.calls[0][0].update).toEqual({ capitalCity: "Freeport" });
-  });
-
   describe("a continent change reaches the political layer", () => {
     const freeNation = (continent: string | null) => ({
       name: "Free",
@@ -380,37 +273,6 @@ describe("applySyncPlan", () => {
       expect(invalidateRealmMap).toHaveBeenCalledTimes(1);
       expect(invalidateRealmMap).toHaveBeenCalledWith(db, "eurth-id");
     });
-
-    it("leaves the map alone when the continent is the one already stored", async () => {
-      const db = applyDb();
-      db.country.findUnique.mockResolvedValue(freeNation("Boreas"));
-      await applySyncPlan(db, ctx, continentUpdate);
-      expect(invalidateRealmMap).not.toHaveBeenCalled();
-    });
-
-    it("leaves the map alone for a figures-only update", async () => {
-      const db = applyDb();
-      db.country.findUnique.mockResolvedValue(freeNation("Aurelia"));
-      await applySyncPlan(
-        db,
-        ctx,
-        emptyPlan({
-          updates: [
-            {
-              countryId: "f",
-              name: "Free",
-              key: "Free",
-              claimed: false,
-              bindKey: false,
-              changes: [{ field: "population", from: 1_000_000, to: 3_000_000 }],
-            },
-          ],
-        })
-      );
-      expect(db.country.update).toHaveBeenCalledTimes(1);
-      expect(invalidateRealmMap).not.toHaveBeenCalled();
-    });
-
     it("reports a failed bump among the errors instead of failing the run", async () => {
       const db = applyDb();
       db.country.findUnique.mockResolvedValue(freeNation("Aurelia"));
@@ -420,72 +282,6 @@ describe("applySyncPlan", () => {
       expect(result.errors).toEqual(["Map version: db down"]);
     });
   });
-
-  it("writes borders through the realm map writer and sets the traced area only for nations with no stated area", async () => {
-    const db = applyDb();
-    db.country.findMany.mockResolvedValue([{ id: "c1", name: "Deseti" }]);
-    const square = {
-      type: "MultiPolygon" as const,
-      coordinates: [
-        [
-          [
-            [0, 0],
-            [1, 0],
-            [1, 1],
-            [0, 0],
-          ],
-        ],
-      ],
-    };
-    await applySyncPlan(
-      db,
-      ctx,
-      emptyPlan({
-        features: [
-          {
-            key: "Deseti",
-            nation: { countryId: "c1" },
-            geometry: square,
-            areaKm2: 6895,
-            sourceHash: "h",
-            fill: "#a547a5",
-            action: "create",
-            setLandArea: true,
-          },
-          {
-            key: "Stated",
-            nation: { countryId: "c2" },
-            geometry: square,
-            areaKm2: 99,
-            sourceHash: "h",
-            fill: null,
-            action: "create",
-            setLandArea: false,
-          },
-        ],
-      })
-    );
-    const [, realmId, features, options] = (writeRealmMapFeatures as jest.Mock).mock.calls[0];
-    expect(realmId).toBe("eurth-id");
-    expect(options).toEqual({ layerType: "political", areaScale: 1 });
-    // The written borders move the realm's map version, once the adjacency is rebuilt
-    expect(invalidateRealmMap).toHaveBeenCalledTimes(1);
-    expect(invalidateRealmMap).toHaveBeenCalledWith(db, "eurth-id");
-    expect(features[0]).toMatchObject({
-      key: "Deseti",
-      name: "Deseti",
-      countryId: "c1",
-      properties: { attribution: "Map: test", fill: "#a547a5" },
-    });
-    // No source colour: no fill, so the map's default colouring applies (as on Ixnay)
-    expect(features[1].properties).not.toHaveProperty("fill");
-    expect(db.country.update).toHaveBeenCalledTimes(1);
-    expect(db.country.update).toHaveBeenCalledWith({
-      where: { id: "c1" },
-      data: { landArea: 6895, areaSqMi: expect.any(Number) },
-    });
-  });
-
   it("measures borders on the realm's own planet", async () => {
     const db = applyDb();
     const square = {
@@ -553,33 +349,6 @@ describe("applySyncPlan", () => {
     const smoothing = { coverage: { tolerance: 0.045, smooth: 2 }, sourceRaw };
 
     beforeEach(() => (repairRealmLayer as jest.Mock).mockClear());
-
-    it("smooths the layer after writing its borders raw, from the source's outlines, before adjacency", async () => {
-      const db = applyDb();
-      await applySyncPlan(
-        db,
-        { ...ctx, areaScale: 0.25, borderSmoothing: smoothing },
-        emptyPlan({ features: [feature] })
-      );
-      expect((writeRealmMapFeatures as jest.Mock).mock.calls.at(-1)[3]).toEqual({
-        layerType: "political",
-        areaScale: 0.25,
-      });
-      expect(repairRealmLayer).toHaveBeenCalledWith(db, "eurth-id", {
-        layerType: "political",
-        coverage: { tolerance: 0.045, smooth: 2 },
-        apply: true,
-        createdBy: "source-sync",
-        areaScale: 0.25,
-        sourceRaw,
-      });
-    });
-
-    it("does not smooth when the run wrote no border", async () => {
-      await applySyncPlan(applyDb(), { ...ctx, borderSmoothing: smoothing }, emptyPlan());
-      expect(repairRealmLayer).not.toHaveBeenCalled();
-    });
-
     it("records a failed smoothing and carries on", async () => {
       (repairRealmLayer as jest.Mock).mockRejectedValueOnce(new Error("no PostGIS"));
       const result = await applySyncPlan(

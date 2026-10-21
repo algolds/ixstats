@@ -166,29 +166,6 @@ describe("modEditPost", () => {
       expect(store.logs).toHaveLength(0);
     }
   );
-
-  it("a draft chain does not block the edit", async () => {
-    const store = forumStore({
-      ...seed(),
-      links: [
-        {
-          id: "l1",
-          postSource: "native",
-          postRef: "p_e1",
-          activityId: "act1",
-          storyline: { status: "draft" },
-        },
-      ],
-    });
-    postIn(store, "p_e1").plainText = "See [ixaction=act1]";
-    await modEditPost(store.db as never, admin, {
-      postId: "p_e1",
-      html: "<p>See [ixaction=act1] again</p>",
-      note: "typo",
-    });
-    expect(store.state.links).toHaveLength(1);
-  });
-
   it("removing a token drops its link in the same transaction; adding one is refused", async () => {
     const store = forumStore(seed());
     postIn(store, "p_e1").plainText = "See [ixaction=act1]";

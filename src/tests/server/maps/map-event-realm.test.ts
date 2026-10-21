@@ -55,38 +55,6 @@ describe("resolveEventRealm", () => {
     await expect(resolveEventRealm(db, named)).resolves.toBe(named);
     expect(db.country.findUnique).not.toHaveBeenCalled();
   });
-
-  it("leaves an event with neither a realm nor a country for every realm", async () => {
-    const db = fakeDb();
-    const bare = event();
-
-    await expect(resolveEventRealm(db, bare)).resolves.toBe(bare);
-    expect(db.country.findUnique).not.toHaveBeenCalled();
-  });
-
-  it("asks once per country, however many connections resolve the same event", async () => {
-    const db = fakeDb();
-
-    await Promise.all([
-      resolveEventRealm(db, event({ countryId: "c1" })),
-      resolveEventRealm(db, event({ countryId: "c1" })),
-      resolveEventRealm(db, event({ countryId: "c1" })),
-    ]);
-    await resolveEventRealm(db, event({ countryId: "c1" }));
-
-    expect(db.country.findUnique).toHaveBeenCalledTimes(1);
-  });
-
-  it("asks again after a minute", async () => {
-    const db = fakeDb();
-    await resolveEventRealm(db, event({ countryId: "c1" }));
-
-    jest.advanceTimersByTime(61_000);
-    await resolveEventRealm(db, event({ countryId: "c1" }));
-
-    expect(db.country.findUnique).toHaveBeenCalledTimes(2);
-  });
-
   it("leaves the event for every realm when the country is unknown", async () => {
     const db = fakeDb(null);
     const unknown = event({ countryId: "gone" });

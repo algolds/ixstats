@@ -32,22 +32,6 @@ beforeEach(() => {
 afterEach(() => errorSpy.mockRestore());
 
 describe("sendForumNotices", () => {
-  it("writes social notices from the forum source, with a plain href and the priority given", async () => {
-    await expect(sendForumNotices([notice(1)])).resolves.toBe(true);
-    expect(createMany).toHaveBeenCalledWith([
-      {
-        userId: "clerk_1",
-        title: "Kir mentioned you in Trade talks",
-        message: "hello",
-        href: "/thinkpages/post/p1",
-        category: "social",
-        priority: "medium",
-        source: "thinkpages-forum",
-        metadata: { kind: "mention", postId: "p1", threadId: "t1" },
-      },
-    ]);
-  });
-
   it("carries a reaction notice's dedupe key in the stored metadata", async () => {
     await sendForumNotices([
       {

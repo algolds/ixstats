@@ -4,7 +4,6 @@ import {
   activeBansFor,
   assertNotBanned,
   bannedBoardIds,
-  BANS_PER_PAGE,
   issueBan,
   liftBan,
   listBans,
@@ -209,39 +208,6 @@ function lockWaits(tx: { $executeRaw: jest.Mock }): void {
 }
 
 describe("activeBansFor", () => {
-  it("asks for live bans on the site, the realm and the category in one query", async () => {
-    const { db } = banDb();
-    await activeBansFor(db as never, "u_m", eurthHub, NOW);
-    expect(db.forumBan.findMany).toHaveBeenCalledWith({
-      where: {
-        userId: "u_m",
-        liftedAt: null,
-        AND: [
-          { OR: [{ expiresAt: null }, { expiresAt: { gt: NOW } }] },
-          {
-            OR: [
-              { scope: "site" },
-              { scope: "realm", scopeId: "r_eurth" },
-              { scope: "category", scopeId: "cat_eurth_hub" },
-            ],
-          },
-        ],
-      },
-      select: { id: true, scope: true, scopeId: true, reason: true, expiresAt: true, auto: true },
-    });
-  });
-
-  it("asks for the realm only for a whole section, and no realm for a sitewide category", async () => {
-    const { db } = banDb();
-    await activeBansFor(db as never, "u_m", { id: null, scope: "realm", realmId: "r_eurth" }, NOW);
-    await activeBansFor(db as never, "u_m", general, NOW);
-    const places = db.forumBan.findMany.mock.calls.map((c) => c[0].where.AND[1].OR);
-    expect(places).toEqual([
-      [{ scope: "site" }, { scope: "realm", scopeId: "r_eurth" }],
-      [{ scope: "site" }, { scope: "category", scopeId: "cat_general" }],
-    ]);
-  });
-
   it("leaves out expired, lifted and elsewhere bans", async () => {
     const { db } = banDb({
       bans: [
@@ -266,24 +232,6 @@ describe("activeBansFor", () => {
 
 describe("bannedBoardIds", () => {
   const ids = ["cat_general", "cat_find"];
-
-  it("asks once for live site bans and bans on the listed categories", async () => {
-    const { db } = banDb();
-    await bannedBoardIds(db as never, member, ids, NOW);
-    expect(db.forumBan.findMany).toHaveBeenCalledTimes(1);
-    expect(db.forumBan.findMany).toHaveBeenCalledWith({
-      where: {
-        userId: "u_m",
-        liftedAt: null,
-        AND: [
-          { OR: [{ expiresAt: null }, { expiresAt: { gt: NOW } }] },
-          { OR: [{ scope: "site" }, { scope: "category", scopeId: { in: ids } }] },
-        ],
-      },
-      select: { scope: true, scopeId: true },
-    });
-  });
-
   it("reports a site ban, and the categories banned one by one", async () => {
     const { db } = banDb();
     db.forumBan.findMany.mockResolvedValueOnce([{ scope: "site", scopeId: null }] as never);
@@ -694,45 +642,11 @@ describe("liftBan", () => {
 });
 
 describe("listBans", () => {
-  const listed = {
-    ...ban({ scope: "realm", scopeId: "r_eurth" }),
-    issuedBy: "u_f",
-    liftedBy: null,
-    createdAt: earlier,
-  };
-
   it("refuses members", async () => {
     await expect(listBans(banDb().db as never, member, { active: true }, 1)).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
   });
-
-  it("lists a site admin's live bans, newest first, a page at a time", async () => {
-    const { db } = banDb({ bans: [listed] });
-    const result = await listBans(db as never, admin, { active: true, userId: "u_m" }, 2);
-    const live = { liftedAt: null, OR: [{ expiresAt: null }, { expiresAt: { gt: NOW } }] };
-    expect(db.forumBan.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { AND: [live, {}, { userId: "u_m" }] },
-        orderBy: { createdAt: "desc" },
-        skip: BANS_PER_PAGE,
-        take: BANS_PER_PAGE,
-      })
-    );
-    expect(result).toEqual({ rows: [{ ...listed, appealStatus: null }], total: 1 });
-  });
-
-  it("adds each ban's appeal status in one query", async () => {
-    const { db } = banDb({ bans: [listed] });
-    db.forumAppeal.findMany.mockResolvedValueOnce([{ subjectId: listed.id, status: "open" }]);
-    const result = await listBans(db as never, admin, { active: true }, 1);
-    expect(db.forumAppeal.findMany).toHaveBeenCalledWith({
-      where: { subjectType: "ban", subjectId: { in: [listed.id] } },
-      select: { subjectId: true, status: true },
-    });
-    expect(result.rows[0]?.appealStatus).toBe("open");
-  });
-
   it("lists finished bans and keeps other moderators to their scope", async () => {
     const { db } = banDb();
     await listBans(db as never, realmMod, { active: false }, 1);

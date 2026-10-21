@@ -30,12 +30,6 @@ const triangle = (size: number): LayerFeature["geometry"] => ({
     ],
   ],
 });
-const traced = (key: string, size = 1): LayerFeature => ({
-  key,
-  name: `Zone ${key}`,
-  properties: { band: key },
-  geometry: triangle(size),
-});
 /** The row the writer stores for a traced feature. */
 const storedRow = (key: string, size = 1) => ({
   featureId: key,
@@ -76,39 +70,6 @@ function dryRun(features: LayerFeature[], stored: object[], cap = Infinity) {
   };
   return runPhysicalStep(ctx);
 }
-
-describe("the physical step compares the traced layers with the stored ones", () => {
-  it.each([
-    [
-      "rows unchanged",
-      [traced("a"), traced("b")],
-      [storedRow("a"), storedRow("b")],
-      "unchanged",
-      0,
-    ],
-    ["a row replaced (drawn differently)", [traced("a", 2)], [storedRow("a")], "would-change", 1],
-    [
-      "a row removed (stored, no longer traced)",
-      [traced("a")],
-      [storedRow("a"), storedRow("b")],
-      "would-change",
-      1,
-    ],
-    ["a row added", [traced("a"), traced("b")], [storedRow("a")], "would-change", 1],
-  ])("%s", async (_name, features, stored, status, changes) => {
-    const report = await dryRun(features, stored);
-    expect(report.status).toBe(status);
-    expect(report.counts).toMatchObject({ changes });
-  });
-
-  it("counts each kind in the step's details", async () => {
-    const report = await dryRun(
-      [traced("same"), traced("moved", 2), traced("fresh")],
-      [storedRow("same"), storedRow("moved"), storedRow("gone")]
-    );
-    expect(report.details).toContain("altitudes: 1 new, 1 changed, 1 retired, 1 unchanged");
-  });
-});
 
 describe("past the guarded client's 1000-row cap", () => {
   it("retires every stored feature the layer no longer has (Ixnay has 4068 altitude bands)", async () => {

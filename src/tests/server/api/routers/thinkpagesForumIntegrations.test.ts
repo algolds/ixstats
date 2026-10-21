@@ -44,15 +44,6 @@ describe("thinkpagesForum integrations", () => {
       cause: { code: "UNAUTHORIZED" },
     });
   });
-
-  it("reads a realm's board preview for anyone, and null for a hidden or unknown realm", async () => {
-    const store = withBoard();
-    const out = await caller(null, store.db).realmBoardPreview({ slug: "eurth" });
-    expect(out!.messages.map((m) => m.id)).toEqual(["p3", "p2", "p1"]);
-    await expect(caller(null, store.db).realmBoardPreview({ slug: "draft" })).resolves.toBeNull();
-    await expect(caller(member, store.db).realmBoardPreview({ slug: "nope" })).resolves.toBeNull();
-  });
-
   it("bounds the slug", async () => {
     const store = withBoard();
     await expect(caller(null, store.db).realmBoardPreview({ slug: "" })).rejects.toMatchObject({

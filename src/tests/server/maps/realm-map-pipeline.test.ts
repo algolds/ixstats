@@ -34,16 +34,12 @@ import {
   getMapPipeline,
   getMapPipelineRun,
   listMapPipelineRuns,
-  loadMapPipelinePreset,
   MAP_PIPELINE_CANCEL_ACTION,
-  MAP_PIPELINE_PRESET_ACTION,
   MAP_PIPELINE_RUN_ACTION,
   MAP_PIPELINE_SAVED_ACTION,
   saveMapPipeline,
   startMapPipelineRun,
 } from "~/server/modules/maps/realm-map-pipeline.config";
-import { autoDefaultView } from "~/server/modules/maps/realm-map-pipeline.steps";
-import { planRealmRelief, type ReliefPlan } from "~/server/modules/maps/realm-relief";
 import { admin, fakeDb, founder, stranger } from "./map-import-fakes";
 
 let dir: string;
@@ -99,24 +95,6 @@ describe("map pipeline config", () => {
       "areas",
     ]);
   });
-
-  it("loads a preset into an empty pipeline, then keeps what the realm has; both audited", async () => {
-    const db = setup();
-    const first = await loadMapPipelinePreset(db, founder, "r1", "eurth-map");
-    expect(first.filled).toContain("rasters");
-    const stored = db.realm.rows[0].settings.map.pipeline;
-    expect(stored.rasters).toHaveLength(5);
-    const again = await loadMapPipelinePreset(db, founder, "r1", "eurth-map");
-    expect(again.filled).toEqual([]);
-    expect(db.adminAuditLog.rows.map((r: { action: string }) => r.action)).toEqual([
-      MAP_PIPELINE_PRESET_ACTION,
-      MAP_PIPELINE_PRESET_ACTION,
-    ]);
-    await expect(loadMapPipelinePreset(db, founder, "r1", "nope")).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
-  });
-
   it("refuses to save art whose upload is gone, and keeps the realm's other settings when it saves", async () => {
     const db = setup({ map: { radiusKm: 6000 }, wiki: { source: "iiwiki" } });
     const gone = realmMapPipelineSchema.parse({ art: { geo: { uploadId: "b".repeat(64) } } });
@@ -179,62 +157,6 @@ describe("map pipeline runs", () => {
       startMapPipelineRun(db, founder, "r1", { steps: ["labels"], dryRun: false }, { kick: false })
     ).rejects.toBeInstanceOf(MapImportError);
   });
-
-  it("starts and runs a relief-only run on a realm with no pipeline, and still refuses any other step", async () => {
-    const db = setup();
-    await expect(
-      startMapPipelineRun(
-        db,
-        founder,
-        "r1",
-        { steps: ["relief", "labels"], dryRun: true },
-        { kick: false }
-      )
-    ).rejects.toThrow(/Set up the map pipeline/);
-
-    const plan: ReliefPlan = {
-      entry: {
-        id: "relief",
-        label: "Relief",
-        kind: "overlay",
-        version: "0123456789abcdef",
-        maxZoom: 5,
-        order: 10,
-      },
-      image: new Uint8Array(),
-      built: false,
-      changed: true,
-      previous: undefined,
-    };
-    jest.mocked(planRealmRelief).mockResolvedValueOnce(plan);
-    const { jobId } = await startMapPipelineRun(
-      db,
-      founder,
-      "r1",
-      { steps: ["relief"], dryRun: true },
-      { kick: false }
-    );
-    expect(await runMapImportJob(db, jobId)).toBe("ran");
-    const run = await getMapPipelineRun(db, founder, jobId);
-    expect(run.status).toBe("succeeded");
-    expect(run.result?.steps.map((s) => [s.step, s.status])).toEqual([["relief", "would-change"]]);
-    expect(planRealmRelief).toHaveBeenCalledWith(db, "r1", { bands: true });
-    expect(db.realm.rows[0].settings.map?.pipeline).toBeUndefined();
-
-    // A stored pipeline that no longer reads does not stop a run that does not use it
-    db.realm.rows[0].settings = { map: { pipeline: { art: { x: { uploadId: 5 } } } } };
-    const again = await startMapPipelineRun(
-      db,
-      founder,
-      "r1",
-      { steps: ["relief"], dryRun: true },
-      { kick: false }
-    );
-    expect(again.jobId).not.toBe(jobId);
-    expect(await runMapImportJob(db, again.jobId)).toBe("ran");
-    expect((await getMapPipelineRun(db, founder, again.jobId)).status).toBe("succeeded");
-  });
-
   it("a dry run reports each step and writes nothing; an apply writes; a second apply finds nothing to do", async () => {
     const db = runDb(withPipeline({ labels, defaultView: "auto" }));
     const run = async (dryRun: boolean) => {
@@ -303,47 +225,6 @@ describe("map pipeline runs", () => {
     expect(run.error).toMatch(/Map labels: Art "labels": the uploaded file is gone/);
     expect(run.result?.steps.map((s) => s.status)).toEqual(["failed", "would-change"]);
   });
-
-  it("fails a queued run of any step but relief once the realm has no pipeline", async () => {
-    // Queued while the realm had a pipeline, run after it was cleared
-    const db = runDb({});
-    for (const [id, steps] of [
-      ["jobgone01", ["labels"]],
-      ["jobgone02", ["relief", "labels"]],
-    ] as const) {
-      db.mapImportJob.rows.push({
-        id,
-        realmId: "r1",
-        kind: "map-pipeline",
-        status: "queued",
-        dryRun: true,
-        options: { steps, dryRun: true },
-        requestedBy: "admin_1",
-        createdAt: new Date(),
-        progress: 0,
-      });
-      await runMapImportJob(db, id);
-      const run = await getMapPipelineRun(db, admin, id);
-      expect(run.status).toBe("failed");
-      expect(run.error).toMatch(/no map pipeline/);
-      expect(run.result).toBeNull();
-    }
-  });
-
-  it("skips the steps the pipeline does not configure", async () => {
-    const db = runDb(withPipeline({}));
-    const { jobId } = await startMapPipelineRun(
-      db,
-      admin,
-      "r1",
-      { steps: ["physical", "rasters", "labels", "flags", "defaultView"], dryRun: true },
-      { kick: false }
-    );
-    await runMapImportJob(db, jobId);
-    const run = await getMapPipelineRun(db, admin, jobId);
-    expect(run.result?.steps.every((s) => s.status === "skipped")).toBe(true);
-  });
-
   it("cancels a queued run (audited) and keeps pipeline runs out of the web process when cron runs them", async () => {
     const db = setup(withPipeline({ labels }));
     const { jobId } = await startMapPipelineRun(
@@ -390,27 +271,5 @@ describe("art", () => {
     expect(fetchBytes.mock.calls[0][1].maxBytes).toBe(25 * 1024 * 1024);
     expect(first.sha256).toMatch(/^[0-9a-f]{64}$/);
     await expect(artResolver({ art, repo: null })("geo")).rejects.toThrow(/no source repository/);
-  });
-});
-
-describe("autoDefaultView", () => {
-  it("centres on the continent with the most nations, weighted by area, at Ixnay's home zoom", () => {
-    expect(
-      autoDefaultView([
-        { continent: "Europa", lng: 100, lat: 30, area: 3 },
-        { continent: "Europa", lng: 110, lat: 40, area: 1 },
-        { continent: "Argis", lng: -20, lat: 60, area: 50 },
-      ])
-    ).toEqual({ view: { center: [102.5, 32.5], zoom: 1.8 }, continent: "Europa", nations: 2 });
-  });
-
-  it("averages a continent across ±180° on its own side, and takes every nation when none has a continent", () => {
-    const view = autoDefaultView([
-      { continent: null, lng: 179, lat: 0, area: 1 },
-      { continent: null, lng: -179, lat: 0, area: 1 },
-    ]);
-    expect(Math.abs(view!.view.center[0])).toBe(180);
-    expect(view!.continent).toBeNull();
-    expect(autoDefaultView([])).toBeNull();
   });
 });

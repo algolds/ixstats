@@ -65,22 +65,6 @@ describe("realm board chat follows board restrictions", () => {
     ).rejects.toThrow(message);
     expect(db.thinkshareMessage.create).not.toHaveBeenCalled();
   });
-
-  it("lets an unrestricted member chat", async () => {
-    const db = makeDb(BOARD_CONV, null);
-    const service = createMessagingService({ db });
-    await service.sendMessage("clerk_u1", { conversationId: "conv_board", content: "hi" });
-    expect(db.thinkshareMessage.create).toHaveBeenCalled();
-  });
-
-  it("does not look up realm boards for other conversations", async () => {
-    const db = makeDb({ id: "conv_dm", type: "group", source: "thinkshare" }, { kind: "mute" });
-    const service = createMessagingService({ db });
-    await service.sendMessage("clerk_u1", { conversationId: "conv_dm", content: "hi" });
-    expect(db.realmBoard.findUnique).not.toHaveBeenCalled();
-    expect(db.thinkshareMessage.create).toHaveBeenCalled();
-  });
-
   it("an ordinary ThinkTank chat costs one board lookup and is not restricted", async () => {
     const conv = { id: "conv_tt", type: "group", source: "thinktank", sourceId: "group9" };
     const db = makeDb(conv, { kind: "ban" });

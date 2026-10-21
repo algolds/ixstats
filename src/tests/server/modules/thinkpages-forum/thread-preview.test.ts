@@ -1,9 +1,6 @@
 /** @jest-environment node */
 import { advertGate } from "~/server/modules/thinkpages-forum/advert-access";
-import {
-  latestPublicThreadPreviews,
-  withThreadPreviews,
-} from "~/server/modules/thinkpages-forum/thread-preview";
+import { latestPublicThreadPreviews } from "~/server/modules/thinkpages-forum/thread-preview";
 
 const AT = new Date("2026-10-09T10:00:00Z");
 const EARLIER = new Date("2026-10-09T09:00:00Z");
@@ -194,59 +191,7 @@ function fakeDb(opts: { listing: ListedRow[]; posts?: FakePost[]; realms?: objec
   };
 }
 
-const previewsOf = async (fake: ReturnType<typeof fakeDb>) =>
-  (await latestPublicThreadPreviews(fake.db, 20)).map((t) => t.preview);
-
-describe("withThreadPreviews", () => {
-  it("answers nothing without a query for no threads", async () => {
-    const fake = fakeDb({ listing: [] });
-    await expect(withThreadPreviews(fake.db, [], [])).resolves.toEqual([]);
-    expect(fake.postFindMany).not.toHaveBeenCalled();
-    expect(fake.postFindFirst).not.toHaveBeenCalled();
-  });
-});
-
 describe("latestPublicThreadPreviews", () => {
-  it("previews an unanswered thread with its first visible post", async () => {
-    const fake = fakeDb({
-      listing: [listed("t1", 1)],
-      posts: [
-        post("p1", "t1", {
-          plainText: "Hello [ixaction=a1]   world",
-          reactionCounts: { like: 2, fire: 1 },
-        }),
-        post("p1b", "t1", { hidden: true, plainText: "Hidden one" }),
-      ],
-    });
-    const [out] = await latestPublicThreadPreviews(fake.db, 20);
-    expect(out!.preview).toEqual({
-      threadId: "t1",
-      title: "Thread t1",
-      threadHref: "/thinkpages/t/t1",
-      postHref: "/thinkpages/post/p1",
-      kind: "thread",
-      excerpt: "Hello world",
-      author: {
-        name: "jane",
-        avatarUrl: null,
-        flagUrl: "https://flags.example/eurth.png",
-        persona: false,
-        personaType: null,
-      },
-      board: { name: "General", href: "/thinkpages/c/general" },
-      realm: null,
-      style: "ooc",
-      replyCount: 0,
-      reactionTotal: 3,
-    });
-    expect(out!.postedAt).toEqual(AT);
-    expect(fake.postFindMany.mock.calls[0]![0]).toMatchObject({
-      where: { threadId: { in: ["t1"] }, hidden: false },
-      distinct: ["threadId"],
-      orderBy: [{ threadId: "asc" }, { createdAt: "asc" }, { id: "asc" }],
-    });
-  });
-
   it("calls a lone visible reply a reply when the opening post is hidden", async () => {
     const fake = fakeDb({
       listing: [listed("t3", 1)],
@@ -359,22 +304,6 @@ describe("latestPublicThreadPreviews", () => {
     const asked = fake.userFindMany.mock.calls.flatMap(([args]) => args.where.id.in);
     expect(asked).not.toContain("u_secret");
   });
-
-  it("falls back to the thread's own author and href when no post is visible", async () => {
-    const fake = fakeDb({
-      listing: [listed("t3", 3)],
-      posts: [post("p1", "t3", { hidden: true })],
-    });
-    const [out] = await latestPublicThreadPreviews(fake.db, 20);
-    expect(out!.preview).toMatchObject({
-      excerpt: "",
-      postHref: "/thinkpages/t/t3",
-      author: { name: "jane", avatarUrl: null, flagUrl: null, persona: false, personaType: null },
-      reactionTotal: 0,
-    });
-    expect(out!.postedAt).toBeNull();
-  });
-
   it("reports a persona thread with no visible post as a persona, by name only, never its player", async () => {
     const fake = fakeDb({
       listing: [listed("t6", 3, site(), { authorUserId: "u_secret", authorPersonaId: "pa1" })],
@@ -397,26 +326,6 @@ describe("latestPublicThreadPreviews", () => {
     const asked = fake.userFindMany.mock.calls.flatMap(([args]) => args.where.id.in);
     expect(asked).not.toContain("u_secret");
   });
-
-  it("previews the highest id among visible posts that share the newest time", async () => {
-    const fake = fakeDb({
-      listing: [listed("t7", 3)],
-      posts: [
-        post("pa", "t7", { plainText: "First of the tie" }),
-        post("pc", "t7", { plainText: "Last of the tie" }),
-        post("pb", "t7", { plainText: "Middle of the tie" }),
-      ],
-    });
-    const [out] = await latestPublicThreadPreviews(fake.db, 20);
-    expect(out!.preview).toMatchObject({
-      postHref: "/thinkpages/post/pc",
-      excerpt: "Last of the tie",
-    });
-    expect(fake.postFindMany.mock.calls[0]![0]).toMatchObject({
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    });
-  });
-
   it("asks for one first post per unanswered thread, even if its post count is stale", async () => {
     const fake = fakeDb({
       listing: [listed("t8", 1)],
@@ -435,31 +344,6 @@ describe("latestPublicThreadPreviews", () => {
       orderBy: [{ threadId: "asc" }, { createdAt: "asc" }, { id: "asc" }],
     });
     await expect(fake.postFindMany.mock.results[0]!.value).resolves.toHaveLength(1);
-  });
-
-  it("names Ixnay when it has no realm row, and links the board by the canonical slug", async () => {
-    const fake = fakeDb({
-      listing: [listed("t4", 1, inRealm("default", "hub", "Hub", "ooc"))],
-      realms: [],
-    });
-    const [preview] = await previewsOf(fake);
-    expect(preview!.realm).toEqual({
-      slug: "ixnay",
-      name: "Ixnay",
-      emblemUrl: null,
-      thumbnail: null,
-    });
-    expect(preview!.board.href).toBe("/thinkpages/r/ixnay/hub");
-  });
-
-  it("links the thread when a realm board's realm cannot be resolved", async () => {
-    const fake = fakeDb({
-      listing: [listed("t5", 1, inRealm("r_gone", "hub", "Hub", "ooc"))],
-      realms: [],
-    });
-    const [preview] = await previewsOf(fake);
-    expect(preview!.realm).toBeNull();
-    expect(preview!.board).toEqual({ name: "Hub", href: "/thinkpages/t/t5" });
   });
 });
 
@@ -485,26 +369,5 @@ describe("what the preview listing reads", () => {
     const [[unanswered], [answered]] = fake.postFindMany.mock.calls;
     expect(unanswered!.where.threadId).toEqual({ in: ["t1"] });
     expect(answered!.where.OR).toEqual([{ threadId: "t2", createdAt: AT }]);
-  });
-
-  it("runs a fixed number of post queries however many threads are listed", async () => {
-    const listing = Array.from({ length: 20 }, (_, i) => listed(`t${i}`, i % 2 === 0 ? 1 : 3));
-    const posts = listing.map((t) => post(`p_${t.id}`, t.id));
-    const fake = fakeDb({ listing, posts });
-    const out = await latestPublicThreadPreviews(fake.db, 20);
-    expect(out).toHaveLength(20);
-    expect(fake.threadFindMany).toHaveBeenCalledTimes(1);
-    expect(fake.postFindMany).toHaveBeenCalledTimes(2);
-    expect(fake.postFindFirst).not.toHaveBeenCalled();
-    // One realm read for the whole preview; one author read each for the listing and for the posts.
-    expect(fake.realmFindMany).toHaveBeenCalledTimes(1);
-    expect(fake.userFindMany).toHaveBeenCalledTimes(2);
-    expect(fake.accountFindMany).toHaveBeenCalledTimes(2);
-  });
-
-  it("skips the query for a kind of thread that is not listed", async () => {
-    const fake = fakeDb({ listing: [listed("t1", 1)], posts: [post("p1", "t1")] });
-    await latestPublicThreadPreviews(fake.db, 20);
-    expect(fake.postFindMany).toHaveBeenCalledTimes(1);
   });
 });

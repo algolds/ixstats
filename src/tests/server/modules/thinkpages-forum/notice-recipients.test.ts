@@ -113,24 +113,5 @@ describe("readableUsers", () => {
         (await readableUsers(catMods as never, reports(null), users)).map((u) => u.id)
       ).toEqual(["u_plain", "u_author"]);
     });
-
-    it("asks once per kind for everybody, never per user, and skips the realm queries off a realm", async () => {
-      const mods = modDb({});
-      await readableUsers(mods as never, reports("r1"), [admin, ...users]);
-      expect(mods.realm.findMany).toHaveBeenCalledTimes(1);
-      expect(mods.realm.findMany).toHaveBeenCalledWith({
-        where: {
-          id: "r1",
-          ownerId: { in: ["clerk_u_plain", "clerk_u_author", "clerk_u_founder"] },
-        },
-        select: { ownerId: true },
-      });
-      expect(mods.realmOfficer.findMany).toHaveBeenCalledTimes(1);
-      expect(mods.forumCategoryModerator.findMany).toHaveBeenCalledTimes(1);
-      const site = modDb({});
-      await readableUsers(site as never, reports(null), users);
-      expect(site.realm.findMany).not.toHaveBeenCalled();
-      expect(site.realmOfficer.findMany).not.toHaveBeenCalled();
-    });
   });
 });

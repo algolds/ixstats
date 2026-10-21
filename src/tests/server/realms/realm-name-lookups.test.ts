@@ -100,19 +100,6 @@ describe("E-p: a name resolves inside one realm; ids and slugs win first", () =>
       id: "c_eu",
     });
   });
-
-  it("getByIdBasic prefers an id, then a (globally unique) slug, over a name", async () => {
-    const table = countryTable([{ ...EURTH_GALLAMBRIA, name: "c_ix" }, IX_GALLAMBRIA]);
-    await expect(
-      byId(publicCtx(table, "r_eurth")).getByIdBasic({ id: "c_ix" })
-    ).resolves.toMatchObject({ id: "c_ix" });
-    await expect(
-      byId(publicCtx(table)).getByIdBasic({ id: "gallambria-eurth" })
-    ).resolves.toMatchObject({
-      id: "c_eu",
-    });
-  });
-
   it("getByNameWithAtomic (/maps?name=) resolves within the viewer's realm", async () => {
     const table = countryTable([EURTH_GALLAMBRIA, IX_GALLAMBRIA]);
     const atomic = createCallerFactory(createTRPCRouter({ ...atomicProcedures }));

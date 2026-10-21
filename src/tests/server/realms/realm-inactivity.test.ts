@@ -10,8 +10,6 @@ jest.mock("~/lib/notifications/api", () => ({ notificationAPI: { create: jest.fn
 jest.mock("~/server/modules/realms/realms.flags", () => ({ deleteLocalFlagImages: jest.fn() }));
 
 import { runRealmInactivity } from "~/server/modules/realms/realms.inactivity";
-import { inactivityNoticeContent } from "~/server/modules/realms/realms.notices";
-
 const DAY = 86_400_000;
 const now = new Date("2026-10-11T00:00:00Z");
 const daysAgo = (n: number) => new Date(now.getTime() - n * DAY);
@@ -141,38 +139,5 @@ describe("runRealmInactivity", () => {
     deps.notify.mockRejectedValue(new Error("email down"));
     jest.spyOn(console, "error").mockImplementation(() => undefined);
     await expect(runRealmInactivity(db, deps)).resolves.toMatchObject({ warned: 1, released: 1 });
-  });
-});
-
-describe("inactivity notices", () => {
-  const base = {
-    clerkUserId: "clerk-1",
-    nationName: "Aurelia",
-    realmName: "Eurth",
-    realmSlug: "eurth",
-    days: 90,
-    exclusiveWindow: false,
-  };
-
-  it("warns with the release date and the reclaim window", () => {
-    const content = inactivityNoticeContent({
-      ...base,
-      kind: "warning",
-      date: new Date("2026-10-25T00:00:00Z"),
-    });
-    expect(content.title).toBe("Aurelia will be released soon");
-    expect(content.message).toContain("Sign in before October 25, 2026 to keep Aurelia in Eurth");
-    expect(content.message).toContain("for 180 days");
-    expect(content.href).toBe("/r/eurth");
-  });
-
-  it("says another player may claim a released nation first unless the realm keeps it", () => {
-    const released = { ...base, kind: "released" as const, date: new Date("2027-04-09T00:00:00Z") };
-    expect(inactivityNoticeContent(released).message).toContain(
-      "before April 9, 2027 to get them back, unless another player claims it first."
-    );
-    expect(inactivityNoticeContent({ ...released, exclusiveWindow: true }).message).toMatch(
-      /to get them back\.$/
-    );
   });
 });

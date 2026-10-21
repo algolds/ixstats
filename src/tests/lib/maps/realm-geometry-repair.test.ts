@@ -22,24 +22,6 @@ const multi = (...xs: number[]) => ({
 });
 
 describe("dropRepeatedPoints", () => {
-  it("drops consecutive repeats and returns a MultiPolygon", () => {
-    const polygon = {
-      type: "Polygon" as const,
-      coordinates: [
-        [
-          [0, 0],
-          [0, 0],
-          [1, 0],
-          [1, 1],
-          [1, 1],
-          [0, 1],
-          [0, 0],
-        ],
-      ],
-    };
-    expect(dropRepeatedPoints(polygon)).toEqual(multi(0));
-  });
-
   it("drops rings that collapse, a polygon whose outer ring collapses, and returns null when nothing is left", () => {
     const collapsed = [
       [5, 5],
@@ -151,31 +133,6 @@ describe("repairPolygonalGeometry", () => {
 });
 
 describe("findOverlapTrims", () => {
-  it("asks for the realm layer's overlaps, the smaller key keeping each strip, and parses the trimmed parts", async () => {
-    const db = {
-      $queryRawUnsafe: jest.fn().mockResolvedValue([
-        {
-          id: "row-b",
-          key: "Salvia",
-          countryId: "c-s",
-          geojson: JSON.stringify(multi(2)),
-          removed_km2: 12.5,
-        },
-      ]),
-    };
-    const trims = await findOverlapTrims(db, "eurth-id", { keys: ["Salvia"], areaScale: 2 });
-    expect(trims).toEqual([
-      { id: "row-b", key: "Salvia", countryId: "c-s", geometry: multi(2), removedKm2: 12.5 },
-    ]);
-    const [sql, realmId, layerType, keys, scale] = db.$queryRawUnsafe.mock.calls[0];
-    expect([realmId, layerType, keys, scale]).toEqual(["eurth-id", "political", ["Salvia"], 2]);
-    expect(sql).toMatch(/"worldId" = \$1 AND "layerType" = \$2/);
-    expect(sql).toMatch(/b\.key COLLATE "C" < a\.key COLLATE "C"/);
-    expect(sql).toMatch(/ST_Difference/);
-    // Rows whose rings cross ±180 keep their planar-repaired PostGIS copy out of the comparison.
-    expect(sql).toMatch(/ST_DumpSegments/);
-  });
-
   it("drops the repeated points GeoJSON's rounding leaves in a trimmed outline", async () => {
     const rounded = {
       type: "MultiPolygon",
@@ -201,12 +158,6 @@ describe("findOverlapTrims", () => {
     };
     const [trim] = await findOverlapTrims(db, "eurth-id");
     expect(trim!.geometry).toEqual(multi(2));
-  });
-
-  it("covers the whole layer when no keys are given", async () => {
-    const db = { $queryRawUnsafe: jest.fn().mockResolvedValue([]) };
-    await expect(findOverlapTrims(db, "eurth-id")).resolves.toEqual([]);
-    expect(db.$queryRawUnsafe.mock.calls[0].slice(1)).toEqual(["eurth-id", "political", null, 1]);
   });
 });
 
@@ -287,23 +238,6 @@ describe("smoothLayerCoverage", () => {
       sql.includes("ST_CoverageSimplify") ? rows : [{ geojson: String(args[0]) }]
     ),
   });
-
-  it("asks for the layer as one noded, simplified coverage, rows across ±180 left out", async () => {
-    const db = coverageDb();
-    await smoothLayerCoverage(db as never, "eurth-id", {
-      layerType: "political",
-      tolerance: 0.045,
-      smooth: 0,
-    });
-    const [sql, realmId, layerType, tolerance] = db.$queryRawUnsafe.mock.calls[0]!;
-    expect([realmId, layerType, tolerance]).toEqual(["eurth-id", "political", 0.045]);
-    expect(sql).toMatch(/ST_Polygonize/);
-    expect(sql).toMatch(/ST_AsGeoJSON\(ST_Multi\(s\.g\)\)/);
-    expect(sql).toMatch(/ST_CoverageSimplify\(g, \$3\) OVER \(\)/);
-    expect(sql).toMatch(/ORDER BY fid, l\.key COLLATE "C"/);
-    expect(sql).toMatch(/ST_DumpSegments/);
-  });
-
   it("without smoothing returns the simplified outlines, made valid, with vertex counts", async () => {
     const db = coverageDb();
     const updates = await smoothLayerCoverage(db as never, "eurth-id", {

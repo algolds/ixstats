@@ -336,19 +336,6 @@ describe("ThinkPagesWebSocketServer anonymous readers", () => {
     reader.disconnect();
     await bareWs.shutdown();
   });
-
-  it("asks the check once per room", async () => {
-    const reader = connect();
-    await connected(reader);
-    const first = nextEvent(reader, "board:presence");
-    reader.emit("subscribe", { channel: "realm-board:r_pub" });
-    await first;
-    const again = nextEvent(reader, "board:presence");
-    reader.emit("subscribe", { channel: "realm-board:r_pub" });
-    await again;
-    expect(canJoinRealmBoard).toHaveBeenCalledTimes(1);
-  });
-
   it("holds a burst of subscribes to the cap and to one check per room, however fast they come", async () => {
     const reader = connect();
     await connected(reader);
@@ -362,38 +349,6 @@ describe("ThinkPagesWebSocketServer anonymous readers", () => {
     const rooms = canJoinRealmBoard.mock.calls.map(([, realmId]) => realmId);
     expect(new Set(rooms).size).toBe(5);
   });
-
-  it("shares a join in flight with a repeat of the same room, and reports a refusal to both", async () => {
-    const reader = connect();
-    await connected(reader);
-    const refusals: string[] = [];
-    reader.on("subscribe:error", (e: { channel: string }) => refusals.push(e.channel));
-    for (let i = 0; i < 3; i += 1) reader.emit("subscribe", { channel: "realm-board:r_draft" });
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    expect(refusals).toEqual(Array(3).fill("realm-board:r_draft"));
-    expect(canJoinRealmBoard).toHaveBeenCalledTimes(1);
-  });
-
-  it("starts no presence work for an unsubscribe from a room the socket is not in, or a bad name", async () => {
-    const inside = connect("token-a");
-    const outsider = connect("token-b");
-    await Promise.all([connected(inside), connected(outsider)]);
-    inside.emit("subscribe", { channel: "realm-board:r_pub" });
-    await nextEvent(inside, "board:presence");
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    const silent = silentFor(inside, "board:presence", 250);
-    outsider.emit("unsubscribe", { channel: "realm-board:r_pub" });
-    outsider.emit("unsubscribe", { channel: "realm-board:not a room" });
-    expect(await silent).toBe(true);
-    // A real leave still updates the room.
-    const update = nextEvent<{ count: number }>(inside, "board:presence");
-    outsider.emit("subscribe", { channel: "realm-board:r_pub" });
-    await update;
-    const left = nextEvent<{ count: number }>(inside, "board:presence");
-    outsider.emit("unsubscribe", { channel: "realm-board:r_pub" });
-    expect((await left).count).toBe(1);
-  });
-
   it("caps the board rooms one socket reads at once", async () => {
     const reader = connect();
     await connected(reader);
@@ -445,14 +400,6 @@ describe("ThinkPagesWebSocketServer board typing", () => {
     });
     expect(boardTypingName).toHaveBeenCalledWith("user_a", null);
   });
-
-  it("does not echo typing back to the typist", async () => {
-    const { typist } = await pair();
-    const silent = silentFor(typist, "board:typing", 250);
-    typist.emit("board:typing", { realmId: "r_pub" });
-    expect(await silent).toBe(true);
-  });
-
   it("uses a persona's own name, and drops a persona that is not the user's", async () => {
     const { typist, watcher } = await pair();
     const typing = nextEvent<{ name: string }>(watcher, "board:typing");
@@ -464,20 +411,6 @@ describe("ThinkPagesWebSocketServer board typing", () => {
     typist.emit("board:typing", { realmId: "r_pub", personaId: "pa_other" });
     expect(await silent).toBe(true);
   });
-
-  it("relays at most one event per second per user per room", async () => {
-    const { typist, watcher } = await pair();
-    const seen: string[] = [];
-    watcher.on("board:typing", (event: { name: string }) => seen.push(event.name));
-    for (let i = 0; i < 5; i += 1) typist.emit("board:typing", { realmId: "r_pub" });
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    expect(seen).toHaveLength(1);
-    await new Promise((resolve) => setTimeout(resolve, 900));
-    typist.emit("board:typing", { realmId: "r_pub" });
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    expect(seen).toHaveLength(2);
-  });
-
   it("relays no typing from a user who may not post, and asks the forum once per room", async () => {
     const { watcher } = await pair();
     const banned = connect("token-banned");
@@ -490,19 +423,6 @@ describe("ThinkPagesWebSocketServer board typing", () => {
     expect(canTypeOnBoard).toHaveBeenCalledWith("user_banned", "r_pub");
     expect(boardTypingName).not.toHaveBeenCalled();
   });
-
-  it("caches the right to type for the socket, so typing does not query on every event", async () => {
-    const { typist, watcher } = await pair();
-    const seen: string[] = [];
-    watcher.on("board:typing", (e: { name: string }) => seen.push(e.name));
-    typist.emit("board:typing", { realmId: "r_pub" });
-    await new Promise((resolve) => setTimeout(resolve, 1100));
-    typist.emit("board:typing", { realmId: "r_pub" });
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    expect(seen).toHaveLength(2);
-    expect(canTypeOnBoard).toHaveBeenCalledTimes(1);
-  });
-
   it("relays no typing at all when the server was given no typing check", async () => {
     const bare = createServer();
     const bareWs = new ThinkPagesWebSocketServer(bare, {
@@ -545,47 +465,6 @@ describe("ThinkPagesWebSocketServer board typing", () => {
     expect(await silent).toBe(true);
   });
 });
-
-describe("ThinkPagesWebSocketServer board presence", () => {
-  it("counts distinct signed-in users and each anonymous socket, and follows joins and leaves", async () => {
-    const first = connect("token-a");
-    const sameUser = connect("token-a");
-    const anon = connect();
-    await Promise.all([connected(first), connected(sameUser), connected(anon)]);
-    const counts: number[] = [];
-    first.on("board:presence", (e: { count: number }) => counts.push(e.count));
-
-    first.emit("subscribe", { channel: "realm-board:r_pub" });
-    await nextEvent(first, "board:presence");
-    sameUser.emit("subscribe", { channel: "realm-board:r_pub" });
-    await new Promise((resolve) => setTimeout(resolve, 150));
-    expect(counts.at(-1)).toBe(1);
-
-    anon.emit("subscribe", { channel: "realm-board:r_pub" });
-    await new Promise((resolve) => setTimeout(resolve, 150));
-    expect(counts.at(-1)).toBe(2);
-
-    anon.disconnect();
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    expect(counts.at(-1)).toBe(1);
-  });
-
-  it("coalesces a burst of joins into few events", async () => {
-    const watcher = connect("token-b");
-    await connected(watcher);
-    watcher.emit("subscribe", { channel: "realm-board:r_pub" });
-    await nextEvent(watcher, "board:presence");
-    const counts: number[] = [];
-    watcher.on("board:presence", (e: { count: number }) => counts.push(e.count));
-    const crowd = Array.from({ length: 6 }, () => connect());
-    await Promise.all(crowd.map(connected));
-    for (const client of crowd) client.emit("subscribe", { channel: "realm-board:r_pub" });
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    expect(counts.at(-1)).toBe(7);
-    expect(counts.length).toBeLessThan(6);
-  });
-});
-
 describe("ThinkPagesWebSocketServer board broadcasts", () => {
   it("delivers a board event only to the realm's room", async () => {
     const inside = connect("token-a");

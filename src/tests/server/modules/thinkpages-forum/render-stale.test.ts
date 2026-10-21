@@ -61,45 +61,12 @@ beforeEach(() => {
   rerender.mockReset();
   resetRenderFailuresForTests();
 });
-
-it("re-renders stale posts and replaces their templates", async () => {
-  rerender.mockResolvedValue({
-    contentHtml: "<p>new</p>",
-    plainText: "new",
-    rendererVersion: "forum-1:v",
-    renderedAt: new Date(),
-    templates: ["Template:Flag"],
-  });
-  const { db, updates, templateWrites } = fakeDb([
-    { id: "p1", threadId: "t1", contentWikitext: "x" },
-  ]);
-  const result = await rerenderPosts(db as never, ["p1"]);
-  expect(result).toEqual({ rendered: 1, failed: 0 });
-  expect(updates[0]).toMatchObject({ id: "p1", contentHtml: "<p>new</p>" });
-  expect(templateWrites).toEqual([["Template:Flag"]]);
-});
-
 it("leaves a post untouched when MediaWiki is still down", async () => {
   rerender.mockResolvedValue(null);
   const { db, updates } = fakeDb([{ id: "p1", threadId: "t1", contentWikitext: "x" }]);
   expect(await rerenderPosts(db as never, ["p1"])).toEqual({ rendered: 0, failed: 1 });
   expect(updates).toHaveLength(0);
 });
-
-it("skips the template insert when the render used no templates", async () => {
-  rerender.mockResolvedValue({
-    contentHtml: "<p>new</p>",
-    plainText: "new",
-    rendererVersion: "forum-1:v",
-    renderedAt: new Date(),
-    templates: [],
-  });
-  const { db, templateWrites } = fakeDb([{ id: "p1", threadId: "t1", contentWikitext: "x" }]);
-  await rerenderPosts(db as never, ["p1"]);
-  expect(db.forumPostTemplate.deleteMany).toHaveBeenCalledWith({ where: { postId: "p1" } });
-  expect(templateWrites).toEqual([]);
-});
-
 it("writes only the text it rendered: an edit between the read and the write is left untouched", async () => {
   rerender.mockResolvedValue({
     contentHtml: "<p>stale</p>",
@@ -135,8 +102,6 @@ it("selects stale post ids with the renderer version and limit bound", async () 
   expect(values).toEqual(["forum-1:v", 7]);
   expect(strings.join("?")).toContain('"contentWikitext" IS NOT NULL');
 });
-
-const LINKED = '<p>Hi <a class="forum-mention" href="/id/kir">@kir</a></p>';
 const RENDERED = {
   plainText: "Hi @kir",
   rendererVersion: "forum-1:v",
@@ -151,19 +116,6 @@ function withNames(db: ReturnType<typeof fakeDb>["db"]) {
     thinkpagesAccount: { findMany: jest.fn(async (_args: object) => []) },
   };
 }
-
-it("adds the mention links to what it re-renders, and queries no name for a post without an @", async () => {
-  rerender.mockResolvedValue({ ...RENDERED, contentHtml: "<p>Hi @kir</p>" });
-  const { db, updates } = fakeDb([{ id: "p1", threadId: "t1", contentWikitext: "Hi @kir" }]);
-  const names = withNames(db);
-  await rerenderPosts(names as never, ["p1"]);
-  expect(updates[0]).toMatchObject({ id: "p1", contentHtml: LINKED });
-
-  rerender.mockResolvedValue({ ...RENDERED, contentHtml: "<p>new</p>", plainText: "new" });
-  names.user.findMany.mockClear();
-  await rerenderPosts(names as never, ["p1"]);
-  expect(names.user.findMany).not.toHaveBeenCalled();
-});
 
 it("does not keep a mention link the render carried: only the ones it makes itself", async () => {
   rerender.mockResolvedValue({

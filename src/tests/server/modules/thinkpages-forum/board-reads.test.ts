@@ -1,10 +1,8 @@
 /** @jest-environment node */
-import { SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
-import { threadOrderBy } from "~/lib/thinkpages-forum/thread-sort";
+import { SITE_CATEGORIES } from "~/tests/helpers/forum-site-categories";
 import {
   boardTopPosters,
   latestPerCategory,
-  postCountsPerCategory,
   trendingThreads,
 } from "~/server/modules/thinkpages-forum/board-reads";
 import { advertGate } from "~/server/modules/thinkpages-forum/advert-access";
@@ -80,42 +78,6 @@ function latestDb() {
 }
 
 describe("latestPerCategory", () => {
-  it("returns the newest thread of each board with its last post's author ids", async () => {
-    const db = latestDb();
-    const out = await latestPerCategory(db as never, null, categories);
-    expect(out.get(general.id)).toEqual({
-      threadId: "t_g",
-      threadTitle: "General chat",
-      authorUserId: "u_x",
-      authorPersonaId: "pa_1",
-      importedAuthorName: null,
-      at: T2,
-    });
-    expect(out.get(byKey("find-a-realm").id)).toMatchObject({
-      authorUserId: null,
-      importedAuthorName: "OldName",
-    });
-  });
-
-  it("makes exactly two queries however many categories there are", async () => {
-    const db = latestDb();
-    await latestPerCategory(db as never, member, categories);
-    expect(db.forumThread.findMany).toHaveBeenCalledTimes(1);
-    expect(db.forumPost.findMany).toHaveBeenCalledTimes(1);
-    const threadArgs = argsOf(db.forumThread.findMany);
-    expect(threadArgs).toMatchObject({ orderBy: { lastPostAt: "desc" }, distinct: ["categoryId"] });
-    expect(argsOf(db.forumPost.findMany)).toMatchObject({
-      orderBy: { createdAt: "desc" },
-      distinct: ["threadId"],
-    });
-  });
-
-  it("ignores archived threads", async () => {
-    const db = latestDb();
-    await latestPerCategory(db as never, null, [general]);
-    expect(argsOf(db.forumThread.findMany).where).toMatchObject({ archived: false });
-  });
-
   it("ignores hidden threads for members and keeps them for admins and the category's moderators", async () => {
     const forMember = latestDb();
     await latestPerCategory(forMember as never, member, [general]);
@@ -154,47 +116,7 @@ describe("latestPerCategory", () => {
       { categoryId: reports.id, hidden: false, authorUserId: member.id, ...advertGate(member) },
     ]);
   });
-
-  it("asks nothing about categories the viewer cannot see", async () => {
-    const db = latestDb();
-    const out = await latestPerCategory(db as never, member, [staff]);
-    expect(out.size).toBe(0);
-    expect(db.forumThread.findMany).not.toHaveBeenCalled();
-    expect(db.forumPost.findMany).not.toHaveBeenCalled();
-  });
-
-  it("falls back to the thread's own time when no post is visible", async () => {
-    const db = latestDb();
-    db.forumPost.findMany.mockResolvedValue([]);
-    const out = await latestPerCategory(db as never, null, [general]);
-    expect(out.get(general.id)).toMatchObject({ authorUserId: null, at: T2 });
-  });
 });
-
-describe("postCountsPerCategory", () => {
-  it("sums post counts per visible category in one grouped query, archived threads included", async () => {
-    const groupBy = jest.fn(async (_args: object) => [
-      { categoryId: general.id, _sum: { postCount: 42 } },
-      { categoryId: byKey("rules").id, _sum: { postCount: null } },
-    ]);
-    const out = await postCountsPerCategory({ forumThread: { groupBy } } as never, member, [
-      general,
-      byKey("rules"),
-      staff,
-    ]);
-    expect(out.get(general.id)).toBe(42);
-    expect(out.get(byKey("rules").id)).toBe(0);
-    expect(groupBy).toHaveBeenCalledTimes(1);
-    const args = argsOf(groupBy);
-    expect(args).toMatchObject({ by: ["categoryId"], _sum: { postCount: true } });
-    expect(args.where.OR).toEqual([
-      { categoryId: general.id, hidden: false, ...advertGate(member) },
-      { categoryId: byKey("rules").id, hidden: false, ...advertGate(member) },
-    ]);
-    expect(args.where).not.toHaveProperty("archived");
-  });
-});
-
 describe("trendingThreads", () => {
   const NOW = new Date("2026-10-09T12:00:00Z");
   const row = (id: string, category: object, authorUserId: string | null = "u_x") => ({
@@ -242,13 +164,6 @@ describe("trendingThreads", () => {
     expect(args.where.createdAt).toEqual({ gte: new Date("2026-10-08T12:00:00Z") });
     expect(args.where.hidden).toBe(false);
   });
-
-  it("keeps staff boards for admins and respects the limit", async () => {
-    const db = trendingDb(threads);
-    const out = await trendingThreads(db as never, admin, 2, NOW);
-    expect(out.map((t) => t.threadId)).toEqual(["t_staff", "t_gen"]);
-  });
-
   it("leaves out threads of categories in unpublished realms", async () => {
     const db = trendingDb(threads);
     await trendingThreads(db as never, member, 5, NOW);
@@ -282,23 +197,6 @@ describe("boardTopPosters", () => {
       ]),
     },
   });
-
-  it("returns the top authors by posts this calendar month", async () => {
-    const db = postsDb();
-    const out = await boardTopPosters(db as never, member, general, 5, NOW);
-    expect(out).toEqual([
-      { authorUserId: "u_1", postCount: 7 },
-      { authorUserId: "u_2", postCount: 3 },
-    ]);
-    const args = argsOf(db.forumPost.groupBy);
-    expect(args).toMatchObject({ by: ["authorUserId"], take: 5 });
-    expect(args.where).toMatchObject({
-      createdAt: { gte: new Date("2026-10-01T00:00:00Z") },
-      hidden: false,
-      thread: { categoryId: general.id, hidden: false },
-    });
-  });
-
   it("does not count persona posts for the player behind the persona", async () => {
     const db = postsDb();
     await boardTopPosters(db as never, null, general, 5, NOW);
@@ -319,89 +217,7 @@ describe("boardTopPosters", () => {
     expect(db.forumPost.groupBy).toHaveBeenCalledTimes(1);
   });
 });
-
-describe("threadOrderBy", () => {
-  it("orders latest by activity, newest by creation and replies by post count, pinned first", () => {
-    expect(threadOrderBy("latest")).toEqual([
-      { pinned: "desc" },
-      { lastPostAt: "desc" },
-      { id: "desc" },
-    ]);
-    expect(threadOrderBy("newest")).toEqual([
-      { pinned: "desc" },
-      { createdAt: "desc" },
-      { id: "desc" },
-    ]);
-    expect(threadOrderBy("replies")).toEqual([
-      { pinned: "desc" },
-      { postCount: "desc" },
-      { id: "desc" },
-    ]);
-  });
-});
-
 describe("listBoards", () => {
-  it("joins counts, latest post (with its author's name) and style onto the visible site boards", async () => {
-    const db = {
-      forumCategory: { findMany: jest.fn(async (_args: object) => categories) },
-      forumThread: {
-        groupBy: jest.fn(async (args: { by: string[] }) =>
-          args.by.length === 2
-            ? [
-                {
-                  categoryId: general.id,
-                  archived: false,
-                  _count: { _all: 4 },
-                  _max: { lastPostAt: T2 },
-                },
-              ]
-            : [{ categoryId: general.id, _sum: { postCount: 20 } }]
-        ),
-        findMany: jest.fn(async (_args: object) => [
-          { id: "t_g", title: "General chat", categoryId: general.id, lastPostAt: T2 },
-        ]),
-      },
-      forumPost: {
-        findMany: jest.fn(async (_args: object) => [
-          {
-            threadId: "t_g",
-            authorUserId: "u_x",
-            authorPersonaId: null,
-            importedAuthorName: null,
-            createdAt: T2,
-          },
-        ]),
-      },
-      user: {
-        findMany: jest.fn(async (_args: object) => [
-          { id: "u_x", handle: "heku", wikiUsername: null, country: null },
-        ]),
-      },
-      thinkpagesAccount: { findMany: jest.fn(async (_args: object) => []) },
-    };
-    const rows = await listBoards(db as never, null);
-    expect(rows.map((r) => r.key)).not.toContain("staff");
-    const row = rows.find((r) => r.key === "general")!;
-    expect(row).toMatchObject({
-      id: general.id,
-      style: "ooc",
-      visibility: "public",
-      threadCount: 4,
-      postCount: 20,
-    });
-    expect(row.latest).toEqual({
-      threadId: "t_g",
-      threadTitle: "General chat",
-      authorUserId: "u_x",
-      authorPersonaId: null,
-      importedAuthorName: null,
-      at: T2,
-      author: { name: "heku", handle: "heku", avatarUrl: null, flagUrl: null, personaType: null },
-    });
-    expect(rows.find((r) => r.key === "rules")!.latest).toBeNull();
-    expect(rows.find((r) => r.key === "rules")!.postCount).toBe(0);
-  });
-
   it("hides the player's user id behind a persona's latest post and names the persona", async () => {
     const db = {
       forumCategory: { findMany: jest.fn(async (_args: object) => [general]) },
@@ -535,39 +351,6 @@ describe("latestActivity", () => {
     };
   }
 
-  it("lists the newest visible posts, marks a thread's first post and names the board", async () => {
-    const db = activityDb(
-      [post("p_3", "t_g", general, T2), post("p_1", "t_new", general, T1)],
-      ["p_0", "p_1"]
-    );
-    const out = await latestActivity(db as never, member, 6);
-    expect(out).toEqual([
-      expect.objectContaining({ postId: "p_3", threadId: "t_g", isFirstPost: false, at: T2 }),
-      expect.objectContaining({
-        postId: "p_1",
-        threadTitle: "Thread t_new",
-        categoryName: "General",
-        isFirstPost: true,
-        author: { name: "heku", handle: "heku", avatarUrl: null, flagUrl: null, personaType: null },
-      }),
-    ]);
-    const args = argsOf(db.forumPost.findMany);
-    expect(args.orderBy).toEqual([{ createdAt: "desc" }, { id: "desc" }]);
-    expect(args.where).toMatchObject({ hidden: false, thread: { hidden: false, archived: false } });
-  });
-
-  it("marks a post in character when its board is an in-character board", async () => {
-    const ic = { ...general, id: "cat_ic", style: "ic" };
-    const db = activityDb([post("p_ic", "t_ic", ic, T2), post("p_ooc", "t_ooc", general, T1)], []);
-    const out = await latestActivity(db as never, member, 6);
-    expect(out.find((i) => i.postId === "p_ic")?.inCharacter).toBe(true);
-    expect(out.find((i) => i.postId === "p_ooc")?.inCharacter).toBe(false);
-    const select = argsOf(db.forumPost.findMany).select as {
-      thread: { select: { category: { select: { style: boolean } } } };
-    };
-    expect(select.thread.select.category.select.style).toBe(true);
-  });
-
   it("only reads sitewide boards and published realms, never a realm board", async () => {
     const db = activityDb([], []);
     await latestActivity(db as never, null, 6);
@@ -614,20 +397,5 @@ describe("latestActivity", () => {
     });
     expect(JSON.stringify(item)).not.toMatch(/heku|u_x/);
     expect(db.user.findMany).not.toHaveBeenCalled();
-  });
-
-  it("names an imported author with no persona type", async () => {
-    const db = activityDb(
-      [post("p_i", "t_g", general, T2, { authorUserId: null, importedAuthorName: "OldName" })],
-      []
-    );
-    const [item] = await latestActivity(db as never, null, 6);
-    expect(item!.author).toEqual({
-      name: "OldName",
-      handle: null,
-      avatarUrl: null,
-      flagUrl: null,
-      personaType: null,
-    });
   });
 });

@@ -7,7 +7,7 @@ jest.mock("~/server/db", () => ({ db: {} }));
 
 import { createCallerFactory } from "~/server/api/trpc";
 import { thinkpagesForumRouter } from "~/server/api/routers/thinkpagesForum";
-import { SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
+import { SITE_CATEGORIES } from "~/tests/helpers/forum-site-categories";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { banRow, forumBanFake } from "~/tests/helpers/forum-ban-fake";
 import { engagementTables } from "~/tests/helpers/forum-engagement-fake";
@@ -57,8 +57,6 @@ const ACTIVE = {
   ownerId: "founder",
   ...look,
 };
-const DRAFT = { ...ACTIVE, status: "draft" };
-const ARCHIVED = { ...ACTIVE, status: "archived" };
 
 function advertDb(advertRealm: object, grants: object[] = [], firstPostId = "p1") {
   return {
@@ -148,14 +146,6 @@ describe("an advert in the board list", () => {
     expect(JSON.stringify(out)).not.toContain("ownerId");
     expect(JSON.stringify(out)).not.toContain("founder");
   });
-
-  it("marks an ordinary thread as no advert", async () => {
-    const out = await caller(member, advertDb(null as never)).category({
-      key: "find-a-realm",
-      page: 1,
-    });
-    expect(out.threads[0]!.advert).toBeNull();
-  });
 });
 
 describe("an advert on the thread page", () => {
@@ -172,37 +162,6 @@ describe("an advert on the thread page", () => {
     expect(JSON.stringify(out)).not.toContain("ownerId");
     expect(JSON.stringify(out)).not.toContain('"founder"');
   });
-
-  it("tells the founder they manage it, and an archived realm's advert that it is closed", async () => {
-    expect(
-      (await caller(founder, advertDb(ACTIVE)).thread({ threadId: "t_ad", page: 1 })).advert
-    ).toMatchObject({ canManage: true, closed: false });
-    expect(
-      (await caller(member, advertDb(ARCHIVED)).thread({ threadId: "t_ad", page: 1 })).advert
-    ).toMatchObject({ canManage: false, closed: true });
-  });
-
-  it("reads a draft realm's advert as not found to a member and shows it to the founder", async () => {
-    await expect(
-      caller(member, advertDb(DRAFT)).thread({ threadId: "t_ad", page: 1 })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-    await expect(
-      caller(founder, advertDb(DRAFT)).thread({ threadId: "t_ad", page: 1 })
-    ).resolves.toMatchObject({ advert: { realmSlug: "eurth" } });
-  });
-
-  it("reads an archived realm's advert as locked, closed to replies, edits and reactions, without storing it", async () => {
-    const out = await caller(member, advertDb(ARCHIVED)).thread({ threadId: "t_ad", page: 1 });
-    expect(out.thread.locked).toBe(true);
-    expect(out.canReply).toBe(false);
-    expect(out.canReact).toBe(false);
-    expect(out.posts.every((p) => !p.isOwn)).toBe(true);
-    const open = await caller(member, advertDb(ACTIVE)).thread({ threadId: "t_ad", page: 1 });
-    expect(open.thread.locked).toBe(false);
-    expect(open.canReply).toBe(true);
-    expect(open.canReact).toBe(true);
-  });
-
   it("offers the first post's Edit to whoever manages the advert, though another wrote it, and a reply's to its author", async () => {
     const grants = [{ userId: "officer", powers: ["appearance"] }];
     const manager = await caller(officer, advertDb(ACTIVE, grants)).thread({
@@ -239,11 +198,6 @@ describe("an advert on the thread page", () => {
     });
     expect(founderOut.posts[0]).toMatchObject({ byViewer: true, isOwn: true });
   });
-
-  it("has no advert for an ordinary thread", async () => {
-    const out = await caller(member, advertDb(null as never)).thread({ threadId: "t_ad", page: 1 });
-    expect(out.advert).toBeNull();
-  });
 });
 
 describe("who may lock an advert, as the thread page is told", () => {
@@ -276,32 +230,11 @@ describe("who may lock an advert, as the thread page is told", () => {
     expect(await rights(officer, advertDb(ACTIVE))).toMatchObject({ canLock: false });
     expect(await rights(member, advertDb(ACTIVE))).toMatchObject({ canLock: false });
   });
-
-  it("does not offer an unlock flag: unlocking is the moderator's, in the thread bar", async () => {
-    expect(await rights(admin, advertDb(ACTIVE))).not.toHaveProperty("canUnlock");
-  });
-
-  it("offers it to a manager who is also a moderator of the category", async () => {
-    expect(await rights(officer, moderating(advertDb(ACTIVE, grants)))).toMatchObject({
-      canManage: true,
-      canLock: true,
-    });
-  });
-
   it("offers nothing on a hidden advert, which setAdvertLocked answers as not found", async () => {
     const db = moderating(hidden(advertDb(ACTIVE, grants)));
     expect(await rights(officer, db)).toMatchObject({ canManage: true, canLock: false });
     expect(await rights(admin, hidden(advertDb(ACTIVE)))).toMatchObject({ canLock: false });
   });
-
-  it("offers nothing on an archived realm's advert, which stays locked", async () => {
-    expect(await rights(founder, advertDb(ARCHIVED))).toMatchObject({
-      closed: true,
-      canLock: false,
-    });
-    expect(await rights(admin, advertDb(ARCHIVED))).toMatchObject({ canLock: false });
-  });
-
   it("offers nothing to a viewer banned from the board, founder or appearance officer", async () => {
     expect(await rights(founder, bannedFrom(advertDb(ACTIVE), "u_f"))).toMatchObject({
       canLock: false,

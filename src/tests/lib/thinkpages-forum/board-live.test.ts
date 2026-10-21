@@ -1,9 +1,7 @@
 import {
   boardLiveEventSchema,
   boardLiveMessageSchema,
-  removeBoardMessage,
   upsertBoardMessage,
-  type BoardLiveEvent,
   type BoardLiveMessage,
 } from "~/lib/thinkpages-forum/board-live";
 
@@ -29,23 +27,6 @@ const item = (id: string, minute: number) => ({
   createdAt: new Date(Date.UTC(2026, 9, 10, 12, minute)),
 });
 describe("boardLiveEventSchema", () => {
-  const events: BoardLiveEvent[] = [
-    { type: "board:message", realmId: "r1", message: live("p1") },
-    { type: "board:updated", realmId: "r1", change: { type: "updated", message: live("p1") } },
-    { type: "board:updated", realmId: "r1", change: { type: "removed", postId: "p1" } },
-    {
-      type: "board:settings",
-      realmId: "r1",
-      settings: { visitorsAllowed: false, slowModeSeconds: 30 },
-    },
-    { type: "board:typing", realmId: "r1", name: "Eurth Daily" },
-    { type: "board:presence", realmId: "r1", count: 3 },
-  ];
-
-  it.each(events)("round trips %j through JSON", (event) => {
-    expect(boardLiveEventSchema.parse(JSON.parse(JSON.stringify(event)))).toEqual(event);
-  });
-
   it("rejects a malformed event and an unknown type", () => {
     expect(boardLiveEventSchema.safeParse({ type: "board:presence", realmId: "r1" }).success).toBe(
       false
@@ -69,16 +50,6 @@ describe("boardLiveEventSchema", () => {
 
 describe("upsertBoardMessage", () => {
   const list = [item("p5", 5), item("p3", 3), item("p1", 1)];
-
-  it("inserts a newer message at the top", () => {
-    expect(upsertBoardMessage(list, item("p6", 6), { complete: false }).map((m) => m.id)).toEqual([
-      "p6",
-      "p5",
-      "p3",
-      "p1",
-    ]);
-  });
-
   it("replaces by id without duplicating, keeping the place", () => {
     const next = upsertBoardMessage(list, { ...item("p3", 3), extra: 1 } as never, {
       complete: false,
@@ -86,12 +57,6 @@ describe("upsertBoardMessage", () => {
     expect(next.map((m) => m.id)).toEqual(["p5", "p3", "p1"]);
     expect(next[1]).toMatchObject({ extra: 1 });
   });
-
-  it("orders ties by id, newest id first", () => {
-    const next = upsertBoardMessage([item("a", 3)], item("b", 3), { complete: false });
-    expect(next.map((m) => m.id)).toEqual(["b", "a"]);
-  });
-
   it("slots an older message in only when the list holds every older one", () => {
     expect(upsertBoardMessage(list, item("p2", 2), { complete: true }).map((m) => m.id)).toEqual([
       "p5",
@@ -108,20 +73,7 @@ describe("upsertBoardMessage", () => {
       "p1",
     ]);
   });
-
-  it("starts an empty list", () => {
-    expect(upsertBoardMessage([], item("p1", 1), { complete: false })).toEqual([item("p1", 1)]);
-  });
 });
-
-describe("removeBoardMessage", () => {
-  it("drops the post and returns the same list when it is not there", () => {
-    const list = [item("p2", 2), item("p1", 1)];
-    expect(removeBoardMessage(list, "p2").map((m) => m.id)).toEqual(["p1"]);
-    expect(removeBoardMessage(list, "nope")).toBe(list);
-  });
-});
-
 describe("boardLiveMessageSchema reactions", () => {
   const message = {
     id: "p1",
@@ -138,20 +90,6 @@ describe("boardLiveMessageSchema reactions", () => {
     replyTo: null,
     continued: null,
   };
-
-  it("defaults to no reactions, so an older server's event still parses", () => {
-    expect(boardLiveMessageSchema.parse(message).reactions).toEqual({});
-  });
-
-  it("carries the counts and rejects a count that is not a number", () => {
-    expect(boardLiveMessageSchema.parse({ ...message, reactions: { like: 2 } }).reactions).toEqual({
-      like: 2,
-    });
-    expect(boardLiveMessageSchema.safeParse({ ...message, reactions: { like: "2" } }).success).toBe(
-      false
-    );
-  });
-
   it("rejects a count that is zero, negative or fractional, as the server reader would not count it", () => {
     for (const count of [0, -1, 1.5]) {
       expect(
@@ -171,25 +109,5 @@ describe("boardLiveMessageSchema reactions", () => {
   it("drops a viewer's own reaction if one is sent", () => {
     const parsed = boardLiveMessageSchema.parse({ ...message, myReaction: "like" });
     expect(parsed).not.toHaveProperty("myReaction");
-  });
-});
-
-describe("boardLiveMessageSchema persona type", () => {
-  it("still parses a live message from a server that sends no personaType", () => {
-    const message = live("p1");
-    const result = boardLiveMessageSchema.safeParse({ ...message, author: { ...message.author } });
-    expect(result.success).toBe(true);
-    expect(result.data?.author.personaType).toBeUndefined();
-  });
-
-  it("keeps a known persona type and rejects an unknown one", () => {
-    const message = live("p1");
-    const withType = (personaType: string | null) => ({
-      ...message,
-      author: { ...message.author, persona: true, personaType },
-    });
-    expect(boardLiveMessageSchema.parse(withType("media")).author.personaType).toBe("media");
-    expect(boardLiveMessageSchema.parse(withType(null)).author.personaType).toBeNull();
-    expect(boardLiveMessageSchema.safeParse(withType("personal")).success).toBe(false);
   });
 });

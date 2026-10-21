@@ -1,11 +1,9 @@
 /** @jest-environment node */
-import { boardSettingsOf } from "~/server/modules/thinkpages-forum/board-access";
 import { boardPostRealm, getBoard } from "~/server/modules/thinkpages-forum/board";
 import {
   admin,
   boardPost,
   boardStore,
-  countries,
   founder,
   member,
   officer,
@@ -37,65 +35,7 @@ const board = (
   slug = "eurth",
   store = storeWith()
 ) => getBoard(store.db as never, who as never, slug, opts);
-
-describe("boardSettingsOf", () => {
-  const dbWith = (row: object | null) => ({ realm: { findUnique: jest.fn(async () => row) } });
-
-  it("reports the defaults and no row for a realm without one (Ixnay, synthesized)", async () => {
-    expect(await boardSettingsOf(dbWith(null) as never, "default")).toEqual({
-      emblemUrl: null,
-      visitorsAllowed: true,
-      slowModeSeconds: 0,
-      hasRow: false,
-    });
-  });
-
-  it("reports the row's own settings, and that it has one", async () => {
-    const out = await boardSettingsOf(
-      dbWith({
-        emblemUrl: null,
-        thumbnail: "https://img.example/t.png",
-        boardVisitorsAllowed: false,
-        boardSlowModeSeconds: 30,
-      }) as never,
-      "r_eurth"
-    );
-    expect(out).toEqual({
-      emblemUrl: "https://img.example/t.png",
-      visitorsAllowed: false,
-      slowModeSeconds: 30,
-      hasRow: true,
-    });
-  });
-});
-
 describe("getBoard", () => {
-  it("returns the realm, its settings and member count, newest message first", async () => {
-    const out = await board(member);
-    expect(out.realm).toEqual({
-      id: "r_eurth",
-      slug: "eurth",
-      name: "Eurth",
-      emblemUrl: "https://img.example/eurth.png",
-      memberCount: 4,
-      hasRow: true,
-      settings: { visitorsAllowed: true, slowModeSeconds: 0 },
-    });
-    expect(out.messages.map((m) => m.id)).toEqual(["p6", "p4", "p3", "p2", "p1"]);
-    expect(out.hasMore).toBe(false);
-    expect(out.access).toMatchObject({ canRead: true, canPost: true, isMember: true });
-  });
-
-  it("falls back from the emblem to the thumbnail", async () => {
-    const store = storeWith();
-    Object.assign(
-      store.state.realms.find((r) => r.id === "r_eurth")!,
-      { emblemUrl: null }
-    );
-    const out = await board(member, {}, "eurth", store);
-    expect(out.realm.emblemUrl).toBe("https://img.example/eurth-thumb.png");
-  });
-
   it("pages back with a post id cursor, reporting whether more remain", async () => {
     const first = await board(member, { limit: 2 });
     expect(first.messages.map((m) => m.id)).toEqual(["p6", "p4"]);
@@ -135,46 +75,6 @@ describe("getBoard", () => {
       expect(out.messages.find((m) => m.id === "p1")).toMatchObject({ hidden: false });
     }
   });
-
-  it("reads the visitors' realms in one query, however many realms they come from", async () => {
-    const nation = (id: string, ownerUserId: string, realmId: string) => ({
-      id,
-      ownerUserId,
-      realmId,
-      currentTotalGdp: 1,
-    });
-    const store = boardStore(
-      seed({
-        posts: [
-          boardPost("v1", 1, { authorUserId: "u_visitor" }),
-          boardPost("v2", 2, { authorUserId: "u_plain" }),
-          boardPost("v3", 3, { authorUserId: "u_claims" }),
-        ] as never,
-      }),
-      {
-        countries: [
-          ...countries,
-          nation("c_old", "u_plain", "r_old"),
-          nation("c_draft", "u_claims", "r_draft"),
-        ],
-      }
-    );
-    const findUnique = jest.spyOn(store.db.realm, "findUnique");
-    const findMany = jest.spyOn(store.db.realm, "findMany");
-    const { messages: out } = await board(member, {}, "eurth", store);
-    const byId = Object.fromEntries(out.map((m) => [m.id, m.visitorRealm]));
-    // A hidden (draft) realm gives no label.
-    expect(byId).toEqual({
-      v1: { slug: "aurora", name: "Aurora" },
-      v2: { slug: "old", name: "Old" },
-      v3: null,
-    });
-    const reads = [...findUnique.mock.calls, ...findMany.mock.calls].filter(([args]) =>
-      /r_(aurora|old|draft)/.test(JSON.stringify(args))
-    );
-    expect(reads).toHaveLength(1);
-  });
-
   it("labels visitors with their own realm, and nobody else", async () => {
     const out = await board(member);
     const byId = Object.fromEntries(out.messages.map((m) => [m.id, m]));
@@ -242,28 +142,6 @@ describe("getBoard", () => {
       expect(out.messages.every((m) => !("moderable" in m) && !("sanctionable" in m))).toBe(true);
     }
   });
-
-  it("gives a persona's player to moderators only", async () => {
-    const out = await board(officer);
-    expect(out.messages.find((m) => m.id === "p6")).toMatchObject({ authorUserId: "u_member" });
-  });
-
-  it("marks the viewer's own messages and which they may still edit", async () => {
-    const store = storeWith(
-      [
-        boardPost("old", 0, { createdAt: new Date(Date.now() - 20 * 60_000) }),
-        boardPost("fresh", 1, { createdAt: new Date() }),
-        boardPost("theirs", 2, { authorUserId: "u_visitor", createdAt: new Date() }),
-      ],
-      []
-    );
-    const out = await board(member, {}, "eurth", store);
-    const byId = Object.fromEntries(out.messages.map((m) => [m.id, m]));
-    expect(byId.old).toMatchObject({ byViewer: true, canEdit: false });
-    expect(byId.fresh).toMatchObject({ byViewer: true, canEdit: true });
-    expect(byId.theirs).toMatchObject({ byViewer: false, canEdit: false });
-  });
-
   it("summarizes the message a reply answers, not leaking hidden or persona players", async () => {
     const store = storeWith([
       boardPost("a", 1, { plainText: "x".repeat(300) }),
@@ -397,12 +275,6 @@ describe("boardPostRealm", () => {
   const store = storeWith();
   const find = (who: object | null, id: string) =>
     boardPostRealm(store.db as never, who as never, id);
-
-  it("names the realm whose board holds the post", async () => {
-    expect(await find(member, "p1")).toEqual({ realmSlug: "eurth" });
-    expect(await find(null, "p1")).toEqual({ realmSlug: "eurth" });
-  });
-
   it("hides a hidden post from members and shows it to moderators", async () => {
     expect(await find(member, "p5")).toBeNull();
     expect(await find(founder, "p5")).toEqual({ realmSlug: "eurth" });

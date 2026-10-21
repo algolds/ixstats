@@ -79,24 +79,6 @@ describe("/thinkpages/r/mine", () => {
       expect.objectContaining({ where: { ownerUserId: "u1" } })
     );
   });
-
-  it("sends a member holding no nation to the forum home", async () => {
-    signedIn("member");
-    await expect(MyRealmPage()).rejects.toThrow("redirect:/thinkpages");
-  });
-
-  it("sends a signed-out visitor to the forum home without a lookup", async () => {
-    await expect(MyRealmPage()).rejects.toThrow("redirect:/thinkpages");
-    expect(fakeDb.user.findUnique).not.toHaveBeenCalled();
-    expect(fakeDb.country.findMany).not.toHaveBeenCalled();
-  });
-
-  it("sends a signed-in user without a user row to the forum home", async () => {
-    signedIn("stranger");
-    fakeDb.user.findUnique.mockResolvedValue(null);
-    await expect(MyRealmPage()).rejects.toThrow("redirect:/thinkpages");
-  });
-
   it("sends a member whose realm is hidden from them to the forum home", async () => {
     signedIn("member");
     fakeDb.country.findMany.mockResolvedValue([

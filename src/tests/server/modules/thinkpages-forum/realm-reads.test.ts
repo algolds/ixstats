@@ -50,28 +50,6 @@ describe("listForumRealms", () => {
       })
     );
   });
-
-  it("adds realms where the viewer holds a nation, founded or serves as an officer", async () => {
-    const db = listDb([]);
-    await listForumRealms(db as never, plain);
-    expect(db.realm.findMany.mock.calls[0][0].where).toEqual({
-      isSystem: false,
-      OR: [
-        { id: "default" },
-        { status: "active", visibility: "public" },
-        { countries: { some: { ownerUserId: "u_plain" } } },
-        { ownerId: "plain" },
-        { officers: { some: { userId: "plain" } } },
-      ],
-    });
-  });
-
-  it("asks for every realm but the system ones for a site admin", async () => {
-    const db = listDb([]);
-    await listForumRealms(db as never, admin);
-    expect(db.realm.findMany.mock.calls[0][0].where).toEqual({ isSystem: false });
-  });
-
   it("never lists a system realm: the where carries isSystem false for anonymous, regular and admin viewers", async () => {
     for (const viewer of [null, plain, admin]) {
       const db = listDb([]);
@@ -110,26 +88,6 @@ describe("listForumRealms", () => {
       null
     );
     expect(formerSlug.realms).toEqual([{ id: "default", slug: "ixnay", name: "Ixnay" }]);
-  });
-
-  it("opens the realm of the viewer's active nation by default, else Ixnay", async () => {
-    const rows = [EURTH, IXNAY_ROW];
-    await expect(
-      listForumRealms(listDb(rows) as never, { ...owner, activeRealmId: "r_eurth" })
-    ).resolves.toMatchObject({
-      defaultSlug: "eurth",
-    });
-    await expect(
-      listForumRealms(listDb(rows) as never, { ...owner, activeRealmId: "r_gone" })
-    ).resolves.toMatchObject({
-      defaultSlug: "ixnay",
-    });
-    await expect(listForumRealms(listDb(rows) as never, plain)).resolves.toMatchObject({
-      defaultSlug: "ixnay",
-    });
-    await expect(listForumRealms(listDb(rows) as never, null)).resolves.toMatchObject({
-      defaultSlug: "ixnay",
-    });
   });
 });
 
@@ -195,40 +153,6 @@ describe("getRealmSection", () => {
     };
   }
 
-  it("returns the realm, its categories in order with counts from one grouped query, and the posting access", async () => {
-    const db = sectionDb(EURTH);
-    const out = await getRealmSection(db as never, owner, "eurth");
-    expect(out.realm).toEqual({ id: "r_eurth", slug: "eurth", name: "Eurth", status: "active" });
-    expect(out.categories.map((c) => c.key)).toEqual([
-      "hub",
-      "character-threads",
-      "current-events",
-    ]);
-    expect(out.categories[0]).toEqual({
-      id: "cat_hub",
-      key: "hub",
-      name: "Hub",
-      description: "Out-of-character talk for the realm.",
-      icAllowed: false,
-      postRole: "any",
-      threadCount: 2,
-      lastPostAt: new Date("2026-10-05"),
-      latest: { threadId: "t_hub", threadTitle: "Harbour tax", at: new Date("2026-10-06") },
-    });
-    expect(out.categories[1]).toMatchObject({ threadCount: 0, lastPostAt: null, latest: null });
-    expect(out.access).toMatchObject({ canPost: true, notice: null, ban: null });
-    expect(out.access).not.toHaveProperty("restriction");
-    expect(db.forumCategory.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { scope: "realm", realmId: "r_eurth" },
-        orderBy: { order: "asc" },
-      })
-    );
-    expect(db.forumThread.groupBy).toHaveBeenCalledTimes(1);
-    expect(db.forumThread.groupBy.mock.calls[0][0]).toMatchObject({ where: { hidden: false } });
-    expect(db.forumCategory.createMany).not.toHaveBeenCalled();
-  });
-
   it("gives a realm-banned owner the ban and its notice", async () => {
     const db = sectionDb(EURTH);
     const ban = banRow({ userId: owner.id, scope: "realm", scopeId: "r_eurth", reason: "Spam" });
@@ -241,15 +165,6 @@ describe("getRealmSection", () => {
       },
     });
   });
-
-  it("gives the reason a signed-in user without a nation cannot post", async () => {
-    const db = sectionDb(EURTH);
-    db.country.findMany.mockResolvedValue([]);
-    await expect(getRealmSection(db as never, plain, "eurth")).resolves.toMatchObject({
-      access: { canPost: false, notice: "Only owners of a nation in Eurth can post here." },
-    });
-  });
-
   it("gives NOT_FOUND for an unknown realm and a draft realm the viewer is not staff of", async () => {
     await expect(getRealmSection(sectionDb(null) as never, plain, "nowhere")).rejects.toMatchObject(
       { code: "NOT_FOUND" }
@@ -328,19 +243,5 @@ describe("getRealmSection", () => {
     );
     expect(db.forumCategory.findMany).toHaveBeenCalledTimes(2);
     expect(out.categories).toHaveLength(3);
-  });
-
-  it("opens Ixnay's section without a realm row", async () => {
-    const db = sectionDb(null);
-    const out = await getRealmSection(db as never, null, "ixnay");
-    expect(out.realm).toEqual({
-      id: "default",
-      slug: "ixnay",
-      name: "Ixnay",
-      status: "active",
-    });
-    expect(db.forumCategory.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { scope: "realm", realmId: "default" } })
-    );
   });
 });

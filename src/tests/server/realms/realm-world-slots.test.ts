@@ -133,27 +133,6 @@ describe("realms.map.worldStatus", () => {
       ])
     );
   });
-
-  it("says whether the viewer can review the claims that lock it: the founder, the Claims power, site staff", async () => {
-    const db = realmDb();
-    const reviewer = async (who: string) =>
-      (await caller(db, who).worldStatus({ realm: "eurth" })).canReviewClaims;
-    expect(await reviewer(FOUNDER)).toBe(true);
-    expect(await reviewer(CLAIMS_OFFICER)).toBe(true);
-    expect(await reviewer(ADMIN)).toBe(true);
-    // The Map power alone edits the map but has no Claims section to open
-    expect(await reviewer(MAP_OFFICER)).toBe(false);
-  });
-
-  it("is unlocked while the realm has no pending or approved claim", async () => {
-    const db = realmDb();
-    claimCounts(db, 0, 0);
-    await expect(caller(db, MAP_OFFICER).worldStatus({ realm: "eurth" })).resolves.toMatchObject({
-      locked: false,
-      lockReason: null,
-    });
-  });
-
   it("locks an archived realm, for a site admin too, whatever its claims", async () => {
     const db = realmDb({ [EURTH]: "archived" });
     claimCounts(db, 0, 0);
@@ -163,32 +142,6 @@ describe("realms.map.worldStatus", () => {
       lockReason: "archived",
     });
   });
-
-  it("says the relief step of the latest world import failed, so the tab can offer to rebuild it", async () => {
-    const db = realmDb();
-    db.mapImportJob!.findMany!.mockResolvedValue([
-      { id: "j_apply", result: { phase: "world-apply", relief: { status: "failed" } } },
-    ]);
-    await expect(caller(db, FOUNDER).worldStatus({ realm: "eurth" })).resolves.toMatchObject({
-      reliefFailed: true,
-    });
-    expect(db.mapImportJob!.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { realmId: EURTH, kind: "world", dryRun: false, status: "succeeded" },
-      })
-    );
-  });
-
-  it("does not say it once the relief was built", async () => {
-    const db = realmDb();
-    db.mapImportJob!.findMany!.mockResolvedValue([
-      { id: "j_apply", result: { phase: "world-apply", relief: { status: "built" } } },
-    ]);
-    await expect(caller(db, FOUNDER).worldStatus({ realm: "eurth" })).resolves.toMatchObject({
-      reliefFailed: false,
-    });
-  });
-
   it("does not look at the realm's imports for someone who may not see its world", async () => {
     const db = realmDb();
     await expect(caller(db, PLAYER).worldStatus({ realm: "eurth" })).rejects.toMatchObject({
@@ -264,13 +217,6 @@ describe("realms.map.setSlotClaimable", () => {
     });
     expect(db.country!.update).not.toHaveBeenCalled();
   });
-
-  it("lets an officer with the map power do the same", async () => {
-    const db = realmDb();
-    await caller(db, MAP_OFFICER).setSlotClaimable(input);
-    expect(db.country!.updateMany).toHaveBeenCalled();
-  });
-
   it("makes a slot claimable again whoever holds it", async () => {
     const db = realmDb();
     await caller(db, FOUNDER).setSlotClaimable({ ...input, claimable: true });

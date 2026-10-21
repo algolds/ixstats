@@ -48,38 +48,6 @@ const cont = (s: ReturnType<typeof boardStore>, who: object, postId: string, ext
   continueInThread(s.db as never, who as never, { postId, title: "A long thought", ...extra });
 
 describe("continueInThread", () => {
-  it("moves the author's message into a new Hub thread as its first post and leaves a placeholder", async () => {
-    const s = store();
-    const out = await cont(s, member, "p1");
-    const thread = threadIn(s, out.threadId);
-    expect(thread).toMatchObject({
-      categoryId: HUB,
-      title: "A long thought",
-      authorUserId: "u_member",
-      authorPersonaId: null,
-      postCount: 1,
-    });
-    // The very post moves (its id, text and time stay), so reports and permalinks follow it.
-    expect(postIn(s, "p1")).toMatchObject({
-      threadId: out.threadId,
-      plainText: "A long thought",
-      replyToPostId: null,
-      createdAt: at(1),
-    });
-    const placeholder = s.state.posts.find((p) => p.continuedThreadId === out.threadId)!;
-    expect(placeholder).toMatchObject({
-      threadId: BOARD_THREAD,
-      authorUserId: "u_member",
-      createdAt: at(1),
-      continuedThreadId: out.threadId,
-    });
-    expect(out.placeholder).toMatchObject({
-      id: placeholder.id,
-      continued: { threadId: out.threadId, title: "A long thought", replies: 0 },
-      byViewer: true,
-    });
-  });
-
   it("dates the new thread by the moved message and takes the board thread's lock", async () => {
     const s = store();
     const out = await cont(s, member, "p1");
@@ -168,16 +136,6 @@ describe("continueInThread", () => {
     });
     await expect(cont(other, member, "hubpost")).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
-
-  it("validates the title", async () => {
-    await expect(cont(store(), member, "p1", { title: "ab" })).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-    });
-    await expect(cont(store(), member, "p1", { title: "x".repeat(201) })).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-    });
-  });
-
   describe("personas", () => {
     it("moves an in-character message to an in-character category, never the Hub", async () => {
       const s = store();

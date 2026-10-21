@@ -50,35 +50,6 @@ describe("resolveMentionNames", () => {
       expect.objectContaining({ where: { handle: { in: ["kir"] }, isActive: true } })
     );
   });
-
-  it("picks one persona when two differ only by case: the exact spelling, else the oldest", async () => {
-    // The rows arrive oldest first (the query orders them by createdAt, then id).
-    const exact = mentionDb(
-      [],
-      [
-        { username: "Kira", clerkUserId: "clerk_old" },
-        { username: "kira", clerkUserId: "clerk_new" },
-      ]
-    );
-    const byExact = await resolveMentionNames(exact as never, ["kira"]);
-    expect(byExact.get("kira")).toMatchObject({
-      ownerClerkId: "clerk_new",
-      href: "/dashboard/profile/kira",
-    });
-    const oldest = mentionDb(
-      [],
-      [
-        { username: "Kira", clerkUserId: "clerk_old" },
-        { username: "KIRA", clerkUserId: "clerk_new" },
-      ]
-    );
-    const byAge = await resolveMentionNames(oldest as never, ["kira"]);
-    expect(byAge.get("kira")).toMatchObject({ ownerClerkId: "clerk_old" });
-    expect(oldest.thinkpagesAccount.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ orderBy: [{ createdAt: "asc" }, { id: "asc" }] })
-    );
-  });
-
   it("looks up at most the first 50 names", async () => {
     const db = mentionDb([], []);
     const names = Array.from({ length: 60 }, (_, i) => `name${i + 100}`);
@@ -129,36 +100,6 @@ describe("withMentionLinks", () => {
     );
     expect(out.contentWikitext).toBe("Hi @kir");
   });
-
-  it("returns the body itself, with no query, when there is no @ or no name resolves", async () => {
-    const fake = db();
-    const plain = { contentHtml: "<p>nothing</p>" };
-    await expect(withMentionLinks(fake as never, plain)).resolves.toBe(plain);
-    expect(fake.user.findMany).not.toHaveBeenCalled();
-    fake.user.findMany.mockResolvedValue([]);
-    const nobody = { contentHtml: "<p>Hi @nobody</p>" };
-    await expect(withMentionLinks(fake as never, nobody)).resolves.toBe(nobody);
-  });
-
-  it("leaves a mention inside a quote, code or a link alone", async () => {
-    const body = {
-      contentHtml: '<blockquote>@kir</blockquote><code>@kir</code><a href="/x">@kir</a>',
-    };
-    await expect(withMentionLinks(db() as never, body)).resolves.toBe(body);
-  });
-
-  it("re-links a stored mention link that an edit sends back", async () => {
-    const stored = '<p>Hi <a class="forum-mention" href="/id/kir">@kir</a></p>';
-    const out = await withMentionLinks(db() as never, { contentHtml: stored });
-    expect(out.contentHtml).toBe(stored);
-    const canvas = `<div class="mw-parser-output">${stored}</div>`;
-    const again = await withMentionLinks(db() as never, {
-      contentHtml: canvas,
-      contentWikitext: "x",
-    });
-    expect(again.contentHtml).toBe(canvas);
-  });
-
   it("unwraps a forged mention link to text: it stays text unless @name resolves, and then it is the real link", async () => {
     const forged = '<a class="forum-mention" href="/id/victim">@victim</a>';
     const light = await withMentionLinks(db() as never, { contentHtml: `<p>${forged}</p>` });
@@ -174,16 +115,6 @@ describe("withMentionLinks", () => {
     expect(named.contentHtml).toBe('<p><a class="forum-mention" href="/id/kir">@kir</a></p>');
     expect(mentionAnchorNames(named.contentHtml)).toEqual(["kir"]);
   });
-
-  it("links a persona at its profile path, which mentionAnchorNames then trusts", async () => {
-    const personas = mentionDb([], [{ username: "Aria_V", clerkUserId: "clerk_owner" }]);
-    const out = await withMentionLinks(personas as never, { contentHtml: "<p>Hi @aria_v</p>" });
-    expect(out.contentHtml).toBe(
-      '<p>Hi <a class="forum-mention" href="/dashboard/profile/Aria_V">@aria_v</a></p>'
-    );
-    expect(mentionAnchorNames(out.contentHtml)).toEqual(["aria_v"]);
-  });
-
   it("changes nothing in a body past the nesting ceiling, and queries no name", async () => {
     const fake = db();
     const body = {

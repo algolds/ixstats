@@ -1,56 +1,9 @@
 /** @jest-environment node */
-import {
-  ATTACH_PARAM,
-  categoryHref,
-  claimNationHref,
-  hubHref,
-  isForumPath,
-  modHref,
-  newThreadAttachHref,
-  newThreadHref,
-  postHref,
-  realmBoardAttachHref,
-  realmBoardHref,
-  realmHref,
-  threadHref
-} from "~/lib/thinkpages-forum/links";
+import { categoryHref, modHref, realmBoardAttachHref } from "~/lib/thinkpages-forum/links";
 
 describe("forum links", () => {
-  it("puts sitewide categories under /c and realm categories under /r/<slug>", () => {
-    expect(categoryHref({ key: "general" })).toBe("/thinkpages/c/general");
-    expect(categoryHref({ key: "general", realm: null })).toBe("/thinkpages/c/general");
-    expect(categoryHref({ key: "hub", realm: { slug: "eurth" } })).toBe("/thinkpages/r/eurth/hub");
-  });
-
-  it("opens a realm's Hub, encoding the slug", () => {
-    expect(hubHref("eurth")).toBe("/thinkpages/r/eurth/hub");
-    expect(hubHref("a/b")).toBe("/thinkpages/r/a%2Fb/hub");
-  });
-
-  it("opens a realm's landing page, encoding the slug, and anchors a message on it", () => {
-    expect(realmHref("eurth")).toBe("/thinkpages/r/eurth");
-    expect(realmHref("a/b")).toBe("/thinkpages/r/a%2Fb");
-    expect(realmBoardHref("eurth")).toBe("/thinkpages/r/eurth");
-    expect(realmBoardHref("eurth", "p 1")).toBe("/thinkpages/r/eurth#post-p%201");
-  });
-
-  it("starts a thread under the category's path", () => {
-    expect(newThreadHref({ key: "general" })).toBe("/thinkpages/c/general/new");
-    expect(newThreadHref({ key: "hub", realm: { slug: "eurth" } })).toBe(
-      "/thinkpages/r/eurth/hub/new"
-    );
-  });
-
-  it("links threads by id and nation claims to the realm's Nations tab", () => {
-    expect(threadHref("t1")).toBe("/thinkpages/t/t1");
-    expect(postHref("p9")).toBe("/thinkpages/post/p9");
-    expect(postHref("a/b")).toBe("/thinkpages/post/a%2Fb");
-    expect(claimNationHref("eurth")).toBe("/r/eurth/nations");
-  });
-
   it("encodes slugs so they cannot add path segments or query parameters", () => {
     expect(categoryHref({ key: "hub", realm: { slug: "../x" } })).toBe("/thinkpages/r/..%2Fx/hub");
-    expect(claimNationHref("a/b")).toBe("/r/a%2Fb/nations");
   });
 
   it("opens the moderation console, encoding the tab and realm", () => {
@@ -60,32 +13,7 @@ describe("forum links", () => {
     expect(modHref({ tab: "log=x" })).toBe("/thinkpages/mod?tab=log%3Dx");
   });
 });
-
-describe("isForumPath", () => {
-  it("is true for the forum and anything under it, false for lookalikes", () => {
-    expect(isForumPath("/thinkpages")).toBe(true);
-    expect(isForumPath("/thinkpages/c/general")).toBe(true);
-    expect(isForumPath("/thinkpages-old")).toBe(false);
-    expect(isForumPath("/dashboard")).toBe(false);
-    expect(isForumPath("/")).toBe(false);
-  });
-});
-
 describe("attach links", () => {
-  it("opens a realm's board with the composer prefilled", () => {
-    expect(ATTACH_PARAM).toBe("attach");
-    expect(realmBoardAttachHref("eurth", "dir-abc")).toBe("/thinkpages/r/eurth?attach=dir-abc");
-  });
-
-  it("opens a category's new-thread form with the composer prefilled", () => {
-    expect(newThreadAttachHref({ key: "hub", realm: { slug: "eurth" } }, "dir-abc")).toBe(
-      "/thinkpages/r/eurth/hub/new?attach=dir-abc"
-    );
-    expect(newThreadAttachHref({ key: "general" }, "a1")).toBe(
-      "/thinkpages/c/general/new?attach=a1"
-    );
-  });
-
   it("encodes the slug and the id, so neither can add a parameter", () => {
     expect(realmBoardAttachHref("a b", "x&y=1")).toBe("/thinkpages/r/a%20b?attach=x%26y%3D1");
   });

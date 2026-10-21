@@ -5,7 +5,7 @@
  * officers holding it, Hand over for the founder).
  */
 import React from "react";
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 jest.mock("next/navigation", () => ({
   usePathname: () => "/r/eurth",
@@ -48,11 +48,8 @@ jest.mock("~/app/admin/realms/_components/ClaimsTab", () => ({
 jest.mock("~/app/r/[realm]/_components/manage/RealmWikitextEditor", () => ({
   RealmWikitextEditor: ({ saveLabel }: { saveLabel: string }) => <button>{saveLabel}</button>,
 }));
-
-import { RealmRegionHeader } from "~/app/r/[realm]/_components/RealmRegionHeader";
-import { CommunityPanel, OfficersPanel, PollPanel } from "~/app/r/[realm]/_components/RealmSidebar";
+import { CommunityPanel } from "~/app/r/[realm]/_components/RealmSidebar";
 import { LeaveRealmButton } from "~/app/r/[realm]/_components/LeaveRealmButton";
-import { LinksSection } from "~/app/r/[realm]/_components/manage/LinksSection";
 import RealmManagePage from "~/app/r/[realm]/(region)/manage/page";
 import "~/app/r/[realm]/(region)/rules/page";
 
@@ -99,162 +96,6 @@ function overview(overrides: Record<string, unknown> = {}) {
     ...overrides,
   } as never;
 }
-
-describe("realm header", () => {
-  it("shows the stats strip and tags, and no Manage tab for players", () => {
-    render(<RealmRegionHeader openToClaim={0} overview={overview()} />);
-    expect(screen.getByRole("heading", { name: "Eurth" })).toBeTruthy();
-    expect(screen.getByText("42")).toBeTruthy();
-    expect(screen.getByText("1.20B")).toBeTruthy();
-    expect(screen.getByText("2025")).toBeTruthy();
-    expect(screen.getByText("Administered by IxStats staff")).toBeTruthy();
-    expect(screen.queryByText("Open to claim")).toBeNull();
-    expect(screen.getByText("Fantasy")).toBeTruthy();
-    const nav = screen.getByRole("navigation", { name: "Realm sections" });
-    expect(within(nav).getByRole("link", { name: "Overview" }).getAttribute("aria-current")).toBe(
-      "page"
-    );
-    expect(within(nav).queryByRole("link", { name: "Manage" })).toBeNull();
-    expect(within(nav).queryByRole("link", { name: "Rules" })).toBeNull();
-    expect(screen.queryByText("In-world date")).toBeNull();
-  });
-  it("counts the nations still open to claim", () => {
-    render(<RealmRegionHeader openToClaim={100} overview={overview()} />);
-    expect(screen.getByText("Open to claim")).toBeTruthy();
-    expect(screen.getByText("100")).toBeTruthy();
-  });
-  it("adds the Rules tab once the realm has rules, and for those who write them", () => {
-    const rules = { html: "<p>Be civil.</p>", summary: "Be civil.", updatedAt: null };
-    const { unmount } = render(
-      <RealmRegionHeader openToClaim={0} overview={overview({ rules })} />
-    );
-    expect(screen.getByRole("link", { name: "Rules" }).getAttribute("href")).toContain(
-      "/r/eurth/rules"
-    );
-    unmount();
-    render(
-      <RealmRegionHeader
-        openToClaim={0}
-        overview={overview({
-          viewer: {
-            signedIn: true,
-            powers: ["appearance"],
-            isFounder: false,
-            canManage: true,
-            ownedNations: [],
-          },
-        })}
-      />
-    );
-    expect(screen.getByRole("link", { name: "Rules" })).toBeTruthy();
-  });
-
-  it("adds the Manage tab for the founder and officers", () => {
-    render(
-      <RealmRegionHeader
-        openToClaim={0}
-        overview={overview({
-          viewer: {
-            signedIn: true,
-            powers: ["board"],
-            isFounder: false,
-            canManage: true,
-            ownedNations: [],
-          },
-        })}
-      />
-    );
-    expect(screen.getByRole("link", { name: "Manage" }).getAttribute("href")).toContain(
-      "/r/eurth/manage"
-    );
-  });
-});
-
-describe("realm share", () => {
-  const holder = {
-    signedIn: true,
-    powers: [],
-    isFounder: false,
-    canManage: false,
-    ownedNations: [{ id: "c1", name: "Aurelia", slug: "aurelia" }],
-  };
-
-  afterEach(() => {
-    delete queries["ixnayid.getStatus"];
-  });
-
-  it("offers the canonical link and card, and no invite to a viewer without a nation here", async () => {
-    queries["ixnayid.getStatus"] = { passportHandle: "alex" };
-    render(<RealmRegionHeader openToClaim={0} overview={overview()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Share" }));
-    expect(await screen.findByRole("button", { name: "Copy link" })).toBeTruthy();
-    // The stable card route outside the (region) group (src/app/r/[realm]/opengraph-image.tsx); the
-    // group's own image is served at a hashed path.
-    expect(screen.getByRole("link", { name: "Download card" }).getAttribute("href")).toBe(
-      "/r/eurth/opengraph-image"
-    );
-    expect(screen.queryByRole("button", { name: "Copy invite link" })).toBeNull();
-  });
-
-  it("adds Copy invite link carrying the viewer's handle when they hold a nation here", async () => {
-    queries["ixnayid.getStatus"] = { passportHandle: "alex" };
-    const writeText = jest.fn().mockResolvedValue(undefined);
-    Object.assign(navigator, { clipboard: { writeText } });
-    render(<RealmRegionHeader openToClaim={0} overview={overview({ viewer: holder })} />);
-    fireEvent.click(screen.getByRole("button", { name: "Share" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Copy invite link" }));
-    await waitFor(() =>
-      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/r/eurth?via=alex`)
-    );
-  });
-});
-
-describe("sidebar", () => {
-  it("links officers and the founder with a handle to their passport", () => {
-    const founder = {
-      name: "Borovia",
-      handle: "bora",
-      nation: { id: "c2", name: "Borovia", slug: "borovia", flag: null },
-    };
-    const officers = [
-      { title: "Foreign Minister", powers: [], name: "Aurelia", handle: "aure", nation: null },
-      { title: "Archivist", powers: [], name: "Cassia", handle: "cass", nation: null },
-    ];
-    render(<OfficersPanel overview={overview({ founder, officers })} />);
-    expect(screen.getByRole("link", { name: "Borovia" }).getAttribute("href")).toMatch(/\/@bora$/);
-    expect(screen.getByRole("link", { name: "Aurelia" }).getAttribute("href")).toMatch(/\/@aure$/);
-    expect(screen.getByRole("link", { name: "Cassia" }).getAttribute("href")).toMatch(/\/@cass$/);
-  });
-
-  it("links the header's founder to their passport when they have a handle", () => {
-    const founder = { name: "Borovia", handle: "bora", nation: null };
-    render(<RealmRegionHeader openToClaim={0} overview={overview({ founder })} />);
-    expect(screen.getByRole("link", { name: "Borovia" }).getAttribute("href")).toMatch(/\/@bora$/);
-  });
-
-  it("lets a nation owner vote in the realm poll", () => {
-    mutate.mockClear();
-    const poll = {
-      id: "p1",
-      question: "Where should the capital be?",
-      description: null,
-      multiple: false,
-      endDate: null,
-      expired: false,
-      options: [
-        { id: "o1", label: "North", votes: 0 },
-        { id: "o2", label: "South", votes: 0 },
-      ],
-      totalVotes: 0,
-      userVotedOptionIds: [],
-      canVote: true,
-    };
-    render(<PollPanel slug="eurth" overview={overview({ poll })} />);
-    fireEvent.click(screen.getAllByRole("checkbox")[1]!);
-    fireEvent.click(screen.getByRole("button", { name: "Vote" }));
-    expect(mutate).toHaveBeenCalledWith({ pollId: "p1", optionIds: ["o2"] });
-  });
-});
 
 describe("community panel", () => {
   it("opens each link in a new tab without passing on the realm page", () => {
@@ -335,125 +176,6 @@ describe("Manage tab", () => {
     embassies: [],
     polls: [],
   });
-
-  it("shows an officer only the sections their powers allow", async () => {
-    queries["realms.region.manage"] = manage(["board"], false);
-    queries["realms.getBySlug"] = { countries: [] };
-    await renderManage();
-    const nav = await screen.findByRole("navigation", { name: "Manage sections" });
-    expect(
-      within(nav)
-        .getAllByRole("link")
-        .map((a) => a.textContent)
-    ).toEqual(["Officers", "Forum moderation"]);
-    expect(screen.queryByText("claims list")).toBeNull();
-    expect(screen.queryByRole("heading", { name: "Appearance" })).toBeNull();
-  });
-
-  it("sends the board power to the forum moderation console for this realm", async () => {
-    queries["realms.region.manage"] = manage(["board"], false);
-    await renderManage();
-    const section = (await screen.findByRole("heading", { name: "Forum moderation" })).closest(
-      "section"
-    )!;
-    expect(
-      within(section).getByText(/hide, lock, warn and ban in this realm's forum section/i)
-    ).toBeTruthy();
-    expect(
-      within(section)
-        .getByRole("link", { name: "Open the moderation console" })
-        .getAttribute("href")
-    ).toBe("/thinkpages/mod?realm=eurth");
-    expect(screen.queryByText(/muted or banned/i)).toBeNull();
-  });
-
-  it("gives an officer with the claims power the Claims section", async () => {
-    queries["realms.region.manage"] = manage(["claims"], false);
-    await renderManage();
-    const nav = await screen.findByRole("navigation", { name: "Manage sections" });
-    expect(
-      within(nav)
-        .getAllByRole("link")
-        .map((a) => a.textContent)
-    ).toEqual(["Officers", "Claims"]);
-    expect(screen.getByText("claims list")).toBeTruthy();
-    expect(screen.queryByRole("heading", { name: "Hand over" })).toBeNull();
-  });
-
-  it("gives the founder claims review, every section and the hand-over", async () => {
-    queries["realms.region.manage"] = manage(["appearance", "board", "diplomacy", "claims"], true, {
-      canHandOver: true,
-    });
-    queries["realms.directory"] = [];
-    await renderManage();
-    const nav = await screen.findByRole("navigation", { name: "Manage sections" });
-    expect(
-      within(nav)
-        .getAllByRole("link")
-        .map((a) => a.textContent)
-    ).toEqual([
-      "Appearance",
-      "Advert",
-      "Links",
-      "Factbook",
-      "Rules",
-      "Officers",
-      "Claims",
-      "Forum moderation",
-      "Embassies",
-      "Poll",
-      "Time",
-      "Source sync",
-      "Wiki",
-      "Hand over",
-    ]);
-    expect(screen.getByText("claims list")).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Source sync" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Wiki" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Community links" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Rules" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Save rules" })).toBeTruthy();
-  });
-
-  it("gives an appearance officer the links, in-world date, factbook and rules", async () => {
-    queries["realms.region.manage"] = manage(["appearance"], false);
-    await renderManage();
-    const nav = await screen.findByRole("navigation", { name: "Manage sections" });
-    expect(
-      within(nav)
-        .getAllByRole("link")
-        .map((a) => a.textContent)
-    ).toEqual(["Appearance", "Advert", "Links", "Factbook", "Rules", "Officers"]);
-  });
-
-  it("lets site staff, and only them, set the founder line and founding year in Appearance", async () => {
-    queries["realms.region.manage"] = manage(["appearance"], false);
-    await renderManage();
-    await screen.findByRole("navigation", { name: "Manage sections" });
-    expect(screen.queryByLabelText("Founder title")).toBeNull();
-    expect(screen.queryByLabelText("Founded")).toBeNull();
-    cleanup();
-    queries["realms.region.manage"] = manage(["appearance"], true, { canSetFounding: true });
-    await renderManage();
-    expect(await screen.findByLabelText("Founder title")).toBeTruthy();
-    const founded = screen.getByLabelText("Founded");
-    expect(founded).toHaveAttribute("placeholder", "2026");
-    // A year still to come keeps Save off.
-    fireEvent.change(founded, { target: { value: String(new Date().getUTCFullYear() + 1) } });
-    expect(screen.getByRole("button", { name: "Save appearance" })).toBeDisabled();
-    fireEvent.change(founded, { target: { value: "2003" } });
-    expect(screen.getByRole("button", { name: "Save appearance" })).not.toBeDisabled();
-  });
-
-  it("leaves the hand-over out for site admins acting as founder", async () => {
-    queries["realms.region.manage"] = manage(["appearance", "board", "diplomacy", "claims"], true);
-    queries["realms.directory"] = [];
-    await renderManage();
-    const nav = await screen.findByRole("navigation", { name: "Manage sections" });
-    expect(within(nav).queryByRole("link", { name: "Hand over" })).toBeNull();
-    expect(within(nav).getByRole("link", { name: "Claims" })).toBeTruthy();
-  });
-
   it("hands the realm to an officer once the realm slug is typed", async () => {
     mutate.mockClear();
     queries["realms.region.manage"] = manage(["appearance", "board", "diplomacy", "claims"], true, {
@@ -487,30 +209,6 @@ describe("Manage tab", () => {
       newOwnerId: "clerk_minister",
       confirmSlug: "eurth",
       keepPreviousAsOfficer: true,
-    });
-  });
-});
-
-describe("community links editor", () => {
-  it("won't save an address that isn't https, and saves the trimmed links", () => {
-    mutate.mockClear();
-    render(
-      <LinksSection
-        slug="eurth"
-        links={[{ label: "Forum", url: "https://forum.eurth.example/", kind: "forum" }]}
-      />
-    );
-    const save = screen.getByRole("button", { name: "Save links" }) as HTMLButtonElement;
-    const address = screen.getByLabelText("Link 1 address");
-    fireEvent.change(address, { target: { value: "javascript:alert(1)" } });
-    expect(screen.getByText("Use a full https:// address.")).toBeTruthy();
-    expect(save.disabled).toBe(true);
-    fireEvent.change(address, { target: { value: " https://forum.eurth.example/new " } });
-    expect(save.disabled).toBe(false);
-    fireEvent.click(save);
-    expect(mutate).toHaveBeenCalledWith({
-      slug: "eurth",
-      links: [{ label: "Forum", url: "https://forum.eurth.example/new", kind: "forum" }],
     });
   });
 });

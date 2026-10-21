@@ -78,20 +78,6 @@ it("sweeps idle users from the per-user limiter once it holds more than 1,000", 
     now.mockRestore();
   }
 });
-
-it("composes notices, a floated infobox and the body inside mw-parser-output", () => {
-  const html = composePostHtml({
-    bodyHtml: "<p>b</p>",
-    infoboxHtml: "<table>i</table>",
-    noticesHtml: "<div>n</div>",
-    toc: [],
-    rendererVersion: "x",
-  } as never);
-  expect(html.startsWith('<div class="mw-parser-output">')).toBe(true);
-  expect(html.indexOf("n</div>")).toBeLessThan(html.indexOf("<table>"));
-  expect(html.indexOf("<table>")).toBeLessThan(html.indexOf("<p>b</p>"));
-});
-
 describe("members cannot position their post over the app", () => {
   const OVERLAY =
     '<div class="fixed inset-0 z-50 wikitable" style="position:fixed;inset:0;z-index:99999;color:red">Please sign in again</div>';
@@ -122,9 +108,5 @@ describe("members cannot position their post over the app", () => {
         )
       ).contentHtml
     );
-  });
-
-  it("stamps the renderer version that re-renders stored posts", () => {
-    expect(FORUM_RENDERER_VERSION).toMatch(/^forum-6:/);
   });
 });

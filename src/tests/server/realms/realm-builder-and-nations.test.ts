@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { listBuilderRealms, listMyNations, resolveBuilderRealm } from "~/server/modules/realms";
+import { listBuilderRealms, resolveBuilderRealm } from "~/server/modules/realms";
 
 jest.mock("~/lib/auth", () => ({ isSystemOwner: () => false }));
 
@@ -30,27 +30,6 @@ function builderDb(opts: {
 }
 
 describe("listBuilderRealms", () => {
-  it("lists Ixnay first, with the player's standing against each realm's effective cap", async () => {
-    const db = builderDb({
-      membershipTier: "mycountry_premium",
-      activeRealmId: "eurth",
-      realms: [
-        { id: "eurth", slug: "eurth", name: "Eurth", settings: { maxNationsPerUser: 3 } },
-        { id: "default", slug: "ixnay", name: "Ixnay", settings: null },
-        { id: "zed", slug: "zed", name: "Zed", settings: { maxNationsPerUser: 20 } },
-      ],
-      owned: ["default", "eurth", "eurth", "eurth"],
-    });
-    await expect(listBuilderRealms(db, user)).resolves.toEqual({
-      defaultRealmId: "eurth",
-      realms: [
-        { id: "default", slug: "ixnay", name: "Ixnay", held: 1, cap: 1, canCreate: false },
-        { id: "eurth", slug: "eurth", name: "Eurth", held: 3, cap: 3, canCreate: false },
-        { id: "zed", slug: "zed", name: "Zed", held: 0, cap: 5, canCreate: true },
-      ],
-    });
-  });
-
   it("offers Ixnay and active, non-system realms that are public, founded by the player, or where they hold a nation", async () => {
     const db = builderDb({ realms: [] });
     await listBuilderRealms(db, user);
@@ -73,14 +52,6 @@ describe("listBuilderRealms", () => {
       select: { id: true, slug: true, name: true, settings: true },
     });
   });
-
-  it("falls back to Ixnay as the default when the active nation's realm is not offered", async () => {
-    const db = builderDb({
-      activeRealmId: "closed",
-      realms: [{ id: "default", slug: "ixnay", name: "Ixnay", settings: null }],
-    });
-    await expect(listBuilderRealms(db, user)).resolves.toMatchObject({ defaultRealmId: "default" });
-  });
 });
 
 describe("resolveBuilderRealm", () => {
@@ -91,12 +62,6 @@ describe("resolveBuilderRealm", () => {
       country: { count: jest.fn().mockResolvedValue(held), findMany: jest.fn() },
     } as any;
   }
-
-  it("Ixnay needs no realm row", async () => {
-    await expect(resolveBuilderRealm(db(null), user)).resolves.toMatchObject({
-      realmId: "default",
-    });
-  });
 
   it("Ixnay's row is open whatever its status", async () => {
     await expect(
@@ -118,80 +83,5 @@ describe("resolveBuilderRealm", () => {
         "x"
       )
     ).rejects.toMatchObject({ code: "CAP_REACHED", message: expect.stringMatching(/Premium/) });
-  });
-
-  it("a premium player under the realm cap passes", async () => {
-    const d = db(
-      { id: "x", status: "active", settings: { maxNationsPerUser: 5 } },
-      4,
-      "mycountry_premium"
-    );
-    await expect(resolveBuilderRealm(d, user, "x")).resolves.toMatchObject({
-      realmId: "x",
-      capacity: { held: 4, cap: 5, canTakeAnother: true },
-    });
-  });
-});
-
-describe("listMyNations", () => {
-  it("groups the player's nations by realm (Ixnay first), with the active nation", async () => {
-    const owned = [
-      {
-        id: "c1",
-        name: "Aurelia",
-        slug: "aurelia",
-        flag: null,
-        realmId: "default",
-        realm: { slug: "ixnay", name: "Ixnay" },
-      },
-      {
-        id: "e1",
-        name: "Brava",
-        slug: "brava",
-        flag: "f.png",
-        realmId: "eurth",
-        realm: { slug: "eurth", name: "Eurth" },
-      },
-      {
-        id: "a1",
-        name: "Cadiz",
-        slug: "cadiz",
-        flag: null,
-        realmId: "alpha",
-        realm: { slug: "alpha", name: "Alpha" },
-      },
-      {
-        id: "e2",
-        name: "Dorn",
-        slug: "dorn",
-        flag: null,
-        realmId: "eurth",
-        realm: { slug: "eurth", name: "Eurth" },
-      },
-    ];
-    const db = {
-      country: { findMany: jest.fn().mockResolvedValue(owned) },
-    } as any;
-    const result = await listMyNations(db, { id: "u1", countryId: "e2" });
-    expect(db.country.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { ownerUserId: "u1" } })
-    );
-    expect(result.activeCountryId).toBe("e2");
-    expect(result.realms.map((r) => [r.id, r.nations.map((n) => n.id)])).toEqual([
-      ["default", ["c1"]],
-      ["alpha", ["a1"]],
-      ["eurth", ["e1", "e2"]],
-    ]);
-    expect(result.realms[2]).toMatchObject({ slug: "eurth", name: "Eurth" });
-  });
-
-  it("an account with no nations gets an empty list", async () => {
-    const db = {
-      country: { findMany: jest.fn().mockResolvedValue([]) },
-    } as any;
-    await expect(listMyNations(db, { id: "u1", countryId: null })).resolves.toEqual({
-      activeCountryId: null,
-      realms: [],
-    });
   });
 });

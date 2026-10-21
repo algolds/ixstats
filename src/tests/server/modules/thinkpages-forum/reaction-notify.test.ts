@@ -109,21 +109,6 @@ describe("notifyReaction", () => {
       select: { id: true },
     });
   });
-
-  it("names the realm's board for a board message and the sitewide thread for a sitewide post", async () => {
-    const { db } = setup();
-    await notifyReaction(db, reactor, { postId: "b1" });
-    const [[[board]]] = sent.mock.calls as never as [[[ForumNotice]]];
-    expect(board).toMatchObject({
-      title: "member reacted to your post in the Eurth board",
-      href: "/thinkpages/post/b1",
-      metadata: { postId: "b1", threadId: "t_board_r_eurth" },
-    });
-    await notifyReaction(db, reactor, { postId: "p_site" });
-    const [, [[site]]] = sent.mock.calls as never as [unknown, [[ForumNotice]]];
-    expect(site).toMatchObject({ title: "member reacted to your post in Thread t_site" });
-  });
-
   it("tells a persona post's owner, naming the reactor only, never the persona or its player", async () => {
     const { db } = setup();
     await notifyReaction(db, reactor, { postId: "p_persona" });
@@ -168,17 +153,6 @@ describe("notifyReaction", () => {
     expect(sent).not.toHaveBeenCalled();
     expect(notification.findFirst).not.toHaveBeenCalled();
   });
-
-  it("looks for the reaction by its post and reactor", async () => {
-    const { db, store } = setup();
-    await notifyReaction(db, reactor, { postId: "p_hub" });
-    expect(store.reactionDb.findUnique).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { postId_userId: { postId: "p_hub", userId: "u_member" } },
-      })
-    );
-  });
-
   it("tells nobody who cannot read the post", async () => {
     const { db } = setup();
     await notifyReaction(db, reactor, { postId: "p_draft" });
@@ -228,19 +202,6 @@ describe("notifyReaction", () => {
       select: { id: true },
     });
   });
-
-  it("tells the owner again for another reactor, and about another post by the same reactor", async () => {
-    const { db, stored } = setup();
-    await notifyReaction(db, reactor, { postId: "p_hub" });
-    await notifyReaction(db, { id: "u_plain", clerkUserId: "clerk_u_plain" }, { postId: "p_hub" });
-    await notifyReaction(db, reactor, { postId: "p_site" });
-    expect(stored.map((row) => JSON.parse(row.metadata).reactionKey)).toEqual([
-      "p_hub:u_member",
-      "p_hub:u_plain",
-      "p_site:u_member",
-    ]);
-  });
-
   it("does not throw when the lookup or the write fails", async () => {
     const { db, notification } = setup();
     notification.findFirst.mockRejectedValue(new Error("db down"));

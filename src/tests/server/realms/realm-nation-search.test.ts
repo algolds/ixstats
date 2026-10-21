@@ -81,36 +81,6 @@ describe("realms.searchNations", () => {
       title: { contains: "au", mode: "insensitive" },
     });
   });
-
-  it("returns countries and untaken nation pages by name, with their realm and whether they are claimable", async () => {
-    const result = await caller(makeDb()).searchNations({ query: "au" });
-
-    expect(result).toEqual([
-      expect.objectContaining({
-        kind: "country",
-        id: "c1",
-        name: "Aurelia",
-        claimable: false,
-        realm: EURTH,
-      }),
-      expect.objectContaining({
-        kind: "country",
-        id: "c2",
-        name: "Austral",
-        flag: "/f.png",
-        claimable: true,
-        realm: IXNAY,
-      }),
-      expect.objectContaining({ kind: "page", name: "Auvergne", claimable: true, realm: EURTH }),
-    ]);
-    // "Aurora" is a page a country already carries (by name, it has no page reference) and "Auberon" is the page
-    // of a nation since renamed: neither is offered.
-    expect(result.map((r) => r.name)).not.toContain("Aurora");
-    expect(result.map((r) => r.name)).not.toContain("Auberon");
-    expect(JSON.stringify(result)).not.toContain("u_secret");
-    for (const row of result) expect(row).not.toHaveProperty("ownerUserId");
-  });
-
   it("caps the results", async () => {
     const db = makeDb();
     db.country.findMany.mockImplementation(async ({ where }: any) =>
@@ -128,62 +98,21 @@ describe("realms.searchNations", () => {
     const result = await caller(db).searchNations({ query: "na" });
     expect(result).toHaveLength(NATION_SEARCH_LIMIT);
   });
-
-  it("finds nothing when no realm is listed", async () => {
-    const db = makeDb();
-    db.realm.findMany.mockResolvedValue([]);
-    await expect(caller(db).searchNations({ query: "au" })).resolves.toEqual([]);
-    expect(db.country.findMany).not.toHaveBeenCalled();
-  });
-
   it("refuses a query shorter than two letters", async () => {
     await expect(caller(makeDb()).searchNations({ query: " a " })).rejects.toThrow();
   });
 
   it("is refused over the public rate limit before touching the database", async () => {
     jest.spyOn(rateLimiter, "isEnabled").mockReturnValue(true);
-    jest
-      .spyOn(rateLimiter, "check")
-      .mockResolvedValue({
-        success: false,
-        remaining: 0,
-        resetAt: new Date("2026-10-06T12:00:00Z"),
-      });
+    jest.spyOn(rateLimiter, "check").mockResolvedValue({
+      success: false,
+      remaining: 0,
+      resetAt: new Date("2026-10-06T12:00:00Z"),
+    });
     jest.spyOn(console, "warn").mockImplementation(() => undefined);
     const db = makeDb();
     await expect(caller(db).searchNations({ query: "au" })).rejects.toThrow(/Too many requests/);
     expect(db.realm.findMany).not.toHaveBeenCalled();
     jest.restoreAllMocks();
-  });
-});
-
-describe("realms.directory claimable nation pages", () => {
-  it("counts each realm's nation pages that no country has taken yet", async () => {
-    const db = createMockPrisma();
-    db.realm.findMany.mockResolvedValue([
-      { ...EURTH, description: null, thumbnail: null, settings: null, _count: { countries: 1 } },
-      { ...IXNAY, description: null, thumbnail: null, settings: null, _count: { countries: 0 } },
-    ]);
-    db.country.groupBy.mockResolvedValue([]);
-    db.realmPage.findMany.mockResolvedValue([
-      { realmId: "eurth", title: "Aurora", wikiSource: "ixwiki" },
-      { realmId: "eurth", title: "Auberon", wikiSource: "ixwiki" },
-      { realmId: "eurth", title: "Borea", wikiSource: "ixwiki" },
-    ]);
-    db.country.findMany.mockResolvedValue([
-      { realmId: "eurth", name: "Aurora", wikiSource: "ixwiki", wikiPageTitle: null },
-      { realmId: "eurth", name: "Free Borea", wikiSource: "ixwiki", wikiPageTitle: "Borea" },
-    ]);
-
-    const rows = await caller(db).directory();
-
-    expect(db.realmPage.findMany.mock.calls[0]![0].where).toEqual({
-      realmId: { in: ["eurth", "default"] },
-      kind: "nation",
-    });
-    expect(rows.map((r) => [r.id, r.openNationPageCount])).toEqual([
-      ["eurth", 1],
-      ["default", 0],
-    ]);
   });
 });

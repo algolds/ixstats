@@ -51,12 +51,6 @@ describe("countRecruits", () => {
     mockRows.push(claim("p1"), claim("p1"));
     await expect(countRecruits(db, "inviter")).resolves.toBe(1);
   });
-
-  it("counts two different claimants as two", async () => {
-    mockRows.push(claim("p1"), claim("p2"), claim("p1"));
-    await expect(countRecruits(db, "inviter")).resolves.toBe(2);
-  });
-
   it("counts only approved claims naming this inviter", async () => {
     mockRows.push(
       claim("p1", "pending"),

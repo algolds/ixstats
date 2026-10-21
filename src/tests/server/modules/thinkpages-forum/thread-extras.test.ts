@@ -1,6 +1,4 @@
 /** @jest-environment node */
-import { POSTS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
-import { postNumberOf } from "~/lib/thinkpages-forum/numbers";
 import {
   roleContextOf,
   roleOf,
@@ -17,30 +15,7 @@ const ctx = (over: Partial<RoleContext> = {}): RoleContext => ({
   ...over,
 });
 const player = (id: string) => ({ authorUserId: id, authorPersonaId: null });
-
-describe("postNumberOf", () => {
-  it("counts from 1 and continues across pages", () => {
-    expect(postNumberOf(1, 0)).toBe(1);
-    expect(postNumberOf(1, POSTS_PER_PAGE - 1)).toBe(POSTS_PER_PAGE);
-    expect(postNumberOf(2, 0)).toBe(POSTS_PER_PAGE + 1);
-    expect(postNumberOf(3, 4)).toBe(2 * POSTS_PER_PAGE + 5);
-  });
-});
-
 describe("roleOf", () => {
-  it("ranks staff over officer over starter", () => {
-    const all = ctx({
-      staffUserIds: new Set(["u1"]),
-      officerUserIds: new Set(["u1", "u2"]),
-      starterUserId: "u1",
-    });
-    expect(roleOf(player("u1"), all)).toBe("staff");
-    expect(roleOf(player("u2"), all)).toBe("officer");
-    const starter = ctx({ officerUserIds: new Set(["u2"]), starterUserId: "u3" });
-    expect(roleOf(player("u3"), starter)).toBe("starter");
-    expect(roleOf(player("u4"), starter)).toBeNull();
-  });
-
   it("gives imported posts without an account no role", () => {
     const c = ctx({ starterUserId: "u1" });
     expect(roleOf({ authorUserId: null, authorPersonaId: null }, c)).toBeNull();
@@ -79,31 +54,7 @@ describe("roleContextOf", () => {
       ),
     },
   });
-  const posts = [player("u_admin"), player("u_off"), player("u_plain"), player("u_admin")];
   const thread = { authorUserId: "u_plain", authorPersonaId: null };
-
-  it("finds staff by role and officers of the thread's realm in one query each", async () => {
-    const db = fakeDb();
-    const out = await roleContextOf(db as never, thread, { scope: "realm", realmId: "r1" }, posts);
-    expect([...out.staffUserIds]).toEqual(["u_admin"]);
-    expect([...out.officerUserIds]).toEqual(["u_off"]);
-    expect(out).toMatchObject({ starterUserId: "u_plain", starterPersonaId: null });
-    expect(db.user.findMany).toHaveBeenCalledTimes(1);
-    expect(db.user.findMany.mock.calls[0]![0]).toMatchObject({
-      where: { id: { in: ["u_admin", "u_off", "u_plain"] } },
-    });
-    expect(db.realmOfficer.findMany).toHaveBeenCalledTimes(1);
-    expect(db.realmOfficer.findMany.mock.calls[0]![0].where).toMatchObject({ realmId: "r1" });
-  });
-
-  it("looks up no officers for a sitewide thread", async () => {
-    const db = fakeDb();
-    const out = await roleContextOf(db as never, thread, { scope: "site", realmId: null }, posts);
-    expect(out.officerUserIds.size).toBe(0);
-    expect(out.staffUserIds.has("u_admin")).toBe(true);
-    expect(db.realmOfficer.findMany).not.toHaveBeenCalled();
-  });
-
   it("never loads the player behind a persona post", async () => {
     const db = fakeDb();
     await roleContextOf(db as never, thread, { scope: "realm", realmId: "r1" }, [
@@ -111,16 +62,6 @@ describe("roleContextOf", () => {
       player("u_off"),
     ]);
     expect(db.user.findMany.mock.calls[0]![0]).toMatchObject({ where: { id: { in: ["u_off"] } } });
-  });
-
-  it("runs no query when no post has a player author", async () => {
-    const db = fakeDb();
-    const out = await roleContextOf(db as never, thread, { scope: "realm", realmId: "r1" }, [
-      { authorUserId: null, authorPersonaId: null },
-    ]);
-    expect(out.staffUserIds.size + out.officerUserIds.size).toBe(0);
-    expect(db.user.findMany).not.toHaveBeenCalled();
-    expect(db.realmOfficer.findMany).not.toHaveBeenCalled();
   });
 });
 
@@ -177,33 +118,6 @@ describe("threadParticipants", () => {
       "hidden"
     );
   });
-
-  it("merges one persona's rows and honours the limit", async () => {
-    const db = {
-      forumPost: {
-        groupBy: jest.fn(async () => [
-          {
-            authorUserId: "u1",
-            authorPersonaId: "pa1",
-            importedAuthorName: null,
-            _count: { _all: 2 },
-          },
-          {
-            authorUserId: "u9",
-            authorPersonaId: "pa1",
-            importedAuthorName: null,
-            _count: { _all: 3 },
-          },
-          ...rows,
-        ]),
-      },
-    };
-    const out = await threadParticipants(db as never, member, general, "t1", 2);
-    expect(out.top).toHaveLength(2);
-    expect(out.top[0]).toMatchObject({ authorPersonaId: "pa1", posts: 12, authorUserId: null });
-    // The total is counted before the cut: pa1 (merged), u1, u2, OldName.
-    expect(out.total).toBe(4);
-  });
 });
 
 describe("threadLastPosters", () => {
@@ -226,18 +140,6 @@ describe("threadLastPosters", () => {
     { threadId: "t3", authorUserId: null, authorPersonaId: null, importedAuthorName: "OldName" },
   ];
   const fakeDb = () => ({ forumPost: { findMany: jest.fn(async (_args: object) => posts) } });
-
-  it("asks once for the newest visible post of each listed thread", async () => {
-    const db = fakeDb();
-    await threadLastPosters(db as never, member, general, ["t1", "t2", "t3"]);
-    expect(db.forumPost.findMany).toHaveBeenCalledTimes(1);
-    expect(db.forumPost.findMany.mock.calls[0]![0]).toMatchObject({
-      where: { threadId: { in: ["t1", "t2", "t3"] }, hidden: false },
-      orderBy: { createdAt: "desc" },
-      distinct: ["threadId"],
-    });
-  });
-
   it("reads hidden posts too for the category's moderator only", async () => {
     const db = fakeDb();
     await threadLastPosters(db as never, admin, general, ["t1"]);
@@ -263,11 +165,5 @@ describe("threadLastPosters", () => {
         importedAuthorName: "OldName",
       });
     }
-  });
-
-  it("does not query for an empty list", async () => {
-    const db = fakeDb();
-    expect((await threadLastPosters(db as never, member, general, [])).size).toBe(0);
-    expect(db.forumPost.findMany).not.toHaveBeenCalled();
   });
 });

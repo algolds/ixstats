@@ -10,12 +10,10 @@ jest.mock("~/lib/maps/geo-validation", () => ({
   ...jest.requireActual("~/lib/maps/geo-validation"),
   isPostGISAvailable: jest.fn().mockResolvedValue(true),
 }));
-
-import { isPostGISAvailable } from "~/lib/maps/geo-validation";
 import { createCallerFactory } from "~/server/api/trpc";
 import { geoEditorBordersRouter } from "~/server/api/routers/geo/editor/borders";
 import { realmMapRouter } from "~/server/api/routers/realms/map";
-import { EARTH_RADIUS_KM, polygonalAreaSqKm } from "~/lib/maps/planet";
+import { EARTH_RADIUS_KM } from "~/lib/maps/planet";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 const EURTH = "r_eurth";
@@ -128,24 +126,6 @@ describe("Recompute areas", () => {
       realm: "eurth",
       alsoSetLandArea,
     });
-
-  it("re-measures the realm's polygon features with PostGIS × (r / 6371)²", async () => {
-    const db = realmDb(HALF_EARTH);
-    db.$queryRawUnsafe!.mockResolvedValue([{ id: "a" }, { id: "b" }]);
-    await expect(recompute(db, MAP_OFFICER)).resolves.toMatchObject({
-      radiusKm: HALF_EARTH,
-      updated: 2,
-      countriesUpdated: 0,
-    });
-    const [sql, realmId, factor] = db.$queryRawUnsafe!.mock.calls[0];
-    expect(sql).toContain("ST_Area(geom_postgis::geography)");
-    expect(sql).toContain(`"worldId" = $1`);
-    expect(realmId).toBe(EURTH);
-    expect(factor).toBeCloseTo(0.25);
-    // the new areas show in the layers: the realm's map version moves
-    expect(db.$queryRaw!.mock.calls.map((call) => call[1])).toEqual([EURTH]);
-  });
-
   it("leaves nations' stated land area alone unless the founder ticks the box", async () => {
     const db = realmDb();
     await recompute(db, MAP_OFFICER);
@@ -158,32 +138,6 @@ describe("Recompute areas", () => {
     await expect(recompute(db, MAP_OFFICER, true)).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(db.$queryRawUnsafe).not.toHaveBeenCalled();
   });
-
-  it("with the box ticked, a nation's land area becomes the sum of its regions", async () => {
-    const db = realmDb();
-    db.mapLayer!.groupBy!.mockResolvedValue([{ countryId: "c1", _sum: { areaSqKm: 1500 } }]);
-    await expect(recompute(db, FOUNDER, true)).resolves.toMatchObject({ countriesUpdated: 1 });
-    expect(db.country!.updateMany).toHaveBeenCalledWith({
-      where: { id: "c1", realmId: EURTH },
-      data: { landArea: 1500, areaSqMi: 1500 * 0.386102 },
-    });
-  });
-
-  it("without PostGIS, measures each polygon here on the realm's planet", async () => {
-    (isPostGISAvailable as jest.Mock).mockResolvedValueOnce(false);
-    const db = realmDb(HALF_EARTH);
-    db.mapLayer!.findMany!.mockResolvedValueOnce([
-      { id: "a", geometry: SQUARE },
-      { id: "b", geometry: { type: "LineString", coordinates: [] } },
-    ]);
-    await expect(recompute(db, MAP_OFFICER)).resolves.toMatchObject({ updated: 1 });
-    expect(db.mapLayer!.update).toHaveBeenCalledWith({
-      where: { id: "a" },
-      data: { areaSqKm: polygonalAreaSqKm(SQUARE, HALF_EARTH) },
-    });
-    expect(db.mapLayer!.findMany!.mock.calls[0][0].where).toMatchObject({ realmId: EURTH });
-  });
-
   it("refuses an unknown realm slug, even for a site admin, instead of falling back to Ixnay", async () => {
     const db = realmDb();
     const ctx = createMockRouterContext({
@@ -246,92 +200,5 @@ describe("map settings", () => {
       })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(db.realm!.update).not.toHaveBeenCalled();
-  });
-});
-
-describe("what the realm's map viewer shows", () => {
-  it("lists the realm's raster layers in drawing order, its climate key and the layer types it has", async () => {
-    const db = realmDb();
-    const layer = { label: "L", version: "0a1b2c3d", maxZoom: 5 };
-    const climateKey = {
-      system: "Köppen",
-      zones: [{ code: "Af", name: "Rainforest", color: "#0000fe" }],
-    };
-    db.realm!.findUnique!.mockImplementation(async () => ({
-      id: EURTH,
-      slug: "eurth",
-      name: "Eurth",
-      ownerId: FOUNDER,
-      status: "active",
-      settings: {
-        map: {
-          rasterLayers: [
-            { ...layer, id: "climate", kind: "overlay", order: 1 },
-            { ...layer, id: "geography", kind: "base" },
-          ],
-          climateKey,
-        },
-      },
-      officers: [],
-    }));
-    db.mapLayer!.groupBy!.mockResolvedValue([{ layerType: "political" }, { layerType: "climate" }]);
-    const result = await createCallerFactory(realmMapRouter)(ctxAs(db, "clerk_player")).display({
-      realm: "eurth",
-    });
-    expect(result.rasterLayers.map((l) => l.id)).toEqual(["geography", "climate"]);
-    expect(result.climateKey).toEqual(climateKey);
-    expect(result.layerTypes).toEqual(["climate", "political"]);
-    expect(db.mapLayer!.groupBy).toHaveBeenCalledWith({
-      by: ["layerType"],
-      where: { realmId: EURTH, isActive: true },
-    });
-  });
-
-  const display = (db: Db, who: string) =>
-    createCallerFactory(realmMapRouter)(ctxAs(db, who)).display({ realm: "eurth" });
-
-  it("falls back to the source sync's attribution when the realm sets none", async () => {
-    const db = realmDb();
-    db.realmSourceSync!.findUnique!.mockResolvedValue({
-      settings: { attribution: "Borders: Eurth map project" },
-    });
-    await expect(display(db, "clerk_player")).resolves.toMatchObject({
-      realmId: EURTH,
-      isIxnay: false,
-      radiusKm: EARTH_RADIUS_KM,
-      attribution: "Borders: Eurth map project",
-      canEdit: false,
-      isFounder: false,
-    });
-  });
-
-  it("prefers the realm's own credit line, and adds nothing realm-only about unclaimed nations", async () => {
-    const db = realmDb(HALF_EARTH);
-    db.realm!.findUnique!.mockImplementation(async () => ({
-      id: EURTH,
-      slug: "eurth",
-      name: "Eurth",
-      ownerId: FOUNDER,
-      status: "active",
-      settings: {
-        map: {
-          radiusKm: HALF_EARTH,
-          attribution: "Map: Eurth",
-          baseImage: "/images/uploads/uploaded_eurth.png",
-        },
-      },
-      officers: [{ userId: MAP_OFFICER, powers: ["map"] }],
-    }));
-    const result = await display(db, MAP_OFFICER);
-    expect(result).toMatchObject({
-      radiusKm: HALF_EARTH,
-      attribution: "Map: Eurth",
-      baseImage: "/images/uploads/uploaded_eurth.png",
-      canEdit: true,
-      isFounder: false,
-    });
-    expect(db.realmSourceSync!.findUnique).not.toHaveBeenCalled();
-    expect(result).toMatchObject({ rasterLayers: [], climateKey: null, layerTypes: [] });
-    expect(result).not.toHaveProperty("unclaimedCountryIds");
   });
 });

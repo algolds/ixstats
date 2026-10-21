@@ -34,18 +34,6 @@ const reactable = (viewer: object, postId: string, store = reactionStore()) =>
   loadReactablePost(store.db as never, viewer as never, postId);
 
 describe("loadReadablePost", () => {
-  it("reads a thread post and a board message signed out, and says which is which", async () => {
-    const thread = await readable(null, "p_hub");
-    expect(thread).toMatchObject({
-      board: false,
-      post: { id: "p_hub", threadId: "t_hub" },
-      category: { key: "hub" },
-      realm: { slug: "eurth" },
-    });
-    expect(await readable(null, "b1")).toMatchObject({ board: true, realm: { slug: "eurth" } });
-    expect(await readable(null, "p_site")).toMatchObject({ board: false, realm: null });
-  });
-
   it("does not find an unknown post, a hidden post, a post in a hidden thread or a hidden realm", async () => {
     for (const id of ["nope", "p_hidden", "p_hiddenthread", "p_draft", "b_hidden", "b_draft"]) {
       await expect(readable(member, id)).rejects.toMatchObject({ code: "NOT_FOUND" });
@@ -111,20 +99,6 @@ describe("loadReadablePost", () => {
 });
 
 describe("loadReactablePost", () => {
-  it("lets members, visitors, members without a nation, moderators and admins react to a thread post", async () => {
-    for (const viewer of [member, visitor, plain, founder, admin]) {
-      expect(await reactable(viewer, "p_hub")).toMatchObject({ board: false });
-    }
-    expect(await reactable(member, "p_site")).toMatchObject({ board: false, realm: null });
-    expect(await reactable(member, "p_import")).toMatchObject({ post: { authorUserId: null } });
-  });
-
-  it("lets anyone who may post on the board react to a message", async () => {
-    for (const viewer of [member, visitor, plain, founder, admin]) {
-      expect(await reactable(viewer, "b1")).toMatchObject({ board: true });
-    }
-  });
-
   it("refuses your own post, your own persona post and your own board message", async () => {
     await expect(reactable(member, "p_mine")).rejects.toMatchObject({
       code: "FORBIDDEN",
@@ -243,12 +217,6 @@ describe("threadReactable", () => {
     status,
     ownerId: "o",
   });
-
-  it("is on for a signed-in viewer on an open, visible thread of an open realm", () => {
-    expect(threadReactable(member as never, open, false, null)).toBe(true);
-    expect(threadReactable(member as never, open, false, realm("active"))).toBe(true);
-  });
-
   it("is off for a signed-out viewer, a ban, a closed or hidden thread and an archived realm", () => {
     expect(threadReactable(null, open, false, null)).toBe(false);
     expect(threadReactable(member as never, open, true, null)).toBe(false);

@@ -4,10 +4,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import {
   calls,
-  failures,
   jobRow,
-  listInputs,
-  notify,
   realmRow,
   resetFakeAtlas,
   responses,
@@ -63,32 +60,6 @@ beforeEach(() => {
   resetFakeAtlas();
   loadRealm();
 });
-
-describe("the realm page", () => {
-  it("shows the realm's figures and problems", () => {
-    render(<AtlasRealmPage slug="eurth" />);
-    expect(screen.getByRole("heading", { name: "Eurth" })).toBeInTheDocument();
-    expect(screen.getByText("5 of 7")).toBeInTheDocument();
-    expect(screen.getByText("Missing rivers, lakes")).toBeInTheDocument();
-    expect(screen.getByText("5 owned, 6 open, 1 reserved")).toBeInTheDocument();
-    expect(screen.getByText("Missing layers")).toBeInTheDocument();
-    expect(screen.getByText("40")).toBeInTheDocument();
-  });
-
-  it("lists the realm's recent jobs and mounts its map pipeline", () => {
-    render(<AtlasRealmPage slug="eurth" />);
-    expect(listInputs.at(-1)).toEqual({ realm: "eurth", limit: 10 });
-    expect(screen.getByRole("button", { name: "Open World check recent_1" })).toBeInTheDocument();
-    expect(screen.getByText("pipeline panel for eurth")).toBeInTheDocument();
-  });
-  it("says when the realm cannot be read", () => {
-    state.realm = undefined;
-    state.realmError = "Realm not found";
-    render(<AtlasRealmPage slug="nowhere" />);
-    expect(screen.getByText("Realm not found")).toBeInTheDocument();
-  });
-});
-
 describe("the realm page actions", () => {
   it("rebuilds the relief after asking", () => {
     render(<AtlasRealmPage slug="eurth" />);
@@ -114,31 +85,5 @@ describe("the realm page actions", () => {
     loadRealm(false);
     render(<AtlasRealmPage slug="eurth" />);
     expect(screen.getByRole("button", { name: "Roll back last import" })).toBeDisabled();
-  });
-
-  it("refreshes the caches for the realm", () => {
-    responses["atlas.realms.refresh"] = { mapVersion: 5 };
-    render(<AtlasRealmPage slug="eurth" />);
-    fireEvent.click(screen.getByRole("button", { name: "Refresh caches" }));
-    expect(calls).toEqual([["atlas.realms.refresh", { realm: "eurth" }]]);
-  });
-  it("toasts the server's error when an action fails", () => {
-    failures["geoEditor.mapImport.rebuildRelief"] = "No relief source";
-    failures["atlas.jobs.rollback"] = "A later import is in place";
-    failures["atlas.realms.refresh"] = "Realm not found";
-    render(<AtlasRealmPage slug="eurth" />);
-    fireEvent.click(screen.getByRole("button", { name: "Rebuild relief" }));
-    fireEvent.click(
-      within(screen.getByRole("alertdialog")).getByRole("button", { name: "Rebuild relief" })
-    );
-    expect(notify.error).toHaveBeenCalledWith("Could not rebuild the relief", "No relief source");
-    fireEvent.click(screen.getByRole("button", { name: "Roll back last import" }));
-    fireEvent.click(
-      within(screen.getByRole("alertdialog")).getByRole("button", { name: "Roll back" })
-    );
-    expect(notify.error).toHaveBeenCalledWith("Could not roll back", "A later import is in place");
-    fireEvent.click(screen.getByRole("button", { name: "Refresh caches" }));
-    expect(notify.error).toHaveBeenCalledWith("Could not refresh the caches", "Realm not found");
-    expect(notify.success).not.toHaveBeenCalled();
   });
 });

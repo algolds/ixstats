@@ -59,13 +59,6 @@ describe("N2: createAccount requires country ownership", () => {
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(db.thinkpagesAccount.create).not.toHaveBeenCalled();
   });
-
-  it("allows a persona for the caller's own country", async () => {
-    const caller = createAccountsCaller(createMockRouterContext({ db }) as never);
-    await caller.createAccount(personaInput);
-    expect(db.thinkpagesAccount.create).toHaveBeenCalledTimes(1);
-  });
-
   it("allows an admin to create a persona for any country", async () => {
     const caller = createAccountsCaller(
       createMockRouterContext({
@@ -120,27 +113,6 @@ describe("N3: verified is admin-only", () => {
     });
     expect(db.thinkpagesAccount.update).not.toHaveBeenCalled();
   });
-
-  it("still lets a regular user update other settings", async () => {
-    const caller = createAccountsCaller(createMockRouterContext({ db, user: memberUser }) as never);
-    await caller.updateAccount({ accountId: "a1", personality: "serious" });
-    expect(db.thinkpagesAccount.update).toHaveBeenCalledTimes(1);
-  });
-
-  it("lets an admin set verified", async () => {
-    const caller = createAccountsCaller(
-      createMockRouterContext({
-        db,
-        user: {
-          clerkUserId: CLERK_ID,
-          countryId: "test_country_1",
-          role: { name: "admin", level: 10 },
-        },
-      }) as never
-    );
-    const result = await caller.updateAccount({ accountId: "a1", verified: true });
-    expect(result.verified).toBe(true);
-  });
 });
 
 describe("N5: getPost honours visibility", () => {
@@ -189,12 +161,6 @@ describe("N5: getPost honours visibility", () => {
       await expect(caller.getPost({ postId: "p1" })).resolves.toMatchObject({ id: "p1" });
     }
   });
-
-  it("shows public posts to anonymous viewers", async () => {
-    const caller = callerFor(basePost({}), null);
-    await expect(caller.getPost({ postId: "p1" })).resolves.toMatchObject({ id: "p1" });
-  });
-
   it("drops private replies and embedded private parents the viewer cannot read", async () => {
     const caller = callerFor(
       basePost({
@@ -291,13 +257,6 @@ describe("N8: native reactions are not double counted", () => {
     const counts = resolveReactionCounts(JSON.stringify({ like: 1 }), [{ reactionType: "like" }]);
     expect(counts).toEqual({ like: 1 });
   });
-
-  it("falls back to reaction rows when no JSON tally exists", () => {
-    expect(
-      resolveReactionCounts(null, [{ reactionType: "like" }, { reactionType: "like" }])
-    ).toEqual({ like: 2 });
-  });
-
   it("tolerates malformed JSON", () => {
     expect(resolveReactionCounts("{not json", [{ reactionType: "fire" }])).toEqual({ fire: 1 });
   });

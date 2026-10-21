@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { cn } from "~/lib/utils/cn";
 
 /** Up to two capital letters from a name, for an avatar without a picture. */
-export function initialsOf(name: string): string {
+function initialsOf(name: string): string {
   const letters = name
     .split(/\s+/)
     .filter(Boolean)

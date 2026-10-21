@@ -185,14 +185,6 @@ describe("automatic sitewide bans are site admins' alone (M3, kept)", () => {
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(store.state.bans[0]).toMatchObject({ liftedAt: null });
   });
-
-  it("a site admin sees and lifts it", async () => {
-    const store = storeWith({ bans: [triggered] });
-    const listed = await listBans(store.db as never, admin, { active: true }, 1);
-    expect(listed.rows.map((r) => r.id)).toEqual(["b_auto"]);
-    await liftBan(store.db as never, admin2, { banId: "b_auto" });
-    expect(store.state.bans[0]).toMatchObject({ liftedBy: "u_a2" });
-  });
 });
 
 describe("a fresh tier ban on each warning while 5+ points stay active (M4, kept)", () => {

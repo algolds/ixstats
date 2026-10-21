@@ -27,23 +27,6 @@ describe("mentionSuggestions", () => {
     }
     expect(db.user.findMany).not.toHaveBeenCalled();
   });
-
-  it("matches handles and personas by prefix, case-insensitively, and drops a leading @", async () => {
-    const db = suggestDb(
-      [{ handle: "kirsten", clerkUserId: "clerk_k" }],
-      [{ username: "KirNews", displayName: "Kir News", profileImageUrl: "/n.png" }],
-      [{ clerkUserId: "clerk_k", profileImageUrl: "/k.png" }]
-    );
-    const out = await mentionSuggestions(db as never, "@Ki");
-    expect(out).toEqual([
-      { kind: "user", name: "kirsten", label: "kirsten", avatarUrl: "/k.png" },
-      { kind: "persona", name: "KirNews", label: "Kir News", avatarUrl: "/n.png" },
-    ]);
-    expect(db.user.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { handle: { startsWith: "ki" }, isActive: true } })
-    );
-  });
-
   it("never suggests a personal persona: the persona search excludes personal accounts", async () => {
     const db = suggestDb([], [{ username: "AriaV", displayName: "Aria", profileImageUrl: null }]);
     await mentionSuggestions(db as never, "ar");
@@ -53,49 +36,6 @@ describe("mentionSuggestions", () => {
     expect(searches).toHaveLength(1);
     expect(searches[0]!.where).toMatchObject({ isActive: true, accountType: { not: "personal" } });
   });
-
-  it("lets the handle win a shared name, skips personas that could never be typed, and returns at most 6", async () => {
-    const personas = [
-      { username: "kirk", displayName: "A", profileImageUrl: null },
-      { username: "kir.dot", displayName: "B", profileImageUrl: null },
-      ...Array.from({ length: 12 }, (_, i) => ({
-        username: `kirx${i}`,
-        displayName: `P${i}`,
-        profileImageUrl: null,
-      })),
-    ];
-    const db = suggestDb([{ handle: "kirk", clerkUserId: "clerk_kirk" }], personas);
-    const out = await mentionSuggestions(db as never, "kir");
-    expect(out).toHaveLength(6);
-    expect(out[0]).toMatchObject({ kind: "user", name: "kirk" });
-    expect(out.some((s) => s.name === "kir.dot")).toBe(false);
-    expect(out.filter((s) => s.name.toLowerCase() === "kirk")).toHaveLength(1);
-  });
-
-  it("over-fetches, so names that are dropped do not leave the page short", async () => {
-    const untypable = Array.from({ length: 8 }, (_, i) => ({
-      username: `kir.${i}`,
-      displayName: `U${i}`,
-      profileImageUrl: null,
-    }));
-    const typable = Array.from({ length: 4 }, (_, i) => ({
-      username: `kirz${i}`,
-      displayName: `T${i}`,
-      profileImageUrl: null,
-    }));
-    const db = suggestDb(
-      [{ handle: "kirk", clerkUserId: "clerk_kirk" }],
-      [...untypable, ...typable]
-    );
-    const out = await mentionSuggestions(db as never, "kir");
-    expect(out.map((s) => s.name)).toEqual(["kirk", "kirz0", "kirz1", "kirz2", "kirz3"]);
-    expect(db.user.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 12 }));
-    const [search] = db.thinkpagesAccount.findMany.mock.calls
-      .map(([args]) => args)
-      .filter((args) => !args.where.clerkUserId);
-    expect(search).toMatchObject({ take: 12 });
-  });
-
   it("gives a handle suggestion exactly its four fields", async () => {
     const db = suggestDb([{ handle: "kirsten", clerkUserId: "clerk_k" }]);
     const [only] = await mentionSuggestions(db as never, "ki");

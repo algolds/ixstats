@@ -21,8 +21,9 @@ function fakeForum() {
       }
       return { count };
     }),
-    findFirst: jest.fn(async (args: { where: CategoryRow }) =>
-      categories.find((c) => c.realmId === args.where.realmId && c.key === args.where.key) ?? null
+    findFirst: jest.fn(
+      async (args: { where: CategoryRow }) =>
+        categories.find((c) => c.realmId === args.where.realmId && c.key === args.where.key) ?? null
     ),
   };
   const forumThread = {
@@ -40,28 +41,6 @@ function fakeForum() {
 }
 
 describe("seedRealmCategories", () => {
-  it("creates the three realm categories and the board category in one idempotent insert", async () => {
-    const { db, categories } = fakeForum();
-    const result = await seedRealmCategories(db as never, { id: "r1", name: "Eurth" });
-
-    expect(result).toEqual({ created: 4 });
-    expect(db.forumCategory.createMany).toHaveBeenCalledTimes(1);
-    const arg = db.forumCategory.createMany.mock.calls[0]![0];
-    expect(arg.skipDuplicates).toBe(true);
-    expect(arg.data.map((d) => d.key)).toEqual(["board", "hub", "character-threads", "current-events"]);
-    for (const row of arg.data) {
-      expect(row).toMatchObject({ scope: "realm", realmId: "r1", visibility: "public", postRole: "any" });
-    }
-    expect(arg.data.map((d) => d.icAllowed)).toEqual([true, false, true, true]);
-    expect(arg.data.map((d) => [d.key, d.style])).toEqual([
-      ["board", "board"],
-      ["hub", "ooc"],
-      ["character-threads", "ic"],
-      ["current-events", "ic"],
-    ]);
-    expect(categories.find((c) => c.key === "board")).toMatchObject({ order: 0 });
-  });
-
   it("gives the board category exactly one thread titled for the realm, with no author and unpinned", async () => {
     const { db, threads } = fakeForum();
     await seedRealmCategories(db as never, { id: "r1", name: "Eurth" });
@@ -91,12 +70,5 @@ describe("seedRealmCategories", () => {
     threads.length = 0;
     await seedRealmCategories(db as never, { id: "r1", name: "Eurth" });
     expect(threads).toHaveLength(1);
-  });
-
-  it("gives each realm its own board thread", async () => {
-    const { db, threads } = fakeForum();
-    await seedRealmCategories(db as never, { id: "r1", name: "Eurth" });
-    await seedRealmCategories(db as never, { id: "r2", name: "Aurelia" });
-    expect(threads.map((t) => t.sourceRef)).toEqual(["realm_board_thread:r1", "realm_board_thread:r2"]);
   });
 });

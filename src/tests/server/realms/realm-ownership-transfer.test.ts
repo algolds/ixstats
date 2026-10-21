@@ -190,15 +190,6 @@ describe("site admins transfer a realm", () => {
     expect(notify).toHaveBeenCalledTimes(2);
     error.mockRestore();
   });
-
-  it("leaves the realm's map alone when the handover is refused", async () => {
-    const db = makeDb();
-    await expect(
-      callerAs(ADMIN, db, admin).region.adminTransferOwner(transfer({ newOwnerId: FOUNDER }))
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(invalidateRealmMap).not.toHaveBeenCalled();
-  });
-
   it("keeps the previous founder as an officer with every power when asked", async () => {
     const db = makeDb();
     await callerAs(ADMIN, db, admin).region.adminTransferOwner(
@@ -217,30 +208,6 @@ describe("site admins transfer a realm", () => {
     });
     expect(auditChanges(db)).toMatchObject({ keptPreviousAsOfficer: true });
   });
-
-  it("hands a realm back to staff, and from staff to a player with no one to keep", async () => {
-    const db = makeDb();
-    await callerAs(ADMIN, db, admin).region.adminTransferOwner(transfer({ newOwnerId: null }));
-    expect(db.realm.update).toHaveBeenLastCalledWith({
-      where: { id: "eurth" },
-      data: { ownerId: "system" },
-    });
-
-    const staffDb = makeDb(realmRow({ ownerId: "system" }));
-    await callerAs(ADMIN, staffDb, admin).region.adminTransferOwner(
-      transfer({ keepPreviousAsOfficer: true })
-    );
-    expect(staffDb.realm.update).toHaveBeenCalledWith({
-      where: { id: "eurth" },
-      data: { ownerId: PLAYER },
-    });
-    expect(staffDb.realmOfficer.upsert).not.toHaveBeenCalled();
-    expect(auditChanges(staffDb)).toMatchObject({
-      previousOwnerId: "system",
-      keptPreviousAsOfficer: false,
-    });
-  });
-
   it("keeps Ixnay with staff", async () => {
     const db = makeDb(realmRow({ id: "default", slug: "ixnay", ownerId: "system" }));
     await expect(

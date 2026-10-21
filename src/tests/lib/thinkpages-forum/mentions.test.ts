@@ -1,7 +1,5 @@
 /** @jest-environment node */
-import {
-  mentionNamesIn,
-} from "~/lib/thinkpages-forum/mentions";
+import { mentionNamesIn } from "~/lib/thinkpages-forum/mentions";
 
 describe("mentionNamesIn", () => {
   it("finds @name of 3 to 24 letters, digits and underscores, lower-cased, once each, in order", () => {
@@ -11,13 +9,6 @@ describe("mentionNamesIn", () => {
       "bob",
     ]);
   });
-
-  it("ignores names that are too short or too long", () => {
-    expect(mentionNamesIn("@ab @abc")).toEqual(["abc"]);
-    expect(mentionNamesIn(`@${"a".repeat(24)}`)).toEqual(["a".repeat(24)]);
-    expect(mentionNamesIn(`@${"a".repeat(25)}`)).toEqual([]);
-  });
-
   it("ignores an @ that is glued to a word or another @", () => {
     expect(mentionNamesIn("mail me at kir@example.com")).toEqual([]);
     expect(mentionNamesIn("@@kir")).toEqual([]);

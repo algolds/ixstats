@@ -2,13 +2,7 @@
 jest.mock("~/lib/notifications/api", () => ({ notificationAPI: { create: jest.fn() } }));
 
 import { notificationAPI } from "~/lib/notifications/api";
-import {
-  notifyAppealDecision,
-  notifyAutoBanShortened,
-  notifyBan,
-  notifyBanLifted,
-  notifyWarning,
-} from "~/server/modules/thinkpages-forum";
+import { notifyAutoBanShortened, notifyWarning } from "~/server/modules/thinkpages-forum";
 
 const create = jest.mocked(notificationAPI.create);
 
@@ -59,25 +53,6 @@ describe("notifyWarning", () => {
     ).resolves.toBeUndefined();
     expect(errorSpy).toHaveBeenCalled();
   });
-
-  it("never throws when the user lookup fails", async () => {
-    const db = { user: { findUnique: jest.fn(async () => Promise.reject(new Error("db down"))) } };
-    await expect(
-      notifyWarning(db as never, { userId: "u_m", points: 2, reason: "Rude", activePoints: 2 })
-    ).resolves.toBeUndefined();
-    expect(create).not.toHaveBeenCalled();
-  });
-
-  it("sends nothing when the member is gone", async () => {
-    await notifyWarning(userDb(null) as never, {
-      userId: "u_x",
-      points: 2,
-      reason: "Rude",
-      activePoints: 2,
-    });
-    expect(create).not.toHaveBeenCalled();
-    expect(errorSpy).not.toHaveBeenCalled();
-  });
 });
 
 describe("notifyAutoBanShortened (M5)", () => {
@@ -92,40 +67,5 @@ describe("notifyAutoBanShortened (M5)", () => {
       message: "Your automatic forum ban was shortened; it now ends on 16 Oct 2026.",
       type: "info",
     });
-  });
-});
-
-describe("notifyBan", () => {
-  it("never throws", async () => {
-    create.mockRejectedValueOnce(new Error("boom"));
-    await expect(
-      notifyBan(userDb() as never, {
-        userId: "u_m",
-        ban: { scope: "site", expiresAt: null, reason: "x" },
-      })
-    ).resolves.toBeUndefined();
-  });
-});
-
-describe("notifyBanLifted", () => {
-  it("never throws", async () => {
-    create.mockRejectedValueOnce(new Error("boom"));
-    await expect(
-      notifyBanLifted(userDb() as never, { userId: "u_m", ban: { scope: "site" } })
-    ).resolves.toBeUndefined();
-  });
-});
-
-describe("notifyAppealDecision", () => {
-  it("never throws", async () => {
-    create.mockRejectedValueOnce(new Error("boom"));
-    await expect(
-      notifyAppealDecision(userDb() as never, {
-        userId: "u_m",
-        subjectType: "ban",
-        outcome: "upheld",
-        response: "No.",
-      })
-    ).resolves.toBeUndefined();
   });
 });

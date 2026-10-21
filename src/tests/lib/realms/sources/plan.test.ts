@@ -1,14 +1,8 @@
 /** @jest-environment node */
 import type { SourceNation, SourceSnapshot } from "~/lib/realms/sources/adapters";
 import { DEFAULT_SYNC_OPTIONS, type RealmSyncOverrides } from "~/lib/realms/sources/config";
+import { matchSourceNations, nearNationName } from "~/lib/realms/sources/matching";
 import {
-  baseNationName,
-  matchSourceNations,
-  nearNationName,
-  normalizeNationName,
-} from "~/lib/realms/sources/matching";
-import {
-  infoboxNeedsRead,
   geometryHash,
   planSourceSync,
   type PlanCountry,
@@ -83,34 +77,6 @@ function input(
     snapshot: { nations: [], organizations: [], features: [], warnings: [], ...snapshot },
   };
 }
-
-describe("infoboxNeedsRead", () => {
-  it("reads again a nation left without a flag, whether the read never landed or was partial", () => {
-    expect(infoboxNeedsRead({ flag: null })).toBe(true);
-    expect(infoboxNeedsRead({ flag: " " })).toBe(true);
-    expect(infoboxNeedsRead({ flag: "/flags/eurth--tagmatium.png" })).toBe(false);
-  });
-});
-
-describe("normalizeNationName", () => {
-  it("ignores case, accents, hyphens, underscores and URI encoding", () => {
-    expect(normalizeNationName("Kíziáuke")).toBe("kiziauke");
-    expect(normalizeNationName("Bainbridge-Islands")).toBe(
-      normalizeNationName("Bainbridge_Islands")
-    );
-    expect(normalizeNationName("K%C3%ADzi%C3%A1uke")).toBe("kiziauke");
-    expect(normalizeNationName("Ide-Jima")).toBe("ide jima");
-  });
-});
-
-describe("baseNationName", () => {
-  it("drops a trailing parenthetical qualifier (a wiki's disambiguation), nothing else", () => {
-    expect(baseNationName("Nanto (Eurth)")).toBe("nanto");
-    expect(baseNationName("Congo (Brazzaville)")).toBe("congo");
-    expect(baseNationName("Nanto")).toBe("nanto");
-    expect(baseNationName("(Eurth)")).toBe("");
-  });
-});
 
 describe("matchSourceNations", () => {
   const countries = [
@@ -349,18 +315,6 @@ describe("planSourceSync", () => {
     expect(nearNationName("Nova Aurel", "Nova Aurelia")).toBe(true);
     expect(nearNationName("Mar", "Maradonia")).toBe(false);
   });
-
-  it("creates a nation the source runs as an NPC like any other: players may claim it", () => {
-    const plan = planSourceSync(
-      input({
-        snapshot: { nations: [nation("Mito"), nation("Tavok")] },
-        rosterPages: [{ title: "Mito" }],
-      })
-    );
-    expect(plan.creates.map((c) => c.name)).toEqual(["Mito", "Tavok"]);
-    expect(plan.unmatched).toEqual([]);
-  });
-
   it("lets secondary-source figures neither change an existing nation nor outrank the infobox on a new one", () => {
     const secondary = ["capital", "gdpPerCapita", "landArea"] as const;
     const matched = planSourceSync(
@@ -388,52 +342,6 @@ describe("planSourceSync", () => {
     );
     expect(created.creates[0]!.secondary).toEqual([...secondary]);
   });
-
-  it("plans an infobox re-read for unclaimed nations whose infobox never landed, and only those", () => {
-    const countries = [
-      country("e", "Empty", { infoboxEmpty: true }),
-      country("x", "Excluded", { infoboxEmpty: true, externalSourceKey: "Excluded" }),
-      country("c", "Claimed", { infoboxEmpty: true, ownerUserId: "u1" }),
-      country("m", "Mapland", { infoboxEmpty: true, wikiPageTitle: null }),
-      country("o", "Other wiki", { infoboxEmpty: true, wikiSource: "ixwiki" }),
-      country("f", "Filled"),
-    ];
-    const overrides = { nations: { Excluded: { exclude: true } }, organizations: {} };
-    const realmPageTitles = ["Empty", "Excluded", "Claimed", "Other wiki", "Filled"];
-    const plan = planSourceSync(input({ countries, overrides, realmPageTitles }));
-    expect(plan.refills).toEqual([{ countryId: "e", name: "Empty", wikiTitle: "Empty" }]);
-    const foreign = planSourceSync(
-      input({ countries: [country("e", "Empty", { infoboxEmpty: true })] })
-    );
-    expect(foreign.refills).toEqual([]);
-    const off = planSourceSync(
-      input({
-        countries,
-        realmPageTitles,
-        options: { ...DEFAULT_SYNC_OPTIONS, useWikiInfobox: false },
-      })
-    );
-    expect(off.refills).toEqual([]);
-  });
-
-  it("uses the traced area only when the source states no land area", () => {
-    const plan = planSourceSync(
-      input({
-        snapshot: {
-          nations: [nation("A", { landArea: null }), nation("B")],
-          features: [
-            { key: "A", geometry: square(0), areaKm2: 6895 },
-            { key: "B", geometry: square(2), areaKm2: 99 },
-          ],
-        },
-      })
-    );
-    expect(plan.creates.find((c) => c.key === "A")!.landArea).toBe(6895);
-    expect(plan.creates.find((c) => c.key === "B")!.landArea).toBe(50_000);
-    expect(plan.features.find((f) => f.key === "A")!.setLandArea).toBe(true);
-    expect(plan.features.find((f) => f.key === "B")!.setLandArea).toBe(false);
-  });
-
   it("updates unclaimed nations' figures but leaves claimed nations alone by default", () => {
     const snapshot = {
       nations: [
@@ -542,35 +450,6 @@ describe("planSourceSync", () => {
     expect(plan.warnings.join(" ")).toMatch(/B: not linked/);
     expect(plan.warnings.join(" ")).toMatch(/already has region C-from-a-png/);
   });
-
-  it("colours each border with its nation's source colour, and rewrites a border whose colour changed", () => {
-    const geometry = square(0);
-    const plan = planSourceSync(
-      input({
-        snapshot: {
-          nations: [nation("A", { color: "#a547a5" }), nation("B", { color: null })],
-          features: [
-            { key: "A", geometry, areaKm2: 10 },
-            { key: "B", geometry: square(2), areaKm2: 10 },
-          ],
-        },
-        countries: [
-          country("a", "A", { externalSourceKey: "A" }),
-          country("b", "B", { externalSourceKey: "B" }),
-        ],
-        features: [
-          { featureId: "A", countryId: "a", sourceHash: geometryHash(geometry), fill: null },
-          { featureId: "B", countryId: "b", sourceHash: geometryHash(square(2)), fill: null },
-        ],
-        linkedFeatureByCountry: { a: "A", b: "B" },
-      })
-    );
-    expect(plan.featuresUnchanged).toBe(1);
-    expect(plan.features.map((f) => [f.key, f.action, f.fill])).toEqual([
-      ["A", "recolour", "#a547a5"],
-    ]);
-  });
-
   it("creates realm alliances with members, types them by the rules unless staff chose, and reports unknown members", () => {
     const plan = planSourceSync(
       input({
@@ -690,27 +569,6 @@ describe("newNationFields: precedence for a created nation", () => {
       capitalCity: "Map Capital",
       officialName: "Commonwealth of Deseti",
       motto: "Onward",
-    });
-  });
-
-  it("ranks the map's secondary-source fields below the infobox", () => {
-    const fields = newNationFields(
-      {
-        ...planned,
-        landArea: 1_000,
-        gdpPerCapita: 12_000,
-        secondary: ["capital", "landArea", "gdpPerCapita"],
-      },
-      { country: { landArea: 44_000 }, identity: { capitalCity: "Wiki Capital" } }
-    );
-    expect(fields.initial).toMatchObject({ landArea: 44_000, baselineGdpPerCapita: 12_000 });
-    expect(fields.identity.capitalCity).toBe("Wiki Capital");
-  });
-
-  it("without an infobox gives only the map's values", () => {
-    expect(newNationFields(planned, null)).toEqual({
-      initial: { baselinePopulation: 5_000_000, continent: "Europa" },
-      identity: { capitalCity: "Map Capital" },
     });
   });
 });

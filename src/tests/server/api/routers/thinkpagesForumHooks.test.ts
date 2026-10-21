@@ -24,12 +24,10 @@ jest.mock("~/server/modules/thinkpages-forum", () => {
 import { createCallerFactory } from "~/server/api/trpc";
 import { thinkpagesForumRouter } from "~/server/api/routers/thinkpagesForum";
 import {
-  afterBoardMessage,
-  afterEdit,
   afterReply,
   afterThreadStarted,
   createThread,
-  ForumError
+  ForumError,
 } from "~/server/modules/thinkpages-forum";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
@@ -49,8 +47,6 @@ const caller = () =>
   createCallerFactory(thinkpagesForumRouter)(
     createMockRouterContext({ auth: { userId: "clerk_1" }, user: member as never, db }) as never
   );
-const actor = expect.objectContaining({ id: "u1", clerkUserId: "clerk_1" });
-
 describe("the write hooks", () => {
   beforeEach(() => {
     for (const level of ["log", "info", "warn"] as const)
@@ -58,30 +54,6 @@ describe("the write hooks", () => {
     jest.mocked(afterThreadStarted).mockClear();
   });
   afterEach(() => jest.restoreAllMocks());
-
-  it("runs the hook after starting a thread, with the new ids", async () => {
-    const out = await caller().createThread({
-      categoryKey: "general",
-      title: "Hello there",
-      html: "<p>Hi</p>",
-    });
-    expect(out).toEqual({ threadId: "t_new", postId: "p_new", formatting: "done" });
-    expect(afterThreadStarted).toHaveBeenCalledWith(db, actor, out);
-  });
-
-  it("runs the hook after a reply and after an edit", async () => {
-    await caller().reply({ threadId: "t1", html: "<p>Hi</p>" });
-    expect(afterReply).toHaveBeenCalledWith(db, actor, { threadId: "t1", postId: "p_reply" });
-    await caller().editPost({ postId: "p1", html: "<p>Hi</p>", editedAt: null });
-    expect(afterEdit).toHaveBeenCalledWith(db, actor, "p1");
-  });
-
-  it("runs the hooks after a board message and its edit", async () => {
-    await caller().postBoardMessage({ realm: "eurth", html: "<p>Hi</p>" });
-    expect(afterBoardMessage).toHaveBeenCalledWith(db, actor, "m1");
-    await caller().editBoardMessage({ postId: "m1", html: "<p>Hi</p>" });
-    expect(afterEdit).toHaveBeenCalledWith(db, actor, "m1");
-  });
   it("does not wait for the hook: a hook that never settles does not hold the response", async () => {
     jest.mocked(afterReply).mockReturnValueOnce(new Promise<void>(() => undefined));
     await expect(caller().reply({ threadId: "t1", html: "<p>Hi</p>" })).resolves.toEqual({

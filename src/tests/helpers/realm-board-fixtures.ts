@@ -4,8 +4,8 @@
 import type { RouterOutputs } from "~/trpc/react";
 
 type Board = RouterOutputs["thinkpagesForum"]["getBoard"];
-export type FixtureMessage = Board["messages"][number];
-export type FixtureAccess = Board["access"];
+type FixtureMessage = Board["messages"][number];
+type FixtureAccess = Board["access"];
 
 /** A board message by a member: "kir", twelve minutes old, no role, no reply, not continued. */
 export function boardMessage(overrides: Partial<FixtureMessage> = {}): FixtureMessage {

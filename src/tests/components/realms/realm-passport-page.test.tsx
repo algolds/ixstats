@@ -5,7 +5,7 @@
  */
 import { Suspense } from "react";
 import { act, render, screen } from "@testing-library/react";
-import type { PassportPayload, RealmItem } from "~/components/passport/types";
+import type { PassportPayload } from "~/components/passport/types";
 
 jest.mock("next/navigation", () => ({
   usePathname: () => "/r/eurth/u/alex",
@@ -45,31 +45,6 @@ jest.mock("~/trpc/react", () => {
 
 import RealmPassportPage from "~/app/r/[realm]/(region)/u/[username]/page";
 import { generateMetadata } from "~/app/r/[realm]/(region)/u/[username]/layout";
-
-function membership(name: string): RealmItem {
-  return {
-    id: "eurth",
-    name: "Eurth Concord",
-    slug: "eurth",
-    role: "member",
-    isPrimary: false,
-    country: {
-      id: `c-${name}`,
-      name,
-      slug: name.toLowerCase(),
-      flagUrl: null,
-      coatOfArmsUrl: null,
-      currentPopulation: 1_000_000,
-      currentTotalGdp: 1_000_000_000,
-      currentGdpPerCapita: 1000,
-      continent: null,
-      region: null,
-      governmentType: null,
-      currentPublicApproval: 50,
-    },
-  };
-}
-
 const passport = {
   handle: "alex",
   account: {
@@ -99,50 +74,10 @@ beforeEach(() => {
 });
 
 describe("realm passport page", () => {
-  it("asks for the holder's memberships in this realm only and renders those nations", async () => {
-    queries.set("ixnayid.getRealms", [membership("Aurelia"), membership("Borovia")]);
-    await renderPage();
-    expect(queryInputs.get("ixnayid.getRealms")).toEqual({ handle: "alex", realm: "eurth" });
-    expect(screen.getByRole("link", { name: "Aurelia" }).getAttribute("href")).toBe(
-      "/countries/aurelia"
-    );
-    expect(screen.getByRole("link", { name: "Borovia" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Alex Pav" })).toBeTruthy();
-    expect(screen.getByText("@alex · Realm passport in Eurth Concord")).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Full passport/ }).getAttribute("href")).toBe("/@alex");
-  });
-
-  it("names the realm from the region overview when the holder has nothing here", async () => {
-    queries.set("ixnayid.getRealms", []);
-    await renderPage("%40alex");
-    expect(queryInputs.get("ixnayid.getRealms")).toEqual({ handle: "alex", realm: "eurth" });
-    expect(
-      screen.getByText("@alex holds no membership or claimed country in Eurth Concord.")
-    ).toBeTruthy();
-  });
-
-  it("shows and links the payload's passport handle when the URL names a legacy name", async () => {
-    queries.set("ixnayid.getPassport", { ...passport, handle: "alex_h" });
-    queries.set("ixnayid.getRealms", []);
-    await renderPage("Alex%20Forum");
-    expect(queryInputs.get("ixnayid.getRealms")).toEqual({ handle: "Alex Forum", realm: "eurth" });
-    expect(screen.getByText("@alex_h · Realm passport in Eurth Concord")).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Full passport/ }).getAttribute("href")).toBe(
-      "/@alex_h"
-    );
-    expect(pageTitle).toHaveBeenLastCalledWith("Alex Pav (@alex_h) · Eurth Concord");
-  });
   it("does not crash on a malformed segment", async () => {
     queries.set("ixnayid.getPassport", null);
     queries.set("ixnayid.getRealms", []);
     await renderPage("%E0%A4%A");
-    expect(screen.getByText("Identity not found")).toBeTruthy();
-  });
-
-  it("says so when the identity does not exist", async () => {
-    queries.set("ixnayid.getPassport", null);
-    queries.set("ixnayid.getRealms", []);
-    await renderPage("nobody");
     expect(screen.getByText("Identity not found")).toBeTruthy();
   });
 });

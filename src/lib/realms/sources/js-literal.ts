@@ -296,15 +296,6 @@ export function readBoundLiteral(
   return value;
 }
 
-/** Read a whole input that is just one literal (tests, pasted data). */
-export function readLiteral(source: string): LiteralValue {
-  const reader = new Reader(source);
-  const value = reader.value(0);
-  reader.skip();
-  if (reader.peek() !== "") reader.fail(`Unexpected "${reader.peek()}" after the literal`);
-  return value;
-}
-
 export function isLiteralObject(value: LiteralValue | undefined): value is { [key: string]: LiteralValue } {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
