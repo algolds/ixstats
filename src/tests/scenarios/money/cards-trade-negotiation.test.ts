@@ -7,7 +7,11 @@
  * through the job. On Postgres: an accept racing a withdraw, an accept racing a counter at one revision, and the
  * responder's copy listed while the accept runs.
  *
- * Folds trading-queries: `myTurn` and the live-PENDING read, checked on the Trades list after each step.
+ * Folds trading-queries: `myTurn` and the live-PENDING read, checked on the Trades list after each step. Folds the
+ * trade-service (offers, counter, accept), trade-settlement, credit-leg, trade-queries and market-art suites: what an
+ * offer, an accept and a counter refuse (yourself, credits alone, one copy twice, a blocking partner, bound, not yours,
+ * listed, unaffordable, maintenance, trading off, expired, signed after the table, a payer who can no longer pay), each
+ * moving nothing; the fee preview; a trade hidden from anyone outside it; a gift; a withdraw while trading is off.
  */
 let mockDb: unknown;
 jest.mock("~/server/db", () => ({
@@ -292,6 +296,265 @@ describe("cards-trade-negotiation (memory)", () => {
         orderBy: { createdAt: "asc" },
       })
     ).toEqual([{ source: "CROSS_REALM_TRADE" }, { source: "TRADE" }]);
+  });
+});
+
+type OfferInput = Parameters<ReturnType<typeof offers>["createtradeOffer"]>[0];
+type CounterTable = Omit<
+  Parameters<ReturnType<typeof offers>["counterTrade"]>[0],
+  "tradeId" | "revision"
+>;
+
+describe("cards-trade-negotiation (memory): what a trade refuses", () => {
+  let db: MemoryPrisma;
+  let w: World;
+  const as = (player: Player) => offers(callerContext(db as never, player));
+  const setConfig = async (key: string, value: string) => {
+    await db.systemConfig.create({ data: { key, value } });
+    clearEconomyCaches();
+  };
+  const signed = (id: string, inscribedAt: Date) =>
+    db.cardOwnership.update({
+      where: { id },
+      data: { inscription: "gg", inscribedById: "m-bob", inscribedName: "@bob", inscribedAt },
+    });
+
+  beforeEach(async () => {
+    db = createMemoryPrisma();
+    mockDb = db;
+    w = await seed(db as never, "m-");
+  });
+
+  it.each<[string, () => Promise<unknown>, (w: World) => OfferInput, object]>([
+    [
+      "a trade with yourself",
+      async () => undefined,
+      (w) => ({ partnerId: w.alice.id, initiatorCardIds: [w.a[1]] }),
+      { code: "BAD_REQUEST", message: "Choose another player to trade with." },
+    ],
+    [
+      "credits alone",
+      async () => undefined,
+      (w) => ({ partnerId: w.bob.id, initiatorCredits: 100 }),
+      { code: "BAD_REQUEST", message: "Add at least one card. Credits alone can't be traded." },
+    ],
+    [
+      "one copy twice",
+      async () => undefined,
+      (w) => ({ partnerId: w.bob.id, initiatorCardIds: [w.a[1], w.a[1]] }),
+      { code: "BAD_REQUEST", message: "A card can only be in the trade once." },
+    ],
+    [
+      "to a player who blocked you",
+      () =>
+        db.userConnection.create({
+          data: { userId: "m-bob-clerk", targetUserId: "m-alice-clerk", connectionType: "blocked" },
+        }),
+      (w) => ({ partnerId: w.bob.id, initiatorCardIds: [w.a[1]] }),
+      { code: "FORBIDDEN", message: "This player isn't taking trade offers from you." },
+    ],
+    [
+      "a bound card's copy",
+      () => db.card.update({ where: { id: "m-lore" }, data: { isBound: true } }),
+      (w) => ({ partnerId: w.bob.id, initiatorCardIds: [w.a[1]] }),
+      { code: "PRECONDITION_FAILED" },
+    ],
+    [
+      "the other player's copy as yours",
+      async () => undefined,
+      (w) => ({ partnerId: w.bob.id, initiatorCardIds: [w.b1] }),
+      { code: "CONFLICT", message: "Some cards in this trade are no longer that player's." },
+    ],
+    [
+      "a listed copy",
+      () => db.cardOwnership.update({ where: { id: "m-a2" }, data: { isLocked: true } }),
+      (w) => ({ partnerId: w.bob.id, initiatorCardIds: [w.a[1]] }),
+      {
+        code: "CONFLICT",
+        message: "Some cards in this trade are listed, at auction or in another trade.",
+      },
+    ],
+    [
+      "more credits than you hold",
+      async () => undefined,
+      (w) => ({ partnerId: w.bob.id, initiatorCardIds: [w.a[2]], initiatorCredits: 1001 }),
+      { code: "BAD_REQUEST", message: "You don't have enough IxCredits for this trade." },
+    ],
+    [
+      "in maintenance",
+      () => setConfig("vault_isMaintenanceMode", "true"),
+      (w) => ({ partnerId: w.bob.id, initiatorCardIds: [w.a[2]] }),
+      { code: "BAD_REQUEST", message: "Vault economy is currently in maintenance mode." },
+    ],
+    [
+      "while trading is switched off",
+      () => setConfig("vault_isTradingEnabled", "false"),
+      (w) => ({ partnerId: w.bob.id, initiatorCardIds: [w.a[2]] }),
+      { code: "BAD_REQUEST", message: "Card trading is switched off right now." },
+    ],
+  ])("refuses to offer %s, locking nothing", async (_label, make, input, refusal) => {
+    await make();
+    const before = await locks(db as never, w.a);
+    await expect(as(w.alice).createtradeOffer(input(w))).rejects.toMatchObject(refusal);
+    expect(await locks(db as never, w.a)).toEqual(before);
+    expect(await db.tradeOffer.count()).toBe(0);
+  });
+
+  /** Alice offers a2 and 100 IxC for Bob's b1. */
+  const paidOffer = () =>
+    as(w.alice).createtradeOffer({
+      partnerId: w.bob.id,
+      initiatorCardIds: [w.a[1]],
+      initiatorCredits: 100,
+      recipientCardIds: [w.b1],
+    });
+
+  it.each<[string, (tradeId: string) => Promise<unknown>, (w: World) => Player, object]>([
+    [
+      "your own table",
+      async () => undefined,
+      (w) => w.alice,
+      { code: "FORBIDDEN", message: "Wait for the other player to respond." },
+    ],
+    [
+      "a table that has expired",
+      (id) =>
+        db.tradeOffer.update({ where: { id }, data: { expiresAt: new Date(Date.now() - 1000) } }),
+      (w) => w.bob,
+      { code: "BAD_REQUEST" },
+    ],
+    [
+      "while trading is switched off",
+      () => setConfig("vault_isTradingEnabled", "false"),
+      (w) => w.bob,
+      { code: "BAD_REQUEST" },
+    ],
+    [
+      "once the copy it asks for is listed",
+      () => db.cardOwnership.update({ where: { id: "m-b1" }, data: { isLocked: true } }),
+      (w) => w.bob,
+      { code: "CONFLICT" },
+    ],
+    [
+      "once the copy it asks for was signed after the table was written",
+      () => signed("m-b1", new Date(Date.now() + 60_000)),
+      (w) => w.bob,
+      { code: "CONFLICT" },
+    ],
+    [
+      "once the payer can no longer pay",
+      () => db.myVault.update({ where: { userId: "m-alice" }, data: { credits: 50 } }),
+      (w) => w.bob,
+      { code: "BAD_REQUEST" },
+    ],
+  ])("refuses to accept %s, moving nothing", async (_label, make, responder, refusal) => {
+    const offer = await paidOffer();
+    await make(offer.id);
+    const credits = await creditsOf(db as never, [w.alice.id, w.bob.id]);
+    await expect(
+      as(responder(w)).respondToTrade({ tradeId: offer.id, action: "ACCEPT", revision: 0 })
+    ).rejects.toMatchObject(refusal);
+    expect(await owners(db as never, [w.a[1], w.b1])).toEqual({
+      [w.a[1]]: w.alice.id,
+      [w.b1]: w.bob.id,
+    });
+    expect(await creditsOf(db as never, [w.alice.id, w.bob.id])).toEqual(credits);
+    expect(
+      await db.tradeOffer.findUniqueOrThrow({ where: { id: offer.id }, select: { status: true } })
+    ).toEqual({ status: "PENDING" });
+  });
+
+  it("accepts a copy signed before the table was written", async () => {
+    await signed("m-b1", new Date(Date.now() - 60_000));
+    const offer = await paidOffer();
+    await expect(
+      as(w.bob).respondToTrade({ tradeId: offer.id, action: "ACCEPT", revision: 0 })
+    ).resolves.toMatchObject({ status: "ACCEPTED" });
+  });
+
+  it.each<
+    [string, () => Promise<unknown>, (w: World) => Player, (w: World) => CounterTable, object]
+  >([
+    [
+      "the proposer countering their own table",
+      async () => undefined,
+      (w) => w.alice,
+      (w) => ({ initiatorCardIds: [w.a[1]], recipientCardIds: [w.b1] }),
+      { code: "FORBIDDEN" },
+    ],
+    [
+      "a counter asking for a copy listed elsewhere",
+      () => db.cardOwnership.update({ where: { id: "m-a3" }, data: { isLocked: true } }),
+      (w) => w.bob,
+      (w) => ({ initiatorCardIds: [w.a[1], w.a[2]], recipientCardIds: [w.b1] }),
+      { code: "CONFLICT" },
+    ],
+    [
+      "a counter offering credits the counterer lacks",
+      async () => undefined,
+      (w) => w.bob,
+      (w) => ({ initiatorCardIds: [w.a[1]], recipientCardIds: [w.b1], recipientCredits: 5000 }),
+      { code: "BAD_REQUEST" },
+    ],
+  ])("refuses %s, changing nothing", async (_label, make, counterer, table, refusal) => {
+    const offer = await paidOffer();
+    await make();
+    await expect(
+      as(counterer(w)).counterTrade({ tradeId: offer.id, revision: 0, ...table(w) })
+    ).rejects.toMatchObject(refusal);
+    expect(
+      await db.tradeOffer.findUniqueOrThrow({
+        where: { id: offer.id },
+        select: { revision: true, proposerId: true },
+      })
+    ).toEqual({ revision: 0, proposerId: w.alice.id });
+    expect(await locks(db as never, [w.a[1], w.b1])).toEqual({ [w.a[1]]: true, [w.b1]: false });
+  });
+
+  it("shows each side's market fee, and hides the trade from a player outside it", async () => {
+    const offer = await as(w.alice).createtradeOffer({
+      partnerId: w.bob.id,
+      initiatorCardIds: [w.a[1]],
+      initiatorCredits: 100,
+      recipientCardIds: [w.b1],
+      recipientCredits: 1000,
+    });
+    expect(
+      (await queries(callerContext(db as never, w.bob)).getTradeById({ tradeId: offer.id }))
+        .feePreview
+    ).toEqual({ initiator: 0, recipient: 100 });
+    await expect(
+      queries(callerContext(db as never, w.nia)).getTradeById({ tradeId: offer.id })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(
+      as(w.nia).respondToTrade({ tradeId: offer.id, action: "ACCEPT", revision: 0 })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("logs a one-sided table as a gift, never cross-realm", async () => {
+    const gift = await as(w.alice).createtradeOffer({
+      partnerId: w.bob.id,
+      initiatorCardIds: [w.a[2]],
+    });
+    await expect(
+      as(w.bob).respondToTrade({ tradeId: gift.id, action: "ACCEPT", revision: 0 })
+    ).resolves.toMatchObject({ isCrossRealm: false });
+    expect(
+      await db.cardTransferEvent.findMany({
+        where: { ownershipId: w.a[2], action: { in: ["GIFT", "TRADE"] } },
+        select: { action: true, toUserId: true },
+      })
+    ).toEqual([{ action: "GIFT", toUserId: w.bob.id }]);
+  });
+
+  it("lets a player withdraw their offer while trading is switched off, freeing the copy", async () => {
+    const offer = await as(w.alice).createtradeOffer({
+      partnerId: w.bob.id,
+      initiatorCardIds: [w.a[2]],
+    });
+    await setConfig("vault_isTradingEnabled", "false");
+    await as(w.alice).cancelTrade({ tradeId: offer.id });
+    expect(await locks(db as never, [w.a[2]])).toEqual({ [w.a[2]]: false });
   });
 });
 
