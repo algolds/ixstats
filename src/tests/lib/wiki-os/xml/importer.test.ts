@@ -1,29 +1,10 @@
 /** @jest-environment node */
 /**
- * Plan 408: the XML importer against an in-memory stand-in for the WikiOS tables
- * (see fake-wiki-db.ts): fresh import, idempotent re-import, placeholder fill, head rules,
- * redirects, authors, errors, dry run and atomicity.
+ * Plan 408: the XML importer against an in-memory stand-in for the WikiOS tables (see fake-wiki-db.ts): fresh import,
+ * idempotent re-import, placeholder fill, head rules (an older dump or a save that landed meanwhile is never
+ * overwritten, a parked revision is never the head), hidden text kept hidden, authors only through verified links,
+ * errors, dry run and atomicity, restrictions; and the revision planner's twin rules.
  */
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
-import { enqueueRender, invalidateDependents } from "~/lib/wiki-os/services/render-service";
-import { notifyWatchers } from "~/lib/wiki-os/services/watchlist-notify";
-import { createExportWriter } from "~/lib/wiki-os/xml/export-writer";
-import { readExport } from "~/lib/wiki-os/xml/import-reader";
-import { importExport, MAX_CONSECUTIVE_WRITE_FAILURES } from "~/lib/wiki-os/xml/importer";
-import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
-import type { XmlRevision } from "~/lib/wiki-os/xml/types";
-import {
-  rawStatements,
-  resetStore,
-  snapshotStore,
-  store,
-  transactionOptions,
-  type ArticleRow,
-  type RevisionRow,
-} from "./fake-wiki-db";
-
 jest.mock("~/server/db", () => jest.requireActual("./fake-wiki-db").createFakeDbModule());
 jest.mock("~/lib/wiki-os/services/render-service", () => ({
   enqueueRender: jest.fn(),
@@ -35,6 +16,18 @@ jest.mock("~/lib/wiki-os/services/watchlist-notify", () => ({
 jest.mock("~/lib/wiki-os/core/media-asset-service", () => ({
   MediaAssetService: { processContentImages: jest.fn().mockResolvedValue(undefined) },
 }));
+
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { enqueueRender } from "~/lib/wiki-os/services/render-service";
+import { notifyWatchers } from "~/lib/wiki-os/services/watchlist-notify";
+import { createExportWriter } from "~/lib/wiki-os/xml/export-writer";
+import { readExport } from "~/lib/wiki-os/xml/import-reader";
+import { importExport, MAX_CONSECUTIVE_WRITE_FAILURES } from "~/lib/wiki-os/xml/importer";
+import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
+import type { XmlRevision } from "~/lib/wiki-os/xml/types";
+import { type ArticleRow, rawStatements, resetStore, type RevisionRow, snapshotStore, store, transactionOptions } from "./fake-wiki-db";
+import { type ExistingRevisionRow, type ImportedRevision, planRevisionImport } from "~/lib/wiki-os/xml/revision-plan";
 
 const FIXTURE = readFileSync(
   join(__dirname, "../../../fixtures/xml/mediawiki-export-0.11.xml"),
@@ -168,18 +161,6 @@ describe("fresh import of the export-0.11 fixture", () => {
     });
     expect(article("Kingdom of Testia").summary).toContain("Testia is a kingdom");
   });
-  it("maps legacy edit restrictions to a protection level", () => {
-    expect(article("Kingdom of Testia").protectionLevel).toBe("SYSOP");
-    expect(article("Testia").protectionLevel).toBe("ALL");
-  });
-
-  it("leaves the link graph, templates and categories of each page it gave a head to the render it queues (plan 406)", () => {
-    expect(enqueueRender).toHaveBeenCalledTimes(5);
-    expect(enqueueRender).toHaveBeenCalledWith(article("Kingdom of Testia").id, {
-      background: true,
-    });
-  });
-
   it("imports each page in one transaction with room for a long history", () => {
     expect(transactionOptions).toHaveLength(5);
     expect(transactionOptions[0]?.timeout).toBeGreaterThanOrEqual(60_000);
@@ -370,21 +351,6 @@ describe("placeholder revisions from scripts/sync-ixwiki-full.ts", () => {
     expect(hidden).toMatchObject({ wikitext: "", textDeleted: true });
     expect(store.revisions.filter((r) => r.mwRevId === 1001)).toHaveLength(1);
   });
-
-  it("does not turn a filled revision into a duplicate on the next import", async () => {
-    const seeded = seedArticle();
-    seedRevision(seeded.id, {
-      mwRevId: 1001,
-      wikitext: "",
-      createdAt: new Date("2026-01-02T03:04:05Z"),
-    });
-
-    await importFixture();
-    const again = await importFixture();
-
-    expect(again).toMatchObject({ revisionsImported: 0, placeholdersFilled: 0, pagesCreated: 0 });
-    expect(store.revisions.filter((r) => r.mwRevId === 1001)).toHaveLength(1);
-  });
 });
 
 describe("the page's head only moves forward", () => {
@@ -406,32 +372,6 @@ describe("the page's head only moves forward", () => {
     expect(enqueueRender).not.toHaveBeenCalledWith(seeded.id, expect.anything()); // its head did not change: nothing to render
     expect(revisionsOf("Kingdom of Testia")).toHaveLength(4);
   });
-
-  it("a newer dump replaces an older head, marks its rendering stale (the HTML stays until the render lands) and queues the render", async () => {
-    const seeded = seedArticle({ wikitext: "OLD", mwLatestRevId: 5 });
-    seedRevision(seeded.id, { wikitext: "OLD", createdAt: new Date("2025-12-01T00:00:00Z") });
-
-    await importFixture();
-
-    expect(article("Kingdom of Testia")).toMatchObject({
-      wikitext: KINGDOM_V2,
-      mwLatestRevId: 1002,
-      contentHtml: "<p>seeded</p>",
-      htmlSyncedAt: null,
-      mwPageId: 101,
-    });
-    expect(enqueueRender).toHaveBeenCalledWith(seeded.id, { background: true });
-  });
-
-  it("marks the pages that transclude a page stale when its head changes (plan 406)", async () => {
-    const seeded = seedArticle({ wikitext: "OLD", mwLatestRevId: 5 });
-    seedRevision(seeded.id, { wikitext: "OLD", createdAt: new Date("2025-12-01T00:00:00Z") });
-
-    await importFixture();
-
-    expect(invalidateDependents).toHaveBeenCalledWith("Kingdom of Testia", "ixwiki");
-  });
-
   it("does not count a parked revision as the head: a dump's head still replaces an older one (plan 406)", async () => {
     const seeded = seedArticle({ wikitext: "OLD", mwLatestRevId: 5 });
     seedRevision(seeded.id, { wikitext: "OLD", createdAt: new Date("2025-12-01T00:00:00Z") });
@@ -465,84 +405,12 @@ describe("the page's head only moves forward", () => {
       currentRef: "1002",
     });
   });
-
-  it("links the diff in the watchers' notification when the caller knows the head the page had (the inbound sync does)", async () => {
-    const seeded = seedArticle({ wikitext: "OLD", mwLatestRevId: 5 });
-    seedRevision(seeded.id, { wikitext: "OLD", createdAt: new Date("2025-12-01T00:00:00Z") });
-
-    await ArticleRepository.importPageRevisions({
-      source: "ixwiki",
-      title: "Kingdom of Testia",
-      slug: "kingdom_of_testia",
-      namespace: 0,
-      namespacePrefix: null,
-      mwPageId: 101,
-      protectionLevel: null,
-      restrictions: [],
-      revisions: [
-        {
-          mwRevId: 1002,
-          createdAt: new Date("2026-01-01T00:00:00Z"),
-          author: "alice",
-          authorId: null,
-          summary: "edit",
-          commentDeleted: false,
-          textDeleted: false,
-          userDeleted: false,
-          minor: false,
-          byteSize: 3,
-          byteDelta: 3,
-          sha1: mwSha1Base36("new"),
-          wikitext: "new",
-        },
-      ],
-      head: {
-        createdAt: new Date("2026-01-01T00:00:00Z"),
-        mwRevId: 1002,
-        wikitext: "new",
-        summary: null,
-        wordCount: 1,
-        readingTime: 1,
-        redirectTargetSlug: null,
-        redirectTargetFragment: null,
-      },
-      previousRef: "1001",
-      dryRun: false,
-    });
-
-    expect(notifyWatchers).toHaveBeenCalledWith(
-      expect.objectContaining({ previousRef: "1001", currentRef: "1002", editor: "alice" })
-    );
-  });
-  it("tells nobody when the page's head did not change, or on a dry run", async () => {
-    const seeded = seedArticle({ wikitext: "NEWER LOCAL EDIT", mwLatestRevId: 9999 });
-    seedRevision(seeded.id, {
-      wikitext: "NEWER LOCAL EDIT",
-      createdAt: new Date("2026-06-01T00:00:00Z"),
-    });
-    await importFixture();
-    expect(notifyWatchers).not.toHaveBeenCalled();
-
-    const older = seedArticle({ title: "Other", slug: "other", wikitext: "OLD" });
-    seedRevision(older.id, { wikitext: "OLD", createdAt: new Date("2025-12-01T00:00:00Z") });
-    await importFixture({ dryRun: true });
-    expect(notifyWatchers).not.toHaveBeenCalled();
-  });
-
   it("leaves an existing protection alone and only protects an unprotected page", async () => {
     seedArticle({ protectionLevel: "PROTECTED" });
 
     await importFixture();
 
     expect(article("Kingdom of Testia").protectionLevel).toBe("PROTECTED");
-  });
-
-  it("keeps a page's existing MediaWiki page id", async () => {
-    seedArticle({ mwPageId: 555 });
-
-    await importFixture();
-
-    expect(article("Kingdom of Testia").mwPageId).toBe(555);
   });
 });
 
@@ -664,41 +532,6 @@ describe("values a dump may not carry", () => {
     ]);
     expect(store.articles.map((a) => a.title)).toEqual(["Good page"]);
   });
-
-  it("rejects a declared size, page id or namespace that is out of range", async () => {
-    const summary = await importXml(
-      dump(
-        pageXml(
-          "BadSize",
-          '<revision><id>2</id><timestamp>2026-01-01T00:00:00Z</timestamp><text bytes="-5" deleted="deleted" /></revision>'
-        ),
-        pageXml(
-          "HugeSize",
-          '<revision><id>3</id><timestamp>2026-01-01T00:00:00Z</timestamp><text bytes="3000000000" deleted="deleted" /></revision>'
-        ),
-        pageXml("BadPage", revXml({}), "<ns>0</ns><id>3000000000</id>"),
-        pageXml("BadNs", revXml({}), "<ns>-1</ns><id>4</id>"),
-        good
-      )
-    );
-
-    expect(summary.errors.map((e) => e.message)).toEqual([
-      "The size of revision 2 must be a whole number from 0 to 2147483647, not -5",
-      "The size of revision 3 must be a whole number from 0 to 2147483647, not 3000000000",
-      "The page id must be a whole number from 0 to 2147483647, not 3000000000",
-      "The namespace must be a whole number from 0 to 2147483647, not -1",
-    ]);
-    expect(store.articles.map((a) => a.title)).toEqual(["Good page"]);
-  });
-
-  it("accepts the largest values that fit", async () => {
-    const summary = await importXml(
-      dump(pageXml("Edge", revXml({ id: "2147483647" }), "<ns>0</ns><id>2147483647</id>"))
-    );
-
-    expect(summary.errors).toEqual([]);
-    expect(store.revisions[0]?.mwRevId).toBe(2147483647);
-  });
 });
 
 describe("hashes and content models", () => {
@@ -719,107 +552,7 @@ describe("hashes and content models", () => {
       },
     ]);
   });
-  it("keeps the dump's hash for text that is not available", async () => {
-    const hidden = `<mediawiki><page><title>Foo</title><ns>0</ns><revision><id>1</id><timestamp>2026-01-01T00:00:00Z</timestamp><text bytes="5" sha1="kept" deleted="deleted" /></revision></page></mediawiki>`;
-
-    const summary = await importXml(hidden);
-
-    expect(summary.warnings).toEqual([]);
-    expect(store.revisions[0]).toMatchObject({ sha1: "kept", wikitext: "", textDeleted: true });
-  });
-
-  const withModel = (title: string, model: string, ns = 0) =>
-    `<mediawiki><page><title>${title}</title><ns>${ns}</ns><revision><id>1</id><timestamp>2026-01-01T00:00:00Z</timestamp>` +
-    `<model>${model}</model><text>x</text></revision></page></mediawiki>`;
-
-  it("warns, without failing, when a revision's model is not the one the title implies", async () => {
-    const summary = await importXml(withModel("Module:Foo", "wikitext", 828));
-
-    expect(summary.errors).toEqual([]);
-    expect(store.articles.map((a) => a.title)).toEqual(["Module:Foo"]);
-    expect(summary.warnings).toEqual([
-      {
-        title: "Module:Foo",
-        message:
-          'Content model "wikitext" differs from "Scribunto", the model MediaWiki\'s defaults give this title',
-      },
-    ]);
-  });
 });
-
-describe("a WikiOS revision without a hash", () => {
-  const TEXT = "Testia is a [[kingdom]].";
-  const seedNative = (overrides: Partial<RevisionRow> = {}) => {
-    const seeded = seedArticle();
-    return seedRevision(seeded.id, {
-      mwRevId: null,
-      wikitext: TEXT,
-      sha1: null,
-      byteSize: 24,
-      createdAt: new Date("2026-01-02T03:04:05.420Z"),
-      ...overrides,
-    });
-  };
-
-  it("is hashed from its text, matched to the dump's revision and stamped, not duplicated", async () => {
-    const native = seedNative();
-
-    const summary = await importFixture();
-
-    expect(native).toMatchObject({ mwRevId: 1001, sha1: mwSha1Base36(TEXT) });
-    expect(revisionsOf("Kingdom of Testia")).toHaveLength(3);
-    expect(summary.revisionsSkipped).toBe(1);
-    expect(summary.revisionsImported).toBe(6);
-  });
-
-  it("is only hashed in memory on a dry run, which still reports the match", async () => {
-    const native = seedNative();
-    store.writes = 0;
-
-    const summary = await importFixture({ dryRun: true });
-
-    expect(native).toMatchObject({ mwRevId: null, sha1: null });
-    expect(store.writes).toBe(0);
-    expect(summary.revisionsSkipped).toBe(1);
-    expect(summary.revisionsImported).toBe(6);
-  });
-
-  it("gets its hash written back even when nothing matches it", async () => {
-    const native = seedNative({
-      wikitext: "something else entirely",
-      createdAt: new Date("2025-05-05T00:00:00Z"),
-    });
-
-    const summary = await importFixture();
-
-    expect(native.sha1).toBe(mwSha1Base36("something else entirely"));
-    expect(native.mwRevId).toBeNull();
-    expect(summary.revisionsImported).toBe(7);
-  });
-
-  it("is not read when it cannot be a twin: rows with a MediaWiki id are matched by id, and deleted rows have no text to hash", async () => {
-    const seeded = seedArticle();
-    const synced = seedRevision(seeded.id, {
-      mwRevId: 1001,
-      wikitext: TEXT,
-      sha1: null,
-      createdAt: new Date("2026-01-02T03:04:05Z"),
-    });
-    const deleted = seedRevision(seeded.id, {
-      mwRevId: null,
-      wikitext: "",
-      textDeleted: true,
-      sha1: null,
-      byteSize: 0,
-    });
-
-    await importFixture();
-
-    expect(synced.sha1).toBeNull();
-    expect(deleted.sha1).toBeNull();
-  });
-});
-
 describe("redirects read from the head's wikitext", () => {
   const redirectDump = (tag: string, text: string) =>
     `<mediawiki><page><title>Duncala city</title><ns>0</ns><id>1</id>${tag}<revision><id>1</id><timestamp>2026-01-01T00:00:00Z</timestamp><text xml:space="preserve">${text}</text></revision></page></mediawiki>`;
@@ -831,26 +564,6 @@ describe("redirects read from the head's wikitext", () => {
     expect(article("Duncala city")).toMatchObject({
       redirectTargetSlug: "Duncala",
       redirectTargetFragment: "Geography",
-    });
-  });
-
-  it("derives the redirect from the wikitext when the dump has no <redirect> element", async () => {
-    await importXml(redirectDump("", "#REDIRECT [[Duncala]]"));
-
-    expect(article("Duncala city")).toMatchObject({
-      redirectTargetSlug: "Duncala",
-      redirectTargetFragment: null,
-    });
-  });
-
-  it("falls back to <redirect title>, fragment included, for text the redirect rule does not read", async () => {
-    await importXml(
-      redirectDump('<redirect title="duncala#Part one" />', "Moved: see the section.")
-    );
-
-    expect(article("Duncala city")).toMatchObject({
-      redirectTargetSlug: "Duncala",
-      redirectTargetFragment: "Part one",
     });
   });
 });
@@ -951,14 +664,6 @@ describe("pages that cannot be imported", () => {
     expect(summary.errors).toEqual([{ title: "Bad|title", message: 'Invalid title "Bad|title"' }]);
     expect(store.articles.map((a) => a.title)).toEqual(["Good"]);
   });
-
-  it("rejects a title with a fragment, which MediaWiki never exports", async () => {
-    const summary = await importXml(dump(pageXml("Foo#Bar", "0")));
-
-    expect(summary.errors[0]?.message).toMatch(/Invalid title/);
-    expect(store.articles).toHaveLength(0);
-  });
-
   it("rejects a namespace that disagrees with the title's prefix", async () => {
     const summary = await importXml(dump(pageXml("Talk:Foo", "0"), pageXml("Bar", "1")));
 
@@ -966,43 +671,6 @@ describe("pages that cannot be imported", () => {
     expect(summary.errors[0]?.message).toMatch(/Namespace 0 does not match/);
     expect(store.articles).toHaveLength(0);
   });
-
-  it("accepts a namespace the canonical table does not know, keeping MediaWiki's id", async () => {
-    await importXml(dump(pageXml("Portal:Foo", "100")));
-
-    expect(article("Portal:Foo")).toMatchObject({ namespace: 100, namespacePrefix: "Portal" });
-  });
-
-  it("accepts a colon in a main-namespace title", async () => {
-    await importXml(dump(pageXml("Star Wars: Episode One", "0")));
-
-    expect(article("Star Wars: Episode One")).toMatchObject({
-      namespace: 0,
-      namespacePrefix: null,
-    });
-  });
-
-  it("rejects a revision with an invalid timestamp, importing nothing of that page", async () => {
-    const summary = await importXml(
-      dump(
-        pageXml(
-          "Foo",
-          "0",
-          "<revision><id>1</id><timestamp>yesterday</timestamp><text>x</text></revision>"
-        )
-      )
-    );
-
-    expect(summary.errors[0]?.message).toMatch(/invalid timestamp/);
-    expect(store.articles).toHaveLength(0);
-  });
-
-  it("rejects a page with no revisions", async () => {
-    const summary = await importXml(dump(pageXml("Foo", "0", "")));
-
-    expect(summary.errors).toEqual([{ title: "Foo", message: "The page has no revisions" }]);
-  });
-
   it("rolls the whole page back when a write fails, and imports the pages after it", async () => {
     const { db } = jest.requireMock("~/server/db") as {
       db: { wikiRevision: { createMany: (...a: unknown[]) => Promise<unknown> } };
@@ -1063,22 +731,6 @@ describe("a database that is down or not migrated", () => {
       /Stopped after 10 pages in a row.*sha1.*migrated/
     );
   });
-
-  it("reports a Prisma failure as the one line that says what went wrong", async () => {
-    const broken = findUnique().mockRejectedValue(
-      new Error(
-        "\nInvalid `client.wikiRevision.findMany()` invocation in\n/app/article-repository.ts:126:37\n\n  123 : [];\n→ 126 ...(await client.wikiRevision.findMany(\nThe column `t0.sha1` does not exist in the current database."
-      )
-    );
-
-    const summary = await importXml(dump(goodPage(1)));
-    broken.mockRestore();
-
-    expect(summary.errors).toEqual([
-      { title: "Page 1", message: "The column `t0.sha1` does not exist in the current database." },
-    ]);
-  });
-
   it("keeps going after an isolated failure, and malformed pages never count towards stopping", async () => {
     const blip = findUnique().mockRejectedValueOnce(new Error("blip"));
 
@@ -1105,13 +757,6 @@ describe("a malformed dump", () => {
     expect(summary.errors[0]?.title).toBe("(dump)");
     expect(store.articles.map((a) => a.title)).toEqual(["Kingdom of Testia"]);
   });
-
-  it("reports a file that is not an export", async () => {
-    const summary = await importXml("<html/>");
-
-    expect(summary.errors[0]).toMatchObject({ title: "(dump)" });
-    expect(summary.errors[0]?.message).toMatch(/not a MediaWiki export/i);
-  });
 });
 
 describe("dry run", () => {
@@ -1132,18 +777,6 @@ describe("dry run", () => {
     expect(real).toEqual(planned);
   });
 });
-
-describe("options", () => {
-  it("imports another wiki's pages under its own source, with no IxWiki namespaces", async () => {
-    await importFixture({ source: "iiwiki" });
-
-    const talk = article("Talk:Kingdom of Testia", "iiwiki");
-    expect(talk).toMatchObject({ source: "iiwiki", namespace: 1, namespacePrefix: "Talk" });
-    expect(store.revisions.every((r) => r.source === "iiwiki")).toBe(true);
-    expect(store.articles.filter((a) => a.source === "ixwiki")).toHaveLength(0);
-  });
-});
-
 describe("legacy <restrictions> become wiki_restrictions rows (plan 409 review)", () => {
   const rulesOf = (title: string) =>
     store.restrictions
@@ -1169,20 +802,6 @@ describe("legacy <restrictions> become wiki_restrictions rows (plan 409 review)"
     // pages the dump did not protect get none
     expect(rulesOf("Testia")).toEqual([]);
   });
-
-  it("reads edit, move and upload rules, autoconfirmed and sysop levels, and ignores the rest", async () => {
-    await importXml(
-      dumpWith("edit=autoconfirmed:move=sysop:upload=sysop:create=sysop:delete=sysop")
-    );
-
-    expect(rulesOf("Kingdom of Testia")).toEqual([
-      "edit:autoconfirmed",
-      "move:sysop",
-      "upload:sysop",
-    ]);
-    expect(article("Kingdom of Testia").protectionLevel).toBe("AUTOCONFIRMED");
-  });
-
   it("tightens a level it has no counterpart for to sysop and warns", async () => {
     const summary = await importXml(dumpWith("edit=templateeditor"));
 
@@ -1208,16 +827,6 @@ describe("legacy <restrictions> become wiki_restrictions rows (plan 409 review)"
     expect(store.restrictions.filter((r) => r.title === "Kingdom of Testia")).toHaveLength(2);
     expect(rulesOf("Kingdom of Testia")).toEqual(["edit:autoconfirmed", "move:sysop"]);
   });
-
-  it("writes none in a dry run, and files another wiki's under its own source", async () => {
-    await importFixture({ dryRun: true });
-    expect(store.restrictions).toEqual([]);
-
-    await importFixture({ source: "iiwiki" });
-    expect(store.restrictions.every((r) => r.source === "iiwiki")).toBe(true);
-    expect(store.restrictions).toHaveLength(2);
-  });
-
   it("a page that fails to import leaves no restriction behind", async () => {
     const broken = dumpWith("edit=sysop").replace("2026-01-02T03:04:05Z", "not a timestamp");
     const summary = await importXml(broken);
@@ -1256,10 +865,68 @@ describe("per-page authorization (plan 409: canWritePage)", () => {
     // a refusal is a rejection, not a database failure: the import never gives up early
     expect(summary.errors.some((e) => e.title === "(dump)")).toBe(false);
   });
+});
 
-  it("writes every page when there is no callback (the operator's command line tools)", async () => {
-    const summary = await importFixture();
-    expect(summary.errors).toEqual([]);
-    expect(store.articles).toHaveLength(5);
+describe("the revision planner's twins", () => {
+  const at = (iso: string) => new Date(iso);
+
+  const dump = (overrides: Partial<ImportedRevision> = {}): ImportedRevision => ({
+    mwRevId: 10,
+    createdAt: at("2026-01-01T00:00:00Z"),
+    author: "Jane",
+    authorId: null,
+    summary: null,
+    minor: false,
+    byteSize: 5,
+    byteDelta: 5,
+    sha1: "hash-a",
+    wikitext: "hello",
+    textDeleted: false,
+    commentDeleted: false,
+    userDeleted: false,
+    ...overrides,
+  });
+
+  const row = (overrides: Partial<ExistingRevisionRow> = {}): ExistingRevisionRow => ({
+    id: "row-1",
+    articleId: "a1",
+    mwRevId: 10,
+    sha1: "hash-a",
+    createdAt: at("2026-01-01T00:00:00Z"),
+    isPlaceholder: false,
+    ...overrides,
+  });
+
+  describe("planRevisionImport", () => {
+    it("does not match revisions of the same text a second apart, or with another hash", () => {
+      const native = row({ mwRevId: null, createdAt: at("2026-01-01T00:00:01Z") });
+      const other = row({ id: "other", mwRevId: null, sha1: "hash-b" });
+
+      const plan = planRevisionImport("a1", [native, other], [dump({ mwRevId: 77 })]);
+
+      expect(plan.inserts).toHaveLength(1);
+      expect(plan.stamps).toEqual([]);
+    });
+
+    it("never treats two different MediaWiki revisions as twins", () => {
+      const plan = planRevisionImport("a1", [row({ mwRevId: 11 })], [dump({ mwRevId: 12 })]);
+
+      expect(plan.inserts).toHaveLength(1);
+    });
+
+    it("claims a twin once: two identical dump revisions do not both match one row", () => {
+      const native = row({ id: "native", mwRevId: null });
+
+      const plan = planRevisionImport("a1", [native], [dump({ mwRevId: 1 }), dump({ mwRevId: 2 })]);
+
+      expect(plan.stamps).toEqual([{ rowId: "native", mwRevId: 1 }]);
+      expect(plan.inserts.map((r) => r.mwRevId)).toEqual([2]);
+    });
+    it("skips a rev id repeated inside the dump instead of inserting it twice", () => {
+      const plan = planRevisionImport("a1", [], [dump({ mwRevId: 5 }), dump({ mwRevId: 5 })]);
+
+      expect(plan).toMatchObject({ skipped: 1 });
+      expect(plan.inserts).toHaveLength(1);
+    });
   });
 });

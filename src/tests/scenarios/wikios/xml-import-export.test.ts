@@ -21,6 +21,12 @@
  * - xml/content-model.test.ts: Module: pages (any case, subpages) are Scribunto except `/doc`; MediaWiki: and user
  *   `.css`/`.js`/`.json` pages are css, javascript and json; `Template:Foo.css`, `User:Jane.css`, `Node.js` and
  *   `Help:Module:Foo` stay wikitext.
+ * - app/api/wiki-import-route.test.ts: who may (401 before the body is read, 403 importing nothing), dryRun only when
+ *   exactly false, 415 for other types, 413 from Content-Length alone and for a chunked or gzip body by the bytes on
+ *   the wire, a body that is not an export, and the unknown namespace only an administrator may import into.
+ * - app/api/wiki-export-route.test.ts: published pages only, a file name a title cannot break, 500 pages (50 with
+ *   history, which needs a signed-in user), a realm name for the source, 429 from the bucket, and YAML frontmatter and
+ *   Markdown file names a title or slug cannot break out of.
  */
 import { gzipSync } from "node:zlib";
 import { NextRequest } from "next/server";
@@ -41,7 +47,10 @@ jest.mock("~/lib/wiki-os/services/render-service", () => ({
 jest.mock("~/lib/wiki-os/services/watchlist-notify", () => ({ notifyWatchers: jest.fn().mockResolvedValue(0) }));
 
 import { auth } from "@clerk/nextjs/server";
-import { POST as importRoute } from "~/app/api/wiki/import/route";
+import { randomBytes } from "node:crypto";
+import { GET as importGate, POST as importRoute } from "~/app/api/wiki/import/route";
+import { rateLimiter } from "~/lib/cache/rate-limiter";
+import type { ArticleRow } from "~/tests/lib/wiki-os/xml/fake-wiki-db";
 import { GET as exportRoute } from "~/app/api/wiki/export/route";
 import { getWikiPermissionsForAuthId } from "~/lib/wiki-os/rights";
 import { enqueueRender } from "~/lib/wiki-os/services/render-service";
@@ -259,5 +268,230 @@ describe("Special:Import, then Special:Export, then importing the export again",
     const roundTrip = await (await pick("export.xml", "text/xml", new TextEncoder().encode(xml), "?dryRun=false")).json();
     expect(roundTrip).toMatchObject({ pagesCreated: 0, revisionsImported: 0, errors: [] });
     expect(snapshotStore()).toEqual(unchanged);
+  });
+});
+
+describe("the import route refuses before it writes", () => {
+  const MIB = 1024 * 1024;
+  const DUMP = dump(PAGES.slice(0, 3));
+  /** A POST whose body is `body` (a string, bytes, or a stream: streams have no Content-Length). */
+  const post = (
+    body: string | Uint8Array | ReadableStream<Uint8Array>,
+    { type = "application/xml", query = "", headers = {} }: { type?: string | null; query?: string; headers?: Record<string, string> } = {}
+  ) =>
+    importRoute(
+      new NextRequest(`http://localhost:3000/api/wiki/import${query}`, {
+        method: "POST",
+        body,
+        headers: { ...(type ? { "content-type": type } : {}), ...headers },
+        duplex: "half",
+      } as ConstructorParameters<typeof NextRequest>[1])
+    );
+  /** A stream of `count` chunks of `size` bytes that records how many chunks were pulled from it. */
+  const countedStream = (count: number, size: number) => {
+    const pulled = { chunks: 0 };
+    const chunk = new Uint8Array(size).fill(32); // spaces: harmless XML whitespace
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        if (pulled.chunks >= count) return controller.close();
+        pulled.chunks += 1;
+        controller.enqueue(chunk);
+      },
+    });
+    return { stream, pulled };
+  };
+
+  it("tells the page who may import: 200 with the limit for an administrator, 403 for a member, 401 signed out", async () => {
+    const ok = await importGate();
+    expect([ok.status, await ok.json()]).toEqual([200, { admin: true, maxBytes: DEFAULT_MAX_UPLOAD_BYTES }]);
+    holding("read", "edit");
+    expect((await importGate()).status).toBe(403);
+    jest.mocked(auth).mockResolvedValue({ userId: null } as never);
+    expect((await importGate()).status).toBe(401);
+  });
+
+  it("refuses a signed-out caller with 401 before reading the body, and a member with 403, importing nothing", async () => {
+    jest.mocked(auth).mockResolvedValue({ userId: null } as never);
+    const { stream, pulled } = countedStream(10, 1024);
+    expect((await post(stream)).status).toBe(401);
+    // (A Request with a stream body primes the stream with one chunk before any handler runs.)
+    expect(pulled.chunks).toBeLessThanOrEqual(1);
+
+    jest.mocked(auth).mockResolvedValue({ userId: "user_admin" } as never);
+    holding("read", "edit");
+    expect((await post(DUMP, { query: "?dryRun=false" })).status).toBe(403);
+    expect(store.writes).toBe(0);
+    expect(store.articles).toEqual([]);
+  });
+
+  it.each(["", "?dryRun=1", "?dryRun=no", "?dryrun=false"])(
+    "only reports, writing nothing, unless dryRun is exactly false (%j)",
+    async (query) => {
+      const body = await (await post(DUMP, { query })).json();
+      expect(body).toMatchObject({ dryRun: true, pagesCreated: 3 });
+      expect(store.writes).toBe(0);
+    }
+  );
+
+  it.each([["multipart/form-data; boundary=x"], ["application/json"], ["application/octet-stream"], [null]])(
+    "answers 415 to Content-Type %j",
+    async (type) => {
+      expect((await post(DUMP, { type })).status).toBe(415);
+      expect(store.articles).toEqual([]);
+    }
+  );
+
+  it("refuses an oversized body from Content-Length alone, without reading it", async () => {
+    const { stream, pulled } = countedStream(10, 1024);
+    expect((await post(stream, { headers: { "content-length": String(200 * MIB) } })).status).toBe(413);
+    expect(pulled.chunks).toBeLessThanOrEqual(1);
+  });
+
+  it("cuts off a chunked body (no Content-Length) just past the limit, without reading it all", async () => {
+    // 1000 MiB offered in 1 MiB chunks: the stream is abandoned just past 9.5 MiB
+    const { stream, pulled } = countedStream(1000, MIB);
+    const res = await post(stream);
+    expect(res.status).toBe(413);
+    expect((await res.json()).error).toMatch(/larger than 9961472 bytes/);
+    expect(pulled.chunks).toBeGreaterThanOrEqual(10);
+    expect(pulled.chunks).toBeLessThan(15);
+  });
+
+  it("cuts off a chunked gzip body the same way, by the bytes on the wire", async () => {
+    // a real archive of well-formed XML that does not compress (a comment of random base64), about 14 MiB as sent
+    const archive = gzipSync(`<mediawiki><!-- ${randomBytes(14 * MIB).toString("base64")} --></mediawiki>`);
+    expect(archive.length).toBeGreaterThan(DEFAULT_MAX_UPLOAD_BYTES);
+    let offered = 0;
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        if (offered >= archive.length) return controller.close();
+        controller.enqueue(archive.subarray(offered, offered + MIB));
+        offered += MIB;
+      },
+    });
+    expect((await post(stream, { type: "application/gzip" })).status).toBe(413);
+    expect(offered).toBeLessThan(archive.length);
+  });
+
+  it("reports a body that is not an export, and a corrupt archive, as a summary error", async () => {
+    expect((await (await post("<html/>")).json()).errors[0]).toMatchObject({ title: "(dump)" });
+    const corrupt = await post(new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), { type: "application/gzip" });
+    expect(corrupt.status).toBe(200);
+    expect((await corrupt.json()).errors[0]).toMatchObject({ title: "(dump)" });
+  });
+
+  it("imports into a namespace the wiki does not know only for an administrator", async () => {
+    const portal = dump([{ title: "Portal:Testia", ns: 100, id: 9, revisions: one(901, "A portal.") }]);
+    holding("read", "edit", "import");
+    expect((await (await post(portal, { query: "?dryRun=false" })).json()).errors).toEqual([
+      { title: "Portal:Testia", message: "permission: Only wiki administrators can import pages in this namespace." },
+    ]);
+    holding(...SYSOP);
+    expect(await (await post(portal, { query: "?dryRun=false" })).json()).toMatchObject({ pagesCreated: 1, errorCount: 0 });
+  });
+});
+
+describe("the export route's bounds", () => {
+  const request = (query: string) => exportRoute(new NextRequest(`http://localhost:3000/api/wiki/export?${query}`));
+  const seed = (overrides: Partial<ArticleRow>) => {
+    const article: ArticleRow = {
+      id: `a${store.articles.length + 1}`,
+      source: "ixwiki",
+      title: "Alpha",
+      slug: "alpha",
+      status: "PUBLISHED",
+      format: "WIKITEXT",
+      namespace: 0,
+      namespacePrefix: null,
+      wikitext: "alpha text",
+      contentHtml: null,
+      htmlSyncedAt: null,
+      summary: null,
+      wordCount: 2,
+      readingTime: 1,
+      mwPageId: 11,
+      mwLatestRevId: 21,
+      redirectTargetSlug: null,
+      redirectTargetFragment: null,
+      protectionLevel: "ALL",
+      updatedAt: new Date("2026-01-01T00:00:00Z"),
+      ...overrides,
+    };
+    store.articles.push(article);
+    store.revisions.push({
+      id: `r${store.revisions.length + 1}`,
+      articleId: article.id,
+      source: "ixwiki",
+      mwRevId: 21 + store.revisions.length,
+      author: "Jane",
+      authorId: null,
+      summary: null,
+      minor: false,
+      textDeleted: false,
+      commentDeleted: false,
+      userDeleted: false,
+      byteSize: 10,
+      byteDelta: 10,
+      sha1: null,
+      createdAt: new Date("2026-01-01T00:00:00Z"),
+      wikitext: article.wikitext,
+      format: "WIKITEXT",
+    });
+  };
+  const titlesIn = (xml: string) => [...xml.matchAll(/<title>([^<]*)<\/title>/g)].map((match) => match[1]);
+  const pages = (count: number) => encodeURIComponent(Array.from({ length: count }, (_, i) => `Page ${i}`).join("|"));
+  // js-yaml comes with the toolchain (an override in package.json) and has no type declarations here.
+  const { load: parseYaml } = require("js-yaml") as { load: (text: string) => unknown };
+
+  beforeEach(() => jest.mocked(auth).mockResolvedValue({ userId: null } as never));
+
+  it("exports only published pages, under a file name no title can break", async () => {
+    seed({ title: "Alpha" });
+    seed({ title: "Draft page", slug: "draft_page", status: "DRAFT" });
+    seed({ title: "Archived page", slug: "archived_page", status: "ARCHIVED" });
+    expect(titlesIn(await (await request("format=xml&pages=Alpha|Draft page|Archived page")).text())).toEqual(["Alpha"]);
+
+    const res = await request(`format=xml&pages=${encodeURIComponent('a"\r\nX-Injected: 1')}`);
+    expect(res.headers.get("content-disposition")).toMatch(/^attachment; filename="[A-Za-z0-9._-]+\.xml"$/);
+    expect(res.headers.get("x-injected")).toBeNull();
+    await res.text();
+  });
+
+  it("needs pages, at most 500, and a realm name for the source", async () => {
+    expect((await request("format=xml")).status).toBe(400);
+    const tooMany = await request(`format=xml&pages=${pages(501)}`);
+    expect([tooMany.status, await tooMany.json()]).toEqual([400, { error: "Too many pages: at most 500 per export" }]);
+    expect((await request(`format=xml&pages=${pages(500)}`)).status).toBe(200);
+    expect((await request(`format=xml&pages=Alpha&source=${encodeURIComponent("x'; --")}`)).status).toBe(400);
+  });
+
+  it("exports history only to a signed-in user, and at most 50 pages of it", async () => {
+    seed({ title: "Alpha" });
+    expect((await request("format=xml&pages=Alpha&history=1")).status).toBe(401);
+    expect(jest.mocked(rateLimiter.check)).not.toHaveBeenCalled();
+    jest.mocked(auth).mockResolvedValue({ userId: "user_1" } as never);
+    expect((await request(`format=xml&history=1&pages=${pages(50)}`)).status).toBe(200);
+    const res = await request(`format=xml&history=1&pages=${pages(51)}`);
+    expect([res.status, await res.json()]).toEqual([400, { error: "Too many pages: at most 50 per export with history" }]);
+  });
+
+  it("answers 429 once the bucket is empty", async () => {
+    jest.mocked(rateLimiter.check).mockResolvedValueOnce({ success: false, remaining: 0, resetAt: new Date() } as never);
+    expect((await request("format=xml&pages=Alpha")).status).toBe(429);
+  });
+
+  it("writes Markdown frontmatter and a file name that a title or slug cannot break out of", async () => {
+    const title = 'He said "hi": a\nb # c --- [d] {e}\\';
+    const slug = 'slug: "x"\n---\nfoo: bar';
+    seed({ title, slug, wikitext: "body text" });
+    const text = await (await request(`slug=${encodeURIComponent(slug)}`)).text();
+    const parsed = parseYaml(/^---\n([\s\S]*?)\n---\n/.exec(text)?.[1] ?? "") as Record<string, unknown>;
+    expect(parsed).toMatchObject({ title, slug, realm: "ixwiki", status: "PUBLISHED" });
+    expect(Object.keys(parsed).sort()).toEqual(["exportedAt", "readingTime", "realm", "slug", "status", "title", "wordCount"]);
+    expect(text.endsWith("body text")).toBe(true);
+
+    seed({ title: "Weird", slug: 'we"ird/../name\r\nX: 1' });
+    const weird = await request(`slug=${encodeURIComponent('we"ird/../name\r\nX: 1')}`);
+    expect(weird.headers.get("content-disposition")).toMatch(/^attachment; filename="[A-Za-z0-9._-]+\.mdx"$/);
   });
 });

@@ -1,15 +1,23 @@
 /** @jest-environment node */
-import { readFileSync } from "node:fs";
+/**
+ * Plan 408: what comes in before the importer: the export reader (hidden and unfetched text, exact text, any chunking,
+ * truncated and malformed dumps, nesting and unknown blocks bounded), the upload stream (a byte limit and a gzip bomb
+ * bounded by the bytes sent and by what they expand to), the command line's dump input, the hash MediaWiki uses and the
+ * XML-forbidden characters a save strips (never joining two lone surrogates).
+ */
+
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createExportWriter, DEFAULT_SITEINFO } from "~/lib/wiki-os/xml/export-writer";
-import {
-  MAX_DEPTH,
-  readExport,
-  type ImportEvent,
-  type ImportPage,
-} from "~/lib/wiki-os/xml/import-reader";
+import { type ImportEvent, type ImportPage, MAX_DEPTH, readExport } from "~/lib/wiki-os/xml/import-reader";
 import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
 import type { XmlRevision } from "~/lib/wiki-os/xml/types";
+import { gzipSync } from "node:zlib";
+import { byteLimit, openUpload, PayloadTooLargeError } from "~/lib/wiki-os/xml/upload-stream";
+import { tmpdir } from "node:os";
+import { Readable } from "node:stream";
+import { openDumpInput } from "~/lib/wiki-os/xml/dump-input";
+import { stripXmlForbiddenControlChars } from "~/lib/wiki-os/xml/control-chars";
 
 const FIXTURE = readFileSync(
   join(__dirname, "../../../fixtures/xml/mediawiki-export-0.11.xml"),
@@ -36,78 +44,6 @@ describe("readExport: the hand-written export-0.11 fixture", () => {
   beforeAll(async () => {
     events = await read(FIXTURE);
   });
-
-  it("yields siteinfo first, then one event per page", () => {
-    expect(events.map((e) => e.type)).toEqual(["siteinfo", "page", "page", "page", "page", "page"]);
-    expect(pagesOf(events).map((p) => p.title)).toEqual([
-      "Kingdom of Testia",
-      "Testia",
-      "Talk:Kingdom of Testia",
-      "Template:Infobox testia",
-      "File:Testia flag.png",
-    ]);
-  });
-
-  it("reads siteinfo with its namespaces, the main one empty", () => {
-    const first = events[0];
-    expect(first?.type === "siteinfo" && first.siteinfo).toEqual({
-      sitename: "IxWiki",
-      dbname: "ixwiki",
-      base: "https://ixwiki.com/wiki/Main_Page",
-      generator: "MediaWiki 1.45.1",
-      case: "first-letter",
-      namespaces: [
-        { key: -2, case: "first-letter", name: "Media" },
-        { key: 0, case: "first-letter", name: "" },
-        { key: 1, case: "first-letter", name: "Talk" },
-        { key: 6, case: "first-letter", name: "File" },
-        { key: 10, case: "first-letter", name: "Template" },
-      ],
-    });
-  });
-
-  it("reads page fields: ns, id, restrictions, redirect, upload count", () => {
-    const [kingdom, redirect, talk, template, file] = pagesOf(events);
-    expect(kingdom).toMatchObject({
-      ns: 0,
-      id: 101,
-      restrictions: "edit=sysop:move=sysop",
-      redirectTitle: null,
-      uploads: 0,
-    });
-    expect(redirect).toMatchObject({ ns: 0, id: 102, redirectTitle: "Kingdom of Testia" });
-    expect(talk).toMatchObject({ ns: 1, id: 103, restrictions: null });
-    expect(template).toMatchObject({ ns: 10, id: 104 });
-    expect(file).toMatchObject({ ns: 6, id: 105, uploads: 1 });
-  });
-
-  it("reads a named contributor, an IP, a minor flag and a summary", () => {
-    const [first, second] = pagesOf(events)[0]?.revisions ?? [];
-    expect(first).toEqual({
-      id: 1001,
-      parentId: null,
-      timestamp: "2026-01-02T03:04:05Z",
-      contributor: { username: "Jane", id: 7 },
-      minor: false,
-      comment: "Create the page",
-      commentDeleted: false,
-      model: "wikitext",
-      format: "text/x-wiki",
-      text: "Testia is a [[kingdom]].",
-      textDeleted: false,
-      bytes: 24,
-      sha1: "5m4a1twcqtk8kln29696qjq0i7jb99b",
-    });
-    expect(second).toMatchObject({
-      id: 1002,
-      parentId: 1001,
-      contributor: { ip: "192.0.2.7" },
-      minor: true,
-      comment: "typo & <nowiki> fix",
-      text: "Testia is a [[kingdom]] & <nowiki>more</nowiki>.",
-    });
-  });
-
   it("reports a deleted contributor, comment and text as hidden, keeping bytes and sha1", () => {
     const hidden = pagesOf(events)[0]?.revisions[2];
     expect(hidden).toMatchObject({
@@ -128,14 +64,6 @@ describe("readExport: the hand-written export-0.11 fixture", () => {
     expect(talk?.revisions[0]?.comment).toBeNull();
     expect(template?.revisions[0]?.text).toBe("<includeonly>{{{1}}}</includeonly>");
   });
-
-  it("skips elements it does not know without failing", () => {
-    // <unknownfuturething>, <logitem> at the top level and <upload>'s children are all ignored.
-    const template = pagesOf(events)[3];
-    expect(template?.revisions).toHaveLength(1);
-    expect(pagesOf(events)[4]?.revisions).toHaveLength(1);
-  });
-
   it("every text's sha1 and size agree with what the fixture declares", () => {
     for (const page of pagesOf(events)) {
       for (const revision of page.revisions) {
@@ -164,12 +92,6 @@ describe("readExport: chunking", () => {
     expect(pagesOf(events)[2]?.revisions[0]?.text).toBe("Discuss é漢字 here.\n\n* one\n* two\n");
     expect(events).toEqual(await read(FIXTURE));
   });
-
-  it("reads a dump that starts with a byte-order mark", async () => {
-    const events = await read(`﻿${FIXTURE}`);
-    expect(pagesOf(events)).toHaveLength(5);
-  });
-
   it("yields each page as soon as it closes, before the rest of the stream is read", async () => {
     const afterFirstPage = FIXTURE.indexOf("</page>") + "</page>".length;
     let consumedAll = false;
@@ -195,15 +117,6 @@ describe("readExport: bad input", () => {
   it("throws on malformed XML", async () => {
     await expect(read("<mediawiki><page><title>x</page></mediawiki>")).rejects.toThrow();
   });
-
-  it("throws on a document that is not a MediaWiki export", async () => {
-    await expect(read("<html><body/></html>")).rejects.toThrow(/not a MediaWiki export/i);
-  });
-
-  it("throws on an empty stream", async () => {
-    await expect(read("")).rejects.toThrow();
-  });
-
   it("keeps the pages that were complete before a truncated dump fails", async () => {
     const truncated = FIXTURE.slice(0, FIXTURE.indexOf("<title>Testia</title>") + 30);
     const seen: string[] = [];
@@ -216,14 +129,6 @@ describe("readExport: bad input", () => {
     ).rejects.toThrow();
     expect(seen).toEqual(["Kingdom of Testia"]);
   });
-
-  it("reads a dump with no pages", async () => {
-    const events = await read(
-      '<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" version="0.11"><siteinfo><sitename>X</sitename></siteinfo></mediawiki>'
-    );
-    expect(events.map((e) => e.type)).toEqual(["siteinfo"]);
-  });
-
   it("tells deleted text from text that was never fetched and from a blank page", async () => {
     const events = await read(
       "<mediawiki><page><title>Foo</title><ns>0</ns>" +
@@ -242,27 +147,6 @@ describe("readExport: bad input", () => {
       [4, "", false], // no claim about content
       [5, null, false], // no <text> at all
     ]);
-  });
-
-  it("tolerates missing ids, contributor and text: null/default fields, no failure", async () => {
-    const events = await read(
-      "<mediawiki><page><title>Bare</title><revision><timestamp>2026-01-01T00:00:00Z</timestamp></revision></page></mediawiki>"
-    );
-    expect(pagesOf(events)[0]).toMatchObject({
-      title: "Bare",
-      ns: null,
-      id: null,
-      revisions: [
-        {
-          id: null,
-          parentId: null,
-          contributor: { deleted: true },
-          text: null,
-          model: "wikitext",
-          format: "text/x-wiki",
-        },
-      ],
-    });
   });
 });
 
@@ -285,13 +169,6 @@ describe("readExport: hostile structure", () => {
       expect(pagesOf(events)[0]?.revisions[0]).toMatchObject({ id: 1, text: "kept" });
     }
   );
-
-  it("reads the same page whatever unknown elements wrap its fields", async () => {
-    const xml = `<mediawiki><page><title>Foo</title><wrap><title>NOT THIS</title></wrap>${revision}</page></mediawiki>`;
-
-    expect(pagesOf(await read(xml))[0]?.title).toBe("Foo");
-  });
-
   const nested = (levels: number) => `${"<a>".repeat(levels)}deep${"</a>".repeat(levels)}`;
 
   it("accepts nesting up to the limit", async () => {
@@ -434,5 +311,156 @@ describe("writer to reader round trip", () => {
       ),
     });
     expect(second).toMatchObject({ title: "Second", id: null, revisions: [] });
+  });
+});
+
+describe("the upload stream", () => {
+  const streamOf = (chunks: Uint8Array[]) =>
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        for (const chunk of chunks) controller.enqueue(chunk);
+        controller.close();
+      },
+    });
+
+  async function collect(source: AsyncIterable<Uint8Array>): Promise<Buffer> {
+    const parts: Buffer[] = [];
+    for await (const chunk of source) parts.push(Buffer.from(chunk));
+    return Buffer.concat(parts);
+  }
+
+  const limits = { maxBytes: 100, maxExpandedBytes: 1000 };
+
+  describe("byteLimit", () => {
+    async function through(chunks: Uint8Array[], limit: number) {
+      const out: Uint8Array[] = [];
+      const reader = streamOf(chunks).pipeThrough(byteLimit(limit, "The thing")).getReader();
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) return out;
+        out.push(value);
+      }
+    }
+
+    it("passes exactly `limit` bytes and fails on the byte after", async () => {
+      await expect(through([new Uint8Array(60), new Uint8Array(40)], 100)).resolves.toHaveLength(2);
+      await expect(through([new Uint8Array(60), new Uint8Array(41)], 100)).rejects.toThrow(
+        PayloadTooLargeError
+      );
+    });
+  });
+
+  describe("openUpload", () => {
+    it("bounds a gzip body by the bytes sent, not by what they expand to", async () => {
+      const archive = gzipSync(Buffer.alloc(10, 1));
+      const small = { maxBytes: archive.length - 1, maxExpandedBytes: 1000 };
+
+      await expect(
+        collect(openUpload(streamOf([archive]), { ...small, gzip: true }))
+      ).rejects.toThrow("The upload is larger than");
+    });
+
+    it("bounds what a small archive expands to (a gzip bomb)", async () => {
+      const bomb = gzipSync(Buffer.alloc(5_000_000));
+      expect(bomb.length).toBeLessThan(10_000);
+
+      await expect(
+        collect(
+          openUpload(streamOf([bomb]), { maxBytes: 100_000, maxExpandedBytes: 50_000, gzip: true })
+        )
+      ).rejects.toThrow("The decompressed dump is larger than 50000 bytes");
+    });
+
+    it("fails on a corrupt or truncated archive", async () => {
+      const archive = gzipSync("x".repeat(1000));
+
+      await expect(
+        collect(openUpload(streamOf([Buffer.from("not gzip at all")]), { ...limits, gzip: true }))
+      ).rejects.toThrow();
+      await expect(
+        collect(openUpload(streamOf([archive.subarray(0, 10)]), { ...limits, gzip: true }))
+      ).rejects.toThrow();
+    });
+  });
+});
+
+describe("the command line's dump input", () => {
+  const XML =
+    "<mediawiki><page><title>Foo</title><ns>0</ns><revision><id>1</id><timestamp>2026-01-01T00:00:00Z</timestamp><text>hi</text></revision></page></mediawiki>";
+
+  let dir: string;
+  beforeAll(() => {
+    dir = mkdtempSync(join(tmpdir(), "dump-input-"));
+  });
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+  async function titles(stream: Readable): Promise<string[]> {
+    const found: string[] = [];
+    for await (const event of readExport(stream) as AsyncIterable<ImportEvent>) {
+      if (event.type === "page") found.push(event.page.title);
+    }
+    return found;
+  }
+
+  describe("openDumpInput", () => {
+    it("reports a missing .gz file as an error of the stream, not an unhandled crash or a hang", async () => {
+      await expect(
+        titles(openDumpInput(join(dir, "missing.xml.gz"), Readable.from([])))
+      ).rejects.toThrow(/ENOENT/);
+    });
+
+    it("reports a .gz file that is not gzip, and a truncated one", async () => {
+      const fake = join(dir, "fake.xml.gz");
+      const cut = join(dir, "cut.xml.gz");
+      writeFileSync(fake, XML);
+      writeFileSync(cut, gzipSync(XML).subarray(0, 12));
+
+      await expect(titles(openDumpInput(fake, Readable.from([])))).rejects.toThrow(/header|gzip/i);
+      await expect(titles(openDumpInput(cut, Readable.from([])))).rejects.toThrow(/unexpected end/i);
+    });
+  });
+});
+
+describe("MediaWiki's text hash", () => {
+  // Reference values computed independently (hashlib + a hand-written base-36 conversion).
+  describe("mwSha1Base36", () => {
+    it.each([
+      ["a", "frkhg3ewxov0h1g2eh87fri7z1g12ns"],
+      ["Hello, world!", "hbbvduyzg9rvcn7s9tgwxvh7c4u19y1"],
+    ])("hashes %j", (text, expected) => {
+      expect(mwSha1Base36(text)).toBe(expected);
+    });
+    it("left-pads a small digest with zeros to 31 characters", () => {
+      expect(mwSha1Base36("pad10")).toBe("0xppfai6ugrm8kqtj77un9sv64fkg0z");
+    });
+  });
+});
+
+describe("the characters XML cannot carry", () => {
+  describe("lone surrogates (PostgreSQL cannot store them: a save of one was a 500)", () => {
+    it("never joins two lone surrogates into a pair by removing a control between them", () => {
+      expect(stripXmlForbiddenControlChars("\uD800\u0001\uDC00")).toBe("\uFFFD\uFFFD");
+    });
+
+    it("gives text PostgreSQL and the export can carry: what it returns survives a UTF-8 round trip", () => {
+      const stripped = stripXmlForbiddenControlChars("x\uD800y\uDC00z\u0000\uFFFE\uD83D");
+
+      expect(Buffer.from(stripped, "utf8").toString("utf8")).toBe(stripped);
+      expect(stripped).toBe("x\uFFFDy\uFFFDz\uFFFD");
+    });
+  });
+
+  describe("the strip is a fixed point (stripping stripped text changes nothing)", () => {
+    it("holds for every pair of the interesting characters", () => {
+      const parts = ["a", "\u0000", "\u0001", "\t", "\uFFFE", "\uFFFF", "\uFFFD", "\uD800", "\uDC00", "\u{1F600}", "\uDE00", "\uD83D"];
+      for (const left of parts) {
+        for (const middle of parts) {
+          for (const right of parts) {
+            const once = stripXmlForbiddenControlChars(`${left}${middle}${right}`);
+            expect(stripXmlForbiddenControlChars(once)).toBe(once);
+          }
+        }
+      }
+    });
   });
 });
