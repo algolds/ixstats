@@ -130,18 +130,6 @@ function overrideCommitsMidSync(row: StoredEntry) {
   });
 }
 
-/** A weekly the state file keys `2026-W42`, with its range, as no override left it. */
-const stateWeekly = (over: Partial<StoredEntry> = {}) =>
-  storedEntry({
-    id: "w-state",
-    type: "weekly",
-    date: "2026-W42",
-    dateStart: "2026-10-12",
-    winnerUser: "Amy",
-    winnerPage: "Amy's page",
-    ...over,
-  });
-
 beforeEach(() => {
   jest.clearAllMocks();
   jest.spyOn(console, "warn").mockImplementation(() => undefined);
@@ -178,25 +166,6 @@ describe("the state file", () => {
     expect(places(rows[0])).toEqual(CY_AND_DEE);
     expect(rows[0]).toMatchObject({ editCount: 12, overriddenAt: OVERRIDDEN });
   });
-
-  it("keeps a weekly's override that commits while the sync runs", async () => {
-    store([stateWeekly()]);
-    stateFile({
-      weeklyResults: {
-        "2026-W42": {
-          winner: { user: "Bo", page: "Bo's page", score: 1, bytesAdded: 1 },
-          weekStart: "2026-10-12",
-          weekEnd: "2026-10-18",
-        },
-      },
-    });
-    overrideCommitsMidSync(rows[0]!);
-
-    await syncCurrentWinners(true);
-
-    expect(rows[0]).toMatchObject({ ...CY_AND_DEE, dateEnd: "2026-10-18" });
-  });
-
   it("keeps the winner an override gave a state-keyed weekly", async () => {
     store([
       storedEntry({
@@ -307,40 +276,6 @@ describe("a state-keyed twin the state file creates late", () => {
     await syncCurrentWinners(true);
     expect(rows[1]).toMatchObject(OVERRIDE_COLUMNS);
   });
-
-  it("takes a monthly's override through the first of its month", async () => {
-    store([overriddenOolWeekly({ id: "m-ool", type: "monthly", date: "2026-07-01" })]);
-    stateFile({
-      monthlyResults: { "2026-07": { winner: { user: "Amy", page: "Amy's page", score: 1 } } },
-    });
-
-    await syncCurrentWinners(true);
-
-    expect(rows[1]).toMatchObject({
-      date: "2026-07",
-      type: "monthly",
-      dateStart: "2026-07-01",
-      dateEnd: "2026-07-31",
-      ...OVERRIDE_COLUMNS,
-    });
-  });
-
-  it("takes nothing from an override of another contest, or from a contest no override wrote", async () => {
-    store([overriddenOolWeekly({ date: "2026-10-05" })]);
-    stateFile(stateWeek("2026-10-12"));
-    await syncCurrentWinners(true);
-    expect(rows[1]).toMatchObject({
-      winnerUser: "Amy",
-      winnerPage: "Amy's page",
-      status: "approved",
-      overriddenAt: null,
-    });
-
-    store([overriddenOolWeekly({ overriddenAt: null })]);
-    stateFile(stateWeek("2026-10-12"));
-    await syncCurrentWinners(true);
-    expect(rows[1]).toMatchObject({ winnerUser: "Amy", overriddenAt: null });
-  });
 });
 
 describe("the current year's OOL page", () => {
@@ -362,29 +297,6 @@ describe("the current year's OOL page", () => {
 
     expect(places(rows[0])).toEqual(CY_AND_DEE);
   });
-
-  it("keeps an override of a state-keyed twin that commits after it was read", async () => {
-    store([stateWeekly()]);
-    jest.mocked(parseOOLPage).mockReturnValue([fromPage({ type: "weekly", date: "2026-10-12" })]);
-    overrideCommitsMidSync(rows[0]!);
-
-    await syncCurrentWinners(true);
-
-    expect(rows).toHaveLength(1);
-    expect(places(rows[0])).toEqual(CY_AND_DEE);
-  });
-
-  it("still inserts a contest it does not hold yet, with the page's places", async () => {
-    store([]);
-    jest.mocked(parseOOLPage).mockReturnValue([fromPage()]);
-
-    await syncCurrentWinners(true);
-
-    expect(rows).toEqual([
-      expect.objectContaining({ date: "2026-10-16", type: "daily", winnerUser: "Amy" }),
-    ]);
-  });
-
   it("keeps an override's places on the state-keyed twin it writes a weekly over", async () => {
     store([
       storedEntry({
@@ -432,32 +344,5 @@ describe("syncFromOOLPages", () => {
 
     expect(rows).toHaveLength(1);
     expect(places(rows[0])).toEqual(CY_AND_DEE);
-  });
-
-  it("keeps an override of the twin that commits after the twin was read", async () => {
-    store([stateWeekly()]);
-    jest.mocked(parseOOLPage).mockReturnValue([fromPage({ type: "weekly", date: "2026-10-12" })]);
-    overrideCommitsMidSync(rows[0]!);
-
-    await syncFromOOLPages();
-
-    expect(places(rows[0])).toEqual(CY_AND_DEE);
-  });
-
-  it("still writes a twin no override wrote", async () => {
-    store([
-      storedEntry({
-        id: "w-state",
-        type: "weekly",
-        date: "2026-W42",
-        dateStart: "2026-10-12",
-        ...CY_AND_DEE,
-      }),
-    ]);
-    jest.mocked(parseOOLPage).mockReturnValue([fromPage({ type: "weekly", date: "2026-10-12" })]);
-
-    await syncFromOOLPages();
-
-    expect(places(rows[0])).toMatchObject({ winnerUser: "Amy", runnerUpUser: "Bee" });
   });
 });

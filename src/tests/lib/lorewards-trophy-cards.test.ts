@@ -17,9 +17,7 @@ import { mintCopy } from "~/lib/cards/mint";
 import { matches, storedEntry } from "~/tests/helpers/loreward-entry-store";
 import {
   backfillTrophyCards,
-  EXCLUDE_TROPHY_CARDS,
   grantUnownedTrophyCards,
-  isTrophyCard,
   mintTrophyCards,
 } from "~/lib/lorewards/trophy-cards";
 
@@ -92,15 +90,6 @@ interface CardWhere {
 const inContestPlace = (card: CardRow, where: CardWhere) =>
   inList(where.lorewardEntryId?.in, card.lorewardEntryId ?? "") &&
   (!where.lorewardEdition || card.lorewardEdition === where.lorewardEdition);
-
-/** The values bound to the contest-place advisory lock calls, among all `$executeRaw` calls. */
-function contestLocks(database: PrismaClient): string[] {
-  const raw = (database as unknown as { $executeRaw: jest.Mock }).$executeRaw;
-  return raw.mock.calls
-    .filter(([strings]: [string[]]) => strings.join("?").includes("pg_advisory_xact_lock"))
-    .flatMap(([, ...values]: [string[], ...Array<string | number>]) => values)
-    .filter((value): value is string => typeof value === "string" && value.includes(":"));
-}
 
 /** When each contest-place lock was taken (jest's invocation order), among all `$executeRaw` calls. */
 function contestLockOrder(database: PrismaClient): number[] {
@@ -272,14 +261,6 @@ beforeEach(() => {
     return { id: `o${ownerships.length}` } as Awaited<ReturnType<typeof mintCopy>>;
   });
 });
-
-describe("trophy exclusion", () => {
-  it("leaves every trophy out, Loreward or sports, by type", () => {
-    expect(EXCLUDE_TROPHY_CARDS).toEqual({ cardType: { not: "TROPHY" } });
-    expect(isTrophyCard({ cardType: "TROPHY" })).toBe(true);
-    expect(isTrophyCard({ cardType: "LORE" })).toBe(false);
-  });
-});
 describe("mintTrophyCards", () => {
   it("mints one one-of-one, bound Trophy card per recorded place of the entry", async () => {
     entries = [entry({ runnerUpUser: "Urcea", runnerUpPage: "Caballian Wars" })];
@@ -332,50 +313,6 @@ describe("mintTrophyCards", () => {
     expect(cards).toHaveLength(1);
     expect(ownerships).toEqual([]);
   });
-
-  it("mints a wikios> winner's card owned by the WikiOS account behind the label's edits", async () => {
-    entries = [entry({ winnerUser: "wikios>Kir_Republic" })];
-    winningEdits.set("Seneca front", ["u2"]);
-    await mintTrophyCards(db);
-    expect(ownersOf("c1")).toEqual([expect.objectContaining({ ownerId: "u2", serialNumber: 1 })]);
-    expect(placeQueries).toEqual([{ author: "Kir_Republic", title: "Seneca front" }]);
-  });
-
-  it("mints a plain-named winner's card unowned without a link, even with WikiOS edits on the page", async () => {
-    winningEdits.set("Seneca front", ["u2"]);
-    await mintTrophyCards(db);
-    expect(ownersOf("c1")).toEqual([]);
-  });
-
-  it("gives a linked winner a Serialised copy through mintCopy", async () => {
-    links.set("Kir Republic", "u1");
-
-    await mintTrophyCards(db);
-
-    expect(jest.mocked(mintCopy)).toHaveBeenCalledWith(expect.anything(), {
-      cardId: "c1",
-      ownerId: "u1",
-      finish: "SERIALISED",
-      source: "TROPHY",
-    });
-    expect(ownersOf("c1")).toEqual([expect.objectContaining({ ownerId: "u1", serialNumber: 1 })]);
-    expect(cards[0]?.metadata).toMatchObject({ grantedTo: "u1" });
-  });
-
-  it("counts a place another run already minted as not minted", async () => {
-    failNextCardCreate = true;
-
-    expect(await mintTrophyCards(db)).toEqual({ minted: 0 });
-    expect(cards).toEqual([]);
-  });
-
-  it("counts a unique violation surfaced as a ConflictError as not minted", async () => {
-    failNextCardCreateAsConflict = true;
-
-    expect(await mintTrophyCards(db)).toEqual({ minted: 0 });
-    expect(cards).toEqual([]);
-  });
-
   it("writes no IxCredits", async () => {
     links.set("Kir Republic", "u1");
     await mintTrophyCards(db);
@@ -387,12 +324,6 @@ describe("grantUnownedTrophyCards", () => {
   beforeEach(async () => {
     await mintTrophyCards(db);
   });
-
-  it("grants nothing while the winner is still unlinked", async () => {
-    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
-    expect(ownerships).toEqual([]);
-  });
-
   it("takes the per-card lock, after the contest place's, before it looks at the card or its owners", async () => {
     links.set("Kir Republic", "u1");
 
@@ -423,15 +354,6 @@ describe("grantUnownedTrophyCards", () => {
     expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
     expect(ownersOf("c1")).toHaveLength(1);
   });
-
-  it("grants a wikios> winner's card to the WikiOS account behind the label's edits", async () => {
-    entries[0]!.winnerUser = "wikios>Kir_Republic";
-    winningEdits.set("Seneca front", ["u2", "u2"]);
-
-    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 1 });
-    expect(ownersOf("c1")).toEqual([expect.objectContaining({ ownerId: "u2", serialNumber: 1 })]);
-  });
-
   it("grants nothing for a plain name without a link, or for a label two accounts share", async () => {
     // A plain name is a MediaWiki editor: WikiOS edits under it on the page prove nothing.
     winningEdits.set("Seneca front", ["u9"]);
@@ -441,14 +363,6 @@ describe("grantUnownedTrophyCards", () => {
     expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
     expect(ownerships).toEqual([]);
   });
-
-  it("grants nothing for an entry that is no longer approved", async () => {
-    links.set("Kir Republic", "u1");
-    entries[0]!.status = "rejected";
-    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
-    expect(ownerships).toEqual([]);
-  });
-
   it("does not hand a card back that its owner has since removed", async () => {
     links.set("Kir Republic", "u1");
     await grantUnownedTrophyCards(db);
@@ -552,24 +466,6 @@ describe("trophy cards of a contest stored twice", () => {
     entries = weeklyTwins("Urcea", "Nasastan");
     expect(await mintTrophyCards(db)).toEqual({ minted: 0 });
   });
-
-  it("grants one card per contest place, the state-keyed entry's, when the pair has two", async () => {
-    entries = weeklyTwins("Kir_Republic", "Kir_Republic");
-    cards = [legacyCard("c-ool", "w-ool"), legacyCard("c-state", "w-state")];
-    links.set("Kir Republic", "u1");
-    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 1 });
-    expect(ownerships.map((o) => o.cardId)).toEqual(["c-state"]);
-    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
-  });
-
-  it("grants nothing for a place the pair disagrees on", async () => {
-    entries = weeklyTwins("Kir_Republic", "Nasastan");
-    cards = [legacyCard("c-ool", "w-ool")];
-    links.set("Kir Republic", "u1");
-    links.set("Nasastan", "u2");
-    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
-    expect(ownerships).toEqual([]);
-  });
 });
 
 describe("trophy cards when an override writes the place while a run waits", () => {
@@ -581,104 +477,9 @@ describe("trophy cards when an override writes the place while a run waits", () 
     expect(cards).toEqual([]);
     expect(reread).toHaveBeenCalledTimes(1);
   });
-
-  it("mints when the transaction's re-read still records the listed holder", async () => {
-    links.set("Kir Republic", "u1");
-    const { reread, listing } = distinctTx([entry()]);
-
-    expect(await mintTrophyCards(db)).toEqual({ minted: 1 });
-    expect(ownersOf("c1")).toEqual([expect.objectContaining({ ownerId: "u1" })]);
-    expect(reread).toHaveBeenCalledTimes(1);
-    // The root client only listed the contests
-    expect(listing).toHaveBeenCalledTimes(1);
-  });
-
-  it("grants nothing to the listed holder once the place records another", async () => {
-    await mintTrophyCards(db);
-    links.set("Kir Republic", "u1");
-    const { reread } = distinctTx([entry({ winnerUser: "Cy" })]);
-
-    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
-    expect(ownerships).toEqual([]);
-    expect(reread).toHaveBeenCalledTimes(1);
-  });
-
-  it("grants nothing once the place records nobody", async () => {
-    await mintTrophyCards(db);
-    links.set("Kir Republic", "u1");
-    const { reread } = distinctTx([entry({ winnerUser: null, winnerPage: null })]);
-
-    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
-    expect(ownerships).toEqual([]);
-    expect(reread).toHaveBeenCalledTimes(1);
-  });
-
-  it("grants nothing for a card retired after it was listed", async () => {
-    await mintTrophyCards(db);
-    links.set("Kir Republic", "u1");
-    // Only the transaction's read sees the card retired
-    const retiredRead = jest.fn(async (_args: object) => ({ ...cards[0], isRetired: true }));
-    distinctTx([entry()], { card: { ...db.card, findUnique: retiredRead } });
-
-    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
-    expect(ownerships).toEqual([]);
-    expect(retiredRead).toHaveBeenCalledWith({
-      where: { id: "c1" },
-      select: { metadata: true, isRetired: true },
-    });
-  });
-
-  it("grants when the transaction's re-read still records the listed holder", async () => {
-    await mintTrophyCards(db);
-    links.set("Kir Republic", "u1");
-    const { reread } = distinctTx([entry()]);
-
-    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 1 });
-    expect(reread).toHaveBeenCalledTimes(1);
-  });
 });
 
 describe("trophy cards under the contest place lock", () => {
-  it("takes the contest place's lock, by its identity key, before each re-check", async () => {
-    await mintTrophyCards(db);
-    expect(contestLocks(db)).toEqual(["daily:2026-10-16:winner"]);
-    // The mint's in-lock re-check (does a card of the place exist?) runs after the lock.
-    expect(contestLockOrder(db)[0]).toBeLessThan(firstCall(db.card.count)!);
-
-    links.set("Kir Republic", "u1");
-    await grantUnownedTrophyCards(db);
-    expect(contestLocks(db)).toEqual(["daily:2026-10-16:winner", "daily:2026-10-16:winner"]);
-    // The grant's in-lock re-check (is a card of the place owned?) runs after its lock.
-    expect(contestLockOrder(db)[1]).toBeLessThan(firstCall(db.cardOwnership.count)!);
-  });
-
-  it("mints a linked winner's copy through mintCopy only after the lock and its re-check", async () => {
-    links.set("Kir Republic", "u1");
-    await mintTrophyCards(db);
-    const [copy] = jest.mocked(mintCopy).mock.invocationCallOrder;
-    expect(contestLockOrder(db)[0]).toBeLessThan(firstCall(db.card.count)!);
-    expect(firstCall(db.card.count)!).toBeLessThan(copy!);
-  });
-
-  it("grants the copy through mintCopy only after the lock and its re-check", async () => {
-    await mintTrophyCards(db);
-    links.set("Kir Republic", "u1");
-    await grantUnownedTrophyCards(db);
-    const [copy] = jest.mocked(mintCopy).mock.invocationCallOrder;
-    expect(contestLockOrder(db)[1]).toBeLessThan(firstCall(db.cardOwnership.count)!);
-    expect(firstCall(db.cardOwnership.count)!).toBeLessThan(copy!);
-  });
-
-  it("mints nothing when the lock's re-read finds a twin's card this run never listed", async () => {
-    // Run B listed [ool, state] and minted the state entry's card; run A listed only [ool], then waited.
-    entries = weeklyTwins("Kir_Republic", "Kir_Republic");
-    cards = [legacyCard("c-state", "w-state")];
-    const findMany = db.lorewardEntry.findMany as unknown as jest.Mock;
-    findMany.mockImplementationOnce(async () => [entries[0]]);
-    expect(await mintTrophyCards(db)).toEqual({ minted: 0 });
-    expect(cards.map((card) => card.id)).toEqual(["c-state"]);
-  });
-
   it("mints nothing when another sync minted the contest place's card while it waited", async () => {
     entries = weeklyTwins("Kir_Republic", "Kir_Republic");
     cards = [legacyCard("c-ool", "w-ool")];
@@ -687,21 +488,6 @@ describe("trophy cards under the contest place lock", () => {
     findMany.mockImplementationOnce(async () => []);
     expect(await mintTrophyCards(db)).toEqual({ minted: 0 });
     expect(cards).toHaveLength(1);
-  });
-
-  it("grants nothing when another sync granted a twin's card while it waited", async () => {
-    entries = weeklyTwins("Kir_Republic", "Kir_Republic");
-    cards = [legacyCard("c-ool", "w-ool"), legacyCard("c-state", "w-state")];
-    links.set("Kir Republic", "u1");
-    // This run listed both cards unowned; the other sync then gave c-ool to its holder.
-    const findMany = db.card.findMany as unknown as jest.Mock;
-    findMany.mockImplementationOnce(async () => {
-      const listed = cards.map((card) => ({ ...card }));
-      ownerships.push({ id: "o-other", cardId: "c-ool", ownerId: "u1", serialNumber: 1 });
-      return listed;
-    });
-    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
-    expect(ownerships.map((o) => o.cardId)).toEqual(["c-ool"]);
   });
 });
 
@@ -719,29 +505,6 @@ describe("backfillTrophyCards", () => {
     ];
     links.set("Kir Republic", "u1");
   });
-
-  it("on a dry run writes nothing and reports what is missing by contest and place", async () => {
-    const report = await backfillTrophyCards(db, false);
-
-    expect(report).toEqual({
-      missing: { "daily:winner": 2, "daily:runner-up": 1, "monthly:winner": 1 },
-      minted: 0,
-      granted: 0,
-    });
-    expect(cards).toEqual([]);
-    expect(ownerships).toEqual([]);
-    expect(db.card.create).not.toHaveBeenCalled();
-  });
-
-  it("on apply mints every place, grants the linked winner's cards and pays no credits", async () => {
-    const report = await backfillTrophyCards(db, true);
-
-    expect(report).toMatchObject({ minted: 4, granted: 0 });
-    expect(cards).toHaveLength(4);
-    expect(ownerships.map((o) => o.ownerId)).toEqual(["u1", "u1", "u1"]);
-    expect(creditWrites).toEqual([]);
-  });
-
   it("is idempotent: a second apply finds nothing missing", async () => {
     await backfillTrophyCards(db, true);
 

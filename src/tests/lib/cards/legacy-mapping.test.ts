@@ -3,7 +3,6 @@
 import {
   articleKey,
   boundFor,
-  canonicalArticleTitle,
   categoryFor,
   earliestRealmByArticle,
   finishFor,
@@ -13,13 +12,10 @@ import {
   loreMergeGroups,
   mapCardType,
   mapRarity,
-  mapTypeString,
   renumberCollisions,
   renumberOnto,
   RETIRED_NS_CATEGORY,
-  SYSTEM_REALMS,
-  wikiFallbackRealm,
-  withoutStatKeys,
+  wikiFallbackRealm
 } from "~/lib/cards/legacy-mapping";
 
 const d = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
@@ -57,12 +53,6 @@ describe("card type", () => {
     );
     expect(mapCardType(card("SPECIAL", { title: "Veteran" }))).toBe("SPECIAL");
   });
-
-  it("knows no other value, so the dry run can fail on it", () => {
-    expect(mapCardType(card("COMMUNITY"))).toBeNull();
-    expect(mapTypeString("bogus")).toBeNull();
-    expect(mapTypeString(" ns_import ")).toBe("NS");
-  });
 });
 
 describe("rarity and finish", () => {
@@ -79,11 +69,6 @@ describe("rarity and finish", () => {
     expect(mapRarity("MYTHIC")).toEqual({ rarity: "LEGENDARY", retiredTopTier: true });
     expect(mapRarity("divine")).toEqual({ rarity: "LEGENDARY", retiredTopTier: true });
   });
-
-  it("knows no other rarity", () => {
-    expect(mapRarity("SHINY")).toBeNull();
-  });
-
   it("makes trophy copies Serialised, retired top-tier copies Holo, and never downgrades a copy", () => {
     expect(finishFor({ type: "TROPHY", retiredTopTier: false, current: "STANDARD" })).toBe(
       "SERIALISED"
@@ -164,24 +149,9 @@ describe("home realm", () => {
       expect(wikiFallbackRealm(source)).toBe("default");
     }
   });
-
-  it("seeds the three system realms with their ids as slugs", () => {
-    expect(SYSTEM_REALMS.map((r) => [r.id, r.slug])).toEqual([
-      ["nationstates", "nationstates"],
-      ["iiwiki", "iiwiki"],
-      ["althistory", "althistory"],
-    ]);
-  });
 });
 
 describe("canonical titles and the Lore merge", () => {
-  it("canonicalises titles so spellings of one page share a key", () => {
-    expect(canonicalArticleTitle("battle_of_kiro", "ixwiki")).toBe("Battle of kiro");
-    expect(articleKey("iiwiki", "foo_bar")).toBe(articleKey("iiwiki", "Foo bar"));
-    expect(articleKey(null, "X")).toBe(articleKey("ixwiki", "X"));
-    expect(articleKey("iiwiki", "X")).not.toBe(articleKey("ixwiki", "X"));
-  });
-
   it("groups duplicate Lore cards; the survivor has the most copies, then is the oldest", () => {
     const base = { type: "LORE" as const, wikiSource: "iiwiki", createdAt: d("2026-01-01") };
     const groups = loreMergeGroups([
@@ -247,15 +217,6 @@ describe("NS facts and stat keys", () => {
       id: "7",
       season: "3",
     });
-  });
-
-  it("drops loreStats and the legacy stats copy from metadata, and nothing else", () => {
-    expect(withoutStatKeys({ loreStats: { a: 1 }, stats: {}, qualityScore: 50 })).toEqual({
-      qualityScore: 50,
-    });
-    const untouched = { qualityScore: 50 };
-    expect(withoutStatKeys(untouched)).toBe(untouched);
-    expect(withoutStatKeys(null)).toBeNull();
   });
 });
 

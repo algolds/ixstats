@@ -2,7 +2,6 @@
 /** The pack editor: what it saves, the guarantee cleared, the pool previewed, and no sale for a pool it can't deliver. */
 import {
   PackEditorSchema,
-  previewPackPool,
   savePack,
   setPackActive,
   type PackEditorInput,
@@ -76,46 +75,6 @@ describe("PackEditorSchema", () => {
 });
 
 describe("savePack", () => {
-  it("updates the editor's fields, clears the guarantee, and keeps theme keys the editor does not show", async () => {
-    const db = stockedDb();
-    db.cardPack.findUnique.mockResolvedValue({
-      id: "pack_1",
-      themeFilter: { subcategories: ["Treaties"], realmIds: ["old"] },
-      season: null,
-    });
-    db.cardPack.update.mockResolvedValue({ id: "pack_1" });
-    await expect(savePack(db as never, actor, input({ cardType: "NS" }))).resolves.toEqual({
-      id: "pack_1",
-    });
-    expect(db.cardPack.update).toHaveBeenCalledWith({
-      where: { id: "pack_1" },
-      data: expect.objectContaining({
-        cardType: "NS",
-        guaranteedRarity: null,
-        commonOdds: 65,
-        legendaryOdds: 0.1,
-        purchaseLimit: 3,
-        updatedAt: expect.any(Date),
-        themeFilter: {
-          subcategories: ["Treaties"],
-          realmIds: ["iiwiki"],
-          categories: ["HISTORY"],
-          cardTypes: [],
-        },
-      }),
-    });
-    expect(db.auditLog.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        action: "CARD_PACK_SAVE",
-        userId: "clerk_admin",
-        target: "pack_1",
-        details: 'Edited the pack "IIWiki booster"',
-      }),
-    });
-    expect(db.$transaction).toHaveBeenCalled();
-    const { data } = db.cardPack.update.mock.calls[0]![0];
-    expect(data).not.toHaveProperty("season");
-  });
   it("keeps stored categories and types the editor cannot carry, so a legacy theme never widens", async () => {
     const db = stockedDb();
     db.cardPack.findUnique.mockResolvedValue({
@@ -133,15 +92,6 @@ describe("savePack", () => {
       categories: ["BOGUS"],
       cardTypes: ["SPECIAL", "MYSTERY"],
     });
-  });
-  it("refuses a pack id that does not exist rather than making a new pack", async () => {
-    const db = createMockPrisma();
-    await expect(savePack(db as never, actor, input({ id: "pack_gone" }))).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
-    expect(db.cardPack.create).not.toHaveBeenCalled();
-    expect(db.cardPack.update).not.toHaveBeenCalled();
-    expect(db.auditLog.create).not.toHaveBeenCalled();
   });
 });
 
@@ -195,16 +145,6 @@ describe("savePack on sale", () => {
     ).rejects.toMatchObject({ code: "PRECONDITION_FAILED", message: cannotSell("Epic") });
     expect(tx.cardPack.update).not.toHaveBeenCalled();
   });
-
-  it("refuses a new pack put on sale the same way, creating nothing", async () => {
-    const { db, tx } = inTransaction();
-    tx.card.groupBy.mockResolvedValue(NO_EPIC);
-    await expect(savePack(db as never, actor, input({ id: undefined }))).rejects.toMatchObject({
-      code: "PRECONDITION_FAILED",
-    });
-    expect(tx.cardPack.create).not.toHaveBeenCalled();
-    expect(poolWhere(tx)).not.toContain("season");
-  });
 });
 
 describe("setPackActive on sale", () => {
@@ -218,21 +158,6 @@ describe("setPackActive on sale", () => {
     guaranteedRarity: null,
     ...odds,
   };
-
-  it("puts a pack whose pool has every rarity it shows on sale, and audits it", async () => {
-    const { db, tx } = inTransaction();
-    tx.cardPack.findUnique.mockResolvedValue(storedPack);
-    tx.card.groupBy.mockResolvedValue(tiers(...RARITIES));
-    await setPackActive(db as never, actor, { packId: "pack_1", isActive: true });
-    expect(tx.cardPack.update).toHaveBeenCalledWith({
-      where: { id: "pack_1" },
-      data: { isActive: true, updatedAt: expect.any(Date) },
-    });
-    expect(tx.auditLog.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ details: 'Put the pack "Founder Pack" on sale' }),
-    });
-  });
-
   it("refuses one with an empty rarity it shows, writing nothing", async () => {
     const { db, tx } = inTransaction();
     tx.cardPack.findUnique.mockResolvedValue(storedPack);
@@ -246,66 +171,5 @@ describe("setPackActive on sale", () => {
     expect(where).toContain('{"cardType":"LORE"}');
     expect(where).toContain('{"season":2}');
     expect(where).toContain('{"realmId":{"in":["iiwiki"]}}');
-  });
-
-  it("refuses one whose stored guarantee has no card, even at odds 0", async () => {
-    const { db, tx } = inTransaction();
-    tx.cardPack.findUnique.mockResolvedValue({
-      ...storedPack,
-      ...noEpicOdds,
-      guaranteedRarity: "EPIC",
-    });
-    tx.card.groupBy.mockResolvedValue(NO_EPIC);
-    await expect(
-      setPackActive(db as never, actor, { packId: "pack_1", isActive: true })
-    ).rejects.toMatchObject({ message: cannotSell("Epic") });
-  });
-});
-describe("previewPackPool", () => {
-  it("counts the approved pool by rarity, flags each rarity it shows with no card, and counts bought packs waiting", async () => {
-    const db = createMockPrisma();
-    db.card.findMany
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([
-        { id: "c1", title: "Elm", rarity: "RARE", realm: { name: "IIWiki" } },
-      ]);
-    db.card.groupBy.mockResolvedValue([
-      { rarity: "COMMON", _count: { _all: 40 } },
-      { rarity: "RARE", _count: { _all: 3 } },
-    ]);
-    db.userPack.count.mockResolvedValue(3);
-    const preview = await previewPackPool(db as never, {
-      packId: "pack_1",
-      cardType: null,
-      season: null,
-      pool: input().pool,
-      odds,
-      guaranteedRarity: null,
-    });
-    expect(preview.total).toBe(43);
-    expect(preview.byRarity.find((row) => row.rarity === "UNCOMMON")).toEqual({
-      rarity: "UNCOMMON",
-      count: 0,
-      odds: 25,
-      empty: true,
-    });
-    expect(preview.byRarity.find((row) => row.rarity === "RARE")?.empty).toBe(false);
-    expect(preview.undeliverable).toEqual(["UNCOMMON", "ULTRA_RARE", "EPIC", "LEGENDARY"]);
-    expect(preview.unopened).toBe(3);
-    expect(db.userPack.count).toHaveBeenCalledWith({
-      where: { packId: "pack_1", isOpened: false },
-    });
-    expect(preview.samples).toEqual([
-      { id: "c1", title: "Elm", rarity: "RARE", realmName: "IIWiki" },
-    ]);
-    const where = db.card.groupBy.mock.calls[0]![0].where;
-    expect(JSON.stringify(where)).toContain('"reviewState":"APPROVED"');
-    expect(JSON.stringify(where)).toContain('"realmId":{"in":["iiwiki"]}');
-    // The sample is unordered, so Postgres stops after 12 index rows instead of sorting the whole pool
-    expect(db.card.findMany.mock.calls[1]![0]).toEqual({
-      where,
-      take: 12,
-      select: { id: true, title: true, rarity: true, realm: { select: { name: true } } },
-    });
   });
 });

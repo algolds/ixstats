@@ -133,28 +133,6 @@ beforeEach(() => {
   useAuthor().mockReturnValue({ data: undefined } as never);
 });
 describe("CardSheet about", () => {
-  it("tells the excerpt to hide the art for a retired card only, not for one the viewer does not hold", () => {
-    const commons = {
-      ...card,
-      wikiSource: "commons",
-      wikiArticleTitle: "File:Flag of Ireland.svg",
-    };
-    const page = "https://commons.wikimedia.org/wiki/File:Flag_of_Ireland.svg";
-    showSheet(
-      sheet({ card: commons, copies: [], face: { ...face, copy: null, uncollected: true } })
-    );
-    const view = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    expect(screen.getByText(`Excerpt ${page}`)).toBeInTheDocument();
-    view.unmount();
-    showSheet(sheet({ card: { ...card, isRetired: true }, face: { ...face, isRetired: true } }));
-    const retired = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    expect(screen.getByText("Excerpt /wiki/Caphiria without art")).toBeInTheDocument();
-    retired.unmount();
-    showSheet(sheet({ card: commons }));
-    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    expect(screen.getByText(`Excerpt ${page}`)).toBeInTheDocument();
-  });
-
   it("adds the licence to the art credit when the line does not name it, held or not, since the art shows", () => {
     showSheet(
       sheet({

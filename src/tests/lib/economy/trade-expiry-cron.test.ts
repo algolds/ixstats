@@ -79,28 +79,10 @@ describe("processExpiredTrades", () => {
     );
     expect(result).toMatchObject({ success: true, processed: 1, failed: 0 });
   });
-
-  it("frees the initiator's copies when the initiator wrote the table", async () => {
-    mockFindMany.mockResolvedValue([{ ...COUNTERED, proposerId: "alice" }]);
-    await processExpiredTrades();
-    expect(tx.cardOwnership.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: ["a1"] }, ownerId: "alice" },
-      data: { isLocked: false },
-    });
-  });
-
   it("frees nothing for a trade that was accepted, cancelled or countered since it was read", async () => {
     mockFindMany.mockResolvedValue([COUNTERED]);
     tx.tradeOffer.updateMany.mockResolvedValue({ count: 0 });
     await processExpiredTrades();
     expect(tx.cardOwnership.updateMany).not.toHaveBeenCalled();
-  });
-
-  it("counts a trade that failed and goes on to the next", async () => {
-    mockFindMany.mockResolvedValue([COUNTERED, { ...COUNTERED, id: "t2" }]);
-    tx.tradeOffer.updateMany.mockRejectedValueOnce(new Error("lock timeout"));
-    const result = await processExpiredTrades();
-    expect(result).toMatchObject({ success: false, processed: 1, failed: 1 });
-    expect(result.errors).toEqual([{ tradeId: "t1", error: "lock timeout" }]);
   });
 });

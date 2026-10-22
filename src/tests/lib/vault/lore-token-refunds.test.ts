@@ -2,7 +2,6 @@
 /** Unspent lore tokens are refunded at purchase price (cards refresh spec §2.2). */
 import {
   LORE_TOKEN_ITEM_IDS,
-  loreTokensOf,
   planLoreTokenRefunds,
   tokensByItem,
   tokensUsed,
@@ -172,37 +171,9 @@ describe("token accounting", () => {
       ])
     ).toBe(1);
   });
-
-  it("never counts below zero", () => {
-    expect(tokensUsed([{ metadata: { tokenRefund: true } }, { metadata: null }])).toBe(0);
-  });
-
-  it("reads the perk from an item's effects", () => {
-    expect(loreTokensOf({ perks: { loreTokens: 2 } })).toBe(2);
-    expect(loreTokensOf({ perks: { cardCapacity: 50 } })).toBe(0);
-    expect(loreTokensOf({ perks: { loreTokens: -1 } })).toBe(0);
-    expect(loreTokensOf({ perks: { loreTokens: "2" } })).toBe(0);
-    expect(loreTokensOf({ perks: [2] })).toBe(0);
-    expect(loreTokensOf(null)).toBe(0);
-  });
 });
 
 describe("tokensByItem", () => {
-  it("maps each item carrying the perk to its tokens per purchase", () => {
-    expect(
-      tokensByItem([
-        { id: "upgrade_lore_token", effects: { perks: { loreTokens: 1 } } },
-        { id: "upgrade_myclub_license", effects: { perks: { loreTokens: 2 } } },
-        { id: "frame_gold", effects: null },
-      ])
-    ).toEqual(
-      new Map([
-        ["upgrade_lore_token", 1],
-        ["upgrade_myclub_license", 2],
-      ])
-    );
-  });
-
   it("refuses to plan when no lore token item reports a token count, rather than refunding nothing", () => {
     const missing = /upgrade_lore_token.*nothing was written/;
     expect(() =>

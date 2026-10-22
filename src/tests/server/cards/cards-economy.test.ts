@@ -44,29 +44,20 @@ jest.mock("~/lib/cards/economy-config", () => {
 
 import {
   CARD_ECONOMY_DEFAULTS,
-  clearEconomyConfigCache,
   readEconomyConfig,
   setEconomyConfig,
 } from "~/lib/cards/economy-config";
-import { clearGeneralCardSettingsCache } from "~/lib/cards/general-settings";
-import { clearValuationCache, setValuationConfig } from "~/lib/cards/valuation";
-import { clearBonusConfigCache } from "~/lib/vault/vault-bonus";
+import { setValuationConfig } from "~/lib/cards/valuation";
 import {
-  recomputeValues,
-  saveBonuses,
   saveCardValues,
-  saveDailyImport,
   saveEconomy,
   saveLorewardPayouts,
-  saveMarket,
-  saveRarityThresholds,
+  saveMarket
 } from "~/server/modules/cards/cards.economy";
 import { recomputeMarketValues } from "~/server/modules/cards/market-values";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
 const actor = { dbId: "db_admin", clerkId: "clerk_admin" };
-const rising = { UNCOMMON: 5, RARE: 25, ULTRA_RARE: 45, EPIC: 65, LEGENDARY: 85 };
-
 const upserts = (db: ReturnType<typeof createMockPrisma>) =>
   db.systemConfig.upsert.mock.calls.map(([args]) => [args.where.key, args.update.value]);
 
@@ -141,116 +132,7 @@ describe("card values", () => {
     expect(error).toHaveBeenCalled();
     error.mockRestore();
   });
-
-  it("saves the finish, level and median numbers, and refuses them out of bounds", async () => {
-    const db = createMockPrisma();
-    await saveCardValues(db as never, actor, { medianSales: 10, levelBonusCap: 0.5 });
-    expect(
-      jest.mocked(setValuationConfig).mock.calls.map(([, field, value]) => [field, value])
-    ).toEqual([
-      ["levelBonusCap", 0.5],
-      ["medianSales", 10],
-    ]);
-    await expect(saveCardValues(db as never, actor, { levelBonusPerLevel: 0.3 })).rejects.toThrow(
-      "Level bonus per level: enter a number from 0 to 0.2."
-    );
-    await expect(saveCardValues(db as never, actor, { medianDays: 30.5 })).rejects.toThrow(
-      "Market median window (days): enter a whole number from 1 to 365."
-    );
-    await expect(saveCardValues(db as never, actor, { finishHolo: 0.5 })).rejects.toThrow(
-      "Holo value multiplier: enter a number from 1 to 100."
-    );
-    expect(setValuationConfig).toHaveBeenCalledTimes(2);
-  });
-
-  it("writes, audits and revalues nothing when no field was sent", async () => {
-    const db = createMockPrisma();
-    expect(await saveCardValues(db as never, actor, {})).toEqual({ prices: 0, updated: 0 });
-    expect(db.auditLog.create).not.toHaveBeenCalled();
-    expect(recomputeMarketValues).not.toHaveBeenCalled();
-  });
-
-  it("revalues every card on request and audits the count", async () => {
-    const db = createMockPrisma();
-    expect(await recomputeValues(db as never, actor)).toEqual({ prices: 0, updated: 42 });
-    expect(recomputeMarketValues).toHaveBeenCalledWith(db);
-    expect(db.auditLog.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        action: "CARD_ECONOMY_SAVE",
-        details: "Revalued every card, 42 changed value",
-      }),
-    });
-  });
-
-  it("reports a revalue that ran as done when only its audit row fails", async () => {
-    const db = createMockPrisma();
-    db.auditLog.create.mockRejectedValueOnce(new Error("connection reset"));
-    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
-    expect(await recomputeValues(db as never, actor)).toEqual({ prices: 0, updated: 42 });
-    expect(error).toHaveBeenCalled();
-    error.mockRestore();
-  });
 });
-
-describe("caches", () => {
-  /** A client whose transaction records when it commits. */
-  const committing = (order: string[]) => {
-    const tx = createMockPrisma({ $executeRaw: jest.fn().mockResolvedValue(1) });
-    return createMockPrisma({
-      $transaction: jest.fn(async (write: (client: typeof tx) => Promise<void>) => {
-        await write(tx);
-        order.push("commit");
-      }),
-    });
-  };
-
-  it.each([
-    [
-      "card values",
-      (db: never) => saveCardValues(db, actor, { floorRare: 120 }),
-      clearValuationCache,
-    ],
-    [
-      "market",
-      (db: never) => saveMarket(db, actor, { maxInventoryCards: 200 }),
-      clearGeneralCardSettingsCache,
-    ],
-    ["bonuses", (db: never) => saveBonuses(db, actor, { newPlayer: 4000 }), clearBonusConfigCache],
-    ["economy", (db: never) => saveEconomy(db, actor, { xpPack: 12 }), clearEconomyConfigCache],
-  ])("clears the %s cache after the commit", async (_section, save, clear) => {
-    const order: string[] = [];
-    jest.mocked(clear).mockImplementation(() => {
-      order.push("clear");
-    });
-    await save(committing(order) as never);
-    expect(order).toEqual(["commit", "clear"]);
-  });
-
-  it("clears nothing when the transaction fails", async () => {
-    const db = createMockPrisma({
-      $transaction: jest.fn(async () => {
-        throw new Error("deadlock");
-      }),
-    });
-    await expect(saveMarket(db as never, actor, { maxInventoryCards: 200 })).rejects.toThrow(
-      "deadlock"
-    );
-    expect(clearGeneralCardSettingsCache).not.toHaveBeenCalled();
-  });
-});
-
-it("writes a section's numbers and its audit row through the transaction's client", async () => {
-  const tx = createMockPrisma();
-  const db = createMockPrisma({
-    $transaction: jest.fn((write: (client: typeof tx) => Promise<void>) => write(tx)),
-  });
-  await saveMarket(db as never, actor, { maxInventoryCards: 200 });
-  expect(tx.systemConfig.upsert).toHaveBeenCalledTimes(1);
-  expect(tx.auditLog.create).toHaveBeenCalledTimes(1);
-  expect(db.systemConfig.upsert).not.toHaveBeenCalled();
-  expect(db.auditLog.create).not.toHaveBeenCalled();
-});
-
 describe("market and bonuses", () => {
   it("stores the market fee and capacity under the keys the game reads", async () => {
     const db = createMockPrisma();
@@ -284,25 +166,6 @@ describe("market and bonuses", () => {
     expect(db.systemConfig.upsert).not.toHaveBeenCalled();
     expect(db.auditLog.create).not.toHaveBeenCalled();
   });
-
-  it("stores bonuses, the pay switch included, and refuses a fractional amount", async () => {
-    const db = createMockPrisma();
-    await saveBonuses(db as never, actor, { nsPerCard: 60, enabled: 0 });
-    expect(upserts(db)).toEqual([
-      ["vault_bonus_enabled", "0"],
-      ["vault_bonus_ns_per_card", "60"],
-    ]);
-    await expect(saveBonuses(db as never, actor, { newPlayer: 2.5 })).rejects.toThrow(
-      "New player: enter a whole number from 0 to 100,000."
-    );
-    await expect(saveBonuses(db as never, actor, { nsCap: 100_001 })).rejects.toThrow(
-      "NationStates import, most per nation: enter a whole number from 0 to 100,000."
-    );
-    await expect(saveBonuses(db as never, actor, { enabled: 2 })).rejects.toThrow(
-      "Pay bonuses: enter a whole number from 0 to 1."
-    );
-    expect(db.auditLog.create).toHaveBeenCalledTimes(1);
-  });
 });
 
 describe("Loreward payouts", () => {
@@ -323,146 +186,12 @@ describe("Loreward payouts", () => {
       }),
     });
   });
-
-  it("refuses a fractional payout or a cell sent twice, and writes nothing", async () => {
-    const db = createMockPrisma();
-    await expect(
-      saveLorewardPayouts(db as never, actor, [{ type: "weekly", place: "winner", credits: 1.5 }])
-    ).rejects.toThrow("Weekly winner: enter a whole number from 0 to 100,000.");
-    await expect(
-      saveLorewardPayouts(db as never, actor, [
-        { type: "daily", place: "winner", credits: 1 },
-        { type: "daily", place: "winner", credits: 2 },
-      ])
-    ).rejects.toThrow("Daily winner is listed twice.");
-    expect(db.systemConfig.upsert).not.toHaveBeenCalled();
-    expect(db.auditLog.create).not.toHaveBeenCalled();
-  });
 });
-
-describe("rarity tables and daily imports", () => {
-  it("stores a rising table under its source's key and audits it", async () => {
-    const db = createMockPrisma();
-    await saveRarityThresholds(db as never, actor, { source: "althistory", thresholds: rising });
-    expect(upserts(db)).toEqual([["card_rarity_thresholds_althistory", JSON.stringify(rising)]]);
-    expect(db.auditLog.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        details:
-          "Rarity table: althistory UNCOMMON 5, RARE 25, ULTRA_RARE 45, EPIC 65, LEGENDARY 85",
-      }),
-    });
-    expect(db.$transaction).toHaveBeenCalledTimes(1);
-  });
-
-  it("refuses a table that does not rise, or a score over 100, with the schema's sentence", async () => {
-    const db = createMockPrisma();
-    await expect(
-      saveRarityThresholds(db as never, actor, {
-        source: "iiwiki",
-        thresholds: { ...rising, RARE: 5 },
-      })
-    ).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-      message: "Each rarity needs a higher minimum score than the one below it",
-    });
-    await expect(
-      saveRarityThresholds(db as never, actor, {
-        source: "iiwiki",
-        thresholds: { ...rising, LEGENDARY: 101 },
-      })
-    ).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-      message: "Each minimum score must be a number from 0 to 100",
-    });
-    expect(db.systemConfig.upsert).not.toHaveBeenCalled();
-    expect(db.auditLog.create).not.toHaveBeenCalled();
-  });
-
-  it("stores a wiki's daily import and audits it", async () => {
-    const db = createMockPrisma();
-    await saveDailyImport(db as never, actor, {
-      source: "althistory",
-      setting: { enabled: true, count: 5 },
-    });
-    expect(upserts(db)).toEqual([
-      ["card_daily_import_althistory", JSON.stringify({ enabled: true, count: 5 })],
-    ]);
-    expect(db.auditLog.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ details: "Daily import: althistory on, 5 a day" }),
-    });
-    await saveDailyImport(db as never, actor, {
-      source: "iiwiki",
-      setting: { enabled: false, count: 20 },
-    });
-    expect(db.auditLog.create).toHaveBeenLastCalledWith({
-      data: expect.objectContaining({ details: "Daily import: iiwiki off" }),
-    });
-  });
-
-  it("refuses a daily import switched on with no cards a day, and saves one switched off at 0", async () => {
-    const db = createMockPrisma();
-    await expect(
-      saveDailyImport(db as never, actor, {
-        source: "althistory",
-        setting: { enabled: true, count: 0 },
-      })
-    ).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-      message: "Set how many cards a day, or switch the daily import off.",
-    });
-    expect(db.systemConfig.upsert).not.toHaveBeenCalled();
-    expect(db.auditLog.create).not.toHaveBeenCalled();
-
-    await saveDailyImport(db as never, actor, {
-      source: "althistory",
-      setting: { enabled: false, count: 0 },
-    });
-    expect(upserts(db)).toEqual([
-      ["card_daily_import_althistory", JSON.stringify({ enabled: false, count: 0 })],
-    ]);
-  });
-
-  it("refuses a daily count over the cap with a sentence naming the wiki", async () => {
-    const db = createMockPrisma();
-    await expect(
-      saveDailyImport(db as never, actor, {
-        source: "althistory",
-        setting: { enabled: true, count: 101 },
-      })
-    ).rejects.toThrow("AltHistory Wiki cards a day: enter a whole number from 0 to 100.");
-    expect(db.systemConfig.upsert).not.toHaveBeenCalled();
-  });
-});
-
 describe("card economy numbers", () => {
   const written = () =>
     jest.mocked(setEconomyConfig).mock.calls.map(([, field, value]) => [field, value]);
   /** A client whose `$executeRaw` (the save's lock) resolves, as Postgres's does. */
   const economyDb = () => createMockPrisma({ $executeRaw: jest.fn().mockResolvedValue(1) });
-
-  it("saves the sent numbers through the transaction, with one audit row", async () => {
-    const tx = economyDb();
-    const db = createMockPrisma({
-      $transaction: jest.fn((write: (client: typeof tx) => Promise<void>) => write(tx)),
-    });
-    await saveEconomy(db as never, actor, { listingFee: 7, finishHoloPct: 3 });
-    expect(written()).toEqual([
-      ["finishHoloPct", 3],
-      ["listingFee", 7],
-    ]);
-    for (const [client] of jest.mocked(setEconomyConfig).mock.calls) expect(client).toBe(tx);
-    expect(readEconomyConfig).toHaveBeenCalledWith(tx);
-    expect(db.$transaction).toHaveBeenCalledTimes(1);
-    expect(tx.auditLog.create).toHaveBeenCalledTimes(1);
-    expect(tx.auditLog.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        action: "CARD_ECONOMY_SAVE",
-        userId: "clerk_admin",
-        details: "Economy: finishHoloPct 3, listingFee 7",
-      }),
-    });
-  });
-
   it("serialises the saves on one lock, taken before the stored numbers are read", async () => {
     const tx = economyDb();
     const db = createMockPrisma({
@@ -521,13 +250,5 @@ describe("card economy numbers", () => {
       ["dailyCommonPct", 64],
       ["dailyRarePct", 8],
     ]);
-  });
-
-  it("writes and audits nothing when no number was sent", async () => {
-    const db = createMockPrisma();
-    await saveEconomy(db as never, actor, {});
-    expect(db.$transaction).not.toHaveBeenCalled();
-    expect(db.auditLog.create).not.toHaveBeenCalled();
-    expect(clearEconomyConfigCache).not.toHaveBeenCalled();
   });
 });

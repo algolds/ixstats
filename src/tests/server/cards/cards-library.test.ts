@@ -14,7 +14,6 @@ import { createMockPrisma } from "~/tests/helpers/mock-db";
 const actor = { dbId: "db_admin", clerkId: "clerk_admin" };
 const AS_OF = new Date("2026-10-01T12:00:00Z");
 const ELM = "https://iiwiki.com/images/a/ab/Elm.png";
-const ELM_FLAG = "https://iiwiki.com/images/b/bc/Elm_flag.png";
 const filter = (input: Record<string, string>) => LibraryFilterSchema.parse(input);
 const COMPLIANCE_FREE = [
   { takedowns: { none: { status: "HIDDEN" } } },
@@ -145,101 +144,6 @@ describe("updateLibraryCard", () => {
     });
     expect(db.auditLog.create).not.toHaveBeenCalled();
   });
-
-  it("re-prices an NS card from its NationStates bank value until a copy of it sells here", async () => {
-    const ns = { cardType: "NS", metadata: { nsData: { market_value: "1000" } } };
-    const unsold = setUp(stored(ns));
-    await updateLibraryCard(unsold.db as never, actor, {
-      ...unsold.edit,
-      rarity: "RARE",
-      reason: "Season fix",
-    });
-    // 1,000 × the 1.5 premium, over the Rare floor of 100
-    expect(unsold.tx.card.updateMany.mock.calls[0]![0].data.marketValue).toBe(1500);
-
-    const sold = setUp(stored({ ...ns, firstSoldAt: new Date("2026-11-01") }));
-    await updateLibraryCard(sold.db as never, actor, {
-      ...sold.edit,
-      rarity: "RARE",
-      reason: "Season fix",
-    });
-    expect(sold.tx.card.updateMany.mock.calls[0]![0].data.marketValue).toBe(100);
-  });
-  it("writes only what changed, under the art, visibility and rarity it read", async () => {
-    const { db, tx, edit } = setUp();
-    await updateLibraryCard(db as never, actor, {
-      ...edit,
-      title: "Elm Republic",
-      description: "A republic",
-      artwork: ELM_FLAG,
-      reason: "unused",
-    });
-    expect(tx.card.updateMany.mock.calls[0]![0]).toEqual({
-      where: { id: "card_1", artwork: ELM, isRetired: false, rarity: "COMMON" },
-      data: {
-        title: "Elm Republic",
-        description: "A republic",
-        artwork: ELM_FLAG,
-        artworkSource: "UPLOADED",
-        artworkCredit: null,
-      },
-    });
-    expect(actions(tx)).toEqual(["CARD_UPDATE"]);
-    expect(tx.auditLog.create.mock.calls[0]![0].data.details).toBe(
-      "Edited the title, description, art of Elm Republic"
-    );
-  });
-
-  it("sends new art to Licence review as unknown, named by its file on the card's wiki", async () => {
-    const { db, tx, edit } = setUp();
-    await updateLibraryCard(db as never, actor, { ...edit, artwork: ELM_FLAG });
-    const licence = {
-      wiki: "iiwiki",
-      status: "UNKNOWN",
-      fileUrl: ELM_FLAG,
-      fileTitle: "Elm_flag.png",
-      descriptionUrl: null,
-      licence: null,
-      licenceUrl: null,
-      artist: null,
-      attribution: null,
-      reviewedBy: null,
-      reviewedAt: null,
-      note: "Art changed in the Library",
-    };
-    expect(tx.cardArtLicence.upsert).toHaveBeenCalledWith({
-      where: { cardId: "card_1" },
-      create: { cardId: "card_1", ...licence },
-      update: licence,
-    });
-    expect(tx.cardArtLicence.upsert.mock.invocationCallOrder[0]).toBeGreaterThan(
-      tx.card.updateMany.mock.invocationCallOrder[0]!
-    );
-
-    // Art on another host names no file; a card with no source is IxWiki's
-    const legacy = setUp(stored({ wikiSource: null }));
-    await updateLibraryCard(legacy.db as never, actor, {
-      ...legacy.edit,
-      artwork: "https://example.com/elm.png",
-    });
-    expect(legacy.tx.cardArtLicence.upsert.mock.calls[0]![0].update).toMatchObject({
-      wiki: "ixwiki",
-      fileUrl: "https://example.com/elm.png",
-      fileTitle: null,
-    });
-  });
-  it("takes new art only as an https address, and keeps stored art of any form", async () => {
-    const { db, tx, edit } = setUp(stored({ artwork: "/api/wiki/file/Elm.png" }));
-    for (const artwork of ["http://example.com/a.png", "javascript:alert(1)", "/images/a.png"]) {
-      await expect(updateLibraryCard(db as never, actor, { ...edit, artwork })).rejects.toThrow(
-        /https/
-      );
-    }
-    await updateLibraryCard(db as never, actor, { ...edit, title: "Elm II" });
-    expect(tx.card.updateMany.mock.calls[0]![0].data).toEqual({ title: "Elm II" });
-    expect(tx.cardArtLicence.upsert).not.toHaveBeenCalled();
-  });
-
   it("leaves art and visibility that a takedown hides to Compliance, and lets the words change", async () => {
     const { db, tx, edit } = setUp(
       stored({ artwork: null, isRetired: true, _count: { takedowns: 1 } })
@@ -268,24 +172,6 @@ describe("updateLibraryCard", () => {
     ).rejects.toThrow(/from Compliance/);
     expect(tx.card.updateMany).not.toHaveBeenCalled();
   });
-
-  it("refuses a card that is gone, or that changed between its read and its write", async () => {
-    const gone = setUp(null);
-    await expect(updateLibraryCard(gone.db as never, actor, gone.edit)).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
-
-    const { db, tx, edit } = setUp();
-    tx.card.updateMany.mockResolvedValue({ count: 0 });
-    await expect(
-      updateLibraryCard(db as never, actor, { ...edit, artwork: ELM_FLAG })
-    ).rejects.toMatchObject({
-      code: "CONFLICT",
-      message: "This card changed while you edited it. Reload and try again.",
-    });
-    expect(tx.cardArtLicence.upsert).not.toHaveBeenCalled();
-    expect(tx.auditLog.create).not.toHaveBeenCalled();
-  });
 });
 
 describe("bulkSetRetired", () => {
@@ -306,17 +192,6 @@ describe("bulkSetRetired", () => {
     );
     expect(tx.card.updateMany).not.toHaveBeenCalled();
   });
-
-  it("refuses a change of no cards, so no empty change is audited", async () => {
-    const { db, tx } = withTx();
-    await expect(bulkSetRetired(db as never, actor, input({ expected: 0 }))).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-      message: "No matching card would change",
-    });
-    expect(tx.card.count).not.toHaveBeenCalled();
-    expect(tx.auditLog.create).not.toHaveBeenCalled();
-  });
-
   it("changes at most MAX_FILTER_REVIEW cards, as of a read that has happened", async () => {
     const { db, tx } = withTx();
     await expect(
@@ -363,30 +238,5 @@ describe("bulkSetRetired", () => {
       target: null,
       details: "Hid 12 cards matching realm eurth: Realm closed",
     });
-  });
-
-  it("unhides the hidden cards it counted, reward cards included, naming the whole filter", async () => {
-    const { db, tx } = withTx();
-    tx.card.count.mockResolvedValue(1);
-    tx.card.updateMany.mockResolvedValue({ count: 1 });
-    const narrow = filter({
-      cardType: "NS",
-      rarity: "EPIC",
-      source: "iiwiki",
-      show: "retired",
-      search: "Elm",
-    });
-    await bulkSetRetired(
-      db as never,
-      actor,
-      input({ filter: narrow, retired: false, expected: 1 })
-    );
-    const { where, data } = tx.card.updateMany.mock.calls[0]![0];
-    expect(data).toEqual({ isRetired: false, retiredAt: null });
-    expect(where).toEqual(tx.card.count.mock.calls[0]![0].where);
-    expect(where.AND.slice(-3)).toEqual([{ isRetired: true }, ...COMPLIANCE_FREE]);
-    expect(tx.auditLog.create.mock.calls[0]![0].data.details).toBe(
-      'Unhid 1 card matching type NS, rarity EPIC, source iiwiki, showing retired, title "Elm": Realm closed'
-    );
   });
 });

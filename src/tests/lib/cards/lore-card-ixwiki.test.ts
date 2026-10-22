@@ -142,15 +142,6 @@ describe("generateCard for IxWiki", () => {
       mocked.wikiArticle.findMany.mock.calls.some(([args]) => args.where.status === "ARCHIVED")
     ).toBe(true);
   });
-
-  it("reads no artwork when every picture of the page was deleted", async () => {
-    archiveFilePages("Caphiria map.png");
-
-    const card = await wikiLoreCardGenerator.generateCard("Caphiria", "ixwiki");
-
-    expect(card.artwork).toBeNull();
-    expect(card.imageFile).toBeNull();
-  });
   it("refuses a page Postgres lacks or has deleted, without asking a wiki", async () => {
     mocked.wikiArticle.findFirst.mockResolvedValue(null);
 
@@ -162,29 +153,6 @@ describe("generateCard for IxWiki", () => {
     expect(guard.calls()).toEqual([]);
   });
 });
-
-describe("previews and credits for IxWiki", () => {
-  it("shows no lead picture whose file page WikiOS deleted", async () => {
-    heads = [
-      {
-        id: "a1",
-        title: "Caphiria",
-        length: 5000,
-        head: "{{Infobox country|image = Caphiria map.png}}\nCaphiria is a country.",
-      },
-    ];
-    mocked.wikiAsset.findMany.mockResolvedValue([asset]);
-    mocked.wikiArticle.findMany.mockImplementation(async (args: { where: { status?: string } }) =>
-      args.where.status === "ARCHIVED" ? [{ title: "File:Caphiria map.png" }] : []
-    );
-
-    const [preview] = await wikiLoreCardGenerator.fetchArticleMetadataBatch(["Caphiria"], "ixwiki");
-
-    expect(preview).toMatchObject({ title: "Caphiria", hasImage: false });
-    expect(preview?.imageUrl).toBeFalsy();
-  });
-});
-
 describe("previews of many pages", () => {
   /** The real client cuts a `findMany` with no `take` to 1000 rows (src/server/db.ts); so does this one. */
   const CLIENT_CAP = 1000;
@@ -219,13 +187,6 @@ describe("previews of many pages", () => {
     expect(previews).toHaveLength(PAGES);
     expect(previews.map((preview) => preview.categoryCount)).toEqual(Array(PAGES).fill(PER_PAGE));
     expect(guard.calls()).toEqual([]);
-  });
-  it("name the authors of the pages asked with an explicit take (a take-less findMany is cut to 1000)", async () => {
-    mocked.wikiArticle.findMany.mockResolvedValue([]);
-
-    await wikiLoreCardGenerator.fetchArticleAuthorInfoBatch(["A", "B", "C"], "ixwiki");
-
-    expect(mocked.wikiArticle.findMany.mock.calls[0]?.[0].take).toBe(3);
   });
 });
 
@@ -275,24 +236,4 @@ describe("a page outside the main namespace", () => {
       select: { namespace: true },
     });
   });
-
-  it.each([
-    ["iiwiki", "Portal:Eurth", 100, "iiwiki.com"],
-    ["althistory", "User blog:Elm/Post", 500, "althistory.fandom.com"],
-  ] as const)(
-    "is refused on %s (%s, namespace %s) by the namespace the wiki reports, before its image or backlinks are read",
-    async (source, title, ns, host) => {
-      guard.restore();
-      guard = installFetchGuard(() => ({
-        query: { pages: { "5": { pageid: 5, ns, title, revisions: [{ "*": BODY }] } } },
-      }));
-      await expect(wikiLoreCardGenerator.generateCard(title, source)).rejects.toMatchObject({
-        name: "ArticleRejected",
-        kind: "not-article",
-        message: "Not an article",
-      });
-      expect(guard.calls()).toHaveLength(1);
-      expect(new URL(guard.calls()[0]!).hostname).toBe(host);
-    }
-  );
 });

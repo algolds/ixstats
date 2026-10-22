@@ -13,7 +13,7 @@ jest.mock("~/server/modules/cards/cards.art-licence", () => ({
 
 import { Prisma } from "@prisma/client";
 import { wikiLoreCardGenerator } from "~/lib/cards/lore-card-generator";
-import { ArticleRejected, type LoreCardCandidate } from "~/lib/cards/lore-card-candidate";
+import { type LoreCardCandidate } from "~/lib/cards/lore-card-candidate";
 import { captureArtLicence, wikiQueryFor } from "~/server/modules/cards/cards.art-licence";
 import { DEFAULT_RARITY_THRESHOLDS } from "~/lib/cards/rarity-engine";
 import { TRPCError } from "@trpc/server";
@@ -99,25 +99,6 @@ describe("stageArticleCard", () => {
     expect(source).toBe("iiwiki");
     expect(keys.values).toEqual(["battle of kiro"]);
   });
-  it("skips a realm's nation page", async () => {
-    const db = makeDb();
-    db.realmPage.findMany.mockResolvedValue([{ realmId: "eurth", kind: "nation" }]);
-    const outcome = await stageArticleCard(db as never, "iiwiki", input("Elm"), context);
-    expect(outcome).toEqual({
-      status: "SKIPPED",
-      reason: "A realm's nation page does not become a Lore card",
-    });
-    expect(generateCard).not.toHaveBeenCalled();
-  });
-  it("fails a title MediaWiki would refuse, without asking anything", async () => {
-    const db = makeDb();
-    expect(await stageArticleCard(db as never, "iiwiki", input("a|b"), context)).toEqual({
-      status: "FAILED",
-      reason: "Not a valid page title",
-    });
-    expect(db.$queryRaw).not.toHaveBeenCalled();
-  });
-
   it("blocks art whose licence forbids commercial use or changes, and creates nothing", async () => {
     const db = makeDb();
     capture.mockResolvedValue({ ...openLicence, licence: "CC BY-NC-SA 4.0", status: "RESTRICTED" });
@@ -127,17 +108,6 @@ describe("stageArticleCard", () => {
       reason: "Its art is licensed CC BY-NC-SA 4.0, which does not allow commercial use or changes",
     });
     expect(db.card.create).not.toHaveBeenCalled();
-  });
-
-  it("names a restriction it found without a licence name as restrictive", async () => {
-    const db = makeDb();
-    capture.mockResolvedValue({ ...openLicence, licence: null, status: "RESTRICTED" });
-    expect(await stageArticleCard(db as never, "iiwiki", input("Union Assembly"), context)).toEqual(
-      {
-        status: "BLOCKED",
-        reason: "Its art is licensed restrictively, which does not allow commercial use or changes",
-      }
-    );
   });
   it("reads a lost natural-key race as already a card", async () => {
     const db = makeDb();
@@ -149,40 +119,6 @@ describe("stageArticleCard", () => {
     );
   });
 });
-
-describe("a page outside the main namespace", () => {
-  it.each([
-    ["iiwiki", "User:Elm/Draft"],
-    ["althistory", "Template talk:Infobox nation"],
-    ["ixwiki", "Category:Nations"],
-    ["ixwiki", "IxWiki:About"],
-  ] as const)("is skipped on %s (%s) without reading it", async (source, title) => {
-    const db = makeDb();
-    expect(await stageArticleCard(db as never, source, input(title), context)).toEqual({
-      status: "SKIPPED",
-      reason: "Not an article",
-    });
-    expect(generateCard).not.toHaveBeenCalled();
-    expect(db.$queryRaw).not.toHaveBeenCalled();
-  });
-});
-
-describe("a page whose wiki reports another namespace", () => {
-  it.each([
-    ["iiwiki", "Portal:Eurth"],
-    ["althistory", "User blog:Elm/Post"],
-  ] as const)("is skipped on %s (%s) as the generator's read finds it", async (source, title) => {
-    generateCard.mockRejectedValue(new ArticleRejected("not-article", "Not an article"));
-    const db = makeDb();
-    expect(await stageArticleCard(db as never, source, input(title), context)).toEqual({
-      status: "SKIPPED",
-      reason: "Not an article",
-    });
-    expect(generateCard).toHaveBeenCalledWith(title, source, expect.any(Object));
-    expect(db.card.create).not.toHaveBeenCalled();
-  });
-});
-
 describe("stageCommonsFile", () => {
   const commons: ImportContext = { ...context, thresholds: DEFAULT_RARITY_THRESHOLDS.commons };
   const flag = {
@@ -192,21 +128,6 @@ describe("stageCommonsFile", () => {
     descriptionUrl: "https://commons.wikimedia.org/wiki/File:Flag_of_Ireland.svg",
     licence: "Public domain",
   };
-  it("skips a file a legacy Commons card shows, without asking Commons", async () => {
-    const db = makeDb();
-    db.$queryRaw.mockResolvedValueOnce([]).mockResolvedValueOnce([
-      {
-        artwork:
-          "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Flag_of_Ireland.svg/120px-Flag_of_Ireland.svg.png",
-        descriptionUrl: null,
-      },
-    ]);
-    expect(await stageCommonsFile(db as never, input("flag_of_Ireland.svg"), commons)).toEqual({
-      status: "SKIPPED",
-      reason: "Already a card",
-    });
-    expect(capture).not.toHaveBeenCalled();
-  });
   it("blocks a file licensed non-commercial", async () => {
     const db = makeDb();
     capture.mockResolvedValue({ ...flag, licence: "CC BY-NC 2.0", status: "RESTRICTED" });

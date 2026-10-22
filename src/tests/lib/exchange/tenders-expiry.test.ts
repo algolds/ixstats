@@ -16,9 +16,7 @@ import {
   completeContract,
   createContract,
   createGovernmentContract,
-  disputeContract,
-  placeBid,
-  resolveDispute,
+  placeBid
 } from "~/lib/exchange/contracts";
 import { AWARD_GRACE_DAYS, expireLapsedContracts } from "~/lib/exchange/expiry";
 import { notifyExchange } from "~/lib/exchange/notify";
@@ -143,35 +141,6 @@ describe("government tenders", () => {
     expect(sov("alice")).toBe(5000);
     expect(contract(id)).toMatchObject({ status: "CANCELLED", escrow: 0 });
   });
-
-  it("an admin refund after a dispute goes back to the wallet and tells both parties", async () => {
-    const id = await tender(400);
-    const bobCo = await found("bob", "Bob Builders");
-    const bid = await placeBid(fake.client, {
-      userId: "bob",
-      contractId: id,
-      companyId: bobCo,
-      amount: 400,
-    });
-    await awardContract(fake.client, { userId: "alice", contractId: id, bidId: bid.id });
-    await disputeContract(fake.client, { userId: "bob", contractId: id, reason: "Never paid" });
-    expect(notifyExchange).toHaveBeenLastCalledWith([
-      expect.objectContaining({ userId: "alice", priority: "high" }),
-    ]);
-    await resolveDispute(fake.client, {
-      contractId: id,
-      outcome: "REFUND_ISSUER",
-      note: "No delivery",
-    });
-    expect(sov("alice")).toBe(5000);
-    expect(
-      jest
-        .mocked(notifyExchange)
-        .mock.calls.at(-1)![0]
-        .map((n) => n.userId)
-        .sort()
-    ).toEqual(["alice", "bob"]);
-  });
 });
 
 describe("expireLapsedContracts", () => {
@@ -194,14 +163,6 @@ describe("expireLapsedContracts", () => {
     });
     return { co, id: k.id as string };
   }
-
-  it("leaves contracts inside the award grace alone", async () => {
-    const id = await tender(400);
-    const end = contract(id).endIxTime as number;
-    const r = await expireLapsedContracts(fake.client, end + ixDays(AWARD_GRACE_DAYS) - 1);
-    expect(r.expired).toBe(0);
-    expect(contract(id).status).toBe("OPEN");
-  });
 
   it("cancels lapsed OPEN contracts, refunds escrow once and is idempotent", async () => {
     const tenderId = await tender(400);

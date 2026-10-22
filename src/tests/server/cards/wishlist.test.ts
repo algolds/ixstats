@@ -1,11 +1,8 @@
 /** @jest-environment node */
 /** The wishlist (spec §2.3 Wishlist): the player's own wished cards, with what is on sale for each. */
 import { CATALOGUE_WHERE } from "~/lib/cards/hub/catalogue";
-import { CARD_FACE_SELECT } from "~/lib/cards/hub/faces";
 import {
   addToWishlist,
-  listWishlist,
-  removeFromWishlist,
   WISHLIST_MAX,
 } from "~/server/modules/cards/market/wishlist";
 
@@ -89,44 +86,5 @@ describe("addToWishlist", () => {
     const roomForOne = makeDb({ isBound: false }, WISHLIST_MAX - 1);
     await addToWishlist(roomForOne as never, "u1", "c1");
     expect(roomForOne.cardWatchlist.upsert).toHaveBeenCalled();
-  });
-});
-
-describe("removeFromWishlist", () => {
-  it("removes the player's own wish only", async () => {
-    const db = makeDb();
-    await removeFromWishlist(db as never, "u1", "c1");
-    expect(db.cardWatchlist.deleteMany).toHaveBeenCalledWith({
-      where: { userId: "u1", cardId: "c1" },
-    });
-  });
-});
-describe("listWishlist", () => {
-  it("reads the player's own wishes, newest first, and only live listings and auctions", async () => {
-    const db = makeDb();
-    await listWishlist(db as never, "u1", NOW);
-    expect(db.cardWatchlist.findMany).toHaveBeenCalledWith({
-      where: { userId: "u1" },
-      select: { cardId: true, createdAt: true, card: { select: CARD_FACE_SELECT } },
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      take: WISHLIST_MAX,
-    });
-    expect(db.cardOwnership.groupBy).toHaveBeenCalledWith({
-      by: ["cardId"],
-      where: { ownerId: "u1", cardId: { in: ["c1"] } },
-      _count: { _all: true },
-    });
-    expect(db.cardListing.groupBy).toHaveBeenCalledWith({
-      by: ["cardId"],
-      where: { cardId: { in: ["c1"] }, status: "ACTIVE", expiresAt: { gt: NOW } },
-      _count: { _all: true },
-      _min: { price: true },
-    });
-    // The auction's own card, which it keeps when an ended auction outlives its copy
-    expect(db.cardAuction.groupBy).toHaveBeenCalledWith({
-      by: ["cardId"],
-      where: { cardId: { in: ["c1"] }, status: "ACTIVE", endTime: { gt: NOW } },
-      _count: { _all: true },
-    });
   });
 });

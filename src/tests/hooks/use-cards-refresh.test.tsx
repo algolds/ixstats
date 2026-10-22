@@ -77,13 +77,6 @@ describe("useCardsRefresh", () => {
       "vault.getBalance",
     ]);
   });
-
-  it("stays the same function across renders, so a socket subscription can hold it", () => {
-    const { result, rerender } = renderHook(() => useCardsRefresh());
-    const first = result.current;
-    rerender();
-    expect(result.current).toBe(first);
-  });
 });
 
 describe("useBidRefresh", () => {

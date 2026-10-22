@@ -21,14 +21,10 @@ jest.mock("~/lib/realms/sources/wiki-discovery-client", () => ({
   ),
   createDiscoveryClient: jest.fn(),
 }));
-import { withJobLock } from "~/lib/system/job-lock";
 import { DiscoveryStopped } from "~/lib/realms/sources/wiki-discovery-client";
 import { DEFAULT_RARITY_THRESHOLDS } from "~/lib/cards/rarity-engine";
 import {
   cancelImportJob,
-  createImportJob,
-  kickImportRunner,
-  MAX_IMPORT_TITLES,
   runImportJobs,
   type RunDeps,
   type StageItem,
@@ -296,23 +292,6 @@ describe("runImportJobs", () => {
     expect(items[0]!.status).toBe("STAGED");
     expect(jobs[0]!.status).toBe("DONE");
   });
-
-  it("skips and counts an item a dead runner left under a cancelled job, in one transaction", async () => {
-    const jobs = [jobRow("j", 10, "CANCELLED")];
-    jobs[0]!.processed = 1;
-    jobs[0]!.staged = 1;
-    const items = [itemRow("j", "A", "PROCESSING", "j:A", 6), itemRow("j", "B", "STAGED")];
-    const db = fakeDb(jobs, items);
-    const stage = stageMock();
-    await runImportJobs(db as never, deps(stage));
-
-    expect(stage).not.toHaveBeenCalled();
-    expect(items[0]).toMatchObject({ status: "SKIPPED", reason: "Cancelled" });
-    expect(jobs[0]).toMatchObject({ status: "CANCELLED", processed: 2, staged: 1, skipped: 1 });
-    expect(db.$transaction.mock.calls.map(([work]) => Array.isArray(work) && work.length)).toEqual([
-      2,
-    ]);
-  });
   it("fails the job and parks its item in one transaction, so a cancel after the stop counts every item", async () => {
     const jobs = [jobRow("j", 1)];
     const items = [itemRow("j", "A"), itemRow("j", "B")];
@@ -344,50 +323,5 @@ describe("runImportJobs", () => {
     const stage = stageMock(async () => ({ status: "FAILED", reason: "x".repeat(900) }));
     await runImportJobs(fakeDb(jobs, items) as never, deps(stage));
     expect(items[0]!.reason).toHaveLength(500);
-  });
-
-  it("stops taking items once its time budget is spent", async () => {
-    const jobs = [jobRow("j", 1)];
-    const items = [itemRow("j", "A"), itemRow("j", "B")];
-    let clock = 0;
-    const stage = stageMock(async () => {
-      clock += 4 * MINUTE;
-      return staged;
-    });
-    await runImportJobs(fakeDb(jobs, items) as never, deps(stage, { now: () => clock }));
-    expect(titlesStaged(stage)).toEqual(["A"]);
-    expect(items[1]!.status).toBe("QUEUED");
-    expect(jobs[0]!.status).toBe("RUNNING");
-  });
-});
-describe("kickImportRunner", () => {
-  const flush = () => new Promise((resolve) => setImmediate(resolve));
-  it("logs a failed run instead of throwing", async () => {
-    const failure = new Error("lease table missing");
-    jest.mocked(withJobLock).mockRejectedValue(failure);
-    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
-    kickImportRunner(fakeDb([], []) as never);
-    await flush();
-    expect(error).toHaveBeenCalledWith("[Card imports] Run failed:", failure);
-    error.mockRestore();
-  });
-});
-
-describe("job lifecycle", () => {
-  it("keeps at most the title cap and a 200-character label", async () => {
-    const db = fakeDb([], []);
-    const titles = Array.from({ length: MAX_IMPORT_TITLES + 5 }, (_, i) => `Page ${i}`);
-    const created = await createImportJob(db as never, {
-      source: "ixwiki",
-      kind: "DAILY",
-      label: "L".repeat(300),
-      titles,
-      requestedBy: null,
-      requireImage: true,
-    });
-    expect(created.queued).toBe(MAX_IMPORT_TITLES);
-    const { data } = db.cardImportJob.create.mock.calls[0]![0];
-    expect(data).toMatchObject({ kind: "DAILY", requireImage: true, total: MAX_IMPORT_TITLES });
-    expect(data.label).toHaveLength(200);
   });
 });

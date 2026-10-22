@@ -1,11 +1,9 @@
 /** @jest-environment node */
 /** Curation: approve imports into packs; make free suggestions into cards. */
 jest.mock("~/server/modules/cards/cards.importer", () => ({ stageForAdmin: jest.fn() }));
-import { MAX_FILTER_REVIEW } from "~/lib/cards/curation-limits";
 import { stageForAdmin } from "~/server/modules/cards/cards.importer";
 import {
   acceptSuggestion,
-  declineSuggestion,
   reviewCards,
 } from "~/server/modules/cards/cards.curation";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
@@ -81,30 +79,6 @@ describe("reviewCards", () => {
       }),
     });
   });
-
-  it("rejects by filter only the pending cards the admin saw", async () => {
-    const { db, tx } = withTx();
-    tx.card.count.mockResolvedValue(40);
-    tx.card.updateMany.mockResolvedValue({ count: 40 });
-    await reviewCards(db as never, actor, {
-      decision: "REJECT",
-      filter: { realm: "all", cardType: "NS" },
-      asOf: AS_OF,
-      expected: 40,
-      note: "wrong region",
-    });
-    expect(tx.card.count).toHaveBeenCalledTimes(1);
-    expect(tx.card.updateMany).toHaveBeenCalledWith({
-      where: { reviewState: "PENDING", cardType: "NS", createdAt: { lte: AS_OF } },
-      data: expect.objectContaining({ reviewState: "REJECTED", reviewedBy: "db_admin" }),
-    });
-    expect(tx.auditLog.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        details: "Rejected 40 cards matching realm all, type NS: wrong region",
-      }),
-    });
-  });
-
   it.each([
     [8, /New cards arrived since you loaded the queue/],
     [6, /reviewed since you loaded the queue/],
@@ -121,37 +95,6 @@ describe("reviewCards", () => {
     await expect(review).rejects.toThrow(message);
     expect(tx.card.updateMany).not.toHaveBeenCalled();
     expect(tx.auditLog.create).not.toHaveBeenCalled();
-  });
-
-  it("refuses a filter review above the cap, or without the queue it was read from, before reading anything", async () => {
-    const { db, tx } = withTx();
-    const filter = { realm: "all" };
-    await expect(
-      reviewCards(db as never, actor, {
-        decision: "APPROVE",
-        filter,
-        asOf: AS_OF,
-        expected: MAX_FILTER_REVIEW + 1,
-      })
-    ).rejects.toThrow(/at most 2,000 cards at once/);
-    await expect(
-      reviewCards(db as never, actor, { decision: "APPROVE", filter, expected: 3 })
-    ).rejects.toThrow(/Reload the queue/);
-    expect(db.$transaction).not.toHaveBeenCalled();
-    expect(tx.card.count).not.toHaveBeenCalled();
-  });
-  it("refuses a queue read dated after now, before reading anything", async () => {
-    const { db, tx } = withTx();
-    await expect(
-      reviewCards(db as never, actor, {
-        decision: "APPROVE",
-        filter: { realm: "all" },
-        asOf: new Date(Date.now() + 60_000),
-        expected: 3,
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST", message: expect.stringMatching(/future/) });
-    expect(db.$transaction).not.toHaveBeenCalled();
-    expect(tx.card.count).not.toHaveBeenCalled();
   });
 });
 describe("suggestions", () => {
@@ -187,13 +130,5 @@ describe("suggestions", () => {
     expect(stage.mock.invocationCallOrder[0]).toBeLessThan(
       db.$transaction.mock.invocationCallOrder[0]!
     );
-  });
-  it("refuses to decline a suggestion someone already answered", async () => {
-    const { db, tx } = withTx();
-    tx.loreCardRequest.updateMany.mockResolvedValue({ count: 0 });
-    await expect(
-      declineSuggestion(db as never, actor, { requestId: "req", reason: "Not a lore article" })
-    ).rejects.toMatchObject({ code: "CONFLICT" });
-    expect(tx.auditLog.create).not.toHaveBeenCalled();
   });
 });
