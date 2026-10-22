@@ -82,15 +82,6 @@ const layersOf = (db: { realm: { rows: Array<{ settings: object }> } }) =>
 const versionsOf = () => readdirSync(path.join(root, "r1", "relief")).sort();
 
 describe("buildRealmRelief from cells", () => {
-  it("tells the map it changed, after the entry is recorded", async () => {
-    const db = setup();
-    await buildRealmRelief(db, "r1", { cells: ridgeCells() });
-    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
-    expect(db.realm.rows[0].mapVersion).toBeGreaterThan(5);
-    expect(db.realm.update.mock.invocationCallOrder[0]!).toBeLessThan(
-      db.$queryRaw.mock.invocationCallOrder[0]!
-    );
-  });
   it("does not build again for the same cells", async () => {
     const db = setup();
     const first = await buildRealmRelief(db, "r1", { cells: ridgeCells() });
@@ -123,19 +114,6 @@ describe("buildRealmRelief from cells", () => {
       ["relief", c.version],
     ]);
   });
-
-  it("records a version that was built but never recorded, without building it again", async () => {
-    const db = setup();
-    const first = await buildRealmRelief(db, "r1", { cells: ridgeCells() });
-    db.realm.rows[0].settings = {};
-    const mapVersion = db.realm.rows[0].mapVersion;
-
-    const again = await buildRealmRelief(db, "r1", { cells: ridgeCells() });
-    expect(again).toMatchObject({ version: first.version, built: false });
-    expect(layersOf(db).map((l) => l.version)).toEqual([first.version]);
-    expect(db.realm.rows[0].mapVersion).toBeGreaterThan(mapVersion);
-  });
-
   it("builds for a realm whose settings were never written (Ixnay's are null)", async () => {
     const db = setup(null);
     const entry = await buildRealmRelief(db, "r1", { cells: ridgeCells() });

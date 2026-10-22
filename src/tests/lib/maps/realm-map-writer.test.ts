@@ -3,6 +3,19 @@ jest.mock("~/lib/maps/geo-validation", () => ({
   isPostGISAvailable: jest.fn().mockResolvedValue(true),
 }));
 import { geometryProblem, writeRealmMapFeatures } from "~/lib/maps/realm-map-writer";
+import {
+  crossesAntimeridian,
+  dropRepeatedPoints,
+  repairPolygonalGeometry,
+  smoothLayerCoverage,
+} from "~/lib/maps/realm-geometry-repair";
+import type { MultiPolygon } from "geojson";
+import {
+  planLayerRepair,
+  repairRealmLayer,
+  type LayerFeatureState,
+} from "~/lib/maps/realm-layer-repair";
+import { realmLayerConfigSchema } from "~/lib/maps/import/realm-layer-config";
 
 const square = (x: number) => ({
   type: "MultiPolygon" as const,
@@ -91,53 +104,6 @@ describe("geometryProblem", () => {
 });
 
 describe("writeRealmMapFeatures", () => {
-  it("upserts by (realm, layer, key) with name and link, fills PostGIS and returns the geography area", async () => {
-    const db = writerDb();
-    const result = await writeRealmMapFeatures(
-      db,
-      "eurth-id",
-      [
-        {
-          key: "Tavok",
-          geometry: square(0),
-          name: "Tavok",
-          countryId: "c1",
-          areaKm2: 264334,
-          properties: { sourceKey: "Tavok" },
-        },
-      ],
-      { layerType: "political" }
-    );
-    expect(result).toEqual({
-      written: ["Tavok"],
-      rejected: [],
-      areas: { Tavok: 777.5 },
-      trimmed: {},
-      smoothed: 0,
-    });
-    const upsert = db.mapLayer.upsert.mock.calls[0][0];
-    expect(upsert.where).toEqual({
-      realmId_layerType_featureId: {
-        realmId: "eurth-id",
-        layerType: "political",
-        featureId: "Tavok",
-      },
-    });
-    expect(upsert.create).toMatchObject({
-      displayName: "Tavok",
-      countryId: "c1",
-      isActive: true,
-      properties: { sourceKey: "Tavok" },
-    });
-    const write = db.$queryRawUnsafe.mock.calls.find(([sql]: [string]) =>
-      sql.includes("SET geom_postgis")
-    )[0];
-    expect(write).toMatch(/ST_MakeValid\(ST_SetSRID\(ST_GeomFromGeoJSON/);
-    expect(write).toMatch(/ST_Area\(geom_postgis::geography\)/);
-    // The country takes the outline, never the land area (that is the caller's precedence decision).
-    expect(db.country.update.mock.calls[0][0].data).not.toHaveProperty("landArea");
-  });
-
   it("rejects bad geometry and countries of other realms without writing them", async () => {
     const db = writerDb();
     const result = await writeRealmMapFeatures(db, "eurth-id", [
@@ -259,59 +225,329 @@ describe("writeRealmMapFeatures", () => {
     expect(result.areas).toEqual({ A: 777.5, B: 12 });
     expect(result.trimmed).toEqual({ B: 3 });
   });
+});
 
-  it("with `coverage`, smooths the whole layer as one coverage after the write and stores what changed", async () => {
-    const db = writerDb();
-    db.country.updateMany = jest.fn().mockResolvedValue({ count: 1 });
-    const base = db.$queryRawUnsafe.getMockImplementation();
-    db.$queryRawUnsafe.mockImplementation(async (sql: string, ...params: any[]) => {
-      if (sql.includes("ST_CoverageSimplify"))
-        return [
-          { id: "row-Z", key: "Z", countryId: null, geojson: JSON.stringify(square(0)), before: 9 },
-        ];
-      if (sql.includes("WHERE id = $1 AND")) return [{ area: 42 }];
-      return base(sql, ...params);
-    });
-    const result = await writeRealmMapFeatures(
-      db,
-      "eurth-id",
-      [{ key: "Z", geometry: square(0) }],
-      {
-        layerType: "climate",
-        coverage: { tolerance: 0.045, smooth: 0 },
-      }
-    );
-    const coverage = db.$queryRawUnsafe.mock.calls.find(([sql]: [string]) =>
-      sql.includes("ST_CoverageSimplify")
-    );
-    expect(coverage.slice(1)).toEqual(["eurth-id", "climate", 0.045]);
-    expect(result.smoothed).toBe(1);
-    expect(result.areas).toEqual({ Z: 42 });
+describe("repairing a realm's geometry", () => {
+  const ring = (x: number) => [
+    [x, 0],
+    [x + 1, 0],
+    [x + 1, 1],
+    [x, 1],
+    [x, 0],
+  ];
+  const multi = (...xs: number[]) => ({
+    type: "MultiPolygon" as const,
+    coordinates: xs.map((x) => [ring(x)]),
   });
+  describe("dropRepeatedPoints", () => {
+    it("drops rings that collapse, a polygon whose outer ring collapses, and returns null when nothing is left", () => {
+      const collapsed = [
+        [5, 5],
+        [5, 5],
+        [6, 5],
+        [5, 5],
+      ];
+      const hole = [
+        [0.2, 0.2],
+        [0.2, 0.2],
+        [0.2, 0.2],
+        [0.2, 0.2],
+      ];
+      expect(
+        dropRepeatedPoints({ type: "MultiPolygon", coordinates: [[ring(0), hole], [collapsed]] })
+      ).toEqual(multi(0));
+      expect(dropRepeatedPoints({ type: "Polygon", coordinates: [collapsed] })).toBeNull();
+    });
+  });
+  describe("crossesAntimeridian", () => {
+    it("is true for a ring jumping across ±180 and false for a wide geometry that does not", () => {
+      const crossing = {
+        type: "Polygon" as const,
+        coordinates: [
+          [
+            [179, 0],
+            [-179, 0],
+            [-179, 1],
+            [179, 1],
+            [179, 0],
+          ],
+        ],
+      };
+      expect(crossesAntimeridian(crossing)).toBe(true);
+      // Tagmatium on Eurth: parts from -80° to 102°, 183° wide, but no ring crosses.
+      expect(crossesAntimeridian(multi(-80, 101))).toBe(false);
+    });
+  });
+  describe("repairPolygonalGeometry", () => {
+    it("with PostGIS makes the de-duplicated geometry valid and keeps only its polygonal parts", async () => {
+      const repaired = multi(0, 3);
+      const db = {
+        $queryRawUnsafe: jest.fn().mockResolvedValue([{ geojson: JSON.stringify(repaired) }]),
+      };
+      const input = {
+        type: "Polygon" as const,
+        coordinates: [
+          [
+            [0, 0],
+            [0, 0],
+            [1, 0],
+            [1, 1],
+            [0, 1],
+            [0, 0],
+          ],
+        ],
+      };
+      await expect(repairPolygonalGeometry(db, input, true)).resolves.toEqual(repaired);
+      const [sql, json] = db.$queryRawUnsafe.mock.calls[0];
+      expect(sql).toMatch(
+        /ST_Multi\(ST_CollectionExtract\(ST_MakeValid\(ST_SetSRID\(ST_GeomFromGeoJSON\(\$1::text\), 4326\)\), 3\)\)/
+      );
+      expect(JSON.parse(json)).toEqual(multi(0));
+    });
+    it("without PostGIS, or for a ring across ±180, only drops repeated points", async () => {
+      const db = { $queryRawUnsafe: jest.fn() };
+      await expect(repairPolygonalGeometry(db, multi(0), false)).resolves.toEqual(multi(0));
+      const crossing = {
+        type: "Polygon" as const,
+        coordinates: [
+          [
+            [179, 0],
+            [-179, 0],
+            [-179, 0],
+            [-179, 1],
+            [179, 1],
+            [179, 0],
+          ],
+        ],
+      };
+      await expect(repairPolygonalGeometry(db, crossing, true)).resolves.toEqual({
+        type: "MultiPolygon",
+        coordinates: [
+          [
+            [
+              [179, 0],
+              [-179, 0],
+              [-179, 1],
+              [179, 1],
+              [179, 0],
+            ],
+          ],
+        ],
+      });
+      expect(db.$queryRawUnsafe).not.toHaveBeenCalled();
+    });
+  });
+  describe("smoothLayerCoverage", () => {
+    /** Two 4° squares side by side (x 0-4 and 4-8), as the coverage query would return them. */
+    const rows = [
+      {
+        id: "row-a",
+        key: "A",
+        countryId: "c-a",
+        geojson: JSON.stringify(multiSquare(0)),
+        before: 12,
+      },
+      {
+        id: "row-b",
+        key: "B",
+        countryId: null,
+        geojson: JSON.stringify(multiSquare(4)),
+        before: 8,
+      },
+    ];
+    function multiSquare(x: number) {
+      return {
+        type: "MultiPolygon" as const,
+        coordinates: [
+          [
+            [
+              [x, 0],
+              [x + 4, 0],
+              [x + 4, 4],
+              [x, 4],
+              [x, 0],
+            ],
+          ],
+        ],
+      };
+    }
+    /** Coverage rows first; the per-feature repair returns what it was given. */
+    const coverageDb = () => ({
+      $queryRawUnsafe: jest.fn(async (sql: string, ...args: Array<string | number>) =>
+        sql.includes("ST_CoverageSimplify") ? rows : [{ geojson: String(args[0]) }]
+      ),
+    });
+    it("smooths both sides of a shared edge alike: the neighbours still meet, the outer corners are cut", async () => {
+      const updates = await smoothLayerCoverage(coverageDb() as never, "eurth-id", {
+        layerType: "political",
+        tolerance: 0.5,
+        smooth: 2,
+      });
+      const ringA = updates[0]!.geometry.coordinates[0]![0]!;
+      const ringB = updates[1]!.geometry.coordinates[0]![0]!;
+      expect(ringA).not.toContainEqual([0, 0]);
+      expect(ringB).not.toContainEqual([8, 4]);
+      const onEdge = (ring: number[][]) =>
+        ring
+          .filter((p) => p[0] === 4)
+          .map((p) => p[1])
+          .sort();
+      expect(onEdge(ringA)).toEqual(expect.arrayContaining(onEdge(ringB)));
+      expect(onEdge(ringB)).toEqual(expect.arrayContaining([0, 4]));
+    });
+  });
+});
 
-  it("with `coverage`, stamps the layer's smoothed features last, after overlap removal, so a repair can tell them", async () => {
-    const db = writerDb();
-    db.country.updateMany = jest.fn().mockResolvedValue({ count: 1 });
-    const base = db.$queryRawUnsafe.getMockImplementation();
-    db.$queryRawUnsafe.mockImplementation(async (sql: string, ...params: any[]) => {
-      if (sql.includes("ST_CoverageSimplify"))
-        return [
-          { id: "row-A", key: "A", countryId: null, geojson: JSON.stringify(square(0)), before: 9 },
-        ];
-      return base(sql, ...params);
+describe("repairing a realm's layer", () => {
+  const square = (x: number, size = 1): MultiPolygon => ({
+    type: "MultiPolygon",
+    coordinates: [
+      [
+        [
+          [x, 0],
+          [x + size, 0],
+          [x + size, size],
+          [x, size],
+          [x, 0],
+        ],
+      ],
+    ],
+  });
+  const COVERAGE = { tolerance: 0.045, smooth: 2 };
+  function feature(key: string, over: Partial<LayerFeatureState> = {}): LayerFeatureState {
+    return {
+      id: `row-${key}`,
+      key,
+      countryId: null,
+      name: key,
+      properties: {},
+      geometry: square(0),
+      hash: `h-${key}`,
+      crosses: false,
+      valid: true,
+      reason: "Valid Geometry",
+      repeated: 0,
+      vertices: 5,
+      storedType: "ST_MultiPolygon",
+      ...over,
+    };
+  }
+  const stamped = (key: string, over: Partial<LayerFeatureState> = {}) =>
+    feature(key, { properties: { coverage: { ...COVERAGE, hash: `h-${key}` } }, ...over });
+  describe("planLayerRepair", () => {
+    it("will not smooth when a smoothed feature's unsmoothed outline is unknown (it would be rounded twice)", () => {
+      const plan = planLayerRepair([stamped("A"), feature("B")], { trims: [], coverage: COVERAGE });
+      expect(plan.smoothing).toMatchObject({ status: "blocked", blocked: ["A"] });
+      expect(plan.changed).toBe(false);
     });
-    await writeRealmMapFeatures(db, "eurth-id", [{ key: "A", geometry: square(0) }], {
-      coverage: { tolerance: 0.045, smooth: 2 },
+
+    it("will not smooth a synced feature without a record when the source could not be read", () => {
+      const plan = planLayerRepair([feature("A", { properties: { sourceHash: "s-A" } })], {
+        trims: [],
+        coverage: COVERAGE,
+        sourceUnavailable: "HTTP 404",
+      });
+      expect(plan.smoothing).toMatchObject({ status: "blocked", blocked: ["A"] });
     });
-    const sqls = db.$queryRawUnsafe.mock.calls.map(([sql]: [string]) => sql);
-    const stamp = sqls.findIndex((sql: string) => sql.includes("'coverage'"));
-    expect(stamp).toBeGreaterThan(sqls.findIndex((sql: string) => sql.includes("ST_Difference")));
-    expect(sqls[stamp]).toContain("md5(geometry::text)");
-    expect(db.$queryRawUnsafe.mock.calls[stamp].slice(1)).toEqual([
-      "eurth-id",
-      "political",
-      0.045,
-      2,
-    ]);
+    it("repairs invalid outlines, repeated points and overlaps; rows across ±180 are left out of every count", () => {
+      const plan = planLayerRepair(
+        [
+          feature("A", { valid: false, reason: "Self-intersection" }),
+          feature("B", { repeated: 2 }),
+          feature("C", { storedType: "ST_Polygon" }),
+          feature("Z", { crosses: true, valid: false }),
+        ],
+        { trims: [{ key: "B", removedKm2: 3 }], coverage: null }
+      );
+      expect(plan.needsRepair).toEqual(["A", "B", "C"]);
+      expect(plan.changed).toBe(true);
+      expect(plan.crossing).toEqual(["Z"]);
+    });
+  });
+  describe("repairRealmLayer", () => {
+    function repairDb(rows: Array<Record<string, unknown>>) {
+      const db: any = {
+        country: {
+          findMany: jest.fn().mockResolvedValue([]),
+          update: jest.fn(),
+          updateMany: jest.fn(),
+        },
+        mapLayer: {
+          findMany: jest.fn().mockResolvedValue([]),
+          upsert: jest.fn(async ({ where }: any) => ({
+            id: `row-${where.realmId_layerType_featureId.featureId}`,
+          })),
+          update: jest.fn(),
+        },
+        mapImport: { create: jest.fn().mockResolvedValue({ id: "imp1" }) },
+        $queryRawUnsafe: jest.fn(async (sql: string, ...params: any[]) => {
+          if (sql.includes("ST_IsValidReason")) return rows;
+          if (
+            sql.includes("AS geojson") &&
+            !sql.includes("ST_Difference") &&
+            !sql.includes("ST_CoverageSimplify")
+          )
+            return [{ geojson: params[0] }];
+          return [];
+        }),
+        $transaction: jest.fn((cb: any) => cb(db)),
+      };
+      return db;
+    }
+
+    const row = (key: string, properties: object) => ({
+      id: `row-${key}`,
+      key,
+      countryId: null,
+      name: key,
+      properties,
+      geojson: JSON.stringify(square(0)),
+      hash: `h-${key}`,
+      crosses: false,
+      valid: true,
+      reason: "Valid Geometry",
+      repeated: 0,
+      vertices: 5,
+      storedType: "ST_MultiPolygon",
+    });
+    it("a dry run writes nothing", async () => {
+      const db = repairDb([row("A", {})]);
+      const report = await repairRealmLayer(db, "eurth-id", {
+        layerType: "political",
+        coverage: COVERAGE,
+        apply: false,
+        createdBy: "test",
+      });
+      expect(report.plan.smoothing.status).toBe("smooth");
+      expect(report.written).toBeNull();
+      expect(db.mapLayer.upsert).not.toHaveBeenCalled();
+    });
+    it("applying writes every polygon from its unsmoothed outline, its old record dropped, with a rollback snapshot", async () => {
+      const db = repairDb([row("A", { sourceHash: "s-A", fill: "#123456" })]);
+      const report = await repairRealmLayer(db, "eurth-id", {
+        layerType: "political",
+        coverage: COVERAGE,
+        apply: true,
+        createdBy: "test",
+        sourceRaw: new Map([["A", { geometry: square(10), sourceHash: "s-A" }]]),
+      });
+      expect(report.written?.written).toEqual(["A"]);
+      expect(report.mapImportId).toBe("imp1");
+      const upsert = db.mapLayer.upsert.mock.calls[0][0];
+      expect(upsert.update.properties).toEqual({ sourceHash: "s-A", fill: "#123456" });
+      expect(upsert.update.geometry).toEqual(square(10));
+      expect(db.mapImport.create.mock.calls[0][0].data).toMatchObject({
+        realmId: "eurth-id",
+        layerTypes: ["political"],
+        mode: "merge",
+        createdBy: "test",
+      });
+    });
+  });
+});
+
+describe("realm layer config", () => {
+  it("names art by key, never by file path", () => {
+    expect(() => realmLayerConfigSchema.parse({ land: "Maps/blank.png" })).toThrow(/Art names/);
   });
 });

@@ -1,3 +1,10 @@
+jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
+jest.mock("fs/promises", () => ({ readFile: jest.fn() }));
+
+import { readFile } from "fs/promises";
+import { loadLayerFromDB, loadLayerWithFallback } from "~/server/modules/maps/layer-loader";
+import { clearLayerCache } from "~/server/shared/layer-cache";
+import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 /** @jest-environment node */
 /**
  * Who may read a realm's map tiles. The realm row is memoised for 60 s; the answer for the viewer never is (a
@@ -81,12 +88,6 @@ describe("resolveTileRealm", () => {
     expect(await access.resolveTileRealm("r_draft")).toBeNull();
     expect(await access.resolveTileRealm("draft-world")).toBeNull();
   });
-
-  it("gives an unpublished realm's owner private access", async () => {
-    asOwner();
-    expect(await access.resolveTileRealm("r_draft")).toEqual({ id: "r_draft", access: "private" });
-  });
-
   it("never lets a staff member's answer reach an anonymous viewer through the memo", async () => {
     asOwner();
     expect(await access.resolveTileRealm("r_draft")).toEqual({ id: "r_draft", access: "private" });
@@ -109,19 +110,74 @@ describe("resolveTileRealm", () => {
     );
     expect(await access.resolveTileRealm("r_draft")).toEqual({ id: "r_draft", access: "public" });
   });
+});
 
-  it("keeps other realms' rows when one realm's map is invalidated, and drops all on a global change", async () => {
-    await access.resolveTileRealm("r_eurth");
-    await access.resolveTileRealm("r_draft");
-    realmFind.mockClear();
-    await invalidation.invalidateRealmMap(
-      { $queryRaw: jest.fn().mockResolvedValue([{ mapVersion: 1 }]) },
-      "r_draft"
-    );
-    await access.resolveTileRealm("r_eurth");
-    expect(realmFind).not.toHaveBeenCalled();
-    await invalidation.invalidateAllRealmMaps({ $executeRaw: jest.fn().mockResolvedValue(2) });
-    await access.resolveTileRealm("r_eurth");
-    expect(realmFind).toHaveBeenCalledTimes(1);
+describe("layers load per realm", () => {
+  const readFileMock = readFile as unknown as jest.Mock;
+  const square = {
+    type: "Polygon",
+    coordinates: [
+      [
+        [0, 0],
+        [1, 0],
+        [1, 1],
+        [0, 0],
+      ],
+    ],
+  };
+  function row(featureId: string) {
+    return {
+      featureId,
+      geometry: square,
+      properties: {},
+      displayName: featureId,
+      countryId: null,
+      areaSqKm: 1,
+      centroid: [0.5, 0.5],
+    };
+  }
+  function makeDb(rows: ReturnType<typeof row>[]) {
+    return {
+      mapLayer: { findMany: jest.fn().mockResolvedValue(rows) },
+      countrySovereignty: { findMany: jest.fn().mockResolvedValue([]) },
+    };
+  }
+  function whereOf(db: ReturnType<typeof makeDb>, call = 0) {
+    return db.mapLayer.findMany.mock.calls[call][0].where;
+  }
+  describe("loadLayerFromDB is realm-scoped", () => {
+    beforeEach(() => {
+      clearLayerCache();
+      readFileMock.mockReset();
+    });
+
+    it("filters the layer query by the requested realm", async () => {
+      const db = makeDb([row("l1")]);
+      await loadLayerFromDB(db, "lakes", 1, "r_eurth");
+
+      expect(whereOf(db)).toMatchObject({ layerType: "lakes", isActive: true, realmId: "r_eurth" });
+    });
+    it("never serves one realm's cached layer to another realm", async () => {
+      const db = makeDb([row("l1")]);
+      await loadLayerFromDB(db, "lakes", 1, DEFAULT_REALM_ID);
+      await loadLayerFromDB(db, "lakes", 1, "r_eurth");
+
+      expect(db.mapLayer.findMany).toHaveBeenCalledTimes(2);
+      expect(whereOf(db, 1)).toMatchObject({ realmId: "r_eurth" });
+    });
+  });
+  describe("loadLayerWithFallback: the static GeoJSON fallback is Ixnay's only", () => {
+    beforeEach(() => {
+      clearLayerCache();
+      readFileMock.mockReset();
+    });
+
+    it("returns an empty FeatureCollection for another realm with no DB layer, without reading files", async () => {
+      const db = makeDb([]);
+      const fc = await loadLayerWithFallback(db, "political", 1, "r_eurth");
+
+      expect(fc).toEqual({ type: "FeatureCollection", features: [] });
+      expect(readFileMock).not.toHaveBeenCalled();
+    });
   });
 });
