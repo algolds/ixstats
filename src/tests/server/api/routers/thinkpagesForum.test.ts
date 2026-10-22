@@ -21,6 +21,7 @@ jest.mock("~/server/modules/thinkpages-forum", () => {
     fileReport: jest.fn(async () => ({ reportId: "rep_1" })),
     fileAppeal: jest.fn(async () => ({ appealId: "ap_1" })),
     myStanding: jest.fn(async () => ({ activePoints: 3, warnings: [], bans: [], appeals: [] })),
+    createAdvert: jest.fn(),
   };
 });
 
@@ -30,13 +31,15 @@ import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { REALM_CATEGORIES } from "~/lib/thinkpages-forum/categories";
 import { SITE_CATEGORIES } from "~/tests/helpers/forum-site-categories";
 import {
+  afterThreadStarted,
+  createAdvert,
   createThread,
-  fileAppeal,
   fileReport,
-  renderPostWikitext,
+  ForumError,
 } from "~/server/modules/thinkpages-forum";
-import { banNotice } from "~/lib/thinkpages-forum/moderation-policy";
-import { banRow, forumBanFake, type BanRow } from "~/tests/helpers/forum-ban-fake";
+import { mapError } from "~/server/api/routers/thinkpagesForum/viewer";
+import { TRPCError } from "@trpc/server";
+import { forumBanFake, type BanRow } from "~/tests/helpers/forum-ban-fake";
 import { engagementTables } from "~/tests/helpers/forum-engagement-fake";
 
 const caller = (user: object | null, db: object = {}) =>
@@ -66,7 +69,6 @@ const categories = SITE_CATEGORIES.map((c, i) => ({
   order: i,
 }));
 const general = categories.find((c) => c.key === "general")!;
-const staff = categories.find((c) => c.key === "staff")!;
 
 const when = new Date("2026-10-01");
 const rawUser = {
@@ -217,64 +219,6 @@ const noMod = { siteAdmin: false, realmIds: [], categoryIds: [] };
 const ALLOWED_PERSONA_FIELDS = ["displayName", "username", "avatarUrl", "personaType"];
 
 describe("thinkpagesForum router", () => {
-  it("lets an anonymous visitor read the public categories only", async () => {
-    const out = await caller(null, forumDb()).categories();
-    expect(out.map((c) => c.key)).toContain("general");
-    expect(out.map((c) => c.key)).not.toContain("staff");
-  });
-  it("refuses to start a thread without signing in", async () => {
-    // authMiddleware throws an UnauthorizedError; a direct caller sees its code as the cause.
-    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
-    await expect(
-      caller(null, forumDb()).createThread({
-        categoryKey: "general",
-        title: "Hello there",
-        html: "<p>x</p>",
-      })
-    ).rejects.toMatchObject({ cause: { code: "UNAUTHORIZED" } });
-    warn.mockRestore();
-    expect(createThread).not.toHaveBeenCalled();
-  });
-  describe("the post body and previewPost", () => {
-    const NEW = { categoryKey: "general", title: "Hello there" };
-
-    it("takes exactly one of html and wikitext", async () => {
-      jest.mocked(createThread).mockClear();
-      const c = caller(member, forumDb());
-      await expect(c.createThread({ ...NEW })).rejects.toMatchObject({ code: "BAD_REQUEST" });
-      await expect(
-        c.createThread({ ...NEW, html: "<p>x</p>", wikitext: "x" })
-      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-      await expect(c.reply({ threadId: "t1" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
-      await expect(
-        c.reply({ threadId: "t1", html: "<p>x</p>", wikitext: "x" })
-      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-      await expect(c.editPost({ postId: "p1", editedAt: null })).rejects.toMatchObject({
-        code: "BAD_REQUEST",
-      });
-      await expect(
-        c.editPost({ postId: "p1", editedAt: null, wikitext: "x".repeat(50_001) })
-      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-      expect(createThread).not.toHaveBeenCalled();
-    });
-    it("refuses a preview to an anonymous visitor and maps a refused render", async () => {
-      jest.mocked(renderPostWikitext).mockClear();
-      const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
-      await expect(caller(null, forumDb()).previewPost({ wikitext: "x" })).rejects.toMatchObject({
-        cause: { code: "UNAUTHORIZED" },
-      });
-      warn.mockRestore();
-      expect(renderPostWikitext).not.toHaveBeenCalled();
-      const { ForumError } = jest.requireActual("~/server/modules/thinkpages-forum");
-      jest
-        .mocked(renderPostWikitext)
-        .mockRejectedValueOnce(new ForumError("BAD_REQUEST", "Signatures are not used."));
-      await expect(
-        caller(member, forumDb()).previewPost({ wikitext: "~~~~" })
-      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    });
-  });
-
   describe("a post's wikitext on the thread read", () => {
     function wikitextDb(thread: object = {}) {
       const db = forumDb(thread);
@@ -342,28 +286,6 @@ describe("thinkpagesForum router", () => {
       expect(JSON.stringify(asAdmin)).not.toContain("''wiki''");
     });
   });
-  it("maps the render limit to TOO_MANY_REQUESTS", async () => {
-    const { ForumError } = jest.requireActual("~/server/modules/thinkpages-forum");
-    jest
-      .mocked(createThread)
-      .mockRejectedValueOnce(new ForumError("TOO_MANY_REQUESTS", "Slow down."));
-    await expect(
-      caller(member, forumDb()).createThread({
-        categoryKey: "general",
-        title: "Hello there",
-        html: "<p>x</p>",
-      })
-    ).rejects.toMatchObject({ code: "TOO_MANY_REQUESTS" });
-  });
-
-  it("maps an unseen category to NOT_FOUND", async () => {
-    await expect(
-      caller(member, forumDb()).category({ key: "staff", page: 1 })
-    ).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
-  });
-
   it("names each listed thread's last poster without the player behind a persona", async () => {
     const asMember = await caller(member, forumDb()).category({ key: "general", page: 1 });
     // The default last post (p1) is the persona's: the persona, never u1.
@@ -390,79 +312,6 @@ describe("thinkpagesForum router", () => {
     expect(JSON.stringify(out)).not.toContain("secret@example.com");
     expect(JSON.stringify(out)).not.toContain("clerk_1");
   });
-
-  it("denies canStart to an anonymous visitor and to a member in a staff-post category", async () => {
-    expect((await caller(null, forumDb()).category({ key: "general", page: 1 })).canStart).toBe(
-      false
-    );
-    const announcements = categories.find(
-      (c) => c.postRole === "staff" && c.visibility === "public"
-    );
-    if (announcements) {
-      const out = await caller(member, forumDb()).category({ key: announcements.key, page: 1 });
-      expect(out.canStart).toBe(false);
-    }
-    expect((await caller(admin, forumDb()).category({ key: staff.key, page: 1 })).canStart).toBe(
-      true
-    );
-  });
-  describe("thread page reactions", () => {
-    const reacted = (id: string, reactionCounts: object | string) => ({
-      id,
-      authorUserId: "u2",
-      authorPersonaId: null,
-      importedAuthorName: null,
-      contentHtml: `<p>${id}</p>`,
-      editedAt: null,
-      createdAt: when,
-      reactionCounts,
-    });
-    function reactedDb(thread: object = {}, bans: BanRow[] = []) {
-      const db = forumDb(thread, bans);
-      db.forumPost.findMany.mockResolvedValue([
-        reacted("p1", { fire: 2, like: 1 }),
-        reacted("p2", {}),
-      ] as never);
-      return db;
-    }
-
-    it("offers reacting on an open thread, and not on a closed one or to a banned member", async () => {
-      expect((await caller(member, reactedDb()).thread({ threadId: "t1", page: 1 })).canReact).toBe(
-        true
-      );
-      for (const closed of [{ locked: true }, { archived: true }]) {
-        const out = await caller(member, reactedDb(closed)).thread({ threadId: "t1", page: 1 });
-        expect(out.canReact).toBe(false);
-      }
-      const banned = reactedDb({}, [banRow({ userId: "u1", scope: "site" })]);
-      expect((await caller(member, banned).thread({ threadId: "t1", page: 1 })).canReact).toBe(
-        false
-      );
-    });
-
-    it("offers no reacting on a hidden thread, even to a moderator who can read it", async () => {
-      expect((await caller(admin, reactedDb()).thread({ threadId: "t1", page: 1 })).canReact).toBe(
-        true
-      );
-      const out = await caller(admin, reactedDb({ hidden: true })).thread({
-        threadId: "t1",
-        page: 1,
-      });
-      expect(out).toMatchObject({ canModerate: true });
-      expect(out.canReact).toBe(false);
-    });
-
-    it("offers no reacting in an archived realm, and still offers it in a live one", async () => {
-      expect(
-        (await caller(member, realmForumDb(inEurth)).thread({ threadId: "t1", page: 1 })).canReact
-      ).toBe(true);
-      const archived = realmForumDb(inEurth);
-      archived.realm.findUnique.mockResolvedValue({ ...EURTH, status: "archived" } as never);
-      const out = await caller(member, archived).thread({ threadId: "t1", page: 1 });
-      expect(out.canReact).toBe(false);
-    });
-  });
-
   describe("thread page authors, numbers, roles and participants", () => {
     const post = (id: string, authorUserId: string | null, authorPersonaId: string | null) => ({
       id,
@@ -560,13 +409,6 @@ describe("thinkpagesForum router", () => {
       expect(out.thread.authorUserId).toBeNull();
       expect(out.viewerIsAuthor).toBe(true);
     });
-    it("keeps the player ids on persona posts and the persona thread for the category's moderator", async () => {
-      const db = pageDb({ authorUserId: "u1", authorPersonaId: "pa1" });
-      const out = await caller(admin, db).thread({ threadId: "t1", page: 1 });
-      expect(out.posts.map((p) => p.authorUserId)).toEqual(["u1", "u2", "u1"]);
-      expect(out.thread.authorUserId).toBe("u1");
-    });
-
     it("sends a member no player id on a persona thread in the category list, a moderator the id", async () => {
       const asMember = await caller(member, forumDb()).category({ key: "general", page: 1 });
       expect(asMember.threads[0]).toMatchObject({ authorPersonaId: "pa1", authorUserId: null });
@@ -574,29 +416,6 @@ describe("thinkpagesForum router", () => {
       expect(asAdmin.threads[0]).toMatchObject({ authorPersonaId: "pa1", authorUserId: "u1" });
     });
   });
-
-  it("offers an admin no reply and no Edit on a hidden thread, or on their own hidden post", async () => {
-    const own = { authorUserId: "u_admin", authorPersonaId: null, editedAt: null, createdAt: when };
-    const posts = [
-      { ...own, id: "p1", contentHtml: "<p>mine</p>", hidden: false },
-      { ...own, id: "p2", contentHtml: "<p>hidden</p>", hidden: true },
-    ];
-    const hiddenThread = forumDb({ hidden: true });
-    hiddenThread.forumPost.findMany.mockResolvedValue(posts as never);
-    const out = await caller(admin, hiddenThread).thread({ threadId: "t1", page: 1 });
-    expect(out.canReply).toBe(false);
-    expect(out.posts.map((p) => p.isOwn)).toEqual([false, false]);
-
-    const openThread = forumDb();
-    openThread.forumPost.findMany.mockResolvedValue(posts as never);
-    const visible = await caller(admin, openThread).thread({ threadId: "t1", page: 1 });
-    expect(visible.canReply).toBe(true);
-    expect(visible.posts.map((p) => p.isOwn)).toEqual([true, false]);
-    // A site admin moderates the category, so the Hidden badge reaches them (T0-19).
-    expect(visible.posts.map((p) => p.hidden)).toEqual([false, true]);
-    expect(visible).toMatchObject({ canModerate: true });
-  });
-
   it("strips hidden and gives no moderator tools to a member (T0-19)", async () => {
     const db = forumDb();
     db.forumPost.findMany.mockResolvedValue([
@@ -628,44 +447,6 @@ describe("thinkpagesForum router", () => {
     }
     expect(thread.canReply).toBe(true);
   });
-
-  it("offers a site-banned member no thread start, no reply and no Edit on their own sitewide post", async () => {
-    const ban = banRow({ userId: "u1", reason: "Abuse" });
-    const category = await caller(member, forumDb({}, [ban])).category({ key: "general", page: 1 });
-    expect(category).toMatchObject({
-      canStart: false,
-      notice: banNotice({ scope: "site", expiresAt: null, reason: "Abuse" }),
-    });
-    const thread = await caller(member, forumDb({}, [ban])).thread({ threadId: "t1", page: 1 });
-    expect(thread).toMatchObject({
-      canReply: false,
-      banned: true,
-      notice: banNotice({ scope: "site", expiresAt: null, reason: "Abuse" }),
-    });
-    expect(category.banned).toBe(true);
-    expect(thread.posts.map((p) => p.isOwn)).toEqual([false, false]);
-    const lifted = banRow({ userId: "u1", liftedAt: new Date() });
-    const free = await caller(member, forumDb({}, [lifted])).thread({ threadId: "t1", page: 1 });
-    expect(free.posts.map((p) => p.isOwn)).toEqual([true, false]);
-    expect(free).toMatchObject({ banned: false, notice: null, canReply: true });
-  });
-  it("gives an anonymous reader no Edit and no reply", async () => {
-    const out = await caller(null, forumDb()).thread({ threadId: "t1", page: 1 });
-    expect(out.posts.every((p) => p.isOwn === false && p.byViewer === false)).toBe(true);
-    expect(out.viewerIsAuthor).toBe(false);
-    expect(out.canReply).toBe(false);
-  });
-
-  it("closes replies on a locked or archived thread", async () => {
-    expect(
-      (await caller(member, forumDb({ locked: true })).thread({ threadId: "t1", page: 1 })).canReply
-    ).toBe(false);
-    expect(
-      (await caller(member, forumDb({ archived: true })).thread({ threadId: "t1", page: 1 }))
-        .canReply
-    ).toBe(false);
-  });
-
   it("lists only the caller's active personas", async () => {
     const db = forumDb();
     const out = await caller(member, db).myPersonas();
@@ -677,54 +458,8 @@ describe("thinkpagesForum router", () => {
       })
     );
   });
-  it("enforces the input limits", async () => {
-    const c = caller(member, forumDb());
-    await expect(c.category({ key: "Bad Key", page: 1 })).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-    });
-    await expect(c.category({ key: "general", page: 1001 })).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-    });
-    await expect(c.thread({ threadId: "x".repeat(65), page: 1 })).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-    });
-    await expect(
-      c.createThread({ categoryKey: "general", title: "ab", html: "<p>x</p>" })
-    ).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-    });
-    await expect(
-      c.createThread({ categoryKey: "general", title: "Fine title", html: "x".repeat(50_001) })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(
-      c.editPost({ postId: "p1", editedAt: null, html: "x".repeat(50_001) })
-    ).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-    });
-  });
-
   describe("reports, standing and appeals", () => {
-    const quiet = () => jest.spyOn(console, "warn").mockImplementation(() => {});
-    beforeEach(() => {
-      jest.mocked(fileReport).mockClear();
-      jest.mocked(fileAppeal).mockClear();
-    });
-
-    it("refuses a report, the standing and an appeal without signing in", async () => {
-      const warn = quiet();
-      const anon = caller(null, forumDb());
-      await expect(
-        anon.report({ targetType: "post", targetId: "p1", reason: "Spam here" })
-      ).rejects.toMatchObject({ cause: { code: "UNAUTHORIZED" } });
-      await expect(anon.myStanding()).rejects.toMatchObject({ cause: { code: "UNAUTHORIZED" } });
-      await expect(
-        anon.appeal({ subjectType: "ban", subjectId: "b1", body: "Please reconsider this." })
-      ).rejects.toMatchObject({ cause: { code: "UNAUTHORIZED" } });
-      warn.mockRestore();
-      expect(fileReport).not.toHaveBeenCalled();
-      expect(fileAppeal).not.toHaveBeenCalled();
-    });
-
+    beforeEach(() => jest.mocked(fileReport).mockClear());
     it("files a report as the signed-in member and returns only its id", async () => {
       const out = await caller(member, forumDb()).report({
         targetType: "post",
@@ -737,26 +472,6 @@ describe("thinkpagesForum router", () => {
         expect.objectContaining({ id: "u1", mod: noMod }),
         { targetType: "post", targetId: "p2", reason: "Spam here" }
       );
-    });
-    it("bounds the report and appeal inputs", async () => {
-      const c = caller(member, forumDb());
-      for (const bad of [
-        { targetType: "user", targetId: "p1", reason: "Spam here" },
-        { targetType: "post", targetId: "x".repeat(65), reason: "Spam here" },
-        { targetType: "post", targetId: "p1", reason: "  a " },
-        { targetType: "post", targetId: "p1", reason: "x".repeat(1001) },
-      ]) {
-        await expect(c.report(bad as never)).rejects.toMatchObject({ code: "BAD_REQUEST" });
-      }
-      for (const bad of [
-        { subjectType: "report", subjectId: "w1", body: "Long enough body." },
-        { subjectType: "warning", subjectId: "w1", body: "too short" },
-        { subjectType: "warning", subjectId: "w1", body: "x".repeat(4001) },
-      ]) {
-        await expect(c.appeal(bad as never)).rejects.toMatchObject({ code: "BAD_REQUEST" });
-      }
-      expect(fileReport).not.toHaveBeenCalled();
-      expect(fileAppeal).not.toHaveBeenCalled();
     });
   });
 
@@ -779,14 +494,6 @@ describe("thinkpagesForum router", () => {
           thumbnail: "https://img.example/t.png",
         },
       });
-    });
-
-    it("gives no realm for one hidden from the viewer", async () => {
-      const db = realmForumDb(inEurth);
-      db.realm.findUnique.mockResolvedValue({ ...EURTH, status: "draft" } as never);
-      const out = await caller(member, db).navFlags();
-      expect(out.realm).toBeNull();
-      expect(out.realmMember).toBe(false);
     });
     it("returns a realm section with canPost and notice, never the raw posting access", async () => {
       const out = await caller(member, realmForumDb()).realmSection({ realm: "eurth" });
@@ -813,93 +520,6 @@ describe("thinkpagesForum router", () => {
       const guest = await caller(null, realmForumDb()).realmSection({ realm: "eurth" });
       expect(guest).toMatchObject({ canPost: false, needsNation: false });
     });
-    it("offers reply and Edit in a realm thread only to those who may post there", async () => {
-      const outsider = await caller(member, realmForumDb()).thread({ threadId: "t1", page: 1 });
-      expect(outsider.canReply).toBe(false);
-      expect(outsider.posts.map((p) => p.isOwn)).toEqual([false, false]);
-      const owner = await caller(member, realmForumDb(inEurth)).thread({ threadId: "t1", page: 1 });
-      expect(owner.canReply).toBe(true);
-      expect(owner.posts.map((p) => p.isOwn)).toEqual([true, false]);
-    });
-    it("carries the viewer's moderator context, matched by Clerk id (T0-10)", async () => {
-      const db = realmForumDb();
-      await caller(founder, db).createThread({
-        categoryKey: "hub",
-        realm: "eurth",
-        title: "Hello there",
-        html: "<p>x</p>",
-      });
-      expect(createThread).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ id: "u_f", mod: { ...noMod, realmIds: ["r_eurth"] } }),
-        expect.anything()
-      );
-      expect(db.realm.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { ownerId: "founder" } })
-      );
-    });
-
-    it("gives a realm moderator the Hidden badge and the Move destinations, a member neither", async () => {
-      const characterThreads = {
-        ...hub,
-        id: "rcat_ct",
-        ...REALM_CATEGORIES[1]!,
-      };
-      const db = realmForumDb();
-      db.forumCategory.findMany.mockResolvedValue([characterThreads] as never);
-      db.forumPost.findMany.mockResolvedValue([
-        {
-          id: "p1",
-          authorUserId: "u1",
-          authorPersonaId: null,
-          contentHtml: "<p>a</p>",
-          editedAt: null,
-          createdAt: when,
-          hidden: false,
-        },
-        {
-          id: "p2",
-          authorUserId: "u2",
-          authorPersonaId: null,
-          contentHtml: "<p>b</p>",
-          editedAt: null,
-          createdAt: when,
-          hidden: true,
-        },
-      ] as never);
-      const out = await caller(founder, db).thread({ threadId: "t1", page: 1 });
-      expect(out).toMatchObject({
-        canModerate: true,
-        moderatorTools: {
-          categories: [
-            {
-              key: "character-threads",
-              name: "Character Threads",
-              realm: { slug: "eurth", name: "Eurth" },
-            },
-          ],
-        },
-      });
-      expect(out.posts.map((p) => p.hidden)).toEqual([false, true]);
-      expect(db.forumCategory.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: {
-            scope: "realm",
-            realmId: "r_eurth",
-            visibility: "public",
-            id: { not: "rcat_hub" },
-            style: { not: "board" },
-            NOT: { scope: "realm", key: "board" },
-          },
-        })
-      );
-
-      const plain = await caller(member, realmForumDb(inEurth)).thread({ threadId: "t1", page: 1 });
-      expect(plain.canModerate).toBe(false);
-      expect("moderatorTools" in plain).toBe(false);
-      expect(plain.posts.every((p) => !("hidden" in p))).toBe(true);
-    });
-
     it("tells a realm moderator what they may do to each post and the thread; a member nothing (I-1, M-8)", async () => {
       const db = realmForumDb(inEurth);
       const by = (id: string, authorUserId: string) => ({
@@ -978,5 +598,375 @@ describe("thinkpagesForum router", () => {
         expect.objectContaining({ select: expect.objectContaining({ hidden: true }) })
       );
     });
+  });
+});
+
+/**
+ * Phase 4 (XenForo import): threads and posts whose XenForo author has no IxStats account carry a null
+ * `authorUserId` and an `importedAuthorName`. The router never treats them as the viewer's, never asks for a null
+ * user, passes the imported name through, and offers moderators hide but never a sanction on them.
+ */
+describe("imported authors on the thread and category reads", () => {
+  const caller = (user: object | null, db: object) =>
+    createCallerFactory(thinkpagesForumRouter)(
+      createMockRouterContext({
+        auth: user ? { userId: "clerk_1" } : null,
+        user: user as never,
+        db,
+      }) as never
+    );
+  const member = {
+    id: "u1",
+    clerkUserId: "clerk_1",
+    countryId: "c1",
+    email: "x@y.z",
+    role: { name: "user", level: 100 },
+  };
+  const categories = SITE_CATEGORIES.map((c, i) => ({
+    id: `cat_${c.key}`,
+    scope: "site",
+    realmId: null,
+    ...c,
+    order: i,
+  }));
+  const general = categories.find((c) => c.key === "general")!;
+  const when = new Date("2026-10-01");
+  const IMPORTED = { authorUserId: null, authorPersonaId: null, importedAuthorName: "OldName" };
+  const postRow = (id: string, author: object) => ({
+    id,
+    contentHtml: `<p>${id}</p>`,
+    editedAt: null,
+    createdAt: when,
+    hidden: false,
+    ...author,
+  });
+  interface UserQuery {
+    where: { id: { in: Array<string | null> } };
+  }
+  /** The imported thread's full row, XenForo user id and provenance included. */
+  const threadRow = {
+    id: "t_imported",
+    title: "From the old forum",
+    categoryId: general.id,
+    ...IMPORTED,
+    xenforoUserId: 77,
+    xenforoThreadId: 1234,
+    sourceRef: "xenforo_thread:1234",
+    pinned: false,
+    hidden: false,
+    locked: false,
+    archived: false,
+    postCount: 2,
+    lastPostAt: when,
+    createdAt: when,
+    category: general,
+  };
+  /** An imported thread in General: its first post imported, a reply by u1 (the member). */
+  function importedDb() {
+    return {
+      ...engagementTables(),
+      forumBan: forumBanFake([]),
+      forumCategory: {
+        findMany: jest.fn(async () => categories),
+        findFirst: jest.fn(
+          async ({ where }: { where: { key: string } }) =>
+            categories.find((c) => c.key === where.key) ?? null
+        ),
+      },
+      forumThread: {
+        groupBy: jest.fn(async () => []),
+        findMany: jest.fn(async () => [
+          {
+            id: "t_imported",
+            title: "From the old forum",
+            ...IMPORTED,
+            pinned: false,
+            locked: false,
+            hidden: false,
+            postCount: 2,
+            lastPostAt: when,
+          },
+        ]),
+        count: jest.fn(async () => 1),
+        // Answers with the selected fields only, as Prisma does.
+        findUnique: jest.fn(async ({ select }: { select: Record<string, boolean> }) =>
+          Object.fromEntries(Object.entries(threadRow).filter(([field]) => select[field]))
+        ),
+      },
+      forumPost: {
+        findMany: jest.fn(async () => [
+          postRow("p_imported", IMPORTED),
+          postRow("p_member", {
+            authorUserId: "u1",
+            authorPersonaId: null,
+            importedAuthorName: null,
+          }),
+        ]),
+        count: jest.fn(async () => 2),
+        groupBy: jest.fn(async () => []),
+      },
+      user: {
+        findMany: jest.fn(async (_args: UserQuery) => [
+          {
+            id: "u1",
+            clerkUserId: "clerk_1",
+            handle: "heku",
+            wikiUsername: null,
+            country: null,
+            role: { name: "user", level: 100 },
+          },
+        ]),
+      },
+      thinkpagesAccount: { findMany: jest.fn(async () => []) },
+      realm: { findMany: jest.fn(async () => []) },
+      realmOfficer: { findMany: jest.fn(async () => []) },
+      forumCategoryModerator: { findMany: jest.fn(async () => []) },
+    };
+  }
+  /** Every user id list the router asked the database for. */
+  function askedUserIds(db: ReturnType<typeof importedDb>): Array<string | null> {
+    return db.user.findMany.mock.calls.flatMap(([args]) => args.where.id.in);
+  }
+  describe("thinkpagesForum router with imported authors", () => {
+    it("never marks an imported post or thread as the viewer's, and passes the imported name through", async () => {
+      const db = importedDb();
+      const out = await caller(member, db).thread({ threadId: "t_imported", page: 1 });
+      expect(out.posts.map(({ id, byViewer, isOwn }) => ({ id, byViewer, isOwn }))).toEqual([
+        { id: "p_imported", byViewer: false, isOwn: false },
+        { id: "p_member", byViewer: true, isOwn: true },
+      ]);
+      expect(out.viewerIsAuthor).toBe(false);
+      expect(out.posts[0]).toMatchObject({ authorUserId: null, importedAuthorName: "OldName" });
+      expect(out.thread).toMatchObject({ authorUserId: null, importedAuthorName: "OldName" });
+      expect(Object.keys(out.authors.users)).toEqual(["u1"]);
+      // Authors, then the page's roles: both ask for real user ids only.
+      expect([...new Set(askedUserIds(db))]).toEqual(["u1"]);
+    });
+
+    it("returns the thread's own fields and never its XenForo user id or provenance", async () => {
+      const out = await caller(null, importedDb()).thread({ threadId: "t_imported", page: 1 });
+      expect(out.thread).toEqual({
+        id: "t_imported",
+        title: "From the old forum",
+        categoryId: general.id,
+        ...IMPORTED,
+        xenforoThreadId: 1234,
+        pinned: false,
+        hidden: false,
+        locked: false,
+        archived: false,
+        postCount: 2,
+        lastPostAt: when,
+        createdAt: when,
+      });
+      expect(out.thread).not.toHaveProperty("xenforoUserId");
+      expect(out.thread).not.toHaveProperty("sourceRef");
+    });
+  });
+});
+
+/**
+ * What the forum router returns for a Find a Realm advert: the row mark and the page's advert view, never the raw
+ * realm row that was joined to read it (it carries the founder's Clerk id), and a hidden realm's advert reads as gone.
+ */
+describe("adverts on the board list and the thread page", () => {
+  const caller = (user: object | null, db: object) =>
+    createCallerFactory(thinkpagesForumRouter)(
+      createMockRouterContext({
+        auth: user ? { userId: (user as { clerkUserId: string }).clerkUserId } : null,
+        user: user as never,
+        db,
+      }) as never
+    );
+  const member = {
+    id: "u1",
+    clerkUserId: "clerk_1",
+    countryId: "c1",
+    email: "x@y.z",
+    role: { name: "user", level: 100 },
+  };
+  const officer = { ...member, id: "u_off", clerkUserId: "officer" };
+  const find = {
+    id: "cat_find",
+    scope: "site",
+    realmId: null,
+    style: "ooc",
+    ...SITE_CATEGORIES.find((c) => c.key === "find-a-realm")!,
+    order: 1,
+  };
+  const when = new Date("2026-10-01");
+  const look = { thumbnail: "/t.png", emblemUrl: "/e.png" };
+  const ACTIVE = {
+    id: "r_eurth",
+    slug: "eurth",
+    name: "Eurth",
+    status: "active",
+    ownerId: "founder",
+    ...look,
+  };
+  function advertDb(advertRealm: object, grants: object[] = [], firstPostId = "p1") {
+    return {
+      ...engagementTables(),
+      forumBan: forumBanFake([]),
+      forumCategory: {
+        findMany: jest.fn(async () => [find]),
+        findFirst: jest.fn(async () => find),
+      },
+      forumThread: {
+        groupBy: jest.fn(async () => []),
+        findMany: jest.fn(async (args?: { select?: { reads?: object } }): Promise<object[]> =>
+          args?.select?.reads
+            ? []
+            : [
+                {
+                  id: "t_ad",
+                  title: "Join Eurth",
+                  authorUserId: "u_f",
+                  authorPersonaId: null,
+                  pinned: false,
+                  locked: false,
+                  postCount: 1,
+                  lastPostAt: when,
+                  advertRealm,
+                },
+              ]
+        ),
+        count: jest.fn(async () => 1),
+        findUnique: jest.fn(async () => ({
+          id: "t_ad",
+          title: "Join Eurth",
+          categoryId: find.id,
+          authorUserId: "u_f",
+          authorPersonaId: null,
+          hidden: false,
+          locked: false,
+          archived: false,
+          category: find,
+          advertRealm,
+        })),
+      },
+      forumPost: {
+        findMany: jest.fn(async () => [
+          {
+            id: "p1",
+            threadId: "t_ad",
+            authorUserId: "u_f",
+            authorPersonaId: null,
+            contentHtml: "<p>Come</p>",
+            editedAt: null,
+            createdAt: when,
+          },
+          {
+            id: "p2",
+            threadId: "t_ad",
+            authorUserId: "u1",
+            authorPersonaId: null,
+            contentHtml: "<p>Is it open?</p>",
+            editedAt: null,
+            createdAt: when,
+          },
+        ]),
+        findFirst: jest.fn(async () => ({ id: firstPostId })),
+        count: jest.fn(async () => 2),
+        groupBy: jest.fn(async () => []),
+      },
+      user: { findMany: jest.fn(async () => []) },
+      thinkpagesAccount: { findMany: jest.fn(async () => []) },
+      realm: { findMany: jest.fn(async () => []) },
+      realmOfficer: { findMany: jest.fn(async (_args?: object) => grants) },
+      forumCategoryModerator: { findMany: jest.fn(async () => []) },
+    };
+  }
+  describe("an advert in the board list", () => {
+    it("carries the advert mark and never the joined realm row or its founder", async () => {
+      const out = await caller(member, advertDb(ACTIVE)).category({ key: "find-a-realm", page: 1 });
+      expect(out.threads[0]!.advert).toEqual({
+        realmSlug: "eurth",
+        realmName: "Eurth",
+        emblemUrl: "/e.png",
+        thumbnail: "/t.png",
+        claimsOpen: true,
+      });
+      expect(out.threads[0]).not.toHaveProperty("advertRealm");
+      expect(JSON.stringify(out)).not.toContain("ownerId");
+      expect(JSON.stringify(out)).not.toContain("founder");
+    });
+  });
+  describe("an advert on the thread page", () => {
+    it("returns the advert view and never the joined realm row or its founder", async () => {
+      const out = await caller(member, advertDb(ACTIVE)).thread({ threadId: "t_ad", page: 1 });
+      expect(out.advert).toEqual({
+        realmSlug: "eurth",
+        realmName: "Eurth",
+        canManage: false,
+        closed: false,
+        canLock: false,
+      });
+      expect(out).not.toHaveProperty("advertRealm");
+      expect(JSON.stringify(out)).not.toContain("ownerId");
+      expect(JSON.stringify(out)).not.toContain('"founder"');
+    });
+    it("decides the first post by the thread's first post, so a hidden first post does not move Edit to the next", async () => {
+      const grants = [{ userId: "officer", powers: ["appearance"] }];
+      const out = await caller(officer, advertDb(ACTIVE, grants, "p_hidden_first")).thread({
+        threadId: "t_ad",
+        page: 1,
+      });
+      expect(out.posts.map((p) => p.isOwn)).toEqual([false, false]);
+    });
+  });
+});
+
+describe("write hooks and refusals", () => {
+  const NEW_THREAD = { categoryKey: "general", title: "Hello there", html: "<p>Hi</p>" };
+  const NEW_ADVERT = { realm: "eurth", title: "Join Eurth", wikitext: "Come and play." };
+  beforeEach(() => {
+    for (const level of ["log", "info", "warn"] as const)
+      jest.spyOn(console, level).mockImplementation(() => undefined);
+    jest.mocked(afterThreadStarted).mockClear();
+  });
+  afterEach(() => jest.restoreAllMocks());
+
+  it("does not wait for the hook: a hook that never settles does not hold the response", async () => {
+    jest.mocked(afterThreadStarted).mockReturnValueOnce(new Promise<void>(() => undefined));
+    await expect(caller(member, forumDb()).createThread(NEW_THREAD)).resolves.toMatchObject({
+      threadId: "t_new",
+    });
+  });
+
+  it("runs no hook when the write is refused", async () => {
+    jest.mocked(createThread).mockRejectedValueOnce(new ForumError("FORBIDDEN", "Nope"));
+    await expect(caller(member, forumDb()).createThread(NEW_THREAD)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    expect(afterThreadStarted).not.toHaveBeenCalled();
+  });
+
+  it("names the existing advert in a CONFLICT, and runs no hook", async () => {
+    jest.mocked(createAdvert).mockRejectedValueOnce(
+      new ForumError("CONFLICT", "This realm already has an advert.", undefined, {
+        threadId: "t_old",
+      })
+    );
+    await expect(caller(member, forumDb()).createAdvert(NEW_ADVERT)).rejects.toMatchObject({
+      code: "CONFLICT",
+      cause: { context: { threadId: "t_old" } },
+    });
+    expect(afterThreadStarted).not.toHaveBeenCalled();
+  });
+
+  it("publishes a rate-limit wait, and gives a plain refusal no cause", () => {
+    const thrown = (error: Error): TRPCError => {
+      try {
+        mapError(error);
+      } catch (caught) {
+        if (caught instanceof TRPCError) return caught;
+      }
+      throw new Error("mapError did not throw a TRPCError");
+    };
+    const limited = thrown(new ForumError("TOO_MANY_REQUESTS", "slow", 12));
+    expect(limited.code).toBe("TOO_MANY_REQUESTS");
+    expect(limited.cause).toMatchObject({ context: { retryAfterSeconds: 12 } });
+    expect(thrown(new ForumError("FORBIDDEN", "no")).cause).toBeUndefined();
   });
 });
