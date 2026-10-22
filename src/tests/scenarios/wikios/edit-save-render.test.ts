@@ -17,6 +17,12 @@
  *   that revision's own text and title; byte deltas are the history's; an unknown reference is null.
  * - purge-service.test.ts: purgeArticle nulls htmlSyncedAt without touching the text, evicts the title caches and
  *   queues exactly one render.
+ * - revision-placeholder.test.ts, xml/deleted-revision-read.test.ts: a revision imported without its text (a synced one
+ *   holding "", or "" with a size) and one whose text an administrator deleted read as unknown (null), never as an empty
+ *   page; a native revision that really is empty reads as ""; a parked revision says so; a revision of another wiki is
+ *   no IxWiki revision.
+ * - wikios-edit-conflict.test.ts, wikios-get-wikitext.test.ts: a save under a lower-case spelling lands on the canonical
+ *   title; the editor gets the head's every reference with the text, and the text alone when the head cannot be read.
  */
 jest.mock("~/server/db", () => {
   const fake = jest.requireActual("~/tests/helpers/fake-wiki-db").createFakeWikiDb({ prisma: true });
@@ -279,5 +285,41 @@ describe("a member edits Caphiria and readers see the new page", () => {
     expect(jest.mocked(renderArticleViaMediaWiki).mock.calls).toEqual([[V1, "Caphiria"]]);
     expect(page().htmlSyncedAt).toBeInstanceOf(Date);
     expect(revisionsOf(page().id)).toHaveLength(1);
+  });
+
+  it("saves under the canonical title, and hands the editor every reference of the head with its text", async () => {
+    // the head is stamped with MediaWiki's id (5001); a native save adds its row id as the newest head
+    const loaded = await reading().getWikitext({ title: "Caphiria" });
+    expect(loaded).toMatchObject({ revisionRef: "5001", revisionRefs: expect.arrayContaining([r1, "5001"]) });
+
+    await editing().saveWikitext({ title: "caphiria", wikitext: V2, baseRevisionRef: "5001" });
+    expect(tables.wikiArticle.rows.map((row) => row.title)).toEqual(["Caphiria"]);
+
+    // a head that cannot be read still leaves the editor the text, with no reference to save against
+    const down = jest.spyOn(tables.wikiRevision, "findMany").mockRejectedValueOnce(new Error("db down"));
+    await expect(reading().getWikitext({ title: "Caphiria" })).resolves.toMatchObject({ wikitext: V2, revisionRef: null, revisionRefs: [] });
+    down.mockRestore();
+  });
+
+  it("reads a revision whose text is unknown or hidden as unknown, never as an empty page", async () => {
+    const id = page().id;
+    const at = (day: number) => new Date(`2026-09-0${day}T00:00:00Z`);
+    tables.wikiRevision.insert({ articleId: id, mwRevId: 4001, wikitext: "", byteSize: 4096, createdAt: at(2) }); // imported placeholder
+    tables.wikiRevision.insert({ articleId: id, mwRevId: 4002, wikitext: "", byteSize: 0, createdAt: at(3) }); // synced, empty: unknown
+    tables.wikiRevision.insert({ articleId: id, mwRevId: 4003, wikitext: "", byteSize: 0, textDeleted: true, createdAt: at(4) });
+    const blank = tables.wikiRevision.insert({ articleId: id, wikitext: "", byteSize: 0, createdAt: at(5) }); // native, really empty
+    tables.wikiRevision.insert({ articleId: id, mwRevId: 9001, wikitext: "conflicting text", byteSize: 16, parked: true, createdAt: at(6) });
+
+    await expect(getRevisionWikitext("4001")).resolves.toMatchObject({ wikitext: null, title: "Caphiria" });
+    await expect(getRevisionWikitext("4002")).resolves.toMatchObject({ wikitext: null });
+    await expect(getRevisionWikitext("4003")).resolves.toMatchObject({ wikitext: null });
+    await expect(getRevisionWikitext(blank.id)).resolves.toMatchObject({ wikitext: "", parked: false });
+    await expect(getRevisionWikitext("9001")).resolves.toMatchObject({ wikitext: "conflicting text", parked: true });
+
+    // a revision of another wiki is no IxWiki revision
+    const other = tables.wikiArticle.insert({ title: "Caphiria", slug: "caphiria", source: "iiwiki", wikitext: "x" });
+    const foreign = tables.wikiRevision.insert({ articleId: other.id, source: "iiwiki", mwRevId: 7001, wikitext: "x", byteSize: 1 });
+    await expect(getRevisionWikitext("7001")).resolves.toBeNull();
+    await expect(getRevisionWikitext(foreign.id)).resolves.toBeNull();
   });
 });
