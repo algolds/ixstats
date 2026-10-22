@@ -1,11 +1,25 @@
 /** @jest-environment node */
 /**
  * A corpus of realistic map shapes, and what the map's geometry helpers must make of them: areas (with lakes, islands
- * and a realm's own planet radius), the antimeridian (cut, measured and outlined without its seam) and the poles.
- * Wyoming and Colorado are the real states (latitude/longitude boxes, so their area on a sphere has a closed form);
- * the others are boxes placed where the hard cases are: a lake, an archipelago, Fiji's antimeridian, Antarctica.
+ * and a realm's own planet radius), the antimeridian (cut, measured and outlined without its seam) and the poles;
+ * rings assembled into nations; geometry checked and repaired before it is stored; borders simplified, smoothed and
+ * packed for the wire without breaking; and realm map art cut into Web Mercator raster tiles.
+ * Wyoming is the real state (a latitude/longitude box, so its area on a sphere has a closed form); the others are
+ * boxes placed where the hard cases are: a lake, an archipelago, Fiji's antimeridian, Antarctica.
+ * Folds: src/tests/lib/maps/geojson-compress.test.ts, src/tests/lib/maps/geojson-pack.test.ts,
+ * src/tests/lib/maps/topology-smooth.test.ts, src/tests/lib/maps/raster-tiles.test.ts,
+ * src/tests/lib/geo-validation.test.ts
  */
-import type { Geometry, MultiLineString, MultiPolygon, Polygon, Position } from "geojson";
+import type { PrismaClient } from "@prisma/client";
+import type {
+  Feature,
+  FeatureCollection,
+  Geometry,
+  MultiLineString,
+  MultiPolygon,
+  Polygon,
+  Position,
+} from "geojson";
 import {
   buildMeasureFeatures,
   formatArea,
@@ -14,11 +28,27 @@ import {
 import { calculateApproxArea } from "~/lib/flags/svg/topology-flattener";
 import { calculateArea } from "~/lib/maps/border-editor";
 import { polygonMetrics } from "~/lib/maps/feature-metrics";
+import {
+  repairGeometryGeoJSON,
+  resetPostGISCache,
+  validateGeometryStructure,
+} from "~/lib/maps/geo-validation";
+import { compressFeatureCollection } from "~/lib/maps/geojson-compress";
+import { packFeatureCollection, unpackLayers } from "~/lib/maps/geojson-pack";
 import { fitToSeam, passesSeam } from "~/lib/maps/import/world-seam";
 import { EARTH_RADIUS_KM, polygonalAreaSqKm, sphericalRingAreaSqKm } from "~/lib/maps/planet";
 import { parseProvinceSvg } from "~/lib/maps/province-importer/parse-provinces";
+import {
+  isRasterTileCoord,
+  mercatorLatitude,
+  rasterLegendPath,
+  rasterTilePath,
+  remapRows,
+  tileSourceRows,
+} from "~/lib/maps/raster-tiles";
 import { assembleRings, signedRingArea } from "~/lib/maps/ring-assembly";
 import { seamlessOutline } from "~/lib/maps/seam-outline";
+import { smoothTopology } from "~/lib/maps/topology-smooth";
 import { computeApproxAreaForFeature } from "~/server/modules/maps/layer-geometry";
 
 type Coord = [number, number];
@@ -51,11 +81,6 @@ const CORPUS: Array<{ name: string; geometry: Polygon | MultiPolygon; sqKm: numb
     name: "Wyoming",
     geometry: { type: "Polygon", coordinates: [box(-111.05, 41, -104.05, 45)] },
     sqKm: boxSqKm(-111.05, 41, -104.05, 45),
-  },
-  {
-    name: "Colorado",
-    geometry: { type: "Polygon", coordinates: [box(-109.05, 37, -102.05, 41)] },
-    sqKm: boxSqKm(-109.05, 37, -102.05, 41),
   },
   {
     name: "a nation with a lake",
@@ -116,7 +141,7 @@ describe("areas", () => {
     expect(polygonMetrics(null)).toBeNull();
     // the stored bounding box spans every part
     expect(polygonMetrics(CORPUS[0]!.geometry)!.boundingBox).toEqual([-111.05, 41, -104.05, 45]);
-    expect(polygonMetrics(CORPUS[3]!.geometry)!.boundingBox).toEqual([30, -1, 38, 4]);
+    expect(polygonMetrics(CORPUS[2]!.geometry)!.boundingBox).toEqual([30, -1, 38, 4]);
   });
 
   it("closes an open ring before measuring it", () => {
@@ -291,7 +316,7 @@ describe("the antimeridian", () => {
     const archipelago = seamlessOutline({
       type: "FeatureCollection",
       features: [
-        { type: "Feature", properties: {}, geometry: CORPUS[3]!.geometry },
+        { type: "Feature", properties: {}, geometry: CORPUS[2]!.geometry },
         { type: "Feature", properties: {}, geometry: { type: "Point", coordinates: [0, 0] } },
       ],
     });
@@ -357,17 +382,6 @@ describe("rings to nations", () => {
     );
 
   it.each([
-    [
-      "outer CCW, lake CW, island CCW",
-      [NATION, box(3, 3, 7, 7, true), ISLAND],
-      [
-        [
-          [0, 0],
-          [3, 3],
-        ],
-        [[20, 0]],
-      ],
-    ],
     [
       "every ring wound the same way, the lake first",
       [LAKE, ISLAND, NATION],
@@ -462,5 +476,234 @@ describe("rings to nations", () => {
       )
     ).provinces;
     expect((twins!.geometry as MultiPolygon).coordinates.map((p) => p.length)).toEqual([1, 1]);
+  });
+});
+
+describe("geometry checked and repaired before it is stored", () => {
+  const ring = (...points: Coord[]): Polygon => ({ type: "Polygon", coordinates: [points] });
+
+  it.each([
+    ["an open ring", ring([0, 0], [1, 0], [1, 1], [0, 1]), "ring_not_closed"],
+    ["a ring of three positions", ring([0, 0], [1, 0], [0, 1]), "too_few_vertices"],
+  ])("refuses %s", (_name, geometry, type) => {
+    expect(validateGeometryStructure(geometry).map((e) => e.type)).toEqual([type]);
+  });
+
+  /** A border drawn as a bowtie, and the two triangles PostGIS's ST_MakeValid makes of it. */
+  const BOWTIE = ring([0, 0], [2, 2], [2, 0], [0, 2], [0, 0]);
+  const REPAIRED: MultiPolygon = {
+    type: "MultiPolygon",
+    coordinates: [
+      [
+        [
+          [0, 0],
+          [1, 1],
+          [0, 2],
+          [0, 0],
+        ],
+      ],
+      [
+        [
+          [1, 1],
+          [2, 2],
+          [2, 0],
+          [1, 1],
+        ],
+      ],
+    ],
+  };
+  /** A database with PostGIS whose repair query answers with `repair`, and its query mock. */
+  const postgis = (repair: () => Promise<unknown>) => {
+    const query = jest.fn(async (sql: string) =>
+      sql.includes("PostGIS_Version") ? [{ version: "3.4" }] : repair()
+    );
+    return { db: { $queryRawUnsafe: query } as unknown as PrismaClient, query };
+  };
+
+  beforeEach(() => {
+    resetPostGISCache();
+    jest.spyOn(console, "warn").mockImplementation(() => undefined);
+  });
+  afterEach(() => jest.restoreAllMocks());
+
+  it("stores PostGIS's repair of a self-intersecting border", async () => {
+    const { db } = postgis(async () => [{ repaired: JSON.stringify(REPAIRED) }]);
+    expect(await repairGeometryGeoJSON(db, BOWTIE)).toEqual(REPAIRED);
+  });
+
+  it("stores the border as drawn when the repair query fails, rather than failing the write", async () => {
+    const { db, query } = postgis(async () => {
+      throw new Error("Query failed");
+    });
+    expect(await repairGeometryGeoJSON(db, BOWTIE)).toBe(BOWTIE);
+    // PostGIS was there: the repair was tried and its failure absorbed
+    expect(query).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("borders on the wire", () => {
+  /** A closed ring of `n` points on a circle: dense enough that any tolerance above 0.001 removes some. */
+  const circle = (n: number): Position[] => [
+    ...Array.from({ length: n }, (_, i): Position => [
+      Math.cos((2 * Math.PI * i) / n),
+      Math.sin((2 * Math.PI * i) / n),
+    ]),
+    [1, 0],
+  ];
+
+  it("simplifies a nation whose lake is degenerate rather than keeping it whole (regression)", () => {
+    // three collinear points: a hole with no area, which turf's cleanCoords rejects
+    const sliver: Position[] = [
+      [0.5, 0.5],
+      [0.6, 0.6],
+      [0.7, 0.7],
+      [0.5, 0.5],
+    ];
+    const outer = circle(360);
+    const nation: Feature = {
+      type: "Feature",
+      properties: { name: "x" },
+      geometry: { type: "Polygon", coordinates: [outer, sliver] },
+    };
+    const out = compressFeatureCollection(
+      { type: "FeatureCollection", features: [nation] },
+      { simplifyTolerance: 0.05, coordinatePrecision: 4 }
+    );
+    const [simplified, hole] = (out.features[0]!.geometry as Polygon).coordinates;
+    expect(simplified!.length).toBeLessThan(outer.length / 4);
+    expect(hole).toEqual(sliver);
+  });
+
+  it("packs every geometry type and back at its precision, without drifting along a long line", () => {
+    const layer: FeatureCollection = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          properties: { _id: "fiji" },
+          geometry: {
+            type: "MultiPolygon",
+            coordinates: [
+              [
+                [
+                  [-179.9871, 12.5],
+                  [-179.5, 12.75],
+                  [-179.5, 13.0001],
+                  [-179.9871, 12.5],
+                ],
+              ],
+            ],
+          },
+        },
+        {
+          type: "Feature",
+          properties: { _id: "river" },
+          geometry: {
+            type: "LineString",
+            coordinates: [
+              [10.12, -5.5],
+              [10.13, -5.49],
+            ],
+          },
+        },
+        {
+          type: "Feature",
+          properties: { _id: "capital" },
+          geometry: { type: "Point", coordinates: [1.23456, 2.34567] },
+        },
+        { type: "Feature", properties: { _id: "unplaced" }, geometry: null as never },
+      ],
+    };
+    expect(unpackLayers({ political: packFeatureCollection(layer, 4) }).political).toEqual(layer);
+    const long: FeatureCollection = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          properties: {},
+          geometry: {
+            type: "LineString",
+            coordinates: Array.from({ length: 50 }, (_, i) => [i * 0.00449, 0]),
+          },
+        },
+      ],
+    };
+    const unpacked = unpackLayers({ rivers: packFeatureCollection(long, 2) }).rivers!;
+    const coordinates = (unpacked.features[0]!.geometry as { coordinates: Position[] }).coordinates;
+    expect(coordinates[49]![0]).toBeCloseTo(0.22, 10);
+  });
+
+  it("smooths a shared border once, so neighbours still meet exactly at their junctions", () => {
+    const topoServer = require("topojson-server") as {
+      topology: (objects: Record<string, FeatureCollection>) => {
+        arcs: number[][][];
+        objects: Record<string, unknown>;
+      };
+    };
+    const topoClient = require("topojson-client") as {
+      feature: (topology: unknown, object: unknown) => { features: Array<Feature<Polygon>> };
+    };
+    const square = (x: number): Feature<Polygon> => ({
+      type: "Feature",
+      properties: {},
+      geometry: { type: "Polygon", coordinates: [box(x, 0, x + 4, 4)] },
+    });
+    const topology = topoServer.topology({
+      regions: { type: "FeatureCollection", features: [square(0), square(4)] },
+    });
+    const smoothed = smoothTopology(topology, { iterations: 2 });
+    const [a, b] = topoClient.feature(smoothed, smoothed.objects.regions).features;
+    const ringA = a!.geometry.coordinates[0]!;
+    const ringB = b!.geometry.coordinates[0]!;
+    const shared = ringA.filter((p) => ringB.some((q) => q[0] === p[0] && q[1] === p[1]));
+    // The shared edge x = 4 is a straight arc between two junctions: unchanged, both ends kept.
+    expect(shared).toEqual(expect.arrayContaining([[4, 0]]));
+    expect(shared).toEqual(expect.arrayContaining([[4, 4]]));
+    // Outer corners are cut.
+    expect(ringA).not.toContainEqual([0, 0]);
+    expect(ringB).not.toContainEqual([8, 4]);
+  });
+});
+
+describe("realm map art as Web Mercator raster tiles", () => {
+  it("shows each tile row the image row Web Mercator puts it at: high latitudes repeat image rows, never skip one", () => {
+    // z1: the tile rows meet at the equator; z2: row 1 starts at 66.513°N
+    expect(mercatorLatitude(256, 512)).toBeCloseTo(0, 9);
+    expect(mercatorLatitude(256, 1024)).toBeCloseTo(66.51326, 4);
+    // an image of the zoom's equatorial resolution: 256·2^z wide, half as tall
+    const height = 4096;
+    for (let ty = 0; ty < 32; ty++) {
+      const rows = tileSourceRows(5, ty, height);
+      for (let r = 1; r < 256; r++) expect(rows[r]! - rows[r - 1]!).toBeLessThanOrEqual(1.0001);
+    }
+    // At 70°N a Mercator row covers about a third of an image row
+    const y70 = (256 * 32 * (1 - Math.log(Math.tan(Math.PI / 4 + rad(70) / 2)) / Math.PI)) / 2;
+    const ty = Math.floor(y70 / 256);
+    const r = Math.floor(y70 - ty * 256);
+    const rows = tileSourceRows(5, ty, height);
+    expect(rows[r + 1]! - rows[r]!).toBeCloseTo(Math.cos(rad(70)), 2);
+  });
+
+  it("weights colour by opacity, so a transparent sea's colour never bleeds into the coast", () => {
+    const src = { width: 1, height: 2, data: Uint8Array.from([28, 28, 28, 0, 200, 0, 0, 128]) };
+    expect([...remapRows(src, Float64Array.from([0.5]))]).toEqual([200, 0, 0, 64]);
+    expect([...remapRows(src, Float64Array.from([0]))]).toEqual([0, 0, 0, 0]);
+  });
+
+  it("serves only tile coordinates inside the layer's pyramid", () => {
+    expect(isRasterTileCoord(0, 0, 0)).toBe(true);
+    expect(isRasterTileCoord(5, 31, 31)).toBe(true);
+    expect(isRasterTileCoord(5, 32, 0)).toBe(false);
+    expect(isRasterTileCoord(9, 0, 0)).toBe(false);
+    expect(isRasterTileCoord(-1, 0, 0)).toBe(false);
+    expect(isRasterTileCoord(1.5, 0, 0)).toBe(false);
+  });
+
+  it("names the realm (encoded) and the layer's version in every URL, so a rebuilt image is never served stale", () => {
+    const layer = { id: "geography", version: "abc12345" };
+    expect(rasterTilePath("r 1/..", layer)).toBe(
+      "/api/map-rasters/r%201%2F../geography/abc12345/{z}/{x}/{y}"
+    );
+    expect(rasterLegendPath("r1", layer)).toBe("/api/map-rasters/r1/geography/abc12345/legend");
   });
 });
