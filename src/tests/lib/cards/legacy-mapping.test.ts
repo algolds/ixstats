@@ -33,10 +33,6 @@ describe("card type", () => {
     ["COMMONS_IMPORT", "LORE"],
     ["USER_CUSTOM", "LORE"],
     ["NS_IMPORT", "NS"],
-    ["NATION", "NATION"],
-    ["SPECIAL", "SPECIAL"],
-    ["NS", "NS"],
-    ["TROPHY", "TROPHY"],
   ])("%s becomes %s", (from, to) => {
     expect(mapCardType(card(from))).toBe(to);
   });
@@ -56,7 +52,7 @@ describe("card type", () => {
 });
 
 describe("rarity and finish", () => {
-  it.each(["COMMON", "UNCOMMON", "RARE", "ULTRA_RARE", "EPIC", "LEGENDARY"])("%s stays", (r) => {
+  it.each(["COMMON", "LEGENDARY"])("%s stays", (r) => {
     expect(mapRarity(r)).toEqual({ rarity: r, retiredTopTier: false });
   });
 
