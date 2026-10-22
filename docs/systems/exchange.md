@@ -25,7 +25,7 @@ same wallet.
 | Logic | `src/lib/exchange/`: `companies.ts`, `contracts.ts` (B2B and B2G), `shares.ts`, `dividends.ts`, `ownership.ts` (holders, company lock, exact pro rata split), `sectors.ts`, `decisions.ts`, `expiry.ts`, `market.ts`, `notify.ts`, `queries.ts`, `guards.ts`, `amounts.ts` (pure, shared with the UI) |
 | Jobs | `exchange-market` (`7 */6 * * *`, `market.ts` `runExchangeMarketTick`) and `exchange-contract-expiry` (`*/15 * * * *`, `expiry.ts` `expireLapsedContracts`) in `src/server/cron/jobs.ts`; both off unless named in `CRON_ENABLED_JOBS` |
 | Schema | `prisma/schema/exchange.prisma` |
-| Tests | `src/tests/lib/vault/exchange-wallet-safety.test.ts`, `src/tests/lib/exchange/` (companies and contracts, shares and dividends, sectors and decisions, tenders and expiry, notifications), `src/tests/server/api/routers/exchange-router.test.ts` (in-memory database: `src/tests/helpers/fake-exchange-db.ts`) |
+| Tests | `src/tests/lib/vault/exchange-wallet-safety.test.ts`, `src/tests/lib/exchange/` (companies and contracts, shares and dividends, sectors and decisions, tenders and expiry; in-memory database: `src/tests/helpers/fake-exchange-db.ts`), the router's auth gates and input bounds in `src/tests/server/api/routers/money-router-gates.test.ts` |
 
 ## Money rules
 
