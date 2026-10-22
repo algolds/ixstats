@@ -4,20 +4,19 @@ import type { ArtCredit } from "~/lib/cards/face/art-credit";
 
 interface ArtCreditLineProps {
   credit: ArtCredit;
-  /** Words before the credit, such as "Art:" where nothing else says what it credits. */
-  label?: string;
-  className?: string;
+  /** Words before the credit, such as "Art:", since the caption it sits in credits more than the art. */
+  label: string;
 }
 
 /**
- * The art credit on the card back and in the sheet, linked to the art's source when it has one; the licence follows
+ * The art credit in the sheet's credits caption, linked to the art's source when it has one; the licence follows
  * unless the line already names it.
  */
-export function ArtCreditLine({ credit, label, className }: ArtCreditLineProps) {
+export function ArtCreditLine({ credit, label }: ArtCreditLineProps) {
   const licence = credit.licence && !credit.line.includes(credit.licence) ? credit.licence : null;
   return (
-    <p className={cn("text-label-secondary", className)}>
-      {label && `${label} `}
+    <span>
+      {`${label} `}
       {credit.sourceUrl ? (
         <a
           href={credit.sourceUrl}
@@ -31,6 +30,6 @@ export function ArtCreditLine({ credit, label, className }: ArtCreditLineProps) 
         credit.line
       )}
       {licence && ` · ${licence}`}
-    </p>
+    </span>
   );
 }

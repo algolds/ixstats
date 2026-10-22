@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Link as LinkIcon, LogIn } from "iconoir-react";
@@ -9,9 +9,11 @@ import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "~/components/ui/sheet";
+import { Tooltip } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils/cn";
 import { createUrl } from "~/lib/utils/url-utils";
 import { withBasePath } from "~/lib/base-path";
+import { copiesBestFirst, pickedCopy } from "~/lib/cards/face/copy-pick";
 import { CARD_FACE_WIDTH } from "~/lib/cards/face/face-size";
 import { RARITY_LABEL } from "~/lib/cards/face/labels";
 import { cardSheetHref, encodeSheetFrom, type SheetFrom } from "~/lib/cards/face/sheet-link";
@@ -140,9 +142,15 @@ function SheetBody({ sheet }: { sheet: CardSheetData }) {
   const hero = useRef<HTMLDivElement>(null);
   // Null until the first turn, so the status line stays quiet when the sheet opens.
   const [side, setSide] = useState<Side | null>(null);
+  // Null picks the best copy, also once the picked one is gone.
+  const [pickedId, setPickedId] = useState<string | null>(null);
   const [showcasing, setShowcasing] = useState<string[] | null>(null);
   const reduce = useFacetReducedMotion();
-  const { face, card } = sheet;
+  const { card } = sheet;
+  const held = useMemo(() => copiesBestFirst(sheet.copies), [sheet.copies]);
+  const picked = pickedCopy(held, pickedId);
+  // The big card is the picked copy; without one, the card itself, which has no back to turn to.
+  const face = picked?.copy.face ?? sheet.face;
   const flipped = side === "back";
   // Turning to the back is a reveal (its provenance), so it gets the pack reveal's feedback for its rarity.
   const flip = useCallback(() => {
@@ -166,38 +174,34 @@ function SheetBody({ sheet }: { sheet: CardSheetData }) {
   };
 
   return (
-    // grid-cols-1 lets the phone's one column shrink below the card's 288 px. The bottom sheet's close button sits
-    // over the column's top-right corner, so on a phone the card starts below it (pt-8); beside the details it clears.
+    // grid-cols-1 lets the phone's one column shrink below the card's 288 px. The bottom sheet's close button, and the
+    // header's icon buttons beside it, sit over the column's top-right corner, so on a phone the card starts below
+    // them (pt-8); beside the details it clears them.
     <div className="grid grid-cols-1 gap-6 md:grid-cols-[auto_1fr]">
       <div
         ref={hero}
         role="group"
         tabIndex={-1}
-        aria-label="The card. Press Space or F to turn it over."
+        aria-label={picked ? "The card. Press Space or F to turn it over." : "The card"}
         className="flex flex-col items-center gap-3 pt-8 outline-none md:sticky md:top-0 md:self-start md:pt-0"
       >
         <CardFlip
           face={face}
-          flipped={flipped}
-          onFlip={flip}
-          back={
-            <CardBackProvenance
-              face={face}
-              copy={sheet.copies[0] ?? null}
-              artCredit={card.artCredit}
-              ns={card.ns}
-            />
+          turn={
+            picked && {
+              back: <CardBackProvenance face={face} facts={picked.facts} copy={picked.copy} />,
+              flipped,
+              onFlip: flip,
+            }
           }
         />
-        <Button variant="secondary" size="sm" onClick={flip}>
-          {flipped ? "Show the front" : "Show the back"}
-        </Button>
         <p role="status" className="sr-only">
           {side ? SIDE_SHOWN[side] : ""}
         </p>
       </div>
       <div className="min-w-0 space-y-6">
-        <header className="space-y-1 pr-10">
+        {/* The title clears the corner's buttons on wide screens; on a phone it sits below the card. */}
+        <header className={cn("space-y-1", sheet.signedIn ? "md:pr-36" : "md:pr-20")}>
           <SheetTitle className="text-title-2">{card.title}</SheetTitle>
           <SheetDescription>
             {[
@@ -208,12 +212,21 @@ function SheetBody({ sheet }: { sheet: CardSheetData }) {
               .filter(Boolean)
               .join(" · ")}
           </SheetDescription>
-          {/* The wishlist and the mute are the signed-in player's own */}
-          <div className="flex flex-wrap items-center gap-1">
-            <Button variant="ghost" size="sm" className="px-0" onClick={() => void copyLink()}>
-              <LinkIcon />
-              Copy link
-            </Button>
+          {/*
+           * Beside the close button and level with it (both sit against the sheet itself, top-4). The wishlist and the
+           * mute are the signed-in player's own.
+           */}
+          <div className="absolute top-4 right-14 flex items-center gap-1">
+            <Tooltip content="Copy link">
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label="Copy link"
+                onClick={() => void copyLink()}
+              >
+                <LinkIcon aria-hidden />
+              </Button>
+            </Tooltip>
             {sheet.signedIn && (
               <>
                 <WishlistToggle cardId={card.id} />
@@ -225,8 +238,9 @@ function SheetBody({ sheet }: { sheet: CardSheetData }) {
         {sheet.signedIn && (
           <CardSheetCopies
             card={card}
-            realmName={face.realm.name}
-            copies={sheet.copies}
+            held={held}
+            picked={picked}
+            onPick={setPickedId}
             onAddToShowcase={(id) => setShowcasing([id])}
           />
         )}

@@ -1,39 +1,33 @@
 import { cn } from "~/lib/utils/cn";
-import { focusRing } from "~/components/ui/button";
-import { NationStatesDataCredit } from "~/components/cards/display/NationStatesAttribution";
 import { FINISH_LABEL } from "~/lib/cards/face/labels";
 import { CARD_FACE_WIDTH } from "~/lib/cards/face/face-size";
-import type { ArtCredit } from "~/lib/cards/face/art-credit";
-import type { NsProvenance } from "~/lib/cards/face/ns-provenance";
 import { trailLabel, trailParties, type TrailEvent } from "~/lib/cards/face/trail";
-import type { CardFaceData } from "~/lib/cards/face/types";
-import { ArtCreditLine } from "./ArtCreditLine";
+import type { CardCopyFacts, CardFaceData } from "~/lib/cards/face/types";
 import { RealmCrest } from "./RealmCrest";
 
-/** How many moves the back lists; the sheet's copy rows have the rest. */
+/** How many moves the back has room for. */
 const TRAIL_ON_BACK = 4;
 
 interface CardBackProvenanceProps {
   face: CardFaceData;
+  /** The copy's serial, finish and level. */
+  facts: CardCopyFacts;
   copy: {
     experience: number;
     inscription: { text: string; signerName: string | null; signedAt: Date | null } | null;
     /** Newest first. */
     trail: TrailEvent[];
-  } | null;
-  artCredit: ArtCredit | null;
-  ns: NsProvenance | null;
+  };
 }
 
 const longDate = (date: Date) =>
   date.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
 
 /**
- * The card back: realm crest, serial and finish, the inscription with the signer's name, level and XP, the ownership
- * trail by name, the art credit and licence, and for NS cards the NationStates provenance line. Its edge uses the
- * same rarity colour as the face.
+ * The card back, one held copy's story: realm crest, serial and finish, the inscription with the signer's name and
+ * date, level and XP, and the ownership trail by name. Its edge uses the same rarity colour as the face.
  */
-export function CardBackProvenance({ face, copy, artCredit, ns }: CardBackProvenanceProps) {
+export function CardBackProvenance({ face, facts, copy }: CardBackProvenanceProps) {
   return (
     <div
       data-card-rarity={face.rarity}
@@ -42,18 +36,17 @@ export function CardBackProvenance({ face, copy, artCredit, ns }: CardBackProven
         CARD_FACE_WIDTH.L
       )}
     >
-      <div className="flex items-center gap-2">
+      {/* pr-6 clears the turn-over hint in the card's corner. */}
+      <div className="flex items-center gap-2 pr-6">
         <RealmCrest realm={face.realm} size="md" />
         <div className="min-w-0">
           <p className="text-headline truncate">{face.realm.name}</p>
           <p className="text-label-secondary tabular-nums">
-            {face.copy
-              ? `#${face.copy.serialNumber} · ${FINISH_LABEL[face.copy.finish]}`
-              : "Not in your collection"}
+            {`#${facts.serialNumber} · ${FINISH_LABEL[facts.finish]}`}
           </p>
         </div>
       </div>
-      {copy?.inscription && (
+      {copy.inscription && (
         <figure className="facet-well rounded-row p-3">
           <blockquote className="text-body">{copy.inscription.text}</blockquote>
           <figcaption className="text-label-secondary mt-1">
@@ -62,18 +55,14 @@ export function CardBackProvenance({ face, copy, artCredit, ns }: CardBackProven
           </figcaption>
         </figure>
       )}
-      {face.copy && copy && (
-        <p className="tabular-nums">{`Level ${face.copy.level} · ${copy.experience.toLocaleString()} XP`}</p>
-      )}
-      {copy && copy.trail.length > 0 && (
+      <p className="tabular-nums">{`Level ${facts.level} · ${copy.experience.toLocaleString()} XP`}</p>
+      {copy.trail.length > 0 && (
         <ol className="divide-separator divide-y">
           {copy.trail.slice(0, TRAIL_ON_BACK).map((event) => (
             <TrailRow key={event.id} event={event} />
           ))}
         </ol>
       )}
-      {ns && <NsLine ns={ns} />}
-      {artCredit && <ArtCreditLine credit={artCredit} className="mt-auto" />}
     </div>
   );
 }
@@ -90,25 +79,5 @@ function TrailRow({ event }: { event: TrailEvent }) {
         {event.at.toLocaleDateString()}
       </time>
     </li>
-  );
-}
-
-function NsLine({ ns }: { ns: NsProvenance }) {
-  const facts = [ns.nation, ns.season ? `season ${ns.season}` : null, ns.region, ns.category];
-  return (
-    <div className="space-y-1">
-      <p>{facts.filter(Boolean).join(" · ")}</p>
-      <a
-        href={ns.cardUrl ?? ns.nationUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={cn("text-tint underline", focusRing)}
-      >
-        View on NationStates
-      </a>
-      <p className="text-label-secondary">
-        <NationStatesDataCredit linkClassName={cn("underline", focusRing)} />
-      </p>
-    </div>
   );
 }

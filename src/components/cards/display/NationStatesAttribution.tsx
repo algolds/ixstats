@@ -5,8 +5,6 @@
  * see where the data comes from and its licensing status.
  */
 import { NationStatesLogo } from "./NationStatesLogo";
-import { ShieldAlert } from "iconoir-react";
-import { Button } from "~/components/ui/button";
 
 /** The attribution every surface with NationStates card data shows: the data's source and the disclaimer. */
 export function NationStatesDataCredit({ linkClassName }: { linkClassName?: string }) {
@@ -27,13 +25,8 @@ export function NationStatesDataCredit({ linkClassName }: { linkClassName?: stri
   );
 }
 
-export function NationStatesAttribution({
-  className,
-  onRequestTakedown,
-}: {
-  className?: string;
-  onRequestTakedown?: () => void;
-}) {
+/** The boxed credit, with NationStates' logo, for the NationStates import and its takedown form. */
+export function NationStatesAttribution({ className }: { className?: string }) {
   return (
     <div
       className={`border-separator bg-surface text-label-secondary rounded-control text-footnote flex shrink-0 items-center justify-between gap-2 border px-3 py-2 leading-tight ${className ?? ""}`}
@@ -44,21 +37,6 @@ export function NationStatesAttribution({
           <NationStatesDataCredit linkClassName="text-blue font-medium hover:underline" />
         </p>
       </div>
-
-      {onRequestTakedown && (
-        <>
-          <div className="bg-border/60 h-4 w-px shrink-0" />
-          <Button
-            variant="link"
-            size="sm"
-            onClick={onRequestTakedown}
-            className="text-red h-auto shrink-0 gap-1 px-0"
-          >
-            <ShieldAlert className="h-3 w-3 shrink-0" />
-            <span>Verify & request takedown</span>
-          </Button>
-        </>
-      )}
     </div>
   );
 }

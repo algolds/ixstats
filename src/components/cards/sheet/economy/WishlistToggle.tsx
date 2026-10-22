@@ -2,6 +2,7 @@
 
 import { Heart, HeartSolid } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { Tooltip } from "~/components/ui/tooltip";
 import { useSheetEconomy } from "~/hooks/cards/useSheetEconomy";
 import { useMarketActions } from "~/hooks/cards/useMarketActions";
 
@@ -10,16 +11,19 @@ export function WishlistToggle({ cardId }: { cardId: string }) {
   const { data } = useSheetEconomy(cardId);
   const { wish, unwish } = useMarketActions(cardId);
   if (!data || data.isBound) return null;
-  const busy = wish.isPending || unwish.isPending;
-  return data.wishlisted ? (
-    <Button size="sm" variant="ghost" disabled={busy} onClick={() => unwish.mutate({ cardId })}>
-      <HeartSolid aria-hidden />
-      On your wishlist
-    </Button>
-  ) : (
-    <Button size="sm" variant="ghost" disabled={busy} onClick={() => wish.mutate({ cardId })}>
-      <Heart aria-hidden />
-      Add to wishlist
-    </Button>
+  const wished = data.wishlisted;
+  return (
+    <Tooltip content={wished ? "On your wishlist" : "Add to wishlist"}>
+      <Button
+        size="icon-sm"
+        variant="ghost"
+        aria-label="Wishlist"
+        aria-pressed={wished}
+        disabled={wish.isPending || unwish.isPending}
+        onClick={() => (wished ? unwish.mutate({ cardId }) : wish.mutate({ cardId }))}
+      >
+        {wished ? <HeartSolid aria-hidden /> : <Heart aria-hidden />}
+      </Button>
+    </Tooltip>
   );
 }

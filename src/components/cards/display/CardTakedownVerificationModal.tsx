@@ -38,6 +38,8 @@ interface CardTakedownVerificationModalProps {
   season?: number | null;
   defaultNationName?: string;
   onTakedownSuccess?: () => void;
+  /** Where focus goes once it closes, for an opener that is gone by then (a popover's button). */
+  onCloseAutoFocus?: (event: Event) => void;
 }
 
 export function CardTakedownVerificationModal({
@@ -49,6 +51,7 @@ export function CardTakedownVerificationModal({
   season,
   defaultNationName = "",
   onTakedownSuccess,
+  onCloseAutoFocus,
 }: CardTakedownVerificationModalProps) {
   const [nationName, setNationName] = useState(defaultNationName || cardTitle || "");
   const [debouncedNation, setDebouncedNation] = useState(defaultNationName || cardTitle || "");
@@ -102,7 +105,10 @@ export function CardTakedownVerificationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="border-separator bg-surface rounded-card shadow-card p-6 sm:max-w-md">
+      <DialogContent
+        className="border-separator bg-surface rounded-card shadow-card p-6 sm:max-w-md"
+        onCloseAutoFocus={onCloseAutoFocus}
+      >
         <DialogHeader className="space-y-2">
           <div className="flex items-center gap-2">
             <div className="rounded-row border-red/30 bg-red/10 text-red border p-2">

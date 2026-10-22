@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { Flip } from "iconoir-react";
+import { cn } from "~/lib/utils/cn";
 import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
 import { REDUCED_MOTION_FADE, springSmooth, tweenExit } from "~/lib/design/motion";
 import type { CardFaceData } from "~/lib/cards/face/types";
@@ -51,23 +53,46 @@ function inOtherDialog(target: EventTarget | null, own: Element | null): boolean
   return dialog !== null && dialog !== (own?.closest(DIALOG) ?? null);
 }
 
-interface CardFlipProps {
-  face: CardFaceData;
+/** A held copy's turn: its back, the side that shows, and how to turn it. */
+interface CardTurn {
   back: ReactNode;
   flipped: boolean;
   onFlip: () => void;
 }
 
+interface CardFlipProps {
+  face: CardFaceData;
+  /** Null for a card the viewer holds no copy of: only a copy has a back, so the card does not turn. */
+  turn: CardTurn | null;
+}
+
+/** The corner's hint that a tap turns the card; Space and F are named by the card's label. */
+function TurnHint() {
+  return (
+    <span
+      data-slot="turn-hint"
+      aria-hidden
+      className="pointer-events-none absolute top-2 right-2 grid size-7 place-items-center rounded-full bg-black/60 text-white"
+    >
+      <Flip className="size-4" />
+    </span>
+  );
+}
+
 /**
- * The sheet's large card: it leans toward the pointer, a Foil, Holo or Serialised copy catches the light, and Space or F
- * turns it over. Under Reduce Motion there is no tilt and no holo, and the sides cross-fade.
+ * The sheet's large card: it leans toward the pointer, a Foil, Holo or Serialised copy catches the light, and a held
+ * copy turns over when tapped or on Space or F. Under Reduce Motion there is no tilt and no holo, and the sides
+ * cross-fade.
  */
-export function CardFlip({ face, back, flipped, onFlip }: CardFlipProps) {
+export function CardFlip({ face, turn }: CardFlipProps) {
   const reduce = useFacetReducedMotion();
   const { tilt, holo, onPointerMove, onPointerLeave } = useCardTilt();
   const root = useRef<HTMLDivElement>(null);
+  const onFlip = turn?.onFlip;
+  const flipped = turn?.flipped === true;
 
   useEffect(() => {
+    if (!onFlip) return;
     const onKey = (event: KeyboardEvent) => {
       const own = root.current;
       if (!aimsAtCard(event) || inOtherDialog(event.target, own)) return;
@@ -92,14 +117,16 @@ export function CardFlip({ face, back, flipped, onFlip }: CardFlipProps) {
       {showHolo && <CardHolo holoRef={holo} />}
     </span>
   );
+  const shell = {
+    ref: root,
+    tabIndex: -1,
+    onClick: onFlip,
+    className: cn("relative mx-auto w-fit max-w-full outline-none", turn && "cursor-pointer"),
+  };
 
   if (reduce) {
     return (
-      <div
-        ref={root}
-        tabIndex={-1}
-        className="mx-auto grid w-fit max-w-full grid-cols-1 outline-none"
-      >
+      <div {...shell} className={cn(shell.className, "grid grid-cols-1")}>
         <AnimatePresence initial={false}>
           <motion.div
             key={flipped ? "back" : "front"}
@@ -109,18 +136,18 @@ export function CardFlip({ face, back, flipped, onFlip }: CardFlipProps) {
             transition={REDUCED_MOTION_FADE}
             className="col-start-1 row-start-1"
           >
-            {flipped ? back : front}
+            {flipped ? turn?.back : front}
           </motion.div>
         </AnimatePresence>
+        {turn && <TurnHint />}
       </div>
     );
   }
 
   return (
     <div
-      ref={root}
-      tabIndex={-1}
-      className="mx-auto w-fit max-w-full outline-none perspective-distant"
+      {...shell}
+      className={cn(shell.className, "perspective-distant")}
       onPointerMove={onPointerMove}
       onPointerLeave={onPointerLeave}
     >
@@ -134,11 +161,14 @@ export function CardFlip({ face, back, flipped, onFlip }: CardFlipProps) {
           <div className="backface-hidden" inert={flipped}>
             {front}
           </div>
-          <div className="absolute inset-0 rotate-y-180 backface-hidden" inert={!flipped}>
-            {back}
-          </div>
+          {turn && (
+            <div className="absolute inset-0 rotate-y-180 backface-hidden" inert={!flipped}>
+              {turn.back}
+            </div>
+          )}
         </motion.div>
       </motion.div>
+      {turn && <TurnHint />}
     </div>
   );
 }

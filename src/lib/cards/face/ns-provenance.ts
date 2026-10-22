@@ -2,7 +2,7 @@
 import type { Prisma } from "@prisma/client";
 import { nsFactsOf, nsNationKey } from "~/lib/cards/ns-facts";
 
-/** The NationStates facts a card's back and sheet show: provenance only, never stats (spec §2.1). */
+/** The NationStates facts the sheet's About shows: provenance only, never stats (spec §2.1). */
 export interface NsProvenance {
   nation: string;
   season: number | null;

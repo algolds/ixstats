@@ -1,16 +1,20 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useId, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowSeparate, Combine, EditPencil, Shop, Trash } from "iconoir-react";
+import { ArrowSeparate, Calendar, Combine, EditPencil, Lock, Shop, Trash } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { Tooltip } from "~/components/ui/tooltip";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import {
   useSheetEconomy,
   type CopyEconomyView,
   type FusionGroupView,
 } from "~/hooks/cards/useSheetEconomy";
-import { CARD_HUB_PATHS, tradeBuilderHref } from "~/lib/cards/hub-routes";
+import type { HeldCopy } from "~/lib/cards/face/copy-pick";
+import { FINISH_LABEL } from "~/lib/cards/face/labels";
+import type { CardCopyFacts } from "~/lib/cards/face/types";
+import { CARD_HUB_PATHS, marketTabHref, tradeBuilderHref } from "~/lib/cards/hub-routes";
 import type { CardSheetData, SheetCopy } from "~/lib/cards/hub/sheet";
 import { BreakDownDialog } from "./economy/BreakDownDialog";
 import { useDialogFocus, type DialogFocus } from "./economy/dialog-focus";
@@ -18,67 +22,98 @@ import { FuseDialog } from "./economy/FuseDialog";
 import { ListCopyDialog } from "./economy/ListCopyDialog";
 import { SignDialog } from "./economy/SignDialog";
 
-/** The "Your copies" heading, where focus goes once a burn takes the copy's row away. */
+/** The "Your copies" heading, where focus goes once a burn takes the picked copy away. */
 export const COPIES_HEADING_ID = "sheet-copies";
 
 type Open = "list" | "fuse" | "breakdown" | "sign" | null;
 
+/**
+ * What the Sell group holds: the sale actions for a free copy; for a locked one, where it already is (Selling for a
+ * listing or an auction, else Trades, as only a trade offer locks a copy otherwise); nothing for a bound card, which is
+ * never sold, nor for a locked copy until the economy says where it is.
+ */
+type Sale = "sell" | "selling" | "trades" | null;
+
+function saleOf(isBound: boolean, isLocked: boolean, economy: CopyEconomyView | null): Sale {
+  if (isBound) return null;
+  if (!isLocked) return "sell";
+  if (!economy) return null;
+  return (economy.listingId ?? economy.auctionId) === null ? "trades" : "selling";
+}
+
+/** A copy by its serial, finish and level. */
+export const copyLabel = (facts: CardCopyFacts) =>
+  `#${facts.serialNumber} · ${FINISH_LABEL[facts.finish]} · Level ${facts.level}`;
+
+const sinceLabel = (date: Date) =>
+  `Since ${date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}`;
+
 interface CopyActionsProps {
-  copy: SheetCopy;
+  held: HeldCopy<SheetCopy>;
   card: CardSheetData["card"];
   onAddToShowcase: (ownershipId: string) => void;
 }
 
 /**
- * The actions on one held copy (spec §2.3 Detail sheet): add to a showcase, list at a fixed price or sell at auction,
- * fuse, break down for dust, and sign. Phase 5 adds "Add to binder". A bound card is never offered for sale (spec
- * §2.1 Bound cards), and a copy already in a listing or trade is not offered again. What a copy allows, and what it is
- * worth, come from the server (`cards.getSheetEconomy`); until that arrives only the showcase and the auction form show.
+ * The action bar for the picked copy, headed by its serial, finish, level, value and facts, in three groups: Sell
+ * (list at a fixed price, sell at auction, offer in a trade), Workshop (fuse, break down for dust) and Keep (add to a
+ * showcase, sign). A group with nothing to offer is left out. What a copy allows, and what it is worth, come from the
+ * server (`cards.getSheetEconomy`); until that arrives only the auction, the trade and the showcase show.
  */
-export function CopyActions({ copy, card, onAddToShowcase }: CopyActionsProps) {
+export function CopyActions({ held, card, onAddToShowcase }: CopyActionsProps) {
   const { data } = useSheetEconomy(card.id);
   const [open, setOpen] = useState<Open>(null);
   const { focus, settle } = useDialogFocus();
   const showcaseButton = useRef<HTMLButtonElement>(null);
-  const ownershipId = copy.face.copy?.ownershipId;
-  if (!ownershipId) return null;
+  const headId = useId();
+  const { copy, facts } = held;
+  const ownershipId = facts.ownershipId;
   const economy = data?.copies.find((c) => c.ownershipId === ownershipId) ?? null;
   const group = data?.fusionGroups.find((g) => g.ownershipIds.includes(ownershipId)) ?? null;
-  const sellable = !card.isBound && !copy.isLocked;
-  // A burn takes the copy's whole row away; a listing or a signature only the button that opened the dialog.
+  const sale = saleOf(card.isBound, copy.isLocked, economy);
+  // A burn takes the copy away; a listing or a signature only the button that opened the dialog.
   const done = (burned: boolean) => () => {
     settle(burned ? document.getElementById(COPIES_HEADING_ID) : showcaseButton.current);
     setOpen(null);
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {economy && <CopyValue value={economy.value} retired={card.isRetired} />}
-      <Button
-        ref={showcaseButton}
-        size="sm"
-        variant="secondary"
-        onClick={() => onAddToShowcase(ownershipId)}
-      >
-        Add to showcase
-      </Button>
-      {sellable && economy && (
-        <Button size="sm" variant="secondary" onClick={() => setOpen("list")}>
-          <Shop aria-hidden />
-          List
-        </Button>
-      )}
-      {sellable && <AuctionLink ownershipId={ownershipId} />}
-      {sellable && (
-        <Button size="sm" variant="ghost" asChild>
-          <Link href={tradeBuilderHref({ give: ownershipId })}>
-            <ArrowSeparate aria-hidden />
-            Offer in a trade
-          </Link>
-        </Button>
-      )}
-      {economy && <WorkshopButtons economy={economy} group={group} onOpen={setOpen} />}
-      {economy && (economy.listingId ?? economy.auctionId) !== null && <SellingLink />}
+    <div role="group" aria-labelledby={headId} className="space-y-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <p id={headId} className="text-callout text-label tabular-nums">
+          {copyLabel(facts)}
+        </p>
+        {economy && <CopyValue value={economy.value} retired={card.isRetired} />}
+        <FactChip icon={<Calendar className="size-3.5" />} label={sinceLabel(copy.acquiredAt)} />
+        {copy.isLocked && (
+          <FactChip icon={<Lock className="size-3.5" />} label="In a listing or trade" />
+        )}
+      </div>
+      {/* The groups stack on a phone, and sit side by side from sm up. */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-x-6">
+        <SellGroup
+          sale={sale}
+          ownershipId={ownershipId}
+          onList={economy ? () => setOpen("list") : null}
+        />
+        {economy && <WorkshopGroup economy={economy} group={group} onOpen={setOpen} />}
+        <ActionGroup label="Keep">
+          <Button
+            ref={showcaseButton}
+            size="sm"
+            variant="secondary"
+            onClick={() => onAddToShowcase(ownershipId)}
+          >
+            Add to showcase
+          </Button>
+          {economy?.canSign && (
+            <Button size="sm" variant="ghost" onClick={() => setOpen("sign")}>
+              <EditPencil aria-hidden />
+              Sign
+            </Button>
+          )}
+        </ActionGroup>
+      </div>
       {data && economy && (
         <CopyDialogs
           open={open}
@@ -96,6 +131,104 @@ export function CopyActions({ copy, card, onAddToShowcase }: CopyActionsProps) {
   );
 }
 
+interface SellGroupProps {
+  sale: Sale;
+  ownershipId: string;
+  /** Listing needs the copy's value to suggest a price, so it waits for the economy. */
+  onList: (() => void) | null;
+}
+
+function SellGroup({ sale, ownershipId, onList }: SellGroupProps) {
+  if (sale === null) return null;
+  // A copy on sale, at auction or offered is managed, and cancelled, where it is.
+  if (sale !== "sell") {
+    return (
+      <ActionGroup label="Sell">
+        <Button size="sm" variant="ghost" asChild>
+          <Link href={marketTabHref(sale)}>
+            {sale === "selling" ? "See it in Selling" : "See it in Trades"}
+          </Link>
+        </Button>
+      </ActionGroup>
+    );
+  }
+  return (
+    <ActionGroup label="Sell">
+      {onList && (
+        <Button size="sm" variant="secondary" onClick={onList}>
+          <Shop aria-hidden />
+          List
+        </Button>
+      )}
+      <Button size="sm" variant="secondary" asChild>
+        <Link href={`${CARD_HUB_PATHS.market}?tab=selling&sell=${encodeURIComponent(ownershipId)}`}>
+          Auction
+        </Link>
+      </Button>
+      <Button size="sm" variant="ghost" asChild>
+        <Link href={tradeBuilderHref({ give: ownershipId })}>
+          <ArrowSeparate aria-hidden />
+          Trade
+        </Link>
+      </Button>
+    </ActionGroup>
+  );
+}
+
+interface WorkshopGroupProps {
+  economy: CopyEconomyView;
+  group: FusionGroupView | null;
+  onOpen: (open: Open) => void;
+}
+
+function WorkshopGroup({ economy, group, onOpen }: WorkshopGroupProps) {
+  const breaks = economy.breakdownBlocker === null;
+  if (!group && !breaks) return null;
+  return (
+    <ActionGroup label="Workshop">
+      {group && (
+        <Button size="sm" variant="secondary" onClick={() => onOpen("fuse")}>
+          <Combine aria-hidden />
+          Fuse
+        </Button>
+      )}
+      {breaks && (
+        <Button size="sm" variant="ghost" onClick={() => onOpen("breakdown")}>
+          <Trash aria-hidden />
+          Break down
+        </Button>
+      )}
+    </ActionGroup>
+  );
+}
+
+function ActionGroup({ label, children }: { label: string; children: ReactNode }) {
+  const labelId = useId();
+  return (
+    <div role="group" aria-labelledby={labelId} className="space-y-1">
+      <p id={labelId} className="text-footnote text-label-secondary">
+        {label}
+      </p>
+      <div className="flex flex-wrap gap-2">{children}</div>
+    </div>
+  );
+}
+
+/** A fact about the copy as a small icon, named for screen readers and in a tooltip. */
+function FactChip({ icon, label }: { icon: ReactNode; label: string }) {
+  return (
+    <Tooltip content={label}>
+      <span
+        role="img"
+        aria-label={label}
+        className="bg-fill-3 text-label-secondary inline-grid size-6 place-items-center rounded-full"
+      >
+        {icon}
+      </span>
+    </Tooltip>
+  );
+}
+
 /** The copy's value, from the server; a retired card's copies are worth nothing, and say why. */
 function CopyValue({ value, retired }: { value: number; retired: boolean }) {
   return (
@@ -104,56 +237,6 @@ function CopyValue({ value, retired }: { value: number; retired: boolean }) {
       <IxCreditsSymbol className="size-[0.8em]" />
       <span>{value.toLocaleString()}</span>
     </span>
-  );
-}
-
-function AuctionLink({ ownershipId }: { ownershipId: string }) {
-  return (
-    <Button size="sm" variant="secondary" asChild>
-      <Link href={`${CARD_HUB_PATHS.market}?tab=selling&sell=${encodeURIComponent(ownershipId)}`}>
-        Sell at auction
-      </Link>
-    </Button>
-  );
-}
-
-/** A copy on sale or at auction is managed, and cancelled, from the Selling tab. */
-function SellingLink() {
-  return (
-    <Button size="sm" variant="ghost" asChild>
-      <Link href={`${CARD_HUB_PATHS.market}?tab=selling`}>See it in Selling</Link>
-    </Button>
-  );
-}
-
-interface WorkshopButtonsProps {
-  economy: CopyEconomyView;
-  group: FusionGroupView | null;
-  onOpen: (open: Open) => void;
-}
-
-function WorkshopButtons({ economy, group, onOpen }: WorkshopButtonsProps) {
-  return (
-    <>
-      {group && (
-        <Button size="sm" variant="secondary" onClick={() => onOpen("fuse")}>
-          <Combine aria-hidden />
-          Fuse
-        </Button>
-      )}
-      {economy.breakdownBlocker === null && (
-        <Button size="sm" variant="ghost" onClick={() => onOpen("breakdown")}>
-          <Trash aria-hidden />
-          Break down
-        </Button>
-      )}
-      {economy.canSign && (
-        <Button size="sm" variant="ghost" onClick={() => onOpen("sign")}>
-          <EditPencil aria-hidden />
-          Sign
-        </Button>
-      )}
-    </>
   );
 }
 
@@ -170,8 +253,8 @@ interface CopyDialogsProps {
 }
 
 /**
- * A dialog mounts only while open: each opening starts from the copy's value and an empty inscription, and a sheet with
- * many copies holds no closed dialogs (each one carries the copy mutations).
+ * A dialog mounts only while open: each opening starts from the copy's value and an empty inscription, and the sheet
+ * holds no closed dialogs (each one carries the copy mutations).
  */
 function CopyDialogs({
   open,

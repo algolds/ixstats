@@ -1,5 +1,5 @@
 // src/lib/cards/face/art-credit.ts
-/** The `CardArtLicence` fields the back and the sheet show (Phase 2: one row per card, `Card.artLicence`). */
+/** The `CardArtLicence` fields the sheet shows (Phase 2: one row per card, `Card.artLicence`). */
 export interface ArtLicenceFacts {
   fileTitle: string | null;
   licence: string | null;
@@ -8,7 +8,7 @@ export interface ArtLicenceFacts {
   descriptionUrl: string | null;
 }
 
-/** The art credit the back and the sheet's About show (spec §2.4 Licensing). */
+/** The art credit the sheet's About shows (spec §2.4 Licensing). */
 export interface ArtCredit {
   line: string;
   licence: string | null;
