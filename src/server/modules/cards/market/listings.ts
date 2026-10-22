@@ -23,7 +23,7 @@ import {
 } from "~/lib/cards/market/settle-sale";
 import { grantCardXp, type GrantXpResult } from "~/lib/cards/xp-utils";
 import { earnCreditsTx, LedgerError, spendCreditsTx } from "~/lib/vault/vault-ledger";
-import { vaultsBusyError } from "~/lib/vault/vault-locks";
+import { lockVaultsTx, vaultsBusyError } from "~/lib/vault/vault-locks";
 
 const DAY_MS = 86_400_000;
 const HISTORY_DAYS = 30;
@@ -70,6 +70,8 @@ export async function createListing(
   const fee = input.isFeatured ? cfg.listingFeeFeatured : cfg.listingFee;
   return ledgerSafe(() =>
     db.$transaction(async (tx) => {
+      // The seller's vault before the copy, the order a trade's accept takes them in, so the two never deadlock
+      await lockVaultsTx(tx, [input.sellerId]);
       const copy = await tx.cardOwnership.findFirst({
         where: { id: input.ownershipId, ownerId: input.sellerId },
         select: {

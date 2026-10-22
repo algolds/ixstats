@@ -58,6 +58,7 @@ describe("bound copies never move", () => {
     const db = createMockPrisma();
     const tx = createMockPrisma();
     db.$transaction = jest.fn((cb: (client: typeof tx) => Promise<object>) => cb(tx));
+    tx.$queryRaw = jest.fn().mockResolvedValue([]);
     // The listing transaction reads the copy
     tx.cardOwnership.findFirst.mockResolvedValue({
       id: "o1",

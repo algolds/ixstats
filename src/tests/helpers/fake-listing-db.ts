@@ -112,6 +112,8 @@ export function makeListingDb(over: Partial<World> = {}) {
   const systemConfig = { findMany: jest.fn(async () => world.config) };
   const tx = {
     systemConfig,
+    // The seller's vault lock (lockVaultsTx)
+    $queryRaw: jest.fn(async () => []),
     cardOwnership: {
       findFirst: jest.fn(async ({ where }: { where: CopyClaim }) =>
         copyMatches(world.copy, where) && world.copy ? { ...world.copy } : null

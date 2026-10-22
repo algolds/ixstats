@@ -287,6 +287,20 @@ describe("cards-auction-lifecycle (memory)", () => {
       ],
     });
     await auctionLifecycle(w, 7, 40);
+
+    // Listing the auction took Sam's vault before the copy, as a trade's accept does
+    const log = db.store.log;
+    const copyLock = log.findIndex(
+      (e) =>
+        e.kind === "write" &&
+        e.model === "CardOwnership" &&
+        e.op === "updateMany" &&
+        e.where?.id === w.copies[0] &&
+        e.where?.isLocked === false
+    );
+    const sellerVault = log.findIndex((e) => e.kind === "vaults");
+    expect(log[sellerVault]).toEqual({ kind: "vaults", userIds: [w.sam.id] });
+    expect(sellerVault).toBeLessThan(copyLock);
   });
 
   it("names no refund for a free listing that ends unsold", async () => {

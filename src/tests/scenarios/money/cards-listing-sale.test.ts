@@ -282,8 +282,24 @@ describe("cards-listing-sale (memory)", () => {
       royalty: 10,
     });
 
-    // The purchase took the claim row first, then every party's vault at once in user-id order, then the copy
+    // The listing took Sam's vault before the copy, as a trade's accept does, then charged the fee
     const log = db.store.log;
+    const copyLock = log.findIndex(
+      (e) =>
+        e.kind === "write" &&
+        e.model === "CardOwnership" &&
+        e.op === "updateMany" &&
+        e.where?.id === w.copies[0] &&
+        e.where?.isLocked === false
+    );
+    const sellerVault = log.findIndex((e) => e.kind === "vaults");
+    expect(log[sellerVault]).toEqual({ kind: "vaults", userIds: [w.sam.id] });
+    expect(sellerVault).toBeLessThan(copyLock);
+    expect(
+      log.findIndex((e, i) => i > copyLock && e.kind === "write" && e.model === "MyVault")
+    ).toBeGreaterThan(copyLock);
+
+    // The purchase took the claim row first, then every party's vault at once in user-id order, then the copy
     const claim = log.findIndex(
       (e) =>
         e.kind === "write" &&

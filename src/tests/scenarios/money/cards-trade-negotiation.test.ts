@@ -361,28 +361,101 @@ describeWithDb("cards-trade-negotiation (Postgres)", () => {
     );
   });
 
-  it("refuses an accept while the responder lists the copy it gives, moving nothing", async () => {
-    const offer = await offers(callerContext(db, w.alice)).createtradeOffer({
-      partnerId: w.bob.id,
-      initiatorCardIds: [w.a[1]],
-      recipientCardIds: [w.b1],
-    });
-    const [accept, listing] = await Promise.allSettled([
-      offers(callerContext(db, w.bob)).respondToTrade({
-        tradeId: offer.id,
-        action: "ACCEPT",
-        revision: 0,
-      }),
-      listings(callerContext(db, w.bob)).createListing({ ownershipId: w.b1, price: 50 }),
-    ]);
-    expect([accept.status, listing.status].sort()).toEqual(["fulfilled", "rejected"]);
-    if (accept.status === "rejected") {
-      expect(accept.reason).toMatchObject({ code: "CONFLICT" });
-      expect(await owners(db, [w.a[1], w.b1])).toEqual({ [w.a[1]]: w.alice.id, [w.b1]: w.bob.id });
-      expect(await locks(db, [w.a[1], w.b1])).toEqual({ [w.a[1]]: true, [w.b1]: true });
-    } else {
-      expect(await owners(db, [w.a[1], w.b1])).toEqual({ [w.a[1]]: w.bob.id, [w.b1]: w.alice.id });
-      expect(await db.cardListing.count({ where: { ownershipId: w.b1 } })).toBe(0);
+  // Both wait behind a third transaction holding b1's row, so the one queued first takes b1 the moment it is free while
+  // the other already holds what it took. When a listing locked the copy before the seller's vault, a listing queued
+  // first held b1 and wanted Bob's vault while the accept held the vaults and wanted b1, and Postgres killed one.
+  it.each([
+    ["the listing", "listing"],
+    ["the accept", "accept"],
+  ] as const)(
+    "lets a listing of the copy a paid trade gives race its accept without a deadlock: %s goes first",
+    async (_label, first) => {
+      const offer = await offers(callerContext(db, w.alice)).createtradeOffer({
+        partnerId: w.bob.id,
+        initiatorCardIds: [w.a[1]],
+        initiatorCredits: 100,
+        recipientCardIds: [w.b1],
+      });
+      const accept = () =>
+        offers(callerContext(db, w.bob)).respondToTrade({
+          tradeId: offer.id,
+          action: "ACCEPT",
+          revision: 0,
+        });
+      const list = () =>
+        listings(callerContext(db, w.bob)).createListing({ ownershipId: w.b1, price: 50 });
+
+      const blocker = await holdCopyRow(db, w.b1);
+      const [start, next] = first === "listing" ? [list, accept] : [accept, list];
+      const firstRun = Promise.allSettled([start()]);
+      const firstPid = await waiterOn(db, blocker.pid);
+      const secondRun = Promise.allSettled([next()]);
+      await waiterOn(db, firstPid);
+      await blocker.release();
+      const [[won], [lost]] = await Promise.all([firstRun, secondRun]);
+
+      expect(won).toMatchObject({ status: "fulfilled" });
+      expect(lost).toMatchObject({ status: "rejected" });
+      const refusal = (lost as PromiseRejectedResult).reason as Error;
+      expect(refusal.message).not.toMatch(/try again/i);
+      const credits = await creditsOf(db, [w.alice.id, w.bob.id]);
+      if (first === "listing") {
+        expect(refusal).toMatchObject({
+          code: "CONFLICT",
+          message: "Cards in this trade changed hands; trade cannot complete",
+        });
+        expect(await owners(db, [w.a[1], w.b1])).toEqual({
+          [w.a[1]]: w.alice.id,
+          [w.b1]: w.bob.id,
+        });
+        expect(await locks(db, [w.a[1], w.b1])).toEqual({ [w.a[1]]: true, [w.b1]: true });
+        expect(credits).toEqual({ [w.alice.id]: 1000, [w.bob.id]: 995 });
+      } else {
+        expect(refusal).toMatchObject({ code: "NOT_FOUND", message: "You don't own this copy." });
+        expect(await owners(db, [w.a[1], w.b1])).toEqual({
+          [w.a[1]]: w.bob.id,
+          [w.b1]: w.alice.id,
+        });
+        expect(await db.cardListing.count({ where: { ownershipId: w.b1 } })).toBe(0);
+        expect(credits).toEqual({ [w.alice.id]: 900, [w.bob.id]: 1100 });
+      }
     }
-  });
+  );
 });
+
+/** Holds copy `id`'s row lock in a transaction of its own until `release`; `pid` is that transaction's backend. */
+async function holdCopyRow(db: PrismaClient, id: string) {
+  let release = (): void => undefined;
+  const released = new Promise<void>((resolve) => (release = resolve));
+  let held = (_pid: number): void => undefined;
+  const pid = new Promise<number>((resolve) => (held = resolve));
+  const done = db.$transaction(
+    async (tx) => {
+      const [row] = await tx.$queryRaw<
+        { pid: number }[]
+      >`SELECT pg_backend_pid() AS pid FROM "CardOwnership" WHERE id = ${id} FOR UPDATE`;
+      held(row!.pid);
+      await released;
+    },
+    { timeout: 20_000 }
+  );
+  return {
+    pid: await pid,
+    release: () => {
+      release();
+      return done;
+    },
+  };
+}
+
+/** The backend that `pid` blocks, once one is waiting on it. */
+async function waiterOn(db: PrismaClient, pid: number): Promise<number> {
+  for (let tries = 0; tries < 200; tries++) {
+    const [row] = await db.$queryRaw<
+      { pid: number }[]
+    >`SELECT pid FROM pg_stat_activity WHERE ${pid}::int = ANY(pg_blocking_pids(pid))`;
+    if (row) return row.pid;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  throw new Error(`Nothing waited on backend ${pid}`);
+}
