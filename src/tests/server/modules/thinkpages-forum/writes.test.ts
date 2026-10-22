@@ -1,6 +1,9 @@
 /** @jest-environment node */
+jest.mock("~/server/db", () => ({ db: {} }));
 jest.mock("~/server/modules/thinkpages-forum/render", () => ({
+  FORUM_RENDERER_VERSION: "forum-1:v",
   renderPostWikitext: jest.fn(),
+  renderViaWiki: jest.fn(),
 }));
 jest.mock("~/server/modules/thinkpages-forum/mention-links", () => ({
   withMentionLinks: jest.fn(async (_db: object, body: object) => body),
@@ -21,6 +24,16 @@ import { validateEditLinks } from "~/server/modules/thinkpages-forum/writes-link
 import type { ForumActor, WritesDb } from "~/server/modules/thinkpages-forum/writes";
 import { prepareBody } from "~/server/modules/thinkpages-forum/writes";
 import { assertTokensArePlainText } from "~/server/modules/thinkpages-forum/writes-body";
+import { renderViaWiki } from "~/server/modules/thinkpages-forum/render";
+import {
+  nextStaleBatch,
+  rerenderPosts,
+  resetRenderFailuresForTests,
+} from "~/server/modules/thinkpages-forum/render-stale";
+import {
+  linkOldForumAccount,
+  unlinkOldForumAccount,
+} from "~/server/modules/thinkpages-forum/old-forum-accounts";
 
 const admin = {
   id: "u_a",
@@ -744,39 +757,37 @@ describe("an author's edit of a post that already links an action", () => {
   });
 });
 
-describe("an image counts as content", () => {
-  describe("prepareBody: an image counts as content", () => {
-    it.each([
-      ["an image whose src the sanitizer removed", '<p><img src="javascript:alert(1)"></p>'],
-      ["a protocol-relative src", '<p><img src="//e.com/a.png"></p>'],
-      ["a data: src", '<p><img src="data:image/png;base64,AAAA"></p>'],
-    ])("still refuses %s", (_, html) => {
-      expect(() => prepareBody(html)).toThrow("A post needs some text.");
+describe("prepareBody: an image counts as content", () => {
+  it.each([
+    ["an image whose src the sanitizer removed", '<p><img src="javascript:alert(1)"></p>'],
+    ["a protocol-relative src", '<p><img src="//e.com/a.png"></p>'],
+    ["a data: src", '<p><img src="data:image/png;base64,AAAA"></p>'],
+  ])("still refuses %s", (_, html) => {
+    expect(() => prepareBody(html)).toThrow("A post needs some text.");
+  });
+  describe("the media picker's URL forms, through the real sanitizer", () => {
+    const saved = process.env.NEXT_PUBLIC_BASE_PATH;
+    beforeEach(() => {
+      process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstates";
     });
-    describe("the media picker's URL forms, through the real sanitizer", () => {
-      const saved = process.env.NEXT_PUBLIC_BASE_PATH;
-      beforeEach(() => {
-        process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstates";
-      });
-      afterEach(() => {
-        if (saved === undefined) delete process.env.NEXT_PUBLIC_BASE_PATH;
-        else process.env.NEXT_PUBLIC_BASE_PATH = saved;
-      });
+    afterEach(() => {
+      if (saved === undefined) delete process.env.NEXT_PUBLIC_BASE_PATH;
+      else process.env.NEXT_PUBLIC_BASE_PATH = saved;
+    });
 
-      it.each([
-        ["an upload", "/images/uploads/1700000000-abc.png"],
-        [
-          "a Commons file through the MediaWiki proxy",
-          "/api/mediawiki/commons/Special:Filepath/Flag%20of%20Caphiria%20%28alt%29.svg",
-        ],
-        [
-          "a wiki file through the proxy under the base path",
-          "/projects/ixstates/api/mediawiki/ixwiki/images/a/ab/Map.png",
-        ],
-      ])("keeps an image-only post with %s", (_, src) => {
-        const html = `<p><img src="${src}" alt=""></p>`;
-        expect(prepareBody(html)).toEqual({ contentHtml: html, plainText: "" });
-      });
+    it.each([
+      ["an upload", "/images/uploads/1700000000-abc.png"],
+      [
+        "a Commons file through the MediaWiki proxy",
+        "/api/mediawiki/commons/Special:Filepath/Flag%20of%20Caphiria%20%28alt%29.svg",
+      ],
+      [
+        "a wiki file through the proxy under the base path",
+        "/projects/ixstates/api/mediawiki/ixwiki/images/a/ab/Map.png",
+      ],
+    ])("keeps an image-only post with %s", (_, src) => {
+      const html = `<p><img src="${src}" alt=""></p>`;
+      expect(prepareBody(html)).toEqual({ contentHtml: html, plainText: "" });
     });
   });
 });
@@ -784,18 +795,297 @@ describe("an image counts as content", () => {
 // Directives are attached by their `dir-<intentId>` token, and Canvas posts go through the MediaWiki render: the token must
 // reach the card splitter as plain text whichever renderer ran.
 describe("a Canvas post's action tokens", () => {
-  describe("a Canvas post's action tokens", () => {
-    it("are refused when the render shows other ids than the text holds, even at the same count", () => {
-      // <includeonly> and {{{x|default}}} make the source text and the rendered page differ.
-      expect(() => assertTokensArePlainText("<p>[ixaction=theirs]</p>", "[ixaction=mine]")).toThrow(
-        /plain text/
+  it("are refused when the render shows other ids than the text holds, even at the same count", () => {
+    // <includeonly> and {{{x|default}}} make the source text and the rendered page differ.
+    expect(() => assertTokensArePlainText("<p>[ixaction=theirs]</p>", "[ixaction=mine]")).toThrow(
+      /plain text/
+    );
+    expect(() =>
+      assertTokensArePlainText("<p>[ixaction=a] [ixaction=b]</p>", "[ixaction=a] [ixaction=c]")
+    ).toThrow(/plain text/);
+    expect(() =>
+      assertTokensArePlainText("<p>[ixaction=a] [ixaction=b]</p>", "[ixaction=a] [ixaction=b]")
+    ).not.toThrow();
+  });
+});
+
+describe("the stale-render cron's writes", () => {
+  const rerender = jest.mocked(renderViaWiki);
+  type Row = { id: string; threadId: string; contentWikitext: string };
+  /** `editedTo`: the wikitext an author saves between the cron's read and its write. */
+  function fakeDb(posts: Row[], editedTo?: string) {
+    const updates: Array<{ id: string; renderedAt: Date | null; contentHtml: string }> = [];
+    const templateWrites: string[][] = [];
+    const parts = {
+      forumPost: {
+        findMany: jest.fn(async () => posts),
+        updateMany: jest.fn(
+          async ({
+            where,
+            data,
+          }: {
+            where: { id: string; contentWikitext: string };
+            data: { renderedAt: Date | null; contentHtml: string };
+          }) => {
+            const current = editedTo ?? posts.find((p) => p.id === where.id)?.contentWikitext;
+            if (current !== where.contentWikitext) return { count: 0 };
+            updates.push({
+              id: where.id,
+              renderedAt: data.renderedAt,
+              contentHtml: data.contentHtml,
+            });
+            return { count: 1 };
+          }
+        ),
+      },
+      forumPostTemplate: {
+        deleteMany: jest.fn(async () => ({ count: 0 })),
+        createMany: jest.fn(async ({ data }: { data: Array<{ title: string }> }) => {
+          templateWrites.push(data.map((d) => d.title));
+          return { count: data.length };
+        }),
+      },
+    };
+    const db = {
+      ...parts,
+      $transaction: jest.fn(async (fn: (tx: typeof parts) => Promise<boolean>) => fn(parts)),
+    };
+    return { db, updates, templateWrites };
+  }
+  // The cron links mentions itself: the real linker here, not the identity stand-in the write tests use.
+  const realLinks = jest.requireActual<
+    typeof import("~/server/modules/thinkpages-forum/mention-links")
+  >("~/server/modules/thinkpages-forum/mention-links");
+  beforeEach(() => {
+    rerender.mockReset();
+    resetRenderFailuresForTests();
+    jest.mocked(withMentionLinks).mockImplementation(realLinks.withMentionLinks);
+  });
+  afterEach(() => {
+    jest.mocked(withMentionLinks).mockImplementation(async (_db, body) => body);
+  });
+  it("writes only the text it rendered: an edit between the read and the write is left untouched", async () => {
+    rerender.mockResolvedValue({
+      contentHtml: "<p>stale</p>",
+      plainText: "stale",
+      rendererVersion: "forum-1:v",
+      renderedAt: new Date(),
+      templates: ["Template:Flag"],
+    });
+    const { db, updates, templateWrites } = fakeDb(
+      [{ id: "p1", threadId: "t1", contentWikitext: "x" }],
+      "edited"
+    );
+    expect(await rerenderPosts(db as never, ["p1"])).toEqual({ rendered: 0, failed: 0 });
+    expect(db.forumPost.updateMany.mock.calls[0]![0].where).toEqual({
+      id: "p1",
+      contentWikitext: "x",
+    });
+    expect(updates).toHaveLength(0);
+    expect(db.forumPostTemplate.deleteMany).not.toHaveBeenCalled();
+    expect(templateWrites).toEqual([]);
+  });
+  const RENDERED = {
+    plainText: "Hi @kir",
+    rendererVersion: "forum-1:v",
+    renderedAt: new Date(),
+    templates: [],
+  };
+  function withNames(db: ReturnType<typeof fakeDb>["db"]) {
+    return {
+      ...db,
+      user: { findMany: jest.fn(async (_args: object) => [{ id: "u_kir", handle: "kir" }]) },
+      thinkpagesAccount: { findMany: jest.fn(async (_args: object) => []) },
+    };
+  }
+  it("does not keep a mention link the render carried: only the ones it makes itself", async () => {
+    rerender.mockResolvedValue({
+      ...RENDERED,
+      contentHtml: '<p><a class="forum-mention" href="/id/victim">@victim</a> @kir</p>',
+    });
+    const { db, updates } = fakeDb([{ id: "p1", threadId: "t1", contentWikitext: "x" }]);
+    await rerenderPosts(withNames(db) as never, ["p1"]);
+    expect(updates[0]?.contentHtml).toBe(
+      '<p>@victim <a class="forum-mention" href="/id/kir">@kir</a></p>'
+    );
+  });
+  describe("a post whose render keeps failing", () => {
+    const BROKEN = Array.from({ length: 12 }, (_, i) => `broken${i}`);
+    const posts: Row[] = [...BROKEN, "fine"].map((id) => ({
+      id,
+      threadId: "t1",
+      contentWikitext: id,
+    }));
+    /** The stale query's order: posts that never rendered come first, and LIMIT cuts the list there. */
+    const queue = (rows: Row[]) => ({
+      $queryRaw: jest.fn(async (_s: TemplateStringsArray, ...values: Array<string | number>) =>
+        rows.slice(0, Number(values[values.length - 1])).map(({ id }) => ({ id }))
+      ),
+    });
+    const run = async (rows: Row[]) => {
+      const { db, updates } = fakeDb(rows);
+      const ids = await nextStaleBatch(queue(rows) as never);
+      db.forumPost.findMany.mockImplementation(async () => rows.filter((p) => ids.includes(p.id)));
+      const result = await rerenderPosts(db as never, ids);
+      return { ids, result, updates };
+    };
+    const mediaWiki = (broken: boolean) =>
+      rerender.mockImplementation(async (source: string) =>
+        broken && source.startsWith("broken")
+          ? null
+          : {
+              contentHtml: "<p>ok</p>",
+              plainText: "ok",
+              rendererVersion: "forum-1:v",
+              renderedAt: new Date(),
+              templates: [],
+            }
       );
-      expect(() =>
-        assertTokensArePlainText("<p>[ixaction=a] [ixaction=b]</p>", "[ixaction=a] [ixaction=c]")
-      ).toThrow(/plain text/);
-      expect(() =>
-        assertTokensArePlainText("<p>[ixaction=a] [ixaction=b]</p>", "[ixaction=a] [ixaction=b]")
-      ).not.toThrow();
+
+    it("goes to the back of the queue, so a renderable post behind it is reached on the next run", async () => {
+      mediaWiki(true);
+      const first = await run(posts);
+      expect(first.ids).toEqual(BROKEN.slice(0, 10));
+      expect(first.result).toEqual({ rendered: 0, failed: 10 });
+      const second = await run(posts);
+      expect(second.ids).toEqual([...BROKEN.slice(10), "fine"]);
+      expect(second.updates.map((u) => u.id)).toEqual(["fine"]);
+      expect(second.result).toEqual({ rendered: 1, failed: 2 });
+    });
+  });
+});
+
+/**
+ * Phase 4b: staff link an old XenForo account in the admin users panel. The link attributes that XenForo user's
+ * unattributed imported threads and posts at once (no import rerun); unlinking hands them back to the old name.
+ */
+describe("attributing imported content to a linked account", () => {
+  type Row = {
+    id: string;
+    authorUserId: string | null;
+    xenforoUserId: number | null;
+    importedAuthorName: string | null;
+  };
+  type Where = {
+    authorUserId?: string | null;
+    xenforoUserId?: number;
+    importedAuthorName?: object;
+  };
+  function store(
+    opts: { users?: Array<{ id: string; forumUserId: number | null; createdAt: Date }> } = {}
+  ) {
+    const users = opts.users ?? [{ id: "u1", forumUserId: null, createdAt: new Date(0) }];
+    const threads: Row[] = [
+      { id: "t1", authorUserId: null, xenforoUserId: 77, importedAuthorName: "OldTimer" },
+      { id: "t2", authorUserId: null, xenforoUserId: 88, importedAuthorName: "Other" },
+      { id: "t3", authorUserId: "u1", xenforoUserId: null, importedAuthorName: null },
+    ];
+    const posts: Row[] = [
+      { id: "p1", authorUserId: null, xenforoUserId: 77, importedAuthorName: "OldTimer" },
+      { id: "p2", authorUserId: null, xenforoUserId: 77, importedAuthorName: "OldTimer" },
+      { id: "p3", authorUserId: "u1", xenforoUserId: null, importedAuthorName: null },
+      { id: "p4", authorUserId: null, xenforoUserId: 88, importedAuthorName: "Other" },
+    ];
+    const matches = (r: Row, w: Where) =>
+      (w.xenforoUserId === undefined || r.xenforoUserId === w.xenforoUserId) &&
+      (!("authorUserId" in w) || r.authorUserId === w.authorUserId) &&
+      (w.importedAuthorName === undefined || r.importedAuthorName !== null);
+    const table = (rows: Row[]) => ({
+      findFirst: jest.fn(
+        async ({ where }: { where: Where }) => rows.find((r) => matches(r, where)) ?? null
+      ),
+      updateMany: jest.fn(
+        async ({ where, data }: { where: Where; data: { authorUserId: string | null } }) => {
+          const hit = rows.filter((r) => matches(r, where));
+          for (const r of hit) r.authorUserId = data.authorUserId;
+          return { count: hit.length };
+        }
+      ),
+    });
+    const user = {
+      findFirst: jest.fn(
+        async ({ where }: { where: { forumUserId: number; id: { not: string } } }) =>
+          users.find((u) => u.forumUserId === where.forumUserId && u.id !== where.id.not) ?? null
+      ),
+      findUnique: jest.fn(
+        async ({ where }: { where: { id: string } }) => users.find((u) => u.id === where.id) ?? null
+      ),
+      update: jest.fn(
+        async ({
+          where,
+          data,
+        }: {
+          where: { id: string };
+          data: {
+            forumUserId: number | null;
+            forumUsername: string | null;
+            lastForumSync: Date | null;
+          };
+        }) => {
+          const u = users.find((x) => x.id === where.id)!;
+          u.forumUserId = data.forumUserId;
+          return u;
+        }
+      ),
+    };
+    // Report re-attribution (M8) runs as raw SQL after a relink; the fake has no reports table.
+    const $executeRaw = jest.fn(async (_sql: TemplateStringsArray, ..._values: string[]) => 0);
+    const tables = { user, forumThread: table(threads), forumPost: table(posts), $executeRaw };
+    const $transaction = jest.fn(async (run: (tx: typeof tables) => Promise<object>) =>
+      run(tables)
+    );
+    return {
+      db: { ...tables, $transaction } as never,
+      threads,
+      posts,
+      user,
+    };
+  }
+  describe("linkOldForumAccount", () => {
+    it("re-linking to another id hands the previous id's posts back before attributing the new one's", async () => {
+      const s = store();
+      await linkOldForumAccount(s.db, { userId: "u1", xenforoUserId: 77 });
+      await expect(linkOldForumAccount(s.db, { userId: "u1", xenforoUserId: 88 })).resolves.toEqual(
+        {
+          username: "Other",
+          previousXenforoUserId: 77,
+          released: { threads: 1, posts: 2 },
+          relinked: { threads: 1, posts: 1 },
+        }
+      );
+      // 77's imported rows are back on the old name; 88's are u1's; native content is untouched.
+      expect(s.threads.map((t) => t.authorUserId)).toEqual([null, "u1", "u1"]);
+      expect(s.posts.map((p) => p.authorUserId)).toEqual([null, null, "u1", "u1"]);
+    });
+    it("refuses an unknown id without a typed name, and an id another account holds", async () => {
+      await expect(
+        linkOldForumAccount(store().db, { userId: "u1", xenforoUserId: 99 })
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      const taken = store({
+        users: [
+          { id: "u1", forumUserId: null, createdAt: new Date(0) },
+          { id: "u2", forumUserId: 77, createdAt: new Date(0) },
+        ],
+      });
+      await expect(
+        linkOldForumAccount(taken.db, { userId: "u1", xenforoUserId: 77 })
+      ).rejects.toMatchObject({ code: "CONFLICT" });
+      expect(taken.user.update).not.toHaveBeenCalled();
+    });
+  });
+  describe("unlinkOldForumAccount", () => {
+    it("hands the imported content back to the old name and leaves native content alone", async () => {
+      const s = store();
+      await linkOldForumAccount(s.db, { userId: "u1", xenforoUserId: 77 });
+      await expect(unlinkOldForumAccount(s.db, "u1")).resolves.toEqual({
+        released: { threads: 1, posts: 2 },
+      });
+      expect(s.threads.map((t) => t.authorUserId)).toEqual([null, null, "u1"]);
+      expect(s.posts.map((p) => p.authorUserId)).toEqual([null, null, "u1", null]);
+      expect(s.user.update).toHaveBeenLastCalledWith({
+        where: { id: "u1" },
+        data: { forumUserId: null, forumUsername: null, lastForumSync: null },
+      });
     });
   });
 });

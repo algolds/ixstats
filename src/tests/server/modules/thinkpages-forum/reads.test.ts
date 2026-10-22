@@ -1,4 +1,7 @@
 /** @jest-environment node */
+jest.mock("~/lib/notifications/api", () => ({ notificationAPI: { createMany: jest.fn() } }));
+jest.mock("~/lib/notifications/guard", () => ({ isNotificationEventEnabled: jest.fn() }));
+
 import { REALM_CATEGORIES } from "~/lib/thinkpages-forum/categories";
 import { SITE_CATEGORIES } from "~/tests/helpers/forum-site-categories";
 import {
@@ -23,7 +26,6 @@ import {
 } from "~/server/modules/thinkpages-forum/board-reads";
 import { latestActivity, listBoards } from "~/server/modules/thinkpages-forum/board-list";
 import { latestPublicThreadPreviews } from "~/server/modules/thinkpages-forum/thread-preview";
-import { describe, expect, it, jest } from "@jest/globals";
 import { latestPublicThreads } from "~/server/modules/thinkpages-forum/public-threads";
 import {
   roleOf,
@@ -35,6 +37,21 @@ import {
   forumActivityOf,
   importedAuthorByName,
 } from "~/server/modules/thinkpages-forum/member-activity";
+import {
+  readableUsers,
+  type NoticePlace,
+} from "~/server/modules/thinkpages-forum/notice-recipients";
+import { memberName } from "~/server/modules/thinkpages-forum/notice-text";
+import { notificationAPI } from "~/lib/notifications/api";
+import { isNotificationEventEnabled } from "~/lib/notifications/guard";
+import {
+  sendForumNotices,
+  type ForumNotice,
+} from "~/server/modules/thinkpages-forum/forum-notices";
+import {
+  discussionCountsOf,
+  discussionsOf,
+} from "~/server/modules/thinkpages-forum/action-discussions";
 
 const admin = {
   id: "u_a",
@@ -1455,6 +1472,499 @@ describe("a member's forum footprint", () => {
     it("never confirms a name that only staff-only or draft-realm content carries", async () => {
       await expect(importedAuthorByName(fakeDb() as never, "Secretive")).resolves.toBeNull();
       await expect(importedAuthorByName(fakeDb() as never, "Drafted")).resolves.toBeNull();
+    });
+  });
+});
+
+describe("who may be told about a thread", () => {
+  const role = { name: "user", level: 100 };
+  const user = (id: string, over: object = {}) => ({
+    id,
+    clerkUserId: `clerk_${id}`,
+    countryId: null,
+    role,
+    ...over,
+  });
+  const admin = user("u_admin", { role: { name: "admin", level: 10 } });
+  const plain = user("u_plain");
+  const author = user("u_author");
+  const founder = user("u_founder");
+  const db = {
+    realm: { findMany: jest.fn(async () => []) },
+    realmOfficer: { findMany: jest.fn(async () => []) },
+    forumCategoryModerator: { findMany: jest.fn(async () => []) },
+  };
+  const category = (visibility: string) => ({
+    id: "cat",
+    scope: "site",
+    realmId: null,
+    visibility,
+  });
+  const place = (over: Partial<NoticePlace> = {}): NoticePlace => ({
+    thread: { authorUserId: "u_author", hidden: false },
+    category: category("public"),
+    realm: null,
+    ...over,
+  });
+  const ids = async (p: NoticePlace, users = [admin, plain, author, founder]) =>
+    (await readableUsers(db as never, p, users)).map((u) => u.id);
+  describe("readableUsers", () => {
+    it("tells nobody about a hidden thread, moderators included", async () => {
+      expect(await ids(place({ thread: { authorUserId: "u_author", hidden: true } }))).toEqual([]);
+    });
+
+    it("keeps a staff board to site admins", async () => {
+      expect(await ids(place({ category: category("staff") }))).toEqual(["u_admin"]);
+    });
+
+    it("keeps a Reports thread to its author and the people who moderate it", async () => {
+      expect(await ids(place({ category: category("reporter_staff") }))).toEqual([
+        "u_admin",
+        "u_author",
+      ]);
+    });
+
+    it("hides a draft realm from everyone but its founder and site admins", async () => {
+      const draft = {
+        id: "r1",
+        slug: "draft",
+        name: "Draft",
+        status: "draft",
+        ownerId: "clerk_u_founder",
+      };
+      const inRealm = place({
+        category: { id: "cat", scope: "realm", realmId: "r1", visibility: "public" },
+        realm: draft,
+      });
+      expect(await ids(inRealm)).toEqual(["u_admin", "u_founder"]);
+      const open = { ...draft, status: "active" };
+      expect(await ids({ ...inRealm, realm: open })).toEqual([
+        "u_admin",
+        "u_plain",
+        "u_author",
+        "u_founder",
+      ]);
+    });
+  });
+  describe("naming a member in a notice", () => {
+    type MemberRow = { handle: string | null; wikiUsername: string | null; clerkUserId: string };
+    function memberDb(row: MemberRow | null, connections = privacyConnections()) {
+      return {
+        user: { findUnique: jest.fn(async (_args: object): Promise<MemberRow | null> => row) },
+        userConnection: connections,
+      };
+    }
+    describe("memberName", () => {
+      const wikiOnly: MemberRow = { handle: null, wikiUsername: "Wiki Name", clerkUserId: "c1" };
+      it("gives the fallback instead of the wiki name with wiki attribution off", async () => {
+        const off = privacyConnections(wikiAttributionOff("c1"));
+        expect(await memberName(memberDb(wikiOnly, off) as never, "u1", "Member")).toBe("Member");
+      });
+
+      it("fails closed: a switch it cannot read gives the fallback", async () => {
+        const broken = privacyConnections();
+        broken.findMany.mockRejectedValue(new Error("db down"));
+        expect(await memberName(memberDb(wikiOnly, broken) as never, "u1", "Member")).toBe(
+          "Member"
+        );
+      });
+    });
+  });
+  describe("sending the notices", () => {
+    const createMany = jest.mocked(notificationAPI.createMany);
+    const enabled = jest.mocked(isNotificationEventEnabled);
+    const notice = (n: number): ForumNotice => ({
+      clerkUserId: `clerk_${n}`,
+      title: "Kir mentioned you in Trade talks",
+      message: "hello",
+      href: "/thinkpages/post/p1",
+      priority: "medium",
+      metadata: { kind: "mention", postId: "p1", threadId: "t1" },
+    });
+    let errorSpy: jest.SpyInstance;
+    beforeEach(() => {
+      createMany.mockReset();
+      createMany.mockResolvedValue([]);
+      enabled.mockReset();
+      enabled.mockResolvedValue(true);
+      errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    });
+    afterEach(() => errorSpy.mockRestore());
+    describe("sendForumNotices", () => {
+      it("checks the admin switch itself, since createMany has no guard, and writes nothing when it is off", async () => {
+        enabled.mockResolvedValue(false);
+        await expect(sendForumNotices([notice(1)])).resolves.toBe(true);
+        expect(enabled).toHaveBeenCalledWith("thinkpages-forumNotification");
+        expect(createMany).not.toHaveBeenCalled();
+      });
+    });
+  });
+});
+
+describe("the posts that discuss an action", () => {
+  interface Cat {
+    id: string;
+    key: string;
+    name: string;
+    style: string;
+    visibility: string;
+    scope: string;
+    realmId: string | null;
+  }
+  const cat = (id: string, extra: Partial<Cat>): Cat => ({
+    id,
+    key: id,
+    name: id,
+    style: "ooc",
+    visibility: "public",
+    scope: "site",
+    realmId: null,
+    ...extra,
+  });
+  const general = cat("general", { name: "General" });
+  const hub = cat("hub", { name: "Hub", scope: "realm", realmId: "r_eurth" });
+  const board = cat("board", { name: "Board", style: "board", scope: "realm", realmId: "r_eurth" });
+  const oldHub = cat("old-hub", { name: "Old Hub", scope: "realm", realmId: "r_old" });
+  const draftHub = cat("draft-hub", { name: "Draft Hub", scope: "realm", realmId: "r_draft" });
+  const reports = cat("reports", { name: "Reports", visibility: "reporter_staff" });
+  const staffOnly = cat("staff-only", { name: "Staff", visibility: "staff" });
+  const realms = [
+    { id: "r_eurth", slug: "eurth", name: "Eurth", status: "active", ownerId: "founder" },
+    { id: "r_old", slug: "old", name: "Old Land", status: "archived", ownerId: "founder" },
+    { id: "r_draft", slug: "draft", name: "Draft Land", status: "draft", ownerId: "founder" },
+  ];
+  const users = [
+    {
+      id: "u_ann",
+      handle: "ann",
+      wikiUsername: null,
+      clerkUserId: "clerk_ann",
+      country: { name: "Annland", flag: null },
+    },
+  ];
+  const USER = { name: "user", level: 100 };
+  const guest = null;
+  const member = { id: "u_m", clerkUserId: "clerk_m", countryId: "c1", role: USER };
+  const author = { id: "u_ann", clerkUserId: "clerk_ann", countryId: "c2", role: USER };
+  const admin = {
+    id: "u_a",
+    clerkUserId: "clerk_a",
+    countryId: null,
+    role: { name: "admin", level: 10 },
+  };
+  const realmMod = {
+    ...member,
+    mod: { siteAdmin: false, realmIds: ["r_eurth"], categoryIds: [] },
+  };
+  interface PostRow {
+    id: string;
+    hidden: boolean;
+    createdAt: Date;
+    authorUserId: string | null;
+    authorPersonaId: string | null;
+    importedAuthorName: string | null;
+    thread: {
+      id: string;
+      title: string;
+      hidden: boolean;
+      authorUserId: string | null;
+      category: Cat;
+    };
+  }
+  const post = (
+    id: string,
+    category: Cat,
+    extra: Partial<PostRow> = {},
+    thread: Partial<PostRow["thread"]> = {}
+  ): PostRow => ({
+    id,
+    hidden: false,
+    createdAt: new Date("2026-10-01T10:00:00Z"),
+    authorUserId: "u_ann",
+    authorPersonaId: null,
+    importedAuthorName: null,
+    thread: {
+      id: `t_${id}`,
+      title: `Thread of ${id}`,
+      hidden: false,
+      authorUserId: "u_ann",
+      category,
+      ...thread,
+    },
+    ...extra,
+  });
+  interface LinkRow {
+    id: string;
+    activityId: string;
+    postSource: string;
+    postRef: string;
+    createdAt: Date;
+  }
+  /** Newer links have a smaller `n`. */
+  const link = (n: number, postRef: string, extra: Partial<LinkRow> = {}): LinkRow => ({
+    id: `l${String(n).padStart(3, "0")}`,
+    activityId: "a1",
+    postSource: "native",
+    postRef,
+    createdAt: new Date(Date.UTC(2026, 9, 10) - n * 60_000),
+    ...extra,
+  });
+  interface LinkWhere {
+    activityId: string | { in: string[] };
+    postSource: string;
+    activity?: { visibility: string };
+    OR?: Array<{ createdAt: { lt: Date } | Date; id?: { lt: string } }>;
+  }
+  /** `privateActivities` are the ids of activities whose row is not `visibility: "public"`. */
+  function world(links: LinkRow[], posts: PostRow[], privateActivities: string[] = []) {
+    const db = {
+      postActionLink: {
+        findMany: jest.fn(async (args: { where: LinkWhere; take: number }) => {
+          const { activityId, activity, OR } = args.where;
+          const after = (l: LinkRow) =>
+            OR === undefined ||
+            OR.some((c) =>
+              c.createdAt instanceof Date
+                ? l.createdAt.getTime() === c.createdAt.getTime() && l.id < c.id!.lt
+                : l.createdAt.getTime() < c.createdAt.lt.getTime()
+            );
+          return links
+            .filter(
+              (l) =>
+                l.postSource === args.where.postSource &&
+                (typeof activityId === "string"
+                  ? l.activityId === activityId
+                  : activityId.in.includes(l.activityId)) &&
+                (activity === undefined ||
+                  (activity.visibility === "public") ===
+                    !privateActivities.includes(l.activityId)) &&
+                after(l)
+            )
+            .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime() || (a.id < b.id ? 1 : -1))
+            .slice(0, args.take);
+        }),
+      },
+      forumPost: {
+        findMany: jest.fn(async ({ where }: { where: { id: { in: string[] } } }) =>
+          posts.filter((p) => where.id.in.includes(p.id))
+        ),
+      },
+      realm: {
+        findUnique: jest.fn(
+          async ({ where }: { where: { id?: string; slug?: string } }) =>
+            realms.find((r) => (where.id ? r.id === where.id : r.slug === where.slug)) ?? null
+        ),
+      },
+      user: {
+        findMany: jest.fn(async ({ where }: { where: { id: { in: string[] } } }) =>
+          users.filter((u) => where.id.in.includes(u.id))
+        ),
+      },
+      thinkpagesAccount: {
+        findMany: jest.fn(async () => []),
+      },
+    };
+    return db;
+  }
+  const page = (db: ReturnType<typeof world>, viewer: object | null, cursor?: string) =>
+    discussionsOf(db as never, viewer as never, { activityId: "a1", cursor });
+  /** The opaque cursor after link `n`: its time in ms, a dot, its id. */
+  const cursorOf = (n: number): string => {
+    const l = link(n, "x");
+    return `${l.createdAt.getTime()}.${l.id}`;
+  };
+  const ids = (out: { items: Array<{ postId: string }> }) => out.items.map((i) => i.postId);
+  describe("discussionsOf", () => {
+    describe("an activity that is not public (R3)", () => {
+      const posts = [post("p1", general)];
+
+      it("lists nothing for an abandoned directive, for any viewer", async () => {
+        const db = world([link(1, "p1")], posts, ["a1"]);
+        for (const viewer of [guest, member, author, admin]) {
+          expect(await page(db, viewer)).toEqual({ items: [], nextCursor: null });
+        }
+      });
+    });
+
+    // One test per rule that visiblePosts mirrors (R12).
+    describe("visibility", () => {
+      it("hidden post: left out for a member and a visitor, shown marked to a moderator", async () => {
+        const posts = [post("p_vis", hub), post("p_hid", hub, { hidden: true })];
+        const links = [link(1, "p_hid"), link(2, "p_vis")];
+        expect(ids(await page(world(links, posts), member))).toEqual(["p_vis"]);
+        expect(ids(await page(world(links, posts), guest))).toEqual(["p_vis"]);
+        const modView = await page(world(links, posts), realmMod);
+        expect(modView.items.map((i) => [i.postId, i.hidden])).toEqual([
+          ["p_hid", true],
+          ["p_vis", undefined],
+        ]);
+        expect((await page(world(links, posts), admin)).items).toHaveLength(2);
+      });
+      it("staff category: for site admins only", async () => {
+        const posts = [post("p_staff", staffOnly)];
+        const links = [link(1, "p_staff")];
+        expect((await page(world(links, posts), guest)).items).toEqual([]);
+        expect((await page(world(links, posts), member)).items).toEqual([]);
+        expect((await page(world(links, posts), realmMod)).items).toEqual([]);
+        expect(ids(await page(world(links, posts), admin))).toEqual(["p_staff"]);
+      });
+
+      it("Reports thread: its author and moderators only", async () => {
+        const posts = [post("p_rep", reports, {}, { authorUserId: "u_ann" })];
+        const links = [link(1, "p_rep")];
+        expect((await page(world(links, posts), guest)).items).toEqual([]);
+        expect((await page(world(links, posts), member)).items).toEqual([]);
+        expect(ids(await page(world(links, posts), author))).toEqual(["p_rep"]);
+        expect(ids(await page(world(links, posts), admin))).toEqual(["p_rep"]);
+      });
+
+      it("draft realm: for its staff only, while an archived realm stays readable", async () => {
+        const posts = [post("p_draft", draftHub), post("p_old", oldHub)];
+        const links = [link(1, "p_draft"), link(2, "p_old")];
+        expect(ids(await page(world(links, posts), guest))).toEqual(["p_old"]);
+        expect(ids(await page(world(links, posts), member))).toEqual(["p_old"]);
+        expect(ids(await page(world(links, posts), admin))).toEqual(["p_draft", "p_old"]);
+      });
+      it("board path: a hidden board message is for the realm's moderators only", async () => {
+        const posts = [post("p_b", board, { hidden: true })];
+        const links = [link(1, "p_b")];
+        expect((await page(world(links, posts), guest)).items).toEqual([]);
+        expect((await page(world(links, posts), member)).items).toEqual([]);
+        const out = await page(world(links, posts), realmMod);
+        expect(out.items[0]).toMatchObject({ kind: "board", hidden: true });
+      });
+    });
+
+    describe("authors", () => {
+      it("leaves a persona's post out for every viewer, moderators included, and never looks up its player", async () => {
+        for (const viewer of [guest, member, author, realmMod, admin]) {
+          const db = world(
+            [link(1, "p_persona")],
+            [post("p_persona", general, { authorPersonaId: "pa1", authorUserId: "u_ann" })]
+          );
+          const out = await page(db, viewer);
+          expect(out).toEqual({ items: [], nextCursor: null });
+          expect(db.user.findMany).not.toHaveBeenCalled();
+          expect(db.thinkpagesAccount.findMany).not.toHaveBeenCalled();
+        }
+      });
+    });
+
+    describe("paging", () => {
+      const many = (count: number, over: (n: number) => Partial<PostRow> = () => ({})) => {
+        const nums = Array.from({ length: count }, (_, i) => i + 1);
+        return world(
+          nums.map((n) => link(n, `p${n}`)),
+          nums.map((n) => post(`p${n}`, general, over(n)))
+        );
+      };
+      it("scans 100 links per call and hands back a cursor when all of them were hidden", async () => {
+        const db = many(150, () => ({ hidden: true }));
+        const first = await page(db, guest);
+        expect(first.items).toEqual([]);
+        expect(first.nextCursor).toBe(cursorOf(100));
+        const second = await page(db, guest, first.nextCursor!);
+        expect(second).toEqual({ items: [], nextCursor: null });
+      });
+
+      it.each([
+        ["no dot", "l999"],
+        ["exponent time", "1e3.l001"],
+      ])(
+        "reads a cursor that does not parse as the end of the list: %s",
+        async (_label, cursor) => {
+          const db = many(3);
+          expect(await page(db, guest, cursor)).toEqual({ items: [], nextCursor: null });
+          expect(db.postActionLink.findMany).not.toHaveBeenCalled();
+        }
+      );
+
+      it("continues after the cursor link even when that link has since been deleted", async () => {
+        const first = await page(many(45), guest);
+        expect(first.nextCursor).toBe(cursorOf(20));
+        // An edit removed link 20 (and link 5) between the two requests.
+        const nums = Array.from({ length: 45 }, (_, i) => i + 1).filter((n) => n !== 20 && n !== 5);
+        const after = world(
+          nums.map((n) => link(n, `p${n}`)),
+          nums.map((n) => post(`p${n}`, general))
+        );
+        const second = await page(after, guest, first.nextCursor!);
+        expect(ids(second)[0]).toBe("p21");
+        expect(second.items).toHaveLength(20);
+      });
+
+      it("breaks a tie between links of the same instant by id, so none repeats or is skipped", async () => {
+        const same = new Date("2026-10-09T00:00:00Z");
+        const nums = Array.from({ length: 30 }, (_, i) => i + 1);
+        const db = world(
+          nums.map((n) => link(n, `p${n}`, { createdAt: same })),
+          nums.map((n) => post(`p${n}`, general))
+        );
+        const first = await page(db, guest);
+        const second = await page(db, guest, first.nextCursor!);
+        const all = [...ids(first), ...ids(second)];
+        expect(all).toHaveLength(30);
+        expect(new Set(all).size).toBe(30);
+      });
+    });
+  });
+  describe("discussionCountsOf", () => {
+    const counts = (db: ReturnType<typeof world>, viewer: object | null, wanted: string[]) =>
+      discussionCountsOf(db as never, viewer as never, wanted);
+    it("reads at most 1,000 links per call", async () => {
+      const db = world([link(1, "p1")], [post("p1", general)]);
+      await counts(db, guest, ["a1"]);
+      const [[call]] = db.postActionLink.findMany.mock.calls;
+      expect(call.take).toBe(1000);
+    });
+
+    it("bounds the scan per action: one busy action cannot zero the counts of the others", async () => {
+      const busy = Array.from({ length: 1000 }, (_, i) => link(i + 1, `pb${i}`));
+      const posts = busy.map((l) => post(l.postRef, general));
+      const older = link(5000, "p_b", { activityId: "a2" });
+      const db = world([...busy, older], [...posts, post("p_b", general)]);
+      const out = await counts(db, guest, ["a1", "a2", "a3"]);
+      expect(out.a2).toEqual({ count: 1, postIds: ["p_b"] });
+      expect(out.a1!.count).toBe(1000);
+      expect(out.a3).toEqual({ count: 0, postIds: [] });
+    });
+    it("never counts a persona's post, for any viewer", async () => {
+      const posts = [
+        post("p_persona", general, { authorPersonaId: "pa1", authorUserId: "u_ann" }),
+        post("p_user", general),
+      ];
+      const links = [link(1, "p_persona"), link(2, "p_user")];
+      for (const viewer of [guest, member, realmMod, admin]) {
+        expect((await counts(world(links, posts), viewer, ["a1"])).a1).toEqual({
+          count: 1,
+          postIds: ["p_user"],
+        });
+      }
+    });
+
+    it("agrees with discussionsOf for the same viewer, post for post", async () => {
+      const posts = [
+        post("p1", general),
+        post("p2", hub, { hidden: true }),
+        post("p3", reports, {}, { authorUserId: "u_ann" }),
+        post("p4", draftHub),
+        post("p5", board),
+        post("p6", general, { authorPersonaId: "pa1" }),
+      ];
+      const links = posts.map((p, i) => link(i + 1, p.id));
+      for (const viewer of [guest, member, author, realmMod, admin]) {
+        const listed = ids(await page(world(links, posts), viewer));
+        const counted = (await counts(world(links, posts), viewer, ["a1"])).a1!;
+        expect(counted.count).toBe(listed.length);
+        expect(counted.postIds).toEqual(listed.slice(0, 2));
+      }
+    });
+    it("is safe for an id that names a prototype key", async () => {
+      const db = world([link(1, "p1", { activityId: "__proto__" })], [post("p1", general)]);
+      const out = await counts(db, guest, ["__proto__", "a1"]);
+      expect(Object.keys(out)).toEqual(["__proto__", "a1"]);
+      expect(Object.getPrototypeOf(out)).toBe(Object.prototype);
+      expect(({} as { count?: number }).count).toBeUndefined();
     });
   });
 });

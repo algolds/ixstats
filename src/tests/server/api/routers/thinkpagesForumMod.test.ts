@@ -47,7 +47,7 @@ import {
   listReports,
   notifyBan,
   notifyBanLifted,
-  notifyWarning
+  notifyWarning,
 } from "~/server/modules/thinkpages-forum";
 
 const caller = (user: object | null, db: object) =>
