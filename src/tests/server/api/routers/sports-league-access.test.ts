@@ -202,7 +202,7 @@ describe("placePrediction", () => {
     ["a fractional stake", { stake: 1.5 }, /./],
   ])("rejects %s", async (_name, input, message) => {
     const db = predictionDb();
-    if (input.matchId) db.sportMatch.findUnique.mockResolvedValue(null);
+    if ("matchId" in input) db.sportMatch.findUnique.mockResolvedValue(null);
     await expect(place("user_a", db, input)).rejects.toThrow(message);
     expect(spend).not.toHaveBeenCalled();
   });
