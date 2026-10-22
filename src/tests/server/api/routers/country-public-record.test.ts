@@ -161,7 +161,7 @@ describe("countries.getByIdBasic (plan 404)", () => {
       visitorOn(db)
     ).getByIdBasic({ id: "c_1" });
 
-    const { select } = findMany.mock.calls[0]?.[0] as { select: Record<string, boolean> };
+    const { select } = findMany.mock.calls[0]![0] as { select: Record<string, boolean> };
     expect(select).not.toHaveProperty("geometry");
     expect(select).toMatchObject({ id: true, name: true, centroid: true });
   });
