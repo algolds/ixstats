@@ -6,7 +6,10 @@
  * new-copy sources at the last free slot, and a dust credit at the Int ceiling.
  *
  * Folds card-packs-notices, card-packs-open-faces, workshop-numbers and ledger-bypass-routes (the VT-4/5/23
- * regression: a purchase goes through the ledger, its switches and its counters).
+ * regression: a purchase goes through the ledger, its switches and its counters), and the workshop's unit suites
+ * (breakdown, craft, fusion, dust-ledger, workshop-errors): a second break-down credits nothing, a fusion keeps the
+ * lowest serial, the copies a break-down or fusion refuses (signed, Serialised, listed, bound, asked for in a pending
+ * trade, Holo), and a craft refused for room, credits or dust spends nothing.
  */
 let mockDb: unknown;
 jest.mock("~/server/db", () => ({
@@ -32,6 +35,7 @@ import { creditDustTx, MAX_DUST_BALANCE } from "~/server/modules/cards/workshop/
 import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-prisma";
 import {
   addCard,
+  addCopy,
   addPack,
   addPlayer,
   addRealm,
@@ -199,6 +203,11 @@ async function packToDust(w: World) {
     })
   ).toBe(2);
   expect(await db.cardOwnership.count({ where: { id: { in: burned.map((c) => c.id) } } })).toBe(0);
+  // Breaking the same copies down again finds nothing to burn and credits nothing
+  await expect(crafting.breakDown({ ownershipIds: burned.map((c) => c.id) })).rejects.toMatchObject(
+    { code: "NOT_FOUND" }
+  );
+  expect((await crafting.getDust())[0]?.balance).toBe(expected);
   expect(
     await db.cardTransferEvent.findMany({
       where: { action: "BREAKDOWN", fromUserId: alice.id },
@@ -281,7 +290,9 @@ describe("cards-pack-to-dust (memory)", () => {
     expect(quote.credits).toBe(12);
 
     // The craft's lock order: the my_vault row, the dust row, capacity (7334), the serial (7331), then the copy
-    const craftStart = log.map((e) => e.kind === "write" && e.model === "MyVault").lastIndexOf(true);
+    const craftStart = log
+      .map((e) => e.kind === "write" && e.model === "MyVault")
+      .lastIndexOf(true);
     const order = log
       .slice(craftStart)
       .map((e) =>
@@ -397,6 +408,194 @@ describe("cards-pack-to-dust (memory)", () => {
     });
     expect((await creditsOf(db as never, [w.alice.id]))[w.alice.id]).toBe(99);
     expect(await db.userPack.count({ where: { userId: w.alice.id } })).toBe(0);
+  });
+});
+
+describe("cards-pack-to-dust (memory): the workshop's refusals", () => {
+  let db: MemoryPrisma;
+  let w: World;
+  const crafting = () => workshop(callerContext(db as never, w.alice));
+  /** Alice's copies of the Epic e1, serials 1 to n, all Standard. */
+  const epics = async (n: number) => {
+    const ids = Array.from({ length: n }, (_, i) => `m-e1-${i + 1}`);
+    for (const [i, id] of ids.entries())
+      await addCopy(db as never, { id, cardId: "m-e1", ownerId: w.alice.id, serialNumber: i + 1 });
+    return ids;
+  };
+  const dustOf = async () =>
+    (await db.cardDustBalance.findMany({ where: { userId: w.alice.id } })).map((b) => b.balance);
+
+  beforeEach(async () => {
+    db = createMemoryPrisma();
+    mockDb = db;
+    w = await seed(db as never, "m-");
+  });
+
+  it("fuses three Standard copies into the lowest serial at Foil, burning the others on their trail", async () => {
+    const [low, mid, high] = await epics(3);
+    await db.cardOwnership.update({ where: { id: low! }, data: { level: 4 } });
+    expect(await crafting().fuse({ ownershipIds: [high!, low!, mid!] })).toEqual({
+      ownershipId: low,
+      finish: "FOIL",
+      serialNumber: 1,
+    });
+    expect(
+      await db.cardOwnership.findMany({
+        where: { ownerId: w.alice.id },
+        select: { id: true, finish: true, level: true },
+      })
+    ).toEqual([{ id: low, finish: "FOIL", level: 4 }]);
+    expect(
+      await db.cardTransferEvent.findMany({
+        where: { action: "FUSE" },
+        select: { serialNumber: true, finish: true },
+        orderBy: { serialNumber: "asc" },
+      })
+    ).toEqual([
+      { serialNumber: 1, finish: "FOIL" },
+      { serialNumber: 2, finish: "STANDARD" },
+      { serialNumber: 3, finish: "STANDARD" },
+    ]);
+    // The card's serial lock comes before the burn, and the burn before the upgrade
+    const order = db.store.log
+      .map((e) =>
+        e.kind === "advisory" ? `lock ${e.ns}` : e.kind === "write" ? `${e.model}.${e.op}` : e.kind
+      )
+      .filter((e) => /^lock 7331|CardOwnership\.(deleteMany|updateMany)/.test(e));
+    expect(order).toEqual(["lock 7331", "CardOwnership.deleteMany", "CardOwnership.updateMany"]);
+  });
+
+  const signed = {
+    inscription: "gg",
+    inscribedById: "m-alice",
+    inscribedName: "@alice",
+    inscribedAt: new Date(),
+  };
+  it.each<[string, (copy: string) => Promise<unknown>, string]>([
+    [
+      "a signed copy",
+      (copy) => db.cardOwnership.update({ where: { id: copy }, data: signed }),
+      "Signed copies can't be broken down.",
+    ],
+    [
+      "a Serialised copy",
+      (copy) => db.cardOwnership.update({ where: { id: copy }, data: { finish: "SERIALISED" } }),
+      "Serialised copies can't be broken down.",
+    ],
+    [
+      "a listed copy",
+      (copy) => db.cardOwnership.update({ where: { id: copy }, data: { isLocked: true } }),
+      "A copy that is listed or in a trade can't be broken down.",
+    ],
+    [
+      "a bound copy",
+      () => db.card.update({ where: { id: "m-e1" }, data: { isBound: true } }),
+      "Bound cards can't be broken down.",
+    ],
+    [
+      "a copy asked for in a pending trade",
+      async (copy) => {
+        const other = await addPlayer(db as never, "m-other");
+        return db.tradeOffer.create({
+          data: {
+            initiatorId: other.id,
+            recipientId: w.alice.id,
+            proposerId: other.id,
+            initiatorCardIds: [],
+            recipientCardIds: [copy],
+            status: "PENDING",
+            expiresAt: new Date(Date.now() + 86_400_000),
+          },
+        });
+      },
+      "A copy that is listed or in a trade can't be broken down.",
+    ],
+  ])("refuses to break down %s, burning nothing of the batch", async (_label, make, message) => {
+    const [ok, refused] = await epics(2);
+    await make(refused!);
+    await expect(crafting().breakDown({ ownershipIds: [ok!, refused!] })).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message,
+    });
+    expect(await db.cardOwnership.count({ where: { ownerId: w.alice.id } })).toBe(2);
+    expect(await dustOf()).toEqual([]);
+  });
+
+  it.each<[string, (copies: string[]) => Promise<unknown>, string]>([
+    [
+      "a signed copy",
+      ([, mid]) => db.cardOwnership.update({ where: { id: mid! }, data: signed }),
+      "Signed copies can't be fused.",
+    ],
+    [
+      "a listed copy",
+      ([, , high]) => db.cardOwnership.update({ where: { id: high! }, data: { isLocked: true } }),
+      "A copy that is listed or in a trade can't be fused.",
+    ],
+    [
+      "bound copies",
+      () => db.card.update({ where: { id: "m-e1" }, data: { isBound: true } }),
+      "Bound cards can't be fused.",
+    ],
+    [
+      "Holo copies",
+      () => db.cardOwnership.updateMany({ where: { cardId: "m-e1" }, data: { finish: "HOLO" } }),
+      "Holo is the highest finish fusing reaches.",
+    ],
+  ])("refuses to fuse %s, changing nothing", async (_label, make, message) => {
+    const copies = await epics(3);
+    await make(copies);
+    const before = await db.cardOwnership.findMany({ where: { ownerId: w.alice.id } });
+    await expect(crafting().fuse({ ownershipIds: copies })).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message,
+    });
+    expect(await db.cardOwnership.findMany({ where: { ownerId: w.alice.id } })).toEqual(before);
+    expect(await db.cardTransferEvent.count({ where: { action: "FUSE" } })).toBe(0);
+  });
+
+  it.each<[string, { credits: number; dust: number; full?: boolean }, object]>([
+    [
+      "a full collection: the credit and dust spends roll back",
+      { credits: 1000, dust: 1000, full: true },
+      {
+        code: "PRECONDITION_FAILED",
+        message:
+          "Your collection is full. Break down cards, or buy a capacity upgrade in the Store.",
+      },
+    ],
+    [
+      "too few credits: no dust is spent",
+      { credits: 0, dust: 1000 },
+      { code: "BAD_REQUEST", message: expect.stringMatching(/^Insufficient credits/) },
+    ],
+    [
+      "too little dust: the credits come back",
+      { credits: 1000, dust: 0 },
+      { code: "PRECONDITION_FAILED", message: "You need 40 dust from this card's realm." },
+    ],
+  ])("crafts nothing with %s", async (_label, start, refusal) => {
+    await db.myVault.update({ where: { userId: w.alice.id }, data: { credits: start.credits } });
+    if (start.dust > 0)
+      await db.cardDustBalance.create({
+        data: { userId: w.alice.id, realmId: w.realmId, balance: start.dust },
+      });
+    if (start.full) {
+      const room = await db.$transaction((tx) => lockedCopyRoomTx(tx, w.alice.id));
+      await db.cardOwnership.createMany({
+        data: Array.from({ length: room }, (_, i) => ({
+          cardId: "m-e2",
+          ownerId: w.alice.id,
+          serialNumber: i + 1,
+        })),
+      });
+    }
+    const copies = await db.cardOwnership.count({ where: { ownerId: w.alice.id } });
+    await expect(crafting().craft({ cardId: w.common })).rejects.toMatchObject(refusal);
+    expect((await creditsOf(db as never, [w.alice.id]))[w.alice.id]).toBe(start.credits);
+    expect(await dustOf()).toEqual(start.dust > 0 ? [start.dust] : []);
+    expect(await db.cardOwnership.count({ where: { ownerId: w.alice.id } })).toBe(copies);
+    expect(await ledgerOf(db as never, w.alice.id)).toEqual([]);
   });
 });
 
