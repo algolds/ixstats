@@ -9,7 +9,8 @@
  *
  * Folds the listings, listings-end and settle-sale unit suites: what a listing, a purchase and a cancel refuse
  * (already listed, bound, not yours, a fee or price the player cannot pay, maintenance, the market or earning switched
- * off, expired, cancelled, your own), each moving nothing, and a sale rolled back whole when its XP fails.
+ * off, expired, cancelled, your own), each moving nothing, and a sale rolled back whole when its XP fails; and
+ * card-notify's mute: a muted card sends its player no notice.
  */
 let mockDb: unknown;
 jest.mock("~/server/db", () => ({
@@ -462,6 +463,17 @@ describe("cards-listing-sale (memory): what the market refuses", () => {
       })
     ).toEqual({ status: "ACTIVE" });
     expect(create).not.toHaveBeenCalled();
+  });
+
+  it("sends no notice about a card the player muted, and still pays them", async () => {
+    await db.cardNotificationMute.create({ data: { userId: w.nia.id, cardId: w.card } });
+    const listing = await as(w.sam).createListing({ ownershipId: w.copies[0], price: 500 });
+    create.mockClear();
+    await as(w.bea).buyListing({ listingId: listing.id });
+    expect(create.mock.calls.map(([n]) => [n.userId, n.title])).toEqual([
+      [w.sam.id, "Your listing sold"],
+    ]);
+    expect((await creditsOf(db as never, [w.nia.id]))[w.nia.id]).toBeGreaterThan(0);
   });
 
   it("refuses to cancel another player's listing, refunding nothing", async () => {
