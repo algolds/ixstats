@@ -32,4 +32,4 @@ You earn 50 IxCredits for each newly imported card, up to 5,000 IxCredits. The b
 
 ## For NationStates nation owners
 
-If a card of your NationStates nation appears in IxStats and you'd like it removed, open the card and choose **Verify & request takedown** in its **About** section (see [Takedowns](/help/vault/lore-cards#takedowns)). You verify you own the nation the same way as above, and the card's art is hidden at once. You can also ask us at [admin@ixwiki.com](mailto:admin@ixwiki.com) to take down any card's art; we answer within 14 days.
+If a card of your NationStates nation appears in IxStats and you'd like it removed, open the card, choose the **(i)** (About NationStates data) at the end of its **About** section, then **Verify & request takedown** (see [Takedowns](/help/vault/lore-cards#takedowns)). You verify you own the nation the same way as above, and the card's art is hidden at once. You can also ask us at [admin@ixwiki.com](mailto:admin@ixwiki.com) to take down any card's art; we answer within 14 days.

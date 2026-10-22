@@ -42,8 +42,8 @@ Your passport's **Focus** stat counts how many lore categories your collection c
 
 To ask for a card to be taken down, for example because it uses your work or your nation without your agreement:
 
-- **A NationStates card:** open the card and choose **Verify & request takedown** in its **About** section. You prove you own the nation the same way as when [importing a deck](/help/vault/ns-import), and the card's art is hidden at once.
-- **Any other card:** sign in, open the card and choose **Request a takedown** in its **About** section. Say why it should come down and, if you like, how staff can reach you. You can also email the staff at [admin@ixwiki.com](mailto:admin@ixwiki.com) with the card's title (or its link: open the card and choose **Copy link**) and why it should come down.
+- **A NationStates card:** open the card, choose the **(i)** (About NationStates data) at the end of its **About** section, then **Verify & request takedown**. You prove you own the nation the same way as when [importing a deck](/help/vault/ns-import), and the card's art is hidden at once.
+- **Any other card:** sign in, open the card and choose **Request a takedown** in its **About** section. Say why it should come down and, if you like, how staff can reach you. You can also email the staff at [admin@ixwiki.com](mailto:admin@ixwiki.com) with the card's title (or its link: open the card and choose the link button, **Copy link**, at its top) and why it should come down.
 
 Requests for any other card are answered within 14 days, and only staff see who sent one. A card has one request at a time, so if someone has already asked for it you're told so. You can have up to five requests waiting.
 

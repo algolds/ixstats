@@ -24,7 +24,7 @@ If you cancel it in **Selling**, or it expires, the copy comes back to you and h
 
 ## Selling at auction
 
-1. Open a card you own and choose **Sell at auction**, or open **Selling** and choose **Sell a card**. Pick the copy (search for it, or page through your cards).
+1. Open a card you own and choose **Auction**, or open **Selling** and choose **Sell a card**. Pick the copy (search for it, or page through your cards).
 2. Set a **starting price** and, if you like, a **buy-now price** (higher than the starting price).
 3. Choose how long it runs: **24 hours**, **3 days** or **7 days**.
 4. Pay the listing fee, the same as for a fixed-price listing.
@@ -43,7 +43,7 @@ When an auction ends, the highest bidder gets the card and the seller gets the p
 
 ## Direct trades
 
-1. Open **Trades** and choose **New trade**, then find the other player by their IxnayID handle. Or open a card you own and choose **Offer in a trade**. Before you build anything, you see whether they take trade offers from you.
+1. Open **Trades** and choose **New trade**, then find the other player by their IxnayID handle. Or open a card you own and choose **Trade**. Before you build anything, you see whether they take trade offers from you.
 2. Fill the two columns, **You give** and **You get**, with cards and IxC from each collection. A trade needs at least one card, so you can offer IxC for a card. If one side gives nothing, the trade is a gift.
 3. Cards on your wishlist are marked among theirs, and cards on their wishlist are marked among yours.
 4. Send it, with a note if you like. The cards you give are held while the offer is open.
