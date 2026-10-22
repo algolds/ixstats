@@ -46,10 +46,11 @@ const SPEND_2042 = { Finance: 20, Defense: 25, Education: 30, Health: 25 };
 let db: MemoryPrisma;
 let lena: Owner;
 
-/** The clock stands still at `ixTime` (an override followed by a pause reads back exactly). */
+/** The clock stands still at `ixTime` (a pause, then an override, reads back exactly). */
 function setClock(ixTime: number) {
-  IxTime.setTimeOverride(ixTime);
+  // Pause first: a pause after the override would anchor wherever the clock ran to in between
   IxTime.setMultiplierOverride(0);
+  IxTime.setTimeOverride(ixTime);
 }
 
 async function addPolicy(

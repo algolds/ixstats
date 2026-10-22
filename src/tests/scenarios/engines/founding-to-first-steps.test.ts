@@ -66,8 +66,9 @@ function valoria(): FoundingDraft {
 beforeEach(async () => {
   jest.spyOn(console, "log").mockImplementation(() => undefined);
   jest.spyOn(console, "info").mockImplementation(() => undefined);
-  IxTime.setTimeOverride(NOW);
+  // Pause first: a pause after the override would anchor wherever the clock ran to in between
   IxTime.setMultiplierOverride(0);
+  IxTime.setTimeOverride(NOW);
   db = createMemoryPrisma();
   mockDb = db;
   await addIxnay(db as never);

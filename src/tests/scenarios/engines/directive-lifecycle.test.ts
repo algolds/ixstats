@@ -6,13 +6,18 @@
  * the first is open. A security directive adds no growth effect; an abandoned one still uses its weekly slot, so a
  * fourth directive that week is refused. The outcome reports the ledger and the GDP effect. The directive cannot be
  * completed while resistance is open; as the owner answers and delegates the linked issues its progress follows, and
- * then it completes.
+ * then it completes. A committed directive declares one public activity row (a draft none) and an abandoned one
+ * takes it private, in the same write as the status. A dismissed issue holds executive bandwidth for the delegation
+ * window, counted in IxTime days. The draft-upgrade path upgrades only the owner's own draft, once, and never re-applies
+ * an active, finished or foreign directive under the weekly cap; a status only moves forward.
  *
  * Folds intent-commit-effects (spine link, non-zero levers, the level effect, the stored bandwidth cost, no growth
  * effect for security, assemblePackages' levers), intent-weekly-cap (abandoned keeps the slot, drafts never count,
  * the fourth refused), intent-outcome (ledger numbers, non-numeric rows, GDP effects, NOT_FOUND, suggest's level
- * shift), national-issues-consequences (progress from linked statuses), intent-system's five packages, the directive
- * sum and window of exec-bandwidth, and the spawn, link and deterministic-mode cases of resistance.
+ * shift), national-issues-consequences (progress from linked statuses), intent-system's five packages,
+ * exec-bandwidth (the directive sum and window, the delegation window in IxTime days), the spawn, link and
+ * deterministic-mode cases of resistance, intent-commit-guard (the draft-upgrade exploit, the status transitions) and
+ * intent-commit-activity (no row for a draft, the abandoned row private, a failed withdraw rolling the status back).
  */
 let mockDb: unknown;
 jest.mock("~/server/db", () => ({
@@ -22,10 +27,25 @@ jest.mock("~/server/db", () => ({
 }));
 jest.mock("~/lib/notifications/api", () => ({ notificationAPI: { create: jest.fn() } }));
 jest.mock("~/lib/achievements/queue", () => ({ queueAchievementCheck: jest.fn() }));
-jest.mock("~/lib/activity/directive-activity", () => ({
-  declareDirectiveActivity: jest.fn(async () => null),
-  withdrawDirectiveActivity: jest.fn(async () => undefined),
-}));
+/** Set to make the next withdrawal of a directive's activity row fail (the feed is down). */
+const mockFeed = { failNextWithdraw: false };
+jest.mock("~/lib/activity/directive-activity", () => {
+  const actual = jest.requireActual<typeof import("~/lib/activity/directive-activity")>(
+    "~/lib/activity/directive-activity"
+  );
+  return {
+    ...actual,
+    withdrawDirectiveActivity: async (
+      ...args: Parameters<typeof actual.withdrawDirectiveActivity>
+    ) => {
+      if (mockFeed.failNextWithdraw) {
+        mockFeed.failNextWithdraw = false;
+        throw new Error("activity feed down");
+      }
+      return actual.withdrawDirectiveActivity(...args);
+    },
+  };
+});
 jest.mock("~/lib/intent/intent-summation", () => ({
   generateIntentSummationDraft: jest.fn(async () => null),
 }));
@@ -41,9 +61,11 @@ jest.mock("~/lib/national-issues/config", () => ({
 import { IxTime } from "~/lib/ixtime";
 import { growthModifierToLevelShift } from "~/lib/economy/calculations";
 import {
+  DELEGATED_ISSUE_EXEC_BANDWIDTH,
   DIRECTIVE_EXEC_BANDWIDTH_WINDOW_MS,
   loadExecBandwidthState,
 } from "~/lib/government/exec-bandwidth";
+import { directiveActivityId } from "~/lib/action-links";
 import { GROWTH_EFFECT_YEARS } from "~/lib/intent/assemble";
 import { NationalIssuesConsequences, NationalIssuesEngine } from "~/lib/national-issues";
 import { createCallerFactory } from "~/server/api/trpc";
@@ -72,8 +94,9 @@ let lena: Owner;
 beforeEach(async () => {
   jest.spyOn(console, "log").mockImplementation(() => undefined);
   jest.spyOn(console, "info").mockImplementation(() => undefined);
-  IxTime.setTimeOverride(NOW);
+  // Pause first: a pause after the override would anchor wherever the clock ran to in between
   IxTime.setMultiplierOverride(0);
+  IxTime.setTimeOverride(NOW);
   db = createMemoryPrisma();
   mockDb = db;
   await addIxnay(db as never);
@@ -139,18 +162,27 @@ it("commits, caps, resists, reports and completes a directive", async () => {
   expect(defense.packages[1]!.consequences.map((c) => c.targetField)).toContain("stabilityScore");
   expect(defense.packages[1]!.gdpGrowthModifier).toBe(0);
 
-  // A saved draft uses no slot
-  await owner.commit({ countryId: "testland", goal: "Build rail", tier: "proposed" });
+  // A saved draft uses no slot and declares no activity row (a private directive cannot be revealed by the forum)
+  const draft = await owner.commit({ countryId: "testland", goal: "Build rail", tier: "proposed" });
   expect((await status()).usedThisWeek).toBe(0);
+  expect(draft.activityId).toBeNull();
+  expect(await db.activityFeed.count()).toBe(0);
 
   // The moderate jobs directive: applied once through the spine, a phased level effect, its bandwidth held
   const moderate = suggested.packages.find((p) => p.tier === "moderate")!;
-  const { intent: jobs } = await owner.commit({
+  const { intent: jobs, activityId } = await owner.commit({
     countryId: "testland",
     goal: JOBS,
     tier: "moderate",
   });
   expect(jobs).toMatchObject({ status: "active", execBandwidthCost: moderate.execBandwidthCost });
+  expect(activityId).toBe(directiveActivityId(jobs.id));
+  expect(
+    await db.activityFeed.findUniqueOrThrow({
+      where: { id: activityId! },
+      select: { visibility: true },
+    })
+  ).toEqual({ visibility: "public" });
   const ledger = await db.countryChangeLog.findMany({
     where: { sourceId: jobs.id },
     select: { targetField: true, previousValue: true, newValue: true, deltaValue: true },
@@ -191,7 +223,18 @@ it("commits, caps, resists, reports and completes a directive", async () => {
     tier: "moderate",
   });
   expect(await db.nationalIssue.count({ where: { templateId: "factory-walkout" } })).toBe(1);
+  // Abandoning takes its activity row private in the same write; a failed withdrawal rolls the status back
+  const visibility = async () =>
+    (await db.activityFeed.findUniqueOrThrow({ where: { id: directiveActivityId(again.id) } }))
+      .visibility;
+  mockFeed.failNextWithdraw = true;
+  await expect(owner.updateStatus({ id: again.id, status: "abandoned" })).rejects.toMatchObject({
+    code: "INTERNAL_SERVER_ERROR",
+  });
+  expect((await db.intent.findUniqueOrThrow({ where: { id: again.id } })).status).toBe("active");
+  expect(await visibility()).toBe("public");
   await owner.updateStatus({ id: again.id, status: "abandoned" });
+  expect(await visibility()).toBe("private");
   expect(await status()).toMatchObject({ usedThisWeek: 2, canCommit: true });
 
   // A security directive moves no GDP; the extreme package's cost is stored
@@ -287,7 +330,102 @@ it("commits, caps, resists, reports and completes a directive", async () => {
   expect(await NationalIssuesConsequences.recomputeIntentProgress(crime.id, db as never)).toBe(0);
   expect((await db.intent.findUniqueOrThrow({ where: { id: crime.id } })).progress).toBe(0);
 
-  // Past the execution window the directives hold no bandwidth
+  // A delegated (dismissed) issue holds bandwidth for the delegation window, in IxTime days (not 5 ms)
+  IxTime.setTimeOverride(NOW + 86_400_000);
+  expect((await loadExecBandwidthState(db as never, "testland")).breakdown.delegatedIssues).toBe(
+    DELEGATED_ISSUE_EXEC_BANDWIDTH
+  );
+
+  // Past the execution window the directives and the delegation hold no bandwidth
   IxTime.setTimeOverride(NOW + DIRECTIVE_EXEC_BANDWIDTH_WINDOW_MS + 1);
-  expect((await loadExecBandwidthState(db as never, "testland")).breakdown.directives).toBe(0);
+  expect((await loadExecBandwidthState(db as never, "testland")).breakdown).toMatchObject({
+    directives: 0,
+    delegatedIssues: 0,
+  });
+});
+
+it("upgrades only the owner's own draft, once, and never re-applies a directive under the cap", async () => {
+  await addNation(db as never, { id: "twinland", name: "Twinland", baselineDate: new Date(NOW) });
+  const omar = await addOwner(db as never, "omar", "twinland");
+  const owner = intents(asOwner(db as never, lena));
+  const commitAs = (intentId: string, tier: "measured" | "extreme" = "measured") =>
+    owner.commit({ countryId: "testland", goal: JOBS, tier, intentId });
+  const applied = (intentId: string) =>
+    db.countryChangeLog.count({ where: { sourceId: intentId } });
+
+  // A rival's draft, or an id that does not exist, is not the owner's to upgrade
+  const { intent: rivalDraft } = await intents(asOwner(db as never, omar)).commit({
+    countryId: "twinland",
+    goal: CRIME,
+    tier: "proposed",
+  });
+  await expect(commitAs(rivalDraft.id, "extreme")).rejects.toMatchObject({ code: "NOT_FOUND" });
+  await expect(commitAs("missing")).rejects.toMatchObject({ code: "NOT_FOUND" });
+  expect(await db.intent.findUniqueOrThrow({ where: { id: rivalDraft.id } })).toMatchObject({
+    countryId: "twinland",
+    status: "proposed",
+    tier: "proposed",
+  });
+
+  // The owner's draft: two upgrades racing apply its package once
+  const { intent: draft } = await owner.commit({
+    countryId: "testland",
+    goal: JOBS,
+    tier: "proposed",
+  });
+  const raced = await Promise.allSettled([commitAs(draft.id), commitAs(draft.id)]);
+  expect(raced.map((r) => r.status).sort()).toEqual(["fulfilled", "rejected"]);
+  expect(raced.find((r) => r.status === "rejected")).toMatchObject({
+    reason: { code: "BAD_REQUEST" },
+  });
+  expect(await db.intent.findUniqueOrThrow({ where: { id: draft.id } })).toMatchObject({
+    status: "active",
+    tier: "measured",
+  });
+  const rows = await applied(draft.id);
+  expect(rows).toBeGreaterThan(0);
+
+  // With the week at 1/3 only the draft check stops a replay of the active directive
+  expect(await owner.getStatus({ countryId: "testland" })).toMatchObject({
+    usedThisWeek: 1,
+    canCommit: true,
+  });
+  await expect(commitAs(draft.id, "extreme")).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  await owner.updateStatus({ id: draft.id, status: "abandoned" });
+  await expect(commitAs(draft.id)).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  expect(await applied(draft.id)).toBe(rows);
+  expect((await db.intent.findUniqueOrThrow({ where: { id: draft.id } })).tier).toBe("measured");
+
+  // Nobody moves another nation's directive
+  await expect(
+    intents(asOwner(db as never, omar)).updateStatus({ id: draft.id, status: "completed" })
+  ).rejects.toMatchObject({ code: "FORBIDDEN" });
+});
+
+it.each([
+  ["proposed", "abandoned", true],
+  ["active", "completed", true],
+  ["active", "abandoned", true],
+  ["abandoned", "active", false],
+  ["completed", "active", false],
+  ["proposed", "active", false],
+  ["active", "proposed", false],
+] as const)("a status moves %s → %s: %s", async (from, to, allowed) => {
+  const intent = await db.intent.create({
+    data: {
+      countryId: "testland",
+      goal: JOBS,
+      tier: "measured",
+      category: "economy",
+      status: from,
+      changesJson: "[]",
+      createdIxTime: NOW,
+    },
+  });
+  const change = intents(asOwner(db as never, lena)).updateStatus({ id: intent.id, status: to });
+  if (allowed) await expect(change).resolves.toMatchObject({ status: to });
+  else await expect(change).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  expect((await db.intent.findUniqueOrThrow({ where: { id: intent.id } })).status).toBe(
+    allowed ? to : from
+  );
 });

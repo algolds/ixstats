@@ -1,6 +1,10 @@
 /**
- * Statecraft simulation: foreign policy impacts, power brokers, the whip, and the vote and
- * consequence fog (which never fabricates a figure).
+ * The Statecraft corpus: foreign policy impacts, power brokers, the whip, the vote and consequence fog (which never
+ * fabricates a figure), the directive goal classifier over real goal texts (domestic only), and the guards on the
+ * resistance a directive raises (template cooldown, spawn modes, never throwing into a commit). The resistance spawn,
+ * link and dedupe run in tests/scenarios/engines/directive-lifecycle.test.ts.
+ *
+ * Folds intent-system and the guard cases of intent/resistance.
  */
 
 import { computeForeignPolicyImpact, type FPParty } from "~/lib/statecraft/foreign-policy";
@@ -115,5 +119,97 @@ describe("revealConsequences — fog is the build's blind spots", () => {
     const approval = out.find((r) => r.domain === "approval")!;
     expect(approval.state).toBe("questioned");
     expect(approval.reason).toMatch(/over capacity/i);
+  });
+});
+
+import { classifyGoal } from "~/lib/intent/assemble";
+
+describe("classifyGoal over real goal texts", () => {
+  it.each([
+    ["Transition to Green Energy", "infrastructure"],
+    ["Provide subsidies to Clean Energy Startups", "fiscal"],
+    ["Expand healthcare access to Rural Communities", "social"],
+    ["Boost military defense readiness", "defense"],
+    ["Crack down on urban crime and corruption", "security"],
+  ])("classifies %p as %s (capitalised words are not foreign names)", (goal, category) => {
+    expect(classifyGoal(goal).category).toBe(category);
+  });
+
+  it.each(["Sign military alliance with Urcea", "Declare war against hostile nation"])(
+    "refuses the foreign goal %p",
+    (goal) => {
+      expect(() => classifyGoal(goal)).toThrow(
+        "Cabinet Directives are restricted to domestic policy"
+      );
+    }
+  );
+});
+
+import { IxTime } from "~/lib/ixtime";
+import { spawnIntentResistance, spawnResistanceForIntent } from "~/lib/intent/resistance";
+import { NationalIssuesEngine, nationalIssuesConfig } from "~/lib/national-issues";
+
+describe("directive resistance guards", () => {
+  const template = {
+    id: "tmpl-economic",
+    title: "Economic Resistance in {{country}}",
+    description: "Citizens are demonstrating against economic reforms in {{country}}.",
+    triggerReason: "Policy resistance triggered",
+    domain: "economic",
+    category: "economic",
+    options: [{ id: "opt_1", label: "Compromise", description: "Offer", consequences: [] }],
+    cooldownDays: 30,
+    maxActivePerCountry: 1,
+    baseUrgency: 60,
+  };
+  const intent = { id: "intent-1", category: "economy", tier: "extreme" };
+  const db = {
+    nationalIssueTemplate: { findMany: jest.fn(), findUnique: jest.fn() },
+    nationalIssue: { findFirst: jest.fn(), count: jest.fn() },
+  };
+  let forceGenerate: jest.SpiedFunction<typeof NationalIssuesEngine.forceGenerate>;
+  const spawnMode = (mode: "deterministic" | "probability" | "off") =>
+    jest
+      .spyOn(nationalIssuesConfig, "getNationalIssuesConfig")
+      .mockReturnValue({ maxIssuesPerSession: 3, maxIssuesPerWeek: 5, spawnMode: mode });
+
+  beforeEach(() => {
+    jest.spyOn(IxTime, "getCurrentIxTime").mockReturnValue(1_000_000);
+    forceGenerate = jest.spyOn(NationalIssuesEngine, "forceGenerate").mockResolvedValue("issue-1");
+    db.nationalIssueTemplate.findMany.mockReset().mockResolvedValue([template]);
+    db.nationalIssueTemplate.findUnique.mockReset().mockResolvedValue(template);
+    db.nationalIssue.findFirst.mockReset().mockResolvedValue(null);
+    db.nationalIssue.count.mockReset().mockResolvedValue(0);
+  });
+  afterEach(() => jest.restoreAllMocks());
+
+  it("raises nothing from a template still cooling down after a recent spawn", async () => {
+    db.nationalIssue.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: "recent" });
+    await expect(
+      spawnResistanceForIntent({
+        db: db as never,
+        countryId: "country-1",
+        intent,
+        tokens: ["economic"],
+      })
+    ).resolves.toBeNull();
+    expect(forceGenerate).not.toHaveBeenCalled();
+  });
+
+  it.each(["probability", "off"] as const)("raises nothing in %s mode", async (mode) => {
+    spawnMode(mode);
+    await expect(
+      spawnIntentResistance({ db: db as never, countryId: "country-1", intent })
+    ).resolves.toBeNull();
+    expect(db.nationalIssueTemplate.findMany).not.toHaveBeenCalled();
+  });
+
+  it("never throws into the commit when the database fails", async () => {
+    spawnMode("deterministic");
+    jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    db.nationalIssueTemplate.findMany.mockRejectedValue(new Error("boom"));
+    await expect(
+      spawnIntentResistance({ db: db as never, countryId: "country-1", intent })
+    ).resolves.toBeNull();
   });
 });

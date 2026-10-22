@@ -79,9 +79,9 @@ let db: MemoryPrisma;
 beforeEach(async () => {
   jest.spyOn(console, "log").mockImplementation(() => undefined);
   jest.spyOn(console, "info").mockImplementation(() => undefined);
-  // The clock stands still at NOW (an override followed by a pause reads back exactly)
-  IxTime.setTimeOverride(NOW);
+  // The clock stands still at NOW. Pause first: a pause after the override would anchor wherever the clock ran to
   IxTime.setMultiplierOverride(0);
+  IxTime.setTimeOverride(NOW);
   db = createMemoryPrisma();
   mockDb = db;
   const baselineDate = new Date(NOW - YEAR);
