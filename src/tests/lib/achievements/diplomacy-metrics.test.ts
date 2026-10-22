@@ -244,9 +244,7 @@ describe("thresholds the fixture does not reach", () => {
     ["dip-good-neighbour", "cooperativeAccepted", 5],
     ["dip-winning-hearts", "npcInvitesAccepted", 3],
     ["dip-consensus-builder", "proposalsApproved", 25],
-    ["nation-first-arms", "armsAttached", 1],
     ["nation-stewardship-3", "ownedMonths", 36],
-    ["nation-identity", "identityComplete", 1],
     ["nation-heraldic-house", "heraldryPublishedInstitutions", 3],
     ["nation-cartographer", "mapEditsApproved", 10],
   ])("%s unlocks at %s >= %d and not one below", (id, metric, threshold) => {

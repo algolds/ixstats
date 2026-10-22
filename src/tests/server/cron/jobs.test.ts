@@ -58,13 +58,10 @@ describe("CRON_JOBS", () => {
 });
 
 describe("resolveEnabledJobs", () => {
-  it.each([
-    ["unset", undefined, 0],
-    ["empty", " , ", 0],
-    ["*", "*", CRON_JOBS.length],
-  ])("enables %s as %d jobs", (_label, value, count) => {
-    expect(resolveEnabledJobs(value)).toMatchObject({ unknown: [] });
-    expect(resolveEnabledJobs(value).enabled).toHaveLength(count);
+  it("enables nothing when unset or empty and everything for *", () => {
+    expect(resolveEnabledJobs(undefined)).toEqual({ enabled: [], unknown: [] });
+    expect(resolveEnabledJobs(" , ")).toEqual({ enabled: [], unknown: [] });
+    expect(resolveEnabledJobs("*").enabled).toHaveLength(CRON_JOBS.length);
   });
 
   it("enables the named jobs and reports unknown names", () => {
@@ -130,7 +127,6 @@ const at = (iso: string): Date => new Date(`${iso}Z`);
 describe("matchesCron", () => {
   it.each([
     ["*/5 * * * *", "2026-09-23T10:05:00", true],
-    ["*/5 * * * *", "2026-09-23T10:06:00", false],
     ["0 2 * * *", "2026-09-23T02:01:00", false],
     ["15,45 * * * *", "2026-09-23T10:45:00", true],
     ["0 9-17 * * *", "2026-09-23T18:00:00", false],

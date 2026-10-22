@@ -511,49 +511,62 @@ describe("the public side", () => {
     expect(tree.allIntents.find((i) => i.id === "draft")?.changesJson).toContain("budget");
   });
 
-  it.each([
-    ["another player", otherPlayer],
-    ["a signed-out visitor", signedOut],
-  ] as Array<[string, Ctx]>)("gives %s the redacted public tree only", async (_who, ctxFor) => {
-    const db = makeDb();
-    const tree = await intents(ctxFor(db)).getTree({ countryId: COUNTRY });
-    expect(tree.allIntents.map((i) => i.id).sort()).toEqual(["done", "in_force"]);
-    for (const intent of tree.allIntents) {
-      expect(intent).toMatchObject({
-        changesJson: "[]",
-        execBandwidthCost: null,
-        cooldownUntil: null,
-      });
-    }
-    expect(tree.roots).toHaveLength(2);
+  it("gives another player and a signed-out visitor the redacted public tree only", async () => {
+    const publicTree = async (ctxFor: Ctx) => {
+      const tree = await intents(ctxFor(makeDb())).getTree({ countryId: COUNTRY });
+      return {
+        ids: tree.allIntents.map((i) => i.id).sort(),
+        roots: tree.roots.length,
+        redacted: tree.allIntents.every(
+          (i) => i.changesJson === "[]" && i.execBandwidthCost === null && i.cooldownUntil === null
+        ),
+      };
+    };
+    const expected = { ids: ["done", "in_force"], roots: 2, redacted: true };
+    expect({
+      otherPlayer: await publicTree(otherPlayer),
+      signedOut: await publicTree(signedOut),
+    }).toEqual({ otherPlayer: expected, signedOut: expected });
   });
 
-  it.each([
-    ["another player", otherPlayer, { draft: "NOT_FOUND", withdrawn: "NOT_FOUND" }],
-    ["a signed-out visitor", signedOut, { draft: "NOT_FOUND", withdrawn: "NOT_FOUND" }],
-    ["the owner", owner, { draft: "served", withdrawn: "served" }],
-    ["an admin", admin, { draft: "served", withdrawn: "served" }],
-  ] as Array<[string, Ctx, Record<string, string>]>)(
-    "shows %s a directive's outcome: enacted always, drafts and abandoned ones %p",
-    async (_who, ctxFor, hidden) => {
-      const outcome = (intentId: string) => (ctx: never) => intents(ctx).getOutcome({ intentId });
-      expect({
-        in_force: await outcomeOf(outcome("in_force"), ctxFor(makeDb())),
-        draft: await outcomeOf(outcome("draft"), ctxFor(makeDb())),
-        withdrawn: await outcomeOf(outcome("withdrawn"), ctxFor(makeDb())),
-      }).toEqual({ in_force: "served", ...hidden });
-    }
-  );
+  it("shows a directive's outcome to everyone once enacted, and a draft or abandoned one to the owner and admins only", async () => {
+    const outcomes = async (ctxFor: Ctx) => {
+      const of = (intentId: string) =>
+        outcomeOf((ctx) => intents(ctx).getOutcome({ intentId }), ctxFor(makeDb()));
+      return {
+        in_force: await of("in_force"),
+        draft: await of("draft"),
+        withdrawn: await of("withdrawn"),
+      };
+    };
+    const hidden = { in_force: "served", draft: "NOT_FOUND", withdrawn: "NOT_FOUND" };
+    const shown = { in_force: "served", draft: "served", withdrawn: "served" };
+    expect({
+      otherPlayer: await outcomes(otherPlayer),
+      signedOut: await outcomes(signedOut),
+      owner: await outcomes(owner),
+      admin: await outcomes(admin),
+    }).toEqual({ otherPlayer: hidden, signedOut: hidden, owner: shown, admin: shown });
+  });
 
-  it.each([
-    ["another player", otherPlayer, { countryId: COUNTRY, status: { not: "draft" } }],
-    ["a signed-out visitor", signedOut, { countryId: COUNTRY, status: { not: "draft" } }],
-    ["the owner", owner, { countryId: COUNTRY }],
-    ["an admin", admin, { countryId: COUNTRY }],
-  ] as Array<[string, Ctx, Where]>)("lists policies for %s as %p", async (_who, ctxFor, where) => {
-    const db = makeDb();
-    await policies(ctxFor(db)).getPolicies({ countryId: COUNTRY });
-    expect(db.policy.findMany).toHaveBeenCalledWith(expect.objectContaining({ where }));
+  it("lists policies without drafts for everyone but the owner and admins", async () => {
+    const whereFor = async (ctxFor: Ctx) => {
+      const db = makeDb();
+      await policies(ctxFor(db)).getPolicies({ countryId: COUNTRY });
+      return (db.policy.findMany.mock.calls[0]![0] as { where: Where }).where;
+    };
+    const published = { countryId: COUNTRY, status: { not: "draft" } };
+    expect({
+      otherPlayer: await whereFor(otherPlayer),
+      signedOut: await whereFor(signedOut),
+      owner: await whereFor(owner),
+      admin: await whereFor(admin),
+    }).toEqual({
+      otherPlayer: published,
+      signedOut: published,
+      owner: { countryId: COUNTRY },
+      admin: { countryId: COUNTRY },
+    });
   });
 
   it("never serves another player's drafts even when asked for them", async () => {

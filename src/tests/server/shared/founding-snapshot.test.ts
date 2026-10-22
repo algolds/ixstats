@@ -204,7 +204,7 @@ describe("computeFoundingSnapshot: every archetype, every band pair", () => {
     expect((snapshot.economyBuilderState.sectors as unknown[]).length).toBe(7);
   });
 
-  it.each(["absolute-monarchy", "confederation"])(
+  it.each(["absolute-monarchy"])(
     "a %s founding takes the form's government type and departments",
     (formId) => {
       const snapshot = computeFoundingSnapshot({

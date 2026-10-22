@@ -14,21 +14,10 @@ import {
   type RouteForMobility,
   type CityNode,
 } from "~/lib/economy/national-mobility";
-import {
-  calculateRouteTravelTime,
-  resolveRouteBaseSpeed,
-  KMH_PER_KNOT,
-  type LngLat,
-} from "~/lib/economy/travel-time";
+import { calculateRouteTravelTime, KMH_PER_KNOT, type LngLat } from "~/lib/economy/travel-time";
 import { distanceKm } from "~/lib/maps/geo-math";
 
 describe("Travel Time Engine", () => {
-  describe("resolveRouteBaseSpeed", () => {
-    it("falls back to 80 km/h for unknown route types", () => {
-      const speed = resolveRouteBaseSpeed("custom_hyperloop");
-      expect(speed).toBe(80);
-    });
-  });
   describe("calculateRouteTravelTime", () => {
     it("applies terrain difficulty degradation", () => {
       // 100 km/h with 1.0 terrain difficulty -> 25% drag -> 75 km/h

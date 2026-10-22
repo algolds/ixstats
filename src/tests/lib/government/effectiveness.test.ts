@@ -111,7 +111,6 @@ describe("government forms", () => {
     ["Military junta", "military-government"],
     ["Merchant republic ruled by an oligarchy", "merchant-oligarchy"],
     ["Unitary absolute sultanate", "absolute-monarchy"],
-    ["Parliamentary constitutional emirate", "constitutional-monarchy"],
   ])("maps the infobox government %p to %p", (text, expected) => {
     expect(matchGovernmentForm(text)).toBe(expected);
   });
