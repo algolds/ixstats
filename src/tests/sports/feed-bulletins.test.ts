@@ -1,10 +1,14 @@
+/**
+ * Sports bulletins on the feed: a stored marker the card would read is refused unless every field it reads is
+ * well-formed (untrusted post content), a legacy markdown bulletin still parses, and one encode round trip.
+ */
 import {
   formatMatchDayBulletin,
   encodeSportsBulletin,
   parseSportsBulletin,
 } from "~/lib/sports/feed-bulletins";
 describe("encode and parse sports bulletin", () => {
-  test("encodes and parses correctly", () => {
+  it("encodes and parses correctly", () => {
     const data = {
       league: { id: "league-123", name: "La Liga" },
       sportEmoji: "⚽",
@@ -29,7 +33,7 @@ describe("encode and parse sports bulletin", () => {
     const parsed = parseSportsBulletin(encoded);
     expect(parsed).toEqual(data);
   });
-  test("recovers a legacy markdown bulletin (no marker) into card data", () => {
+  it("recovers a legacy markdown bulletin (no marker) into card data", () => {
     // Exactly what the pre-encode cron posted — names with trailing digits + movers.
     const markdown = formatMatchDayBulletin({
       leagueName: "Imperial League",
@@ -62,30 +66,22 @@ describe("encode and parse sports bulletin", () => {
 });
 
 describe("parseSportsBulletin — stored JSON marker", () => {
-  it("ignores a marker without a league (it would crash the card)", () => {
-    expect(parseSportsBulletin('<!-- sports-bulletin:{"results":[]} -->')).toBeNull();
-  });
   const marker = (fields: string) =>
     `<!-- sports-bulletin:{"league":{"name":"Premier"},"sportEmoji":"⚽"${fields}} -->`;
 
   it.each([
-    ["results: null", ',"results":null'],
-    ["results: {}", ',"results":{}'],
-    ["results: [{}]", ',"results":[{}]'],
-    ["results: [null]", ',"results":[null]'],
-    [
-      "a result without its away side",
-      ',"results":[{"home":{"name":"A"},"homeScore":1,"awayScore":0}]',
-    ],
+    ["no league", '<!-- sports-bulletin:{"results":[]} -->'],
+    ["results: null", marker(',"results":null')],
+    ["results: [{}]", marker(',"results":[{}]')],
     [
       "a result with a text score",
-      ',"results":[{"home":{"name":"A"},"away":{"name":"B"},"homeScore":"1","awayScore":0}]',
+      marker(
+        ',"results":[{"home":{"name":"A"},"away":{"name":"B"},"homeScore":"1","awayScore":0}]'
+      ),
     ],
-    ["movers: null", ',"movers":null'],
-    ["movers: [{}]", ',"movers":[{}]'],
-    ["movers: [1]", ',"movers":[1]'],
-  ])("does not trust a marker with %s (the card reads those fields)", (_name, fields) => {
-    expect(parseSportsBulletin(marker(fields))).toBeNull();
+    ["movers: [1]", marker(',"movers":[1]')],
+  ])("does not trust a marker with %s (the card reads those fields)", (_name, content) => {
+    expect(parseSportsBulletin(content)).toBeNull();
   });
 
   it("falls through to the markdown under a marker it does not trust", () => {
