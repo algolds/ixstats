@@ -11,7 +11,8 @@
  * message reaches her. "Seen" shows only once both allow receipts, and her online dot only once she allows it. Omar's
  * request she declines, and he cannot write again; Ivy accepts nobody, or no requests, and refuses outright.
  *
- * A ThinkTank chat takes messages only from members, hides a blocked member's messages from the one who blocked
+ * A ThinkTank chat is read and written only by its current members (not one who left, nor a realm board's banned
+ * nation owner) and a group DM only by its participants. It hides a blocked member's messages from the one who blocked
  * them, keeps each message its author's to edit or delete, and a conversation imported from the old forum is
  * read-only. ThinkTank invites pass only as each invitee allows (Ivy takes
  * none, Sam blocked the inviter), only the invitee answers hers, and only the owner mints a single-use code.
@@ -524,39 +525,110 @@ it("lets ThinkTank invites through only as each invitee allows, and only the inv
   expect(members.map((m) => m.userId).sort()).toEqual([HANA, IVY, OMAR].sort());
 });
 
-// BUG (found 2026-10-21, for the owner): reading a conversation enrolls any signed-in caller in a ThinkTank chat or
-// any group conversation (query-operations getConversationMessages, "auto-enroll or allow read"), with no check of
-// group membership or the group's type, and the router passes it through. Ivy reads an invite-only ThinkTank's chat
-// (by its conversation or its group id) and a group DM she is not in, and is then a participant who can write.
-it.failing(
-  "keeps an invite-only ThinkTank's chat and a group DM closed to a non-member who reads them",
-  async () => {
-    const svc = createMessagingService({
-      db: db as never,
-      notifications: { create: jest.fn().mockResolvedValue("n") } as never,
-      websocket: { broadcastToUsers: jest.fn() } as never,
+/**
+ * Omar's invite-only Inner Circle: Hana joins by invite, Sam joins by invite and then leaves. Omar writes in its chat,
+ * and Hana starts a group DM with Sam and Omar.
+ */
+async function innerCircle() {
+  const svc = createMessagingService({
+    db: db as never,
+    notifications: { create: jest.fn().mockResolvedValue("n") } as never,
+    websocket: { broadcastToUsers: jest.fn() } as never,
+  });
+  const circle = await thinktanks(as("omar")).createThinktank({
+    name: "Inner Circle",
+    type: "invite_only",
+  });
+  const chat = (await thinktanks(as("omar")).getThinktankById({ groupId: circle.id }))!
+    .conversationId!;
+  await thinktanks(as("omar")).inviteToThinktank({ groupId: circle.id, userIds: [HANA, SAM] });
+  for (const invitee of ["hana", "sam"]) {
+    const invite = await db.thinktankInvite.findFirstOrThrow({
+      where: { groupId: circle.id, invitedUser: `${invitee}-clerk` },
     });
-    const circle = await thinktanks(as("omar")).createThinktank({
-      name: "Inner Circle",
-      type: "invite_only",
-    });
-    const chat = (await thinktanks(as("omar")).getThinktankById({ groupId: circle.id }))!
-      .conversationId!;
-    await svc.sendMessage(OMAR, { conversationId: chat, content: "The plan" } as never);
-    const dm = await svc.createConversation(HANA, { participantIds: [SAM, OMAR] } as never);
-    await svc.sendMessage(HANA, { conversationId: dm.id, content: "Between us" } as never);
-
-    for (const conversationId of [circle.id, chat, dm.id]) {
-      await expect(
-        svc.getConversationMessages(IVY, { conversationId } as never)
-      ).rejects.toMatchObject({
-        name: "MessagingForbiddenError",
-      });
-    }
-    await expect(
-      svc.sendMessage(IVY, { conversationId: chat, content: "I'm in" } as never)
-    ).rejects.toMatchObject({
-      name: "MessagingForbiddenError",
-    });
+    await thinktanks(as(invitee)).acceptThinktankInvite({ inviteId: invite.id });
   }
-);
+  await thinktanks(as("sam")).leaveThinktank({ groupId: circle.id });
+  await svc.sendMessage(OMAR, { conversationId: chat, content: "The plan" } as never);
+  const dm = await svc.createConversation(HANA, { participantIds: [SAM, OMAR] } as never);
+  await svc.sendMessage(HANA, { conversationId: dm.id, content: "Between us" } as never);
+  return { svc, ids: { group: circle.id, chat, dm: dm.id } };
+}
+
+// Found 2026-10-21: reading a conversation used to enroll any signed-in caller in any ThinkTank chat or group DM.
+it.each([
+  ["a non-member of an invite-only ThinkTank, by its chat's id", IVY, "chat"],
+  ["a non-member of an invite-only ThinkTank, by its group's id", IVY, "group"],
+  ["a former member who left the ThinkTank", SAM, "chat"],
+  ["a stranger to a group DM", IVY, "dm"],
+] as const)("keeps a private group chat closed to %s", async (_who, userId, target) => {
+  const { svc, ids } = await innerCircle();
+  const forbidden = { name: "MessagingForbiddenError" };
+
+  await expect(
+    svc.getConversationMessages(userId, { conversationId: ids[target] } as never)
+  ).rejects.toMatchObject(forbidden);
+  await expect(svc.getConversation(userId, ids[target])).rejects.toMatchObject(forbidden);
+  await expect(
+    svc.sendMessage(userId, { conversationId: ids[target], content: "I'm in" } as never)
+  ).rejects.toMatchObject(forbidden);
+  const conversationId = target === "dm" ? ids.dm : ids.chat;
+  expect(
+    await db.conversationParticipant.count({ where: { conversationId, userId, isActive: true } })
+  ).toBe(0);
+});
+
+it("enrolls a current ThinkTank member in its chat once, and they read it", async () => {
+  const { svc, ids } = await innerCircle();
+  await db.conversationParticipant.deleteMany({
+    where: { conversationId: ids.chat, userId: HANA },
+  });
+
+  for (const conversationId of [ids.chat, ids.group]) {
+    const { messages } = await svc.getConversationMessages(HANA, { conversationId } as never);
+    expect(messages.map((m: { content: string }) => m.content)).toEqual(["The plan"]);
+  }
+  expect(
+    await db.conversationParticipant.count({ where: { conversationId: ids.chat, userId: HANA } })
+  ).toBe(1);
+});
+
+it.each([
+  ["muted on it, is joined and reads", "mute", ["Board notice"]],
+  ["banned from it, is refused", "ban", null],
+] as const)("a realm board member whose nation is %s", async (_case, kind, read) => {
+  const svc = createMessagingService({ db: db as never });
+  const chat = await db.thinkshareConversation.create({
+    data: { type: "group", source: "thinktank", name: "Ixnay board" },
+  });
+  const board = await db.thinktankGroup.create({
+    data: {
+      name: "Ixnay board",
+      type: "realm_board",
+      createdBy: "system",
+      conversationId: chat.id,
+      members: { create: { userId: OMAR } },
+    },
+  });
+  await db.thinkshareConversation.update({
+    where: { id: chat.id },
+    data: { sourceId: board.id },
+  });
+  await db.realmBoard.create({ data: { realmId: "default", groupId: board.id } });
+  await db.realmBoardBan.create({
+    data: { realmId: "default", countryId: "omaria", kind, createdBy: "system" },
+  });
+  await db.thinkshareMessage.create({
+    data: { conversationId: chat.id, userId: "system", content: "Board notice" },
+  });
+
+  const reading = svc.getConversationMessages(OMAR, { conversationId: chat.id } as never);
+  if (read) {
+    expect((await reading).messages.map((m: { content: string }) => m.content)).toEqual(read);
+  } else {
+    await expect(reading).rejects.toMatchObject({ name: "MessagingForbiddenError" });
+  }
+  expect(
+    await db.conversationParticipant.count({ where: { conversationId: chat.id, userId: OMAR } })
+  ).toBe(read ? 1 : 0);
+});

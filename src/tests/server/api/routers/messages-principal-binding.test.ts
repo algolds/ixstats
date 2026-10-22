@@ -132,6 +132,24 @@ describe("Plan 148: Secure Messaging Principal Binding", () => {
         },
       });
     });
+
+    it("throws FORBIDDEN when caller is not an active participant in getConversation", async () => {
+      const mockDb = createMockDb();
+      mockDb.thinkshareConversation.findFirst = jest.fn().mockResolvedValue({
+        id: "conv-secret",
+        type: "group",
+        source: "thinkshare",
+        participants: [{ userId: victimUser }],
+        messages: [{ userId: victimUser, content: "Between us" }],
+      });
+
+      await expect(
+        createCaller(callerUser, mockDb).conversations.getConversation({
+          conversationId: "conv-secret",
+        })
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      expect(mockDb.conversationParticipant.upsert).not.toHaveBeenCalled();
+    });
   });
 
   describe("Send Isolation & Spoofing Prevention", () => {
