@@ -162,7 +162,7 @@ export function readNavPreferences(keys: NavStorageKeys): NavPreferences {
 /**
  * The localStorage key of the reader's WikiOS media mode ("auto" | "plinth"), owned by
  * `MEDIA_THEME_STORAGE_KEY` in `lib/wiki-os/transformers/media-theme.ts` (this design module does not
- * import from wiki-os; `appearance.test.ts` keeps the two equal).
+ * import from wiki-os; `appearance-init-script.test.tsx` keeps the two equal).
  */
 export const MEDIA_THEME_KEY = "wikios-media-theme-mode";
 

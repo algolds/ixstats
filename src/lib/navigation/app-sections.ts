@@ -4,8 +4,7 @@
  * One list of apps — icon, route, `data-app` tint key and sections — read by the AppSidebar (app
  * switcher + the current app's sections), the TabBar (primary apps + "More") and anything else that
  * needs to know "which app am I in". Every `href` must resolve to a real `src/app/**\/page.tsx`
- * that renders something (not a redirect stub); `src/tests/lib/navigation/app-sections.test.ts`
- * enforces that.
+ * that renders something (not a redirect stub).
  *
  * Adding an app: add an entry to `APPS` (and its tint to `tokens.css` if it is new), then list it in
  * `TAB_BAR_PRIORITY` if it should be able to take a tab. Adding a section: add it to the app's

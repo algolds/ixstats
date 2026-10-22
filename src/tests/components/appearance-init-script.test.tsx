@@ -8,6 +8,7 @@ import { renderToStaticMarkup, renderToString } from "react-dom/server";
 import { ServerInsertedHTMLContext } from "next/dist/shared/lib/server-inserted-html.shared-runtime";
 import { AppearanceInitScript } from "~/components/providers/AppearanceInitScript";
 import { APPEARANCE_INIT_SCRIPT, MEDIA_THEME_KEY } from "~/lib/design/appearance";
+import { MEDIA_THEME_STORAGE_KEY } from "~/lib/wiki-os/transformers/media-theme";
 
 describe("AppearanceInitScript", () => {
   it("hands the server the script, with the nonce, and renders nothing itself", () => {
@@ -29,6 +30,8 @@ describe("AppearanceInitScript", () => {
     localStorage.setItem(MEDIA_THEME_KEY, "plinth-marker-9f2c");
     expect(APPEARANCE_INIT_SCRIPT).not.toContain("plinth-marker-9f2c");
     expect(APPEARANCE_INIT_SCRIPT).toContain(JSON.stringify(MEDIA_THEME_KEY));
+    // The reader writes the mode under WikiOS's key; the script must read that same key
+    expect(MEDIA_THEME_KEY).toBe(MEDIA_THEME_STORAGE_KEY);
     localStorage.clear();
   });
 });
