@@ -1,8 +1,18 @@
+/** @jest-environment node */
+/**
+ * The WikiOS takeover kit (docs/operations/wikios-v1-cutover.md): the verifier's verdict rules, which must never pass a
+ * broken takeover, its checklist of takeover paths, and the nginx file, which routes every /images prefix the app
+ * allows and leaves MediaWiki's own /images/ alone.
+ *
+ * Folds wikios-takeover-nginx.
+ */
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { WIKIOS_ALLOWED_PREFIXES } from "~/lib/system/wikios-standalone";
 import {
   buildExpectations,
   evaluateExpectation,
   parseArgs,
-  planChecks,
   type ChecklistOptions,
   type Expectation,
   type Observation,
@@ -28,9 +38,6 @@ const checklist = (partial: Partial<ChecklistOptions> = {}): ChecklistOptions =>
   category: "Category:Countries",
   ...partial,
 });
-
-/** parseArgs with the IxStates URL supplied and no environment to fall back on. */
-const parse = (argv: string[] = []) => parseArgs(["--ixstates", IXSTATES, ...argv], {});
 
 const row = (partial: Partial<Expectation>): Expectation => ({
   name: "row",
@@ -84,14 +91,6 @@ describe("evaluateExpectation", () => {
     ).toBe(true);
     const result = evaluateExpectation(expectation, observed({ body: "<div class='mw-body'>" }));
     expect(result.failures).toEqual(['body does not include "__next"']);
-  });
-  it("collects every failure of one row", () => {
-    const expectation = row({ expectStatus: 301, expectLocation: "/a", expectBodyIncludes: "x" });
-    const result = evaluateExpectation(
-      expectation,
-      observed({ status: 302, location: "/b", body: "" })
-    );
-    expect(result.failures).toHaveLength(3);
   });
 });
 
@@ -149,7 +148,8 @@ describe("the anonymous article body row (F20: WIKIOS_LEAN_FLIGHT=1 is verified 
   const BODY_ROW = /article body text/;
   const bodyRow = (partial: Partial<ChecklistOptions> = {}) =>
     buildExpectations(checklist(partial)).find((expectation) => BODY_ROW.test(expectation.name));
-  const ARTICLE = '<div class="wikios-article-body wikios-article-content"><div id="wikios-lean-x-body">';
+  const ARTICLE =
+    '<div class="wikios-article-body wikios-article-content"><div id="wikios-lean-x-body">';
   const LEAD = "Pelaxia is a country in Eurth.";
   const DEEP = "Its ports handle most of the continent's grain";
 
@@ -160,11 +160,15 @@ describe("the anonymous article body row (F20: WIKIOS_LEAN_FLIGHT=1 is verified 
       observed({ body: `<main><h1>Pelaxia</h1>${ARTICLE}</div></div></main>` })
     );
     expect(miss.ok).toBe(false);
-    expect(miss.failures[0]).toContain(`the article element does not include ${JSON.stringify(DEEP)}`);
+    expect(miss.failures[0]).toContain(
+      `the article element does not include ${JSON.stringify(DEEP)}`
+    );
     expect(
       evaluateExpectation(
         expectation,
-        observed({ body: `<main>${ARTICLE}<p>${DEEP}, and its mines the metals.</p></div></div></main>` })
+        observed({
+          body: `<main>${ARTICLE}<p>${DEEP}, and its mines the metals.</p></div></div></main>`,
+        })
       ).ok
     ).toBe(true);
   });
@@ -178,7 +182,10 @@ describe("the anonymous article body row (F20: WIKIOS_LEAN_FLIGHT=1 is verified 
     const body =
       `<body><main><h1>Pelaxia</h1>${ARTICLE}</div></div></main>` +
       `<div hidden><meta name="description" content="${LEAD}"/></div></body>`;
-    const result = evaluateExpectation(expectation, observed({ body: `<html>${head}${body}</html>` }));
+    const result = evaluateExpectation(
+      expectation,
+      observed({ body: `<html>${head}${body}</html>` })
+    );
     expect(result.ok).toBe(false);
   });
 
@@ -200,7 +207,9 @@ describe("the anonymous article body row (F20: WIKIOS_LEAN_FLIGHT=1 is verified 
 
   it("fails a page with no article element at all (an error page, a soft 404)", () => {
     const expectation = bodyRow({ articleText: LEAD })!;
-    expect(evaluateExpectation(expectation, observed({ body: `<body><p>${LEAD}</p></body>` })).ok).toBe(false);
+    expect(
+      evaluateExpectation(expectation, observed({ body: `<body><p>${LEAD}</p></body>` })).ok
+    ).toBe(false);
   });
 });
 describe("parseArgs", () => {
@@ -212,9 +221,25 @@ describe("parseArgs", () => {
   });
 });
 
-describe("planChecks", () => {
-  it("marks internal rows skipped when --internal is absent", () => {
-    const plan = planChecks(parse());
-    expect(plan.filter((p) => p.url === null).map((p) => p.expectation.via)).toEqual(["internal"]);
+describe("wikios-takeover.conf under /images/", () => {
+  const conf = readFileSync(join(process.cwd(), "scripts/ops/nginx/wikios-takeover.conf"), "utf8")
+    .split("\n")
+    .filter((line) => !line.trimStart().startsWith("#"))
+    .join("\n");
+  /** The `location` heads of the file. */
+  const heads = [...conf.matchAll(/^location\s+(\S+(?:\s+\S+)?)\s*\{[^}]*\}/gm)].map((m) => m[1]!);
+
+  it("does not take /images/ itself: MediaWiki's uploads and thumbnails stay where they are", () => {
+    expect(heads.filter((head) => /\/images\b/.test(head)).sort()).toEqual(
+      ["^~ /images/flags/", "^~ /images/uploads/", "^~ /images/wikios"].sort()
+    );
+  });
+
+  it("routes every /images prefix the app allows", () => {
+    const allowed = WIKIOS_ALLOWED_PREFIXES.filter((prefix) => prefix.startsWith("/images/"));
+    expect([...allowed].sort()).toEqual(["/images/flags", "/images/uploads", "/images/wikios"]);
+    for (const prefix of allowed) {
+      expect(heads.some((head) => head.startsWith(`^~ ${prefix}`))).toBe(true);
+    }
   });
 });

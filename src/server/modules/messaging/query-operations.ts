@@ -18,6 +18,7 @@ import { batchResolveMessagingAccounts } from "./account-resolver";
 import { blockedUserClerkIds } from "~/server/shared/user-blocks";
 import { usersWithSwitchOff } from "~/server/shared/privacy-permissions";
 import { visibleOnlineUserIds } from "~/server/shared/presence";
+import { enrollThinktankMember } from "./thinktank-enrollment";
 
 const FOLDER_SOURCES = new Set(["diplomatic", "wiki", "forum"]);
 const COUNTED_SOURCES = ["thinktank", "diplomatic", "wiki", "forum"] as const;
@@ -366,21 +367,12 @@ export class MessagingQueryOperations {
 
     if (!conv) return null;
 
-    // Ensure actor is in participants if group is public or user is already a member
+    // Only participants see a conversation; a ThinkTank member is joined to their group's chat.
     if (
-      actorId &&
       !conv.participants.some((p: any) => p.userId === actorId) &&
-      (conv.source === "thinktank" || conv.type === "group")
+      !(await enrollThinktankMember(this.db, actorId, conv.id))
     ) {
-      await this.db.conversationParticipant
-        .create({
-          data: {
-            conversationId: conv.id,
-            userId: actorId,
-            role: "participant",
-          },
-        })
-        .catch(() => {});
+      throw new MessagingForbiddenError();
     }
 
     const userIdsToResolve: string[] = [actorId];
@@ -421,22 +413,10 @@ export class MessagingQueryOperations {
 
     const targetConvId = conv?.id || conversationId;
 
-    let participant = await this.db.conversationParticipant.findFirst({
-      where: { conversationId: targetConvId, userId: actorId, isActive: true },
-    });
-
-    // For ThinkTank groups or public discussions, auto-enroll or allow read
-    if (!participant && conv && (conv.source === "thinktank" || conv.type === "group")) {
-      participant = await this.db.conversationParticipant
-        .create({
-          data: {
-            conversationId: targetConvId,
-            userId: actorId,
-            role: "participant",
-          },
-        })
-        .catch(() => null);
-    }
+    const participant =
+      (await this.db.conversationParticipant.findFirst({
+        where: { conversationId: targetConvId, userId: actorId, isActive: true },
+      })) ?? (conv ? await enrollThinktankMember(this.db, actorId, targetConvId) : null);
 
     if (!participant) {
       throw new MessagingForbiddenError();

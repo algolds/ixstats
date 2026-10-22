@@ -1,12 +1,19 @@
 /** @jest-environment node */
 /**
  * Plan 346: pins the Facet anti-slop gates (docs/reference/facet-design-system.md §8) so they
- * cannot regrow.
+ * cannot regrow, and the live Facet rules of the stylesheets: the five layers (only chrome and
+ * overlay blur), the content-type scopes, facet-on-dark, the one rarity palette, and the accent
+ * utilities as Tailwind compiles them.
+ *
+ * Folds facet-layers, facet-on-dark-tokens, card-rarity-tokens, identity-cascade,
+ * no-framer-motion-imports and no-jsx-text-lint-comments (MC-9).
  */
 import fs from "fs";
 import path from "path";
 
+import { compile } from "@tailwindcss/node";
 import { SANCTIONED_TEXTURES } from "~/components/ui/texture-overlay";
+import { CARD_RARITY_HEX, SYSTEM_COLORS } from "~/lib/design/tokens";
 
 const srcDir = path.resolve(__dirname, "../..");
 const excludedDirs = [path.join(srcDir, "tests")];
@@ -231,6 +238,11 @@ describe("Facet anti-slop guards", () => {
     expect(hits(/from ["']lucide-react["']/g)).toEqual([]);
   });
 
+  // Plan 339: framer-motion is only a transitive dependency of `motion`.
+  it("imports motion from motion/react, never framer-motion directly", () => {
+    expect(hits(/from\s+["']framer-motion[^"']*["']/g)).toEqual([]);
+  });
+
   it("keeps @radix-ui imports inside src/components/ui", () => {
     const uiDir = path.join("components", "ui") + path.sep;
     const leaks = hits(/from ["']@radix-ui\/[^"']+["']/g).filter((hit) => !hit.startsWith(uiDir));
@@ -337,5 +349,332 @@ describe("Facet anti-slop guards", () => {
         .filter((hit) => !UNSANCTIONED_TEXTURE_ALLOWED.has(hit));
       expect(offenders).toEqual([]);
     });
+  });
+});
+
+/**
+ * MC-9: a `// oxlint-disable-next-line` written between JSX tags is JSX text, not a comment, so it
+ * rendered as literal text in the notification tray. Inside JSX a directive has to be a
+ * `{/* ... *\/}` expression comment. A `//` lint directive whose previous line closes a JSX tag
+ * (ends in `>` but not `=>`) is where it becomes visible text.
+ */
+function jsxTextDirectives(source: string): number[] {
+  const lines = source.split("\n");
+  const found: number[] = [];
+  lines.forEach((line, i) => {
+    if (!/^\/\/\s*(oxlint|eslint)-disable/.test(line.trim())) return;
+    const prev = (lines[i - 1] ?? "").trimEnd();
+    if (prev.endsWith(">") && !prev.endsWith("=>")) found.push(i + 1);
+  });
+  return found;
+}
+
+describe("lint directives inside JSX (MC-9)", () => {
+  it("detects a directive written as JSX text, and not one after an arrow", () => {
+    const sample = [
+      '<span className="x">',
+      "  // oxlint-disable-next-line",
+      "  {value}",
+      "</span>",
+    ];
+    expect(jsxTextDirectives(sample.join("\n"))).toEqual([2]);
+    expect(jsxTextDirectives("const f = () =>\n  // oxlint-disable-next-line\n  g();")).toEqual([]);
+  });
+
+  it("no .tsx file renders a lint directive as text", () => {
+    const offenders = sources
+      .filter(({ file }) => file.endsWith(".tsx"))
+      .flatMap(({ file, content }) => jsxTextDirectives(content).map((line) => `${file}:${line}`));
+    expect(offenders).toEqual([]);
+  });
+});
+
+const STYLES = path.join(srcDir, "styles");
+const LAYERS = path.join(STYLES, "facet/layers.css");
+const GLOBALS = path.join(STYLES, "globals.css");
+const stripComments = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, "");
+
+function filesUnder(dir: string, extensions: RegExp): string[] {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory())
+      return entry.name === "node_modules" ? [] : filesUnder(full, extensions);
+    return extensions.test(entry.name) ? [full] : [];
+  });
+}
+
+describe("Facet layers", () => {
+  const layers = stripComments(fs.readFileSync(LAYERS, "utf8"));
+  const utility = (name: string) =>
+    new RegExp(`@utility ${name} \\{([\\s\\S]*?)\\n\\}`).exec(layers)?.[1] ?? "";
+
+  it.each(["facet-canvas", "facet-pane", "facet-well", "facet-chrome", "facet-overlay"])(
+    "defines the %s layer utility",
+    (name) => {
+      expect(layers).toMatch(new RegExp(`@utility ${name} \\{`));
+    }
+  );
+
+  it("blurs only chrome and overlay (the pane has no backdrop-filter)", () => {
+    expect(utility("facet-pane")).not.toMatch(/backdrop-filter/);
+    expect(utility("facet-chrome")).toMatch(/backdrop-filter/);
+    expect(utility("facet-overlay")).toMatch(/backdrop-filter/);
+  });
+
+  it("chrome points secondary labels at the vibrant role; pane and well read the accent before the tint", () => {
+    expect(utility("facet-chrome")).toMatch(
+      /--color-label-secondary: var\(--color-label-vibrant-secondary\)/
+    );
+    expect(utility("facet-pane")).toMatch(/var\(--facet-accent, var\(--tint\)\)/);
+    expect(utility("facet-well")).toMatch(/var\(--facet-accent, var\(--tint\)\)/);
+  });
+
+  // A blur that is switched off (`none`) and a scalar declaration are not glass; painting one is.
+  it("is the only stylesheet of the four Facet sheets that blurs or paints a glass fill", () => {
+    const sheets = filesUnder(path.join(STYLES, "facet"), /\.css$/);
+    expect(sheets.map((f) => path.basename(f)).sort()).toEqual([
+      "interaction.css",
+      "layers.css",
+      "shell.css",
+      "tokens.css",
+    ]);
+    const paintsGlass = /backdrop-filter:\s*(?!none)\S|var\(--(?:pane|chrome|overlay)-fill[,)]/;
+    const offenders = sheets
+      .filter((f) => f !== LAYERS)
+      .filter((f) => paintsGlass.test(stripComments(fs.readFileSync(f, "utf8"))));
+    expect(offenders.map((f) => path.relative(srcDir, f))).toEqual([]);
+  });
+
+  // A stylesheet imported from TypeScript is compiled on its own, without tokens.css, so it cannot
+  // use Tailwind directives or the custom variants. globals.css is the one entry that carries them.
+  it("stylesheets imported from components use no @variant, @utility, @apply or @theme", () => {
+    const importRe = /^\s*import\s+["']([^"']+\.css)["']/gm;
+    const offenders: string[] = [];
+    for (const { file, content } of sources) {
+      for (const [, spec] of content.matchAll(importRe)) {
+        const resolved = spec!.startsWith("~/")
+          ? path.join(srcDir, spec!.slice(2))
+          : path.resolve(path.dirname(path.join(srcDir, file)), spec!);
+        if (
+          !resolved.startsWith(STYLES + path.sep) ||
+          resolved === GLOBALS ||
+          !fs.existsSync(resolved)
+        ) {
+          continue;
+        }
+        if (
+          /@(variant|utility|apply|theme)\b/.test(stripComments(fs.readFileSync(resolved, "utf8")))
+        ) {
+          offenders.push(`${file} -> ${path.relative(srcDir, resolved)}`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it.each([
+    ["prose", /max-width:\s*70ch/],
+    ["data", /font-variant-numeric:\s*tabular-nums/],
+    ["visualization", /padding:\s*0/],
+    ["feed", /border-top:\s*1px solid var\(--color-separator\)/],
+  ])("[data-content=%s] carries its standard", (type, rule) => {
+    const body =
+      new RegExp(`\\[data-content="${type}"\\][^{]*\\{([^}]*)\\}`).exec(layers)?.[1] ?? "";
+    expect(body).toMatch(rule);
+  });
+});
+
+describe("facet-on-dark", () => {
+  const ROLES = ["red", "yellow", "green", "blue", "indigo"] as const;
+  const block =
+    /@utility facet-on-dark \{([^}]*)\}/.exec(
+      fs.readFileSync(path.join(STYLES, "utilities.css"), "utf8")
+    )?.[1] ?? "";
+
+  it.each(ROLES)("binds %s to its dark-theme value in tokens.ts", (role) => {
+    const match = new RegExp(`--color-${role}:\\s*(#[0-9a-fA-F]{6});`).exec(block);
+    expect(match?.[1]?.toLowerCase()).toBe(SYSTEM_COLORS[role].dark.toLowerCase());
+  });
+
+  it("rebinds only those five roles", () => {
+    expect((block.match(/--color-[a-z]+:/g) ?? []).sort()).toEqual(
+      ROLES.map((r) => `--color-${r}:`).sort()
+    );
+  });
+});
+
+/**
+ * One rarity palette: six Facet tokens declared once and the same in both themes, mirrored in CARD_RARITY_HEX, and the
+ * card face reading them through `data-card-rarity` only (no rarity utility classes).
+ */
+describe("card rarity tokens", () => {
+  /** Every sheet, so a per-theme override in any of them counts as a second declaration. */
+  const allSheets = filesUnder(STYLES, /\.css$/)
+    .map((file) => fs.readFileSync(file, "utf8"))
+    .join("\n");
+  const ATTRIBUTE: Record<keyof typeof CARD_RARITY_HEX, string> = {
+    common: "COMMON",
+    uncommon: "UNCOMMON",
+    rare: "RARE",
+    "ultra-rare": "ULTRA_RARE",
+    epic: "EPIC",
+    legendary: "LEGENDARY",
+  };
+
+  it("declares each rarity once, with its CARD_RARITY_HEX value, and no other rarity token", () => {
+    for (const [name, hex] of Object.entries(CARD_RARITY_HEX)) {
+      const declarations = [
+        ...allSheets.matchAll(new RegExp(`--color-rarity-${name}:\\s*([^;]+);`, "g")),
+      ];
+      expect({ name, values: declarations.map((m) => m[1]!.trim()) }).toEqual({
+        name,
+        values: [hex],
+      });
+    }
+    const names = [...allSheets.matchAll(/--color-rarity-([a-z-]+):/g)].map((m) => m[1]);
+    expect(names.sort()).toEqual(Object.keys(CARD_RARITY_HEX).sort());
+  });
+
+  it("maps every data-card-rarity value to its token in the card art sheet", () => {
+    const cardArt = fs.readFileSync(path.join(STYLES, "card-art.css"), "utf8");
+    expect(cardArt).toMatch(
+      /\[data-card-rarity\]\s*\{\s*--card-rarity:\s*var\(--color-rarity-common\);/
+    );
+    for (const [name, attribute] of Object.entries(ATTRIBUTE)) {
+      if (name === "common") continue;
+      expect(cardArt).toMatch(
+        new RegExp(
+          `\\[data-card-rarity="${attribute}"\\]\\s*\\{\\s*--card-rarity:\\s*var\\(--color-rarity-${name}\\);`
+        )
+      );
+    }
+  });
+
+  it("is read only through data-card-rarity, never as a rarity utility class", () => {
+    // The light-theme edge and gem are darkened at the element (--card-rarity-paint); a utility would paint the raw hue.
+    const rarityUtility = /(?<![\w-])(?:text|bg|border|fill|stroke)-rarity-/;
+    const offenders = filesUnder(srcDir, /\.(?:tsx?|css|mdx?)$/).filter(
+      (file) => file !== __filename && rarityUtility.test(fs.readFileSync(file, "utf8"))
+    );
+    expect(offenders.map((file) => path.relative(srcDir, file))).toEqual([]);
+  });
+});
+
+interface CompiledRule {
+  selector: string;
+  body: string;
+  /** Enclosing at-rules, outermost first. */
+  conditions: string[];
+}
+
+/** Flatten nested CSS (Tailwind's output keeps `&` nesting) into rules with full selectors. */
+function flattenCss(css: string): CompiledRule[] {
+  const rules: CompiledRule[] = [];
+  const walk = (source: string, parents: string[], conditions: string[]) => {
+    let i = 0;
+    let start = 0;
+    let decls = "";
+    while (i < source.length) {
+      const ch = source[i]!;
+      if (ch === "{") {
+        const prelude = source.slice(start, i).trim();
+        let depth = 1;
+        let j = i + 1;
+        while (j < source.length && depth > 0) {
+          if (source[j] === "{") depth++;
+          else if (source[j] === "}") depth--;
+          j++;
+        }
+        const body = source.slice(i + 1, j - 1);
+        if (prelude.startsWith("@")) {
+          walk(body, parents, [...conditions, prelude.replace(/\s+/g, " ")]);
+        } else {
+          const selectors = prelude.split(",").map((part) => part.trim());
+          const full =
+            parents.length === 0
+              ? selectors
+              : parents.flatMap((parent) =>
+                  selectors.map((sel) =>
+                    sel.includes("&") ? sel.replace(/&/g, parent) : `${parent} ${sel}`
+                  )
+                );
+          walk(body, full, conditions);
+        }
+        i = j;
+        start = i;
+        continue;
+      }
+      if (ch === ";") {
+        decls += source.slice(start, i + 1);
+        start = i + 1;
+      }
+      i++;
+    }
+    if (parents.length > 0 && decls.trim()) {
+      for (const selector of parents) rules.push({ selector, body: decls, conditions });
+    }
+  };
+  walk(css, [], []);
+  return rules;
+}
+
+/** The real token and identity sheets, compiled with Tailwind. */
+describe("accent utilities as Tailwind compiles them", () => {
+  let rules: CompiledRule[] = [];
+
+  beforeAll(async () => {
+    const entry = [
+      '@import "tailwindcss/theme.css" layer(theme);',
+      '@import "tailwindcss/utilities.css" layer(utilities);',
+      '@import "./facet/tokens.css";',
+      '@import "./facet/interaction.css";',
+    ].join("\n");
+    const compiler = await compile(entry, { base: STYLES, onDependency: () => undefined });
+    const css = compiler.build([
+      "facet-press",
+      "facet-lift",
+      "bg-facet-accent-fill",
+      "text-facet-accent",
+      "text-facet-accent-ink",
+      "text-label-secondary",
+      "text-muted-foreground",
+      "text-tint-ink",
+    ]);
+    rules = flattenCss(css.slice(css.indexOf("@layer utilities")));
+  }, 30_000);
+
+  const rulesFor = (cls: string) =>
+    rules.filter((rule) =>
+      new RegExp(`\\.${cls.replace("/", "\\\\/")}(?![\\w-])`).test(rule.selector)
+    );
+  const declares = (cls: string, pattern: RegExp) =>
+    rulesFor(cls).some((r) => pattern.test(r.body));
+
+  it.each([
+    ["bg-facet-accent-fill", /var\(--facet-accent, var\(--tint\)\) var\(--accent-fill-mix\)/],
+    ["text-facet-accent", /color:\s*var\(--facet-accent, var\(--tint\)\)/],
+    ["text-facet-accent-ink", /80%, var\(--color-label\)/],
+    // Secondary labels read the variable at the element, so a chrome scope re-resolves them.
+    ["text-label-secondary", /color:\s*var\(--color-label-secondary\)/],
+    ["text-muted-foreground", /color:\s*var\(--color-label-secondary\)/],
+    // Badge variant="tinted": the tint pulled toward the label.
+    ["text-tint-ink", /color-mix\(in srgb, var\(--tint\) 80%, var\(--color-label\)\)/],
+  ])("%s falls back to the app tint or re-resolves at the element", (cls, pattern) => {
+    expect(declares(cls, pattern)).toBe(true);
+  });
+
+  it.each([
+    ["facet-press", /scale:\s*none/],
+    ["facet-lift", /translate:\s*none/],
+  ])("%s drops its movement under Reduce Motion (OS and in-app)", (cls, drop) => {
+    const rulesOf = rulesFor(cls);
+    expect(
+      rulesOf.some(
+        (r) => r.conditions.includes("@media (prefers-reduced-motion: reduce)") && drop.test(r.body)
+      )
+    ).toBe(true);
+    expect(
+      rulesOf.some((r) => r.selector.includes('[data-motion="reduced"]') && drop.test(r.body))
+    ).toBe(true);
   });
 });

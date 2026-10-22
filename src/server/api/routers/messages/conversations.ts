@@ -66,7 +66,10 @@ export const messagesConversationsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const messagingService = messagingFor(ctx);
 
-      return await messagingService.getConversation(ctx.auth.userId, input.conversationId);
+      return await mapMessagingErrors(
+        () => messagingService.getConversation(ctx.auth.userId, input.conversationId),
+        { forbidden: "You are not a participant in this conversation" }
+      );
     }),
 
   /**

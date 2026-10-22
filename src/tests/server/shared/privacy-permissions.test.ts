@@ -1,22 +1,62 @@
 /** @jest-environment node */
 /**
- * SL-4: the server enforces the direct-message, mention and trade-offer audiences and muted
- * words. "followers" means the sender follows the recipient (a persona follow or a country
- * follow); "verified" means the sender owns a verified persona.
+ * SL-4 privacy, enforced on the server. The direct-message, mention and trade-offer audiences ("followers": the sender
+ * follows the recipient, by persona or country; "verified": the sender owns a verified persona) and muted words; the
+ * privacy switches (fail closed), the online heartbeat, Clear history, wiki attribution on `users.resolveWikiAuthor`
+ * and linked names in trading partner search; and blocks and mutes: a blocked or muted account's posts leave the
+ * viewer's feed, a user who blocked someone cannot be messaged by them, and in a group conversation the blocker no
+ * longer sees, or is notified of, the blocked account's messages.
+ *
+ * Folds privacy-sl4-controls and user-blocks.
  */
+jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
 jest.mock("~/server/db", () => ({ db: {} }));
+jest.mock("~/lib/cache", () => ({
+  ...jest.requireActual("~/lib/cache"),
+  globalCache: {
+    get: jest.fn().mockResolvedValue(null),
+    set: jest.fn().mockResolvedValue(undefined),
+  },
+}));
 
+import { createCallerFactory } from "~/server/api/trpc";
+import { dropMutedItems } from "~/server/api/routers/activities/feed/shared";
+import { thinkpagesFeedRouter } from "~/server/api/routers/thinkpages/feed";
+import { usersPreferencesRouter } from "~/server/api/routers/users/preferences";
+import { globalCache } from "~/lib/cache";
+import { searchTradePartners } from "~/server/modules/cards/trading/partners";
+import { createMessagingService } from "~/server/modules/messaging";
+import { clearOwnHistory } from "~/server/shared/clear-history";
+import {
+  ONLINE_WINDOW_MS,
+  recordHeartbeat,
+  resetPresenceForTests,
+  visibleOnlineUserIds,
+} from "~/server/shared/presence";
 import {
   containsMutedKeyword,
+  hiddenLinkedNames,
   mutedKeywords,
   permissionAudiences,
   recipientsRefusing,
   refusesTradeOffer,
+  splitDirectMessageRefusals,
   tradeOfferRefusers,
+  usersWithSwitchOff,
+  withoutHiddenWikiNames,
 } from "~/server/shared/privacy-permissions";
-import { createMessagingService } from "~/server/modules/messaging";
+import {
+  blockedUserClerkIds,
+  hiddenThinkpagesAccountIds,
+  recipientsBlockingSender,
+} from "~/server/shared/user-blocks";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
-import { dropMutedItems } from "~/server/api/routers/activities/feed/shared";
+import {
+  privacyConfigRow,
+  privacyConnections,
+  wikiAttributionOff,
+} from "~/tests/helpers/privacy-config-fake";
+import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 function withConfigs(configs: Record<string, Record<string, unknown> | string>) {
   const db = createMockPrisma();
@@ -190,5 +230,420 @@ describe("dropMutedItems (activity and Following feeds)", () => {
     ];
     expect(dropMutedItems(items, ["election", "tariffs"]).map((i) => i.id)).toEqual(["c"]);
     expect(dropMutedItems(items, [])).toBe(items);
+  });
+});
+
+function dbWithConfigs(configs: Record<string, Record<string, unknown>>) {
+  const db = createMockPrisma();
+  db.userConnection.findMany.mockImplementation(async (args: any) =>
+    args.where.connectionType === "privacy_config"
+      ? Object.entries(configs).map(([userId, cfg]) => ({ userId, status: JSON.stringify(cfg) }))
+      : []
+  );
+  return db;
+}
+
+describe("privacy switches", () => {
+  it("usersWithSwitchOff lists only explicit false values", async () => {
+    const db = dbWithConfigs({ a: { dmReadReceipts: false }, b: { dmReadReceipts: true }, c: {} });
+    expect([
+      ...(await usersWithSwitchOff(db as never, ["a", "b", "c", "d"], "dmReadReceipts")),
+    ]).toEqual(["a"]);
+  });
+
+  it("splitDirectMessageRefusals sends filtering users to requests, others are refused", async () => {
+    const db = dbWithConfigs({
+      filtering: { directMessages: "followers" },
+      off: { directMessages: "followers", messageRequestFiltering: false },
+      nobody: { directMessages: "nobody" },
+    });
+    expect(await splitDirectMessageRefusals(db as never, ["filtering", "off", "nobody"])).toEqual({
+      requests: ["filtering"],
+      refused: ["off", "nobody"],
+    });
+  });
+
+  it("hiddenLinkedNames fails closed", async () => {
+    const db = createMockPrisma();
+    db.userConnection.findMany.mockRejectedValue(new Error("down"));
+    const hidden = await hiddenLinkedNames(db as never, ["a"]);
+    expect([...hidden.discord, ...hidden.wiki]).toEqual(["a", "a"]);
+  });
+});
+
+describe("withoutHiddenWikiNames (wiki attribution off)", () => {
+  const people = [
+    { id: "u_off", clerkUserId: "off", wikiUsername: "Hidden Name", handle: null },
+    { id: "u_on", clerkUserId: "on", wikiUsername: "Shown Name", handle: null },
+    { id: "u_default", clerkUserId: "default", wikiUsername: "Default Name", handle: null },
+    { id: "u_none", clerkUserId: "none", wikiUsername: null, handle: "nowiki" },
+  ];
+
+  it("blanks the wiki name of a user with the switch off and keeps the rest of every row", async () => {
+    const connections = privacyConnections([
+      ...wikiAttributionOff("off"),
+      privacyConfigRow("on", { showWikiAttribution: true }),
+    ]);
+    const out = await withoutHiddenWikiNames({ userConnection: connections } as never, people);
+    expect(out).toEqual([
+      { id: "u_off", clerkUserId: "off", wikiUsername: null, handle: null },
+      people[1],
+      people[2],
+      people[3],
+    ]);
+  });
+  it("fails closed: a read error blanks every wiki name", async () => {
+    const connections = privacyConnections();
+    connections.findMany.mockRejectedValue(new Error("db down"));
+    const out = await withoutHiddenWikiNames({ userConnection: connections } as never, people);
+    expect(out.map((u) => u.wikiUsername)).toEqual([null, null, null, null]);
+    expect(out.map((u) => u.handle)).toEqual([null, null, null, "nowiki"]);
+  });
+});
+
+describe("presence", () => {
+  beforeEach(() => resetPresenceForTests());
+
+  it("is online for two minutes after a heartbeat, unless hidden", async () => {
+    const at = new Date("2026-10-06T12:00:00Z");
+    await recordHeartbeat("a", at);
+    await recordHeartbeat("b", at);
+    const db = dbWithConfigs({ b: { showOnlineStatus: false } });
+    expect([...(await visibleOnlineUserIds(db as never, ["a", "b", "c"], at))]).toEqual(["a"]);
+    const later = new Date(at.getTime() + ONLINE_WINDOW_MS + 1);
+    expect([...(await visibleOnlineUserIds(db as never, ["a"], later))]).toEqual([]);
+  });
+
+  it("shows nobody when the setting cannot be read", async () => {
+    await recordHeartbeat("a");
+    const db = createMockPrisma();
+    db.userConnection.findMany.mockRejectedValue(new Error("down"));
+    expect((await visibleOnlineUserIds(db as never, ["a"])).size).toBe(0);
+  });
+});
+
+describe("clearOwnHistory", () => {
+  beforeEach(() => resetPresenceForTests());
+
+  it("deletes personal notifications, read receipts and the heartbeat, nothing shared", async () => {
+    const db = createMockPrisma();
+    db.notification.deleteMany.mockReturnValue(Promise.resolve({ count: 3 }));
+    db.messageReadReceipt.deleteMany.mockReturnValue(Promise.resolve({ count: 5 }));
+    db.$transaction.mockImplementation((ops: Promise<unknown>[]) => Promise.all(ops));
+    await recordHeartbeat("clerk_1");
+
+    expect(await clearOwnHistory(db as never, "clerk_1", "db_1")).toEqual({
+      notifications: 3,
+      readReceipts: 5,
+    });
+    expect(db.notification.deleteMany).toHaveBeenCalledWith({
+      where: { userId: { in: ["clerk_1", "db_1"] } },
+    });
+    expect(db.messageReadReceipt.deleteMany).toHaveBeenCalledWith({
+      where: { userId: "clerk_1" },
+    });
+    expect((await visibleOnlineUserIds(dbWithConfigs({}) as never, ["clerk_1"])).size).toBe(0);
+  });
+});
+
+describe("users router", () => {
+  function caller(db: ReturnType<typeof createMockPrisma>, userId = "clerk_1") {
+    const ctx = createMockRouterContext({
+      db,
+      auth: { userId },
+      user: { id: "db_1", clerkUserId: userId, lastSeenAt: new Date() },
+    });
+    return createCallerFactory(usersPreferencesRouter)(ctx as never);
+  }
+
+  it("clearHistory needs an explicit confirmation", async () => {
+    const db = createMockPrisma();
+    await expect(caller(db).clearHistory({ confirm: false } as never)).rejects.toThrow();
+    expect(db.notification.deleteMany).not.toHaveBeenCalled();
+  });
+  it("resolveWikiAuthor drops the role and country when wiki attribution is off", async () => {
+    const db = dbWithConfigs({ clerk_9: { showWikiAttribution: false } });
+    db.user.findFirst.mockResolvedValue({
+      wikiUsername: "Alex",
+      clerkUserId: "clerk_9",
+      role: { name: "admin", displayName: "Admin" },
+      country: { id: "c", name: "Caphiria", slug: "caphiria" },
+    });
+    expect(await caller(db).resolveWikiAuthor({ wikiUsername: "Alex" })).toEqual({
+      wikiUsername: "Alex",
+      role: null,
+      country: null,
+    });
+  });
+});
+
+describe("trading partner search", () => {
+  it("neither shows nor matches a hidden Discord tag", async () => {
+    const db = dbWithConfigs({ clerk_h: { showDiscordTag: false } });
+    db.user.findMany.mockResolvedValue([
+      {
+        id: "u_h",
+        clerkUserId: "clerk_h",
+        discordUsername: "rosegarden",
+        forumUsername: null,
+        wikiUsername: null,
+        country: { name: "Nowhere", leader: "Someone" },
+      },
+      {
+        id: "u_v",
+        clerkUserId: "clerk_v",
+        discordUsername: "rosegarden2",
+        forumUsername: null,
+        wikiUsername: null,
+        country: { name: "Elsewhere", leader: "Other" },
+      },
+    ]);
+    const rules = {
+      userOfHandle: async () => null,
+      namesOf: async (ids: readonly string[]) =>
+        new Map(ids.map((id) => [id, { handle: id, displayName: null }])),
+      cardsShown: async () => new Set<string>(),
+    };
+    const viewer = { id: "db_me", clerkUserId: "me" };
+    const results = await searchTradePartners(db as never, rules, viewer, "rosegarden");
+    expect(results.map((r) => r.id)).toEqual(["u_v"]);
+  });
+});
+
+describe("hiddenThinkpagesAccountIds", () => {
+  it("is empty for anonymous viewers without touching the database", async () => {
+    const db = createMockPrisma();
+    expect(await hiddenThinkpagesAccountIds(db as never, null)).toEqual([]);
+    expect(db.userConnection.findMany).not.toHaveBeenCalled();
+  });
+
+  it("resolves blocked and muted users and blocked nations to their ThinkPages accounts", async () => {
+    const db = createMockPrisma();
+    db.userConnection.findMany.mockResolvedValue([
+      { targetUserId: "db_muted", targetCountryId: null },
+      { targetUserId: "db_blocked", targetCountryId: "country_x" },
+    ]);
+    db.user.findMany.mockResolvedValue([
+      { clerkUserId: "clerk_muted" },
+      { clerkUserId: "clerk_b" },
+    ]);
+    db.thinkpagesAccount.findMany.mockResolvedValue([{ id: "acc1" }, { id: "acc2" }]);
+
+    expect(await hiddenThinkpagesAccountIds(db as never, "viewer")).toEqual(["acc1", "acc2"]);
+    expect(db.userConnection.findMany.mock.calls[0]![0].where).toEqual({
+      userId: "viewer",
+      connectionType: { in: ["blocked", "muted"] },
+    });
+    expect(db.thinkpagesAccount.findMany.mock.calls[0]![0].where).toEqual({
+      OR: [
+        { clerkUserId: { in: ["clerk_muted", "clerk_b"] } },
+        { countryId: { in: ["country_x"] } },
+      ],
+      NOT: { clerkUserId: "viewer" },
+    });
+  });
+});
+
+describe("thinkpages.getFeed honours the viewer's block and mute lists", () => {
+  const createCaller = createCallerFactory(thinkpagesFeedRouter);
+
+  it("excludes hidden accounts and caches per viewer", async () => {
+    const db = createMockPrisma();
+    // Block/mute rows only; the muted-word lookup (connectionType "keyword") finds none.
+    db.userConnection.findMany.mockImplementation(async (args: any) =>
+      args.where.connectionType === "keyword"
+        ? []
+        : [{ targetUserId: "db_x", targetCountryId: null }]
+    );
+    db.user.findMany.mockResolvedValue([{ clerkUserId: "clerk_x" }]);
+    db.thinkpagesAccount.findMany.mockResolvedValue([{ id: "acc_x" }]);
+    const ctx = createMockRouterContext({ db, auth: { userId: "viewer" }, user: null });
+
+    await createCaller(ctx as never).getFeed({});
+    expect(db.thinkpagesPost.findMany.mock.calls[0]![0].where).toEqual({
+      visibility: "public",
+      accountId: { notIn: ["acc_x"] },
+    });
+    const key = (globalCache.set as jest.Mock).mock.calls.at(-1)![0] as string;
+    expect(key).toContain(":viewer:viewer");
+  });
+
+  it("leaves out posts with the viewer's muted words (SL-4)", async () => {
+    const db = createMockPrisma();
+    db.userConnection.findMany.mockImplementation(async (args: any) =>
+      args.where.connectionType === "keyword"
+        ? [{ targetUserId: "election", status: "Election" }]
+        : []
+    );
+    const ctx = createMockRouterContext({ db, auth: { userId: "viewer" }, user: null });
+
+    await createCaller(ctx as never).getFeed({});
+    expect(db.thinkpagesPost.findMany.mock.calls[0]![0].where).toEqual({
+      visibility: "public",
+      AND: [{ NOT: { content: { contains: "election", mode: "insensitive" } } }],
+    });
+    const key = (globalCache.set as jest.Mock).mock.calls.at(-1)![0] as string;
+    expect(key).toContain(":viewer:viewer");
+  });
+
+  it("leaves the shared feed alone for viewers with empty lists", async () => {
+    const db = createMockPrisma();
+    const ctx = createMockRouterContext({ db, auth: { userId: "viewer" }, user: null });
+    await createCaller(ctx as never).getFeed({});
+    expect(db.thinkpagesPost.findMany.mock.calls[0]![0].where).toEqual({ visibility: "public" });
+  });
+});
+
+describe("recipientsBlockingSender", () => {
+  it("matches blocks of the sender's ids or nation", async () => {
+    const db = createMockPrisma();
+    db.user.findUnique.mockResolvedValue({ id: "db_sender", countryId: "c_sender" });
+    db.userConnection.findMany.mockResolvedValue([{ userId: "r1" }]);
+
+    expect(await recipientsBlockingSender(db as never, "sender", ["sender", "r1", "r2"])).toEqual([
+      "r1",
+    ]);
+    expect(db.userConnection.findMany.mock.calls[0]![0].where).toEqual({
+      userId: { in: ["r1", "r2"] },
+      connectionType: "blocked",
+      OR: [{ targetUserId: { in: ["sender", "db_sender"] } }, { targetCountryId: "c_sender" }],
+    });
+  });
+});
+
+describe("messaging refuses senders the recipient blocked", () => {
+  function service(db: ReturnType<typeof createMockPrisma>) {
+    return createMessagingService({
+      db: db as never,
+      notifications: { createNotification: jest.fn() } as never,
+      websocket: { broadcastToUsers: jest.fn() } as never,
+    });
+  }
+
+  it("createConversation throws MessagingBlockedError", async () => {
+    const db = createMockPrisma();
+    db.userConnection.findMany.mockResolvedValue([{ userId: "r1" }]);
+    await expect(
+      service(db).createConversation("sender", { participantIds: ["r1"] } as never)
+    ).rejects.toMatchObject({ name: "MessagingBlockedError" });
+    expect(db.thinkshareConversation.create).not.toHaveBeenCalled();
+  });
+
+  it("sendMessage in a direct conversation throws MessagingBlockedError", async () => {
+    const db = createMockPrisma();
+    db.thinkshareConversation.findFirst.mockResolvedValue({ id: "c1", type: "direct" });
+    db.conversationParticipant.findFirst.mockResolvedValue({ id: "p1", conversation: {} });
+    db.conversationParticipant.findMany.mockResolvedValue([{ userId: "r1" }]);
+    db.userConnection.findMany.mockResolvedValue([{ userId: "r1" }]);
+    await expect(
+      service(db).sendMessage("sender", { conversationId: "c1", content: "hi" } as never)
+    ).rejects.toMatchObject({ name: "MessagingBlockedError" });
+    expect(db.thinkshareMessage.create).not.toHaveBeenCalled();
+  });
+
+  it("sendMessage still goes through when nobody blocked the sender", async () => {
+    const db = createMockPrisma();
+    db.thinkshareConversation.findFirst.mockResolvedValue({ id: "c1", type: "direct" });
+    db.conversationParticipant.findFirst.mockResolvedValue({ id: "p1", conversation: {} });
+    db.thinkshareMessage.create.mockResolvedValue({ id: "m1" });
+    await service(db).sendMessage("sender", { conversationId: "c1", content: "hi" } as never);
+    expect(db.thinkshareMessage.create).toHaveBeenCalled();
+  });
+});
+
+describe("blockedUserClerkIds", () => {
+  it("is empty for anonymous viewers without touching the database", async () => {
+    const db = createMockPrisma();
+    expect(await blockedUserClerkIds(db as never, null)).toEqual([]);
+    expect(db.userConnection.findMany).not.toHaveBeenCalled();
+  });
+
+  it("resolves blocked accounts and nations (not muted ones) to Clerk ids", async () => {
+    const db = createMockPrisma();
+    db.userConnection.findMany.mockResolvedValue([
+      { targetUserId: "db_b", targetCountryId: null },
+      { targetUserId: null, targetCountryId: "country_x" },
+    ]);
+    db.user.findMany.mockResolvedValue([
+      { clerkUserId: "clerk_b" },
+      { clerkUserId: "clerk_x" },
+      { clerkUserId: "viewer" },
+    ]);
+
+    expect(await blockedUserClerkIds(db as never, "viewer")).toEqual([
+      "db_b",
+      "clerk_b",
+      "clerk_x",
+    ]);
+    expect(db.userConnection.findMany.mock.calls[0]![0].where).toEqual({
+      userId: "viewer",
+      connectionType: "blocked",
+    });
+    expect(db.user.findMany.mock.calls[0]![0].where).toEqual({
+      OR: [
+        { id: { in: ["db_b"] } },
+        { clerkUserId: { in: ["db_b"] } },
+        { countryId: { in: ["country_x"] } },
+      ],
+    });
+  });
+});
+
+describe("group conversations hide blocked accounts from the viewer", () => {
+  function service(db: ReturnType<typeof createMockPrisma>) {
+    const notifications = { create: jest.fn().mockResolvedValue("n1") };
+    const websocket = { broadcastToUsers: jest.fn() };
+    const svc = createMessagingService({
+      db: db as never,
+      notifications: notifications as never,
+      websocket: websocket as never,
+    });
+    return { svc, notifications, websocket };
+  }
+
+  function readDb(type: string) {
+    const db = createMockPrisma();
+    db.thinkshareConversation.findFirst.mockResolvedValue({ id: "c1", type, source: "thinkshare" });
+    db.conversationParticipant.findFirst.mockResolvedValue({ id: "p1" });
+    db.userConnection.findMany.mockResolvedValue([
+      { targetUserId: "clerk_b", targetCountryId: null },
+    ]);
+    db.user.findMany.mockResolvedValue([{ clerkUserId: "clerk_b" }]);
+    db.thinkshareMessage.findMany.mockResolvedValue([]);
+    return db;
+  }
+
+  it("leaves blocked senders' messages out of a group conversation read", async () => {
+    const db = readDb("group");
+    await service(db).svc.getConversationMessages("viewer", { conversationId: "c1" } as never);
+    expect(db.thinkshareMessage.findMany.mock.calls[0]![0].where).toEqual({
+      conversationId: "c1",
+      userId: { notIn: ["clerk_b"] },
+    });
+  });
+
+  it("does not filter a direct conversation read", async () => {
+    const db = readDb("direct");
+    await service(db).svc.getConversationMessages("viewer", { conversationId: "c1" } as never);
+    expect(db.thinkshareMessage.findMany.mock.calls[0]![0].where).toEqual({
+      conversationId: "c1",
+    });
+    expect(db.userConnection.findMany).not.toHaveBeenCalled();
+  });
+
+  it("lets a blocked member post to the group but does not notify or push to the blocker", async () => {
+    const db = createMockPrisma();
+    db.thinkshareConversation.findFirst.mockResolvedValue({ id: "c1", type: "group" });
+    db.conversationParticipant.findFirst.mockResolvedValue({ id: "p1", conversation: {} });
+    db.conversationParticipant.findMany.mockResolvedValue([{ userId: "r1" }, { userId: "r2" }]);
+    db.userConnection.findMany.mockResolvedValue([{ userId: "r1" }]);
+    db.thinkshareMessage.create.mockResolvedValue({ id: "m1" });
+    const { svc, notifications, websocket } = service(db);
+
+    await svc.sendMessage("sender", { conversationId: "c1", content: "hi" } as never);
+
+    expect(db.thinkshareMessage.create).toHaveBeenCalled();
+    expect(notifications.create.mock.calls.map((c: any[]) => c[0].userId)).toEqual(["r2"]);
+    expect(websocket.broadcastToUsers.mock.calls[0]![0]).toEqual(["r2"]);
   });
 });

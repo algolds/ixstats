@@ -18,6 +18,7 @@ import {
 import { MessagingBlockedError, MessagingForbiddenError, MessagingNotFoundError } from "./errors";
 import { recipientsBlockingSender } from "~/server/shared/user-blocks";
 import { realmBoardChatRestriction } from "~/server/shared/realm-board";
+import { enrollThinktankMember } from "./thinktank-enrollment";
 import {
   recipientsRefusing,
   splitDirectMessageRefusals,
@@ -158,25 +159,7 @@ export class MessagingMessageOperations {
       include: { conversation: true },
     });
     if (participant || !conv) return participant;
-
-    const membership = await this.db.thinktankGroup?.findFirst?.({
-      where: {
-        conversationId,
-        isActive: true,
-        members: { some: { userId: actorId, isActive: true } },
-      },
-      select: { id: true },
-    });
-    if (!membership) return null;
-
-    return this.db.conversationParticipant
-      .upsert({
-        where: { conversationId_userId: { conversationId, userId: actorId } },
-        create: { conversationId, userId: actorId, role: "participant" },
-        update: { isActive: true, leftAt: null },
-        include: { conversation: true },
-      })
-      .catch(() => null);
+    return enrollThinktankMember(this.db, actorId, conversationId);
   }
 
   /**

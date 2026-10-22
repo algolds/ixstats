@@ -1,9 +1,17 @@
 /** @jest-environment node */
 // `jest` is deliberately NOT imported from "@jest/globals" (see cards-archetypes-admin-auth.test.ts):
 // the hoisted jest.mock() factories rely on the ambient global.
-//
-// Plan 401 regression tests: WikiOS authorization gaps (S4 verified wiki link, S5 stash ownership,
-// S6 author profile, S7 render-proxy/cache/limits).
+/**
+ * The WikiOS routers' gates, one mock set for all of them. Plan 401 (S4 to S8): authorization reads the verified
+ * WikiAccountLink, never a typed name; a stash write goes only into the caller's own stashes; the author profile
+ * resolves the requested name only; template previews are signed-in, bounded, sanitised and SHA-256 keyed, and
+ * template wikitext cannot be broken out of; write procedures carry limits and every title and query input is capped.
+ * The editing router saves and previews only sanitised HTML, keeps to the namespace allowlist and canonical titles,
+ * and needs the right the page's protection asks for (plan 409). Identity is the internal User id, so blurbs and
+ * stashes find the caller's own rows.
+ *
+ * Folds wikios-save-sanitize and wikios-user-identity, each in its own block.
+ */
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: {
@@ -19,9 +27,13 @@ jest.mock("~/server/db", () => ({
       count: jest.fn().mockResolvedValue(0),
     },
     wikiMirrorJob: { create: jest.fn() },
-    stash: { findFirst: jest.fn(), create: jest.fn() },
-    stashItem: { upsert: jest.fn(), deleteMany: jest.fn() },
+    stash: { findMany: jest.fn(), findFirst: jest.fn(), findUnique: jest.fn(), create: jest.fn() },
+    stashItem: { upsert: jest.fn(), deleteMany: jest.fn(), findMany: jest.fn() },
     lorewardUserStats: { findUnique: jest.fn(), count: jest.fn() },
+    blurbPrompt: { findUnique: jest.fn() },
+    blurbResponse: { findUnique: jest.fn(), create: jest.fn() },
+    thinkpagesAccount: { findFirst: jest.fn() },
+    thinkpagesPost: { create: jest.fn() },
     auditLog: { create: jest.fn() },
     $transaction: jest.fn(),
   },
@@ -29,12 +41,12 @@ jest.mock("~/server/db", () => ({
 }));
 jest.mock("~/lib/auth", () => ({
   __esModule: true,
-  isSystemOwner: () => false,
+  isSystemOwner: (id: string) => id === "system_owner_id",
   UserManagementService: jest.fn(),
 }));
 jest.mock("~/lib/auth/system-owner-constants", () => ({
   __esModule: true,
-  isSystemOwner: () => false,
+  isSystemOwner: (id: string) => id === "system_owner_id",
 }));
 jest.mock("~/lib/wiki-os/core", () => ({
   __esModule: true,
@@ -89,6 +101,8 @@ jest.mock("~/lib/wiki-os/templates/preview-service.server", () => ({
 }));
 jest.mock("~/lib/wiki-os/core/page-management-service", () => ({
   __esModule: true,
+  PageOperationError: jest.requireActual("~/lib/wiki-os/core/page-management-service")
+    .PageOperationError,
   PageManagementService: { restoreArticle: jest.fn() },
 }));
 
@@ -96,6 +110,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
+import { blurbsRespondRouter } from "~/server/api/routers/blurbs/respond";
 import { wikiosEditingRouter } from "~/server/api/routers/wikios/editing";
 import { wikiosStashRouter } from "~/server/api/routers/wikios/stash";
 import { wikiosDiscussionsRouter } from "~/server/api/routers/wikios/discussions";
@@ -110,6 +125,12 @@ import {
   previewCacheKey,
   renderTemplateWithRedisCache,
 } from "~/lib/wiki-os/templates/preview-service.server";
+import {
+  getRevisionWikitextShadow,
+  getArticleHistoryShadow,
+} from "~/lib/wiki-os/adapters/mediawiki/article-store";
+import { wikitextToHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
+import { PageManagementService } from "~/lib/wiki-os/core/page-management-service";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { privacyConnections } from "~/tests/helpers/privacy-config-fake";
 import { ArticleRepository } from "~/lib/wiki-os/core";
@@ -669,5 +690,660 @@ describe("S8: bounded inputs on stash, placeholder, profile and discussion endpo
     await expect(
       caller.postComment({ threadId: "t".repeat(65), content: "hi" })
     ).rejects.toMatchObject(bad);
+  });
+});
+
+describe("the editing router (save, preview, page management, rights)", () => {
+  const createCaller = createCallerFactory(wikiosEditingRouter);
+
+  /**
+   * The verified WikiAccountLink of the signed-in user (null = no verified link): proven by the account
+   * itself, to a wiki account that is old and active enough to autoconfirm.
+   */
+  const mockVerifiedLink = (username: string | null) =>
+    (
+      db as unknown as { wikiAccountLink: { findFirst: jest.Mock } }
+    ).wikiAccountLink.findFirst.mockResolvedValue(
+      username
+        ? {
+            username,
+            verifiedById: null,
+            mwRegisteredAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+            mwEditCount: 50,
+          }
+        : null
+    );
+
+  const userCtx = (wikiUsername: string | null = null) =>
+    createMockRouterContext({
+      auth: { userId: "user_1" },
+      user: { id: "db1", clerkUserId: "user_1", wikiUsername, role: { name: "user", level: 100 } },
+    });
+
+  const existingArticle = () => ({ status: "PUBLISHED" }) as never;
+
+  /** The page's title-keyed protection rows (plan 409: the restriction table is the source of truth). */
+  const mockRestrictions = (...rows: Array<{ action: string; level: string }>) =>
+    (
+      db as unknown as { wikiRestriction: { findMany: jest.Mock } }
+    ).wikiRestriction.findMany.mockResolvedValue(rows.map((row) => ({ ...row, expiresAt: null })));
+
+  beforeEach(() => {
+    mockRestrictions();
+  });
+
+  describe("wikiosEditingRouter.saveWikitext", () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it("forbids saveWikitext on a SYSOP-protected page for a non-admin", async () => {
+      jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(existingArticle());
+      mockRestrictions({ action: "edit", level: "sysop" });
+      const caller = createCaller(userCtx("Linked") as never);
+
+      await expect(caller.saveWikitext({ title: "Locked", wikitext: "x" })).rejects.toMatchObject({
+        code: "FORBIDDEN",
+      });
+      expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("wikiosEditingRouter page management", () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+      jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(existingArticle());
+    });
+
+    it("forbids restoreArticle for a non-admin", async () => {
+      const caller = createCaller(userCtx("Linked") as never);
+      await expect(caller.restoreArticle({ title: "Page" })).rejects.toMatchObject({
+        code: "FORBIDDEN",
+      });
+      expect(PageManagementService.restoreArticle).not.toHaveBeenCalled();
+    });
+  });
+
+  const adminCtx = () =>
+    createMockRouterContext({
+      auth: { userId: "system_owner_id" },
+      user: {
+        id: "dbadmin",
+        clerkUserId: "system_owner_id",
+        wikiUsername: "Admin",
+        role: { name: "admin", level: 0 },
+      },
+    });
+
+  describe("wikiosEditingRouter namespace allowlist (NEW-1)", () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+      mockVerifiedLink("Linked");
+      jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(null);
+      jest.mocked(ArticleRepository.saveArticle).mockResolvedValue({
+        article: {} as never,
+        revisionId: "rev-1" as never,
+      });
+      jest.mocked(getRevisionWikitextShadow).mockResolvedValue({
+        wikitext: "old",
+        title: "X",
+        source: "ixwiki",
+        timestamp: "",
+        fromShadow: true,
+        parked: false,
+      });
+      jest.mocked(getArticleHistoryShadow).mockResolvedValue({
+        revisions: [
+          {
+            revid: "r2",
+            user: "bob",
+            timestamp: "",
+            comment: "",
+            size: 1,
+            byteDelta: 0,
+            minor: false,
+            sha1: null,
+            parked: false,
+            textDeleted: false,
+            commentDeleted: false,
+            userDeleted: false,
+          },
+          {
+            revid: "r1",
+            user: "amy",
+            timestamp: "",
+            comment: "",
+            size: 1,
+            byteDelta: 0,
+            minor: false,
+            sha1: null,
+            parked: false,
+            textDeleted: false,
+            commentDeleted: false,
+            userDeleted: false,
+          },
+        ],
+        hasMore: false,
+        fromShadow: true,
+      });
+    });
+
+    const forbidden = [
+      "Template:Infobox",
+      "Module:Foo",
+      "MediaWiki:Common.js",
+      "User:Someone/common.js",
+    ];
+
+    it.each(forbidden)("saveWikitext refuses %s for a non-admin", async (title) => {
+      const caller = createCaller(userCtx("Linked") as never);
+      await expect(caller.saveWikitext({ title, wikitext: "x" })).rejects.toMatchObject({
+        code: "FORBIDDEN",
+      });
+      expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
+    });
+
+    it.each(forbidden)("revertToRevision refuses %s for a non-admin", async (title) => {
+      const caller = createCaller(userCtx("Linked") as never);
+      await expect(caller.revertToRevision({ title, revid: "r1" })).rejects.toMatchObject({
+        code: "FORBIDDEN",
+      });
+      expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
+    });
+
+    it.each(forbidden)("rollback refuses %s for a non-admin", async (title) => {
+      const caller = createCaller(userCtx("Linked") as never);
+      await expect(caller.rollback({ title })).rejects.toMatchObject({ code: "FORBIDDEN" });
+      expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
+    });
+
+    it("allows an article, the user's own page, and passes the revision id to the export", async () => {
+      const caller = createCaller(userCtx("Linked") as never);
+      await caller.saveWikitext({ title: "Caphiria", wikitext: "x" });
+      await caller.saveWikitext({ title: "User:Linked/Notes", wikitext: "x" });
+      expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(2);
+    });
+
+    it("refuses another user's page and a user page without a verified linked account", async () => {
+      await expect(
+        createCaller(userCtx("Linked") as never).saveWikitext({
+          title: "User:Other",
+          wikitext: "x",
+        })
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      mockVerifiedLink(null);
+      await expect(
+        createCaller(userCtx(null) as never).saveWikitext({ title: "User:Linked", wikitext: "x" })
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("lets a wiki admin edit interface namespaces", async () => {
+      const caller = createCaller(adminCtx() as never);
+      await caller.saveWikitext({ title: "Template:Infobox", wikitext: "x" });
+      jest.mocked(getRevisionWikitextShadow).mockResolvedValue({
+        wikitext: "old",
+        title: "MediaWiki:Sidebar",
+        source: "ixwiki",
+        timestamp: "",
+        fromShadow: true,
+        parked: false,
+      });
+      await caller.revertToRevision({ title: "MediaWiki:Sidebar", revid: "r1" });
+      expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("wikiosEditingRouter.previewWikitext (NEW-13)", () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+      jest.mocked(wikitextToHtml).mockResolvedValue("<p>hi</p>");
+    });
+
+    it("rejects an anonymous caller", async () => {
+      const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+      const caller = createCaller(createMockRouterContext({ auth: null, user: null }) as never);
+      await expect(caller.previewWikitext({ wikitext: "hi", title: "T" })).rejects.toThrow(
+        /Authentication required/
+      );
+      expect(wikitextToHtml).not.toHaveBeenCalled();
+      warn.mockRestore();
+    });
+
+    it("renders for a signed-in user", async () => {
+      const caller = createCaller(userCtx("Linked") as never);
+      await expect(caller.previewWikitext({ wikitext: "hi", title: "T" })).resolves.toHaveProperty(
+        "html"
+      );
+    });
+
+    it("sanitizes the HTML it hands back: script, event handlers and javascript: links are gone (plan 404 review)", async () => {
+      jest
+        .mocked(wikitextToHtml)
+        .mockResolvedValue(
+          '<p onclick="steal()">Hi <a href="javascript:alert(1)">link</a></p><script>alert(2)</script>' +
+            '<table class="infobox"><tr><td>Capital<img src=x onerror="alert(3)"></td></tr></table>' +
+            '<div class="hatnote">Notice <script>alert(4)</script></div>'
+        );
+      const caller = createCaller(userCtx("Linked") as never);
+
+      const { html } = await caller.previewWikitext({ wikitext: "hi", title: "T" });
+
+      expect(html).toContain("Hi");
+      expect(html).toContain("Capital");
+      expect(html).toContain("Notice");
+      expect(html).not.toMatch(/<script|onclick|onerror|javascript:/i);
+      // The wrapper the editor styles keeps its class.
+      expect(html).toContain("wikios-infobox-container");
+    });
+  });
+
+  describe("wikiosEditingRouter canonical titles (plan 403)", () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+      jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(null);
+      jest.mocked(ArticleRepository.saveArticle).mockResolvedValue({
+        article: {} as never,
+        revisionId: "rev-1" as never,
+      });
+    });
+
+    it("saves, exports and reports the canonical title whatever spelling was sent", async () => {
+      const caller = createCaller(userCtx("Linked") as never);
+
+      const result = await caller.saveWikitext({ title: "foo_bar", wikitext: "x" });
+
+      expect(result.title).toBe("Foo bar");
+      expect(ArticleRepository.saveArticle).toHaveBeenCalledWith(
+        expect.objectContaining({ slug: "Foo bar", title: "Foo bar" }),
+        expect.anything(),
+        expect.anything()
+      );
+    });
+
+    it("refuses a title MediaWiki would refuse before saving anything", async () => {
+      const caller = createCaller(userCtx("Linked") as never);
+
+      await expect(caller.saveWikitext({ title: "a[b", wikitext: "x" })).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+      });
+      expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("wikiosEditingRouter preview and restore canonical titles (plan 403)", () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+      jest.mocked(wikitextToHtml).mockResolvedValue("<p>hi</p>");
+      jest
+        .mocked(PageManagementService.restoreArticle)
+        .mockResolvedValue({ success: true, articleId: "a1" });
+    });
+
+    it("previews against the canonical title", async () => {
+      const caller = createCaller(userCtx("Linked") as never);
+
+      await caller.previewWikitext({ wikitext: "hi", title: "user_talk:jane" });
+
+      expect(wikitextToHtml).toHaveBeenCalledWith("hi", "User talk:Jane");
+    });
+
+    it("refuses to preview a title MediaWiki would refuse", async () => {
+      const caller = createCaller(userCtx("Linked") as never);
+
+      await expect(caller.previewWikitext({ wikitext: "hi", title: "a[b" })).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+      });
+      expect(wikitextToHtml).not.toHaveBeenCalled();
+    });
+
+    it("restores by the canonical title", async () => {
+      const caller = createCaller(adminCtx() as never);
+
+      await caller.restoreArticle({ title: "foo_bar" });
+
+      expect(PageManagementService.restoreArticle).toHaveBeenCalledWith(
+        "Foo bar",
+        { userId: "dbadmin", name: "Admin" },
+        "ixwiki"
+      );
+    });
+
+    it("checks the admin right before the title, and refuses an invalid title", async () => {
+      await expect(
+        createCaller(userCtx("Linked") as never).restoreArticle({ title: "a[b" })
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      await expect(
+        createCaller(adminCtx() as never).restoreArticle({ title: "a[b" })
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(PageManagementService.restoreArticle).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("wikiosEditingRouter rights (plan 409)", () => {
+    const mockGroups = (...groups: string[]) =>
+      (
+        db as unknown as { wikiUserGroup: { findMany: jest.Mock } }
+      ).wikiUserGroup.findMany.mockResolvedValue(
+        groups.map((group) => ({ group, expiresAt: null }))
+      );
+    const mockBlocks = (...rows: Array<{ reason: string | null; allowUserTalk: boolean }>) =>
+      (
+        db as unknown as { wikiBlock: { findMany: jest.Mock } }
+      ).wikiBlock.findMany.mockResolvedValue(rows.map((row) => ({ ...row, expiresAt: null })));
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+      mockVerifiedLink(null);
+      mockGroups();
+      mockBlocks();
+      jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(existingArticle());
+      jest.mocked(ArticleRepository.saveArticle).mockResolvedValue({
+        article: {} as never,
+        revisionId: "rev-1" as never,
+      });
+      jest.mocked(getRevisionWikitextShadow).mockResolvedValue({
+        wikitext: "old",
+        title: "Caphiria",
+        source: "ixwiki",
+        timestamp: "",
+        fromShadow: true,
+        parked: false,
+      });
+      jest.mocked(getArticleHistoryShadow).mockResolvedValue({
+        revisions: [
+          {
+            revid: "r2",
+            user: "bob",
+            timestamp: "",
+            comment: "",
+            size: 1,
+            byteDelta: 0,
+            minor: false,
+            sha1: null,
+            parked: false,
+            textDeleted: false,
+            commentDeleted: false,
+            userDeleted: false,
+          },
+          {
+            revid: "r1",
+            user: "amy",
+            timestamp: "",
+            comment: "",
+            size: 1,
+            byteDelta: 0,
+            minor: false,
+            sha1: null,
+            parked: false,
+            textDeleted: false,
+            commentDeleted: false,
+            userDeleted: false,
+          },
+        ],
+        hasMore: false,
+        fromShadow: true,
+      });
+    });
+
+    it("refuses every write to a blocked user, with the block reason", async () => {
+      mockBlocks({ reason: "vandalism", allowUserTalk: true });
+      const caller = createCaller(userCtx("Linked") as never);
+
+      await expect(caller.saveWikitext({ title: "Caphiria", wikitext: "x" })).rejects.toMatchObject(
+        {
+          code: "FORBIDDEN",
+          message: expect.stringMatching(/^blocked: .*vandalism/),
+        }
+      );
+      await expect(
+        caller.revertToRevision({ title: "Caphiria", revid: "r1" })
+      ).rejects.toMatchObject({
+        message: expect.stringMatching(/^blocked: /),
+      });
+      expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
+    });
+
+    it("holds create-protection against a new page, and an archived page counts as new", async () => {
+      mockRestrictions({ action: "create", level: "sysop" });
+      const caller = createCaller(userCtx("Linked") as never);
+
+      jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(null);
+      await expect(caller.saveWikitext({ title: "Salted", wikitext: "x" })).rejects.toMatchObject({
+        message: expect.stringMatching(/^titleprotected: /),
+      });
+
+      jest.mocked(ArticleRepository.findBySlug).mockResolvedValue({ status: "ARCHIVED" } as never);
+      await expect(caller.saveWikitext({ title: "Salted", wikitext: "x" })).rejects.toMatchObject({
+        message: expect.stringMatching(/^titleprotected: /),
+      });
+
+      // An existing page is not held by create-protection.
+      jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(existingArticle());
+      await caller.saveWikitext({ title: "Salted", wikitext: "x" });
+      expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(1);
+    });
+
+    it("rolls back only for the rollback right", async () => {
+      const caller = createCaller(userCtx("Linked") as never);
+      await expect(caller.rollback({ title: "Caphiria" })).rejects.toMatchObject({
+        message: expect.stringMatching(/^permissiondenied: /),
+      });
+      expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
+
+      mockGroups("rollbacker");
+      await caller.rollback({ title: "Caphiria" });
+      expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(1);
+    });
+
+    it("holds a rollback to the page's edit protection", async () => {
+      mockGroups("rollbacker");
+      mockRestrictions({ action: "edit", level: "sysop" });
+      await expect(
+        createCaller(userCtx("Linked") as never).rollback({ title: "Caphiria" })
+      ).rejects.toMatchObject({ message: expect.stringMatching(/^protectedpage: /) });
+    });
+
+    it("restoreArticle checks and acts in the realm it was asked for, and maps service refusals", async () => {
+      const caller = createCaller(adminCtx() as never);
+      jest
+        .mocked(PageManagementService.restoreArticle)
+        .mockResolvedValue({ success: true, articleId: "a1" });
+
+      await caller.restoreArticle({ title: "foo_bar", realm: "iiwiki" });
+      expect(PageManagementService.restoreArticle).toHaveBeenCalledWith(
+        "Foo bar",
+        { userId: "dbadmin", name: "Admin" },
+        "iiwiki"
+      );
+
+      const { PageOperationError } = jest.requireActual<
+        typeof import("~/lib/wiki-os/core/page-management-service")
+      >("~/lib/wiki-os/core/page-management-service");
+      for (const code of ["NOT_FOUND", "CONFLICT", "BAD_REQUEST"] as const) {
+        jest
+          .mocked(PageManagementService.restoreArticle)
+          .mockRejectedValueOnce(new PageOperationError(code, `refused ${code}`));
+        await expect(caller.restoreArticle({ title: "Foo" })).rejects.toMatchObject({
+          code,
+          message: `refused ${code}`,
+        });
+      }
+    });
+
+    it("will not save over a deleted page: an administrator restores it first", async () => {
+      jest.mocked(ArticleRepository.findBySlug).mockResolvedValue({ status: "ARCHIVED" } as never);
+      mockGroups("rollbacker");
+      const caller = createCaller(userCtx("Linked") as never);
+      const refused = {
+        code: "PRECONDITION_FAILED",
+        message: "This page was deleted; ask an administrator to restore it",
+      };
+
+      await expect(caller.saveWikitext({ title: "Gone", wikitext: "x" })).rejects.toMatchObject(
+        refused
+      );
+      await expect(caller.revertToRevision({ title: "Gone", revid: "r1" })).rejects.toMatchObject(
+        refused
+      );
+      await expect(caller.rollback({ title: "Gone" })).rejects.toMatchObject(refused);
+      expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
+    });
+
+    it("checks the caller's rights on a deleted title before telling them it was deleted", async () => {
+      jest.mocked(ArticleRepository.findBySlug).mockResolvedValue({ status: "ARCHIVED" } as never);
+      const caller = createCaller(userCtx("Linked") as never);
+
+      await expect(
+        caller.saveWikitext({ title: "Template:Gone", wikitext: "x" })
+      ).rejects.toMatchObject({
+        message: expect.stringMatching(/^namespaceprotected: /),
+      });
+      mockBlocks({ reason: "spam", allowUserTalk: true });
+      await expect(caller.saveWikitext({ title: "Gone", wikitext: "x" })).rejects.toMatchObject({
+        message: expect.stringMatching(/^blocked: /),
+      });
+    });
+
+    it("lets the IxStates admin role act as a sysop: edit Template:, roll back, but not edit site JS", async () => {
+      const adminRoleCtx = createMockRouterContext({
+        auth: { userId: "user_2" },
+        user: {
+          id: "db2",
+          clerkUserId: "user_2",
+          wikiUsername: "Mod",
+          role: { name: "admin", level: 10 },
+        },
+      });
+      const caller = createCaller(adminRoleCtx as never);
+
+      await caller.saveWikitext({ title: "Template:Infobox", wikitext: "x" });
+      await caller.rollback({ title: "Caphiria" });
+      await expect(
+        caller.saveWikitext({ title: "MediaWiki:Common.js", wikitext: "x" })
+      ).rejects.toMatchObject({ message: expect.stringMatching(/^namespaceprotected: /) });
+    });
+  });
+});
+
+describe("identity is the internal User id (blurbs, stashes)", () => {
+  const mockDb = db as unknown as {
+    user: { findFirst: jest.Mock };
+    blurbPrompt: { findUnique: jest.Mock };
+    blurbResponse: { findUnique: jest.Mock; create: jest.Mock };
+    thinkpagesAccount: { findFirst: jest.Mock };
+    thinkpagesPost: { create: jest.Mock };
+    stash: { findMany: jest.Mock; findFirst: jest.Mock; findUnique: jest.Mock; create: jest.Mock };
+    stashItem: { upsert: jest.Mock };
+  };
+
+  const ctx = () =>
+    createMockRouterContext({
+      auth: { userId: "user_clerk_1" },
+      user: {
+        id: "db_user_1",
+        clerkUserId: "user_clerk_1",
+        countryId: "country_1",
+        role: { name: "user", level: 100 },
+      },
+    }) as never;
+
+  describe("blurbs.submitResponse identity", () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+      // Only the Clerk id finds the user, as in production (findWikiUserByAuthId matches clerkUserId).
+      mockDb.user.findFirst.mockImplementation(async (args: { where: { clerkUserId?: string } }) =>
+        args.where.clerkUserId === "user_clerk_1"
+          ? { id: "db_user_1", countryId: "country_1" }
+          : null
+      );
+      mockDb.blurbPrompt.findUnique.mockResolvedValue({
+        id: "prompt_1",
+        status: "ACTIVE",
+        slug: "p",
+        title: "Prompt",
+      });
+      mockDb.blurbResponse.findUnique.mockResolvedValue(null);
+      mockDb.thinkpagesAccount.findFirst.mockResolvedValue({ id: "acct_1" });
+      mockDb.thinkpagesPost.create.mockResolvedValue({ id: "post_1" });
+      mockDb.blurbResponse.create.mockImplementation(async (args: { data: unknown }) => args.data);
+    });
+
+    it("finds the signed-in user by Clerk id and saves the dispatch under the internal id", async () => {
+      const caller = createCallerFactory(blurbsRespondRouter)(ctx());
+      const result = await caller.submitResponse({ promptId: "prompt_1", content: "Hello" });
+
+      expect(mockDb.user.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { clerkUserId: "user_clerk_1" } })
+      );
+      expect(result).toMatchObject({ userId: "db_user_1", countryId: "country_1" });
+      // The ThinkPages cross-post looks the account up by Clerk id, too.
+      expect(mockDb.thinkpagesAccount.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { clerkUserId: "user_clerk_1", countryId: "country_1" } })
+      );
+      expect(result).toMatchObject({ thinkpagesPostId: "post_1" });
+    });
+  });
+
+  describe("wikios stash identity", () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it("lists stashes keyed by the internal id and by the legacy Clerk id", async () => {
+      mockDb.stash.findMany.mockResolvedValue([
+        {
+          id: "legacy",
+          name: "My Stash",
+          color: "#000",
+          icon: null,
+          isDefault: true,
+          order: 0,
+          _count: { items: 3 },
+        },
+      ]);
+      const caller = createCallerFactory(wikiosStashRouter)(ctx());
+      const stashes = await caller.getStashes();
+
+      expect(mockDb.stash.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { userId: { in: ["db_user_1", "user_clerk_1"] } } })
+      );
+      expect(stashes).toEqual([expect.objectContaining({ id: "legacy", itemCount: 3 })]);
+    });
+
+    it("stashes into the legacy default stash instead of creating a second one", async () => {
+      mockDb.stash.findFirst.mockResolvedValue({ id: "legacy", userId: "user_clerk_1" });
+      mockDb.stashItem.upsert.mockResolvedValue({});
+      const caller = createCallerFactory(wikiosStashRouter)(ctx());
+      const result = await caller.stashPage({ pageTitle: "Caphiria" });
+
+      expect(result).toEqual({ success: true, stashId: "legacy" });
+      expect(mockDb.stash.create).not.toHaveBeenCalled();
+    });
+
+    it("does not stash into a named stash that belongs to someone else", async () => {
+      mockDb.stash.findFirst.mockResolvedValue(null);
+      mockDb.stashItem.upsert.mockClear();
+      const caller = createCallerFactory(wikiosStashRouter)(ctx());
+
+      await expect(caller.stashPage({ pageTitle: "Caphiria", stashId: "other" })).rejects.toThrow(
+        "Stash not found"
+      );
+      expect(mockDb.stash.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: "other", userId: { in: ["db_user_1", "user_clerk_1"] } },
+        })
+      );
+      expect(mockDb.stashItem.upsert).not.toHaveBeenCalled();
+    });
+
+    it("does not delete a stash that belongs to someone else", async () => {
+      mockDb.stash.findUnique.mockResolvedValue({
+        id: "other",
+        userId: "user_clerk_2",
+        isDefault: false,
+      });
+      const caller = createCallerFactory(wikiosStashRouter)(ctx());
+      await expect(caller.deleteStash({ id: "other" })).rejects.toThrow("Stash not found");
+    });
   });
 });

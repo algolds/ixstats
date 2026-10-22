@@ -159,7 +159,7 @@ Cloudflare), `src/lib/site-metadata.ts` (the page-metadata origin when `NEXT_PUB
 `src/lib/wiki-os/permissions.ts` (`assertWikiosWritable`) only name `api.php` in comments: while the WikiOS v1 switch is off,
 `/w/api.php` answers `readonly`.
 
-A browser calls none of this: `src/tests/architecture/browser-mediawiki.test.ts` fails if client code imports a module that
+A browser calls none of this: `src/tests/architecture/client-server-entrypoints.test.ts` fails if client code imports a module that
 calls MediaWiki or names a MediaWiki URL helper. `src/lib/wiki-os/templates/template-registry.ts` (types and pure helpers) is
 client-safe; the render-engine and refresh calls are in the server-only `template-engine.server.ts`.
 

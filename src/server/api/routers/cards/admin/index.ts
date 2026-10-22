@@ -1,7 +1,7 @@
 /**
  * The card admin (cards refresh spec §2.4): one sub-router per `/admin/cards` tab, plus NationStates imports and
  * the player tools, mounted at `api.cards.admin.<tab>.*`. Every procedure is `adminProcedure`
- * (src/tests/architecture/cards-admin-gate.test.ts); routers validate and call `src/server/modules/cards/*`.
+ * (src/tests/architecture/procedure-builders.test.ts); routers validate and call `src/server/modules/cards/*`.
  */
 import { createTRPCRouter } from "~/server/api/trpc";
 import { cardsAdminOverviewRouter } from "./overview";

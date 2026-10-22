@@ -518,7 +518,7 @@ RATE_LIMIT_WINDOW_MS="60000"  # the tRPC tiers use their hard-coded limits
 REDIS_ENABLED="false"  # Use in-memory for testing
 ```
 
-Automated coverage already exists: `src/tests/lib/cache/rate-limiter.test.ts`, `src/tests/server/api/rate-limit-middleware.test.ts` and `src/tests/server/realms/realm-rate-limits.test.ts`.
+Automated coverage already exists: `src/tests/lib/cache/rate-limiter.test.ts` and `src/tests/scenarios/security/security-mutation-burst.test.ts` (every builder's limit and namespace, the realm and article-read buckets, the bucket key).
 
 #### 2. Create a Test Script (sketch — not in the repo)
 
@@ -1095,7 +1095,7 @@ const createRateLimitMiddleware = (options: RateLimitOptions) => {
 
 ### 7. Test Rate Limiting in CI/CD
 
-Unit tests already cover the limiter and middleware (`src/tests/lib/cache/rate-limiter.test.ts`, `src/tests/server/api/rate-limit-middleware.test.ts`, `src/tests/server/realms/realm-rate-limits.test.ts`). An end-to-end sketch against a running server:
+Unit tests already cover the limiter and middleware (`src/tests/lib/cache/rate-limiter.test.ts`, `src/tests/scenarios/security/security-mutation-burst.test.ts`). An end-to-end sketch against a running server:
 
 ```typescript
 // sketch

@@ -2,7 +2,7 @@
  * RateLimiter — per-call limits and Redis resilience (plan 340, Step 1).
  *
  * `jest` is the ambient global (not imported from "@jest/globals") because the hoisted
- * jest.mock() factories below run before imports; see trpc-impersonation.test.ts.
+ * jest.mock() factories below run before imports, and importing `jest` would shadow that global.
  */
 import { describe, it, expect, afterEach } from "@jest/globals";
 import { RateLimiter } from "~/lib/cache/rate-limiter";
@@ -116,22 +116,6 @@ afterEach(() => {
 });
 
 describe("RateLimiter per-call limits (in-memory)", () => {
-  it("enforces the limits passed to check(), not the global config", async () => {
-    const limiter = new RateLimiter();
-    const outcomes = await callTimes(limiter, 3, uniqueId(), "public", { maxRequests: 2, windowMs: MINUTE });
-    expect(outcomes).toEqual([true, true, false]);
-  });
-
-  it("keeps namespaces with different limits independent", async () => {
-    const limiter = new RateLimiter();
-    const id = uniqueId();
-    const strict = { maxRequests: 1, windowMs: MINUTE };
-    const loose = { maxRequests: 3, windowMs: MINUTE };
-
-    expect(await callTimes(limiter, 2, id, "strict", strict)).toEqual([true, false]);
-    expect(await callTimes(limiter, 4, id, "loose", loose)).toEqual([true, true, true, false]);
-  });
-
   it("falls back to the RATE_LIMIT_* env config when no limits are passed", async () => {
     const limiter = new RateLimiter();
     const outcomes = await callTimes(limiter, 6, uniqueId(), "default");
@@ -140,7 +124,10 @@ describe("RateLimiter per-call limits (in-memory)", () => {
 
   it("reports remaining requests against the per-call limit", async () => {
     const limiter = new RateLimiter();
-    const result = await limiter.check(uniqueId(), "queries", { maxRequests: 120, windowMs: MINUTE });
+    const result = await limiter.check(uniqueId(), "queries", {
+      maxRequests: 120,
+      windowMs: MINUTE,
+    });
     expect(result.remaining).toBe(119);
   });
 
@@ -160,7 +147,10 @@ describe("RateLimiter per-call limits (in-memory)", () => {
   it("allows everything with a full per-call window when disabled", async () => {
     mockEnv.RATE_LIMIT_ENABLED = "false";
     const limiter = new RateLimiter();
-    const outcomes = await callTimes(limiter, 3, uniqueId(), "public", { maxRequests: 1, windowMs: MINUTE });
+    const outcomes = await callTimes(limiter, 3, uniqueId(), "public", {
+      maxRequests: 1,
+      windowMs: MINUTE,
+    });
     expect(outcomes).toEqual([true, true, true]);
     const result = await limiter.check(uniqueId(), "public", { maxRequests: 30, windowMs: MINUTE });
     expect(result.remaining).toBe(30);
@@ -170,7 +160,10 @@ describe("RateLimiter per-call limits (in-memory)", () => {
 describe("RateLimiter Redis resilience", () => {
   it("uses in-memory limits while the Redis client is not ready", async () => {
     const { limiter, redis } = await createRedisBackedLimiter();
-    const outcomes = await callTimes(limiter, 2, uniqueId(), "public", { maxRequests: 1, windowMs: MINUTE });
+    const outcomes = await callTimes(limiter, 2, uniqueId(), "public", {
+      maxRequests: 1,
+      windowMs: MINUTE,
+    });
 
     expect(outcomes).toEqual([true, false]);
     expect(redis.multiCalls).toBe(0);
@@ -182,7 +175,10 @@ describe("RateLimiter Redis resilience", () => {
 
     redis.emit("error", new Error("ECONNRESET"));
     redis.status = "ready";
-    const outcomes = await callTimes(limiter, 2, uniqueId(), "public", { maxRequests: 1, windowMs: MINUTE });
+    const outcomes = await callTimes(limiter, 2, uniqueId(), "public", {
+      maxRequests: 1,
+      windowMs: MINUTE,
+    });
 
     expect(redis.multiCalls).toBe(2);
     expect(outcomes).toEqual([true, false]);

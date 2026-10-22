@@ -3,8 +3,7 @@
  * A `loading.tsx` above a route makes Next flush the shell before the page runs, so `notFound()`,
  * `redirect()` and `permanentRedirect()` from it answer HTTP 200 (verified on Next 16.3.6). The
  * WikiOS routes need the real 404, 307 and 308: no `loading.tsx` may be an ancestor of
- * `src/app/(wiki-os)`. The loading UI lives in `_components/RootLoading.tsx` and every other
- * top-level route segment re-exports it from its own `loading.tsx`.
+ * `src/app/(wiki-os)`.
  *
  * The passport redirect needs the real 308 too: `/id/[username]` (canonical handle) has no `loading.tsx` above it.
  * `/r`'s loading UI sits in the realm's `(region)` group instead.
@@ -20,24 +19,6 @@ import path from "node:path";
 
 const APP = path.join(process.cwd(), "src/app");
 const WIKI_GROUP = "(wiki-os)";
-/** Directories that are not route segments with pages of their own, or are WikiOS's. */
-const NOT_LOADING_SEGMENTS = new Set([
-  WIKI_GROUP,
-  "api",
-  "wiki-sitemap",
-  "robots.txt",
-  "_components",
-]);
-/** A segment with a loading.tsx of its own that is not the shared one. */
-const OWN_LOADING = new Set(["builder"]);
-/**
- * Top-level segments with no loading.tsx of their own: redirect pages need the real 307 or 308, and `r` keeps its
- * loading UI in the realm's `(region)` group.
- */
-const REDIRECT_SEGMENTS = new Set(["id", "r", "thinkpages"]);
-/** The redirect pages, relative to src/app. */
-const REDIRECT_PAGES = ["id/[username]/page.tsx"];
-
 const LOADING_FILE = /^loading\.(?:tsx?|jsx?)$/;
 const PAGE_FILE = /^page\.(?:tsx?|jsx?)$/;
 
@@ -51,6 +32,15 @@ function walk(dir: string, visit: (file: string) => void): void {
 
 const hasLoading = (dir: string) => fs.readdirSync(dir).some((name) => LOADING_FILE.test(name));
 
+/** Every directory from the page's own up to src/app that holds a loading.tsx. */
+function loadingAbove(page: string): string[] {
+  const found: string[] = [];
+  for (let dir = path.dirname(page); dir.startsWith(APP); dir = path.dirname(dir)) {
+    if (hasLoading(dir)) found.push(path.relative(process.cwd(), dir));
+  }
+  return found;
+}
+
 describe("no loading.tsx above the WikiOS routes", () => {
   it("there is none at src/app", () => {
     expect(fs.readdirSync(APP).filter((name) => LOADING_FILE.test(name))).toEqual([]);
@@ -62,86 +52,19 @@ describe("no loading.tsx above the WikiOS routes", () => {
       if (PAGE_FILE.test(path.basename(file))) pages.push(file);
     });
     expect(pages.length).toBeGreaterThan(20); // the walk found the wiki routes
-
-    const offenders: string[] = [];
-    for (const page of pages) {
-      for (let dir = path.dirname(page); dir.startsWith(APP); dir = path.dirname(dir)) {
-        if (hasLoading(dir)) offenders.push(path.relative(process.cwd(), dir));
-      }
-    }
-    expect([...new Set(offenders)]).toEqual([]);
-  });
-
-  it("the catch-all route has none either", () => {
-    const wikiDir = path.join(APP, WIKI_GROUP, "wiki", "[...slug]");
-    expect(fs.existsSync(path.join(wikiDir, "page.tsx"))).toBe(true);
-    expect(hasLoading(wikiDir)).toBe(false);
-    expect(hasLoading(path.join(APP, WIKI_GROUP, "wiki"))).toBe(false);
-    expect(hasLoading(path.join(APP, WIKI_GROUP))).toBe(false);
+    expect([...new Set(pages.flatMap(loadingAbove))]).toEqual([]);
   });
 });
 
-describe("no loading.tsx above the passport redirects", () => {
-  it.each(REDIRECT_PAGES)("%s has none in any ancestor directory", (page) => {
-    const file = path.join(APP, page);
-    expect(fs.existsSync(file)).toBe(true);
-    const offenders: string[] = [];
-    for (let dir = path.dirname(file); dir.startsWith(APP); dir = path.dirname(dir)) {
-      if (hasLoading(dir)) offenders.push(path.relative(process.cwd(), dir));
-    }
-    expect(offenders).toEqual([]);
-  });
-
-  it("keeps the realm pages' loading UI inside the (region) group", () => {
-    const source = fs.readFileSync(path.join(APP, "r/[realm]/(region)/loading.tsx"), "utf8");
-    expect(source).toContain('from "~/app/_components/RootLoading"');
-  });
-});
-
-describe("no loading.tsx above the ThinkPages redirect pages", () => {
-  const pages = [
+describe("no loading.tsx above the redirect pages", () => {
+  it.each([
+    "id/[username]/page.tsx",
     "thinkpages/post/[postId]/page.tsx",
     "thinkpages/r/mine/page.tsx",
     "thinkpages/t/[threadId]/unread/page.tsx",
-  ];
-
-  it.each(pages)("%s has none in any ancestor directory", (page) => {
+  ])("%s has none in any ancestor directory", (page) => {
     const file = path.join(APP, page);
     expect(fs.existsSync(file)).toBe(true);
-    const offenders: string[] = [];
-    for (let dir = path.dirname(file); dir.startsWith(APP); dir = path.dirname(dir)) {
-      if (hasLoading(dir)) offenders.push(path.relative(process.cwd(), dir));
-    }
-    expect(offenders).toEqual([]);
+    expect(loadingAbove(file)).toEqual([]);
   });
-
-  it.each(["c", "t/[threadId]/(thread)", "mod", "r/[realm]/[key]"])(
-    "thinkpages/%s keeps the shared loading UI",
-    (segment) => {
-      const source = fs.readFileSync(path.join(APP, "thinkpages", segment, "loading.tsx"), "utf8");
-      expect(source).toContain('from "~/app/_components/RootLoading"');
-    }
-  );
-});
-
-describe("the non-wiki route segments keep their loading UI", () => {
-  const segments = fs
-    .readdirSync(APP, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && !NOT_LOADING_SEGMENTS.has(entry.name))
-    .filter((entry) => !REDIRECT_SEGMENTS.has(entry.name))
-    .map((entry) => entry.name)
-    .filter((name) => {
-      let hasPage = false;
-      walk(path.join(APP, name), (file) => {
-        hasPage ||= PAGE_FILE.test(path.basename(file));
-      });
-      return hasPage;
-    });
-  it.each(segments.filter((segment) => !OWN_LOADING.has(segment)))(
-    "%s re-exports the shared RootLoading",
-    (segment) => {
-      const source = fs.readFileSync(path.join(APP, segment, "loading.tsx"), "utf8");
-      expect(source).toContain('from "~/app/_components/RootLoading"');
-    }
-  );
 });

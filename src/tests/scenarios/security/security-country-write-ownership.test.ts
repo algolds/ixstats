@@ -5,8 +5,17 @@
  * call for an own, second or foreign target, and the write it guards. A new country mutation is one row.
  *
  * Folds country-idor-government, -meetings, -policies, -quickactions, -transport and -misc, and
- * multi-nation-write-access: the row matrix, plus each file's own details below it.
+ * multi-nation-write-access: the row matrix, plus each file's own details below it. Also folds country-authorization
+ * (the check decides on the fresh user row), cultural-artifact-upload-auth, diplomatic-scenarios-record-choice-auth and
+ * audit-country-idor (the detector that lists the mutations needing a row).
  */
+jest.mock("~/lib/vault/vault-service", () => ({
+  __esModule: true,
+  vaultService: { earnCredits: jest.fn().mockResolvedValue({ success: true }) },
+}));
+jest.mock("~/lib/diplomacy/choice-tracker", () => ({
+  DiplomaticChoiceTracker: { recordChoice: jest.fn().mockResolvedValue(undefined) },
+}));
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: {
@@ -37,6 +46,19 @@ import { wikiosDiscussionsRouter } from "~/server/api/routers/wikios/discussions
 import { securityConflictsRouter } from "~/server/api/routers/security/conflicts";
 import { onomaNameBankRouter } from "~/server/api/routers/onoma/namebank";
 import { electionsPartiesRouter } from "~/server/api/routers/elections/parties";
+import { diplomaticCulturalLifecycleParticipationRouter } from "~/server/api/routers/diplomacy/cultural/lifecycle/participation";
+import { diplomaticScenariosChoicesRouter } from "~/server/api/routers/diplomaticScenarios/choices";
+import {
+  assertCountryResourceWriteAccess,
+  assertCountryWriteAccess,
+} from "~/server/shared/country-authorization";
+import { Project } from "ts-morph";
+import {
+  analyzeSource,
+  applyAllowlist,
+  isFailing,
+} from "../../../../scripts/audit/audit-country-idor";
+import { createMockPrisma } from "~/tests/helpers/mock-db";
 import { createMockCallerContext, type MockCallerContext } from "~/tests/helpers/router-context";
 
 const OWN = "country_own";
@@ -715,5 +737,272 @@ describe("and the details each country mutation adds", () => {
     await meetings.appointOfficial({ ...appointment, governmentStructureId: "structure_foreign" });
     expect(db.meetingAgendaItem.create).toHaveBeenCalledTimes(1);
     expect(db.governmentOfficial.create).toHaveBeenCalledTimes(1);
+  });
+});
+
+type AuthContext = Parameters<typeof assertCountryWriteAccess>[0];
+type FreshUser = { id?: string; countryId: string | null; role: { name: string } };
+
+/** A caller whose session says `cached` while the database now says `fresh`; `country` is the one row that exists. */
+function staleSession(
+  cached: { id?: string; countryId: string | null; role: string },
+  fresh: FreshUser | null,
+  country: { id: string; ownerUserId: string | null } = {
+    id: "country_alpha",
+    ownerUserId: "db_owner",
+  }
+): AuthContext {
+  return {
+    auth: { userId: "user_x" },
+    user: { clerkUserId: "user_x", ...cached },
+    db: {
+      user: { findUnique: jest.fn().mockResolvedValue(fresh) },
+      country: {
+        findUnique: jest.fn(async ({ where }: { where: { id: string } }) =>
+          where.id === country.id ? country : null
+        ),
+      },
+    },
+  };
+}
+
+describe("the country-write check decides on the fresh user row", () => {
+  const member = { role: { name: "member" } };
+
+  it.each([
+    [
+      "a member whose session still names their old nation",
+      { countryId: "old_country", role: "member" },
+      { ...member, countryId: "country_alpha" },
+      "country_alpha",
+      null,
+    ],
+    [
+      "a member promoted to admin since the session was cached",
+      { countryId: "other_country", role: "member" },
+      { countryId: "other_country", role: { name: "admin" } },
+      "country_alpha",
+      null,
+    ],
+    [
+      "a Clerk id that now maps to a different platform user than the session's owner",
+      { id: "db_owner", countryId: null, role: "member" },
+      { ...member, id: "db_other", countryId: null },
+      "country_alpha",
+      "FORBIDDEN",
+    ],
+    [
+      "a player writing a country that does not exist",
+      { countryId: "home", role: "member" },
+      { ...member, countryId: "home" },
+      "country_missing",
+      "NOT_FOUND",
+    ],
+  ] as const)("%s", async (_who, cached, fresh, target, refusal) => {
+    const result = assertCountryWriteAccess(staleSession(cached, fresh), target);
+    if (refusal) await expect(result).rejects.toMatchObject({ code: refusal });
+    else await expect(result).resolves.toBeUndefined();
+  });
+
+  it("refuses a player an unowned (NPC) nation", async () => {
+    const ctx = staleSession(
+      { countryId: "mine", role: "member" },
+      { ...member, countryId: "mine" },
+      { id: "npc", ownerUserId: null }
+    );
+    await expect(assertCountryWriteAccess(ctx, "npc")).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it.each([
+    ["a member", "member", { code: "NOT_FOUND", message: "Meeting not found" }],
+    ["an admin", "admin", null],
+    ["a member promoted to staff since the session was cached", "staff", null],
+  ] as const)("a row with no known owning country: %s", async (_who, freshRole, refusal) => {
+    const ctx = staleSession(
+      { countryId: "other_country", role: "member" },
+      { countryId: "other_country", role: { name: freshRole } }
+    );
+    const result = assertCountryResourceWriteAccess(ctx, null, "Meeting");
+    if (refusal) await expect(result).rejects.toMatchObject(refusal);
+    else await expect(result).resolves.toBeUndefined();
+  });
+});
+
+describe("cultural exchange artifacts and diplomatic choices", () => {
+  const upload = {
+    exchangeId: "ex_1",
+    type: "photo" as const,
+    title: "Harvest",
+    fileUrl: "https://example.com/a.png",
+    contributor: "Caller",
+  };
+  const uploadDb = (
+    exchange: { hostCountryId: string } | null,
+    participant: { id: string } | null
+  ) => ({
+    culturalExchange: {
+      findUnique: jest
+        .fn()
+        .mockResolvedValue(exchange && { ...exchange, hostCountryName: "Host", type: "festival" }),
+    },
+    culturalExchangeParticipant: { findFirst: jest.fn().mockResolvedValue(participant) },
+    culturalArtifact: { create: jest.fn().mockResolvedValue({ id: "artifact_1" }) },
+  });
+
+  it.each([
+    ["the exchange's host, without a participant row", { hostCountryId: OWN }, null, null],
+    ["a participant country", { hostCountryId: FOREIGN }, { id: "participant_1" }, null],
+    [
+      "a country that is neither host nor participant",
+      { hostCountryId: FOREIGN },
+      null,
+      "FORBIDDEN",
+    ],
+    ["anyone, on a missing exchange", null, null, "NOT_FOUND"],
+  ] as const)("an artifact upload by %s", async (_who, exchange, participant, refusal) => {
+    const db = uploadDb(exchange, participant);
+    const upload$ = createCallerFactory(diplomaticCulturalLifecycleParticipationRouter)(
+      context("member", db)
+    ).uploadCulturalArtifact(upload);
+    if (refusal) {
+      await expect(upload$).rejects.toMatchObject({ code: refusal });
+      expect(db.culturalArtifact.create).not.toHaveBeenCalled();
+    } else {
+      await expect(upload$).resolves.toEqual({ id: "artifact_1" });
+      expect(db.culturalArtifact.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ exchangeId: "ex_1", countryId: OWN }),
+      });
+    }
+  });
+
+  // recordChoice validates cuids, so these ids are cuid-shaped: the caller owns A.
+  const [A, B, C] = [
+    "ckcountrya0000000000001",
+    "ckcountryb0000000000002",
+    "ckcountryc0000000000003",
+  ];
+  const SCENARIO = "ckscenario00000000000004";
+  const scenario = (country1Id: string, country2Id: string) => ({
+    id: SCENARIO,
+    type: "cultural_exchange",
+    title: "Test Scenario",
+    narrative: "Narrative",
+    country1Id,
+    country2Id,
+    status: "active",
+    expiresAt: new Date(Date.now() + 86_400_000),
+    responseOptions: JSON.stringify([
+      { id: "choice_1", label: "Choice 1", effects: { culturalImpact: 10 } },
+    ]),
+    tags: JSON.stringify([]),
+    culturalImpact: 10,
+    diplomaticRisk: 5,
+  });
+  const choose = (signedIn: boolean, between: readonly [string, string], countryId: string) => {
+    const owner = { id: "db_user_a", clerkUserId: "user_owns_a", countryId: A };
+    // Every other delegate the choice touches (its rewards, its news) answers with nothing.
+    const db = createMockPrisma();
+    db.user.findUnique.mockResolvedValue({ ...owner, role: { name: "user" } });
+    db.country.findUnique.mockImplementation(async ({ where }: { where: { id: string } }) => ({
+      id: where.id,
+      name: "Country",
+      flag: null,
+    }));
+    db.culturalScenario.findUnique.mockResolvedValue(scenario(...between));
+    db.culturalScenario.updateMany.mockResolvedValue({ count: 1 });
+    db.culturalScenario.findUniqueOrThrow.mockResolvedValue({
+      ...scenario(...between),
+      status: "completed",
+    });
+    const ctx = createMockCallerContext({
+      auth: signedIn ? { userId: owner.clerkUserId } : null,
+      user: signedIn ? { ...owner, role: { name: "user", level: 100 } } : null,
+      db,
+    });
+    const result = createCallerFactory(diplomaticScenariosChoicesRouter)(ctx).recordChoice({
+      scenarioId: SCENARIO,
+      countryId,
+      choiceId: "choice_1",
+      choiceLabel: "Choice 1",
+    });
+    return { db, result };
+  };
+
+  it.each([
+    ["a signed-out visitor", false, [A, B], A, "UNAUTHORIZED"],
+    ["a member, for a country they do not own", true, [A, C], C, "FORBIDDEN"],
+    ["the owner, on a scenario that does not involve their country", true, [B, C], A, "FORBIDDEN"],
+    ["the owner of an involved country, for it", true, [A, B], A, null],
+  ] as const)(
+    "a diplomatic choice recorded by %s",
+    async (_who, signedIn, between, countryId, refusal) => {
+      const { db, result } = choose(signedIn, between, countryId);
+      if (refusal) {
+        const error = await result.then(
+          () => null,
+          (e: unknown) => e
+        );
+        expect(codeOf(error)).toBe(refusal);
+        expect(db.culturalScenario.updateMany).not.toHaveBeenCalled();
+      } else {
+        await expect(result).resolves.toMatchObject({ success: true });
+        expect(db.culturalScenario.updateMany).toHaveBeenCalledTimes(1);
+      }
+    }
+  );
+});
+
+describe("audit:idor, which lists the mutations that need a row", () => {
+  const FILE = "src/server/api/routers/fixture.ts";
+  const SOURCE = `
+export const fixtureRouter = createTRPCRouter({
+  guarded: protectedProcedure
+    .input(z.object({ countryId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+      return ctx.db.policy.create({ data: input });
+    }),
+  unguarded: protectedProcedure
+    .input(z.object({ countryId: z.string() }))
+    .mutation(async ({ ctx, input }) => ctx.db.policy.create({ data: input })),
+  inline: countryOwnerProcedure
+    .input(z.object({ countryId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.country.id !== input.countryId) throw new TRPCError({ code: "FORBIDDEN" });
+    }),
+  rowById: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => ctx.db.cabinetMeeting.delete({ where: { id: input.id } })),
+  unrelatedRow: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => ctx.db.forumPost.delete({ where: { id: input.id } })),
+  adminOnly: adminProcedure
+    .input(z.object({ countryId: z.string() }))
+    .mutation(async ({ ctx, input }) => ctx.db.country.delete({ where: { id: input.countryId } })),
+  readOnly: protectedProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => ctx.db.policy.findMany({ where: input })),
+});
+`;
+  const analyze = () => analyzeSource(new Project({ useInMemoryFileSystem: true }), FILE, SOURCE);
+
+  it("classifies country-scoped mutations and skips admin, queries and unrelated rows", () => {
+    expect(Object.fromEntries(analyze().map((f) => [f.procedure, f.status]))).toEqual({
+      guarded: "OK",
+      unguarded: "MISSING",
+      inline: "MANUAL",
+      rowById: "MISSING",
+    });
+  });
+
+  it("allowlists only the named procedures and fails while anything is unresolved", () => {
+    const findings = applyAllowlist(analyze(), {
+      [`${FILE}#inline`]: "compares ctx.country.id to input.countryId",
+      [`${FILE}#unguarded`]: "reviewed",
+      [`${FILE}#rowById`]: "reviewed",
+    });
+    expect(findings.find((f) => f.procedure === "inline")?.status).toBe("ALLOWED");
+    expect(isFailing(findings)).toBe(false);
+    expect(isFailing(analyze())).toBe(true);
   });
 });

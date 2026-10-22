@@ -1,10 +1,68 @@
+/** @jest-environment node */
+// `jest` is deliberately NOT imported from "@jest/globals" for the mocks: the hoisted jest.mock() factories rely on the
+// ambient global.
+/**
+ * The principal a router acts for is `ctx.auth.userId`, never an id in the input. Messaging (Plan 148): reads,
+ * sends, edits, deletes, reactions and read receipts are the caller's own, and a non-participant is refused. Vault
+ * and notification reads take the caller from the context (an anonymous caller's spoofed userId reads nothing).
+ * `achievements.unlock` is admin-only, for anyone including oneself. `users.getUserWithRole` returns a role level
+ * only, never the user row or a name.
+ *
+ * Folds achievements-unlock-admin-auth, self-scoped-queries-auth and user-role-level.
+ */
+jest.mock("~/server/bridges/wiki-talk-bridge", () => ({
+  wikiTalkBridge: {
+    syncInbound: jest.fn().mockResolvedValue({
+      conversationsCreated: 1,
+      conversationsUpdated: 0,
+      messagesCreated: 2,
+    }),
+    sendOutbound: jest.fn().mockResolvedValue({ success: true }),
+  },
+}));
+jest.mock("~/lib/notifications/api", () => ({
+  notificationAPI: { create: jest.fn().mockResolvedValue({ success: true }) },
+}));
+jest.mock("~/lib/achievements/service", () => ({
+  __esModule: true,
+  achievementService: {
+    unlockSpecific: jest.fn().mockResolvedValue(true),
+    checkAndUnlock: jest.fn().mockResolvedValue([]),
+  },
+}));
+jest.mock("~/lib/vault/vault-service", () => ({
+  __esModule: true,
+  vaultService: {
+    getBalance: jest.fn().mockResolvedValue({
+      credits: 100,
+      lifetimeEarned: 100,
+      lifetimeSpent: 0,
+      vaultLevel: 1,
+      vaultXp: 0,
+    }),
+  },
+}));
+jest.mock("~/lib/cache/advanced-cache-system", () => ({
+  __esModule: true,
+  globalCache: { get: jest.fn().mockResolvedValue(null), set: jest.fn(), delete: jest.fn() },
+}));
+
+import { describe, it, expect, beforeEach } from "@jest/globals";
 import { TRPCError } from "@trpc/server";
+import { createCallerFactory } from "~/server/api/trpc";
+import { achievementsManagementRouter } from "~/server/api/routers/achievements/management";
 import { messagesConversationsRouter } from "~/server/api/routers/messages/conversations";
 import { messagesMessagingRouter } from "~/server/api/routers/messages/messaging";
 import { messagesParticipantsRouter } from "~/server/api/routers/messages/participants";
+import { notificationsUserRouter } from "~/server/api/routers/notifications/user";
+import { usersProfileRouter } from "~/server/api/routers/users/profile";
+import { vaultBalanceCreditsRouter } from "~/server/api/routers/vault/balance-credits";
+import { achievementService } from "~/lib/achievements/service";
+import { vaultService } from "~/lib/vault/vault-service";
+import { wikiTalkBridge } from "~/server/bridges/wiki-talk-bridge";
+import { createMockPrisma } from "~/tests/helpers/mock-db";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockDb } from "~/tests/helpers/transactional-mock-db";
-import { wikiTalkBridge } from "~/server/bridges/wiki-talk-bridge";
 
 jest.mock("~/server/bridges/wiki-talk-bridge", () => ({
   wikiTalkBridge: {
@@ -131,6 +189,24 @@ describe("Plan 148: Secure Messaging Principal Binding", () => {
           isActive: true,
         },
       });
+    });
+
+    it("throws FORBIDDEN when caller is not an active participant in getConversation", async () => {
+      const mockDb = createMockDb();
+      mockDb.thinkshareConversation.findFirst = jest.fn().mockResolvedValue({
+        id: "conv-secret",
+        type: "group",
+        source: "thinkshare",
+        participants: [{ userId: victimUser }],
+        messages: [{ userId: victimUser, content: "Between us" }],
+      });
+
+      await expect(
+        createCaller(callerUser, mockDb).conversations.getConversation({
+          conversationId: "conv-secret",
+        })
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      expect(mockDb.conversationParticipant.upsert).not.toHaveBeenCalled();
     });
   });
 
@@ -369,5 +445,154 @@ describe("Plan 148: Secure Messaging Principal Binding", () => {
         })
       ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
+  });
+});
+
+const createCaller = createCallerFactory(achievementsManagementRouter);
+
+const unlockInput = {
+  userId: "victim_clerk_id",
+  achievementId: "first_steps",
+  title: "First Steps",
+};
+
+describe("achievements.unlock is admin-only", () => {
+  beforeEach(() => {
+    (achievementService.unlockSpecific as jest.Mock).mockClear();
+  });
+
+  it("rejects an ordinary user granting an achievement to another user, and grants nothing", async () => {
+    const db = createMockDb();
+    const caller = createCaller(
+      createMockRouterContext({
+        auth: { userId: "user_1" },
+        user: { id: "db1", clerkUserId: "user_1", role: { name: "user", level: 100 } },
+        db,
+      }) as never
+    );
+
+    await expect(caller.unlock(unlockInput)).rejects.toThrow(/Admin privileges required/);
+    expect(achievementService.unlockSpecific).not.toHaveBeenCalled();
+  });
+
+  it("rejects an ordinary user granting an achievement to themselves", async () => {
+    const db = createMockDb();
+    const caller = createCaller(
+      createMockRouterContext({
+        auth: { userId: "user_1" },
+        user: { id: "db1", clerkUserId: "user_1", role: { name: "user", level: 100 } },
+        db,
+      }) as never
+    );
+
+    await expect(caller.unlock({ ...unlockInput, userId: "user_1" })).rejects.toThrow(
+      /Admin privileges required/
+    );
+    expect(achievementService.unlockSpecific).not.toHaveBeenCalled();
+  });
+
+  it("lets an admin grant an achievement", async () => {
+    const db = createMockDb();
+    const caller = createCaller(
+      createMockRouterContext({
+        auth: { userId: "admin_1" },
+        user: { id: "db_admin", clerkUserId: "admin_1", role: { name: "admin", level: 10 } },
+        db,
+      }) as never
+    );
+
+    const result = await caller.unlock(unlockInput);
+
+    expect(achievementService.unlockSpecific).toHaveBeenCalledWith(
+      "victim_clerk_id",
+      "first_steps",
+      expect.anything()
+    );
+    // The grant runs against the request's own db client.
+    expect(jest.mocked(achievementService.unlockSpecific).mock.calls[0]?.[2]).toBe(db);
+    expect(result.creditsEarned).toBe(5);
+  });
+});
+
+const createVaultCaller = createCallerFactory(vaultBalanceCreditsRouter);
+const createNotificationsCaller = createCallerFactory(notificationsUserRouter);
+
+describe("Self-scoped vault/notification queries (Finding 6)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("vault.getBalance takes identity from ctx.auth.userId, never from input", async () => {
+    const db = createMockDb();
+    const ctx = createMockRouterContext({
+      auth: { userId: "user_self" },
+      user: { id: "db_self", clerkUserId: "user_self", role: { name: "user", level: 100 } },
+      db,
+    });
+    const caller = createVaultCaller(ctx as never);
+
+    await caller.getBalance();
+
+    expect(vaultService.getBalance).toHaveBeenCalledWith("user_self", expect.anything());
+  });
+
+  it("notifications.getUnreadCount ignores a spoofed input.userId and never queries the victim for an anonymous caller", async () => {
+    const db = createMockDb();
+    const ctx = createMockRouterContext({ auth: null, user: null, db });
+    const caller = createNotificationsCaller(ctx as never);
+
+    const result = await caller.getUnreadCount({ userId: "victim" } as never);
+
+    expect(result).toEqual({ count: 0 });
+    expect(db.user.findFirst).not.toHaveBeenCalled();
+  });
+});
+
+const AUTHOR = "clerk_author";
+
+function makeDb(author: { role: { level: number } | null } | null) {
+  const db = createMockPrisma();
+  db.user.findUnique.mockResolvedValue(
+    author && {
+      id: "db_author",
+      clerkUserId: AUTHOR,
+      wikiUsername: "Wiki Author",
+      discordUsername: "authortag",
+      ...author,
+    }
+  );
+  return db;
+}
+
+async function lookUp(db: ReturnType<typeof makeDb>, viewer: string | null) {
+  const ctx = createMockRouterContext({
+    db,
+    auth: viewer ? { userId: viewer } : null,
+    user: viewer ? { id: `db_${viewer}`, clerkUserId: viewer } : null,
+  });
+  return createCallerFactory(usersProfileRouter)(ctx as never).getUserWithRole({
+    clerkUserId: AUTHOR,
+  });
+}
+
+describe("users.getUserWithRole returns the role level only", () => {
+  it.each([
+    ["another player", "clerk_viewer"],
+    ["a signed-out visitor", null],
+    ["the user themself", AUTHOR],
+  ])("gives %s the level and nothing else", async (_who, viewer) => {
+    const db = makeDb({ role: { level: 20 } });
+    const result = await lookUp(db, viewer);
+    expect(result).toEqual({ roleLevel: 20 });
+    expect(JSON.stringify(result)).not.toMatch(/Wiki Author|authortag|db_author/);
+  });
+  it("is null for an unknown user, one without a role, or a read error", async () => {
+    expect(await lookUp(makeDb(null), "clerk_viewer")).toEqual({ roleLevel: null });
+    expect(await lookUp(makeDb({ role: null }), "clerk_viewer")).toEqual({ roleLevel: null });
+    const failing = makeDb(null);
+    failing.user.findUnique.mockRejectedValue(new Error("db down"));
+    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    expect(await lookUp(failing, "clerk_viewer")).toEqual({ roleLevel: null });
+    error.mockRestore();
   });
 });

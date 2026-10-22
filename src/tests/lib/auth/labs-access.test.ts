@@ -1,7 +1,10 @@
 /**
- * SL-27: Labs routes have a server-side gate that matches the navigation shell: signed-in users
- * while `showLabsTab` is on (the default); with it off only admins, `labs.access` holders and dev
- * builds. Signed-out visitors are sent to sign-in and a failed lookup denies.
+ * The server-side page auth helpers. SL-27: Labs routes have a gate that matches the navigation shell: signed-in users
+ * while `showLabsTab` is on (the default); with it off only admins, `labs.access` holders and dev builds. Signed-out
+ * visitors are sent to sign-in and a failed lookup denies. The dashboard's signed-in country is read without touching
+ * the database for a guest, and lets Next.js control-flow errors (auth redirects) through.
+ *
+ * Folds signed-in-country.
  */
 jest.mock("@clerk/nextjs/server", () => ({ __esModule: true, auth: jest.fn() }));
 jest.mock("next/navigation", () => ({ __esModule: true, unstable_rethrow: jest.fn() }));
@@ -11,8 +14,10 @@ jest.mock("~/server/db", () => ({
 }));
 
 import { auth } from "@clerk/nextjs/server";
+import { unstable_rethrow } from "next/navigation";
 import { db } from "~/server/db";
 import { getLabsAccess } from "~/lib/auth/labs-access.server";
+import { getSignedInCountryId } from "~/lib/auth/signed-in-country.server";
 import { labsAccessDecision } from "~/lib/navigation/labs-gate";
 
 type AuthResult = Awaited<ReturnType<typeof auth>>;
@@ -84,5 +89,26 @@ describe("getLabsAccess", () => {
     const spy = jest.spyOn(console, "error").mockImplementation(() => {});
     await expect(getLabsAccess()).resolves.toBe("denied");
     spy.mockRestore();
+  });
+});
+
+describe("getSignedInCountryId", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
+
+  it("returns an empty string for guests without touching the database", async () => {
+    authMock.mockResolvedValue({ userId: null } as AuthResult);
+    await expect(getSignedInCountryId()).resolves.toBe("");
+    expect(findUser).not.toHaveBeenCalled();
+  });
+
+  it("lets Next.js control-flow errors propagate", async () => {
+    const nextError = new Error("DYNAMIC_SERVER_USAGE");
+    authMock.mockRejectedValue(nextError);
+    jest.mocked(unstable_rethrow).mockImplementation((error) => {
+      throw error;
+    });
+    await expect(getSignedInCountryId()).rejects.toBe(nextError);
   });
 });

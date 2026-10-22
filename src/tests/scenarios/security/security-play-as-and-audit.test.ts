@@ -8,7 +8,11 @@
  * audited: mutations and failures, with the trusted IP. A second staff member is refused play-as of the system
  * owner, of an equal, and of nobody, and a member is refused play-as at all, each attempt audited.
  *
- * Folds audit-log-middleware (the admin audit rows and the trusted IP).
+ * The system owner may play as anyone, and a header naming the requester themself changes nothing. A newcomer's first
+ * request creates their account, pays the new-player bonus once and queues their first achievement check.
+ *
+ * Folds audit-log-middleware (the admin audit rows and the trusted IP), trpc-impersonation (the play-as decision and
+ * the context swap) and user-creation-onboarding.
  */
 let mockDb: unknown;
 jest.mock("~/server/db", () => ({
@@ -40,6 +44,7 @@ import {
   createTRPCContext,
   createTRPCRouter,
 } from "~/server/api/trpc";
+import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { createMemoryPrisma } from "~/tests/helpers/memory-prisma";
 import {
   addCard,
@@ -274,6 +279,14 @@ describe("play-as that is refused", () => {
     }
   );
 
+  it("a play-as header naming the requester themself changes nothing and audits nothing", async () => {
+    const before = await w.db.auditLog.count({ where: { userId: w.sam.clerkUserId } });
+    const ctx = await request(w.sam, { "x-play-as-user": w.sam.clerkUserId });
+    expect(ctx.auth?.userId).toBe(w.sam.clerkUserId);
+    expect(ctx.impersonatorId).toBeUndefined();
+    expect(await w.db.auditLog.count({ where: { userId: w.sam.clerkUserId } })).toBe(before);
+  });
+
   it("a member with a play-as header stays themself", async () => {
     const ctx = await request(w.mo, { "x-play-as-user": w.ada.clerkUserId });
     expect(ctx.auth?.userId).toBe(w.mo.clerkUserId);
@@ -282,5 +295,34 @@ describe("play-as that is refused", () => {
       (row) => row.userId === w.mo.clerkUserId
     );
     expect(JSON.parse(denied[0]!.details!)).toMatchObject({ reason: "not-staff" });
+  });
+});
+
+describe("the system owner and a newcomer", () => {
+  it("the system owner may play as staff, who outrank every member", async () => {
+    await w.db.user.create({
+      data: { id: "owner", clerkUserId: "user_owner", lastSeenAt: new Date() },
+    });
+    const ctx = await request(
+      { id: "owner", clerkUserId: "user_owner" },
+      { "x-play-as-user": w.sam.clerkUserId }
+    );
+    expect(ctx.auth?.userId).toBe(w.sam.clerkUserId);
+    expect(ctx.impersonatorId).toBe("user_owner");
+  });
+
+  it("a newcomer's first request creates their account, pays the new-player bonus once and queues achievements", async () => {
+    const newcomer = { id: "", clerkUserId: "newcomer-clerk" };
+    const first = await request(newcomer);
+    const id = first.user!.id;
+    expect(await w.db.user.count({ where: { clerkUserId: newcomer.clerkUserId } })).toBe(1);
+    expect(jest.mocked(queueAchievementCheck)).toHaveBeenCalledWith(id);
+
+    await request(newcomer);
+    await app(await request(newcomer)).vault.getBalance();
+    expect(await w.db.user.count({ where: { clerkUserId: newcomer.clerkUserId } })).toBe(1);
+    expect(await ledgerOf(w.db, id)).toEqual([
+      { credits: 5000, balanceAfter: 5000, type: "EARN_BONUS", source: "bonus:new_player" },
+    ]);
   });
 });

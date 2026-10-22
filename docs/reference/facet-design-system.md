@@ -324,7 +324,7 @@ Beside them: `src/styles/card-art.css` holds content art (card faces, holographi
 
 The tests under `src/tests/architecture/` enforce parts of this file. Run the relevant one when you change tokens, layers or a primitive.
 
-- `facet-layers.test.ts`: the five layer utilities exist; only Chrome and Overlay blur; `layers.css` is the only Facet sheet that blurs or paints glass; exactly four Facet sheets; no `material-*` class or `material=` prop; the content-type scopes.
+- `facet-guards.test.ts` (with the anti-slop gates): the five layer utilities exist; only Chrome and Overlay blur; `layers.css` is the only Facet sheet that blurs or paints glass; exactly four Facet sheets; no `material-*` class or `material=` prop; the content-type scopes.
 - `facet-ratchet.test.ts`: counts of eyebrows, uppercase stat labels, em dashes, `Sparks`, emoji, `hover:scale`, hex classes, raw palette classes and `animate-ping` may only fall. Lower the baseline with `UPDATE_FACET_RATCHET=1 bun run test -- facet-ratchet` after removing tells.
 - `token-contrast.test.ts`: CSS tokens match `src/lib/design/tokens.ts`; AA contrast for label, tint and ink pairs, and for labels on the Pane over the tinted canvas and on Chrome, in both themes; Reduce Transparency and Increase Contrast make every layer opaque.
 - `css-layering.test.ts`: every Facet sheet is layered (no top-level rules, no `!important`), and utilities set no position, z-index, radius, margin or letter-spacing.

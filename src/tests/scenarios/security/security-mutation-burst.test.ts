@@ -8,8 +8,8 @@
  * active-nation mutations sit on the light-mutation bucket and article reads on their own wiki_read bucket, each
  * refused before it reads anything.
  *
- * Folds rate-limit-middleware (each builder's namespace and limit), realm-rate-limits and
- * wikios-article-read-rate-limit.
+ * Folds rate-limit-middleware (each builder's namespace and limit), realm-rate-limits,
+ * wikios-article-read-rate-limit and rate-limit-identity (which trusted header keys a visitor's bucket).
  */
 jest.mock("~/env", () => ({
   env: { ...jest.requireActual("~/env").env, RATE_LIMIT_ENABLED: "true", REDIS_ENABLED: "false" },
@@ -187,6 +187,22 @@ describe("the bucket follows the real caller, never a header", () => {
     });
     expect(second.rateLimitIdentifier).toBe("ip:203.0.113.21");
     await expect(burst(second).publicRead()).resolves.toBe("ok");
+  });
+
+  it.each([
+    [
+      "cf-connecting-ip over x-real-ip",
+      { "cf-connecting-ip": "2.2.2.2", "x-real-ip": "3.3.3.3" },
+      "ip:2.2.2.2",
+    ],
+    ["x-real-ip without cf-connecting-ip", { "x-real-ip": "3.3.3.3" }, "ip:3.3.3.3"],
+    [
+      "no trusted header, only client-set ones",
+      { "x-ratelimit-identifier": "evil", "x-forwarded-for": "1.1.1.1" },
+      "anonymous",
+    ],
+  ])("keys a visitor's bucket off %s", async (_case, headers, identifier) => {
+    expect((await request(null, headers)).rateLimitIdentifier).toBe(identifier);
   });
 
   it("refills the bucket a minute later", async () => {
