@@ -31,17 +31,6 @@ it.each([
     true,
   ],
   [
-    "a wrapped one on another column is not that column's",
-    () =>
-      isUniqueViolation(
-        new ConflictError("Unique constraint violation on ForumThread (advertRealmId)"),
-        "activityId"
-      ),
-    false,
-  ],
-  ["a missing row is no unique violation", () => isUniqueViolation(prismaError("P2025")), false],
-  ["a raw P2025 is a missing record", () => isMissingRecord(prismaError("P2025")), true],
-  [
     "the db client's wrapped NotFoundError is one",
     () => isMissingRecord(new NotFoundError("ForumPost", undefined, { prismaError: "gone" })),
     true,

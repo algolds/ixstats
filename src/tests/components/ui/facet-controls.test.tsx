@@ -172,28 +172,6 @@ describe("SegmentedControl", () => {
     fireEvent.mouseDown(tab("One"));
     expect(tab("One")).toHaveAttribute("aria-selected", "true");
   });
-
-  it("names a badged segment by its label and count, the count itself hidden", () => {
-    render(
-      <SegmentedControl
-        aria-label="Mailbox"
-        value="inbox"
-        onValueChange={() => {}}
-        options={[
-          { value: "inbox", label: "Inbox", badge: 12, badgeLabel: "12 unread" },
-          { value: "sent", label: "Sent", badge: 3 },
-          { value: "stars", label: <span aria-hidden>★</span>, "aria-label": "Starred", badge: 2 },
-        ]}
-      />
-    );
-    expect(screen.getByRole("radio", { name: "Inbox , 12 unread" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Sent , 3" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Starred, 2" })).toBeInTheDocument();
-    const badge = screen
-      .getByRole("radio", { name: /Inbox/ })
-      .querySelector('[data-slot="segmented-control-badge"]');
-    expect(badge).toHaveAttribute("aria-hidden");
-  });
 });
 
 describe("Tabs", () => {

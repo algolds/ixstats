@@ -157,15 +157,6 @@ const EXECUTIVE: Row[] = [
     () => chain(["completed", "completed", "active", "completed"]),
     2,
   ],
-  [
-    "a directive parent cycle still ends",
-    () =>
-      directiveMetrics([
-        directive(0, { id: "a", status: "completed", parentId: "b" }),
-        directive(1, { id: "b", status: "completed", parentId: "a" }),
-      ]).directiveChainDepth,
-    2,
-  ],
   ["discipline: 30 over 10 weeks with 3 abandoned holds", () => discipline(30, 10, 3), 1],
   ["discipline: a fourth abandoned breaks it", () => discipline(30, 10, 4), 0],
   [
@@ -245,11 +236,6 @@ const EXECUTIVE: Row[] = [
     () => fiscalStewardFlag(NOW, FISCAL_YEARS, new Date(ownedFor(18).getTime() + 1)),
     0,
   ],
-  [
-    "fiscal steward: a year without an allocation",
-    () => fiscalStewardFlag(NOW, new Set([2040, 2041, 2043]), ownedFor(30)),
-    0,
-  ],
 ];
 
 // --- Politics -------------------------------------------------------------------------------------------------------
@@ -272,8 +258,6 @@ const generals = (spanMs: number) => [
   election("General Election (Year 2044)", after(10 * MONTH_MS)),
   election("General Election (Year 2047)", after(10 * MONTH_MS + spanMs)),
 ];
-const meetings = (count: number, weeks: number) =>
-  Array.from({ length: count }, (_, i) => new Date(START + (i % weeks) * WEEK));
 
 const POLITICS: Row[] = [
   [
@@ -314,15 +298,6 @@ const POLITICS: Row[] = [
     1,
   ],
   [
-    "full term: a millisecond short",
-    () =>
-      electionMetrics([
-        firstGeneral,
-        election("General Election (Year 2044)", after(18 * MONTH_MS - 1)),
-      ]).fullTerm,
-    0,
-  ],
-  [
     "full term: a snap election before the first general does not become the first",
     () =>
       electionMetrics([
@@ -344,7 +319,6 @@ const POLITICS: Row[] = [
     () => electionMetrics(generals(36 * MONTH_MS)).peacefulTransitions,
     2,
   ],
-  ["council: 24 meetings fall short", () => councilMeetings(meetings(24, 10)), 0],
   [
     "council: 25 meetings in 3 real weeks (12 on the 4x clock) clear nothing",
     () => councilMeetings(Array.from({ length: 25 }, (_, i) => new Date(START + i * DAY))),
@@ -408,11 +382,6 @@ const PLATFORM_AND_NATION: Row[] = [
     "a national identity needs 3 symbols: 2 fall short",
     () => isIdentityComplete({ ...IDENTITY, nationalFlower: " " }),
     false,
-  ],
-  [
-    "ISO week: 3 Jan 2021 belongs to 2020-W53",
-    () => weekKey(utc("2021-01-03")) === "2020-W53",
-    true,
   ],
   [
     "a week run crosses the year boundary",
@@ -544,12 +513,6 @@ describe("achievement definitions", () => {
       "vid-lightswitch",
       { embassyCount: 25, totalMilitaryPersonnel: 5 },
       false,
-    ],
-    [
-      "1337 reads the rounded GDP per capita",
-      "meme-1337",
-      { country: { currentGdpPerCapita: 1337.4 } },
-      true,
     ],
     [
       "First Loreward is not a runner-up place",

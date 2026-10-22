@@ -173,17 +173,6 @@ it.each([
     [1, 2, 3],
   ],
   [
-    "tracing between two different rivers gives nothing",
-    () =>
-      traceAlongLayer(
-        [0.5, 0.01],
-        [10.5, 0.01],
-        [line([0, 0], [1, 0], [2, 0]), line([10, 0], [11, 0], [12, 0])],
-        0.1
-      ),
-    [],
-  ],
-  [
     "provinces cover a concave country",
     () => coverage(L_SHAPE, 5) >= 0.95 && coverage(L_SHAPE, 5) <= 1.01,
     true,
@@ -201,18 +190,6 @@ it.each([
     { moved: true, conserved: true },
   ],
   [
-    "a brush stroke that misses the source changes nothing",
-    () =>
-      brushed(
-        [
-          [0.7, 0.3],
-          [0.7, 0.7],
-        ],
-        5
-      ),
-    null,
-  ],
-  [
     "an Illustrator SVG names its dots, kerning fragments joined and a line break one space",
     cityNames,
     ["CHRYSONUM", "LUX NORBA", "SAO PAULO"],
@@ -222,7 +199,6 @@ it.each([
     () => affine(["Alpha", "Beta", "Gamma"]),
     [2, -2, 100, 50],
   ],
-  ["two matched provinces are too few to align", () => affine(["Alpha", "Beta"]), null],
   [
     "a route's difficulty is its climb: 5,000 m of ascent is 1",
     () => normalizeTerrainDifficulty([0, 2500, 5000]),

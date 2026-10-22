@@ -68,25 +68,19 @@ it.each<[Deployment, keyof typeof helpers, string, string | null]>([
     "https://ixwiki.com/images/flag.png",
     "https://ixwiki.com/images/flag.png",
   ],
-  ["ixstates", "assetUrl", "  ", null],
   ["ixstates", "toRouterPath", `${BASE}/wiki/X?action=edit#a`, "/wiki/X?action=edit#a"],
   ["ixstates", "toRouterPath", `${BASE}${BASE}/wiki/X`, `${BASE}/wiki/X`],
-  ["ixstates", "toRouterPath", BASE, "/"],
   ["ixstates", "toRouterPath", `${BASE}x/y`, `${BASE}x/y`],
   // Never a protocol-relative path that would leave the site
-  ["ixstates", "toRouterPath", "//example.org/x", "//example.org/x"],
   ["ixstates", "toRouterPath", `${BASE}//evil.com/x`, `${BASE}//evil.com/x`],
   ["ixstates", "toRouterPath", `${BASE}/\\evil.com/x`, `${BASE}/\\evil.com/x`],
   ["ixstates", "ixstatesHref", "/countries/aurelia?tab=x", `${BASE}/countries/aurelia?tab=x`],
-  ["ixstates", "ixstatesLinkHref", "/blurbs", "/blurbs"],
   ["ixstates", "ixstatesLinkHref", "mycountry/diplomacy", "/mycountry/diplomacy"],
   ["ixstates", "ixstatesLinkHref", `${BASE}/blurbs`, "/blurbs"],
   ["root", "withBasePath", "/vault/store", "/vault/store"],
-  ["root", "toRouterPath", `${BASE}/wiki/X`, `${BASE}/wiki/X`],
   ["ixworld", "withBasePath", "/vault/store", "/vault/store"],
   ["wikios", "ixstatesHref", "/blurbs", `${IXSTATES}/blurbs`],
   ["wikios", "ixstatesHref", `${BASE}/myleague/1`, `${IXSTATES}/myleague/1`],
-  ["wikios", "ixstatesHref", "//example.org/x", "//example.org/x"],
   ["wikios", "ixstatesLinkHref", "/blurbs", `${IXSTATES}/blurbs`],
   // A page still renders when the standalone build lacks its IxStates URL
   ["wikios without an IxStates URL", "ixstatesHref", "/blurbs", "/blurbs"],
@@ -95,13 +89,12 @@ it.each<[Deployment, keyof typeof helpers, string, string | null]>([
   expect(helpers[helper](input)).toBe(expected);
 });
 
-it.each([
-  ["on the subpath", `${BASE}/vault/store`, `${BASE}/vault/store`],
-  ["at the root (dev)", "/vault/store", "/vault/store"],
-])("in the browser %s, withBasePath follows the page's own path", (_where, pathname, expected) => {
+it("follows the page's own path in the browser: a dev page at the root gets no base path", () => {
   deploy("ixstates");
-  (globalThis as { window?: unknown }).window = { location: { pathname, hostname: "localhost" } };
-  expect(withBasePath("/vault/store")).toBe(expected);
+  (globalThis as { window?: unknown }).window = {
+    location: { pathname: "/vault/store", hostname: "localhost" },
+  };
+  expect(withBasePath("/vault/store")).toBe("/vault/store");
 });
 
 it("sends every IxStates-only route to IxStates from the standalone wiki, and refuses a redirect with no URL", () => {

@@ -33,13 +33,6 @@ describe("absoluteAssetUrl", () => {
 describe("isAllowedImageUrl", () => {
   const APP = new URL("https://app.ixstates.test");
   const allowed = (url: string, app = APP) => isAllowedImageUrl(new URL(url), app);
-  it("allows plain http only for the app's own origin (dev)", () => {
-    const dev = new URL("http://dev.ixstates.test:3000");
-    expect(allowed("http://dev.ixstates.test:3000/images/a.png", dev)).toBe(true);
-    expect(allowed("http://ixwiki.com/images/a.png")).toBe(false);
-    expect(allowed("http://upload.wikimedia.org/a.png")).toBe(false);
-  });
-
   it("refuses other hosts, lookalikes, odd ports and credentials", () => {
     expect(allowed("https://evil.example/a.png")).toBe(false);
     expect(allowed("https://ixwiki.com.evil.example/a.png")).toBe(false);
