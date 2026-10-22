@@ -1,274 +1,396 @@
 /** @jest-environment node */
-// `jest` is deliberately NOT imported from "@jest/globals": the
-// hoisted jest.mock() factories rely on the ambient global.
+// `jest` is the injected global on purpose: @swc/jest only hoists jest.mock() on the global.
 //
-// The country profile's visibility rules, enforced on the server:
-// - countries.getPublicRecord: anyone (signed out included) reads enacted directives and resolved
-//   issues, public fields only.
-// - intent.getTree: the owner and privileged roles get every intent; everyone else the public
-//   record, redacted.
-// - nationalIssues.getHistory: the owner (or a privileged role) only; FORBIDDEN otherwise.
-// The rest of the owner-only reads and writes are covered in country-private-record.test.ts.
-jest.mock("~/server/db", () => ({
-  __esModule: true,
-  db: { user: { findUnique: jest.fn() }, auditLog: { create: jest.fn() } },
-  isDatabaseReadOnly: true,
+// The reads behind a country's public profile. The header's owner never reaches a client under their wiki name while
+// wiki attribution is off, failing closed (privacy). The small profile ten screens ask for never selects the geometry
+// blob (plan 404). The intro reads the country's own wiki page and never looks its name up on other wikis when that
+// page is missing, with the name and country caches apart. Crisis statistics count only the crises that list the
+// country, in either stored form. The vitality scores and the World Census never fabricate a missing figure and rank
+// within the country's realm, lower-is-better where it should be. (Who sees the statecraft record is in
+// country-private-record.test.ts.)
+//
+// Folds country-owner-wiki-attribution, countries-get-by-id-basic, countries-wiki-rich-intro,
+// crisis-events-statistics and mycountry-vitality-rankings.
+jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
+jest.mock("~/server/db", () => ({ __esModule: true, db: {}, isDatabaseReadOnly: true }));
+jest.mock("~/server/shared/clerk-public-profile", () => ({
+  clerkPublicProfile: jest.fn(async () => ({ imageUrl: null, role: null })),
 }));
-jest.mock("~/lib/auth", () => ({
+jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
   __esModule: true,
-  isSystemOwner: () => false,
-  UserManagementService: jest.fn(),
+  getArticleIntro: jest.fn(),
+  getPageSections: jest.fn(),
+  getPageImages: jest.fn(),
 }));
-jest.mock("~/lib/auth/system-owner-constants", () => ({
+jest.mock("~/lib/wiki-os/adapters/mediawiki/article-store", () => ({
   __esModule: true,
-  isSystemOwner: () => false,
-}));
-jest.mock("~/lib/activity", () => ({
-  __esModule: true,
-  CountryEventSpine: { recordCountryEvent: jest.fn() },
-}));
-jest.mock("~/lib/intent/resistance", () => ({
-  __esModule: true,
-  spawnIntentResistance: jest.fn(),
+  getArticleWikitextShadow: jest.fn(),
 }));
 
-import { describe, it, expect } from "@jest/globals";
+import { describe, it, expect, beforeEach } from "@jest/globals";
+import type { Prisma } from "@prisma/client";
+import { db as mockedDb } from "~/server/db";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
-import { intentRouter } from "~/server/api/routers/intent";
-import { nationalIssuesPlayerRouter } from "~/server/api/routers/national-issues/player";
-import { publicRecordProcedures } from "~/server/api/routers/countries/public-record";
+import { clearTrpcMemoryCache } from "~/lib/cache/trpc-cache";
+import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
+import { economyProcedures } from "~/server/api/routers/countries/economy";
+import { identityProcedures } from "~/server/api/routers/countries/identity";
+import { wikiProcedures } from "~/server/api/routers/countries/wiki";
+import { crisisEventsRouter } from "~/server/api/routers/crisis-events";
+import {
+  calculateVitalityScores,
+  emptyDiplomaticStandingInputs,
+  generateRankings,
+  rankCensus,
+  scoreDiplomaticStanding,
+} from "~/server/shared/mycountry-helpers";
+import { createMockPrisma } from "~/tests/helpers/mock-db";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
+import { privacyConfigRow, wikiAttributionOff } from "~/tests/helpers/privacy-config-fake";
 
-const COUNTRY = "country_owned";
+const visitorOn = (db: object) => createMockRouterContext({ auth: null, user: null, db }) as never;
 
-const intentRow = (overrides: Record<string, unknown>) => ({
-  id: "i",
-  countryId: COUNTRY,
-  goal: "Goal",
-  tier: "measured",
-  category: "economy",
-  target: null,
-  status: "active",
-  changesJson: '[{"field":"budget","delta":5}]',
-  summary: null,
-  riskRating: "stable",
-  progress: 40,
-  parentId: null,
-  cooldownUntil: 123,
-  execBandwidthCost: 12,
-  createdIxTime: 1_000,
-  createdAt: new Date("2026-01-01"),
-  updatedAt: new Date("2026-01-01"),
-  ...overrides,
-});
-
-const ALL_INTENTS = [
-  intentRow({ id: "in_force", status: "active", createdIxTime: 3_000 }),
-  intentRow({ id: "done", status: "completed", createdIxTime: 2_000 }),
-  intentRow({ id: "draft", status: "proposed", tier: "proposed" }),
-  intentRow({ id: "withdrawn", status: "abandoned" }),
-];
-
-/** A Prisma double that applies the `status`/`tier` filters the routers send. */
-function makeDb({ ownerUserId = "owner_db" }: { ownerUserId?: string } = {}) {
-  const matches = (row: Record<string, any>, where: Record<string, any>) =>
-    Object.entries(where).every(([key, cond]) => {
-      if (cond && typeof cond === "object" && "in" in cond) return cond.in.includes(row[key]);
-      if (cond && typeof cond === "object" && "not" in cond) return row[key] !== cond.not;
-      return row[key] === cond;
-    });
-  return {
-    user: {
-      findUnique: jest.fn(async ({ where }: { where: { clerkUserId: string } }) =>
-        where.clerkUserId === "owner_clerk"
-          ? { id: "owner_db", countryId: COUNTRY, role: { name: "member" } }
-          : { id: "other_db", countryId: "country_other", role: { name: "member" } }
-      ),
-      update: jest.fn(async () => ({})),
-    },
-    country: {
-      findUnique: jest.fn(async () => ({ id: COUNTRY, ownerUserId })),
-    },
-    intent: {
-      findMany: jest.fn(async ({ where }: { where: Record<string, any> }) =>
-        ALL_INTENTS.filter((row) => matches(row, where))
-      ),
-    },
-    nationalIssue: {
-      findMany: jest.fn(async ({ where }: { where: Record<string, any> }) =>
-        [
-          {
-            id: "resolved",
-            title: "Harbour strike",
-            domain: "economy",
-            status: "responded",
-            chosenOptionLabel: "Meet the unions",
-            autoResolveLabel: null,
-            consequenceLog: "Wages rose; the ports reopened.",
-            respondedIxTime: 5_000,
-            createdIxTime: 4_000,
-            appliedConsequences: '{"budget":-40}',
-          },
-          {
-            id: "lapsed",
-            title: "Drought relief",
-            domain: "social",
-            status: "auto_resolved",
-            chosenOptionLabel: null,
-            autoResolveLabel: "Do nothing",
-            consequenceLog: null,
-            respondedIxTime: 6_000,
-            createdIxTime: 4_500,
-          },
-          { id: "open", title: "Open issue", domain: "economy", status: "pending" },
-          { id: "gone", title: "Dismissed issue", domain: "economy", status: "dismissed" },
-        ].filter((row) => matches(row, { status: where.status }))
-      ),
-    },
+describe("countries.getByIdWithEconomicData: the owner's wiki name and wiki attribution", () => {
+  /** The owner as the procedure selects them (SOVEREIGN_OWNER_SELECT in countries/economy.ts). */
+  type OwnerRow = Prisma.UserGetPayload<{
+    select: {
+      id: true;
+      clerkUserId: true;
+      handle: true;
+      forumUsername: true;
+      wikiUsername: true;
+      membershipTier: true;
+      role: { select: { displayName: true; name: true } };
+    };
+  }>;
+  const OWNER: OwnerRow = {
+    id: "owner_db",
+    clerkUserId: "owner_clerk",
+    handle: null,
+    forumUsername: null,
+    wikiUsername: "Wiki Ruler",
+    membershipTier: "citizen",
+    role: null,
   };
-}
-
-type Db = ReturnType<typeof makeDb>;
-
-const signedOut = (db: Db) => createMockRouterContext({ db, auth: null, user: null }) as never;
-const owner = (db: Db) =>
-  createMockRouterContext({
-    db,
-    auth: { userId: "owner_clerk" },
-    user: {
-      id: "owner_db",
-      clerkUserId: "owner_clerk",
-      countryId: COUNTRY,
-      role: { name: "member" },
-    },
-  }) as never;
-const otherPlayer = (db: Db) =>
-  createMockRouterContext({
-    db,
-    auth: { userId: "other_clerk" },
-    user: {
-      id: "other_db",
-      clerkUserId: "other_clerk",
-      countryId: "country_other",
-      role: { name: "member" },
-    },
-  }) as never;
-const publicRecordCaller = createCallerFactory(createTRPCRouter(publicRecordProcedures));
-const intentCaller = createCallerFactory(intentRouter);
-const issuesCaller = createCallerFactory(nationalIssuesPlayerRouter);
-
-describe("countries.getPublicRecord", () => {
-  it("serves signed-out visitors enacted directives and resolved issues only", async () => {
-    const db = makeDb();
-    const record = await publicRecordCaller(signedOut(db)).getPublicRecord({ countryId: COUNTRY });
-
-    expect(db.intent.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          countryId: COUNTRY,
-          status: { in: ["active", "completed"] },
-          tier: { not: "proposed" },
-        },
-      })
-    );
-    expect(db.nationalIssue.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { countryId: COUNTRY, status: { in: ["responded", "auto_resolved"] } },
-      })
-    );
-    expect(record.directives.map((d) => d.id)).toEqual(["in_force", "done"]);
-    expect(record.issueOutcomes.map((o) => o.id)).toEqual(["lapsed", "resolved"]);
-  });
-
-  it("returns public fields only (no package, executive bandwidth, cooldown or applied consequences)", async () => {
-    const db = makeDb();
-    const record = await publicRecordCaller(signedOut(db)).getPublicRecord({ countryId: COUNTRY });
-
-    expect(Object.keys(record.directives[0]!).sort()).toEqual(
-      ["category", "createdIxTime", "goal", "id", "progress", "status", "summary", "tier"].sort()
-    );
-    expect(record.issueOutcomes.find((o) => o.id === "resolved")).toEqual({
-      id: "resolved",
-      title: "Harbour strike",
-      domain: "economy",
-      decision: "Meet the unions",
-      outcome: "Wages rose; the ports reopened.",
-      resolvedBy: "government",
-      ixTime: 5_000,
+  function makeDb(owner: Partial<OwnerRow> = {}) {
+    const db = createMockPrisma();
+    db.country.findMany.mockResolvedValue([{ id: "c1", slug: "eldoria" }]);
+    db.country.findFirst.mockResolvedValue({
+      id: "c1",
+      slug: "eldoria",
+      name: "Eldoria",
+      baselineDate: new Date(0),
+      lastCalculated: new Date(0),
+      storytellerEffects: [],
+      owner: { ...OWNER, ...owner },
     });
-    expect(record.issueOutcomes.find((o) => o.id === "lapsed")).toMatchObject({
-      decision: "Do nothing",
-      resolvedBy: "default",
-    });
-    // The select never asks for private columns.
-    const [{ select: intentSelect }] = db.intent.findMany.mock.calls[0] as unknown as [
-      { select: Record<string, boolean> },
-    ];
-    expect(intentSelect).not.toHaveProperty("changesJson");
-    expect(intentSelect).not.toHaveProperty("execBandwidthCost");
-    const [{ select: issueSelect }] = db.nationalIssue.findMany.mock.calls[0] as unknown as [
-      { select: Record<string, boolean> },
-    ];
-    expect(issueSelect).not.toHaveProperty("appliedConsequences");
-    expect(issueSelect).not.toHaveProperty("responseOptions");
-  });
-});
+    return db;
+  }
+  type Db = ReturnType<typeof makeDb>;
+  type Read = {
+    owner: { wikiUsername: string | null; forumUsername: string | null } | null;
+    sovereignUser: { username: string | null } | null;
+  };
+  const theOwner = (db: Db) =>
+    createMockRouterContext({
+      db,
+      auth: { userId: "owner_clerk" },
+      user: {
+        id: "owner_db",
+        clerkUserId: "owner_clerk",
+        countryId: "c1",
+        role: { name: "member" },
+      },
+    }) as never;
+  const read = async (ctx: never) =>
+    (await createCallerFactory(createTRPCRouter({ ...economyProcedures }))(
+      ctx
+    ).getByIdWithEconomicData({ id: "eldoria" })) as Read;
 
-describe("intent.getTree", () => {
-  it("gives the owner every intent, drafts and abandoned included", async () => {
-    const db = makeDb();
-    const tree = await intentCaller(owner(db)).getTree({ countryId: COUNTRY });
-    expect(tree.allIntents.map((i) => i.id).sort()).toEqual(
-      ["done", "draft", "in_force", "withdrawn"].sort()
-    );
-    expect(tree.allIntents.find((i) => i.id === "draft")?.changesJson).toContain("budget");
-  });
+  beforeEach(() => clearTrpcMemoryCache());
 
-  it("gives an owner who is not acting as the nation (Country.ownerUserId) every intent", async () => {
-    const db = makeDb({ ownerUserId: "other_db" });
-    const tree = await intentCaller(otherPlayer(db)).getTree({ countryId: COUNTRY });
-    expect(tree.allIntents).toHaveLength(4);
-  });
   it.each([
-    ["another player", otherPlayer],
-    ["a signed-out visitor", signedOut],
-  ])("gives %s the redacted public record only", async (_who, ctxFor) => {
-    const db = makeDb();
-    const tree = await intentCaller(ctxFor(db)).getTree({ countryId: COUNTRY });
-
-    expect(tree.allIntents.map((i) => i.id).sort()).toEqual(["done", "in_force"]);
-    for (const intent of tree.allIntents) {
-      expect(intent.changesJson).toBe("[]");
-      expect(intent.execBandwidthCost).toBeNull();
-      expect(intent.cooldownUntil).toBeNull();
-    }
-    expect(tree.roots).toHaveLength(2);
+    ["a visitor", (db: Db) => visitorOn(db)],
+    ["the owner", theOwner],
+  ])("sends %s no wiki name of an owner with the switch off", async (_who, ctxFor) => {
+    const db = makeDb({ forumUsername: "ForumRuler" });
+    db.userConnection.findMany.mockResolvedValue(wikiAttributionOff("owner_clerk"));
+    const record = await read(ctxFor(db));
+    expect(record.owner).toMatchObject({ wikiUsername: null, forumUsername: "ForumRuler" });
+    expect(record.sovereignUser?.username).toBe("ForumRuler");
+    expect(JSON.stringify(record)).not.toContain("Wiki Ruler");
   });
 
-  it("never looks up a signed-out caller", async () => {
+  it("keeps the wiki name of an owner with the switch on", async () => {
     const db = makeDb();
-    await intentCaller(signedOut(db)).getTree({ countryId: COUNTRY });
-    expect(db.user.findUnique).not.toHaveBeenCalled();
-    expect(db.country.findUnique).not.toHaveBeenCalled();
+    db.userConnection.findMany.mockResolvedValue([
+      privacyConfigRow("owner_clerk", { showWikiAttribution: true }),
+    ]);
+    expect((await read(visitorOn(db))).owner?.wikiUsername).toBe("Wiki Ruler");
+  });
+
+  it("fails closed: a switch it cannot read hides the wiki name", async () => {
+    const db = makeDb();
+    db.userConnection.findMany.mockRejectedValue(new Error("db down"));
+    const record = await read(visitorOn(db));
+    expect(record.owner?.wikiUsername).toBeNull();
+    expect(record.sovereignUser?.username).toBe("owner_clerk");
+    expect(JSON.stringify(record)).not.toContain("Wiki Ruler");
   });
 });
 
-describe("nationalIssues.getHistory", () => {
-  it("is FORBIDDEN for another player", async () => {
-    const db = makeDb();
-    await expect(
-      issuesCaller(otherPlayer(db)).getHistory({ countryId: COUNTRY })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    expect(db.nationalIssue.findMany).not.toHaveBeenCalled();
+describe("countries.getByIdBasic (plan 404)", () => {
+  it("does not select the geometry blob", async () => {
+    const findMany = jest.fn().mockResolvedValue([
+      {
+        id: "c_1",
+        name: "Aurelia",
+        slug: "aurelia",
+        flag: null,
+        continent: "Eurth",
+        currentPopulation: 1_000,
+        currentGdpPerCapita: 2_000,
+        currentTotalGdp: 3_000,
+        landArea: 4_000,
+        populationDensity: 5,
+        centroid: [1, 2],
+      },
+    ]);
+    const db = { country: { findMany }, realm: { findUnique: jest.fn().mockResolvedValue(null) } };
+    await createCallerFactory(createTRPCRouter({ ...identityProcedures }))(
+      visitorOn(db)
+    ).getByIdBasic({ id: "c_1" });
+
+    const { select } = findMany.mock.calls[0]?.[0] as { select: Record<string, boolean> };
+    expect(select).not.toHaveProperty("geometry");
+    expect(select).toMatchObject({ id: true, name: true, centroid: true });
+  });
+});
+
+describe("countries.getWikiRichIntro", () => {
+  const findMany = jest.fn<
+    Promise<Array<{ id: string; wikiSource: string | null; wikiPageTitle: string | null }>>,
+    [{ where: { id: { in: string[] } } }]
+  >();
+  const intro = (input: { countryName: string; countryId?: string }) =>
+    createCallerFactory(createTRPCRouter(wikiProcedures))(
+      visitorOn({ country: { findMany } })
+    ).getWikiRichIntro(input);
+  /** The (title, wiki) pairs the wikitext store was asked for, in order. */
+  const reads = () => jest.mocked(getArticleWikitextShadow).mock.calls.map(([t, w]) => [t, w]);
+  const LEAD =
+    "'''Tagmatium''' is a nation on the continent of [[Alharu]], long the seat of an old and storied empire.";
+
+  beforeEach(() => {
+    jest.mocked(getArticleWikitextShadow).mockReset();
+    findMany.mockReset().mockResolvedValue([]);
   });
 
-  it("requires a session", async () => {
-    const db = makeDb();
-    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
-    await expect(issuesCaller(signedOut(db)).getHistory({ countryId: COUNTRY })).rejects.toThrow(
-      /Authentication required/
+  it("does not look the name up on other wikis when the referenced page is missing", async () => {
+    findMany.mockResolvedValue([
+      { id: "c-gone", wikiSource: "iiwiki", wikiPageTitle: "Gone Land" },
+    ]);
+    jest.mocked(getArticleWikitextShadow).mockResolvedValue(null);
+    await expect(intro({ countryName: "Gone Land", countryId: "c-gone" })).resolves.toBeNull();
+    expect(reads()).toEqual([["Gone Land", "iiwiki"]]);
+  });
+
+  it("caches a lookup by name apart from a lookup by country", async () => {
+    findMany.mockResolvedValue([{ id: "c-urc", wikiSource: "iiwiki", wikiPageTitle: "Urcea" }]);
+    jest.mocked(getArticleWikitextShadow).mockResolvedValue({
+      wikitext: LEAD,
+      revid: null,
+      timestamp: "",
+      fromShadow: true,
+      stale: false,
+    });
+    await intro({ countryName: "Urcea" });
+    await intro({ countryName: "Urcea", countryId: "c-urc" });
+    expect(reads()).toEqual([
+      ["Urcea", "ixwiki"],
+      ["Urcea", "iiwiki"],
+    ]);
+  });
+});
+
+describe("crisisEvents.getStatistics country scope", () => {
+  it("counts only crises that list the country, in JSON or legacy comma form", async () => {
+    const event = (overrides: Record<string, unknown>) => ({
+      id: "e",
+      type: "natural",
+      category: "governance",
+      severity: "low",
+      responseStatus: "pending",
+      casualties: 0,
+      economicImpact: 0,
+      affectedCountries: null,
+      ...overrides,
+    });
+    const db = createMockPrisma();
+    db.crisisEvent.findMany.mockResolvedValue([
+      event({ id: "json", affectedCountries: '["c1","c9"]', severity: "critical" }),
+      event({ id: "legacy", affectedCountries: "c9, c1" }),
+      event({ id: "other", affectedCountries: '["c2"]' }),
+      // a substring match must not count: "c1" is not "c10"
+      event({ id: "prefix", affectedCountries: '["c10"]' }),
+      event({ id: "none", affectedCountries: null }),
+    ]);
+    const stats = await createCallerFactory(crisisEventsRouter)(visitorOn(db)).getStatistics({
+      timeframe: "month",
+      countryId: "c1",
+    });
+    expect(stats).toMatchObject({ activeEvents: 2, criticalEvents: 1, totalEvents: 2 });
+    // The database narrows first with a contains prefilter on the stored string.
+    expect(db.crisisEvent.findMany.mock.calls[0][0].where).toMatchObject({
+      affectedCountries: { contains: "c1" },
+    });
+  });
+});
+
+describe("vitality scores and the World Census", () => {
+  it("shows a missing diplomatic record and efficiency as null (—) and averages only the known scores", () => {
+    expect(scoreDiplomaticStanding(emptyDiplomaticStandingInputs())).toBeNull();
+    const scores = calculateVitalityScores({
+      currentGdpPerCapita: 25000,
+      adjustedGdpGrowth: 0.02,
+      populationGrowthRate: 0.01,
+      populationDensity: 100,
+      economicTier: "Developed",
+    } as never);
+    expect(scores.diplomaticStanding).toBeNull();
+    expect(scores.governmentalEfficiency).toBeNull();
+    expect(scores.overallScore).toBe(
+      Math.round((scores.economicVitality + scores.populationWellbeing) / 2)
     );
-    warn.mockRestore();
-    expect(db.nationalIssue.findMany).not.toHaveBeenCalled();
+  });
+
+  it("ranks every category that has a value, with debt and inequality lower-is-better", () => {
+    const row = (id: string, values: Record<string, number | null>, region = "North") => ({
+      id,
+      region,
+      economicTier: "Developed",
+      populationTier: "3",
+      values,
+    });
+    const byCategory = Object.fromEntries(
+      rankCensus("me", [
+        row("me", {
+          "Public Approval": 70,
+          "Debt to GDP": 40,
+          "Income Equality": 0.3,
+          "Diplomatic Standing": 55,
+        }),
+        row("x", {
+          "Public Approval": 80,
+          "Debt to GDP": 90,
+          "Income Equality": 0.25,
+          "Diplomatic Standing": null,
+        }),
+        row(
+          "y",
+          {
+            "Public Approval": 60,
+            "Debt to GDP": 20,
+            "Income Equality": 0.5,
+            "Diplomatic Standing": 70,
+          },
+          "South"
+        ),
+      ]).map((r) => [r.category, r])
+    );
+    expect(byCategory["Public Approval"]).toMatchObject({
+      global: { position: 2, total: 3 },
+      regional: { position: 2, total: 2, region: "North" },
+      value: 70,
+    });
+    expect(byCategory["Debt to GDP"]).toMatchObject({
+      global: { position: 2, total: 3 },
+      lowerIsBetter: true,
+    });
+    expect(byCategory["Income Equality"]!.global).toEqual({ position: 2, total: 3 });
+    // A country with no diplomatic record is left out of that ranking, not ranked as 0.
+    expect(byCategory["Diplomatic Standing"]!.global).toEqual({ position: 2, total: 2 });
+  });
+
+  it("builds the World Census from stored stats within the country's realm", async () => {
+    const realmCountries = [
+      {
+        id: "c_census",
+        region: "North",
+        currentGdpPerCapita: 30000,
+        currentPopulation: 5e6,
+        currentTotalGdp: 1.5e11,
+        adjustedGdpGrowth: 0.04,
+        populationGrowthRate: 0.01,
+        publicApproval: 62,
+        totalDebtGDPRatio: 55,
+        incomeInequalityGini: 0.32,
+        infrastructureRating: 70,
+        economicTier: "Developed",
+        populationTier: "3",
+        stabilityMetrics: { stabilityScore: 58 },
+      },
+      {
+        id: "c_other",
+        region: "North",
+        currentGdpPerCapita: 50000,
+        currentPopulation: 2e6,
+        currentTotalGdp: 1e11,
+        adjustedGdpGrowth: 0.01,
+        populationGrowthRate: 0,
+        publicApproval: 40,
+        totalDebtGDPRatio: null,
+        incomeInequalityGini: 0.4,
+        infrastructureRating: 50,
+        economicTier: "Developed",
+        populationTier: "2",
+        stabilityMetrics: null,
+      },
+    ];
+    const findMany = jest.fn().mockResolvedValue(realmCountries);
+    Object.assign(mockedDb as unknown as Record<string, unknown>, {
+      country: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: "c_census",
+          realmId: "r_eurth",
+          adjustedGdpGrowth: 0.04,
+          populationGrowthRate: 0.01,
+        }),
+        findMany,
+      },
+      diplomaticRelation: {
+        findMany: jest.fn(async () => [
+          { country1: "c_census", country2: "c_other", strength: 75 },
+        ]),
+      },
+      embassy: { findMany: jest.fn(async () => []) },
+      allianceMember: { findMany: jest.fn(async () => []) },
+      treaty: { findMany: jest.fn(async () => []) },
+      foreignPolicyAction: { findMany: jest.fn(async () => []) },
+    });
+
+    const rankings = await generateRankings("c_census");
+    const get = (c: string) => rankings.find((r) => r.category === c)!;
+
+    expect(findMany.mock.calls[0][0].where).toMatchObject({ realmId: "r_eurth" });
+    expect(rankings.map((r) => r.category)).toEqual([
+      "GDP per Capita",
+      "Total GDP",
+      "GDP Growth",
+      "Population",
+      "Public Approval",
+      "Stability",
+      "Diplomatic Standing",
+      "Infrastructure",
+      "Debt to GDP",
+      "Income Equality",
+    ]);
+    expect(get("GDP per Capita").global.position).toBe(2);
+    expect(get("Total GDP").global.position).toBe(1);
+    expect(get("Stability").global).toEqual({ position: 1, total: 1 });
+    expect(get("Debt to GDP").global).toEqual({ position: 1, total: 1 });
+    expect(get("Diplomatic Standing").value).toBe(75);
+    expect(get("GDP per Capita").trend).toBe("improving");
+    expect(get("Public Approval").trend).toBeUndefined();
   });
 });

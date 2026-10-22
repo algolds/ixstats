@@ -2,12 +2,15 @@
 // `jest` is deliberately NOT imported from "@jest/globals": the
 // hoisted jest.mock() factories rely on the ambient global.
 //
-// The owner's side of a nation's statecraft, enforced on the server (the public side is
-// country-public-record.test.ts). Owner-only: open issues and their detail (nationalIssues.*),
-// the directive status/suggest/linked-issue reads, executive bandwidth (policies.getPolicyReconContext) and
-// draft policies. Every procedure is checked for the owner, another player, an admin (the
-// dev "view as" toolbar is system-owner only, which is privileged the same way) and a
-// signed-out caller.
+// Who sees what of a nation's statecraft, enforced on the server. Owner-only, one row per procedure: open issues and
+// their detail, recon and delegation (nationalIssues.*), the issue history, the directive status/suggest/linked-issue
+// reads, executive bandwidth (policies.getPolicyReconContext) and the threshold alerts (intelligence.*). Each row runs
+// the owner, an admin (the dev "view as" toolbar is system-owner only, which is privileged the same way), the
+// nation's owner while acting as another nation (Country.ownerUserId), another player (refused before any private read
+// or write) and a signed-out visitor (refused before any lookup). The public side: the public record and the intent
+// tree give everyone else enacted directives and resolved issues only, redacted; outcomes and policies hide drafts.
+//
+// Folds country-public-record and intelligence-alerts.
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: { user: { findUnique: jest.fn() }, auditLog: { create: jest.fn() } },
@@ -80,10 +83,12 @@ jest.mock("~/lib/government/exec-bandwidth", () => {
 });
 
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
-import { createCallerFactory } from "~/server/api/trpc";
+import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { intentRouter } from "~/server/api/routers/intent";
+import { intelligenceRouter } from "~/server/api/routers/intelligence";
 import { nationalIssuesPlayerRouter } from "~/server/api/routers/national-issues/player";
 import { policiesRouter } from "~/server/api/routers/policies";
+import { publicRecordProcedures } from "~/server/api/routers/countries/public-record";
 import { NationalIssuesConsequences } from "~/lib/national-issues";
 import { loadExecBandwidthState } from "~/lib/government/exec-bandwidth";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
@@ -105,18 +110,87 @@ const ISSUE = {
   consequences: [],
 };
 
-const intentRow = (id: string, status: string, tier = "measured") => ({
-  id,
+const intentRow = (overrides: Record<string, unknown>) => ({
+  id: "i",
   countryId: COUNTRY,
   goal: "Goal",
-  tier,
-  status,
+  tier: "measured",
+  category: "economy",
+  target: null,
+  status: "active",
+  changesJson: '[{"field":"budget","delta":5}]',
+  summary: null,
+  riskRating: "stable",
+  progress: 40,
+  parentId: null,
+  cooldownUntil: 123,
+  execBandwidthCost: 12,
+  createdIxTime: 1_000,
+  createdAt: new Date("2026-01-01"),
+  updatedAt: new Date("2026-01-01"),
+  ...overrides,
 });
-const INTENTS: Record<string, ReturnType<typeof intentRow>> = {
-  in_force: intentRow("in_force", "active"),
-  draft: intentRow("draft", "proposed", "proposed"),
-  withdrawn: intentRow("withdrawn", "abandoned"),
+const INTENTS = [
+  intentRow({ id: "in_force", status: "active", createdIxTime: 3_000 }),
+  intentRow({ id: "done", status: "completed", createdIxTime: 2_000 }),
+  intentRow({ id: "draft", status: "proposed", tier: "proposed" }),
+  intentRow({ id: "withdrawn", status: "abandoned" }),
+];
+
+const RESOLVED_ISSUES = [
+  {
+    id: "resolved",
+    title: "Harbour strike",
+    domain: "economy",
+    status: "responded",
+    chosenOptionLabel: "Meet the unions",
+    autoResolveLabel: null,
+    consequenceLog: "Wages rose; the ports reopened.",
+    respondedIxTime: 5_000,
+    createdIxTime: 4_000,
+    appliedConsequences: '{"budget":-40}',
+  },
+  {
+    id: "lapsed",
+    title: "Drought relief",
+    domain: "social",
+    status: "auto_resolved",
+    chosenOptionLabel: null,
+    autoResolveLabel: "Do nothing",
+    consequenceLog: null,
+    respondedIxTime: 6_000,
+    createdIxTime: 4_500,
+  },
+  { id: "open", title: "Open issue", domain: "economy", status: "pending" },
+  { id: "gone", title: "Dismissed issue", domain: "economy", status: "dismissed" },
+];
+
+const ALERT = {
+  id: "a_medium",
+  countryId: COUNTRY,
+  title: "gdpGrowthRate breached medium threshold",
+  description: "Current value: 1.00",
+  category: "ECONOMIC",
+  alertType: "threshold_breach",
+  severity: "MEDIUM",
+  currentValue: 1,
+  expectedValue: 2,
+  isResolved: false,
+  resolvedAt: null,
+  readAt: null,
+  detectedAt: new Date("2026-10-04T00:00:00Z"),
 };
+
+type Where = Record<string, unknown>;
+/** A row matches when every equality, `in` and `not` condition holds (the filters the routers send). */
+const matches = (row: Record<string, unknown>, where: Where = {}) =>
+  Object.entries(where).every(([key, cond]) => {
+    if (cond && typeof cond === "object" && "in" in cond)
+      return (cond as { in: unknown[] }).in.includes(row[key]);
+    if (cond && typeof cond === "object" && "not" in cond)
+      return row[key] !== (cond as { not: unknown }).not;
+    return cond === undefined || typeof cond === "object" || row[key] === cond;
+  });
 
 function makeDb({ ownerUserId = "owner_db" }: { ownerUserId?: string } = {}) {
   return {
@@ -139,16 +213,23 @@ function makeDb({ ownerUserId = "owner_db" }: { ownerUserId?: string } = {}) {
       findUnique: jest.fn(async ({ where }: { where: { id: string } }) =>
         where.id === ISSUE.id ? ISSUE : null
       ),
-      findMany: jest.fn(async (_args: object) => [ISSUE]),
+      findMany: jest.fn(async ({ where }: { where: Where }) =>
+        where.status
+          ? RESOLVED_ISSUES.filter((row) => matches(row, { status: where.status }))
+          : [ISSUE]
+      ),
       findFirst: jest.fn(async () => null),
       count: jest.fn(async () => 1),
       update: jest.fn(async (_args: object) => ISSUE),
     },
     intent: {
       findUnique: jest.fn(
-        async ({ where }: { where: { id: string } }) => INTENTS[where.id] ?? null
+        async ({ where }: { where: { id: string } }) =>
+          INTENTS.find((i) => i.id === where.id) ?? null
       ),
-      findMany: jest.fn(async () => []),
+      findMany: jest.fn(async ({ where }: { where: Where }) =>
+        INTENTS.filter((row) => matches(row, where))
+      ),
     },
     countryChangeLog: { findMany: jest.fn(async () => []) },
     storytellerEffect: { findMany: jest.fn(async () => []) },
@@ -158,6 +239,17 @@ function makeDb({ ownerUserId = "owner_db" }: { ownerUserId?: string } = {}) {
     policy: {
       findMany: jest.fn(async (_args: object) => []),
       findFirst: jest.fn(async () => null),
+    },
+    intelligenceAlert: {
+      findMany: jest.fn(async (_args: object) => [ALERT]),
+      findUnique: jest.fn(async ({ where }: { where: { id: string } }) =>
+        where.id === ALERT.id
+          ? { id: ALERT.id, countryId: COUNTRY, readAt: null, isResolved: false }
+          : null
+      ),
+      count: jest.fn(async () => 1),
+      update: jest.fn(async (_args: object) => ({})),
+      updateMany: jest.fn(async (_args: object) => ({ count: 1 })),
     },
   };
 }
@@ -197,14 +289,24 @@ const admin = (db: Db) =>
 const issues = createCallerFactory(nationalIssuesPlayerRouter);
 const intents = createCallerFactory(intentRouter);
 const policies = createCallerFactory(policiesRouter);
+const intelligence = createCallerFactory(intelligenceRouter);
+const publicRecord = createCallerFactory(createTRPCRouter(publicRecordProcedures));
 
 type Ctx = (db: Db) => never;
 type Call = (ctx: never) => Promise<unknown>;
 
-/**
- * Owner-only procedures: the call, and the DB read/write that must not happen for a refused
- * caller.
- */
+/** The code a refusal carries: a TRPCError's own, or the AppError a middleware threw. */
+const codeOf = (error: unknown) => {
+  const { code, cause } = error as { code?: string; cause?: { trpcCode?: string; code?: string } };
+  return cause?.trpcCode ?? cause?.code ?? code;
+};
+const outcomeOf = (call: Call, ctx: never) =>
+  call(ctx).then(
+    () => "served",
+    (error: unknown) => codeOf(error)
+  );
+
+/** Owner-only procedures: the call, and the DB read or write a refused caller must not reach. */
 const OWNER_ONLY: Array<[string, Call, (db: Db) => jest.Mock]> = [
   [
     "nationalIssues.getMyIssues",
@@ -232,9 +334,24 @@ const OWNER_ONLY: Array<[string, Call, (db: Db) => jest.Mock]> = [
     () => NationalIssuesConsequences.resolveIssue as unknown as jest.Mock,
   ],
   [
+    "nationalIssues.dismiss",
+    (ctx) => issues(ctx).dismiss({ id: ISSUE.id }),
+    (db) => db.nationalIssue.update,
+  ],
+  [
+    "nationalIssues.commissionRecon",
+    (ctx) => issues(ctx).commissionRecon({ issueId: ISSUE.id }),
+    (db) => db.nationalIssue.update,
+  ],
+  [
     "nationalIssues.getReconReveal",
     (ctx) => issues(ctx).getReconReveal({ issueId: ISSUE.id }),
     (db) => db.nationalIssue.update,
+  ],
+  [
+    "nationalIssues.getHistory",
+    (ctx) => issues(ctx).getHistory({ countryId: COUNTRY }),
+    (db) => db.nationalIssue.findMany,
   ],
   [
     "intent.getStatus",
@@ -256,6 +373,26 @@ const OWNER_ONLY: Array<[string, Call, (db: Db) => jest.Mock]> = [
     (ctx) => policies(ctx).getPolicyReconContext({ countryId: COUNTRY }),
     () => loadExecBandwidthState as unknown as jest.Mock,
   ],
+  [
+    "intelligence.getMyAlerts",
+    (ctx) => intelligence(ctx).getMyAlerts({ countryId: COUNTRY }),
+    (db) => db.intelligenceAlert.findMany,
+  ],
+  [
+    "intelligence.markAlertRead",
+    (ctx) => intelligence(ctx).markAlertRead({ id: ALERT.id }),
+    (db) => db.intelligenceAlert.update,
+  ],
+  [
+    "intelligence.markAllAlertsRead",
+    (ctx) => intelligence(ctx).markAllAlertsRead({ countryId: COUNTRY }),
+    (db) => db.intelligenceAlert.updateMany,
+  ],
+  [
+    "intelligence.dismissAlert",
+    (ctx) => intelligence(ctx).dismissAlert({ id: ALERT.id }),
+    (db) => db.intelligenceAlert.update,
+  ],
 ];
 
 let warn: ReturnType<typeof jest.spyOn>;
@@ -265,169 +402,165 @@ beforeEach(() => {
 });
 afterEach(() => warn.mockRestore());
 
-describe.each(OWNER_ONLY)("%s", (_name, call, guarded) => {
-  it.each([
-    ["the owner", owner],
-    ["an admin", admin],
-  ] as Array<[string, Ctx]>)("serves %s", async (_who, ctxFor) => {
-    const db = makeDb();
-    await expect(call(ctxFor(db))).resolves.toBeDefined();
-  });
+describe("owner-only statecraft", () => {
+  it.each(OWNER_ONLY)(
+    "%s serves the owner, an admin and the owner acting as another nation; refuses everyone else",
+    async (_name, call, guarded) => {
+      const served = {
+        owner: await outcomeOf(call, owner(makeDb())),
+        admin: await outcomeOf(call, admin(makeDb())),
+        ownerActingElsewhere: await outcomeOf(
+          call,
+          otherPlayer(makeDb({ ownerUserId: "other_db" }))
+        ),
+      };
+      // The refused player's call alone: how far it got past the check
+      const refused = makeDb();
+      const guard = guarded(refused);
+      const before = guard.mock.calls.length;
+      const otherPlayerOutcome = await outcomeOf(call, otherPlayer(refused));
+      const reached = guard.mock.calls.length - before;
+      const visitor = makeDb();
+      expect({
+        ...served,
+        otherPlayer: otherPlayerOutcome,
+        signedOut: await outcomeOf(call, signedOut(visitor)),
+      }).toEqual({
+        owner: "served",
+        admin: "served",
+        ownerActingElsewhere: "served",
+        otherPlayer: "FORBIDDEN",
+        signedOut: "UNAUTHORIZED",
+      });
+      // A single-issue read loads the issue to find its country; nothing past that may run.
+      expect(reached).toBeLessThanOrEqual(guard === refused.nationalIssue.findUnique ? 1 : 0);
+      expect(visitor.user.findUnique).not.toHaveBeenCalled();
+    }
+  );
 
-  it("serves an owner who is not acting as the nation (Country.ownerUserId)", async () => {
-    const db = makeDb({ ownerUserId: "other_db" });
-    await expect(call(otherPlayer(db))).resolves.toBeDefined();
-  });
-
-  it("is FORBIDDEN for another player, before any private read or write", async () => {
-    const db = makeDb();
-    const guard = guarded(db);
-    const before = guard.mock.calls.length;
-    await expect(call(otherPlayer(db))).rejects.toMatchObject({ code: "FORBIDDEN" });
-    // getIssue loads the owning country first; nothing past that may run.
-    const allowed = guard === db.nationalIssue.findUnique ? 1 : 0;
-    expect(guard.mock.calls.length - before).toBeLessThanOrEqual(allowed);
-  });
-
-  it("requires a session", async () => {
-    const db = makeDb();
-    await expect(call(signedOut(db))).rejects.toThrow(/Authentication required/);
-    expect(db.user.findUnique).not.toHaveBeenCalled();
-  });
-});
-
-describe("nationalIssues mutations", () => {
-  it("markViewed updates the owner's pending issue", async () => {
-    const db = makeDb();
-    await issues(owner(db)).markViewed({ id: ISSUE.id });
-    expect(db.nationalIssue.update).toHaveBeenCalledWith({
-      where: { id: ISSUE.id },
-      data: { status: "viewed" },
-    });
-  });
-
-  it("dismiss is FORBIDDEN for another player and leaves the issue open", async () => {
-    const db = makeDb();
-    await expect(issues(otherPlayer(db)).dismiss({ id: ISSUE.id })).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
-    expect(db.nationalIssue.update).not.toHaveBeenCalled();
-  });
-
-  it("commissionRecon is FORBIDDEN for another player and allowed for an admin", async () => {
-    const db = makeDb();
-    await expect(
-      issues(otherPlayer(db)).commissionRecon({ issueId: ISSUE.id })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    expect(db.nationalIssue.update).not.toHaveBeenCalled();
-
-    await expect(issues(admin(db)).commissionRecon({ issueId: ISSUE.id })).resolves.toHaveProperty(
-      "readyIxTime"
-    );
-  });
-
-  it("a missing issue is NOT_FOUND, for players and admins alike", async () => {
-    const db = makeDb();
+  it("answers NOT_FOUND for a missing issue, to players and admins alike", async () => {
     for (const ctxFor of [owner, admin]) {
-      await expect(issues(ctxFor(db)).getIssue({ id: "missing" })).rejects.toMatchObject({
+      await expect(issues(ctxFor(makeDb())).getIssue({ id: "missing" })).rejects.toMatchObject({
         code: "NOT_FOUND",
       });
     }
   });
-});
 
-describe("intent.getOutcome", () => {
-  it.each([
-    ["another player", otherPlayer],
-    ["a signed-out visitor", signedOut],
-  ] as Array<[string, Ctx]>)(
-    "serves %s an enacted directive only; drafts and abandoned ones are NOT_FOUND",
-    async (_who, ctxFor) => {
-      const db = makeDb();
-      await expect(intents(ctxFor(db)).getOutcome({ intentId: "in_force" })).resolves.toEqual({
-        ledger: [],
-        gdpEffects: [],
-      });
-      for (const intentId of ["draft", "withdrawn"]) {
-        await expect(intents(ctxFor(db)).getOutcome({ intentId })).rejects.toMatchObject({
-          code: "NOT_FOUND",
-        });
-      }
-      expect(db.countryChangeLog.findMany).toHaveBeenCalledTimes(1);
-    }
-  );
-
-  it.each([
-    ["the owner", owner],
-    ["an admin", admin],
-  ] as Array<[string, Ctx]>)("serves %s every directive's outcome", async (_who, ctxFor) => {
-    const db = makeDb();
-    for (const intentId of ["in_force", "draft", "withdrawn"]) {
-      await expect(intents(ctxFor(db)).getOutcome({ intentId })).resolves.toBeDefined();
-    }
-  });
-});
-
-describe("intent.getLinkedIssues", () => {
-  it("scopes the issues to the directive's own country", async () => {
+  it("scopes a directive's linked issues to its own country", async () => {
     const db = makeDb();
     await intents(owner(db)).getLinkedIssues({ intentId: "in_force" });
     expect(db.nationalIssue.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { intentId: "in_force", countryId: COUNTRY } })
     );
   });
-});
 
-describe("intent.generateSummationDraft", () => {
-  it("refuses another country's directive under the caller's own countryId", async () => {
-    const db = makeDb();
-    const ctx = createMockRouterContext({
-      db,
-      auth: { userId: "other_clerk" },
-      user: {
-        id: "other_db",
-        clerkUserId: "other_clerk",
+  it("refuses to draft a summation of another country's directive under the caller's own countryId", async () => {
+    await expect(
+      intents(otherPlayer(makeDb())).generateSummationDraft({
+        intentId: "draft",
         countryId: "country_other",
-        role: { name: "member" },
-      },
-    }) as never;
-    await expect(
-      intents(ctx).generateSummationDraft({ intentId: "draft", countryId: "country_other" })
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
-
-  it("drafts the owner's own directive", async () => {
-    const db = makeDb();
     await expect(
-      intents(owner(db)).generateSummationDraft({ intentId: "in_force", countryId: COUNTRY })
+      intents(owner(makeDb())).generateSummationDraft({ intentId: "in_force", countryId: COUNTRY })
     ).resolves.toEqual({ postId: "post_1" });
   });
 });
 
-describe("policies.getPolicies", () => {
-  it.each([
-    ["another player", otherPlayer],
-    ["a signed-out visitor", signedOut],
-  ] as Array<[string, Ctx]>)("never serves %s draft policies", async (_who, ctxFor) => {
+describe("the public side", () => {
+  it("serves a signed-out visitor the public record: enacted directives and resolved issues, public fields only", async () => {
     const db = makeDb();
-    await policies(ctxFor(db)).getPolicies({ countryId: COUNTRY });
-    expect(db.policy.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { countryId: COUNTRY, status: { not: "draft" } } })
+    const record = await publicRecord(signedOut(db)).getPublicRecord({ countryId: COUNTRY });
+
+    expect(record.directives.map((d) => d.id)).toEqual(["in_force", "done"]);
+    expect(Object.keys(record.directives[0]!).sort()).toEqual(
+      ["category", "createdIxTime", "goal", "id", "progress", "status", "summary", "tier"].sort()
     );
-    await expect(
-      policies(ctxFor(db)).getPolicies({ countryId: COUNTRY, status: "draft" })
-    ).resolves.toEqual([]);
-    expect(db.policy.findMany).toHaveBeenCalledTimes(1);
+    expect(record.issueOutcomes.map((o) => o.id)).toEqual(["lapsed", "resolved"]);
+    expect(record.issueOutcomes.find((o) => o.id === "resolved")).toEqual({
+      id: "resolved",
+      title: "Harbour strike",
+      domain: "economy",
+      decision: "Meet the unions",
+      outcome: "Wages rose; the ports reopened.",
+      resolvedBy: "government",
+      ixTime: 5_000,
+    });
+    expect(record.issueOutcomes.find((o) => o.id === "lapsed")).toMatchObject({
+      decision: "Do nothing",
+      resolvedBy: "default",
+    });
+    // The selects never ask for the private columns
+    const [{ select: intentSelect }] = db.intent.findMany.mock.calls[0] as unknown as [
+      { select: Record<string, boolean> },
+    ];
+    expect(intentSelect).not.toHaveProperty("changesJson");
+    expect(intentSelect).not.toHaveProperty("execBandwidthCost");
+    const [{ select: issueSelect }] = db.nationalIssue.findMany.mock.calls[0] as unknown as [
+      { select: Record<string, boolean> },
+    ];
+    expect(issueSelect).not.toHaveProperty("appliedConsequences");
+    expect(issueSelect).not.toHaveProperty("responseOptions");
+  });
+
+  it("gives the owner the whole intent tree, drafts and abandoned directives included", async () => {
+    const tree = await intents(owner(makeDb())).getTree({ countryId: COUNTRY });
+    expect(tree.allIntents.map((i) => i.id).sort()).toEqual(
+      ["done", "draft", "in_force", "withdrawn"].sort()
+    );
+    expect(tree.allIntents.find((i) => i.id === "draft")?.changesJson).toContain("budget");
   });
 
   it.each([
-    ["the owner", owner],
-    ["an admin", admin],
-  ] as Array<[string, Ctx]>)("serves %s every policy, drafts included", async (_who, ctxFor) => {
+    ["another player", otherPlayer],
+    ["a signed-out visitor", signedOut],
+  ] as Array<[string, Ctx]>)("gives %s the redacted public tree only", async (_who, ctxFor) => {
+    const db = makeDb();
+    const tree = await intents(ctxFor(db)).getTree({ countryId: COUNTRY });
+    expect(tree.allIntents.map((i) => i.id).sort()).toEqual(["done", "in_force"]);
+    for (const intent of tree.allIntents) {
+      expect(intent).toMatchObject({
+        changesJson: "[]",
+        execBandwidthCost: null,
+        cooldownUntil: null,
+      });
+    }
+    expect(tree.roots).toHaveLength(2);
+  });
+
+  it.each([
+    ["another player", otherPlayer, { draft: "NOT_FOUND", withdrawn: "NOT_FOUND" }],
+    ["a signed-out visitor", signedOut, { draft: "NOT_FOUND", withdrawn: "NOT_FOUND" }],
+    ["the owner", owner, { draft: "served", withdrawn: "served" }],
+    ["an admin", admin, { draft: "served", withdrawn: "served" }],
+  ] as Array<[string, Ctx, Record<string, string>]>)(
+    "shows %s a directive's outcome: enacted always, drafts and abandoned ones %p",
+    async (_who, ctxFor, hidden) => {
+      const outcome = (intentId: string) => (ctx: never) => intents(ctx).getOutcome({ intentId });
+      expect({
+        in_force: await outcomeOf(outcome("in_force"), ctxFor(makeDb())),
+        draft: await outcomeOf(outcome("draft"), ctxFor(makeDb())),
+        withdrawn: await outcomeOf(outcome("withdrawn"), ctxFor(makeDb())),
+      }).toEqual({ in_force: "served", ...hidden });
+    }
+  );
+
+  it.each([
+    ["another player", otherPlayer, { countryId: COUNTRY, status: { not: "draft" } }],
+    ["a signed-out visitor", signedOut, { countryId: COUNTRY, status: { not: "draft" } }],
+    ["the owner", owner, { countryId: COUNTRY }],
+    ["an admin", admin, { countryId: COUNTRY }],
+  ] as Array<[string, Ctx, Where]>)("lists policies for %s as %p", async (_who, ctxFor, where) => {
     const db = makeDb();
     await policies(ctxFor(db)).getPolicies({ countryId: COUNTRY });
-    expect(db.policy.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { countryId: COUNTRY } })
-    );
+    expect(db.policy.findMany).toHaveBeenCalledWith(expect.objectContaining({ where }));
+  });
+
+  it("never serves another player's drafts even when asked for them", async () => {
+    const db = makeDb();
+    await expect(
+      policies(otherPlayer(db)).getPolicies({ countryId: COUNTRY, status: "draft" })
+    ).resolves.toEqual([]);
+    expect(db.policy.findMany).not.toHaveBeenCalled();
   });
 });
