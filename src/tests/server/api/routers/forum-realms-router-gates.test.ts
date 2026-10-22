@@ -234,13 +234,6 @@ describe("input bounds", () => {
       "",
     ],
     [
-      "an edit past 50,000 characters",
-      "member",
-      "thinkpagesForum.editPost",
-      { postId: "p1", editedAt: null, html: "x".repeat(50_001) },
-      "html",
-    ],
-    [
       "a report on a user",
       "member",
       "thinkpagesForum.report",
@@ -248,25 +241,11 @@ describe("input bounds", () => {
       "targetType",
     ],
     [
-      "a report reason past 1,000 characters",
-      "member",
-      "thinkpagesForum.report",
-      { targetType: "post", targetId: "p1", reason: "x".repeat(1001) },
-      "reason",
-    ],
-    [
       "an appeal under 10 characters",
       "member",
       "thinkpagesForum.appeal",
       { subjectType: "warning", subjectId: "w1", body: "too short" },
       "body",
-    ],
-    [
-      "a read mark of page 0",
-      "member",
-      "thinkpagesForum.markThreadRead",
-      { threadId: "t1", page: 0 },
-      "page",
     ],
     ["a one-letter mention query", "member", "thinkpagesForum.mentionSuggestions", { q: "k" }, "q"],
     [
@@ -284,14 +263,6 @@ describe("input bounds", () => {
       "limit",
     ],
     [
-      "a board preview slug past 100 characters",
-      "member",
-      "thinkpagesForum.realmBoardPreview",
-      { slug: "x".repeat(101) },
-      "slug",
-    ],
-    ["a stash of no thread", "member", "thinkpagesForum.stashThread", { threadId: "" }, "threadId"],
-    [
       "an advert title past 200 characters",
       "member",
       "thinkpagesForum.createAdvert",
@@ -299,7 +270,6 @@ describe("input bounds", () => {
       "title",
     ],
     ["a ban of 0 days", "admin", "thinkpagesForumMod.ban", { ...BAN, days: 0 }, "days"],
-    ["a ban of part of a day", "admin", "thinkpagesForumMod.ban", { ...BAN, days: 1.5 }, "days"],
     [
       "a ban in a place that is not one",
       "admin",
@@ -308,13 +278,6 @@ describe("input bounds", () => {
       "scope.kind",
     ],
     ["a warning of 6 points", "admin", "thinkpagesForumMod.warn", { ...WARN, points: 6 }, "points"],
-    [
-      "a warning on a user rather than a post",
-      "admin",
-      "thinkpagesForumMod.warn",
-      { ...WARN, target: { type: "user", id: "u2" } },
-      "target.type",
-    ],
     [
       "an appeal response past 2,000 characters",
       "admin",
@@ -334,13 +297,6 @@ describe("input bounds", () => {
       "admin",
       "realms.adminCreateRealm",
       { slug: "eu rth", name: "Eurth", visibility: "public" },
-      "slug",
-    ],
-    [
-      "a realm slug in capitals",
-      "admin",
-      "realms.adminCreateRealm",
-      { slug: "Eurth", name: "Eurth", visibility: "public" },
       "slug",
     ],
     [

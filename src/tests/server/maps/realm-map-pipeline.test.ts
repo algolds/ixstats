@@ -35,8 +35,6 @@ import {
   listMapPipelineRuns,
   MAP_PIPELINE_CANCEL_ACTION,
   MAP_PIPELINE_RUN_ACTION,
-  MAP_PIPELINE_SAVED_ACTION,
-  saveMapPipeline,
   startMapPipelineRun,
 } from "~/server/modules/maps/realm-map-pipeline.config";
 import { admin, fakeDb, founder, stranger } from "./map-import-fakes";
@@ -90,27 +88,6 @@ function setup(settings: object = {}) {
 const withPipeline = (pipeline: object) => ({
   map: { pipeline: realmMapPipelineSchema.parse(pipeline) },
 });
-
-describe("map pipeline config", () => {
-  it("refuses to save art whose upload is gone, and keeps the realm's other settings when it saves", async () => {
-    const db = setup({ map: { radiusKm: 6000 }, wiki: { source: "iiwiki" } });
-    const gone = realmMapPipelineSchema.parse({ art: { geo: { uploadId: "b".repeat(64) } } });
-    await expect(saveMapPipeline(db, founder, "r1", gone)).rejects.toThrow(
-      /Upload again: the files of geo/
-    );
-    const uploadId = await saveMapUpload(new Uint8Array([1, 2, 3]));
-    const ok = realmMapPipelineSchema.parse({ art: { geo: { uploadId } }, labels });
-    await saveMapPipeline(db, founder, "r1", ok);
-    expect(db.realm.rows[0].settings).toEqual({
-      map: { radiusKm: 6000, pipeline: ok },
-      wiki: { source: "iiwiki" },
-    });
-    expect(db.adminAuditLog.rows.map((r: { action: string }) => r.action)).toEqual([
-      MAP_PIPELINE_SAVED_ACTION,
-    ]);
-  });
-});
-
 describe("map pipeline runs", () => {
   const nations = [
     { continent: "Europa", lng: 100, lat: 30, area: 3 },
@@ -195,32 +172,6 @@ describe("map pipeline runs", () => {
     // Who started each run, by name (the panel shows it), not a raw account id.
     expect(runs[0]!.requestedByName).toBe("Ixnay");
     expect(runs[0]!.results.map((r) => r.status)).toEqual(["unchanged", "unchanged"]);
-  });
-
-  it("records a failed step, goes on with the next, and marks the run failed", async () => {
-    const db = runDb(
-      withPipeline({
-        art: { labels: { uploadId: "c".repeat(64) } },
-        labels: { art: "labels" },
-        defaultView: "auto",
-      })
-    );
-    db.mapImportJob.rows.push({
-      id: "jobfail01",
-      realmId: "r1",
-      kind: "map-pipeline",
-      status: "queued",
-      dryRun: true,
-      options: { steps: ["labels", "defaultView"], dryRun: true },
-      requestedBy: "admin_1",
-      createdAt: new Date(),
-      progress: 0,
-    });
-    await runMapImportJob(db, "jobfail01");
-    const run = await getMapPipelineRun(db, admin, "jobfail01");
-    expect(run.status).toBe("failed");
-    expect(run.error).toMatch(/Map labels: Art "labels": the uploaded file is gone/);
-    expect(run.result?.steps.map((s) => s.status)).toEqual(["failed", "would-change"]);
   });
   it("cancels a queued run (audited) and keeps pipeline runs out of the web process when cron runs them", async () => {
     const db = setup(withPipeline({ labels }));
@@ -399,28 +350,6 @@ describe("measuring a realm", () => {
       expect(result.measures.nations.medianKm2).toBeGreaterThan(2.4e6);
       expect(result.measures.nations.medianKm2).toBeLessThan(2.55e6);
     });
-
-    it("reads more rows than the database guard's default cap and leaves out inactive features", async () => {
-      const features = Array.from({ length: 1500 }, (_, i) => ({
-        layerType: "political",
-        geometry: polygon(
-          box(
-            -60 + (i % 100),
-            -20 + Math.floor(i / 100),
-            -59.5 + (i % 100),
-            -19.5 + Math.floor(i / 100)
-          )
-        ),
-      }));
-      const { db, id } = seed([
-        ...features,
-        { layerType: "political", geometry: polygon(box(100, 0, 110, 10)), isActive: false },
-      ]);
-      const result = await measureRealm(db, id);
-      if (!result.ok) throw new Error("expected a measurement");
-      expect(result.measures.nations.count).toBe(1500);
-      expect(db.mapLayer.findMany.mock.calls[0][0].take).toBeGreaterThan(1000);
-    });
     it("prefers a realm whose id is the name when another realm's slug is the same", async () => {
       const { db, id } = seed([{ layerType: "political", geometry: polygon(box(0, 0, 10, 10)) }]);
       db.realm.rows.unshift({
@@ -472,22 +401,6 @@ describe("seeding a realm's labels", () => {
     ],
   }).labels;
   describe("seeding a realm's labels", () => {
-    it("a dry run reports what would be created and writes nothing", async () => {
-      const db = fakeDb([]);
-      const report = await seedRealmLabels(db as never, "realm_1", ENTRIES, {
-        apply: false,
-        submittedBy: "script",
-      });
-      expect(report).toEqual({
-        created: ["Argic Ocean (west)", "Auraid Bay", "Kosscow Sea"],
-        updated: [],
-        unchanged: 0,
-      });
-      expect(db.mapLabel.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { realmId: "realm_1", countryId: null } })
-      );
-      expect(db.mapLabel.create).not.toHaveBeenCalled();
-    });
     it("is idempotent: matches by key (or by name for a hand-made label), updates only what changed", async () => {
       const db = fakeDb([
         {

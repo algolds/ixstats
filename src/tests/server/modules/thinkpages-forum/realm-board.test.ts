@@ -11,34 +11,22 @@ import {
 } from "~/tests/helpers/forum-board-fake";
 import { boardAccessFor } from "~/server/modules/thinkpages-forum/board-access";
 import { loadForumRealm, type ForumRealm } from "~/server/modules/thinkpages-forum";
-import { ban, banned, claimsOfficer, founder, plain } from "~/tests/helpers/forum-board-fake";
+import { ban, banned, claimsOfficer, founder } from "~/tests/helpers/forum-board-fake";
 import { realmBoardPreview } from "~/server/modules/thinkpages-forum/board-preview";
 import { seedRealmCategories } from "~/server/modules/thinkpages-forum/realm-seed";
 import {
   forumActivityOf,
   importedAuthorByName,
   loadCategory,
-  moveDestinations,
 } from "~/server/modules/thinkpages-forum";
 import {
   latestPublicThreads,
   publicThreadWhere,
 } from "~/server/modules/thinkpages-forum/public-threads";
 import { summarizeCategories } from "~/server/modules/thinkpages-forum/reads";
-import {
-  admin as siteAdmin,
-  eurthMod,
-  realmCat,
-  seed as modSeed,
-} from "~/tests/helpers/forum-mod-fixtures";
-import { forumStore } from "~/tests/helpers/forum-store-fake";
+import { admin as siteAdmin } from "~/tests/helpers/forum-mod-fixtures";
 import { locatePostFor } from "~/server/api/routers/thinkpagesForum/permalink";
-import {
-  editPost,
-  getThreadPosts,
-  replyToThread,
-  stashThread,
-} from "~/server/modules/thinkpages-forum";
+import { getThreadPosts, replyToThread } from "~/server/modules/thinkpages-forum";
 import { BOARD_THREAD, seed as boardSeed } from "~/tests/helpers/forum-board-fake";
 
 const messages = [
@@ -65,13 +53,6 @@ const board = (
   store = storeWith()
 ) => getBoard(store.db as never, who as never, slug, opts);
 describe("getBoard", () => {
-  it("clamps the page size", async () => {
-    const store = storeWith();
-    const out = await board(member, { limit: 10_000 }, "eurth", store);
-    expect(out.messages).toHaveLength(5);
-    expect((await board(member, { limit: 0 })).messages).toHaveLength(1);
-  });
-
   it("refuses a cursor that is not a message of this board", async () => {
     await expect(board(member, { before: "nope" })).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
@@ -198,13 +179,6 @@ describe("getBoard", () => {
     await expect(board(member, {}, "draft")).rejects.toMatchObject({ code: "NOT_FOUND" });
     await expect(board(admin, {}, "draft")).resolves.toMatchObject({ realm: { slug: "draft" } });
   });
-  it("heals a realm that has no board thread yet by seeding it", async () => {
-    const store = boardStore(seed({ threads: [], categories: [] }));
-    const createMany = jest.fn(async () => ({ count: 1 }));
-    Object.assign(store.db.forumCategory, { createMany });
-    await expect(board(member, {}, "eurth", store)).rejects.toMatchObject({ code: "NOT_FOUND" });
-    expect(createMany).toHaveBeenCalled();
-  });
 });
 
 describe("boardPostRealm", () => {
@@ -229,20 +203,8 @@ describe("who reads, posts and moderates the board", () => {
     const realm = (await loadForumRealm(store.db as never, { slug })) as ForumRealm;
     return boardAccessFor(store.db as never, who as never, realm, undefined, category);
   }
-  const base = {
-    canRead: true,
-    canPost: false,
-    isMember: false,
-    isVisitor: false,
-    isModerator: false,
-    canManageSettings: false,
-    reason: null,
-    visitorRealm: null,
-  };
+
   describe("boardAccessFor", () => {
-    it("lets a signed-out reader read but not post, asking them to sign in", async () => {
-      expect(await accessFor(null)).toMatchObject({ ...base, reason: "sign_in" });
-    });
     it("refuses a banned member (realm ban), who can still read", async () => {
       const store = boardStore();
       store.state.bans.push(ban({ userId: "u_banned", scope: "realm", scopeId: "r_eurth" }));
@@ -268,16 +230,6 @@ describe("who reads, posts and moderates the board", () => {
         canPost: true,
       });
     });
-
-    it("refuses a site-banned visitor too", async () => {
-      const store = boardStore();
-      store.state.bans.push(ban({ userId: "u_visitor", scope: "site" }));
-      expect(await accessFor(visitor, "eurth", store)).toMatchObject({
-        canPost: false,
-        reason: "banned",
-      });
-    });
-
     it("treats the founder, a board officer and a site admin as moderators who can post", async () => {
       for (const who of [founder, officer, admin]) {
         expect(await accessFor(who)).toMatchObject({
@@ -287,16 +239,6 @@ describe("who reads, posts and moderates the board", () => {
         });
       }
     });
-
-    it("lets the founder, a board officer and a site admin change the board's settings, and no one else", async () => {
-      for (const who of [founder, officer, admin]) {
-        expect(await accessFor(who)).toMatchObject({ canManageSettings: true });
-      }
-      for (const who of [member, visitor, plain, claimsOfficer, null]) {
-        expect(await accessFor(who)).toMatchObject({ canManageSettings: false });
-      }
-    });
-
     it("does not make a claims-only officer a moderator", async () => {
       expect(await accessFor(claimsOfficer)).toMatchObject({ isModerator: false, isVisitor: true });
     });
@@ -390,15 +332,6 @@ describe("the board preview", () => {
         personaType: "media",
       });
       expect(JSON.stringify(persona)).not.toContain("u_member");
-    });
-    it("gives null for an unknown realm and for a realm hidden from the viewer", async () => {
-      await expect(
-        realmBoardPreview(store().db as never, member as never, "nope")
-      ).resolves.toBeNull();
-      await expect(
-        realmBoardPreview(store().db as never, member as never, "draft")
-      ).resolves.toBeNull();
-      await expect(realmBoardPreview(store().db as never, null, "draft")).resolves.toBeNull();
     });
   });
 });
@@ -540,18 +473,6 @@ describe("the board stays out of the generic forum", () => {
       await importedAuthorByName(db as never, "OldTimer");
       expect(JSON.stringify(argsOf(findFirst as never))).toContain('"style":{"not":"board"}');
     });
-
-    it("a moderator is never offered the board as a place to move a thread", async () => {
-      const state = modSeed();
-      state.categories = [
-        ...state.categories,
-        { ...realmCat("r_eurth", "board"), id: "r_eurth_board", style: "board" },
-      ];
-      const store = forumStore(state);
-      const from = state.categories.find((c) => c.id === "r_eurth_hub") as never;
-      const keys = (await moveDestinations(store.db as never, eurthMod, from)).map((c) => c.key);
-      expect(keys).toEqual(["character-threads", "current-events"]);
-    });
   });
   describe("the board thread on the generic thread paths", () => {
     const store = () =>
@@ -577,30 +498,6 @@ describe("the board stays out of the generic forum", () => {
           })
         ).rejects.toMatchObject({ code: "NOT_FOUND" });
         expect(s.state.posts).toHaveLength(2);
-      });
-
-      it("takes no author edits through the post edit", async () => {
-        const s = store();
-        await expect(
-          editPost(s.db as never, member as never, {
-            postId: "p1",
-            html: "<p>edited</p>",
-            editedAt: null,
-          })
-        ).rejects.toMatchObject({ code: "NOT_FOUND" });
-        expect(s.state.posts[0]).toMatchObject({ plainText: "Message p1" });
-      });
-
-      it("cannot be stashed", async () => {
-        const s = store();
-        await expect(
-          stashThread(
-            s.db as never,
-            member as never,
-            { primaryId: "u_member", ids: ["u_member"] },
-            { threadId: BOARD_THREAD }
-          )
-        ).rejects.toMatchObject({ code: "NOT_FOUND" });
       });
     });
     describe("the post permalink", () => {

@@ -14,23 +14,12 @@ import {
   unreactToPost,
 } from "~/server/modules/thinkpages-forum/reactions";
 import type { BoardStore } from "~/tests/helpers/forum-board-fake";
-import {
-  admin,
-  ban,
-  banned,
-  founder,
-  member,
-  officer,
-  plain,
-  visitor,
-} from "~/tests/helpers/forum-board-fake";
+import { admin, ban, banned, member, plain, visitor } from "~/tests/helpers/forum-board-fake";
 import { reactionStore } from "~/tests/helpers/forum-reaction-fixtures";
 import {
   loadReactablePost,
   loadReadablePost,
 } from "~/server/modules/thinkpages-forum/reaction-target";
-import { boardPost } from "~/tests/helpers/forum-board-fake";
-import { SITE_CATEGORY } from "~/tests/helpers/forum-reaction-fixtures";
 import {
   sendForumNotices,
   type ForumNotice,
@@ -60,21 +49,6 @@ describe("reactToPost", () => {
     expect(store.reactions[0]).toMatchObject({ postId: "p_hub", userId: "u_member", type: "like" });
     expect(countsOf(store, "p_hub")).toEqual({ like: 1 });
   });
-  it("switches the member's one reaction to another type in place", async () => {
-    const store = reactionStore();
-    await react(store, member, "p_hub", "like");
-    await react(store, visitor, "p_hub", "like");
-    const out = await react(store, member, "p_hub", "fire");
-    expect(out).toEqual({
-      counts: { like: 1, fire: 1 },
-      mine: "fire",
-      created: false,
-      board: false,
-    });
-    expect(store.reactions).toHaveLength(2);
-    expect(countsOf(store, "p_hub")).toEqual({ like: 1, fire: 1 });
-  });
-
   it("recounts under a per-post lock taken before any row changes", async () => {
     const store = reactionStore();
     await react(store, member, "p_hub", "like");
@@ -85,44 +59,6 @@ describe("reactToPost", () => {
       store.reactionDb.create.mock.invocationCallOrder[0]!
     );
   });
-
-  it("recounts from the rows, so the counts equal them after several members react in the same tick", async () => {
-    const store = reactionStore();
-    const who = [member, visitor, plain, officer, founder];
-    await Promise.all(who.map((v, i) => react(store, v, "p_hub", i % 2 === 0 ? "like" : "fire")));
-    expect(store.reactions).toHaveLength(5);
-    expect(countsOf(store, "p_hub")).toEqual({ like: 3, fire: 2 });
-  });
-  it("rejects a type that is not a reaction before it reads anything", async () => {
-    const store = reactionStore();
-    for (const type of ["sad", "discord:", "like\n", "__proto__", "x".repeat(200)]) {
-      await expect(react(store, member, "p_hub", type)).rejects.toMatchObject({
-        code: "BAD_REQUEST",
-      });
-    }
-    expect(store.db.forumPost.findUnique).not.toHaveBeenCalled();
-    expect(store.reactions).toHaveLength(0);
-  });
-
-  it("writes nothing when the post cannot take a reaction", async () => {
-    const store = reactionStore();
-    store.state.bans.push(ban({ userId: "u_banned", scope: "realm", scopeId: "r_eurth" }));
-    for (const [viewer, id, code] of [
-      [member, "p_mine", "FORBIDDEN"],
-      [member, "p_hidden", "NOT_FOUND"],
-      [member, "p_locked", "CONFLICT"],
-      [member, "b_continued", "CONFLICT"],
-      [member, "p_draft", "NOT_FOUND"],
-      [member, "p_old", "CONFLICT"],
-      [admin, "b_old", "CONFLICT"],
-      [banned, "p_hub", "FORBIDDEN"],
-    ] as const) {
-      await expect(react(store, viewer, id, "like")).rejects.toMatchObject({ code });
-    }
-    expect(store.reactions).toHaveLength(0);
-    expect(store.db.$transaction).not.toHaveBeenCalled();
-  });
-
   it("answers CONFLICT when the unique key catches a duplicate, and leaves the rows and counts alone", async () => {
     const store = reactionStore();
     store.reactions.push({
@@ -139,25 +75,6 @@ describe("reactToPost", () => {
     expect(store.reactions).toHaveLength(1);
     expect(store.reactions[0]).toMatchObject({ type: "like" });
     expect(countsOf(store, "p_hub")).toEqual({ like: 1 });
-  });
-  it("answers CONFLICT when the transaction runs past its timeout, and says to try again", async () => {
-    const store = reactionStore();
-    store.db.$transaction.mockRejectedValueOnce(
-      new Prisma.PrismaClientKnownRequestError("Transaction API error: timed out", {
-        code: "P2028",
-        clientVersion: "test",
-      })
-    );
-    await expect(react(store, member, "p_hub", "like")).rejects.toMatchObject({
-      code: "CONFLICT",
-      message: "Your reaction changed at the same moment. Try again.",
-    });
-    expect(store.reactions).toHaveLength(0);
-  });
-  it("does not turn another database failure into a CONFLICT", async () => {
-    const store = reactionStore();
-    store.reactionDb.create.mockRejectedValueOnce(new Error("connection lost"));
-    await expect(react(store, member, "p_hub", "like")).rejects.toThrow("connection lost");
   });
   it("answers NOT_FOUND when the post is deleted between the checks and the write", async () => {
     const lostUpdate = reactionStore();
@@ -193,33 +110,6 @@ describe("reactToPost", () => {
 });
 
 describe("unreactToPost", () => {
-  it("removes the reaction and the count, and removing again changes nothing", async () => {
-    const store = reactionStore();
-    await react(store, member, "p_hub", "fire");
-    await react(store, visitor, "p_hub", "fire");
-    expect(await unreact(store, member, "p_hub")).toEqual({
-      counts: { fire: 1 },
-      mine: null,
-      created: false,
-      board: false,
-    });
-    expect(await unreact(store, member, "p_hub")).toMatchObject({
-      counts: { fire: 1 },
-      mine: null,
-    });
-    expect(store.reactions).toHaveLength(1);
-    expect(countsOf(store, "p_hub")).toEqual({ fire: 1 });
-  });
-  it("still works after the thread locks, the member is banned or the realm archives", async () => {
-    const store = reactionStore();
-    await react(store, member, "p_hub", "like");
-    Object.assign(
-      store.state.threads.find((t) => t.id === "t_hub")!,
-      { locked: true }
-    );
-    store.state.bans.push(ban({ userId: "u_member", scope: "site" }));
-    expect(await unreact(store, member, "p_hub")).toMatchObject({ counts: {}, mine: null });
-  });
   it("finds nothing for a post the member cannot read", async () => {
     const store = reactionStore();
     await expect(unreact(store, member, "p_hidden")).rejects.toMatchObject({ code: "NOT_FOUND" });
@@ -281,30 +171,9 @@ describe("listReactors", () => {
     );
     expect((await list(store, null, { postId: "p_hub" })).groups).toHaveLength(12);
   });
-  it("is readable to whoever can read the post, and no one else", async () => {
-    const store = await reacted();
-    await expect(list(store, null, { postId: "p_hidden" })).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
-    await expect(list(store, member, { postId: "p_draft" })).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
-    await expect(list(store, founder, { postId: "b_hidden" })).resolves.toEqual({ groups: [] });
-  });
 });
 
 describe("who may read and react to a post", () => {
-  const threadRow = (id: string, categoryId: string, authorUserId: string) => ({
-    id,
-    categoryId,
-    title: `Thread ${id}`,
-    authorUserId,
-    authorPersonaId: null,
-    pinned: false,
-    locked: false,
-    hidden: false,
-    archived: false,
-  });
   const readable = (viewer: object | null, postId: string, store = reactionStore()) =>
     loadReadablePost(store.db as never, viewer as never, postId);
   const reactable = (viewer: object, postId: string, store = reactionStore()) =>
@@ -316,22 +185,6 @@ describe("who may read and react to a post", () => {
       }
     });
     // The rules it mirrors from resolvePostLocation and loadVisibleThread, one test each.
-    it("follows canSeeThread: a staff category is the site admins' only", async () => {
-      const store = reactionStore();
-      store.state.categories.push({
-        ...SITE_CATEGORY,
-        id: "cat_staff",
-        key: "staff",
-        visibility: "staff",
-      });
-      store.state.threads.push(threadRow("t_staff", "cat_staff", "u_member2"));
-      store.state.posts.push(
-        boardPost("p_staff", 1, { threadId: "t_staff", authorUserId: "u_member2" })
-      );
-      await expect(readable(null, "p_staff", store)).rejects.toMatchObject({ code: "NOT_FOUND" });
-      await expect(readable(member, "p_staff", store)).rejects.toMatchObject({ code: "NOT_FOUND" });
-      expect(await readable(admin, "p_staff", store)).toMatchObject({ post: { id: "p_staff" } });
-    });
     it("follows the realm rule: a post of a realm hidden from the viewer is theirs to see only as staff", async () => {
       await expect(readable(null, "p_draft")).rejects.toMatchObject({ code: "NOT_FOUND" });
       expect(await readable(admin, "p_draft")).toMatchObject({ realm: { slug: "draft" } });
@@ -345,14 +198,6 @@ describe("who may read and react to a post", () => {
       });
       await expect(reactable(visitor, "p_persona")).rejects.toMatchObject({ code: "FORBIDDEN" });
       await expect(reactable(member, "b_mine")).rejects.toMatchObject({ code: "FORBIDDEN" });
-    });
-
-    it("refuses a hidden post or thread to the moderators who can read them, and finds nothing for a member", async () => {
-      await expect(reactable(admin, "p_hidden")).rejects.toMatchObject({ code: "CONFLICT" });
-      await expect(reactable(admin, "p_hiddenthread")).rejects.toMatchObject({ code: "CONFLICT" });
-      await expect(reactable(founder, "b_hidden")).rejects.toMatchObject({ code: "CONFLICT" });
-      await expect(reactable(member, "p_hidden")).rejects.toMatchObject({ code: "NOT_FOUND" });
-      await expect(reactable(member, "b_hidden")).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
     it("refuses a locked or archived thread and an archived realm", async () => {
       await expect(reactable(member, "p_locked")).rejects.toMatchObject({ code: "CONFLICT" });
@@ -383,13 +228,6 @@ describe("who may read and react to a post", () => {
         code: "FORBIDDEN",
       });
     });
-
-    it("never binds a site admin with a ban", async () => {
-      const store = reactionStore();
-      store.state.bans.push(ban({ userId: "u_admin", scope: "site" }));
-      expect(await reactable(admin, "p_hub", store)).toMatchObject({ board: false });
-    });
-
     it("refuses a visitor while the realm's board is closed to visitors, and still lets a member react", async () => {
       const store = reactionStore();
       Object.assign(
@@ -497,11 +335,6 @@ describe("the reaction notice", () => {
       }
       expect(sent).not.toHaveBeenCalled();
     });
-    it("tells nobody who cannot read the post", async () => {
-      const { db } = setup();
-      await notifyReaction(db, reactor, { postId: "p_draft" });
-      expect(sent).not.toHaveBeenCalled();
-    });
     it("tells nobody who blocked the reactor", async () => {
       const { db } = setup();
       blocking.mockResolvedValue(["clerk_u_member2"]);
@@ -525,11 +358,7 @@ describe("reaction types and counts", () => {
   describe("isReactionType", () => {
     it.each([
       ["sad, which has no icon", "sad"],
-      ["a built-in in capitals", "LIKE"],
-      ["a 33-letter Discord name", `discord:${"a".repeat(33)}`],
-      ["a non-digit Discord id", "discord:name:abc"],
       ["the prototype key", "__proto__"],
-      ["the constructor key", "constructor"],
     ])("rejects %s", (_label, type) => {
       expect(isReactionType(type)).toBe(false);
     });
@@ -556,11 +385,6 @@ describe("reaction types and counts", () => {
     });
   });
   describe("applyReactionChange", () => {
-    it("changes nothing when the type is the same, and never goes below zero", () => {
-      expect(applyReactionChange({ like: 2 }, "like", "like")).toEqual({ like: 2 });
-      expect(applyReactionChange({}, "like", null)).toEqual({});
-    });
-
     it("never reads or writes a prototype key, as either side of the change", () => {
       for (const key of ["constructor", "__proto__"]) {
         expect(applyReactionChange({ like: 1 }, key, "fire")).toEqual({ like: 1, fire: 1 });

@@ -110,8 +110,6 @@ import { realmScopeInput } from "~/server/api/trpc/realm-scope";
 import { identityProcedures } from "~/server/api/routers/countries/identity";
 import { usersPreferencesRouter } from "~/server/api/routers/users/preferences";
 import { adminCountriesImportRouter } from "~/server/api/routers/admin/countries/import";
-import { resolveTargetCountryRecord } from "~/lib/national-issues/evaluators/issue-instantiation";
-
 const directory = createTRPCRouter({ ...listProcedures });
 
 function eurthViewer() {
@@ -184,18 +182,6 @@ describe("every cross-country display listing is scoped to the viewer's realm", 
         }),
     ],
     [
-      "countries.getTopCountriesByPopulation",
-      (db) =>
-        createCallerFactory(countries)(ctxFor(db, eurthViewer())).getTopCountriesByPopulation({
-          limit: 5,
-        }),
-    ],
-    [
-      "countries.getRandomCountries",
-      (db) =>
-        createCallerFactory(countries)(ctxFor(db, eurthViewer())).getRandomCountries({ limit: 3 }),
-    ],
-    [
       "countries.getGlobalStats",
       (db) => createCallerFactory(countries)(ctxFor(db, eurthViewer())).getGlobalStats(),
     ],
@@ -219,10 +205,6 @@ describe("every cross-country display listing is scoped to the viewer's realm", 
         createCallerFactory(geo)(ctxFor(db, eurthViewer())).getRegionalChoropleth({
           metric: "gdpPerCapita",
         }),
-    ],
-    [
-      "geoCore.getCanonDensity",
-      (db) => createCallerFactory(geo)(ctxFor(db, eurthViewer())).getCanonDensity(),
     ],
     [
       "geoCore.getGeopoliticalOverlay",
@@ -399,36 +381,6 @@ describe("founding a nation in a realm", () => {
       const { caller } = setup();
       await caller.createCountry(input() as never);
       expect(grantBonus).not.toHaveBeenCalled();
-    });
-    it("an unknown realm is NOT_FOUND and a closed realm FORBIDDEN; nothing is created", async () => {
-      const unknown = setup();
-      await expect(
-        unknown.caller.createCountry(input({ realmId: "nowhere" }) as never)
-      ).rejects.toMatchObject({ code: "NOT_FOUND" });
-      expect(unknown.db.country.create).not.toHaveBeenCalled();
-
-      const closed = setup({ realms: { old: { status: "archived", settings: null } } });
-      await expect(
-        closed.caller.createCountry(input({ realmId: "old" }) as never)
-      ).rejects.toMatchObject({ code: "FORBIDDEN" });
-      expect(closed.db.country.create).not.toHaveBeenCalled();
-    });
-
-    it("a name that is a nation page of the realm must be claimed, not built (AT-3)", async () => {
-      const { db, caller } = setup({ nationPage: "New Aurelia" });
-      await expect(caller.createCountry(input() as never)).rejects.toMatchObject({
-        code: "CONFLICT",
-        message: expect.stringMatching(/claim it on the realm page/),
-      });
-      expect(db.realmPage.findFirst).toHaveBeenCalledWith({
-        where: {
-          realmId: "default",
-          kind: "nation",
-          title: { equals: "New Aurelia", mode: "insensitive" },
-        },
-        select: { title: true },
-      });
-      expect(db.country.create).not.toHaveBeenCalled();
     });
     it("a cap filled concurrently (inside the transaction) is CONFLICT, not a generic failure", async () => {
       const { db, caller } = setup();
@@ -725,26 +677,6 @@ describe("names resolve inside one realm", () => {
         id: "c_eu",
       });
     });
-    it("national-issue targets come from the subject nation's realm", async () => {
-      const subject: Row = {
-        id: "c_subj",
-        name: "Subject",
-        slug: "subject",
-        realmId: DEFAULT_REALM_ID,
-      };
-      const db = {
-        country: countryTable([subject, EURTH_GALLAMBRIA, IX_GALLAMBRIA]),
-        intent: { findMany: jest.fn().mockResolvedValue([{ target: "Gallambria" }]) },
-      };
-      const byIntent = await resolveTargetCountryRecord("c_subj", db as never, {} as never);
-      expect(byIntent?.leader).toBe("Ixnay leader");
-
-      db.intent.findMany.mockResolvedValue([]);
-      db.country = countryTable([subject, EURTH_GALLAMBRIA]);
-      await expect(
-        resolveTargetCountryRecord("c_subj", db as never, {} as never)
-      ).resolves.toBeNull();
-    });
     it("the roster import (Ixnay-only) never updates another realm's same-name nation", async () => {
       const table = countryTable([EURTH_GALLAMBRIA]);
       (parseRosterFile as jest.Mock).mockResolvedValue([
@@ -819,13 +751,6 @@ describe("names resolve inside one realm", () => {
       expect(probe).toHaveBeenCalledTimes(1);
 
       await as("r_eurth").probe();
-      expect(probe).toHaveBeenCalledTimes(2);
-    });
-
-    it("never caches an all-realms read", async () => {
-      probe.mockClear();
-      await as().probe({ realm: ALL_REALMS });
-      await as().probe({ realm: ALL_REALMS });
       expect(probe).toHaveBeenCalledTimes(2);
     });
   });

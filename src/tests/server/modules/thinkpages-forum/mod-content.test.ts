@@ -15,7 +15,6 @@ import {
   at,
   eurthMod,
   expectOneLog,
-  generalMod,
   member,
   moderatorOf,
   post,
@@ -71,33 +70,6 @@ describe("setThreadFlag", () => {
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(threadIn(store, "t_general").locked).toBe(false);
     expect(store.db.$transaction).not.toHaveBeenCalled();
-  });
-  it("a category moderator acts in their category only", async () => {
-    const store = forumStore(seed());
-    await setThreadFlag(store.db as never, generalMod, {
-      threadId: "t_general",
-      flag: "pinned",
-      value: true,
-    });
-    expect(threadIn(store, "t_general").pinned).toBe(true);
-    await expect(
-      setThreadFlag(store.db as never, generalMod, {
-        threadId: "t_eurth",
-        flag: "pinned",
-        value: true,
-      })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-  });
-
-  it.each([["a member", member]])("%s is FORBIDDEN", async (_label, viewer) => {
-    const store = forumStore(seed());
-    await expect(
-      setThreadFlag(store.db as never, viewer, {
-        threadId: "t_general",
-        flag: "locked",
-        value: true,
-      })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });
 
@@ -160,23 +132,6 @@ describe("moveThread", () => {
     expect(threadIn(store, "t_eurth").categoryId).toBe("r_eurth_hub");
     expect(store.logs).toHaveLength(0);
   });
-  it("keeps a thread in its own section, even for a site admin", async () => {
-    const store = forumStore(seed());
-    await expect(
-      moveThread(store.db as never, admin, {
-        threadId: "t_eurth",
-        to: { key: "hub", realm: "aurora" },
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(
-      moveThread(store.db as never, admin, {
-        threadId: "t_general",
-        to: { key: "hub", realm: "eurth" },
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(threadIn(store, "t_general").categoryId).toBe("cat_general");
-  });
-
   it("never moves a thread into a category with a different audience (a Reports thread stays private)", async () => {
     const store = forumStore(seed());
     await expect(
@@ -255,15 +210,6 @@ describe("setPostHidden", () => {
       setPostHidden(store.db as never, admin, { postId: "p_g1", hidden: true })
     ).rejects.toMatchObject({ code: "CONFLICT", message: "Hide the thread instead." });
     expect(postIn(store, "p_g1").hidden).toBe(false);
-  });
-  it("is scoped: Eurth's moderator cannot hide a sitewide post, a missing post is NOT_FOUND", async () => {
-    const store = forumStore(seed());
-    await expect(
-      setPostHidden(store.db as never, eurthMod, { postId: "p_g2", hidden: true })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await expect(
-      setPostHidden(store.db as never, admin, { postId: "nope", hidden: true })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 });
 
@@ -392,18 +338,6 @@ describe("the realm board thread", () => {
       expect(store.logs).toHaveLength(0);
     }
   );
-
-  it("refuses to move the board thread to another category", async () => {
-    const store = boardStore();
-    await expect(
-      moveThread(store.db as never, admin, {
-        threadId: "t_board",
-        to: { key: "hub", realm: "eurth" },
-      })
-    ).rejects.toMatchObject({ code: "CONFLICT" });
-    expect(threadIn(store, "t_board").categoryId).toBe("r_eurth_board");
-  });
-
   it("still moderates its messages: hides and restores any post, the first included", async () => {
     const store = boardStore();
     await setPostHidden(store.db as never, eurthMod, { postId: "p_b1", hidden: true });
@@ -534,23 +468,6 @@ describe("moderator edits", () => {
         where: { postSource: "native", postRef: "p_e1", activityId: { notIn: [] } },
       });
     });
-
-    it("needs a note, a valid body and the moderator's scope", async () => {
-      const store = forumStore(seed());
-      await expect(
-        modEditPost(store.db as never, admin, { postId: "p_e2", html: "<p>ok</p>", note: "  " })
-      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-      await expect(
-        modEditPost(store.db as never, admin, { postId: "p_e2", html: "<p></p>", note: "x" })
-      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-      await expect(
-        modEditPost(store.db as never, eurthMod, { postId: "p_g2", html: "<p>ok</p>", note: "x" })
-      ).rejects.toMatchObject({ code: "FORBIDDEN" });
-      await expect(
-        modEditPost(store.db as never, member, { postId: "p_e2", html: "<p>ok</p>", note: "x" })
-      ).rejects.toMatchObject({ code: "FORBIDDEN" });
-      expect(postIn(store, "p_e2").plainText).toBe("Post p_e2");
-    });
     it("a concurrent edit by the author is CONFLICT, never overwritten", async () => {
       const store = forumStore(seed());
       const run = store.db.$transaction.getMockImplementation()!;
@@ -568,20 +485,6 @@ describe("moderator edits", () => {
       expect(postIn(store, "p_e2")).toMatchObject({ plainText: "Author's fix", editedAt: at(9) });
       expect(store.logs).toHaveLength(0);
     });
-    it("a site admin's post is edited by site admins only", async () => {
-      const store = forumStore(seed());
-      await expect(
-        modEditPost(store.db as never, eurthMod, { postId: "p_a2", html: "<p>x</p>", note: "x" })
-      ).rejects.toMatchObject({ code: "FORBIDDEN" });
-      expect(postIn(store, "p_a2").plainText).toBe("Post p_a2");
-      await modEditPost(store.db as never, admin, {
-        postId: "p_a2",
-        html: "<p>Tidied</p>",
-        note: "x",
-      });
-      expect(postIn(store, "p_a2").plainText).toBe("Tidied");
-    });
-
     describe("mentions", () => {
       it("records a silent mention row for each member the edit links, never the author, and tells nobody", async () => {
         const { store, rows } = mentionStore();

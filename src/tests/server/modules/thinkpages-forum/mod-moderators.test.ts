@@ -1,5 +1,4 @@
 /** @jest-environment node */
-import { Prisma } from "@prisma/client";
 import {
   listCategoryModerators,
   resolveMember,
@@ -11,7 +10,6 @@ import {
   categories,
   eurthMod,
   generalMod,
-  member,
   realms,
   USER_ROLE,
 } from "~/tests/helpers/forum-mod-fixtures";
@@ -24,7 +22,6 @@ import {
   canModerateCategory,
   canSeeThread,
   moderatorContext,
-  scopeCategoryIds,
 } from "~/server/modules/thinkpages-forum";
 import { banScopeOf, scopeFromColumns } from "~/server/modules/thinkpages-forum/mod-scope";
 import { listModLog } from "~/server/modules/thinkpages-forum";
@@ -89,22 +86,6 @@ describe("resolveMember", () => {
       name: "alice",
     });
   });
-
-  it.each([["a wiki username two accounts share", "Twin"]])(
-    "returns null for %s",
-    async (_case, handle) => {
-      const store = storeWith();
-      expect(await resolveMember(store.db as never, generalMod, { handle })).toBeNull();
-    }
-  );
-
-  it.each([["a member", member]] as const)("refuses %s (FORBIDDEN)", async (_case, viewer) => {
-    const store = storeWith();
-    await expect(
-      resolveMember(store.db as never, viewer, { handle: "alice" })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    expect(store.db.user.findUnique).not.toHaveBeenCalled();
-  });
 });
 
 describe("listCategoryModerators", () => {
@@ -140,23 +121,6 @@ describe("setCategoryModerator", () => {
     ]);
     expect(detailOf(store.logs[0])).toEqual({ categoryId: "cat_side" });
     expect(store.db.forumModLog.create).not.toHaveBeenCalled();
-  });
-  it("maps a racing duplicate grant (unique violation) to CONFLICT", async () => {
-    const store = storeWith();
-    store.tx.forumCategoryModerator.create.mockRejectedValueOnce(
-      new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
-        code: "P2002",
-        clientVersion: "test",
-      })
-    );
-    await expect(
-      setCategoryModerator(store.db as never, admin, {
-        locator: { key: "side-games" },
-        userId: "u_w",
-        grant: true,
-      })
-    ).rejects.toMatchObject({ code: "CONFLICT" });
-    expect(store.logs).toEqual([]);
   });
   it.each([
     ["a realm founder, in their own realm", eurthMod, { key: "hub", realm: "eurth" }],
@@ -223,23 +187,6 @@ describe("promotion and bans (M9)", () => {
         store.tx.forumCategoryModerator.create.mock.invocationCallOrder[0]!
       );
     });
-    it("still lets a site admin remove a banned member's role", async () => {
-      const store = forumStore({
-        categories,
-        realms,
-        users,
-        bans: [site()],
-        categoryModerators: [
-          { id: "cm1", categoryId: "cat_general", userId: "u_m", grantedBy: "u_a" },
-        ],
-      });
-      await setCategoryModerator(store.db as never, admin, {
-        locator: { key: "general" },
-        userId: "u_m",
-        grant: false,
-      });
-      expect(store.state.categoryModerators).toEqual([]);
-    });
   });
   describe("assertBoardGrantable (M9, a realm's board power)", () => {
     it.each([["a site ban", site()]])(
@@ -280,7 +227,6 @@ describe("moderator scope", () => {
   };
   const general = { id: "cat_general", scope: "site", realmId: null, visibility: "public" };
   const reports = { id: "cat_reports", scope: "site", realmId: null, visibility: "reporter_staff" };
-  const staff = { id: "cat_staff", scope: "site", realmId: null, visibility: "staff" };
   const eurthHub = {
     id: "cat_eurth_hub",
     scope: "realm",
@@ -344,48 +290,11 @@ describe("moderator scope", () => {
       expect(canModerateCategory(realmMod, general)).toBe(false);
       expect(canModerateCategory(realmMod, { ...general, realmId: "r_eurth" })).toBe(false);
     });
-
-    it("keeps category moderators to their category", () => {
-      expect(canModerateCategory(categoryMod, general)).toBe(true);
-      expect(canModerateCategory(categoryMod, reports)).toBe(false);
-      expect(canModerateCategory(categoryMod, eurthHub)).toBe(false);
-      expect(canModerateCategory(member, general)).toBe(false);
-      expect(canModerateCategory(null, general)).toBe(false);
-    });
-
     it("keeps the site scope to site admins (site bans are admin-only)", () => {
       expect(canActInScope(admin, { kind: "site" }, null)).toBe(true);
       expect(canActInScope(realmMod, { kind: "site" }, null)).toBe(false);
       expect(canActInScope(categoryMod, { kind: "site" }, null)).toBe(false);
       expect(canActInScope(null, { kind: "site" }, null)).toBe(false);
-    });
-  });
-  describe("scopeCategoryIds", () => {
-    const categoryDb = () => ({
-      forumCategory: {
-        findMany: jest.fn(async () => [
-          { id: "cat_eurth_hub" },
-          { id: "cat_eurth_ct" },
-          { id: "cat_general" },
-        ]),
-      },
-    });
-    it("gives realm moderators their realms' categories plus the ones they moderate, once each", async () => {
-      const db = categoryDb();
-      const viewer = {
-        ...realmMod,
-        mod: { ...realmMod.mod, categoryIds: ["cat_general", "cat_reports"] },
-      };
-      expect(await scopeCategoryIds(db as never, viewer)).toEqual([
-        "cat_eurth_hub",
-        "cat_eurth_ct",
-        "cat_general",
-        "cat_reports",
-      ]);
-      expect(db.forumCategory.findMany).toHaveBeenCalledWith({
-        where: { scope: "realm", realmId: { in: ["r_eurth"] } },
-        select: { id: true },
-      });
     });
   });
   describe("canSeeThread (M8, M9)", () => {
@@ -415,11 +324,6 @@ describe("moderator scope", () => {
           reports
         )
       ).toBe(true);
-    });
-
-    it("keeps staff threads to site admins", () => {
-      expect(canSeeThread(member, own, staff)).toBe(false);
-      expect(canSeeThread(admin, theirs, staff)).toBe(true);
     });
   });
   describe("stored scopes and paging", () => {

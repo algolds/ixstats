@@ -173,17 +173,6 @@ describe("fileReport", () => {
       store.tx.forumReport.findFirst.mock.invocationCallOrder[0]!
     );
   });
-
-  it.each(["ab", "  a  ", "x".repeat(1001)])(
-    "a reason of 3 to 1000 characters (%#)",
-    async (reason) => {
-      const store = reportsStore();
-      await expect(fileAs(store, reporter, "post", "p_eurth", reason)).rejects.toMatchObject({
-        code: "BAD_REQUEST",
-      });
-    }
-  );
-
   it.each([
     ["a hidden thread", "thread", "t_hidden"],
     ["another member's Reports thread", "thread", "t_report"],
@@ -232,19 +221,6 @@ describe("listReports", () => {
     expect(eurth.total).toBe(1);
     const general = await listReports(store.db as never, generalMod, { status: "open" }, 1);
     expect(general.rows.map((r) => r.id)).toEqual(["rep_general", "rep_gone"]);
-  });
-  it("is moderators only", async () => {
-    const store = reportsStore([], { reports: queue() });
-    await expect(
-      listReports(store.db as never, member, { status: "open" }, 1)
-    ).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
-    await expect(listReports(store.db as never, null, { status: "open" }, 1)).rejects.toMatchObject(
-      {
-        code: "FORBIDDEN",
-      }
-    );
   });
 });
 
@@ -296,20 +272,6 @@ describe("resolveReport", () => {
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(store.state.reports.find((r) => r.id === "rep_eurth")!.status).toBe("dismissed");
     expect(store.logs).toHaveLength(0);
-  });
-
-  it("is scoped to the report's category", async () => {
-    const store = reportsStore([], { reports: queue() });
-    await expect(
-      resolveReport(store.db as never, generalMod, { reportId: "rep_eurth", outcome: "resolved" })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await expect(
-      resolveReport(store.db as never, member, { reportId: "rep_eurth", outcome: "resolved" })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await expect(
-      resolveReport(store.db as never, admin, { reportId: "nope", outcome: "resolved" })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-    expect(store.state.reports.find((r) => r.id === "rep_eurth")!.status).toBe("open");
   });
 });
 

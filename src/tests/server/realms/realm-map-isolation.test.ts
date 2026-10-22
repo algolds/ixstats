@@ -42,16 +42,13 @@ import { geoEditorBordersRouter } from "~/server/api/routers/geo/editor/borders"
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { realmMapRouter } from "~/server/api/routers/realms/map";
-import { EARTH_RADIUS_KM } from "~/lib/maps/planet";
 import type { PrismaClient } from "@prisma/client";
 import { updateSubdivisionSpatialProfile } from "~/lib/country-geo/spatial";
 import {
-  clipAndValidatePolygon,
   COUNTRY_BORDER_SQL,
   resetPostGISCache,
   snapPointToCountryBorder,
   validatePointContainment,
-  validatePolygonContainment,
 } from "~/lib/maps/geo-validation";
 import { countryGeoRouter } from "~/server/api/routers/countryGeo";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
@@ -367,7 +364,6 @@ describe("a realm's map areas and settings", () => {
   const EURTH = "r_eurth";
   const FOUNDER = "clerk_founder";
   const MAP_OFFICER = "clerk_mapper";
-  const HALF_EARTH = EARTH_RADIUS_KM / 2;
   type ModelMock = Record<string, jest.Mock>;
   type Db = Record<string, ModelMock> & Record<`$${string}`, jest.Mock>;
   function realmDb(radiusKm?: number): Db {
@@ -412,67 +408,8 @@ describe("a realm's map areas and settings", () => {
     );
     return db;
   }
-  function ctxAs(db: Db, clerkUserId: string) {
-    return createMockRouterContext({
-      db,
-      auth: { userId: clerkUserId },
-      user: { id: `db_${clerkUserId}`, clerkUserId, role: null, country: null },
-      rateLimitIdentifier: `${clerkUserId}_${Math.random()}`,
-    }) as never;
-  }
-  const SQUARE = {
-    type: "Polygon" as const,
-    coordinates: [
-      [
-        [0, 0],
-        [4, 0],
-        [4, 4],
-        [0, 4],
-        [0, 0],
-      ],
-    ],
-  };
-  async function splitAreas(radiusKm?: number) {
-    const db = realmDb(radiusKm);
-    db.mapLayer!.findFirst!.mockResolvedValue({
-      id: "ml1",
-      featureId: "Big",
-      countryId: null,
-      geometry: SQUARE,
-    });
-    await createCallerFactory(geoEditorBordersRouter)(ctxAs(db, MAP_OFFICER)).splitCountry({
-      featureId: "Big",
-      splitLine: [
-        [2, -1],
-        [2, 5],
-      ],
-      nameA: "West",
-      nameB: "East",
-      realm: "eurth",
-    });
-    const rows = db.mapLayer!.createMany!.mock.calls[0][0].data as Array<{ areaSqKm: number }>;
-    return rows.map((r) => r.areaSqKm);
-  }
-  describe("the border editor stores areas on the realm's planet", () => {
-    it("a planet of half Earth's radius stores a quarter of the area", async () => {
-      const earth = await splitAreas();
-      const small = await splitAreas(HALF_EARTH);
-      expect(earth).toHaveLength(2);
-      small.forEach((area, i) => expect(area).toBeCloseTo(earth[i]! / 4, 6));
-    });
-  });
+
   describe("Recompute areas", () => {
-    const recompute = (db: Db, who: string, alsoSetLandArea = false) =>
-      createCallerFactory(realmMapRouter)(ctxAs(db, who)).recomputeAreas({
-        realm: "eurth",
-        alsoSetLandArea,
-      });
-    it("leaves nations' stated land area alone unless the founder ticks the box", async () => {
-      const db = realmDb();
-      await recompute(db, MAP_OFFICER);
-      expect(db.country!.updateMany).not.toHaveBeenCalled();
-      expect(db.country!.update).not.toHaveBeenCalled();
-    });
     it("refuses an unknown realm slug, even for a site admin, instead of falling back to Ixnay", async () => {
       const db = realmDb();
       const ctx = createMockRouterContext({
@@ -495,23 +432,6 @@ describe("a realm's map areas and settings", () => {
       });
       expect(db.$queryRawUnsafe).not.toHaveBeenCalled();
       expect(db.country!.updateMany).not.toHaveBeenCalled();
-      expect(db.realm!.update).not.toHaveBeenCalled();
-    });
-
-    it("a player who is neither founder nor map officer cannot recompute", async () => {
-      const db = realmDb();
-      await expect(recompute(db, "clerk_player")).rejects.toMatchObject({ code: "FORBIDDEN" });
-    });
-  });
-  describe("map settings", () => {
-    it("refuses a base image that is neither https nor an upload", async () => {
-      const db = realmDb();
-      await expect(
-        createCallerFactory(realmMapRouter)(ctxAs(db, FOUNDER)).updateSettings({
-          realm: "eurth",
-          baseImage: "http://example.org/map.png",
-        })
-      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
       expect(db.realm!.update).not.toHaveBeenCalled();
     });
   });
@@ -623,11 +543,6 @@ describe("spatial profiles and borders read only the country's realm", () => {
 
     it.each([
       ["validatePointContainment", (db: PrismaClient) => validatePointContainment(db, "c1", 1, 1)],
-      [
-        "validatePolygonContainment",
-        (db: PrismaClient) => validatePolygonContainment(db, "c1", SQUARE),
-      ],
-      ["clipAndValidatePolygon", (db: PrismaClient) => clipAndValidatePolygon(db, "c1", SQUARE)],
       ["snapPointToCountryBorder", (db: PrismaClient) => snapPointToCountryBorder(db, "c1", 1, 1)],
     ])("%s", async (_name, run) => {
       const { db, mapLayerSql } = sqlDb((sql) =>

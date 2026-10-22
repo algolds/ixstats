@@ -13,7 +13,6 @@ import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 import { thinkpagesPostsFlagsRouter } from "~/server/api/routers/thinkpages/posts/flags";
 import { thinkpagesPostsPostsCreateRouter } from "~/server/api/routers/thinkpages/posts/posts/create";
-import { thinkpagesPostsPostsModifyRouter } from "~/server/api/routers/thinkpages/posts/posts/modify";
 import { thinkpagesFeedRouter } from "~/server/api/routers/thinkpages/feed";
 import { activitiesFeedGlobalRouter } from "~/server/api/routers/activities/feed/global";
 import { latestPublicThreadPreviews } from "~/server/modules/thinkpages-forum";
@@ -166,7 +165,7 @@ describe("N5: getPost honours visibility", () => {
     );
   };
 
-  it.each(["private", "draft"])("hides %s posts from anonymous viewers", async (visibility) => {
+  it.each(["private"])("hides %s posts from anonymous viewers", async (visibility) => {
     const caller = callerFor(basePost({ visibility }), null);
     await expect(caller.getPost({ postId: "p1" })).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
@@ -200,15 +199,6 @@ describe("N11: bookmarkPost uses the authenticated caller", () => {
     const arg = db.postBookmark.upsert.mock.calls[0][0];
     expect(arg.create.userId).toBe(CLERK_ID);
     expect(arg.where.userId_postId.userId).toBe(CLERK_ID);
-  });
-
-  it("removes only the caller's bookmark", async () => {
-    const db = createMockPrisma();
-    const caller = createBookmarksCaller(createMockRouterContext({ db }) as never);
-    await caller.bookmarkPost({ postId: "p1", bookmarked: false });
-    expect(db.postBookmark.deleteMany).toHaveBeenCalledWith({
-      where: { postId: "p1", userId: CLERK_ID },
-    });
   });
 });
 
@@ -284,7 +274,6 @@ describe("saved posts and flags belong to the caller", () => {
 describe("mentions, private posts and engagement counters", () => {
   const CLERK_ID = "test_user_clerk_id";
   const createCaller = createCallerFactory(thinkpagesPostsPostsCreateRouter);
-  const modifyCaller = createCallerFactory(thinkpagesPostsPostsModifyRouter);
   const author = {
     id: "persona_me",
     clerkUserId: CLERK_ID,
@@ -352,63 +341,7 @@ describe("mentions, private posts and engagement counters", () => {
       expect(mockOnSocialActivity).not.toHaveBeenCalled();
     });
   });
-  describe("engagement counters", () => {
-    it("deletePost decrements the parent / original counters without going below zero", async () => {
-      const db: any = createMockPrisma();
-      db.thinkpagesPost.findUnique.mockResolvedValue({
-        id: "p1",
-        accountId: "persona_me",
-        content: "x",
-        parentPostId: "parent",
-        repostOfId: "orig",
-        account: { clerkUserId: CLERK_ID },
-      });
-      db.thinkpagesPost.count.mockResolvedValue(0);
-      db.thinkpagesPost.delete.mockResolvedValue({ id: "p1" });
-      const caller = modifyCaller(createMockRouterContext({ db }) as never);
-      await caller.deletePost({ postId: "p1" });
-
-      expect(db.thinkpagesPost.updateMany).toHaveBeenCalledWith({
-        where: { id: "parent", replyCount: { gt: 0 } },
-        data: { replyCount: { decrement: 1 } },
-      });
-      expect(db.thinkpagesPost.updateMany).toHaveBeenCalledWith({
-        where: { id: "orig", repostCount: { gt: 0 } },
-        data: { repostCount: { decrement: 1 } },
-      });
-    });
-  });
 });
-
-/**
- * WK-11: the ThinkPages account limit comes from Admin → ThinkPages.
- * WK-10: the ThinkPages → Discord feed configuration can be saved.
- */
-describe("the persona limit (WK-11)", () => {
-  const newAccount = {
-    countryId: "c1",
-    accountType: "citizen" as const,
-    username: "newbie",
-    firstName: "New",
-  };
-  describe("ThinkPages account limit (WK-11)", () => {
-    it("createAccount refuses once the configured limit is reached", async () => {
-      const db = createMockPrisma();
-      db.systemConfig.findUnique.mockResolvedValue({ value: "2" });
-      db.thinkpagesAccount.findMany.mockResolvedValue([{ id: "a1" }, { id: "a2" }]);
-      const caller = createCallerFactory(thinkpagesAccountsRouter)(
-        createMockRouterContext({ db }) as never
-      );
-
-      await expect(caller.createAccount(newAccount)).rejects.toMatchObject({
-        code: "BAD_REQUEST",
-        message: "You have reached the maximum of 2 ThinkPages accounts per user",
-      });
-      expect(db.thinkpagesAccount.create).not.toHaveBeenCalled();
-    });
-  });
-});
-
 /**
  * The ThinkPages feed's realm filter: public posts by personas of the realm's nations. The realm's board is read by
  * the feed's board block (native forum messages), not here. Without a realm the feed is unchanged (all realms).

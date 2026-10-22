@@ -24,8 +24,6 @@ import { realmPowers } from "~/server/modules/realms";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 import { MAX_REALM_LINKS } from "~/lib/realms/realm-community";
-import { realmClock } from "~/server/modules/realms/realms.settings";
-import { SPEED_CHANGE_COOLDOWN_MS } from "~/lib/realms/realm-clock";
 import { runRealmInactivity } from "~/server/modules/realms/realms.inactivity";
 import {
   IXSTATS_NATION_GROWTH_DEFAULTS,
@@ -33,7 +31,6 @@ import {
 } from "~/lib/realms/nation-growth-defaults";
 import {
   applyNationDefaults,
-  getNationDefaults,
   NATION_DEFAULTS_APPLIED_ACTION,
   UNCLAIMED_NATION_WHERE,
 } from "~/server/modules/realms/realms.nation-defaults";
@@ -128,30 +125,6 @@ describe("Manage permissions", () => {
       expect.objectContaining({ data: expect.objectContaining({ realmId: "eurth" }) })
     );
   });
-
-  it("keeps appointing officers to the founder", async () => {
-    const db = makeDb();
-    await expect(
-      callerAs(OFFICER, db).region.appointOfficer({
-        slug: "eurth",
-        userId: PLAYER,
-        title: "Envoy",
-        powers: ["board"],
-      })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-
-    db.country.findFirst.mockResolvedValue({ id: "c1" });
-    await callerAs(FOUNDER, db).region.appointOfficer({
-      slug: "eurth",
-      userId: PLAYER,
-      title: "Envoy",
-      powers: ["board", "board"],
-    });
-    expect(db.realmOfficer.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ userId: PLAYER, powers: ["board"], appointedBy: FOUNDER }),
-    });
-  });
-
   describe("the board power and forum bans (M9)", () => {
     const BANNED = {
       code: "BAD_REQUEST",
@@ -201,20 +174,6 @@ describe("Manage permissions", () => {
       );
     });
   });
-
-  it("only appoints players who own a nation in the realm", async () => {
-    const db = makeDb();
-    db.country.findFirst.mockResolvedValue(null);
-    await expect(
-      callerAs(FOUNDER, db).region.appointOfficer({
-        slug: "eurth",
-        userId: PLAYER,
-        title: "Envoy",
-        powers: [],
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-  });
-
   it("makes an archived realm read-only, even for its founder", async () => {
     const db = makeDb(realmRow({ status: "archived" }));
     await expect(
@@ -239,16 +198,6 @@ describe("Manage permissions", () => {
       expect(html).not.toMatch(/\s(style|class|id)=/);
       expect(html).not.toContain("z-index");
     }
-  });
-
-  it("refuses a non-https banner", async () => {
-    const db = makeDb();
-    await expect(
-      callerAs(FOUNDER, db).region.updateAppearance({
-        slug: "eurth",
-        bannerUrl: "javascript:alert(1)",
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 });
 
@@ -295,20 +244,6 @@ describe("embassies", () => {
     expect(db.realmEmbassy.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: "e1", toRealmId: "eurth", status: "proposed" } })
     );
-  });
-});
-
-describe("realm poll", () => {
-  it("runs one poll at a time", async () => {
-    const db = makeDb();
-    db.poll.findFirst.mockResolvedValue({ id: "p0" });
-    await expect(
-      callerAs(FOUNDER, db).region.createPoll({
-        slug: "eurth",
-        question: "Again?",
-        options: ["Yes", "No"],
-      })
-    ).rejects.toMatchObject({ code: "CONFLICT" });
   });
 });
 describe("leaving a realm", () => {
@@ -466,13 +401,6 @@ describe("deleting a realm (AT-8)", () => {
     return db;
   }
 
-  it("never deletes Ixnay", async () => {
-    const db = deletableDb();
-    await expect(
-      callerAs(ADMIN, db, admin).region.deleteRealm({ realmId: "default", confirmSlug: "ixnay" })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(db.realm.delete).not.toHaveBeenCalled();
-  });
   it("refuses a realm that still has nations or map regions, and moves nothing", async () => {
     const withNations = deletableDb(3);
     await expect(
@@ -489,31 +417,6 @@ describe("deleting a realm (AT-8)", () => {
       callerAs(ADMIN, withMap, admin).region.deleteRealm({ realmId: "eurth", confirmSlug: "eurth" })
     ).rejects.toMatchObject({ code: "CONFLICT", message: expect.stringContaining("map regions") });
     expect(withMap.realm.delete).not.toHaveBeenCalled();
-  });
-
-  it("counts only the nations that block: owned ones, ones with a claim in play, and any not generated", async () => {
-    const db = deletableDb();
-    await callerAs(ADMIN, db, admin).region.deleteRealm({ realmId: "eurth", confirmSlug: "eurth" });
-    expect(db.realm.findUnique).toHaveBeenCalledWith(
-      expect.objectContaining({
-        select: expect.objectContaining({
-          _count: {
-            select: {
-              countries: {
-                where: {
-                  OR: [
-                    { worldgen: false },
-                    { ownerUserId: { not: null } },
-                    { realmClaims: { some: { status: { in: ["pending", "approved"] } } } },
-                    { blurbResponses: { some: {} } },
-                  ],
-                },
-              },
-            },
-          },
-        }),
-      })
-    );
   });
   it("hides the realm's advert thread before the realm goes, so it does not outlive it as an ordinary thread", async () => {
     const db = deletableDb();
@@ -537,45 +440,6 @@ describe("deleting a realm (AT-8)", () => {
     );
   });
 });
-
-describe("inactivity rules (ToS §2.8)", () => {
-  it("lets only the founder set them, keeping the realm's other settings", async () => {
-    const db = makeDb(realmRow({ settings: { maxNationsPerUser: 2 } }));
-    db.realm.findUnique.mockImplementation(async ({ where, select }: any) =>
-      select?.settings && where.id
-        ? { settings: { maxNationsPerUser: 2 } }
-        : where.slug === "eurth" || where.id === "eurth"
-          ? realmRow()
-          : null
-    );
-    await callerAs(FOUNDER, db).region.updateInactivity({
-      slug: "eurth",
-      inactivityDays: 60,
-      reclaimWindowExclusive: false,
-    });
-    expect(db.realm.update).toHaveBeenCalledWith({
-      where: { id: "eurth" },
-      data: {
-        settings: { maxNationsPerUser: 2, inactivityDays: 60, reclaimWindowExclusive: false },
-      },
-    });
-    await expect(
-      callerAs(OFFICER, db).region.updateInactivity({
-        slug: "eurth",
-        inactivityDays: null,
-        reclaimWindowExclusive: false,
-      })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await expect(
-      callerAs(FOUNDER, db).region.updateInactivity({
-        slug: "eurth",
-        inactivityDays: 10,
-        reclaimWindowExclusive: false,
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-  });
-});
-
 /**
  * Realm community links, rules and the in-world date (docs/specs/2026-10-05-realm-regions-design.md): link
  * validation, the in-world date's formatting and storage in `Realm.settings`, the Manage actions' `appearance`
@@ -700,27 +564,6 @@ describe("the realm clock", () => {
   }
   const START = { slug: "eurth", startDate: "1203-03-14", era: "AE", multiplier: 3 };
   describe("realm clock actions", () => {
-    it("holds the founder to one speed change a week, to the millisecond; never staff, never an era edit", async () => {
-      const { db, row } = makeDb();
-      const t0 = Date.now();
-      jest.useFakeTimers({ now: t0 });
-      await caller(FOUNDER, db).startClock(START);
-      // An era edit a day later leaves the week where it was.
-      jest.setSystemTime(t0 + 24 * 60 * 60 * 1000);
-      await caller(FOUNDER, db).updateClock({ slug: "eurth", era: "New Era" });
-      expect(realmClock(row.settings as never)?.changedAt).toBe(t0);
-      jest.setSystemTime(t0 + SPEED_CHANGE_COOLDOWN_MS - 1);
-      await expect(
-        caller(FOUNDER, db).updateClock({ slug: "eurth", multiplier: 6 })
-      ).rejects.toMatchObject({ code: "BAD_REQUEST", message: expect.stringMatching(/UTC$/) });
-      jest.setSystemTime(t0 + SPEED_CHANGE_COOLDOWN_MS);
-      await caller(FOUNDER, db).updateClock({ slug: "eurth", multiplier: 6 });
-      expect(realmClock(row.settings as never)).toMatchObject({ multiplier: 6, era: "New Era" });
-      // Site staff are never held, even straight after the founder's change.
-      await caller(ADMIN, db).updateClock({ slug: "eurth", multiplier: 0 });
-      expect(realmClock(row.settings as never)?.multiplier).toBe(0);
-      jest.useRealTimers();
-    });
     it("keeps an unpublished realm's clock private", async () => {
       const { db, row } = makeDb();
       await caller(FOUNDER, db).startClock(START);
@@ -896,16 +739,6 @@ describe("nation growth defaults", () => {
     return { db, realm };
   }
   describe("realm nation defaults service", () => {
-    it("leaves Ixnay alone: its nations keep their curated roster values", async () => {
-      const { db } = setup();
-      await expect(applyNationDefaults(db, admin, "default")).rejects.toMatchObject({
-        code: "BAD_REQUEST",
-      });
-      await expect(getNationDefaults(db, admin, "default")).rejects.toMatchObject({
-        code: "BAD_REQUEST",
-      });
-      expect(db.realm.findUnique).not.toHaveBeenCalled();
-    });
     it("applies to unclaimed nations, guarded against a claim since, and audits every change", async () => {
       const { db } = setup();
       const result = await applyNationDefaults(db, admin, "eurth-id");

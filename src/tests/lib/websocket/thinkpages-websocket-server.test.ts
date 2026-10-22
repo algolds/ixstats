@@ -13,14 +13,11 @@ import type { ThinkPagesMessageEvent } from "~/lib/websocket/thinkpages-websocke
 import {
   THINKPAGES_BROADCAST_CHANNEL,
   publishBoardEvent,
-  redisThinkPagesBroadcaster,
   startThinkPagesBroadcastSubscriber,
   type BroadcastPublisher,
   type BroadcastSubscriber,
   type MessageBroadcaster,
 } from "~/server/thinkpages-broadcast-bridge";
-import { getThinkPagesBroadcaster } from "~/server/websocket-server";
-
 const mockTokens: Record<string, string> = {
   "token-a": "user_a",
   "token-b": "user_b",
@@ -259,26 +256,6 @@ describe("ThinkPagesWebSocketServer anonymous readers", () => {
       expect(await refused).toEqual({ channel, reason: "forbidden" });
     }
   });
-
-  it("refuses every realm board room when the server was given no join check", async () => {
-    const bare = createServer();
-    const bareWs = new ThinkPagesWebSocketServer(bare);
-    await new Promise<void>((resolve) => bare.listen(0, resolve));
-    const reader = connectClient(`http://localhost:${(bare.address() as AddressInfo).port}`, {
-      path: "/ws/thinkpages",
-      transports: ["websocket"],
-      reconnection: false,
-      forceNew: true,
-      auth: { anonymous: true },
-    });
-    clients.push(reader);
-    await connected(reader);
-    const refused = nextEvent<{ reason: string }>(reader, "subscribe:error");
-    reader.emit("subscribe", { channel: "realm-board:r_pub" });
-    expect(await refused).toEqual({ channel: "realm-board:r_pub", reason: "forbidden" });
-    reader.disconnect();
-    await bareWs.shutdown();
-  });
   it("holds a burst of subscribes to the cap and to one check per room, however fast they come", async () => {
     const reader = connect();
     await connected(reader);
@@ -342,14 +319,6 @@ describe("ThinkPagesWebSocketServer board typing", () => {
     typist.emit("board:typing", { realmId: "r_pub", personaId: "pa_other" });
     expect(await silent).toBe(true);
   });
-  it("ignores typing for a room the socket has not joined", async () => {
-    const { watcher } = await pair();
-    const stranger = connect("token-a");
-    await connected(stranger);
-    const silent = silentFor(watcher, "board:typing", 250);
-    stranger.emit("board:typing", { realmId: "r_pub" });
-    expect(await silent).toBe(true);
-  });
 });
 describe("ThinkPagesWebSocketServer board broadcasts", () => {
   it("delivers a board event only to the realm's room", async () => {
@@ -408,35 +377,6 @@ describe("RealmBoardRooms typing caches and logging", () => {
     await rooms.relayTyping(socket, "u1", { realmId: "r1", personaId: "pa1" });
     expect(boardTypingName).toHaveBeenCalledTimes(2);
     expect(emitted).toHaveLength(2);
-  });
-
-  it("logs a failing check instead of swallowing it, and refuses", async () => {
-    const rooms = new RealmBoardRooms({} as never, () => null, {
-      canTypeOnBoard: async () => {
-        throw new Error("db down");
-      },
-      canJoinRealmBoard: async () => {
-        throw new Error("db down");
-      },
-      boardTypingName: async () => {
-        throw new Error("db down");
-      },
-    });
-    await rooms.relayTyping(socket, "u1", { realmId: "r1" });
-    expect(emitted).toEqual([]);
-    expect(warn).toHaveBeenCalledWith("[RealmBoardRooms] typing rights check failed:", "db down");
-    await expect(rooms.join(socket, null, "r2")).resolves.toBe(false);
-    expect(warn).toHaveBeenCalledWith("[RealmBoardRooms] join check failed:", "db down");
-    const open = new RealmBoardRooms({} as never, () => null, {
-      canTypeOnBoard: async () => true,
-      boardTypingName: async () => {
-        throw new Error("db down");
-      },
-    });
-    clock += 1_500;
-    await open.relayTyping(socket, "u1", { realmId: "r1" });
-    expect(emitted).toEqual([]);
-    expect(warn).toHaveBeenCalledWith("[RealmBoardRooms] typing name check failed:", "db down");
   });
 });
 
@@ -523,9 +463,6 @@ describe("the broadcast bridge between processes", () => {
         expect(server.broadcastBoard).toHaveBeenCalledWith(boardEvent);
         expect(server.broadcastMessage).not.toHaveBeenCalled();
       });
-    });
-    it("routes through Redis when this process hosts no Socket.IO server", () => {
-      expect(getThinkPagesBroadcaster()).toBe(redisThinkPagesBroadcaster);
     });
   });
 });

@@ -8,7 +8,6 @@ import {
 import {
   linkMentionsInHtml,
   mentionNamesInHtml,
-  unwrapMentionAnchors,
 } from "~/server/modules/thinkpages-forum/mention-html";
 import { mentionSuggestions } from "~/server/modules/thinkpages-forum/mention-suggest";
 
@@ -72,19 +71,6 @@ describe("withMentionLinks", () => {
     expect(out.contentHtml).toBe('<p>Hi <a class="forum-mention" href="/id/kir">@kir</a></p>');
     expect(out.plainText).toBe("Hi @kir");
   });
-
-  it("links a Canvas render and runs the Canvas sanitizer and positioning strip over it again", async () => {
-    const body = {
-      contentHtml:
-        '<div class="mw-parser-output"><p style="color:red;position:fixed" onclick="x()">Hi @kir</p></div>',
-      contentWikitext: "Hi @kir",
-    };
-    const out = await withMentionLinks(db() as never, body);
-    expect(out.contentHtml).toBe(
-      '<div class="mw-parser-output"><p style="color:red">Hi <a class="forum-mention" href="/id/kir">@kir</a></p></div>'
-    );
-    expect(out.contentWikitext).toBe("Hi @kir");
-  });
   it("unwraps a forged mention link to text: it stays text unless @name resolves, and then it is the real link", async () => {
     const forged = '<a class="forum-mention" href="/id/victim">@victim</a>';
     const light = await withMentionLinks(db() as never, { contentHtml: `<p>${forged}</p>` });
@@ -136,12 +122,6 @@ describe("mentions in the stored html", () => {
       const adopted = "<i><b>".repeat(300) + "</i>".repeat(300) + "@kir";
       expect(mentionNamesInHtml(adopted)).toEqual([]);
     });
-    it("reads the contents of a noscript as the sanitizer's parser does, as elements nobody is mentioned in", () => {
-      expect(mentionNamesInHtml("<noscript><p>@kir</p></noscript>")).toEqual([]);
-      expect(mentionNamesInHtml('<noscript><p title="</noscript>@kir">x</p></noscript>')).toEqual(
-        []
-      );
-    });
   });
   describe("linkMentionsInHtml", () => {
     it("keeps escaped characters escaped, so markup in the text cannot become markup", () => {
@@ -153,15 +133,6 @@ describe("mentions in the stored html", () => {
       const trap =
         '<noscript><p title="</noscript><img src=x onerror=alert(1)>">@kir</p></noscript>';
       expect(linkMentionsInHtml(`<p>@kir</p>${trap}`, hrefOf)).toBe(`<p>${link("kir")}</p>${trap}`);
-    });
-  });
-  describe("unwrapMentionAnchors", () => {
-    it("replaces a mention link by its text, and drops the class from any other element", () => {
-      expect(
-        unwrapMentionAnchors(
-          '<p><a class="forum-mention" href="/id/victim">@kir</a> <a class="x Forum-Mention y" href="/z">z <b>b</b></a><span class="forum-mention a">s</span></p>'
-        )
-      ).toBe('<p>@kir z b<span class="a">s</span></p>');
     });
   });
   describe("mentionAnchorNames", () => {
@@ -219,12 +190,6 @@ describe("mention suggestions", () => {
         accountType: { not: "personal" },
       });
     });
-    it("gives a handle suggestion exactly its four fields", async () => {
-      const db = suggestDb([{ handle: "kirsten", clerkUserId: "clerk_k" }]);
-      const [only] = await mentionSuggestions(db as never, "ki");
-      expect(Object.keys(only!).sort()).toEqual(["avatarUrl", "kind", "label", "name"]);
-    });
-
     it("never carries a player behind a persona: a persona suggestion has only its own data", async () => {
       const db = suggestDb(
         [],

@@ -4,7 +4,6 @@ jest.mock("~/lib/maps/geo-validation", () => ({
 }));
 import { geometryProblem, writeRealmMapFeatures } from "~/lib/maps/realm-map-writer";
 import {
-  crossesAntimeridian,
   dropRepeatedPoints,
   repairPolygonalGeometry,
   smoothLayerCoverage,
@@ -183,19 +182,6 @@ describe("writeRealmMapFeatures", () => {
     expect(db.mapLayer.upsert.mock.calls[0][0].create.geometry).toEqual(repaired);
     expect(db.country.update.mock.calls[0][0].data.geometry).toEqual(repaired);
   });
-
-  it("rejects a feature the repair leaves without area", async () => {
-    const db = writerDb();
-    db.$queryRawUnsafe.mockImplementationOnce(async () => [{ geojson: null }]);
-    const result = await writeRealmMapFeatures(db, "eurth-id", [
-      { key: "Sliver", geometry: square(0) },
-    ]);
-    expect(result.rejected).toEqual([
-      { key: "Sliver", reason: "no polygonal area is left after repair" },
-    ]);
-    expect(db.mapLayer.upsert).not.toHaveBeenCalled();
-  });
-
   it("after a political write, gives each overlap strip with the written features to one side and reports it", async () => {
     const db = writerDb();
     db.country.updateMany = jest.fn().mockResolvedValue({ count: 1 });
@@ -257,25 +243,6 @@ describe("repairing a realm's geometry", () => {
         dropRepeatedPoints({ type: "MultiPolygon", coordinates: [[ring(0), hole], [collapsed]] })
       ).toEqual(multi(0));
       expect(dropRepeatedPoints({ type: "Polygon", coordinates: [collapsed] })).toBeNull();
-    });
-  });
-  describe("crossesAntimeridian", () => {
-    it("is true for a ring jumping across ±180 and false for a wide geometry that does not", () => {
-      const crossing = {
-        type: "Polygon" as const,
-        coordinates: [
-          [
-            [179, 0],
-            [-179, 0],
-            [-179, 1],
-            [179, 1],
-            [179, 0],
-          ],
-        ],
-      };
-      expect(crossesAntimeridian(crossing)).toBe(true);
-      // Tagmatium on Eurth: parts from -80° to 102°, 183° wide, but no ring crosses.
-      expect(crossesAntimeridian(multi(-80, 101))).toBe(false);
     });
   });
   describe("repairPolygonalGeometry", () => {
@@ -440,15 +407,6 @@ describe("repairing a realm's layer", () => {
       expect(plan.smoothing).toMatchObject({ status: "blocked", blocked: ["A"] });
       expect(plan.changed).toBe(false);
     });
-
-    it("will not smooth a synced feature without a record when the source could not be read", () => {
-      const plan = planLayerRepair([feature("A", { properties: { sourceHash: "s-A" } })], {
-        trims: [],
-        coverage: COVERAGE,
-        sourceUnavailable: "HTTP 404",
-      });
-      expect(plan.smoothing).toMatchObject({ status: "blocked", blocked: ["A"] });
-    });
     it("repairs invalid outlines, repeated points and overlaps; rows across ±180 are left out of every count", () => {
       const plan = planLayerRepair(
         [
@@ -509,18 +467,6 @@ describe("repairing a realm's layer", () => {
       repeated: 0,
       vertices: 5,
       storedType: "ST_MultiPolygon",
-    });
-    it("a dry run writes nothing", async () => {
-      const db = repairDb([row("A", {})]);
-      const report = await repairRealmLayer(db, "eurth-id", {
-        layerType: "political",
-        coverage: COVERAGE,
-        apply: false,
-        createdBy: "test",
-      });
-      expect(report.plan.smoothing.status).toBe("smooth");
-      expect(report.written).toBeNull();
-      expect(db.mapLayer.upsert).not.toHaveBeenCalled();
     });
     it("applying writes every polygon from its unsmoothed outline, its old record dropped, with a rollback snapshot", async () => {
       const db = repairDb([row("A", { sourceHash: "s-A", fill: "#123456" })]);

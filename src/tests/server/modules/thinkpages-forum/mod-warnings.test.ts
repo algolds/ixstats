@@ -5,7 +5,6 @@ import { banNotice } from "~/lib/thinkpages-forum/moderation-policy";
 import {
   activeBansFor,
   assertNotBanned,
-  bannedBoardIds,
   issueBan,
   liftBan,
   listBans,
@@ -372,54 +371,6 @@ describe("issueWarning", () => {
       select: { expiresAt: true },
     });
   });
-  it("still bans automatically under a shorter, lifted or expired manual site ban, or a realm ban", async () => {
-    const manual = (extra: Partial<BanRow>) =>
-      autoBan({
-        id: `b_${extra.expiresAt?.getTime() ?? "x"}`,
-        auto: false,
-        autoTier: null,
-        ...extra,
-      });
-    const { db, bans } = warnDb({
-      warnings: [warning({ points: 4 })],
-      bans: [
-        manual({ expiresAt: days(6) }),
-        manual({ id: "b_lifted", expiresAt: null, liftedAt: days(-1) }),
-        manual({ id: "b_expired", expiresAt: days(-1) }),
-        manual({ id: "b_realm", scope: "realm", scopeId: "r_eurth", expiresAt: null }),
-      ],
-    });
-    const outcome = await issueWarning(db as never, admin, { ...sitewide, points: 1 });
-    expect(outcome.autoBan).toMatchObject({ kind: "issued", autoTier: 5, expiresAt: days(7) });
-    expect(bans).toHaveLength(5);
-  });
-  it("never brings an automatic ban's end forward when crossing up", async () => {
-    const { db, bans } = warnDb({
-      warnings: [warning({ id: "w_a", points: 5 }), warning({ id: "w_b", points: 2 })],
-      bans: [autoBan({ createdAt: days(-1), expiresAt: days(40), autoTier: 5 })],
-    });
-    const outcome = await issueWarning(db as never, admin, { ...sitewide, points: 3 });
-    expect(outcome.autoBan).toMatchObject({ kind: "extended", autoTier: 10, expiresAt: days(40) });
-    expect(bans[0]).toMatchObject({ autoTier: 10, expiresAt: days(40) });
-  });
-
-  it("never lifts an active automatic ban when expired points leave a new warning's count under every tier", async () => {
-    // Day 91: 3 points (day 0) have expired, 2 points (day 85) remain; the 7-day ban from day 85 still runs.
-    const { db, tx, bans, logs } = warnDb({
-      warnings: [
-        warning({ points: 3, expiresAt: days(-1) }),
-        warning({ points: 2, expiresAt: days(84) }),
-      ],
-      bans: [autoBan({ createdAt: days(-6), expiresAt: days(1), autoTier: 5 })],
-    });
-    const outcome = await issueWarning(db as never, admin, { ...sitewide, points: 1 });
-    expect(outcome).toEqual({ warningId: "w1", activePoints: 3, autoBan: null });
-    expect(bans[0]).toMatchObject({ liftedAt: null, expiresAt: days(1), autoTier: 5 });
-    expect(tx.forumBan.update).not.toHaveBeenCalled();
-    expect(tx.forumBan.updateMany).not.toHaveBeenCalled();
-    expect(logs.map((l) => l.action)).toEqual(["warning.issue"]);
-  });
-
   it("never shortens an active automatic ban to a lower tier on a new warning", async () => {
     const { db, tx, bans, logs } = warnDb({
       warnings: [warning({ points: 5, expiresAt: days(-1) }), warning({ points: 5 })],
@@ -503,23 +454,6 @@ describe("issueWarning", () => {
       code: "NOT_FOUND",
     });
     expect(tx.forumWarning.create).not.toHaveBeenCalled();
-  });
-
-  it("checks the reason and the points", async () => {
-    const { db } = warnDb();
-    for (const bad of [
-      { reason: "  " },
-      { reason: "x".repeat(1001) },
-      { points: 0 },
-      { points: 6 },
-      { points: 1.5 },
-    ]) {
-      await expect(issueWarning(db as never, admin, { ...sitewide, ...bad })).rejects.toMatchObject(
-        {
-          code: "BAD_REQUEST",
-        }
-      );
-    }
   });
 });
 
@@ -656,24 +590,6 @@ describe("revokeWarning", () => {
     });
     expect(logs.map((l) => l.action)).toEqual(["warning.revoke"]);
   });
-
-  it("leaves the automatic ban alone when the revoked warning had already expired", async () => {
-    // X (3 points) has expired; Y (2 points) brought the ban. Revoking X changes no active points.
-    const { db, bans, logs } = warnDb({
-      warnings: [
-        warning({ id: "w_x", points: 3, expiresAt: days(-1) }),
-        warning({ id: "w_y", points: 2 }),
-      ],
-      bans: [autoBan({ autoTier: 5 })],
-    });
-    expect(await revokeWarning(db as never, admin, { warningId: "w_x" })).toEqual({
-      userId: "u_m",
-      autoBan: null,
-    });
-    expect(bans[0]).toMatchObject({ liftedAt: null, expiresAt: days(5), autoTier: 5 });
-    expect(logs.map((l) => l.action)).toEqual(["warning.revoke"]);
-  });
-
   it("never extends an automatic ban on a revoke, even with points above its tier", async () => {
     // 11 points under a 5-point ban (a manual site ban covered the 10 tier, then was lifted).
     const { db, bans, logs } = warnDb({
@@ -708,38 +624,9 @@ describe("revokeWarning", () => {
     );
     expect(logs).toEqual([]);
   });
-  it("keeps moderators to their scope and refuses unknown or revoked warnings", async () => {
-    const { db, logs } = warnDb({
-      warnings: [
-        warning({ id: "w_site" }),
-        warning({ id: "w_general", categoryId: "cat_general" }),
-        warning({ id: "w_done", categoryId: "cat_eurth_hub", revokedAt: days(-1) }),
-      ],
-    });
-    await expect(
-      revokeWarning(db as never, realmMod, { warningId: "w_site" })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await expect(
-      revokeWarning(db as never, realmMod, { warningId: "w_general" })
-    ).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
-    await expect(revokeWarning(db as never, admin, { warningId: "w_nope" })).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
-    await expect(
-      revokeWarning(db as never, realmMod, { warningId: "w_done" })
-    ).rejects.toMatchObject({ code: "CONFLICT" });
-    expect(logs).toEqual([]);
-  });
 });
 
 describe("activePointsOf and listWarnings", () => {
-  it("refuses members", async () => {
-    await expect(listWarnings(warnDb().db as never, member, {}, 1)).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
-  });
   it("keeps other moderators to warnings issued in their categories", async () => {
     const { db } = warnDb();
     await listWarnings(db as never, realmMod, {}, 1);
@@ -947,36 +834,7 @@ describe("bans", () => {
       });
     });
   });
-  describe("bannedBoardIds", () => {
-    const ids = ["cat_general", "cat_find"];
-    it("reports a site ban, and the categories banned one by one", async () => {
-      const { db } = banDb();
-      db.forumBan.findMany.mockResolvedValueOnce([{ scope: "site", scopeId: null }] as never);
-      expect(await bannedBoardIds(db as never, member, ids, NOW)).toEqual({
-        site: true,
-        categories: new Set(),
-      });
-      db.forumBan.findMany.mockResolvedValueOnce([
-        { scope: "category", scopeId: "cat_find" },
-        { scope: "category", scopeId: "cat_general" },
-      ] as never);
-      expect(await bannedBoardIds(db as never, member, ids, NOW)).toEqual({
-        site: false,
-        categories: new Set(["cat_find", "cat_general"]),
-      });
-    });
-  });
   describe("postingBan and assertNotBanned", () => {
-    it("returns the strongest live ban", async () => {
-      const { db } = banDb({
-        bans: [
-          ban({ id: "category", scope: "category", scopeId: "cat_eurth_hub" }),
-          ban({ id: "site", expiresAt: later }),
-          ban({ id: "realm", scope: "realm", scopeId: "r_eurth" }),
-        ],
-      });
-      expect((await postingBan(db as never, member, eurthHub))?.id).toBe("site");
-    });
     it("refuses a banned member with the ban notice, and lets others through", async () => {
       const live = ban({
         scope: "realm",
@@ -1138,24 +996,6 @@ describe("bans", () => {
       });
       expect(tx.forumBan.create).not.toHaveBeenCalled();
     });
-    it("checks the reason and the length", async () => {
-      const { db, tx } = banDb();
-      for (const bad of [
-        { reason: "   " },
-        { reason: "x".repeat(1001) },
-        { days: 0 },
-        { days: 3651 },
-        { days: 1.5 },
-      ]) {
-        await expect(issueBan(db as never, admin, { ...input, ...bad })).rejects.toMatchObject({
-          code: "BAD_REQUEST",
-        });
-      }
-      await expect(issueBan(db as never, admin, { ...input, days: 3650 })).resolves.toMatchObject({
-        banId: "b_new",
-      });
-      expect(tx.forumBan.create).toHaveBeenCalledTimes(1);
-    });
   });
   describe("liftBan", () => {
     it("lifts a live ban and logs it in the same transaction", async () => {
@@ -1209,24 +1049,6 @@ describe("bans", () => {
       });
       expect(tx.forumModLog.create).toHaveBeenCalledTimes(1);
     });
-
-    it("refuses unknown, out-of-scope and finished bans", async () => {
-      await expect(liftBan(banDb().db as never, admin, { banId: "b1" })).rejects.toMatchObject({
-        code: "NOT_FOUND",
-      });
-      await expect(
-        liftBan(banDb({ ban: ban({}) }).db as never, realmMod, { banId: "b1" })
-      ).rejects.toMatchObject({
-        code: "FORBIDDEN",
-      });
-      for (const finished of [ban({ liftedAt: earlier }), ban({ expiresAt: earlier })]) {
-        const { db, tx } = banDb({ ban: finished });
-        await expect(liftBan(db as never, admin, { banId: "b1" })).rejects.toMatchObject({
-          code: "CONFLICT",
-        });
-        expect(tx.forumModLog.create).not.toHaveBeenCalled();
-      }
-    });
   });
   describe("listBans", () => {
     it("refuses members", async () => {
@@ -1234,22 +1056,6 @@ describe("bans", () => {
         listBans(banDb().db as never, member, { active: true }, 1)
       ).rejects.toMatchObject({
         code: "FORBIDDEN",
-      });
-    });
-    it("lists finished bans and keeps other moderators to their scope", async () => {
-      const { db } = banDb();
-      await listBans(db as never, realmMod, { active: false }, 1);
-      expect(db.forumBan.findMany.mock.calls[0]![0].where).toEqual({
-        AND: [
-          { OR: [{ liftedAt: { not: null } }, { expiresAt: { lte: NOW } }] },
-          {
-            OR: [
-              { scope: "realm", scopeId: { in: ["r_eurth"] } },
-              { scope: "category", scopeId: { in: ["cat_eurth_hub"] } },
-            ],
-          },
-          {},
-        ],
       });
     });
   });

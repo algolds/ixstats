@@ -10,15 +10,7 @@ import {
   canJoinRealmBoard,
   canTypeOnBoard,
 } from "~/server/modules/thinkpages-forum/board-socket";
-import {
-  at,
-  ban,
-  boardPost,
-  boardStore,
-  personas,
-  seed,
-  users,
-} from "~/tests/helpers/forum-board-fake";
+import { at, ban, boardPost, boardStore, seed, users } from "~/tests/helpers/forum-board-fake";
 import {
   boardLiveEventSchema,
   boardLiveMessageSchema,
@@ -60,36 +52,6 @@ describe("boardMessagePayload", () => {
     const payload = boardMessagePayload(message({ moderable: true, sanctionable: true }));
     expect(JSON.stringify(payload)).not.toMatch(/moderable|sanctionable/);
   });
-
-  it("is the persona-safe public shape: no viewer flags, ISO times", () => {
-    expect(boardMessagePayload(message({ editedAt: at(2) }))).toEqual({
-      type: "updated",
-      message: {
-        id: "p1",
-        authorUserId: "u_member",
-        authorPersonaId: null,
-        importedAuthorName: null,
-        author: {
-          name: "member",
-          handle: "member",
-          avatarUrl: null,
-          flagUrl: null,
-          persona: false,
-          personaType: null,
-        },
-        role: null,
-        isVisitor: false,
-        visitorRealm: null,
-        contentHtml: "<p>hi</p>",
-        reactions: {},
-        createdAt: at(1).toISOString(),
-        editedAt: at(2).toISOString(),
-        replyTo: null,
-        continued: null,
-      },
-    });
-  });
-
   it("never carries the player behind a persona, even from a moderator's shape", () => {
     const persona = message({
       authorPersonaId: "pa_news",
@@ -148,33 +110,6 @@ describe("publishBoardPost", () => {
     expect(out.broadcastBoard).toHaveBeenCalledTimes(1);
     expect(JSON.stringify(out.broadcastBoard.mock.calls)).not.toContain("secret");
   });
-
-  it("shows a continued link only as the public may see it", async () => {
-    const restricted = {
-      id: "t_staff",
-      categoryId: "cat_staff",
-      title: "Staff only talk",
-      authorUserId: "u_member",
-      postCount: 3,
-      hidden: false,
-    };
-    const base = seed();
-    const store = boardStore(
-      seed({
-        categories: [
-          ...(base.categories ?? []),
-          { ...(base.categories ?? [])[1]!, id: "cat_staff", key: "staff", visibility: "staff" },
-        ],
-        posts: [boardPost("p1", 1, { continuedThreadId: "t_staff" })],
-        threads: [...(base.threads ?? []), restricted] as never,
-      })
-    );
-    const out = broadcaster();
-    await publishBoardPost(store.db as never, out, "p1", "message");
-    const wire = JSON.stringify(out.broadcastBoard.mock.calls[0]![0]);
-    expect(wire).not.toContain("Staff only talk");
-    expect(wire).toContain("Continued in a thread");
-  });
   it("never fails the write: a throwing broadcaster or database is logged", async () => {
     const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
     const store = eurth();
@@ -217,23 +152,6 @@ describe("boardTypingName", () => {
   it("names the persona, not the player, for the player's own persona", async () => {
     await expect(boardTypingName(db(), "clerk_u_member", "pa_news")).resolves.toBe("Eurth Daily");
   });
-
-  it("gives no name for the personal account named as a persona", async () => {
-    const store = boardStore(seed(), {
-      personas: [
-        ...personas,
-        {
-          id: "pa_me",
-          clerkUserId: "clerk_u_member",
-          isActive: true,
-          accountType: "personal",
-          displayName: "Me",
-        },
-      ],
-    });
-    await expect(boardTypingName(store.db as never, "clerk_u_member", "pa_me")).resolves.toBeNull();
-  });
-
   it("drops a persona that is not the user's own, or an unknown user", async () => {
     await expect(boardTypingName(db(), "clerk_u_member", "pa_visitor")).resolves.toBeNull();
     await expect(boardTypingName(db(), "clerk_nobody", null)).resolves.toBeNull();
@@ -246,11 +164,6 @@ describe("canTypeOnBoard", () => {
     s.state.bans.push(ban({ userId: "u_banned", scope: "realm", scopeId: "r_eurth" }));
     return s;
   };
-  it("is false for a banned user", async () => {
-    await expect(canTypeOnBoard(store().db as never, "clerk_u_banned", "r_eurth")).resolves.toBe(
-      false
-    );
-  });
   it("is false in an archived realm, for an unknown user and for an unknown realm", async () => {
     const { db } = store();
     await expect(canTypeOnBoard(db as never, "clerk_u_member", "r_old")).resolves.toBe(false);

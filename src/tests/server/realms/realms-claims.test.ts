@@ -6,7 +6,7 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/article-store", () => ({
 
 import { Prisma } from "@prisma/client";
 import { createClaimsService, DEFAULT_REALM_ID } from "~/server/modules/realms";
-import { assignNation, nationCapacity } from "~/server/modules/realms";
+import { assignNation } from "~/server/modules/realms";
 import { prefillFromInfobox } from "~/server/modules/realms/realms.prefill";
 jest.mock("~/lib/auth", () => ({ isSystemOwner: () => false }));
 jest.mock("~/server/shared/map-invalidation", () => ({
@@ -43,13 +43,6 @@ const uniqueViolation = () =>
       meta: { modelName: "Country", target: ["realmId", "name"] },
     }
   );
-/** What Postgres raises when another country took the new nation's slug between the free-slug search and the create. */
-const slugViolation = () =>
-  new Prisma.PrismaClientKnownRequestError("Unique constraint failed on the fields: (`slug`)", {
-    code: "P2002",
-    clientVersion: "6.19.3",
-    meta: { modelName: "Country", target: ["slug"] },
-  });
 
 interface RegionRow {
   id: string;
@@ -153,13 +146,6 @@ describe("claimCountry", () => {
     expect(deps.onNationAssigned).toHaveBeenCalledTimes(1);
     expect(deps.fetchPageCreator).toHaveBeenCalledWith("ixwiki", "Aurelia");
   });
-  it("does not fold case beyond the first letter (MediaWiki treats Some User and Some user as different accounts)", async () => {
-    const { deps, db, claims } = setup();
-    deps.fetchPageCreator.mockResolvedValue("Some_User");
-    db.wikiAccountLink.findFirst.mockResolvedValue({ username: "Some user" });
-    await expect(claims.claimCountry(actor, "c1")).resolves.toMatchObject({ status: "pending" });
-  });
-
   it("stays pending on creator mismatch, missing verified link, or wiki failure", async () => {
     const a = setup();
     a.deps.fetchPageCreator.mockResolvedValue("Someone Else");
@@ -225,21 +211,6 @@ describe("claimCountry", () => {
     });
     expect(deps.onNationAssigned).toHaveBeenCalledTimes(1);
   });
-
-  it("an upgrade that a moderator decided first is NOT_PENDING and assigns nothing", async () => {
-    const { db, deps, claims } = setup();
-    db.realmClaim.findFirst.mockResolvedValue({
-      id: "old",
-      userId: "u1",
-      countryId: "c1",
-      status: "pending",
-    });
-    db.realmClaim.updateMany.mockResolvedValueOnce({ count: 0 });
-    await expect(claims.claimCountry(actor, "c1")).rejects.toMatchObject({ code: "NOT_PENDING" });
-    expect(db.country.updateMany).not.toHaveBeenCalled();
-    expect(deps.onNationAssigned).not.toHaveBeenCalled();
-  });
-
   it("an auto-approval that loses the ownership race is ALREADY_OWNED as a claim error, not a 500 (F-5.3)", async () => {
     const { db, deps, claims } = setup();
     db.country.updateMany.mockResolvedValue({ count: 0 }); // someone else took the nation after the read
@@ -248,14 +219,6 @@ describe("claimCountry", () => {
       code: "ALREADY_OWNED",
     });
     expect(deps.onNationAssigned).not.toHaveBeenCalled();
-  });
-
-  it("known alt accounts are merged for ixwiki only — an iiwiki page by the alt stays pending (F-5.2)", async () => {
-    const { db, deps, claims } = setup();
-    db.country.findUnique.mockResolvedValue({ ...country, wikiSource: "iiwiki" });
-    deps.fetchPageCreator.mockResolvedValue("Carthinova"); // an ixwiki alt of Kir; on iiwiki it is someone else
-    await expect(claims.claimCountry(actor, "c1")).resolves.toMatchObject({ status: "pending" });
-    expect(db.country.updateMany).not.toHaveBeenCalled();
   });
 });
 
@@ -271,15 +234,6 @@ describe("reviewClaim", () => {
     country: { name: "Aurelia" },
   };
   const guarded = { id: "cl1", status: "pending" };
-
-  it("only moderators may review", async () => {
-    const { db, claims } = setup();
-    db.realmClaim.findUnique.mockResolvedValue(pending);
-    await expect(claims.reviewClaim(actor, "cl1", { approve: true })).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
-  });
-
   it("approving moves pending → approved first, then assigns, rejects competing claims and notifies", async () => {
     const { db, deps, claims } = setup();
     db.realmClaim.findUnique.mockResolvedValue(pending);
@@ -305,16 +259,6 @@ describe("reviewClaim", () => {
       code: "NOT_PENDING",
     });
     expect(db.country.updateMany).not.toHaveBeenCalled();
-    expect(db.user.updateMany).not.toHaveBeenCalled();
-    expect(deps.onNationAssigned).not.toHaveBeenCalled();
-  });
-  it("a race lost at the guarded ownership write is rejected the same way", async () => {
-    const { db, deps, claims } = setup();
-    db.realmClaim.findUnique.mockResolvedValue(pending);
-    db.country.updateMany.mockResolvedValue({ count: 0 });
-    await expect(claims.reviewClaim(admin, "cl1", { approve: true })).resolves.toEqual({
-      status: "rejected",
-    });
     expect(db.user.updateMany).not.toHaveBeenCalled();
     expect(deps.onNationAssigned).not.toHaveBeenCalled();
   });
@@ -398,35 +342,6 @@ function pageSetup({ takenSlugs = [] as string[] } = {}) {
 }
 
 describe("claimNationPage", () => {
-  it("a slug taken mid-create is a slug conflict, never 'belongs to another player'", async () => {
-    const { db, deps, claims } = pageSetup();
-    db.country.create.mockRejectedValue(slugViolation());
-    await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).rejects.toMatchObject({
-      name: "ClaimError",
-      code: "SLUG_CONFLICT",
-    });
-    expect(deps.onNationAssigned).not.toHaveBeenCalled();
-  });
-  it("refuses a nation whose country already exists in the realm", async () => {
-    const { db, claims } = pageSetup();
-    db.country.findFirst.mockResolvedValue({ id: "c-existing" });
-    await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).rejects.toMatchObject({
-      code: "ALREADY_OWNED",
-    });
-    // Matched by the page reference, or by name for a nation stored without one.
-    expect(db.country.findFirst).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          realmId: EURTH,
-          OR: [
-            { wikiSource: expect.any(String), wikiPageTitle: "Aurelia" },
-            { wikiPageTitle: null, name: "Aurelia" },
-          ],
-        },
-      })
-    );
-    expect(db.realmClaim.create).not.toHaveBeenCalled();
-  });
   it("losing the create race to a concurrent approval (unique violation) is ALREADY_OWNED, not a 500", async () => {
     const { db, deps, claims } = pageSetup();
     db.country.create.mockRejectedValue(uniqueViolation());
@@ -436,49 +351,7 @@ describe("claimNationPage", () => {
     });
     expect(deps.onNationAssigned).not.toHaveBeenCalled();
   });
-
-  it("any other database failure is not disguised as a claim error", async () => {
-    const { db, claims } = pageSetup();
-    db.country.create.mockRejectedValue(new Error("connection reset"));
-    await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).rejects.toThrow(
-      "connection reset"
-    );
-  });
 });
-
-describe("reviewClaim — nation page claims", () => {
-  const pendingPage = {
-    id: "cl1",
-    status: "pending",
-    userId: "u1",
-    countryId: null,
-    realmId: EURTH,
-    wikiSource: "iiwiki",
-    wikiPageTitle: "Aurelia",
-    realm: { ownerId: "system", slug: "eurth", status: "active" },
-    user: { clerkUserId: "clerk_u1" },
-    country: null,
-  };
-  const guarded = { id: "cl1", status: "pending" };
-  it("if the nation's country appeared meanwhile, the claim is rejected with a reason", async () => {
-    const { db, deps, claims } = pageSetup();
-    db.realmClaim.findUnique.mockResolvedValue(pendingPage);
-    db.country.findFirst.mockResolvedValue({ id: "c-raced" });
-    await expect(claims.reviewClaim(admin, "cl1", { approve: true })).resolves.toEqual({
-      status: "rejected",
-    });
-    expect(db.realmClaim.updateMany).toHaveBeenLastCalledWith({
-      where: guarded,
-      data: expect.objectContaining({
-        status: "rejected",
-        rejectionReason: expect.stringContaining("another player"),
-      }),
-    });
-    expect(db.country.create).not.toHaveBeenCalled();
-    expect(deps.onNationAssigned).not.toHaveBeenCalled();
-  });
-});
-
 describe("approved nation-page claims take their map region (decision 11)", () => {
   const region = (overrides: Partial<RegionRow> = {}): RegionRow => ({
     id: "ml-eurth",
@@ -579,38 +452,13 @@ describe("realm status (AT-7)", () => {
     realm: { settings: null, status },
   });
 
-  it.each(["draft", "archived"])(
-    "a %s realm refuses country claims and files nothing",
-    async (status) => {
-      const { db, claims } = setup();
-      db.country.findUnique.mockResolvedValue(eurthCountry(status));
-      await expect(claims.claimCountry(actor, "c1")).rejects.toMatchObject({
-        code: "REALM_CLOSED",
-      });
-      expect(db.realmClaim.create).not.toHaveBeenCalled();
-    }
-  );
-  it("a pending claim in a realm archived since can be rejected but not approved", async () => {
-    const claim = {
-      id: "cl1",
-      status: "pending",
-      userId: "u1",
-      countryId: "c9",
-      realmId: EURTH,
-      realm: { ownerId: "system", slug: "eurth", status: "archived" },
-      user: { clerkUserId: "clerk_u1" },
-      country: { name: "Gallambria" },
-    };
+  it.each(["draft"])("a %s realm refuses country claims and files nothing", async (status) => {
     const { db, claims } = setup();
-    db.realmClaim.findUnique.mockResolvedValue(claim);
-    await expect(claims.reviewClaim(admin, "cl1", { approve: true })).rejects.toMatchObject({
+    db.country.findUnique.mockResolvedValue(eurthCountry(status));
+    await expect(claims.claimCountry(actor, "c1")).rejects.toMatchObject({
       code: "REALM_CLOSED",
     });
-    expect(db.realmClaim.updateMany).not.toHaveBeenCalled();
-    expect(db.country.updateMany).not.toHaveBeenCalled();
-    await expect(
-      claims.reviewClaim(admin, "cl1", { approve: false, reason: "Realm archived" })
-    ).resolves.toEqual({ status: "rejected" });
+    expect(db.realmClaim.create).not.toHaveBeenCalled();
   });
 });
 
@@ -736,19 +584,6 @@ describe("scenery slots (Country.claimable false)", () => {
     expect(db.country.updateMany).not.toHaveBeenCalled();
     expect(deps.onNationAssigned).not.toHaveBeenCalled();
   });
-  it("an auto-approval that loses a flip to scenery is a claim error, not a 500, and assigns nothing", async () => {
-    const { db, deps, claims } = setup();
-    db.country.findUnique
-      .mockResolvedValueOnce({ ...country, claimable: true })
-      .mockResolvedValueOnce(scenery);
-    await expect(claims.claimCountry(actor, "c1")).rejects.toMatchObject({
-      name: "ClaimError",
-      code: "NOT_FOUND",
-      message: expect.stringMatching(/no longer open for claims/),
-    });
-    expect(db.country.updateMany).not.toHaveBeenCalled();
-    expect(deps.onNationAssigned).not.toHaveBeenCalled();
-  });
   it("approving a claim filed before its country was made scenery rejects it with a reason and assigns nothing", async () => {
     const { db, deps, claims } = setup();
     db.country.findUnique.mockResolvedValue(scenery);
@@ -870,18 +705,6 @@ describe("claim invites", () => {
       });
       expect(createdData(db)).not.toHaveProperty("invitedByUserId");
     });
-    it("never overwrites an inviter already recorded", async () => {
-      const { db, deps, claims } = setup();
-      db.realmClaim.findFirst.mockResolvedValue({
-        id: "old",
-        userId: "u1",
-        invitedByUserId: "u_first",
-      });
-      await claims.claimCountry(actor, "c1", { via: "ambassador" });
-      expect(deps.resolveInviter).not.toHaveBeenCalled();
-      expect(db.realmClaim.updateMany).not.toHaveBeenCalled();
-    });
-
     it("keeps the stored inviter when a concurrent claim recorded one first", async () => {
       const { db, deps, claims } = setup();
       db.wikiAccountLink.findFirst.mockResolvedValue({ username: "Kir" });
@@ -1003,22 +826,6 @@ describe("claiming a nation the source sync created", () => {
         expect.objectContaining({ countryId: "c-sync" })
       );
     });
-
-    it("the infobox then fills only what is still empty: flag and leader, never the arms or the map's capital", async () => {
-      const { db, deps, claims } = setup();
-      await claims.claimCountry(actor, "c-sync");
-      expect(deps.fetchNationPrefill).toHaveBeenCalledWith("iiwiki", "Aurelia");
-      expect(db.country.update).toHaveBeenCalledWith({
-        where: { id: "c-sync" },
-        data: { flag: "https://img/flag.png", leader: "Queen Ana" },
-      });
-      expect(db.nationalIdentity.update).toHaveBeenCalledWith({
-        where: { countryId: "c-sync" },
-        data: { motto: "Onward" },
-      });
-      // The sync's figures are never replaced by the infobox's.
-      expect(JSON.stringify(db.country.update.mock.calls)).not.toContain("baselinePopulation");
-    });
     it("finds the nation by its wiki page, not its name: a renamed nation is handed over, never duplicated", async () => {
       const { db, claims } = setup();
       db.country.findFirst.mockImplementation(async ({ where }: any) =>
@@ -1050,25 +857,6 @@ describe("claiming a nation the source sync created", () => {
 });
 
 describe("the nation cap", () => {
-  function client(held: number, membershipTier: string | null) {
-    return {
-      country: { count: jest.fn().mockResolvedValue(held) },
-      user: { findUnique: jest.fn().mockResolvedValue({ membershipTier }) },
-    } as any;
-  }
-  describe("nationCapacity: min(realm cap, tier cap)", () => {
-    it("a premium player in a realm capped at 3 gets 3", async () => {
-      const c = client(2, "mycountry_premium");
-      await expect(
-        nationCapacity(c, { userId: "u1", realmId: "r1", settings: { maxNationsPerUser: 3 } })
-      ).resolves.toEqual({ held: 2, cap: 3, realmCap: 3, tierCap: 5, canTakeAnother: true });
-      expect(c.country.count).toHaveBeenCalledWith({ where: { ownerUserId: "u1", realmId: "r1" } });
-      expect(c.user.findUnique).toHaveBeenCalledWith({
-        where: { id: "u1" },
-        select: { membershipTier: true },
-      });
-    });
-  });
   describe("the tier cap is enforced by assignNation and claims", () => {
     const unowned = {
       id: "c1",

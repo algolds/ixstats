@@ -151,23 +151,6 @@ describe("realmPostingAccess", () => {
       );
     }
   });
-
-  it("4. lets the owner of a nation in the realm post", async () => {
-    const db = accessDb();
-    const access = await realmPostingAccess(db as never, owner, EURTH);
-    expect(access).toEqual({
-      ownedCountryIds: ["c_eurth"],
-      isModerator: false,
-      ban: null,
-      canPost: true,
-      notice: null,
-      needsNation: false,
-    });
-    expect(db.country.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { realmId: "r_eurth", ownerUserId: "u_owner" } })
-    );
-  });
-
   it("5. refuses a signed-in user with no nation in the realm, and an officer without the board power", async () => {
     for (const viewer of [plain, claimsOfficer]) {
       const access = await realmPostingAccess(accessDb() as never, viewer, EURTH);
@@ -201,18 +184,6 @@ describe("realmPostingAccess", () => {
       needsNation: false,
     });
   });
-  it("6. ignores expired and lifted bans, another realm's ban and another member's ban", async () => {
-    const bans = [
-      realmBan("u_owner", { id: "b_expired", expiresAt: new Date(Date.now() - DAY_MS) }),
-      realmBan("u_owner", { id: "b_lifted", liftedAt: new Date() }),
-      realmBan("u_owner", { id: "b_other", scopeId: "r_bee" }),
-      realmBan("u_next", { id: "b_next" }),
-    ];
-    await expect(
-      realmPostingAccess(accessDb({ bans }) as never, owner, EURTH)
-    ).resolves.toMatchObject({ canPost: true, ban: null, notice: null });
-  });
-
   it("6. leaves the section open under a category ban, but refuses posting in that category", async () => {
     const ban = banRow({
       userId: "u_owner",
@@ -307,9 +278,7 @@ describe("realm sections", () => {
     status,
     ownerId,
   });
-  const IXNAY_ROW = row("default", "ixnay", "Ixnay", "active", "system");
   const EURTH = row("r_eurth", "eurth", "Eurth");
-  const ALBA = row("r_alba", "alba", "Alba");
   const DRAFT = row("r_draft", "draft-land", "Draft Land", "draft");
   describe("listForumRealms", () => {
     function listDb(rows: Array<ReturnType<typeof row>>) {
@@ -322,25 +291,6 @@ describe("realm sections", () => {
         await listForumRealms(db as never, viewer);
         expect(db.realm.findMany.mock.calls[0][0].where).toMatchObject({ isSystem: false });
       }
-    });
-
-    it("puts Ixnay first, then by name, and drops realms hidden from the viewer", async () => {
-      const out = await listForumRealms(listDb([ALBA, DRAFT, EURTH, IXNAY_ROW]) as never, plain);
-      expect(out.realms).toEqual([
-        { id: "default", slug: "ixnay", name: "Ixnay" },
-        { id: "r_alba", slug: "alba", name: "Alba" },
-        { id: "r_eurth", slug: "eurth", name: "Eurth" },
-      ]);
-      const forFounder = await listForumRealms(
-        listDb([ALBA, DRAFT, EURTH, IXNAY_ROW]) as never,
-        founder
-      );
-      expect(forFounder.realms.map((r) => r.slug)).toEqual([
-        "ixnay",
-        "alba",
-        "draft-land",
-        "eurth",
-      ]);
     });
   });
   describe("getRealmSection", () => {

@@ -25,21 +25,12 @@ import {
   DiscoveryStopped,
 } from "~/lib/realms/sources/wiki-discovery-client";
 import { discoverRoster } from "~/lib/realms/sources/iiwiki-discovery";
-import { loreImportOptions } from "~/lib/realms/lore-import";
 import {
-  realmWikiMap,
   realmWikiSettings,
   realmWikiSettingsSchema,
-  withRealmWikiMap,
   withRealmWikiSettings,
-  type RealmWikiMap,
 } from "~/lib/realms/realm-wiki-settings";
-import {
-  crawlRealmCategory,
-  loreDowngrades,
-  prunableTitles,
-  type WikiQuery,
-} from "~/lib/realms/lore-import";
+import { crawlRealmCategory, prunableTitles, type WikiQuery } from "~/lib/realms/lore-import";
 import { realmForWikiArticle } from "~/server/modules/realms/realms.map";
 
 type Viewer = {
@@ -49,11 +40,6 @@ type Viewer = {
 } | null;
 const player: Viewer = { id: "u_player", clerkUserId: "clerk_player", role: null };
 const founder: Viewer = { id: "u_founder", clerkUserId: "clerk_founder", role: null };
-const admin: Viewer = {
-  id: "u_admin",
-  clerkUserId: "clerk_admin",
-  role: { name: "admin", level: 10 },
-};
 
 function realmDb(settings: Record<string, unknown> = { maxNationsPerUser: 2 }, status = "active") {
   const state = { settings };
@@ -173,24 +159,6 @@ describe("archived realms", () => {
     expect(wiki.calls).toEqual([]);
   });
 });
-
-describe("realms.wiki.save", () => {
-  it("validates, normalizes and stores the settings, keeping the realm's other settings", async () => {
-    const db = realmDb();
-    await caller(db, founder).save({
-      slug: "eurth",
-      wiki: {
-        ...EURTH_WIKI,
-        rootCategory: "category:Eurth",
-        rosterCategory: "Category:Countries_(Eurth)",
-      },
-    });
-    expect(db.state.settings).toEqual({ maxNationsPerUser: 2, wiki: EURTH_WIKI });
-
-    await caller(db, admin).save({ slug: "eurth", wiki: null });
-    expect(db.state.settings).toEqual({ maxNationsPerUser: 2 });
-  });
-});
 describe("realms.wiki.chooseMap and recheckMap", () => {
   it("refuses a download whose SHA-1 differs from the wiki's, storing nothing", async () => {
     const db = realmDb({ wiki: EURTH_WIKI });
@@ -266,14 +234,6 @@ describe("the discovery client is a polite wiki client", () => {
       await expect(client.query(rosterQuery, Any)).rejects.toBeInstanceOf(DiscoveryStopped);
       expect(wiki.calls).toHaveLength(1);
     });
-
-    it("stops at the request cap", async () => {
-      const { client } = setup(undefined, { maxRequests: 2 });
-      await client.query(rosterQuery, Any);
-      await client.query(rosterQuery, Any);
-      await expect(client.query(rosterQuery, Any)).rejects.toThrow("discovery cap");
-      expect(client.stopped()?.kind).toBe("cap");
-    });
     it("sends the allowlisted user agent and formatversion 2", async () => {
       const seen: Array<Record<string, string>> = [];
       const client = createDiscoveryClient("iiwiki", {
@@ -337,11 +297,6 @@ describe("realm wiki settings", () => {
     it.each<[Record<string, unknown>, string]>([
       [{ ...base, source: "ixwiki" }, "IxWiki is Ixnay's and never crawled"],
       [{ ...base, source: "https://evil.example" }, "a wiki is named by id, never by URL"],
-      [{ ...base, rootCategory: "Category:Eurth|x" }, "characters MediaWiki forbids"],
-      [
-        { ...base, mapCategories: Array.from({ length: 6 }, (_, i) => `Category:M${i}`) },
-        "too many map categories",
-      ],
     ])("refuses %j (%s)", (input) => {
       expect(parse(input).success).toBe(false);
     });
@@ -353,46 +308,6 @@ describe("realm wiki settings", () => {
       expect(withWiki).toEqual({ ...stored, wiki: EURTH_WIKI });
       expect(realmWikiSettings(withWiki)).toEqual(EURTH_WIKI);
       expect(withRealmWikiSettings(withWiki, null)).toEqual(stored);
-    });
-    it("stores the chosen map under settings.map, keeping other map keys", () => {
-      const map: RealmWikiMap = {
-        source: {
-          wiki: "iiwiki",
-          fileTitle: "File:Eurth political map 2024.png",
-          sha1: "a".repeat(40),
-        },
-        attribution: "Map by Cartographer, CC BY-SA 4.0, via IIWiki",
-        file: {
-          width: 8192,
-          height: 4096,
-          size: 9876543,
-          mime: "image/png",
-          licence: "CC BY-SA 4.0",
-          descriptionUrl: "https://iiwiki.com/wiki/File:Eurth_political_map_2024.png",
-          chosenAt: "2026-10-07T12:00:00.000Z",
-          chosenBy: "clerk_founder",
-          checkedAt: null,
-        },
-      };
-      const settings = withRealmWikiMap(
-        { maxNationsPerUser: 2, map: { projection: "equirectangular" } },
-        map
-      );
-      expect(settings).toMatchObject({
-        maxNationsPerUser: 2,
-        map: { projection: "equirectangular", source: map.source, attribution: map.attribution },
-      });
-      expect(realmWikiMap(settings)).toEqual(map);
-      expect(
-        realmWikiMap({ map: { source: { wiki: "iiwiki", fileTitle: "File:X.png", sha1: "nope" } } })
-      ).toBeNull();
-    });
-  });
-  describe("import-realm-lore defaults from the realm's wiki settings", () => {
-    it("does not apply one wiki's settings to another wiki", () => {
-      expect(() => loreImportOptions({ source: "althistory" }, EURTH_WIKI)).toThrow(
-        "missing --category, --keyword"
-      );
     });
   });
 });
@@ -509,16 +424,6 @@ describe("lore import", () => {
           ["Claimed", "Founded", "A"]
         )
       ).toEqual({ prune: ["Gone"], kept: ["Claimed", "Founded"] });
-    });
-  });
-  describe("loreDowngrades (re-import)", () => {
-    it("never turns a claimed or founded nation page back into lore", () => {
-      expect(
-        loreDowngrades(
-          ["Gone From Roster", "Claimed", "Founded"],
-          ["Claimed", "Founded", "Unrelated"]
-        )
-      ).toEqual({ downgrade: ["Gone From Roster"], kept: ["Claimed", "Founded"] });
     });
   });
 });

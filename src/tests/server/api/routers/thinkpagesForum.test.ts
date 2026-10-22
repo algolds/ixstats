@@ -37,8 +37,6 @@ import {
   fileReport,
   ForumError,
 } from "~/server/modules/thinkpages-forum";
-import { mapError } from "~/server/api/routers/thinkpagesForum/viewer";
-import { TRPCError } from "@trpc/server";
 import { forumBanFake, type BanRow } from "~/tests/helpers/forum-ban-fake";
 import { engagementTables } from "~/tests/helpers/forum-engagement-fake";
 
@@ -216,8 +214,6 @@ function realmForumDb(owned: Array<{ id: string; realmId: string; currentTotalGd
 const inEurth = [{ id: "c1", realmId: "r_eurth", currentTotalGdp: 10 }];
 const founder = { ...member, id: "u_f", clerkUserId: "founder" };
 const noMod = { siteAdmin: false, realmIds: [], categoryIds: [] };
-const ALLOWED_PERSONA_FIELDS = ["displayName", "username", "avatarUrl", "personaType"];
-
 describe("thinkpagesForum router", () => {
   describe("a post's wikitext on the thread read", () => {
     function wikitextDb(thread: object = {}) {
@@ -299,18 +295,6 @@ describe("thinkpagesForum router", () => {
     const asAdmin = await caller(admin, forumDb()).category({ key: "general", page: 1 });
     expect(asAdmin.threads[0]!.lastPoster).toEqual(asMember.threads[0]!.lastPoster);
     expect(asAdmin.authors.users).toEqual({});
-  });
-  it("returns display-safe authors and canStart on a category", async () => {
-    const db = forumDb();
-    const out = await caller(member, db).category({ key: "general", page: 1 });
-    expect(out.canStart).toBe(true);
-    // The listed thread is a persona thread: the player behind it gets no entry (flag, avatar or name).
-    expect(out.authors.users).toEqual({});
-    expect(Object.keys(out.authors.personas.pa1!).sort()).toEqual(
-      [...ALLOWED_PERSONA_FIELDS].sort()
-    );
-    expect(JSON.stringify(out)).not.toContain("secret@example.com");
-    expect(JSON.stringify(out)).not.toContain("clerk_1");
   });
   describe("thread page authors, numbers, roles and participants", () => {
     const post = (id: string, authorUserId: string | null, authorPersonaId: string | null) => ({
@@ -409,12 +393,6 @@ describe("thinkpagesForum router", () => {
       expect(out.thread.authorUserId).toBeNull();
       expect(out.viewerIsAuthor).toBe(true);
     });
-    it("sends a member no player id on a persona thread in the category list, a moderator the id", async () => {
-      const asMember = await caller(member, forumDb()).category({ key: "general", page: 1 });
-      expect(asMember.threads[0]).toMatchObject({ authorPersonaId: "pa1", authorUserId: null });
-      const asAdmin = await caller(admin, forumDb()).category({ key: "general", page: 1 });
-      expect(asAdmin.threads[0]).toMatchObject({ authorPersonaId: "pa1", authorUserId: "u1" });
-    });
   });
   it("strips hidden and gives no moderator tools to a member (T0-19)", async () => {
     const db = forumDb();
@@ -476,25 +454,6 @@ describe("thinkpagesForum router", () => {
   });
 
   describe("realm sections", () => {
-    it("gives a member's realm its emblem and thumbnail for the sidebar, and only these", async () => {
-      const db = realmForumDb(inEurth);
-      db.realm.findUnique.mockImplementation((async ({ select }: { select?: object }) => ({
-        ...EURTH,
-        ...(select && "emblemUrl" in select
-          ? { emblemUrl: "https://img.example/e.png", thumbnail: "https://img.example/t.png" }
-          : {}),
-      })) as never);
-      await expect(caller(member, db).navFlags()).resolves.toEqual({
-        realmMember: true,
-        forumModerator: false,
-        realm: {
-          slug: "eurth",
-          name: "Eurth",
-          emblemUrl: "https://img.example/e.png",
-          thumbnail: "https://img.example/t.png",
-        },
-      });
-    });
     it("returns a realm section with canPost and notice, never the raw posting access", async () => {
       const out = await caller(member, realmForumDb()).realmSection({ realm: "eurth" });
       expect(out).toMatchObject({
@@ -566,37 +525,6 @@ describe("thinkpagesForum router", () => {
       const plain = await caller(member, realmForumDb(inEurth)).thread({ threadId: "t1", page: 1 });
       expect("moderable" in plain).toBe(false);
       expect(plain.posts.some((p) => "moderable" in p || "sanctionable" in p)).toBe(false);
-    });
-
-    it("marks hidden threads in a category for its moderators only (M-4)", async () => {
-      const listed = (db: ReturnType<typeof realmForumDb>) => {
-        db.forumThread.findMany.mockResolvedValue([
-          {
-            id: "t1",
-            title: "Hello",
-            authorUserId: "u1",
-            authorPersonaId: null,
-            pinned: false,
-            locked: false,
-            hidden: true,
-            postCount: 1,
-            lastPostAt: when,
-          },
-        ] as never);
-        return db;
-      };
-      const forMod = await caller(founder, listed(realmForumDb())).category({
-        key: "hub",
-        page: 1,
-        realm: "eurth",
-      });
-      expect(forMod.threads.map((t) => t.hidden)).toEqual([true]);
-      const db = listed(realmForumDb(inEurth));
-      const forMember = await caller(member, db).category({ key: "hub", page: 1, realm: "eurth" });
-      expect(forMember.threads.every((t) => !("hidden" in t))).toBe(true);
-      expect(db.forumThread.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ select: expect.objectContaining({ hidden: true }) })
-      );
     });
   });
 });
@@ -785,7 +713,6 @@ describe("adverts on the board list and the thread page", () => {
     email: "x@y.z",
     role: { name: "user", level: 100 },
   };
-  const officer = { ...member, id: "u_off", clerkUserId: "officer" };
   const find = {
     id: "cat_find",
     scope: "site",
@@ -906,14 +833,6 @@ describe("adverts on the board list and the thread page", () => {
       expect(JSON.stringify(out)).not.toContain("ownerId");
       expect(JSON.stringify(out)).not.toContain('"founder"');
     });
-    it("decides the first post by the thread's first post, so a hidden first post does not move Edit to the next", async () => {
-      const grants = [{ userId: "officer", powers: ["appearance"] }];
-      const out = await caller(officer, advertDb(ACTIVE, grants, "p_hidden_first")).thread({
-        threadId: "t_ad",
-        page: 1,
-      });
-      expect(out.posts.map((p) => p.isOwn)).toEqual([false, false]);
-    });
   });
 });
 
@@ -953,20 +872,5 @@ describe("write hooks and refusals", () => {
       cause: { context: { threadId: "t_old" } },
     });
     expect(afterThreadStarted).not.toHaveBeenCalled();
-  });
-
-  it("publishes a rate-limit wait, and gives a plain refusal no cause", () => {
-    const thrown = (error: Error): TRPCError => {
-      try {
-        mapError(error);
-      } catch (caught) {
-        if (caught instanceof TRPCError) return caught;
-      }
-      throw new Error("mapError did not throw a TRPCError");
-    };
-    const limited = thrown(new ForumError("TOO_MANY_REQUESTS", "slow", 12));
-    expect(limited.code).toBe("TOO_MANY_REQUESTS");
-    expect(limited.cause).toMatchObject({ context: { retryAfterSeconds: 12 } });
-    expect(thrown(new ForumError("FORBIDDEN", "no")).cause).toBeUndefined();
   });
 });

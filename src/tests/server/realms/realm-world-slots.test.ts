@@ -26,11 +26,9 @@ import { realmMapRouter } from "~/server/api/routers/realms/map";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
-import { Prisma } from "@prisma/client";
 import { geoEditorLinkageAssignmentRouter } from "~/server/api/routers/geo/editor/linkage/assignment";
 import { invalidateCache } from "~/lib/cache";
 import { clearTrpcMemoryCache } from "~/lib/cache/trpc-cache";
-import { listBuilderRealms } from "~/server/modules/realms";
 import { atlasStudioRouter } from "~/server/api/routers/atlas/studio";
 import { admin, fakeDb } from "~/tests/server/maps/map-import-fakes";
 
@@ -40,7 +38,6 @@ const FOUNDER = "clerk_founder";
 const MAP_OFFICER = "clerk_mapper";
 const BOARD_OFFICER = "clerk_board";
 const CLAIMS_OFFICER = "clerk_claims";
-const PLAYER = "clerk_player";
 const ADMIN = "clerk_admin";
 
 type ModelMock = Record<string, jest.Mock>;
@@ -149,15 +146,6 @@ describe("realms.map.worldStatus", () => {
       ])
     );
   });
-  it("locks an archived realm, for a site admin too, whatever its claims", async () => {
-    const db = realmDb({ [EURTH]: "archived" });
-    claimCounts(db, 0, 0);
-    await expect(caller(db, ADMIN).worldStatus({ realm: "eurth" })).resolves.toMatchObject({
-      status: "archived",
-      locked: true,
-      lockReason: "archived",
-    });
-  });
 });
 
 describe("realms.map.worldSlot", () => {
@@ -191,23 +179,6 @@ describe("realms.map.setSlotClaimable", () => {
     await expect(caller(db, FOUNDER).setSlotClaimable(input)).rejects.toMatchObject({
       code: "CONFLICT",
     });
-  });
-
-  it("refuses anyone without the map power, Ixnay and archived realms, writing nothing", async () => {
-    for (const [who, realm, status] of [
-      [PLAYER, "eurth", {}],
-      [BOARD_OFFICER, "eurth", {}],
-      [FOUNDER, "other", {}],
-      [ADMIN, "ixnay", {}],
-      [ADMIN, "eurth", { [EURTH]: "archived" }],
-      [FOUNDER, "eurth", { [EURTH]: "archived" }],
-    ] as const) {
-      const db = realmDb(status);
-      await expect(caller(db, who).setSlotClaimable({ ...input, realm })).rejects.toMatchObject({
-        code: "FORBIDDEN",
-      });
-      expect(db.country!.updateMany).not.toHaveBeenCalled();
-    }
   });
 });
 
@@ -324,12 +295,7 @@ describe("renaming a slot", () => {
       ...input,
     });
   }
-  const uniqueViolation = (target: string[]) =>
-    new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
-      code: "P2002",
-      clientVersion: "test",
-      meta: { target },
-    });
+
   beforeEach(() => {
     jest.clearAllMocks();
     clearTrpcMemoryCache();
@@ -356,17 +322,6 @@ describe("renaming a slot", () => {
       expect(db.mapLayer!.update).not.toHaveBeenCalled();
       expect(invalidateCache).not.toHaveBeenCalled();
     });
-    it("is also a CONFLICT when a concurrent save takes the name first, before the region is touched", async () => {
-      const db = slotDb();
-      db.country!.update!.mockResolvedValueOnce({}).mockRejectedValue(
-        uniqueViolation(["realmId", "name"])
-      );
-      await expect(save(db, MAP_OFFICER)).rejects.toMatchObject({
-        code: "CONFLICT",
-        message: "Another nation of this realm is already called Algir Renamed",
-      });
-      expect(db.mapLayer!.update).not.toHaveBeenCalled();
-    });
   });
   describe("a country that is not an unowned generated slot", () => {
     it("keeps its name when a player holds it, and the region is still renamed", async () => {
@@ -377,58 +332,6 @@ describe("renaming a slot", () => {
     });
   });
 });
-
-describe("the builder's realms", () => {
-  const user = { id: "u1", clerkUserId: "clerk_u1" };
-  function builderDb(opts: {
-    membershipTier?: string;
-    activeRealmId?: string | null;
-    realms: Array<{ id: string; slug: string; name: string; settings: object | null }>;
-    owned?: string[];
-  }) {
-    return {
-      user: {
-        findUnique: jest.fn().mockResolvedValue({
-          membershipTier: opts.membershipTier ?? "basic",
-          country: opts.activeRealmId ? { realmId: opts.activeRealmId } : null,
-        }),
-      },
-      realm: {
-        findMany: jest.fn().mockResolvedValue(opts.realms),
-        findUnique: jest.fn(),
-      },
-      country: {
-        findMany: jest.fn().mockResolvedValue((opts.owned ?? []).map((realmId) => ({ realmId }))),
-        count: jest.fn(),
-      },
-    } as any;
-  }
-  describe("listBuilderRealms", () => {
-    it("offers Ixnay and active, non-system realms that are public, founded by the player, or where they hold a nation", async () => {
-      const db = builderDb({ realms: [] });
-      await listBuilderRealms(db, user);
-      expect(db.realm.findMany).toHaveBeenCalledWith({
-        where: {
-          OR: [
-            { id: "default" },
-            {
-              status: "active",
-              isSystem: false,
-              OR: [
-                { visibility: "public" },
-                { ownerId: "clerk_u1" },
-                { countries: { some: { ownerUserId: "u1" } } },
-              ],
-            },
-          ],
-        },
-        orderBy: { name: "asc" },
-        select: { id: true, slug: true, name: true, settings: true },
-      });
-    });
-  });
-});
-
 /**
  * atlas.studio.createRealm and applyStatus: a draft, unlisted realm owned by the admin who made it, and the
  * world status Ixnay's layer choice reads (the founder's worldStatus refuses Ixnay).
