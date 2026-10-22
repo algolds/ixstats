@@ -213,10 +213,10 @@ function SheetBody({ sheet }: { sheet: CardSheetData }) {
               .join(" · ")}
           </SheetDescription>
           {/*
-           * Beside the close button and level with it (both sit against the sheet itself, top-4). The wishlist and the
-           * mute are the signed-in player's own.
+           * Beside the close button and level with it (both sit against the sheet itself, top-4). On a phone the sheet
+           * scrolls under them, so they get a backing. The wishlist and the mute are the signed-in player's own.
            */}
-          <div className="absolute top-4 right-14 flex items-center gap-1">
+          <div className="max-md:bg-popover absolute top-4 right-14 flex items-center gap-1 max-md:rounded-full">
             <Tooltip content="Copy link">
               <Button
                 size="icon-sm"

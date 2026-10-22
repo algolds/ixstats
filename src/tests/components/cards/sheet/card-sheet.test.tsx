@@ -590,7 +590,9 @@ describe("CardSheet about", () => {
     expect(within(about()).queryByRole("button", { name: /takedown/ })).toBeNull();
     expect(within(about()).queryByRole("link", { name: "How to ask for a takedown" })).toBeNull();
 
-    fireEvent.click(within(about()).getByRole("button", { name: "About NationStates data" }));
+    const infoButton = within(about()).getByRole("button", { name: "About NationStates data" });
+    expect(infoButton.closest("p")).toHaveTextContent(/^Data from NationStates$/);
+    fireEvent.click(infoButton);
     const info = screen.getByRole("dialog", { name: "About NationStates data" });
     expect(info).toHaveTextContent(/Not affiliated with or endorsed by NationStates/);
     fireEvent.click(within(info).getByRole("button", { name: "Verify & request takedown" }));

@@ -92,7 +92,11 @@ function NsDataInfo({ triggerRef, onTakedown }: NsDataInfoProps) {
           </Button>
         </PopoverTrigger>
       </Tooltip>
-      <PopoverContent aria-label={NS_DATA} className="text-footnote text-label-secondary space-y-3">
+      <PopoverContent
+        aria-label={NS_DATA}
+        collisionPadding={16}
+        className="text-footnote text-label-secondary space-y-3"
+      >
         <p>
           <NationStatesDataCredit linkClassName={cn("underline", focusRing)} />
         </p>
@@ -121,7 +125,9 @@ function Credits({ card, writer }: { card: CardSheetData["card"]; writer: string
   const parts: ReactNode[] = [];
   if (writer) parts.push(`Article by ${writer}`);
   if (card.artCredit) parts.push(<ArtCreditLine credit={card.artCredit} label="Art:" />);
-  if (parts.length === 0 && !card.ns) return null;
+  // An NS card's (i) gets a few words to sit on, so it is never alone on its line
+  if (card.ns) parts.push("Data from NationStates");
+  if (parts.length === 0) return null;
   return (
     <>
       <p className="text-footnote text-label-secondary">
@@ -133,7 +139,7 @@ function Credits({ card, writer }: { card: CardSheetData["card"]; writer: string
         ))}
         {card.ns && (
           <>
-            {parts.length > 0 && " "}
+            {" "}
             <NsDataInfo triggerRef={info} onTakedown={() => setTakedown(true)} />
           </>
         )}
