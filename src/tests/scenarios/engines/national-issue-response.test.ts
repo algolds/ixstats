@@ -6,9 +6,14 @@
  * closed with a consequence log. A consequence the engine cannot apply is left out. Two IxTime years on, the stat
  * progression has moved Testland's stored GDP by exactly the phased effects, against an untouched twin nation.
  *
+ * The stat progression cron, run batch by batch over three nations (one whose baseline cannot be projected), writes
+ * the projection into the current figures only, never a baseline, and keeps one history point per nation per IxTime
+ * month; the broken nation fails alone.
+ *
  * Folds national-issues-resolve-effects (the column writes, the StorytellerEffects and their consequence rows, the
  * log line, the unappliable consequence; its no-IxCredits tombstone is not carried), the +X pp, multiplier and
- * dropped-consequence cases of national-issues-projection-effects, and stat-progression's level-effect case.
+ * dropped-consequence cases of national-issues-projection-effects, and stat-progression (the level-effect case, the
+ * current-only write, one history point per IxTime month, the batch walk and the isolated failure).
  */
 let mockDb: unknown;
 jest.mock("~/server/db", () => ({
@@ -225,4 +230,38 @@ it("raises an issue, refuses a rival, applies the owner's answer and moves the p
   const perHead = async (id: string) =>
     (await db.country.findUniqueOrThrow({ where: { id } })).currentGdpPerCapita;
   expect((await perHead("testland")) / (await perHead("twinland"))).toBeCloseTo(1.003 * 0.995, 9);
+});
+
+it("progresses the stored figures batch by batch, one history point per IxTime month, a broken nation failing alone", async () => {
+  jest.spyOn(console, "error").mockImplementation(() => undefined);
+  await addNation(db as never, { id: "brokenland", baselineDate: new Date(NOW - YEAR) });
+  await db.country.update({
+    where: { id: "brokenland" },
+    data: { baselinePopulation: Number.NaN },
+  });
+  const before = await db.country.findUniqueOrThrow({ where: { id: "testland" } });
+  const run = (ixTime: number) => runStatProgression({ db: db as never, ixTime, batchSize: 1 });
+  const points = (countryId: string) => db.historicalDataPoint.count({ where: { countryId } });
+
+  expect(await run(NOW + YEAR)).toMatchObject({ processed: 3, updated: 2, failed: 1 });
+  const after = await db.country.findUniqueOrThrow({ where: { id: "testland" } });
+  expect(after).toMatchObject({
+    baselinePopulation: before.baselinePopulation,
+    baselineGdpPerCapita: before.baselineGdpPerCapita,
+    baselineDate: before.baselineDate,
+    lastCalculated: new Date(NOW + YEAR),
+  });
+  expect(after.currentGdpPerCapita).toBeGreaterThan(before.currentGdpPerCapita);
+  expect(after.currentPopulation).toBeGreaterThan(before.currentPopulation);
+  expect([await points("testland"), await points("twinland"), await points("brokenland")]).toEqual([
+    1, 1, 0,
+  ]);
+
+  // Later the same IxTime month: the figures move again, the history does not
+  await run(NOW + YEAR + 86_400_000);
+  expect(await points("testland")).toBe(1);
+  // The next IxTime month adds the next point
+  await run(NOW + YEAR + 40 * 86_400_000);
+  expect(await points("testland")).toBe(2);
+  expect(await db.calculationLog.count()).toBe(3);
 });
