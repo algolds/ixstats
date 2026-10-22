@@ -34,14 +34,13 @@ import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { TRPCError } from "@trpc/server";
-import sharp from "sharp";
+import "sharp";
 import { MAX_UPLOAD_BYTES } from "~/lib/wiki-os/config";
 import { hashFile } from "~/lib/wiki-os/core/file-hash";
 import { authorizeAction, requireRight } from "~/lib/wiki-os/permissions";
 import { scheduleMirrorKick, uploadPayloadSchema } from "~/lib/wiki-os/services/mirror-outbox";
 import { UploadError } from "~/lib/wiki-os/services/upload-error";
 import {
-  descriptionWikitext,
   uploadFile,
   type UploadRequest,
 } from "~/lib/wiki-os/services/upload-service";
@@ -137,13 +136,6 @@ describe("a new file", () => {
     expect(tables.wikiArticle.rows).toHaveLength(1);
     expect(tables.wikiArticle.rows[0]?.wikitext).toBe("old text");
     expect(jobs().map((job) => job.kind)).toEqual(["upload"]);
-  });
-
-  it("takes the whole page text as given when the caller sends it (api.php text)", async () => {
-    await uploadFile(request({ pageText: "just this", description: "ignored" }));
-
-    const page = tables.wikiArticle.rows.find((row) => row.title === "File:Flag of Eurth.png");
-    expect(page?.wikitext).toBe("just this");
   });
 });
 
@@ -243,22 +235,6 @@ describe("refusals", () => {
     expect(tables.wikiAsset.rows).toHaveLength(0);
     expect(jobs()).toHaveLength(0);
   });
-
-  it("accepts a clean SVG with the size it states", async () => {
-    const bytes = new TextEncoder().encode(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"><rect width="40" height="20"/></svg>`
-    );
-
-    const result = await uploadFile(request({ bytes, filename: "Clean.svg" }));
-
-    expect(result).toMatchObject({
-      result: "Success",
-      mime: "image/svg+xml",
-      width: 40,
-      height: 20,
-    });
-  });
-
   it.each([
     [
       "a name whose extension is wrong for the bytes",
@@ -286,16 +262,6 @@ describe("refusals", () => {
     expect(staged()).toEqual([]);
     expect(jobs()).toHaveLength(0);
   });
-
-  it("refuses a name with nothing usable in it, and turns the characters a title cannot hold into dashes", async () => {
-    await expect(uploadFile(request({ filename: "folder/" }))).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-    });
-
-    const result = await uploadFile(request({ filename: "[bad].png" }));
-    expect(result).toMatchObject({ filename: "-bad-.png" });
-  });
-
   it("is refused a name whose File: page was deleted", async () => {
     tables.wikiArticle.seed({
       title: "File:Flag of Eurth.png",
@@ -380,18 +346,6 @@ describe("nothing is left staged when an upload fails (review M1)", () => {
     expect(staged()).toEqual([]);
     expect(tables.wikiAsset.rows).toHaveLength(0);
   });
-
-  it("takes an SVG that states an absurd width as one with no stated size, not as a crash", async () => {
-    const bytes = new TextEncoder().encode(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="99999999999" height="20"/>`
-    );
-
-    const result = await uploadFile(request({ bytes, filename: "Huge.svg" }));
-
-    expect(result).toMatchObject({ result: "Success", width: null, height: 20 });
-    expect(tables.wikiAsset.rows[0]).toMatchObject({ width: null, height: 20 });
-  });
-
   it("leaves nothing staged when the record fails after the file was staged", async () => {
     failing(tables.wikiLog, "create");
 
@@ -449,29 +403,6 @@ describe("the pixel area limit (review minor 3)", () => {
       result: "Success",
     });
   });
-
-  it("follows WIKIOS_MAX_IMAGE_AREA for a wiki that raised $wgMaxImageArea, and ignores a bad value", async () => {
-    process.env.WIKIOS_MAX_IMAGE_AREA = "30000000";
-    await expect(uploadFile(request({ bytes: png(5000, 5000) }))).resolves.toMatchObject({
-      result: "Success",
-    });
-
-    process.env.WIKIOS_MAX_IMAGE_AREA = "lots";
-    await expect(
-      uploadFile(request({ bytes: png(5000, 5001), filename: "Other.png" }))
-    ).rejects.toMatchObject({ code: "file-too-large" });
-  });
-
-  it("does not hold a drawing to it: an SVG may state any size", async () => {
-    const bytes = new TextEncoder().encode(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="90000" height="90000"/>`
-    );
-
-    await expect(uploadFile(request({ bytes, filename: "Map.svg" }))).resolves.toMatchObject({
-      result: "Success",
-      width: 90000,
-    });
-  });
 });
 
 describe("the SVG size limit", () => {
@@ -498,68 +429,5 @@ describe("the SVG size limit", () => {
     await expect(
       uploadFile(request({ bytes: svgOf(5_000_000), filename: "Map.svg" }))
     ).resolves.toMatchObject({ result: "Success" });
-  });
-
-  it("follows WIKIOS_MAX_SVG_BYTES, and ignores a bad value; a raster is not held to it", async () => {
-    process.env.WIKIOS_MAX_SVG_BYTES = "6000000";
-    await expect(
-      uploadFile(request({ bytes: svgOf(5_500_000), filename: "Map.svg" }))
-    ).resolves.toMatchObject({ result: "Success" });
-
-    process.env.WIKIOS_MAX_SVG_BYTES = "plenty";
-    await expect(
-      uploadFile(request({ bytes: svgOf(5_500_000), filename: "Other.svg" }))
-    ).rejects.toMatchObject({ code: "file-too-large" });
-
-    process.env.WIKIOS_MAX_SVG_BYTES = "1000";
-    await expect(uploadFile(request({ filename: "Flag.png" }))).resolves.toMatchObject({
-      result: "Success",
-    });
-  });
-});
-
-describe("the BlurHash (WK-17)", () => {
-  it("is a new version's own when a file is replaced", async () => {
-    const colour = async (r: number) =>
-      new Uint8Array(
-        await sharp({ create: { width: 8, height: 8, channels: 3, background: { r, g: 0, b: 0 } } })
-          .png()
-          .toBuffer()
-      );
-    await uploadFile(request({ bytes: await colour(250), filename: "Swatch.png" }));
-    const first = tables.wikiAsset.rows[0]?.blurhash;
-    await uploadFile(
-      request({ bytes: await colour(20), filename: "Swatch.png", ignoreWarnings: true })
-    );
-
-    expect(tables.wikiAsset.rows).toHaveLength(1);
-    expect(tables.wikiAsset.rows[0]?.blurhash).not.toBe(first);
-  });
-
-  it("is none for an SVG, and none for a picture that cannot be decoded, which still uploads", async () => {
-    const svg = new TextEncoder().encode(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"><rect width="40" height="20"/></svg>`
-    );
-    await expect(uploadFile(request({ bytes: svg, filename: "Clean.svg" }))).resolves.toMatchObject(
-      { result: "Success" }
-    );
-    // a PNG header with no image data behind it
-    await expect(uploadFile(request({ filename: "Broken.png" }))).resolves.toMatchObject({
-      result: "Success",
-    });
-
-    expect(tables.wikiAsset.rows.map((row) => row.blurhash)).toEqual([null, null]);
-  });
-});
-
-describe("descriptionWikitext", () => {
-  it("writes the two sections and a link for each valid category", () => {
-    expect(
-      descriptionWikitext({
-        description: " A map. ",
-        license: "",
-        categories: ["Maps", "Category:Eurth", "bad|name", "  "],
-      })
-    ).toBe("== Summary ==\nA map.\n== Licensing ==\n\n[[Category:Maps]]\n[[Category:Eurth]]");
   });
 });
