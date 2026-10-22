@@ -6,7 +6,12 @@
  *   → the follow-up election also resolves.
  *
  * Before MC-2 nothing created an election or a candidate, seats never had a party and
- * `legislation.holdVote` always threw "No seated legislature".
+ * `legislation.holdVote` always threw "No seated legislature". An election is claimed before it
+ * is counted, so the owner's "Count votes" button and the cron racing count it once, and a count
+ * that cannot finish (a party dissolved before the vote, a failed count) releases it for a later
+ * pass.
+ *
+ * Folds election-lifecycle-claims.
  */
 
 // ── In-memory database (only what the politics paths touch) ────────────────
@@ -413,5 +418,71 @@ describe("MC-2 politics lifecycle", () => {
     expect(tables.election).toHaveLength(0);
     const status = await elections.getElectionStatus({ countryId: COUNTRY });
     expect(status).toMatchObject({ activeParties: 1, minParties: 2, upcoming: null });
+  });
+
+  it("counts a due election once when the owner and the cron reach it together", async () => {
+    await setUpNation();
+    const first = tables.election![0]!;
+    IxTime.setTimeOverride(first.scheduledIxTime + DAY);
+
+    // Hold the owner's claim until the cron has read the election as due too
+    const claim = fakeDb.election.updateMany;
+    let ownerAtClaim!: () => void;
+    const reached = new Promise<void>((resolve) => (ownerAtClaim = resolve));
+    let releaseOwner!: () => void;
+    const held = new Promise<void>((resolve) => (releaseOwner = resolve));
+    let waiting = true;
+    fakeDb.election.updateMany = jest.fn(async (args: { where: Record<string, unknown> }) => {
+      if (waiting) {
+        waiting = false;
+        ownerAtClaim();
+        await held;
+      }
+      return claim(args);
+    });
+
+    const ownerCount = callers().elections.resolveDueElection({ countryId: COUNTRY });
+    await reached;
+    const cron = await processDueElections();
+    releaseOwner();
+
+    expect(cron).toMatchObject({ resolved: 1 });
+    await expect(ownerCount).resolves.toEqual({ resolved: false, reason: "already_counting" });
+    expect(first.status).toBe("completed");
+    expect(tables.electionResult!.filter((r) => r.electionId === first.id)).toHaveLength(2);
+    expect(tables.legislativeSeat!.filter((seat) => seat.partyId != null)).toHaveLength(100);
+  });
+
+  it.each([
+    [
+      "a party dissolved before the vote",
+      () => {
+        tables.politicalParty![1]!.isActive = false;
+        return () => {
+          tables.politicalParty![1]!.isActive = true;
+        };
+      },
+    ],
+    [
+      "the count failed",
+      () => {
+        jest.spyOn(console, "error").mockImplementation(() => undefined);
+        fakeDb.electionResult.create.mockRejectedValueOnce(new Error("db down"));
+        return () => undefined;
+      },
+    ],
+  ])("releases an election it cannot count (%s) for a later pass", async (_label, breakIt) => {
+    await setUpNation();
+    const first = tables.election![0]!;
+    IxTime.setTimeOverride(first.scheduledIxTime + DAY);
+    const repair = breakIt();
+
+    expect(await processDueElections()).toMatchObject({ resolved: 0, skipped: 1 });
+    expect(first.status).toBe("upcoming");
+    expect(tables.electionResult).toHaveLength(0);
+
+    repair();
+    expect(await processDueElections()).toMatchObject({ resolved: 1 });
+    expect(first.status).toBe("completed");
   });
 });
