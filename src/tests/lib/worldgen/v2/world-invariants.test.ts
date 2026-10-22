@@ -6,7 +6,7 @@
  * their slots (across the antimeridian too), the presets' measured shape, the 2026-10 audit regressions and the
  * quality gate. One test per behaviour; each world is generated once.
  */
-import type { Feature, LineString, Position } from "geojson";
+import type { Feature, LineString, MultiLineString, Position } from "geojson";
 import { EARTH_RADIUS_KM, sphericalRingAreaSqKm } from "~/lib/maps/planet";
 import { DEFAULT_PARAMS, WORLD_PRESETS } from "~/lib/worldgen/v2/config";
 import { generateWorld } from "~/lib/worldgen/v2/index";
@@ -241,7 +241,9 @@ describe("the exported layers", () => {
       expect(layers.altitudes!.features.every((f) => /^zone_[0-8]$/.test(f.properties!.zone))).toBe(
         true
       );
-      expect(layers.rivers!.features.every((f) => f.geometry.type === "LineString")).toBe(true);
+      expect(
+        layers.rivers!.features.every((f) => /^(Multi)?LineString$/.test(f.geometry.type))
+      ).toBe(true);
       // Chaikin smoothing: no coast is left as a raw cell outline
       expect(
         layers.background!.features.every(
@@ -356,11 +358,10 @@ describe("the exported layers", () => {
     }
   });
 
-  // KNOWN BUG (reported to the owner 2026-10-21): exportRivers smooths a river's cell centres as they are, so a river
-  // whose cells step across the antimeridian (178.7 to -178.7) is drawn the long way, 357 degrees round the world,
-  // and overshoots to about ±204. fitToSeam keeps it whole, so the map shows a line across the planet. When the
-  // export unwraps the longitudes first, this starts failing: drop `.failing`.
-  it.failing("draws no river step longer than a few degrees, across the antimeridian too", () => {
+  // Regression (2026-10-21): exportRivers smoothed a river's cell centres as they were, so a river whose cells step
+  // across the antimeridian (178.7 to -178.7) was drawn the long way, 357 degrees round the world, overshooting to
+  // about ±204: 3 of the 9 rivers of Eurth at seed 4. A river is now unwrapped before smoothing and cut at ±180.
+  it("draws no river step longer than a few degrees, cutting a river that crosses the antimeridian at ±180", () => {
     const eurth = world("eurth-rivers", {
       ...WORLD_PRESETS.eurth,
       countryCountRange: [12, 12],
@@ -368,14 +369,29 @@ describe("the exported layers", () => {
       cellCount: 8000,
       plateCount: 8,
     });
-    for (const river of eurth.layers.rivers!.features) {
-      const line = (river.geometry as LineString).coordinates;
-      const longest = Math.max(...line.slice(1).map((p, i) => Math.abs(p[0]! - line[i]![0]!)));
-      expect({ river: river.id, longest: longest < 10 }).toEqual({
-        river: river.id,
+    const linesOf = (geometry: LineString | MultiLineString) =>
+      geometry.type === "LineString" ? [geometry.coordinates] : geometry.coordinates;
+    const rivers = eurth.layers.rivers!.features.map((river) => ({
+      id: river.id,
+      lines: linesOf(river.geometry as LineString | MultiLineString),
+    }));
+    for (const { id, lines } of rivers) {
+      const steps = lines.flatMap((line) =>
+        line.slice(1).map((p, i) => Math.abs(p[0]! - line[i]![0]!))
+      );
+      const inRange = lines.flat().every((p) => Math.abs(p[0]!) <= 180);
+      expect({ river: id, longest: Math.max(...steps) < 10, inRange }).toEqual({
+        river: id,
         longest: true,
+        inRange: true,
       });
     }
+    const cut = rivers.filter(({ lines }) => lines.length > 1);
+    expect(cut.length).toBeGreaterThan(0);
+    for (const { lines } of cut)
+      expect(lines.some((line) => line.some((p) => Math.abs(Math.abs(p[0]!) - 180) < 1e-9))).toBe(
+        true
+      );
   });
 });
 

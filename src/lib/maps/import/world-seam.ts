@@ -1,6 +1,7 @@
 /**
- * The antimeridian in a world bundle. The generator smooths rivers across the seam without wrapping them, so a
- * river reaches about ±205 degrees of longitude, and the bundle allows 360 either way. The realm map stores longitudes
+ * The antimeridian in a world bundle. A bundle made before 2026-10-21 smoothed rivers across the seam without
+ * wrapping them, so a river reached about ±205 degrees of longitude, and the bundle allows 360 either way (the
+ * generator now cuts its rivers here before it exports them). The realm map stores longitudes
  * within ±180 (its writer rejects anything else) and draws a feature that crosses the seam as parts either side of it,
  * the way the generator already splits polygons. `fitToSeam` does the same for a feature that runs past ±180: it is cut
  * at each seam and every part shifted into range. A feature within ±180 comes back as it is.

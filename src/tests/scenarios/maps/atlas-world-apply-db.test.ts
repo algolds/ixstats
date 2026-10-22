@@ -25,7 +25,6 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { VectorTile } from "@mapbox/vector-tile";
 import { PbfReader } from "pbf";
-import type { Feature, Position } from "geojson";
 import type { PrismaClient } from "@prisma/client";
 import { WORLD_PRESETS } from "~/lib/worldgen/v2/config";
 import { buildWorldBundle } from "~/lib/worldgen/world-apply";
@@ -41,13 +40,6 @@ import { RELIEF_ENTRY } from "~/tests/server/maps/world-import-fixtures";
 jest.setTimeout(120_000);
 
 const db = client as unknown as PrismaClient;
-const reach = (f: Feature) =>
-  Math.max(
-    ...(f.geometry.type === "LineString"
-      ? f.geometry.coordinates
-      : (f.geometry as { coordinates: Position[][] }).coordinates.flat()
-    ).map(([x]) => Math.abs(x!))
-  );
 
 describeWithDb("a generated world applied to a realm on real PostGIS", () => {
   const p = prefix();
@@ -84,7 +76,7 @@ describeWithDb("a generated world applied to a realm on real PostGIS", () => {
   });
 
   it("stores valid PostGIS copies, unions and joins every nation, moves the version and tiles the seam rivers apart", async () => {
-    // Eurth at seed 4 on 8,000 cells, twelve nations: three rivers past ±180, three nations on the seam
+    // Eurth at seed 4 on 8,000 cells, twelve nations: three rivers and three nations on the seam
     const draft = realWorld({
       params: {
         ...WORLD_PRESETS.eurth,
@@ -95,7 +87,9 @@ describeWithDb("a generated world applied to a realm on real PostGIS", () => {
       seed: 4,
     });
     const bundle = buildWorldBundle(draft, "preset");
-    expect(bundle.layers.rivers.features.filter((f) => reach(f) > 180).length).toBeGreaterThan(0);
+    expect(bundle.layers.rivers.features.some((f) => f.geometry.type === "MultiLineString")).toBe(
+      true
+    );
     const uploadId = await saveMapUpload(gzipSync(JSON.stringify(bundle)));
     const check = await db.mapImportJob.create({
       data: {
@@ -175,7 +169,5 @@ describeWithDb("a generated world applied to a realm on real PostGIS", () => {
     const tile = new VectorTile(new PbfReader(await buildTile(db, realmId, "rivers", 0, 0, 0)))
       .layers.rivers;
     expect(tile?.length).toBe(bundle.layers.rivers.features.length);
-    // (A river the generator itself drew the long way round the world still spans it: see the it.failing case in
-    // src/tests/lib/worldgen/v2/world-invariants.test.ts.)
   });
 });

@@ -127,7 +127,7 @@ export interface GeneratedWorld {
     altitudes: FeatureCollection; // 9-zone cumulative topography isolines (zone_0 to zone_8)
     climate: FeatureCollection; // 12 Trewartha biome polygons
     political: FeatureCollection; // National territories: _id, _displayName, _fillColor, _areaSqKm, slotKey. Absent when the realm keeps its borders
-    rivers: FeatureCollection; // Hydrographic river LineStrings (_strokeColor #0284c7, lengthKm, flux)
+    rivers: FeatureCollection; // Hydrographic river LineStrings, cut into a MultiLineString at ±180 (_strokeColor #0284c7, lengthKm, flux)
     lakes: FeatureCollection; // Inland waterbody lake polygons (_fillColor #0284c7, areaKm2)
     icecaps: FeatureCollection; // Polar ice cap polygons (#ffffff)
   };

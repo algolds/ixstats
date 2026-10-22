@@ -7,7 +7,7 @@
  * - climate: biome region polygons (grouped by biome, spline smoothed)
  * - political: country territory polygons (grouped by state, with _id, _displayName, _fillColor, slotKey, etc.)
  *   (omitted when the realm keeps its own borders)
- * - rivers: river network LineString features
+ * - rivers: river network LineString features (a MultiLineString when a river crosses the antimeridian)
  * - lakes: lake feature polygons
  * - icecaps: ice cap polygons (biome === 10)
  *
@@ -21,14 +21,8 @@
  */
 
 import { slotKey, type WorldGraph, type WorldGenParams } from "./types";
-import type {
-  FeatureCollection,
-  Feature,
-  LineString,
-  Polygon,
-  MultiPolygon,
-  Position,
-} from "geojson";
+import type { FeatureCollection, Feature, Polygon, MultiPolygon, Position } from "geojson";
+import { fitToSeam } from "~/lib/maps/import/world-seam";
 import { ELEVATION_ZONES, ICE_CAP_BIOME, TREWARTHA_BIOMES } from "./config";
 import { coastCorners, mergeCells, type MergedPolygon } from "./helpers/polygon-merge";
 import { catmullRomSmoothLine } from "./helpers/chaikin";
@@ -245,10 +239,17 @@ function exportRivers(graph: WorldGraph): FeatureCollection {
     const landRiverCells = river.cells.filter((c) => cells.isLand[c] === 1);
     if (landRiverCells.length < 2) continue;
 
-    const lineCoords: [number, number][] = landRiverCells.map((c) => [
-      cellLng(graph, c),
-      cellLat(graph, c),
-    ]);
+    // Unwrapped, each centre within 180 degrees of the last, so a river that steps across the antimeridian is
+    // smoothed the short way and not 357 degrees round the world
+    const lineCoords: [number, number][] = [];
+    for (const c of landRiverCells) {
+      const previous = lineCoords[lineCoords.length - 1]?.[0];
+      const lng = cellLng(graph, c);
+      lineCoords.push([
+        previous === undefined ? lng : lng + 360 * Math.round((previous - lng) / 360),
+        cellLat(graph, c),
+      ]);
+    }
 
     // The spline overshoots at the poles (a river on an Antarctic coast reached latitude -90.74), and no
     // map projection takes a latitude past 90
@@ -257,10 +258,9 @@ function exportRivers(graph: WorldGraph): FeatureCollection {
       Math.max(-90, Math.min(90, lat)),
     ]);
 
-    const geom: LineString = {
-      type: "LineString",
-      coordinates: smoothedLine,
-    };
+    // Cut where it crosses ±180, each part shifted back into range, the way a world bundle's lines are fitted
+    const geom = fitToSeam({ type: "LineString", coordinates: smoothedLine });
+    if (!geom) continue;
 
     geoFeatures.push({
       type: "Feature",
