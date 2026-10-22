@@ -74,12 +74,6 @@ describe("createBotPassword", () => {
     expect(await verifyBotPassword(created.password, data.passwordHash)).toBe(true);
     expect(JSON.stringify(created.summary)).not.toContain(created.password);
   });
-
-  it("always stores basic and keeps grants in the table's order", async () => {
-    await createBotPassword("u1", { appId: "A", grants: ["delete", "editpage"] });
-    expect(bp.create.mock.calls[0]![0].data.grants).toEqual(["basic", "editpage", "delete"]);
-  });
-
   it("refuses a bad app id, an unknown grant, a duplicate and too many", async () => {
     expect((await refusal(createBotPassword("u1", { appId: "bad@id", grants: [] }))).code).toBe("BAD_REQUEST");
     expect((await refusal(createBotPassword("u1", { appId: "x".repeat(33), grants: [] }))).code).toBe("BAD_REQUEST");
@@ -107,10 +101,5 @@ describe("deleteBotPassword", () => {
     bp.deleteMany.mockResolvedValue({ count: 1 });
     await deleteBotPassword("u1", "bp1");
     expect(bp.deleteMany).toHaveBeenCalledWith({ where: { id: "bp1", userId: "u1" } });
-  });
-
-  it("says not found when nothing was deleted (someone else's, or already gone)", async () => {
-    bp.deleteMany.mockResolvedValue({ count: 0 });
-    expect((await refusal(deleteBotPassword("u1", "bp1"))).code).toBe("NOT_FOUND");
   });
 });

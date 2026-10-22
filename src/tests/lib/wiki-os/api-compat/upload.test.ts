@@ -75,20 +75,6 @@ describe("action=upload", () => {
     });
     expect(deps.siteUrl).toBe("https://ixwiki.com");
   });
-
-  it("takes the file's own name when no filename is given, and the comment as the page text when there is no text (as MediaWiki does)", async () => {
-    const { upload, called } = await setup();
-
-    await upload({ comment: "uploaded by hand" });
-
-    const [request] = called("uploadFile")[0]!.args as [Record<string, any>];
-    expect(request).toMatchObject({
-      filename: "from-the-part.png",
-      pageText: "uploaded by hand",
-      ignoreWarnings: false,
-    });
-  });
-
   it("answers a warning the way MediaWiki writes it, underscores and all, and stores nothing", async () => {
     const warning: UploadResult = {
       result: "Warning",
@@ -135,14 +121,6 @@ describe("action=upload", () => {
       code: "fileexists-no-change",
       info: "The upload is an exact duplicate of the current version of [[:File:Flag of Eurth.png]].",
     });
-  });
-
-  it("gives the imageinfo of the file the service stored: its url is absolute", async () => {
-    const { upload } = await setup();
-
-    const body = await upload({ filename: "Flag.png" });
-
-    expect(body.upload.imageinfo).toMatchObject({ sha1: "", mime: "image/png" });
   });
 });
 

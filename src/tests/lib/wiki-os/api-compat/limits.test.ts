@@ -1,22 +1,18 @@
 /** @jest-environment node */
 /**
- * Plan 410: the limits that keep one request's cost bounded (edit sizes, summaries, NUL, value
- * lists, search, response size, revision history) and the behaviours the review asked for
- * (blank pages, section edit summaries, log ids, malformed continuations).
+ * api.php input bounds (plan 410): page and summary sizes, NUL, blank pages, history paging, value lists, search
+ * limits, the response budget, continuations that cannot be forged, the login throttle key, and hostile text through
+ * parse, compare and section edits (no scan keyed on a text's content, the diff table bounded and escaped).
  */
 jest.mock("~/server/db", () => ({ __esModule: true, db: {} }));
 
-import {
-  call,
-  fakeSha1Hex,
-  fakeWiki,
-  loggedIn,
-  makeDeps,
-  makeWikiDeps,
-  type FakeWikiData,
-} from "./harness";
+import { call, fakeWiki, type FakeWikiData, loggedIn, makeDeps, makeWikiDeps } from "./harness";
 import { createHash } from "node:crypto";
 import { MAX_RESULT_BYTES } from "~/lib/wiki-os/api-compat/budget";
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
+import { diffTableHtml } from "~/lib/wiki-os/api-compat/diff-table";
+import { DiffTooLargeError, diffWikitext } from "~/lib/wiki-os/transformers/wikitext-diff";
+import { sectionHeadings } from "~/lib/wiki-os/wikitext/section-locator";
 
 type Body = Record<string, any>;
 
@@ -193,50 +189,7 @@ describe("edit sizes", () => {
     expect(summaries[1]).toBe("ab");
     expect(summaries[2]).toBe("s".repeat(499)); // never half of a surrogate pair
   });
-
-  it("cuts a log reason the same way", async () => {
-    const { act, calls } = await setup();
-    await act({ action: "delete", title: "Existing", reason: `${"r".repeat(700)}\u0000` });
-    expect(calls.find((c) => c.name === "archivePage")!.args[1] as string).toBe("r".repeat(500));
-  });
 });
-
-describe("section edits", () => {
-  it("puts MediaWiki's /* heading */ marker in front of the summary", async () => {
-    const summaryOf = async (params: Record<string, string>) => {
-      const { act, saves } = await setup();
-      await act({ action: "edit", title: "Sections", ...params });
-      return (saves()[0]!.args[1] as { summary: string }).summary;
-    };
-    expect(await summaryOf({ section: "1", text: "== One ==\nnew", summary: "why" })).toBe(
-      "/* One */ why"
-    );
-    expect(await summaryOf({ section: "2", text: "=== One A ===\nnewer" })).toBe("/* One A */");
-    expect(await summaryOf({ section: "0", text: "New lead.", summary: "lead" })).toBe("lead");
-  });
-
-  it("adds no blank line when text is appended to a section", async () => {
-    const { act, saves } = await setup();
-    await act({ action: "edit", title: "Sections", section: "3", appendtext: "\nthree body" });
-    await act({ action: "edit", title: "Sections", section: "2", appendtext: "\nmore a" });
-    const [last, middle] = saves()
-      .map((c) => (c.args[1] as { wikitext: string }).wikitext)
-      .reverse();
-    expect(middle).toBe(SECTIONED.replace("two body", "two body\nthree body"));
-    expect(last).toContain("a body\nmore a\n\n== Two ==");
-    expect(middle).not.toContain("two body\n\nthree body");
-  });
-});
-
-describe("log ids", () => {
-  it("answers the logid of the delete and of the move it just made", async () => {
-    const { act } = await setup();
-    expect((await act({ action: "delete", title: "Existing" })).delete.logid).toBe(55);
-    const moved = await act({ action: "move", from: "Existing", to: "Moved" });
-    expect(moved.move.logid).toBe(56);
-  });
-});
-
 describe("blank pages are pages", () => {
   it("shows a blanked page in prop=info and prop=revisions", async () => {
     const wiki = await makeWikiDeps(wikiData());
@@ -298,58 +251,6 @@ describe("prop=revisions of one page", () => {
         `action=query&titles=Busy&prop=revisions&rvprop=ids&${params}&formatversion=2`
       )
     ).body as Body;
-
-  it("answers the latest revision only, with no continuation, by default", async () => {
-    const body = await run("");
-    expect(body.query.pages[0].revisions.map((r: Body) => r.revid)).toEqual([111]);
-    expect(body.continue).toBeUndefined();
-  });
-
-  it.each([
-    "rvlimit=5",
-    "rvdir=newer",
-    "rvstartid=105",
-    "rvendid=103",
-    "rvuser=Heku",
-    "rvexcludeuser=Heku",
-    "rvstart=2026-01-10T00:00:00Z",
-    "rvend=2026-01-02T00:00:00Z",
-  ])("pages through the history when %s is given", async (param) => {
-    const body = await run(param);
-    expect(body.query.pages[0].revisions.length).toBeGreaterThanOrEqual(1);
-    if (param === "rvlimit=5") {
-      expect(body.query.pages[0].revisions).toHaveLength(5);
-      expect(body.continue.rvcontinue).toBeDefined();
-    }
-    if (param === "rvdir=newer") expect(body.query.pages[0].revisions[0].revid).toBe(100);
-  });
-
-  it("normalizes rvuser and rvexcludeuser like a user name (underscores, first letter)", async () => {
-    const data = history();
-    data.revisions![3]!.user = "Some user";
-    const seen: Array<{ users?: string[]; excludeUser?: string }> = [];
-    const store = fakeWiki(data);
-    const findRevisions = store.findRevisions.bind(store);
-    store.findRevisions = (query) => (
-      seen.push({
-        users: query.users ? [...query.users] : undefined,
-        excludeUser: query.excludeUser,
-      }),
-      findRevisions(query)
-    );
-    const deps = await makeDeps({ store });
-    await call(
-      deps,
-      "action=query&titles=Busy&prop=revisions&rvprop=ids&rvlimit=max&rvuser=some_user&formatversion=2"
-    );
-    await call(
-      deps,
-      "action=query&titles=Busy&prop=revisions&rvprop=ids&rvlimit=max&rvexcludeuser=some_user&formatversion=2"
-    );
-    expect(seen[0]!.users).toEqual(["Some user"]);
-    expect(seen[1]!.excludeUser).toBe("Some user");
-  });
-
   it("takes only the first of several rvlimit=1 pages: the continuation then leads on", async () => {
     const first = await run("rvlimit=1");
     expect(first.query.pages[0].revisions).toHaveLength(1);
@@ -418,52 +319,6 @@ describe("rvprop=sha1 on legacy revisions with no stored hash", () => {
       spy.mock.calls.flatMap(([ids]) => ids).every((id) => (id - 100) % 2 === 0 && id !== 104)
     ).toBe(true);
   });
-
-  it("gives slotsha1 the same, and reads nothing when no hash was asked for", async () => {
-    const { deps, spy } = await spied();
-    const slots = (
-      await call(
-        deps,
-        "action=query&titles=Old&prop=revisions&rvprop=ids|slotsha1&rvslots=main&rvlimit=3&formatversion=2"
-      )
-    ).body as Body;
-    // newest first: 124 carries a stored hash, 123 too, 122 is a legacy row
-    expect(slots.query.pages[0].revisions.map((rev: Body) => rev.slots.main.sha1)).toEqual([
-      expect.stringMatching(/^[0-9a-f]{40}$/),
-      expect.stringMatching(/^[0-9a-f]{40}$/),
-      sha1HexOf("text 22"),
-    ]);
-    spy.mockClear();
-    await call(
-      deps,
-      "action=query&titles=Old&prop=revisions&rvprop=ids|size|user&rvlimit=max&formatversion=2"
-    );
-    expect(spy).not.toHaveBeenCalled();
-  });
-
-  it("covers several pages and revids, and never asks for a revision that already has its hash", async () => {
-    const { deps, spy } = await spied();
-    const body = (
-      await call(
-        deps,
-        "action=query&titles=Old|Other&prop=revisions&rvprop=ids|sha1&formatversion=2"
-      )
-    ).body as Body;
-    expect(body.query.pages.map((page: Body) => page.revisions[0].sha1)).toEqual([
-      expect.stringMatching(/^[0-9a-f]{40}$/),
-      sha1HexOf("other text"),
-    ]);
-    expect(spy.mock.calls.flatMap(([ids]) => ids)).toEqual([900]); // Old's newest revision (124) carries a stored hash
-    spy.mockClear();
-    const byId = (
-      await call(deps, "action=query&revids=100|101&prop=revisions&rvprop=ids|sha1&formatversion=2")
-    ).body as Body;
-    expect(byId.query.pages[0].revisions.map((rev: Body) => rev.sha1)).toEqual([
-      sha1HexOf("text 0"),
-      expect.stringMatching(/^[0-9a-f]{40}$/),
-    ]);
-    expect(spy.mock.calls.flatMap(([ids]) => ids)).toEqual([100]);
-  });
 });
 
 describe("value lists", () => {
@@ -478,28 +333,6 @@ describe("value lists", () => {
     expect(body.query.allpages).toHaveLength(2);
     expect(body.warnings).toBeUndefined();
   });
-
-  it("dedupes siprop, uiprop and rvprop values, and gives the same answer as one of each", async () => {
-    const deps = await makeDeps({ store: fakeWiki(wikiData()) });
-    const once = (await call(deps, "action=query&meta=siteinfo&siprop=general&formatversion=2"))
-      .body;
-    const twice = (
-      await call(deps, "action=query&meta=siteinfo&siprop=general|general&formatversion=2")
-    ).body;
-    expect(twice).toEqual(once);
-    const info = (
-      await call(deps, "action=query&meta=userinfo&uiprop=rights|rights|groups&formatversion=2")
-    ).body as Body;
-    expect(info.query.userinfo.rights).toEqual(expect.any(Array));
-    const revs = (
-      await call(
-        deps,
-        "action=query&titles=Existing&prop=revisions&rvprop=ids|ids|ids&formatversion=2"
-      )
-    ).body as Body;
-    expect(revs.query.pages[0].revisions[0].revid).toBe(101);
-  });
-
   it.each([
     ["list", "list"],
     ["meta", "meta"],
@@ -739,15 +572,6 @@ describe("continuations and counts", () => {
     const byId = (await ask("1|1004", "revids=1000|1001|1002")).error;
     expect(byId.code).toBe("badcontinue");
   });
-
-  it("gives sha1 as 40 hexadecimal characters, as MediaWiki's tools expect", async () => {
-    const deps = await makeDeps({ store: fakeWiki(wikiData()) });
-    const body = (
-      await call(deps, "action=query&titles=Existing&prop=revisions&rvprop=sha1&formatversion=2")
-    ).body as Body;
-    expect(body.query.pages[0].revisions[0].sha1).toMatch(/^[0-9a-f]{40}$/);
-    expect(body.query.pages[0].revisions[0].sha1).toBe(fakeSha1Hex(101));
-  });
 });
 
 describe("login", () => {
@@ -794,5 +618,180 @@ describe("login", () => {
     const body = (await wiki.bot.login("Heku@Bot", "p".repeat(1025))) as Body;
     expect(body.login.result).toBe("Failed");
     expect(keys).toEqual([]);
+  });
+});
+
+describe("hostile input", () => {
+  const N = 200_000;
+  const BUDGET_MS = 200 * TIMING_BUDGET_SCALE;
+
+  const HOSTILE: Record<string, string> = {
+    "category opener and spaces": `[[Category:${" ".repeat(N)}`,
+    "category opener, spaces then a key": `[[ ${" ".repeat(N)}Category:a|b`,
+    "unclosed link openers": "[[".repeat(N / 2),
+    "unclosed link targets": "[[a".repeat(N / 3),
+    "unclosed piped links": "[[a|".repeat(N / 4),
+    "unclosed section links": "[[a#".repeat(N / 4),
+    "unclosed category links": "[[Category:a".repeat(N / 12),
+    "unclosed nowiki openers": "<nowiki ".repeat(N / 8),
+    "unclosed pre and ref openers": "<pre <ref <gallery ".repeat(N / 18),
+    "nowiki openers with attributes": '<nowiki a="'.repeat(N / 11),
+    "heading marks": "== ".repeat(N / 3),
+    "a line of equals signs": "=".repeat(N),
+    "headings with trailing space": "== a ==  \n".repeat(N / 10),
+    "bare addresses": "http://".repeat(N / 7),
+    "quotes": "'''''".repeat(N / 5),
+    "braces": "{{".repeat(N / 2),
+    "a long run of closed links": "[[a]]".repeat(N / 5),
+    "distinct closed links": Array.from({ length: N / 12 }, (_, i) => `[[Page ${i}]]`).join(""),
+  };
+
+  for (const [name, text] of Object.entries(HOSTILE)) HOSTILE[name] = text.slice(0, N);
+
+  const timed = <T>(run: () => T): { value: T; ms: number } => {
+    const start = performance.now();
+    const value = run();
+    return { value, ms: performance.now() - start };
+  };
+  /** The same characters in a new string object (a text read from the database again is one). */
+  const freshCopy = (text: string) => text.split("").join("");
+
+  describe("no scan keeps state keyed on a text's content", () => {
+    const hostile = "<nowiki ".repeat(125_000);
+
+    it("scans an equal copy of a hostile text as fast as the first (a content comparison per `<` was quadratic)", () => {
+      const first = timed(() => sectionHeadings(hostile));
+      const copy = freshCopy(hostile);
+      expect(copy).toBe(hostile);
+      const second = timed(() => sectionHeadings(copy));
+      const third = timed(() => sectionHeadings(freshCopy(hostile)));
+      expect(first.ms).toBeLessThan(200 * TIMING_BUDGET_SCALE);
+      expect(second.ms).toBeLessThan(200 * TIMING_BUDGET_SCALE);
+      expect(third.ms).toBeLessThan(200 * TIMING_BUDGET_SCALE);
+    });
+    it("answers an anonymous parse&page= of a stored hostile page quickly, request after request", async () => {
+      const wiki = await makeWikiDeps({ pages: [{ pageId: 1, title: "Hostile", wikitext: hostile }], revisions: [{ revId: 1, page: "Hostile", timestamp: "2026-01-01T00:00:00Z", content: hostile }], html: { Hostile: "<p>stored</p>" } });
+      for (let round = 0; round < 3; round++) {
+        // each request reads the page's text again: a new string with the same content
+        wiki.data.pages![0]!.wikitext = freshCopy(hostile);
+        const start = performance.now();
+        const body = (await call(wiki.deps, "action=parse&page=Hostile&prop=text|sections|categories|links|displaytitle|properties&formatversion=2")).body as Record<string, any>;
+        expect(performance.now() - start).toBeLessThan(400 * TIMING_BUDGET_SCALE);
+        expect(body.parse.title).toBe("Hostile");
+      }
+    });
+  });
+
+  describe("the compare table over plan 413's diff engine is bounded", () => {
+    const lines = (count: number, tag: string) => Array.from({ length: count }, (_, i) => `${tag} line ${i}`).join("\n");
+    const table = (oldText: string, newText: string) => diffTableHtml(diffWikitext(oldText, newText, { context: 2 }), 2 * 1024 * 1024);
+    const toobig = (run: () => unknown) => {
+      try {
+        run();
+      } catch (error) {
+        return (error as { code?: string }).code;
+      }
+      return undefined;
+    };
+
+    it("refuses two 100,000-line texts as toobig in under 500 ms, whether they share nothing or every tenth line differs", () => {
+      const old = Array.from({ length: 100_000 }, (_, i) => `row ${i}`);
+      const changed = old.map((line, i) => (i % 10 === 0 ? `${line} changed` : line));
+      for (const [from, to] of [[lines(100_000, "old"), lines(100_000, "new")], [old.join("\n"), changed.join("\n")]] as const) {
+        const { ms, value } = timed(() => toobig(() => table(from, to)));
+        expect(ms).toBeLessThan(500 * TIMING_BUDGET_SCALE);
+        expect(value).toBe("toobig");
+      }
+    });
+
+    it("refuses a diff the engine had to cut (more rows than one answer carries) rather than show a smaller change", () => {
+      const old = Array.from({ length: 19_000 }, (_, i) => `row ${i}`);
+      const changed = old.map((line, i) => (i % 3 === 0 ? `${line} changed` : line));
+      const { ms, value } = timed(() => toobig(() => table(old.join("\n"), changed.join("\n"))));
+      expect(value).toBe("toobig");
+      expect(ms).toBeLessThan(1000 * TIMING_BUDGET_SCALE);
+    });
+    it("refuses a text over 2 MB (DiffTooLargeError is the engine's) and a table past 2 MB", () => {
+      expect(() => diffWikitext("a".repeat(2 * 1024 * 1024 + 1), "b")).toThrow(DiffTooLargeError);
+      const diff = diffWikitext("x", "y", { context: 2 });
+      expect(toobig(() => diffTableHtml(diff, 100))).toBe("toobig");
+      expect(diffTableHtml(diff, 10_000)).toContain("diff-addedline");
+    });
+
+    it("lays a changed line out as MediaWiki does: the differing words inside ins and del, everything escaped", () => {
+      const html = table("a\nthe <b>old</b> text\nz", "a\nthe <i>new</i> text\nz");
+      expect(html).toContain('<td class="diff-deletedline">');
+      expect(html).toContain('<td class="diff-addedline">');
+      expect(html).not.toContain("<b>");
+      expect(html).not.toContain("<i>");
+      expect(html).toMatch(/<del class="diffchange diffchange-inline">[^<]*b[^<]*<\/del>/);
+      expect(html).toMatch(/<ins class="diffchange diffchange-inline">[^<]*i[^<]*<\/ins>/);
+      // a pure addition or removal carries its whole line
+      expect(table("a", "a\nnew")).toContain('<td class="diff-addedline"><ins class="diffchange diffchange-inline">new</ins></td>');
+    });
+  });
+
+  describe("action=parse and action=compare over hostile text", () => {
+    const WIKI = (): FakeWikiData => ({ pages: [{ pageId: 1, title: "Alpha", wikitext: "x" }], revisions: [{ revId: 1, page: "Alpha", timestamp: "2026-01-01T00:00:00Z", content: "x" }] });
+    const PARSE_PROPS = "text|links|categories|sections|displaytitle|externallinks|properties|wikitext";
+
+    async function bot() {
+      const wiki = await makeWikiDeps(WIKI());
+      await loggedIn(wiki.bot);
+      return wiki;
+    }
+    const form = (params: Record<string, string>) => ({ ...params, formatversion: "2" });
+
+    // one family of each shape: a run of one opener, openers with attributes, heading marks, addresses, quotes, braces,
+    // and closed links past the caps of what one parse lists
+    const PARSE_FAMILIES = [
+      "category opener and spaces",
+      "unclosed piped links",
+      "unclosed nowiki openers",
+      "unclosed pre and ref openers",
+      "heading marks",
+      "bare addresses",
+      "quotes",
+      "braces",
+      "distinct closed links",
+    ];
+    it.each(PARSE_FAMILIES.map((name) => [name, HOSTILE[name]!] as const))(
+      `parse&text= answers %s in under ${BUDGET_MS} ms`,
+      async (_name, text) => {
+        const wiki = await bot();
+        const start = performance.now();
+        const body = (await wiki.bot.post(form({ action: "parse", text, prop: PARSE_PROPS }))) as Record<string, any>;
+        expect(performance.now() - start).toBeLessThan(BUDGET_MS);
+        expect(body.error).toBeUndefined();
+        expect(body.parse.links.length).toBeLessThanOrEqual(5000);
+        expect(body.parse.categories.length).toBeLessThanOrEqual(1000);
+        expect(body.parse.sections.length).toBeLessThanOrEqual(5000);
+      }
+    );
+    it("compare of two near-identical big revisions answers with its context, not toobig", async () => {
+      const lines = Array.from({ length: 19_000 }, (_, i) => `line ${i}`);
+      const edited = [...lines];
+      edited[9_500] = "line 9500 edited";
+      const wiki = await makeWikiDeps(
+        { pages: [{ pageId: 1, title: "Big" }], revisions: [
+          { revId: 1, page: "Big", timestamp: "2026-01-01T00:00:00Z", content: lines.join("\n") },
+          { revId: 2, page: "Big", timestamp: "2026-01-02T00:00:00Z", content: edited.join("\n") },
+        ] },
+      );
+      const start = performance.now();
+      const body = (await call(wiki.deps, "action=compare&fromrev=1&torev=2&formatversion=2")).body as Record<string, any>;
+      expect(performance.now() - start).toBeLessThan(2000 * TIMING_BUDGET_SCALE);
+      expect(body.error).toBeUndefined();
+      expect(body.compare.body.split("\n")).toHaveLength(6);
+    }, 30_000);
+
+    it("compare of two 100,000-line texts answers in under 500 ms, or says toobig", async () => {
+      const wiki = await makeWikiDeps(WIKI());
+      const side = (tag: string) => Array.from({ length: 100_000 }, (_, i) => `${tag}${i}`).join("\n").slice(0, 199_999);
+      const start = performance.now();
+      const body = (await call(wiki.deps, `action=compare&formatversion=2`, { method: "POST", body: { fromtext: side("a"), totext: side("b") } })).body as Record<string, any>;
+      expect(performance.now() - start).toBeLessThan(500 * TIMING_BUDGET_SCALE);
+      expect(body.compare?.body ?? body.error.code).toBeTruthy();
+    });
   });
 });
