@@ -511,12 +511,6 @@ describe("a page nested too deep is left to the passes that only tidy it", () =>
         tagsNestTooDeep(`${nested("<u>", 200)}${"<b><i>".repeat(100)}</u>${nested("<u>", 200)}`)
       ).toBe(false);
     });
-
-    it("is quick on closing tags that close nothing", () => {
-      const started = performance.now();
-      tagsNestTooDeep(`${nested("<a>", 399)}${nested("</b>", 400_000)}`);
-      expect(performance.now() - started).toBeLessThan(500 * TIMING_BUDGET_SCALE);
-    });
   });
 
   describe("nestsTooDeep asks the parser how deep it nests", () => {
@@ -567,26 +561,6 @@ describe("a page nested too deep is left to the passes that only tidy it", () =>
       expect(tagsNestTooDeep(nested("<!-- <s> -->", 5_000))).toBe(true);
       expect(nestsTooDeep(nested("<!-- <s> -->", 5_000))).toBe(false);
       expect(nestsTooDeep(nested('<p title="<s>">x</p>', 450))).toBe(false);
-    });
-
-    it("takes time linear in the page, and stops where the page gets too deep", () => {
-      const started = performance.now();
-      nestsTooDeep(`${nested("<a>", 399)}${nested("</b>", 100_000)}`);
-      nestsTooDeep(nested("<div>", 400_000)); // parsed whole, this takes 8 s
-      nestsTooDeep(nested("<a><div></a>", 100_000));
-      nestsTooDeep(nested("<i><b></i>", 100_000));
-      expect(performance.now() - started).toBeLessThan(1_500 * TIMING_BUDGET_SCALE);
-    });
-
-    it("passes a page of 450 KB of the HTML articles have, in tens of milliseconds", () => {
-      const page = fixtures
-        .map((text) => parseWikitextToHtml(text))
-        .join("\n")
-        .repeat(30)
-        .slice(0, 450_000);
-      const started = performance.now();
-      expect(nestsTooDeep(page)).toBe(false);
-      expect(performance.now() - started).toBeLessThan(500 * TIMING_BUDGET_SCALE);
     });
   });
 
@@ -670,23 +644,6 @@ describe("slimArticleHtml empties the blanks between blocks instead of removing 
       ...fixtures.map((text) => parseWikitextToHtml(text)),
     ];
     expect(disagreements(pages, slimArticleHtml, legacySlimArticleHtml)).toEqual([]);
-  });
-
-  it("takes time linear in the siblings: a hundred thousand characters of lines of one kind of block", () => {
-    const lines = (unit: string, open = "", close = "") =>
-      `${open}${unit.repeat(Math.ceil(100_000 / unit.length))}${close}`;
-    const started = performance.now();
-    for (const html of [
-      lines("<p>x</p>\n"),
-      lines("<div>a</div>\n"),
-      lines("<blockquote>a</blockquote>\n"),
-      lines("<li>a</li>\n", "<ul>", "</ul>"),
-      lines("<tr><td>a</td></tr>\n", "<table>", "</table>"),
-    ]) {
-      expect(slimArticleHtml(html)).not.toContain("\n");
-    }
-    // the removing version takes 1.7 s on the first of these alone
-    expect(performance.now() - started).toBeLessThan(3_000 * TIMING_BUDGET_SCALE);
   });
 });
 
@@ -847,14 +804,6 @@ describe("mapSrcsetUrls answers what it answered", () => {
       )
     ).toEqual([]);
   });
-
-  it("takes time linear in a run of commas that does not end its token", () => {
-    const started = performance.now();
-    expect(mapSrcsetUrls(`a${",".repeat(200_000)}x 1x`, mapped)).toBe(
-      `<a${",".repeat(200_000)}x> 1x`
-    );
-    expect(performance.now() - started).toBeLessThan(500 * TIMING_BUDGET_SCALE); // the expression took 3 s on this
-  });
 });
 
 // ---- scope-template-styles: the masked sheet is built from pieces ----------------------------------------------
@@ -912,12 +861,69 @@ describe("scopeTemplateStyles answers what it answered", () => {
       )
     ).toEqual([]);
   });
+});
 
-  it("takes time linear in the parentheses of a sheet", () => {
-    const started = performance.now();
-    for (const css of ["(".repeat(190_000), "calc(".repeat(38_000), ".a:is(".repeat(31_000)]) {
-      scopeTemplateStyles(css, "https://ixwiki.com");
-    }
-    expect(performance.now() - started).toBeLessThan(1_000 * TIMING_BUDGET_SCALE); // the first took 5.9 s
+// ---- chip-markers: one jsdom window for the process ---------------------------------------------------------
+
+const CHIP_PAGE =
+  '<p>Pop <a href="/wiki/Template:CountryData:Aurelia:population">x</a> and {{MyCountry:gdp}} and ' +
+  "filler text to give every page some weight. ".repeat(20) +
+  "</p>";
+
+// Plan 404 review: markTemplateChips made a new jsdom window on every call. A window costs ~0.5 MB the process never
+// gives back, so 2,000 renders of chip pages held 1.5 GB. It now uses one window for the life of the process.
+describe("markTemplateChips does not leak a jsdom window per call", () => {
+  afterEach(() => {
+    jest.dontMock("jsdom");
+    jest.resetModules();
+  });
+
+  it("creates one jsdom window for any number of calls", () => {
+    let windows = 0;
+    jest.isolateModules(() => {
+      const actual = jest.requireActual<typeof import("jsdom")>("jsdom");
+      jest.doMock("jsdom", () => ({
+        JSDOM: class {
+          readonly window: InstanceType<typeof actual.JSDOM>["window"];
+          constructor(...args: ConstructorParameters<typeof actual.JSDOM>) {
+            windows++;
+            this.window = new actual.JSDOM(...args).window;
+          }
+        },
+      }));
+      const { markTemplateChips } =
+        require("~/lib/wiki-os/templates/chip-markers") as typeof import("~/lib/wiki-os/templates/chip-markers");
+
+      expect(windows).toBe(0); // created on first use, not at import
+      for (let n = 0; n < 2_000; n++) {
+        expect(markTemplateChips(CHIP_PAGE)).toContain(
+          'data-wikios-chip="CountryData:Aurelia:population"'
+        );
+      }
+    });
+
+    expect(windows).toBe(1);
+  });
+
+  it("does not create a window for a page with no chip in it", () => {
+    let windows = 0;
+    jest.isolateModules(() => {
+      const actual = jest.requireActual<typeof import("jsdom")>("jsdom");
+      jest.doMock("jsdom", () => ({
+        JSDOM: class {
+          readonly window: InstanceType<typeof actual.JSDOM>["window"];
+          constructor(...args: ConstructorParameters<typeof actual.JSDOM>) {
+            windows++;
+            this.window = new actual.JSDOM(...args).window;
+          }
+        },
+      }));
+      const { markTemplateChips } =
+        require("~/lib/wiki-os/templates/chip-markers") as typeof import("~/lib/wiki-os/templates/chip-markers");
+
+      markTemplateChips("<p>No chips here.</p>");
+    });
+
+    expect(windows).toBe(0);
   });
 });

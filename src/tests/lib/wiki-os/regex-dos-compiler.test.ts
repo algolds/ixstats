@@ -27,7 +27,14 @@ import {
   replaceInlineTemplates,
   replacePipedLinks,
   replaceSimpleLinks,
+  stripBareExternalLinks,
+  stripComments,
+  stripHtmlTags,
+  stripNamespacedLinks,
+  stripSelfClosingRefs,
+  stripTagBlocks,
   stripUnclosedTemplateTail,
+  unpackExternalLinks,
 } from "~/lib/wiki-os/transformers/clean-markup-passes";
 import {
   getImageUrl,
@@ -45,11 +52,17 @@ import {
 } from "~/lib/wiki-os/transformers/infobox-parser";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import {
+  CLEAN_MARKUP_CEILING,
   COMPILE_CEILING,
+  cleanWikiMarkup,
+  cleanWikitextExcerpt,
   imageDimensionAttributes,
   parseWikitextToHtml,
+  stripWikitextFiles,
+  unpackInternalLinks,
 } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { findMatchingClosingBrackets } from "~/lib/wiki-os/wikitext/link-parser";
+import { matchBrackets } from "~/lib/wiki-os/wikitext/match-index";
 import { splitBalancedPipes } from "~/lib/wiki-os/wikitext/parameter-parser";
 import {
   extractTableCellContent,
@@ -1098,5 +1111,393 @@ describe("compile-passes: every pass answers what its regular expression answere
       (text) => replaceReflists(text, "$&R"),
       (text) => text.replace(/\{\{[Rr]eflist[^}]*\}\}/gi, () => "$&R")
     );
+  });
+});
+
+// ---- clean-markup-passes: each pass and cleanWikiMarkup against the expressions and loops they replaced -------------------------------------------------------
+
+const cleanLegacy = {
+  comments: (t: string) => t.replace(/<!--[\s\S]*?-->/g, ""),
+  refBlocks: (t: string) => t.replace(/<ref\b[^>]*>[\s\S]*?<\/ref>/gi, ""),
+  refSelfClosing: (t: string) => t.replace(/<ref\b[^>]*\/>/gi, ""),
+  gallery: (t: string) => t.replace(/<gallery\b[^>]*>[\s\S]*?<\/gallery>/gi, ""),
+  math: (t: string) => t.replace(/<math\b[^>]*>[\s\S]*?<\/math>/gi, ""),
+  category: (t: string) => t.replace(/\[\[(?:Category|category):[^\]]+\]\]/gi, ""),
+  templateLink: (t: string) => t.replace(/\[\[(?:Template|template):[^\]]+\]\]/gi, ""),
+  unclosedTail: (t: string) => t.replace(/\{\{[^}]*$/g, ""),
+  htmlTags: (t: string) => t.replace(/<[^>]+>/g, ""),
+  externalLabelled: (t: string) => t.replace(/\[https?:\/\/[^\s\]]+\s+([^\]]+)\]/g, "$1"),
+  externalBare: (t: string) => t.replace(/\[https?:\/\/[^\s\]]+\]/g, ""),
+  files: (text: string) => {
+    let result = "";
+    let i = 0;
+    const index = matchBrackets(text);
+    while (i < text.length) {
+      const prefix = text.slice(i, i + 8).toLowerCase();
+      if (
+        prefix.startsWith("[[file:") ||
+        prefix.startsWith("[[image:") ||
+        prefix.startsWith("[[media:")
+      ) {
+        const closeIdx = findMatchingClosingBrackets(text, i, index);
+        if (closeIdx !== -1) {
+          i = closeIdx + 2;
+          continue;
+        }
+      }
+      result += text[i];
+      i++;
+    }
+    return result;
+  },
+  inlineTemplates: (text: string) => {
+    let t = text;
+    t = t.replace(
+      /\{\{(?:flag|flagcountry|flagicon)\s*\|\s*([^|}]+)[^}]*\}\}/gi,
+      (_match, name: string) => (_match.toLowerCase().includes("flagicon") ? "" : name.trim())
+    );
+    t = t.replace(
+      /\{\{(?:quote|blockquote|cite quote)\s*\|\s*([^|}]+)(?:\|([^|}]+))?[^}]*\}\}/gi,
+      (_match, quote: string, author?: string) => {
+        const q = quote.trim();
+        const a = author ? author.trim() : "";
+        return `\n\n<blockquote class="my-2 border-l-2 border-primary/50 pl-3 italic text-muted-foreground">${q}${a ? ` &mdash; <span class="font-semibold text-foreground">${a}</span>` : ""}</blockquote>\n\n`;
+      }
+    );
+    t = t.replace(
+      /\{\{(?:main|main article|see also|further)\s*\|\s*([^|}]+)[^}]*\}\}/gi,
+      (_match, target: string) => {
+        const name = target.trim();
+        const route = titleToWikiOSRoute(name);
+        return `\n\n<p class="text-xs italic text-muted-foreground/80 my-1 font-medium">Main article: <a href="${route}" class="text-primary hover:underline font-semibold">${name}</a></p>\n\n`;
+      }
+    );
+    t = t.replace(
+      /\{\{convert\s*\|\s*([\d.]+)\s*\|\s*([^|}]+)\s*\|\s*([^|}]+)[^}]*\}\}/gi,
+      (_match, val: string, u1: string) => `${val} ${u1.trim()}`
+    );
+    t = t.replace(/\{\{lang(?:-[a-z]+)?\s*\|(?:[a-z-]+\|)?([^|}]+)[^}]*\}\}/gi, "$1");
+    t = t.replace(/\{\{(?:nowrap|nobr|small|smaller|font)\s*\|\s*([^|}]+)[^}]*\}\}/gi, "$1");
+    return t;
+  },
+};
+
+/** The whole of `cleanWikiMarkup` (and the template pass of the parser) as it was, minus the ceiling. */
+function legacyClean(rawText: string): string {
+  let text = rawText;
+  text = text.replace(/^\[blurb:[^\]]+\]\s*/gi, "");
+  text = cleanLegacy.comments(text);
+  text = text.replace(/__(?:NOTOC|TOC|NOEDITSECTION|FORCETOC|SHOWFACTBOX|DISAMBIG)__/gi, "");
+  text = cleanLegacy.refSelfClosing(cleanLegacy.refBlocks(text));
+  text = cleanLegacy.math(cleanLegacy.gallery(text));
+  text = cleanLegacy.files(text);
+  text = cleanLegacy.category(text);
+  text = cleanLegacy.templateLink(text);
+  text = text.replace(/(?:Template|template)\s*:[^\n.<|\]}]*/gi, "");
+  text = legacyTemplates(text);
+  text = text.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1");
+  text = cleanLegacy.externalBare(cleanLegacy.externalLabelled(text));
+  text = cleanLegacy.htmlTags(text);
+  text = text.replace(/^==+[^=]+==+/gm, "");
+  text = text.replace(/'''''/g, "").replace(/'''/g, "").replace(/''/g, "");
+  text = text.replace(/&\w+;/g, " ");
+  return text.replace(/\s+/g, " ").trim();
+}
+
+function legacyTemplates(input: string): string {
+  if (!input || !input.includes("{{")) return input;
+  let text = cleanLegacy.inlineTemplates(input);
+  text = text.replace(
+    /^\{\{(?:Infobox|Sidebar|Taxobox|Navigation|Notice|Short description|About|Redirect|Distinguish|Other uses)\b[\s\S]*?(?=\n\n[A-Z0-9'"]|\n==|$)/gi,
+    (match) => {
+      const openCount = (match.match(/\{\{/g) || []).length;
+      const closeCount = (match.match(/\}\}/g) || []).length;
+      if (openCount > closeCount) return "";
+      return match;
+    }
+  );
+  let depth = 0;
+  while (text.includes("{{") && depth < 20) {
+    depth++;
+    const prev = text;
+    text = text.replace(/\{\{([^{}]*)\}\}/g, (_match, inner: string) => {
+      const parts = inner.trim().split("|");
+      const templateName = parts[0]?.trim().toLowerCase();
+      if (
+        templateName === "nowrap" ||
+        templateName === "nobr" ||
+        templateName === "small" ||
+        templateName === "smaller"
+      ) {
+        return parts.slice(1).join("|").trim();
+      }
+      if (templateName === "lang" && parts.length >= 3) return parts[2]?.trim() || "";
+      if (templateName?.startsWith("formatnum:"))
+        return templateName.replace("formatnum:", "").trim();
+      return "";
+    });
+    if (text === prev) break;
+  }
+  text = cleanLegacy.unclosedTail(text);
+  text = text.replace(/^[^{]*\}\}/g, "");
+  text = text.replace(/\{\{|\}\}/g, "");
+  return text;
+}
+
+// ---- a seeded generator of small texts made of the tokens these passes read -------------------------
+
+const CLEAN_TOKENS = [
+  "{{",
+  "}}",
+  "{{flag|a}}",
+  "{{flagicon|a}}",
+  "{{flag|",
+  "{{quote|a|b}}",
+  "{{blockquote| q }}",
+  "{{main|Some page}}",
+  "{{convert|12|km|mi}}",
+  "{{convert|1|",
+  "{{lang|fr|bonjour}}",
+  "{{lang-de|x}}",
+  "{{nowrap| x }}",
+  "{{small|y}}",
+  "{{Infobox country\n",
+  "{{formatnum:12}}",
+  "<ref>",
+  "</ref>",
+  "<ref name=a/>",
+  "<ref name=a />",
+  "<REF",
+  "<refx>",
+  "<ref",
+  "<!--",
+  "-->",
+  "<gallery>",
+  "</gallery>",
+  "<math>",
+  "</MATH>",
+  "<b>",
+  "</b>",
+  "<",
+  ">",
+  "<>",
+  "[[Category:A]]",
+  "[[category:",
+  "[[Category:]]",
+  "[[Template:X]]",
+  "[[TEMPLATE:",
+  "Template:x",
+  "[[File:",
+  "[[Image:a|b]]",
+  "[[media:c]]",
+  "[[a|b]]",
+  "[[",
+  "]]",
+  "[",
+  "]",
+  "|",
+  "[http://a b]",
+  "[http://a]",
+  "[https://a  ]",
+  "[http://a ]",
+  "[https://",
+  "[http://",
+  "[http",
+  "http://",
+  "[HTTP://a b]",
+  " ",
+  "  ",
+  "\t",
+  " ",
+  "\n",
+  "\n\n",
+  "a",
+  "bc",
+  "'''",
+  "==",
+  "=",
+  "&amp;",
+  "}",
+  "{",
+  "/",
+  "s",
+  "İ",
+  "K",
+];
+
+function* randomTexts(count: number, seed: number): Generator<string> {
+  let state = seed;
+  const next = () => {
+    state = (state * 1664525 + 1013904223) % 4294967296;
+    return state / 4294967296;
+  };
+  for (let i = 0; i < count; i++) {
+    const length = 1 + Math.floor(next() * 14);
+    let text = "";
+    for (let j = 0; j < length; j++) text += CLEAN_TOKENS[Math.floor(next() * CLEAN_TOKENS.length)];
+    yield text;
+  }
+}
+
+/** The first texts on which `actual` and `expected` disagree. */
+function cleanDisagreements(
+  actual: (text: string) => string,
+  expected: (text: string) => string,
+  count = 30_000,
+  seed = 4060
+): string[] {
+  const bad: string[] = [];
+  for (const text of randomTexts(count, seed)) {
+    if (actual(text) !== expected(text)) bad.push(text);
+    if (bad.length >= 5) break;
+  }
+  return bad;
+}
+
+describe("each linear pass answers what its expression answered", () => {
+  const cases: Array<[string, (text: string) => string, (text: string) => string]> = [
+    ["comments", stripComments, cleanLegacy.comments],
+    ["<ref>...</ref>", (t) => stripTagBlocks(t, "ref"), cleanLegacy.refBlocks],
+    ["<ref />", stripSelfClosingRefs, cleanLegacy.refSelfClosing],
+    ["<gallery>", (t) => stripTagBlocks(t, "gallery"), cleanLegacy.gallery],
+    ["<math>", (t) => stripTagBlocks(t, "math"), cleanLegacy.math],
+    ["[[Category:]]", (t) => stripNamespacedLinks(t, "category:"), cleanLegacy.category],
+    ["[[Template:]]", (t) => stripNamespacedLinks(t, "template:"), cleanLegacy.templateLink],
+    ["unclosed {{ tail", stripUnclosedTemplateTail, cleanLegacy.unclosedTail],
+    ["html tags", stripHtmlTags, cleanLegacy.htmlTags],
+    ["[url label]", unpackExternalLinks, cleanLegacy.externalLabelled],
+    ["[url]", stripBareExternalLinks, cleanLegacy.externalBare],
+    ["file links", stripWikitextFiles, cleanLegacy.files],
+    [
+      "internal links",
+      unpackInternalLinks,
+      (t) => t.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1"),
+    ],
+  ];
+
+  it.each(cases)("%s, on 30,000 random small texts", (_name, actual, expected) => {
+    expect(cleanDisagreements(actual, expected)).toEqual([]);
+  });
+
+  it("the whole pipeline (every template pass included), on 30,000 random small texts", () => {
+    expect(cleanDisagreements((t) => cleanWikiMarkup(t), legacyClean, 30_000, 99)).toEqual([]);
+  });
+
+  it("replaceInlineTemplates is the expression, applied where its `}}` is", () => {
+    const flag = /\{\{(?:flag)\s*\|\s*([^|}]+)[^}]*\}\}/;
+    expect(
+      replaceInlineTemplates(
+        "a {{flag| X }} b {{flag|}} {{FLAG|y}}",
+        flag,
+        (m) => `<${m[1]?.trim()}>`
+      )
+    ).toBe("a <X> b {{flag|}} <y>");
+    expect(replaceInlineTemplates("{{flag|a", flag, () => "!")).toBe("{{flag|a");
+    expect(replaceInlineTemplates("{{flag|a}", flag, () => "!")).toBe("{{flag|a}");
+  });
+});
+
+describe("cleanWikiMarkup of a whole page (maxLength 0)", () => {
+  it("cleans all of a long page, not its first 20,000 characters", () => {
+    const text = "Lead. ".repeat(10_000) + "[[Treaty|the treaty]] {{flag|Urcea}} <ref>x</ref> END";
+    expect(cleanWikiMarkup(text).endsWith("the treaty Urcea END")).toBe(true);
+  });
+});
+
+// ---- wikitext-parser: unpackInternalLinks in one pass, an excerpt read no further than its ceiling ----------
+
+const legacyUnpack = (text: string): string =>
+  text.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1");
+
+describe("unpackInternalLinks", () => {
+  it("unpacks piped and plain links", () => {
+    expect(unpackInternalLinks("See [[Treaty of Oakhaven|the treaty]] and [[Vesper]].")).toBe(
+      "See the treaty and Vesper."
+    );
+    expect(unpackInternalLinks("[[A|b|c]] [[|x]] [[a|]] [[a]]")).toBe(
+      legacyUnpack("[[A|b|c]] [[|x]] [[a|]] [[a]]")
+    );
+  });
+
+  it("leaves what is not a link alone", () => {
+    for (const text of [
+      "[[",
+      "[[]]",
+      "[[a]",
+      "[[a] ]",
+      "a]]",
+      "[[a\n]]b",
+      "[ [a]]",
+      "[[a]]]",
+      "]]]]",
+      "[[[a]]]",
+    ]) {
+      expect(unpackInternalLinks(text)).toBe(legacyUnpack(text));
+    }
+  });
+
+  it("answers what the regular expression answered, on 30,000 random small texts", () => {
+    const pieces = [
+      "[[",
+      "]]",
+      "[",
+      "]",
+      "|",
+      "a",
+      "b c",
+      " ",
+      "\n",
+      "[[a|b]]",
+      "[[a]]",
+      "||",
+      "x|",
+      "|y",
+    ];
+    let state = 406;
+    const next = () => {
+      state = (state * 1664525 + 1013904223) % 4294967296;
+      return state / 4294967296;
+    };
+    const disagreements: string[] = [];
+    for (let i = 0; i < 30_000; i++) {
+      const length = 1 + Math.floor(next() * 12);
+      const text = Array.from({ length }, () => pieces[Math.floor(next() * pieces.length)]).join(
+        ""
+      );
+      if (unpackInternalLinks(text) !== legacyUnpack(text)) disagreements.push(text);
+    }
+    expect(disagreements.slice(0, 5)).toEqual([]);
+  });
+});
+
+describe("cleanWikiMarkup on hostile text", () => {
+  // Not linear: bounded by the ceiling (about 0.2 s for the worst family at 20,000 characters on a busy machine).
+  it("reads no more than the ceiling of a text for an excerpt, and all of it for a whole page", () => {
+    expect(CLEAN_MARKUP_CEILING).toBe(20_000);
+    const lead = "The lead paragraph. ";
+    const text = lead + "x ".repeat(100_000) + " END";
+    const excerpt = cleanWikiMarkup(text, 1_000_000);
+    expect(excerpt).toBe((lead + "x ".repeat(100_000)).slice(0, CLEAN_MARKUP_CEILING).trim());
+    expect(excerpt).not.toContain("END");
+    expect(cleanWikiMarkup(text).endsWith(" END")).toBe(true);
+  });
+
+  it("leaves a text within the ceiling, and an excerpt of a long page, as they were", () => {
+    expect(cleanWikiMarkup("The [[Treaty|treaty]] was '''signed'''.")).toBe(
+      "The treaty was signed."
+    );
+    expect(cleanWikitextExcerpt("Lead text. " + "More. ".repeat(50_000), 40)).toBe(
+      "Lead text. More. More. More. More. More.…"
+    );
+  });
+});
+
+describe("stripWikitextFiles on hostile text", () => {
+  it("strips closed file links and keeps the rest, nested links included", () => {
+    expect(
+      stripWikitextFiles(
+        "a [[File:A.png|thumb|Flag of [[Urcea]]]] b [[Image:B.png]] c [[Media:C.ogg]]"
+      )
+    ).toBe("a  b  c ");
   });
 });
