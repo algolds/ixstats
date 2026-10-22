@@ -610,19 +610,16 @@ describe("and the details each country mutation adds", () => {
   });
 
   it("transport: another country's route sent with the caller's own countryId is NOT_FOUND", async () => {
-    for (const [procedure, write, extra] of [
-      ["deleteRoute", "delete", {}],
-      ["updateRoute", "update", { name: "X" }],
-      ["updateRouteGeometry", "update", { geometry }],
+    const routesOf = (db: Db) => createCallerFactory(transportRouteMutationsRouter)(member(db));
+    type Routes = ReturnType<typeof routesOf>;
+    const route = { id: "route_foreign", countryId: OWN };
+    for (const [send, write] of [
+      [(routes: Routes) => routes.deleteRoute(route), "delete"],
+      [(routes: Routes) => routes.updateRoute({ ...route, name: "X" }), "update"],
+      [(routes: Routes) => routes.updateRouteGeometry({ ...route, geometry }), "update"],
     ] as const) {
       const db = transportDb();
-      await expect(
-        createCallerFactory(transportRouteMutationsRouter)(member(db))[procedure]({
-          id: "route_foreign",
-          countryId: OWN,
-          ...extra,
-        })
-      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      await expect(send(routesOf(db))).rejects.toMatchObject({ code: "NOT_FOUND" });
       expect(db.transportRoute[write]).not.toHaveBeenCalled();
     }
   });

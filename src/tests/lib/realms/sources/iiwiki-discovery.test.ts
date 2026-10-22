@@ -92,7 +92,7 @@ describe("nation infobox hints", () => {
 describe("map candidates", () => {
   it("drops non-images and tiny files, and caps the list", () => {
     const files = new Map<string, WikiFileInfo>();
-    const base = {
+    const base: Omit<WikiFileInfo, "fileTitle" | "width" | "height" | "mime"> = {
       url: "https://iiwiki.com/images/x.png",
       descriptionUrl: null,
       thumbUrl: null,
@@ -102,6 +102,8 @@ describe("map candidates", () => {
       licenceUrl: null,
       artist: null,
       credit: null,
+      ownAttribution: null,
+      holder: "iiwiki",
       attribution: "x",
     };
     for (let i = 0; i < MAX_MAP_CANDIDATES + 5; i++) {

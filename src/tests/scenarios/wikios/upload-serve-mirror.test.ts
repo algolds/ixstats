@@ -99,7 +99,7 @@ let sent: Array<{ url: string; init: RequestInit }>;
 let answerNext: Response | null;
 const realFetch = global.fetch;
 
-let flag: Uint8Array;
+let flag: Uint8Array<ArrayBuffer>;
 beforeAll(async () => {
   directory = mkdtempSync(join(tmpdir(), "wikios-upload-scenario-"));
   process.env.WIKIOS_UPLOAD_DIR = directory;

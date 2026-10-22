@@ -18,7 +18,7 @@ jest.mock("~/server/db", () => ({
 jest.mock("~/lib/notifications/api", () => ({ notificationAPI: { create: jest.fn() } }));
 jest.mock("~/server/market-broadcast-bridge", () => ({ publishMarketEvent: jest.fn() }));
 
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { processExpiredAuctions } from "~/lib/economy/auction-completion-cron";
 import { auctionService } from "~/lib/economy/auction-service";
 import { notificationAPI } from "~/lib/notifications/api";
@@ -314,14 +314,17 @@ describe("cards-auction-lifecycle (memory)", () => {
     });
     // Cy's bid lands between Ann's read and her claim: her compare-and-swap loses
     const realFind = db.cardAuction.findUnique;
-    jest.spyOn(db.cardAuction, "findUnique").mockImplementationOnce(async (args: never) => {
+    // a plain promise where the client returns its own query object (the service only awaits it)
+    jest.spyOn(db.cardAuction, "findUnique").mockImplementationOnce((async (
+      args: Prisma.CardAuctionFindUniqueArgs
+    ) => {
       const read = await realFind(args);
       await auctionService.placeBid(
         { userId: w.cy.id, auctionId: auction.id, amount: 105 },
         db as never
       );
       return read;
-    });
+    }) as never);
     await expect(
       auctionService.placeBid({ userId: w.ann.id, auctionId: auction.id, amount: 106 }, db as never)
     ).rejects.toMatchObject({ code: "CONFLICT" });

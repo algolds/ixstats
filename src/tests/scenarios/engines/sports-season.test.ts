@@ -211,7 +211,7 @@ describe("sports-season (memory)", () => {
     expect(day.results).toHaveLength(1);
     const played = await db.sportMatch.findUniqueOrThrow({ where: { id: opener!.id } });
     expect(played.status).toBe("completed");
-    const trace = (played.matchStats as { trace: EventTraceStep[] }).trace;
+    const trace = (played.matchStats as Record<string, unknown>).trace as EventTraceStep[];
     const afterDay = await table(db as never, season.id);
     expectHockeyPoints(afterDay, played as never, trace);
 
@@ -273,7 +273,9 @@ describe("sports-season (memory)", () => {
     const overtime = [...trace, { t: 63, type: "goal", description: "Overtime winner" }];
     await db.sportMatch.update({
       where: { id: opener!.id },
-      data: { matchStats: { ...(flipped.matchStats as object), trace: overtime } },
+      data: {
+        matchStats: { ...(flipped.matchStats as object), trace: overtime.map((step) => ({ ...step })) },
+      },
     });
     await override(flipped.homeScore!, flipped.awayScore!);
     expectHockeyPoints(

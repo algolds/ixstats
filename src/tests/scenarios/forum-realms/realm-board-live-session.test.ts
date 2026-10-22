@@ -190,11 +190,7 @@ it("a board session: slow mode, a visitor, a persona, reactions, a hide and a co
     visitorRealm: { slug: "aurora", name: "Aurora" },
   });
   await settle();
-  expect(
-    notices.mock.calls.flatMap(
-      ([batch]) => batch as Array<{ userId: string; metadata: { kind: string } }>
-    )
-  ).toEqual([
+  expect(notices.mock.calls.flatMap(([batch]) => batch)).toEqual([
     expect.objectContaining({
       userId: mel.clerkUserId,
       metadata: expect.objectContaining({ kind: "reply" }),
@@ -281,7 +277,7 @@ it("a board session: slow mode, a visitor, a persona, reactions, a hide and a co
   // Mel continues her first message in the Hub: it becomes the thread's first post, a placeholder stays behind
   const moved = await asMel.continueInThread({ postId: first.id, title: "Mornings in Eurth" });
   await settle();
-  const hubThread = await db.forumThread.findUnique({
+  const hubThread = await db.forumThread.findUniqueOrThrow({
     where: { id: moved.threadId },
     include: { category: true, posts: true },
   });

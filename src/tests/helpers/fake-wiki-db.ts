@@ -104,26 +104,26 @@ function prismaOperator(value: unknown, condition: Record<string, unknown>): boo
   return undefined;
 }
 
+const rowsOf = (schema: Schema, table: string): Row[] => schema.tables()[table]!.rows;
+
 function relationMatches(
   schema: Schema,
   relation: Relation,
   row: Row,
   condition: Record<string, unknown>
 ): boolean {
-  const related = schema
-    .tables()
-    [relation.table]!.rows.filter((other) => other[relation.foreign] === row[relation.local]);
+  const linked = rowsOf(schema, relation.table).filter((other) => other[relation.foreign] === row[relation.local]);
   const test = (other: Row, where: unknown) =>
     matchesIn(schema, relation.table, other, (where ?? {}) as Where);
   if (!relation.many) {
-    const [one] = related;
+    const [one] = linked;
     if ("is" in condition) return condition.is === null ? !one : !!one && test(one, condition.is);
     if ("isNot" in condition) return condition.isNot === null ? !!one : !one || !test(one, condition.isNot);
     return !!one && test(one, condition);
   }
-  if ("some" in condition) return related.some((other) => test(other, condition.some));
-  if ("none" in condition) return !related.some((other) => test(other, condition.none));
-  if ("every" in condition) return related.every((other) => test(other, condition.every));
+  if ("some" in condition) return linked.some((other) => test(other, condition.some));
+  if ("none" in condition) return !linked.some((other) => test(other, condition.none));
+  if ("every" in condition) return linked.every((other) => test(other, condition.every));
   return false;
 }
 
@@ -206,10 +206,8 @@ function orderKey(
   const relation = schema ? RELATIONS[table]?.[field] : undefined;
   if (relation && isPlainObject(direction)) {
     const [inner, innerDirection] = Object.entries(direction)[0]!;
-    const related = schema!
-      .tables()
-      [relation.table]!.rows.find((other) => other[relation.foreign] === row[relation.local]);
-    return related ? orderKey(schema, relation.table, related, inner, innerDirection) : [null, "asc"];
+    const linked = rowsOf(schema!, relation.table).find((other) => other[relation.foreign] === row[relation.local]);
+    return linked ? orderKey(schema, relation.table, linked, inner, innerDirection) : [null, "asc"];
   }
   if (schema && isPlainObject(direction)) return [row[field], String(direction.sort ?? "asc")];
   return [row[field], String(direction)];
@@ -258,13 +256,11 @@ function project(schema: Schema | null, table: string, row: Row, args: FindManyA
 
 function related(schema: Schema, table: string, row: Row, key: string, args: FindManyArgs): Row[] {
   const relation = RELATIONS[table]![key]!;
-  let rows = schema
-    .tables()
-    [relation.table]!.rows.filter(
-      (other) =>
-        other[relation.foreign] === row[relation.local] &&
-        matchesIn(schema, relation.table, other, args.where ?? {})
-    );
+  let rows = rowsOf(schema, relation.table).filter(
+    (other) =>
+      other[relation.foreign] === row[relation.local] &&
+      matchesIn(schema, relation.table, other, args.where ?? {})
+  );
   rows = sortRows(schema, relation.table, rows, args.orderBy);
   rows = rows.slice(args.skip ?? 0);
   if (args.take !== undefined) rows = rows.slice(0, args.take);
@@ -562,7 +558,9 @@ export interface FakeWikiDbOptions {
 /** The WikiOS tables plus `$transaction` (which just runs the callback against the same tables). */
 export function createFakeWikiDb({ prisma = false }: FakeWikiDbOptions = {}) {
   const schema: Schema | null = prisma ? { tables: () => tables } : null;
-  const table = (name: string, defaults: () => Record<string, unknown> = () => ({})) =>
+  // Typed, not inferred: inferring it reads `schema`, whose initializer reads `tables`, and that cycle silently made
+  // every table (and so every row a test reads) `any`
+  const table = (name: string, defaults: () => Record<string, unknown> = () => ({})): Table =>
     createTable(
       prisma ? () => ({ ...PRISMA_DEFAULTS[name]?.(), ...defaults() }) : defaults,
       name,

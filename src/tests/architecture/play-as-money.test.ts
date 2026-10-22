@@ -287,7 +287,7 @@ async function playAsOutcome(route: string): Promise<string> {
   }
 }
 
-const mutations = Object.entries(appRouter._def.procedures)
+const mutations = Object.entries<unknown>(appRouter._def.procedures)
   .filter(([, procedure]) => (procedure as { _def: { type: string } })._def.type === "mutation")
   .map(([route]) => route);
 

@@ -13,7 +13,7 @@
  */
 import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";
-import { Prisma } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 
 type Value = unknown;
 type Row = Record<string, Value>;
@@ -1106,15 +1106,15 @@ function delegate(store: MemoryStore, model: Model, guard: <T>(work: () => T) =>
   };
 }
 
-export interface MemoryPrisma {
-  /** The tables, the lock and write log, and `onRaw`. */
-  store: MemoryStore;
-  [delegate: string]: any;
-}
+/**
+ * The client's own type, so a scenario's reads have the schema's types; `store` holds the tables, the lock and write
+ * log, and `onRaw`.
+ */
+export type MemoryPrisma = PrismaClient & { store: MemoryStore };
 
 /**
- * A fresh in-memory Prisma client. Use it where the code wants a `PrismaClient` (`as never` at the call site); its
- * interactive transaction client has the same delegates and raw methods, and no `$transaction`.
+ * A fresh in-memory Prisma client, typed as a `PrismaClient`; its interactive transaction client has the same delegates
+ * and raw methods, and no `$transaction`.
  */
 export function createMemoryPrisma(store: MemoryStore = new MemoryStore()): MemoryPrisma {
   const mutex = new Mutex();
@@ -1154,6 +1154,7 @@ export function createMemoryPrisma(store: MemoryStore = new MemoryStore()): Memo
         );
       };
     }
+    // the delegates are built from the schema at run time, so the proxy is typed as the client it stands in for
     return new Proxy(base, {
       get(target, prop) {
         if (typeof prop === "symbol" || prop in target) return target[prop as string];
@@ -1167,7 +1168,7 @@ export function createMemoryPrisma(store: MemoryStore = new MemoryStore()): Memo
       has(target, prop) {
         return prop in target || (typeof prop === "string" && BY_DELEGATE.has(prop));
       },
-    }) as MemoryPrisma;
+    }) as never;
   };
 
   const txClient = client(inside, false);

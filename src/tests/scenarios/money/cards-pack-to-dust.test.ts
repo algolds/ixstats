@@ -281,7 +281,7 @@ describe("cards-pack-to-dust (memory)", () => {
     expect(quote.credits).toBe(12);
 
     // The craft's lock order: the my_vault row, the dust row, capacity (7334), the serial (7331), then the copy
-    const craftStart = log.findLastIndex((e) => e.kind === "write" && e.model === "MyVault");
+    const craftStart = log.map((e) => e.kind === "write" && e.model === "MyVault").lastIndexOf(true);
     const order = log
       .slice(craftStart)
       .map((e) =>

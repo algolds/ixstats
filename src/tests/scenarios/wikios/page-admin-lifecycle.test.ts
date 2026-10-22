@@ -137,7 +137,15 @@ beforeEach(() => {
   wikiCacheService.clearCache();
   jest.mocked(renderArticleViaMediaWiki).mockImplementation(async (wikitext: string) => ({
     html: `<div class="mw-parser-output"><p>${wikitext}</p></div>`,
-    metadata: null,
+    // MediaWiki reported no links, templates, images or categories
+    metadata: {
+      links: null,
+      templates: null,
+      images: null,
+      categories: null,
+      displayTitle: null,
+      properties: {},
+    },
   }));
   tables.user.seed(
     { id: "db-sysop", clerkUserId: "clerk-sysop", wikiUsername: "Mod" },

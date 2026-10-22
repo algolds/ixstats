@@ -145,7 +145,7 @@ it("a report becomes warnings, an automatic sitewide ban, an appeal and an overt
     reason: "  Spam link  ",
   });
   expect(Object.keys(report)).toEqual(["reportId"]);
-  const hub = await db.forumCategory.findFirst({ where: { realmId: "eurth", key: "hub" } });
+  const hub = await db.forumCategory.findFirstOrThrow({ where: { realmId: "eurth", key: "hub" } });
   expect(await db.forumReport.findUnique({ where: { id: report.reportId } })).toMatchObject({
     status: "open",
     categoryId: hub.id,
@@ -208,7 +208,7 @@ it("a report becomes warnings, an automatic sitewide ban, an appeal and an overt
   expect(boards.filter((b: { canStart: boolean }) => b.canStart)).toEqual([]);
 
   // He appeals the ban and Ada's warning; Ada issued both, so she may review neither
-  const adaWarning = await db.forumWarning.findFirst({ where: { issuedBy: ada.id } });
+  const adaWarning = await db.forumWarning.findFirstOrThrow({ where: { issuedBy: ada.id } });
   const banAppeal = await asMax.appeal({
     subjectType: "ban",
     subjectId: ban.id,

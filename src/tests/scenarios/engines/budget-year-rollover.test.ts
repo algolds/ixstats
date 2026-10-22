@@ -130,17 +130,17 @@ beforeEach(async () => {
   await addOwner(db as never, "omar", "twinland");
   // The cron's reminder, as the notification API stores it (the first reminder for Twinland fails)
   let twinlandFails = true;
-  notify.mockReset().mockImplementation(async (input: Record<string, unknown>) => {
+  notify.mockReset().mockImplementation(async (input) => {
     if (input.countryId === "twinland" && twinlandFails) {
       twinlandFails = false;
       throw new Error("Notification suppressed");
     }
     const row = await db.notification.create({
       data: {
-        title: input.title as string,
-        message: input.message as string,
-        countryId: input.countryId as string,
-        source: input.source as string,
+        title: input.title,
+        message: input.message,
+        countryId: input.countryId,
+        source: input.source,
         metadata: JSON.stringify(input.metadata),
       },
     });

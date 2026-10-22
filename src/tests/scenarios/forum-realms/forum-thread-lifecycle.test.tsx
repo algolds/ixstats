@@ -68,11 +68,8 @@ const at = (ms: number) => jest.setSystemTime(new Date(NOW + ms));
 function toldAbout(postId: string): Record<string, string[]> {
   const told: Record<string, string[]> = {};
   for (const [batch] of notices.mock.calls) {
-    for (const n of batch as Array<{
-      userId: string;
-      metadata: { kind: string; postId: string };
-    }>) {
-      if (n.metadata.postId === postId) (told[n.userId] ??= []).push(n.metadata.kind);
+    for (const n of batch) {
+      if (n.metadata!.postId === postId) (told[n.userId!] ??= []).push(n.metadata!.kind);
     }
   }
   return told;
@@ -184,7 +181,7 @@ it("a thread is started, quoted, mentioned, edited, read and moderated, and ever
       .then((rows: Array<{ userId: string }>) => rows.map((r) => r.userId));
   expect(await mentioned()).toEqual([ana.id, cai.id]);
   // The real sanitizer stored no script, handler or overlay; PostBody links the real quote only
-  const stored = await db.forumPost.findUnique({ where: { id: reply.postId } });
+  const stored = await db.forumPost.findUniqueOrThrow({ where: { id: reply.postId } });
   expect(stored.contentHtml).not.toMatch(
     /<script|onerror|onclick|onmouseover="x"|position:\s*fixed/i
   );

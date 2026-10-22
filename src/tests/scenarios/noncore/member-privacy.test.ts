@@ -255,7 +255,8 @@ it("keeps a message from outside Hana's audience as a request, and honours both 
 
   // Inside the audience (Sam takes messages from everyone) a conversation is a plain one
   const plain = await svc.createConversation(HANA, { participantIds: [SAM] } as never);
-  expect(plain.participants.find((p) => p.userId === SAM)?.requestStatus).not.toBe("pending");
+  const samInPlain = plain.participants.find((p: { userId: string }) => p.userId === SAM);
+  expect(samInPlain?.requestStatus).not.toBe("pending");
 
   // Outside Hana's: a request she is not told of, in her Requests folder and not her inbox
   const request = await svc.createConversation(SAM, { participantIds: [HANA] } as never);

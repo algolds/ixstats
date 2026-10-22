@@ -162,7 +162,7 @@ it("an invited player claims a nation page, votes and posts; the rival is told; 
     })
   ).toMatchObject({ status: "approved", autoApproved: true });
   await settle();
-  const aurelia = await db.country.findFirst({ where: { realmId: "eurth", name: "Aurelia" } });
+  const aurelia = await db.country.findFirstOrThrow({ where: { realmId: "eurth", name: "Aurelia" } });
   expect(aurelia).toMatchObject({ ownerUserId: pia.id, ...GROWTH });
   expect(await db.user.findUnique({ where: { id: pia.id } })).toMatchObject({
     countryId: aurelia.id,
@@ -291,7 +291,7 @@ describeWithDb("realm-join-claim-post (Postgres)", () => {
     fetchPageCreator: jest.fn(async () => "Pia"),
     onNationAssigned: jest.fn(async () => undefined),
     onClaimRejected: jest.fn(async () => undefined),
-    fetchNationPrefill: jest.fn(async () => null),
+    // no fetchNationPrefill: every nation gets the plain baseline
     resolveInviter: jest.fn(async () => null),
   };
   const actor = (id: string) => ({ id, clerkUserId: `${id}-clerk`, role: null });

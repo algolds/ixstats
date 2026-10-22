@@ -87,7 +87,7 @@ async function surfaces(who: Member | null) {
   const forumOf = caller(who);
   const viewer = await viewerOf(who);
   const board = await forumOf.category({ key: "find-a-realm", page: 1 });
-  const home = (await forumOf.categories()).find((b: { key: string }) => b.key === "find-a-realm");
+  const home = (await forumOf.categories()).find((b: { key: string }) => b.key === "find-a-realm")!;
   const trending = await forumOf.trending();
   const titles = await readableThreadTitles(db as never, viewer, [advert.threadId, plain.threadId]);
   const discussed = await discussionsOf(db as never, viewer, { activityId: "act" });

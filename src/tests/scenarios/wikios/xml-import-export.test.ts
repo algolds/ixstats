@@ -141,7 +141,7 @@ const PAGES: DumpPage[] = [
 const INTERFACE_PAGES = PAGES.slice(11).map((page) => page.title);
 
 /** The file the admin picked, as the import page sends it: the helper's type, the bytes as the body. */
-function pick(name: string, browserType: string, bytes: Uint8Array, query = "") {
+function pick(name: string, browserType: string, bytes: Uint8Array<ArrayBuffer>, query = "") {
   const type = contentTypeFor({ name, type: browserType });
   return importRoute(
     new NextRequest(`http://localhost:3000/api/wiki/import${query}`, {
