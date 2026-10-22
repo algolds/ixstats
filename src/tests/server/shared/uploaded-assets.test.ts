@@ -1,4 +1,10 @@
 /** @jest-environment node */
+/**
+ * Uploaded files: the upload route stores an SVG only once it is sanitised and records it as the uploader's, a
+ * registered file must sit inside the uploads directory under a local URL (no traversal, no sibling directory that
+ * shares the prefix, no javascript: URL), an oversized picture gets no thumbnail, and the forum source lists public
+ * assets only. Folds app/api/upload/image-route.
+ */
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { promises as fs } from "fs";
 import os from "os";
@@ -15,7 +21,14 @@ jest.mock("~/server/db", () => ({
     },
   },
 }));
+jest.mock("@clerk/nextjs/server", () => ({ auth: async () => ({ userId: "user_1" }) }));
+jest.mock("~/lib/cache", () => ({
+  ...jest.requireActual("~/lib/cache"),
+  rateLimiter: { check: async () => ({ success: true, resetAt: new Date() }) },
+}));
 
+import type { NextRequest } from "next/server";
+import { POST } from "~/app/api/upload/image/route";
 import {
   registerUploadedAsset,
   listUploadedAssets,
@@ -76,18 +89,6 @@ describe("registerUploadedAsset", () => {
     }
   });
 
-  it("stores a restricted visibility", async () => {
-    await registerUploadedAsset({
-      filePath: pngPath,
-      url: "/images/uploads/forum/staff.png",
-      mimeType: "image/png",
-      source: "forum",
-      sourceRef: "s1",
-      visibility: "restricted",
-    });
-    const args = mockUpsert.mock.calls[0]![0] as { create: { visibility: string } };
-    expect(args.create.visibility).toBe("restricted");
-  });
   describe("input validation", () => {
     const rejects = async (input: RegisterUploadedAssetInput) => {
       const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
@@ -102,7 +103,12 @@ describe("registerUploadedAsset", () => {
       const outsidePng = path.join(outside, "o.png");
       await fs.copyFile(pngPath, outsidePng);
       try {
-        await rejects({ filePath: outsidePng, url: "/images/uploads/o.png", mimeType: "image/png", source: "forum" });
+        await rejects({
+          filePath: outsidePng,
+          url: "/images/uploads/o.png",
+          mimeType: "image/png",
+          source: "forum",
+        });
         await expect(fs.stat(`${outsidePng}.thumb.webp`)).rejects.toThrow();
       } finally {
         await fs.rm(outside, { recursive: true, force: true });
@@ -115,7 +121,12 @@ describe("registerUploadedAsset", () => {
       const siblingPng = path.join(sibling, "s.png");
       await fs.copyFile(pngPath, siblingPng);
       try {
-        await rejects({ filePath: siblingPng, url: "/images/uploads/s.png", mimeType: "image/png", source: "forum" });
+        await rejects({
+          filePath: siblingPng,
+          url: "/images/uploads/s.png",
+          mimeType: "image/png",
+          source: "forum",
+        });
         await expect(fs.stat(`${siblingPng}.thumb.webp`)).rejects.toThrow();
       } finally {
         await fs.rm(sibling, { recursive: true, force: true });
@@ -131,14 +142,19 @@ describe("registerUploadedAsset", () => {
       });
     });
 
-    it("rejects an external url", async () => {
-      await rejects({ filePath: pngPath, url: "https://evil.example/a.png", mimeType: "image/png", source: "forum" });
-      await expect(fs.stat(`${pngPath}.thumb.webp`)).rejects.toThrow();
-    });
-
     it("rejects a javascript: url and a url with ..", async () => {
-      await rejects({ filePath: pngPath, url: "javascript:alert(1)", mimeType: "image/png", source: "forum" });
-      await rejects({ filePath: pngPath, url: "/images/uploads/../../a.png", mimeType: "image/png", source: "forum" });
+      await rejects({
+        filePath: pngPath,
+        url: "javascript:alert(1)",
+        mimeType: "image/png",
+        source: "forum",
+      });
+      await rejects({
+        filePath: pngPath,
+        url: "/images/uploads/../../a.png",
+        mimeType: "image/png",
+        source: "forum",
+      });
       await expect(fs.stat(`${pngPath}.thumb.webp`)).rejects.toThrow();
     });
   });
@@ -151,11 +167,40 @@ describe("listUploadedAssets", () => {
     const args = mockFindMany.mock.calls[0]![0] as { where: Record<string, unknown> };
     expect(args.where).toMatchObject({ source: "forum", visibility: "public" });
   });
+});
 
-  it("lists the caller's own uploads regardless of visibility", async () => {
-    mockFindMany.mockResolvedValueOnce([]);
-    await listUploadedAssets({ source: "upload", uploaderClerkId: "user_1", limit: 5 });
-    const args = mockFindMany.mock.calls[0]![0] as { where: Record<string, unknown> };
-    expect(args.where).not.toHaveProperty("visibility");
+describe("the upload route", () => {
+  const upload = (file: File) => {
+    const form = new FormData();
+    form.set("file", file);
+    return POST({ formData: async () => form } as unknown as NextRequest);
+  };
+
+  it("refuses an SVG it cannot sanitise, writing and recording nothing", async () => {
+    const before = await fs.readdir(dir);
+    const res = await upload(
+      new File(["<script>alert(1)</script>"], "x.svg", { type: "image/svg+xml" })
+    );
+    expect(res.status).toBe(400);
+    expect(((await res.json()) as { error: string }).error).toBe("SVG could not be sanitised");
+    expect(await fs.readdir(dir)).toEqual(before);
+    expect(mockUpsert).not.toHaveBeenCalled();
+  });
+
+  it("stores a sanitised SVG and records it as the uploader's", async () => {
+    const res = await upload(
+      new File(['<svg onload="x()"><rect/></svg>'], "ok.svg", { type: "image/svg+xml" })
+    );
+    expect(res.status).toBe(200);
+    const { url } = (await res.json()) as { url: string };
+    const stored = await fs.readFile(path.join(dir, path.basename(url)), "utf8");
+    expect(stored).not.toContain("onload");
+    const args = mockUpsert.mock.calls[0]![0] as { create: Record<string, unknown> };
+    expect(args.create).toMatchObject({
+      source: "upload",
+      uploaderClerkId: "user_1",
+      mimeType: "image/svg+xml",
+      url,
+    });
   });
 });

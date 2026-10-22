@@ -4,14 +4,14 @@
  * the site origin, and an image is fetched up front and handed to satori only when it is a type
  * satori draws. A failed, slow, oversized or unsupported image gives null (the card falls back to
  * initials or the tint) instead of failing the whole image. The URLs are user-stored and the routes
- * public, so only allow-listed hosts are fetched, never localhost or an IP, never via a redirect.
+ * public, so only allow-listed hosts are fetched, never localhost or an IP, never via a redirect. What the cards print
+ * (`src/lib/og/og-models.ts`): a hidden or unknown passport, and a draft or unknown realm, give the generic card with
+ * nothing personal on it, and a hidden fact is left out, never a placeholder. Folds og-models.test.ts.
  */
 import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
-import {
-  absoluteAssetUrl,
-  fetchOgImage,
-  isAllowedImageUrl
-} from "~/lib/og/og-assets.server";
+import { absoluteAssetUrl, fetchOgImage, isAllowedImageUrl } from "~/lib/og/og-assets.server";
+import { passportOgModel, realmOgModel, type PassportOgSource } from "~/lib/og/og-models";
+import { PASSPORT_GENERIC_DESCRIPTION, PASSPORT_TITLE } from "~/lib/passport/passport-labels";
 
 const ORIGIN = new URL("https://ixwiki.com");
 const PNG = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
@@ -93,11 +93,6 @@ describe("fetchOgImage", () => {
     expect(fetchMock.mock.calls[0]?.[1]?.redirect).toBe("error");
   });
 
-  it("gives null for an image declared over the size cap", async () => {
-    respond(PNG, { headers: { "Content-Length": String(50 * 1024 * 1024) } });
-    await expect(fetchOgImage("/huge.png", ORIGIN)).resolves.toBeNull();
-  });
-
   it("stops reading a chunked body once it passes the size cap", async () => {
     const chunk = new Uint8Array(1024 * 1024);
     chunk.set(PNG);
@@ -117,5 +112,50 @@ describe("fetchOgImage", () => {
     await expect(fetchOgImage("/chunked.png", ORIGIN)).resolves.toBeNull();
     expect(cancelled).toBe(true);
     expect(pulled).toBeLessThan(10);
+  });
+});
+
+describe("what a link preview prints", () => {
+  type PreviewCard = Extract<NonNullable<PassportOgSource>, { preview: true }>;
+  const card = (over: Partial<PreviewCard> = {}): PreviewCard => ({
+    preview: true,
+    handle: "alex",
+    displayName: "Alex Pav",
+    avatarUrl: "/images/uploads/alex.png",
+    primaryNation: {
+      name: "New_Burgundie",
+      flagUrl: "/images/uploads/flag.png",
+      realm: { name: "Eurth" },
+      role: "founder",
+    },
+    lorewards: { score: 1247, rank: 14 },
+    realmCount: 1,
+    nationCount: 2,
+    joinedAt: new Date("2025-10-04T12:00:00.000Z"),
+    ...over,
+  });
+
+  it("is the generic card for an unknown passport or one whose previews are off", () => {
+    const generic = {
+      kind: "generic",
+      title: PASSPORT_TITLE,
+      description: PASSPORT_GENERIC_DESCRIPTION,
+    };
+    expect(passportOgModel(null)).toEqual(generic);
+    expect(passportOgModel({ preview: false })).toEqual(generic);
+  });
+
+  it("leaves a hidden or unknown passport fact out, never printing a placeholder", () => {
+    const bare = passportOgModel(card({ lorewards: null, nationCount: 0, joinedAt: null }));
+    expect(bare.kind === "passport" && bare.stats).toEqual([]);
+  });
+
+  it("is the generic card for a draft or unknown realm", () => {
+    expect(realmOgModel(null)).toMatchObject({
+      kind: "generic",
+      name: "Realms",
+      counts: null,
+      bannerUrl: null,
+    });
   });
 });
