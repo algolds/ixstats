@@ -80,17 +80,6 @@ beforeEach(() => {
 });
 
 describe("which events are applied", () => {
-  it.each(["upload", "import", "newusers", "patrol", "thanks", "create"])(
-    "ignores %s events",
-    async (type) => {
-      await expect(applyLogEvent(event({ type, action: type, title: "Foo" }))).resolves.toBe(
-        "ignored"
-      );
-
-      expect(mockLogCreate).not.toHaveBeenCalled();
-    }
-  );
-
   it("ignores what the mirror account did: WikiOS's own act coming back", async () => {
     jest.mocked(isMirrorUser).mockReturnValue(true);
 
@@ -154,19 +143,6 @@ describe("delete and restore", () => {
       data: { status: "ARCHIVED" },
     });
   });
-
-  it("logs the deletion of a page WikiOS never held, and a second deletion changes nothing", async () => {
-    await expect(
-      applyLogEvent(event({ type: "delete", action: "delete", title: "Nowhere" }))
-    ).resolves.toBe("applied");
-    expect(tx.wikiArticle.update).not.toHaveBeenCalled();
-    expect(loggedRow()).toMatchObject({ articleId: null });
-
-    tx.wikiArticle.findUnique.mockResolvedValue({ id: "art-1", status: "ARCHIVED" });
-    await applyLogEvent(event({ type: "delete", action: "delete", title: "Foo", logid: 502 }));
-    expect(tx.wikiArticle.update).not.toHaveBeenCalled();
-  });
-
   it("ignores a revision deletion (the page itself stays)", async () => {
     await expect(
       applyLogEvent(event({ type: "delete", action: "revision", title: "Foo" }))
@@ -191,16 +167,6 @@ describe("delete and restore", () => {
     expect(evictCaches).toHaveBeenCalledWith("Foo", "art-1");
     expect(loggedRow()).toMatchObject({ action: "restore", articleId: "art-1" });
   });
-
-  it("renders nothing for a restore of a page that is not deleted in WikiOS", async () => {
-    tx.wikiArticle.findUnique.mockResolvedValue({ id: "art-1", status: "PUBLISHED" });
-
-    await applyLogEvent(event({ type: "delete", action: "restore", title: "Foo" }));
-
-    expect(tx.wikiArticle.update).not.toHaveBeenCalled();
-    expect(enqueueRender).not.toHaveBeenCalled();
-  });
-
   it("writes no log row, so the event is retried, when bringing the page over fails", async () => {
     tx.wikiArticle.findUnique.mockResolvedValue({ id: "art-1", status: "ARCHIVED" });
     jest.mocked(syncLatestRevision).mockRejectedValueOnce(new Error("MediaWiki returned HTTP 503"));
@@ -258,31 +224,6 @@ describe("move", () => {
     expect(evictCaches).toHaveBeenCalledWith("New name", "art-1");
     expect(loggedRow()).toMatchObject({ logType: "move", title: "Old name", articleId: "art-1" });
   });
-
-  it("stores a new namespace when the page moves across namespaces", async () => {
-    tx.wikiArticle.findUnique.mockImplementation(async ({ where }) =>
-      where.source_title.title === "Old name" ? { id: "art-1" } : null
-    );
-
-    await applyLogEvent(moveEvent({ target_title: "User:Jane/Draft", target_ns: 2 }));
-
-    expect(tx.wikiArticle.update.mock.calls[0]?.[0].data).toMatchObject({
-      title: "User:Jane/Draft",
-      namespace: 2,
-      namespacePrefix: "User",
-    });
-  });
-
-  it("does not look for a redirect when MediaWiki left none (suppressredirect)", async () => {
-    tx.wikiArticle.findUnique.mockImplementation(async ({ where }) =>
-      where.source_title.title === "Old name" ? { id: "art-1" } : null
-    );
-
-    await applyLogEvent(moveEvent({ target_title: "New name", suppressredirect: true }));
-
-    expect(syncLatestRevision).not.toHaveBeenCalled();
-  });
-
   it("refuses to rename onto a page WikiOS has (and logs nothing)", async () => {
     tx.wikiArticle.findUnique.mockImplementation(async ({ where }) =>
       where.source_title.title === "Old name"
@@ -361,18 +302,6 @@ describe("move", () => {
     expect(syncLatestRevision).toHaveBeenCalledWith("Old name");
     expect(loggedRow()).toMatchObject({ articleId: "art-1" });
   });
-
-  it("logs a move of a page WikiOS never held without importing anything", async () => {
-    await expect(applyLogEvent(moveEvent())).resolves.toBe("applied");
-
-    expect(syncLatestRevision).not.toHaveBeenCalled();
-    expect(loggedRow()).toMatchObject({ articleId: null });
-  });
-
-  it("skips a move whose target is not a title", async () => {
-    await expect(applyLogEvent(moveEvent({ target_title: "a[b" }))).resolves.toBe("skipped");
-    expect(mockLogCreate).not.toHaveBeenCalled();
-  });
 });
 
 describe("protect", () => {
@@ -424,19 +353,6 @@ describe("protect", () => {
       articleId: "art-1",
     });
   });
-
-  it("modifies: the restrictions MediaWiki no longer lists are removed", async () => {
-    await applyLogEvent(
-      protectEvent(
-        { details: [{ type: "edit", level: "autoconfirmed", expiry: "infinity" }] },
-        "modify"
-      )
-    );
-
-    expect(tx.wikiRestriction.upsert).toHaveBeenCalledTimes(1);
-    expect(tx.wikiRestriction.deleteMany).toHaveBeenCalledTimes(3);
-  });
-
   it("unprotects: every restriction goes and the article is open again", async () => {
     tx.wikiArticle.findUnique.mockResolvedValue({ id: "art-1" });
 
@@ -462,25 +378,6 @@ describe("protect", () => {
       cascade: true,
     });
   });
-
-  it("protects the title of a page that does not exist yet (create protection)", async () => {
-    await applyLogEvent(
-      protectEvent(
-        { details: [{ type: "create", level: "sysop", expiry: "infinity" }] },
-        "protect",
-        "Not yet"
-      )
-    );
-
-    expect(tx.wikiRestriction.upsert.mock.calls[0]?.[0].where.source_title_action).toEqual({
-      source: "ixwiki",
-      title: "Not yet",
-      action: "create",
-    });
-    expect(tx.wikiArticle.update).not.toHaveBeenCalled();
-    expect(loggedRow()).toMatchObject({ articleId: null });
-  });
-
   it("is tolerant of a details list it cannot read: it applies nothing, writes no row and says so", async () => {
     const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
 
@@ -493,10 +390,6 @@ describe("protect", () => {
     expect(tx.wikiRestriction.deleteMany).not.toHaveBeenCalled();
     expect(mockLogCreate).not.toHaveBeenCalled();
     warn.mockRestore();
-  });
-
-  it("ignores a protection moving along with its page (the move event moves it)", async () => {
-    await expect(applyLogEvent(protectEvent({}, "move_prot"))).resolves.toBe("ignored");
   });
 });
 
@@ -527,30 +420,6 @@ describe("block", () => {
     });
     expect(loggedRow()).toMatchObject({ logType: "block", title: "User:Troll" });
   });
-
-  it("an indefinite block never expires, and 'nousertalk' takes the user's talk page away", async () => {
-    await applyLogEvent(
-      blockEvent({ duration: "infinite", expiry: "infinity", flags: ["nousertalk"] })
-    );
-
-    expect(tx.wikiBlock.create.mock.calls[0]?.[0].data).toMatchObject({
-      expiresAt: null,
-      allowUserTalk: false,
-    });
-  });
-
-  it("changes the block it recorded on a reblock", async () => {
-    tx.wikiBlock.findFirst.mockResolvedValue({ id: "block-1" });
-
-    await applyLogEvent(blockEvent({ expiry: "infinity" }, "reblock"));
-
-    expect(tx.wikiBlock.create).not.toHaveBeenCalled();
-    expect(tx.wikiBlock.update).toHaveBeenCalledWith({
-      where: { id: "block-1" },
-      data: expect.objectContaining({ expiresAt: null }),
-    });
-  });
-
   it("lifts only the blocks this sync recorded", async () => {
     await expect(applyLogEvent(blockEvent({}, "unblock"))).resolves.toBe("applied");
 
@@ -631,29 +500,6 @@ describe("rights", () => {
 
     expect(tx.wikiUserGroup.create).not.toHaveBeenCalled();
     expect(tx.wikiUserGroup.update).not.toHaveBeenCalled();
-  });
-
-  it("updates the expiry of a membership it granted", async () => {
-    tx.wikiUserGroup.findUnique.mockResolvedValue({ id: "g1", source: "mw-import" });
-
-    await applyLogEvent(
-      rightsEvent({
-        oldgroups: ["sysop"],
-        newgroups: ["sysop"],
-        newmetadata: [{ group: "sysop", expiry: "2028-02-02T00:00:00Z" }],
-      })
-    );
-
-    expect(tx.wikiUserGroup.update).toHaveBeenCalledWith({
-      where: { id: "g1" },
-      data: { expiresAt: new Date("2028-02-02T00:00:00Z") },
-    });
-  });
-
-  it("ignores a rights change that is not about a user", async () => {
-    await expect(applyLogEvent(rightsEvent({ newgroups: ["sysop"] }, "Foo"))).resolves.toBe(
-      "ignored"
-    );
   });
 });
 

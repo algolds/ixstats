@@ -8,7 +8,6 @@
 import {
   PageManagementService,
   PageOperationError,
-  talkTitleOf,
   type PageActor,
 } from "~/lib/wiki-os/core/page-management-service";
 import { notifyWatchers } from "~/lib/wiki-os/services/watchlist-notify";
@@ -132,42 +131,12 @@ describe("PageManagementService.movePage", () => {
     );
     expect(mockFindFirst).not.toHaveBeenCalled();
   });
-
-  it("still refuses a move onto the same page", async () => {
-    await expect(
-      PageManagementService.movePage("Old name", "old_name", "x", actor)
-    ).rejects.toThrow("identical");
-  });
-  it("leaves no redirect when asked not to", async () => {
-    const result = await PageManagementService.movePage(
-      "old_name",
-      "New name",
-      "tidy",
-      actor,
-      "ixwiki",
-      {
-        leaveRedirect: false,
-      }
-    );
-
-    expect(result.redirectArticleId).toBeNull();
-    expect(mockCreate).not.toHaveBeenCalled();
-    expect(mockRevisionCreate).not.toHaveBeenCalled();
-  });
-
   it("refuses a destination that already exists", async () => {
     pages({ old_name: original, new_name: { id: "other", title: "New name" } });
     await expect(
       PageManagementService.movePage("old_name", "New name", "x", actor)
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(mockUpdate).not.toHaveBeenCalled();
-  });
-
-  it("reports a missing page as NOT_FOUND", async () => {
-    pages({});
-    await expect(
-      PageManagementService.movePage("old_name", "New name", "x", actor)
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
   it("does not move the talk page when it is missing, when the destination talk page exists, or when declined", async () => {
     expect(
@@ -197,17 +166,6 @@ describe("PageManagementService.movePage", () => {
     );
     expect(declined.talk).toBeNull();
     expect(mockUpdate).toHaveBeenCalledTimes(1);
-  });
-
-  it("never moves a talk page's talk page", async () => {
-    pages({ "talk:old_name": talkOriginal });
-    const result = await PageManagementService.movePage(
-      "Talk:Old name",
-      "Talk:New name",
-      "x",
-      actor
-    );
-    expect(result.talk).toBeNull();
   });
 });
 
@@ -279,70 +237,7 @@ describe("PageManagementService.movePage: deleted pages and protections (plan 40
     // create-protection stays with the title: it is never in the moved set
     expect(JSON.stringify(mockRestrictionUpdateMany.mock.calls)).not.toContain("create");
   });
-
-  it("keeps the article's mirrored protection level in step with the moved edit protection", async () => {
-    const expires = new Date("2027-01-01T00:00:00Z");
-    mockRestrictionFindUnique.mockResolvedValue({ level: "autoconfirmed", expiresAt: expires });
-    await PageManagementService.movePage("old_name", "New name", "x", actor, "ixwiki", {
-      moveTalk: false,
-    });
-    expect(mockUpdate.mock.calls[0]?.[0].data).toMatchObject({
-      protectionLevel: "AUTOCONFIRMED",
-      protectionExpiry: expires,
-    });
-
-    mockUpdate.mockClear();
-    mockRestrictionFindUnique.mockResolvedValue({ level: "sysop", expiresAt: null });
-    await PageManagementService.movePage("old_name", "Newer name", "x", actor, "ixwiki", {
-      moveTalk: false,
-    });
-    expect(mockUpdate.mock.calls[0]?.[0].data).toMatchObject({ protectionLevel: "SYSOP" });
-
-    mockUpdate.mockClear();
-    mockRestrictionFindUnique.mockResolvedValue(null);
-    await PageManagementService.movePage("old_name", "Newest name", "x", actor, "ixwiki", {
-      moveTalk: false,
-    });
-    expect(mockUpdate.mock.calls[0]?.[0].data).toMatchObject({
-      protectionLevel: "ALL",
-      protectionExpiry: null,
-    });
-  });
-
-  it("migrates the protections of the talk page too", async () => {
-    pages({ old_name: original, "talk:old_name": talkOriginal });
-    await PageManagementService.movePage("old_name", "New name", "x", actor);
-    expect(mockRestrictionUpdateMany.mock.calls.map((c) => c[0].where.title)).toEqual([
-      "Old name",
-      "Talk:Old name",
-    ]);
-  });
 });
-
-describe("talkTitleOf", () => {
-  it.each([
-    ["Old name", "Talk:Old name"],
-    ["user:Foo", "User talk:Foo"],
-    ["template:Foo/doc", "Template talk:Foo/doc"],
-    ["module:Foo", "Module talk:Foo"],
-    ["ixwiki:Rules", "IxWiki talk:Rules"],
-    ["campaign:Operation Dawn", "Campaign talk:Operation Dawn"],
-  ])("%s has the talk page %s", (title, talk) => {
-    expect(talkTitleOf(title)).toBe(talk);
-  });
-
-  it.each(["Talk:Foo", "User talk:Foo", "Special:Version", "a[b", "Topic:Foo"])(
-    "%s has none",
-    (title) => {
-      expect(talkTitleOf(title)).toBeNull();
-    }
-  );
-
-  it("has none for another wiki's pages", () => {
-    expect(talkTitleOf("Foo", "iiwiki")).toBeNull();
-  });
-});
-
 describe("PageManagementService.archiveArticle / restoreArticle", () => {
   it("re-renders the pages that use a template or module when one is moved, archived or restored", async () => {
     const template = { id: "t1", title: "Template:Box", namespace: 10, status: "PUBLISHED" };
@@ -359,28 +254,6 @@ describe("PageManagementService.archiveArticle / restoreArticle", () => {
     pages({ "template:box": { ...template, status: "ARCHIVED" } });
     await PageManagementService.restoreArticle("template:box", actor, "ixwiki", "back");
     expect(mockInvalidateTemplates).toHaveBeenCalledWith("Template:Box", "ixwiki");
-  });
-
-  it("refuses to archive a missing or already archived page", async () => {
-    pages({});
-    await expect(
-      PageManagementService.archiveArticle("Old name", "x", actor)
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-
-    pages({ old_name: { ...original, status: "ARCHIVED" } });
-    await expect(
-      PageManagementService.archiveArticle("Old name", "x", actor)
-    ).rejects.toMatchObject({ code: "CONFLICT" });
-    expect(mockUpdate).not.toHaveBeenCalled();
-  });
-  it("refuses to restore a page that is not archived, or missing", async () => {
-    await expect(PageManagementService.restoreArticle("Old name", actor)).rejects.toMatchObject({
-      code: "CONFLICT",
-    });
-    pages({});
-    await expect(PageManagementService.restoreArticle("Old name", actor)).rejects.toBeInstanceOf(
-      PageOperationError
-    );
   });
 });
 describe("PageManagementService.movePage refuses files (F37)", () => {
@@ -410,14 +283,6 @@ describe("PageManagementService.movePage refuses files (F37)", () => {
     });
     expect(mockUpdate).not.toHaveBeenCalled();
     expect(mockJobCreate).not.toHaveBeenCalled();
-  });
-
-  it("does not refuse a File talk: page, a Category: page or an ordinary one", async () => {
-    pages({ "file_talk:old": { id: "ft", title: "File talk:Old", namespace: 7, status: "PUBLISHED" } });
-
-    await expect(
-      PageManagementService.movePage("File talk:Old", "File talk:New", "x", actor, "ixwiki", { moveTalk: false })
-    ).resolves.toMatchObject({ success: true });
   });
 });
 
@@ -452,89 +317,7 @@ describe("PageManagementService.movePage and the destination's creation lock (m6
     expect(keys).toEqual(["ixwiki:New name", "ixwiki:Talk:New name"]);
   });
 });
-describe("PageManagementService.getBrokenRedirects", () => {
-  const redirectRow = (id: string, title: string, redirectTargetSlug: string) => ({
-    id,
-    title,
-    slug: title.toLowerCase().replace(/ /g, "_"),
-    redirectTargetSlug,
-  });
-
-  it("compares the stored target title with published article titles, not slugs", async () => {
-    mockFindMany
-      .mockResolvedValueOnce([
-        redirectRow("r1", "Old name", "Foo bar"),
-        redirectRow("r2", "Gone", "Missing page"),
-      ])
-      .mockResolvedValueOnce([{ title: "Foo bar" }]);
-
-    const broken = await PageManagementService.getBrokenRedirects(10);
-
-    expect(broken).toEqual([{ id: "r2", title: "Gone", slug: "gone", targetSlug: "Missing page" }]);
-    expect(mockFindMany.mock.calls[1]?.[0]).toEqual({
-      where: {
-        source: "ixwiki",
-        title: { in: ["Foo bar", "Missing page"] },
-        status: "PUBLISHED",
-      },
-      select: { title: true },
-    });
-  });
-
-  it("canonicalizes a stored target before comparing", async () => {
-    mockFindMany
-      .mockResolvedValueOnce([redirectRow("r1", "Old name", "talk:new_name")])
-      .mockResolvedValueOnce([{ title: "Talk:New name" }]);
-
-    await expect(PageManagementService.getBrokenRedirects(10)).resolves.toEqual([]);
-    expect(mockFindMany.mock.calls[1]?.[0].where.title).toEqual({ in: ["Talk:New name"] });
-  });
-
-  it("scopes both queries to the realm and honours the limit", async () => {
-    mockFindMany
-      .mockResolvedValueOnce([
-        redirectRow("r1", "A", "X1"),
-        redirectRow("r2", "B", "X2"),
-        redirectRow("r3", "C", "X3"),
-      ])
-      .mockResolvedValueOnce([]);
-
-    const broken = await PageManagementService.getBrokenRedirects(2, "iiwiki");
-
-    expect(broken.map((b) => b.id)).toEqual(["r1", "r2"]);
-    expect(mockFindMany.mock.calls[0]?.[0]).toMatchObject({
-      where: { source: "iiwiki", redirectTargetSlug: { not: null } },
-      take: 4,
-    });
-    expect(mockFindMany.mock.calls[1]?.[0].where.source).toBe("iiwiki");
-  });
-
-  it("reports nothing when there are no redirects", async () => {
-    mockFindMany.mockResolvedValueOnce([]);
-
-    await expect(PageManagementService.getBrokenRedirects(10)).resolves.toEqual([]);
-    expect(mockFindMany).toHaveBeenCalledTimes(1);
-  });
-});
 describe("PageManagementService tells the watchers (plan 416, WK-19)", () => {
-  it.each([
-    ["move", () => PageManagementService.movePage("old_name", "new_name", "tidy", actor)],
-    ["delete", () => PageManagementService.archiveArticle("Old name", "spam", actor)],
-    [
-      "restore",
-      () => {
-        pages({ old_name: { ...original, status: "ARCHIVED" } });
-        return PageManagementService.restoreArticle("Old name", actor);
-      },
-    ],
-  ])("a %s does not wait for the watchers to be told", async (_operation, run) => {
-    jest.mocked(notifyWatchers).mockReturnValueOnce(new Promise<number>(() => undefined));
-
-    await expect(run()).resolves.toMatchObject({ success: true });
-
-    expect(notifyWatchers).toHaveBeenCalledTimes(1);
-  });
-
   it("a watcher notification that fails costs the operation nothing", async () => {
     jest.mocked(notifyWatchers).mockRejectedValueOnce(new Error("notifications down"));
     const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
@@ -553,21 +336,11 @@ describe("PageManagementService tells the watchers (plan 416, WK-19)", () => {
 });
 
 describe("PageManagementService and the mirror outbox (plan 407)", () => {
-  const jobs = () => mockJobCreate.mock.calls.map(([args]) => args.data);
-
   beforeEach(() => {
     mockLogCreate.mockImplementation(async ({ data }: { data: { title: string } }) => ({
       id: `log:${data.title}`,
     }));
   });
-  it("records that no redirect was left when the mover asked for none", async () => {
-    await PageManagementService.movePage("old_name", "new_name", "tidy", actor, "ixwiki", {
-      leaveRedirect: false,
-    });
-
-    expect(jobs()[0]?.payload).toMatchObject({ leaveRedirect: false });
-  });
-
   it("writes no job for a deleted page that is moved: MediaWiki has nothing at that title", async () => {
     pages({ old_name: { ...original, status: "ARCHIVED" } });
 

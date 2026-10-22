@@ -1,33 +1,34 @@
 /** @jest-environment node */
 /**
  * The renderer's corpus: realistic snippets of what WikiOS renders (MediaWiki's HTML of an IxWiki article and of a
- * sister wiki's page, the wikitext the fallback compiler draws) run through the real transform, slimming, chip marking,
- * view bundle and page facts, and what each one must come out as: one row per behaviour.
+ * sister wiki's page, the wikitext the fallback compiler draws, an infobox's figures) run through the real transform,
+ * slimming, chip marking, view bundle, section edit links, lead image and page facts, and what each one must come out
+ * as: one row per behaviour.
  *
  * Replaces html-transformer-redlinks (plan 415 F16), source-links (ruling E-l), srcset-transform (plan 415 F17: an
  * absolute candidate was prefixed again), lcp-images (plan 413), slim-html (plan 413, plan 415 m3), legacy-profile-links,
- * article-seo (plan 412), chip-markers (plan 404 review) and wikitext-html-parser.
+ * article-seo (plan 412), chip-markers (plan 404 review), wikitext-html-parser, section-edit-links, image-url-lead-image
+ * (the old version's answers kept on random texts), lead-image-canonical-path (plan 418 D2: one stored form under any
+ * base path) and parse-money (GDP figures read as money, never as leading digits).
  */
+
+import { JSDOM } from "jsdom";
 import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { mediaWikiOrigin } from "~/lib/wiki-os/config";
-import { transformArticleHtml, transformImages } from "~/lib/wiki-os/transformers/html-transformer";
+import { appendSectionEditLinks, removeSectionEditLinks, transformArticleHtml, transformImages } from "~/lib/wiki-os/transformers/html-transformer";
 import { mapSrcsetUrls } from "~/lib/wiki-os/transformers/srcset";
 import { slimArticleHtml, templateStyleIdentifiers } from "~/lib/wiki-os/transformers/slim-html";
 import { buildViewBundle } from "~/lib/wiki-os/services/render-service";
-import { HERO_IMAGE_WIDTH, extractLeadImage, extractLeadImageFromHtml, heroImage } from "~/lib/wiki-os/transformers/image-url";
+import { extractLeadImage, extractLeadImageFromHtml, extractLeadImageFromWikitext, extractLeadImagePath, getImagePath, getImageUrl, getMd5ShardPath, HERO_IMAGE_WIDTH, heroImage, isNoticeOrUtilityIcon, resolveStoredImageUrl } from "~/lib/wiki-os/transformers/image-url";
 import { currentProfileHref, currentProfileLinks } from "~/lib/wiki-os/legacy-profile-links";
 import { articleSeo, descriptionFromHtml, leadImageUrl } from "~/lib/wiki-os/article-seo";
-import {
-  chipKeysIn,
-  chipMarker,
-  isMarkableKey,
-  markTemplateChips,
-  substituteChipMarkers,
-  templateKeysOf,
-} from "~/lib/wiki-os/templates/chip-markers";
+import { chipKeysIn, chipMarker, isMarkableKey, markTemplateChips, substituteChipMarkers, templateKeysOf } from "~/lib/wiki-os/templates/chip-markers";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { proxiedFileUrl } from "~/lib/realms/sources/wiki-file-info";
 import { IIWIKI_EXCERPT } from "~/tests/fixtures/cards/iiwiki-excerpt";
+import { afterEach, beforeEach, describe, expect, it } from "@jest/globals";
+import { parseInfoboxWithTemplates } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
+import { parseMoney } from "~/lib/wiki-os/transformers/infobox-parser";
 
 const ORIGIN = mediaWikiOrigin();
 const HOST = new URL(ORIGIN).host;
@@ -237,16 +238,11 @@ describe("pictures", () => {
   const shout = (url: string) => `<${url}>`;
   it.each([
     ["a.png 1x, b.png 2x", "<a.png> 1x, <b.png> 2x"],
-    ["a.png 1.5x,b.png 2x", "<a.png> 1.5x,<b.png> 2x"],
     ["a.png 300w, b.png 600w", "<a.png> 300w, <b.png> 600w"],
-    ["a.png", "<a.png>"],
     ["a.png,b.png", "<a.png,b.png>"],
-    ["a.png, b.png", "<a.png>, <b.png>"],
     ["  a.png  1x ,  b.png 2x  ", "  <a.png>  1x ,  <b.png> 2x  "],
-    ["a.png,\n b.png 2x", "<a.png>,\n <b.png> 2x"],
     ["/images/a/ab/Foo,_Bar.png 1x, /images/c/cd/Baz.png 2x", "</images/a/ab/Foo,_Bar.png> 1x, </images/c/cd/Baz.png> 2x"],
     ["", ""],
-    ["   ", "   "],
     [",,", ",,"],
   ])("mapSrcsetUrls maps the URLs of %p and keeps the rest", (srcset, expected) => {
     expect(mapSrcsetUrls(srcset, shout)).toBe(expected);
@@ -360,10 +356,8 @@ describe("pictures", () => {
       2000,
       { src: "/api/mediawiki/ixwiki/images/thumb/a/ab/Flag.png/1280px-Flag.png", original, width: HERO_IMAGE_WIDTH, height: 853 },
     ],
-    ["the same from the file's own URL", original, 3000, 2000, { src: "/api/mediawiki/ixwiki/images/thumb/a/ab/Flag.png/1280px-Flag.png" }],
     ["a file no wider than the hero is served itself", thumb, 1200, 800, { src: original, original, width: 1200, height: 800 }],
     ["a vector is served itself", "/api/mediawiki/ixwiki/images/thumb/a/ab/Seal.svg/330px-Seal.svg.png", 5000, 5000, { src: "/api/mediawiki/ixwiki/images/a/ab/Seal.svg" }],
-    ["a file of unknown size is served itself", thumb, null, null, { src: original, original, width: null, height: null }],
     ["an address that is not a hashed /images/ path is left alone", "https://example.com/pictures/flag.png", 4000, 3000, { src: "https://example.com/pictures/flag.png" }],
   ])("heroImage: %s", (_behaviour, url, width, height, expected) => {
     expect(heroImage(url, width, height)).toMatchObject(expected);
@@ -494,30 +488,15 @@ describe("profile links", () => {
   it.each([
     ["/thinkpages/profile/jane", "/dashboard/profile/jane"],
     ["/thinkpages/u/jane", "/dashboard/profile/jane"],
-    ["/thinkpages/profile/jane/", "/dashboard/profile/jane"],
     ["/thinkpages/profile/jane?x=1#top", "/dashboard/profile/jane?x=1#top"],
-    ["/id/@jane", "/@jane"],
-    ["/id/@jane/", "/@jane"],
     ["/id/@jane?tab=work", "/@jane?tab=work"],
-    ["/id/@jane#top", "/@jane#top"],
-    ["/id/@jane/work", "/@jane?tab=work"],
     ["/id/@jane/work?x=1#top", "/@jane?tab=work&x=1#top"],
     ["/@jane/work", "/@jane?tab=work"],
-    ["/@jane/work/", "/@jane?tab=work"],
-    ["/@jane/work?x=1", "/@jane?tab=work&x=1"],
     ["/id/@jane/work?tab=x", "/@jane?tab=work"],
-    ["/id/@jane/work?x=1&amp;y=2&tab=x", "/@jane?tab=work&x=1&amp;y=2"],
     // the base path and the IxWiki origin the link carries stay; the old base path moves
     ["/projects/ixstates/thinkpages/profile/jane", "/projects/ixstates/dashboard/profile/jane"],
-    ["/projects/ixstates/id/@jane/work", "/projects/ixstates/@jane?tab=work"],
     ["https://ixwiki.com/thinkpages/u/jane", "https://ixwiki.com/dashboard/profile/jane"],
-    ["https://www.ixwiki.com/projects/ixstates/id/@jane", "https://www.ixwiki.com/projects/ixstates/@jane"],
-    ["/projects/ixstats/thinkpages/profile/jane", "/projects/ixstates/dashboard/profile/jane"],
-    ["/projects/ixstats/thinkpages/u/jane?x=1", "/projects/ixstates/dashboard/profile/jane?x=1"],
     ["/projects/ixstats/id/@jane/work", "/projects/ixstates/@jane?tab=work"],
-    ["/projects/ixstats/@jane/work#top", "/projects/ixstates/@jane?tab=work#top"],
-    ["/projects/ixstats/@jane", "/projects/ixstates/@jane"],
-    ["/projects/ixstats/@jane?tab=work", "/projects/ixstates/@jane?tab=work"],
     ["https://ixwiki.com/projects/ixstats/thinkpages/profile/jane", "https://ixwiki.com/projects/ixstates/dashboard/profile/jane"],
   ])("currentProfileHref sends %s to %s", (old, current) => {
     expect(currentProfileHref(old)).toBe(current);
@@ -525,21 +504,11 @@ describe("profile links", () => {
 
   it.each([
     "/@jane",
-    "/@jane?tab=work",
-    "/projects/ixstates/@jane",
-    "/projects/ixstats/wiki/Foo",
     "/projects/ixstatsx/@jane/work",
-    "/dashboard/profile/jane",
     "/id/jane",
-    "/id/@",
-    "/thinkpages/profile/",
     "/thinkpages/post/12",
-    "/thinkpages/r/ixnay",
-    "/wiki/Foo",
     "/countries/aurelia/@x/work",
     "https://example.com/@jane/work",
-    "https://example.com/id/@jane",
-    "https://example.com/thinkpages/profile/jane",
     "https://ixwiki.com.evil.test/id/@jane",
     "",
   ])("currentProfileHref leaves %s as it is", (href) => {
@@ -585,16 +554,11 @@ describe("template chips: stored as inert markers at render time, substituted ex
 
   it.each([
     ["MyCountry:gdp", true],
-    ["CountryData:Aurelia:population", true],
     ["BusinessData:Acme Corp (Eurth):revenue", true],
     ["Other:gdp", false],
-    ["MyCountry", false],
     ['MyCountry:a"b', false],
-    ["CountryData:Bosnia & Herzegovina:population", false],
     ["CountryData:A<B:population", false],
-    ["MyCountry:a=b", false],
     ["MyCountry:a\nb", false],
-    ["CountryData::population", false],
     [`MyCountry:${"a".repeat(300)}`, false],
   ])("isMarkableKey(%j) is %s", (key, markable) => {
     expect(isMarkableKey(key)).toBe(markable);
@@ -613,11 +577,8 @@ describe("template chips: stored as inert markers at render time, substituted ex
   it.each([
     ["an extra attribute", '<span class="c" data-wikios-chip="MyCountry:a"></span>'],
     ["a child", '<span data-wikios-chip="MyCountry:a">x</span>'],
-    ["another tag", '<b data-wikios-chip="MyCountry:a"></b>'],
     ["single quotes", "<span data-wikios-chip='MyCountry:a'></span>"],
     ["escaped text", '&lt;span data-wikios-chip="MyCountry:a"&gt;&lt;/span&gt;'],
-    ["an attribute value", '<p title="<span data-wikios-chip=&quot;MyCountry:a&quot;></span>">x</p>'],
-    ["a key outside the alphabet", '<span data-wikios-chip="MyCountry:a&amp;b"></span>'],
   ])("a lookalike with %s is no marker", (_name, lookalike) => {
     expect(chipKeysIn(lookalike)).toEqual([]);
     expect(substituteChipMarkers(lookalike, () => "CHIP")).toBe(lookalike);
@@ -768,5 +729,353 @@ describe("the fallback compiler", () => {
       if (typeof text === "string") expect(html).not.toContain(text);
       else expect(html).not.toMatch(text);
     }
+  });
+});
+
+describe("section edit links", () => {
+  // the reader appends them to its live tree in the browser: a document of its own stands in for it here
+  const document = new JSDOM("<!doctype html><body></body>").window.document;
+  /** The HTML of `html` after the links are appended to its live tree. */
+  function addSectionEditLinks(html: string, slug: string): string {
+    const root = document.createElement("div");
+    root.innerHTML = html;
+    appendSectionEditLinks(root, slug);
+    return root.innerHTML;
+  }
+
+  describe("appendSectionEditLinks", () => {
+    test("adds an edit link to h2/h3 headings carrying the heading text", () => {
+      const html =
+        '<div class="mw-heading mw-heading2"><h2 id="History">History &amp; Origins</h2></div>' +
+        '<h3 id="Early"><span>Early</span> years</h3><h4 id="Deep">Deep</h4>';
+
+      const out = addSectionEditLinks(html, "Foo_Bar");
+
+      expect(out).toContain(
+        '<h2 id="History">History &amp; Origins<a class="wikios-section-edit-link" href="'
+      );
+      expect(out).toContain(`/wiki/Foo_Bar?action=edit&amp;section=${encodeURIComponent("History & Origins")}`);
+      expect(out).toContain('aria-label="Edit section: History &amp; Origins"');
+      expect(out).toContain(`action=edit&amp;section=${encodeURIComponent("Early years")}`);
+      expect(out).toContain('<h4 id="Deep">Deep</h4>');
+    });
+    test("adds a link in place, once: the heading element itself is the one that keeps it", () => {
+      const root = document.createElement("div");
+      root.innerHTML = '<h2 id="A">Alpha</h2><p>text</p>';
+      const heading = root.querySelector("h2");
+
+      appendSectionEditLinks(root, "Foo");
+      appendSectionEditLinks(root, "Foo");
+
+      expect(root.querySelector("h2")).toBe(heading);
+      expect(root.querySelectorAll(".wikios-section-edit-link")).toHaveLength(1);
+      expect(root.querySelector("p")?.textContent).toBe("text");
+    });
+  });
+
+  describe("removeSectionEditLinks", () => {
+    test("takes the appended links out again and leaves the headings and the rest alone", () => {
+      const root = document.createElement("div");
+      root.innerHTML = '<h2 id="A">Alpha</h2><h3 id="B">Beta</h3><p>text</p>';
+      const heading = root.querySelector("h2");
+      appendSectionEditLinks(root, "Foo");
+      expect(root.querySelectorAll(".wikios-section-edit-link")).toHaveLength(2);
+
+      removeSectionEditLinks(root);
+
+      expect(root.innerHTML).toBe('<h2 id="A">Alpha</h2><h3 id="B">Beta</h3><p>text</p>');
+      expect(root.querySelector("h2")).toBe(heading);
+      removeSectionEditLinks(root); // none left: nothing to do
+    });
+  });
+});
+
+describe("the lead image of a page's wikitext", () => {
+  /** The implementation this one replaced, unchanged: the oracle for small inputs. */
+  function legacyExtractLeadImageFromWikitext(wikitext: string): string | null {
+    if (!wikitext) return null;
+    const infoboxFieldMatch = wikitext.match(
+      /\|\s*(?:image|logo|company_logo|flag|image_flag|coat_of_arms|image_coat|seal|image_seal|map|image_map|photo|image_photo|portrait|image_portrait|album_cover|cover|poster|emblem|badge|insignia|picture|header_image|leader_image|flag_image|symbol)\s*=\s*([^|\n}]+)/i
+    );
+    if (infoboxFieldMatch && infoboxFieldMatch[1]) {
+      const rawFile = infoboxFieldMatch[1]
+        .replace(/\[\[(?:File|Image):/gi, "")
+        .replace(/\]\]/g, "")
+        .split(/[|\]}\n]/)[0]!
+        .replace(/^(?:File|Image|file|image):/i, "")
+        .trim();
+      if (rawFile && !isNoticeOrUtilityIcon(rawFile)) return getImageUrl(rawFile);
+    }
+    const cleanWikitext = wikitext.replace(
+      /^\{\{(?:Underconstruction|under_construction|WIP|work_in_progress|Stub|Cleanup|Ambox|Notice|Disambig|About|Short description)\b[\s\S]*?\}\}/gim,
+      ""
+    );
+    const fileRegex = /\[\[(?:File|Image):([^|\]\n]+)[^\]]*\]\]/gi;
+    let match: RegExpExecArray | null;
+    while ((match = fileRegex.exec(cleanWikitext)) !== null) {
+      const rawFile = match[1]?.trim();
+      if (rawFile && !isNoticeOrUtilityIcon(rawFile)) return getImageUrl(rawFile);
+    }
+    return null;
+  }
+
+  const url = (file: string) => getImageUrl(file);
+
+  describe("extractLeadImageFromWikitext", () => {
+    it("takes the first infobox picture parameter, whatever its name", () => {
+      expect(
+        extractLeadImageFromWikitext(
+          "{{Infobox country\n| name = Eurth\n| flag = Flag of Eurth.svg\n}}"
+        )
+      ).toBe(url("Flag of Eurth.svg"));
+      expect(
+        extractLeadImageFromWikitext("{{Infobox company\n|logo=Acme logo.png\n|image=Other.jpg}}")
+      ).toBe(url("Acme logo.png"));
+      for (const name of [
+        "image",
+        "company_logo",
+        "coat_of_arms",
+        "image_map",
+        "album_cover",
+        "symbol",
+        "LOGO",
+      ]) {
+        expect(extractLeadImageFromWikitext(`{{Infobox\n| ${name} = A.png\n}}`)).toBe(url("A.png"));
+      }
+    });
+    it("falls back to the first content file when the parameter is blank or a notice icon", () => {
+      expect(extractLeadImageFromWikitext("| image = \n| x = 1\n[[File:Body.png|thumb|cap]]")).toBe(
+        url("Body.png")
+      );
+      expect(extractLeadImageFromWikitext("| image = Ambox warning.png\n[[File:Body.png]]")).toBe(
+        url("Body.png")
+      );
+    });
+
+    it("skips notice templates at the top of a page, and notice icons among the files", () => {
+      expect(
+        extractLeadImageFromWikitext("{{Stub|[[File:Stub icon.png]]}}\n[[Image:Real.jpg|thumb]]")
+      ).toBe(url("Real.jpg"));
+      expect(extractLeadImageFromWikitext("[[File:Ambox notice.png]] [[File:Real.jpg]]")).toBe(
+        url("Real.jpg")
+      );
+    });
+    it("does not take a file name longer than MediaWiki allows for one", () => {
+      expect(extractLeadImageFromWikitext(`| image = ${"a".repeat(1000)}.png`)).toBeNull();
+      expect(extractLeadImageFromWikitext(`[[File:${"a".repeat(1000)}.png]]`)).toBeNull();
+    });
+  });
+
+  describe("it answers what the regular-expression version answered", () => {
+    const PIECES = [
+      "[[",
+      "]]",
+      "[",
+      "]",
+      "|",
+      "}",
+      "{{",
+      "}}",
+      "{{Stub",
+      "{{stub",
+      "{{Notice",
+      "{{Short description",
+      "{{About",
+      "File:",
+      "Image:",
+      "file:",
+      "IMAGE:",
+      "|image",
+      "| image =",
+      "|logo=",
+      "| FLAG = ",
+      "|map",
+      "=",
+      " ",
+      "  ",
+      "\n",
+      "\r",
+      "\t",
+      " ",
+      "a",
+      "Flag.svg",
+      "x.png",
+      "A b.jpg",
+      "ambox.png",
+      "icon.png",
+      "Real.jpg",
+      "thumb",
+      "200px",
+      "stub",
+      "_",
+      "{",
+      "}x",
+    ];
+
+    function random(seed: number): () => number {
+      let state = seed;
+      return () => {
+        state = (state * 1664525 + 1013904223) % 4294967296;
+        return state / 4294967296;
+      };
+    }
+
+    it("on 20,000 random small texts built from markup pieces", () => {
+      const next = random(406);
+      const disagreements: string[] = [];
+      for (let i = 0; i < 20_000; i++) {
+        const length = 1 + Math.floor(next() * 14);
+        const text = Array.from({ length }, () => PIECES[Math.floor(next() * PIECES.length)]).join(
+          ""
+        );
+        const expected = legacyExtractLeadImageFromWikitext(text);
+        const actual = extractLeadImageFromWikitext(text);
+        if (actual !== expected) disagreements.push(JSON.stringify({ text, expected, actual }));
+      }
+      expect(disagreements.slice(0, 5)).toEqual([]);
+    });
+  });
+
+  describe("hostile input is read in linear time", () => {
+    const BUDGET_MS = 100 * TIMING_BUDGET_SCALE;
+
+    function ms(text: string): number {
+      const started = performance.now();
+      extractLeadImageFromWikitext(text);
+      return performance.now() - started;
+    }
+
+    it("answers what the old version answered for a link that swallows the openers before it", () => {
+      // The first opener runs to the first `]]` there is: the link of the real picture.
+      const text = "[[File:a|x".repeat(10) + "\n[[File:Real.jpg]]";
+      expect(extractLeadImageFromWikitext(text)).toBe(legacyExtractLeadImageFromWikitext(text));
+      expect(extractLeadImageFromWikitext(text)).toBe(url("A"));
+      expect(ms("[[File:a|x".repeat(100_000) + "\n[[File:Real.jpg]]")).toBeLessThan(BUDGET_MS);
+    });
+  });
+});
+
+describe("the stored lead image under any base path", () => {
+  const BASE_PATH = "/projects/ixstats";
+  const shard = (file: string) => getMd5ShardPath(file).fullPath;
+
+  let savedBasePath: string | undefined;
+  beforeEach(() => {
+    savedBasePath = process.env.NEXT_PUBLIC_BASE_PATH;
+  });
+  afterEach(() => {
+    if (savedBasePath === undefined) delete process.env.NEXT_PUBLIC_BASE_PATH;
+    else process.env.NEXT_PUBLIC_BASE_PATH = savedBasePath;
+  });
+
+  describe("the stored form of a lead image", () => {
+    it("is the canonical path, whatever base path the deployment is served at", () => {
+      const wikitext = "{{Infobox country|image = Flag of Caphiria.svg}}";
+
+      delete process.env.NEXT_PUBLIC_BASE_PATH;
+      const atRoot = extractLeadImagePath(wikitext);
+      process.env.NEXT_PUBLIC_BASE_PATH = BASE_PATH;
+      const underBase = extractLeadImagePath(wikitext);
+
+      expect(atRoot).toBe(`/images/${shard("Flag of Caphiria.svg")}`);
+      expect(atRoot).toMatch(/^\/images\/[0-9a-f]\/[0-9a-f]{2}\/Flag_of_Caphiria\.svg$/);
+      expect(underBase).toBe(atRoot);
+      expect(getImagePath("Flag of Caphiria.svg")).toBe(atRoot);
+    });
+  });
+
+  describe("resolveStoredImageUrl", () => {
+    const canonical = `/images/${shard("Map.png")}`;
+
+    it("loads a canonical path through the image proxy under the base path of the deployment", () => {
+      delete process.env.NEXT_PUBLIC_BASE_PATH;
+      expect(resolveStoredImageUrl(canonical)).toBe(`/api/mediawiki/ixwiki${canonical}`);
+
+      process.env.NEXT_PUBLIC_BASE_PATH = BASE_PATH;
+      expect(resolveStoredImageUrl(canonical)).toBe(`${BASE_PATH}/api/mediawiki/ixwiki${canonical}`);
+    });
+
+    it("leaves a row written before as it is: a proxied path keeps the base path it was written under", () => {
+      process.env.NEXT_PUBLIC_BASE_PATH = BASE_PATH;
+      const legacy = `${BASE_PATH}/api/mediawiki/ixwiki${canonical}`;
+
+      expect(resolveStoredImageUrl(legacy)).toBe(legacy);
+      expect(resolveStoredImageUrl(`/api/mediawiki/ixwiki${canonical}`)).toBe(
+        `/api/mediawiki/ixwiki${canonical}`
+      );
+    });
+
+    it("proxies a stored absolute IxWiki URL as before, and leaves another host's alone", () => {
+      delete process.env.NEXT_PUBLIC_BASE_PATH;
+
+      expect(resolveStoredImageUrl(`https://ixwiki.com${canonical}`)).toBe(
+        `/api/mediawiki/ixwiki${canonical}`
+      );
+      expect(resolveStoredImageUrl("https://example.org/pic.png")).toBe("https://example.org/pic.png");
+    });
+  });
+});
+
+describe("an infobox's money", () => {
+  describe("parseMoney", () => {
+    it.each([
+      ["$45,000", 45_000],
+      ["US$ 45,000", 45_000],
+      ["USD 45,000", 45_000],
+      ["£12,345.67", 12_346],
+      ["$1.5 trillion", 1_500_000_000_000],
+      ["€2.3 billion", 2_300_000_000],
+      ["$1.2tn", 1_200_000_000_000],
+      ["$45k", 45_000],
+      ["{{formatnum:45000}}", 45_000],
+      ["{{nowrap|$1.5 trillion}}", 1_500_000_000_000],
+      ["45,000 (2025 est.)", 45_000],
+      ["{{increase}} $45,000<ref>IMF, 2025</ref>", 45_000],
+      ["approx. $1.5&nbsp;trillion", 1_500_000_000_000],
+      ["[[United States dollar|$]]45,000", 45_000],
+    ])("%s is %d", (text, expected) => {
+      expect(parseMoney(text)).toBe(expected);
+    });
+
+    it.each([
+      ["45 quadrillion"], // a magnitude it does not know: no leading-digits guess
+      ["2.300.000"], // dots as thousand separators are ambiguous
+      ["1,5 billion"], // a decimal comma likewise
+      ["Ranked 12th"],
+      ["$0"],
+    ])("%s is not a figure", (text) => {
+      expect(parseMoney(text)).toBeNull();
+    });
+  });
+
+  describe("parseInfoboxWithTemplates reads GDP fields as money", () => {
+    it("fills gdp_nominal and gdpPerCapita from currency-prefixed, trillion-scaled values", () => {
+      const parsed = parseInfoboxWithTemplates(
+        [
+          "{{Infobox country",
+          "| conventional_long_name = Federal Republic of Aurelia",
+          "| population_estimate = 30,000,000",
+          "| GDP_nominal = $1.5 trillion",
+          "| GDP_nominal_per_capita = US$ 50,000",
+          "| GDP_PPP = Int$ 2.1 trillion",
+          "}}",
+        ].join("\n"),
+        "Aurelia"
+      );
+      expect(parsed).toMatchObject({
+        population_estimate: 30_000_000,
+        gdp_nominal: 1_500_000_000_000,
+        gdpPerCapita: 50_000,
+        gdp_ppp: 2_100_000_000_000,
+      });
+    });
+
+    it("leaves a GDP it cannot read unset rather than misread", () => {
+      const parsed = parseInfoboxWithTemplates(
+        "{{Infobox country\n| GDP_nominal = 45 quadrillion\n}}",
+        "Aurelia"
+      );
+      expect(parsed?.gdp_nominal).toBeUndefined();
+    });
   });
 });

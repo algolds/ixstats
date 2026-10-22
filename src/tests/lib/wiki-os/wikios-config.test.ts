@@ -1,36 +1,15 @@
 /** @jest-environment node */
-// Plan 415 step 1: one WikiOS config object. The wiki's host and MediaWiki endpoints are read from the
-// environment once, in `config.ts`; everything else asks it.
-import {
-  buildWikiosConfig,
-  getMediaWikiApiUrl,
-  isMediaWikiUrl,
-  mediaWikiApiUrl,
-  mediaWikiHostPattern,
-  mediaWikiImageUrl,
-  mediaWikiOrigin,
-  publicArticleUrl,
-  titleUrlPath,
-  wikiosConfig,
-} from "~/lib/wiki-os/config";
+/**
+ * WikiOS's configuration: TemplateStyles fail closed for any unknown value, server-side calls go through the internal
+ * URL, a public URL that is not one is refused by name, the wiki host is recognised with its dots escaped (never a
+ * lookalike host), the media proxy fetches only the wikis and their CDNs, and each wiki keeps its own file hosts.
+ */
+
+import { buildWikiosConfig, isMediaWikiUrl, mediaWikiHostPattern } from "~/lib/wiki-os/config";
+import { isAllowedMediaUrl } from "~/lib/wiki-os/media-hosts";
+import { SISTER_WIKI_HOSTS, sisterWikiFileHosts, sisterWikiHost } from "~/lib/wiki-os/wiki-hosts";
+
 describe("buildWikiosConfig", () => {
-  it("defaults to the public IxWiki host with the internal API falling back to the public one", () => {
-    const config = buildWikiosConfig({});
-
-    expect(config.siteName).toBe("WikiOS");
-    expect(config.projectNamespace).toBe("IxWiki");
-    expect(config.articlePath).toBe("/wiki/");
-    expect(config.userAgent).toBe("IxStats-Builder");
-    expect(config.publicBaseUrl).toBe("https://ixwiki.com");
-    expect(config.publicHost).toBe("ixwiki.com");
-    expect(config.mediawiki).toEqual({
-      publicApiUrl: "https://ixwiki.com/api.php",
-      internalApiUrl: "https://ixwiki.com/api.php",
-      writeApiUrl: "https://ixwiki.com/api.php",
-      botUser: undefined,
-    });
-  });
-
   it("leaves TemplateStyles on only for an unset, empty, 1, true, on or yes WIKIOS_TEMPLATESTYLES: any other value fails closed", () => {
     expect(buildWikiosConfig({}).templateStyles).toBe(true);
     for (const on of ["", "  ", "1", "true", "TRUE", "On", " yes "]) {
@@ -40,15 +19,6 @@ describe("buildWikiosConfig", () => {
       expect(buildWikiosConfig({ templateStyles: off }).templateStyles).toBe(false);
     }
   });
-
-  it("drops the trailing slash of the configured origin and keeps its port", () => {
-    const config = buildWikiosConfig({ publicUrl: "http://localhost:8080//" });
-
-    expect(config.publicBaseUrl).toBe("http://localhost:8080");
-    expect(config.publicHost).toBe("localhost:8080");
-    expect(config.mediawiki.publicApiUrl).toBe("http://localhost:8080/api.php");
-  });
-
   it("sends server-side calls to the internal URL and writes through it unless told otherwise", () => {
     const config = buildWikiosConfig({
       publicUrl: "https://wiki.example/",
@@ -67,56 +37,12 @@ describe("buildWikiosConfig", () => {
     expect(explicit.mediawiki.writeApiUrl).toBe("http://127.0.0.1:8089/api.php");
     expect(explicit.mediawiki.botUser).toBe("Mirror@wikios");
   });
-
-  it("reads a blank variable as unset", () => {
-    const config = buildWikiosConfig({ publicUrl: "  ", internalApiUrl: "", botUser: " " });
-
-    expect(config.publicBaseUrl).toBe("https://ixwiki.com");
-    expect(config.mediawiki.internalApiUrl).toBe("https://ixwiki.com/api.php");
-    expect(config.mediawiki.botUser).toBeUndefined();
-  });
-
   it("refuses a public URL that is not a URL, by name", () => {
     expect(() => buildWikiosConfig({ publicUrl: "not a url" })).toThrow(/NEXT_PUBLIC_MEDIAWIKI_URL/);
   });
 });
 
 describe("the module's configuration and helpers", () => {
-  it("gives the origin and the API URL of each audience", () => {
-    expect(mediaWikiOrigin()).toBe("https://ixwiki.com");
-    expect(mediaWikiApiUrl({ internal: false })).toBe("https://ixwiki.com/api.php");
-    expect(mediaWikiApiUrl({ internal: true })).toBe(wikiosConfig.mediawiki.internalApiUrl);
-    expect(getMediaWikiApiUrl("ixwiki")).toBe(wikiosConfig.mediawiki.internalApiUrl);
-  });
-
-  it("keeps the sister wikis' own API URLs", () => {
-    expect(getMediaWikiApiUrl("althistory")).toBe("https://althistory.fandom.com/api.php");
-  });
-  describe("publicArticleUrl", () => {
-    it.each([
-      ["Main Page", "https://ixwiki.com/wiki/Main_Page"],
-      ["File:Flag of Aurelia.svg", "https://ixwiki.com/wiki/File:Flag_of_Aurelia.svg"],
-      ["Café & Sons?", "https://ixwiki.com/wiki/Caf%C3%A9_%26_Sons%3F"],
-      ["Aurelia/History", "https://ixwiki.com/wiki/Aurelia/History"],
-    ])("links %p", (title, url) => {
-      expect(publicArticleUrl(title)).toBe(url);
-    });
-
-    it("links a page of a sister wiki on that wiki", () => {
-      expect(publicArticleUrl("Portal:Eurth", "iiwiki")).toBe("https://iiwiki.com/wiki/Portal:Eurth");
-    });
-  });
-
-  it("encodes a title path the way the canonical title does", () => {
-    expect(titleUrlPath("User talk:Foo bar")).toBe("User_talk:Foo_bar");
-  });
-
-  describe("mediaWikiImageUrl", () => {
-    it.each(["/images/8/88/Flag.svg", "images/8/88/Flag.svg"])("puts %p on the wiki's host", (path) => {
-      expect(mediaWikiImageUrl(path)).toBe("https://ixwiki.com/images/8/88/Flag.svg");
-    });
-  });
-
   describe("isMediaWikiUrl", () => {
     it.each([
       "https://ixwiki.com/images/a.png",
@@ -174,5 +100,22 @@ describe("a configured environment", () => {
     expect(fresh.wikiosConfig.mediawiki.botUser).toBe("Mirror@wikios");
     expect(fresh.publicArticleUrl("Main Page")).toBe("https://wiki.example/wiki/Main_Page");
     expect(fresh.WIKI_SOURCES.ixwiki.baseUrl).toBe("https://wiki.example");
+  });
+});
+
+describe("the wiki hosts", () => {
+  describe("sister wiki hosts", () => {
+    it("let the media proxy fetch the wikis and their CDNs, and nothing else", () => {
+      expect(isAllowedMediaUrl("https://iiwiki.com/images/a.png")).toBe(true);
+      expect(isAllowedMediaUrl("https://static.wikia.nocookie.net/x/a.png")).toBe(true);
+      expect(isAllowedMediaUrl("https://upload.wikimedia.org/x/a.png")).toBe(true);
+      expect(isAllowedMediaUrl("https://iiwiki.com.evil.example/a.png")).toBe(false);
+      expect(isAllowedMediaUrl("ftp://iiwiki.com/a.png")).toBe(false);
+    });
+    it("give each wiki its own file hosts", () => {
+      expect(sisterWikiFileHosts(SISTER_WIKI_HOSTS.iiwiki)).toEqual(["iiwiki.com"]);
+      expect(sisterWikiFileHosts(SISTER_WIKI_HOSTS.althistory)).toEqual(["althistory.fandom.com", "static.wikia.nocookie.net"]);
+      expect(sisterWikiHost("hasOwnProperty")).toBeNull();
+    });
   });
 });

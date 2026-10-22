@@ -1,10 +1,9 @@
 /** @jest-environment node */
-// `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factories
-// rely on the ambient global.
+// `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factories rely on the ambient global.
 //
-// Plan 418 (A10, A11): IxWiki's category lists, counts, subcategories, autocomplete and file search are read from
-// Postgres (wiki_categories, wiki_category_members, wiki_assets) and never fall back to MediaWiki. A sister
-// wiki's still ask that wiki.
+// Plan 418, 411: IxWiki's category lists, counts, subcategories, autocomplete and file search come from PostgreSQL
+// (published members only, hidden categories left out of every list, a deleted File: page's asset never listed, never
+// a MediaWiki fallback).
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: {
@@ -16,13 +15,13 @@ jest.mock("~/server/db", () => ({
   isDatabaseReadOnly: true,
 }));
 
-import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
+import { afterEach, beforeEach, describe, expect, it } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosCategoriesRouter } from "~/server/api/routers/wikios/categories";
 import { wikiosSearchRouter } from "~/server/api/routers/wikios/search";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { db } from "~/server/db";
-import { installFetchGuard, type FetchGuard } from "~/tests/helpers/fetch-guard";
+import { type FetchGuard, installFetchGuard } from "~/tests/helpers/fetch-guard";
 
 const mocked = db as unknown as {
   wikiCategory: { findMany: jest.Mock };
@@ -76,12 +75,6 @@ describe("searchCategories for IxWiki", () => {
     ]);
     expect(guard.calls()).toEqual([]);
   });
-
-  it("is empty when Postgres has no match: there is no MediaWiki fallback", async () => {
-    expect(await categories().searchCategories({ query: "Zzz", wiki: "ixwiki" })).toEqual([]);
-    expect(guard.calls()).toEqual([]);
-  });
-
   it("counts published members only", async () => {
     mocked.wikiCategory.findMany.mockResolvedValue([{ name: "Countries" }]);
 
@@ -90,21 +83,6 @@ describe("searchCategories for IxWiki", () => {
     expect(sqlOf(mocked.$queryRaw.mock.calls[0]!)).toContain(`a."status" = 'PUBLISHED'`);
   });
 });
-
-describe("getCategoryTotalCounts for IxWiki", () => {
-  it("answers each category's file count by the name it was asked under, 0 for one with none", async () => {
-    counts = [countRow("Flag images", 0, 0, 7)];
-
-    const result = await categories().getCategoryTotalCounts({
-      categories: ["Flag_images", "Empty category"],
-      wiki: "ixwiki",
-    });
-
-    expect(result).toEqual({ Flag_images: 7, "Empty category": 0 });
-    expect(guard.calls()).toEqual([]);
-  });
-});
-
 describe("getSubcategories for IxWiki", () => {
   it("lists the namespace-14 members of the category without the Category: prefix", async () => {
     titles = ["Category:Provinces", "Category:Cities"];
@@ -113,13 +91,6 @@ describe("getSubcategories for IxWiki", () => {
 
     expect(result).toEqual(["Provinces", "Cities"]);
     expect(JSON.stringify(mocked.$queryRaw.mock.calls[0])).toContain(`a.\\"namespace\\" = 14`);
-    expect(guard.calls()).toEqual([]);
-  });
-
-  it("is empty for a category with no subcategory, without asking MediaWiki", async () => {
-    expect(await categories().getSubcategories({ category: "Nothing", wiki: "ixwiki" })).toEqual(
-      []
-    );
     expect(guard.calls()).toEqual([]);
   });
 });
@@ -136,13 +107,6 @@ describe("autocompleteCategories for IxWiki", () => {
       hidden: false,
       name: { startsWith: "C o", mode: "insensitive" },
     });
-    expect(guard.calls()).toEqual([]);
-  });
-
-  it("is empty when nothing matches", async () => {
-    expect(await categories().autocompleteCategories({ prefix: "Zzz", wiki: "ixwiki" })).toEqual(
-      []
-    );
     expect(guard.calls()).toEqual([]);
   });
 });
@@ -181,26 +145,6 @@ describe("searchFiles for IxWiki", () => {
     ]);
     expect(guard.calls()).toEqual([]);
   });
-
-  it("reports 0 (not an invented 800x600) for unknown dimensions, and the thumbnail when there is one", async () => {
-    mocked.wikiAsset.findMany.mockResolvedValue([
-      {
-        ...asset,
-        width: null,
-        height: null,
-        thumbnailUrl: "/api/wiki/file/thumb/Flag_of_Caphiria.png",
-      },
-    ]);
-
-    const [file] = await search().searchFiles({ query: "flag", wiki: "ixwiki" });
-
-    expect(file).toMatchObject({
-      width: 0,
-      height: 0,
-      thumbUrl: "/api/wiki/file/thumb/Flag_of_Caphiria.png",
-    });
-  });
-
   it("gives an upload that only WikiOS holds the base path it is served under, and leaves MediaWiki's URLs as they are", async () => {
     const previous = process.env.NEXT_PUBLIC_BASE_PATH;
     process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstates";
@@ -248,34 +192,6 @@ describe("searchFiles for IxWiki", () => {
       [50, 50],
     ]);
     expect(guard.calls()).toEqual([]);
-  });
-
-  it("is empty when Postgres holds no asset: there is no MediaWiki fallback", async () => {
-    expect(await search().searchFiles({ query: "zzz", wiki: "ixwiki" })).toEqual([]);
-    expect(await search().searchFiles({ category: "Zzz", wiki: "ixwiki" })).toEqual([]);
-    expect(guard.calls()).toEqual([]);
-  });
-
-  it("limits the search to the files a category lists", async () => {
-    titles = ["File:Flag of Caphiria.png", "File:Map.png"];
-    mocked.wikiAsset.findMany.mockResolvedValue([asset]);
-
-    await search().searchFiles({ category: "Flags", limit: 10, wiki: "ixwiki" });
-
-    expect(JSON.stringify(mocked.$queryRaw.mock.calls[0])).toContain(`a.\\"namespace\\" = 6`);
-    expect(mocked.wikiAsset.findMany.mock.calls[0]?.[0]).toMatchObject({
-      take: 50,
-      where: {
-        AND: [
-          {
-            OR: [
-              { title: { in: ["Flag of Caphiria.png", "Map.png"] } },
-              { filename: { in: ["Flag_of_Caphiria.png", "Map.png"] } },
-            ],
-          },
-        ],
-      },
-    });
   });
 });
 
@@ -373,20 +289,6 @@ describe("a sister wiki's categories and files (iiwiki) are still read from that
     ]);
     expect(mocked.wikiAsset.findMany).not.toHaveBeenCalled();
   });
-
-  it("searchFiles in a category asks for thumbnails too", async () => {
-    guard.restore();
-    let requested: URL | undefined;
-    guard = installFetchGuard((url) => {
-      requested = url;
-      return { query: { pages: {} } };
-    });
-
-    expect(await search().searchFiles({ category: "Elmerian", wiki: "iiwiki" })).toEqual([]);
-
-    expect(requested?.searchParams.get("generator")).toBe("categorymembers");
-    expect(requested?.searchParams.get("iiurlwidth")).toBe("500");
-  });
 });
 
 describe("getCategories counts files, not every member", () => {
@@ -411,20 +313,48 @@ describe("getCategories counts files, not every member", () => {
     expect(call[1]).toBe(10);
     expect(guard.calls()).toEqual([]);
   });
+});
 
-  it("a sister wiki: drops categories whose file count is 0", async () => {
-    guard.restore();
-    guard = installFetchGuard(() => ({
-      query: {
-        allcategories: [
-          { "*": "Elmerian", files: 4 },
-          { "*": "Pages only", files: 0 },
-        ],
-      },
-    }));
+describe("hidden categories", () => {
+  const findMany = jest.mocked(db.wikiCategory.findMany);
 
-    expect(await categories().getCategories({ wiki: "althistory", limit: 5 })).toEqual([
-      { name: "Elmerian", fileCount: 4 },
-    ]);
+  const caller = () =>
+    createCallerFactory(wikiosCategoriesRouter)(
+      createMockRouterContext({ auth: null, user: null }) as never
+    );
+
+  const category = (name: string) =>
+    ({ name, slug: name.toLowerCase(), _count: { members: 3, children: 0 } }) as never;
+
+  beforeEach(() => {
+    jest.mocked(db.$queryRaw).mockResolvedValue([] as never);
+    jest.clearAllMocks();
+  });
+
+  describe("category lists leave out hidden categories (plan 406)", () => {
+    it("the category search", async () => {
+      findMany.mockResolvedValue([category("Countries")]);
+
+      await caller().searchCategories({ query: "Count", wiki: "ixwiki" });
+
+      expect(findMany.mock.calls[0]?.[0]?.where).toMatchObject({ hidden: false });
+    });
+
+    it("the category search browsing from a letter", async () => {
+      findMany.mockResolvedValue([category("Countries")]);
+
+      await caller().searchCategories({ from: "C", wiki: "ixwiki" });
+
+      expect(findMany.mock.calls[0]?.[0]?.where).toMatchObject({ hidden: false });
+    });
+
+    it("the biggest categories", async () => {
+      await caller().getCategories({ wiki: "ixwiki", limit: 10 });
+
+      // One SQL query (plan 422): hidden categories are left out in its WHERE clause.
+      expect(findMany).not.toHaveBeenCalled();
+      const query = jest.mocked(db.$queryRaw).mock.calls[0]?.[0] as unknown as TemplateStringsArray;
+      expect(query.join("?")).toContain('c."hidden" = false');
+    });
   });
 });

@@ -1,10 +1,11 @@
 /** @jest-environment node */
 // `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factories rely on the ambient global.
 //
-// Plan 409 (security review): a deleted (archived) page's text must not come back from ANY reader of
-// page text, for a signed-out or ordinary caller: the wiki routers, the lore-card, country, map and
-// cache readers, and the repository/bridge/shadow functions underneath. The archived page holds a marker
-// string; every read is asked for it, and live MediaWiki (whose own copy may still exist) is never asked.
+// Plan 409 (security review): a deleted (archived) page's text must not come back from ANY reader of page text, for a
+// signed-out or ordinary caller: the wiki routers, the lore-card, country, map and cache readers, and the
+// repository/bridge/shadow functions underneath. The archived page holds a marker string; every read is asked for it,
+// and live MediaWiki (whose own copy may still exist) is never asked. A deleted page cannot be watched either, except by
+// a reader who may see it.
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: jest.requireActual("~/tests/helpers/fake-wiki-db").fakeWikiDb.db,
@@ -17,7 +18,7 @@ jest.mock("~/lib/auth", () => ({
   UserManagementService: jest.fn(),
 }));
 
-import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
+import { afterEach, beforeEach, describe, expect, it } from "@jest/globals";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { wikiosPageContentRouter } from "~/server/api/routers/wikios/page-content";
 import { wikiosHistoryDiffRouter } from "~/server/api/routers/wikios/history-diff";
@@ -28,14 +29,11 @@ import { wikiCacheRouter } from "~/server/api/routers/wikiCache";
 import { cardsSheetRouter } from "~/server/api/routers/cards/sheet";
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
-import {
-  getArticleIntro,
-  getArticleWikitext,
-  getInfobox,
-} from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { getArticleIntro, getArticleWikitext, getInfobox } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getArticleSummaryFromShadow } from "~/lib/wiki-os/core/native-search-service";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { fakeWikiDb } from "~/tests/helpers/fake-wiki-db";
+import { wikiosWatchlistAnnotationsRouter } from "~/server/api/routers/wikios/watchlist-annotations";
 
 const { tables } = fakeWikiDb;
 const HIDDEN = "ARCHIVED-MARKER-7f3a9";
@@ -253,5 +251,49 @@ describe("a caller with deletedhistory", () => {
     await expect(
       getArticleWikitextShadow("Hidden land", "ixwiki", { includeArchived: true })
     ).resolves.toMatchObject({ wikitext: TEXT(HIDDEN) });
+  });
+});
+
+describe("watching a deleted page", () => {
+  const { tables } = fakeWikiDb;
+
+  const watcher = (role: string) =>
+    createCallerFactory(wikiosWatchlistAnnotationsRouter)(
+      createMockRouterContext({
+        auth: { userId: "user_1" },
+        user: { id: "db_1", clerkUserId: "user_1", role: { name: role, level: 100 } },
+        db: fakeWikiDb.db,
+      }) as never
+    );
+
+  beforeEach(() => {
+    fakeWikiDb.reset();
+  });
+
+  describe("watchPage", () => {
+    it.each([["user"], ["Legacy"]])(
+      "answers NOT_FOUND for a deleted page and writes nothing (role %s)",
+      async (role) => {
+        tables.wikiArticle.seed({ source: "ixwiki", title: "Gone page", status: "ARCHIVED" });
+
+        await expect(watcher(role).watchPage({ pageTitle: "Gone_page" })).rejects.toMatchObject({
+          code: "NOT_FOUND",
+        });
+
+        expect(tables.wikiWatchlist.rows).toHaveLength(0);
+        expect(tables.stash.rows).toHaveLength(0);
+        expect(tables.stashItem.rows).toHaveLength(0);
+      }
+    );
+
+    it("lets a sysop (deletedhistory) watch a deleted page", async () => {
+      tables.wikiArticle.seed({ source: "ixwiki", title: "Gone page", status: "ARCHIVED" });
+
+      await expect(watcher("admin").watchPage({ pageTitle: "Gone page" })).resolves.toEqual({
+        success: true,
+      });
+
+      expect(tables.wikiWatchlist.rows).toHaveLength(1);
+    });
   });
 });

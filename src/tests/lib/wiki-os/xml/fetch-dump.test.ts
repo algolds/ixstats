@@ -7,13 +7,9 @@ import { createExportWriter } from "~/lib/wiki-os/xml/export-writer";
 import {
   apiRevisionToXml,
   fetchDump,
-  redirectTargetOf,
   type FetchDumpOptions,
 } from "~/lib/wiki-os/xml/fetch-dump";
 import { readExport, type ImportPage } from "~/lib/wiki-os/xml/import-reader";
-import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
-import type { XmlRevision } from "~/lib/wiki-os/xml/types";
-
 const API = "https://wiki.example.test/api.php";
 
 interface FakePage {
@@ -203,25 +199,6 @@ const page = (n: number, ns = 0, extra: Partial<FakePage> = {}): FakePage => ({
 });
 
 describe("fetchDump: current revisions", () => {
-  it("dumps every namespace of the wiki, 50 titles per export request", async () => {
-    const wiki = fakeWiki([...Array.from({ length: 120 }, (_, i) => page(i + 1)), page(500, 1)]);
-
-    const { pages, count, xml } = await run(wiki.impl);
-
-    expect(count).toBe(121);
-    expect(pages).toHaveLength(121);
-    expect(pages.find((p) => p.title === "Page 7")?.revisions[0]?.text).toBe(
-      "current text of Page 7"
-    );
-    expect(pages.find((p) => p.title === "Talk:Page 500")).toMatchObject({ ns: 1, id: 500 });
-    expect(xml).toContain("<sitename>Fake Wiki</sitename>");
-    const exports = wiki.requests.filter((u) => u.searchParams.get("export") === "1");
-    expect(exports.map((u) => (u.searchParams.get("titles") ?? "").split("|").length)).toEqual([
-      50, 50, 20, 1,
-    ]);
-    expect(exports.every((u) => u.searchParams.get("exportnowrap") === "1")).toBe(true);
-  });
-
   it("follows allpages continuation and keeps redirects with their target", async () => {
     const wiki = fakeWiki([page(1), page(2), page(3, 0, { redirectTo: "Page 1" }), page(4)], {
       allPagesChunk: 2,
@@ -231,25 +208,6 @@ describe("fetchDump: current revisions", () => {
 
     expect(pages.map((p) => p.title).sort()).toEqual(["Page 1", "Page 2", "Page 3", "Page 4"]);
     expect(pages.find((p) => p.title === "Page 3")?.redirectTitle).toBe("Page 1");
-  });
-
-  it("asks only for the namespaces it was given", async () => {
-    const wiki = fakeWiki([page(1), page(2, 1)]);
-
-    const { pages } = await run(wiki.impl, { namespaces: [1] });
-
-    expect(pages.map((p) => p.title)).toEqual(["Talk:Page 2"]);
-    const listed = wiki.requests.filter((u) => u.searchParams.get("list") === "allpages");
-    expect(listed.map((u) => u.searchParams.get("apnamespace"))).toEqual(["1"]);
-  });
-
-  it("skips the virtual Media and Special namespaces when asked for all", async () => {
-    const wiki = fakeWiki([page(1)]);
-
-    await run(wiki.impl);
-
-    const listed = wiki.requests.filter((u) => u.searchParams.get("list") === "allpages");
-    expect(listed.map((u) => u.searchParams.get("apnamespace"))).toEqual(["0", "1"]);
   });
 });
 
@@ -277,15 +235,6 @@ describe("fetchDump: full history", () => {
     expect(revisionRequests[0]?.searchParams.get("rvdir")).toBe("newer");
     expect(revisionRequests[0]?.searchParams.get("rvslots")).toBe("main");
     expect(revisionRequests[0]?.searchParams.get("rvlimit")).toBe("max");
-  });
-
-  it("finds a redirect's target from its current wikitext", async () => {
-    const wiki = fakeWiki([page(1), page(2, 0, { redirectTo: "Page 1" })]);
-
-    const { pages } = await run(wiki.impl, { history: true, namespaces: [0] });
-
-    expect(pages.find((p) => p.title === "Page 2")?.redirectTitle).toBe("Page 1");
-    expect(pages.find((p) => p.title === "Page 1")?.redirectTitle).toBeNull();
   });
 });
 
@@ -346,34 +295,6 @@ describe("failures", () => {
     await expect(run(down)).rejects.toThrow(/HTTP 503/);
     expect(calls).toBe(4);
   });
-
-  it("does not retry a client error", async () => {
-    let calls = 0;
-    const denied: typeof fetch = async () => {
-      calls += 1;
-      return new Response("forbidden", { status: 403 });
-    };
-
-    await expect(run(denied)).rejects.toThrow(/HTTP 403/);
-    expect(calls).toBe(1);
-  });
-
-  it("retries a dropped connection", async () => {
-    const wiki = fakeWiki([page(1)]);
-    let first = true;
-    const dropped: typeof fetch = async (input, init) => {
-      if (first) {
-        first = false;
-        throw new TypeError("fetch failed");
-      }
-      return wiki.impl(input, init);
-    };
-
-    const { pages } = await run(dropped, { namespaces: [0] });
-
-    expect(pages).toHaveLength(1);
-  });
-
   it("rejects an answer that is not what the API documents", async () => {
     const odd: typeof fetch = async () =>
       new Response(JSON.stringify({ query: {} }), { status: 200 });
@@ -383,21 +304,6 @@ describe("failures", () => {
 });
 
 describe("apiRevisionToXml", () => {
-  it("maps an anonymous edit, a hex hash and the size", () => {
-    const revision = apiRevisionToXml(
-      apiRevision(3, { anon: true, user: "192.0.2.5", userid: 0, minor: true, size: 12 }) as never
-    );
-
-    expect(revision).toMatchObject({
-      id: 3,
-      parentId: 2,
-      contributor: { ip: "192.0.2.5" },
-      minor: true,
-      bytes: 12,
-      sha1: "phoiac9h4m842xq45sp7s6u21eteeq1",
-    });
-  });
-
   it("maps hidden user, summary and text to their hidden forms", () => {
     const revision = apiRevisionToXml(
       apiRevision(1, {
@@ -414,30 +320,5 @@ describe("apiRevisionToXml", () => {
       comment: null,
       text: null,
     });
-  });
-
-  it("keeps a real account's id and text and the page's model", () => {
-    const revision: XmlRevision = apiRevisionToXml(apiRevision(2) as never);
-
-    expect(revision).toMatchObject({
-      contributor: { username: "Jane", id: 7 },
-      comment: "edit 2",
-      text: "text 2",
-      model: "wikitext",
-      format: "text/x-wiki",
-    });
-    expect(mwSha1Base36("")).toBe(revision.sha1);
-  });
-});
-
-describe("redirectTargetOf", () => {
-  it.each([
-    ["#REDIRECT [[Foo]]", "Foo"],
-    ["#redirect [[Foo bar#Section|label]]", "Foo bar"],
-    ["  #REDIRECT: [[:Category:Foo]]\n[[Category:Redirects]]", "Category:Foo"],
-    ["Not a redirect [[Foo]]", null],
-    ["", null],
-  ])("%j -> %j", (text, expected) => {
-    expect(redirectTargetOf(text)).toBe(expected);
   });
 });

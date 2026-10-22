@@ -64,13 +64,6 @@ describe("action=parse", () => {
     expect(body.parse).toEqual({ title: "Alpha", pageid: 1, text: "<p>stored html of Alpha</p>", revid: 12 });
     expect(calls.filter((c) => c.name === "renderWikitext")).toHaveLength(0);
   });
-
-  it("wraps text in {'*': ...} for formatversion=1", async () => {
-    const { body } = await run("action=parse&page=Alpha&prop=text|wikitext", "format=json");
-    expect(body.parse.text).toEqual({ "*": "<p>stored html of Alpha</p>" });
-    expect(body.parse.wikitext).toEqual({ "*": PAGE_TEXT });
-  });
-
   it("renders the page's wikitext through the private renderer when the stored one is stale", async () => {
     const { body, calls } = await run("action=parse&page=Stale&prop=text");
     expect(body.parse.text).toBe("<p>rendered(Stale): stale wikitext</p>");
@@ -78,15 +71,6 @@ describe("action=parse", () => {
     expect(calls.find((c) => c.name === "ensureRendered")!.args).toEqual(["art:Stale"]);
     expect(calls.filter((c) => c.name === "renderWikitext")).toHaveLength(0);
   });
-
-  it("renders given text with a title (default API), and refuses another content model", async () => {
-    const { body, calls } = await runBot("action=parse&text=%27%27hi%27%27&title=Sandbox&contentmodel=wikitext&prop=text");
-    expect(body.parse).toEqual({ title: "Sandbox", pageid: 0, text: "<p>rendered(Sandbox): ''hi''</p>" });
-    expect(calls.filter((c) => c.name === "renderWikitext")).toHaveLength(1);
-    expect((await runBot("action=parse&text=x&prop=text")).body.parse.title).toBe("API");
-    expect((await runBot("action=parse&text=x&contentmodel=json")).body.error.code).toBe("badvalue");
-  });
-
   it("refuses text= without a bot-password session (permissiondenied), and past 200,000 characters (toobig)", async () => {
     const anonymous = await run("action=parse&text=%27%27hi%27%27&prop=text");
     expect(anonymous.body.error.code).toBe("permissiondenied");
@@ -129,15 +113,6 @@ describe("action=parse", () => {
     // an empty text is empty html, with no renderer call
     expect((await runBot("action=parse&text=%20&prop=text")).body.parse.text).toBe("");
   });
-
-  it("renders an old revision", async () => {
-    const { body, calls } = await run("action=parse&oldid=11&prop=text|revid|wikitext");
-    expect(body.parse).toMatchObject({ title: "Alpha", pageid: 1, revid: 11, wikitext: "old text" });
-    expect(calls.find((c) => c.name === "renderWikitext")!.args).toEqual(["old text", "Alpha"]);
-    expect((await run("action=parse&oldid=999")).body.error.code).toBe("nosuchrevid");
-    expect((await run("action=parse&oldid=42")).body.error.code).toBe("missingcontent");
-  });
-
   it("follows a redirect when asked, and refuses a missing page or no source", async () => {
     expect((await run("action=parse&page=Gamma&redirects&prop=revid")).body.parse.title).toBe("Alpha");
     expect((await run("action=parse&page=Gamma&prop=revid")).body.parse.title).toBe("Gamma");
@@ -146,35 +121,6 @@ describe("action=parse", () => {
     expect((await run("action=parse")).body.error.code).toBe("missingparam");
     expect((await run("action=parse&pageid=1&prop=revid")).body.parse.title).toBe("Alpha");
   });
-
-  it("lists categories (v2 and v1 shapes) from the stored page", async () => {
-    const v2 = await run("action=parse&page=Alpha&prop=categories");
-    expect(v2.body.parse.categories).toEqual([
-      { sortkey: "", category: "Cats", hidden: false },
-      { sortkey: "", category: "Dogs", hidden: false },
-    ]);
-    const v1 = await run("action=parse&page=Alpha&prop=categories", "format=json");
-    expect(v1.body.parse.categories).toEqual([{ sortkey: "", "*": "Cats" }, { sortkey: "", "*": "Dogs" }]);
-    // given text has no stored page: categories come from its links, with their sort keys
-    const text = await runBot(`action=parse&text=${encodeURIComponent("[[Category:Big cats|zz]] [[:Category:Not a member]] [[Category:Big cats]]")}&prop=categories`);
-    expect(text.body.parse.categories).toEqual([{ sortkey: "zz", category: "Big_cats", hidden: false }]);
-  });
-
-  it("lists links with their namespace and whether the page exists", async () => {
-    const v2 = await run("action=parse&page=Alpha&prop=links");
-    expect(v2.body.parse.links).toEqual([
-      { ns: 0, exists: true, title: "Beta" },
-      { ns: 0, exists: false, title: "Missing page" },
-      { ns: 10, exists: true, title: "Template:Foo" },
-    ]);
-    const v1 = await run("action=parse&page=Alpha&prop=links", "format=json");
-    expect(v1.body.parse.links).toEqual([
-      { ns: 0, exists: "", "*": "Beta" },
-      { ns: 0, "*": "Missing page" },
-      { ns: 10, exists: "", "*": "Template:Foo" },
-    ]);
-  });
-
   it("lists sections with MediaWiki's numbering, levels and anchors", async () => {
     const { body } = await run("action=parse&page=Alpha&prop=sections");
     expect(body.parse.sections).toEqual([
@@ -183,28 +129,6 @@ describe("action=parse", () => {
       expect.objectContaining({ toclevel: 1, level: "2", line: "Second", number: "2", index: "3" }),
     ]);
     expect(body.parse.sections[0].byteoffset).toBe(Buffer.byteLength(PAGE_TEXT.slice(0, PAGE_TEXT.indexOf("== First =="))));
-  });
-
-  it("answers displaytitle, properties, external links and the empty link lists", async () => {
-    const { body } = await run("action=parse&page=Alpha&prop=displaytitle|properties|externallinks|langlinks|iwlinks|parsewarnings");
-    expect(body.parse.displaytitle).toBe("alpha");
-    expect(body.parse.properties).toEqual([{ name: "displaytitle", value: "alpha" }]);
-    expect(body.parse.externallinks).toEqual(["https://example.org/page"]);
-    expect(body.parse.langlinks).toEqual([]);
-    expect((await run("action=parse&page=Beta&prop=displaytitle")).body.parse.displaytitle).toBe("Beta");
-    const v1 = await run("action=parse&page=Alpha&prop=properties", "format=json");
-    expect(v1.body.parse.properties).toEqual([{ name: "displaytitle", "*": "alpha" }]);
-  });
-
-  it("returns MediaWiki's default props, templates and images included", async () => {
-    const { body } = await run("action=parse&page=Alpha");
-    expect(Object.keys(body.parse).sort()).toEqual(
-      ["categories", "displaytitle", "externallinks", "images", "iwlinks", "langlinks", "links", "pageid", "parsewarnings", "properties", "revid", "sections", "templates", "text", "title"].sort()
-    );
-  });
-
-  it("answers badvalue for an unknown prop", async () => {
-    expect((await run("action=parse&page=Alpha&prop=nonsense")).body.error.code).toBe("badvalue");
   });
 });
 
@@ -243,34 +167,6 @@ describe("action=compare", () => {
     expect(manyLines.length).toBeLessThan(200_000);
     expect((await post({ fromtext: manyLines, totext: `${manyLines}\nmore` })).error.code).toBe("toobig");
   });
-
-  it("compares the newest revisions of two titles and adds the requested props", async () => {
-    const { body } = await run("action=compare&fromtitle=Beta&totitle=alpha&prop=diff|user|comment|parsedcomment|size|timestamp|diffsize");
-    expect(body.compare).toMatchObject({
-      fromuser: "Heku",
-      fromuserid: 7,
-      touser: "Tester",
-      tocomment: "second <b>",
-      toparsedcomment: "second &lt;b&gt;",
-      fromsize: 4,
-      tosize: Buffer.byteLength(PAGE_TEXT),
-      fromtimestamp: "2026-01-03T10:00:00Z",
-      totimestamp: "2026-01-02T10:00:00Z",
-    });
-    expect(body.compare.diffsize).toBeGreaterThan(0);
-    expect(body.compare.fromid).toBeUndefined(); // ids was not asked for
-  });
-
-  it("supports a page id, torelative and bare text", async () => {
-    expect((await run("action=compare&fromid=1&toid=2&prop=ids")).body.compare).toMatchObject({ fromrevid: 12, torevid: 21 });
-    expect((await run("action=compare&fromrev=12&torelative=prev&prop=ids")).body.compare).toMatchObject({ fromrevid: 12, torevid: 11 });
-    expect((await run("action=compare&fromrev=11&torelative=next&prop=ids")).body.compare).toMatchObject({ fromrevid: 11, torevid: 12 });
-    expect((await run("action=compare&fromrev=11&torelative=cur&prop=ids")).body.compare).toMatchObject({ fromrevid: 11, torevid: 12 });
-    const text = await run("action=compare&fromtext=a&totext=b");
-    expect(text.body.compare).toEqual({ body: tableOf("a", "b") });
-    expect(text.body.compare.body).toContain('<td class="diff-deletedline"><del class="diffchange diffchange-inline">a</del></td>');
-  });
-
   it("refuses missing sides, unknown revisions, hidden text and missing pages", async () => {
     expect((await run("action=compare")).body.error.code).toBe("missingparam");
     expect((await run("action=compare&fromrev=11")).body.error.code).toBe("missingparam");

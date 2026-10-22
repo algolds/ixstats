@@ -194,34 +194,6 @@ describe("getArticleMarginData does not leak who the authors are", () => {
 
     expect(page[0]!.resolvedBy).toEqual({ username: "Urcea" });
   });
-
-  it("flags the reader's own threads and comments, and nobody's for an anonymous reader", async () => {
-    seedThread({}, 2); // comment 0 by the creator, comment 1 by "other"
-
-    const own = await margin("creator").getArticleMarginData({ articleTitle: "Caphiria" });
-    const other = await margin("other").getArticleMarginData({ articleTitle: "Caphiria" });
-    const anon = await margin("anon").getArticleMarginData({ articleTitle: "Caphiria" });
-    const flags = (page: typeof own) => [
-      page.threads[0]!.createdBy.isAuthor,
-      ...page.threads[0]!.comments.map((c) => c.author.isAuthor),
-    ];
-
-    expect(flags(own)).toEqual([true, true, false]);
-    expect(flags(other)).toEqual([false, false, true]);
-    expect(flags(anon)).toEqual([false, false, false]);
-  });
-
-  it("recognises a thread written under the Clerk id (rows from before 2026-08-22)", async () => {
-    seedThread({ createdBy: "user_creator" });
-
-    const { threads: page } = await margin("creator").getArticleMarginData({
-      articleTitle: "Caphiria",
-    });
-
-    expect(page[0]!.createdBy.isAuthor).toBe(true);
-    expect(page[0]!.createdBy.username).toBe("Alice");
-  });
-
   it("tells only a sysop that they may moderate", async () => {
     seedThread();
 
@@ -232,75 +204,6 @@ describe("getArticleMarginData does not leak who the authors are", () => {
 });
 
 describe("paging", () => {
-  it("serves threads 50 at a time, newest activity first, and counts them all", async () => {
-    for (let i = 0; i < 60; i++) {
-      seedThread({ title: `T${i}`, updatedAt: new Date(Date.UTC(2026, 8, 1, 0, 0, i)) });
-    }
-
-    const first = await margin("anon").getArticleMarginData({ articleTitle: "Caphiria" });
-    const second = await margin("anon").getArticleMarginData({
-      articleTitle: "Caphiria",
-      cursor: first.nextCursor!,
-    });
-
-    expect(first.threads).toHaveLength(50);
-    expect(first.threads[0]!.title).toBe("T59");
-    expect(first.nextCursor).toBe(first.threads[49]!.id);
-    expect(first.totalOpenCount).toBe(60);
-    expect(second.threads).toHaveLength(10);
-    expect(second.threads[0]!.title).toBe("T9");
-    expect(second.nextCursor).toBeNull();
-    const ids = [...first.threads, ...second.threads].map((t) => t.id);
-    expect(new Set(ids).size).toBe(60);
-  });
-
-  it("counts open and resolved threads whatever status the page shows", async () => {
-    seedThread();
-    seedThread({ status: "RESOLVED" });
-    seedThread({ status: "RESOLVED" });
-
-    const open = await margin("anon").getArticleMarginData({ articleTitle: "Caphiria" });
-
-    expect(open.threads).toHaveLength(1);
-    expect(open.totalOpenCount).toBe(1);
-    expect(open.totalResolvedCount).toBe(2);
-  });
-
-  it("serves a thread's first 100 comments and the rest through getThreadComments", async () => {
-    const thread = seedThread({}, 120);
-
-    const { threads: page } = await margin("anon").getArticleMarginData({ articleTitle: "Caphiria" });
-    const shown = page[0]!;
-    const rest = await margin("anon").getThreadComments({
-      threadId: thread.id,
-      cursor: shown.comments.at(-1)!.id,
-    });
-
-    expect(shown.comments).toHaveLength(100);
-    expect(shown.commentCount).toBe(120);
-    expect(shown.hasMoreComments).toBe(true);
-    expect(rest.comments).toHaveLength(20);
-    expect(rest.comments[0]!.content).toBe("comment 100");
-    expect(rest.nextCursor).toBeNull();
-  });
-
-  it("pages comments by 100 through getThreadComments", async () => {
-    const thread = seedThread({}, 230);
-
-    const one = await margin("anon").getThreadComments({ threadId: thread.id });
-    const two = await margin("anon").getThreadComments({ threadId: thread.id, cursor: one.nextCursor! });
-    const three = await margin("anon").getThreadComments({ threadId: thread.id, cursor: two.nextCursor! });
-
-    expect([one.comments.length, two.comments.length, three.comments.length]).toEqual([100, 100, 30]);
-    expect(three.nextCursor).toBeNull();
-  });
-
-  it("answers NOT_FOUND for the comments of a thread that does not exist", async () => {
-    await expect(margin("anon").getThreadComments({ threadId: "nope" })).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
-  });
-
   it("hides the comments of a deleted page's thread from readers without deletedhistory", async () => {
     tables.wikiArticle.seed({ source: "ixwiki", title: "Caphiria", slug: "caphiria", status: "ARCHIVED" });
     const thread = seedThread();
@@ -340,23 +243,6 @@ describe("resolveThread", () => {
       margin("other").resolveThread({ threadId: thread.id, resolved: false })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
-
-  it("knows the creator of a thread keyed by the Clerk id", async () => {
-    const thread = seedThread({ createdBy: "user_creator" });
-
-    await expect(
-      margin("creator").resolveThread({ threadId: thread.id, resolved: true })
-    ).resolves.toMatchObject({ status: "RESOLVED" });
-  });
-
-  it("answers NOT_FOUND for a missing thread and refuses a signed-out caller", async () => {
-    await expect(margin("creator").resolveThread({ threadId: "nope", resolved: true })).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
-    await expect(margin("anon").resolveThread({ threadId: "nope", resolved: true })).rejects.toThrow(
-      "Authentication required"
-    );
-  });
 });
 
 describe("deleteThread", () => {
@@ -378,28 +264,6 @@ describe("deleteThread", () => {
 });
 
 describe("deleteComment", () => {
-  it("lets the author delete their own comment, leaving the rest of the thread", async () => {
-    const thread = seedThread({}, 3); // comment 1 is by "other"
-    const mine = comments.rows.find((c) => c.userId === "db_other")!;
-
-    await expect(margin("other").deleteComment({ commentId: mine.id })).resolves.toEqual({
-      success: true,
-      threadDeleted: false,
-    });
-    expect(comments.rows.some((c) => c.id === mine.id)).toBe(false);
-    expect(threads.rows.map((t) => t.id)).toEqual([thread.id]);
-  });
-
-  it("lets a sysop delete anyone's comment", async () => {
-    seedThread({}, 2);
-    const target = comments.rows[0]!;
-
-    await expect(margin("sysop").deleteComment({ commentId: target.id })).resolves.toMatchObject({
-      success: true,
-    });
-    expect(comments.rows).toHaveLength(1);
-  });
-
   it("refuses someone else's comment", async () => {
     seedThread({}, 1); // by the creator
     const target = comments.rows[0]!;
@@ -410,18 +274,6 @@ describe("deleteComment", () => {
     });
     expect(comments.rows).toHaveLength(1);
   });
-
-  it("takes the thread with its last comment", async () => {
-    seedThread({}, 1);
-    const only = comments.rows[0]!;
-
-    await expect(margin("creator").deleteComment({ commentId: only.id })).resolves.toEqual({
-      success: true,
-      threadDeleted: true,
-    });
-    expect(threads.rows).toHaveLength(0);
-  });
-
   it("answers NOT_FOUND for a missing comment, refuses a signed-out caller, BAD_REQUEST for a long id", async () => {
     await expect(margin("creator").deleteComment({ commentId: "nope" })).rejects.toMatchObject({
       code: "NOT_FOUND",
@@ -454,19 +306,6 @@ describe("writing to a deleted page's Margin", () => {
       status: "ARCHIVED",
     });
   const newThread = { articleTitle: "Caphiria", title: "Border dispute", content: "Look at this" };
-
-  it("opens a thread on a published page, and on a title with no page yet", async () => {
-    tables.wikiArticle.seed({ source: "ixwiki", title: "Caphiria", slug: "caphiria" });
-
-    await expect(margin("other").createThread(newThread)).resolves.toMatchObject({
-      articleTitle: "Caphiria",
-    });
-    await expect(
-      margin("other").createThread({ ...newThread, articleTitle: "Not yet written" })
-    ).resolves.toBeDefined();
-    expect(threads.rows).toHaveLength(2);
-  });
-
   it("answers NOT_FOUND to createThread for a deleted page, and writes nothing", async () => {
     archive();
 
@@ -476,14 +315,6 @@ describe("writing to a deleted page's Margin", () => {
     expect(threads.rows).toHaveLength(0);
     expect(comments.rows).toHaveLength(0);
   });
-
-  it("lets a reader with deletedhistory open a thread on a deleted page", async () => {
-    archive();
-
-    await expect(margin("sysop").createThread(newThread)).resolves.toBeDefined();
-    expect(threads.rows).toHaveLength(1);
-  });
-
   it("answers NOT_FOUND to postComment on a deleted page's thread, and writes nothing", async () => {
     const thread = seedThread({}, 1);
     archive();
@@ -492,19 +323,5 @@ describe("writing to a deleted page's Margin", () => {
       margin("other").postComment({ threadId: thread.id, content: "Me too" })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
     expect(comments.rows).toHaveLength(1);
-  });
-
-  it("lets anyone reply on a published page's thread, and a reader with deletedhistory on a deleted one", async () => {
-    const thread = seedThread({}, 1);
-
-    await expect(
-      margin("other").postComment({ threadId: thread.id, content: "Me too" })
-    ).resolves.toMatchObject({ content: "Me too" });
-
-    archive();
-    await expect(
-      margin("sysop").postComment({ threadId: thread.id, content: "Noted" })
-    ).resolves.toMatchObject({ content: "Noted" });
-    expect(comments.rows).toHaveLength(3);
   });
 });

@@ -16,6 +16,11 @@
  * own type, else application/octet-stream; a file over 10 MB is refused without a request; a refusal rejects with
  * UploadFailed carrying the code and the sentence; an answer that is not JSON rejects readably; describeWarnings says
  * a taken name will be replaced, that the same file already is the current version, and lists the duplicates.
+ *
+ * Folds the routes' own gates (wiki-upload-route.test.ts, wiki-file-route.test.ts): no cross-site form may post a file
+ * (415 for a form, multipart or text type), a body that streams past the limit with no Content-Length is refused and
+ * nothing staged, a failure the route does not know is a 500 with no detail; an SVG and a PDF are only ever downloads
+ * (the app's CSP would replace the sandbox), and a deleted file, a name that is no title and a name with a path are 404.
  */
 jest.mock("~/lib/wiki-os/config", () =>
   jest
@@ -278,5 +283,92 @@ describe("a member uploads Flag of Eurth.png", () => {
       url: "/api/wiki/upload?filename=x.pdf",
       init: { method: "POST", body: untyped, headers: { "Content-Type": "application/octet-stream" } },
     });
+  });
+});
+
+describe("the upload and file routes refuse what they must", () => {
+  const upload = (query: string, body: BodyInit | null, type: string) =>
+    POST(
+      new NextRequest(`http://localhost:3000/api/wiki/upload?${query}`, {
+        method: "POST",
+        body,
+        headers: { "content-type": type },
+        ...(body instanceof ReadableStream ? { duplex: "half" } : {}),
+      } as ConstructorParameters<typeof NextRequest>[1])
+    );
+  /** A body that streams `total` bytes in 1 MB chunks, with no Content-Length. */
+  const streamOf = (total: number) => {
+    let given = 0;
+    return new ReadableStream<Uint8Array>({
+      pull(controller) {
+        const size = Math.min(1_000_000, total - given);
+        if (size <= 0) return controller.close();
+        given += size;
+        controller.enqueue(new Uint8Array(size));
+      },
+    });
+  };
+  const SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>';
+
+  it.each([
+    ["a form post", "application/x-www-form-urlencoded"],
+    ["a multipart form", "multipart/form-data; boundary=x"],
+    ["plain text", "text/plain"],
+  ])("refuses %s: no cross-site form may upload", async (_name, type) => {
+    as("member");
+    expect((await upload("filename=Flag.png", flag, type)).status).toBe(415);
+    expect(tables.wikiAsset.rows).toEqual([]);
+  });
+
+  it("refuses a file that streams past the limit with no Content-Length, and stages nothing", async () => {
+    as("member");
+    expect((await upload("filename=Flag.png", streamOf(MAX_UPLOAD_BYTES + 1), "image/png")).status).toBe(413);
+    expect(tables.wikiAsset.rows).toEqual([]);
+  });
+
+  it("answers a failure it does not know with a 500 and no detail", async () => {
+    as("member");
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const down = jest.spyOn(tables.wikiAsset, "findMany").mockRejectedValue(new Error("connect ECONNREFUSED db:5432"));
+    const response = await upload("filename=Flag.png", flag, "image/png");
+    down.mockRestore();
+    expect(response.status).toBe(500);
+    expect(JSON.stringify(await response.json())).not.toContain("ECONNREFUSED");
+  });
+
+  it("serves an SVG and a PDF as downloads with nosniff, and an SVG inline only to an image load, sandboxed", async () => {
+    as("member");
+    await postUpload(new File([SVG], "Badge.svg", { type: "image/svg+xml" }), { filename: "Badge.svg" });
+    const pdf = new Uint8Array([...Buffer.from("%PDF-1.4\n%\xe2\xe3\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n", "latin1")]);
+    await postUpload(new File([pdf], "Treaty.pdf", { type: "application/pdf" }), { filename: "Treaty.pdf" });
+    // a navigation, a frame, or a client that sends no fetch metadata but asks for a page: never run as a page
+    for (const [name, headers] of [
+      ["Badge.svg", { "Sec-Fetch-Dest": "document" }],
+      ["Badge.svg", { "Sec-Fetch-Dest": "iframe" }],
+      ["Badge.svg", { Accept: "text/html" }],
+      ["Treaty.pdf", { "Sec-Fetch-Dest": "document" }],
+    ] as const) {
+      const served = await fileRequest(name, headers);
+      expect(served.headers.get("Content-Disposition")).toBe(`attachment; filename="${name}"`);
+      expect(served.headers.get("X-Content-Type-Options")).toBe("nosniff");
+    }
+    // only an image load renders it inline, sandboxed and kept by no shared cache
+    const asImage = await fileRequest("Badge.svg", { "Sec-Fetch-Dest": "image" });
+    expect(asImage.headers.get("Content-Disposition")).toBe("inline");
+    expect(asImage.headers.get("Content-Security-Policy")).toContain("sandbox");
+    expect(asImage.headers.get("Cache-Control")).toBe("private, no-store");
+  });
+
+  it("answers 404 for no such file, a deleted file, a name that is no title and a name with a path in it", async () => {
+    as("member");
+    await postUpload(flagFile(), { filename: "Flag of Eurth.png" });
+    expect((await fileRequest("Nothing.png")).status).toBe(404);
+    expect((await fileRequest("[bad].png")).status).toBe(404);
+    const nested = await getFile(new NextRequest("http://localhost:3000/api/wiki/file/dir/Flag_of_Eurth.png"), {
+      params: Promise.resolve({ name: ["dir", "Flag_of_Eurth.png"] }),
+    } as never);
+    expect(nested.status).toBe(404);
+    tables.wikiArticle.rows.find((article) => article.title === "File:Flag of Eurth.png")!.status = "ARCHIVED";
+    expect((await fileRequest("Flag_of_Eurth.png")).status).toBe(404);
   });
 });

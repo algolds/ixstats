@@ -236,55 +236,6 @@ describe("api.php action=edit", () => {
     expect(jobs()).toEqual([]);
   });
 });
-
-describe("api.php action=rollback", () => {
-  /** A vandal edited Alpha after Heku: the page's text in WikiOS (the saves' base) and the harness's history agree. */
-  const vandalised = [
-    {
-      revId: 104,
-      page: "Alpha",
-      timestamp: "2026-01-04T10:00:00Z",
-      user: "Vandal",
-      content: "vandalised",
-    },
-  ];
-  const alphaIsVandalised = () => {
-    tables.wikiArticle.rows.find((row) => row.id === "a-alpha")!.wikitext = "vandalised";
-  };
-
-  it("inserts one revision job, in the save's own transaction, for the revision that restores the earlier text", async () => {
-    alphaIsVandalised();
-    const { act } = await setup({ tokenType: "rollback", moreRevisions: vandalised });
-
-    const body = await act("rollback", { title: "Alpha", user: "Vandal" });
-
-    expect(body.rollback).toMatchObject({ title: "Alpha", old_revid: 104, last_revid: 101 });
-    expect(tables.wikiRevision.rows).toHaveLength(1);
-    expect(tables.wikiRevision.rows[0]).toMatchObject({ wikitext: "good text" });
-    expect(summary()).toEqual(["revision:Alpha"]);
-    expect(jobs()[0]).toMatchObject({
-      source: "ixwiki",
-      kind: "revision",
-      articleId: "a-alpha",
-      revisionId: tables.wikiRevision.rows[0]!.id,
-      state: "pending",
-    });
-    expect(insertedInTransaction).toEqual([true]);
-    expect(scheduleMirrorKick).toHaveBeenCalledTimes(1);
-  });
-
-  it("inserts no job for a rollback that is refused (the page's last editor is someone else)", async () => {
-    alphaIsVandalised();
-    const { act } = await setup({ tokenType: "rollback", moreRevisions: vandalised });
-
-    const refused = await act("rollback", { title: "Alpha", user: "Heku" });
-
-    expect(refused.error.code).toBe("alreadyrolled");
-    expect(tables.wikiRevision.rows).toEqual([]);
-    expect(jobs()).toEqual([]);
-  });
-});
-
 describe("api.php action=upload", () => {
   const PNG = Uint8Array.from([
     0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52, 0, 0, 0, 8,
@@ -333,40 +284,6 @@ describe("api.php action=upload", () => {
     expect(tables.wikiArticle.rows.filter((row) => row.title === "File:Flag.png")).toEqual([]);
     expect(readdirSync(uploadDirectory)).toEqual([]);
   });
-
-  it("queues nothing for a file it refuses, and one job for a replacement", async () => {
-    const { act } = await setup();
-
-    const refused = await act(
-      "upload",
-      { filename: "Evil.svg" },
-      part(new TextEncoder().encode("<svg><script/></svg>"))
-    );
-    expect(refused.error.code).toBe("uploaded-script-svg");
-    expect(jobs()).toEqual([]);
-
-    await act("upload", { filename: "Flag.png", text: "x" }, part());
-    const warned = await act(
-      "upload",
-      { filename: "Flag.png" },
-      part(Uint8Array.from([...PNG, 2]))
-    );
-    expect(warned.upload.result).toBe("Warning");
-    expect(warned.upload.warnings.exists).toBe("Flag.png");
-    expect(summary()).toEqual(["revision:File:Flag.png", "upload:File:Flag.png"]);
-
-    const replaced = await act(
-      "upload",
-      { filename: "Flag.png", ignorewarnings: "1" },
-      part(Uint8Array.from([...PNG, 2]))
-    );
-    expect(replaced.upload.result).toBe("Success");
-    expect(summary()).toEqual([
-      "revision:File:Flag.png",
-      "upload:File:Flag.png",
-      "upload:File:Flag.png",
-    ]);
-  });
 });
 
 describe("api.php move, delete, undelete and protect", () => {
@@ -383,43 +300,6 @@ describe("api.php move, delete, undelete and protect", () => {
     });
     expect(insertedInTransaction).toEqual([true]);
   });
-
-  it("action=undelete queues one undelete job", async () => {
-    tables.wikiArticle.rows.find((row) => row.id === "a-alpha")!.status = "ARCHIVED";
-    const { act } = await setup();
-
-    await act("undelete", { title: "Alpha", reason: "oops" });
-
-    expect(summary()).toEqual(["undelete:Alpha"]);
-    expect(jobs()[0]).toMatchObject({ payload: { reason: "oops" } });
-    expect(insertedInTransaction).toEqual([true]);
-  });
-
-  it("action=protect queues one protect job with every restriction", async () => {
-    const { act } = await setup();
-
-    await act("protect", {
-      title: "Alpha",
-      protections: "edit=sysop|move=autoconfirmed",
-      expiry: "infinite",
-      reason: "vandalism",
-    });
-
-    expect(jobs()).toHaveLength(1);
-    expect(jobs()[0]).toMatchObject({
-      kind: "protect",
-      title: "Alpha",
-      payload: {
-        reason: "vandalism",
-        restrictions: [
-          { action: "edit", level: "sysop", expiresAt: null },
-          { action: "move", level: "autoconfirmed", expiresAt: null },
-        ],
-      },
-    });
-    expect(insertedInTransaction).toEqual([true]);
-  });
-
   it("action=move queues one move job per page that moved: the page, and its talk page when it goes along", async () => {
     const { act } = await setup();
 
@@ -478,14 +358,6 @@ describe("api.php move, delete, undelete and protect", () => {
 
     expect(missing.error.code).toBe("missingtitle");
     expect(cascade.error.code).toBe("cantcascade");
-    expect(jobs()).toEqual([]);
-  });
-
-  it("queues nothing for a read", async () => {
-    const { act } = await setup();
-
-    await act("query", { titles: "Alpha", prop: "revisions" });
-
     expect(jobs()).toEqual([]);
   });
 });

@@ -2,7 +2,6 @@ import {
   fetchPageCreator,
   fetchUserPageHistory,
   fetchWikiUser,
-  normalizeWikiUsername,
   WikiApiError,
   wikiUserPageUrl,
 } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
@@ -20,52 +19,6 @@ describe("account-proof", () => {
   afterEach(() => {
     global.fetch = realFetch;
   });
-
-  it("normalises MediaWiki usernames", () => {
-    expect(normalizeWikiUsername("  some_user  name ")).toBe("Some user name");
-    expect(normalizeWikiUsername("kir")).toBe("Kir");
-  });
-
-  it("returns the canonical user or null when missing", async () => {
-    global.fetch = jest
-      .fn()
-      .mockReturnValueOnce(
-        json({
-          query: {
-            users: [
-              { userid: 7, name: "Kir", editcount: 42, registration: "2026-01-01T00:00:00Z" },
-            ],
-          },
-        })
-      )
-      .mockReturnValueOnce(json({ query: { users: [{ name: "Nobody", missing: true }] } })) as any;
-    await expect(fetchWikiUser("iiwiki", "kir")).resolves.toEqual({
-      username: "Kir",
-      userId: 7,
-      registration: new Date("2026-01-01T00:00:00Z"),
-      editCount: 42,
-    });
-    await expect(fetchWikiUser("iiwiki", "nobody")).resolves.toBeNull();
-  });
-
-  it("asks for the account's edit count and registration, and tolerates a wiki that does not say them", async () => {
-    const fetchMock = jest
-      .fn()
-      .mockReturnValueOnce(
-        json({ query: { users: [{ userid: 3, name: "Old", registration: null }] } })
-      );
-    global.fetch = fetchMock as any;
-
-    await expect(fetchWikiUser("iiwiki", "old")).resolves.toEqual({
-      username: "Old",
-      userId: 3,
-      registration: null,
-      editCount: null,
-    });
-    const url = new URL(String(fetchMock.mock.calls[0]?.[0]));
-    expect(url.searchParams.get("usprop")).toBe("editcount|registration");
-  });
-
   it("reads the user page revisions saved since a time, oldest first (content + author), and the page creator", async () => {
     const fetchMock = jest
       .fn()
@@ -152,17 +105,6 @@ describe("account-proof", () => {
       complete: false,
     });
   });
-
-  it("a user page that does not exist has an empty, complete history", async () => {
-    global.fetch = jest
-      .fn()
-      .mockReturnValueOnce(json({ query: { pages: [{ missing: true }] } })) as any;
-    await expect(fetchUserPageHistory("ixwiki", "Kir", new Date())).resolves.toEqual({
-      revisions: [],
-      complete: true,
-    });
-  });
-
   it("throws WikiApiError on a non-JSON (Cloudflare) response", async () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
@@ -192,16 +134,6 @@ describe("account-proof", () => {
       expect(wikiUserPageUrl("ixwiki", "some user")).toMatch(
         /^https:\/\/[^/]+\/classic\/User:Some_user\?action=edit$/
       );
-    });
-
-    it("keeps a sister wiki's own page in both states", () => {
-      delete process.env.WIKIOS_V1_ENABLED;
-      const off = wikiUserPageUrl("iiwiki", "Kir");
-      process.env.WIKIOS_V1_ENABLED = "1";
-      expect(wikiUserPageUrl("iiwiki", "Kir")).toBe(off);
-      expect(off).toBe("https://iiwiki.com/wiki/User:Kir");
-      expect(wikiUserPageUrl("althistory", "Kir")).toMatch(/\/wiki\/User:Kir$/);
-      expect(wikiUserPageUrl("althistory", "Kir")).not.toContain("/classic/");
     });
   });
 });

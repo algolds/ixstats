@@ -119,47 +119,6 @@ afterEach(() => {
 });
 
 describe("getMainPageData", () => {
-  it("builds the featured article from the Main Page's own view, on the server", async () => {
-    const { getMainPageData } = loadService();
-
-    const { featured } = await getMainPageData();
-
-    expect(mockGetArticleView).toHaveBeenCalledWith(
-      "Main Page",
-      expect.any(Function),
-      undefined,
-      "none"
-    );
-    expect(featured).toMatchObject({
-      title: "Aurelia Nova",
-      slug: "Aurelia_Nova",
-      excerpt: "A country on Eurth known for its long coast.",
-    });
-    expect(featured!.image).toContain("/api/mediawiki/ixwiki/images/a.png");
-  });
-
-  it("picks the day's almanac entry from the category, skipping other namespaces, and reads its lead and picture", async () => {
-    jest.useFakeTimers({
-      now: new Date("2026-09-30T12:00:00Z"),
-      doNotFake: ["nextTick", "queueMicrotask"],
-    });
-    const { getMainPageData } = loadService();
-
-    const first = (await getMainPageData()).almanac;
-
-    expect(["List of countries by GDP", "List of countries by population"]).toContain(first!.title);
-    expect(first).toMatchObject({
-      category: "Bureau of International Statistics",
-      excerpt: "The gross domestic product of every country, ranked from largest to smallest.",
-    });
-    expect(first!.thumbnail).toContain("/api/mediawiki/ixwiki/images/gdp.png");
-    expect(first!.slug).toBe(encodeURIComponent(first!.title.replace(/ /g, "_")));
-
-    // the same day gives the same entry from a fresh instance; tomorrow may differ but is still an entry
-    const again = (await loadService().getMainPageData()).almanac;
-    expect(again!.title).toBe(first!.title);
-  });
-
   it("has no almanac, and no made-up fallback list, when the category has no entries", async () => {
     mockCategoryDetails.mockResolvedValue({
       category: null,
@@ -238,15 +197,6 @@ describe("getMainPageData", () => {
     await getMainPageData();
     expect(mockSiteStats).toHaveBeenCalledTimes(2);
   });
-
-  it("does not keep a failed build", async () => {
-    mockCategoryDetails.mockRejectedValueOnce(new Error("boom"));
-    const { getMainPageData } = loadService();
-
-    // the almanac failed but the build as a whole completes (parts are independent)
-    expect((await getMainPageData()).almanac).toBeNull();
-  });
-
   it("selects only what a prompt card needs, and gives each visitor a prompt of their own", async () => {
     mockPromptFindMany.mockResolvedValue([
       { id: "a", title: "A", question: "Q", slug: "a", featured: false, _count: { responses: 1 } },

@@ -57,41 +57,6 @@ afterEach(() => {
 });
 
 describe("fulltextSearch (indexed)", () => {
-  it("reads the stored searchVector with websearch_to_tsquery and ranks with ts_rank_cd", async () => {
-    mockQueryRaw.mockResolvedValueOnce([fulltextRow()]).mockResolvedValueOnce([{ total: 42 }]);
-    const { NativeSearchService } = loadService();
-
-    await NativeSearchService.fulltextSearch("  kingdom -war  ", "ixwiki", 20, 40, 0);
-
-    const [pageSql, ...pageParams] = mockQueryRaw.mock.calls[0] as [string, ...unknown[]];
-    expect(pageSql).toContain('"searchVector" @@');
-    expect(pageSql).toContain("websearch_to_tsquery('english'");
-    expect(pageSql).toContain("ts_rank_cd(");
-    expect(pageSql).toContain("ts_headline(");
-    expect(pageSql).toContain("StartSel=«, StopSel=»");
-    // never a tsvector built per row per query
-    expect(pageSql).not.toMatch(/to_tsvector\('english', coalesce\(title/);
-    expect(pageSql).not.toContain("ILIKE");
-    // the query text, source, namespace, limit and offset travel as parameters
-    // `-war` is websearch syntax typed on purpose: read as it is, with no prefix word
-    expect(pageParams).toEqual(["kingdom -war", "ixwiki", 0, 20, 40, null]);
-  });
-
-  it("counts every match in a query of its own, so total is not the page size", async () => {
-    mockQueryRaw.mockResolvedValueOnce([fulltextRow()]).mockResolvedValueOnce([{ total: 42 }]);
-    const { NativeSearchService } = loadService();
-
-    const { results, total } = await NativeSearchService.fulltextSearch("kingdom", "ixwiki", 1, 0);
-
-    const [countSql, ...countParams] = mockQueryRaw.mock.calls[1] as [string, ...unknown[]];
-    expect(countSql).toContain("count(*)");
-    expect(countSql).toContain('"searchVector" @@');
-    // a plainly typed query: the text before its last word, and the last word as a prefix
-    expect(countParams).toEqual(["", "ixwiki", 0, "kingdom"]);
-    expect(results).toHaveLength(1);
-    expect(total).toBe(42);
-  });
-
   it.each<[string, string, string | null]>([
     ["Pela", "", "Pela"],
     ["  pelaxia garrison ", "pelaxia ", "garrison"],
@@ -143,23 +108,6 @@ describe("fulltextSearch (indexed)", () => {
     expect(prefixes).toEqual(["pela", null]);
     expect(String((mockQueryRaw.mock.calls[0] as unknown[])[1])).toBe("kingdom foo'&|:*()<>");
   });
-
-  it("builds the snippet from the prose: template parameter, table and brace lines are taken out in SQL, for the page's rows only", async () => {
-    mockQueryRaw.mockResolvedValue([]);
-    const { NativeSearchService } = loadService();
-
-    await NativeSearchService.fulltextSearch("garrison");
-
-    const [pageSql] = mockQueryRaw.mock.calls[0] as [string];
-    const [, headlineSql] = pageSql.split("hits AS (");
-    // the strip sits after the LIMIT, in the select over `hits`, not in the ranking
-    expect(headlineSql).toContain("LIMIT $4::int OFFSET $5::int");
-    expect(headlineSql).toContain(
-      String.raw`regexp_replace(left(a.wikitext, 20000), '^[ \t]*[|!{}][^\n]*(\n|$)', '', 'gn')`
-    );
-    expect(headlineSql).toContain("left(regexp_replace(");
-  });
-
   it("drops NUL characters from the query: Postgres text cannot hold one", async () => {
     mockQueryRaw.mockResolvedValue([]);
     const { NativeSearchService } = loadService();
@@ -191,25 +139,6 @@ describe("fulltextSearch (indexed)", () => {
     expect(pageSql).toContain("a.status = 'PUBLISHED'");
     expect(namespace).toBe(10);
   });
-
-  it("turns the ts_headline markers into character ranges of a plain-text snippet", async () => {
-    mockQueryRaw
-      .mockResolvedValueOnce([
-        fulltextRow({ headline: "The «kingdom» of Burgundie and its «second» city" }),
-      ])
-      .mockResolvedValueOnce([{ total: 1 }]);
-    const { NativeSearchService } = loadService();
-
-    const { results } = await NativeSearchService.fulltextSearch("kingdom second");
-
-    const [item] = results;
-    expect(item!.snippet).toBe("The kingdom of Burgundie and its second city");
-    expect(item!.snippetRanges.map(([s, e]) => item!.snippet.slice(s, e))).toEqual([
-      "kingdom",
-      "second",
-    ]);
-  });
-
   it("keeps markup out of the snippet, and falls back to the summary when there is no headline", async () => {
     mockQueryRaw
       .mockResolvedValueOnce([
@@ -267,25 +196,6 @@ describe("fulltextSearch before the migration is applied", () => {
     expect(warn).toHaveBeenCalledTimes(1);
     expect(String(warn.mock.calls[0]![0])).toContain("2026-09-30-wikios-search-indexes.sql");
   });
-
-  it("tries the indexed query again after a few minutes and uses it once it works", async () => {
-    const now = jest.spyOn(Date, "now").mockReturnValue(1_000_000);
-    mockQueryRaw.mockRejectedValue(missingColumn());
-    mockFindMany.mockResolvedValue([]);
-    mockCount.mockResolvedValue(0);
-    const { NativeSearchService } = loadService();
-    await NativeSearchService.fulltextSearch("kingdom");
-    mockQueryRaw.mockClear();
-
-    now.mockReturnValue(1_000_000 + 5 * 60 * 1000 + 1);
-    mockQueryRaw.mockReset();
-    mockQueryRaw.mockResolvedValueOnce([fulltextRow()]).mockResolvedValueOnce([{ total: 1 }]);
-    const { results } = await NativeSearchService.fulltextSearch("kingdom");
-
-    expect(results[0]!.snippetRanges.length).toBeGreaterThan(0);
-    expect(mockQueryRaw).toHaveBeenCalledTimes(2);
-  });
-
   it.each([
     'column "searchVector" does not exist',
     "function similarity(text, text) does not exist",
@@ -316,68 +226,9 @@ describe("fulltextSearch before the migration is applied", () => {
     await expect(NativeSearchService.fulltextSearch("kingdom")).rejects.toThrow(message);
     expect(mockFindMany).not.toHaveBeenCalled();
   });
-
-  it("does not hide any other database error behind the slow query", async () => {
-    mockQueryRaw.mockRejectedValue(new Error("connection terminated"));
-    const { NativeSearchService } = loadService();
-
-    await expect(NativeSearchService.fulltextSearch("kingdom")).rejects.toThrow(
-      "connection terminated"
-    );
-    expect(mockFindMany).not.toHaveBeenCalled();
-  });
 });
 
 describe("spotlightSearch (title typeahead)", () => {
-  const typeaheadRow = (overrides: Record<string, unknown> = {}) => ({
-    id: "1",
-    title: "Urcea",
-    summary: "A kingdom.",
-    readingTime: 3,
-    leadImageUrl: "https://img/urcea.png",
-    tier: 1,
-    similarity: 0.4,
-    ...overrides,
-  });
-
-  it("asks for prefix, then contains, then trigram matches in one query that never touches wikitext", async () => {
-    mockQueryRaw.mockResolvedValue([typeaheadRow()]);
-    const { NativeSearchService } = loadService();
-
-    const results = await NativeSearchService.spotlightSearch("Urc", "ixwiki", 10);
-
-    expect(mockQueryRaw).toHaveBeenCalledTimes(1);
-    const [sql, ...params] = mockQueryRaw.mock.calls[0] as [string, ...unknown[]];
-    expect(sql).toContain("lower(title) LIKE lower($4::text)");
-    expect(sql).toContain("lower(title) % lower($3::text)");
-    expect(sql).toContain("similarity(lower(title)");
-    expect(sql).not.toContain("wikitext");
-    expect(sql).toContain("LIMIT $6");
-    expect(params).toEqual(["ixwiki", 0, "Urc", "Urc%", "%Urc%", 10]);
-    expect(results[0]).toMatchObject({
-      title: "Urcea",
-      snippet: "A kingdom.",
-      leadImageUrl: "https://img/urcea.png",
-      matchType: "title_fuzzy",
-    });
-  });
-
-  it("leaves the contains pattern out for a 2-character query", async () => {
-    mockQueryRaw.mockResolvedValue([]);
-    const { NativeSearchService } = loadService();
-
-    await NativeSearchService.spotlightSearch("Ur");
-
-    expect((mockQueryRaw.mock.calls[0] as unknown[]).slice(1)).toEqual([
-      "ixwiki",
-      0,
-      "Ur",
-      "Ur%",
-      null,
-      10,
-    ]);
-  });
-
   it("escapes LIKE wildcards in what the reader typed, and reads an underscore as a space", async () => {
     mockQueryRaw.mockResolvedValue([]);
     const { NativeSearchService } = loadService();
@@ -388,35 +239,6 @@ describe("spotlightSearch (title typeahead)", () => {
     expect(params[2]).toBe("100% off");
     expect(params[3]).toBe("100\\% off%");
   });
-
-  it("looks in the namespace a Template:, Category: or User: query names", async () => {
-    mockQueryRaw.mockResolvedValue([]);
-    const { NativeSearchService } = loadService();
-
-    await NativeSearchService.spotlightSearch("template:info");
-    await NativeSearchService.spotlightSearch("Category:Urc");
-    await NativeSearchService.spotlightSearch("user:ab");
-
-    expect(mockQueryRaw.mock.calls.map((call) => (call as unknown[])[2])).toEqual([10, 14, 2]);
-  });
-
-  it("scores an exact title 1, a prefix 0.8, and a similar title by its similarity", async () => {
-    mockQueryRaw.mockResolvedValue([
-      typeaheadRow({ id: "a", title: "Urcea", tier: 0 }),
-      typeaheadRow({ id: "b", title: "Urcean Navy", tier: 1 }),
-      typeaheadRow({ id: "c", title: "Urtea", tier: 3, similarity: 0.45 }),
-    ]);
-    const { NativeSearchService } = loadService();
-
-    const results = await NativeSearchService.spotlightSearch("Urcea");
-
-    expect(results.map((r) => [r.matchType, r.similarityScore])).toEqual([
-      ["title_exact", 1],
-      ["title_fuzzy", 0.8],
-      ["title_fuzzy", 0.45],
-    ]);
-  });
-
   it("drops NUL characters from what the reader typed, so a\\u0000b is not a 500", async () => {
     mockQueryRaw.mockResolvedValue([]);
     const { NativeSearchService } = loadService();

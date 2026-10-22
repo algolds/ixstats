@@ -362,13 +362,14 @@ async function fastForward(
   const result = await ArticleRepository.importPageRevisions(input);
   if (result.inserted === 0 && !result.headUpdated) return "known";
   if (article?.status === "ARCHIVED") await restoreRecreatedPage(article);
+  // The page has new text: the caches that serve its intro and wikitext must not keep the old one.
+  await evictCaches(input.title, article?.id);
   return "fast-forward";
 }
 
 /** A page deleted in WikiOS and created again in MediaWiki is back. */
 async function restoreRecreatedPage(article: StoredArticle): Promise<void> {
   await db.wikiArticle.update({ where: { id: article.id }, data: { status: "PUBLISHED" } });
-  await evictCaches(article.title, article.id);
 }
 
 // ---------------------------------------------------------------------------

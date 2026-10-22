@@ -1,12 +1,14 @@
 /** @jest-environment node */
 /**
- * Plan 410: the request pipeline (format version, error envelope, POST-only actions, assert, rate
- * limits), the login/logout flow and meta=siteinfo|userinfo|tokens.
+ * api.php, the request pipeline and the session (plan 410): unknown actions, output formats, the error header, the rate
+ * limits, siteinfo on a bot's startup, the anonymous token, bot-password login, logout and assert, the session secret
+ * (no fallback key, forged cookies refused, anonymous reads kept) and the legacy action=tokens.
  */
 jest.mock("~/server/db", () => ({ __esModule: true, db: {} }));
 
-import { Bot, NOW, call, fakeAuthStore, fakeLoader, fakeStore, makeDeps } from "./harness";
-
+import { Bot, call, fakeAuthStore, fakeStore, fakeWiki, type FakeWikiData, makeDeps, makeWikiDeps, NOW } from "./harness";
+import { createHmac } from "node:crypto";
+import { env } from "~/env";
 type Body = Record<string, any>;
 const run = async (query: string, options?: Parameters<typeof call>[2], deps?: Parameters<typeof call>[0]) =>
   (await call(deps ?? (await makeDeps()), query, options)).body as Body;
@@ -20,11 +22,6 @@ describe("errors and the request pipeline", () => {
       "*": "See /w/api.php for API usage.",
     });
   });
-
-  it("asks for the action when it is missing", async () => {
-    expect((await run("format=json")).error.code).toBe("missingparam");
-  });
-
   it("refuses JSONP and other output formats", async () => {
     expect((await run("action=query&meta=siteinfo&callback=x")).error.code).toBe("badvalue");
     expect((await run("action=query&meta=siteinfo&format=xml")).error.code).toBe("badvalue");
@@ -42,13 +39,6 @@ describe("errors and the request pipeline", () => {
     expect(output.errorCode).toBe("badvalue");
     expect((await call(await makeDeps(), "action=query&meta=tokens")).errorCode).toBeNull();
   });
-
-  it("answers the newer error envelope when errorformat asks for it", async () => {
-    const body = await run("action=nope&errorformat=plaintext&formatversion=2");
-    expect(body.errors[0]).toMatchObject({ code: "badvalue", module: "main" });
-    expect(body.docref).toBeDefined();
-  });
-
   it("turns an unexpected failure into internal_api_error without leaking it", async () => {
     const spy = jest.spyOn(console, "error").mockImplementation(() => undefined);
     const deps = await makeDeps({
@@ -131,39 +121,9 @@ describe("meta=siteinfo", () => {
       expect.arrayContaining(["ParserFunctions", "Scribunto", "Cite", "TemplateStyles", "TemplateData"])
     );
   });
-
-  it("uses plain values and real booleans for formatversion=2", async () => {
-    const body = await run("action=query&meta=siteinfo&siprop=general|namespaces|namespacealiases&formatversion=2");
-    expect(body.query.general.writeapi).toBe(true);
-    expect(body.query.namespaces["6"]).toMatchObject({ name: "File", canonical: "File", content: false });
-    expect(body.query.namespaces["0"]).toMatchObject({ name: "", content: true });
-    expect(body.query.namespacealiases).toContainEqual({ id: 6, alias: "Image" });
-  });
-
-  it("answers statistics, usergroups, restrictions and the redirect magic word", async () => {
-    const body = await run("action=query&meta=siteinfo&siprop=statistics|usergroups|restrictions|magicwords|interwikimap|rightsinfo&formatversion=2");
-    expect(body.query.statistics).toEqual({
-      pages: 10, articles: 8, edits: 50, images: 2, users: 3, activeusers: 1, admins: 1, jobs: 0,
-    });
-    expect(body.query.usergroups.find((g: Body) => g.name === "sysop").rights).toContain("delete");
-    expect(body.query.restrictions.levels).toEqual(["", "autoconfirmed", "sysop"]);
-    expect(body.query.magicwords.find((w: Body) => w.name === "redirect").aliases).toEqual(["#REDIRECT"]);
-    expect(body.query.interwikimap).toEqual([]);
-  });
-
-  it("refuses an unknown siprop", async () => {
-    expect((await run("action=query&meta=siteinfo&siprop=nope")).error.code).toBe("badvalue");
-  });
 });
 
 describe("meta=userinfo and tokens, anonymous", () => {
-  it("names an anonymous caller by address with id 0 and `anon`", async () => {
-    const v1 = await run("action=query&meta=userinfo&uiprop=groups|rights|hasmsg|editcount");
-    expect(v1.query.userinfo).toMatchObject({ id: 0, name: "203.0.113.9", anon: "", groups: [], rights: ["read"], editcount: 0 });
-    const v2 = await run("action=query&meta=userinfo&formatversion=2");
-    expect(v2.query.userinfo).toEqual({ id: 0, name: "203.0.113.9", anon: true });
-  });
-
   it("gives an anonymous caller only the +\\ token", async () => {
     const body = await run("action=query&meta=tokens&type=csrf|watch");
     expect(body.query.tokens).toEqual({ csrftoken: "+\\", watchtoken: "+\\" });
@@ -253,11 +213,232 @@ describe("assert", () => {
     // the grants did not give the bot flag, so assert=bot fails even for a sysop user
     expect(((await bot.get({ action: "query", meta: "userinfo", assert: "bot" })).error as Body).code).toBe("assertbotfailed");
   });
+});
 
-  it("passes assert=bot when the grants allow the bot right", async () => {
-    const deps = await makeDeps({ loadPermissions: fakeLoader(["*", "user", "sysop", "bot"]) });
-    const bot = new Bot({ ...deps, auth: await fakeAuthStore("bot-secret", ["basic", "highvolume"]) });
-    await bot.login();
-    expect((await bot.get({ action: "query", meta: "userinfo", assert: "bot" })).query).toBeDefined();
+describe("the session secret", () => {
+  type Body = Record<string, any>;
+  const mutableEnv = env as { WIKIOS_API_SESSION_SECRET?: string };
+  const REAL_SECRET = mutableEnv.WIKIOS_API_SESSION_SECRET;
+
+  const data = (): FakeWikiData => ({
+    pages: [{ pageId: 1, title: "Alpha" }],
+    revisions: [{ revId: 1, page: "Alpha", timestamp: "2026-01-01T00:00:00Z", content: "alpha" }],
+  });
+
+  afterEach(() => {
+    mutableEnv.WIKIOS_API_SESSION_SECRET = REAL_SECRET;
+    jest.restoreAllMocks();
+  });
+
+  /** A cookie value signed the way api.php signs one (`<id>.<HMAC-SHA256 of "session:<id>">`) under a key of the forger's choosing. */
+  const forgedCookie = (sessionId: string, key: string) =>
+    `${sessionId}.${createHmac("sha256", key).update(`session:${sessionId}`).digest("base64url")}`;
+
+  describe.each([
+    ["unset", undefined],
+    ["shorter than 32 characters", "a-short-secret"],
+  ])("with the session secret %s", (_label, secret) => {
+    beforeEach(() => {
+      mutableEnv.WIKIOS_API_SESSION_SECRET = secret;
+      jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    });
+
+    it("refuses a login and starts no session", async () => {
+      const wiki = await makeWikiDeps(data());
+      const sessionsBefore = wiki.deps.auth as unknown as { sessions: Map<string, unknown> };
+      // the login token cannot be had (next test), so a login brings a made-up one: refused before any password is checked
+      const direct = await call(wiki.deps, "", {
+        method: "POST",
+        body: {
+          action: "login",
+          lgname: "Heku@Bot",
+          lgpassword: "bot-secret",
+          lgtoken: "0123456789abcdef0123456789abcdef+\\",
+          format: "json",
+        },
+      });
+      expect((direct.body as Body).error.code).toBe("sessionsecretmissing");
+      expect((direct.body as Body).login).toBeUndefined();
+      expect(direct.setCookies).toEqual([]); // no session cookie, and no login nonce cookie either
+      expect(sessionsBefore.sessions.size).toBe(0);
+    });
+
+    it("refuses to hand out a login token", async () => {
+      const wiki = await makeWikiDeps(data());
+      const output = await call(wiki.deps, "action=query&meta=tokens&type=login&format=json");
+      expect((output.body as Body).error.code).toBe("sessionsecretmissing");
+      expect(output.setCookies).toEqual([]);
+      expect(output.errorCode).toBe("sessionsecretmissing");
+    });
+
+    it("rejects a forged session cookie, whoever signed it: with no key, a guessed one or the old development key", async () => {
+      const wiki = await makeWikiDeps(data());
+      // a session that exists in the store: only a valid signature could have named it
+      (wiki.deps.auth as unknown as { sessions: Map<string, unknown> }).sessions.set(
+        "known-session",
+        {
+          id: "known-session",
+          botPasswordId: "bp1",
+          userId: "u-heku",
+          expiresAt: new Date("2030-01-01T00:00:00Z"),
+          grants: ["basic", "editpage"],
+        } as never
+      );
+      for (const cookie of [
+        "known-session.forged",
+        forgedCookie("known-session", ""),
+        forgedCookie("known-session", "wikios-api-development-secret-not-for-production"),
+        forgedCookie("known-session", secret ?? ""),
+      ]) {
+        const read = await call(wiki.deps, "action=query&meta=userinfo&format=json", {
+          cookies: { wikios_api_session: cookie },
+        });
+        expect((read.body as Body).error?.code).toBe("sessionsecretmissing");
+        const write = await call(wiki.deps, "", {
+          method: "POST",
+          cookies: { wikios_api_session: cookie },
+          body: { action: "edit", title: "Alpha", text: "x", token: "+\\", format: "json" },
+        });
+        expect((write.body as Body).error?.code).toBe("sessionsecretmissing");
+      }
+      expect(wiki.calls.filter((c) => c.name === "saveWikitext")).toEqual([]);
+    });
+
+    it("keeps anonymous reads working, and anonymous writes denied", async () => {
+      const wiki = await makeWikiDeps(data());
+      const siteinfo = (
+        await call(wiki.deps, "action=query&meta=siteinfo&siprop=general&format=json")
+      ).body as Body;
+      expect(siteinfo.query.general.sitename).toBe("WikiOS");
+      const pages = (await call(wiki.deps, "action=query&list=allpages&format=json")).body as Body;
+      expect(pages.query.allpages).toHaveLength(1);
+      const user = (await call(wiki.deps, "action=query&meta=userinfo&format=json")).body as Body;
+      expect(user.query.userinfo.id).toBe(0);
+      const csrf = (await call(wiki.deps, "action=query&meta=tokens&format=json")).body as Body;
+      expect(csrf.query.tokens.csrftoken).toBe("+\\");
+      const parsed = (await call(wiki.deps, "action=parse&page=Alpha&prop=wikitext&format=json"))
+        .body as Body;
+      expect(parsed.error).toBeUndefined();
+      const write = (
+        await call(wiki.deps, "", {
+          method: "POST",
+          body: { action: "edit", title: "Alpha", text: "x", token: "+\\", format: "json" },
+        })
+      ).body as Body;
+      expect(write.error.code).toBe("writeapidenied");
+    });
+
+    it("logs one warning at first use, and not again", async () => {
+      const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+      await jest.isolateModulesAsync(async () => {
+        // a fresh copy of the module (its "already warned" flag starts false) over a fresh copy of the env mock
+        (require("~/env").env as { WIKIOS_API_SESSION_SECRET?: string }).WIKIOS_API_SESSION_SECRET =
+          secret;
+        const fresh = await import("~/lib/wiki-os/api-compat/auth");
+        expect(() => fresh.newLoginNonce(new Date())).toThrow(/sessionsecretmissing/);
+        expect(() => fresh.readSessionCookie("a.b")).toThrow(/sessionsecretmissing/);
+        expect(() => fresh.sessionToken("id", "csrf")).toThrow(/sessionsecretmissing/);
+      });
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(String(warn.mock.calls[0]![0])).toContain("WIKIOS_API_SESSION_SECRET");
+    });
+  });
+
+  describe("with a session secret", () => {
+    it("logs in, and still rejects a cookie signed with another key (the old development key included)", async () => {
+      const wiki = await makeWikiDeps(data());
+      const login = (await wiki.bot.login()) as Body;
+      expect(login.login.result).toBe("Success");
+      const me = (await wiki.bot.get({ action: "query", meta: "userinfo", format: "json" })) as Body;
+      expect(me.query.userinfo.name).toBe("Heku");
+
+      const sessionId = Object.values(wiki.bot.jar)
+        .find((value) => value.includes("."))!
+        .split(".")[0]!;
+      for (const key of [
+        "wikios-api-development-secret-not-for-production",
+        "another-key-of-more-than-32-characters!!",
+      ]) {
+        const forged = new Bot(wiki.deps);
+        forged.jar.wikios_api_session = forgedCookie(sessionId, key);
+        const read = (await forged.get({
+          action: "query",
+          meta: "userinfo",
+          format: "json",
+        })) as Body;
+        expect(read.query.userinfo.id).toBe(0); // anonymous: the forged cookie opened nothing
+      }
+    });
+  });
+});
+
+describe("src/env.ts never refuses to start over the session secret", () => {
+  const BASE_ENV: Record<string, string> = {
+    DATABASE_URL: "postgresql://user:pass@localhost:5433/ixstats_test",
+    CRON_SECRET: "c".repeat(40),
+    WIKI_SYNC_WEBHOOK_SECRET: "w".repeat(40),
+    // what production requires besides the secret under test
+    IXTIME_BOT_SECRET: "i".repeat(40),
+    CLERK_SECRET_KEY: "sk_test_" + "x".repeat(30),
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_" + "x".repeat(30),
+  };
+
+  /** The invalid-variable names `src/env.ts` reports (it logs them and throws), or [] when it loads. */
+  async function invalidVariables(overrides: Record<string, string | undefined>, nodeEnv: string): Promise<string[]> {
+    const saved = { ...process.env };
+    const logged: unknown[][] = [];
+    const spy = jest.spyOn(console, "error").mockImplementation((...args) => void logged.push(args));
+    try {
+      Object.assign(process.env, BASE_ENV, { NODE_ENV: nodeEnv, SKIP_ENV_VALIDATION: "" });
+      for (const [key, value] of Object.entries(overrides)) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
+      let failed = false;
+      await jest.isolateModulesAsync(async () => {
+        try {
+          await import("../../../../env");
+        } catch {
+          failed = true;
+        }
+      });
+      return failed ? [...JSON.stringify(logged).matchAll(/"path":\["([A-Za-z_]+)"/g)].map((match) => match[1]!) : [];
+    } finally {
+      spy.mockRestore();
+      for (const key of Object.keys(process.env)) if (!(key in saved)) delete process.env[key];
+      Object.assign(process.env, saved);
+    }
+  }
+
+  describe.each(["production"])("src/env.ts in %s", (nodeEnv) => {
+    it.each([
+      ["unset", undefined],
+      ["one character", "x"],
+      ["32 characters", "k".repeat(32)],
+    ])("loads when WIKIOS_API_SESSION_SECRET is %s", async (_label, value) => {
+      const failures = await invalidVariables({ WIKIOS_API_SESSION_SECRET: value }, nodeEnv);
+      expect(failures.filter((name) => name.includes("WIKIOS_API_SESSION_SECRET"))).toEqual([]);
+      expect(failures).toEqual([]);
+    });
+  });
+});
+
+describe("legacy tokens", () => {
+  type Body = Record<string, any>;
+
+  const DATA = (): FakeWikiData => ({
+    pages: [
+      { pageId: 1, title: "Alpha" },
+      { pageId: 2, title: "Beta", redirect: "Alpha" },
+    ],
+    revisions: [{ revId: 1, page: "Alpha", timestamp: "2026-01-01T00:00:00Z", content: "a" }],
+  });
+
+  describe("action=tokens (legacy)", () => {
+    it("defaults to the edit token, gives an anonymous caller the anonymous token, and refuses an unknown type", async () => {
+      const deps = await makeDeps({ store: fakeWiki(DATA()) });
+      expect(((await call(deps, "action=tokens&format=json")).body as Body).tokens).toEqual({ edittoken: "+\\" });
+      expect(((await call(deps, "action=tokens&type=bogus&format=json")).body as Body).error.code).toBe("badvalue");
+    });
   });
 });

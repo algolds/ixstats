@@ -1194,6 +1194,14 @@ const WIKITEXT_UNITS: ReadonlyArray<readonly [name: string, unit: string]> = [
   ["[blurb:", "[blurb:"],
   ['<ref␠name="', '<ref name="'],
   ["<math", "<math"],
+  // tags the parser reads to their close, and the template passes of cleanWikiMarkup (the per-file timing suites')
+  ["<poem>", "<poem>"],
+  ["<syntaxhighlight", "<syntaxhighlight"],
+  ["{{lang|", "{{lang|"],
+  ["{{nowrap|", "{{nowrap|"],
+  ["{{main|", "{{main|"],
+  ["}}{{", "}}{{"],
+  ["<ref␠name=a␠/>", "<ref name=a />"],
   // numbers, and the openers of the expressions that read them
   ["1", "1"],
   ["1,", "1,"],
@@ -1230,6 +1238,23 @@ const CATEGORY_THEN_SPACES: Family = {
   name: "[[Category:␠×N",
   build: (size) => `[[Category:${" ".repeat(Math.max(0, size - 11))}`,
 };
+
+/** An opener, then only blanks to the end of the text, closed once: a pass that reads to the end from each blank. */
+const THEN_SPACES: readonly Family[] = [
+  "{{convert|1|",
+  "{{convert|1|a|",
+  "{{flag|",
+  "{{nowrap|",
+  "{{quote|a|",
+  "{{lang|",
+  "[http://a",
+  "<ref>",
+  "<!--",
+  "<",
+].map((head) => ({
+  name: `${head}␠×N}}`,
+  build: (size: number) => `${head}${" ".repeat(Math.max(0, size - head.length - 2))}}}`,
+}));
 
 /** What an SVG document is made of (the driver wraps the text in `<svg xmlns="http://www.w3.org/2000/svg">`). */
 const SVG_UNITS: ReadonlyArray<readonly [name: string, unit: string]> = [
@@ -1464,6 +1489,7 @@ export const FAMILIES: readonly Family[] = [
     build: (size: number) => repeatTo(unit, size),
   })),
   CATEGORY_THEN_SPACES,
+  ...THEN_SPACES,
   nested("{{a|…}}", "{{a|", "}}"),
   nested("[[…]]", "[[", "]]"),
   // a literal `<!--` that never closes (in a nowiki, say), and links after it that all close

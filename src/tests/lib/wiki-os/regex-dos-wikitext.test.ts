@@ -5,7 +5,6 @@
  * openers and closers are the common case) and on every real-looking page of src/tests/fixtures/wikitext.
  * The gate that they are fast is regex-dos.test.ts.
  */
-import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { disagreements, fixtureTexts, randomTexts } from "../../helpers/wikitext-fuzz";
 import {
   findMatchingClosingBraces,
@@ -30,6 +29,9 @@ import {
 import * as legacyProtected from "./legacy/protected-regions";
 import { findSectionLine, sectionHeadings } from "~/lib/wiki-os/wikitext/section-locator";
 import { linkTargets } from "~/lib/wiki-os/api-compat/scan";
+import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
+import { checkEditPolicy, parseWikiTitle } from "~/lib/wiki-os/namespace-policy";
+import { redirectTargetOf } from "~/lib/wiki-os/xml/fetch-dump";
 import { parse } from "~/lib/wiki-os/wikitext/parser";
 import { parse as legacyParse } from "./legacy/parser";
 import {
@@ -936,16 +938,6 @@ describe("match-index: an opener the pass did not reach is scanned for, within a
     for (let at = first; at <= last; at += 2) findMatchingClosingBrackets(text, at, index);
     expect(findMatchingClosingBrackets(text, last, index)).toBe(-1);
   });
-
-  it("reads a text of openers after a comment that never closes in linear time", () => {
-    const text = `<!--${"[[x ".repeat(200_000)}`;
-    const index = matchBrackets(text);
-    const started = performance.now();
-    for (let at = text.indexOf("[["); at !== -1; at = text.indexOf("[[", at + 1)) {
-      findMatchingClosingBrackets(text, at, index);
-    }
-    expect(performance.now() - started).toBeLessThan(2_000 * TIMING_BUDGET_SCALE);
-  });
 });
 
 // ---- template-parser: scanTemplates looks for the next `<` once ---------------------------------------------
@@ -1293,11 +1285,6 @@ describe("api-compat/scan: linkTargets answers what it answered", () => {
       )
     ).toEqual([]);
   });
-  it("takes time linear in the nested links of a text", () => {
-    const started = performance.now();
-    linkTargets("[[".repeat(100_000) + "]]".repeat(100_000), 5001);
-    expect(performance.now() - started).toBeLessThan(500 * TIMING_BUDGET_SCALE);
-  });
 });
 
 // ---- parser: a block's closing </blockquote> is looked for once -----------------------------------------------
@@ -1340,17 +1327,111 @@ describe("parser: scanBlockquote answers what it answered", () => {
       )
     ).toEqual([]);
   });
+});
 
-  it("takes time linear in the openers of a text: lines that never close, and lines that close once with text after", () => {
-    const started = performance.now();
-    for (const text of [
-      "<blockquote>\n".repeat(11_000),
-      `${"<blockquote>\n".repeat(11_000)}</blockquote> tail`,
-      `${"<blockquote\n".repeat(11_000)}</blockquote>`,
-      `${"<blockquote>\n".repeat(11_000)}</blockquote>${" ".repeat(100_000)}x`,
-    ]) {
-      expect(parse(text).ast.nodes.length).toBeGreaterThan(0);
+// ---- xml/fetch-dump: redirectTargetOf -------------------------------------------------------------------
+
+describe("redirectTargetOf reads the target in one scan", () => {
+  const TOKENS = [
+    "#REDIRECT",
+    "#redirect",
+    "#ReDirect",
+    " ",
+    " ",
+    "\n",
+    "\t",
+    "\u00a0",
+    "\ufeff",
+    ":",
+    "[[",
+    "[",
+    "]]",
+    "]",
+    "|",
+    "#",
+    "Foo",
+    "Foo Bar",
+    "Ünï",
+    "a",
+    "label",
+    "Sec tion",
+  ];
+  /** `redirectTargetOf` as it was. */
+  const legacy = (wikitext: string): string | null => {
+    const match =
+      /^\s*#REDIRECT\s*:?\s*\[\[\s*:?([^\]|#]+?)\s*(?:#[^\]|]*)?(?:\|[^\]]*)?\]\]/i.exec(wikitext);
+    return match?.[1]?.trim() ?? null;
+  };
+
+  it("answers what the expression answered, on random texts that start like a redirect", () => {
+    const texts = [...randomTexts(TOKENS, 80_000, 61, 12)].map((t) => `#REDIRECT [[${t}`);
+    expect(disagreements(texts, redirectTargetOf, legacy)).toEqual([]);
+  });
+
+  it("answers what the expression answered, on random texts and the real pages", () => {
+    expect(
+      disagreements([...randomTexts(TOKENS, 80_000, 62, 12), ...fixtures], redirectTargetOf, legacy)
+    ).toEqual([]);
+  });
+
+  it("keeps its answers for the usual forms", () => {
+    expect(redirectTargetOf("#REDIRECT [[Foo bar#Sec|label]]")).toBe("Foo bar");
+    expect(redirectTargetOf(" \n#redirect: [[ :Foo ]]")).toBe("Foo");
+    expect(redirectTargetOf("#REDIRECT [[]]")).toBeNull();
+    expect(redirectTargetOf("#REDIRECT [[Foo")).toBeNull();
+    expect(redirectTargetOf("text #REDIRECT [[Foo]]")).toBeNull();
+  });
+});
+
+// ---- core/title: a page name is bounded -----------------------------------------------------------------
+
+describe("canonicalizeTitle looks at no more than 4,096 characters of a title", () => {
+  it("still canonicalizes what it did", () => {
+    expect(canonicalizeTitle("foo_bar")?.title).toBe("Foo bar");
+    expect(canonicalizeTitle(`foo${" ".repeat(4_000)}bar`)?.title).toBe("Foo bar");
+    expect(canonicalizeTitle("Foo#Sec_tion")?.fragment).toBe("Sec tion");
+  });
+
+  it("refuses a longer one at once, and does not bound the fragment", () => {
+    expect(canonicalizeTitle(`foo${" ".repeat(5_000)}bar`)).toBeNull();
+    expect(canonicalizeTitle(`foo#${"x".repeat(100_000)}`)?.fragment).toHaveLength(100_000);
+  });
+
+  it("is the bound of parseWikiTitle, which every caller of a raw title reaches", () => {
+    expect(parseWikiTitle(`Talk:foo${" ".repeat(4_000)}bar`)).toEqual({
+      namespaceId: 1,
+      base: "foo bar",
+    });
+    expect(parseWikiTitle(`foo${"x".repeat(5_000)}`)).toBeNull();
+    // a title no parser can judge is refused to everyone but an administrator, who is let through as before
+    const nobody = { rights: new Set<never>(), linkedWikiUsername: null };
+    expect(checkEditPolicy(`foo${"x".repeat(5_000)}`, nobody)).toEqual({
+      allowed: false,
+      reason: "That page title is not valid.",
+    });
+  });
+});
+
+// ---- parser: a tag runs to the next closing tag of its name; the match index is the forward scan -------------
+
+describe("the parser pairs tags and the match index answers as the scan does", () => {
+  it("still pairs each opening tag with the next closing tag", () => {
+    const { ast } = parse("<nowiki>{{a}}</nowiki>\n\n<nowiki>open\n\n<nowiki>{{b}}</nowiki>");
+    // the second <nowiki> runs to the only closing tag after it, as it always did (they do not nest)
+    expect(ast.nodes.map((n) => n.raw)).toEqual([
+      "<nowiki>{{a}}</nowiki>",
+      "<nowiki>open\n\n<nowiki>{{b}}</nowiki>",
+    ]);
+  });
+
+  it("gives the same answer through the public functions with or without the index", () => {
+    for (const text of fixtures) {
+      const braces = matchBraces(text);
+      const brackets = matchBrackets(text);
+      for (let i = 0; i < text.length; i++) {
+        if (text.startsWith("{{", i)) expect(findMatchingClosingBraces(text, i, braces)).toBe(findMatchingClosingBraces(text, i));
+        if (text.startsWith("[[", i)) expect(findMatchingClosingBrackets(text, i, brackets)).toBe(findMatchingClosingBrackets(text, i));
+      }
     }
-    expect(performance.now() - started).toBeLessThan(2_000 * TIMING_BUDGET_SCALE); // each of these takes 5 to 9 s unmemoized
   });
 });

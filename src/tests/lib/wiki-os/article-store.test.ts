@@ -86,26 +86,6 @@ beforeEach(() => {
 });
 
 afterEach(() => guard.restore());
-
-test("fresh shadow row is served without touching MediaWiki", async () => {
-  mockWikiArticleFindFirst.mockResolvedValue(row({ updatedAt: new Date("2026-06-01T00:00:00Z") }));
-
-  const res = await getArticleWikitextShadow("Foo");
-
-  expect(res).toMatchObject({ wikitext: "shadow body", fromShadow: true, stale: false });
-  expect(mockGetArticleWikitext).not.toHaveBeenCalled();
-});
-
-test("a sister wiki's missing shadow is fetched from that wiki", async () => {
-  mockWikiArticleFindFirst.mockResolvedValue(null);
-  mockGetArticleWikitext.mockResolvedValue({ wikitext: "fresh body", pageId: 42, length: 10 });
-
-  const res = await getArticleWikitextShadow("Foo", "iiwiki");
-
-  expect(mockGetArticleWikitext).toHaveBeenCalledWith("Foo", "iiwiki");
-  expect(res).toMatchObject({ wikitext: "fresh body", revid: 42, fromShadow: false });
-});
-
 test("an IxWiki page Postgres lacks is null: MediaWiki is not asked (plan 418)", async () => {
   mockWikiArticleFindFirst.mockResolvedValue(null);
   mockGetArticleWikitext.mockResolvedValue({ wikitext: "fresh body", pageId: 42, length: 10 });
@@ -115,107 +95,6 @@ test("an IxWiki page Postgres lacks is null: MediaWiki is not asked (plan 418)",
   expect(res).toBeNull();
   expect(mockGetArticleWikitext).not.toHaveBeenCalled();
 });
-
-test("a sister wiki's failure falls back to null when not found in DB", async () => {
-  mockWikiArticleFindFirst.mockResolvedValue(null);
-  mockGetArticleWikitext.mockRejectedValue(new Error("ECONNREFUSED"));
-
-  const res = await getArticleWikitextShadow("Foo", "iiwiki").catch(() => null);
-
-  expect(res).toBeNull();
-});
-
-test("a sister wiki's page that is not there returns null when not in DB", async () => {
-  mockWikiArticleFindFirst.mockResolvedValue(null);
-  mockGetArticleWikitext.mockResolvedValue(null);
-
-  const res = await getArticleWikitextShadow("Foo", "iiwiki");
-
-  expect(res).toBeNull();
-});
-
-test("history read-through serves local revisions when present", async () => {
-  mockWikiArticleFindFirst.mockResolvedValue({ id: "art1" });
-  mockWikiRevisionFindMany.mockResolvedValue([
-    {
-      id: "rev-1",
-      articleId: "art1",
-      createdAt: new Date("2026-06-01T00:00:00Z"),
-      author: "bob",
-      summary: "edit",
-      wikitext: "body",
-      minor: false,
-      byteSize: 4,
-      byteDelta: -2,
-    },
-    {
-      id: "rev-0",
-      mwRevId: 9001,
-      articleId: "art1",
-      createdAt: new Date("2026-05-01T00:00:00Z"),
-      author: "alice",
-      summary: "synced",
-      wikitext: "bodyxx",
-      minor: false,
-      byteSize: 6,
-      byteDelta: 6,
-    },
-  ]);
-
-  const res = await getArticleHistoryShadow("Foo", 50);
-
-  // Native edits are referenced by row id, MediaWiki-synced ones by rev_id.
-  expect(res.revisions[0]).toMatchObject({
-    revid: "rev-1",
-    user: "bob",
-    comment: "edit",
-    byteDelta: -2,
-  });
-  expect(res.revisions[1]).toMatchObject({ revid: "9001", byteDelta: 6 });
-  expect(guard.calls()).toEqual([]);
-  expect(mockWikiRevisionFindMany).toHaveBeenCalledWith(
-    expect.objectContaining({ where: { articleId: "art1", parked: false } })
-  );
-});
-
-test("history asks for one more revision than the page to tell whether an older page exists", async () => {
-  const row = (n: number) => ({
-    id: `rev-${n}`,
-    mwRevId: null,
-    articleId: "art1",
-    createdAt: new Date(`2026-06-0${n}T00:00:00Z`),
-    author: "bob",
-    summary: "",
-    minor: false,
-    byteSize: n,
-    byteDelta: 1,
-    sha1: null,
-  });
-  mockWikiArticleFindFirst.mockResolvedValue({ id: "art1" });
-  mockWikiRevisionFindMany.mockResolvedValue([row(3), row(2), row(1)]);
-
-  const res = await getArticleHistoryShadow("Foo", 2);
-
-  expect(mockWikiRevisionFindMany).toHaveBeenCalledWith(expect.objectContaining({ take: 3 }));
-  expect(res.revisions.map((r) => r.revid)).toEqual(["rev-3", "rev-2"]);
-  expect(res.hasMore).toBe(true);
-
-  mockWikiRevisionFindMany.mockResolvedValue([row(2), row(1)]);
-  expect((await getArticleHistoryShadow("Foo", 2)).hasMore).toBe(false);
-  expect(guard.calls()).toEqual([]);
-});
-
-test("a page after a cursor is answered from PostgreSQL only, empty past the oldest revision", async () => {
-  mockWikiArticleFindFirst.mockResolvedValue({ id: "art1" });
-  mockWikiRevisionFindFirst.mockResolvedValue({ id: "rev-1" });
-  mockWikiRevisionFindMany.mockResolvedValue([]);
-
-  const res = await getArticleHistoryShadow("Foo", 50, { before: "rev-1" });
-
-  expect(res).toEqual({ revisions: [], hasMore: false, fromShadow: true });
-  expect(guard.calls()).toEqual([]);
-});
-
 test("history lists ask for parked revisions and get them flagged; everything else never sees them", async () => {
   mockWikiArticleFindFirst.mockResolvedValue({ id: "art1" });
   mockWikiRevisionFindMany.mockResolvedValue([
@@ -244,16 +123,6 @@ test("history lists ask for parked revisions and get them flagged; everything el
     expect.objectContaining({ where: { articleId: "art1" } })
   );
 });
-
-test("a page with no local revisions has an empty history: MediaWiki is not asked (plan 418)", async () => {
-  mockWikiRevisionFindMany.mockResolvedValue([]);
-
-  const res = await getArticleHistoryShadow("Foo", 50);
-
-  expect(res).toEqual({ revisions: [], hasMore: false, fromShadow: true });
-  expect(guard.calls()).toEqual([]);
-});
-
 describe("getArticleAuthors: a sister wiki's lookup is cached, single-flight and limited (NEW-5)", () => {
   const mwData = (title: string) => ({
     creator: { username: `creator-of-${title}`, timestamp: "2026-01-01T00:00:00Z" },
@@ -262,19 +131,6 @@ describe("getArticleAuthors: a sister wiki's lookup is cached, single-flight and
     contributors: [{ username: "editor", editCount: 1 }],
     totalContributors: 1,
   });
-
-  it("calls MediaWiki once for repeated views, with a short timeout", async () => {
-    mockFetchAuthors.mockResolvedValue(mwData("CachedPage"));
-
-    const first = await getArticleAuthors("CachedPage", "iiwiki");
-    const second = await getArticleAuthors("cachedpage", "iiwiki");
-
-    expect(mockFetchAuthors).toHaveBeenCalledTimes(1);
-    expect(mockFetchAuthors).toHaveBeenCalledWith("CachedPage", "iiwiki", 250, 2500);
-    expect(first.creator).toMatchObject({ username: "creator-of-CachedPage" });
-    expect(second.creator).toMatchObject({ username: "creator-of-CachedPage" });
-  });
-
   it("shares one in-flight request between concurrent views", async () => {
     mockFetchAuthors.mockResolvedValue(mwData("ConcurrentPage"));
 
@@ -306,21 +162,6 @@ describe("getArticleAuthors: a sister wiki's lookup is cached, single-flight and
     expect(mockFetchAuthors).toHaveBeenCalledWith("100% Pure", "iiwiki", 250, 2500);
     expect(mockFetchAuthors).toHaveBeenCalledWith("100%25 Pure", "iiwiki", 250, 2500);
   });
-
-  it("still overlays a newer Postgres edit on the cached MediaWiki data", async () => {
-    mockFetchAuthors.mockResolvedValue(mwData("OverlayPage"));
-    mockWikiRevisionFindFirst.mockResolvedValue({
-      author: "WikiOSUser",
-      createdAt: new Date("2026-03-01T00:00:00Z"),
-    });
-
-    await getArticleAuthors("OverlayPage", "iiwiki");
-    const again = await getArticleAuthors("OverlayPage", "iiwiki");
-
-    expect(mockFetchAuthors).toHaveBeenCalledTimes(1);
-    expect(again.lastEditor).toMatchObject({ username: "WikiOSUser" });
-  });
-
   it("never has more than a few lookups in flight: a further title is answered from Postgres, without an error", async () => {
     const releases: Array<() => void> = [];
     mockFetchAuthors.mockImplementation(

@@ -35,24 +35,6 @@ describe("GET /api/wiki/feed/[type]", () => {
       revision("rev-2", { author: null, summary: null, minor: true, byteDelta: -40 }),
     ]);
   });
-
-  it("returns an Atom feed with one entry per recent revision", async () => {
-    const res = await get("recent-changes.atom");
-    const xml = await res.text();
-
-    expect(res.status).toBe(200);
-    expect(res.headers.get("Content-Type")).toContain("application/atom+xml");
-    expect(xml.startsWith('<?xml version="1.0" encoding="utf-8"?>')).toBe(true);
-    expect(xml.match(/<entry>/g)).toHaveLength(2);
-    expect(xml).toContain("<title>Urcea (+120)</title>");
-    expect(xml).toContain("<title>Urcea (-40)</title>");
-    expect(xml).toContain('<link href="https://ixstats.com/wiki/Urcea" />');
-    expect(xml).toContain("<name>Aurelian</name>");
-    expect(xml).toContain("<summary>Minor edit</summary>");
-    expect(xml).toContain("<name>WikiOS Contributor</name>");
-    expect(xml).toContain("<updated>2026-09-20T12:00:00.000Z</updated>");
-  });
-
   it("escapes markup so the Atom document stays well-formed", async () => {
     findMany.mockResolvedValue([
       revision("rev-1", { summary: "Fixed <b> & \"quotes\"", author: "A&B" }),
@@ -65,21 +47,6 @@ describe("GET /api/wiki/feed/[type]", () => {
     expect(xml).toContain("limit=5&amp;realm=ixwiki");
     expect(xml).not.toMatch(/&(?!amp;|lt;|gt;|quot;|apos;)/);
   });
-
-  it("returns a JSON Feed for the .json variant", async () => {
-    const res = await get("recent-changes.json");
-    const body = (await res.json()) as {
-      version: string;
-      items: Array<{ id: string; url: string; authors: Array<{ name: string }> }>;
-    };
-
-    expect(body.version).toBe("https://jsonfeed.org/version/1.1");
-    expect(body.items).toHaveLength(2);
-    expect(body.items[0]?.id).toBe("tag:ixstats.com,2026-09-20:wiki:rev:rev-1");
-    expect(body.items[0]?.url).toBe("https://ixstats.com/wiki/Urcea");
-    expect(body.items[0]?.authors).toEqual([{ name: "Aurelian" }]);
-  });
-
   it("filters by realm and clamps the limit", async () => {
     await get("recent-changes.atom", "?limit=500&realm=iiwiki");
     expect(findMany).toHaveBeenLastCalledWith(

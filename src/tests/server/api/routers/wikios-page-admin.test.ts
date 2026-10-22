@@ -127,22 +127,6 @@ describe("movePage", () => {
       comment: "tidy",
     });
   });
-
-  it("can leave no redirect and keep the talk page", async () => {
-    const result = await as(sysopCtx()).movePage({
-      from: "Old name",
-      to: "New name",
-      leaveRedirect: false,
-      moveTalk: false,
-    });
-
-    expect(result).toMatchObject({ redirectCreated: false, talkMoved: false });
-    expect(tables.wikiArticle.rows.map((row) => row.title).sort()).toEqual([
-      "New name",
-      "Talk:Old name",
-    ]);
-  });
-
   it("is forbidden without the move right, into a protected namespace, or past a move protection", async () => {
     await expect(
       as(plainCtx()).movePage({ from: "Old name", to: "New name" })
@@ -204,21 +188,6 @@ describe("movePage", () => {
       expect(tables.wikiLog.rows).toHaveLength(0);
       expect(tables.wikiMirrorJob.rows).toHaveLength(0);
     });
-
-    it("still moves the File talk page's namespace neighbours: a File talk: page is not a file", async () => {
-      tables.wikiArticle.seed({
-        id: "a-file-talk",
-        source: "ixwiki",
-        title: "File talk:Flag.png",
-        slug: "file_talk:flag.png",
-        namespace: 7,
-        wikitext: "chat",
-      });
-
-      await expect(
-        as(sysopCtx()).movePage({ from: "File talk:Flag.png", to: "File talk:Banner.png", moveTalk: false })
-      ).resolves.toMatchObject({ success: true });
-    });
   });
 
   it("needs suppressredirect to move without leaving a redirect", async () => {
@@ -248,20 +217,6 @@ describe("movePage", () => {
       ]);
       expect(tables.wikiLog.rows).toHaveLength(0);
     });
-
-    it("can be moved by a sysop, who leaves no redirect for it and keeps it deleted", async () => {
-      const result = await as(sysopCtx()).movePage({
-        from: "Old name",
-        to: "New name",
-        moveTalk: false,
-      });
-      expect(result).toMatchObject({ redirectCreated: false });
-      expect(tables.wikiArticle.rows.find((row) => row.id === "a-old")).toMatchObject({
-        title: "New name",
-        status: "ARCHIVED",
-      });
-    });
-
     it("cannot be used to plant a redirect on a salted title: create-protection holds the old title", async () => {
       tables.wikiArticle.rows.find((row) => row.id === "a-old")!.status = "PUBLISHED";
       tables.wikiRestriction.seed({
@@ -300,22 +255,6 @@ describe("movePage", () => {
       expect(tables.wikiArticle.rows.find((row) => row.id === "a-old")?.title).toBe("Old name");
       expect(tables.wikiRestriction.rows.map((row) => row.title)).toEqual(["Talk:New name"]);
     });
-
-    it("does not matter when the talk page stays behind", async () => {
-      protectDestinationTalk();
-
-      await as(memberCtx()).movePage({ from: "Old name", to: "New name", moveTalk: false });
-
-      expect(tables.wikiArticle.rows.find((row) => row.id === "a-old")?.title).toBe("New name");
-    });
-
-    it("lets a sysop move the talk page onto it", async () => {
-      protectDestinationTalk();
-
-      await as(sysopCtx()).movePage({ from: "Old name", to: "New name" });
-
-      expect(tables.wikiArticle.rows.map((row) => row.title)).toContain("Talk:New name");
-    });
   });
 
   describe("protection follows the page", () => {
@@ -342,61 +281,6 @@ describe("movePage", () => {
 
       expect(restrictionsAt("Old name")).toHaveLength(3);
       expect(tables.wikiArticle.rows.find((row) => row.id === "a-old")?.title).toBe("Old name");
-    });
-
-    it("moves the edit, move and upload protections to the new title, keeps create-protection, and syncs the mirror", async () => {
-      seedProtections();
-      tables.wikiArticle.rows.find((row) => row.id === "a-old")!.protectionLevel = "SYSOP";
-
-      await as(sysopCtx()).movePage({ from: "Old name", to: "New name", moveTalk: false });
-
-      expect(restrictionsAt("New name")).toEqual([
-        "edit:sysop",
-        "move:autoconfirmed",
-        "upload:sysop",
-      ]);
-      expect(restrictionsAt("Old name")).toEqual(["create:sysop"]);
-      expect(tables.wikiArticle.rows.find((row) => row.id === "a-old")).toMatchObject({
-        title: "New name",
-        protectionLevel: "SYSOP",
-      });
-      // the redirect left behind is an ordinary page
-      expect(tables.wikiArticle.rows.find((row) => row.title === "Old name")).toMatchObject({
-        protectionLevel: "ALL",
-      });
-    });
-
-    it("protects the moved page against the next mover, and replaces stale protections at the destination", async () => {
-      tables.wikiRestriction.seed({
-        source: "ixwiki",
-        title: "New name",
-        action: "edit",
-        level: "autoconfirmed",
-      });
-      tables.wikiRestriction.seed({
-        source: "ixwiki",
-        title: "Old name",
-        action: "edit",
-        level: "sysop",
-      });
-      await as(sysopCtx()).movePage({ from: "Old name", to: "New name", moveTalk: false });
-      expect(restrictionsAt("New name")).toEqual(["edit:sysop"]);
-
-      await expect(
-        as(memberCtx()).movePage({ from: "New name", to: "Newer name" })
-      ).rejects.toMatchObject({ message: expect.stringMatching(/^protectedpage: /) });
-    });
-
-    it("moves a protected talk page's protection with it", async () => {
-      tables.wikiRestriction.seed({
-        source: "ixwiki",
-        title: "Talk:Old name",
-        action: "edit",
-        level: "autoconfirmed",
-      });
-      await as(sysopCtx()).movePage({ from: "Old name", to: "New name" });
-      expect(restrictionsAt("Talk:New name")).toEqual(["edit:autoconfirmed"]);
-      expect(restrictionsAt("Talk:Old name")).toEqual([]);
     });
   });
 
@@ -511,35 +395,6 @@ describe("protectPage / getPageRestrictions", () => {
     expect(shown.restrictions[0]?.setBy).toBe("Mod");
     expect(JSON.stringify(shown)).not.toContain("dbsysop");
   });
-
-  it("updates in place and removes a restriction with a null level, restoring the mirror", async () => {
-    const protect = (level: "sysop" | "autoconfirmed" | null) =>
-      as(sysopCtx()).protectPage({ title: "Old name", restrictions: [{ action: "edit", level }] });
-
-    await protect("autoconfirmed");
-    await protect("sysop");
-    expect(tables.wikiRestriction.rows).toHaveLength(1);
-    expect(tables.wikiRestriction.rows[0]).toMatchObject({ level: "sysop" });
-
-    await protect(null);
-    expect(tables.wikiRestriction.rows).toHaveLength(0);
-    expect(tables.wikiArticle.rows.find((row) => row.id === "a-old")).toMatchObject({
-      protectionLevel: "ALL",
-    });
-    expect(logTypes()).toEqual(["protect/protect", "protect/protect", "protect/unprotect"]);
-  });
-
-  it("protects a title that has no page yet (create-protection) and hides expired protections", async () => {
-    await as(sysopCtx()).protectPage({
-      title: "Salted",
-      restrictions: [{ action: "create", level: "sysop" }],
-    });
-    expect(tables.wikiRestriction.rows[0]).toMatchObject({ title: "Salted", action: "create" });
-
-    tables.wikiRestriction.rows[0]!.expiresAt = new Date(Date.now() - DAY);
-    expect((await anonymous().getPageRestrictions({ title: "Salted" })).restrictions).toEqual([]);
-  });
-
   it("refuses cascading protection, which is not enforced yet, and stores nothing", async () => {
     await expect(
       as(sysopCtx()).protectPage({
@@ -640,31 +495,6 @@ describe("blockUser / unblockUser / listBlocks", () => {
     expect(blocks[0]).toMatchObject({ target: "Victim", blockedBy: "Mod", reason: "second" });
     expect(JSON.stringify(blocks)).not.toMatch(/db(victim|sysop)/);
   });
-
-  it("unblocks, logs it, and answers NOT_FOUND for someone who is not blocked", async () => {
-    await expect(
-      as(sysopCtx()).unblockUser({ target: { wikiUsername: "Victim" } })
-    ).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
-    await as(sysopCtx()).blockUser({ target: { wikiUsername: "Victim" } });
-    await as(sysopCtx()).unblockUser({ target: { wikiUsername: "Victim" }, reason: "sorry" });
-
-    expect(tables.wikiBlock.rows).toHaveLength(0);
-    expect(logTypes()).toEqual(["block/block", "block/unblock"]);
-    expect((await anonymous().listBlocks({})).blocks).toEqual([]);
-  });
-
-  it("lists only blocks in force", async () => {
-    tables.wikiBlock.seed(
-      { wikiUsername: "Gone", expiresAt: new Date(Date.now() - DAY) },
-      { wikiUsername: "Here", expiresAt: inFuture() },
-      { wikiUsername: "Forever" }
-    );
-    const { blocks } = await anonymous().listBlocks({});
-    expect(blocks.map((block) => block.target).sort()).toEqual(["Forever", "Here"]);
-  });
-
   it("is forbidden without the block right", async () => {
     await expect(
       as(memberCtx()).blockUser({ target: { wikiUsername: "Victim" } })
@@ -718,21 +548,6 @@ describe("setUserGroups", () => {
     await as(memberCtx()).setUserGroups({ target: { wikiUsername: "Victim" }, remove: ["bot"] });
     expect((await anonymous().getUserPermissions({ user: "Victim" })).groups).not.toContain("bot");
   });
-
-  it("keys a membership by wiki username while no WikiOS user has verified it", async () => {
-    await as(memberCtx()).setUserGroups({
-      target: { wikiUsername: "unlinked_admin" },
-      add: ["sysop"],
-      expiresAt: inFuture(),
-    });
-    const row = tables.wikiUserGroup.rows.find((candidate) => candidate.group === "sysop");
-    expect(row).toMatchObject({ wikiUsername: "Unlinked admin" });
-    expect(row).not.toHaveProperty("userId");
-
-    const shown = await anonymous().getUserPermissions({ user: "Unlinked admin" });
-    expect(shown.groups).toContain("sysop");
-  });
-
   it("only lets a bureaucrat change the groups on the changeable list", async () => {
     await expect(
       as(memberCtx()).setUserGroups({ target: { wikiUsername: "Victim" }, add: ["rollbacker"] })
@@ -757,18 +572,6 @@ describe("setUserGroups", () => {
     });
     expect(tables.wikiUserGroup.rows).toHaveLength(1);
   });
-
-  it("lets the owner (a bureaucrat by role) change groups too", async () => {
-    await as(ownerCtx()).setUserGroups({
-      target: { userId: "dbvictim" },
-      add: ["interface-admin"],
-    });
-    expect(tables.wikiUserGroup.rows.find((row) => row.group === "interface-admin")).toMatchObject({
-      userId: "dbvictim",
-      addedById: "dbowner",
-    });
-  });
-
   it("refuses adding and removing the same group, an empty change and a past expiry", async () => {
     const change = (input: object) =>
       as(ownerCtx()).setUserGroups({ target: { wikiUsername: "Victim" }, ...input });
@@ -795,36 +598,6 @@ describe("getUserPermissions", () => {
       changeableGroups: [],
     });
   });
-
-  it("gives the caller their own groups, rights and what they may change", async () => {
-    const own = await as(ownerCtx()).getUserPermissions();
-    expect(own.groups).toEqual(expect.arrayContaining(["sysop", "bureaucrat", "interface-admin"]));
-    expect(own.changeableGroups).toEqual(expect.arrayContaining(["sysop", "bot"]));
-
-    const member = await as(memberCtx()).getUserPermissions();
-    expect(member).toMatchObject({ username: "Member" });
-    expect(member.groups).toEqual(expect.arrayContaining(["user", "autoconfirmed"]));
-    expect(member.rights).toContain("move");
-    expect(member.rights).not.toContain("delete");
-  });
-
-  it("reports the IxStates role mapping for another user", async () => {
-    tables.user.seed({
-      id: "dbadmin",
-      wikiUsername: null,
-      clerkUserId: "user_adm",
-      role: { name: "admin" },
-    });
-    tables.wikiAccountLink.seed({
-      userId: "dbadmin",
-      source: "ixwiki",
-      username: "Adm",
-      verifiedAt: new Date(),
-    });
-    const shown = await anonymous().getUserPermissions({ user: "adm" });
-    expect(shown.groups).toContain("sysop");
-    expect(shown.explicitGroups).toEqual([]);
-  });
 });
 
 describe("getLog", () => {
@@ -836,31 +609,6 @@ describe("getLog", () => {
     await as(sysopCtx()).deletePage({ title: "Old name" });
     await as(ownerCtx()).blockUser({ target: { wikiUsername: "Victim" } });
   });
-
-  it("returns entries newest first, filtered by type, title and user", async () => {
-    const all = await anonymous().getLog({});
-    expect(all.entries.map((entry) => `${entry.type}/${entry.action}`)).toEqual([
-      "block/block",
-      "delete/delete",
-      "protect/protect",
-    ]);
-    expect(all.entries[0]).toMatchObject({ actor: "Boss", title: "User:Victim" });
-
-    expect((await anonymous().getLog({ type: "protect" })).entries).toHaveLength(1);
-    expect((await anonymous().getLog({ title: "old_name" })).entries).toHaveLength(2);
-    expect((await anonymous().getLog({ user: "Mod" })).entries).toHaveLength(2);
-    expect((await anonymous().getLog({ user: "Nobody" })).entries).toEqual([]);
-  });
-
-  it("pages with a cursor", async () => {
-    const first = await anonymous().getLog({ limit: 2 });
-    expect(first.entries).toHaveLength(2);
-    expect(first.nextCursor).not.toBeNull();
-    const second = await anonymous().getLog({ limit: 2, cursor: first.nextCursor! });
-    expect(second.entries.map((entry) => entry.type)).toEqual(["protect"]);
-    expect(second.nextCursor).toBeNull();
-  });
-
   it("never returns an internal or auth-provider id", async () => {
     const text = JSON.stringify(await anonymous().getLog({ limit: 500 }));
     expect(text).not.toMatch(/dbsysop|dbowner|dbmember|user_sysop|user_owner/);

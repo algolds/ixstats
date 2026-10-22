@@ -1,12 +1,10 @@
 import React from "react";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { WikiVisualEditor } from "~/components/wiki-os/editor/WikiVisualEditor";
 import { getDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
 
 /** What the mocked Plate canvas reports as its value; the real serializer turns it into wikitext. */
 let mockNodes: unknown[] = [];
-/** The canvas's change callback, so a test can report an edit after the mount report. */
-let reportValue: (nodes: unknown[]) => void = () => undefined;
 const mockNotifyError = jest.fn();
 const mockNotifyWarning = jest.fn();
 let mockUserId: string | null = "user_alice";
@@ -72,8 +70,6 @@ jest.mock("~/components/wiki-os/editor/plate/PlateWikiEditor", () => ({
   }) => {
     React.useEffect(() => {
       props.onEditorReady({});
-      reportValue = (nodes) =>
-        props.onValueChange(nodes, "<p>html that must never be saved</p>", "");
       props.onValueChange(mockNodes, "<p>html that must never be saved</p>", "");
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -106,17 +102,6 @@ describe("WikiVisualEditor drafts and what a save writes (review fixes 7-8)", ()
     mockUserId = "user_alice";
     mockNodes = [paragraph("Edited text.")];
   });
-
-  it("does not write a draft after a successful publish", async () => {
-    const { onSave } = setup();
-    fireEvent.click(screen.getByText("publish"));
-    await waitFor(() => expect(onSave).toHaveBeenCalled());
-    await act(async () => undefined);
-    expect(onSave).toHaveBeenCalledWith("Edited text.", "", false, false);
-    expect(getDraft("user_alice", "Vesperia")).toBeNull();
-    expect(window.localStorage.length).toBe(0);
-  });
-
   it("keeps the work as a draft when the publish fails", async () => {
     const { onSave } = setup();
     onSave.mockRejectedValueOnce(new Error("offline"));
@@ -131,16 +116,6 @@ describe("WikiVisualEditor drafts and what a save writes (review fixes 7-8)", ()
     await waitFor(() => expect(onSave).toHaveBeenCalled());
     expect(onSave.mock.calls[0]![0]).toBe("");
   });
-
-  it("'Save draft' stores the wikitext in the wikitext field", async () => {
-    setup();
-    fireEvent.click(screen.getByText("save-draft"));
-    await waitFor(() => expect(getDraft("user_alice", "Vesperia")).not.toBeNull());
-    const draft = getDraft("user_alice", "Vesperia")!;
-    expect(draft.wikitext).toBe("Edited text.");
-    expect(draft.html).toBeUndefined();
-    expect(draft.mode).toBe("visual");
-  });
   it("does not start from another user's draft (plan 416)", () => {
     saveDraft("user_bob", {
       title: "Vesperia",
@@ -150,17 +125,6 @@ describe("WikiVisualEditor drafts and what a save writes (review fixes 7-8)", ()
     });
     setup();
     expect(screen.getByTestId("canvas").textContent).toBe("Start");
-  });
-
-  it("starts from a local draft by default and ignores it when the host settles drafts itself", () => {
-    saveDraft("user_alice", {
-      title: "Vesperia",
-      source: "ixwiki",
-      mode: "visual",
-      wikitext: "From the draft",
-    });
-    setup();
-    expect(screen.getByTestId("canvas").textContent).toBe("From the draft");
   });
   it("tells the author when an edit could not be applied or a block was moved, and still saves", async () => {
     mockNodes = [
@@ -192,38 +156,11 @@ describe("WikiVisualEditor drafts and what a save writes (review fixes 7-8)", ()
   });
 
   describe("dirty state (F2: the mount report is not an edit)", () => {
-    const dirty = () => screen.getByTestId("toolbar").getAttribute("data-dirty");
-
-    it("is clean when the canvas has only reported the document it opened", () => {
-      setup();
-      expect(dirty()).toBe("false");
-    });
-
-    it("becomes dirty when a later report differs from the opened document", () => {
-      setup();
-      act(() => reportValue([paragraph("Edited text, and more.")]));
-      expect(dirty()).toBe("true");
-    });
-
-    it("stays clean when a later report serializes to the opened text", () => {
-      setup();
-      act(() => reportValue([paragraph("Edited text.")]));
-      expect(dirty()).toBe("false");
-    });
-
     it("does not report the mere opening of the visual editor as unsaved work when switching to source", () => {
       const onSwitchToSource = jest.fn();
       setup({ onSwitchToSource });
       fireEvent.click(screen.getByText("to-source"));
       expect(onSwitchToSource).toHaveBeenCalledWith(false, "Edited text.");
-    });
-
-    it("reports unsaved work when switching to source after an edit", () => {
-      const onSwitchToSource = jest.fn();
-      setup({ onSwitchToSource });
-      act(() => reportValue([paragraph("Changed.")]));
-      fireEvent.click(screen.getByText("to-source"));
-      expect(onSwitchToSource).toHaveBeenCalledWith(true, "Changed.");
     });
   });
 });

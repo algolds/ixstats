@@ -1,8 +1,9 @@
 /** @jest-environment node */
 // `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factories rely on the ambient global.
 //
-// Plan 409: every read of a single page hides a deleted (archived) page from readers without
-// `deletedhistory`; the list of deleted pages is for those who may browse them.
+// Plan 409, 416: every read of a single page hides a deleted (archived) page from readers without `deletedhistory`
+// (revisions and diffs of it too); the list of deleted pages is for those who may browse them and never carries an
+// editor's id; the audit log names actors without internal ids; a public file download is allowlisted and rate-limited.
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: jest.requireActual("~/tests/helpers/fake-wiki-db").fakeWikiDb.db,
@@ -17,7 +18,7 @@ jest.mock("~/lib/auth", () => ({
 jest.mock("~/lib/wiki-os/core", () => ({
   __esModule: true,
   ArticleRepository: { findBySlug: jest.fn(), findMissingTitles: jest.fn() },
-  MediaAssetService: {},
+  MediaAssetService: { findAsset: jest.fn() },
   LinkGraphService: { getBacklinks: jest.fn().mockResolvedValue([]) },
 }));
 jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
@@ -52,8 +53,13 @@ jest.mock("~/lib/wiki-os/core/native-search-service", () => ({
     .fn()
     .mockResolvedValue({ title: "Caphiria", intro: "An intro" }),
 }));
+jest.mock("~/lib/wiki-os/services/media-download", () => ({
+  __esModule: true,
+  downloadMedia: jest.fn(),
+}));
 
-import { describe, it, expect, beforeEach } from "@jest/globals";
+import { wikiosPageViewsRouter } from "~/server/api/routers/wikios/page-views";
+import { afterEach, beforeEach, describe, expect, it } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosPageContentRouter } from "~/server/api/routers/wikios/page-content";
 import { wikiosHistoryDiffRouter } from "~/server/api/routers/wikios/history-diff";
@@ -63,12 +69,11 @@ import { wikiosUtilitiesRouter } from "~/server/api/routers/wikios/utilities";
 import { wikiosDiscussionsRouter } from "~/server/api/routers/wikios/discussions";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { fakeWikiDb } from "~/tests/helpers/fake-wiki-db";
-import {
-  getArticleHistoryShadow,
-  getArticleWikitextShadow,
-  getRevisionWikitextShadow,
-} from "~/lib/wiki-os/adapters/mediawiki/article-store";
+import { getArticleHistoryShadow, getArticleWikitextShadow, getRevisionWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { batchFetchThumbnails } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { MediaAssetService } from "~/lib/wiki-os/core";
+import { downloadMedia } from "~/lib/wiki-os/services/media-download";
+import { rateLimiter } from "~/lib/cache";
 
 const { tables } = fakeWikiDb;
 
@@ -90,6 +95,7 @@ const userTalk = (role: string | null) => createCallerFactory(wikiosUserTalkRout
 const discussions = (role: string | null) =>
   createCallerFactory(wikiosDiscussionsRouter)(ctxOf(role));
 const utilities = (role: string | null) => createCallerFactory(wikiosUtilitiesRouter)(ctxOf(role));
+const pageViews = (role: string | null) => createCallerFactory(wikiosPageViewsRouter)(ctxOf(role));
 
 const revision = {
   wikitext: "== Geography ==\nHills.",
@@ -161,6 +167,7 @@ const READS: Array<[string, (role: string | null, title: string) => Promise<unkn
   ],
   ["getPageImages", (r, title) => content(r).getPageImages({ title })],
   ["getHistory", (r, title) => history(r).getHistory({ title })],
+  ["getPageInfo", (r, title) => pageViews(r).getPageInfo({ title })],
   ["getParentCategories", (r, title) => categories(r).getParentCategories({ title })],
   ["getBacklinks", (r, title) => userTalk(r).getBacklinks({ title })],
   [
@@ -257,5 +264,89 @@ describe("getArchivedArticles", () => {
 
     const listed = await utilities("admin").getArchivedArticles({});
     expect(listed.map((row) => row.title)).toEqual(["Caphiria"]);
+  });
+});
+
+describe("public reads that must not leak", () => {
+  const { tables } = fakeWikiDb;
+
+  const ctxOf = (role: string | null) =>
+    createMockRouterContext(
+      role
+        ? {
+            auth: { userId: "user_1" },
+            user: { id: "db1", clerkUserId: "user_1", role: { name: role, level: 100 } },
+          }
+        : { auth: null, user: null }
+    ) as never;
+  const utilities = (role: string | null) => createCallerFactory(wikiosUtilitiesRouter)(ctxOf(role));
+  const content = (role: string | null) => createCallerFactory(wikiosPageContentRouter)(ctxOf(role));
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    fakeWikiDb.reset();
+  });
+  describe("getAuditLogs", () => {
+    it("names the actor by name and selects no internal user id", async () => {
+      tables.wikiLog.seed({
+        logType: "delete",
+        action: "delete",
+        title: "Gone page",
+        actorName: "Admin",
+        comment: "spam",
+        params: { reason: "spam" },
+        userId: "db_internal_admin",
+      });
+      const findMany = jest.spyOn(tables.wikiLog, "findMany");
+
+      const { logs } = await utilities(null).getAuditLogs({});
+
+      expect(logs).toHaveLength(1);
+      const select = (findMany.mock.calls[0]![0] as { select: Record<string, boolean> }).select;
+      expect(select).toMatchObject({ actorName: true });
+      expect(select).not.toHaveProperty("userId");
+      expect(Object.keys(select).sort()).toEqual([
+        "action",
+        "actorName",
+        "comment",
+        "createdAt",
+        "id",
+        "logType",
+        "params",
+        "title",
+      ]);
+    });
+  });
+
+  describe("downloadFile", () => {
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+    it("gives null for a file the download refuses (a host off the allowlist, or over 10 MB)", async () => {
+      jest.mocked(MediaAssetService.findAsset).mockResolvedValue({
+        url: "http://169.254.169.254/latest/meta-data/",
+        mimeType: "image/png",
+      } as never);
+      jest.mocked(downloadMedia).mockResolvedValue(null);
+
+      await expect(content(null).downloadFile({ filename: "Flag.png" })).resolves.toBeNull();
+    });
+
+    it("is rate-limited for anonymous callers and stops before looking the file up", async () => {
+      jest.spyOn(rateLimiter, "isEnabled").mockReturnValue(true);
+      jest.spyOn(rateLimiter, "check").mockResolvedValue({
+        success: false,
+        remaining: 0,
+        resetAt: new Date(Date.now() + 60_000),
+      } as never);
+      jest.spyOn(console, "warn").mockImplementation(() => undefined);
+
+      await expect(content(null).downloadFile({ filename: "Flag.png" })).rejects.toThrow(
+        /Too many requests/
+      );
+
+      expect(MediaAssetService.findAsset).not.toHaveBeenCalled();
+      expect(downloadMedia).not.toHaveBeenCalled();
+    });
   });
 });

@@ -1,11 +1,10 @@
 /** @jest-environment node */
 /**
- * The two WikiOS switches. The v1 switch (`WIKIOS_V1_ENABLED`, lib/wiki-os/v1-switch.ts) off keeps an ordinary
- * deploy safe before the cutover's operator steps: the background renders and the parked-revision re-push do
- * nothing, and full-text search does not read the search vector the manual SQL fills. With it off, WikiOS writes
- * and the outbound mirror follow the admin editing switch (lib/wiki-os/editing-switch.ts, a SystemConfig row):
- * off, WikiOS takes no writes, api.php answers `readonly`, and the mirror only drains jobs already queued; on,
- * writes and the mirror run. The other suites run with the v1 switch on (setupTests.ts).
+ * The WikiOS v1 cutover and the editing switch: until it is on, every page action and every write with no page check
+ * of its own (rights, imports, bot passwords, api.php) is refused with MediaWiki's readonly code before anything is
+ * read, the mirror applies no job and drains what is pending once it goes off, nothing renders in the background and no
+ * parked revision is pushed back. The switch row is cached and kept when a read fails; only a configured mirror may
+ * turn it on, WIKIOS_V1_ENABLED forces it on and keeps it on, and every change is audited and its DM best effort.
  */
 jest.mock("~/server/db", () => ({
   __esModule: true,
@@ -23,7 +22,7 @@ jest.mock("~/server/db", () => ({
     },
     wikiArticle: { findMany: jest.fn(), count: jest.fn() },
     $queryRawUnsafe: jest.fn(),
-    systemConfig: { findUnique: jest.fn() },
+    systemConfig: { findUnique: jest.fn(), upsert: jest.fn() },
   },
 }));
 jest.mock("~/lib/auth", () => ({ __esModule: true, isSystemOwner: () => true }));
@@ -34,26 +33,22 @@ jest.mock("~/lib/wiki-os/services/staged-uploads", () => ({
   ...jest.requireActual("~/lib/wiki-os/services/staged-uploads"),
   sweepStagedOrphansIfDue: jest.fn().mockResolvedValue(null),
 }));
+jest.mock("~/lib/discord/admin-dm", () => ({ sendAdminDm: jest.fn(async () => undefined) }));
 
 import { NextRequest } from "next/server";
 import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
-import {
-  assertWikiosWritable,
-  decideAction,
-  decideFilePageCreation,
-  requireRight,
-} from "~/lib/wiki-os/permissions";
+import { assertWikiosWritable, decideAction, decideFilePageCreation, requireRight } from "~/lib/wiki-os/permissions";
 import { rightsForGroups, type WikiPermissions } from "~/lib/wiki-os/rights";
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
-import {
-  __resetWikiosEditingCacheForTests,
-  refreshWikiosEditingFlag,
-} from "~/lib/wiki-os/editing-switch";
+import { __resetWikiosEditingCacheForTests, isWikiosEditingEnabled, isWikiosEditingForcedByEnv, refreshWikiosEditingFlag, WIKIOS_EDITING_KEY } from "~/lib/wiki-os/editing-switch";
 import { runMirrorCycle } from "~/lib/wiki-os/services/mirror-worker";
 import { renderStaleBatch } from "~/lib/wiki-os/services/render-service";
 import { repushSkippedParks } from "~/lib/wiki-os/services/inbound-revision-sync";
 import { NativeSearchService } from "~/lib/wiki-os/core/native-search-service";
 import { db } from "~/server/db";
+import type { SystemConfig } from "@prisma/client";
+import { sendAdminDm } from "~/lib/discord/admin-dm";
+import { setEditing } from "~/lib/wiki-os/services/editing-admin";
 
 const sysop: WikiPermissions = {
   groups: ["*", "user", "sysop"],
@@ -111,13 +106,6 @@ describe("off: WikiOS is read-only", () => {
     await expect(requireRight(ctx, "block")).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(db.wikiUserGroup.findMany).not.toHaveBeenCalled();
   });
-
-  it("allows them again once it is on", () => {
-    process.env.WIKIOS_V1_ENABLED = "true";
-    expect(decideAction({ ...request, action: "edit" })).toEqual({ allowed: true });
-    expect(() => assertWikiosWritable()).not.toThrow();
-  });
-
   it("api.php answers readonly to every request, without reading it", async () => {
     const route = await import("~/app/w/api.php/route");
     for (const req of [
@@ -228,15 +216,131 @@ describe("admin editing switch (WIKIOS_V1_ENABLED off)", () => {
       where: { source: "ixwiki", state: { in: ["pending", "running"] } },
     });
   });
+});
 
-  it("the mirror skips when the switch is off and the outbox is empty", async () => {
-    await editing(false);
-    const result = await runMirrorCycle({ maxJobs: 1 });
-    expect(result.skipped).toBe(true);
+describe("the editing switch", () => {
+  const findUnique = jest.mocked(db.systemConfig.findUnique);
+  const upsert = jest.mocked(db.systemConfig.upsert);
+
+  /** The row the switch reads; only `value` matters to it. */
+  const configRow = (value: string): SystemConfig => ({
+    id: "cfg_wikios_editing",
+    key: WIKIOS_EDITING_KEY,
+    value,
+    description: null,
+    createdAt: new Date(0),
+    updatedAt: new Date(0),
   });
 
-  it("background renders stay off without the full cutover", async () => {
-    await editing(true);
-    await expect(renderStaleBatch()).resolves.toEqual({ rendered: 0, failed: 0 });
+  let was: string | undefined;
+  beforeEach(() => {
+    was = process.env.WIKIOS_V1_ENABLED;
+    delete process.env.WIKIOS_V1_ENABLED;
+    __resetWikiosEditingCacheForTests();
+    jest.clearAllMocks();
+    findUnique.mockReset().mockResolvedValue(null);
+    upsert.mockReset().mockResolvedValue(configRow("false"));
+    jest.useRealTimers();
+  });
+  afterEach(() => {
+    if (was === undefined) delete process.env.WIKIOS_V1_ENABLED;
+    else process.env.WIKIOS_V1_ENABLED = was;
+  });
+
+  describe("editing switch", () => {
+    it("is forced on by WIKIOS_V1_ENABLED", () => {
+      process.env.WIKIOS_V1_ENABLED = "true";
+      expect(isWikiosEditingForcedByEnv()).toBe(true);
+      expect(isWikiosEditingEnabled()).toBe(true);
+    });
+    it("keeps the last value when the read fails", async () => {
+      findUnique.mockResolvedValueOnce(configRow("true"));
+      await refreshWikiosEditingFlag();
+      findUnique.mockRejectedValueOnce(new Error("db down"));
+      const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+      await expect(refreshWikiosEditingFlag(true)).resolves.toBe(true);
+      expect(warn).toHaveBeenCalled();
+      warn.mockRestore();
+    });
+    it("a stale synchronous read starts a background refresh", async () => {
+      findUnique.mockResolvedValue(configRow("true"));
+      expect(isWikiosEditingEnabled()).toBe(false);
+      await new Promise((r) => setImmediate(r));
+      expect(findUnique).toHaveBeenCalledTimes(1);
+      expect(isWikiosEditingEnabled()).toBe(true);
+    });
+  });
+});
+
+describe("switching editing on and off", () => {
+  const actor = { id: "u_admin", clerkUserId: "user_admin", name: "Admin" };
+  const audit = jest.fn(async () => ({}));
+  const tx = { adminAuditLog: { create: audit } };
+  const flush = () => new Promise((resolve) => setImmediate(resolve));
+  let env: NodeJS.ProcessEnv;
+
+  beforeEach(() => {
+    env = { ...process.env };
+    delete process.env.WIKIOS_V1_ENABLED;
+    process.env.WIKIOS_MEDIAWIKI_BOT_USER = "Mirror@bot";
+    process.env.WIKIOS_MEDIAWIKI_BOT_TOKEN = "secret";
+    process.env.WIKIOS_MEDIAWIKI_API = "https://wiki.test/api.php";
+    __resetWikiosEditingCacheForTests();
+    jest.clearAllMocks();
+    jest.mocked(db.systemConfig.findUnique).mockResolvedValue(null);
+    // two mirror jobs still wait in the outbox
+    jest.mocked(db.wikiMirrorJob.count).mockResolvedValue(2 as never);
+  });
+  afterEach(() => {
+    process.env = env;
+  });
+
+  describe("editing admin", () => {
+    it("refuses to switch on when the mirror is not configured", async () => {
+      delete process.env.WIKIOS_MEDIAWIKI_BOT_TOKEN;
+      await expect(setEditing(tx as never, actor, true)).rejects.toMatchObject({
+        code: "PRECONDITION_FAILED",
+      });
+      expect(db.systemConfig.upsert).not.toHaveBeenCalled();
+    });
+
+    it("switches on: writes the row, audits and DMs", async () => {
+      const status = await setEditing(tx as never, actor, true);
+      await flush();
+      expect(status.enabled).toBe(true);
+      expect(isWikiosEditingEnabled()).toBe(true);
+      expect(audit).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          action: "wikios.editing.enable",
+          targetType: "wikios",
+          adminId: "u_admin",
+          adminName: "Admin",
+        }),
+      });
+      expect(sendAdminDm).toHaveBeenCalledWith(
+        expect.stringContaining("WikiOS editing turned on by Admin")
+      );
+    });
+
+    it("switching off mentions the mirror jobs still draining", async () => {
+      jest.mocked(db.systemConfig.findUnique).mockResolvedValue({ value: "true" } as never);
+      await setEditing(tx as never, actor, false);
+      await flush();
+      expect(sendAdminDm).toHaveBeenCalledWith(
+        expect.stringMatching(/turned off by Admin.*2 mirror jobs/)
+      );
+    });
+    it("cannot be switched off while WIKIOS_V1_ENABLED forces it on", async () => {
+      process.env.WIKIOS_V1_ENABLED = "true";
+      await expect(setEditing(tx as never, actor, false)).rejects.toMatchObject({
+        code: "PRECONDITION_FAILED",
+      });
+    });
+
+    it("a failing DM never fails the switch", async () => {
+      jest.mocked(sendAdminDm).mockRejectedValueOnce(new Error("discord down"));
+      await expect(setEditing(tx as never, actor, true)).resolves.toMatchObject({ enabled: true });
+      await flush();
+    });
   });
 });

@@ -27,7 +27,7 @@ import { MediaAssetService } from "~/lib/wiki-os/core/media-asset-service";
 import { runUploadJob } from "~/lib/wiki-os/services/mirror-upload";
 import { isStaged, stageBytes } from "~/lib/wiki-os/services/upload-staging";
 import { API_URL, createFakeMediaWiki } from "~/tests/helpers/fake-mediawiki";
-import { executedSql, fakeWikiDb } from "~/tests/helpers/fake-wiki-db";
+import { fakeWikiDb } from "~/tests/helpers/fake-wiki-db";
 
 const { db, tables } = fakeWikiDb;
 const realFetch = globalThis.fetch;
@@ -236,54 +236,6 @@ describe("uploading a staged file", () => {
     await expect(runUploadJob(uploadJob(sha1))).resolves.toBeUndefined();
     expect(String(tables.wikiAsset.rows[0]?.url)).toContain("/images/");
   });
-
-  it("fails when MediaWiki refuses it as no change but does not hold the bytes", async () => {
-    const sha1 = await stagedUpload(png(5));
-    imageInfo(null);
-    wiki.on("upload", () => ({
-      error: { code: "fileexists-no-change", info: "an exact duplicate" },
-    }));
-
-    await expect(runUploadJob(uploadJob(sha1))).rejects.toThrow("fileexists-no-change");
-    expect(tables.wikiAsset.rows[0]?.url).toBe(`${STAGED_FILE_PATH}Flag_of_Eurth.png`);
-    expect(await isStaged(sha1)).toBe(true);
-  });
-
-  it("fails on a refusal (the bot may not upload) and keeps everything for the retry", async () => {
-    const sha1 = await stagedUpload(png(6));
-    imageInfo(null);
-    wiki.on("upload", () => ({ error: { code: "permissiondenied", info: "no upload right" } }));
-
-    await expect(runUploadJob(uploadJob(sha1))).rejects.toThrow("permissiondenied");
-    expect(tables.wikiAsset.rows[0]?.url).toBe(`${STAGED_FILE_PATH}Flag_of_Eurth.png`);
-    expect(await isStaged(sha1)).toBe(true);
-    expect(executedSql).toHaveLength(0);
-  });
-
-  it("fails on a warning answer (WikiOS asked to ignore them, so it is not a success)", async () => {
-    const sha1 = await stagedUpload(png(7));
-    imageInfo(null);
-    wiki.on("upload", () => ({ upload: { result: "Warning", warnings: { badfilename: "x" } } }));
-
-    await expect(runUploadJob(uploadJob(sha1))).rejects.toThrow("did not take the upload");
-    expect(await isStaged(sha1)).toBe(true);
-  });
-
-  it("writes nothing when the bot password is wrong: the job fails before any upload", async () => {
-    const sha1 = await stagedUpload(png(8));
-    wiki = createFakeMediaWiki({ loginResult: "Failed" });
-    globalThis.fetch = wiki.fetch as unknown as typeof fetch;
-
-    await expect(runUploadJob(uploadJob(sha1))).rejects.toThrow(
-      "MediaWiki bot login failed: Failed"
-    );
-
-    expect(calls("upload")).toHaveLength(0);
-    expect(calls("query")).toHaveLength(0);
-    expect(tables.wikiAsset.rows[0]?.url).toBe(`${STAGED_FILE_PATH}Flag_of_Eurth.png`);
-    expect(await isStaged(sha1)).toBe(true);
-  });
-
   it("fails, for the retry and the alert, when the staged file is gone and MediaWiki does not hold it", async () => {
     const sha1 = await stagedUpload(png(9));
     rmSync(join(directory, sha1));

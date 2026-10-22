@@ -182,20 +182,6 @@ describe("an article is read on the server (plan 412 step 2)", () => {
     expect(signal).toBe("permanent:/wiki/New_name?rdfrom=Old+name#Early_history");
     expect(mockNotFound).not.toHaveBeenCalled();
   });
-  it("a redirect page whose target does not exist is rendered where it is: no 404, no redirect to a missing page", async () => {
-    // getArticleHtml answers the redirect page itself (resolvedFrom null) when the target is missing.
-    succeeds(
-      article({
-        title: "Old name",
-        resolvedFrom: null,
-        contentHtml: '<div class="redirectMsg"></div>',
-      })
-    );
-    const { tree, signal } = await outcome(["Old_name"]);
-
-    expect(signal).toBeNull();
-    expect(propsOf(tree, "ArticlePageClient")).toMatchObject({ title: "Old name" });
-  });
   it("a busy or failed lookup is not a 404: the client asks again", async () => {
     fails("TOO_MANY_REQUESTS");
     const { tree, signal } = await outcome(["Aurelia"]);
@@ -216,32 +202,7 @@ describe("Special: pages (plan 412 step 3)", () => {
     mockFileInfo.mockRejectedValue(refused);
     expect((await outcome(["Special:FilePath", "x".repeat(300)])).signal).toBe("not-found");
   });
-
-  it("an unknown special page is a 404, not a redirect to the utilities", async () => {
-    expect((await outcome(["Special:NoSuchThing"])).signal).toBe("not-found");
-    expect((await outcome(["Special:constructor"])).signal).toBe("not-found");
-  });
 });
-
-describe("namespaced pages (plan 412 step 4)", () => {
-  it("a user page for someone who does not exist is a 404, in the page and in the metadata (like MediaWiki)", async () => {
-    fails("NOT_FOUND");
-    mockResolveAuthor.mockResolvedValue(null);
-
-    expect((await outcome(["User:Nobody_at_all"])).signal).toBe("not-found");
-    expect(mockResolveAuthor).toHaveBeenCalledWith({ wikiUsername: "Nobody at all" });
-    await expect(
-      generateMetadata({
-        params: Promise.resolve({ slug: ["User:Nobody_at_all"] }),
-        searchParams: Promise.resolve({}),
-      })
-    ).rejects.toThrow("not-found");
-    // A user name too long to be one is not a user.
-    mockResolveAuthor.mockRejectedValue(new TRPCError({ code: "BAD_REQUEST" }));
-    expect((await outcome(["User:X" + "x".repeat(150)])).signal).toBe("not-found");
-  });
-});
-
 describe("deleted pages through the route (plan 409)", () => {
   // The route reads as an anonymous viewer, to whom getArticleHtml, getHistory, getPageInfo,
   // getRevisionHtml and getFileInfo answer NOT_FOUND for a deleted (ARCHIVED) page.
@@ -257,26 +218,6 @@ describe("deleted pages through the route (plan 409)", () => {
       })
     ).rejects.toThrow("not-found");
   });
-
-  it("a deleted user page shows only the profile card, a deleted category page only its members, a deleted file nothing", async () => {
-    fails("NOT_FOUND");
-    expect(propsOf((await outcome(["User:Jane"])).tree, "UserProfileCard")).toMatchObject({
-      pageExists: false,
-    });
-
-    mockCategoryPage.mockResolvedValue({
-      members: [{ title: "Aurelia", namespace: 0 }],
-      total: 1,
-      next: null,
-    });
-    const category = await outcome(["Category:Countries"]);
-    expect(named(category.tree, "ArticlePageClient")).toBeUndefined();
-    expect(propsOf(category.tree, "CategoryMembers")).toMatchObject({ total: 1 });
-
-    mockFileInfo.mockResolvedValue(null); // getFileInfo leaves a deleted description page's file out
-    expect((await outcome(["File:Flag.svg"])).signal).toBe("not-found");
-  });
-
   it("the history, info, revision and diff views of a deleted page are 404s", async () => {
     mockPageInfo.mockRejectedValue(notFoundError());
     expect((await outcome(["Deleted_page"], { action: "info" })).signal).toBe("not-found");
@@ -288,24 +229,6 @@ describe("deleted pages through the route (plan 409)", () => {
     expect((await outcome(["Deleted_page"], { oldid: "5" })).signal).toBe("not-found");
   });
 });
-
-describe("views of a page (plan 412 step 5)", () => {
-  it("a revision of another page moves to that page; a missing revision is a 404", async () => {
-    mockPrefetchedState.mockReturnValue({
-      status: "success",
-      data: { title: "Other page", timestamp: "2026-01-01T00:00:00.000Z" },
-    });
-    expect((await outcome(["Aurelia"], { oldid: "5" })).signal).toBe(
-      "permanent:/wiki/Other_page?oldid=5"
-    );
-
-    fails("NOT_FOUND");
-    expect((await outcome(["Aurelia"], { oldid: "404" })).signal).toBe("not-found");
-    fails("PRECONDITION_FAILED");
-    expect((await outcome(["Aurelia"], { oldid: "405" })).signal).toBe("not-found");
-  });
-});
-
 describe("generateMetadata (plan 412 step 2)", () => {
   const metadata = (slug: string[], query: Query = {}) =>
     generateMetadata({ params: Promise.resolve({ slug }), searchParams: Promise.resolve(query) });

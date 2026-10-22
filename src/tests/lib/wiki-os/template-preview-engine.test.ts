@@ -1,20 +1,28 @@
 /** @jest-environment node */
-// Plan 418 (B4): the template preview is rendered by MediaWiki as a private engine, through the render
-// service's own non-persisting call (`action=parse&text=`): never `&page=`, never `templatedata`, never anything
-// else. When the engine cannot answer, the in-process compiler does.
-import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
+/**
+ * Templates: a preview never reaches the engine with an invocation that could break out, falls back to the in-process
+ * compiler when the engine is down and degrades to empty HTML, never an error; TemplateData is read from the template's
+ * own page (or its /doc), case-folded tags and wrongly shaped fields included, never from a deleted page.
+ */
+jest.mock("~/server/db", () => ({
+  __esModule: true,
+  db: { wikiArticle: { findMany: jest.fn() } },
+}));
+
+import { afterEach, beforeEach, describe, expect, it } from "@jest/globals";
 import { getTemplatePreview } from "~/lib/wiki-os/templates/template-engine.server";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { transformImages } from "~/lib/wiki-os/transformers/html-transformer";
 import { transformWikiLinks } from "~/lib/wiki-os/transformers/url-compat";
+import { db } from "~/server/db";
+import { extractTemplateDataJson, parseTemplateData, readTemplateData } from "~/lib/wiki-os/templates/template-data-reader";
+import { type FetchGuard, installFetchGuard } from "~/tests/helpers/fetch-guard";
 
 /** What the in-process compiler makes of the invocation `{{Quote box|text=hi}}`. */
 const compiled = () =>
   transformWikiLinks(transformImages(parseWikitextToHtml("{{Quote box|text=hi}}", "ixwiki"), "ixwiki"));
 
 let fetchSpy: jest.SpiedFunction<typeof fetch>;
-const sentBody = () => new URLSearchParams(String(fetchSpy.mock.calls[0]![1]!.body));
-
 beforeEach(() => {
   fetchSpy = jest
     .spyOn(global, "fetch")
@@ -23,32 +31,6 @@ beforeEach(() => {
 afterEach(() => fetchSpy.mockRestore());
 
 describe("getTemplatePreview", () => {
-  it("sends the invocation to the engine as text to parse, in one request", async () => {
-    await expect(getTemplatePreview("Quote box", { text: "hi" })).resolves.toContain("engine");
-
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
-    expect(fetchSpy.mock.calls[0]![1]!.method).toBe("POST");
-    const body = sentBody();
-    expect(body.get("action")).toBe("parse");
-    expect(body.get("text")).toBe("{{Quote box|text=hi}}");
-    expect(body.get("title")).toBeTruthy();
-    expect(body.has("page")).toBe(false);
-    expect(String(fetchSpy.mock.calls[0]![0])).toMatch(/\/api\.php$/);
-  });
-
-  it("uses the internal engine URL when one is configured (the configuration is read when it loads)", async () => {
-    process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL = "http://127.0.0.1:8080/api.php";
-    try {
-      await jest.isolateModulesAsync(async () => {
-        const engine = await import("~/lib/wiki-os/templates/template-engine.server");
-        await engine.getTemplatePreview("Quote box", { text: "hi" });
-      });
-      expect(String(fetchSpy.mock.calls[0]![0])).toBe("http://127.0.0.1:8080/api.php");
-    } finally {
-      delete process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL;
-    }
-  });
-
   it("falls back to the in-process compiler when the engine does not answer", async () => {
     fetchSpy.mockRejectedValue(new Error("engine down"));
 
@@ -57,15 +39,83 @@ describe("getTemplatePreview", () => {
     expect(html).not.toContain("engine");
     expect(html).toBe(compiled());
   });
-
-  it("falls back to the in-process compiler when the engine answers with nothing", async () => {
-    fetchSpy.mockResolvedValue(Response.json({ parse: {} }));
-
-    expect(await getTemplatePreview("Quote box", { text: "hi" })).toBe(compiled());
-  });
-
   it("never calls the engine for an invocation that could break out", async () => {
     await expect(getTemplatePreview("Quote box", { text: "a}}b" })).resolves.toBe("Invalid parameter");
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("TemplateData", () => {
+  const findMany = (db.wikiArticle as unknown as { findMany: jest.Mock }).findMany;
+
+  const DATA = {
+    description: { en: "A quote box." },
+    params: {
+      text: { label: { en: "Text" }, description: "The quote.", required: true, type: "string" },
+      author: { label: "Author", aliases: ["by"], suggested: true, default: "Anonymous" },
+    },
+    paramOrder: ["text", "author"],
+    format: "block",
+    sets: [{ label: "Attribution", params: ["author"] }],
+  };
+  const block = (data: unknown) => `<templatedata>\n${JSON.stringify(data)}\n</templatedata>`;
+
+  let guard: FetchGuard;
+  beforeEach(() => {
+    jest.clearAllMocks();
+    guard = installFetchGuard();
+    findMany.mockResolvedValue([]);
+  });
+  afterEach(() => guard.restore());
+
+  describe("extractTemplateDataJson", () => {
+    it("finds the block after a character whose lower case is longer than itself (\"İ\")", () => {
+      // "İ".toLowerCase() is two UTF-16 units: offsets taken in a lower-cased copy would cut the JSON short.
+      const text = `İİİİ intro <TemplateData>{"description":"after dotted capitals"}</TemplateData> İ`;
+
+      expect(extractTemplateDataJson(text)).toBe('{"description":"after dotted capitals"}');
+      expect(parseTemplateData("T", extractTemplateDataJson(text)!)?.description).toBe(
+        "after dotted capitals"
+      );
+    });
+
+    it("closes the block at its own closing tag in any case, and reads a second block independently", () => {
+      expect(extractTemplateDataJson('<templatedata>{"a":1}</TEMPLATEDATA>x<templatedata>{"b":2}')).toBe(
+        '{"a":1}'
+      );
+      expect(extractTemplateDataJson("<templatedata>{}")).toBeNull();
+    });
+  });
+
+  describe("parseTemplateData", () => {
+    it("reads a field of the wrong shape as absent instead of refusing the template", () => {
+      const info = parseTemplateData("T", JSON.stringify({ params: { a: { required: "yes", aliases: 3 } }, format: 7 }));
+
+      expect(info?.params.a).toMatchObject({ required: undefined, aliases: undefined });
+      expect(info?.format).toBeUndefined();
+    });
+  });
+
+  describe("readTemplateData", () => {
+    it("falls back to the /doc subpage, where the convention keeps it", async () => {
+      findMany.mockResolvedValue([
+        { title: "Template:Navbox", wikitext: "{{{1}}}<noinclude>{{documentation}}</noinclude>" },
+        { title: "Template:Navbox/doc", wikitext: block(DATA) },
+      ]);
+
+      const result = await readTemplateData(["Template:Navbox"]);
+
+      expect(result.get("Navbox")?.description).toBe("A quote box.");
+      expect(guard.calls()).toEqual([]);
+    });
+    it("leaves out a template with no TemplateData, a title that cannot be one, and a deleted page (the query names the published ones)", async () => {
+      findMany.mockResolvedValue([{ title: "Template:Plain", wikitext: "just {{{1}}}" }]);
+
+      const result = await readTemplateData(["Plain", "bad|title", "Missing"]);
+
+      expect(result.size).toBe(0);
+      expect(findMany.mock.calls[0]?.[0].where.status).toBe("PUBLISHED");
+      expect(guard.calls()).toEqual([]);
+    });
   });
 });

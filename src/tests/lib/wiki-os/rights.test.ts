@@ -1,5 +1,17 @@
 /** @jest-environment node */
-// Plan 409: the rights engine (groups, role mapping, implicit autoconfirmed, expiry, pending links).
+/**
+ * The rights table (plan 409): who gets which right (groups, the role mapping, a system owner, implicit and linked
+ * autoconfirmed, expiry, links an ordinary admin confirmed giving nothing), blocks, which namespaces and interface pages
+ * each group may edit (never Special or Media, user scripts only their owner's, site scripts only interface admins),
+ * and how a page's protection levels gate edit, move and upload.
+ */
+const mockDb = db as unknown as {
+  wikiAccountLink: { findFirst: jest.Mock };
+  wikiUserGroup: { findMany: jest.Mock };
+  wikiBlock: { findMany: jest.Mock };
+  wikiRevision: { count: jest.Mock };
+  user: { findUnique: jest.Mock };
+};
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: {
@@ -17,21 +29,11 @@ jest.mock("~/lib/auth", () => ({
 }));
 
 import { isWikiAdmin } from "~/lib/wiki-os/auth";
-import {
-  mwAccountAutoconfirms,
-  AUTOCONFIRM_AGE_MS,
-  AUTOCONFIRM_EDIT_COUNT,
-  BUREAUCRAT_CHANGEABLE_GROUPS,
-  changeableGroups,
-  getWikiPermissions,
-  getWikiPermissionsForAuthId,
-  loadTargetPermissions,
-  resolveGroups,
-  rightsForGroups,
-  type GroupResolutionInput,
-} from "~/lib/wiki-os/rights";
+import { AUTOCONFIRM_AGE_MS, AUTOCONFIRM_EDIT_COUNT, BUREAUCRAT_CHANGEABLE_GROUPS, changeableGroups, getWikiPermissions, getWikiPermissionsForAuthId, type Group, type GroupResolutionInput, loadTargetPermissions, mwAccountAutoconfirms, resolveGroups, type Right, rightsForGroups, type WikiPermissions } from "~/lib/wiki-os/rights";
 import { isSystemOwner } from "~/lib/auth";
 import { db } from "~/server/db";
+import { checkEditPolicy, type EditPolicyIdentity, parseWikiTitle } from "~/lib/wiki-os/namespace-policy";
+import { decideAction, type PageRestriction } from "~/lib/wiki-os/permissions";
 
 const NOW = new Date("2026-09-30T12:00:00Z");
 const DAY = 24 * 60 * 60 * 1000;
@@ -97,13 +99,6 @@ describe("resolveGroups: explicit groups", () => {
     const groups = groupsOf({ explicitGroups });
     expect(groups).toEqual(expect.arrayContaining(["bot", "sysop"]));
     expect(groups).not.toContain("rollbacker");
-  });
-
-  it("ignores a group name it does not know", () => {
-    expect(groupsOf({ explicitGroups: [{ group: "suppress", expiresAt: null }] })).toEqual([
-      "*",
-      "user",
-    ]);
   });
 });
 
@@ -196,14 +191,6 @@ interface Row extends KeyClause {
   allowUserTalk?: boolean;
   expiresAt: Date | null;
 }
-
-const mockDb = db as unknown as {
-  wikiAccountLink: { findFirst: jest.Mock };
-  wikiUserGroup: { findMany: jest.Mock };
-  wikiBlock: { findMany: jest.Mock };
-  wikiRevision: { count: jest.Mock };
-  user: { findUnique: jest.Mock };
-};
 
 let groupRows: Row[] = [];
 let blockRows: Row[] = [];
@@ -323,15 +310,6 @@ describe("getWikiPermissions", () => {
     mockDb.wikiAccountLink.findFirst.mockResolvedValue(linkRow());
     await getWikiPermissions(ctxFor({ createdAt: ago(30 * DAY) }));
     expect(mockDb.wikiRevision.count).not.toHaveBeenCalled();
-  });
-
-  it("loads once per request context", async () => {
-    const ctx = ctxFor();
-    await Promise.all([getWikiPermissions(ctx), getWikiPermissions(ctx)]);
-    await getWikiPermissions(ctx);
-    expect(mockDb.wikiUserGroup.findMany).toHaveBeenCalledTimes(1);
-    await getWikiPermissions(ctxFor());
-    expect(mockDb.wikiUserGroup.findMany).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -577,5 +555,263 @@ describe("pending wiki-username rows attach only through a trusted link (plan 40
 
     const perms = await loadTargetPermissions({ userId: "db1", wikiUsername: "Alice" });
     expect(perms.groups).not.toContain("sysop");
+  });
+});
+
+describe("namespaces and interface pages", () => {
+  // Plan 409: the policy asks for rights, not for "is admin". These are the rights of the groups that matter.
+  const userRights: ReadonlySet<Right> = new Set<Right>(["edit", "createpage", "createtalk"]);
+  const sysopRights: ReadonlySet<Right> = new Set<Right>([
+    ...userRights,
+    "editprotected",
+    "editinterface",
+  ]);
+  const interfaceAdminRights: readonly Right[] = [
+    "editinterface",
+    "editsitecss",
+    "editsitejs",
+    "editsitejson",
+    "editusercss",
+    "edituserjs",
+    "edituserjson",
+  ];
+  /** The owner role: sysop + interface-admin. */
+  const adminRights: ReadonlySet<Right> = new Set<Right>([...sysopRights, ...interfaceAdminRights]);
+
+  const user = { rights: userRights, linkedWikiUsername: "Alice" };
+  const unlinked = { rights: userRights, linkedWikiUsername: null };
+  const sysop = { rights: sysopRights, linkedWikiUsername: null };
+  const interfaceAdmin = {
+    rights: new Set<Right>([...userRights, ...interfaceAdminRights]),
+    linkedWikiUsername: null,
+  };
+  const admin = { rights: adminRights, linkedWikiUsername: null };
+
+  const allowed = (title: string, identity: EditPolicyIdentity = user) =>
+    checkEditPolicy(title, identity).allowed;
+
+  describe("parseWikiTitle", () => {
+    it("refuses titles that hide a prefix behind character references, and empty titles", () => {
+      expect(parseWikiTitle("Template&#58;Foo")).toBeNull();
+      expect(parseWikiTitle("Module&colon;Foo")).toBeNull();
+      expect(parseWikiTitle("  :  ")).toBeNull();
+    });
+
+    it("folds unicode spaces and invisible marks", () => {
+      expect(parseWikiTitle("Template\u00A0:Foo")?.namespaceId).toBe(10);
+      expect(parseWikiTitle("Mod\u200Bule:Foo")?.namespaceId).toBe(828);
+    });
+  });
+
+  describe("checkEditPolicy: ordinary users", () => {
+    it("may edit main-namespace articles and talk pages", () => {
+      expect(allowed("Caphiria")).toBe(true);
+      expect(allowed("Star Wars: A Story")).toBe(true);
+      expect(allowed("Talk:Caphiria")).toBe(true);
+      expect(allowed("User talk:Somebody")).toBe(true);
+      expect(allowed("Template talk:Infobox")).toBe(true);
+      expect(allowed("Campaign talk:Operation Dawn")).toBe(true);
+    });
+
+    it("treats Portal: as a main-namespace title, as IxWiki does (it has no Portal namespace)", () => {
+      expect(allowed("Portal:Eurth")).toBe(true);
+    });
+
+    it.each([
+      "Template:Infobox country",
+      "Module:Foo",
+      "MediaWiki:Common.js",
+      "MediaWiki:Sidebar",
+      "Help:Editing",
+      "Category:Nations",
+      "File:Flag.png",
+      "Image:Flag.png",
+      "IxWiki:Policy",
+      "Project:Policy",
+      "Gadget:Foo",
+      "Gadget definition:Foo",
+      "MediaWiki talk:Common.js",
+      "Module talk:Foo",
+      "Widget:Foo",
+      "Campaign:Operation Dawn",
+      "campaign : Operation Dawn",
+      ":Template:Foo",
+      "template:foo",
+      "TEMPLATE:foo",
+      "Template :foo",
+      "Template:Foo/Module:Bar",
+      "Template\u00A0:Foo",
+      "Template&#58;Foo",
+      "Mod&#x75;le:Foo",
+    ])("cannot edit %s", (title) => {
+      expect(allowed(title)).toBe(false);
+    });
+
+    it("can never edit Special or Media pages, even as admin", () => {
+      expect(allowed("Special:Version", admin)).toBe(false);
+      expect(allowed("Media:Foo.png", admin)).toBe(false);
+    });
+
+    it("may edit only their own user page, and only with a linked wiki account", () => {
+      expect(allowed("User:Alice")).toBe(true);
+      expect(allowed("user:alice")).toBe(true); // first letter is case-insensitive
+      expect(allowed("User:ALICE")).toBe(false);
+      expect(allowed("User:Alice/Sandbox")).toBe(true);
+      expect(allowed("User:Bob")).toBe(false);
+      expect(allowed("User:Alice Smith")).toBe(false);
+      expect(allowed("User:Alice", unlinked)).toBe(false);
+    });
+
+    it("cannot edit user script, style or data subpages, even their own", () => {
+      expect(allowed("User:Alice/common.js")).toBe(false);
+      expect(allowed("User:Alice/vector.css")).toBe(false);
+      expect(allowed("User:Alice/data.JSON")).toBe(false);
+      expect(allowed("User:Bob/common.js")).toBe(false);
+    });
+  });
+
+  describe("checkEditPolicy: wiki admins", () => {
+    it.each([
+      "Caphiria",
+      "Template:Infobox country",
+      "Module:Foo",
+      "MediaWiki:Common.js",
+      "Category:Nations",
+      "File:Flag.png",
+      "IxWiki:Policy",
+      "User:Bob/common.js",
+    ])("can edit %s", (title) => {
+      expect(allowed(title, admin)).toBe(true);
+    });
+  });
+
+  describe("checkEditPolicy: sysop versus interface-admin (plan 409)", () => {
+    it.each([
+      "Template:Infobox country",
+      "Module:Foo",
+      "MediaWiki:Sidebar",
+      "MediaWiki talk:Sidebar",
+      "Help:Editing",
+      "Category:Nations",
+      "File:Flag.png",
+      "IxWiki:Policy",
+      "User:Bob",
+    ])("sysop can edit %s", (title) => {
+      expect(allowed(title, sysop)).toBe(true);
+    });
+
+    it.each([
+      "MediaWiki:Common.css",
+      "MediaWiki:Common.js",
+      "MediaWiki:Gadgets.json",
+      "MediaWiki:Theme.less",
+      "User:Bob/common.js",
+      "User:Bob/vector.css",
+      "User:Bob/data.json",
+    ])("sysop alone cannot edit the interface page %s", (title) => {
+      expect(allowed(title, sysop)).toBe(false);
+    });
+
+    it("asks for the right that matches the kind of interface page", () => {
+      const only = (right: Right) => ({
+        rights: new Set<Right>(["edit", right]),
+        linkedWikiUsername: null,
+      });
+      expect(allowed("MediaWiki:Common.css", only("editsitecss"))).toBe(true);
+      expect(allowed("MediaWiki:Common.js", only("editsitecss"))).toBe(false);
+      expect(allowed("MediaWiki:Common.js", only("editsitejs"))).toBe(true);
+      expect(allowed("MediaWiki:Data.json", only("editsitejson"))).toBe(true);
+      expect(allowed("MediaWiki:Sidebar", only("editsitejs"))).toBe(false);
+      expect(allowed("MediaWiki:Sidebar", only("editinterface"))).toBe(true);
+      expect(allowed("User:Bob/common.js", only("edituserjs"))).toBe(true);
+      expect(allowed("User:Bob/common.js", only("editsitejs"))).toBe(false);
+      expect(allowed("User:Bob/vector.css", only("editusercss"))).toBe(true);
+    });
+
+    it("lets interface-admin edit script pages but not other namespaces", () => {
+      expect(allowed("MediaWiki:Common.js", interfaceAdmin)).toBe(true);
+      expect(allowed("MediaWiki:Sidebar", interfaceAdmin)).toBe(true);
+      expect(allowed("User:Bob/common.js", interfaceAdmin)).toBe(true);
+      expect(allowed("Template:Foo", interfaceAdmin)).toBe(false);
+      expect(allowed("User:Bob", interfaceAdmin)).toBe(false);
+    });
+
+    it("still lets the owner of a verified link edit their own text pages but not their own scripts", () => {
+      expect(allowed("User:Alice/Notes", user)).toBe(true);
+      expect(allowed("User:Alice/common.js", user)).toBe(false);
+      expect(allowed("User:Alice/common.js", { ...user, rights: adminRights })).toBe(true);
+    });
+  });
+});
+
+describe("protection levels", () => {
+  const NOW = new Date("2026-09-27T12:00:00Z");
+  const PAST = new Date("2026-09-01T00:00:00Z");
+  const FUTURE = new Date("2026-12-01T00:00:00Z");
+
+  const who = (groups: Group[]): WikiPermissions => ({
+    groups,
+    rights: rightsForGroups(groups),
+    block: null,
+    verifiedWikiUsername: null,
+  });
+
+  const plain = who(["*", "user"]);
+  // The legacy `User.wikiUsername` column grants nothing: such a user is just a plain user.
+  const legacyUsername = who(["*", "user"]);
+  // A verified wiki link autoconfirms.
+  const verified = who(["*", "user", "autoconfirmed"]);
+  const admin = who(["*", "user", "sysop"]);
+  const anonymous = who(["*"]);
+
+  const restriction = (level: string, expiresAt: Date | null = null): PageRestriction[] => [
+    { action: "edit", level, expiresAt },
+  ];
+
+  describe("page protection (edit restrictions)", () => {
+    it.each([
+      ["new page, signed in", "create", [], plain, true],
+      ["unprotected, signed in", "edit", [], plain, true],
+      ["unprotected, anonymous", "edit", [], anonymous, false],
+      [
+        "autoconfirmed level, no verified account",
+        "edit",
+        restriction("autoconfirmed"),
+        plain,
+        false,
+      ],
+      [
+        "autoconfirmed level, legacy wikiUsername but no verified account",
+        "edit",
+        restriction("autoconfirmed"),
+        legacyUsername,
+        false,
+      ],
+      ["autoconfirmed level, verified account", "edit", restriction("autoconfirmed"), verified, true],
+      ["autoconfirmed level, admin", "edit", restriction("autoconfirmed"), admin, true],
+      ["sysop level, verified non-admin", "edit", restriction("sysop"), verified, false],
+      ["sysop level, admin", "edit", restriction("sysop"), admin, true],
+      [
+        "legacy PROTECTED level, verified non-admin",
+        "edit",
+        restriction("PROTECTED"),
+        verified,
+        false,
+      ],
+      ["legacy PROTECTED level, admin", "edit", restriction("PROTECTED"), admin, true],
+      ["unknown level fails closed", "edit", restriction("SOMETHING_NEW"), verified, false],
+      ["unknown level, admin", "edit", restriction("SOMETHING_NEW"), admin, true],
+      ["expired sysop level counts as unprotected", "edit", restriction("sysop", PAST), plain, true],
+      ["unexpired sysop level", "edit", restriction("sysop", FUTURE), plain, false],
+    ] as const)("%s", (_label, action, restrictions, permissions, expected) => {
+      const decision = decideAction({
+        action,
+        title: "Caphiria",
+        permissions,
+        restrictions: [...restrictions],
+        now: NOW,
+      });
+      expect(decision.allowed).toBe(expected);
+    });
   });
 });

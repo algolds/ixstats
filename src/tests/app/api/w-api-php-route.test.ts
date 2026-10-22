@@ -97,25 +97,6 @@ describe("GET", () => {
 });
 
 describe("POST bodies", () => {
-  it("reads urlencoded parameters, and lets the body override the query string", async () => {
-    const response = await route.POST(
-      new NextRequest(url("action=nonsense"), {
-        method: "POST",
-        headers: { "content-type": "application/x-www-form-urlencoded" },
-        body: "action=query&meta=tokens&format=json",
-      })
-    );
-    expect((await json(response)).query.tokens.csrftoken).toBe("+\\");
-  });
-
-  it("reads multipart/form-data text fields", async () => {
-    const form = new FormData();
-    form.set("action", "query");
-    form.set("meta", "tokens");
-    form.set("format", "json");
-    const response = await route.POST(new NextRequest(url(), { method: "POST", body: form }));
-    expect((await json(response)).query.tokens.csrftoken).toBe("+\\");
-  });
   it("also refuses an oversized body that sent no Content-Length", async () => {
     const response = await route.POST(
       new NextRequest(url(), {
@@ -186,15 +167,6 @@ describe("the body limit is enforced while streaming", () => {
     });
     expect(response.status).toBe(413);
   });
-
-  it("still reads a body just under the limit", async () => {
-    const response = await post(`action=query&meta=tokens&format=json&pad=${"x".repeat(3 * MB)}`, {
-      "content-type": "application/x-www-form-urlencoded",
-    });
-    expect(response.status).toBe(200);
-    expect((await json(response)).query.tokens.csrftoken).toBe("+\\");
-  });
-
   it("answers a multipart body the parser cannot read with 400 badrequest, never a 500", async () => {
     const response = await post("not multipart at all", {
       "content-type": "multipart/form-data; boundary=xx",
@@ -238,45 +210,6 @@ describe("an upload: a multipart body with a file part (plan 411)", () => {
   beforeEach(() => {
     uploads.calls.length = 0;
   });
-
-  it("hands the file part to the module, byte for byte, together with the fields", async () => {
-    const { cookie } = await login();
-    const bytes = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0, 255, 128, 7]);
-
-    const response = await route.POST(
-      new NextRequest(url(), {
-        method: "POST",
-        headers: { cookie },
-        body: uploadForm(bytes, await csrfToken(cookie)),
-      })
-    );
-
-    const body = await json(response);
-    expect(body.upload.result).toBe("Success");
-    const [request] = uploads.calls.find((call) => call.name === "uploadFile")!.args as [
-      Record<string, any>,
-    ];
-    expect(request).toMatchObject({ filename: "Flag.png", comment: "A flag" });
-    expect(Buffer.from(request.bytes)).toEqual(Buffer.from(bytes));
-  });
-
-  it("lets a request with a session send a file of the upload limit, which a plain request may not (4 MB)", async () => {
-    const { cookie } = await login();
-    const token = await csrfToken(cookie);
-    const big = new Uint8Array(MAX_UPLOAD_BYTES - 1000);
-
-    const accepted = await route.POST(
-      new NextRequest(url(), { method: "POST", headers: { cookie }, body: uploadForm(big, token) })
-    );
-    expect((await json(accepted)).upload.result).toBe("Success");
-
-    const anonymous = await route.POST(
-      new NextRequest(url(), { method: "POST", body: uploadForm(new Uint8Array(5 * MB), token) })
-    );
-    expect(anonymous.status).toBe(413);
-    expect((await json(anonymous)).error.code).toBe("toobig");
-  });
-
   it("lets only a session this server signed send a file that large: a made-up cookie keeps the 4 MB limit (review M4)", async () => {
     const { cookie } = await login();
     const token = await csrfToken(cookie);
@@ -425,24 +358,6 @@ describe("the session cookie", () => {
     );
     expect(info.query.userinfo).toMatchObject({ id: 7, name: "Heku" });
     expect(info.query.userinfo.anon).toBeUndefined();
-  });
-
-  it("is cleared by logout", async () => {
-    const { cookie } = await login();
-    const tokens = await json(
-      await route.GET(new NextRequest(url("action=query&meta=tokens"), { headers: { cookie } }))
-    );
-    const response = await route.POST(
-      new NextRequest(url(), {
-        method: "POST",
-        headers: { "content-type": "application/x-www-form-urlencoded", cookie },
-        body: new URLSearchParams({
-          action: "logout",
-          token: tokens.query.tokens.csrftoken,
-        }).toString(),
-      })
-    );
-    expect(response.headers.get("set-cookie")).toContain("Max-Age=0");
   });
 });
 

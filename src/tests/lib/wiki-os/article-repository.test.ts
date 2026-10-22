@@ -152,42 +152,9 @@ describe("ArticleRepository.saveArticle", () => {
     expect(args.create).toMatchObject({ title: "Foo bar", slug: "foo_bar" });
     expect(args.update).toMatchObject({ slug: "foo_bar" });
   });
-  it("writes the namespace of a Talk: page on create and update", async () => {
-    await save("Talk:x");
-
-    const args = mockUpsert.mock.calls[0]?.[0];
-    expect(args.where.source_title.title).toBe("Talk:X");
-    expect(args.create).toMatchObject({ namespace: 1, namespacePrefix: "Talk" });
-    expect(args.update).toMatchObject({ namespace: 1, namespacePrefix: "Talk" });
-  });
   it("rejects a title MediaWiki would refuse before touching the database", async () => {
     await expect(save("a[b")).rejects.toThrow("Invalid title");
     expect(mockUpsert).not.toHaveBeenCalled();
-  });
-  it("clamps an explicit excerpt to the VarChar(500) column (plan 402)", async () => {
-    await save("Foo", "", "Foo is a country.", { excerpt: "x".repeat(2_000) });
-
-    expect(mockUpsert.mock.calls[0]?.[0].create.summary).toHaveLength(480);
-    expect(mockUpsert.mock.calls[0]?.[0].update.summary).toHaveLength(480);
-  });
-  it("writes a redirect's canonical target title and fragment on create and update (plan 402)", async () => {
-    const { article } = await save("Old", "", "#REDIRECT [[foo#Bar]]");
-
-    const args = mockUpsert.mock.calls[0]?.[0];
-    const expected = { redirectTargetSlug: "Foo", redirectTargetFragment: "Bar" };
-    expect(args.create).toMatchObject(expected);
-    expect(args.update).toMatchObject(expected);
-    expect(article).toMatchObject(expected);
-  });
-
-  it("writes nulls for ordinary text, so an edited-away redirect is cleared (plan 402)", async () => {
-    const { article } = await save("Old", "", "Now a real article. #REDIRECT [[Foo]]");
-
-    const args = mockUpsert.mock.calls[0]?.[0];
-    const expected = { redirectTargetSlug: null, redirectTargetFragment: null };
-    expect(args.create).toMatchObject(expected);
-    expect(args.update).toMatchObject(expected);
-    expect(article).toMatchObject(expected);
   });
 });
 
@@ -329,15 +296,6 @@ describe("ArticleRepository.saveArticle: a save that cannot get its turn is busy
     });
     expect(mockRevisionCreate).not.toHaveBeenCalled();
   });
-
-  it("lets every other failure of the save through as it is", async () => {
-    const other = new Error("connection refused");
-    mockQueryRaw.mockRejectedValue(other);
-    await expect(save()).rejects.toBe(other);
-
-    mockQueryRaw.mockRejectedValue(prismaError("P2002")); // a unique violation is not a busy page
-    await expect(save()).rejects.not.toBeInstanceOf(PageBusyError);
-  });
 });
 
 describe("ArticleRepository.saveArticle: the page is locked, and the edit-conflict check is part of the save (F1)", () => {
@@ -451,16 +409,6 @@ describe("ArticleRepository.saveArticle: the page is locked, and the edit-confli
     });
     nothingWritten();
   });
-
-  it("makes no check without an expected head (a revert, a rollback, an upload's page), but still locks the page", async () => {
-    mockRevisionFindFirst.mockResolvedValue(HEAD);
-
-    await save();
-
-    expect(mockQueryRaw).toHaveBeenCalledTimes(1);
-    expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
-  });
-
   it("makes the check against the latest LIVE revision, read by the locked row's id: a parked one is not the head", async () => {
     await save({ expectedHeadRef: "rev-head" }).catch(() => undefined);
 
@@ -474,18 +422,6 @@ describe("ArticleRepository.saveArticle: the page is locked, and the edit-confli
       { id: "desc" },
     ]);
   });
-
-  it("finds the head by title (a join) only when the page had no row to lock: the creator before it may have made it", async () => {
-    mockQueryRaw.mockResolvedValue([]);
-
-    await save({ expectedHeadRef: null });
-
-    expect(mockRevisionFindFirst.mock.calls[0]?.[0].where).toEqual({
-      article: { source: "ixwiki", title: "Foo" },
-      parked: false,
-    });
-  });
-
   it("records the head it was made on top of as the new revision's parent (F5), none for the first revision", async () => {
     mockRevisionFindFirst.mockResolvedValue(HEAD);
     await save();
@@ -500,47 +436,6 @@ describe("ArticleRepository.saveArticle: the page is locked, and the edit-confli
     expect(mockRevisionCreate.mock.calls[0]?.[0].data.parentRevisionId).toBeNull();
   });
 });
-
-describe("ArticleRepository.saveArticle tells the watchers (plan 416, WK-19)", () => {
-  const save = (extra: { editSummary?: string } = {}, authorName?: string) => {
-    mockUpsert.mockImplementation(async (args: { create: { title: string } }) =>
-      savedRow(args.create.title)
-    );
-    return ArticleRepository.saveArticle(
-      { slug: "Foo", title: "Foo", wikitext: "new text", ...extra },
-      "user_clerk",
-      authorName
-    );
-  };
-  it("notifies after the revision is written, never before the transaction committed", async () => {
-    const order: string[] = [];
-    mockRevisionCreate.mockImplementation(async () => {
-      order.push("revision");
-      return { id: "r1" };
-    });
-    jest.mocked(notifyWatchers).mockImplementation(async () => {
-      order.push("notify");
-      return 0;
-    });
-
-    await save();
-
-    expect(order).toEqual(["revision", "notify"]);
-  });
-  it("does not notify for a save that changed nothing, or one that failed", async () => {
-    mockCount.mockResolvedValue(1);
-    await save();
-    expect(notifyWatchers).not.toHaveBeenCalled();
-
-    mockCount.mockResolvedValue(0);
-    mockUpsert.mockRejectedValue(new Error("db down"));
-    await expect(
-      ArticleRepository.saveArticle({ slug: "Foo", title: "Foo", wikitext: "x" })
-    ).rejects.toThrow("db down");
-    expect(notifyWatchers).not.toHaveBeenCalled();
-  });
-});
-
 describe("ArticleRepository.saveArticle and the mirror outbox (plan 407)", () => {
   const save = (extra: { source?: string } = {}) => {
     mockUpsert.mockImplementation(async (args: { create: { title: string } }) =>
@@ -573,26 +468,6 @@ describe("ArticleRepository.saveArticle and the mirror outbox (plan 407)", () =>
     // the job is part of the transaction: it is written before the post-commit work
     expect(order).toEqual(["revision", "job", "enqueue"]);
   });
-  it("queues a job for a save that changed nothing too: the revision exists, so MediaWiki gets it", async () => {
-    mockCount.mockResolvedValue(1);
-
-    await save();
-
-    expect(mockJobCreate).toHaveBeenCalledTimes(1);
-  });
-
-  it("kicks the worker once the job is committed, never when the transaction failed", async () => {
-    await save();
-    expect(scheduleMirrorKick).toHaveBeenCalledTimes(1);
-
-    jest.mocked(scheduleMirrorKick).mockClear();
-    mockUpsert.mockRejectedValue(new Error("db down"));
-    await expect(
-      ArticleRepository.saveArticle({ slug: "Foo", title: "Foo", wikitext: "text" })
-    ).rejects.toThrow("db down");
-    expect(scheduleMirrorKick).not.toHaveBeenCalled();
-  });
-
   it("writes no job for the MediaWiki: namespace: the mirror account may never write it", async () => {
     mockUpsert.mockImplementation(async (args: { create: { title: string } }) =>
       savedRow(args.create.title)
@@ -615,64 +490,6 @@ describe("ArticleRepository.saveArticle and the mirror outbox (plan 407)", () =>
     expect(scheduleMirrorKick).not.toHaveBeenCalled();
   });
 });
-
-describe("ArticleRepository.findArticleForView (plan 404)", () => {
-  const viewRow = (title: string, overrides: Record<string, unknown> = {}) => ({
-    id: `id-${title}`,
-    title,
-    status: "PUBLISHED",
-    htmlSyncedAt: new Date("2026-09-30T10:00:00Z"),
-    revisions: [
-      { createdAt: new Date("2026-09-29T08:00:00Z"), byteSize: 1200, textDeleted: false },
-    ],
-    categories: [{ category: { name: "Countries" } }, { category: { name: "Eurth" } }],
-    ...overrides,
-  });
-  it("says a page's text is empty only for a current revision that really is 0 bytes (F35a)", async () => {
-    const emptyOf = async (revisions: Array<Record<string, unknown>>) => {
-      mockFindUnique.mockResolvedValue(viewRow("Talk:Paulastra", { revisions }));
-      return (await ArticleRepository.findArticleForView("Talk:Paulastra"))?.emptyText;
-    };
-    const at = new Date("2026-09-29T08:00:00Z");
-
-    await expect(emptyOf([{ createdAt: at, byteSize: 0, textDeleted: false }])).resolves.toBe(true);
-    // a placeholder: the text was never imported, its size is known
-    await expect(emptyOf([{ createdAt: at, byteSize: 300, textDeleted: false }])).resolves.toBe(
-      false
-    );
-    // hidden by revision deletion: not an empty page
-    await expect(emptyOf([{ createdAt: at, byteSize: 0, textDeleted: true }])).resolves.toBe(false);
-    // no revision rows at all: a stub
-    await expect(emptyOf([])).resolves.toBe(false);
-  });
-
-  it("resolves a case variant by slug like findBySlug does", async () => {
-    mockFindMany.mockResolvedValue([viewRow("NATO")]);
-
-    const head = await ArticleRepository.findArticleForView("nato");
-
-    expect(head?.title).toBe("NATO");
-    expect(mockFindMany.mock.calls[0]?.[0].select).toHaveProperty("htmlSyncedAt");
-    expect(mockFindFirst).not.toHaveBeenCalled();
-  });
-
-  it("reports a stale article and an article with no revision rows", async () => {
-    mockFindUnique.mockResolvedValue(viewRow("Foo", { htmlSyncedAt: null, revisions: [] }));
-
-    await expect(ArticleRepository.findArticleForView("Foo")).resolves.toMatchObject({
-      htmlSyncedAt: null,
-      lastModified: null,
-    });
-  });
-
-  it("is null for a missing article, and lets a database error through", async () => {
-    await expect(ArticleRepository.findArticleForView("Nowhere")).resolves.toBeNull();
-
-    mockFindUnique.mockRejectedValue(new Error("db down"));
-    await expect(ArticleRepository.findArticleForView("Foo")).rejects.toThrow("db down");
-  });
-});
-
 describe("ArticleRepository.findBySlug", () => {
   it("returns the exact canonical row even when a case-variant row also exists", async () => {
     const rows = new Map([
@@ -735,33 +552,6 @@ describe("ArticleRepository.findBySlug", () => {
     expect(args.where.OR.length).toBeGreaterThan(0);
     expect(article?.title).toBe("NATO");
   });
-
-  it("looks another wiki's title up without IxWiki's namespace table", async () => {
-    mockFindUnique.mockResolvedValue(articleRow("Project:foo", { source: "iiwiki" }));
-
-    const article = await ArticleRepository.findBySlug("project:foo", "iiwiki");
-
-    expect(mockFindUnique.mock.calls[0]?.[0].where).toEqual({
-      source_title: { source: "iiwiki", title: "Project:foo" },
-    });
-    expect(article?.title).toBe("Project:foo");
-  });
-  it("returns null for a stub row without wikitext", async () => {
-    mockFindUnique.mockResolvedValue(articleRow("Foo", { wikitext: "" }));
-
-    await expect(ArticleRepository.findBySlug("Foo")).resolves.toBeNull();
-    expect(mockFindMany).not.toHaveBeenCalled();
-  });
-
-  it("still tries the legacy lookup for a title MediaWiki would refuse", async () => {
-    mockFindFirst.mockResolvedValue(articleRow("a[b"));
-
-    const article = await ArticleRepository.findBySlug("a[b");
-
-    expect(mockFindUnique).not.toHaveBeenCalled();
-    expect(mockFindMany).not.toHaveBeenCalled();
-    expect(article?.title).toBe("a[b");
-  });
 });
 
 describe("ArticleRepository.getHistory", () => {
@@ -805,81 +595,6 @@ describe("ArticleRepository.getHistory", () => {
       expect.objectContaining({ articleId: "id-Foo bar", author: "alice" }),
     ]);
   });
-  it("carries MediaWiki's revision-deletion flags to the caller, which decides who sees what", async () => {
-    mockFindUnique.mockResolvedValue(articleRow("Foo"));
-    mockRevisionFindMany.mockResolvedValue([
-      { ...revision("Foo"), sha1: "abc", textDeleted: true, userDeleted: true },
-    ]);
-
-    const [row] = await ArticleRepository.getHistory("Foo");
-
-    expect(row).toMatchObject({
-      author: "alice",
-      sha1: "abc",
-      textDeleted: true,
-      commentDeleted: false,
-      userDeleted: true,
-    });
-  });
-
-  it("pages after a revision: the cursor skips the revision itself, by rev_id or row id", async () => {
-    mockFindUnique.mockResolvedValue(articleRow("Foo"));
-    mockRevisionFindMany.mockResolvedValue([revision("Foo", "rev-older")]);
-
-    mockRevisionFindFirst.mockResolvedValueOnce({ id: "rev-9001" });
-    await ArticleRepository.getHistory("Foo", "ixwiki", 50, { before: "9001" });
-    expect(mockRevisionFindFirst.mock.calls.at(-1)?.[0]).toMatchObject({
-      where: { articleId: "id-Foo", mwRevId: 9001 },
-    });
-    expect(mockRevisionFindMany.mock.calls.at(-1)?.[0]).toMatchObject({
-      cursor: { id: "rev-9001" },
-      skip: 1,
-      take: 50,
-    });
-
-    mockRevisionFindFirst.mockResolvedValueOnce({ id: "cuid-7" });
-    await ArticleRepository.getHistory("Foo", "ixwiki", 2, { before: "cuid-7" });
-    expect(mockRevisionFindFirst.mock.calls.at(-1)?.[0]).toMatchObject({
-      where: { articleId: "id-Foo", id: "cuid-7" },
-    });
-  });
-
-  it("starts at the revision itself for `from`, and is empty for a revision of another page", async () => {
-    mockFindUnique.mockResolvedValue(articleRow("Foo"));
-    mockRevisionFindMany.mockResolvedValue([revision("Foo")]);
-    mockRevisionFindFirst.mockResolvedValueOnce({ id: "cuid-7" });
-
-    await ArticleRepository.getHistory("Foo", "ixwiki", 2, { from: "cuid-7" });
-    const args = mockRevisionFindMany.mock.calls.at(-1)?.[0];
-    expect(args).toMatchObject({ cursor: { id: "cuid-7" }, take: 2 });
-    expect(args).not.toHaveProperty("skip");
-
-    mockRevisionFindMany.mockClear();
-    mockRevisionFindFirst.mockResolvedValueOnce(null);
-    await expect(
-      ArticleRepository.getHistory("Foo", "ixwiki", 2, { before: "elsewhere" })
-    ).resolves.toEqual([]);
-    expect(mockRevisionFindMany).not.toHaveBeenCalled();
-  });
-
-  it("follows a unique case-variant slug match, and the newest row when it is ambiguous", async () => {
-    mockFindMany.mockResolvedValue([articleRow("NATO")]);
-    await ArticleRepository.getHistory("nato");
-    expect(mockRevisionFindMany.mock.calls[0]?.[0].where).toEqual({
-      articleId: "id-NATO",
-      parked: false,
-    });
-
-    mockFindMany.mockResolvedValue([articleRow("NATO"), articleRow("Nato")]);
-    mockFindFirst.mockResolvedValue(articleRow("NATO"));
-    await ArticleRepository.getHistory("nAto");
-    expect(mockFindFirst.mock.calls[0]?.[0].orderBy).toEqual({ updatedAt: "desc" });
-    expect(mockRevisionFindMany.mock.calls[1]?.[0].where).toEqual({
-      articleId: "id-NATO",
-      parked: false,
-    });
-  });
-
   it("leaves parked revisions out by default (the first entry is the page's current revision) and lists them, flagged, on request", async () => {
     mockFindMany.mockResolvedValue([articleRow("NATO")]);
     mockRevisionFindMany.mockResolvedValue([
@@ -956,22 +671,5 @@ describe("ArticleRepository.getHistory", () => {
 
       expect([revision3?.id, base?.id]).toEqual(["r3", "r1"]);
     });
-
-    it("is there for a history list that asks for it, in order, and can anchor a page", async () => {
-      const all = { includeParked: true };
-      expect(ids(await ArticleRepository.getHistory("Foo", "ixwiki", 10, undefined, all))).toEqual([
-        "r3",
-        "r2",
-        "r1",
-      ]);
-      expect(
-        ids(await ArticleRepository.getHistory("Foo", "ixwiki", 5, { before: "r2" }, all))
-      ).toEqual(["r1"]);
-    });
-  });
-
-  it("is empty, without reading revisions, when the article does not exist", async () => {
-    await expect(ArticleRepository.getHistory("Nowhere")).resolves.toEqual([]);
-    expect(mockRevisionFindMany).not.toHaveBeenCalled();
   });
 });

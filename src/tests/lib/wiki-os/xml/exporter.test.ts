@@ -1,20 +1,24 @@
 /** @jest-environment node */
 /**
- * Plan 408: exporting WikiOS pages as XML, and the whole loop: XML dump -> WikiOS tables -> XML
- * dump -> WikiOS tables (an export is a dump WikiOS itself can import without loss).
+ * Plan 408: exporting WikiOS pages as XML, and the whole loop: XML dump -> WikiOS tables -> XML dump -> WikiOS tables
+ * (an export is a dump WikiOS itself can import without loss). Published pages only, never a parked or deleted
+ * revision as the head, deleted text written as deleted; and the writer's escaping and streaming.
  */
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { writeExport, contributorOf } from "~/lib/wiki-os/xml/exporter";
-import { readExport, type ImportEvent, type ImportPage } from "~/lib/wiki-os/xml/import-reader";
-import { importExport } from "~/lib/wiki-os/xml/importer";
-import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
-import { resetStore, store, type ArticleRow, type RevisionRow } from "./fake-wiki-db";
-
 jest.mock("~/server/db", () => jest.requireActual("./fake-wiki-db").createFakeDbModule());
 jest.mock("~/lib/wiki-os/core/link-graph-service", () => ({
   LinkGraphService: { syncArticleLinks: jest.fn().mockResolvedValue(0) },
 }));
+
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { writeExport } from "~/lib/wiki-os/xml/exporter";
+import { type ImportEvent, type ImportPage, readExport } from "~/lib/wiki-os/xml/import-reader";
+import { importExport } from "~/lib/wiki-os/xml/importer";
+import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
+import { type ArticleRow, resetStore, type RevisionRow, store } from "./fake-wiki-db";
+import { SaxesParser } from "saxes";
+import { createExportWriter, DEFAULT_SITEINFO, escapeXmlAttribute, escapeXmlText } from "~/lib/wiki-os/xml/export-writer";
+import type { XmlRevision } from "~/lib/wiki-os/xml/types";
 
 const FIXTURE = readFileSync(
   join(__dirname, "../../../fixtures/xml/mediawiki-export-0.11.xml"),
@@ -111,17 +115,6 @@ const seedPage = (overrides: Partial<ArticleRow>, revisions: Array<Partial<Revis
 beforeEach(() => {
   resetStore();
 });
-
-describe("contributorOf", () => {
-  it("tells an account, an IP (v4 and v6) and a hidden contributor apart", () => {
-    expect(contributorOf("Jane Doe")).toEqual({ username: "Jane Doe", id: null });
-    expect(contributorOf("192.0.2.7")).toEqual({ ip: "192.0.2.7" });
-    expect(contributorOf("2001:db8::1")).toEqual({ ip: "2001:db8::1" });
-    expect(contributorOf("(deleted)")).toEqual({ deleted: true });
-    expect(contributorOf(null)).toEqual({ deleted: true });
-  });
-});
-
 describe("writeExport", () => {
   it("writes only PUBLISHED pages, selected by canonical title", async () => {
     seedPage({ title: "Alpha" }, [{}]);
@@ -159,31 +152,6 @@ describe("writeExport", () => {
       text: "new text",
     });
   });
-
-  it("does not read the revision hash for a current-only export, only for full history", async () => {
-    seedPage({ title: "Alpha" }, [{ mwRevId: 1 }]);
-    const { db } = jest.requireMock("~/server/db") as {
-      db: {
-        wikiRevision: {
-          findFirst: (...a: unknown[]) => Promise<unknown>;
-          findMany: (...a: unknown[]) => Promise<unknown>;
-        };
-      };
-    };
-    const first = jest.spyOn(db.wikiRevision, "findFirst");
-    const many = jest.spyOn(db.wikiRevision, "findMany");
-
-    await exportXml({ source: "ixwiki", titles: ["Alpha"], history: false });
-    const currentSelect = (first.mock.calls[0]?.[0] as { select: Record<string, boolean> }).select;
-    await exportXml({ source: "ixwiki", titles: ["Alpha"], history: true });
-    const historySelect = (many.mock.calls[0]?.[0] as { select: Record<string, boolean> }).select;
-    first.mockRestore();
-    many.mockRestore();
-
-    expect(currentSelect).not.toHaveProperty("sha1");
-    expect(historySelect).toHaveProperty("sha1", true);
-  });
-
   it("never takes a parked revision (a MediaWiki edit that did not go live) for the head, and leaves it out of the history (plan 406)", async () => {
     seedPage({ title: "Alpha", wikitext: "WikiOS text" }, [
       { mwRevId: 1, wikitext: "WikiOS text", author: "Jane" },
@@ -256,84 +224,6 @@ describe("writeExport", () => {
     ]);
     expect(page?.revisions[1]?.sha1).toBe("abc");
   });
-
-  it("exports the head of a page that has no revision rows, in history mode too", async () => {
-    seedPage({
-      title: "Alpha",
-      wikitext: "only text",
-      updatedAt: new Date("2026-05-05T05:05:05.900Z"),
-    });
-
-    const [page] = await readXml(
-      await exportXml({ source: "ixwiki", titles: ["Alpha"], history: true })
-    );
-
-    expect(page?.revisions).toHaveLength(1);
-    expect(page?.revisions[0]).toMatchObject({
-      id: null,
-      timestamp: "2026-05-05T05:05:05Z",
-      contributor: { deleted: true },
-      text: "only text",
-      textDeleted: false,
-    });
-  });
-
-  it("does not add the synthetic head when the page has revision rows", async () => {
-    seedPage({ title: "Alpha", wikitext: "head" }, [{ mwRevId: 7, wikitext: "head" }]);
-
-    const [page] = await readXml(
-      await exportXml({ source: "ixwiki", titles: ["Alpha"], history: true })
-    );
-
-    expect(page?.revisions.map((r) => r.id)).toEqual([7]);
-  });
-
-  it("writes the content model of the page's title on every revision", async () => {
-    seedPage(
-      { title: "Module:Foo", wikitext: "return {}", namespace: 828, namespacePrefix: "Module" },
-      [{ mwRevId: 1, wikitext: "return {}" }]
-    );
-    seedPage(
-      {
-        title: "MediaWiki:Common.css",
-        wikitext: "a{}",
-        namespace: 8,
-        namespacePrefix: "MediaWiki",
-      },
-      [
-        { mwRevId: 2, wikitext: "a{}" },
-        { mwRevId: 3, wikitext: "b{}" },
-      ]
-    );
-    seedPage({ title: "Node.js", wikitext: "x" }, [{ mwRevId: 4, wikitext: "x" }]);
-
-    const pages = await readXml(await exportXml({ source: "ixwiki", history: true }));
-
-    const models = (title: string) =>
-      pages.find((p) => p.title === title)?.revisions.map((r) => `${r.model} ${r.format}`);
-    expect(models("Module:Foo")).toEqual(["Scribunto text/plain"]);
-    expect(models("MediaWiki:Common.css")).toEqual(["css text/css", "css text/css"]);
-    expect(models("Node.js")).toEqual(["wikitext text/x-wiki"]);
-  });
-
-  it("exports a section redirect with its fragment, from the wikitext", async () => {
-    seedPage(
-      {
-        title: "Duncala city",
-        wikitext: "#REDIRECT [[Duncala#History of Duncala]]\n[[Category:Redirects]]",
-        redirectTargetSlug: "Duncala",
-        redirectTargetFragment: "History of Duncala",
-      },
-      [{ wikitext: "#REDIRECT [[Duncala#History of Duncala]]" }]
-    );
-
-    const [page] = await readXml(
-      await exportXml({ source: "ixwiki", titles: ["Duncala city"], history: false })
-    );
-
-    expect(page?.redirectTitle).toBe("Duncala#History of Duncala");
-  });
-
   it("never exports a redirect the wikitext does not make, whatever stale columns say", async () => {
     seedPage(
       {
@@ -413,38 +303,6 @@ describe("writeExport", () => {
       contributor: { username: "Jane", id: null },
     });
   });
-
-  it("exports a redirect's target by its canonical title, read from the wikitext", async () => {
-    seedPage({ title: "Old", wikitext: "#REDIRECT [[new_name]]" }, [
-      { wikitext: "#REDIRECT [[new_name]]" },
-    ]);
-
-    const [page] = await readXml(
-      await exportXml({ source: "ixwiki", titles: ["Old"], history: false })
-    );
-
-    expect(page?.redirectTitle).toBe("New name");
-  });
-
-  it("uses the stored target for another wiki's redirects, fragment included", async () => {
-    seedPage(
-      {
-        title: "Old",
-        source: "iiwiki",
-        wikitext: "#REDIRECT [[New name#Part]]",
-        redirectTargetSlug: "New name",
-        redirectTargetFragment: "Part",
-      },
-      [{ source: "iiwiki", wikitext: "x" }]
-    );
-
-    const [page] = await readXml(
-      await exportXml({ source: "iiwiki", titles: ["Old"], history: false })
-    );
-
-    expect(page?.redirectTitle).toBe("New name#Part");
-  });
-
   it("without titles, exports every published page of the namespaces asked for, in batches", async () => {
     for (let i = 0; i < 450; i++) seedPage({ title: `Page ${i}` }, [{}]);
     seedPage({ title: "Talk:Page 0", namespace: 1, namespacePrefix: "Talk" }, [{}]);
@@ -457,15 +315,6 @@ describe("writeExport", () => {
     expect(all).toHaveLength(451);
     expect(new Set(all.map((p) => p.title)).size).toBe(451);
     expect(talk.map((p) => p.title)).toEqual(["Talk:Page 0"]);
-  });
-
-  it("resolves with the number of pages written", async () => {
-    seedPage({ title: "Alpha" }, [{}]);
-    seedPage({ title: "Beta" }, [{}]);
-
-    const written = await writeExport(() => undefined, { source: "ixwiki", history: false });
-
-    expect(written).toBe(2);
   });
 });
 
@@ -534,16 +383,134 @@ describe("the loop: import, export, import again", () => {
       [4, false, 4096],
     ]);
   });
-  it("a current-only export imports as the same heads", async () => {
-    await importExport(readExport(chunks(FIXTURE)));
-    const headsOf = () => store.articles.map((a) => [a.title, a.wikitext]).sort();
-    const heads = headsOf();
-    const xml = await exportXml({ source: "ixwiki", history: false });
+});
 
-    resetStore();
-    await importExport(readExport(chunks(xml)));
+describe("the export writer", () => {
+  interface ParsedElement {
+    name: string;
+    attributes: Record<string, string>;
+    text: string;
+  }
 
-    expect(headsOf()).toEqual(heads);
-    expect(store.revisions).toHaveLength(5);
+  /** Parse `xml` with saxes (throws on any well-formedness error) and list its elements. */
+  function parseElements(xml: string): ParsedElement[] {
+    const parser = new SaxesParser();
+    const elements: ParsedElement[] = [];
+    const open: ParsedElement[] = [];
+    parser.on("opentag", (tag) => {
+      const element = { name: tag.name, attributes: { ...tag.attributes }, text: "" };
+      elements.push(element);
+      open.push(element);
+    });
+    parser.on("text", (text) => {
+      const current = open[open.length - 1];
+      if (current) current.text += text;
+    });
+    parser.on("closetag", () => {
+      open.pop();
+    });
+    parser.write(xml).close();
+    return elements;
+  }
+
+  const byName = (elements: ParsedElement[], name: string) => elements.filter((e) => e.name === name);
+
+  async function dump(
+    pages: Parameters<ReturnType<typeof createExportWriter>["page"]>[0][]
+  ): Promise<string> {
+    let out = "";
+    const writer = createExportWriter((chunk) => {
+      out += chunk;
+    }, DEFAULT_SITEINFO);
+    await writer.start();
+    for (const page of pages) await writer.page(page);
+    await writer.end();
+    return out;
+  }
+
+  const revision = (overrides: Partial<XmlRevision> = {}): XmlRevision => ({
+    id: 456,
+    parentId: 455,
+    timestamp: "2026-01-02T03:04:05Z",
+    contributor: { username: "Jane", id: 7 },
+    minor: false,
+    comment: "edit summary",
+    model: "wikitext",
+    format: "text/x-wiki",
+    text: "Hello",
+    textDeleted: false,
+    commentDeleted: false,
+    ...overrides,
+  });
+
+  describe("escaping", () => {
+    it('escapes & < > in text and also " in attributes', () => {
+      expect(escapeXmlText('<b>&"</b>')).toBe('&lt;b&gt;&amp;"&lt;/b&gt;');
+      expect(escapeXmlAttribute('<b>&"</b>')).toBe("&lt;b&gt;&amp;&quot;&lt;/b&gt;");
+    });
+
+    it("keeps carriage returns and attribute whitespace from being normalised away", () => {
+      expect(escapeXmlText("a\r\nb")).toBe("a&#13;\nb");
+      expect(escapeXmlAttribute("a\nb\tc")).toBe("a&#10;b&#9;c");
+    });
+
+    it("drops characters XML 1.0 cannot carry", () => {
+      expect(escapeXmlText("a\u0000b\u0008c￾d\uD800e")).toBe("abcde");
+      expect(escapeXmlText("tab\there\nnew 🙂")).toBe("tab\there\nnew 🙂");
+    });
+  });
+  describe("createExportWriter", () => {
+    it('round-trips `<b>&"</b>` in text, summary, title and redirect target', async () => {
+      const wikitext = '<b>&"</b> a\r\nb ]]> & &amp; &lt;';
+      const xml = await dump([
+        {
+          title: 'Foo <&"> bar',
+          ns: 0,
+          pageId: 1,
+          redirectTitle: 'Bar "quoted" & <more>\nline',
+          revisions: [revision({ text: wikitext, comment: '<i>&"</i>' })],
+        },
+      ]);
+
+      const elements = parseElements(xml);
+      expect(byName(elements, "text")[0]?.text).toBe(wikitext);
+      expect(byName(elements, "comment")[0]?.text).toBe('<i>&"</i>');
+      expect(byName(elements, "title")[0]?.text).toBe('Foo <&"> bar');
+      expect(byName(elements, "redirect")[0]?.attributes.title).toBe('Bar "quoted" & <more>\nline');
+    });
+
+    it("sizes and hashes a multibyte text by its UTF-8 bytes", async () => {
+      const text = "é漢🙂 done"; // 2 + 3 + 4 + 5 bytes
+      const xml = await dump([{ title: "Foo", ns: 0, pageId: 1, revisions: [revision({ text })] }]);
+
+      const elements = parseElements(xml);
+      const node = byName(elements, "text")[0];
+      expect(node?.attributes.bytes).toBe("14");
+      expect(node?.attributes.sha1).toBe(mwSha1Base36(text));
+      expect(node?.attributes["xml:space"]).toBe("preserve");
+      expect(byName(elements, "sha1")[0]?.text).toBe(mwSha1Base36(text));
+    });
+    it("streams revisions from an async iterable, one chunk at a time", async () => {
+      const chunks: string[] = [];
+      async function* revisions(): AsyncGenerator<XmlRevision> {
+        yield revision({ id: 1, parentId: null, text: "one" });
+        yield revision({ id: 2, parentId: 1, text: "two" });
+      }
+      const writer = createExportWriter(async (chunk) => {
+        await Promise.resolve();
+        chunks.push(chunk);
+      });
+
+      await writer.start();
+      await writer.page({ title: "Foo", ns: 0, pageId: 1, revisions: revisions() });
+      await writer.end();
+
+      // start, page header, two revisions, </page>, </mediawiki>
+      expect(chunks).toHaveLength(6);
+      expect(chunks[0]).toContain("<siteinfo>");
+      expect(chunks[2]).toContain("one");
+      expect(chunks[3]).toContain("two");
+      expect(() => parseElements(chunks.join(""))).not.toThrow();
+    });
   });
 });

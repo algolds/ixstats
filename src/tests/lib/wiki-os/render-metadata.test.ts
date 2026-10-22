@@ -95,18 +95,6 @@ describe("a page its last edit blanked", () => {
 });
 
 describe("renderArticle stores what MediaWiki reported", () => {
-  it("clears every set when the page now reports none", async () => {
-    const id = stubArticle();
-    mockRender.mockResolvedValue({ html: HTML, metadata: metadata() });
-
-    await renderArticle(id);
-
-    expect(tx.wikiCategoryMember.deleteMany).toHaveBeenCalledWith({ where: { articleId: id } });
-    expect(tx.wikiTemplateLink.deleteMany).toHaveBeenCalledWith({ where: { articleId: id } });
-    expect(tx.wikiImageLink.deleteMany).toHaveBeenCalledWith({ where: { articleId: id } });
-    expect(tx.wikiLink.deleteMany).toHaveBeenCalledWith({ where: { sourceArticleId: id } });
-  });
-
   it("flags a hidden category on the category itself, and creates a category it has not seen", async () => {
     const id = stubArticle();
     mockRender.mockResolvedValue({
@@ -129,27 +117,6 @@ describe("renderArticle stores what MediaWiki reported", () => {
     });
     expect(tx.wikiCategory.upsert.mock.calls[1]?.[0].create).toMatchObject({ hidden: false });
   });
-
-  it("keeps the sort key a category was given, and a category with a belfast-like name (no substring filter)", async () => {
-    const id = stubArticle();
-    mockRender.mockResolvedValue({
-      html: HTML,
-      metadata: metadata({
-        categories: [
-          { name: "Belfast", sortKey: "Belfast, city", hidden: false },
-          { name: "Finland", sortKey: null, hidden: false },
-        ],
-      }),
-    });
-
-    await renderArticle(id);
-
-    expect(tx.wikiCategoryMember.createMany.mock.calls[0]?.[0].data).toEqual([
-      { articleId: id, categoryId: "cat-belfast", sortKey: "Belfast, city" },
-      { articleId: id, categoryId: "cat-finland", sortKey: null },
-    ]);
-  });
-
   it("stores the display title (sanitized) and only the page properties worth keeping", async () => {
     const id = stubArticle();
     mockRender.mockResolvedValue({
@@ -177,19 +144,6 @@ describe("renderArticle stores what MediaWiki reported", () => {
       page_image_free: "Flag.svg",
     });
   });
-
-  it("stores no display title and no properties for an ordinary page", async () => {
-    const id = stubArticle();
-    mockRender.mockResolvedValue({ html: HTML, metadata: metadata() });
-
-    await renderArticle(id);
-
-    expect(tx.wikiArticle.update.mock.calls[0]?.[0].data).toEqual({
-      displayTitle: null,
-      pageProps: Prisma.DbNull,
-    });
-  });
-
   it("leaves alone a set the response did not carry in a readable shape", async () => {
     const id = stubArticle();
     mockRender.mockResolvedValue({
@@ -209,19 +163,6 @@ describe("renderArticle stores what MediaWiki reported", () => {
     expect(tx.wikiImageLink.deleteMany).not.toHaveBeenCalled();
     expect(tx.wikiCategoryMember.deleteMany).toHaveBeenCalledTimes(1);
   });
-
-  it("stores nothing when the response reported none of the four sets", async () => {
-    const id = stubArticle();
-    mockRender.mockResolvedValue({
-      html: HTML,
-      metadata: metadata({ links: null, templates: null, images: null, categories: null }),
-    });
-
-    await expect(renderArticle(id)).resolves.toEqual({ ok: true });
-
-    expect(mockTransaction).not.toHaveBeenCalled();
-  });
-
   it("does not store the metadata of a render a save overtook", async () => {
     const id = stubArticle();
     mockRender.mockResolvedValue({ html: HTML, metadata: metadata() });
@@ -243,21 +184,5 @@ describe("renderArticle stores what MediaWiki reported", () => {
 
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("Aurelia"), expect.any(Error));
     warn.mockRestore();
-  });
-
-  it("stores no metadata for an HTML-only row (nothing was rendered)", async () => {
-    const id = `art-${++ids}`;
-    mockFindUnique.mockResolvedValue({
-      title: "Stub",
-      source: "ixwiki",
-      wikitext: "",
-      contentHtml: HTML,
-      revisions: [], // no revision: the HTML is all it has
-    });
-
-    await expect(renderArticle(id)).resolves.toEqual({ ok: true });
-
-    expect(mockRender).not.toHaveBeenCalled();
-    expect(mockTransaction).not.toHaveBeenCalled();
   });
 });

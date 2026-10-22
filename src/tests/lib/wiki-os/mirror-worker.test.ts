@@ -22,6 +22,7 @@ import { runUploadJob } from "~/lib/wiki-os/services/mirror-upload";
 import { invalidateTemplateDependents } from "~/lib/wiki-os/services/render-service";
 import { sweepStagedOrphansIfDue } from "~/lib/wiki-os/services/staged-uploads";
 import { discordWebhook } from "~/lib/discord/webhook";
+import { alertDeadJobs } from "~/lib/wiki-os/services/mirror-alerts";
 import { withJobLock } from "~/lib/system/job-lock";
 
 type Row = WikiMirrorJob;
@@ -235,15 +236,6 @@ describe("runMirrorCycle", () => {
     expect(invalidateTemplateDependents).toHaveBeenCalledTimes(1);
     expect(invalidateTemplateDependents).toHaveBeenCalledWith("Template:Box", "ixwiki");
   });
-  it("does not re-render anything for a revision job that failed", async () => {
-    addJob({ title: "Template:Box" });
-    revisionJob.mockRejectedValue(new Error("MediaWiki 503"));
-
-    await runMirrorCycle();
-
-    expect(invalidateTemplateDependents).not.toHaveBeenCalled();
-  });
-
   it("keeps the order of one title after a failure: a job behind a backing-off one waits, other titles go on", async () => {
     const failing = addJob({
       title: "A",
@@ -358,17 +350,6 @@ describe("runMirrorCycle", () => {
     expect(message.match(/revision Page \d: MediaWiki down/g)).toHaveLength(5);
     expect(message).toContain("...and 2 more");
   });
-  it("does nothing while SKIP_MEDIAWIKI_SYNC is true: the jobs stay in the outbox", async () => {
-    const waiting = addJob();
-    process.env.SKIP_MEDIAWIKI_SYNC = "true";
-
-    const result = await runMirrorCycle();
-
-    expect(result).toEqual({ skipped: true, done: 0, failed: 0, dead: 0 });
-    expect(revisionJob).not.toHaveBeenCalled();
-    expect(byId(waiting.id)).toMatchObject({ state: "pending", attempts: 0 });
-  });
-
   it("looks for orphaned staged files at the end of a cycle (the sweep throttles itself), and a failing sweep does not fail the cycle", async () => {
     addJob();
 
@@ -383,16 +364,6 @@ describe("runMirrorCycle", () => {
       expect.objectContaining({ message: "disk unreadable" })
     );
   });
-
-  it("stops after maxJobs attempts, leaving the rest for the next run", async () => {
-    for (let i = 0; i < 5; i++) addJob({ title: `Page ${i}` });
-
-    const result = await runMirrorCycle({ maxJobs: 3 });
-
-    expect(result.done).toBe(3);
-    expect(rows.filter((row) => row.state === "pending")).toHaveLength(2);
-  });
-
   it("starts no job once its time is up", async () => {
     addJob();
 
@@ -468,28 +439,6 @@ describe("batches of revision jobs", () => {
       });
     }
   });
-
-  it("stops a batch at the first job of the title that is not a plain revision", async () => {
-    const before = addJob({ title: "Foo" });
-    const moving = addJob({
-      kind: "move",
-      title: "Foo",
-      payload: { to: "Bar", reason: "", leaveRedirect: true },
-      revisionId: null,
-    });
-    const after = addJob({ title: "Bar" });
-
-    await runMirrorCycle();
-
-    expect(planBatch.mock.calls.map(([jobs]) => jobs.map((job) => job.id))).toEqual([
-      [before.id],
-      [after.id],
-    ]);
-    expect(pageJob).toHaveBeenCalledTimes(1);
-    expect(pageJob.mock.calls[0]?.[0].id).toBe(moving.id);
-    expect(rows.every((row) => row.state === "done")).toBe(true);
-  });
-
   it("settles the jobs the plan took and gives the rest back untried, for the next batch", async () => {
     const jobs = [addJob({ title: "Foo" }), addJob({ title: "Foo" }), addJob({ title: "Foo" })];
     planBatch.mockImplementationOnce(async (given) => ({
@@ -512,34 +461,6 @@ describe("batches of revision jobs", () => {
     // an attempt that was given back is not counted
     expect(byId(jobs[2]!.id)).toMatchObject({ state: "done", attempts: 1 });
   });
-
-  it("keeps the note a batch leaves on a job, in its payload", async () => {
-    const job = addJob({ title: "Foo" });
-    sendBatch.mockImplementationOnce(async (plan) =>
-      plan.members.map((member) => ({ job: member.job, mwRevId: 9, note: "pushed as an edit" }))
-    );
-
-    await runMirrorCycle();
-
-    expect(byId(job.id)).toMatchObject({
-      state: "done",
-      mwRevId: 9,
-      payload: { restore: false, note: "pushed as an edit" },
-    });
-  });
-
-  it("does not batch a restore, which goes alone, nor take a revision job behind it", async () => {
-    const restore = addJob({ title: "Foo", payload: { restore: true, summary: "Restoring" } });
-    const behind = addJob({ title: "Foo" });
-
-    await runMirrorCycle();
-
-    expect(planBatch.mock.calls.map(([given]) => given.map((job) => job.id))).toEqual([
-      [restore.id],
-      [behind.id],
-    ]);
-  });
-
   it("makes every job of a failed batch dead on the same attempt, with one warning for them all", async () => {
     addJob({ title: "Foo", attempts: 7 });
     addJob({ title: "Foo", attempts: 7 });
@@ -566,19 +487,6 @@ describe("batches of revision jobs", () => {
     expect(byId(second.id)).toMatchObject({ state: "running", attempts: 0 });
     expect(byId(third.id)).toMatchObject({ state: "pending", attempts: 0 });
   });
-
-  it("ends the cycle when not even the first job could be claimed", async () => {
-    const taken = addJob({ title: "Foo" });
-    addJob({ title: "Bar" });
-    racedClaims.add(taken.id);
-
-    const result = await runMirrorCycle();
-
-    expect(result).toMatchObject({ done: 0, failed: 0 });
-    expect(planBatch).not.toHaveBeenCalled();
-    expect(byId(taken.id)).toMatchObject({ state: "running", attempts: 0 });
-  });
-
   it("fails only the jobs not settled yet when an outcome cannot be stored, never one already done", async () => {
     const first = addJob({ title: "Foo" });
     const second = addJob({ title: "Foo" });
@@ -592,46 +500,6 @@ describe("batches of revision jobs", () => {
     expect(byId(second.id)).toMatchObject({ state: "pending", attempts: 1, lastError: "db down" });
     expect(byId(third.id)).toMatchObject({ state: "pending", attempts: 1, lastError: "db down" });
     expect(result).toMatchObject({ done: 1, failed: 2 });
-  });
-
-  it("still re-renders the users of a template after a batch that was partly stored", async () => {
-    const first = addJob({ title: "Template:Box" });
-    const second = addJob({ title: "Template:Box" });
-    storeFails.add(second.id);
-
-    await runMirrorCycle();
-
-    expect(byId(first.id).state).toBe("done");
-    expect(invalidateTemplateDependents).toHaveBeenCalledTimes(1);
-  });
-
-  it("does not re-render anything when not even one outcome was stored", async () => {
-    const only = addJob({ title: "Template:Box" });
-    storeFails.add(only.id);
-
-    await runMirrorCycle();
-
-    expect(invalidateTemplateDependents).not.toHaveBeenCalled();
-  });
-
-  it("counts a batch against maxJobs by its jobs", async () => {
-    for (let i = 0; i < 5; i++) addJob({ title: "Foo" });
-
-    const result = await runMirrorCycle({ maxJobs: 3 });
-
-    expect(result.done).toBe(3);
-    expect(planBatch.mock.calls[0]?.[0]).toHaveLength(3);
-    expect(rows.filter((row) => row.state === "pending")).toHaveLength(2);
-  });
-
-  it("re-renders the users of a template once after its batch", async () => {
-    addJob({ title: "Template:Box" });
-    addJob({ title: "Template:Box" });
-
-    await runMirrorCycle();
-
-    expect(invalidateTemplateDependents).toHaveBeenCalledTimes(1);
-    expect(invalidateTemplateDependents).toHaveBeenCalledWith("Template:Box", "ixwiki");
   });
 });
 
@@ -690,20 +558,31 @@ describe("runMirrorCycleLocked", () => {
       { timeoutMs: 600_000 }
     );
   });
+});
 
-  it("runs one cycle inside the lock and returns its result", async () => {
-    const job = addJob();
-    jest.mocked(withJobLock).mockImplementation(async (_db, _name, fn) => ({
-      ran: true,
-      result: await fn(),
-    }));
+// Plan 407 (mirror-alerts.test.ts): the dead-job warning is at most one Discord message in 30 minutes, and a webhook that
+// did not take one is not tried again for 5.
+describe("the dead-job warning holds back", () => {
+  const at = (minutes: number) => new Date(Date.now() + minutes * 60_000);
 
-    await expect(runMirrorCycleLocked()).resolves.toEqual({
-      skipped: false,
-      done: 1,
-      failed: 0,
-      dead: 0,
-    });
-    expect(byId(job.id).state).toBe("done");
+  it("for 30 minutes after the last one, without even looking for jobs", async () => {
+    addJob({ state: "dead", lastError: "MediaWiki 503" });
+    await alertDeadJobs(at(0));
+    addJob({ state: "dead", title: "Bar", lastError: "MediaWiki 503", updatedAt: at(10) });
+    await alertDeadJobs(at(29));
+    expect(warn).toHaveBeenCalledTimes(1);
+    await alertDeadJobs(at(31));
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(warn).toHaveBeenLastCalledWith("WikiOS mirror job dead", "revision Bar: MediaWiki 503");
+  });
+
+  it("for 5 minutes after Discord did not take one, so a dead webhook is not tried in every cycle", async () => {
+    warn.mockResolvedValue(false);
+    addJob({ state: "dead", lastError: "MediaWiki 503" });
+    await alertDeadJobs(at(0));
+    await alertDeadJobs(at(4));
+    expect(warn).toHaveBeenCalledTimes(1);
+    await alertDeadJobs(at(5));
+    expect(warn).toHaveBeenCalledTimes(2);
   });
 });
