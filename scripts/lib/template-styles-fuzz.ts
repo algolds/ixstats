@@ -1,7 +1,7 @@
 /**
  * Seeded generators of hostile TemplateStyles sheets, and the runner that feeds them to `scopeTemplateStyles` and
  * judges the result with the oracle (plan 415 re-review). Used by the Jest gate (a bounded run with fixed seeds,
- * `src/tests/security/scope-template-styles-oracle.test.ts`) and by the deep manual run
+ * `src/tests/security/scope-template-styles-vectors.test.ts`) and by the deep manual run
  * (`scripts/audit/fuzz-template-styles.ts`, hundreds of thousands of cases).
  *
  * Every generator is deterministic for its seed. Each sheet it makes is run through the scoper with the wiki's

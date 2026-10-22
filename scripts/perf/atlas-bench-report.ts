@@ -1,7 +1,7 @@
 /**
  * scripts/perf/atlas-bench-report.ts - the acceptance table of `bun run perf:atlas` (atlas-bench.ts): one result per
- * target, how it prints, and the exit code. Pure, so it is unit-tested without a database
- * (src/tests/scripts/atlas-bench-report.test.ts).
+ * target, how it prints, and the exit code. Pure; its verdict rules (an unmeasured value never passes, the exit
+ * code) are unit-tested in src/tests/scripts/verification-gates.test.ts.
  *
  * A value that was not measured (NaN, Infinity) fails its target: a broken measurement must not read as a pass.
  * An informational line (`info`) is the one exception to having a target: it prints a number and decides nothing.

@@ -1,7 +1,7 @@
 /**
  * scripts/audit/fuzz-template-styles.ts: a deep run of the exact-oracle fuzzer for the TemplateStyles scoper (plan 415).
  *
- * The Jest gate (`src/tests/security/scope-template-styles-oracle.test.ts`) runs ~20k sheets per generator with fixed
+ * The Jest gate (`src/tests/security/scope-template-styles-vectors.test.ts`) runs ~20k sheets per generator with fixed
  * seeds. This is the same code with the counts up, for a manual pass after any change to
  * `src/lib/utils/scope-template-styles.ts` or when a CSS bypass is reported. Two independent oracles read what the
  * scoper emits, lightningcss (a spec CSS parser) and the @csstools tokenizer. A selector that can match outside
