@@ -4,7 +4,7 @@
  * Scenario: an autoconfirmed member opens Caphiria (head r1), edits it and saves on top of r1. The save stores a
  * revision, marks the view stale, writes one mirror job, tells the page's watchers and queues one render; the render
  * (MediaWiki's HTML is a stand-in) stores the view and the page's link, template and category sets; every reader then
- * gets the sanitized new body and the new categories. The reader walks the history and opens each revision; a save on
+ * gets the sanitized new body and the new categories, and the country and geo intro is the new text at once. The reader walks the history and opens each revision; a save on
  * the stale base is an edit conflict carrying the page as it is; a purge renders the page again without touching its
  * text. Real routers, ArticleRepository, render service, article view, link graph, categories, outbox and
  * notifications run over the in-memory WikiOS tables (Prisma mode).
@@ -43,17 +43,18 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
   ...jest.requireActual("~/lib/wiki-os/adapters/mediawiki/parsoid"),
   renderArticleViaMediaWiki: jest.fn(),
 }));
-jest.mock("~/lib/wiki-os/services/title-cache-eviction", () => ({
-  __esModule: true,
-  evictWikiTitleCaches: jest.fn().mockResolvedValue(undefined),
-}));
+jest.mock("~/lib/wiki-os/services/title-cache-eviction", () => {
+  const actual = jest.requireActual("~/lib/wiki-os/services/title-cache-eviction");
+  return { __esModule: true, evictWikiTitleCaches: jest.fn(actual.evictWikiTitleCaches) };
+});
 
 import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosEditingRouter } from "~/server/api/routers/wikios/editing";
 import { wikiosPageContentRouter } from "~/server/api/routers/wikios/page-content";
 import { wikiosHistoryDiffRouter } from "~/server/api/routers/wikios/history-diff";
 import { renderArticleViaMediaWiki, type RenderMetadata } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
-import { getRevisionWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { getArticleIntro, getRevisionWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { wikiBridgeCache } from "~/lib/wiki-os/adapters/mediawiki/bridge/types";
 import { purgeArticle } from "~/lib/wiki-os/services/purge-service";
 import { evictWikiTitleCaches } from "~/lib/wiki-os/services/title-cache-eviction";
 import { buildViewBundle } from "~/lib/wiki-os/services/render-service";
@@ -119,6 +120,7 @@ afterAll(() => {
 let r1: string;
 beforeEach(() => {
   fake.reset();
+  wikiBridgeCache.clear();
   jest.clearAllMocks();
   jest.mocked(renderArticleViaMediaWiki).mockImplementation(async (wikitext: string) => parse(wikitext));
   tables.user.seed(
@@ -145,6 +147,8 @@ describe("a member edits Caphiria and readers see the new page", () => {
   it("saves on top of r1, renders once, and serves the sanitized body with the render's categories", async () => {
     const loaded = await reading().getWikitext({ title: "Caphiria" });
     expect(loaded).toMatchObject({ wikitext: V1, revisionRef: "5001" });
+    // the country and geo intros read the page through the bridge, which keeps what it read for 30 minutes
+    await expect(getArticleIntro("Caphiria")).resolves.toMatchObject({ text: "Caphiria is a kingdom." });
 
     const saved = await editing().saveWikitext({
       title: "Caphiria",
@@ -185,6 +189,8 @@ describe("a member edits Caphiria and readers see the new page", () => {
     expect(view.contentHtml).toContain("is an empire in");
     expect(view.contentHtml).not.toMatch(/<script|onclick/i);
     expect(view).toMatchObject({ title: "Caphiria", categories: ["Kingdoms"] });
+    // and the intro is the new text at once, not the one the bridge held
+    expect((await getArticleIntro("Caphiria"))?.text).toMatch(/^Caphiria is an empire in Sarpedon/);
   });
 
   it("answers a second save on the stale base with an edit conflict carrying the page as it is now", async () => {

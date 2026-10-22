@@ -1,10 +1,11 @@
 /**
  * title-cache-eviction.ts — forget what every cache holds about one page.
  *
- * A page that was deleted, restored or moved must read as it is now, not as it was up to a day ago:
+ * A page that was edited, deleted, restored or moved must read as it is now, not as it was up to a day ago:
  * the bridge's intro/wikitext cache, the country profile and parsed-infobox cache, the lore scan
  * caches (memory and `external_api_cache`), the geo and countries wiki readers' tRPC cache and the article view
- * cache. Called by `PageManagementService` after the change commits; an inbound-sync archive calls it too.
+ * cache. Called by `PageManagementService` after the change commits, by a save that changed the text
+ * (`ArticleRepository.saveArticle`) and by the inbound sync's fast-forwards and archives.
  * Best effort: a cache that cannot be reached is logged and the others are still cleared, since a failed
  * eviction must not fail the operation that already happened (the entries age out on their TTL).
  */

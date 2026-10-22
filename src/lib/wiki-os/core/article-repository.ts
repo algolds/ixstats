@@ -41,6 +41,20 @@ function retryableWhenBusy(error: unknown): never {
   throw isTransactionBusy(error) ? new PageBusyError() : error;
 }
 
+/**
+ * Forget what every cache holds about a page whose text a save changed: the bridge's intro and wikitext (the
+ * country and geo intros), the country profile, the lore scans and the wiki readers' tRPC cache. Loaded on
+ * demand: the eviction module reaches the article view cache, which reads through this repository. Best effort.
+ */
+async function evictTitleCaches(title: string, source: string, articleId: string): Promise<void> {
+  try {
+    const { evictWikiTitleCaches } = await import("../services/title-cache-eviction");
+    await evictWikiTitleCaches(title, source, articleId);
+  } catch (error) {
+    console.warn("[WikiOS] Evicting the caches of a saved page failed:", error);
+  }
+}
+
 /** `WikiArticle.summary` is a VarChar(500); the excerpt stays under it. */
 const MAX_EXCERPT_LENGTH = 480;
 /** The excerpt is the lead of the article: cleaning more than this is wasted work on a 2 MB page. */
@@ -574,6 +588,7 @@ export class ArticleRepository {
     if (!result.textUnchanged) {
       enqueueRender(result.article.id);
       void invalidateDependents(title, source);
+      void evictTitleCaches(result.article.title, source, result.article.id);
       // watchlist: tell the page's watchers (once each until they visit); the editor is left out.
       void notifyWatchers({
         kind: "edited",

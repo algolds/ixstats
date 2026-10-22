@@ -3,7 +3,7 @@
 /**
  * Scenario: WikiOS and classic MediaWiki edited side by side. An editor changes Caphiria on MediaWiki and an
  * administrator deletes another page there; the inbound cycle fast-forwards Caphiria (rendered again from the new
- * text), archives the deleted page and tells the watchers. A WikiOS member then edits Caphiria: the mirror
+ * text, its intro the new text at once), archives the deleted page and tells the watchers. A WikiOS member then edits Caphiria: the mirror
  * imports the revision under `wikios>Label`, stamps MediaWiki's revision on it, and a second cycle has nothing to do.
  * A MediaWiki edit on the base WikiOS has moved past is parked with one re-push of WikiOS's head, and the next cycle
  * pushes nothing again; the re-push itself coming back is WikiOS's own echo. A page whose revision cannot be read
@@ -51,6 +51,8 @@ import { runAutoSyncCycle } from "~/lib/wiki-os/services/auto-sync-service";
 import { runMirrorCycle } from "~/lib/wiki-os/services/mirror-worker";
 import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
 import { invalidateCsrfToken } from "~/lib/wiki-os/adapters/mediawiki/csrf-cache";
+import { getArticleIntro } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { wikiBridgeCache } from "~/lib/wiki-os/adapters/mediawiki/bridge/types";
 import { renderArticleViaMediaWiki } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import { labelOfImportName } from "~/lib/wiki-os/services/import-label";
 import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
@@ -82,6 +84,7 @@ let site: ReturnType<typeof createFakeMediaWikiSite>;
 
 beforeEach(() => {
   fake.reset();
+  wikiBridgeCache.clear();
   jest.clearAllMocks();
   invalidateCsrfToken();
   process.env.WIKIOS_MEDIAWIKI_API = API_URL;
@@ -127,6 +130,9 @@ afterEach(() => {
 
 describe("WikiOS and MediaWiki edited side by side", () => {
   it("syncs MediaWiki's edits and deletions in, mirrors WikiOS's edits out, and parks a conflict once", async () => {
+    // the country and geo intros read the page through the bridge, which keeps what it read for 30 minutes
+    await expect(getArticleIntro("Caphiria")).resolves.toMatchObject({ text: "Caphiria is a kingdom." });
+
     // 1. on MediaWiki: Alice edits Caphiria, an administrator deletes Old page
     const alice = site.editAs("Alice", "Caphiria", "Caphiria is an empire.");
     site.deletePage("Admin", "Old page");
@@ -144,6 +150,8 @@ describe("WikiOS and MediaWiki edited side by side", () => {
     expect(article("Caphiria")?.htmlSyncedAt).toBeInstanceOf(Date);
     expect((await telemetry()).inboundSyncStatus).toBe("ACTIVE");
     expect(jobs()).toEqual([]); // nothing of MediaWiki's goes back to MediaWiki
+    // the fast-forward evicted the page from the bridge: its intro is Alice's text
+    expect((await getArticleIntro("Caphiria"))?.text).toBe("Caphiria is an empire.");
 
     // 2. in WikiOS: a member with no verified wiki account edits Caphiria; the mirror imports it
     const saved = await ArticleRepository.saveArticle(
@@ -152,6 +160,8 @@ describe("WikiOS and MediaWiki edited side by side", () => {
       "  Kir\n Republic "
     );
     expect(jobs()).toEqual(["revision Caphiria pending"]);
+    await settle();
+    expect((await getArticleIntro("Caphiria"))?.text).toBe("Caphiria is an empire in Sarpedon.");
 
     const first = await runMirrorCycle();
     expect(first).toMatchObject({ done: 1, failed: 0 });
