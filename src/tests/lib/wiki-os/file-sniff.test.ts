@@ -144,40 +144,14 @@ describe("sniffFile: SVG", () => {
     expect(result).toMatchObject({ ok: false, code: "unsafe-svg" });
   });
 
+  // the scanner's own matrix below holds every vector; these go through sniffFile end to end
   const hostile: Array<[string, string]> = [
-    [
-      "a <script> with a namespace prefix",
-      `<svg xmlns:s="http://www.w3.org/2000/svg"><s:script>alert(1)</s:script></svg>`,
-    ],
     ["an event handler", `<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"/>`],
-    [
-      "an event handler on a child, quoted with a single quote",
-      `<svg><rect onclick='x()' width="1"/></svg>`,
-    ],
-    ["a javascript: URL", `<svg><a href="javascript:alert(1)"><rect/></a></svg>`],
     [
       "a javascript: URL spelled with a character reference and a tab",
       `<svg><a href="jav&#x61;&#9;script:alert(1)"><rect/></a></svg>`,
     ],
-    [
-      "an xlink:href to another host",
-      `<svg xmlns:xlink="http://www.w3.org/1999/xlink"><use xlink:href="https://evil.example/a.svg#x"/></svg>`,
-    ],
-    ["an external image", `<svg><image href="https://evil.example/pixel.png"/></svg>`],
-    ["a foreignObject", `<svg><foreignObject><div/></foreignObject></svg>`],
-    ["an animated href", `<svg><a><set attributeName="href" to="javascript:alert(1)"/></a></svg>`],
-    ["an external url() in a style", `<svg><rect style="fill:url(https://evil.example/x)"/></svg>`],
-    ["an @import", `<svg><style>@import url(https://evil.example/x.css);</style></svg>`],
     ["an entity declaration", `<!DOCTYPE svg [<!ENTITY a "aaaa">]><svg>&a;</svg>`],
-    [
-      "an external stylesheet instruction",
-      `<?xml version="1.0"?><?xml-stylesheet href="https://evil.example/x.css"?><svg/>`,
-    ],
-    ["an HTML data: URL", `<svg><a href="data:text/html;base64,PHNjcmlwdD4="><rect/></a></svg>`],
-    [
-      "a data: URL that is not a raster image",
-      `<svg><image href="data:image/svg+xml;base64,PHN2Zy8+"/></svg>`,
-    ],
   ];
 
   it.each(hostile)("refuses an SVG with %s", (_name, text) => {

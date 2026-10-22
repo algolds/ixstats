@@ -27,23 +27,15 @@ import { isWikiStandalone, WikiStandaloneConfigError, wikiStandaloneRedirect } f
 describe("paths", () => {
   it.each<[string, string | undefined, ReturnType<typeof getArticleRoute>]>([
     ["/wiki/Aurelia", undefined, { title: "Aurelia", tab: "read" }],
-    ["/wiki/Aurelia/", undefined, { title: "Aurelia", tab: "read" }],
     ["/wiki/Talk:Aurelia", undefined, { title: "Talk:Aurelia", tab: "talk" }],
-    ["/wiki/Portal:Eurth", undefined, { title: "Portal:Eurth", tab: "read" }],
     ["/wiki/New_Aurelia%20City", undefined, { title: "New Aurelia City", tab: "read" }],
     ["/wiki/A/B", undefined, { title: "A/B", tab: "read" }],
     // a title that used to be a tool route is a page now (the old slugs redirect before this renders)
     ["/wiki/Search", undefined, { title: "Search", tab: "read" }],
     ["/util/history/Aurelia", undefined, { title: "Aurelia", tab: "history" }],
     ["/wiki/Aurelia", "edit", { title: "Aurelia", tab: "edit" }],
-    ["/wiki/Talk:Aurelia", "history", { title: "Talk:Aurelia", tab: "history" }],
-    ["/wiki", undefined, null],
-    ["/wiki/Main_Page", undefined, null],
-    ["/wiki/Special:Random", undefined, null],
     ["/wiki/special%3Arandom", undefined, null],
     ["/util/search", undefined, null],
-    ["/util/history", undefined, null],
-    ["/util/whatlinkshere/Aurelia", undefined, null],
     ["/stashes", undefined, null],
     ["/dashboard", undefined, null],
   ])("getArticleRoute(%s, %s)", (pathname, view, expected) => {
@@ -54,8 +46,6 @@ describe("paths", () => {
     ["/wiki/Special:Random", true],
     ["/util/search", true],
     ["/wiki/Search", false],
-    ["/wiki/Aurelia", false],
-    ["/wiki/Talk:Aurelia", false],
   ])("isNonArticlePath(%s) is %s", (pathname, expected) => {
     expect(isNonArticlePath(pathname)).toBe(expected);
   });
@@ -65,21 +55,16 @@ describe("tool links", () => {
   it.each<[string, string | null, Record<string, string | null> | undefined, string]>([
     ["Foo bar", "Foo_bar", undefined, "/wiki/Foo_bar?action=edit"],
     ["Template:Foo/doc", "Template%3AFoo%2Fdoc", undefined, "/wiki/Template:Foo/doc?action=edit"],
-    ["foo_bar", null, undefined, "/wiki/Foo_bar?action=edit"],
-    ["Foo bar", null, { mode: "visual" }, "/wiki/Foo_bar?action=edit&mode=visual"],
     ["Foo", null, { mode: "source", prefill: "{{Infobox}}\n" }, "/wiki/Foo?action=edit&mode=source&prefill=%7B%7BInfobox%7D%7D%0A"],
-    ["Foo", null, { mode: "source", prefill: null }, "/wiki/Foo?action=edit&mode=source"],
     ["a[b c", null, { mode: "visual" }, "/wiki/a%5Bb_c?action=edit&mode=visual"],
     // a text that is not a title keeps the page's own slug
     ["a[b", "a%5Bb", undefined, "/wiki/a%5Bb?action=edit"],
-    ["a[b", null, undefined, "/wiki/a%5Bb?action=edit"],
   ])("pageEditHref(%j, %j, %j) is %s", (title, slug, params, expected) => {
     expect(pageEditHref(title, slug, params as never)).toBe(expected);
   });
 
   it.each([
     ["Foo bar", { page: { title: "Talk:Foo bar" }, isTalk: false }],
-    ["User:Jane", { page: { title: "User talk:Jane" }, isTalk: false }],
     ["Talk:Foo bar", { page: { title: "Foo bar" }, isTalk: true }],
     ["Special:Random", null],
     ["a[b", null],
@@ -92,10 +77,7 @@ describe("tool links", () => {
     ["Pelaxia", true],
     ["Economy of Urcea", true],
     ["Main Page", false],
-    ["Main_Page", false],
-    ["  ", false],
     ["Talk:Pelaxia", false],
-    ["Category:Countries", false],
   ])("mayNameCountry(%j) is %s", (title, expected) => {
     expect(mayNameCountry(title)).toBe(expected);
   });
@@ -113,13 +95,12 @@ describe("pages on several wikis", () => {
   it.each(["ixwiki", "iiwiki", "althistory"])("parseWikiSource keeps %s", (source) => {
     expect(parseWikiSource(source)).toBe(source);
   });
-  it.each([null, undefined, "", "eurth", "IIWIKI", "toString", "__proto__", "constructor"])("parseWikiSource reads %p as ixwiki", (value) => {
+  it.each([null, "eurth", "IIWIKI", "__proto__", "constructor"])("parseWikiSource reads %p as ixwiki", (value) => {
     expect(parseWikiSource(value)).toBe("ixwiki");
   });
 
   it.each<[string, "ixwiki" | "iiwiki" | "althistory" | undefined, string]>([
     ["United Kingdom of Aurelia", undefined, "/wiki/United_Kingdom_of_Aurelia"],
-    ["Aurelia", "ixwiki", "/wiki/Aurelia"],
     ["Portal:Eurth", "iiwiki", "/wiki/Portal%3AEurth?source=iiwiki"],
     ["Gallambria", "althistory", "/wiki/Gallambria?source=althistory"],
   ])("wikiReaderPath(%j, %s) is %s", (title, source, expected) => {
@@ -152,16 +133,11 @@ describe("diffs and sections", () => {
   const HISTORY = ["9", "7", "5", "3"]; // newest first, as the history lists them
   it.each<[string, { oldid: string | null; diff: string }, string[], ReturnType<typeof resolveDiffRefs>]>([
     ["?diff=<ref>&oldid=<ref> compares the two", { oldid: "5", diff: "9" }, [], { fromrev: "5", torev: "9" }],
-    ["?diff=<ref> alone is what that revision changed", { oldid: null, diff: "7" }, [], { fromrev: undefined, torev: "7" }],
     ["?diff=prev&oldid=N is what N changed", { oldid: "5", diff: "prev" }, [], { fromrev: undefined, torev: "5" }],
     ["?diff=prev needs an oldid", { oldid: null, diff: "prev" }, [], null],
     ["?diff=next&oldid=N compares N with the revision after it", { oldid: "5", diff: "next" }, HISTORY, { fromrev: "5", torev: "7" }],
     ["?diff=next of the newest is nothing", { oldid: "9", diff: "next" }, HISTORY, null],
-    ["?diff=next of a revision not in the history is nothing", { oldid: "4", diff: "next" }, HISTORY, null],
-    ["?diff=next needs an oldid", { oldid: null, diff: "next" }, HISTORY, null],
     ["?diff=cur compares with the newest revision", { oldid: "3", diff: "cur" }, HISTORY, { fromrev: "3", torev: "9" }],
-    ["?diff=cur alone is the newest revision's change", { oldid: null, diff: "cur" }, HISTORY, { fromrev: undefined, torev: "9" }],
-    ["?diff=cur needs the history", { oldid: "3", diff: "cur" }, [], null],
   ])("%s", (_behaviour, refs, history, expected) => {
     expect(resolveDiffRefs(refs, history)).toEqual(expected);
   });

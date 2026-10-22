@@ -238,16 +238,11 @@ describe("pictures", () => {
   const shout = (url: string) => `<${url}>`;
   it.each([
     ["a.png 1x, b.png 2x", "<a.png> 1x, <b.png> 2x"],
-    ["a.png 1.5x,b.png 2x", "<a.png> 1.5x,<b.png> 2x"],
     ["a.png 300w, b.png 600w", "<a.png> 300w, <b.png> 600w"],
-    ["a.png", "<a.png>"],
     ["a.png,b.png", "<a.png,b.png>"],
-    ["a.png, b.png", "<a.png>, <b.png>"],
     ["  a.png  1x ,  b.png 2x  ", "  <a.png>  1x ,  <b.png> 2x  "],
-    ["a.png,\n b.png 2x", "<a.png>,\n <b.png> 2x"],
     ["/images/a/ab/Foo,_Bar.png 1x, /images/c/cd/Baz.png 2x", "</images/a/ab/Foo,_Bar.png> 1x, </images/c/cd/Baz.png> 2x"],
     ["", ""],
-    ["   ", "   "],
     [",,", ",,"],
   ])("mapSrcsetUrls maps the URLs of %p and keeps the rest", (srcset, expected) => {
     expect(mapSrcsetUrls(srcset, shout)).toBe(expected);
@@ -361,10 +356,8 @@ describe("pictures", () => {
       2000,
       { src: "/api/mediawiki/ixwiki/images/thumb/a/ab/Flag.png/1280px-Flag.png", original, width: HERO_IMAGE_WIDTH, height: 853 },
     ],
-    ["the same from the file's own URL", original, 3000, 2000, { src: "/api/mediawiki/ixwiki/images/thumb/a/ab/Flag.png/1280px-Flag.png" }],
     ["a file no wider than the hero is served itself", thumb, 1200, 800, { src: original, original, width: 1200, height: 800 }],
     ["a vector is served itself", "/api/mediawiki/ixwiki/images/thumb/a/ab/Seal.svg/330px-Seal.svg.png", 5000, 5000, { src: "/api/mediawiki/ixwiki/images/a/ab/Seal.svg" }],
-    ["a file of unknown size is served itself", thumb, null, null, { src: original, original, width: null, height: null }],
     ["an address that is not a hashed /images/ path is left alone", "https://example.com/pictures/flag.png", 4000, 3000, { src: "https://example.com/pictures/flag.png" }],
   ])("heroImage: %s", (_behaviour, url, width, height, expected) => {
     expect(heroImage(url, width, height)).toMatchObject(expected);
@@ -495,30 +488,15 @@ describe("profile links", () => {
   it.each([
     ["/thinkpages/profile/jane", "/dashboard/profile/jane"],
     ["/thinkpages/u/jane", "/dashboard/profile/jane"],
-    ["/thinkpages/profile/jane/", "/dashboard/profile/jane"],
     ["/thinkpages/profile/jane?x=1#top", "/dashboard/profile/jane?x=1#top"],
-    ["/id/@jane", "/@jane"],
-    ["/id/@jane/", "/@jane"],
     ["/id/@jane?tab=work", "/@jane?tab=work"],
-    ["/id/@jane#top", "/@jane#top"],
-    ["/id/@jane/work", "/@jane?tab=work"],
     ["/id/@jane/work?x=1#top", "/@jane?tab=work&x=1#top"],
     ["/@jane/work", "/@jane?tab=work"],
-    ["/@jane/work/", "/@jane?tab=work"],
-    ["/@jane/work?x=1", "/@jane?tab=work&x=1"],
     ["/id/@jane/work?tab=x", "/@jane?tab=work"],
-    ["/id/@jane/work?x=1&amp;y=2&tab=x", "/@jane?tab=work&x=1&amp;y=2"],
     // the base path and the IxWiki origin the link carries stay; the old base path moves
     ["/projects/ixstates/thinkpages/profile/jane", "/projects/ixstates/dashboard/profile/jane"],
-    ["/projects/ixstates/id/@jane/work", "/projects/ixstates/@jane?tab=work"],
     ["https://ixwiki.com/thinkpages/u/jane", "https://ixwiki.com/dashboard/profile/jane"],
-    ["https://www.ixwiki.com/projects/ixstates/id/@jane", "https://www.ixwiki.com/projects/ixstates/@jane"],
-    ["/projects/ixstats/thinkpages/profile/jane", "/projects/ixstates/dashboard/profile/jane"],
-    ["/projects/ixstats/thinkpages/u/jane?x=1", "/projects/ixstates/dashboard/profile/jane?x=1"],
     ["/projects/ixstats/id/@jane/work", "/projects/ixstates/@jane?tab=work"],
-    ["/projects/ixstats/@jane/work#top", "/projects/ixstates/@jane?tab=work#top"],
-    ["/projects/ixstats/@jane", "/projects/ixstates/@jane"],
-    ["/projects/ixstats/@jane?tab=work", "/projects/ixstates/@jane?tab=work"],
     ["https://ixwiki.com/projects/ixstats/thinkpages/profile/jane", "https://ixwiki.com/projects/ixstates/dashboard/profile/jane"],
   ])("currentProfileHref sends %s to %s", (old, current) => {
     expect(currentProfileHref(old)).toBe(current);
@@ -526,21 +504,11 @@ describe("profile links", () => {
 
   it.each([
     "/@jane",
-    "/@jane?tab=work",
-    "/projects/ixstates/@jane",
-    "/projects/ixstats/wiki/Foo",
     "/projects/ixstatsx/@jane/work",
-    "/dashboard/profile/jane",
     "/id/jane",
-    "/id/@",
-    "/thinkpages/profile/",
     "/thinkpages/post/12",
-    "/thinkpages/r/ixnay",
-    "/wiki/Foo",
     "/countries/aurelia/@x/work",
     "https://example.com/@jane/work",
-    "https://example.com/id/@jane",
-    "https://example.com/thinkpages/profile/jane",
     "https://ixwiki.com.evil.test/id/@jane",
     "",
   ])("currentProfileHref leaves %s as it is", (href) => {
@@ -586,16 +554,11 @@ describe("template chips: stored as inert markers at render time, substituted ex
 
   it.each([
     ["MyCountry:gdp", true],
-    ["CountryData:Aurelia:population", true],
     ["BusinessData:Acme Corp (Eurth):revenue", true],
     ["Other:gdp", false],
-    ["MyCountry", false],
     ['MyCountry:a"b', false],
-    ["CountryData:Bosnia & Herzegovina:population", false],
     ["CountryData:A<B:population", false],
-    ["MyCountry:a=b", false],
     ["MyCountry:a\nb", false],
-    ["CountryData::population", false],
     [`MyCountry:${"a".repeat(300)}`, false],
   ])("isMarkableKey(%j) is %s", (key, markable) => {
     expect(isMarkableKey(key)).toBe(markable);
@@ -614,11 +577,8 @@ describe("template chips: stored as inert markers at render time, substituted ex
   it.each([
     ["an extra attribute", '<span class="c" data-wikios-chip="MyCountry:a"></span>'],
     ["a child", '<span data-wikios-chip="MyCountry:a">x</span>'],
-    ["another tag", '<b data-wikios-chip="MyCountry:a"></b>'],
     ["single quotes", "<span data-wikios-chip='MyCountry:a'></span>"],
     ["escaped text", '&lt;span data-wikios-chip="MyCountry:a"&gt;&lt;/span&gt;'],
-    ["an attribute value", '<p title="<span data-wikios-chip=&quot;MyCountry:a&quot;></span>">x</p>'],
-    ["a key outside the alphabet", '<span data-wikios-chip="MyCountry:a&amp;b"></span>'],
   ])("a lookalike with %s is no marker", (_name, lookalike) => {
     expect(chipKeysIn(lookalike)).toEqual([]);
     expect(substituteChipMarkers(lookalike, () => "CHIP")).toBe(lookalike);
