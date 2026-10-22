@@ -11,7 +11,7 @@ import { useKeepSelectedInView } from "~/hooks/useKeepSelectedInView";
 
 /**
  * A single choice among 2-5 peer options (view switchers, periods, filters), skinned over Radix
- * RadioGroup (`radiogroup`, arrow keys move and select) or, with `asTabs`, Radix Tabs (`tablist`). The selected segment is
+ * RadioGroup (`radiogroup`, arrow keys, Home and End move and select) or, with `asTabs`, Radix Tabs (`tablist`). The selected segment is
  * marked by a thumb that springs between segments.
  *
  * More than five options scroll horizontally instead of squeezing (`scrollable` overrides). An
@@ -125,6 +125,15 @@ export function SegmentedControl<T extends string = string>({
     onValueChange?.(next as T);
   };
 
+  // Radix moves focus to the first or last enabled radio on Home or End but selects only on the arrows: select there too.
+  const selectEdge = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key !== "Home" && event.key !== "End") return;
+    if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+    const enabled = options.filter((o) => !(disabled || o.disabled));
+    const edge = event.key === "Home" ? enabled[0] : enabled[enabled.length - 1];
+    if (edge) select(edge.value);
+  };
+
   // Keep the selected segment visible when the track scrolls (the track only, never the page).
   const trackRef = React.useRef<HTMLDivElement>(null);
   useKeepSelectedInView(trackRef, {
@@ -216,7 +225,12 @@ export function SegmentedControl<T extends string = string>({
         {content}
       </TabsPrimitive.Trigger>
     ) : (
-      <RadioGroupPrimitive.Item key={option.value} {...segment} data-slot="segmented-control-item">
+      <RadioGroupPrimitive.Item
+        key={option.value}
+        {...segment}
+        data-slot="segmented-control-item"
+        onKeyDown={selectEdge}
+      >
         {content}
       </RadioGroupPrimitive.Item>
     );
