@@ -1,9 +1,9 @@
 /**
- * Shared set-up of the World tab's panel tests (world-panel*.test.tsx): the answers of the mocked queries, a fake
+ * Shared set-up of the World tab's panel tests (world-panel and world-apply): the answers of the mocked queries, a fake
  * generator worker the tests speak for, and the render helpers. The test file mocks `~/trpc/react` (with
  * `fake-map-import`), `useWorldPreview`, `useMapLayerData` and the apply region before importing this.
  */
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import type { FeatureCollection } from "geojson";
 import { api } from "~/trpc/react";
 import { useWorldPreview } from "~/hooks/useWorldPreview";
@@ -129,11 +129,6 @@ export const renderPanel = (props: Partial<React.ComponentProps<typeof WorldPane
 export const lastRequest = () => workers.at(-1)!.posted.at(-1)!;
 export const requestCount = () => workers.reduce((n, w) => n + w.posted.length, 0);
 
-export async function generateFirst() {
-  fireEvent.click(screen.getByRole("button", { name: "Generate preview" }));
-  return lastRequest();
-}
-
 /**
  * The first preview, answered. A change made while a run is in flight waits for it, so a test that then changes
  * something and reads the request it caused starts from an idle worker.
@@ -143,15 +138,3 @@ export function settle() {
   act(() => workers.at(-1)!.say(resultMessage(request.id, { seed: request.seed })));
   return request;
 }
-
-export async function generateSettled() {
-  await generateFirst();
-  return settle();
-}
-
-/** One key press on a slider: the keys commit when they come up. */
-export const step = (name: string, key = "ArrowRight") => {
-  const thumb = screen.getByRole("slider", { name });
-  fireEvent.keyDown(thumb, { key });
-  fireEvent.keyUp(thumb, { key });
-};

@@ -93,7 +93,7 @@ const ixnayLike = generateWorld({ ...WORLD_PRESETS.ixnay, seed: 7 });
 | `nations`     | 7. Politics                             | `seed`, `countryCountRange`, `useMarkovNaming`, keep-borders                                                                                                                                                     |
 | `output`      | 8. Export, slots, packed cells          | `hasIcecaps`, `developmentLevel` (read only after export, by `buildSlots`)                                                                                                                                       |
 
-`planRestart(prev, next)` returns the first stage whose inputs differ (the land mask by identity), and `output` when nothing did. Every stage seeds its own random stream from `seed + offset` and writes only the arrays it owns, so a restarted run equals a full run; `stages.test.ts` pins that for every stage, both seeds, Ixnay and Eurth, with and without a mask, for every single parameter and for chains of changes.
+`planRestart(prev, next)` returns the first stage whose inputs differ (the land mask by identity), and `output` when nothing did. Every stage seeds its own random stream from `seed + offset` and writes only the arrays it owns, so a restarted run equals a full run; `world-invariants.test.ts` pins that with one restart row per stage, with and without a land mask.
 
 The cache holds at most one snapshot per stage, copies of the cell arrays the later stages write: the land snapshot (17 bytes per cell) and the climate snapshot (56; the climate stage rewrites `h`, `isLand` and `elevZone`, so each owns its copy), and for nations the finished graph itself (60, no copy). Restoring copies out of a snapshot and never hands one out. `begin()` marks the cache unusable until `finish()`, so a half-finished run can never be restarted from, and a restart that throws is run again in full once (the worker runner does that; a failed first run is not repeated). The worker also keeps one rasterised land mask per `maskKey` (`<realm slug>:<mapVersion>`) so a realm's mask is not rasterised on every request.
 
@@ -287,14 +287,6 @@ bun run perf:atlas
 
 ### Key Test Suites:
 
-- `mesh.test.ts`: Voronoi mesh density, spatial distribution, and boundary detection.
-- `terrain.test.ts`: Heightmaps, elevation zone assignments, mountain ridges.
-- `coastlines.test.ts`: Feature classification and speck removal.
-- `quality-gate.test.ts`: 9-check quality evaluation; the gate never mutates the graph.
-- `presets.test.ts`: Ixnay/Eurth preset fidelity and regressions from the 2026-10 audit.
-- `integration.test.ts`: Multi-seed end-to-end pipeline validation across seeds `1`, `42`, `100`, `256`, `777`.
-- `multi-seed-audit.test.ts`: 10-seed scientific composite score enforcement ($\ge 85\%$).
-- `generate-to-fit.test.ts`: land mask and kept borders. `polygon-merge.test.ts`: the integer-key merge against the string-key reference. `performance.test.ts`: the cached-mesh slider change within budget.
-- `stages.test.ts`: `planRestart` for every field and a restart equals a full run for every stage. `diagnostics.test.ts`, `raster-draw.test.ts`, `render-png.test.ts`: the diagnostic images, the rasteriser and the PNG layout. `measure-world.test.ts`, `zip-store.test.ts`, `studio-*.test.ts`: the sampler, the zip writer and the Studio's pure modules.
-- `export.test.ts`, `ring-geometry.test.ts`, `ring-smooth.test.ts`: valid exported polygons, shared borders identical, areas within tolerance.
-- `baseline.test.ts`, `land-mask.test.ts`, `relief.test.ts`, `relief-preview.test.ts`, `world-stats.test.ts`, `worker/*`: the pure modules and the runner.
+- `src/tests/lib/worldgen/v2/world-invariants.test.ts`: the generator's corpus. Earth-like, Eurth and Ixnay worlds through per-stage invariants, a restart from every stage equal to a full run, the exported layers (valid rings, shared borders and coasts, slot areas, the antimeridian and the poles, rivers cut at ±180), the slots' baseline, the stats, the PNG, preset fidelity, the 2026-10 audit regressions and the ten-seed quality gate.
+- `src/tests/lib/worldgen/realm-fit-corpus.test.ts`: a world fitted to a realm's map: the land mask, the rasteriser, the sampler, kept borders and the relief, across the seam and round the poles.
+- `src/tests/lib/worldgen/world-apply.test.ts`: the World tab and Studio recipe to the bundle: control and field bounds, stored recipes, which realm may take a world, the worker runner and the zip writer.
