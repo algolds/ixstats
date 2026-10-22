@@ -304,7 +304,8 @@ export const geoEditorBordersRouter = createTRPCRouter({
         return { applied: true, editRequestId: null };
       }
 
-      // Create edit request for review
+      // Create edit request for review: refused now, as the direct path is, if PostGIS finds the border invalid
+      await validateGeometryValid(ctx.db, input.proposedGeometry);
       const editRequest = await ctx.db.mapEditRequest.create({
         data: {
           countryId: feature.countryId ?? "unknown",

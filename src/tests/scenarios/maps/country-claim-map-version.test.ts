@@ -1,7 +1,8 @@
 /** @jest-environment node */
 /**
  * Scenario: on Eurth (a planet of half Earth's radius) a founder redraws an unclaimed region against a player's
- * nation, an admin makes the region a nation, and a border edit filed for review is approved. The border and queue
+ * nation, an admin makes the region a nation, and a border edit filed for review is approved (a self-crossing one is
+ * refused when filed and when approved). The border and queue
  * routers, the linkage router, the geometry check, the realm-scaled area, the map version bump and the live-sync bus
  * are real; the database is map-import-fakes' (a throwing transaction puts every table back), PostGIS answers its two
  * questions (is this valid, what is its area) from the scenario, and the Country outline sync is a spy.
@@ -250,23 +251,35 @@ describe("a region is drawn, checked, made a nation and its border approved", ()
     expect(db.realm.rows[0].mapVersion).toBe(10);
   });
 
-  // KNOWN GAP (reported to the owner 2026-10-21): only the direct path asks PostGIS whether a border is valid. A
-  // border filed for review is stored as filed and approved as stored, so a self-crossing outline reaches the map's
-  // GeoJSON. When submitBorderEdit or approveEdit checks it, this starts failing: drop `.failing`.
-  it.failing(
-    "refuses a self-crossing border filed for review, as the direct path does",
-    async () => {
-      const db = eurth();
-      const filed = await borders(db, "founder").submitBorderEdit({
+  // Regression (2026-10-21): only the direct path asked PostGIS whether a border was valid, so a self-crossing outline
+  // filed for review was stored as filed and approved as stored, reaching the map's GeoJSON. Both are checked now,
+  // approval again because the stored edit can change between filing and review.
+  it("refuses a self-crossing border filed for review, and again on approval, as the direct path does", async () => {
+    const db = eurth();
+    const file = (proposedGeometry: Polygon) =>
+      borders(db, "founder").submitBorderEdit({
         featureId: "east",
         editSubtype: "redraw",
-        proposedGeometry: BOW_TIE as never,
+        proposedGeometry: proposedGeometry as never,
         realm: "eurth",
       });
-      await queue(db, "admin")
-        .approveEdit({ editId: filed.editRequestId! })
-        .catch(() => undefined);
-      expect(region(db, "east").geometry).toEqual(box(2, 4));
-    }
-  );
+    const selfCrossing = {
+      code: "BAD_REQUEST",
+      message: expect.stringContaining("Self-intersection"),
+    };
+
+    await expect(file(BOW_TIE)).rejects.toMatchObject(selfCrossing);
+    expect(db.mapEditRequest.rows).toEqual([]);
+
+    // A good border is filed; by the time the admin reviews it, the stored edit holds a self-crossing one
+    const { editRequestId } = await file(box(3, 5));
+    const edit = (db.mapEditRequest.rows as Row[]).find((r) => r.id === editRequestId)!;
+    edit.proposedData = { geometry: BOW_TIE };
+    await expect(queue(db, "admin").approveEdit({ editId: editRequestId! })).rejects.toMatchObject(
+      selfCrossing
+    );
+    expect(region(db, "east").geometry).toEqual(box(2, 4));
+    expect(edit.status).toBe("pending");
+    expect(db.realm.rows[0].mapVersion).toBe(7);
+  });
 });

@@ -6,6 +6,7 @@ import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { ActivityGenerator } from "~/lib/activity";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
+import { validateGeometryValid } from "~/lib/maps/geo-validation";
 
 const reviewInput = z.object({
   editId: z.string(),
@@ -125,6 +126,8 @@ async function applyBorderAdjust(
       message: "This border edit can no longer be applied: its feature or geometry is missing",
     });
   }
+  // Checked again on approval (it was checked when filed): the stored edit can change before it is reviewed
+  await validateGeometryValid(db, proposed.geometry as Record<string, unknown>);
 
   await db.mapLayer.update({
     where: { id: mapLayer.id },
