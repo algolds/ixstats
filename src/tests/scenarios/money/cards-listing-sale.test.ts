@@ -6,6 +6,10 @@
  * expires through the expiry job; each refunds the stored fee's share. Settlement runs for real (nothing is mocked
  * below the routers), on the in-memory Prisma and then on Postgres, where a cancel races a purchase and two players buy
  * each other's listings at once.
+ *
+ * Folds the listings, listings-end and settle-sale unit suites: what a listing, a purchase and a cancel refuse
+ * (already listed, bound, not yours, a fee or price the player cannot pay, maintenance, the market or earning switched
+ * off, expired, cancelled, your own), each moving nothing, and a sale rolled back whole when its XP fails.
  */
 let mockDb: unknown;
 jest.mock("~/server/db", () => ({
@@ -15,7 +19,7 @@ jest.mock("~/server/db", () => ({
 }));
 jest.mock("~/lib/notifications/api", () => ({ notificationAPI: { create: jest.fn() } }));
 
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { notificationAPI } from "~/lib/notifications/api";
 import { createCallerFactory } from "~/server/api/trpc";
 import { cardMarketListingsRouter } from "~/server/api/routers/card-market/listings";
@@ -327,6 +331,151 @@ describe("cards-listing-sale (memory)", () => {
     expect(
       await market(callerContext(db as never, w.sam)).cancelListing({ listingId: listing.id })
     ).toEqual({ refund: 2.5 });
+  });
+});
+
+describe("cards-listing-sale (memory): what the market refuses", () => {
+  let db: MemoryPrisma;
+  let w: World;
+  const as = (player: Player) => market(callerContext(db as never, player));
+  const setConfig = async (key: string, value: string) => {
+    await db.systemConfig.create({ data: { key, value } });
+    clearEconomyCaches();
+  };
+  const copy = (id: string) =>
+    db.cardOwnership.findUniqueOrThrow({
+      where: { id },
+      select: { ownerId: true, isLocked: true },
+    });
+
+  beforeEach(async () => {
+    db = createMemoryPrisma();
+    mockDb = db;
+    w = await seed(db as never, "m-");
+  });
+
+  it.each<[string, () => Promise<unknown>, (w: World) => Player, object]>([
+    [
+      "a copy that is already listed or in a trade",
+      () => db.cardOwnership.update({ where: { id: "m-own1" }, data: { isLocked: true } }),
+      (w) => w.sam,
+      { code: "CONFLICT" },
+    ],
+    [
+      "a bound card's copy",
+      () => db.card.update({ where: { id: "m-card" }, data: { isBound: true } }),
+      (w) => w.sam,
+      { code: "PRECONDITION_FAILED" },
+    ],
+    ["another player's copy", async () => undefined, (w) => w.bea, { code: "NOT_FOUND" }],
+    [
+      "with a fee the seller cannot pay",
+      () => db.myVault.update({ where: { userId: "m-sam" }, data: { credits: 2 } }),
+      (w) => w.sam,
+      { code: "BAD_REQUEST", message: expect.stringMatching(/^Insufficient credits/) },
+    ],
+    [
+      "in maintenance",
+      () => setConfig("vault_isMaintenanceMode", "true"),
+      (w) => w.sam,
+      { code: "BAD_REQUEST" },
+    ],
+    [
+      "while the market is switched off",
+      () => setConfig("vault_isAuctionsEnabled", "false"),
+      (w) => w.sam,
+      { code: "BAD_REQUEST" },
+    ],
+  ])("refuses to list %s, charging and listing nothing", async (_label, make, seller, refusal) => {
+    await make();
+    const before = await copy(w.copies[0]);
+    await expect(
+      as(seller(w)).createListing({ ownershipId: w.copies[0], price: 500 })
+    ).rejects.toMatchObject(refusal);
+    expect(await copy(w.copies[0])).toEqual(before);
+    expect(await db.cardListing.count()).toBe(0);
+    expect(await ledgerOf(db as never, w.sam.id)).toEqual([]);
+  });
+
+  it.each<[string, (listingId: string) => Promise<unknown>, (w: World) => Player, object]>([
+    ["the buyer's own listing", async () => undefined, (w) => w.sam, { code: "BAD_REQUEST" }],
+    [
+      "a listing that has expired",
+      (id) =>
+        db.cardListing.update({ where: { id }, data: { expiresAt: new Date(Date.now() - 1000) } }),
+      (w) => w.bea,
+      { code: "NOT_FOUND" },
+    ],
+    [
+      "a listing its seller cancelled",
+      (id) => as(w.sam).cancelListing({ listingId: id }),
+      (w) => w.bea,
+      { code: "NOT_FOUND" },
+    ],
+    [
+      "with credits the buyer lacks",
+      () => db.myVault.update({ where: { userId: "m-bea" }, data: { credits: 100 } }),
+      (w) => w.bea,
+      { code: "BAD_REQUEST", message: expect.stringMatching(/^Insufficient credits/) },
+    ],
+    [
+      "while the market is switched off",
+      () => setConfig("vault_isAuctionsEnabled", "false"),
+      (w) => w.bea,
+      { code: "BAD_REQUEST" },
+    ],
+    [
+      "while earning is switched off, so the seller could not be paid",
+      () => setConfig("vault_isEarningEnabled", "false"),
+      (w) => w.bea,
+      { code: "BAD_REQUEST" },
+    ],
+  ])("refuses to buy %s, moving nothing", async (_label, make, buyer, refusal) => {
+    const listing = await as(w.sam).createListing({ ownershipId: w.copies[0], price: 500 });
+    await make(listing.id);
+    const credits = await creditsOf(db as never, [w.sam.id, w.bea.id]);
+    await expect(as(buyer(w)).buyListing({ listingId: listing.id })).rejects.toMatchObject(refusal);
+    expect(await creditsOf(db as never, [w.sam.id, w.bea.id])).toEqual(credits);
+    expect((await copy(w.copies[0])).ownerId).toBe(w.sam.id);
+    expect(await db.cardTransferEvent.count({ where: { action: "LISTING_SALE" } })).toBe(0);
+    expect(await ledgerOf(db as never, w.bea.id)).toEqual([]);
+  });
+
+  it("rolls the whole sale back when the copy's XP cannot be granted", async () => {
+    const listing = await as(w.sam).createListing({ ownershipId: w.copies[0], price: 500 });
+    // The purchase's one transaction: its client's XP write fails, after the claim, the charge and the move
+    const realTx = db.$transaction.bind(db);
+    jest.spyOn(db, "$transaction").mockImplementationOnce(((
+      work: (tx: Prisma.TransactionClient) => Promise<unknown>
+    ) =>
+      realTx(async (tx) => {
+        jest.spyOn(tx.cardExperienceEvent, "create").mockRejectedValueOnce(new Error("disk full"));
+        return work(tx);
+      })) as never);
+    await expect(as(w.bea).buyListing({ listingId: listing.id })).rejects.toThrow();
+    expect(await copy(w.copies[0])).toEqual({ ownerId: w.sam.id, isLocked: true });
+    expect(await creditsOf(db as never, [w.bea.id])).toEqual({ [w.bea.id]: 2000 });
+    expect(
+      await db.cardListing.findUniqueOrThrow({
+        where: { id: listing.id },
+        select: { status: true },
+      })
+    ).toEqual({ status: "ACTIVE" });
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("refuses to cancel another player's listing, refunding nothing", async () => {
+    const listing = await as(w.sam).createListing({ ownershipId: w.copies[0], price: 500 });
+    await expect(as(w.bea).cancelListing({ listingId: listing.id })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect(
+      await db.cardListing.findUniqueOrThrow({
+        where: { id: listing.id },
+        select: { status: true },
+      })
+    ).toEqual({ status: "ACTIVE" });
+    expect((await ledgerOf(db as never, w.sam.id)).map((r) => r.type)).toEqual(["SPEND_MARKET"]);
   });
 });
 
