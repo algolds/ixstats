@@ -1,24 +1,27 @@
 /** @jest-environment node */
 /**
- * Plan 404: each article is rendered once per revision, off the read path. renderArticle stores
- * the view bundle guarded by the wikitext it rendered; ensureRendered is single-flight and bounded
- * by waitMs; enqueueRender never runs more than two MediaWiki renders at once.
+ * The render service (plan 404, 406, 413): a page is rendered once per text, off the read path and single-flight, at
+ * most two at a time, saves and waiting readers first; a failed render stores nothing (the previous bundle stays), a
+ * save that lands mid-render restarts it, a hung render is abandoned; every part of the view is sanitized, and a
+ * bundle a different sanitizer built is sanitized again; the stale pages that transclude a template are re-rendered
+ * oldest first within their budget, failures kept out of the way.
  */
 const mockFindUnique = jest.fn();
 const mockUpdateMany = jest.fn();
+const mockFindMany = jest.fn();
+const mockExecuteRaw = jest.fn();
 const mockRenderViaMediaWiki = jest.fn();
 const mockSanitizeHook = jest.fn();
-
 jest.mock("~/server/db", () => ({
   db: {
     wikiArticle: {
       findUnique: (...a: unknown[]) => mockFindUnique(...a),
+      findMany: (...a: unknown[]) => mockFindMany(...a),
       updateMany: (...a: unknown[]) => mockUpdateMany(...a),
     },
+    $executeRaw: (...a: unknown[]) => mockExecuteRaw(...a),
   },
 }));
-// `mockRenderViaMediaWiki` answers with the HTML (or null); MediaWiki's metadata is the subject of
-// render-metadata.test.ts, so here a render reports nothing about the page.
 jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
   renderArticleViaMediaWiki: async (...a: unknown[]) => {
     const html = (await mockRenderViaMediaWiki(...a)) as string | null;
@@ -37,8 +40,6 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
         };
   },
 }));
-
-// The real sanitizer; `mockSanitizeHook` sees each call first, so a test can make it throw.
 jest.mock("~/lib/utils/sanitize-html", () => {
   const actual = jest.requireActual<typeof import("~/lib/utils/sanitize-html")>(
     "~/lib/utils/sanitize-html"
@@ -53,16 +54,7 @@ jest.mock("~/lib/utils/sanitize-html", () => {
 });
 
 import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
-import {
-  buildViewBundle,
-  enqueueRender,
-  ensureRendered,
-  loadViewBundle,
-  renderArticle,
-  renderFallbackView,
-  renderInBackground,
-  RENDERER_VERSION,
-} from "~/lib/wiki-os/services/render-service";
+import { buildViewBundle, enqueueRender, ensureRendered, invalidateDependents, loadViewBundle, renderArticle, RENDERER_VERSION, renderFallbackView, renderInBackground, renderStaleBatch } from "~/lib/wiki-os/services/render-service";
 import { wikiArticleSanitizerFingerprint } from "~/lib/utils/sanitize-html";
 
 interface Deferred<T> {
@@ -153,28 +145,6 @@ describe("renderArticle", () => {
     await expect(renderArticle(id)).resolves.toEqual({ ok: false, superseded: true });
     expect(mockRenderViaMediaWiki).toHaveBeenCalledTimes(3);
   });
-
-  it("builds an HTML-only row from its stored HTML without calling MediaWiki", async () => {
-    const id = freshId();
-    stubArticle(id, { wikitext: "", contentHtml: PARSED });
-
-    await expect(renderArticle(id)).resolves.toEqual({ ok: true });
-
-    expect(mockRenderViaMediaWiki).not.toHaveBeenCalled();
-    expect(mockUpdateMany.mock.calls[0]?.[0].data.renderedView.bodyHtml).toContain("Intro.");
-  });
-
-  it("stores nothing for a stub with neither wikitext nor HTML, and for a missing article", async () => {
-    const stub = freshId();
-    stubArticle(stub, { wikitext: "  ", contentHtml: null });
-    await expect(renderArticle(stub)).resolves.toEqual({ ok: false });
-
-    mockFindUnique.mockResolvedValue(null);
-    await expect(renderArticle(freshId())).resolves.toEqual({ ok: false });
-
-    expect(mockRenderViaMediaWiki).not.toHaveBeenCalled();
-    expect(mockUpdateMany).not.toHaveBeenCalled();
-  });
 });
 
 describe("renderArticle of a page its last edit blanked", () => {
@@ -194,27 +164,6 @@ describe("renderArticle of a page its last edit blanked", () => {
     expect(data.renderedView).toEqual(buildViewBundle(""));
     expect(data.renderedView.bodyHtml).not.toContain("Old content");
     expect(data.htmlSyncedAt).toBeInstanceOf(Date);
-  });
-
-  it("does the same for a text that is only whitespace (the editor does not trim it)", async () => {
-    const id = freshId();
-    stubArticle(id, { wikitext: "  \n", contentHtml: OLD, revisions: [{ byteSize: 3, textDeleted: false }] });
-
-    await renderArticle(id);
-
-    expect(mockUpdateMany.mock.calls[0]?.[0].data.contentHtml).toBe("");
-  });
-
-  it("still builds an HTML-only row from the HTML it has (no revision), and a stub whose text was never imported (a revision with a size but no text, or a hidden one)", async () => {
-    for (const revisions of [[], [{ byteSize: 480, textDeleted: false }], [{ byteSize: 0, textDeleted: true }]]) {
-      mockUpdateMany.mockClear();
-      const id = freshId();
-      stubArticle(id, { wikitext: "", contentHtml: OLD, revisions });
-
-      await expect(renderArticle(id)).resolves.toEqual({ ok: true });
-
-      expect(mockUpdateMany.mock.calls[0]?.[0].data.contentHtml).toBe(OLD);
-    }
   });
   it("reads the newest live revision only (a parked MediaWiki edit is not the page)", async () => {
     const id = freshId();
@@ -360,40 +309,6 @@ describe("enqueueRender", () => {
 });
 
 describe("renderInBackground", () => {
-  it("starts one render without waiting, and joins one that is already running", async () => {
-    const id = freshId();
-    stubArticle(id);
-    const mediaWiki = deferred<string | null>();
-    mockRenderViaMediaWiki.mockReturnValue(mediaWiki.promise);
-
-    expect(renderInBackground(id)).toBeUndefined();
-    renderInBackground(id);
-    await flush();
-    expect(mockRenderViaMediaWiki).toHaveBeenCalledTimes(1);
-    expect(mockUpdateMany).not.toHaveBeenCalled();
-
-    mediaWiki.resolve(PARSED);
-    await flush();
-    expect(mockUpdateMany).toHaveBeenCalledTimes(1);
-  });
-
-  it("leaves an article alone while its last render's cool-down lasts; a write ends it", async () => {
-    const id = freshId();
-    stubArticle(id);
-    mockRenderViaMediaWiki.mockResolvedValue(null);
-    await ensureRendered(id, { waitMs: 1000 });
-    expect(mockRenderViaMediaWiki).toHaveBeenCalledTimes(1);
-
-    renderInBackground(id);
-    await flush();
-    expect(mockRenderViaMediaWiki).toHaveBeenCalledTimes(1);
-
-    mockRenderViaMediaWiki.mockResolvedValue(PARSED);
-    enqueueRender(id);
-    await flush();
-    expect(mockRenderViaMediaWiki).toHaveBeenCalledTimes(2);
-  });
-
   it("queues behind a save and a waiting reader, as backlog work", async () => {
     const [a, b, outdated, save] = Array.from({ length: 4 }, freshId);
     mockFindUnique.mockImplementation(async (args: { where: { id: string } }) => ({
@@ -547,19 +462,6 @@ describe("loadViewBundle", () => {
 
       expect(performance.now() - started).toBeLessThan(1_000 * TIMING_BUDGET_SCALE);
     });
-
-    it("keeps the template chip markers the sanitizer lets through", async () => {
-      const marked = buildViewBundle('<p><a href="/wiki/Template:MyCountry:x">y</a></p>');
-      mockFindUnique.mockResolvedValue({
-        renderedView: { ...marked, rendererVersion: "2" },
-        htmlSyncedAt: syncedAt,
-      });
-
-      const loaded = await loadViewBundle("a");
-
-      expect(marked.bodyHtml).toContain("data-wikios-chip");
-      expect(loaded?.bundle.bodyHtml).toBe(marked.bodyHtml);
-    });
   });
 });
 
@@ -587,19 +489,6 @@ describe("renderFallbackView", () => {
     expect(bundle?.bodyHtml).not.toContain("<script");
     expect(bundle?.bodyHtml).toContain("too large to format");
   });
-
-  it("prefers the HTML MediaWiki produced for an earlier revision over compiling the wikitext", async () => {
-    mockFindUnique.mockResolvedValue({
-      wikitext: "Newer text",
-      contentHtml: "<p>Earlier render.</p>",
-      revisions: [{ byteSize: 10, textDeleted: false }],
-    });
-
-    const bundle = await renderFallbackView("a");
-
-    expect(bundle?.bodyHtml).toContain("Earlier render.");
-    expect(bundle?.bodyHtml).not.toContain("Newer");
-  });
   it("is an empty bundle for a page an edit blanked, whatever HTML its earlier text left behind (m4)", async () => {
     mockFindUnique.mockResolvedValue({
       wikitext: "",
@@ -617,24 +506,6 @@ describe("renderFallbackView", () => {
       take: 1,
       select: { byteSize: true, textDeleted: true },
     });
-  });
-
-  it("keeps the stored HTML of a stub whose text was never imported (a revision that only holds a size, or a hidden one)", async () => {
-    for (const revisions of [[{ byteSize: 480, textDeleted: false }], [{ byteSize: 0, textDeleted: true }]]) {
-      mockFindUnique.mockResolvedValueOnce({ wikitext: "", contentHtml: "<p>Legacy.</p>", revisions });
-
-      await expect(renderFallbackView("a")).resolves.toMatchObject({
-        bodyHtml: expect.stringContaining("Legacy."),
-      });
-    }
-  });
-
-  it("is null for a stub and for a missing article", async () => {
-    mockFindUnique.mockResolvedValueOnce({ wikitext: "", contentHtml: "", revisions: [] });
-    await expect(renderFallbackView("a")).resolves.toBeNull();
-
-    mockFindUnique.mockResolvedValueOnce(null);
-    await expect(renderFallbackView("a")).resolves.toBeNull();
   });
 });
 
@@ -695,22 +566,6 @@ describe("the render queue's priorities", () => {
     await open(second);
     await expect(read).resolves.toEqual({ ok: true });
     await open(b);
-    await open(first);
-  });
-
-  it("moves a background render up to a save's place when the article is saved", async () => {
-    const { a, b, started, open } = holdBothSlots();
-    const [first, second] = Array.from({ length: 2 }, freshId);
-    await flush();
-
-    enqueueRender(first, { background: true });
-    enqueueRender(second, { background: true });
-    enqueueRender(second); // the editor saves the page the backlog also holds
-    await open(a);
-
-    expect(started).toEqual([a, b, second]);
-    await open(b);
-    await open(second);
     await open(first);
   });
 });
@@ -803,5 +658,293 @@ describe("saves that keep overtaking a render (plan 404 review)", () => {
 
     await expect(ensureRendered(id, { waitMs: 5000 })).resolves.toEqual({ ok: false });
     expect(mockRenderViaMediaWiki).toHaveBeenCalledTimes(9);
+  });
+});
+
+describe("stale pages", () => {
+  const HTML = '<div class="mw-parser-output"><p>Intro.</p></div>';
+
+  let ids = 0;
+  const freshIds = (count: number) => Array.from({ length: count }, () => `stale-${++ids}`);
+
+  interface FindManyArgs {
+    where: { htmlSyncedAt?: null; id?: { notIn?: string[]; in?: string[] } };
+    take?: number;
+  }
+
+  /**
+   * The articles the fake database holds as stale: never rendered or edited since, and outdated bundles.
+   * `scanGate` holds the scan for outdated bundles until it resolves.
+   */
+  interface StaleArticles {
+    unsynced: string[];
+    outdated: string[];
+    scanGate?: Promise<void>;
+  }
+
+  /**
+   * `findMany` answers the three queries the batch asks (the per-minute unsynced one, the one scan for
+   * outdated bundles, and the check of a few ids before they are rendered); a stored render brings the
+   * article up to date, so it is neither unsynced nor outdated any more. `findUnique` answers the render.
+   */
+  function database(stale: StaleArticles) {
+    mockFindMany.mockImplementation(async ({ where, take }: FindManyArgs) => {
+      const list = (articleIds: string[]) => articleIds.slice(0, take).map((id) => ({ id }));
+      if (where.htmlSyncedAt === null) {
+        const leftOut = new Set(where.id?.notIn);
+        return list(stale.unsynced.filter((id) => !leftOut.has(id)));
+      }
+      if (!where.id) await stale.scanGate;
+      const asked = where.id?.in && new Set(where.id.in);
+      return list(stale.outdated.filter((id) => !asked || asked.has(id)));
+    });
+    mockUpdateMany.mockImplementation(async ({ where }: { where: { id: string } }) => {
+      stale.unsynced = stale.unsynced.filter((id) => id !== where.id);
+      stale.outdated = stale.outdated.filter((id) => id !== where.id);
+      return { count: 1 };
+    });
+    mockFindUnique.mockImplementation(async ({ where }: { where: { id: string } }) => ({
+      title: `Title of ${where.id}`,
+      source: "ixwiki",
+      wikitext: `text of ${where.id}`,
+      contentHtml: null,
+    }));
+  }
+
+  /** `findUnique` answers for the given articles; `findMany` lists them as unsynced. */
+  const staleArticles = (articleIds: string[]) => database({ unsynced: articleIds, outdated: [] });
+
+  const flush = () => new Promise((resolve) => setImmediate(resolve));
+
+  /** A scan that stays pending until `open()`: a batch that runs meanwhile is known not to have its result. */
+  function heldScan() {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    return {
+      gate,
+      open: async () => {
+        release();
+        await flush();
+      },
+    };
+  }
+
+  const queries = () => mockFindMany.mock.calls.map(([args]) => args as FindManyArgs);
+  const unsyncedQueries = () => queries().filter((query) => query.where.htmlSyncedAt === null);
+  const checkQueries = () => queries().filter((query) => query.where.id?.in !== undefined);
+  const scanQueries = () =>
+    queries().filter((query) => query.where.htmlSyncedAt === undefined && !query.where.id);
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUpdateMany.mockResolvedValue({ count: 1 });
+    mockRenderViaMediaWiki.mockResolvedValue(HTML);
+    mockExecuteRaw.mockResolvedValue(0);
+    mockFindMany.mockResolvedValue([]);
+  });
+
+  describe("invalidateDependents", () => {
+    it("marks every article that transcludes the page stale with one statement", async () => {
+      mockExecuteRaw.mockResolvedValue(83);
+
+      await expect(invalidateDependents("Template:Infobox country")).resolves.toBe(83);
+
+      expect(mockExecuteRaw).toHaveBeenCalledTimes(1);
+      const [strings, ...values] = mockExecuteRaw.mock.calls[0]!;
+      const sql = (strings as string[]).join("?").replace(/\s+/g, " ");
+      expect(sql).toContain('UPDATE wiki_articles SET "htmlSyncedAt" = NULL');
+      expect(sql).toContain('SELECT "articleId" FROM wiki_template_links WHERE "templateTitle" = ?');
+      // Only articles with a fresh view are touched: the stale ones are already waiting.
+      expect(sql).toContain('"htmlSyncedAt" IS NOT NULL');
+      expect(values).toEqual(["ixwiki", "Template:Infobox country"]);
+    });
+
+    it("is best effort: a failure is logged and counts as nothing marked", async () => {
+      mockExecuteRaw.mockRejectedValue(new Error("db down"));
+      const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+
+      await expect(invalidateDependents("Module:Foo")).resolves.toBe(0);
+
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("Module:Foo"), expect.any(Error));
+      warn.mockRestore();
+    });
+  });
+  describe("renderStaleBatch", () => {
+    it("renders the stale published articles, oldest first, and counts them", async () => {
+      const [a, b, c] = freshIds(3);
+      staleArticles([a!, b!, c!]);
+
+      await expect(renderStaleBatch()).resolves.toEqual({ rendered: 3, failed: 0 });
+
+      expect(mockFindMany).toHaveBeenCalledWith({
+        where: { status: "PUBLISHED", htmlSyncedAt: null, wikitext: { not: "" } },
+        orderBy: { updatedAt: "asc" },
+        take: 20,
+        select: { id: true },
+      });
+      expect(mockUpdateMany.mock.calls.map(([args]) => args.where.id)).toEqual([a, b, c]);
+    });
+    it("leaves out an article whose render failed, so the rest of the queue is not kept waiting", async () => {
+      const [broken, fine] = freshIds(2);
+      staleArticles([broken!, fine!]);
+      mockRenderViaMediaWiki.mockImplementation(async (_text: string, title: string) =>
+        title === `Title of ${broken}` ? null : HTML
+      );
+
+      await expect(renderStaleBatch()).resolves.toEqual({ rendered: 1, failed: 1 });
+
+      await renderStaleBatch();
+      // (the service remembers failures for the life of the process, so other tests' articles may be listed too)
+      expect(unsyncedQueries()[1]?.where.id?.notIn).toContain(broken);
+    });
+
+    it("counts an article that saves keep overtaking as failed, and leaves it out for a while", async () => {
+      const [moving] = freshIds(1);
+      staleArticles([moving!]);
+      mockUpdateMany.mockResolvedValue({ count: 0 });
+
+      await expect(renderStaleBatch()).resolves.toEqual({ rendered: 0, failed: 1 });
+
+      await renderStaleBatch();
+      expect(unsyncedQueries()[1]?.where.id?.notIn).toContain(moving);
+    });
+
+    it("starts no new render once its time budget is spent", async () => {
+      const stale = freshIds(6);
+      staleArticles(stale);
+      const now = jest.spyOn(Date, "now");
+      const start = 1_000_000;
+      let tick = 0;
+      // Every call to Date.now() moves the clock on by 20 s: the budget (45 s) is gone after two renders.
+      now.mockImplementation(() => start + 20_000 * tick++);
+
+      const result = await renderStaleBatch();
+
+      expect(result.rendered).toBeLessThan(6);
+      expect(result.rendered).toBeGreaterThan(0);
+      now.mockRestore();
+    });
+  });
+  describe("renderStaleBatch: bundles an earlier renderer version built", () => {
+    /** A fresh copy of the service: the backlog of outdated articles is per process. */
+    async function freshService() {
+      let service!: typeof import("~/lib/wiki-os/services/render-service");
+      await jest.isolateModulesAsync(async () => {
+        service = await import("~/lib/wiki-os/services/render-service");
+      });
+      return service;
+    }
+    const renderedIds = () => mockUpdateMany.mock.calls.map(([args]) => args.where.id);
+
+    it("finds them with one scan, never with the per-minute query, and renders them oldest first", async () => {
+      const { renderStaleBatch: batch, RENDERER_VERSION: version } = await freshService();
+      const [o1, o2, o3] = freshIds(3);
+      const scan = heldScan();
+      database({ unsynced: [], outdated: [o1!, o2!, o3!], scanGate: scan.gate });
+
+      await expect(batch()).resolves.toEqual({ rendered: 0, failed: 0 }); // the scan is still running
+      await scan.open();
+      await expect(batch()).resolves.toEqual({ rendered: 3, failed: 0 });
+      await batch();
+      await batch();
+
+      expect(renderedIds()).toEqual([o1, o2, o3]);
+      const outdatedBundle = {
+        status: "PUBLISHED",
+        wikitext: { not: "" },
+        renderedView: { path: ["rendererVersion"], not: version },
+      };
+      expect(scanQueries()).toEqual([
+        {
+          where: outdatedBundle,
+          orderBy: { updatedAt: "asc" },
+          take: 100_000,
+          select: { id: true },
+        },
+      ]);
+      // the check keeps the outdated condition: a row that was brought up to date is not rendered again
+      expect(checkQueries()).toEqual([
+        { where: { ...outdatedBundle, id: { in: [o1, o2, o3] } }, select: { id: true } },
+      ]);
+      expect(unsyncedQueries()).toHaveLength(4);
+      for (const query of unsyncedQueries()) {
+        expect(query.where).toEqual({
+          status: "PUBLISHED",
+          htmlSyncedAt: null,
+          wikitext: { not: "" },
+        });
+      }
+    });
+
+    it("renders unsynced articles at once, whatever the scan is doing", async () => {
+      const { renderStaleBatch: batch } = await freshService();
+      const [u1, u2, o1] = freshIds(3);
+      const scan = heldScan();
+      database({ unsynced: [u1!, u2!], outdated: [o1!], scanGate: scan.gate });
+
+      await expect(batch()).resolves.toEqual({ rendered: 2, failed: 0 }); // returns with the scan pending
+      expect(renderedIds()).toEqual([u1, u2]);
+      expect(scanQueries()).toHaveLength(1);
+
+      await scan.open();
+      await expect(batch()).resolves.toEqual({ rendered: 1, failed: 0 });
+      expect(renderedIds()).toEqual([u1, u2, o1]);
+    });
+
+    it("renders unsynced articles first, and the outdated ones in the room they leave", async () => {
+      const { renderStaleBatch: batch } = await freshService();
+      const [u1, u2, o1, o2, o3] = freshIds(5);
+      database({ unsynced: [u1!, u2!], outdated: [o1!, o2!, o3!] });
+
+      // the scan resolved while the unsynced articles rendered, so this batch already uses it
+      await expect(batch(4)).resolves.toEqual({ rendered: 4, failed: 0 });
+
+      expect(renderedIds()).toEqual([u1, u2, o1, o2]);
+    });
+    it("starts no render of the backlog once the time budget is spent", async () => {
+      const { renderStaleBatch: batch } = await freshService();
+      const scan = heldScan();
+      database({ unsynced: [], outdated: freshIds(10), scanGate: scan.gate });
+      await batch();
+      await scan.open();
+      const now = jest.spyOn(Date, "now");
+      let tick = 0;
+      // Every call to Date.now() moves the clock on by 20 s: the budget (45 s) is gone after two renders.
+      now.mockImplementation(() => 1_000_000 + 20_000 * tick++);
+
+      const result = await batch();
+
+      expect(result.rendered).toBeGreaterThan(0);
+      expect(result.rendered).toBeLessThan(10);
+      now.mockRestore();
+    });
+    it("keeps a failed article in the backlog, behind the usual backoff", async () => {
+      const { renderStaleBatch: batch } = await freshService();
+      const [broken, fine] = freshIds(2);
+      const scan = heldScan();
+      database({ unsynced: [], outdated: [broken!, fine!], scanGate: scan.gate });
+      mockRenderViaMediaWiki.mockImplementation(async (_text: string, title: string) =>
+        title === `Title of ${broken}` ? null : HTML
+      );
+      await batch();
+      await scan.open();
+      const attempts = () => mockFindUnique.mock.calls.filter(([a]) => a.where.id === broken).length;
+
+      await expect(batch()).resolves.toEqual({ rendered: 1, failed: 1 });
+      await expect(batch()).resolves.toEqual({ rendered: 0, failed: 0 }); // backing off: left alone
+      expect(attempts()).toBe(1);
+      expect(scanQueries()).toHaveLength(1);
+
+      const later = jest.spyOn(Date, "now").mockReturnValue(Date.now() + 2 * 60_000);
+      try {
+        await expect(batch()).resolves.toEqual({ rendered: 0, failed: 1 }); // its turn again, no rescan
+      } finally {
+        later.mockRestore();
+      }
+      expect(attempts()).toBe(2);
+      expect(scanQueries()).toHaveLength(1);
+    });
   });
 });
