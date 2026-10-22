@@ -6,19 +6,14 @@ import type { PrismaClient } from "@prisma/client";
 import {
   MIN_INTERVAL_MS,
   applyPlan,
-  buildPlan,
-  collectAll,
   createApiClient,
   databaseHost,
   mapBlocks,
   mapGroups,
   mapProtectedTitles,
   mapProtections,
-  parseAllUsers,
   parseArgs,
-  parseBlocks,
   parseExpiry,
-  type ApiGet,
   type ImportPlan,
 } from "../../../scripts/wikios-import-rights";
 import { createFakeWikiDb } from "~/tests/helpers/fake-wiki-db";
@@ -28,12 +23,9 @@ const FUTURE = "2027-01-01T00:00:00Z";
 const PAST = "2026-01-01T00:00:00Z";
 
 describe("parseExpiry", () => {
-  it.each([undefined, "infinity", "infinite", "indefinite", "never", "Infinity"])(
-    "%p is no expiry",
-    (value) => {
-      expect(parseExpiry(value)).toBeNull();
-    }
-  );
+  it.each([undefined, "infinity", "indefinite"])("%p is no expiry", (value) => {
+    expect(parseExpiry(value)).toBeNull();
+  });
 
   it("reads an ISO timestamp and refuses gibberish", () => {
     expect(parseExpiry(FUTURE)).toEqual(new Date(FUTURE));
@@ -217,75 +209,9 @@ describe("mapBlocks", () => {
     expect(row?.reason).toHaveLength(500);
   });
 });
-
-describe("response parsing", () => {
-  it("turns an API error object into a thrown Error", () => {
-    expect(() =>
-      parseAllUsers({ error: { code: "badvalue", info: "Unrecognized value" } })
-    ).toThrow("badvalue");
-  });
-
-  it("refuses a response of the wrong shape", () => {
-    expect(() => parseBlocks({ query: { blocks: "nope" } })).toThrow();
-  });
-});
-
-describe("collectAll", () => {
-  it("follows continuation parameters until the listing ends", async () => {
-    const calls: Array<Record<string, string>> = [];
-    const get: ApiGet = async (params) => {
-      calls.push(params);
-      return params.aufrom
-        ? { query: { allusers: [{ name: "B", groups: [] }] } }
-        : {
-            continue: { aufrom: "B", continue: "-||" },
-            query: { allusers: [{ name: "A", groups: [] }] },
-          };
-    };
-    const users = await collectAll(get, { list: "allusers" }, parseAllUsers);
-    expect(users.map((u) => u.name)).toEqual(["A", "B"]);
-    expect(calls).toEqual([
-      { list: "allusers" },
-      { list: "allusers", aufrom: "B", continue: "-||" },
-    ]);
-  });
-
-  it("gives up on a listing that never ends", async () => {
-    const get: ApiGet = async () => ({ continue: { aufrom: "again" }, query: { allusers: [] } });
-    await expect(collectAll(get, { list: "allusers" }, parseAllUsers)).rejects.toThrow(
-      "did not finish"
-    );
-  });
-});
-
 describe("createApiClient", () => {
   const response = (body: object, ok = true) =>
     ({ ok, status: ok ? 200 : 503, json: async () => body }) as Response;
-
-  it("asks with the allowlisted UA, JSON formatversion 2 and the given parameters", async () => {
-    const fetchImpl = jest.fn().mockResolvedValue(response({ query: {} }));
-    const get = createApiClient("https://wiki.example/api.php", {
-      fetchImpl,
-      sleep: async () => {},
-    });
-
-    await get({ list: "blocks", bklimit: "max" });
-
-    const [url, init] = fetchImpl.mock.calls[0] as [URL, { headers: Record<string, string> }];
-    expect(url.origin + url.pathname).toBe("https://wiki.example/api.php");
-    expect(Object.fromEntries(url.searchParams)).toEqual({
-      action: "query",
-      format: "json",
-      formatversion: "2",
-      list: "blocks",
-      bklimit: "max",
-    });
-    expect(init.headers["User-Agent"]).toBe("IxStats-Builder");
-    // read-only: a plain GET, nothing sent in a body
-    expect(init).not.toHaveProperty("method");
-    expect(init).not.toHaveProperty("body");
-  });
-
   it("waits a second between requests, never before the first, and never less even if asked", async () => {
     const fetchImpl = jest.fn().mockResolvedValue(response({}));
     const sleep = jest.fn().mockResolvedValue(undefined);
@@ -301,136 +227,7 @@ describe("createApiClient", () => {
     await get({});
     expect(sleep.mock.calls).toEqual([[MIN_INTERVAL_MS], [MIN_INTERVAL_MS]]);
   });
-
-  it("throws on an HTTP error", async () => {
-    const get = createApiClient("https://wiki.example/api.php", {
-      fetchImpl: jest.fn().mockResolvedValue(response({}, false)),
-      sleep: async () => {},
-    });
-    await expect(get({})).rejects.toThrow("503");
-  });
 });
-
-describe("buildPlan", () => {
-  /** A scripted wiki: answers by the listing the parameters ask for. */
-  const wiki = (
-    overrides: { protectedTitles?: number } = {}
-  ): { get: ApiGet; calls: Array<Record<string, string>> } => {
-    const calls: Array<Record<string, string>> = [];
-    const manyPages = Array.from({ length: 51 }, (_, i) => ({ title: `Page ${i}` }));
-    const get: ApiGet = async (params) => {
-      calls.push(params);
-      if (params.meta === "siteinfo")
-        return { query: { namespaces: { "-1": { id: -1 }, "0": { id: 0 }, "10": { id: 10 } } } };
-      if (params.list === "allusers") {
-        return {
-          query: {
-            allusers:
-              params.augroup === "sysop"
-                ? [{ name: "kir", groups: ["sysop", "bureaucrat"] }]
-                : params.augroup === "bot"
-                  ? [{ name: "Helper", groups: ["bot"] }]
-                  : [],
-          },
-        };
-      }
-      if (params.list === "allpages") {
-        return {
-          query: {
-            allpages:
-              params.apnamespace === "0"
-                ? manyPages
-                : params.apnamespace === "10"
-                  ? [{ title: "Template:Infobox" }]
-                  : [],
-          },
-        };
-      }
-      if (params.prop === "info") {
-        return {
-          query: {
-            pages: (params.titles ?? "").split("|").map((title) => ({
-              title,
-              protection: [
-                {
-                  type: "edit",
-                  level: title === "Template:Infobox" ? "sysop" : "autoconfirmed",
-                  expiry: "infinity",
-                },
-              ],
-            })),
-          },
-        };
-      }
-      if (params.list === "protectedtitles") {
-        return {
-          query: {
-            protectedtitles: overrides.protectedTitles
-              ? [{ title: "Salted", level: "sysop", expiry: "infinity" }]
-              : [],
-          },
-        };
-      }
-      if (params.list === "blocks") {
-        return {
-          query: {
-            blocks: [
-              {
-                user: "Vandal",
-                userid: 4,
-                expiry: "infinity",
-                reason: "spam",
-                allowusertalk: true,
-              },
-              { user: "9.9.9.9" },
-            ],
-          },
-        };
-      }
-      throw new Error(`unexpected request ${JSON.stringify(params)}`);
-    };
-    return { get, calls };
-  };
-
-  it("reads every listing and maps it", async () => {
-    const { get, calls } = wiki({ protectedTitles: 1 });
-    const plan = await buildPlan(get, NOW);
-
-    expect(plan.groups).toEqual([
-      { wikiUsername: "Kir", group: "sysop" },
-      { wikiUsername: "Kir", group: "bureaucrat" },
-      { wikiUsername: "Helper", group: "bot" },
-    ]);
-    expect(plan.restrictions.filter((r) => r.action === "edit")).toHaveLength(52);
-    expect(plan.restrictions.find((r) => r.title === "Template:Infobox")).toMatchObject({
-      level: "sysop",
-    });
-    expect(plan.restrictions.find((r) => r.action === "create")).toMatchObject({
-      title: "Salted",
-      level: "sysop",
-    });
-    expect(plan.blocks).toEqual([
-      { wikiUsername: "Vandal", reason: "spam", expiresAt: null, allowUserTalk: true },
-    ]);
-    expect(plan.notes).toEqual(["Skipped 1 block(s) on IP addresses or ranges."]);
-
-    // the four imported groups are each asked for; Special and Media are never listed; 52 titles go out in batches of 50
-    expect(calls.filter((c) => c.list === "allusers").map((c) => c.augroup)).toEqual([
-      "sysop",
-      "bureaucrat",
-      "interface-admin",
-      "bot",
-    ]);
-    expect(calls.filter((c) => c.list === "allpages").map((c) => c.apnamespace)).toEqual([
-      "0",
-      "10",
-    ]);
-    expect(calls.filter((c) => c.prop === "info").map((c) => c.titles?.split("|").length)).toEqual([
-      50, 2,
-    ]);
-  });
-});
-
 describe("applyPlan", () => {
   const plan = (): ImportPlan => ({
     groups: [

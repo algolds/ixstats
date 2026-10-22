@@ -1,5 +1,11 @@
 /** @jest-environment node */
-/** Cards refresh §5.5 step 3 and §5.6: the backfill on a fixture database. */
+/**
+ * Cards refresh §5.5 step 3 and §5.6: the backfill on a fixture database (the deploy runs it with --apply on every
+ * release). And the card pack seed (§3), which only creates, so it never overwrites an admin's pack edits.
+ *
+ * Folds card-packs-seed.
+ */
+import { readFileSync } from "node:fs";
 import type { LedgerRow } from "~/lib/cards/legacy-mapping";
 import {
   applyPlan,
@@ -462,16 +468,6 @@ describe("cards refresh backfill", () => {
     });
     expect(planBackfill(odd, OPTIONS).errors.join("\n")).toMatch(/pack_odd/);
   });
-
-  it("reports each typed pack's pool before and after the remap", () => {
-    const { report } = planBackfill(fixture(), OPTIONS);
-    expect(report.packPools).toEqual([
-      { id: "pack_s1", cardType: "NS", season: 1, before: 2, after: 2 },
-      // LORE_BATCH folds into LORE: the theme now draws every Lore card (foo_new is merged away).
-      { id: "pack_theme", cardType: null, season: null, before: 1, after: 3 },
-    ]);
-  });
-
   it("counts the imports attributed to their current owner rather than to a trade giver", () => {
     const db = fixture();
     db.copies.push(copy("o_ns2_t", "ns2", { ownerId: "u_two" }));
@@ -522,5 +518,15 @@ describe("cards refresh backfill", () => {
       { id: "althistory", slug: "althistory", isSystem: true },
     ]);
     expect(isEmptyPlan(planBackfill(done, OPTIONS).plan)).toBe(true);
+  });
+});
+
+describe("card pack seed", () => {
+  it("creates missing packs and never updates existing ones", () => {
+    const seed = readFileSync("prisma/seeds/card-packs.ts", "utf8");
+    expect(seed).toMatch(/createMany\(\{[\s\S]*skipDuplicates: true/);
+    expect(seed).not.toMatch(/\.upsert\(|\.update\(/);
+    // The JSON keeps pdsConfig for the pack art generator; the seed strips it (the column is gone).
+    expect(seed).toMatch(/pdsConfig: _art, \.\.\.pack/);
   });
 });

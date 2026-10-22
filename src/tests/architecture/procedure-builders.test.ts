@@ -1,12 +1,15 @@
+/** @jest-environment node */
+/**
+ * Which procedure builder a router may use. M0 #19: every signed-in mutation is rate-limited, so a mutation built on
+ * bare protectedProcedure / premiumProcedure (no limit at all) uses rateLimitedMutationProcedure,
+ * premiumMutationProcedure, lightMutationProcedure, standardMutationCountryOwnerProcedure or adminProcedure instead.
+ * Cards refresh spec §2.4, §3: every card admin procedure is admin-only and lives under cards.admin.
+ *
+ * Folds cards-admin-gate.
+ */
 import fs from "fs";
 import path from "path";
 
-/**
- * M0 #19: every signed-in mutation is rate-limited. A mutation built on bare
- * protectedProcedure / premiumProcedure has no limit at all; use rateLimitedMutationProcedure,
- * premiumMutationProcedure, lightMutationProcedure, standardMutationCountryOwnerProcedure or
- * adminProcedure instead.
- */
 const ROUTERS = path.resolve(__dirname, "../../server/api/routers");
 
 /** Directories not yet converted, with the reason. Shrink-only. */
@@ -46,9 +49,32 @@ describe("signed-in mutations are rate-limited", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("allowlisted directories still need converting (remove them once they do not)", () => {
-    for (const dir of Object.keys(ALLOWLIST)) {
+  it.each(Object.keys(ALLOWLIST))(
+    "allowlisted %s still needs converting (remove it once it does not)",
+    (dir) => {
       expect(walk(path.join(ROUTERS, dir)).flatMap(unlimitedMutations).length).toBeGreaterThan(0);
     }
+  );
+});
+
+describe("card admin procedures", () => {
+  const OTHER_BUILDERS =
+    /\b(publicProcedure|protectedProcedure|premiumProcedure|rateLimitedMutationProcedure|rateLimitedPublicProcedure|lightMutationProcedure|readOnlyProcedure|wikiReadProcedure|countryOwnerProcedure)\b/;
+  const read = (file: string) => fs.readFileSync(file, "utf8");
+
+  it("cards/admin builds every procedure on adminProcedure", () => {
+    const files = walk(path.join(ROUTERS, "cards/admin"));
+    expect(files.length).toBeGreaterThanOrEqual(12);
+    expect(files.filter((file) => OTHER_BUILDERS.test(read(file)))).toEqual([]);
+  });
+
+  it("no card router outside cards/admin holds an admin procedure", () => {
+    const files = ["cards", "lore-cards", "card-packs", "ns-import"].flatMap((dir) =>
+      fs
+        .readdirSync(path.join(ROUTERS, dir))
+        .filter((file) => file.endsWith(".ts"))
+        .map((file) => path.join(ROUTERS, dir, file))
+    );
+    expect(files.filter((file) => /\badminProcedure\b/.test(read(file)))).toEqual([]);
   });
 });
