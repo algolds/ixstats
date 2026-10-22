@@ -1,194 +1,129 @@
+/** @jest-environment node */
 /**
- * Ledger *Tx variants (plan 327).
+ * The vault ledger (`src/lib/vault/vault-ledger.ts`) on the in-memory Prisma: its *Tx variants run on an interactive
+ * transaction's client (which has no `$transaction`) and fail as a LedgerError, so the caller's transaction rolls
+ * back; a spend never takes a balance below zero; the active daily cap is checked under the vault row's lock; a refund
+ * is never capped. Code audit VT-23: the earning switch stops every earning type (bonuses and card sales included),
+ * and only refunds still pay while it is off.
  *
- * They must work on a Prisma interactive-transaction client — which has NO
- * `$transaction` method — and surface every failure as a `LedgerError` so the
- * caller's transaction rolls back.
+ * Folds vault-concurrency and earning-kill-switch.
  */
-
+import type { VaultTransactionType } from "@prisma/client";
 import {
   earnCredits,
   earnCreditsTx,
-  spendCreditsTx,
   LedgerError,
+  spendCredits,
+  spendCreditsTx,
 } from "~/lib/vault/vault-ledger";
 import { VAULT_CONFIG_DEFAULTS } from "~/lib/vault/vault-perks";
+import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-prisma";
+import {
+  addPlayer,
+  clearEconomyCaches,
+  creditsOf,
+  ledgerOf,
+  type Player,
+} from "~/tests/helpers/money-world";
 
-interface TxState {
-  credits: number;
-  todayRows: Array<{ credits: number }>;
-  rows: any[];
-}
+let db: MemoryPrisma;
+let mo: Player;
 
-function makeState(credits: number, todayRows: Array<{ credits: number }> = []): TxState {
-  return { credits, todayRows, rows: [] };
-}
+const spend = (amount: number) =>
+  db.$transaction((tx) =>
+    spendCreditsTx(tx, { userId: mo.id, amount, type: "SPEND_MARKET", source: "test_spend" })
+  );
+const earn = (amount: number, type: VaultTransactionType) =>
+  db.$transaction((tx) => earnCreditsTx(tx, { userId: mo.id, amount, type, source: "test_earn" }));
+const balance = async () => (await creditsOf(db as never, [mo.id]))[mo.id];
 
-/** A mock shaped like Prisma.TransactionClient: no `$transaction` key. */
-function makeTx(state: TxState) {
-  return {
-    systemConfig: {
-      findMany: jest.fn().mockResolvedValue([]),
-    },
-    user: {
-      findFirst: jest.fn().mockResolvedValue({ id: "u1", clerkUserId: "user_1" }),
-    },
-    myVault: {
-      upsert: jest.fn().mockImplementation(async () => ({
-        id: "v1",
-        userId: "u1",
-        credits: state.credits,
-        lastDailyReset: new Date(),
-        todayEarned: 0,
-      })),
-      update: jest.fn().mockImplementation(async ({ data }: any) => {
-        if (data.credits?.increment) state.credits += data.credits.increment;
-        return { id: "v1", credits: state.credits };
-      }),
-      updateMany: jest.fn().mockImplementation(async ({ where, data }: any) => {
-        if (where.credits?.gte !== undefined && state.credits < where.credits.gte) {
-          return { count: 0 };
-        }
-        state.credits -= data.credits.decrement;
-        return { count: 1 };
-      }),
-      findUniqueOrThrow: jest.fn().mockImplementation(async () => ({
-        id: "v1",
-        credits: state.credits,
-      })),
-    },
-    vaultTransaction: {
-      findMany: jest.fn().mockImplementation(async () => state.todayRows),
-      create: jest.fn().mockImplementation(async ({ data }: any) => {
-        state.rows.push(data);
-        return { id: "t" };
-      }),
-    },
-    $queryRaw: jest.fn().mockResolvedValue([]),
-  };
-}
-
-const saturatedActiveCap = [{ credits: VAULT_CONFIG_DEFAULTS.activeDailyCap }];
-
-describe("vault-ledger *Tx variants", () => {
-  beforeEach(() => {
-    jest.spyOn(console, "log").mockImplementation(() => {});
-    jest.spyOn(console, "error").mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
-  it("spendCreditsTx works on a client without $transaction", async () => {
-    const state = makeState(100);
-    const tx = makeTx(state);
-    expect("$transaction" in tx).toBe(false);
-
-    const result = await spendCreditsTx(tx as any, {
-      userId: "u1",
-      amount: 40,
-      type: "SPEND_MARKET",
-      source: "test_spend",
-    });
-
-    expect(result).toEqual({ newBalance: 60, amount: 40 });
-    expect(state.rows).toHaveLength(1);
-    expect(state.rows[0]).toMatchObject({
-      vaultId: "v1",
-      credits: -40,
-      balanceAfter: 60,
-      type: "SPEND_MARKET",
-      source: "test_spend",
-    });
-  });
-
-  it("spendCreditsTx throws LedgerError INSUFFICIENT_CREDITS when balance too low", async () => {
-    const state = makeState(10);
-    const tx = makeTx(state);
-
-    const err = await spendCreditsTx(tx as any, {
-      userId: "u1",
-      amount: 40,
-      type: "SPEND_MARKET",
-      source: "test_spend",
-    }).catch((e) => e);
-
-    expect(err).toBeInstanceOf(LedgerError);
-    expect(err.code).toBe("INSUFFICIENT_CREDITS");
-    expect(err.balance).toBe(10);
-    expect(state.rows).toHaveLength(0);
-    expect(state.credits).toBe(10);
-  });
-
-  it("earnCreditsTx works on a client without $transaction", async () => {
-    const state = makeState(100);
-    const tx = makeTx(state);
-
-    const result = await earnCreditsTx(tx as any, {
-      userId: "u1",
-      amount: 25,
-      type: "EARN_CARDS",
-      source: "test_earn",
-    });
-
-    expect(result).toEqual({ newBalance: 125, amount: 25 });
-    expect(state.rows).toHaveLength(1);
-    expect(state.rows[0]).toMatchObject({ credits: 25, balanceAfter: 125, type: "EARN_CARDS" });
-    expect(tx.$queryRaw).not.toHaveBeenCalled();
-  });
-
-  it("REFUND is not capped", async () => {
-    const state = makeState(0, saturatedActiveCap);
-    const tx = makeTx(state);
-
-    const result = await earnCreditsTx(tx as any, {
-      userId: "u1",
-      amount: 50,
-      type: "REFUND",
-      source: "auction_bid_refund",
-    });
-
-    expect(result).toEqual({ newBalance: 50, amount: 50 });
-    expect(state.rows[0]).toMatchObject({ credits: 50, type: "REFUND" });
-    expect(tx.$queryRaw).not.toHaveBeenCalled();
-    expect(tx.vaultTransaction.findMany).not.toHaveBeenCalled();
-  });
-
-  it("EARN_ACTIVE is capped and locks the vault row", async () => {
-    const state = makeState(0, saturatedActiveCap);
-    const tx = makeTx(state);
-
-    const err = await earnCreditsTx(tx as any, {
-      userId: "u1",
-      amount: 50,
+/** Today's EARN_ACTIVE row that uses up the whole active cap. */
+async function saturateActiveCap() {
+  const vault = await db.myVault.findUniqueOrThrow({ where: { userId: mo.id } });
+  await db.vaultTransaction.create({
+    data: {
+      vaultId: vault.id,
+      credits: VAULT_CONFIG_DEFAULTS.activeDailyCap,
+      balanceAfter: vault.credits,
       type: "EARN_ACTIVE",
-      source: "test_earn",
-    }).catch((e) => e);
+      source: "earlier_today",
+    },
+  });
+}
 
-    expect(err).toBeInstanceOf(LedgerError);
-    expect(err.code).toBe("DAILY_CAP_REACHED");
-    expect(err.message).toContain("Daily earning cap reached");
-    expect(tx.$queryRaw).toHaveBeenCalledTimes(1);
-    expect(state.rows).toHaveLength(0);
-    expect(state.credits).toBe(0);
+beforeEach(async () => {
+  clearEconomyCaches();
+  db = createMemoryPrisma();
+  mo = await addPlayer(db as never, "mo", 100);
+  jest.spyOn(console, "log").mockImplementation(() => undefined);
+  jest.spyOn(console, "error").mockImplementation(() => undefined);
+});
+afterEach(() => jest.restoreAllMocks());
+
+describe("spending", () => {
+  it("spends inside the caller's transaction, writing one ledger row with the balance after", async () => {
+    await expect(spend(40)).resolves.toEqual({ newBalance: 60, amount: 40 });
+    expect(await ledgerOf(db as never, mo.id)).toEqual([
+      { credits: -40, balanceAfter: 60, type: "SPEND_MARKET", source: "test_spend" },
+    ]);
   });
 
-  it("wrapper earnCredits still returns {success:false,message} on cap", async () => {
-    const state = makeState(0, saturatedActiveCap);
-    const tx = makeTx(state);
-    const db: any = {
-      ...tx,
-      $transaction: jest.fn().mockImplementation(async (cb: any) => cb(tx)),
-    };
+  it("refuses a spend the balance does not cover, naming the balance and writing nothing", async () => {
+    const refused = await spend(140).catch((error: unknown) => error);
+    expect(refused).toBeInstanceOf(LedgerError);
+    expect(refused).toMatchObject({ code: "INSUFFICIENT_CREDITS", balance: 100 });
+    expect(await balance()).toBe(100);
+    expect(await ledgerOf(db as never, mo.id)).toEqual([]);
+  });
 
-    const result = await earnCredits("u1", 10, "EARN_ACTIVE", "test_earn", db);
+  it("never lets concurrent spends take a balance below zero", async () => {
+    const results = await Promise.all(
+      Array.from({ length: 10 }, () => spendCredits(mo.id, 50, "SPEND_MARKET", "race", db))
+    );
+    expect(results.filter((r) => r.success)).toHaveLength(2);
+    expect(await balance()).toBe(0);
+    expect(await ledgerOf(db as never, mo.id)).toHaveLength(2);
+  });
+});
 
-    expect(result).toEqual({
+describe("earning", () => {
+  it("caps active earnings at the daily cap under the vault row's lock, and the wrapper answers why", async () => {
+    await saturateActiveCap();
+    await expect(earn(50, "EARN_ACTIVE")).rejects.toMatchObject({
+      code: "DAILY_CAP_REACHED",
+      message: expect.stringContaining("Daily earning cap reached"),
+    });
+    expect(db.store.log.some((e) => e.kind === "vaults" && e.userIds[0] === mo.id)).toBe(true);
+    expect(await earnCredits(mo.id, 10, "EARN_ACTIVE", "test_earn", db)).toEqual({
       success: false,
       newBalance: 0,
       message: expect.stringContaining("Daily earning cap reached"),
     });
-    expect(db.$transaction).toHaveBeenCalledTimes(1);
+    expect(await balance()).toBe(100);
+  });
+
+  it("never caps a refund", async () => {
+    await saturateActiveCap();
+    await expect(earn(50, "REFUND")).resolves.toEqual({ newBalance: 150, amount: 50 });
+  });
+
+  describe("while earning is switched off (VT-23)", () => {
+    beforeEach(async () => {
+      await db.systemConfig.create({ data: { key: "vault_isEarningEnabled", value: "false" } });
+      clearEconomyCaches();
+    });
+
+    it.each(["EARN_ACTIVE", "EARN_SOCIAL", "EARN_PASSIVE", "EARN_BONUS", "EARN_CARDS"] as const)(
+      "refuses %s, writing nothing",
+      async (type) => {
+        await expect(earn(25, type)).rejects.toMatchObject({ code: "EARNING_DISABLED" });
+        expect(await balance()).toBe(100);
+        expect(await ledgerOf(db as never, mo.id)).toEqual([]);
+      }
+    );
+
+    it("still pays a refund", async () => {
+      await expect(earn(25, "REFUND")).resolves.toEqual({ newBalance: 125, amount: 25 });
+    });
   });
 });
