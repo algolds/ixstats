@@ -108,6 +108,8 @@ export class MessagingConversationOperations {
     if (!conv) throw new MessagingNotFoundError();
     const myP = conv.participants.find((p: any) => p.userId === actorId && p.isActive);
     if (!myP) throw new MessagingForbiddenError();
+    // A direct message stays between its two people, and a ThinkTank's chat follows its membership (invites, joins)
+    if (conv.type === "direct" || conv.source === "thinktank") throw new MessagingForbiddenError();
 
     await this.db.conversationParticipant.upsert({
       where: {

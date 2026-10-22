@@ -398,7 +398,8 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
             </Button>
           )}
 
-          {view.isGroup && onAddParticipants && (
+          {/* A ThinkTank's chat follows its membership: people join it through the ThinkTank */}
+          {view.isGroup && conversation.source !== "thinktank" && onAddParticipants && (
             <Button
               variant="ghost"
               size="icon"

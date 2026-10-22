@@ -578,6 +578,29 @@ it.each([
   ).toBe(0);
 });
 
+// Found 2026-10-21: any participant could add anyone to any conversation, past a ThinkTank's invites.
+it.each([
+  ["refuses a member adding someone to a ThinkTank chat, which follows its membership", OMAR, "chat", 0],
+  ["refuses adding a third person to a direct message", HANA, "direct", 0],
+  ["lets a participant add someone to a group DM", HANA, "dm", 1],
+] as const)("%s", async (_case, actorId, target, added) => {
+  const { svc, ids } = await innerCircle();
+  const direct = await db.thinkshareConversation.create({
+    data: {
+      type: "direct",
+      participants: { create: [{ userId: HANA }, { userId: OMAR }] },
+    },
+  });
+  const conversationId = target === "direct" ? direct.id : ids[target];
+
+  const adding = svc.addParticipant(actorId, { conversationId, targetUserId: IVY });
+  if (added) await adding;
+  else await expect(adding).rejects.toMatchObject({ name: "MessagingForbiddenError" });
+  expect(
+    await db.conversationParticipant.count({ where: { conversationId, userId: IVY, isActive: true } })
+  ).toBe(added);
+});
+
 it("enrolls a current ThinkTank member in its chat once, and they read it", async () => {
   const { svc, ids } = await innerCircle();
   await db.conversationParticipant.deleteMany({

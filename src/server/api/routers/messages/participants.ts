@@ -58,7 +58,8 @@ export const messagesParticipantsRouter = createTRPCRouter({
             targetUserId: input.userId,
           }),
         {
-          forbidden: "You must be an active participant to add others",
+          forbidden:
+            "Only an active participant can add others, and not to a direct message or a ThinkTank chat",
           notFound: "Conversation not found",
         }
       );
