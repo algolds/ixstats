@@ -4,7 +4,8 @@
  * Order: nation name, forum username, wiki username, then the user's first active ThinkPages
  * account. Never an ID fragment: anyone with no linked name reads as UNKNOWN_DISPLAY_NAME.
  * resolveDisplayNames skips the wiki username of a user with wiki attribution off
- * (`showWikiAttribution`; a read error counts as off).
+ * (`showWikiAttribution`; a read error counts as off), and any persona of theirs whose name reads
+ * as that wiki name (a personal persona made while it was shown is named after it).
  */
 import type { PrismaClient } from "@prisma/client";
 import { withoutHiddenWikiNames } from "./privacy-permissions";
@@ -30,6 +31,22 @@ export function pickDisplayName(sources: DisplayNameSources): string | null {
   );
 }
 
+/** Letters and digits only, lower-cased, so "Hana Wiki", "HanaWiki" and "hanawiki_me" compare alike. */
+function flatName(name: string): string {
+  return name
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]/gu, "");
+}
+
+/**
+ * Whether a persona name gives away the hidden wiki name `hiddenWikiName` (it contains it, case,
+ * spacing and punctuation aside). Fails closed: a wiki name with no letters or digits matches all.
+ */
+export function revealsWikiName(name: string, hiddenWikiName: string | null | undefined): boolean {
+  return hiddenWikiName != null && flatName(name).includes(flatName(hiddenWikiName));
+}
+
 /** The delegates the resolver reads; accepts the Prisma client or a transaction client. */
 type DisplayNameDb = Pick<PrismaClient, "user" | "thinkpagesAccount" | "userConnection">;
 
@@ -46,22 +63,23 @@ export async function resolveDisplayNames(
   const names = new Map<string, string>();
   if (ids.length === 0) return names;
 
-  const users = await withoutHiddenWikiNames(
-    db,
-    await db.user.findMany({
-      where: { clerkUserId: { in: ids } },
-      select: {
-        clerkUserId: true,
-        forumUsername: true,
-        wikiUsername: true,
-        country: { select: { name: true } },
-      },
-    })
-  );
-  for (const user of users) {
+  const rows = await db.user.findMany({
+    where: { clerkUserId: { in: ids } },
+    select: {
+      clerkUserId: true,
+      forumUsername: true,
+      wikiUsername: true,
+      country: { select: { name: true } },
+    },
+  });
+  const users = await withoutHiddenWikiNames(db, rows);
+  const hiddenWiki = new Map<string, string>();
+  users.forEach((user, i) => {
+    const wikiUsername = rows[i]?.wikiUsername;
+    if (wikiUsername && !user.wikiUsername) hiddenWiki.set(user.clerkUserId, wikiUsername);
     const name = pickDisplayName(user);
     if (name) names.set(user.clerkUserId, name);
-  }
+  });
 
   const missing = ids.filter((id) => !names.has(id));
   if (missing.length > 0) {
@@ -73,7 +91,9 @@ export async function resolveDisplayNames(
     for (const account of accounts) {
       if (!names.has(account.clerkUserId)) {
         const name = account.displayName || account.username;
-        if (name) names.set(account.clerkUserId, name);
+        if (name && !revealsWikiName(name, hiddenWiki.get(account.clerkUserId))) {
+          names.set(account.clerkUserId, name);
+        }
       }
     }
   }

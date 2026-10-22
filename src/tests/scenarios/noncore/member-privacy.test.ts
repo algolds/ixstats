@@ -215,14 +215,24 @@ it("hides every wiki name when the privacy switches cannot be read", async () =>
   expect(posts.map((p) => p.realUser?.wikiUsername ?? null)).toEqual([null, null]);
 });
 
-// OWNER DECISION: a first post creates the player's personal persona named after what was shown then, here the wiki
-// name. Once Hana turns attribution off, display names and messaging fall back to that persona, so they still say
-// "Hana Wiki". Should hiding the wiki name rename, or stop falling back to, a persona named after it?
-it.failing("stops naming Hana by her wiki name through a persona made while it was shown", async () => {
+// A first post names the personal persona after what was shown then, here the wiki name. Once Hana turns attribution
+// off, nothing falls back to that persona (owner 2026-10-21: stop the fallback; the persona keeps its name).
+it("stops naming Hana by her wiki name through a persona made while it was shown", async () => {
   const groupId = await economists();
   await post(groupId);
+  const persona = await db.thinkpagesAccount.findFirstOrThrow({ where: { clerkUserId: HANA } });
+  expect(persona.displayName).toBe("Hana Wiki");
   await privacy("hana", { showWikiAttribution: false });
-  expect((await resolveDisplayNames(db as never, [HANA])).get(HANA)).not.toBe("Hana Wiki");
+
+  expect((await resolveDisplayNames(db as never, [HANA, SAM])).get(HANA)).toBe(UNKNOWN_DISPLAY_NAME);
+  const messaging = await batchResolveMessagingAccounts([HANA], db as never);
+  expect(messaging.get(HANA)?.displayName).toBe(UNKNOWN_DISPLAY_NAME);
+  const group = await thinktanks(as("omar")).getThinktankById({ groupId });
+  const rosterName = (id: string) =>
+    (group!.members.find((m) => m.userId === id)?.user as { displayName?: string } | undefined)?.displayName;
+  expect([rosterName(HANA), rosterName(SAM)]).toEqual([UNKNOWN_DISPLAY_NAME, "Sam Wiki"]);
+  const after = await db.thinkpagesAccount.findFirstOrThrow({ where: { clerkUserId: HANA } });
+  expect(after.displayName).toBe("Hana Wiki");
 });
 
 it("keeps a message from outside Hana's audience as a request, and honours both sides' receipts and online status", async () => {
