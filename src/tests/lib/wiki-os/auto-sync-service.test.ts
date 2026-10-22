@@ -1,27 +1,11 @@
 /** @jest-environment node */
 /**
- * Plan 339 Step 2 + plan 406: runAutoSyncCycle is the single recentchanges sync. It keeps a high-water
- * mark in SystemConfig, follows rccontinue, never advances past a failed page, and applies MediaWiki
- * revisions one at a time, oldest first, by the inbound rule (fast-forward, echo or park).
+ * Plan 339 Step 2 + plan 406: runAutoSyncCycle is the single recentchanges sync. It keeps a high-water mark in
+ * SystemConfig, follows rccontinue, never advances past a failed page, and applies MediaWiki revisions one at a time,
+ * oldest first, by the inbound rule (fast-forward, echo or park), which is first given as its own table of cases. The
+ * incident regressions the stateful site can play are rows of the inbound-sync-mirror scenario; these are the rest.
  */
 // The mirror's api.php and bot login come from `wikiosConfig`; this test sets their variables as it runs.
-jest.mock("~/lib/wiki-os/config", () =>
-  jest
-    .requireActual("~/tests/helpers/live-wikios-config")
-    .withLiveEnvironment(jest.requireActual("~/lib/wiki-os/config"))
-);
-
-import { createHash } from "node:crypto";
-import {
-  getInboundSyncStatus,
-  runAutoSyncCycle,
-  syncSinglePage,
-} from "~/lib/wiki-os/services/auto-sync-service";
-import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
-import { notificationAPI } from "~/lib/notifications/api";
-import { applyLogEvent } from "~/lib/wiki-os/services/inbound-log-events";
-import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
-
 const mockSystemConfigFindUnique = jest.fn();
 const mockSystemConfigUpsert = jest.fn();
 const mockArticleFindUnique = jest.fn();
@@ -37,19 +21,11 @@ const mockQueryRaw = jest.fn();
 const mockExecuteRaw = jest.fn();
 const mockTransaction = jest.fn();
 const mockJobCreate = jest.fn();
-
-/** The lease upsert of withJobLock when the lease is free: it returns the caller's own holder (its second value). */
-const leaseFree = async (_strings: TemplateStringsArray, ...values: unknown[]) => [
-  { holder: values[1] },
-];
-/** ... and when another process holds it: no row comes back. */
-const leaseTaken = async () => [];
-/** The raw statements the sync itself ran: the lease's own release left out. */
-const syncStatements = () =>
-  mockExecuteRaw.mock.calls.filter(
-    ([strings]) => !(strings as TemplateStringsArray).join("?").includes('"job_leases"')
-  );
-
+jest.mock("~/lib/wiki-os/config", () =>
+  jest
+    .requireActual("~/tests/helpers/live-wikios-config")
+    .withLiveEnvironment(jest.requireActual("~/lib/wiki-os/config"))
+);
 jest.mock("~/server/db", () => ({
   db: {
     $transaction: (...a: unknown[]) => mockTransaction(...a),
@@ -83,6 +59,26 @@ jest.mock("~/lib/wiki-os/services/inbound-log-events", () => ({ applyLogEvent: j
 jest.mock("~/lib/wiki-os/services/title-cache-eviction", () => ({
   evictWikiTitleCaches: jest.fn().mockResolvedValue(undefined),
 }));
+
+import { createHash } from "node:crypto";
+import { getInboundSyncStatus, runAutoSyncCycle, syncSinglePage } from "~/lib/wiki-os/services/auto-sync-service";
+import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
+import { notificationAPI } from "~/lib/notifications/api";
+import { applyLogEvent } from "~/lib/wiki-os/services/inbound-log-events";
+import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
+import { decideInbound, type InboundDecision, type InboundHead, type InboundRevision } from "~/lib/wiki-os/services/inbound-decision";
+
+/** The lease upsert of withJobLock when the lease is free: it returns the caller's own holder (its second value). */
+const leaseFree = async (_strings: TemplateStringsArray, ...values: unknown[]) => [
+  { holder: values[1] },
+];
+/** ... and when another process holds it: no row comes back. */
+const leaseTaken = async () => [];
+/** The raw statements the sync itself ran: the lease's own release left out. */
+const syncStatements = () =>
+  mockExecuteRaw.mock.calls.filter(
+    ([strings]) => !(strings as TemplateStringsArray).join("?").includes('"job_leases"')
+  );
 
 const HWM_KEY = "wikiAutoSync.rcHighWater";
 const LOG_HWM_KEY = "wikiAutoSync.logHighWater";
@@ -1295,6 +1291,128 @@ describe("a page with text but no revision row (the shape of Crown Jewels of Cap
     expect(mockArticleUpdate).toHaveBeenCalledWith({
       where: { id: "art-1" },
       data: { status: "PUBLISHED" },
+    });
+  });
+});
+
+describe("the inbound rule", () => {
+  const HEAD_TEXT = "The head text.\n";
+  const HEAD_SHA1 = mwSha1Base36(HEAD_TEXT);
+  const OTHER_SHA1 = mwSha1Base36("Somebody else's text.");
+  const THIRD_SHA1 = mwSha1Base36("A third text.");
+
+  const head = (over: Partial<InboundHead> = {}): InboundHead => ({
+    mwRevId: 100,
+    sha1: HEAD_SHA1,
+    wikitext: HEAD_TEXT,
+    ...over,
+  });
+
+  const rev = (over: Partial<InboundRevision> = {}): InboundRevision => ({
+    revid: 101,
+    parentid: 100,
+    sha1: OTHER_SHA1,
+    byMirrorBot: false,
+    ...over,
+  });
+
+  interface Row {
+    name: string;
+    head: InboundHead | null;
+    rev: InboundRevision;
+    parentSha1?: string | null;
+    expected: InboundDecision;
+  }
+
+  const rows: Row[] = [
+    {
+      name: "the page is new to WikiOS",
+      head: null,
+      rev: rev({ parentid: 0 }),
+      expected: "fast-forward",
+    },
+    {
+      name: "the page exists in WikiOS but has no revision",
+      head: null,
+      rev: rev({ parentid: 77 }),
+      expected: "fast-forward",
+    },
+    {
+      name: "the edit's parent is the head by MediaWiki revision id",
+      head: head(),
+      rev: rev({ parentid: 100 }),
+      expected: "fast-forward",
+    },
+    {
+      name: "the head has no stored hash: it is computed from its text",
+      head: head({ sha1: null }),
+      rev: rev({ sha1: HEAD_SHA1, parentid: 55 }),
+      expected: "echo",
+    },
+    {
+      name: "the edit has exactly the head's text (the mirror's export coming back)",
+      head: head({ mwRevId: null }),
+      rev: rev({ sha1: HEAD_SHA1, parentid: 55 }),
+      expected: "echo",
+    },
+    {
+      name: "the edit's text is the head's without its trailing newline (MediaWiki trims what it saves)",
+      head: head({ sha1: null }),
+      rev: rev({ sha1: mwSha1Base36("The head text."), parentid: 55 }),
+      expected: "echo",
+    },
+    {
+      name: "an edit by the mirror account is an echo whatever its text",
+      head: head({ mwRevId: 90 }),
+      rev: rev({ byMirrorBot: true, parentid: 12, sha1: THIRD_SHA1 }),
+      expected: "echo",
+    },
+    {
+      name: "the head was never stamped, but the parent has exactly the head's text",
+      head: head({ mwRevId: null }),
+      rev: rev({ parentid: 55 }),
+      parentSha1: HEAD_SHA1,
+      expected: "fast-forward",
+    },
+    {
+      name: "the head is stamped with an older revision, but the parent has the head's text (a copy pushed back after a park)",
+      head: head({ mwRevId: 90 }),
+      rev: rev({ parentid: 95 }),
+      parentSha1: HEAD_SHA1,
+      expected: "fast-forward",
+    },
+    {
+      name: "the parent's text differs from the head's: the author never saw WikiOS's edit",
+      head: head({ mwRevId: null }),
+      rev: rev({ parentid: 55 }),
+      parentSha1: THIRD_SHA1,
+      expected: "park",
+    },
+    {
+      name: "the parent is another revision and its hash was not fetched",
+      head: head({ mwRevId: 90 }),
+      rev: rev({ parentid: 95 }),
+      parentSha1: null,
+      expected: "park",
+    },
+    {
+      name: "a page created in MediaWiki while WikiOS already has one with other text",
+      head: head({ mwRevId: null }),
+      rev: rev({ parentid: 0 }),
+      expected: "park",
+    },
+  ];
+
+  describe("decideInbound", () => {
+    it.each(rows)("$name -> $expected", ({ head: h, rev: r, parentSha1, expected }) => {
+      expect(decideInbound({ head: h, rev: r, parentSha1: parentSha1 ?? null })).toBe(expected);
+    });
+
+    it("covers every decision", () => {
+      expect(new Set(rows.map((row) => row.expected))).toEqual(
+        new Set(["echo", "fast-forward", "park"])
+      );
+      expect(rows.length).toBeGreaterThanOrEqual(8);
     });
   });
 });
