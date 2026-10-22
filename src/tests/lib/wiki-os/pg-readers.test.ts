@@ -4,7 +4,8 @@
  * from WikiOS's own rows (verified links included, names taken as typed); a parked revision is no recent change and is
  * flagged where it is listed; a deleted page's text and its files never come back; a page's images leave out icons,
  * non-images and files whose page was deleted, with the limit applied first; a sister wiki is still asked for its own;
- * the main page counts only edits that went live and reports a failed count as unknown, never a stand-in number.
+ * the main page counts only edits that went live and reports a failed count as unknown, never a stand-in number; and no
+ * list (search, category members, recent changes, contributions, backlinks, redirects, media usage) shows a deleted page.
  */
 jest.mock("~/server/db", () => ({
   __esModule: true,
@@ -13,9 +14,14 @@ jest.mock("~/server/db", () => ({
     wikiRevision: { count: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), groupBy: jest.fn() },
     wikiAccountLink: { findFirst: jest.fn(), findMany: jest.fn() },
     wikiAsset: { findMany: jest.fn(), findFirst: jest.fn(), count: jest.fn() },
+    wikiLink: { findMany: jest.fn() },
+    wikiCategory: { findFirst: jest.fn() },
+    wikiCategoryMember: { findMany: jest.fn() },
+    wikiTemplate: { findMany: jest.fn() },
     user: { count: jest.fn() },
     lorewardUserStats: { findFirst: jest.fn() },
     $queryRaw: jest.fn(),
+    $queryRawUnsafe: jest.fn(),
   },
 }));
 jest.mock("~/lib/wiki-os/rights", () => ({
@@ -28,10 +34,14 @@ import { db } from "~/server/db";
 import { loadTargetPermissions } from "~/lib/wiki-os/rights";
 import { ixwikiGetUserContribs, ixwikiGetUserCreatedPages, ixwikiGetUserInfo, ixwikiRecentChanges } from "~/lib/wiki-os/adapters/mediawiki/bridge/pg-activity";
 import { type FetchGuard, installFetchGuard } from "~/tests/helpers/fetch-guard";
-import { ixwikiGetWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge/pg-reader";
+import { ixwikiGetWikitext, ixwikiResolveRedirect } from "~/lib/wiki-os/adapters/mediawiki/bridge/pg-reader";
 import { getArticleWikitext, getPageImages } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { ixwikiGetSiteStats } from "~/lib/wiki-os/adapters/mediawiki/bridge/pg-site";
+import { NativeSearchService } from "~/lib/wiki-os/core/native-search-service";
+import { CategoryService } from "~/lib/wiki-os/core/category-service";
+import { LinkGraphService } from "~/lib/wiki-os/core/link-graph-service";
+import { PageManagementService } from "~/lib/wiki-os/core/page-management-service";
 
 // each folded suite sets what it reads; nothing one leaves on the shared database mock reaches the next
 beforeEach(() => jest.resetAllMocks());
@@ -649,6 +659,131 @@ describe("the main page's reads", () => {
         users: null,
         activeUsers: null,
       });
+    });
+  });
+});
+
+describe("lists never show a deleted page", () => {
+  type Delegate = Record<string, jest.Mock>;
+  const listsDb = jest.requireMock<{
+    db: Record<
+      | "wikiArticle"
+      | "wikiRevision"
+      | "wikiLink"
+      | "wikiCategory"
+      | "wikiCategoryMember"
+      | "wikiAsset"
+      | "wikiAccountLink"
+      | "wikiTemplate"
+      | "user",
+      Delegate
+    > & { $queryRawUnsafe: jest.Mock; $queryRaw: jest.Mock };
+  }>("~/server/db").db;
+
+  const published = { status: "PUBLISHED" };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    listsDb.wikiArticle.findMany.mockResolvedValue([]);
+    listsDb.wikiArticle.findUnique.mockResolvedValue(null);
+    listsDb.wikiArticle.count.mockResolvedValue(0);
+    listsDb.wikiRevision.findMany.mockResolvedValue([]);
+    listsDb.wikiRevision.count.mockResolvedValue(0);
+    listsDb.wikiLink.findMany.mockResolvedValue([]);
+    listsDb.wikiCategoryMember.findMany.mockResolvedValue([]);
+    listsDb.wikiAsset.count.mockResolvedValue(0);
+    listsDb.wikiAccountLink.findMany.mockResolvedValue([]);
+    listsDb.user.count.mockResolvedValue(0);
+    listsDb.$queryRaw.mockResolvedValue([]);
+    listsDb.wikiTemplate.findMany.mockResolvedValue([]);
+    listsDb.$queryRawUnsafe.mockResolvedValue([]);
+  });
+
+  describe("search", () => {
+    it("spotlight search looks at published pages only", async () => {
+      await NativeSearchService.spotlightSearch("Caph", "ixwiki", 5);
+
+      const [sql] = listsDb.$queryRawUnsafe.mock.calls[0] as [string];
+      expect(sql).toContain("status = 'PUBLISHED'");
+    });
+
+    it("full-text search filters the page query and the count query", async () => {
+      await NativeSearchService.fulltextSearch("kingdom of caphiria", "ixwiki", 10);
+
+      const [pageSql, countSql] = listsDb.$queryRawUnsafe.mock.calls.map((call) => call[0] as string);
+      expect(pageSql).toContain("a.status = 'PUBLISHED'");
+      expect(countSql).toContain("a.status = 'PUBLISHED'");
+    });
+    // last: it leaves the search on its slow queries (the indexes "are missing") for the rest of the file
+  });
+
+  describe("categories", () => {
+    it("lists only published members and counts only those", async () => {
+      listsDb.wikiCategory.findFirst.mockResolvedValue({
+        id: "c1",
+        slug: "nations",
+        name: "Nations",
+        description: null,
+        parent: null,
+        children: [{ id: "c2", slug: "kingdoms", name: "Kingdoms", _count: { members: 0 } }],
+        members: [],
+      });
+
+      await CategoryService.getCategoryDetails("Nations");
+
+      const include = listsDb.wikiCategory.findFirst.mock.calls[0]?.[0].include;
+      expect(include.members.where).toEqual({ article: published });
+      expect(include.children.select._count.select.members.where).toEqual({ article: published });
+      expect(listsDb.wikiCategoryMember.findMany.mock.calls.map((c) => c[0].where.article)).toEqual([
+        published,
+        published,
+      ]);
+    });
+  });
+
+  describe("activity and links", () => {
+    it("recent changes skip revisions of deleted pages", async () => {
+      await ixwikiRecentChanges(10);
+      expect(listsDb.wikiRevision.findMany.mock.calls[0]?.[0].where.article).toMatchObject(published);
+    });
+
+    it("contributions and created pages skip deleted pages", async () => {
+      await ixwikiGetUserContribs("Amy", 10, 0);
+      await ixwikiGetUserCreatedPages("Amy", 10);
+      expect(listsDb.wikiRevision.findMany.mock.calls[0]?.[0].where.article).toMatchObject(published);
+      // Created pages are one raw query over the pages' first revisions, which names the status.
+      const [strings] = listsDb.$queryRaw.mock.calls[0] as [TemplateStringsArray];
+      expect(strings.join("$")).toContain(`a."status" = 'PUBLISHED'`);
+    });
+
+    it("backlinks come from published pages, and a link to a deleted page is a red link", async () => {
+      await LinkGraphService.getBacklinks("Caphiria");
+      expect(listsDb.wikiLink.findMany.mock.calls[0]?.[0].where.sourceArticle).toMatchObject(
+        published
+      );
+
+      // The render replaces an article's links; a target is resolved among published pages only.
+      const tx = {
+        ...listsDb,
+        wikiLink: { ...listsDb.wikiLink, deleteMany: jest.fn(), createMany: jest.fn() },
+      };
+      await LinkGraphService.replaceLinks(tx as never, "a1", "ixwiki", [{ title: "Caphiria" }]);
+      expect(listsDb.wikiArticle.findMany.mock.calls[0]?.[0].where).toMatchObject(published);
+    });
+
+    it("a redirect from a deleted page is not followed", async () => {
+      await ixwikiResolveRedirect("Old name");
+      // Both the exact-title and the slug-variant lookup are raw SQL that names the status.
+      const queries = listsDb.$queryRaw.mock.calls.map(([strings]) => strings.join("$"));
+      expect(queries).toHaveLength(2);
+      for (const query of queries) expect(query).toContain(`"status" = 'PUBLISHED'`);
+    });
+  });
+
+  describe("counts and usage", () => {
+    it("media usage lists published pages only", async () => {
+      await PageManagementService.getMediaUsage("Flag.png");
+      expect(listsDb.wikiArticle.findMany.mock.calls[0]?.[0].where).toMatchObject(published);
     });
   });
 });

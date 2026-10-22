@@ -1,11 +1,68 @@
 /** @jest-environment node */
-// `jest` is deliberately NOT imported from "@jest/globals" (see cards-archetypes-admin-auth.test.ts):
-// the hoisted jest.mock() factories rely on the ambient global.
+// `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factories rely on the ambient global.
 //
-// A stash holds one item per (content type, title). `StashItem` used to be unique on
-// (stashId, pageTitle), so an Onoma name "Rome" and the article "Rome" overwrote each other.
-// The fake `stashItem` below only understands the NEW compound key, so a router still upserting on
-// the old two-column compound key fails here instead of silently passing.
+// The stash keys an item by (stash, content type, title): an Onoma name, a dictionary and an article of one title live
+// side by side, saving or annotating one never overwrites another, and unstashing removes exactly the one asked; a
+// stashed forum thread is listed with its current title only while the reader may still read it (hidden and staff
+// threads drop out), and bridge-era ids are never written or returned.
+jest.mock("~/server/db", () => ({
+  __esModule: true,
+  db: {
+    user: { findUnique: jest.fn(), findFirst: jest.fn() },
+    auditLog: { create: jest.fn() },
+    // The native forum thread's lookup (a public General thread) and the moderator context's reads.
+    forumThread: {
+      findUnique: jest.fn(async () => ({
+        id: "t7",
+        title: "A native thread",
+        authorUserId: "u_other",
+        hidden: false,
+        category: { id: "cat_general", scope: "site", realmId: null, visibility: "public" },
+      })),
+      findMany: jest.fn(),
+    },
+    realm: { findMany: jest.fn(async () => []), findUnique: jest.fn(async () => null) },
+    realmOfficer: { findMany: jest.fn(async () => []) },
+    forumCategoryModerator: { findMany: jest.fn(async () => []) },
+    stash: {
+      findFirst: jest.fn(async () => ({
+        id: "stash_1",
+        userId: "db_user_1",
+        name: "My Stash",
+        isDefault: true,
+      })),
+      findMany: jest.fn(async () => [{ id: "stash_1" }]),
+      create: jest.fn(),
+    },
+    get stashItem() {
+      return fakeStashItem;
+    },
+  },
+  isDatabaseReadOnly: true,
+}));
+jest.mock("~/lib/auth", () => ({
+  __esModule: true,
+  isSystemOwner: () => false,
+  UserManagementService: jest.fn(),
+}));
+jest.mock("~/lib/auth/system-owner-constants", () => ({
+  __esModule: true,
+  isSystemOwner: () => false,
+}));
+jest.mock("~/lib/wiki-os/permissions", () => ({
+  __esModule: true,
+  requireNotBlocked: jest.fn(async () => undefined),
+}));
+
+import { beforeEach, describe, expect, it } from "@jest/globals";
+import { createCallerFactory } from "~/server/api/trpc";
+import { wikiosStashRouter } from "~/server/api/routers/wikios/stash";
+import { onomaNameBankRouter } from "~/server/api/routers/onoma/namebank";
+import { thinkpagesForumRouter } from "~/server/api/routers/thinkpagesForum";
+import { wikiosWatchlistAnnotationsRouter } from "~/server/api/routers/wikios/watchlist-annotations";
+import { createMockRouterContext } from "~/tests/helpers/router-context";
+import { db } from "~/server/db";
+
 type FakeItem = {
   id: string;
   stashId: string;
@@ -90,64 +147,6 @@ const fakeStash = {
   name: "My Stash",
   isDefault: true,
 };
-
-jest.mock("~/server/db", () => ({
-  __esModule: true,
-  db: {
-    user: { findUnique: jest.fn(), findFirst: jest.fn() },
-    auditLog: { create: jest.fn() },
-    // The native forum thread's lookup (a public General thread) and the moderator context's reads.
-    forumThread: {
-      findUnique: jest.fn(async () => ({
-        id: "t7",
-        title: "A native thread",
-        authorUserId: "u_other",
-        hidden: false,
-        category: { id: "cat_general", scope: "site", realmId: null, visibility: "public" },
-      })),
-    },
-    realm: { findMany: jest.fn(async () => []) },
-    realmOfficer: { findMany: jest.fn(async () => []) },
-    forumCategoryModerator: { findMany: jest.fn(async () => []) },
-    stash: {
-      findFirst: jest.fn(async () => ({
-        id: "stash_1",
-        userId: "db_user_1",
-        name: "My Stash",
-        isDefault: true,
-      })),
-      findMany: jest.fn(async () => [{ id: "stash_1" }]),
-      create: jest.fn(),
-    },
-    get stashItem() {
-      return fakeStashItem;
-    },
-  },
-  isDatabaseReadOnly: true,
-}));
-jest.mock("~/lib/auth", () => ({
-  __esModule: true,
-  isSystemOwner: () => false,
-  UserManagementService: jest.fn(),
-}));
-jest.mock("~/lib/auth/system-owner-constants", () => ({
-  __esModule: true,
-  isSystemOwner: () => false,
-}));
-
-jest.mock("~/lib/wiki-os/permissions", () => ({
-  __esModule: true,
-  requireNotBlocked: jest.fn(async () => undefined),
-}));
-
-import { describe, it, expect, beforeEach } from "@jest/globals";
-import { createCallerFactory } from "~/server/api/trpc";
-import { wikiosStashRouter } from "~/server/api/routers/wikios/stash";
-import { onomaNameBankRouter } from "~/server/api/routers/onoma/namebank";
-import { thinkpagesForumRouter } from "~/server/api/routers/thinkpagesForum";
-import { wikiosWatchlistAnnotationsRouter } from "~/server/api/routers/wikios/watchlist-annotations";
-import { createMockRouterContext } from "~/tests/helpers/router-context";
-import { db } from "~/server/db";
 
 const ctx = () =>
   createMockRouterContext({
@@ -326,5 +325,87 @@ describe("stashPage takes no contentId", () => {
     expect(first?.create).not.toHaveProperty("contentId");
     expect(second?.update).toEqual({});
     expect(store.map((i) => i.contentId)).toEqual([null]);
+  });
+});
+
+describe("stashed forum threads", () => {
+  const general = { id: "cat_general", scope: "site", realmId: null, visibility: "public" };
+  const staff = { id: "cat_staff", scope: "site", realmId: null, visibility: "staff" };
+  const thread = (id: string, extra: object = {}) => ({
+    id,
+    title: `Now ${id}`,
+    authorUserId: "u_other",
+    hidden: false,
+    category: general,
+    ...extra,
+  });
+  const item = (pageTitle: string, note: string | null) => ({
+    id: `i_${pageTitle}`,
+    pageTitle,
+    pageSlug: "/x",
+    note,
+    contentType: null,
+    contentId: null,
+    annotations: [],
+    _count: { annotations: 0 },
+    savedAt: new Date("2026-10-01T00:00:00Z"),
+  });
+
+  const caller = () =>
+    createCallerFactory(wikiosStashRouter)(
+      createMockRouterContext({
+        auth: { userId: "user_1" },
+        user: { id: "db1", clerkUserId: "user_1", role: { name: "user", level: 100 } },
+      }) as never
+    );
+
+  describe("getStashItems and stashed forum threads (I5)", () => {
+    it("re-titles readable native threads, drops unreadable ones and leaves other items alone", async () => {
+      jest
+        .mocked(db.stashItem.findMany)
+        .mockResolvedValue([
+          item("Main_Page", "a wiki note"),
+          item("thinkpages:thread:t_ok", "Old title"),
+          item("thinkpages:thread:t_hidden", "Hidden title"),
+          item("thinkpages:thread:t_staff", "Staff title"),
+          item("thinkpages:thread:t_gone", "Gone title"),
+        ] as never);
+      jest
+        .mocked(db.forumThread.findMany)
+        .mockResolvedValue([
+          thread("t_ok"),
+          thread("t_hidden", { hidden: true }),
+          thread("t_staff", { category: staff }),
+        ] as never);
+
+      const { items } = await caller().getStashItems({ stashId: "s1" });
+
+      expect(items.map((i) => [i.pageTitle, i.note])).toEqual([
+        ["Main_Page", "a wiki note"],
+        ["thinkpages:thread:t_ok", "Now t_ok"],
+      ]);
+    });
+
+    it("leaves out bridge-era forum:thread: items and returns no contentId", async () => {
+      jest.mocked(db.forumThread.findMany).mockResolvedValue([thread("t_ok")] as never);
+      jest
+        .mocked(db.stashItem.findMany)
+        .mockResolvedValue([
+          item("thinkpages:thread:t_ok", "Old title"),
+          { ...item("forum:thread:7", "An old thread"), contentId: 7 },
+        ] as never);
+
+      const { items } = await caller().getStashItems({ stashId: "s1" });
+
+      expect(items.map((i) => i.pageTitle)).toEqual(["thinkpages:thread:t_ok"]);
+      expect(items[0]).not.toHaveProperty("contentId");
+    });
+
+    it("asks nothing of the forum when the page holds no native thread", async () => {
+      jest.mocked(db.forumThread.findMany).mockClear();
+      jest.mocked(db.stashItem.findMany).mockResolvedValue([item("Main_Page", null)] as never);
+      await caller().getStashItems({ stashId: "s1" });
+      expect(db.forumThread.findMany).not.toHaveBeenCalled();
+    });
   });
 });

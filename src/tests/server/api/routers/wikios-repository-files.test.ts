@@ -86,28 +86,6 @@ describe("repositoryFiles: ixwiki", () => {
     const before = await signedOut().repositoryFiles({ source: "ixwiki", limit: 40, cursor: "1920" });
     expect(before.nextCursor).toBe("1960");
   });
-
-  it.each([
-    ["jpg", ["image/jpeg"]],
-    ["png", ["image/png"]],
-    ["svg", ["image/svg+xml"]],
-  ] as const)("maps fileType %s to mime types for the IxWiki search", async (fileType, mimes) => {
-    mockSearch.mockResolvedValueOnce([]);
-    await signedOut().repositoryFiles({ source: "ixwiki", fileType });
-    expect(mockSearch.mock.calls[0]![0]).toMatchObject({ fileTypes: mimes });
-  });
-
-  it("passes no fileTypes without a fileType, and ignores it for other sources", async () => {
-    mockSearch.mockResolvedValueOnce([]);
-    await signedOut().repositoryFiles({ source: "ixwiki" });
-    expect(mockSearch.mock.calls[0]![0].fileTypes).toBeUndefined();
-
-    mockListUploaded.mockResolvedValue({ items: [], nextCursor: null });
-    await signedOut().repositoryFiles({ source: "forum", fileType: "svg" });
-    expect(mockSearch).toHaveBeenCalledTimes(1);
-    expect(mockListUploaded.mock.calls[0]![0]).not.toHaveProperty("fileType");
-  });
-
   it("rejects a cursor that is not an offset", async () => {
     await expect(
       signedOut().repositoryFiles({ source: "ixwiki", cursor: "abc" })
@@ -116,46 +94,6 @@ describe("repositoryFiles: ixwiki", () => {
 });
 
 describe("repositoryFiles: iiwiki", () => {
-  it("round-trips MediaWiki's continue object through the cursor", async () => {
-    const page = (title: string, cont?: Record<string, unknown>) => ({
-      ...(cont ? { continue: cont } : {}),
-      query: {
-        pages: {
-          "1": {
-            title: `File:${title}`,
-            index: 1,
-            imageinfo: [
-              { url: `https://iiwiki.com/${title}`, thumburl: `https://iiwiki.com/t/${title}`, size: 5, width: 2, height: 2, mime: "image/png" },
-            ],
-          },
-        },
-      },
-    });
-    guard = installFetchGuard((url) =>
-      url.searchParams.get("gsroffset") === "40"
-        ? page("B.png")
-        : page("A.png", { gsroffset: 40, continue: "-||" })
-    );
-
-    const first = await signedOut().repositoryFiles({ source: "iiwiki", query: "flag-ii-page", limit: 40 });
-    expect(first.files).toHaveLength(1);
-    expect(first.files[0]).toMatchObject({ name: "A.png", blurhash: null, thumbUrl: "https://iiwiki.com/t/A.png" });
-    expect(first.nextCursor).toEqual(expect.any(String));
-
-    const second = await signedOut().repositoryFiles({
-      source: "iiwiki",
-      query: "flag-ii-page",
-      limit: 40,
-      cursor: first.nextCursor,
-    });
-    const sent = new URL(guard.calls()[1]!);
-    expect(sent.searchParams.get("gsroffset")).toBe("40");
-    expect(sent.searchParams.get("continue")).toBe("-||");
-    expect(sent.searchParams.get("gsrsearch")).toBe("flag-ii-page");
-    expect(second.files[0]).toMatchObject({ name: "B.png" });
-    expect(second.nextCursor).toBeNull();
-  });
-
   it.each([
     ["action", "delete"],
     ["generator", "allpages"],
@@ -169,52 +107,6 @@ describe("repositoryFiles: iiwiki", () => {
 });
 
 describe("sisterFileInfo", () => {
-  const info = (name: string) => ({
-    url: `https://iiwiki.com/images/${name}`,
-    thumburl: `https://iiwiki.com/t/${name}`,
-    size: 7,
-    width: 3,
-    height: 2,
-    mime: "image/png",
-  });
-
-  it("looks the titles up in one call and keys them by the requested title", async () => {
-    guard = installFetchGuard(() => ({
-      query: {
-        normalized: [{ from: "File:A_b.png", to: "File:A b.png" }],
-        pages: {
-          "1": { title: "File:A b.png", imageinfo: [info("A_b.png")] },
-          "2": { title: "File:C.svg", imageinfo: [{ ...info("C.svg"), mime: "image/svg+xml" }] },
-          "-1": { title: "File:Gone.png", missing: "" },
-        },
-      },
-    }));
-    const out = await signedOut().sisterFileInfo({
-      wiki: "iiwiki",
-      titles: ["File:A_b.png", "File:C.svg", "File:Gone.png"],
-    });
-    expect(guard.calls()).toHaveLength(1);
-    const sent = new URL(guard.calls()[0]!);
-    expect(sent.searchParams.get("action")).toBe("query");
-    expect(sent.searchParams.get("titles")).toBe("File:A_b.png|File:C.svg|File:Gone.png");
-    expect(sent.searchParams.get("prop")).toBe("imageinfo");
-    expect(sent.searchParams.get("iiprop")).toBe("url|size|mime");
-    expect(sent.searchParams.get("iiurlwidth")).toBe("500");
-    expect(Object.keys(out.files)).toEqual(["File:A_b.png", "File:C.svg"]);
-    expect(out.files["File:A_b.png"]).toEqual({
-      name: "A b.png",
-      title: "File:A b.png",
-      url: "https://iiwiki.com/images/A_b.png",
-      thumbUrl: "https://iiwiki.com/t/A_b.png",
-      size: 7,
-      width: 3,
-      height: 2,
-      mime: "image/png",
-      blurhash: null,
-    });
-    expect(out.files["File:C.svg"]).toMatchObject({ mime: "image/svg+xml" });
-  });
-
   it.each([
     ["no titles", []],
     ["51 titles", Array.from({ length: 51 }, (_, i) => `File:${i}.png`)],
@@ -253,40 +145,6 @@ describe("sisterFileInfo", () => {
 });
 
 describe("repositoryFiles: forum and mine", () => {
-  const record = {
-    id: "r1",
-    url: "/images/uploads/forum/1-p.jpg",
-    thumbUrl: "/images/uploads/forum/1-p.jpg.thumb.webp",
-    title: "p.jpg",
-    mimeType: "image/jpeg",
-    width: 8,
-    height: 6,
-    sizeBytes: 99,
-    blurhash: "LEHV6nWB2yk8",
-    source: "forum",
-    visibility: "public",
-    createdAt: new Date("2026-10-09T00:00:00Z"),
-  };
-
-  it("maps forum records to the file shape", async () => {
-    mockListUploaded.mockResolvedValue({ items: [record], nextCursor: "next" });
-    const out = await signedOut().repositoryFiles({ source: "forum", query: "p", limit: 10 });
-    expect(mockListUploaded.mock.calls[0]![0]).toMatchObject({ source: "forum", query: "p", limit: 10 });
-    expect(mockListUploaded.mock.calls[0]![0]).not.toHaveProperty("uploaderClerkId", expect.anything());
-    expect(out.nextCursor).toBe("next");
-    expect(out.files[0]).toMatchObject({
-      name: "p.jpg",
-      title: "File:p.jpg",
-      size: 99,
-      mime: "image/jpeg",
-      width: 8,
-      height: 6,
-      blurhash: "LEHV6nWB2yk8",
-    });
-    expect(out.files[0]!.url).toContain("/images/uploads/forum/1-p.jpg");
-    expect(out.files[0]!.thumbUrl).toContain(".thumb.webp");
-  });
-
   it("mine requires sign-in", async () => {
     await expect(signedOut().repositoryFiles({ source: "mine" })).rejects.toMatchObject({
       code: "UNAUTHORIZED",

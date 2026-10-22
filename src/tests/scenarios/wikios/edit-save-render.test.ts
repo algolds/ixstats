@@ -23,6 +23,11 @@
  *   no IxWiki revision.
  * - wikios-edit-conflict.test.ts, wikios-get-wikitext.test.ts: a save under a lower-case spelling lands on the canonical
  *   title; the editor gets the head's every reference with the text, and the text alone when the head cannot be read.
+ * - wikios-revert.test.ts (plan 402): a revert refuses a revision whose text was never imported, another page's, a parked
+ *   one (an administrator too), and blanking (whitespace included) unless the caller is an administrator; a rollback
+ *   restores the last other editor's text and is refused when every revision is the same editor's.
+ * - title-cache-eviction.test.ts: the edit evicts the page from the bridge under every spelling a reader asked for, and
+ *   nothing else; an eviction that cannot reach one cache still clears the others and never fails the save.
  */
 jest.mock("~/server/db", () => {
   const fake = jest.requireActual("~/tests/helpers/fake-wiki-db").createFakeWikiDb({ prisma: true });
@@ -61,6 +66,7 @@ import { wikiosHistoryDiffRouter } from "~/server/api/routers/wikios/history-dif
 import { renderArticleViaMediaWiki, type RenderMetadata } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import { getArticleIntro, getRevisionWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { wikiBridgeCache } from "~/lib/wiki-os/adapters/mediawiki/bridge/types";
+import { intelligentLoreCache } from "~/lib/wiki-os/core/intelligent-lore-cache";
 import { purgeArticle } from "~/lib/wiki-os/services/purge-service";
 import { evictWikiTitleCaches } from "~/lib/wiki-os/services/title-cache-eviction";
 import { buildViewBundle } from "~/lib/wiki-os/services/render-service";
@@ -79,6 +85,13 @@ const member = () =>
   }) as never;
 const signedOut = () => createMockRouterContext({ auth: null, user: null }) as never;
 const editing = () => createCallerFactory(wikiosEditingRouter)(member());
+const administrator = () =>
+  createCallerFactory(wikiosEditingRouter)(
+    createMockRouterContext({
+      auth: { userId: "clerk-admin" },
+      user: { id: "db-admin", clerkUserId: "clerk-admin", wikiUsername: "Admin", role: { name: "admin", level: 10 } },
+    }) as never
+  );
 const reading = () => createCallerFactory(wikiosPageContentRouter)(signedOut());
 const history = () => createCallerFactory(wikiosHistoryDiffRouter)(signedOut());
 
@@ -321,5 +334,61 @@ describe("a member edits Caphiria and readers see the new page", () => {
     const foreign = tables.wikiRevision.insert({ articleId: other.id, source: "iiwiki", mwRevId: 7001, wikitext: "x", byteSize: 1 });
     await expect(getRevisionWikitext("7001")).resolves.toBeNull();
     await expect(getRevisionWikitext(foreign.id)).resolves.toBeNull();
+  });
+
+  it("refuses a revert to text it does not have or that never went live, and blanking but for an administrator", async () => {
+    const id = page().id;
+    const urcea = tables.wikiArticle.insert({ title: "Urcea", slug: "urcea", wikitext: "Urcea." });
+    tables.wikiRevision.insert({ articleId: urcea.id, mwRevId: 4100, wikitext: "Urcea.", byteSize: 6 });
+    tables.wikiRevision.insert({ articleId: id, mwRevId: 4001, wikitext: "", byteSize: 4096 }); // never imported
+    tables.wikiRevision.insert({ articleId: id, mwRevId: 9001, wikitext: "conflicting text", byteSize: 16, parked: true });
+    const blank = tables.wikiRevision.insert({ articleId: id, wikitext: "", byteSize: 0 });
+    const blanks = tables.wikiRevision.insert({ articleId: id, wikitext: " \n\t  \n", byteSize: 6 });
+    const before = revisionsOf(id).length;
+    const revert = (revid: string, as = editing) => as().revertToRevision({ title: "Caphiria", revid });
+
+    await expect(revert("4001")).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    await expect(revert("4100")).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(revert("9001")).rejects.toMatchObject({ code: "PRECONDITION_FAILED", message: expect.stringContaining("never went live") });
+    await expect(revert("9001", administrator)).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    await expect(revert(blank.id)).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    await expect(revert(blanks.id)).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    expect(revisionsOf(id)).toHaveLength(before);
+    expect(page().wikitext).toBe(V1);
+
+    // an administrator may blank the page
+    await revert(blank.id, administrator);
+    expect(page().wikitext).toBe("");
+  });
+
+  it("rolls back to the last other editor's text, and refuses when every revision is the same editor's", async () => {
+    tables.wikiUserGroup.seed({ userId: "db-member", group: "rollbacker" });
+    await editing().saveWikitext({ title: "Caphiria", wikitext: V2, baseRevisionRef: "5001" });
+    await editing().saveWikitext({ title: "Caphiria", wikitext: `${V2}\nMore.`, baseRevisionRef: revisionsOf(page().id).at(-1)!.id });
+
+    await editing().rollback({ title: "Caphiria" });
+    expect(page().wikitext).toBe(V1);
+    expect(revisionsOf(page().id).at(-1)).toMatchObject({ wikitext: V1, summary: expect.stringContaining("Rolled back edits by Member") });
+
+    tables.wikiArticle.insert({ title: "Solo", slug: "solo", wikitext: "two" });
+    const solo = tables.wikiArticle.rows.find((row) => row.title === "Solo")!;
+    tables.wikiRevision.insert({ articleId: solo.id, wikitext: "one", byteSize: 3, author: "Member", createdAt: new Date("2026-09-01") });
+    tables.wikiRevision.insert({ articleId: solo.id, wikitext: "two", byteSize: 3, author: "Member", createdAt: new Date("2026-09-02") });
+    await expect(editing().rollback({ title: "Solo" })).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+  });
+
+  it("evicts the edited page under every spelling a reader used, and nothing else, even when one cache is down", async () => {
+    tables.wikiArticle.insert({ title: "Urcea", slug: "urcea", wikitext: "Urcea is a kingdom." });
+    for (const spelling of ["Caphiria", "caphiria"]) await getArticleIntro(spelling);
+    await getArticleIntro("Urcea");
+    jest.spyOn(intelligentLoreCache, "evictTitle").mockRejectedValueOnce(new Error("cache down"));
+    jest.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    const saved = await editing().saveWikitext({ title: "Caphiria", wikitext: V2, baseRevisionRef: "5001" });
+    expect(saved).toMatchObject({ success: true });
+    await settle();
+
+    expect([...wikiBridgeCache.keys()].filter((key) => key.startsWith("intro:"))).toEqual(["intro:ixwiki:Urcea"]);
+    expect((await getArticleIntro("caphiria"))?.text).toMatch(/^Caphiria is an empire in Sarpedon/);
   });
 });

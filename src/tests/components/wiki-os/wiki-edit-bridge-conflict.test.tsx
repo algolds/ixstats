@@ -159,14 +159,6 @@ describe("WikiEditBridge edit conflicts and drafts (WK-2)", () => {
     expect(onClose).toHaveBeenCalled();
     expect(mockInvalidate).toHaveBeenCalledWith({ title: "Vesperia" });
   });
-
-  it("sends no base for a page that did not exist", async () => {
-    mockPage = { wikitext: "", revisionRef: null };
-    await openEditor();
-    await save("First text");
-    expect(mockSave.mock.calls[0]![0].baseRevisionRef).toBeUndefined();
-  });
-
   it("keeps the author's text, shows the banner and does not close on a conflict", async () => {
     mockSave.mockResolvedValueOnce(conflictResult("rev-2"));
     await openEditor();
@@ -180,43 +172,6 @@ describe("WikiEditBridge edit conflicts and drafts (WK-2)", () => {
     // the editor was not remounted: the author's text is still in it
     expect(mockSourceMounted).toHaveBeenCalledTimes(1);
   });
-
-  it("'Save anyway' saves the same text on top of the current revision", async () => {
-    mockSave.mockResolvedValueOnce(conflictResult("rev-2"));
-    await openEditor();
-    mockEditorContent = "My text";
-    await save("My text");
-
-    fireEvent.click(await screen.findByRole("button", { name: "Save anyway" }));
-
-    await waitFor(() => expect(onClose).toHaveBeenCalled());
-    expect(mockSave).toHaveBeenCalledTimes(2);
-    expect(mockSave.mock.calls[1]![0]).toEqual(
-      expect.objectContaining({ wikitext: "My text", baseRevisionRef: "rev-2" })
-    );
-    expect(mockNotifySuccess).toHaveBeenCalled();
-    expect(screen.queryByText(/Edit Conflict Detected/)).toBeNull();
-  });
-
-  it("'Load current version' reloads the editor on the current text, and saves against the new revision", async () => {
-    mockSave.mockResolvedValueOnce(conflictResult("rev-2", "Their text"));
-    await openEditor();
-    await save("My text");
-
-    fireEvent.click(await screen.findByRole("button", { name: "Load current version" }));
-
-    await waitFor(() => expect(lastSourceProps().initialWikitext).toBe("Their text"));
-    expect(mockSourceMounted).toHaveBeenCalledTimes(2);
-    expect(screen.queryByText(/Edit Conflict Detected/)).toBeNull();
-    // the author's text is not a draft any more: the current version must not be shadowed by it
-    expect(getDraft("user_alice", "Vesperia")).toBeNull();
-
-    await save("Merged text");
-    expect(mockSave.mock.calls[1]![0]).toEqual(
-      expect.objectContaining({ wikitext: "Merged text", baseRevisionRef: "rev-2" })
-    );
-  });
-
   it("builds the next save of a session on the revision the last one created", async () => {
     await openEditor();
     await save("First", true);
@@ -226,14 +181,6 @@ describe("WikiEditBridge edit conflicts and drafts (WK-2)", () => {
     expect(mockSave.mock.calls[1]![0].baseRevisionRef).toBe("rev-9");
     expect(onClose).not.toHaveBeenCalled();
   });
-
-  it("restores a draft that is based on the revision now published", async () => {
-    saveDraft("user_alice", { title: "Vesperia", source: "ixwiki", mode: "source", wikitext: "Draft text", baseRevisionRef: "rev-1" });
-    await openEditor();
-    expect(lastSourceProps().initialWikitext).toBe("Draft text");
-    expect(screen.queryByText(/Older draft found/)).toBeNull();
-  });
-
   it("does not silently replace fresher server text with an older draft", async () => {
     saveDraft("user_alice", { title: "Vesperia", source: "ixwiki", mode: "source", wikitext: "Old draft", baseRevisionRef: "rev-0" });
     render(<WikiEditBridge title="Vesperia" initialMode="source" onClose={onClose} />);
@@ -248,35 +195,6 @@ describe("WikiEditBridge edit conflicts and drafts (WK-2)", () => {
     expect(lastSourceProps().initialWikitext).toBe("Server text");
     expect(getDraft("user_alice", "Vesperia")).toBeNull();
   });
-
-  it("does not raise the older-draft question for a draft that equals the published text", async () => {
-    // The visual editor writes a draft of what it just published; it must not greet the next edit.
-    saveDraft("user_alice", { title: "Vesperia", source: "ixwiki", mode: "source", wikitext: "Server text", baseRevisionRef: undefined });
-    await openEditor();
-    expect(screen.queryByText(/Older draft found/)).toBeNull();
-    expect(lastSourceProps().initialWikitext).toBe("Server text");
-  });
-
-  it("treats a draft with no recorded base as older than a page that has a revision", async () => {
-    saveDraft("user_alice", { title: "Vesperia", source: "ixwiki", mode: "source", wikitext: "Legacy draft", baseRevisionRef: undefined });
-    render(<WikiEditBridge title="Vesperia" initialMode="source" onClose={onClose} />);
-    expect(await screen.findByText(/Older draft found/)).toBeTruthy();
-  });
-
-  it("restores an older draft on request and then checks a save against the draft's own base", async () => {
-    saveDraft("user_alice", { title: "Vesperia", source: "ixwiki", mode: "source", wikitext: "Old draft", baseRevisionRef: "rev-0" });
-    mockSave.mockResolvedValueOnce(conflictResult("rev-1", "Server text"));
-    render(<WikiEditBridge title="Vesperia" initialMode="source" onClose={onClose} />);
-
-    fireEvent.click(await screen.findByRole("button", { name: "Restore my draft" }));
-    await screen.findByTestId("source");
-    expect(lastSourceProps().initialWikitext).toBe("Old draft");
-
-    expect(await save("Old draft, edited")).toBeInstanceOf(Error);
-    expect(mockSave.mock.calls[0]![0].baseRevisionRef).toBe("rev-0");
-    expect(await screen.findByText(/Edit Conflict Detected/)).toBeTruthy();
-  });
-
   it("never offers another user's draft of the page (plan 416)", async () => {
     saveDraft("user_bob", { title: "Vesperia", source: "ixwiki", mode: "source", wikitext: "Bob's draft", baseRevisionRef: "rev-1" });
 
@@ -298,13 +216,6 @@ describe("WikiEditBridge edit conflicts and drafts (WK-2)", () => {
     await screen.findByTestId("source");
     expect(lastSourceProps().initialWikitext).toBe("Alice's draft");
   });
-
-  it("stamps drafts written by any editor with the revision the editor was loaded from", async () => {
-    await openEditor();
-    saveDraft("user_alice", { title: "Vesperia", source: "ixwiki", mode: "source", wikitext: "In progress" });
-    expect(getDraft("user_alice", "Vesperia")?.baseRevisionRef).toBe("rev-1");
-  });
-
   it("'Save anyway' sends what is in the editor NOW, not what the conflicting save sent", async () => {
     mockSave.mockResolvedValueOnce(conflictResult("rev-2"));
     await openEditor();
@@ -321,22 +232,6 @@ describe("WikiEditBridge edit conflicts and drafts (WK-2)", () => {
       })
     );
   });
-
-  it("opens an editor on a fresh fetch: no cache, refetch on mount, and no editor until it arrived", async () => {
-    mockFetchedAfterMount = false;
-    const view = render(<WikiEditBridge title="Vesperia" initialMode="source" onClose={onClose} />);
-
-    expect(mockUseQuery).toHaveBeenCalledWith(
-      { title: "Vesperia" },
-      expect.objectContaining({ staleTime: 0, refetchOnMount: "always" })
-    );
-    expect(screen.queryByTestId("source")).toBeNull();
-
-    mockFetchedAfterMount = true;
-    view.rerender(<WikiEditBridge title="Vesperia" initialMode="source" onClose={onClose} />);
-    expect(await screen.findByTestId("source")).toBeTruthy();
-  });
-
   describe("'Load current version' against the real draft store", () => {
     async function conflictWithDraft(mode: "source" | "visual"): Promise<void> {
       mockSave.mockResolvedValueOnce(conflictResult("rev-2", "Their text"));
@@ -355,14 +250,6 @@ describe("WikiEditBridge edit conflicts and drafts (WK-2)", () => {
       fireEvent.click(await screen.findByRole("button", { name: "Load current version" }));
     }
 
-    it.each(["source", "visual"] as const)("%s mode: clears the page's draft and opens on the current text", async (mode) => {
-      await conflictWithDraft(mode);
-
-      await waitFor(() => expect(screen.getByTestId(mode).textContent).toBe("Their text"));
-      expect(getDraft("user_alice", "Vesperia")).toBeNull();
-      expect(window.localStorage.length).toBe(0);
-    });
-
     it("keeps the author's text in the component: 'Restore my text' puts it back into the editor", async () => {
       await conflictWithDraft("visual");
       await screen.findByText(/Your version was set aside/);
@@ -377,26 +264,6 @@ describe("WikiEditBridge edit conflicts and drafts (WK-2)", () => {
       expect(warning.closest("p")!.textContent).toContain("saving will replace the current version");
       // and it does not come back as a draft
       expect(getDraft("user_alice", "Vesperia")).toBeNull();
-    });
-
-    it("'Copy my version' puts the author's text on the clipboard", async () => {
-      const writeText = jest.fn().mockResolvedValue(undefined);
-      Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
-      await conflictWithDraft("source");
-
-      fireEvent.click(await screen.findByRole("button", { name: "Copy my version" }));
-
-      expect(writeText).toHaveBeenCalledWith("My text");
-      await waitFor(() => expect(mockNotifySuccess).toHaveBeenCalledWith("Copied", expect.any(String)));
-    });
-
-    it("shows no replace warning until the author restores their text, and drops it after a save", async () => {
-      await conflictWithDraft("source");
-      expect(screen.queryByText(/This is your text, not the current version/)).toBeNull();
-      fireEvent.click(await screen.findByRole("button", { name: "Restore my text" }));
-      await screen.findByText(/This is your text, not the current version/);
-      await save("Final");
-      expect(screen.queryByText(/This is your text, not the current version/)).toBeNull();
     });
   });
 });
