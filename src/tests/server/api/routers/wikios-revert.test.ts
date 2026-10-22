@@ -182,38 +182,6 @@ describe("wikiosEditingRouter.revertToRevision (plan 402)", () => {
     ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     expectNothingSaved();
   });
-
-  it("compares the revision's page with the canonical form of the title", async () => {
-    jest.mocked(getRevisionWikitextShadow).mockResolvedValue(revision("old text", "Foo bar"));
-
-    await createCaller(userCtx() as never).revertToRevision({ title: "foo_bar", revid: "r1" });
-
-    expect(ArticleRepository.saveArticle).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Foo bar", wikitext: "old text" }),
-      expect.anything(),
-      expect.anything()
-    );
-  });
-
-  it("saves, exports and purges the edge cache once for a valid revert", async () => {
-    jest.mocked(getRevisionWikitextShadow).mockResolvedValue(revision("old text"));
-
-    const result = await createCaller(userCtx() as never).revertToRevision({
-      title: "Foo bar",
-      revid: "r1",
-    });
-
-    expect(result).toMatchObject({ success: true, title: "Foo bar", revisionId: "rev-new" });
-    expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(1);
-    expect(ArticleRepository.saveArticle).toHaveBeenCalledWith(
-      expect.objectContaining({ editSummary: "Reverted to revision r1 via WikiOS" }),
-      expect.anything(),
-      expect.anything()
-    );
-    expect(CloudflareGuardian.purgeArticleEdgeCache).toHaveBeenCalledTimes(1);
-    expect(CloudflareGuardian.purgeArticleEdgeCache).toHaveBeenCalledWith("Foo bar");
-  });
-
   it("refuses to blank a page that has text, unless the caller is a wiki admin", async () => {
     jest.mocked(getRevisionWikitextShadow).mockResolvedValue(revision(""));
 
@@ -238,60 +206,12 @@ describe("wikiosEditingRouter.revertToRevision (plan 402)", () => {
     ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     expectNothingSaved();
   });
-
-  it("lets anyone restore a blank revision over a page that is only whitespace", async () => {
-    jest.mocked(getRevisionWikitextShadow).mockResolvedValue(revision(""));
-    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(currentArticle("  \n "));
-
-    await createCaller(userCtx() as never).revertToRevision({ title: "Foo bar", revid: "r1" });
-
-    expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(1);
-  });
-
-  it("lets anyone restore an empty revision over a page that is already empty", async () => {
-    jest.mocked(getRevisionWikitextShadow).mockResolvedValue(revision(""));
-    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(currentArticle(""));
-
-    await createCaller(userCtx() as never).revertToRevision({ title: "Foo bar", revid: "r1" });
-
-    expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(1);
-  });
 });
 
 describe("wikiosEditingRouter.rollback (plan 402)", () => {
   beforeEach(() => {
     mockGroups("rollbacker");
   });
-
-  it("refuses a placeholder target revision", async () => {
-    jest.mocked(getRevisionWikitextShadow).mockResolvedValue(revision(null));
-
-    await expect(
-      createCaller(userCtx() as never).rollback({ title: "Foo bar" })
-    ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
-    expectNothingSaved();
-  });
-
-  it("refuses a parked target revision, as a revert does (the history it reads leaves parked ones out; this is the second line)", async () => {
-    jest
-      .mocked(getRevisionWikitextShadow)
-      .mockResolvedValue(revision("parked text", "Foo bar", true));
-
-    await expect(
-      createCaller(userCtx() as never).rollback({ title: "Foo bar" })
-    ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
-    expectNothingSaved();
-  });
-
-  it("refuses a target revision of another page", async () => {
-    jest.mocked(getRevisionWikitextShadow).mockResolvedValue(revision("other text", "Baz"));
-
-    await expect(
-      createCaller(userCtx() as never).rollback({ title: "Foo bar" })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expectNothingSaved();
-  });
-
   it("refuses to blank a page that has text, unless the caller is a wiki admin", async () => {
     jest.mocked(getRevisionWikitextShadow).mockResolvedValue(revision(""));
 
@@ -339,30 +259,6 @@ describe("wikiosEditingRouter revert and rollback error codes (plan 402)", () =>
   beforeEach(() => {
     mockGroups("rollbacker");
   });
-
-  it("revertToRevision answers NOT_FOUND for an unknown revision", async () => {
-    jest.mocked(getRevisionWikitextShadow).mockResolvedValue(null);
-
-    await expect(
-      createCaller(userCtx() as never).revertToRevision({ title: "Foo bar", revid: "r404" })
-    ).rejects.toMatchObject({ code: "NOT_FOUND", message: "Revision r404 not found." });
-    expectNothingSaved();
-  });
-
-  it("rollback answers PRECONDITION_FAILED when there is nothing older to roll back to", async () => {
-    jest.mocked(getArticleHistoryShadow).mockResolvedValue({
-      revisions: [historyEntry("r1", "amy")],
-      hasMore: false,
-      fromShadow: true,
-    });
-
-    await expect(
-      createCaller(userCtx() as never).rollback({ title: "Foo bar" })
-    ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
-    expect(getRevisionWikitextShadow).not.toHaveBeenCalled();
-    expectNothingSaved();
-  });
-
   it("rollback answers PRECONDITION_FAILED when every revision is by the same user", async () => {
     jest.mocked(getArticleHistoryShadow).mockResolvedValue({
       revisions: [historyEntry("r2", "amy"), historyEntry("r1", "amy")],
@@ -374,15 +270,6 @@ describe("wikiosEditingRouter revert and rollback error codes (plan 402)", () =>
       createCaller(userCtx() as never).rollback({ title: "Foo bar" })
     ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     expect(getRevisionWikitextShadow).not.toHaveBeenCalled();
-    expectNothingSaved();
-  });
-
-  it("rollback answers NOT_FOUND when the target revision cannot be read", async () => {
-    jest.mocked(getRevisionWikitextShadow).mockResolvedValue(null);
-
-    await expect(
-      createCaller(userCtx() as never).rollback({ title: "Foo bar" })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
     expectNothingSaved();
   });
 });

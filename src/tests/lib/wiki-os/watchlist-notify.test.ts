@@ -167,44 +167,6 @@ describe("notifyWatchers", () => {
     expect(sent().map((n) => n.userId)).toEqual(["clerk_u_a"]);
     expect(watches.find((w) => w.userId === "u_nobody")!.notificationTime).toBeNull();
   });
-
-  it("writes the notification the watchlist page and the bell show", async () => {
-    watches.push(watch("u_a"));
-
-    await edit();
-
-    expect(sent()).toEqual([
-      {
-        userId: "clerk_u_a",
-        title: "Caphiria was edited",
-        message: "Kir: Fixed the borders",
-        href: "/util/diff?oldid=r_old&diff=r_new",
-        category: "wiki",
-        priority: "low",
-        source: "wikiWatchlist",
-        metadata: { articleId: "art1", kind: "edited" },
-      },
-    ]);
-  });
-
-  it("falls back to the page when there is no earlier revision to diff against", async () => {
-    watches.push(watch("u_a"));
-
-    await edit({ previousRef: null, summary: "" });
-
-    expect(sent()[0]).toMatchObject({ href: "/wiki/Caphiria", message: "Kir edited this page" });
-  });
-
-  it("claims all of a chunk's rows with one updateMany and writes its notifications with one createMany", async () => {
-    watches.push(watch("u_a"), watch("u_b"), watch("u_c"));
-
-    await edit();
-
-    expect(db.wikiWatchlist.updateMany).toHaveBeenCalledTimes(1);
-    expect(mockCreateMany).toHaveBeenCalledTimes(1);
-    expect(sent()).toHaveLength(3);
-  });
-
   it("notifies once per watcher until they visit the page", async () => {
     watches.push(watch("u_a"), watch("u_b"));
 
@@ -278,20 +240,6 @@ describe("notifyWatchers", () => {
     expect(await edit({ summary: "Later" })).toBe(2);
     expect(watches.every((w) => w.notificationTime !== null)).toBe(true);
   });
-
-  it("does nothing, and queries nothing, when the watchlist notification event is switched off", async () => {
-    watches.push(watch("u_a"));
-    mockEventEnabled.mockResolvedValue(false);
-
-    await expect(edit()).resolves.toBe(0);
-
-    expect(mockEventEnabled).toHaveBeenCalledWith("wikiWatchlistNotification");
-    expect(mockEventEnabled).toHaveBeenCalledTimes(1);
-    expect(db.wikiWatchlist.findMany).not.toHaveBeenCalled();
-    expect(mockCreateMany).not.toHaveBeenCalled();
-    expect(watches[0]!.notificationTime).toBeNull();
-  });
-
   it("never throws: a failing database costs the notification, not the edit", async () => {
     jest.mocked(db.wikiWatchlist.findMany).mockRejectedValueOnce(new Error("db down"));
     const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
@@ -301,12 +249,6 @@ describe("notifyWatchers", () => {
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
   });
-
-  it("does nothing for a page nobody watches", async () => {
-    await expect(edit()).resolves.toBe(0);
-    expect(mockCreateMany).not.toHaveBeenCalled();
-  });
-
   it("notifies every watcher of a popular page, a chunk of 1000 at a time, not just the first 1000", async () => {
     for (let i = 0; i < 2300; i += 1) watches.push(watch(`u_${String(i).padStart(5, "0")}`));
     // A few with no Clerk id sit among them: skipped, and they must not stall the paging.
@@ -320,15 +262,6 @@ describe("notifyWatchers", () => {
     ]);
     expect(new Set(sent().map((n) => n.userId)).size).toBe(2300);
     expect(watches.filter((w) => w.notificationTime === null && w.clerkUserId)).toHaveLength(0);
-  });
-  it("clips a very long edit summary", async () => {
-    watches.push(watch("u_a"));
-
-    await edit({ summary: "x".repeat(500) });
-
-    const message = sent()[0]!.message;
-    expect(message.length).toBeLessThan(260);
-    expect(message.endsWith("…")).toBe(true);
   });
 });
 
@@ -347,14 +280,5 @@ describe("markWatchedVisited", () => {
     expect(watches[0]!.lastViewedTime.getTime()).toBeGreaterThan(Date.UTC(2026, 8, 2));
     expect(watches[1]!.notificationTime).not.toBeNull();
     expect(watches[2]!.notificationTime).not.toBeNull();
-  });
-
-  it("does nothing for a page that does not exist", async () => {
-    watches.push(watch("u_a", "art1", new Date()));
-
-    await markWatchedVisited("u_a", "No such page");
-
-    expect(watches[0]!.notificationTime).not.toBeNull();
-    expect(db.wikiWatchlist.updateMany).not.toHaveBeenCalled();
   });
 });

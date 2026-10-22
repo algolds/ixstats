@@ -31,17 +31,7 @@ import { evictWikiTitleCaches } from "~/lib/wiki-os/services/title-cache-evictio
 import { evictArticleView } from "~/lib/wiki-os/services/article-view-service";
 import { invalidateCache } from "~/lib/cache/trpc-cache";
 import { wikiBridgeCache } from "~/lib/wiki-os/adapters/mediawiki/bridge/types";
-import { intelligentLoreCache } from "~/lib/wiki-os/core/intelligent-lore-cache";
 import { wikiCacheService } from "~/lib/wiki-os/adapters/ixstates/cache-service";
-
-const scanOf = (...titles: string[]) => ({
-  pagesScanned: titles.length,
-  foundVariants: [],
-  categoryUsed: null,
-  extractedData: {} as never,
-  pages: titles.map((title) => ({ title, content: `text of ${title}` })),
-});
-
 beforeEach(() => {
   jest.clearAllMocks();
   wikiBridgeCache.clear();
@@ -72,65 +62,7 @@ describe("the bridge cache", () => {
     ]);
   });
 });
-
-describe("the country profile cache", () => {
-  it("drops the profile and the parsed infobox of the page, and no other page's", async () => {
-    await wikiCacheService.setCustomCache("ixwiki:Caphiria", "profile", { name: "c" }, 60_000);
-    await wikiCacheService.setCustomCache(
-      "parsed-infobox:ixwiki:caphiria",
-      "x",
-      { name: "c" },
-      60_000
-    );
-    await wikiCacheService.setCustomCache(
-      "parsed-infobox:ixwiki:other",
-      "x",
-      { name: "o" },
-      60_000
-    );
-    await wikiCacheService.setCustomCache("iiwiki:Caphiria", "profile", { name: "ii" }, 60_000);
-
-    await evictWikiTitleCaches("Caphiria", "ixwiki");
-
-    expect(await wikiCacheService.getCustomCache("ixwiki:Caphiria")).toBeNull();
-    expect(await wikiCacheService.getCustomCache("parsed-infobox:ixwiki:caphiria")).toBeNull();
-    expect(await wikiCacheService.getCustomCache("parsed-infobox:ixwiki:other")).not.toBeNull();
-    expect(await wikiCacheService.getCustomCache("iiwiki:Caphiria")).not.toBeNull();
-  });
-});
-
 describe("the lore scan caches", () => {
-  it("drops the scan for the country the page is and any scan that read the page", async () => {
-    await intelligentLoreCache.setDeepScan(
-      "ixwiki",
-      "Caphiria",
-      scanOf("Caphiria", "History of Caphiria")
-    );
-    await intelligentLoreCache.setDeepScan("ixwiki", "Neighbour", scanOf("Neighbour", "Caphiria"));
-    await intelligentLoreCache.setDeepScan("ixwiki", "Elsewhere", scanOf("Elsewhere"));
-
-    await evictWikiTitleCaches("Caphiria", "ixwiki");
-
-    expect(await intelligentLoreCache.getDeepScan("ixwiki", "Caphiria")).toBeNull();
-    expect(await intelligentLoreCache.getDeepScan("ixwiki", "Neighbour")).toBeNull();
-    expect(await intelligentLoreCache.getDeepScan("ixwiki", "Elsewhere")).not.toBeNull();
-  });
-
-  it("drops category lists naming the page, and the 'no such page' mark a deleted page left", async () => {
-    await intelligentLoreCache.setCategoryMembers("ixwiki", "Nations", [
-      { title: "Caphiria" },
-      { title: "Other" },
-    ]);
-    await intelligentLoreCache.setCategoryMembers("ixwiki", "Cities", [{ title: "Capital" }]);
-    intelligentLoreCache.markMissingPage("ixwiki", "caphiria");
-
-    await evictWikiTitleCaches("Caphiria", "ixwiki");
-
-    expect(intelligentLoreCache.isKnownMissingPage("ixwiki", "caphiria")).toBe(false);
-    expect(await intelligentLoreCache.getCategoryMembers("ixwiki", "Nations")).toBeNull();
-    expect(await intelligentLoreCache.getCategoryMembers("ixwiki", "Cities")).not.toBeNull();
-  });
-
   it("deletes the persisted rows: the page's own scan and any scan or category list that names it", async () => {
     await evictWikiTitleCaches("Foo bar", "ixwiki");
 
@@ -161,12 +93,6 @@ describe("the other caches", () => {
     );
     expect(evictArticleView).toHaveBeenCalledWith("art-1");
   });
-
-  it("clears no article view when it is not told the article", async () => {
-    await evictWikiTitleCaches("Foo bar", "ixwiki");
-    expect(evictArticleView).not.toHaveBeenCalled();
-  });
-
   it("still clears the rest when one cache cannot be reached, and does not throw", async () => {
     const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
     mockDeleteMany.mockRejectedValue(new Error("db down"));

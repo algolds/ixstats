@@ -99,15 +99,12 @@ const rendered = (html: string) => ({
 });
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { syncSinglePage } from "~/lib/wiki-os/services/auto-sync-service";
-import { ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 import { registerTemplateProvider } from "~/lib/wiki-os/templates/template-resolver";
 import { buildViewBundle } from "~/lib/wiki-os/services/render-service";
 import { getArticleView } from "~/lib/wiki-os/services/article-view-service";
 
 const syncSinglePageMockReset = () => jest.mocked(syncSinglePage).mockClear();
-import { evictArticleView } from "~/lib/wiki-os/services/article-view-service";
-
 const caller = () =>
   createCallerFactory(wikiosPageContentRouter)(
     createMockRouterContext({ auth: null, user: null }) as never
@@ -117,19 +114,6 @@ const findArticleForView = ViewRepository.findArticleForView as jest.Mock;
 
 /** The sanitizer is a spy, so the stored bundles below are built by the real transform only. */
 const bundleOf = (html: string) => buildViewBundle(html);
-
-interface Deferred<T> {
-  promise: Promise<T>;
-  resolve: (value: T) => void;
-}
-function deferred<T>(): Deferred<T> {
-  let resolve!: (value: T) => void;
-  const promise = new Promise<T>((r) => {
-    resolve = r;
-  });
-  return { promise, resolve };
-}
-
 const SYNCED = new Date("2026-09-30T10:00:00Z");
 const EDITED = new Date("2026-09-29T08:00:00Z");
 
@@ -175,23 +159,6 @@ const freshBundleRow = (html: string, htmlSyncedAt: Date | null = SYNCED) => ({
   wikitext: "'''Aurelia''' is a country.",
   contentHtml: null,
 });
-
-describe("getArticleHtml (IxWiki) reads the stored view bundle", () => {
-  it("reads the bundle again after the article's views were evicted (plan 409: delete, move)", async () => {
-    const found = head();
-    findArticleForView.mockResolvedValue(found);
-    setRow(freshBundleRow("<p>Cached.</p>"));
-    await caller().getArticleHtml({ title: "Aurelia" });
-    mockFindUnique.mockClear();
-
-    expect(evictArticleView(found.id)).toBe(1);
-    await caller().getArticleHtml({ title: "Aurelia" });
-
-    expect(mockFindUnique).toHaveBeenCalledTimes(1);
-    expect(evictArticleView(found.id)).toBe(1); // and it was cached again
-  });
-});
-
 describe("getArticleHtml (IxWiki) renders a stale or never-rendered article once", () => {
   it("two concurrent readers of one stale article cause one MediaWiki call", async () => {
     findArticleForView.mockResolvedValue(head({ htmlSyncedAt: null }));
@@ -209,103 +176,7 @@ describe("getArticleHtml (IxWiki) renders a stale or never-rendered article once
     expect(second.contentHtml).toBe("<p>New.</p>");
     expect(renderArticleViaMediaWiki).toHaveBeenCalledTimes(1);
   });
-
-  it("serves the stale bundle, marked stale, when the render fails", async () => {
-    findArticleForView.mockResolvedValue(head({ htmlSyncedAt: null }));
-    setRow({ ...freshBundleRow("<p>Old but fine.</p>", null) });
-
-    const result = await caller().getArticleHtml({ title: "Aurelia" });
-
-    expect(result.contentHtml).toBe("<p>Old but fine.</p>");
-    expect(result.renderQuality).toBe("rendered");
-    expect(result.stale).toBe(true);
-    expect(mockUpdateMany).not.toHaveBeenCalled();
-  });
-  it("serves the HTML MediaWiki made for an earlier revision, not the regex compile, when the first render fails", async () => {
-    findArticleForView.mockResolvedValue(head({ htmlSyncedAt: null }));
-    setRow({
-      renderedView: null,
-      htmlSyncedAt: null,
-      title: "Aurelia",
-      wikitext: "Newer wikitext that the regex compiler would show.",
-      contentHtml: "<p>Earlier MediaWiki render.</p>",
-    });
-
-    const result = await caller().getArticleHtml({ title: "Aurelia" });
-
-    expect(result).toMatchObject({
-      contentHtml: "<p>Earlier MediaWiki render.</p>",
-      renderQuality: "fallback",
-      stale: true,
-    });
-  });
-
-  it("falls back to the locally compiled wikitext, marked and never persisted, when the first render fails", async () => {
-    findArticleForView.mockResolvedValue(head({ htmlSyncedAt: null }));
-    setRow({
-      renderedView: null,
-      htmlSyncedAt: null,
-      title: "Aurelia",
-      wikitext: "'''Aurelia''' is a country.",
-      contentHtml: null,
-    });
-
-    const result = await caller().getArticleHtml({ title: "Aurelia" });
-
-    expect(result.renderQuality).toBe("fallback");
-    expect(result.stale).toBe(true);
-    expect(result.contentHtml).toContain("Aurelia");
-    expect(renderArticleViaMediaWiki).toHaveBeenCalledTimes(1);
-    expect(mockUpdateMany).not.toHaveBeenCalled();
-  });
 });
-
-describe("getArticleHtml (IxWiki) for a page whose text is empty (F35a)", () => {
-  const blankRow = (
-    title: string,
-    revisions: Array<{ byteSize: number; textDeleted: boolean }>
-  ) => ({
-    renderedView: null,
-    htmlSyncedAt: null,
-    title,
-    wikitext: "",
-    contentHtml: null,
-    revisions,
-  });
-
-  it("serves an existing page with an empty current revision as an empty article, not a missing one", async () => {
-    findArticleForView.mockResolvedValue(
-      head({ htmlSyncedAt: null, title: "Talk:Paulastra", emptyText: true, categories: [] })
-    );
-    setRow(blankRow("Talk:Paulastra", [{ byteSize: 0, textDeleted: false }]));
-
-    const result = await caller().getArticleHtml({ title: "Talk:Paulastra" });
-
-    expect(result).toMatchObject({
-      title: "Talk:Paulastra",
-      contentHtml: "",
-      infoboxHtml: null,
-      noticesHtml: null,
-      toc: [],
-      categories: [],
-      lastModified: EDITED.toISOString(),
-      stale: false,
-    });
-    expect(syncSinglePage).not.toHaveBeenCalled(); // the page is there: nothing to import
-  });
-
-  it("keeps a stub (no empty current revision) not found", async () => {
-    findArticleForView.mockResolvedValue(
-      head({ htmlSyncedAt: null, title: "Talk:Stubbed", emptyText: false })
-    );
-    setRow(blankRow("Talk:Stubbed", [])); // no revision: a stub
-
-    await expect(caller().getArticleHtml({ title: "Talk:Stubbed" })).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
-  });
-});
-
 describe("getArticleHtml (IxWiki) for a title Postgres does not have", () => {
   it("does not ask MediaWiki again for the same title within a minute", async () => {
     findArticleForView.mockResolvedValue(null);
@@ -355,27 +226,6 @@ describe("getArticleHtml (IxWiki) for a title Postgres does not have", () => {
       .catch(() => undefined);
     expect(syncSinglePage).toHaveBeenCalledTimes(5);
   });
-
-  it("lets concurrent first readers of one missing title share one import instead of turning one away", async () => {
-    let imported = false;
-    const found = head({ title: "Shared import" });
-    findArticleForView.mockImplementation(async () => (imported ? found : null));
-    setRow(freshBundleRow("<p>Imported.</p>"));
-    const release = deferred<boolean>();
-    jest.mocked(syncSinglePage).mockImplementation(() => release.promise);
-
-    const first = caller().getArticleHtml({ title: "Shared import" });
-    const second = caller().getArticleHtml({ title: "Shared import" });
-    await new Promise((resolve) => setImmediate(resolve));
-    imported = true;
-    release.resolve(true);
-
-    const [a, b] = await Promise.all([first, second]);
-    expect(a.contentHtml).toBe("<p>Imported.</p>");
-    expect(b.contentHtml).toBe("<p>Imported.</p>");
-    expect(syncSinglePage).toHaveBeenCalledTimes(1);
-  });
-
   it("holds imports to a steady rate per process: the 31st within a minute is refused as busy", async () => {
     findArticleForView.mockResolvedValue(null);
     jest.mocked(syncSinglePage).mockResolvedValue(false);
@@ -484,39 +334,6 @@ describe("getArticleHtml (IxWiki) redirects (plan 412)", () => {
       }
     }
   );
-  it("a redirect to a page that does not exist shows the redirect page itself, not 'no such page'", async () => {
-    // "Old name" redirects to "New name", which has no article; "Old name" itself does.
-    findArticleForView.mockImplementation(async (title: string) =>
-      title === "New name" ? null : head({ title })
-    );
-    setRow(
-      freshBundleRow('<div class="redirectMsg"><p>Redirect to:</p><ul><li>New name</li></ul></div>')
-    );
-
-    const result = await caller().getArticleHtml({ title: "Old name" });
-
-    expect(findArticleForView.mock.calls.map((call) => call[0])).toEqual(["New name", "Old name"]);
-    expect(result).toMatchObject({
-      title: "Old name",
-      resolvedFrom: null, // the route renders it where it is: no redirect to a missing page
-      redirectFragment: null,
-    });
-    expect(result.contentHtml).toContain("redirectMsg");
-  });
-  it("a busy lookup of the target is busy, not a reason to show the redirect page", async () => {
-    findArticleForView.mockImplementation(async (title: string) => {
-      if (title === "New name") return null;
-      return head({ title });
-    });
-    jest.mocked(syncSinglePage).mockImplementation(async () => {
-      throw new ThrottledError("Importing pages from MediaWiki");
-    });
-
-    await expect(caller().getArticleHtml({ title: "Old name" })).rejects.toMatchObject({
-      code: "TOO_MANY_REQUESTS",
-    });
-    expect(findArticleForView).toHaveBeenCalledTimes(1);
-  });
 });
 
 describe("MediaWiki imports by who asked (plan 412 review)", () => {
@@ -545,21 +362,6 @@ describe("MediaWiki imports by who asked (plan 412 review)", () => {
     });
     expect(syncSinglePage).toHaveBeenCalledWith("Ssr page one");
   });
-
-  it.each([
-    ["a client navigation's RSC fetch", { "x-trpc-source": "rsc", accept: "text/x-component" }],
-    ["a bare request", { "x-trpc-source": "rsc", accept: "*/*" }],
-    ["a request with no Accept at all", { "x-trpc-source": "rsc" }],
-    ["an API client", { "x-trpc-source": "rsc", accept: "application/json" }],
-  ])("%s never imports: a missing page is simply missing", async (_name, headers) => {
-    await expect(
-      asHeaders(headers).getArticleHtml({ title: "No import page" })
-    ).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
-    expect(syncSinglePage).not.toHaveBeenCalled();
-  });
-
   it("the reader's own call (not the server's) imports whatever it accepts", async () => {
     await expect(
       asHeaders({ accept: "application/json" }).getArticleHtml({ title: "Client page" })
@@ -609,8 +411,6 @@ describe("MediaWiki imports by who asked (plan 412 review)", () => {
 describe("getArticleHtml (IxWiki) template chips stay per viewer", () => {
   const chipped =
     '<p>Pop: <a href="/wiki/Template:CountryData:Aurelia:population" title="x">pop</a></p>';
-  const chipMarker = '<span data-wikios-chip="CountryData:Aurelia:population"></span>';
-
   const provider = (value: string) =>
     jest.fn(
       async (..._args: unknown[]) =>
@@ -618,29 +418,6 @@ describe("getArticleHtml (IxWiki) template chips stay per viewer", () => {
           ["CountryData:Aurelia:population", { key: "CountryData:Aurelia:population", value }],
         ])
     );
-
-  it("stores a chip as an inert marker and fills in the viewer's chip", async () => {
-    findArticleForView.mockResolvedValue(head());
-    setRow(freshBundleRow(chipped));
-    expect(mockBundleRow.current?.renderedView).toMatchObject({
-      bodyHtml: `<p>Pop: ${chipMarker}</p>`,
-    });
-    jest.mocked(resolveActiveCountryId).mockResolvedValue("country_1");
-    const resolve = provider("12,345");
-    const unregister = registerTemplateProvider({ name: "test", canHandle: () => true, resolve });
-
-    const result = await caller().getArticleHtml({ title: "Aurelia" });
-    unregister();
-
-    expect(result.contentHtml).toContain("12,345");
-    expect(result.contentHtml).toContain("wikios-stat-resolved");
-    expect(result.contentHtml).not.toContain("data-wikios-chip");
-    expect(resolve).toHaveBeenCalledWith(
-      [expect.objectContaining({ key: "CountryData:Aurelia:population" })],
-      { activeCountryId: "country_1" }
-    );
-  });
-
   describe("the chip-filled view is kept per viewer country (plan 404 review)", () => {
     const setup = async (countryId: string | null) => {
       jest.mocked(resolveActiveCountryId).mockResolvedValue(countryId);

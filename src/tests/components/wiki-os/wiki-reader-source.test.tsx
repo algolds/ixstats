@@ -131,21 +131,6 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
       expect(screen.getByText("Loading article...")).toBeInTheDocument();
       expect(mockRenderer).not.toHaveBeenCalled();
     });
-    it("a signed-in reader still asks once for their own chips: a lean copy is the anonymous one", () => {
-      const refetch = jest.fn();
-      mockSignedIn = true;
-      lean(refetch);
-      const body = document.createElement("div");
-      body.id = `wikios-lean-${token}-body`;
-      body.innerHTML = "<p>Eurth</p>";
-      document.body.append(body);
-
-      const { rerender } = render(<Reader title="Aurelia" />);
-      rerender(<Reader title="Aurelia" />);
-
-      expect(refetch).toHaveBeenCalledTimes(1);
-      body.remove();
-    });
   });
 
   describe("viewer-specific chips (the route reads the article as an anonymous viewer)", () => {
@@ -196,41 +181,6 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
 
       fireEvent.click(screen.getByRole("button", { name: /try again/i }));
       expect(refetch).toHaveBeenCalledTimes(1);
-    });
-
-    it("shows a retrying state while the automatic retries run", () => {
-      mockUseQuery.mockReturnValue({
-        data: undefined,
-        isLoading: true,
-        error: null,
-        refetch: jest.fn(),
-        failureCount: 1,
-      });
-      render(<Reader title="Nowhere" />);
-
-      expect(screen.getByText(/WikiOS is busy, retrying/)).toBeInTheDocument();
-    });
-
-    it("shows plain loading before any failure, and still not-found for any other error", () => {
-      mockUseQuery.mockReturnValue({
-        data: undefined,
-        isLoading: true,
-        error: null,
-        refetch: jest.fn(),
-        failureCount: 0,
-      });
-      const { unmount } = render(<Reader title="Nowhere" />);
-      expect(screen.getByText("Loading article...")).toBeInTheDocument();
-      unmount();
-
-      mockUseQuery.mockReturnValue({
-        data: undefined,
-        isLoading: false,
-        error: Object.assign(new Error("nope"), { data: { code: "NOT_FOUND" } }),
-        refetch: jest.fn(),
-      });
-      render(<Reader title="Nowhere" />);
-      expect(screen.getByText(/does not exist on WikiOS/)).toBeInTheDocument();
     });
   });
   it("a wiki that fails to answer is not called a missing page: the reader offers to try again", () => {

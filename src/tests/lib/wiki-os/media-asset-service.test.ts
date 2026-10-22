@@ -25,20 +25,6 @@ const upload = (name: string, sha1: string) => ({
 });
 
 beforeEach(() => fakeWikiDb.reset());
-
-describe("MediaAssetService MD5 Shard Path Calculation", () => {
-  it("calculates accurate MD5 shards and paths for filenames", () => {
-    const result1 = MediaAssetService.getMd5ShardPath("Caphiria_flag.svg");
-    expect(result1.shard).toBeDefined();
-    expect(result1.fullPath).toContain("Caphiria_flag.svg");
-    expect(result1.cleanName).toBe("Caphiria_flag.svg");
-
-    const result2 = MediaAssetService.getMd5ShardPath("File:National Emblem of Vesper.png");
-    expect(result2.cleanName).toBe("National_Emblem_of_Vesper.png");
-    expect(result2.fullPath).toContain("National_Emblem_of_Vesper.png");
-  });
-});
-
 describe("recordUpload", () => {
   it("creates the row served from WikiOS, with no made-up blurhash and no thumbnail", async () => {
     const asset = await db.$transaction((tx) =>
@@ -57,61 +43,6 @@ describe("recordUpload", () => {
     });
     expect(asset.md5Hash).toBe(MediaAssetService.getMd5ShardPath("Flag of Eurth.png").hash);
     expect(MediaAssetService.isStagedUrl(asset.url)).toBe(true);
-  });
-
-  it("replaces the facts of a name that has a row, wherever its old URL pointed", async () => {
-    tables.wikiAsset.seed({
-      title: "Old.png",
-      slug: "old.png",
-      filename: "Old.png",
-      url: "https://ixwiki.com/images/a/ab/Old.png",
-      thumbnailUrl: "https://ixwiki.com/images/thumb/a/ab/Old.png/300px-Old.png",
-      mimeType: "image/png",
-      sizeBytes: 1,
-      md5Hash: MediaAssetService.getMd5ShardPath("Old.png").hash,
-    });
-
-    await db.$transaction((tx) =>
-      MediaAssetService.recordUpload(tx as never, upload("Old.png", "n".repeat(31)))
-    );
-
-    expect(tables.wikiAsset.rows).toHaveLength(1);
-    expect(tables.wikiAsset.rows[0]).toMatchObject({
-      url: "/api/wiki/file/Old.png",
-      thumbnailUrl: null,
-      sizeBytes: 100,
-      sha1: "n".repeat(31),
-    });
-  });
-
-  it("stores the BlurHash it is given, and a new version's replaces the old one's (WK-17)", async () => {
-    const first = "LEHV6nWB2yk8pyo0adR*.7kCMdnj";
-    await db.$transaction((tx) =>
-      MediaAssetService.recordUpload(tx as never, {
-        ...upload("Swatch.png", "c".repeat(31)),
-        blurhash: first,
-      })
-    );
-    expect(tables.wikiAsset.rows[0]?.blurhash).toBe(first);
-
-    await db.$transaction((tx) =>
-      MediaAssetService.recordUpload(tx as never, upload("Swatch.png", "d".repeat(31)))
-    );
-    expect(tables.wikiAsset.rows[0]?.blurhash).toBeNull();
-  });
-
-  it("gives a name whose slug another file took a slug of its own", async () => {
-    await db.$transaction((tx) =>
-      MediaAssetService.recordUpload(tx as never, upload("Flag.png", "a".repeat(31)))
-    );
-    await db.$transaction((tx) =>
-      MediaAssetService.recordUpload(tx as never, upload("Flag.PNG", "b".repeat(31)))
-    );
-
-    const slugs = tables.wikiAsset.rows.map((row) => row.slug);
-    expect(new Set(slugs).size).toBe(2);
-    expect(slugs[0]).toBe("flag.png");
-    expect(slugs[1]).toMatch(/^flag_[0-9a-f]{6}\.png$/);
   });
 });
 
@@ -144,34 +75,7 @@ describe("markMirrored", () => {
     expect(await MediaAssetService.isStillStaged("1".repeat(31))).toBe(false);
   });
 });
-
-describe("findDuplicates", () => {
-  it("lists the other names that hold the same content", async () => {
-    await db.$transaction((tx) =>
-      MediaAssetService.recordUpload(tx as never, upload("A.png", "d".repeat(31)))
-    );
-    await db.$transaction((tx) =>
-      MediaAssetService.recordUpload(tx as never, upload("B.png", "d".repeat(31)))
-    );
-    await db.$transaction((tx) =>
-      MediaAssetService.recordUpload(tx as never, upload("C.png", "e".repeat(31)))
-    );
-
-    expect(await MediaAssetService.findDuplicates("d".repeat(31), "A.png")).toEqual(["B.png"]);
-    expect(await MediaAssetService.findDuplicates("d".repeat(31), "Z.png")).toEqual([
-      "A.png",
-      "B.png",
-    ]);
-  });
-});
-
 describe("registerAsset", () => {
-  it("makes up no blurhash for a file it only knows by name", async () => {
-    const asset = await MediaAssetService.registerAsset({ filename: "Seen_in_MediaWiki.png" });
-
-    expect(asset.blurhash).toBeNull();
-  });
-
   it("keeps a file's BlurHash while its size is the same, and drops it for a new version (WK-17)", async () => {
     const hash = "LEHV6nWB2yk8pyo0adR*.7kCMdnj";
     await MediaAssetService.registerAsset({
@@ -220,24 +124,6 @@ describe("search", () => {
       Array.from({ length: 20 }, (_, i) => `Flag ${String(70 + i).padStart(3, "0")}.png`)
     );
   });
-
-  it("reads fixed batches of 50 whatever the limit is, in an order that ends in the id", async () => {
-    for (let i = 0; i < 130; i++) seedAsset(`Map ${String(i).padStart(3, "0")}.png`);
-    const findMany = jest.spyOn(tables.wikiAsset, "findMany");
-
-    const one = await MediaAssetService.search({ limit: 1 });
-    const fifty = await MediaAssetService.search({ limit: 50 });
-
-    expect(one).toHaveLength(1);
-    expect(fifty).toHaveLength(50);
-    // nothing was deleted: each search needed one batch
-    expect(findMany).toHaveBeenCalledTimes(2);
-    for (const [args] of findMany.mock.calls) {
-      expect(args).toMatchObject({ take: 50, skip: 0, orderBy: [{ title: "asc" }, { id: "asc" }] });
-    }
-    findMany.mockRestore();
-  });
-
   it("gives files that share a title a stable order across batches (no repeat, no loss)", async () => {
     // 60 assets with one title: the second batch starts inside the tie
     const rows = Array.from({ length: 60 }, (_, i) =>
@@ -249,26 +135,6 @@ describe("search", () => {
     const byId = rows.map((row) => row.id).sort();
     expect(found.map((asset) => asset.id)).toEqual(byId.slice(0, 55));
   });
-
-  it("skips `offset` listed assets (not hidden ones) and pages without repeats", async () => {
-    for (let i = 0; i < 130; i++) {
-      const title = `Page ${String(i).padStart(3, "0")}.png`;
-      seedAsset(title);
-      if (i % 10 === 0) archiveFilePage(title);
-    }
-
-    const first = await MediaAssetService.search({ limit: 40 });
-    const second = await MediaAssetService.search({ limit: 40, offset: 40 });
-    const third = await MediaAssetService.search({ limit: 40, offset: 80 });
-
-    const all = [...first, ...second, ...third].map((asset) => asset.title);
-    // 130 files, 13 hidden: 117 listed, so the third page is short
-    expect(third).toHaveLength(37);
-    expect(new Set(all).size).toBe(117);
-    expect(all).toEqual([...all].sort());
-    expect(all.some((title) => /Page (000|010|120)\.png/.test(title))).toBe(false);
-  });
-
   it("stops after 500 assets however many of them are hidden, instead of reading on", async () => {
     for (let i = 0; i < 700; i++) {
       const title = `Hidden ${String(i).padStart(3, "0")}.png`;

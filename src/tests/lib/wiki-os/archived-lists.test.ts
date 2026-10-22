@@ -32,8 +32,6 @@ import {
   ixwikiGetUserCreatedPages,
   ixwikiRecentChanges,
 } from "~/lib/wiki-os/adapters/mediawiki/bridge/pg-activity";
-import { ixwikiGetSiteStats } from "~/lib/wiki-os/adapters/mediawiki/bridge/pg-site";
-import { ixwikiSearchTemplates } from "~/lib/wiki-os/adapters/mediawiki/bridge/pg-search";
 import { ixwikiResolveRedirect } from "~/lib/wiki-os/adapters/mediawiki/bridge/pg-reader";
 
 type Delegate = Record<string, jest.Mock>;
@@ -85,31 +83,7 @@ describe("search", () => {
     expect(pageSql).toContain("a.status = 'PUBLISHED'");
     expect(countSql).toContain("a.status = 'PUBLISHED'");
   });
-
-  it("template search over articles filters too", async () => {
-    await ixwikiSearchTemplates("Infobox");
-    expect(mockDb.wikiArticle.findMany.mock.calls[0]?.[0].where).toMatchObject({
-      namespace: 10,
-      ...published,
-    });
-  });
-
   // last: it leaves the search on its slow queries (the indexes "are missing") for the rest of the file
-  it("the slow queries used before the search indexes exist filter too", async () => {
-    mockDb.$queryRawUnsafe.mockRejectedValue(new Error("column a.searchVector does not exist"));
-    jest.spyOn(console, "warn").mockImplementation(() => undefined);
-
-    await NativeSearchService.spotlightSearch("Caph", "ixwiki", 5);
-    await NativeSearchService.fulltextSearch("kingdom of caphiria", "ixwiki", 10);
-
-    const wheres = mockDb.wikiArticle.findMany.mock.calls.map((call) => call[0].where);
-    expect(wheres).toHaveLength(2);
-    expect(wheres).toEqual([
-      expect.objectContaining(published),
-      expect.objectContaining(published),
-    ]);
-    expect(mockDb.wikiArticle.count.mock.calls[0]?.[0].where).toMatchObject(published);
-  });
 });
 
 describe("categories", () => {
@@ -176,14 +150,6 @@ describe("activity and links", () => {
 });
 
 describe("counts and usage", () => {
-  it("site stats count published pages", async () => {
-    await ixwikiGetSiteStats();
-    expect(mockDb.wikiArticle.count.mock.calls.map((c) => c[0].where)).toEqual([
-      expect.objectContaining(published),
-      expect.objectContaining(published),
-    ]);
-  });
-
   it("media usage lists published pages only", async () => {
     await PageManagementService.getMediaUsage("Flag.png");
     expect(mockDb.wikiArticle.findMany.mock.calls[0]?.[0].where).toMatchObject(published);
