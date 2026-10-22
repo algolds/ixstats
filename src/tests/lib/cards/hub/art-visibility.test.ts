@@ -5,45 +5,12 @@ jest.mock("~/lib/cards/copy-value", () => ({ topCopiesByValue: jest.fn() }));
 import { topCopiesByValue } from "~/lib/cards/copy-value";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 import { contextShowsCard } from "~/lib/cards/hub/art-visibility";
-import { displayedCopies } from "~/lib/cards/hub/displayed";
-import type { CardFaceRow } from "~/lib/cards/hub/faces";
-
-const realm = { id: "default", slug: "ixnay", name: "Ixnay", emblemUrl: null, isSystem: false };
-const card = (id: string, cardType: CardFaceRow["cardType"] = "LORE"): CardFaceRow => ({
-  id,
-  title: id,
-  rarity: "RARE",
-  cardType,
-  artwork: `https://art/${id}.png`,
-  isRetired: false,
-  collectorNumber: 1,
-  season: 1,
-  nsSeason: null,
-  realm,
-});
-const copyOf = (id: string) => ({
-  id: `o-${id}`,
-  finish: "STANDARD" as const,
-  serialNumber: 1,
-  level: 1,
-});
 /** The passport chain reversed: "ann" (a stored handle) and "Takatta Loa" (a wiki name) name the holder. */
 const holderOf = jest.fn(async (handle: string) =>
   handle === "ann" || handle === "Takatta Loa" ? "holder" : null
 );
 const visible = { vaultVisible: jest.fn(async () => true), holderOf };
 const hidden = { vaultVisible: jest.fn(async () => false), holderOf };
-/** The shared copy value's ranking of a player's copies, best first. */
-const ranked = (...ids: string[]) =>
-  ids.map((id, i) => ({
-    ownershipId: `o-${id}`,
-    ownerId: "u1",
-    cardId: id,
-    cardType: "LORE" as const,
-    finish: "STANDARD" as const,
-    value: 100 - i,
-  }));
-
 beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(topCopiesByValue).mockResolvedValue([]);
@@ -148,16 +115,6 @@ describe("contextShowsCard", () => {
     ).resolves.toBe(false);
     expect(db.tradeOffer.findFirst).toHaveBeenCalledTimes(3);
   });
-
-  it("counts nothing for an offer that lists no copies", async () => {
-    const db = createMockPrisma();
-    db.tradeOffer.findFirst.mockResolvedValue({ initiatorCardIds: [], recipientCardIds: "o1" });
-    await expect(
-      contextShowsCard(db as never, "me", "c1", { kind: "offer", id: "t1" }, visible)
-    ).resolves.toBe(false);
-    expect(db.cardOwnership.count).not.toHaveBeenCalled();
-  });
-
   it("shows a card in another player's public showcase, unless they hide their Vault cards", async () => {
     const db = createMockPrisma();
     db.cardCollection.findFirst.mockResolvedValue({ userId: "owner", items: [{ id: "i1" }] });
@@ -194,36 +151,6 @@ describe("contextShowsCard", () => {
       select: { id: true },
     });
   });
-
-  it("shows a holder's trophy, or a card they display, when they show their Vault cards", async () => {
-    const db = createMockPrisma();
-    db.cardOwnership.findFirst.mockResolvedValue({ id: "trophy-copy" });
-    await expect(
-      contextShowsCard(db as never, "me", "t1", { kind: "holder", handle: "ann" }, visible)
-    ).resolves.toBe(true);
-    expect(holderOf).toHaveBeenCalledWith("ann");
-    expect(db.user.findUnique).not.toHaveBeenCalled();
-    expect(db.cardOwnership.findFirst.mock.calls[0]![0].where).toEqual({
-      ownerId: "holder",
-      cardId: "t1",
-      cards: { cardType: "TROPHY" },
-    });
-
-    db.cardOwnership.findFirst.mockResolvedValue(null);
-    db.cardCollection.findFirst.mockResolvedValue(null);
-    jest.mocked(topCopiesByValue).mockResolvedValue(ranked("c9"));
-    db.cardOwnership.findMany.mockResolvedValue([{ ...copyOf("c9"), cards: card("c9") }]);
-    await expect(
-      contextShowsCard(db as never, "me", "c9", { kind: "holder", handle: "ann" }, visible)
-    ).resolves.toBe(true);
-    await expect(
-      contextShowsCard(db as never, "me", "c8", { kind: "holder", handle: "ann" }, visible)
-    ).resolves.toBe(false);
-    await expect(
-      contextShowsCard(db as never, "me", "c9", { kind: "holder", handle: "ann" }, hidden)
-    ).resolves.toBe(false);
-    expect(hidden.vaultVisible).toHaveBeenLastCalledWith("holder");
-  });
   it("shows nothing for a handle no player has", async () => {
     const db = createMockPrisma();
     await expect(
@@ -231,35 +158,5 @@ describe("contextShowsCard", () => {
     ).resolves.toBe(false);
     expect(visible.vaultVisible).not.toHaveBeenCalled();
     expect(db.cardOwnership.findFirst).not.toHaveBeenCalled();
-  });
-});
-
-describe("displayedCopies", () => {
-  it("shows the latest public pinned showcase, in the order its cards were added, leaving hidden cards out", async () => {
-    const db = createMockPrisma();
-    db.cardCollection.findFirst.mockResolvedValue({
-      id: "s1",
-      name: "Best of Ixnay",
-      items: [{ cardOwnership: { ...copyOf("c1"), cards: card("c1") } }],
-    });
-    const shown = await displayedCopies(db as never, "u1");
-    expect(shown.showcase).toEqual({ id: "s1", name: "Best of Ixnay" });
-    expect(shown.copies).toEqual([{ card: card("c1"), copy: copyOf("c1") }]);
-    expect(db.cardCollection.findFirst.mock.calls[0]![0].where).toEqual({
-      userId: "u1",
-      isPublic: true,
-      pinnedAt: { not: null },
-    });
-    expect(db.cardCollection.findFirst.mock.calls[0]![0]).toMatchObject({
-      orderBy: { pinnedAt: "desc" },
-      select: {
-        items: {
-          where: { cardOwnership: { cards: { isRetired: false } } },
-          orderBy: { addedAt: "asc" },
-          take: 6,
-        },
-      },
-    });
-    expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
   });
 });

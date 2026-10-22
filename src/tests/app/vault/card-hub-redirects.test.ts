@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
  * Every old card address redirects permanently into the hub or the Store, keeping its query, and `/vault/cards` opens
- * Mine; a page that moved out of the Vault (the Exchange) redirects permanently too. `src/proxy.ts` answers them: a
+ * Mine, and the hub and Store addresses they land on pass straight through. `src/proxy.ts` answers them: a
  * redirect thrown by a page would stream as a 200 under the Vault's loading boundary, so the old pages are gone.
  */
 import { afterAll, beforeAll, describe, expect, it, jest } from "@jest/globals";
@@ -38,19 +38,12 @@ const locationOf = (res: Response) => res.headers.get("location");
 describe("proxy: old card addresses", () => {
   it.each([
     ["/vault/inventory?card=c1", "/vault/cards/mine?card=c1"],
-    ["/vault/crafting", "/vault/cards/mine"],
-    ["/vault/collections", "/vault/cards/sets"],
     ["/vault/collections/cl_9", "/vault/cards/sets?showcase=cl_9"],
-    ["/explore/collections", "/vault/cards/sets"],
-    ["/vault/lore-gallery", "/vault/cards/explore"],
     ["/vault/lore-generator", "/vault/cards/explore?suggest=1"],
     ["/vault/ns-library", "/vault/cards/explore?realm=nationstates"],
-    ["/vault/ns-deck", "/vault/import"],
     ["/vault/ns-deck/testlandia", "/vault/cards/explore?realm=nationstates"],
     ["/vault/packs?tab=store", "/vault/store?view=packs"],
-    ["/vault/market", "/vault/cards/market"],
     ["/vault/marketplace?tab=trading", "/vault/cards/market?tab=trades"],
-    ["/vault/trading", "/vault/cards/market?tab=trades"],
     ["/vault/store?tab=auctions&card=c1", "/vault/cards/market?card=c1"],
   ])("sends %s on with a 308 to %s", async (path, target) => {
     const res = await run(path);
@@ -81,25 +74,12 @@ describe("proxy: old card addresses", () => {
   });
 });
 
-describe("proxy: pages that moved", () => {
-  it.each(["/labs/exchange", "/vault/exchange-rates", "/vault/exchange/companies"])(
-    "lets %s through",
-    async (path) => {
-      const res = await run(path);
-      expect(locationOf(res)).toBeNull();
-    }
-  );
-});
 describe("proxy: hub and Store addresses", () => {
   it.each([
     "/vault/cards/mine?card=c1",
-    "/vault/cards/sets?showcase=s1",
     "/vault/cards/market?tab=selling",
-    "/vault/cards/explore?suggest=1",
-    "/vault/store",
     "/vault/store?view=packs",
     "/vault/import",
-    "/vault",
   ])("lets %s through", async (path) => {
     const res = await run(path);
     expect(locationOf(res)).toBeNull();

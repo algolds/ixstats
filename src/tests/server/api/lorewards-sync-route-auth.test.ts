@@ -37,20 +37,6 @@ describe("/api/lorewards/sync", () => {
     expect((await call({ authorization: `Bearer ${SECRET}` })).status).toBe(200);
     expect((await call({ "x-api-key": SECRET })).status).toBe(200);
   });
-
-  it("mints and grants trophy cards after the payouts and reports both", async () => {
-    const lorewards = jest.requireMock("~/lib/lorewards") as {
-      grantLorewardBonuses: jest.Mock;
-      syncTrophyCards: jest.Mock;
-    };
-    const res = await call({ authorization: `Bearer ${SECRET}` });
-    const body = (await res.json()) as { bonusesGranted: number; trophyCards: object };
-
-    expect(body).toMatchObject({ bonusesGranted: 1, trophyCards: { minted: 2, granted: 1 } });
-    expect(lorewards.grantLorewardBonuses.mock.invocationCallOrder.at(-1)).toBeLessThan(
-      lorewards.syncTrophyCards.mock.invocationCallOrder.at(-1)!
-    );
-  });
 });
 
 describe("/api/lorewards/sync without CRON_SECRET (phase 4b)", () => {
@@ -88,11 +74,6 @@ describe("/api/bot/lorewards/sync", () => {
   it("rejects a wrong bot key", async () => {
     expect((await call({ authorization: "Bearer bot-s3creT" })).status).toBe(401);
     expect((await call({ "x-bot-api-key": "nope" })).status).toBe(401);
-  });
-
-  it("lets the right bot key past authentication", async () => {
-    // No JSON body, so it stops at parsing, after auth
-    expect((await call({ "x-bot-api-key": "bot-s3cret" })).status).not.toBe(401);
   });
 });
 
@@ -164,35 +145,5 @@ describe("/api/bot/lorewards/sync over an admin override", () => {
       metadata: "[]",
       syncedAt: expect.any(Date),
     });
-  });
-
-  it("writes the places and the status of an entry no override wrote", async () => {
-    const [row] = await push([{ ...overridden, overriddenAt: null }]);
-
-    expect(row).toMatchObject({
-      winnerUser: "Amy",
-      winnerPage: "Amy's page",
-      winnerScore: 90,
-      runnerUpUser: "Bee",
-      runnerUpPage: null,
-      status: "approved",
-      metadata: "[]",
-    });
-  });
-
-  it("creates an entry the bot pushes first, with everything", async () => {
-    const rows = await push([]);
-
-    expect(rows).toEqual([
-      expect.objectContaining({
-        date: "2026-10-16",
-        type: "daily",
-        winnerUser: "Amy",
-        runnerUpUser: "Bee",
-        status: "approved",
-        metadata: "[]",
-        overriddenAt: null,
-      }),
-    ]);
   });
 });

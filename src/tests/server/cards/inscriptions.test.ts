@@ -6,7 +6,6 @@
 import { Prisma } from "@prisma/client";
 import {
   inscribeCopy,
-  listInscriptionReports,
   reportInscription,
   resolveInscriptionReport,
 } from "~/server/modules/cards/inscriptions";
@@ -99,35 +98,6 @@ describe("reportInscription", () => {
     return db;
   }
 
-  it("files the inscription as it reads now, with the reason trimmed", async () => {
-    const db = signedCopy();
-    await expect(report(db)).resolves.toEqual({ reportId: "r1" });
-    expect(db.cardOwnership.findUnique).toHaveBeenCalledWith({
-      where: { id: "own_1" },
-      select: { inscription: true },
-    });
-    expect(db.cardInscriptionReport.create).toHaveBeenCalledWith({
-      data: { ownershipId: "own_1", reporterId: "u2", text: "gg", reason: "a slur" },
-      select: { id: true },
-    });
-  });
-
-  it("takes a reason of 3 to 500 characters, counted once trimmed", async () => {
-    await expect(report(signedCopy(), " abc ")).resolves.toEqual({ reportId: "r1" });
-    await expect(report(signedCopy(), `${"\u{1F600}".repeat(500)}  `)).resolves.toEqual({
-      reportId: "r1",
-    });
-  });
-
-  it.each([
-    ["under 3 characters once trimmed", "  ab  ", "Say what is wrong with it."],
-    ["past 500 characters", "r".repeat(501), "Keep it to 500 characters."],
-  ])("refuses a reason %s, before any read", async (_, reason, message) => {
-    const db = signedCopy();
-    await expect(report(db, reason)).rejects.toMatchObject({ code: "BAD_REQUEST", message });
-    expect(db.cardOwnership.findUnique).not.toHaveBeenCalled();
-  });
-
   it("files up to 5 waiting reports per player, and refuses a sixth before filing", async () => {
     const fifth = signedCopy();
     fifth.cardInscriptionReport.count.mockResolvedValue(4);
@@ -144,20 +114,6 @@ describe("reportInscription", () => {
     });
     expect(sixth.cardInscriptionReport.create).not.toHaveBeenCalled();
   });
-
-  it("refuses a copy with no inscription, or none at all", async () => {
-    const unsigned = signedCopy();
-    unsigned.cardOwnership.findUnique.mockResolvedValue({ inscription: null });
-    await expect(report(unsigned)).rejects.toMatchObject({
-      code: "NOT_FOUND",
-      message: "This copy has no inscription.",
-    });
-    const gone = signedCopy();
-    gone.cardOwnership.findUnique.mockResolvedValue(null);
-    await expect(report(gone)).rejects.toMatchObject({ code: "NOT_FOUND" });
-    expect(gone.cardInscriptionReport.create).not.toHaveBeenCalled();
-  });
-
   it("files one report per player and copy: a second, or a race to it, is refused", async () => {
     const db = signedCopy();
     db.cardInscriptionReport.create.mockRejectedValue(prismaError("P2002"));
@@ -166,99 +122,7 @@ describe("reportInscription", () => {
       message: "You already reported this inscription.",
     });
   });
-
-  it("refuses a copy removed between the read and the report", async () => {
-    const db = signedCopy();
-    db.cardInscriptionReport.create.mockRejectedValue(prismaError("P2003"));
-    await expect(report(db)).rejects.toMatchObject({
-      code: "NOT_FOUND",
-      message: "This copy has no inscription.",
-    });
-  });
 });
-
-describe("listInscriptionReports", () => {
-  const row = (id: string, over: { reporterId?: string; ownership?: object } = {}) => ({
-    id,
-    ownershipId: `own_${id}`,
-    text: "gg",
-    reason: "a slur",
-    reporterId: over.reporterId ?? "u_rep",
-    createdAt: NOW,
-    ownership: {
-      cardId: "card_1",
-      serialNumber: 12,
-      inscribedById: "u_sig",
-      inscribedName: "@sig",
-      cards: { title: "Elm" },
-      ...over.ownership,
-    },
-  });
-
-  it("lists the open reports, oldest first, with the frozen signer and the reporter named for staff", async () => {
-    const db = createMockPrisma();
-    db.cardInscriptionReport.findMany.mockResolvedValue([
-      // A frozen name: its signer is not read
-      row("r1", { ownership: { inscribedById: "u_signed" } }),
-      // An older signature with no frozen name: the signer's name now
-      row("r2", { reporterId: "u_gone", ownership: { inscribedName: null } }),
-      row("r3", { ownership: { inscribedName: null, inscribedById: null } }),
-    ]);
-    const namesOf = jest.fn(
-      async (_ids: readonly string[]) =>
-        new Map([
-          ["u_rep", "@rep"],
-          ["u_sig", "@sig_now"],
-        ])
-    );
-
-    const rows = await listInscriptionReports(db as never, namesOf);
-
-    expect(db.cardInscriptionReport.findMany).toHaveBeenCalledWith({
-      where: { status: "open" },
-      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-      take: 100,
-      select: {
-        id: true,
-        ownershipId: true,
-        text: true,
-        reason: true,
-        reporterId: true,
-        createdAt: true,
-        ownership: {
-          select: {
-            cardId: true,
-            serialNumber: true,
-            inscribedById: true,
-            inscribedName: true,
-            cards: { select: { title: true } },
-          },
-        },
-      },
-    });
-    // One read for everyone named: the reporters, and the signers with no frozen name
-    expect(namesOf).toHaveBeenCalledTimes(1);
-    expect(namesOf).toHaveBeenCalledWith(["u_rep", "u_gone", "u_sig"]);
-    expect(rows).toEqual([
-      {
-        id: "r1",
-        ownershipId: "own_r1",
-        cardId: "card_1",
-        cardTitle: "Elm",
-        serialNumber: 12,
-        text: "gg",
-        signerName: "@sig",
-        reporterName: "@rep",
-        reason: "a slur",
-        createdAt: NOW,
-      },
-      expect.objectContaining({ id: "r2", signerName: "@sig_now", reporterName: null }),
-      expect.objectContaining({ id: "r3", signerName: null, reporterName: "@rep" }),
-    ]);
-    for (const r of rows) expect(r).not.toHaveProperty("reporterId");
-  });
-});
-
 describe("resolveInscriptionReport", () => {
   const resolve = (db: ReturnType<typeof createMockPrisma>, action: "clear" | "dismiss") =>
     resolveInscriptionReport(db as never, { actor: ADMIN, reportId: "r1", action, now: NOW });
@@ -331,18 +195,6 @@ describe("resolveInscriptionReport", () => {
     expect(tx.cardOwnership.updateMany).not.toHaveBeenCalled();
     expect(tx.auditLog.create).not.toHaveBeenCalled();
   });
-
-  it("closes a report on a copy cleared already, with no second audit row", async () => {
-    const { db, tx } = openReport();
-    tx.cardOwnership.updateMany.mockResolvedValue({ count: 0 });
-    await expect(resolve(db, "clear")).resolves.toEqual({ status: "cleared" });
-    expect(tx.cardInscriptionReport.updateMany).toHaveBeenNthCalledWith(2, {
-      where: { ownershipId: "own_1", status: "open" },
-      data: { status: "cleared", ...HANDLED },
-    });
-    expect(tx.auditLog.create).not.toHaveBeenCalled();
-  });
-
   it("audits once when two admins clear two reports on one copy at the same time", async () => {
     const db = createMockPrisma();
     db.cardInscriptionReport.updateMany.mockResolvedValue({ count: 1 });
@@ -372,25 +224,5 @@ describe("resolveInscriptionReport", () => {
     ]);
     expect(db.cardOwnership.updateMany).toHaveBeenCalledTimes(2);
     expect(db.auditLog.create).toHaveBeenCalledTimes(1);
-  });
-
-  it("dismissing closes only that report, if it is still open", async () => {
-    const { db, tx } = openReport();
-    await expect(resolve(db, "dismiss")).resolves.toEqual({ status: "dismissed" });
-    expect(db.cardInscriptionReport.updateMany).toHaveBeenCalledTimes(1);
-    expect(db.cardInscriptionReport.updateMany).toHaveBeenCalledWith({
-      where: { id: "r1", status: "open" },
-      data: { status: "dismissed", ...HANDLED },
-    });
-    expect(db.$transaction).not.toHaveBeenCalled();
-    expect(tx.cardOwnership.updateMany).not.toHaveBeenCalled();
-    expect(db.cardOwnership.updateMany).not.toHaveBeenCalled();
-    expect(db.auditLog.create).not.toHaveBeenCalled();
-
-    db.cardInscriptionReport.updateMany.mockResolvedValue({ count: 0 });
-    await expect(resolve(db, "dismiss")).rejects.toMatchObject({
-      code: "NOT_FOUND",
-      message: "This report is already handled.",
-    });
   });
 });

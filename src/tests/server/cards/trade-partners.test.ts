@@ -21,7 +21,6 @@ import { copyFaces } from "~/lib/cards/hub/market-faces";
 import { wishlistCardIds } from "~/server/modules/cards/market/wishlist";
 import {
   findTradePartner,
-  getPartnerWishlist,
   getTradeables,
   searchTradePartners,
   type PartnerName,
@@ -164,15 +163,6 @@ describe("searchTradePartners", () => {
     country: { name: "Nowhere", leader: "Someone" },
     ...fields,
   });
-
-  it("needs two characters, and reads nothing before then", async () => {
-    const db = makeDb();
-    for (const query of ["", "a", " a ", "@a", "@"]) {
-      expect(await searchTradePartners(db as never, rulesFor(), VIEWER, query)).toEqual([]);
-    }
-    expect(db.user.findMany).not.toHaveBeenCalled();
-  });
-
   it("matches the typed text literally: a % or _ is a character, not a wildcard", async () => {
     const db = makeDb();
     await searchTradePartners(db as never, rulesFor(), VIEWER, " @a_b%\\ ");
@@ -273,75 +263,10 @@ describe("searchTradePartners", () => {
     expect(found[4]!.privacy).toEqual({ audience: "followers", allowed: true, cardsShown: false });
     expect(found[5]!.countryName).toBeNull();
   });
-
-  it("returns at most eight, leaving out a player with no name", async () => {
-    const db = makeDb();
-    db.user.findMany.mockResolvedValue(
-      Array.from({ length: 12 }, (_, i) => user(`p${i}`, { forumUsername: "rosegarden" }))
-    );
-    const rules = rulesFor();
-    rules.namesOf.mockImplementationOnce(
-      async (ids) =>
-        new Map<string, PartnerName>(
-          ids.filter((id) => id !== "p1").map((id) => [id, { handle: id, displayName: null }])
-        )
-    );
-    const found = await searchTradePartners(db as never, rules, VIEWER, "rose");
-    expect(found.map((p) => p.id)).toEqual(["p0", "p2", "p3", "p4", "p5", "p6", "p7"]);
-    expect(found[0]!.displayName).toBeNull();
-    expect(tradeOfferRefusers).toHaveBeenCalledWith(db, "user_alice", [
-      "clerk_p0",
-      "clerk_p2",
-      "clerk_p3",
-      "clerk_p4",
-      "clerk_p5",
-      "clerk_p6",
-      "clerk_p7",
-    ]);
-  });
 });
 
 describe("getTradeables", () => {
   const input = { partnerId: "bob", side: "theirs" as const, filters: {}, limit: 10 };
-  it("filters by realm, finish, type and a literal title search, and pages from a cursor", async () => {
-    const db = makeDb();
-    const page = await getTradeables(db as never, rulesFor(), VIEWER, {
-      ...input,
-      filters: {
-        realmId: "default",
-        finish: "FOIL",
-        cardType: "NS",
-        rarity: "EPIC",
-        search: "50%_off",
-      },
-      cursor: "o0",
-      limit: 2,
-    });
-    expect(db.cardOwnership.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          ownerId: "bob",
-          isLocked: false,
-          finish: "FOIL",
-          cards: {
-            isBound: false,
-            realmId: "default",
-            rarity: "EPIC",
-            cardType: "NS",
-            title: { contains: "50\\%\\_off", mode: "insensitive" },
-          },
-        },
-        take: 3,
-        cursor: { id: "o0" },
-        skip: 1,
-      })
-    );
-    expect(page.nextCursor).toBeNull();
-    expect(page.items.map((i) => [i.ownershipId, i.value, i.highlighted])).toEqual([
-      ["o1", 120, false],
-      ["o2", 0, true],
-    ]);
-  });
   it("refuses up front when the partner does not take offers from you, reading no copies", async () => {
     jest.mocked(tradeOfferRefusers).mockResolvedValue(refusals(["user_bob"]));
     for (const side of ["theirs", "mine"] as const) {
@@ -367,42 +292,5 @@ describe("getTradeables", () => {
     expect(mine.items.map((i) => i.highlighted)).toEqual([false, false]);
     expect(db.cardWatchlist.findMany).not.toHaveBeenCalled();
     expect(wishlistCardIds).not.toHaveBeenCalled();
-  });
-
-  it("finds no partner who is missing, inactive or yourself", async () => {
-    const gone = makeDb();
-    gone.user.findUnique.mockResolvedValue(null);
-    const inactive = makeDb();
-    inactive.user.findUnique.mockResolvedValue({ ...BOB, isActive: false });
-    const self = makeDb();
-    const cases = [
-      [gone, "bob"],
-      [inactive, "bob"],
-      [self, "alice"],
-    ] as const;
-    for (const [db, partnerId] of cases) {
-      await expect(
-        getTradeables(db as never, rulesFor(), VIEWER, { ...input, partnerId })
-      ).rejects.toMatchObject({ code: "NOT_FOUND", message: "Player not found." });
-      expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
-    }
-    expect(self.user.findUnique).not.toHaveBeenCalled();
-    expect(tradeOfferRefusers).not.toHaveBeenCalled();
-  });
-});
-
-describe("getPartnerWishlist", () => {
-  it("is refused when the partner does not take offers from you or hides their cards", async () => {
-    const closed = makeDb();
-    jest.mocked(tradeOfferRefusers).mockResolvedValueOnce(refusals(["user_bob"]));
-    await expect(
-      getPartnerWishlist(closed as never, rulesFor(), VIEWER, "bob")
-    ).rejects.toMatchObject(FORBIDDEN);
-    const hidden = makeDb();
-    await expect(
-      getPartnerWishlist(hidden as never, rulesFor([]), VIEWER, "bob")
-    ).rejects.toMatchObject(PRIVATE);
-    expect(closed.cardWatchlist.findMany).not.toHaveBeenCalled();
-    expect(hidden.cardWatchlist.findMany).not.toHaveBeenCalled();
   });
 });

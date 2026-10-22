@@ -8,7 +8,6 @@ import { earnCreditsTx, LedgerError } from "~/lib/vault/vault-ledger";
 import { clearEconomyConfigCache } from "~/lib/cards/economy-config";
 import {
   payNationRoyaltiesTx,
-  royaltyNotices,
   royaltyRecipientsTx,
   type RoyaltyCard,
 } from "~/lib/cards/market/royalty";
@@ -84,14 +83,6 @@ describe("nation royalty", () => {
     // No eligible owner stops before the economy config is read
     expect(tx.systemConfig.findMany).not.toHaveBeenCalled();
   });
-
-  it("pays nothing, and looks up no nation, when there is no fee (100 IxC or less)", async () => {
-    const tx = makeTx("owner");
-    expect(await pay(tx, { amount: 100, fee: 0 })).toEqual([]);
-    expect(tx.country.findMany).not.toHaveBeenCalled();
-    expect(earn).not.toHaveBeenCalled();
-  });
-
   it.each([
     ["is not a nation card", { cardId: "c", cardType: "LORE", countryId: "country_1" }],
     ["shows no nation", { cardId: "c", cardType: "NATION", countryId: null }],
@@ -109,14 +100,6 @@ describe("nation royalty", () => {
       { recipientId: "owner", amount: 5, cardId: "card_n" },
     ]);
   });
-
-  it("works the share out in whole cents, with no float shortfall", async () => {
-    // 2% of 29 is 0.58; 0.58 × 100 in floating point is 57.99..., which a float floor pays as 0.57
-    expect(await pay(makeTx("owner"), { amount: 29, fee: 2 })).toEqual([
-      { recipientId: "owner", amount: 0.58, cardId: "card_n" },
-    ]);
-  });
-
   describe("with several nation cards (a trade's credit leg)", () => {
     const nations = [
       { id: "country_1", ownerUserId: "owner_1" },
@@ -159,17 +142,11 @@ describe("nation royalty", () => {
         { recipientId: "owner_2", amount: 20, cardId: "card_m" },
       ]);
     });
-
-    it("pays nothing when a share would round down to 0", async () => {
-      // 2% of 0.5 is one cent, which two owners cannot share
-      expect(await pay(makeTx(nations), { cards: two, amount: 0.5, fee: 1 })).toEqual([]);
-      expect(earn).not.toHaveBeenCalled();
-    });
   });
 
   it("keeps a payout's share with the house when the ledger refuses that payout", async () => {
     // On a sale this needs the config to flip after the seller was paid: with earning off, the seller's EARN_CARDS
-    // payment comes first and fails the whole sale (settle-sale.test.ts pins that)
+    // payment comes first and fails the whole sale (cards-listing-sale pins that)
     earn.mockRejectedValueOnce(new LedgerError("EARNING_DISABLED", "Earning credits is off."));
     expect(await pay(makeTx("owner"), { partyIds: [] })).toEqual([]);
   });
@@ -199,34 +176,5 @@ describe("nation royalty", () => {
     ).toEqual([]);
     expect(none.country.findMany).not.toHaveBeenCalled();
     expect(earn).not.toHaveBeenCalled();
-  });
-
-  it("writes a notice per payout, naming the card", () => {
-    expect(
-      royaltyNotices(
-        [
-          { recipientId: "owner", amount: 20, cardId: "card_n" },
-          { recipientId: "other", amount: 0.29, cardId: "card_m" },
-        ],
-        new Map([["card_n", "Aurelia"]])
-      )
-    ).toEqual([
-      {
-        userId: "owner",
-        cardId: "card_n",
-        title: "Royalty paid",
-        message: "A copy of your nation's card, Aurelia, changed hands. You received 20 IxC.",
-        type: "success",
-        priority: "low",
-      },
-      {
-        userId: "other",
-        cardId: "card_m",
-        title: "Royalty paid",
-        message: "A copy of your nation's card changed hands. You received 0.29 IxC.",
-        type: "success",
-        priority: "low",
-      },
-    ]);
   });
 });

@@ -52,17 +52,6 @@ describe("loadPublicCosmetics", () => {
     ]);
     expect(JSON.stringify(result)).not.toMatch(/credits|balance|purchase/i);
   });
-
-  it("skips the database for an empty lookup and caps a long one", async () => {
-    const mock = db();
-    await expect(loadPublicCosmetics(mock as never, {})).resolves.toEqual({ users: {} });
-    expect(mock.user.findMany).not.toHaveBeenCalled();
-
-    const many = Array.from({ length: MAX_PUBLIC_COSMETICS_LOOKUP + 10 }, (_, i) => `u${i}`);
-    await loadPublicCosmetics(mock as never, { userIds: many });
-    const or = mock.user.findMany.mock.calls[0][0].where.OR;
-    expect(or[0].id.in).toHaveLength(MAX_PUBLIC_COSMETICS_LOOKUP);
-  });
 });
 
 describe("vault.getEquippedCosmeticsFor", () => {

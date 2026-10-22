@@ -3,7 +3,8 @@
  * A staff admin plays as an ordinary member through the real request context: the context swaps to the member, keeps
  * the rate-limit bucket on the admin and writes one play-as audit row. The admin reads the member's packs, but every
  * admin procedure and every money move (a pack purchase, the daily claim) is refused, with the member's wallet, ledger
- * and collection untouched; the member buying the same pack themself pays. Out of play-as, the admin's own calls are
+ * and collection untouched; the member buying the same pack themself pays. Reading the member's balance pays no
+ * new-player bonus; the member's own next read pays it once. Out of play-as, the admin's own calls are
  * audited: mutations and failures, with the trusted IP. A second staff member is refused play-as of the system
  * owner, of an equal, and of nobody, and a member is refused play-as at all, each attempt audited.
  *
@@ -194,6 +195,20 @@ describe("an admin playing as a member", () => {
     expect(await creditsOf(w.db, [w.mo.id])).toEqual({ [w.mo.id]: 400 });
     expect(await ledgerOf(w.db, w.mo.id)).toEqual([
       { credits: -100, balanceAfter: 400, type: "SPEND_PACKS", source: "PACK_PURCHASE" },
+    ]);
+  });
+
+  it("reads the member's balance without paying their new-player bonus, which their own next read pays once", async () => {
+    const rows = await w.db.vaultTransaction.count();
+    const asMo = app(await request(w.ada, { "x-play-as-user": w.mo.clerkUserId }));
+    await expect(asMo.vault.getBalance()).resolves.toMatchObject({ credits: 400 });
+    expect(await w.db.vaultTransaction.count()).toBe(rows);
+
+    const mo = app(await request(w.mo));
+    await expect(mo.vault.getBalance()).resolves.toMatchObject({ credits: 5400 });
+    await mo.vault.getBalance();
+    expect((await ledgerOf(w.db, w.mo.id)).slice(1)).toEqual([
+      { credits: 5000, balanceAfter: 5400, type: "EARN_BONUS", source: "bonus:new_player" },
     ]);
   });
 });

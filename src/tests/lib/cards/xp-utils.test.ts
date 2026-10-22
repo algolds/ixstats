@@ -1,6 +1,16 @@
 /** @jest-environment node */
+/**
+ * Card XP: `grantCardXp` grants a source's amount inside the caller's transaction, within the per-copy UTC daily cap,
+ * by a compare-and-swap that re-reads and retries and gives up writing nothing; the holding tick gives every held
+ * copy its daily XP in one statement that claims the day, so a day never ticks twice; a level is 1 to 10 at 1,000 XP.
+ *
+ * Folds holding-xp and levels.
+ */
 import { clearEconomyConfigCache } from "~/lib/cards/economy-config";
-import { grantCardXp, type CardXpSource } from "~/lib/cards/xp-utils";
+import { grantCardXp } from "~/lib/cards/xp-utils";
+import { Prisma } from "@prisma/client";
+import { runHoldingXpTick } from "~/server/modules/cards/holding-xp";
+import { clampLevel, levelForXp } from "~/lib/cards/levels";
 
 const NOW = new Date("2026-11-02T12:00:00Z");
 const TODAY = new Date("2026-11-02T00:00:00Z");
@@ -53,30 +63,6 @@ describe("grantCardXp", () => {
       },
     });
   });
-
-  it.each<[CardXpSource, number]>([
-    ["PACK_OPEN", 11],
-    ["DAILY_CLAIM", 12],
-    ["TRADE", 13],
-    ["AUCTION_WIN", 14],
-    // A fixed-price purchase earns what an auction win does
-    ["LISTING_PURCHASE", 14],
-    // A cross-realm trade earns double the trade amount (spec §2.2)
-    ["CROSS_REALM_TRADE", 26],
-  ])("reads %s's amount from its own Economy tab number", async (source, amount) => {
-    const stored = [
-      { key: "card_economy_xp_pack", value: "11" },
-      { key: "card_economy_xp_daily", value: "12" },
-      { key: "card_economy_xp_trade_per_card", value: "13" },
-      { key: "card_economy_xp_auction_win", value: "14" },
-    ];
-    const tx = makeTx({ level: 1, experience: 0, xpDay: null, xpToday: 0 }, stored);
-    expect((await grantCardXp(tx as never, "own_1", source, undefined, NOW)).xpGained).toBe(amount);
-    expect(tx.cardExperienceEvent.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ amount, source, metadata: null }),
-    });
-  });
-
   it("stops at the daily cap per copy and writes nothing once it is reached", async () => {
     const capped = makeTx({ level: 3, experience: 2400, xpDay: TODAY, xpToday: 100 });
     expect(await grantCardXp(capped as never, "own_1", "AUCTION_WIN", undefined, NOW)).toEqual({
@@ -108,16 +94,6 @@ describe("grantCardXp", () => {
       data: { experience: 2425, level: 3, xpToday: 25, xpDay: TODAY },
     });
   });
-
-  it("keeps the level at 10 while XP keeps counting", async () => {
-    const tx = makeTx({ level: 10, experience: 12_000, xpDay: null, xpToday: 0 });
-    expect(await grantCardXp(tx as never, "own_1", "PACK_OPEN", undefined, NOW)).toMatchObject({
-      newLevel: 10,
-      newXP: 12_010,
-      leveledUp: false,
-    });
-  });
-
   it("re-reads and retries when another grant changed the copy first", async () => {
     const tx = makeTx({ level: 1, experience: 0, xpDay: null, xpToday: 0 });
     tx.cardOwnership.findUnique
@@ -154,35 +130,107 @@ describe("grantCardXp", () => {
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("own_1"));
     warn.mockRestore();
   });
+});
 
-  it("does nothing for a copy that no longer exists", async () => {
-    const tx = makeTx(null);
-    expect(await grantCardXp(tx as never, "gone", "TRADE", undefined, NOW)).toEqual({
-      prevLevel: 0,
-      newLevel: 0,
-      prevXP: 0,
-      newXP: 0,
-      leveledUp: false,
-      xpGained: 0,
+describe("the holding tick", () => {
+  const NOW = new Date("2026-11-02T03:30:00Z");
+  const DAY_KEY = "cards_holding_tick_day";
+
+  interface FindManyArgs {
+    where: { key: { in?: string[]; startsWith?: string } };
+  }
+
+  /**
+   * A database whose stored tick day is `lastDay`. The tick's statement reports `outcome`, and claiming the day stores
+   * it, as Postgres would.
+   */
+  function makeDb(
+    lastDay: string | null,
+    economy: Array<{ key: string; value: string }> = [],
+    outcome: { claimed: boolean; copies: number } = { claimed: true, copies: 42 }
+  ) {
+    let stored = lastDay;
+    return {
+      systemConfig: {
+        findMany: jest.fn().mockImplementation(async ({ where }: FindManyArgs) => {
+          if (where.key.in) return stored ? [{ key: DAY_KEY, value: stored }] : [];
+          return economy;
+        }),
+      },
+      $queryRaw: jest
+        .fn()
+        .mockImplementation(async (_strings: TemplateStringsArray, ...values: string[]) => {
+          if (outcome.claimed) stored = values[1] ?? null;
+          return [outcome];
+        }),
+    };
+  }
+
+  const flat = (sql: string) => sql.replace(/\s+/g, " ").trim();
+
+  /** The one statement the tick ran, fragments and all, as Postgres receives it. */
+  function statementOf(db: ReturnType<typeof makeDb>): Prisma.Sql {
+    const [strings, ...values] = db.$queryRaw.mock.calls[0] as Parameters<typeof Prisma.sql>;
+    return Prisma.sql(strings, ...values);
+  }
+
+  beforeEach(() => clearEconomyConfigCache());
+
+  describe("runHoldingXpTick", () => {
+    it("ticks every copy held a day, in one statement that also claims the day, without event rows", async () => {
+      const db = makeDb("2026-11-01");
+      expect(await runHoldingXpTick(db as never, NOW)).toEqual({
+        day: "2026-11-02",
+        copies: 42,
+        skipped: false,
+      });
+      expect(db.$queryRaw).toHaveBeenCalledTimes(1);
+      const { sql, values } = statementOf(db);
+      // The day is claimed only when it is later than the last one stored, in the statement that ticks the copies,
+      // and the statement says whether it claimed the day as well as how many copies it ticked
+      expect(flat(sql)).toContain(
+        flat(`WITH claim AS (
+          INSERT INTO "SystemConfig" ("id", "key", "value", "description", "updatedAt")
+          VALUES (gen_random_uuid()::text, ?, ?, ?, now())
+          ON CONFLICT ("key") DO UPDATE SET "value" = EXCLUDED."value", "updatedAt" = now()
+            WHERE "SystemConfig"."value" < EXCLUDED."value"
+          RETURNING 1
+        ), ticked AS (
+          UPDATE "CardOwnership" o SET`)
+      );
+      expect(flat(sql)).toMatch(
+        /RETURNING 1 \) SELECT EXISTS \(SELECT 1 FROM claim\) AS claimed, \(SELECT count\(\*\) FROM ticked\)::int AS copies$/
+      );
+      expect(sql).not.toContain("card_experience_events");
+      expect(values.slice(0, 3)).toEqual([DAY_KEY, "2026-11-02", expect.any(String)]);
     });
-    expect(tx.cardOwnership.updateMany).not.toHaveBeenCalled();
+    it("skips a day it already ticked", async () => {
+      const db = makeDb("2026-11-02");
+      expect(await runHoldingXpTick(db as never, NOW)).toEqual({
+        day: "2026-11-02",
+        copies: 0,
+        skipped: true,
+      });
+      expect(db.$queryRaw).not.toHaveBeenCalled();
+    });
+    it("never ticks a day before the last one it ticked", async () => {
+      const db = makeDb("2026-11-03");
+      expect(await runHoldingXpTick(db as never, NOW)).toMatchObject({ skipped: true, copies: 0 });
+      expect(db.$queryRaw).not.toHaveBeenCalled();
+    });
   });
+});
 
-  it("does nothing for a copy that went while it retried", async () => {
-    const tx = makeTx({ level: 2, experience: 1500, xpDay: null, xpToday: 0 });
-    tx.cardOwnership.findUnique.mockResolvedValueOnce({
-      level: 2,
-      experience: 1500,
-      xpDay: null,
-      xpToday: 0,
+describe("card levels", () => {
+  describe("card levels", () => {
+    it("is 1 to 10 from XP, 1,000 a level, and XP past the cap is kept", () => {
+      expect(levelForXp(0)).toBe(1);
+      expect(levelForXp(999)).toBe(1);
+      expect(levelForXp(1000)).toBe(2);
+      expect(levelForXp(9000)).toBe(10);
+      expect(levelForXp(250_000)).toBe(10);
+      expect(clampLevel(37)).toBe(10);
+      expect(clampLevel(0)).toBe(1);
     });
-    tx.cardOwnership.findUnique.mockResolvedValueOnce(null);
-    tx.cardOwnership.updateMany.mockResolvedValueOnce({ count: 0 });
-    expect(await grantCardXp(tx as never, "own_1", "TRADE", undefined, NOW)).toMatchObject({
-      prevLevel: 0,
-      newLevel: 0,
-      xpGained: 0,
-    });
-    expect(tx.cardExperienceEvent.create).not.toHaveBeenCalled();
   });
 });

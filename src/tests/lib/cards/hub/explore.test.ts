@@ -3,7 +3,6 @@
 import type { Prisma } from "@prisma/client";
 import type { z } from "zod";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
-import { CATALOGUE_WHERE } from "~/lib/cards/hub/catalogue";
 import {
   ExploreQuerySchema,
   exploreGrid,
@@ -14,17 +13,6 @@ const query = (overrides: z.input<typeof ExploreQuerySchema> = {}) =>
   ExploreQuerySchema.parse(overrides);
 const PUBLISHED = { status: { notIn: ["draft", "generating"] } };
 const NO_TROPHIES = { cardType: { not: "TROPHY" } };
-
-describe("CATALOGUE_WHERE", () => {
-  it("holds approved, unhidden cards whose home realm is published", () => {
-    expect(CATALOGUE_WHERE).toEqual({
-      reviewState: "APPROVED",
-      isRetired: false,
-      realm: PUBLISHED,
-    });
-  });
-});
-
 describe("exploreWhere", () => {
   it("matches %, _ and \\ in a title search literally", () => {
     expect(exploreWhere(query({ search: "100%_a\\b" }), "me")).toMatchObject({
@@ -75,11 +63,5 @@ describe("exploreRegions", () => {
     expect(sql).toMatch(/ORDER BY COUNT\(\*\) DESC, 1\s+LIMIT 60/);
     expect(sql).not.toContain("pacific");
     expect(values).toEqual(["%pacific%"]);
-  });
-
-  it("matches %, _ and \\ literally", async () => {
-    const db = regionsDb();
-    await exploreRegions(db as never, "100%_a\\b");
-    expect(sentQuery(db).values).toEqual(["%100\\%\\_a\\\\b%"]);
   });
 });

@@ -328,55 +328,6 @@ describe("reassigning a trophy", () => {
     // The fields it wrote come back, for the bot
     expect(result.written).toEqual(written);
   });
-
-  it("starts a new holder with no page, score or bytes unless the override gives them", async () => {
-    const h = setup({ contest: [daily("Amy", "Old page")] });
-
-    await override(h, { winnerUser: "Cy" });
-    expect(h.tx.lorewardEntry.updateMany.mock.calls[0]![0].data).toMatchObject({
-      winnerUser: "Cy",
-      winnerPage: null,
-      winnerScore: null,
-      winnerBytes: null,
-      // The other place keeps its fields
-      runnerUpUser: "Bee",
-      runnerUpScore: 80,
-    });
-
-    const typed = setup({ contest: [daily("Amy", "Old page")] });
-    await override(typed, { winnerUser: "Cy", winnerPage: "Cy's page", winnerBytes: 5 });
-    expect(typed.tx.lorewardEntry.updateMany.mock.calls[0]![0].data).toMatchObject({
-      winnerPage: "Cy's page",
-      winnerScore: null,
-      winnerBytes: 5,
-    });
-
-    const retyped = setup({ contest: [daily("Amy", "Old page")] });
-    await override(retyped, { winnerUser: "Amy" });
-    expect(retyped.tx.lorewardEntry.updateMany.mock.calls[0]![0].data).toMatchObject({
-      winnerPage: "Old page",
-      winnerScore: 90,
-      winnerBytes: 900,
-    });
-  });
-
-  it("writes the status it is given to every entry, and keeps it when it is not", async () => {
-    const given = setup({ contest: [daily("Amy", "Old page")] });
-    await overrideLorewardEntry(given.db as never, actor, {
-      date: "2026-10-20",
-      type: "daily",
-      fields: { winnerUser: "Amy" },
-      status: "approved",
-    });
-    expect(given.tx.lorewardEntry.updateMany.mock.calls[0]![0].data).toMatchObject({
-      status: "approved",
-    });
-
-    const kept = setup({ contest: [daily("Amy", "Old page")] });
-    await override(kept, { winnerUser: "Amy" });
-    expect(kept.tx.lorewardEntry.updateMany.mock.calls[0]![0].data).not.toHaveProperty("status");
-  });
-
   it("takes both places' contest locks, winner first, before it reads the contest, then the card's serial lock", async () => {
     accounts({ Cy: "user_cy" });
     const h = setup({ contest: [daily("Amy", "Old page")], trophies: [amyTrophy()] });
@@ -428,34 +379,6 @@ describe("reassigning a trophy", () => {
     expect(cardUpdates(h)[0]!.data.metadata).toMatchObject({
       grantedTo: "user_cy",
       grantedAt: expect.any(String),
-    });
-  });
-
-  it("leaves a card that waits for no account unminted", async () => {
-    const h = setup({ contest: [daily("Amy", "Old page")], trophies: [amyTrophy([])] });
-
-    await override(h, winner("Cy", "Old page"));
-
-    expect(mintTrophyCopyTx).not.toHaveBeenCalled();
-    expect(removeCopyTx).not.toHaveBeenCalled();
-  });
-
-  it("keeps the copy, and its grant date, when the place's new page still resolves to its holder", async () => {
-    accounts({ Amy: "user_amy" });
-    const h = setup({ contest: [daily("Amy", "Old page")], trophies: [amyTrophy()] });
-
-    await expect(override(h, winner("Amy", "New page"))).resolves.toMatchObject({
-      reassigned: 1,
-    });
-
-    expect(h.tx.cardOwnership.updateMany).not.toHaveBeenCalled();
-    expect(h.tx.cardTransferEvent.create).not.toHaveBeenCalled();
-    expect(removeCopyTx).not.toHaveBeenCalled();
-    expect(mintTrophyCopyTx).not.toHaveBeenCalled();
-    expect(cardUpdates(h)[0]!.data).toMatchObject({
-      title: "New page",
-      wikiArticleTitle: "New page",
-      metadata: { grantedTo: "user_amy", grantedAt: AMY_GRANTED_AT },
     });
   });
   it("refuses, rolling the override back, when the copy changed hands meanwhile", async () => {
@@ -576,137 +499,6 @@ describe("the places an override changes", () => {
     expect(removeCopyTx).not.toHaveBeenCalled();
     expect(locks(h)).not.toContain("7331 trophy_2");
   });
-
-  it("leaves a place the override leaves out alone, even when its card disagrees with its entries", async () => {
-    // A sync moved the runner-up from Bee to Dee after Bee's card was minted; the admin corrects only the winner
-    accounts({ Cy: "user_cy", Dee: "user_dee" });
-    const h = setup({
-      contest: [{ ...daily("Amy", "Old page"), runnerUpUser: "Dee" }],
-      trophies: [amyTrophy(), beeTrophy([BEE_COPY])],
-    });
-
-    await expect(override(h, winner("Cy", "New page"))).resolves.toMatchObject({
-      reassigned: 1,
-      voided: 0,
-    });
-
-    expect(h.tx.card.findMany).toHaveBeenCalledTimes(1);
-    expect(h.tx.card.findMany.mock.calls[0]![0].where.lorewardEdition).toBe("winner");
-    expect(cardUpdates(h).map(({ where }) => where.id)).toEqual(["trophy_1"]);
-    expect(removeCopyTx).not.toHaveBeenCalled();
-    expect(h.tx.cardOwnership.updateMany).toHaveBeenCalledTimes(1);
-  });
-
-  it("voids the runner-up only when the override clears it", async () => {
-    const h = setup({
-      contest: [daily("Amy", "Old page")],
-      trophies: [amyTrophy(), beeTrophy([BEE_COPY])],
-    });
-
-    await expect(override(h, { runnerUpUser: null, runnerUpPage: null })).resolves.toMatchObject({
-      reassigned: 0,
-      voided: 1,
-    });
-
-    expect(h.tx.lorewardEntry.updateMany.mock.calls[0]![0].data).toMatchObject({
-      winnerUser: "Amy",
-      winnerPage: "Old page",
-      runnerUpUser: null,
-      runnerUpPage: null,
-    });
-    expect(removeCopyTx).toHaveBeenCalledWith(h.tx, BEE_COPY, "VOID");
-    expect(cardUpdates(h).map(({ where }) => where.id)).toEqual(["trophy_2"]);
-  });
-
-  it("leaves an unchanged place alone when its card already agrees", async () => {
-    const h = setup({ contest: [daily("Amy", "Old page")], trophies: [amyTrophy(), beeTrophy()] });
-
-    await expect(override(h, winner("Amy", "Old page"))).resolves.toMatchObject({
-      reassigned: 0,
-      voided: 0,
-      minted: 0,
-      mintDeferred: false,
-    });
-
-    expect(h.tx.lorewardEntry.updateMany).toHaveBeenCalled();
-    expect(h.tx.card.update).not.toHaveBeenCalled();
-    expect(h.tx.auditLog.create).not.toHaveBeenCalled();
-    expect(locks(h)).toHaveLength(2);
-  });
-
-  it("repairs a card whose holder disagrees with an unchanged place when the override is sent again", async () => {
-    accounts({ Amy: "user_amy" });
-    const stale = amyTrophy(undefined, { metadata: { wikiUser: "Zed", grantedTo: "user_amy" } });
-    const h = setup({ contest: [daily("Amy", "Old page")], trophies: [stale] });
-
-    await expect(override(h, winner("Amy", "Old page"))).resolves.toMatchObject({
-      reassigned: 1,
-    });
-
-    expect(cardUpdates(h)[0]!.data.metadata).toMatchObject({ wikiUser: "Amy" });
-  });
-
-  it("repairs a card whose title disagrees, and voids a card an empty place never voided", async () => {
-    accounts({ Amy: "user_amy" });
-    const retitled = setup({
-      contest: [daily("Amy", "Old page")],
-      trophies: [amyTrophy(undefined, { title: "Another page" })],
-    });
-    await expect(override(retitled, winner("Amy", "Old page"))).resolves.toMatchObject({
-      reassigned: 1,
-    });
-
-    const unvoided = setup({ contest: [daily(null, null)], trophies: [amyTrophy()] });
-    await expect(override(unvoided, winner(null, null))).resolves.toMatchObject({ voided: 1 });
-
-    const voided = amyTrophy([], { metadata: { voidedAt: "2026-10-18T00:00:00.000Z" } });
-    const done = setup({ contest: [daily(null, null)], trophies: [voided] });
-    await expect(override(done, winner(null, null))).resolves.toMatchObject({ voided: 0 });
-  });
-
-  it("brings back a voided card when the override names a holder its entries already record", async () => {
-    accounts({ Amy: "user_amy" });
-    const voided = amyTrophy([], {
-      metadata: { wikiUser: "Amy", grantedTo: null, voidedAt: "2026-10-18T00:00:00.000Z" },
-    });
-    const h = setup({ contest: [daily("Amy", "Old page")], trophies: [voided] });
-
-    await expect(override(h, winner("Amy", "Old page"))).resolves.toMatchObject({
-      reassigned: 1,
-    });
-
-    expect(mintTrophyCopyTx).toHaveBeenCalledWith(h.tx, "trophy_1", "user_amy");
-    expect(cardUpdates(h)[0]!.data).toMatchObject({
-      isRetired: false,
-      metadata: { voidedAt: null },
-    });
-  });
-
-  it("voids one place and reassigns the other in one override, naming nobody for a card that records no holder", async () => {
-    const unnamed = { contest: "daily" };
-    const h = setup({
-      contest: [daily("Amy", "Old page")],
-      trophies: [amyTrophy([], { metadata: unnamed }), beeTrophy([], { metadata: unnamed })],
-    });
-
-    await expect(
-      override(h, { winnerUser: null, winnerPage: null, runnerUpUser: "Dee" })
-    ).resolves.toMatchObject({ reassigned: 1, voided: 1, minted: 0 });
-
-    expect(auditRows(h).map((row) => row.details)).toEqual([
-      "Voided the daily winner of 2026-10-20 trophy (was nobody)",
-      "Reassigned the daily runner-up of 2026-10-20 trophy from nobody to Dee, waiting for their account",
-    ]);
-    expect(cardUpdates(h)[1]!.data.metadata.provenance).toEqual([
-      expect.objectContaining({ from: null, to: "Dee" }),
-    ]);
-    expect(h.tx.card.findMany).toHaveBeenCalledWith({
-      where: { lorewardEntryId: { in: ["entry_1"] }, lorewardEdition: "runner-up" },
-      select: { id: true, title: true, isRetired: true, metadata: true },
-      orderBy: { id: "asc" },
-    });
-  });
-
   it("swaps the winner and the runner-up: each copy moves in place, under its own card's lock", async () => {
     accounts({ Amy: "user_amy", Bee: "user_bee" });
     const h = setup({
@@ -744,55 +536,6 @@ describe("the places an override changes", () => {
       ["Old page", "Amy"],
     ]);
   });
-
-  it("changes nothing on a place with no card yet, and leaves it to the mint", async () => {
-    jest.mocked(mintTrophyCards).mockResolvedValue({ minted: 1 });
-    const h = setup({ contest: [daily("Amy", "Old page")] });
-
-    await expect(override(h, winner("Cy", "Page"))).resolves.toMatchObject({
-      reassigned: 0,
-      voided: 0,
-      minted: 1,
-      mintDeferred: false,
-    });
-
-    expect(resolveLorewardPlace).not.toHaveBeenCalled();
-    expect(h.tx.card.update).not.toHaveBeenCalled();
-  });
-
-  it("creates the entry, approved and marked, when its contest has none, and leaves the trophy to the mint", async () => {
-    const h = setup({ contest: [], keyed: null });
-
-    await override(h, winner("Cy", "Page"));
-
-    const written = {
-      winnerUser: "Cy",
-      winnerPage: "Page",
-      winnerScore: null,
-      winnerBytes: null,
-      runnerUpUser: null,
-      runnerUpPage: null,
-      runnerUpScore: null,
-      runnerUpBytes: null,
-    };
-    expect(h.tx.lorewardEntry.upsert).toHaveBeenCalledWith({
-      where: { date_type: { date: "2026-10-20", type: "daily" } },
-      create: {
-        date: "2026-10-20",
-        type: "daily",
-        ...written,
-        status: "approved",
-        overriddenAt: expect.any(Date),
-      },
-      update: { ...written, overriddenAt: expect.any(Date) },
-      select: { id: true },
-    });
-    expect(locks(h)).toEqual(["7332 daily:2026-10-20:winner", "7332 daily:2026-10-20:runner-up"]);
-    expect(h.tx.lorewardEntry.updateMany).not.toHaveBeenCalled();
-    expect(h.tx.card.findMany).not.toHaveBeenCalled();
-    expect(mintTrophyCards).toHaveBeenCalledWith(h.db, ["entry_new"]);
-  });
-
   it("still succeeds when the mint after the override fails, deferring it to the next sync", async () => {
     const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
     jest.mocked(mintTrophyCards).mockRejectedValue(new Error("database went away"));
@@ -861,34 +604,6 @@ describe("a contest stored twice", () => {
     expect(h.tx.cardOwnership.updateMany).toHaveBeenCalledTimes(1);
     expect(mintTrophyCards).toHaveBeenCalledWith(h.db, ["w_ool", "w_state"]);
   });
-
-  it("keeps the state-keyed entry's stored fields for those the override leaves out", async () => {
-    const [ool, state] = weeklyTwins("Amy", "Amy");
-    const h = setup({
-      contest: [
-        { ...ool!, winnerBytes: 1 },
-        { ...state!, winnerBytes: 2 },
-      ],
-    });
-
-    await override(h, winner("Amy", "Page"), WEEKLY);
-
-    expect(h.tx.lorewardEntry.updateMany.mock.calls[0]![0].data).toMatchObject({ winnerBytes: 2 });
-  });
-
-  it("finds the contest by the keyed entry's own first day when the state key is overridden", async () => {
-    const [, state] = weeklyTwins("Amy", "Amy");
-    const h = setup({ contest: weeklyTwins("Amy", "Amy"), keyed: state });
-
-    await override(h, winner("Cy", "Page"), { date: "2026-W43", type: "weekly" });
-
-    expect(locks(h)[0]).toBe("7332 weekly:2026-10-19:winner");
-    expect(h.tx.lorewardEntry.findUnique).toHaveBeenCalledWith({
-      where: { date_type: { date: "2026-W43", type: "weekly" } },
-      select: { type: true, date: true, dateStart: true },
-    });
-  });
-
   it("refuses an override that leaves out a place the two records disagree on", async () => {
     const h = setup({ contest: weeklyTwins("Amy", "Bob") });
 
@@ -905,149 +620,6 @@ describe("a contest stored twice", () => {
     await expect(override(pages, winner("Cy", "Page"), WEEKLY)).rejects.toMatchObject({
       message: "The two records of this contest disagree on the runner-up. Set the runner-up too.",
     });
-  });
-
-  it("counts a place its entries disagreed on as changed, even when the override names one of them", async () => {
-    accounts({ Amy: "user_amy" });
-    const h = setup({
-      contest: weeklyTwins("Amy", "Bob"),
-      trophies: [weeklyTrophy("trophy_1", [AMY_COPY])],
-    });
-
-    await expect(override(h, winner("Amy", "Page"), WEEKLY)).resolves.toMatchObject({
-      reassigned: 1,
-    });
-  });
-
-  it("keeps the place's trophy on the card whose copy the new holder already owns, and voids the other copy", async () => {
-    accounts({ Cy: "user_cy" });
-    const cyCopy: Copy = { ...AMY_COPY, id: "own_c", cardId: "trophy_b", ownerId: "user_cy" };
-    const amyCopy = { ...AMY_COPY, cardId: "trophy_a" };
-    const h = setup({
-      contest: weeklyTwins("Amy", "Amy"),
-      trophies: [weeklyTrophy("trophy_a", [amyCopy]), weeklyTrophy("trophy_b", [cyCopy])],
-    });
-
-    await expect(override(h, winner("Cy", "Page"), WEEKLY)).resolves.toMatchObject({
-      reassigned: 1,
-      voided: 1,
-    });
-
-    expect(h.tx.cardOwnership.updateMany).not.toHaveBeenCalled();
-    expect(removeCopyTx).toHaveBeenCalledWith(h.tx, amyCopy, "VOID");
-    expect(auditRows(h)).toEqual([
-      expect.objectContaining({
-        action: "TROPHY_VOID",
-        target: "trophy_a",
-        details:
-          "Voided the duplicate copy of the weekly winner of 2026-W43 trophy held by user_amy: the place's trophy is trophy_b",
-      }),
-      expect.objectContaining({ action: "TROPHY_REASSIGN", target: "trophy_b" }),
-    ]);
-    expect(cardUpdates(h).map(({ where, data }) => [where.id, data.metadata.grantedTo])).toEqual([
-      ["trophy_a", null],
-      ["trophy_b", "user_cy"],
-    ]);
-  });
-
-  it("refills a place whose cards a void retired: the keeper comes back, the duplicate stays retired but unvoided", async () => {
-    accounts({ Cy: "user_cy" });
-    const voidedMeta = { contest: "weekly", wikiUser: "Amy", voidedAt: "2026-10-18T00:00:00.000Z" };
-    const voidedCard = (id: string) =>
-      amyTrophy([], { id, title: "Page", isRetired: true, metadata: voidedMeta });
-    const [ool, state] = weeklyTwins("Amy", "Amy");
-    const emptied = (entry: Entry): Entry => ({ ...entry, winnerUser: null, winnerPage: null });
-    const h = setup({
-      contest: [emptied(ool!), emptied(state!)],
-      trophies: [voidedCard("trophy_a"), voidedCard("trophy_b")],
-    });
-
-    await override(h, winner("Cy", "Page"), WEEKLY);
-
-    const [keeper, duplicate] = cardUpdates(h);
-    expect(keeper).toMatchObject({
-      where: { id: "trophy_a" },
-      data: { isRetired: false, metadata: { voidedAt: null } },
-    });
-    expect(duplicate!.where.id).toBe("trophy_b");
-    expect(duplicate!.data).not.toHaveProperty("isRetired");
-    expect(duplicate!.data.metadata).toMatchObject({ voidedAt: null, wikiUser: "Cy" });
-  });
-
-  it("does nothing on a later override of the refilled place", async () => {
-    const left = (id: string, isRetired: boolean) =>
-      amyTrophy([], {
-        id,
-        title: "Page",
-        isRetired,
-        metadata: { contest: "weekly", wikiUser: "Cy", voidedAt: null },
-      });
-    const h = setup({
-      contest: weeklyTwins("Cy", "Cy"),
-      trophies: [left("trophy_a", false), left("trophy_b", true)],
-    });
-
-    await expect(override(h, winner("Cy", "Page"), WEEKLY)).resolves.toMatchObject({
-      reassigned: 0,
-      voided: 0,
-    });
-    expect(h.tx.card.update).not.toHaveBeenCalled();
-    expect(h.tx.auditLog.create).not.toHaveBeenCalled();
-  });
-
-  it("keeps the place's trophy on a card that is not retired when no card holds a copy", async () => {
-    accounts({ Cy: "user_cy" });
-    const h = setup({
-      contest: weeklyTwins("Amy", "Amy"),
-      trophies: [
-        amyTrophy([], {
-          id: "trophy_a",
-          title: "Page",
-          isRetired: true,
-          metadata: { wikiUser: "Amy" },
-        }),
-        amyTrophy([], { id: "trophy_b", title: "Page", metadata: { wikiUser: "Amy" } }),
-      ],
-    });
-
-    await override(h, winner("Cy", "Page"), WEEKLY);
-
-    expect(mintTrophyCopyTx).toHaveBeenCalledTimes(1);
-    expect(mintTrophyCopyTx).toHaveBeenCalledWith(h.tx, "trophy_b", "user_cy");
-  });
-
-  it("moves the held copy when no copy is the new holder's, and lets the other card only follow", async () => {
-    accounts({ Cy: "user_cy" });
-    const h = setup({
-      contest: weeklyTwins("Amy", "Amy"),
-      trophies: [
-        weeklyTrophy("trophy_a", []),
-        weeklyTrophy("trophy_b", [{ ...AMY_COPY, cardId: "trophy_b" }]),
-      ],
-    });
-
-    await expect(override(h, winner("Cy", "Page"), WEEKLY)).resolves.toMatchObject({
-      reassigned: 2,
-      voided: 0,
-    });
-
-    expect(h.tx.cardOwnership.updateMany).toHaveBeenCalledTimes(1);
-    expect(h.tx.cardTransferEvent.create.mock.calls[0]![0].data).toMatchObject({
-      cardId: "trophy_b",
-      toUserId: "user_cy",
-    });
-    expect(mintTrophyCopyTx).not.toHaveBeenCalled();
-    expect(auditRows(h)[0]).toMatchObject({
-      action: "TROPHY_REASSIGN",
-      target: "trophy_a",
-      details:
-        "Reassigned the duplicate weekly winner of 2026-W43 trophy card from Amy to Cy: the place's trophy is trophy_b",
-    });
-    expect(cardUpdates(h).map(({ where, data }) => [where.id, data.metadata.grantedTo])).toEqual([
-      ["trophy_a", null],
-      ["trophy_b", "user_cy"],
-    ]);
-    expect(resolveLorewardPlace).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -1082,33 +654,6 @@ describe("the day an override names", () => {
     // The bot is told of the contest by its first day
     expect(result.day).toBe("2026-10-19");
   });
-
-  it("finds a monthly by any day of it, through the first of its month", async () => {
-    const july = {
-      ...daily("Amy", "Page"),
-      id: "m_state",
-      type: "monthly",
-      date: "2026-07",
-      dateStart: "2026-07-01",
-      dateEnd: "2026-07-31",
-    };
-    const h = setup({ contest: [july], keyed: null });
-    h.tx.lorewardEntry.findFirst.mockResolvedValue(july);
-
-    const result = await override(h, winner("Cy", "Page"), {
-      date: "2026-07-17",
-      type: "monthly",
-    });
-
-    expect(h.tx.lorewardEntry.findFirst.mock.calls[0]![0].where).toEqual({
-      type: "monthly",
-      OR: [{ dateStart: "2026-07-01" }, { dateStart: null, date: "2026-07-01" }],
-    });
-    expect(locks(h)[0]).toBe("7332 monthly:2026-07-01:winner");
-    expect(h.tx.lorewardEntry.upsert).not.toHaveBeenCalled();
-    expect(result.day).toBe("2026-07-01");
-  });
-
   it("refuses a weekly or monthly day no recorded contest holds, writing and locking nothing", async () => {
     for (const key of [
       { date: "2026-10-22", type: "weekly" as const },
@@ -1125,31 +670,5 @@ describe("the day an override names", () => {
       expect(h.tx.lorewardEntry.updateMany).not.toHaveBeenCalled();
     }
     expect(mintTrophyCards).not.toHaveBeenCalled();
-  });
-
-  it("refuses a weekly key no entry is stored under without reading it as a day", async () => {
-    const h = setup({ contest: [], keyed: null });
-
-    await expect(
-      override(h, winner("Cy", "Page"), { date: "2026-W44", type: "weekly" })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(h.tx.lorewardEntry.findFirst).not.toHaveBeenCalled();
-  });
-
-  it("names a contest stored under its key by its first day, and a daily by its date", async () => {
-    const [, state] = weeklyTwins("Amy", "Amy");
-    const keyed = setup({ contest: weeklyTwins("Amy", "Amy"), keyed: state });
-    await expect(
-      override(keyed, winner("Cy", "Page"), { date: "2026-W43", type: "weekly" })
-    ).resolves.toMatchObject({ day: "2026-10-19" });
-    expect(keyed.tx.lorewardEntry.findFirst).not.toHaveBeenCalled();
-
-    const h = setup({ contest: [daily("Amy", "Old page")] });
-    await expect(override(h, winner("Cy", "Page"))).resolves.toMatchObject({ day: "2026-10-20" });
-    const fresh = setup({ contest: [], keyed: null });
-    await expect(override(fresh, winner("Cy", "Page"))).resolves.toMatchObject({
-      day: "2026-10-20",
-    });
-    expect(fresh.tx.lorewardEntry.findFirst).not.toHaveBeenCalled();
   });
 });

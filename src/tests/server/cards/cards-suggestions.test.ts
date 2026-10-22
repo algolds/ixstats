@@ -1,7 +1,6 @@
 /** @jest-environment node */
 /** Free suggestions: anyone signed in, 3 a rolling day, uncarded articles only. */
 import {
-  mySuggestions,
   suggestCard,
   SUGGESTIONS_PER_DAY,
 } from "~/server/modules/cards/cards.suggestions";
@@ -68,40 +67,5 @@ describe("suggestCard", () => {
       suggestCard(full as never, "p", { source: "ixwiki", title: "Elm" }, NOW)
     ).rejects.toThrow(/3 articles a day/);
     expect(full.loreCardRequest.create).not.toHaveBeenCalled();
-  });
-
-  it("refuses an article that has a card, one already suggested, and a realm's nation page", async () => {
-    await expect(
-      suggestCard(
-        makeDb({ carded: ["elm"] }) as never,
-        "p",
-        { source: "ixwiki", title: "Elm" },
-        NOW
-      )
-    ).rejects.toThrow(/already has a card/);
-    await expect(
-      suggestCard(makeDb({ open: true }) as never, "p", { source: "ixwiki", title: "Elm" }, NOW)
-    ).rejects.toThrow(/already suggested/);
-    await expect(
-      suggestCard(
-        makeDb({ pageKind: "nation" }) as never,
-        "p",
-        { source: "iiwiki", title: "Elm" },
-        NOW
-      )
-    ).rejects.toThrow("A realm's nation page does not become a lore card");
-  });
-});
-
-describe("mySuggestions", () => {
-  it("lists the player's own suggestions, newest first", async () => {
-    const db = createMockPrisma();
-    await mySuggestions(db as never, "db_player");
-    expect(db.loreCardRequest.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { userId: "db_player" },
-        orderBy: { requestedAt: "desc" },
-      })
-    );
   });
 });

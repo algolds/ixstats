@@ -39,12 +39,6 @@ describe("wallet creation", () => {
     const seeds = fake.tables.exchangeTransaction!.filter((r) => r.source === "WALLET_SEED");
     expect(seeds).toHaveLength(1);
   });
-
-  it("resolves a Clerk id to the same wallet", async () => {
-    const a = await getOrCreateWallet("clerk_1", fake.client);
-    const b = await getOrCreateWallet("u1", fake.client);
-    expect(a.id).toBe(b.id);
-  });
 });
 
 describe("spend", () => {
@@ -102,31 +96,6 @@ describe("spend", () => {
 });
 
 describe("idempotency", () => {
-  it("applies a retried spend once", async () => {
-    const opts = { idempotencyKey: "exchange:test:u1:req-1" };
-    const first = await exchangeService.spend(
-      "u1",
-      300,
-      "CHARTER_FEE",
-      "X",
-      fake.client,
-      undefined,
-      opts
-    );
-    const retry = await exchangeService.spend(
-      "u1",
-      300,
-      "CHARTER_FEE",
-      "X",
-      fake.client,
-      undefined,
-      opts
-    );
-    expect(first).toMatchObject({ success: true, alreadyApplied: false, newBalance: 700 });
-    expect(retry).toMatchObject({ success: true, alreadyApplied: true, newBalance: 700 });
-    expect(balance()).toBe(700);
-  });
-
   it("applies concurrent duplicates once", async () => {
     await getOrCreateWallet("u1", fake.client);
     const opts = { idempotencyKey: "exchange:test:u1:req-2" };

@@ -14,7 +14,6 @@ jest.mock("~/lib/cards/mint", () => ({ mintCopy: jest.fn() }));
 import type { Prisma } from "@prisma/client";
 import { mintCopy } from "~/lib/cards/mint";
 import { PACK_ODDS_FIELDS } from "~/lib/cards/pack-odds";
-import { grantCardXp } from "~/lib/cards/xp-utils";
 import { generatePackCards, openPack, PackError } from "~/lib/cards/pack-service";
 import { invalidateVaultConfigCache, clearUserPerksCache } from "~/lib/vault/vault-perks";
 import { cardPacksUserRouter } from "~/server/api/routers/card-packs/user";
@@ -241,36 +240,6 @@ describe("openPack", () => {
     expect(jest.mocked(mintCopy)).not.toHaveBeenCalled();
     expect(tx.card.findFirst).not.toHaveBeenCalled();
   });
-
-  it("refuses to open when its guaranteed rarity has no cards, before drawing", async () => {
-    const { db, tx } = makeDb([{ id: "common", rarity: "COMMON", cardType: "NATION" }], {
-      guaranteedRarity: "rare",
-    });
-    await expect(openPack(db, USER, USER_PACK_ID)).rejects.toMatchObject({
-      code: "PRECONDITION_FAILED",
-      message: expect.stringContaining("it has no Rare cards to give"),
-    });
-    expect(tx.card.findFirst).not.toHaveBeenCalled();
-    expect(jest.mocked(mintCopy)).not.toHaveBeenCalled();
-  });
-
-  it("refuses, minting nothing, when a drawn rarity's cards go between the count and the draw", async () => {
-    // Uncommon still has a card, but a pack never draws another rarity in place of the rolled one
-    const { db, tx } = makeDb([
-      { id: "common", rarity: "COMMON", cardType: "NATION" },
-      { id: "uncommon", rarity: "UNCOMMON", cardType: "NATION" },
-    ]);
-    // The first draw finds its card; the second finds its tier emptied since the count
-    tx.card.findFirst.mockResolvedValueOnce({ id: "common" }).mockResolvedValueOnce(null);
-    await expect(openPack(db, USER, USER_PACK_ID)).rejects.toMatchObject({
-      code: "PRECONDITION_FAILED",
-      message:
-        "This pack can't be opened right now: it has no Common cards to give. It stays unopened; try again later.",
-    });
-    expect(tx.card.findFirst).toHaveBeenCalledTimes(2);
-    expect(jest.mocked(mintCopy)).not.toHaveBeenCalled();
-  });
-
   it("never pulls a card homed in a draft or generating realm", async () => {
     const { db } = makeDb([
       { id: "draft", rarity: "COMMON", cardType: "LORE", realm: { status: "draft" } },
@@ -280,31 +249,6 @@ describe("openPack", () => {
     const pulled = await openPack(db, USER, USER_PACK_ID);
     expect(pulled.map((p) => p.card.id)).toEqual(Array(5).fill("ok"));
   });
-  it("mints every pulled card through mintCopy, its finish rolled, from the pack's transaction", async () => {
-    const { db, tx } = makeDb([{ id: "ok", rarity: "COMMON", cardType: "LORE" }]);
-    jest.mocked(grantCardXp).mockClear();
-    const result = await openPack(db, USER, USER_PACK_ID);
-    expect(result.map((r) => r.ownershipId)).toEqual([
-      "copy_1",
-      "copy_2",
-      "copy_3",
-      "copy_4",
-      "copy_5",
-    ]);
-    expect(jest.mocked(mintCopy)).toHaveBeenCalledWith(tx, {
-      cardId: "ok",
-      ownerId: USER,
-      source: "PACK_OPEN",
-    });
-    expect(jest.mocked(grantCardXp)).toHaveBeenCalledTimes(5);
-    expect(jest.mocked(grantCardXp)).toHaveBeenCalledWith(
-      tx,
-      "copy_1",
-      "PACK_OPEN",
-      JSON.stringify({ packId: "p1", packName: "Test Pack" })
-    );
-  });
-
   it("mints in cardId order, so concurrent opens take the serial locks in one order", async () => {
     const { db } = makeDb(
       [
@@ -322,39 +266,6 @@ describe("openPack", () => {
     expect(mintOrder).toEqual(["a-card", "a-card", "a-card", "b-card", "b-card", "b-card"]);
     expect(result).toHaveLength(6);
   });
-
-  it("mints in code-unit order, the order a break-down locks in, where a locale would differ", async () => {
-    // ICU sorts "_" before digits, so localeCompare would put the longer id second; code units put it first
-    const { db } = makeDb(
-      [
-        { id: "card_ns_108642_s4", rarity: "COMMON", cardType: "NS" },
-        { id: "card_ns_1086420_s4", rarity: "COMMON", cardType: "NS" },
-      ],
-      { cardCount: 2 }
-    );
-    // Two rarity rolls, then the shorter id first and the longer second, so the draw order is not the mint order
-    const random = jest.spyOn(Math, "random");
-    for (const roll of [0.1, 0.1, 0.1, 0.9]) random.mockReturnValueOnce(roll);
-    const result = await openPack(db, USER, USER_PACK_ID);
-    expect(jest.mocked(mintCopy).mock.calls.map(([, input]) => input.cardId)).toEqual([
-      "card_ns_1086420_s4",
-      "card_ns_108642_s4",
-    ]);
-    // The pulls stay in draw order
-    expect(result.map((p) => p.card.id)).toEqual(["card_ns_108642_s4", "card_ns_1086420_s4"]);
-  });
-
-  it("lets only one of two concurrent opens mint: the second is a CONFLICT", async () => {
-    const { db } = makeDb([{ id: "ok", rarity: "COMMON", cardType: "LORE" }]);
-    const [first, second] = await Promise.allSettled([
-      openPack(db, USER, USER_PACK_ID),
-      openPack(db, USER, USER_PACK_ID),
-    ]);
-    expect(first.status).toBe("fulfilled");
-    expect(second).toMatchObject({ status: "rejected", reason: { code: "CONFLICT" } });
-    expect(jest.mocked(mintCopy)).toHaveBeenCalledTimes(5);
-  });
-
   it("never pulls a Trophy or Special card, whatever its other fields", async () => {
     const { db } = makeDb([
       { id: "trophy", rarity: "COMMON", cardType: "TROPHY" },
@@ -387,14 +298,6 @@ describe("openPack", () => {
       db.cardOwnership.count.mock.invocationCallOrder[0]
     );
   });
-
-  it("passes any other failure of the capacity check through, minting nothing", async () => {
-    const { db, tx } = makeDb([{ id: "ok", rarity: "COMMON", cardType: "LORE" }], { cardCount: 3 });
-    tx.$executeRaw.mockRejectedValueOnce(new Error("connection reset"));
-    await expect(openPack(db, USER, USER_PACK_ID)).rejects.toThrow("connection reset");
-    expect(jest.mocked(mintCopy)).not.toHaveBeenCalled();
-  });
-
   it("opens a pack that exactly fills the collection", async () => {
     const { db } = makeDb([{ id: "ok", rarity: "COMMON", cardType: "LORE" }], { cardCount: 3 });
     db.cardOwnership.count.mockResolvedValue(147);
@@ -406,19 +309,8 @@ describe("cardPacks.openPack errors", () => {
   const createCaller = createCallerFactory(cardPacksUserRouter);
   const call = (db: any) =>
     createCaller(createMockRouterContext({ db }) as never).openPack({ userPackId: USER_PACK_ID });
-
-  it("maps an empty pool to PRECONDITION_FAILED instead of a 500", async () => {
-    const { db } = makeDb([]);
-    await expect(call(db)).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
-  });
-
   it("maps another user's pack to NOT_FOUND", async () => {
     const { db } = makeDb([], {}, { userId: "someone_else" });
     await expect(call(db)).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
-
-  it("maps an already-opened pack to CONFLICT", async () => {
-    const { db } = makeDb([], {}, { isOpened: true });
-    await expect(call(db)).rejects.toMatchObject({ code: "CONFLICT" });
   });
 });

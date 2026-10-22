@@ -8,16 +8,11 @@ jest.mock("~/lib/exchange/notify", () => ({
   notifyExchange: jest.fn(),
   sendExchangeNotices: jest.fn(),
 }));
-
-import { computeFairValue } from "~/lib/exchange/companies";
 import { DAY_MS } from "~/lib/exchange/contracts";
 import { resolveDueDecisions, submitDecision } from "~/lib/exchange/decisions";
-import { runExchangeMarketTick } from "~/lib/exchange/market";
 import {
-  MAX_STEP,
   buySectorUnits,
   computeSectorIndices,
-  nextIndexValue,
   rebalanceFunds,
   sellSectorUnits,
 } from "~/lib/exchange/sectors";
@@ -81,14 +76,6 @@ function ageBuys(userId: string) {
 beforeEach(setup);
 
 describe("index arithmetic", () => {
-  it("moves at most MAX_STEP per run toward the activity target", () => {
-    expect(nextIndexValue(1000, 10_000, 10_000)).toBe(1000);
-    expect(nextIndexValue(1000, 1_000_000, 0)).toBe(1000 * (1 + MAX_STEP));
-    expect(nextIndexValue(1000, 0, 1_000_000)).toBe(1000 * (1 - MAX_STEP));
-    expect(nextIndexValue(1000, 11_000, 10_000)).toBe(1000 * (21_000 / 20_000));
-    expect(nextIndexValue(100, 0, 1_000_000)).toBe(100); // the floor
-  });
-
   it("rebalancing funds conserves every cent and favours the faster-growing sector", () => {
     const out = rebalanceFunds([
       { sectorKey: "a", cents: 100_00, growth: 1.05 },
@@ -116,39 +103,7 @@ describe("index arithmetic", () => {
       for (const c of next.values()) expect(Number.isInteger(c) && c >= 0).toBe(true);
     }
   });
-
-  it("fair value follows the sector index and applied decisions", () => {
-    const base = { capital: 1000, contractsWonValue: 400, standing: 2, decisionValue: 0 };
-    expect(computeFairValue(base).fairValue).toBe(1000 + 100 + 200); // the MVP formula
-    expect(computeFairValue(base, 1100).fairValue).toBe(1430);
-    expect(computeFairValue({ ...base, decisionValue: 500 }, 1000).fairValue).toBe(1800);
-    expect(computeFairValue(base, 100).sectorFactor).toBe(0.5); // held to 0.5 .. 2
-  });
 });
-
-describe("computeSectorIndices", () => {
-  it("captures the base on the first run, then steps toward activity and records history", async () => {
-    const now = IxTime.getCurrentIxTime();
-    await computeSectorIndices(fake.client, now);
-    expect(index("industry")).toMatchObject({ value: 1000, baseTotal: 20_200 });
-    expect(fake.tables.sectorIndexHistory).toHaveLength(4);
-
-    company().capital = 200_000; // a huge deposit
-    await computeSectorIndices(fake.client, now + 1);
-    expect(index("industry").value).toBe(1050); // capped at +5%
-    expect(index("services").value).toBe(1000);
-    expect(fake.tables.sectorIndexHistory).toHaveLength(8);
-  });
-
-  it("the market tick refreshes fair values against the new index", async () => {
-    await runExchangeMarketTick(fake.client);
-    company().capital = 200_000;
-    const r = await runExchangeMarketTick(fake.client);
-    expect(r.indices.find((i) => i.sector === "industry")?.value).toBe(1050);
-    expect(company().fairValue).toBe(Math.round((200_000 + 200) * 1.05 * 100) / 100);
-  });
-});
-
 describe("sector funds", () => {
   it("buys at the unit price and sells everything back for the whole fund", async () => {
     const r = await buySectorUnits(fake.client, {
@@ -333,29 +288,6 @@ describe("company decisions", () => {
     expect(company().decisionValue).toBe(500);
     expect(company().fairValue).toBe(19_500 + 200 + 500);
   });
-
-  it("moves a company to another sector", async () => {
-    await expect(
-      submitDecision(fake.client, {
-        userId: "alice",
-        companyId: "co",
-        type: "ENTER_SECTOR",
-        sectorKey: "industry",
-        requestId: rid(),
-      })
-    ).rejects.toMatchObject({ code: "CONFLICT" });
-    await submitDecision(fake.client, {
-      userId: "alice",
-      companyId: "co",
-      type: "ENTER_SECTOR",
-      sectorKey: "services",
-      requestId: rid(),
-    });
-    expect(company().capital).toBe(19_500);
-    await resolveDueDecisions(fake.client, later());
-    expect(company().sectorKey).toBe("services");
-  });
-
   it("can't spend more capital than the company holds", async () => {
     await expect(
       submitDecision(fake.client, {

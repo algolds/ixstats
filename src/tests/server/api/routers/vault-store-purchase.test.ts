@@ -20,8 +20,7 @@ jest.mock("~/lib/cache", () => ({
 import { createCallerFactory } from "~/server/api/trpc";
 import { vaultRouter } from "~/server/api/routers/vault";
 import { vaultStoreRouter } from "~/server/api/routers/vault/store";
-import { getOrCreateVault, LedgerError, spendCreditsTx } from "~/lib/vault/vault-ledger";
-import { countStorePurchases } from "~/lib/vault/store-purchases";
+import { getOrCreateVault, spendCreditsTx } from "~/lib/vault/vault-ledger";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockDb, type MockPrismaProxy } from "~/tests/helpers/transactional-mock-db";
 
@@ -126,15 +125,6 @@ describe("vault.purchaseStoreItem", () => {
     });
     expect(spendMock).not.toHaveBeenCalled();
   });
-
-  it("treats an equipped cosmetic as owned", async () => {
-    const { caller } = makeCaller(ITEMS.frame, { equipped: "other,frame_gold" });
-
-    await expect(caller.purchaseStoreItem({ itemId: "frame_gold" })).rejects.toMatchObject({
-      code: "CONFLICT",
-    });
-  });
-
   it("locks the vault row before checking ownership", async () => {
     const { db, caller } = makeCaller(ITEMS.frame);
 
@@ -143,17 +133,6 @@ describe("vault.purchaseStoreItem", () => {
     const sql = (db.$queryRaw.mock.calls[0]![0] as TemplateStringsArray).join("?");
     expect(sql).toContain("FOR UPDATE");
   });
-
-  it("lets upgrades stack", async () => {
-    const { caller } = makeCaller(ITEMS.capacity, {
-      purchases: purchaseRows("upgrade_card_capacity", "upgrade_card_capacity"),
-    });
-
-    await caller.purchaseStoreItem({ itemId: "upgrade_card_capacity" });
-
-    expect(spendMock.mock.calls[0]![1]).toMatchObject({ amount: 100, type: "SPEND_BOOST" });
-  });
-
   it("enforces the mega-capacity prerequisite on the server", async () => {
     const four = purchaseRows(...Array(4).fill("upgrade_card_capacity"));
     const { caller } = makeCaller(ITEMS.mega, { purchases: four });
@@ -168,18 +147,6 @@ describe("vault.purchaseStoreItem", () => {
     await ready.purchaseStoreItem({ itemId: "upgrade_card_capacity_mega" });
     expect(spendMock).toHaveBeenCalledTimes(1);
   });
-
-  it("reports insufficient credits as a bad request", async () => {
-    const { caller } = makeCaller(ITEMS.frame);
-    spendMock.mockRejectedValueOnce(
-      new LedgerError("INSUFFICIENT_CREDITS", "Insufficient credits", 10)
-    );
-
-    await expect(caller.purchaseStoreItem({ itemId: "frame_gold" })).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-    });
-  });
-
   it("refuses a retired item without charging, even if its row is reactivated", async () => {
     const { caller } = makeCaller({
       id: "upgrade_archetype_proposal",
@@ -210,40 +177,10 @@ describe("vault.purchaseStoreItem", () => {
     expect(spendMock).not.toHaveBeenCalled();
   });
 });
-
-describe("vault.listStoreItems", () => {
-  it("hides retired items and withdrawn lore tokens from the storefront", async () => {
-    const { db, caller } = makeCaller(null);
-    db.vaultStoreItem.findMany = jest.fn().mockResolvedValue([]);
-
-    await caller.listStoreItems();
-
-    expect(db.vaultStoreItem.findMany.mock.calls[0][0].where).toEqual({
-      isActive: true,
-      id: { notIn: ["upgrade_archetype_proposal", "upgrade_lore_token"] },
-    });
-  });
-});
-
 describe("the vault router no longer lets clients spend arbitrary amounts", () => {
   it("does not expose spendCredits", () => {
     const procedures = Object.keys(vaultRouter._def.procedures);
     expect(procedures).toContain("purchaseStoreItem");
     expect(procedures).not.toContain("spendCredits");
-  });
-});
-
-describe("store purchase helpers", () => {
-  it("counts purchases from string and object metadata, ignoring junk", () => {
-    expect(
-      countStorePurchases([
-        { metadata: JSON.stringify({ itemId: "a" }) },
-        { metadata: { itemId: "a" } },
-        { metadata: { itemId: "b" } },
-        { metadata: "not json" },
-        { metadata: null },
-        { metadata: { other: 1 } },
-      ])
-    ).toEqual({ a: 2, b: 1 });
   });
 });

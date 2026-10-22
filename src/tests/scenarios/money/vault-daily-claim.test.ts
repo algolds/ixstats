@@ -7,7 +7,9 @@
  * one day, and a daily card racing a pack open for the last free slot.
  *
  * Folds vault-daily-claim-face (its "no second daily claim" tombstone is not carried) and daily-claim-mint (the mint
- * row, the XP, 7334 before 7331 and nothing minted at a full collection).
+ * row, the XP, 7334 before 7331 and nothing minted at a full collection), and daily-claim-atomic and pool-draw: the
+ * streak on the next day and after a missed one, the Economy tab's daily odds, every reason a card stays out of the
+ * daily pool (an empty pool keeps the slot for the credits), and a failed ledger write that takes no slot.
  */
 let mockDb: unknown;
 jest.mock("~/server/db", () => ({
@@ -18,7 +20,7 @@ jest.mock("~/server/db", () => ({
 jest.mock("~/lib/notifications/api", () => ({ notificationAPI: { create: jest.fn() } }));
 jest.mock("~/lib/achievements/queue", () => ({ queueAchievementCheck: jest.fn() }));
 
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { lockedCopyRoomTx } from "~/lib/cards/capacity";
 import { notificationAPI } from "~/lib/notifications/api";
 import { createCallerFactory } from "~/server/api/trpc";
@@ -201,6 +203,93 @@ describe("vault-daily-claim (memory)", () => {
       expect.any(Error)
     );
     expect(await db.cardOwnership.count({ where: { ownerId: w.dee.id } })).toBe(1);
+  });
+});
+
+describe("vault-daily-claim (memory): the streak, the pool and a failed write", () => {
+  let db: MemoryPrisma;
+  let w: World;
+  const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000);
+
+  beforeEach(async () => {
+    db = createMemoryPrisma();
+    mockDb = db;
+    w = await seed(db as never, "m-");
+  });
+
+  it.each([
+    ["on the next UTC day, one more", 1, 6],
+    ["after a missed day, back to 1", 2, 1],
+  ])("counts the streak %s", async (_label, last, streak) => {
+    await db.myVault.update({
+      where: { userId: w.dee.id },
+      data: { lastLoginDate: daysAgo(last), loginStreak: 5 },
+    });
+    await expect(claim(w, "CREDITS")).resolves.toMatchObject({ success: true, streak });
+  });
+
+  it("rolls the daily card's rarity by the Economy tab's daily odds", async () => {
+    await db.systemConfig.create({
+      data: { key: "card_economy_daily_legendary_pct", value: "100" },
+    });
+    const { cardAwarded } = await claim(w, "CARD");
+    expect(
+      await db.cardOwnership.findUniqueOrThrow({
+        where: { id: cardAwarded!.ownershipId },
+        select: { cards: { select: { rarity: true } } },
+      })
+    ).toEqual({ cards: { rarity: "LEGENDARY" } });
+  });
+
+  // Every catalogue card but one is retired; the one left is kept out of the pool for one reason each time
+  it.each<[string, (cardId: string) => Promise<unknown>]>([
+    [
+      "waiting in review",
+      (id) => db.card.update({ where: { id }, data: { reviewState: "PENDING" } }),
+    ],
+    ["retired", (id) => db.card.update({ where: { id }, data: { isRetired: true } })],
+    ["bound", (id) => db.card.update({ where: { id }, data: { isBound: true } })],
+    ["a Special card", (id) => db.card.update({ where: { id }, data: { cardType: "SPECIAL" } })],
+    ["a Trophy card", (id) => db.card.update({ where: { id }, data: { cardType: "TROPHY" } })],
+    ["a Nation card", (id) => db.card.update({ where: { id }, data: { cardType: "NATION" } })],
+    [
+      "art whose licence is restricted",
+      (id) =>
+        db.cardArtLicence.create({ data: { cardId: id, wiki: "ixwiki", status: "RESTRICTED" } }),
+    ],
+    [
+      "homed in a draft realm",
+      () => db.realm.update({ where: { id: w.realmId }, data: { status: "draft" } }),
+    ],
+  ])("never draws a card %s, and keeps the slot for the credits", async (_label, exclude) => {
+    await db.card.updateMany({ where: { id: { not: "m-common" } }, data: { isRetired: true } });
+    await exclude("m-common");
+    await expect(claim(w, "CARD")).rejects.toThrow(
+      "There is no card to draw right now. Take the credits instead."
+    );
+    expect(await db.cardOwnership.count({ where: { ownerId: w.dee.id } })).toBe(0);
+    await expect(claim(w, "CREDITS")).resolves.toMatchObject({ success: true, streak: 1 });
+  });
+
+  it("takes no slot when the credits' ledger write fails, so the claim can be made again", async () => {
+    const realTx = db.$transaction.bind(db);
+    jest.spyOn(db, "$transaction").mockImplementationOnce(((
+      work: (tx: Prisma.TransactionClient) => Promise<unknown>
+    ) =>
+      realTx(async (tx) => {
+        jest.spyOn(tx.vaultTransaction, "create").mockRejectedValueOnce(new Error("disk full"));
+        return work(tx);
+      })) as never);
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
+    await expect(claim(w, "CREDITS")).rejects.toThrow();
+    expect(
+      await db.myVault.findUniqueOrThrow({
+        where: { userId: w.dee.id },
+        select: { credits: true, lastLoginDate: true },
+      })
+    ).toEqual({ credits: 0, lastLoginDate: null });
+    await expect(claim(w, "CREDITS")).resolves.toMatchObject({ success: true, streak: 1 });
+    expect(await ledgerOf(db as never, w.dee.id)).toHaveLength(1);
   });
 });
 

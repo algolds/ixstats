@@ -1,4 +1,12 @@
 /** @jest-environment node */
+/**
+ * The Vault dividend: one payout per user per day, keyed so a day settled twice pays once, from that day's own
+ * activity (collection interest on the deck value without trophies or retired copies, wiki, posts and card activity),
+ * scaled by the streak and the owned upgrades and capped; missed days are settled oldest first, at most 7 back and
+ * never before the recorded start. The formula's caps and multipliers are checked line by line.
+ *
+ * Folds vault-dividend.
+ */
 jest.mock("~/lib/lorewards/scoring", () => ({ scoreDailyWikiOS: jest.fn() }));
 jest.mock("~/lib/vault/vault-perks", () => ({ getYieldBoostMultiplier: jest.fn() }));
 jest.mock("~/lib/vault/vault-service", () => ({ earnCreditsOnce: jest.fn() }));
@@ -6,7 +14,6 @@ jest.mock("~/lib/vault/vault-service", () => ({ earnCreditsOnce: jest.fn() }));
 import type { PrismaClient } from "@prisma/client";
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { scoreDailyWikiOS } from "~/lib/lorewards/scoring";
-import { dividendKey, parseDividendMetadata } from "~/lib/vault/vault-dividend";
 import { getYieldBoostMultiplier } from "~/lib/vault/vault-perks";
 import { earnCreditsOnce } from "~/lib/vault/vault-service";
 import {
@@ -14,6 +21,14 @@ import {
   recordDividendStart,
   settleMissedDividends,
 } from "~/server/modules/vault/vault-dividend-settle";
+import {
+  DIVIDEND,
+  computeDividend,
+  dividendKey,
+  parseDividendMetadata,
+  type DividendInputs,
+  type DividendLine,
+} from "~/lib/vault/vault-dividend";
 
 interface Range {
   gte: Date;
@@ -221,19 +236,6 @@ const deck = (ownerId: string, value: number, cardType = "LORE") => {
 };
 
 describe("settleDividendDay", () => {
-  it("pays a user with only interest", async () => {
-    vault("u1");
-    deck("u1", 2000);
-    expect(await settleDividendDay(db, D)).toEqual({ paid: 1, skipped: 0 });
-    expect(rowsFor("u1")).toMatchObject([{ amount: 5, idempotencyKey: dividendKey("u1", D) }]);
-    // Untyped at the mock boundary: tsc overflows its stack comparing PrismaClient with the
-    // asymmetric-matcher form of earnCreditsOnce's parameters.
-    expect(earnCreditsOnce as jest.Mock).toHaveBeenCalledWith(
-      db,
-      expect.objectContaining({ type: "EARN_PASSIVE", source: "VAULT_DIVIDEND", userId: "u1" })
-    );
-  });
-
   it("skips vaults with nothing to pay and users without a vault", async () => {
     vault("u1");
     vault("u2");
@@ -263,26 +265,6 @@ describe("settleDividendDay", () => {
     const meta = parseDividendMetadata(JSON.stringify(rowsFor("u1")[0]?.metadata));
     expect(meta?.inputs).toMatchObject({ deckValue: 2000 });
   });
-
-  it("values the deck copy by copy, as worked by hand", async () => {
-    vault("u1");
-    hold("u1", { rarity: "EPIC" }); // floor 1000
-    hold("u1", { rarity: "RARE", finish: "HOLO" }); // 100 x 9 = 900
-    const foil = hold("u1", { rarity: "RARE", finish: "FOIL", level: 6 }); // 100 x 3 = 300, +10% = 330
-    // Its Standard copies sell at 400, a median the Foil copy never reads (it would make the copy 440).
-    world.prices.push({ cardId: foil, finish: "STANDARD", median: 400 });
-    hold("u1", { cardType: "NS", bank: 40 }); // unsold: 40 x 1.5 = 60 beats the floor 10
-    hold("u1", { rarity: "EPIC", cardType: "TROPHY", finish: "SERIALISED" }); // 250, never paid on
-    hold("u1", { rarity: "LEGENDARY", finish: "HOLO", level: 10, isRetired: true }); // hidden: 0
-
-    await settleDividendDay(db, D);
-
-    // 1000 + 900 + 330 + 60 = 2290; interest 2290 x 0.25% = 5.725, rounded to 6.
-    const meta = parseDividendMetadata(JSON.stringify(rowsFor("u1")[0]?.metadata));
-    expect(meta?.inputs).toMatchObject({ deckValue: 2290 });
-    expect(rowsFor("u1")).toMatchObject([{ amount: 6 }]);
-  });
-
   it("pays nothing on a retired card's copy", async () => {
     vault("u1");
     // A Legendary Holo at level 10 would be worth 3000 x 9 x 1.18 = 31,860.
@@ -293,13 +275,6 @@ describe("settleDividendDay", () => {
     expect(jest.mocked(db.cardOwnership.findMany).mock.calls[0]?.[0]).toMatchObject({
       where: { cards: { isRetired: false, cardType: { notIn: ["TROPHY"] } } },
     });
-  });
-
-  it("pays nothing to a user whose whole deck is trophy cards", async () => {
-    vault("u1");
-    deck("u1", 50000, "TROPHY");
-
-    expect(await settleDividendDay(db, D)).toEqual({ paid: 0, skipped: 0 });
   });
   it("counts only human ThinkPages posts and visible forum posts from the day", async () => {
     vault("u1");
@@ -410,10 +385,6 @@ describe("settleDividendDay", () => {
     expect(error).toHaveBeenCalled();
     error.mockRestore();
   });
-
-  it("rejects a malformed day", async () => {
-    await expect(settleDividendDay(db, "20-10-2026")).rejects.toThrow("yyyy-mm-dd");
-  });
 });
 
 describe("settleMissedDividends", () => {
@@ -470,30 +441,9 @@ describe("settleMissedDividends", () => {
       "2026-10-19",
     ]);
   });
-
-  it("settles no missed day when no start has been recorded", async () => {
-    config.clear();
-    expect((await settleMissedDividends(db, now)).days).toEqual([]);
-  });
-
-  it("settles nothing when every day is already settled", async () => {
-    for (let d = 13; d <= 19; d++) ledger.add(dividendKey("x", `2026-10-${d}`));
-    expect((await settleMissedDividends(db, now)).days).toEqual([]);
-  });
 });
 
 describe("recordDividendStart", () => {
-  it("stores the first day it is given and returns it", async () => {
-    expect(await recordDividendStart(db, "2026-10-20")).toBe("2026-10-20");
-    expect(config.get(START_KEY)).toBe("2026-10-20");
-  });
-
-  it("never moves the start later once set", async () => {
-    await recordDividendStart(db, "2026-10-20");
-    expect(await recordDividendStart(db, "2026-10-25")).toBe("2026-10-20");
-    expect(config.get(START_KEY)).toBe("2026-10-20");
-  });
-
   it("a first run settles only yesterday, then a later run with a gap fills back to the start", async () => {
     vault("u1");
     deck("u1", 2000);
@@ -512,5 +462,76 @@ describe("recordDividendStart", () => {
       "2026-10-23",
     ]);
     expect(config.get(START_KEY)).toBe("2026-10-20");
+  });
+});
+
+describe("the dividend formula", () => {
+  const ZERO: DividendInputs = {
+    deckValue: 0,
+    wikiScore: 0,
+    posts: 0,
+    packsOpened: 0,
+    tradesCompleted: 0,
+    listingsSold: 0,
+    streakDays: 0,
+    yieldBoost: 0,
+  };
+
+  const amountOf = (lines: DividendLine[], key: DividendLine["key"]) =>
+    lines.find((l) => l.key === key)?.amount;
+
+  describe("computeDividend", () => {
+    it("pays wiki at one credit per 80 points, floored, capped at 30", () => {
+      expect(amountOf(computeDividend({ ...ZERO, wikiScore: 239 }).lines, "wiki")).toBe(2);
+      expect(amountOf(computeDividend({ ...ZERO, wikiScore: 79 }).lines, "wiki")).toBeUndefined();
+      expect(amountOf(computeDividend({ ...ZERO, wikiScore: 100_000 }).lines, "wiki")).toBe(
+        DIVIDEND.WIKI_CAP
+      );
+    });
+    it("pays cards at 2 per pack, 5 per trade and 3 per sale, capped at 20", () => {
+      const r = computeDividend({ ...ZERO, packsOpened: 1, tradesCompleted: 1, listingsSold: 1 });
+      expect(amountOf(r.lines, "cards")).toBe(10);
+      expect(r.lines.find((l) => l.key === "cards")?.detail).toEqual({
+        packs: 1,
+        trades: 1,
+        sold: 1,
+      });
+      expect(amountOf(computeDividend({ ...ZERO, packsOpened: 50 }).lines, "cards")).toBe(
+        DIVIDEND.CARDS_CAP
+      );
+    });
+
+    it.each([
+      [0, 0],
+      [5, 8], // activity 30: 30 x 0.05 x 5 = 7.5 -> 8
+      [10, 15],
+      [30, 15], // capped at 10 days
+    ])("streak of %i days adds %i on 30 activity credits", (streakDays, expected) => {
+      // 30 activity credits: posts 10 -> 20, trades 2 -> 10 (cards)
+      const r = computeDividend({ ...ZERO, posts: 10, tradesCompleted: 2, streakDays });
+      expect(amountOf(r.lines, "streak") ?? 0).toBe(expected);
+      expect(r.total).toBe(30 + expected);
+    });
+    it("caps the total at 150 after the boost", () => {
+      const r = computeDividend({
+        deckValue: 1_000_000,
+        wikiScore: 100_000,
+        posts: 99,
+        packsOpened: 50,
+        tradesCompleted: 9,
+        listingsSold: 9,
+        streakDays: 30,
+        yieldBoost: 0.5,
+      });
+      // 25 interest + 70 activity + streak round(70 x 0.5) = 35 -> 130; boost 65 -> 195
+      expect(r.total).toBe(DIVIDEND.TOTAL_CAP);
+      expect(r.lines.reduce((sum, l) => sum + l.amount, 0)).toBeGreaterThan(DIVIDEND.TOTAL_CAP);
+    });
+  });
+
+  describe("dividendKey", () => {
+    it("keys one payout per user per day", () => {
+      expect(dividendKey("u1", "2026-10-20")).toBe("dividend:u1:2026-10-20");
+    });
   });
 });

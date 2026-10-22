@@ -1,7 +1,15 @@
 /** @jest-environment node */
-/** Cards refresh §5.4: mintCopy is the one way a copy comes into being. */
+/**
+ * Minting a copy (`mintCopy`): concurrent mints of one card get distinct serials under the card's serial lock, a
+ * removed copy's serial is never issued again, the mint row records source, serial and finish, a Serialised run is
+ * held to its size and a voided one-of-one comes back under its own serial; serial locks are taken in UTF-16 code
+ * unit order, so every multi-card path locks cards in one order.
+ *
+ * Folds serial-number.
+ */
 import { clearEconomyConfigCache } from "~/lib/cards/economy-config";
-import { MINT_SOURCES, mintCopy } from "~/lib/cards/mint";
+import { mintCopy } from "~/lib/cards/mint";
+import { allocateSerialNumberTx, serialLockOrder } from "~/lib/cards/serial-number";
 
 interface CopyRow {
   id: string;
@@ -105,20 +113,6 @@ describe("mintCopy", () => {
       },
     ]);
   });
-
-  it("rolls the finish from the Economy tab when the caller names none", async () => {
-    const db = fakeDatabase({}, [{ key: "card_economy_finish_holo_pct", value: "100" }]);
-    await db.transaction((tx) =>
-      mintCopy(tx, { cardId: "card_1", ownerId: "u1", source: "PACK_OPEN" })
-    );
-    expect(db.copies[0]).toMatchObject({ finish: "HOLO", importDiscounted: false });
-    expect(db.events[0]).toMatchObject({
-      cardId: "card_1",
-      serialNumber: 1,
-      finish: "HOLO",
-      action: "PACK_OPEN",
-    });
-  });
   it("keeps a named finish whatever the odds, and marks imported copies for the import share of dust", async () => {
     const db = fakeDatabase({}, [{ key: "card_economy_finish_holo_pct", value: "100" }]);
     await db.transaction((tx) =>
@@ -132,16 +126,6 @@ describe("mintCopy", () => {
     expect(db.copies[0]).toMatchObject({ finish: "STANDARD", importDiscounted: true });
     expect(db.events[0]).toMatchObject({ finish: "STANDARD", action: "NS_DECK_IMPORT" });
   });
-
-  it("mints a craft as the CRAFT source, not import-discounted", async () => {
-    expect(MINT_SOURCES).toContain("CRAFT");
-    const db = fakeDatabase();
-    await db.transaction((tx) =>
-      mintCopy(tx, { cardId: "c1", ownerId: "u1", finish: "STANDARD", source: "CRAFT" })
-    );
-    expect(db.copies[0]).toMatchObject({ importDiscounted: false });
-    expect(db.events[0]).toMatchObject({ action: "CRAFT", finish: "STANDARD" });
-  });
   it("refuses a Serialised copy past its run, and never limits a Standard one", async () => {
     const db = fakeDatabase({ trophy: 1 });
     const serial = (finish: "SERIALISED" | "STANDARD") =>
@@ -152,22 +136,6 @@ describe("mintCopy", () => {
     await expect(serial("SERIALISED")).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     await expect(serial("STANDARD")).resolves.toMatchObject({ serialNumber: 2 });
   });
-
-  it.each([
-    ["0", 0],
-    ["null", null],
-  ])(
-    "treats a totalSupply of %s as no run size, so a Serialised copy always mints",
-    async (_, run) => {
-      const db = fakeDatabase({ lore: run });
-      const serial = () =>
-        db.transaction((tx) =>
-          mintCopy(tx, { cardId: "lore", ownerId: "u1", finish: "SERIALISED", source: "ADMIN" })
-        );
-      await expect(serial()).resolves.toMatchObject({ serialNumber: 1 });
-      await expect(serial()).resolves.toMatchObject({ serialNumber: 2 });
-    }
-  );
 });
 
 describe("mintCopy reissuing a serial", () => {
@@ -259,5 +227,67 @@ describe("mintCopy reissuing a serial", () => {
 
     await expect(reissue(tx, 2)).rejects.toThrow("Every copy of this card's run has been minted");
     expect(tx.cardOwnership.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("serials and their lock order", () => {
+  function makeTx() {
+    return {
+      $executeRaw: jest.fn().mockResolvedValue(1),
+      cardOwnership: { findFirst: jest.fn() },
+      cardTransferEvent: { findFirst: jest.fn() },
+    };
+  }
+  const asTx = (tx: ReturnType<typeof makeTx>) => tx as never;
+
+  describe("allocateSerialNumberTx", () => {
+    it("takes the per-card advisory lock before reading the current max serial", async () => {
+      const tx = makeTx();
+      tx.cardOwnership.findFirst.mockResolvedValue({ serialNumber: 4 });
+
+      await allocateSerialNumberTx(asTx(tx), "card_1");
+
+      expect(tx.$executeRaw).toHaveBeenCalledTimes(1);
+      expect(tx.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+        tx.cardOwnership.findFirst.mock.invocationCallOrder[0]
+      );
+
+      // Tagged template: [strings, ...values]; the SQL names the xact lock and binds the cardId.
+      const [strings, namespace, cardId] = tx.$executeRaw.mock.calls[0];
+      expect(strings.join("?")).toContain("pg_advisory_xact_lock(?::int, hashtext(?))");
+      expect(namespace).toBe(7331);
+      expect(cardId).toBe("card_1");
+    });
+    it("counts the serials in the card's trail, so a removed copy's serial is never issued again", async () => {
+      const tx = makeTx();
+      tx.cardOwnership.findFirst.mockResolvedValue({ serialNumber: 4 });
+      tx.cardTransferEvent.findFirst.mockResolvedValue({ serialNumber: 7 });
+
+      await expect(allocateSerialNumberTx(asTx(tx), "card_1")).resolves.toBe(8);
+      expect(tx.cardTransferEvent.findFirst).toHaveBeenCalledWith({
+        where: { cardId: "card_1", serialNumber: { not: null } },
+        orderBy: { serialNumber: "desc" },
+        select: { serialNumber: true },
+      });
+      expect(tx.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+        tx.cardTransferEvent.findFirst.mock.invocationCallOrder[0]
+      );
+    });
+  });
+  /** NS ids where a locale's order and code-unit order disagree: ICU sorts "_" before digits, code units after. */
+  const NS_LONG = "card_ns_1086420_s4";
+  const NS_SHORT = "card_ns_108642_s4";
+
+  describe("serialLockOrder", () => {
+    it("lists each card once, by UTF-16 code unit, whatever the locale would say", () => {
+      expect(serialLockOrder([NS_SHORT, "card_b", NS_LONG, "Card_z", NS_SHORT, "card_b"])).toEqual([
+        "Card_z",
+        "card_b",
+        NS_LONG,
+        NS_SHORT,
+      ]);
+      expect(serialLockOrder(new Set(["b", "a"]))).toEqual(["a", "b"]);
+      expect(serialLockOrder([])).toEqual([]);
+    });
   });
 });

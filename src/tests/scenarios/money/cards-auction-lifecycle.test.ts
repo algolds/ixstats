@@ -7,7 +7,10 @@
  * pays no fee and is named a buyout. On Postgres: two bidders racing one minimum bid, a buyout racing the completion
  * at the end, and a cancel racing the first bid.
  *
- * Folds auction-notices: who hears what, through the notices completeAuction and executeBuyout really send.
+ * Folds auction-notices: who hears what, through the notices completeAuction and executeBuyout really send. Folds
+ * auction-service-ledger: every vault-taking step's lock order, what a listing, a bid and a buyout refuse (listed,
+ * not yours, an unpayable fee, a buy-now at the start, the highest bidder again, an ended auction, a buyout at the
+ * end), a buyout rolled back whole by a failed XP grant, and no royalty for the nation's own owner.
  */
 let mockDb: unknown;
 jest.mock("~/server/db", () => ({
@@ -287,6 +290,35 @@ describe("cards-auction-lifecycle (memory)", () => {
       ],
     });
     await auctionLifecycle(w, 7, 40);
+
+    // Listing the auction took Sam's vault before the copy, as a trade's accept does
+    const log = db.store.log;
+    const copyLock = log.findIndex(
+      (e) =>
+        e.kind === "write" &&
+        e.model === "CardOwnership" &&
+        e.op === "updateMany" &&
+        e.where?.id === w.copies[0] &&
+        e.where?.isLocked === false
+    );
+    const sellerVault = log.findIndex((e) => e.kind === "vaults");
+    expect(log[sellerVault]).toEqual({ kind: "vaults", userIds: [w.sam.id] });
+    expect(sellerVault).toBeLessThan(copyLock);
+    // Every vault-taking step locks its parties at once, in user-id order: each listing the seller, each bid the bidder
+    // and the bidder it outbids, the completion the winner, the seller and the royalty's owner, the buyout the buyer,
+    // the seller, the refunded bidder and the royalty's owner
+    const ids = (...players: Player[]) => players.map((p) => p.id).sort();
+    expect(log.filter((e) => e.kind === "vaults").map((e) => e.userIds)).toEqual([
+      [w.sam.id],
+      [w.ann.id],
+      ids(w.ann, w.cy),
+      ids(w.cy, w.bob),
+      ids(w.bob, w.nia, w.sam),
+      [w.sam.id],
+      [w.sam.id],
+      [w.ann.id],
+      ids(w.cy, w.sam, w.ann, w.nia),
+    ]);
   });
 
   it("names no refund for a free listing that ends unsold", async () => {
@@ -330,6 +362,151 @@ describe("cards-auction-lifecycle (memory)", () => {
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(await ledgerOf(db as never, w.ann.id)).toEqual([]);
     expect((await creditsOf(db as never, [w.cy.id]))[w.cy.id]).toBe(895);
+  });
+});
+
+describe("cards-auction-lifecycle (memory): what an auction refuses", () => {
+  let db: MemoryPrisma;
+  let w: World;
+  const as = (player: Player) => market(callerContext(db as never, player));
+  const list = (over: { buyoutPrice?: number } = {}) =>
+    as(w.sam).createAuction({ cardId: w.copies[0], startingPrice: 100, duration: "24h", ...over });
+  const moneyOf = () => creditsOf(db as never, [w.sam.id, w.ann.id, w.cy.id, w.nia.id]);
+
+  beforeEach(async () => {
+    db = createMemoryPrisma();
+    mockDb = db;
+    w = await seed(db as never, "m-");
+  });
+
+  it.each<[string, () => Promise<unknown>, (w: World) => Player, { buyoutPrice?: number }, object]>(
+    [
+      [
+        "a copy already listed or in a trade",
+        () => db.cardOwnership.update({ where: { id: "m-own1" }, data: { isLocked: true } }),
+        (w) => w.sam,
+        {},
+        { code: "CONFLICT" },
+      ],
+      ["another player's copy", async () => undefined, (w) => w.ann, {}, { code: "FORBIDDEN" }],
+      [
+        "with a fee the seller cannot pay",
+        () => db.myVault.update({ where: { userId: "m-sam" }, data: { credits: 2 } }),
+        (w) => w.sam,
+        {},
+        { code: "BAD_REQUEST", message: expect.stringMatching(/^Insufficient/) },
+      ],
+      [
+        "with a buy-now at the starting price",
+        async () => undefined,
+        (w) => w.sam,
+        { buyoutPrice: 100 },
+        { code: "BAD_REQUEST", message: "Buyout price must be higher than starting price" },
+      ],
+    ]
+  )("refuses to auction %s, charging nothing", async (_label, make, seller, over, refusal) => {
+    await make();
+    const credits = await moneyOf();
+    await expect(
+      as(seller(w)).createAuction({
+        cardId: w.copies[0],
+        startingPrice: 100,
+        duration: "24h",
+        ...over,
+      })
+    ).rejects.toMatchObject(refusal);
+    expect(await moneyOf()).toEqual(credits);
+    expect(await db.cardAuction.count()).toBe(0);
+  });
+
+  it.each<[string, (auctionId: string) => Promise<unknown>, (w: World) => Player, object]>([
+    [
+      "from the bidder already highest",
+      (id) => as(w.ann).placeBid({ auctionId: id, amount: 105 }),
+      (w) => w.ann,
+      { code: "BAD_REQUEST", message: "You are already the highest bidder" },
+    ],
+    [
+      "on an auction that has ended though the job has not settled it",
+      (id) => endAuction(db as never, id),
+      (w) => w.cy,
+      { code: "BAD_REQUEST", message: "Auction has expired" },
+    ],
+    [
+      "from the seller",
+      async () => undefined,
+      (w) => w.sam,
+      { code: "BAD_REQUEST", message: "Cannot bid on your own auction" },
+    ],
+  ])("refuses a bid %s, moving nothing", async (_label, make, bidder, refusal) => {
+    const { auction } = await list();
+    await make(auction.id);
+    const credits = await moneyOf();
+    await expect(
+      as(bidder(w)).placeBid({ auctionId: auction.id, amount: 200 })
+    ).rejects.toMatchObject(refusal);
+    expect(await moneyOf()).toEqual(credits);
+  });
+
+  it("refuses a buyout at the moment the auction ends, so the completion alone settles it", async () => {
+    const { auction } = await list({ buyoutPrice: 500 });
+    await db.cardAuction.update({ where: { id: auction.id }, data: { endTime: new Date() } });
+    const credits = await moneyOf();
+    await expect(as(w.cy).executeBuyout({ auctionId: auction.id })).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
+    expect(await moneyOf()).toEqual(credits);
+  });
+
+  it("rolls a buyout back whole when the buyer's XP cannot be granted", async () => {
+    const { auction } = await list({ buyoutPrice: 500 });
+    await as(w.ann).placeBid({ auctionId: auction.id, amount: 105 });
+    const credits = await moneyOf();
+    const realTx = db.$transaction.bind(db);
+    jest.spyOn(db, "$transaction").mockImplementationOnce(((
+      work: (tx: Prisma.TransactionClient) => Promise<unknown>
+    ) =>
+      realTx(async (tx) => {
+        jest.spyOn(tx.cardExperienceEvent, "create").mockRejectedValueOnce(new Error("disk full"));
+        return work(tx);
+      })) as never);
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
+    await expect(as(w.cy).executeBuyout({ auctionId: auction.id })).rejects.toMatchObject({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Failed to execute buyout",
+    });
+    expect(await moneyOf()).toEqual(credits);
+    expect(
+      await db.cardOwnership.findUniqueOrThrow({
+        where: { id: w.copies[0] },
+        select: { ownerId: true, isLocked: true },
+      })
+    ).toEqual({ ownerId: w.sam.id, isLocked: true });
+    expect(
+      await db.cardAuction.findUniqueOrThrow({
+        where: { id: auction.id },
+        select: { status: true },
+      })
+    ).toEqual({ status: "ACTIVE" });
+  });
+
+  it("pays no royalty on a nation card its own nation's owner sells", async () => {
+    await db.cardOwnership.update({ where: { id: w.copies[0] }, data: { ownerId: w.nia.id } });
+    await db.myVault.update({ where: { userId: w.nia.id }, data: { credits: 100 } });
+    const { auction } = await as(w.nia).createAuction({
+      cardId: w.copies[0],
+      startingPrice: 200,
+      duration: "24h",
+    });
+    await as(w.ann).placeBid({ auctionId: auction.id, amount: 210 });
+    await endAuction(db as never, auction.id);
+    create.mockClear();
+    await processExpiredAuctions();
+    expect((await ledgerOf(db as never, w.nia.id)).map((r) => r.source)).toEqual([
+      "auction_listing_fee",
+      "card_sale_auction",
+    ]);
+    expect(cardNotices().map(([, title]) => title)).not.toContain("Royalty paid");
   });
 });
 

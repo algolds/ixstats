@@ -238,6 +238,8 @@ export class AuctionService {
 
     return auctionCall("Failed to create auction", async () => {
       const auction = await db.$transaction(async (tx) => {
+        // The seller's vault before the copy, the order a trade's accept takes them in, so the two never deadlock
+        await lockVaultsTx(tx, [params.userId]);
         const copy = await tx.cardOwnership.findFirst({
           where: { id: params.cardId, ownerId: params.userId },
           select: {

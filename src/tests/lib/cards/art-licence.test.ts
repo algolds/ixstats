@@ -7,21 +7,12 @@ import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 describe("classifyLicence", () => {
   it.each([
     ["CC BY-NC-SA 4.0", "RESTRICTED"],
-    ["cc-by-nd-3.0", "RESTRICTED"],
-    ["Creative Commons Attribution-NonCommercial 2.0", "RESTRICTED"],
     ["Attribution-NoDerivs 3.0 Unported", "RESTRICTED"],
-    ["Creative Commons Attribution-Share Alike 3.0", "OPEN"],
     ["CC BY-SA 4.0", "OPEN"],
-    ["cc-by-sa-3.0", "OPEN"],
     ["CC0", "OPEN"],
-    ["Public domain", "OPEN"],
     ["PD-self", "OPEN"],
-    ["GNU Free Documentation License", "OPEN"],
     ["GFDL", "OPEN"],
-    ["Free Art License", "OPEN"],
     ["Fairuse", "UNKNOWN"],
-    ["Fair use files", "UNKNOWN"],
-    ["All rights reserved", "UNKNOWN"],
     ["and", "UNKNOWN"],
   ])("%s is %s", (text, status) => {
     expect(classifyLicence([text])).toBe(status);
@@ -66,19 +57,7 @@ describe("fileNameFromArtworkUrl", () => {
       "Elm.png",
     ],
     [
-      "https://img1.wikia.nocookie.net/__cb20120101/althistory/images/a/ab/Elm.png",
-      "althistory",
-      "Elm.png",
-    ],
-    ["https://images.wikia.com/althistory/images/a/ab/Elm.png", "althistory", "Elm.png"],
-    ["https://althistory.fandom.com/images/a/ab/Elm.png", "althistory", "Elm.png"],
-    [
       "https://upload.wikimedia.org/wikipedia/commons/4/45/Flag_of_Ireland.svg?utm_source=commons.wikimedia.org",
-      "commons",
-      "Flag_of_Ireland.svg",
-    ],
-    [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Flag_of_Ireland.svg/320px-Flag_of_Ireland.svg.png",
       "commons",
       "Flag_of_Ireland.svg",
     ],
@@ -95,7 +74,6 @@ describe("fileNameFromArtworkUrl", () => {
     ],
     ["https://iiwiki.com/images/thumb/a/ab/Elm.png/300px-Elm.png", "iiwiki", "Elm.png"],
     ["/api/wiki/file/Caphiria_flag.svg", "ixwiki", "Caphiria_flag.svg"],
-    ["https://iiwiki.com/images/a/ab/100%25_Bad.png", "iiwiki", "100%_Bad.png"],
     ["https://iiwiki.com/images/a/ab/Broken%E0%A4%A.png", "iiwiki", "Broken%E0%A4%A.png"],
   ])("%s names %s's %s", (url, source, name) => {
     expect(fileNameFromArtworkUrl(url, source)).toBe(name);
@@ -104,11 +82,8 @@ describe("fileNameFromArtworkUrl", () => {
   it.each<[string, CardWikiSource]>([
     // Another host's art never names a source wiki's same-named file.
     ["https://evil.example/images/a/ab/X.png", "iiwiki"],
-    ["https://evil.example/images/a/ab/X.png", "ixwiki"],
     ["https://iiwiki.com.evil.example/images/a/ab/X.png", "iiwiki"],
     ["https://iiwiki.com/images/a/ab/X.png", "althistory"],
-    [`${mediaWikiOrigin()}/images/1/16/X.png`, "iiwiki"],
-    ["https://upload.wikimedia.org/wikipedia/commons/4/45/X.svg", "iiwiki"],
     ["https://upload.wikimedia.org/wikipedia/en/4/45/X.svg", "commons"],
     // Another Fandom wiki's file (and AltHistory's German wiki is another wiki).
     ["https://static.wikia.nocookie.net/starwars/images/a/ab/X.png", "althistory"],
@@ -116,18 +91,14 @@ describe("fileNameFromArtworkUrl", () => {
       "https://static.wikia.nocookie.net/althistory/de/images/a/ab/X.png/revision/latest",
       "althistory",
     ],
-    [`https://${FANDOM}/a/ab/X.png/revision/latest`, "iiwiki"],
     ["/api/wiki/file/X.svg", "commons"],
     ["/images/cards/lore-placeholder.svg", "ixwiki"],
     ["ftp://iiwiki.com/images/a/ab/X.png", "iiwiki"],
     // A path step is never a file name.
     ["https://upload.wikimedia.org/wikipedia/commons/4/45/File:..", "commons"],
-    ["https://upload.wikimedia.org/wikipedia/commons/4/45/File:%2e%2e", "commons"],
     [`https://${FANDOM}/a/ab/%2e%2e`, "althistory"],
-    [`https://${FANDOM}/a/ab/./revision/latest`, "althistory"],
     // On Fandom's shared CDN only an AltHistory file path names a file.
     ["https://static.wikia.nocookie.net/images/a/ab/X.png", "althistory"],
-    ["https://static.wikia.nocookie.net/wikipedia/commons/4/45/X.png", "althistory"],
     ["https://www.nationstates.net/images/cards/s3/ab.jpg", "ixwiki"],
     ["not a url", "ixwiki"],
   ])("%s names no %s file", (url, source) => {

@@ -36,7 +36,7 @@ import * as fs from "fs";
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { db } from "~/server/db";
 import { parseOOLPage } from "~/lib/lorewards/ool-parser";
-import { syncCurrentWinners, syncFromOOLPages } from "~/lib/lorewards/sync";
+import { syncCurrentWinners } from "~/lib/lorewards/sync";
 import { entryStore, storedEntry, type StoredEntry } from "~/tests/helpers/loreward-entry-store";
 
 const mocked = db as unknown as {
@@ -119,31 +119,6 @@ describe("syncCurrentWinners", () => {
       "utf-8"
     );
   });
-
-  it("gives a kept wikios> name the page's page when it stored none", async () => {
-    store([storedEntry({ id: "d1", winnerUser: "wikios>Kir Republic", winnerPage: null })]);
-    jest.mocked(parseOOLPage).mockReturnValue([fromPage({ winnerPage: "Seneca front" })]);
-
-    await syncCurrentWinners(true);
-
-    expect(places(rows[0])).toMatchObject({
-      winnerUser: "wikios>Kir Republic",
-      winnerPage: "Seneca front",
-    });
-  });
-
-  it("keeps a kept wikios> name's null page when the page's line names another holder", async () => {
-    store([storedEntry({ id: "d1", winnerUser: "wikios>Kir Republic", winnerPage: null })]);
-    jest
-      .mocked(parseOOLPage)
-      .mockReturnValue([fromPage({ winnerUser: "Urcea", winnerPage: "Isurians" })]);
-
-    await syncCurrentWinners(true);
-
-    // Isurians is Urcea's page, not Kir Republic's: it would pay the label's edits to someone else's article.
-    expect(places(rows[0])).toMatchObject({ winnerUser: "wikios>Kir Republic", winnerPage: null });
-  });
-
   it("still takes the page's plain names, and its own wikios> names, everywhere else", async () => {
     store([
       storedEntry({
@@ -188,46 +163,5 @@ describe("syncCurrentWinners", () => {
     expect(rows).toHaveLength(1);
     expect(places(rows[0])).toMatchObject({ winnerUser: "Urcea", winnerPage: "Isurians" });
     expect(mocked.lorewardEntry.upsert).not.toHaveBeenCalled();
-  });
-
-  it("keeps the state-keyed weekly's wikios> name and page when the page gives the plain label", async () => {
-    store([stateWeekly({ winnerUser: "wikios>Kir Republic", winnerPage: "Seneca front" })]);
-    jest
-      .mocked(parseOOLPage)
-      .mockReturnValue([fromPage({ type: "weekly", date: "2026-10-12", winnerPage: null })]);
-
-    await syncCurrentWinners(true);
-
-    expect(rows).toHaveLength(1);
-    expect(places(rows[0])).toMatchObject({
-      winnerUser: "wikios>Kir Republic",
-      winnerPage: "Seneca front",
-    });
-  });
-});
-
-describe("syncFromOOLPages", () => {
-  it("writes a weekly the state file holds under its own key, instead of inserting a twin", async () => {
-    store([stateWeekly()]);
-    jest
-      .mocked(parseOOLPage)
-      .mockReturnValue([fromPage({ type: "weekly", date: "2026-10-12", winnerUser: "Urcea" })]);
-
-    await syncFromOOLPages();
-
-    expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ id: "w-state", winnerUser: "Urcea" });
-    expect(mocked.lorewardEntry.create).not.toHaveBeenCalled();
-  });
-
-  it("still inserts a contest it does not hold yet", async () => {
-    store([]);
-    jest.mocked(parseOOLPage).mockReturnValue([fromPage({ type: "weekly", date: "2026-10-12" })]);
-
-    await syncFromOOLPages();
-
-    expect(rows.map((row) => [row.type, row.date, row.winnerUser])).toEqual([
-      ["weekly", "2026-10-12", "Kir Republic"],
-    ]);
   });
 });

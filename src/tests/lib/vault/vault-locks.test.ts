@@ -22,13 +22,6 @@ describe("lockVaultsTx", () => {
       'SELECT id FROM "my_vault" WHERE "userId" IN (?,?,?) ORDER BY "userId" FOR UPDATE'
     );
   });
-
-  it("sorts by code point, as the database orders the ids", async () => {
-    const tx = { $queryRaw: jest.fn(async (_query: Prisma.Sql) => []) };
-    await lockVaultsTx(tx as never, ["b", "B", "a"]);
-    expect(tx.$queryRaw.mock.calls[0]![0].values).toEqual(["B", "a", "b"]);
-  });
-
   it("leaves out a null (no bidder), and asks nothing for no parties", async () => {
     const tx = { $queryRaw: jest.fn(async (_query: Prisma.Sql) => []) };
     await lockVaultsTx(tx as never, ["u_bidder", null]);

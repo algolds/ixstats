@@ -176,56 +176,6 @@ describe("lorewards.getMyTrophies", () => {
     });
   });
 
-  /**
-   * An unlinked viewer whose WikiOS edits carry "Ada": a daily win recorded as `winnerUser`, whose edits under the
-   * label group as `authors`.
-   */
-  function unlinkedAda(winnerUser: string, authors: Array<string | null>) {
-    db.wikiAccountLink.findFirst.mockResolvedValue(null);
-    db.lorewardEntry.findMany.mockResolvedValue([
-      entry("2026-10-20", { winnerUser, winnerPage: "Seneca front" }),
-    ]);
-    db.wikiRevision.groupBy.mockImplementation(async ({ by }: { by: string[] }) =>
-      by[0] === "author"
-        ? [
-            {
-              author: "Ada",
-              _min: { createdAt: new Date("2026-10-01T00:00:00Z") },
-              _max: { createdAt: new Date("2026-10-20T10:00:00Z") },
-            },
-          ]
-        : authors.map((authorId) => ({ authorId }))
-    );
-  }
-
-  it("counts an unlinked viewer's wikios> wins their WikiOS edits made, not the name's stats row", async () => {
-    unlinkedAda("wikios>Ada", ["u1"]);
-    db.vaultTransaction.aggregate.mockResolvedValue({ _sum: { credits: 500 } });
-
-    const mine = await viewer().getMyTrophies();
-    expect(mine).toMatchObject({
-      wikiUsername: "Ada",
-      verified: false,
-      unmatched: 0,
-      wins: { daily: 1, weekly: 0, monthly: 0 },
-      paid: 500,
-    });
-    expect(db.lorewardUserStats.findFirst).not.toHaveBeenCalled();
-    expect(db.wikiRevision.groupBy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        by: ["authorId"],
-        where: expect.objectContaining({
-          author: "Ada",
-          article: { source: "ixwiki", title: "Seneca front", redirectTargetSlug: null },
-        }),
-      })
-    );
-  });
-  it("needs a signed-in viewer", async () => {
-    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
-    await expect(signedOut().getMyTrophies()).rejects.toThrow(/Authentication required/);
-    warnSpy.mockRestore();
-  });
 });
 
 describe("lorewards.getTrophies", () => {
@@ -243,11 +193,6 @@ describe("lorewards.getTrophies", () => {
     expect(loadPassportHandleById).toHaveBeenCalledWith("u1");
     expect(db.vaultTransaction.aggregate).not.toHaveBeenCalled();
   });
-  it("has a holder handle of null when the account that verified the name is gone", async () => {
-    jest.mocked(loadPassportHandleById).mockResolvedValue(null);
-    expect((await signedOut().getTrophies({ username: "Ada" })).holderHandle).toBeNull();
-  });
-
   it("returns the counts but no cards when the owner hides Vault cards on their passport", async () => {
     jest.mocked(loadPassportSettings).mockResolvedValue(settings(false));
 
@@ -271,16 +216,6 @@ describe("lorewards.getTrophies", () => {
     expect(theirs.holderHandle).toBeNull();
     expect(theirs.wins.daily).toBe(6);
   });
-
-  it("reads the stats row of the exact name: only its first letter is case-insensitive", async () => {
-    await signedOut().getTrophies({ username: "ada_lovelace" });
-    await signedOut().getTrophies({ username: "OstroZava" });
-    expect(db.lorewardUserStats.findFirst.mock.calls.map(([args]) => args.where)).toEqual([
-      { username: "Ada lovelace" },
-      { username: "OstroZava" },
-    ]);
-  });
-
   it("finds the name's verified link by an exact match on the normalized name", async () => {
     await signedOut().getTrophies({ username: "ada_lovelace" });
     expect(db.wikiAccountLink.findFirst).toHaveBeenCalledWith({

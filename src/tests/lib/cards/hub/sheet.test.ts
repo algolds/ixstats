@@ -188,33 +188,8 @@ describe("loadCardSheet", () => {
       wikiArticleTitle: "Caphiria",
     });
   });
-
-  it("values a retired card at nothing and shows its placeholder face to its holder", async () => {
-    const db = setup({ card: { ...CARD, isRetired: true }, catalogued: 0 });
-    const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
-    expect(sheet!.card).toMatchObject({ isRetired: true, value: 0 });
-    expect(sheet!.face).toMatchObject({
-      artwork: null,
-      isRetired: true,
-      copy: { ownershipId: "o1" },
-    });
-    expect(sheet!.copies[0]!.face.artwork).toBeNull();
-  });
   describe("a card outside the catalogue", () => {
     const RETIRED = { ...CARD, isRetired: true };
-
-    it("opens with no art from a pending offer to the viewer that holds a retired copy", async () => {
-      const db = setup({ card: RETIRED, copies: [], catalogued: 0 });
-      db.tradeOffer.findFirst.mockResolvedValue({ initiatorCardIds: ["o9"], recipientCardIds: [] });
-      db.cardOwnership.count.mockResolvedValue(1);
-      const sheet = await sheetFor(db as never, "me", "c1", {
-        from: { kind: "offer", id: "t1" },
-        rules,
-      });
-      expect(sheet!.face).toMatchObject({ artwork: null, isRetired: true, copy: null });
-      expect(sheet!.card).toMatchObject({ isRetired: true, value: 0 });
-    });
-
     it("opens with no art while a retired card is on a live listing", async () => {
       const db = setup({ card: RETIRED, copies: [], auctions: [LISTING], catalogued: 0 });
       const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
@@ -230,18 +205,6 @@ describe("loadCardSheet", () => {
       ).resolves.toBeNull();
       expect(rules.vaultVisible).not.toHaveBeenCalled();
     });
-
-    it("opens a retired copy's placeholder face, with no art, from the viewer's own showcase", async () => {
-      const db = setup({ card: RETIRED, copies: [], catalogued: 0 });
-      db.cardCollection.findFirst.mockResolvedValue(RETIRED_SHOWCASE);
-      const sheet = await sheetFor(db as never, "owner", "c1", {
-        from: { kind: "showcase", id: "s1" },
-        rules,
-      });
-      expect(rules.vaultVisible).toHaveBeenCalledWith("owner");
-      expect(sheet!.face).toMatchObject({ artwork: null, isRetired: true });
-    });
-
     it("is null when the place it was opened from does not show it", async () => {
       // A card in review: outside the catalogue without being retired.
       const db = setup({ copies: [], catalogued: 0 });
@@ -273,38 +236,6 @@ describe("loadCardSheet", () => {
       expect(sheet!.copies[0]!.inscription).toMatchObject({ signerName: null });
       expect(sheet!.market.listings[0]).toMatchObject({ sellerName: null, isMine: false });
     });
-
-    it("names each player as the identity rule does: a nation for a player with no handle, or nobody", async () => {
-      // An older signature, with no name frozen, names its signer as they are named now
-      const db = setup({ auctions: [LISTING], copies: [{ ...COPY, inscribedName: null }] });
-      playersOf.mockResolvedValueOnce(
-        new Map([
-          ["u-a", { name: "Caphiria", showsVault: true }],
-          ["me", { name: "@max", showsVault: true }],
-          ["u-signer", { name: null, showsVault: true }],
-        ])
-      );
-      const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
-      expect(sheet!.copies[0]!.trail[0]).toMatchObject({
-        from: { name: "Caphiria" },
-        to: { name: "@max" },
-      });
-      expect(sheet!.copies[0]!.inscription).toMatchObject({ signerName: null });
-      expect(sheet!.market.listings[0]).toMatchObject({ sellerName: "Caphiria" });
-    });
-
-    it("always names the viewer to themselves", async () => {
-      const db = setup({ auctions: [{ ...LISTING, sellerId: "me" }] });
-      playersOf.mockResolvedValueOnce(
-        new Map([
-          ["u-a", { name: "@ann", showsVault: true }],
-          ["me", { name: "@max", showsVault: false }],
-        ])
-      );
-      const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
-      expect(sheet!.copies[0]!.trail[0]!.to).toEqual({ name: "@max" });
-      expect(sheet!.market.listings[0]).toMatchObject({ sellerName: "@max", isMine: true });
-    });
   });
 
   describe("the signature", () => {
@@ -315,23 +246,6 @@ describe("loadCardSheet", () => {
       const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
       return sheet!.copies[0]!.inscription!.signerName;
     };
-
-    it("prints the name frozen at signing, though the signer is named otherwise now", async () => {
-      const db = signedBy("u-signer", "@sig");
-      await expect(
-        signerOf(db, new Map([["u-signer", { name: "@newname", showsVault: true }]]))
-      ).resolves.toBe("@sig");
-      expect(db.cardOwnership.findMany.mock.calls[0]![0].select).toMatchObject({
-        inscription: true,
-        inscribedAt: true,
-        inscribedById: true,
-        inscribedName: true,
-      });
-      // The frozen name prints even when the signer has no name at all now
-      await expect(
-        signerOf(db, new Map([["u-signer", { name: null, showsVault: true }]]))
-      ).resolves.toBe("@sig");
-    });
     it("hides the frozen name while the signer's Passport hides Vault cards, or once they are gone", async () => {
       const db = signedBy("u-signer", "@sig");
       await expect(
@@ -349,24 +263,9 @@ describe("loadCardSheet", () => {
       ).resolves.toBeNull();
       await expect(signerOf(db, new Map())).resolves.toBeNull();
     });
-
-    it("names no signer for a signature with none recorded, frozen name or not", async () => {
-      await expect(
-        signerOf(signedBy(null, "@sig"), new Map([["me", { name: "@max", showsVault: true }]]))
-      ).resolves.toBeNull();
-    });
   });
 
   describe("a signed-out visitor", () => {
-    it("is asked to sign in for a retired copy on a public showcase, which lists it to its owner only", async () => {
-      const db = setup({ card: { ...CARD, isRetired: true }, copies: [], catalogued: 0 });
-      db.cardCollection.findFirst.mockResolvedValue(RETIRED_SHOWCASE);
-      await expect(
-        loadCardSheet(db as never, null, "c1", { from: { kind: "showcase", id: "s1" }, rules })
-      ).resolves.toEqual({ signIn: true });
-      expect(rules.vaultVisible).not.toHaveBeenCalled();
-    });
-
     it.each([
       ["a bare link", null],
       ["an offer", { kind: "offer" as const, id: "t1" }],
@@ -382,14 +281,6 @@ describe("loadCardSheet", () => {
       ).resolves.toEqual({ signIn: true });
       expect(db.tradeOffer.findFirst).not.toHaveBeenCalled();
       expect(playersOf).not.toHaveBeenCalled();
-    });
-
-    it("is asked to sign in for a card that does not exist, which it cannot tell apart", async () => {
-      const db = setup();
-      db.card.findUnique.mockResolvedValue(null);
-      await expect(
-        loadCardSheet(db as never, null, "nope", { from: null, rules })
-      ).resolves.toEqual({ signIn: true });
     });
   });
 

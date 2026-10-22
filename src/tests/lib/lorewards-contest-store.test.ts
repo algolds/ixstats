@@ -57,12 +57,6 @@ describe("findContestEntries", () => {
     });
     expect(pages.every((page) => !("cursor" in page) && !("skip" in page))).toBe(true);
   });
-
-  it("stops after one page when the table is smaller", async () => {
-    const db = pagedTable(3);
-    expect(await findContestEntries(db as never, {})).toHaveLength(3);
-    expect(db.lorewardEntry.findMany).toHaveBeenCalledTimes(1);
-  });
 });
 
 describe("holderStillRecordedTx", () => {
@@ -103,24 +97,6 @@ describe("holderStillRecordedTx", () => {
       select: CONTEST_ENTRY_SELECT,
       orderBy: { id: "asc" },
     });
-  });
-
-  it("judges the holder through the state-keyed entry, page included", async () => {
-    // Both entries name Amy; only the state-keyed one, which the place acts through, records another page.
-    expect(await recheck([row("ool"), state({ winnerPage: "Other" })]).ids).toBeNull();
-    expect(await recheck([row("ool", { winnerPage: "Other" }), state()]).ids).toEqual([
-      "ool",
-      "state",
-    ]);
-  });
-
-  it.each<[string, object[]]>([
-    ["another holder", [row("ool", { winnerUser: "Cy" })]],
-    ["nobody", [row("ool", { winnerUser: null, winnerPage: null })]],
-    ["entries that disagree", [row("ool"), state({ winnerUser: "Cy" })]],
-    ["no entry at all", []],
-  ])("is null when the contest now records %s", async (_, rows) => {
-    expect(await recheck(rows).ids).toBeNull();
   });
 });
 

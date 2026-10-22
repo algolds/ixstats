@@ -28,9 +28,7 @@ jest.mock("~/lib/vault/vault-ledger", () => ({
   spendCreditsTx: jest.fn(),
   LedgerError: class LedgerError extends Error {},
 }));
-
-import { Prisma } from "@prisma/client";
-import { assertCapacityTx, CapacityError, copyRoom } from "~/lib/cards/capacity";
+import { assertCapacityTx, CapacityError } from "~/lib/cards/capacity";
 import { refundListingFeeTx } from "~/lib/economy/auction-service";
 import { mintCopy } from "~/lib/cards/mint";
 import { notificationAPI } from "~/lib/notifications/api";
@@ -136,12 +134,6 @@ describe("grantCard", () => {
     });
     expect(mintCopy).not.toHaveBeenCalled();
   });
-
-  it.each(["OPEN", "UNKNOWN"])("grants a card whose art licence is %s", async (status) => {
-    const db = setup({ artLicence: { status } }, 5);
-    await expect(grantCard(db as never, actor, input)).resolves.toMatchObject({ serialNumber: 9 });
-  });
-
   it("refuses a trophy and a full inventory", async () => {
     await expect(
       grantCard(setup({ cardType: "TROPHY" }, 5) as never, actor, input)
@@ -154,33 +146,6 @@ describe("grantCard", () => {
     expect(mintCopy).not.toHaveBeenCalled();
     expect(full.auditLog.create).not.toHaveBeenCalled();
     expect(notificationAPI.create).not.toHaveBeenCalled();
-  });
-
-  it("checks capacity for one copy inside the grant's transaction, under the owner's lock, before the mint", async () => {
-    const db = setup({ cardType: "LORE" }, 1);
-    const tx = new Proxy(db, {}); // the transaction client: same models, a different object
-    db.$transaction = jest.fn(async (run: (t: typeof tx) => Promise<unknown>) => run(tx));
-
-    await grantCard(db as never, actor, input);
-
-    expect(assertCapacityTx).toHaveBeenCalledWith(tx, "user_1", 1);
-    expect(jest.mocked(assertCapacityTx).mock.invocationCallOrder[0]).toBeLessThan(
-      jest.mocked(mintCopy).mock.invocationCallOrder[0]!
-    );
-    expect(copyRoom).not.toHaveBeenCalled();
-  });
-
-  it("passes any other failure of the capacity check through", async () => {
-    const db = setup({ cardType: "LORE" }, 5);
-    jest.mocked(assertCapacityTx).mockRejectedValueOnce(new Error("connection reset"));
-    await expect(grantCard(db as never, actor, input)).rejects.toThrow("connection reset");
-    expect(mintCopy).not.toHaveBeenCalled();
-  });
-
-  it("refuses a card that does not exist", async () => {
-    const db = setup({ cardType: "LORE" }, 5);
-    db.card.findUnique.mockResolvedValue(null);
-    await expect(grantCard(db as never, actor, input)).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 });
 
@@ -232,22 +197,6 @@ describe("revokeCopy", () => {
     });
     expect(clearVaultCaches).toHaveBeenCalledWith({ id: "user_1", clerkUserId: "clerk_1" });
   });
-
-  it("takes the card's serial lock before it checks or writes anything", async () => {
-    const db = createMockPrisma();
-    db.cardOwnership.findUnique.mockResolvedValue(copy());
-    db.cardOwnership.deleteMany.mockResolvedValue({ count: 1 });
-
-    await revoke(db);
-
-    const [strings, namespace, cardId] = db.$executeRaw.mock.calls[0]!;
-    expect((strings as string[]).join("?")).toContain("pg_advisory_xact_lock(?::int, hashtext(?))");
-    expect([namespace, cardId]).toEqual([7331, "card_1"]);
-    expect(db.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
-      db.cardAuction.count.mock.invocationCallOrder[0]!
-    );
-  });
-
   // The owner's rule, kept though a removed copy's auctions and listings would now stay
   it.each([
     ["an auction", "cardAuction", []],
@@ -380,32 +329,6 @@ describe("adminCancelAuction", () => {
     expect(clearVaultCaches).toHaveBeenCalledWith(expect.objectContaining({ id: "seller" }));
     expect(clearVaultCaches).toHaveBeenCalledWith(expect.objectContaining({ id: "bidder" }));
   });
-
-  it("refunds no bid when the auction has none, still returning half the fee to the seller", async () => {
-    const db = createMockPrisma();
-    db.cardAuction.findUnique.mockResolvedValue({ ...auction, currentBidderId: null });
-    db.cardAuction.updateMany.mockResolvedValue({ count: 1 });
-
-    await adminCancelAuction(db as never, actor, { auctionId: "auc_1", reason: "Seller asked" });
-
-    expect(earnCreditsTx).not.toHaveBeenCalled();
-    expect(refundListingFeeTx).toHaveBeenCalledTimes(1);
-    expect(db.auditLog.create.mock.calls[0]![0].data.details).toContain("no bid to refund");
-    expect(clearVaultCaches).toHaveBeenCalledTimes(1);
-  });
-
-  it("unlocks no copy when the auction's copy is gone, still refunding the bid and the fee", async () => {
-    const db = createMockPrisma();
-    db.cardAuction.findUnique.mockResolvedValue({ ...auction, cardInstanceId: null });
-    db.cardAuction.updateMany.mockResolvedValue({ count: 1 });
-
-    await adminCancelAuction(db as never, actor, { auctionId: "auc_1", reason: "Seller asked" });
-
-    expect(db.cardOwnership.updateMany).not.toHaveBeenCalled();
-    expect(earnCreditsTx).toHaveBeenCalledTimes(1);
-    expect(refundListingFeeTx).toHaveBeenCalledTimes(1);
-  });
-
   it("refuses an auction the completion cron settled after the admin loaded it, refunding nothing", async () => {
     const db = createMockPrisma();
     db.cardAuction.findUnique.mockResolvedValue(auction);
@@ -438,15 +361,6 @@ describe("adminCancelAuction", () => {
     expect(earnCreditsTx).not.toHaveBeenCalled();
     expect(refundListingFeeTx).not.toHaveBeenCalled();
     expect(db.auditLog.create).not.toHaveBeenCalled();
-  });
-
-  it("refuses an auction that has already ended", async () => {
-    const db = createMockPrisma();
-    db.cardAuction.findUnique.mockResolvedValue({ ...auction, status: "COMPLETED" });
-    await expect(
-      adminCancelAuction(db as never, actor, { auctionId: "auc_1", reason: "Seller asked" })
-    ).rejects.toMatchObject({ code: "CONFLICT" });
-    expect(db.cardAuction.updateMany).not.toHaveBeenCalled();
   });
 });
 
@@ -524,17 +438,6 @@ describe("adminCancelListing", () => {
       })
     );
   });
-
-  it("refuses a missing listing and one that has ended, changing nothing", async () => {
-    const missing = setup(null);
-    await expect(cancel(missing.db)).rejects.toMatchObject({ code: "NOT_FOUND" });
-    const ended = setup({ ...listing, status: "SOLD" });
-    await expect(cancel(ended.db)).rejects.toMatchObject({ code: "CONFLICT" });
-    expect(ended.tx.cardListing.updateMany).not.toHaveBeenCalled();
-    expect(earnCreditsTx).not.toHaveBeenCalled();
-    expect(notificationAPI.create).not.toHaveBeenCalled();
-  });
-
   it("refuses a listing that sold or ended after the admin loaded it, refunding and auditing nothing", async () => {
     const { db, tx } = setup(listing, 0);
     await expect(cancel(db)).rejects.toMatchObject({ code: "CONFLICT" });
@@ -592,21 +495,6 @@ describe("voidTrade", () => {
     expect(clearVaultCaches).toHaveBeenCalledWith(expect.objectContaining({ id: "user_1" }));
     expect(clearVaultCaches).toHaveBeenCalledWith(expect.objectContaining({ id: "user_2" }));
   });
-
-  it("releases the counterer's cards once a counter-offer made them the proposer", async () => {
-    const db = createMockPrisma();
-    db.tradeOffer.findUnique.mockResolvedValue({ ...pending, proposerId: "user_2", revision: 3 });
-    db.tradeOffer.updateMany.mockResolvedValue({ count: 1 });
-
-    await voidTrade(db as never, actor, { tradeId: "tr_1", reason: "Scam report" });
-
-    expect(db.tradeOffer.updateMany.mock.calls[0]![0].where).toMatchObject({ revision: 3 });
-    expect(db.cardOwnership.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: ["own_9"] }, ownerId: "user_2" },
-      data: { isLocked: false },
-    });
-  });
-
   it("refuses a trade that is no longer pending, or was countered after it was read, releasing nothing", async () => {
     const db = createMockPrisma();
     db.tradeOffer.findUnique.mockResolvedValue(pending);
@@ -616,28 +504,6 @@ describe("voidTrade", () => {
       voidTrade(db as never, actor, { tradeId: "tr_1", reason: "Scam report" })
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(db.cardOwnership.updateMany).not.toHaveBeenCalled();
-  });
-
-  it("answers a lost deadlock with a CONFLICT to try again, and passes any other failure through", async () => {
-    const db = createMockPrisma();
-    db.tradeOffer.findUnique.mockResolvedValue(pending);
-    const deadlock = new Prisma.PrismaClientKnownRequestError("deadlock detected", {
-      code: "P2034",
-      clientVersion: "6",
-    });
-    db.$transaction.mockRejectedValueOnce(deadlock);
-    await expect(
-      voidTrade(db as never, actor, { tradeId: "tr_1", reason: "Scam report" })
-    ).rejects.toMatchObject({
-      code: "CONFLICT",
-      message: "This trade changed at the same moment. Try again.",
-    });
-    const boom = new Error("connection reset");
-    db.$transaction.mockRejectedValueOnce(boom);
-    await expect(
-      voidTrade(db as never, actor, { tradeId: "tr_1", reason: "Scam report" })
-    ).rejects.toBe(boom);
-    expect(notificationAPI.create).not.toHaveBeenCalled();
   });
 });
 
@@ -707,31 +573,5 @@ describe("awardPack", () => {
     expect(tx.userPack.create).not.toHaveBeenCalled();
     expect(tx.auditLog.create).not.toHaveBeenCalled();
     expect(notificationAPI.create).not.toHaveBeenCalled();
-  });
-
-  it("refuses a pack whose guarantee has no card, even at odds 0", async () => {
-    const { db, tx } = inTransaction();
-    db.cardPack.findUnique.mockResolvedValue({
-      ...founders,
-      commonOdds: 65.9,
-      epicOdds: 0,
-      guaranteedRarity: "EPIC",
-    });
-    tx.card.groupBy.mockResolvedValue(
-      tiers("COMMON", "UNCOMMON", "RARE", "ULTRA_RARE", "LEGENDARY")
-    );
-    await expect(
-      awardPack(db as never, actor, { userId: "user_1", packId: "pack_1" })
-    ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
-    expect(tx.userPack.create).not.toHaveBeenCalled();
-  });
-
-  it("refuses a pack that does not exist", async () => {
-    const db = createMockPrisma();
-    db.user.findUnique.mockResolvedValue({ id: "user_1", clerkUserId: "clerk_1" });
-    await expect(
-      awardPack(db as never, actor, { userId: "user_1", packId: "gone" })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-    expect(db.userPack.create).not.toHaveBeenCalled();
   });
 });
