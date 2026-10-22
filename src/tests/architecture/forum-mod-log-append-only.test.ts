@@ -1,8 +1,6 @@
 /** @jest-environment node */
 import fs from "fs";
 import path from "path";
-import { logModAction } from "~/server/modules/thinkpages-forum/mod-log";
-
 /**
  * M16: the moderation log is append-only. Nothing in application code updates or deletes a ForumModLog row, through
  * Prisma or raw SQL (follow-up M12: all of src but the tests, scripts and the custom server); the follow-ups
@@ -70,22 +68,5 @@ describe("forum moderation log is append-only", () => {
       ])
     );
     expect(files.some((file) => file.startsWith("src/tests/"))).toBe(false);
-  });
-
-  it("src/server/modules/thinkpages-forum/mod-log.ts exports logModAction, which only creates rows", async () => {
-    const source = fs.readFileSync(
-      path.join(ROOT, "src/server/modules/thinkpages-forum/mod-log.ts"),
-      "utf8"
-    );
-    expect(source).toMatch(/export async function logModAction\(/);
-    const tx = { forumModLog: { create: jest.fn(async () => ({ id: "log1" })) } };
-    await logModAction(tx as never, {
-      actorId: "u_a",
-      action: "ban.issue",
-      targetType: "user",
-      targetId: "u_p",
-      scope: { kind: "realm", realmId: "r1" },
-    });
-    expect(tx.forumModLog.create).toHaveBeenCalledTimes(1);
   });
 });

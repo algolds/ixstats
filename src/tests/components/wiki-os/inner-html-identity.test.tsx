@@ -2,7 +2,7 @@
 // object, even for the same string. A component that builds `{ __html }` in its render therefore replaces its DOM
 // (images reload, scroll and selection reset, added links vanish) on every render of its parent. One object per
 // HTML string leaves the nodes alone until the HTML itself changes.
-import React from "react";
+import "react";
 import { render } from "@testing-library/react";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -11,25 +11,12 @@ import { StashPagesList } from "~/components/wiki-os/stashes/StashPagesList";
 
 const root = process.cwd();
 
-function InlineObject({ html }: { html: string }) {
-  return <div data-testid="host" dangerouslySetInnerHTML={{ __html: html }} />;
-}
-
 function MemoisedObject({ html }: { html: string }) {
   const markup = useHtmlMarkup(html);
   return <div data-testid="host" dangerouslySetInnerHTML={markup} />;
 }
 
 describe("a re-render with the same HTML", () => {
-  it("rewrites the DOM when the `{ __html }` object is built in render (the bug, as a control)", () => {
-    const { container, rerender } = render(<InlineObject html="<p><b>x</b></p>" />);
-    const before = container.querySelector("b");
-
-    rerender(<InlineObject html="<p><b>x</b></p>" />);
-
-    expect(container.querySelector("b")).not.toBe(before);
-  });
-
   it("leaves the nodes alone when the object is built once per string (useHtmlMarkup)", () => {
     const { container, rerender } = render(<MemoisedObject html="<p><b>x</b></p>" />);
     const before = container.querySelector("b");

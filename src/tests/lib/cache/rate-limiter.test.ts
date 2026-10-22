@@ -2,7 +2,7 @@
  * RateLimiter — per-call limits and Redis resilience (plan 340, Step 1).
  *
  * `jest` is the ambient global (not imported from "@jest/globals") because the hoisted
- * jest.mock() factories below run before imports; see trpc-impersonation.test.ts.
+ * jest.mock() factories below run before imports, and importing `jest` would shadow that global.
  */
 import { describe, it, expect, afterEach } from "@jest/globals";
 import { RateLimiter } from "~/lib/cache/rate-limiter";
