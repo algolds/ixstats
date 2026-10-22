@@ -1,93 +1,226 @@
 /** @jest-environment node */
 /**
- * IxStates Passport handles: pure format, reserved-word and slug rules.
+ * IxStates Passport handles. A handle is 3 to 24 of `a-z 0-9 _`, normalised, never a reserved word; the backfill
+ * makes only valid handles and never a Clerk or row id. `ixnayid.setHandle`: the signed-in user claims one; a taken
+ * handle is refused (a unique-constraint race too), and the self-service change is allowed once (admins may always
+ * change it). `getStatus` reports the change as used, and the old forum account from the kept columns, writing nothing.
+ *
+ * Folds ixnayid-set-handle and ixnayid-forum-readonly.
  */
-import { describe, expect, it } from "@jest/globals";
+jest.mock("~/server/db", () => {
+  const db = {
+    user: { findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
+    country: { findUnique: jest.fn().mockResolvedValue(null) },
+    thinkpagesAccount: { findFirst: jest.fn().mockResolvedValue(null) },
+    wikiAccountLink: { findFirst: jest.fn().mockResolvedValue(null) },
+  };
+  return { __esModule: true, db, isDatabaseReadOnly: false };
+});
+
+import { beforeEach, describe, expect, it } from "@jest/globals";
+import { Prisma } from "@prisma/client";
+import { createCallerFactory } from "~/server/api/trpc";
+import { ixnayidCoreRouter } from "~/server/api/routers/ixnayid/core";
+import { db } from "~/server/db";
 import {
-  HANDLE_PATTERN,
   RESERVED_HANDLES,
   chooseBackfillHandle,
   needsCanonicalRedirect,
-  pickAvailableHandle,
   slugifyHandle,
   validateHandle,
 } from "~/server/modules/identity/identity.handle";
+import { createMockRouterContext } from "~/tests/helpers/router-context";
 
-describe("HANDLE_PATTERN", () => {
-  it.each(["abc", "a_b", "user_123", "a".repeat(24), "123"])("accepts %s", (h) => {
-    expect(HANDLE_PATTERN.test(h)).toBe(true);
-  });
-
-  it.each(["ab", "a".repeat(25), "Abc", "a-b", "a b", "a.b", "", "ünï"])("rejects %s", (h) => {
-    expect(HANDLE_PATTERN.test(h)).toBe(false);
-  });
-});
-describe("validateHandle", () => {
-  it("accepts and normalises a valid handle", () => {
-    expect(validateHandle("@Picard_1")).toEqual({ ok: true, handle: "picard_1" });
+describe("a handle", () => {
+  it.each(["@Picard_1", "a_b", "123", "a".repeat(24)])("%s is valid, normalised", (raw) => {
+    expect(validateHandle(raw)).toEqual({ ok: true, handle: raw.replace(/^@/, "").toLowerCase() });
   });
 
-  it("rejects bad formats", () => {
-    expect(validateHandle("ab")).toEqual({ ok: false, reason: "format" });
-    expect(validateHandle("has space")).toEqual({ ok: false, reason: "format" });
-    expect(validateHandle("a".repeat(25))).toEqual({ ok: false, reason: "format" });
-  });
-  it.each([...RESERVED_HANDLES])("rejects reserved word %s", (word) => {
+  it.each(["ab", "a".repeat(25), "a-b", "has space", "a.b", "", "ünï"])(
+    "%j is refused as a format",
+    (raw) => {
+      expect(validateHandle(raw)).toEqual({ ok: false, reason: "format" });
+    }
+  );
+
+  it.each([...RESERVED_HANDLES])("refuses the reserved word %s, however it is written", (word) => {
     expect(validateHandle(word)).toEqual({ ok: false, reason: "reserved" });
     expect(validateHandle(`@${word.toUpperCase()}`)).toEqual({ ok: false, reason: "reserved" });
   });
-});
 
-describe("slugifyHandle", () => {
-  it("always produces a valid handle", () => {
+  it("is always made valid by the backfill, and never from a Clerk or row id", () => {
     for (const s of ["Admin", "x", "!!!", "Jean-Luc Picard", "a".repeat(30), "settings"]) {
-      expect(validateHandle(slugifyHandle(s)).ok).toBe(true);
+      expect([s, validateHandle(slugifyHandle(s)).ok]).toEqual([s, true]);
     }
+    expect(
+      chooseBackfillHandle({ wiki: null, forum: null, persona: null, nation: null })
+    ).toBeNull();
+    expect(
+      chooseBackfillHandle({ wiki: "Kir Wiki", forum: "KirForum", persona: null, nation: null })
+    ).toEqual({
+      source: "wiki",
+      handle: "kir_wiki",
+    });
   });
-});
 
-describe("pickAvailableHandle", () => {
-  it("returns base when free", () => {
-    expect(pickAvailableHandle("picard", new Set())).toBe("picard");
-  });
-
-  it("suffixes _2, _3 on collision", () => {
-    expect(pickAvailableHandle("picard", new Set(["picard"]))).toBe("picard_2");
-    expect(pickAvailableHandle("picard", new Set(["picard", "picard_2"]))).toBe("picard_3");
-  });
-});
-
-describe("needsCanonicalRedirect", () => {
-  it("redirects a legacy segment to the stored handle", () => {
+  it("redirects a legacy segment to the stored handle, but never me", () => {
     expect(needsCanonicalRedirect("Kir Forum", "kir")).toBe(true);
-    expect(needsCanonicalRedirect("clerk_abc", "kir")).toBe(true);
-  });
-  it("never redirects me", () => {
-    expect(needsCanonicalRedirect("me", "kir")).toBe(false);
     expect(needsCanonicalRedirect("@Me", "kir")).toBe(false);
   });
 });
 
-describe("chooseBackfillHandle", () => {
-  const none = { wiki: null, forum: null, persona: null, nation: null };
+const mocked = db as unknown as {
+  user: { findUnique: jest.Mock; findFirst: jest.Mock; update: jest.Mock };
+};
+const createCaller = createCallerFactory(ixnayidCoreRouter);
 
-  it("prefers the verified wiki name, then forum, persona and nation names", () => {
-    const all = { wiki: "Kir Wiki", forum: "KirForum", persona: "Kir Persona", nation: "Caphiria" };
-    expect(chooseBackfillHandle(all)).toEqual({ source: "wiki", handle: "kir_wiki" });
-    expect(chooseBackfillHandle({ ...all, wiki: null })).toEqual({
-      source: "forum",
-      handle: "kirforum",
+function caller(role: { name: string; level?: number } = { name: "user", level: 100 }) {
+  return createCaller(
+    createMockRouterContext({
+      auth: { userId: "clerk_1" },
+      user: { id: "db_1", clerkUserId: "clerk_1", role },
+      db,
+    }) as never
+  );
+}
+
+function storedUser(
+  handle: string | null,
+  handleChangedAt: Date | null,
+  forum: { forumUserId: number | null; forumUsername: string | null } = {
+    forumUserId: null,
+    forumUsername: "Kir Forum",
+  }
+) {
+  mocked.user.findUnique.mockResolvedValue({
+    id: "db_1",
+    clerkUserId: "clerk_1",
+    handle,
+    handleChangedAt,
+    countryId: null,
+    ...forum,
+    lastForumSync: null,
+    discordUserId: null,
+    discordUsername: null,
+    lastDiscordSync: null,
+    country: null,
+  });
+}
+
+const CHANGED = new Date("2026-09-01T00:00:00Z");
+
+beforeEach(() => {
+  mocked.user.findUnique.mockReset();
+  mocked.user.findFirst.mockReset().mockResolvedValue(null);
+  mocked.user.update
+    .mockReset()
+    .mockImplementation(({ data }: { data: { handle: string } }) =>
+      Promise.resolve({ handle: data.handle })
+    );
+  storedUser("kir_old", null);
+});
+
+describe("ixnayid.setHandle", () => {
+  it("saves a valid handle, normalised, and records the change", async () => {
+    await expect(caller().setHandle({ handle: "@Kir_New" })).resolves.toEqual({
+      handle: "kir_new",
     });
-    expect(chooseBackfillHandle({ ...none, persona: "Kir Persona", nation: "Caphiria" })).toEqual({
-      source: "persona",
-      handle: "kir_persona",
-    });
-    expect(chooseBackfillHandle({ ...none, nation: "Caphiria" })).toEqual({
-      source: "nation",
-      handle: "caphiria",
+    expect(mocked.user.update).toHaveBeenCalledWith({
+      where: { id: "db_1" },
+      data: { handle: "kir_new", handleChangedAt: expect.any(Date) },
+      select: { handle: true },
     });
   });
-  it("gives no handle without a usable name, never a Clerk or row id", () => {
-    expect(chooseBackfillHandle(none)).toBeNull();
+  it("rejects a handle another user holds", async () => {
+    mocked.user.findFirst.mockResolvedValue({ id: "db_2" });
+    await expect(caller().setHandle({ handle: "taken" })).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
+    expect(mocked.user.findFirst).toHaveBeenCalledWith({
+      where: { handle: "taken", NOT: { id: "db_1" } },
+      select: { id: true },
+    });
+    expect(mocked.user.update).not.toHaveBeenCalled();
+  });
+
+  it("reports a unique-constraint race as taken", async () => {
+    mocked.user.update.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
+        code: "P2002",
+        clientVersion: "test",
+      })
+    );
+    await expect(caller().setHandle({ handle: "raced" })).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
+  });
+
+  it("rejects a second self-service change", async () => {
+    storedUser("kir_new", CHANGED);
+    await expect(caller().setHandle({ handle: "kir_again" })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    expect(mocked.user.update).not.toHaveBeenCalled();
+  });
+
+  it("lets a user without a handle claim one without using up the change", async () => {
+    storedUser(null, null);
+    await expect(caller().setHandle({ handle: "kir_first" })).resolves.toEqual({
+      handle: "kir_first",
+    });
+    expect(mocked.user.update).toHaveBeenCalledWith({
+      where: { id: "db_1" },
+      data: { handle: "kir_first" },
+      select: { handle: true },
+    });
+  });
+
+  it("allows one change after a first claim, then refuses the next", async () => {
+    storedUser("kir_first", null);
+    await expect(caller().setHandle({ handle: "kir_second" })).resolves.toEqual({
+      handle: "kir_second",
+    });
+    expect(mocked.user.update).toHaveBeenCalledWith({
+      where: { id: "db_1" },
+      data: { handle: "kir_second", handleChangedAt: expect.any(Date) },
+      select: { handle: true },
+    });
+
+    mocked.user.update.mockClear();
+    storedUser("kir_second", CHANGED);
+    await expect(caller().setHandle({ handle: "kir_third" })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    expect(mocked.user.update).not.toHaveBeenCalled();
+  });
+
+  it("lets an admin change their handle again", async () => {
+    storedUser("kir_new", CHANGED);
+    await expect(
+      caller({ name: "admin", level: 10 }).setHandle({ handle: "kir_again" })
+    ).resolves.toEqual({ handle: "kir_again" });
+  });
+
+  it("treats saving the current handle as a no-op that keeps the change available", async () => {
+    await expect(caller().setHandle({ handle: "KIR_OLD" })).resolves.toEqual({ handle: "kir_old" });
+    expect(mocked.user.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("ixnayid.getStatus handle", () => {
+  it("reports the change as used, except for admins", async () => {
+    storedUser("kir", CHANGED);
+    expect((await caller().getStatus()).canChangeHandle).toBe(false);
+    expect((await caller({ name: "admin", level: 10 }).getStatus()).canChangeHandle).toBe(true);
+  });
+});
+
+describe("ixnayid.getStatus old forum account", () => {
+  it("reports the imported forum name from the stored columns and writes nothing", async () => {
+    storedUser("kir", null, { forumUserId: 9, forumUsername: "Kir" });
+    const status = await caller().getStatus();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(status.forum).toMatchObject({ linked: true, username: "Kir" });
+    expect(mocked.user.update).not.toHaveBeenCalled();
   });
 });

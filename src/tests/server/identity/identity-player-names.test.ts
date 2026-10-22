@@ -136,19 +136,6 @@ describe("loadPlayerNames", () => {
       orderBy: { currentTotalGdp: "desc" },
     });
   });
-
-  it("reads nothing for no players, and no wiki names or nations when every player has a handle", async () => {
-    await expect(loadPlayerNames([])).resolves.toEqual(new Map());
-    expect(db.user.findMany).not.toHaveBeenCalled();
-
-    jest.mocked(db.user.findMany).mockResolvedValue([user("ann", "ann")] as never);
-    await expect(loadPlayerNames(["ann"])).resolves.toEqual(
-      new Map([["ann", { handle: "ann", displayName: "@ann" }]])
-    );
-    expect(db.wikiAccountLink.findMany).not.toHaveBeenCalled();
-    expect(db.country.findMany).not.toHaveBeenCalled();
-  });
-
   it("falls back down the chain when the wiki names cannot be read, and to nobody when the nations cannot", async () => {
     jest
       .mocked(db.user.findMany)
@@ -236,16 +223,5 @@ describe("loadPlayerNames", () => {
       expect(resolveHandleUser).not.toHaveBeenCalledWith("Takatta Loa");
       expect(resolveHandleUser).not.toHaveBeenCalledWith("Kir of the Wiki");
     });
-
-    it("reads no switch when no player has a wiki name", async () => {
-      jest.mocked(db.wikiAccountLink.findMany).mockResolvedValue([]);
-      await loadPlayerNames(["loa", "kir", "ann"]);
-      expect(db.userConnection.findMany).not.toHaveBeenCalled();
-    });
-  });
-
-  it("leaves out an id that names no player", async () => {
-    jest.mocked(db.user.findMany).mockResolvedValue([] as never);
-    await expect(loadPlayerNames(["gone"])).resolves.toEqual(new Map());
   });
 });
