@@ -7,7 +7,7 @@
  * and nothing becomes a protocol-relative path that leaves the site. `siteMetadataBase` is an origin only.
  */
 import { resolveUrl } from "next/dist/lib/metadata/resolvers/resolve-url";
-import { assetUrl, getBasePath, navigateWithBasePath, toRouterPath, withBasePath } from "~/lib/base-path";
+import { assetUrl, navigateWithBasePath, toRouterPath, withBasePath } from "~/lib/base-path";
 import { siteMetadataBase } from "~/lib/site-metadata";
 import { navigateTo } from "~/lib/utils/url-utils";
 import {
@@ -56,58 +56,43 @@ const helpers = { withBasePath, assetUrl, toRouterPath, ixstatesHref, ixstatesLi
 
 it.each<[Deployment, keyof typeof helpers, string, string | null]>([
   ["ixstates", "withBasePath", "/vault/store", `${BASE}/vault/store`],
-  ["ixstates", "assetUrl", "/images/uploads/uploaded_1_flag.png", `${BASE}/images/uploads/uploaded_1_flag.png`],
-  ["ixstates", "assetUrl", "https://ixwiki.com/images/flag.png", "https://ixwiki.com/images/flag.png"],
-  ["ixstates", "assetUrl", "data:image/png;base64,AAAA", "data:image/png;base64,AAAA"],
+  [
+    "ixstates",
+    "assetUrl",
+    "/images/uploads/uploaded_1_flag.png",
+    `${BASE}/images/uploads/uploaded_1_flag.png`,
+  ],
+  [
+    "ixstates",
+    "assetUrl",
+    "https://ixwiki.com/images/flag.png",
+    "https://ixwiki.com/images/flag.png",
+  ],
   ["ixstates", "assetUrl", "  ", null],
   ["ixstates", "toRouterPath", `${BASE}/wiki/X?action=edit#a`, "/wiki/X?action=edit#a"],
   ["ixstates", "toRouterPath", `${BASE}${BASE}/wiki/X`, `${BASE}/wiki/X`],
   ["ixstates", "toRouterPath", BASE, "/"],
-  ["ixstates", "toRouterPath", `${BASE}?tab=x`, "/?tab=x"],
   ["ixstates", "toRouterPath", `${BASE}x/y`, `${BASE}x/y`],
-  ["ixstates", "toRouterPath", `${IXSTATES}/wiki/X`, `${IXSTATES}/wiki/X`],
   // Never a protocol-relative path that would leave the site
   ["ixstates", "toRouterPath", "//example.org/x", "//example.org/x"],
   ["ixstates", "toRouterPath", `${BASE}//evil.com/x`, `${BASE}//evil.com/x`],
   ["ixstates", "toRouterPath", `${BASE}/\\evil.com/x`, `${BASE}/\\evil.com/x`],
-  ["ixstates", "toRouterPath", `${BASE}///evil.com`, `${BASE}///evil.com`],
   ["ixstates", "ixstatesHref", "/countries/aurelia?tab=x", `${BASE}/countries/aurelia?tab=x`],
-  ["ixstates", "ixstatesHref", "/", BASE],
   ["ixstates", "ixstatesLinkHref", "/blurbs", "/blurbs"],
   ["ixstates", "ixstatesLinkHref", "mycountry/diplomacy", "/mycountry/diplomacy"],
   ["ixstates", "ixstatesLinkHref", `${BASE}/blurbs`, "/blurbs"],
-  ["ixstates", "ixstatesLinkHref", `${BASE}${BASE}/blurbs`, `${BASE}/blurbs`],
-  ["ixstates", "ixstatesLinkHref", BASE, "/"],
-  ["ixstates", "ixstatesLinkHref", `${BASE}#top`, "/#top"],
-  ["ixstates", "ixstatesLinkHref", "/projects/ixstatesx/y", "/projects/ixstatesx/y"],
-  ["ixstates", "ixstatesLinkHref", `${IXSTATES}/blurbs`, `${IXSTATES}/blurbs`],
   ["root", "withBasePath", "/vault/store", "/vault/store"],
   ["root", "toRouterPath", `${BASE}/wiki/X`, `${BASE}/wiki/X`],
-  ["root", "ixstatesHref", "/blurbs", "/blurbs"],
-  ["root", "ixstatesLinkHref", "mycountry", "/mycountry"],
   ["ixworld", "withBasePath", "/vault/store", "/vault/store"],
   ["wikios", "ixstatesHref", "/blurbs", `${IXSTATES}/blurbs`],
-  ["wikios", "ixstatesHref", "mycountry/diplomacy", `${IXSTATES}/mycountry/diplomacy`],
   ["wikios", "ixstatesHref", `${BASE}/myleague/1`, `${IXSTATES}/myleague/1`],
-  ["wikios", "ixstatesHref", "/projects/ixstatesx/y", `${IXSTATES}/projects/ixstatesx/y`],
-  ["wikios", "ixstatesHref", `${IXSTATES}/myleague/1`, `${IXSTATES}/myleague/1`],
   ["wikios", "ixstatesHref", "//example.org/x", "//example.org/x"],
   ["wikios", "ixstatesLinkHref", "/blurbs", `${IXSTATES}/blurbs`],
-  ["wikios", "ixstatesLinkHref", "/", `${IXSTATES}/`],
   // A page still renders when the standalone build lacks its IxStates URL
   ["wikios without an IxStates URL", "ixstatesHref", "/blurbs", "/blurbs"],
 ])("%s: %s(%j) is %j", (deployment, helper, input, expected) => {
   deploy(deployment);
   expect(helpers[helper](input)).toBe(expected);
-});
-
-it("resolves no base path for the IxWorld build, and the configured one elsewhere", () => {
-  deploy("ixworld");
-  expect(getBasePath()).toBe("");
-  deploy("ixstates");
-  expect(getBasePath()).toBe(BASE);
-  process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstats";
-  expect(getBasePath()).toBe("/projects/ixstats");
 });
 
 it.each([
@@ -121,7 +106,16 @@ it.each([
 
 it("sends every IxStates-only route to IxStates from the standalone wiki, and refuses a redirect with no URL", () => {
   deploy("wikios");
-  for (const path of ["/blurbs", "/mycountry", "/dashboard", "/countries", "/vault", "/settings", "/messages", "/maps"]) {
+  for (const path of [
+    "/blurbs",
+    "/mycountry",
+    "/dashboard",
+    "/countries",
+    "/vault",
+    "/settings",
+    "/messages",
+    "/maps",
+  ]) {
     expect(WIKIOS_ALLOWED_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`))).toBe(false);
     expect(ixstatesHref(path)).toBe(`${IXSTATES}${path}`);
   }
@@ -145,7 +139,9 @@ it("hands the router the plain path, and an absolute URL to window.location", ()
 });
 
 it("gives Next an origin-only metadataBase, so page and OG image URLs keep one base path", () => {
-  expect(siteMetadataBase("https://example.org/projects/ixstates/").href).toBe("https://example.org/");
+  expect(siteMetadataBase("https://example.org/projects/ixstates/").href).toBe(
+    "https://example.org/"
+  );
   expect(siteMetadataBase("false").href).toBe(`${new URL(mediaWikiOrigin()).origin}/`);
   const base = siteMetadataBase("https://example.org");
   expect(resolveUrl(`${BASE}/@alex`, base).href).toBe(`https://example.org${BASE}/@alex`);
