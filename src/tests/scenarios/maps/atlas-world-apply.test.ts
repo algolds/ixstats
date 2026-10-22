@@ -7,6 +7,8 @@
  *
  * The world is Eurth's preset at seed 4 on 8,000 cells, some of whose rivers cross the antimeridian: the generator cuts
  * them at ±180 (until 2026-10-21 it drew them the long way, to about 204 degrees), so the writer takes them as made.
+ * The apply replaces the realm's slots as a regeneration does: the one nobody held goes, held ones stay, and each new
+ * nation has its own name and slug and its border.
  */
 jest.mock("~/env", () => ({
   env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test", CRON_ENABLED_JOBS: "" },
@@ -311,6 +313,29 @@ describe("a founder generates a world from a published preset, applies it and ro
       rivers.some((r: { geometry: { type: string } }) => r.geometry.type === "MultiLineString")
     ).toBe(true);
     expect(runRelief).toHaveBeenCalledTimes(1);
+    // the slot nobody held is retired, a player's nation and a hand-made one stay; each new nation is a generated
+    // slot with a name and slug of its own, linked to its border; the realm records the generation
+    const seeded = ["c_old1", "c_old2", "c_owned", "c_manual"];
+    const made = (db.country.rows as Row[]).filter((c) => !seeded.includes(String(c.id)));
+    expect(made).toHaveLength(draft.slots.length);
+    expect(db.country.rows.map((c: Row) => c.id)).toEqual(
+      expect.arrayContaining(["c_old2", "c_owned", "c_manual"])
+    );
+    expect(db.country.rows.some((c: Row) => c.id === "c_old1")).toBe(false);
+    expect(made.every((c) => c.worldgen === true && c.realmId === "r1")).toBe(true);
+    const names = (db.country.rows as Row[]).map((c) => String(c.name).toLowerCase());
+    expect(new Set(names).size).toBe(names.length);
+    expect(new Set(made.map((c) => c.slug)).size).toBe(made.length);
+    const linked = (c: Row) =>
+      (db.mapLayer.rows as Row[]).some(
+        (r) =>
+          r.layerType === "political" &&
+          r.isActive &&
+          r.countryId === c.id &&
+          r.displayName === c.name
+      );
+    expect(made.filter((c) => !linked(c))).toEqual([]);
+    expect(db.realm.rows[0]).toMatchObject({ seed: 4, generationParams: { source: "preset" } });
     // the map version moved (the map, then its relief entry), and live sync heard it for this realm only
     const appliedVersion = db.realm.rows[0].mapVersion as number;
     expect(appliedVersion).toBeGreaterThan(diff.mapVersion!);
