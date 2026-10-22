@@ -743,11 +743,15 @@ describe("and the details each country mutation adds", () => {
 type AuthContext = Parameters<typeof assertCountryWriteAccess>[0];
 type FreshUser = { id?: string; countryId: string | null; role: { name: string } };
 
-/** A caller whose session says `cached`, while the database now says `fresh`, writing `country_alpha`. */
+/** A caller whose session says `cached` while the database now says `fresh`; `country` is the one row that exists. */
 function staleSession(
   cached: { id?: string; countryId: string | null; role: string },
-  fresh: FreshUser | null
-) {
+  fresh: FreshUser | null,
+  country: { id: string; ownerUserId: string | null } = {
+    id: "country_alpha",
+    ownerUserId: "db_owner",
+  }
+): AuthContext {
   return {
     auth: { userId: "user_x" },
     user: { clerkUserId: "user_x", ...cached },
@@ -755,11 +759,11 @@ function staleSession(
       user: { findUnique: jest.fn().mockResolvedValue(fresh) },
       country: {
         findUnique: jest.fn(async ({ where }: { where: { id: string } }) =>
-          where.id === "country_alpha" ? { id: "country_alpha", ownerUserId: "db_owner" } : null
+          where.id === country.id ? country : null
         ),
       },
     },
-  } as unknown as AuthContext;
+  };
 }
 
 describe("the country-write check decides on the fresh user row", () => {
@@ -803,9 +807,9 @@ describe("the country-write check decides on the fresh user row", () => {
   it("refuses a player an unowned (NPC) nation", async () => {
     const ctx = staleSession(
       { countryId: "mine", role: "member" },
-      { ...member, countryId: "mine" }
+      { ...member, countryId: "mine" },
+      { id: "npc", ownerUserId: null }
     );
-    (ctx.db.country.findUnique as jest.Mock).mockResolvedValue({ id: "npc", ownerUserId: null });
     await expect(assertCountryWriteAccess(ctx, "npc")).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
