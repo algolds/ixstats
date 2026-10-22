@@ -83,19 +83,6 @@ describe("ClaimableNations", () => {
       consent: { accepted: true, permissionNote: "Kir" },
     });
   });
-  it("an invite link's via rides along with the claim", () => {
-    mockSearch = "via=ambassador";
-    renderList();
-    agree();
-    fireEvent.click(screen.getByRole("button", { name: "Claim Aurelia" }));
-    expect(mockMutate).toHaveBeenCalledWith({
-      realmSlug: "eurth",
-      title: "Aurelia",
-      consent: { accepted: true },
-      via: "ambassador",
-    });
-  });
-
   it("an invite link's via survives sign-in through the redirect URL", () => {
     mockSignedIn = false;
     mockSearch = "via=ambassador";

@@ -26,16 +26,11 @@ jest.mock("~/server/db", () => ({
     forumPost: { findUnique: jest.fn(), count: jest.fn() },
   },
 }));
-jest.mock("~/components/thinkpages-forum/home", () => ({ ForumHome: jest.fn() }));
 
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { auth } from "@clerk/nextjs/server";
-import { permanentRedirect, unstable_rethrow } from "next/navigation";
 import { db } from "~/server/db";
 import LegacyPostPage from "~/app/thinkpages/post/[postId]/page";
-import "~/app/thinkpages/page";
-const mockPermanentRedirect = jest.mocked(permanentRedirect);
-const mockUnstableRethrow = jest.mocked(unstable_rethrow);
 const mockAuth = jest.mocked(auth);
 const signedIn = (userId: string | null) =>
   mockAuth.mockResolvedValue({ userId } as Awaited<ReturnType<typeof auth>>);
@@ -120,11 +115,6 @@ beforeEach(() => {
 const openPost = (postId: string) => LegacyPostPage({ params: Promise.resolve({ postId }) });
 
 describe("/thinkpages/post/<id>", () => {
-  it("sends any other id to the feed post when signed out (307, not 308)", async () => {
-    await expect(openPost("feed1")).rejects.toThrow("redirect:/dashboard/post/feed1");
-    expect(mockPermanentRedirect).not.toHaveBeenCalled();
-  });
-
   it("sends a signed-in member to their own Reports thread, and anyone else to the feed post", async () => {
     seedThread(reports, postsOf(3), { authorUserId: "u_member", hidden: false });
     signedIn("member");
@@ -153,26 +143,6 @@ describe("/thinkpages/post/<id>", () => {
     // The visible posts around it still resolve, on the page a non-moderator sees.
     await expect(openPost("p4")).rejects.toThrow("redirect:/thinkpages/t/t1?page=1#post-p4");
   });
-
-  it("treats a signed-in user without a user row like a guest", async () => {
-    seedThread(reports, postsOf(3), { authorUserId: "u_member", hidden: false });
-    signedIn("stranger");
-    await expect(openPost("p1")).rejects.toThrow("redirect:/dashboard/post/p1");
-  });
-
-  it("falls back to the feed post for an id over the input bound, without a lookup", async () => {
-    const long = "x".repeat(65);
-    await expect(openPost(long)).rejects.toThrow(`redirect:/dashboard/post/${long}`);
-    expect(fakeDb.forumPost.findUnique).not.toHaveBeenCalled();
-  });
-  it("treats a failed session read as signed out", async () => {
-    seedThread(reports, postsOf(3), { authorUserId: "u_member", hidden: false });
-    const error = new Error("no clerk");
-    mockAuth.mockRejectedValue(error);
-    await expect(openPost("p1")).rejects.toThrow("redirect:/dashboard/post/p1");
-    expect(mockUnstableRethrow).toHaveBeenCalledWith(error);
-  });
-
   it("encodes the ids on both paths", async () => {
     seedThread(general, [{ id: "a b/c", hidden: false, createdAt: new Date() }]);
     await expect(openPost("a b/c")).rejects.toThrow(

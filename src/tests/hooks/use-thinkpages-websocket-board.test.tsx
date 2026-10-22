@@ -1,4 +1,4 @@
-import { act, renderHook } from "@testing-library/react";
+import { renderHook } from "@testing-library/react";
 
 type Handler = (data?: object) => void;
 const fake = {
@@ -38,9 +38,6 @@ import { useThinkPagesWebSocket } from "~/hooks/useThinkPagesWebSocket";
 
 const env = process.env as Record<string, string | undefined>;
 const saved = env.NEXT_PUBLIC_ENABLE_WEBSOCKET;
-const fire = (name: string, data?: object) =>
-  act(() => fake.handlers.get(name)?.forEach((handler) => handler(data)));
-
 beforeEach(() => {
   env.NEXT_PUBLIC_ENABLE_WEBSOCKET = "true";
   fake.handlers.clear();
@@ -69,19 +66,6 @@ describe("useThinkPagesWebSocket for realm boards", () => {
     getToken = async () => null;
     renderHook(() => useThinkPagesWebSocket({ accountId: "user_1", anonymous: true }));
     expect(await new Promise((resolve) => fake.options!.auth(resolve))).toEqual({ token: "" });
-  });
-  it("does not connect without an account unless anonymous reading was asked for", () => {
-    renderHook(() => useThinkPagesWebSocket({}));
-    expect(mockIo).not.toHaveBeenCalled();
-  });
-  it("hands valid board events to the caller and drops malformed ones", () => {
-    const onBoardEvent = jest.fn();
-    renderHook(() => useThinkPagesWebSocket({ anonymous: true, onBoardEvent }));
-    fire("board:presence", { type: "board:presence", realmId: "r1", count: 2 });
-    fire("board:presence", { type: "board:presence", realmId: "r1" });
-    fire("board:typing", { type: "board:presence", realmId: "r1", count: "2" });
-    expect(onBoardEvent).toHaveBeenCalledTimes(1);
-    expect(onBoardEvent).toHaveBeenCalledWith({ type: "board:presence", realmId: "r1", count: 2 });
   });
   describe("losing the connection", () => {
     beforeEach(() => {

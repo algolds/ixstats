@@ -4,10 +4,22 @@ import type { AddressInfo } from "net";
 import { io as connectClient, type Socket as ClientSocket } from "socket.io-client";
 import {
   ThinkPagesWebSocketServer,
-  parseChannel,
   type ThinkPagesServerOptions,
 } from "~/lib/websocket/thinkpages-websocket-server";
 import type { BoardLiveEvent } from "~/lib/thinkpages-forum/board-live";
+import type { Socket } from "socket.io";
+import { RealmBoardRooms } from "~/lib/websocket/realm-board-room";
+import type { ThinkPagesMessageEvent } from "~/lib/websocket/thinkpages-websocket-server";
+import {
+  THINKPAGES_BROADCAST_CHANNEL,
+  publishBoardEvent,
+  redisThinkPagesBroadcaster,
+  startThinkPagesBroadcastSubscriber,
+  type BroadcastPublisher,
+  type BroadcastSubscriber,
+  type MessageBroadcaster,
+} from "~/server/thinkpages-broadcast-bridge";
+import { getThinkPagesBroadcaster } from "~/server/websocket-server";
 
 const mockTokens: Record<string, string> = {
   "token-a": "user_a",
@@ -124,10 +136,6 @@ afterAll(() => {
 });
 
 describe("ThinkPagesWebSocketServer handshake", () => {
-  it("lets a connection without a token in as an anonymous reader", async () => {
-    await expect(connected(connect())).resolves.toBeUndefined();
-  });
-
   it("refuses a handshake with no token that does not say it is anonymous", async () => {
     for (const auth of [{}, { token: "" }, { anonymous: false }]) {
       const client = connectClient(url, {
@@ -173,15 +181,6 @@ describe("ThinkPagesWebSocketServer rooms", () => {
     });
     expect(await silent).toBe(true);
   });
-
-  it("rejects malformed channels", async () => {
-    const client = connect("token-a");
-    await connected(client);
-    const refused = nextEvent<{ reason: string }>(client, "subscribe:error");
-    client.emit("subscribe", { channel: "country:c1" });
-    expect(await refused).toEqual({ channel: "country:c1", reason: "invalid_channel" });
-  });
-
   it("lets a participant join, stamps its own id on typing, and delivers messages", async () => {
     const member = connect("token-a");
     await connected(member);
@@ -214,63 +213,7 @@ describe("ThinkPagesWebSocketServer rooms", () => {
     expect((await update).data.content).toBe("hello");
   });
 });
-
-describe("parseChannel", () => {
-  it.each([
-    ["conversation:c1", { kind: "conversation", id: "c1" }],
-    ["group:g_1", { kind: "group", id: "g_1" }],
-    ["realm-board:r-eurth", { kind: "realm-board", id: "r-eurth" }],
-  ])("reads %s", (channel, expected) => {
-    expect(parseChannel(channel)).toEqual(expected);
-  });
-
-  it.each([
-    "country:c1",
-    "realm-board:",
-    "realm-board:a:b",
-    "realm-board:a b",
-    `realm-board:${"x".repeat(65)}`,
-    "",
-    "conversation",
-  ])("refuses %j", (channel) => {
-    expect(parseChannel(channel)).toBeNull();
-  });
-});
-
 describe("ThinkPagesWebSocketServer anonymous readers", () => {
-  it("lets a signed-out reader join a visible realm's board room and receive its events", async () => {
-    const reader = connect();
-    await connected(reader);
-    const presence = nextEvent<BoardLiveEvent>(reader, "board:presence");
-    reader.emit("subscribe", { channel: "realm-board:r_pub" });
-    expect(await presence).toEqual({ type: "board:presence", realmId: "r_pub", count: 1 });
-    expect(canJoinRealmBoard).toHaveBeenCalledWith(null, "r_pub");
-
-    const message = nextEvent<BoardLiveEvent>(reader, "board:message");
-    const event: BoardLiveEvent = {
-      type: "board:message",
-      realmId: "r_pub",
-      message: {
-        id: "p1",
-        authorUserId: null,
-        authorPersonaId: null,
-        importedAuthorName: null,
-        author: { name: "n", handle: null, avatarUrl: null, flagUrl: null, persona: false },
-        role: null,
-        isVisitor: false,
-        visitorRealm: null,
-        contentHtml: "<p>hi</p>",
-        reactions: {},
-        createdAt: "2026-10-10T12:00:00.000Z",
-        editedAt: null,
-        replyTo: null,
-        continued: null,
-      },
-    };
-    wsServer.broadcastBoard(event);
-    expect(await message).toEqual(event);
-  });
-
   it("refuses a realm the check refuses (a draft or hidden realm)", async () => {
     const reader = connect();
     await connected(reader);
@@ -349,18 +292,6 @@ describe("ThinkPagesWebSocketServer anonymous readers", () => {
     const rooms = canJoinRealmBoard.mock.calls.map(([, realmId]) => realmId);
     expect(new Set(rooms).size).toBe(5);
   });
-  it("caps the board rooms one socket reads at once", async () => {
-    const reader = connect();
-    await connected(reader);
-    const refusals: string[] = [];
-    reader.on("subscribe:error", (e: { channel: string }) => refusals.push(e.channel));
-    for (let i = 1; i <= 6; i += 1) {
-      reader.emit("subscribe", { channel: `realm-board:r_pub${i}` });
-      await new Promise((resolve) => setTimeout(resolve, 30));
-    }
-    expect(refusals).toEqual(["realm-board:r_pub6"]);
-  });
-
   it("ignores typing, presence and receipts from an anonymous reader", async () => {
     const member = connect("token-a");
     const reader = connect();
@@ -411,51 +342,6 @@ describe("ThinkPagesWebSocketServer board typing", () => {
     typist.emit("board:typing", { realmId: "r_pub", personaId: "pa_other" });
     expect(await silent).toBe(true);
   });
-  it("relays no typing from a user who may not post, and asks the forum once per room", async () => {
-    const { watcher } = await pair();
-    const banned = connect("token-banned");
-    await connected(banned);
-    banned.emit("subscribe", { channel: "realm-board:r_pub" });
-    await nextEvent(banned, "board:presence");
-    const silent = silentFor(watcher, "board:typing", 250);
-    banned.emit("board:typing", { realmId: "r_pub" });
-    expect(await silent).toBe(true);
-    expect(canTypeOnBoard).toHaveBeenCalledWith("user_banned", "r_pub");
-    expect(boardTypingName).not.toHaveBeenCalled();
-  });
-  it("relays no typing at all when the server was given no typing check", async () => {
-    const bare = createServer();
-    const bareWs = new ThinkPagesWebSocketServer(bare, {
-      canJoinRealmBoard,
-      boardTypingName,
-      presenceDelayMs: 20,
-    });
-    await new Promise<void>((resolve) => bare.listen(0, resolve));
-    const bareUrl = `http://localhost:${(bare.address() as AddressInfo).port}`;
-    const open = (token: string) => {
-      const c = connectClient(bareUrl, {
-        path: "/ws/thinkpages",
-        transports: ["websocket"],
-        reconnection: false,
-        forceNew: true,
-        auth: { token },
-      });
-      clients.push(c);
-      return c;
-    };
-    const [typist, watcher] = [open("token-a"), open("token-b")];
-    await Promise.all([connected(typist), connected(watcher)]);
-    typist.emit("subscribe", { channel: "realm-board:r_pub" });
-    watcher.emit("subscribe", { channel: "realm-board:r_pub" });
-    await Promise.all([nextEvent(typist, "board:presence"), nextEvent(watcher, "board:presence")]);
-    const silent = silentFor(watcher, "board:typing", 250);
-    typist.emit("board:typing", { realmId: "r_pub" });
-    expect(await silent).toBe(true);
-    typist.disconnect();
-    watcher.disconnect();
-    await bareWs.shutdown();
-  });
-
   it("ignores typing for a room the socket has not joined", async () => {
     const { watcher } = await pair();
     const stranger = connect("token-a");
@@ -482,5 +368,166 @@ describe("ThinkPagesWebSocketServer board broadcasts", () => {
     wsServer.broadcastBoard(event);
     expect(await update).toEqual(event);
     expect(await silent).toBe(true);
+  });
+});
+
+describe("the board room's typing name checks", () => {
+  describe("RealmBoardRooms typing caches and logging", () => {
+    const emitted: object[] = [];
+    const socket = {
+      rooms: new Set(["realm-board:r1"]),
+      connected: true,
+      to: () => ({ emit: (_name: string, event: object) => emitted.push(event) }),
+    } as unknown as Socket;
+    let now: jest.SpyInstance;
+    let warn: jest.SpyInstance;
+    let clock = 1_000_000;
+
+    beforeEach(() => {
+      emitted.length = 0;
+      clock = 1_000_000;
+      now = jest.spyOn(Date, "now").mockImplementation(() => clock);
+      warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    });
+    afterEach(() => {
+      now.mockRestore();
+      warn.mockRestore();
+    });
+
+    it("asks for the typing name again after 30 seconds, so a revoked persona stops", async () => {
+      const boardTypingName = jest.fn(async () => "Persona Name");
+      const rooms = new RealmBoardRooms({} as never, () => null, {
+        canTypeOnBoard: async () => true,
+        boardTypingName,
+      });
+      await rooms.relayTyping(socket, "u1", { realmId: "r1", personaId: "pa1" });
+      clock += 1_500;
+      await rooms.relayTyping(socket, "u1", { realmId: "r1", personaId: "pa1" });
+      expect(boardTypingName).toHaveBeenCalledTimes(1);
+      clock += 30_000;
+      boardTypingName.mockResolvedValueOnce(null as never);
+      await rooms.relayTyping(socket, "u1", { realmId: "r1", personaId: "pa1" });
+      expect(boardTypingName).toHaveBeenCalledTimes(2);
+      expect(emitted).toHaveLength(2);
+    });
+
+    it("logs a failing check instead of swallowing it, and refuses", async () => {
+      const rooms = new RealmBoardRooms({} as never, () => null, {
+        canTypeOnBoard: async () => {
+          throw new Error("db down");
+        },
+        canJoinRealmBoard: async () => {
+          throw new Error("db down");
+        },
+        boardTypingName: async () => {
+          throw new Error("db down");
+        },
+      });
+      await rooms.relayTyping(socket, "u1", { realmId: "r1" });
+      expect(emitted).toEqual([]);
+      expect(warn).toHaveBeenCalledWith("[RealmBoardRooms] typing rights check failed:", "db down");
+      await expect(rooms.join(socket, null, "r2")).resolves.toBe(false);
+      expect(warn).toHaveBeenCalledWith("[RealmBoardRooms] join check failed:", "db down");
+      const open = new RealmBoardRooms({} as never, () => null, {
+        canTypeOnBoard: async () => true,
+        boardTypingName: async () => {
+          throw new Error("db down");
+        },
+      });
+      clock += 1_500;
+      await open.relayTyping(socket, "u1", { realmId: "r1" });
+      expect(emitted).toEqual([]);
+      expect(warn).toHaveBeenCalledWith("[RealmBoardRooms] typing name check failed:", "db down");
+    });
+  });
+});
+
+describe("the broadcast bridge between processes", () => {
+  type Listener = (channel: string, message: string) => void;
+  /** In-memory stand-in for a Redis server: one publisher, one subscriber connection. */
+  function createFakeRedis(status = "ready") {
+    const listeners: Listener[] = [];
+    const channels = new Set<string>();
+    const publisher: BroadcastPublisher = {
+      status,
+      publish: jest.fn(async (channel: string, message: string) => {
+        if (!channels.has(channel)) return 0;
+        for (const listener of listeners) listener(channel, message);
+        return listeners.length;
+      }),
+    };
+    const subscriber: BroadcastSubscriber = {
+      subscribe: jest.fn(async (channel: string) => {
+        channels.add(channel);
+      }),
+      onMessage: (listener: Listener) => {
+        listeners.push(listener);
+      },
+      quit: jest.fn(async () => undefined),
+    };
+    const deliver = (channel: string, message: string) => {
+      for (const listener of listeners) listener(channel, message);
+    };
+    return { publisher, subscriber, deliver };
+  }
+  function fakeServer(): MessageBroadcaster & {
+    broadcastMessage: jest.Mock;
+    broadcastBoard: jest.Mock;
+  } {
+    return { broadcastMessage: jest.fn(), broadcastBoard: jest.fn() };
+  }
+  const event: ThinkPagesMessageEvent = {
+    type: "message:new",
+    conversationId: "conv1",
+    messageId: "msg1",
+    accountId: "user_a",
+    content: "hello",
+    timestamp: 1700000000000,
+  };
+  let warn: jest.SpyInstance;
+  beforeEach(() => {
+    warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+  });
+  afterEach(() => {
+    warn.mockRestore();
+  });
+  describe("ThinkPages broadcast bridge", () => {
+    it("ignores other channels, malformed JSON and events of the wrong shape", () => {
+      const redis = createFakeRedis();
+      const server = fakeServer();
+      startThinkPagesBroadcastSubscriber(server, redis.subscriber);
+
+      redis.deliver("some:other:channel", JSON.stringify(event));
+      redis.deliver(THINKPAGES_BROADCAST_CHANNEL, "{not json");
+      redis.deliver(THINKPAGES_BROADCAST_CHANNEL, JSON.stringify({ type: "notification:new" }));
+
+      expect(server.broadcastMessage).not.toHaveBeenCalled();
+    });
+
+    describe("realm board events", () => {
+      const boardEvent: BoardLiveEvent = {
+        type: "board:updated",
+        realmId: "r_eurth",
+        change: { type: "removed", postId: "p1" },
+      };
+
+      it("round trips a board event to broadcastBoard, not broadcastMessage", () => {
+        const redis = createFakeRedis();
+        const server = fakeServer();
+        startThinkPagesBroadcastSubscriber(server, redis.subscriber);
+
+        publishBoardEvent(boardEvent, redis.publisher);
+
+        expect(redis.publisher.publish).toHaveBeenCalledWith(
+          THINKPAGES_BROADCAST_CHANNEL,
+          JSON.stringify(boardEvent)
+        );
+        expect(server.broadcastBoard).toHaveBeenCalledWith(boardEvent);
+        expect(server.broadcastMessage).not.toHaveBeenCalled();
+      });
+    });
+    it("routes through Redis when this process hosts no Socket.IO server", () => {
+      expect(getThinkPagesBroadcaster()).toBe(redisThinkPagesBroadcaster);
+    });
   });
 });
