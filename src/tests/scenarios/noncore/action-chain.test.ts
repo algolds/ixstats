@@ -13,7 +13,10 @@
  *
  * Folds directive-activity, activity-hooks, activities-feed-visibility, activities-following-visibility, the
  * action-links module tests (links, chains, wiki-sync), actionLinks (its gates; the input bounds are in
- * noncore-router-gates) and use-thread-action-cards. The token parser's security rows stay in lib/action-links.
+ * noncore-router-gates), use-thread-action-cards and lib/action-links: the parser of the player text both write
+ * paths read keeps what reaches the wiki on its line with no markup, never cuts a token out of an attribute (which
+ * would let the rest of it escape as HTML), renders cards only for tokens in text runs (I7), and leaves no token
+ * behind a removal.
  */
 let mockDb: unknown;
 jest.mock("~/server/db", () => ({
@@ -47,7 +50,14 @@ jest.mock("~/lib/wiki-os/services/edit-service", () => ({
 }));
 
 import { TRPCError } from "@trpc/server";
-import { MAX_ACTIONS_PER_POST } from "~/lib/action-links";
+import {
+  chainWikiSection,
+  isActivityId,
+  MAX_ACTIONS_PER_POST,
+  parseTextActionTokens,
+  splitActionTokens,
+  withoutActionTokens,
+} from "~/lib/action-links";
 import {
   declareDirectiveActivity,
   withdrawDirectiveActivity,
@@ -323,4 +333,64 @@ it("keeps an approval whose wiki write failed, and the cron writes it later", as
   await expect(
     ActivityHooks.Diplomatic.onAllianceFormed("aurelia", "Pact", "economic")
   ).resolves.toBeUndefined();
+});
+
+describe("the action-token parser", () => {
+  describe("chainWikiSection", () => {
+    it("strips wikitext control characters from player text", () => {
+      const text = chainWikiSection({
+        title: "Bad ]] [[Title",
+        approvedIxTime: 0,
+        entries: [{ title: "x]] {{y}}", type: "t", ixTime: 0, url: "https://x" }],
+      });
+      expect(text).not.toMatch(/\]\]|\[\[|\{\{|\}\}/);
+    });
+
+    it("keeps newline and inline-markup injection on the heading's single line", () => {
+      const text = chainWikiSection({
+        title: "x\n== Fake ==\n__NOTOC__ ~~~~ '''bold &#91; '<'",
+        approvedIxTime: 0,
+        entries: [{ title: "a\n* b", type: "t\n== T ==", ixTime: 0, url: "https://x" }],
+      });
+      const lines = text.split("\n");
+      expect(lines).toHaveLength(3);
+      expect(lines[0]).toBe("== Story chain: x == Fake == NOTOC bold #91; ==");
+      expect([lines[0], lines[2]].join("\n")).not.toMatch(/__|~~~|''|&/);
+      expect(lines[2]).toMatch(/^\* .*: \[https:\/\/x a \* b\] \(t == T ==\)$/);
+    });
+  });
+
+  describe("splitActionTokens", () => {
+    it("never cuts a token inside an attribute value", () => {
+      const title = '<p>hi <span title="[ixaction=abc] ><img src=x onerror=alert(1)>">x</span></p>';
+      const href =
+        '<p><a href="https://e.com/?q=[ixaction=abc] <img src=x onerror=alert(1)>">l</a></p>';
+      expect(splitActionTokens(title)).toEqual([{ kind: "html", text: title }]);
+      expect(splitActionTokens(href)).toEqual([{ kind: "html", text: href }]);
+    });
+  });
+
+  describe("parseTextActionTokens (I7)", () => {
+    it("lists the distinct ids in text runs only, in first-seen order", () => {
+      const html =
+        '<p title="[ixaction=attr]">[ixaction=b] then [ixaction=a]</p><!-- [ixaction=c] -->[ixaction=b]';
+      expect(parseTextActionTokens(html)).toEqual(["b", "a"]);
+    });
+  });
+
+  describe("withoutActionTokens", () => {
+    it("removes every token, including one formed by a removal", () => {
+      expect(withoutActionTokens("a [ixaction=x] b [ixaction=[ixaction=y]z]")).toBe("a  b ");
+    });
+  });
+  describe("activity ids", () => {
+    it.each([
+      ["dir-abc_1", true],
+      ["a".repeat(65), false],
+      ["<script>", false],
+      ["a]b", false],
+    ])("isActivityId(%j) is %s", (value, expected) => {
+      expect(isActivityId(value)).toBe(expected);
+    });
+  });
 });

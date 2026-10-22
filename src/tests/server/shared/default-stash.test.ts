@@ -1,13 +1,15 @@
 /** @jest-environment node */
 /**
- * A write that loses a race is recognised in either form it reaches the code (the raw Prisma error, or the
- * ConflictError / NotFoundError the app's db client wraps it into), so racing first writes resolve to the row that
- * won instead of failing: the default stash is the first consumer. Folds prisma-error-unique.test.ts.
+ * The app's db client wraps errors and caps reads, and code built on it loses nothing to either: a write that loses
+ * a race is recognised in either form (the raw Prisma error, or the ConflictError / NotFoundError the client wraps it
+ * into), so racing first writes resolve to the row that won (the default stash is the first consumer), and a read of
+ * every row pages past the client's 1,000-row cap. Folds prisma-error-unique and system/find-all-by-id.
  */
 import { describe, it, expect } from "@jest/globals";
 import { Prisma } from "@prisma/client";
 import { ConflictError, NotFoundError } from "~/lib/app-error";
 import { isMissingRecord, isUniqueViolation } from "~/lib/prisma-error";
+import { findAllById, type IdPage } from "~/lib/system/find-all-by-id";
 import { getOrCreateDefaultStash } from "~/server/shared/default-stash";
 
 const prismaError = (code: string, target?: string[]) =>
@@ -95,4 +97,15 @@ describe("getOrCreateDefaultStash", () => {
     await expect(getOrCreateDefaultStash(db, ["u1"], "u1")).rejects.toThrow("connection lost");
     expect(stash.create).toHaveBeenCalledTimes(1);
   });
+});
+
+it("reads every row past the client's 1,000-row cap, in id-ordered pages", async () => {
+  const rows = Array.from({ length: 1203 }, (_, i) => ({ id: `id${String(i).padStart(5, "0")}` }));
+  const fetchPage = jest.fn(async ({ take, cursor, skip = 0 }: IdPage) => {
+    const start = cursor ? rows.findIndex((r) => r.id === cursor.id) + skip : 0;
+    return rows.slice(start, start + take);
+  });
+  const all = await findAllById(fetchPage, 500);
+  expect(new Set(all.map((r) => r.id)).size).toBe(1203);
+  expect(fetchPage.mock.calls[1]![0]).toMatchObject({ cursor: { id: "id00499" }, skip: 1 });
 });
