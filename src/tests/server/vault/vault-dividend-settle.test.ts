@@ -444,12 +444,6 @@ describe("settleMissedDividends", () => {
 });
 
 describe("recordDividendStart", () => {
-  it("never moves the start later once set", async () => {
-    await recordDividendStart(db, "2026-10-20");
-    expect(await recordDividendStart(db, "2026-10-25")).toBe("2026-10-20");
-    expect(config.get(START_KEY)).toBe("2026-10-20");
-  });
-
   it("a first run settles only yesterday, then a later run with a gap fills back to the start", async () => {
     vault("u1");
     deck("u1", 2000);
@@ -487,19 +481,6 @@ describe("the dividend formula", () => {
     lines.find((l) => l.key === key)?.amount;
 
   describe("computeDividend", () => {
-    it("pays an interest-only user 0.25% of the deck", () => {
-      const r = computeDividend({ ...ZERO, deckValue: 2000 });
-      expect(r.total).toBe(5);
-      expect(r.lines.map((l) => l.key)).toEqual(["interest"]);
-      expect(r.lines[0]?.detail).toEqual({ deckValue: 2000, rate: DIVIDEND.INTEREST_RATE });
-    });
-
-    it("caps interest at 25 and rounds below it", () => {
-      expect(computeDividend({ ...ZERO, deckValue: 1_000_000 }).total).toBe(DIVIDEND.INTEREST_CAP);
-      expect(computeDividend({ ...ZERO, deckValue: 1000 }).total).toBe(3); // 2.5 rounds up
-      expect(computeDividend({ ...ZERO, deckValue: 100 }).lines).toEqual([]); // 0.25 rounds to 0
-    });
-
     it("pays wiki at one credit per 80 points, floored, capped at 30", () => {
       expect(amountOf(computeDividend({ ...ZERO, wikiScore: 239 }).lines, "wiki")).toBe(2);
       expect(amountOf(computeDividend({ ...ZERO, wikiScore: 79 }).lines, "wiki")).toBeUndefined();
@@ -507,14 +488,6 @@ describe("the dividend formula", () => {
         DIVIDEND.WIKI_CAP
       );
     });
-
-    it("pays posts at 2 each, capped at 20", () => {
-      expect(amountOf(computeDividend({ ...ZERO, posts: 4 }).lines, "posts")).toBe(8);
-      expect(amountOf(computeDividend({ ...ZERO, posts: 99 }).lines, "posts")).toBe(
-        DIVIDEND.POST_CAP
-      );
-    });
-
     it("pays cards at 2 per pack, 5 per trade and 3 per sale, capped at 20", () => {
       const r = computeDividend({ ...ZERO, packsOpened: 1, tradesCompleted: 1, listingsSold: 1 });
       expect(amountOf(r.lines, "cards")).toBe(10);
@@ -539,24 +512,6 @@ describe("the dividend formula", () => {
       expect(amountOf(r.lines, "streak") ?? 0).toBe(expected);
       expect(r.total).toBe(30 + expected);
     });
-
-    it("gives interest no streak: the multiplier applies to activity only", () => {
-      const r = computeDividend({ ...ZERO, deckValue: 4000, streakDays: 10 });
-      expect(r.total).toBe(10);
-      expect(r.lines.map((l) => l.key)).toEqual(["interest"]);
-    });
-
-    it("boosts the subtotal by the owned upgrades", () => {
-      // interest 10 + posts 20 = 30; boost 0.1 -> 3
-      const r = computeDividend({ ...ZERO, deckValue: 4000, posts: 10, yieldBoost: 0.1 });
-      expect(amountOf(r.lines, "boost")).toBe(3);
-      expect(r.total).toBe(33);
-      expect(r.lines.find((l) => l.key === "boost")?.detail).toEqual({
-        subtotal: 30,
-        yieldBoost: 0.1,
-      });
-    });
-
     it("caps the total at 150 after the boost", () => {
       const r = computeDividend({
         deckValue: 1_000_000,

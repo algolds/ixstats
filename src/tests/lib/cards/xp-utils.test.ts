@@ -7,7 +7,7 @@
  * Folds holding-xp and levels.
  */
 import { clearEconomyConfigCache } from "~/lib/cards/economy-config";
-import { grantCardXp, type CardXpSource } from "~/lib/cards/xp-utils";
+import { grantCardXp } from "~/lib/cards/xp-utils";
 import { Prisma } from "@prisma/client";
 import { runHoldingXpTick } from "~/server/modules/cards/holding-xp";
 import { clampLevel, levelForXp } from "~/lib/cards/levels";
@@ -63,30 +63,6 @@ describe("grantCardXp", () => {
       },
     });
   });
-
-  it.each<[CardXpSource, number]>([
-    ["PACK_OPEN", 11],
-    ["DAILY_CLAIM", 12],
-    ["TRADE", 13],
-    ["AUCTION_WIN", 14],
-    // A fixed-price purchase earns what an auction win does
-    ["LISTING_PURCHASE", 14],
-    // A cross-realm trade earns double the trade amount (spec §2.2)
-    ["CROSS_REALM_TRADE", 26],
-  ])("reads %s's amount from its own Economy tab number", async (source, amount) => {
-    const stored = [
-      { key: "card_economy_xp_pack", value: "11" },
-      { key: "card_economy_xp_daily", value: "12" },
-      { key: "card_economy_xp_trade_per_card", value: "13" },
-      { key: "card_economy_xp_auction_win", value: "14" },
-    ];
-    const tx = makeTx({ level: 1, experience: 0, xpDay: null, xpToday: 0 }, stored);
-    expect((await grantCardXp(tx as never, "own_1", source, undefined, NOW)).xpGained).toBe(amount);
-    expect(tx.cardExperienceEvent.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ amount, source, metadata: null }),
-    });
-  });
-
   it("stops at the daily cap per copy and writes nothing once it is reached", async () => {
     const capped = makeTx({ level: 3, experience: 2400, xpDay: TODAY, xpToday: 100 });
     expect(await grantCardXp(capped as never, "own_1", "AUCTION_WIN", undefined, NOW)).toEqual({

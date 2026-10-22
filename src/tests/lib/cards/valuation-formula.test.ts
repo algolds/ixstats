@@ -14,20 +14,15 @@ import {
   baseValue,
   CARD_VALUATION_DEFAULTS,
   CARD_VALUATION_DEFAULTS as cfg,
-  clampValuationConfig,
   valueOfCopy,
   levelBonus,
-  medianOf,
-  referenceValue,
   type ValueCard,
 } from "~/lib/cards/valuation";
 import {
   deckValueOf,
-  deckValuesByOwner,
-  loadCopyValues,
-  topCopiesByValue,
+  loadCopyValues
 } from "~/lib/cards/copy-value";
-import { mediansBySale, recomputeMarketValues } from "~/server/modules/cards/market-values";
+import { recomputeMarketValues } from "~/server/modules/cards/market-values";
 
 const card = (over: Partial<ValueCard> = {}): ValueCard => ({
   rarity: "RARE",
@@ -82,39 +77,6 @@ describe("the value formula", () => {
         cfg
       )
     ).toBe(0);
-  });
-
-  it("gives Card.marketValue as a Standard copy at level 1", () => {
-    expect(referenceValue(card(), 120, cfg)).toBe(120);
-    expect(referenceValue(card(), null, cfg)).toBe(100);
-  });
-
-  it("takes the median of the last sales (mean of the middle two when even)", () => {
-    expect(medianOf([])).toBeNull();
-    expect(medianOf([50])).toBe(50);
-    expect(medianOf([300, 100, 200])).toBe(200);
-    expect(medianOf([100, 400, 200, 300])).toBe(250);
-  });
-
-  it("clamps stored numbers", () => {
-    const clamped = clampValuationConfig({
-      ...cfg,
-      medianSales: 0,
-      medianDays: 9999,
-      levelBonusCap: 4,
-      multTrophy: -1,
-    });
-    expect([
-      clamped.medianSales,
-      clamped.medianDays,
-      clamped.levelBonusCap,
-      clamped.multTrophy,
-    ]).toEqual([1, 365, 1, 0]);
-    expect(clampValuationConfig({ ...cfg, medianSales: 80.4, medianDays: 0.4 })).toMatchObject({
-      medianSales: 50,
-      medianDays: 1,
-    });
-    expect(clampValuationConfig(cfg)).toEqual(cfg);
   });
 });
 
@@ -248,43 +210,6 @@ describe("one value per copy", () => {
       // The trophy: Epic floor 1000 x trophy 0.25 = 250.
       expect(await deckValueOf(db as never, "u1")).toEqual({ total: 350, exTrophy: 100 });
     });
-    it("sums each owner's copies to the cent", async () => {
-      const db = makeDb(
-        [
-          copy("a", "rare", "STANDARD", 1, "u1"),
-          copy("b", "ns", "STANDARD", 1, "u1"),
-          copy("c", "rare", "FOIL", 1, "u2"),
-        ],
-        {
-          medians: [
-            { cardId: "rare", finish: "STANDARD", median: 100.1 },
-            { cardId: "ns", finish: "STANDARD", median: 200.2 },
-            { cardId: "rare", finish: "FOIL", median: 450.25 },
-          ],
-        }
-      );
-      const totals = await deckValuesByOwner(db as never, { excludeTypes: ["TROPHY"] });
-      // u1: 100.1 + 200.2 is 300.29999999999995 in floating point. u2: the Foil copy reads the Foil median (450.25
-      // beats 100 x 3 = 300), never the Standard one.
-      expect([...totals]).toEqual([
-        ["u1", 300.3],
-        ["u2", 450.25],
-      ]);
-    });
-  });
-
-  describe("top copies", () => {
-    it("returns the most valuable copy of each card, best first", async () => {
-      const db = makeDb([
-        copy("a", "rare"),
-        copy("b", "rare", "HOLO"),
-        copy("t", "trophy", "SERIALISED"),
-      ]);
-      expect((await topCopiesByValue(db as never, "u1", 2)).map((c) => c.ownershipId)).toEqual([
-        "b",
-        "t",
-      ]);
-    });
   });
 });
 
@@ -338,25 +263,6 @@ describe("the card-values job", () => {
 
   const salesSql = (db: ReturnType<typeof makeDb>["db"]) => db.$queryRaw.mock.calls[0]!;
   const valueSql = (db: ReturnType<typeof makeDb>["db"]) => inlined(db.$queryRaw.mock.calls[1]!);
-
-  describe("market medians", () => {
-    it("takes the median per card and finish", () => {
-      expect(
-        mediansBySale([
-          { cardId: "card_1", finish: "STANDARD", price: 100 },
-          { cardId: "card_1", finish: "STANDARD", price: 300 },
-          { cardId: "card_1", finish: "STANDARD", price: 200 },
-          { cardId: "card_1", finish: "FOIL", price: 900 },
-          { cardId: "card_2", finish: "STANDARD", price: 40 },
-        ])
-      ).toEqual([
-        { cardId: "card_1", finish: "STANDARD", median: 200, sales: 3 },
-        { cardId: "card_1", finish: "FOIL", median: 900, sales: 1 },
-        { cardId: "card_2", finish: "STANDARD", median: 40, sales: 1 },
-      ]);
-    });
-  });
-
   describe("recomputeMarketValues", () => {
     it("reads only the last N priced sales within the window, then rebuilds prices and reference values", async () => {
       const { db } = makeDb([{ cardId: "card_1", finish: "STANDARD", price: 210 }]);

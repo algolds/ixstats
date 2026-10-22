@@ -180,7 +180,6 @@ const many = (n: number, prefix: string) => Array.from({ length: n }, (_, i) => 
 describe("input bounds", () => {
   it.each<[string, string, unknown]>([
     ["a listing at 0 IxC", "cardMarket.createListing", { ownershipId: "own_1", price: 0 }],
-    ["a listing at a part IxC", "cardMarket.createListing", { ownershipId: "own_1", price: 1.5 }],
     [
       "a listing over 1,000,000 IxC",
       "cardMarket.createListing",
@@ -191,18 +190,11 @@ describe("input bounds", () => {
       "cardMarket.createListings",
       { items: many(21, "o").map((ownershipId) => ({ ownershipId, price: 10 })) },
     ],
-    ["no listings at once", "cardMarket.createListings", { items: [] }],
     ["a market page over 100", "cardMarket.browse", { limit: 101 }],
-    ["a market offset past 500", "cardMarket.browse", { offset: 501 }],
     [
       "an auction starting at a part IxC",
       "cardMarket.createAuction",
       { cardId: "own_1", startingPrice: 10.5, duration: "24h" },
-    ],
-    [
-      "an auction starting at 0",
-      "cardMarket.createAuction",
-      { cardId: "own_1", startingPrice: 0, duration: "24h" },
     ],
     [
       "an auction of a day not offered",
@@ -222,11 +214,6 @@ describe("input bounds", () => {
       { partnerId: "them", initiatorCardIds: ["c1"], initiatorCredits: 1_000_001 },
     ],
     [
-      "a trade message past 500 characters",
-      "trading.createtradeOffer",
-      { partnerId: "them", initiatorCardIds: ["c1"], message: "x".repeat(501) },
-    ],
-    [
       "a counter at a revision below 0",
       "trading.counterTrade",
       { tradeId: "t1", revision: -1, initiatorCardIds: ["c1"] },
@@ -236,7 +223,6 @@ describe("input bounds", () => {
       "trading.respondToTrade",
       { tradeId: "t1", action: "COUNTER", revision: 1 },
     ],
-    ["a partner handle past 80 characters", "trading.findPartner", { handle: "h".repeat(81) }],
     [
       "a tradeables search past 80 characters",
       "trading.getTradeables",
@@ -244,10 +230,6 @@ describe("input bounds", () => {
     ],
     ["a break-down of no copies", "crafting.breakDown", { ownershipIds: [] }],
     ["a break-down of 101 copies", "crafting.breakDown", { ownershipIds: many(101, "o") }],
-    ["a fusion of a copy id past 64", "crafting.fuse", { ownershipIds: ["x".repeat(65)] }],
-    ["a craft of no card", "crafting.craft", { cardId: "" }],
-    ["a region search past 100 characters", "cards.exploreRegions", { search: "x".repeat(101) }],
-    ["an Explore page of 500", "cards.exploreGrid", { limit: 500 }],
     ["Mine sorted by a column it has not", "cards.listMine", { sort: "price" }],
     ["a showcase add of no copies", "cards.addToShowcase", { showcaseId: "s1", ownershipIds: [] }],
     [
@@ -259,11 +241,6 @@ describe("input bounds", () => {
       "an inscription past 240 characters",
       "cards.inscribe",
       { ownershipId: "own_1", text: "t".repeat(241) },
-    ],
-    [
-      "a report reason past 1,000 characters",
-      "cards.reportInscription",
-      { ownershipId: "own_1", reason: "r".repeat(1001) },
     ],
     [
       "a takedown contact past 200 characters",

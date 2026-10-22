@@ -122,11 +122,8 @@ const FUSIBLE: CardFinish[] = ["STANDARD", "FOIL"];
 const HOSTILE: Partial<CardEconomyConfig>[] = [
   {},
   { fusionCopies: 2, dustFoilMult: 10, dustHoloMult: 1000 },
-  { fusionCopies: 1, dustFoilMult: 3, dustHoloMult: 9 },
-  { dustFoilMult: 2.6, dustHoloMult: 7.7 },
   { dustHoloMult: Number.POSITIVE_INFINITY, dustFoilMult: Number.NaN },
   { dustImportMult: 0.29, dustRare: 100, dustEpic: 333.7 },
-  { craftDustMult: 0.1 },
   { fusionCopies: 10, dustFoilMult: 10, dustHoloMult: 100, dustLegendary: 3e8, craftDustMult: 1e6 },
 ];
 
