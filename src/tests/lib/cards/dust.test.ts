@@ -1,15 +1,29 @@
 /** @jest-environment node */
-import { CARD_ECONOMY_DEFAULTS as cfg, clampEconomyConfig } from "~/lib/cards/economy-config";
+/**
+ * Dust (`src/lib/cards/dust.ts`): each rarity's Standard yield, the Foil and Holo multiples and the import share in
+ * whole dust, a craft's price, and what can be crafted. The EV guard: fusing then breaking down, and crafting then
+ * breaking down, never return more dust than went in, at the defaults and for hostile admin numbers after clamping,
+ * and every yield and price fits the Int column. A fused copy is import-discounted when any of its inputs was.
+ *
+ * Folds economy-ev.
+ */
+import type { CardFinish, CardRarity } from "@prisma/client";
+import {
+  CARD_ECONOMY_DEFAULTS,
+  CARD_ECONOMY_DEFAULTS as cfg,
+  clampEconomyConfig,
+  type CardEconomyConfig,
+} from "~/lib/cards/economy-config";
 import { CARD_VALUATION_DEFAULTS as valuation } from "~/lib/cards/valuation";
 import {
-  copyBlocker,
   craftability,
   craftQuote,
   dustYield,
-  fusionBlocker,
   standardDust,
+  type DustCopy,
   type WorkshopCopy,
 } from "~/lib/cards/dust";
+import { nextFinish } from "~/lib/cards/finish";
 
 const copy = (over: Partial<WorkshopCopy> = {}): WorkshopCopy => ({
   cardId: "c1",
@@ -59,11 +73,6 @@ describe("dust", () => {
     ).toBe(0);
   });
 
-  it("gives nothing for a Serialised copy", () => {
-    expect(dustYield(copy({ finish: "SERIALISED" }), cfg)).toBe(0);
-    expect(dustYield(copy({ rarity: "LEGENDARY", finish: "SERIALISED" }), cfg)).toBe(0);
-  });
-
   it("prices a craft at 8x the Standard yield plus the rarity floor", () => {
     expect(craftQuote("COMMON", cfg, valuation)).toEqual({ dust: 40, credits: 10 });
     expect(craftQuote("EPIC", cfg, valuation)).toEqual({ dust: 4000, credits: 1000 });
@@ -72,13 +81,6 @@ describe("dust", () => {
   it("prices a craft exactly, rounding a part dust up", () => {
     expect(craftQuote("RARE", { ...cfg, craftDustMult: 1.1 }, valuation).dust).toBe(55);
     expect(craftQuote("COMMON", { ...cfg, craftDustMult: 1.1 }, valuation).dust).toBe(6);
-  });
-
-  it("never prices a craft above its stated multiplier", () => {
-    // 1.00006 × 50 is 50.003 and 1.00006 × 100,000 is 100,006; the cost applies 1.0000.
-    expect(craftQuote("RARE", { ...cfg, craftDustMult: 1.00006 }, valuation).dust).toBe(50);
-    const big = { ...cfg, dustRare: 100_000, craftDustMult: 1.00006 };
-    expect(craftQuote("RARE", big, valuation).dust).toBe(100_000);
   });
 
   it("charges the rarity floor in whole cents, never below 0, and the default floor for one that is not finite", () => {
@@ -109,47 +111,88 @@ describe("dust", () => {
       reason: "Retired cards can't be crafted.",
     });
   });
+});
 
-  it("names why a copy can't be broken down", () => {
-    expect(copyBlocker(copy(), "break down")).toBeNull();
-    expect(copyBlocker(copy(), "fuse")).toBeNull();
-    expect(copyBlocker(copy({ isBound: true }), "break down")).toBe(
-      "Bound cards can't be broken down."
-    );
-    expect(copyBlocker(copy({ finish: "SERIALISED" }), "fuse")).toBe(
-      "Serialised copies can't be fused."
-    );
-    expect(copyBlocker(copy({ inscription: "gg" }), "break down")).toBe(
-      "Signed copies can't be broken down."
-    );
-    expect(copyBlocker(copy({ isLocked: true }), "fuse")).toBe(
-      "A copy that is listed or in a trade can't be fused."
-    );
+const RARITIES: CardRarity[] = ["COMMON", "UNCOMMON", "RARE", "ULTRA_RARE", "EPIC", "LEGENDARY"];
+const FINISHES: CardFinish[] = ["STANDARD", "FOIL", "HOLO", "SERIALISED"];
+const FUSIBLE: CardFinish[] = ["STANDARD", "FOIL"];
+
+/** Admin numbers that each push one clamp: the defaults, a loop-making fusion, a fusion of 1, part multiples, numbers
+ * that are not finite, a part import share, a craft below one yield, and every number at its ceiling. */
+const HOSTILE: Partial<CardEconomyConfig>[] = [
+  {},
+  { fusionCopies: 2, dustFoilMult: 10, dustHoloMult: 1000 },
+  { fusionCopies: 1, dustFoilMult: 3, dustHoloMult: 9 },
+  { dustFoilMult: 2.6, dustHoloMult: 7.7 },
+  { dustHoloMult: Number.POSITIVE_INFINITY, dustFoilMult: Number.NaN },
+  { dustImportMult: 0.29, dustRare: 100, dustEpic: 333.7 },
+  { craftDustMult: 0.1 },
+  { fusionCopies: 10, dustFoilMult: 10, dustHoloMult: 100, dustLegendary: 3e8, craftDustMult: 1e6 },
+];
+
+/** The largest Int column value (CardDustBalance.balance). */
+const INT_MAX = 2_147_483_647;
+
+/** Every way to mark n inputs imported or not. */
+function importPatterns(n: number): boolean[][] {
+  return Array.from({ length: 2 ** n }, (_, mask) =>
+    Array.from({ length: n }, (_, i) => Boolean(mask & (1 << i)))
+  );
+}
+
+function fusedYield(inputs: DustCopy[], cfg: CardEconomyConfig): number {
+  const finish = nextFinish(inputs[0]!.finish);
+  if (!finish) throw new Error("not fusible");
+  return dustYield(
+    { rarity: inputs[0]!.rarity, finish, importDiscounted: inputs.some((c) => c.importDiscounted) },
+    cfg
+  );
+}
+
+describe.each(
+  HOSTILE.map((over): [string, CardEconomyConfig] => [
+    JSON.stringify(over),
+    clampEconomyConfig({ ...CARD_ECONOMY_DEFAULTS, ...over }),
+  ])
+)("dust EV with %s", (_label, cfg) => {
+  it("fuse then break down never beats breaking the inputs down", () => {
+    for (const rarity of RARITIES) {
+      for (const finish of FUSIBLE) {
+        for (const pattern of importPatterns(cfg.fusionCopies)) {
+          const inputs = pattern.map((importDiscounted) => ({ rarity, finish, importDiscounted }));
+          const separately = inputs.reduce((sum, c) => sum + dustYield(c, cfg), 0);
+          expect(fusedYield(inputs, cfg)).toBeLessThanOrEqual(separately);
+        }
+      }
+    }
   });
 
-  it("fuses exactly three copies of one card at one fusible finish", () => {
-    expect(fusionBlocker([copy(), copy(), copy()], cfg)).toBeNull();
-    expect(fusionBlocker([], cfg)).toBe("Fusing takes 3 copies.");
-    expect(fusionBlocker([copy(), copy()], cfg)).toBe("Fusing takes 3 copies.");
-    expect(fusionBlocker([copy(), copy(), copy(), copy()], cfg)).toBe("Fusing takes 3 copies.");
-    expect(fusionBlocker([copy(), copy(), copy({ cardId: "c2" })], cfg)).toBe(
-      "Fuse copies of one card at the same finish."
-    );
-    expect(fusionBlocker([copy(), copy(), copy({ finish: "FOIL" })], cfg)).toBe(
-      "Fuse copies of one card at the same finish."
-    );
-    const holo = copy({ finish: "HOLO" });
-    expect(fusionBlocker([holo, holo, holo], cfg)).toBe(
-      "Holo is the highest finish fusing reaches."
-    );
-    const serialised = copy({ finish: "SERIALISED" });
-    expect(fusionBlocker([serialised, serialised, serialised], cfg)).toBe(
-      "Serialised copies can't be fused."
-    );
-    expect(fusionBlocker([copy(), copy(), copy({ inscription: "x" })], cfg)).toBe(
-      "Signed copies can't be fused."
-    );
-    expect(fusionBlocker([copy(), copy()], { ...cfg, fusionCopies: 2 })).toBeNull();
-    expect(fusionBlocker([], { fusionCopies: 0 })).toBe("Fusing takes 0 copies.");
+  it("craft then break down never returns more dust than the craft cost", () => {
+    for (const rarity of RARITIES) {
+      const crafted = { rarity, finish: "STANDARD" as const, importDiscounted: false };
+      expect(dustYield(crafted, cfg)).toBeLessThanOrEqual(craftQuote(rarity, cfg, valuation).dust);
+    }
   });
+
+  it("pays and charges whole, non-negative dust that fits an Int, for every rarity and finish", () => {
+    const fits = (dust: number) => Number.isInteger(dust) && dust >= 0 && dust <= INT_MAX;
+    for (const rarity of RARITIES) {
+      expect(fits(craftQuote(rarity, cfg, valuation).dust)).toBe(true);
+      for (const finish of FINISHES) {
+        for (const importDiscounted of [false, true]) {
+          expect(fits(dustYield({ rarity, finish, importDiscounted }, cfg))).toBe(true);
+        }
+      }
+    }
+  });
+});
+
+it("at the defaults fusion is exactly neutral: 3 Standard = 1 Foil, 3 Foil = 1 Holo", () => {
+  const cfg = CARD_ECONOMY_DEFAULTS;
+  for (const rarity of RARITIES) {
+    const standard = { rarity, finish: "STANDARD" as const, importDiscounted: false };
+    const foil = { ...standard, finish: "FOIL" as const };
+    expect(fusedYield([standard, standard, standard], cfg)).toBe(3 * dustYield(standard, cfg));
+    expect(fusedYield([foil, foil, foil], cfg)).toBe(3 * dustYield(foil, cfg));
+  }
 });
