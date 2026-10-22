@@ -113,7 +113,7 @@ saved. If the saved design has no image yet, the button calls `renderAchievement
 
 `attachToCountry` still refuses with `BAD_REQUEST` ("This design has no rendered image yet…") when neither URL is a
 Vexel render (`RENDERED_IMAGE_URL` in `render.ts`), and leaves the country's coat of arms unchanged. Tests:
-`src/tests/server/api/routers/heraldry-attach-guard.test.ts`, `heraldry-render.test.ts`.
+`src/tests/server/api/routers/heraldry-router.test.ts`.
 
 ### Export
 

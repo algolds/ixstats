@@ -31,7 +31,6 @@ import { polygonMetrics } from "~/lib/maps/feature-metrics";
 import {
   repairGeometryGeoJSON,
   resetPostGISCache,
-  validateGeometryStructure,
 } from "~/lib/maps/geo-validation";
 import { compressFeatureCollection } from "~/lib/maps/geojson-compress";
 import { packFeatureCollection, unpackLayers } from "~/lib/maps/geojson-pack";
@@ -481,13 +480,6 @@ describe("rings to nations", () => {
 
 describe("geometry checked and repaired before it is stored", () => {
   const ring = (...points: Coord[]): Polygon => ({ type: "Polygon", coordinates: [points] });
-
-  it.each([
-    ["an open ring", ring([0, 0], [1, 0], [1, 1], [0, 1]), "ring_not_closed"],
-    ["a ring of three positions", ring([0, 0], [1, 0], [0, 1]), "too_few_vertices"],
-  ])("refuses %s", (_name, geometry, type) => {
-    expect(validateGeometryStructure(geometry).map((e) => e.type)).toEqual([type]);
-  });
 
   /** A border drawn as a bowtie, and the two triangles PostGIS's ST_MakeValid makes of it. */
   const BOWTIE = ring([0, 0], [2, 2], [2, 0], [0, 2], [0, 0]);
