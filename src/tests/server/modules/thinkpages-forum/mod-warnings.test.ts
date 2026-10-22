@@ -14,7 +14,7 @@ import {
   banRow as ban,
   matchesActiveBan as matches,
   type ActiveBanWhere,
-  type BanRow,
+  type BanRow as FakeBanRow,
 } from "~/tests/helpers/forum-ban-fake";
 
 const NOW = new Date("2026-10-09T12:00:00Z");
@@ -686,7 +686,7 @@ describe("bans", () => {
     liftedAt: null;
     OR: [{ expiresAt: null }, { expiresAt: { gt: Date } }];
   }
-  const isLiveAt = (row: BanRow, where: LiveBanWhere): boolean =>
+  const isLiveAt = (row: FakeBanRow, where: LiveBanWhere): boolean =>
     row.userId === where.userId &&
     row.scope === where.scope &&
     row.scopeId === where.scopeId &&
@@ -699,7 +699,7 @@ describe("bans", () => {
   }
   /** The member lock is a tagged template call: (strings, key). */
   type LockCall = [TemplateStringsArray, string];
-  function banDb(opts: { bans?: BanRow[]; ban?: BanRow | null } = {}) {
+  function banDb(opts: { bans?: FakeBanRow[]; ban?: FakeBanRow | null } = {}) {
     const tx = {
       $executeRaw: jest.fn(async (..._call: LockCall) => 0),
       forumBan: {
