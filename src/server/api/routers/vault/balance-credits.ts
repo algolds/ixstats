@@ -36,13 +36,15 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
       const cached = await globalCache.get<any>(cacheKey);
       if (cached) return cached;
 
-      // Accounts that predate the sign-up bonus get it on first Vault open (no-op once paid)
-      if (NEW_PLAYER_BONUS_ON_VAULT_OPEN) {
+      // Accounts that predate the sign-up bonus get it on first Vault open (no-op once paid), but never from staff
+      // playing as them: that read is not cached either, so the member's own next visit pays it
+      const playingAs = Boolean(ctx.impersonatorId);
+      if (NEW_PLAYER_BONUS_ON_VAULT_OPEN && !playingAs) {
         await grantNewPlayerBonus(ctx.db as any, userId, "vault_opened");
       }
 
       const balance = await vaultService.getBalance(userId, ctx.db as any);
-      await globalCache.set(cacheKey, balance, { ttl: 30 });
+      if (!playingAs) await globalCache.set(cacheKey, balance, { ttl: 30 });
       return balance;
     } catch (error) {
       console.error("[Vault Router] Error getting balance:", error);
