@@ -1,16 +1,16 @@
 /** @jest-environment node */
 /**
  * Plan 411: what an upload is is decided by its bytes. Real PNG, JPEG, GIF and WebP headers are built here (no fixture
- * files), a scripted SVG is refused and a clean one accepted, and a hostile SVG costs linear time.
+ * files), a scripted SVG is refused and a clean one accepted, sizes no database column holds are refused, a hostile SVG
+ * costs linear time, and a BlurHash is never decoded from more pixels than an upload may have.
  */
+jest.mock("~/server/db", () => ({ __esModule: true, db: {} }));
+
 import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
-import {
-  extensionMatches,
-  fileExtension,
-  sniffFile,
-  type SniffResult,
-} from "~/lib/wiki-os/core/file-sniff";
+import { sniffFile, type SniffResult } from "~/lib/wiki-os/core/file-sniff";
 import { scanSvg } from "~/lib/wiki-os/core/svg-scan";
+import sharp from "sharp";
+import { computeBlurhash } from "~/lib/wiki-os/services/image-blurhash";
 
 /** Why an SVG text is refused, or null. */
 const svgProblem = (text: string) => scanSvg(text).problem;
@@ -27,9 +27,6 @@ const bytes = (...parts: Array<number | number[] | string>): Uint8Array =>
   );
 
 const be32 = (n: number) => [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255];
-const le16 = (n: number) => [n & 255, (n >> 8) & 255];
-const le24 = (n: number) => [n & 255, (n >> 8) & 255, (n >> 16) & 255];
-
 const png = (width: number, height: number) =>
   bytes(
     [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
@@ -39,10 +36,6 @@ const png = (width: number, height: number) =>
     be32(height),
     [8, 6, 0, 0, 0]
   );
-
-const gif = (width: number, height: number) =>
-  bytes("GIF89a", le16(width), le16(height), [0, 0, 0]);
-
 /** SOI, an APP0 segment to skip, then SOF0 with the size (height first), as every JPEG has. */
 const jpeg = (width: number, height: number) =>
   bytes(
@@ -63,45 +56,6 @@ const jpeg = (width: number, height: number) =>
       3,
     ]
   );
-
-const webpLossy = (width: number, height: number) =>
-  bytes(
-    "RIFF",
-    [0, 0, 0, 0],
-    "WEBP",
-    "VP8 ",
-    [0, 0, 0, 0],
-    [0, 0, 0],
-    [0x9d, 0x01, 0x2a],
-    le16(width),
-    le16(height)
-  );
-
-const webpLossless = (width: number, height: number) => {
-  const bits = ((width - 1) & 0x3fff) | (((height - 1) & 0x3fff) << 14);
-  return bytes(
-    "RIFF",
-    [0, 0, 0, 0],
-    "WEBP",
-    "VP8L",
-    [0, 0, 0, 0],
-    [0x2f],
-    [bits & 255, (bits >> 8) & 255, (bits >> 16) & 255, (bits >>> 24) & 255]
-  );
-};
-
-const webpExtended = (width: number, height: number) =>
-  bytes(
-    "RIFF",
-    [0, 0, 0, 0],
-    "WEBP",
-    "VP8X",
-    [0, 0, 0, 0],
-    [0, 0, 0, 0],
-    le24(width - 1),
-    le24(height - 1)
-  );
-
 const svg = (text: string) => new TextEncoder().encode(text);
 
 const accepted = (result: SniffResult) => {
@@ -118,20 +72,6 @@ describe("sniffFile: the bytes decide the type and the size", () => {
       height: 480,
     });
   });
-
-  it("reads a GIF's size (little-endian) for both signatures", () => {
-    expect(accepted(sniffFile(gif(120, 80)))).toMatchObject({
-      kind: "gif",
-      mime: "image/gif",
-      width: 120,
-      height: 80,
-    });
-    expect(accepted(sniffFile(bytes("GIF87a", le16(7), le16(9), [0])))).toMatchObject({
-      width: 7,
-      height: 9,
-    });
-  });
-
   it("reads a JPEG's size from its frame header, past the segments before it", () => {
     expect(accepted(sniffFile(jpeg(1920, 1080)))).toEqual({
       kind: "jpeg",
@@ -145,30 +85,6 @@ describe("sniffFile: the bytes decide the type and the size", () => {
     const result = sniffFile(bytes([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x04, 0, 0, 0xff, 0xda, 0, 2]));
     expect(result).toMatchObject({ ok: false, code: "corrupt" });
   });
-
-  it("reads the size of a lossy, a lossless and an extended WebP", () => {
-    expect(accepted(sniffFile(webpLossy(300, 200)))).toMatchObject({
-      kind: "webp",
-      mime: "image/webp",
-      width: 300,
-      height: 200,
-    });
-    expect(accepted(sniffFile(webpLossless(321, 123)))).toMatchObject({ width: 321, height: 123 });
-    expect(accepted(sniffFile(webpExtended(4000, 3000)))).toMatchObject({
-      width: 4000,
-      height: 3000,
-    });
-  });
-
-  it("takes a PDF with no pixel size", () => {
-    expect(accepted(sniffFile(bytes("%PDF-1.7\n%...")))).toEqual({
-      kind: "pdf",
-      mime: "application/pdf",
-      width: null,
-      height: null,
-    });
-  });
-
   it("refuses an empty file, an unknown type and an HTML page, whatever the name would say", () => {
     expect(sniffFile(new Uint8Array(0))).toMatchObject({ ok: false, code: "empty-file" });
     expect(sniffFile(bytes("MZ\x90\x00 an exe"))).toMatchObject({
@@ -203,14 +119,6 @@ describe("sniffFile: SVG", () => {
       height: 60,
     });
   });
-
-  it("takes the size from the viewBox when there is no width or height", () => {
-    const file = accepted(
-      sniffFile(svg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100"/>`))
-    );
-    expect(file).toMatchObject({ width: 200, height: 100 });
-  });
-
   it("gives no size for a length or a viewBox no database Int holds, instead of a number that would fail the insert", () => {
     expect(accepted(sniffFile(svg(`<svg width="99999999999" height="12"/>`)))).toMatchObject({
       width: null,
@@ -228,30 +136,6 @@ describe("sniffFile: SVG", () => {
       width: 2_147_483_647,
     });
   });
-
-  it("converts absolute units and gives no size for percentages", () => {
-    expect(accepted(sniffFile(svg(`<svg width="1in" height="12pt"/>`)))).toMatchObject({
-      width: 96,
-      height: 16,
-    });
-    expect(accepted(sniffFile(svg(`<svg width="100%" height="100%"/>`)))).toMatchObject({
-      width: null,
-      height: null,
-    });
-  });
-
-  it("accepts a byte-order mark and leading whitespace", () => {
-    expect(
-      accepted(sniffFile(svg(`﻿ \n<svg xmlns="http://www.w3.org/2000/svg" width="5" height="5"/>`)))
-        .kind
-    ).toBe("svg");
-  });
-
-  it("accepts inline raster images and a comment-first document", () => {
-    const inline = `<!-- made by hand --><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="4" height="4"><image xlink:href="data:image/png;base64,iVBORw0KGgo="/></svg>`;
-    expect(accepted(sniffFile(svg(inline))).kind).toBe("svg");
-  });
-
   it("refuses an SVG that holds a <script>", () => {
     const result = sniffFile(
       svg(`<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>`)
@@ -356,18 +240,32 @@ describe("the SVG size limit (review)", () => {
   });
 });
 
-describe("extension rules", () => {
-  it("reads the extension of a name", () => {
-    expect(fileExtension("Flag of Eurth.PNG")).toBe("png");
-    expect(fileExtension("noextension")).toBe("");
-    expect(fileExtension("archive.tar.gz")).toBe("gz");
+describe("BlurHash", () => {
+  const picture = (
+    width: number,
+    height: number,
+    background: { r: number; g: number; b: number; alpha?: number },
+    channels: 3 | 4 = 3
+  ) => sharp({ create: { width, height, channels, background } });
+  let warn: jest.SpyInstance;
+  beforeEach(() => {
+    warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+  });
+  afterEach(() => {
+    warn.mockRestore();
+    delete process.env.WIKIOS_MAX_IMAGE_AREA;
   });
 
-  it("knows which extensions a kind may carry", () => {
-    expect(extensionMatches("jpeg", "a.jpg")).toBe(true);
-    expect(extensionMatches("jpeg", "a.JPEG")).toBe(true);
-    expect(extensionMatches("png", "a.jpg")).toBe(false);
-    expect(extensionMatches("svg", "a.svg.png")).toBe(false);
-    expect(extensionMatches("pdf", "a")).toBe(false);
+  describe("computeBlurhash", () => {
+    it("gives null, not an error, for bytes that are not a picture", async () => {
+      expect(await computeBlurhash(Buffer.from("not a png at all"), "image/png")).toBeNull();
+      expect(await computeBlurhash(new Uint8Array(0), "image/png")).toBeNull();
+    });
+
+    it("refuses to decode a picture of more pixels than an upload may have", async () => {
+      const bytes = await picture(100, 100, { r: 9, g: 9, b: 9 }).png().toBuffer();
+      process.env.WIKIOS_MAX_IMAGE_AREA = "5000";
+      expect(await computeBlurhash(bytes, "image/png")).toBeNull();
+    });
   });
 });

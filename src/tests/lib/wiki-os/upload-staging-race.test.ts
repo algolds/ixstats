@@ -1,12 +1,9 @@
 /** @jest-environment node */
-// `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factories rely on the ambient global.
-//
-// Plan 411, review M3: an upload of the same bytes and the mirror job that finishes with them at the same moment. The real upload
-// service and the real mirror job run over the fake tables, whose advisory locks behave as PostgreSQL's (a transaction waits
-// for the one that holds the key), MediaWiki is the scripted fake, and the staging directory is a real one. Before the fix, B
-// found the file staged and skipped writing it, A's job released it before B's rows committed, and B's job went dead with
-// "staged file is gone".
-// The mirror's api.php and bot login come from `wikiosConfig`; this test sets their variables as it runs.
+/**
+ * Staged upload files (plan 411): the advisory lock that keeps a finishing job and a new upload of the same bytes from
+ * deleting each other's file, names that can only be a hash (no path), bytes written once, and the sweep that deletes
+ * only what no asset, no unfinished job and no write in progress needs.
+ */
 jest.mock("~/lib/wiki-os/config", () =>
   jest
     .requireActual("~/tests/helpers/live-wikios-config")
@@ -37,24 +34,24 @@ jest.mock("~/lib/wiki-os/services/watchlist-notify", () => ({
 jest.mock("~/lib/wiki-os/guardian/cloudflare-guardian", () => ({
   CloudflareGuardian: { purgeArticleEdgeCache: jest.fn() },
 }));
-// the release can be held back by a test (see `holdRelease`)
 jest.mock("~/lib/wiki-os/services/upload-staging", () => {
   const actual = jest.requireActual("~/lib/wiki-os/services/upload-staging");
   return { __esModule: true, ...actual, releaseStaged: jest.fn(actual.releaseStaged) };
 });
 
-import { mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { invalidateCsrfToken } from "~/lib/wiki-os/adapters/mediawiki/csrf-cache";
-import { hashFile } from "~/lib/wiki-os/core/file-hash";
-import { STAGED_FILE_LOCK_NAMESPACE } from "~/lib/wiki-os/services/staged-uploads";
+import { hashFile, isFileHash } from "~/lib/wiki-os/core/file-hash";
+import { STAGED_FILE_LOCK_NAMESPACE, STAGED_ORPHAN_AGE_MS, sweepStagedOrphans, withStagedFileLock } from "~/lib/wiki-os/services/staged-uploads";
 import { runUploadJob } from "~/lib/wiki-os/services/mirror-upload";
 import type { MirrorJob } from "~/lib/wiki-os/services/mirror-queue";
-import { isStaged, releaseStaged } from "~/lib/wiki-os/services/upload-staging";
+import { isStaged, readStaged, releaseStaged, stageBytes } from "~/lib/wiki-os/services/upload-staging";
 import { uploadFile } from "~/lib/wiki-os/services/upload-service";
 import { API_URL, createFakeMediaWiki } from "~/tests/helpers/fake-mediawiki";
-import { advisoryLocks as allAdvisoryLocks, fakeWikiDb } from "~/tests/helpers/fake-wiki-db";
+import { advisoryLocks, advisoryLocks as allAdvisoryLocks, fakeWikiDb } from "~/tests/helpers/fake-wiki-db";
+import { STAGED_FILE_PATH } from "~/lib/wiki-os/config";
 
 /** The staged-file locks taken so far (a new File: page's creation takes a lock of its own, for the title: not these). */
 const stagedLocks = () =>
@@ -248,5 +245,156 @@ describe("an upload and the mirror job of the same bytes, at the same moment (re
 
     expect(result).toMatchObject({ result: "Success", noChange: true });
     expect(await isStaged(SHA1)).toBe(false);
+  });
+});
+
+describe("the staging directory", () => {
+  let directory: string;
+
+  beforeEach(() => {
+    directory = mkdtempSync(join(tmpdir(), "wikios-staging-test-"));
+    process.env.WIKIOS_UPLOAD_DIR = directory;
+  });
+
+  afterEach(() => {
+    rmSync(directory, { recursive: true, force: true });
+    delete process.env.WIKIOS_UPLOAD_DIR;
+  });
+
+  describe("file hashes", () => {
+    it("only a 31-character base-36 string names a staged file", () => {
+      expect(isFileHash(hashFile(new Uint8Array([1])).base36)).toBe(true);
+      for (const bad of [
+        "",
+        "../etc/passwd",
+        "a".repeat(30),
+        "a".repeat(32),
+        "A".repeat(31),
+        `${"a".repeat(30)}/`,
+      ]) {
+        expect(isFileHash(bad)).toBe(false);
+      }
+    });
+  });
+
+  describe("the staging directory", () => {
+    const bytes = Uint8Array.from([1, 2, 3, 250]);
+    const { base36 } = hashFile(bytes);
+    it("does not write the same bytes twice", async () => {
+      await stageBytes(base36, bytes);
+      writeFileSync(join(directory, base36), "sentinel");
+
+      await stageBytes(base36, bytes);
+
+      expect((await readStaged(base36))?.toString()).toBe("sentinel");
+    });
+    it("refuses a name that is not a hash", async () => {
+      await expect(stageBytes("../outside", bytes)).rejects.toThrow("not a file hash");
+      await expect(readStaged("../outside")).rejects.toThrow("not a file hash");
+      await expect(releaseStaged("a/b")).rejects.toThrow("not a file hash");
+    });
+  });
+});
+
+describe("the sweep", () => {
+  const { tables } = fakeWikiDb;
+  const NOW = new Date("2026-10-01T12:00:00Z");
+  const hoursAgo = (hours: number) => new Date(NOW.getTime() - hours * 3_600_000);
+  /** A 31-character base-36 name, as the hash of a file is. */
+  const hash = (n: number) => `orphan${String(n).padStart(25, "0")}`;
+  let directory: string;
+
+  /** A file in the staging directory last written `hours` ago. */
+  const stage = (name: string, hours: number) => {
+    const path = join(directory, name);
+    writeFileSync(path, "bytes");
+    utimesSync(path, hoursAgo(hours), hoursAgo(hours));
+  };
+  const left = () => readdirSync(directory).sort();
+
+  const servedAsset = (sha1: string) =>
+    tables.wikiAsset.seed({
+      filename: `${sha1}.png`,
+      sha1,
+      url: `${STAGED_FILE_PATH}${sha1}.png`,
+    });
+  const uploadJob = (sha1: string, state: string) =>
+    tables.wikiMirrorJob.seed({
+      source: "ixwiki",
+      kind: "upload",
+      title: "File:Flag.png",
+      state,
+      payload: { sha1, comment: "c" },
+    });
+
+  beforeAll(() => {
+    directory = mkdtempSync(join(tmpdir(), "wikios-staged-uploads-test-"));
+    process.env.WIKIOS_UPLOAD_DIR = directory;
+  });
+  afterAll(() => {
+    rmSync(directory, { recursive: true, force: true });
+    delete process.env.WIKIOS_UPLOAD_DIR;
+  });
+  beforeEach(() => {
+    fakeWikiDb.reset();
+    for (const name of readdirSync(directory)) rmSync(join(directory, name), { force: true });
+  });
+
+  describe("sweepStagedOrphans", () => {
+    it("deletes a staged file older than a day that nothing needs, and keeps one just under that age", async () => {
+      stage(hash(1), STAGED_ORPHAN_AGE_MS / 3_600_000 + 0.01);
+      stage(hash(2), STAGED_ORPHAN_AGE_MS / 3_600_000 - 0.01);
+
+      await expect(sweepStagedOrphans(NOW)).resolves.toBe(1);
+
+      expect(left()).toEqual([hash(2)]);
+    });
+
+    it("keeps an old file an asset is still served from, and one an unfinished upload job names (a dead one included)", async () => {
+      for (const n of [1, 2, 3, 4, 5]) stage(hash(n), 48);
+      servedAsset(hash(1));
+      uploadJob(hash(2), "pending");
+      uploadJob(hash(3), "dead");
+      uploadJob(hash(4), "done");
+
+      await expect(sweepStagedOrphans(NOW)).resolves.toBe(2);
+
+      // 4 (only a finished job names it) and 5 (nothing does) are orphans
+      expect(left()).toEqual([hash(1), hash(2), hash(3)]);
+    });
+
+    it("deletes the temporary files of writes that never finished once they are a day old, and touches nothing else", async () => {
+      stage(`${hash(1)}.abcdef012345.tmp`, 30);
+      stage(`${hash(2)}.abcdef012345.tmp`, 1);
+      stage("notes.txt", 100);
+      stage("SHORT", 100);
+
+      await sweepStagedOrphans(NOW);
+
+      expect(left()).toEqual(["SHORT", `${hash(2)}.abcdef012345.tmp`, "notes.txt"].sort());
+    });
+    it("judges each file under its own lock, and sees the rows of an upload that was recording them at that moment", async () => {
+      stage(hash(1), 48);
+      stage(hash(2), 48);
+      let sweeping: Promise<number> | undefined;
+
+      // an upload of the bytes of hash(1) holds the lock while it records its asset; the sweep starts meanwhile
+      await withStagedFileLock(hash(1), async () => {
+        advisoryLocks.length = 0;
+        sweeping = sweepStagedOrphans(NOW);
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        expect(left()).toEqual([hash(1), hash(2)].sort()); // it waits for hash(1)'s lock, and goes in order
+        servedAsset(hash(1));
+      });
+
+      await expect(sweeping).resolves.toBe(1);
+      expect(left()).toEqual([hash(1)]);
+      expect(advisoryLocks).toEqual(
+        expect.arrayContaining([
+          `${STAGED_FILE_LOCK_NAMESPACE}:${hash(1)}`,
+          `${STAGED_FILE_LOCK_NAMESPACE}:${hash(2)}`,
+        ])
+      );
+    });
   });
 });
