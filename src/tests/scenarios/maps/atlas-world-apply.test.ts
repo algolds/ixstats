@@ -57,7 +57,7 @@ import { presetParamsOf } from "~/lib/worldgen/studio-preset-params";
 import { WORLD_PRESETS } from "~/lib/worldgen/v2/config";
 import { buildWorldBundle } from "~/lib/worldgen/world-apply";
 import { controlsForPreset, paramsFromControls } from "~/lib/worldgen/world-controls";
-import { FACTORY_PRESETS, resolvePreset, type FactoryPreset } from "~/lib/worldgen/world-presets";
+import { FACTORY_PRESETS, resolvePreset } from "~/lib/worldgen/world-presets";
 import { createCallerFactory } from "~/server/api/trpc";
 import { atlasPresetsRouter } from "~/server/api/routers/atlas/presets";
 import { geoEditorMapImportRouter } from "~/server/api/routers/geo/editor/map-import";
@@ -224,10 +224,7 @@ describe("a founder generates a world from a published preset, applies it and ro
     });
     const published = await realmMapAs(db, founder).worldPresets({ realm: "eurth" });
     expect(published.map((p) => p.slug)).toEqual(Object.keys(WORLD_PRESETS));
-    // worldPresets sends no description (a WorldPresetOption has none), so the second half always holds
-    expect(
-      published.every((p) => p.name !== "" && (p as Partial<FactoryPreset>).description !== "")
-    ).toBe(true);
+    expect(published.every((p) => p.name !== "")).toBe(true);
     expect(published.find((p) => p.slug === "eurth")?.params.riverDensity).toBe(0.9);
     // a recipe naming a preset that has since gone comes back as Earth-like, the factory one if even that is gone
     expect(resolvePreset(published, "deleted-preset").slug).toBe("earthlike");
