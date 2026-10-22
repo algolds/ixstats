@@ -1,4 +1,15 @@
 /** @jest-environment node */
+/**
+ * Map import jobs and what they write: one job per realm at a time, an engine failure and a cancel recorded on the
+ * job, a job that stopped reporting failed, an oversize file refused; "Import this map" from the realm's wiki only for
+ * its map staff and refused when the wiki's file changed since it was chosen; the shared writer's refusals and
+ * replace-mode retirements, areas measured on the realm's own planet, a failed map version bump that does not fail
+ * the recorded import, and only the realm's latest import still in place can be rolled back. The whole plan, apply
+ * and rollback through the router is the atlas-png-map-import scenario.
+ *
+ * Folds: src/tests/server/maps/map-import-apply.test.ts, src/tests/server/maps/map-import-wiki.test.ts,
+ * src/tests/server/api/routers/geo/map-import-router.test.ts
+ */
 jest.mock("~/env", () => ({
   env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test", CRON_ENABLED_JOBS: "" },
 }));
@@ -18,25 +29,52 @@ jest.mock("~/lib/system/job-lock", () => ({
     }
   }),
 }));
+const fetchOriginal = jest.fn();
+jest.mock("~/server/modules/realms/realms.wiki", () => {
+  class RealmWikiError extends Error {
+    constructor(
+      public readonly code: string,
+      message: string
+    ) {
+      super(message);
+    }
+  }
+  return {
+    RealmWikiError,
+    fetchChosenWikiMapOriginal: (...args: unknown[]) => fetchOriginal(...args),
+  };
+});
 
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import type { Polygon } from "geojson";
 import {
   cancelMapImportJob,
-  getMapImportJob,
   mapImportLockName,
   processMapImportQueue,
   recoverStaleMapImports,
   runMapImportJob,
   startMapImport,
-  startMapImportApply,
   STALE_AFTER_MS,
-  type ApplySummary,
 } from "~/server/modules/maps/map-import.jobs";
-import { MapImportError } from "~/server/modules/maps/map-import.realm";
-import { MAX_MAP_IMPORT_BYTES, type EngineResult } from "~/lib/maps/import/options";
-import { admin, fakeDb, founder, stranger } from "./map-import-fakes";
+import {
+  applyMapImportPlan,
+  planMapImport,
+  refreshRealmMap,
+} from "~/server/modules/maps/map-import.apply";
+import { rollbackMapImport } from "~/server/modules/maps/map-import.history";
+import { writePipelineLayers } from "~/server/modules/maps/map-import.pipeline";
+import { findImportRealm, MapImportError } from "~/server/modules/maps/map-import.realm";
+import { startWikiMapImport } from "~/server/modules/maps/map-import.wiki";
+import { RealmWikiError } from "~/server/modules/realms/realms.wiki";
+import { polygonalAreaSqKm } from "~/lib/maps/planet";
+import {
+  MAX_MAP_IMPORT_BYTES,
+  mapImportApplySchema,
+  type EngineResult,
+} from "~/lib/maps/import/options";
+import { admin, fakeDb, stranger } from "./map-import-fakes";
 
 const held = new Set<string>();
 (globalThis as { heldLeases?: Set<string> }).heldLeases = held;
@@ -51,14 +89,14 @@ afterAll(() => {
   delete process.env.MAP_IMPORT_DIR;
 });
 
-const square = (x: number) => ({
-  type: "Polygon" as const,
+const square = (x: number, size = 10): Polygon => ({
+  type: "Polygon",
   coordinates: [
     [
       [x, 0],
-      [x + 10, 0],
-      [x + 10, 10],
-      [x, 10],
+      [x + size, 0],
+      [x + size, size],
+      [x, size],
       [x, 0],
     ],
   ],
@@ -84,6 +122,7 @@ const result: EngineResult = {
   report: { log: [], warnings: [], timingsMs: {} },
 };
 
+/** Eurth (half Earth's radius) with one nation and a roster page, and an engine that traces `result`. */
 function setup() {
   const db = fakeDb();
   db.realm.rows.push({
@@ -110,52 +149,16 @@ function setup() {
 }
 
 const bytes = new TextEncoder().encode('{"type":"FeatureCollection","features":[]}');
+const queue = (db: ReturnType<typeof fakeDb>, filename = "a.geojson") =>
+  startMapImport(
+    { realmId: "r1", source: { kind: "geojson", bytes, filename }, requestedBy: "admin_1" },
+    { db, kick: false }
+  );
 
 describe("map import jobs: lifecycle", () => {
-  it("applies an analysis: writes the borders, keeps a snapshot and fills only a missing land area", async () => {
-    const { db, runEngine } = setup();
-    const jobId = await startMapImport(
-      {
-        realmId: "r1",
-        source: { kind: "geojson", bytes, filename: "eurth.geojson" },
-        requestedBy: "admin_1",
-      },
-      { db, kick: false, runEngine }
-    );
-    await runMapImportJob(db, jobId, { runEngine });
-    const applyId = await startMapImportApply(
-      db as never,
-      admin,
-      jobId,
-      { mapping: { Aurelia: "Aurelia", Borealis: "Borealis" } },
-      { kick: false }
-    );
-    expect(await runMapImportJob(db, applyId)).toBe("ran");
-    const job = await getMapImportJob(db, admin, applyId);
-    expect(job.error).toBeNull();
-    const summary = job.result as ApplySummary;
-    expect(summary).toMatchObject({ phase: "apply", written: 2, nations: 2, deactivated: 0 });
-    expect(summary.landAreasFilled).toEqual(["Aurelia"]);
-    const aurelia = db.mapLayer.rows.find((r: { featureId: string }) => r.featureId === "Aurelia");
-    expect(aurelia).toMatchObject({ countryId: "c_aur", displayName: "Aurelia", isActive: true });
-    // The realm's planet is half Earth's radius: areas are a quarter of Earth's.
-    const area = db.country.rows[0].landArea;
-    expect(area).toBeGreaterThan(0);
-    expect(db.mapImport.rows).toHaveLength(1);
-    expect(db.mapImport.rows[0]).toMatchObject({ rollbackAvailable: true, mode: "merge" });
-    expect(db.mapImport.rows[0].snapshot).toBeInstanceOf(Uint8Array);
-  });
-
   it("runs one job per realm at a time: a job whose realm lease is held stays queued", async () => {
     const { db, runEngine } = setup();
-    const jobId = await startMapImport(
-      {
-        realmId: "r1",
-        source: { kind: "geojson", bytes, filename: "a.geojson" },
-        requestedBy: "admin_1",
-      },
-      { db, kick: false }
-    );
+    const jobId = await queue(db);
     held.add(mapImportLockName("r1"));
     try {
       expect(await runMapImportJob(db, jobId, { runEngine })).toBe("busy");
@@ -188,28 +191,14 @@ describe("map import jobs: lifecycle", () => {
 
   it("cancels a queued job, and a running job stops at its next progress report", async () => {
     const { db } = setup();
-    const queued = await startMapImport(
-      {
-        realmId: "r1",
-        source: { kind: "geojson", bytes, filename: "a.geojson" },
-        requestedBy: "admin_1",
-      },
-      { db, kick: false }
-    );
+    const queued = await queue(db);
     await cancelMapImportJob(db as never, admin, queued);
     expect(db.mapImportJob.rows[0].status).toBe("cancelled");
     await expect(cancelMapImportJob(db as never, admin, queued)).rejects.toMatchObject({
       code: "CONFLICT",
     });
 
-    const running = await startMapImport(
-      {
-        realmId: "r1",
-        source: { kind: "geojson", bytes, filename: "b.geojson" },
-        requestedBy: "admin_1",
-      },
-      { db, kick: false }
-    );
+    const running = await queue(db, "b.geojson");
     const runEngine = jest.fn(
       async (
         _k: string,
@@ -273,22 +262,206 @@ describe("map import jobs: lifecycle", () => {
   });
 });
 
-describe("map import jobs: who may see and apply them", () => {
-  it("lets the founder in and keeps other players out", async () => {
-    const { db, runEngine } = setup();
-    const jobId = await startMapImport(
-      {
-        realmId: "r1",
-        source: { kind: "geojson", bytes, filename: "a.geojson" },
-        requestedBy: "founder_1",
+describe("Import this map (from the realm's wiki)", () => {
+  function wikiRealm() {
+    const db = fakeDb();
+    db.realm.rows.push({
+      id: "r1",
+      slug: "eurth",
+      name: "Eurth",
+      ownerId: "founder_1",
+      settings: {
+        map: {
+          source: "iiwiki",
+          attribution: "Map by A. Cartographer (CC BY-SA)",
+          bounds: { west: -180, south: -60, east: 180, north: 80 },
+        },
       },
-      { db, kick: false, runEngine }
+    });
+    return db;
+  }
+  beforeEach(() => fetchOriginal.mockReset());
+
+  it("is only for the realm's map staff: the wiki is not asked for a stranger", async () => {
+    const db = wikiRealm();
+    await expect(startWikiMapImport(db, stranger, "r1", { kick: false })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    expect(fetchOriginal).not.toHaveBeenCalled();
+  });
+
+  it("passes on the wiki's refusal when the file changed since it was chosen, and queues nothing", async () => {
+    const db = wikiRealm();
+    fetchOriginal.mockRejectedValue(
+      new (RealmWikiError as never as new (c: string, m: string) => Error)(
+        "CONFLICT",
+        "The wiki's file changed"
+      )
     );
-    await expect(getMapImportJob(db, founder, jobId)).resolves.toMatchObject({ id: jobId });
-    await expect(getMapImportJob(db, stranger, jobId)).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await runMapImportJob(db, jobId, { runEngine });
-    await expect(
-      startMapImportApply(db as never, stranger, jobId, { mapping: {} }, { kick: false })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(startWikiMapImport(db, admin, "r1", { kick: false })).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
+    expect(db.mapImportJob.rows).toHaveLength(0);
+  });
+});
+
+describe("what an import writes", () => {
+  /** A realm with Borealis's border, a stale Old Kingdom and a lake on another layer (`radiusKm` its planet). */
+  function mappedRealm(radiusKm?: number) {
+    const db = fakeDb();
+    db.realm.rows.push({
+      id: "r1",
+      slug: "eurth",
+      name: "Eurth",
+      ownerId: "founder_1",
+      settings: radiusKm ? { map: { radiusKm } } : {},
+    });
+    db.country.rows.push(
+      { id: "c_aur", name: "Aurelia", realmId: "r1", landArea: null, geometry: null },
+      { id: "c_bor", name: "Borealis", realmId: "r1", landArea: 51_000, geometry: null }
+    );
+    const row = (id: string, layerType: string, featureId: string, geometry: Polygon) => ({
+      id,
+      realmId: "r1",
+      layerType,
+      featureId,
+      displayName: featureId,
+      countryId: null,
+      geometry,
+      properties: {},
+      isActive: true,
+    });
+    db.mapLayer.rows.push(
+      { ...row("m1", "political", "borealis-key", square(10)), countryId: "c_bor" },
+      row("m2", "political", "Old Kingdom", square(90)),
+      row("m3", "lakes", "lake-1", square(100, 1)),
+      row("m4", "lakes", "lake-old", square(110, 1))
+    );
+    return db;
+  }
+  const feature = (
+    id: string,
+    geometry: Polygon | { type: "LineString"; coordinates: number[][] }
+  ) => ({
+    type: "Feature" as const,
+    id,
+    properties: id === "lake-2" ? { name: "Blue Lake" } : {},
+    geometry,
+  });
+  const line = (toLon: number) => ({
+    type: "LineString" as const,
+    coordinates: [
+      [0, 0],
+      [toLon, 1],
+    ],
+  });
+
+  it("replace mode retires the stale features of the imported layer types only, keeps one whose incoming row was refused, and refuses bad geometry", async () => {
+    const db = mappedRealm();
+    const out = await writePipelineLayers(db as never, {
+      realmId: "r1",
+      mode: "replace",
+      createdBy: "admin_1",
+      layers: {
+        lakes: {
+          type: "FeatureCollection",
+          features: [feature("lake-2", square(120, 1)), feature("lake-1", square(500, 1))],
+        },
+        rivers: {
+          type: "FeatureCollection",
+          features: [feature("r-1", line(1)), feature("r-2", line(500))],
+        },
+      },
+    });
+    expect(out).toMatchObject({ imported: 2, deactivated: 1, mode: "replace" });
+    expect(out.rejected.map((r) => `${r.layerType}:${r.key}`).sort()).toEqual([
+      "lakes:lake-1",
+      "rivers:r-2",
+    ]);
+    expect(out.rejected.find((r) => r.key === "r-2")?.reason).toMatch(/lon\/lat/);
+    const row = (key: string) =>
+      db.mapLayer.rows.find((r: { featureId: string }) => r.featureId === key);
+    expect(row("lake-2")).toMatchObject({ displayName: "Blue Lake", isActive: true });
+    expect(row("r-1")).toMatchObject({ isActive: true });
+    expect(row("lake-old").isActive).toBe(false);
+    // the lake whose new border was refused keeps its old one, and the borders are another layer
+    expect(row("lake-1")).toMatchObject({ isActive: true, geometry: square(100, 1) });
+    expect(row("Old Kingdom").isActive).toBe(true);
+    expect(db.mapImport.rows[0]).toMatchObject({ mode: "replace", rollbackAvailable: true });
+    expect([...db.mapImport.rows[0].layerTypes].sort()).toEqual(["lakes", "rivers"]);
+  });
+
+  it("measures areas on the realm's own planet", async () => {
+    const apply = mapImportApplySchema.parse({
+      mapping: { Aurelia: "Aurelia", Borealis: "Borealis" },
+      mode: "merge",
+    });
+    const area = async (db: ReturnType<typeof mappedRealm>) =>
+      (await planMapImport(db as never, await findImportRealm(db, "r1"), result, apply, {})).diff
+        .features[0]!.areaKm2!;
+    const onEarth = await area(mappedRealm());
+    expect(onEarth).toBeCloseTo(polygonalAreaSqKm(square(0)), 3);
+    // half Earth's radius: a quarter of the area
+    expect((await area(mappedRealm(6371 / 2))) / onEarth).toBeCloseTo(0.25, 6);
+  });
+
+  it("rolls back only the realm's latest import still in place: an older one is refused, writing nothing, until the newer is rolled back", async () => {
+    const db = mappedRealm();
+    const realm = await findImportRealm(db, "r1");
+    const apply = mapImportApplySchema.parse({
+      mapping: { Aurelia: "Aurelia", Borealis: "Borealis" },
+      mode: "replace",
+    });
+    const map = () =>
+      JSON.stringify(
+        db.mapLayer.rows
+          .map(
+            (r: {
+              layerType: string;
+              featureId: string;
+              isActive: boolean;
+              countryId: string | null;
+            }) => [r.layerType, r.featureId, r.isActive, r.countryId].join(":")
+          )
+          .sort()
+      );
+    const original = map();
+    const importOnce = async (jobId: string) =>
+      applyMapImportPlan(
+        db as never,
+        realm,
+        await planMapImport(db as never, realm, result, apply, {}),
+        { jobId, requestedBy: "admin_1" }
+      );
+    const first = await importOnce("j1");
+    const afterFirst = map();
+    expect(afterFirst).not.toBe(original); // Aurelia's border added, Old Kingdom's retired
+    const second = await importOnce("j2");
+    const state = () => JSON.stringify([db.mapLayer.rows, db.country.rows, db.mapImport.rows]);
+    const before = state();
+
+    await expect(rollbackMapImport(db as never, admin, first.mapImportId)).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: expect.stringContaining("Roll back the newer import"),
+    });
+    expect(state()).toBe(before);
+
+    // newest first: each rollback puts back the map as the import before it found it
+    await rollbackMapImport(db as never, admin, second.mapImportId);
+    expect(map()).toBe(afterFirst);
+    await rollbackMapImport(db as never, admin, first.mapImportId);
+    expect(map()).toBe(original);
+  });
+
+  it("moves the realm's map version, and a failed bump is logged instead of failing the recorded import", async () => {
+    const db = mappedRealm();
+    await expect(refreshRealmMap(db as never, "r1", { adjacency: false })).resolves.toBeNull();
+    expect(db.realm.rows[0].mapVersion).toBe(1);
+
+    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    db.$queryRaw.mockRejectedValueOnce(new Error("db down"));
+    await expect(refreshRealmMap(db as never, "r1", { adjacency: false })).resolves.toBeNull();
+    expect(error).toHaveBeenCalledWith(expect.stringContaining("version bump"), expect.any(Error));
+    error.mockRestore();
   });
 });

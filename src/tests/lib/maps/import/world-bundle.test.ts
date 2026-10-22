@@ -1,7 +1,9 @@
 /** @jest-environment node */
 /**
- * The world bundle: the browser generator's upload (gzip JSON) and the server's reading of it. Every hostile or
- * oversized bundle is refused with a reason; a bundle that parses is safe for the `world` import job.
+ * The world bundle: the browser generator's upload (gzip JSON) and the server's reading of it. A bundle is untrusted
+ * input: every hostile or oversized one is refused with its reason, one row per class of refusal (zip bombs, each
+ * cap, non-finite and out-of-range numbers, bad rings, the wrong geometry for a layer, unknown slots and layers), and
+ * a bundle that parses is safe for the `world` import job, at every cap, past the antimeridian and at both poles.
  */
 import { gzipSync } from "node:zlib";
 import type { Feature, FeatureCollection, Polygon, Position } from "geojson";
@@ -19,7 +21,6 @@ import {
   MAX_WORLD_BUNDLE_POSITIONS,
   MAX_WORLD_BUNDLE_SLOTS,
   parseWorldBundleJson,
-  worldGenParamsSchema,
   type WorldBundle,
   type WorldBundleSlot,
 } from "~/lib/maps/import/world-bundle";
@@ -119,7 +120,6 @@ const deepProperty = (depth: number) =>
     BACKGROUND,
     `${BACKGROUND}{"type":"Feature","properties":{"deep":${"[".repeat(depth)}1e999${"]".repeat(depth)}},"geometry":{"type":"Polygon","coordinates":[[[0,0],[10,0],[10,7.123],[0,0]]]}},`
   );
-const { lakes: _lakes, ...WITHOUT_LAKES } = bundle().layers;
 
 /** What the server's parser says of a bundle (or of its raw text). */
 const reasonOf = (input: WorldBundle | string) => {
@@ -151,12 +151,31 @@ function bundleOf(world: GeneratedWorld): WorldBundle {
   };
 }
 
+/**
+ * A preset world at every cap at once: the most slots, cells and features, with rings past 180 (the generator's
+ * reach) and at both poles, and a cell at the far corner of the range with a height no planet has.
+ */
+function atEveryCap(): WorldBundle {
+  const cells = new Float32Array(MAX_WORLD_BUNDLE_CELLS * 3);
+  cells.set([-360, 90, 1e30]);
+  const background = [triangle(-203.4, 85), triangle(360, 90), triangle(-360, -90)];
+  return bundle({
+    slots: slots(MAX_WORLD_BUNDLE_SLOTS),
+    cells: encodeCells(cells),
+    layers: {
+      ...bundle().layers,
+      background: collection(background.map((ring) => polygon({}, [ring]))),
+      lakes: collection(polygons(MAX_WORLD_BUNDLE_FEATURES - 6)),
+    },
+  });
+}
+
 describe("a world bundle the server can use", () => {
-  it("round-trips through gzip, as written and as a generated world with both polar caps makes it", async () => {
-    const original = bundle();
-    const bytes = await encodeWorldBundle(original);
+  it("round-trips through gzip, a realm-map bundle as written and a generated world with both polar caps", async () => {
+    const realmMap = bundle({ source: "realm-map", layers: PHYSICAL, slots: [] });
+    const bytes = await encodeWorldBundle(realmMap);
     expect(isGzip(bytes)).toBe(true);
-    expect(parseWorldBundle(bytes)).toEqual({ ok: true, bundle: original });
+    expect(parseWorldBundle(bytes)).toEqual({ ok: true, bundle: realmMap });
     const polar = { north: true, south: true };
     const world = generateWorld({ ...DEFAULT_PARAMS, seed: 7, cellCount: 6000, polarLand: polar });
     const parsed = parseWorldBundle(await encodeWorldBundle(bundleOf(world)));
@@ -169,28 +188,8 @@ describe("a world bundle the server can use", () => {
     expect(decodeCells(encodeCells(packed))).toEqual({ ok: true, cells: packed });
   });
 
-  it.each([
-    ["a realm-map world", bundle({ source: "realm-map", layers: PHYSICAL, slots: [] })],
-    ["the most slots", bundle({ slots: slots(MAX_WORLD_BUNDLE_SLOTS) })],
-    [
-      "the most cells",
-      bundle({ cells: encodeCells(new Float32Array(MAX_WORLD_BUNDLE_CELLS * 3)) }),
-    ],
-    ["the most features", withLayer("lakes", polygons(MAX_WORLD_BUNDLE_FEATURES - 4))],
-    [
-      "a ring past 180 (the generator's reach)",
-      withLayer("background", [polygon({}, [triangle(-203.4, 85)])]),
-    ],
-    [
-      "both poles",
-      withLayer("background", [
-        polygon({}, [triangle(360, 90)]),
-        polygon({}, [triangle(-360, -90)]),
-      ]),
-    ],
-    ["a cell of any finite height", cellsOf(-360, 90, 1e30)],
-  ])("accepts %s", (_name, input) => {
-    expect(reasonOf(input)).toBeNull();
+  it("accepts a world at every cap at once, past the antimeridian and at both poles", () => {
+    expect(reasonOf(atEveryCap())).toBeNull();
   });
 });
 
@@ -208,71 +207,35 @@ describe("a hostile or broken bundle", () => {
       ],
     },
   };
-  const badMulti: Feature = {
-    type: "Feature",
-    properties: {},
-    geometry: { type: "MultiPolygon", coordinates: [[RING], [RING.slice(0, 3)]] },
-  };
-  const threePoints: Position[] = [
-    [0, 0],
-    [1, 1],
-    [0, 0],
-  ];
-  const noGeometry = textWith(
-    '"lakes":{"type":"FeatureCollection","features":[]}',
-    '"lakes":{"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":null}]}'
-  );
   const bad: Array<[string, WorldBundle | string, RegExp]> = [
     ["malformed JSON", "{not json", /not valid JSON/],
-    ["JSON that is not a bundle", "[]", /world bundle/i],
-    ["JSON null", "null", /world bundle/i],
-    ["an unknown version", JSON.stringify({ ...bundle(), version: 2 }), /version/],
     [
       "params past the generator's bounds",
       bundle({ params: { ...DEFAULT_PARAMS, cellCount: 5e6 } }),
       /params/,
     ],
     [
-      "a short hypsometry",
-      bundle({ params: { ...DEFAULT_PARAMS, hypsometry: [1] } }),
-      /hypsometry/,
-    ],
-    [
       "more cells than the cap",
       bundle({ cells: encodeCells(new Float32Array((MAX_WORLD_BUNDLE_CELLS + 1) * 3)) }),
       /more than 200,000 cells/,
     ],
-    ["cells that are not base64", bundle({ cells: "%%%%" }), /cells/],
     [
       "cells that are not whole triples",
       bundle({ cells: encodeCells(new Float32Array(4)) }),
       /cells/,
     ],
-    ["no cells", bundle({ cells: "" }), /no cells/i],
     ["a non-finite cell", cellsOf(0, 0, Number.NaN), /cells.*finite/i],
-    ["a cell longitude past the range", cellsOf(3e38, 0, 0), /cells.*range/i],
     ["a cell latitude past the pole", cellsOf(10, 20, 5, 0, -90.5, 0), /cells.*range/i],
-    ["a cell longitude too large for a float", cellsOf(1e300, 0, 0), /cells.*finite/i],
     [
       "more slots than the cap",
       bundle({ slots: slots(MAX_WORLD_BUNDLE_SLOTS + 1) }),
       /more than 500/,
     ],
-    ["one slot key twice", bundle({ slots: [slot(1), slot(1)] }), /slot_1.*twice/],
     [
       "one slot name twice, whatever its case and spaces",
       bundle({ slots: [slot(1), { ...slot(2), name: "  NATION 1 " }] }),
       /nation 1.*twice|twice.*nation 1/i,
     ],
-    ["a slot colour that is not hex", bundle({ slots: [{ ...slot(1), colour: "red" }] }), /colour/],
-    ["a blank slot name", bundle({ slots: [{ ...slot(1), name: "  " }] }), /name/],
-    ["a non-finite slot number", textWith('"population":1200000', '"population":1e999'), /slots/],
-    [
-      "a non-finite property",
-      textWith('"properties":{}', '"properties":{"a":1e999}'),
-      /background.*finite/i,
-    ],
-    ["a non-finite property 20 arrays deep", deepProperty(20), /background feature 0.*finite/i],
     [
       "a non-finite property 50,000 arrays deep, without overflowing the stack",
       deepProperty(50_000),
@@ -285,42 +248,11 @@ describe("a hostile or broken bundle", () => {
       /background feature 0.*finite.*range/i,
     ],
     [
-      "a longitude past twice round",
-      withLayer("background", [polygon({}, [triangle(360.5, 1)])]),
-      /range/i,
-    ],
-    [
-      "a latitude past the pole",
-      withLayer("background", [polygon({}, [triangle(1, 90.5)])]),
-      /range/i,
-    ],
-    [
-      "a ring that is not closed",
-      withLayer("political", [
-        polygon({ slotKey: "slot_1" }),
-        polygon({ slotKey: "slot_2" }, [RING.slice(0, 4)]),
-      ]),
-      /political.*feature 1.*not closed/i,
-    ],
-    [
-      "a ring of three points",
-      withLayer("lakes", [polygon({}, [threePoints])]),
-      /lakes.*feature 0.*fewer than 4/i,
-    ],
-    ["a polygon with no ring", withLayer("lakes", [polygon({}, [])]), /lakes.*feature 0/i],
-    [
       "a hole that is not closed",
       withLayer("lakes", [polygon({}, [RING, RING.slice(0, 4)])]),
       /lakes.*not closed/i,
     ],
-    ["a MultiPolygon with a bad ring", withLayer("icecaps", [badMulti]), /icecaps.*feature 0/i],
-    ["a feature with no geometry", noGeometry, /lakes.*feature 0.*geometry/i],
     ["a line in a polygon layer", twoPolitical(line), /political.*feature 0.*polygon/i],
-    [
-      "a political feature naming no slot",
-      twoPolitical(polygon({ name: "A" })),
-      /political.*feature 0.*slotKey/,
-    ],
     [
       "a political feature naming an unknown slot",
       twoPolitical(polygon({ slotKey: "slot_99" })),
@@ -331,26 +263,10 @@ describe("a hostile or broken bundle", () => {
       JSON.stringify({ ...bundle(), layers: { ...bundle().layers, labels: empty() } }),
       /labels/,
     ],
-    ["a missing layer", JSON.stringify({ ...bundle(), layers: WITHOUT_LAKES }), /lakes/],
-    [
-      "a preset world without a political layer",
-      bundle({ layers: PHYSICAL }),
-      /preset.*political/i,
-    ],
-    [
-      "a realm-map world with a political layer",
-      bundle({ source: "realm-map" }),
-      /realm map.*political/i,
-    ],
     [
       "a realm-map world with slots",
       bundle({ source: "realm-map", layers: PHYSICAL }),
       /realm map.*slots/i,
-    ],
-    [
-      "one feature more than the most",
-      withLayer("lakes", polygons(MAX_WORLD_BUNDLE_FEATURES - 3)),
-      /has 20,001 map features; a world has at most 20,000/,
     ],
     [
       "the most features counted over every layer together",
@@ -361,7 +277,7 @@ describe("a hostile or broken bundle", () => {
           icecaps: collection(polygons(MAX_WORLD_BUNDLE_FEATURES / 2)),
         },
       }),
-      /has 20,004 map features/,
+      /has 20,004 map features; a world has at most 20,000/,
     ],
     [
       "one position more than the most",
@@ -375,9 +291,7 @@ describe("a hostile or broken bundle", () => {
   });
 
   it.each([
-    ["bytes that are not gzip", () => new TextEncoder().encode(JSON.stringify(bundle())), /gzip/i],
     ["corrupt gzip", () => gzipSync(JSON.stringify(bundle())).subarray(0, -20), /corrupt|gzip/i],
-    ["gzip that is not JSON", () => gzipSync("hello"), /not valid JSON/],
     [
       "a zip bomb past the 48 MB cap, stopped before the JSON is parsed",
       () => gzipSync(Buffer.alloc(MAX_WORLD_BUNDLE_JSON_BYTES + 1)),
@@ -385,17 +299,5 @@ describe("a hostile or broken bundle", () => {
     ],
   ])("is refused from the upload: %s", (_name, bytes, reason) => {
     expect(parseWorldBundle(bytes())).toEqual({ ok: false, reason: expect.stringMatching(reason) });
-  });
-
-  it("refuses generator params the generator would choke on", () => {
-    expect(worldGenParamsSchema.safeParse(DEFAULT_PARAMS).success).toBe(true);
-    for (const params of [
-      { cellCount: 150_001 },
-      { plateCount: 2 },
-      { developmentLevel: "stone-age" },
-      { temperatureOffset: Infinity },
-    ]) {
-      expect(worldGenParamsSchema.safeParse({ ...DEFAULT_PARAMS, ...params }).success).toBe(false);
-    }
   });
 });

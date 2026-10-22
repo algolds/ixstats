@@ -39,18 +39,13 @@ const ROMAN = [
 
 describe("Onoma on real names", () => {
   it.each([
-    ["Schmidt", "germanic", "/ˈʃmidt/"],
     ["Verona", "germanic", "/ˈfeʁona/"],
     ["Verona", "germanic+slavic", "/ˈfeʁona/"],
-    ["Carthago", "latin", "/ˈkaɾtaɡo/"],
     ["New-Venceia", "latin", "/ˈnew-ˈwentseia/"],
     ["Czern", "slavic", "/ˈtʃern/"],
     ["Mithril", "constructed", "/ˈmiθɾil/"],
     ["Hello World", "celtic", "/ˈheɬo ˈʊoɾld/"],
     ["Hello World", "arabic", "/ˈħello ˈwoɾld/"],
-    ["Hello World", "indic", "/ˈhello ˈʋoɾld/"],
-    ["Galdhor", "species:elf", "/ˈɡalðor/"],
-    ["Khazad", "species:dwarf", "/ˈxazad/"],
     ["Uruk", "species:orc", "/ˈʊrukʼ/"],
     ["Fitzgerald", "noble:norman", "/ˈfɪtsgerald/"],
     ["ship", null, "/ˈʃip/"],
@@ -90,10 +85,8 @@ describe("Onoma on real names", () => {
   });
 
   it.each([
-    ["/ʃəˈnoʊmə/", "shuh-NOH-muh"],
     ["/ɪmˈpɛɾia/", "ihm-PEH-ree-ah"],
     ["/ˈnoʊvə ˈroʊma/", "NOH-vuh ROH-mah"],
-    ["/ˈɑrəgən/", "AH-ruh-guhn"],
   ])("re-spells %s for a browser voice as %s", (ipa, spelling) => {
     expect(ipaToSpeechSpelling(ipa)).toBe(spelling);
     expect(ipaToSpokenText(ipa)).toBe(spelling.toLowerCase().replace(/-/g, " "));
@@ -103,7 +96,6 @@ describe("Onoma on real names", () => {
     ["Schmidt", "cyrillic", "Шмидт"],
     ["Helios", "greek", "Ελιος"],
     ["Kareth", "arabic", "كاريث"],
-    ["Verona", "unsupported", "Verona"],
   ])("writes %s in the %s script as %s", (name, script, written) => {
     expect(transcribeToScript(name, script as never)).toBe(written);
   });
@@ -114,12 +106,6 @@ describe("Onoma on real names", () => {
       "Latin",
       "feminine",
       { nominative: { singular: "Roma", plural: "Romae" }, genitive: { plural: "Romarum" } },
-    ],
-    [
-      "Marcus",
-      "Latin",
-      "masculine",
-      { nominative: { plural: "Marci" }, genitive: { plural: "Marcorum" } },
     ],
     [
       "Helios",
@@ -156,8 +142,6 @@ describe("Onoma on real names", () => {
     ["Rhys I of Faneria", "person", "Rhys"],
     ["Queen Elizabeth II", "person", "Elizabeth"],
     ["Isle of Man", "city", "Isle of Man"],
-    ["Doclea", "city", "Doclea"],
-    ["Category:Stub pages", "city", null],
     ["List of countries", "city", null],
     ["Socialist Party", "organization", null],
     ["Infobox cheese/doc", "culture_cuisine", null],

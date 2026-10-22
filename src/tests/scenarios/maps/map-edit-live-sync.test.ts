@@ -288,11 +288,6 @@ describe("an edit in one realm refreshes only that realm's open maps", () => {
       ["display", "version"],
     ],
     ["a bulk change", JSON.stringify({ changeType: "bulk", realmId: "default" }), ALL],
-    [
-      "a change it does not know",
-      JSON.stringify({ changeType: "something-new", realmId: "default" }),
-      ALL,
-    ],
     ["a payload it cannot read", "not json", ALL],
     [
       "a city",

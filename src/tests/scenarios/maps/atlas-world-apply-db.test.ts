@@ -4,7 +4,11 @@
  * fresh realm. What the in-memory fake cannot show: the writer's own PostGIS copy of every feature, valid; the
  * nations' outlines through atlas_country_union; their adjacency graph; the map version moved by the real SQL; and the
  * realm's rivers tile, whose seam-crossing rivers are split at ±180. Its rows are its own (prefix()) and go when it
- * ends.
+ * ends. Then the version bump's own expression, as invalidateRealmMap sends it, evaluated by Postgres in a read-only
+ * SELECT (the column replaced by a literal): one past the old version, never below the epoch second, so a database
+ * restored to an older state jumps past every number its URLs, browsers and tile folders ever carried.
+ *
+ * Folds: src/tests/server/shared/map-version-sql.test.ts
  */
 jest.mock("~/env", () => ({
   env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test", CRON_ENABLED_JOBS: "" },
@@ -25,7 +29,6 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { VectorTile } from "@mapbox/vector-tile";
 import { PbfReader } from "pbf";
-import type { Feature, Position } from "geojson";
 import type { PrismaClient } from "@prisma/client";
 import { WORLD_PRESETS } from "~/lib/worldgen/v2/config";
 import { buildWorldBundle } from "~/lib/worldgen/world-apply";
@@ -34,20 +37,14 @@ import { buildTile, sourceGeometry } from "~/server/modules/maps/tile-render";
 import { rebuildAdjacency } from "~/lib/maps/adjacency";
 import { applyWorld } from "~/server/modules/maps/world-import";
 import { db as client } from "~/server/db";
+import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { realWorld } from "~/tests/helpers/real-world-result";
-import { describeWithDb, prefix } from "~/tests/helpers/scenario-db";
+import { describeWithDb, prefix, scenarioDb } from "~/tests/helpers/scenario-db";
 import { RELIEF_ENTRY } from "~/tests/server/maps/world-import-fixtures";
 
 jest.setTimeout(120_000);
 
 const db = client as unknown as PrismaClient;
-const reach = (f: Feature) =>
-  Math.max(
-    ...(f.geometry.type === "LineString"
-      ? f.geometry.coordinates
-      : (f.geometry as { coordinates: Position[][] }).coordinates.flat()
-    ).map(([x]) => Math.abs(x!))
-  );
 
 describeWithDb("a generated world applied to a realm on real PostGIS", () => {
   const p = prefix();
@@ -84,7 +81,7 @@ describeWithDb("a generated world applied to a realm on real PostGIS", () => {
   });
 
   it("stores valid PostGIS copies, unions and joins every nation, moves the version and tiles the seam rivers apart", async () => {
-    // Eurth at seed 4 on 8,000 cells, twelve nations: three rivers past ±180, three nations on the seam
+    // Eurth at seed 4 on 8,000 cells, twelve nations: three rivers and three nations on the seam
     const draft = realWorld({
       params: {
         ...WORLD_PRESETS.eurth,
@@ -95,7 +92,9 @@ describeWithDb("a generated world applied to a realm on real PostGIS", () => {
       seed: 4,
     });
     const bundle = buildWorldBundle(draft, "preset");
-    expect(bundle.layers.rivers.features.filter((f) => reach(f) > 180).length).toBeGreaterThan(0);
+    expect(bundle.layers.rivers.features.some((f) => f.geometry.type === "MultiLineString")).toBe(
+      true
+    );
     const uploadId = await saveMapUpload(gzipSync(JSON.stringify(bundle)));
     const check = await db.mapImportJob.create({
       data: {
@@ -175,7 +174,31 @@ describeWithDb("a generated world applied to a realm on real PostGIS", () => {
     const tile = new VectorTile(new PbfReader(await buildTile(db, realmId, "rivers", 0, 0, 0)))
       .layers.rivers;
     expect(tile?.length).toBe(bundle.layers.rivers.features.length);
-    // (A river the generator itself drew the long way round the world still spans it: see the it.failing case in
-    // src/tests/lib/worldgen/v2/world-invariants.test.ts.)
+  });
+});
+
+describeWithDb("Realm.mapVersion's bump, evaluated by Postgres", () => {
+  const pg = scenarioDb();
+  afterAll(() => pg.$disconnect());
+
+  /** What the statement invalidateRealmMap really sends sets the version to, from `old`, and the epoch second. */
+  async function bumpFrom(old: number): Promise<{ next: number; epoch: number }> {
+    const queryRaw = jest.fn().mockResolvedValue([{ mapVersion: 1 }]);
+    await invalidateRealmMap({ $queryRaw: queryRaw } as never, "default");
+    const sql = (queryRaw.mock.calls[0]![0] as string[]).join("?");
+    const expression = /SET "mapVersion" = (.+) WHERE/.exec(sql)?.[1];
+    if (!expression) throw new Error(`no version expression in: ${sql}`);
+    const [row] = await pg.$queryRawUnsafe<Array<{ next: number; epoch: number }>>(
+      `SELECT (${expression.replaceAll('"mapVersion"', String(old))})::int AS next,
+              (extract(epoch from now()))::int AS epoch`
+    );
+    return row!;
+  }
+
+  it("jumps past the epoch second from a counter below it, as after a restore, and goes up by one above it", async () => {
+    const restored = await bumpFrom(7);
+    expect(restored.next).toBeGreaterThanOrEqual(restored.epoch);
+    const ahead = restored.epoch + 1000;
+    expect((await bumpFrom(ahead)).next).toBe(ahead + 1);
   });
 });

@@ -8,13 +8,7 @@
  */
 import { useSyncExternalStore } from "react";
 
-export interface FakeCallError {
-  message: string;
-  data?: { code: string };
-}
-
 const jobs = new Map<string, object>();
-const readErrors = new Map<string, FakeCallError>();
 const listeners = new Set<() => void>();
 let revision = 0;
 
@@ -35,29 +29,21 @@ export const calls: string[] = [];
 export const start = jest.fn();
 export const applyWorld = jest.fn();
 export const rebuildRelief = jest.fn();
-export const cancelJob = jest.fn();
+const cancelJob = jest.fn();
 export const invalidated = {
   version: jest.fn(),
   display: jest.fn(),
   worldStatus: jest.fn(),
 };
-/** The job ids the component asked the job query for, with whether it was enabled */
-export const jobReads: Array<{ jobId: string; enabled: boolean }> = [];
 
 /** Set a job's view. Jobs belong to the realm under test (`r_eurth`) unless the test says another. */
 export function setJob(id: string, job: object) {
   jobs.set(id, { id, realmId: "r_eurth", ...job });
   emit();
 }
-export function failRead(id: string, error: FakeCallError) {
-  readErrors.set(id, error);
-  emit();
-}
 export function resetFakeMapImport() {
   jobs.clear();
-  readErrors.clear();
   calls.length = 0;
-  jobReads.length = 0;
   for (const fn of [start, applyWorld, rebuildRelief, cancelJob, ...Object.values(invalidated)])
     fn.mockReset();
 }
@@ -83,11 +69,7 @@ export const geoEditor = {
           () => revision
         );
         const enabled = options?.enabled ?? true;
-        jobReads.push({ jobId: input.jobId, enabled });
-        return {
-          data: enabled ? jobs.get(input.jobId) : undefined,
-          error: enabled ? (readErrors.get(input.jobId) ?? null) : null,
-        };
+        return { data: enabled ? jobs.get(input.jobId) : undefined, error: null };
       },
     },
   },

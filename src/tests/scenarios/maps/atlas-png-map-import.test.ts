@@ -7,6 +7,10 @@
  *
  * The map (src/tests/fixtures/map-import-images.ts) is red and green nations sharing a wavy border, one nation painted
  * in yellow and brown, a lake in red, an island and a purple speck in green, anti-aliased with black border lines.
+ * Along the way, a stranger is refused at every procedure of the wizard and a georeference that can't be fitted is
+ * refused.
+ *
+ * Folds: src/tests/server/api/routers/geo/map-import-router.test.ts
  */
 jest.mock("~/env", () => ({
   env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test", CRON_ENABLED_JOBS: "" },
@@ -194,6 +198,27 @@ describe("an admin imports a painted political map and rolls it back", () => {
     expect(uploaded.status).toBe(200);
     const { uploadId, kind } = (await uploaded.json()) as { uploadId: string; kind: "png" };
     expect(kind).toBe("png");
+
+    // The wizard's other procedures are the realm's map staff's too, and a georeference that can't be fitted is refused
+    await expect(importAs(db, stranger).context({ realmId: "r1" })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    await expect(
+      importAs(db, stranger).saveGeoreference({ realmId: "r1", georef: { projection: "mercator" } })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      importAs(db, admin).previewGeoreference({
+        width: 100,
+        height: 100,
+        georef: {
+          controlPoints: [
+            { x: 0, y: 0, lon: 0, lat: 0 },
+            { x: 0, y: 10, lon: 0, lat: -1 },
+            { x: 0, y: 20, lon: 0, lat: -2 },
+          ],
+        },
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
 
     // 2. The analysis traces the colours; the speck under 100 px is merged into its neighbour
     const start = { realmId: "r1", uploadId, kind, filename: "eurth.png" };

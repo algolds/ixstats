@@ -1,10 +1,15 @@
 /** @jest-environment node */
 /**
  * Scenario: on Eurth (a planet of half Earth's radius) a founder redraws an unclaimed region against a player's
- * nation, an admin makes the region a nation, and a border edit filed for review is approved. The border and queue
+ * nation, an admin makes the region a nation, and a border edit filed for review is approved (a self-crossing one is
+ * refused when filed and when approved). A founder's border draft is offered back with only the neighbours it may still
+ * write. The border and queue
  * routers, the linkage router, the geometry check, the realm-scaled area, the map version bump and the live-sync bus
- * are real; the database is map-import-fakes' (a throwing transaction puts every table back), PostGIS answers its two
- * questions (is this valid, what is its area) from the scenario, and the Country outline sync is a spy.
+ * are real; the database is map-import-fakes' (a throwing transaction puts every table back), PostGIS answers its
+ * questions (is this valid, what is its area, which regions are next to this one) from the scenario, and the Country
+ * outline sync is a spy.
+ *
+ * Folds: src/tests/server/api/routers/geo/editor/border-neighbours.test.ts
  */
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
 jest.mock("~/server/db", () => ({ db: {} }));
@@ -250,23 +255,87 @@ describe("a region is drawn, checked, made a nation and its border approved", ()
     expect(db.realm.rows[0].mapVersion).toBe(10);
   });
 
-  // KNOWN GAP (reported to the owner 2026-10-21): only the direct path asks PostGIS whether a border is valid. A
-  // border filed for review is stored as filed and approved as stored, so a self-crossing outline reaches the map's
-  // GeoJSON. When submitBorderEdit or approveEdit checks it, this starts failing: drop `.failing`.
-  it.failing(
-    "refuses a self-crossing border filed for review, as the direct path does",
-    async () => {
-      const db = eurth();
-      const filed = await borders(db, "founder").submitBorderEdit({
+  // Regression (2026-10-21): only the direct path asked PostGIS whether a border was valid, so a self-crossing outline
+  // filed for review was stored as filed and approved as stored, reaching the map's GeoJSON. Both are checked now,
+  // approval again because the stored edit can change between filing and review.
+  it("refuses a self-crossing border filed for review, and again on approval, as the direct path does", async () => {
+    const db = eurth();
+    const file = (proposedGeometry: Polygon) =>
+      borders(db, "founder").submitBorderEdit({
         featureId: "east",
         editSubtype: "redraw",
-        proposedGeometry: BOW_TIE as never,
+        proposedGeometry: proposedGeometry as never,
         realm: "eurth",
       });
-      await queue(db, "admin")
-        .approveEdit({ editId: filed.editRequestId! })
-        .catch(() => undefined);
-      expect(region(db, "east").geometry).toEqual(box(2, 4));
-    }
-  );
+    const selfCrossing = {
+      code: "BAD_REQUEST",
+      message: expect.stringContaining("Self-intersection"),
+    };
+
+    await expect(file(BOW_TIE)).rejects.toMatchObject(selfCrossing);
+    expect(db.mapEditRequest.rows).toEqual([]);
+
+    // A good border is filed; by the time the admin reviews it, the stored edit holds a self-crossing one
+    const { editRequestId } = await file(box(3, 5));
+    const edit = (db.mapEditRequest.rows as Row[]).find((r) => r.id === editRequestId)!;
+    edit.proposedData = { geometry: BOW_TIE };
+    await expect(queue(db, "admin").approveEdit({ editId: editRequestId! })).rejects.toMatchObject(
+      selfCrossing
+    );
+    expect(region(db, "east").geometry).toEqual(box(2, 4));
+    expect(edit.status).toBe("pending");
+    expect(db.realm.rows[0].mapVersion).toBe(7);
+  });
+
+  it("offers a founder's border draft back with only the neighbours it may still write, and not once the border is saved", async () => {
+    const db = eurth();
+    const hourAgo = new Date(Date.now() - 3_600_000);
+    Object.assign(region(db, "west"), { boundingBox: [0, 0, 2, 2], updatedAt: hourAgo });
+    region(db, "east").updatedAt = hourAgo;
+    // PostGIS's neighbour search answers the realm's other active regions
+    const answer = db.$queryRawUnsafe.getMockImplementation();
+    db.$queryRawUnsafe = jest.fn(async (sql: string, ...args: unknown[]) =>
+      sql.includes("ST_MakeEnvelope")
+        ? (db.mapLayer.rows as Row[])
+            .filter((r) => r.realmId === args[0] && r.featureId !== args[1] && r.isActive)
+            .map(({ featureId, displayName, geometry, updatedAt }) => ({
+              featureId,
+              displayName,
+              geometry,
+              updatedAt,
+            }))
+        : answer(sql, ...args)
+    );
+    const open = () =>
+      borders(db, "founder").startBorderEditSession({ featureId: "west", realm: "eurth" });
+
+    const { session, draft } = await open();
+    expect(draft).toBeNull();
+    // The draft moves East and North, a region that is no longer next to West
+    await borders(db, "founder").saveBorderEditDraft({
+      sessionId: session.id,
+      sessionData: {
+        featureId: "west",
+        geometry: box(0, 3),
+        dirtyNeighbors: { east: box(3, 4), north: box(0, 2, 4) },
+      },
+    });
+    const offered = (await open()).draft;
+    expect(offered?.geometry).toEqual(box(0, 3));
+    expect(offered?.dirtyNeighbors).toEqual({ east: box(3, 4) });
+
+    // The player saves East after the draft: the draft's old outline of East would overwrite that save
+    region(db, "east").updatedAt = new Date(Date.now() + 1000);
+    expect((await open()).draft?.dirtyNeighbors).toEqual({});
+
+    // The founder saves West itself: the save supersedes the draft, which is not offered again
+    await borders(db, "founder").submitBorderEdit({
+      featureId: "west",
+      editSubtype: "redraw",
+      proposedGeometry: box(0, 3) as never,
+      applyDirectly: true,
+      realm: "eurth",
+    });
+    expect((await open()).draft).toBeNull();
+  });
 });

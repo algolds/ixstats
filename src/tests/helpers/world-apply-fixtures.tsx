@@ -1,5 +1,5 @@
 /**
- * Shared set-up of the apply region's tests (world-apply.test.tsx, world-apply-resume.test.tsx): the fixtures the fake
+ * Shared set-up of the apply region's tests (world-apply.test.tsx and the Studio's ship tests): the fixtures the fake
  * server answers with and the render helpers. The test file mocks `~/trpc/react` (with `fake-map-import`) and
  * `encodeWorldBundle` (jsdom has no CompressionStream) before importing this.
  */

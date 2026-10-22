@@ -3,7 +3,7 @@
  *
  * A change to a parameter restarts the run at the first stage that reads it; the stages before it come from the
  * cache. Every stage seeds its own random streams from `seed + offset` and writes only what is listed below, so a
- * restarted run is identical to a full run (pinned by `stages.test.ts`).
+ * restarted run is identical to a full run (pinned by the restart rows of `world-invariants.test.ts`).
  *
  * Snapshots are copies of the arrays the later stages write, at most one per stage: the climate stage rewrites
  * `h`, `isLand` and `elevZone`, so the land snapshot and the climate snapshot each hold their own. The nations
