@@ -1,13 +1,23 @@
 /** @jest-environment node */
 /**
- * gdp_level_adjustment / population_level_adjustment (national-issue consequences): the level
- * shift phases in over `duration` IxTime years from the effect's start, is kept afterwards, and
- * never touches the projection before the effect starts.
+ * The economy corpus. gdp_level_adjustment / population_level_adjustment (national-issue and directive
+ * consequences): the level shift phases in over `duration` IxTime years from the effect's start and is kept
+ * afterwards. Stacked negative population effects never produce NaN or a zero population (plan 339). The country
+ * event spine clamps a stat to its bounds and never treats a missing stat as 0. A Fiscal Policy rate save keeps the
+ * builder's excise list and the other excise keys. Refusing a non-finite stat is in national-issue-response.
+ *
+ * Folds population-progression, country-event-spine and fiscal-tax-channels.
  */
-import {
-  growthModifierToLevelShift,
-  IxStatsCalculator
-} from "~/lib/economy/calculations";
+jest.mock("~/lib/diplomacy/news-generator", () => ({
+  generateDiplomaticNews: jest.fn().mockResolvedValue(true),
+}));
+jest.mock("~/lib/activity/hooks", () => ({
+  ActivityHooks: { Economic: { onTaxPolicyChange: jest.fn().mockResolvedValue(true) } },
+}));
+
+import { CountryEventSpine } from "~/lib/activity";
+import { fiscalUpdateForRate } from "~/components/mycountry/shell/fiscal/taxChannels";
+import { growthModifierToLevelShift, IxStatsCalculator } from "~/lib/economy/calculations";
 import { IxTime } from "~/lib/ixtime";
 import type { BaseCountryData, EconomicConfig, StorytellerEffect } from "~/types/ixstats";
 
@@ -109,5 +119,105 @@ describe("growthModifierToLevelShift", () => {
     expect(growthModifierToLevelShift(0.02, 1)).toBe(0.000583);
     expect(growthModifierToLevelShift(0.05, 2)).toBeCloseTo(Math.pow(1.0315 / 1.03, 2) - 1, 6);
     expect(growthModifierToLevelShift(0, 1)).toBe(0);
+  });
+});
+
+describe("population progression floor (plan 339)", () => {
+  it.each([
+    ["two -0.5 effects on a shrinking nation, for a year and a half", -0.01, 1.5],
+    ["a summed rate of exactly -1", 0, 1],
+  ])("%s stays finite and positive", (_label, baseRate, years) => {
+    const stats = calc.initializeCountryStats({ ...base, populationGrowthRate: baseRate });
+    const effects: StorytellerEffect[] = [-0.5, -0.5].map((value) => ({
+      ixTimeTimestamp: baseline,
+      inputType: "population_adjustment",
+      value,
+      isActive: true,
+    }));
+    const { currentPopulation } = calc.calculateTimeProgression(
+      stats,
+      IxTime.addYears(baseline, years),
+      effects
+    ).newStats;
+    expect(Number.isFinite(currentPopulation)).toBe(true);
+    expect(currentPopulation).toBeGreaterThan(0);
+  });
+});
+
+describe("the country event spine", () => {
+  const countryId = "test-country-id";
+  function spineDb(country: Record<string, unknown>) {
+    return {
+      country: {
+        findUnique: jest.fn().mockResolvedValue({ id: countryId, ...country }),
+        update: jest.fn().mockResolvedValue({ id: countryId }),
+      },
+      governmentStructure: {
+        findUnique: jest.fn().mockResolvedValue({ countryId, totalBudget: 50000 }),
+        update: jest.fn().mockResolvedValue({ countryId }),
+      },
+      internalStabilityMetrics: {
+        findUnique: jest.fn().mockResolvedValue({ countryId, stabilityScore: 70 }),
+        update: jest.fn().mockResolvedValue({ countryId }),
+      },
+      countryChangeLog: { create: jest.fn().mockResolvedValue({ id: "log-id" }) },
+    };
+  }
+
+  it("clamps a stat to its bounds", async () => {
+    const db = spineDb({ publicApproval: 95 });
+    const results = await CountryEventSpine.recordCountryEvent({
+      db: db as never,
+      countryId,
+      sourceType: "policy",
+      sourceId: "policy-123",
+      description: "Activate policy",
+      consequences: [
+        { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 15 },
+      ],
+    });
+    expect(results).toEqual([expect.objectContaining({ newValue: 100, delta: 5 })]);
+    expect(db.country.update).toHaveBeenCalledWith({
+      where: { id: countryId },
+      data: { publicApproval: 100 },
+    });
+  });
+
+  it("skips a stat that has no stored value instead of treating it as 0", async () => {
+    const db = spineDb({ unemploymentRate: null });
+    const results = await CountryEventSpine.recordCountryEvent({
+      db: db as never,
+      countryId,
+      sourceType: "decision",
+      description: "Directive",
+      consequences: [
+        {
+          targetModel: "Country",
+          targetField: "unemploymentRate",
+          operation: "subtract",
+          value: 0.6,
+        },
+      ],
+    });
+    expect(results).toHaveLength(0);
+    expect(db.country.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("a Fiscal Policy rate save keeps the other excise rates", () => {
+  it.each([
+    ["an excise object", '{"capitalGainsRate":18}', 7, { capitalGainsRate: 18, tariffRate: 7 }],
+    [
+      "the builder's excise list",
+      '[{"type":"alcohol","rate":20},{"type":"tariff","rate":3}]',
+      5,
+      [
+        { type: "alcohol", rate: 20 },
+        { type: "tariff", rate: 5 },
+      ],
+    ],
+  ])("in %s", (_label, stored, rate, expected) => {
+    const update = fiscalUpdateForRate("tariff", rate, stored);
+    expect(JSON.parse(update.exciseTaxRates!)).toEqual(expected);
   });
 });
