@@ -16,6 +16,14 @@
  * Folds:
  * - wikios-health-telemetry.test.ts: after a cycle with a failed page getHealthTelemetry is DEGRADED and carries the
  *   stored status; after a clean cycle ACTIVE; when the status row cannot be read UNKNOWN, never ACTIVE.
+ * - auto-sync-service.test.ts, the incident regressions the stateful site can play (one row each): a blanking edit is an
+ *   empty revision and head; a revision never sorts before the head it builds on; a verified account's edit is credited
+ *   to its WikiOS user; the mirror account's edit is WikiOS's own whatever its text; a parked edit's verified editor is
+ *   told with the diff link; an edit of a page WikiOS deleted is parked and nothing pushed; a page MediaWiki creates anew
+ *   comes back; a title MediaWiki would refuse is skipped; a redirect's target and section are stored, and cleared; the
+ *   webhook's single-page sync imports, never parks, and never throws when MediaWiki is down; without a mirror account a
+ *   park pushes nothing, the telemetry names the page, and the head goes out once an account is configured; a page with
+ *   text but no revision row is never overwritten: its text is captured first, an edit on another base parked.
  * - import-label.test.ts: the revision MediaWiki gets names `importName("  Kir\n Republic ")` = "wikios>Kir Republic",
  *   an unattributed save "wikios>Community Contributor"; `labelOfImportName` reads MediaWiki's name back as the label
  *   ("wikios>Kir_Republic" stays "Kir_Republic", "wikios>  Kir Republic " is "Kir Republic") and is null for a bare
@@ -47,7 +55,7 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
 
 import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosUtilitiesRouter } from "~/server/api/routers/wikios/utilities";
-import { runAutoSyncCycle } from "~/lib/wiki-os/services/auto-sync-service";
+import { runAutoSyncCycle, syncSinglePage } from "~/lib/wiki-os/services/auto-sync-service";
 import { runMirrorCycle } from "~/lib/wiki-os/services/mirror-worker";
 import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
 import { invalidateCsrfToken } from "~/lib/wiki-os/adapters/mediawiki/csrf-cache";
@@ -267,5 +275,151 @@ describe("WikiOS and MediaWiki edited side by side", () => {
   it("reads MediaWiki's names back as labels only for the import prefix", () => {
     expect(labelOfImportName("wikios>Kir_Republic")).toBe("Kir_Republic");
     expect(labelOfImportName("wikios>  Kir Republic ")).toBe("Kir Republic");
+  });
+});
+
+describe("inbound incidents, one row each", () => {
+  const caphiriaRev = () => site.current("Caphiria")!.revid;
+  /** A WikiOS member saves on top of the head before the mirror runs: MediaWiki's next edit is on a base WikiOS left. */
+  const saveInWikiOS = (wikitext: string) =>
+    ArticleRepository.saveArticle({ slug: "Caphiria", title: "Caphiria", wikitext, expectedHeadRef: String(caphiriaRev()) }, undefined, "Kir");
+  const restoreJobs = () => tables.wikiMirrorJob.rows.filter((job) => (job.payload as { restore?: boolean } | null)?.restore);
+
+  it("imports a MediaWiki edit that blanks the page as a real, empty revision and an empty head", async () => {
+    const blank = site.editAs("Alice", "Caphiria", "");
+    await runAutoSyncCycle();
+    expect(article("Caphiria")).toMatchObject({ wikitext: "", mwLatestRevId: blank.revid });
+    expect(headOf("Caphiria")).toMatchObject({ mwRevId: blank.revid, wikitext: "", byteSize: 0, textDeleted: false });
+  });
+
+  it("never lets a revision sort before the head it builds on (MediaWiki's clock is behind)", async () => {
+    const ahead = new Date(Date.now() + 86_400_000);
+    headOf("Caphiria").createdAt = ahead;
+    const alice = site.editAs("Alice", "Caphiria", "Caphiria is an empire.");
+    await runAutoSyncCycle();
+    expect(headOf("Caphiria").mwRevId).toBe(alice.revid);
+    expect((headOf("Caphiria").createdAt as Date).getTime()).toBeGreaterThan(ahead.getTime());
+  });
+
+  it("credits a revision to the WikiOS user who verified the MediaWiki account", async () => {
+    tables.user.seed({ id: "db-alice", clerkUserId: "clerk-alice", wikiUsername: "Alice" });
+    tables.wikiAccountLink.seed({ userId: "db-alice", source: "ixwiki", username: "Alice", verifiedAt: new Date("2026-01-01") });
+    site.editAs("Alice", "Caphiria", "Caphiria is an empire.");
+    await runAutoSyncCycle();
+    expect(headOf("Caphiria")).toMatchObject({ author: "Alice", authorId: "db-alice" });
+  });
+
+  it("treats an edit by the mirror account as WikiOS's own whatever its text: recorded, never judged, nothing pushed", async () => {
+    const own = site.editAs(site.mirror, "Caphiria", "Text the mirror wrote.");
+    await runAutoSyncCycle();
+    expect(article("Caphiria")?.wikitext).toBe("Caphiria is a kingdom.");
+    expect(revisionsOf("Caphiria").find((row) => row.mwRevId === own.revid)).toMatchObject({ parked: false });
+    expect(revisionsOf("Caphiria").filter((row) => row.parked)).toEqual([]);
+    expect(jobs()).toEqual([]);
+  });
+
+  it("tells a parked edit's verified editor, with the diff against the head it conflicted with", async () => {
+    tables.user.seed({ id: "db-bob", clerkUserId: "clerk-bob", wikiUsername: "Bob" });
+    tables.wikiAccountLink.seed({ userId: "db-bob", source: "ixwiki", username: "Bob", verifiedAt: new Date("2026-01-01") });
+    const saved = await saveInWikiOS("Caphiria is an empire in Sarpedon.");
+    const bob = site.editAs("Bob", "Caphiria", "Caphiria is a republic.");
+    await runAutoSyncCycle();
+    expect(revisionsOf("Caphiria").filter((row) => row.parked).map((row) => row.mwRevId)).toEqual([bob.revid]);
+    expect(jest.mocked(notificationAPI.create)).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "db-bob", href: `/wiki/Caphiria?diff=${bob.revid}&oldid=${saved.revisionId}` })
+    );
+  });
+
+  it("parks an edit of a page WikiOS deleted, and pushes nothing back", async () => {
+    article("Caphiria")!.status = "ARCHIVED";
+    const alice = site.editAs("Alice", "Caphiria", "Caphiria is back?");
+    await runAutoSyncCycle();
+    expect(revisionsOf("Caphiria").find((row) => row.mwRevId === alice.revid)).toMatchObject({ parked: true, parkReason: "conflict:deleted" });
+    expect(article("Caphiria")).toMatchObject({ status: "ARCHIVED", wikitext: "Caphiria is a kingdom." });
+    expect(jobs()).toEqual([]);
+  });
+
+  it("brings a page WikiOS deleted back when MediaWiki creates it anew", async () => {
+    site.deletePage("Admin", "Old page");
+    await runAutoSyncCycle();
+    expect(article("Old page")?.status).toBe("ARCHIVED");
+    const anew = site.editAs("Alice", "Old page", "A new old page.");
+    await runAutoSyncCycle();
+    expect(article("Old page")).toMatchObject({ status: "PUBLISHED", wikitext: "A new old page.", mwLatestRevId: anew.revid });
+  });
+
+  it("skips a change whose title MediaWiki itself would refuse, and syncs the rest", async () => {
+    site.editAs("Alice", "Bad|title", "x");
+    site.editAs("Carol", "Ixnay", "Ixnay is a world.");
+    await runAutoSyncCycle();
+    expect(article("Bad|title")).toBeUndefined();
+    expect(article("Ixnay")?.wikitext).toBe("Ixnay is a world.");
+    expect((await telemetry()).inboundSyncStatus).toBe("ACTIVE");
+  });
+
+  it("stores a synced redirect's canonical target and section, and clears them when the page stops redirecting", async () => {
+    site.editAs("Alice", "Caphirian history", "#REDIRECT [[caphiria#History]]");
+    await runAutoSyncCycle();
+    expect(article("Caphirian history")).toMatchObject({ redirectTargetSlug: "Caphiria", redirectTargetFragment: "History" });
+    site.editAs("Alice", "Caphirian history", "Now an article of its own.");
+    await runAutoSyncCycle();
+    expect(article("Caphirian history")).toMatchObject({ redirectTargetSlug: null, redirectTargetFragment: null });
+  });
+
+  it("the webhook's single-page sync imports a new page, leaves a conflict to the cycle, and never throws", async () => {
+    const carol = site.editAs("Carol", "Ixnay", "Ixnay is a world.");
+    await expect(syncSinglePage("Ixnay")).resolves.toBe(true);
+    expect(headOf("Ixnay")).toMatchObject({ mwRevId: carol.revid });
+
+    await saveInWikiOS("Caphiria is an empire in Sarpedon.");
+    site.editAs("Bob", "Caphiria", "Caphiria is a republic.");
+    await expect(syncSinglePage("Caphiria")).resolves.toBe(false);
+    expect(revisionsOf("Caphiria").filter((row) => row.parked)).toEqual([]);
+
+    global.fetch = jest.fn().mockRejectedValue(new Error("connect ECONNREFUSED")) as never;
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
+    await expect(syncSinglePage("Ixnay")).resolves.toBe(false);
+  });
+
+  it("without a mirror account a park pushes nothing and is named in the telemetry, until an account is configured", async () => {
+    delete process.env.WIKIOS_MEDIAWIKI_BOT_USER;
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
+    await saveInWikiOS("Caphiria is an empire in Sarpedon.");
+    site.editAs("Bob", "Caphiria", "Caphiria is a republic.");
+    await runAutoSyncCycle();
+    expect(revisionsOf("Caphiria").filter((row) => row.parked)).toHaveLength(1);
+    expect(restoreJobs()).toEqual([]);
+    expect(await telemetry()).toMatchObject({ inboundSyncStatus: "DEGRADED", inboundSync: { repushSkipped: ["Caphiria"] } });
+
+    process.env.WIKIOS_MEDIAWIKI_BOT_USER = "WikiOSMirror@wikios";
+    await runAutoSyncCycle();
+    expect(restoreJobs().map((job) => job.title)).toEqual(["Caphiria"]);
+    expect((await telemetry()).inboundSync).toMatchObject({ repushSkipped: [] });
+  });
+
+  it("never overwrites a page that has text but no revision row: its text is captured first, an edit on another base parked", async () => {
+    const synced = site.editAs("Founder", "Legacy", "Legacy text.");
+    site.editAs("Founder", "Other", "MediaWiki's text.");
+    tables.wikiArticle.insert({ title: "Legacy", slug: "legacy", wikitext: "Legacy text.", mwPageId: site.pages.get("Legacy")!.pageid, mwLatestRevId: synced.revid });
+    tables.wikiArticle.insert({ title: "Other", slug: "other", wikitext: "WikiOS's own text.", mwPageId: site.pages.get("Other")!.pageid, mwLatestRevId: null });
+    site.editAs("Alice", "Legacy", "Legacy, edited.");
+    site.editAs("Alice", "Other", "MediaWiki's text, edited.");
+
+    await runAutoSyncCycle();
+
+    // the edit on the revision the page came from goes on top of a revision that holds the page's old text
+    expect(revisionsOf("Legacy").map((row) => [row.wikitext, row.parked])).toEqual([
+      ["Legacy text.", false],
+      ["Legacy, edited.", false],
+    ]);
+    expect(article("Legacy")?.wikitext).toBe("Legacy, edited.");
+    // MediaWiki's revisions of a page whose text WikiOS never had from them are parked against the captured text, which
+    // stays the page's
+    expect(revisionsOf("Other").map((row) => [row.wikitext, row.parked])).toEqual([
+      ["WikiOS's own text.", false],
+      ["MediaWiki's text.", true],
+      ["MediaWiki's text, edited.", true],
+    ]);
+    expect(article("Other")?.wikitext).toBe("WikiOS's own text.");
   });
 });

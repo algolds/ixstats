@@ -1,7 +1,13 @@
 /** @jest-environment node */
 // `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factories rely on the ambient global.
 //
-// Plan 407: getMirrorStatus, requeueMirrorJob and discardMirrorJob are for administrators only.
+// Plan 407: getMirrorStatus, requeueMirrorJob and discardMirrorJob are for administrators only; the status never carries
+// the bot's password, a requeued job starts again from its first attempt, a discarded one keeps its error.
+jest.mock("~/lib/wiki-os/config", () =>
+  jest
+    .requireActual("~/tests/helpers/live-wikios-config")
+    .withLiveEnvironment(jest.requireActual("~/lib/wiki-os/config"))
+);
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: {
@@ -68,6 +74,19 @@ describe("getMirrorStatus", () => {
     });
   });
 
+  it("never carries the bot's password", async () => {
+    process.env.WIKIOS_MEDIAWIKI_BOT_USER = "WikiOSMirror@wikios";
+    process.env.WIKIOS_MEDIAWIKI_BOT_TOKEN = "secret-bot-password";
+    try {
+      const status = await admin().getMirrorStatus();
+      expect(status).toMatchObject({ botConfigured: true });
+      expect(JSON.stringify(status)).not.toContain("secret-bot-password");
+    } finally {
+      delete process.env.WIKIOS_MEDIAWIKI_BOT_USER;
+      delete process.env.WIKIOS_MEDIAWIKI_BOT_TOKEN;
+    }
+  });
+
   it("refuses a member and a visitor", async () => {
     await expect(member().getMirrorStatus()).rejects.toThrow(/Admin privileges required/);
     await expect(signedOut().getMirrorStatus()).rejects.toThrow(/Authentication required/);
@@ -77,7 +96,7 @@ describe("getMirrorStatus", () => {
 describe.each([
   [
     "requeueMirrorJob",
-    { where: { id: "j1", source: "ixwiki", state: "dead" }, data: { state: "pending" } },
+    { where: { id: "j1", source: "ixwiki", state: "dead" }, data: { state: "pending", attempts: 0, nextAttemptAt: expect.any(Date) } },
   ],
   [
     "discardMirrorJob",

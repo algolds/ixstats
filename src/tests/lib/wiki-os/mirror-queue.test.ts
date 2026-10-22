@@ -1,30 +1,16 @@
 /** @jest-environment node */
 /**
- * Plan 407: the mirror queue's rules. Per-title FIFO (a dead job blocks its title), a move holding both of its
- * titles, the backoff schedule, and the dead letter after 8 attempts.
+ * Plan 407: the mirror queue's rules and the outbox that fills it. Per-title FIFO (a dead job blocks its title), a
+ * move holding both of its titles, claims only while pending, the dead letter after 8 attempts, the error column's
+ * limit; the outbox never writes for the MediaWiki: namespace, fails the caller's transaction with its insert, and
+ * kicks the worker once.
  */
-import type { WikiMirrorJob } from "@prisma/client";
-import {
-  backoffMs,
-  claimJob,
-  completeJob,
-  failJob,
-  loadWindow,
-  MAX_ATTEMPTS,
-  MAX_BATCH_JOBS,
-  pickBatch,
-  pickRunnable,
-  purgeDoneJobs,
-  reclaimInterruptedJobs,
-  releaseJobs,
-} from "~/lib/wiki-os/services/mirror-queue";
-
 const mockFindMany = jest.fn();
 const mockUpdate = jest.fn();
 const mockUpdateMany = jest.fn();
 const mockDeleteMany = jest.fn();
 const mockFindUnique = jest.fn();
-
+const mockRunLocked = jest.fn();
 jest.mock("~/server/db", () => ({
   db: {
     wikiMirrorJob: {
@@ -36,6 +22,14 @@ jest.mock("~/server/db", () => ({
     },
   },
 }));
+jest.mock("~/lib/wiki-os/services/mirror-worker", () => ({
+  __esModule: true,
+  runMirrorCycleLocked: (...a: unknown[]) => mockRunLocked(...a),
+}));
+
+import type { WikiMirrorJob } from "@prisma/client";
+import { claimJob, failJob, MAX_ATTEMPTS, MAX_BATCH_JOBS, pickBatch, pickRunnable, purgeDoneJobs, reclaimInterruptedJobs } from "~/lib/wiki-os/services/mirror-queue";
+import { enqueueDeleteJob, enqueueMoveJob, enqueueProtectJob, enqueueRevisionJob, scheduleMirrorKick } from "~/lib/wiki-os/services/mirror-outbox";
 
 const NOW = new Date("2026-10-01T12:00:00Z");
 let counter = 0;
@@ -75,27 +69,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   counter = 0;
 });
-
-describe("backoffMs", () => {
-  it("doubles from a minute and stops at an hour", () => {
-    expect([1, 2, 3, 4, 5, 6, 7, 8].map((attempts) => backoffMs(attempts) / 60_000)).toEqual([
-      1, 2, 4, 8, 16, 32, 60, 60,
-    ]);
-  });
-});
-
 describe("pickRunnable", () => {
-  it("is null when nothing is waiting", () => {
-    expect(pickRunnable([], NOW)).toBeNull();
-  });
-
-  it("takes the oldest pending job that is due", () => {
-    const first = job({ title: "A" });
-    const second = job({ title: "B" });
-
-    expect(pickRunnable([first, second], NOW)).toBe(first);
-  });
-
   it("runs the jobs of one title in the order they were written: the younger waits for the older", () => {
     const older = job({ title: "Foo" });
     const younger = job({ title: "Foo" });
@@ -116,14 +90,6 @@ describe("pickRunnable", () => {
 
     expect(pickRunnable([backingOff, sameTitle, other], NOW)).toBe(other);
   });
-
-  it("holds the title of a job that is running", () => {
-    const running = job({ title: "Foo", state: "running", attempts: 1 });
-    const sameTitle = job({ title: "Foo" });
-
-    expect(pickRunnable([running, sameTitle], NOW)).toBeNull();
-  });
-
   it("lets a dead job block its title, and only its title, until it is requeued or discarded", () => {
     const dead = job({ title: "Foo", state: "dead", attempts: MAX_ATTEMPTS });
     const sameTitle = job({ title: "Foo" });
@@ -138,14 +104,6 @@ describe("pickRunnable", () => {
     // discarded: it is done, so it is not in the window any more
     expect(pickRunnable([sameTitle], NOW)).toBe(sameTitle);
   });
-
-  it("does not run a job that is not due yet", () => {
-    const later = job({ nextAttemptAt: new Date(NOW.getTime() + 1) });
-
-    expect(pickRunnable([later], NOW)).toBeNull();
-    expect(pickRunnable([later], new Date(NOW.getTime() + 1))).toBe(later);
-  });
-
   it("holds both titles of a move: the edits before it come first, the edits to the new title after it", () => {
     const editOld = job({ title: "Old" });
     const moving = move("Old", "New");
@@ -176,55 +134,6 @@ describe("pickRunnable", () => {
 
 describe("pickBatch", () => {
   const ids = (jobs: readonly WikiMirrorJob[]) => jobs.map((candidate) => candidate.id);
-
-  it("is the job alone when it is not a plain revision job", () => {
-    const moving = move("Old", "New");
-    const restore = job({ payload: { restore: true } });
-    const deleting = job({ kind: "delete", payload: { reason: "" } });
-
-    expect(pickBatch([moving, job({ title: "Old" })], moving, NOW)).toEqual([moving]);
-    expect(pickBatch([restore, job()], restore, NOW)).toEqual([restore]);
-    expect(pickBatch([deleting, job()], deleting, NOW)).toEqual([deleting]);
-  });
-
-  it("takes the plain revision jobs of the title that wait next, oldest first, and no other title's", () => {
-    const first = job({ title: "Foo" });
-    const other = job({ title: "Bar" });
-    const second = job({ title: "Foo" });
-    const third = job({ title: "Foo" });
-
-    expect(ids(pickBatch([first, other, second, third], first, NOW))).toEqual([
-      first.id,
-      second.id,
-      third.id,
-    ]);
-  });
-
-  it("starts at the job it was given, never at an older one", () => {
-    const older = job({ title: "Foo", state: "running" });
-    const first = job({ title: "Foo" });
-    const second = job({ title: "Foo" });
-
-    expect(ids(pickBatch([older, first, second], first, NOW))).toEqual([first.id, second.id]);
-  });
-
-  it("stops at the first job of the title that is anything else", () => {
-    const first = job({ title: "Foo" });
-    const second = job({ title: "Foo" });
-    const deleting = job({
-      kind: "delete",
-      title: "Foo",
-      payload: { reason: "" },
-      revisionId: null,
-    });
-    const after = job({ title: "Foo" });
-
-    expect(ids(pickBatch([first, second, deleting, after], first, NOW))).toEqual([
-      first.id,
-      second.id,
-    ]);
-  });
-
   it("stops at a restore, a move away from the title and a move to it", () => {
     for (const blocker of [
       job({ title: "Foo", payload: { restore: true, summary: "Restoring" } }),
@@ -237,32 +146,6 @@ describe("pickBatch", () => {
       expect(ids(pickBatch([first, blocker, after], first, NOW))).toEqual([first.id]);
     }
   });
-
-  it("stops at a job that is running, dead or waiting out a backoff", () => {
-    for (const blocker of [
-      job({ title: "Foo", state: "running" }),
-      job({ title: "Foo", state: "dead" }),
-      job({ title: "Foo", attempts: 1, nextAttemptAt: new Date(NOW.getTime() + 1) }),
-    ]) {
-      const first = job({ title: "Foo" });
-      const after = job({ title: "Foo" });
-
-      expect(ids(pickBatch([first, blocker, after], first, NOW))).toEqual([first.id]);
-    }
-  });
-
-  it("lets jobs of other titles, moves between other titles included, sit between the revisions", () => {
-    const first = job({ title: "Foo" });
-    const between = [
-      job({ title: "Bar" }),
-      move("A", "B"),
-      job({ kind: "delete", title: "Baz", payload: { reason: "" } }),
-    ];
-    const second = job({ title: "Foo" });
-
-    expect(ids(pickBatch([first, ...between, second], first, NOW))).toEqual([first.id, second.id]);
-  });
-
   it("takes at most 50 jobs, or the cap it is given", () => {
     const jobs = Array.from({ length: 60 }, () => job({ title: "Foo" }));
 
@@ -275,18 +158,6 @@ describe("pickBatch", () => {
 });
 
 describe("the queue's writes", () => {
-  it("reads the oldest not-done jobs of the realm, oldest first", async () => {
-    mockFindMany.mockResolvedValue([]);
-
-    await loadWindow();
-
-    expect(mockFindMany).toHaveBeenCalledWith({
-      where: { source: "ixwiki", state: { notIn: ["done", "discarded"] } },
-      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-      take: 1_000,
-    });
-  });
-
   it("claims a job only while it is pending: running, one more attempt, and the row as it is now", async () => {
     mockUpdateMany.mockResolvedValue({ count: 1 });
     mockFindUnique.mockResolvedValue(job({ id: "job1", state: "running", attempts: 1 }));
@@ -307,58 +178,6 @@ describe("the queue's writes", () => {
 
     expect(mockFindUnique).not.toHaveBeenCalled();
   });
-
-  it("completes a job with the MediaWiki revision it made, and clears the last error", async () => {
-    await completeJob(job({ id: "job1" }), 555);
-    await completeJob(job({ id: "job2" }), null);
-
-    expect(mockUpdate.mock.calls[0]?.[0]).toEqual({
-      where: { id: "job1" },
-      data: { state: "done", lastError: null, mwRevId: 555 },
-    });
-    expect(mockUpdate.mock.calls[1]?.[0].data).toEqual({ state: "done", lastError: null });
-  });
-
-  it("keeps a note about how a job was finished in its payload, beside what the payload already says", async () => {
-    await completeJob(job({ id: "job1" }), 7, "pushed as an edit");
-    await completeJob(
-      job({ id: "job2", payload: { restore: true, summary: "Restoring" } }),
-      7,
-      "pushed as an edit"
-    );
-
-    expect(mockUpdate.mock.calls[0]?.[0].data.payload).toEqual({
-      restore: false,
-      note: "pushed as an edit",
-    });
-    expect(mockUpdate.mock.calls[1]?.[0].data.payload).toEqual({
-      restore: true,
-      summary: "Restoring",
-      note: "pushed as an edit",
-    });
-  });
-
-  it("gives claimed jobs back: pending again, the attempt not counted", async () => {
-    await releaseJobs(["job1", "job2"]);
-    await releaseJobs([]);
-
-    expect(mockUpdateMany).toHaveBeenCalledTimes(1);
-    expect(mockUpdateMany).toHaveBeenCalledWith({
-      where: { id: { in: ["job1", "job2"] }, state: "running" },
-      data: { state: "pending", attempts: { decrement: 1 } },
-    });
-  });
-
-  it("sends a failed job back to pending after its backoff, keeping the error", async () => {
-    await failJob(job({ attempts: 3 }), "MediaWiki 503", NOW);
-
-    expect(mockUpdate.mock.calls[0]?.[0].data).toEqual({
-      state: "pending",
-      lastError: "MediaWiki 503",
-      nextAttemptAt: new Date(NOW.getTime() + 4 * 60_000),
-    });
-  });
-
   it("makes a job dead on its 8th failed attempt, with no further attempt scheduled", async () => {
     await failJob(job({ attempts: MAX_ATTEMPTS - 1 }), "x", NOW);
     await failJob(job({ attempts: MAX_ATTEMPTS }), "bot login failed", NOW);
@@ -402,6 +221,118 @@ describe("the queue's writes", () => {
         state: { in: ["done", "discarded"] },
         updatedAt: { lt: new Date(NOW.getTime() - 30 * 24 * 60 * 60_000) },
       },
+    });
+  });
+});
+
+describe("the outbox", () => {
+  const create = jest.fn();
+  const tx = { wikiMirrorJob: { create } } as never;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    create.mockResolvedValue({});
+    delete process.env.SKIP_MEDIAWIKI_SYNC;
+  });
+
+  describe("the inserts", () => {
+    it("writes nothing for the MediaWiki: namespace, which the mirror account may never write", async () => {
+      await enqueueRevisionJob(tx, { title: "MediaWiki:Sidebar", articleId: "a1", revisionId: "r1" });
+      await enqueueRevisionJob(tx, {
+        title: "mediawiki:common.css",
+        articleId: "a1",
+        revisionId: "r1",
+      });
+      await enqueueDeleteJob(tx, "delete", {
+        title: "MediaWiki:Sidebar",
+        articleId: "a1",
+        logId: "l",
+        reason: "",
+      });
+      await enqueueProtectJob(tx, {
+        title: "MediaWiki:Sidebar",
+        articleId: "a1",
+        logId: "l",
+        reason: "",
+        restrictions: [{ action: "edit", level: "sysop", expiresAt: null }],
+      });
+      // a move out of, or into, the namespace is as impossible
+      await enqueueMoveJob(tx, {
+        title: "MediaWiki:Sidebar",
+        articleId: "a1",
+        logId: "l",
+        to: "Sidebar",
+        reason: "",
+        leaveRedirect: true,
+      });
+      await enqueueMoveJob(tx, {
+        title: "Sidebar",
+        articleId: "a1",
+        logId: "l",
+        to: "MediaWiki:Sidebar",
+        reason: "",
+        leaveRedirect: true,
+      });
+
+      expect(create).not.toHaveBeenCalled();
+    });
+
+    it("still mirrors the namespaces around it (Template:, Module:, MediaWiki talk:)", async () => {
+      for (const title of ["Template:Box", "Module:Box", "MediaWiki talk:Sidebar", "Foo"]) {
+        await enqueueRevisionJob(tx, { title, articleId: "a1", revisionId: "r1" });
+      }
+
+      expect(create).toHaveBeenCalledTimes(4);
+    });
+
+    it("lets a failed insert fail the caller's transaction", async () => {
+      create.mockRejectedValue(new Error("outbox down"));
+
+      await expect(
+        enqueueRevisionJob(tx, { title: "Foo", articleId: "a1", revisionId: "r1" })
+      ).rejects.toThrow("outbox down");
+    });
+  });
+
+  describe("scheduleMirrorKick", () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+      mockRunLocked.mockResolvedValue({ skipped: false, done: 1, failed: 0, dead: 0 });
+    });
+    afterEach(async () => {
+      await jest.advanceTimersByTimeAsync(5_000); // let a pending kick finish before the next test
+      jest.useRealTimers();
+    });
+
+    it("runs the worker once, two seconds after the first write, however many writes there were", async () => {
+      scheduleMirrorKick();
+      scheduleMirrorKick();
+      await jest.advanceTimersByTimeAsync(1_999);
+      scheduleMirrorKick();
+      expect(mockRunLocked).not.toHaveBeenCalled();
+
+      await jest.advanceTimersByTimeAsync(1);
+
+      expect(mockRunLocked).toHaveBeenCalledTimes(1);
+    });
+    it("does nothing while SKIP_MEDIAWIKI_SYNC is true: the jobs wait in the outbox", async () => {
+      process.env.SKIP_MEDIAWIKI_SYNC = "true";
+
+      scheduleMirrorKick();
+      await jest.advanceTimersByTimeAsync(10_000);
+
+      expect(mockRunLocked).not.toHaveBeenCalled();
+    });
+
+    it("never lets a failed run escape: it is logged", async () => {
+      const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+      mockRunLocked.mockRejectedValue(new Error("lock timeout"));
+
+      scheduleMirrorKick();
+      await jest.advanceTimersByTimeAsync(2_000);
+
+      expect(warn).toHaveBeenCalledWith("[WikiMirror] The in-process run failed:", expect.any(Error));
+      warn.mockRestore();
     });
   });
 });

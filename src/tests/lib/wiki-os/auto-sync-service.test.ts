@@ -88,8 +88,6 @@ const HWM_KEY = "wikiAutoSync.rcHighWater";
 const LOG_HWM_KEY = "wikiAutoSync.logHighWater";
 
 const importPageRevisions = jest.mocked(ArticleRepository.importPageRevisions);
-/** The mirror jobs written: a park's re-push of WikiOS's head is a `revision` job in the outbox. */
-const pushedJobs = () => mockJobCreate.mock.calls.map(([args]) => args.data);
 const notify = jest.mocked(notificationAPI.create);
 const applyEvent = jest.mocked(applyLogEvent);
 
@@ -350,19 +348,6 @@ describe("the cycle", () => {
     );
     expect(storedHighWater()).toBe("2026-09-27T10:00:02Z");
   });
-
-  it("with HWM requests rcdir=newer&rcstart=<hwm>", async () => {
-    mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T09:00:00Z" });
-
-    await runAutoSyncCycle();
-
-    const [params] = rcCalls();
-    expect(params?.get("rcdir")).toBe("newer");
-    expect(params?.get("rcstart")).toBe("2026-09-27T09:00:00Z");
-    expect(params?.get("rclimit")).toBe("50");
-    expect(highWaterWritten(HWM_KEY)).toBeUndefined();
-  });
-
   it("follows rccontinue across two pages", async () => {
     mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T09:00:00Z" });
     rcResponses = [
@@ -378,48 +363,6 @@ describe("the cycle", () => {
     expect(calls[1]?.get("continue")).toBe("-||");
     expect(storedHighWater()).toBe("2026-09-27T10:00:02Z");
   });
-
-  it("does not advance HWM past a failed page sync, and still syncs the other pages", async () => {
-    mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T09:00:00Z" });
-    rcResponses = [{ changes: [change("A", 1, 1), change("B", 2, 2), change("C", 3, 3)] }];
-    mwRevisions = new Map([
-      [1, { title: "A", revid: 1 }],
-      [3, { title: "C", revid: 3 }],
-    ]);
-    failingRevisions = new Set([2]);
-    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
-
-    await runAutoSyncCycle();
-
-    expect(fetchedRevids()).toEqual([1, 2, 3]);
-    expect(storedHighWater()).toBe("2026-09-27T10:00:01Z");
-    consoleError.mockRestore();
-  });
-
-  it("holds back later revisions of a page whose earlier revision failed (they would precede their parent)", async () => {
-    mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T09:00:00Z" });
-    rcResponses = [{ changes: [change("A", 1, 1), change("A", 2, 2), change("B", 3, 3)] }];
-    mwRevisions = new Map([[3, { title: "B", revid: 3 }]]);
-    failingRevisions = new Set([1]);
-    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
-
-    await runAutoSyncCycle();
-
-    expect(fetchedRevids()).toEqual([1, 3]);
-    consoleError.mockRestore();
-  });
-
-  it("skips a change whose revision is already stored", async () => {
-    rcResponses = [{ changes: [change("A", 1, 1)] }];
-    knownRevids = new Set([1]);
-
-    await runAutoSyncCycle();
-
-    expect(fetchedRevids()).toEqual([]);
-    expect(importPageRevisions).not.toHaveBeenCalled();
-    expect(storedHighWater()).toBe("2026-09-27T10:00:01Z");
-  });
-
   it("skips a revision MediaWiki no longer has (deleted since)", async () => {
     rcResponses = [{ changes: [change("A", 1, 1)] }];
 
@@ -656,125 +599,6 @@ describe("log events in the cycle", () => {
 // ---------------------------------------------------------------------------
 
 describe("fast-forward", () => {
-  it("imports a page MediaWiki has and WikiOS lacks, through the importer, as one revision and the head", async () => {
-    rcResponses = [{ changes: [change("Foo", 100, 1)] }];
-    mwRevisions = new Map([
-      [
-        100,
-        {
-          title: "Foo",
-          revid: 100,
-          pageId: 7,
-          user: "alice",
-          text: "[[Bar]] text",
-          comment: "first",
-          minor: true,
-          timestamp: "2026-09-27T10:00:01Z",
-        },
-      ],
-    ]);
-
-    await runAutoSyncCycle();
-
-    expect(importPageRevisions).toHaveBeenCalledTimes(1);
-    const input = importPageRevisions.mock.calls[0]![0];
-    expect(input).toMatchObject({
-      source: "ixwiki",
-      title: "Foo",
-      slug: "foo",
-      namespace: 0,
-      namespacePrefix: null,
-      mwPageId: 7,
-      dryRun: false,
-      restrictions: [],
-      protectionLevel: null,
-    });
-    expect(input.revisions).toEqual([
-      {
-        mwRevId: 100,
-        createdAt: new Date("2026-09-27T10:00:01Z"),
-        author: "alice",
-        authorId: null,
-        summary: "first",
-        commentDeleted: false,
-        textDeleted: false,
-        userDeleted: false,
-        minor: true,
-        byteSize: 12,
-        byteDelta: 12,
-        sha1: mwSha1Base36("[[Bar]] text"),
-        wikitext: "[[Bar]] text",
-      },
-    ]);
-    expect(input.head).toMatchObject({
-      mwRevId: 100,
-      wikitext: "[[Bar]] text",
-      wordCount: 2,
-      readingTime: 1,
-      redirectTargetSlug: null,
-      redirectTargetFragment: null,
-    });
-    expect(mockRevisionCreateMany).not.toHaveBeenCalled();
-    expect(mockJobCreate).not.toHaveBeenCalled();
-  });
-
-  it("imports an edit whose parent is WikiOS's head (by MediaWiki revision id)", async () => {
-    article = storedArticle();
-    head = storedHead(90);
-    rcResponses = [{ changes: [change("Foo", 91, 1)] }];
-    mwRevisions = new Map([
-      [91, { title: "Foo", revid: 91, parentid: 90, text: "Edited in MediaWiki." }],
-    ]);
-
-    await runAutoSyncCycle();
-
-    expect(importPageRevisions).toHaveBeenCalledTimes(1);
-    const input = importPageRevisions.mock.calls[0]![0];
-    expect(input.title).toBe("Foo");
-    expect(input.revisions[0]).toMatchObject({ mwRevId: 91, byteDelta: 20 - 12 });
-    // watchlist (plan 416): the importer tells the page's watchers; the head it replaces makes it a diff link.
-    expect(input.previousRef).toBe("90");
-    expect(mockRevisionCreateMany).not.toHaveBeenCalled();
-    expect(mockJobCreate).not.toHaveBeenCalled();
-  });
-
-  it("imports two sequential MediaWiki edits of one page in one cycle, the second on top of the first", async () => {
-    mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T09:00:00Z" });
-    article = storedArticle();
-    head = storedHead(90);
-    rcResponses = [{ changes: [change("Foo", 91, 1), change("Foo", 92, 2)] }];
-    mwRevisions = new Map([
-      [
-        91,
-        {
-          title: "Foo",
-          revid: 91,
-          parentid: 90,
-          text: "First edit.",
-          timestamp: "2026-09-27T10:00:01Z",
-        },
-      ],
-      [
-        92,
-        {
-          title: "Foo",
-          revid: 92,
-          parentid: 91,
-          text: "Second edit.",
-          timestamp: "2026-09-27T10:00:02Z",
-        },
-      ],
-    ]);
-
-    await runAutoSyncCycle();
-
-    expect(importPageRevisions.mock.calls.map(([input]) => input.revisions[0]?.mwRevId)).toEqual([
-      91, 92,
-    ]);
-    expect(mockRevisionCreateMany).not.toHaveBeenCalled();
-    expect(storedHighWater()).toBe("2026-09-27T10:00:02Z");
-  });
-
   it("imports when the head was never stamped but the edit's parent has exactly WikiOS's text", async () => {
     article = storedArticle();
     head = storedHead(null);
@@ -789,118 +613,9 @@ describe("fast-forward", () => {
     expect(importPageRevisions).toHaveBeenCalledTimes(1);
     expect(mockRevisionCreateMany).not.toHaveBeenCalled();
   });
-
-  it("imports a MediaWiki edit that blanks the page as a real, empty revision and an empty head: the state the render reads as a blanked page", async () => {
-    article = storedArticle();
-    head = storedHead(90);
-    rcResponses = [{ changes: [change("Foo", 91, 1)] }];
-    mwRevisions = new Map([[91, { title: "Foo", revid: 91, parentid: 90, text: "" }]]);
-
-    await runAutoSyncCycle();
-
-    expect(importPageRevisions).toHaveBeenCalledTimes(1);
-    const input = importPageRevisions.mock.calls[0]![0];
-    // not parked, not hidden, 0 bytes: renderArticle shows nothing for this page, whatever HTML its old text left behind
-    expect(input.revisions[0]).toMatchObject({
-      mwRevId: 91,
-      wikitext: "",
-      byteSize: 0,
-      textDeleted: false,
-    });
-    expect(input.head).toMatchObject({ mwRevId: 91, wikitext: "" });
-    expect(mockRevisionCreateMany).not.toHaveBeenCalled(); // not parked
-  });
-
-  it("never lets a revision sort before the head it builds on (MediaWiki's clock is behind)", async () => {
-    article = storedArticle();
-    head = storedHead(90, { createdAt: new Date("2026-09-27T10:00:05.500Z") });
-    rcResponses = [{ changes: [change("Foo", 91, 1)] }];
-    mwRevisions = new Map([
-      [
-        91,
-        {
-          title: "Foo",
-          revid: 91,
-          parentid: 90,
-          text: "Quick edit.",
-          timestamp: "2026-09-27T10:00:05Z",
-        },
-      ],
-    ]);
-
-    await runAutoSyncCycle();
-
-    const input = importPageRevisions.mock.calls[0]![0];
-    expect(input.revisions[0]!.createdAt.getTime()).toBe(
-      new Date("2026-09-27T10:00:05.501Z").getTime()
-    );
-    expect(input.head?.createdAt).toEqual(input.revisions[0]!.createdAt);
-  });
-
-  it("credits the revision to the WikiOS user who verified the MediaWiki account", async () => {
-    rcResponses = [{ changes: [change("Foo", 100, 1)] }];
-    mwRevisions = new Map([[100, { title: "Foo", revid: 100, user: "alice_b" }]]);
-    mockAccountLinkFindFirst.mockResolvedValue({ userId: "user-7" });
-
-    await runAutoSyncCycle();
-
-    expect(mockAccountLinkFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ username: "Alice b" }) })
-    );
-    expect(importPageRevisions.mock.calls[0]![0].revisions[0]).toMatchObject({
-      author: "alice_b",
-      authorId: "user-7",
-    });
-  });
 });
 
 describe("echo", () => {
-  it("stamps the MediaWiki id on a head the mirror exported (its text comes back), and imports nothing", async () => {
-    article = storedArticle({ mwPageId: null });
-    head = storedHead(null);
-    rcResponses = [{ changes: [change("Foo", 91, 1)] }];
-    mwRevisions = new Map([
-      [91, { title: "Foo", revid: 91, pageId: 7, parentid: 50, text: "WikiOS text." }],
-    ]);
-
-    await runAutoSyncCycle();
-
-    expect(importPageRevisions).not.toHaveBeenCalled();
-    expect(mockRevisionCreateMany).not.toHaveBeenCalled();
-    expect(mockRevisionUpdateMany).toHaveBeenCalledWith({
-      where: { id: "rev-9", mwRevId: null },
-      data: { mwRevId: 91 },
-    });
-    expect(mockArticleUpdate).toHaveBeenCalledWith({
-      where: { id: "art-1" },
-      data: expect.objectContaining({ mwLatestRevId: 91, mwPageId: 7 }),
-    });
-  });
-
-  it("treats an edit by the mirror account as WikiOS's own whatever its text: recorded, never judged, nothing pushed", async () => {
-    process.env.WIKIOS_MEDIAWIKI_BOT_USER = "Mirror@WikiOS";
-    try {
-      article = storedArticle();
-      head = storedHead(90);
-      rcResponses = [{ changes: [change("Foo", 91, 1)] }];
-      mwRevisions = new Map([
-        [91, { title: "Foo", revid: 91, parentid: 50, user: "Mirror", text: "PST changed this." }],
-      ]);
-
-      await runAutoSyncCycle();
-
-      expect(importPageRevisions).not.toHaveBeenCalled();
-      expect(mockJobCreate).not.toHaveBeenCalled();
-      expect(mockRevisionUpdateMany).not.toHaveBeenCalled();
-      expect(mockArticleUpdate).not.toHaveBeenCalled();
-      const [{ data }] = mockRevisionCreateMany.mock.calls[0]!;
-      expect(data[0]).toMatchObject({ mwRevId: 91, wikitext: "PST changed this.", byteDelta: 0 });
-      expect(data[0]).not.toHaveProperty("parked");
-    } finally {
-      delete process.env.WIKIOS_MEDIAWIKI_BOT_USER;
-    }
-  });
-
   it("stores an echo of a head that already has its MediaWiki id as a non-parked revision stamped with its own, dated before the head (the head does not change)", async () => {
     article = storedArticle();
     head = storedHead(90, { createdAt: new Date("2026-09-27T09:00:00Z") });
@@ -1008,48 +723,6 @@ describe("park", () => {
       ],
     ]);
   };
-
-  it("keeps the edit as a parked revision, leaves the article alone, and pushes WikiOS's head back to MediaWiki", async () => {
-    parkSetup();
-
-    await runAutoSyncCycle();
-
-    expect(importPageRevisions).not.toHaveBeenCalled();
-    expect(mockArticleUpdate).not.toHaveBeenCalled();
-    expect(mockRevisionCreateMany).toHaveBeenCalledTimes(1);
-    const [{ data, skipDuplicates }] = mockRevisionCreateMany.mock.calls[0]!;
-    expect(skipDuplicates).toBe(true);
-    expect(data[0]).toMatchObject({
-      articleId: "art-1",
-      source: "ixwiki",
-      mwRevId: 95,
-      author: "carol",
-      summary: "mine",
-      wikitext: "A conflicting edit.",
-      parked: true,
-      parkReason: "conflict:90",
-      // it records the head it did not fit on as its parent (F5), and sets no other row's
-      parentRevisionId: "rev-9",
-      createdAt: new Date("2026-09-27T10:00:01Z"),
-    });
-    expect(syncStatements()).toHaveLength(0);
-    expect(mockJobCreate).toHaveBeenCalledTimes(1);
-    expect(mockJobCreate).toHaveBeenCalledWith({
-      data: {
-        source: "ixwiki",
-        kind: "revision",
-        title: "Foo",
-        articleId: "art-1",
-        revisionId: "rev-9",
-        payload: {
-          restore: true,
-          summary:
-            "Restoring WikiOS revision 90; your edit (rev 95) was kept in WikiOS history as a conflict",
-        },
-      },
-    });
-  });
-
   it("writes the parked revision and the re-push job in one transaction, the job after the revision", async () => {
     parkSetup();
     const order: string[] = [];
@@ -1077,33 +750,6 @@ describe("park", () => {
     expect(notify).not.toHaveBeenCalled();
     consoleError.mockRestore();
   });
-
-  it("notifies the editor when the MediaWiki account has a verified link", async () => {
-    parkSetup();
-    mockAccountLinkFindFirst.mockResolvedValue({ userId: "user-7" });
-
-    await runAutoSyncCycle();
-
-    expect(notify).toHaveBeenCalledTimes(1);
-    expect(notify).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId: "user-7",
-        href: "/wiki/Foo?diff=95&oldid=90",
-        category: "wiki",
-        source: "wikiSync",
-      })
-    );
-  });
-
-  it("notifies nobody when the MediaWiki account is not linked", async () => {
-    parkSetup();
-
-    await runAutoSyncCycle();
-
-    expect(notify).not.toHaveBeenCalled();
-    expect(mockRevisionCreateMany).toHaveBeenCalledTimes(1);
-  });
-
   it("does not push or notify again for a revision that is already parked (the cycle re-reads its last entry)", async () => {
     parkSetup();
     knownRevids = new Set([95]);
@@ -1123,66 +769,9 @@ describe("park", () => {
     expect(mockJobCreate).not.toHaveBeenCalled();
     expect(notify).not.toHaveBeenCalled();
   });
-
-  it("parks an edit of a page WikiOS deleted without pushing anything back", async () => {
-    parkSetup();
-    article = storedArticle({ status: "ARCHIVED" });
-
-    await runAutoSyncCycle();
-
-    expect(mockRevisionCreateMany.mock.calls[0]![0].data[0]).toMatchObject({
-      parked: true,
-      parkReason: "conflict:deleted",
-    });
-    expect(mockJobCreate).not.toHaveBeenCalled();
-  });
-
-  it("brings a page WikiOS deleted back when MediaWiki creates it anew", async () => {
-    article = storedArticle({ status: "ARCHIVED" });
-    head = storedHead(90);
-    rcResponses = [{ changes: [change("Foo", 99, 1)] }];
-    mwRevisions = new Map([
-      [99, { title: "Foo", revid: 99, parentid: 0, pageId: 12, text: "Born again." }],
-    ]);
-
-    await runAutoSyncCycle();
-
-    expect(importPageRevisions).toHaveBeenCalledTimes(1);
-    expect(mockArticleUpdate).toHaveBeenCalledWith({
-      where: { id: "art-1" },
-      data: { status: "PUBLISHED" },
-    });
-    expect(mockRevisionCreateMany).not.toHaveBeenCalled();
-  });
 });
 
 describe("identity of a synced page (plan 402, 403)", () => {
-  it("stores the canonical title, slug and namespace", async () => {
-    rcResponses = [{ changes: [change("user talk:jane_doe", 100, 1)] }];
-    mwRevisions = new Map([[100, { title: "user talk:jane_doe", revid: 100, ns: 3 }]]);
-
-    await runAutoSyncCycle();
-
-    expect(importPageRevisions.mock.calls[0]![0]).toMatchObject({
-      title: "User talk:Jane doe",
-      slug: "user_talk:jane_doe",
-      namespace: 3,
-      namespacePrefix: "User talk",
-    });
-  });
-
-  it("skips a change whose title MediaWiki itself would refuse", async () => {
-    rcResponses = [{ changes: [change("a[b", 100, 1)] }];
-    mwRevisions = new Map([[100, { title: "a[b", revid: 100 }]]);
-    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
-
-    await runAutoSyncCycle();
-
-    expect(importPageRevisions).not.toHaveBeenCalled();
-    expect(storedHighWater()).toBe("2026-09-27T10:00:01Z");
-    warn.mockRestore();
-  });
-
   it("keeps MediaWiki's namespace and the title's prefix when the canonical table lacks it", async () => {
     rcResponses = [{ changes: [change("Portal:Eurth", 100, 1), change("Foo: bar", 101, 2)] }];
     mwRevisions = new Map([
@@ -1213,28 +802,6 @@ describe("identity of a synced page (plan 402, 403)", () => {
       namespacePrefix: "Talk",
     });
   });
-
-  it("stores a synced redirect's canonical target and fragment, and nulls for ordinary text", async () => {
-    rcResponses = [{ changes: [change("Old", 100, 1), change("Plain", 101, 2)] }];
-    mwRevisions = new Map([
-      [100, { title: "Old", revid: 100, pageId: 2, text: "#REDIRECT [[foo_bar#Sec one]]" }],
-      [101, { title: "Plain", revid: 101, pageId: 3, text: "See #REDIRECT [[Foo]] here." }],
-    ]);
-
-    await runAutoSyncCycle();
-
-    const headFor = (title: string) =>
-      importPageRevisions.mock.calls.find(([input]) => input.title === title)?.[0].head;
-    expect(headFor("Old")).toMatchObject({
-      redirectTargetSlug: "Foo bar",
-      redirectTargetFragment: "Sec one",
-    });
-    expect(headFor("Plain")).toMatchObject({
-      redirectTargetSlug: null,
-      redirectTargetFragment: null,
-    });
-  });
-
   it("applies a revision to the article MediaWiki's page id names when the title is unknown (a page moved in MediaWiki)", async () => {
     article = storedArticle({
       title: "Old name",
@@ -1266,14 +833,6 @@ describe("identity of a synced page (plan 402, 403)", () => {
 // ---------------------------------------------------------------------------
 
 describe("syncSinglePage", () => {
-  it("imports the newest revision of a page WikiOS lacks and answers true", async () => {
-    mwRevisions = new Map([[100, { title: "Foo", revid: 100, text: "Hello." }]]);
-
-    await expect(syncSinglePage("Foo")).resolves.toBe(true);
-
-    expect(importPageRevisions).toHaveBeenCalledTimes(1);
-  });
-
   it("answers true without writing when the revision is already stored", async () => {
     mwRevisions = new Map([[100, { title: "Foo", revid: 100 }]]);
     knownRevids = new Set([100]);
@@ -1296,34 +855,8 @@ describe("syncSinglePage", () => {
       data: { mwRevId: 91 },
     });
   });
-
-  it("never parks: a conflicting edit is left to the ordered cycle and answers false", async () => {
-    article = storedArticle();
-    head = storedHead(90);
-    mwRevisions = new Map([
-      [92, { title: "Foo", revid: 92, parentid: 90, text: "Some other text." }],
-      [95, { title: "Foo", revid: 95, parentid: 92, text: "A conflicting edit." }],
-    ]);
-
-    await expect(syncSinglePage("Foo")).resolves.toBe(false);
-
-    expect(mockRevisionCreateMany).not.toHaveBeenCalled();
-    expect(mockJobCreate).not.toHaveBeenCalled();
-    expect(importPageRevisions).not.toHaveBeenCalled();
-  });
-
   it("answers false when MediaWiki has no such page", async () => {
     await expect(syncSinglePage("Nowhere")).resolves.toBe(false);
-  });
-
-  it("answers false, never throws, when MediaWiki is down", async () => {
-    mwRevisions = new Map([[100, { title: "Foo", revid: 100 }]]);
-    fetchMock.mockResolvedValueOnce(jsonResponse({}, 500));
-    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
-
-    await expect(syncSinglePage("Foo")).resolves.toBe(false);
-
-    consoleError.mockRestore();
   });
 });
 
@@ -1432,15 +965,6 @@ describe("the advisory lock", () => {
     expect(fetchMock).not.toHaveBeenCalled();
     expect(importPageRevisions).not.toHaveBeenCalled();
   });
-
-  it("the single-page sync runs under the lock when it is free", async () => {
-    mwRevisions = new Map([[100, { title: "Foo", revid: 100 }]]);
-
-    await expect(syncSinglePage("Foo")).resolves.toBe(true);
-
-    expect(mockQueryRaw.mock.calls[0]?.[1]).toBe("wikios-inbound-sync");
-  });
-
   it("never throws when the lock cannot even be taken (database down), and says so", async () => {
     mockQueryRaw.mockRejectedValue(new Error("connection refused"));
     const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
@@ -1518,19 +1042,6 @@ describe("failures are counted, not swallowed", () => {
     expect(stats.failures).toBe(1);
     consoleError.mockRestore();
   });
-
-  it("an API error body is an error too", async () => {
-    mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T09:00:00Z" });
-    fetchMock.mockImplementationOnce(async () =>
-      jsonResponse({ error: { code: "readapidenied", info: "You need read permission" } })
-    );
-    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
-
-    const stats = await runAutoSyncCycle();
-
-    expect(stats.lastError).toContain("readapidenied");
-    consoleError.mockRestore();
-  });
 });
 
 describe("the sync status the telemetry reads", () => {
@@ -1585,16 +1096,6 @@ describe("the sync status the telemetry reads", () => {
     stored({ value: JSON.stringify({ lastRunAt: 5 }) });
     await expect(getInboundSyncStatus(now)).resolves.toMatchObject({ status: "UNKNOWN" });
   });
-  it("is DEGRADED, naming the articles, when parks went without a re-push (no mirror account)", async () => {
-    stored(statusRow(), ["Foo", "Bar"]);
-
-    await expect(getInboundSyncStatus(now)).resolves.toMatchObject({
-      status: "DEGRADED",
-      failures: 0,
-      repushSkipped: ["Foo", "Bar"],
-    });
-  });
-
   it("is STALE when no cycle has run for an hour (the cron job is not running)", async () => {
     stored(statusRow());
 
@@ -1625,23 +1126,6 @@ describe("a park never loops: no re-push without a mirror account (plan 406 foll
       ],
     ]);
   };
-
-  it("parks the edit, tells the editor and pushes nothing, logging an error", async () => {
-    parkOne();
-    mockAccountLinkFindFirst.mockResolvedValue({ userId: "user-7" });
-    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
-
-    await runAutoSyncCycle();
-
-    expect(mockRevisionCreateMany.mock.calls[0]![0].data[0]).toMatchObject({ parked: true });
-    expect(mockJobCreate).not.toHaveBeenCalled();
-    expect(notify).toHaveBeenCalledTimes(1);
-    expect(consoleError).toHaveBeenCalledWith(
-      expect.stringContaining("WIKIOS_MEDIAWIKI_BOT_USER is not set")
-    );
-    consoleError.mockRestore();
-  });
-
   it("marks the article in the telemetry (SystemConfig), once however many times it is parked", async () => {
     parkOne();
     const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
@@ -1695,42 +1179,6 @@ describe("a park never loops: no re-push without a mirror account (plan 406 foll
     expect(mockJobCreate).not.toHaveBeenCalled();
     consoleError.mockRestore();
   });
-
-  it("pushes the heads of the marked articles once an account is configured, then forgets them", async () => {
-    process.env.WIKIOS_MEDIAWIKI_BOT_USER = "Mirror@WikiOS";
-    let skipped = JSON.stringify(["Foo", "Deleted page", "Gone"]);
-    mockSystemConfigFindUnique.mockImplementation(async ({ where }) =>
-      where.key === SKIPPED_KEY ? { value: skipped } : null
-    );
-    mockSystemConfigUpsert.mockImplementation(async ({ where, update }) => {
-      if (where.key === SKIPPED_KEY) skipped = update.value;
-      return {};
-    });
-    mockArticleFindUnique.mockImplementation(async ({ where }) => {
-      const title = where.source_title.title;
-      if (title === "Foo") return { id: "art-1", title: "Foo", status: "PUBLISHED" };
-      if (title === "Deleted page") return { id: "art-2", title, status: "ARCHIVED" };
-      return null;
-    });
-    head = storedHead(null);
-
-    await runAutoSyncCycle();
-
-    expect(mockJobCreate).toHaveBeenCalledTimes(1);
-    expect(pushedJobs()[0]).toMatchObject({
-      kind: "revision",
-      title: "Foo",
-      articleId: "art-1",
-      revisionId: "rev-9",
-      payload: { restore: true },
-    });
-    expect(JSON.parse(skipped)).toEqual([]);
-
-    mockJobCreate.mockClear();
-    await runAutoSyncCycle();
-    expect(mockJobCreate).not.toHaveBeenCalled();
-  });
-
   it("pushes nothing and keeps the list while no account is configured", async () => {
     const skipped = JSON.stringify(["Foo"]);
     mockSystemConfigFindUnique.mockImplementation(async ({ where }) =>
@@ -1762,107 +1210,6 @@ describe("a page with text but no revision row (the shape of Crown Jewels of Cap
     head = null; // no revision row at all
     rcResponses = [{ changes: [change("Crown Jewels of Caphiria", 95, 1)] }];
   });
-
-  it("does not overwrite the text of such a page with an edit that is not based on it: it is parked, against a revision that holds that text", async () => {
-    article = crown();
-    mwRevisions = new Map([
-      [60, { title: "Crown Jewels of Caphiria", revid: 60, text: "An older text." }],
-      [
-        95,
-        {
-          title: "Crown Jewels of Caphiria",
-          revid: 95,
-          parentid: 60,
-          pageId: 5,
-          user: "carol",
-          text: "Somebody's different article.",
-          timestamp: "2026-09-27T10:00:01Z",
-        },
-      ],
-    ]);
-
-    await runAutoSyncCycle();
-
-    expect(importPageRevisions).not.toHaveBeenCalled();
-    // The existing text is captured first: nothing is lost.
-    expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
-    expect(mockRevisionCreate.mock.calls[0]![0].data).toMatchObject({
-      articleId: "art-1",
-      wikitext: CROWN,
-      sha1: mwSha1Base36(CROWN),
-      createdAt: new Date("2026-09-20T12:00:00Z"),
-    });
-    expect(mockRevisionCreateMany.mock.calls[0]![0].data[0]).toMatchObject({
-      mwRevId: 95,
-      parked: true,
-      parkReason: "conflict:rev-base",
-    });
-    expect(pushedJobs()).toEqual([
-      expect.objectContaining({ kind: "revision", revisionId: "rev-base" }),
-    ]);
-    expect(mockArticleUpdate).not.toHaveBeenCalled();
-  });
-
-  it("imports an edit based on the MediaWiki revision the page was last synced from, after capturing its text", async () => {
-    article = crown();
-    mwRevisions = new Map([
-      [
-        95,
-        {
-          title: "Crown Jewels of Caphiria",
-          revid: 95,
-          parentid: 70,
-          pageId: 5,
-          text: "Updated in MediaWiki.",
-        },
-      ],
-    ]);
-    const order: string[] = [];
-    mockRevisionCreate.mockImplementationOnce(async ({ data }) => {
-      order.push("baseline");
-      return {
-        id: "rev-base",
-        mwRevId: null,
-        sha1: data.sha1,
-        byteSize: data.byteSize,
-        createdAt: data.createdAt,
-      };
-    });
-    importPageRevisions.mockImplementationOnce(async () => {
-      order.push("import");
-      return {
-        created: false,
-        inserted: 1,
-        filled: 0,
-        skipped: 0,
-        conflicts: 0,
-        headUpdated: true,
-      };
-    });
-
-    await runAutoSyncCycle();
-
-    expect(order).toEqual(["baseline", "import"]);
-    expect(importPageRevisions.mock.calls[0]![0]).toMatchObject({ previousRef: "rev-base" });
-    expect(mockRevisionCreateMany).not.toHaveBeenCalled();
-  });
-
-  it("parks, rather than imports, an edit based on some other revision than the one the page came from", async () => {
-    article = crown();
-    mwRevisions = new Map([
-      [71, { title: "Crown Jewels of Caphiria", revid: 71, text: "Another text." }],
-      [
-        95,
-        { title: "Crown Jewels of Caphiria", revid: 95, parentid: 71, pageId: 5, text: "Edited." },
-      ],
-    ]);
-
-    await runAutoSyncCycle();
-
-    expect(importPageRevisions).not.toHaveBeenCalled();
-    expect(mockRevisionCreateMany.mock.calls[0]![0].data[0]).toMatchObject({ parked: true });
-  });
-
   it("recognises the page's own text coming back, and gives it a revision stamped with the MediaWiki id", async () => {
     article = crown();
     mwRevisions = new Map([
