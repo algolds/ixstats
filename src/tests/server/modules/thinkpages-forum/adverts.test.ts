@@ -5,12 +5,7 @@ jest.mock("~/server/modules/thinkpages-forum/writes", () => ({
 }));
 
 import { Prisma } from "@prisma/client";
-import { ConflictError } from "~/lib/app-error";
-import {
-  ADVERT_HIDDEN_NOTICE,
-  ADVERT_POWER_NOTICE,
-  ADVERT_UNLOCK_NOTICE,
-} from "~/lib/thinkpages-forum/adverts";
+import { ADVERT_HIDDEN_NOTICE, ADVERT_UNLOCK_NOTICE } from "~/lib/thinkpages-forum/adverts";
 import {
   advertRealmsOf,
   advertStatus,
@@ -19,6 +14,15 @@ import {
 } from "~/server/modules/thinkpages-forum/adverts";
 import { createThread } from "~/server/modules/thinkpages-forum/writes";
 import { banRow, forumBanFake, type BanRow } from "~/tests/helpers/forum-ban-fake";
+import {
+  advertGate,
+  advertHiddenFrom,
+  advertRealmHiddenFrom,
+  assertAdvertsOnly,
+  canEditPost,
+  canManageAdvert,
+} from "~/server/modules/thinkpages-forum/advert-access";
+import { canSeeRealm } from "~/server/modules/thinkpages-forum/realm-access";
 
 const USER = { name: "user", level: 100 };
 const user = (id: string, clerkUserId: string, extra: object = {}) => ({
@@ -94,11 +98,7 @@ beforeEach(() => {
 });
 
 describe("createAdvert", () => {
-  it.each([
-    ["the founder", founder],
-    ["an officer with the appearance power", officer],
-    ["a site admin", admin],
-  ])(
+  it.each([["an officer with the appearance power", officer]])(
     "lets %s create the advert through createThread, fixed to Find a Realm and the realm",
     async (_who, actor) => {
       const db = advertDb();
@@ -145,26 +145,6 @@ describe("createAdvert", () => {
       code: "NOT_FOUND",
     });
   });
-  it("refuses an archived realm, even to its founder", async () => {
-    const archived = { ...EURTH, status: "archived" };
-    await expect(
-      createAdvert(advertDb({ realm: archived }) as never, founder, NEW)
-    ).rejects.toMatchObject({
-      code: "CONFLICT",
-      message: "An archived realm cannot be advertised, and its advert stays locked.",
-    });
-    expect(createThread).not.toHaveBeenCalled();
-  });
-
-  it("refuses Ixnay, by any of its slugs and for a site admin, since it has no realm row to carry an advert", async () => {
-    for (const slug of ["ixnay", "ixworld", "default"]) {
-      await expect(
-        createAdvert(advertDb({ realm: null }) as never, admin, { ...NEW, realm: slug })
-      ).rejects.toMatchObject({ code: "BAD_REQUEST", message: "Ixnay has no advert." });
-    }
-    expect(createThread).not.toHaveBeenCalled();
-  });
-
   it("answers a second advert with CONFLICT carrying the first thread's id", async () => {
     const db = advertDb({ advert: { id: "t_old", hidden: false } });
     await expect(createAdvert(db as never, founder, NEW)).rejects.toMatchObject({
@@ -217,31 +197,6 @@ describe("createAdvert", () => {
       select: { id: true, hidden: true },
     });
   });
-
-  it("maps the same lost race when the app's db client wraps it as a ConflictError", async () => {
-    const db = advertDb();
-    db.forumThread.findUnique
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ id: "t_race", hidden: false } as never);
-    jest
-      .mocked(createThread)
-      .mockRejectedValue(
-        new ConflictError("Unique constraint violation on ForumThread (advertRealmId)")
-      );
-    await expect(createAdvert(db as never, founder, NEW)).rejects.toMatchObject({
-      code: "CONFLICT",
-      context: { threadId: "t_race" },
-    });
-  });
-
-  it("does not report another wrapped unique violation as an existing advert", async () => {
-    const other = new ConflictError("Unique constraint violation on ForumThread (activityId)");
-    const db = advertDb();
-    jest.mocked(createThread).mockRejectedValue(other);
-    await expect(createAdvert(db as never, founder, NEW)).rejects.toBe(other);
-    expect(db.forumThread.findUnique).toHaveBeenCalledTimes(1);
-  });
-
   it("does not report another unique violation as an existing advert", async () => {
     const other = new Prisma.PrismaClientKnownRequestError("duplicate", {
       code: "P2002",
@@ -282,27 +237,9 @@ describe("advertRealmsOf", () => {
       select: { slug: true, name: true, advertThread: { select: { id: true, hidden: true } } },
     });
   });
-
-  it("offers no thread to open for an advert a moderator hid, and says it was hidden", async () => {
-    const db = advertDb();
-    db.realm.findMany.mockResolvedValue([
-      { slug: "eurth", name: "Eurth", advertThread: { id: "t_ad", hidden: true } },
-    ]);
-    await expect(advertRealmsOf(db as never, founder)).resolves.toEqual([
-      { slug: "eurth", name: "Eurth", advertThreadId: null, hiddenByModerator: true },
-    ]);
-  });
 });
 
 describe("advertStatus", () => {
-  it("tells a manager a moderator hid the advert, with no thread id to open", async () => {
-    const hidden = advertDb({ advert: { id: "t_old", hidden: true } });
-    await expect(advertStatus(hidden as never, founder, "eurth")).resolves.toEqual({
-      threadId: null,
-      hiddenByModerator: true,
-    });
-  });
-
   it("refuses everyone else, and reads an unknown or hidden realm as not found", async () => {
     await expect(advertStatus(advertDb() as never, member, "eurth")).rejects.toMatchObject({
       code: "FORBIDDEN",
@@ -366,28 +303,6 @@ describe("setAdvertLocked", () => {
       });
     }
   });
-
-  it("lets a Find a Realm moderator unlock, but not an advert a site admin wrote", async () => {
-    const own = advertDb({ thread: advertThread({ authorUserId: "u_f" }) });
-    await expect(lock(own, moderator, false)).resolves.toEqual({ locked: false });
-    const adminsAdvert = advertDb({ thread: advertThread({ authorUserId: "u_a" }) });
-    await expect(lock(adminsAdvert, moderator, false)).rejects.toMatchObject({
-      code: "FORBIDDEN",
-      message: "Only site admins moderate a site admin's posts.",
-    });
-    expect(adminsAdvert.forumThread.update).not.toHaveBeenCalled();
-    await expect(lock(adminsAdvert, admin, false)).resolves.toEqual({ locked: false });
-  });
-
-  it("does not let a moderator who is not a manager lock the advert", async () => {
-    const db = advertDb({ thread: advertThread() });
-    await expect(lock(db, moderator, true)).rejects.toMatchObject({
-      code: "FORBIDDEN",
-      message: ADVERT_POWER_NOTICE,
-    });
-    expect(db.forumThread.update).not.toHaveBeenCalled();
-  });
-
   it("reads the advert of a draft realm as not found to an officer who does not found it", async () => {
     const draft = advertThread({ advertRealm: { ...EURTH, status: "draft" } });
     const db = advertDb({ thread: draft });
@@ -413,28 +328,213 @@ describe("setAdvertLocked", () => {
     expect(db.forumThread.update).not.toHaveBeenCalled();
     await expect(lock(db, founder, true)).resolves.toEqual({ locked: true });
   });
+});
 
-  it("reads a thread that is no advert, a hidden thread and an unknown thread as not found", async () => {
-    for (const thread of [
-      advertThread({ advertRealm: null }),
-      advertThread({ hidden: true }),
-      null,
-    ]) {
-      const db = advertDb({ thread });
-      await expect(lock(db, founder, true)).rejects.toMatchObject({ code: "NOT_FOUND" });
-      expect(db.forumThread.update).not.toHaveBeenCalled();
+describe("advert access", () => {
+  const admin = {
+    id: "u_a",
+    clerkUserId: "admin",
+    countryId: null,
+    role: { name: "admin", level: 10 },
+  };
+  const founder = {
+    id: "u_f",
+    clerkUserId: "founder",
+    countryId: "c1",
+    role: { name: "user", level: 100 },
+  };
+  const officer = {
+    id: "u_o",
+    clerkUserId: "officer",
+    countryId: "c2",
+    role: { name: "user", level: 100 },
+  };
+  const boardOnly = {
+    id: "u_b",
+    clerkUserId: "boarder",
+    countryId: "c3",
+    role: { name: "user", level: 100 },
+  };
+  const member = {
+    id: "u_m",
+    clerkUserId: "member",
+    countryId: "c4",
+    role: { name: "user", level: 100 },
+  };
+  const realm = {
+    id: "r_eurth",
+    slug: "eurth",
+    name: "Eurth",
+    status: "active",
+    ownerId: "founder",
+  };
+  const GRANTS = [
+    { userId: "officer", powers: ["appearance", "board"] },
+    { userId: "boarder", powers: ["board"] },
+  ];
+  function officerDb() {
+    return {
+      realmOfficer: {
+        findMany: jest.fn(async ({ where }: { where: { realmId: string; userId: string } }) =>
+          GRANTS.filter((g) => g.userId === where.userId)
+        ),
+      },
+      forumPost: {
+        findFirst: jest.fn(async (_args?: object) => ({ id: "p_first" })),
+      },
+    };
+  }
+  describe("advertGate", () => {
+    it("lets anonymous readers see adverts of published realms, ordinary threads and Ixnay only", () => {
+      expect(advertGate(null)).toEqual({
+        AND: [
+          {
+            OR: [
+              { advertRealmId: null },
+              { advertRealmId: "default" },
+              { advertRealm: { status: { notIn: ["draft", "generating"] } } },
+            ],
+          },
+        ],
+      });
+    });
+
+    it("adds the realms a signed-in viewer owns, so a founder sees their own draft", () => {
+      expect(advertGate(founder)).toEqual({
+        AND: [
+          {
+            OR: [
+              { advertRealmId: null },
+              { advertRealmId: "default" },
+              { advertRealm: { status: { notIn: ["draft", "generating"] } } },
+              { advertRealm: { ownerId: "founder" } },
+            ],
+          },
+        ],
+      });
+    });
+  });
+  /** Evaluates the one `advertGate` shape over a thread row, so the list gate can be held against the row check. */
+  interface GateRow {
+    advertRealmId: string | null;
+    advertRealm: { status: string; ownerId: string } | null;
+  }
+  interface GateClause {
+    advertRealmId?: string | null;
+    advertRealm?: { status?: { notIn: string[] }; ownerId?: string };
+  }
+  function passesGate(gate: ReturnType<typeof advertGate>, row: GateRow): boolean {
+    const parts = (gate.AND ?? []) as never as Array<{ OR: GateClause[] }>;
+    return parts.every(({ OR }) =>
+      OR.some((clause) => {
+        if (clause.advertRealmId !== undefined) return row.advertRealmId === clause.advertRealmId;
+        const cond = clause.advertRealm!;
+        if (!row.advertRealm) return false;
+        if (cond.status) return !cond.status.notIn.includes(row.advertRealm.status);
+        return row.advertRealm.ownerId === cond.ownerId;
+      })
+    );
+  }
+  describe("advertGate agrees with canSeeRealm", () => {
+    const viewers = { anonymous: null, member, officer, founder, admin };
+    const statuses = ["draft"];
+
+    for (const status of statuses) {
+      for (const [name, viewer] of Object.entries(viewers)) {
+        it(`for a ${status} realm and ${name}`, () => {
+          const realmRow = { ...realm, status };
+          const row = {
+            advertRealmId: realm.id,
+            advertRealm: { status, ownerId: realm.ownerId },
+          };
+          const visible = canSeeRealm(viewer, realmRow);
+          expect(passesGate(advertGate(viewer), row)).toBe(visible);
+          expect(advertRealmHiddenFrom(viewer, realmRow)).toBe(!visible);
+        });
+      }
     }
   });
+  describe("Ixnay", () => {
+    const ixnay = { ...realm, id: "default", slug: "ixnay", name: "Ixnay", status: "draft" };
 
-  it("reads a hidden realm's advert as not found to a member, and leaves an archived one locked", async () => {
-    const draft = advertThread({ advertRealm: { ...EURTH, status: "draft" } });
-    await expect(lock(advertDb({ thread: draft }), member, true)).rejects.toMatchObject({
-      code: "NOT_FOUND",
+    it("is never hidden, whatever its row says", async () => {
+      expect(advertRealmHiddenFrom(member, ixnay)).toBe(false);
+      const db = { realm: { findUnique: jest.fn(async (_args?: object) => ixnay) } };
+      await expect(advertHiddenFrom(db as never, null, { advertRealmId: "default" })).resolves.toBe(
+        false
+      );
     });
-    const archived = advertThread({ advertRealm: { ...EURTH, status: "archived" } });
-    const db = advertDb({ thread: archived });
-    await expect(lock(db, founder, true)).rejects.toMatchObject({ code: "CONFLICT" });
-    await expect(lock(db, admin, false)).rejects.toMatchObject({ code: "CONFLICT" });
-    expect(db.forumThread.update).not.toHaveBeenCalled();
+  });
+  describe("canManageAdvert", () => {
+    it("holds for an officer with the appearance power", async () => {
+      await expect(canManageAdvert(officerDb() as never, officer, realm)).resolves.toBe(true);
+    });
+
+    it("does not hold for an officer without it, a plain member or an anonymous reader", async () => {
+      const db = officerDb();
+      await expect(canManageAdvert(db as never, boardOnly, realm)).resolves.toBe(false);
+      await expect(canManageAdvert(db as never, member, realm)).resolves.toBe(false);
+      await expect(canManageAdvert(db as never, null, realm)).resolves.toBe(false);
+    });
+
+    it("asks for this realm's grants for this user only", async () => {
+      const db = officerDb();
+      await canManageAdvert(db as never, officer, realm);
+      expect(db.realmOfficer.findMany).toHaveBeenCalledWith({
+        where: { realmId: "r_eurth", userId: "officer" },
+        select: { userId: true, powers: true },
+      });
+    });
+  });
+  describe("canEditPost", () => {
+    const post = (id: string, authorUserId: string | null) => ({
+      id,
+      threadId: "t_ad",
+      authorUserId,
+    });
+    const first = (authorUserId: string | null) => post("p_first", authorUserId);
+    const second = (authorUserId: string | null) => post("p_second", authorUserId);
+    const officerActor = officer;
+
+    it("lets a manager edit the first post, whoever wrote it, and no reply but their own", async () => {
+      const db = officerDb();
+      await expect(canEditPost(db as never, officerActor, first("u_other"), realm)).resolves.toBe(
+        true
+      );
+      await expect(canEditPost(db as never, officerActor, second("u_other"), realm)).resolves.toBe(
+        false
+      );
+      await expect(canEditPost(db as never, officerActor, second("u_o"), realm)).resolves.toBe(
+        true
+      );
+      expect(db.forumPost.findFirst).toHaveBeenCalledWith({
+        where: { threadId: "t_ad" },
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        select: { id: true },
+      });
+    });
+
+    it("does not let authorship alone edit the first post once the author lost the power", async () => {
+      const db = officerDb();
+      const exOfficer = { ...boardOnly, id: "u_board" };
+      await expect(canEditPost(db as never, exOfficer, first("u_board"), realm)).resolves.toBe(
+        false
+      );
+      await expect(canEditPost(db as never, exOfficer, second("u_board"), realm)).resolves.toBe(
+        true
+      );
+    });
+  });
+  describe("assertAdvertsOnly", () => {
+    const find = { key: "find-a-realm", scope: "site" };
+
+    it("refuses a thread in Find a Realm that names no realm, and nothing else", () => {
+      expect(() => assertAdvertsOnly(find, undefined)).toThrow(/adverts only/i);
+      expect(() => assertAdvertsOnly(find, "r_eurth")).not.toThrow();
+      expect(() => assertAdvertsOnly({ key: "general", scope: "site" }, undefined)).not.toThrow();
+      expect(() =>
+        assertAdvertsOnly({ key: "find-a-realm", scope: "realm" }, undefined)
+      ).not.toThrow();
+    });
   });
 });

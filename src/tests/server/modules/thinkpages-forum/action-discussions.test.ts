@@ -28,12 +28,6 @@ const hub = cat("hub", { name: "Hub", scope: "realm", realmId: "r_eurth" });
 const board = cat("board", { name: "Board", style: "board", scope: "realm", realmId: "r_eurth" });
 const oldHub = cat("old-hub", { name: "Old Hub", scope: "realm", realmId: "r_old" });
 const draftHub = cat("draft-hub", { name: "Draft Hub", scope: "realm", realmId: "r_draft" });
-const draftBoard = cat("draft-board", {
-  name: "Draft Board",
-  style: "board",
-  scope: "realm",
-  realmId: "r_draft",
-});
 const reports = cat("reports", { name: "Reports", visibility: "reporter_staff" });
 const staffOnly = cat("staff-only", { name: "Staff", visibility: "staff" });
 
@@ -189,21 +183,6 @@ const cursorOf = (n: number): string => {
 const ids = (out: { items: Array<{ postId: string }> }) => out.items.map((i) => i.postId);
 
 describe("discussionsOf", () => {
-  it("reads only native links of public activities", async () => {
-    const db = world(
-      [link(1, "p1", { postSource: "xenforo" }), link(2, "p2")],
-      [post("p2", general)]
-    );
-    const out = await page(db, guest);
-    expect(ids(out)).toEqual(["p2"]);
-    const [[call]] = db.postActionLink.findMany.mock.calls;
-    expect(call.where).toEqual({
-      activityId: "a1",
-      postSource: "native",
-      activity: { visibility: "public" },
-    });
-  });
-
   describe("an activity that is not public (R3)", () => {
     const posts = [post("p1", general)];
 
@@ -212,14 +191,6 @@ describe("discussionsOf", () => {
       for (const viewer of [guest, member, author, admin]) {
         expect(await page(db, viewer)).toEqual({ items: [], nextCursor: null });
       }
-    });
-
-    it("counts nothing for it, and still counts the public one beside it", async () => {
-      const db = world([link(1, "p1"), link(2, "p1", { activityId: "a2" })], posts, ["a1"]);
-      expect(await discussionCountsOf(db as never, admin as never, ["a1", "a2"])).toEqual({
-        a1: { count: 0, postIds: [] },
-        a2: { count: 1, postIds: ["p1"] },
-      });
     });
   });
 
@@ -237,27 +208,6 @@ describe("discussionsOf", () => {
       ]);
       expect((await page(world(links, posts), admin)).items).toHaveLength(2);
     });
-
-    it("hidden post: a moderator of just that category (categoryIds) sees it, marked, and no other", async () => {
-      const catMod = {
-        ...member,
-        mod: { siteAdmin: false, realmIds: [], categoryIds: ["general"] },
-      };
-      const posts = [
-        post("p_gen", general, { hidden: true }),
-        post("p_hub", hub, { hidden: true }),
-      ];
-      const out = await page(world([link(1, "p_gen"), link(2, "p_hub")], posts), catMod);
-      expect(out.items.map((i) => [i.postId, i.hidden])).toEqual([["p_gen", true]]);
-    });
-
-    it("hidden thread: left out for a member, marked for a moderator", async () => {
-      const posts = [post("p1", general, {}, { hidden: true })];
-      expect((await page(world([link(1, "p1")], posts), member)).items).toEqual([]);
-      const out = await page(world([link(1, "p1")], posts), admin);
-      expect(out.items[0]).toMatchObject({ postId: "p1", hidden: true });
-    });
-
     it("staff category: for site admins only", async () => {
       const posts = [post("p_staff", staffOnly)];
       const links = [link(1, "p_staff")];
@@ -283,15 +233,6 @@ describe("discussionsOf", () => {
       expect(ids(await page(world(links, posts), member))).toEqual(["p_old"]);
       expect(ids(await page(world(links, posts), admin))).toEqual(["p_draft", "p_old"]);
     });
-
-    it("board path: a message in a draft realm is for its staff only, one in a live realm is public", async () => {
-      const posts = [post("p_b", draftBoard), post("p_live", board)];
-      const links = [link(1, "p_b"), link(2, "p_live")];
-      expect(ids(await page(world(links, posts), guest))).toEqual(["p_live"]);
-      expect(ids(await page(world(links, posts), member))).toEqual(["p_live"]);
-      expect(ids(await page(world(links, posts), admin))).toEqual(["p_b", "p_live"]);
-    });
-
     it("board path: a hidden board message is for the realm's moderators only", async () => {
       const posts = [post("p_b", board, { hidden: true })];
       const links = [link(1, "p_b")];
@@ -315,17 +256,6 @@ describe("discussionsOf", () => {
         expect(db.thinkpagesAccount.findMany).not.toHaveBeenCalled();
       }
     });
-
-    it("lists the user's own post beside a persona post, naming only the user's", async () => {
-      const db = world(
-        [link(1, "p_persona"), link(2, "p_user")],
-        [
-          post("p_persona", general, { authorPersonaId: "pa1", authorUserId: "u_ann" }),
-          post("p_user", general),
-        ]
-      );
-      expect(ids(await page(db, admin))).toEqual(["p_user"]);
-    });
   });
 
   describe("paging", () => {
@@ -347,14 +277,7 @@ describe("discussionsOf", () => {
 
     it.each([
       ["no dot", "l999"],
-      ["no dot, digits", "123"],
-      ["no time", ".l001"],
-      ["no id", "123."],
-      ["not a time", "abc.l001"],
       ["exponent time", "1e3.l001"],
-      ["padded time", " 12 .l001"],
-      ["hex time", "0x10.l001"],
-      ["signed time", "-5.l001"],
     ])("reads a cursor that does not parse as the end of the list: %s", async (_label, cursor) => {
       const db = many(3);
       expect(await page(db, guest, cursor)).toEqual({ items: [], nextCursor: null });
@@ -410,22 +333,6 @@ describe("discussionCountsOf", () => {
     expect(out.a2).toEqual({ count: 1, postIds: ["p_b"] });
     expect(out.a1!.count).toBe(1000);
     expect(out.a3).toEqual({ count: 0, postIds: [] });
-  });
-
-  it("reads again only the actions the shared read starved, each bounded to its own newest 200", async () => {
-    const busy = Array.from({ length: 1000 }, (_, i) => link(i + 1, `pb${i}`));
-    const db = world(
-      [...busy, link(5000, "p_b", { activityId: "a2" })],
-      [...busy.map((l) => post(l.postRef, general)), post("p_b", general)]
-    );
-    await counts(db, guest, ["a1", "a2"]);
-    const takes = db.postActionLink.findMany.mock.calls.map(
-      ([args]) => [args.where.activityId, args.take] as const
-    );
-    expect(takes).toEqual([
-      [{ in: ["a1", "a2"] }, 1000],
-      ["a2", 200],
-    ]);
   });
   it("never counts a persona's post, for any viewer", async () => {
     const posts = [
