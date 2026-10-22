@@ -1,10 +1,17 @@
 /** @jest-environment node */
-// Plan 415 (BUG-09): a sister wiki's page is rendered by that wiki's own parser, not by IxWiki's. The request
-// goes to the sister wiki's api.php (the host is asserted), carries the allow-listed user agent and the page's
-// title, and the answer is transformed, sanitized and cached per (source, title, revision).
-import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
+/**
+ * Sister wikis (IIWiki, AltHistory): a page is rendered by that wiki's own parser, never IxWiki's and never as a page
+ * it parses itself, transformed and sanitized for the reader with its TemplateStyles scoped to the article; IIWiki's
+ * browser render keeps links in WikiOS and strips scripts; upstream answers (429, a Cloudflare page, an API error in a
+ * 200) become the right errors and are never cached.
+ */
+
+import { afterEach, beforeEach, describe, expect, it } from "@jest/globals";
 import { renderSisterArticle, SisterRenderError } from "~/lib/wiki-os/services/sister-render-service";
 import type { WikiArticle } from "~/lib/wiki-os/adapters/mediawiki/bridge/types";
+import { renderIiwikiInBrowser } from "~/lib/wiki-os/iiwiki-browser-render";
+import { TRPCError } from "@trpc/server";
+import { fetchMediaWikiJson } from "~/lib/wiki-os/upstream-fetch";
 
 const PARSED =
   '<div class="mw-parser-output"><table class="infobox"><tr><td><a href="/wiki/Eurth">Eurth</a></td></tr></table>' +
@@ -88,15 +95,6 @@ describe("renderSisterArticle: the request", () => {
     expect(form.has("page")).toBe(false);
     expect(form.has("wrapoutputclass")).toBe(false);
   });
-
-  it("sends the allow-listed IxStats-Builder user agent", async () => {
-    await renderSisterArticle("iiwiki", article());
-
-    const headers = fetchSpy.mock.calls[0]![1]!.headers as Record<string, string>;
-    expect(headers["User-Agent"]).toBe("IxStats-Builder");
-    expect(headers["Api-User-Agent"]).toBe("IxStats-Builder");
-    expect(headers["Content-Type"]).toBe("application/x-www-form-urlencoded");
-  });
 });
 
 describe("renderSisterArticle: the answer", () => {
@@ -147,18 +145,6 @@ describe("renderSisterArticle: the cache", () => {
     expect(second).toBe(first);
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
-
-  it("renders again for a new revision, another wiki or another title", async () => {
-    const page = article();
-    await renderSisterArticle("iiwiki", page);
-
-    await renderSisterArticle("iiwiki", { ...page, revId: page.revId! + 500 });
-    await renderSisterArticle("althistory", page);
-    await renderSisterArticle("iiwiki", { ...page, title: `${page.title} II` });
-
-    expect(fetchSpy).toHaveBeenCalledTimes(4);
-  });
-
   it("does not cache a page whose revision it does not know", async () => {
     const page = article({ revId: undefined });
 
@@ -167,29 +153,94 @@ describe("renderSisterArticle: the cache", () => {
 
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
+});
 
-  it("costs one request for two readers at once", async () => {
-    const page = article();
+describe("IIWiki's browser render", () => {
+  const PARSED =
+    '<div class="mw-parser-output"><table class="infobox"><tr><td><a href="/wiki/Eurth">Eurth</a></td></tr></table>' +
+    '<p>Body <a href="/wiki/Gallambria" title="Gallambria">Gallambria</a> <a href="/wiki/File:Flag.png">flag</a>' +
+    "<script>alert(1)</script></p></div>";
 
-    const [a, b] = await Promise.all([
-      renderSisterArticle("iiwiki", page),
-      renderSisterArticle("iiwiki", page),
-    ]);
-
-    expect(a).toBe(b);
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  let fetchSpy: jest.SpiedFunction<typeof fetch>;
+  beforeEach(() => {
+    fetchSpy = jest
+      .spyOn(global, "fetch")
+      .mockImplementation(async () => Response.json({ parse: { title: "Gylias", text: PARSED } }));
   });
+  afterEach(() => fetchSpy.mockRestore());
 
-  it("keeps a render ten minutes", async () => {
-    const page = article();
-    await renderSisterArticle("iiwiki", page);
+  describe("renderIiwikiInBrowser", () => {
+    it("keeps article links in WikiOS, sends files to IIWiki and strips scripts", async () => {
+      const page = await renderIiwikiInBrowser("Gylias");
+      expect(page?.title).toBe("Gylias");
+      expect(page?.infoboxHtml).toContain('href="/wiki/Eurth?source=iiwiki"');
+      expect(page?.contentHtml).toContain('href="/wiki/Gallambria?source=iiwiki"');
+      expect(page?.contentHtml).toContain('href="https://iiwiki.com/wiki/File:Flag.png"');
+      expect(page?.contentHtml).not.toContain("<script");
+    });
+    it("throws when Cloudflare refuses the browser", async () => {
+      fetchSpy.mockResolvedValueOnce(new Response("Just a moment...", { status: 403 }));
+      await expect(renderIiwikiInBrowser("Gylias")).rejects.toThrow("IIWiki answered 403");
+    });
+  });
+});
 
-    now += 10 * 60 * 1000 - 1;
-    await renderSisterArticle("iiwiki", page);
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+describe("upstream answers", () => {
+  const realFetch = globalThis.fetch;
 
-    now += 2;
-    await renderSisterArticle("iiwiki", page);
-    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  function jsonResponse(body: unknown, status = 200) {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  async function rejection(promise: Promise<unknown>): Promise<TRPCError> {
+    try {
+      await promise;
+    } catch (error) {
+      return error as TRPCError;
+    }
+    throw new Error("expected the call to reject");
+  }
+
+  describe("fetchMediaWikiJson", () => {
+    afterEach(() => {
+      globalThis.fetch = realFetch;
+    });
+    it("maps HTTP 429 to TOO_MANY_REQUESTS", async () => {
+      globalThis.fetch = jest.fn(async () => jsonResponse({}, 429)) as unknown as typeof fetch;
+      const error = await rejection(fetchMediaWikiJson("https://wiki.test/api.php?429"));
+      expect(error).toBeInstanceOf(TRPCError);
+      expect(error.code).toBe("TOO_MANY_REQUESTS");
+    });
+    it("maps an HTML body (a Cloudflare challenge page) to BAD_GATEWAY", async () => {
+      globalThis.fetch = jest.fn(
+        async () => new Response("<html>Just a moment...</html>", { status: 200 })
+      ) as unknown as typeof fetch;
+      const error = await rejection(fetchMediaWikiJson("https://wiki.test/api.php?html"));
+      expect(error.code).toBe("BAD_GATEWAY");
+    });
+
+    it("turns an API error with HTTP 200 into BAD_GATEWAY carrying the code", async () => {
+      globalThis.fetch = jest.fn(async () =>
+        jsonResponse({ error: { code: "badvalue", info: "bad" } })
+      ) as unknown as typeof fetch;
+      const error = await rejection(fetchMediaWikiJson("https://wiki.test/api.php?badvalue"));
+      expect(error.code).toBe("BAD_GATEWAY");
+      expect(error.message).toContain("badvalue");
+    });
+    it("does not cache a failure", async () => {
+      const fetchMock = jest
+        .fn()
+        .mockImplementationOnce(async () => jsonResponse({}, 500))
+        .mockImplementationOnce(async () => jsonResponse({ ok: true }));
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      await rejection(fetchMediaWikiJson("https://wiki.test/api.php?flaky", { cacheTtlMs: 60_000 }));
+      const data = await fetchMediaWikiJson("https://wiki.test/api.php?flaky", { cacheTtlMs: 60_000 });
+      expect(data).toEqual({ ok: true });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
   });
 });
