@@ -70,7 +70,7 @@ export function mediansBySale(
  * Writes every card's reference value in one statement: the highest of floor × type, the Standard median and (NS
  * cards before their first sale) bank value × premium, rounded to the cent as `Math.round(n * 100) / 100` does. It
  * is `referenceValue` in valuation.ts in SQL, in float8 as JavaScript numbers are, so the two agree to the bit; the
- * tests in market-values.test.ts keep them in step. A retired card is revalued too, as it keeps its value for a
+ * tests in valuation-formula.test.ts keep them in step. A retired card is revalued too, as it keeps its value for a
  * restore. Only cards whose value moved are written (and locked); returns them.
  */
 function updateReferenceValues(tx: Tx, cfg: CardValuationConfig) {

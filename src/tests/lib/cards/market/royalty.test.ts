@@ -146,7 +146,7 @@ describe("nation royalty", () => {
 
   it("keeps a payout's share with the house when the ledger refuses that payout", async () => {
     // On a sale this needs the config to flip after the seller was paid: with earning off, the seller's EARN_CARDS
-    // payment comes first and fails the whole sale (settle-sale.test.ts pins that)
+    // payment comes first and fails the whole sale (cards-listing-sale pins that)
     earn.mockRejectedValueOnce(new LedgerError("EARNING_DISABLED", "Earning credits is off."));
     expect(await pay(makeTx("owner"), { partyIds: [] })).toEqual([]);
   });

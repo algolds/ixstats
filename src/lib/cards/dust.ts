@@ -45,7 +45,7 @@ function finishDustMult(finish: CardFinish, cfg: CardEconomyConfig): number {
  * Dust a copy breaks down for: the Standard yield (an imported NS copy's share, rounded down before the finish so a
  * fused copy can never round up) times the finish's whole multiple. Serialised copies never break down. A fused copy
  * is import-discounted when any of its inputs was, which keeps fusing from ever adding dust (the EV guard in
- * `economy-ev.test.ts`).
+ * `src/tests/lib/cards/dust.test.ts`).
  */
 export function dustYield(copy: DustCopy, cfg: CardEconomyConfig): number {
   if (copy.finish === "SERIALISED") return 0;
