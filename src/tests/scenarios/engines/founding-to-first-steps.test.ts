@@ -6,9 +6,14 @@
  * the form's government and its institutions; the founder now acts as it. Its first steps are all open and the welcome
  * page names it. A customised draft sends its components and exact figures.
  *
+ * A blank draft, and one founded on a foundation nation with an exact population, preview the nation they found too;
+ * a draft with a band that does not exist is refused.
+ *
  * Replaces the deleted country-baseline-ixtime source grep with the behaviour, and folds the payload cases of
  * founding-draft (no explicit payloads, components only once customised, exact figures in coreIndicators, the preview
- * carrying the founding's figure fields) and the new-nation and welcome cases of mycountry-first-steps.
+ * carrying the founding's figure fields), the new-nation and welcome cases of mycountry-first-steps and
+ * countries-preview-founding (the preview equals the founded nation for every kind of draft, writes nothing, the
+ * government type comes from the form, an unknown band refused).
  */
 let mockDb: unknown;
 jest.mock("~/server/db", () => ({
@@ -196,4 +201,83 @@ it("sends a customised draft's components and exact figures", () => {
     nominalGDP: 0,
   });
   expect(input.economicInputs?.nationalIdentity).toMatchObject({ nationalAnimal: "Lynx" });
+});
+
+it.each([
+  ["a blank draft", {}],
+  [
+    "a foundation nation with an exact population and its inferred form",
+    {
+      foundationCountry: "benchmark",
+      archetypeId: "arch_nordic",
+      economicInputs: {
+        coreIndicators: { totalPopulation: 8_400_000, gdpPerCapita: 0, nominalGDP: 0 },
+      },
+    },
+  ],
+])("previews %s as the nation it founds", async (_label, draft) => {
+  await db.country.create({
+    data: {
+      id: "benchmark",
+      name: "Benchmark",
+      slug: "benchmark",
+      realmId: "default",
+      baselinePopulation: 9_000_000,
+      baselineGdpPerCapita: 52_000,
+      baselineDate: new Date(NOW),
+      maxGdpGrowthRate: 0.05,
+      adjustedGdpGrowth: 0.02,
+      actualGdpGrowth: 0.02,
+      populationGrowthRate: 0.01,
+      currentPopulation: 9_000_000,
+      currentGdpPerCapita: 52_000,
+      currentTotalGdp: 9_000_000 * 52_000,
+      economicTier: "Very Strong",
+      populationTier: "1",
+      landArea: 400_000,
+      continent: "Norda",
+      region: "North",
+    },
+  });
+  const founder = await db.user.create({
+    data: { id: "ines", clerkUserId: "ines-clerk", lastSeenAt: new Date() },
+  });
+  const ctx = asOwner(db as never, {
+    id: founder.id,
+    clerkUserId: founder.clerkUserId,
+    countryId: null,
+  });
+
+  const preview = await countries(ctx).previewFounding({ name: "New Aurelia", ...draft } as never);
+  expect(await db.country.count()).toBe(1);
+  const { id } = await countries(ctx).createCountry({
+    name: "New Aurelia",
+    foundationCountry: null,
+    economicInputs: {},
+    ...draft,
+  } as never);
+
+  const written = await db.country.findUniqueOrThrow({ where: { id } });
+  expect(written).toMatchObject({
+    currentPopulation: preview.population,
+    currentGdpPerCapita: preview.gdpPerCapita,
+    nominalGDP: preview.gdp,
+  });
+  const structure = await db.governmentStructure.findUniqueOrThrow({ where: { countryId: id } });
+  expect(structure.governmentEffectiveness).toBeCloseTo(preview.governmentEffectiveness, 2);
+  // The government type comes from the form, never the archetype's name
+  expect(written.governmentType).toBe(structure.governmentType);
+  expect(written.governmentType).not.toBe(
+    buildArchetypeSeedRows().find((r) => r.key === "nordic")!.name
+  );
+  for (const value of Object.values(preview)) {
+    if (typeof value === "number") expect(Number.isFinite(value)).toBe(true);
+  }
+});
+
+it("refuses a draft with a band that does not exist", async () => {
+  const ctx = asOwner(db as never, { id: "ines", clerkUserId: "ines-clerk", countryId: null });
+  await expect(
+    countries(ctx).previewFounding({ wealthBand: "galactic" } as never)
+  ).rejects.toMatchObject({ code: "BAD_REQUEST" });
 });

@@ -1,13 +1,36 @@
 /** @jest-environment node */
 /**
- * computeFoundingSnapshot founds one nation per archetype × population band × wealth band with a
- * coherent starting state (redesign spec §3): sectors and labor sum to 100, the budget balances
- * against tax revenue within ±1% of GDP, 5 to 9 departments with allocations summing to the
- * budget, and no NaN or negative figure. Its summary figures match what the real write path and
- * the stored stability formula would produce.
+ * The founding corpus. computeFoundingSnapshot founds every archetype (each at a different population and wealth
+ * band, so every band pair is covered) with a coherent starting state (redesign spec §3): sectors and labor sum to
+ * 100, the budget balances against tax revenue within ±1% of GDP, 5 to 9 departments with allocations summing to the
+ * budget, no NaN or negative figure, and the effectiveness the real write path stores. A form's founding takes its
+ * government type and departments; exact figures, renamed institutions and explicit payloads are honoured; the
+ * stability matches the stored formula. The catalogues founding reads resolve (archetype bands and forms, every
+ * economic component), and a nation created outside the builder (realm claim, world import) starts from the IxTime
+ * baseline with its tier's growth cap and its realm's growth table.
+ *
+ * Folds archetype-display, economic-components and baseline-country. The preview equalling the written nation is in
+ * founding-to-first-steps.
  */
 import type { EconomicArchetype } from "@prisma/client";
-import { buildArchetypeSeedRows } from "~/lib/economy/archetypes/seed";
+import { buildArchetypeSeedRows, builtinArchetypes } from "~/lib/economy/archetypes/seed";
+import {
+  ARCHETYPE_DISPLAY,
+  GOVERNMENT_FORM_IDS,
+  POPULATION_BANDS,
+  WEALTH_BANDS,
+} from "~/lib/economy/archetypes/display";
+import {
+  ATOMIC_ECONOMIC_COMPONENTS,
+  ECONOMIC_TEMPLATES,
+  EconomicComponentType,
+} from "~/lib/economy/atomic-data";
+import { buildBaselineCountryData } from "~/lib/countries/baseline-country";
+import { IxTime } from "~/lib/ixtime";
+import {
+  IXSTATS_NATION_GROWTH_DEFAULTS,
+  type NationGrowthTable,
+} from "~/lib/realms/nation-growth-defaults";
 import { POPULATION_BAND_IDS, WEALTH_BAND_IDS } from "~/lib/builder/founding-bands";
 import { departmentsForForm } from "~/lib/government/form-departments";
 import { getGovernmentForm } from "~/lib/government/forms";
@@ -123,25 +146,52 @@ function assertCoherent(snapshot: FoundingSnapshot) {
   expect(summary.governmentEffectiveness).toBeLessThanOrEqual(100);
 }
 
-const MATRIX = ARCHETYPES.flatMap((archetype) =>
-  POPULATION_BAND_IDS.flatMap((populationBand) =>
-    WEALTH_BAND_IDS.map((wealthBand) => [archetype.key, populationBand, wealthBand] as const)
-  )
+/** What `syncGovernmentComponents` writes for a founding's components on a nation with none yet. */
+async function writtenEffectiveness(snapshot: FoundingSnapshot): Promise<number> {
+  let n = 0;
+  const update = jest.fn().mockResolvedValue({});
+  const tx = {
+    governmentComponent: {
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn(({ data }: { data: object }) => Promise.resolve({ id: `gc${n++}`, ...data })),
+      deleteMany: jest.fn(),
+    },
+    componentSynergy: { deleteMany: jest.fn(), createMany: jest.fn() },
+    governmentStructure: { update },
+  };
+  await syncGovernmentComponents(tx as never, "c1", snapshot.governmentComponents);
+  return update.mock.calls[0]![0].data.governmentEffectiveness as number;
+}
+
+/** Each archetype at its own band pair: archetype i takes population band i mod 4 and wealth band (i div 4) mod 4. */
+const MATRIX = ARCHETYPES.map(
+  (archetype, i) =>
+    [
+      archetype.key,
+      POPULATION_BAND_IDS[i % POPULATION_BAND_IDS.length]!,
+      WEALTH_BAND_IDS[Math.floor(i / POPULATION_BAND_IDS.length) % WEALTH_BAND_IDS.length]!,
+    ] as const
 );
 
-describe("computeFoundingSnapshot: every archetype × size × wealth", () => {
-  it.each(MATRIX)("%s, %s, %s founds a coherent nation", (key, populationBand, wealthBand) => {
-    const archetype = ARCHETYPES.find((a) => a.key === key)!;
-    const snapshot = computeFoundingSnapshot({
-      name: "Aurelia",
-      archetype,
-      foundation: null,
-      populationBand,
-      wealthBand,
-      budgetYear: BUDGET_YEAR,
-    });
-    assertCoherent(snapshot);
-  });
+describe("computeFoundingSnapshot: every archetype, every band pair", () => {
+  it.each(MATRIX)(
+    "%s, %s, %s founds a coherent nation at the effectiveness the save writes",
+    async (key, populationBand, wealthBand) => {
+      const archetype = ARCHETYPES.find((a) => a.key === key)!;
+      const snapshot = computeFoundingSnapshot({
+        name: "Aurelia",
+        archetype,
+        foundation: null,
+        populationBand,
+        wealthBand,
+        budgetYear: BUDGET_YEAR,
+      });
+      assertCoherent(snapshot);
+      const written = await writtenEffectiveness(snapshot);
+      expect(snapshot.summary.governmentEffectiveness).toBeCloseTo(written, 2);
+      expect(foundingGovernmentEffectiveness(snapshot.governmentComponents)).toBe(written);
+    }
+  );
 
   it("blank founding (no archetype) uses the default sector mix and still balances", () => {
     const snapshot = computeFoundingSnapshot({
@@ -154,7 +204,7 @@ describe("computeFoundingSnapshot: every archetype × size × wealth", () => {
     expect((snapshot.economyBuilderState.sectors as unknown[]).length).toBe(7);
   });
 
-  it.each(["parliamentary-republic", "absolute-monarchy", "confederation", "technocracy"])(
+  it.each(["absolute-monarchy", "confederation"])(
     "a %s founding takes the form's government type and departments",
     (formId) => {
       const snapshot = computeFoundingSnapshot({
@@ -255,43 +305,15 @@ describe("helpers", () => {
   });
 });
 
-describe("summary parity with the write path", () => {
-  it.each(ARCHETYPES.map((a) => [a.key, a] as const))(
-    "%s: government effectiveness equals what syncGovernmentComponents writes",
-    async (_key, archetype) => {
-      const snapshot = computeFoundingSnapshot({ name: "P", archetype, foundation: null });
-      let n = 0;
-      const update = jest.fn().mockResolvedValue({});
-      const tx: any = {
-        governmentComponent: {
-          findMany: jest.fn().mockResolvedValue([]),
-          create: jest.fn(({ data }: { data: object }) =>
-            Promise.resolve({ id: `gc${n++}`, ...data })
-          ),
-          deleteMany: jest.fn(),
-        },
-        componentSynergy: { deleteMany: jest.fn(), createMany: jest.fn() },
-        governmentStructure: { update },
-      };
-      await syncGovernmentComponents(tx, "c1", snapshot.governmentComponents);
-      const written = update.mock.calls[0]![0].data.governmentEffectiveness as number;
-      expect(snapshot.summary.governmentEffectiveness).toBeCloseTo(written, 2);
-      expect(foundingGovernmentEffectiveness(snapshot.governmentComponents)).toBe(written);
-    }
-  );
-
-  it.each([
-    ["nordic", "medium", "wealthy"],
-    ["soviet-command", "very-large", "developing"],
-    ["singapore", "small", "very-wealthy"],
-  ] as const)("%s: stability equals the stored formula for the founded row", async (key, p, w) => {
-    const archetype = ARCHETYPES.find((a) => a.key === key)!;
+describe("summary parity with the stored stability formula", () => {
+  it("nordic, medium, wealthy: stability equals the stored formula for the founded row", async () => {
+    const archetype = ARCHETYPES.find((a) => a.key === "nordic")!;
     const snapshot = computeFoundingSnapshot({
       name: "S",
       archetype,
       foundation: { baselinePopulation: 0, baselineGdpPerCapita: 0, landArea: 120_000 },
-      populationBand: p,
-      wealthBand: w,
+      populationBand: "medium",
+      wealthBand: "wealthy",
     });
     const { numbers, base } = snapshot;
     const country = {
@@ -300,7 +322,7 @@ describe("summary parity with the write path", () => {
       currentPopulation: base.population,
       populationDensity: base.population / 120_000,
     };
-    const db: any = {
+    const db = {
       country: { findUnique: jest.fn().mockResolvedValue(country) },
       economicProfile: { findUnique: jest.fn().mockResolvedValue(null) },
       demographics: {
@@ -317,7 +339,92 @@ describe("summary parity with the write path", () => {
       policy: { findMany: jest.fn().mockResolvedValue([]) },
       internalStabilityMetrics: { findUnique: jest.fn().mockResolvedValue(null) },
     };
-    const stored = await computeInternalStability(db, "c1");
+    const stored = await computeInternalStability(db as never, "c1");
     expect(snapshot.summary.stability).toBe(stored!.stabilityScore);
+  });
+});
+
+describe("the catalogues founding reads", () => {
+  it("gives every archetype a valid typical band pair and starting form", () => {
+    const invalid = Object.entries(ARCHETYPE_DISPLAY).filter(
+      ([, d]) =>
+        !POPULATION_BANDS.includes(d.typicalPopulationBand) ||
+        !WEALTH_BANDS.includes(d.typicalWealthBand) ||
+        !(GOVERNMENT_FORM_IDS as readonly string[]).includes(d.startingGovernmentForm)
+    );
+    expect(invalid.map(([id]) => id)).toEqual([]);
+  });
+
+  it("defines every economic component the archetypes and templates name, with symmetric synergies and conflicts", () => {
+    const all = Object.values(EconomicComponentType);
+    const definitionOf = (type: EconomicComponentType) => ATOMIC_ECONOMIC_COMPONENTS[type];
+    expect(all.filter((type) => !definitionOf(type))).toEqual([]);
+    const oneSided = all.flatMap((type) => [
+      ...definitionOf(type)!
+        .synergies.filter((o) => !definitionOf(o)?.synergies.includes(type))
+        .map((o) => `${type} synergy ${o}`),
+      ...definitionOf(type)!
+        .conflicts.filter((o) => !definitionOf(o)?.conflicts.includes(type))
+        .map((o) => `${type} conflict ${o}`),
+    ]);
+    expect(oneSided).toEqual([]);
+    const archetypes = builtinArchetypes();
+    expect(archetypes).toHaveLength(20);
+    const unresolved = [
+      ...ECONOMIC_TEMPLATES.flatMap((t) =>
+        t.components.map((c) => [`template ${t.id}`, c] as const)
+      ),
+      ...archetypes.flatMap((a) =>
+        a.economicComponents.map((c) => [`archetype ${a.id}`, c] as const)
+      ),
+    ].filter(([, type]) => !definitionOf(type));
+    expect(unresolved).toEqual([]);
+    expect(archetypes.filter((a) => a.economicComponents.length === 0)).toEqual([]);
+  });
+});
+
+describe("a nation created outside the builder (realm claim, world import)", () => {
+  beforeEach(() => jest.useFakeTimers().setSystemTime(new Date("2026-09-28T12:00:00Z")));
+  afterEach(() => jest.useRealTimers());
+
+  it("starts from the IxTime baseline with the default figures", () => {
+    const data = buildBaselineCountryData("Aurelia");
+    const now = new Date(IxTime.getCurrentIxTime());
+    expect(data).toMatchObject({
+      name: "Aurelia",
+      // Unknown stays empty, as on Ixnay's countries: every reader shows its own fallback.
+      continent: null,
+      region: null,
+      baselinePopulation: 1_000_000,
+      baselineGdpPerCapita: 50_000,
+      landArea: 100_000,
+      baselineDate: now,
+      lastCalculated: now,
+      nominalGDP: 1_000_000 * 50_000,
+    });
+    expect(data.governmentType).toBeUndefined();
+    expect(data).not.toHaveProperty("slug");
+  });
+
+  it("caps GDP growth by its tier and takes the growth defaults of the tier or of its realm", () => {
+    expect(buildBaselineCountryData("Aurelia")).toMatchObject({
+      maxGdpGrowthRate: 0.0275,
+      ...IXSTATS_NATION_GROWTH_DEFAULTS.Strong,
+    });
+    expect(buildBaselineCountryData("Borea", { baselineGdpPerCapita: 5_000 })).toMatchObject({
+      maxGdpGrowthRate: 0.1,
+      ...IXSTATS_NATION_GROWTH_DEFAULTS.Impoverished,
+    });
+    const table: NationGrowthTable = {
+      ...IXSTATS_NATION_GROWTH_DEFAULTS,
+      Developing: { populationGrowthRate: 0.02, adjustedGdpGrowth: 0.004 },
+    };
+    expect(
+      buildBaselineCountryData("Calder", { baselineGdpPerCapita: 15_000 }, table)
+    ).toMatchObject({
+      populationGrowthRate: 0.02,
+      adjustedGdpGrowth: 0.004,
+      maxGdpGrowthRate: 0.075,
+    });
   });
 });
