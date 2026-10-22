@@ -6,7 +6,7 @@ import { forwardFinder } from "../wikitext/forward-finder";
  * rest of the text for a closer that is not there). Each pass here answers what the expression answered, in
  * one left-to-right scan: a search for a closer that found nothing answers every later opener too, and one
  * that found a closer answers every opener before it, so the work is the length of the text, not the
- * length times the number of openers. tests/lib/wiki-os/clean-markup-linear.test.ts holds a copy of each
+ * length times the number of openers. tests/lib/wiki-os/regex-dos-compiler.test.ts holds a copy of each
  * expression and fuzzes the two against each other.
  */
 
