@@ -822,7 +822,7 @@ describe("issue consequences become level effects", () => {
     extra: Partial<ConsequenceDefinition> = {}
   ): ConsequenceDefinition => ({ targetModel: "Country", targetField, operation, value, ...extra });
 
-  it.each<[string, ConsequenceDefinition, object | null]>([
+  it.each<[string, ConsequenceDefinition, Record<string, unknown> | null]>([
     [
       "growth compounding over whole IxTime years",
       consequence("actualGdpGrowth", "add", 1, { durationDays: 730, effectType: "gradual" }),

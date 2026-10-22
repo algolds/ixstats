@@ -24,7 +24,7 @@ const stored = {
 
 function setup(country: typeof stored | null = stored) {
   const db = {
-    $transaction: jest.fn((cb: (tx: unknown) => unknown) => cb(db)),
+    $transaction: jest.fn((cb: (tx: unknown) => unknown): unknown => cb(db)),
     country: {
       findUnique: jest.fn().mockResolvedValue(country),
       update: jest.fn(async ({ data }: { data: object }) => ({ ...stored, ...data })),

@@ -273,7 +273,7 @@ describe("sanitizeSvg", () => {
     expect(out).toContain("xmlns=");
   });
 
-  it.each([
+  it.each<[string, string, RegExp]>([
     ["a script element", wrap("<script>alert(1)</script><rect/>"), /script|alert/i],
     [
       "event handler attributes",
@@ -311,12 +311,11 @@ describe("sanitizeSvg", () => {
       /x\.example/,
     ],
     ...["fill", "filter", "mask", "clip-path", "marker-start"].map(
-      (attr) =>
-        [
-          `an external url in ${attr}`,
-          wrap(`<rect ${attr}="url(https://x.example/a)"/>`),
-          /x\.example/,
-        ] as const
+      (attr): [string, string, RegExp] => [
+        `an external url in ${attr}`,
+        wrap(`<rect ${attr}="url(https://x.example/a)"/>`),
+        /x\.example/,
+      ]
     ),
   ])("removes %s", (_case, input, removed) => {
     expect(sanitizeSvg(input)).not.toMatch(removed);

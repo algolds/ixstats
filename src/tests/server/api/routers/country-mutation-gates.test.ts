@@ -206,7 +206,7 @@ function firstStepsDb(
       findUnique: jest.fn(async ({ where }: { where: { id: string } }) =>
         where.id === CALLER_COUNTRY ? own : { id: where.id, ownerUserId: "db_user_someone_else" }
       ),
-      update: jest.fn(async () => own),
+      update: jest.fn(async (_args: { where: { id: string }; data: object }) => own),
     },
     budgetAllocation: {
       // Mirrors the `updatedAt > threshold` filter the query sends.
@@ -219,7 +219,9 @@ function firstStepsDb(
     fiscalSystem: { findUnique: jest.fn(async () => rows.fiscal ?? null) },
     taxSystem: { findUnique: jest.fn(async () => rows.tax ?? null) },
     governmentOfficial: { count: jest.fn(async () => rows.officials ?? 0) },
-    wikiArticle: { findFirst: jest.fn(async () => rows.wikiArticle ?? null) },
+    wikiArticle: {
+      findFirst: jest.fn(async (_args: { where: object }) => rows.wikiArticle ?? null),
+    },
     city: { findFirst: jest.fn(async () => rows.capital ?? null) },
   };
 }

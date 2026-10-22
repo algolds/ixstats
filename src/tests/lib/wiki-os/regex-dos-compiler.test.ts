@@ -1325,33 +1325,14 @@ const CLEAN_TOKENS = [
   "K",
 ];
 
-function* randomTexts(count: number, seed: number): Generator<string> {
-  let state = seed;
-  const next = () => {
-    state = (state * 1664525 + 1013904223) % 4294967296;
-    return state / 4294967296;
-  };
-  for (let i = 0; i < count; i++) {
-    const length = 1 + Math.floor(next() * 14);
-    let text = "";
-    for (let j = 0; j < length; j++) text += CLEAN_TOKENS[Math.floor(next() * CLEAN_TOKENS.length)];
-    yield text;
-  }
-}
-
-/** The first texts on which `actual` and `expected` disagree. */
+/** The first texts on which `actual` and `expected` disagree, of `count` random texts of up to 14 clean tokens. */
 function cleanDisagreements(
   actual: (text: string) => string,
   expected: (text: string) => string,
   count = 30_000,
   seed = 4060
 ): string[] {
-  const bad: string[] = [];
-  for (const text of randomTexts(count, seed)) {
-    if (actual(text) !== expected(text)) bad.push(text);
-    if (bad.length >= 5) break;
-  }
-  return bad;
+  return disagreements(randomTexts(CLEAN_TOKENS, count, seed, 14), actual, expected);
 }
 
 describe("each linear pass answers what its expression answered", () => {

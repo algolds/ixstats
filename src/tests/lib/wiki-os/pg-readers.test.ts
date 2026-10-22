@@ -44,7 +44,9 @@ import { LinkGraphService } from "~/lib/wiki-os/core/link-graph-service";
 import { PageManagementService } from "~/lib/wiki-os/core/page-management-service";
 
 // each folded suite sets what it reads; nothing one leaves on the shared database mock reaches the next
-beforeEach(() => jest.resetAllMocks());
+beforeEach(() => {
+  jest.resetAllMocks();
+});
 
 describe("user info", () => {
   const mocked = db as unknown as {

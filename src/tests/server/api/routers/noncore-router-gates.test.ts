@@ -30,6 +30,7 @@ jest.mock("~/lib/cache", () => ({
   invalidateCache: jest.fn().mockResolvedValue(undefined),
 }));
 
+import type { inferRouterInputs } from "@trpc/server";
 import { FeedbackLogger } from "~/lib/logging";
 import { withJobLock } from "~/lib/system/job-lock";
 import { actionLinksRouter } from "~/server/api/routers/actionLinks";
@@ -109,7 +110,7 @@ const FEEDBACK = {
   userAgent: "test",
   logs: [],
 };
-const TANK = {
+const TANK: inferRouterInputs<typeof militaryEquipmentCatalogRouter>["createCatalogEquipment"] = {
   name: "Test Tank",
   manufacturer: "NOBODY",
   category: "vehicle",

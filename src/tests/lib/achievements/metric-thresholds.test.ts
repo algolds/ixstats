@@ -534,10 +534,7 @@ describe("achievement definitions", () => {
       false,
     ],
   ] as const)("%s", (_case, key, data, expected) => {
-    const withCountry =
-      key === "meme-stonks"
-        ? data
-        : { ...data, country: { id: "c1", ...("country" in data ? data.country : {}) } };
+    const withCountry = key === "meme-stonks" ? data : { ...data, country: { id: "c1" } };
     expect(
       achievementService.evaluateCondition(
         { key, conditionJson: null },

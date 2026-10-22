@@ -968,11 +968,11 @@ describe("public threads", () => {
     category: { name: "General" },
   };
   function fakeDb(threads: object[]) {
-    const findMany = jest.fn<(args: object) => Promise<object[]>>().mockResolvedValue(threads);
+    const findMany = jest.fn<Promise<object[]>, [object]>().mockResolvedValue(threads);
     const db = {
       forumThread: { findMany },
       realm: {
-        findMany: jest.fn<(args: object) => Promise<object[]>>().mockResolvedValue([
+        findMany: jest.fn<Promise<object[]>, [object]>().mockResolvedValue([
           { id: "r_active", status: "active" },
           { id: "r_old", status: "archived" },
           { id: "r_draft", status: "draft" },
@@ -981,12 +981,12 @@ describe("public threads", () => {
       },
       user: {
         findMany: jest
-          .fn<(args: object) => Promise<object[]>>()
+          .fn<Promise<object[]>, [object]>()
           .mockResolvedValue([{ id: "u1", handle: "jane", wikiUsername: null, country: null }]),
       },
       thinkpagesAccount: {
         findMany: jest
-          .fn<(args: object) => Promise<object[]>>()
+          .fn<Promise<object[]>, [object]>()
           .mockResolvedValue([{ id: "pa1", displayName: "Herald", username: "herald" }]),
       },
     };
