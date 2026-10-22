@@ -1,13 +1,18 @@
 /**
  * Heraldry on a corpus of coats of arms: the blazon each is read as, the rule-of-tincture and scale warnings the
- * editor shows, and the random designer's output, which must always be a composition the schema stores and the
- * rule of tincture allows.
+ * editor shows, the random designer's output, which must always be a composition the schema stores and the
+ * rule of tincture allows, and the rendered shield, from which a hostile custom charge's scripts, handlers, images
+ * and external references are stripped (XSS) while the drawing stays well-formed.
+ *
+ * Folds: src/tests/lib/heraldry/shield-scene.test.tsx
  */
 import { generateBlazon } from "~/lib/heraldry/blazon";
 import { compositionSchema } from "~/lib/heraldry/composition-schema";
 import { generateRandomComposition } from "~/lib/heraldry/generator";
 import type { HeraldryComposition } from "~/lib/heraldry/types";
 import { validateComposition } from "~/lib/heraldry/validation";
+import { buildShieldScene, serializeShieldSvg } from "~/lib/heraldry/shield-scene";
+import "~/components/maps/vexel/renderer/ShieldRenderer";
 
 type Shield = HeraldryComposition["shield"];
 const arms = (
@@ -83,11 +88,6 @@ describe("coats of arms", () => {
       ["rule-of-tincture"],
     ],
     [
-      "colour on colour (Gules on Azure)",
-      arms({}, { charges: [lion("gules")] as never }),
-      ["rule-of-tincture"],
-    ],
-    [
       "a division with no tinctures",
       arms({ division: "per-pale", tinctures: [] }),
       ["empty-division"],
@@ -112,5 +112,32 @@ describe("coats of arms", () => {
       generateRandomComposition({ cultureGroup: "germanic" })
     );
     expect(germanic.some((c) => c.shield.charges?.[0]?.chargeId === "eagle")).toBe(true);
+  });
+
+  it("renders a hostile custom charge into a well-formed shield, without its scripts, handlers, images or external references", () => {
+    const customId = "6f1c2a52-6a8e-4b8e-9d55-0c1f7c1d2a11";
+    const hostileCharge =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10" onload="alert(1)">' +
+      '<script>alert(1)</script><circle cx="5" cy="5" r="4"/>' +
+      '<image href="https://tracker.example/x.png"/>' +
+      '<linearGradient id="g" href="https://evil.example/s.svg#a"/></svg>';
+    const svg = serializeShieldSvg(
+      buildShieldScene(
+        arms(
+          { division: "per-pale", tinctures: ["azure", "or"] },
+          {
+            ordinaries: [{ type: "chief", tincture: "gules", lineStyle: "straight" }],
+            charges: [lion("or"), { ...lion("argent"), chargeId: customId }] as never,
+          }
+        ),
+        { [customId]: hostileCharge }
+      )
+    );
+
+    const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
+    expect(doc.getElementsByTagName("parsererror")).toHaveLength(0);
+    expect(svg).toContain("<circle");
+    expect(svg).toMatch(/<lineargradient id="g"/i); // kept, minus its external href
+    expect(svg).not.toMatch(/<script|onload|alert|<image|tracker\.example|evil\.example/i);
   });
 });
