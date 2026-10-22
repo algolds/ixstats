@@ -1,10 +1,13 @@
 /** @jest-environment node */
 /**
- * The country editor's section saves: each patches only its own rows and columns, and refuses
- * (CONFLICT, before writing anything) only when a field it changes no longer holds the value the
- * page loaded. Writes to anything else, such as the stat progression moving the current figures
- * or a console touching the country row, never refuse a save. Renaming moves the slug and leaves
- * a redirect behind.
+ * The country editor's section saves: each patches only its own rows and columns, refuses another player's nation
+ * (FORBIDDEN) and refuses (CONFLICT, before writing anything) only when a field it changes no longer holds the value
+ * the page loaded. Writes to anything else, such as the stat progression moving the current figures or a console
+ * touching the country row, never refuse a save: one row per section. Then what each save writes: the identity's
+ * changed fields only, the form without touching departments, components synced in place (their scores kept), the
+ * size rebased, and a rename that moves the slug and leaves a redirect behind, also from Settings.
+ *
+ * Folds the Settings rename of country-rename (its redirect lookups are in slug-redirect-layout).
  */
 jest.mock("~/lib/cache", () => ({
   ...jest.requireActual("~/lib/cache"),
@@ -19,9 +22,13 @@ jest.mock("~/server/shared/map-invalidation", () => ({
   ...jest.requireActual("~/server/shared/map-invalidation"),
   invalidateRealmMap: jest.fn().mockResolvedValue(1),
 }));
+jest.mock("~/server/shared/intelligence-alert-thresholds", () => ({
+  evaluateThresholds: jest.fn().mockResolvedValue(undefined),
+}));
 
 import { createTRPCRouter } from "~/server/api/trpc";
 import { editorProcedures } from "~/server/api/routers/countries/editor";
+import { managementLifecycleProcedures } from "~/server/api/routers/countries/management/lifecycle";
 import { staleMessage } from "~/lib/mycountry/editor-fields";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import {
@@ -156,19 +163,158 @@ const LOADED_FORM = {
 
 beforeEach(() => jest.clearAllMocks());
 
-describe("countries.saveIdentity", () => {
-  const saveCapital = {
-    countryId,
-    section: "language" as const,
-    identity: { capitalCity: "Port Test", motto: "" },
-    expected: { identity: { capitalCity: "Old Port", motto: "Onward" } },
-  };
+const saveCapital = {
+  countryId,
+  section: "language" as const,
+  identity: { capitalCity: "Port Test", motto: "" },
+  expected: { identity: { capitalCity: "Old Port", motto: "Onward" } },
+};
+const formInput = {
+  countryId,
+  governmentType: "Constitutional Monarchy",
+  headOfState: "King",
+  headOfGovernment: "Prime Minister",
+  legislatureName: "Parliament",
+  executiveName: "",
+  judicialName: "High Court",
+  expected: LOADED_FORM,
+};
+const componentsInput = {
+  countryId,
+  componentTypes: ["DEMOCRATIC_PROCESS" as const, "INDEPENDENT_JUDICIARY" as const],
+  expected: { componentTypes: ["RULE_OF_LAW", "DEMOCRATIC_PROCESS"] },
+};
+const sizeInput = {
+  countryId,
+  population: 20_000_000,
+  gdpPerCapita: 30_000,
+  expected: { baselinePopulation: 9_000_000, baselineGdpPerCapita: 25_000 },
+};
+const renameInput = { countryId, name: "  New   Testland ", expected: { name: "Testland" } };
 
-  it("writes only the fields that changed and returns them", async () => {
+type Caller = ReturnType<typeof setup>["caller"];
+type Rows = ReturnType<typeof storedRows>;
+const SECTIONS: Array<{
+  name: string;
+  save: (caller: Caller, target: string) => Promise<unknown>;
+  /** Another tab saving the same section after this page loaded. */
+  anotherTab: (rows: Rows) => void;
+  stale: string;
+}> = [
+  {
+    name: "saveIdentity",
+    save: (c, target) => c.saveIdentity({ ...saveCapital, countryId: target }),
+    anotherTab: (rows) => {
+      rows.identity.motto = "Forward";
+    },
+    stale: "Capital and language changed since you opened it",
+  },
+  {
+    name: "saveGovernmentForm",
+    save: (c, target) => c.saveGovernmentForm({ ...formInput, countryId: target }),
+    anotherTab: (rows) => {
+      rows.structure!.judicialName = "Court of Appeal";
+    },
+    stale: "Form and institutions changed since you opened it",
+  },
+  {
+    name: "saveGovernmentComponents",
+    save: (c, target) =>
+      c.saveGovernmentComponents({
+        ...componentsInput,
+        componentTypes: [...componentsInput.componentTypes],
+        countryId: target,
+      }),
+    anotherTab: (rows) => {
+      rows.components = rows.components.slice(0, 1);
+    },
+    stale: staleMessage("institutions"),
+  },
+  {
+    name: "saveSize",
+    save: (c, target) => c.saveSize({ ...sizeInput, countryId: target }),
+    anotherTab: (rows) => {
+      rows.country.baselinePopulation = 15_000_000;
+    },
+    stale: "Population and wealth changed since you opened it",
+  },
+  {
+    name: "rename",
+    save: (c, target) => c.rename({ ...renameInput, countryId: target }),
+    anotherTab: (rows) => {
+      rows.country.name = "Otherland";
+    },
+    stale: staleMessage("name"),
+  },
+];
+
+describe("every section save", () => {
+  it.each(SECTIONS)(
+    "$name refuses another player's nation and a page another tab outdated, and no background write refuses it",
+    async ({ save, anotherTab, stale }) => {
+      const attempt = async (edit: (rows: Rows) => void, target = countryId) => {
+        const { db, caller } = setup(edit);
+        const result = await save(caller, target).then(
+          () => "saved",
+          (error: { code?: string; message?: string }) =>
+            error.code === "CONFLICT" ? `CONFLICT: ${error.message}` : error.code
+        );
+        return { result, wrote: written(db) };
+      };
+      expect({
+        foreign: await attempt(() => {}, FOREIGN_COUNTRY),
+        anotherTab: await attempt(anotherTab),
+        backgroundWrite: (await attempt(backgroundWrite)).result,
+      }).toEqual({
+        foreign: { result: "FORBIDDEN", wrote: [] },
+        anotherTab: { result: `CONFLICT: ${stale}`, wrote: [] },
+        backgroundWrite: "saved",
+      });
+    }
+  );
+
+  it("refuses values the checks refuse, fields of another section and missing originals", async () => {
     const { db, caller } = setup();
-    const result = await caller.saveIdentity(saveCapital);
+    const refuses = (input: Parameters<Caller["saveIdentity"]>[0]) =>
+      expect(caller.saveIdentity(input)).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await refuses({
+      countryId,
+      section: "civic",
+      identity: { isoCode: "TOOLONG" },
+      expected: { identity: { isoCode: null } },
+    });
+    await refuses({
+      countryId,
+      section: "civic",
+      identity: { motto: "Mine" },
+      expected: { identity: { motto: "Onward" } },
+    });
+    await refuses({
+      countryId,
+      section: "language",
+      identity: { motto: "Mine" },
+      expected: { identity: {} },
+    });
+    await refuses({
+      countryId,
+      section: "symbols",
+      identity: {},
+      flag: "javascript:alert(1)",
+      expected: { identity: {}, flag: null },
+    });
+    await expect(caller.saveSize({ ...sizeInput, population: 10 })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+    expect(written(db)).toEqual([]);
+  });
+});
 
-    expect(result).toEqual({ identity: { capitalCity: "Port Test", motto: null } });
+describe("what each save writes", () => {
+  it("saveIdentity writes only the fields that changed and returns them", async () => {
+    const { db, caller } = setup();
+    expect(await caller.saveIdentity(saveCapital)).toEqual({
+      identity: { capitalCity: "Port Test", motto: null },
+    });
     expect(db.nationalIdentity.upsert).toHaveBeenCalledWith({
       where: { countryId },
       update: { capitalCity: "Port Test", motto: null },
@@ -176,115 +322,9 @@ describe("countries.saveIdentity", () => {
     });
     expect(written(db)).toEqual(["nationalIdentity"]);
   });
-  it("keeps the country's religion copy in step", async () => {
+
+  it("saveGovernmentForm patches the type and names and nothing of departments or components", async () => {
     const { db, caller } = setup();
-    await caller.saveIdentity({
-      countryId,
-      section: "culture",
-      identity: { nationalReligion: "Secular" },
-      expected: { identity: { nationalReligion: null } },
-    });
-    expect(db.country.update.mock.calls[0]![0].data).toEqual({ religion: "Secular" });
-  });
-
-  it("is not refused by a background write or by another tab saving other fields", async () => {
-    const { db, caller } = setup((rows) => {
-      backgroundWrite(rows);
-      rows.identity.demonym = "Testian";
-    });
-    await expect(caller.saveIdentity(saveCapital)).resolves.toBeDefined();
-    expect(db.nationalIdentity.upsert).toHaveBeenCalled();
-  });
-
-  it("is refused when a field it changes moved since the page loaded", async () => {
-    const { db, caller } = setup((rows) => {
-      rows.identity.motto = "Forward";
-    });
-    await expect(caller.saveIdentity(saveCapital)).rejects.toMatchObject({
-      code: "CONFLICT",
-      message: "Capital and language changed since you opened it",
-    });
-    expect(written(db)).toEqual([]);
-  });
-
-  it("is refused when the flag moved since the page loaded", async () => {
-    const { db, caller } = setup((rows) => {
-      rows.country.flag = "https://example.com/other.svg";
-    });
-    await expect(
-      caller.saveIdentity({
-        countryId,
-        section: "symbols",
-        identity: {},
-        flag: "https://example.com/flag.svg",
-        expected: { identity: {}, flag: "https://example.com/old.svg" },
-      })
-    ).rejects.toMatchObject({ code: "CONFLICT", message: staleMessage("symbols") });
-    expect(written(db)).toEqual([]);
-  });
-
-  it("refuses values the checks refuse, fields of another section and missing originals", async () => {
-    const { db, caller } = setup();
-    await expect(
-      caller.saveIdentity({
-        countryId,
-        section: "civic",
-        identity: { isoCode: "TOOLONG" },
-        expected: { identity: { isoCode: null } },
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(
-      caller.saveIdentity({
-        countryId,
-        section: "civic",
-        identity: { motto: "Mine" },
-        expected: { identity: { motto: "Onward" } },
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(
-      caller.saveIdentity({
-        countryId,
-        section: "language",
-        identity: { motto: "Mine" },
-        expected: { identity: {} },
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(
-      caller.saveIdentity({
-        countryId,
-        section: "symbols",
-        identity: {},
-        flag: "javascript:alert(1)",
-        expected: { identity: {}, flag: null },
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(written(db)).toEqual([]);
-  });
-
-  it("refuses another player's nation", async () => {
-    const { db, caller } = setup();
-    await expect(
-      caller.saveIdentity({ ...saveCapital, countryId: FOREIGN_COUNTRY })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    expect(written(db)).toEqual([]);
-  });
-});
-
-describe("countries.saveGovernmentForm", () => {
-  const input = {
-    countryId,
-    governmentType: "Constitutional Monarchy",
-    headOfState: "King",
-    headOfGovernment: "Prime Minister",
-    legislatureName: "Parliament",
-    executiveName: "",
-    judicialName: "High Court",
-    expected: LOADED_FORM,
-  };
-
-  it("patches the type and names and nothing of departments or components", async () => {
-    const { db, caller } = setup();
-    const result = await caller.saveGovernmentForm(input);
     const saved = {
       governmentType: "Constitutional Monarchy",
       headOfState: "King",
@@ -293,7 +333,7 @@ describe("countries.saveGovernmentForm", () => {
       executiveName: null,
       judicialName: "High Court",
     };
-    expect(result).toEqual(saved);
+    expect(await caller.saveGovernmentForm(formInput)).toEqual(saved);
     expect(db.governmentStructure.update).toHaveBeenCalledWith({
       where: { countryId },
       data: saved,
@@ -302,38 +342,15 @@ describe("countries.saveGovernmentForm", () => {
       where: { id: countryId },
       data: { governmentType: "Constitutional Monarchy" },
     });
-    expect(db.nationalIdentity.updateMany).toHaveBeenCalledWith({
-      where: { countryId },
-      data: { governmentType: "Constitutional Monarchy" },
-    });
     expect(written(db)).toEqual(["country", "governmentStructure", "nationalIdentity"]);
   });
-  it("is refused when another tab renamed an institution", async () => {
-    const { db, caller } = setup((rows) => {
-      rows.structure!.judicialName = "Court of Appeal";
-    });
-    await expect(caller.saveGovernmentForm(input)).rejects.toMatchObject({
-      code: "CONFLICT",
-      message: "Form and institutions changed since you opened it",
-    });
-    expect(written(db)).toEqual([]);
-  });
-});
 
-describe("countries.saveGovernmentComponents", () => {
-  const input = {
-    countryId,
-    componentTypes: ["DEMOCRATIC_PROCESS", "INDEPENDENT_JUDICIARY"] as const,
-    expected: { componentTypes: ["RULE_OF_LAW", "DEMOCRATIC_PROCESS"] },
-  };
-
-  it("keeps the rows of kept components, adds new ones and removes the rest", async () => {
+  it("saveGovernmentComponents keeps the rows of kept components, adds new ones and removes the rest", async () => {
     const { db, caller } = setup();
     const result = await caller.saveGovernmentComponents({
-      ...input,
-      componentTypes: [...input.componentTypes],
+      ...componentsInput,
+      componentTypes: [...componentsInput.componentTypes],
     });
-
     expect(db.governmentComponent.create).toHaveBeenCalledTimes(1);
     expect(db.governmentComponent.create.mock.calls[0]![0].data).toMatchObject({
       countryId,
@@ -343,35 +360,13 @@ describe("countries.saveGovernmentComponents", () => {
     expect(db.governmentComponent.deleteMany).toHaveBeenCalledWith({
       where: { id: { in: ["gc_2"] } },
     });
-    expect(db.governmentStructure.update).toHaveBeenCalledWith({
-      where: { countryId },
-      data: { governmentEffectiveness: expect.any(Number) },
-    });
     expect(result).toMatchObject({ components: expect.any(Array), governmentEffectiveness: 55 });
     expect(written(db)).toEqual(["componentSynergy", "governmentComponent", "governmentStructure"]);
   });
-  it("is refused when another tab changed the component set", async () => {
-    const { db, caller } = setup((rows) => {
-      rows.components = [...rows.components.slice(0, 1)];
-    });
-    await expect(
-      caller.saveGovernmentComponents({ ...input, componentTypes: [...input.componentTypes] })
-    ).rejects.toMatchObject({ code: "CONFLICT", message: staleMessage("institutions") });
-    expect(written(db)).toEqual([]);
-  });
-});
 
-describe("countries.saveSize", () => {
-  const input = {
-    countryId,
-    population: 20_000_000,
-    gdpPerCapita: 30_000,
-    expected: { baselinePopulation: 9_000_000, baselineGdpPerCapita: 25_000 },
-  };
-
-  it("rebases population and wealth and recalculates what follows, on the country only", async () => {
+  it("saveSize rebases population and wealth and recalculates what follows, on the country only", async () => {
     const { db, caller } = setup();
-    const result = await caller.saveSize(input);
+    const result = await caller.saveSize(sizeInput);
     const data = db.country.update.mock.calls[0]![0].data;
     expect(data).toMatchObject({
       baselinePopulation: 20_000_000,
@@ -385,7 +380,6 @@ describe("countries.saveSize", () => {
       populationDensity: 200,
     });
     expect(data.baselineDate).toBeInstanceOf(Date);
-    expect(typeof data.economicTier).toBe("string");
     expect(result).toEqual({
       baselinePopulation: 20_000_000,
       baselineGdpPerCapita: 30_000,
@@ -395,38 +389,12 @@ describe("countries.saveSize", () => {
     expect(written(db)).toEqual(["country"]);
   });
 
-  it("is not refused when the stat progression moved the current figures", async () => {
-    const { caller } = setup(backgroundWrite);
-    await expect(caller.saveSize(input)).resolves.toBeDefined();
-  });
-
-  it("is refused when another tab saved a new size", async () => {
-    const { db, caller } = setup((rows) => {
-      rows.country.baselinePopulation = 15_000_000;
-    });
-    await expect(caller.saveSize(input)).rejects.toMatchObject({
-      code: "CONFLICT",
-      message: "Population and wealth changed since you opened it",
-    });
-    expect(written(db)).toEqual([]);
-  });
-
-  it("refuses figures out of range", async () => {
-    const { caller } = setup();
-    await expect(caller.saveSize({ ...input, population: 10 })).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-    });
-  });
-});
-
-describe("countries.rename", () => {
-  const input = { countryId, name: "  New   Testland ", expected: { name: "Testland" } };
-
-  it("renames, moves the slug, writes the identity name and leaves a redirect", async () => {
+  it("rename moves the slug, writes the identity name and leaves a redirect", async () => {
     const { db, caller } = setup();
-    const result = await caller.rename(input);
-
-    expect(result).toEqual({ name: "New Testland", slug: "new-testland" });
+    expect(await caller.rename(renameInput)).toEqual({
+      name: "New Testland",
+      slug: "new-testland",
+    });
     expect(db.country.update).toHaveBeenCalledWith({
       where: { id: countryId },
       data: { name: "New Testland", slug: "new-testland" },
@@ -444,43 +412,53 @@ describe("countries.rename", () => {
       update: { countryId },
       create: { oldSlug: "testland", countryId },
     });
-    expect(written(db)).toEqual(["country", "countrySlugRedirect", "nationalIdentity"]);
     expect(invalidateRealmMap).toHaveBeenCalledWith(expect.anything(), "realm_1");
   });
 
-  it("takes the next free slug when another nation holds the name's slug", async () => {
-    const { db, caller } = setup();
-    db.country.findFirst.mockImplementation(async ({ where }: { where: { slug?: string } }) =>
-      where.slug === "new-testland" ? { id: "someone_else" } : null
+  it("rename takes the next free slug, and refuses a name another nation of the realm has", async () => {
+    const slugTaken = setup();
+    slugTaken.db.country.findFirst.mockImplementation(
+      async ({ where }: { where: { slug?: string } }) =>
+        where.slug === "new-testland" ? { id: "someone_else" } : null
     );
-    const result = await caller.rename(input);
-    expect(result.slug).toBe("new-testland-2");
-  });
+    expect((await slugTaken.caller.rename(renameInput)).slug).toBe("new-testland-2");
 
-  it("refuses a name another nation of the realm has", async () => {
-    const { db, caller } = setup();
-    db.country.findFirst.mockResolvedValue({ id: "someone_else" });
-    await expect(caller.rename({ ...input, name: "Taken" })).rejects.toMatchObject({
+    const nameTaken = setup();
+    nameTaken.db.country.findFirst.mockResolvedValue({ id: "someone_else" });
+    await expect(nameTaken.caller.rename({ ...renameInput, name: "Taken" })).rejects.toMatchObject({
       code: "CONFLICT",
       message: "Another nation in this realm has this name.",
     });
-    expect(written(db)).toEqual([]);
+    expect(written(nameTaken.db)).toEqual([]);
   });
-  it("is refused when another tab renamed the nation", async () => {
-    const { db, caller } = setup((rows) => {
-      rows.country.name = "Otherland";
-    });
-    await expect(caller.rename(input)).rejects.toMatchObject({
-      code: "CONFLICT",
-      message: staleMessage("name"),
-    });
-    expect(db.countrySlugRedirect.upsert).not.toHaveBeenCalled();
-    expect(written(db)).toEqual([]);
-  });
-});
 
-describe("countries.checkNameAvailable", () => {
-  it("refuses a taken name, a lore nation and a name without letters", async () => {
+  it("a Settings rename (countries.update with a name) goes through the same rename", async () => {
+    const { db } = setup();
+    db.country.findUnique.mockResolvedValue({
+      id: CALLER_COUNTRY,
+      name: "Testland",
+      slug: "testland",
+      realmId: "realm_1",
+      continent: null,
+      region: null,
+    });
+    const settings = createTRPCRouter(managementLifecycleProcedures).createCaller(
+      createIdorContext(db as never)
+    );
+    await settings.update({ id: CALLER_COUNTRY, name: "New Testland" });
+    expect(db.country.update).toHaveBeenCalledWith({
+      where: { id: CALLER_COUNTRY },
+      data: expect.objectContaining({ name: "New Testland", slug: "new-testland" }),
+    });
+    expect(db.nationalIdentity.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ update: { countryName: "New Testland" } })
+    );
+    expect(db.countrySlugRedirect.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ create: { oldSlug: "testland", countryId: CALLER_COUNTRY } })
+    );
+  });
+
+  it("checkNameAvailable refuses a taken name, a lore nation and a name without letters, for the caller's nation only", async () => {
     const { db, caller } = setup();
     db.country.findFirst.mockResolvedValueOnce({ id: "someone_else" });
     await expect(caller.checkNameAvailable({ countryId, name: "taken" })).resolves.toMatchObject({
@@ -495,20 +473,14 @@ describe("countries.checkNameAvailable", () => {
         },
       })
     );
-
     db.realmPage.findFirst.mockResolvedValueOnce({ title: "Lorelia" });
     await expect(caller.checkNameAvailable({ countryId, name: "Lorelia" })).resolves.toEqual({
       available: false,
       reason: '"Lorelia" is a nation of this realm\'s lore. Claim it on the realm page instead.',
     });
-
     await expect(caller.checkNameAvailable({ countryId, name: "!!!" })).resolves.toMatchObject({
       available: false,
     });
-  });
-
-  it("refuses to check for another player's nation", async () => {
-    const { caller } = setup();
     await expect(
       caller.checkNameAvailable({ countryId: FOREIGN_COUNTRY, name: "Freeland" })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });

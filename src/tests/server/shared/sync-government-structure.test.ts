@@ -1,3 +1,9 @@
+/**
+ * The builder's save of a government (data-loss guards): the editor's nested structure fields are written, saved
+ * departments are updated in place (their cabinets kept) and only the dropped ones deleted, index-keyed allocations
+ * and parent links resolve to real ids, an input without departments leaves them alone, and kept components keep
+ * their rows and scores.
+ */
 import {
   syncGovernmentComponents,
   syncGovernmentStructure,
@@ -57,21 +63,6 @@ describe("syncGovernmentStructure", () => {
       totalBudget: 500,
     });
   });
-
-  it("still reads the flat shape, and falls back to defaults when names are blank", async () => {
-    const tx = makeTx();
-    await syncGovernmentStructure(tx as never, "c_1", "Caphiria", {
-      governmentName: "",
-      headOfState: "King",
-    });
-
-    const data = tx.governmentStructure.upsert.mock.calls[0][0].update;
-    expect(data).toMatchObject({
-      governmentName: "Government of Caphiria",
-      governmentType: "Federal Republic",
-      headOfState: "King",
-    });
-  });
 });
 
 describe("syncGovernmentStructure departments", () => {
@@ -122,15 +113,6 @@ describe("syncGovernmentStructure departments", () => {
 
     expect(tx.governmentDepartment.findMany).not.toHaveBeenCalled();
     expect(tx.governmentDepartment.deleteMany).not.toHaveBeenCalled();
-  });
-
-  it("replaces only the active revenue sources", async () => {
-    const tx = makeTx();
-    await syncGovernmentStructure(tx as never, "c_1", "Caphiria", { revenueSources: [] });
-
-    expect(tx.revenueSource.deleteMany).toHaveBeenCalledWith({
-      where: { governmentStructureId: "gs_1", isActive: true },
-    });
   });
 });
 

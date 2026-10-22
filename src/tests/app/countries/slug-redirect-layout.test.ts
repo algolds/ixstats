@@ -2,7 +2,10 @@
 /**
  * `/countries/<old slug>/…?…` (and the maps host's root `/<old slug>`, rewritten here) redirects
  * permanently to the same page and query under a renamed country's current slug; live and
- * unknown slugs render as before. The proxy hands the layout the requested path.
+ * unknown slugs render as before. The redirect lookup never hijacks a slug a country holds now.
+ * The proxy hands the layout the requested path, overwriting one the client forged.
+ *
+ * Folds the redirect lookups of country-rename.
  */
 import { NextRequest, type NextFetchEvent } from "next/server";
 
@@ -21,6 +24,7 @@ jest.mock("~/server/shared/country-rename", () => ({
 jest.mock("~/server/db", () => ({ db: { marker: "db" } }));
 
 import CountrySlugLayout from "~/app/countries/[slug]/layout";
+import type { findCountrySlugRedirect as FindRedirect } from "~/server/shared/country-rename";
 import { REQUEST_PATH_HEADER } from "~/lib/countries/slug-redirect";
 
 const render = (slug: string, requestPath?: string) => {
@@ -65,5 +69,44 @@ describe("the proxy hands layouts the requested path", () => {
     expect(res.headers.get(`x-middleware-request-${REQUEST_PATH_HEADER}`)).toBe(
       "/countries/old/factbook?tab=1"
     );
+  });
+});
+
+describe("findCountrySlugRedirect", () => {
+  const { findCountrySlugRedirect } = jest.requireActual<{
+    findCountrySlugRedirect: typeof FindRedirect;
+  }>("~/server/shared/country-rename");
+  function redirectDb(rows: {
+    redirect?: { countryId: string } | null;
+    live?: { id: string } | null;
+    target?: { slug: string | null } | null;
+  }) {
+    return {
+      countrySlugRedirect: { findUnique: jest.fn().mockResolvedValue(rows.redirect ?? null) },
+      country: {
+        findUnique: jest.fn(async ({ where }: { where: { slug?: string; id?: string } }) =>
+          where.slug ? (rows.live ?? null) : (rows.target ?? null)
+        ),
+      },
+    };
+  }
+
+  it("sends an old slug, in any case, to the country's current one", async () => {
+    const db = redirectDb({ redirect: { countryId: "c1" }, target: { slug: "new-testland" } });
+    await expect(findCountrySlugRedirect(db as never, "Testland")).resolves.toBe("new-testland");
+    expect(db.countrySlugRedirect.findUnique).toHaveBeenCalledWith({
+      where: { oldSlug: "testland" },
+      select: { countryId: true },
+    });
+  });
+
+  it("never redirects a slug a country holds now, nor a malformed address", async () => {
+    const live = redirectDb({
+      redirect: { countryId: "c1" },
+      live: { id: "c2" },
+      target: { slug: "new-testland" },
+    });
+    await expect(findCountrySlugRedirect(live as never, "testland")).resolves.toBeNull();
+    await expect(findCountrySlugRedirect(redirectDb({}) as never, "%E0%A4%A")).resolves.toBeNull();
   });
 });
