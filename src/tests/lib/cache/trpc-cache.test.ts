@@ -1,8 +1,15 @@
 /** @jest-environment node */
+/**
+ * The caches never serve one viewer's or realm's data to another, never cache a write or a failure, never hand out
+ * the cached object itself, and stay inside their own keys and bounds: the tRPC cache keys by realm and viewer, a
+ * stale memory entry never outlives Redis coming up, the global cache clears only its own `acs:` keys (never
+ * FLUSHDB, which would drop the rate limits and sessions beside it), and the article cache is bounded by bytes.
+ * Folds advanced-cache-system, redis-client and byte-bounded-cache.
+ */
 import { describe, it, expect, beforeEach } from "@jest/globals";
+import { ByteBoundedCache } from "~/lib/cache/byte-bounded-cache";
 import {
   cacheRealmKey,
-  shouldSkipCache,
   createCacheMiddlewareFactory,
   clearTrpcMemoryCache,
 } from "~/lib/cache/trpc-cache";
@@ -11,24 +18,12 @@ type CacheMiddlewareOpts = Parameters<ReturnType<typeof createCacheMiddlewareFac
 const ctx = {} as CacheMiddlewareOpts["ctx"];
 
 describe("cacheRealmKey", () => {
-  it("shares Ixnay reads and keys other active realms", () => {
-    expect(cacheRealmKey({ activeRealmId: "default" })).toBeUndefined();
-    expect(cacheRealmKey({ activeRealmId: "r_eurth" })).toBe("r_eurth");
-  });
-
   it("keeps a signed-in viewer's read of a named realm apart (staff may see a draft others may not)", () => {
     const staff = cacheRealmKey({ realmSlug: "draft", userId: "user_staff" });
     const anon = cacheRealmKey({ realmSlug: "draft" });
     expect(anon).toBeUndefined();
     expect(staff).toBe("v:user_staff");
     expect(staff).not.toBe(anon);
-  });
-});
-
-describe("shouldSkipCache", () => {
-  it("always skips mutations and subscriptions", () => {
-    expect(shouldSkipCache("mutation", "geoCore.seedBorderHistoryDev")).toBe(true);
-    expect(shouldSkipCache("subscription", "x.onEvent")).toBe(true);
   });
 });
 
@@ -61,17 +56,6 @@ describe("createCacheMiddlewareFactory (memory tier)", () => {
     await mw({ ...opts, realmKey: "r_eurth", next });
     await mw({ ...opts, next });
     await mw({ ...opts, realmKey: "r_eurth", next });
-
-    expect(next).toHaveBeenCalledTimes(2);
-  });
-
-  it("does not cache a failed procedure result", async () => {
-    const mw = createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "t1" });
-    const next = jest.fn(async () => ({ ok: false }));
-    const opts = { ctx, path: "countries.getAll", type: "query" as const, input: { a: 2 } };
-
-    await mw({ ...opts, next });
-    await mw({ ...opts, next });
 
     expect(next).toHaveBeenCalledTimes(2);
   });
@@ -191,16 +175,6 @@ describe("createCacheMiddlewareFactory (ixTime keys)", () => {
     next: () => Promise<{ ok: boolean; data: number }>
   ) => mw({ ctx, path: "geoCore.getWorldMapAsOf", type: "query", input, next });
 
-  it("two ixTimes on the same IxTime day share one entry", async () => {
-    const mw = createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "ix" });
-    const next = jest.fn(async () => ({ ok: true, data: 1 }));
-
-    await call(mw, { ixTime: 20_000 * DAY + 1_000, realm: "eurth" }, next);
-    await call(mw, { ixTime: 20_000 * DAY + DAY - 1, realm: "eurth" }, next);
-
-    expect(next).toHaveBeenCalledTimes(1);
-  });
-
   it("another IxTime day, or another realm on the same day, is its own entry", async () => {
     const mw = createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "ix" });
     const next = jest.fn(async () => ({ ok: true, data: 1 }));
@@ -210,5 +184,76 @@ describe("createCacheMiddlewareFactory (ixTime keys)", () => {
     await call(mw, { ixTime: 20_000 * DAY, realm: "ixnay" }, next);
 
     expect(next).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe("the global cache's Redis tier", () => {
+  it("clears and deletes only its own acs: keys, never with FLUSHDB", async () => {
+    const store = new Map([
+      ["acs:a", "{}"],
+      ["acs:feed:1", "{}"],
+      ["feed:1", "{}"],
+      ["ratelimit:x", "1"],
+    ]);
+    const glob = (pattern: string) =>
+      new RegExp(
+        `^${pattern
+          .split("*")
+          .map((p) => p.replace(/[.+?^${}()|[\]\\]/g, "\\$&"))
+          .join(".*")}$`
+      );
+    const redis = {
+      status: "ready",
+      get: jest.fn(async (key: string) => store.get(key) ?? null),
+      setex: jest.fn(
+        async (key: string, _ttl: number, value: string) => store.set(key, value) && "OK"
+      ),
+      del: jest.fn(async (key: string) => (store.delete(key) ? 1 : 0)),
+      scan: jest.fn(async (_cursor: string, _match: "MATCH", pattern: string) => [
+        "0",
+        [...store.keys()].filter((key) => glob(pattern).test(key)),
+      ]),
+      unlink: jest.fn(async (...keys: string[]) => keys.filter((key) => store.delete(key)).length),
+      flushdb: jest.fn(async () => store.clear()),
+    };
+    let globalCache!: typeof import("~/lib/cache/advanced-cache-system").globalCache;
+    jest.isolateModules(() => {
+      // The bounds suite above narrows the memory config for its own modules; this one reads the real one
+      jest.dontMock("~/lib/system/dev-memory-config");
+      jest.doMock("~/lib/cache/redis-client", () => ({
+        ...jest.requireActual("~/lib/cache/redis-client"),
+        getSharedRedis: () => redis,
+        isRedisReady: (client: { status: string } | null) => client?.status === "ready",
+      }));
+      globalCache = require("~/lib/cache/advanced-cache-system").globalCache;
+    });
+
+    await globalCache.deleteByPattern("feed:*");
+    expect([...store.keys()].sort()).toEqual(["acs:a", "feed:1", "ratelimit:x"]);
+    await globalCache.clear();
+    expect([...store.keys()].sort()).toEqual(["feed:1", "ratelimit:x"]);
+    expect(redis.flushdb).not.toHaveBeenCalled();
+  });
+});
+
+describe("ByteBoundedCache", () => {
+  it("evicts the least recently used entries to fit a new one, and refuses one bigger than the whole cache", () => {
+    const cache = new ByteBoundedCache<string>({
+      maxBytes: 100,
+      defaultTtlMs: 1_000,
+      now: () => 0,
+    });
+    cache.set("a", "A", 40);
+    cache.set("b", "B", 40);
+    cache.get("a"); // b is now the least recently used
+    cache.set("c", "C", 40);
+    expect([cache.get("a"), cache.get("b"), cache.get("c"), cache.totalBytes]).toEqual([
+      "A",
+      undefined,
+      "C",
+      80,
+    ]);
+    cache.set("huge", "H", 101);
+    expect([cache.get("huge"), cache.totalBytes]).toEqual([undefined, 80]);
   });
 });

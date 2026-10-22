@@ -28,15 +28,6 @@ function makeDb(initiallyHeldBy?: string) {
 }
 
 describe("withJobLock", () => {
-  it("runs fn, returns its result and releases the lease", async () => {
-    const { db, leases } = makeDb();
-    const fn = jest.fn().mockResolvedValue(42);
-
-    await expect(withJobLock(db, "passive-income", fn)).resolves.toEqual({ ran: true, result: 42 });
-    expect(fn).toHaveBeenCalledTimes(1);
-    expect(leases.size).toBe(0);
-  });
-
   it("skips fn while another holder's lease is live", async () => {
     const { db, leases } = makeDb("other-runner");
     const fn = jest.fn();

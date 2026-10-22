@@ -6,7 +6,7 @@ import SuperJSON from "superjson";
  * `z.record(z.string(), z.number())` reject an explicit `undefined` value even
  * though a missing key would pass. Dates, Maps, Sets etc. are left for superjson.
  */
-export function stripUndefined(value: unknown): unknown {
+function stripUndefined(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(stripUndefined);
   if (value === null || typeof value !== "object") return value;
   const proto = Object.getPrototypeOf(value);

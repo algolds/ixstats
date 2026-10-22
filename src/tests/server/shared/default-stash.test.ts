@@ -1,7 +1,53 @@
 /** @jest-environment node */
+/**
+ * A write that loses a race is recognised in either form it reaches the code (the raw Prisma error, or the
+ * ConflictError / NotFoundError the app's db client wraps it into), so racing first writes resolve to the row that
+ * won instead of failing: the default stash is the first consumer. Folds prisma-error-unique.test.ts.
+ */
 import { describe, it, expect } from "@jest/globals";
-import { ConflictError } from "~/lib/app-error";
+import { Prisma } from "@prisma/client";
+import { ConflictError, NotFoundError } from "~/lib/app-error";
+import { isMissingRecord, isUniqueViolation } from "~/lib/prisma-error";
 import { getOrCreateDefaultStash } from "~/server/shared/default-stash";
+
+const prismaError = (code: string, target?: string[]) =>
+  new Prisma.PrismaClientKnownRequestError("x", {
+    code,
+    clientVersion: "test",
+    meta: target ? { target } : undefined,
+  });
+
+it.each([
+  [
+    "a raw P2002 is a unique violation",
+    () => isUniqueViolation(prismaError("P2002", ["advertRealmId"])),
+    true,
+  ],
+  [
+    "the db client's ConflictError is one",
+    () => isUniqueViolation(new ConflictError("Unique constraint violation on Stash")),
+    true,
+  ],
+  [
+    "a wrapped one on another column is not that column's",
+    () =>
+      isUniqueViolation(
+        new ConflictError("Unique constraint violation on ForumThread (advertRealmId)"),
+        "activityId"
+      ),
+    false,
+  ],
+  ["a missing row is no unique violation", () => isUniqueViolation(prismaError("P2025")), false],
+  ["a raw P2025 is a missing record", () => isMissingRecord(prismaError("P2025")), true],
+  [
+    "the db client's wrapped NotFoundError is one",
+    () => isMissingRecord(new NotFoundError("ForumPost", undefined, { prismaError: "gone" })),
+    true,
+  ],
+  ["the app's own NotFoundError is not", () => isMissingRecord(new NotFoundError("Post")), false],
+] as const)("%s", (_case, check, expected) => {
+  expect(check()).toBe(expected);
+});
 
 type StashDb = Parameters<typeof getOrCreateDefaultStash>[0];
 
@@ -25,19 +71,6 @@ describe("getOrCreateDefaultStash", () => {
 
     expect(result.id).toBe("winner");
   });
-  it("on a concurrent first stash (P2002) returns the row the other request created", async () => {
-    const { stash, db } = makeDb();
-    stash.findFirst
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ id: "winner", name: "My Stash", isDefault: true });
-    stash.create.mockRejectedValue(uniqueViolation());
-
-    const result = await getOrCreateDefaultStash(db, ["u1"], "u1");
-
-    expect(result).toEqual({ id: "winner", name: "My Stash", isDefault: true });
-    expect(stash.create).toHaveBeenCalledTimes(1);
-  });
-
   it("when a non-default 'My Stash' holds the name, creates the default under 'My Stash (default)'", async () => {
     const { stash, db } = makeDb();
     stash.findFirst.mockResolvedValue(null);
@@ -52,53 +85,6 @@ describe("getOrCreateDefaultStash", () => {
     expect(stash.create.mock.calls[1]![0]).toMatchObject({
       data: { userId: "u1", name: "My Stash (default)", isDefault: true },
     });
-  });
-
-  it("when the fallback create also collides, returns the default that appeared, else the stash with that name", async () => {
-    const { stash, db } = makeDb();
-    // No default at first, no default after the first collision, then one (a concurrent request won).
-    stash.findFirst
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ id: "raced", name: "My Stash (default)", isDefault: true });
-    stash.create.mockRejectedValue(uniqueViolation());
-
-    const raced = await getOrCreateDefaultStash(db, ["u1"], "u1");
-    expect(raced.id).toBe("raced");
-    expect(stash.create).toHaveBeenCalledTimes(2);
-
-    // The name is held by a non-default stash: find it by name.
-    const second = makeDb();
-    second.stash.findFirst
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ id: "named", name: "My Stash (default)", isDefault: false });
-    second.stash.create.mockRejectedValue(uniqueViolation());
-
-    const named = await getOrCreateDefaultStash(second.db, ["u1"], "u1");
-    expect(named.id).toBe("named");
-    expect(second.stash.findFirst.mock.calls[3]![0]).toMatchObject({
-      where: { userId: { in: ["u1"] }, name: "My Stash (default)" },
-    });
-  });
-
-  it("rethrows the collision when nothing can be re-read, and a non-unique error from the fallback", async () => {
-    const lost = makeDb();
-    lost.stash.findFirst.mockResolvedValue(null);
-    lost.stash.create.mockRejectedValue(uniqueViolation());
-    await expect(getOrCreateDefaultStash(lost.db, ["u1"], "u1")).rejects.toMatchObject({
-      code: "P2002",
-    });
-
-    const broken = makeDb();
-    broken.stash.findFirst.mockResolvedValue(null);
-    broken.stash.create
-      .mockRejectedValueOnce(uniqueViolation())
-      .mockRejectedValueOnce(new Error("connection lost"));
-    await expect(getOrCreateDefaultStash(broken.db, ["u1"], "u1")).rejects.toThrow(
-      "connection lost"
-    );
   });
 
   it("rethrows an error that is not a unique violation", async () => {

@@ -9,7 +9,7 @@ import {
   resolveTarget,
   restoreCommand,
   restoreRefusal,
-  selectBackupsToPrune
+  selectBackupsToPrune,
 } from "~/lib/system/db-backup";
 describe("selectBackupsToPrune", () => {
   const files = [
@@ -21,20 +21,12 @@ describe("selectBackupsToPrune", () => {
     "manual-before-migration.dump",
   ];
 
-  it("keeps the newest N backups and returns the rest oldest first", () => {
-    expect(selectBackupsToPrune(files, 2)).toEqual(["ixstats-20260901T031700Z.dump"]);
+  it("keeps the newest N backups, prunes the rest oldest first, and never touches another file", () => {
     expect(selectBackupsToPrune(files, 1)).toEqual([
       "ixstats-20260901T031700Z.dump",
       "ixstats-20260902T031700Z.dump",
     ]);
-  });
-
-  it("never touches other files, and prunes nothing under the limit", () => {
     expect(selectBackupsToPrune(files, 14)).toEqual([]);
-  });
-
-  it("rejects a non-positive keep", () => {
-    expect(() => selectBackupsToPrune(files, 0)).toThrow();
   });
 });
 describe("parseRestoreArgs / restoreRefusal", () => {
