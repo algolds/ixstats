@@ -1,17 +1,28 @@
 /** @jest-environment node */
 /**
- * The cron job table (plan 330). Module files and exports are checked by reading source, not
- * importing it — importing would pull Prisma into Jest.
+ * The cron corpus. The job table (plan 330): unique names, valid default schedules, the lock names manual triggers
+ * share, and every job's modulePath resolving to its export (checked by reading source, not importing it, which would
+ * pull Prisma into Jest); which jobs are enabled and on what schedule; a result summary that never throws, nor does a
+ * run's audit write. The scheduler: the 5-field pattern matcher, once per minute, no overlap, a failing task isolated.
+ *
+ * Folds scheduler and cron-runs.
  */
 import fs from "fs";
 import path from "path";
+import type { PrismaClient } from "@prisma/client";
 import {
   CRON_JOBS,
   resolveEnabledJobs,
   resolveSchedule,
   summarizeResult,
 } from "~/server/cron/jobs";
-import { isValidCronPattern } from "~/server/cron/scheduler";
+import {
+  isValidCronPattern,
+  matchesCron,
+  startScheduler,
+  type ScheduledTask,
+} from "~/server/cron/scheduler";
+import { recordCronRun } from "~/lib/system/cron-runs";
 
 const rootDir = path.resolve(__dirname, "../../../..");
 const moduleFile = (modulePath: string): string =>
@@ -31,41 +42,35 @@ describe("CRON_JOBS", () => {
     expect(lockOf("lorewards-full-sync")).toBe("lorewards");
     expect(lockOf("lorewards-state-sync")).toBe("lorewards");
   });
-  it.each(CRON_JOBS.map((job) => [job.name, job] as const))(
-    "%s points at an existing module and export",
-    (_name, job) => {
-      const file = moduleFile(job.modulePath);
-      expect(fs.existsSync(file)).toBe(true);
-      expect(fs.readFileSync(file, "utf-8")).toContain(`export async function ${job.exportName}(`);
-    }
-  );
-
-  it("each modulePath is the specifier its load() imports", () => {
+  it("points every job at an existing module and export, the specifier its load() imports", () => {
     const source = fs.readFileSync(path.join(rootDir, "src/server/cron/jobs.ts"), "utf-8");
-    for (const job of CRON_JOBS) {
-      expect(source).toContain(`import("${job.modulePath}")`);
-    }
+    const broken = CRON_JOBS.filter((job) => {
+      const file = moduleFile(job.modulePath);
+      return (
+        !fs.existsSync(file) ||
+        !fs.readFileSync(file, "utf-8").includes(`export async function ${job.exportName}(`) ||
+        !source.includes(`import("${job.modulePath}")`)
+      );
+    }).map((job) => `${job.name}: ${job.modulePath}#${job.exportName}`);
+    expect(broken).toEqual([]);
+    expect(CRON_JOBS.length).toBeGreaterThan(30);
   });
 });
 
 describe("resolveEnabledJobs", () => {
-  it("enables nothing when unset or empty", () => {
-    expect(resolveEnabledJobs(undefined)).toEqual({ enabled: [], unknown: [] });
-    expect(resolveEnabledJobs(" , ")).toEqual({ enabled: [], unknown: [] });
+  it.each([
+    ["unset", undefined, 0],
+    ["empty", " , ", 0],
+    ["*", "*", CRON_JOBS.length],
+  ])("enables %s as %d jobs", (_label, value, count) => {
+    expect(resolveEnabledJobs(value)).toMatchObject({ unknown: [] });
+    expect(resolveEnabledJobs(value).enabled).toHaveLength(count);
   });
 
-  it("enables everything for *", () => {
-    expect(resolveEnabledJobs("*").enabled).toHaveLength(CRON_JOBS.length);
-  });
-
-  it("enables the named jobs", () => {
+  it("enables the named jobs and reports unknown names", () => {
     const { enabled, unknown } = resolveEnabledJobs("elections, trade-expiry");
     expect(enabled.map((job) => job.name).sort()).toEqual(["elections", "trade-expiry"]);
     expect(unknown).toEqual([]);
-  });
-
-  it("reports unknown names", () => {
-    expect(resolveEnabledJobs("electionz").unknown).toEqual(["electionz"]);
     expect(resolveEnabledJobs("*,electionz").unknown).toEqual(["electionz"]);
   });
 });
@@ -97,16 +102,137 @@ describe("resolveSchedule", () => {
   });
 });
 
-describe("summarizeResult", () => {
-  it("serializes and caps the result", () => {
+describe("run results", () => {
+  it("summarizes a result, capped, and never throws on an unserializable one", () => {
     expect(summarizeResult(3)).toBe("3");
     expect(summarizeResult({ resolved: 1 })).toBe('{"resolved":1}');
     expect(summarizeResult({ s: "x".repeat(1000) })).toHaveLength(300);
-  });
-
-  it("never throws on unserializable results", () => {
     const circular: { self?: object } = {};
     circular.self = circular;
     expect(summarizeResult(circular)).toBe("[unserializable result]");
+  });
+
+  it("never throws into the job when a run's audit write fails", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const db = {
+      cronRun: { create: jest.fn().mockRejectedValue(new Error("db down")) },
+    } as unknown as PrismaClient;
+    const now = new Date();
+    await expect(
+      recordCronRun(db, { job: "x", status: "success", startedAt: now, finishedAt: now })
+    ).resolves.toBeUndefined();
+    warn.mockRestore();
+  });
+});
+
+const at = (iso: string): Date => new Date(`${iso}Z`);
+
+describe("matchesCron", () => {
+  it.each([
+    ["*/5 * * * *", "2026-09-23T10:05:00", true],
+    ["*/5 * * * *", "2026-09-23T10:06:00", false],
+    ["0 2 * * *", "2026-09-23T02:01:00", false],
+    ["15,45 * * * *", "2026-09-23T10:45:00", true],
+    ["0 9-17 * * *", "2026-09-23T18:00:00", false],
+    ["0 0 * * 1-5", "2026-09-27T00:00:00", false], // Sunday
+    ["0 0 * * 0", "2026-09-27T00:00:00", true],
+    ["* * * *", "2026-09-23T10:00:00", false],
+  ])("%s at %s → %s", (pattern, iso, expected) => {
+    expect(matchesCron(pattern, at(iso))).toBe(expected);
+  });
+
+  it("validates 5-field patterns only", () => {
+    expect(isValidCronPattern("15,45 9-17/2 * * 1-5")).toBe(true);
+    expect(isValidCronPattern("every day")).toBe(false);
+    expect(isValidCronPattern("* * * *")).toBe(false);
+  });
+});
+
+/** Drives startScheduler with a fake clock and a manually fired timer. */
+function harness(tasks: readonly ScheduledTask[], startIso: string) {
+  let clock = at(startIso).getTime();
+  let pending: (() => void) | null = null;
+  const logs: string[] = [];
+  const handle = startScheduler(tasks, {
+    now: () => clock,
+    setTimer: (fn) => {
+      pending = fn;
+      return setTimeout(() => undefined, 0);
+    },
+    clearTimer: (t) => clearTimeout(t),
+    log: (msg) => logs.push(msg),
+  });
+  const fireAt = async (iso: string): Promise<void> => {
+    clock = at(iso).getTime();
+    const fn = pending;
+    pending = null;
+    fn?.();
+    await new Promise((resolve) => setImmediate(resolve));
+  };
+  return { handle, logs, fireAt };
+}
+
+describe("startScheduler", () => {
+  it("fires an every-minute task once per minute, even if the timer fires twice", async () => {
+    const run = jest.fn(async () => undefined);
+    const { handle, fireAt } = harness(
+      [{ name: "t", schedule: "* * * * *", run }],
+      "2026-09-23T10:00:30"
+    );
+
+    await fireAt("2026-09-23T10:01:00.250");
+    await fireAt("2026-09-23T10:01:40"); // early/extra fire within the same minute
+    await fireAt("2026-09-23T10:02:00.250");
+    await fireAt("2026-09-23T10:03:00.250");
+    handle.stop();
+
+    expect(run).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not start a task again while it is still running", async () => {
+    let finish: () => void = () => undefined;
+    const run = jest.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        })
+    );
+    const { handle, logs, fireAt } = harness(
+      [{ name: "slow", schedule: "* * * * *", run }],
+      "2026-09-23T10:00:30"
+    );
+
+    await fireAt("2026-09-23T10:01:00.250");
+    await fireAt("2026-09-23T10:02:00.250");
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(logs).toContain("[Cron] slow still running — skipped this minute");
+
+    finish();
+    await new Promise((resolve) => setImmediate(resolve)); // let the run's finally settle
+    await fireAt("2026-09-23T10:03:00.250");
+    handle.stop();
+    expect(run).toHaveBeenCalledTimes(2);
+  });
+
+  it("logs a failing task and still runs the others", async () => {
+    const failing = jest.fn(async () => {
+      throw new Error("boom");
+    });
+    const healthy = jest.fn(async () => undefined);
+    const { handle, logs, fireAt } = harness(
+      [
+        { name: "failing", schedule: "* * * * *", run: failing },
+        { name: "healthy", schedule: "* * * * *", run: healthy },
+      ],
+      "2026-09-23T10:00:30"
+    );
+
+    await fireAt("2026-09-23T10:01:00.250");
+    await fireAt("2026-09-23T10:02:00.250");
+    handle.stop();
+
+    expect(healthy).toHaveBeenCalledTimes(2);
+    expect(failing).toHaveBeenCalledTimes(2);
+    expect(logs.some((line) => line.startsWith("[Cron] failing failed: Error: boom"))).toBe(true);
   });
 });
