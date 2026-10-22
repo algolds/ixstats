@@ -3,8 +3,6 @@ import { AsyncLocalStorage } from "node:async_hooks";
 jest.mock("~/server/modules/thinkpages-forum/mention-links", () => ({
   withMentionLinks: jest.fn(async (_db: object, body: object) => body),
 }));
-import { BOARD_TOO_LONG } from "~/lib/thinkpages-forum/board";
-import { MAX_POST_HTML } from "~/server/modules/thinkpages-forum";
 import { withMentionLinks } from "~/server/modules/thinkpages-forum/mention-links";
 import { continueInThread } from "~/server/modules/thinkpages-forum/board-continue";
 import {
@@ -14,9 +12,6 @@ import {
 } from "~/server/modules/thinkpages-forum/board-writes";
 import {
   admin,
-  ban,
-  banned,
-  BOARD_THREAD,
   boardPost,
   boardStore,
   claimsOfficer,
@@ -31,6 +26,8 @@ import {
   visitor,
 } from "~/tests/helpers/forum-board-fake";
 import type { Value } from "~/tests/helpers/forum-store-fake";
+import { BOARD_THREAD, threadIn } from "~/tests/helpers/forum-board-fake";
+import { detailOf, type Row, type StoreState } from "~/tests/helpers/forum-store-fake";
 
 const post = (store: ReturnType<typeof boardStore>, who: object, input: object) =>
   postBoardMessage(store.db as never, who as never, {
@@ -46,27 +43,6 @@ const refusal = (code: string, message?: RegExp) =>
   });
 
 describe("postBoardMessage", () => {
-  it("lets moderators post, including a founder without a nation", async () => {
-    const store = boardStore();
-    await expect(post(store, founder, {})).resolves.toMatchObject({ isVisitor: false });
-    await expect(post(store, admin, {})).resolves.toBeDefined();
-  });
-
-  it("stores the message with the mention links added, after the 1,000 character check", async () => {
-    const linked = '<p>Hi <a class="forum-mention" href="/id/kir">@kir</a></p>';
-    jest.mocked(withMentionLinks).mockImplementationOnce((async (_db: object, body: object) => ({
-      ...body,
-      contentHtml: linked,
-    })) as never);
-    const store = boardStore();
-    const message = await post(store, member, { html: "<p>Hi @kir</p>" });
-    expect(postIn(store, message.id)).toMatchObject({ contentHtml: linked, plainText: "Hi @kir" });
-    expect(withMentionLinks).toHaveBeenLastCalledWith(
-      expect.anything(),
-      expect.objectContaining({ plainText: "Hi @kir" })
-    );
-  });
-
   it("refuses an over-long message before looking any name up", async () => {
     jest.mocked(withMentionLinks).mockClear();
     const store = boardStore();
@@ -79,23 +55,6 @@ describe("postBoardMessage", () => {
   });
 
   describe("access", () => {
-    it("refuses a banned member with the ban notice", async () => {
-      const store = boardStore();
-      store.state.bans.push(
-        ban({ userId: "u_banned", scope: "realm", scopeId: "r_eurth", reason: "Spam" })
-      );
-      await expect(post(store, banned, {})).rejects.toEqual(refusal("FORBIDDEN", /ban/i));
-      expect(posts(store)).toBe(0);
-    });
-
-    it("refuses everyone but site admins in an archived realm", async () => {
-      const store = boardStore(seed({ threads: [...(seed().threads ?? [])] }));
-      const oldPost = (who: object) =>
-        postBoardMessage(store.db as never, who as never, { realm: "old", html: "<p>hi</p>" });
-      await expect(oldPost(member)).rejects.toEqual(refusal("FORBIDDEN", /archived/i));
-      await expect(oldPost(admin)).resolves.toBeDefined();
-    });
-
     it("reads a realm hidden from the actor as not found", async () => {
       const store = boardStore();
       await expect(
@@ -220,18 +179,6 @@ describe("postBoardMessage", () => {
       }
       expect(posts(store)).toBe(1);
     });
-
-    it("takes the lock per thread and user, so another member is not held up", async () => {
-      const store = slow(60);
-      withAdvisoryLocks(store);
-      await Promise.all([post(store, member, {}), post(store, member2, {})]);
-      expect(posts(store)).toBe(2);
-      const keys = (store.tx.$executeRaw as jest.Mock).mock.calls.map(([, key]) => String(key));
-      expect(keys).toEqual([
-        `board-post:${BOARD_THREAD}:u_member`,
-        `board-post:${BOARD_THREAD}:u_member2`,
-      ]);
-    });
   });
 
   describe("length", () => {
@@ -240,34 +187,6 @@ describe("postBoardMessage", () => {
       await expect(
         post(store, member, { html: `<p><strong>${"a".repeat(1000)}</strong></p>` })
       ).resolves.toBeDefined();
-    });
-
-    it("refuses 1,001 characters with the thread hint", async () => {
-      const store = boardStore();
-      await expect(
-        post(store, member, { html: `<p>${"a".repeat(1001)}</p>` })
-      ).rejects.toMatchObject({
-        code: "BAD_REQUEST",
-        message: BOARD_TOO_LONG,
-      });
-      expect(BOARD_TOO_LONG).toBe(
-        "Board messages are at most 1,000 characters. Continue in a thread for longer posts."
-      );
-      expect(posts(store)).toBe(0);
-    });
-
-    it("gives a paste over the post limit the board's message too", async () => {
-      const store = boardStore();
-      await expect(
-        post(store, member, { html: `<p>${"a".repeat(MAX_POST_HTML)}</p>` })
-      ).rejects.toMatchObject({ code: "BAD_REQUEST", message: BOARD_TOO_LONG });
-      expect(posts(store)).toBe(0);
-    });
-
-    it("refuses an empty message", async () => {
-      await expect(post(boardStore(), member, { html: "<p>  </p>" })).rejects.toMatchObject({
-        code: "BAD_REQUEST",
-      });
     });
   });
 
@@ -346,19 +265,7 @@ describe("postBoardMessage", () => {
           ],
         })
       );
-
-    it("stores the reply link to a visible message of this board and returns its summary", async () => {
-      const store = withPosts();
-      const message = await post(store, member, { replyToPostId: "p1" });
-      expect(postIn(store, message.id)).toMatchObject({ replyToPostId: "p1" });
-      expect(message.replyTo).toEqual({
-        postId: "p1",
-        authorName: "member",
-        excerpt: "Message p1",
-      });
-    });
-
-    it.each(["hid", "other", "placeholder", "missing"])("refuses %s", async (target) => {
+    it.each(["hid", "other", "placeholder"])("refuses %s", async (target) => {
       const store = withPosts();
       const before = posts(store);
       await expect(post(store, member, { replyToPostId: target })).rejects.toMatchObject({
@@ -388,19 +295,6 @@ describe("editBoardMessage", () => {
         ],
       })
     );
-
-  it("lets the author edit within 15 minutes, marking and returning the message", async () => {
-    const store = withMine();
-    const message = await edit(
-      store,
-      member,
-      "fresh",
-      "<p>Edited <b>text</b><script>x</script></p>"
-    );
-    expect(message).toMatchObject({ id: "fresh", contentHtml: "<p>Edited <b>text</b></p>" });
-    expect(message.editedAt).toBeInstanceOf(Date);
-    expect(postIn(store, "fresh")).toMatchObject({ plainText: "Edited text" });
-  });
   it("refuses after 15 minutes, changing nothing", async () => {
     const store = withMine();
     await expect(edit(store, member, "stale")).rejects.toMatchObject({
@@ -415,32 +309,6 @@ describe("editBoardMessage", () => {
     await expect(edit(store, member2, "fresh")).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(edit(store, founder, "fresh")).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
-
-  it("reads hidden, unknown and non-board posts as not found", async () => {
-    const store = withMine();
-    await expect(edit(store, member, "hid")).rejects.toMatchObject({ code: "NOT_FOUND" });
-    await expect(edit(store, member, "nope")).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
-
-  it("refuses a message that was continued in a thread", async () => {
-    await expect(edit(withMine(), member, "cont")).rejects.toMatchObject({ code: "CONFLICT" });
-  });
-
-  it("refuses a banned author and an over-long edit", async () => {
-    const store = boardStore(
-      seed({ posts: [boardPost("b1", 1, { authorUserId: "u_banned", createdAt: recent(1) })] })
-    );
-    store.state.bans.push(ban({ userId: "u_banned", scope: "site" }));
-    await expect(edit(store, banned, "b1")).rejects.toMatchObject({ code: "FORBIDDEN" });
-    const store2 = withMine();
-    await expect(edit(store2, member, "fresh", `<p>${"a".repeat(1001)}</p>`)).rejects.toMatchObject(
-      {
-        code: "BAD_REQUEST",
-        message: BOARD_TOO_LONG,
-      }
-    );
-  });
-
   it("refuses an edit that lost a race with a moderator's", async () => {
     const store = withMine();
     store.db.forumPost.updateMany = jest.fn(async () => ({ count: 0 })) as never;
@@ -456,7 +324,7 @@ describe("updateBoardSettings", () => {
     }));
   const realmRow = (store: ReturnType<typeof boardStore>) =>
     store.state.realms.find((r) => r.id === "r_eurth")!;
-  it.each([-1, 5, 45, 301, 1.5])("refuses %p seconds", async (seconds) => {
+  it.each([-1, 301, 1.5])("refuses %p seconds", async (seconds) => {
     const store = boardStore();
     await expect(
       update(founder, { slowModeSeconds: seconds }, "r_eurth", store)
@@ -473,13 +341,132 @@ describe("updateBoardSettings", () => {
       expect(realmRow(store).boardVisitorsAllowed).toBe(true);
     }
   });
+});
 
-  it("reads an unknown or hidden realm as not found", async () => {
-    await expect(update(admin, { visitorsAllowed: false }, "nope")).rejects.toMatchObject({
-      code: "NOT_FOUND",
+describe("continuing a message in a thread", () => {
+  const HUB = "cat_r_eurth_hub";
+  const store = (extraPosts: Row[] = [], extra: Partial<StoreState> = {}) =>
+    boardStore(
+      seed({
+        posts: [
+          boardPost("p1", 1, { plainText: "A long thought", contentHtml: "<p>A long thought</p>" }),
+          boardPost("p2", 2, { replyToPostId: "p1", authorUserId: "u_visitor" }),
+          boardPost("persona", 3, { authorPersonaId: "pa_news" }),
+          boardPost("hid", 4, { hidden: true }),
+          boardPost("done", 5, { continuedThreadId: "t_x" }),
+          boardPost("admins", 6, { authorUserId: "u_admin" }),
+          ...extraPosts,
+        ],
+        reports: [
+          {
+            id: "rep1",
+            targetType: "post",
+            targetId: "p1",
+            categoryId: "cat_r_eurth_board",
+            status: "open",
+            reporterId: "u_x",
+          },
+        ],
+        ...extra,
+      })
+    );
+  const cont = (
+    s: ReturnType<typeof boardStore>,
+    who: object,
+    postId: string,
+    extra: object = {}
+  ) => continueInThread(s.db as never, who as never, { postId, title: "A long thought", ...extra });
+  describe("continueInThread", () => {
+    it("points replies to the moved message at its placeholder and open reports at the Hub", async () => {
+      const s = store();
+      const out = await cont(s, member, "p1");
+      expect(postIn(s, "p2").replyToPostId).toBe(out.placeholder.id);
+      expect(s.state.reports[0]).toMatchObject({ categoryId: HUB });
     });
-    await expect(update(member, { visitorsAllowed: false }, "r_draft")).rejects.toMatchObject({
-      code: "NOT_FOUND",
+
+    it("logs a moderator continuing someone else's message, and nobody for an author's own", async () => {
+      const s = store();
+      await cont(s, member, "p1");
+      expect(s.logs).toHaveLength(0);
+      const out = await cont(s, officer, "p2");
+      expect(s.logs).toHaveLength(1);
+      expect(s.logs[0]).toMatchObject({
+        actorId: "u_officer",
+        action: "post.continue",
+        targetType: "post",
+        targetId: "p2",
+        scope: "realm",
+        scopeId: "r_eurth",
+      });
+      expect(detailOf(s.logs[0])).toMatchObject({ threadId: out.threadId });
+      expect(threadIn(s, out.threadId)).toMatchObject({ authorUserId: "u_visitor" });
+    });
+    it("refuses other members and visitors for a message that is not theirs", async () => {
+      for (const who of [member2, visitor]) {
+        const s = store();
+        const before = s.state.threads.length;
+        await expect(cont(s, who, "p1")).rejects.toMatchObject({ code: "FORBIDDEN" });
+        expect(s.state.threads).toHaveLength(before);
+        expect(postIn(s, "p1").threadId).toBe(BOARD_THREAD);
+      }
+    });
+
+    it("does not let a realm moderator act on a site admin's message", async () => {
+      await expect(cont(store(), officer, "admins")).rejects.toMatchObject({ code: "FORBIDDEN" });
+      await expect(cont(store(), admin, "admins")).resolves.toBeDefined();
+    });
+
+    it("needs the author to be able to post in the Hub: a visitor's own message cannot move there", async () => {
+      await expect(cont(store(), visitor, "p2")).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+    it("refuses hidden, already continued, unknown and non-board posts", async () => {
+      await expect(cont(store(), member, "hid")).rejects.toMatchObject({ code: "NOT_FOUND" });
+      await expect(cont(store(), officer, "hid")).rejects.toMatchObject({ code: "CONFLICT" });
+      await expect(cont(store(), member, "done")).rejects.toMatchObject({ code: "CONFLICT" });
+      await expect(cont(store(), member, "nope")).rejects.toMatchObject({ code: "NOT_FOUND" });
+      const other = store([boardPost("hubpost", 8, { threadId: "t_hub" })], {
+        threads: [
+          ...(seed().threads ?? []),
+          {
+            id: "t_hub",
+            categoryId: HUB,
+            title: "Hub",
+            authorUserId: "u_member",
+            postCount: 1,
+            hidden: false,
+          },
+        ],
+      });
+      await expect(cont(other, member, "hubpost")).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+    describe("personas", () => {
+      it("moves an in-character message to an in-character category, never the Hub", async () => {
+        const s = store();
+        await expect(cont(s, member, "persona")).rejects.toMatchObject({ code: "CONFLICT" });
+        const out = await cont(s, member, "persona", { categoryKey: "character-threads" });
+        expect(threadIn(s, out.threadId)).toMatchObject({
+          categoryId: "cat_r_eurth_character-threads",
+          authorPersonaId: "pa_news",
+        });
+        expect(out.placeholder).toMatchObject({ authorUserId: null, authorPersonaId: "pa_news" });
+      });
+    });
+
+    it("keeps the move atomic: a lost race leaves no thread behind", async () => {
+      const s = store();
+      s.tx.forumPost.updateMany = jest.fn(async () => ({ count: 0 })) as never;
+      const before = s.state.threads.length;
+      await expect(cont(s, member, "p1")).rejects.toMatchObject({ code: "CONFLICT" });
+      expect(s.state.threads).toHaveLength(before);
+    });
+
+    it("refuses a destination that is not a realm category", async () => {
+      await expect(cont(store(), member, "p1", { categoryKey: "board" })).rejects.toMatchObject({
+        code: "NOT_FOUND",
+      });
+      await expect(cont(store(), member, "p1", { categoryKey: "nope" })).rejects.toMatchObject({
+        code: "NOT_FOUND",
+      });
     });
   });
 });

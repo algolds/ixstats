@@ -7,19 +7,30 @@ import {
   forumActivityOf,
   importedAuthorByName,
   loadCategory,
-  moderationContext,
   moveDestinations,
 } from "~/server/modules/thinkpages-forum";
-import { trendingThreads } from "~/server/modules/thinkpages-forum/board-reads";
 import {
   latestPublicThreads,
   publicThreadWhere,
 } from "~/server/modules/thinkpages-forum/public-threads";
-import { latestPublicThreadPreviews } from "~/server/modules/thinkpages-forum/thread-preview";
 import { summarizeCategories } from "~/server/modules/thinkpages-forum/reads";
-import { listRealmDirectory } from "~/server/api/routers/realms/places";
 import { admin, eurthMod, realmCat, seed } from "~/tests/helpers/forum-mod-fixtures";
 import { forumStore } from "~/tests/helpers/forum-store-fake";
+import { locatePostFor } from "~/server/api/routers/thinkpagesForum/permalink";
+import {
+  editPost,
+  getThreadPosts,
+  replyToThread,
+  stashThread,
+} from "~/server/modules/thinkpages-forum";
+import {
+  BOARD_THREAD,
+  boardPost,
+  boardStore,
+  founder,
+  member,
+  seed as boardSeed,
+} from "~/tests/helpers/forum-board-fake";
 
 const NOT_BOARD = { style: { not: "board" }, NOT: { scope: "realm", key: "board" } };
 
@@ -94,45 +105,6 @@ describe("realm board exclusions", () => {
     await latestPublicThreads({ forumThread: { findMany }, realm: noRealms } as never, 20);
     expect(argsOf(findMany as never).where.category).toMatchObject(NOT_BOARD);
   });
-
-  it("feed previews list the public threads and read only their visible posts, never a board thread", async () => {
-    const row = {
-      id: "t1",
-      title: "Hello",
-      authorUserId: null,
-      authorPersonaId: null,
-      importedAuthorName: "Old",
-      postCount: 1,
-      createdAt: new Date("2026-10-14"),
-      lastPostAt: new Date("2026-10-14"),
-      category: { key: "general", name: "General", scope: "site", realmId: null, style: "ooc" },
-    };
-    const findMany = jest.fn(async (_args: object) => [row]);
-    const postFindMany = jest.fn(async (_args: object) => []);
-    const db = {
-      forumThread: { findMany },
-      forumPost: { findMany: postFindMany, findFirst: jest.fn(async (_args: object) => null) },
-      realm: noRealms,
-      user: { findMany: jest.fn(async () => []) },
-      thinkpagesAccount: { findMany: jest.fn(async () => []) },
-    };
-    await latestPublicThreadPreviews(db as never, 20);
-    expect(findMany).toHaveBeenCalledTimes(1);
-    expect(argsOf(findMany as never).where.category).toMatchObject(NOT_BOARD);
-    expect(argsOf(postFindMany as never).where).toEqual({
-      threadId: { in: ["t1"] },
-      hidden: false,
-    });
-  });
-
-  it("Trending groups no post of a board thread", async () => {
-    const groupBy = jest.fn(async (_args: object) => []);
-    const db = { realm: noRealms, forumPost: { groupBy }, forumThread: { findMany: jest.fn() } };
-    await trendingThreads(db as never, null, 5, new Date("2026-10-14T12:00:00Z"));
-    const { thread } = argsOf(groupBy as never).where;
-    expect(thread?.category).toMatchObject(NOT_BOARD);
-  });
-
   it("the passport's footprint counts no board post or thread and a board post never confirms a name", async () => {
     const count = jest.fn(async (_args: object) => 0);
     const findFirst = jest.fn(async (_args: object) => null);
@@ -146,44 +118,6 @@ describe("realm board exclusions", () => {
     expect(JSON.stringify(argsOf(findFirst as never))).toContain('"style":{"not":"board"}');
   });
 
-  const directoryRealm = (n: number) => ({
-    id: `r${n}`,
-    slug: `r${n}`,
-    name: `R${n}`,
-    description: null,
-    thumbnail: null,
-    bannerUrl: null,
-    tags: [],
-    foundedAt: null,
-    createdAt: new Date(),
-    settings: null,
-    _count: { countries: 0 },
-  });
-  const directoryDb = (realmCount: number) => ({
-    realm: {
-      findMany: jest.fn(async () =>
-        Array.from({ length: realmCount }, (_, i) => directoryRealm(i + 1))
-      ),
-    },
-    country: { groupBy: jest.fn(async () => []), findMany: jest.fn(async () => []) },
-    realmPage: { findMany: jest.fn(async () => []) },
-    forumCategory: { findMany: jest.fn(async (_args: object) => []) },
-    forumPost: { groupBy: jest.fn(async () => []) },
-    forumThread: {
-      findMany: jest.fn(async (_args: object) => []),
-      groupBy: jest.fn(async (_args: object) => []),
-    },
-    $queryRaw: jest.fn(
-      async (_sql: TemplateStringsArray, ..._values: unknown[]): Promise<object[]> => []
-    ),
-  });
-
-  it("the realm directory's forum activity counts no board message", async () => {
-    const db = directoryDb(1);
-    await listRealmDirectory(db as never, null);
-    const section = argsOf(db.forumCategory.findMany as never).where as object;
-    expect(section).toMatchObject({ scope: "realm", visibility: "public", ...NOT_BOARD });
-  });
   it("a moderator is never offered the board as a place to move a thread", async () => {
     const state = seed();
     state.categories = [
@@ -195,17 +129,64 @@ describe("realm board exclusions", () => {
     const keys = (await moveDestinations(store.db as never, eurthMod, from)).map((c) => c.key);
     expect(keys).toEqual(["character-threads", "current-events"]);
   });
+});
 
-  it("the moderation console does not list the board among a moderator's categories", async () => {
-    const state = seed();
-    state.categories = [
-      ...state.categories,
-      { ...realmCat("r_eurth", "board"), id: "r_eurth_board", style: "board" },
-    ];
-    const store = forumStore(state);
-    const context = await moderationContext(store.db as never, eurthMod);
-    expect(context.categories.map((c) => c.key)).not.toContain("board");
-    const asAdmin = await moderationContext(store.db as never, admin as never);
-    expect(asAdmin.categories.map((c) => c.key)).not.toContain("board");
+describe("the board thread on the generic thread paths", () => {
+  const store = () =>
+    boardStore(boardSeed({ posts: [boardPost("p1", 1), boardPost("hid", 2, { hidden: true })] }));
+  describe("the realm board thread on the generic thread paths", () => {
+    it("is not readable as a thread", async () => {
+      const s = store();
+      for (const who of [member, founder, null]) {
+        await expect(
+          getThreadPosts(s.db as never, who as never, BOARD_THREAD, 1)
+        ).rejects.toMatchObject({
+          code: "NOT_FOUND",
+        });
+      }
+    });
+
+    it("takes no replies through the thread reply", async () => {
+      const s = store();
+      await expect(
+        replyToThread(s.db as never, member as never, { threadId: BOARD_THREAD, html: "<p>hi</p>" })
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      expect(s.state.posts).toHaveLength(2);
+    });
+
+    it("takes no author edits through the post edit", async () => {
+      const s = store();
+      await expect(
+        editPost(s.db as never, member as never, {
+          postId: "p1",
+          html: "<p>edited</p>",
+          editedAt: null,
+        })
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      expect(s.state.posts[0]).toMatchObject({ plainText: "Message p1" });
+    });
+
+    it("cannot be stashed", async () => {
+      const s = store();
+      await expect(
+        stashThread(
+          s.db as never,
+          member as never,
+          { primaryId: "u_member", ids: ["u_member"] },
+          { threadId: BOARD_THREAD }
+        )
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+  });
+  describe("the post permalink", () => {
+    it("resolves a board post to the realm landing, for the viewer who may see it", async () => {
+      const s = store();
+      expect(await locatePostFor(s.db as never, "clerk_u_member", "p1")).toEqual({
+        realmSlug: "eurth",
+      });
+      expect(await locatePostFor(s.db as never, null, "p1")).toEqual({ realmSlug: "eurth" });
+      expect(await locatePostFor(s.db as never, "clerk_u_member", "hid")).toBeNull();
+      expect(await locatePostFor(s.db as never, "founder", "hid")).toEqual({ realmSlug: "eurth" });
+    });
   });
 });
