@@ -58,6 +58,7 @@ jest.mock("~/lib/wiki-os/services/media-download", () => ({
   downloadMedia: jest.fn(),
 }));
 
+import { wikiosPageViewsRouter } from "~/server/api/routers/wikios/page-views";
 import { afterEach, beforeEach, describe, expect, it } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosPageContentRouter } from "~/server/api/routers/wikios/page-content";
@@ -94,6 +95,7 @@ const userTalk = (role: string | null) => createCallerFactory(wikiosUserTalkRout
 const discussions = (role: string | null) =>
   createCallerFactory(wikiosDiscussionsRouter)(ctxOf(role));
 const utilities = (role: string | null) => createCallerFactory(wikiosUtilitiesRouter)(ctxOf(role));
+const pageViews = (role: string | null) => createCallerFactory(wikiosPageViewsRouter)(ctxOf(role));
 
 const revision = {
   wikitext: "== Geography ==\nHills.",
@@ -165,6 +167,7 @@ const READS: Array<[string, (role: string | null, title: string) => Promise<unkn
   ],
   ["getPageImages", (r, title) => content(r).getPageImages({ title })],
   ["getHistory", (r, title) => history(r).getHistory({ title })],
+  ["getPageInfo", (r, title) => pageViews(r).getPageInfo({ title })],
   ["getParentCategories", (r, title) => categories(r).getParentCategories({ title })],
   ["getBacklinks", (r, title) => userTalk(r).getBacklinks({ title })],
   [
