@@ -47,8 +47,11 @@ export function computeParimutuel(entries: PoolEntry[], outcome: PredictionOutco
  * split the entire stake pool pro-rata to their stake. If nobody picked the actual
  * outcome, every stake is refunded (void).
  *
- * Idempotent — only touches predictions still in "open", so re-running (both sim
- * paths, retries) can never double-pay. Best-effort; never throws into the sim.
+ * Idempotent: each prediction is claimed (moved out of "open" by a conditional
+ * update) in the same transaction as its payout, and only the settlement that moved
+ * it pays it; the payout also carries the prediction's idempotency key. So two
+ * settlements racing (both sim paths, retries) can never double-pay. Best-effort;
+ * never throws into the sim.
  *
  * ponytail: no house rake — simplest fair pool. Add a rake here if a sink is needed.
  */
@@ -69,13 +72,21 @@ export async function resolveMatchPredictions(
     const userById = new Map(open.map((p) => [p.id, p.userId]));
 
     for (const s of settlements) {
-      if (s.payout > 0) {
+      await prisma.$transaction(async (tx) => {
+        const claimed = await tx.sportPrediction.updateMany({
+          where: { id: s.id, status: "open" },
+          data: { status: s.status, payout: s.payout, resolvedIxTime: now },
+        });
+        if (claimed.count !== 1 || s.payout <= 0) return;
+        const source = `PREDICTION_${s.status === "void" ? "REFUND" : "WIN"}:${s.id}`;
         const earnResult = await exchangeService.earn(
           userById.get(s.id)!,
           s.payout,
           "PREDICTION_PAYOUT",
-          `PREDICTION_${s.status === "void" ? "REFUND" : "WIN"}:${s.id}`,
-          prisma
+          source,
+          tx,
+          undefined,
+          { idempotencyKey: source }
         );
         if (!earnResult.success) {
           throw new Error(
@@ -83,10 +94,6 @@ export async function resolveMatchPredictions(
               `Failed to credit prediction payout for user ${userById.get(s.id)!}`
           );
         }
-      }
-      await prisma.sportPrediction.update({
-        where: { id: s.id },
-        data: { status: s.status, payout: s.payout, resolvedIxTime: now },
       });
     }
   } catch (err) {

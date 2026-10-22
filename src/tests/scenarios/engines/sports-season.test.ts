@@ -6,9 +6,9 @@
  * rule, the winning side takes the whole pool. Running it again pays and counts nothing. The manager overrides the
  * result: the rebuilt table matches the simulated one, then follows the new score. Each club collects its match
  * revenue once. The clock moves on, the cron plays the rest of the season, refunds the drawn pool, crowns a champion
- * (whose owner gets the Trophy) and starts season 2 with standings, a rookie class, a schedule and aged players. Two
- * known bugs are pinned with it.failing: the draft into a short roster breaks the season transition, and two
- * settlements of one match both pay. On Postgres: the settlement race, and two revenue collections racing.
+ * (whose owner gets the Trophy) and starts season 2 with standings, a rookie class, a schedule and aged players. A
+ * known bug is pinned with it.failing: the draft into a short roster breaks the season transition. Two settlements of
+ * one match racing pay each winner once. On Postgres: the settlement race, and two revenue collections racing.
  *
  * Folds recalculate-standings (2/1/0 and 3/1/0 points, rank never a position column), transition (aging and the
  * off-season loop, as rows), sports-match-revenue (ticket, base fee and win bonus, paid once, foreign club refused,
@@ -153,6 +153,7 @@ describe("sports-season (memory)", () => {
     db = createMemoryPrisma();
     db.store.onRaw(/SELECT pg_advisory_xact_lock\(hashtext\(\?\)\)/, () => 1);
     db.store.onRaw(/SELECT id FROM "sport_teams" WHERE id = \? FOR UPDATE/, ([id]) => [{ id }]);
+    db.store.onRaw(/SELECT id FROM "exchange_wallets" WHERE id = \? FOR UPDATE/, ([id]) => [{ id }]);
     mockDb = db;
     IxTime.setTimeOverride(START);
     w = await seed(db as never, "m-");
@@ -423,15 +424,11 @@ describe("sports-season (memory)", () => {
     }
   );
 
-  it.failing(
-    // BUG (src/lib/sports/predictions.ts): resolveMatchPredictions reads the open predictions without a lock and
-    // credits them with no idempotency key, so two settlements of one match (the match-day button and the cron, or a
-    // retry) both pay every winner. Remove .failing once settlement claims its rows.
-    "pays each winner once when two settlements of one match race",
-    async () => {
-      await raceSettlement(w);
-    }
-  );
+  // Regression: settlement read the open predictions without claiming them and paid with no idempotency key, so two
+  // settlements of one match (the match-day button and the cron, or a retry) both paid every winner
+  it("pays each winner once when two settlements of one match race", async () => {
+    await raceSettlement(w);
+  });
 });
 
 /** A completed match 3-1 to the home side, with Ana (home 100), Ben (away 60) and Cleo (home 40) still open. */
@@ -495,13 +492,9 @@ describeWithDb("sports-season (Postgres)", () => {
   afterEach(() => removeSportsWorld(db, w.p));
   afterAll(() => db.$disconnect());
 
-  it.failing(
-    // BUG (src/lib/sports/predictions.ts): no row lock and no idempotency key on the payout; see the memory case.
-    "pays each winner once when two settlements of one match race",
-    async () => {
-      await raceSettlement(w);
-    }
-  );
+  it("pays each winner once when two settlements of one match race (the claim)", async () => {
+    await raceSettlement(w);
+  });
 
   it("pays a club's match revenue once when two collections race (the row lock)", async () => {
     const match = await settledMatch(w);
