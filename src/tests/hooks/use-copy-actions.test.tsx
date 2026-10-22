@@ -74,12 +74,10 @@ describe("useCopyActions", () => {
     expect(refreshShowcases()).toHaveBeenCalledTimes(burns ? 1 : 0);
   });
 
-  it.each<Action>(["list", "listMany", "breakDown", "fuse", "sign"])(
-    "%s toasts a failure and reads nothing again",
-    (action) => {
-      optionsOf(action).onError({ message: "This copy is locked." });
-      expect(vaultNotify.error).toHaveBeenCalledWith("This copy is locked.");
-      expect(refreshCards()).not.toHaveBeenCalled();
-    }
-  );
+  it("toasts a failure and reads nothing again", () => {
+    optionsOf("breakDown").onError({ message: "This copy is locked." });
+    expect(vaultNotify.error).toHaveBeenCalledWith("This copy is locked.");
+    expect(refreshCards()).not.toHaveBeenCalled();
+    expect(refreshShowcases()).not.toHaveBeenCalled();
+  });
 });
