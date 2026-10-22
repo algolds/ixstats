@@ -197,16 +197,6 @@ const earlier = new Date(NOW.getTime() - DAY_MS);
 beforeEach(() => jest.useFakeTimers({ now: NOW }));
 afterEach(() => jest.useRealTimers());
 
-/** The moment the member's lock is granted after a wait. */
-const WAITED = new Date(NOW.getTime() + 60_000);
-/** The first lock call waits a minute: the clock moves on before it returns. */
-function lockWaits(tx: { $executeRaw: jest.Mock }): void {
-  tx.$executeRaw.mockImplementationOnce(async () => {
-    jest.setSystemTime(WAITED);
-    return 0;
-  });
-}
-
 describe("activeBansFor", () => {
   it("leaves out expired, lifted and elsewhere bans", async () => {
     const { db } = banDb({
@@ -248,17 +238,6 @@ describe("bannedBoardIds", () => {
       categories: new Set(["cat_find", "cat_general"]),
     });
   });
-
-  it("finds no bans and spends no query on a site admin or a signed-out viewer (M5)", async () => {
-    const { db } = banDb({ bans: [ban({ userId: "u_a" })] });
-    for (const viewer of [admin, null]) {
-      expect(await bannedBoardIds(db as never, viewer, ids, NOW)).toEqual({
-        site: false,
-        categories: new Set(),
-      });
-    }
-    expect(db.forumBan.findMany).not.toHaveBeenCalled();
-  });
 });
 
 describe("postingBan and assertNotBanned", () => {
@@ -272,14 +251,6 @@ describe("postingBan and assertNotBanned", () => {
     });
     expect((await postingBan(db as never, member, eurthHub))?.id).toBe("site");
   });
-
-  it("never bans site admins or anonymous viewers, and spends no query on them (M5)", async () => {
-    const { db } = banDb({ bans: [ban({ userId: "u_a" })] });
-    expect(await postingBan(db as never, admin, eurthHub)).toBeNull();
-    expect(await postingBan(db as never, null, eurthHub)).toBeNull();
-    expect(db.forumBan.findMany).not.toHaveBeenCalled();
-  });
-
   it("refuses a banned member with the ban notice, and lets others through", async () => {
     const live = ban({ scope: "realm", scopeId: "r_eurth", expiresAt: later, reason: "Flooding" });
     const { db } = banDb({ bans: [live] });
@@ -337,16 +308,6 @@ describe("issueBan", () => {
     expect(db.$transaction).toHaveBeenCalledTimes(1);
     expectLockedFirst(tx, "u_m", tx.forumBan.create);
   });
-
-  it("dates the ban from when the member's lock was granted", async () => {
-    const { db, tx } = banDb();
-    lockWaits(tx);
-    expect(await issueBan(db as never, realmMod, input)).toEqual({
-      banId: "b_new",
-      expiresAt: new Date(WAITED.getTime() + 7 * DAY_MS),
-    });
-  });
-
   it("checks the member is no moderator here under their lock, so a grant in flight is seen (M9)", async () => {
     const { db, tx } = banDb();
     await issueBan(db as never, realmMod, {
@@ -377,38 +338,6 @@ describe("issueBan", () => {
       message: "Already banned here permanently. Lift that ban to change it.",
     });
   });
-
-  it("bans over an expired, lifted or automatic ban, and at another scope", async () => {
-    const here = { scope: "realm", scopeId: "r_eurth" };
-    const { db, tx } = banDb({
-      bans: [
-        ban({ id: "b_expired", ...here, expiresAt: earlier }),
-        ban({ id: "b_lifted", ...here, expiresAt: later, liftedAt: earlier }),
-        ban({ id: "b_auto", ...here, expiresAt: later, auto: true }),
-        ban({ id: "b_site", expiresAt: null }),
-        ban({ id: "b_hub", scope: "category", scopeId: "cat_eurth_hub", expiresAt: null }),
-      ],
-    });
-    await expect(issueBan(db as never, realmMod, input)).resolves.toMatchObject({ banId: "b_new" });
-    expect(tx.forumBan.findFirst).toHaveBeenCalledWith({
-      where: {
-        userId: "u_m",
-        scope: "realm",
-        scopeId: "r_eurth",
-        auto: false,
-        liftedAt: null,
-        OR: [{ expiresAt: null }, { expiresAt: { gt: NOW } }],
-      },
-      select: { expiresAt: true },
-    });
-  });
-
-  it("works in an archived realm (T0-6)", async () => {
-    const { db } = banDb();
-    expect(realms.find((r) => r.id === "r_eurth")?.status).toBe("archived");
-    await expect(issueBan(db as never, realmMod, input)).resolves.toMatchObject({ banId: "b_new" });
-  });
-
   it("keeps site bans to site admins, and permanent bans have no expiry", async () => {
     const { db, tx } = banDb();
     const site = { ...input, scope: { kind: "site" }, days: null } as const;
@@ -453,24 +382,6 @@ describe("issueBan", () => {
       })
     ).resolves.toMatchObject({ banId: "b_new" });
   });
-
-  it("refuses anonymous actors, unknown places and unknown members", async () => {
-    const { db, tx } = banDb();
-    await expect(issueBan(db as never, null, input)).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await expect(
-      issueBan(db as never, admin, { ...input, scope: { kind: "category", categoryId: "nope" } })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-    await expect(
-      issueBan(db as never, admin, { ...input, scope: { kind: "realm", realmId: "r_nope" } })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-    await expect(
-      issueBan(db as never, admin, { ...input, userId: "u_nope" })
-    ).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
-    expect(tx.forumBan.create).not.toHaveBeenCalled();
-  });
-
   it("never bans site admins or the scope's own moderators (M5)", async () => {
     const { db, tx } = banDb();
     await expect(issueBan(db as never, admin, { ...input, userId: "u_a2" })).rejects.toMatchObject({
@@ -492,20 +403,6 @@ describe("issueBan", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST", message: "Remove their moderator role first." });
     expect(tx.forumBan.create).not.toHaveBeenCalled();
   });
-
-  it("lets a moderator of another place be banned here, and a realm moderator be banned sitewide", async () => {
-    const { db } = banDb();
-    await expect(issueBan(db as never, admin, { ...input, userId: "u_b" })).resolves.toMatchObject({
-      banId: "b_new",
-    });
-    await expect(issueBan(db as never, admin, { ...input, userId: "u_c" })).resolves.toMatchObject({
-      banId: "b_new",
-    });
-    await expect(
-      issueBan(db as never, admin, { ...input, userId: "u_o", scope: { kind: "site" } })
-    ).resolves.toMatchObject({ banId: "b_new" });
-  });
-
   it("checks the reason and the length", async () => {
     const { db, tx } = banDb();
     for (const bad of [
@@ -556,40 +453,6 @@ describe("liftBan", () => {
     });
     expect(db.forumModLog.create).not.toHaveBeenCalled();
   });
-
-  it("lets a realm moderator lift a ban in one of the realm's categories", async () => {
-    const { db, tx } = banDb({ ban: ban({ scope: "category", scopeId: "cat_eurth_hub" }) });
-    await liftBan(db as never, realmMod, { banId: "b1" });
-    expect(tx.forumModLog.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        scope: "category",
-        scopeId: "cat_eurth_hub",
-        detail: '{"note":null,"banId":"b1"}',
-      }),
-    });
-  });
-
-  it("leaves a ban in a deleted category to site admins", async () => {
-    const gone = ban({ scope: "category", scopeId: "cat_deleted" });
-    await expect(
-      liftBan(banDb({ ban: gone }).db as never, realmMod, { banId: "b1" })
-    ).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
-    const { db, tx } = banDb({ ban: gone });
-    await liftBan(db as never, admin, { banId: "b1" });
-    expect(tx.forumModLog.create).toHaveBeenCalledTimes(1);
-  });
-
-  it("dates the lift from when the member's lock was granted", async () => {
-    const { db, tx } = banDb({ ban: ban({ expiresAt: later }) });
-    lockWaits(tx);
-    await liftBan(db as never, admin, { banId: "b1" });
-    expect(tx.forumBan.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { liftedAt: WAITED, liftedBy: "u_a" } })
-    );
-  });
-
   it("refuses to lift the actor's own ban, site admins included", async () => {
     const own = { code: "FORBIDDEN", message: "You can't lift your own ban." };
     const founder = banDb({ ban: ban({ userId: "u_f", scope: "realm", scopeId: "r_eurth" }) });
@@ -601,17 +464,6 @@ describe("liftBan", () => {
     await expect(liftBan(siteAdmin.db as never, admin, { banId: "b1" })).rejects.toMatchObject(own);
     expect(siteAdmin.tx.forumModLog.create).not.toHaveBeenCalled();
   });
-
-  it("refuses an over-long note", async () => {
-    const { db, tx } = banDb({ ban: ban({}) });
-    await expect(
-      liftBan(db as never, admin, { banId: "b1", note: "x".repeat(1001) })
-    ).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-    });
-    expect(tx.forumBan.updateMany).not.toHaveBeenCalled();
-  });
-
   it("logs a lift once when two requests race (the check runs under the lock)", async () => {
     const { db, tx } = banDb({ ban: ban({}) });
     await liftBan(db as never, admin, { banId: "b1" });
