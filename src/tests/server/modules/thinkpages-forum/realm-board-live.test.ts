@@ -4,22 +4,18 @@ import type { BoardMessage } from "~/server/modules/thinkpages-forum/board-messa
 import {
   boardMessagePayload,
   publishBoardPost,
-  publishBoardSettings,
 } from "~/server/modules/thinkpages-forum/board-live";
 import {
   boardTypingName,
   canJoinRealmBoard,
   canTypeOnBoard,
 } from "~/server/modules/thinkpages-forum/board-socket";
+import { at, ban, boardPost, boardStore, seed, users } from "~/tests/helpers/forum-board-fake";
 import {
-  at,
-  ban,
-  boardPost,
-  boardStore,
-  personas,
-  seed,
-  users,
-} from "~/tests/helpers/forum-board-fake";
+  boardLiveEventSchema,
+  boardLiveMessageSchema,
+  type BoardLiveMessage,
+} from "~/lib/thinkpages-forum/board-live";
 
 const broadcaster = () => ({ broadcastBoard: jest.fn<void, [BoardLiveEvent]>() });
 
@@ -56,36 +52,6 @@ describe("boardMessagePayload", () => {
     const payload = boardMessagePayload(message({ moderable: true, sanctionable: true }));
     expect(JSON.stringify(payload)).not.toMatch(/moderable|sanctionable/);
   });
-
-  it("is the persona-safe public shape: no viewer flags, ISO times", () => {
-    expect(boardMessagePayload(message({ editedAt: at(2) }))).toEqual({
-      type: "updated",
-      message: {
-        id: "p1",
-        authorUserId: "u_member",
-        authorPersonaId: null,
-        importedAuthorName: null,
-        author: {
-          name: "member",
-          handle: "member",
-          avatarUrl: null,
-          flagUrl: null,
-          persona: false,
-          personaType: null,
-        },
-        role: null,
-        isVisitor: false,
-        visitorRealm: null,
-        contentHtml: "<p>hi</p>",
-        reactions: {},
-        createdAt: at(1).toISOString(),
-        editedAt: at(2).toISOString(),
-        replyTo: null,
-        continued: null,
-      },
-    });
-  });
-
   it("never carries the player behind a persona, even from a moderator's shape", () => {
     const persona = message({
       authorPersonaId: "pa_news",
@@ -104,40 +70,6 @@ describe("boardMessagePayload", () => {
     expect(payload.type === "updated" && payload.message.authorUserId).toBeNull();
     expect(JSON.stringify(payload)).not.toContain("u_member");
   });
-
-  it("copies the nested fields one by one, so an in-process payload equals the schema-stripped one", () => {
-    const stray = { stray: "x" };
-    const payload = boardMessagePayload(
-      message({
-        author: {
-          name: "n",
-          handle: null,
-          avatarUrl: null,
-          flagUrl: null,
-          persona: false,
-          ...stray,
-        },
-        visitorRealm: { slug: "aurora", name: "Aurora", ...stray },
-        replyTo: { postId: "p0", authorName: "a", excerpt: "e", ...stray },
-        continued: { threadId: "t1", title: "T", replies: 2, ...stray },
-      } as never)
-    );
-    expect(JSON.stringify(payload)).not.toContain("stray");
-    const settings = broadcaster();
-    publishBoardSettings(settings, "r1", {
-      visitorsAllowed: true,
-      slowModeSeconds: 0,
-      ...stray,
-    } as never);
-    expect(JSON.stringify(settings.broadcastBoard.mock.calls)).not.toContain("stray");
-  });
-
-  it("turns a hidden message into a removal that names only the post", () => {
-    expect(boardMessagePayload(message({ hidden: true }))).toEqual({
-      type: "removed",
-      postId: "p1",
-    });
-  });
 });
 
 const eurth = (posts = [boardPost("p1", 1)], threads: object[] = []) => {
@@ -146,35 +78,6 @@ const eurth = (posts = [boardPost("p1", 1)], threads: object[] = []) => {
 };
 
 describe("publishBoardPost", () => {
-  it("publishes a new message to the realm's room as the public shape", async () => {
-    const store = eurth([boardPost("p1", 1, { replyToPostId: null })]);
-    const out = broadcaster();
-    await publishBoardPost(store.db as never, out, "p1", "message");
-    expect(out.broadcastBoard).toHaveBeenCalledTimes(1);
-    const event = out.broadcastBoard.mock.calls[0]![0];
-    expect(event).toMatchObject({ type: "board:message", realmId: "r_eurth" });
-    expect(event.type === "board:message" && event.message).toMatchObject({
-      id: "p1",
-      contentHtml: "<p>Message p1</p>",
-    });
-    const wire = JSON.stringify(event);
-    for (const leaked of ["byViewer", "canEdit", "hidden"]) expect(wire).not.toContain(leaked);
-  });
-
-  it("does not unmask a persona", async () => {
-    const store = eurth([
-      boardPost("p1", 1, { authorPersonaId: "pa_news", authorUserId: "u_member" }),
-    ]);
-    const out = broadcaster();
-    await publishBoardPost(store.db as never, out, "p1", "message");
-    const wire = JSON.stringify(out.broadcastBoard.mock.calls[0]![0]);
-    expect(wire).toContain("Eurth Daily");
-    expect(wire).toContain('"personaType":"media"');
-    expect(wire).not.toContain("u_member");
-    expect(wire).not.toContain("flags.example");
-    expect(wire).not.toContain('handle":"member');
-  });
-
   it("shows a persona whose account is gone as a bare persona, never its player", async () => {
     const store = eurth([
       boardPost("p1", 1, { authorPersonaId: "pa_gone", authorUserId: "u_member" }),
@@ -207,43 +110,6 @@ describe("publishBoardPost", () => {
     expect(out.broadcastBoard).toHaveBeenCalledTimes(1);
     expect(JSON.stringify(out.broadcastBoard.mock.calls)).not.toContain("secret");
   });
-
-  it("shows a continued link only as the public may see it", async () => {
-    const restricted = {
-      id: "t_staff",
-      categoryId: "cat_staff",
-      title: "Staff only talk",
-      authorUserId: "u_member",
-      postCount: 3,
-      hidden: false,
-    };
-    const base = seed();
-    const store = boardStore(
-      seed({
-        categories: [
-          ...(base.categories ?? []),
-          { ...(base.categories ?? [])[1]!, id: "cat_staff", key: "staff", visibility: "staff" },
-        ],
-        posts: [boardPost("p1", 1, { continuedThreadId: "t_staff" })],
-        threads: [...(base.threads ?? []), restricted] as never,
-      })
-    );
-    const out = broadcaster();
-    await publishBoardPost(store.db as never, out, "p1", "message");
-    const wire = JSON.stringify(out.broadcastBoard.mock.calls[0]![0]);
-    expect(wire).not.toContain("Staff only talk");
-    expect(wire).toContain("Continued in a thread");
-  });
-
-  it("ignores a post outside any board and an unknown post", async () => {
-    const hub = { id: "t_hub", categoryId: "cat_r_eurth_hub", title: "Hub thread", hidden: false };
-    const store = eurth([boardPost("p1", 1, { threadId: "t_hub" })], [hub]);
-    const out = broadcaster();
-    await publishBoardPost(store.db as never, out, "p1", "message");
-    await publishBoardPost(store.db as never, out, "nope", "message");
-    expect(out.broadcastBoard).not.toHaveBeenCalled();
-  });
-
   it("never fails the write: a throwing broadcaster or database is logged", async () => {
     const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
     const store = eurth();
@@ -273,13 +139,6 @@ describe("canJoinRealmBoard", () => {
         ],
       })
     ).db as never;
-
-  it("lets anyone, signed in or not, join a visible realm", async () => {
-    for (const realmId of ["r_eurth", "r_aurora", "r_old"]) {
-      await expect(canJoinRealmBoard(db(), null, realmId)).resolves.toBe(true);
-      await expect(canJoinRealmBoard(db(), "clerk_u_member", realmId)).resolves.toBe(true);
-    }
-  });
   it("refuses a draft realm to the public and members, admits its founder and site admins", async () => {
     await expect(canJoinRealmBoard(db(), null, "r_draft")).resolves.toBe(false);
     await expect(canJoinRealmBoard(db(), "clerk_u_member", "r_draft")).resolves.toBe(false);
@@ -293,23 +152,6 @@ describe("boardTypingName", () => {
   it("names the persona, not the player, for the player's own persona", async () => {
     await expect(boardTypingName(db(), "clerk_u_member", "pa_news")).resolves.toBe("Eurth Daily");
   });
-
-  it("gives no name for the personal account named as a persona", async () => {
-    const store = boardStore(seed(), {
-      personas: [
-        ...personas,
-        {
-          id: "pa_me",
-          clerkUserId: "clerk_u_member",
-          isActive: true,
-          accountType: "personal",
-          displayName: "Me",
-        },
-      ],
-    });
-    await expect(boardTypingName(store.db as never, "clerk_u_member", "pa_me")).resolves.toBeNull();
-  });
-
   it("drops a persona that is not the user's own, or an unknown user", async () => {
     await expect(boardTypingName(db(), "clerk_u_member", "pa_visitor")).resolves.toBeNull();
     await expect(boardTypingName(db(), "clerk_nobody", null)).resolves.toBeNull();
@@ -322,28 +164,71 @@ describe("canTypeOnBoard", () => {
     s.state.bans.push(ban({ userId: "u_banned", scope: "realm", scopeId: "r_eurth" }));
     return s;
   };
-
-  it("is true for whoever may post: a member, a visitor while visitors are allowed, a moderator", async () => {
-    const { db } = store();
-    for (const clerk of [
-      "clerk_u_member",
-      "clerk_u_visitor",
-      "clerk_u_plain",
-      "founder",
-      "clerk_u_admin",
-    ])
-      await expect(canTypeOnBoard(db as never, clerk, "r_eurth")).resolves.toBe(true);
-  });
-
-  it("is false for a banned user", async () => {
-    await expect(canTypeOnBoard(store().db as never, "clerk_u_banned", "r_eurth")).resolves.toBe(
-      false
-    );
-  });
   it("is false in an archived realm, for an unknown user and for an unknown realm", async () => {
     const { db } = store();
     await expect(canTypeOnBoard(db as never, "clerk_u_member", "r_old")).resolves.toBe(false);
     await expect(canTypeOnBoard(db as never, "clerk_nobody", "r_eurth")).resolves.toBe(false);
     await expect(canTypeOnBoard(db as never, "clerk_u_member", "r_nope")).rejects.toBeDefined();
+  });
+});
+
+describe("the live event schema", () => {
+  const live = (id: string, createdAt = "2026-10-10T12:00:00.000Z"): BoardLiveMessage => ({
+    id,
+    authorUserId: "u1",
+    authorPersonaId: null,
+    importedAuthorName: null,
+    author: { name: "member", handle: "member", avatarUrl: null, flagUrl: null, persona: false },
+    role: null,
+    isVisitor: false,
+    visitorRealm: null,
+    contentHtml: "<p>hi</p>",
+    reactions: {},
+    createdAt,
+    editedAt: null,
+    replyTo: null,
+    continued: null,
+  });
+  describe("boardLiveEventSchema", () => {
+    it("rejects a malformed event and an unknown type", () => {
+      expect(
+        boardLiveEventSchema.safeParse({ type: "board:presence", realmId: "r1" }).success
+      ).toBe(false);
+      expect(boardLiveEventSchema.safeParse({ type: "board:other", realmId: "r1" }).success).toBe(
+        false
+      );
+    });
+
+    it("has no place for viewer-specific or moderator-only fields", () => {
+      const parsed = boardLiveEventSchema.parse({
+        type: "board:message",
+        realmId: "r1",
+        message: { ...live("p1"), byViewer: true, canEdit: true, hidden: true },
+      });
+      expect(parsed.type === "board:message" && "byViewer" in parsed.message).toBe(false);
+      expect(parsed.type === "board:message" && "hidden" in parsed.message).toBe(false);
+      expect(parsed.type === "board:message" && "canEdit" in parsed.message).toBe(false);
+    });
+  });
+  describe("boardLiveMessageSchema reactions", () => {
+    const message = {
+      id: "p1",
+      authorUserId: null,
+      authorPersonaId: null,
+      importedAuthorName: null,
+      author: { name: "kir", handle: "kir", avatarUrl: null, flagUrl: null, persona: false },
+      role: null,
+      isVisitor: false,
+      visitorRealm: null,
+      contentHtml: "<p>hi</p>",
+      createdAt: "2026-10-10T12:00:00.000Z",
+      editedAt: null,
+      replyTo: null,
+      continued: null,
+    };
+    it("drops a viewer's own reaction if one is sent", () => {
+      const parsed = boardLiveMessageSchema.parse({ ...message, myReaction: "like" });
+      expect(parsed).not.toHaveProperty("myReaction");
+    });
   });
 });

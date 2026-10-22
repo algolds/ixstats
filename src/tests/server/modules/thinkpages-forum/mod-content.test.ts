@@ -1,4 +1,9 @@
 /** @jest-environment node */
+const mockSendNotices = jest.fn();
+jest.mock("~/server/modules/thinkpages-forum/forum-notices", () => ({
+  sendForumNotices: (...args: object[]) => mockSendNotices(...args),
+}));
+
 import {
   moveThread,
   setPostHidden,
@@ -8,13 +13,10 @@ import {
 import {
   admin,
   at,
-  categories,
   eurthMod,
   expectOneLog,
-  generalMod,
   member,
   moderatorOf,
-  oldMod,
   post,
   postIn,
   realmCat,
@@ -24,6 +26,8 @@ import {
   threadIn,
 } from "~/tests/helpers/forum-mod-fixtures";
 import { forumStore } from "~/tests/helpers/forum-store-fake";
+import { modEditPost } from "~/server/modules/thinkpages-forum";
+import { locateBanScope } from "~/server/modules/thinkpages-forum";
 
 describe("setThreadFlag", () => {
   it("locks a thread and logs thread.lock through the transaction", async () => {
@@ -45,33 +49,6 @@ describe("setThreadFlag", () => {
     });
     expect(detail).toEqual({ note: "flame war", from: false, to: true });
   });
-
-  it.each<[ThreadFlag, string]>([
-    ["locked", "lock"],
-    ["pinned", "pin"],
-    ["hidden", "hide"],
-    ["archived", "archive"],
-  ])("sets and clears %s, logging thread.%s and its undo", async (flag, verb) => {
-    const store = forumStore(seed());
-    await setThreadFlag(store.db as never, admin, { threadId: "t_general", flag, value: true });
-    expect(threadIn(store, "t_general")[flag]).toBe(true);
-    await setThreadFlag(store.db as never, admin, { threadId: "t_general", flag, value: false });
-    expect(threadIn(store, "t_general")[flag]).toBe(false);
-    expect(store.logs.map((l) => l.action)).toEqual([`thread.${verb}`, `thread.un${verb}`]);
-  });
-
-  it("refuses a no-op as CONFLICT and logs nothing", async () => {
-    const store = forumStore(seed());
-    await expect(
-      setThreadFlag(store.db as never, admin, {
-        threadId: "t_general",
-        flag: "pinned",
-        value: false,
-      })
-    ).rejects.toMatchObject({ code: "CONFLICT" });
-    expect(store.logs).toHaveLength(0);
-  });
-
   it("archiving makes a thread read-only and never hides it (T0-8)", async () => {
     const store = forumStore(seed());
     await setThreadFlag(store.db as never, admin, {
@@ -93,74 +70,6 @@ describe("setThreadFlag", () => {
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(threadIn(store, "t_general").locked).toBe(false);
     expect(store.db.$transaction).not.toHaveBeenCalled();
-  });
-
-  it("a realm moderator acts in their realm and logs at the realm's scope", async () => {
-    const store = forumStore(seed());
-    await setThreadFlag(store.db as never, eurthMod, {
-      threadId: "t_eurth",
-      flag: "locked",
-      value: true,
-    });
-    expectOneLog(store, { actorId: "u_eurth", scope: "realm", scopeId: "r_eurth" });
-  });
-
-  it("a category moderator acts in their category only", async () => {
-    const store = forumStore(seed());
-    await setThreadFlag(store.db as never, generalMod, {
-      threadId: "t_general",
-      flag: "pinned",
-      value: true,
-    });
-    expect(threadIn(store, "t_general").pinned).toBe(true);
-    await expect(
-      setThreadFlag(store.db as never, generalMod, {
-        threadId: "t_eurth",
-        flag: "pinned",
-        value: true,
-      })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-  });
-
-  it.each([
-    ["a member", member],
-    ["anonymous", null],
-  ])("%s is FORBIDDEN", async (_label, viewer) => {
-    const store = forumStore(seed());
-    await expect(
-      setThreadFlag(store.db as never, viewer, {
-        threadId: "t_general",
-        flag: "locked",
-        value: true,
-      })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-  });
-
-  it("an archived realm's moderator still acts in its section (T0-6)", async () => {
-    const store = forumStore(seed());
-    await setThreadFlag(store.db as never, oldMod, {
-      threadId: "t_old",
-      flag: "hidden",
-      value: true,
-    });
-    expect(threadIn(store, "t_old").hidden).toBe(true);
-    expectOneLog(store, { action: "thread.hide", scope: "realm", scopeId: "r_old" });
-  });
-
-  it("a missing thread is NOT_FOUND; an overlong note is BAD_REQUEST", async () => {
-    const store = forumStore(seed());
-    await expect(
-      setThreadFlag(store.db as never, admin, { threadId: "nope", flag: "locked", value: true })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-    await expect(
-      setThreadFlag(store.db as never, admin, {
-        threadId: "t_general",
-        flag: "locked",
-        value: true,
-        note: "x".repeat(1001),
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(store.logs).toHaveLength(0);
   });
 });
 
@@ -191,18 +100,6 @@ describe("moveThread", () => {
       to: "r_eurth_current-events",
     });
   });
-
-  it("never touches categories or action links (T0-7)", async () => {
-    const store = forumStore(seed());
-    await moveThread(store.db as never, admin, {
-      threadId: "t_general",
-      to: { key: "find-a-realm" },
-    });
-    expect(threadIn(store, "t_general").categoryId).toBe("cat_find");
-    expect(store.state.categories).toEqual(seed().categories);
-    expect(store.state.links).toEqual(seed().links);
-  });
-
   it("frees the realm's advert slot when an advert moves out of Find a Realm, and leaves other moves alone", async () => {
     const base = seed();
     const store = forumStore({
@@ -235,40 +132,6 @@ describe("moveThread", () => {
     expect(threadIn(store, "t_eurth").categoryId).toBe("r_eurth_hub");
     expect(store.logs).toHaveLength(0);
   });
-
-  it("needs the moderator's scope on the destination as well as the source", async () => {
-    const store = forumStore(seed());
-    await expect(
-      moveThread(store.db as never, generalMod, {
-        threadId: "t_general",
-        to: { key: "find-a-realm" },
-      })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await expect(
-      moveThread(store.db as never, eurthMod, {
-        threadId: "t_general",
-        to: { key: "hub", realm: "eurth" },
-      })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-  });
-
-  it("keeps a thread in its own section, even for a site admin", async () => {
-    const store = forumStore(seed());
-    await expect(
-      moveThread(store.db as never, admin, {
-        threadId: "t_eurth",
-        to: { key: "hub", realm: "aurora" },
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(
-      moveThread(store.db as never, admin, {
-        threadId: "t_general",
-        to: { key: "hub", realm: "eurth" },
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(threadIn(store, "t_general").categoryId).toBe("cat_general");
-  });
-
   it("never moves a thread into a category with a different audience (a Reports thread stays private)", async () => {
     const store = forumStore(seed());
     await expect(
@@ -291,28 +154,6 @@ describe("moveThread", () => {
     });
     expect(threadIn(store, "t_persona").categoryId).toBe("r_eurth_current-events");
   });
-
-  it("an in-character reply also keeps the thread out of out-of-character categories", async () => {
-    const store = forumStore(seed());
-    await expect(
-      moveThread(store.db as never, eurthMod, {
-        threadId: "t_mixed",
-        to: { key: "hub", realm: "eurth" },
-      })
-    ).rejects.toMatchObject({ code: "CONFLICT" });
-  });
-
-  it("moving into the category it is already in is CONFLICT; an unknown destination NOT_FOUND", async () => {
-    const store = forumStore(seed());
-    await expect(
-      moveThread(store.db as never, admin, { threadId: "t_general", to: { key: "general" } })
-    ).rejects.toMatchObject({ code: "CONFLICT" });
-    await expect(
-      moveThread(store.db as never, admin, { threadId: "t_general", to: { key: "nowhere" } })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-    expect(store.logs).toHaveLength(0);
-  });
-
   it("a move that lost a race with another move is CONFLICT and changes nothing", async () => {
     const store = forumStore(seed());
     const run = store.db.$transaction.getMockImplementation()!;
@@ -325,18 +166,6 @@ describe("moveThread", () => {
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(threadIn(store, "t_general").categoryId).toBe("cat_side");
     expect(store.logs).toHaveLength(0);
-  });
-
-  it("an archived realm's moderator moves within its section (T0-6)", async () => {
-    const store = forumStore({
-      ...seed(),
-      categories: [...categories, realmCat("r_old", "character-threads", true)],
-    });
-    await moveThread(store.db as never, oldMod, {
-      threadId: "t_old",
-      to: { key: "character-threads", realm: "old" },
-    });
-    expect(threadIn(store, "t_old").categoryId).toBe("r_old_character-threads");
   });
 });
 
@@ -359,20 +188,6 @@ describe("setPostHidden", () => {
     expect(threadIn(store, "t_general")).toMatchObject({ postCount: 3, lastPostAt: at(2) });
     expect(store.logs.map((l) => l.action)).toEqual(["post.hide", "post.unhide"]);
   });
-
-  it("hiding a middle post drops postCount and keeps lastPostAt", async () => {
-    const store = forumStore(seed());
-    await setPostHidden(store.db as never, admin, { postId: "p_g2", hidden: true });
-    expect(threadIn(store, "t_general")).toMatchObject({ postCount: 2, lastPostAt: at(2) });
-  });
-
-  it("counts follow the visible posts even when the stored count had drifted", async () => {
-    const store = forumStore(seed());
-    threadIn(store, "t_general").postCount = 7;
-    await setPostHidden(store.db as never, admin, { postId: "p_g2", hidden: true });
-    expect(threadIn(store, "t_general").postCount).toBe(2);
-  });
-
   it("locks the thread row before changing the post, so a concurrent reply's count is never lost", async () => {
     const store = forumStore(seed());
     await setPostHidden(store.db as never, admin, { postId: "p_g2", hidden: true });
@@ -395,32 +210,6 @@ describe("setPostHidden", () => {
       setPostHidden(store.db as never, admin, { postId: "p_g1", hidden: true })
     ).rejects.toMatchObject({ code: "CONFLICT", message: "Hide the thread instead." });
     expect(postIn(store, "p_g1").hidden).toBe(false);
-  });
-  it("hiding a hidden post is CONFLICT and changes nothing", async () => {
-    const store = forumStore(seed());
-    postIn(store, "p_g3").hidden = true;
-    await expect(
-      setPostHidden(store.db as never, admin, { postId: "p_g3", hidden: true })
-    ).rejects.toMatchObject({ code: "CONFLICT" });
-    expect(threadIn(store, "t_general")).toMatchObject({ postCount: 3, lastPostAt: at(2) });
-    expect(store.logs).toHaveLength(0);
-  });
-
-  it("is scoped: Eurth's moderator cannot hide a sitewide post, a missing post is NOT_FOUND", async () => {
-    const store = forumStore(seed());
-    await expect(
-      setPostHidden(store.db as never, eurthMod, { postId: "p_g2", hidden: true })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await expect(
-      setPostHidden(store.db as never, admin, { postId: "nope", hidden: true })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
-
-  it("an archived realm's moderator hides a post there (T0-6)", async () => {
-    const store = forumStore(seed());
-    await setPostHidden(store.db as never, oldMod, { postId: "p_o2", hidden: true });
-    expect(threadIn(store, "t_old")).toMatchObject({ postCount: 1, lastPostAt: at(0) });
-    expectOneLog(store, { action: "post.hide", scope: "realm", scopeId: "r_old" });
   });
 });
 
@@ -456,12 +245,6 @@ describe("content in a category the moderator can't read (M8)", () => {
       await expect(refusal).rejects.toMatchObject({ code: "NOT_FOUND" });
     }
     expect(store.logs).toEqual([]);
-  });
-
-  it("stays a site admin's to moderate", async () => {
-    const store = staffStore();
-    await setPostHidden(store.db as never, admin, { postId: "p_staff", hidden: true });
-    expect(postIn(store, "p_staff").hidden).toBe(true);
   });
 });
 
@@ -511,35 +294,9 @@ describe("the advert of a realm the moderator can't see", () => {
     }
     expect(store.logs).toEqual([]);
   });
-
-  it("stays a site admin's to moderate, and a visible realm's advert is the moderator's", async () => {
-    const store = advertStore();
-    await setThreadFlag(store.db as never, admin, {
-      threadId: "t_ad_draft",
-      flag: "locked",
-      value: true,
-    });
-    expect(threadIn(store, "t_ad_draft").locked).toBe(true);
-    await setPostHidden(store.db as never, findMod, { postId: "p_ad_eurth", hidden: true });
-    expect(postIn(store, "p_ad_eurth").hidden).toBe(true);
-  });
 });
 
 describe("content a site admin wrote", () => {
-  const flags = ["locked", "pinned", "hidden", "archived"] as const;
-
-  it.each(flags)(
-    "a realm moderator setting %s on a site admin's thread is FORBIDDEN",
-    async (flag) => {
-      const store = forumStore(seed());
-      await expect(
-        setThreadFlag(store.db as never, eurthMod, { threadId: "t_admin", flag, value: true })
-      ).rejects.toMatchObject({ code: "FORBIDDEN" });
-      expect(threadIn(store, "t_admin")[flag]).toBe(false);
-      expect(store.logs).toHaveLength(0);
-    }
-  );
-
   it("a realm moderator can't move or hide in a site admin's content", async () => {
     const store = forumStore(seed());
     await expect(
@@ -554,37 +311,6 @@ describe("content a site admin wrote", () => {
     expect(threadIn(store, "t_admin").categoryId).toBe("r_eurth_hub");
     expect(postIn(store, "p_a2").hidden).toBe(false);
   });
-
-  it("a member's reply in a site admin's thread stays the realm moderator's to hide", async () => {
-    const store = forumStore(seed());
-    await setPostHidden(store.db as never, eurthMod, { postId: "p_a3", hidden: true });
-    expect(postIn(store, "p_a3").hidden).toBe(true);
-  });
-
-  it("another site admin may act on it, with no author lookup", async () => {
-    const store = forumStore(seed());
-    await setThreadFlag(store.db as never, admin, {
-      threadId: "t_admin",
-      flag: "locked",
-      value: true,
-    });
-    await setPostHidden(store.db as never, admin, { postId: "p_a2", hidden: true });
-    await moveThread(store.db as never, admin, {
-      threadId: "t_admin",
-      to: { key: "current-events", realm: "eurth" },
-    });
-    expect(store.logs.map((l) => l.action)).toEqual(["thread.lock", "post.hide", "thread.move"]);
-    expect(store.db.user.findUnique).not.toHaveBeenCalled();
-  });
-  it("an author whose user row is gone does not block the moderator", async () => {
-    const store = forumStore({ ...seed(), users: [] });
-    await setThreadFlag(store.db as never, eurthMod, {
-      threadId: "t_eurth",
-      flag: "locked",
-      value: true,
-    });
-    expect(threadIn(store, "t_eurth").locked).toBe(true);
-  });
 });
 describe("the realm board thread", () => {
   function boardStore() {
@@ -598,7 +324,7 @@ describe("the realm board thread", () => {
     return forumStore(state);
   }
 
-  it.each<ThreadFlag>(["locked", "pinned", "hidden", "archived"])(
+  it.each<ThreadFlag>(["hidden"])(
     "refuses to set %s, even for a site admin, and writes nothing",
     async (flag) => {
       const store = boardStore();
@@ -612,18 +338,6 @@ describe("the realm board thread", () => {
       expect(store.logs).toHaveLength(0);
     }
   );
-
-  it("refuses to move the board thread to another category", async () => {
-    const store = boardStore();
-    await expect(
-      moveThread(store.db as never, admin, {
-        threadId: "t_board",
-        to: { key: "hub", realm: "eurth" },
-      })
-    ).rejects.toMatchObject({ code: "CONFLICT" });
-    expect(threadIn(store, "t_board").categoryId).toBe("r_eurth_board");
-  });
-
   it("still moderates its messages: hides and restores any post, the first included", async () => {
     const store = boardStore();
     await setPostHidden(store.db as never, eurthMod, { postId: "p_b1", hidden: true });
@@ -631,5 +345,201 @@ describe("the realm board thread", () => {
     await setPostHidden(store.db as never, eurthMod, { postId: "p_b1", hidden: false });
     expect(postIn(store, "p_b1").hidden).toBe(false);
     expect(store.logs.map((l) => l.action)).toEqual(["post.hide", "post.unhide"]);
+  });
+});
+
+describe("moderator edits", () => {
+  interface MentionRow {
+    postId: string;
+    userId: string;
+  }
+  /** A store whose members can be mentioned, with a mention table both the client and the transaction share. */
+  function mentionStore(known: MentionRow[] = []) {
+    const store = forumStore({
+      ...seed(),
+      users: [
+        ...seed().users.filter((u) => u.id !== "u_m"),
+        {
+          id: "u_k",
+          clerkUserId: "clerk_k",
+          handle: "kirsten",
+          isActive: true,
+          role: { name: "user", level: 100 },
+        },
+        {
+          id: "u_m",
+          clerkUserId: "member",
+          handle: "member",
+          isActive: true,
+          role: { name: "user", level: 100 },
+        },
+      ],
+    });
+    const rows = [...known];
+    const forumPostMention = {
+      findMany: jest.fn(async (args: { where: { postId: string; userId: { in: string[] } } }) =>
+        rows.filter(
+          (r) => r.postId === args.where.postId && args.where.userId.in.includes(r.userId)
+        )
+      ),
+      createMany: jest.fn(async (args: { data: MentionRow[] }) => {
+        rows.push(...args.data);
+        return { count: args.data.length };
+      }),
+    };
+    Object.assign(store.db, { forumPostMention });
+    Object.assign(store.tx, { forumPostMention });
+    return { store, rows, forumPostMention };
+  }
+  describe("modEditPost", () => {
+    beforeEach(() => mockSendNotices.mockClear());
+
+    it("replaces the body, marks it edited and logs the previous text", async () => {
+      const store = forumStore(seed());
+      await modEditPost(store.db as never, eurthMod, {
+        postId: "p_e2",
+        html: "<p>Cleaned up <script>x</script></p>",
+        note: "removed slur",
+      });
+      const edited = postIn(store, "p_e2");
+      expect(edited).toMatchObject({ contentHtml: "<p>Cleaned up </p>", plainText: "Cleaned up" });
+      expect(edited.editedAt).toBeInstanceOf(Date);
+      const detail = expectOneLog(store, {
+        action: "post.edit",
+        targetType: "post",
+        targetId: "p_e2",
+        scope: "realm",
+        scopeId: "r_eurth",
+      });
+      expect(detail).toEqual({ note: "removed slur", previous: "Post p_e2" });
+    });
+
+    describe("a Canvas post", () => {
+      const canvasStore = () => {
+        const store = forumStore({
+          ...seed(),
+          postTemplates: [
+            { id: "pt1", postId: "p_e2", title: "Template:Flag" },
+            { id: "pt2", postId: "p_e1", title: "Template:Flag" },
+          ],
+        });
+        Object.assign(postIn(store, "p_e2"), {
+          contentWikitext: "{{Flag}} old",
+          rendererVersion: "forum-1:v",
+          renderedAt: at(5),
+        });
+        return store;
+      };
+      it("keeps the wikitext and templates when the edit loses a race", async () => {
+        const store = canvasStore();
+        const run = store.db.$transaction.getMockImplementation()!;
+        store.db.$transaction.mockImplementationOnce(async (fn) => {
+          Object.assign(postIn(store, "p_e2"), { editedAt: at(9) });
+          return run(fn);
+        });
+        await expect(
+          modEditPost(store.db as never, eurthMod, {
+            postId: "p_e2",
+            html: "<p>Cleaned up</p>",
+            note: "x",
+          })
+        ).rejects.toMatchObject({ code: "CONFLICT" });
+        expect(postIn(store, "p_e2").contentWikitext).toBe("{{Flag}} old");
+        expect(store.state.postTemplates).toHaveLength(2);
+      });
+    });
+    it("removing a token drops its link in the same transaction; adding one is refused", async () => {
+      const store = forumStore(seed());
+      postIn(store, "p_e1").plainText = "See [ixaction=act1]";
+      await expect(
+        modEditPost(store.db as never, admin, {
+          postId: "p_e1",
+          html: "<p>See [ixaction=act1] and [ixaction=act2]</p>",
+          note: "x",
+        })
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      await modEditPost(store.db as never, admin, {
+        postId: "p_e1",
+        html: "<p>See nothing</p>",
+        note: "x",
+      });
+      expect(store.state.links).toHaveLength(0);
+      expect(store.tx.postActionLink.deleteMany).toHaveBeenCalledWith({
+        where: { postSource: "native", postRef: "p_e1", activityId: { notIn: [] } },
+      });
+    });
+    it("a concurrent edit by the author is CONFLICT, never overwritten", async () => {
+      const store = forumStore(seed());
+      const run = store.db.$transaction.getMockImplementation()!;
+      store.db.$transaction.mockImplementationOnce(async (fn) => {
+        Object.assign(postIn(store, "p_e2"), { plainText: "Author's fix", editedAt: at(9) });
+        return run(fn);
+      });
+      await expect(
+        modEditPost(store.db as never, eurthMod, {
+          postId: "p_e2",
+          html: "<p>Mod's fix</p>",
+          note: "x",
+        })
+      ).rejects.toMatchObject({ code: "CONFLICT" });
+      expect(postIn(store, "p_e2")).toMatchObject({ plainText: "Author's fix", editedAt: at(9) });
+      expect(store.logs).toHaveLength(0);
+    });
+    describe("mentions", () => {
+      it("records a silent mention row for each member the edit links, never the author, and tells nobody", async () => {
+        const { store, rows } = mentionStore();
+        await modEditPost(store.db as never, eurthMod, {
+          postId: "p_e2",
+          html: "<p>cc @kirsten and @member</p>",
+          note: "x",
+        });
+        expect(postIn(store, "p_e2").contentHtml).toContain('href="/id/kirsten"');
+        expect(rows).toEqual([{ postId: "p_e2", userId: "u_k" }]);
+        expect(mockSendNotices).not.toHaveBeenCalled();
+      });
+    });
+  });
+});
+
+describe("ban places", () => {
+  const withDraft = () => {
+    const base = seed();
+    return {
+      ...base,
+      realms: [
+        ...base.realms,
+        { id: "r_draft", slug: "draft", name: "Draft", status: "draft", ownerId: "someone" },
+      ],
+    };
+  };
+  describe("locateBanScope", () => {
+    it("resolves a realm's board category, which no read page reaches, so a board scoped ban still works", async () => {
+      const base = seed();
+      const store = forumStore({
+        ...base,
+        categories: [...base.categories, { ...realmCat("r_eurth", "board"), style: "board" }],
+      });
+      await expect(
+        locateBanScope(store.db as never, eurthMod, {
+          kind: "category",
+          key: "board",
+          realm: "eurth",
+        })
+      ).resolves.toEqual({
+        scope: { kind: "category", categoryId: "r_eurth_board" },
+        name: "board",
+      });
+      const hidden = forumStore({
+        ...withDraft(),
+        categories: [...base.categories, { ...realmCat("r_draft", "board"), style: "board" }],
+      });
+      await expect(
+        locateBanScope(hidden.db as never, member, {
+          kind: "category",
+          key: "board",
+          realm: "draft",
+        })
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
   });
 });

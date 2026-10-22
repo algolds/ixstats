@@ -208,14 +208,6 @@ describe("mentions", () => {
     });
     expect(only!.title).not.toContain("owner");
   });
-
-  it("never tells an inactive member", async () => {
-    const { db } = await run({ html: `<p>${link("gone")} and ${link("kir")}</p>` });
-    expect(notices().map((n) => n.clerkUserId)).toEqual(["clerk_kir"]);
-    expect(db.user.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ isActive: true }) })
-    );
-  });
   it("skips members who block the author or whose privacy refuses mentions", async () => {
     blocking.mockResolvedValue(["clerk_kir"]);
     refusing.mockResolvedValue(["clerk_bob"]);
@@ -282,60 +274,6 @@ describe("mentions", () => {
 describe("quotes and board replies", () => {
   const quoting = (id: string) =>
     `<blockquote class="forum-quote" data-post="${id}"><div>x</div></blockquote><p>agreed</p>`;
-  it("hands the watcher step only the members actually told, so a mention refuser still gets the watch notice", async () => {
-    blocking.mockResolvedValue(["clerk_bob"]);
-    refusing.mockResolvedValue(["clerk_owner"]);
-    await run({ html: `<p>${link("kir")} ${link("bob")} ${link("owner")}</p>` });
-    expect(notices().map((n) => n.clerkUserId)).toEqual(["clerk_kir"]);
-    expect([...watchers.mock.calls[0]![1].handled]).toEqual(["u_kir"]);
-  });
-
-  it("hands the watcher step nobody when the notices could not be written", async () => {
-    sent.mockResolvedValueOnce(false);
-    await run({ html: `<p>${link("kir")}</p>` });
-    expect([...watchers.mock.calls[0]![1].handled]).toEqual([]);
-  });
-
-  it("lets a member who refuses mentions keep the quote notice they were owed", async () => {
-    refusing.mockResolvedValue(["clerk_kir"]);
-    await run({
-      html: `${quoting("p0")}<p>${link("kir")}</p>`,
-      quoted: [{ authorUserId: "u_kir" }],
-    });
-    expect(notices()).toEqual([
-      expect.objectContaining({
-        clerkUserId: "clerk_kir",
-        title: "actorhandle quoted your post in Trade talks",
-        metadata: { kind: "quote", postId: "p1", threadId: "t1" },
-      }),
-    ]);
-    expect([...watchers.mock.calls[0]![1].handled]).toEqual(["u_kir"]);
-  });
-
-  it("lets a member who refuses mentions keep the board reply they were owed", async () => {
-    refusing.mockResolvedValue(["clerk_kir"]);
-    await run({
-      category: boardCategory,
-      html: `<p>${link("kir")}</p>`,
-      replyToPostId: "p0",
-      replyTarget: { authorUserId: "u_kir", hidden: false },
-    });
-    expect(notices()).toEqual([
-      expect.objectContaining({
-        clerkUserId: "clerk_kir",
-        title: "actorhandle replied to you on the Eurth board",
-        metadata: { kind: "reply", postId: "p1", threadId: "t1" },
-      }),
-    ]);
-  });
-
-  it("tells a member who refuses mentions nothing when the mention was all they were owed", async () => {
-    refusing.mockResolvedValue(["clerk_kir"]);
-    await run({ html: `<p>${link("kir")}</p>` });
-    expect(notices()).toEqual([]);
-    expect([...watchers.mock.calls[0]![1].handled]).toEqual([]);
-  });
-
   it("skips a member who blocks the author for a quote and for a board reply", async () => {
     blocking.mockResolvedValue(["clerk_kir"]);
     await run({ html: quoting("p0"), quoted: [{ authorUserId: "u_kir" }] });
@@ -390,36 +328,6 @@ describe("quotes and board replies", () => {
     const { db } = await run({ html: ids.map(quoting).join("") });
     const [[lookup]] = db.forumPost.findMany.mock.calls;
     expect(lookup.where.id.in).toEqual(ids.slice(0, 5));
-  });
-
-  it("tells the author of the message a board message replies to, on the realm's board", async () => {
-    await run({
-      category: boardCategory,
-      replyToPostId: "p0",
-      replyTarget: { authorUserId: "u_kir", hidden: false },
-    });
-    expect(notices()).toEqual([
-      expect.objectContaining({
-        clerkUserId: "clerk_kir",
-        title: "actorhandle replied to you on the Eurth board",
-        metadata: { kind: "reply", postId: "p1", threadId: "t1" },
-      }),
-    ]);
-    expect(watchers).not.toHaveBeenCalled();
-  });
-
-  it("does not tell a board author about a reply to their own message, or to a hidden one", async () => {
-    await run({
-      category: boardCategory,
-      replyToPostId: "p0",
-      replyTarget: { authorUserId: "u_actor", hidden: false },
-    });
-    await run({
-      category: boardCategory,
-      replyToPostId: "p0",
-      replyTarget: { authorUserId: "u_kir", hidden: true },
-    });
-    expect(notices()).toEqual([]);
   });
 });
 

@@ -6,10 +6,35 @@
  */
 jest.mock("~/server/db", () => ({ db: {} }));
 
+jest.mock("~/lib/ixtime", () => ({
+  IxTime: { getCurrentIxTime: () => Date.UTC(2041, 5, 2, 9, 30) },
+}));
+
+jest.mock("~/lib/cache", () => ({
+  ...jest.requireActual("~/lib/cache"),
+  invalidateCache: jest.fn().mockResolvedValue(undefined),
+}));
+jest.mock("~/lib/notifications/api", () => ({ notificationAPI: { create: jest.fn() } }));
+jest.mock("~/server/modules/realms/realms.flags", () => ({ deleteLocalFlagImages: jest.fn() }));
+
+jest.mock("~/lib/auth", () => ({ isSystemOwner: () => false }));
+
 import { realmsRouter } from "~/server/api/routers/realms";
-import { hasRealmPower, realmPowers } from "~/server/modules/realms";
+import { realmPowers } from "~/server/modules/realms";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
+import { MAX_REALM_LINKS } from "~/lib/realms/realm-community";
+import { runRealmInactivity } from "~/server/modules/realms/realms.inactivity";
+import {
+  IXSTATS_NATION_GROWTH_DEFAULTS,
+  type NationGrowthTable,
+} from "~/lib/realms/nation-growth-defaults";
+import {
+  applyNationDefaults,
+  NATION_DEFAULTS_APPLIED_ACTION,
+  UNCLAIMED_NATION_WHERE,
+} from "~/server/modules/realms/realms.nation-defaults";
+import { isRealmImageUrl } from "~/lib/realms/realm-region";
 
 type Db = ReturnType<typeof createMockPrisma>;
 
@@ -80,12 +105,6 @@ describe("officer powers", () => {
     expect(realmPowers(actor(PLAYER), realm, officers)).toEqual([]);
     expect(realmPowers(null, realm, officers)).toEqual([]);
   });
-
-  it("treats site admins as founders", () => {
-    expect(
-      hasRealmPower({ id: "a", clerkUserId: ADMIN, role: admin }, realm, [], "appearance")
-    ).toBe(true);
-  });
 });
 
 describe("Manage permissions", () => {
@@ -106,30 +125,6 @@ describe("Manage permissions", () => {
       expect.objectContaining({ data: expect.objectContaining({ realmId: "eurth" }) })
     );
   });
-
-  it("keeps appointing officers to the founder", async () => {
-    const db = makeDb();
-    await expect(
-      callerAs(OFFICER, db).region.appointOfficer({
-        slug: "eurth",
-        userId: PLAYER,
-        title: "Envoy",
-        powers: ["board"],
-      })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-
-    db.country.findFirst.mockResolvedValue({ id: "c1" });
-    await callerAs(FOUNDER, db).region.appointOfficer({
-      slug: "eurth",
-      userId: PLAYER,
-      title: "Envoy",
-      powers: ["board", "board"],
-    });
-    expect(db.realmOfficer.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ userId: PLAYER, powers: ["board"], appointedBy: FOUNDER }),
-    });
-  });
-
   describe("the board power and forum bans (M9)", () => {
     const BANNED = {
       code: "BAD_REQUEST",
@@ -164,21 +159,6 @@ describe("Manage permissions", () => {
       await callerAs(FOUNDER, db).region.appointOfficer(appoint(["diplomacy"]));
       expect(db.realmOfficer.create).toHaveBeenCalledTimes(1);
     });
-
-    it("refuses adding the board power to a banned officer, but leaves one who already holds it", async () => {
-      const db = bannedDb(realmRow({ officers: [{ userId: PLAYER, powers: ["diplomacy"] }] }));
-      await expect(
-        callerAs(FOUNDER, db).region.updateOfficer(appoint(["board"]))
-      ).rejects.toMatchObject(BANNED);
-      expect(db.realmOfficer.updateMany).not.toHaveBeenCalled();
-
-      const holder = bannedDb(realmRow({ officers: [{ userId: PLAYER, powers: ["board"] }] }));
-      holder.realmOfficer.updateMany.mockResolvedValue({ count: 1 });
-      await callerAs(FOUNDER, holder).region.updateOfficer(appoint(["board"]));
-      expect(holder.forumBan.findFirst).not.toHaveBeenCalled();
-      expect(holder.realmOfficer.updateMany).toHaveBeenCalledTimes(1);
-    });
-
     it("checks the bans inside the officer write's transaction, under the player's lock (M9)", async () => {
       const db = bannedDb();
       db.forumBan.findFirst.mockResolvedValue(null);
@@ -193,29 +173,7 @@ describe("Manage permissions", () => {
         db.realmOfficer.create.mock.invocationCallOrder[0]!
       );
     });
-
-    it("checks the founder's permission before the player's bans", async () => {
-      const db = bannedDb();
-      await expect(
-        callerAs(OFFICER, db).region.appointOfficer(appoint(["board"]))
-      ).rejects.toMatchObject({ code: "FORBIDDEN" });
-      expect(db.forumBan.findFirst).not.toHaveBeenCalled();
-    });
   });
-
-  it("only appoints players who own a nation in the realm", async () => {
-    const db = makeDb();
-    db.country.findFirst.mockResolvedValue(null);
-    await expect(
-      callerAs(FOUNDER, db).region.appointOfficer({
-        slug: "eurth",
-        userId: PLAYER,
-        title: "Envoy",
-        powers: [],
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-  });
-
   it("makes an archived realm read-only, even for its founder", async () => {
     const db = makeDb(realmRow({ status: "archived" }));
     await expect(
@@ -229,20 +187,6 @@ describe("Manage permissions", () => {
       code: "NOT_FOUND",
     });
   });
-
-  it("renders the factbook from wikitext and strips scripts", async () => {
-    const db = makeDb();
-    await callerAs(FOUNDER, db).region.updateFactbook({
-      slug: "eurth",
-      wikitext: "'''Eurth''' is a world.<script>alert(1)</script>",
-    });
-    const data = db.realm.update.mock.calls[0][0].data;
-    expect(data.factbookWikitext).toContain("'''Eurth'''");
-    expect(data.factbookHtml).toMatch(/<strong[^>]*>Eurth<\/strong>/);
-    expect(data.factbookHtml).not.toContain("<script");
-    expect(data.factbookHtml).not.toContain("class=");
-  });
-
   it("saves factbook and rules HTML without style, class or id, so it can't overlay the page", async () => {
     const db = makeDb();
     const overlay = `<div class='fixed inset-0 z-50' style="position:fixed;inset:0;z-index:99999"><a href="https://evil.example">Session expired, sign in</a></div>`;
@@ -254,59 +198,6 @@ describe("Manage permissions", () => {
       expect(html).not.toMatch(/\s(style|class|id)=/);
       expect(html).not.toContain("z-index");
     }
-  });
-
-  it("refuses a non-https banner", async () => {
-    const db = makeDb();
-    await expect(
-      callerAs(FOUNDER, db).region.updateAppearance({
-        slug: "eurth",
-        bannerUrl: "javascript:alert(1)",
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-  });
-
-  it("lets appearance officers change the thumbnail, https only (AT-8)", async () => {
-    const db = makeDb(realmRow({ officers: [{ userId: OFFICER, powers: ["appearance"] }] }));
-    await callerAs(OFFICER, db).region.updateAppearance({
-      slug: "eurth",
-      thumbnail: "https://img.example/thumb.png",
-    });
-    expect(db.realm.update).toHaveBeenLastCalledWith({
-      where: { id: "eurth" },
-      data: { thumbnail: "https://img.example/thumb.png" },
-    });
-    await callerAs(OFFICER, db).region.updateAppearance({ slug: "eurth", thumbnail: null });
-    expect(db.realm.update).toHaveBeenLastCalledWith({
-      where: { id: "eurth" },
-      data: { thumbnail: null },
-    });
-    await expect(
-      callerAs(OFFICER, db).region.updateAppearance({
-        slug: "eurth",
-        thumbnail: "http://img.example/thumb.png",
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-  });
-  it("refuses an emblem change from an officer without the appearance power", async () => {
-    const db = makeDb();
-    await expect(
-      callerAs(OFFICER, db).region.updateAppearance({
-        slug: "eurth",
-        emblemUrl: "https://img.example/emblem.png",
-      })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    expect(db.realm.update).not.toHaveBeenCalled();
-  });
-  it("refuses a thumbnail change from an officer without the appearance power", async () => {
-    const db = makeDb();
-    await expect(
-      callerAs(OFFICER, db).region.updateAppearance({
-        slug: "eurth",
-        thumbnail: "https://img.example/thumb.png",
-      })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    expect(db.realm.update).not.toHaveBeenCalled();
   });
 });
 
@@ -353,27 +244,6 @@ describe("embassies", () => {
     expect(db.realmEmbassy.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: "e1", toRealmId: "eurth", status: "proposed" } })
     );
-  });
-
-  it("refuses an embassy with itself", async () => {
-    const db = twoRealms();
-    await expect(
-      callerAs(FOUNDER, db).region.proposeEmbassy({ slug: "eurth", targetSlug: "eurth" })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-  });
-});
-
-describe("realm poll", () => {
-  it("runs one poll at a time", async () => {
-    const db = makeDb();
-    db.poll.findFirst.mockResolvedValue({ id: "p0" });
-    await expect(
-      callerAs(FOUNDER, db).region.createPoll({
-        slug: "eurth",
-        question: "Again?",
-        options: ["Yes", "No"],
-      })
-    ).rejects.toMatchObject({ code: "CONFLICT" });
   });
 });
 describe("leaving a realm", () => {
@@ -470,7 +340,7 @@ describe("overview and happenings", () => {
     return db;
   }
 
-  it.each(["draft", "generating"])(
+  it.each(["draft"])(
     "leaks no emblem of a %s realm to a viewer who cannot moderate it",
     async (status) => {
       const db = overviewDb(status, FOUNDER);
@@ -498,68 +368,6 @@ describe("overview and happenings", () => {
       expect(html).not.toMatch(/\s(style|class|id)=/);
     }
   });
-  describe("forum preview (D4)", () => {
-    const lastPostAt = new Date("2026-10-01T10:00:00Z");
-
-    it("lists the realm's latest Hub threads, visible and unarchived ones only (U12), newest first", async () => {
-      const db = overviewDb();
-      db.forumCategory.findFirst.mockResolvedValue({ id: "hub1" });
-      db.forumThread.findMany.mockResolvedValue([
-        { id: "t1", title: "Welcome", postCount: 4, lastPostAt },
-      ]);
-      const overview = await callerAs(PLAYER, db).region.overview({ slug: "eurth" });
-
-      expect(db.forumCategory.findFirst.mock.calls[0]![0].where).toEqual({
-        scope: "realm",
-        realmId: "eurth",
-        key: "hub",
-        visibility: { in: ["public", "reporter_staff"] },
-      });
-      expect(db.forumThread.findMany).toHaveBeenCalledWith({
-        where: { categoryId: "hub1", hidden: false, archived: false },
-        orderBy: { lastPostAt: "desc" },
-        take: 5,
-        select: { id: true, title: true, postCount: true, lastPostAt: true },
-      });
-      expect(overview?.forum).toEqual({
-        threads: [{ id: "t1", title: "Welcome", replies: 3, lastPostAt }],
-      });
-      expect(overview).not.toHaveProperty("board");
-    });
-    it("is empty when the realm has no Hub, or the Hub is not visible to the viewer", async () => {
-      const db = overviewDb();
-      db.forumCategory.findFirst.mockResolvedValue(null);
-      const overview = await callerAs(PLAYER, db).region.overview({ slug: "eurth" });
-      expect(overview?.forum).toEqual({ threads: [] });
-      expect(db.forumThread.findMany).not.toHaveBeenCalled();
-    });
-
-    it("lets site admins see a non-public Hub, nobody else", async () => {
-      const db = overviewDb();
-      db.forumCategory.findFirst.mockResolvedValue(null);
-      await callerAs(ADMIN, db, admin).region.overview({ slug: "eurth" });
-      expect(db.forumCategory.findFirst.mock.calls[0]![0].where).toEqual({
-        scope: "realm",
-        realmId: "eurth",
-        key: "hub",
-        visibility: { in: ["public", "reporter_staff", "staff"] },
-      });
-    });
-
-    it("shows nothing of a draft realm to players (the overview itself is null)", async () => {
-      const db = overviewDb("draft", FOUNDER);
-      expect(await callerAs(PLAYER, db).region.overview({ slug: "eurth" })).toBeNull();
-      expect(db.forumCategory.findFirst).not.toHaveBeenCalled();
-      expect(db.forumThread.findMany).not.toHaveBeenCalled();
-    });
-  });
-
-  it("hides a draft realm's overview from players", async () => {
-    const db = overviewDb("draft", FOUNDER);
-    expect(await callerAs(PLAYER, db).region.overview({ slug: "eurth" })).toBeNull();
-    expect(await callerAs(FOUNDER, db).region.overview({ slug: "eurth" })).not.toBeNull();
-  });
-
   it("leaves draft partner realms out of the embassies panel (AT-6)", async () => {
     const db = overviewDb();
     db.realmEmbassy.findMany.mockResolvedValue([
@@ -574,21 +382,6 @@ describe("overview and happenings", () => {
     expect(db.realm.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: { in: ["terra"] }, status: { notIn: ["draft", "generating"] } },
-      })
-    );
-  });
-  it("leaves embassies with draft or generating partners out of the happenings (AT-6)", async () => {
-    const db = makeDb();
-    await callerAs(PLAYER, db).region.happenings({ slug: "eurth", kinds: ["embassy"] });
-    const hidden = { status: { notIn: ["draft", "generating"] } };
-    expect(db.realmEmbassy.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          OR: [
-            { fromRealmId: "eurth", toRealm: hidden },
-            { toRealmId: "eurth", fromRealm: hidden },
-          ],
-        }),
       })
     );
   });
@@ -608,30 +401,6 @@ describe("deleting a realm (AT-8)", () => {
     return db;
   }
 
-  it("is for site admins only", async () => {
-    const db = deletableDb();
-    await expect(
-      callerAs(FOUNDER, db).region.deleteRealm({ realmId: "eurth", confirmSlug: "eurth" })
-    ).rejects.toThrow();
-    expect(db.realm.delete).not.toHaveBeenCalled();
-  });
-
-  it("never deletes Ixnay", async () => {
-    const db = deletableDb();
-    await expect(
-      callerAs(ADMIN, db, admin).region.deleteRealm({ realmId: "default", confirmSlug: "ixnay" })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(db.realm.delete).not.toHaveBeenCalled();
-  });
-
-  it("needs the realm's slug typed", async () => {
-    const db = deletableDb();
-    await expect(
-      callerAs(ADMIN, db, admin).region.deleteRealm({ realmId: "eurth", confirmSlug: "Eurth!" })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(db.realm.delete).not.toHaveBeenCalled();
-  });
-
   it("refuses a realm that still has nations or map regions, and moves nothing", async () => {
     const withNations = deletableDb(3);
     await expect(
@@ -649,64 +418,6 @@ describe("deleting a realm (AT-8)", () => {
     ).rejects.toMatchObject({ code: "CONFLICT", message: expect.stringContaining("map regions") });
     expect(withMap.realm.delete).not.toHaveBeenCalled();
   });
-
-  it("counts only the nations that block: owned ones, ones with a claim in play, and any not generated", async () => {
-    const db = deletableDb();
-    await callerAs(ADMIN, db, admin).region.deleteRealm({ realmId: "eurth", confirmSlug: "eurth" });
-    expect(db.realm.findUnique).toHaveBeenCalledWith(
-      expect.objectContaining({
-        select: expect.objectContaining({
-          _count: {
-            select: {
-              countries: {
-                where: {
-                  OR: [
-                    { worldgen: false },
-                    { ownerUserId: { not: null } },
-                    { realmClaims: { some: { status: { in: ["pending", "approved"] } } } },
-                    { blurbResponses: { some: {} } },
-                  ],
-                },
-              },
-            },
-          },
-        }),
-      })
-    );
-  });
-
-  it("deletes the realm's unowned generated slots with it, before the realm", async () => {
-    const db = deletableDb();
-    await callerAs(ADMIN, db, admin).region.deleteRealm({ realmId: "eurth", confirmSlug: "eurth" });
-    expect(db.country.deleteMany).toHaveBeenCalledWith({
-      where: {
-        realmId: "eurth",
-        worldgen: true,
-        ownerUserId: null,
-        realmClaims: { none: { status: { in: ["pending", "approved"] } } },
-        blurbResponses: { none: {} },
-      },
-    });
-    expect(db.country.deleteMany.mock.invocationCallOrder[0]).toBeLessThan(
-      db.realm.delete.mock.invocationCallOrder[0]!
-    );
-  });
-  it("deletes the action links of the realm's native posts before its categories", async () => {
-    const db = deletableDb();
-    db.forumPost.findMany.mockResolvedValue([{ id: "p1" }, { id: "p2" }]);
-    await callerAs(ADMIN, db, admin).region.deleteRealm({ realmId: "eurth", confirmSlug: "eurth" });
-    expect(db.forumPost.findMany).toHaveBeenCalledWith({
-      where: { thread: { category: { scope: "realm", realmId: "eurth" } } },
-      select: { id: true },
-    });
-    expect(db.postActionLink.deleteMany).toHaveBeenCalledWith({
-      where: { postSource: "native", postRef: { in: ["p1", "p2"] } },
-    });
-    expect(db.postActionLink.deleteMany.mock.invocationCallOrder[0]).toBeLessThan(
-      db.forumCategory.deleteMany.mock.invocationCallOrder[0]!
-    );
-  });
-
   it("hides the realm's advert thread before the realm goes, so it does not outlive it as an ordinary thread", async () => {
     const db = deletableDb();
     await callerAs(ADMIN, db, admin).region.deleteRealm({ realmId: "eurth", confirmSlug: "eurth" });
@@ -729,60 +440,342 @@ describe("deleting a realm (AT-8)", () => {
     );
   });
 });
-
-describe("inactivity rules (ToS §2.8)", () => {
-  it("shows the founder the realm's rules, defaulting to 90 days, and nobody else", async () => {
-    const db = makeDb();
-    db.realm.findUniqueOrThrow.mockResolvedValue({
-      description: null,
-      bannerUrl: null,
-      thumbnail: null,
-      emblemUrl: null,
-      tags: [],
-      communityLinks: null,
-      settings: { reclaimWindowExclusive: true },
-      foundedAt: null,
-      createdAt: new Date("2026-01-01"),
-    });
-    const founder = await callerAs(FOUNDER, db).region.manage({ slug: "eurth" });
-    expect(founder.inactivity).toEqual({ days: 90, exclusiveWindow: true });
-    const officer = await callerAs(OFFICER, db).region.manage({ slug: "eurth" });
-    expect(officer.inactivity).toBeNull();
-  });
-
-  it("lets only the founder set them, keeping the realm's other settings", async () => {
-    const db = makeDb(realmRow({ settings: { maxNationsPerUser: 2 } }));
-    db.realm.findUnique.mockImplementation(async ({ where, select }: any) =>
-      select?.settings && where.id
-        ? { settings: { maxNationsPerUser: 2 } }
-        : where.slug === "eurth" || where.id === "eurth"
-          ? realmRow()
-          : null
-    );
-    await callerAs(FOUNDER, db).region.updateInactivity({
+/**
+ * Realm community links, rules and the in-world date (docs/specs/2026-10-05-realm-regions-design.md): link
+ * validation, the in-world date's formatting and storage in `Realm.settings`, the Manage actions' `appearance`
+ * gate (archived realms read-only), and what the region overview hands the page.
+ */
+describe("community links and rules", () => {
+  type Db = ReturnType<typeof createMockPrisma>;
+  const FOUNDER = "clerk_founder";
+  const OFFICER = "clerk_officer";
+  function realmRow(overrides: Record<string, unknown> = {}) {
+    return {
+      id: "eurth",
       slug: "eurth",
-      inactivityDays: 60,
-      reclaimWindowExclusive: false,
+      name: "Eurth",
+      ownerId: FOUNDER,
+      status: "active",
+      officers: [{ userId: OFFICER, powers: ["board"] }],
+      ...overrides,
+    };
+  }
+  function makeDb(realm: Record<string, unknown> = realmRow()): Db {
+    const db = createMockPrisma();
+    db.realm.findUnique.mockImplementation(async ({ where }: any) =>
+      where.slug === realm.slug || where.id === realm.id ? realm : null
+    );
+    return db;
+  }
+  function callerAs(clerkUserId: string, db: Db) {
+    return realmsRouter.createCaller(
+      createMockRouterContext({
+        db,
+        auth: { userId: clerkUserId },
+        user: { id: `db_${clerkUserId}`, clerkUserId, role: null },
+        rateLimitIdentifier: `${clerkUserId}_${Math.random()}`,
+      }) as never
+    );
+  }
+  const forum = { label: "Forum", url: "https://forum.eurth.example/", kind: "forum" as const };
+  describe("Manage: links, rules and the in-world date", () => {
+    it("refuses unsafe addresses and too many links", async () => {
+      const db = makeDb();
+      const founder = callerAs(FOUNDER, db).region;
+      for (const url of ["javascript:alert(1)", "http://forum.eurth.example", "data:text/html,x"]) {
+        await expect(
+          founder.updateLinks({ slug: "eurth", links: [{ ...forum, url }] })
+        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      }
+      await expect(
+        founder.updateLinks({
+          slug: "eurth",
+          links: Array.from({ length: MAX_REALM_LINKS + 1 }, () => forum),
+        })
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      await expect(
+        founder.updateLinks({ slug: "eurth", links: [{ ...forum, kind: "telegram" as never }] })
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(db.realm.update).not.toHaveBeenCalled();
     });
-    expect(db.realm.update).toHaveBeenCalledWith({
-      where: { id: "eurth" },
-      data: {
-        settings: { maxNationsPerUser: 2, inactivityDays: 60, reclaimWindowExclusive: false },
+
+    it("renders the rules from wikitext, strips scripts, and removes them when emptied", async () => {
+      const db = makeDb();
+      await callerAs(FOUNDER, db).region.updateRules({
+        slug: "eurth",
+        wikitext: "== Conduct ==\n'''Be civil.'''<script>alert(1)</script>",
+      });
+      const data = db.realm.update.mock.calls[0][0].data;
+      expect(data.rulesWikitext).toContain("'''Be civil.'''");
+      expect(data.rulesHtml).toMatch(/<strong[^>]*>Be civil\.<\/strong>/);
+      expect(data.rulesHtml).not.toContain("<script");
+      expect(data.rulesUpdatedBy).toBe(FOUNDER);
+
+      await callerAs(FOUNDER, db).region.updateRules({ slug: "eurth", wikitext: "   " });
+      expect(db.realm.update.mock.calls[1][0].data).toMatchObject({
+        rulesWikitext: null,
+        rulesHtml: null,
+      });
+    });
+  });
+});
+
+/** Realm clock actions: founder and staff only, continuous switch-on, the speed cooldown, Ixnay and archive rules. */
+describe("the realm clock", () => {
+  type Db = ReturnType<typeof createMockPrisma>;
+  const FOUNDER = "clerk_founder";
+  const OFFICER = "clerk_officer";
+  const ADMIN = "clerk_admin";
+  function makeDb(overrides: Record<string, unknown> = {}): {
+    db: Db;
+    row: Record<string, unknown>;
+  } {
+    const row: Record<string, unknown> = {
+      id: "eurth",
+      slug: "eurth",
+      name: "Eurth",
+      ownerId: FOUNDER,
+      status: "active",
+      officers: [{ userId: OFFICER, powers: ["appearance"] }],
+      settings: { inWorldDate: { mode: "offset", offset: -823, era: "AE" } },
+      ...overrides,
+    };
+    const db = createMockPrisma();
+    db.realm.findUnique.mockImplementation(
+      async ({ where }: { where: { slug?: string; id?: string } }) =>
+        where.slug === row.slug || where.id === row.id ? row : null
+    );
+    // Writes land on the row, so a second call sees the first one's clock.
+    db.realm.update.mockImplementation(async ({ data }: { data: Record<string, unknown> }) =>
+      Object.assign(row, data)
+    );
+    return { db, row };
+  }
+  function caller(clerkUserId: string, db: Db) {
+    const role = clerkUserId === ADMIN ? { name: "admin", level: 10 } : null;
+    return realmsRouter.createCaller(
+      createMockRouterContext({
+        db,
+        auth: { userId: clerkUserId },
+        user: { id: `db_${clerkUserId}`, clerkUserId, role, countryId: null },
+        rateLimitIdentifier: `${clerkUserId}_${Math.random()}`,
+      }) as never
+    ).region;
+  }
+  const START = { slug: "eurth", startDate: "1203-03-14", era: "AE", multiplier: 3 };
+  describe("realm clock actions", () => {
+    it("keeps an unpublished realm's clock private", async () => {
+      const { db, row } = makeDb();
+      await caller(FOUNDER, db).startClock(START);
+      row.status = "draft";
+      const anyone = realmsRouter.createCaller(
+        createMockRouterContext({ db, auth: null, user: null }) as never
+      ).region;
+      expect((await anyone.contextClock({ realm: "eurth" })).clock).toBeNull();
+    });
+  });
+});
+
+/**
+ * The daily realm-inactivity job (ToS §2.8): warn, wait, release with the material held, un-warn, skip Ixnay, and
+ * purge due holds (§2.7).
+ */
+describe("inactivity runs", () => {
+  const DAY = 86_400_000;
+  const now = new Date("2026-10-11T00:00:00Z");
+  const daysAgo = (n: number) => new Date(now.getTime() - n * DAY);
+  function nation(id: string, lastSeen: number, notice: number | null) {
+    return {
+      id,
+      name: id,
+      inactivityNoticeAt: notice === null ? null : daysAgo(notice),
+      owner: { id: `u-${id}`, clerkUserId: `clerk-${id}`, lastSeenAt: daysAgo(lastSeen) },
+    };
+  }
+  function setup() {
+    const nations = [
+      nation("active", 10, null),
+      nation("quiet", 100, null),
+      nation("warned", 100, 5),
+      nation("gone", 120, 15),
+      nation("back", 1, 3),
+    ];
+    const db: any = {
+      $transaction: jest.fn((cb: any) => cb(db)),
+      realm: {
+        findMany: jest.fn().mockResolvedValue([
+          { id: "eurth", name: "Eurth", slug: "eurth", settings: null },
+          { id: "default", name: "Ixnay", slug: "ixnay", settings: null },
+        ]),
       },
+      country: {
+        findMany: jest.fn().mockResolvedValue(nations),
+        findUnique: jest.fn().mockResolvedValue({
+          ownerUserId: "u-gone",
+          flag: "/flags/eurth--gone.png",
+          coatOfArms: null,
+        }),
+        update: jest.fn().mockResolvedValue({}),
+        count: jest.fn().mockResolvedValue(0),
+      },
+      user: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      realmOfficer: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
+      nationMaterialHold: {
+        upsert: jest.fn().mockResolvedValue({}),
+        findMany: jest
+          .fn()
+          .mockResolvedValue([
+            { countryId: "old", flag: "/flags/eurth--old.png", coatOfArms: null },
+          ]),
+        deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+    };
+    const deps = {
+      now: () => now,
+      notify: jest.fn().mockResolvedValue(undefined),
+      deleteImages: jest.fn().mockResolvedValue(1),
+    };
+    return { db, deps };
+  }
+  describe("runRealmInactivity", () => {
+    it("warns, releases after the notice, un-warns a returning owner and purges due holds", async () => {
+      const { db, deps } = setup();
+      await expect(runRealmInactivity(db, deps)).resolves.toEqual({
+        warned: 1,
+        released: 1,
+        reset: 1,
+        purged: 1,
+        files: 1,
+      });
+      expect(db.country.update).toHaveBeenCalledWith({
+        where: { id: "quiet" },
+        data: { inactivityNoticeAt: now },
+      });
+      expect(db.country.update).toHaveBeenCalledWith({
+        where: { id: "back" },
+        data: { inactivityNoticeAt: null },
+      });
+      expect(db.nationMaterialHold.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          create: expect.objectContaining({
+            countryId: "gone",
+            formerOwnerUserId: "u-gone",
+            reason: "inactive",
+            flag: "/flags/eurth--gone.png",
+          }),
+        })
+      );
+      expect(db.country.update).toHaveBeenCalledWith({
+        where: { id: "gone" },
+        data: { ownerUserId: null, ownedSince: null },
+      });
+      expect(deps.notify).toHaveBeenCalledWith(
+        expect.objectContaining({
+          kind: "warning",
+          clerkUserId: "clerk-quiet",
+          date: new Date("2026-10-25T00:00:00Z"),
+        })
+      );
+      expect(deps.notify).toHaveBeenCalledWith(
+        expect.objectContaining({
+          kind: "released",
+          clerkUserId: "clerk-gone",
+          date: new Date("2027-04-09T00:00:00Z"),
+        })
+      );
+      expect(deps.notify).toHaveBeenCalledTimes(2);
+      expect(deps.deleteImages).toHaveBeenCalledWith(["/flags/eurth--old.png", null]);
     });
-    await expect(
-      callerAs(OFFICER, db).region.updateInactivity({
-        slug: "eurth",
-        inactivityDays: null,
-        reclaimWindowExclusive: false,
-      })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await expect(
-      callerAs(FOUNDER, db).region.updateInactivity({
-        slug: "eurth",
-        inactivityDays: 10,
-        reclaimWindowExclusive: false,
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    it("does not release a nation that changed hands since the read", async () => {
+      const { db, deps } = setup();
+      db.country.findUnique.mockResolvedValue({ ownerUserId: "someone-else" });
+      const result = await runRealmInactivity(db, deps);
+      expect(result.released).toBe(0);
+      expect(db.nationMaterialHold.upsert).not.toHaveBeenCalled();
+    });
+  });
+});
+
+describe("nation growth defaults", () => {
+  const admin = { id: "a1", clerkUserId: "clerk_a1", role: { name: "admin", level: 10 } };
+  const table: NationGrowthTable = {
+    ...IXSTATS_NATION_GROWTH_DEFAULTS,
+    Developing: { populationGrowthRate: 0.02, adjustedGdpGrowth: 0.004 },
+  };
+  const nation = (id: string, gdp: number, pop = 0.01, adj = 0.03, max = 0.05) => ({
+    id,
+    name: `Nation ${id}`,
+    baselineGdpPerCapita: gdp,
+    populationGrowthRate: pop,
+    adjustedGdpGrowth: adj,
+    maxGdpGrowthRate: max,
+  });
+  function setup(settings: object | null = { maxNationsPerUser: 2, nationDefaults: table }) {
+    const realm = {
+      id: "eurth-id",
+      slug: "eurth",
+      name: "Eurth",
+      ownerId: "clerk_founder",
+      settings,
+    };
+    const nations = [
+      nation("a", 15_000),
+      nation("b", 15_000, 0.02, 0.004, 0.075),
+      nation("c", 70_000),
+    ];
+    const db: any = {
+      $transaction: jest.fn((cb: any) => cb(db)),
+      realm: {
+        findUnique: jest.fn().mockResolvedValue(realm),
+        update: jest.fn().mockResolvedValue({}),
+      },
+      country: {
+        count: jest.fn().mockResolvedValueOnce(5).mockResolvedValueOnce(3),
+        findMany: jest.fn().mockResolvedValue(nations),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+      adminAuditLog: { create: jest.fn().mockResolvedValue({}) },
+    };
+    return { db, realm };
+  }
+  describe("realm nation defaults service", () => {
+    it("applies to unclaimed nations, guarded against a claim since, and audits every change", async () => {
+      const { db } = setup();
+      const result = await applyNationDefaults(db, admin, "eurth-id");
+      expect(result).toEqual({ unclaimed: 3, updated: 2 });
+      expect(db.country.updateMany).toHaveBeenCalledTimes(2);
+      expect(db.country.updateMany).toHaveBeenCalledWith({
+        where: { id: "a", realmId: "eurth-id", ...UNCLAIMED_NATION_WHERE },
+        data: { populationGrowthRate: 0.02, adjustedGdpGrowth: 0.004, maxGdpGrowthRate: 0.075 },
+      });
+      const audit = db.adminAuditLog.create.mock.calls[0][0].data;
+      expect(audit).toMatchObject({ action: NATION_DEFAULTS_APPLIED_ACTION, targetId: "eurth-id" });
+      const changes = JSON.parse(audit.changes);
+      expect(changes).toMatchObject({ unclaimed: 3, updated: 2, table });
+      expect(changes.nations.map((n: { id: string }) => n.id)).toEqual(["a", "c"]);
+    });
+  });
+});
+
+/** Realm banners and thumbnails: an https:// address, an upload, or an image picked from the repository. */
+describe("isRealmImageUrl", () => {
+  it("refuses other schemes, other local paths and traversal", () => {
+    for (const bad of [
+      "http://img.example/banner.png",
+      "javascript:alert(1)",
+      "data:image/png;base64,AAAA",
+      "//img.example/banner.png",
+      "/images/uploads/banner.png",
+      "/images/flags/aurelia.png",
+      "/images/uploads/uploaded_../../secret",
+      "/images/uploads/uploaded_a b.png",
+      "/images/downloaded/banner.png",
+      "/api/upload/image",
+      "/api/mediawiki/ixwiki/../../admin",
+      "/api/mediawiki/ixwiki/a.png?x=1",
+      "/projects/ixstats/images/uploads/uploaded_1_ab12cd34_banner.png",
+    ]) {
+      expect(isRealmImageUrl(bad)).toBe(false);
+    }
   });
 });

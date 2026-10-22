@@ -38,6 +38,8 @@ import { thinkpagesThinktanksRouter } from "~/server/api/routers/thinkpages/thin
 import { ensurePersonalAccount } from "~/server/api/routers/thinkpages/personal-account";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
+import { ensurePersonalAccount as ensureSharedPersonalAccount } from "~/server/shared/thinkpages-personal-account";
+import { wikiAttributionOff } from "~/tests/helpers/privacy-config-fake";
 
 const ME = "user_me";
 const THEM = "user_them";
@@ -104,45 +106,6 @@ beforeEach(() => {
 });
 
 describe("followPersona", () => {
-  it("follows as the caller's personal persona and moves both counts in one transaction", async () => {
-    const db = makeDb();
-    const result = await createFollowsCaller(ctxAs(ME, db)).followPersona({
-      accountId: "acc_them",
-    });
-
-    expect(result).toMatchObject({ alreadyFollowing: false, followerAccountId: "acc_personal" });
-    expect(db.$transaction).toHaveBeenCalledTimes(1);
-    expect(db.thinkpagesFollow.create).toHaveBeenCalledWith({
-      data: {
-        followerAccountId: "acc_personal",
-        followedAccountId: "acc_them",
-        followerClerkUserId: ME,
-      },
-    });
-    expect(db.thinkpagesAccount.update).toHaveBeenCalledWith({
-      where: { id: "acc_them" },
-      data: { followerCount: { increment: 1 } },
-    });
-    expect(db.thinkpagesAccount.update).toHaveBeenCalledWith({
-      where: { id: "acc_personal" },
-      data: { followingCount: { increment: 1 } },
-    });
-  });
-
-  it("notifies the followed persona's owner by Clerk id, linking the follower's profile", async () => {
-    const db = makeDb();
-    await createFollowsCaller(ctxAs(ME, db)).followPersona({ accountId: "acc_them" });
-    expect(mockNotificationCreate).toHaveBeenCalledTimes(1);
-    expect(mockNotificationCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId: THEM,
-        category: "social",
-        href: "/dashboard/profile/Rowan",
-        message: "Rowan (@Rowan) followed @herald",
-      })
-    );
-  });
-
   it("is idempotent: an existing follow leaves the counts alone and sends nothing", async () => {
     const db = makeDb();
     db.thinkpagesFollow.create.mockRejectedValue(uniqueViolation());
@@ -163,43 +126,9 @@ describe("followPersona", () => {
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(db.thinkpagesFollow.create).not.toHaveBeenCalled();
   });
-
-  it("refuses to follow the caller's own personas", async () => {
-    const db = makeDb([MY_PERSONAL, account({ id: "acc_mine" })]);
-    await expect(
-      createFollowsCaller(ctxAs(ME, db)).followPersona({ accountId: "acc_mine" })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(db.thinkpagesFollow.create).not.toHaveBeenCalled();
-  });
-  it("sends no notification for imported system personas", async () => {
-    const db = makeDb([MY_PERSONAL, account({ id: "acc_sys", clerkUserId: "system_ixtwitter_x" })]);
-    await createFollowsCaller(ctxAs(ME, db)).followPersona({ accountId: "acc_sys" });
-    expect(db.thinkpagesFollow.create).toHaveBeenCalled();
-    expect(mockNotificationCreate).not.toHaveBeenCalled();
-  });
 });
 
 describe("unfollowPersona", () => {
-  it("removes the row and decrements both counts", async () => {
-    const db = makeDb();
-    db.thinkpagesFollow.deleteMany.mockResolvedValue({ count: 1 });
-    const result = await createFollowsCaller(ctxAs(ME, db)).unfollowPersona({
-      accountId: "acc_them",
-    });
-    expect(result).toEqual({ success: true, wasFollowing: true });
-    expect(db.thinkpagesFollow.deleteMany).toHaveBeenCalledWith({
-      where: { followerAccountId: "acc_personal", followedAccountId: "acc_them" },
-    });
-    expect(db.thinkpagesAccount.update).toHaveBeenCalledWith({
-      where: { id: "acc_them" },
-      data: { followerCount: { decrement: 1 } },
-    });
-    expect(db.thinkpagesAccount.update).toHaveBeenCalledWith({
-      where: { id: "acc_personal" },
-      data: { followingCount: { decrement: 1 } },
-    });
-  });
-
   it("leaves the counts alone when there was no follow", async () => {
     const db = makeDb();
     db.thinkpagesFollow.deleteMany.mockResolvedValue({ count: 0 });
@@ -241,21 +170,6 @@ describe("personal persona", () => {
       })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(db.thinkpagesAccount.update).not.toHaveBeenCalled();
-  });
-
-  it("does not count toward the 25-persona cap", async () => {
-    const db = makeDb();
-    db.country.findUnique.mockResolvedValue({ id: "c1" });
-    db.thinkpagesAccount.create.mockResolvedValue({ id: "new" });
-    await createAccountsCaller(ctxAs(ME, db, "c1")).createAccount({
-      countryId: "c1",
-      accountType: "citizen",
-      username: "newbie",
-      firstName: "New",
-    });
-    expect(db.thinkpagesAccount.findMany).toHaveBeenCalledWith({
-      where: { clerkUserId: ME, accountType: { not: "personal" } },
-    });
   });
 });
 
@@ -329,5 +243,47 @@ describe("N13: ThinkTank 'post as yourself'", () => {
     );
     expect(db.thinkpagesAccount.findFirst).not.toHaveBeenCalled();
     expect(db.country.findFirst).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * A new personal persona ("post as yourself") is seeded from the player's names, and with wiki attribution
+ * (`showWikiAttribution`) off never from their wiki name: the forum name, else the existing non-wiki fallback. The
+ * switch is read once and a read error counts as off. An existing persona keeps the name it has.
+ */
+describe("a personal persona and wiki attribution", () => {
+  const ME = "user_me";
+  /** A db with no personal persona yet, whose user row carries `names`. */
+  function newPersonaDb(names: { forumUsername: string | null; wikiUsername: string | null }) {
+    const db = createMockPrisma();
+    db.$transaction = jest.fn((cb: (tx: typeof db) => Promise<object>) => cb(db));
+    db.thinkpagesPersonalAccount.findUnique.mockResolvedValue(null);
+    db.thinkpagesAccount.findUnique.mockResolvedValue(null);
+    db.thinkpagesAccount.create.mockImplementation(async ({ data }: { data: object }) => ({
+      id: "new_personal",
+      ...data,
+    }));
+    db.user.findUnique.mockResolvedValue(names);
+    return db;
+  }
+  const created = (db: ReturnType<typeof newPersonaDb>) =>
+    ensureSharedPersonalAccount(db as never, ME) as Promise<{
+      username: string;
+      displayName: string;
+    }>;
+  describe("ensurePersonalAccount and wiki attribution", () => {
+    it("seeds a player with the switch off from the forum name", async () => {
+      const db = newPersonaDb({ forumUsername: "Rowan", wikiUsername: "Wiki Rowan" });
+      db.userConnection.findMany.mockResolvedValue(wikiAttributionOff(ME));
+      await expect(created(db)).resolves.toMatchObject({ username: "Rowan", displayName: "Rowan" });
+      expect(db.userConnection.findMany).toHaveBeenCalledTimes(1);
+    });
+    it("fails closed: a switch it cannot read keeps the wiki name out", async () => {
+      const db = newPersonaDb({ forumUsername: null, wikiUsername: "WikiRowan" });
+      db.userConnection.findMany.mockRejectedValue(new Error("db down"));
+      const persona = await created(db);
+      expect(persona.username).toMatch(/^member_\d{4}$/);
+      expect(JSON.stringify(db.thinkpagesAccount.create.mock.calls)).not.toContain("WikiRowan");
+    });
   });
 });

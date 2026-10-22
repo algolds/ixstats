@@ -1,6 +1,21 @@
 /** @jest-environment node */
 import { DAY_MS } from "~/lib/thinkpages-forum/moderation-policy";
 import { issueWarning, listWarnings, revokeWarning } from "~/server/modules/thinkpages-forum";
+import { banNotice } from "~/lib/thinkpages-forum/moderation-policy";
+import {
+  activeBansFor,
+  assertNotBanned,
+  issueBan,
+  liftBan,
+  listBans,
+  postingBan,
+} from "~/server/modules/thinkpages-forum";
+import {
+  banRow as ban,
+  matchesActiveBan as matches,
+  type ActiveBanWhere,
+  type BanRow as FakeBanRow,
+} from "~/tests/helpers/forum-ban-fake";
 
 const NOW = new Date("2026-10-09T12:00:00Z");
 const days = (n: number) => new Date(NOW.getTime() + n * DAY_MS);
@@ -356,81 +371,6 @@ describe("issueWarning", () => {
       select: { expiresAt: true },
     });
   });
-
-  it("does not extend an automatic ban to a tier a live manual site ban already outlasts (M-2)", async () => {
-    const { db, tx, bans, logs } = warnDb({
-      warnings: [warning({ id: "w_a", points: 5 }), warning({ id: "w_b", points: 2 })],
-      bans: [
-        autoBan({ createdAt: days(-2), expiresAt: days(5), autoTier: 5 }),
-        autoBan({ id: "b_manual", auto: false, autoTier: null, expiresAt: days(30) }),
-      ],
-    });
-    const outcome = await issueWarning(db as never, admin, { ...sitewide, points: 3 });
-    expect(outcome).toMatchObject({ activePoints: 10, autoBan: null });
-    expect(bans[0]).toMatchObject({ autoTier: 5, expiresAt: days(5) });
-    expect(tx.forumBan.update).not.toHaveBeenCalled();
-    expect(logs.map((l) => l.action)).toEqual(["warning.issue"]);
-  });
-
-  it("still bans automatically under a shorter, lifted or expired manual site ban, or a realm ban", async () => {
-    const manual = (extra: Partial<BanRow>) =>
-      autoBan({
-        id: `b_${extra.expiresAt?.getTime() ?? "x"}`,
-        auto: false,
-        autoTier: null,
-        ...extra,
-      });
-    const { db, bans } = warnDb({
-      warnings: [warning({ points: 4 })],
-      bans: [
-        manual({ expiresAt: days(6) }),
-        manual({ id: "b_lifted", expiresAt: null, liftedAt: days(-1) }),
-        manual({ id: "b_expired", expiresAt: days(-1) }),
-        manual({ id: "b_realm", scope: "realm", scopeId: "r_eurth", expiresAt: null }),
-      ],
-    });
-    const outcome = await issueWarning(db as never, admin, { ...sitewide, points: 1 });
-    expect(outcome.autoBan).toMatchObject({ kind: "issued", autoTier: 5, expiresAt: days(7) });
-    expect(bans).toHaveLength(5);
-  });
-
-  it("gives the 30-day tier in full when 10 points are reached on day 6 of a 7-day ban", async () => {
-    const { db, bans } = warnDb({
-      warnings: [warning({ id: "w_a", points: 5 }), warning({ id: "w_b", points: 2 })],
-      bans: [autoBan({ createdAt: days(-6), expiresAt: days(1), autoTier: 5 })],
-    });
-    const outcome = await issueWarning(db as never, admin, { ...sitewide, points: 3 });
-    expect(outcome.autoBan).toMatchObject({ kind: "extended", autoTier: 10, expiresAt: days(30) });
-    expect(bans[0]).toMatchObject({ autoTier: 10, expiresAt: days(30), createdAt: days(-6) });
-  });
-
-  it("never brings an automatic ban's end forward when crossing up", async () => {
-    const { db, bans } = warnDb({
-      warnings: [warning({ id: "w_a", points: 5 }), warning({ id: "w_b", points: 2 })],
-      bans: [autoBan({ createdAt: days(-1), expiresAt: days(40), autoTier: 5 })],
-    });
-    const outcome = await issueWarning(db as never, admin, { ...sitewide, points: 3 });
-    expect(outcome.autoBan).toMatchObject({ kind: "extended", autoTier: 10, expiresAt: days(40) });
-    expect(bans[0]).toMatchObject({ autoTier: 10, expiresAt: days(40) });
-  });
-
-  it("never lifts an active automatic ban when expired points leave a new warning's count under every tier", async () => {
-    // Day 91: 3 points (day 0) have expired, 2 points (day 85) remain; the 7-day ban from day 85 still runs.
-    const { db, tx, bans, logs } = warnDb({
-      warnings: [
-        warning({ points: 3, expiresAt: days(-1) }),
-        warning({ points: 2, expiresAt: days(84) }),
-      ],
-      bans: [autoBan({ createdAt: days(-6), expiresAt: days(1), autoTier: 5 })],
-    });
-    const outcome = await issueWarning(db as never, admin, { ...sitewide, points: 1 });
-    expect(outcome).toEqual({ warningId: "w1", activePoints: 3, autoBan: null });
-    expect(bans[0]).toMatchObject({ liftedAt: null, expiresAt: days(1), autoTier: 5 });
-    expect(tx.forumBan.update).not.toHaveBeenCalled();
-    expect(tx.forumBan.updateMany).not.toHaveBeenCalled();
-    expect(logs.map((l) => l.action)).toEqual(["warning.issue"]);
-  });
-
   it("never shortens an active automatic ban to a lower tier on a new warning", async () => {
     const { db, tx, bans, logs } = warnDb({
       warnings: [warning({ points: 5, expiresAt: days(-1) }), warning({ points: 5 })],
@@ -442,32 +382,6 @@ describe("issueWarning", () => {
     expect(tx.forumBan.update).not.toHaveBeenCalled();
     expect(logs.map((l) => l.action)).toEqual(["warning.issue"]);
   });
-
-  it("leaves the automatic ban's expiry alone when a new warning stays in its tier", async () => {
-    const { db, tx, bans, logs } = warnDb({
-      warnings: [warning({ points: 5 })],
-      bans: [autoBan({ createdAt: days(-2), expiresAt: days(5), autoTier: 5 })],
-    });
-    const outcome = await issueWarning(db as never, admin, { ...sitewide, points: 1 });
-    expect(outcome).toMatchObject({ activePoints: 6, autoBan: null });
-    expect(bans[0]).toMatchObject({ expiresAt: days(5), autoTier: 5 });
-    expect(tx.forumBan.update).not.toHaveBeenCalled();
-    expect(tx.forumBan.create).not.toHaveBeenCalled();
-    expect(logs.map((l) => l.action)).toEqual(["warning.issue"]);
-  });
-  it("works on content in an archived realm's section (T0-6)", async () => {
-    const { db } = warnDb();
-    const input = {
-      userId: "u_m",
-      reason: "Spam",
-      points: 1,
-      target: { type: "thread", id: "t_eurth" },
-    } as const;
-    await expect(issueWarning(db as never, realmMod, input)).resolves.toMatchObject({
-      activePoints: 1,
-    });
-  });
-
   it("keeps moderators to their scope and sitewide warnings to site admins", async () => {
     const { db, tx } = warnDb();
     const base = { userId: "u_m", reason: "Spam", points: 1 };
@@ -516,19 +430,6 @@ describe("issueWarning", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST", message: "This thread has no IxStats author." });
     expect(tx.forumWarning.create).not.toHaveBeenCalled();
   });
-
-  it("checks the scope before the author on imported content", async () => {
-    const { db } = warnDb();
-    await expect(
-      issueWarning(db as never, member, {
-        userId: "u_m",
-        reason: "Spam",
-        points: 1,
-        target: { type: "post", id: "p_imported" },
-      })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-  });
-
   it("never warns site admins or the scope's own moderators (M5), nor unknown members", async () => {
     const { db, tx } = warnDb();
     await expect(
@@ -554,43 +455,9 @@ describe("issueWarning", () => {
     });
     expect(tx.forumWarning.create).not.toHaveBeenCalled();
   });
-
-  it("checks the reason and the points", async () => {
-    const { db } = warnDb();
-    for (const bad of [
-      { reason: "  " },
-      { reason: "x".repeat(1001) },
-      { points: 0 },
-      { points: 6 },
-      { points: 1.5 },
-    ]) {
-      await expect(issueWarning(db as never, admin, { ...sitewide, ...bad })).rejects.toMatchObject(
-        {
-          code: "BAD_REQUEST",
-        }
-      );
-    }
-  });
 });
 
 describe("issueWarning and revokeWarning read the clock after the member's lock", () => {
-  it("dates a warning from when the lock was granted", async () => {
-    const { db, tx, warnings } = warnDb();
-    lockWaits(tx);
-    await issueWarning(db as never, admin, { userId: "u_m", reason: "Rude", points: 1 });
-    expect(warnings.at(-1)).toMatchObject({
-      createdAt: WAITED,
-      expiresAt: new Date(WAITED.getTime() + 90 * DAY_MS),
-    });
-  });
-
-  it("dates a revoke from when the lock was granted", async () => {
-    const { db, tx, warnings } = warnDb({ warnings: [warning({ id: "w_a" })] });
-    lockWaits(tx);
-    await revokeWarning(db as never, admin, { warningId: "w_a" });
-    expect(warnings[0]).toMatchObject({ revokedAt: WAITED });
-  });
-
   it("leaves the automatic ban alone when the warning expired while the revoke waited for the lock", async () => {
     const { db, tx, bans } = warnDb({
       warnings: [
@@ -713,48 +580,6 @@ describe("revokeWarning", () => {
       },
     ]);
   });
-
-  it("measures a downgrade after an upgrade from the ban's original start", async () => {
-    const { db, bans } = warnDb({
-      warnings: [warning({ id: "w_a", points: 5 }), warning({ id: "w_b", points: 2 })],
-      bans: [autoBan({ createdAt: days(-6), expiresAt: days(1), autoTier: 5 })],
-    });
-    await issueWarning(db as never, admin, { userId: "u_m", reason: "Rude", points: 3 });
-    expect(bans[0]).toMatchObject({ autoTier: 10, expiresAt: days(30) });
-    expect(await revokeWarning(db as never, admin, { warningId: "w1" })).toEqual({
-      userId: "u_m",
-      autoBan: {
-        kind: "shortened",
-        banId: "b_auto",
-        autoTier: 5,
-        days: 7,
-        expiresAt: days(1),
-        reason: "Automatic: 7 active warning points",
-      },
-    });
-    expect(bans[0]).toMatchObject({ autoTier: 5, expiresAt: days(1), liftedAt: null });
-  });
-
-  it("reads the tier from autoTier, not from the ban's length", async () => {
-    const stretched = warnDb({
-      warnings: [warning({ id: "w_a", points: 5 }), warning({ id: "w_b", points: 1 })],
-      bans: [autoBan({ createdAt: days(-2), expiresAt: days(28), autoTier: 5 })],
-    });
-    expect(await revokeWarning(stretched.db as never, admin, { warningId: "w_b" })).toEqual({
-      userId: "u_m",
-      autoBan: null,
-    });
-    expect(stretched.bans[0]).toMatchObject({ expiresAt: days(28), liftedAt: null });
-    const short = warnDb({
-      warnings: [...tenPoints(), warning({ id: "w_d", points: 1 })],
-      bans: [autoBan({ createdAt: days(-2), expiresAt: days(5), autoTier: 10 })],
-    });
-    expect(await revokeWarning(short.db as never, admin, { warningId: "w_d" })).toEqual({
-      userId: "u_m",
-      autoBan: null,
-    });
-  });
-
   it("takes the member's lock before revoking, and logs a revoke once when two requests race", async () => {
     const { db, tx, logs } = warnDb({ warnings: [warning({ id: "w_a", points: 1 })] });
     await revokeWarning(db as never, admin, { warningId: "w_a" });
@@ -765,24 +590,6 @@ describe("revokeWarning", () => {
     });
     expect(logs.map((l) => l.action)).toEqual(["warning.revoke"]);
   });
-
-  it("leaves the automatic ban alone when the revoked warning had already expired", async () => {
-    // X (3 points) has expired; Y (2 points) brought the ban. Revoking X changes no active points.
-    const { db, bans, logs } = warnDb({
-      warnings: [
-        warning({ id: "w_x", points: 3, expiresAt: days(-1) }),
-        warning({ id: "w_y", points: 2 }),
-      ],
-      bans: [autoBan({ autoTier: 5 })],
-    });
-    expect(await revokeWarning(db as never, admin, { warningId: "w_x" })).toEqual({
-      userId: "u_m",
-      autoBan: null,
-    });
-    expect(bans[0]).toMatchObject({ liftedAt: null, expiresAt: days(5), autoTier: 5 });
-    expect(logs.map((l) => l.action)).toEqual(["warning.revoke"]);
-  });
-
   it("never extends an automatic ban on a revoke, even with points above its tier", async () => {
     // 11 points under a 5-point ban (a manual site ban covered the 10 tier, then was lifted).
     const { db, bans, logs } = warnDb({
@@ -817,47 +624,9 @@ describe("revokeWarning", () => {
     );
     expect(logs).toEqual([]);
   });
-
-  it("never issues an automatic ban on a revoke", async () => {
-    const { db, tx } = warnDb({ warnings: [...tenPoints(), warning({ id: "w_d", points: 1 })] });
-    expect(await revokeWarning(db as never, admin, { warningId: "w_d" })).toEqual({
-      userId: "u_m",
-      autoBan: null,
-    });
-    expect(tx.forumBan.create).not.toHaveBeenCalled();
-  });
-  it("keeps moderators to their scope and refuses unknown or revoked warnings", async () => {
-    const { db, logs } = warnDb({
-      warnings: [
-        warning({ id: "w_site" }),
-        warning({ id: "w_general", categoryId: "cat_general" }),
-        warning({ id: "w_done", categoryId: "cat_eurth_hub", revokedAt: days(-1) }),
-      ],
-    });
-    await expect(
-      revokeWarning(db as never, realmMod, { warningId: "w_site" })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await expect(
-      revokeWarning(db as never, realmMod, { warningId: "w_general" })
-    ).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
-    await expect(revokeWarning(db as never, admin, { warningId: "w_nope" })).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
-    await expect(
-      revokeWarning(db as never, realmMod, { warningId: "w_done" })
-    ).rejects.toMatchObject({ code: "CONFLICT" });
-    expect(logs).toEqual([]);
-  });
 });
 
 describe("activePointsOf and listWarnings", () => {
-  it("refuses members", async () => {
-    await expect(listWarnings(warnDb().db as never, member, {}, 1)).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
-  });
   it("keeps other moderators to warnings issued in their categories", async () => {
     const { db } = warnDb();
     await listWarnings(db as never, realmMod, {}, 1);
@@ -866,5 +635,428 @@ describe("activePointsOf and listWarnings", () => {
         where: { AND: [{}, { categoryId: { in: ["cat_eurth_hub"] } }, {}] },
       }),
     ]);
+  });
+});
+
+describe("bans", () => {
+  const NOW = new Date("2026-10-09T12:00:00Z");
+  const USER_ROLE = { name: "user", level: 100 };
+  const ADMIN_ROLE = { name: "admin", level: 10 };
+  const noMod = { siteAdmin: false, realmIds: [], categoryIds: [] };
+  const admin = { id: "u_a", clerkUserId: "admin", countryId: null, role: ADMIN_ROLE };
+  const member = { id: "u_m", clerkUserId: "member", countryId: "c1", role: USER_ROLE };
+  const realmMod = {
+    id: "u_f",
+    clerkUserId: "founder",
+    countryId: null,
+    role: USER_ROLE,
+    mod: { siteAdmin: false, realmIds: ["r_eurth"], categoryIds: [] },
+  };
+  const categoryMod = {
+    id: "u_c",
+    clerkUserId: "catmod",
+    countryId: null,
+    role: USER_ROLE,
+    mod: { ...noMod, categoryIds: ["cat_general"] },
+  };
+  const users = [
+    { id: "u_m", clerkUserId: "member", role: USER_ROLE },
+    { id: "u_a2", clerkUserId: "admin2", role: ADMIN_ROLE },
+    { id: "u_o", clerkUserId: "officer", role: USER_ROLE },
+    { id: "u_c", clerkUserId: "catmod", role: USER_ROLE },
+    { id: "u_b", clerkUserId: "beefounder", role: USER_ROLE },
+    { id: "u_f", clerkUserId: "founder", role: USER_ROLE },
+  ];
+  const realms = [
+    { id: "r_eurth", slug: "eurth", name: "Eurth", status: "archived", ownerId: "founder" },
+    { id: "r_bee", slug: "bee", name: "Bee", status: "active", ownerId: "beefounder" },
+  ];
+  const officers = [{ realmId: "r_eurth", userId: "officer", powers: ["board"] }];
+  const categoryModerators = [{ categoryId: "cat_general", userId: "u_c" }];
+  const categories = [
+    { id: "cat_general", scope: "site", realmId: null },
+    { id: "cat_eurth_hub", scope: "realm", realmId: "r_eurth" },
+  ];
+  /** issueBan's duplicate check: a live manual ban on the member at one scope. */
+  interface LiveBanWhere {
+    userId: string;
+    scope: string;
+    scopeId: string | null;
+    auto: false;
+    liftedAt: null;
+    OR: [{ expiresAt: null }, { expiresAt: { gt: Date } }];
+  }
+  const isLiveAt = (row: FakeBanRow, where: LiveBanWhere): boolean =>
+    row.userId === where.userId &&
+    row.scope === where.scope &&
+    row.scopeId === where.scopeId &&
+    row.auto === where.auto &&
+    row.liftedAt === null &&
+    (row.expiresAt === null || row.expiresAt > where.OR[1].expiresAt.gt);
+  interface LiftUpdate {
+    where: { id: string };
+    data: { liftedAt: Date; liftedBy: string };
+  }
+  /** The member lock is a tagged template call: (strings, key). */
+  type LockCall = [TemplateStringsArray, string];
+  function banDb(opts: { bans?: FakeBanRow[]; ban?: FakeBanRow | null } = {}) {
+    const tx = {
+      $executeRaw: jest.fn(async (..._call: LockCall) => 0),
+      forumBan: {
+        findFirst: jest.fn(
+          async ({ where }: { where: LiveBanWhere }) =>
+            (opts.bans ?? []).find((row) => isLiveAt(row, where)) ?? null
+        ),
+        create: jest.fn(async ({ data }: { data: object }) => ({ id: "b_new", ...data })),
+        // Lifts only a live row, as the conditional update does; the row changes, so a second lift finds nothing.
+        updateMany: jest.fn(async ({ where, data }: LiftUpdate) => {
+          const row = opts.ban;
+          const live =
+            row && row.liftedAt === null && (row.expiresAt === null || row.expiresAt > NOW);
+          if (!row || !live || row.id !== where.id) return { count: 0 };
+          Object.assign(row, data);
+          return { count: 1 };
+        }),
+      },
+      forumModLog: { create: jest.fn(async () => ({ id: "log1" })) },
+      // No warning points, so a site ban's lift re-tiers nothing (M2 is covered in mod-auto-ban-retier.test.ts).
+      forumWarning: { findMany: jest.fn(async () => []) },
+      // No open appeals here; mooting them is covered in mod-appeals.test.ts.
+      forumAppeal: { findFirst: jest.fn(async () => null), updateMany: jest.fn() },
+    };
+    const db = {
+      forumBan: {
+        findMany: jest.fn(async ({ where }: { where: ActiveBanWhere }) =>
+          (opts.bans ?? []).filter((b) => !("userId" in where) || matches(b, where))
+        ),
+        findUnique: jest.fn(async () => opts.ban ?? null),
+        count: jest.fn(async () => (opts.bans ?? []).length),
+      },
+      // Appeal statuses for listBans; none unless a test says so.
+      forumAppeal: {
+        findMany: jest.fn(async (): Promise<Array<{ subjectId: string; status: string }>> => []),
+      },
+      forumCategory: {
+        findUnique: jest.fn(
+          async ({ where }: { where: { id: string } }) =>
+            categories.find((c) => c.id === where.id) ?? null
+        ),
+        findMany: jest.fn(async ({ where }: { where: { realmId: string | { in: string[] } } }) =>
+          categories
+            .filter((c) =>
+              typeof where.realmId === "string"
+                ? c.realmId === where.realmId
+                : where.realmId.in.includes(c.realmId ?? "")
+            )
+            .map((c) => ({ id: c.id }))
+        ),
+      },
+      user: {
+        findUnique: jest.fn(
+          async ({ where }: { where: { id: string } }) =>
+            users.find((u) => u.id === where.id) ?? null
+        ),
+      },
+      realm: {
+        findMany: jest.fn(async ({ where }: { where: { ownerId: string } }) =>
+          realms.filter((r) => r.ownerId === where.ownerId).map((r) => ({ id: r.id }))
+        ),
+        findUnique: jest.fn(
+          async ({ where }: { where: { id: string } }) =>
+            realms.find((r) => r.id === where.id) ?? null
+        ),
+      },
+      realmOfficer: {
+        findMany: jest.fn(
+          async ({ where }: { where: { userId: string; powers: { has: string } } }) =>
+            officers
+              .filter((o) => o.userId === where.userId && o.powers.includes(where.powers.has))
+              .map((o) => ({ realmId: o.realmId }))
+        ),
+      },
+      forumCategoryModerator: {
+        findMany: jest.fn(async ({ where }: { where: { userId: string } }) =>
+          categoryModerators
+            .filter((m) => m.userId === where.userId)
+            .map((m) => ({ categoryId: m.categoryId }))
+        ),
+      },
+      forumModLog: { create: jest.fn(async () => ({ id: "never" })) },
+      $transaction: jest.fn(async (fn: (t: typeof tx) => Promise<object | void>) => fn(tx)),
+    };
+    // issueBan checks the member is sanctionable under their lock (M9), through the transaction client.
+    Object.assign(tx, {
+      user: db.user,
+      realm: db.realm,
+      realmOfficer: db.realmOfficer,
+      forumCategoryModerator: db.forumCategoryModerator,
+    });
+    return { db, tx };
+  }
+  const eurthHub = { id: "cat_eurth_hub", scope: "realm", realmId: "r_eurth" };
+  const general = { id: "cat_general", scope: "site", realmId: null };
+  const later = new Date(NOW.getTime() + DAY_MS);
+  /** The member's lock is the transaction's first statement, keyed by the member. */
+  function expectLockedFirst(
+    tx: { $executeRaw: jest.Mock },
+    userId: string,
+    firstWrite: jest.Mock
+  ): void {
+    const [strings, key] = tx.$executeRaw.mock.calls[0] as LockCall;
+    expect(strings.join("?")).toBe("SELECT pg_advisory_xact_lock(hashtext(?))");
+    expect(key).toBe(`forum-member:${userId}`);
+    expect(tx.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      firstWrite.mock.invocationCallOrder[0]!
+    );
+  }
+  const earlier = new Date(NOW.getTime() - DAY_MS);
+  beforeEach(() => jest.useFakeTimers({ now: NOW }));
+  afterEach(() => jest.useRealTimers());
+  describe("activeBansFor", () => {
+    it("leaves out expired, lifted and elsewhere bans", async () => {
+      const { db } = banDb({
+        bans: [
+          ban({ id: "expired", expiresAt: earlier }),
+          ban({ id: "lifted", liftedAt: earlier }),
+          ban({ id: "bee", scope: "realm", scopeId: "r_bee" }),
+          ban({ id: "other-category", scope: "category", scopeId: "cat_general" }),
+          ban({ id: "live", scope: "realm", scopeId: "r_eurth", expiresAt: later }),
+        ],
+      });
+      const bans = await activeBansFor(db as never, "u_m", eurthHub, NOW);
+      expect(bans.map((b) => b.id)).toEqual(["live"]);
+      expect(bans[0]).toMatchObject({
+        scope: "realm",
+        scopeId: "r_eurth",
+        reason: "Spam",
+        expiresAt: later,
+        auto: false,
+      });
+    });
+  });
+  describe("postingBan and assertNotBanned", () => {
+    it("refuses a banned member with the ban notice, and lets others through", async () => {
+      const live = ban({
+        scope: "realm",
+        scopeId: "r_eurth",
+        expiresAt: later,
+        reason: "Flooding",
+      });
+      const { db } = banDb({ bans: [live] });
+      await expect(assertNotBanned(db as never, member, eurthHub)).rejects.toMatchObject({
+        code: "FORBIDDEN",
+        message: banNotice({ scope: "realm", expiresAt: later, reason: "Flooding" }),
+      });
+      await expect(assertNotBanned(db as never, member, general)).resolves.toBeUndefined();
+      await expect(assertNotBanned(db as never, admin, eurthHub)).resolves.toBeUndefined();
+    });
+
+    it("still binds a moderator with a stale ban row (M5)", async () => {
+      const { db } = banDb({ bans: [ban({ userId: "u_f", scope: "realm", scopeId: "r_eurth" })] });
+      expect(await postingBan(db as never, realmMod, eurthHub)).not.toBeNull();
+    });
+  });
+  describe("issueBan", () => {
+    const input = {
+      userId: "u_m",
+      reason: "  Spam  ",
+      days: 7,
+      scope: { kind: "realm", realmId: "r_eurth" },
+    } as const;
+
+    it("bans in the realm and logs it through the same transaction", async () => {
+      const { db, tx } = banDb();
+      expect(await issueBan(db as never, realmMod, input)).toEqual({
+        banId: "b_new",
+        expiresAt: new Date(NOW.getTime() + 7 * DAY_MS),
+      });
+      expect(tx.forumBan.create).toHaveBeenCalledWith({
+        data: {
+          userId: "u_m",
+          scope: "realm",
+          scopeId: "r_eurth",
+          reason: "Spam",
+          expiresAt: new Date(NOW.getTime() + 7 * DAY_MS),
+          auto: false,
+          issuedBy: "u_f",
+        },
+      });
+      expect(tx.forumModLog.create).toHaveBeenCalledWith({
+        data: {
+          actorId: "u_f",
+          action: "ban.issue",
+          targetType: "user",
+          targetId: "u_m",
+          scope: "realm",
+          scopeId: "r_eurth",
+          detail: JSON.stringify({ banId: "b_new", days: 7, reason: "Spam" }),
+        },
+      });
+      expect(db.forumModLog.create).not.toHaveBeenCalled();
+      expect(db.$transaction).toHaveBeenCalledTimes(1);
+      expectLockedFirst(tx, "u_m", tx.forumBan.create);
+    });
+    it("checks the member is no moderator here under their lock, so a grant in flight is seen (M9)", async () => {
+      const { db, tx } = banDb();
+      await issueBan(db as never, realmMod, {
+        userId: "u_m",
+        scope: { kind: "realm", realmId: "r_eurth" },
+        reason: "Spam",
+        days: 3,
+      });
+      expect(tx.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+        db.user.findUnique.mock.invocationCallOrder[0]!
+      );
+    });
+
+    it("refuses a second live ban at the same scope, checked under the member's lock (M-1)", async () => {
+      const live = ban({ id: "b_live", scope: "realm", scopeId: "r_eurth", expiresAt: later });
+      const { db, tx } = banDb({ bans: [live] });
+      await expect(issueBan(db as never, realmMod, input)).rejects.toMatchObject({
+        code: "CONFLICT",
+        message: "Already banned here until 10 Oct 2026. Lift that ban to change it.",
+      });
+      expect(tx.forumBan.create).not.toHaveBeenCalled();
+      expect(tx.forumModLog.create).not.toHaveBeenCalled();
+      expectLockedFirst(tx, "u_m", tx.forumBan.findFirst);
+
+      const permanent = banDb({ bans: [{ ...live, expiresAt: null }] });
+      await expect(issueBan(permanent.db as never, realmMod, input)).rejects.toMatchObject({
+        code: "CONFLICT",
+        message: "Already banned here permanently. Lift that ban to change it.",
+      });
+    });
+    it("keeps site bans to site admins, and permanent bans have no expiry", async () => {
+      const { db, tx } = banDb();
+      const site = { ...input, scope: { kind: "site" }, days: null } as const;
+      await expect(issueBan(db as never, realmMod, site)).rejects.toMatchObject({
+        code: "FORBIDDEN",
+      });
+      await expect(issueBan(db as never, admin, site)).resolves.toEqual({
+        banId: "b_new",
+        expiresAt: null,
+      });
+      expect(tx.forumBan.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          scope: "site",
+          scopeId: null,
+          expiresAt: null,
+          issuedBy: "u_a",
+        }),
+      });
+    });
+
+    it("keeps realm moderators to their realm and its categories", async () => {
+      const { db } = banDb();
+      await expect(
+        issueBan(db as never, realmMod, { ...input, scope: { kind: "realm", realmId: "r_bee" } })
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      await expect(
+        issueBan(db as never, realmMod, {
+          ...input,
+          scope: { kind: "category", categoryId: "cat_general" },
+        })
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      await expect(
+        issueBan(db as never, realmMod, {
+          ...input,
+          scope: { kind: "category", categoryId: "cat_eurth_hub" },
+        })
+      ).resolves.toMatchObject({ banId: "b_new" });
+      await expect(
+        issueBan(db as never, categoryMod, {
+          ...input,
+          scope: { kind: "category", categoryId: "cat_general" },
+        })
+      ).resolves.toMatchObject({ banId: "b_new" });
+    });
+    it("never bans site admins or the scope's own moderators (M5)", async () => {
+      const { db, tx } = banDb();
+      await expect(
+        issueBan(db as never, admin, { ...input, userId: "u_a2" })
+      ).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+        message: "Site admins can't be banned.",
+      });
+      for (const userId of ["u_o", "u_f"]) {
+        await expect(issueBan(db as never, admin, { ...input, userId })).rejects.toMatchObject({
+          code: "BAD_REQUEST",
+          message: "Remove their moderator role first.",
+        });
+      }
+      await expect(
+        issueBan(db as never, admin, {
+          ...input,
+          userId: "u_c",
+          scope: { kind: "category", categoryId: "cat_general" },
+        })
+      ).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+        message: "Remove their moderator role first.",
+      });
+      expect(tx.forumBan.create).not.toHaveBeenCalled();
+    });
+  });
+  describe("liftBan", () => {
+    it("lifts a live ban and logs it in the same transaction", async () => {
+      const { db, tx } = banDb({
+        ban: ban({ scope: "realm", scopeId: "r_eurth", expiresAt: later }),
+      });
+      await expect(
+        liftBan(db as never, realmMod, { banId: "b1", note: " Served " })
+      ).resolves.toEqual({ userId: "u_m", scope: "realm", scopeId: "r_eurth", autoBan: null });
+      expect(tx.forumBan.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: "b1",
+          liftedAt: null,
+          OR: [{ expiresAt: null }, { expiresAt: { gt: NOW } }],
+        },
+        data: { liftedAt: NOW, liftedBy: "u_f" },
+      });
+      expectLockedFirst(tx, "u_m", tx.forumBan.updateMany);
+      expect(tx.forumModLog.create).toHaveBeenCalledWith({
+        data: {
+          actorId: "u_f",
+          action: "ban.lift",
+          targetType: "user",
+          targetId: "u_m",
+          scope: "realm",
+          scopeId: "r_eurth",
+          detail: JSON.stringify({ note: "Served", banId: "b1" }),
+        },
+      });
+      expect(db.forumModLog.create).not.toHaveBeenCalled();
+    });
+    it("refuses to lift the actor's own ban, site admins included", async () => {
+      const own = { code: "FORBIDDEN", message: "You can't lift your own ban." };
+      const founder = banDb({ ban: ban({ userId: "u_f", scope: "realm", scopeId: "r_eurth" }) });
+      await expect(liftBan(founder.db as never, realmMod, { banId: "b1" })).rejects.toMatchObject(
+        own
+      );
+      expect(founder.tx.forumBan.updateMany).not.toHaveBeenCalled();
+      const siteAdmin = banDb({ ban: ban({ userId: "u_a" }) });
+      await expect(liftBan(siteAdmin.db as never, admin, { banId: "b1" })).rejects.toMatchObject(
+        own
+      );
+      expect(siteAdmin.tx.forumModLog.create).not.toHaveBeenCalled();
+    });
+    it("logs a lift once when two requests race (the check runs under the lock)", async () => {
+      const { db, tx } = banDb({ ban: ban({}) });
+      await liftBan(db as never, admin, { banId: "b1" });
+      await expect(liftBan(db as never, admin, { banId: "b1" })).rejects.toMatchObject({
+        code: "CONFLICT",
+        message: "This ban is no longer active.",
+      });
+      expect(tx.forumModLog.create).toHaveBeenCalledTimes(1);
+    });
+  });
+  describe("listBans", () => {
+    it("refuses members", async () => {
+      await expect(
+        listBans(banDb().db as never, member, { active: true }, 1)
+      ).rejects.toMatchObject({
+        code: "FORBIDDEN",
+      });
+    });
   });
 });

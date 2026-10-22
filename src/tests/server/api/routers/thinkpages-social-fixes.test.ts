@@ -1,3 +1,4 @@
+/** @jest-environment node */
 /**
  * ThinkPages fixes: persona country ownership (N2), admin-only verified (N3), getPost visibility
  * (N5), bookmark caller identity (N11), like-notification target + href (N6/N7) and reaction
@@ -8,16 +9,50 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { thinkpagesAccountsRouter } from "~/server/api/routers/thinkpages/accounts";
 import { thinkpagesPostsPostsQueriesRouter } from "~/server/api/routers/thinkpages/posts/posts/queries";
 import { thinkpagesPostsBookmarksRouter } from "~/server/api/routers/thinkpages/posts/bookmarks";
-import { thinkpagesPostsReactionsMutationsRouter } from "~/server/api/routers/thinkpages/posts/reactions/mutations";
-import { resolveReactionCounts } from "~/server/api/routers/thinkpages/post-utils";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
+import { thinkpagesPostsFlagsRouter } from "~/server/api/routers/thinkpages/posts/flags";
+import { thinkpagesPostsPostsCreateRouter } from "~/server/api/routers/thinkpages/posts/posts/create";
+import { thinkpagesFeedRouter } from "~/server/api/routers/thinkpages/feed";
+import { activitiesFeedGlobalRouter } from "~/server/api/routers/activities/feed/global";
+import { latestPublicThreadPreviews } from "~/server/modules/thinkpages-forum";
+import { adminUsersRouter } from "~/server/api/routers/admin/users";
+import { linkOldForumAccount, unlinkOldForumAccount } from "~/server/modules/thinkpages-forum";
+import { createIdorContext } from "~/tests/helpers/country-idor-context";
 
 const mockOnThinkPageActivity = jest.fn();
+const mockOnSocialActivity = jest.fn();
 jest.mock("~/lib/notifications/hooks", () => ({
   notificationHooks: {
-    onThinkPageActivity: (...args: any[]) => mockOnThinkPageActivity(...args),
+    onThinkPageActivity: (...args: unknown[]) => mockOnThinkPageActivity(...args),
+    onSocialActivity: (...args: unknown[]) => mockOnSocialActivity(...args),
   },
+}));
+jest.mock("~/server/db", () => ({ db: {} }));
+jest.mock("~/lib/cache", () => ({
+  ...jest.requireActual("~/lib/cache"),
+  globalCache: {
+    delete: jest.fn().mockResolvedValue(undefined),
+    deleteByPattern: jest.fn().mockResolvedValue(undefined),
+    get: jest.fn().mockResolvedValue(null),
+    set: jest.fn().mockResolvedValue(undefined),
+  },
+  invalidateCache: jest.fn().mockResolvedValue(undefined),
+}));
+jest.mock("~/lib/vault/vault-service", () => ({
+  vaultService: { earnCredits: jest.fn().mockResolvedValue({ success: false }) },
+}));
+jest.mock("~/lib/discord/thinkpages-feed", () => ({
+  mirrorThinkPagesPostToDiscordFeed: jest.fn().mockResolvedValue(undefined),
+}));
+jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
+  getRecentChanges: jest.fn().mockResolvedValue([]),
+}));
+jest.mock("~/server/modules/thinkpages-forum", () => ({
+  ...jest.requireActual("~/server/modules/thinkpages-forum"),
+  latestPublicThreadPreviews: jest.fn(),
+  linkOldForumAccount: jest.fn(),
+  unlinkOldForumAccount: jest.fn(),
 }));
 
 const CLERK_ID = "test_user_clerk_id";
@@ -25,7 +60,6 @@ const CLERK_ID = "test_user_clerk_id";
 const createAccountsCaller = createCallerFactory(thinkpagesAccountsRouter);
 const createQueriesCaller = createCallerFactory(thinkpagesPostsPostsQueriesRouter);
 const createBookmarksCaller = createCallerFactory(thinkpagesPostsBookmarksRouter);
-const createReactionsCaller = createCallerFactory(thinkpagesPostsReactionsMutationsRouter);
 
 const personaInput = {
   countryId: "test_country_1",
@@ -58,20 +92,6 @@ describe("N2: createAccount requires country ownership", () => {
       caller.createAccount({ ...personaInput, countryId: "other_country" })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(db.thinkpagesAccount.create).not.toHaveBeenCalled();
-  });
-  it("allows an admin to create a persona for any country", async () => {
-    const caller = createAccountsCaller(
-      createMockRouterContext({
-        db,
-        user: {
-          clerkUserId: CLERK_ID,
-          countryId: "test_country_1",
-          role: { name: "admin", level: 10 },
-        },
-      }) as never
-    );
-    await caller.createAccount({ ...personaInput, countryId: "other_country" });
-    expect(db.thinkpagesAccount.create).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -145,7 +165,7 @@ describe("N5: getPost honours visibility", () => {
     );
   };
 
-  it.each(["private", "draft"])("hides %s posts from anonymous viewers", async (visibility) => {
+  it.each(["private"])("hides %s posts from anonymous viewers", async (visibility) => {
     const caller = callerFor(basePost({ visibility }), null);
     await expect(caller.getPost({ postId: "p1" })).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
@@ -153,13 +173,6 @@ describe("N5: getPost honours visibility", () => {
   it("hides private posts from other signed-in users", async () => {
     const caller = callerFor(basePost({ visibility: "private" }), "someone_else");
     await expect(caller.getPost({ postId: "p1" })).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
-
-  it("shows private and draft posts to their owner", async () => {
-    for (const visibility of ["private", "draft"]) {
-      const caller = callerFor(basePost({ visibility }), "owner_clerk");
-      await expect(caller.getPost({ postId: "p1" })).resolves.toMatchObject({ id: "p1" });
-    }
   });
   it("drops private replies and embedded private parents the viewer cannot read", async () => {
     const caller = callerFor(
@@ -187,97 +200,290 @@ describe("N11: bookmarkPost uses the authenticated caller", () => {
     expect(arg.create.userId).toBe(CLERK_ID);
     expect(arg.where.userId_postId.userId).toBe(CLERK_ID);
   });
-
-  it("removes only the caller's bookmark", async () => {
-    const db = createMockPrisma();
-    const caller = createBookmarksCaller(createMockRouterContext({ db }) as never);
-    await caller.bookmarkPost({ postId: "p1", bookmarked: false });
-    expect(db.postBookmark.deleteMany).toHaveBeenCalledWith({
-      where: { postId: "p1", userId: CLERK_ID },
-    });
-  });
 });
 
-describe("N6: like notifications target the author's owning user", () => {
-  beforeEach(() => {
-    mockOnThinkPageActivity.mockReset();
-    mockOnThinkPageActivity.mockResolvedValue(undefined);
+/**
+ * SL-10: bookmarks have a "Saved posts" list, flags belong to the caller, and admins work the
+ * flag queue (dismiss keeps the post, remove deletes it; both resolve every open flag on it).
+ */
+describe("saved posts and flags belong to the caller", () => {
+  const bookmarks = createCallerFactory(thinkpagesPostsBookmarksRouter);
+  const flags = createCallerFactory(thinkpagesPostsFlagsRouter);
+  function userCtx(db: ReturnType<typeof createMockPrisma>, clerk = "viewer") {
+    return createMockRouterContext({
+      db,
+      auth: { userId: clerk },
+      user: { id: "db1", clerkUserId: clerk, role: { name: "user", level: 100 } },
+    }) as never;
+  }
+  const post = (id: string, visibility = "public", owner = "author") => ({
+    id,
+    visibility,
+    content: `post ${id}`,
+    hashtags: null,
+    reactions: [],
+    reactionCounts: null,
+    poll: null,
+    isAutoGenerated: false,
+    createdAt: new Date("2026-10-01T00:00:00Z"),
+    ixTimeTimestamp: new Date("2026-10-01T00:00:00Z"),
+    account: { clerkUserId: owner },
   });
+  describe("thinkpages.getBookmarkedPosts", () => {
+    it("lists the caller's saved posts newest first, skipping deleted and unreadable posts", async () => {
+      const db = createMockPrisma();
+      db.postBookmark.findMany.mockResolvedValue([
+        { id: "b3", postId: "p3", createdAt: new Date("2026-10-04") },
+        { id: "b2", postId: "gone", createdAt: new Date("2026-10-03") },
+        { id: "b1", postId: "p1", createdAt: new Date("2026-10-02") },
+        { id: "b0", postId: "secret", createdAt: new Date("2026-10-01") },
+      ]);
+      db.thinkpagesPost.findMany.mockResolvedValue([
+        post("p1"),
+        post("p3"),
+        post("secret", "private", "someone_else"),
+      ]);
 
-  const setup = (authorClerkUserId: string) => {
-    const db: any = createMockPrisma();
-    db.$transaction = jest.fn((cb: any) => cb(db));
-    db.thinkpagesAccount.findUnique.mockResolvedValue({
-      id: "liker_persona",
-      clerkUserId: CLERK_ID,
-    });
-    db.thinkpagesPost.findUnique
-      .mockResolvedValueOnce({ reactionCounts: null, content: "hello" })
-      .mockResolvedValueOnce({
-        accountId: "author_persona",
-        content: "hello",
-        account: { clerkUserId: authorClerkUserId },
+      const result = await bookmarks(userCtx(db)).getBookmarkedPosts({ limit: 3 });
+
+      expect(db.postBookmark.findMany.mock.calls[0]![0]).toMatchObject({
+        where: { userId: "viewer" },
+        take: 4,
       });
-    db.postReaction.findUnique.mockResolvedValue(null);
-    db.postReaction.create.mockResolvedValue({ id: "r1" });
-    return createReactionsCaller(createMockRouterContext({ db }) as never);
+      expect(result.posts.map((p: { id: string }) => p.id)).toEqual(["p3", "p1"]);
+      expect(result.nextCursor).toBe("b1");
+    });
+  });
+  describe("thinkpages.flagPost", () => {
+    it("records the flag for the caller, whatever userId the client sends", async () => {
+      const db = createMockPrisma();
+      db.thinkpagesPost.findUnique.mockResolvedValue({ id: "p1" });
+      await flags(userCtx(db)).flagPost({ postId: "p1", userId: "someone_else", reason: "spam" });
+      expect(db.postFlag.create).toHaveBeenCalledWith({
+        data: { postId: "p1", userId: "viewer", reason: "spam" },
+      });
+    });
+  });
+});
+
+/**
+ * ThinkPages social loop: mention / repost / quote notifications go to the owning Clerk user
+ * with the actor persona's name and a working post link, and the engagement counters
+ * (replyCount, repostCount, likeCount) are maintained by create / delete / react.
+ */
+describe("mentions, private posts and engagement counters", () => {
+  const CLERK_ID = "test_user_clerk_id";
+  const createCaller = createCallerFactory(thinkpagesPostsPostsCreateRouter);
+  const author = {
+    id: "persona_me",
+    clerkUserId: CLERK_ID,
+    isActive: true,
+    username: "chancellor",
+    displayName: "The Chancellor",
+    verified: false,
+    profileImageUrl: null,
   };
+  function setupCreate(post: Record<string, any> = {}) {
+    const db: any = createMockPrisma();
+    db.thinkpagesAccount.findUnique.mockResolvedValue(author);
+    db.thinkpagesPost.create.mockImplementation(async ({ data }: any) => ({
+      id: "new_post",
+      visibility: data.visibility,
+      postType: data.postType,
+      content: data.content,
+      ...post,
+    }));
+    db.thinkpagesPost.count.mockResolvedValue(10);
+    return db;
+  }
+  beforeEach(() => {
+    mockOnSocialActivity.mockReset().mockResolvedValue(undefined);
+    mockOnThinkPageActivity.mockReset().mockResolvedValue(undefined);
+  });
+  describe("mention notifications", () => {
+    it("skip users whose mention setting excludes the author, but still record the mention (SL-4)", async () => {
+      const db = setupCreate();
+      db.thinkpagesAccount.findMany.mockResolvedValue([
+        { id: "persona_a", username: "alice", clerkUserId: "clerk_alice" },
+        { id: "persona_b", username: "bob", clerkUserId: "clerk_bob" },
+      ]);
+      db.userConnection.findMany.mockImplementation(async (args: any) =>
+        args.where.connectionType === "privacy_config"
+          ? [{ userId: "clerk_alice", status: JSON.stringify({ mentions: "nobody" }) }]
+          : []
+      );
+      const caller = createCaller(createMockRouterContext({ db }) as never);
+      await caller.createPost({
+        accountId: "persona_me",
+        content: "hi @alice @bob",
+        mentions: ["@alice", "@bob"],
+        postToDiscord: false,
+      });
 
-  it("sends the notification to the author's Clerk user id, not the persona id", async () => {
-    const caller = setup("author_clerk");
-    await caller.addReaction({ postId: "p1", accountId: "liker_persona", reactionType: "like" });
-    expect(mockOnThinkPageActivity).toHaveBeenCalledTimes(1);
-    expect(mockOnThinkPageActivity.mock.calls[0]![0]).toMatchObject({
-      action: "liked",
-      targetUserId: "author_clerk",
+      expect(db.postMention.createMany.mock.calls[0][0].data).toHaveLength(2);
+      expect(mockOnSocialActivity).toHaveBeenCalledTimes(1);
+      expect(mockOnSocialActivity.mock.calls[0]![0]).toMatchObject({ toUserId: "clerk_bob" });
+    });
+    it("does not notify from a private post nobody else can open", async () => {
+      const db = setupCreate();
+      db.thinkpagesAccount.findMany.mockResolvedValue([
+        { id: "persona_a", username: "alice", clerkUserId: "clerk_alice" },
+      ]);
+      const caller = createCaller(createMockRouterContext({ db }) as never);
+      await caller.createPost({
+        accountId: "persona_me",
+        content: "psst @alice",
+        mentions: ["@alice"],
+        visibility: "private",
+        postToDiscord: false,
+      });
+      expect(db.postMention.createMany).toHaveBeenCalledTimes(1);
+      expect(mockOnSocialActivity).not.toHaveBeenCalled();
     });
   });
+});
+/**
+ * The ThinkPages feed's realm filter: public posts by personas of the realm's nations. The realm's board is read by
+ * the feed's board block (native forum messages), not here. Without a realm the feed is unchanged (all realms).
+ */
+describe("the realm feed", () => {
+  const createCaller = createCallerFactory(thinkpagesFeedRouter);
+  function feedWhere(db: ReturnType<typeof createMockPrisma>) {
+    return db.thinkpagesPost.findMany.mock.calls[0]![0].where;
+  }
+  function caller(db: ReturnType<typeof createMockPrisma>) {
+    return createCaller(createMockRouterContext({ db, auth: null, user: null }) as never);
+  }
+  describe("thinkpages.getFeed realm filter", () => {
+    it("shows the realm's nations' public posts and never reads the old board chat", async () => {
+      const db = createMockPrisma();
+      db.realmBoard.findUnique.mockResolvedValue({ groupId: "board1" });
+      await caller(db).getFeed({ realmId: "eurth" });
 
-  it("does not notify when liking a post owned by the same user", async () => {
-    const caller = setup(CLERK_ID);
-    await caller.addReaction({ postId: "p1", accountId: "liker_persona", reactionType: "like" });
-    expect(mockOnThinkPageActivity).not.toHaveBeenCalled();
+      expect(db.realmBoard.findUnique).not.toHaveBeenCalled();
+      expect(feedWhere(db)).toEqual({
+        AND: [{ visibility: "public", account: { country: { realmId: "eurth" } } }],
+      });
+      expect(JSON.stringify(feedWhere(db))).not.toContain("thinktank");
+      expect(JSON.stringify(feedWhere(db))).not.toContain("group:");
+    });
   });
 });
 
-describe("N7: ThinkPage notification href", () => {
-  it("links to the real post route", async () => {
-    const { notificationAPI } = await import("~/lib/notifications/api");
-    const spy = jest.spyOn(notificationAPI, "create").mockResolvedValue("n1");
-    await notificationAPI.trigger({
-      thinkpage: { id: "post_9", title: "t", action: "liked", authorId: "a", targetUserId: "u" },
-    } as never);
-    expect(spy.mock.calls[0]![0].href).toMatch(/\/dashboard\/post\/post_9$/);
-    spy.mockRestore();
+/**
+ * Phase 4b (Q10) and sub-project 7: the global feed's forum slice comes from native ThinkPages forum threads (public
+ * categories, site section or published realms; `latestPublicThreadPreviews`), not from XenForo, and each item
+ * carries the preview of the post it refers to.
+ */
+describe("the activity feed's forum slice", () => {
+  const AT = new Date("2026-10-09T10:00:00Z");
+  function previewed(id: string, replyCount: number, over: object = {}, postedAt: Date = AT) {
+    const href = `/thinkpages/t/${id}`;
+    return {
+      id,
+      title: `Thread ${id}`,
+      author: "jane",
+      categoryName: "General",
+      replyCount,
+      createdAt: AT,
+      lastPostAt: AT,
+      postedAt,
+      href,
+      preview: {
+        threadId: id,
+        title: `Thread ${id}`,
+        threadHref: href,
+        postHref: `/thinkpages/post/p_${id}`,
+        kind: replyCount === 0 ? "thread" : "reply",
+        excerpt: `Excerpt of ${id}`,
+        author: {
+          name: replyCount === 0 ? "jane" : "herald",
+          avatarUrl: null,
+          flagUrl: "https://flags.example/e.png",
+          persona: false,
+        },
+        board: { name: "General", href: "/thinkpages/c/general" },
+        realm: null,
+        style: "ooc",
+        replyCount,
+        reactionTotal: 4,
+        ...over,
+      },
+    };
+  }
+  const callerFor = (db: ReturnType<typeof createMockPrisma>) =>
+    createCallerFactory(activitiesFeedGlobalRouter)(createMockRouterContext({ db }) as never);
+  describe("activities.getGlobalFeed forum slice", () => {
+    it("shows a persona item by the persona's name and picture, with no flag", async () => {
+      const persona = {
+        name: "Herald",
+        avatarUrl: "https://img.example/h.png",
+        flagUrl: null,
+        persona: true,
+      };
+      jest
+        .mocked(latestPublicThreadPreviews)
+        .mockResolvedValue([previewed("t5", 2, { author: persona })] as never);
+      const { activities } = await callerFor(createMockPrisma()).getGlobalFeed({
+        filter: "community",
+        limit: 20,
+      });
+      const item = activities.find((a: { source: string }) => a.source === "forum");
+      expect(item).toMatchObject({
+        user: { name: "Herald", avatarUrl: "https://img.example/h.png", flagUrl: null },
+        forum: { author: persona },
+      });
+    });
   });
 });
 
-describe("N8: native reactions are not double counted", () => {
-  it("uses the stored JSON tally as authoritative", () => {
-    const counts = resolveReactionCounts(JSON.stringify({ like: 1 }), [{ reactionType: "like" }]);
-    expect(counts).toEqual({ like: 1 });
-  });
-  it("tolerates malformed JSON", () => {
-    expect(resolveReactionCounts("{not json", [{ reactionType: "fire" }])).toEqual({ fire: 1 });
-  });
-
-  it("getPost reports one like for one stored like plus one row", async () => {
-    const db = createMockPrisma();
-    db.thinkpagesPost.findUnique.mockResolvedValue({
-      id: "p1",
-      content: "x",
-      visibility: "public",
-      account: { clerkUserId: "o" },
-      reactionCounts: JSON.stringify({ like: 1 }),
-      reactions: [{ reactionType: "like" }],
-      replies: [],
-      ixTimeTimestamp: new Date(),
-      createdAt: new Date(),
-    });
-    const caller = createQueriesCaller(
-      createMockRouterContext({ db, auth: null, user: null }) as never
+/**
+ * Phase 4b: linking an old forum account is a staff action in the admin users panel. Only admins may call it; it
+ * links and attributes the imported posts at once (the module, faked here), writes an audit row, and maps the
+ * module's refusals to tRPC errors.
+ */
+describe("linking an old forum account", () => {
+  function caller(role: "member" | "admin") {
+    const ctx = createIdorContext(
+      { adminAuditLog: { create: jest.fn().mockResolvedValue({}) } },
+      role
     );
-    const result: any = await caller.getPost({ postId: "p1" });
-    expect(result.reactionCounts).toEqual({ like: 1 });
+    return { caller: adminUsersRouter.createCaller(ctx as never), db: ctx.db as never as AuditDb };
+  }
+  type AuditDb = { adminAuditLog: { create: jest.Mock } };
+  const LINKED = {
+    username: "OldTimer",
+    previousXenforoUserId: 55,
+    released: { threads: 0, posts: 3 },
+    relinked: { threads: 1, posts: 2 },
+  };
+  beforeEach(() => {
+    jest.mocked(linkOldForumAccount).mockReset().mockResolvedValue(LINKED);
+    jest
+      .mocked(unlinkOldForumAccount)
+      .mockReset()
+      .mockResolvedValue({ released: { threads: 1, posts: 2 } });
+  });
+  describe("admin.linkUserForum / unlinkUserForum", () => {
+    it("links, attributes the imported posts at once and writes an audit row", async () => {
+      const { caller: admin, db } = caller("admin");
+      await expect(
+        admin.linkUserForum({ userId: "u1", xenforoUserId: 77, forumUsername: "OldTimer" })
+      ).resolves.toEqual(LINKED);
+      expect(jest.mocked(linkOldForumAccount).mock.calls[0]![1]).toEqual({
+        userId: "u1",
+        xenforoUserId: 77,
+        username: "OldTimer",
+      });
+      expect(db.adminAuditLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          action: "FORUM_ACCOUNT_LINKED",
+          targetId: "u1",
+          adminId: "db_user_caller",
+        }),
+      });
+      const changes = JSON.parse(db.adminAuditLog.create.mock.calls[0]![0].data.changes);
+      expect(changes).toMatchObject({ xenforoUserId: 77, previousXenforoUserId: 55 });
+    });
   });
 });

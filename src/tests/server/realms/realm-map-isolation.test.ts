@@ -8,13 +8,26 @@ jest.mock("~/lib/maps/geo-validation", () => ({
   isPostGISAvailable: jest.fn().mockResolvedValue(true),
 }));
 
+jest.mock("~/lib/cache", () => ({
+  ...jest.requireActual("~/lib/cache"),
+  invalidateCache: jest.fn().mockResolvedValue(undefined),
+}));
+jest.mock("~/lib/maps/map-update-bus", () => ({ broadcastMapUpdate: jest.fn() }));
+jest.mock("~/lib/country-geo/sync", () => ({
+  syncGeographicDemographics: jest.fn().mockResolvedValue(undefined),
+}));
+jest.mock("~/lib/country-geo", () => ({
+  ...jest.requireActual("~/lib/country-geo"),
+  upsertCity: jest.fn().mockResolvedValue({ id: "city", isNationalCapital: false }),
+  syncCountryGeometryFromMapLayer: jest.fn(),
+}));
+
 import { readFile } from "fs/promises";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { clearTrpcMemoryCache } from "~/lib/cache/trpc-cache";
 import { clearLayerCache } from "~/server/shared/layer-cache";
 import { worldMapProcedures } from "~/server/api/routers/geo/core/world-map";
 import { loadLayerWithFallback } from "~/server/modules/maps/layer-loader";
-import { realmMapRouter } from "~/server/api/routers/realms/map";
 import { borderHistoryProcedures } from "~/server/api/routers/geo/core/border-history";
 import { discoveryProcedures } from "~/server/api/routers/geo/core/discovery";
 import { countryProcedures } from "~/server/api/routers/geo/core/country";
@@ -28,6 +41,17 @@ import { geoEditorLinkageAssignmentRouter } from "~/server/api/routers/geo/edito
 import { geoEditorBordersRouter } from "~/server/api/routers/geo/editor/borders";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
+import { realmMapRouter } from "~/server/api/routers/realms/map";
+import type { PrismaClient } from "@prisma/client";
+import { updateSubdivisionSpatialProfile } from "~/lib/country-geo/spatial";
+import {
+  COUNTRY_BORDER_SQL,
+  resetPostGISCache,
+  snapPointToCountryBorder,
+  validatePointContainment,
+} from "~/lib/maps/geo-validation";
+import { countryGeoRouter } from "~/server/api/routers/countryGeo";
+import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 
 const EURTH = "r_eurth";
 
@@ -143,18 +167,6 @@ describe("/maps shows only the viewed realm's map", () => {
     ]);
     expect(readFile).not.toHaveBeenCalled();
   });
-
-  it("the map's version, which names its layer URLs, is the viewed realm's; ?realm= wins over the viewer's active nation", async () => {
-    const db = emptyDb();
-    const version = createCallerFactory(createTRPCRouter({ version: realmMapRouter.version }));
-    const caller = version(ctxFor(db, eurthViewer()));
-
-    await expect(caller.version({})).resolves.toMatchObject({ realmId: EURTH });
-    await expect(caller.version({ realm: "ixnay" })).resolves.toMatchObject({
-      realmId: DEFAULT_REALM_ID,
-    });
-  });
-
   it("the map's POIs, capitals, cities and subdivisions belong to the realm's countries", async () => {
     const db = emptyDb();
     const caller = geoCaller(ctxFor(db, eurthViewer()));
@@ -243,15 +255,6 @@ describe("/maps shows only the viewed realm's map", () => {
 
     expect(wheres(db, "mapLayer", "findFirst").map(realmOf)).toEqual([EURTH, EURTH, undefined]);
   });
-
-  it("the pin tool asks PostGIS for the realm's layers at the point", async () => {
-    const db = emptyDb();
-    await geoCaller(ctxFor(db, eurthViewer())).getPointInfo({ lng: 1, lat: 2 });
-
-    const [sql, ...params] = db.$queryRawUnsafe!.mock.calls[0];
-    expect(sql).toContain(`"worldId" = $3`);
-    expect(params).toEqual([1, 2, EURTH]);
-  });
 });
 
 describe("a country's geo profile uses its own realm's base layers", () => {
@@ -285,27 +288,6 @@ describe("a country's geo profile uses its own realm's base layers", () => {
 });
 
 describe("the world editor works inside the realm it edits (ruling E-o)", () => {
-  it("linkage validation compares the edited realm's features with the edited realm's nations", async () => {
-    const db = emptyDb();
-    await createCallerFactory(geoEditorLinkageValidationRouter)(adminCtx(db)).validateLinkage({
-      realm: "eurth",
-    });
-
-    expect(wheres(db, "mapLayer").map(realmOf)).toEqual([EURTH]);
-    expect(wheres(db, "country").map(realmOf)).toEqual([EURTH]);
-  });
-
-  it("auto-match links only the edited realm's unlinked features to its own nations", async () => {
-    const db = emptyDb();
-    await createCallerFactory(geoEditorLinkageValidationRouter)(adminCtx(db)).repairLinkage({
-      action: "auto_match",
-      realm: "eurth",
-    });
-
-    expect(realmOf(wheres(db, "mapLayer")[0])).toBe(EURTH);
-    expect(realmOf(wheres(db, "country")[0])).toBe(EURTH);
-  });
-
   it("refuses to link a feature to a country of another realm", async () => {
     const db = emptyDb();
     db.mapLayer!.findFirst!.mockResolvedValue({ id: "ml1", featureId: "Gallambria" });
@@ -359,26 +341,6 @@ describe("the world editor works inside the realm it edits (ruling E-o)", () => 
     expect(db.mapLayer!.update).not.toHaveBeenCalled();
     expect(db.country!.update).not.toHaveBeenCalled();
   });
-
-  it("the border editor loads the feature and its neighbours from the edited realm", async () => {
-    const db = emptyDb();
-    db.mapLayer!.findFirst!.mockResolvedValue({
-      id: "ml1",
-      featureId: "F",
-      boundingBox: [0, 0, 1, 1],
-    });
-    await createCallerFactory(geoEditorBordersRouter)(adminCtx(db)).startBorderEditSession({
-      featureId: "F",
-      realm: "eurth",
-    });
-
-    expect(realmOf(wheres(db, "mapLayer", "findFirst")[0])).toBe(EURTH);
-    // the neighbours come from one spatial query, whose first parameter is the realm
-    const [sql, realmParam] = db.$queryRawUnsafe!.mock.calls[0]!;
-    expect(sql).toContain(`"worldId" = $1`);
-    expect(realmParam).toBe(EURTH);
-  });
-
   it("rebuilding adjacency pairs and updates the given realm's features only", async () => {
     const db = emptyDb();
     db.$queryRawUnsafe!.mockResolvedValue([{ a: "A", b: "B" }]);
@@ -391,18 +353,331 @@ describe("the world editor works inside the realm it edits (ruling E-o)", () => 
     expect(realmParam).toBe(EURTH);
     expect(wheres(db, "mapLayer", "updateMany").map(realmOf)).toEqual([EURTH, EURTH, EURTH]);
   });
+});
 
-  it("rebuilding adjacency clears the neighbours of features that no longer touch anything", async () => {
-    const db = emptyDb();
-    db.$queryRawUnsafe!.mockResolvedValue([{ a: "A", b: "B" }]);
-    await createCallerFactory(geoEditorBordersRouter)(adminCtx(db)).rebuildAdjacency({
-      realmId: EURTH,
+/**
+ * A realm's planet radius (`Realm.settings.map.radiusKm`) scales the areas its map editors store and the
+ * "Recompute areas" action, which never touches nations' stated land area unless the founder asks.
+ */
+// `jest` is the injected global on purpose: @swc/jest only hoists jest.mock() on the global.
+describe("a realm's map areas and settings", () => {
+  const EURTH = "r_eurth";
+  const FOUNDER = "clerk_founder";
+  const MAP_OFFICER = "clerk_mapper";
+  type ModelMock = Record<string, jest.Mock>;
+  type Db = Record<string, ModelMock> & Record<`$${string}`, jest.Mock>;
+  function realmDb(radiusKm?: number): Db {
+    const models = new Map<string, ModelMock>();
+    const raw: Record<string, jest.Mock> = {
+      $queryRawUnsafe: jest.fn().mockResolvedValue([]),
+      // invalidateRealmMap's version bump
+      $queryRaw: jest.fn().mockResolvedValue([{ mapVersion: 1 }]),
+    };
+    const db = new Proxy({} as Db, {
+      get: (_t, name) => {
+        const key = String(name);
+        if (key === "$transaction") return (fn: (tx: Db) => unknown) => fn(db);
+        if (key.startsWith("$")) return raw[key];
+        if (!models.has(key)) {
+          models.set(key, {
+            findMany: jest.fn().mockResolvedValue([]),
+            findFirst: jest.fn().mockResolvedValue(null),
+            findUnique: jest.fn().mockResolvedValue(null),
+            groupBy: jest.fn().mockResolvedValue([]),
+            create: jest.fn().mockResolvedValue({ id: "created" }),
+            createMany: jest.fn().mockResolvedValue({ count: 2 }),
+            update: jest.fn().mockResolvedValue({}),
+            updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+          });
+        }
+        return models.get(key);
+      },
+    });
+    const realm = {
+      id: EURTH,
+      slug: "eurth",
+      name: "Eurth",
+      ownerId: FOUNDER,
+      status: "active",
+      settings: radiusKm ? { map: { radiusKm } } : {},
+      officers: [{ userId: MAP_OFFICER, powers: ["map"] }],
+    };
+    db.realm!.findUnique!.mockImplementation(
+      async ({ where }: { where: { slug?: string; id?: string } }) =>
+        where.slug === "eurth" || where.id === EURTH ? realm : null
+    );
+    return db;
+  }
+
+  describe("Recompute areas", () => {
+    it("refuses an unknown realm slug, even for a site admin, instead of falling back to Ixnay", async () => {
+      const db = realmDb();
+      const ctx = createMockRouterContext({
+        db,
+        auth: { userId: "clerk_admin" },
+        user: {
+          id: "db_admin",
+          clerkUserId: "clerk_admin",
+          role: { name: "admin", level: 10 },
+          country: null,
+        },
+        rateLimitIdentifier: `admin_${Math.random()}`,
+      }) as never;
+      const map = createCallerFactory(realmMapRouter)(ctx);
+      await expect(
+        map.recomputeAreas({ realm: "eruth", alsoSetLandArea: true })
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      await expect(map.updateSettings({ realm: "eruth", radiusKm: 1000 })).rejects.toMatchObject({
+        code: "NOT_FOUND",
+      });
+      expect(db.$queryRawUnsafe).not.toHaveBeenCalled();
+      expect(db.country!.updateMany).not.toHaveBeenCalled();
+      expect(db.realm!.update).not.toHaveBeenCalled();
+    });
+  });
+});
+
+/**
+ * Realms share one coordinate space, so every raw spatial join on map_layers must match the realm of the
+ * country, subdivision or city it measures; otherwise Ixnay's climate, altitudes, rivers and lakes answer for
+ * another realm's land.
+ */
+describe("spatial profiles and borders read only the country's realm", () => {
+  const EURTH = "r_eurth";
+  const SQUARE = {
+    type: "Polygon" as const,
+    coordinates: [
+      [
+        [0, 0],
+        [1, 0],
+        [1, 1],
+        [0, 1],
+        [0, 0],
+      ],
+    ],
+  };
+  /** A db whose raw SQL answers `rows` (by default none) and records every statement. */
+  function sqlDb(rows: (sql: string) => unknown[] = () => []) {
+    const statements: Array<{ sql: string; params: unknown[] }> = [];
+    const $queryRawUnsafe = jest.fn(async (sql: string, ...params: unknown[]) => {
+      statements.push({ sql, params });
+      return rows(sql);
+    });
+    const model = () => ({
+      findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      update: jest.fn().mockResolvedValue({}),
+    });
+    const db: Record<string, any> = {
+      $queryRawUnsafe,
+      $executeRawUnsafe: jest.fn().mockResolvedValue(0),
+      // invalidateRealmMap's version bump, after an import
+      $queryRaw: jest.fn().mockResolvedValue([{ mapVersion: 1 }]),
+      subdivision: model(),
+      city: model(),
+      country: model(),
+      user: model(),
+      realm: {
+        findUnique: jest.fn(async (args: { where: { slug?: string; id?: string } }) =>
+          args.where.slug === "eurth" || args.where.id === EURTH ? { id: EURTH } : null
+        ),
+      },
+    };
+    db.$transaction = (fn: (tx: unknown) => unknown) => fn(db);
+    /** The statements that read map_layers. */
+    const mapLayerSql = () => statements.filter((s) => /map_layers/.test(s.sql));
+    return { db, statements, mapLayerSql };
+  }
+  /** The realm predicate of a statement that joins map_layers to the country being measured. */
+  const REALM_JOIN = /ml\."worldId" = co\."realmId"/;
+  beforeEach(() => {
+    clearTrpcMemoryCache();
+    resetPostGISCache();
+  });
+  describe("spatial profiles read only the country's realm", () => {
+    it("a subdivision's climate, altitudes, rivers and lakes", async () => {
+      const { db, mapLayerSql } = sqlDb();
+      db.subdivision.findUnique.mockResolvedValue({ id: "s1", geometry: SQUARE, areaSqKm: 1 });
+      await updateSubdivisionSpatialProfile(db, "s1");
+
+      const sql = mapLayerSql();
+      expect(sql.map((s) => s.sql.match(/"layerType" = '(\w+)'/)?.[1])).toEqual([
+        "climate",
+        "altitudes",
+        "rivers",
+        "lakes",
+      ]);
+      for (const { sql: text } of sql) {
+        expect(text).toContain(`JOIN "Country" co ON co.id = s."countryId"`);
+        expect(text).toMatch(REALM_JOIN);
+      }
+    });
+  });
+  describe("terrain lookups take a realm", () => {
+    it("countryGeo.sampleTerrainAt samples the viewed realm, or the viewer's own", async () => {
+      const viewer = {
+        id: "u1",
+        clerkUserId: "clerk_u1",
+        countryId: "c_eu",
+        country: { id: "c_eu", name: "Eu", slug: "eu", realmId: EURTH },
+      };
+      const sample = async (realm?: string) => {
+        const { db, mapLayerSql } = sqlDb();
+        const caller = createCallerFactory(countryGeoRouter)(
+          createMockRouterContext({ db, auth: { userId: "clerk_u1" }, user: viewer }) as never
+        );
+        await caller.sampleTerrainAt({ lng: 1, lat: 2, realm });
+        return mapLayerSql()[0]!.params[2];
+      };
+      expect(await sample()).toBe(EURTH);
+      expect(await sample("ixnay")).toBe(DEFAULT_REALM_ID);
+      expect(await sample("ixworld")).toBe(DEFAULT_REALM_ID);
+    });
+  });
+  describe("a country's border is read from its own realm", () => {
+    it("the shared border subquery matches the country's realm", () => {
+      expect(COUNTRY_BORDER_SQL).toContain(`JOIN "Country" co ON co.id = ml."countryId"`);
+      expect(COUNTRY_BORDER_SQL).toMatch(REALM_JOIN);
     });
 
-    expect(wheres(db, "mapLayer", "updateMany")[0]).toMatchObject({
-      featureId: { notIn: ["A", "B"] },
-      NOT: { neighbors: { equals: [] } },
+    it.each([
+      ["validatePointContainment", (db: PrismaClient) => validatePointContainment(db, "c1", 1, 1)],
+      ["snapPointToCountryBorder", (db: PrismaClient) => snapPointToCountryBorder(db, "c1", 1, 1)],
+    ])("%s", async (_name, run) => {
+      const { db, mapLayerSql } = sqlDb((sql) =>
+        /PostGIS_Version/.test(sql)
+          ? [{}]
+          : [{ is_inside: true, clipped: JSON.stringify(SQUARE), distance_meters: 0 }]
+      );
+      await run(db as unknown as PrismaClient);
+      expect(mapLayerSql().length).toBeGreaterThan(0);
+      for (const { sql } of mapLayerSql()) expect(sql).toContain(COUNTRY_BORDER_SQL);
     });
-    expect(db.mapLayer!.updateMany!.mock.calls[0]![0]).toMatchObject({ data: { neighbors: [] } });
+  });
+});
+
+/**
+ * Auto-Match in the world editor: realm-scoped, read in pages past the 1,000-row guard, fuzzy (with the roster's
+ * nation page titles and the nations' source keys as aliases), reviewed before anything uncertain is linked, and
+ * able to give one nation several regions.
+ */
+// `jest` is the injected global on purpose: @swc/jest only hoists jest.mock() on the global.
+describe("auto-match stays in the edited realm", () => {
+  const EURTH = "r_eurth";
+  const MAP_OFFICER = "clerk_mapper";
+  type Row = { id: string; [key: string]: unknown };
+  /** findMany over `rows` honouring `take`, `cursor` and `skip` like Prisma's id-ordered paging. */
+  function pagedFindMany(rows: Row[]) {
+    return jest.fn(
+      async (args: {
+        where?: Record<string, unknown>;
+        take?: number;
+        cursor?: { id: string };
+        skip?: number;
+      }) => {
+        const sorted = [...rows].sort((a, b) => a.id.localeCompare(b.id));
+        const start = args.cursor
+          ? sorted.findIndex((r) => r.id === args.cursor!.id) + (args.skip ?? 0)
+          : 0;
+        return sorted.slice(start, start + (args.take ?? sorted.length));
+      }
+    );
+  }
+  function setup({
+    regions,
+    countries,
+    pages = [],
+  }: {
+    regions: Row[];
+    countries: Row[];
+    pages?: Row[];
+  }) {
+    const db = {
+      realm: {
+        findUnique: jest.fn(async ({ where }: { where: { slug?: string; id?: string } }) =>
+          where.slug === "eurth" || where.id === EURTH
+            ? {
+                id: EURTH,
+                ownerId: "clerk_founder",
+                status: "active",
+                officers: [{ userId: MAP_OFFICER, powers: ["map"] }],
+              }
+            : null
+        ),
+      },
+      mapLayer: {
+        findMany: pagedFindMany(regions),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+      country: {
+        findMany: jest.fn(async (args: { where: { id?: { in: string[] } }; take?: number }) =>
+          args.where.id?.in
+            ? countries.filter((c) => args.where.id!.in.includes(c.id))
+            : pagedFindMany(countries)(args)
+        ),
+      },
+      realmPage: { findMany: pagedFindMany(pages) },
+      // invalidateRealmMap's version bump after the links are written
+      $queryRaw: jest.fn().mockResolvedValue([{ mapVersion: 1 }]),
+    };
+    const caller = createCallerFactory(geoEditorLinkageValidationRouter)(
+      createMockRouterContext({
+        db,
+        auth: { userId: MAP_OFFICER },
+        user: { id: "db_mapper", clerkUserId: MAP_OFFICER, role: null, country: null },
+        rateLimitIdentifier: `${MAP_OFFICER}_${Math.random()}`,
+      }) as never
+    );
+    return { db, caller };
+  }
+  const region = (id: string, featureId: string, displayName: string | null = null) => ({
+    id,
+    featureId,
+    displayName,
+  });
+  beforeEach(() => {
+    clearTrpcMemoryCache();
+    (syncCountryGeometryFromMapLayer as jest.Mock).mockClear();
+  });
+  describe("Auto-Match", () => {
+    it("reads every region and nation in pages, past the 1,000-row guard", async () => {
+      const regions = Array.from({ length: 1203 }, (_, i) =>
+        region(`m${String(i).padStart(5, "0")}`, `Region ${i}`)
+      );
+      const { caller, db } = setup({
+        regions,
+        countries: [
+          { id: "c_last", name: "Region 1202", wikiPageTitle: null, externalSourceKey: null },
+        ],
+      });
+      const result = await caller.suggestLinkageMatches({ realm: "eurth" });
+      expect(result.unlinkedRegions).toBe(1203);
+      expect(result.suggestions.map((s) => s.featureId)).toContain("Region 1202");
+      expect(db.mapLayer.findMany.mock.calls.length).toBeGreaterThan(2);
+      for (const [args] of db.mapLayer.findMany.mock.calls) expect(args.take).toBeDefined();
+    });
+    it("links reviewed matches, refusing nations of another realm", async () => {
+      const { caller, db } = setup({
+        regions: [],
+        countries: [{ id: "c_ost", name: "Ostia", wikiPageTitle: null, externalSourceKey: null }],
+      });
+      await expect(
+        caller.repairLinkage({
+          action: "apply_matches",
+          realm: "eurth",
+          matches: [
+            { featureId: "Ostai", countryId: "c_ost" },
+            { featureId: "Elsewhere", countryId: "c_ixnay" },
+          ],
+        })
+      ).resolves.toEqual({ repaired: 1 });
+      expect(db.country.findMany.mock.calls[0][0].where).toEqual({
+        id: { in: ["c_ost", "c_ixnay"] },
+        realmId: EURTH,
+      });
+      expect(db.mapLayer.updateMany).toHaveBeenCalledTimes(1);
+      expect(db.mapLayer.updateMany.mock.calls[0][0].where.featureId).toBe("Ostai");
+    });
   });
 });

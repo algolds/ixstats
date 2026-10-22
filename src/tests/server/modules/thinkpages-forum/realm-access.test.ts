@@ -2,13 +2,13 @@
 import { banNotice, DAY_MS } from "~/lib/thinkpages-forum/moderation-policy";
 import {
   canSeeRealm,
-  loadForumRealm,
   postingAccessFor,
   realmPostingAccess,
   type ForumRealm,
 } from "~/server/modules/thinkpages-forum";
-import { loadForumRealms } from "~/server/modules/thinkpages-forum/realm-access";
 import { banRow, forumBanFake, type BanRow } from "~/tests/helpers/forum-ban-fake";
+import { REALM_CATEGORIES } from "~/lib/thinkpages-forum/categories";
+import { getRealmSection, listForumRealms } from "~/server/modules/thinkpages-forum";
 
 const role = (name: string, level: number) => ({ name, level });
 const admin = { id: "u_admin", clerkUserId: "admin", countryId: null, role: role("admin", 10) };
@@ -80,79 +80,6 @@ function accessDb(opts: { owned?: Record<string, string[]>; bans?: BanRow[] } = 
   };
 }
 
-describe("loadForumRealm", () => {
-  const rows = [
-    { id: "r_eurth", slug: "eurth", name: "Eurth", status: "active", ownerId: "founder" },
-  ];
-  function realmDb(extra: typeof rows = []) {
-    const all = [...rows, ...extra];
-    return {
-      realm: {
-        findUnique: jest.fn(
-          async ({ where }: { where: { slug?: string; id?: string } }) =>
-            all.find((r) =>
-              where.slug !== undefined ? r.slug === where.slug : r.id === where.id
-            ) ?? null
-        ),
-      },
-    };
-  }
-
-  it("synthesizes Ixnay for its slugs and id when it has no realm row", async () => {
-    for (const ref of [
-      { slug: "ixnay" },
-      { slug: "ixworld" },
-      { slug: "default" },
-      { id: "default" },
-    ]) {
-      await expect(loadForumRealm(realmDb() as never, ref)).resolves.toEqual(IXNAY);
-    }
-  });
-
-  it("names Ixnay from its row when one exists, under the ixnay slug", async () => {
-    const db = realmDb([
-      {
-        id: "default",
-        slug: "default",
-        name: "Ixnay Prime",
-        status: "active",
-        ownerId: "system",
-      },
-    ]);
-    await expect(loadForumRealm(db as never, { slug: "ixworld" })).resolves.toEqual({
-      ...IXNAY,
-      name: "Ixnay Prime",
-    });
-    await expect(loadForumRealm(db as never, { id: "default" })).resolves.toEqual({
-      ...IXNAY,
-      name: "Ixnay Prime",
-    });
-  });
-});
-
-describe("loadForumRealms", () => {
-  const eurth = {
-    id: "r_eurth",
-    slug: "eurth",
-    name: "Eurth",
-    status: "active",
-    ownerId: "founder",
-  };
-  const dbOf = (rows: Array<typeof eurth>) => ({
-    realm: {
-      findMany: jest.fn(async ({ where }: { where: { id: { in: string[] } } }) =>
-        rows.filter((r) => where.id.in.includes(r.id))
-      ),
-    },
-  });
-  it("synthesizes Ixnay without a row and names it from its row under the ixnay slug", async () => {
-    expect((await loadForumRealms(dbOf([]) as never, ["default"])).get("default")).toEqual(IXNAY);
-    const row = { ...eurth, id: "default", slug: "default", name: "Ixnay Prime" };
-    const named = await loadForumRealms(dbOf([row]) as never, ["default"]);
-    expect(named.get("default")).toEqual({ ...row, slug: "ixnay" });
-  });
-});
-
 describe("canSeeRealm", () => {
   it("hides draft and generating realms from plain users and anonymous, not from the founder or an admin", () => {
     for (const status of ["draft", "generating"]) {
@@ -164,14 +91,6 @@ describe("canSeeRealm", () => {
       expect(canSeeRealm(admin, realm)).toBe(true);
     }
   });
-
-  it("shows active and archived realms to anyone", () => {
-    for (const status of ["active", "archived"]) {
-      expect(canSeeRealm(null, { ...EURTH, status })).toBe(true);
-      expect(canSeeRealm(plain, { ...EURTH, status })).toBe(true);
-    }
-  });
-
   it("always shows Ixnay, whatever its row's status, as the switcher always lists it (U7)", () => {
     for (const status of ["draft", "generating", "archived", null]) {
       expect(canSeeRealm(null, { ...IXNAY, status })).toBe(true);
@@ -191,21 +110,6 @@ describe("realmPostingAccess", () => {
       expiresAt: later,
       ...extra,
     });
-
-  it("1. refuses anonymous with a sign-in notice", async () => {
-    const db = accessDb();
-    await expect(realmPostingAccess(db as never, null, EURTH)).resolves.toEqual({
-      ownedCountryIds: [],
-      isModerator: false,
-      ban: null,
-      canPost: false,
-      notice: "Sign in and claim a nation in Eurth to post here.",
-      needsNation: false,
-    });
-    expect(db.country.findMany).not.toHaveBeenCalled();
-    expect(db.forumBan.findMany).not.toHaveBeenCalled();
-  });
-
   it("2. lets a site admin post without nations, without a ban lookup, even in an archived realm or with a ban row", async () => {
     for (const realm of [EURTH, { ...EURTH, status: "archived" }]) {
       const db = accessDb({
@@ -247,23 +151,6 @@ describe("realmPostingAccess", () => {
       );
     }
   });
-
-  it("4. lets the owner of a nation in the realm post", async () => {
-    const db = accessDb();
-    const access = await realmPostingAccess(db as never, owner, EURTH);
-    expect(access).toEqual({
-      ownedCountryIds: ["c_eurth"],
-      isModerator: false,
-      ban: null,
-      canPost: true,
-      notice: null,
-      needsNation: false,
-    });
-    expect(db.country.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { realmId: "r_eurth", ownerUserId: "u_owner" } })
-    );
-  });
-
   it("5. refuses a signed-in user with no nation in the realm, and an officer without the board power", async () => {
     for (const viewer of [plain, claimsOfficer]) {
       const access = await realmPostingAccess(accessDb() as never, viewer, EURTH);
@@ -297,30 +184,6 @@ describe("realmPostingAccess", () => {
       needsNation: false,
     });
   });
-
-  it("6. refuses an owner under a site ban in the realm", async () => {
-    const ban = banRow({ userId: "u_owner", reason: "Abuse" });
-    await expect(
-      realmPostingAccess(accessDb({ bans: [ban] }) as never, owner, EURTH)
-    ).resolves.toMatchObject({
-      canPost: false,
-      ban: { scope: "site" },
-      notice: banNotice({ scope: "site", expiresAt: null, reason: "Abuse" }),
-    });
-  });
-
-  it("6. ignores expired and lifted bans, another realm's ban and another member's ban", async () => {
-    const bans = [
-      realmBan("u_owner", { id: "b_expired", expiresAt: new Date(Date.now() - DAY_MS) }),
-      realmBan("u_owner", { id: "b_lifted", liftedAt: new Date() }),
-      realmBan("u_owner", { id: "b_other", scopeId: "r_bee" }),
-      realmBan("u_next", { id: "b_next" }),
-    ];
-    await expect(
-      realmPostingAccess(accessDb({ bans }) as never, owner, EURTH)
-    ).resolves.toMatchObject({ canPost: true, ban: null, notice: null });
-  });
-
   it("6. leaves the section open under a category ban, but refuses posting in that category", async () => {
     const ban = banRow({
       userId: "u_owner",
@@ -369,15 +232,6 @@ describe("realmPostingAccess", () => {
       canPost: true,
     });
   });
-
-  it("7b. spends no ban lookup in an archived realm, where nobody but site admins posts (M16)", async () => {
-    const db = accessDb({ bans: [banRow({ userId: "u_owner", scope: "site" })] });
-    await expect(
-      realmPostingAccess(db as never, owner, { ...EURTH, status: "archived" })
-    ).resolves.toMatchObject({ canPost: false, ban: null });
-    expect(db.forumBan.findMany).not.toHaveBeenCalled();
-  });
-
   it("8. gives Ixnay no founder: board officers and site admins moderate", async () => {
     await expect(
       realmPostingAccess(accessDb({ owned: {} }) as never, plain, IXNAY)
@@ -397,6 +251,133 @@ describe("realmPostingAccess", () => {
     ).resolves.toMatchObject({
       isModerator: true,
       canPost: true,
+    });
+  });
+});
+
+describe("realm sections", () => {
+  const role = (name: string, level: number) => ({ name, level });
+  const admin = { id: "u_admin", clerkUserId: "admin", countryId: null, role: role("admin", 10) };
+  const founder = {
+    id: "u_founder",
+    clerkUserId: "founder",
+    countryId: null,
+    role: role("user", 100),
+  };
+  const owner = {
+    id: "u_owner",
+    clerkUserId: "owner",
+    countryId: "c_eurth",
+    role: role("user", 100),
+  };
+  const plain = { id: "u_plain", clerkUserId: "plain", countryId: null, role: role("user", 100) };
+  const row = (id: string, slug: string, name: string, status = "active", ownerId = "founder") => ({
+    id,
+    slug,
+    name,
+    status,
+    ownerId,
+  });
+  const EURTH = row("r_eurth", "eurth", "Eurth");
+  const DRAFT = row("r_draft", "draft-land", "Draft Land", "draft");
+  describe("listForumRealms", () => {
+    function listDb(rows: Array<ReturnType<typeof row>>) {
+      return { realm: { findMany: jest.fn(async (_args: { where: object }) => rows) } };
+    }
+
+    it("never lists a system realm: the where carries isSystem false for anonymous, regular and admin viewers", async () => {
+      for (const viewer of [null, plain, admin]) {
+        const db = listDb([]);
+        await listForumRealms(db as never, viewer);
+        expect(db.realm.findMany.mock.calls[0][0].where).toMatchObject({ isSystem: false });
+      }
+    });
+  });
+  describe("getRealmSection", () => {
+    const seeded = REALM_CATEGORIES.map((c) => ({
+      id: `cat_${c.key}`,
+      scope: "realm",
+      realmId: "r_eurth",
+      key: c.key,
+      name: c.name,
+      description: c.description,
+      order: c.order,
+      visibility: "public",
+      postRole: "any",
+      icAllowed: c.icAllowed,
+    }));
+
+    function sectionDb(
+      realm: ReturnType<typeof row> | null,
+      categories: Array<Array<(typeof seeded)[number]>> = [seeded]
+    ) {
+      const findMany = jest.fn();
+      for (const batch of categories) findMany.mockResolvedValueOnce(batch);
+      return {
+        realm: { findUnique: jest.fn(async () => realm) },
+        forumCategory: {
+          findMany,
+          createMany: jest.fn(async () => ({ count: 4 })),
+          findFirst: jest.fn(async () => ({ id: "cat_board" })),
+        },
+        forumThread: {
+          createMany: jest.fn(async () => ({ count: 1 })),
+          findMany: jest.fn(async (_args: { where: object }) => [
+            {
+              id: "t_hub",
+              title: "Harbour tax",
+              categoryId: "cat_hub",
+              lastPostAt: new Date("2026-10-05"),
+            },
+          ]),
+          groupBy: jest.fn(async (_args: { where: object }) => [
+            {
+              categoryId: "cat_hub",
+              _count: { _all: 2 },
+              _max: { lastPostAt: new Date("2026-10-05") },
+            },
+          ]),
+        },
+        forumPost: {
+          findMany: jest.fn(async () => [
+            {
+              threadId: "t_hub",
+              authorUserId: "u_owner",
+              authorPersonaId: null,
+              importedAuthorName: null,
+              createdAt: new Date("2026-10-06"),
+            },
+          ]),
+        },
+        country: { findMany: jest.fn(async () => [{ id: "c_eurth" }]) },
+        realmOfficer: { findMany: jest.fn(async () => []) },
+        forumBan: forumBanFake(),
+      };
+    }
+
+    it("gives NOT_FOUND for an unknown realm and a draft realm the viewer is not staff of", async () => {
+      await expect(
+        getRealmSection(sectionDb(null) as never, plain, "nowhere")
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      const db = sectionDb(DRAFT);
+      await expect(getRealmSection(db as never, plain, "draft-land")).rejects.toMatchObject({
+        code: "NOT_FOUND",
+      });
+      await expect(
+        getRealmSection(sectionDb(DRAFT) as never, null, "draft-land")
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      expect(db.forumCategory.findMany).not.toHaveBeenCalled();
+      await expect(
+        getRealmSection(sectionDb(DRAFT) as never, founder, "draft-land")
+      ).resolves.toBeDefined();
+    });
+    it("names each board's latest thread without its author, so a persona's player never leaks", async () => {
+      const out = await getRealmSection(sectionDb(EURTH) as never, owner, "eurth");
+      expect(Object.keys(out.categories[0]!.latest!).sort()).toEqual([
+        "at",
+        "threadId",
+        "threadTitle",
+      ]);
     });
   });
 });

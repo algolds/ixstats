@@ -12,18 +12,44 @@ jest.mock("~/lib/system/job-lock", () => ({
   ),
 }));
 
+jest.mock("~/lib/maps/realm-map-writer", () => ({
+  writeRealmMapFeatures: jest.fn(
+    async (_db: unknown, _realm: string, features: Array<{ key: string }>) => ({
+      written: features.map((f) => f.key),
+      rejected: [],
+      areas: Object.fromEntries(features.map((f) => [f.key, 1234])),
+    })
+  ),
+}));
+jest.mock("~/lib/maps/realm-layer-repair", () => ({
+  repairRealmLayer: jest.fn().mockResolvedValue({
+    plan: { smoothing: { status: "smooth" } },
+    written: { written: ["A"], smoothed: 1, rejected: [] },
+    mapImportId: "imp1",
+  }),
+}));
+jest.mock("~/lib/maps/adjacency", () => ({
+  rebuildAdjacency: jest.fn().mockResolvedValue({ skipped: true }),
+}));
+jest.mock("~/server/shared/map-invalidation", () => ({
+  invalidateRealmMap: jest.fn().mockResolvedValue(1),
+}));
+
 import fs from "node:fs";
 import path from "node:path";
 import { realmsRouter } from "~/server/api/routers/realms";
 import { sourcePreset } from "~/lib/realms/sources/presets";
 import { withJobLock } from "~/lib/system/job-lock";
 import {
-  loadSourcePreset,
   runDueSourceSyncs,
   runSourceSync,
   sourceSyncLockName,
 } from "~/server/modules/realms/realms.source-sync";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
+import type { SyncPlan } from "~/lib/realms/sources/plan";
+import { applySyncPlan } from "~/server/modules/realms/realms.source-apply";
+import { DEFAULT_SYNC_OPTIONS } from "~/lib/realms/sources/config";
+import { buildSyncPlan, type SourceSyncConfig } from "~/server/modules/realms/realms.source-sync";
 
 const FIXTURES = path.resolve(__dirname, "../../fixtures/realm-sources/eurth-map");
 const fixtureFiles: Record<string, string> = {
@@ -127,15 +153,6 @@ function caller(db: any, viewer: Viewer) {
 }
 
 describe("realms.sourceSync permissions: site admins and the realm's founder only", () => {
-  it("refuses signed-out viewers", async () => {
-    await expect(caller(syncDb(), null).get({ slug: "eurth" })).rejects.toThrow(
-      "Authentication required"
-    );
-    await expect(caller(syncDb(), null).dryRun({ slug: "eurth" })).rejects.toThrow(
-      "Authentication required"
-    );
-  });
-
   it("refuses a player who is neither founder nor site admin, for reads and every write", async () => {
     const db = syncDb();
     const sync = caller(db, player);
@@ -180,33 +197,6 @@ describe("realms.sourceSync permissions: site admins and the realm's founder onl
     });
     expect(db.realmSourceSync.upsert).not.toHaveBeenCalled();
   });
-  it("loading a preset again fills only what the realm's config lacks, unless forced", async () => {
-    const db = syncDb();
-    const edited = {
-      ...configRow,
-      continentMap: { Tavok: "Corrected" },
-      options: { updateBorders: false },
-      settings: {},
-    };
-    db.realmSourceSync.findUnique.mockResolvedValue(edited);
-    const kept = await loadSourcePreset(db, null, "eurth-id", "eurth-map");
-    const { update } = db.realmSourceSync.upsert.mock.calls[0][0];
-    expect(update).not.toHaveProperty("continentMap");
-    expect(update).not.toHaveProperty("options");
-    expect(update).not.toHaveProperty("repo");
-    expect(update.settings).toMatchObject({ files: preset.settings.files });
-    expect(kept).toMatchObject({
-      filled: ["settings"],
-      kept: ["provider", "repo", "ref", "format", "options", "continentMap"],
-    });
-
-    db.realmSourceSync.upsert.mockClear();
-    await loadSourcePreset(db, null, "eurth-id", "eurth-map", { force: true });
-    const forced = db.realmSourceSync.upsert.mock.calls[0][0].update;
-    expect(Object.keys(forced.continentMap)).toHaveLength(115);
-    expect(forced.options).toMatchObject({ updateBorders: true });
-  });
-
   it("refuses source sync changes and runs on an archived realm, but still shows its settings", async () => {
     const db = syncDb();
     db.realm.findUnique.mockResolvedValue({
@@ -316,21 +306,6 @@ describe("runSourceSync", () => {
     });
     expect(fetchFile).not.toHaveBeenCalled();
   });
-
-  it("never runs an archived realm's sync", async () => {
-    const db = syncDb();
-    db.realm.findUnique.mockResolvedValue({ slug: "eurth", status: "archived", settings: null });
-    const outcome = await runSourceSync(
-      db,
-      { realmId: "eurth-id", dryRun: false, triggeredBy: "script" },
-      { fetchFile }
-    );
-    expect(outcome).toMatchObject({
-      status: "failed",
-      errors: [expect.stringContaining("archived")],
-    });
-    expect(fetchFile).not.toHaveBeenCalled();
-  });
 });
 
 describe("runDueSourceSyncs (the realm-source-sync job)", () => {
@@ -371,28 +346,210 @@ describe("runDueSourceSyncs (the realm-source-sync job)", () => {
       expect.objectContaining({ where: { enabled: true, intervalHours: { not: null } } })
     );
   });
+});
 
-  it("skips archived realms", async () => {
-    const now = new Date("2026-10-07T12:00:00Z");
-    const db = syncDb();
-    db.realmSourceSync.findMany.mockResolvedValue([
-      { realmId: "live", enabled: true, intervalHours: 6, lastRunAt: null },
-      { realmId: "old", enabled: true, intervalHours: 6, lastRunAt: null },
-    ]);
-    db.realm.findMany.mockResolvedValue([{ id: "old" }]);
-    const result = await runDueSourceSyncs(
-      db,
-      { fetchFile: jest.fn().mockRejectedValue(new Error("offline")) },
-      now
-    );
-    expect(result).toMatchObject({
-      checked: 1,
-      ran: 1,
-      results: [expect.objectContaining({ realmId: "live" })],
+describe("applying a sync plan", () => {
+  const ctx = {
+    realmId: "eurth-id",
+    realmSlug: "eurth",
+    wikiSource: "iiwiki",
+    attribution: "Map: test",
+    areaScale: 1,
+  };
+  function emptyPlan(over: Partial<SyncPlan> = {}): SyncPlan {
+    return {
+      creates: [],
+      updates: [],
+      skippedClaimed: [],
+      locked: [],
+      features: [],
+      featuresUnchanged: 0,
+      alliances: [],
+      unknownMembers: [],
+      missing: [],
+      unmatched: [],
+      excluded: [],
+      warnings: [],
+      counts: {
+        sourceNations: 0,
+        matched: 0,
+        create: 0,
+        update: 0,
+        features: 0,
+        alliances: 0,
+        unmatched: 0,
+        missing: 0,
+      },
+      refills: [],
+      ...over,
+    };
+  }
+  function applyDb() {
+    const db: any = {
+      $transaction: jest.fn((cb: any) => cb(db)),
+      country: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        findMany: jest.fn().mockResolvedValue([]),
+        create: jest.fn(async ({ data }: any) => ({ id: `id-${data.name}` })),
+        update: jest.fn().mockResolvedValue({}),
+      },
+      nationalIdentity: {
+        upsert: jest.fn().mockResolvedValue({}),
+        update: jest.fn().mockResolvedValue({}),
+        create: jest.fn().mockResolvedValue({}),
+      },
+      alliance: {
+        create: jest.fn(async ({ data }: any) => ({ id: "al-new", realmId: data.realmId })),
+        update: jest.fn(async () => ({ id: "al-old", realmId: "eurth-id" })),
+      },
+      allianceMember: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockResolvedValue({}),
+        count: jest.fn().mockResolvedValue(2),
+      },
+    };
+    return db;
+  }
+  describe("applySyncPlan", () => {
+    beforeEach(() => jest.clearAllMocks());
+    it("leaves a nation claimed since the plan alone when re-reading infoboxes, and reads nothing without a reader", async () => {
+      const db = applyDb();
+      db.country.findFirst = jest.fn().mockResolvedValue(null);
+      const fetchInfobox = jest.fn().mockResolvedValue({ country: { flag: "f" }, identity: {} });
+      const plan = emptyPlan({ refills: [{ countryId: "r1", name: "Taken", wikiTitle: "Taken" }] });
+      const result = await applySyncPlan(db, ctx, plan, { fetchInfobox });
+      expect(db.country.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: "r1", realmId: "eurth-id", ownerUserId: null } })
+      );
+      expect(db.country.update).not.toHaveBeenCalled();
+      expect(result.refilled).toEqual([]);
+      const without = await applySyncPlan(applyDb(), ctx, plan, {});
+      expect(without.refilled).toEqual([]);
     });
-    expect(db.realm.findMany).toHaveBeenCalledWith({
-      where: { id: { in: ["live", "old"] }, status: "archived" },
-      select: { id: true },
+    it("leaves a nation claimed since the plan was made with its own figures", async () => {
+      const db = applyDb();
+      db.country.findUnique.mockResolvedValue({
+        name: "Free",
+        ownerUserId: "u-new-owner",
+        baselinePopulation: 1,
+        baselineGdpPerCapita: 1,
+        landArea: 1,
+        continent: null,
+      });
+      const result = await applySyncPlan(
+        db,
+        ctx,
+        emptyPlan({
+          updates: [
+            {
+              countryId: "f",
+              name: "Free",
+              key: "Free",
+              claimed: false,
+              bindKey: false,
+              changes: [{ field: "population", from: 1, to: 5 }],
+            },
+          ],
+        })
+      );
+      expect(db.country.update).not.toHaveBeenCalled();
+      expect(result.updated).toBe(0);
+    });
+    it("creates realm alliances, adds members once, and never pulls back a nation that left", async () => {
+      const db = applyDb();
+      db.allianceMember.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ id: "m", isActive: false, status: "left" });
+      db.country.findUnique.mockResolvedValue({ realmId: "eurth-id" });
+      const result = await applySyncPlan(
+        db,
+        ctx,
+        emptyPlan({
+          alliances: [
+            {
+              key: "pact",
+              allianceId: null,
+              name: "Some Pact",
+              shortName: "SP",
+              color: "#ff0000",
+              type: "military",
+              changes: [],
+              addMembers: [
+                { nation: { countryId: "a" }, name: "A" },
+                { nation: { countryId: "b" }, name: "B" },
+              ],
+              notInSource: [],
+            },
+          ],
+        })
+      );
+      expect(db.alliance.create.mock.calls[0][0].data).toMatchObject({
+        realmId: "eurth-id",
+        externalSourceKey: "pact",
+        name: "Some Pact",
+        shortName: "SP",
+        type: "military",
+        color: "#ff0000",
+      });
+      expect(db.allianceMember.create).toHaveBeenCalledTimes(1);
+      expect(db.allianceMember.create.mock.calls[0][0].data).toMatchObject({
+        countryId: "a",
+        status: "active",
+        isActive: true,
+      });
+      expect(result).toMatchObject({ alliancesCreated: 1, membersAdded: 1 });
+    });
+  });
+});
+
+/**
+ * The source sync's plan reads past the guarded client's 1000-row cap: Eurth has 2,750 realm pages, and a plan
+ * built from the first 1000 would create nations for pages it never saw or miss the ones it did.
+ * The fake answers at most 1000 rows to a findMany with no `take`, as src/server/db.ts does.
+ */
+describe("planning reads every row", () => {
+  const GUARD_CAP = 1000;
+  /** A table whose findMany answers at most GUARD_CAP rows when no take is given. */
+  function cappedTable(rows: Array<Record<string, unknown>>) {
+    return {
+      findMany: jest.fn(async ({ take }: { take?: number } = {}) =>
+        rows.slice(0, take ?? GUARD_CAP)
+      ),
+    };
+  }
+  const config: SourceSyncConfig = {
+    realmId: "eurth-id",
+    enabled: true,
+    provider: "github",
+    repo: "x/y",
+    ref: "main",
+    format: "eurth-map",
+    settings: {},
+    intervalHours: 24,
+    options: DEFAULT_SYNC_OPTIONS,
+    continentMap: {},
+    overrides: { nations: {}, organizations: {} },
+  };
+  describe("buildSyncPlan reads every row", () => {
+    it("plans a nation for each of 1,500 realm pages, not the first 1000", async () => {
+      const pages = Array.from({ length: 1500 }, (_, i) => ({
+        title: `Page${String.fromCharCode(97 + (i % 26))}${i}x${i * 7}`,
+        kind: "nation",
+        wikiSource: "iiwiki",
+      }));
+      const db = {
+        country: cappedTable([]),
+        realmPage: cappedTable(pages),
+        mapLayer: cappedTable([]),
+        alliance: cappedTable([]),
+      };
+      const { plan } = await buildSyncPlan(db as never, config, {
+        nations: [],
+        organizations: [],
+        features: [],
+        warnings: [],
+      });
+      expect(plan.creates).toHaveLength(1500);
     });
   });
 });

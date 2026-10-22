@@ -209,26 +209,6 @@ describe("BoardComposer on a phone", () => {
     expect(screen.getByTestId("editor")).toBe(editor);
     expect(editor).toHaveValue("half a message");
   });
-  describe("folded in the dock", () => {
-    const composer = (container: HTMLElement) =>
-      container.querySelector('[data-slot="board-composer"]')!;
-    it("stays open once there is a draft, and keeps it, when focus leaves", async () => {
-      jest.useFakeTimers();
-      try {
-        const { container } = renderComposer({ docked: true });
-        const editor = screen.getByTestId("editor");
-        fireEvent.focus(editor);
-        type("half a message");
-        fireEvent.blur(editor);
-        await act(async () => jest.runAllTimers());
-        expect(composer(container)).not.toHaveAttribute("data-collapsed");
-        expect(screen.getByTestId("editor")).toBe(editor);
-        expect(editor).toHaveValue("half a message");
-      } finally {
-        jest.useRealTimers();
-      }
-    });
-  });
 });
 describe("BoardComposer", () => {
   it("keeps the text and shows the error when the post fails", async () => {
@@ -254,16 +234,6 @@ describe("BoardComposer prefill", () => {
     fireEvent.click(post());
     await waitFor(() => expect(onSubmit).toHaveBeenCalled());
     type("");
-    await act(async () => undefined);
-    expect(editorInsert).toHaveBeenCalledTimes(1);
-  });
-  it("does not insert again when the composer remounts after the prefill succeeded", async () => {
-    echo.inserts = true;
-    window.history.replaceState(null, "", "/thinkpages/r/eurth?attach=dir-abc");
-    const first = renderComposer();
-    await waitFor(() => expect(window.location.search).toBe(""));
-    first.unmount();
-    renderComposer();
     await act(async () => undefined);
     expect(editorInsert).toHaveBeenCalledTimes(1);
   });

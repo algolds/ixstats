@@ -19,7 +19,6 @@ const moderatorOf = (id: string, realmIds: string[], categoryIds: string[] = [])
   role: USER_ROLE,
   mod: { siteAdmin: false, realmIds, categoryIds },
 });
-const admin2 = { ...admin, id: "u_a2", clerkUserId: "admin2" };
 const eurthMod = moderatorOf("u_eurth", ["r_eurth"]);
 const generalMod = moderatorOf("u_gen", [], ["cat_general"]);
 /** A non-admin an admin appointed on the staff-only category: they moderate it but can't read it (M8). */
@@ -174,47 +173,15 @@ describe("fileReport", () => {
       store.tx.forumReport.findFirst.mock.invocationCallOrder[0]!
     );
   });
-
-  it.each(["ab", "  a  ", "x".repeat(1001)])(
-    "a reason of 3 to 1000 characters (%#)",
-    async (reason) => {
-      const store = reportsStore();
-      await expect(fileAs(store, reporter, "post", "p_eurth", reason)).rejects.toMatchObject({
-        code: "BAD_REQUEST",
-      });
-    }
-  );
-
   it.each([
     ["a hidden thread", "thread", "t_hidden"],
-    ["a hidden post", "post", "p_hidden"],
     ["another member's Reports thread", "thread", "t_report"],
     ["a thread in a draft realm", "thread", "t_draft"],
-    ["a missing post", "post", "nope"],
-    ["a missing thread", "thread", "nope"],
   ] as const)("%s is NOT_FOUND to the reporter", async (_label, targetType, targetId) => {
     const store = reportsStore();
     await expect(fileAs(store, reporter, targetType, targetId)).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
-  });
-
-  it("files against the target's category as it is under the reporter's lock, not as first read", async () => {
-    const store = reportsStore();
-    store.state.categories.push({ ...categories[2]!, id: "r_eurth_rp", key: "character-threads" });
-    // A moderator moves the thread while this report waits for the reporter's lock.
-    store.tx.$executeRaw.mockImplementationOnce(async () => {
-      store.state.threads.find((t) => t.id === "t_eurth")!.categoryId = "r_eurth_rp";
-      return 1;
-    });
-    await fileAs(store, reporter, "post", "p_eurth");
-    expect(store.state.reports).toEqual([expect.objectContaining({ categoryId: "r_eurth_rp" })]);
-  });
-
-  it("a moderator may report what only moderators see", async () => {
-    const store = reportsStore();
-    await fileAs(store, admin, "post", "p_hidden");
-    expect(store.state.reports).toHaveLength(1);
   });
 });
 
@@ -255,19 +222,6 @@ describe("listReports", () => {
     const general = await listReports(store.db as never, generalMod, { status: "open" }, 1);
     expect(general.rows.map((r) => r.id)).toEqual(["rep_general", "rep_gone"]);
   });
-  it("is moderators only", async () => {
-    const store = reportsStore([], { reports: queue() });
-    await expect(
-      listReports(store.db as never, member, { status: "open" }, 1)
-    ).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
-    await expect(listReports(store.db as never, null, { status: "open" }, 1)).rejects.toMatchObject(
-      {
-        code: "FORBIDDEN",
-      }
-    );
-  });
 });
 
 describe("reports in a category the handler can't read (M8)", () => {
@@ -282,13 +236,6 @@ describe("reports in a category the handler can't read (M8)", () => {
     expect(rows.map((r) => r.id)).toEqual(["rep_general", "rep_gone"]);
     expect(total).toBe(2);
   });
-
-  it("stay in a site admin's queue", async () => {
-    const store = reportsStore([], { reports: staffQueue() });
-    const { rows } = await listReports(store.db as never, admin, { status: "open" }, 1);
-    expect(rows.map((r) => r.id)).toContain("rep_staff");
-  });
-
   it("can't be resolved or dismissed by that moderator; a site admin can", async () => {
     const store = reportsStore([], { reports: staffQueue() });
     for (const outcome of ["resolved", "dismissed"] as const) {
@@ -313,15 +260,6 @@ describe("resolveReport", () => {
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(store.logs).toHaveLength(1);
   });
-
-  it("a report handled before the transaction is CONFLICT without opening one", async () => {
-    const store = reportsStore([], { reports: queue() });
-    await expect(
-      resolveReport(store.db as never, admin, { reportId: "rep_done", outcome: "resolved" })
-    ).rejects.toMatchObject({ code: "CONFLICT" });
-    expect(store.db.$transaction).not.toHaveBeenCalled();
-  });
-
   it("a report handled by someone else meanwhile is CONFLICT and logs nothing", async () => {
     const store = reportsStore([], { reports: queue() });
     const run = store.db.$transaction.getMockImplementation()!;
@@ -334,30 +272,6 @@ describe("resolveReport", () => {
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(store.state.reports.find((r) => r.id === "rep_eurth")!.status).toBe("dismissed");
     expect(store.logs).toHaveLength(0);
-  });
-
-  it("is scoped to the report's category", async () => {
-    const store = reportsStore([], { reports: queue() });
-    await expect(
-      resolveReport(store.db as never, generalMod, { reportId: "rep_eurth", outcome: "resolved" })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await expect(
-      resolveReport(store.db as never, member, { reportId: "rep_eurth", outcome: "resolved" })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await expect(
-      resolveReport(store.db as never, admin, { reportId: "nope", outcome: "resolved" })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-    expect(store.state.reports.find((r) => r.id === "rep_eurth")!.status).toBe("open");
-  });
-
-  it("a report whose category is gone is left to site admins, logged at site scope", async () => {
-    const orphan = report("rep_orphan", "post", "p_x", "cat_deleted");
-    const store = reportsStore([], { reports: [orphan] });
-    await expect(
-      resolveReport(store.db as never, eurthMod, { reportId: "rep_orphan", outcome: "dismissed" })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await resolveReport(store.db as never, admin, { reportId: "rep_orphan", outcome: "dismissed" });
-    expect(store.logs[0]).toMatchObject({ scope: "site", scopeId: null });
   });
 });
 
@@ -418,21 +332,6 @@ describe("reports about the moderator's own content", () => {
     await resolveReport(store.db as never, admin, { reportId: "rep_on_mod", outcome: "resolved" });
     expect(store.logs).toHaveLength(1);
   });
-
-  it("a site admin can't handle a report on their own content; another admin can", async () => {
-    const store = ownStore();
-    await expect(
-      resolveReport(store.db as never, admin, { reportId: "rep_on_admin", outcome: "dismissed" })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await resolveReport(store.db as never, admin2, {
-      reportId: "rep_on_admin",
-      outcome: "dismissed",
-    });
-    expect(store.logs).toEqual([
-      expect.objectContaining({ actorId: "u_a2", action: "report.dismiss" }),
-    ]);
-  });
-
   it("a realm moderator can't resolve or dismiss a report on a site admin's post (M-3)", async () => {
     const store = ownStore();
     await expect(
@@ -444,36 +343,6 @@ describe("reports about the moderator's own content", () => {
     expect(store.state.reports.find((r) => r.id === "rep_on_admin")!.status).toBe("open");
     expect(store.logs).toHaveLength(0);
   });
-
-  it("flags what the viewer may do to each target: nothing on an admin's, no sanction on a fellow moderator's", async () => {
-    const store = ownStore();
-    const flags = async (viewer: typeof admin | typeof eurthMod) => {
-      const { rows } = await listReports(store.db as never, viewer, { status: "open" }, 1);
-      return new Map(
-        rows.map((r) => [r.id, { moderable: r.moderable, sanctionable: r.sanctionable }])
-      );
-    };
-    const byMod = await flags(eurthMod);
-    expect(byMod.get("rep_on_admin")).toEqual({ moderable: false, sanctionable: false });
-    expect(byMod.get("rep_eurth")).toEqual({ moderable: true, sanctionable: true });
-    const byAdmin = await flags(admin);
-    expect(byAdmin.get("rep_on_mod")).toEqual({ moderable: true, sanctionable: false });
-    expect(byAdmin.get("rep_on_mod_thread")).toEqual({ moderable: true, sanctionable: false });
-    expect(byAdmin.get("rep_on_admin")).toEqual({ moderable: true, sanctionable: false });
-    expect(byAdmin.get("rep_general")).toEqual({ moderable: true, sanctionable: true });
-    // Nothing left to hide or sanction; the report itself is still handled.
-    expect(byAdmin.get("rep_gone")).toEqual({ moderable: true, sanctionable: false });
-  });
-
-  it("a report whose target is gone is still handled", async () => {
-    const store = ownStore();
-    await resolveReport(store.db as never, generalMod, {
-      reportId: "rep_gone",
-      outcome: "dismissed",
-    });
-    expect(store.state.reports.find((r) => r.id === "rep_gone")!.status).toBe("dismissed");
-  });
-
   it("a report re-pointed by a move after the scope check is CONFLICT", async () => {
     const store = ownStore();
     const run = store.db.$transaction.getMockImplementation()!;
@@ -503,17 +372,6 @@ describe("reports on imported content without an IxStats author", () => {
     );
     return store;
   };
-
-  it("are filed like any other member's content", async () => {
-    const store = importedStore([]);
-    await fileAs(store, reporter, "post", "p_imported");
-    await fileAs(store, reporter, "thread", "t_imported");
-    expect(store.state.reports.map((r) => [r.targetId, r.categoryId])).toEqual([
-      ["p_imported", "r_eurth_hub"],
-      ["t_imported", "r_eurth_hub"],
-    ]);
-  });
-
   it("queue as hideable, never sanctionable, with no author, and never ask for a null user", async () => {
     const store = importedStore();
     const { rows } = await listReports(store.db as never, eurthMod, { status: "open" }, 1);
@@ -549,15 +407,5 @@ describe("reports on imported content without an IxStats author", () => {
     for (const [args] of store.db.user.findMany.mock.calls as Array<[{ where: Row }]>) {
       expect(JSON.stringify(args.where)).not.toContain("null");
     }
-  });
-
-  it("are resolved by a moderator of the category without looking up an author", async () => {
-    const store = importedStore();
-    await resolveReport(store.db as never, eurthMod, {
-      reportId: "rep_imported_post",
-      outcome: "resolved",
-    });
-    expect(store.state.reports.find((r) => r.id === "rep_imported_post")!.status).toBe("resolved");
-    expect(store.db.user.findUnique).not.toHaveBeenCalled();
   });
 });

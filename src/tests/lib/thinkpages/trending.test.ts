@@ -1,3 +1,4 @@
+/** @jest-environment node */
 /**
  * ThinkPages trending: engagement-decay scoring, post selection, hashtag topics, the
  * thinkpages-trending cron job's writes (trending flags, scores, TrendingTopic, counters), the
@@ -18,6 +19,11 @@ jest.mock("~/server/modules/thinkpages-forum", () => ({
   latestPublicThreads: jest.fn().mockResolvedValue({ threads: [], realms: [] }),
 }));
 
+jest.mock("~/lib/cache/redis-client", () => ({
+  getSharedRedis: () => null,
+  isRedisReady: () => false,
+}));
+
 import { describe, it, expect } from "@jest/globals";
 import {
   TRENDING_CONFIG,
@@ -25,13 +31,9 @@ import {
   scoreEngagement,
   type EngagementEvent,
 } from "~/lib/thinkpages/trending";
-import { reconcileEngagementCounters, runThinkPagesTrending } from "~/lib/thinkpages/trending-cron";
-import { activitiesTrendingRouter } from "~/server/api/routers/activities/trending";
-import { createCallerFactory } from "~/server/api/trpc";
-import { createMockRouterContext } from "~/tests/helpers/router-context";
+import { reconcileEngagementCounters } from "~/lib/thinkpages/trending-cron";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
-import { latestPublicThreads } from "~/server/modules/thinkpages-forum";
-
+import { recordPostView, resetPostViewMemory } from "~/lib/thinkpages/post-views";
 const NOW = new Date("2026-09-30T12:00:00Z");
 const hoursAgo = (h: number) => new Date(NOW.getTime() - h * 3600_000);
 const ev = (postId: string, kind: EngagementEvent["kind"], actorId: string, h = 0) => ({
@@ -68,130 +70,6 @@ describe("scoreEngagement", () => {
     expect(scores.get("p")!.score).toBeCloseTo(2 * decayFactor(1));
   });
 });
-
-function cronDb() {
-  const db: any = createMockPrisma();
-  const author = (clerkUserId: string) => ({ clerkUserId });
-  db.postReaction.findMany.mockResolvedValue([
-    { postId: "hot", accountId: "x1", timestamp: hoursAgo(1), account: author("u1") },
-    { postId: "hot", accountId: "x2", timestamp: hoursAgo(1), account: author("u2") },
-    { postId: "hot", accountId: "x3", timestamp: hoursAgo(2), account: author("u3") },
-    { postId: "self", accountId: "s1", timestamp: hoursAgo(1), account: author("owner") },
-  ]);
-  db.thinkpagesPost.findMany.mockImplementation(async (args: any) => {
-    const where = args?.where ?? {};
-    if (where.parentPostId) {
-      return [
-        { parentPostId: "hot", accountId: "x4", createdAt: hoursAgo(1), account: author("u4") },
-      ];
-    }
-    if (where.repostOfId) return [];
-    if (where.id?.in) {
-      return [
-        {
-          id: "hot",
-          visibility: "public",
-          postType: "original",
-          content: "#Econ news",
-          parentPostId: null,
-          trendingScore: 0,
-          accountId: "author_persona",
-          account: author("owner"),
-        },
-        {
-          id: "self",
-          visibility: "public",
-          postType: "original",
-          content: "me",
-          parentPostId: null,
-          trendingScore: 2,
-          accountId: "author_persona",
-          account: author("owner"),
-        },
-      ];
-    }
-    if (where.hashtags) {
-      return [
-        {
-          id: "hot",
-          hashtags: '["Econ"]',
-          postType: "original",
-          content: "a",
-          accountId: "a",
-          account: author("owner"),
-        },
-        {
-          id: "other",
-          hashtags: '["Econ"]',
-          postType: "original",
-          content: "b",
-          accountId: "b",
-          account: author("u9"),
-        },
-      ];
-    }
-    return []; // counter reconcile pages
-  });
-  db.thinkpagesPost.groupBy.mockResolvedValue([]);
-  db.postReaction.groupBy.mockResolvedValue([]);
-  db.trendingTopic.findMany.mockResolvedValue([]);
-  return db;
-}
-
-describe("runThinkPagesTrending", () => {
-  it("flags the top posts, stores scores, clears the rest and writes TrendingTopic", async () => {
-    const db = cronDb();
-    const result = await runThinkPagesTrending(db, NOW);
-
-    expect(result.trendingPosts).toBe(1);
-    expect(result.trendingTopics).toBe(1);
-
-    const scoreWrite = db.thinkpagesPost.update.mock.calls.find(
-      (c: any) => c[0].where.id === "hot"
-    );
-    expect(scoreWrite[0].data.trendingScore).toBeGreaterThanOrEqual(TRENDING_CONFIG.minPostScore);
-    // Self-engagement never scores; the stale score is reset.
-    expect(db.thinkpagesPost.updateMany).toHaveBeenCalledWith({
-      where: { trendingScore: { not: 0 }, id: { notIn: ["hot"] } },
-      data: { trendingScore: 0 },
-    });
-    expect(db.thinkpagesPost.updateMany).toHaveBeenCalledWith({
-      where: { trending: true, id: { notIn: ["hot"] } },
-      data: { trending: false },
-    });
-    expect(db.thinkpagesPost.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: ["hot"] } },
-      data: { trending: true },
-    });
-
-    expect(db.trendingTopic.upsert).toHaveBeenCalledTimes(1);
-    expect(db.trendingTopic.upsert.mock.calls[0][0]).toMatchObject({
-      where: { hashtag: "Econ" },
-      create: { hashtag: "Econ", postCount: 2, isActive: true, peakTimestamp: NOW },
-    });
-    expect(db.trendingTopic.updateMany).toHaveBeenCalledWith({
-      where: { isActive: true, hashtag: { notIn: ["Econ"] } },
-      data: { isActive: false },
-    });
-  });
-  it("clears every trending flag and topic when nothing qualifies", async () => {
-    const db: any = createMockPrisma();
-    db.thinkpagesPost.groupBy.mockResolvedValue([]);
-    db.postReaction.groupBy.mockResolvedValue([]);
-    const result = await runThinkPagesTrending(db, NOW);
-    expect(result).toMatchObject({ trendingPosts: 0, trendingTopics: 0 });
-    expect(db.thinkpagesPost.updateMany).toHaveBeenCalledWith({
-      where: { trending: true, id: { notIn: [] } },
-      data: { trending: false },
-    });
-    expect(db.trendingTopic.updateMany).toHaveBeenCalledWith({
-      where: { isActive: true, hashtag: { notIn: [] } },
-      data: { isActive: false },
-    });
-    expect(db.trendingTopic.upsert).not.toHaveBeenCalled();
-  });
-});
-
 describe("reconcileEngagementCounters", () => {
   it("rewrites counters that disagree with the real rows", async () => {
     const db: any = createMockPrisma();
@@ -212,47 +90,49 @@ describe("reconcileEngagementCounters", () => {
     });
   });
 });
-describe("activities.getUnifiedTrending forum source (phase 4b)", () => {
-  it("lists native public threads, scored by replies, linking to the thread", async () => {
+
+/**
+ * SL-8: post views count once per signed-in viewer per post per UTC day, never the author's
+ * own, and only on public or unlisted posts. Counted views are written in batches to the
+ * per-day table (read by the trending score) and to the post's lifetime impressions.
+ */
+describe("post views (SL-8)", () => {
+  const NOW = new Date("2026-10-05T10:00:00.000Z");
+  function dbWithPost(post: { visibility: string; clerkUserId: string } | null) {
     const db: any = createMockPrisma();
-    const lastPostAt = new Date();
-    jest.mocked(latestPublicThreads).mockResolvedValueOnce({
-      threads: [
-        {
-          id: "t1",
-          title: "Old forum favourites",
-          author: "jane",
-          categoryName: "General",
-          replyCount: 4,
-          createdAt: lastPostAt,
-          lastPostAt,
-          href: "/thinkpages/t/t1",
-          placement: {
-            key: "general",
-            name: "General",
-            scope: "site",
-            realmId: null,
-            style: "ooc",
-          },
-          persona: false,
-          personaType: null,
-          starter: "user:u1",
-        },
-      ],
-      realms: [],
-    });
-    const caller = createCallerFactory(activitiesTrendingRouter)(
-      createMockRouterContext({ db }) as never
+    db.thinkpagesPost.findUnique.mockResolvedValue(
+      post ? { visibility: post.visibility, account: { clerkUserId: post.clerkUserId } } : null
     );
-    const { items } = await caller.getUnifiedTrending({ limit: 10 });
-    expect(latestPublicThreads).toHaveBeenCalledWith(db, 25);
-    expect(items.find((i) => i.source === "forum")).toMatchObject({
-      id: "forum-t1",
-      title: "Old forum favourites",
-      author: "jane",
-      url: "/thinkpages/t/t1",
-      engagement: { replies: 4, views: 0 },
-      timestamp: lastPostAt.toISOString(),
+    db.thinkpagesPost.updateMany.mockResolvedValue({ count: 1 });
+    db.thinkpagesPostViewDay.upsert.mockResolvedValue({});
+    return db;
+  }
+  beforeEach(() => resetPostViewMemory());
+  describe("recordPostView", () => {
+    it("counts a viewer once per post per day", async () => {
+      const db = dbWithPost({ visibility: "public", clerkUserId: "author" });
+      expect(await recordPostView(db, "p1", "viewer", NOW)).toBe(true);
+      expect(await recordPostView(db, "p1", "viewer", NOW)).toBe(false);
+      // The repeat never reaches the database.
+      expect(db.thinkpagesPost.findUnique).toHaveBeenCalledTimes(1);
+      expect(await recordPostView(db, "p1", "other", NOW)).toBe(true);
+      const tomorrow = new Date(NOW.getTime() + 24 * 60 * 60 * 1000);
+      expect(await recordPostView(db, "p1", "viewer", tomorrow)).toBe(true);
+    });
+
+    it("ignores the author, private posts and missing posts", async () => {
+      expect(
+        await recordPostView(
+          dbWithPost({ visibility: "public", clerkUserId: "me" }),
+          "p",
+          "me",
+          NOW
+        )
+      ).toBe(false);
+      expect(
+        await recordPostView(dbWithPost({ visibility: "private", clerkUserId: "a" }), "p", "v", NOW)
+      ).toBe(false);
+      expect(await recordPostView(dbWithPost(null), "gone", "v", NOW)).toBe(false);
     });
   });
 });

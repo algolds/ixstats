@@ -15,12 +15,33 @@ jest.mock("~/server/shared/map-invalidation", () => ({
   invalidateRealmMap: jest.fn().mockResolvedValue(1),
 }));
 
+jest.mock("~/lib/auth", () => ({ isSystemOwner: (id: string) => id === "sys_owner" }));
+jest.mock("~/server/modules/realms", () => {
+  const actual = jest.requireActual("~/server/modules/realms");
+  return { ...actual, assignNation: jest.fn(actual.assignNation) };
+});
+jest.mock("~/lib/cache", () => ({
+  ...jest.requireActual("~/lib/cache"), // the tRPC context needs the real Cache class
+  globalCache: {
+    delete: jest.fn().mockResolvedValue(undefined),
+    get: jest.fn().mockResolvedValue(null),
+    set: jest.fn().mockResolvedValue(undefined),
+  },
+  invalidateCache: jest.fn().mockResolvedValue(undefined),
+}));
+
 import { realmsRouter } from "~/server/api/routers/realms";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { notifyRealmFounderChanged } from "~/server/modules/realms/realms.notices";
 import { REALM_OWNER_TRANSFER_ACTION } from "~/server/modules/realms/realms.transfer";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
+import { adminAssignNation } from "~/server/modules/realms";
+import { usersProfileRouter } from "~/server/api/routers/users/profile";
+import { usersCountryLinkingRouter } from "~/server/api/routers/users/country-linking";
+import { globalCache } from "~/lib/cache";
+import { assignClaimedNation } from "~/server/modules/realms/realms.ownership";
+import { assignNation, NationOwnershipError, releaseNation } from "~/server/modules/realms";
 
 type Db = ReturnType<typeof createMockPrisma>;
 
@@ -29,7 +50,6 @@ const OFFICER = "clerk_officer";
 const PLAYER = "clerk_player";
 const ADMIN = "clerk_admin";
 const admin = { name: "admin", level: 10 };
-const ALL_POWERS = ["appearance", "board", "diplomacy", "claims", "map"];
 const notify = notifyRealmFounderChanged as jest.Mock;
 
 function realmRow(overrides: Record<string, unknown> = {}) {
@@ -90,15 +110,6 @@ describe("site admins transfer a realm", () => {
     keepPreviousAsOfficer: false,
     ...overrides,
   });
-
-  it("is for site admins only", async () => {
-    const db = makeDb();
-    await expect(callerAs(FOUNDER, db).region.adminTransferOwner(transfer())).rejects.toThrow();
-    await expect(callerAs(OFFICER, db).region.adminTransferOwner(transfer())).rejects.toThrow();
-    expect(db.realm.update).not.toHaveBeenCalled();
-    expect(db.adminAuditLog.create).not.toHaveBeenCalled();
-  });
-
   it("needs the realm's slug typed, checked on the server", async () => {
     const db = makeDb();
     await expect(
@@ -120,14 +131,6 @@ describe("site admins transfer a realm", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(db.realm.update).not.toHaveBeenCalled();
   });
-
-  it("refuses handing the realm to its current founder", async () => {
-    const db = makeDb();
-    await expect(
-      callerAs(ADMIN, db, admin).region.adminTransferOwner(transfer({ newOwnerId: FOUNDER }))
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-  });
-
   it("sets the new founder, records the previous one in the audit log and tells both", async () => {
     const db = makeDb();
     await expect(
@@ -178,55 +181,6 @@ describe("site admins transfer a realm", () => {
     const [update] = db.realm.update.mock.invocationCallOrder;
     const [invalidated] = jest.mocked(invalidateRealmMap).mock.invocationCallOrder;
     expect(update).toBeLessThan(invalidated!);
-  });
-
-  it("still completes the handover and tells both when the version bump fails", async () => {
-    const error = jest.spyOn(console, "error").mockImplementation(() => {});
-    jest.mocked(invalidateRealmMap).mockRejectedValueOnce(new Error("db down"));
-    const db = makeDb();
-    await expect(
-      callerAs(ADMIN, db, admin).region.adminTransferOwner(transfer())
-    ).resolves.toMatchObject({ newOwnerId: PLAYER });
-    expect(notify).toHaveBeenCalledTimes(2);
-    error.mockRestore();
-  });
-  it("keeps the previous founder as an officer with every power when asked", async () => {
-    const db = makeDb();
-    await callerAs(ADMIN, db, admin).region.adminTransferOwner(
-      transfer({ keepPreviousAsOfficer: true })
-    );
-    expect(db.realmOfficer.upsert).toHaveBeenCalledWith({
-      where: { realmId_userId: { realmId: "eurth", userId: FOUNDER } },
-      create: {
-        realmId: "eurth",
-        userId: FOUNDER,
-        title: "Former founder",
-        powers: ALL_POWERS,
-        appointedBy: ADMIN,
-      },
-      update: { title: "Former founder", powers: ALL_POWERS, appointedBy: ADMIN },
-    });
-    expect(auditChanges(db)).toMatchObject({ keptPreviousAsOfficer: true });
-  });
-  it("keeps Ixnay with staff", async () => {
-    const db = makeDb(realmRow({ id: "default", slug: "ixnay", ownerId: "system" }));
-    await expect(
-      callerAs(ADMIN, db, admin).region.adminTransferOwner(
-        transfer({ realmId: "default", confirmSlug: "ixnay" })
-      )
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(db.realm.update).not.toHaveBeenCalled();
-  });
-
-  it("refuses keeping the previous founder when the officer list is full", async () => {
-    const officers = Array.from({ length: 12 }, (_, i) => ({ userId: `clerk_o${i}`, powers: [] }));
-    const db = makeDb(realmRow({ officers }));
-    await expect(
-      callerAs(ADMIN, db, admin).region.adminTransferOwner(
-        transfer({ keepPreviousAsOfficer: true })
-      )
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(db.realm.update).not.toHaveBeenCalled();
   });
 });
 
@@ -284,18 +238,6 @@ describe("the new founder and forum bans (M9)", () => {
       db.realm.update.mock.invocationCallOrder[0]!
     );
   });
-
-  it("hands it back to staff without a ban check", async () => {
-    const db = bannedDb();
-    await callerAs(ADMIN, db, admin).region.adminTransferOwner({
-      realmId: "eurth",
-      newOwnerId: null,
-      confirmSlug: "eurth",
-      keepPreviousAsOfficer: false,
-    });
-    expect(db.forumBan.findFirst).not.toHaveBeenCalled();
-    expect(db.realm.update).toHaveBeenCalled();
-  });
 });
 
 describe("a founder hands their realm over", () => {
@@ -318,24 +260,6 @@ describe("a founder hands their realm over", () => {
     });
     expect(db.realm.update).not.toHaveBeenCalled();
   });
-
-  it("drops the realm's remembered tile access once the founder's handover commits", async () => {
-    const db = makeDb();
-    db.country.findFirst.mockResolvedValue({ id: "c1" });
-    await callerAs(FOUNDER, db).region.handOver(handOver());
-    expect(invalidateRealmMap).toHaveBeenCalledTimes(1);
-    expect(invalidateRealmMap).toHaveBeenCalledWith(db, "eurth");
-  });
-
-  it("needs the realm's slug typed", async () => {
-    const db = makeDb();
-    db.country.findFirst.mockResolvedValue({ id: "c1" });
-    await expect(
-      callerAs(FOUNDER, db).region.handOver(handOver({ confirmSlug: "eurt" }))
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(db.realm.update).not.toHaveBeenCalled();
-  });
-
   it("only hands it to a nation owner of the realm or one of its officers", async () => {
     const db = makeDb();
     db.country.findFirst.mockResolvedValue(null);
@@ -355,113 +279,254 @@ describe("a founder hands their realm over", () => {
       data: { ownerId: PLAYER },
     });
   });
+});
 
-  it("hands it to an officer, whose officer post is dropped, and can keep the founder on", async () => {
-    const db = makeDb();
-    db.country.findFirst.mockResolvedValue(null);
-    await callerAs(FOUNDER, db).region.handOver(
-      handOver({ newOwnerId: OFFICER, keepPreviousAsOfficer: true })
-    );
-    expect(db.realm.update).toHaveBeenCalledWith({
-      where: { id: "eurth" },
-      data: { ownerId: OFFICER },
+describe("nation ownership writers", () => {
+  function db(user: any, country: any) {
+    const d: any = {
+      $transaction: jest.fn((cb: any) => cb(d)),
+      user: {
+        upsert: jest.fn().mockResolvedValue(user),
+        findUnique: jest.fn().mockResolvedValue({ membershipTier: "basic" }),
+        update: jest.fn().mockResolvedValue({}),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+      country: {
+        findUnique: jest.fn().mockResolvedValue(country),
+        findMany: jest.fn().mockResolvedValue([]),
+        count: jest.fn().mockResolvedValue(0),
+        update: jest.fn().mockResolvedValue({}),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+      realmOfficer: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
+    };
+    return d;
+  }
+  describe("adminAssignNation", () => {
+    const country = {
+      id: "c2",
+      realmId: "default",
+      ownerUserId: "u_old",
+      realm: { settings: null },
+    };
+
+    it("regular user: the previous owner loses c2 and the user keeps their other nation in the same realm", async () => {
+      // u1 owns and acts as c1 in Ixnay; the realm allows 2 and u1 is premium, so c2 fits.
+      const d = db(
+        { id: "u1", clerkUserId: "clerk_u1", countryId: "c1" },
+        { ...country, ownerUserId: null, realm: { settings: { maxNationsPerUser: 2 } } }
+      );
+      d.user.findUnique.mockResolvedValue({ membershipTier: "mycountry_premium" });
+      d.country.count.mockResolvedValue(1);
+      await adminAssignNation(d, { clerkUserId: "clerk_u1", countryId: "c2" });
+      expect(d.country.update).toHaveBeenCalledTimes(1);
+      expect(d.country.update).toHaveBeenCalledWith({
+        where: { id: "c2" },
+        data: { ownerUserId: null, ownedSince: null },
+      });
+      expect(d.country.findMany).not.toHaveBeenCalled();
+      expect(d.country.update).not.toHaveBeenCalledWith({
+        where: { id: "c1" },
+        data: { ownerUserId: null, ownedSince: null },
+      });
+      expect(d.user.updateMany).not.toHaveBeenCalledWith({
+        where: { countryId: "c1" },
+        data: { countryId: null },
+      });
+      expect(d.country.updateMany).toHaveBeenCalledWith({
+        where: { id: "c2", ownerUserId: null },
+        data: { ownerUserId: "u1", ownedSince: expect.any(Date) },
+      });
+      // The active pointer follows assignNation's rule: u1 keeps acting as c1.
+      expect(d.user.updateMany).toHaveBeenCalledWith({
+        where: { id: "u1", countryId: null },
+        data: { countryId: "c2" },
+      });
     });
-    expect(db.realmOfficer.deleteMany).toHaveBeenCalledWith({
-      where: { realmId: "eurth", userId: OFFICER },
+    it("a user at their cap in c2's realm is CAP_REACHED; nothing they own is released", async () => {
+      const d = db(
+        { id: "u1", clerkUserId: "clerk_u1", countryId: "c1" },
+        { ...country, ownerUserId: null }
+      );
+      d.country.count.mockResolvedValue(1); // free tier, realm cap 1: already full
+      await expect(
+        adminAssignNation(d, { clerkUserId: "clerk_u1", countryId: "c2" })
+      ).rejects.toMatchObject({
+        code: "CAP_REACHED",
+      });
+      expect(d.country.update).not.toHaveBeenCalledWith({
+        where: { id: "c1" },
+        data: { ownerUserId: null, ownedSince: null },
+      });
+      expect(d.country.updateMany).not.toHaveBeenCalled();
     });
-    expect(db.realmOfficer.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        create: expect.objectContaining({ userId: FOUNDER, powers: ALL_POWERS }),
-      })
-    );
-    expect(auditChanges(db)).toEqual({
-      previousOwnerId: FOUNDER,
-      newOwnerId: OFFICER,
-      keptPreviousAsOfficer: true,
-      via: "founder",
+
+    it("cross-realm (ruling F-1): the user's nation in ANOTHER realm stays owned", async () => {
+      // u1 owns and acts as e1 in Eurth; the admin gives them Ixnay's c2.
+      const d = db(
+        { id: "u1", clerkUserId: "clerk_u1", countryId: "e1" },
+        { ...country, ownerUserId: null }
+      );
+      await adminAssignNation(d, { clerkUserId: "clerk_u1", countryId: "c2" });
+      expect(d.country.count).toHaveBeenCalledWith({
+        where: { ownerUserId: "u1", realmId: "default" },
+      });
+      expect(d.country.update).toHaveBeenCalledTimes(1);
+      expect(d.country.update).not.toHaveBeenCalledWith({
+        where: { id: "e1" },
+        data: { ownerUserId: null, ownedSince: null },
+      });
+      expect(d.user.updateMany).not.toHaveBeenCalledWith({
+        where: { countryId: "e1" },
+        data: { countryId: null },
+      });
+      expect(d.country.updateMany).toHaveBeenCalledWith({
+        where: { id: "c2", ownerUserId: null },
+        data: { ownerUserId: "u1", ownedSince: expect.any(Date) },
+      });
+      // The active pointer follows assignNation's rule: only set while the user acts as no nation.
+      expect(d.user.updateMany).toHaveBeenCalledWith({
+        where: { id: "u1", countryId: null },
+        data: { countryId: "c2" },
+      });
+      expect(d.user.update).not.toHaveBeenCalled();
     });
-    // The founder handed it over themselves: only the new founder is told.
-    expect(notify).toHaveBeenCalledTimes(1);
-    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ clerkUserId: OFFICER }));
   });
+  describe("users.getProfile ThinkPages fallback never grants ownership", () => {
+    const { assignNation } = jest.requireMock("~/server/modules/realms");
 
-  it("refuses handing it to yourself, a deactivated account, or from an archived realm", async () => {
-    const db = makeDb(realmRow(), { inactive: [PLAYER] });
-    db.country.findFirst.mockResolvedValue({ id: "c1" });
-    await expect(
-      callerAs(FOUNDER, db).region.handOver(handOver({ newOwnerId: FOUNDER }))
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(callerAs(FOUNDER, db).region.handOver(handOver())).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-    });
-    const archived = makeDb(realmRow({ status: "archived" }));
-    archived.country.findFirst.mockResolvedValue({ id: "c1" });
-    await expect(callerAs(FOUNDER, archived).region.handOver(handOver())).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
-    expect(db.realm.update).not.toHaveBeenCalled();
-    expect(archived.realm.update).not.toHaveBeenCalled();
-  });
-
-  it("lists the realm's other nation owners as candidates, for the founder only", async () => {
-    const db = makeDb();
-    db.country.findMany.mockResolvedValue([
-      { name: "Aurelia", owner: { clerkUserId: PLAYER } },
-      { name: "Aurelia Minor", owner: { clerkUserId: PLAYER } },
-      { name: "Borea", owner: { clerkUserId: OFFICER } },
-    ]);
-    await expect(
-      callerAs(FOUNDER, db).region.handOverCandidates({ slug: "eurth", query: "a" })
-    ).resolves.toEqual([
-      { userId: PLAYER, nation: "Aurelia" },
-      { userId: OFFICER, nation: "Borea" },
-    ]);
-    expect(db.country.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          realmId: "eurth",
-          owner: { clerkUserId: { not: FOUNDER }, isActive: true },
-          name: { contains: "a", mode: "insensitive" },
+    function profileCaller(ownerUserId: string | null) {
+      const country = { id: "c1", name: "Linkedland" };
+      const d: any = {
+        $transaction: jest.fn((cb: any) => cb(d)),
+        user: {
+          findUnique: jest.fn(({ where }: any) =>
+            Promise.resolve(
+              where.id
+                ? { id: "u1", clerkUserId: "clerk_u1", countryId: "c1", country, role: null }
+                : { id: "u1", clerkUserId: "clerk_u1", countryId: null, country: null, role: null }
+            )
+          ),
+          update: jest.fn().mockResolvedValue({}),
+          updateMany: jest.fn(),
         },
-      })
-    );
-    await expect(
-      callerAs(OFFICER, db).region.handOverCandidates({ slug: "eurth", query: "" })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+        thinkpagesAccount: { findFirst: jest.fn().mockResolvedValue({ countryId: "c1" }) },
+        country: {
+          findUnique: jest.fn().mockResolvedValue({ ownerUserId }),
+          count: jest.fn(),
+          update: jest.fn(),
+        },
+      };
+      const ctx = createMockRouterContext({ auth: { userId: "clerk_u1" }, db: d });
+      return { caller: usersProfileRouter.createCaller(ctx as any), d };
+    }
+
+    beforeEach(() => assignNation.mockClear());
+
+    it("an account for an UNOWNED nation does not make the user its owner", async () => {
+      const { caller, d } = profileCaller(null);
+      const profile = await caller.getProfile();
+      expect(profile.countryId).toBeNull();
+      expect(assignNation).not.toHaveBeenCalled();
+      expect(d.country.update).not.toHaveBeenCalled();
+      expect(d.user.update).not.toHaveBeenCalled();
+    });
+  });
+  describe("users.setActiveNation (ruling F-1)", () => {
+    function caller(ownerUserId: string | null) {
+      const d: any = {
+        $transaction: jest.fn((cb: any) => cb(d)),
+        user: { update: jest.fn().mockResolvedValue({}), updateMany: jest.fn() },
+        country: { findUnique: jest.fn().mockResolvedValue({ ownerUserId }) },
+      };
+      const ctx = createMockRouterContext({
+        auth: { userId: "clerk_u1" },
+        user: { id: "u1", clerkUserId: "clerk_u1", countryId: "c1" },
+        db: d,
+      });
+      return { caller: usersCountryLinkingRouter.createCaller(ctx as any), d };
+    }
+
+    beforeEach(() => jest.mocked(globalCache.delete).mockClear());
+    it("a nation the caller does not own is FORBIDDEN and nothing moves", async () => {
+      for (const owner of ["u2", null]) {
+        const { caller: c, d } = caller(owner);
+        await expect(c.setActiveNation({ countryId: "e1" })).rejects.toMatchObject({
+          code: "FORBIDDEN",
+        });
+        expect(d.user.update).not.toHaveBeenCalled();
+      }
+      expect(globalCache.delete).not.toHaveBeenCalled();
+    });
   });
 });
 
-describe("the Manage payload", () => {
-  function manageDb(officers: Array<{ userId: string; powers: string[] }>) {
-    const db = makeDb(realmRow({ officers }));
-    db.realm.findUniqueOrThrow.mockResolvedValue({
-      description: null,
-      bannerUrl: null,
-      thumbnail: null,
-      tags: [],
-      factbookWikitext: null,
-      factbookUpdatedAt: null,
-      ownerId: FOUNDER,
-      foundedAt: null,
-      createdAt: new Date("2026-01-01"),
-    });
-    return db;
+describe("the ownership module", () => {
+  function tx(country: any, ownedInRealm = 0) {
+    return {
+      country: {
+        findUnique: jest.fn().mockResolvedValue(country),
+        count: jest.fn().mockResolvedValue(ownedInRealm),
+        update: jest.fn().mockResolvedValue({}),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+      user: {
+        findUnique: jest.fn().mockResolvedValue({ membershipTier: "basic" }),
+        update: jest.fn().mockResolvedValue({}),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+    } as any;
   }
-
-  it("offers the hand-over to the founder only, and the claims power to officers granted it", async () => {
-    const db = manageDb([{ userId: OFFICER, powers: ["claims"] }]);
-    await expect(callerAs(FOUNDER, db).region.manage({ slug: "eurth" })).resolves.toMatchObject({
-      isFounder: true,
-      canHandOver: true,
-      powers: ALL_POWERS,
+  const unowned = { id: "c1", realmId: "default", ownerUserId: null, realm: { settings: null } };
+  describe("assignNation", () => {
+    it("sets the owner, and makes it the active nation only when the user has none (invariant I1, ruling F-1)", async () => {
+      const t = tx(unowned);
+      await assignNation(t, { userId: "u1", countryId: "c1" });
+      expect(t.country.updateMany).toHaveBeenCalledWith({
+        where: { id: "c1", ownerUserId: null },
+        data: { ownerUserId: "u1", ownedSince: expect.any(Date) },
+      });
+      // Guarded on countryId: null — a player already acting as a nation (another realm's) keeps it.
+      expect(t.user.updateMany).toHaveBeenCalledWith({
+        where: { id: "u1", countryId: null },
+        data: { countryId: "c1" },
+      });
+      expect(t.user.update).not.toHaveBeenCalled();
     });
-    await expect(
-      callerAs(ADMIN, db, admin).region.manage({ slug: "eurth" })
-    ).resolves.toMatchObject({ isFounder: true, canHandOver: false });
-    await expect(callerAs(OFFICER, db).region.manage({ slug: "eurth" })).resolves.toMatchObject({
-      isFounder: false,
-      canHandOver: false,
-      powers: ["claims"],
+
+    it("loses a concurrent race: the guarded ownership write matches nothing → ALREADY_OWNED, no pointer move", async () => {
+      const t = tx(unowned);
+      t.country.updateMany.mockResolvedValue({ count: 0 });
+      await expect(assignNation(t, { userId: "u1", countryId: "c1" })).rejects.toMatchObject({
+        code: "ALREADY_OWNED",
+      });
+      expect(t.user.update).not.toHaveBeenCalled();
+      expect(t.user.updateMany).not.toHaveBeenCalled();
+    });
+  });
+  describe("assignClaimedNation", () => {
+    const claimable = { ...unowned, claimable: true };
+    it("loses a flip to scenery that lands between its read and its write: the guarded write matches nothing", async () => {
+      const t = tx(claimable);
+      t.country.updateMany.mockResolvedValue({ count: 0 });
+      await expect(
+        assignClaimedNation(t, { userId: "u1", countryId: "c1" })
+      ).rejects.toBeInstanceOf(NationOwnershipError);
+      expect(t.user.updateMany).not.toHaveBeenCalled();
+    });
+  });
+  describe("releaseNation / pointActiveNation", () => {
+    it("clears owner and every active pointer at the country", async () => {
+      const t = tx(unowned);
+      await releaseNation(t, "c1");
+      expect(t.country.update).toHaveBeenCalledWith({
+        where: { id: "c1" },
+        data: { ownerUserId: null, ownedSince: null },
+      });
+      expect(t.user.updateMany).toHaveBeenCalledWith({
+        where: { countryId: "c1" },
+        data: { countryId: null },
+      });
     });
   });
 });

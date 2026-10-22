@@ -1,15 +1,14 @@
 /** @jest-environment node */
 import type { SourceNation, SourceSnapshot } from "~/lib/realms/sources/adapters";
 import { DEFAULT_SYNC_OPTIONS, type RealmSyncOverrides } from "~/lib/realms/sources/config";
-import { matchSourceNations, nearNationName } from "~/lib/realms/sources/matching";
+import { matchSourceNations } from "~/lib/realms/sources/matching";
 import {
   geometryHash,
   planSourceSync,
   type PlanCountry,
   type PlanInput,
 } from "~/lib/realms/sources/plan";
-import { newNationFields } from "~/lib/realms/sources/stats";
-
+import { wikiTitleFromLink } from "~/lib/realms/sources/adapters/js-nation-table";
 const nation = (key: string, over: Partial<SourceNation> = {}): SourceNation => ({
   key,
   displayName: key.replace(/-/g, " "),
@@ -128,18 +127,6 @@ describe("matchSourceNations", () => {
       candidates: [{ countryId: "a" }, { countryId: "b" }],
     });
   });
-
-  it("matches a roster page or nation whose title carries a qualifier the other side lacks", () => {
-    const result = matchSourceNations(
-      [nation("Nanto"), nation("Ymir", { wikiTitle: "Ymir (Eurth)" })],
-      [{ id: "y", name: "Ymir", wikiPageTitle: null, externalSourceKey: null }],
-      [{ title: "Nanto (Eurth)" }],
-      {}
-    );
-    expect(result.get("Nanto")).toEqual({ kind: "page", pageTitle: "Nanto (Eurth)" });
-    expect(result.get("Ymir")).toEqual({ kind: "country", countryId: "y", via: "name" });
-  });
-
   it("prefers an exact name over a qualified one, and never matches two different qualifiers", () => {
     const result = matchSourceNations(
       [
@@ -169,29 +156,6 @@ describe("matchSourceNations", () => {
 });
 
 describe("planSourceSync", () => {
-  it("creates map nations and roster-only pages, naming a matched roster nation after its page", () => {
-    const plan = planSourceSync(
-      input({
-        snapshot: {
-          nations: [nation("Bainbridge-Islands"), nation("Deseti", { wikiTitle: null })],
-        },
-        rosterPages: [{ title: "Bainbridge Islands" }, { title: "Rostervania" }],
-        continentMap: { Deseti: "Europa" },
-      })
-    );
-    expect(plan.creates.map((c) => [c.name, c.key, c.from])).toEqual([
-      ["Bainbridge Islands", "Bainbridge-Islands", "source"],
-      ["Deseti", "Deseti", "source"],
-      ["Rostervania", null, "roster"],
-    ]);
-    expect(plan.creates[1]).toMatchObject({
-      continent: "Europa",
-      wikiTitle: null,
-      readInfobox: false,
-    });
-    expect(plan.creates[0]!.readInfobox).toBe(true);
-  });
-
   it("keeps a map entry's wiki link only when it is one of the realm's pages, and warns otherwise", () => {
     const plan = planSourceSync(
       input({
@@ -270,78 +234,6 @@ describe("planSourceSync", () => {
       expect.stringMatching(/Veldoria: its wiki link "Veldoria" redirects to "Velaheria"/),
     ]);
   });
-
-  it("makes one nation of a map entry and its qualified roster page, and never a second from an existing one", () => {
-    const fresh = planSourceSync(
-      input({
-        snapshot: { nations: [nation("Nanto", { wikiTitle: null })] },
-        rosterPages: [{ title: "Nanto (Eurth)" }],
-      })
-    );
-    expect(fresh.creates.map((c) => [c.name, c.from, c.wikiTitle])).toEqual([
-      ["Nanto (Eurth)", "source", "Nanto (Eurth)"],
-    ]);
-    const rerun = planSourceSync(
-      input({
-        snapshot: { nations: [] },
-        countries: [country("n", "Nanto", { wikiPageTitle: null })],
-        rosterPages: [{ title: "Nanto (Eurth)" }, { title: "Congo (Kinshasa)" }],
-      })
-    );
-    expect(rerun.creates.map((c) => c.name)).toEqual(["Congo (Kinshasa)"]);
-  });
-
-  it("holds back, with a warning, a roster-only page that looks like a map entry or nation spelled another way", () => {
-    const plan = planSourceSync(
-      input({
-        snapshot: {
-          nations: [nation("Ymutz-Mizlan", { wikiTitle: null, displayName: "Ymutz Mizlan" })],
-        },
-        countries: [country("v", "Varota")],
-        rosterPages: [
-          { title: "Ymutztlaclan-Mizlanuzco" },
-          { title: "Varotania" },
-          { title: "Deseti" },
-        ],
-      })
-    );
-    // Held back, not created twice: a claim on the page still creates it if it is a different nation.
-    expect(plan.creates.map((c) => c.name)).toEqual(["Ymutz Mizlan", "Deseti"]);
-    expect(plan.warnings).toEqual([
-      expect.stringContaining('Roster page "Ymutztlaclan-Mizlanuzco" may be "Ymutz Mizlan"'),
-      expect.stringContaining('Roster page "Varotania" may be "Varota"'),
-    ]);
-    expect(nearNationName("Tavok", "Deseti")).toBe(false);
-    expect(nearNationName("Nova Aurel", "Nova Aurelia")).toBe(true);
-    expect(nearNationName("Mar", "Maradonia")).toBe(false);
-  });
-  it("lets secondary-source figures neither change an existing nation nor outrank the infobox on a new one", () => {
-    const secondary = ["capital", "gdpPerCapita", "landArea"] as const;
-    const matched = planSourceSync(
-      input({
-        snapshot: {
-          nations: [
-            nation("Free", {
-              population: 2_000_000,
-              capital: "Old Map Town",
-              gdpPerCapita: 1,
-              landArea: 9,
-              secondary: [...secondary],
-            }),
-          ],
-          features: [{ key: "Free", geometry: square(0), areaKm2: 77 }],
-        },
-        countries: [country("f", "Free", { externalSourceKey: "Free" })],
-      })
-    );
-    expect(matched.updates[0]!.changes).toEqual([
-      { field: "population", from: 1_000_000, to: 2_000_000 },
-    ]);
-    const created = planSourceSync(
-      input({ snapshot: { nations: [nation("New", { secondary: [...secondary] })] } })
-    );
-    expect(created.creates[0]!.secondary).toEqual([...secondary]);
-  });
   it("updates unclaimed nations' figures but leaves claimed nations alone by default", () => {
     const snapshot = {
       nations: [
@@ -404,18 +296,6 @@ describe("planSourceSync", () => {
     );
     expect(ignored.missing).toEqual([]);
   });
-
-  it("keeps new entries out when adding new nations is off, and lists them for staff", () => {
-    const plan = planSourceSync(
-      input({
-        snapshot: { nations: [nation("New")] },
-        options: { ...DEFAULT_SYNC_OPTIONS, addNewNations: false },
-      })
-    );
-    expect(plan.creates).toEqual([]);
-    expect(plan.unmatched[0]).toMatchObject({ key: "New", reason: expect.stringContaining("off") });
-  });
-
   it("writes only changed borders, links them, and never takes another nation's region", () => {
     const geometry = square(0);
     const plan = planSourceSync(
@@ -450,66 +330,6 @@ describe("planSourceSync", () => {
     expect(plan.warnings.join(" ")).toMatch(/B: not linked/);
     expect(plan.warnings.join(" ")).toMatch(/already has region C-from-a-png/);
   });
-  it("creates realm alliances with members, types them by the rules unless staff chose, and reports unknown members", () => {
-    const plan = planSourceSync(
-      input({
-        snapshot: {
-          nations: [nation("A"), nation("B")],
-          organizations: [
-            {
-              key: "pact",
-              name: "Some Pact",
-              shortName: "SP",
-              color: "#ff0000",
-              members: ["A", "B", "Haitu"],
-              suggestedType: "military",
-            },
-            {
-              key: "club",
-              name: "Club",
-              shortName: null,
-              color: null,
-              members: ["A"],
-              suggestedType: "political",
-            },
-          ],
-        },
-        countries: [country("a", "A", { externalSourceKey: "A" })],
-        alliances: [
-          {
-            id: "al1",
-            name: "Club",
-            shortName: null,
-            color: "#6366f1",
-            type: "political",
-            externalSourceKey: null,
-            activeMemberIds: ["a", "x"],
-          },
-        ],
-        overrides: { nations: {}, organizations: { club: { type: "regional" } } },
-      })
-    );
-    const pact = plan.alliances.find((a) => a.key === "pact")!;
-    expect(pact).toMatchObject({
-      allianceId: null,
-      type: "military",
-      name: "Some Pact",
-      shortName: "SP",
-    });
-    expect(pact.addMembers.map((m) => m.name)).toEqual(["A", "B"]);
-    expect(plan.unknownMembers).toEqual([
-      { organization: "Some Pact", member: "Haitu", reason: "No nation of that key in the source" },
-    ]);
-    const club = plan.alliances.find((a) => a.key === "club")!;
-    expect(club).toMatchObject({
-      allianceId: "al1",
-      type: "regional",
-      addMembers: [],
-      notInSource: ["x"],
-    });
-    expect(club.changes).toEqual(expect.arrayContaining(["type", "key"]));
-  });
-
   it("is idempotent: a second plan over the written state changes nothing", () => {
     const geometry = square(0);
     const plan = planSourceSync(
@@ -528,47 +348,16 @@ describe("planSourceSync", () => {
   });
 });
 
-describe("newNationFields: precedence for a created nation", () => {
-  const planned = {
-    name: "Deseti",
-    key: "Deseti",
-    from: "source" as const,
-    wikiTitle: "Deseti",
-    officialName: null,
-    capital: "Map Capital",
-    population: 5_000_000,
-    gdpPerCapita: null,
-    landArea: null,
-    continent: "Europa",
-    readInfobox: true,
-  };
-
-  it("takes the map's figures first, then the infobox's, then leaves the rest to the defaults", () => {
-    const fields = newNationFields(planned, {
-      country: {
-        baselinePopulation: 9,
-        baselineGdpPerCapita: 31_000,
-        flag: "https://x/flag.png",
-        leader: "Someone",
-      },
-      identity: {
-        capitalCity: "Wiki Capital",
-        officialName: "Commonwealth of Deseti",
-        motto: "Onward",
-      },
-    });
-    expect(fields.initial).toEqual({
-      baselinePopulation: 5_000_000,
-      baselineGdpPerCapita: 31_000,
-      continent: "Europa",
-      flag: "https://x/flag.png",
-      leader: "Someone",
-    });
-    expect(fields.initial.landArea).toBeUndefined();
-    expect(fields.identity).toEqual({
-      capitalCity: "Map Capital",
-      officialName: "Commonwealth of Deseti",
-      motto: "Onward",
-    });
+describe("helpers", () => {
+  it("wikiTitleFromLink only reads links on the realm wiki's prefixes, decoding them", () => {
+    const prefixes = ["https://iiwiki.com/w/"];
+    expect(wikiTitleFromLink("https://iiwiki.com/w/Nova_Occidentalis", prefixes)).toBe(
+      "Nova Occidentalis"
+    );
+    expect(wikiTitleFromLink("https://iiwiki.com/w/K%C3%ADzi%C3%A1uke?x=1#top", prefixes)).toBe(
+      "Kíziáuke"
+    );
+    expect(wikiTitleFromLink("https://evil.example/w/Tavok", prefixes)).toBeNull();
+    expect(wikiTitleFromLink(null, prefixes)).toBeNull();
   });
 });

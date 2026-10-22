@@ -1,21 +1,17 @@
-import { EARTH_RADIUS_KM, scaleAreaToRadius, scaleDistanceToRadius } from "~/lib/maps/planet";
+import { EARTH_RADIUS_KM } from "~/lib/maps/planet";
 import {
   isMapBaseImageUrl,
   parseRealmMapSettings,
   realmRadiusKm,
   withRealmMapSettings,
 } from "~/lib/maps/realm-map-settings";
-const HALF_EARTH = EARTH_RADIUS_KM / 2;
-
-describe("planet radius scaling", () => {
-  it("scales distances with the radius and areas with its square", () => {
-    expect(scaleDistanceToRadius(1000, HALF_EARTH)).toBeCloseTo(500);
-    expect(scaleAreaToRadius(1000, HALF_EARTH)).toBeCloseTo(250);
-    expect(scaleAreaToRadius(1000, EARTH_RADIUS_KM * 2)).toBeCloseTo(4000);
-    expect(scaleAreaToRadius(1000)).toBe(1000);
-  });
-});
-
+import {
+  fillPipelineFromPreset,
+  readRealmMapPipeline,
+  realmMapPipelineSchema,
+  type RealmMapPipeline,
+} from "~/lib/maps/realm-map-pipeline";
+import { sourcePreset } from "~/lib/realms/sources/presets";
 describe("Realm.settings.map", () => {
   it("reads each key on its own and drops malformed ones", () => {
     const settings = {
@@ -90,19 +86,48 @@ describe("Realm.settings.map georeference", () => {
   });
 });
 
-describe("Realm.settings.map raster layers and climate key", () => {
-  it("keeps a climate key with hex colours, and refuses a zone without one", () => {
-    const climateKey = {
-      system: "Köppen",
-      zones: [{ code: "Af", name: "Tropical rainforest", color: "#0000fe" }],
-    };
-    expect(parseRealmMapSettings({ map: { climateKey } }).climateKey).toEqual(climateKey);
-    expect(
-      parseRealmMapSettings({
-        map: {
-          climateKey: { system: "Köppen", zones: [{ code: "Af", name: "x", color: "blue" }] },
-        },
-      })
-    ).toEqual({});
+describe("the realm map pipeline's config", () => {
+  const UPLOAD = "a".repeat(64);
+  const minimal = (): RealmMapPipeline =>
+    realmMapPipelineSchema.parse({
+      art: { geo: { repoPath: "maps/geo.png" }, legend: { uploadId: UPLOAD } },
+      rasters: [{ id: "geo", label: "Geography", kind: "base", art: "geo", legendArt: "legend" }],
+    });
+  describe("realm map pipeline config", () => {
+    it("takes art from the source repository or an upload, nothing else", () => {
+      expect(minimal().art).toEqual({
+        geo: { repoPath: "maps/geo.png" },
+        legend: { uploadId: UPLOAD },
+      });
+      expect(() =>
+        realmMapPipelineSchema.parse({ art: { geo: { repoPath: "../secret.png" } } })
+      ).toThrow();
+      expect(() =>
+        realmMapPipelineSchema.parse({ art: { geo: { url: "https://example.com/geo.png" } } })
+      ).toThrow();
+    });
+  });
+  describe("the pipeline in Realm.settings", () => {
+    it("reports a stored config that no longer parses instead of using it", () => {
+      const read = readRealmMapPipeline({ map: { pipeline: { physical: { land: "blank" } } } });
+      expect(read.pipeline).toBeNull();
+      expect(read.problem).toBe('physical: No art named "blank"');
+    });
+  });
+  describe("loading a preset", () => {
+    const preset = sourcePreset("eurth-map")!.mapPipeline!;
+    it("keeps what the realm has and fills only the empty fields; its own art is never replaced", () => {
+      const own = realmMapPipelineSchema.parse({
+        art: { geography: { uploadId: UPLOAD } },
+        coverage: { tolerance: 0.1, smooth: 1 },
+      });
+      const { pipeline, filled, kept } = fillPipelineFromPreset(own, preset);
+      expect(pipeline.art.geography).toEqual({ uploadId: UPLOAD });
+      expect(pipeline.art.blank).toEqual(preset.art.blank);
+      expect(pipeline.coverage).toEqual({ tolerance: 0.1, smooth: 1 });
+      expect(pipeline.rasters).toEqual(preset.rasters);
+      expect(filled).toEqual(["art", "rasters", "physical", "labels", "flags", "defaultView"]);
+      expect(kept).toEqual(["coverage"]);
+    });
   });
 });

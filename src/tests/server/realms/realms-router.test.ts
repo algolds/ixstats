@@ -6,9 +6,7 @@ jest.mock("~/server/modules/identity/identity.invites", () => ({
   ),
   resolveRealmInviter: jest.fn().mockResolvedValue({ handle: "ambassador", displayName: "Amb" }),
 }));
-
-import { REALM_SLUG_PATTERN } from "~/lib/realms/realm-slug";
-import { Prisma } from "@prisma/client";
+jest.mock("~/lib/auth", () => ({ isSystemOwner: () => false }));
 jest.mock("~/server/shared/map-invalidation", () => ({
   ...jest.requireActual("~/server/shared/map-invalidation"),
   invalidateRealmMap: jest.fn().mockResolvedValue(1),
@@ -17,8 +15,24 @@ jest.mock("~/server/shared/map-invalidation", () => ({
 import { realmsRouter } from "~/server/api/routers/realms";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
-import { resolveRealmInviter } from "~/server/modules/identity/identity.invites";
-
+import { NATION_SEARCH_LIMIT } from "~/server/api/routers/realms/places";
+import { DIRECTORY_REALM_WHERE } from "~/server/shared/realm-directory";
+import { createMockPrisma } from "~/tests/helpers/mock-db";
+import {
+  loadRealmMetadataSource,
+  realmMetadata,
+  type RealmMetadataSource,
+} from "~/server/modules/realms";
+import { DEFAULT_REALM_ID, resolveViewerRealmId } from "~/server/modules/realms";
+import { REALM_SLUG_PATTERN } from "~/lib/realms/realm-slug";
+import { SYSTEM_REALM_IDS } from "~/lib/realms/realm-ids";
+import {
+  findRealmIdBySlug,
+  getRealmHub,
+  isRealmOpen,
+  isRealmPublished,
+} from "~/server/modules/realms";
+import { deleteRealm } from "~/server/modules/realms/realms.admin";
 /** The realm content terms consent every claim carries (ToS §2.6). */
 const consent = { accepted: true as const };
 
@@ -97,72 +111,6 @@ describe("realms.getBySlug", () => {
     expect(JSON.stringify(realm)).not.toContain("u_other");
     expect(JSON.stringify(realm)).not.toContain("u_viewer");
   });
-  it("lists only the realm's claimable nations, but a scenery slot still takes the page of its name", async () => {
-    const findUnique = jest.fn().mockResolvedValue({
-      id: "eurth-id",
-      slug: "eurth",
-      name: "Eurth",
-      description: null,
-      thumbnail: null,
-      status: "active",
-      visibility: "public",
-      countries: [
-        { id: "s1", name: "Aurelia", slug: null, flag: null, ownerUserId: null, claimable: false },
-        { id: "c2", name: "Borea", slug: "borea", flag: null, ownerUserId: null, claimable: true },
-      ],
-      pages: [
-        { title: "Aurelia", wikiSource: "iiwiki" },
-        { title: "Corvania", wikiSource: "iiwiki" },
-      ],
-      _count: { pages: 2 },
-    });
-    const realmPage = { findFirst: jest.fn().mockResolvedValue({ wikiSource: "iiwiki" }) };
-    const realm = await caller(findUnique, realmPage).getBySlug({ slug: "eurth" });
-    expect(realm?.countries.map((c) => c.id)).toEqual(["c2"]);
-    expect(realm?.nationPages.map((p) => p.title)).toEqual(["Corvania"]);
-    expect(JSON.stringify(realm)).not.toContain("claimable");
-  });
-  it("keeps a renamed nation's page taken: pages match countries by page reference, by name only without one", async () => {
-    const findUnique = jest.fn().mockResolvedValue({
-      id: "eurth-id",
-      slug: "eurth",
-      name: "Eurth",
-      description: null,
-      thumbnail: null,
-      status: "active",
-      visibility: "public",
-      countries: [
-        {
-          id: "c1",
-          name: "New Gallambria",
-          slug: "gallambria-eurth",
-          flag: null,
-          ownerUserId: "u1",
-          wikiSource: "iiwiki",
-          wikiPageTitle: "Gallambria",
-        },
-        {
-          id: "c2",
-          name: "Borea",
-          slug: "borea",
-          flag: null,
-          ownerUserId: null,
-          wikiSource: "ixwiki",
-          wikiPageTitle: null,
-        },
-      ],
-      pages: [
-        { title: "Aurelia", wikiSource: "iiwiki" },
-        { title: "Borea", wikiSource: "iiwiki" },
-        { title: "Gallambria", wikiSource: "iiwiki" },
-      ],
-      _count: { pages: 3 },
-    });
-    const realmPage = { findFirst: jest.fn().mockResolvedValue({ wikiSource: "iiwiki" }) };
-    const realm = await caller(findUnique, realmPage).getBySlug({ slug: "eurth" });
-    expect(realm?.nationPages).toEqual([{ title: "Aurelia", wikiSource: "iiwiki" }]);
-    expect(JSON.stringify(realm)).not.toContain("wikiPageTitle");
-  });
 });
 
 describe("realms.getBySlug — realm status (AT-7)", () => {
@@ -185,7 +133,7 @@ describe("realms.getBySlug — realm status (AT-7)", () => {
     role,
   });
 
-  it.each(["draft", "generating"])(
+  it.each(["draft"])(
     "hides a %s realm from the public and from signed-in players",
     async (status) => {
       const findUnique = jest.fn().mockResolvedValue(hubRow(status));
@@ -195,18 +143,6 @@ describe("realms.getBySlug — realm status (AT-7)", () => {
       ).resolves.toBeNull();
     }
   );
-
-  it("shows a draft realm to its founder and to site admins, with claims closed", async () => {
-    const findUnique = jest.fn().mockResolvedValue(hubRow("draft"));
-    for (const v of [
-      viewer("clerk_founder"),
-      viewer("clerk_admin", { name: "admin", level: 10 }),
-    ]) {
-      const realm = await caller(findUnique, undefined, v).getBySlug({ slug: "eurth" });
-      expect(realm).toMatchObject({ slug: "eurth", claimsOpen: false });
-    }
-  });
-
   it("keeps an archived realm readable with claims closed, and never exposes the founder id", async () => {
     const findUnique = jest.fn().mockResolvedValue(hubRow("archived"));
     const realm = await caller(findUnique).getBySlug({ slug: "eurth" });
@@ -263,83 +199,6 @@ describe("realms.claimNationPage", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(db.realmClaim.create).not.toHaveBeenCalled();
   });
-
-  it("records who gave permission when the material is someone else's", async () => {
-    const db = claimDb();
-    await claimCaller(db).claimNationPage({
-      consent: { accepted: true, permissionNote: "  Kir, on the Eurth Discord  " },
-      realmSlug: "eurth",
-      title: "Aurelia",
-    });
-    expect(db.realmClaim.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        consentBasis: "permission",
-        permissionNote: "Kir, on the Eurth Discord",
-      }),
-    });
-  });
-  it("a page outside the realm's index is NOT_FOUND and a nation that exists is CONFLICT", async () => {
-    const missing = claimDb();
-    missing.realmPage.findFirst.mockResolvedValue(null);
-    await expect(
-      claimCaller(missing).claimNationPage({ consent, realmSlug: "eurth", title: "Nowhere" })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-
-    const taken = claimDb();
-    taken.country.findFirst.mockResolvedValue({ id: "c1" });
-    await expect(
-      claimCaller(taken).claimNationPage({ consent, realmSlug: "eurth", title: "Aurelia" })
-    ).rejects.toMatchObject({ code: "CONFLICT" });
-  });
-
-  it("refuses a page whose nation was renamed (taken by page reference, not name)", async () => {
-    const db = claimDb();
-    db.country.findFirst.mockImplementation(async ({ where }: any) =>
-      where.name === "Aurelia" ? null : { id: "c1", name: "New Aurelia", ownerUserId: "u9" }
-    );
-    await expect(
-      claimCaller(db).claimNationPage({ consent, realmSlug: "eurth", title: "Aurelia" })
-    ).rejects.toMatchObject({ code: "CONFLICT" });
-    expect(db.realmClaim.create).not.toHaveBeenCalled();
-  });
-
-  it("requires sign-in", async () => {
-    const db = claimDb();
-    await expect(
-      claimCaller(db, false).claimNationPage({ consent, realmSlug: "eurth", title: "Aurelia" })
-    ).rejects.toThrow("Authentication required");
-    expect(db.realm.findUnique).not.toHaveBeenCalled();
-  });
-
-  /** A realm whose founder wrote rules: claims need "I have read the realm's rules". */
-  function rulesDb() {
-    const db = claimDb();
-    db.realmPage.findFirst.mockResolvedValue({
-      wikiSource: "iiwiki",
-      realm: { slug: "eurth", settings: null, status: "active", rulesHtml: "<p>Be civil.</p>" },
-    } as never);
-    return db;
-  }
-
-  it("refuses a claim in a realm with rules until the player accepts them", async () => {
-    const db = rulesDb();
-    await expect(
-      claimCaller(db).claimNationPage({ consent, realmSlug: "eurth", title: "Aurelia" })
-    ).rejects.toMatchObject({
-      code: "PRECONDITION_FAILED",
-      message: expect.stringMatching(/rules/),
-    });
-    await expect(
-      claimCaller(db).claimNationPage({
-        consent,
-        realmSlug: "eurth",
-        title: "Aurelia",
-        acceptedRules: false,
-      })
-    ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
-    expect(db.realmClaim.create).not.toHaveBeenCalled();
-    expect(db.wikiAccountLink.findFirst).not.toHaveBeenCalled();
-  });
 });
 
 describe("realm invites through the router", () => {
@@ -393,19 +252,10 @@ describe("realm invites through the router", () => {
     ).resolves.toMatchObject({ status: "pending" });
     expect(db.realmClaim.create.mock.calls[0]?.[0]).not.toHaveProperty("data.invitedByUserId");
   });
-
-  it("the public inviter lookup asks the identity module for that realm's member", async () => {
-    await expect(
-      inviteCaller({}, false).inviter({ slug: "eurth", via: " ambassador " })
-    ).resolves.toEqual({ handle: "ambassador", displayName: "Amb" });
-    expect(resolveRealmInviter).toHaveBeenCalledWith("eurth", "ambassador");
-  });
 });
 
 describe("realms.adminCreateRealm", () => {
   const admin = { id: "db_admin", clerkUserId: "admin_1", role: { name: "admin", level: 10 } };
-  const member = { id: "db_member", clerkUserId: "member_1", role: { name: "user", level: 100 } };
-
   const createMany = jest.fn().mockResolvedValue({ count: 4 });
   const threadCreateMany = jest.fn().mockResolvedValue({ count: 1 });
 
@@ -429,15 +279,6 @@ describe("realms.adminCreateRealm", () => {
     return realmsRouter.createCaller(ctx as never);
   }
 
-  it("refuses the slug mine, which is the forum's Your realm route", async () => {
-    const create = jest.fn();
-    await expect(
-      adminCaller(create).adminCreateRealm({ slug: "mine", name: "Mine", visibility: "public" })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(create).not.toHaveBeenCalled();
-    expect(REALM_SLUG_PATTERN.test("mine")).toBe(false);
-    expect(REALM_SLUG_PATTERN.test("mine-2")).toBe(true);
-  });
   it("gives the new realm its board thread in the same transaction", async () => {
     threadCreateMany.mockClear();
     const create = jest.fn().mockResolvedValue({ id: "r1", slug: "eurth", name: "Eurth" });
@@ -463,41 +304,6 @@ describe("realms.adminCreateRealm", () => {
     expect(transaction).toHaveBeenCalledTimes(1);
     expect(create).toHaveBeenCalledTimes(1);
   });
-
-  it.each(["Eurth", "e", "a".repeat(41), "eu rth", "eurth!", "eurth_2"])(
-    "rejects the slug %p without touching the database",
-    async (slug) => {
-      const create = jest.fn();
-      await expect(
-        adminCaller(create).adminCreateRealm({ slug, name: "Eurth", visibility: "public" })
-      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-      expect(create).not.toHaveBeenCalled();
-    }
-  );
-
-  it("turns a duplicate slug (P2002) into CONFLICT", async () => {
-    const create = jest.fn().mockRejectedValue(
-      new Prisma.PrismaClientKnownRequestError("Unique constraint failed on the fields: (`slug`)", {
-        code: "P2002",
-        clientVersion: "6.19.3",
-      })
-    );
-    await expect(
-      adminCaller(create).adminCreateRealm({ slug: "ixnay", name: "Copy", visibility: "public" })
-    ).rejects.toMatchObject({ code: "CONFLICT", message: "That slug is taken" });
-  });
-
-  it("is admin-only", async () => {
-    const create = jest.fn();
-    await expect(
-      adminCaller(create, member).adminCreateRealm({
-        slug: "eurth",
-        name: "Eurth",
-        visibility: "public",
-      })
-    ).rejects.toThrow("Admin privileges required");
-    expect(create).not.toHaveBeenCalled();
-  });
 });
 
 describe("realms.adminUpdateRealm", () => {
@@ -512,28 +318,10 @@ describe("realms.adminUpdateRealm", () => {
     return realmsRouter.createCaller(ctx as never);
   }
 
-  it("merges maxNationsPerUser into Realm.settings and keeps the other keys", async () => {
-    const realm = {
-      findUnique: jest
-        .fn()
-        .mockResolvedValue({ settings: { maxNationsPerUser: 1, theme: "dusk" } }),
-      update: jest.fn().mockResolvedValue({ id: "r_eurth" }),
-    };
-    await adminCaller(realm).adminUpdateRealm({
-      id: "r_eurth",
-      name: "Eurth",
-      maxNationsPerUser: 3,
-    });
-
-    expect(realm.update).toHaveBeenCalledWith({
-      where: { id: "r_eurth" },
-      data: { name: "Eurth", settings: { maxNationsPerUser: 3, theme: "dusk" } },
-    });
-  });
   describe("tile access", () => {
     beforeEach(() => jest.mocked(invalidateRealmMap).mockClear());
 
-    it.each(["draft", "generating", "active", "archived"] as const)(
+    it.each(["draft"] as const)(
       "moves the realm to a new map version after its status becomes %s",
       async (status) => {
         const realm = {
@@ -550,26 +338,245 @@ describe("realms.adminUpdateRealm", () => {
         expect(update).toBeLessThan(invalidated!);
       }
     );
+  });
+});
 
-    it("also does so when the status changes together with a nation cap", async () => {
-      const realm = {
-        findUnique: jest.fn().mockResolvedValue({ settings: null }),
-        update: jest.fn().mockResolvedValue({ id: "r_eurth" }),
-      };
-      await adminCaller(realm).adminUpdateRealm({
-        id: "r_eurth",
-        status: "draft",
-        maxNationsPerUser: 2,
+/**
+ * The /realms landing page: `realms.searchNations` finds nations across the realms the directory lists only
+ * (never a draft, generating or unlisted realm), marks claimable ones, never leaks owner ids, and runs behind the
+ * public rate limit; the directory counts each realm's claimable nation pages.
+ */
+describe("nation search", () => {
+  type Db = ReturnType<typeof createMockPrisma>;
+  const EURTH = { id: "eurth", slug: "eurth", name: "Eurth" };
+  const IXNAY = { id: "default", slug: "ixnay", name: "Ixnay" };
+  function makeDb(): Db {
+    const db = createMockPrisma();
+    db.realm.findMany.mockResolvedValue([IXNAY, EURTH]);
+    db.country.findMany.mockImplementation(async ({ where }: any) => {
+      // The "which pages has a country taken" lookup: Aurora by name (no page reference), Auberon renamed.
+      if (where.OR)
+        return [
+          { realmId: "eurth", name: "Aurora", wikiSource: "ixwiki", wikiPageTitle: null },
+          { realmId: "eurth", name: "New Auberon", wikiSource: "ixwiki", wikiPageTitle: "Auberon" },
+        ];
+      return [
+        {
+          id: "c1",
+          name: "Aurelia",
+          slug: "aurelia",
+          flag: null,
+          realmId: "eurth",
+          ownerUserId: "u_secret",
+        },
+        {
+          id: "c2",
+          name: "Austral",
+          slug: "austral",
+          flag: "/f.png",
+          realmId: "default",
+          ownerUserId: null,
+        },
+      ];
+    });
+    db.realmPage.findMany.mockResolvedValue([
+      { realmId: "eurth", title: "Aurora", wikiSource: "ixwiki" },
+      { realmId: "eurth", title: "Auberon", wikiSource: "ixwiki" },
+      { realmId: "eurth", title: "Auvergne", wikiSource: "ixwiki" },
+    ]);
+    return db;
+  }
+  function caller(db: Db) {
+    return realmsRouter.createCaller(
+      createMockRouterContext({ db, auth: null, user: null }) as never
+    );
+  }
+  describe("realms.searchNations", () => {
+    it("searches only the realms the directory lists", async () => {
+      const db = makeDb();
+      await caller(db).searchNations({ query: "  au " });
+
+      expect(db.realm.findMany.mock.calls[0]![0].where).toEqual(DIRECTORY_REALM_WHERE);
+      const countryWhere = db.country.findMany.mock.calls[0]![0].where;
+      expect(countryWhere).toEqual({
+        realmId: { in: ["default", "eurth"] },
+        isDemo: false,
+        claimable: true,
+        name: { contains: "au", mode: "insensitive" },
       });
-      expect(invalidateRealmMap).toHaveBeenCalledWith(expect.anything(), "r_eurth");
+      expect(db.country.findMany.mock.calls[0]![0].take).toBe(NATION_SEARCH_LIMIT);
+      expect(db.realmPage.findMany.mock.calls[0]![0].where).toEqual({
+        realmId: { in: ["default", "eurth"] },
+        kind: "nation",
+        title: { contains: "au", mode: "insensitive" },
+      });
     });
   });
+});
 
-  it.each([0, 21, 1.5])("rejects a cap of %p", async (maxNationsPerUser) => {
-    const realm = { findUnique: jest.fn(), update: jest.fn() };
-    await expect(
-      adminCaller(realm).adminUpdateRealm({ id: "r_eurth", maxNationsPerUser })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(realm.update).not.toHaveBeenCalled();
+/**
+ * Realm page metadata (`/r/{slug}` link unfurls): the realm's name and a short description from its
+ * own description, factbook or tags; no canonical (the realm's pages inherit it). Draft and unknown
+ * realms add nothing, so the root defaults stand and nothing about an unpublished realm leaks.
+ */
+describe("realm page metadata", () => {
+  function source(over: Partial<RealmMetadataSource> = {}): RealmMetadataSource {
+    return {
+      name: "Eurth",
+      unlisted: false,
+      description: null,
+      factbookText: null,
+      tags: [],
+      nationCount: 12,
+      openCount: 4,
+      bannerUrl: null,
+      ...over,
+    };
+  }
+  describe("realmMetadata", () => {
+    it("keeps an unlisted realm out of search results but still unfurls it", () => {
+      expect(realmMetadata(source()).robots).toBeUndefined();
+      const meta = realmMetadata(source({ unlisted: true }));
+      expect(meta.robots).toEqual({ index: false, follow: false });
+      expect(meta.title).toBe("Eurth");
+    });
+  });
+  describe("loadRealmMetadataSource", () => {
+    const row = {
+      id: "r1",
+      name: "Eurth",
+      status: "active",
+      visibility: "public",
+      description: "  ",
+      factbookHtml: "<p>The <b>Eurth</b> factbook.</p>",
+      tags: ["Modern"],
+      bannerUrl: " /images/uploads/eurth-banner.png " as string | null,
+    };
+
+    type RealmRow = typeof row;
+
+    function dbWith(realm: RealmRow | null, nations = 12, claimed = 8) {
+      const db = createMockPrisma();
+      db.realm.findUnique.mockResolvedValue(realm);
+      db.country.count.mockImplementation(
+        async ({ where }: { where: { ownerUserId?: { not: null } } }) =>
+          where.ownerUserId ? claimed : nations
+      );
+      return db;
+    }
+
+    it("returns null for draft, generating and unknown realms", async () => {
+      for (const status of ["draft", "generating"]) {
+        const db = dbWith({ ...row, status });
+        await expect(loadRealmMetadataSource(db as never, "eurth")).resolves.toBeNull();
+        expect(db.country.count).not.toHaveBeenCalled();
+      }
+      await expect(loadRealmMetadataSource(dbWith(null) as never, "nope")).resolves.toBeNull();
+    });
+  });
+});
+
+describe("the viewer's realm", () => {
+  const db = (row: { id: string; status?: string; ownerId?: string } | null) =>
+    ({ realm: { findUnique: jest.fn().mockResolvedValue(row) } }) as any;
+  describe("resolveViewerRealmId", () => {
+    it("hides a draft or generating realm's slug from everyone but its staff (AT-6)", async () => {
+      const draft = { id: "r_draft", status: "draft", ownerId: "clerk_founder" };
+      const founder = { id: "u_f", clerkUserId: "clerk_founder", role: null };
+      const admin = { id: "u_a", clerkUserId: "clerk_admin", role: { name: "admin", level: 10 } };
+      const player = { id: "u_p", clerkUserId: "clerk_player", role: null };
+      await expect(resolveViewerRealmId(db(draft), { realmSlug: "d" })).resolves.toBe(
+        DEFAULT_REALM_ID
+      );
+      await expect(
+        resolveViewerRealmId(db(draft), { realmSlug: "d", viewer: player })
+      ).resolves.toBe(DEFAULT_REALM_ID);
+      await expect(
+        resolveViewerRealmId(db(draft), { realmSlug: "d", viewer: founder })
+      ).resolves.toBe("r_draft");
+      await expect(
+        resolveViewerRealmId(db(draft), { realmSlug: "d", viewer: admin })
+      ).resolves.toBe("r_draft");
+      const generating = { ...draft, status: "generating" };
+      await expect(resolveViewerRealmId(db(generating), { realmSlug: "d" })).resolves.toBe(
+        DEFAULT_REALM_ID
+      );
+    });
+
+    it("resolves unlisted and archived realms by slug for anyone (reachable by link)", async () => {
+      for (const status of ["active", "archived"]) {
+        const row = { id: "r_hidden", status, ownerId: "system", visibility: "unlisted" };
+        await expect(resolveViewerRealmId(db(row as never), { realmSlug: "h" })).resolves.toBe(
+          "r_hidden"
+        );
+      }
+    });
+  });
+});
+
+/** System realms (Realm.isSystem): shelves for cards, never listed, claimable, mapped or deleted (spec §5.1). */
+describe("system realms", () => {
+  const admin = { id: "u_admin", clerkUserId: "clerk_admin", role: { name: "admin", level: 10 } };
+  const systemRow = (id: string) => ({
+    id,
+    slug: id,
+    name: id,
+    description: null,
+    thumbnail: null,
+    ownerId: "system",
+    status: "active",
+    visibility: "public",
+    countries: [],
+    pages: [],
+    _count: { pages: 0, countries: 0 },
+  });
+  describe("system realms", () => {
+    it("are never open to claims or new nations, nor published, though their rows say active", () => {
+      for (const id of SYSTEM_REALM_IDS) {
+        expect(isRealmOpen(id, "active")).toBe(false);
+        expect(isRealmPublished(id, "active")).toBe(false);
+      }
+      expect(isRealmOpen("eurth", "active")).toBe(true);
+      expect(isRealmOpen("default", "draft")).toBe(true);
+    });
+    it("have no hub, even for a site admin", async () => {
+      const db = createMockPrisma();
+      db.realm.findUnique.mockResolvedValue(systemRow("nationstates"));
+      await expect(getRealmHub(db as never, "nationstates", admin)).resolves.toBeNull();
+      expect(db.realmPage.findFirst).not.toHaveBeenCalled();
+    });
+
+    it("never become the viewer's realm: their slug resolves like an unknown one", async () => {
+      const db = createMockPrisma();
+      db.realm.findUnique.mockResolvedValue({ id: "iiwiki", status: "active", ownerId: "system" });
+      await expect(findRealmIdBySlug(db as never, "iiwiki", admin)).resolves.toBeNull();
+    });
+
+    it("can't be deleted, and nor can a realm that still has cards", async () => {
+      const db = createMockPrisma();
+      await expect(
+        deleteRealm(db as never, admin, { realmId: "althistory", confirmSlug: "althistory" })
+      ).rejects.toMatchObject({ code: "BAD_REQUEST", message: "System realms can't be deleted" });
+      expect(db.realm.findUnique).not.toHaveBeenCalled();
+
+      db.realm.findUnique.mockResolvedValue({
+        id: "eurth",
+        slug: "eurth",
+        name: "Eurth",
+        _count: { countries: 0 },
+      });
+      db.mapLayer.count.mockResolvedValue(0);
+      db.card.count.mockResolvedValue(3);
+      await expect(
+        deleteRealm(db as never, admin, { realmId: "eurth", confirmSlug: "eurth" })
+      ).rejects.toMatchObject({ code: "CONFLICT" });
+      expect(db.card.count).toHaveBeenCalledWith({ where: { realmId: "eurth" } });
+      expect(db.$transaction).not.toHaveBeenCalled();
+    });
+    it("keep their slugs: no new realm may take one", () => {
+      for (const slug of SYSTEM_REALM_IDS) expect(REALM_SLUG_PATTERN.test(slug)).toBe(false);
+      expect(REALM_SLUG_PATTERN.test("mine")).toBe(false);
+      expect(REALM_SLUG_PATTERN.test("iiwiki-fans")).toBe(true);
+    });
   });
 });

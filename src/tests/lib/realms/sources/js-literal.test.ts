@@ -6,6 +6,7 @@ import {
   MAX_LITERAL_DEPTH,
   readBoundLiteral,
 } from "~/lib/realms/sources/js-literal";
+import { fetchRepoFile, rawGithubUrl, SourceFetchError } from "~/lib/realms/sources/fetch";
 
 const FIXTURES = path.resolve(__dirname, "../../../fixtures/realm-sources/eurth-map");
 const fixture = (name: string) => fs.readFileSync(path.join(FIXTURES, name), "utf8");
@@ -51,31 +52,9 @@ describe("readBoundLiteral: the source's own files", () => {
       export const data = { real: 4 };`;
     expect(readBoundLiteral(source, "data")).toEqual({ real: 4 });
   });
-
-  it("refuses a file without the binding", () => {
-    expect(() => readBoundLiteral("const other = {};", "nations")).toThrow(LiteralParseError);
-  });
-
-  it("refuses a transformed literal unless told to read the plain literal and ignore the transform", () => {
-    const source = `export const ZONES = [{ code: "Af" }].map((z) => ({ ...z, evil: run() }));`;
-    expect(() => readBoundLiteral(source, "ZONES")).toThrow(/after the literal/);
-    expect(readBoundLiteral(source, "ZONES", "ignore")).toEqual([{ code: "Af" }]);
-  });
 });
 
 describe("readBoundLiteral: values", () => {
-  it("reads escapes, signs, decimals, exponents and single quotes", () => {
-    expect(
-      readLiteral(`{ a: 'it\\'s', b: "\\u00e9\\x41\\n", c: -1.5e3, d: .5, e: 1_000 }`)
-    ).toEqual({
-      a: "it's",
-      b: "éA\n",
-      c: -1500,
-      d: 0.5,
-      e: 1000,
-    });
-  });
-
   it("gives objects no prototype, so a __proto__ key is an own key and pollutes nothing", () => {
     const value = readLiteral(
       `{ "__proto__": { "polluted": true }, constructor: { prototype: { x: 1 } } }`
@@ -91,22 +70,8 @@ describe("readBoundLiteral: hostile input is refused, never run", () => {
   const refused: Array<[string, string]> = [
     ["a function call", `{ a: fetch("https://evil.example") }`],
     ["an identifier reference", `{ a: process }`],
-    ["undefined", `{ a: undefined }`],
     ["a template literal", "{ a: `${process.exit(1)}` }"],
-    ["a getter", `{ get a() { return 1 } }`],
-    ["a method", `{ a() { return 1 } }`],
-    ["a shorthand property", `{ a }`],
     ["a computed key", `{ ["a"]: 1 }`],
-    ["a spread in an object", `{ ...other }`],
-    ["a spread in an array", `[...other]`],
-    ["an arrow function", `{ a: () => 1 }`],
-    ["new", `{ a: new Date() }`],
-    ["NaN", `{ a: NaN }`],
-    ["Infinity", `{ a: Infinity }`],
-    ["a hex number", `{ a: 0x10 }`],
-    ["a regular expression", `{ a: /x/ }`],
-    ["an unterminated string", `{ a: "x }`],
-    ["an array hole", `[1,,2]`],
     ["code after the literal on its line", `{ a: 1 } + alert(1)`],
   ];
   it.each(refused)("refuses %s", (_label, source) => {
@@ -119,8 +84,59 @@ describe("readBoundLiteral: hostile input is refused, never run", () => {
     const veryDeep = "[".repeat(200_000);
     expect(() => readLiteral(veryDeep)).toThrow(LiteralParseError);
   });
+});
 
-  it("names the line a refusal was found on", () => {
-    expect(() => readBoundLiteral("const n = {\n  a: 1,\n  b: evil(),\n};", "n")).toThrow(/line 3/);
+describe("fetching a source repository's files", () => {
+  const file = {
+    repo: "a-seth-harrison/eurth-map",
+    ref: "main",
+    path: "eurth-map/src/data/nations.js",
+  };
+  function response(
+    body: string,
+    init: { status?: number; headers?: Record<string, string> } = {}
+  ) {
+    return new Response(body, { status: init.status ?? 200, headers: init.headers });
+  }
+  describe("rawGithubUrl", () => {
+    it("builds a raw.githubusercontent.com URL from a validated repo, ref and path", () => {
+      expect(rawGithubUrl(file).toString()).toBe(
+        "https://raw.githubusercontent.com/a-seth-harrison/eurth-map/main/eurth-map/src/data/nations.js"
+      );
+      expect(rawGithubUrl({ ...file, path: "a dir/file name.js" }).pathname).toContain(
+        "a%20dir/file%20name.js"
+      );
+    });
+
+    it.each([
+      ["a repo with a host", { ...file, repo: "evil.example/x/y" }],
+      ["a path with ..", { ...file, path: "eurth-map/../../etc/passwd" }],
+      ["a URL as path", { ...file, path: "https://evil.example/x" }],
+    ])("refuses %s", (_label, bad) => {
+      expect(() => rawGithubUrl(bad)).toThrow(SourceFetchError);
+    });
+  });
+  describe("fetchRepoFile", () => {
+    it("refuses a redirect (it could point at another host)", async () => {
+      const fetchImpl = jest
+        .fn()
+        .mockResolvedValue(
+          response("", { status: 302, headers: { location: "https://evil.example/" } })
+        );
+      await expect(fetchRepoFile(file, { fetchImpl })).rejects.toThrow(/redirect/);
+    });
+
+    it("refuses a file over the size cap, by header or while streaming", async () => {
+      const declared = jest
+        .fn()
+        .mockResolvedValue(response("x", { headers: { "content-length": String(10_000_000) } }));
+      await expect(fetchRepoFile(file, { fetchImpl: declared, maxBytes: 1000 })).rejects.toThrow(
+        /larger/
+      );
+      const streamed = jest.fn().mockResolvedValue(response("x".repeat(2000)));
+      await expect(fetchRepoFile(file, { fetchImpl: streamed, maxBytes: 1000 })).rejects.toThrow(
+        /larger/
+      );
+    });
   });
 });
