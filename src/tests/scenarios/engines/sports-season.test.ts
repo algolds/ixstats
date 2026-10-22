@@ -6,9 +6,9 @@
  * rule, the winning side takes the whole pool. Running it again pays and counts nothing. The manager overrides the
  * result: the rebuilt table matches the simulated one, then follows the new score. Each club collects its match
  * revenue once. The clock moves on, the cron plays the rest of the season, refunds the drawn pool, crowns a champion
- * (whose owner gets the Trophy) and starts season 2 with standings, a rookie class, a schedule and aged players. A
- * known bug is pinned with it.failing: the draft into a short roster breaks the season transition. Two settlements of
- * one match racing pay each winner once. On Postgres: the settlement race, and two revenue collections racing.
+ * (whose owner gets the Trophy) and starts season 2 with standings, a rookie class, a schedule and aged players, the
+ * draft filling South's short roster. Two settlements of one match racing pay each winner once. On Postgres: the
+ * settlement race, and two revenue collections racing.
  *
  * Folds recalculate-standings (2/1/0 and 3/1/0 points, rank never a position column), transition (aging and the
  * off-season loop, as rows), sports-match-revenue (ticket, base fee and win bonus, paid once, foreign club refused,
@@ -77,8 +77,11 @@ interface World {
   south: string;
 }
 
-/** A two-club hockey league: Cleo owns North, Dev owns South; Ana, Ben and Cleo hold 500 Sovereigns each. */
-async function seed(db: PrismaClient, p: string, rosterSize = 20): Promise<World> {
+/**
+ * A two-club hockey league: Cleo owns North (a full roster of 20), Dev owns South (`southRoster` players); Ana, Ben
+ * and Cleo hold 500 Sovereigns each.
+ */
+async function seed(db: PrismaClient, p: string, southRoster = 20): Promise<World> {
   const manager = await addPerson(db, `${p}manager`);
   const ana = await addPerson(db, `${p}ana`, 500);
   const ben = await addPerson(db, `${p}ben`, 500);
@@ -92,8 +95,8 @@ async function seed(db: PrismaClient, p: string, rosterSize = 20): Promise<World
     managerId: manager.id,
     sportPreset: "hockey",
     clubs: [
-      { id: north, ownerUserId: cleo.id, base: 66, rosterSize },
-      { id: south, ownerUserId: dev.id, base: 60, rosterSize },
+      { id: north, ownerUserId: cleo.id, base: 66 },
+      { id: south, ownerUserId: dev.id, base: 60, rosterSize: southRoster },
     ],
   });
   return { db, p, manager, ana, ben, cleo, dev, stranger, leagueId: `${p}league`, north, south };
@@ -156,7 +159,7 @@ describe("sports-season (memory)", () => {
     db.store.onRaw(/SELECT id FROM "exchange_wallets" WHERE id = \? FOR UPDATE/, ([id]) => [{ id }]);
     mockDb = db;
     IxTime.setTimeOverride(START);
-    w = await seed(db as never, "m-");
+    w = await seed(db as never, "m-", 12);
     await db.realm.create({
       data: { id: "default", slug: "ixnay", name: "Ixnay", ownerId: "system" },
     });
@@ -341,6 +344,17 @@ describe("sports-season (memory)", () => {
     expect(await db.sportStanding.count({ where: { seasonId: next.id } })).toBe(2);
     expect(await db.sportRookieClass.count({ where: { seasonId: next.id } })).toBe(1);
     expect(await db.sportMatch.count({ where: { seasonId: next.id } })).toBeGreaterThan(0);
+    // South played the season eight short: the draft fills its roster from the rookie class, each pick on its club
+    const picks = await db.sportDraftPick.findMany({
+      where: { seasonId: next.id },
+      select: { teamId: true, player: { select: { teamId: true, careerStage: true } } },
+    });
+    expect(picks.length).toBeGreaterThanOrEqual(8);
+    for (const pick of picks) {
+      expect(pick.player).toEqual({ teamId: pick.teamId, careerStage: "rookie" });
+    }
+    expect(picks.filter((pick) => pick.teamId === w.south)).toHaveLength(8);
+    expect(await db.sportPlayer.count({ where: { teamId: w.south, isActive: true } })).toBe(20);
     for (const before of players) {
       const after = await db.sportPlayer.findUniqueOrThrow({ where: { id: before.id } });
       if (after.careerStage !== "retired") expect(after.age).toBe(before.age + 1);
@@ -397,32 +411,26 @@ describe("sports-season (memory)", () => {
     expect(await points()).toEqual(rule(0, 2));
   });
 
-  it.failing(
-    // BUG (src/lib/sports/transition.ts runAutoDraft): the draft writes SportDraftPick rows with originalTeamId and
-    // currentTeamId, which the model does not have, and without its required teamId. Any club short of a full roster
-    // makes the season transition throw and roll back, so the league never gets its next season (the cron only logs
-    // it). Remove .failing once the draft writes teamId.
-    "drafts rookies into short rosters when the season turns over",
-    async () => {
-      const short = createMemoryPrisma();
-      mockDb = short;
-      const s = await seed(short as never, "s-", 12);
-      const season = await lifecycle(asPerson(short as never, s.manager)).startSeason({
-        leagueId: s.leagueId,
-      });
-      IxTime.setTimeOverride(START + 365 * 86_400_000);
-      await advanceSportsSeasons(short as never);
-      expect(await short.sportSeason.findUniqueOrThrow({ where: { id: season.id } })).toMatchObject(
-        {
-          status: "completed",
-        }
-      );
-      const next = await short.sportSeason.findFirstOrThrow({
-        where: { leagueId: s.leagueId, seasonNumber: 2 },
-      });
-      expect(await short.sportDraftPick.count({ where: { seasonId: next.id } })).toBeGreaterThan(0);
-    }
-  );
+  // Regression: the draft wrote SportDraftPick rows with originalTeamId and currentTeamId (not columns) and without
+  // the required teamId, so any club short of a full roster made the season transition throw and roll back, and the
+  // league never got its next season
+  it("drafts rookies into short rosters when the season turns over", async () => {
+    const short = createMemoryPrisma();
+    mockDb = short;
+    const s = await seed(short as never, "s-", 12);
+    const season = await lifecycle(asPerson(short as never, s.manager)).startSeason({
+      leagueId: s.leagueId,
+    });
+    IxTime.setTimeOverride(START + 365 * 86_400_000);
+    await advanceSportsSeasons(short as never);
+    expect(await short.sportSeason.findUniqueOrThrow({ where: { id: season.id } })).toMatchObject({
+      status: "completed",
+    });
+    const next = await short.sportSeason.findFirstOrThrow({
+      where: { leagueId: s.leagueId, seasonNumber: 2 },
+    });
+    expect(await short.sportDraftPick.count({ where: { seasonId: next.id } })).toBeGreaterThan(0);
+  });
 
   // Regression: settlement read the open predictions without claiming them and paid with no idempotency key, so two
   // settlements of one match (the match-day button and the cron, or a retry) both paid every winner

@@ -371,10 +371,9 @@ async function runAutoDraft(
   const pool = args.rookies.map((r) => ({ ...r, overall: r.ratings.overall ?? 50 }));
   const picks: Array<{
     seasonId: string;
+    teamId: string;
     round: number;
     pickNumber: number;
-    originalTeamId: string;
-    currentTeamId: string;
     playerId: string;
   }> = [];
 
@@ -408,8 +407,7 @@ async function runAutoDraft(
       });
       picks.push({
         seasonId: args.newSeasonId,
-        originalTeamId: teamId,
-        currentTeamId: teamId,
+        teamId,
         round,
         pickNumber: picks.length + 1,
         playerId: player.id,
