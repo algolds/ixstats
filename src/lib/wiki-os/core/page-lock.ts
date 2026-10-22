@@ -13,6 +13,12 @@ import type { Prisma } from "@prisma/client";
 type LockClient = Pick<Prisma.TransactionClient, "$queryRaw" | "$executeRaw">;
 
 /**
+ * The save's transaction: it may wait for the page's lock behind another save (or a long import of the page), so it
+ * gets more than Prisma's 5 s, like the staged-file and render-metadata transactions.
+ */
+export const SAVE_TRANSACTION = { maxWait: 10_000, timeout: 30_000 };
+
+/**
  * The first int of the per-title creation locks, in the two-int form `pg_advisory_xact_lock(namespace, key)` (a key
  * space of its own: the single-int locks are `withJobLock`'s, staged-uploads.ts uses 41101, cards 7331). Arbitrary.
  */

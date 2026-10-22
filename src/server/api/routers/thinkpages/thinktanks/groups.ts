@@ -55,6 +55,7 @@ import { filterInvitableUserIds } from "./invite-privacy";
 import {
   parseGroupSettings,
   parseGroupTags,
+  healGroupConversation,
   viewerMembership,
   type GroupMemberRow,
 } from "./group-helpers";
@@ -64,48 +65,6 @@ type GroupDb = Pick<
   PrismaClient,
   "thinkshareConversation" | "thinktankGroup" | "user" | "thinkpagesAccount" | "userConnection"
 >;
-
-/** Auto-heal a missing ThinkShare conversation for the group (mutates `group` to match). */
-async function healGroupConversation(
-  db: GroupDb,
-  group: {
-    id: string;
-    name: string;
-    avatar: string | null;
-    conversationId: string | null;
-    conversation: { id: string; lastActivity: Date } | null;
-    members: GroupMemberRow[];
-  }
-) {
-  if (group.conversationId && group.conversation) return;
-  try {
-    const newConv = await db.thinkshareConversation.create({
-      data: {
-        type: "group",
-        name: group.name,
-        avatar: group.avatar,
-        source: "thinktank",
-        sourceId: group.id,
-        participants: {
-          create: group.members.map((m) => ({
-            userId: m.userId,
-            role: m.role === "owner" || m.role === "admin" ? "admin" : "participant",
-          })),
-        },
-      },
-    });
-
-    await db.thinktankGroup.update({
-      where: { id: group.id },
-      data: { conversationId: newConv.id },
-    });
-
-    group.conversationId = newConv.id;
-    group.conversation = { id: newConv.id, lastActivity: newConv.createdAt };
-  } catch (e) {
-    console.warn("[ThinkTanks] Failed to auto-heal group conversation:", e);
-  }
-}
 
 /**
  * Players' user rows for display, minus wiki names hidden by `showWikiAttribution`, and those

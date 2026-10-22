@@ -1,18 +1,11 @@
 /**
- * Auction Service
+ * Auction Service: creating IxCards auctions, bids, buyouts, completion and cancelling.
  *
- * Comprehensive auction engine for IxCards marketplace
- * Handles auction creation, bidding, buyouts, completions, and market analytics
- *
- * Features:
- * - Atomic transactions for race condition protection
- * - IxCredits integration via vault-service
- * - real-time auction timing: 24 hours, 3 days or 7 days
- * - Auto-extension for last-minute bids
- * - Market fee calculation (admin house rake, default 10%, on sales >100 IxC)
- * - Listing fees and the unsold refund from the Economy tab; the fee paid is stored on the auction
- * - Bid validation (5% minimum increment)
- * - Notices after the commit
+ * - Each call is one transaction, so a race is refused instead of half applied; IxCredits move through vault-service
+ * - Auctions run 24 hours, 3 days or 7 days, and a last-minute bid extends them; a bid beats the last by at least 5%
+ * - The market fee comes out of the sale (settle-sale.ts); the listing fee, stored on the auction, and its unsold
+ *   refund are the Economy tab's
+ * - Notices go out after the commit
  */
 
 import { vaultService, LedgerError } from "~/lib/vault/vault-service";

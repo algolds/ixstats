@@ -1,4 +1,6 @@
-/** Pure parsing helpers for ThinkTank group rows (split out of groups.ts). */
+/** Helpers for ThinkTank group rows (split out of groups.ts). */
+
+import type { PrismaClient } from "@prisma/client";
 
 export type GroupMemberRow = { userId: string; role: string };
 
@@ -41,4 +43,46 @@ export function viewerMembership(
     ? "owner"
     : group.members.find((m) => m.userId === viewerId)?.role || (isMember ? "member" : null);
   return { isMember, userRole };
+}
+
+/** Auto-heal a missing ThinkShare conversation for the group (mutates `group` to match). */
+export async function healGroupConversation(
+  db: Pick<PrismaClient, "thinkshareConversation" | "thinktankGroup">,
+  group: {
+    id: string;
+    name: string;
+    avatar: string | null;
+    conversationId: string | null;
+    conversation: { id: string; lastActivity: Date } | null;
+    members: GroupMemberRow[];
+  }
+) {
+  if (group.conversationId && group.conversation) return;
+  try {
+    const newConv = await db.thinkshareConversation.create({
+      data: {
+        type: "group",
+        name: group.name,
+        avatar: group.avatar,
+        source: "thinktank",
+        sourceId: group.id,
+        participants: {
+          create: group.members.map((m) => ({
+            userId: m.userId,
+            role: m.role === "owner" || m.role === "admin" ? "admin" : "participant",
+          })),
+        },
+      },
+    });
+
+    await db.thinktankGroup.update({
+      where: { id: group.id },
+      data: { conversationId: newConv.id },
+    });
+
+    group.conversationId = newConv.id;
+    group.conversation = { id: newConv.id, lastActivity: newConv.createdAt };
+  } catch (e) {
+    console.warn("[ThinkTanks] Failed to auto-heal group conversation:", e);
+  }
 }
