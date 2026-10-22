@@ -110,3 +110,19 @@ describe("members cannot position their post over the app", () => {
     );
   });
 });
+
+describe("a Canvas quote through the post render", () => {
+  // What MediaWiki returns for quoteWikitext(...) followed by a reply paragraph.
+  const MW_HTML =
+    '<div class="mw-content-ltr mw-parser-output" lang="en" dir="ltr">' +
+    '<blockquote class="forum-quote" data-post="cnative12"><div class="forum-quote-author"><b>Heku</b> wrote:</div>' +
+    '<div class="forum-quote-body">Hello there</div></blockquote>\n<p>My reply\n</p></div>';
+  describe("a Canvas quote through the post render", () => {
+    it("keeps the quote's class, data-post and author line in the stored html", () => {
+      const html = composePostHtml(buildViewBundle(MW_HTML));
+      expect(html).toContain('class="forum-quote"');
+      expect(html).toContain('data-post="cnative12"');
+      expect(html).toContain("forum-quote-author");
+    });
+  });
+});

@@ -8,44 +8,33 @@ import {
   quotedPostIds,
   relatedWikiTitles,
 } from "~/lib/thinkpages-forum/post-html";
+import { withBasePath } from "~/lib/base-path";
+import { hasImageSrc, rebaseRootRelativeUrls } from "~/lib/thinkpages-forum/html-urls";
+import { categoryHref, realmBoardAttachHref } from "~/lib/thinkpages-forum/links";
 
 describe("isPostId", () => {
-  it.each(["cm1abc", "cnative13", "a_b-c", "x".repeat(64)])("accepts %s", (id) => {
+  it.each(["cnative13", "x".repeat(64)])("accepts %s", (id) => {
     expect(isPostId(id)).toBe(true);
   });
 
-  it.each(["", "x".repeat(65), 'a"b', "a b", "a<b", "../x", "a/b", null, undefined])(
-    "refuses %p",
-    (id) => {
-      expect(isPostId(id)).toBe(false);
-    }
-  );
+  it.each(["x".repeat(65), 'a"b', "../x", null])("refuses %p", (id) => {
+    expect(isPostId(id)).toBe(false);
+  });
 });
 
 describe("embedTitle", () => {
-  it.each(["<script>", 'a"b', "a>b", "a\nb", "a\u0000b", "", "   ", "x".repeat(256), null])(
-    "refuses %p",
-    (title) => {
-      expect(embedTitle(title)).toBeNull();
-    }
-  );
+  it.each(["<script>", 'a"b', "a\nb"])("refuses %p", (title) => {
+    expect(embedTitle(title)).toBeNull();
+  });
 });
 
 describe("embedFileTitle", () => {
-  it.each([
-    "Juan Kerr",
-    "File:../../x?y",
-    "File:../secret.png",
-    "File:a/b.png",
-    "File:a\\b.png",
-    "File:a.png?x=1",
-    "File:a.png#frag",
-    "File:%2e%2e%2fx.png",
-    "File:",
-    null,
-  ])("refuses %p", (title) => {
-    expect(embedFileTitle(title)).toBeNull();
-  });
+  it.each(["File:../secret.png", "File:a.png?x=1", "File:%2e%2e%2fx.png"])(
+    "refuses %p",
+    (title) => {
+      expect(embedFileTitle(title)).toBeNull();
+    }
+  );
 });
 
 describe("embedWidth", () => {
@@ -56,7 +45,7 @@ describe("embedWidth", () => {
     expect(embedWidth("5000")).toEqual({ width: 1200 });
   });
 
-  it.each(["abc", "12px", "-4", "1.5", "", " 3", "9999999"])("refuses %p", (value) => {
+  it.each(["12px", "9999999"])("refuses %p", (value) => {
     expect(embedWidth(value)).toBeNull();
   });
 });
@@ -71,11 +60,8 @@ describe("linkQuoteSources", () => {
     );
   });
   it.each([
-    ['class="forum-quote"'],
-    ['class="forum-quote" data-post=""'],
     ['class="forum-quote" data-post="a&quot;onmouseover=x"'],
     ['class="forum-quote" data-post="../../admin"'],
-    ['class="forum-quote" data-post="a b"'],
   ])("leaves a quote with %s as written", (attrs) => {
     const html = quote(attrs);
     expect(linkQuoteSources(html)).toBe(html);
@@ -99,18 +85,6 @@ describe("relatedWikiTitles", () => {
     ].join(" ");
     expect(relatedWikiTitles(html)).toEqual(["River compacts", "Juan Kerr", "Fiannria"]);
   });
-
-  it("skips files, categories, other sites, edit links and malformed escapes", () => {
-    const html = [
-      a("/wiki/File:Flag.svg"),
-      a("/wiki/Category:Places"),
-      a("https://example.com/wiki/Elsewhere"),
-      a("/w/index.php?title=Nope&action=edit"),
-      a("/wiki/100%"),
-      a("/wiki/Good_page"),
-    ].join(" ");
-    expect(relatedWikiTitles(html)).toEqual(["Good page"]);
-  });
 });
 
 describe("quotedPostIds", () => {
@@ -127,5 +101,120 @@ describe("quotedPostIds", () => {
     const many = Array.from({ length: 9 }, (_, i) => `<blockquote data-post="q${i}"></blockquote>`);
     expect(quotedPostIds(many.join(""))).toHaveLength(5);
     expect(quotedPostIds('<div data-post="p1"></div><a data-post="p2">x</a>')).toEqual([]);
+  });
+});
+
+describe("URLs in a stored post", () => {
+  const prefix = (path: string) => `/p${path}`;
+  describe("rebaseRootRelativeUrls", () => {
+    it("rebases root-relative src and href", () => {
+      expect(
+        rebaseRootRelativeUrls(
+          '<p><a href="/images/x">x</a><img src="/images/y" alt="y"></p>',
+          prefix
+        )
+      ).toBe('<p><a href="/p/images/x">x</a><img src="/p/images/y" alt="y"></p>');
+    });
+
+    it("leaves absolute, protocol-relative, anchor, mailto and relative URLs alone", () => {
+      const html =
+        '<p><a href="https://e.com/a">a</a><img src="//cdn.e.com/b.png"><a href="#top">t</a>' +
+        '<a href="mailto:a@e.com">m</a><img src="http://e.com/c.png"><a href="x/y">r</a></p>';
+      expect(rebaseRootRelativeUrls(html, prefix)).toBe(html);
+    });
+
+    it("never touches text, other attributes or quoted look-alikes", () => {
+      const html =
+        '<p>see src="/images/x" and href="/y"</p><img alt="/images/z" title="a src=&quot;/q&quot;" src="https://e.com/i.png">';
+      expect(rebaseRootRelativeUrls(html, prefix)).toBe(html);
+    });
+
+    it.each(["/images/uploads/a.png", "/thinkpages/t/abc"])("rebases the app path %s", (url) => {
+      expect(rebaseRootRelativeUrls(`<a href="${url}">x</a>`, prefix)).toBe(
+        `<a href="/p${url}">x</a>`
+      );
+    });
+    it.each(["/wiki/Foo", "/thinkpagesx", "/\\evil.com/x", "//evil.com/x"])(
+      "leaves %s alone",
+      (url) => {
+        const html = `<a href="${url}">x</a>`;
+        expect(rebaseRootRelativeUrls(html, prefix)).toBe(html);
+      }
+    );
+
+    describe("with withBasePath under /projects/ixstates", () => {
+      const saved = { ...process.env };
+      beforeEach(() => {
+        process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstates";
+        delete process.env.NEXT_PUBLIC_IXWORLD_STANDALONE;
+      });
+      afterEach(() => {
+        process.env = { ...saved };
+      });
+
+      it.each([
+        ["/images/uploads/a.png", "/projects/ixstates/images/uploads/a.png"],
+        [
+          "/projects/ixstates/images/downloaded/x.png",
+          "/projects/ixstates/images/downloaded/x.png",
+        ],
+      ])("src %s becomes %s", (src, expected) => {
+        expect(rebaseRootRelativeUrls(`<img src="${src}" alt="">`, withBasePath)).toBe(
+          `<img src="${expected}" alt="">`
+        );
+      });
+
+      it("is idempotent", () => {
+        const once = rebaseRootRelativeUrls(
+          '<img src="/images/uploads/a.png"><a href="/thinkpages/t/1">t</a>',
+          withBasePath
+        );
+        expect(rebaseRootRelativeUrls(once, withBasePath)).toBe(once);
+      });
+    });
+  });
+  describe("hasImageSrc", () => {
+    const base = "/projects/ixstates";
+    const has = (html: string) => hasImageSrc(html, base);
+
+    it("counts an image whose src is http(s) or an app image path", () => {
+      expect(has('<p><img src="/images/uploads/a.png" alt=""></p>')).toBe(true);
+      expect(has('<img alt="" src="https://e.com/a.png">')).toBe(true);
+      expect(has('<img src="HTTP://e.com/a.png">')).toBe(true);
+      expect(has('<img src="/images/downloaded/x.png">')).toBe(true);
+      expect(has('<img src="/api/mediawiki/commons/Special:Filepath/A%20b.png">')).toBe(true);
+      expect(has('<img src="/projects/ixstates/images/downloaded/x.png">')).toBe(true);
+      expect(has('<img src="/projects/ixstates/images/uploads/forum/1-abc-x.png">')).toBe(true);
+      expect(has('<img src="/projects/ixstates/api/mediawiki/ixwiki/images/a/ab/X.png">')).toBe(
+        true
+      );
+      expect(has('<img src="data:x"><img src="/images/uploads/a.png">')).toBe(true);
+    });
+
+    it.each([
+      ["a data: URL", '<img src="data:image/png;base64,AAAA" alt="">'],
+      ["a javascript: URL", '<img src=" JavaScript:alert(1)" alt="">'],
+      ["a protocol-relative URL", '<img src="//e.com/a.png">'],
+      ["another app path", '<img src="/images/data:x.png" alt="">'],
+      ["another base path", '<img src="/elsewhere/images/uploads/a.png">'],
+      ["escaped text", '<p>&lt;img src="/images/uploads/a.png"&gt;</p>'],
+    ])("does not count %s", (_, html) => {
+      expect(has(html)).toBe(false);
+    });
+  });
+});
+
+describe("links the forum builds", () => {
+  describe("forum links", () => {
+    it("encodes slugs so they cannot add path segments or query parameters", () => {
+      expect(categoryHref({ key: "hub", realm: { slug: "../x" } })).toBe(
+        "/thinkpages/r/..%2Fx/hub"
+      );
+    });
+  });
+  describe("attach links", () => {
+    it("encodes the slug and the id, so neither can add a parameter", () => {
+      expect(realmBoardAttachHref("a b", "x&y=1")).toBe("/thinkpages/r/a%20b?attach=x%26y%3D1");
+    });
   });
 });

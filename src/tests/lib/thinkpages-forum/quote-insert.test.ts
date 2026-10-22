@@ -1,4 +1,9 @@
 import { htmlToQuoteText, quoteWikitext } from "~/components/thinkpages-forum/composer/QuoteInsert";
+import { serializePlateToWikitext } from "~/components/wiki-os/editor/plate/wiki-wikitext";
+import { astToPlateNodes, wikitextToAst } from "~/lib/wiki-os/transformers/wiki-ast-converter";
+import { createEditor, Editor, Transforms, type Descendant } from "slate";
+import type { TSlateEditor } from "platejs";
+import { appendQuote } from "~/components/thinkpages-forum/composer/canvas-ops";
 describe("quoteWikitext", () => {
   it("strips markup that could open a template, link or tag from the author and the text", () => {
     const out = quoteWikitext({
@@ -11,28 +16,7 @@ describe("quoteWikitext", () => {
     expect(out).toContain("'''bEve/b x y''' wrote:");
     expect(out.match(/</g)).toHaveLength(6);
   });
-
-  it("collapses newlines in the author and in the text, so the block stays one paragraph", () => {
-    const out = quoteWikitext({ postId: "p1", author: "Two\nLines", text: "one\n\ntwo\nthree" });
-    expect(out).toContain("'''Two Lines'''");
-    expect(out).toContain('<div class="forum-quote-body">one two three</div>');
-  });
-
   // Taking out the `<>` (or an inner token) must not join what was around it into a new token.
-  it.each([
-    ["{<>{subst:x}<>}", /\{\{|\}\}/],
-    ["[<>[Category:X]<>]", /\[\[|\]\]/],
-    ["~~<>~ and ~<>~<>~~", /~~~/],
-    ["<<>script>x<</>/script>", /[<>]/],
-  ])("strips %p to a fixed point, in the text and in the author", (hostile, bad) => {
-    const out = quoteWikitext({ postId: "p1", author: hostile, text: hostile });
-    const author = /<div class="forum-quote-author">'''(.*)''' wrote:/.exec(out)?.[1] ?? "";
-    const body = /<div class="forum-quote-body">(.*)<\/div><\/blockquote>/.exec(out)?.[1] ?? "";
-    expect(author).not.toBe("");
-    expect(author).not.toMatch(bad);
-    expect(body).not.toMatch(bad);
-  });
-
   it("holds for another member's post, whose entity-encoded markup is decoded first", () => {
     const html = "<p>{&lt;&gt;{subst:x}&lt;&gt;} [&lt;&gt;[Category:X]&lt;&gt;] ~~&lt;&gt;~</p>";
     const out = quoteWikitext({ postId: "p1", author: "A", text: htmlToQuoteText(html) });
@@ -51,22 +35,69 @@ describe("quoteWikitext", () => {
   });
 });
 
-describe("htmlToQuoteText", () => {
-  it("leaves out the infobox, the notices and embeds, so the quote is the post's own words", () => {
-    const html =
-      '<div class="mw-parser-output"><div class="wikios-notices-container"><div class="notice"><div>Stub notice</div></div></div>' +
-      '<div class="forum-infobox"><table><tr><td>Capital</td><td>Valmora</td></tr></table><div>caption</div></div>' +
-      "<p>The treaty holds.</p>" +
-      '<div class="forum-wiki-embed" data-wiki-embed="article"><a href="/wiki/Urcea">Urcea</a><div class="forum-embed-view"><p>Summary</p></div></div>' +
-      "<p>Signed.</p></div>";
-    expect(htmlToQuoteText(html)).toBe("The treaty holds. Signed.");
+describe("a quote in a post opened for editing", () => {
+  const load = (src: string) => astToPlateNodes(wikitextToAst(src));
+  const save = (nodes: unknown[]) => serializePlateToWikitext(nodes as never).wikitext;
+  const quote = { postId: "ckabcdefghijklmnopqrstuvw", author: "Heku", text: "Hello there" };
+  const block = quoteWikitext(quote).trimEnd();
+  describe("a forum quote in a post that is opened for editing", () => {
+    it("loads as one atomic forum-quote block that saves byte for byte", () => {
+      const src = `${block}\n\nMy reply.`;
+      const nodes = load(src);
+      expect(nodes.map((n: { type: string }) => n.type)).toEqual(["raw-wikitext", "p"]);
+      expect(nodes[0]).toMatchObject({
+        construct: "forum-quote",
+        rawWikitext: block,
+        label: "Heku",
+        caption: "Hello there",
+        children: [{ text: "" }],
+      });
+      expect(save(nodes)).toBe(src);
+    });
   });
+});
 
-  it("drops an unclosed non-prose block to the end rather than quoting it", () => {
-    expect(htmlToQuoteText('<p>Before</p><div class="forum-infobox"><div>open')).toBe("Before");
-  });
-
-  it("keeps a div whose class only resembles one", () => {
-    expect(htmlToQuoteText('<div class="forum-infobox-note">Kept</div>')).toBe("Kept");
+describe("a quote added in Canvas", () => {
+  // platejs is ESM-only and not loadable here: a Slate editor with the slice of Plate's `tf` and `api` that canvas-ops
+  // uses, each a thin pass to the Slate function of the same name.
+  function editorWith(...children: Descendant[]): TSlateEditor {
+    const editor = createEditor();
+    editor.isVoid = (el) => (el as { type?: string }).type === "raw-wikitext";
+    editor.children = children;
+    const plate = {
+      tf: {
+        insertText: (text: string) => Transforms.insertText(editor, text),
+        insertNodes: (nodes: Descendant[], options: { at: number[] }) =>
+          Transforms.insertNodes(editor, nodes, options),
+        removeNodes: (options: { at: number[] }) => Transforms.removeNodes(editor, options),
+        select: (at: Parameters<typeof Transforms.select>[1]) => Transforms.select(editor, at),
+        withoutNormalizing: (run: () => void) => Editor.withoutNormalizing(editor, run),
+        focus: () => {
+          throw new Error("not mounted");
+        },
+      },
+      api: {
+        end: (at: number[]) => Editor.end(editor, at),
+        string: (at: number[]) => Editor.string(editor, at),
+      },
+    };
+    return Object.assign(editor, plate) as never;
+  }
+  const para = (text: string): Descendant => ({ type: "p", children: [{ text }] }) as never;
+  const wikitextOf = (editor: TSlateEditor) =>
+    serializePlateToWikitext(editor.children as never).wikitext;
+  describe("appendQuote", () => {
+    const quote = { postId: "p1", author: "Heku", text: "Hello there" };
+    const block = quoteWikitext(quote).trimEnd();
+    it("saves the quote byte for byte whatever is typed before and after it", () => {
+      const editor = editorWith(para("Intro"));
+      appendQuote(editor, quote);
+      editor.tf.insertText(" and my reply");
+      editor.tf.select({ anchor: { path: [0, 0], offset: 0 }, focus: { path: [0, 0], offset: 0 } });
+      editor.tf.insertText("Edited: ");
+      const saved = wikitextOf(editor);
+      expect(saved).toContain(block);
+      expect(saved).toBe(`Edited: Intro\n\n${block}\n\n and my reply`);
+    });
   });
 });

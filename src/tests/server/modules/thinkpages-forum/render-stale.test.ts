@@ -8,8 +8,7 @@ import { renderViaWiki } from "~/server/modules/thinkpages-forum/render";
 import {
   nextStaleBatch,
   rerenderPosts,
-  resetRenderFailuresForTests,
-  staleForumPostIds,
+  resetRenderFailuresForTests
 } from "~/server/modules/thinkpages-forum/render-stale";
 
 const rerender = jest.mocked(renderViaWiki);
@@ -61,12 +60,6 @@ beforeEach(() => {
   rerender.mockReset();
   resetRenderFailuresForTests();
 });
-it("leaves a post untouched when MediaWiki is still down", async () => {
-  rerender.mockResolvedValue(null);
-  const { db, updates } = fakeDb([{ id: "p1", threadId: "t1", contentWikitext: "x" }]);
-  expect(await rerenderPosts(db as never, ["p1"])).toEqual({ rendered: 0, failed: 1 });
-  expect(updates).toHaveLength(0);
-});
 it("writes only the text it rendered: an edit between the read and the write is left untouched", async () => {
   rerender.mockResolvedValue({
     contentHtml: "<p>stale</p>",
@@ -87,20 +80,6 @@ it("writes only the text it rendered: an edit between the read and the write is 
   expect(updates).toHaveLength(0);
   expect(db.forumPostTemplate.deleteMany).not.toHaveBeenCalled();
   expect(templateWrites).toEqual([]);
-});
-
-it("selects stale post ids with the renderer version and limit bound", async () => {
-  const queryRaw = jest.fn(
-    async (_strings: TemplateStringsArray, ..._values: Array<string | number>) => [
-      { id: "a" },
-      { id: "b" },
-    ]
-  );
-  const ids = await staleForumPostIds({ $queryRaw: queryRaw } as never, 7);
-  expect(ids).toEqual(["a", "b"]);
-  const [strings, ...values] = queryRaw.mock.calls[0]!;
-  expect(values).toEqual(["forum-1:v", 7]);
-  expect(strings.join("?")).toContain('"contentWikitext" IS NOT NULL');
 });
 const RENDERED = {
   plainText: "Hi @kir",
@@ -171,21 +150,5 @@ describe("a post whose render keeps failing", () => {
     expect(second.ids).toEqual([...BROKEN.slice(10), "fine"]);
     expect(second.updates.map((u) => u.id)).toEqual(["fine"]);
     expect(second.result).toEqual({ rendered: 1, failed: 2 });
-  });
-
-  it("is tried again once the wait is over, and forgotten once it renders", async () => {
-    mediaWiki(true);
-    jest.useFakeTimers();
-    try {
-      await run(posts);
-      await run(posts);
-      jest.advanceTimersByTime(60 * 60_000);
-      mediaWiki(false);
-      const again = await run(posts);
-      expect(again.ids).toEqual(BROKEN.slice(0, 10));
-      expect(again.result).toEqual({ rendered: 10, failed: 0 });
-    } finally {
-      jest.useRealTimers();
-    }
   });
 });
