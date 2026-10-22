@@ -1401,7 +1401,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   - Added safe timestamp coercion helpers (`IxTime.toTimestamp`, `IxTime.toDate`, `IxTime.toIsoString`) in [`src/lib/ixtime/core.ts`](src/lib/ixtime/core.ts).
 - **Dedicated Test Suites ([`src/tests/lib/ixtime/`](src/tests/lib/ixtime/))**:
   - Added [`core.test.ts`](src/tests/lib/ixtime/core.test.ts) covering epochs, pivot conversions, calendar arithmetic, formatting, pause/overrides, and coercion helpers.
-  - Added [`accuracy.test.ts`](src/tests/lib/ixtime/accuracy.test.ts) running all 11 mathematical verification test suites of `IxTimeAccuracyVerifier`.
+  - Added `accuracy.test.ts` (since folded into [`core.test.ts`](src/tests/lib/ixtime/core.test.ts)) running all 11 mathematical verification test suites of `IxTimeAccuracyVerifier`.
 
 ### 🧪 Test Suite Consolidation, Clean Output & Worker Leak Elimination
 

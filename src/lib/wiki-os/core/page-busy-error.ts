@@ -43,3 +43,8 @@ export function isTransactionBusy(error: unknown): boolean {
     TRANSACTION_TEXT.test(error.message)
   );
 }
+
+/** A save that waited too long for the page's lock is busy, and retryable: not a failure of the save. */
+export function retryableWhenBusy(error: unknown): never {
+  throw isTransactionBusy(error) ? new PageBusyError() : error;
+}

@@ -18,8 +18,8 @@ import {
   type WikiRevisionSummary,
 } from "./domain-types";
 import { EditConflictError, headMatchesBase } from "./edit-conflict-error";
-import { lockPageForSave } from "./page-lock";
-import { isTransactionBusy, PageBusyError } from "./page-busy-error";
+import { lockPageForSave, SAVE_TRANSACTION } from "./page-lock";
+import { retryableWhenBusy } from "./page-busy-error";
 import { parseRedirect } from "./redirect";
 import { canonicalizeTitle } from "./title";
 import { stripXmlForbiddenControlChars } from "../xml/control-chars";
@@ -29,17 +29,6 @@ import { enqueueRevisionJob, scheduleMirrorKick } from "../services/mirror-outbo
 import { enqueueRender, invalidateDependents } from "../services/render-service";
 import { notifyWatchers } from "../services/watchlist-notify";
 import { importPageRevisions } from "./article-import";
-
-/**
- * The save's transaction: it may wait for the page's lock behind another save (or a long import of the page), so it
- * gets more than Prisma's 5 s, like the staged-file and render-metadata transactions.
- */
-export const SAVE_TRANSACTION = { maxWait: 10_000, timeout: 30_000 };
-
-/** A save that waited too long for the page's lock is busy, and retryable: not a failure of the save. */
-function retryableWhenBusy(error: unknown): never {
-  throw isTransactionBusy(error) ? new PageBusyError() : error;
-}
 
 /**
  * Forget what every cache holds about a page whose text a save changed: the bridge's intro and wikitext (the
