@@ -45,8 +45,8 @@ function saleOf(isBound: boolean, isLocked: boolean, economy: CopyEconomyView | 
 export const copyLabel = (facts: CardCopyFacts) =>
   `#${facts.serialNumber} · ${FINISH_LABEL[facts.finish]} · Level ${facts.level}`;
 
-const sinceLabel = (date: Date) =>
-  `Since ${date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}`;
+const dated = (date: Date, month: "short" | "long") =>
+  date.toLocaleDateString(undefined, { day: "numeric", month, year: "numeric" });
 
 interface CopyActionsProps {
   held: HeldCopy<SheetCopy>;
@@ -84,9 +84,13 @@ export function CopyActions({ held, card, onAddToShowcase }: CopyActionsProps) {
           {copyLabel(facts)}
         </p>
         {economy && <CopyValue value={economy.value} retired={card.isRetired} />}
-        <FactChip icon={<Calendar className="size-3.5" />} label={sinceLabel(copy.acquiredAt)} />
+        <FactChip
+          icon={<Calendar aria-hidden />}
+          label={`Since ${dated(copy.acquiredAt, "short")}`}
+          hint={`In your collection since ${dated(copy.acquiredAt, "long")}`}
+        />
         {copy.isLocked && (
-          <FactChip icon={<Lock className="size-3.5" />} label="In a listing or trade" />
+          <FactChip icon={<Lock aria-hidden />} label="Locked" hint="In a listing or trade" />
         )}
       </div>
       {/* The groups stack on a phone, and sit side by side from sm up. */}
@@ -214,16 +218,16 @@ function ActionGroup({ label, children }: { label: string; children: ReactNode }
   );
 }
 
-/** A fact about the copy as a small icon, named for screen readers and in a tooltip. */
-function FactChip({ icon, label }: { icon: ReactNode; label: string }) {
+/**
+ * A fact about the copy: an icon and a short label, shown so a keyboard user reads it too, with the longer phrasing in
+ * a tooltip.
+ */
+function FactChip({ icon, label, hint }: { icon: ReactNode; label: string; hint: string }) {
   return (
-    <Tooltip content={label}>
-      <span
-        role="img"
-        aria-label={label}
-        className="bg-fill-3 text-label-secondary inline-grid size-6 place-items-center rounded-full"
-      >
+    <Tooltip content={hint}>
+      <span className="bg-fill-3 text-label-secondary text-caption inline-flex h-6 items-center gap-1 rounded-full px-2 tabular-nums [&_svg]:size-3.5 [&_svg]:shrink-0">
         {icon}
+        {label}
       </span>
     </Tooltip>
   );

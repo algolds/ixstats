@@ -420,20 +420,33 @@ describe("CardSheet your copies", () => {
     expect(actionGroup("#1 · Standard · Level 9")).toBeInTheDocument();
   });
 
-  it("heads the bar with the copy's value and its facts as named chips", () => {
+  it("heads the bar with the copy's value and its facts as labelled chips, the tooltip saying more", () => {
     showSheet(sheet({ copies: [copy({ isLocked: true })] }));
     showEconomy(economy({ listingId: "l1" }));
     open();
     const bar = actionGroup("#7 · Foil · Level 4");
     expect(bar).toHaveTextContent("1,500");
-    expect(within(bar).getByRole("img", { name: "Since Oct 1, 2026" })).toBeInTheDocument();
-    expect(within(bar).getByRole("img", { name: "In a listing or trade" })).toBeInTheDocument();
+    // Shown, not left to a tooltip or a screen reader: keyboard users read them too.
+    const since = within(bar).getByText("Since Oct 1, 2026");
+    const locked = within(bar).getByText("Locked");
+    for (const chip of [since, locked]) {
+      expect(chip).not.toHaveClass("sr-only");
+      expect(chip).not.toHaveAttribute("aria-hidden");
+      expect(chip).not.toHaveAttribute("role");
+    }
+    fireEvent.focus(since);
+    expect(screen.getByRole("tooltip")).toHaveTextContent(
+      "In your collection since October 1, 2026"
+    );
+    fireEvent.blur(since);
+    fireEvent.focus(locked);
+    expect(screen.getByRole("tooltip")).toHaveTextContent("In a listing or trade");
   });
 
   it("chips no lock on a copy that is free", () => {
     showSheet();
     open();
-    expect(within(copies()).queryByRole("img", { name: "In a listing or trade" })).toBeNull();
+    expect(within(copies()).queryByText("Locked")).toBeNull();
   });
 
   it("groups a free copy's actions into Sell, Workshop and Keep", () => {
