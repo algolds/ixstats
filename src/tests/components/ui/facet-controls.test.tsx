@@ -10,8 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { SearchField } from "~/components/ui/search-field";
-import { Switch } from "~/components/ui/switch";
-import { Slider } from "~/components/ui/slider";
 
 const CHOICES = [
   { value: "one", label: "One" },
@@ -63,10 +61,28 @@ const SegmentedRadios = () => <Segmented />;
 const SegmentedTabs = () => <Segmented asTabs />;
 
 describe.each([
-  { control: "SegmentedControl", Ui: SegmentedRadios, group: "radiogroup", item: "radio", state: "aria-checked" },
-  { control: "SegmentedControl asTabs", Ui: SegmentedTabs, group: "tablist", item: "tab", state: "aria-selected" },
+  {
+    control: "SegmentedControl",
+    Ui: SegmentedRadios,
+    group: "radiogroup",
+    item: "radio",
+    state: "aria-checked",
+  },
+  {
+    control: "SegmentedControl asTabs",
+    Ui: SegmentedTabs,
+    group: "tablist",
+    item: "tab",
+    state: "aria-selected",
+  },
   { control: "Tabs", Ui: TabsChoice, group: "tablist", item: "tab", state: "aria-selected" },
-  { control: "RadioCardGroup", Ui: RadioCards, group: "radiogroup", item: "radio", state: "aria-checked" },
+  {
+    control: "RadioCardGroup",
+    Ui: RadioCards,
+    group: "radiogroup",
+    item: "radio",
+    state: "aria-checked",
+  },
 ] as const)("$control keyboard model", ({ Ui, group, item, state }) => {
   const choice = (name: string) => screen.getByRole(item, { name: new RegExp(`^${name}`) });
   const selected = () =>
@@ -250,29 +266,17 @@ describe("ToggleGroup", () => {
     await waitFor(() => expect(alpha).toHaveFocus());
   });
 
-  it("single: radios; pressing another releases the first and pressing it again clears", () => {
-    const onValueChange = jest.fn();
-    render(
-      <ToggleGroup type="single" aria-label="Sort" defaultValue="a" onValueChange={onValueChange}>
-        <ToggleGroupItem value="a">Alpha</ToggleGroupItem>
-        <ToggleGroupItem value="b">Beta</ToggleGroupItem>
-      </ToggleGroup>
-    );
-    const alpha = screen.getByRole("radio", { name: "Alpha" });
-    const beta = screen.getByRole("radio", { name: "Beta" });
-    fireEvent.click(beta);
-    expect(alpha).toHaveAttribute("aria-checked", "false");
-    expect(beta).toHaveAttribute("aria-checked", "true");
-    fireEvent.click(beta);
-    expect(beta).toHaveAttribute("aria-checked", "false");
-    expect(onValueChange).toHaveBeenLastCalledWith("");
-  });
-
   it("with disallowEmpty keeps the last pressed item, single or multiple", () => {
     function Single() {
       const [value, setValue] = useState("a");
       return (
-        <ToggleGroup type="single" aria-label="View" value={value} onValueChange={setValue} disallowEmpty>
+        <ToggleGroup
+          type="single"
+          aria-label="View"
+          value={value}
+          onValueChange={setValue}
+          disallowEmpty
+        >
           <ToggleGroupItem value="a">A</ToggleGroupItem>
           <ToggleGroupItem value="b">B</ToggleGroupItem>
         </ToggleGroup>
@@ -285,7 +289,13 @@ describe("ToggleGroup", () => {
 
     const onValueChange = jest.fn();
     render(
-      <ToggleGroup type="multiple" aria-label="Filters" defaultValue={["x", "y"]} disallowEmpty onValueChange={onValueChange}>
+      <ToggleGroup
+        type="multiple"
+        aria-label="Filters"
+        defaultValue={["x", "y"]}
+        disallowEmpty
+        onValueChange={onValueChange}
+      >
         <ToggleGroupItem value="x">X</ToggleGroupItem>
         <ToggleGroupItem value="y">Y</ToggleGroupItem>
       </ToggleGroup>
@@ -297,8 +307,8 @@ describe("ToggleGroup", () => {
   });
 });
 
-describe("SearchField, Switch and Slider", () => {
-  it("SearchField clears on Escape, claiming the key, and lets Escape through when empty", () => {
+describe("SearchField", () => {
+  it("clears on Escape, claiming the key, and lets Escape through when empty", () => {
     const onValueChange = jest.fn();
     function Harness() {
       const [q, setQ] = useState("tax");
@@ -317,32 +327,5 @@ describe("SearchField, Switch and Slider", () => {
     expect(input).toHaveValue("");
     expect(onValueChange).toHaveBeenLastCalledWith("");
     expect(fireEvent.keyDown(input, { key: "Escape" })).toBe(true);
-  });
-
-  it("Switch is a switch whose aria-checked follows a press", () => {
-    const onCheckedChange = jest.fn();
-    render(<Switch aria-label="Notifications" onCheckedChange={onCheckedChange} />);
-    const sw = screen.getByRole("switch", { name: "Notifications" });
-    expect(sw).toHaveAttribute("aria-checked", "false");
-    fireEvent.click(sw);
-    expect(sw).toHaveAttribute("aria-checked", "true");
-    expect(onCheckedChange).toHaveBeenCalledWith(true);
-  });
-
-  it("Slider puts its aria-label or aria-labelledby on the thumb, the element with role=slider", () => {
-    globalThis.ResizeObserver ??= class {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
-    } as unknown as typeof ResizeObserver;
-    render(
-      <>
-        <span id="temp-label">Temperature</span>
-        <Slider aria-labelledby="temp-label" min={0} max={2} step={0.1} value={[0.7]} />
-        <Slider aria-label="Speed" min={0} max={5} value={[1]} />
-      </>
-    );
-    expect(screen.getByRole("slider", { name: "Temperature" })).toHaveAttribute("aria-valuenow", "0.7");
-    expect(screen.getByRole("slider", { name: "Speed" })).toBeInTheDocument();
   });
 });

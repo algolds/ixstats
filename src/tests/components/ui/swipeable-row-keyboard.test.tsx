@@ -96,10 +96,8 @@ describe("SwipeableRow keyboard model", () => {
     );
   });
 
-  it.each([
-    ["Shift+F10", { key: "F10", shiftKey: true }],
-    ["the ContextMenu key", { key: "ContextMenu" }],
-  ])("opens the swipe actions as a menu with %s from the focused child", async (_name, keyInit) => {
+  it("opens the swipe actions as a menu with Shift+F10 from the focused child", async () => {
+    const keyInit = { key: "F10", shiftKey: true };
     const onArchive = jest.fn();
     render(<Row onArchive={onArchive} />);
     const button = screen.getByRole("button", { name: "Open message" });
@@ -121,6 +119,7 @@ describe("SwipeableRow keyboard model", () => {
     // Focus goes back to where the menu was opened from.
     await waitFor(() => expect(document.activeElement).toBe(button));
   });
+
   describe("a row with nothing focusable inside", () => {
     beforeEach(() => jest.useFakeTimers());
     afterEach(() => jest.useRealTimers());

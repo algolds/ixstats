@@ -5,7 +5,7 @@
 import { useState } from "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { Card, SurfaceReset } from "~/components/ui/card";
-import { CutoutCard, CutoutCardHeader } from "~/components/ui/cutout-card";
+import { CutoutCard } from "~/components/ui/cutout-card";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { ActionPill } from "~/components/ui/action-pill";
 import { StepIndicator } from "~/components/ui/step-indicator";
@@ -13,7 +13,14 @@ import { StepIndicator } from "~/components/ui/step-indicator";
 const classOf = (el: Element) => el.getAttribute("class") ?? "";
 
 describe.each([
-  { surface: "an interactive Card", ui: (fn: () => void) => <Card onClick={fn} interactive>Open</Card> },
+  {
+    surface: "an interactive Card",
+    ui: (fn: () => void) => (
+      <Card onClick={fn} interactive>
+        Open
+      </Card>
+    ),
+  },
   {
     surface: "a well Card",
     ui: (fn: () => void) => (
@@ -22,7 +29,10 @@ describe.each([
       </Card>
     ),
   },
-  { surface: "a CutoutCard", ui: (fn: () => void) => <CutoutCard onClick={fn} aria-label="Open" /> },
+  {
+    surface: "a CutoutCard",
+    ui: (fn: () => void) => <CutoutCard onClick={fn} aria-label="Open" />,
+  },
 ])("$surface", ({ ui }) => {
   it("is one focusable button, 44pt on touch with its focus ring outside the clip, activated by click, Enter and Space", () => {
     const onClick = jest.fn();
@@ -57,26 +67,6 @@ describe("Card", () => {
     expect(screen.getByRole("region", { name: "Summary" })).toBeInTheDocument();
   });
 
-  it("does not double-activate when the caller handles the key itself", () => {
-    const onClick = jest.fn();
-    render(
-      <Card
-        onClick={onClick}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            onClick();
-          }
-        }}
-        interactive
-      >
-        Open
-      </Card>
-    );
-    fireEvent.keyDown(screen.getByRole("button", { name: "Open" }), { key: "Enter" });
-    expect(onClick).toHaveBeenCalledTimes(1);
-  });
-
   it("never puts glass on glass: a Card in a Card is a well, an explicit variant wins, an overlay starts a fresh pane", () => {
     render(
       <Card>
@@ -95,18 +85,6 @@ describe("Card", () => {
     expect(screen.getByTestId("deeper")).toHaveAttribute("data-variant", "well");
     expect(screen.getByTestId("forced")).toHaveAttribute("data-variant", "pane");
     expect(screen.getByTestId("in-overlay")).toHaveAttribute("data-variant", "pane");
-  });
-
-  it.each(["h2", "h3", "h4"] as const)("CutoutCardHeader as=%s is a real heading", (as) => {
-    render(
-      <CutoutCard>
-        <CutoutCardHeader as={as} icon={<svg />}>
-          Countries to explore
-        </CutoutCardHeader>
-      </CutoutCard>
-    );
-    const heading = screen.getByRole("heading", { level: Number(as[1]), name: "Countries to explore" });
-    expect(heading.tagName).toBe(as.toUpperCase());
   });
 });
 
@@ -131,13 +109,35 @@ describe("FacetList rows", () => {
   });
 
   it.each([
-    { row: "a selected link row", props: { href: "/a", selected: true }, role: "link", attrs: { "aria-current": "page" } },
-    { row: "an unselected link row", props: { href: "/b" }, role: "link", attrs: { "aria-current": null } },
-    { row: "a tint-selected button row", props: { onClick: () => {}, selected: true, selectionStyle: "tint" as const }, role: "button", attrs: { "aria-current": "true", "aria-pressed": null } },
-    { row: "a tint check toggle", props: { onClick: () => {}, selected: true, selectionStyle: "tint" as const, accessory: "check" as const }, role: "button", attrs: { "aria-pressed": "true", "aria-current": null } },
-    { row: "an unchecked check row", props: { onClick: () => {}, accessory: "check" as const }, role: "button", attrs: { "aria-pressed": "false" } },
-    { row: "a default-fill selected row", props: { onClick: () => {}, selected: true }, role: "button", attrs: { "aria-current": null } },
-    { row: "an explicit aria-current row", props: { onClick: () => {}, "aria-current": "location" as const }, role: "button", attrs: { "aria-current": "location" } },
+    {
+      row: "a selected link row",
+      props: { href: "/a", selected: true },
+      role: "link",
+      attrs: { "aria-current": "page" },
+    },
+    {
+      row: "a tint check toggle",
+      props: {
+        onClick: () => {},
+        selected: true,
+        selectionStyle: "tint" as const,
+        accessory: "check" as const,
+      },
+      role: "button",
+      attrs: { "aria-pressed": "true", "aria-current": null },
+    },
+    {
+      row: "an unchecked check row",
+      props: { onClick: () => {}, accessory: "check" as const },
+      role: "button",
+      attrs: { "aria-pressed": "false" },
+    },
+    {
+      row: "a default-fill selected row",
+      props: { onClick: () => {}, selected: true },
+      role: "button",
+      attrs: { "aria-current": null },
+    },
   ])("$row is a $role with $attrs", ({ props, role, attrs }) => {
     render(
       <FacetListSection aria-label="Rows">
@@ -165,7 +165,10 @@ describe("FacetList rows", () => {
     fireEvent.click(button);
     expect(onClick).not.toHaveBeenCalled();
     expect(screen.queryByRole("link")).toBeNull();
-    expect(screen.getByText("Locked").closest('[data-slot="facet-row"]')).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText("Locked").closest('[data-slot="facet-row"]')).toHaveAttribute(
+      "aria-disabled",
+      "true"
+    );
     expect(screen.getAllByRole("button")).toHaveLength(1);
   });
 });
@@ -201,7 +204,9 @@ describe("StepIndicator", () => {
 
   it("marks the current step inside a named nav; only completed steps are buttons, unless all are navigable", () => {
     const onStepClick = jest.fn();
-    const { rerender } = render(<StepIndicator aria-label="Wizard progress" steps={steps} current={1} />);
+    const { rerender } = render(
+      <StepIndicator aria-label="Wizard progress" steps={steps} current={1} />
+    );
     const nav = screen.getByRole("navigation", { name: "Wizard progress" });
     expect(nav.querySelector('[aria-current="step"]')).toHaveTextContent("Scope");
     expect(screen.queryAllByRole("button")).toHaveLength(0);

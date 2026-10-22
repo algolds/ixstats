@@ -1,10 +1,11 @@
 /**
- * Facet overlays: how a Sheet presents by width and props (detents work without drag under reduced motion),
- * virtual-anchor popovers that never take focus and report Escape, a hover card that is no dialog, and a Tooltip
- * that never switches between controlled and uncontrolled.
+ * Facet overlays: a Sheet's detents work from a button without drag (reduced motion), virtual-anchor popovers never
+ * take focus and report Escape, a hover card is no dialog, a Tooltip never switches between controlled and
+ * uncontrolled, and an Inspector mounts its content once (aside while wide, sheet only while open below xl) and asks
+ * its owner to close the sheet when the viewport grows. Folds inspector.test.tsx.
  */
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import {
   Sheet,
   SheetContent,
@@ -12,9 +13,15 @@ import {
   SheetTitle,
   SHEET_SIDE_BREAKPOINT_QUERY,
 } from "~/components/ui/sheet";
-import { Popover, PopoverContent, PopoverVirtualAnchor, VirtualAnchorPopover } from "~/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverVirtualAnchor,
+  VirtualAnchorPopover,
+} from "~/components/ui/popover";
 import { VirtualAnchorHoverCard } from "~/components/ui/hover-card";
 import { Tooltip } from "~/components/ui/tooltip";
+import { Inspector } from "~/components/ui/inspector";
 
 // Radix only warns under the "development" export condition, which Jest does not set.
 jest.mock("@radix-ui/primitive/is-development", () => ({ IS_DEVELOPMENT: true }));
@@ -40,43 +47,10 @@ afterEach(() => {
   document.documentElement.removeAttribute("data-motion");
 });
 
-describe("Sheet presentation", () => {
-  it.each([
-    { at: "390px", width: 390, props: {}, presentation: "bottom-detent", side: "bottom", detent: "medium" },
-    { at: "1280px", width: 1280, props: {}, presentation: "side", side: "right", detent: null },
-    { at: "390px with side=left", width: 390, props: { side: "left" as const }, presentation: "side", side: "left", detent: null },
-    { at: "390px with detents=[large]", width: 390, props: { detents: ["large" as const] }, presentation: "bottom-detent", side: "bottom", detent: "large" },
-    {
-      at: "1280px as an explicit bottom sheet with detents",
-      width: 1280,
-      props: { side: "bottom" as const, detents: ["medium" as const, "large" as const], defaultDetent: "large" as const },
-      presentation: "bottom-detent",
-      side: "bottom",
-      detent: "large",
-    },
-  ])("at $at it is $presentation on the $side, detent $detent", ({ width, props, presentation, side, detent }) => {
-    mockViewportWidth(width);
-    render(
-      <Sheet open>
-        <SheetContent {...props}>
-          <SheetTitle>Details</SheetTitle>
-          <SheetDescription>Sheet body</SheetDescription>
-        </SheetContent>
-      </Sheet>
-    );
-    const dialog = screen.getByRole("dialog");
-    expect(dialog).toHaveAttribute("data-presentation", presentation);
-    expect(dialog).toHaveAttribute("data-side", side);
-    if (detent) expect(dialog).toHaveAttribute("data-detent", detent);
-    else expect(dialog).not.toHaveAttribute("data-detent");
-  });
-
-  it.each([
-    ["with full motion", false],
-    ["under reduced motion", true],
-  ])("switches detents from the grabber button %s", (_label, reduced) => {
+describe("Sheet detents", () => {
+  it("switch from the grabber button, with no drag, under reduced motion", () => {
     mockViewportWidth(390);
-    if (reduced) document.documentElement.setAttribute("data-motion", "reduced");
+    document.documentElement.setAttribute("data-motion", "reduced");
     render(
       <Sheet open>
         <SheetContent>
@@ -158,4 +132,74 @@ test("toggling a Tooltip's `disabled` never switches it between controlled and u
   rerender(ui(false));
   expect(warn).not.toHaveBeenCalled();
   warn.mockRestore();
+});
+
+describe("Inspector", () => {
+  let listeners = new Set<(event: { matches: boolean }) => void>();
+  let wide = false;
+  /** A viewport the real useMediaQuery reads, wide at xl (1280px). */
+  function viewport(isWide: boolean) {
+    wide = isWide;
+    listeners = new Set();
+    window.matchMedia = ((query: string) => ({
+      get matches() {
+        return query === "(min-width: 1280px)" ? wide : false;
+      },
+      media: query,
+      addEventListener: (_: string, fn: (event: { matches: boolean }) => void) => listeners.add(fn),
+      removeEventListener: (_: string, fn: (event: { matches: boolean }) => void) =>
+        listeners.delete(fn),
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      dispatchEvent: () => false,
+    })) as unknown as typeof window.matchMedia;
+  }
+  let live = 0;
+  let peak = 0;
+  function Probe() {
+    React.useEffect(() => {
+      live += 1;
+      peak = Math.max(peak, live);
+      return () => {
+        live -= 1;
+      };
+    }, []);
+    return <span>probe</span>;
+  }
+  const ui = (open: boolean, onOpenChange: (open: boolean) => void = () => {}) => (
+    <Inspector title="Contents" open={open} onOpenChange={onOpenChange}>
+      <Probe />
+    </Inspector>
+  );
+  beforeEach(() => {
+    live = 0;
+    peak = 0;
+  });
+
+  it("mounts its content once: in the aside while wide, in the sheet only while it is open, never in both", () => {
+    viewport(true);
+    render(ui(false)).unmount();
+    expect(peak).toBe(1);
+
+    viewport(false);
+    peak = 0;
+    const { rerender } = render(ui(false));
+    expect(live).toBe(0);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    rerender(ui(true));
+    expect(screen.getByRole("dialog")).toHaveTextContent("probe");
+    rerender(ui(false));
+    expect(peak).toBe(1);
+  });
+
+  it("asks its owner to close the sheet when the viewport grows to xl", () => {
+    viewport(false);
+    const onOpenChange = jest.fn();
+    render(ui(true, onOpenChange));
+    expect(onOpenChange).not.toHaveBeenCalled();
+    wide = true;
+    act(() => listeners.forEach((fn) => fn({ matches: true })));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
 });

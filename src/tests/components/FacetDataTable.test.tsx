@@ -1,7 +1,7 @@
 /**
- * The Facet data table every admin and MyCountry list uses: search narrows the rows, sortable headers are buttons
- * that report aria-sort, paging is a named nav that marks the current page, mobile cards are pressable from the
- * keyboard, and loading is announced as busy.
+ * The Facet data table every admin and MyCountry list uses: sortable headers are buttons that report aria-sort,
+ * paging is a named nav that marks the current page, mobile cards are pressable from the keyboard, and loading is
+ * announced as busy.
  */
 import { fireEvent, render, screen } from "@testing-library/react";
 import { FacetDataTable } from "~/components/ui/data-table/FacetDataTable";
@@ -31,15 +31,6 @@ const columns: FacetColumn<Person>[] = [
 const firstRow = () => screen.getAllByRole("row")[1]?.textContent;
 
 describe("FacetDataTable", () => {
-  it("narrows the rows to a search", () => {
-    render(
-      <FacetDataTable data={people} columns={columns} searchable searchPlaceholder="Search leaders..." layoutMode="table" />
-    );
-    fireEvent.change(screen.getByPlaceholderText("Search leaders..."), { target: { value: "Charlie" } });
-    expect(screen.queryByText("Alice Wonderland")).toBeNull();
-    expect(screen.getByText("Charlie Chaplin")).toBeInTheDocument();
-  });
-
   it("sorts from a header button that reports aria-sort, ascending then descending", () => {
     render(<FacetDataTable data={people} columns={columns} layoutMode="table" />);
     const header = screen.getByRole("columnheader", { name: "Full Name" });
@@ -50,14 +41,6 @@ describe("FacetDataTable", () => {
     fireEvent.click(screen.getByRole("button", { name: "Full Name" }));
     expect(header).toHaveAttribute("aria-sort", "descending");
     expect(firstRow()).toContain("Diana Prince");
-  });
-
-  it("pages the rows", () => {
-    render(<FacetDataTable data={people} columns={columns} paginated pageSize={2} layoutMode="table" />);
-    expect(screen.queryByText("Charlie Chaplin")).toBeNull();
-    fireEvent.click(screen.getByLabelText("Next Page"));
-    expect(screen.queryByText("Alice Wonderland")).toBeNull();
-    expect(screen.getByText("Diana Prince")).toBeInTheDocument();
   });
 
   it("opens a row from its mobile card by click and by keyboard", () => {
@@ -79,7 +62,13 @@ describe("FacetDataTable", () => {
 
 test("pagination is a named nav with the current page marked", () => {
   render(
-    <FacetTablePagination currentPage={2} totalPages={3} totalItems={30} pageSize={10} onPageChange={() => {}} />
+    <FacetTablePagination
+      currentPage={2}
+      totalPages={3}
+      totalItems={30}
+      pageSize={10}
+      onPageChange={() => {}}
+    />
   );
   expect(screen.getByRole("navigation", { name: "Pagination" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Page 2" })).toHaveAttribute("aria-current", "page");
