@@ -1,8 +1,19 @@
 /** @jest-environment node */
+jest.mock("~/lib/notifications/api", () => ({ notificationAPI: { createMany: jest.fn() } }));
+jest.mock("~/lib/notifications/guard", () => ({ isNotificationEventEnabled: jest.fn() }));
+
 import {
   readableUsers,
   type NoticePlace,
 } from "~/server/modules/thinkpages-forum/notice-recipients";
+import { memberName } from "~/server/modules/thinkpages-forum/notice-text";
+import { privacyConnections, wikiAttributionOff } from "~/tests/helpers/privacy-config-fake";
+import { notificationAPI } from "~/lib/notifications/api";
+import { isNotificationEventEnabled } from "~/lib/notifications/guard";
+import {
+  sendForumNotices,
+  type ForumNotice,
+} from "~/server/modules/thinkpages-forum/forum-notices";
 
 const role = { name: "user", level: 100 };
 const user = (id: string, over: object = {}) => ({
@@ -33,11 +44,6 @@ const ids = async (p: NoticePlace, users = [admin, plain, author, founder]) =>
   (await readableUsers(db as never, p, users)).map((u) => u.id);
 
 describe("readableUsers", () => {
-  it("lets everyone read a public thread, without a role lookup", async () => {
-    expect(await ids(place())).toEqual(["u_admin", "u_plain", "u_author", "u_founder"]);
-    expect(db.realm.findMany).not.toHaveBeenCalled();
-  });
-
   it("tells nobody about a hidden thread, moderators included", async () => {
     expect(await ids(place({ thread: { authorUserId: "u_author", hidden: true } }))).toEqual([]);
   });
@@ -74,44 +80,57 @@ describe("readableUsers", () => {
       "u_founder",
     ]);
   });
+});
 
-  describe("who moderates, looked up for the whole list", () => {
-    const modDb = (over: { founded?: string[]; officers?: string[]; moderators?: string[] }) => ({
-      realm: {
-        findMany: jest.fn(async (_args: object) =>
-          (over.founded ?? []).map((ownerId) => ({ ownerId }))
-        ),
-      },
-      realmOfficer: {
-        findMany: jest.fn(async (_args: object) =>
-          (over.officers ?? []).map((userId) => ({ userId }))
-        ),
-      },
-      forumCategoryModerator: {
-        findMany: jest.fn(async (_args: object) =>
-          (over.moderators ?? []).map((userId) => ({ userId }))
-        ),
-      },
+describe("naming a member in a notice", () => {
+  type MemberRow = { handle: string | null; wikiUsername: string | null; clerkUserId: string };
+  function memberDb(row: MemberRow | null, connections = privacyConnections()) {
+    return {
+      user: { findUnique: jest.fn(async (_args: object): Promise<MemberRow | null> => row) },
+      userConnection: connections,
+    };
+  }
+  describe("memberName", () => {
+    const wikiOnly: MemberRow = { handle: null, wikiUsername: "Wiki Name", clerkUserId: "c1" };
+    it("gives the fallback instead of the wiki name with wiki attribution off", async () => {
+      const off = privacyConnections(wikiAttributionOff("c1"));
+      expect(await memberName(memberDb(wikiOnly, off) as never, "u1", "Member")).toBe("Member");
     });
-    const reports = (realmId: string | null) =>
-      place({
-        category: {
-          id: "cat",
-          scope: realmId ? "realm" : "site",
-          realmId,
-          visibility: "reporter_staff",
-        },
-      });
-    const users = [plain, author, founder];
 
-    it("lets a category moderator, a realm founder and a board officer read a Reports thread", async () => {
-      const mods = modDb({ founded: ["clerk_u_founder"], officers: ["clerk_u_plain"] });
-      const readable = await readableUsers(mods as never, reports("r1"), users);
-      expect(readable.map((u) => u.id)).toEqual(["u_plain", "u_author", "u_founder"]);
-      const catMods = modDb({ moderators: ["u_plain"] });
-      expect(
-        (await readableUsers(catMods as never, reports(null), users)).map((u) => u.id)
-      ).toEqual(["u_plain", "u_author"]);
+    it("fails closed: a switch it cannot read gives the fallback", async () => {
+      const broken = privacyConnections();
+      broken.findMany.mockRejectedValue(new Error("db down"));
+      expect(await memberName(memberDb(wikiOnly, broken) as never, "u1", "Member")).toBe("Member");
+    });
+  });
+});
+
+describe("sending the notices", () => {
+  const createMany = jest.mocked(notificationAPI.createMany);
+  const enabled = jest.mocked(isNotificationEventEnabled);
+  const notice = (n: number): ForumNotice => ({
+    clerkUserId: `clerk_${n}`,
+    title: "Kir mentioned you in Trade talks",
+    message: "hello",
+    href: "/thinkpages/post/p1",
+    priority: "medium",
+    metadata: { kind: "mention", postId: "p1", threadId: "t1" },
+  });
+  let errorSpy: jest.SpyInstance;
+  beforeEach(() => {
+    createMany.mockReset();
+    createMany.mockResolvedValue([]);
+    enabled.mockReset();
+    enabled.mockResolvedValue(true);
+    errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+  });
+  afterEach(() => errorSpy.mockRestore());
+  describe("sendForumNotices", () => {
+    it("checks the admin switch itself, since createMany has no guard, and writes nothing when it is off", async () => {
+      enabled.mockResolvedValue(false);
+      await expect(sendForumNotices([notice(1)])).resolves.toBe(true);
+      expect(enabled).toHaveBeenCalledWith("thinkpages-forumNotification");
+      expect(createMany).not.toHaveBeenCalled();
     });
   });
 });

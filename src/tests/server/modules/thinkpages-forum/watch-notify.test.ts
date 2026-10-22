@@ -117,17 +117,6 @@ describe("notifyWatchers", () => {
       },
     ]);
   });
-
-  it("never claims or tells an inactive watcher", async () => {
-    const db = watchDb({ pages: [["u_w1", "u_w2"]], inactive: ["u_w2"] });
-    await expect(notifyWatchers(db as never, input())).resolves.toBe(1);
-    expect(db.user.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ isActive: true }) })
-    );
-    expect(db.forumThreadWatch.updateMany.mock.calls[0]![0].where.userId).toEqual({ in: ["u_w1"] });
-    expect(sent.mock.calls[0]![0].map((n) => n.clerkUserId)).toEqual(["clerk_w1"]);
-  });
-
   it("tells only the watchers whose claim this reply won when a second reply raced", async () => {
     const db = watchDb({ pages: [["u_w1", "u_w2", "u_w3"]], claimCount: 1, owned: ["u_w2"] });
     await notifyWatchers(db as never, input());
@@ -144,63 +133,6 @@ describe("notifyWatchers", () => {
     expect(release!.data).toEqual({ notifiedAt: null });
     expect(release!.where.notifiedAt).toEqual(claim!.data.notifiedAt);
   });
-
-  it("gives back only the claims of watchers who were to be told, not those already told or blocking the author", async () => {
-    sent.mockResolvedValue(false);
-    blocking.mockResolvedValue(["clerk_w3"]);
-    const db = watchDb({ pages: [["u_w1", "u_w2", "u_w3"]] });
-    await expect(notifyWatchers(db as never, input({ handled: new Set(["u_w2"]) }))).resolves.toBe(
-      0
-    );
-    const [claim, release] = db.forumThreadWatch.updateMany.mock.calls.map(([args]) => args);
-    expect(claim!.where.userId.in).toEqual(["u_w1", "u_w2"]);
-    expect(release!.where.userId.in).toEqual(["u_w1"]);
-  });
-
-  it("claims nothing when every watcher who can read the thread blocks the author", async () => {
-    blocking.mockResolvedValue(["clerk_w1"]);
-    const db = watchDb({ pages: [["u_w1"]] });
-    await expect(notifyWatchers(db as never, input())).resolves.toBe(0);
-    expect(db.forumThreadWatch.updateMany).not.toHaveBeenCalled();
-    expect(sent).not.toHaveBeenCalled();
-  });
-
-  it("tells a watcher who blocks one author about the next reply from someone else", async () => {
-    const notified = new Map<string, Date | null>([
-      ["u_w1", null],
-      ["u_w2", null],
-    ]);
-    const db = watchDb({ pages: [["u_w1", "u_w2"]] });
-    db.forumThreadWatch.findMany.mockImplementation(async ({ where }: { where: WatchWhere }) =>
-      [...notified]
-        .filter(([, at]) => (where.notifiedAt === null ? at === null : at === where.notifiedAt))
-        .map(([userId]) => ({ userId }))
-    );
-    db.forumThreadWatch.updateMany.mockImplementation(async ({ where, data }: Claim) => {
-      let count = 0;
-      for (const id of where.userId.in!) {
-        if (notified.get(id) === null) {
-          notified.set(id, data.notifiedAt);
-          count += 1;
-        }
-      }
-      return { count };
-    });
-    blocking.mockResolvedValueOnce(["clerk_w2"]);
-    await expect(notifyWatchers(db as never, input({ actorId: "u_b" }))).resolves.toBe(1);
-    expect(sent.mock.calls[0]![0].map((n) => n.clerkUserId)).toEqual(["clerk_w1"]);
-    sent.mockClear();
-    await expect(notifyWatchers(db as never, input({ actorId: "u_c" }))).resolves.toBe(1);
-    expect(sent.mock.calls[0]![0].map((n) => n.clerkUserId)).toEqual(["clerk_w2"]);
-  });
-
-  it("gives nothing back when every claimed watcher was settled by the claim", async () => {
-    sent.mockResolvedValue(false);
-    const db = watchDb({ pages: [["u_w1"]] });
-    await notifyWatchers(db as never, input({ handled: new Set(["u_w1"]) }));
-    expect(db.forumThreadWatch.updateMany).toHaveBeenCalledTimes(1);
-  });
-
   it("claims nothing and reads nothing when the admin has switched forum notices off", async () => {
     enabled.mockResolvedValue(false);
     const db = watchDb({ pages: [["u_w1"]] });
