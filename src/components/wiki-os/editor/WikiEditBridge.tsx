@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
+import { useHandleGate } from "~/hooks/useHandleGate";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import {
@@ -16,6 +17,7 @@ import {
 } from "~/lib/wiki-os/editor/draft-store";
 import { appendNewSection, NEW_SECTION_HEADING } from "~/lib/wiki-os/wikitext/new-section";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
+import { HandlePickerDialog } from "./HandlePickerDialog";
 import type { WikitextSerializeResult } from "./plate/wiki-wikitext";
 
 const WikiVisualEditor = dynamic(
@@ -126,6 +128,8 @@ export function WikiEditBridge({
   );
 
   const saveWikitext = api.wikios.saveWikitext.useMutation();
+  // A save is signed with the passport handle: a player without one picks it first.
+  const { ensureHandle, dialog } = useHandleGate();
 
   if (loaded === null && !wtLoading && isFetchedAfterMount) {
     setLoaded({
@@ -209,6 +213,7 @@ export function WikiEditBridge({
 
   const performSave = useCallback(
     async (save: PendingSave, baseRevisionRef: string | null) => {
+      if (!(await ensureHandle())) throw new Error("A passport handle is needed to save.");
       setSaving(true);
       setConflict(null);
       try {
@@ -256,7 +261,7 @@ export function WikiEditBridge({
         setSaving(false);
       }
     },
-    [title, userId, saveWikitext, refetchWikitext, utils, onSaveSuccess, onClose]
+    [title, userId, ensureHandle, saveWikitext, refetchWikitext, utils, onSaveSuccess, onClose]
   );
 
   const handleVisualSave = useCallback(
@@ -452,6 +457,7 @@ export function WikiEditBridge({
           registerContentReader={registerContentReader}
         />
       )}
+      <HandlePickerDialog {...dialog} />
     </div>
   );
 }

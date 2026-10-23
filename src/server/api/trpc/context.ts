@@ -31,6 +31,14 @@ const userContextCache = new Cache<ContextUser>({
   maxSize: 50,
 });
 
+/**
+ * Drops a user's cached context, so their next request reads the row again: after a change the very next call must
+ * see, such as a handle picked from the WikiOS first-save dialog right before the save is retried.
+ */
+export function forgetContextUser(clerkUserId: string): void {
+  userContextCache.delete(clerkUserId);
+}
+
 const debug = (...args: unknown[]) => {
   if (VERBOSE) console.log(...args);
 };

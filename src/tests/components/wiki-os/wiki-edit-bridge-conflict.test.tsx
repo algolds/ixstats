@@ -8,7 +8,12 @@ type SaveProps = {
   initialWikitext: string;
   registerContentReader?: (read: (() => string | null) | null) => void;
   restoreLocalDraft?: boolean;
-  onSave: (content: string, summary: string, minor: boolean, keepEditing?: boolean) => Promise<void>;
+  onSave: (
+    content: string,
+    summary: string,
+    minor: boolean,
+    keepEditing?: boolean
+  ) => Promise<void>;
 };
 
 const mockSave = jest.fn();
@@ -19,13 +24,23 @@ const mockNotifyError = jest.fn();
 const mockVisual = jest.fn();
 const mockSource = jest.fn();
 const mockSourceMounted = jest.fn();
-let mockPage: { wikitext: string; revisionRef: string | null; revisionRefs?: string[] } = { wikitext: "", revisionRef: null };
+let mockPage: { wikitext: string; revisionRef: string | null; revisionRefs?: string[] } = {
+  wikitext: "",
+  revisionRef: null,
+};
 /** What the open editor holds right now (null: still what it was opened with). */
 let mockEditorContent: string | null = null;
 let mockFetchedAfterMount = true;
 const mockUseQuery = jest.fn();
 let mockUserId: string | null = "user_alice";
 let mockAuthLoaded = true;
+/** The player's stored passport handle, as `ixnayid.getStatus` reports it. */
+let mockHandle: string | null = "alice";
+/** The status query has answered (else the gate reads it on the save). */
+let mockStatusLoaded = true;
+let mockStatusReadFails = false;
+const mockSetHandle = jest.fn();
+const mockInvalidateStatus = jest.fn();
 
 jest.mock("~/lib/wiki-os/use-wiki-auth", () => ({
   useWikiAuth: () => ({
@@ -38,7 +53,9 @@ jest.mock("next/dynamic", () => ({
   __esModule: true,
   default: (loader: () => Promise<React.ComponentType<Record<string, unknown>>>) =>
     function Lazy(props: Record<string, unknown>) {
-      const [Loaded, setLoaded] = React.useState<React.ComponentType<Record<string, unknown>> | null>(null);
+      const [Loaded, setLoaded] = React.useState<React.ComponentType<
+        Record<string, unknown>
+      > | null>(null);
       React.useEffect(() => {
         void loader().then((component) => setLoaded(() => component));
       }, []);
@@ -47,7 +64,35 @@ jest.mock("next/dynamic", () => ({
 }));
 jest.mock("~/trpc/react", () => ({
   api: {
-    useUtils: () => ({ wikios: { getWikitext: { invalidate: (...args: unknown[]) => mockInvalidate(...args) } } }),
+    useUtils: () => ({
+      wikios: { getWikitext: { invalidate: (...args: unknown[]) => mockInvalidate(...args) } },
+      ixnayid: {
+        getStatus: {
+          invalidate: () => mockInvalidateStatus(),
+          fetch: () =>
+            mockStatusReadFails
+              ? Promise.reject(new Error("offline"))
+              : Promise.resolve({ handle: mockHandle }),
+        },
+      },
+    }),
+    ixnayid: {
+      getStatus: {
+        useQuery: () => ({ data: mockStatusLoaded ? { handle: mockHandle } : undefined }),
+      },
+      suggestHandle: { useQuery: () => ({ data: { handle: "alice_2" } }) },
+      // The server takes the handle; the next status read reports it.
+      setHandle: {
+        useMutation: (opts: { onSuccess: (result: { handle: string }) => Promise<void> }) => ({
+          isPending: false,
+          mutate: (input: { handle: string }) => {
+            mockSetHandle(input);
+            mockHandle = input.handle;
+            void opts.onSuccess({ handle: input.handle });
+          },
+        }),
+      },
+    },
     wikios: {
       getWikitext: {
         useQuery: (...args: unknown[]) => {
@@ -60,7 +105,9 @@ jest.mock("~/trpc/react", () => ({
           };
         },
       },
-      saveWikitext: { useMutation: () => ({ mutateAsync: (...args: unknown[]) => mockSave(...args) }) },
+      saveWikitext: {
+        useMutation: () => ({ mutateAsync: (...args: unknown[]) => mockSave(...args) }),
+      },
     },
   },
 }));
@@ -79,9 +126,12 @@ jest.mock("~/components/wiki-os/editor/WikiVisualEditor", () => ({
   WikiVisualEditor: (props: SaveProps) => {
     mockVisual(props);
     const { getDraft: readDraft } = jest.requireActual("~/lib/wiki-os/editor/draft-store");
-    const draft = props.restoreLocalDraft === false ? null : readDraft("user_alice", props.title, "ixwiki");
+    const draft =
+      props.restoreLocalDraft === false ? null : readDraft("user_alice", props.title, "ixwiki");
     React.useEffect(() => {
-      props.registerContentReader?.(() => mockEditorContent ?? draft?.wikitext ?? props.initialWikitext);
+      props.registerContentReader?.(
+        () => mockEditorContent ?? draft?.wikitext ?? props.initialWikitext
+      );
       return () => props.registerContentReader?.(null);
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [props.registerContentReader]);
@@ -105,7 +155,14 @@ const lastVisualProps = (): SaveProps => mockVisual.mock.calls.at(-1)![0] as Sav
 const lastSourceProps = (): SaveProps => mockSource.mock.calls.at(-1)![0] as SaveProps;
 
 async function openEditor(): Promise<void> {
-  render(<WikiEditBridge title="Vesperia" initialMode="source" onClose={onClose} onSaveSuccess={onSaveSuccess} />);
+  render(
+    <WikiEditBridge
+      title="Vesperia"
+      initialMode="source"
+      onClose={onClose}
+      onSaveSuccess={onSaveSuccess}
+    />
+  );
   await screen.findByTestId("source");
 }
 
@@ -131,6 +188,16 @@ async function save(content: string, keepEditing = false): Promise<unknown> {
   return outcome;
 }
 
+/** A save left running while the handle picker is open: "saved", or what it threw. */
+function startSave(content: string): Promise<unknown> {
+  return lastSourceProps()
+    .onSave(content, "summary", false)
+    .then(
+      () => "saved",
+      (error: Error) => error
+    );
+}
+
 describe("WikiEditBridge edit conflicts and drafts (WK-2)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -142,6 +209,10 @@ describe("WikiEditBridge edit conflicts and drafts (WK-2)", () => {
     mockFetchedAfterMount = true;
     mockUserId = "user_alice";
     mockAuthLoaded = true;
+    mockHandle = "alice";
+    mockStatusLoaded = true;
+    mockStatusReadFails = false;
+    mockInvalidateStatus.mockResolvedValue(undefined);
     mockSave.mockResolvedValue({ success: true, title: "Vesperia", revisionId: "rev-9" });
     mockRefetch.mockResolvedValue({ data: { wikitext: "Saved text", revisionRef: "rev-9" } });
   });
@@ -158,6 +229,65 @@ describe("WikiEditBridge edit conflicts and drafts (WK-2)", () => {
     expect(onSaveSuccess).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
     expect(mockInvalidate).toHaveBeenCalledWith({ title: "Vesperia" });
+  });
+  it("asks a player with no passport handle for one, and saves only after they pick it", async () => {
+    mockHandle = null;
+    await openEditor();
+
+    const outcome = startSave("My text");
+
+    const input = await screen.findByLabelText("Passport handle");
+    expect(input).toHaveValue("alice_2");
+    expect(mockSave).not.toHaveBeenCalled();
+
+    fireEvent.change(input, { target: { value: "alice" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save and continue" }));
+
+    expect(await outcome).toBe("saved");
+    expect(mockSetHandle).toHaveBeenCalledWith({ handle: "alice" });
+    expect(mockInvalidateStatus).toHaveBeenCalled();
+    expect(mockSave).toHaveBeenCalledTimes(1);
+    expect(mockSave).toHaveBeenCalledWith(expect.objectContaining({ wikitext: "My text" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+  it("saves nothing when the player cancels the handle picker", async () => {
+    mockHandle = null;
+    await openEditor();
+
+    const outcome = startSave("My text");
+    fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+
+    expect(await outcome).toEqual(new Error("A passport handle is needed to save."));
+    expect(mockSetHandle).not.toHaveBeenCalled();
+    expect(mockSave).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+  it("reads the status on the save when it has not loaded yet", async () => {
+    mockHandle = null;
+    mockStatusLoaded = false;
+    await openEditor();
+
+    const outcome = startSave("My text");
+    fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+
+    expect(await outcome).toEqual(new Error("A passport handle is needed to save."));
+    expect(mockSave).not.toHaveBeenCalled();
+  });
+  it("lets the server decide when the status cannot be read", async () => {
+    mockHandle = null;
+    mockStatusLoaded = false;
+    mockStatusReadFails = true;
+    await openEditor();
+
+    expect(await save("My text")).toBe("saved");
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(mockSave).toHaveBeenCalledTimes(1);
+  });
+  it("saves at once for a player who has a handle", async () => {
+    await openEditor();
+    await save("My text");
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(mockSave).toHaveBeenCalledTimes(1);
   });
   it("keeps the author's text, shows the banner and does not close on a conflict", async () => {
     mockSave.mockResolvedValueOnce(conflictResult("rev-2"));
@@ -182,7 +312,13 @@ describe("WikiEditBridge edit conflicts and drafts (WK-2)", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
   it("does not silently replace fresher server text with an older draft", async () => {
-    saveDraft("user_alice", { title: "Vesperia", source: "ixwiki", mode: "source", wikitext: "Old draft", baseRevisionRef: "rev-0" });
+    saveDraft("user_alice", {
+      title: "Vesperia",
+      source: "ixwiki",
+      mode: "source",
+      wikitext: "Old draft",
+      baseRevisionRef: "rev-0",
+    });
     render(<WikiEditBridge title="Vesperia" initialMode="source" onClose={onClose} />);
 
     expect(await screen.findByText(/Older draft found/)).toBeTruthy();
@@ -196,7 +332,13 @@ describe("WikiEditBridge edit conflicts and drafts (WK-2)", () => {
     expect(getDraft("user_alice", "Vesperia")).toBeNull();
   });
   it("never offers another user's draft of the page (plan 416)", async () => {
-    saveDraft("user_bob", { title: "Vesperia", source: "ixwiki", mode: "source", wikitext: "Bob's draft", baseRevisionRef: "rev-1" });
+    saveDraft("user_bob", {
+      title: "Vesperia",
+      source: "ixwiki",
+      mode: "source",
+      wikitext: "Bob's draft",
+      baseRevisionRef: "rev-1",
+    });
 
     await openEditor();
 
@@ -204,7 +346,13 @@ describe("WikiEditBridge edit conflicts and drafts (WK-2)", () => {
     expect(screen.queryByText(/Older draft found/)).toBeNull();
   });
   it("waits until the account is known before deciding about a draft", async () => {
-    saveDraft("user_alice", { title: "Vesperia", source: "ixwiki", mode: "source", wikitext: "Alice's draft", baseRevisionRef: "rev-1" });
+    saveDraft("user_alice", {
+      title: "Vesperia",
+      source: "ixwiki",
+      mode: "source",
+      wikitext: "Alice's draft",
+      baseRevisionRef: "rev-1",
+    });
     mockAuthLoaded = false;
     const view = render(<WikiEditBridge title="Vesperia" initialMode="source" onClose={onClose} />);
     await act(async () => undefined);
@@ -238,11 +386,20 @@ describe("WikiEditBridge edit conflicts and drafts (WK-2)", () => {
       render(<WikiEditBridge title="Vesperia" initialMode={mode} onClose={onClose} />);
       await screen.findByTestId(mode);
       // The author's own draft of the page exists while they edit (Save draft, or an earlier session).
-      saveDraft("user_alice", { title: "Vesperia", source: "ixwiki", mode, wikitext: "My stale draft" });
+      saveDraft("user_alice", {
+        title: "Vesperia",
+        source: "ixwiki",
+        mode,
+        wikitext: "My stale draft",
+      });
       mockEditorContent = "My text";
       await act(async () => {
         try {
-          await (mode === "source" ? lastSourceProps() : lastVisualProps()).onSave("My text", "s", false);
+          await (mode === "source" ? lastSourceProps() : lastVisualProps()).onSave(
+            "My text",
+            "s",
+            false
+          );
         } catch {
           /* the conflict is the point */
         }
@@ -261,7 +418,9 @@ describe("WikiEditBridge edit conflicts and drafts (WK-2)", () => {
       expect(screen.queryByText(/Your version was set aside/)).toBeNull();
       // one line of warning: saving replaces the current version with the restored text
       const warning = screen.getByText(/This is your text, not the current version/);
-      expect(warning.closest("p")!.textContent).toContain("saving will replace the current version");
+      expect(warning.closest("p")!.textContent).toContain(
+        "saving will replace the current version"
+      );
       // and it does not come back as a draft
       expect(getDraft("user_alice", "Vesperia")).toBeNull();
     });
