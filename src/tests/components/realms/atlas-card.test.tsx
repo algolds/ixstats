@@ -69,6 +69,13 @@ describe("atlas RealmCard", () => {
     expect(screen.queryByText(/ open$/)).not.toBeInTheDocument();
   });
 
+  it("the open chip carries a decorative hatch swatch", () => {
+    renderCard();
+    const swatch = screen.getByTestId("open-swatch");
+    expect(swatch).toHaveAttribute("aria-hidden", "true");
+    expect(swatch.parentElement).toHaveTextContent("127 open");
+  });
+
   it("Join goes to the Nations tab", () => {
     renderCard();
     expect(screen.getByRole("link", { name: "Join" })).toHaveAttribute("href", "/r/ixnay/nations");
