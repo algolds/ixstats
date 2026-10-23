@@ -46,6 +46,8 @@ import { realmMapPipelineRouter } from "./map-pipeline";
 import { realmWikiRouter } from "./wiki";
 import { realmNationDefaultsRouter } from "./nation-defaults";
 import { realmSlugWhere } from "~/lib/realms/realm-ids";
+import { getRealmMapFace } from "~/server/modules/realms/realms.map-face";
+import { mutationRealmId } from "~/server/api/trpc/realm-scope";
 
 /** The side effects linkCountry used to run when a nation changed hands; failures are logged, never thrown. */
 async function onNationAssigned(event: NationAssignedEvent): Promise<void> {
@@ -345,6 +347,13 @@ export const realmsRouter = createTRPCRouter({
   directory: rateLimitedPublicProcedure.query(({ ctx }) =>
     listRealmDirectory(ctx.db, ctx.user?.id ?? null)
   ),
+
+  /** A realm's map face for its directory card and page header: political SVG paths, cached an hour. */
+  mapFace: rateLimitedPublicProcedure
+    .input(z.object({ realmSlug: z.string().trim().min(1).max(60) }))
+    .query(async ({ ctx, input }) =>
+      getRealmMapFace(ctx.db, await mutationRealmId(ctx, input.realmSlug))
+    ),
 
   /** Nation search on /realms: countries and claimable nation pages in the realms the directory lists. */
   searchNations: rateLimitedPublicProcedure
