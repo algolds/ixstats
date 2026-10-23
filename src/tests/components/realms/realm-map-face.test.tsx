@@ -5,7 +5,16 @@ import type { CardRealmBadge } from "~/lib/cards/face/types";
 const mockUseQuery = jest.fn();
 
 jest.mock("~/trpc/react", () => ({
-  api: { realms: { mapFace: { useQuery: (...args: unknown[]) => mockUseQuery(...args) } } },
+  api: {
+    realms: {
+      mapFace: {
+        useQuery: (
+          input: { realmSlug: string },
+          options: { enabled: boolean; staleTime: number }
+        ) => mockUseQuery(input, options),
+      },
+    },
+  },
 }));
 
 const realm: CardRealmBadge = {
@@ -68,5 +77,16 @@ describe("RealmMapFace", () => {
     expect(fill).toMatch(/^url\(#[A-Za-z0-9_-]+\)$/);
     const id = /#([^)]+)\)/.exec(fill ?? "")?.[1];
     expect(container.querySelector(`pattern[id="${id}"]`)).not.toBeNull();
+  });
+
+  it("loads the crest emblem without a referrer", () => {
+    mockUseQuery.mockReturnValue({ data: null, isLoading: false });
+    const { container } = render(
+      <RealmMapFace
+        realm={{ ...realm, crestUrl: "https://eurth.org/crest.png" }}
+        bannerUrl={null}
+      />
+    );
+    expect(container.querySelector("img")?.getAttribute("referrerpolicy")).toBe("no-referrer");
   });
 });
