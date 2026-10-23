@@ -132,6 +132,7 @@ model WikiRevision {
   parked           Boolean      @default(false)
   parkReason       String?      // "conflict:<head revision ref>"
   createdAt        DateTime     @default(now())
+  claimTags        WikiRevisionClaimTag[]
 
   @@index([articleId, createdAt])
   @@index([articleId, parked, createdAt])
@@ -262,6 +263,64 @@ model WikiBlock {
   @@index([userId])
   @@index([wikiUsername])
   @@map("wiki_blocks")
+}
+
+enum WikiNameClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REVOKED
+}
+
+enum WikiNameClaimOrigin {
+  PLAYER
+  ADMIN_LINK
+  CONVERSION
+}
+
+/// An old IxWiki (MediaWiki) user name an account holds or asked for. Only APPROVED claims identify anyone
+/// (src/lib/identity/wiki-names.ts); one approved owner per name is a partial unique index in the claims SQL.
+model WikiNameClaim {
+  id            String                 @id @default(cuid())
+  userId        String
+  user          User                   @relation("WikiNameClaims", fields: [userId], references: [id], onDelete: Cascade)
+  source        String                 @default("ixwiki")
+  name          String // normalizeWikiUsername form
+  status        WikiNameClaimStatus    @default(PENDING)
+  /// false: the name shows nowhere public (converted from wiki attribution off) until the owner turns it on.
+  visible       Boolean                @default(true)
+  /// Imported MediaWiki groups keyed by this name pass to the account (plan 409: a system owner decided it).
+  rightsPass    Boolean                @default(false)
+  origin        WikiNameClaimOrigin
+  evidence      String?                @db.VarChar(1000)
+  decisionNote  String?                @db.VarChar(1000)
+  requestedById String
+  decidedById   String?
+  decidedAt     DateTime?
+  mwUserId      Int?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  tags          WikiRevisionClaimTag[]
+
+  @@index([source, name])
+  @@index([userId, status])
+  @@index([status, createdAt])
+  @@map("wiki_name_claims")
+}
+
+/// One `authorId` a claim put on a revision; `undoneAt` is set when a revoke (or the backfill's undo) took it back.
+model WikiRevisionClaimTag {
+  id         String        @id @default(cuid())
+  claimId    String
+  claim      WikiNameClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  revisionId String
+  revision   WikiRevision  @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+  taggedAt   DateTime      @default(now())
+  undoneAt   DateTime?
+
+  @@index([claimId, undoneAt])
+  @@index([revisionId])
+  @@map("wiki_revision_claim_tags")
 }
 
 /// An app-specific credential for the api.php endpoint (Special:BotPasswords). The password is shown once; only

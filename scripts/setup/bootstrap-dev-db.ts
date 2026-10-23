@@ -71,6 +71,9 @@ export const CARDS_ECONOMY_SQL = "prisma/migrations/20261101120000_cards_economy
 export const CARDS_CATEGORIES_SQL =
   "prisma/migrations/20261102120000_cards_categories/migration.sql";
 
+/** IxnayID identity: the wiki name claims (with their partial unique indexes) and revision tag tables; idempotent. */
+export const IXNAYID_CLAIMS_SQL = "prisma/migrations/20261103120000_ixnayid_claims/migration.sql";
+
 /** The SQL `db push` cannot apply, in the order it runs (the triggers first: the Atlas SQL backfills through them). */
 export const DB_SETUP_SQL_FILES = [MAP_GEOMETRY_TRIGGERS_SQL, ATLAS_R0_SQL, ATLAS_RA_SQL];
 
@@ -203,6 +206,15 @@ async function main(): Promise<void> {
     "prisma/schema",
     "--file",
     CARDS_CATEGORIES_SQL,
+  ]);
+  run("bunx", [
+    "prisma",
+    "db",
+    "execute",
+    "--schema",
+    "prisma/schema",
+    "--file",
+    IXNAYID_CLAIMS_SQL,
   ]);
   run("bun", ["scripts/setup/seed-db.ts", "--force"]);
 
