@@ -13,11 +13,7 @@ import {
 } from "~/server/modules/thinkpages-forum";
 import { advertGate } from "~/server/modules/thinkpages-forum/advert-access";
 import { summarizeCategories } from "~/server/modules/thinkpages-forum/reads";
-import {
-  privacyConfigRow,
-  privacyConnections,
-  wikiAttributionOff,
-} from "~/tests/helpers/privacy-config-fake";
+import { privacyConnections, wikiAttributionOff } from "~/tests/helpers/privacy-config-fake";
 import { boardTopPosters, trendingThreads } from "~/server/modules/thinkpages-forum/board-reads";
 import { latestActivity, listBoards } from "~/server/modules/thinkpages-forum/board-list";
 import { latestPublicThreadPreviews } from "~/server/modules/thinkpages-forum/thread-preview";
@@ -252,7 +248,7 @@ describe("getCategoryThreads in a realm", () => {
   });
 });
 describe("authorsOf", () => {
-  it("names users handle, then wiki name, then country name, then Member, never the discord or forum name or clerk id", async () => {
+  it("names users handle, then country name, then Member, never the wiki, discord or forum name or clerk id", async () => {
     const db = readDb();
     db.user.findMany.mockResolvedValue([
       { id: "u1", handle: "heku", wikiUsername: "Heku", country: { name: "Caphiria" } },
@@ -277,7 +273,7 @@ describe("authorsOf", () => {
       flagUrl: null,
     });
     expect(out.users.get("u2")).toEqual({
-      name: "WikiName",
+      name: "Caphiria",
       handle: null,
       avatarUrl: null,
       flagUrl: null,
@@ -307,6 +303,7 @@ describe("authorsOf", () => {
     expect(JSON.stringify([...out.users.values()])).not.toContain("clerk");
     expect(db.user.findMany.mock.calls[0][0].select).not.toHaveProperty("name");
     expect(db.user.findMany.mock.calls[0][0].select).not.toHaveProperty("discordUsername");
+    expect(db.user.findMany.mock.calls[0][0].select).not.toHaveProperty("wikiUsername");
     expect(db.user.findMany.mock.calls[0][0].select.country).toEqual({
       select: { name: true, flag: true },
     });
@@ -361,7 +358,7 @@ describe("authorsOf", () => {
     });
   });
 
-  it("skips the wiki name of a member with wiki attribution off, the same for every viewer", async () => {
+  it("names a member the same whatever their wiki attribution says, and never reads the switch", async () => {
     const db = readDb();
     db.user.findMany.mockResolvedValue([
       { id: "u1", clerkUserId: "c1", handle: "heku", wikiUsername: "Heku", country: null },
@@ -373,38 +370,11 @@ describe("authorsOf", () => {
         country: { name: "Caphiria" },
       },
       { id: "u3", clerkUserId: "c3", handle: null, wikiUsername: "Plain", country: null },
-      { id: "u4", clerkUserId: "c4", handle: null, wikiUsername: "Shown", country: null },
     ]);
-    db.userConnection.findMany.mockResolvedValue([
-      ...wikiAttributionOff("c1", "c2", "c3"),
-      privacyConfigRow("c4", { showWikiAttribution: true }),
-    ]);
-    const out = await authorsOf(db as never, ["u1", "u2", "u3", "u4"], []);
-    expect([...out.users.values()].map((u) => u.name)).toEqual([
-      "heku",
-      "Caphiria",
-      "Member",
-      "Shown",
-    ]);
-    expect(db.userConnection.findMany).toHaveBeenCalledTimes(1);
-  });
-
-  it("fails closed: a switch it cannot read hides every wiki name", async () => {
-    const db = readDb();
-    db.user.findMany.mockResolvedValue([
-      {
-        id: "u1",
-        clerkUserId: "c1",
-        handle: null,
-        wikiUsername: "WikiName",
-        country: { name: "Caphiria" },
-      },
-      { id: "u2", clerkUserId: "c2", handle: null, wikiUsername: "Other", country: null },
-      { id: "u3", clerkUserId: "c3", handle: "heku", wikiUsername: "Heku", country: null },
-    ]);
-    db.userConnection.findMany.mockRejectedValue(new Error("db down"));
+    db.userConnection.findMany.mockResolvedValue(wikiAttributionOff("c1", "c2", "c3"));
     const out = await authorsOf(db as never, ["u1", "u2", "u3"], []);
-    expect([...out.users.values()].map((u) => u.name)).toEqual(["Caphiria", "Member", "heku"]);
+    expect([...out.users.values()].map((u) => u.name)).toEqual(["heku", "Caphiria", "Member"]);
+    expect(db.userConnection.findMany).not.toHaveBeenCalled();
   });
 });
 
@@ -1243,17 +1213,24 @@ describe("who may be told about a thread", () => {
   });
   describe("naming a member in a notice", () => {
     type MemberRow = { handle: string | null; wikiUsername: string | null; clerkUserId: string };
-    function memberDb(row: MemberRow | null, connections = privacyConnections()) {
+    function memberDb(row: MemberRow | null) {
       return {
         user: { findUnique: jest.fn(async (_args: object): Promise<MemberRow | null> => row) },
-        userConnection: connections,
       };
     }
     describe("memberName", () => {
-      const wikiOnly: MemberRow = { handle: null, wikiUsername: "Wiki Name", clerkUserId: "c1" };
-      it("gives the fallback instead of the wiki name with wiki attribution off", async () => {
-        const off = privacyConnections(wikiAttributionOff("c1"));
-        expect(await memberName(memberDb(wikiOnly, off) as never, "u1", "Member")).toBe("Member");
+      it("names a member by handle, else the fallback, never by their wiki name", async () => {
+        const wikiOnly: MemberRow = { handle: null, wikiUsername: "Wiki Name", clerkUserId: "c1" };
+        const db = memberDb(wikiOnly);
+        expect(await memberName(db as never, "u1", "Member")).toBe("Member");
+        expect(
+          await memberName(memberDb({ ...wikiOnly, handle: "heku" }) as never, "u1", "Member")
+        ).toBe("heku");
+        expect(await memberName(memberDb(null) as never, "u1", "Member")).toBe("Member");
+        expect(db.user.findUnique.mock.calls[0]?.[0]).toEqual({
+          where: { id: "u1" },
+          select: { handle: true },
+        });
       });
     });
   });

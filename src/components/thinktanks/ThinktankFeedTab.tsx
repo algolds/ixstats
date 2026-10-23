@@ -31,7 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
@@ -77,13 +77,15 @@ const personaAuthor = (post: any) => {
   };
 };
 
-const memberAuthor = (post: any) => {
+type GroupFeedPost = RouterOutputs["thinkpages"]["getGroupFeed"]["posts"][number];
+
+const memberAuthor = (post: GroupFeedPost) => {
   const { account: persona, realUser } = post;
   return {
     displayName:
       realUser?.country?.name ||
       realUser?.forumUsername ||
-      realUser?.wikiUsername ||
+      realUser?.handle ||
       persona?.displayName ||
       "Member",
     countryName: realUser?.country?.name || persona?.country?.name,

@@ -19,10 +19,8 @@ import { notificationHooks } from "~/lib/notifications/hooks";
 import {
   pickDisplayName,
   resolveDisplayName,
-  revealsWikiName,
   UNKNOWN_DISPLAY_NAME,
 } from "~/server/shared/display-names";
-import { withoutHiddenWikiNames } from "~/server/shared/privacy-permissions";
 import {
   canReadGroupType,
   requireGroupManager,
@@ -66,28 +64,18 @@ type GroupDb = Pick<
   "thinkshareConversation" | "thinktankGroup" | "user" | "thinkpagesAccount" | "userConnection"
 >;
 
-/**
- * Players' user rows for display, minus wiki names hidden by `showWikiAttribution`, and those
- * hidden names by Clerk id (server-side only, to skip a persona named after one).
- */
-async function displayUsers(db: GroupDb, clerkUserIds: string[]) {
-  const rows = await db.user.findMany({
+/** Players' user rows for display (an old wiki name is never one: it is a name claim, shown on the passport). */
+function displayUsers(db: GroupDb, clerkUserIds: string[]) {
+  return db.user.findMany({
     where: { clerkUserId: { in: clerkUserIds } },
     select: {
       id: true,
       clerkUserId: true,
       forumUsername: true,
-      wikiUsername: true,
+      handle: true,
       country: { select: { id: true, name: true, flag: true } },
     },
   });
-  const users = await withoutHiddenWikiNames(db, rows);
-  const hiddenWiki = new Map<string, string>();
-  users.forEach((user, i) => {
-    const wikiUsername = rows[i]?.wikiUsername;
-    if (wikiUsername && !user.wikiUsername) hiddenWiki.set(user.clerkUserId, wikiUsername);
-  });
-  return { users, hiddenWiki };
 }
 
 /** Members joined to their user record (or first active persona) for display. */
@@ -96,7 +84,7 @@ async function enrichGroupMembers<M extends GroupMemberRow>(
   members: M[]
 ): Promise<Array<M & { user: any }>> {
   const memberUserIds = members.map((m) => m.userId);
-  const [{ users, hiddenWiki }, userAccounts] = await Promise.all([
+  const [users, userAccounts] = await Promise.all([
     displayUsers(db, memberUserIds),
     db.thinkpagesAccount.findMany({
       where: { clerkUserId: { in: memberUserIds }, isActive: true },
@@ -115,16 +103,13 @@ async function enrichGroupMembers<M extends GroupMemberRow>(
     const u = userMap.get(m.userId);
     const acc = accountMap.get(m.userId);
     if (u) {
-      const personaName = acc?.displayName;
-      const shownPersonaName =
-        personaName && !revealsWikiName(personaName, hiddenWiki.get(m.userId)) ? personaName : null;
       return {
         ...m,
         user: {
           ...u,
           avatarUrl: acc?.profileImageUrl || null,
           displayName:
-            pickDisplayName({ ...u, thinkpagesDisplayName: shownPersonaName }) ??
+            pickDisplayName({ ...u, thinkpagesDisplayName: acc?.displayName }) ??
             UNKNOWN_DISPLAY_NAME,
         },
       };
@@ -575,7 +560,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       });
 
       const clerkUserIds = posts.map((p) => p.account?.clerkUserId).filter(Boolean);
-      const { users } = await displayUsers(db, clerkUserIds);
+      const users = await displayUsers(db, clerkUserIds);
       const userMap = new Map(users.map((u) => [u.clerkUserId, u]));
 
       let nextCursor: string | undefined = undefined;

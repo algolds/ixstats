@@ -72,7 +72,6 @@ const when = new Date("2026-10-01");
 const rawUser = {
   id: "u1",
   handle: "heku",
-  wikiUsername: "Heku",
   discordUsername: "heku#1",
   email: "secret@example.com",
   clerkUserId: "clerk_1",
@@ -155,7 +154,7 @@ function forumDb(thread: object = {}, bans: BanRow[] = []) {
     user: {
       findMany: jest.fn(async () => [
         rawUser,
-        { ...rawUser, id: "u2", handle: null, wikiUsername: null, discordUsername: "disc#2" },
+        { ...rawUser, id: "u2", handle: null, discordUsername: "disc#2" },
       ]),
     },
     thinkpagesAccount: { findMany: jest.fn(async () => [rawPersona]) },
@@ -639,7 +638,6 @@ describe("imported authors on the thread and category reads", () => {
             id: "u1",
             clerkUserId: "clerk_1",
             handle: "heku",
-            wikiUsername: null,
             country: null,
             role: { name: "user", level: 100 },
           },
