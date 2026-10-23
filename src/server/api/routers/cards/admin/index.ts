@@ -9,6 +9,7 @@ import { cardsAdminLibraryRouter } from "./library";
 import { cardsAdminImportsRouter } from "./imports";
 import { cardsAdminNationStatesRouter } from "./nationstates";
 import { cardsAdminCurationRouter } from "./curation";
+import { cardsAdminCategoriesRouter } from "./categories";
 import { cardsAdminPacksRouter } from "./packs";
 import { cardsAdminEconomyRouter } from "./economy";
 import { cardsAdminSeasonsRouter } from "./seasons";
@@ -22,6 +23,7 @@ export const cardsAdminRouter = createTRPCRouter({
   imports: cardsAdminImportsRouter,
   nationstates: cardsAdminNationStatesRouter,
   curation: cardsAdminCurationRouter,
+  categories: cardsAdminCategoriesRouter,
   packs: cardsAdminPacksRouter,
   economy: cardsAdminEconomyRouter,
   seasons: cardsAdminSeasonsRouter,

@@ -13,25 +13,14 @@ import {
   listInscriptionReports,
   resolveInscriptionReport,
 } from "~/server/modules/cards/inscriptions";
-import { loadPlayerNames, type PlayerName } from "~/server/modules/identity/identity.player-names";
+import { loadPlayerNames } from "~/server/modules/identity/identity.player-names";
 import { adminActor } from "~/server/shared/admin-actor";
+import { staffName, staffNames } from "./_staff-names";
 
 const takedownInput = z.object({ takedownId: z.string().min(1) });
 const limit = z.number().int().min(1).max(200).default(100);
 
 type TakedownRow = Awaited<ReturnType<typeof listTakedowns>>[number];
-
-/**
- * A player named for staff: the name other players read, else their passport handle (staff need to know who it is
- * even when other players read "a player"). No Vault cards switch applies to staff.
- */
-const staffName = (name: PlayerName) => name.displayName ?? name.handle;
-
-/** Players named for staff, in one read (the inscription queue's `StaffNames`). */
-async function staffNames(userIds: readonly string[]): Promise<Map<string, string>> {
-  const names = await loadPlayerNames(userIds);
-  return new Map([...names].map(([id, name]) => [id, staffName(name)]));
-}
 
 /**
  * Who asked a player's request, for staff (`staffName`). Any other origin's requester is the filing admin, which the
