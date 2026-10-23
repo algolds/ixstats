@@ -408,6 +408,23 @@ enum LoreCategory {
   SPECIAL
 }
 
+/// Who set a lore card's category: the classifier (import or backfill), an admin, the realm's owner, or a player's
+/// suggestion an admin accepted.
+enum CardCategorySource {
+  CLASSIFIER
+  ADMIN
+  REALM_OWNER
+  SUGGESTION
+}
+
+/// A player's category suggestion: waiting, accepted as proposed, answered with another category, or turned down.
+enum CardCategorySuggestionStatus {
+  PENDING
+  ACCEPTED
+  CHANGED
+  REJECTED
+}
+
 /// *
 ///  * ArtworkSource - Origin of card artwork
 enum ArtworkSource {

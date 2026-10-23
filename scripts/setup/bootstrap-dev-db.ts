@@ -64,6 +64,13 @@ export const CARDS_FACE_HUB_SQL = "prisma/migrations/20261031120000_cards_face_h
  */
 export const CARDS_ECONOMY_SQL = "prisma/migrations/20261101120000_cards_economy/migration.sql";
 
+/**
+ * Card categories: the category source, confidence and review columns and the suggestions table; idempotent. On a
+ * fresh database it runs after `db push`, where every statement is a no-op.
+ */
+export const CARDS_CATEGORIES_SQL =
+  "prisma/migrations/20261102120000_cards_categories/migration.sql";
+
 /** The SQL `db push` cannot apply, in the order it runs (the triggers first: the Atlas SQL backfills through them). */
 export const DB_SETUP_SQL_FILES = [MAP_GEOMETRY_TRIGGERS_SQL, ATLAS_R0_SQL, ATLAS_RA_SQL];
 
@@ -187,6 +194,15 @@ async function main(): Promise<void> {
     "prisma/schema",
     "--file",
     CARDS_ECONOMY_SQL,
+  ]);
+  run("bunx", [
+    "prisma",
+    "db",
+    "execute",
+    "--schema",
+    "prisma/schema",
+    "--file",
+    CARDS_CATEGORIES_SQL,
   ]);
   run("bun", ["scripts/setup/seed-db.ts", "--force"]);
 

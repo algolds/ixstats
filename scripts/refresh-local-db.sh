@@ -52,6 +52,7 @@ bunx prisma db execute --schema prisma/schema --file prisma/migrations/202610271
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261028120000_cards_admin/migration.sql
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261031120000_cards_face_hub/migration.sql
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261101120000_cards_economy/migration.sql
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261102120000_cards_categories/migration.sql
 bun run db:push:force
 
 # Verify and auto-heal WikiOS articles and categories in PostgreSQL

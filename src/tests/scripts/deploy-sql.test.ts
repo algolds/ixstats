@@ -78,6 +78,13 @@ describe("the SQL the deploy runs", () => {
     expect(backfill).toBeGreaterThan(at("20261027120000_cards_foundations/migration.sql"));
     expect(backfill).toBeLessThan(at("20261027120001_cards_foundations_constraints/migration.sql"));
   });
+
+  it("runs the card categories SQL after the economy SQL and before the push", () => {
+    const at = (needle: string) => script.indexOf(needle);
+    const categories = at("20261102120000_cards_categories/migration.sql");
+    expect(categories).toBeGreaterThan(at("20261101120000_cards_economy/migration.sql"));
+    expect(categories).toBeLessThan(push);
+  });
 });
 
 /** Each step that must run before db push: a hand-written SQL file or the cards backfill. */

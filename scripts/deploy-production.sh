@@ -185,6 +185,9 @@ bunx prisma db execute --schema prisma/schema --file prisma/migrations/202610311
 # Cards refresh Phase 4 (docs/specs/2026-10-15-cards-refresh-design.md §2.2): listings, dust, market prices, mutes,
 # inscription reports, and the trade and auction status enums converted in place (BEFORE the push). Idempotent.
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261101120000_cards_economy/migration.sql || exit 1
+# Card categories (docs/superpowers/specs/2026-10-23-card-categories-design.md): the category source, confidence and
+# review columns and the suggestions table. Additive and idempotent.
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261102120000_cards_categories/migration.sql || exit 1
 
 # Sync production database with schema
 echo "🔄 Syncing production database schema..."

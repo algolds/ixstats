@@ -55,6 +55,15 @@ model Card {
   description      String?
   category         LoreCategory?
   subcategory      String?
+  /// Who set the category; null on a card the categories backfill has not reached.
+  categorySource      CardCategorySource?
+  /// The classifier's confidence, 0 to 1; null once a person set or confirmed the category.
+  categoryConfidence  Float?
+  /// Waiting in the admin's category review queue: a low-confidence guess, or no category at all.
+  categoryNeedsReview Boolean             @default(false)
+  categoryReviewedAt  DateTime?
+  /// DB user id of the admin or realm owner who last set or confirmed it.
+  categoryReviewedBy  String?
   artwork          String?
   artworkSource    ArtworkSource?  @default(PROCEDURAL)
   artworkCredit    String?
@@ -101,6 +110,7 @@ model Card {
   listings          CardListing[]
   marketPrices      CardMarketPrice[]
   notificationMutes CardNotificationMute[]
+  categorySuggestions CardCategorySuggestion[]
 
   @@unique([nsCardId, nsSeason])
   @@unique([lorewardEntryId, lorewardEdition])
@@ -114,6 +124,8 @@ model Card {
   @@index([season], map: "Card_season_idx")
   @@index([realmId])
   @@index([reviewState, realmId])
+  @@index([cardType, category])
+  @@index([categoryNeedsReview, categoryConfidence])
   @@map("cards")
 }
 
@@ -696,4 +708,25 @@ model CardInscriptionReport {
   @@unique([ownershipId, reporterId])
   @@index([status, createdAt])
   @@map("card_inscription_reports")
+}
+
+/// A player's proposed category for a lore card, for the admin's review queue. One open (PENDING) per card per player,
+/// held by the per-player lock 7340 (cards.category-suggestions.ts).
+model CardCategorySuggestion {
+  id          String                       @id @default(cuid())
+  cardId      String
+  userId      String // User.id
+  category    LoreCategory
+  subcategory String?
+  note        String?                      @db.VarChar(500)
+  status      CardCategorySuggestionStatus @default(PENDING)
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime                     @default(now())
+  card        Card                         @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([cardId, status])
+  @@index([userId, createdAt])
+  @@map("card_category_suggestions")
 }
