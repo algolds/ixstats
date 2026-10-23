@@ -160,12 +160,12 @@ async function surfaces(viewer: Person | null) {
   return { passport, name: names.get(pat.id), profile, author };
 }
 
-/** Mel's block list, as Settings → Privacy & Security shows it. */
+/** Mel's block list's labels, as Settings → Privacy & Security shows them, sorted: the list has no set order. */
 async function melsBlockList() {
   const settings = await createCallerFactory(usersPreferencesRouter)(
     asViewer(mel)
   ).getPrivacySettings();
-  return settings.blockedAccounts.map((account) => account.label);
+  return settings.blockedAccounts.map((account) => account.label).sort();
 }
 
 const VISITORS = [
