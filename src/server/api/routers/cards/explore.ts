@@ -3,6 +3,7 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import {
   ExploreQuerySchema,
   ExploreRegionsQuerySchema,
+  exploreFacets,
   exploreGrid,
   exploreRegions,
   exploreShelves,
@@ -13,6 +14,7 @@ export const cardsExploreRouter = createTRPCRouter({
   exploreGrid: protectedProcedure
     .input(ExploreQuerySchema)
     .query(({ ctx, input }) => exploreGrid(ctx.db, ctx.user.id, input)),
+  exploreFacets: protectedProcedure.query(({ ctx }) => exploreFacets(ctx.db)),
   exploreRegions: protectedProcedure
     .input(ExploreRegionsQuerySchema.optional())
     .query(({ ctx, input }) => exploreRegions(ctx.db, input?.search)),

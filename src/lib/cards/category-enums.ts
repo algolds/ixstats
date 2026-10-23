@@ -39,6 +39,17 @@ export function isValidLoreCategory(value: string): value is LoreCategory {
   return Object.values(LoreCategory).includes(value as LoreCategory);
 }
 
+/** The filters' extra choice: a lore card with no category. */
+export const UNCATEGORISED = "UNCATEGORISED" as const;
+
+export const CategoryFilter = { ...LoreCategory, UNCATEGORISED } as const;
+
+export type CategoryFilterValue = LoreCategory | typeof UNCATEGORISED;
+
+export function isCategoryFilterValue(value: string): value is CategoryFilterValue {
+  return value === UNCATEGORISED || isValidLoreCategory(value);
+}
+
 /**
  * Core keyword roots per category. Plural and stem variations are dynamically expanded.
  */

@@ -17,9 +17,10 @@ import {
 } from "~/components/ui/select";
 import { Switch } from "~/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
-import { BROWSABLE_CATEGORIES, isValidLoreCategory } from "~/lib/cards/category-enums";
-import { getCategoryLabel } from "~/lib/cards/category-theme";
+import { isCategoryFilterValue, type CategoryFilterValue } from "~/lib/cards/category-enums";
+import { getCategoryFilterLabel } from "~/lib/cards/category-theme";
 import { OWNED_FILTER_LABEL, OWNED_FILTERS } from "~/lib/cards/face/explore-options";
+import { listedCategories, listedTypes } from "~/lib/cards/face/filter-facets";
 import { activeFilterCount, EMPTY_CARD_FILTERS, type CardFilters } from "~/lib/cards/face/filters";
 import {
   FINISH_LABEL,
@@ -27,7 +28,6 @@ import {
   RARITY_LABEL,
   RARITY_ORDER,
   TYPE_LABEL,
-  TYPE_ORDER,
 } from "~/lib/cards/face/labels";
 import type { CardRealmBadge, CardType } from "~/lib/cards/face/types";
 
@@ -40,10 +40,6 @@ const ANY = "__any";
 const SEARCH_MAX = 100;
 
 const OWNED_OPTIONS = OWNED_FILTERS.map((value) => ({ value, label: OWNED_FILTER_LABEL[value] }));
-const CATEGORY_OPTIONS = BROWSABLE_CATEGORIES.map((category) => ({
-  value: category,
-  label: getCategoryLabel(category),
-}));
 
 type SetFilter = <K extends keyof CardFilters>(key: K, value: CardFilters[K]) => void;
 interface Option {
@@ -252,12 +248,16 @@ function FilterFields(props: {
   set: SetFilter;
   has: (dimension: FilterDimension) => boolean;
   types: readonly CardType[];
+  categories: readonly CategoryFilterValue[];
   realms: readonly CardRealmBadge[];
   realmNames: ReadonlyMap<string, string>;
   regions: readonly string[];
   regionSearch?: RegionSearchOptions;
 }) {
   const { filters, set, has } = props;
+  // A picked type or category stays listed after its cards are gone, so it can be turned off.
+  const types = listedTypes(props.types, filters.types);
+  const categories = listedCategories(props.categories, filters.category);
   return (
     <>
       {has("owned") && (
@@ -296,22 +296,24 @@ function FilterFields(props: {
           onChange={(finishes) => set("finishes", finishes)}
         />
       )}
-      {has("type") && (
+      {has("type") && types.length > 0 && (
         <Toggles
           label="Type"
-          values={props.types}
+          values={types}
           labels={TYPE_LABEL}
           picked={filters.types}
           onChange={(types) => set("types", types)}
         />
       )}
-      {has("category") && (
+      {has("category") && categories.length > 0 && (
         <PickOne
           label="Category"
           anyLabel="Any category"
           value={filters.category}
-          options={CATEGORY_OPTIONS}
-          onChange={(value) => set("category", value && isValidLoreCategory(value) ? value : null)}
+          options={categories.map((value) => ({ value, label: getCategoryFilterLabel(value) }))}
+          onChange={(value) =>
+            set("category", value && isCategoryFilterValue(value) ? value : null)
+          }
         />
       )}
       {has("region") && (
@@ -333,8 +335,10 @@ interface CardFilterBarProps<S extends string> {
   filters: CardFilters;
   onChange: (next: CardFilters) => void;
   dimensions: readonly FilterDimension[];
-  /** The type filter's choices; every type unless the tab holds fewer. */
-  types?: readonly CardType[];
+  /** The type filter's choices: the types the tab has cards of. */
+  types: readonly CardType[];
+  /** The category filter's choices: the categories the tab has cards in, Uncategorised included. */
+  categories: readonly CategoryFilterValue[];
   realms: readonly CardRealmBadge[];
   regions?: readonly string[];
   /** Makes the region filter a search over the server's regions; without it, a select over `regions`. */
@@ -379,7 +383,8 @@ export function CardFilterBar<S extends string>(props: CardFilterBarProps<S>) {
             filters={filters}
             set={set}
             has={(dimension) => props.dimensions.includes(dimension)}
-            types={props.types ?? TYPE_ORDER}
+            types={props.types}
+            categories={props.categories}
             realms={props.realms}
             realmNames={realmNames}
             regions={props.regions ?? []}

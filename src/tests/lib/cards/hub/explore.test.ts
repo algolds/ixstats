@@ -5,6 +5,8 @@ import type { z } from "zod";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 import {
   ExploreQuerySchema,
+  categoryWhere,
+  exploreFacets,
   exploreGrid,
   exploreRegions,
   exploreWhere,
@@ -33,6 +35,48 @@ describe("exploreWhere", () => {
         isRetired: false,
       });
     }
+  });
+});
+
+describe("the category filter", () => {
+  it("narrows to the picked categories", () => {
+    expect(categoryWhere(["HISTORY", "MILITARY"])).toEqual({
+      category: { in: ["HISTORY", "MILITARY"] },
+    });
+    expect(categoryWhere(undefined)).toEqual({});
+    expect(categoryWhere([])).toEqual({});
+  });
+
+  it("reads Uncategorised as lore cards with no category, never the NS cards", () => {
+    expect(categoryWhere(["UNCATEGORISED"])).toEqual({
+      OR: [{ cardType: "LORE", category: null }],
+    });
+    expect(categoryWhere(["HISTORY", "UNCATEGORISED"])).toEqual({
+      OR: [{ category: { in: ["HISTORY"] } }, { cardType: "LORE", category: null }],
+    });
+    expect(exploreWhere(query({ categories: ["UNCATEGORISED"] }), "me")).toMatchObject({
+      OR: [{ cardType: "LORE", category: null }],
+      reviewState: "APPROVED",
+    });
+  });
+});
+
+describe("exploreFacets", () => {
+  it("counts the Explore catalogue (no trophies, published realms) by type and category", async () => {
+    const db = createMockPrisma();
+    db.card.groupBy.mockResolvedValue([
+      { cardType: "LORE", category: "HISTORY", _count: { _all: 3 } },
+      { cardType: "LORE", category: null, _count: { _all: 2 } },
+      { cardType: "NS", category: null, _count: { _all: 9 } },
+    ]);
+    await expect(exploreFacets(db as never)).resolves.toEqual({
+      types: ["LORE", "NS"],
+      categories: ["HISTORY", "UNCATEGORISED"],
+    });
+    expect(db.card.groupBy.mock.calls[0]![0]).toMatchObject({
+      by: ["cardType", "category"],
+      where: { realm: PUBLISHED, ...NO_TROPHIES, reviewState: "APPROVED", isRetired: false },
+    });
   });
 });
 
