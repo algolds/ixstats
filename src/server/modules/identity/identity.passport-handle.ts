@@ -34,6 +34,12 @@ export async function loadClaimedWikiName(userId: string | undefined): Promise<s
   return primaryNameOf(db, userId, { shown: true }).catch(() => null);
 }
 
+/** The user's own first approved name, hidden or not: what their own passport shows them. Null on a read error. */
+export async function loadOwnWikiName(userId: string | undefined): Promise<string | null> {
+  if (!userId) return null;
+  return primaryNameOf(db, userId).catch(() => null);
+}
+
 /** Whether the user shows wiki attribution (`showWikiAttribution`); a read error counts as off. */
 async function showsWikiAttribution(clerkUserId: string): Promise<boolean> {
   return switchIsOn(db, clerkUserId, "showWikiAttribution").catch(() => false);

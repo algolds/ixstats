@@ -1,106 +1,16 @@
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { getWikiAuth } from "~/lib/wiki-os/auth";
 import { assertTitleVisible } from "~/lib/wiki-os/permissions";
-import { findWikiProfileUser } from "~/lib/wiki-os/storage";
 import {
   getUserContribs,
   getUserInfo,
   getBacklinks,
 } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 
-import { db } from "~/server/db";
 import { LinkGraphService } from "~/lib/wiki-os/core";
 import { toRevisionRef } from "~/lib/wiki-os/core/domain-types";
-import { switchIsOn } from "~/server/shared/privacy-permissions";
-import type { PrismaClient } from "@prisma/client";
-
-const NO_LORE_STATS = {
-  totalScore: 0,
-  currentStreak: 0,
-  longestStreak: 0,
-  dailyWins: 0,
-  weeklyWins: 0,
-  monthlyWins: 0,
-};
-
-/**
- * The player whose wiki account `wikiName` is, while they tie it to their nation and role (wiki attribution,
- * `showWikiAttribution`, as users.resolveWikiAuthor); null when they turned it off, for every caller, or when the
- * switch cannot be read.
- */
-async function attributedProfileUser(
-  privacyDb: Pick<PrismaClient, "userConnection">,
-  wikiName: string
-) {
-  const owner = await findWikiProfileUser(wikiName);
-  if (!owner) return null;
-  const shown = await switchIsOn(privacyDb, owner.clerkUserId, "showWikiAttribution").catch(
-    () => false
-  );
-  return shown ? owner : null;
-}
 
 export const wikiosUserTalkRouter = createTRPCRouter({
-  /**
-   * Consolidated author profile for WikiOS sidebar, header, and user cards.
-   * Resolves wiki identity, wiki edit stats from PostgreSQL, loreward scores, and country affiliation in a single fast query (~15ms).
-   */
-  getAuthorProfile: publicProcedure
-    .input(
-      z
-        .object({
-          username: z.string().max(255).optional(),
-        })
-        .optional()
-    )
-    .query(async ({ ctx, input }) => {
-      const requestedName = input?.username?.trim() || null;
-      const wikiName = requestedName ?? (ctx.auth?.userId ? getWikiAuth(ctx).wikiUsername : null);
-
-      if (!wikiName) {
-        return null;
-      }
-
-      // A named profile is resolved by that name only. Without a name the profile is the caller's own.
-      const userPromise = requestedName
-        ? attributedProfileUser(ctx.db, requestedName)
-        : Promise.resolve(ctx.user ?? null);
-
-      // Parallel fetch User + Action API user info + Loreward stats
-      const [profileUser, mwInfo, loreStatsRecord] = await Promise.all([
-        userPromise,
-        getUserInfo(wikiName),
-        db.lorewardUserStats.findUnique({ where: { username: wikiName } }),
-      ]);
-
-      const lore = loreStatsRecord ?? NO_LORE_STATS;
-      const rank =
-        lore.totalScore > 0
-          ? (await db.lorewardUserStats.count({ where: { totalScore: { gt: lore.totalScore } } })) +
-            1
-          : null;
-
-      return {
-        username: wikiName,
-        displayName: wikiName,
-        existsInMediaWiki: mwInfo?.exists === true,
-        editCount: mwInfo?.user_editcount ?? 0,
-        registration: mwInfo?.user_registration ?? null,
-        // the rights engine's groups of the account (explicit rows, implicit groups, the IxStates role), as the bridge reports them
-        groups: mwInfo?.groups ?? [],
-        loreScore: lore.totalScore,
-        loreStreak: lore.currentStreak,
-        longestStreak: lore.longestStreak,
-        totalWins: lore.dailyWins + lore.weeklyWins + lore.monthlyWins,
-        rank,
-        country: profileUser?.country ?? null,
-        role: profileUser?.role
-          ? { name: profileUser.role.name, level: profileUser.role.level }
-          : null,
-      };
-    }),
-
   /**
    * Get pages that link to the given page (backlinks / "What Links Here").
    * Native PostgreSQL Link Graph queried in O(1) time (<1ms).

@@ -11,7 +11,8 @@ import {
 } from "~/server/api/trpc";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { viewerRealmId } from "~/server/api/trpc/realm-scope";
-import { hiddenLinkedNames, switchIsOn } from "~/server/shared/privacy-permissions";
+import { hiddenLinkedNames } from "~/server/shared/privacy-permissions";
+import { accountOfWikiName } from "~/lib/identity/wiki-names";
 import { recordHeartbeat } from "~/server/shared/presence";
 import { clearOwnHistory } from "~/server/shared/clear-history";
 
@@ -579,20 +580,19 @@ export const usersPreferencesRouter = createTRPCRouter({
 
   // ─── Wiki Author Resolution ──────────────────────────────────────────
 
+  /**
+   * The account a wiki name stands for (a claim its owner shows, else the handle the name spells), with its role and
+   * nation; null when nobody shows the name. Visibility lives on the claim, never on a privacy switch.
+   */
   resolveWikiAuthor: rateLimitedPublicProcedure
     .input(z.object({ wikiUsername: z.string().min(1).max(100) }))
     .query(async ({ ctx, input }) => {
-      const user = await ctx.db.user.findFirst({
-        where: { wikiUsername: input.wikiUsername },
+      const account = await accountOfWikiName(ctx.db, input.wikiUsername, { shown: true });
+      if (!account) return null;
+      const user = await ctx.db.user.findUnique({
+        where: { id: account.userId },
         select: {
-          wikiUsername: true,
-          clerkUserId: true,
-          role: {
-            select: {
-              name: true,
-              displayName: true,
-            },
-          },
+          role: { select: { name: true, displayName: true } },
           country: {
             select: {
               id: true,
@@ -607,31 +607,10 @@ export const usersPreferencesRouter = createTRPCRouter({
         },
       });
 
-      if (!user) return null;
-      // Wiki attribution off (SL-4): the wiki name is not linked to the user's role or country.
-      if (!(await switchIsOn(ctx.db, user.clerkUserId, "showWikiAttribution").catch(() => false))) {
-        return { wikiUsername: user.wikiUsername, role: null, country: null };
-      }
-
       return {
-        wikiUsername: user.wikiUsername,
-        role: user.role
-          ? {
-              name: user.role.name,
-              displayName: user.role.displayName,
-            }
-          : null,
-        country: user.country
-          ? {
-              id: user.country.id,
-              name: user.country.name,
-              slug: user.country.slug,
-              flag: user.country.flag,
-              economicTier: user.country.economicTier,
-              leader: user.country.leader,
-              continent: user.country.continent,
-            }
-          : null,
+        wikiUsername: input.wikiUsername,
+        role: user?.role ?? null,
+        country: user?.country ?? null,
       };
     }),
 });

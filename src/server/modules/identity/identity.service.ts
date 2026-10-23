@@ -31,7 +31,11 @@ import {
 import { loadRecruitedCount } from "./identity.invites";
 import { loadRealmRoles } from "./identity.realm-roles";
 import type { IdentityCountry } from "./identity.selects";
-import { loadClaimedWikiName, loadPassportHandle } from "./identity.passport-handle";
+import {
+  loadClaimedWikiName,
+  loadOwnWikiName,
+  loadPassportHandle,
+} from "./identity.passport-handle";
 import { resolveIdentity, resolveIdentityNations, resolveUserIdentity } from "./identity.resolve";
 import { loadLinkPrivacy, passportOnline } from "./identity.link-privacy";
 import type {
@@ -155,14 +159,15 @@ function passportAccount(
 function passportWiki(
   identity: ResolvedIdentity,
   wikiInfo: WikiInfo,
+  /** The first approved name the user shows, or, on their own passport, their first approved name even if hidden. */
   claimedWikiName: string | null,
   sections: Pick<ReturnType<typeof redactPassportSections>, "lorewards">
 ) {
   return {
-    // A user's wiki is "linked" only through an approved claim they show (a legacy
-    // `User.wikiUsername` proves nothing). A handle with no user is an external wiki name, linked if it exists.
+    // A user's wiki is "linked" only through an approved claim (a legacy `User.wikiUsername`
+    // proves nothing). A handle with no user is an external wiki name, linked if it exists.
     linked: identity.user ? Boolean(claimedWikiName) : Boolean(wikiInfo?.exists),
-    username: identity.wikiName,
+    username: identity.user ? claimedWikiName : identity.wikiName,
     lorewards: sections.lorewards,
   };
 }
@@ -206,6 +211,7 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
   const [
     wikiInfo,
     claimedWikiName,
+    ownWikiName,
     loreStats,
     forumActivity,
     persona,
@@ -218,6 +224,8 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     // Only an external wiki name needs MediaWiki: a user's wiki is linked by their shown claim.
     user ? null : loadWikiInfo(wikiName),
     loadClaimedWikiName(user?.id),
+    // A hidden claim shows nowhere but on its owner's own passport
+    identity.isOwner ? loadOwnWikiName(user?.id) : null,
     showLore ? loadLoreStats(wikiName) : null,
     shown.forumStats && user ? forum.getActivity(user.id).catch(() => null) : null,
     loadPersonalPersona(user),
@@ -265,7 +273,7 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     online,
     wiki: hideWiki
       ? { ...HIDDEN_WIKI, username: null }
-      : passportWiki(identity, wikiInfo, claimedWikiName, sections),
+      : passportWiki(identity, wikiInfo, ownWikiName ?? claimedWikiName, sections),
     forum: passportForum(identity, sections.forumStats),
     /** Credits and collection; null when the owner hides them. */
     vault: sections.vault,

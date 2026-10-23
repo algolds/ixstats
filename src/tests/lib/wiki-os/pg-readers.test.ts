@@ -275,7 +275,7 @@ describe("parked revisions in the lists", () => {
   const realFetch = globalThis.fetch;
   beforeEach(() => {
     jest.clearAllMocks();
-    (db.wikiAccountLink.findMany as unknown as jest.Mock).mockResolvedValue([]);
+    (db.wikiNameClaim.findFirst as unknown as jest.Mock).mockResolvedValue(null);
     globalThis.fetch = jest.fn().mockRejectedValue(new Error("offline")) as typeof fetch;
   });
   afterAll(() => {
@@ -324,6 +324,8 @@ describe("an account's activity", () => {
   const mocked = db as unknown as {
     wikiRevision: { findMany: jest.Mock };
     wikiAccountLink: { findMany: jest.Mock };
+    wikiNameClaim: { findFirst: jest.Mock };
+    user: { findUnique: jest.Mock };
     $queryRaw: jest.Mock;
   };
 
@@ -353,7 +355,8 @@ describe("an account's activity", () => {
     jest.clearAllMocks();
     guard = installFetchGuard();
     mocked.wikiRevision.findMany.mockResolvedValue([]);
-    mocked.wikiAccountLink.findMany.mockResolvedValue([]);
+    mocked.wikiNameClaim.findFirst.mockResolvedValue(null);
+    mocked.user.findUnique.mockResolvedValue(null);
     mocked.$queryRaw.mockResolvedValue([]);
   });
   afterEach(() => guard.restore());
@@ -378,20 +381,51 @@ describe("an account's activity", () => {
       expect(guard.calls()).toEqual([]);
     });
 
-    it("also lists the edits saved under the id of the WikiOS user who proved the account", async () => {
-      mocked.wikiAccountLink.findMany.mockResolvedValue([{ userId: "u1" }]);
+    it("also lists the edits saved under the id of the account holding the name's shown claim", async () => {
+      mocked.wikiNameClaim.findFirst.mockResolvedValue({
+        userId: "u1",
+        visible: true,
+        user: { handle: null },
+      });
 
       await ixwikiGetUserContribs("Kir", 50, 0, 3);
 
-      expect(mocked.wikiAccountLink.findMany.mock.calls[0]?.[0].take).toBe(1);
-      expect(mocked.wikiAccountLink.findMany.mock.calls[0]?.[0].where).toMatchObject({
+      expect(mocked.wikiNameClaim.findFirst.mock.calls[0]?.[0].where).toMatchObject({
         source: "ixwiki",
-        username: "Kir",
-        verifiedAt: { not: null },
+        name: "Kir",
+        status: "APPROVED",
       });
+      expect(mocked.wikiAccountLink.findMany).not.toHaveBeenCalled();
       expect(mocked.wikiRevision.findMany.mock.calls[0]?.[0].where).toEqual({
         OR: [{ author: { equals: "Kir", mode: "insensitive" } }, { authorId: { in: ["u1"] } }],
         article: { namespace: 3, status: "PUBLISHED" },
+      });
+    });
+
+    it("lists the edits of the account whose handle the name spells, when nobody claims it", async () => {
+      mocked.user.findUnique.mockResolvedValue({ id: "u2", handle: "kir" });
+
+      await ixwikiGetUserContribs("kir", 50, 0, 0);
+
+      expect(mocked.user.findUnique.mock.calls[0]?.[0].where).toEqual({ handle: "kir" });
+      expect(mocked.wikiRevision.findMany.mock.calls[0]?.[0].where.OR).toEqual([
+        { author: { equals: "Kir", mode: "insensitive" } },
+        { authorId: { in: ["u2"] } },
+      ]);
+    });
+
+    it("lists only the name's own edits for a claim its owner keeps hidden", async () => {
+      mocked.wikiNameClaim.findFirst.mockResolvedValue({
+        userId: "u1",
+        visible: false,
+        user: { handle: "kir" },
+      });
+
+      await ixwikiGetUserContribs("Kir", 50, 0, 0);
+
+      expect(mocked.wikiRevision.findMany.mock.calls[0]?.[0].where).toEqual({
+        author: { equals: "Kir", mode: "insensitive" },
+        article: { namespace: 0, status: "PUBLISHED" },
       });
     });
   });
@@ -735,6 +769,8 @@ describe("the main page's reads", () => {
         activeUsers: 3,
       });
       expect(readsOf.revisionGroupBy.mock.calls[0]![0].where.createdAt.gte).toBeInstanceOf(Date);
+      // a user of the wiki is an account with a passport handle, never the legacy wiki name column
+      expect(readsOf.userCount.mock.calls[0]![0]).toEqual({ where: { handle: { not: null } } });
     });
 
     it("counts the edits and the editors of edits that went live: a parked revision is neither", async () => {
@@ -785,7 +821,7 @@ describe("lists never show a deleted page", () => {
       | "wikiCategory"
       | "wikiCategoryMember"
       | "wikiAsset"
-      | "wikiAccountLink"
+      | "wikiNameClaim"
       | "wikiTemplate"
       | "user",
       Delegate
@@ -804,7 +840,7 @@ describe("lists never show a deleted page", () => {
     listsDb.wikiLink.findMany.mockResolvedValue([]);
     listsDb.wikiCategoryMember.findMany.mockResolvedValue([]);
     listsDb.wikiAsset.count.mockResolvedValue(0);
-    listsDb.wikiAccountLink.findMany.mockResolvedValue([]);
+    listsDb.wikiNameClaim.findFirst.mockResolvedValue(null);
     listsDb.user.count.mockResolvedValue(0);
     listsDb.$queryRaw.mockResolvedValue([]);
     listsDb.wikiTemplate.findMany.mockResolvedValue([]);

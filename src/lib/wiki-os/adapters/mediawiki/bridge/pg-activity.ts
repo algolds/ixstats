@@ -9,6 +9,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { loadWikiUserInfo, type WikiUserInfo } from "~/lib/wiki-os/core/wiki-user-info";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import { accountOfWikiName } from "~/lib/identity/wiki-names";
 import { resolveStoredImageUrl } from "~/lib/wiki-os/transformers/image-url";
 import { cleanExcerpt } from "~/lib/wiki-os/transformers/wikitext-parser";
 import type { WikiRecentChange } from "./types";
@@ -87,23 +88,15 @@ export interface UserContribution {
 }
 
 /**
- * The WikiOS users who proved they own the wiki account `username`: their revisions carry the user
- * id, whatever name the edit was saved under. At most one (a wiki account links to one user).
+ * The account a wiki name means (a shown claim, else a handle): its revisions carry the user id,
+ * whatever name the edit was saved under. At most one.
  */
 async function linkedUserIds(username: string): Promise<string[]> {
-  const links = await db.wikiAccountLink.findMany({
-    where: {
-      source: "ixwiki",
-      username: normalizeWikiUsername(username),
-      verifiedAt: { not: null },
-    },
-    select: { userId: true },
-    take: 1, // a wiki account links to one user
-  });
-  return links.map((link) => link.userId);
+  const account = await accountOfWikiName(db, username, { shown: true });
+  return account ? [account.userId] : [];
 }
 
-/** The revisions made by the account `username`: by the name it edited under, or by its verified owner's id. */
+/** The revisions made by the account `username`: by the name it edited under, or by its owner's id. */
 function madeBy(username: string, userIds: readonly string[]): Prisma.WikiRevisionWhereInput {
   const named = {
     author: { equals: normalizeWikiUsername(username), mode: "insensitive" as const },
@@ -161,8 +154,8 @@ interface CreatedPageRow {
 
 /**
  * The main-namespace pages `username` created, newest first: the published pages whose oldest live
- * revision (a parked edit is nobody's creation) was made by that account, by name or by its verified
- * owner's id. `createdAt` and `byteSize` are those of that first revision.
+ * revision (a parked edit is nobody's creation) was made by that account, by name or by its owner's
+ * id. `createdAt` and `byteSize` are those of that first revision.
  */
 export async function ixwikiGetUserCreatedPages(
   username: string,

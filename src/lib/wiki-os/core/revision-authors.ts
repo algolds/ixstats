@@ -136,11 +136,11 @@ function authorInfoWithoutRevisions(
   };
 }
 
-/** The wiki username of the WikiOS user `userId`, or null. */
-async function ownerWikiUsername(userId: string | null): Promise<string | null> {
+/** The passport handle of the WikiOS user `userId`, or null. */
+async function ownerName(userId: string | null): Promise<string | null> {
   if (!userId) return null;
-  const owner = await db.user.findUnique({ where: { id: userId }, select: { wikiUsername: true } });
-  return owner?.wikiUsername ?? null;
+  const owner = await db.user.findUnique({ where: { id: userId }, select: { handle: true } });
+  return owner?.handle ?? null;
 }
 
 /** A revision's author as a reader may see it: null when its user was hidden (revision deletion). */
@@ -185,9 +185,9 @@ export async function loadRevisionAuthors(
   // The article's owner is asked only when the ledger leaves the creator unnamed, never when the creator's user was
   // hidden (revision deletion): the owner of a page a hidden user made is that very user.
   const oldestAuthor = oldest && visibleAuthor(oldest);
-  const ownerName = oldest?.userDeleted || oldestAuthor ? null : await ownerWikiUsername(article.authorId);
+  const owner = oldest?.userDeleted || oldestAuthor ? null : await ownerName(article.authorId);
   if (!oldest || !newest) {
-    return authorInfoWithoutRevisions(ownerName, article.createdAt, article.updatedAt);
+    return authorInfoWithoutRevisions(owner, article.createdAt, article.updatedAt);
   }
 
   return buildAuthorInfo(
@@ -199,6 +199,6 @@ export async function loadRevisionAuthors(
       lastEditedAt: group._max.createdAt ?? newest.createdAt,
       userDeleted: group.userDeleted,
     })),
-    ownerName
+    owner
   );
 }

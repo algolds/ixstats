@@ -111,7 +111,9 @@ beforeEach(() => {
     {
       id: "db_creator",
       clerkUserId: "user_creator",
-      wikiUsername: "Alice",
+      handle: "alice",
+      // the legacy column never names anyone
+      wikiUsername: "Old Alice",
       discordUserId: "discord_111",
       discordUsername: "alice#1234",
       country: { name: "Caphiria" },
@@ -119,6 +121,7 @@ beforeEach(() => {
     {
       id: "db_other",
       clerkUserId: "user_other",
+      handle: null,
       wikiUsername: null,
       discordUserId: "discord_222",
       discordUsername: "bob_the_discord_handle",
@@ -127,6 +130,7 @@ beforeEach(() => {
     {
       id: "db_ghost",
       clerkUserId: "user_ghost",
+      handle: null,
       wikiUsername: null,
       discordUserId: "discord_333",
       discordUsername: "ghost_handle",
@@ -154,7 +158,9 @@ describe("getArticleMarginData does not leak who the authors are", () => {
   it("returns only a display name, an avatar and isAuthor for each author", async () => {
     seedThread();
 
-    const { threads: page } = await margin("anon").getArticleMarginData({ articleTitle: "Caphiria" });
+    const { threads: page } = await margin("anon").getArticleMarginData({
+      articleTitle: "Caphiria",
+    });
 
     expect(Object.keys(page[0]!.createdBy).sort()).toEqual(["avatar", "isAuthor", "username"]);
     expect(Object.keys(page[0]!.comments[0]!.author).sort()).toEqual([
@@ -168,19 +174,25 @@ describe("getArticleMarginData does not leak who the authors are", () => {
     }
   });
 
-  it("names an author by wiki username, then country, and never by a Discord handle", async () => {
+  it("names an author by passport handle, then country, and never by a Discord handle", async () => {
     seedThread({ createdBy: "db_creator" });
     seedThread({ createdBy: "db_other", title: "Second" });
     seedThread({ createdBy: "db_ghost", title: "Third" });
     seedThread({ createdBy: "user_unknown_id", title: "Fourth" });
+    seedThread({ createdBy: "alice", title: "Keyed by handle" });
+    seedThread({ createdBy: "Old Alice", title: "Keyed by the legacy name" });
 
-    const { threads: page } = await margin("anon").getArticleMarginData({ articleTitle: "Caphiria" });
+    const { threads: page } = await margin("anon").getArticleMarginData({
+      articleTitle: "Caphiria",
+    });
     const nameOf = (title: string) => page.find((t) => t.title === title)?.createdBy.username;
 
-    expect(nameOf("Border dispute")).toBe("Alice");
+    expect(nameOf("Border dispute")).toBe("alice");
     expect(nameOf("Second")).toBe("Urcea");
     expect(nameOf("Third")).toBe("Unknown user");
     expect(nameOf("Fourth")).toBe("Unknown user");
+    expect(nameOf("Keyed by handle")).toBe("alice");
+    expect(nameOf("Keyed by the legacy name")).toBe("Unknown user");
     expect(JSON.stringify(page)).not.toMatch(/bob_the_discord_handle|ghost_handle|user_unknown_id/);
   });
 
@@ -197,15 +209,26 @@ describe("getArticleMarginData does not leak who the authors are", () => {
   it("tells only a sysop that they may moderate", async () => {
     seedThread();
 
-    expect((await margin("sysop").getArticleMarginData({ articleTitle: "Caphiria" })).canModerate).toBe(true);
-    expect((await margin("creator").getArticleMarginData({ articleTitle: "Caphiria" })).canModerate).toBe(false);
-    expect((await margin("anon").getArticleMarginData({ articleTitle: "Caphiria" })).canModerate).toBe(false);
+    expect(
+      (await margin("sysop").getArticleMarginData({ articleTitle: "Caphiria" })).canModerate
+    ).toBe(true);
+    expect(
+      (await margin("creator").getArticleMarginData({ articleTitle: "Caphiria" })).canModerate
+    ).toBe(false);
+    expect(
+      (await margin("anon").getArticleMarginData({ articleTitle: "Caphiria" })).canModerate
+    ).toBe(false);
   });
 });
 
 describe("paging", () => {
   it("hides the comments of a deleted page's thread from readers without deletedhistory", async () => {
-    tables.wikiArticle.seed({ source: "ixwiki", title: "Caphiria", slug: "caphiria", status: "ARCHIVED" });
+    tables.wikiArticle.seed({
+      source: "ixwiki",
+      title: "Caphiria",
+      slug: "caphiria",
+      status: "ARCHIVED",
+    });
     const thread = seedThread();
 
     await expect(margin("other").getThreadComments({ threadId: thread.id })).rejects.toMatchObject({
@@ -232,7 +255,10 @@ describe("resolveThread", () => {
 
     await expect(
       margin("other").resolveThread({ threadId: thread.id, resolved: true })
-    ).rejects.toMatchObject({ code: "FORBIDDEN", message: expect.stringMatching(/^permissiondenied:/) });
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: expect.stringMatching(/^permissiondenied:/),
+    });
     expect((await threads.findUnique({ where: { id: thread.id } }))!.status).toBe("OPEN");
   });
 
@@ -249,7 +275,9 @@ describe("deleteThread", () => {
   it.each([["creator"], ["sysop"]] as const)("lets %s delete a thread", async (who) => {
     const thread = seedThread();
 
-    await expect(margin(who).deleteThread({ threadId: thread.id })).resolves.toEqual({ success: true });
+    await expect(margin(who).deleteThread({ threadId: thread.id })).resolves.toEqual({
+      success: true,
+    });
     expect(threads.rows).toHaveLength(0);
   });
 
@@ -281,7 +309,9 @@ describe("deleteComment", () => {
     await expect(margin("anon").deleteComment({ commentId: "nope" })).rejects.toThrow(
       "Authentication required"
     );
-    await expect(margin("creator").deleteComment({ commentId: "c".repeat(65) })).rejects.toMatchObject({
+    await expect(
+      margin("creator").deleteComment({ commentId: "c".repeat(65) })
+    ).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
   });
@@ -290,7 +320,9 @@ describe("deleteComment", () => {
     seedThread({}, 1);
     tables.wikiBlock.seed({ userId: "db_creator", reason: "vandalism" });
 
-    await expect(margin("creator").deleteComment({ commentId: comments.rows[0]!.id })).rejects.toMatchObject({
+    await expect(
+      margin("creator").deleteComment({ commentId: comments.rows[0]!.id })
+    ).rejects.toMatchObject({
       code: "FORBIDDEN",
       message: expect.stringMatching(/^blocked:/),
     });

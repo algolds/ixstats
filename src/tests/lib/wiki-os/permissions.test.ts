@@ -790,7 +790,7 @@ describe("article authorship from the revision ledger", () => {
 
     it("does not reveal a hidden creator through the article's owner (the owner of a page a hidden user made is that user)", async () => {
       mocked.wikiArticle.findUnique.mockResolvedValue(article({ authorId: "u1" }));
-      mocked.user.findUnique.mockResolvedValue({ wikiUsername: "OwnerName" });
+      mocked.user.findUnique.mockResolvedValue({ handle: "OwnerName" });
       // revision 1, by the owner, has its user hidden; revision 2 is a visible edit by Bea
       ledger(
         { author: "OwnerName", createdAt: day(1), userDeleted: true },
@@ -823,14 +823,19 @@ describe("article authorship from the revision ledger", () => {
 
     it("credits an unnamed first revision to the article's owner", async () => {
       mocked.wikiArticle.findUnique.mockResolvedValue(article({ authorId: "u1" }));
-      mocked.user.findUnique.mockResolvedValue({ wikiUsername: "OwnerName" });
+      mocked.user.findUnique.mockResolvedValue({ handle: "owner_name" });
       ledger({ author: null, createdAt: day(1) }, { author: null, createdAt: day(2) }, [
         { author: null, edits: 2, last: day(2) },
       ]);
 
       const info = await getArticleAuthors("Caphiria");
 
-      expect(info.creator).toMatchObject({ username: "OwnerName" });
+      // the owner's passport handle, never the legacy wiki name column
+      expect(info.creator).toMatchObject({ username: "owner_name" });
+      expect(mocked.user.findUnique).toHaveBeenCalledWith({
+        where: { id: "u1" },
+        select: { handle: true },
+      });
       expect(guard.calls()).toEqual([]);
     });
     it("answers with no author at all for a page Postgres lacks, without asking MediaWiki", async () => {
