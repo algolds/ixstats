@@ -16,6 +16,8 @@ import { tellBotOfOverride } from "~/lib/lorewards/bot-client";
 import { overrideDateSchema } from "~/lib/lorewards/override-form";
 import { adminActor } from "~/server/shared/admin-actor";
 import { overrideLorewardEntry } from "~/server/modules/cards/cards.trophies";
+import { searchLegacyNames } from "~/server/modules/identity/identity.name-search";
+import { fetchClassicWikiUsers } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { writeConfigKeys } from "./_config-kv";
 
 /** The scorer's tunable weights (WK-8): prose weight is a 0-1 blend, the rest bonuses/multipliers. */
@@ -458,36 +460,13 @@ export const adminWikiRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const clean = input.query.trim();
-      const users = await ctx.db.user.findMany({
-        where: {
-          wikiUsername: { contains: clean, mode: "insensitive" },
-        },
-        take: input.limit,
-        select: {
-          wikiUsername: true,
-        },
-      });
-
-      const stats = await ctx.db.lorewardUserStats.findMany({
-        where: {
-          username: { contains: clean, mode: "insensitive" },
-        },
-        take: input.limit,
-        select: { username: true, totalScore: true },
-      });
-
-      const resultsMap = new Map<string, number>();
-      for (const u of users) {
-        if (u.wikiUsername) resultsMap.set(u.wikiUsername, 0);
-      }
-      for (const s of stats) {
-        resultsMap.set(s.username, s.totalScore);
-      }
-
-      return Array.from(resultsMap.entries()).map(([username, editCount]) => ({
-        username,
-        editCount,
-      }));
+      // The Lorewards bot section's picker: the legacy name search, with each name's Lorewards total as before
+      const names = await searchLegacyNames(
+        ctx.db,
+        { fetchClassicUsers: fetchClassicWikiUsers },
+        input.query,
+        input.limit
+      );
+      return names.map((e) => ({ username: e.name, editCount: e.lorewards?.totalScore ?? 0 }));
     }),
 });

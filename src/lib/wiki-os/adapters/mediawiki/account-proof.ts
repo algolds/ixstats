@@ -3,7 +3,8 @@
  * and to find who created a page. IxWiki is read through its internal api.php (the private engine's URL),
  * the sister wikis through their public ones, all with the allowlisted IxStats-Builder user agent
  * (iiwiki through the Cloudflare-safe URL). The underlying
- * `wikiQuery` is exported for other read-only wiki queries (the realm lore import).
+ * `wikiQuery` is exported for other read-only wiki queries (the realm lore import), and IxWiki's user list
+ * (`fetchClassicWikiUsers`) feeds the admin's legacy name search.
  */
 import { z } from "zod";
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl, WIKI_SOURCES } from "~/lib/wiki-os/config";
@@ -211,4 +212,34 @@ export async function fetchPageCreator(source: ProofSource, title: string): Prom
   );
   const creator = data.query.pages[0]?.revisions?.[0]?.user;
   return creator ? normalizeWikiUsername(creator) : null;
+}
+
+const AllUsersSchema = z.object({
+  query: z.object({
+    allusers: z.array(z.object({ name: z.string(), editcount: z.number().optional() })),
+  }),
+});
+
+/**
+ * IxWiki's user list (`list=allusers`) from a name prefix, read-only: the admin's legacy name search. MediaWiki matches
+ * the prefix in its stored form, so it is normalised first (`foo_b` reads from `Foo b`).
+ */
+export async function fetchClassicWikiUsers(
+  prefix: string,
+  limit: number
+): Promise<Array<{ name: string; editCount: number | null }>> {
+  const data = await wikiQuery(
+    "ixwiki",
+    {
+      list: "allusers",
+      auprefix: normalizeWikiUsername(prefix),
+      aulimit: String(limit),
+      auprop: "editcount",
+    },
+    AllUsersSchema
+  );
+  return data.query.allusers.map((user) => ({
+    name: user.name,
+    editCount: user.editcount ?? null,
+  }));
 }
