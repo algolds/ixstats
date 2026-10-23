@@ -335,3 +335,47 @@ it("credits Lorewards wins only through an approved name claim, never a bare, pe
   expect(await lorewards(cy)).toEqual([]);
   expect(await lorewards(dee)).toEqual([]);
 });
+
+it("measures global unlock percents among accounts, so a player holding two names counts once", async () => {
+  const nia = await member("nia");
+  await member("ben");
+  await member("cy");
+  await member("dee");
+  for (const [userId, name, day] of [
+    ["nia", "Nia Wiki", 1],
+    ["nia", "Nia Old", 2],
+    ["ben", "Ben Wiki", 1],
+  ] as const) {
+    await db.wikiNameClaim.create({
+      data: {
+        userId,
+        source: "ixwiki",
+        name,
+        status: "APPROVED",
+        origin: "PLAYER",
+        requestedById: userId,
+        decidedAt: new Date(Date.UTC(2026, 0, day)),
+      },
+    });
+    await db.lorewardUserStats.create({
+      data: { username: name, dailyWins: 1, weeklyWins: 0, monthlyWins: 0, totalScore: 5 } as never,
+    });
+  }
+  await db.wikiArticleAward.create({
+    data: {
+      pageTitle: "Lore page",
+      pageSlug: "lore_page",
+      category: "FEATURED",
+      name: "Featured Article",
+      recipientUsers: ["Nia Wiki", "Nia Old", "Ben Wiki"],
+    },
+  });
+
+  const list = await board(as(nia)).getAllWithStatus({ userId: nia.clerk });
+  const percentOf = (match: (key: string) => boolean) =>
+    list.find((row) => match(row.key))?.globalUnlockPercent;
+
+  // Two of the four members earned each, Nia once for both of her names
+  expect(percentOf((key) => key === "ool-bronze")).toBe(50);
+  expect(percentOf((key) => key.startsWith("wiki-award-"))).toBe(50);
+});

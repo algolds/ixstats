@@ -227,12 +227,19 @@ async function bigEditTally(db: PrismaClient, wikiUsernames: string[]) {
   }
 }
 
+/** An approved claimed wiki name and the account holding it. */
+interface RegisteredName {
+  name: string;
+  userId: string;
+}
+
 async function oolMedals(
   db: PrismaClient,
   wikiUsername: string | null | undefined,
-  wikiUsernames: string[],
+  registered: RegisteredName[],
   totalUsers: number
 ) {
+  const wikiUsernames = registered.map((r) => r.name);
   const oolStats = wikiUsername
     ? await db.lorewardUserStats.findUnique({ where: { username: wikiUsername } })
     : null;
@@ -270,10 +277,11 @@ async function oolMedals(
     });
   };
 
-  const earners = [0, 0, 0, 0];
-  for (const username of wikiUsernames) {
-    laddersFor(username.toLowerCase()).ever.forEach((ever, tier) => {
-      if (ever > 0) earners[tier] = (earners[tier] ?? 0) + 1;
+  // Earning accounts per tier: a player holding several names counts once
+  const earners = MEDALS.map(() => new Set<string>());
+  for (const { name, userId } of registered) {
+    laddersFor(name.toLowerCase()).ever.forEach((ever, tier) => {
+      if (ever > 0) earners[tier]!.add(userId);
     });
   }
 
@@ -288,26 +296,25 @@ async function oolMedals(
     unlockedAt: target.ever[tier]! > 0 ? unlockedAt : null,
     metadata: JSON.stringify({ count: target.owned[tier] }),
     rewards: null,
-    globalUnlockPercent: percentOf(earners[tier]!, totalUsers),
+    globalUnlockPercent: percentOf(earners[tier]!.size, totalUsers),
   }));
 }
 
 async function wikiAwardAchievements(
   db: PrismaClient,
   wikiUsername: string | null | undefined,
-  registeredNames: Set<string>,
+  accountByName: Map<string, string>,
   totalUsers: number
 ) {
   const allAwards = await db.wikiArticleAward.findMany({ orderBy: { awardedAt: "desc" } });
 
-  // Registered earners per award name
+  // Registered earning accounts per award name (lower-cased name to account in `accountByName`)
   const earnersByAward = new Map<string, Set<string>>();
   for (const award of allAwards) {
     const earners = earnersByAward.get(award.name) ?? new Set<string>();
     for (const user of parseRecipients(award.recipientUsers)) {
-      if (typeof user === "string" && registeredNames.has(user.toLowerCase())) {
-        earners.add(user.toLowerCase());
-      }
+      const account = typeof user === "string" ? accountByName.get(user.toLowerCase()) : undefined;
+      if (account) earners.add(account);
     }
     earnersByAward.set(award.name, earners);
   }
@@ -468,18 +475,17 @@ export const achievementsProgressRouter = createTRPCRouter({
         const totalUsers = (await ctx.db.user.count()) || 1;
         const standard = await standardAchievements(ctx.db, targetUserId, totalUsers);
 
-        // Global unlock percents are measured among the approved claimed wiki names
-        const registeredUsers = await ctx.db.wikiNameClaim.findMany({
+        // Global unlock percents count the accounts holding approved claimed wiki names, once each
+        const registered = await ctx.db.wikiNameClaim.findMany({
           where: { source: IXWIKI, status: "APPROVED" },
-          select: { name: true },
+          select: { name: true, userId: true },
         });
-        const wikiUsernames = registeredUsers.map((u) => u.name);
 
-        const medals = await oolMedals(ctx.db, wikiUsername, wikiUsernames, totalUsers);
+        const medals = await oolMedals(ctx.db, wikiUsername, registered, totalUsers);
         const wikiAwards = await wikiAwardAchievements(
           ctx.db,
           wikiUsername,
-          new Set(wikiUsernames.map((name) => name.toLowerCase())),
+          new Map(registered.map((r) => [r.name.toLowerCase(), r.userId])),
           totalUsers
         );
         return [...standard, ...medals, ...wikiAwards];
