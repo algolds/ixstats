@@ -140,8 +140,8 @@ async function payPlace(
 
 /**
  * Pay the winner and the runner-up of every approved daily, weekly and monthly contest from the payout start
- * (`LOREWARD_PAYOUT_START`) on, by contest and place (`resolveLorewardPlace`). A plain name pays only the exact holder
- * of its VERIFIED ixwiki `WikiAccountLink`; a `wikios>Label` name pays the one WikiOS account behind the label's
+ * (`LOREWARD_PAYOUT_START`) on, by contest and place (`resolveLorewardPlace`). A plain name pays only the account
+ * holding its exact APPROVED ixwiki name claim; a `wikios>Label` name pays the one WikiOS account behind the label's
  * edits to the winning page in the contest. Anything else pays no one. A contest stored twice (`groupByContest`)
  * pays each place once, through its state-keyed entry, and not at all while its entries name different holders.
  * Entries before the start are never paid, so an account found later does not back-pay history. Idempotent and

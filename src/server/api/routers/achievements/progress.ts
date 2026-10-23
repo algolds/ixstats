@@ -6,7 +6,7 @@ import {
   rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
 import { achievementService } from "~/lib/achievements/service";
-import { withoutHiddenWikiNames } from "~/server/shared/privacy-permissions";
+import { IXWIKI, namesOfUser } from "~/lib/identity/wiki-names";
 
 /** How many of the newest unlocks the summary carries. */
 const RECENT_UNLOCKS = 3;
@@ -117,19 +117,18 @@ async function resolveTargetUserId(
 }
 
 /**
- * The wiki name whose Lorewards medals and wiki awards the target's list shows: the viewer's own always; another
- * player's only while they show wiki attribution (`showWikiAttribution`, as the Passport, identity.link-privacy.ts;
- * a read error counts as off). Null leaves the medals as for a player with no wiki account and lists no award.
+ * The approved wiki names whose Lorewards medals and wiki awards the target's list can show, oldest approval first:
+ * all of the viewer's own; another player's only those they show (a hidden claim reads as no name). The list shows
+ * the first (the primary name). None leaves the medals as for a player with no wiki account and lists no award.
  */
-async function lorewardsWikiName(
-  db: Pick<PrismaClient, "userConnection">,
-  target: { clerkUserId: string; wikiUsername: string | null } | null,
+async function lorewardsWikiNames(
+  db: Pick<PrismaClient, "wikiNameClaim">,
+  target: { id: string; clerkUserId: string } | null,
   viewerClerkId: string | undefined
-): Promise<string | null> {
-  if (!target?.wikiUsername) return null;
-  if (target.clerkUserId === viewerClerkId) return target.wikiUsername;
-  const [shown] = await withoutHiddenWikiNames(db, [target]);
-  return shown?.wikiUsername ?? null;
+): Promise<string[]> {
+  if (!target) return [];
+  const shown = target.clerkUserId !== viewerClerkId;
+  return (await namesOfUser(db, target.id, { shown })).map((c) => c.name);
 }
 
 async function loadMasterAchievements(db: PrismaClient) {
@@ -457,20 +456,24 @@ export const achievementsProgressRouter = createTRPCRouter({
         const userRecord = targetUserId
           ? await ctx.db.user.findUnique({
               where: { clerkUserId: targetUserId },
-              select: { clerkUserId: true, wikiUsername: true },
+              select: { id: true, clerkUserId: true },
             })
           : null;
-        const wikiUsername = await lorewardsWikiName(ctx.db, userRecord, ctx.user?.clerkUserId);
+        const [wikiUsername = null] = await lorewardsWikiNames(
+          ctx.db,
+          userRecord,
+          ctx.user?.clerkUserId
+        );
 
         const totalUsers = (await ctx.db.user.count()) || 1;
         const standard = await standardAchievements(ctx.db, targetUserId, totalUsers);
 
-        // Global unlock percents are measured among registered wiki users
-        const registeredUsers = await ctx.db.user.findMany({
-          where: { wikiUsername: { not: null } },
-          select: { wikiUsername: true },
+        // Global unlock percents are measured among the approved claimed wiki names
+        const registeredUsers = await ctx.db.wikiNameClaim.findMany({
+          where: { source: IXWIKI, status: "APPROVED" },
+          select: { name: true },
         });
-        const wikiUsernames = registeredUsers.flatMap((u) => u.wikiUsername || []);
+        const wikiUsernames = registeredUsers.map((u) => u.name);
 
         const medals = await oolMedals(ctx.db, wikiUsername, wikiUsernames, totalUsers);
         const wikiAwards = await wikiAwardAchievements(

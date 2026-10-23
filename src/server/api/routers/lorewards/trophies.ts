@@ -11,8 +11,8 @@ import {
 } from "~/server/api/trpc";
 import { loadPassportHandleById } from "~/server/modules/identity/identity.passport-handle";
 import { loadPassportSettings } from "~/server/modules/identity/identity.privacy";
+import { IXWIKI, ownerOfName } from "~/lib/identity/wiki-names";
 import { loadMyTrophies, myRaceRank, viewerNames } from "~/lib/lorewards/my-trophies";
-import { verifiedLorewardUser } from "~/lib/lorewards/resolve-user";
 import { getTodayRace, type TodayRace } from "~/lib/lorewards/today-race";
 import { loadTrophies, lorewardCreditsPaid } from "~/lib/lorewards/trophy-summary";
 
@@ -44,13 +44,14 @@ export const lorewardsTrophiesRouter = createTRPCRouter({
   getTodayRace: publicProcedure.query(() => getTodayRace()),
 
   /**
-   * A wiki user's trophies (rate-limited: any name can be asked for). The cards are those held by the account
-   * that verified the name, and are left out when that account hides its Vault cards on its passport.
+   * A wiki user's trophies (rate-limited: any name can be asked for). The cards are those held by the owner of
+   * the name's approved claim while they show it (a hidden claim names no holder), and are left out when that
+   * account hides its Vault cards on its passport.
    */
   getTrophies: rateLimitedPublicProcedure
     .input(z.object({ username: z.string().min(1).max(200) }))
     .query(async ({ ctx, input }) => {
-      const holder = await verifiedLorewardUser(ctx.db, input.username);
+      const holder = await ownerOfName(ctx.db, IXWIKI, input.username, { shown: true });
       const showCards = holder ? (await loadPassportSettings(holder)).visibility.vaultCards : false;
       return loadTrophies(
         ctx.db,

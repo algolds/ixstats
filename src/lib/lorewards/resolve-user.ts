@@ -1,17 +1,18 @@
 import { type PrismaClient } from "@prisma/client";
+import { IXWIKI, ownerOfName } from "~/lib/identity/wiki-names";
 import type { LorewardPlace } from "~/lib/vault/vault-bonus";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import { importName, labelOfImportName } from "~/lib/wiki-os/services/import-label";
 
 /**
- * Who a Loreward place pays: "Edits made in WikiOS earn for your account without a link; wins on the classic wiki
- * need a verified link". The bot scores MediaWiki, where a WikiOS edit by an author with no verified link arrives as
- * `wikios>Label` (`importName`; no MediaWiki account can hold a `>`). Every other recorded name is a MediaWiki
- * account, or a linked WikiOS user mirrored under it, so only that name's verified link can be paid for it.
+ * Who a Loreward place pays: "Edits made in WikiOS earn for your account without a claim; wins on the classic wiki
+ * need an approved name claim". The bot scores MediaWiki, where a WikiOS edit by an author with no shown claimed
+ * name arrives as `wikios>Label` (`importName`; no MediaWiki account can hold a `>`). Every other recorded name is a
+ * MediaWiki account, or a WikiOS user mirrored under their primary shown claim, so only that name's approved claim
+ * can be paid for it.
  */
 
-const SOURCE = "ixwiki";
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const DAY_MS = 86_400_000;
 /**
@@ -87,18 +88,15 @@ export function contestWindow(
 }
 
 /**
- * The account that verified the ixwiki name, or null. The match is exact on the normalized username, as the inbound
- * sync's `verifiedWikiUserId` matches it: MediaWiki usernames are case-sensitive after the first letter.
+ * The account holding the ixwiki name's APPROVED claim, or null (a pending, rejected or revoked claim pays no one). Any
+ * visibility: a payout is not a display, so a claim its owner keeps hidden still pays them. The match is exact on the
+ * normalized name, as the resolver stores it: MediaWiki usernames are case-sensitive after the first letter.
  */
-export async function verifiedLorewardUser(
-  db: Pick<PrismaClient, "wikiAccountLink">,
+export function claimedLorewardUser(
+  db: Pick<PrismaClient, "wikiNameClaim">,
   wikiUser: string
 ): Promise<string | null> {
-  const link = await db.wikiAccountLink.findFirst({
-    where: { source: SOURCE, username: normalizeWikiUsername(wikiUser), verifiedAt: { not: null } },
-    select: { userId: true },
-  });
-  return link?.userId ?? null;
+  return ownerOfName(db, IXWIKI, wikiUser);
 }
 
 /**
@@ -118,37 +116,37 @@ async function labelEditsAuthor(
   const [only, ...others] = await db.wikiRevision.groupBy({
     by: ["authorId"],
     where: {
-      source: SOURCE,
+      source: IXWIKI,
       author: label,
       createdAt: window,
-      article: { source: SOURCE, title: page.title, redirectTargetSlug: null },
+      article: { source: IXWIKI, title: page.title, redirectTargetSlug: null },
     },
   });
   return only && others.length === 0 ? only.authorId : null;
 }
 
-/** The account a place pays: for a `wikios>` name, the WikiOS account behind its edits; else the name's verified link. */
+/** The account a place pays: for a `wikios>` name, the WikiOS account behind its edits; else the name's approved claim. */
 export async function resolveLorewardPlace(
-  db: Pick<PrismaClient, "wikiAccountLink" | "wikiRevision">,
+  db: Pick<PrismaClient, "wikiNameClaim" | "wikiRevision">,
   place: LorewardPlaceRef
 ): Promise<string | null> {
   const label = labelOfImportName(place.wikiUser);
   return label === null
-    ? verifiedLorewardUser(db, place.wikiUser)
+    ? claimedLorewardUser(db, place.wikiUser)
     : labelEditsAuthor(db, place, label);
 }
 
 /**
  * The account a set of scored revisions (one name's edits to one page on one day) is credited to, from the
- * revisions' own `authorId`s: one WikiOS account on all of them, that account (even when someone else holds a link
- * for the name); none on any (all mirrored from MediaWiki), the name's exact verified-link holder; mixed, no one.
+ * revisions' own `authorId`s: one WikiOS account on all of them, that account (even when someone else claims the
+ * name); none on any (all mirrored from MediaWiki), the holder of the name's approved claim; mixed, no one.
  */
 export async function scoredEditsAccount(
-  db: Pick<PrismaClient, "wikiAccountLink">,
+  db: Pick<PrismaClient, "wikiNameClaim">,
   wikiUser: string,
   authorIds: ReadonlyArray<string | null>
 ): Promise<string | null> {
   const [only, ...others] = [...new Set(authorIds)];
   if (only === undefined || others.length > 0) return null;
-  return only ?? verifiedLorewardUser(db, wikiUser);
+  return only ?? claimedLorewardUser(db, wikiUser);
 }

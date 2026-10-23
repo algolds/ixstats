@@ -2,8 +2,9 @@
 /**
  * Who a Loreward place pays. The bot scores MediaWiki, where an unlinked WikiOS author's edits arrive as
  * `wikios>Label` (a name no MediaWiki account can hold) and every other name is a MediaWiki account, or a linked
- * WikiOS user mirrored under it. A plain name pays only its exact verified-link holder. A `wikios>` name pays the one
- * WikiOS account behind the label's edits to the winning page inside the contest. A link never applies to it.
+ * WikiOS user mirrored under it. A plain name pays only the account holding its exact APPROVED name claim (hidden or
+ * shown: a payout is not a display). A `wikios>` name pays the one WikiOS account behind the label's edits to the
+ * winning page inside the contest. A claim never applies to it.
  */
 import { describe, it, expect } from "@jest/globals";
 import {
@@ -21,9 +22,17 @@ interface Revision {
   /** The revision sits on a redirect article (a page moved away from this title). */
   redirect: boolean;
 }
-interface Link {
-  username: string;
+interface Claim {
+  name: string;
   userId: string;
+  status?: "PENDING" | "APPROVED" | "REJECTED" | "REVOKED";
+  visible?: boolean;
+}
+interface ClaimWhere {
+  source: string;
+  name: string;
+  status: string;
+  visible?: boolean;
 }
 interface RevisionWhere {
   source: string;
@@ -56,21 +65,20 @@ const matches = (r: Revision, where: RevisionWhere) => {
   );
 };
 
-/** A database holding these revisions and verified ixwiki links, answering the queries the resolver makes. */
-function fakeDb(revisions: Revision[], links: Link[] = []) {
+const claimMatches = (c: Claim, where: ClaimWhere) =>
+  where.source === "ixwiki" &&
+  c.name === where.name &&
+  (c.status ?? "APPROVED") === where.status &&
+  (where.visible === undefined || (c.visible ?? true) === where.visible);
+
+/** A database holding these revisions and ixwiki name claims, answering the queries the resolver makes. */
+function fakeDb(revisions: Revision[], claims: Claim[] = []) {
   return {
-    wikiAccountLink: {
-      findFirst: jest.fn(
-        async ({
-          where,
-        }: {
-          where: { username: string; source?: string; verifiedAt?: object };
-          select?: object;
-        }) => {
-          const link = links.find((l) => l.username === where.username);
-          return link ? { userId: link.userId } : null;
-        }
-      ),
+    wikiNameClaim: {
+      findFirst: jest.fn(async ({ where }: { where: ClaimWhere; select?: object }) => {
+        const claim = claims.find((c) => claimMatches(c, where));
+        return claim ? { userId: claim.userId } : null;
+      }),
     },
     wikiRevision: {
       groupBy: jest.fn(async ({ where }: { by?: string[]; where: RevisionWhere }) =>
@@ -93,26 +101,56 @@ const daily = (over: Partial<LorewardPlaceRef> = {}): LorewardPlaceRef => ({
 });
 
 describe("resolveLorewardPlace, a plain (MediaWiki) name", () => {
-  it("pays the exact verified-link holder of the normalized name, without reading revisions", async () => {
-    const db = fakeDb([rev("u2")], [{ username: "Kir Republic", userId: "u1" }]);
+  it("pays the approved claim's owner of the normalized name, without reading revisions", async () => {
+    const db = fakeDb([rev("u2")], [{ name: "Kir Republic", userId: "u1" }]);
     expect(await resolveLorewardPlace(db as never, daily({ wikiUser: "Kir_Republic" }))).toBe("u1");
-    expect(db.wikiAccountLink.findFirst).toHaveBeenCalledWith({
-      where: { source: "ixwiki", username: "Kir Republic", verifiedAt: { not: null } },
+    expect(db.wikiNameClaim.findFirst).toHaveBeenCalledWith({
+      where: { source: "ixwiki", name: "Kir Republic", status: "APPROVED" },
       select: { userId: true },
     });
     expect(db.wikiRevision.groupBy).not.toHaveBeenCalled();
   });
 
-  it("pays no one without a link, even with WikiOS edits under that name on the page", async () => {
+  it("pays no one without a claim, even with WikiOS edits under that name on the page", async () => {
     const db = fakeDb([rev("u2"), rev("u2", { createdAt: "2026-10-16T18:00:00.000Z" })]);
     expect(await resolveLorewardPlace(db as never, daily({ wikiUser: "Kir Republic" }))).toBeNull();
     expect(db.wikiRevision.groupBy).not.toHaveBeenCalled();
   });
 
-  it("does not match a verified link that differs in case after the first letter", async () => {
+  it.each(["PENDING", "REJECTED", "REVOKED"] as const)(
+    "pays no one for a %s claim on the name",
+    async (status) => {
+      const db = fakeDb([], [{ name: "Kir Republic", userId: "u1", status }]);
+      expect(
+        await resolveLorewardPlace(db as never, daily({ wikiUser: "Kir Republic" }))
+      ).toBeNull();
+    }
+  );
+
+  it("pays the owner of an approved claim they keep hidden: a payout is not a display", async () => {
+    const db = fakeDb([], [{ name: "Kir Republic", userId: "u1", visible: false }]);
+    expect(await resolveLorewardPlace(db as never, daily({ wikiUser: "Kir Republic" }))).toBe("u1");
+  });
+
+  it("pays the approved holder, not a revoked earlier holder of the same name", async () => {
+    const db = fakeDb(
+      [],
+      [
+        { name: "Kir Republic", userId: "u_wrong", status: "REVOKED" },
+        { name: "Kir Republic", userId: "u_right" },
+      ]
+    );
+    expect(await resolveLorewardPlace(db as never, daily({ wikiUser: "Kir Republic" }))).toBe(
+      "u_right"
+    );
+  });
+
+  it("does not match a claim that differs in case after the first letter", async () => {
     // MediaWiki usernames are case-sensitive after the first letter: "OstroZava" is another account.
-    const db = fakeDb([], [{ username: "OstroZava", userId: "u9" }]);
-    expect(await resolveLorewardPlace(db as never, daily({ wikiUser: "Ostrozava" }))).toBeNull();
+    const db = fakeDb([], [{ name: "Ostrozava", userId: "u9" }]);
+    expect(await resolveLorewardPlace(db as never, daily({ wikiUser: "OstroZava" }))).toBeNull();
+    const other = fakeDb([], [{ name: "OstroZava", userId: "u9" }]);
+    expect(await resolveLorewardPlace(other as never, daily({ wikiUser: "Ostrozava" }))).toBeNull();
   });
 });
 
@@ -156,14 +194,24 @@ describe("resolveLorewardPlace, a wikios> name", () => {
 });
 
 describe("scoredEditsAccount (the dividend's scored revisions)", () => {
-  const links = [{ username: "Kir Republic", userId: "u9" }];
-  it("pays the exact link holder when every revision came from MediaWiki", async () => {
-    expect(await scoredEditsAccount(fakeDb([], links) as never, "Kir Republic", [null])).toBe("u9");
+  const claims = [{ name: "Kir Republic", userId: "u9" }];
+  it("pays the approved claim's owner when every revision came from MediaWiki", async () => {
+    expect(await scoredEditsAccount(fakeDb([], claims) as never, "Kir Republic", [null])).toBe(
+      "u9"
+    );
     expect(await scoredEditsAccount(fakeDb([]) as never, "Kir Republic", [null, null])).toBeNull();
+    const pending = fakeDb([], [{ ...claims[0]!, status: "PENDING" }]);
+    expect(await scoredEditsAccount(pending as never, "Kir Republic", [null])).toBeNull();
+  });
+
+  it("credits the one WikiOS account on every revision, even when another account claims the name", async () => {
+    expect(await scoredEditsAccount(fakeDb([], claims) as never, "Kir Republic", ["u2"])).toBe(
+      "u2"
+    );
   });
 
   it("pays no one for mixed revisions, or none", async () => {
-    const db = fakeDb([], links);
+    const db = fakeDb([], claims);
     expect(await scoredEditsAccount(db as never, "Kir Republic", ["u2", null])).toBeNull();
     expect(await scoredEditsAccount(db as never, "Kir Republic", ["u2", "u3"])).toBeNull();
     expect(await scoredEditsAccount(db as never, "Kir Republic", [])).toBeNull();

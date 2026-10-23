@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
  * Loreward trophy cards: one one-of-one, bound Trophy card per recorded place, its copy Serialised, held unowned
- * until the place's account can be told (a plain name's verified wiki link, or for a `wikios>` name the WikiOS
+ * until the place's account can be told (a plain name's approved name claim, or for a `wikios>` name the WikiOS
  * account behind its edits). Minting, granting and the backfill never write IxCredits.
  */
 // `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factories rely on the ambient global.
@@ -57,7 +57,7 @@ let cards: CardRow[];
 let ownerships: OwnershipRow[];
 /** The serials each card's transfer events record (they outlive a voided copy). */
 let trail: Array<{ cardId: string; serialNumber: number }>;
-let links: Map<string, string>;
+let claims: Map<string, string>;
 /** The authorIds of each page's edits under the queried label, by page title, as the place query groups them. */
 let winningEdits: Map<string, Array<string | null>>;
 /** The label and page of every place query the fake answered. */
@@ -118,9 +118,9 @@ function buildDb(): PrismaClient {
       ),
     },
     systemConfig: { findUnique: jest.fn(async () => ({ value: "3" })) },
-    wikiAccountLink: {
-      findFirst: jest.fn(async ({ where }: { where: { username: string } }) => {
-        const userId = links.get(where.username);
+    wikiNameClaim: {
+      findFirst: jest.fn(async ({ where }: { where: { name: string } }) => {
+        const userId = claims.get(where.name);
         return userId ? { userId } : null;
       }),
     },
@@ -241,7 +241,7 @@ beforeEach(() => {
   cards = [];
   ownerships = [];
   trail = [];
-  links = new Map();
+  claims = new Map();
   winningEdits = new Map();
   placeQueries = [];
   creditWrites = [];
@@ -307,14 +307,14 @@ describe("mintTrophyCards", () => {
 
     expect(await mintTrophyCards(db)).toEqual({ minted: 0 });
   });
-  it("leaves a card unowned when the winner has no verified link", async () => {
+  it("leaves a card unowned when the winner has no approved name claim", async () => {
     await mintTrophyCards(db);
 
     expect(cards).toHaveLength(1);
     expect(ownerships).toEqual([]);
   });
   it("writes no IxCredits", async () => {
-    links.set("Kir Republic", "u1");
+    claims.set("Kir Republic", "u1");
     await mintTrophyCards(db);
     expect(creditWrites).toEqual([]);
   });
@@ -325,7 +325,7 @@ describe("grantUnownedTrophyCards", () => {
     await mintTrophyCards(db);
   });
   it("takes the per-card lock, after the contest place's, before it looks at the card or its owners", async () => {
-    links.set("Kir Republic", "u1");
+    claims.set("Kir Republic", "u1");
 
     await grantUnownedTrophyCards(db);
 
@@ -339,8 +339,8 @@ describe("grantUnownedTrophyCards", () => {
     expect(cardLock).toBeLessThan(firstCall(db.card.findUnique)!);
   });
 
-  it("grants the card once after a link appears", async () => {
-    links.set("Kir Republic", "u1");
+  it("grants the card once after a claim is approved", async () => {
+    claims.set("Kir Republic", "u1");
 
     expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 1 });
     expect(jest.mocked(mintCopy)).toHaveBeenCalledWith(expect.anything(), {
@@ -354,7 +354,7 @@ describe("grantUnownedTrophyCards", () => {
     expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
     expect(ownersOf("c1")).toHaveLength(1);
   });
-  it("grants nothing for a plain name without a link, or for a label two accounts share", async () => {
+  it("grants nothing for a plain name without a claim, or for a label two accounts share", async () => {
     // A plain name is a MediaWiki editor: WikiOS edits under it on the page prove nothing.
     winningEdits.set("Seneca front", ["u9"]);
     expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
@@ -364,7 +364,7 @@ describe("grantUnownedTrophyCards", () => {
     expect(ownerships).toEqual([]);
   });
   it("does not hand a card back that its owner has since removed", async () => {
-    links.set("Kir Republic", "u1");
+    claims.set("Kir Republic", "u1");
     await grantUnownedTrophyCards(db);
     ownerships = [];
 
@@ -373,7 +373,7 @@ describe("grantUnownedTrophyCards", () => {
   });
 
   it("does not grant a card that gained an owner since it was listed", async () => {
-    links.set("Kir Republic", "u1");
+    claims.set("Kir Republic", "u1");
     // The fake's card.findMany (a jest.fn over the in-memory rows), not Prisma's PrismaPromise-typed method
     const findMany = db.card.findMany as unknown as jest.Mock<
       Promise<CardRow[]>,
@@ -391,7 +391,7 @@ describe("grantUnownedTrophyCards", () => {
   });
 
   it("writes no IxCredits", async () => {
-    links.set("Kir Republic", "u1");
+    claims.set("Kir Republic", "u1");
     await grantUnownedTrophyCards(db);
     expect(creditWrites).toEqual([]);
   });
@@ -399,7 +399,7 @@ describe("grantUnownedTrophyCards", () => {
   it("grants a trophy its place gave up again under its serial, reissued, never a second one", async () => {
     // An override voided the copy (serial 1 lives on in the trail) and cleared the grant
     trail.push({ cardId: "c1", serialNumber: 1 });
-    links.set("Kir Republic", "u1");
+    claims.set("Kir Republic", "u1");
 
     expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 1 });
     expect(jest.mocked(mintCopy)).toHaveBeenCalledWith(expect.anything(), {
@@ -413,7 +413,7 @@ describe("grantUnownedTrophyCards", () => {
 
   it("grants no retired trophy: a voided place waits for an override to fill it again", async () => {
     cards[0]!.isRetired = true;
-    links.set("Kir Republic", "u1");
+    claims.set("Kir Republic", "u1");
 
     expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
     expect(ownerships).toEqual([]);
@@ -470,7 +470,7 @@ describe("trophy cards of a contest stored twice", () => {
 
 describe("trophy cards when an override writes the place while a run waits", () => {
   it("mints nothing for a holder the place no longer records once the lock is held", async () => {
-    links.set("Kir Republic", "u1");
+    claims.set("Kir Republic", "u1");
     const { reread } = distinctTx([entry({ winnerUser: "Cy" })]);
 
     expect(await mintTrophyCards(db)).toEqual({ minted: 0 });
@@ -503,7 +503,7 @@ describe("backfillTrophyCards", () => {
       entry({ id: "d2", date: "2017-03-19" }),
       entry({ id: "m1", type: "monthly", date: "2020-01-01", winnerPage: null }),
     ];
-    links.set("Kir Republic", "u1");
+    claims.set("Kir Republic", "u1");
   });
   it("is idempotent: a second apply finds nothing missing", async () => {
     await backfillTrophyCards(db, true);

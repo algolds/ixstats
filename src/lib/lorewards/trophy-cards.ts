@@ -1,8 +1,8 @@
 /**
  * Loreward trophy cards: every recorded Loreward place (daily, weekly or monthly; winner or runner-up) is a
  * one-of-one, bound Trophy card (cards refresh §2.1) for that wiki user, its copy Serialised. The card is minted
- * once per (entry, edition) and held unowned until the place's account can be told (a plain name's exact verified
- * wiki link, or the one WikiOS account behind a `wikios>` name's edits: `resolveLorewardPlace`), then granted
+ * once per (entry, edition) and held unowned until the place's account can be told (a plain name's approved name
+ * claim, or the one WikiOS account behind a `wikios>` name's edits: `resolveLorewardPlace`), then granted
  * exactly once.
  * No IxCredits are written here: trophy cards stay out of deck value and the dividend (`EXCLUDE_TROPHY_CARDS`).
  * A Lore card and a Trophy card may exist for the same article (§3).

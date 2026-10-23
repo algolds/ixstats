@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
- * Loreward payouts by contest and place. A plain (MediaWiki) name pays only the owner of its VERIFIED ixwiki
- * WikiAccountLink (an exact match on the normalized name); a `wikios>Label` name pays the one WikiOS account behind
+ * Loreward payouts by contest and place. A plain (MediaWiki) name pays only the owner of its APPROVED ixwiki name
+ * claim (an exact match on the normalized name); a `wikios>Label` name pays the one WikiOS account behind
  * the label's edits to the winning page in the contest. Never to whoever holds the legacy User.wikiUsername (which
  * could be set without proof), and only for entries from the payout start on.
  */
@@ -18,7 +18,7 @@ jest.mock("~/server/db", () => {
   };
   const db = {
     lorewardEntry: { findMany: jest.fn() },
-    wikiAccountLink: { findFirst: jest.fn() },
+    wikiNameClaim: { findFirst: jest.fn() },
     // No winning edits mirrored: no WikiOS account is behind the place.
     wikiRevision: { groupBy: jest.fn(async () => []) },
     systemConfig: { findMany: jest.fn() },
@@ -44,7 +44,7 @@ import { grantLorewardBonuses } from "~/lib/lorewards/payout";
 
 const mocked = db as unknown as {
   lorewardEntry: { findMany: jest.Mock };
-  wikiAccountLink: { findFirst: jest.Mock };
+  wikiNameClaim: { findFirst: jest.Mock };
   wikiRevision: { groupBy: jest.Mock };
   systemConfig: { findMany: jest.Mock };
   user: { findFirst: jest.Mock };
@@ -110,7 +110,7 @@ function grants() {
     .mock.calls.map(([, userId, source, amount]) => [userId, source, amount]);
 }
 
-describe("grantLorewardBonuses", () => {
+describe("grantLorewardBonuses, by approved name claim", () => {
   beforeEach(() => {
     jest.mocked(grantBonusTx).mockReset().mockResolvedValue(true);
     jest
@@ -119,7 +119,7 @@ describe("grantLorewardBonuses", () => {
       .mockResolvedValue({ enabled: 1 } as never);
     mocked.user.findFirst.mockReset();
     mocked.systemConfig.findMany.mockReset().mockResolvedValue([]);
-    mocked.wikiAccountLink.findFirst.mockReset().mockResolvedValue({ userId: "u_verified" });
+    mocked.wikiNameClaim.findFirst.mockReset().mockResolvedValue({ userId: "u_claimed" });
     mocked.lorewardEntry.findMany.mockReset();
     listing([daily()]);
     mocked.wikiRevision.groupBy.mockReset().mockResolvedValue([]);
@@ -149,7 +149,7 @@ describe("grantLorewardBonuses", () => {
   it("pays an agreeing weekly pair once, through its state-keyed entry", async () => {
     listing(weeklyTwins("Kir_Republic", "Kir_Republic"));
     expect(await grantLorewardBonuses()).toBe(1);
-    expect(grants()).toEqual([["u_verified", "bonus:loreward:w-state", 1500]]);
+    expect(grants()).toEqual([["u_claimed", "bonus:loreward:w-state", 1500]]);
     expect(tx.vaultTransaction.findFirst).toHaveBeenCalledWith({
       where: {
         type: "EARN_BONUS",
@@ -181,10 +181,10 @@ describe("grantLorewardBonuses", () => {
     expect(await grantLorewardBonuses()).toBe(1);
     // An OOL write (or an override) names another holder on the same row before the next run.
     listing([daily({ winnerUser: "Other" })]);
-    mocked.wikiAccountLink.findFirst.mockResolvedValue({ userId: "u_other" });
+    mocked.wikiNameClaim.findFirst.mockResolvedValue({ userId: "u_other" });
     expect(await grantLorewardBonuses()).toBe(0);
 
-    expect(grants()).toEqual([["u_verified", "bonus:loreward:e1", 500]]);
+    expect(grants()).toEqual([["u_claimed", "bonus:loreward:e1", 500]]);
   });
 
   it("locks the place by its identity key, then re-reads, checks and pays, all on the transaction's client", async () => {
@@ -247,20 +247,20 @@ describe("grantLorewardBonuses", () => {
     warn.mockRestore();
   });
 
-  it("pays the owner of the verified ixwiki link, matching the normalized name", async () => {
+  it("pays the owner of the approved ixwiki name claim, matching the normalized name", async () => {
     expect(await grantLorewardBonuses()).toBe(1);
     // A contest stored once is checked for an earlier payment of its place too, then paid as before.
     expect(tx.vaultTransaction.findFirst).toHaveBeenCalledWith({
       where: { type: "EARN_BONUS", source: { in: ["bonus:loreward:e1"] } },
       select: { id: true },
     });
-    expect(mocked.wikiAccountLink.findFirst).toHaveBeenCalledWith({
-      where: { source: "ixwiki", username: "Kir Republic", verifiedAt: { not: null } },
+    expect(mocked.wikiNameClaim.findFirst).toHaveBeenCalledWith({
+      where: { source: "ixwiki", name: "Kir Republic", status: "APPROVED" },
       select: { userId: true },
     });
     expect(grantBonusTx).toHaveBeenCalledWith(
       expect.anything(),
-      "u_verified",
+      "u_claimed",
       "bonus:loreward:e1",
       500,
       expect.objectContaining({ entryId: "e1", type: "daily", place: "winner" })
@@ -268,7 +268,7 @@ describe("grantLorewardBonuses", () => {
   });
 
   it("pays nobody when only the legacy User.wikiUsername column matches", async () => {
-    mocked.wikiAccountLink.findFirst.mockResolvedValue(null);
+    mocked.wikiNameClaim.findFirst.mockResolvedValue(null);
     mocked.user.findFirst.mockResolvedValue({ id: "u_squatter" });
     expect(await grantLorewardBonuses()).toBe(0);
     expect(grantBonusTx).not.toHaveBeenCalled();
@@ -290,8 +290,8 @@ describe("grantLorewardBonuses", () => {
     ]);
     await grantLorewardBonuses();
     expect(grants()).toEqual([
-      ["u_verified", "bonus:loreward:w-straddle", 1500],
-      ["u_verified", "bonus:loreward:first-day", 500],
+      ["u_claimed", "bonus:loreward:w-straddle", 1500],
+      ["u_claimed", "bonus:loreward:first-day", 500],
     ]);
   });
   it("pays nothing while bonuses are switched off", async () => {

@@ -286,20 +286,43 @@ it.each([
   }
 );
 
-it("credits Lorewards wins only through a verified wiki link, never a bare or unverified wiki name", async () => {
+it("credits Lorewards wins only through an approved name claim, never a bare, pending or revoked wiki name", async () => {
   const nia = await member("nia");
   const ben = await member("ben");
   const cy = await member("cy");
+  const dee = await member("dee");
   await db.user.update({ where: { id: "ben" }, data: { wikiUsername: "Ben Wiki" } });
+  // A verified legacy link alone proves nothing any more
   await db.wikiAccountLink.create({
-    data: { userId: nia.id, source: "ixwiki", username: "Nia Wiki", verifiedAt: new Date() },
+    data: { userId: ben.id, source: "ixwiki", username: "Ben Wiki", verifiedAt: new Date() },
   });
-  await db.wikiAccountLink.create({
-    data: { userId: cy.id, source: "ixwiki", username: "Cy Wiki" },
-  });
-  for (const username of ["Nia Wiki", "Ben Wiki", "Cy Wiki"]) {
+  const claim = (userId: string, name: string, status: "APPROVED" | "PENDING" | "REVOKED") =>
+    db.wikiNameClaim.create({
+      data: {
+        userId,
+        source: "ixwiki",
+        name,
+        status,
+        origin: "PLAYER",
+        requestedById: userId,
+        decidedAt: status === "PENDING" ? null : new Date(),
+      },
+    });
+  // Nia holds two names, one kept hidden: their wins add up
+  await claim(nia.id, "Nia Wiki", "APPROVED");
+  await claim(nia.id, "Nia Old", "APPROVED");
+  await db.wikiNameClaim.updateMany({ where: { name: "Nia Old" }, data: { visible: false } });
+  await claim(cy.id, "Cy Wiki", "PENDING");
+  await claim(dee.id, "Dee Wiki", "REVOKED");
+  for (const [username, dailyWins] of [
+    ["Nia Wiki", 3],
+    ["Nia Old", 2],
+    ["Ben Wiki", 5],
+    ["Cy Wiki", 5],
+    ["Dee Wiki", 5],
+  ] as const) {
     await db.lorewardUserStats.create({
-      data: { username, dailyWins: 5, weeklyWins: 0, monthlyWins: 0, totalScore: 50 } as never,
+      data: { username, dailyWins, weeklyWins: 0, monthlyWins: 0, totalScore: 50 } as never,
     });
   }
 
@@ -310,4 +333,5 @@ it("credits Lorewards wins only through a verified wiki link, never a bare or un
   expect((await lorewards(nia)).sort()).toEqual(["lorewards-daily-5", "lorewards-first"]);
   expect(await lorewards(ben)).toEqual([]);
   expect(await lorewards(cy)).toEqual([]);
+  expect(await lorewards(dee)).toEqual([]);
 });

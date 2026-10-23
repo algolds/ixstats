@@ -1,26 +1,27 @@
 /**
  * Platform metrics (account scope): wiki, forum, ThinkTank, cards, Lorewards and cross-platform
  * activity of one person. Every query is a count or a short indexed read. Ids differ by model:
- * `ctx.userId` (`User.id`) keys cards, the forum, Onoma and the wiki link; `ctx.clerkUserId` keys
+ * `ctx.userId` (`User.id`) keys cards, the forum, Onoma and the wiki name claims; `ctx.clerkUserId` keys
  * ThinkPages, ThinkTanks and Vexel. Wiki activity (edits and the Renaissance week) is the user's own
- * revisions: those carrying their `authorId` (WikiOS edits, and classic-wiki edits imported once their link was
- * verified), plus rows with no `authorId` under exactly their VERIFIED ixwiki link's name, so an unlinked user's
- * WikiOS edits count. Lorewards read the stats row of exactly the verified link's name, so an unlinked user reads 0
- * there. The legacy `User.wikiUsername` is unproven and never read. Streaks and the Renaissance week use real UTC
- * days and ISO weeks. Map edits are not loaded here: the account key
- * `mapEditsApproved` belongs to the nation loaders.
+ * revisions: those carrying their `authorId` (WikiOS edits, and classic-wiki edits a name claim tagged), plus rows
+ * with no `authorId` under exactly one of the ixwiki names they hold an APPROVED claim on, so a player with no
+ * claimed name still has their WikiOS edits counted. Lorewards add up the stats rows of exactly those names (the
+ * longest streak is the largest of them, not a sum), so a player with no claimed name reads 0 there. A pending,
+ * rejected or revoked claim, a legacy link and the legacy `User.wikiUsername` prove nothing and are never read. A
+ * claim its owner keeps hidden still counts: a count names no one. Streaks and the Renaissance week use real UTC
+ * days and ISO weeks. Map edits are not loaded here: the account key `mapEditsApproved` belongs to the nation loaders.
  *
  * Loader budget: at most 3 indexed queries each, and never a row list that grows with the user's
  * history. Sums, distinct counts and "is there a week with all three" are single aggregate raw
- * queries (parameterised), and the verified wiki username is resolved once per evaluation. The one
+ * queries (parameterised), and the claimed wiki names are read once per evaluation. The one
  * exception is the deck value, the shared per-copy value (src/lib/cards/copy-value.ts): it reads the
  * player's live copies in a fixed number of batched reads, a list bounded by their card capacity.
  */
 import type { Prisma } from "@prisma/client";
 import { weekKey } from "~/lib/achievements/time-buckets";
 import { deckValueOf } from "~/lib/cards/copy-value";
+import { namesOfUser } from "~/lib/identity/wiki-names";
 import { EXCLUDE_TROPHY_CARDS } from "~/lib/lorewards/trophy-cards";
-import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import type { MetricContext, MetricLoader } from "./registry";
 
 const DAY_MS = 86_400_000;
@@ -68,44 +69,40 @@ export function effectiveClaimStreak(
   return dayNumber(now) - dayNumber(vault.lastLoginDate) <= 1 ? vault.loginStreak : 0;
 }
 
-const usernames = new WeakMap<MetricContext, Promise<string | null>>();
+const claimedNames = new WeakMap<MetricContext, Promise<string[]>>();
 
 /**
- * The username of the user's verified ixwiki link, `normalizeWikiUsername`-normalised (the form `WikiRevision.author`
- * holds), or null. The wiki, Lorewards and Renaissance loaders share one evaluation's context, so it is read once.
+ * Every ixwiki name the user holds an approved claim on, shown or hidden, in its stored form (the form
+ * `WikiRevision.author` holds), oldest approval first. The wiki, Lorewards and Renaissance loaders share one
+ * evaluation's context, so they are read once.
  */
-function verifiedWikiUsername(ctx: MetricContext): Promise<string | null> {
-  let username = usernames.get(ctx);
-  if (!username) {
-    username = ctx.db.wikiAccountLink
-      .findFirst({
-        where: { userId: ctx.userId, source: "ixwiki", verifiedAt: { not: null } },
-        select: { username: true },
-      })
-      .then((link) => (link ? normalizeWikiUsername(link.username) : null));
-    usernames.set(ctx, username);
+function claimedWikiNames(ctx: MetricContext): Promise<string[]> {
+  let names = claimedNames.get(ctx);
+  if (!names) {
+    names = namesOfUser(ctx.db, ctx.userId).then((claims) => claims.map((c) => c.name));
+    claimedNames.set(ctx, names);
   }
-  return username;
+  return names;
 }
 
 /**
  * Edits, articles created (first revision of a main-namespace non-redirect page) and distinct pages, in one pass,
- * over the user's own wiki revisions: those carrying their `authorId` (WikiOS edits, and classic-wiki edits imported
- * once their link was verified), plus the classic-wiki edits imported before that, with no `authorId` and `author`
- * exactly their verified link's name, which the link proves they own. A signed-in WikiOS edit carries its author's
+ * over the user's own wiki revisions: those carrying their `authorId` (WikiOS edits, and classic-wiki edits a name
+ * claim tagged), plus the classic-wiki edits with no `authorId` and `author` exactly one of their claimed names,
+ * which the approved claim proves they own. A signed-in WikiOS edit carries its author's
  * `authorId`, so another player's edits under the same label never count. A system save with no signed-in user (the
  * story-chain wiki sync, under a country name) carries none, and `mwRevId` cannot tell it from a MediaWiki import
  * (it is stamped on mirrored WikiOS rows too). Where the WikiOS `revId` trigger is installed (the hand-applied
  * `2026-09-30-wikios-api.sql`), `revId = mwRevId` marks an import, because a native row keeps its sequence id; this
- * code does not rely on that, so such a save under exactly the link's name counts for the link holder. With no link
- * the name is bound as NULL, and `author = NULL` matches no row.
+ * code does not rely on that, so such a save under exactly a claimed name counts for the claim's owner. With no
+ * claimed name the array is empty, and `author = ANY('{}')` matches no row.
  */
 export const wikiLoader: MetricLoader = {
   id: "platform-wiki",
   scope: "account",
   keys: WIKI_KEYS,
   async load(ctx) {
-    const username = await verifiedWikiUsername(ctx);
+    const names = await claimedWikiNames(ctx);
     const [row] = await ctx.db.$queryRaw<Array<{ edits: number; created: number; pages: number }>>`
       SELECT COUNT(*)::int AS edits,
         (COUNT(*) FILTER (WHERE r."parentRevisionId" IS NULL AND a.namespace = 0
@@ -113,7 +110,7 @@ export const wikiLoader: MetricLoader = {
         COUNT(DISTINCT r."articleId")::int AS pages
       FROM wiki_revisions r
       JOIN wiki_articles a ON a.id = r."articleId"
-      WHERE (r."authorId" = ${ctx.userId} OR (r."authorId" IS NULL AND r.author = ${username}))
+      WHERE (r."authorId" = ${ctx.userId} OR (r."authorId" IS NULL AND r.author = ANY(${names}::text[])))
         AND r.source = 'ixwiki' AND r.parked = false AND r."userDeleted" = false`;
     return {
       wikiEdits: row?.edits ?? 0,
@@ -242,27 +239,28 @@ export const cardsDeckLoader: MetricLoader = {
 };
 
 /**
- * Loreward wins and runner-ups from the stats row of exactly the linked wiki account (daily runner-ups only exist):
- * MediaWiki usernames are case-sensitive after the first letter, so only the normalized name matches, as
- * `resolveLorewardPlace` matches a plain name. Places won under a `wikios>` name are not in this row.
+ * Loreward wins and runner-ups (daily runner-ups only exist) added up over the stats rows of exactly the user's
+ * claimed names, the win streak the longest of any of them: MediaWiki usernames are case-sensitive after the first
+ * letter, so only the stored name matches, as `resolveLorewardPlace` matches a plain name. Places won under a
+ * `wikios>` name are not in these rows.
  */
 export const lorewardsLoader: MetricLoader = {
   id: "platform-lorewards",
   scope: "account",
   keys: LOREWARD_KEYS,
   async load(ctx) {
-    const username = await verifiedWikiUsername(ctx);
-    const stats = username
-      ? await ctx.db.lorewardUserStats.findFirst({
-          where: { username },
-        })
-      : null;
+    const names = await claimedWikiNames(ctx);
+    const rows = names.length
+      ? await ctx.db.lorewardUserStats.findMany({ where: { username: { in: names } } })
+      : [];
+    const sum = (pick: (row: (typeof rows)[number]) => number) =>
+      rows.reduce((total, row) => total + pick(row), 0);
     return {
-      lorewardDailyWins: stats?.dailyWins ?? 0,
-      lorewardWeeklyWins: stats?.weeklyWins ?? 0,
-      lorewardMonthlyWins: stats?.monthlyWins ?? 0,
-      lorewardRunnerUps: stats?.dailyRunnerUps ?? 0,
-      lorewardWinStreak: stats?.longestStreak ?? 0,
+      lorewardDailyWins: sum((r) => r.dailyWins),
+      lorewardWeeklyWins: sum((r) => r.weeklyWins),
+      lorewardMonthlyWins: sum((r) => r.monthlyWins),
+      lorewardRunnerUps: sum((r) => r.dailyRunnerUps),
+      lorewardWinStreak: Math.max(0, ...rows.map((r) => r.longestStreak)),
     };
   },
 };
@@ -279,7 +277,7 @@ export const renaissanceLoader: MetricLoader = {
   keys: ["renaissanceWeek"],
   async load(ctx) {
     const { db, userId, clerkUserId, now } = ctx;
-    const username = await verifiedWikiUsername(ctx);
+    const names = await claimedWikiNames(ctx);
     const since = new Date(now.getTime() - LOOKBACK_DAYS * DAY_MS);
     const weeks = [weekKey(now), weekKey(new Date(now.getTime() - WEEK_MS))];
     const [row] = await db.$queryRaw<Array<{ weeks: number }>>`
@@ -287,7 +285,7 @@ export const renaissanceLoader: MetricLoader = {
         SELECT wk FROM (
           SELECT 'wiki' AS kind, to_char(r."createdAt", 'IYYY-"W"IW') AS wk
           FROM wiki_revisions r
-          WHERE (r."authorId" = ${userId} OR (r."authorId" IS NULL AND r.author = ${username}))
+          WHERE (r."authorId" = ${userId} OR (r."authorId" IS NULL AND r.author = ANY(${names}::text[])))
             AND r.source = 'ixwiki' AND r.parked = false
             AND r."userDeleted" = false AND r."createdAt" >= ${since}
           UNION
