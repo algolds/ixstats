@@ -54,10 +54,19 @@ describe("the category filter", () => {
     expect(categoryWhere(["HISTORY", "UNCATEGORISED"])).toEqual({
       OR: [{ category: { in: ["HISTORY"] } }, { cardType: "LORE", category: null }],
     });
-    expect(exploreWhere(query({ categories: ["UNCATEGORISED"] }), "me")).toMatchObject({
-      OR: [{ cardType: "LORE", category: null }],
+  });
+
+  it("keeps Uncategorised's OR in an AND of its own, so no other OR can replace it", () => {
+    const where = exploreWhere(query({ categories: ["UNCATEGORISED"] }), "me");
+    expect(where).toMatchObject({
+      AND: [{ OR: [{ cardType: "LORE", category: null }] }],
       reviewState: "APPROVED",
     });
+    expect(where.OR).toBeUndefined();
+    expect(exploreWhere(query({ categories: ["HISTORY"] }), "me").AND).toEqual([
+      { category: { in: ["HISTORY"] } },
+    ]);
+    expect(exploreWhere(query(), "me").AND).toBeUndefined();
   });
 });
 

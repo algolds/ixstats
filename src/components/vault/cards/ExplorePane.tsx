@@ -21,7 +21,12 @@ import type { ExplorePage, RealmShelf as Shelf } from "~/lib/cards/hub/explore";
 import { STORE_PATH } from "~/lib/cards/hub-routes";
 import { DEFAULT_REALM_ID, isIxnaySlug, NS_REALM_ID } from "~/lib/realms/realm-ids";
 import { cn } from "~/lib/utils/cn";
-import { CardFilterBar, type FilterDimension, type RegionSearchOptions } from "./CardFilterBar";
+import {
+  CardFilterBar,
+  type FacetsStatus,
+  type FilterDimension,
+  type RegionSearchOptions,
+} from "./CardFilterBar";
 import { CardGrid } from "./CardGrid";
 import { MoreCards } from "./MoreCards";
 import { RealmShelf } from "./RealmShelf";
@@ -46,6 +51,16 @@ function realmForSlug(realms: readonly CardRealmBadge[], slug: string) {
   return realms.find((realm) =>
     isIxnaySlug(slug) ? realm.id === DEFAULT_REALM_ID : realm.slug === slug
   );
+}
+
+/** The filters' types and categories: a failed refresh keeps the ones it has; only choices that never loaded say so. */
+function facetsStatus(query: {
+  isLoading: boolean;
+  isError: boolean;
+  data?: object;
+}): FacetsStatus {
+  if (query.isLoading) return "loading";
+  return query.isError && !query.data ? "failed" : "ready";
 }
 
 /** Every loaded card once: a card published between page fetches shifts the offsets, so pages can overlap. */
@@ -181,6 +196,7 @@ export function ExplorePane({
           dimensions={EXPLORE_DIMENSIONS}
           types={facets.data?.types ?? []}
           categories={facets.data?.categories ?? []}
+          facets={facetsStatus(facets)}
           realms={realms}
           regions={regions}
           regionSearch={regionSearch}

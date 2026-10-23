@@ -67,7 +67,8 @@ export function exploreWhere(query: ExploreQuery, viewerId: string): Prisma.Card
     ...(query.realmId ? { realmId: query.realmId } : {}),
     ...(query.rarities?.length ? { rarity: { in: query.rarities } } : {}),
     ...(query.types?.length ? { cardType: { not: "TROPHY", in: query.types } } : {}),
-    ...categoryWhere(query.categories),
+    // In an AND of its own: Uncategorised's OR must survive any other OR merged in here.
+    ...(query.categories?.length ? { AND: [categoryWhere(query.categories)] } : {}),
     ...(query.season ? { season: query.season } : {}),
     ...(query.region ? { metadata: { path: ["nsData", "region"], equals: query.region } } : {}),
     ...(query.search

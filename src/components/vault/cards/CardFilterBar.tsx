@@ -8,6 +8,7 @@ import { Label } from "~/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Skeleton } from "~/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -33,6 +34,9 @@ import type { CardRealmBadge, CardType } from "~/lib/cards/face/types";
 
 export type FilterDimension =
   "realm" | "rarity" | "finish" | "type" | "category" | "duplicates" | "owned" | "region";
+
+/** Where the type and category choices are, when the caller loads them apart from its cards. */
+export type FacetsStatus = "ready" | "loading" | "failed";
 
 /** A select's "no filter" choice: Radix gives an empty value no item, and no realm id or region name is this. */
 const ANY = "__any";
@@ -243,6 +247,58 @@ function DuplicatesSwitch({ on, onChange }: { on: boolean; onChange: (on: boolea
   );
 }
 
+/** The type and category filters: a skeleton while their choices load, a line when they did not. */
+function FacetFields(props: {
+  filters: CardFilters;
+  set: SetFilter;
+  has: (dimension: FilterDimension) => boolean;
+  types: readonly CardType[];
+  categories: readonly CategoryFilterValue[];
+  status: FacetsStatus;
+}) {
+  const { filters, set, has, status } = props;
+  if (!has("type") && !has("category")) return null;
+  if (status === "loading") {
+    return (
+      <Skeleton
+        role="status"
+        aria-label="Loading types and categories"
+        className="rounded-control h-8 w-full"
+      />
+    );
+  }
+  // A picked type or category stays listed after its cards are gone, so it can be turned off.
+  const types = listedTypes(props.types, filters.types);
+  const categories = listedCategories(props.categories, filters.category);
+  return (
+    <>
+      {has("type") && types.length > 0 && (
+        <Toggles
+          label="Type"
+          values={types}
+          labels={TYPE_LABEL}
+          picked={filters.types}
+          onChange={(types) => set("types", types)}
+        />
+      )}
+      {has("category") && categories.length > 0 && (
+        <PickOne
+          label="Category"
+          anyLabel="Any category"
+          value={filters.category}
+          options={categories.map((value) => ({ value, label: getCategoryFilterLabel(value) }))}
+          onChange={(value) =>
+            set("category", value && isCategoryFilterValue(value) ? value : null)
+          }
+        />
+      )}
+      {status === "failed" && (
+        <p className="text-footnote text-label-secondary">Types and categories did not load.</p>
+      )}
+    </>
+  );
+}
+
 function FilterFields(props: {
   filters: CardFilters;
   set: SetFilter;
@@ -253,11 +309,9 @@ function FilterFields(props: {
   realmNames: ReadonlyMap<string, string>;
   regions: readonly string[];
   regionSearch?: RegionSearchOptions;
+  facets: FacetsStatus;
 }) {
   const { filters, set, has } = props;
-  // A picked type or category stays listed after its cards are gone, so it can be turned off.
-  const types = listedTypes(props.types, filters.types);
-  const categories = listedCategories(props.categories, filters.category);
   return (
     <>
       {has("owned") && (
@@ -296,26 +350,14 @@ function FilterFields(props: {
           onChange={(finishes) => set("finishes", finishes)}
         />
       )}
-      {has("type") && types.length > 0 && (
-        <Toggles
-          label="Type"
-          values={types}
-          labels={TYPE_LABEL}
-          picked={filters.types}
-          onChange={(types) => set("types", types)}
-        />
-      )}
-      {has("category") && categories.length > 0 && (
-        <PickOne
-          label="Category"
-          anyLabel="Any category"
-          value={filters.category}
-          options={categories.map((value) => ({ value, label: getCategoryFilterLabel(value) }))}
-          onChange={(value) =>
-            set("category", value && isCategoryFilterValue(value) ? value : null)
-          }
-        />
-      )}
+      <FacetFields
+        filters={filters}
+        set={set}
+        has={has}
+        types={props.types}
+        categories={props.categories}
+        status={props.facets}
+      />
       {has("region") && (
         <RegionField
           value={filters.region}
@@ -339,6 +381,8 @@ interface CardFilterBarProps<S extends string> {
   types: readonly CardType[];
   /** The category filter's choices: the categories the tab has cards in, Uncategorised included. */
   categories: readonly CategoryFilterValue[];
+  /** Whether `types` and `categories` have loaded; a tab that reads them with its cards leaves this out. */
+  facets?: FacetsStatus;
   realms: readonly CardRealmBadge[];
   regions?: readonly string[];
   /** Makes the region filter a search over the server's regions; without it, a select over `regions`. */
@@ -389,6 +433,7 @@ export function CardFilterBar<S extends string>(props: CardFilterBarProps<S>) {
             realmNames={realmNames}
             regions={props.regions ?? []}
             regionSearch={props.regionSearch}
+            facets={props.facets ?? "ready"}
           />
           <Button
             variant="ghost"
