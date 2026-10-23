@@ -53,8 +53,9 @@ bunx prisma db execute --schema prisma/schema --file prisma/migrations/202610281
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261031120000_cards_face_hub/migration.sql
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261101120000_cards_economy/migration.sql
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261102120000_cards_categories/migration.sql
-# The IxnayID name claims and revision tag tables
+# The IxnayID name claims and revision tag tables, then the IxWiki links converted into claims
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261103120000_ixnayid_claims/migration.sql
+bun scripts/identity/convert-wiki-name-claims.ts --apply
 bun run db:push:force
 
 # Verify and auto-heal WikiOS articles and categories in PostgreSQL

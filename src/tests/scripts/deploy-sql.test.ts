@@ -93,6 +93,13 @@ describe("the SQL the deploy runs", () => {
     expect(claims).toBeLessThan(push);
   });
 
+  it("converts the IxWiki links after the claims SQL and before the push", () => {
+    const at = (needle: string) => script.indexOf(needle);
+    const convert = at("bun scripts/identity/convert-wiki-name-claims.ts --apply || exit 1");
+    expect(convert).toBeGreaterThan(at("20261103120000_ixnayid_claims/migration.sql"));
+    expect(convert).toBeLessThan(push);
+  });
+
   it("keeps one approved owner per wiki name in SQL, where Prisma cannot say it", () => {
     const body = sql("prisma/migrations/20261103120000_ixnayid_claims/migration.sql");
     expect(body).toMatch(
@@ -104,9 +111,9 @@ describe("the SQL the deploy runs", () => {
   });
 });
 
-/** Each step that must run before db push: a hand-written SQL file or the cards backfill. */
+/** Each step that must run before db push: a hand-written SQL file, the cards backfill or the IxWiki link conversion. */
 const STEP =
-  /bunx prisma db execute --schema prisma\/schema --file (\S+\.sql)|bun (scripts\/cards\/backfill-cards-refresh\.ts --apply)/g;
+  /bunx prisma db execute --schema prisma\/schema --file (\S+\.sql)|bun (scripts\/(?:cards\/backfill-cards-refresh|identity\/convert-wiki-name-claims)\.ts --apply)/g;
 const beforePush = (text: string) => {
   const pushAt = text.indexOf("bun run db:push:force");
   return [...text.matchAll(STEP)].filter((m) => m.index < pushAt).map((m) => (m[1] ?? m[2])!);
