@@ -20,10 +20,7 @@ import {
 type AccountMap = Map<string, UserAccount>;
 
 /** The delegates the resolver reads; accepts the Prisma client or a transaction client. */
-export type MessagingAccountsDb = Pick<
-  PrismaClient,
-  "user" | "country" | "thinkpagesAccount" | "userConnection"
->;
+export type MessagingAccountsDb = Pick<PrismaClient, "user" | "country" | "thinkpagesAccount">;
 
 const COUNTRY_INCLUDE = {
   country: { select: { slug: true, name: true, flag: true } },

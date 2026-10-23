@@ -162,7 +162,7 @@ api.users.createCountry.useMutation() // { userId, countryName, initialData?, na
 api.users.setActiveNation.useMutation() // { countryId }
 api.users.updateMembershipTier.useMutation() // { userId, tier }
 api.users.updateWikiPreferences.useMutation() // { wikiAutoScan?, wikiSourcePriority?, wikiDisplayMode? }
-api.users.updatePrivacyConfig.useMutation() // { directMessages?, messageRequestFiltering?, mentions?, tradeOffers?, thinktankInvites?, showOnlineStatus?, searchDiscoverable?, searchEngineIndexing?, dmReadReceipts?, diagnosticTelemetry?, personalizedRecommendations?, showDiscordTag?, showWikiAttribution? }
+api.users.updatePrivacyConfig.useMutation() // { directMessages?, messageRequestFiltering?, mentions?, tradeOffers?, thinktankInvites?, showOnlineStatus?, searchDiscoverable?, searchEngineIndexing?, dmReadReceipts?, diagnosticTelemetry?, personalizedRecommendations?, showDiscordTag? }
 api.users.blockAccount.useMutation() // { identifier }
 api.users.unblockAccount.useMutation() // { connectionId }
 api.users.muteAccount.useMutation() // { identifier }

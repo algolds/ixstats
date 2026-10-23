@@ -3,7 +3,8 @@
  * `/r/{realm}/@handle` (`src/app/r/[realm]/(region)/u/[username]/layout.tsx`): what link unfurlers
  * (Discord, Slack) and search engines read. `passportMetadata` is pure; `passportPageMetadata`
  * reads `getPassportCard` and `passportIndexable` for it. Images are left to the route's
- * `opengraph-image.tsx`, which Next attaches on its own.
+ * `opengraph-image.tsx`, which Next attaches on its own. The indexing rule is the holder's
+ * "Search engine indexing" switch (Settings → Privacy & Security, SL-4).
  */
 import type { Metadata } from "next";
 import { withBasePath } from "~/lib/base-path";
@@ -14,7 +15,9 @@ import {
   realmsAndNations,
 } from "~/lib/passport/passport-labels";
 import { NOINDEX, orNullLogged, SITE_NAME, socialMetadata } from "~/lib/site-metadata";
-import { passportIndexable } from "./identity.link-privacy";
+import { db } from "~/server/db";
+import { usersWithSwitchOff } from "~/server/shared/privacy-permissions";
+import { resolveHandleOwnerClerkId } from "./identity.resolve";
 import { getPassportCard } from "./identity.service";
 import type { PassportCard } from "./identity.types";
 
@@ -67,6 +70,20 @@ export function passportMetadata(card: PassportCard | null, indexable: boolean):
     alternates: { canonical: url },
     ...robots,
   };
+}
+
+/**
+ * Whether search engines may index the passport at `handle` (`searchEngineIndexing`). A handle
+ * with no user (an external wiki or forum name) is indexable; a read error is not.
+ */
+export async function passportIndexable(handle: string): Promise<boolean> {
+  try {
+    const clerkId = await resolveHandleOwnerClerkId(handle);
+    if (!clerkId) return true;
+    return !(await usersWithSwitchOff(db, [clerkId], "searchEngineIndexing")).has(clerkId);
+  } catch {
+    return false;
+  }
 }
 
 /**

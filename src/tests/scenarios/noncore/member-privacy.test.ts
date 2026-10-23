@@ -3,11 +3,11 @@
  * A member's privacy settings decide what other members see. Hana writes on IxWiki as "Hana Wiki" (a verified link
  * and an approved name claim, Lorewards medals and a featured-article award) and has no nation; Sam writes as "Sam
  * Wiki" and has the passport handle "samwise". No surface that names players reads a wiki name at all (display names,
- * messaging, a ThinkTank's roster, feed and join notices): they name a player by handle, else their persona, whatever
- * wiki attribution says and even when the switch cannot be read, and a persona made while the wiki name was shown
- * loses to the handle. With attribution off her passport handle skips the wiki name, and she still sees her own link.
- * Her achievements as others see them follow her name claim: while she keeps it hidden they read no wiki name, and
- * she still sees her own.
+ * messaging, a ThinkTank's roster, feed and join notices): they name a player by handle, else their persona, whether
+ * her claim is shown or hidden and even when the privacy switches cannot be read, and a persona made while the wiki
+ * name was shown loses to the handle. With her claim hidden her passport handle skips the wiki name, and she still sees
+ * her own claim. Her achievements as others see them follow her name claim: while she keeps it hidden they read no
+ * wiki name, and she still sees her own.
  *
  * Her direct messages are open to followers only, with read receipts and online status off. Sam, outside her
  * audience, starts a conversation: it waits in her Requests folder and she is not told. She accepts, and Sam's next
@@ -185,15 +185,15 @@ async function hanasLorewardsSeenBy(viewer: string) {
   };
 }
 
-it("names Hana and Sam by handle, else persona, never by a wiki name, whatever wiki attribution says", async () => {
+it("names Hana and Sam by handle, else persona, never by a wiki name, whether her claim is shown or hidden", async () => {
   const groupId = await economists();
   await post(groupId);
 
   // Her first post made her personal persona, never named after her wiki name
   const persona = await db.thinkpagesAccount.findFirstOrThrow({ where: { clerkUserId: HANA } });
   expect(persona.displayName).not.toContain("Hana Wiki");
-  for (const shown of [true, false]) {
-    for (const id of ["hana", "sam"]) await privacy(id, { showWikiAttribution: shown });
+  for (const visible of [true, false]) {
+    await db.wikiNameClaim.updateMany({ where: { userId: "hana" }, data: { visible } });
     for (const viewer of [null, "omar", "hana"]) {
       expect(await namesSeenBy(viewer, groupId)).toEqual({
         display: [persona.displayName, "samwise", "Omaria", UNKNOWN_DISPLAY_NAME],
@@ -211,8 +211,8 @@ it("names Hana and Sam by handle, else persona, never by a wiki name, whatever w
   expect(joined.length).toBeGreaterThan(1);
   for (const notice of joined) expect(notice.actorUserName).not.toMatch(/(Hana|Sam) Wiki/);
 
-  // With attribution off her passport handle (on every share link) skips the wiki name; her own settings still show
-  // the link
+  // With her claim hidden her passport handle (on every share link) skips the wiki name; her own settings still show
+  // the claim
   const status = await ixnayid(as("hana")).getStatus();
   expect(status.passportHandle).not.toMatch(/hana[ _]wiki/i);
   expect(status.wiki).toMatchObject({ linked: true, username: "Hana Wiki" });

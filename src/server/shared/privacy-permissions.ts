@@ -15,9 +15,9 @@
  *   `directMessages` audience goes to their Requests folder instead of being refused
  *   ("nobody" still refuses). See `splitDirectMessageRefusals`.
  * - Boolean switches read through `usersWithSwitchOff`: `showOnlineStatus` (presence.ts),
- *   `dmReadReceipts` (messaging "seen"), `searchEngineIndexing` (passport robots metadata),
- *   `showDiscordTag` and `showWikiAttribution` (public profile surfaces; `withoutHiddenWikiNames`
- *   keeps a hidden wiki name off the forum, ThinkTanks and display names).
+ *   `dmReadReceipts` (messaging "seen"), `searchEngineIndexing` (passport robots metadata) and
+ *   `showDiscordTag` (public profile surfaces). An old wiki name has no switch: each name claim
+ *   carries its own visibility (src/lib/identity/wiki-names.ts).
  *
  * "followers" means the sender follows the recipient: one of the sender's ThinkPages personas
  * follows one of the recipient's (ThinkpagesFollow), or the sender's country follows the
@@ -43,8 +43,7 @@ export type PrivacySwitchKey =
   | "showOnlineStatus"
   | "searchEngineIndexing"
   | "dmReadReceipts"
-  | "showDiscordTag"
-  | "showWikiAttribution";
+  | "showDiscordTag";
 
 const AUDIENCES = new Set<Audience>(["everyone", "followers", "verified", "nobody"]);
 
@@ -120,47 +119,18 @@ export async function usersWithSwitchOff(
 }
 
 /**
- * Users whose linked Discord tag or wiki name must not appear on public surfaces
- * (`showDiscordTag` / `showWikiAttribution` off). Fails closed: on a read error everyone's
- * names are hidden.
+ * Users whose linked Discord tag must not appear on public surfaces (`showDiscordTag` off). Fails
+ * closed: on a read error everyone's tags are hidden.
  */
 export async function hiddenLinkedNames(
   db: Pick<PrismaClient, "userConnection">,
   clerkIds: string[]
-): Promise<{ discord: Set<string>; wiki: Set<string> }> {
+): Promise<{ discord: Set<string> }> {
   try {
-    const configs = await loadPrivacyConfigs(db, clerkIds);
-    const off = (key: PrivacySwitchKey) =>
-      new Set([...configs].filter(([, c]) => c[key] === false).map(([id]) => id));
-    return { discord: off("showDiscordTag"), wiki: off("showWikiAttribution") };
+    return { discord: await usersWithSwitchOff(db, clerkIds, "showDiscordTag") };
   } catch {
-    const all = new Set(clerkIds);
-    return { discord: all, wiki: all };
+    return { discord: new Set(clerkIds) };
   }
-}
-
-/**
- * `users` with the wiki name blanked for each one who turned wiki attribution off (`showWikiAttribution`), so a
- * surface that names them falls through to its next name and matches no hidden name. One batch read, for the users
- * with a wiki name only (none when no one has one). Fails closed: on a read error every wiki name is blanked.
- */
-export async function withoutHiddenWikiNames<
-  U extends { clerkUserId: string; wikiUsername: string | null },
->(db: Pick<PrismaClient, "userConnection">, users: readonly U[]): Promise<U[]> {
-  const named = users.filter((u) => u.wikiUsername).map((u) => u.clerkUserId);
-  const hidden = await usersWithSwitchOff(db, named, "showWikiAttribution").catch(
-    () => new Set(named)
-  );
-  return users.map((u) => (hidden.has(u.clerkUserId) ? { ...u, wikiUsername: null } : u));
-}
-
-/** Whether one user has the boolean switch `key` on (the default). */
-export async function switchIsOn(
-  db: Pick<PrismaClient, "userConnection">,
-  clerkId: string,
-  key: PrivacySwitchKey
-): Promise<boolean> {
-  return !(await usersWithSwitchOff(db, [clerkId], key)).has(clerkId);
 }
 
 /**

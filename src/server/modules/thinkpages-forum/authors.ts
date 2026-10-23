@@ -6,7 +6,7 @@ import { personaTypeOf, type PersonaType } from "~/lib/thinkpages-forum/persona-
 import type { PreviewAuthor } from "~/lib/thinkpages-forum/preview";
 import { personalAvatars } from "./personal-avatars";
 
-export type AuthorsDb = Pick<PrismaClient, "user" | "thinkpagesAccount" | "userConnection">;
+export type AuthorsDb = Pick<PrismaClient, "user" | "thinkpagesAccount">;
 
 export interface ForumUserAuthor {
   name: string;

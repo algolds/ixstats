@@ -14,7 +14,6 @@ import {
   USER_ROLE,
 } from "~/tests/helpers/forum-mod-fixtures";
 import { detailOf, forumStore, type Row } from "~/tests/helpers/forum-store-fake";
-import { wikiAttributionOff } from "~/tests/helpers/privacy-config-fake";
 import { assertBoardGrantable } from "~/server/modules/thinkpages-forum";
 import { ban, NOW } from "~/tests/helpers/forum-appeal-fixtures";
 import {
@@ -45,8 +44,8 @@ const categoryModerators: Row[] = [
   { id: "cm2", categoryId: "cat_general", userId: "u_m", grantedBy: "u_a", createdAt: at(2) },
   { id: "cm3", categoryId: "r_eurth_hub", userId: "u_w", grantedBy: "u_a", createdAt: at(3) },
 ];
-const storeWith = (userConnections: Row[] = []) =>
-  forumStore({ categories, realms, users: people, categoryModerators, userConnections });
+const storeWith = () =>
+  forumStore({ categories, realms, users: people, categoryModerators, userConnections: [] });
 describe("resolveMember", () => {
   it("returns only the id and a public name, never a Clerk id or email", async () => {
     const store = storeWith();
@@ -57,14 +56,13 @@ describe("resolveMember", () => {
       expect(call[0]!.select).toEqual({ id: true, handle: true });
     }
   });
-  it("finds nobody by an old wiki name, whatever wiki attribution says", async () => {
-    for (const store of [storeWith(), storeWith(wikiAttributionOff("wiki", "member"))]) {
-      for (const name of ["Bob_Smith", "Alice of Eurth", "Twin"]) {
-        expect(await resolveMember(store.db as never, generalMod, { handle: name })).toBeNull();
-      }
-      expect(store.db.user.findMany).not.toHaveBeenCalled();
-      expect(store.db.userConnection.findMany).not.toHaveBeenCalled();
+  it("finds nobody by an old wiki name, and reads no privacy setting", async () => {
+    const store = storeWith();
+    for (const name of ["Bob_Smith", "Alice of Eurth", "Twin"]) {
+      expect(await resolveMember(store.db as never, generalMod, { handle: name })).toBeNull();
     }
+    expect(store.db.user.findMany).not.toHaveBeenCalled();
+    expect(store.db.userConnection.findMany).not.toHaveBeenCalled();
   });
 });
 

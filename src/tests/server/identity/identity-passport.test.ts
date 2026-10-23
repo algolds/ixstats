@@ -5,15 +5,16 @@
  * (MediaWiki, XenForo, Clerk, the Vault) stubbed.
  *
  * Privacy is persisted (`PassportPreference`) and enforced server-side: a section the owner hides is absent from the
- * payload for every viewer, the owner included, and is not even loaded. Wiki attribution (SL-4) also keeps the wiki
- * account's work, history and Lorewards from other viewers (never from the owner); "Online status" decides the online
- * flag and "Search engine indexing" the robots metadata; a switch that cannot be read hides. The payload carries the
- * passport handle, never the URL segment. A public read writes nothing, reports the wiki "linked" only for an approved
- * name claim the holder shows (a hidden claim links nothing) and asks MediaWiki nothing for a user. Realm rows carry the realm role, never the site role. The card and page
- * metadata make no external call and carry no personal field; with link previews off they are generic.
+ * payload for every viewer, the owner included, and is not even loaded. A wiki name's work, history and Lorewards
+ * follow its claim's visibility (the resolver names the identity's wiki name), never a switch; "Online status" decides
+ * the online flag and "Search engine indexing" the robots metadata; a switch that cannot be read hides. The payload
+ * carries the passport handle, never the URL segment. A public read writes nothing, reports the wiki "linked" only for
+ * an approved name claim the holder shows (a hidden claim links nothing) and asks MediaWiki nothing for a user. Realm
+ * rows carry the realm role, never the site role. The card and page metadata make no external call and carry no
+ * personal field; with link previews off they are generic.
  *
- * Folds identity-passport-handle, -link-privacy, -wiki, -realms, -card, -metadata and identity-showcase-ribbons. The
- * wiki name on the passport, in its handle and in player names with the switch off is security-wiki-attribution-off's.
+ * Folds identity-passport-handle, -link-privacy, -wiki, -realms, -card, -metadata and identity-showcase-ribbons. A
+ * hidden claim on the passport, in its handle, in player names and on the mirror is security-hidden-wiki-claim's.
  */
 jest.mock("~/server/db", () => {
   const db = {
@@ -91,8 +92,8 @@ import {
   toPassportSettings,
   type PassportSections,
 } from "~/server/modules/identity/identity.privacy";
-import { passportIndexable } from "~/server/modules/identity/identity.link-privacy";
 import {
+  passportIndexable,
   passportMetadata,
   passportPageMetadata,
 } from "~/server/modules/identity/identity.metadata";
@@ -510,30 +511,21 @@ describe("the wiki block of a public read", () => {
   });
 });
 
-describe("wiki attribution on the work, the history and the Lorewards", () => {
+describe("the work, the history and the Lorewards of a shown claim", () => {
   beforeEach(() => {
     claimed("Alex");
     loader.loadLoreStats.mockResolvedValue({ ...LORE_STATS, totalScore: 1200 });
   });
 
-  it("drops wiki articles from the Work tab when attribution is off", async () => {
-    switches({ showWikiAttribution: false });
-    await getWork(resolvesTo("visitor"));
-    expect(loader.loadAuthoredArticleRows).not.toHaveBeenCalled();
-  });
-
-  it.each([
-    ["a visitor", "visitor", false],
-    ["the owner", "clerk_1", true],
-  ])("with attribution off, %s's History tab holds wiki items: %s", async (_who, viewer, wiki) => {
+  it("lists the wiki articles on the Work tab and the wiki items in History for a visitor", async () => {
     loader.loadNativeRevisions.mockResolvedValue([REVISION]);
-    switches({ showWikiAttribution: false });
-    const page = await getHistory({ ...resolvesTo(viewer), limit: 50 });
-    expect(page.items.some((item) => item.system === "wikios")).toBe(wiki);
-    if (!wiki) expect(page.items.map((item) => item.type)).toEqual(["realm.joined"]);
+    await getWork(resolvesTo("visitor"));
+    expect(loader.loadAuthoredArticleRows).toHaveBeenCalled();
+    const page = await getHistory({ ...resolvesTo("visitor"), limit: 50 });
+    expect(page.items.some((item) => item.system === "wikios")).toBe(true);
   });
 
-  it("links the History join event to the stored handle, else the passport handle, never the segment or wiki name", async () => {
+  it("links the History join event to the stored handle, else the passport handle, never the segment or a hidden name", async () => {
     const stored = await getHistory({
       ...resolvesTo(null, { handle: "alex_h" }, "Alex Legacy"),
       limit: 50,
@@ -541,9 +533,10 @@ describe("wiki attribution on the work, the history and the Lorewards", () => {
     expect(stored.items.find((item) => item.type === "realm.joined")?.objectUrl).toBe("/@alex_h");
 
     (resolveHandleUser as jest.Mock).mockResolvedValue({ id: holder.id });
-    switches({ showWikiAttribution: false });
+    // A hidden claim gives the identity no wiki name (identity.resolve.ts), and the handle chain skips it
+    claimed({ name: "Alex", visible: false });
     const chain = await getHistory({
-      ...resolvesTo("visitor", { forumUsername: null }),
+      ...resolvesTo("visitor", { forumUsername: null, wikiUsername: null }),
       limit: 50,
     });
     expect(chain.items.find((item) => item.type === "realm.joined")?.objectUrl).toBe("/@clerk_1");
@@ -551,19 +544,11 @@ describe("wiki attribution on the work, the history and the Lorewards", () => {
   });
 
   it.each([
-    ["hidden from visitors, and not loaded, when it is off", "visitor", false, null],
-    ["still shown to the owner when it is off", "clerk_1", false, 1200],
-    ["shown to visitors when it is on", "visitor", true, 1200],
-  ])("Lorewards are %s", async (_case, viewer, on, score) => {
-    switches({ showWikiAttribution: on });
+    ["a visitor", "visitor"],
+    ["the owner", "clerk_1"],
+  ])("shows the Lorewards to %s", async (_who, viewer) => {
     const passport = await getPassport(resolvesTo(viewer), forum);
-    if (score === null) {
-      expect(passport?.wiki.lorewards).toBeNull();
-      expect(loader.loadLoreStats).not.toHaveBeenCalled();
-      expect(loader.loadLoreAwards).not.toHaveBeenCalled();
-    } else {
-      expect(passport?.wiki.lorewards).toMatchObject({ totalScore: score });
-    }
+    expect(passport?.wiki.lorewards).toMatchObject({ totalScore: 1200 });
   });
 });
 
@@ -650,13 +635,6 @@ describe("the passport card", () => {
     expect(loader.loadLoreRank).not.toHaveBeenCalled();
   });
 
-  it("hides Lorewards from visitors when wiki attribution is off, not from the owner", async () => {
-    switches({ showWikiAttribution: false });
-    expect(await card()).toMatchObject({ preview: true, lorewards: null });
-    resolvesTo("clerk_1", cardHolder, "Alex");
-    expect(await card("clerk_1")).toMatchObject({ lorewards: { score: 900, rank: 4 } });
-  });
-
   it("falls back to the forum name, then the handle, with no avatar or bio", async () => {
     loader.loadPersonalPersona.mockResolvedValue(null);
     expect(await card()).toMatchObject({ displayName: "AlexForum", avatarUrl: null, bio: null });
@@ -664,7 +642,7 @@ describe("the passport card", () => {
     expect(await card()).toMatchObject({ displayName: "alex" });
   });
 
-  it("names a handle-less holder by the chain, leaving the wiki name out for every viewer when attribution is off", async () => {
+  it("names a handle-less holder by the chain, leaving a hidden claimed name out for every viewer", async () => {
     (resolveHandleUser as jest.Mock).mockResolvedValue({ id: holder.id });
     claimed("Alex_Wiki");
     resolvesTo(null, { ...cardHolder, handle: null }, "Alex");
@@ -672,7 +650,7 @@ describe("the passport card", () => {
 
     const handleless = { ...cardHolder, handle: null, forumUsername: null };
     loader.loadPersonalPersona.mockResolvedValue(null);
-    switches({ showWikiAttribution: false });
+    claimed({ name: "Alex_Wiki", visible: false });
     resolvesTo(null, handleless, "Alex_Wiki");
     const visitor = await card(null, "Alex_Wiki");
     expect(visitor).toMatchObject({ handle: "clerk_1", displayName: "clerk_1" });

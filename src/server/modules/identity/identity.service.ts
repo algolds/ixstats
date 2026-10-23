@@ -4,6 +4,7 @@
  * data, and each honours the owner's privacy settings (identity.privacy.ts).
  */
 import { db } from "~/server/db";
+import { visibleOnlineUserIds } from "~/server/shared/presence";
 import { buildAuthoredArticles, buildWikiActivityFeed } from "./identity.feed";
 import {
   loadAuthoredArticleRows,
@@ -37,7 +38,6 @@ import {
   loadPassportHandle,
 } from "./identity.passport-handle";
 import { resolveIdentity, resolveIdentityNations, resolveUserIdentity } from "./identity.resolve";
-import { loadLinkPrivacy, passportOnline } from "./identity.link-privacy";
 import type {
   AuthoredArticle,
   IdentityForumActivity,
@@ -172,11 +172,12 @@ function passportWiki(
   };
 }
 
-/** The wiki block when the holder turned wiki attribution off (identity.link-privacy.ts). */
-const HIDDEN_WIKI = {
-  linked: false,
-  lorewards: null,
-};
+/** Whether the passport holder is online and lets others see it (`showOnlineStatus`). */
+async function passportOnline(identity: ResolvedIdentity): Promise<boolean> {
+  const clerkId = identity.user?.clerkUserId;
+  if (!clerkId) return false;
+  return (await visibleOnlineUserIds(db, [clerkId])).has(clerkId);
+}
 
 /** The old forum account (the kept `forumUserId` / `forumUsername` columns, or an imported name) and counters. */
 function passportForum(
@@ -200,13 +201,8 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
   const identity = await resolveIdentity(query.handle, query.viewerClerkId, forum);
   if (!identity) return null;
   const { user, wikiName } = identity;
-  const [settings, { hideWiki }] = await Promise.all([
-    loadPassportSettings(user?.id),
-    loadLinkPrivacy(identity),
-  ]);
+  const settings = await loadPassportSettings(user?.id);
   const shown = settings.visibility;
-  // Lorewards are wiki attribution: a visitor sees none when the holder turned it off (as on the card).
-  const showLore = shown.accolades && !hideWiki;
 
   const [
     wikiInfo,
@@ -226,7 +222,7 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     loadClaimedWikiName(user?.id),
     // A hidden claim shows nowhere but on its owner's own passport
     identity.isOwner ? loadOwnWikiName(user?.id) : null,
-    showLore ? loadLoreStats(wikiName) : null,
+    shown.accolades ? loadLoreStats(wikiName) : null,
     shown.forumStats && user ? forum.getActivity(user.id).catch(() => null) : null,
     loadPersonalPersona(user),
     loadClerkProfile(identity),
@@ -262,8 +258,8 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     recruitedCount,
     /**
      * The passport handle (`loadPassportHandle`); share links use this, never the URL segment. It
-     * is the same for every viewer and carries no wiki name while wiki attribution is off. An
-     * identity with no user (an external wiki or forum name) keeps its segment.
+     * is the same for every viewer and carries no hidden claimed name. An identity with no user
+     * (an external wiki or forum name) keeps its segment.
      */
     handle,
     account: passportAccount(identity, clerk, settings.signature),
@@ -271,9 +267,7 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     privacy: shown,
     /** Shown online (heartbeat in the last two minutes and `showOnlineStatus` on). */
     online,
-    wiki: hideWiki
-      ? { ...HIDDEN_WIKI, username: null }
-      : passportWiki(identity, wikiInfo, ownWikiName ?? claimedWikiName, sections),
+    wiki: passportWiki(identity, wikiInfo, ownWikiName ?? claimedWikiName, sections),
     forum: passportForum(identity, sections.forumStats),
     /** Credits and collection; null when the owner hides them. */
     vault: sections.vault,
@@ -317,17 +311,14 @@ export async function getPassportCard(query: IdentityQuery): Promise<PassportCar
   const identity = await resolveUserIdentity(query.handle, query.viewerClerkId);
   const user = identity?.user;
   if (!identity || !user) return null;
-  const [settings, { hideWiki }] = await Promise.all([
-    loadPassportSettings(user.id),
-    loadLinkPrivacy(identity),
-  ]);
+  const settings = await loadPassportSettings(user.id);
   if (!settings.visibility.linkPreview) return { preview: false };
 
   const [realms, persona, handle, lorewards] = await Promise.all([
     resolveIdentityNations(identity).then((nations) => membershipsOf(identity, nations)),
     loadPersonalPersona(user),
     loadPassportHandle(user),
-    loadCardLorewards(identity, settings.visibility.accolades && !hideWiki),
+    loadCardLorewards(identity, settings.visibility.accolades),
   ]);
   const { primaryNation, realmCount, nationCount } = nationSummaryOf(realms);
   return {
@@ -375,17 +366,16 @@ export async function getWork(query: IdentityQuery): Promise<IdentityWork> {
       wikiActivityFeed: [],
     };
   }
-  const [nations, settings, { hideWiki }] = await Promise.all([
+  const [nations, settings] = await Promise.all([
     resolveIdentityNations(identity),
     loadPassportSettings(identity.user?.id),
-    loadLinkPrivacy(identity),
   ]);
   const nationIds = nations.map((n) => n.id);
   const [wikiActivityFeed, articleRows, createdPages, conlangs, sportTeams, directives] =
     await Promise.all([
-      hideWiki ? [] : loadWikiFeed(identity, settings.visibility),
-      hideWiki ? [] : loadAuthoredArticleRows(identity),
-      hideWiki ? [] : loadCreatedPages(identity.wikiName),
+      loadWikiFeed(identity, settings.visibility),
+      loadAuthoredArticleRows(identity),
+      loadCreatedPages(identity.wikiName),
       loadConlangs(identity),
       loadSportTeams(nationIds),
       loadDirectives(nationIds),
@@ -401,23 +391,19 @@ export async function getWork(query: IdentityQuery): Promise<IdentityWork> {
 
 /**
  * Tab 4 — the cross-platform History stream, newest first, paged by event id. Empty when the owner
- * hides their activity history; without wiki items when wiki attribution is off for this viewer.
+ * hides their activity history.
  */
 export async function getHistory(
   query: IdentityQuery & { limit: number; cursor?: string | null }
 ): Promise<IdentityHistoryPage> {
   const identity = await resolveIdentity(query.handle, query.viewerClerkId);
   if (!identity) return { items: [], nextCursor: null };
-  const [settings, { hideWiki }] = await Promise.all([
-    loadPassportSettings(identity.user?.id),
-    loadLinkPrivacy(identity),
-  ]);
+  const settings = await loadPassportSettings(identity.user?.id);
   if (!settings.visibility.historyStream) return { items: [], nextCursor: null };
   const nations = await resolveIdentityNations(identity);
   const nationIds = nations.map((n) => n.id);
-  // Wiki attribution off hides wiki activity here exactly as it does on the Work tab.
   const [feed, directives, handle] = await Promise.all([
-    hideWiki ? [] : loadWikiFeed(identity, settings.visibility),
+    loadWikiFeed(identity, settings.visibility),
     loadDirectives(nationIds),
     identity.user ? loadPassportHandle(identity.user) : identity.handle,
   ]);

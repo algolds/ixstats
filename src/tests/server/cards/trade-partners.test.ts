@@ -84,7 +84,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(permissionAudiences).mockResolvedValue(new Map([["user_bob", "followers"]]));
   jest.mocked(tradeOfferRefusers).mockResolvedValue(refusals());
-  jest.mocked(hiddenLinkedNames).mockResolvedValue({ discord: new Set(), wiki: new Set() });
+  jest.mocked(hiddenLinkedNames).mockResolvedValue({ discord: new Set() });
   jest.mocked(wishlistCardIds).mockResolvedValue(new Set(["c2"]));
   jest.mocked(loadCopyValues).mockResolvedValue([
     {
@@ -192,7 +192,6 @@ describe("searchTradePartners", () => {
   it("neither shows nor matches a hidden Discord tag or an old wiki name, and names players by the identity rule", async () => {
     jest.mocked(hiddenLinkedNames).mockResolvedValue({
       discord: new Set(["clerk_hidden", "clerk_nation"]),
-      wiki: new Set(),
     });
     jest.mocked(tradeOfferRefusers).mockResolvedValue(refusals(["clerk_forum"], ["clerk_leader"]));
     jest.mocked(permissionAudiences).mockResolvedValue(

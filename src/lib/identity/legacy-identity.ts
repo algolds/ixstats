@@ -36,7 +36,7 @@ export interface LegacySnapshot {
   links: LegacyLinkRow[];
   /** Users whose `wikiUsername` is not null. */
   users: LegacyUserRow[];
-  /** Clerk ids whose privacy config has `showWikiAttribution === false`. */
+  /** Clerk ids whose stored privacy config has the retired `showWikiAttribution === false`. */
   hiddenClerkIds: ReadonlySet<string>;
   /** `User.id` of every `SYSTEM_OWNER_IDS` Clerk id. */
   systemOwnerUserIds: ReadonlySet<string>;

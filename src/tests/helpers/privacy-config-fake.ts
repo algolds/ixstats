@@ -22,10 +22,6 @@ export function privacyConfigRow(
   };
 }
 
-/** Rows turning wiki attribution (`showWikiAttribution`) off for each of `clerkUserIds`. */
-export const wikiAttributionOff = (...clerkUserIds: string[]): PrivacyConfigRow[] =>
-  clerkUserIds.map((id) => privacyConfigRow(id, { showWikiAttribution: false }));
-
 /** A `userConnection` delegate holding `rows` (none: every switch keeps its default, on). */
 export function privacyConnections(rows: PrivacyConfigRow[] = []) {
   return { findMany: jest.fn(async (_args?: object): Promise<PrivacyConfigRow[]> => rows) };

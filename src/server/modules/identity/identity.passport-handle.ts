@@ -1,20 +1,17 @@
 /**
  * The one passport handle chain every display and share surface uses (getStatus, getPassport, the
  * passport card, the History join event and a realm's inviter): the stored handle, else the first
- * approved ixwiki name claim the holder shows (`visible`) while they show wiki attribution
- * (`showWikiAttribution`), else the forum name, else the Clerk id. A computed name is used only when
- * it resolves back to the same user (another user may hold it as a handle or name), so every handle
- * this returns opens this user's passport.
+ * approved ixwiki name claim the holder shows (`visible`), else the forum name, else the Clerk id. A
+ * computed name is used only when it resolves back to the same user (another user may hold it as a
+ * handle or name), so every handle this returns opens this user's passport.
  *
  * The handle is the same for every viewer, the owner included: share and invite links carry it, so a
- * hidden claim, or wiki attribution off, never names the holder by their wiki name, even in the
- * owner's own copy. The owner still sees their wiki name where only they see it (the passport's wiki
- * block, identity.link-privacy.ts, and Settings). A switch that cannot be read counts as off. A link
+ * hidden claim never names the holder by their wiki name, even in the owner's own copy. The owner
+ * still sees their wiki name where only they see it (the passport's wiki block and Settings). A link
  * that carries a claimed name resolves to the holder only while the claim is shown (identity.resolve.ts).
  */
 import { primaryNameOf } from "~/lib/identity/wiki-names";
 import { db } from "~/server/db";
-import { switchIsOn, withoutHiddenWikiNames } from "~/server/shared/privacy-permissions";
 import { resolveHandleUser } from "./identity.resolve";
 
 /** The user columns the chain reads. */
@@ -40,61 +37,47 @@ export async function loadOwnWikiName(userId: string | undefined): Promise<strin
   return primaryNameOf(db, userId).catch(() => null);
 }
 
-/** Whether the user shows wiki attribution (`showWikiAttribution`); a read error counts as off. */
-async function showsWikiAttribution(clerkUserId: string): Promise<boolean> {
-  return switchIsOn(db, clerkUserId, "showWikiAttribution").catch(() => false);
-}
-
 async function resolvesTo(name: string, userId: string): Promise<boolean> {
   const owner = await resolveHandleUser(name).catch(() => null);
   return owner?.id === userId;
 }
 
-/** The chain past the stored handle, given the wiki name it may use (null when it may not). */
+/** The chain past the stored handle, given the user's shown claimed name (null without one). */
 async function passportHandleOf(
   user: PassportHandleUser,
-  allowedWikiName: string | null
+  claimedWikiName: string | null
 ): Promise<string> {
-  for (const name of [allowedWikiName, user.forumUsername]) {
+  for (const name of [claimedWikiName, user.forumUsername]) {
     if (name && (await resolvesTo(name, user.id))) return name;
   }
   return user.clerkUserId;
 }
 
 /**
- * The user's passport handle. With no stored handle it reads the wiki attribution switch and the
- * shown claimed name; a caller that already read that name passes it as `known`.
+ * The user's passport handle. With no stored handle it reads the shown claimed name; a caller that
+ * already read that name passes it as `known`.
  */
 export async function loadPassportHandle(
   user: PassportHandleUser,
   known?: { claimedWikiName: string | null }
 ): Promise<string> {
   if (user.handle) return user.handle;
-  const [claimedWikiName, attributed] = await Promise.all([
-    known ? known.claimedWikiName : loadClaimedWikiName(user.id),
-    showsWikiAttribution(user.clerkUserId),
-  ]);
-  return passportHandleOf(user, attributed ? claimedWikiName : null);
+  const claimedWikiName = known ? known.claimedWikiName : await loadClaimedWikiName(user.id);
+  return passportHandleOf(user, claimedWikiName);
 }
 
 /**
  * The passport handles of many users at once, in their order, by `loadPassportHandle`'s rule, given the shown claimed
- * names already read for them: one read of the wiki attribution switch for the batch, for the users a wiki name could
- * name (no stored handle, a shown claim). A switch that cannot be read hides every wiki name.
+ * names already read for them.
  */
 export async function loadPassportHandles(
   users: readonly PassportHandleUser[],
   claimedWikiNames: ReadonlyMap<string, string>
 ): Promise<string[]> {
-  const allowed = await withoutHiddenWikiNames(
-    db,
-    users.map((user) => ({
-      ...user,
-      wikiUsername: user.handle ? null : (claimedWikiNames.get(user.id) ?? null),
-    }))
-  );
   return Promise.all(
-    allowed.map((user) => user.handle || passportHandleOf(user, user.wikiUsername))
+    users.map(
+      (user) => user.handle || passportHandleOf(user, claimedWikiNames.get(user.id) ?? null)
+    )
   );
 }
 
