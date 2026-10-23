@@ -1,6 +1,6 @@
 import "server-only";
 
-import { notFound, permanentRedirect } from "next/navigation";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
 import type { ReactElement, ReactNode } from "react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { CategoryMembers } from "~/components/wiki-os/reader/CategoryMembers";
@@ -91,11 +91,17 @@ async function standardView(canon: CanonicalTitle, view: ReadView, query: Search
 }
 
 /**
- * `User:<name>`: the page's own text, with the profile card. A user with no page still gets the card,
- * as long as the user exists: like MediaWiki, a page for someone who does not exist is a 404.
+ * `User:<name>`: a root page of a handle or of a shown claim opens the owner's passport (307: a claim
+ * can be revoked); its old text stays in the history. Otherwise the page's own text, with the profile
+ * card. A user with no page still gets the card, as long as the user exists: like MediaWiki, a page
+ * for someone who does not exist is a 404.
  */
 async function userView(canon: CanonicalTitle, view: ReadView, query: SearchParamsLike) {
   const username = canon.base.split("/")[0] ?? canon.base;
+  if (!canon.base.includes("/")) {
+    const owner = await api.users.wikiUserPageOwner({ name: username }).catch(() => null);
+    if (owner) redirect(`/@${owner.handle}`);
+  }
   const loaded = await loadArticle(canon.title, view.followRedirect);
   if (loaded.status === "missing") {
     if (canon.base.includes("/") || (await userExists(username)) === false) notFound();

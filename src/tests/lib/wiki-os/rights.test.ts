@@ -625,7 +625,10 @@ describe("the own user page", () => {
     };
     expect(checkEditPolicy("User:Alpha", identity).allowed).toBe(true);
     expect(checkEditPolicy("User:Old_name/Sandbox", identity).allowed).toBe(true);
-    expect(checkEditPolicy("User:Someone", identity).allowed).toBe(false);
+    expect(checkEditPolicy("User:Someone", identity)).toEqual({
+      allowed: false,
+      reason: "You can only edit your own user page.",
+    });
   });
 
   it("lists the handle and every approved claim, hidden ones included", async () => {

@@ -2,7 +2,7 @@
 /**
  * Readers and profiles on the claim resolver (IxnayID P2). `users.resolveWikiAuthor` ties a wiki name to an account
  * only through an approved claim its owner shows, else through the passport handle the name spells: a pending or a
- * hidden claim answers null. The wiki talk bridge reads the talk page of the user's first approved claim (a hidden one
+ * hidden claim answers null. `users.wikiUserPageOwner` names the passport a `User:` page opens, by the same rule. The wiki talk bridge reads the talk page of the user's first approved claim (a hidden one
  * too: it is their own inbox), else of their handle.
  */
 let mockDb: unknown;
@@ -102,6 +102,52 @@ describe("users.resolveWikiAuthor", () => {
     await db.user.update({ where: { id: "c" }, data: { wikiUsername: "Legacy" } });
 
     expect(await resolve("Legacy")).toBeNull();
+  });
+});
+
+describe("users.wikiUserPageOwner", () => {
+  const owner = (name: string) =>
+    createCallerFactory(usersPreferencesRouter)(
+      createMockCallerContext({
+        db: mockDb,
+        auth: null,
+        user: null,
+        rateLimitIdentifier: `test:${Math.random()}`,
+      })
+    ).wikiUserPageOwner({ name });
+
+  it("names the passport handle of a shown claim's owner", async () => {
+    await claim("a", "Old name");
+
+    expect(await owner("Old_name")).toEqual({ handle: "alpha" });
+  });
+
+  it("names the handle an unclaimed name spells", async () => {
+    expect(await owner("Foo_bar")).toEqual({ handle: "foo_bar" });
+  });
+
+  it("lets an approved claim beat the handle the name spells", async () => {
+    await claim("a", "Foo bar");
+
+    expect(await owner("Foo bar")).toEqual({ handle: "alpha" });
+  });
+
+  it("answers null for a pending claim's name", async () => {
+    await claim("a", "Old name", { status: "PENDING", decidedAt: null });
+
+    expect(await owner("Old name")).toBeNull();
+  });
+
+  it("answers null for a hidden claim's name, never the handle it might spell", async () => {
+    await claim("a", "Foo bar", { visible: false });
+
+    expect(await owner("Foo bar")).toBeNull();
+  });
+
+  it("answers null when the claim's owner has no handle yet", async () => {
+    await claim("c", "Old name");
+
+    expect(await owner("Old name")).toBeNull();
   });
 });
 

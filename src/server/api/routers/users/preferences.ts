@@ -613,4 +613,15 @@ export const usersPreferencesRouter = createTRPCRouter({
         country: user?.country ?? null,
       };
     }),
+
+  /**
+   * The passport a `User:<name>` page opens (IxnayID design decision 10): the handle of the account an approved, shown
+   * claim gives the name to, else of the account whose handle the name spells. Null without a handle to open.
+   */
+  wikiUserPageOwner: rateLimitedPublicProcedure
+    .input(z.object({ name: z.string().min(1).max(255) }))
+    .query(async ({ ctx, input }) => {
+      const account = await accountOfWikiName(ctx.db, input.name, { shown: true });
+      return account?.handle ? { handle: account.handle } : null;
+    }),
 });

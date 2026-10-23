@@ -34,13 +34,17 @@ const mockListPages = jest.fn();
 const mockPageInfo = jest.fn();
 const mockHistory = jest.fn();
 const mockResolveAuthor = jest.fn();
+const mockUserPageOwner = jest.fn();
 const mockParentCategoriesPrefetch = jest.fn();
 const mockAwardsPrefetch = jest.fn();
 const mockCountryPrefetch = jest.fn();
 jest.mock("~/trpc/server", () => ({
   __esModule: true,
   api: {
-    users: { resolveWikiAuthor: (...args: unknown[]) => mockResolveAuthor(...args) },
+    users: {
+      resolveWikiAuthor: (...args: unknown[]) => mockResolveAuthor(...args),
+      wikiUserPageOwner: (...args: unknown[]) => mockUserPageOwner(...args),
+    },
     lorewards: {
       getArticleAwardsAndAchievements: {
         prefetch: (...args: unknown[]) => mockAwardsPrefetch(...args),
@@ -159,6 +163,7 @@ beforeEach(() => {
   mockFileInfo.mockResolvedValue(null);
   mockFileDetails.mockResolvedValue(null);
   mockResolveAuthor.mockResolvedValue({ wikiUsername: "Jane" });
+  mockUserPageOwner.mockResolvedValue(null);
 });
 
 describe("an article is read on the server (plan 412 step 2)", () => {
@@ -189,6 +194,66 @@ describe("an article is read on the server (plan 412 step 2)", () => {
     expect(signal).toBeNull();
     expect(mockNotFound).not.toHaveBeenCalled();
     expect(propsOf(tree, "ArticlePageClient")).toMatchObject({ title: "Aurelia" });
+  });
+});
+
+describe("User: pages open the owner's passport (IxnayID design decision 10)", () => {
+  it("a shown claim's user page is a temporary redirect to the owner's passport, before any article read", async () => {
+    mockUserPageOwner.mockResolvedValue({ handle: "alpha" });
+
+    expect((await outcome(["User:Old_name"])).signal).toBe("redirect:/@alpha");
+    expect(mockUserPageOwner).toHaveBeenCalledWith({ name: "Old name" });
+    expect(mockPermanentRedirect).not.toHaveBeenCalled();
+    expect(mockArticlePrefetch).not.toHaveBeenCalled();
+  });
+
+  it("a handle's user page opens that handle's passport", async () => {
+    mockUserPageOwner.mockResolvedValue({ handle: "foo_bar" });
+
+    expect((await outcome(["User:Foo_bar"])).signal).toBe("redirect:/@foo_bar");
+    expect(mockUserPageOwner).toHaveBeenCalledWith({ name: "Foo bar" });
+  });
+
+  it("an unclaimed or hidden name's page renders as before: its text and the profile card", async () => {
+    succeeds(article({ title: "User:Old name" }));
+    const { tree, signal } = await outcome(["User:Old_name"]);
+
+    expect(signal).toBeNull();
+    expect(propsOf(tree, "ArticlePageClient")).toMatchObject({ title: "User:Old name" });
+  });
+
+  it("a hidden claim's page with no text is a 404, as for a name nobody holds: the owner is never told", async () => {
+    fails("NOT_FOUND");
+    mockResolveAuthor.mockResolvedValue(null);
+
+    expect((await outcome(["User:Old_name"])).signal).toBe("not-found");
+    expect(mockRedirect).not.toHaveBeenCalled();
+  });
+
+  it("never redirects a subpage or a user talk page", async () => {
+    mockUserPageOwner.mockResolvedValue({ handle: "alpha" });
+
+    expect((await outcome(["User:Old_name", "Sandbox"])).signal).toBeNull();
+    expect((await outcome(["User_talk:Old_name"])).signal).toBeNull();
+    expect(mockUserPageOwner).not.toHaveBeenCalled();
+    expect(mockRedirect).not.toHaveBeenCalled();
+  });
+
+  it("leaves the editor and the history alone, so the old text stays reachable", async () => {
+    mockUserPageOwner.mockResolvedValue({ handle: "alpha" });
+    mockHistory.mockResolvedValue({ revisions: [], hasMore: false });
+
+    expect((await outcome(["User:Old_name"], { action: "edit" })).signal).toBeNull();
+    expect((await outcome(["User:Old_name"], { action: "history" })).signal).toBeNull();
+    expect(mockUserPageOwner).not.toHaveBeenCalled();
+  });
+
+  it("a failed owner lookup renders the page as before", async () => {
+    mockUserPageOwner.mockRejectedValue(new TRPCError({ code: "TOO_MANY_REQUESTS" }));
+
+    const { tree, signal } = await outcome(["User:Old_name"]);
+    expect(signal).toBeNull();
+    expect(propsOf(tree, "ArticlePageClient")).not.toBeNull();
   });
 });
 
