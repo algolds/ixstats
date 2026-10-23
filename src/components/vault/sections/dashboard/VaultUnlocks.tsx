@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type PointerEvent, type ReactNode } from "react";
+import { Trophy } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
+import { CardTitle } from "~/components/ui/card";
 import { focusRing } from "~/components/ui/button";
 import { CutoutCard } from "~/components/ui/cutout-card";
 import { Progress } from "~/components/ui/progress";
@@ -32,6 +34,17 @@ interface AchievementFace {
 const slideAt = (el: HTMLElement) =>
   el.clientWidth ? Math.round(el.scrollLeft / el.clientWidth) : 0;
 
+/** How far a mouse drag must go, in track widths, to turn the slide, as a finger swipe would. */
+const SWIPE_TURN = 1 / 6;
+/** Movement under this many px is a click, not a drag. */
+const DRAG_SLOP = 4;
+
+/** Where a drag of `dx` px (negative leftward) from slide `from` lands: the next or previous slide past the turn. */
+function swipeTarget(from: number, dx: number, width: number, count: number): number {
+  const step = Math.abs(dx) > width * SWIPE_TURN ? -Math.sign(dx) : 0;
+  return Math.min(count - 1, Math.max(0, from + step));
+}
+
 /** One achievement on its art (aurora, and foil when an unlock is epic or better), linking to it. */
 function UnlockSlide({
   achievement,
@@ -57,13 +70,16 @@ function UnlockSlide({
     >
       <Link
         href={`/vault/achievements?a=${encodeURIComponent(achievement.key)}`}
+        // A mouse drag turns the deck; it must not start the browser's own drag of the link
+        draggable={false}
         className={cn(focusRing, "rounded-cutout block h-full w-full")}
       >
         <CutoutCard
           interactive
           style={facetAccentStyle(theme.accent)}
-          // min-h-40: as tall as the Balance card, also where it is not beside it (a phone)
-          className="flex h-full min-h-40 items-center gap-3 p-4"
+          // min-h-40: as tall as the Balance card, also where it is not beside it (a phone). pt-12 clears the deck's
+          // header, pb-7 its dots.
+          className="flex h-full min-h-40 items-center gap-3 px-4 pt-12 pb-7"
         >
           <AchievementCardBackdrop
             categoryTheme={theme}
@@ -99,6 +115,11 @@ export function VaultUnlocks() {
   });
   const track = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
+  const titleId = useId();
+  // A mouse press on the track: where it started, the scroll then, and whether it moved enough to be a drag
+  const drag = useRef<{ x: number; left: number; moved: boolean } | null>(null);
+  // Set when a drag ends, so the click the release fires does not open the slide
+  const dragged = useRef(false);
 
   const recent = summary?.recent ?? [];
   // The next-up query is cached longer than the summary, so it can still name an achievement just earned.
@@ -122,17 +143,66 @@ export function VaultUnlocks() {
     el?.scrollTo({ left: index * el.clientWidth });
   };
 
+  // Touch scrolls the track natively; a mouse drags it the same way, its snapping paused while it follows the pointer.
+  const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== "mouse" || event.button !== 0) return;
+    drag.current = { x: event.clientX, left: event.currentTarget.scrollLeft, moved: false };
+  };
+  const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const start = drag.current;
+    if (!start) return;
+    const dx = event.clientX - start.x;
+    if (!start.moved && Math.abs(dx) < DRAG_SLOP) return;
+    if (!start.moved) {
+      start.moved = true;
+      event.currentTarget.style.scrollSnapType = "none";
+      event.currentTarget.style.scrollBehavior = "auto";
+    }
+    event.currentTarget.scrollLeft = start.left - dx;
+  };
+  const endDrag = (event: PointerEvent<HTMLDivElement>) => {
+    const start = drag.current;
+    drag.current = null;
+    if (!start?.moved) return;
+    const el = event.currentTarget;
+    el.style.scrollSnapType = "";
+    el.style.scrollBehavior = "";
+    dragged.current = true;
+    const width = el.clientWidth;
+    show(swipeTarget(Math.round(start.left / width), event.clientX - start.x, width, count));
+  };
+
   return (
     <section
       aria-roledescription="carousel"
-      aria-label="Achievements"
+      aria-labelledby={titleId}
       data-slot="vault-unlocks"
       // The dots sit on the card's foot, not under it, so the card fills the Balance card's row
       className="relative flex h-full flex-col"
     >
+      {/* One header over every slide, as the Balance card's; taps and drags pass through it to the slide */}
+      <CardTitle
+        id={titleId}
+        icon={<Trophy />}
+        className="text-label pointer-events-none absolute top-5 left-5 z-10"
+      >
+        Achievements
+      </CardTitle>
       <div
         ref={track}
+        data-slot="vault-unlocks-track"
         onScroll={(e) => setActive(slideAt(e.currentTarget))}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        onPointerLeave={endDrag}
+        onClickCapture={(e) => {
+          if (!dragged.current) return;
+          dragged.current = false;
+          e.preventDefault();
+          e.stopPropagation();
+        }}
         className="flex flex-1 snap-x snap-mandatory [scrollbar-width:none] overflow-x-auto overscroll-x-contain motion-safe:scroll-smooth [&::-webkit-scrollbar]:hidden"
       >
         {recent.map((unlock, index) => (
