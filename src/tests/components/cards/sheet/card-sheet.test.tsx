@@ -14,7 +14,7 @@ jest.mock("~/components/providers/FacetMotionConfig", () => ({
   useFacetReducedMotion: jest.fn(() => true),
 }));
 jest.mock("~/components/cards/display/CardPriceHistoryChart", () => ({
-  CardPriceHistoryChart: () => <p>Price history</p>,
+  CardPriceHistoryChart: () => <p>Value chart</p>,
 }));
 jest.mock("~/components/cards/display/LoreWikiExcerpt", () => ({
   LoreWikiExcerpt: ({ wikiUrl, artHidden }: { wikiUrl: string | null; artHidden?: boolean }) => (
@@ -466,6 +466,17 @@ describe("CardSheet your copies", () => {
     );
   });
 
+  it("fills every action in the bar, none left as bare text", () => {
+    showSheet();
+    showEconomy(economy());
+    open();
+    const actions = ["Sell", "Workshop", "Keep"].flatMap((name) =>
+      Array.from(actionGroup(name).querySelectorAll("button, a"))
+    );
+    expect(actions).toHaveLength(7);
+    for (const action of actions) expect(action).toHaveClass("bg-fill-3");
+  });
+
   it("keeps each workshop action to its own rule, and leaves the group out when neither is open", () => {
     showSheet();
     showEconomy(economy({ fusion: ["o8", "o9", "o10"] }));
@@ -500,6 +511,7 @@ describe("CardSheet your copies", () => {
       "href",
       "/vault/cards/market?tab=selling"
     );
+    expect(within(actionGroup("Sell")).getByRole("link")).toHaveClass("bg-fill-3");
   });
 
   it("points a copy offered in a trade to Trades, once the economy says it is not on sale", () => {
@@ -559,6 +571,58 @@ describe("CardSheet your copies", () => {
     open();
     expect(within(copies()).getByText(line)).toBeInTheDocument();
     expect(within(copies()).queryAllByRole("link")).toHaveLength(0);
+  });
+});
+
+describe("CardSheet layout", () => {
+  const sold = {
+    listings: [],
+    recentSales: [{ price: 120, finish: null, at: new Date(2026, 9, 1) }],
+    wantedBy: 12,
+  };
+  const regionNames = () =>
+    screen
+      .getAllByRole("region")
+      .map((region) => within(region).getAllByRole("heading")[0]?.textContent);
+
+  it("puts About under the market's value, and the price history last", () => {
+    showSheet(sheet({ market: sold }));
+    open();
+    expect(regionNames()).toEqual(["Your copies", "Market", "About", "Price history"]);
+  });
+
+  it("keeps the value chart and the recent sales folded until asked for", () => {
+    showSheet(sheet({ market: sold }));
+    open();
+    const toggle = screen.getByRole("button", { name: "Price history" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("Value chart")).toBeNull();
+    expect(screen.queryByRole("list", { name: "Recent sales" })).toBeNull();
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Value chart")).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("list", { name: "Recent sales" })).getByText("120")
+    ).toBeInTheDocument();
+  });
+
+  it("gives a visitor the price history only when something has sold, and never the chart", () => {
+    showSheet(sheet({ signedIn: false, copies: [] }));
+    const view = open();
+    expect(screen.queryByRole("button", { name: "Price history" })).toBeNull();
+    showSheet(sheet({ signedIn: false, copies: [], market: sold }));
+    view.rerender(sheetElement());
+    fireEvent.click(screen.getByRole("button", { name: "Price history" }));
+    expect(screen.getByRole("list", { name: "Recent sales" })).toBeInTheDocument();
+    expect(screen.queryByText("Value chart")).toBeNull();
+  });
+
+  it("gives a player the price history before anything has sold, for the chart", () => {
+    showSheet();
+    open();
+    fireEvent.click(screen.getByRole("button", { name: "Price history" }));
+    expect(screen.getByText("Value chart")).toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: "Recent sales" })).toBeNull();
   });
 });
 

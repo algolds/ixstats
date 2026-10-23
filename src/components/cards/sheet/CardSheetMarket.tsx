@@ -2,8 +2,10 @@
 
 import { useId, useState } from "react";
 import Link from "next/link";
+import { NavArrowDown } from "iconoir-react";
 import { cn } from "~/lib/utils/cn";
 import { Button, focusRing } from "~/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import { Stat } from "~/components/ui/stat";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { CardPriceHistoryChart } from "~/components/cards/display/CardPriceHistoryChart";
@@ -44,8 +46,7 @@ const seller = (listing: SheetListing) => {
 
 /**
  * "Market": what a copy is worth, how many want it, live listings (Buy at a fixed price; auctions are bid on in the
- * market), the craft offer, price history and recent sales. What the viewer may do, and every price, comes from the
- * server.
+ * market) and the craft offer. What the viewer may do, and every price, comes from the server.
  */
 export function CardSheetMarket({
   cardId,
@@ -98,20 +99,6 @@ export function CardSheetMarket({
         </Link>
       </p>
       {signedIn && economy?.craft && <CraftButton cardId={cardId} offer={economy.craft} />}
-      {signedIn && <CardPriceHistoryChart cardId={cardId} />}
-      {market.recentSales.length > 0 && (
-        <ul aria-label="Recent sales" className="text-footnote text-label-secondary space-y-1">
-          {market.recentSales.map((sale, index) => (
-            <li key={`${sale.at.getTime()}-${index}`} className="flex justify-between">
-              <span>
-                {sale.at.toLocaleDateString()}
-                {sale.finish ? ` · ${FINISH_LABEL[sale.finish]}` : ""}
-              </span>
-              {credits(sale.price)}
-            </li>
-          ))}
-        </ul>
-      )}
       {buying && (
         <BuyListingDialog
           onOpenChange={(open) => !open && setBuying(null)}
@@ -165,5 +152,54 @@ function ListingLine({ listing, cardId, signedIn, onBuy }: ListingLineProps) {
         )}
       </span>
     </li>
+  );
+}
+
+interface CardSheetPriceHistoryProps {
+  cardId: string;
+  recentSales: CardSheetData["market"]["recentSales"];
+  /** The value chart is for players; a visitor sees the recent sales only. */
+  signedIn: boolean;
+}
+
+/** The sheet's last section, folded until asked for: the value chart and the recent sales. */
+export function CardSheetPriceHistory({
+  cardId,
+  recentSales,
+  signedIn,
+}: CardSheetPriceHistoryProps) {
+  if (!signedIn && recentSales.length === 0) return null;
+  return (
+    <Collapsible asChild>
+      <section aria-labelledby="sheet-price-history" className="space-y-3">
+        <h3 id="sheet-price-history" className="text-headline">
+          <CollapsibleTrigger
+            className={cn("group flex w-full items-center justify-between rounded-sm", focusRing)}
+          >
+            Price history
+            <NavArrowDown
+              aria-hidden
+              className="text-label-secondary size-4 transition-transform group-data-[state=open]:rotate-180"
+            />
+          </CollapsibleTrigger>
+        </h3>
+        <CollapsibleContent className="space-y-3">
+          {signedIn && <CardPriceHistoryChart cardId={cardId} />}
+          {recentSales.length > 0 && (
+            <ul aria-label="Recent sales" className="text-footnote text-label-secondary space-y-1">
+              {recentSales.map((sale, index) => (
+                <li key={`${sale.at.getTime()}-${index}`} className="flex justify-between">
+                  <span>
+                    {sale.at.toLocaleDateString()}
+                    {sale.finish ? ` · ${FINISH_LABEL[sale.finish]}` : ""}
+                  </span>
+                  {credits(sale.price)}
+                </li>
+              ))}
+            </ul>
+          )}
+        </CollapsibleContent>
+      </section>
+    </Collapsible>
   );
 }

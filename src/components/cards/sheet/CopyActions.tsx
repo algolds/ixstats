@@ -111,7 +111,7 @@ export function CopyActions({ held, card, onAddToShowcase }: CopyActionsProps) {
             Add to showcase
           </Button>
           {economy?.canSign && (
-            <Button size="sm" variant="ghost" onClick={() => setOpen("sign")}>
+            <Button size="sm" variant="secondary" onClick={() => setOpen("sign")}>
               <EditPencil aria-hidden />
               Sign
             </Button>
@@ -148,7 +148,7 @@ function SellGroup({ sale, ownershipId, onList }: SellGroupProps) {
   if (sale !== "sell") {
     return (
       <ActionGroup label="Sell">
-        <Button size="sm" variant="ghost" asChild>
+        <Button size="sm" variant="secondary" asChild>
           <Link href={marketTabHref(sale)}>
             {sale === "selling" ? "See it in Selling" : "See it in Trades"}
           </Link>
@@ -169,7 +169,7 @@ function SellGroup({ sale, ownershipId, onList }: SellGroupProps) {
           Auction
         </Link>
       </Button>
-      <Button size="sm" variant="ghost" asChild>
+      <Button size="sm" variant="secondary" asChild>
         <Link href={tradeBuilderHref({ give: ownershipId })}>
           <ArrowSeparate aria-hidden />
           Trade
@@ -197,7 +197,7 @@ function WorkshopGroup({ economy, group, onOpen }: WorkshopGroupProps) {
         </Button>
       )}
       {breaks && (
-        <Button size="sm" variant="ghost" onClick={() => onOpen("breakdown")}>
+        <Button size="sm" variant="secondary" onClick={() => onOpen("breakdown")}>
           <Trash aria-hidden />
           Break down
         </Button>
