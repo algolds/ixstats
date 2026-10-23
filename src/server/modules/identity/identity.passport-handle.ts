@@ -1,17 +1,18 @@
 /**
  * The one passport handle chain every display and share surface uses (getStatus, getPassport, the
- * passport card, the History join event and a realm's inviter): the stored handle, else the verified
- * ixwiki name while the holder shows wiki attribution (`showWikiAttribution`), else the forum name,
- * else the Clerk id. A computed name is used only when it resolves back to the same user (another
- * user may hold it as a handle or name), so every handle this returns opens this user's passport.
+ * passport card, the History join event and a realm's inviter): the stored handle, else the first
+ * approved ixwiki name claim the holder shows (`visible`) while they show wiki attribution
+ * (`showWikiAttribution`), else the forum name, else the Clerk id. A computed name is used only when
+ * it resolves back to the same user (another user may hold it as a handle or name), so every handle
+ * this returns opens this user's passport.
  *
- * The handle is the same for every viewer, the owner included: share and invite links carry it, so
- * with wiki attribution off it never names the holder by their wiki name, even in the owner's own
- * copy. The owner still sees their wiki name where only they see it (the passport's wiki block,
- * identity.link-privacy.ts, and Settings). A switch that cannot be read counts as off. A link that
- * carries the wiki name (an old one) resolves to the holder only while the switch is on
- * (identity.resolve.ts).
+ * The handle is the same for every viewer, the owner included: share and invite links carry it, so a
+ * hidden claim, or wiki attribution off, never names the holder by their wiki name, even in the
+ * owner's own copy. The owner still sees their wiki name where only they see it (the passport's wiki
+ * block, identity.link-privacy.ts, and Settings). A switch that cannot be read counts as off. A link
+ * that carries a claimed name resolves to the holder only while the claim is shown (identity.resolve.ts).
  */
+import { primaryNameOf } from "~/lib/identity/wiki-names";
 import { db } from "~/server/db";
 import { switchIsOn, withoutHiddenWikiNames } from "~/server/shared/privacy-permissions";
 import { resolveHandleUser } from "./identity.resolve";
@@ -24,16 +25,13 @@ export interface PassportHandleUser {
   forumUsername: string | null;
 }
 
-/** The user's verified ixwiki link name, or null. Only this proves a wiki account is theirs. */
-export async function loadVerifiedWikiName(userId: string | undefined): Promise<string | null> {
+/**
+ * The user's first approved ixwiki name claim they show (a hidden one names them nowhere public), or
+ * null; a read error is null. Only an approved claim ties a wiki name to an account.
+ */
+export async function loadClaimedWikiName(userId: string | undefined): Promise<string | null> {
   if (!userId) return null;
-  const link = await db.wikiAccountLink
-    .findFirst({
-      where: { userId, source: "ixwiki", verifiedAt: { not: null } },
-      select: { username: true },
-    })
-    .catch(() => null);
-  return link?.username ?? null;
+  return primaryNameOf(db, userId, { shown: true }).catch(() => null);
 }
 
 /** Whether the user shows wiki attribution (`showWikiAttribution`); a read error counts as off. */
@@ -59,34 +57,34 @@ async function passportHandleOf(
 
 /**
  * The user's passport handle. With no stored handle it reads the wiki attribution switch and the
- * verified ixwiki name; a caller that already read that name passes it as `known`.
+ * shown claimed name; a caller that already read that name passes it as `known`.
  */
 export async function loadPassportHandle(
   user: PassportHandleUser,
-  known?: { verifiedWikiName: string | null }
+  known?: { claimedWikiName: string | null }
 ): Promise<string> {
   if (user.handle) return user.handle;
-  const [verifiedWikiName, attributed] = await Promise.all([
-    known ? known.verifiedWikiName : loadVerifiedWikiName(user.id),
+  const [claimedWikiName, attributed] = await Promise.all([
+    known ? known.claimedWikiName : loadClaimedWikiName(user.id),
     showsWikiAttribution(user.clerkUserId),
   ]);
-  return passportHandleOf(user, attributed ? verifiedWikiName : null);
+  return passportHandleOf(user, attributed ? claimedWikiName : null);
 }
 
 /**
- * The passport handles of many users at once, in their order, by `loadPassportHandle`'s rule, given the verified
- * ixwiki names already read for them: one read of the wiki attribution switch for the batch, for the users a wiki
- * name could name (no stored handle, a verified name). A switch that cannot be read hides every wiki name.
+ * The passport handles of many users at once, in their order, by `loadPassportHandle`'s rule, given the shown claimed
+ * names already read for them: one read of the wiki attribution switch for the batch, for the users a wiki name could
+ * name (no stored handle, a shown claim). A switch that cannot be read hides every wiki name.
  */
 export async function loadPassportHandles(
   users: readonly PassportHandleUser[],
-  verifiedWikiNames: ReadonlyMap<string, string>
+  claimedWikiNames: ReadonlyMap<string, string>
 ): Promise<string[]> {
   const allowed = await withoutHiddenWikiNames(
     db,
     users.map((user) => ({
       ...user,
-      wikiUsername: user.handle ? null : (verifiedWikiNames.get(user.id) ?? null),
+      wikiUsername: user.handle ? null : (claimedWikiNames.get(user.id) ?? null),
     }))
   );
   return Promise.all(

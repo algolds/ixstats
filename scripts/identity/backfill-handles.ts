@@ -2,13 +2,15 @@
  * Backfill IxStates Passport handles for users that have none.
  * Dry run by default: prints a table of `userId  source  handle`; --apply writes.
  *   bun scripts/identity/backfill-handles.ts [--apply]
- * Source order (`chooseBackfillHandle`): verified ixwiki link name, forum username, personal
+ * Source order (`chooseBackfillHandle`): the first approved ixwiki name claim the user shows (a
+ * handle is public, so a hidden claim never seeds one), forum username, personal
  * ThinkPages persona name, primary owned nation name (`Country.ownerUserId`: the held
  * `User.countryId`, else the largest economy). A name whose slug has no letter or digit is skipped.
  * A user with no usable name keeps no handle (never one minted from a Clerk id or row id). Handles
  * are de-duplicated against existing handles and against earlier picks in the same run.
  */
 import { PrismaClient } from "@prisma/client";
+import { namesOfUsers } from "~/lib/identity/wiki-names";
 import { PERSONAL_ACCOUNT_TYPE } from "~/server/shared/thinkpages-personal-account";
 import {
   chooseBackfillHandle,
@@ -40,13 +42,10 @@ function firstByKey<T>(rows: T[], key: (row: T) => string, value: (row: T) => st
   return map;
 }
 
-async function loadVerifiedWikiNames(userIds: string[]): Promise<Map<string, string>> {
-  const links = await db.wikiAccountLink.findMany({
-    where: { userId: { in: userIds }, source: "ixwiki", verifiedAt: { not: null } },
-    select: { userId: true, username: true },
-    orderBy: { verifiedAt: "asc" },
-  });
-  return firstByKey(links, (l) => l.userId, (l) => l.username);
+/** The first approved claim each user shows (a hidden one never seeds a public handle). */
+async function loadClaimedWikiNames(userIds: string[]): Promise<Map<string, string>> {
+  const names = await namesOfUsers(db, userIds, { shown: true });
+  return new Map([...names].map(([userId, claims]) => [userId, claims[0]!.name]));
 }
 
 /** Personal ThinkPages persona names by Clerk id (the persona `loadPersonalPersona` reads). */
@@ -60,7 +59,11 @@ async function loadPersonaNames(clerkUserIds: string[]): Promise<Map<string, str
     select: { clerkUserId: true, displayName: true },
     orderBy: { createdAt: "asc" },
   });
-  return firstByKey(personas, (p) => p.clerkUserId, (p) => p.displayName);
+  return firstByKey(
+    personas,
+    (p) => p.clerkUserId,
+    (p) => p.displayName
+  );
 }
 
 /** Primary owned nation names by user id. */
@@ -89,7 +92,7 @@ async function main(): Promise<void> {
   ]);
   const taken = new Set<string>(existing.flatMap((u) => (u.handle ? [u.handle] : [])));
   const [wikiNames, personaNames, nationNames] = await Promise.all([
-    loadVerifiedWikiNames(users.map((u) => u.id)),
+    loadClaimedWikiNames(users.map((u) => u.id)),
     loadPersonaNames(users.map((u) => u.clerkUserId)),
     loadNationNames(users),
   ]);

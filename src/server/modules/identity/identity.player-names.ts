@@ -1,9 +1,10 @@
 /**
  * How the card surfaces name players (card sheets, showcases, trades and their history), many at once, by one rule
- * (`playerDisplayName`). One read of the players, then one of the verified ixwiki names and one of the nations of those
- * with no stored handle, and one of the wiki attribution switch, however many rows name them; only the handle chain's
- * resolve-back check runs per player.
+ * (`playerDisplayName`). One read of the players, then one of the shown claimed ixwiki names and one of the nations of
+ * those with no stored handle, and one of the wiki attribution switch, however many rows name them; only the handle
+ * chain's resolve-back check runs per player.
  */
+import { namesOfUsers, type ClaimedName } from "~/lib/identity/wiki-names";
 import { db } from "~/server/db";
 import { loadPassportHandles, type PassportHandleUser } from "./identity.passport-handle";
 import { LISTED_NATION_WHERE, NATIONS_LARGEST_FIRST } from "./identity.selects";
@@ -38,16 +39,20 @@ function firstPerUser(rows: ReadonlyArray<readonly [string | null, string]>): Ma
   return first;
 }
 
-/** The verified ixwiki name of each player who has one (the first link found, as `loadVerifiedWikiName` takes). */
-async function verifiedWikiNames(userIds: readonly string[]): Promise<Map<string, string>> {
+/**
+ * The first approved claim each player shows (as `loadClaimedWikiName` takes it); a hidden claim names nobody, and a
+ * failed read names none.
+ */
+async function claimedWikiNames(userIds: readonly string[]): Promise<Map<string, string>> {
   if (userIds.length === 0) return new Map();
-  const links = await db.wikiAccountLink
-    .findMany({
-      where: { userId: { in: [...userIds] }, source: "ixwiki", verifiedAt: { not: null } },
-      select: { userId: true, username: true },
-    })
-    .catch(() => []);
-  return firstPerUser(links.map((link) => [link.userId, link.username] as const));
+  const names = await namesOfUsers(db, userIds, { shown: true }).catch(
+    () => new Map<string, ClaimedName[]>()
+  );
+  return new Map(
+    [...names].flatMap(([userId, [first]]): Array<[string, string]> =>
+      first ? [[userId, first.name]] : []
+    )
+  );
 }
 
 /** The nation each player's passport lists first (as `resolveIdentityNations` lists them); a failed read names none. */
@@ -76,10 +81,10 @@ export async function loadPlayerNames(
   // Only a player with no stored handle reaches the wiki name, or past it to the Clerk id and their nation.
   const unhandled = users.filter((u) => !u.handle).map((u) => u.id);
   const [wikiNames, nations] = await Promise.all([
-    verifiedWikiNames(unhandled),
+    claimedWikiNames(unhandled),
     nationNames(unhandled),
   ]);
-  // A verified wiki name names only a player who shows wiki attribution (one switch read for the batch).
+  // A shown claimed name names only a player who shows wiki attribution (one switch read for the batch).
   const handles = await loadPassportHandles(users, wikiNames);
   return new Map(
     users.map((user, i): [string, PlayerName] => {

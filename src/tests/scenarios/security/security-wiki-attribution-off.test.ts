@@ -97,6 +97,16 @@ async function seed(db: PrismaClient) {
   await db.wikiAccountLink.create({
     data: { userId: pat.id, source: "ixwiki", username: WIKI_NAME, verifiedAt: new Date() },
   });
+  await db.wikiNameClaim.create({
+    data: {
+      userId: pat.id,
+      name: WIKI_NAME,
+      status: "APPROVED",
+      origin: "CONVERSION",
+      requestedById: pat.id,
+      decidedAt: new Date(),
+    },
+  });
   await db.user.create({ data: { ...mel, lastSeenAt: new Date() } });
   await db.user.create({ data: { ...ada, roleId: admin.id, lastSeenAt: new Date() } });
   await db.user.create({

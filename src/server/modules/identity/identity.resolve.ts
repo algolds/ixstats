@@ -1,17 +1,23 @@
 /**
  * Resolves a public passport handle to a user and their linked wiki/forum names.
  * Order: the stored IxStates Passport handle, then the viewer's own linked names, then users by
- * forum name, wiki name, Clerk id or id, then external wiki/forum names. A country name, slug or id
- * does not resolve a person (country-name passport URLs are dropped).
+ * forum name, claimed wiki name, Clerk id or id, then external wiki/forum names. A country name, slug
+ * or id does not resolve a person (country-name passport URLs are dropped).
  *
- * A legacy wiki name resolves to its player only while they show wiki attribution
- * (`showWikiAttribution`): the switch is read in one batch for the users holding the name, and a
- * read error counts as off. With it off, a link carrying the wiki name (an old one) does not open
- * their passport; it falls through to the external wiki name, if any. The viewer's own names
- * (findViewerMatch) still resolve to themself.
+ * A claimed wiki name resolves to its owner while the claim is approved and shown (`visible`). A
+ * hidden claim does not open their passport; a link carrying it falls through to the external wiki
+ * name, if any. A claims read that fails resolves no wiki name. The viewer's own names, every
+ * approved claim hidden or not (findViewerMatch), still resolve to themself.
  */
 import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
+import {
+  IXWIKI,
+  claimName,
+  claimSpellings,
+  namesOfUser,
+  primaryNameOf,
+} from "~/lib/identity/wiki-names";
 import { lookupWikiUser } from "~/lib/wiki-os/adapters/ixstates/user-sync";
 import { validateHandle } from "./identity.handle";
 import {
@@ -22,7 +28,6 @@ import {
 } from "./identity.selects";
 import type { IdentityForumGateway, ResolvedIdentity } from "./identity.types";
 import { likeLiteral } from "~/lib/utils/like-literal";
-import { withoutHiddenWikiNames } from "~/server/shared/privacy-permissions";
 
 /** A case-insensitive exact match: Prisma compiles it to ILIKE, so the value's wildcards are escaped. */
 const insensitive = (value: string) => ({
@@ -37,49 +42,43 @@ async function findUserByStoredHandle(segment: string) {
   return db.user.findUnique({ where: { handle: valid.handle } });
 }
 
+/** The signed-in viewer, when `names` (lower-cased) holds their forum name or any name they hold, hidden or not. */
 async function findViewerMatch(viewerClerkId: string | null, names: string[]) {
   if (!viewerClerkId) return null;
   const viewer = await db.user.findUnique({
     where: { clerkUserId: viewerClerkId },
   });
   if (!viewer) return null;
-  const linked = [viewer.wikiUsername, viewer.forumUsername];
+  const claimed = (await namesOfUser(db, viewer.id)).flatMap((c) => claimSpellings(c.name));
+  const linked = [viewer.forumUsername, ...claimed];
   return linked.some((name) => (name ? names.includes(name.toLowerCase()) : false)) ? viewer : null;
 }
 
-const WIKI_NAME_HOLDER_SELECT = {
-  id: true,
-  clerkUserId: true,
-  wikiUsername: true,
-} satisfies Prisma.UserSelect;
-type WikiNameHolder = Prisma.UserGetPayload<{ select: typeof WIKI_NAME_HOLDER_SELECT }>;
-
-/** The users holding one of `names` as their legacy `User.wikiUsername`; none when the read fails. */
-async function wikiNameHolders(names: string[]): Promise<WikiNameHolder[]> {
+/**
+ * The claimed-name match for `names`: the owners of approved, shown claims on one of them (as written, or in the
+ * stored form, where underscores are spaces), case-insensitive, by id. A read error matches nobody.
+ */
+async function claimedNameMatch(names: string[]): Promise<Prisma.UserWhereInput[]> {
+  const spellings = [...new Set(names.flatMap((n) => [n, claimName(n)]))].filter(Boolean);
   try {
-    return await db.user.findMany({
-      where: { OR: names.map((name) => ({ wikiUsername: insensitive(name) })) },
-      select: WIKI_NAME_HOLDER_SELECT,
+    const claims = await db.wikiNameClaim.findMany({
+      where: {
+        source: IXWIKI,
+        status: "APPROVED",
+        visible: true,
+        OR: spellings.map((n) => ({ name: insensitive(n) })),
+      },
+      select: { userId: true },
     });
+    return claims.length > 0 ? [{ id: { in: [...new Set(claims.map((c) => c.userId))] } }] : [];
   } catch {
     return [];
   }
 }
 
 /**
- * The legacy wiki-name match for `names`: the users holding one of them who show wiki attribution, by id. One
- * query for the holders and one batch switch read (withoutHiddenWikiNames); a read error matches nobody.
- */
-async function attributedWikiNameMatch(names: string[]): Promise<Prisma.UserWhereInput[]> {
-  const holders = await wikiNameHolders(names);
-  if (holders.length === 0) return [];
-  const shown = (await withoutHiddenWikiNames(db, holders)).filter((u) => u.wikiUsername);
-  return shown.length > 0 ? [{ id: { in: shown.map((u) => u.id) } }] : [];
-}
-
-/**
- * Legacy names a passport segment may carry: Clerk id, forum name, wiki name (only while its owner shows wiki
- * attribution), user id, and `me`.
+ * Legacy names a passport segment may carry: Clerk id, forum name, claimed wiki name (only while its claim is
+ * shown), user id, and `me`.
  */
 async function legacyNameWhere(
   handle: string,
@@ -96,7 +95,7 @@ async function legacyNameWhere(
       ...(stripped !== handle
         ? [{ forumUsername: insensitive(stripped) }, { clerkUserId: stripped }]
         : []),
-      ...(await attributedWikiNameMatch([...new Set([handle, stripped])])),
+      ...(await claimedNameMatch([...new Set([handle, stripped])])),
     ],
   };
 }
@@ -159,14 +158,14 @@ type FoundUser = Awaited<ReturnType<typeof findPerson>>;
 type LinkedNames = Pick<ResolvedIdentity, "wikiName" | "forumUserId" | "forumUsername">;
 
 /**
- * The linked names of a found user. The wiki name is only `User.wikiUsername` (kept in sync with the
- * verified ixwiki link): a country's page title or name is never taken for the holder's wiki account,
- * so another wiki user's Lorewards, work and history are never attributed to them.
+ * The linked names of a found user. The wiki name is only their first approved claim they show
+ * (wiki-names.ts): a country's page title or name is never taken for the holder's wiki account, so
+ * another wiki user's Lorewards, work and history are never attributed to them.
  */
-function linkedNamesOf(user: FoundUser): LinkedNames | null {
+async function linkedNamesOf(user: FoundUser): Promise<LinkedNames | null> {
   if (!user) return null;
   return {
-    wikiName: user.wikiUsername || null,
+    wikiName: await primaryNameOf(db, user.id, { shown: true }),
     forumUserId: user.forumUserId ?? null,
     forumUsername: user.forumUsername ?? null,
   };
@@ -204,7 +203,7 @@ export async function resolveIdentity(
 ): Promise<ResolvedIdentity | null> {
   const { handle, user } = await findBySegment(rawHandle, viewerClerkId);
   const linked =
-    linkedNamesOf(user) ??
+    (await linkedNamesOf(user)) ??
     (await findExternalNames([...new Set([handle, handle.replace(/_$/, "")])], forum));
 
   if (!user && !linked.wikiName && !linked.forumUserId) return null;
@@ -220,7 +219,7 @@ export async function resolveUserIdentity(
   viewerClerkId: string | null
 ): Promise<ResolvedIdentity | null> {
   const { handle, user } = await findBySegment(rawHandle, viewerClerkId);
-  const linked = linkedNamesOf(user);
+  const linked = await linkedNamesOf(user);
   return linked ? toIdentity(handle, user, linked, viewerClerkId) : null;
 }
 
