@@ -24,6 +24,13 @@ interface SharedParticipant {
   displayName?: string | null;
 }
 
+/** A recent conversation, as far as the share list reads it. */
+interface SharedConversation {
+  id: string;
+  name?: string | null;
+  otherParticipants: SharedParticipant[];
+}
+
 interface MarginShareModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -152,10 +159,10 @@ export function MarginShareModal({
           {/* ThinkShare dispatch */}
           {recentConversations.length > 0 && (
             <FacetListSection header="Send to conversation" headerAs="h4">
-              {recentConversations.map((c) => {
+              {recentConversations.map((c: SharedConversation) => {
                 const participantName =
                   c.otherParticipants
-                    .map((p: SharedParticipant) => p.displayName)
+                    .map((p) => p.displayName)
                     .filter(Boolean)
                     .join(", ") ||
                   c.name ||
