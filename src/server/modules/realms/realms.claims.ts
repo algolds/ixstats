@@ -1,7 +1,8 @@
 /**
  * Realm claims: "claim anything that already exists" — an existing country, or a nation page in the realm's
- * lore index, whose approval creates the country (ruling E-f). A claim is auto-approved when the claimant's
- * *verified* wiki account created the nation's wiki page; otherwise it waits for a realm moderator (site
+ * lore index, whose approval creates the country (ruling E-f). A claim is auto-approved when the claimant
+ * created the nation's wiki page: on IxWiki through one of their approved wiki names, on a sister wiki through
+ * their verified account there (IxnayID design decision 12). Otherwise it waits for a realm moderator (site
  * admins for Ixnay, whose owner is "system").
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
@@ -9,13 +10,13 @@ import { buildBaselineCountryData } from "~/lib/countries/baseline-country";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo/sync";
 import { parsePrismaError } from "~/lib/prisma-error";
 import { DEFAULT_REALM_ID, realmSlugWhere } from "~/lib/realms/realm-ids";
+import { IXWIKI, namesOfUser } from "~/lib/identity/wiki-names";
 import { generateSlug } from "~/lib/utils/slug-utils";
 import {
   isProofSource,
   normalizeWikiUsername,
   type ProofSource,
 } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
-import { resolvePrimaryWikiUsername } from "~/lib/wiki-os/adapters/ixstates/user-sync";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { assertCountryInFeatureRealm } from "~/server/shared/realm-link-guard";
 import {
@@ -104,6 +105,7 @@ type ClaimsDb = Pick<
   | "country"
   | "user"
   | "wikiAccountLink"
+  | "wikiNameClaim"
   | "realmClaim"
   | "realmPage"
   | "nationMaterialHold"
@@ -168,13 +170,6 @@ const autoApproval = () => ({
   reviewedBy: AUTO_REVIEWER,
   reviewedAt: new Date(),
 });
-/** Known alt accounts (KNOWN_WIKI_ALTS) are ixwiki accounts: on any other wiki the same name is someone else. */
-const canonical = (source: ProofSource, name: string) => {
-  const normalized = normalizeWikiUsername(name);
-  return source === "ixwiki"
-    ? normalizeWikiUsername(resolvePrimaryWikiUsername(normalized))
-    : normalized;
-};
 const notPending = () => new ClaimError("NOT_PENDING", "This claim was already decided");
 /** AT-7: only an active realm (or Ixnay) hands out nations; draft, generating and archived realms refuse claims. */
 function assertRealmOpen(realmId: string, status: string | null | undefined): void {
@@ -542,6 +537,18 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
       reason: RIVAL_REJECTION,
     }));
 
+  /**
+   * The names under which a page on `source` is the claimant's own: on IxWiki every approved claim, hidden ones
+   * too (auto-approval is not a display); on a sister wiki the verified account there.
+   */
+  async function creatorNames(userId: string, source: ProofSource): Promise<string[]> {
+    if (source === IXWIKI) return (await namesOfUser(db, userId)).map((claim) => claim.name);
+    const link = await db.wikiAccountLink.findFirst({
+      where: { userId, source, verifiedAt: { not: null } },
+    });
+    return link ? [normalizeWikiUsername(link.username)] : [];
+  }
+
   async function isVerifiedCreator(
     userId: string,
     country: {
@@ -555,15 +562,13 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     // creator to prove, so its claim always goes to manual review.
     if (country.realmId && country.realmId !== DEFAULT_REALM_ID && !country.wikiSource)
       return false;
-    const source = country.wikiSource ?? "ixwiki";
+    const source = country.wikiSource ?? IXWIKI;
     if (!isProofSource(source)) return false;
-    const link = await db.wikiAccountLink.findFirst({
-      where: { userId, source, verifiedAt: { not: null } },
-    });
-    if (!link) return false;
+    const names = await creatorNames(userId, source);
+    if (names.length === 0) return false;
     try {
       const creator = await deps.fetchPageCreator(source, country.wikiPageTitle ?? country.name);
-      return !!creator && canonical(source, creator) === canonical(source, link.username);
+      return !!creator && names.includes(normalizeWikiUsername(creator));
     } catch {
       return false; // wiki unreachable ⇒ fall back to manual review, never approve
     }
@@ -932,10 +937,10 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
           select: {
             id: true,
             clerkUserId: true,
-            wikiUsername: true,
-            // Only proven accounts identify the claimant; wikiUsername is the legacy, unverified column.
+            // Approved wiki names and proven sister-wiki accounts identify the claimant.
+            wikiNameClaims: { where: { status: "APPROVED" }, select: { name: true } },
             wikiAccountLinks: {
-              where: { verifiedAt: { not: null } },
+              where: { verifiedAt: { not: null }, source: { not: IXWIKI } },
               select: { source: true, username: true },
             },
           },

@@ -162,7 +162,9 @@ it("an invited player claims a nation page, votes and posts; the rival is told; 
     })
   ).toMatchObject({ status: "approved", autoApproved: true });
   await settle();
-  const aurelia = await db.country.findFirstOrThrow({ where: { realmId: "eurth", name: "Aurelia" } });
+  const aurelia = await db.country.findFirstOrThrow({
+    where: { realmId: "eurth", name: "Aurelia" },
+  });
   expect(aurelia).toMatchObject({ ownerUserId: pia.id, ...GROWTH });
   expect(await db.user.findUnique({ where: { id: pia.id } })).toMatchObject({
     countryId: aurelia.id,
@@ -271,6 +273,40 @@ it("an invited player claims a nation page, votes and posts; the rival is told; 
   ).rejects.toMatchObject({
     code: "FORBIDDEN",
   });
+});
+
+it("an Ixnay claim is approved at once through one of the claimant's approved wiki names; a pending name waits", async () => {
+  await db.realm.create({
+    data: { id: "default", slug: "ixnay", name: "Ixnay", ownerId: "system", status: "active" },
+  });
+  const aurelia = await addNation(db as never, "ix-aurelia", "default", null, "Aurelia");
+  const nameClaim = (userId: string, name: string, status: "APPROVED" | "PENDING") =>
+    db.wikiNameClaim.create({
+      data: { userId, name, status, origin: "PLAYER", requestedById: userId },
+    });
+  // Pia holds two approved names, the second of which created Aurelia's wiki page; Rex only asked for that name
+  await nameClaim(pia.id, "Pia of Old", "APPROVED");
+  await nameClaim(pia.id, "Pia", "APPROVED");
+  await nameClaim(rex.id, "Pia", "PENDING");
+  const claim = (member: Member) =>
+    realms(as(db as never, member)).claimCountry({ countryId: aurelia.id, consent: CONSENT });
+
+  expect(await claim(rex)).toMatchObject({ status: "pending", autoApproved: false });
+  expect(await claim(pia)).toMatchObject({ status: "approved", autoApproved: true });
+  await settle();
+  expect(await db.country.findUnique({ where: { id: aurelia.id } })).toMatchObject({
+    ownerUserId: pia.id,
+  });
+  expect(
+    await db.realmClaim.findMany({
+      where: { countryId: aurelia.id },
+      orderBy: { createdAt: "asc" },
+      select: { userId: true, status: true },
+    })
+  ).toEqual([
+    { userId: rex.id, status: "rejected" },
+    { userId: pia.id, status: "approved" },
+  ]);
 });
 
 it("a rejection notice for a realm it cannot name links to the directory", async () => {

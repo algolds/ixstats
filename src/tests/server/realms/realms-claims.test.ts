@@ -12,9 +12,6 @@ jest.mock("~/lib/auth", () => ({ isSystemOwner: () => false }));
 jest.mock("~/server/shared/map-invalidation", () => ({
   invalidateRealmMap: jest.fn().mockResolvedValue(1),
 }));
-jest.mock("~/lib/wiki-os/adapters/ixstates/user-sync", () => ({
-  resolvePrimaryWikiUsername: (name: string) => (name === "Carthinova" ? "Kir" : name),
-}));
 
 const actor = { id: "u1", clerkUserId: "clerk_u1", role: null };
 const admin = { id: "a1", clerkUserId: "clerk_a1", role: { name: "admin", level: 10 } };
@@ -58,6 +55,45 @@ interface RegionRow {
   areaSqKm: number;
 }
 type Where = Record<string, unknown> & { OR?: Where[] };
+
+interface NameClaimRow {
+  userId: string;
+  name: string;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "REVOKED";
+  visible: boolean;
+}
+interface NameClaimWhere {
+  source: string;
+  userId: { in: string[] };
+  status: NameClaimRow["status"];
+  visible?: boolean;
+}
+const KIR: NameClaimRow = { userId: "u1", name: "Kir", status: "APPROVED", visible: true };
+
+/** The wiki_name_claims rows the resolver reads, its source, account, status and visibility filters applied. */
+function nameClaimTable(rows: NameClaimRow[]) {
+  return {
+    findMany: jest.fn(({ where }: { where: NameClaimWhere }) =>
+      Promise.resolve(
+        rows
+          .filter(
+            (r) =>
+              where.source === "ixwiki" &&
+              where.userId.in.includes(r.userId) &&
+              r.status === where.status &&
+              (where.visible === undefined || r.visible === where.visible)
+          )
+          .map((r) => ({
+            id: `wnc-${r.name}`,
+            rightsPass: false,
+            decidedAt: null,
+            mwUserId: null,
+            ...r,
+          }))
+      )
+    ),
+  };
+}
 
 /** Prisma-style equality where (plus OR) over rows — enough for map layer lookups and guarded links. */
 function matches(row: RegionRow, where: Where): boolean {
@@ -109,6 +145,7 @@ function setup() {
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
     wikiAccountLink: { findFirst: jest.fn().mockResolvedValue({ username: "Kir" }) },
+    wikiNameClaim: nameClaimTable([KIR]),
     nationMaterialHold: { findUnique: jest.fn().mockResolvedValue(null) },
     realmClaim: {
       findFirst: jest.fn().mockResolvedValue(null),
@@ -130,15 +167,14 @@ function setup() {
 }
 
 describe("claimCountry", () => {
-  it("auto-approves the verified page creator and runs side effects once", async () => {
+  it("auto-approves the page creator by an approved wiki name and runs side effects once", async () => {
     const { db, deps, claims } = setup();
     await expect(claims.claimCountry(actor, "c1")).resolves.toMatchObject({
       status: "approved",
       autoApproved: true,
     });
-    expect(db.wikiAccountLink.findFirst).toHaveBeenCalledWith({
-      where: { userId: "u1", source: "ixwiki", verifiedAt: { not: null } },
-    });
+    // An Ixnay claim reads the claimant's approved names, never an IxWiki account link.
+    expect(db.wikiAccountLink.findFirst).not.toHaveBeenCalled();
     expect(db.country.updateMany).toHaveBeenCalledWith({
       where: { id: "c1", ownerUserId: null, claimable: true },
       data: { ownerUserId: "u1", ownedSince: expect.any(Date) },
@@ -146,12 +182,12 @@ describe("claimCountry", () => {
     expect(deps.onNationAssigned).toHaveBeenCalledTimes(1);
     expect(deps.fetchPageCreator).toHaveBeenCalledWith("ixwiki", "Aurelia");
   });
-  it("stays pending on creator mismatch, missing verified link, or wiki failure", async () => {
+  it("stays pending on creator mismatch, no approved wiki name, or wiki failure", async () => {
     const a = setup();
     a.deps.fetchPageCreator.mockResolvedValue("Someone Else");
     await expect(a.claims.claimCountry(actor, "c1")).resolves.toMatchObject({ status: "pending" });
     const b = setup();
-    b.db.wikiAccountLink.findFirst.mockResolvedValue(null);
+    b.db.wikiNameClaim = nameClaimTable([]);
     await expect(b.claims.claimCountry(actor, "c1")).resolves.toMatchObject({ status: "pending" });
     const c = setup();
     c.deps.fetchPageCreator.mockRejectedValue(new Error("cloudflare"));
@@ -222,6 +258,85 @@ describe("claimCountry", () => {
   });
 });
 
+describe("Ixnay claims and the claimant's approved wiki names (design decision 12)", () => {
+  const SECOND: NameClaimRow = { ...KIR, name: "Second Name" };
+
+  it("auto-approves when one of two approved names created the page", async () => {
+    const { db, deps, claims } = setup();
+    db.wikiNameClaim = nameClaimTable([KIR, SECOND]);
+    deps.fetchPageCreator.mockResolvedValue("second_Name");
+    await expect(claims.claimCountry(actor, "c1")).resolves.toMatchObject({
+      status: "approved",
+      autoApproved: true,
+    });
+    expect(deps.onNationAssigned).toHaveBeenCalledTimes(1);
+  });
+
+  it("a pending, rejected or revoked claim on the creator's name does not approve", async () => {
+    for (const status of ["PENDING", "REJECTED", "REVOKED"] as const) {
+      const { db, deps, claims } = setup();
+      db.wikiNameClaim = nameClaimTable([KIR, { ...SECOND, status }]);
+      deps.fetchPageCreator.mockResolvedValue("Second Name");
+      await expect(claims.claimCountry(actor, "c1")).resolves.toMatchObject({
+        status: "pending",
+      });
+      expect(deps.onNationAssigned).not.toHaveBeenCalled();
+    }
+  });
+
+  it("a name its owner keeps hidden still approves: auto-approval is not a display", async () => {
+    const { db, claims } = setup();
+    db.wikiNameClaim = nameClaimTable([{ ...KIR, visible: false }]);
+    await expect(claims.claimCountry(actor, "c1")).resolves.toMatchObject({
+      status: "approved",
+      autoApproved: true,
+    });
+  });
+
+  it("another account's approved claim on the creator's name does not approve", async () => {
+    const { db, claims } = setup();
+    db.wikiNameClaim = nameClaimTable([{ ...KIR, userId: "u2" }]);
+    await expect(claims.claimCountry(actor, "c1")).resolves.toMatchObject({ status: "pending" });
+  });
+
+  it("a claim with no wikiSource (an Ixnay country) reads the claimant's names", async () => {
+    const { db, deps, claims } = setup();
+    db.country.findUnique.mockResolvedValue({ ...country, wikiSource: null });
+    await expect(claims.claimCountry(actor, "c1")).resolves.toMatchObject({
+      status: "approved",
+    });
+    expect(deps.fetchPageCreator).toHaveBeenCalledWith("ixwiki", "Aurelia");
+  });
+
+  it("an IIWiki realm still needs the verified sister link, whatever IxWiki names the claimant holds", async () => {
+    const iiwikiCountry = {
+      ...country,
+      realmId: EURTH,
+      wikiSource: "iiwiki",
+      wikiPageTitle: "Aurelia",
+      realm: { settings: null, status: "active", slug: "eurth", rulesHtml: null },
+    };
+    const unlinked = setup();
+    unlinked.db.country.findUnique.mockResolvedValue(iiwikiCountry);
+    unlinked.db.wikiAccountLink.findFirst.mockResolvedValue(null);
+    await expect(unlinked.claims.claimCountry(actor, "c1")).resolves.toMatchObject({
+      status: "pending",
+    });
+    expect(unlinked.deps.fetchPageCreator).not.toHaveBeenCalled();
+
+    const linked = setup();
+    linked.db.country.findUnique.mockResolvedValue(iiwikiCountry);
+    linked.db.wikiNameClaim = nameClaimTable([]);
+    await expect(linked.claims.claimCountry(actor, "c1")).resolves.toMatchObject({
+      status: "approved",
+    });
+    expect(linked.db.wikiAccountLink.findFirst).toHaveBeenCalledWith({
+      where: { userId: "u1", source: "iiwiki", verifiedAt: { not: null } },
+    });
+    expect(linked.deps.fetchPageCreator).toHaveBeenCalledWith("iiwiki", "Aurelia");
+  });
+});
+
 describe("reviewClaim", () => {
   const pending = {
     id: "cl1",
@@ -265,13 +380,18 @@ describe("reviewClaim", () => {
 });
 
 describe("listClaims", () => {
-  it("identifies claimants only by verified wiki accounts", async () => {
+  it("identifies claimants by approved wiki names and verified sister-wiki accounts", async () => {
     const { db, claims } = setup();
     await claims.listClaims(admin, "pending");
     const { include } = db.realmClaim.findMany.mock.calls[0][0];
-    expect(include.user.select.wikiAccountLinks).toEqual({
-      where: { verifiedAt: { not: null } },
-      select: { source: true, username: true },
+    expect(include.user.select).toEqual({
+      id: true,
+      clerkUserId: true,
+      wikiNameClaims: { where: { status: "APPROVED" }, select: { name: true } },
+      wikiAccountLinks: {
+        where: { verifiedAt: { not: null }, source: { not: "ixwiki" } },
+        select: { source: true, username: true },
+      },
     });
   });
 });
@@ -669,8 +789,8 @@ describe("claim invites", () => {
         findUnique: jest.fn().mockResolvedValue({ membershipTier: "basic" }),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
-      // No verified wiki account: claims wait for review unless a test says otherwise.
-      wikiAccountLink: { findFirst: jest.fn().mockResolvedValue(null) },
+      // No approved wiki name: claims wait for review unless a test says otherwise.
+      wikiNameClaim: nameClaimTable([]),
       nationMaterialHold: { findUnique: jest.fn().mockResolvedValue(null) },
       realmClaim: {
         findFirst: jest.fn().mockResolvedValue(null),
@@ -707,7 +827,7 @@ describe("claim invites", () => {
     });
     it("keeps the stored inviter when a concurrent claim recorded one first", async () => {
       const { db, deps, claims } = setup();
-      db.wikiAccountLink.findFirst.mockResolvedValue({ username: "Kir" });
+      db.wikiNameClaim = nameClaimTable([KIR]);
       db.realmClaim.findFirst.mockResolvedValue({ id: "old", userId: "u1", invitedByUserId: null });
       // The guarded attach loses the race: the row has an inviter by now.
       db.realmClaim.updateMany.mockResolvedValueOnce({ count: 0 });

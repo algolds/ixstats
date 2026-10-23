@@ -16,25 +16,17 @@ const WIKI_LABELS: Record<string, string> = {
   althistory: "AltHistory",
 };
 
-/** Verified wiki accounts identify the claimant; the legacy wikiUsername was never proven, so it is labelled. */
+/** The claimant's approved wiki names, then their verified sister-wiki accounts; with neither, the Clerk id. */
 function ClaimantName({ user }: { user: Claimant }) {
-  if (user.wikiAccountLinks.length > 0) {
-    return (
-      <span className="text-label">
-        {user.wikiAccountLinks
-          .map((link) => `${WIKI_LABELS[link.source] ?? link.source}: ${link.username} ✓`)
-          .join(", ")}
-      </span>
-    );
-  }
-  if (user.wikiUsername) {
-    return (
-      <span>
-        {user.wikiUsername} <span className="text-yellow">(unverified)</span>
-      </span>
-    );
-  }
-  return <span className="font-mono">{user.clerkUserId}</span>;
+  const names = user.wikiNameClaims.map((claim) => claim.name);
+  const labels = [
+    ...(names.length > 0 ? [`${WIKI_LABELS.ixwiki}: ${names.join(", ")}`] : []),
+    ...user.wikiAccountLinks.map(
+      (link) => `${WIKI_LABELS[link.source] ?? link.source}: ${link.username}`
+    ),
+  ];
+  if (labels.length === 0) return <span className="font-mono">{user.clerkUserId}</span>;
+  return <span className="text-label">{labels.join(", ")}</span>;
 }
 
 /** A claim on an existing country names the country; a nation-page claim names the page its approval turns into a country. */
