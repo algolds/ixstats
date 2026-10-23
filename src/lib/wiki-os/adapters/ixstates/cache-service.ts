@@ -234,10 +234,10 @@ export class WikiCacheService {
   }
 
   /**
-   * Clear cache for a specific country
+   * Clear cache for a specific country, on the wiki its page is on
    */
-  clearCountryCache(countryName: string): void {
-    this.invalidate(countryName, "ixwiki");
+  clearCountryCache(countryName: string, wikiSource: WikiSource = "ixwiki"): void {
+    this.invalidate(countryName, wikiSource);
   }
 
   /**

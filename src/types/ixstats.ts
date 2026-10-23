@@ -481,6 +481,10 @@ export interface CountryWithEconomicData {
   governmentType?: string | null;
   religion?: string | null;
   leader?: string | null;
+  /** The wiki the country's own page is on (`ixwiki`, or `iiwiki` for an Eurth nation). */
+  wikiSource?: string | null;
+  /** The country's own wiki page, when it names one (realm nations do). */
+  wikiPageTitle?: string | null;
   areaSqMi?: number | null;
   baselinePopulation: number;
   baselineGdpPerCapita: number;

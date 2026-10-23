@@ -130,6 +130,12 @@ export interface DossierTabProps {
   /** Name of the country to fetch intelligence for */
   countryName: string;
 
+  /** The wiki the country's own page is on (`Country.wikiSource`): an Eurth nation's is iiwiki */
+  wikiSource?: string | null;
+
+  /** The country's own wiki page (`Country.wikiPageTitle`), read instead of its name */
+  wikiPageTitle?: string | null;
+
   /** Current country data from IxStats for comparison and fallback */
   countryData: {
     /** Current population count */

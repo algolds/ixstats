@@ -16,6 +16,8 @@ export default function DossierPage() {
   return (
     <DossierTab
       countryName={country.name}
+      wikiSource={country.wikiSource}
+      wikiPageTitle={country.wikiPageTitle}
       countryData={{
         currentPopulation: country.currentPopulation,
         currentGdpPerCapita: country.currentGdpPerCapita,

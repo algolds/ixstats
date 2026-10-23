@@ -10,7 +10,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { api } from "~/trpc/react";
 import type { WikiIntelligenceData, WikiSettings, DataConflict } from "~/types/dossier";
-import { getWikiBaseUrl } from "~/lib/wiki-os/config";
+import { getWikiBaseUrl, parseWikiSource, type WikiSource } from "~/lib/wiki-os/config";
 
 /**
  * Props for the useDossier hook
@@ -18,6 +18,12 @@ import { getWikiBaseUrl } from "~/lib/wiki-os/config";
 interface UseDossierProps {
   /** Name of the country to fetch intelligence for */
   countryName: string;
+
+  /** The wiki the country's own page is on (`Country.wikiSource`): an Eurth nation's is iiwiki */
+  wikiSource?: string | null;
+
+  /** The country's own wiki page (`Country.wikiPageTitle`), read instead of its name */
+  wikiPageTitle?: string | null;
 
   /** Current country data from IxStats for comparison and fallback */
   countryData: {
@@ -139,6 +145,8 @@ const DEFAULT_WIKI_SETTINGS: WikiSettings = {
  */
 export function useDossier({
   countryName,
+  wikiSource: countryWikiSource,
+  wikiPageTitle,
   countryData,
   initialSettings = {},
 }: UseDossierProps): UseDossierReturn {
@@ -156,12 +164,14 @@ export function useDossier({
     "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL"
   >("PUBLIC");
 
-  // Determine which wiki source to query based on settings
-  const wikiSource = wikiSettings.wikiBaseUrls.custom?.includes("althistory")
+  // The country's own wiki when it names one (an Eurth nation's is iiwiki); otherwise the settings decide.
+  const settingsSource: WikiSource = wikiSettings.wikiBaseUrls.custom?.includes("althistory")
     ? "althistory"
     : wikiSettings.enableIIWiki
       ? "iiwiki"
       : "ixwiki";
+  const wikiSource = countryWikiSource ? parseWikiSource(countryWikiSource) : settingsSource;
+  const pageTitle = wikiPageTitle?.trim() || countryName;
 
   // tRPC query for fetching cached wiki profile data
   const {
@@ -170,7 +180,7 @@ export function useDossier({
     error,
     refetch,
   } = api.wikiCache.getCountryProfile.useQuery({
-    countryName,
+    countryName: pageTitle,
     wikiSource,
   });
 
@@ -231,7 +241,7 @@ export function useDossier({
       confidence: profileData.confidence || 0,
       isLoading: false,
       error: undefined,
-      wikiSource: (profileData.wikiSource as "ixwiki" | "iiwiki" | "althistory") || wikiSource,
+      wikiSource: profileData.wikiSource ?? wikiSource,
     };
   }, [profileData, isLoading, error, countryName, wikiSource]);
 
@@ -324,7 +334,7 @@ export function useDossier({
       console.log("[useDossier] Manual refresh triggered - clearing cache");
 
       // Clear cache and refetch
-      await refreshMutation.mutateAsync({ countryName });
+      await refreshMutation.mutateAsync({ countryName: pageTitle, wikiSource });
 
       // Refetch the data
       await refetch();
@@ -335,7 +345,7 @@ export function useDossier({
       console.error("[useDossier] Refresh error:", error);
       throw error; // Re-throw so caller can handle it
     }
-  }, [refreshMutation, refetch, countryName]);
+  }, [refreshMutation, refetch, countryName, pageTitle, wikiSource]);
 
   /**
    * Check if viewer has access to a given classification level

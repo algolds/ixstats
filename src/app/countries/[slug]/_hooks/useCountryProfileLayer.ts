@@ -18,9 +18,8 @@ import { useMemo } from "react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { claimableNation } from "~/lib/realms/claimable-nation";
-import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { resolveImageUrl } from "~/lib/wiki-os/transformers/image-url";
-import type { WikiSource } from "~/lib/wiki-os/config";
+import { parseWikiSource, wikiReaderPath, type WikiSource } from "~/lib/wiki-os/config";
 import type { CountryWithEconomicData } from "~/components/mycountry/shared/primitives/CountryDataProvider";
 import { formatCensusValue } from "~/lib/format/census";
 import {
@@ -300,10 +299,10 @@ function buildLore(
   article: ReturnType<typeof splitWikiSections>,
   overview: string,
   founding: FoundingEvent[],
-  title: string,
+  page: { title: string; wiki: WikiSource },
   isLoading: boolean
 ) {
-  // Non-IxWiki sources (and articles missing from the shadow store) fall back to the cached overview.
+  // Articles missing from the wiki fall back to the cached overview.
   const lead = leadParagraphs(article.lead);
   const prologue = lead.length ? lead : wikiToParagraphs(overview, { max: 3 });
   const chapters: Partial<Record<LoreChapter, LoreSection>> = {};
@@ -317,8 +316,8 @@ function buildLore(
     if (section) chapters[chapter] = section;
   }
   return {
-    articleTitle: title,
-    wikiHref: titleToWikiOSRoute(title),
+    articleTitle: page.title,
+    wikiHref: wikiReaderPath(page.title, page.wiki),
     prologue,
     chapters,
     founding,
@@ -475,7 +474,7 @@ export function useCountryProfileLayer({
   const c = country as Loose | null | undefined;
   const countryId: string = c?.id ?? "";
   const enabled = !!countryId;
-  const wikiSource = (str(c?.wikiSource) ?? "ixwiki") as "ixwiki" | "iiwiki" | "althistory";
+  const wikiSource = parseWikiSource(str(c?.wikiSource));
   const articleTitle = str(c?.wikiPageTitle) ?? (c?.name ? String(c.name).replace(/_/g, " ") : "");
 
   // Lore: the infobox (identity, founding dates) and the article text (chapters).
@@ -483,13 +482,14 @@ export function useCountryProfileLayer({
     { countryName: articleTitle, wikiSource },
     { enabled: !!articleTitle, ...WIKI }
   );
+  // The article on the country's own wiki (an Eurth nation's on IIWiki).
   const wikitext = api.wikios.getWikitext.useQuery(
-    { title: articleTitle },
-    { enabled: !!articleTitle && wikiSource === "ixwiki", ...WIKI }
+    { title: articleTitle, wikiSource },
+    { enabled: !!articleTitle, ...WIKI }
   );
   const redirect = redirectTarget(wikitext.data?.wikitext);
   const redirected = api.wikios.getWikitext.useQuery(
-    { title: redirect ?? "" },
+    { title: redirect ?? "", wikiSource },
     { enabled: !!redirect, ...WIKI }
   );
 
@@ -524,8 +524,7 @@ export function useCountryProfileLayer({
 
   const articleText = (redirect ? redirected.data : wikitext.data)?.wikitext ?? "";
   const loreLoading =
-    wikiProfile.isLoading ||
-    (wikiSource === "ixwiki" && (wikitext.isLoading || (!!redirect && redirected.isLoading)));
+    wikiProfile.isLoading || wikitext.isLoading || (!!redirect && redirected.isLoading);
 
   return useMemo<CountryProfileLayer | null>(() => {
     if (!c) return null;
@@ -537,7 +536,7 @@ export function useCountryProfileLayer({
       splitWikiSections(articleText),
       wikiProfile.data?.sections?.[0]?.content ?? "",
       founding,
-      redirect ?? articleTitle,
+      { title: redirect ?? articleTitle, wiki: wikiSource },
       loreLoading
     );
 
