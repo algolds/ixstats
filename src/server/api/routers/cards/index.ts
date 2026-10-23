@@ -14,6 +14,7 @@
  *  - takedowns:   a player's takedown request for a card not from NationStates
  *  - inscriptions: signing a copy and reporting an inscription
  *  - sheet-economy: your copies' values and actions on the sheet
+ *  - realm-categories: a realm founder's edits to their realm's card categories (`api.cards.realmCategories.*`)
  *  - admin:       every card admin procedure, one sub-router per admin tab
  */
 import { createTRPCRouter, mergeRouters } from "~/server/api/trpc";
@@ -26,6 +27,7 @@ import { cardsMuteRouter } from "./mute";
 import { cardsTakedownsRouter } from "./takedowns";
 import { cardsInscriptionsRouter } from "./inscriptions";
 import { cardsSheetEconomyRouter } from "./sheet-economy";
+import { cardsRealmCategoriesRouter } from "./realm-categories";
 import { cardsAdminRouter } from "./admin";
 
 export const cardsRouter = mergeRouters(
@@ -38,5 +40,5 @@ export const cardsRouter = mergeRouters(
   cardsTakedownsRouter,
   cardsInscriptionsRouter,
   cardsSheetEconomyRouter,
-  createTRPCRouter({ admin: cardsAdminRouter })
+  createTRPCRouter({ admin: cardsAdminRouter, realmCategories: cardsRealmCategoriesRouter })
 );

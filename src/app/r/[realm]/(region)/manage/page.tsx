@@ -9,6 +9,7 @@ import { SourceSyncPanel } from "~/app/admin/realms/_components/source-sync/Sour
 import { RealmWikiPanel } from "~/app/admin/realms/_components/wiki/RealmWikiPanel";
 import { MapPipelinePanel } from "~/app/admin/realms/_components/map-pipeline/MapPipelinePanel";
 import { AdvertSection } from "../../_components/manage/AdvertSection";
+import { CardCategoriesSection } from "../../_components/manage/cards/CardCategoriesSection";
 import { AppearanceSection } from "../../_components/manage/AppearanceSection";
 import { EmbassiesSection } from "../../_components/manage/EmbassiesSection";
 import { FactbookSection } from "../../_components/manage/FactbookSection";
@@ -163,6 +164,16 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
               <MapPipelinePanel slug={slug} />
             </ManageSection>
           ),
+        },
+      ],
+    },
+    {
+      label: "Cards",
+      sections: [
+        {
+          id: "card-categories",
+          label: "Card categories",
+          node: manage.isFounder && editable && <CardCategoriesSection slug={slug} />,
         },
       ],
     },
