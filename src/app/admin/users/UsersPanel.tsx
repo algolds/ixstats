@@ -38,14 +38,23 @@ import { AssignCountryDialog, LinkDiscordDialog, LinkWikiDialog } from "./UsersP
 import { CountryClaimsTab, DiscordSyncTab } from "./UsersPanelTabs";
 import { usePlayAs } from "./usePlayAs";
 import { OldForumAccountDialog, type OldForumAccountTarget } from "./OldForumAccountDialog";
+import { NameClaimsTab } from "./NameClaimsTab";
+
+const TABS = [
+  "identities",
+  "name-claims",
+  "wiki-reconciliation",
+  "discord-sync",
+  "country-claims",
+] as const;
+type UsersTab = (typeof TABS)[number];
+const isTab = (value: string): value is UsersTab => TABS.some((tab) => tab === value);
 
 export function UsersPanel() {
   usePageTitle({ title: "Admin - User Identity & Accounts Hub" });
 
   const notify = useNotify();
-  const [activeTab, setActiveTab] = useState<
-    "identities" | "wiki-reconciliation" | "discord-sync" | "country-claims"
-  >("identities");
+  const [activeTab, setActiveTab] = useState<UsersTab>("identities");
   const [searchTerm, setSearchTerm] = useState("");
 
   const { activePlayAs, handleStartPlayAs, handleStopPlayAs } = usePlayAs();
@@ -230,12 +239,16 @@ export function UsersPanel() {
         </div>
       )}
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
+      <Tabs value={activeTab} onValueChange={(v) => isTab(v) && setActiveTab(v)} className="w-full">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <TabsList className="bg-fill-3 border-separator h-9 p-1">
             <TabsTrigger value="identities" className="text-footnote">
               <Shield className="mr-2 h-3.5 w-3.5" />
               Master identity matrix
+            </TabsTrigger>
+            <TabsTrigger value="name-claims" className="text-footnote">
+              <WikiIcon className="mr-2 h-3.5 w-3.5" />
+              Name claims
             </TabsTrigger>
             <TabsTrigger value="wiki-reconciliation" className="text-footnote">
               <WikiIcon className="mr-2 h-3.5 w-3.5" />
@@ -455,6 +468,10 @@ export function UsersPanel() {
               </Table>
             )}
           </Card>
+        </TabsContent>
+
+        <TabsContent value="name-claims" className="mt-4">
+          <NameClaimsTab />
         </TabsContent>
 
         {/* TAB 2: WIKI RECONCILIATION & ALTS */}

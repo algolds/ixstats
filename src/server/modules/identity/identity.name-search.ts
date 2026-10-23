@@ -47,7 +47,9 @@ export interface LinkTarget {
   countryName: string | null;
 }
 
-export interface ClaimQueueItem extends NameClaimView {
+/** A queued claim: the player's own words move to `playerEvidence`, so `evidence` is the name's. */
+export interface ClaimQueueItem extends Omit<NameClaimView, "evidence"> {
+  playerEvidence: string | null;
   account: LinkTarget;
   evidence: NameEvidence;
 }
@@ -320,9 +322,11 @@ export async function listClaimQueue(
     db,
     page.map((row) => row.name)
   );
-  const items = page.flatMap(({ user, ...claim }) => {
+  const items = page.flatMap(({ user, evidence: playerEvidence, ...claim }) => {
     const found = evidence.get(claim.name);
-    return found ? [{ ...claim, account: toLinkTarget(user), evidence: found }] : [];
+    return found
+      ? [{ ...claim, playerEvidence, account: toLinkTarget(user), evidence: found }]
+      : [];
   });
   return { items, nextCursor: rows.length > input.limit ? (page.at(-1)?.id ?? null) : null };
 }
