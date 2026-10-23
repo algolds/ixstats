@@ -149,7 +149,6 @@ describe("searchTradePartners", () => {
     clerkUserId: string;
     handle: string | null;
     forumUsername: string | null;
-    wikiUsername: string | null;
     discordUsername: string | null;
     country: { name: string; leader: string } | null;
   }
@@ -158,7 +157,6 @@ describe("searchTradePartners", () => {
     clerkUserId: `clerk_${id}`,
     handle: null,
     forumUsername: null,
-    wikiUsername: null,
     discordUsername: null,
     country: { name: "Nowhere", leader: "Someone" },
     ...fields,
@@ -175,7 +173,6 @@ describe("searchTradePartners", () => {
           { handle: { startsWith: "a\\_b\\%\\\\", mode: "insensitive" } },
           { country: { OR: [{ name: term }, { leader: term }] } },
           { forumUsername: term },
-          { wikiUsername: term },
           { discordUsername: term },
         ],
       },
@@ -184,7 +181,6 @@ describe("searchTradePartners", () => {
         clerkUserId: true,
         handle: true,
         forumUsername: true,
-        wikiUsername: true,
         discordUsername: true,
         country: { select: { name: true, leader: true } },
       },
@@ -193,10 +189,10 @@ describe("searchTradePartners", () => {
       take: 15,
     });
   });
-  it("neither shows nor matches a hidden Discord tag or wiki name, and names players by the identity rule", async () => {
+  it("neither shows nor matches a hidden Discord tag or an old wiki name, and names players by the identity rule", async () => {
     jest.mocked(hiddenLinkedNames).mockResolvedValue({
       discord: new Set(["clerk_hidden", "clerk_nation"]),
-      wiki: new Set(["clerk_wiki"]),
+      wiki: new Set(),
     });
     jest.mocked(tradeOfferRefusers).mockResolvedValue(refusals(["clerk_forum"], ["clerk_leader"]));
     jest.mocked(permissionAudiences).mockResolvedValue(
@@ -209,7 +205,8 @@ describe("searchTradePartners", () => {
     const db = makeDb();
     db.user.findMany.mockResolvedValue([
       user("hidden", { discordUsername: "rosegarden" }),
-      user("wiki", { wikiUsername: "Rosegarden" }),
+      // An old wiki name is not a search term: it is neither asked for nor read
+      user("wiki"),
       user("tag", { discordUsername: "Rosegarden2" }),
       user("nation", {
         discordUsername: "rosegarden",
@@ -219,7 +216,7 @@ describe("searchTradePartners", () => {
       user("forum", { forumUsername: "RoseGardenFan" }),
       user("handle", { handle: "rosegardener" }),
       user("inside", { handle: "my_rosegarden" }),
-      { ...user("stateless", { wikiUsername: "rosegarden" }), country: null },
+      { ...user("stateless", { handle: "rosegarden" }), country: null },
     ]);
     const rules = rulesFor(["tag"]);
     const found = await searchTradePartners(db as never, rules, VIEWER, "RoseGarden");

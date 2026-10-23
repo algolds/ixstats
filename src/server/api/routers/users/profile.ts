@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient, Role, User } from "@prisma/client";
 import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { UserManagementService } from "~/lib/auth";
 import { globalCache } from "~/lib/cache";
@@ -95,7 +95,16 @@ async function reconcileLinkedCountry(db: PrismaClient, clerkUserId: string, cur
   }
 }
 
-function profileOf(clerkUserId: string, userRecord: any, countryRecord: any) {
+/** The user fields the own profile sends: the passport handle names the player, never an old wiki name. */
+type ProfileUser = Pick<User, "membershipTier" | "createdAt" | "handle" | "forumUsername"> & {
+  role?: Role | null;
+};
+
+function profileOf<C extends { id: string }>(
+  clerkUserId: string,
+  userRecord: ProfileUser | null,
+  countryRecord: C | null
+) {
   return {
     userId: clerkUserId,
     countryId: countryRecord?.id ?? null,
@@ -103,7 +112,7 @@ function profileOf(clerkUserId: string, userRecord: any, countryRecord: any) {
     role: userRecord?.role ?? null,
     membershipTier: userRecord?.membershipTier ?? "basic",
     createdAt: userRecord?.createdAt ?? new Date(),
-    wikiUsername: userRecord?.wikiUsername ?? null,
+    handle: userRecord?.handle ?? null,
     forumUsername: userRecord?.forumUsername ?? null,
     hasCompletedSetup: Boolean(countryRecord),
   };

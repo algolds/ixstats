@@ -278,6 +278,12 @@ it.each(GATES)("$procedure is refused to $who", async ({ who, run, refusal }) =>
   expect(overrideLorewardEntry).not.toHaveBeenCalled();
 });
 
+it("reads only each admin's id when it alerts them to feedback, never a wiki name", async () => {
+  db.user.findMany.mockResolvedValue([]);
+  await call.userLogging(ctx("a member")).submitFeedback(FEEDBACK);
+  expect(db.user.findMany).toHaveBeenCalledWith(expect.objectContaining({ select: { id: true } }));
+});
+
 it("reads, saves and clears only the caller's own builder draft", async () => {
   const draft = call.builderDraft(ctx("a member"));
   db.builderDraft.findUnique.mockResolvedValue({ data: { step: 2 }, updatedAt: new Date(0) });

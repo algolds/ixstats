@@ -73,7 +73,7 @@ export function UnifiedGlassCommandBar({
   const owner = country?.owner;
   const sovereign = owner
     ? {
-        username: str(owner.forumUsername) ?? str(owner.wikiUsername),
+        username: str(owner.handle) ?? str(owner.forumUsername),
         roleName: str(owner.role?.displayName) ?? str(owner.role?.name),
         avatarUrl: owner.avatarUrl,
         role: owner.clerkRole ?? str(owner.role?.name),

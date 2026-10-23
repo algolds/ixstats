@@ -596,3 +596,30 @@ describe("users.getUserWithRole returns the role level only", () => {
     error.mockRestore();
   });
 });
+
+describe("users.getProfile names the player by their passport handle", () => {
+  it("sends the handle and the forum name, never an old wiki name", async () => {
+    const db = createMockPrisma();
+    db.user.findUnique.mockResolvedValue({
+      id: "db_profile",
+      clerkUserId: "clerk_profile",
+      countryId: null,
+      country: null,
+      role: null,
+      membershipTier: "citizen",
+      createdAt: new Date(0),
+      handle: "ruler",
+      forumUsername: "ForumRuler",
+      wikiUsername: "Wiki Ruler",
+    });
+    db.thinkpagesAccount.findFirst.mockResolvedValue(null);
+    const ctx = createMockRouterContext({
+      db,
+      auth: { userId: "clerk_profile" },
+      user: { id: "db_profile", clerkUserId: "clerk_profile" },
+    });
+    const profile = await createCallerFactory(usersProfileRouter)(ctx as never).getProfile();
+    expect(profile).toMatchObject({ handle: "ruler", forumUsername: "ForumRuler" });
+    expect(JSON.stringify(profile)).not.toContain("Wiki Ruler");
+  });
+});

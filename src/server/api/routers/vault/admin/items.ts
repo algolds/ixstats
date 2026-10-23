@@ -16,7 +16,7 @@ export const vaultAdminItemsRouter = createTRPCRouter({
               user: {
                 select: {
                   id: true,
-                  wikiUsername: true,
+                  handle: true,
                   clerkUserId: true,
                   country: {
                     select: {
@@ -32,7 +32,8 @@ export const vaultAdminItemsRouter = createTRPCRouter({
         orderBy: { createdAt: "desc" },
       });
 
-      return txs.map((tx: any) => {
+      return txs.map((tx) => {
+        const buyer = tx.vault.user;
         return {
           id: tx.id,
           credits: tx.credits,
@@ -42,13 +43,10 @@ export const vaultAdminItemsRouter = createTRPCRouter({
           itemId: purchasedItemId(tx.metadata) ?? "",
           createdAt: tx.createdAt,
           user: {
-            id: tx.vault.user?.id,
-            displayName:
-              tx.vault.user?.country?.name ??
-              tx.vault.user?.wikiUsername ??
-              tx.vault.user?.clerkUserId ??
-              "Unknown User",
-            flag: tx.vault.user?.country?.flag,
+            id: buyer.id,
+            // The nation, then the passport handle, then the Clerk id; never an old wiki name.
+            displayName: buyer.country?.name ?? buyer.handle ?? buyer.clerkUserId,
+            flag: buyer.country?.flag,
           },
         };
       });

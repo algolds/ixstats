@@ -1,7 +1,8 @@
 /**
  * A nation of another wiki (an Eurth nation on IIWiki) reads its own wiki page everywhere the country is shown: the
  * dossier (`useDossier`), the map's info panel (`useCountryPanelData`) and the country profile's lore
- * (`useCountryProfileLayer`), whose article text and link are that wiki's too. An IxWiki country reads as before.
+ * (`useCountryProfileLayer`), whose article text and link are that wiki's too. An IxWiki country reads as before. The
+ * profile names its sovereign by their passport handle, then their forum name, never an old wiki name.
  */
 import { act, renderHook } from "@testing-library/react";
 
@@ -109,5 +110,21 @@ describe("useCountryProfileLayer", () => {
     );
     expect(article?.input).toEqual({ title: "Afropa", wikiSource: "iiwiki" });
     expect(result.current?.lore.wikiHref).toBe("/wiki/Afropa?source=iiwiki");
+  });
+
+  it.each([
+    [{ handle: "ruler", forumUsername: "ForumRuler", wikiUsername: "Wiki Ruler" }, "ruler"],
+    [{ handle: null, forumUsername: "ForumRuler", wikiUsername: "Wiki Ruler" }, "ForumRuler"],
+    [{ handle: null, forumUsername: null, wikiUsername: "Wiki Ruler" }, null],
+  ])("names the sovereign %o as %s", (owner, username) => {
+    const country = { id: "c-urc", name: "Urcea", owner } as CountryWithEconomicData & {
+      owner: typeof owner;
+    };
+
+    const { result } = renderHook(() =>
+      useCountryProfileLayer({ country, flagUrl: null, isOwner: false, currentIxTime: 0 })
+    );
+
+    expect(result.current?.identity.sovereign?.username).toBe(username);
   });
 });
