@@ -100,10 +100,13 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
     setTimeout(() => setCopiedHandle(false), 2000);
   };
 
-  // Connected accounts counter
+  // Connected accounts counter: a verified sister wiki is the wiki service (IxWiki names are claims now)
+  const sisterWikiVerified = Boolean(
+    linkFor("iiwiki")?.verified || linkFor("althistory")?.verified
+  );
   const linkedServicesCount =
     (status?.forum.linked ? 1 : 0) +
-    (status?.wiki.linked || wikiLinks.data?.some((l) => l.verified) ? 1 : 0) +
+    (sisterWikiVerified ? 1 : 0) +
     (status?.discord.linked ? 1 : 0);
 
   const totalConnectedCount = linkedServicesCount + (userProfile?.countryId ? 1 : 0);
@@ -326,8 +329,8 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
           label="Linked accounts"
           description={
             status
-              ? `${linkedServicesCount} of 3 connected (old forum, wikis, Discord)`
-              : "Connect your wiki and Discord accounts"
+              ? `${linkedServicesCount} of 3 connected (old forum, sister wikis, Discord)`
+              : "Connect your sister wiki and Discord accounts"
           }
           icon={LinkIcon}
           glyphClass="bg-indigo/15 text-indigo"
@@ -361,14 +364,13 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
               glyphClass="bg-fill-3 text-label-secondary"
             />
 
-            {/* Wiki accounts (verified by user-page token) */}
+            {/* Sister wikis (verified by user-page token); IxWiki names are claims, above */}
             <div className="flex items-start gap-3 p-4">
               <div className="bg-blue/15 text-blue rounded-control-sm flex size-7 shrink-0 items-center justify-center">
                 <BookOpen aria-hidden className="size-4" />
               </div>
               <div className="min-w-0 flex-1 space-y-3">
-                <div className="text-label text-headline">Wikis</div>
-                <WikiAccountVerifyRow source="ixwiki" label="Wiki" link={linkFor("ixwiki")} />
+                <div className="text-label text-headline">Sister wikis</div>
                 <WikiAccountVerifyRow source="iiwiki" label="IIWiki" link={linkFor("iiwiki")} />
                 <WikiAccountVerifyRow
                   source="althistory"

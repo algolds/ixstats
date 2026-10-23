@@ -13,6 +13,7 @@ import {
   fetchWikiUser,
   PROOF_SOURCES,
 } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import { SISTER_READER_IDS } from "~/lib/wiki-os/wiki-hosts";
 import {
   createWikiLinkService,
   WikiLinkError,
@@ -24,6 +25,9 @@ import {
   type ClaimActor,
 } from "~/server/modules/identity/identity.name-claims";
 
+// Verification is for the sister wikis only: an old IxWiki name joins an account through a name claim. Unlinking
+// still takes every proof source, so a player can drop an IxWiki link they verified before claims.
+const sisterSourceInput = z.enum(SISTER_READER_IDS);
 const wikiSourceInput = z.enum(PROOF_SOURCES);
 const wikiLinks = () => createWikiLinkService(db, { fetchWikiUser, fetchUserPageHistory });
 
@@ -58,13 +62,13 @@ export const ixnayidLinkingRouter = createTRPCRouter({
   listWikiLinks: protectedProcedure.query(({ ctx }) => wikiLinks().list(ctx.user.id)),
 
   startWikiVerification: lightMutationProcedure
-    .input(z.object({ source: wikiSourceInput, username: z.string().trim().min(1).max(100) }))
+    .input(z.object({ source: sisterSourceInput, username: z.string().trim().min(1).max(100) }))
     .mutation(({ ctx, input }) =>
       wikiLinks().start(ctx.user.id, input.source, input.username).catch(toTrpcError)
     ),
 
   confirmWikiVerification: lightMutationProcedure
-    .input(z.object({ source: wikiSourceInput }))
+    .input(z.object({ source: sisterSourceInput }))
     .mutation(({ ctx, input }) =>
       wikiLinks().confirm(ctx.user.id, input.source).catch(toTrpcError)
     ),

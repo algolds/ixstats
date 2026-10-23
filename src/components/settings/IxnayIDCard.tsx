@@ -7,7 +7,6 @@ import Link from "next/link";
 import {
   Link as Link2,
   LinkSlash as Unlink,
-  OpenBook as BookOpen,
   SystemRestart as Loader2,
   Check,
   OpenNewWindow as ExternalLink,
@@ -15,7 +14,6 @@ import {
   User as UserIcon,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { WikiAccountVerifyRow } from "~/components/settings/WikiAccountVerifyRow";
 import { OldForumAccount } from "~/components/settings/OldForumAccount";
 
 interface ServiceRowProps {
@@ -114,7 +112,6 @@ interface IxnayIDCardProps {
 export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
   const utils = api.useUtils();
   const { data: status, isLoading } = api.ixnayid.getStatus.useQuery();
-  const wikiLinks = api.ixnayid.listWikiLinks.useQuery();
 
   // Mutations
   const linkDiscord = api.ixnayid.linkDiscord.useMutation({
@@ -180,23 +177,6 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
         <div className="space-y-4">
           {/* Old forum: read-only since phase 4b (staff attribute imported posts) */}
           <OldForumAccount forum={status?.forum ?? { linked: false, username: null }} />
-
-          {/* Wiki (verified by user-page token) */}
-          <div className="rounded-row border-separator bg-surface-secondary flex items-start gap-4 border p-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-100 shadow-inner dark:bg-blue-900/30">
-              <BookOpen className="h-6 w-6 text-blue-500" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <span className="text-headline text-label">Wiki</span>
-              <div className="mt-2">
-                <WikiAccountVerifyRow
-                  source="ixwiki"
-                  label="Wiki"
-                  link={wikiLinks.data?.find((l) => l.source === "ixwiki")}
-                />
-              </div>
-            </div>
-          </div>
 
           {/* Discord */}
           <ServiceRow

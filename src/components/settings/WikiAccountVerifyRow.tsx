@@ -5,20 +5,18 @@ import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import type { SisterReaderId } from "~/lib/wiki-os/wiki-hosts";
 
-type Source = "ixwiki" | "iiwiki" | "althistory";
 type WikiLinkView = RouterOutputs["ixnayid"]["listWikiLinks"][number];
 
 interface WikiAccountVerifyRowProps {
-  source: Source;
+  source: SisterReaderId;
   label: string;
   link: WikiLinkView | undefined;
 }
 
 export function WikiAccountVerifyRow({ source, label, link }: WikiAccountVerifyRowProps) {
   const notify = useNotify();
-  // The main wiki reads as "the wiki" in a sentence; a sister wiki keeps its name.
-  const noun = source === "ixwiki" ? "wiki" : label;
   const utils = api.useUtils();
   const [username, setUsername] = useState("");
   const [code, setCode] = useState<{ token: string; userPageUrl: string; username: string } | null>(
@@ -35,7 +33,7 @@ export function WikiAccountVerifyRow({ source, label, link }: WikiAccountVerifyR
       setCode({ token: res.token, userPageUrl: res.userPageUrl, username: res.username });
       refresh();
     },
-    onError: (err) => notify.error(err.message || `Failed to start ${noun} verification`),
+    onError: (err) => notify.error(err.message || `Failed to start ${label} verification`),
   });
 
   const confirm = api.ixnayid.confirmWikiVerification.useMutation({
@@ -44,7 +42,7 @@ export function WikiAccountVerifyRow({ source, label, link }: WikiAccountVerifyR
       setCode(null);
       refresh();
     },
-    onError: (err) => notify.error(err.message || `Failed to verify ${noun} account`),
+    onError: (err) => notify.error(err.message || `Failed to verify ${label} account`),
   });
 
   const unlink = api.ixnayid.unlinkWikiAccount.useMutation({
@@ -52,7 +50,7 @@ export function WikiAccountVerifyRow({ source, label, link }: WikiAccountVerifyR
       setCode(null);
       refresh();
     },
-    onError: (err) => notify.error(err.message || `Failed to unlink ${noun} account`),
+    onError: (err) => notify.error(err.message || `Failed to unlink ${label} account`),
   });
 
   if (link?.verified) {
@@ -79,11 +77,11 @@ export function WikiAccountVerifyRow({ source, label, link }: WikiAccountVerifyR
         {code && (
           <p className="text-muted-foreground text-xs">
             Paste <code className="bg-muted rounded px-1 font-mono">{code.token}</code> anywhere on
-            your {noun} user page and save it while logged in as{" "}
+            your {label} user page and save it while logged in as{" "}
             <strong>{code?.username ?? link?.username}</strong>, then press Verify. The code works
             for 24 hours.{" "}
             <a href={code.userPageUrl} target="_blank" rel="noreferrer" className="underline">
-              Open your {noun} user page
+              Open your {label} user page
             </a>
             .
           </p>

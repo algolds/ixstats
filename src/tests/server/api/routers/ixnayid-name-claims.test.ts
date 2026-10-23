@@ -4,6 +4,19 @@
  * show. The router acts as the signed-in player (never a system owner) and maps the module's refusals to tRPC codes.
  */
 jest.mock("~/server/db", () => ({ __esModule: true, db: {}, isDatabaseReadOnly: false }));
+// Wiki verification never reaches a real wiki: a found user lets a refused source fail on the input, not the lookup.
+jest.mock("~/lib/wiki-os/adapters/mediawiki/account-proof", () => ({
+  ...jest.requireActual<typeof import("~/lib/wiki-os/adapters/mediawiki/account-proof")>(
+    "~/lib/wiki-os/adapters/mediawiki/account-proof"
+  ),
+  fetchWikiUser: jest.fn(async () => ({
+    username: "X",
+    userId: 1,
+    registration: null,
+    editCount: 0,
+  })),
+  fetchUserPageHistory: jest.fn(async () => []),
+}));
 
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
@@ -81,5 +94,19 @@ describe("listMyNameClaims", () => {
     await claim("c3", "p1", "Newer", "2026-10-03T00:00:00Z");
     const mine = await callerAs("p1").listMyNameClaims();
     expect(mine.map((c) => c.id)).toEqual(["c3", "c1"]);
+  });
+});
+
+describe("wiki verification is for sister wikis only", () => {
+  it("refuses to start an IxWiki verification: IxWiki names are claims now", async () => {
+    await expect(
+      callerAs("p1").startWikiVerification({ source: "ixwiki" as never, username: "x" })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("refuses to confirm an IxWiki verification", async () => {
+    await expect(
+      callerAs("p1").confirmWikiVerification({ source: "ixwiki" as never })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 });
