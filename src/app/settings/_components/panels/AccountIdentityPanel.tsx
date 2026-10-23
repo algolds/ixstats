@@ -28,6 +28,7 @@ import { useUserCountry } from "~/hooks/useUserCountry";
 import { SettingsHeader } from "../SettingsHeader";
 import { SettingsGroup, SettingsRow } from "../primitives";
 import { WikiAccountVerifyRow } from "~/components/settings/WikiAccountVerifyRow";
+import { WikiNameClaims } from "~/components/settings/WikiNameClaims";
 import { oldForumAccountText } from "~/components/settings/OldForumAccount";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
@@ -261,6 +262,13 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
             </Button>
           </form>
         </SettingsRow>
+      </SettingsGroup>
+
+      <SettingsGroup
+        title="Old IxWiki names"
+        description="Names you edited the classic wiki under. An administrator checks each one before it joins your account."
+      >
+        <WikiNameClaims />
       </SettingsGroup>
 
       {/* Account credentials & linked accounts */}

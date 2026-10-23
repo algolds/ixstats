@@ -17,6 +17,12 @@ import {
   createWikiLinkService,
   WikiLinkError,
 } from "~/server/modules/identity/identity.wiki-links";
+import {
+  createNameClaimService,
+  NAME_CLAIM_HTTP,
+  NameClaimError,
+  type ClaimActor,
+} from "~/server/modules/identity/identity.name-claims";
 
 const wikiSourceInput = z.enum(PROOF_SOURCES);
 const wikiLinks = () => createWikiLinkService(db, { fetchWikiUser, fetchUserPageHistory });
@@ -30,6 +36,20 @@ function toTrpcError(error: Error): never {
           ? "CONFLICT"
           : "BAD_REQUEST";
     throw new TRPCError({ code, message: error.message });
+  }
+  throw error;
+}
+
+/** A player acts for their own account only, never as a system owner. */
+const playerActor = (user: { id: string; clerkUserId: string }): ClaimActor => ({
+  userId: user.id,
+  clerkUserId: user.clerkUserId,
+  isSystemOwner: false,
+});
+
+function toClaimTrpcError(error: Error): never {
+  if (error instanceof NameClaimError) {
+    throw new TRPCError({ code: NAME_CLAIM_HTTP[error.code], message: error.message });
   }
   throw error;
 }
@@ -55,6 +75,31 @@ export const ixnayidLinkingRouter = createTRPCRouter({
       await wikiLinks().unlink(ctx.user.id, input.source);
       return { success: true };
     }),
+
+  listMyNameClaims: protectedProcedure.query(({ ctx }) =>
+    createNameClaimService(ctx.db).listMine(ctx.user.id)
+  ),
+
+  requestNameClaim: rateLimitedMutationProcedure
+    .input(
+      z.object({
+        name: z.string().trim().min(1).max(85),
+        evidence: z.string().trim().max(1000).nullish(),
+      })
+    )
+    .mutation(({ ctx, input }) =>
+      createNameClaimService(ctx.db)
+        .request(playerActor(ctx.user), { name: input.name, evidence: input.evidence ?? null })
+        .catch(toClaimTrpcError)
+    ),
+
+  setNameClaimVisibility: rateLimitedMutationProcedure
+    .input(z.object({ claimId: z.string().min(1).max(64), visible: z.boolean() }))
+    .mutation(({ ctx, input }) =>
+      createNameClaimService(ctx.db)
+        .setVisibility(playerActor(ctx.user), input)
+        .catch(toClaimTrpcError)
+    ),
 
   linkDiscord: rateLimitedMutationProcedure.mutation(async ({ ctx }) => {
     const result = await linkDiscordAccount(ctx.user.id, ctx.auth.userId);
