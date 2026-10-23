@@ -30,7 +30,6 @@ const card = (over: Partial<Row> = {}): Row => ({
   title: "Kiro",
   category: "MILITARY",
   subcategory: "army",
-  categoryNeedsReview: false,
   ...over,
 });
 
