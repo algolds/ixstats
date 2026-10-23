@@ -25,6 +25,8 @@ export interface WikiArticle {
   length: number;
   /** The revision the text is of, when the wiki said (a sister wiki's page: what its rendered view is cached under). */
   revId?: number;
+  /** The redirect title the page was asked for under, when its wiki followed one (a sister wiki's page). */
+  redirectedFrom?: string;
 }
 
 export interface WikiIntro {

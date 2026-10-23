@@ -59,9 +59,13 @@ WikiOS is the knowledge engine and structured worldbuilding platform for IxState
 - **Export switch and bot.** `SKIP_MEDIAWIKI_SYNC=true` stops the export worker. Upstream edits use the bot in
   `WIKIOS_MEDIAWIKI_BOT_USER` (default `Heku@WikiOS`, a bot password on a personal account); there is no dedicated
   bridge account.
-- **Sister wikis.** `http-reader.ts` reads IIWiki and AltHistory; a host that returns 403 or is offline is skipped
-  for 5 minutes. On a `?source=` page, links stay on that wiki, and editing, Watch, `?margin` and the Halo follow the
-  page's wiki (Sept 2026 rulings E-l/E-m). Searching with `wikiSource: "all"` queries all three wikis at once.
+- **Sister wikis.** `http-reader.ts` reads IIWiki and AltHistory (redirects followed), through iiwiki's development
+  relay in development; a host that refuses twice in a row (403) is skipped for a minute (one refusal is often a
+  single Cloudflare challenge). A sister page is rendered by its own wiki (`action=parse&oldid=`, see
+  [mediawiki-dependencies.md](mediawiki-dependencies.md)). A country of another wiki (an Eurth nation on IIWiki)
+  reads its own page there everywhere: the dossier, the map panel, the profile's lore and the `countries.getWiki*`
+  readers (`src/server/modules/countries/countries.wiki.ts`, given the country's id). On a `?source=` page, links
+  stay on that wiki, and editing, Watch, `?margin` and the Halo follow the page's wiki (Sept 2026 rulings E-l/E-m). Searching with `wikiSource: "all"` queries all three wikis at once.
 
 ---
 

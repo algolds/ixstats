@@ -517,7 +517,8 @@ describe("getArticleHtml for another wiki's page is sanitized like any other (pl
       '<table class="infobox"><tr><td>Box <script>i()</script></td></tr></table>' +
       "<p>Body <script>b()</script></p></div>";
     globalThis.fetch = jest.fn(
-      async () => new Response(JSON.stringify({ parse: { text: parsed } }), { status: 200 })
+      async () =>
+        new Response(JSON.stringify({ parse: { title: "Eurth", text: parsed } }), { status: 200 })
     ) as typeof fetch;
     jest.mocked(sanitizeWikiArticleHtml).mockImplementation((html: string) => `SANITIZED(${html})`);
 
@@ -528,5 +529,25 @@ describe("getArticleHtml for another wiki's page is sanitized like any other (pl
     expect(result.noticesHtml).toMatch(/^SANITIZED\(.*Notice/);
     expect(sanitizeWikiArticleHtml).toHaveBeenCalledTimes(3);
     expect(result).toMatchObject({ wikiSource: "iiwiki", stale: false, renderQuality: "rendered" });
+  });
+
+  it("shows the page a redirect names, says where the reader came from, and credits that page's authors", async () => {
+    jest.mocked(getArticleWikitext).mockResolvedValue({
+      title: "Bashan Protectorate",
+      redirectedFrom: "Bashan",
+      wikitext: "text",
+      pageId: 41,
+      length: 4,
+      revId: 900,
+    });
+    jest.mocked(getArticleAuthors).mockResolvedValue(null);
+    globalThis.fetch = jest.fn(async () =>
+      Response.json({ parse: { title: "Bashan Protectorate", text: "<p>Bashan</p>" } })
+    ) as typeof fetch;
+
+    const result = await caller().getArticleHtml({ title: "Bashan", wikiSource: "iiwiki" });
+
+    expect(result).toMatchObject({ title: "Bashan Protectorate", resolvedFrom: "Bashan" });
+    expect(getArticleAuthors).toHaveBeenCalledWith("Bashan Protectorate", "iiwiki");
   });
 });

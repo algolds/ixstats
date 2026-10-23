@@ -13,39 +13,43 @@ import {
 
 const USER_AGENT = DEFAULT_USER_AGENT;
 
-const offlineExternalHosts = new Map<string, number>();
+/** How long a host that refused twice in a row (403) is skipped. */
+const OFFLINE_FOR_MS = 60 * 1000;
+const offlineUntil = new Map<string, number>();
+/** Hosts whose last answer was a refusal. */
+const refusedOnce = new Set<string>();
 
-export function isExternalHostOffline(hostname: string): boolean {
-  const offlineTime = offlineExternalHosts.get(hostname);
-  if (offlineTime) {
-    if (Date.now() - offlineTime > 5 * 60 * 1000) {
-      offlineExternalHosts.delete(hostname);
-      return false;
-    }
-    return true;
-  }
+function isExternalHostOffline(hostname: string): boolean {
+  const until = offlineUntil.get(hostname);
+  if (until === undefined) return false;
+  if (Date.now() < until) return true;
+  offlineUntil.delete(hostname);
   return false;
 }
 
-export function markExternalHostOffline(hostname: string) {
-  if (!offlineExternalHosts.has(hostname)) {
-    offlineExternalHosts.set(hostname, Date.now());
-    console.warn(
-      `[WikiBridge] External host ${hostname} is returning 403 (Forbidden). ` +
-        `Requests to this host are suspended for 5 minutes in development to prevent server stalling.`
-    );
+/**
+ * A 403 from `hostname`. One is as often a Cloudflare challenge of that one request (or of the relay in front of
+ * iiwiki) as an outage, so only a second refusal in a row skips the host, and only for a minute.
+ */
+function noteRefusal(hostname: string) {
+  if (!refusedOnce.delete(hostname)) {
+    refusedOnce.add(hostname);
+    return;
   }
+  offlineUntil.set(hostname, Date.now() + OFFLINE_FOR_MS);
+  console.warn(
+    `[WikiBridge] External host ${hostname} refused twice in a row (403). ` +
+      `Requests to it are suspended for a minute to prevent server stalling.`
+  );
 }
 
 /**
  * Fetch from an external wiki API with circuit breaker resilience for 403/offline errors.
- * Returns null on persistent failures instead of throwing or polling repeatedly. `form` makes it a
- * POST of that form (a render of a page's wikitext does not fit in a URL).
+ * Returns null on persistent failures instead of throwing or polling repeatedly.
  */
 export async function fetchExternalWiki(
   url: string,
-  timeoutMs: number = 12000,
-  form?: URLSearchParams
+  timeoutMs: number = 12000
 ): Promise<Response | null> {
   const hostname = new URL(url).hostname;
   if (isExternalHostOffline(hostname)) {
@@ -57,22 +61,21 @@ export async function fetchExternalWiki(
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     const response = await fetch(url, {
-      ...(form ? { method: "POST", body: form.toString() } : {}),
       headers: {
         "User-Agent": USER_AGENT,
         "Api-User-Agent": USER_AGENT,
         Accept: "application/json, text/html, */*",
         "Accept-Language": "en-US,en;q=0.9",
-        ...(form ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
       },
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
 
     if (response.status === 403) {
-      markExternalHostOffline(hostname);
+      noteRefusal(hostname);
       return null;
     }
+    refusedOnce.delete(hostname);
 
     if (!response.ok) {
       return null;
@@ -121,42 +124,56 @@ export async function iiwikiApiCall(params: Record<string, string>): Promise<unk
   return res.json();
 }
 
+/** An `action=query&prop=revisions` answer with its redirects followed (`redirects=1`). */
+interface WikitextQuery {
+  query?: {
+    redirects?: Array<{ from?: string; to?: string }>;
+    pages?: Record<
+      string,
+      {
+        pageid?: number;
+        title?: string;
+        revisions?: Array<{ revid?: number; slots?: { main?: { "*"?: string } } }>;
+      }
+    >;
+  };
+}
+
+/**
+ * `title`'s wikitext on a sister wiki, read through `apiCall`. A redirect is followed: the answer is the page it
+ * names, under that page's title, with `redirectedFrom` set (a title the wiki only normalised is not a redirect).
+ */
+async function readSisterWikitext(
+  apiCall: (params: Record<string, string>) => Promise<unknown | null>,
+  title: string
+): Promise<WikiArticle | null> {
+  const data = (await apiCall({
+    action: "query",
+    titles: title,
+    prop: "revisions",
+    rvprop: "content|ids",
+    rvslots: "main",
+    redirects: "1",
+  })) as WikitextQuery | null;
+
+  const page = Object.values(data?.query?.pages ?? {})[0];
+  if (!page?.pageid || page.pageid < 0) return null;
+
+  const wikitext = page.revisions?.[0]?.slots?.main?.["*"] ?? "";
+  const redirectedFrom = data?.query?.redirects?.[0]?.from;
+  return {
+    title: page.title ?? title,
+    pageId: page.pageid,
+    wikitext,
+    length: wikitext.length,
+    revId: page.revisions?.[0]?.revid,
+    ...(redirectedFrom ? { redirectedFrom } : {}),
+  };
+}
+
 export async function iiwikiGetWikitext(title: string): Promise<WikiArticle | null> {
   try {
-    const data = (await iiwikiApiCall({
-      action: "query",
-      titles: title,
-      prop: "revisions",
-      rvprop: "content|ids",
-      rvslots: "main",
-    })) as {
-      query?: {
-        pages?: Record<
-          string,
-          {
-            pageid?: number;
-            title?: string;
-            revisions?: Array<{ revid?: number; slots?: { main?: { "*"?: string } } }>;
-          }
-        >;
-      };
-    } | null;
-
-    if (!data) return null;
-    const pages = data.query?.pages;
-    if (!pages) return null;
-
-    const page = Object.values(pages)[0];
-    if (!page || !page.pageid || page.pageid < 0) return null;
-
-    const wikitext = page.revisions?.[0]?.slots?.main?.["*"] ?? "";
-    return {
-      title: page.title ?? title,
-      pageId: page.pageid,
-      wikitext,
-      length: wikitext.length,
-      revId: page.revisions?.[0]?.revid,
-    };
+    return await readSisterWikitext(iiwikiApiCall, title);
   } catch (err) {
     console.error("[WikiBridge] iiwiki fetch error:", err);
     return null;
@@ -343,40 +360,7 @@ export async function althistoryApiCall(params: Record<string, string>): Promise
 
 export async function althistoryGetWikitext(title: string): Promise<WikiArticle | null> {
   try {
-    const data = (await althistoryApiCall({
-      action: "query",
-      titles: title,
-      prop: "revisions",
-      rvprop: "content|ids",
-      rvslots: "main",
-    })) as {
-      query?: {
-        pages?: Record<
-          string,
-          {
-            pageid?: number;
-            title?: string;
-            revisions?: Array<{ revid?: number; slots?: { main?: { "*"?: string } } }>;
-          }
-        >;
-      };
-    } | null;
-
-    if (!data) return null;
-    const pages = data.query?.pages;
-    if (!pages) return null;
-
-    const page = Object.values(pages)[0];
-    if (!page || !page.pageid || page.pageid < 0) return null;
-
-    const wikitext = page.revisions?.[0]?.slots?.main?.["*"] ?? "";
-    return {
-      title: page.title ?? title,
-      pageId: page.pageid,
-      wikitext,
-      length: wikitext.length,
-      revId: page.revisions?.[0]?.revid,
-    };
+    return await readSisterWikitext(althistoryApiCall, title);
   } catch (err) {
     console.error("[WikiBridge] althistory fetch error:", err);
     return null;
@@ -423,17 +407,23 @@ export async function fetchPageImagesHttp(
   const cached = cacheGet<PageImage[]>(cacheKey);
   if (cached) return cached;
 
-  const apiUrl = wiki === "iiwiki" ? `${getIiwikiApiBaseUrl()}/api.php` : ALTHISTORY_API;
+  // The wiki's configured api.php: iiwiki's development relay gets past the Cloudflare 403 this server meets.
+  const apiUrl = getMediaWikiApiUrl(wiki);
   const thumbWidth = opts?.thumbWidth ?? 200;
   const maxImages = opts?.limit ?? 50;
   const excludePatterns = opts?.excludePatterns ?? [];
+  const query = (params: Record<string, string>) =>
+    fetchExternalWiki(`${apiUrl}?${new URLSearchParams({ ...params, format: "json" })}`, 5000);
 
   try {
-    const listRes = await fetch(
-      `${apiUrl}?action=query&titles=${encodeURIComponent(title)}&prop=images&imlimit=${maxImages}&format=json&redirects=1`,
-      { headers: { "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(5000) }
-    );
-    if (!listRes.ok) return null;
+    const listRes = await query({
+      action: "query",
+      titles: title,
+      prop: "images",
+      imlimit: String(maxImages),
+      redirects: "1",
+    });
+    if (!listRes) return null;
     const listData = (await listRes.json()) as {
       query?: {
         pages?: Record<string, { missing?: boolean; images?: Array<{ title: string }> }>;
@@ -449,12 +439,14 @@ export async function fetchPageImagesHttp(
       .filter((t) => !excludePatterns.some((p) => p.test(t)));
     if (imageTitles.length === 0) return null;
 
-    const titlesParam = imageTitles.slice(0, maxImages).map(encodeURIComponent).join("|");
-    const infoRes = await fetch(
-      `${apiUrl}?action=query&titles=${titlesParam}&prop=imageinfo&iiprop=url|size|mime&iiurlwidth=${thumbWidth}&format=json`,
-      { headers: { "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(5000) }
-    );
-    if (!infoRes.ok) return null;
+    const infoRes = await query({
+      action: "query",
+      titles: imageTitles.slice(0, maxImages).join("|"),
+      prop: "imageinfo",
+      iiprop: "url|size|mime",
+      iiurlwidth: String(thumbWidth),
+    });
+    if (!infoRes) return null;
     const infoData = (await infoRes.json()) as {
       query?: {
         pages?: Record<

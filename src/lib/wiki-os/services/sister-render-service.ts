@@ -1,21 +1,22 @@
 /**
  * sister-render-service.ts: the reader's HTML for a page of another wiki (`?source=iiwiki|althistory`).
  *
- * The page's wikitext is rendered by **that wiki's own parser** (`action=parse&text=&title=` on its own
- * api.php, called directly: never through the development proxy, which forwards GET only), so its
- * templates, parser functions and modules resolve against its own pages, never against IxWiki's (plan 415,
- * BUG-09: they used to be posted to IxWiki's engine, which has other templates).
- * The request carries the allow-listed `IxStats-Builder` user agent and goes through the bridge's fetch
- * helper, which keeps iiwiki's Cloudflare circuit breaker. The answer is transformed for the reader and
- * sanitized like any other article HTML (another wiki's HTML is as untrusted as a user's), and cached per
- * `(source, title, revision)` for ten minutes, 200 pages: a page that changes has a new revision, so it
- * is never served stale, and a reader who opens a sister page twice does not render it twice.
+ * The page is rendered by **that wiki's own parser**: `action=parse&oldid=<the revision WikiOS read>` (by title
+ * when the revision is unknown), so its templates, parser functions and modules resolve against its own pages,
+ * never against IxWiki's (plan 415, BUG-09: they used to be posted to IxWiki's engine, which has other templates).
+ * It is a GET through the wiki's configured api.php (`getMediaWikiApiUrl`): in development iiwiki's relay, which
+ * passes the Cloudflare challenge this server cannot. The request carries the allow-listed `IxStats-Builder` user
+ * agent and goes through the bridge's fetch helper, which keeps the hosts' circuit breaker. An answer for another
+ * page (a relay that drops `oldid` parses an empty page called "API") is refused. The answer is transformed for the
+ * reader and sanitized like any other article HTML (another wiki's HTML is as untrusted as a user's), and cached
+ * per `(source, title, revision)` for ten minutes, 200 pages: a page that changes has a new revision, so it is never
+ * served stale, and a reader who opens a sister page twice does not render it twice.
  */
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { Cache } from "~/lib/cache";
 import { fetchExternalWiki } from "~/lib/wiki-os/adapters/mediawiki/bridge/http-reader";
 import type { SisterWikiSource, WikiArticle } from "~/lib/wiki-os/adapters/mediawiki/bridge/types";
-import { sisterApiUrl } from "~/lib/wiki-os/config";
+import { getMediaWikiApiUrl } from "~/lib/wiki-os/config";
 import {
   stripConflictingStyles,
   transformArticleHtml,
@@ -47,36 +48,42 @@ const renders = new Cache<SisterRender>({ maxSize: 200, defaultTtlMs: 10 * 60 * 
 const inFlight = new Map<string, Promise<SisterRender>>();
 
 interface ParseAnswer {
-  parse?: { text?: string };
+  parse?: { title?: string; text?: string };
   error?: { info?: string };
 }
 
-/** The form `action=parse` takes to render `article`'s wikitext in the context of its own title. */
-function parseForm(article: WikiArticle): URLSearchParams {
-  return new URLSearchParams({
+/** The `action=parse` request for `article`: the revision WikiOS read, or the page by title. */
+function parseUrl(source: SisterWikiSource, article: WikiArticle): string {
+  const page =
+    article.revId === undefined ? { page: article.title } : { oldid: String(article.revId) };
+  const query = new URLSearchParams({
     action: "parse",
-    text: article.wikitext,
-    title: article.title,
-    contentmodel: "wikitext",
+    ...page,
     prop: "text",
     disablelimitreport: "1",
     disableeditsection: "1",
     formatversion: "2",
     format: "json",
   });
+  return `${getMediaWikiApiUrl(source)}?${query}`;
 }
 
-async function renderOnItsWiki(source: SisterWikiSource, article: WikiArticle): Promise<SisterRender> {
-  const response = await fetchExternalWiki(
-    sisterApiUrl(source),
-    RENDER_TIMEOUT_MS,
-    parseForm(article)
-  );
+async function renderOnItsWiki(
+  source: SisterWikiSource,
+  article: WikiArticle
+): Promise<SisterRender> {
+  const response = await fetchExternalWiki(parseUrl(source, article), RENDER_TIMEOUT_MS);
   if (!response) throw new SisterRenderError(source, "it did not answer");
 
   const answer = (await response.json()) as ParseAnswer;
   const html = answer.parse?.text;
   if (!html) throw new SisterRenderError(source, answer.error?.info ?? "no parse result");
+  if (answer.parse?.title !== article.title) {
+    throw new SisterRenderError(
+      source,
+      `it parsed "${answer.parse?.title}", not "${article.title}"`
+    );
+  }
 
   const transformed = transformArticleHtml(stripConflictingStyles(html), "", source);
   return {
@@ -93,7 +100,8 @@ export async function renderSisterArticle(
   article: WikiArticle
 ): Promise<SisterRender> {
   // A page whose revision is unknown cannot be told from its successor: it is rendered every time.
-  const key = article.revId === undefined ? null : `${source}\u0000${article.title}\u0000${article.revId}`;
+  const key =
+    article.revId === undefined ? null : `${source}\u0000${article.title}\u0000${article.revId}`;
   if (key === null) return renderOnItsWiki(source, article);
 
   const cached = renders.get(key);

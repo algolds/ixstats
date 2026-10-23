@@ -158,6 +158,28 @@ describe("the api.php proxy", () => {
     });
   });
 
+  it("forwards a render of one revision and a page's image list (sister-render-service, page images)", async () => {
+    fetchMock.mockImplementation(async () =>
+      Response.json({ parse: { title: "Afropa", text: "" } })
+    );
+    await apiPhp(
+      "iiwiki",
+      "action=parse&oldid=1072575&prop=text&disableeditsection=1&disablelimitreport=1&formatversion=2"
+    );
+    await apiPhp("iiwiki", "action=parse&page=Afropa&prop=text");
+    await apiPhp("iiwiki", "action=query&titles=Afropa&prop=images&imlimit=50");
+
+    const sent = fetchMock.mock.calls.map(([url]) => new URL(fetchedUrl(url)).searchParams);
+    expect(Object.fromEntries(sent[0]!)).toMatchObject({
+      action: "parse",
+      oldid: "1072575",
+      disableeditsection: "1",
+      disablelimitreport: "1",
+    });
+    expect(sent[1]!.get("page")).toBe("Afropa");
+    expect(sent[2]!.get("imlimit")).toBe("50");
+  });
+
   it("refuses an action iiwiki's list does not allow, and an unknown wiki", async () => {
     expect((await apiPhp("iiwiki", "action=edit")).status).toBe(400);
     expect((await apiPhp("nowhere", "action=query")).status).toBe(404);

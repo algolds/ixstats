@@ -129,13 +129,11 @@ export const wikiosPageContentRouter = createTRPCRouter({
     .query(async ({ input, ctx }) => {
       const { wikiSource } = input;
 
-      // Another wiki's page: its wikitext is fetched from that wiki and rendered by that wiki's own parser
-      // (never IxWiki's, whose templates are not its templates), then sanitized and cached per revision.
+      // Another wiki's page: its wikitext is fetched from that wiki (a redirect followed to the page it names) and
+      // rendered by that wiki's own parser (never IxWiki's, whose templates are not its templates), then sanitized
+      // and cached per revision.
       if (wikiSource !== "ixwiki") {
-        const [article, authorInfo] = await Promise.all([
-          getArticleWikitext(input.title, wikiSource),
-          getArticleAuthors(input.title, wikiSource),
-        ]);
+        const article = await getArticleWikitext(input.title, wikiSource);
         if (!article) {
           throw new TRPCError({
             code: "NOT_FOUND",
@@ -143,12 +141,15 @@ export const wikiosPageContentRouter = createTRPCRouter({
           });
         }
 
-        const rendered = await renderSisterArticle(wikiSource, article).catch((error: Error) => {
-          if (error instanceof SisterRenderError) {
-            throw new TRPCError({ code: "BAD_GATEWAY", message: error.message, cause: error });
-          }
-          throw error;
-        });
+        const [rendered, authorInfo] = await Promise.all([
+          renderSisterArticle(wikiSource, article).catch((error: Error) => {
+            if (error instanceof SisterRenderError) {
+              throw new TRPCError({ code: "BAD_GATEWAY", message: error.message, cause: error });
+            }
+            throw error;
+          }),
+          getArticleAuthors(article.title, wikiSource),
+        ]);
 
         return {
           ...rendered,
@@ -158,7 +159,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
           isRedirect: false,
           redirectTarget: null,
           redirectFragment: null,
-          resolvedFrom: null,
+          /** The redirect the reader asked for ("Redirected from"), or null. */
+          resolvedFrom: article.redirectedFrom ?? null,
           wikiSource,
           authorInfo,
           renderQuality: "rendered" as const,
@@ -227,12 +229,28 @@ export const wikiosPageContentRouter = createTRPCRouter({
     }),
 
   /**
-   * Get raw wikitext for the source editor.
+   * Get raw wikitext for the source editor, or another wiki's page (read only: a country profile's lore), which
+   * has no IxWiki revision to base an edit on.
    */
   getWikitext: publicProcedure
-    .input(z.object({ title: z.string().min(1).max(500) }))
+    .input(
+      z.object({
+        title: z.string().min(1).max(500),
+        wikiSource: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
+      })
+    )
     .query(async ({ input, ctx }) => {
-      await assertTitleVisible(ctx, input.title);
+      await assertTitleVisible(ctx, input.title, input.wikiSource);
+      if (input.wikiSource !== "ixwiki") {
+        const page = await getArticleWikitextShadow(input.title, input.wikiSource);
+        return {
+          wikitext: page?.wikitext ?? "",
+          revid: page?.revid ?? null,
+          timestamp: page?.timestamp ?? null,
+          revisionRef: null,
+          revisionRefs: [] as string[],
+        };
+      }
       // The head revision is read BEFORE the text: a save in between can then only make the text newer
       // than its ref (a harmless extra conflict), never older (which would let a stale edit overwrite it).
       // Without the shadow store the editor still loads; it then saves without a base revision.
