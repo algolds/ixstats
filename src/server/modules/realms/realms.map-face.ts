@@ -22,7 +22,8 @@ interface Extent {
   height: number;
 }
 
-interface FaceRow {
+interface PoliticalRow {
+  status: "open" | "claimed" | "other";
   d: string | null;
   xmin: number | null;
   ymin: number | null;
@@ -30,12 +31,16 @@ interface FaceRow {
   ymax: number | null;
 }
 
-interface PoliticalRow extends FaceRow {
-  status: "open" | "claimed" | "other";
+interface LandRow {
+  d: string | null;
 }
 
 /** Web Mercator scaled so the world is 1000 units wide. */
 const SCALE = 1000 / 40_075_016.68;
+/** Faces are clipped to |latitude| <= 75 degrees, which Mercator inflates towards the poles. In scaled
+ * units that is |y| <= SCALE * R * ln(tan(45deg + 75deg / 2)), with R = 6 378 137 m: about 322.7. */
+const CLIP_Y = SCALE * 6_378_137 * Math.log(Math.tan(Math.PI / 4 + (75 * Math.PI) / 360));
+const CLIP_BOX = `ST_MakeEnvelope(-1000, ${-CLIP_Y}, 1000, ${CLIP_Y})`;
 /** Simplify tolerances in face units (the world is 1000 wide). Never above 1.0: 1.5 segfaulted Postgres. */
 const NATION_TOLERANCE = 0.6;
 /** Land is a backdrop under the nations, so it is simplified more coarsely. */
@@ -76,7 +81,9 @@ const POLITICAL_SQL = `
 WITH nations AS (
   SELECT CASE WHEN c.id IS NULL OR (c."ownerUserId" IS NULL AND NOT c.claimable) THEN 'other'
               WHEN c."ownerUserId" IS NULL THEN 'open' ELSE 'claimed' END AS status,
-         ST_SimplifyPreserveTopology(ST_Scale(ST_Transform(s.g, 3857), $2::float8, $2::float8), $3::float8) AS g
+         ST_ClipByBox2D(
+           ST_SimplifyPreserveTopology(ST_Scale(ST_Transform(s.g, 3857), $2::float8, $2::float8), $3::float8),
+           ${CLIP_BOX}) AS g
   FROM (${layerGeometry("political")}) s
   LEFT JOIN "Country" c ON c.id = s."countryId"
 )
@@ -88,18 +95,19 @@ FROM nations WHERE NOT ST_IsEmpty(g) GROUP BY status`;
 const LAND_SQL = `
 WITH land AS (
   SELECT ST_UnaryUnion(ST_CollectionExtract(ST_Collect(
-           ST_MakeValid(ST_SimplifyPreserveTopology(ST_Scale(ST_Transform(s.g, 3857), $2::float8, $2::float8), $3::float8))), 3)) AS g
+           ST_ClipByBox2D(
+             ST_MakeValid(ST_SimplifyPreserveTopology(ST_Scale(ST_Transform(s.g, 3857), $2::float8, $2::float8), $3::float8)),
+             ${CLIP_BOX})), 3)) AS g
   FROM (${layerGeometry("climate", NOT_POLAR_CAP)}) s
   WHERE NOT ST_IsEmpty(s.g)
 )
-SELECT ST_AsSVG(g, 1, 0) AS d,
-       ST_XMin(g) AS xmin, ST_YMin(g) AS ymin, ST_XMax(g) AS xmax, ST_YMax(g) AS ymax
-FROM land`;
+SELECT ST_AsSVG(g, 1, 0) AS d FROM land`;
 
-/** The union of every row's extent, skipping rows with no geometry; null when none has any. */
-function unionExtent(rows: FaceRow[]): Extent | null {
+/** The union of the nations' extents, skipping rows with no geometry; null when none has any. Land
+ * fills the face but never frames it. */
+function unionExtent(rows: PoliticalRow[]): Extent | null {
   const boxes = rows.filter(
-    (r): r is FaceRow & { xmin: number; ymin: number; xmax: number; ymax: number } =>
+    (r): r is PoliticalRow & { xmin: number; ymin: number; xmax: number; ymax: number } =>
       r.d !== null && r.xmin !== null && r.ymin !== null && r.xmax !== null && r.ymax !== null
   );
   if (boxes.length === 0) return null;
@@ -114,8 +122,8 @@ function unionExtent(rows: FaceRow[]): Extent | null {
 async function buildFace(db: Pick<PrismaClient, "$queryRawUnsafe">, realmId: string): Promise<RealmMapFace | null> {
   const political = await db.$queryRawUnsafe<PoliticalRow[]>(POLITICAL_SQL, realmId, SCALE, NATION_TOLERANCE);
   if (political.length === 0) return null;
-  const [land = null] = await db.$queryRawUnsafe<FaceRow[]>(LAND_SQL, realmId, SCALE, LAND_TOLERANCE);
-  const extent = unionExtent(land ? [...political, land] : political);
+  const [land = null] = await db.$queryRawUnsafe<LandRow[]>(LAND_SQL, realmId, SCALE, LAND_TOLERANCE);
+  const extent = unionExtent(political);
   if (!extent) return null;
   const pathOf = (status: PoliticalRow["status"]) => political.find((r) => r.status === status)?.d ?? "";
   return {

@@ -48,3 +48,16 @@ it("path strings carry no collection separators", async () => {
   expect(sql).toContain("ST_CollectionExtract");
   expect(sql).toMatch(/ST_CollectionExtract\(ST_Collect\(g\), 3\)/);
 });
+it("frames the face on the nations alone, never on the land", async () => {
+  const bare = dbWith([row("open", "M 0 0 z")]);
+  const withLand = dbWith([row("open", "M 0 0 z")], [{ d: "M -900 -300 z", xmin: -900, ymin: -300, xmax: 900, ymax: 300 }]);
+  const a = await getRealmMapFace(bare as never, "realm-e", 0);
+  const b = await getRealmMapFace(withLand as never, "realm-f", 0);
+  expect(b?.land).toBe("M -900 -300 z");
+  expect(b?.viewBox).toBe(a?.viewBox);
+});
+it("clips nations and land to the latitude band before drawing", async () => {
+  const db = dbWith([row("open", "M 0 0 z")]);
+  await getRealmMapFace(db as never, "realm-g", 0);
+  for (const [sql] of db.$queryRawUnsafe.mock.calls) expect(sql).toContain("ST_ClipByBox2D");
+});
