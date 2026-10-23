@@ -65,6 +65,17 @@ async function filePageLicenceHints(query: WikiQuery, fileTitle: string): Promis
   return [...categories, ...licenceTemplates(page.revisions?.[0]?.slots.main.content ?? "")];
 }
 
+/** The file page's visible category names, without the `Category:` prefix: what a Commons card is classified by. */
+export async function fileCategories(query: WikiQuery, fileTitle: string): Promise<string[]> {
+  const data = await query(
+    { titles: fileTitle, prop: "categories", clshow: "!hidden", cllimit: "50" },
+    FilePageSchema
+  );
+  return (data.query?.pages[0]?.categories ?? []).map((category) =>
+    category.title.replace(/^Category:/, "")
+  );
+}
+
 /** The hint that decides: a restricted licence over an open one; null when no hint reads as a licence. */
 function decidingHint(hints: string[]): string | null {
   const status = (hint: string) => classifyLicence([hint]);
