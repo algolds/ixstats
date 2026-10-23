@@ -3,13 +3,21 @@
 import { MAX_FILTER_REVIEW } from "~/lib/cards/curation-limits";
 import { CARD_VALUATION_DEFAULTS, referenceValue } from "~/lib/cards/valuation";
 import {
+  LibraryEditSchema,
   LibraryFilterSchema,
   bulkSetRetired,
   updateLibraryCard,
   type BulkSetRetiredInput,
   type LibraryEdit,
 } from "~/server/modules/cards/cards.library";
+import { setCardCategoryTx } from "~/server/modules/cards/cards.categories";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
+
+jest.mock("~/server/modules/cards/cards.categories", () => ({
+  setCardCategoryTx: jest.fn(async () => ({ changed: true })),
+}));
+
+beforeEach(() => jest.clearAllMocks());
 
 const actor = { dbId: "db_admin", clerkId: "clerk_admin" };
 const AS_OF = new Date("2026-10-01T12:00:00Z");
@@ -41,6 +49,8 @@ describe("updateLibraryCard", () => {
     firstSoldAt: Date | null;
     metadata: object | null;
     artLicence: { status: string } | null;
+    category: "HISTORY" | "MILITARY" | null;
+    subcategory: string | null;
     _count: { takedowns: number };
   }
   const stored = (over: Partial<Stored> = {}): Stored => ({
@@ -55,6 +65,8 @@ describe("updateLibraryCard", () => {
     firstSoldAt: null,
     metadata: null,
     artLicence: null,
+    category: "HISTORY",
+    subcategory: null,
     _count: { takedowns: 0 },
     ...over,
   });
@@ -171,6 +183,62 @@ describe("updateLibraryCard", () => {
       updateLibraryCard(db as never, actor, { ...edit, retired: false })
     ).rejects.toThrow(/from Compliance/);
     expect(tx.card.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("changes only the category through the one category write, inside the edit's transaction", async () => {
+    const { db, tx, edit } = setUp();
+    await updateLibraryCard(db as never, actor, {
+      ...edit,
+      category: { category: "MILITARY", subcategory: "unit" },
+    });
+    expect(jest.mocked(setCardCategoryTx)).toHaveBeenCalledWith(tx, {
+      cardId: "card_1",
+      choice: { category: "MILITARY", subcategory: "unit" },
+      source: "ADMIN",
+      editor: actor,
+    });
+    expect(tx.card.updateMany).not.toHaveBeenCalled();
+    expect(actions(tx)).toEqual([]);
+  });
+
+  it("writes the words and the category together when both change", async () => {
+    const { db, tx, edit } = setUp();
+    await updateLibraryCard(db as never, actor, {
+      ...edit,
+      title: "Elm II",
+      category: { category: "HISTORY", subcategory: "event" },
+    });
+    expect(tx.card.updateMany.mock.calls[0]![0].data).toEqual({ title: "Elm II" });
+    expect(actions(tx)).toEqual(["CARD_UPDATE"]);
+    expect(jest.mocked(setCardCategoryTx)).toHaveBeenCalledWith(
+      tx,
+      expect.objectContaining({ choice: { category: "HISTORY", subcategory: "event" } })
+    );
+  });
+
+  it("leaves the category alone when the sheet sends it unchanged, or not at all", async () => {
+    const { db, edit } = setUp();
+    await updateLibraryCard(db as never, actor, {
+      ...edit,
+      category: { category: "HISTORY", subcategory: null },
+    });
+    await updateLibraryCard(db as never, actor, edit);
+    expect(jest.mocked(setCardCategoryTx)).not.toHaveBeenCalled();
+  });
+
+  it("refuses a subcategory that is not in its category before reading anything", () => {
+    expect(
+      LibraryEditSchema.safeParse({
+        cardId: "card_1",
+        title: "Elm",
+        description: "",
+        artwork: null,
+        rarity: "COMMON",
+        retired: false,
+        category: { category: "HISTORY", subcategory: "army" },
+        expected: { artwork: null, isRetired: false, rarity: "COMMON" },
+      }).success
+    ).toBe(false);
   });
 });
 

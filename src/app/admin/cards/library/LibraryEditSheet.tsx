@@ -1,5 +1,8 @@
 "use client";
-/** Edit one card: its title, description and art, its rarity (with a reason, audited) and whether it is hidden. */
+/**
+ * Edit one card: its title, description and art, its rarity (with a reason, audited), whether it is hidden and, for a
+ * lore card, its category.
+ */
 import { useState } from "react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -10,6 +13,8 @@ import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/com
 import { Switch } from "~/components/ui/switch";
 import { Textarea } from "~/components/ui/textarea";
 import { ValueSelect } from "~/components/ui/value-select";
+import { CategoryPicker } from "~/components/cards/category/CategoryPicker";
+import type { CategoryChoice } from "~/lib/cards/category-taxonomy";
 import { lacksRarityReason } from "~/lib/cards/curation-limits";
 import { RARITIES, RARITY_LABELS, type RarityValue } from "../shared/card-labels";
 
@@ -33,6 +38,7 @@ interface Draft {
   rarity: RarityValue;
   retired: boolean;
   reason: string;
+  category: CategoryChoice;
 }
 
 /** Why the card cannot be saved yet, or null. The server checks the same rules; this says which one. */
@@ -64,6 +70,7 @@ export function LibraryEditSheet({
     rarity: card.rarity,
     retired: card.isRetired,
     reason: "",
+    category: { category: card.category, subcategory: card.subcategory },
   });
   const update = api.cards.admin.library.update.useMutation({
     onSuccess: () => {
@@ -83,6 +90,8 @@ export function LibraryEditSheet({
       setDraft((current) => ({ ...current, [key]: value }));
   const hold = complianceHold(card);
   const rarityChanged = draft.rarity !== card.rarity;
+  const categoryChanged =
+    draft.category.category !== card.category || draft.category.subcategory !== card.subcategory;
   const blocker = saveBlocker(card, draft);
   const submit = () =>
     update.mutate({
@@ -93,6 +102,7 @@ export function LibraryEditSheet({
       rarity: draft.rarity,
       retired: draft.retired,
       ...(rarityChanged ? { reason: draft.reason.trim() } : {}),
+      ...(categoryChanged ? { category: draft.category } : {}),
       expected: { artwork: card.artwork, isRetired: card.isRetired, rarity: card.rarity },
     });
 
@@ -153,6 +163,13 @@ export function LibraryEditSheet({
                 onChange={(event) => set("reason")(event.target.value)}
               />
             </div>
+          )}
+          {card.cardType === "LORE" && (
+            <CategoryPicker
+              idPrefix="library-category"
+              value={draft.category}
+              onChange={set("category")}
+            />
           )}
           <div className="space-y-1">
             <div className="flex items-center gap-2">

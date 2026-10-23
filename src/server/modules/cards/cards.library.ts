@@ -1,6 +1,6 @@
 /**
  * The Library: a realm-scoped explorer over every card (realm, type, rarity, source wiki, retired, art hidden,
- * bound), an edit with an audited rarity override, and bulk hide. Hiding retires a card: it leaves packs and Explore,
+ * bound), an edit with an audited rarity override and category, and bulk hide. Hiding retires a card: it leaves packs and Explore,
  * and owned copies stay. Art a takedown hides, or whose licence is restricted, is changed and shown again only from
  * Compliance, so the Library never un-hides it by accident.
  */
@@ -9,6 +9,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { EXCLUDE_RESTRICTED_ART } from "~/lib/cards/art-licence";
 import { cardWikiSourceSchema } from "~/lib/cards/card-sources";
+import { CategoryChoiceSchema, type CategoryChoice } from "~/lib/cards/category-taxonomy";
 import { cardCount, lacksRarityReason } from "~/lib/cards/curation-limits";
 import { CardRarity, CardType } from "~/lib/cards/enums";
 import { nsBankValue } from "~/lib/cards/ns-facts";
@@ -16,6 +17,7 @@ import { getValuationConfig, referenceValue } from "~/lib/cards/valuation";
 import type { CardAdminActor } from "~/server/shared/admin-actor";
 import { recordCardAudit } from "./cards.audit";
 import { assertBulkRead, assertBulkRecountTx } from "./cards.bulk";
+import { setCardCategoryTx } from "./cards.categories";
 import {
   HIDDEN_TAKEDOWNS,
   artLicenceFollowsTx,
@@ -119,6 +121,10 @@ export async function listLibrary(
         rewardAchievementKey: true,
         reviewState: true,
         marketValue: true,
+        category: true,
+        subcategory: true,
+        categorySource: true,
+        categoryNeedsReview: true,
         realm: { select: { name: true } },
         artLicence: { select: { status: true } },
         _count: { select: { CardOwnership: true, takedowns: HIDDEN_TAKEDOWNS } },
@@ -140,6 +146,8 @@ export const LibraryEditSchema = z.object({
   rarity: z.enum(CardRarity),
   retired: z.boolean(),
   reason: z.string().trim().max(500).optional(),
+  /** A lore card's category, sent only when the admin changed it. */
+  category: CategoryChoiceSchema.optional(),
   /** The card as the admin opened it: an edit over anything changed since is refused. */
   expected: z.object({
     artwork: z.string().max(2000).nullable(),
@@ -167,11 +175,16 @@ function editedCard(tx: Prisma.TransactionClient, id: string) {
       isRetired: true,
       firstSoldAt: true,
       metadata: true,
+      category: true,
+      subcategory: true,
       artLicence: { select: { status: true } },
       _count: { select: { takedowns: HIDDEN_TAKEDOWNS } },
     },
   });
 }
+
+const categoryChanged = (card: EditedCard, choice: CategoryChoice) =>
+  card.category !== choice.category || card.subcategory !== choice.subcategory;
 
 function assertEditable(card: EditedCard, input: LibraryEdit) {
   const { expected } = input;
@@ -243,9 +256,48 @@ async function valueAtRarity(
 }
 
 /**
- * Edit one card: its words, art, rarity (with a reason, re-priced and audited) and whether it is hidden. It runs
- * under the card's takedown lock, which every hide takes, so the hold it reads stands until it commits; the write
- * holds only over the art, visibility and rarity it read, which a bulk hide or a sync may change meanwhile.
+ * The conditional write of an edit's words, art, rarity and visibility, and their audit rows. The write holds only
+ * over the art, visibility and rarity the edit read, which a bulk hide or a sync may change meanwhile.
+ */
+async function writeEdit(
+  tx: Prisma.TransactionClient,
+  actor: CardAdminActor,
+  card: EditedCard,
+  input: LibraryEdit,
+  { data, edited }: ReturnType<typeof wordsAndArt>
+): Promise<void> {
+  // No `takedowns none HIDDEN` term: every hide in the app holds the lock this edit holds. The one exception is the
+  // compliance backfill (scripts/cards/backfill-card-compliance.ts), a one-off runbook step that writes HIDDEN rows
+  // without it, for cards already hidden and artless.
+  const written = await tx.card.updateMany({
+    where: { id: card.id, artwork: card.artwork, isRetired: card.isRetired, rarity: card.rarity },
+    data,
+  });
+  if (written.count !== 1) {
+    throw new TRPCError({
+      code: "CONFLICT",
+      message: "This card changed while you edited it. Reload and try again.",
+    });
+  }
+  if (edited.includes("art")) await artLicenceFollowsTx(tx, card, input.artwork, "Library");
+  const audit = (action: "CARD_RARITY_OVERRIDE" | "CARD_UPDATE" | "CARD_HIDE", details: string) =>
+    recordCardAudit(tx, { action, actor: actor.clerkId, target: card.id, details });
+  if (input.rarity !== card.rarity) {
+    await audit(
+      "CARD_RARITY_OVERRIDE",
+      `Rarity ${card.rarity} → ${input.rarity}: ${input.reason?.trim()}`
+    );
+  }
+  if (edited.length > 0)
+    await audit("CARD_UPDATE", `Edited the ${edited.join(", ")} of ${input.title}`);
+  if (input.retired !== card.isRetired)
+    await audit("CARD_HIDE", `${input.retired ? "Hid" : "Unhid"} ${input.title}`);
+}
+
+/**
+ * Edit one card: its words, art, rarity (with a reason, re-priced and audited), whether it is hidden and, for a lore
+ * card, its category (through the one category write, which audits it). It runs under the card's takedown lock, which
+ * every hide takes, so the hold it reads stands until it commits.
  */
 export async function updateLibraryCard(
   db: PrismaClient,
@@ -257,45 +309,24 @@ export async function updateLibraryCard(
     const card = await editedCard(tx, input.cardId);
     if (!card) throw new TRPCError({ code: "NOT_FOUND", message: "Card not found" });
     assertEditable(card, input);
-    const { data, edited } = wordsAndArt(card, input);
-    const rarityChanged = input.rarity !== card.rarity;
-    const retiredChanged = input.retired !== card.isRetired;
-    if (rarityChanged) {
-      data.rarity = input.rarity;
-      data.marketValue = await valueAtRarity(tx, db, card, input.rarity);
+    const change = wordsAndArt(card, input);
+    if (input.rarity !== card.rarity) {
+      change.data.rarity = input.rarity;
+      change.data.marketValue = await valueAtRarity(tx, db, card, input.rarity);
     }
-    if (retiredChanged) {
-      data.isRetired = input.retired;
-      data.retiredAt = input.retired ? new Date() : null;
+    if (input.retired !== card.isRetired) {
+      change.data.isRetired = input.retired;
+      change.data.retiredAt = input.retired ? new Date() : null;
     }
-    if (Object.keys(data).length === 0) return;
-
-    // No `takedowns none HIDDEN` term: every hide in the app holds the lock this edit holds. The one exception is the
-    // compliance backfill (scripts/cards/backfill-card-compliance.ts), a one-off runbook step that writes HIDDEN rows
-    // without it, for cards already hidden and artless.
-    const written = await tx.card.updateMany({
-      where: { id: card.id, artwork: card.artwork, isRetired: card.isRetired, rarity: card.rarity },
-      data,
-    });
-    if (written.count !== 1) {
-      throw new TRPCError({
-        code: "CONFLICT",
-        message: "This card changed while you edited it. Reload and try again.",
+    if (Object.keys(change.data).length > 0) await writeEdit(tx, actor, card, input, change);
+    if (input.category && categoryChanged(card, input.category)) {
+      await setCardCategoryTx(tx, {
+        cardId: card.id,
+        choice: input.category,
+        source: "ADMIN",
+        editor: actor,
       });
     }
-    if (edited.includes("art")) await artLicenceFollowsTx(tx, card, input.artwork, "Library");
-    const audit = (action: "CARD_RARITY_OVERRIDE" | "CARD_UPDATE" | "CARD_HIDE", details: string) =>
-      recordCardAudit(tx, { action, actor: actor.clerkId, target: card.id, details });
-    if (rarityChanged) {
-      await audit(
-        "CARD_RARITY_OVERRIDE",
-        `Rarity ${card.rarity} → ${input.rarity}: ${input.reason?.trim()}`
-      );
-    }
-    if (edited.length > 0)
-      await audit("CARD_UPDATE", `Edited the ${edited.join(", ")} of ${input.title}`);
-    if (retiredChanged)
-      await audit("CARD_HIDE", `${input.retired ? "Hid" : "Unhid"} ${input.title}`);
   });
 }
 
