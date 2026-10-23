@@ -2,8 +2,13 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { namesOfUser } from "~/lib/identity/wiki-names";
 import { createTRPCRouter, lightMutationProcedure, protectedProcedure } from "~/server/api/trpc";
+import { forgetContextUser } from "~/server/api/trpc/context";
 import { db } from "~/server/db";
-import { HandleClaimError, setUserHandle } from "~/server/modules/identity/identity.handle-claim";
+import {
+  HandleClaimError,
+  setUserHandle,
+  suggestHandleFor,
+} from "~/server/modules/identity/identity.handle-claim";
 import { loadPassportHandle } from "~/server/modules/identity/identity.passport-handle";
 import { isSiteAdmin, type RealmActor } from "~/server/modules/realms/realms.access";
 
@@ -124,16 +129,24 @@ export const ixnayidCoreRouter = createTRPCRouter({
     };
   }),
 
+  /** The handle the WikiOS first-save picker prefills (null when no name gives one). */
+  suggestHandle: protectedProcedure.query(async ({ ctx }) => ({
+    handle: await suggestHandleFor(ctx.user.id),
+  })),
+
   /** Claim or change the signed-in user's IxStates Passport handle. */
   setHandle: lightMutationProcedure
     .input(z.object({ handle: z.string().min(1).max(64) }))
     .mutation(async ({ ctx, input }) => {
       try {
-        return await setUserHandle({
+        const saved = await setUserHandle({
           userId: ctx.user.id,
           handle: input.handle,
           isAdmin: callerIsAdmin(ctx),
         });
+        // The save the WikiOS picker retries next must be signed with this handle, not refused by a cached context.
+        forgetContextUser(ctx.user.clerkUserId);
+        return saved;
       } catch (error) {
         if (!(error instanceof HandleClaimError)) throw error;
         throw new TRPCError({ code: HANDLE_ERROR_CODES[error.code], message: error.message });

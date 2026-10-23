@@ -1,11 +1,12 @@
 /**
  * Claiming or changing a user's IxStates Passport handle (`ixnayid.setHandle`). A first claim (no
  * stored handle) is free; changing a stored handle is allowed once (`User.handleChangedAt`), and
- * admins may always change theirs.
+ * admins may always change theirs. `suggestHandleFor` prefills the WikiOS first-save handle picker.
  */
 import { Prisma } from "@prisma/client";
+import { primaryNameOf } from "~/lib/identity/wiki-names";
 import { db } from "~/server/db";
-import { validateHandle } from "./identity.handle";
+import { chooseBackfillHandle, pickAvailableHandle, validateHandle } from "./identity.handle";
 
 type HandleClaimErrorCode = "FORMAT" | "RESERVED" | "TAKEN" | "ALREADY_CHANGED" | "NO_USER";
 
@@ -72,4 +73,38 @@ export async function setUserHandle(input: {
     if (error instanceof Error && isUniqueViolation(error)) throw takenError(handle);
     throw error;
   }
+}
+
+/**
+ * Leaves room for `pickAvailableHandle`'s numeric suffix: a 24-character base becomes `<first 22>_2`, which does not
+ * start with the base, so stored handles are matched on a shorter prefix.
+ */
+const TAKEN_PREFIX_LENGTH = 20;
+
+/**
+ * The handle the first-save picker offers a handle-less player: from their first shown wiki name, else their forum
+ * name, else their nation's name (`chooseBackfillHandle`), numbered past the stored handles. Never a hidden claim's
+ * name; null when no name gives a handle.
+ */
+export async function suggestHandleFor(userId: string): Promise<string | null> {
+  const [user, wiki] = await Promise.all([
+    db.user.findUnique({
+      where: { id: userId },
+      select: { forumUsername: true, country: { select: { name: true } } },
+    }),
+    primaryNameOf(db, userId, { shown: true }),
+  ]);
+  const choice = chooseBackfillHandle({
+    wiki,
+    forum: user?.forumUsername ?? null,
+    persona: null,
+    nation: user?.country?.name ?? null,
+  });
+  if (!choice) return null;
+  const stored = await db.user.findMany({
+    where: { handle: { startsWith: choice.handle.slice(0, TAKEN_PREFIX_LENGTH) } },
+    select: { handle: true },
+  });
+  const taken = new Set(stored.flatMap((row) => (row.handle ? [row.handle] : [])));
+  return pickAvailableHandle(choice.handle, taken);
 }

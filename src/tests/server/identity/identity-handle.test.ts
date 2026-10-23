@@ -5,12 +5,14 @@
  * handle is refused (a unique-constraint race too), and the self-service change is allowed once (admins may always
  * change it). `getStatus` reports the change as used, the old forum account from the kept columns, writing nothing, and
  * the owner's own first approved wiki name (hidden or not), while the passport handle takes only a shown one.
+ * `suggestHandle` prefills the first-save handle picker: from a shown claim, the forum name or the nation, made free of
+ * the stored handles, never from a hidden claim.
  *
  * Folds ixnayid-set-handle and ixnayid-forum-readonly.
  */
 jest.mock("~/server/db", () => {
   const db = {
-    user: { findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
+    user: { findUnique: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), update: jest.fn() },
     country: { findUnique: jest.fn().mockResolvedValue(null) },
     thinkpagesAccount: { findFirst: jest.fn().mockResolvedValue(null) },
     wikiNameClaim: { findMany: jest.fn().mockResolvedValue([]) },
@@ -72,7 +74,7 @@ describe("a handle", () => {
 });
 
 const mocked = db as unknown as {
-  user: { findUnique: jest.Mock; findFirst: jest.Mock; update: jest.Mock };
+  user: { findUnique: jest.Mock; findFirst: jest.Mock; findMany: jest.Mock; update: jest.Mock };
   wikiNameClaim: { findMany: jest.Mock };
 };
 const createCaller = createCallerFactory(ixnayidCoreRouter);
@@ -115,6 +117,7 @@ const CHANGED = new Date("2026-09-01T00:00:00Z");
 beforeEach(() => {
   mocked.user.findUnique.mockReset();
   mocked.user.findFirst.mockReset().mockResolvedValue(null);
+  mocked.user.findMany.mockReset().mockResolvedValue([]);
   mocked.user.update
     .mockReset()
     .mockImplementation(({ data }: { data: { handle: string } }) =>
@@ -273,5 +276,71 @@ describe("ixnayid.getStatus wiki name", () => {
       isCustomClaimed: false,
       lastSync: null,
     });
+  });
+});
+
+describe("ixnayid.suggestHandle", () => {
+  /** The owner's approved claims; a `shown` read keeps the visible ones. */
+  const claims = (rows: Array<{ name: string; visible: boolean }>) =>
+    mocked.wikiNameClaim.findMany.mockImplementation(
+      async ({ where }: { where: { visible?: boolean } }) =>
+        rows
+          .filter((row) => !where.visible || row.visible)
+          .map((row, i) => ({
+            id: `c${i}`,
+            userId: "db_1",
+            rightsPass: false,
+            decidedAt: null,
+            mwUserId: null,
+            ...row,
+          }))
+    );
+
+  afterEach(() => {
+    mocked.wikiNameClaim.findMany.mockReset().mockResolvedValue([]);
+  });
+
+  it("takes the shown claim, made free of the stored handles", async () => {
+    storedUser(null, null);
+    claims([{ name: "Old name", visible: true }]);
+    mocked.user.findMany.mockResolvedValue([{ handle: "old_name" }, { handle: "old_name_3" }]);
+    await expect(caller().suggestHandle()).resolves.toEqual({ handle: "old_name_2" });
+    expect(mocked.user.findMany).toHaveBeenCalledTimes(1);
+    expect(mocked.user.findMany.mock.calls[0]![0]).toMatchObject({
+      where: { handle: { startsWith: "old_name" } },
+    });
+  });
+
+  it("counts stored handles the numbering shortened, for a 24-character name", async () => {
+    storedUser(null, null);
+    claims([{ name: "A very long old wiki name", visible: true }]);
+    const stored = ["a_very_long_old_wiki_nam", "a_very_long_old_wiki_n_2", "someone_else"];
+    mocked.user.findMany.mockImplementation(
+      async ({ where }: { where: { handle: { startsWith: string } } }) =>
+        stored.filter((h) => h.startsWith(where.handle.startsWith)).map((handle) => ({ handle }))
+    );
+    await expect(caller().suggestHandle()).resolves.toEqual({
+      handle: "a_very_long_old_wiki_n_3",
+    });
+  });
+
+  it("never offers a hidden claim's name: the forum name comes next", async () => {
+    storedUser(null, null);
+    claims([{ name: "Secret Name", visible: false }]);
+    await expect(caller().suggestHandle()).resolves.toEqual({ handle: "kir_forum" });
+  });
+
+  it("falls back to the nation's name", async () => {
+    mocked.user.findUnique.mockResolvedValue({
+      forumUsername: null,
+      country: { name: "Caphiria" },
+    });
+    await expect(caller().suggestHandle()).resolves.toEqual({ handle: "caphiria" });
+  });
+
+  it("suggests nothing when the user has no name to make one from", async () => {
+    mocked.user.findUnique.mockResolvedValue({ forumUsername: null, country: null });
+    await expect(caller().suggestHandle()).resolves.toEqual({ handle: null });
+    expect(mocked.user.findMany).not.toHaveBeenCalled();
   });
 });
