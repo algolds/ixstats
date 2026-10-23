@@ -3,9 +3,11 @@
  * Card categories phase: classify every Lore card from its wiki's infoboxes and categories, and its title and
  * excerpt. Each wiki is read through its api.php (`prop=categories|templates`, 50 titles a request, one request a
  * second, User-Agent IxStats-Builder), every continuation followed. A card below the review threshold, or with nothing
- * to go on, waits in the admin review queue ("Uncategorised" when no category scored). The dry run writes a report
+ * to go on, waits in the admin review queue ("Uncategorised" when no category scored). A retired card is skipped, and a
+ * card whose article is tagged Abandoned Lore is retired by the apply (held copies kept, one CARD_HIDE audit row
+ * each), never queued for review. The dry run writes a report
  * (the distribution, a confidence histogram to choose the threshold, a sample per category, the low-confidence list,
- * the changes and the unmapped wiki categories and infoboxes) to scripts/reports/.
+ * the changes, the Abandoned Lore cards and the unmapped wiki categories and infoboxes) to scripts/reports/.
  *
  *   bun scripts/cards/backfill-card-categories.ts                     # dry run: writes the report, not the cards
  *   bun scripts/cards/backfill-card-categories.ts --apply             # write the categories, then drop the labels
@@ -29,6 +31,7 @@ import { dirname } from "path";
 import { PrismaClient, type Prisma } from "@prisma/client";
 import { z } from "zod";
 import {
+  abandonedRows,
   buildBackfillReport,
   collectPageSignals,
   planCardCategory,
@@ -40,7 +43,11 @@ import {
   type PageSignals,
   type PagesResponse,
 } from "~/lib/cards/category-backfill";
-import { parseCardWikiSource, type CardWikiSource } from "~/lib/cards/card-sources";
+import {
+  cardSourceLabel,
+  parseCardWikiSource,
+  type CardWikiSource,
+} from "~/lib/cards/card-sources";
 import { CATEGORY_REVIEW_THRESHOLD, classifierColumns } from "~/lib/cards/category-classifier";
 import { isJsonObject } from "~/lib/cards/ns-facts";
 import type { WikiQuery } from "~/lib/realms/lore-import";
@@ -50,6 +57,7 @@ import {
   DiscoveryStopped,
 } from "~/lib/realms/sources/wiki-discovery-client";
 import { titleKey } from "~/lib/wiki-os/core/title";
+import { recordCardAudit } from "~/server/modules/cards/cards.audit";
 
 const TITLES_PER_REQUEST = 50;
 const APPLY_BATCH = 200;
@@ -126,6 +134,7 @@ const CARD_SELECT = {
   category: true,
   subcategory: true,
   categorySource: true,
+  isRetired: true,
 } satisfies Prisma.CardSelect;
 
 type CardRow = Prisma.CardGetPayload<{ select: typeof CARD_SELECT }>;
@@ -143,6 +152,7 @@ function toBackfillCard(row: CardRow): BackfillCard {
     subcategory: row.subcategory,
     categorySource: row.categorySource,
     hasLegacyLabel: metadata !== null && "category" in metadata,
+    retired: row.isRetired,
   };
 }
 
@@ -217,6 +227,40 @@ export async function dropLegacyLabels(db: PrismaClient): Promise<number> {
       AND "categorySource" IS NOT NULL`;
 }
 
+type AbandonedCard = Pick<BackfillCard, "id" | "title" | "source">;
+
+/**
+ * Retires each card tagged Abandoned Lore that is not yet retired, as `retire-seed-cards.ts` does: one CARD_HIDE audit
+ * row each, held copies kept. A card already retired is left alone, so a re-run writes no second audit row.
+ */
+export async function retireAbandoned(
+  db: Pick<PrismaClient, "$transaction">,
+  cards: readonly AbandonedCard[]
+): Promise<number> {
+  if (cards.length === 0) return 0;
+  return db.$transaction(
+    async (tx) => {
+      let retired = 0;
+      for (const card of cards) {
+        const { count } = await tx.card.updateMany({
+          where: { id: card.id, cardType: "LORE", isRetired: false },
+          data: { isRetired: true, retiredAt: new Date() },
+        });
+        if (count === 0) continue;
+        retired += 1;
+        await recordCardAudit(tx, {
+          action: "CARD_HIDE",
+          actor: null,
+          target: card.id,
+          details: `Retired: its ${cardSourceLabel(card.source)} article is tagged Abandoned Lore`,
+        });
+      }
+      return retired;
+    },
+    { timeout: 60_000 }
+  );
+}
+
 const PageSignalsSchema = z.object({
   categories: z.array(z.string()),
   templates: z.array(z.string()),
@@ -274,12 +318,12 @@ async function readWikis(
   return stops;
 }
 
-/** Plans every card, reads what the plan needs, reports, and with `apply` writes. */
+/** Plans every card, reads what the plan needs, reports, and with `apply` writes, then retires the abandoned. */
 export async function runBackfill(
   db: PrismaClient,
   options: BackfillOptions,
   deps: BackfillDeps
-): Promise<{ report: BackfillReport; written: number; swept: number }> {
+): Promise<{ report: BackfillReport; written: number; swept: number; retired: number }> {
   const cards = await readBackfillCards(db, options.source);
   const plan = (card: BackfillCard) => {
     const signals = card.articleTitle
@@ -302,10 +346,14 @@ export async function runBackfill(
     mode: options.apply ? "apply" : "dry-run",
     stops,
   });
-  if (!options.apply) return { report, written: 0, swept: 0 };
+  if (!options.apply) return { report, written: 0, swept: 0, retired: 0 };
   const written = await applyDecisions(db, rows);
   const swept = report.legacyLabels.sweepRuns ? await dropLegacyLabels(db) : 0;
-  return { report, written, swept };
+  const retired = await retireAbandoned(
+    db,
+    abandonedRows(rows).map(({ card }) => card)
+  );
+  return { report, written, swept, retired };
 }
 
 export interface BackfillArgs extends BackfillOptions {
@@ -361,7 +409,7 @@ async function main() {
     `scripts/reports/card-categories-${new Date().toISOString().replace(/[:.]/g, "-")}.md`;
   const db = new PrismaClient();
   try {
-    const { report, written, swept } = await runBackfill(db, args, {
+    const { report, written, swept, retired } = await runBackfill(db, args, {
       queryFor: (source) =>
         createDiscoveryClient(source, {
           apiUrl: backfillApiUrl(source),
@@ -377,11 +425,13 @@ async function main() {
     writeFile(reportPath.replace(/(\.md)?$/, ".json"), JSON.stringify(report, null, 2));
     const { counts } = report;
     console.log(
-      `${counts.writes} to write (${counts.review} for review, ${counts.changes} changes), ${counts.protected} protected, ${counts.kept} kept, ${counts.unread} not read.`
+      `${counts.writes} to write (${counts.review} for review, ${counts.changes} changes), ${counts.protected} protected, ${counts.kept} kept, ${counts.unread} not read, ${counts.retired} retired and skipped, ${counts.abandoned} Abandoned Lore.`
     );
     console.log(`Report: ${reportPath}`);
     if (args.apply) {
-      console.log(`${written} cards written; ${swept} legacy labels swept.`);
+      console.log(
+        `${written} cards written; ${swept} legacy labels swept; ${retired} Abandoned Lore cards retired.`
+      );
     } else {
       console.log("Dry run: no card written. Re-run with --apply.");
     }

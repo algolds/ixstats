@@ -26,10 +26,13 @@ export interface LoreCardCandidate {
 /** The reason recorded for a page outside the main namespace (a portal, a user blog, a template). */
 export const NOT_ARTICLE_REASON = "Not an article";
 
+/** The reason recorded for an article its wiki tags Abandoned Lore. */
+export const ABANDONED_LORE_REASON = "Its article is tagged Abandoned Lore";
+
 /** Why an article cannot become a card; the importer records the reason and skips the page. */
 export class ArticleRejected extends Error {
   constructor(
-    public readonly kind: "missing" | "not-article" | "no-image" | "too-short",
+    public readonly kind: "missing" | "not-article" | "abandoned" | "no-image" | "too-short",
     message: string
   ) {
     super(message);

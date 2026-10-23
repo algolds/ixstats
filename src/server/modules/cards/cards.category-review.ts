@@ -16,11 +16,12 @@ interface Page {
 
 const WAITING_CLASSIFICATIONS = {
   cardType: "LORE",
+  isRetired: false,
   categoryNeedsReview: true,
   categorySource: "CLASSIFIER",
 } satisfies Prisma.CardWhereInput;
 
-/** Lore cards the classifier placed with low confidence or not at all, least confident first. */
+/** Lore cards (not retired) the classifier placed with low confidence or not at all, least confident first. */
 export async function listCategoryClassifications(db: PrismaClient, page: Page) {
   const [rows, total] = await Promise.all([
     db.card.findMany({

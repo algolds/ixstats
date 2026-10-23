@@ -1,5 +1,6 @@
 /** @jest-environment node */
 /** The categories backfill script: guarded writes, every continuation followed, the IIWiki dev proxy honoured. */
+import { CATEGORY_REVIEW_THRESHOLD } from "~/lib/cards/category-classifier";
 import type { WikiQuery } from "~/lib/realms/lore-import";
 import { DiscoveryStopped } from "~/lib/realms/sources/wiki-discovery-client";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
@@ -10,6 +11,7 @@ import {
   fetchSignals,
   parseBackfillArgs,
   readBackfillCards,
+  retireAbandoned,
   runBackfill,
   type SignalCache,
 } from "../../../scripts/cards/backfill-card-categories";
@@ -129,6 +131,7 @@ describe("readBackfillCards", () => {
         category: null,
         subcategory: null,
         categorySource: null,
+        isRetired: false,
       },
       {
         id: "b",
@@ -140,6 +143,7 @@ describe("readBackfillCards", () => {
         category: "MILITARY",
         subcategory: "unit",
         categorySource: "ADMIN",
+        isRetired: true,
       },
     ]);
     await expect(readBackfillCards(db as never, null)).resolves.toEqual([
@@ -153,6 +157,7 @@ describe("readBackfillCards", () => {
         subcategory: null,
         categorySource: null,
         hasLegacyLabel: true,
+        retired: false,
       },
       {
         id: "b",
@@ -164,6 +169,7 @@ describe("readBackfillCards", () => {
         subcategory: "unit",
         categorySource: "ADMIN",
         hasLegacyLabel: false,
+        retired: true,
       },
     ]);
     expect(db.card.findMany.mock.calls[0]![0].where).toEqual({ cardType: "LORE" });
@@ -185,7 +191,11 @@ describe("readBackfillCards", () => {
 });
 
 describe("runBackfill", () => {
-  const row = (id: string, wikiSource: string, over: Record<string, string | null> = {}) => ({
+  const row = (
+    id: string,
+    wikiSource: string,
+    over: Record<string, string | boolean | null> = {}
+  ) => ({
     id,
     title: id,
     wikiSource,
@@ -195,6 +205,7 @@ describe("runBackfill", () => {
     category: null,
     subcategory: null,
     categorySource: null,
+    isRetired: false,
     ...over,
   });
   const battle = {
@@ -214,8 +225,51 @@ describe("runBackfill", () => {
   function setup(cards: ReturnType<typeof row>[]) {
     const db = createMockPrisma({ $executeRaw: jest.fn().mockResolvedValue(1) });
     db.card.findMany.mockResolvedValue(cards);
+    db.card.updateMany.mockResolvedValue({ count: 1 });
     return db;
   }
+  const abandonedCache = (): SignalCache => ({
+    version: 1,
+    pages: {
+      "ixwiki|gone": { categories: ["Category:Abandoned Lore"], templates: [], missing: false },
+    },
+  });
+
+  it("skips a retired card: it reads nothing for it and counts it", async () => {
+    const db = setup([row("Kiro", "ixwiki"), row("Seed", "ixwiki", { isRetired: true })]);
+    const query = jest.fn().mockResolvedValue(battle);
+    const result = await runBackfill(db as never, options, {
+      queryFor: () => query,
+      cache: freshCache(),
+      saveCache: jest.fn(),
+    });
+    expect(query).toHaveBeenCalledTimes(1);
+    expect(query.mock.calls[0]![0].titles).toBe("Kiro");
+    expect(result.report.counts).toMatchObject({ retired: 1, writes: 1 });
+    expect(db.$executeRaw.mock.calls.map((call) => call.at(-1))).not.toContain("Seed");
+  });
+
+  it("retires an Abandoned Lore card on apply, after its category write, and not on a dry run", async () => {
+    const dry = setup([row("Gone", "ixwiki")]);
+    const deps = { queryFor: () => jest.fn(), saveCache: jest.fn() };
+    const preview = await runBackfill(
+      dry as never,
+      { ...options, apply: false },
+      { ...deps, cache: abandonedCache() }
+    );
+    expect(preview.report.abandoned).toEqual([{ id: "Gone", title: "Gone", source: "ixwiki" }]);
+    expect(preview.report.counts.review).toBe(0);
+    expect(dry.card.updateMany).not.toHaveBeenCalled();
+
+    const db = setup([row("Gone", "ixwiki")]);
+    const result = await runBackfill(db as never, options, { ...deps, cache: abandonedCache() });
+    expect(result.retired).toBe(1);
+    expect(db.$executeRaw.mock.calls[0]!.slice(-2)).toEqual([false, "Gone"]);
+    expect(db.card.updateMany).toHaveBeenCalledWith({
+      where: { id: "Gone", cardType: "LORE", isRetired: false },
+      data: { isRetired: true, retiredAt: expect.any(Date) },
+    });
+  });
 
   it("leaves a stopped wiki's cards untouched, writes the rest, and skips the sweep", async () => {
     const db = setup([
@@ -301,13 +355,42 @@ describe("runBackfill", () => {
   });
 });
 
+describe("retireAbandoned", () => {
+  const gone = { id: "g1", title: "Gone", source: "ixwiki" as const };
+
+  it("retires each card not yet retired, with one CARD_HIDE audit row each", async () => {
+    const db = createMockPrisma();
+    db.card.updateMany.mockResolvedValue({ count: 1 });
+    await expect(retireAbandoned(db as never, [gone])).resolves.toBe(1);
+    expect(db.$transaction).toHaveBeenCalledTimes(1);
+    expect(db.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: null,
+        action: "CARD_HIDE",
+        entityType: "CARD",
+        target: "g1",
+        details: "Retired: its IxWiki article is tagged Abandoned Lore",
+      }),
+    });
+  });
+
+  it("writes no second audit row for a card retired meanwhile, and nothing for no cards", async () => {
+    const db = createMockPrisma();
+    db.card.updateMany.mockResolvedValue({ count: 0 });
+    await expect(retireAbandoned(db as never, [gone])).resolves.toBe(0);
+    expect(db.auditLog.create).not.toHaveBeenCalled();
+    await expect(retireAbandoned(db as never, [])).resolves.toBe(0);
+    expect(db.$transaction).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("parseBackfillArgs", () => {
   it("defaults to a dry run over every wiki at the classifier's threshold", () => {
     expect(parseBackfillArgs([])).toMatchObject({
       apply: false,
       reclassify: false,
       source: null,
-      threshold: 0.5,
+      threshold: CATEGORY_REVIEW_THRESHOLD,
       report: null,
       cache: "scripts/reports/card-categories-cache.json",
     });
