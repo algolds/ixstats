@@ -597,10 +597,16 @@ describe("CardSheet layout", () => {
       .getAllByRole("region")
       .map((region) => within(region).getAllByRole("heading")[0]?.textContent);
 
-  it("puts About under the market's value, and the price history last", () => {
+  it("puts About under the card on a wide screen, and between Market and the folds on a phone", () => {
     showSheet(sheet({ market: sold }));
     open();
-    expect(regionNames()).toEqual(["Your copies", "Market", "About", "Price history"]);
+    // Read after the actions; jsdom has no layout, so the placement is pinned by its classes
+    expect(regionNames()).toEqual(["Your copies", "Market", "Price history", "About"]);
+    expect(about().parentElement).toHaveClass("md:col-start-1", "md:row-start-2", "max-md:order-1");
+    expect(screen.getByRole("region", { name: "Price history" }).parentElement).toHaveClass(
+      "max-md:order-2"
+    );
+    expect(turnable()).not.toHaveClass("md:sticky");
   });
 
   it("keeps the value chart and the recent sales folded until asked for", () => {
@@ -643,7 +649,7 @@ describe("CardSheet layout", () => {
       })
     );
     open();
-    expect(regionNames()).toEqual(["Your copies", "Market", "About", "Price history", "Mint"]);
+    expect(regionNames()).toEqual(["Your copies", "Market", "Price history", "Mint", "About"]);
     const toggle = screen.getByRole("button", { name: "Mint" });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByRole("button", { name: /Craft for/ })).toBeNull();

@@ -43,8 +43,9 @@ type Side = "front" | "back";
 const SIDE_SHOWN: Record<Side, string> = { front: "Showing the front", back: "Showing the back" };
 
 /**
- * The one card sheet: no tabs; the card, then Your copies, Market, About, and Price history and Mint folded. Stacks on
- * phones. A signed-out visitor sees it only for a card a player shows publicly, and is asked to sign in for any other.
+ * The one card sheet: no tabs. On a wide screen the card with About under it, beside Your copies, Market, and Price
+ * history and Mint folded; on a phone one column, About after Market. A signed-out visitor sees it only for a card a
+ * player shows publicly, and is asked to sign in for any other.
  */
 export function CardSheet({ cardId, from, onClose }: CardSheetProps) {
   const query = api.cards.getSheet.useQuery({ cardId, from: from ? encodeSheetFrom(from) : null });
@@ -176,14 +177,16 @@ function SheetBody({ sheet }: { sheet: CardSheetData }) {
   return (
     // grid-cols-1 lets the phone's one column shrink below the card's 288 px. The bottom sheet's close button, and the
     // header's icon buttons beside it, sit over the column's top-right corner, so on a phone the card starts below
-    // them (pt-8); beside the details it clears them.
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-[auto_1fr]">
+    // them (pt-8); beside the details it clears them. On a wide screen the card and About share the left column and
+    // the details span both rows on the right (the auto row fits the card, so About sits right under it); on a
+    // phone the details dissolve into the one column (contents) and the orders put About after Market.
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-[auto_1fr] md:grid-rows-[auto_1fr]">
       <div
         ref={hero}
         role="group"
         tabIndex={-1}
         aria-label={picked ? "The card. Press Space or F to turn it over." : "The card"}
-        className="flex flex-col items-center gap-3 pt-8 outline-none md:sticky md:top-0 md:self-start md:pt-0"
+        className="flex flex-col items-center gap-3 pt-8 outline-none md:col-start-1 md:row-start-1 md:pt-0"
       >
         <CardFlip
           face={face}
@@ -199,7 +202,7 @@ function SheetBody({ sheet }: { sheet: CardSheetData }) {
           {side ? SIDE_SHOWN[side] : ""}
         </p>
       </div>
-      <div className="min-w-0 space-y-6">
+      <div className="min-w-0 max-md:contents md:col-start-2 md:row-span-2 md:row-start-1 md:space-y-6">
         {/* The title clears the corner's buttons on wide screens; on a phone it sits below the card. */}
         <header className={cn("space-y-1", sheet.signedIn ? "md:pr-36" : "md:pr-20")}>
           <SheetTitle className="text-title-2">{card.title}</SheetTitle>
@@ -252,13 +255,17 @@ function SheetBody({ sheet }: { sheet: CardSheetData }) {
           market={sheet.market}
           signedIn={sheet.signedIn}
         />
+        <div className="space-y-6 max-md:order-2">
+          <CardSheetPriceHistory
+            cardId={card.id}
+            recentSales={sheet.market.recentSales}
+            signedIn={sheet.signedIn}
+          />
+          <CardSheetCraft cardId={card.id} signedIn={sheet.signedIn} />
+        </div>
+      </div>
+      <div className="max-md:order-1 md:col-start-1 md:row-start-2 md:w-72">
         <CardSheetAbout card={card} artHidden={card.isRetired} signedIn={sheet.signedIn} />
-        <CardSheetPriceHistory
-          cardId={card.id}
-          recentSales={sheet.market.recentSales}
-          signedIn={sheet.signedIn}
-        />
-        <CardSheetCraft cardId={card.id} signedIn={sheet.signedIn} />
       </div>
       <AddToShowcaseDialog
         open={showcasing !== null}
