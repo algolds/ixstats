@@ -36,7 +36,10 @@ interface PoliticalRow extends FaceRow {
 
 /** Web Mercator scaled so the world is 1000 units wide. */
 const SCALE = 1000 / 40_075_016.68;
-const SIMPLIFY_TOLERANCE = 0.6;
+/** Simplify tolerances in face units (the world is 1000 wide). Never above 1.0: 1.5 segfaulted Postgres. */
+const NATION_TOLERANCE = 0.6;
+/** Land is a backdrop under the nations, so it is simplified more coarsely. */
+const LAND_TOLERANCE = 1.0;
 const BAND_ASPECT = 2.4;
 const BAND_PADDING = 0.04;
 const CACHE_TTL_MS = 3_600_000;
@@ -77,7 +80,7 @@ WITH nations AS (
   FROM (${layerGeometry("political")}) s
   LEFT JOIN "Country" c ON c.id = s."countryId"
 )
-SELECT status, ST_AsSVG(ST_CollectionExtract(ST_Collect(g), 3), 1, 1) AS d,
+SELECT status, ST_AsSVG(ST_CollectionExtract(ST_Collect(g), 3), 1, 0) AS d,
        ST_XMin(ST_Extent(g)) AS xmin, ST_YMin(ST_Extent(g)) AS ymin,
        ST_XMax(ST_Extent(g)) AS xmax, ST_YMax(ST_Extent(g)) AS ymax
 FROM nations WHERE NOT ST_IsEmpty(g) GROUP BY status`;
@@ -89,7 +92,7 @@ WITH land AS (
   FROM (${layerGeometry("climate", NOT_POLAR_CAP)}) s
   WHERE NOT ST_IsEmpty(s.g)
 )
-SELECT ST_AsSVG(g, 1, 1) AS d,
+SELECT ST_AsSVG(g, 1, 0) AS d,
        ST_XMin(g) AS xmin, ST_YMin(g) AS ymin, ST_XMax(g) AS xmax, ST_YMax(g) AS ymax
 FROM land`;
 
@@ -109,9 +112,9 @@ function unionExtent(rows: FaceRow[]): Extent | null {
 }
 
 async function buildFace(db: Pick<PrismaClient, "$queryRawUnsafe">, realmId: string): Promise<RealmMapFace | null> {
-  const political = await db.$queryRawUnsafe<PoliticalRow[]>(POLITICAL_SQL, realmId, SCALE, SIMPLIFY_TOLERANCE);
+  const political = await db.$queryRawUnsafe<PoliticalRow[]>(POLITICAL_SQL, realmId, SCALE, NATION_TOLERANCE);
   if (political.length === 0) return null;
-  const [land = null] = await db.$queryRawUnsafe<FaceRow[]>(LAND_SQL, realmId, SCALE, SIMPLIFY_TOLERANCE);
+  const [land = null] = await db.$queryRawUnsafe<FaceRow[]>(LAND_SQL, realmId, SCALE, LAND_TOLERANCE);
   const extent = unionExtent(land ? [...political, land] : political);
   if (!extent) return null;
   const pathOf = (status: PoliticalRow["status"]) => political.find((r) => r.status === status)?.d ?? "";
