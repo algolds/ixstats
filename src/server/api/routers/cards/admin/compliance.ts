@@ -13,9 +13,12 @@ import {
   listInscriptionReports,
   resolveInscriptionReport,
 } from "~/server/modules/cards/inscriptions";
-import { loadPlayerNames } from "~/server/modules/identity/identity.player-names";
+import {
+  loadPlayerNames,
+  staffName,
+  staffNames,
+} from "~/server/modules/identity/identity.player-names";
 import { adminActor } from "~/server/shared/admin-actor";
-import { staffName, staffNames } from "./_staff-names";
 
 const takedownInput = z.object({ takedownId: z.string().min(1) });
 const limit = z.number().int().min(1).max(200).default(100);
