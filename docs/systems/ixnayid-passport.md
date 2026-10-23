@@ -79,3 +79,24 @@ The back face also saves:
 - [Achievements](./achievements.md)
 - [Vault](./myvault.md)
 - [API Reference](../reference/api-complete.md)
+
+---
+
+## IxnayID identity deploy runbook (owner)
+
+The IxnayID identity work ([design](../superpowers/specs/2026-10-23-ixnayid-identity-and-lorewards-design.md)) makes the
+passport account the only IxWiki and WikiOS identity: old IxWiki names reach an account only through approved name
+claims. Run these steps in order.
+
+1. **Before:** read the legacy identity counts on production and keep the output.
+   `bun scripts/identity/count-legacy-identity.ts`
+2. **Conversion dry run:** print the conversion plan (writes nothing), and read the conflicts before deploying.
+   `bun scripts/identity/convert-wiki-name-claims.ts`
+3. **Deploy:** `scripts/deploy-production.sh` runs, before `db push`, the claims SQL
+   (`20261103120000_ixnayid_claims`), the conversion with `--apply`, then the removal SQL
+   (`20261103120001_ixnayid_drop_legacy`), which refuses to run until the conversion has.
+4. **After deploy:** tag the revisions of claimed names (dry run first, then apply; `--undo` reverses it).
+   `bun scripts/identity/tag-claimed-revisions.ts`, then `bun scripts/identity/tag-claimed-revisions.ts --apply`
+5. **Check:** run the counts again. `revisionsWithAuthorId` grows; the legacy counts read 0 once the columns are gone.
+   `bun scripts/identity/count-legacy-identity.ts`
+6. **Discord bot:** needs no change for plan A.
