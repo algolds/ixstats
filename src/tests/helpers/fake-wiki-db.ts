@@ -40,7 +40,9 @@ const RELATIONS: Record<string, Record<string, Relation>> = {
     outgoingLinks: { table: "wikiLink", many: true, local: "id", foreign: "sourceArticleId" },
     watchers: { table: "wikiWatchlist", many: true, local: "id", foreign: "articleId" },
   },
-  wikiRevision: { article: { table: "wikiArticle", many: false, local: "articleId", foreign: "id" } },
+  wikiRevision: {
+    article: { table: "wikiArticle", many: false, local: "articleId", foreign: "id" },
+  },
   wikiCategoryMember: {
     category: { table: "wikiCategory", many: false, local: "categoryId", foreign: "id" },
     article: { table: "wikiArticle", many: false, local: "articleId", foreign: "id" },
@@ -48,8 +50,12 @@ const RELATIONS: Record<string, Record<string, Relation>> = {
   wikiCategory: {
     members: { table: "wikiCategoryMember", many: true, local: "id", foreign: "categoryId" },
   },
-  wikiTemplateLink: { article: { table: "wikiArticle", many: false, local: "articleId", foreign: "id" } },
-  wikiImageLink: { article: { table: "wikiArticle", many: false, local: "articleId", foreign: "id" } },
+  wikiTemplateLink: {
+    article: { table: "wikiArticle", many: false, local: "articleId", foreign: "id" },
+  },
+  wikiImageLink: {
+    article: { table: "wikiArticle", many: false, local: "articleId", foreign: "id" },
+  },
   wikiLink: {
     sourceArticle: { table: "wikiArticle", many: false, local: "sourceArticleId", foreign: "id" },
   },
@@ -57,6 +63,7 @@ const RELATIONS: Record<string, Record<string, Relation>> = {
     article: { table: "wikiArticle", many: false, local: "articleId", foreign: "id" },
     user: { table: "user", many: false, local: "userId", foreign: "id" },
   },
+  wikiNameClaim: { user: { table: "user", many: false, local: "userId", foreign: "id" } },
   wikiAsset: {},
 };
 
@@ -112,13 +119,16 @@ function relationMatches(
   row: Row,
   condition: Record<string, unknown>
 ): boolean {
-  const linked = rowsOf(schema, relation.table).filter((other) => other[relation.foreign] === row[relation.local]);
+  const linked = rowsOf(schema, relation.table).filter(
+    (other) => other[relation.foreign] === row[relation.local]
+  );
   const test = (other: Row, where: unknown) =>
     matchesIn(schema, relation.table, other, (where ?? {}) as Where);
   if (!relation.many) {
     const [one] = linked;
     if ("is" in condition) return condition.is === null ? !one : !!one && test(one, condition.is);
-    if ("isNot" in condition) return condition.isNot === null ? !!one : !one || !test(one, condition.isNot);
+    if ("isNot" in condition)
+      return condition.isNot === null ? !!one : !one || !test(one, condition.isNot);
     return !!one && test(one, condition);
   }
   if ("some" in condition) return linked.some((other) => test(other, condition.some));
@@ -130,7 +140,8 @@ function relationMatches(
 /** `matches`, and in the Prisma mode (`schema` set) the relations and operators of `table` too. */
 function matchesIn(schema: Schema | null, table: string, row: Row, where: Where): boolean {
   return Object.entries(where).every(([key, condition]) => {
-    if (key === "OR") return (condition as Where[]).some((clause) => matchesIn(schema, table, row, clause));
+    if (key === "OR")
+      return (condition as Where[]).some((clause) => matchesIn(schema, table, row, clause));
     if (key === "AND") {
       return [condition].flat().every((clause) => matchesIn(schema, table, row, clause as Where));
     }
@@ -139,11 +150,16 @@ function matchesIn(schema: Schema | null, table: string, row: Row, where: Where)
     }
     const value = row[key];
     const relation = schema ? RELATIONS[table]?.[key] : undefined;
-    if (relation && isPlainObject(condition)) return relationMatches(schema!, relation, row, condition);
+    if (relation && isPlainObject(condition))
+      return relationMatches(schema!, relation, row, condition);
     // a boolean column with a false default reads as false on a row written without it (Prisma mode)
     if (schema && condition === false && value === undefined) return true;
     if (schema && condition === null) return value === null || value === undefined;
-    if (!isPlainObject(condition)) return value === condition || (schema !== null && time(value) === time(condition) && value instanceof Date);
+    if (!isPlainObject(condition))
+      return (
+        value === condition ||
+        (schema !== null && time(value) === time(condition) && value instanceof Date)
+      );
     if ("path" in condition && "equals" in condition) {
       // a JSON path filter: { path: ["sha1"], equals: "..." }
       const found = (condition.path as string[]).reduce<unknown>(
@@ -174,7 +190,8 @@ function matchesIn(schema: Schema | null, table: string, row: Row, where: Where)
     if ("in" in condition) return (condition.in as unknown[]).includes(value);
     if ("notIn" in condition) return !(condition.notIn as unknown[]).includes(value);
     if ("not" in condition) {
-      if (schema && isPlainObject(condition.not)) return !matchesIn(schema, table, row, { [key]: condition.not });
+      if (schema && isPlainObject(condition.not))
+        return !matchesIn(schema, table, row, { [key]: condition.not });
       if (schema && condition.not === null) return value !== null && value !== undefined;
       return value !== condition.not;
     }
@@ -206,7 +223,9 @@ function orderKey(
   const relation = schema ? RELATIONS[table]?.[field] : undefined;
   if (relation && isPlainObject(direction)) {
     const [inner, innerDirection] = Object.entries(direction)[0]!;
-    const linked = rowsOf(schema!, relation.table).find((other) => other[relation.foreign] === row[relation.local]);
+    const linked = rowsOf(schema!, relation.table).find(
+      (other) => other[relation.foreign] === row[relation.local]
+    );
     return linked ? orderKey(schema, relation.table, linked, inner, innerDirection) : [null, "asc"];
   }
   if (schema && isPlainObject(direction)) return [row[field], String(direction.sort ?? "asc")];
@@ -240,7 +259,8 @@ function project(schema: Schema | null, table: string, row: Row, args: FindManyA
       copy._count = Object.fromEntries(
         Object.entries(counted).map(([name, inner]) => [
           name,
-          related(schema, table, row, name, isPlainObject(inner) ? (inner as FindManyArgs) : {}).length,
+          related(schema, table, row, name, isPlainObject(inner) ? (inner as FindManyArgs) : {})
+            .length,
         ])
       );
       continue;
@@ -275,8 +295,10 @@ function applyUpdate(schema: Schema | null, row: Row, data: Record<string, unkno
   }
   for (const [key, value] of Object.entries(data)) {
     if (value === undefined) continue;
-    if (isPlainObject(value) && "increment" in value) row[key] = Number(row[key] ?? 0) + Number(value.increment);
-    else if (isPlainObject(value) && "decrement" in value) row[key] = Number(row[key] ?? 0) - Number(value.decrement);
+    if (isPlainObject(value) && "increment" in value)
+      row[key] = Number(row[key] ?? 0) + Number(value.increment);
+    else if (isPlainObject(value) && "decrement" in value)
+      row[key] = Number(row[key] ?? 0) - Number(value.decrement);
     else if (isPlainObject(value) && "set" in value) row[key] = value.set;
     else row[key] = value;
   }
@@ -426,6 +448,8 @@ export interface FakeWikiDb {
   wikiAsset: Table;
   wikiDiscussionThread: Table;
   wikiWatchlist: Table;
+  wikiNameClaim: Table;
+  wikiRevisionClaimTag: Table;
   stash: Table;
   stashItem: Table;
   systemConfig: Table;
@@ -604,6 +628,16 @@ export function createFakeWikiDb({ prisma = false }: FakeWikiDbOptions = {}) {
     })),
     wikiDiscussionThread: table("wikiDiscussionThread"),
     wikiWatchlist: table("wikiWatchlist", () => ({ notificationTime: null })),
+    // an approved, shown IxWiki name claim (src/lib/identity/wiki-names.ts reads only APPROVED ones)
+    wikiNameClaim: table("wikiNameClaim", () => ({
+      status: "APPROVED",
+      visible: true,
+      rightsPass: false,
+      source: "ixwiki",
+      decidedAt: null,
+      mwUserId: null,
+    })),
+    wikiRevisionClaimTag: table("wikiRevisionClaimTag", () => ({ undoneAt: null })),
     stash: table("stash"),
     stashItem: table("stashItem"),
     systemConfig: table("systemConfig"),
@@ -672,12 +706,19 @@ export function createFakeWikiDb({ prisma = false }: FakeWikiDbOptions = {}) {
         if (leases.get(name)?.holder === holder) leases.delete(name);
         return 1;
       }
-      const users = /UPDATE wiki_articles SET "htmlSyncedAt" = NULL WHERE source = \? AND "htmlSyncedAt" IS NOT NULL AND id IN \(SELECT "articleId" FROM (wiki_template_links|wiki_image_links) WHERE "(templateTitle|fileName)" = \?\)/.exec(sql);
+      const users =
+        /UPDATE wiki_articles SET "htmlSyncedAt" = NULL WHERE source = \? AND "htmlSyncedAt" IS NOT NULL AND id IN \(SELECT "articleId" FROM (wiki_template_links|wiki_image_links) WHERE "(templateTitle|fileName)" = \?\)/.exec(
+          sql
+        );
       if (prisma && users) {
         // invalidateDependents and the mirror's upload: the pages that transclude a page, or show a file, go stale
         const [source, name] = values as [string, string];
-        const linked = (users[1] === "wiki_template_links" ? tables.wikiTemplateLink : tables.wikiImageLink).rows;
-        const ids = new Set(linked.filter((row) => row[users[2]!] === name).map((row) => row.articleId));
+        const linked = (
+          users[1] === "wiki_template_links" ? tables.wikiTemplateLink : tables.wikiImageLink
+        ).rows;
+        const ids = new Set(
+          linked.filter((row) => row[users[2]!] === name).map((row) => row.articleId)
+        );
         const stale = tables.wikiArticle.rows.filter(
           (row) => row.source === source && row.htmlSyncedAt && ids.has(row.id)
         );
@@ -689,7 +730,9 @@ export function createFakeWikiDb({ prisma = false }: FakeWikiDbOptions = {}) {
         const live = sortRows(
           schema,
           "wikiRevision",
-          tables.wikiRevision.rows.filter((row) => row.articleId === values[0] && row.parked !== true),
+          tables.wikiRevision.rows.filter(
+            (row) => row.articleId === values[0] && row.parked !== true
+          ),
           [{ createdAt: "asc" }, { id: "asc" }]
         );
         let set = 0;
