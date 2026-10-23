@@ -4,8 +4,9 @@ import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-pr
 import {
   createNameClaimService,
   MAX_PENDING_CLAIMS,
-  NAME_CLAIM_HTTP,
   NameClaimError,
+  type NameClaimErrorCode,
+  toNameClaimTrpcError,
 } from "~/server/modules/identity/identity.name-claims";
 import type { ClaimApprovedEvent } from "~/lib/identity/claim-hooks";
 
@@ -395,7 +396,7 @@ describe("refusals", () => {
     await expect(
       service().request(actor("p2"), { name: "Old name", evidence: null })
     ).rejects.toThrow("That name already belongs to another account.");
-    expect(NAME_CLAIM_HTTP).toEqual({
+    const http: Record<NameClaimErrorCode, string> = {
       INVALID_NAME: "BAD_REQUEST",
       TAKEN: "CONFLICT",
       ALREADY_REQUESTED: "BAD_REQUEST",
@@ -404,7 +405,17 @@ describe("refusals", () => {
       NOT_PENDING: "BAD_REQUEST",
       NOT_APPROVED: "BAD_REQUEST",
       NOT_ALLOWED: "FORBIDDEN",
-    });
+    };
+    for (const [code, trpcCode] of Object.entries(http)) {
+      expect(() =>
+        toNameClaimTrpcError(new NameClaimError(code as NameClaimErrorCode, `why ${code}`))
+      ).toThrow(expect.objectContaining({ code: trpcCode, message: `why ${code}` }));
+    }
+  });
+
+  it("passes any other error through as it is", async () => {
+    const other = new Error("boom");
+    await expect(Promise.reject(other).catch(toNameClaimTrpcError)).rejects.toBe(other);
   });
 });
 

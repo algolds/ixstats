@@ -19,8 +19,7 @@ import {
 } from "~/server/modules/identity/identity.wiki-links";
 import {
   createNameClaimService,
-  NAME_CLAIM_HTTP,
-  NameClaimError,
+  toNameClaimTrpcError,
   type ClaimActor,
 } from "~/server/modules/identity/identity.name-claims";
 
@@ -47,13 +46,6 @@ const playerActor = (user: { id: string; clerkUserId: string }): ClaimActor => (
   clerkUserId: user.clerkUserId,
   isSystemOwner: false,
 });
-
-function toClaimTrpcError(error: Error): never {
-  if (error instanceof NameClaimError) {
-    throw new TRPCError({ code: NAME_CLAIM_HTTP[error.code], message: error.message });
-  }
-  throw error;
-}
 
 export const ixnayidLinkingRouter = createTRPCRouter({
   listWikiLinks: protectedProcedure.query(({ ctx }) => wikiLinks().list(ctx.user.id)),
@@ -91,7 +83,7 @@ export const ixnayidLinkingRouter = createTRPCRouter({
     .mutation(({ ctx, input }) =>
       createNameClaimService(ctx.db)
         .request(playerActor(ctx.user), { name: input.name, evidence: input.evidence ?? null })
-        .catch(toClaimTrpcError)
+        .catch(toNameClaimTrpcError)
     ),
 
   setNameClaimVisibility: rateLimitedMutationProcedure
@@ -99,7 +91,7 @@ export const ixnayidLinkingRouter = createTRPCRouter({
     .mutation(({ ctx, input }) =>
       createNameClaimService(ctx.db)
         .setVisibility(playerActor(ctx.user), input)
-        .catch(toClaimTrpcError)
+        .catch(toNameClaimTrpcError)
     ),
 
   linkDiscord: rateLimitedMutationProcedure.mutation(async ({ ctx }) => {

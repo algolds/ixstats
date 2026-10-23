@@ -15,6 +15,7 @@ import type {
   WikiNameClaimOrigin,
   WikiNameClaimStatus,
 } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 import {
   runClaimApprovedHooks,
   type ClaimApprovedEvent,
@@ -48,8 +49,8 @@ export class NameClaimError extends Error {
   }
 }
 
-/** The tRPC code each refusal maps to (plain strings: this module does not import tRPC). */
-export const NAME_CLAIM_HTTP: Readonly<
+/** The tRPC code each refusal maps to. */
+const NAME_CLAIM_HTTP: Readonly<
   Record<NameClaimErrorCode, "BAD_REQUEST" | "CONFLICT" | "FORBIDDEN" | "NOT_FOUND">
 > = {
   INVALID_NAME: "BAD_REQUEST",
@@ -61,6 +62,14 @@ export const NAME_CLAIM_HTTP: Readonly<
   NOT_APPROVED: "BAD_REQUEST",
   NOT_ALLOWED: "FORBIDDEN",
 };
+
+/** For a router's `.catch`: a refusal as a tRPC error, its message kept; any other error passes through. */
+export function toNameClaimTrpcError(error: Error): never {
+  if (error instanceof NameClaimError) {
+    throw new TRPCError({ code: NAME_CLAIM_HTTP[error.code], message: error.message });
+  }
+  throw error;
+}
 
 export const MAX_PENDING_CLAIMS = 10;
 
