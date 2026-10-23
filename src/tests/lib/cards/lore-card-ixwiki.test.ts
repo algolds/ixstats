@@ -110,6 +110,12 @@ describe("generateCard for IxWiki", () => {
     ]);
     mocked.wikiAsset.findMany.mockResolvedValue([asset]);
   });
+
+  it("classifies from the article's raw wikitext and its categories", async () => {
+    const card = await wikiLoreCardGenerator.generateCard("Caphiria", "ixwiki");
+    expect(card.classification).toMatchObject({ category: "NATION", subcategory: "nation" });
+    expect(card.classification.confidence).toBeGreaterThanOrEqual(0.5);
+  });
   /** WikiOS deleted these `File:` pages (names as `wiki_image_links` holds them, no prefix). */
   const archiveFilePages = (...names: string[]) =>
     mocked.wikiArticle.findMany.mockImplementation(async (args: { where: { status?: string } }) =>

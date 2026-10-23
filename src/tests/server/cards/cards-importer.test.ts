@@ -38,7 +38,7 @@ const candidate = (overrides: Partial<LoreCardCandidate> = {}): LoreCardCandidat
   wikiSource: "iiwiki",
   wikiArticleTitle: "Union Assembly",
   wikiUrl: "/wiki/Union_Assembly?source=iiwiki",
-  category: "GOVERNMENT",
+  classification: { category: "GOVERNMENT", subcategory: "legislature-or-body", confidence: 0.9 },
   signals: {
     length: 4000,
     referenceCount: 4,

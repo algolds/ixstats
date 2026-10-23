@@ -1,7 +1,7 @@
 /** What the lore-card generator reads from an article, before the importer turns it into a card. */
 import type { ArticleSignals } from "~/lib/cards/rarity-engine";
 import type { CardArticleSource } from "~/lib/cards/card-sources";
-import type { LoreCategory } from "~/lib/cards/category-enums";
+import type { CategoryClassification } from "~/lib/cards/category-classifier";
 import type { CardAuthorInfo } from "~/types/cards-display";
 
 export interface LoreCardCandidate {
@@ -17,7 +17,7 @@ export interface LoreCardCandidate {
   wikiSource: CardArticleSource;
   wikiArticleTitle: string;
   wikiUrl: string;
-  category: LoreCategory;
+  classification: CategoryClassification;
   signals: ArticleSignals;
   qualityScore: number;
   authorInfo?: CardAuthorInfo;

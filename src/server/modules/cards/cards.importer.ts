@@ -268,7 +268,7 @@ export async function stageArticleCard(
       artwork: read.artwork,
       artworkSource: read.artwork ? "WIKI_FETCHED" : "PROCEDURAL",
       artworkCredit: licence?.attribution ?? null,
-      category: read.category,
+      category: read.classification.category,
       cardType: "LORE",
       rarity,
       season: await getCurrentIxCardSeason(db),
@@ -280,7 +280,6 @@ export async function stageArticleCard(
       marketValue: await cardValue(db, rarity),
       metadata: {
         wikiUrl: read.wikiUrl,
-        category: read.category,
         qualityScore: read.qualityScore,
         fullExcerpt: read.fullExcerpt,
         ...(read.authorInfo
@@ -310,7 +309,7 @@ export async function stageCommonsFile(
 
   const title = commonsCardTitle(fileTitle);
   const rarity = rarityForScore(0, context.thresholds);
-  const category = classifyLoreArticle({ title, text: "", categories: [] });
+  const category = classifyLoreArticle({ title, source: "commons" }).category;
   return createStagedCard(
     db,
     {
@@ -327,7 +326,7 @@ export async function stageCommonsFile(
       realmId: wikiFallbackRealm("commons"),
       ...reviewOf(input),
       marketValue: await cardValue(db, rarity),
-      metadata: { category, descriptionUrl: licence.descriptionUrl },
+      metadata: { descriptionUrl: licence.descriptionUrl },
       artLicence: { create: licenceRecord("commons", licence.fileUrl, licence, input) },
     },
     licence

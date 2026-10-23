@@ -17,7 +17,7 @@ import type { MediaWikiPageItem, MediaWikiCategoryItem } from "~/lib/wiki-os/typ
 import { LORE_CATEGORIES } from "~/lib/lorewards";
 import type { CardAuthorInfo } from "~/types/cards-display";
 import type { LoreCategory as LoreCategoryType } from "./category-enums";
-import { classifyLoreArticle } from "./category-classifier";
+import { classifyLoreArticle, type CategoryClassification } from "./category-classifier";
 import { fileNameFromArtworkUrl } from "./art-licence";
 import { cardSourceLabel, type CardArticleSource } from "./card-sources";
 import { ArticleRejected, NOT_ARTICLE_REASON, type LoreCardCandidate } from "./lore-card-candidate";
@@ -51,7 +51,7 @@ interface ArticleMetadataPreview {
   length: number; // page length in bytes (cheap size proxy from prop=info)
   extract: string;
   categoryCount: number;
-  category?: LoreCategoryType;
+  category: LoreCategoryType | null;
   authorInfo?: CardAuthorInfo | null;
 }
 
@@ -145,7 +145,7 @@ class WikiLoreCardGenerator {
       wikiSource,
       wikiArticleTitle: articleTitle,
       wikiUrl: wikiReaderPath(articleTitle, wikiSource),
-      category: this.detectCategory(articleData),
+      classification: this.classify(articleData, wikiSource),
       signals,
       qualityScore: qualityScore(signals),
       authorInfo: articleData.authorInfo,
@@ -315,7 +315,7 @@ class WikiLoreCardGenerator {
           .filter((p) => !p.missing)
           .map((p) => {
             const titleKey = (p.title || "").replace(/_/g, " ").trim().toLowerCase();
-            return this.toMetadataPreview(p, authorsMap.get(titleKey) || null);
+            return this.toMetadataPreview(p, wikiSource, authorsMap.get(titleKey) || null);
           });
       } catch (e) {
         console.error(`[Lore Card Generator] Metadata batch fetch failed:`, e);
@@ -360,6 +360,7 @@ class WikiLoreCardGenerator {
           categories: page.categories,
           original: page.imageUrl ? { source: page.imageUrl } : undefined,
         },
+        "ixwiki",
         authors.get(page.title.replace(/_/g, " ").trim().toLowerCase()) ?? null
       )
     );
@@ -367,6 +368,7 @@ class WikiLoreCardGenerator {
 
   private toMetadataPreview(
     page: MediaWikiPageItem & { extract?: string; length?: number },
+    source: CardArticleSource,
     authorInfo?: CardAuthorInfo | null
   ): ArticleMetadataPreview {
     const extract: string = page.extract || "";
@@ -383,7 +385,8 @@ class WikiLoreCardGenerator {
         title: page.title,
         text: extract,
         categories: page.categories,
-      }),
+        source,
+      }).category,
       authorInfo: authorInfo ?? null,
     };
   }
@@ -538,13 +541,14 @@ class WikiLoreCardGenerator {
     };
   }
 
-  private detectCategory(
-    articleData: MediaWikiPageItem & { text?: string; extract?: string }
-  ): LoreCategoryType {
+  /** The article's category from its infoboxes (in the raw wikitext), its categories, title and text. */
+  private classify(articleData: ArticleData, source: CardArticleSource): CategoryClassification {
     return classifyLoreArticle({
       title: articleData.title,
-      text: articleData.text || articleData.extract || "",
-      categories: (articleData.categories || []).map((c) => ({ title: c.title || "" })),
+      text: articleData.extract || articleData.text,
+      wikitext: articleData.rawText,
+      categories: articleData.categories,
+      source,
     });
   }
 
