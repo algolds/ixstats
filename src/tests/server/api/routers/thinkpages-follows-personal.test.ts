@@ -39,7 +39,6 @@ import { ensurePersonalAccount } from "~/server/api/routers/thinkpages/personal-
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 import { ensurePersonalAccount as ensureSharedPersonalAccount } from "~/server/shared/thinkpages-personal-account";
-import { wikiAttributionOff } from "~/tests/helpers/privacy-config-fake";
 
 const ME = "user_me";
 const THEM = "user_them";
@@ -247,14 +246,17 @@ describe("N13: ThinkTank 'post as yourself'", () => {
 });
 
 /**
- * A new personal persona ("post as yourself") is seeded from the player's names, and with wiki attribution
- * (`showWikiAttribution`) off never from their wiki name: the forum name, else the existing non-wiki fallback. The
- * switch is read once and a read error counts as off. An existing persona keeps the name it has.
+ * A new personal persona ("post as yourself") is seeded from the player's forum name, else their passport handle,
+ * else the generic fallback: never their old wiki name, which is not read at all (nor the privacy switches).
  */
-describe("a personal persona and wiki attribution", () => {
+describe("a personal persona's first name", () => {
   const ME = "user_me";
   /** A db with no personal persona yet, whose user row carries `names`. */
-  function newPersonaDb(names: { forumUsername: string | null; wikiUsername: string | null }) {
+  function newPersonaDb(names: {
+    forumUsername: string | null;
+    handle: string | null;
+    wikiUsername: string;
+  }) {
     const db = createMockPrisma();
     db.$transaction = jest.fn((cb: (tx: typeof db) => Promise<object>) => cb(db));
     db.thinkpagesPersonalAccount.findUnique.mockResolvedValue(null);
@@ -271,19 +273,30 @@ describe("a personal persona and wiki attribution", () => {
       username: string;
       displayName: string;
     }>;
-  describe("ensurePersonalAccount and wiki attribution", () => {
-    it("seeds a player with the switch off from the forum name", async () => {
-      const db = newPersonaDb({ forumUsername: "Rowan", wikiUsername: "Wiki Rowan" });
-      db.userConnection.findMany.mockResolvedValue(wikiAttributionOff(ME));
-      await expect(created(db)).resolves.toMatchObject({ username: "Rowan", displayName: "Rowan" });
-      expect(db.userConnection.findMany).toHaveBeenCalledTimes(1);
+  it("takes the forum name first", async () => {
+    const db = newPersonaDb({
+      forumUsername: "Rowan",
+      handle: "rowan_h",
+      wikiUsername: "Wiki Rowan",
     });
-    it("fails closed: a switch it cannot read keeps the wiki name out", async () => {
-      const db = newPersonaDb({ forumUsername: null, wikiUsername: "WikiRowan" });
-      db.userConnection.findMany.mockRejectedValue(new Error("db down"));
-      const persona = await created(db);
-      expect(persona.username).toMatch(/^member_\d{4}$/);
-      expect(JSON.stringify(db.thinkpagesAccount.create.mock.calls)).not.toContain("WikiRowan");
+    await expect(created(db)).resolves.toMatchObject({ username: "Rowan", displayName: "Rowan" });
+  });
+  it("takes the passport handle when there is no forum name", async () => {
+    const db = newPersonaDb({ forumUsername: null, handle: "rowan_h", wikiUsername: "WikiRowan" });
+    await expect(created(db)).resolves.toMatchObject({
+      username: "rowan_h",
+      displayName: "rowan_h",
     });
+  });
+  it("never takes the wiki name", async () => {
+    const db = newPersonaDb({ forumUsername: null, handle: null, wikiUsername: "WikiRowan" });
+    const persona = await created(db);
+    expect(persona.username).toMatch(/^member_\d{4}$/);
+    expect(JSON.stringify(db.thinkpagesAccount.create.mock.calls)).not.toContain("WikiRowan");
+    expect(db.user.findUnique).toHaveBeenCalledWith({
+      where: { clerkUserId: ME },
+      select: { forumUsername: true, handle: true },
+    });
+    expect(db.userConnection.findMany).not.toHaveBeenCalled();
   });
 });

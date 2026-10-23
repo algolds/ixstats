@@ -5,13 +5,11 @@
  * enforced by the `ThinkpagesPersonalAccount` row (primary key = Clerk user id), so two concurrent
  * "post as yourself" calls cannot create two personas.
  *
- * A new persona is never seeded from the wiki name of a user who turned wiki attribution off
- * (`showWikiAttribution`; a read error counts as off): it takes the forum name, else the generic
- * fallback. An existing persona keeps the name it has.
+ * A new persona takes the forum name, else the passport handle, else the generic fallback: never
+ * an old wiki name. An existing persona keeps the name it has.
  */
 import type { PrismaClient, ThinkpagesAccount } from "@prisma/client";
 import { isUniqueViolation } from "~/lib/prisma-error";
-import { withoutHiddenWikiNames } from "./privacy-permissions";
 
 export const PERSONAL_ACCOUNT_TYPE = "personal";
 
@@ -22,7 +20,7 @@ const MAX_CREATE_ATTEMPTS = 6;
 
 type PersonalDb = Pick<
   PrismaClient,
-  "thinkpagesAccount" | "thinkpagesPersonalAccount" | "user" | "userConnection" | "$transaction"
+  "thinkpagesAccount" | "thinkpagesPersonalAccount" | "user" | "$transaction"
 >;
 
 interface PersonalAccountPreferences {
@@ -63,20 +61,20 @@ export async function findPersonalAccount(
   return account;
 }
 
-/** Username stem and display name for a new personal persona: explicit prefs, then the user's forum/shown wiki names. */
+/** Username stem and display name for a new personal persona: explicit prefs, then the user's forum name and handle. */
 function initialNames(
   prefs: PersonalAccountPreferences,
-  user: { forumUsername: string | null; wikiUsername: string | null } | null
+  user: { forumUsername: string | null; handle: string | null } | null
 ) {
   const base =
     toUsernameBase(prefs.username) ??
     toUsernameBase(user?.forumUsername) ??
-    toUsernameBase(user?.wikiUsername) ??
+    toUsernameBase(user?.handle) ??
     FALLBACK_USERNAME_BASE;
   const displayName =
     prefs.displayName?.trim().slice(0, 50) ||
     user?.forumUsername ||
-    user?.wikiUsername ||
+    user?.handle ||
     prefs.username?.trim() ||
     base;
   return { base, displayName };
@@ -102,10 +100,9 @@ export async function ensurePersonalAccount(
 
   const user = await db.user.findUnique({
     where: { clerkUserId },
-    select: { forumUsername: true, wikiUsername: true },
+    select: { forumUsername: true, handle: true },
   });
-  const [shown] = user ? await withoutHiddenWikiNames(db, [{ ...user, clerkUserId }]) : [];
-  const { base, displayName } = initialNames(prefs, shown ?? null);
+  const { base, displayName } = initialNames(prefs, user);
 
   // The fallback stem is generic, so skip straight to a suffixed name for it.
   const firstAttempt = base === FALLBACK_USERNAME_BASE ? 2 : 0;

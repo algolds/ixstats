@@ -1,11 +1,10 @@
 /**
  * Category moderators (M19) and finding members (M14). Site admins appoint and remove category moderators; realm
- * founders give their officers the `board` power instead. Moderators find a member by Passport handle or wiki
- * username and get back only an id and a public name.
+ * founders give their officers the `board` power instead. Moderators find a member by Passport handle and get back
+ * only an id and a public name.
  */
 import type { PrismaClient } from "@prisma/client";
 import { isSiteAdmin } from "~/server/modules/realms";
-import { withoutHiddenWikiNames } from "~/server/shared/privacy-permissions";
 import type { ForumViewer } from "./access";
 import { ForumError, isUniqueViolation } from "./errors";
 import { logModAction } from "./mod-log";
@@ -33,34 +32,22 @@ export interface ResolvedMember {
 }
 
 /**
- * A member by Passport handle (unique, stored lowercase; a leading @ is ignored), else by wiki username, exactly. A
- * wiki username two accounts share resolves to nobody rather than to either. A member with wiki attribution off
- * (`showWikiAttribution`; a read error counts as off) is neither found nor named by it. Moderators only.
+ * A member by Passport handle (unique, stored lowercase; a leading @ is ignored). An old wiki name finds nobody: it is
+ * a name claim, not a handle. Moderators only.
  */
 export async function resolveMember(
-  db: Pick<PrismaClient, "user" | "userConnection">,
+  db: Pick<PrismaClient, "user">,
   viewer: ForumViewer,
   input: { handle: string }
 ): Promise<ResolvedMember | null> {
   assertModerator(viewer);
-  const query = input.handle.trim();
-  const handle = query.replace(/^@/, "").toLowerCase();
+  const handle = input.handle.trim().replace(/^@/, "").toLowerCase();
   if (!handle) return null;
   const byHandle = await db.user.findUnique({
     where: { handle },
     select: { id: true, handle: true },
   });
-  if (byHandle?.handle) return { id: byHandle.id, name: byHandle.handle };
-  const byWiki = await withoutHiddenWikiNames(
-    db,
-    await db.user.findMany({
-      where: { wikiUsername: query },
-      select: { id: true, clerkUserId: true, wikiUsername: true },
-      take: 2,
-    })
-  );
-  const only = byWiki.length === 1 ? byWiki[0] : undefined;
-  return only?.wikiUsername ? { id: only.id, name: only.wikiUsername } : null;
+  return byHandle?.handle ? { id: byHandle.id, name: byHandle.handle } : null;
 }
 
 /** A category's moderators, for site admins and the category's own moderators. */

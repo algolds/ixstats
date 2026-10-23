@@ -155,7 +155,7 @@ function build(setup: Setup = {}) {
           (p) => where.id!.in.includes(p.id) && (!where.isActive || p.isActive !== false)
         );
       }),
-      findUnique: jest.fn(async () => ({ handle: "actorhandle", wikiUsername: null })),
+      findUnique: jest.fn(async () => ({ handle: "actorhandle" })),
     },
     thinkpagesAccount: {
       findMany: jest.fn(async () => setup.personaOwners ?? []),

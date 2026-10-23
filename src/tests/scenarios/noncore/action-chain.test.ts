@@ -339,6 +339,41 @@ it("keeps an approval whose wiki write failed, and the cron writes it later", as
   ).resolves.toBeUndefined();
 });
 
+it("names a player's activity by handle, else forum name, never by their old wiki name", async () => {
+  await db.user.update({
+    where: { id: "ana" },
+    data: { handle: "ana_h", wikiUsername: "Ana Wiki", forumUsername: "AnaF" },
+  });
+  await db.user.update({
+    where: { id: "nils" },
+    data: { wikiUsername: "Nils Wiki", forumUsername: "NilsF" },
+  });
+  for (const [id, owner] of [
+    ["ana-row", ana],
+    ["nils-row", nils],
+  ] as const) {
+    await db.activityFeed.create({
+      data: {
+        id,
+        type: "social",
+        category: "social",
+        title: id,
+        description: id,
+        userId: owner.clerkUserId,
+        visibility: "public",
+        priority: "medium",
+      },
+    });
+  }
+  const { activities } = await globalFeed(
+    createMockCallerContext({ db, auth: null, user: null })
+  ).getGlobalFeed({ filter: "all", limit: 20 });
+  const names = new Map(
+    activities.map((a: { id: string; user: { name?: string } }) => [a.id, a.user.name])
+  );
+  expect([names.get("ana-row"), names.get("nils-row")]).toEqual(["ana_h", "NilsF"]);
+});
+
 describe("the action-token parser", () => {
   describe("chainWikiSection", () => {
     it("strips wikitext control characters from player text", () => {

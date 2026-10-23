@@ -145,7 +145,7 @@ async function activityRowItems(db: PrismaClient, input: FeedInput, mergeCap: nu
           select: {
             clerkUserId: true,
             countryId: true,
-            wikiUsername: true,
+            handle: true,
             discordUsername: true,
             forumUsername: true,
             country: { select: { name: true, flag: true } },
@@ -170,7 +170,7 @@ async function activityRowItems(db: PrismaClient, input: FeedInput, mergeCap: nu
       ? {
           id: dbUser.clerkUserId,
           name:
-            (hidden.wiki.has(dbUser.clerkUserId) ? null : dbUser.wikiUsername) ??
+            dbUser.handle ??
             (hidden.discord.has(dbUser.clerkUserId) ? null : dbUser.discordUsername) ??
             dbUser.forumUsername ??
             dbUser.country?.name ??

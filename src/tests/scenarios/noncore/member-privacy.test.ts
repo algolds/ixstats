@@ -1,11 +1,13 @@
 /** @jest-environment node */
 /**
  * A member's privacy settings decide what other members see. Hana writes on IxWiki as "Hana Wiki" (a verified link
- * and an approved name claim, Lorewards medals and a featured-article award) and has no nation. She turns wiki
- * attribution off in Settings → Privacy: every surface that names players stops using her wiki name (display names,
- * messaging, a ThinkTank's roster, feed and join notices, her passport handle), she still sees her own, and turning it
- * back on restores it. A switch that cannot be read hides every wiki name. Her achievements as others see them follow
- * her name claim instead: while she keeps it hidden they read no wiki name, and she still sees her own.
+ * and an approved name claim, Lorewards medals and a featured-article award) and has no nation; Sam writes as "Sam
+ * Wiki" and has the passport handle "samwise". No surface that names players reads a wiki name at all (display names,
+ * messaging, a ThinkTank's roster, feed and join notices): they name a player by handle, else their persona, whatever
+ * wiki attribution says and even when the switch cannot be read, and a persona made while the wiki name was shown
+ * loses to the handle. With attribution off her passport handle skips the wiki name, and she still sees her own link.
+ * Her achievements as others see them follow her name claim: while she keeps it hidden they read no wiki name, and
+ * she still sees her own.
  *
  * Her direct messages are open to followers only, with read receipts and online status off. Sam, outside her
  * audience, starts a conversation: it waits in her Requests folder and she is not told. She accepts, and Sam's next
@@ -84,7 +86,7 @@ beforeEach(async () => {
   await addNation(db as never, { id: "omaria", name: "Omaria", baselineDate: new Date() });
   const people = [
     { id: "hana", wikiUsername: "Hana Wiki" },
-    { id: "sam", wikiUsername: "Sam Wiki" },
+    { id: "sam", wikiUsername: "Sam Wiki", handle: "samwise" },
     { id: "omar", wikiUsername: null, countryId: "omaria" },
     { id: "ivy", wikiUsername: null },
   ];
@@ -94,6 +96,7 @@ beforeEach(async () => {
         id: p.id,
         clerkUserId: `${p.id}-clerk`,
         wikiUsername: p.wikiUsername,
+        handle: p.handle ?? null,
         countryId: p.countryId ?? null,
         lastSeenAt: new Date(),
       },
@@ -159,17 +162,16 @@ async function namesSeenBy(viewer: string | null, groupId: string) {
   const messaging = await batchResolveMessagingAccounts([HANA, SAM], db as never);
   const group = await thinktanks(as(viewer)).getThinktankById({ groupId });
   const roster = new Map(
-    group!.members.map((m) => [m.userId, (m.user as { wikiUsername?: string | null }).wikiUsername])
+    group!.members.map((m) => [m.userId, (m.user as { displayName?: string }).displayName])
   );
   const { posts } = await thinktanks(as(viewer)).getGroupFeed({ groupId });
-  const feed = new Map(
-    posts.map((p) => [p.account!.clerkUserId, p.realUser?.wikiUsername ?? null])
-  );
+  const feed = new Map(posts.map((p) => [p.account!.clerkUserId, p.realUser?.handle ?? null]));
   return {
     display: [display.get(HANA), display.get(SAM), display.get(OMAR), display.get("ghost-clerk")],
     messaging: [messaging.get(HANA)?.displayName, messaging.get(SAM)?.displayName],
     roster: [roster.get(HANA), roster.get(SAM)],
     feed: [feed.get(HANA), feed.get(SAM)],
+    wikiNameShown: /(Hana|Sam) Wiki/.test(JSON.stringify([group, posts, [...messaging.values()]])),
   };
 }
 
@@ -183,31 +185,34 @@ async function hanasLorewardsSeenBy(viewer: string) {
   };
 }
 
-it("hides Hana's wiki name everywhere others see her while attribution is off, and shows it again once on", async () => {
-  await privacy("hana", { showWikiAttribution: false });
+it("names Hana and Sam by handle, else persona, never by a wiki name, whatever wiki attribution says", async () => {
   const groupId = await economists();
   await post(groupId);
 
-  // With her wiki name hidden, she is named by her personal persona (made by her first post)
+  // Her first post made her personal persona, never named after her wiki name
   const persona = await db.thinkpagesAccount.findFirstOrThrow({ where: { clerkUserId: HANA } });
   expect(persona.displayName).not.toContain("Hana Wiki");
-  for (const viewer of [null, "omar", "hana"]) {
-    const seen = await namesSeenBy(viewer, groupId);
-    expect(seen.display[0]).toBe(persona.displayName);
-    expect(seen.display.slice(1)).toEqual(["Sam Wiki", "Omaria", UNKNOWN_DISPLAY_NAME]);
-    expect(seen.messaging[0]).not.toBe("Hana Wiki");
-    expect(seen.messaging[1]).toBe("Sam Wiki");
-    expect(seen.roster).toEqual([null, "Sam Wiki"]);
-    expect(seen.feed).toEqual([null, "Sam Wiki"]);
+  for (const shown of [true, false]) {
+    for (const id of ["hana", "sam"]) await privacy(id, { showWikiAttribution: shown });
+    for (const viewer of [null, "omar", "hana"]) {
+      expect(await namesSeenBy(viewer, groupId)).toEqual({
+        display: [persona.displayName, "samwise", "Omaria", UNKNOWN_DISPLAY_NAME],
+        messaging: [persona.displayName, "samwise"],
+        roster: [persona.displayName, "samwise"],
+        feed: [null, "samwise"],
+        wikiNameShown: false,
+      });
+    }
   }
-  // The join notice did not name her by her wiki name either
-  const hanaJoined = mockThinktankActivity.mock.calls
+  // The join notices did not name either by a wiki name
+  const joined = mockThinktankActivity.mock.calls
     .map(([n]) => n as { actorUserId: string; actorUserName: string })
-    .filter((n) => n.actorUserId === HANA);
-  expect(hanaJoined.length).toBeGreaterThan(0);
-  for (const notice of hanaJoined) expect(notice.actorUserName).not.toContain("Hana Wiki");
+    .filter((n) => n.actorUserId === HANA || n.actorUserId === SAM);
+  expect(joined.length).toBeGreaterThan(1);
+  for (const notice of joined) expect(notice.actorUserName).not.toMatch(/(Hana|Sam) Wiki/);
 
-  // Her passport handle (on every share link) skips the wiki name; her own settings still show the link
+  // With attribution off her passport handle (on every share link) skips the wiki name; her own settings still show
+  // the link
   const status = await ixnayid(as("hana")).getStatus();
   expect(status.passportHandle).not.toMatch(/hana[ _]wiki/i);
   expect(status.wiki).toMatchObject({ linked: true, username: "Hana Wiki" });
@@ -218,13 +223,6 @@ it("hides Hana's wiki name everywhere others see her while attribution is off, a
   const sams = await ixnayid(as("sam")).getStatus();
   expect(sams.wiki).toMatchObject({ linked: false, username: null });
   expect(sams.passportHandle).not.toMatch(/sam[ _]wiki/i);
-
-  await privacy("hana", { showWikiAttribution: true });
-  const seen = await namesSeenBy("omar", groupId);
-  expect(seen.display[0]).toBe("Hana Wiki");
-  expect(seen.messaging[0]).toBe("Hana Wiki");
-  expect(seen.roster[0]).toBe("Hana Wiki");
-  expect(seen.feed[0]).toBe("Hana Wiki");
 });
 
 it("reads no wiki name for Hana's achievements as others see them while she keeps her name claim hidden", async () => {
@@ -251,7 +249,7 @@ it("reads no wiki name for Hana's achievements as others see them while she keep
   });
 });
 
-it("hides every wiki name when the privacy switches cannot be read", async () => {
+it("names players the same when the privacy switches cannot be read", async () => {
   const groupId = await economists();
   const unreadable = () =>
     jest.spyOn(db.userConnection, "findMany").mockRejectedValue(new Error("db down"));
@@ -260,45 +258,57 @@ it("hides every wiki name when the privacy switches cannot be read", async () =>
   const display = await resolveDisplayNames(db as never, [HANA, SAM, OMAR]);
   expect([HANA, SAM, OMAR].map((id) => display.get(id))).toEqual([
     UNKNOWN_DISPLAY_NAME,
-    UNKNOWN_DISPLAY_NAME,
+    "samwise",
     "Omaria",
   ]);
   const messaging = await batchResolveMessagingAccounts([HANA, SAM], db as never);
   expect([messaging.get(HANA)?.displayName, messaging.get(SAM)?.displayName]).toEqual([
     UNKNOWN_DISPLAY_NAME,
-    UNKNOWN_DISPLAY_NAME,
+    "samwise",
   ]);
   const group = await thinktanks(as(null)).getThinktankById({ groupId });
-  expect(
-    group!.members.map((m) => (m.user as { wikiUsername?: string | null }).wikiUsername ?? null)
-  ).toEqual([null, null, null]);
+  expect(group!.members.map((m) => (m.user as { displayName?: string }).displayName)).toEqual([
+    "Omaria",
+    UNKNOWN_DISPLAY_NAME,
+    "samwise",
+  ]);
 
   jest.restoreAllMocks();
   await post(groupId);
   unreadable();
   const { posts } = await thinktanks(as(null)).getGroupFeed({ groupId });
-  expect(posts.map((p) => p.realUser?.wikiUsername ?? null)).toEqual([null, null]);
+  const feed = new Map(posts.map((p) => [p.account!.clerkUserId, p.realUser?.handle ?? null]));
+  expect([feed.get(HANA), feed.get(SAM)]).toEqual([null, "samwise"]);
 });
 
-// A first post names the personal persona after what was shown then, here the wiki name. Once Hana turns attribution
-// off, nothing falls back to that persona (owner 2026-10-21: stop the fallback; the persona keeps its name).
-it("stops naming Hana by her wiki name through a persona made while it was shown", async () => {
+// A first post used to name the personal persona after the wiki name while it was shown. Once Hana hides her claim,
+// her handle names her, so nothing falls back to that persona (owner 2026-10-21); the persona keeps its name.
+it("names Hana by her handle, not a persona named after her wiki name, once she hides her claim", async () => {
   const groupId = await economists();
-  await post(groupId);
-  const persona = await db.thinkpagesAccount.findFirstOrThrow({ where: { clerkUserId: HANA } });
-  expect(persona.displayName).toBe("Hana Wiki");
-  await privacy("hana", { showWikiAttribution: false });
+  await db.thinkpagesAccount.create({
+    data: {
+      clerkUserId: HANA,
+      countryId: null,
+      accountType: "personal",
+      username: "HanaWiki",
+      displayName: "Hana Wiki",
+      firstName: "Hana Wiki",
+      lastName: "",
+      bio: "",
+      verified: false,
+    },
+  });
+  await db.wikiNameClaim.updateMany({ where: { userId: "hana" }, data: { visible: false } });
+  await db.user.update({ where: { id: "hana" }, data: { handle: "hanako" } });
 
-  expect((await resolveDisplayNames(db as never, [HANA, SAM])).get(HANA)).toBe(
-    UNKNOWN_DISPLAY_NAME
-  );
+  expect((await resolveDisplayNames(db as never, [HANA])).get(HANA)).toBe("hanako");
   const messaging = await batchResolveMessagingAccounts([HANA], db as never);
-  expect(messaging.get(HANA)?.displayName).toBe(UNKNOWN_DISPLAY_NAME);
+  expect(messaging.get(HANA)?.displayName).toBe("hanako");
   const group = await thinktanks(as("omar")).getThinktankById({ groupId });
   const rosterName = (id: string) =>
     (group!.members.find((m) => m.userId === id)?.user as { displayName?: string } | undefined)
       ?.displayName;
-  expect([rosterName(HANA), rosterName(SAM)]).toEqual([UNKNOWN_DISPLAY_NAME, "Sam Wiki"]);
+  expect([rosterName(HANA), rosterName(SAM)]).toEqual(["hanako", "samwise"]);
   const after = await db.thinkpagesAccount.findFirstOrThrow({ where: { clerkUserId: HANA } });
   expect(after.displayName).toBe("Hana Wiki");
 });

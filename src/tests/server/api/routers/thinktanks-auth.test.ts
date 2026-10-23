@@ -347,7 +347,7 @@ describe("SL-12: notification names come from the identity resolver", () => {
       {
         clerkUserId: OUTSIDER,
         forumUsername: null,
-        wikiUsername: null,
+        handle: null,
         country: { name: "Caphiria" },
       },
     ]);

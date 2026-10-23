@@ -79,7 +79,6 @@ const when = new Date("2026-10-09T12:00:00Z");
 const rawUser = (id: string, handle: string) => ({
   id,
   handle,
-  wikiUsername: null,
   country: null,
   email: `${id}@example.com`,
   clerkUserId: `clerk_${id}`,

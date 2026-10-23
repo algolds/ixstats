@@ -17,7 +17,7 @@ interface Member {
     displayName?: string | null;
     avatarUrl?: string | null;
     forumUsername?: string | null;
-    wikiUsername?: string | null;
+    handle?: string | null;
     country?: {
       id: string;
       name: string;
@@ -56,7 +56,7 @@ function matchesQuery(member: Member, query: string) {
     user?.displayName,
     user?.country?.name,
     user?.forumUsername,
-    user?.wikiUsername,
+    user?.handle,
     member.userId,
     member.role,
   ].some((field) => field?.toLowerCase().includes(query));
@@ -69,7 +69,7 @@ function memberIdentity(member: Member) {
     user?.displayName ||
     country?.name ||
     user?.forumUsername ||
-    user?.wikiUsername ||
+    user?.handle ||
     `User ${member.userId.slice(-6)}`;
 
   const subtitle =

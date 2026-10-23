@@ -137,7 +137,6 @@ const userRow = (id: string, extra: Row = {}): Row => ({
   id,
   clerkUserId: `clerk_${id}`,
   handle: id.replace("u_", ""),
-  wikiUsername: null,
   countryId: null,
   country: { name: `Nation of ${id}`, flag: `https://flags.example/${id}.png` },
   role: USER_ROLE,

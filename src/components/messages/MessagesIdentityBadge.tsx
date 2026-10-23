@@ -14,14 +14,13 @@ interface UserProfile {
 }
 
 interface IxnayIdData {
-  wikiUsername?: string | null;
   forumUsername?: string | null;
   discordUsername?: string | null;
 }
 
 /**
  * Resolves the display identity based on the conversation's folder context.
- * Diplomatic channels show country name, wiki discussions show wiki username, etc.
+ * Diplomatic channels show the country name, forum discussions the forum username.
  */
 export function resolveIdentity(
   displayName: string,
@@ -41,13 +40,6 @@ export function resolveIdentity(
       badgeIcon: Globe,
       badgeColor: "text-yellow",
       sourceLabel: "Diplomatic",
-    };
-  }
-
-  if (source === "wiki") {
-    return {
-      displayName: ixnayId?.wikiUsername ?? displayName,
-      avatar: null,
     };
   }
 

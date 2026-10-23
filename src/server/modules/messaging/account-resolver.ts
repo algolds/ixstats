@@ -1,14 +1,12 @@
 /**
  * Batch Account Resolver for Messaging (Plan 163)
  *
- * Efficiently batch-resolves clerkUserIds, countryIds, forum keys, and wiki usernames
+ * Efficiently batch-resolves clerkUserIds, countryIds, forum keys, and wiki talk-page authors
  * in a single round-trip without N+1 queries.
  *
- * A player who turned wiki attribution off (`showWikiAttribution`) is never named by their wiki
- * name: the switch is read in one batch (`withoutHiddenWikiNames`; a read error hides every wiki
- * name) and the name falls through to the next one, as display-names.ts does. The name is the same
- * for every viewer, the player included. `wiki:` ids are wiki talk-page authors (wiki-talk-bridge),
- * named on the wiki itself, not players.
+ * A player is named as display-names.ts names them (nation, forum name, passport handle, persona),
+ * never by an old wiki name, and the same for every viewer, the player included. `wiki:` ids are
+ * wiki talk-page authors (wiki-talk-bridge), named on the wiki itself, not players.
  */
 
 import type { Prisma, PrismaClient } from "@prisma/client";
@@ -18,7 +16,6 @@ import {
   resolveDisplayNames,
   UNKNOWN_DISPLAY_NAME,
 } from "~/server/shared/display-names";
-import { withoutHiddenWikiNames } from "~/server/shared/privacy-permissions";
 
 type AccountMap = Map<string, UserAccount>;
 
@@ -42,13 +39,10 @@ function account(
 }
 
 async function resolveClerkAccounts(realIds: string[], db: MessagingAccountsDb, map: AccountMap) {
-  const users = await withoutHiddenWikiNames(
-    db,
-    await db.user.findMany({
-      where: { clerkUserId: { in: realIds } },
-      include: COUNTRY_INCLUDE,
-    })
-  );
+  const users = await db.user.findMany({
+    where: { clerkUserId: { in: realIds } },
+    include: COUNTRY_INCLUDE,
+  });
   for (const u of users) {
     map.set(
       u.clerkUserId,
