@@ -1,8 +1,14 @@
 // src/lib/cards/hub/mine.ts
-import { CardFinish, CardRarity, CardType, LoreCategory } from "@prisma/client";
+import { CardFinish, CardRarity, CardType } from "@prisma/client";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { z } from "zod";
+import {
+  CategoryFilter,
+  UNCATEGORISED,
+  type CategoryFilterValue,
+} from "~/lib/cards/category-enums";
 import { loadCopyValues, type ValueDb } from "~/lib/cards/copy-value";
+import { filterFacets, type FilterFacets } from "~/lib/cards/face/filter-facets";
 import { rarityRank } from "~/lib/cards/face/labels";
 import { MINE_SORTS, type MineSort } from "~/lib/cards/face/mine-options";
 import type { CardFaceData, CardRealmBadge } from "~/lib/cards/face/types";
@@ -19,7 +25,7 @@ export const MineQuerySchema = z.object({
   rarities: z.array(z.enum(CardRarity)).max(6).optional(),
   finishes: z.array(z.enum(CardFinish)).max(4).optional(),
   types: z.array(z.enum(CardType)).max(5).optional(),
-  categories: z.array(z.enum(LoreCategory)).max(20).optional(),
+  categories: z.array(z.enum(CategoryFilter)).max(20).optional(),
   duplicates: z.boolean().optional(),
   search: z.string().trim().max(100).optional(),
   sort: z.enum(MINE_SORTS).default("acquired"),
@@ -68,10 +74,22 @@ export interface MinePage {
   /** Every realm the player holds a card from, for the realm filter. */
   realms: CardRealmBadge[];
   totalCopies: number;
+  /** The types and categories of every copy the player holds, before the filters, for the filters' choices. */
+  facets: FilterFacets;
 }
 
 function inList<T>(list: readonly T[] | undefined, value: T): boolean {
   return !list?.length || list.includes(value);
+}
+
+/** A card with no category matches only Uncategorised, and only when it is a lore card. */
+function matchesCategory(
+  values: readonly CategoryFilterValue[] | undefined,
+  card: MineCopyRow["cards"]
+): boolean {
+  if (!values?.length) return true;
+  if (card.category !== null) return values.includes(card.category);
+  return card.cardType === "LORE" && values.includes(UNCATEGORISED);
 }
 
 function matchesFacets({ row }: MineEntry, query: MineQuery): boolean {
@@ -81,8 +99,7 @@ function matchesFacets({ row }: MineEntry, query: MineQuery): boolean {
     inList(query.rarities, card.rarity) &&
     inList(query.finishes, row.finish) &&
     inList(query.types, card.cardType) &&
-    (!query.categories?.length ||
-      (card.category !== null && query.categories.includes(card.category)))
+    matchesCategory(query.categories, card)
   );
 }
 
@@ -142,6 +159,7 @@ export function selectMine(entries: readonly MineEntry[], query: MineQuery): Min
     nextCursor: next < picked.length ? next : null,
     realms: [...realms.values()].sort((a, b) => a.name.localeCompare(b.name)),
     totalCopies: entries.length,
+    facets: filterFacets(entries.map(({ row }) => row.cards)),
   };
 }
 

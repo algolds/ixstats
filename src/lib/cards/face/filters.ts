@@ -1,5 +1,5 @@
 // src/lib/cards/face/filters.ts
-import type { LoreCategory } from "~/lib/cards/category-enums";
+import type { CategoryFilterValue } from "~/lib/cards/category-enums";
 import type { ExploreQuery } from "~/lib/cards/hub/explore";
 import type { MineQuery } from "~/lib/cards/hub/mine";
 import type { OwnedFilter } from "./explore-options";
@@ -12,7 +12,7 @@ export interface CardFilters {
   rarities: CardRarity[];
   finishes: CardFinish[];
   types: CardType[];
-  category: LoreCategory | null;
+  category: CategoryFilterValue | null;
   duplicates: boolean;
   owned: OwnedFilter;
   region: string | null;

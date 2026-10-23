@@ -1,9 +1,16 @@
 // src/lib/cards/hub/explore.ts
-import { CardRarity, CardType, LoreCategory, Prisma } from "@prisma/client";
+import { CardRarity, CardType, Prisma } from "@prisma/client";
 import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
+import {
+  CategoryFilter,
+  UNCATEGORISED,
+  type CategoryFilterValue,
+  type LoreCategory,
+} from "~/lib/cards/category-enums";
 import { normalizeArtwork } from "~/lib/cards/face/artwork";
 import { EXPLORE_SORTS, OWNED_FILTERS, type ExploreSort } from "~/lib/cards/face/explore-options";
+import { filterFacets, type FilterFacets } from "~/lib/cards/face/filter-facets";
 import type { CardFaceData, CardRealmBadge } from "~/lib/cards/face/types";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { cardsCollectedBy, facesFor, type CollectionDb } from "./art-visibility";
@@ -16,7 +23,7 @@ export const ExploreQuerySchema = z.object({
   realmId: z.string().min(1).max(64).optional(),
   rarities: z.array(z.enum(CardRarity)).max(6).optional(),
   types: z.array(z.enum(CardType)).max(5).optional(),
-  categories: z.array(z.enum(LoreCategory)).max(20).optional(),
+  categories: z.array(z.enum(CategoryFilter)).max(20).optional(),
   region: z.string().trim().min(1).max(100).optional(),
   season: z.number().int().min(1).max(99).optional(),
   owned: z.enum(OWNED_FILTERS).default("all"),
@@ -42,6 +49,17 @@ const EXPLORE_CATALOGUE_WHERE = {
   cardType: { not: "TROPHY" },
 } satisfies Prisma.CardWhereInput;
 
+/** The category filter: Uncategorised is a lore card with no category, never an NS card (they carry none). */
+export function categoryWhere(
+  values: readonly CategoryFilterValue[] | undefined
+): Prisma.CardWhereInput {
+  if (!values?.length) return {};
+  const real = values.filter((value): value is LoreCategory => value !== UNCATEGORISED);
+  const inReal = { category: { in: real } } satisfies Prisma.CardWhereInput;
+  if (!values.includes(UNCATEGORISED)) return inReal;
+  return { OR: [...(real.length ? [inReal] : []), { cardType: "LORE", category: null }] };
+}
+
 /** The catalogue narrowed by the grid's filters. A title search matches `%` and `_` literally. */
 export function exploreWhere(query: ExploreQuery, viewerId: string): Prisma.CardWhereInput {
   return {
@@ -49,7 +67,7 @@ export function exploreWhere(query: ExploreQuery, viewerId: string): Prisma.Card
     ...(query.realmId ? { realmId: query.realmId } : {}),
     ...(query.rarities?.length ? { rarity: { in: query.rarities } } : {}),
     ...(query.types?.length ? { cardType: { not: "TROPHY", in: query.types } } : {}),
-    ...(query.categories?.length ? { category: { in: query.categories } } : {}),
+    ...categoryWhere(query.categories),
     ...(query.season ? { season: query.season } : {}),
     ...(query.region ? { metadata: { path: ["nsData", "region"], equals: query.region } } : {}),
     ...(query.search
@@ -57,6 +75,16 @@ export function exploreWhere(query: ExploreQuery, viewerId: string): Prisma.Card
       : {}),
     ...ownedWhere(query.owned, viewerId),
   };
+}
+
+/** The type and category filters' choices: only those the Explore catalogue has cards for. */
+export async function exploreFacets(db: Pick<PrismaClient, "card">): Promise<FilterFacets> {
+  const groups = await db.card.groupBy({
+    by: ["cardType", "category"],
+    where: EXPLORE_CATALOGUE_WHERE,
+    _count: { _all: true },
+  });
+  return filterFacets(groups);
 }
 
 /** Every sort ends on a unique key, so offset pages never repeat or skip a card. */

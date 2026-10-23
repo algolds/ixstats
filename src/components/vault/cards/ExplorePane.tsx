@@ -16,7 +16,6 @@ import {
   exploreFilterInput,
   type CardFilters,
 } from "~/lib/cards/face/filters";
-import { TYPE_ORDER } from "~/lib/cards/face/labels";
 import type { CardFaceData, CardRealmBadge } from "~/lib/cards/face/types";
 import type { ExplorePage, RealmShelf as Shelf } from "~/lib/cards/hub/explore";
 import { STORE_PATH } from "~/lib/cards/hub-routes";
@@ -36,11 +35,11 @@ const EXPLORE_DIMENSIONS: readonly FilterDimension[] = [
   "category",
   "region",
 ];
-/** Trophy cards are not in Explore: they live in Lorewards and Mine. */
-const EXPLORE_TYPES = TYPE_ORDER.filter((type) => type !== "TROPHY");
 const PAGE = 48;
 /** Regions change only when NationStates cards are imported. */
 const REGIONS_STALE_MS = 10 * 60 * 1000;
+/** The filters' types and categories change only when cards are imported, published or categorised. */
+const FACETS_STALE_MS = 10 * 60 * 1000;
 
 /** The realm a `?realm=` slug names; Ixnay's old slugs still find it. */
 function realmForSlug(realms: readonly CardRealmBadge[], slug: string) {
@@ -124,6 +123,7 @@ export function ExplorePane({
 }: ExplorePaneProps) {
   const shelves = api.cards.exploreShelves.useQuery();
   const realms = useMemo(() => shelves.data?.realms ?? [], [shelves.data]);
+  const facets = api.cards.exploreFacets.useQuery(undefined, { staleTime: FACETS_STALE_MS });
   const { filters, setFilters, change, nsRealmId } = useExploreFilters(realms, initialRealmSlug);
   const [sort, setSort] = useState<ExploreSort>("newest");
   const gridSection = useRef<HTMLElement>(null);
@@ -179,7 +179,8 @@ export function ExplorePane({
           filters={filters}
           onChange={change}
           dimensions={EXPLORE_DIMENSIONS}
-          types={EXPLORE_TYPES}
+          types={facets.data?.types ?? []}
+          categories={facets.data?.categories ?? []}
           realms={realms}
           regions={regions}
           regionSearch={regionSearch}
