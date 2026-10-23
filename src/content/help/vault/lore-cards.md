@@ -1,6 +1,6 @@
 ---
 title: Lore Cards
-description: Cards made from wiki articles, how they're made, and how to suggest one.
+description: Cards made from wiki articles, how they're made, their categories, and how to suggest a card or a category.
 badge: Vault, Cards & Rewards
 prevHref: /help/vault/crafting
 prevLabel: Dust, fusion and crafting
@@ -10,7 +10,7 @@ nextLabel: Importing NationStates Cards
 
 ## What lore cards are
 
-A lore card is a card made from a wiki article (from the wiki, IIWiki or the AltHistory Wiki): a historical event, a person, an organisation, a place and so on. It shows an excerpt of the article, links to it in WikiOS (IIWiki and AltHistory Wiki articles open there too, read-only), and has a category (military, diplomacy, geography, religion, culture, government, people, economy, science, history and others). A few lore cards are made from Wikimedia Commons files instead, and link to the file's page there.
+A lore card is a card made from a wiki article (from the wiki, IIWiki or the AltHistory Wiki): a historical event, a person, an organisation, a place and so on. It shows an excerpt of the article, links to it in WikiOS (IIWiki and AltHistory Wiki articles open there too, read-only), and has a category, often with a subcategory: for example History · Event, or Geography · City or settlement. The categories are Military, Diplomacy, Geography, Religion, Culture, Government, People, Economy, Science, History, Nation and Special; a country's article is a Nation card. A card whose category isn't settled yet reads **Uncategorised** until staff choose one. A few lore cards are made from Wikimedia Commons files instead, and link to the file's page there.
 
 Browse every lore card in [Cards → Explore](/vault/cards/explore), realm by realm, each with its art. Until you collect a card, its art is muted and the card shows its number; once you hold a copy, it shows in full colour.
 
@@ -18,6 +18,8 @@ Browse every lore card in [Cards → Explore](/vault/cards/explore), realm by re
 
 - **Imports**: admins import articles from the wiki, IIWiki and the AltHistory Wiki, and files from Wikimedia Commons, and a daily import adds a few more from each wiki that has it switched on.
 - **Suggestions** from players (below).
+
+Each card's category is worked out from its article: its infobox, the wiki categories it is in, and its title and opening text. When the guess isn't clear enough, staff check it. An article its wiki tags as Abandoned Lore isn't made into a card, and a card made from one before is retired.
 
 Every imported card waits for an admin's review before it can drop from packs. A card's rarity comes from the article itself (its length, its references, how many pages link to it, whether it is featured, whether it has an infobox and how many categories it's in), scored against a table set for each wiki; admins can change it. An article whose lead image is licensed for non-commercial use only, or with no changes allowed, is not imported.
 
@@ -29,6 +31,19 @@ Every imported card waits for an admin's review before it can drop from packs. A
 4. An admin reviews it. If it's accepted, the card is made and joins the card pool. If it's declined, your list of suggestions in the same window shows why.
 
 Paid requests and lore tokens have ended. Requests you had already paid for wait as free suggestions, and everyone with unused lore tokens they bought gets back what they paid, shown as a refund in your Vault's transaction history.
+
+## Suggesting a category
+
+If a lore card's category looks wrong, or it reads Uncategorised, you can suggest a better one.
+
+1. Sign in and open the card. Its category shows in its **About** section.
+2. Choose **Suggest a category**, beside the category.
+3. Pick a category and, if one fits, a subcategory. Add a note if you like, for example why you think it fits.
+4. Choose **Send suggestion**. Staff review it before the card changes.
+
+You can have one suggestion waiting for each card, and send ten a day. If you've already suggested a category for a card and staff haven't answered yet, you're told so.
+
+In [Cards → Explore](/vault/cards/explore) and [Mine](/vault/cards/mine), the type and category filters list only the types and categories that have cards. **Uncategorised** shows lore cards that don't have a category yet.
 
 ## Getting lore cards
 
