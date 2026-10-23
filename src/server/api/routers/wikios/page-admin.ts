@@ -224,7 +224,8 @@ export const wikiosPageAdminRouter = createTRPCRouter({
 
   /**
    * Groups, rights and block of the caller (named by their passport handle), or, with `user`, of that wiki
-   * username (with the explicit memberships a bureaucrat could remove).
+   * username (with the explicit memberships a bureaucrat could remove). A name its holder hides answers, to anyone
+   * else, as a name nobody holds: only the rows keyed by the name itself.
    */
   getUserPermissions: publicProcedure
     .input(z.object({ user: z.string().min(1).max(255).optional() }).optional())
@@ -243,7 +244,10 @@ export const wikiosPageAdminRouter = createTRPCRouter({
           changeableGroups: changeableGroups(caller.rights),
         };
       }
-      const target = await RightsAdminService.resolveTarget({ wikiUsername: input.user });
+      const target = await RightsAdminService.resolveShownTarget(
+        input.user,
+        getWikiAuth(ctx).internalUserId
+      );
       const [permissions, explicit] = await Promise.all([
         loadTargetPermissions({ userId: target.userId, wikiUsername: target.displayName }),
         RightsAdminService.explicitGroups(target),
