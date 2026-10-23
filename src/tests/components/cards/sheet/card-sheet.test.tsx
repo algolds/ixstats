@@ -122,8 +122,6 @@ const ns = {
   season: 3,
   region: "Lazarus",
   category: "Civil Rights Lovefest",
-  cardUrl: null,
-  nationUrl: "https://www.nationstates.net/nation=testlandia",
 };
 const copy = (overrides: Partial<SheetCopy> = {}): SheetCopy => ({
   face,
@@ -680,16 +678,15 @@ describe("CardSheet about", () => {
     expect(caption).toHaveClass("text-footnote", "text-label-secondary");
   });
 
-  it("gives an NS card its facts line, and puts the NationStates notice and takedown behind (i)", () => {
+  it("gives an NS card its facts line with no link out, and puts the NationStates notice and takedown behind (i)", () => {
     showSheet(
       sheet({ card: { ...card, cardType: "NS", wikiArticleTitle: null, wikiSource: null, ns } })
     );
     open();
-    const facts = within(about()).getByRole("link", { name: "View on NationStates" });
-    expect(facts).toHaveAttribute("href", ns.nationUrl);
-    expect(facts.parentElement).toHaveTextContent(
-      "Testlandia · season 3 · Lazarus · Civil Rights Lovefest · View on NationStates"
-    );
+    expect(
+      within(about()).getByText("Testlandia · season 3 · Lazarus · Civil Rights Lovefest")
+    ).toBeInTheDocument();
+    expect(within(about()).queryByRole("link", { name: "View on NationStates" })).toBeNull();
     expect(screen.queryByText(/Not affiliated with or endorsed by NationStates/)).toBeNull();
     expect(within(about()).queryByRole("button", { name: /takedown/ })).toBeNull();
     expect(within(about()).queryByRole("link", { name: "How to ask for a takedown" })).toBeNull();

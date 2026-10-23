@@ -48,22 +48,10 @@ function useArticleAuthor(card: CardSheetData["card"], isLore: boolean): string 
   return stored ?? cleanAuthor(live.data?.authorInfo?.displayAuthor);
 }
 
-/** An NS card's NationStates facts, then its page there. */
+/** An NS card's NationStates facts. */
 function NsFacts({ ns }: { ns: NsProvenance }) {
   const facts = [ns.nation, ns.season ? `season ${ns.season}` : null, ns.region, ns.category];
-  return (
-    <p className="text-callout text-label-secondary">
-      {facts.filter(Boolean).join(" · ")} ·{" "}
-      <a
-        href={ns.cardUrl ?? ns.nationUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={cn("text-tint underline", focusRing)}
-      >
-        View on NationStates
-      </a>
-    </p>
-  );
+  return <p className="text-callout text-label-secondary">{facts.filter(Boolean).join(" · ")}</p>;
 }
 
 interface NsDataInfoProps {

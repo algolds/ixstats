@@ -28,7 +28,6 @@ const CARD = {
   collectorNumber: 9,
   season: 1,
   nsSeason: null,
-  nsCardId: null,
   realm,
   isBound: false,
   category: "HISTORY",

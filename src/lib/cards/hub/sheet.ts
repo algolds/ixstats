@@ -34,7 +34,6 @@ export type SheetRules = HolderRules & PlayerRules;
 
 const SHEET_CARD_SELECT = {
   ...CARD_FACE_SELECT,
-  nsCardId: true,
   isBound: true,
   category: true,
   description: true,
