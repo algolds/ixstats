@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { api } from "~/trpc/react";
 import { timeAgo } from "~/lib/format/compact";
+import { stripHtml } from "~/lib/utils/sanitize-html";
 import { useUser } from "~/context/auth-context";
 import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
 import { RealmBoardBlock } from "./RealmBoardBlock";
@@ -21,7 +22,8 @@ interface FeedRow {
 }
 
 function CompactRow({ row }: { row: FeedRow }) {
-  const excerpt = row.content.slice(0, COMPACT_EXCERPT);
+  const text = stripHtml(row.content);
+  const excerpt = text.slice(0, COMPACT_EXCERPT);
   return (
     <li>
       <Link
@@ -38,7 +40,7 @@ function CompactRow({ row }: { row: FeedRow }) {
         </span>
         <span className="text-label-secondary text-footnote">
           {excerpt}
-          {row.content.length > COMPACT_EXCERPT && "…"}
+          {text.length > COMPACT_EXCERPT && "…"}
         </span>
       </Link>
     </li>

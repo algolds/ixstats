@@ -48,4 +48,11 @@ describe("RealmsHeader", () => {
     render(<RealmsHeader realms={realms} standing="no-nation" />);
     expect(screen.getByText("2 realms · 280 nations · 262 open")).toBeInTheDocument();
   });
+
+  it("holder with no directory yet: no newcomer line, no counts line", () => {
+    const { container } = render(<RealmsHeader realms={undefined} standing="holds-nations" />);
+    expect(screen.queryByText(NEWCOMER)).not.toBeInTheDocument();
+    expect(screen.queryByText(/ open$/)).not.toBeInTheDocument();
+    expect(container.querySelector(".text-label-secondary")).toBeNull();
+  });
 });

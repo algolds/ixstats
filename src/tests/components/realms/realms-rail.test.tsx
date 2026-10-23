@@ -154,6 +154,27 @@ describe("RealmFeed compact", () => {
     expect(first.textContent).not.toContain("x".repeat(121));
   });
 
+  it("compact rows show post text without markup", () => {
+    mockGetFeed.mockReturnValue({
+      data: {
+        posts: [
+          {
+            id: "m1",
+            content: "<p>Rich <b>bold</b></p><!-- x -->",
+            timestamp: new Date().toISOString(),
+            account: { displayName: "Marked" },
+          },
+        ],
+      },
+      isLoading: false,
+      error: null,
+    });
+    render(<RealmFeed realmId="r1" realmSlug="ixnay" compact />);
+    const row = screen.getByRole("link");
+    expect(row.textContent).toContain("Rich bold");
+    expect(row.textContent).not.toContain("<");
+  });
+
   it("the default feed is unchanged", () => {
     mockGetFeed.mockReturnValue({ data: { posts }, isLoading: false, error: null });
     render(<RealmFeed realmId="r1" realmSlug="ixnay" />);

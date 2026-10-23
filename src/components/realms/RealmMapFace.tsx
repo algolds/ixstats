@@ -75,16 +75,20 @@ function FaceSvg({ face, className }: { face: Face; className?: string }) {
 
 /**
  * A realm's face: its banner when it has one, else its political map drawn from the atlas (claimed nations in the
- * tint, open ones hatched), else its crest on the tint. The map is only fetched when there is no banner.
+ * tint, open ones hatched), else its crest on the tint (just the tint with `showCrest={false}`, for a caller that
+ * draws the crest itself). The map is only fetched when there is no banner.
  */
 export function RealmMapFace({
   realm,
   bannerUrl,
   className,
+  showCrest = true,
 }: {
   realm: CardRealmBadge;
   bannerUrl: string | null;
   className?: string;
+  /** Whether the no-banner, no-map fallback draws the crest (default true). */
+  showCrest?: boolean;
 }) {
   const { data: face, isLoading } = api.realms.mapFace.useQuery(
     { realmSlug: realm.slug },
@@ -107,7 +111,7 @@ export function RealmMapFace({
   if (face) return <FaceSvg face={face} className={className} />;
   return (
     <div className={cn("bg-tint-fill grid h-full w-full place-items-center", className)}>
-      <RealmCrest realm={realm} size="lg" />
+      {showCrest && <RealmCrest realm={realm} size="lg" />}
     </div>
   );
 }

@@ -48,20 +48,21 @@ export function RealmsHeader({
   standing: ViewerStanding;
 }) {
   const newcomer = standing === "signed-out" || standing === "no-nation";
+  const counts = realms && realms.length > 0 ? countsLine(realms) : null;
   return (
     <PageHeader
       title="Realms"
       subtitle={
-        <>
-          {newcomer && (
-            <span className="block">
-              Worlds with their own nations, boards and lore. Claim a nation and play.
-            </span>
-          )}
-          {realms && realms.length > 0 && (
-            <span className="block tabular-nums">{countsLine(realms)}</span>
-          )}
-        </>
+        newcomer || counts ? (
+          <>
+            {newcomer && (
+              <span className="block">
+                Worlds with their own nations, boards and lore. Claim a nation and play.
+              </span>
+            )}
+            {counts && <span className="block tabular-nums">{counts}</span>}
+          </>
+        ) : undefined
       }
       actions={<CallToAction standing={standing} />}
       bleed

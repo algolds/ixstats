@@ -78,7 +78,11 @@ function DirectoryRealmCard({ realm }: { realm: DirectoryRealm }) {
           <div className="relative h-36 overflow-hidden">
             <SharedElement name={`realm-map-${realm.slug}`}>
               <motion.div style={drift} className="h-full w-full scale-[1.08]">
-                <RealmMapFace realm={realmBadge(realm)} bannerUrl={realm.bannerUrl} />
+                <RealmMapFace
+                  realm={realmBadge(realm)}
+                  bannerUrl={realm.bannerUrl}
+                  showCrest={false}
+                />
               </motion.div>
             </SharedElement>
             {open > 0 && (
@@ -106,15 +110,15 @@ function DirectoryRealmCard({ realm }: { realm: DirectoryRealm }) {
           >
             {realm.name}
           </Link>
-          <p className="text-label-secondary text-footnote">
-            {`${plural(realm.nationCount, "nation")} · ${boardActivity(realm.board)}`}
-          </p>
           {realm.description && (
             <p className="text-label-secondary text-footnote line-clamp-2">{realm.description}</p>
           )}
           {realm.tags.length > 0 && (
             <p className="text-label-secondary text-footnote">{realm.tags.join(" · ")}</p>
           )}
+          <p className="text-label-secondary text-footnote">
+            {`${plural(realm.nationCount, "nation")} · ${boardActivity(realm.board)}`}
+          </p>
           <JoinAction realm={realm} />
         </div>
       </Card>

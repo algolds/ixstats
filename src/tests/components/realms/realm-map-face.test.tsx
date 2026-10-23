@@ -70,6 +70,13 @@ describe("RealmMapFace", () => {
     expect(screen.getByText("E").closest(".bg-tint-fill")).not.toBeNull();
   });
 
+  it("without a crest the fallback is the plain tint field", () => {
+    mockUseQuery.mockReturnValue({ data: null, isLoading: false });
+    const { container } = render(<RealmMapFace realm={realm} bannerUrl={null} showCrest={false} />);
+    expect(screen.queryByText("E")).toBeNull();
+    expect(container.querySelector(".bg-tint-fill")).not.toBeNull();
+  });
+
   it("uses a DOM-safe pattern id", () => {
     mockUseQuery.mockReturnValue({ data: face, isLoading: false });
     const { container } = render(<RealmMapFace realm={realm} bannerUrl={null} />);
