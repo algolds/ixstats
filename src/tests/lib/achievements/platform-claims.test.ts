@@ -34,7 +34,10 @@ const stats = (username: string, over: Partial<StatsRow> = {}): StatsRow => ({
 function fakeDb(names: string[], rows: StatsRow[]) {
   return {
     wikiNameClaim: {
-      findMany: jest.fn(async () => names.map((name) => ({ userId: "u1", name }))),
+      findMany: jest.fn(
+        async (_query: { where: { source: string; userId: { in: string[] }; status: string } }) =>
+          names.map((name) => ({ userId: "u1", name }))
+      ),
     },
     lorewardUserStats: {
       findMany: jest.fn(async ({ where }: { where: { username: { in: string[] } } }) =>
@@ -80,11 +83,9 @@ describe("lorewardsLoader on claimed names", () => {
   it("reads every approved claim of the account, shown or hidden", async () => {
     const db = fakeDb(["Old name"], []);
     await lorewardsLoader.load(contextOf(db));
-    expect(db.wikiNameClaim.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { source: "ixwiki", userId: { in: ["u1"] }, status: "APPROVED" },
-      })
-    );
+    expect(db.wikiNameClaim.findMany.mock.calls[0]?.[0]).toMatchObject({
+      where: { source: "ixwiki", userId: { in: ["u1"] }, status: "APPROVED" },
+    });
   });
 
   it("reads no stats and counts nothing with no claimed name", async () => {

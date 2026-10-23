@@ -238,7 +238,9 @@ describe("ixnayid.getStatus wiki name", () => {
           .map((row) => ({ userId: "db_1", status: "APPROVED", ...row }))
     );
 
-  afterEach(() => mocked.wikiNameClaim.findMany.mockReset().mockResolvedValue([]));
+  afterEach(() => {
+    mocked.wikiNameClaim.findMany.mockReset().mockResolvedValue([]);
+  });
 
   it("is the owner's own first approved name even when hidden, and the handle takes only a shown one", async () => {
     storedUser(null, null);
