@@ -7,7 +7,7 @@
  */
 import { Prisma } from "@prisma/client";
 import { lockWikiNameTx } from "~/lib/identity/claim-tags";
-import { IXWIKI, ownerOfName, primaryNameOf } from "~/lib/identity/wiki-names";
+import { claimName, IXWIKI, namesOfUser, ownerOfName } from "~/lib/identity/wiki-names";
 import { db } from "~/server/db";
 import { chooseBackfillHandle, pickAvailableHandle, validateHandle } from "./identity.handle";
 
@@ -95,28 +95,44 @@ const TAKEN_PREFIX_LENGTH = 20;
 
 /**
  * The handle the first-save picker offers a handle-less player: from their first shown wiki name, else their forum
- * name, else their nation's name (`chooseBackfillHandle`), numbered past the stored handles. Never a hidden claim's
- * name; null when no name gives a handle.
+ * name, else their nation's name (`chooseBackfillHandle`), numbered past the stored handles and the old wiki names
+ * other players hold (which `setUserHandle` refuses). Never a hidden claim's name, nor a name spelling one; null when
+ * no name gives a handle.
  */
 export async function suggestHandleFor(userId: string): Promise<string | null> {
-  const [user, wiki] = await Promise.all([
+  const [user, claims] = await Promise.all([
     db.user.findUnique({
       where: { id: userId },
       select: { forumUsername: true, country: { select: { name: true } } },
     }),
-    primaryNameOf(db, userId, { shown: true }),
+    namesOfUser(db, userId),
   ]);
-  const choice = chooseBackfillHandle({
-    wiki,
-    forum: user?.forumUsername ?? null,
-    persona: null,
-    nation: user?.country?.name ?? null,
-  });
+  const choice = chooseBackfillHandle(
+    {
+      wiki: claims.find((claim) => claim.visible)?.name ?? null,
+      forum: user?.forumUsername ?? null,
+      persona: null,
+      nation: user?.country?.name ?? null,
+    },
+    claims.filter((claim) => !claim.visible).map((claim) => claim.name)
+  );
   if (!choice) return null;
-  const stored = await db.user.findMany({
-    where: { handle: { startsWith: choice.handle.slice(0, TAKEN_PREFIX_LENGTH) } },
-    select: { handle: true },
-  });
+  const prefix = choice.handle.slice(0, TAKEN_PREFIX_LENGTH);
+  const [stored, othersNames] = await Promise.all([
+    db.user.findMany({ where: { handle: { startsWith: prefix } }, select: { handle: true } }),
+    db.wikiNameClaim.findMany({
+      where: {
+        source: IXWIKI,
+        status: "APPROVED",
+        NOT: { userId },
+        name: { startsWith: claimName(prefix) },
+      },
+      select: { name: true },
+    }),
+  ]);
   const taken = new Set(stored.flatMap((row) => (row.handle ? [row.handle] : [])));
-  return pickAvailableHandle(choice.handle, taken);
+  const claimed = new Set(othersNames.map((claim) => claim.name));
+  return pickAvailableHandle(choice.handle, {
+    has: (handle) => taken.has(handle) || claimed.has(claimName(handle)),
+  });
 }

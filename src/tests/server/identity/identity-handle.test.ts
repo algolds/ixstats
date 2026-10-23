@@ -63,13 +63,33 @@ describe("a handle", () => {
       expect([s, validateHandle(slugifyHandle(s)).ok]).toEqual([s, true]);
     }
     expect(
-      chooseBackfillHandle({ wiki: null, forum: null, persona: null, nation: null })
+      chooseBackfillHandle({ wiki: null, forum: null, persona: null, nation: null }, [])
     ).toBeNull();
     expect(
-      chooseBackfillHandle({ wiki: "Kir Wiki", forum: "KirForum", persona: null, nation: null })
+      chooseBackfillHandle({ wiki: "Kir Wiki", forum: "KirForum", persona: null, nation: null }, [])
     ).toEqual({
       source: "wiki",
       handle: "kir_wiki",
+    });
+  });
+
+  it("never makes a backfill handle that spells one of the user's hidden claims", () => {
+    const names = {
+      wiki: null,
+      forum: null,
+      persona: "Secret-One",
+      nation: "A very long secret wiki name",
+    };
+    // the persona's handle, secret_one, is the hidden "Secret one" (normalised, any letter case)
+    expect(chooseBackfillHandle(names, ["Secret One"])).toEqual({
+      source: "nation",
+      handle: "a_very_long_secret_wiki_",
+    });
+    // the nation's name is a hidden claim, though its handle is cut short
+    expect(chooseBackfillHandle(names, ["Secret One", "A very long secret wiki name"])).toBeNull();
+    expect(chooseBackfillHandle(names, ["Secret two"])).toEqual({
+      source: "persona",
+      handle: "secret_one",
     });
   });
 
@@ -322,12 +342,18 @@ describe("ixnayid.getStatus wiki name", () => {
 });
 
 describe("ixnayid.suggestHandle", () => {
-  /** The owner's approved claims; a `shown` read keeps the visible ones. */
-  const claims = (rows: Array<{ name: string; visible: boolean }>) =>
+  /**
+   * Approved claims, the owner's (db_1) unless a row says otherwise: a read by account keeps that account's (a `shown`
+   * read only the visible ones), a read of other accounts' names (`NOT`) the rest.
+   */
+  const claims = (rows: Array<{ name: string; visible: boolean; userId?: string }>) =>
     mocked.wikiNameClaim.findMany.mockImplementation(
-      async ({ where }: { where: { visible?: boolean } }) =>
+      async ({
+        where,
+      }: {
+        where: { visible?: boolean; userId?: { in: string[] }; NOT?: { userId: string } };
+      }) =>
         rows
-          .filter((row) => !where.visible || row.visible)
           .map((row, i) => ({
             id: `c${i}`,
             userId: "db_1",
@@ -336,6 +362,10 @@ describe("ixnayid.suggestHandle", () => {
             mwUserId: null,
             ...row,
           }))
+          .filter((row) =>
+            where.NOT ? row.userId !== where.NOT.userId : where.userId?.in.includes(row.userId)
+          )
+          .filter((row) => !where.visible || row.visible)
     );
 
   afterEach(() => {
@@ -370,6 +400,44 @@ describe("ixnayid.suggestHandle", () => {
     storedUser(null, null);
     claims([{ name: "Secret Name", visible: false }]);
     await expect(caller().suggestHandle()).resolves.toEqual({ handle: "kir_forum" });
+    // a shown claim approved after the hidden one still comes first
+    claims([
+      { name: "Secret Name", visible: false },
+      { name: "Old name", visible: true },
+    ]);
+    await expect(caller().suggestHandle()).resolves.toEqual({ handle: "old_name" });
+  });
+
+  it("skips a name whose handle spells a hidden claim: the nation's name comes next", async () => {
+    mocked.user.findUnique.mockResolvedValue({
+      forumUsername: "Kir Forum",
+      country: { name: "Caphiria" },
+    });
+    claims([{ name: "Kir forum", visible: false }]);
+    await expect(caller().suggestHandle()).resolves.toEqual({ handle: "caphiria" });
+  });
+
+  it("numbers past an old wiki name another player holds, as setHandle would refuse it", async () => {
+    mocked.user.findUnique.mockResolvedValue({
+      forumUsername: null,
+      country: { name: "Caphiria" },
+    });
+    claims([
+      { name: "Caphiria", visible: true, userId: "db_2" },
+      { name: "Caphiria 3", visible: false, userId: "db_3" },
+    ]);
+    mocked.user.findMany.mockResolvedValue([{ handle: "caphiria_2" }]);
+    await expect(caller().suggestHandle()).resolves.toEqual({ handle: "caphiria_4" });
+    expect(mocked.wikiNameClaim.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          source: "ixwiki",
+          status: "APPROVED",
+          NOT: { userId: "db_1" },
+          name: { startsWith: "Caphiria" },
+        },
+      })
+    );
   });
 
   it("falls back to the nation's name", async () => {

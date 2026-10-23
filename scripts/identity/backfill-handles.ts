@@ -5,12 +5,14 @@
  * Source order (`chooseBackfillHandle`): the first approved ixwiki name claim the user shows (a
  * handle is public, so a hidden claim never seeds one), forum username, personal
  * ThinkPages persona name, primary owned nation name (`Country.ownerUserId`: the held
- * `User.countryId`, else the largest economy). A name whose slug has no letter or digit is skipped.
- * A user with no usable name keeps no handle (never one minted from a Clerk id or row id). Handles
- * are de-duplicated against existing handles and against earlier picks in the same run.
+ * `User.countryId`, else the largest economy). A name whose slug has no letter or digit is skipped, and
+ * so is a name that is, or whose handle spells, one of the user's hidden claims. A user with no usable
+ * name keeps no handle (never one minted from a Clerk id or row id). Handles are de-duplicated against
+ * existing handles, earlier picks in the same run and the old wiki names other accounts hold (which
+ * `setUserHandle` refuses).
  */
 import { PrismaClient } from "@prisma/client";
-import { namesOfUsers } from "~/lib/identity/wiki-names";
+import { claimName, IXWIKI, namesOfUsers } from "~/lib/identity/wiki-names";
 import { PERSONAL_ACCOUNT_TYPE } from "~/server/shared/thinkpages-personal-account";
 import {
   chooseBackfillHandle,
@@ -42,10 +44,34 @@ function firstByKey<T>(rows: T[], key: (row: T) => string, value: (row: T) => st
   return map;
 }
 
-/** The first approved claim each user shows (a hidden one never seeds a public handle). */
-async function loadClaimedWikiNames(userIds: string[]): Promise<Map<string, string>> {
-  const names = await namesOfUsers(db, userIds, { shown: true });
-  return new Map([...names].map(([userId, claims]) => [userId, claims[0]!.name]));
+interface ClaimedNames {
+  /** The first approved claim the user shows (a hidden one never seeds a public handle). */
+  shown: string | null;
+  /** The user's hidden claims, which no handle may spell. */
+  hidden: string[];
+}
+
+/** Each user's approved claims, split into the first shown one and the hidden ones. */
+async function loadClaimedWikiNames(userIds: string[]): Promise<Map<string, ClaimedNames>> {
+  const names = await namesOfUsers(db, userIds);
+  return new Map(
+    [...names].map(([userId, claims]) => [
+      userId,
+      {
+        shown: claims.find((claim) => claim.visible)?.name ?? null,
+        hidden: claims.filter((claim) => !claim.visible).map((claim) => claim.name),
+      },
+    ])
+  );
+}
+
+/** Every approved claimed name (stored form) to the account holding it. */
+async function loadClaimOwners(): Promise<Map<string, string>> {
+  const claims = await db.wikiNameClaim.findMany({
+    where: { source: IXWIKI, status: "APPROVED" },
+    select: { name: true, userId: true },
+  });
+  return new Map(claims.map((claim) => [claim.name, claim.userId]));
 }
 
 /** Personal ThinkPages persona names by Clerk id (the persona `loadPersonalPersona` reads). */
@@ -91,22 +117,30 @@ async function main(): Promise<void> {
     db.user.findMany({ where: { handle: { not: null } }, select: { handle: true } }),
   ]);
   const taken = new Set<string>(existing.flatMap((u) => (u.handle ? [u.handle] : [])));
-  const [wikiNames, personaNames, nationNames] = await Promise.all([
+  const [wikiNames, claimOwners, personaNames, nationNames] = await Promise.all([
     loadClaimedWikiNames(users.map((u) => u.id)),
+    loadClaimOwners(),
     loadPersonaNames(users.map((u) => u.clerkUserId)),
     loadNationNames(users),
   ]);
 
   const picks: Pick[] = [];
   for (const user of users) {
-    const choice = chooseBackfillHandle({
-      wiki: wikiNames.get(user.id) ?? null,
-      forum: user.forumUsername,
-      persona: personaNames.get(user.clerkUserId) ?? null,
-      nation: nationNames.get(user.id) ?? null,
-    });
+    const claimed = wikiNames.get(user.id);
+    const choice = chooseBackfillHandle(
+      {
+        wiki: claimed?.shown ?? null,
+        forum: user.forumUsername,
+        persona: personaNames.get(user.clerkUserId) ?? null,
+        nation: nationNames.get(user.id) ?? null,
+      },
+      claimed?.hidden ?? []
+    );
     if (!choice) continue;
-    const handle = pickAvailableHandle(choice.handle, taken);
+    const handle = pickAvailableHandle(choice.handle, {
+      has: (candidate) =>
+        taken.has(candidate) || (claimOwners.get(claimName(candidate)) ?? user.id) !== user.id,
+    });
     taken.add(handle);
     picks.push({ userId: user.id, source: choice.source, handle });
   }
