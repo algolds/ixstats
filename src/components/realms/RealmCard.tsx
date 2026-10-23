@@ -1,11 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { RealmAvatar } from "~/components/realms/RealmAvatar";
-import { plural, realmHref, type DirectoryRealm } from "~/app/realms/_components/realm-directory";
+import { motion } from "motion/react";
+import {
+  openToJoinCount,
+  plural,
+  realmBadge,
+  realmHref,
+  type DirectoryRealm,
+} from "~/app/realms/_components/realm-directory";
+import { RealmCrest } from "~/components/cards/face/RealmCrest";
+import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
+import { RealmMapFace } from "~/components/realms/RealmMapFace";
+import { useMapDrift } from "~/components/realms/use-map-drift";
 import { Badge } from "~/components/ui/badge";
-import { assetUrl } from "~/lib/base-path";
-import { realmBoardHref } from "~/lib/thinkpages-forum/links";
+import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
+import { SharedElement } from "~/components/ui/view-transition";
 import { RealmAdvertCard, type AdvertOverview } from "./RealmAdvertCard";
 
 function boardActivity(board: DirectoryRealm["board"]): string {
@@ -15,75 +26,86 @@ function boardActivity(board: DirectoryRealm["board"]): string {
   return `${week} · last ${new Date(board.lastPostAt).toLocaleDateString()}`;
 }
 
-/** A realm's banner card in the directory: counts, tags, board activity and a way in. */
-function DirectoryRealmCard({ realm }: { realm: DirectoryRealm }) {
-  const base = realmHref(realm.slug);
-  const canClaimMore = realm.myNationCount < realm.maxNationsPerUser;
+/** The way in: Join for a newcomer, Claim another below the cap, and the holding itself at the cap. */
+function JoinAction({ realm }: { realm: DirectoryRealm }) {
+  const { myNationCount, maxNationsPerUser } = realm;
+  const nations = realmHref(realm.slug, "nations");
   return (
-    <li className="border-separator bg-surface rounded-card flex flex-col overflow-hidden border">
-      <Link href={base} tabIndex={-1} aria-hidden="true" className="bg-fill-3 block h-24">
-        {realm.bannerUrl && (
-          <img
-            src={assetUrl(realm.bannerUrl) ?? ""}
-            referrerPolicy="no-referrer"
-            alt=""
-            className="h-full w-full object-cover"
-          />
-        )}
-      </Link>
-      <div className="flex flex-1 flex-col gap-3 p-5">
-        <div className="flex items-center gap-3">
-          <RealmAvatar thumbnail={realm.thumbnail} />
-          <div className="min-w-0">
-            <Link href={base} className="text-label text-headline block truncate hover:underline">
-              {realm.name}
-            </Link>
-            <p className="text-label-secondary text-footnote">
-              {plural(realm.nationCount, "nation")} · {realm.openNationCount.toLocaleString()}{" "}
-              unclaimed
-              {realm.openNationPageCount > 0 &&
-                ` · ${plural(realm.openNationPageCount, "page")} to claim`}
-            </p>
+    <div className="mt-auto flex flex-wrap items-center gap-3">
+      {myNationCount < maxNationsPerUser && (
+        <Button
+          asChild
+          size="sm"
+          variant={myNationCount > 0 ? "outline" : "default"}
+          className="z-raised relative"
+        >
+          <Link href={nations}>{myNationCount > 0 ? "Claim another" : "Join"}</Link>
+        </Button>
+      )}
+      {myNationCount > 0 && (
+        <span className="text-label-secondary text-footnote">
+          You hold {myNationCount} of {maxNationsPerUser}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * A realm in the atlas: its map face under a crest, the name stretched over the card as one link, and a way to join.
+ * The face drifts against the pointer and is the shared element that morphs into the realm page header.
+ */
+function DirectoryRealmCard({ realm }: { realm: DirectoryRealm }) {
+  const reduceMotion = useFacetReducedMotion();
+  const { drift, onPointerMove, onPointerLeave } = useMapDrift();
+  const open = openToJoinCount(realm);
+  const pointer = reduceMotion ? {} : { onPointerMove, onPointerLeave };
+  return (
+    <li>
+      <Card
+        content="entity"
+        className="hover:ring-tint/40 relative flex flex-col overflow-hidden transition-transform duration-100 ease-out hover:ring-1 has-[a[data-stretch]:active]:scale-[.985] motion-reduce:transform-none"
+        {...pointer}
+      >
+        <div className="relative">
+          <div className="relative h-36 overflow-hidden">
+            <SharedElement name={`realm-map-${realm.slug}`}>
+              <motion.div style={drift} className="h-full w-full scale-[1.08]">
+                <RealmMapFace realm={realmBadge(realm)} bannerUrl={realm.bannerUrl} />
+              </motion.div>
+            </SharedElement>
+            {open > 0 && (
+              <Badge variant="secondary" className="absolute top-3 right-3">
+                {open.toLocaleString()} open
+              </Badge>
+            )}
           </div>
+          <RealmCrest
+            realm={realmBadge(realm)}
+            size="lg"
+            className="ring-surface absolute -bottom-6 left-4 ring-3"
+          />
         </div>
-        {realm.description && (
-          <p className="text-label-secondary text-footnote line-clamp-2">{realm.description}</p>
-        )}
-        {realm.tags.length > 0 && (
-          <ul className="flex flex-wrap gap-1" aria-label="Tags">
-            {realm.tags.map((tag) => (
-              <li key={tag}>
-                <Badge variant="outline">{tag}</Badge>
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className="text-label-secondary text-footnote">{boardActivity(realm.board)}</p>
-        {realm.boardMessagesThisWeek > 0 && (
-          <p className="text-label-secondary text-footnote">
-            {plural(realm.boardMessagesThisWeek, "board message")} this week
-          </p>
-        )}
-        <div className="text-caption mt-auto flex flex-wrap items-center gap-3">
-          {/* The live board, whose rail lists the realm's boards. */}
+        <div className="flex flex-1 flex-col gap-2 p-4 pt-9">
           <Link
-            href={realmBoardHref(realm.slug)}
-            className="text-label hover:underline pointer-coarse:min-h-11"
+            href={realmHref(realm.slug)}
+            data-stretch
+            className="text-label text-headline block truncate after:absolute after:inset-0 after:content-['']"
           >
-            Forum
+            {realm.name}
           </Link>
-          {realm.myNationCount > 0 && (
-            <span className="text-label-secondary">
-              You hold {realm.myNationCount} of {realm.maxNationsPerUser}
-            </span>
+          <p className="text-label-secondary text-footnote">
+            {`${plural(realm.nationCount, "nation")} · ${boardActivity(realm.board)}`}
+          </p>
+          {realm.description && (
+            <p className="text-label-secondary text-footnote line-clamp-2">{realm.description}</p>
           )}
-          {canClaimMore && (
-            <Link href={realmHref(realm.slug, "nations")} className="text-label hover:underline">
-              {realm.myNationCount > 0 ? "Claim another nation" : "Join · claim a nation"}
-            </Link>
+          {realm.tags.length > 0 && (
+            <p className="text-label-secondary text-footnote">{realm.tags.join(" · ")}</p>
           )}
+          <JoinAction realm={realm} />
         </div>
-      </div>
+      </Card>
     </li>
   );
 }
