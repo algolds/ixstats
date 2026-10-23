@@ -124,12 +124,12 @@ function isOwnUserTalkEdit(
   action: WikiAction,
   title: string,
   block: ActiveBlock,
-  verifiedWikiUsername: string | null
+  ownUserNames: readonly string[]
 ): boolean {
   if (!block.allowUserTalk || (action !== "edit" && action !== "create")) return false;
   const parsed = parseWikiTitle(title);
-  // Only a verified wiki account has an identity that could own a talk page.
-  return parsed?.namespaceId === 3 && isOwnUserSpace(parsed.base, verifiedWikiUsername);
+  // The talk page of the handle or of any name the account holds through an approved claim.
+  return parsed?.namespaceId === 3 && isOwnUserSpace(parsed.base, ownUserNames);
 }
 
 function checkRestrictions(
@@ -163,15 +163,15 @@ export interface ActionRequest {
 export function decideAction(request: ActionRequest): ActionDecision {
   if (!isWikiosEditingEnabled()) return deny("readonly", WIKIOS_READONLY_REASON);
   const { action, title, permissions, restrictions, now } = request;
-  const { block, rights, verifiedWikiUsername } = permissions;
+  const { block, rights, ownUserNames } = permissions;
 
-  if (block && !isOwnUserTalkEdit(action, title, block, verifiedWikiUsername)) {
+  if (block && !isOwnUserTalkEdit(action, title, block, ownUserNames)) {
     return deny("blocked", describeBlock(block));
   }
 
   // An upload needs the upload right, not the right to edit the File: page it creates.
   if (action !== "upload") {
-    const policy = checkEditPolicy(title, { rights, linkedWikiUsername: verifiedWikiUsername });
+    const policy = checkEditPolicy(title, { rights, ownUserNames });
     if (!policy.allowed) return deny("namespaceprotected", policy.reason);
   }
 

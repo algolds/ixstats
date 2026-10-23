@@ -259,46 +259,38 @@ describe("applyPlan", () => {
 
   const setup = () => {
     const fake = createFakeWikiDb();
-    fake.tables.wikiAccountLink.seed(
-      {
-        userId: "dbkir",
-        source: "ixwiki",
-        username: "Kir",
-        verifiedAt: new Date("2026-01-01"),
-        verifiedById: null,
-      },
-      {
-        userId: "dbpending",
-        source: "ixwiki",
-        username: "Pending",
-        verifiedAt: null,
-        verifiedById: null,
-      }
-    );
+    // Kir's name is claimed (a system owner approved it); the claim connects it to the account at read time
+    fake.tables.wikiNameClaim.seed({ userId: "dbkir", name: "Kir", rightsPass: true });
+    fake.tables.wikiAccountLink.seed({
+      userId: "dbkir",
+      source: "ixwiki",
+      username: "Kir",
+      verifiedAt: new Date("2026-01-01"),
+      verifiedById: null,
+    });
     fake.tables.wikiArticle.seed({ source: "ixwiki", title: "Caphiria" });
     return { fake, prisma: fake.db as unknown as PrismaClient };
   };
 
-  it("stores a verified username's rows against the user, and any other against the wiki username", async () => {
+  it("keys every group and block by the wiki username alone, claimed or not (claims connect names at read time)", async () => {
     const { fake, prisma } = setup();
     const result = await applyPlan(prisma, plan());
 
     expect(result).toEqual({ groups: 2, restrictions: 2, blocks: 2 });
     const groups = fake.tables.wikiUserGroup.rows;
     expect(groups.find((g) => g.group === "sysop")).toMatchObject({
-      userId: "dbkir",
+      wikiUsername: "Kir",
       source: "mw-import",
     });
-    expect(groups.find((g) => g.group === "sysop")).not.toHaveProperty("wikiUsername");
     expect(groups.find((g) => g.group === "bureaucrat")).toMatchObject({
       wikiUsername: "Pending",
       source: "mw-import",
     });
-    expect(groups.find((g) => g.group === "bureaucrat")).not.toHaveProperty("userId");
+    expect(groups.some((g) => "userId" in g)).toBe(false);
 
     const blocks = fake.tables.wikiBlock.rows;
     expect(blocks.find((b) => b.wikiUsername === "Kir")).toMatchObject({
-      userId: "dbkir",
+      userId: null,
       source: "mw-import",
     });
     expect(blocks.find((b) => b.wikiUsername === "Stranger")).toMatchObject({
@@ -320,18 +312,15 @@ describe("applyPlan", () => {
     });
   });
 
-  it("leaves a name whose link an admin confirmed keyed by wiki username, so the admin's link inherits nothing", async () => {
+  it("never reads a claim or a link: whether a name's groups pass is decided when rights are read", async () => {
     const { fake, prisma } = setup();
-    fake.tables.wikiAccountLink.rows.find((link) => link.username === "Kir")!.verifiedById =
-      "dbadmin";
+    const claims = jest.spyOn(fake.db.wikiNameClaim, "findMany");
+    const links = jest.spyOn(fake.db.wikiAccountLink, "findMany");
 
     await applyPlan(prisma, plan());
 
-    const sysop = fake.tables.wikiUserGroup.rows.find((g) => g.group === "sysop");
-    expect(sysop).toMatchObject({ wikiUsername: "Kir", source: "mw-import" });
-    expect(sysop).not.toHaveProperty("userId");
-    const block = fake.tables.wikiBlock.rows.find((b) => b.wikiUsername === "Kir");
-    expect(block?.userId).toBeNull();
+    expect(claims).not.toHaveBeenCalled();
+    expect(links).not.toHaveBeenCalled();
   });
 
   it("is idempotent, and never overwrites a row WikiOS already has", async () => {

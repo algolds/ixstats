@@ -144,7 +144,8 @@ beforeEach(() => {
     { id: "member", clerkUserId: "clerk-member", wikiUsername: "Member" },
     { id: "newcomer", clerkUserId: "clerk-newcomer", wikiUsername: "Newcomer", createdAt: new Date() }
   );
-  tables.wikiAccountLink.seed({ userId: "member", source: "ixwiki", username: "Member", verifiedAt: new Date("2026-01-01") });
+  // autoconfirmed by an administrator's grant (an old IxWiki name no longer autoconfirms by its MediaWiki age)
+  tables.wikiUserGroup.seed({ userId: "member", group: "autoconfirmed" });
   // a page that already shows the file: it goes stale when MediaWiki's copy takes over
   const eurth = tables.wikiArticle.insert({ title: "Eurth", slug: "eurth", wikitext: "[[File:Flag of Eurth.png]]", htmlSyncedAt: new Date() });
   tables.wikiImageLink.seed({ articleId: eurth.id, fileName: "Flag of Eurth.png" });

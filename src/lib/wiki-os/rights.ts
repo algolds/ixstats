@@ -3,20 +3,27 @@
 // IxStates (Clerk) role mapping. `GROUP_RIGHTS` is the single table to tune what a group may do.
 //
 // A user's groups are the union of
-//   - the implicit groups: `*` (everyone), `user` (signed in), `autoconfirmed` (see below);
-//   - their explicit, non-expired `wiki_user_groups` rows, keyed by WikiOS user id or by the
-//     MediaWiki username of their VERIFIED wiki link (so a membership imported from MediaWiki for a
-//     name nobody has linked yet applies the moment the link is verified), but only when the link
-//     was proven by the account's own token or confirmed by a system owner: a link an ordinary admin
-//     confirmed proves nothing about who owns the wiki account, so it never inherits pending rows;
+//   - the implicit groups: `*` (everyone), `user` (signed in), `autoconfirmed` (WikiOS's own rule: account
+//     age and edits, the edits including every revision an approved name claim tagged);
+//   - their explicit, non-expired `wiki_user_groups` rows, keyed by WikiOS user id or by an old IxWiki
+//     name the account holds through an APPROVED claim (so a membership imported from MediaWiki applies
+//     the moment its name is approved), but only a claim a system owner approved or linked (`rightsPass`,
+//     plan 409): an ordinary admin's approval gives the name, never its imported groups. The passport
+//     handle never attaches imported rows;
 //   - the groups their IxStates role maps to (`ROLE_GROUP_MAP`).
+// Imported blocks (`wiki_blocks` keyed by name) follow every approved claim, whoever approved it.
 // Enforcement of an action against these rights lives in `permissions.ts`.
 
 import { SYSTEM_OWNER_IDS, isSystemOwner } from "~/lib/auth";
 import { db } from "~/server/db";
-import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import {
+  IXWIKI,
+  claimName,
+  namesOfUser,
+  ownerOfName,
+  type ClaimedName,
+} from "~/lib/identity/wiki-names";
 import { getWikiAuth, type WikiAuthContext } from "~/lib/wiki-os/auth";
-import { getVerifiedWikiLink } from "~/lib/wiki-os/storage";
 
 /** Groups an administrator can grant explicitly (stored in `wiki_user_groups`). */
 export const EXPLICIT_GROUPS = [
@@ -163,22 +170,6 @@ export const ROLE_GROUP_MAP: Readonly<Record<string, readonly ExplicitGroup[]>> 
 export const AUTOCONFIRM_AGE_MS = 4 * 24 * 60 * 60 * 1000;
 export const AUTOCONFIRM_EDIT_COUNT = 10;
 
-/**
- * Whether the wiki account behind a verified link is at least `AUTOCONFIRM_AGE_MS` old and has
- * `AUTOCONFIRM_EDIT_COUNT` edits, as recorded when the link was proven. A link without that record
- * (an older link, or an admin's) proves identity only: autoconfirmed then comes from WikiOS's own rule.
- */
-export function mwAccountAutoconfirms(
-  link: { mwRegisteredAt: Date | null; mwEditCount: number | null },
-  now: Date
-): boolean {
-  return (
-    link.mwRegisteredAt !== null &&
-    now.getTime() - link.mwRegisteredAt.getTime() >= AUTOCONFIRM_AGE_MS &&
-    (link.mwEditCount ?? 0) >= AUTOCONFIRM_EDIT_COUNT
-  );
-}
-
 export interface GroupRow {
   group: string;
   expiresAt: Date | null;
@@ -188,10 +179,8 @@ export interface GroupResolutionInput {
   signedIn: boolean;
   /** When the account was created; null when unknown (never autoconfirms by age). */
   accountCreatedAt: Date | null;
-  /** WikiOS edits (`wiki_revisions` by author) the account has made. */
+  /** WikiOS edits (`wiki_revisions` by author id, claim-tagged revisions included) the account has made. */
   editCount: number;
-  /** The user's verified wiki link is to an account that is itself old and active enough (see `mwAccountAutoconfirms`). */
-  linkAutoconfirms: boolean;
   explicitGroups: readonly GroupRow[];
   roleName: string | null;
   isSystemOwner: boolean;
@@ -204,7 +193,6 @@ export function isActive(expiresAt: Date | null, now: Date): boolean {
 }
 
 function isAutoconfirmed(input: GroupResolutionInput): boolean {
-  if (input.linkAutoconfirms) return true;
   const { accountCreatedAt, editCount, now } = input;
   return (
     accountCreatedAt !== null &&
@@ -250,29 +238,27 @@ export interface WikiPermissions {
   groups: Group[];
   rights: Set<Right>;
   block: ActiveBlock | null;
-  /** The verified wiki account name (null = none); what "my own user page" means. */
-  verifiedWikiUsername: string | null;
+  /** Names whose User: pages are the subject's own: their handle (unless someone else holds that name) and their approved claims. */
+  ownUserNames: string[];
 }
 
-/** Who to compute permissions for: a WikiOS user, and/or a wiki username that may not be linked yet. */
+/** Who to compute permissions for: a WikiOS user, or a wiki username nobody holds. */
 export interface RightsSubject {
-  /** WikiOS user id, or null for a wiki username nobody has linked. */
+  /** WikiOS user id, or null for a wiki username nobody holds. */
   userId: string | null;
   signedIn: boolean;
   accountCreatedAt: Date | null;
   roleName: string | null;
   isSystemOwner: boolean;
-  /** The verified wiki account name (own user page); null = no verified link. */
-  verifiedWikiUsername: string | null;
-  /**
-   * The wiki username pending group and block rows attach through: the verified name when the link
-   * was proven by the account's own token or confirmed by a system owner; null for a link an
-   * ordinary admin confirmed (an admin must not be able to claim a name that holds imported groups).
-   * For a wiki username nobody has linked it is that name.
-   */
-  pendingKeyUsername: string | null;
-  linkAutoconfirms: boolean;
+  ownUserNames: string[];
+  /** Names imported groups attach through: claims with rightsPass; for a name nobody holds, that name. */
+  groupKeyNames: string[];
+  /** Names imported blocks attach through: every approved claim; for a name nobody holds, that name. */
+  blockKeyNames: string[];
 }
+
+/** The names imported rows attach to an account through (see `RightsSubject`). */
+export type ClaimKeyNames = Pick<RightsSubject, "groupKeyNames" | "blockKeyNames">;
 
 interface BlockRow {
   reason: string | null;
@@ -280,15 +266,16 @@ interface BlockRow {
   allowUserTalk: boolean;
 }
 
-/** Keys `wiki_user_groups` and `wiki_blocks` rows are matched by: the user id and the wiki username. */
-function identityKeys(subject: RightsSubject) {
-  return [
-    ...(subject.userId ? [{ userId: subject.userId }] : []),
-    ...(subject.pendingKeyUsername
-      ? [{ wikiUsername: normalizeWikiUsername(subject.pendingKeyUsername) }]
-      : []),
-  ];
+/** `where` clauses for rows keyed by `userId` (when there is one) or by one of `names`. */
+function rowKeys(userId: string | null, names: readonly string[]) {
+  return [...(userId ? [{ userId }] : []), ...names.map((wikiUsername) => ({ wikiUsername }))];
 }
+
+/** Keys `wiki_user_groups` rows are matched by: the user id and the names a system owner gave the account. */
+const groupKeys = (subject: RightsSubject) => rowKeys(subject.userId, subject.groupKeyNames);
+
+/** Keys `wiki_blocks` rows are matched by: the user id and every name the account holds. */
+const blockKeys = (subject: RightsSubject) => rowKeys(subject.userId, subject.blockKeyNames);
 
 /** One block from the subject's active ones: indefinite beats dated, and user talk stays only if every block allows it. */
 function mergeBlocks(rows: readonly BlockRow[]): ActiveBlock | null {
@@ -311,8 +298,8 @@ function mergeBlocks(rows: readonly BlockRow[]): ActiveBlock | null {
 
 /** WikiOS edits by the subject, counted only when the account is old enough for the count to matter. */
 async function countEditsIfEligible(subject: RightsSubject, now: Date): Promise<number> {
-  const { userId, accountCreatedAt, linkAutoconfirms } = subject;
-  if (!userId || linkAutoconfirms || accountCreatedAt === null) return 0;
+  const { userId, accountCreatedAt } = subject;
+  if (!userId || accountCreatedAt === null) return 0;
   if (now.getTime() - accountCreatedAt.getTime() < AUTOCONFIRM_AGE_MS) return 0;
   return db.wikiRevision.count({ where: { authorId: userId } });
 }
@@ -322,14 +309,18 @@ export async function loadSubjectPermissions(
   subject: RightsSubject,
   now: Date
 ): Promise<WikiPermissions> {
-  const keys = identityKeys(subject);
+  const groupWhere = groupKeys(subject);
+  const blockWhere = blockKeys(subject);
   const [explicitGroups, blocks, editCount] = await Promise.all([
-    keys.length
-      ? db.wikiUserGroup.findMany({ where: { OR: keys }, select: { group: true, expiresAt: true } })
+    groupWhere.length
+      ? db.wikiUserGroup.findMany({
+          where: { OR: groupWhere },
+          select: { group: true, expiresAt: true },
+        })
       : [],
-    keys.length
+    blockWhere.length
       ? db.wikiBlock.findMany({
-          where: { OR: keys },
+          where: { OR: blockWhere },
           select: { reason: true, expiresAt: true, allowUserTalk: true },
         })
       : [],
@@ -339,7 +330,6 @@ export async function loadSubjectPermissions(
     signedIn: subject.signedIn,
     accountCreatedAt: subject.accountCreatedAt,
     editCount,
-    linkAutoconfirms: subject.linkAutoconfirms,
     explicitGroups,
     roleName: subject.roleName,
     isSystemOwner: subject.isSystemOwner,
@@ -349,7 +339,7 @@ export async function loadSubjectPermissions(
     groups: [...groups],
     rights: rightsForGroups(groups),
     block: mergeBlocks(blocks.filter((block) => isActive(block.expiresAt, now))),
-    verifiedWikiUsername: subject.verifiedWikiUsername,
+    ownUserNames: subject.ownUserNames,
   };
 }
 
@@ -359,41 +349,50 @@ function toDate(value: Date | string | null | undefined): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-type LinkStanding = Pick<
-  RightsSubject,
-  "verifiedWikiUsername" | "pendingKeyUsername" | "linkAutoconfirms"
->;
+type ClaimStanding = ClaimKeyNames & Pick<RightsSubject, "ownUserNames">;
 
-const NO_LINK: LinkStanding = {
-  verifiedWikiUsername: null,
-  pendingKeyUsername: null,
-  linkAutoconfirms: false,
-};
+const NO_CLAIMS: ClaimStanding = { ownUserNames: [], groupKeyNames: [], blockKeyNames: [] };
 
-/** Whether the WikiOS user `verifierId` is a system owner (the non-logging check, see `loadTargetPermissions`). */
-async function isSystemOwnerUser(verifierId: string): Promise<boolean> {
-  const verifier = await db.user.findUnique({
-    where: { id: verifierId },
-    select: { clerkUserId: true },
-  });
-  return Boolean(verifier?.clerkUserId && SYSTEM_OWNER_IDS.includes(verifier.clerkUserId));
+/** Groups pass only through a claim a system owner decided (plan 409); blocks follow every approved claim. */
+function keyNamesOf(claims: readonly ClaimedName[]): ClaimKeyNames {
+  return {
+    groupKeyNames: claims.filter((claim) => claim.rightsPass).map((claim) => claim.name),
+    blockKeyNames: claims.map((claim) => claim.name),
+  };
 }
 
-/** What the user's verified wiki link is worth to the rights engine, and through which name it may attach pending rows. */
-async function linkStanding(userId: string | null, now: Date): Promise<LinkStanding> {
-  const link = userId ? await getVerifiedWikiLink(userId) : null;
-  if (!link) return NO_LINK;
-  const trusted = link.verifiedById === null || (await isSystemOwnerUser(link.verifiedById));
+/** The names imported group and block rows attach to the account `userId` through (hidden claims included). */
+export async function claimKeyNames(userId: string): Promise<ClaimKeyNames> {
+  return keyNamesOf(await namesOfUser(db, userId));
+}
+
+/**
+ * What the account's approved claims (hidden ones included) and its passport `handle` are worth to the rights
+ * engine. The handle's page is the account's own unless another account holds that name; the handle never
+ * attaches imported rows (anyone may pick a handle that spells an old sysop's name).
+ */
+async function claimStanding(userId: string | null, handle: string | null): Promise<ClaimStanding> {
+  if (!userId) return NO_CLAIMS;
+  const [claims, handleOwner] = await Promise.all([
+    namesOfUser(db, userId),
+    handle ? ownerOfName(db, IXWIKI, claimName(handle)) : null,
+  ]);
+  const ownsHandle = handle !== null && (handleOwner === null || handleOwner === userId);
   return {
-    verifiedWikiUsername: link.username,
-    pendingKeyUsername: trusted ? link.username : null,
-    linkAutoconfirms: mwAccountAutoconfirms(link, now),
+    ...keyNamesOf(claims),
+    ownUserNames: [...(ownsHandle ? [handle] : []), ...claims.map((claim) => claim.name)],
   };
+}
+
+/** The passport handle of the account `userId` (not yet in the request context). */
+async function handleOf(userId: string | null): Promise<string | null> {
+  if (!userId) return null;
+  const user = await db.user.findUnique({ where: { id: userId }, select: { handle: true } });
+  return user?.handle ?? null;
 }
 
 async function loadCtxPermissions(ctx: WikiAuthContext): Promise<WikiPermissions> {
   const { internalUserId, userId } = getWikiAuth(ctx);
-  const now = new Date();
   return loadSubjectPermissions(
     {
       userId: internalUserId,
@@ -401,9 +400,9 @@ async function loadCtxPermissions(ctx: WikiAuthContext): Promise<WikiPermissions
       accountCreatedAt: toDate(ctx.user?.createdAt),
       roleName: ctx.user?.role?.name ?? null,
       isSystemOwner: userId !== null && isSystemOwner(userId),
-      ...(await linkStanding(internalUserId, now)),
+      ...(await claimStanding(internalUserId, await handleOf(internalUserId))),
     },
-    now
+    new Date()
   );
 }
 
@@ -456,7 +455,7 @@ export async function getWikiPermissionsForAuthId(authId: string): Promise<WikiP
 
 /**
  * Groups, rights and active block of someone other than the caller: the WikiOS user `userId` (null
- * when `wikiUsername` is a wiki account nobody has linked) known by `wikiUsername`.
+ * when `wikiUsername` is a name nobody holds) known by `wikiUsername`.
  */
 export async function loadTargetPermissions(
   target: { userId: string | null; wikiUsername: string },
@@ -465,9 +464,15 @@ export async function loadTargetPermissions(
   const user = target.userId
     ? await db.user.findUnique({
         where: { id: target.userId },
-        select: { createdAt: true, clerkUserId: true, role: { select: { name: true } } },
+        select: {
+          createdAt: true,
+          clerkUserId: true,
+          handle: true,
+          role: { select: { name: true } },
+        },
       })
     : null;
+  const unheld = [claimName(target.wikiUsername)].filter((name) => name !== "");
   return loadSubjectPermissions(
     {
       userId: target.userId,
@@ -477,8 +482,8 @@ export async function loadTargetPermissions(
       // Not `isSystemOwner`: that logs an [AUDIT] line per call, and this runs for any profile anyone looks up.
       isSystemOwner: Boolean(user?.clerkUserId && SYSTEM_OWNER_IDS.includes(user.clerkUserId)),
       ...(target.userId
-        ? await linkStanding(target.userId, now)
-        : { ...NO_LINK, pendingKeyUsername: target.wikiUsername }),
+        ? await claimStanding(target.userId, user?.handle ?? null)
+        : { ownUserNames: [], groupKeyNames: unheld, blockKeyNames: unheld }),
     },
     now
   );

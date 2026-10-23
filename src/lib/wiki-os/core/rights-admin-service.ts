@@ -8,9 +8,14 @@
 
 import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
-import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import {
+  accountOfWikiName,
+  claimName,
+  namesOfUsers,
+  primaryNameOf,
+} from "~/lib/identity/wiki-names";
 import type { RestrictionLevel, RestrictionType } from "~/lib/wiki-os/permissions";
-import { isActive, type ExplicitGroup } from "~/lib/wiki-os/rights";
+import { claimKeyNames, isActive, type ExplicitGroup } from "~/lib/wiki-os/rights";
 import { enqueueProtectJob, scheduleMirrorKick } from "../services/mirror-outbox";
 import {
   legacyProtectionLevel,
@@ -18,12 +23,12 @@ import {
   type PageActor,
 } from "./page-management-service";
 
-/** A user to act on: a WikiOS user, or a wiki username that may not be linked to anyone yet. */
+/** A user to act on: a WikiOS user, or a wiki username that may not belong to anyone. */
 export type UserTarget = { userId: string } | { wikiUsername: string };
 
 export interface ResolvedTarget {
   userId: string | null;
-  /** The wiki username rows may also be keyed by, when known. */
+  /** The wiki username a new row is also keyed by, when known. */
   wikiUsername: string | null;
   /** What logs and lists show. */
   displayName: string;
@@ -77,64 +82,61 @@ export interface LogQuery {
   cursor?: string;
 }
 
-/** `where` clauses matching rows keyed by the target's user id and/or wiki username. */
-function keysOf(target: Pick<ResolvedTarget, "userId" | "wikiUsername">) {
+/**
+ * `where` clauses matching the target's `kind` rows: its user id and the names the rights engine attaches them
+ * through (`claimKeyNames`: groups only through a claim a system owner decided, blocks through every approved
+ * claim). A block also matches the target's own name; a name nobody holds is its own key.
+ */
+async function keysOf(
+  target: Pick<ResolvedTarget, "userId" | "wikiUsername">,
+  kind: "groups" | "blocks"
+) {
+  const ownName = target.wikiUsername ? [target.wikiUsername] : [];
+  if (!target.userId) return ownName.map((wikiUsername) => ({ wikiUsername }));
+  const names = await claimKeyNames(target.userId);
+  const keyNames = kind === "groups" ? names.groupKeyNames : [...names.blockKeyNames, ...ownName];
   return [
-    ...(target.userId ? [{ userId: target.userId }] : []),
-    ...(target.wikiUsername ? [{ wikiUsername: target.wikiUsername }] : []),
+    { userId: target.userId },
+    ...[...new Set(keyNames)].map((wikiUsername) => ({ wikiUsername })),
   ];
-}
-
-/** The name a user goes by: the verified wiki account, else the legacy `User.wikiUsername`. */
-function userLabel(verified: string | null | undefined, legacy: string | null): string {
-  return verified ?? legacy ?? "Unknown user";
 }
 
 export class RightsAdminService {
   /**
-   * The user `target` names. A wiki username resolves to the WikiOS user who verified it, if any;
-   * a user id must exist. Throws NOT_FOUND for a user id nobody has.
+   * The user `target` names. A wiki username resolves to the account holding its approved claim, else the
+   * account whose handle it spells, if any; a user id must exist. Throws NOT_FOUND for a user id nobody has.
    */
   static async resolveTarget(target: UserTarget): Promise<ResolvedTarget> {
     if ("wikiUsername" in target) {
-      const wikiUsername = normalizeWikiUsername(target.wikiUsername);
-      const link = await db.wikiAccountLink.findFirst({
-        where: { source: "ixwiki", username: wikiUsername, verifiedAt: { not: null } },
-        select: { userId: true },
-      });
-      return { userId: link?.userId ?? null, wikiUsername, displayName: wikiUsername };
+      const wikiUsername = claimName(target.wikiUsername);
+      const account = await accountOfWikiName(db, wikiUsername);
+      return { userId: account?.userId ?? null, wikiUsername, displayName: wikiUsername };
     }
-    const [user, link] = await Promise.all([
-      db.user.findUnique({ where: { id: target.userId }, select: { wikiUsername: true } }),
-      db.wikiAccountLink.findFirst({
-        where: { userId: target.userId, source: "ixwiki", verifiedAt: { not: null } },
-        select: { username: true },
-      }),
+    const [user, primaryName] = await Promise.all([
+      db.user.findUnique({ where: { id: target.userId }, select: { handle: true } }),
+      primaryNameOf(db, target.userId, { shown: true }),
     ]);
     if (!user) throw new PageOperationError("NOT_FOUND", "No such user.");
     return {
       userId: target.userId,
-      wikiUsername: link?.username ?? null,
-      displayName: userLabel(link?.username, user.wikiUsername),
+      wikiUsername: primaryName,
+      displayName: user.handle ?? primaryName ?? "Unknown user",
     };
   }
 
   /**
-   * The names users go by in logs and lists (see `userLabel`). An id with no user row is absent from the map.
+   * The names users go by in logs and lists: the passport handle, else the first name the account shows. An id
+   * with no user row is absent from the map.
    */
   static async displayNames(userIds: readonly string[]): Promise<Map<string, string>> {
     const ids = [...new Set(userIds)];
     if (ids.length === 0) return new Map();
-    const [links, users] = await Promise.all([
-      db.wikiAccountLink.findMany({
-        where: { userId: { in: ids }, source: "ixwiki", verifiedAt: { not: null } },
-        select: { userId: true, username: true },
-      }),
-      db.user.findMany({ where: { id: { in: ids } }, select: { id: true, wikiUsername: true } }),
+    const [users, names] = await Promise.all([
+      db.user.findMany({ where: { id: { in: ids } }, select: { id: true, handle: true } }),
+      namesOfUsers(db, ids, { shown: true }),
     ]);
-    const verified = new Map(links.map((link) => [link.userId, link.username]));
     return new Map(
-      users.map((user) => [user.id, userLabel(verified.get(user.id), user.wikiUsername)])
+      users.map((user) => [user.id, user.handle ?? names.get(user.id)?.[0]?.name ?? "Unknown user"])
     );
   }
 
@@ -240,7 +242,7 @@ export class RightsAdminService {
     if (target.userId === actor.userId) {
       throw new PageOperationError("BAD_REQUEST", "You cannot block yourself.");
     }
-    const keys = keysOf(target);
+    const keys = await keysOf(target, "blocks");
     const now = new Date();
 
     await db.$transaction(async (tx) => {
@@ -277,10 +279,11 @@ export class RightsAdminService {
   }): Promise<string> {
     const { reason, actor } = params;
     const target = await this.resolveTarget(params.target);
+    const keys = await keysOf(target, "blocks");
     const now = new Date();
 
     await db.$transaction(async (tx) => {
-      const rows = await tx.wikiBlock.findMany({ where: { OR: keysOf(target) } });
+      const rows = await tx.wikiBlock.findMany({ where: { OR: keys } });
       if (!rows.some((row) => isActive(row.expiresAt, now))) {
         throw new PageOperationError("NOT_FOUND", `${target.displayName} is not blocked.`);
       }
@@ -328,11 +331,11 @@ export class RightsAdminService {
     };
   }
 
-  /** The explicit (non-expired) group memberships of `target`, by user id or wiki username. */
+  /** The explicit (non-expired) group memberships the rights engine gives `target` (see `keysOf`). */
   static async explicitGroups(
     target: Pick<ResolvedTarget, "userId" | "wikiUsername">
   ): Promise<Array<{ group: string; expiresAt: Date | null }>> {
-    const keys = keysOf(target);
+    const keys = await keysOf(target, "groups");
     if (keys.length === 0) return [];
     const rows = await db.wikiUserGroup.findMany({
       where: { OR: keys },
@@ -360,13 +363,12 @@ export class RightsAdminService {
       throw new PageOperationError("BAD_REQUEST", "Name a group to add or remove.");
     }
     const target = await this.resolveTarget(params.target);
+    const keys = await keysOf(target, "groups");
 
     await db.$transaction(async (tx) => {
       for (const group of add) await this.grant(tx, target, group, expiresAt, actor);
       if (remove.length > 0) {
-        await tx.wikiUserGroup.deleteMany({
-          where: { group: { in: [...remove] }, OR: keysOf(target) },
-        });
+        await tx.wikiUserGroup.deleteMany({ where: { group: { in: [...remove] }, OR: keys } });
       }
       await tx.wikiLog.create({
         data: {

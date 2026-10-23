@@ -1,24 +1,36 @@
 /** @jest-environment node */
 /**
  * The PostgreSQL readers that replaced MediaWiki's (plan 418): an account's revisions, created pages and info come
- * from WikiOS's own rows (verified links included, names taken as typed); a parked revision is no recent change and is
- * flagged where it is listed; a deleted page's text and its files never come back; a page's images leave out icons,
- * non-images and files whose page was deleted, with the limit applied first; a sister wiki is still asked for its own;
- * the main page counts only edits that went live and reports a failed count as unknown, never a stand-in number; and no
- * list (search, category members, recent changes, contributions, backlinks, redirects, media usage) shows a deleted page.
+ * from WikiOS's own rows (approved name claims included, a hidden one never, names taken as typed); a parked revision
+ * is no recent change and is flagged where it is listed; a deleted page's text and its files never come back; a page's
+ * images leave out icons, non-images and files whose page was deleted, with the limit applied first; a sister wiki is
+ * still asked for its own; the main page counts only edits that went live and reports a failed count as unknown, never
+ * a stand-in number; and no list (search, category members, recent changes, contributions, backlinks, redirects, media
+ * usage) shows a deleted page.
  */
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: {
-    wikiArticle: { findUnique: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), count: jest.fn() },
-    wikiRevision: { count: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), groupBy: jest.fn() },
+    wikiArticle: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      findFirst: jest.fn(),
+      count: jest.fn(),
+    },
+    wikiRevision: {
+      count: jest.fn(),
+      findFirst: jest.fn(),
+      findMany: jest.fn(),
+      groupBy: jest.fn(),
+    },
     wikiAccountLink: { findFirst: jest.fn(), findMany: jest.fn() },
+    wikiNameClaim: { findFirst: jest.fn() },
     wikiAsset: { findMany: jest.fn(), findFirst: jest.fn(), count: jest.fn() },
     wikiLink: { findMany: jest.fn() },
     wikiCategory: { findFirst: jest.fn() },
     wikiCategoryMember: { findMany: jest.fn() },
     wikiTemplate: { findMany: jest.fn() },
-    user: { count: jest.fn() },
+    user: { count: jest.fn(), findUnique: jest.fn() },
     lorewardUserStats: { findFirst: jest.fn() },
     $queryRaw: jest.fn(),
     $queryRawUnsafe: jest.fn(),
@@ -32,9 +44,17 @@ jest.mock("~/lib/wiki-os/rights", () => ({
 import { afterEach, beforeEach, describe, expect, it } from "@jest/globals";
 import { db } from "~/server/db";
 import { loadTargetPermissions } from "~/lib/wiki-os/rights";
-import { ixwikiGetUserContribs, ixwikiGetUserCreatedPages, ixwikiGetUserInfo, ixwikiRecentChanges } from "~/lib/wiki-os/adapters/mediawiki/bridge/pg-activity";
+import {
+  ixwikiGetUserContribs,
+  ixwikiGetUserCreatedPages,
+  ixwikiGetUserInfo,
+  ixwikiRecentChanges,
+} from "~/lib/wiki-os/adapters/mediawiki/bridge/pg-activity";
 import { type FetchGuard, installFetchGuard } from "~/tests/helpers/fetch-guard";
-import { ixwikiGetWikitext, ixwikiResolveRedirect } from "~/lib/wiki-os/adapters/mediawiki/bridge/pg-reader";
+import {
+  ixwikiGetWikitext,
+  ixwikiResolveRedirect,
+} from "~/lib/wiki-os/adapters/mediawiki/bridge/pg-reader";
 import { getArticleWikitext, getPageImages } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { ixwikiGetSiteStats } from "~/lib/wiki-os/adapters/mediawiki/bridge/pg-site";
@@ -51,9 +71,21 @@ beforeEach(() => {
 describe("user info", () => {
   const mocked = db as unknown as {
     wikiRevision: { count: jest.Mock; findFirst: jest.Mock };
-    wikiAccountLink: { findFirst: jest.Mock };
+    wikiNameClaim: { findFirst: jest.Mock };
+    user: { findUnique: jest.Mock };
     lorewardUserStats: { findFirst: jest.Mock };
   };
+  const accountCreated = new Date("2025-01-01T00:00:00Z");
+  /** The approved claim on the name: what the resolver reads, and the MediaWiki id the reader reads. */
+  const claimOnName = (claim: { userId: string; visible: boolean; mwUserId: number | null }) =>
+    mocked.wikiNameClaim.findFirst.mockImplementation(
+      async ({ select }: { select: Record<string, unknown> }) =>
+        select.mwUserId
+          ? claim.visible
+            ? { mwUserId: claim.mwUserId }
+            : null
+          : { userId: claim.userId, visible: claim.visible, user: { handle: null } }
+    );
   const permissions = jest.mocked(loadTargetPermissions);
 
   const firstEdit = new Date("2024-03-01T10:00:00Z");
@@ -64,13 +96,16 @@ describe("user info", () => {
     guard = installFetchGuard();
     mocked.wikiRevision.count.mockResolvedValue(3);
     mocked.wikiRevision.findFirst.mockResolvedValue({ author: "Kir", createdAt: firstEdit });
-    mocked.wikiAccountLink.findFirst.mockResolvedValue(null);
+    mocked.wikiNameClaim.findFirst.mockResolvedValue(null);
+    mocked.user.findUnique.mockImplementation(async ({ where }: { where: { id?: string } }) =>
+      where.id ? { createdAt: accountCreated } : null
+    );
     mocked.lorewardUserStats.findFirst.mockResolvedValue(null);
     permissions.mockResolvedValue({
       groups: ["*"],
       rights: new Set(),
       block: null,
-      verifiedWikiUsername: null,
+      ownUserNames: [],
     });
   });
   afterEach(() => guard.restore());
@@ -87,7 +122,7 @@ describe("user info", () => {
         user_editcount: 3,
         registration: firstEdit.toISOString(),
         user_registration: firstEdit.toISOString(),
-        // The id is MediaWiki's: unknown without a verified link, never made up.
+        // The id is MediaWiki's: unknown without an approved claim that recorded it, never made up.
         userId: 0,
         user_id: 0,
       });
@@ -102,7 +137,7 @@ describe("user info", () => {
         groups: ["*", "sysop"],
         rights: new Set(),
         block: null,
-        verifiedWikiUsername: null,
+        ownUserNames: [],
       });
 
       const info = await ixwikiGetUserInfo("Kir");
@@ -111,33 +146,79 @@ describe("user info", () => {
       expect(permissions).toHaveBeenCalledWith({ userId: null, wikiUsername: "Kir" });
     });
 
-    it("takes the user id and registration of a verified link, and counts edits saved under its owner's id", async () => {
-      const registered = new Date("2023-01-05T00:00:00Z");
-      mocked.wikiAccountLink.findFirst.mockResolvedValue({
-        userId: "u1",
-        username: "Kir",
-        wikiUserId: 42,
-        mwRegisteredAt: registered,
-        user: { createdAt: new Date("2025-01-01T00:00:00Z") },
-      });
+    it("takes the MediaWiki id of an approved claim, and counts edits saved under its owner's id", async () => {
+      claimOnName({ userId: "u1", visible: true, mwUserId: 42 });
       permissions.mockResolvedValue({
         groups: ["*", "user", "autoconfirmed"],
         rights: new Set(),
         block: null,
-        verifiedWikiUsername: "Kir",
+        ownUserNames: ["Kir"],
       });
 
       const info = await ixwikiGetUserInfo("Kir");
 
       expect(info).toMatchObject({
         userId: 42,
-        registration: registered.toISOString(),
+        registration: firstEdit.toISOString(),
         groups: ["*", "user", "autoconfirmed"],
       });
       expect(mocked.wikiRevision.count.mock.calls[0]?.[0].where).toEqual({
         OR: [{ author: { equals: "Kir", mode: "insensitive" } }, { authorId: "u1" }],
       });
       expect(permissions).toHaveBeenCalledWith({ userId: "u1", wikiUsername: "Kir" });
+      expect(mocked.wikiNameClaim.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { source: "ixwiki", name: "Kir", status: "APPROVED", visible: true },
+        })
+      );
+    });
+
+    it("dates an account with no revisions from its creation, and an id it never recorded is 0", async () => {
+      claimOnName({ userId: "u1", visible: true, mwUserId: null });
+      mocked.wikiRevision.count.mockResolvedValue(0);
+      mocked.wikiRevision.findFirst.mockResolvedValue(null);
+
+      expect(await ixwikiGetUserInfo("Kir")).toMatchObject({
+        exists: true,
+        userId: 0,
+        registration: accountCreated.toISOString(),
+      });
+    });
+
+    it("knows a hidden claim's name from its revisions only: no account, no account edits", async () => {
+      claimOnName({ userId: "u1", visible: false, mwUserId: 42 });
+
+      const info = await ixwikiGetUserInfo("Kir");
+
+      expect(info).toMatchObject({ exists: true, userId: 0, editCount: 3 });
+      expect(mocked.wikiRevision.count.mock.calls[0]?.[0].where).toEqual({
+        author: { equals: "Kir", mode: "insensitive" },
+      });
+      expect(permissions).toHaveBeenCalledWith({ userId: null, wikiUsername: "Kir" });
+      expect(mocked.user.findUnique).not.toHaveBeenCalled();
+
+      mocked.wikiRevision.count.mockResolvedValue(0);
+      mocked.wikiRevision.findFirst.mockResolvedValue(null);
+      expect(await ixwikiGetUserInfo("Kir")).toMatchObject({ exists: false, groups: [] });
+    });
+
+    it("finds the account whose passport handle the name spells, when nobody claimed it", async () => {
+      mocked.user.findUnique.mockImplementation(
+        async ({ where }: { where: { id?: string; handle?: string } }) =>
+          where.handle === "kir"
+            ? { id: "u2", handle: "kir" }
+            : where.id === "u2"
+              ? { createdAt: accountCreated }
+              : null
+      );
+
+      const info = await ixwikiGetUserInfo("Kir");
+
+      expect(info).toMatchObject({ exists: true, userId: 0 });
+      expect(mocked.wikiRevision.count.mock.calls[0]?.[0].where).toEqual({
+        OR: [{ author: { equals: "Kir", mode: "insensitive" } }, { authorId: "u2" }],
+      });
+      expect(permissions).toHaveBeenCalledWith({ userId: "u2", wikiUsername: "Kir" });
     });
     it("reports an unknown name as not existing, without asking MediaWiki", async () => {
       mocked.wikiRevision.count.mockResolvedValue(0);
@@ -345,7 +426,10 @@ describe("an account's activity", () => {
 });
 
 describe("a page's wikitext", () => {
-  const article = db.wikiArticle as unknown as Record<"findUnique" | "findMany" | "findFirst", jest.Mock>;
+  const article = db.wikiArticle as unknown as Record<
+    "findUnique" | "findMany" | "findFirst",
+    jest.Mock
+  >;
 
   const row = (over: Record<string, unknown> = {}) => ({
     id: "a1",
@@ -388,7 +472,9 @@ describe("a page's wikitext", () => {
       article.findUnique.mockResolvedValue(row({ status: "ARCHIVED" }));
 
       expect(await getArticleWikitextShadow("Caphiria", "ixwiki")).toBeNull();
-      expect(await getArticleWikitextShadow("Caphiria", "ixwiki", { includeArchived: true })).toMatchObject({
+      expect(
+        await getArticleWikitextShadow("Caphiria", "ixwiki", { includeArchived: true })
+      ).toMatchObject({
         wikitext: "'''Caphiria''' is a country.",
       });
       expect(guard.calls()).toEqual([]);
@@ -402,7 +488,13 @@ describe("a page's wikitext", () => {
         expect(url.hostname).toBe("iiwiki.com");
         return {
           query: {
-            pages: { 7: { pageid: 7, title: "Elmeria", revisions: [{ slots: { main: { "*": "Sister text" } } }] } },
+            pages: {
+              7: {
+                pageid: 7,
+                title: "Elmeria",
+                revisions: [{ slots: { main: { "*": "Sister text" } } }],
+              },
+            },
           },
         };
       });
@@ -521,7 +613,9 @@ describe("a page's images", () => {
             pages: {
               2: {
                 title: "File:Elm.png",
-                imageinfo: [{ url: "https://iiwiki.com/Elm.png", width: 640, height: 480, mime: "image/png" }],
+                imageinfo: [
+                  { url: "https://iiwiki.com/Elm.png", width: 640, height: 480, mime: "image/png" },
+                ],
               },
             },
           },
@@ -570,7 +664,11 @@ describe("the main page's reads", () => {
           byteSize: 1200,
           byteDelta: 200,
           createdAt: new Date("2026-06-01T00:00:00Z"),
-          article: { title: "Aurelia", summary: "A '''country''' on Eurth.", leadImageUrl: "/i.png" },
+          article: {
+            title: "Aurelia",
+            summary: "A '''country''' on Eurth.",
+            leadImageUrl: "/i.png",
+          },
         },
       ]);
 
@@ -607,7 +705,12 @@ describe("the main page's reads", () => {
 
       const [change] = await ixwikiRecentChanges(6);
 
-      expect(change).toMatchObject({ user: "MediaWiki Editor", oldLen: 0, newLen: 500, blurb: null });
+      expect(change).toMatchObject({
+        user: "MediaWiki Editor",
+        oldLen: 0,
+        newLen: 500,
+        blurb: null,
+      });
     });
   });
 
@@ -617,7 +720,11 @@ describe("the main page's reads", () => {
       readsOf.revisionCount.mockResolvedValue(75000);
       readsOf.assetCount.mockResolvedValue(7500);
       readsOf.userCount.mockResolvedValue(130);
-      readsOf.revisionGroupBy.mockResolvedValue([{ author: "a" }, { author: "b" }, { author: "c" }]);
+      readsOf.revisionGroupBy.mockResolvedValue([
+        { author: "a" },
+        { author: "b" },
+        { author: "c" },
+      ]);
 
       await expect(ixwikiGetSiteStats()).resolves.toEqual({
         articles: 4800,
@@ -639,7 +746,10 @@ describe("the main page's reads", () => {
 
       await ixwikiGetSiteStats();
 
-      expect(readsOf.revisionCount.mock.calls[0]![0].where).toEqual({ source: "ixwiki", parked: false });
+      expect(readsOf.revisionCount.mock.calls[0]![0].where).toEqual({
+        source: "ixwiki",
+        parked: false,
+      });
       expect(readsOf.revisionGroupBy.mock.calls[0]![0].where).toMatchObject({
         source: "ixwiki",
         parked: false,
@@ -712,7 +822,9 @@ describe("lists never show a deleted page", () => {
     it("full-text search filters the page query and the count query", async () => {
       await NativeSearchService.fulltextSearch("kingdom of caphiria", "ixwiki", 10);
 
-      const [pageSql, countSql] = listsDb.$queryRawUnsafe.mock.calls.map((call) => call[0] as string);
+      const [pageSql, countSql] = listsDb.$queryRawUnsafe.mock.calls.map(
+        (call) => call[0] as string
+      );
       expect(pageSql).toContain("a.status = 'PUBLISHED'");
       expect(countSql).toContain("a.status = 'PUBLISHED'");
     });
@@ -736,23 +848,26 @@ describe("lists never show a deleted page", () => {
       const include = listsDb.wikiCategory.findFirst.mock.calls[0]?.[0].include;
       expect(include.members.where).toEqual({ article: published });
       expect(include.children.select._count.select.members.where).toEqual({ article: published });
-      expect(listsDb.wikiCategoryMember.findMany.mock.calls.map((c) => c[0].where.article)).toEqual([
-        published,
-        published,
-      ]);
+      expect(listsDb.wikiCategoryMember.findMany.mock.calls.map((c) => c[0].where.article)).toEqual(
+        [published, published]
+      );
     });
   });
 
   describe("activity and links", () => {
     it("recent changes skip revisions of deleted pages", async () => {
       await ixwikiRecentChanges(10);
-      expect(listsDb.wikiRevision.findMany.mock.calls[0]?.[0].where.article).toMatchObject(published);
+      expect(listsDb.wikiRevision.findMany.mock.calls[0]?.[0].where.article).toMatchObject(
+        published
+      );
     });
 
     it("contributions and created pages skip deleted pages", async () => {
       await ixwikiGetUserContribs("Amy", 10, 0);
       await ixwikiGetUserCreatedPages("Amy", 10);
-      expect(listsDb.wikiRevision.findMany.mock.calls[0]?.[0].where.article).toMatchObject(published);
+      expect(listsDb.wikiRevision.findMany.mock.calls[0]?.[0].where.article).toMatchObject(
+        published
+      );
       // Created pages are one raw query over the pages' first revisions, which names the status.
       const [strings] = listsDb.$queryRaw.mock.calls[0] as [TemplateStringsArray];
       expect(strings.join("$")).toContain(`a."status" = 'PUBLISHED'`);

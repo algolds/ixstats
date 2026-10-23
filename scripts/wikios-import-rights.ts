@@ -10,16 +10,13 @@
  *   - create-protections  list=protectedtitles
  *   - user blocks         list=blocks
  * and maps them onto `wiki_user_groups`, `wiki_restrictions` and `wiki_blocks` (rows with source
- * `mw-import`, keyed by wiki username; a username whose VERIFIED WikiAccountLink the account proved itself
- * gets that user's id; a link an admin confirmed gets nothing, it must not inherit MediaWiki rights).
+ * `mw-import`, every group and block keyed by wiki username alone). The approved IxWiki name claims connect a
+ * name to an account when rights are read (src/lib/wiki-os/rights.ts): its groups pass only through a claim a
+ * system owner approved or linked, its blocks through every approved claim.
  *
  * Usage:
  *   bun scripts/wikios-import-rights.ts --api https://ixwiki.com/api.php            # dry run (default)
  *   bun scripts/wikios-import-rights.ts --api https://ixwiki.com/api.php --yes      # write
- *
- * Before `--yes`: a link an administrator confirmed before `wiki_account_links.verifiedById` existed reads as
- * self-proven (NULL) and would inherit the rights of its wiki account. Set `verifiedById` on those first:
- * docs/operations/wikios-v1-cutover.md, step 1b.
  *
  * A dry run only calls the wiki and prints the plan: it never connects to a database. `--yes` prints the
  * database host first, then upserts: a row that already exists is left exactly as it is, so a re-run adds
@@ -492,38 +489,15 @@ export interface ApplyResult {
 
 /**
  * Upsert the plan. A row that exists is left as it is (`update: {}`), so this is safe to re-run and never
- * overwrites a change made in WikiOS. A wiki username with a verified link is stored against that user.
+ * overwrites a change made in WikiOS. Every row is keyed by wiki username: no claim or link is read here.
  */
 export async function applyPlan(prisma: PrismaClient, plan: ImportPlan): Promise<ApplyResult> {
-  const names = [...new Set([...plan.groups, ...plan.blocks].map((row) => row.wikiUsername))];
-  // Only links the account proved itself (no admin confirmed them): an admin-confirmed link must not
-  // inherit a name's groups, so those names stay keyed by wiki username, which such a link never matches.
-  const links = await prisma.wikiAccountLink.findMany({
-    where: {
-      source: "ixwiki",
-      verifiedAt: { not: null },
-      verifiedById: null,
-      username: { in: names },
-    },
-    select: { userId: true, username: true },
-  });
-  const userIdOf = new Map(links.map((link) => [link.username, link.userId]));
-
   for (const { wikiUsername, group } of plan.groups) {
-    const userId = userIdOf.get(wikiUsername);
-    if (userId) {
-      await prisma.wikiUserGroup.upsert({
-        where: { userId_group: { userId, group } },
-        create: { userId, group, source: "mw-import" },
-        update: {},
-      });
-    } else {
-      await prisma.wikiUserGroup.upsert({
-        where: { wikiUsername_group: { wikiUsername, group } },
-        create: { wikiUsername, group, source: "mw-import" },
-        update: {},
-      });
-    }
+    await prisma.wikiUserGroup.upsert({
+      where: { wikiUsername_group: { wikiUsername, group } },
+      create: { wikiUsername, group, source: "mw-import" },
+      update: {},
+    });
   }
 
   for (const restriction of plan.restrictions) {
@@ -542,13 +516,12 @@ export async function applyPlan(prisma: PrismaClient, plan: ImportPlan): Promise
   }
 
   for (const block of plan.blocks) {
-    const userId = userIdOf.get(block.wikiUsername) ?? null;
     const existing = await prisma.wikiBlock.findFirst({
       where: { source: "mw-import", wikiUsername: block.wikiUsername },
       select: { id: true },
     });
     if (!existing)
-      await prisma.wikiBlock.create({ data: { ...block, userId, source: "mw-import" } });
+      await prisma.wikiBlock.create({ data: { ...block, userId: null, source: "mw-import" } });
   }
 
   return {

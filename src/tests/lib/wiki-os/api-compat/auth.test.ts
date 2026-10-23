@@ -10,6 +10,10 @@ jest.mock("~/server/db", () => ({
   __esModule: true,
   db: {
     wikiAccountLink: { findFirst: jest.fn() },
+    wikiNameClaim: {
+      findMany: jest.fn().mockResolvedValue([]),
+      findFirst: jest.fn().mockResolvedValue(null),
+    },
     wikiUserGroup: { findMany: jest.fn() },
     wikiBlock: { findMany: jest.fn() },
     wikiRevision: { count: jest.fn() },
@@ -98,7 +102,7 @@ const permissionsOf = (rights: Right[]) => ({
   groups: ["*" as const],
   rights: new Set<Right>(rights),
   block: null,
-  verifiedWikiUsername: null,
+  ownUserNames: [],
 });
 
 describe("bot passwords", () => {
@@ -161,7 +165,6 @@ describe("grants", () => {
   describe("capWikiPermissions: effective rights = user rights ∩ grant rights", () => {
     beforeEach(() => {
       jest.clearAllMocks();
-      (db.wikiAccountLink.findFirst as jest.Mock).mockResolvedValue(null);
       (db.wikiUserGroup.findMany as jest.Mock).mockResolvedValue([
         { group: "sysop", expiresAt: null },
       ]);

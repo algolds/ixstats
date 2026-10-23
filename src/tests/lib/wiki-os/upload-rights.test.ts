@@ -69,13 +69,20 @@ const png = (salt = 0) =>
     salt,
   ]);
 
-const ctxFor = (id: string, clerk: string, name: string, role = "user"): WikiAuthContext => ({
+const ctxFor = (
+  id: string,
+  clerk: string,
+  name: string,
+  role = "user",
+  createdAt?: Date
+): WikiAuthContext => ({
   auth: { userId: clerk },
-  user: { id, clerkUserId: clerk, wikiUsername: name, role: { name: role, level: 100 } },
+  user: { id, clerkUserId: clerk, wikiUsername: name, createdAt, role: { name: role, level: 100 } },
 });
 
-/** autoconfirmed through a verified wiki link (seeded in beforeEach). */
-const member = () => ctxFor("dbmember", "user_member", "Member");
+/** autoconfirmed by WikiOS's own rule: a month old, with the ten revisions its claim tagged (seeded in beforeEach). */
+const member = () =>
+  ctxFor("dbmember", "user_member", "Member", "user", new Date(Date.now() - 30 * 86_400_000));
 const plain = () => ctxFor("dbplain", "user_plain", "Newbie");
 const sysop = () => ctxFor("dbsysop", "user_sysop", "Mod", "admin");
 const anonymous: WikiAuthContext = { auth: null, user: null };
@@ -99,12 +106,15 @@ beforeEach(() => {
     { id: "dbmember", wikiUsername: "Member" },
     { id: "dbsysop", wikiUsername: "Mod" }
   );
-  tables.wikiAccountLink.seed({
-    userId: "dbmember",
-    source: "ixwiki",
-    username: "Member",
-    verifiedAt: new Date("2026-01-01"),
-  });
+  tables.wikiNameClaim.seed({ userId: "dbmember", name: "Member" });
+  tables.wikiRevision.seed(
+    ...Array.from({ length: 10 }, (_, i) => ({
+      id: `r-member-${i}`,
+      articleId: "a-elsewhere",
+      author: "Member",
+      authorId: "dbmember",
+    }))
+  );
 });
 
 const upload = (

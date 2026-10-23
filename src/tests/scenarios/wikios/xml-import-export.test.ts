@@ -70,7 +70,7 @@ const holding = (...rights: string[]) =>
     groups: [],
     rights: new Set(rights),
     block: null,
-    verifiedWikiUsername: null,
+    ownUserNames: [],
   } as never);
 
 interface DumpRevision {

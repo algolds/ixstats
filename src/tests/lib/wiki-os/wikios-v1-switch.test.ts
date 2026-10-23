@@ -54,7 +54,7 @@ const sysop: WikiPermissions = {
   groups: ["*", "user", "sysop"],
   rights: rightsForGroups(["*", "user", "sysop"]),
   block: null,
-  verifiedWikiUsername: "Admin",
+  ownUserNames: ["Admin"],
 };
 const request = { title: "Aurelia", permissions: sysop, restrictions: [], now: new Date() };
 

@@ -84,7 +84,7 @@ export function fakeLoader(groups: Group[] = ["*", "user", "sysop"]): Permission
       groups: effective,
       rights: rights as Set<Right>,
       block: null,
-      verifiedWikiUsername: null,
+      ownUserNames: [],
     };
   };
 }

@@ -58,7 +58,7 @@ function introspectionSession(): ApiSession {
     name: "Introspection",
     userId: 1,
     ctx: { auth: null, user: null },
-    permissions: { groups: [], rights: new Set(), block: null, verifiedWikiUsername: null },
+    permissions: { groups: [], rights: new Set(), block: null, ownUserNames: [] },
     sessionId: null,
     grants: null,
   };

@@ -143,17 +143,17 @@ function normalizeUserName(name: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
-/** Whether the page name `base` (no namespace) is `owner`'s own page or one of its subpages. */
-export function isOwnUserSpace(base: string, owner: string | null): boolean {
-  const rootName = base.split("/")[0] ?? "";
-  return Boolean(owner) && normalizeUserName(rootName) === normalizeUserName(owner ?? "");
+/** Whether the page name `base` (no namespace) is the page of one of `owners` (names), or one of its subpages. */
+export function isOwnUserSpace(base: string, owners: readonly string[]): boolean {
+  const rootName = normalizeUserName(base.split("/")[0] ?? "");
+  return rootName !== "" && owners.some((owner) => normalizeUserName(owner) === rootName);
 }
 
 export interface EditPolicyIdentity {
   /** The caller's rights (see `rightsForGroups`). */
   rights: ReadonlySet<Right>;
-  /** Verified linked MediaWiki account name, or null when the user has no linked account. */
-  linkedWikiUsername: string | null;
+  /** The names whose user pages are the caller's own: their handle and their approved claims (see `WikiPermissions`). */
+  ownUserNames: readonly string[];
 }
 
 export type EditPolicyResult = { allowed: true } | { allowed: false; reason: string };
@@ -169,10 +169,10 @@ function checkUserPage(base: string, identity: EditPolicyIdentity): EditPolicyRe
       ? ALLOWED
       : deny("Only interface administrators can edit user script, style and data pages.");
   }
-  if (isOwnUserSpace(base, identity.linkedWikiUsername)) return ALLOWED;
+  if (isOwnUserSpace(base, identity.ownUserNames)) return ALLOWED;
   return identity.rights.has("editprotected")
     ? ALLOWED
-    : deny("You can only edit your own user page (this needs a linked wiki account).");
+    : deny("You can only edit your own user page.");
 }
 
 /** Whether `identity` may write to `rawTitle` through WikiOS. */
