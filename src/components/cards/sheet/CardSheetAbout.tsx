@@ -214,7 +214,7 @@ export function CardSheetAbout({ card, artHidden, signedIn }: CardSheetAboutProp
       {isLore ? (
         <LoreWikiExcerpt card={card} wikiUrl={wikiUrl} artHidden={artHidden} />
       ) : (
-        card.description && <p className="text-callout text-label-secondary">{card.description}</p>
+        card.description && <p className="text-body text-label-secondary">{card.description}</p>
       )}
       {card.ns && <NsFacts ns={card.ns} />}
       <Credits card={card} writer={writer} />

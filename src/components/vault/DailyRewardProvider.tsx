@@ -14,7 +14,7 @@ import { Progress } from "~/components/ui/progress";
 import { Stat } from "~/components/ui/stat";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "~/components/ui/dialog";
 import { CardFace } from "~/components/cards/face/CardFace";
-import { CardFaceDown } from "~/components/cards/face/CardFaceDown";
+import { CardBack } from "~/components/cards/face/CardBack";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { StreakPill } from "~/components/vault/StreakPill";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
@@ -140,7 +140,7 @@ function ChoiceTile({
  * card is narrower than size S to fit it.
  */
 function FaceDownCard() {
-  return <CardFaceDown size="S" className="w-20 -rotate-2" />;
+  return <CardBack card={null} size="S" className="w-20 -rotate-2" />;
 }
 
 /** Progress toward the full streak boost, in a well under the choices. */

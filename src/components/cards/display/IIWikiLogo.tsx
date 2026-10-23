@@ -1,8 +1,7 @@
 "use client";
 
 import { cn } from "~/lib/utils";
-
-const IIWIKI_LOGO_URL = "/images/IIWikiLogo.png";
+import { IIWIKI_LOGO_URL } from "~/lib/cards/realm-logos";
 
 interface IIWikiLogoProps {
   className?: string;

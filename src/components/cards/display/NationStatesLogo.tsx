@@ -2,9 +2,7 @@
 
 import React from "react";
 import { cn } from "~/lib/utils";
-
-const NATIONSTATES_LOGO_URL =
-  "https://static.wikia.nocookie.net/logopedia/images/7/70/NationStates_Logo_%282002%2C_Badge%29.png";
+import { NATIONSTATES_LOGO_URL } from "~/lib/cards/realm-logos";
 
 interface NationStatesLogoProps {
   className?: string;

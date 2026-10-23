@@ -139,6 +139,42 @@
     border: 2px solid var(--card-rarity-paint);
     background-color: var(--color-surface-secondary);
   }
+  /* The card back (CardBack.tsx), an engraved print in the rarity's colour: fine rings and a crosshatch under the
+     lattice of the back's mark. A Foil, Holo or Serialised copy's lattice catches the light where the pointer is
+     (`--holo-x`, `--holo-y`, set by useCardTilt on the tilting card); never with Reduce Transparency or more contrast,
+     and CardFlip leaves it out under Reduce Motion. */
+  .card-back {
+    --card-back-line: color-mix(in oklab, var(--card-rarity-paint) 9%, transparent);
+    background-image:
+      repeating-radial-gradient(
+        circle at 50% 50%,
+        var(--card-back-line) 0 1px,
+        transparent 1px 7px
+      ),
+      repeating-linear-gradient(45deg, var(--card-back-line) 0 1px, transparent 1px 10px),
+      repeating-linear-gradient(-45deg, var(--card-back-line) 0 1px, transparent 1px 10px);
+  }
+  .card-back-lattice {
+    color: var(--card-rarity-paint);
+    opacity: 0.24;
+  }
+  .card-back-shine {
+    color: rgb(255 255 255 / 0.85);
+    mask-image: radial-gradient(
+      circle at var(--holo-x, 50%) var(--holo-y, 50%),
+      black,
+      transparent 45%
+    );
+    @variant transparency-reduced {
+      display: none;
+    }
+    @variant contrast-more {
+      display: none;
+    }
+  }
+  .card-back-shine[data-card-finish="SERIALISED"] {
+    color: var(--color-rarity-legendary);
+  }
   /* A card the viewer has not collected: its art, muted. Only the picture is filtered; the rarity edge and gem, the
      scrim and the title keep their colour, so every rarity still reads as itself. The dark theme also dims it a little,
      since muted art still stands out on a dark page. */

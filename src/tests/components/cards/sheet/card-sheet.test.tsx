@@ -231,6 +231,21 @@ const moreItems = () => {
   fireEvent.keyDown(menu, { key: "Escape" });
   return items;
 };
+/** Trail moves, newest first, alternating trades between Cal and Bea. */
+const moves = (count: number) =>
+  Array.from({ length: count }, (_, index) => ({
+    id: `t${index}`,
+    action: "TRADE" as const,
+    from: { name: index % 2 ? "Bea" : "Cal" },
+    to: { name: index % 2 ? "Cal" : "Bea" },
+    price: null,
+    at: new Date(2026, 9, 10 - index),
+  }));
+const backSide = () => {
+  const back = turnable().querySelector<HTMLElement>("[data-card-back]");
+  if (!back) throw new Error("no card back");
+  return back;
+};
 const turnable = () =>
   screen.getByRole("group", { name: "The card. Press Space or F to turn it over." });
 
@@ -339,16 +354,7 @@ describe("CardSheet card", () => {
     const signed = held(12, "HOLO", 6, {
       experience: 5100,
       inscription: { text: "For Ann", signerName: "Bea", signedAt: new Date(2026, 9, 3) },
-      trail: [
-        {
-          id: "t1",
-          action: "TRADE",
-          from: { name: "Cal" },
-          to: { name: "Bea" },
-          price: null,
-          at: new Date("2026-10-04T12:00:00Z"),
-        },
-      ],
+      trail: moves(4),
     });
     showSheet(
       sheet({
@@ -365,12 +371,17 @@ describe("CardSheet card", () => {
     );
     open();
     fireEvent.keyDown(window, { key: "f" });
-    const back = turnable();
+    const back = backSide();
+    // The printed back: rarity at the top; serial and finish, the wordmark and the number at the foot
+    expect(within(back).getByText("Epic")).toBeInTheDocument();
     expect(within(back).getByText("#12 · Holo")).toBeInTheDocument();
+    expect(within(back).getByText("IxCards")).toBeInTheDocument();
+    expect(within(back).getByText("No. 9")).toBeInTheDocument();
     expect(within(back).getByText("For Ann")).toBeInTheDocument();
     expect(within(back).getByText("Signed by Bea on October 3, 2026")).toBeInTheDocument();
     expect(within(back).getByText("Level 6 · 5,100 XP")).toBeInTheDocument();
-    expect(within(back).getAllByRole("listitem")).toHaveLength(1);
+    // The latest three moves; the sheet's Trail lists them all
+    expect(within(back).getAllByRole("listitem")).toHaveLength(3);
     expect(within(back).queryByText(/Testlandia/)).toBeNull();
     expect(within(back).queryByRole("link")).toBeNull();
     expect(within(back).queryByText(/NationStates API/)).toBeNull();
@@ -622,6 +633,24 @@ describe("CardSheet your copies", () => {
     open();
     expect(within(copies()).getByText(line)).toBeInTheDocument();
     expect(within(copies()).queryAllByRole("link")).toHaveLength(0);
+  });
+});
+
+describe("CardSheet trail", () => {
+  it("lists every move of the picked copy in a folded Trail", () => {
+    showSheet(sheet({ copies: [held(12, "HOLO", 6, { trail: moves(5) })] }));
+    open();
+    const toggle = screen.getByRole("button", { name: "Trail" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(toggle);
+    const region = screen.getByRole("region", { name: "Trail" });
+    expect(within(region).getAllByRole("listitem")).toHaveLength(5);
+  });
+
+  it("leaves Trail out for a copy that has never moved", () => {
+    showSheet(sheet({ copies: [held(12, "HOLO", 6, { trail: [] })] }));
+    open();
+    expect(screen.queryByRole("button", { name: "Trail" })).toBeNull();
   });
 });
 

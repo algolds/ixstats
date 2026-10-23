@@ -48,3 +48,7 @@ To ask for a card to be taken down, for example because it uses your work or you
 Requests for any other card are answered within 14 days, and only staff see who sent one. A card has one request at a time, so if someone has already asked for it you're told so. You can have up to five requests waiting.
 
 A card that's taken down stays in your collection, without its art and with no value.
+
+## Credits
+
+The category marks on card backs are from [game-icons.net](https://game-icons.net), by Lorc, Delapouite and contributors, under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).

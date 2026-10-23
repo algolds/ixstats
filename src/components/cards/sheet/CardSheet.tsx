@@ -24,9 +24,10 @@ import type { CardSheetData } from "~/lib/cards/hub/sheet";
 import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
 import { CardFlip } from "~/components/cards/face/CardFlip";
 import { playRevealFeedback } from "~/components/cards/reveal/reveal-feedback";
-import { CardBackProvenance } from "~/components/cards/face/CardBackProvenance";
+import { CardBack } from "~/components/cards/face/CardBack";
 import { AddToShowcaseDialog } from "~/components/cards/showcase/AddToShowcaseDialog";
 import { CardSheetCopies } from "./CardSheetCopies";
+import { CardSheetTrail } from "./CardSheetTrail";
 import { CardSheetCraft, CardSheetMarket, CardSheetPriceHistory } from "./CardSheetMarket";
 import { CardSheetAbout } from "./CardSheetAbout";
 import { MuteToggle } from "./economy/MuteToggle";
@@ -192,7 +193,14 @@ function SheetBody({ sheet }: { sheet: CardSheetData }) {
           face={face}
           turn={
             picked && {
-              back: <CardBackProvenance face={face} facts={picked.facts} copy={picked.copy} />,
+              back: (
+                <CardBack
+                  card={{ ...face, category: card.category }}
+                  size="L"
+                  story={{ facts: picked.facts, ...picked.copy }}
+                  shine={reduce ? null : picked.facts.finish}
+                />
+              ),
               flipped,
               onFlip: flip,
             }
@@ -248,6 +256,7 @@ function SheetBody({ sheet }: { sheet: CardSheetData }) {
             onAddToShowcase={(id) => setShowcasing([id])}
           />
         )}
+        {picked && <CardSheetTrail trail={picked.copy.trail} />}
         <CardSheetMarket
           cardId={card.id}
           cardTitle={card.title}

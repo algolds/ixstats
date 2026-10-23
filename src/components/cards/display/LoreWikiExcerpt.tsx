@@ -70,7 +70,7 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
           Loading article excerpt...
         </div>
       ) : excerptText ? (
-        <div className="text-label-secondary text-footnote max-h-64 space-y-2 overflow-y-auto pr-1 leading-relaxed">
+        <div className="text-label-secondary text-callout max-h-80 space-y-2 overflow-y-auto pr-1 leading-relaxed">
           <WikiHtmlContent html={parsedHtml} />
         </div>
       ) : (

@@ -86,7 +86,7 @@ function TurnHint() {
  */
 export function CardFlip({ face, turn }: CardFlipProps) {
   const reduce = useFacetReducedMotion();
-  const { tilt, holo, onPointerMove, onPointerLeave } = useCardTilt();
+  const { tilt, onPointerMove, onPointerLeave } = useCardTilt();
   const root = useRef<HTMLDivElement>(null);
   const onFlip = turn?.onFlip;
   const flipped = turn?.flipped === true;
@@ -114,7 +114,7 @@ export function CardFlip({ face, turn }: CardFlipProps) {
   const front = (
     <span className="relative block">
       <CardFace face={face} size="L" className="max-w-full" />
-      {showHolo && <CardHolo holoRef={holo} />}
+      {showHolo && <CardHolo />}
     </span>
   );
   const shell = {
