@@ -62,7 +62,8 @@ function UnlockSlide({
         <CutoutCard
           interactive
           style={facetAccentStyle(theme.accent)}
-          className="flex h-full items-center gap-3 p-4"
+          // min-h-40: as tall as the Balance card, also where it is not beside it (a phone)
+          className="flex h-full min-h-40 items-center gap-3 p-4"
         >
           <AchievementCardBackdrop
             categoryTheme={theme}
@@ -126,7 +127,8 @@ export function VaultUnlocks() {
       aria-roledescription="carousel"
       aria-label="Achievements"
       data-slot="vault-unlocks"
-      className="flex h-full flex-col"
+      // The dots sit on the card's foot, not under it, so the card fills the Balance card's row
+      className="relative flex h-full flex-col"
     >
       <div
         ref={track}
@@ -168,7 +170,7 @@ export function VaultUnlocks() {
         )}
       </div>
       {count > 1 && (
-        <div className="flex justify-center">
+        <div className="absolute inset-x-0 bottom-0 flex justify-center">
           {Array.from({ length: count }, (_, index) => (
             <button
               key={index}
@@ -176,7 +178,7 @@ export function VaultUnlocks() {
               aria-label={`Show achievement ${index + 1} of ${count}`}
               aria-current={index === active}
               onClick={() => show(index)}
-              // The padding makes a 24px target around the 6px dot, and spaces it from the track.
+              // The padding makes a 24px target around the 6px dot, inside the card's bottom padding.
               className={cn(focusRing, "rounded-full p-2.25")}
             >
               <span
