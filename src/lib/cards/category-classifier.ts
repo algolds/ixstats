@@ -52,7 +52,10 @@ export const SIGNAL_STRENGTH = {
 const KEYWORD_POINTS = { titleKeyword: 5, leadKeywordsMax: 15 } as const;
 const FULL_KEYWORD_POINTS = 20;
 
-/** Below this confidence a classification waits for review. Provisional: the backfill's dry run sets it. */
+/**
+ * Below this confidence a classification waits for review. 0.45 was chosen from the 2026-10-23 dry run, whose
+ * confidence histogram is sparse between 0.4 and 0.5.
+ */
 export const CATEGORY_REVIEW_THRESHOLD = 0.45;
 
 /** How much of the text counts as its lead. */

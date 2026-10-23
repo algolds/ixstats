@@ -1,9 +1,10 @@
 /** @jest-environment node */
 /** The categories backfill script: guarded writes, every continuation followed, the IIWiki dev proxy honoured. */
+import type { PrismaClient } from "@prisma/client";
 import { CATEGORY_REVIEW_THRESHOLD } from "~/lib/cards/category-classifier";
 import type { WikiQuery } from "~/lib/realms/lore-import";
 import { DiscoveryStopped } from "~/lib/realms/sources/wiki-discovery-client";
-import { createMockPrisma } from "~/tests/helpers/mock-db";
+import { createMockPrisma, type MockPrismaProxy } from "~/tests/helpers/mock-db";
 import {
   applyDecisions,
   backfillApiUrl,
@@ -16,7 +17,10 @@ import {
   type SignalCache,
 } from "../../../scripts/cards/backfill-card-categories";
 
-const sqlOf = (call: unknown[]) => (call[0] as TemplateStringsArray).join("?");
+type RawCall = Parameters<PrismaClient["$executeRaw"]>;
+/** The mock's `$executeRaw` calls, read as the client's parameters. */
+const rawCalls = (db: MockPrismaProxy): RawCall[] => db.$executeRaw.mock.calls;
+const sqlOf = ([query]: RawCall) => ("strings" in query ? query.strings : query).join("?");
 
 it("follows every continue answer before it classifies", async () => {
   const query = jest
@@ -51,7 +55,7 @@ it("asks 50 titles at a time", async () => {
 });
 
 it("stops, rather than looping, when an api.php drops the continuation parameters", async () => {
-  // The dev relay forwards `continue` but not `clcontinue`/`tlcontinue`, so MediaWiki answers the first page again.
+  // A relay that forwards `continue` but not `clcontinue`/`tlcontinue` makes MediaWiki answer the first page again.
   const answer = {
     continue: { clcontinue: "1|X", continue: "||" },
     query: { pages: [{ title: "A" }] },
@@ -78,12 +82,12 @@ it("writes only over an unset or classifier category, and drops the card's legac
   ]);
   expect(written).toBe(1);
   expect(db.$executeRaw).toHaveBeenCalledTimes(1);
-  const sql = sqlOf(db.$executeRaw.mock.calls[0]!);
+  const sql = sqlOf(rawCalls(db)[0]!);
   expect(sql).toContain(`("categorySource" IS NULL OR "categorySource" = 'CLASSIFIER')`);
   expect(sql).toContain(`"cardType" = 'LORE'`);
   expect(sql).toContain(`"metadata" - 'category'`);
   expect(sql).not.toContain("realmId");
-  expect(db.$executeRaw.mock.calls[0]!.slice(1)).toEqual(["MILITARY", "unit", 0.9, false, "c1"]);
+  expect(rawCalls(db)[0]!.slice(1)).toEqual(["MILITARY", "unit", 0.9, false, "c1"]);
 });
 
 it("writes the review flag of the run's threshold, in transactions of 200", async () => {
@@ -99,13 +103,13 @@ it("writes the review flag of the run's threshold, in transactions of 200", asyn
   }));
   await expect(applyDecisions(db as never, rows)).resolves.toBe(401);
   expect(db.$transaction).toHaveBeenCalledTimes(3);
-  expect(db.$executeRaw.mock.calls[0]![4]).toBe(true);
+  expect(rawCalls(db)[0]![4]).toBe(true);
 });
 
 it("sweeps the legacy labels only of cards the backfill has reached", async () => {
   const db = createMockPrisma({ $executeRaw: jest.fn().mockResolvedValue(2375) });
   await expect(dropLegacyLabels(db as never)).resolves.toBe(2375);
-  expect(sqlOf(db.$executeRaw.mock.calls[0]!)).toContain(`"categorySource" IS NOT NULL`);
+  expect(sqlOf(rawCalls(db)[0]!)).toContain(`"categorySource" IS NOT NULL`);
 });
 
 it("reads IIWiki through the dev proxy when one is set, and IxWiki at its api.php", () => {
@@ -246,7 +250,7 @@ describe("runBackfill", () => {
     expect(query).toHaveBeenCalledTimes(1);
     expect(query.mock.calls[0]![0].titles).toBe("Kiro");
     expect(result.report.counts).toMatchObject({ retired: 1, writes: 1 });
-    expect(db.$executeRaw.mock.calls.map((call: string[]) => call.at(-1))).not.toContain("Seed");
+    expect(rawCalls(db).map((call) => call.at(-1))).not.toContain("Seed");
   });
 
   it("retires an Abandoned Lore card on apply, after its category write, and not on a dry run", async () => {
@@ -264,7 +268,7 @@ describe("runBackfill", () => {
     const db = setup([row("Gone", "ixwiki")]);
     const result = await runBackfill(db as never, options, { ...deps, cache: abandonedCache() });
     expect(result.retired).toBe(1);
-    expect(db.$executeRaw.mock.calls[0]!.slice(-2)).toEqual([false, "Gone"]);
+    expect(rawCalls(db)[0]!.slice(-2)).toEqual([false, "Gone"]);
     expect(db.card.updateMany).toHaveBeenCalledWith({
       where: { id: "Gone", cardType: "LORE", isRetired: false },
       data: { isRetired: true, retiredAt: expect.any(Date) },
@@ -296,7 +300,7 @@ describe("runBackfill", () => {
     expect(result.written).toBe(1);
     expect(result.swept).toBe(0);
     expect(db.$executeRaw).toHaveBeenCalledTimes(1);
-    expect(db.$executeRaw.mock.calls[0]!.slice(1)).toEqual([
+    expect(rawCalls(db)[0]!.slice(1)).toEqual([
       "MILITARY",
       "battle-or-war",
       expect.any(Number),
@@ -329,7 +333,75 @@ describe("runBackfill", () => {
     expect(saveCache).toHaveBeenCalledTimes(1);
     expect(cache.pages["ixwiki|new"]).toEqual({ categories: [], templates: [], missing: false });
     expect(result.written).toBe(2);
-    expect(sqlOf(db.$executeRaw.mock.calls.at(-1)!)).toContain(`"categorySource" IS NOT NULL`);
+    expect(sqlOf(rawCalls(db).at(-1)!)).toContain(`"categorySource" IS NOT NULL`);
+  });
+
+  it("reads a kept and a protected card on an uncached run, only to retire them as Abandoned Lore", async () => {
+    const db = setup([
+      row("Old", "ixwiki", { categorySource: "CLASSIFIER", category: "HISTORY" }),
+      row("Mine", "ixwiki", { categorySource: "REALM_OWNER", category: "MILITARY" }),
+    ]);
+    const abandoned = { title: "", categories: [{ title: "Category:Abandoned Lore" }] };
+    const query = jest.fn().mockResolvedValue({
+      query: {
+        pages: [
+          { ...abandoned, title: "Old" },
+          { ...abandoned, title: "Mine" },
+        ],
+      },
+    });
+    const result = await runBackfill(db as never, options, {
+      queryFor: () => query,
+      cache: freshCache(),
+      saveCache: jest.fn(),
+    });
+    expect(query.mock.calls[0]![0].titles).toBe("Old|Mine");
+    expect(result.report.counts).toMatchObject({ kept: 1, protected: 1, writes: 0, abandoned: 2 });
+    // Their categories stay: the only raw write is the legacy-label sweep
+    expect(result.written).toBe(0);
+    expect(rawCalls(db).map((call) => sqlOf(call))).toEqual([
+      expect.stringContaining(`"categorySource" IS NOT NULL`),
+    ]);
+    expect(result.retired).toBe(2);
+    for (const id of ["Old", "Mine"]) {
+      expect(db.card.updateMany).toHaveBeenCalledWith({
+        where: { id, cardType: "LORE", isRetired: false },
+        data: { isRetired: true, retiredAt: expect.any(Date) },
+      });
+    }
+    expect(db.auditLog.create).toHaveBeenCalledTimes(2);
+  });
+
+  it("reads the cards it classifies before the ones it reads only for Abandoned Lore", async () => {
+    const db = setup([
+      row("Old", "ixwiki", { categorySource: "CLASSIFIER", category: "HISTORY" }),
+      row("Mine", "ixwiki", { categorySource: "ADMIN" }),
+      row("New", "ixwiki"),
+      row("Seed", "ixwiki", { categorySource: "ADMIN", isRetired: true }),
+    ]);
+    const query = jest.fn().mockResolvedValue({ query: { pages: [] } });
+    await runBackfill(db as never, options, {
+      queryFor: () => query,
+      cache: freshCache(),
+      saveCache: jest.fn(),
+    });
+    expect(query.mock.calls.map(([params]) => params.titles)).toEqual(["New|Old|Mine"]);
+  });
+
+  it("reads no kept card the cache already holds", async () => {
+    const db = setup([row("Old", "ixwiki", { categorySource: "CLASSIFIER", category: "HISTORY" })]);
+    const query = jest.fn();
+    const cache: SignalCache = {
+      version: 1,
+      pages: { "ixwiki|old": { categories: [], templates: [], missing: false } },
+    };
+    const result = await runBackfill(db as never, options, {
+      queryFor: () => query,
+      cache,
+      saveCache: jest.fn(),
+    });
+    expect(query).not.toHaveBeenCalled();
+    expect(result.retired).toBe(0);
   });
 
   it("writes nothing on a dry run, and plans no write for a card an earlier run classified", async () => {
@@ -349,7 +421,8 @@ describe("runBackfill", () => {
     );
     expect(db.$executeRaw).not.toHaveBeenCalled();
     expect(db.$transaction).not.toHaveBeenCalled();
-    expect(query.mock.calls[0]![0].titles).toBe("Kiro");
+    // The kept card is read too, only to find whether it is Abandoned Lore
+    expect(query.mock.calls[0]![0].titles).toBe("Kiro|Old");
     expect(result.report.counts).toMatchObject({ writes: 1, kept: 1 });
     expect(result.report.mode).toBe("dry-run");
   });
@@ -396,7 +469,7 @@ describe("parseBackfillArgs", () => {
     });
   });
 
-  it("reads every flag, and refuses an unknown wiki or a threshold outside 0 to 1", () => {
+  it("reads every flag, and refuses a wiki it does not know or a threshold outside 0 to 1", () => {
     expect(
       parseBackfillArgs([
         "--apply",

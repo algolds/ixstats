@@ -6,6 +6,7 @@ import { createMockPrisma } from "~/tests/helpers/mock-db";
 import {
   ExploreQuerySchema,
   categoryWhere,
+  clearExploreFacetsCache,
   exploreFacets,
   exploreGrid,
   exploreRegions,
@@ -71,6 +72,37 @@ describe("the category filter", () => {
 });
 
 describe("exploreFacets", () => {
+  beforeEach(() => clearExploreFacetsCache());
+  afterEach(() => jest.restoreAllMocks());
+
+  const facetsDb = () => {
+    const db = createMockPrisma();
+    db.card.groupBy.mockResolvedValue([
+      { cardType: "LORE", category: "HISTORY", _count: { _all: 3 } },
+    ]);
+    return db;
+  };
+
+  it("counts the catalogue once in two minutes, for every viewer", async () => {
+    const now = jest.spyOn(Date, "now").mockReturnValue(1_000_000);
+    const db = facetsDb();
+    const first = await exploreFacets(db as never);
+    now.mockReturnValue(1_000_000 + 2 * 60_000 - 1);
+    await expect(exploreFacets(db as never)).resolves.toBe(first);
+    expect(db.card.groupBy).toHaveBeenCalledTimes(1);
+    now.mockReturnValue(1_000_000 + 2 * 60_000);
+    await exploreFacets(db as never);
+    expect(db.card.groupBy).toHaveBeenCalledTimes(2);
+  });
+
+  it("counts afresh once the memo is cleared", async () => {
+    const db = facetsDb();
+    await exploreFacets(db as never);
+    clearExploreFacetsCache();
+    await exploreFacets(db as never);
+    expect(db.card.groupBy).toHaveBeenCalledTimes(2);
+  });
+
   it("counts the Explore catalogue (no trophies, published realms) by type and category", async () => {
     const db = createMockPrisma();
     db.card.groupBy.mockResolvedValue([

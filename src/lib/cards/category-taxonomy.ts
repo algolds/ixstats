@@ -96,6 +96,10 @@ export interface CategoryChoice {
   subcategory: string | null;
 }
 
+/** Whether two choices name the same category and subcategory. */
+export const sameCategoryChoice = (a: CategoryChoice, b: CategoryChoice): boolean =>
+  a.category === b.category && a.subcategory === b.subcategory;
+
 /** The category choice every write path parses. */
 export const CategoryChoiceSchema = z
   .object({

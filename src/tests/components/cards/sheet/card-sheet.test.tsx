@@ -804,6 +804,13 @@ describe("CardSheet about", () => {
     expect(within(about()).queryByRole("button", { name: "Suggest a category" })).toBeNull();
   });
 
+  it("shows a retired lore card's category, and offers no suggestion the server would refuse", () => {
+    showSheet(sheet({ card: { ...card, isRetired: true } }));
+    open();
+    expect(within(about()).getByText("Category: History · Event")).toBeInTheDocument();
+    expect(within(about()).queryByRole("button", { name: "Suggest a category" })).toBeNull();
+  });
+
   it.each<[string, Partial<CardSheetData["card"]>]>([
     ["an NS card", { cardType: "NS", wikiArticleTitle: null, wikiSource: null, ns }],
     ["a Special card", { cardType: "SPECIAL", category: "SPECIAL" }],

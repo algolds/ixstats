@@ -123,8 +123,6 @@ export async function listLibrary(
         marketValue: true,
         category: true,
         subcategory: true,
-        categorySource: true,
-        categoryNeedsReview: true,
         realm: { select: { name: true } },
         artLicence: { select: { status: true } },
         _count: { select: { CardOwnership: true, takedowns: HIDDEN_TAKEDOWNS } },

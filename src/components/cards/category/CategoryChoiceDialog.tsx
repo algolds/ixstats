@@ -13,7 +13,7 @@ import {
 } from "~/components/ui/dialog";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
-import type { CategoryChoice } from "~/lib/cards/category-taxonomy";
+import { sameCategoryChoice, type CategoryChoice } from "~/lib/cards/category-taxonomy";
 import { CategoryPicker } from "./CategoryPicker";
 
 const NOTE_MAX = 500;
@@ -28,6 +28,8 @@ interface CategoryChoiceDialogProps {
   pending: boolean;
   allowUncategorised?: boolean;
   withNote?: boolean;
+  /** Confirm stays off until the pick differs from `initial`, for a choice the server refuses unchanged. */
+  requireChange?: boolean;
   /** Shown above the picker, for example a `Signal` saying the player already suggested one. */
   notice?: ReactNode;
   /** The control that opens it, which gets focus back when it closes. */
@@ -46,6 +48,7 @@ export function CategoryChoiceDialog({
   pending,
   allowUncategorised = true,
   withNote = false,
+  requireChange = false,
   notice,
   trigger,
   onConfirm,
@@ -61,7 +64,10 @@ export function CategoryChoiceDialog({
       setNote("");
     }
   }
-  const ready = !pending && (allowUncategorised || draft.category !== null);
+  const ready =
+    !pending &&
+    (allowUncategorised || draft.category !== null) &&
+    !(requireChange && sameCategoryChoice(draft, initial));
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (ready) onConfirm(draft, note.trim() || null);

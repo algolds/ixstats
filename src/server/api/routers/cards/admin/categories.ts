@@ -12,7 +12,7 @@ import {
   listCategorySuggestions,
 } from "~/server/modules/cards/cards.category-review";
 import { adminActor } from "~/server/shared/admin-actor";
-import { staffNames } from "./_staff-names";
+import { staffNames } from "~/server/modules/identity/identity.player-names";
 
 const page = z.object({
   offset: z.number().int().min(0).default(0),
@@ -36,7 +36,7 @@ export const cardsAdminCategoriesRouter = createTRPCRouter({
   }),
 
   set: adminProcedure
-    .input(z.object({ cardId: z.string().min(1), choice: CategoryChoiceSchema }))
+    .input(z.object({ cardId: z.string().min(1).max(64), choice: CategoryChoiceSchema }))
     .mutation(({ ctx, input }) =>
       setCardCategory(ctx.db, {
         cardId: input.cardId,
@@ -49,7 +49,7 @@ export const cardsAdminCategoriesRouter = createTRPCRouter({
   answerSuggestion: adminProcedure
     .input(
       z.object({
-        suggestionId: z.string().min(1),
+        suggestionId: z.string().min(1).max(64),
         decision: z.enum(["ACCEPT", "CHANGE", "REJECT"]),
         choice: CategoryChoiceSchema.optional(),
       })

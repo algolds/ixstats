@@ -78,14 +78,27 @@ export function exploreWhere(query: ExploreQuery, viewerId: string): Prisma.Card
   };
 }
 
+/** The facets are catalogue-wide, the same for every viewer, so one count serves everyone for a short while. */
+const FACETS_TTL_MS = 2 * 60_000;
+let facetsCache: { value: FilterFacets; expires: number } | null = null;
+
+/** Forget the memoised facets, so the next call counts the catalogue afresh. */
+export function clearExploreFacetsCache(): void {
+  facetsCache = null;
+}
+
 /** The type and category filters' choices: only those the Explore catalogue has cards for. */
 export async function exploreFacets(db: Pick<PrismaClient, "card">): Promise<FilterFacets> {
+  const now = Date.now();
+  if (facetsCache && facetsCache.expires > now) return facetsCache.value;
   const groups = await db.card.groupBy({
     by: ["cardType", "category"],
     where: EXPLORE_CATALOGUE_WHERE,
     _count: { _all: true },
   });
-  return filterFacets(groups);
+  const value = filterFacets(groups);
+  facetsCache = { value, expires: now + FACETS_TTL_MS };
+  return value;
 }
 
 /** Every sort ends on a unique key, so offset pages never repeat or skip a card. */

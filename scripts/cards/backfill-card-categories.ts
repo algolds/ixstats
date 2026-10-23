@@ -5,7 +5,8 @@
  * second, User-Agent IxStats-Builder), every continuation followed. A card below the review threshold, or with nothing
  * to go on, waits in the admin review queue ("Uncategorised" when no category scored). A retired card is skipped, and a
  * card whose article is tagged Abandoned Lore is retired by the apply (held copies kept, one CARD_HIDE audit row
- * each), never queued for review. The dry run writes a report
+ * each), never queued for review: that holds for an admin-, realm-owner- or suggestion-set card and one an earlier run
+ * classified too, whose article is read only for that tag. The dry run writes a report
  * (the distribution, a confidence histogram to choose the threshold, a sample per category, the low-confidence list,
  * the changes, the Abandoned Lore cards and the unmapped wiki categories and infoboxes) to scripts/reports/.
  *
@@ -21,10 +22,11 @@
  * run; the final `metadata.category` sweep runs only when every card was read. It never overwrites an admin-,
  * realm-owner- or suggestion-set category (the UPDATE itself guards on `categorySource`), and never writes `realmId`.
  *
- * IIWiki may answer only from the production server. In development the wikis' configured api.php is used, which for
- * IIWiki is the maps host's relay; set IIWIKI_DEV_PROXY_URL to try another proxy. The relay forwards only its
- * parameter allowlist (src/app/api/mediawiki/_config.ts), without cllimit, clshow, clcontinue, tllimit, tlnamespace or
- * tlcontinue, so its continuations repeat and the run stops IIWiki rather than read part of each page.
+ * IIWiki may answer only from the production server, which reads iiwiki.com directly. In development the wikis'
+ * configured api.php is used, which for IIWiki is the maps host's relay: dev reads IIWiki through it once the relay's
+ * allowlist (src/app/api/mediawiki/_config.ts, with cllimit, clshow, clcontinue, tllimit, tlnamespace and tlcontinue)
+ * is deployed to maps.ixwiki.com. Set IIWIKI_DEV_PROXY_URL to try another proxy. An api.php that drops the
+ * continuations repeats them, and the run stops that wiki rather than read part of each page.
  */
 import { mkdirSync, readFileSync, writeFileSync } from "fs";
 import { dirname } from "path";
@@ -40,6 +42,7 @@ import {
   type BackfillCard,
   type BackfillDecision,
   type BackfillReport,
+  type BackfillRow,
   type PageSignals,
   type PagesResponse,
 } from "~/lib/cards/category-backfill";
@@ -102,7 +105,7 @@ async function readWhole(query: WikiQuery, titles: readonly string[]): Promise<P
         kind: "error",
         status: null,
         message:
-          "the wiki repeated its continuation: the api.php in use drops clcontinue/tlcontinue (as the dev relay's parameter allowlist does)",
+          "the wiki repeated its continuation: the api.php in use drops clcontinue/tlcontinue (as a relay without them in its allowlist does)",
       });
     }
     sent = next;
@@ -318,6 +321,25 @@ async function readWikis(
   return stops;
 }
 
+/**
+ * Each wiki's uncached titles: first the cards the plan classifies, then the kept and protected ones, read only to
+ * find an Abandoned Lore tag (their categories are never changed). A retired card is never read.
+ */
+function titlesToRead(rows: readonly BackfillRow[]): Map<CardWikiSource, string[]> {
+  const ordered = [
+    ...rows.filter(({ decision }) => decision.kind === "unread"),
+    ...rows.filter(({ decision }) => decision.kind === "kept" || decision.kind === "protected"),
+  ];
+  const titlesBySource = new Map<CardWikiSource, string[]>();
+  for (const { card, signals } of ordered) {
+    if (!card.articleTitle || signals !== null) continue;
+    const titles = titlesBySource.get(card.source) ?? [];
+    titles.push(card.articleTitle);
+    titlesBySource.set(card.source, titles);
+  }
+  return titlesBySource;
+}
+
 /** Plans every card, reads what the plan needs, reports, and with `apply` writes, then retires the abandoned. */
 export async function runBackfill(
   db: PrismaClient,
@@ -332,14 +354,7 @@ export async function runBackfill(
     const decision = planCardCategory(card, signals, options.threshold, options);
     return { card, decision, signals };
   };
-  const titlesBySource = new Map<CardWikiSource, string[]>();
-  for (const { card, decision } of cards.map(plan)) {
-    if (decision.kind !== "unread" || !card.articleTitle) continue;
-    const titles = titlesBySource.get(card.source) ?? [];
-    titles.push(card.articleTitle);
-    titlesBySource.set(card.source, titles);
-  }
-  const stops = await readWikis(titlesBySource, deps);
+  const stops = await readWikis(titlesToRead(cards.map(plan)), deps);
   const rows = cards.map(plan);
   const report = buildBackfillReport(rows, {
     threshold: options.threshold,

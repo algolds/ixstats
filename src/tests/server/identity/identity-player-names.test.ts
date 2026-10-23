@@ -24,6 +24,8 @@ import { DIRECTORY_REALM_WHERE } from "~/server/shared/realm-directory";
 import {
   loadPlayerNames,
   playerDisplayName,
+  staffName,
+  staffNames,
 } from "~/server/modules/identity/identity.player-names";
 import { resolveHandleUser } from "~/server/modules/identity/identity.resolve";
 
@@ -223,5 +225,16 @@ describe("loadPlayerNames", () => {
       expect(resolveHandleUser).not.toHaveBeenCalledWith("Takatta Loa");
       expect(resolveHandleUser).not.toHaveBeenCalledWith("Kir of the Wiki");
     });
+  });
+});
+
+describe("staffNames", () => {
+  it("names a player for staff by the name players read, else by their passport handle", async () => {
+    jest
+      .mocked(db.user.findMany)
+      .mockResolvedValue([user("ann", "ann"), user("nul", null)] as never);
+    const names = await staffNames(["ann", "nul"]);
+    expect(Object.fromEntries(names)).toEqual({ ann: "@ann", nul: "user_nul" });
+    expect(staffName({ handle: "user_x", displayName: "Caphiria" })).toBe("Caphiria");
   });
 });
