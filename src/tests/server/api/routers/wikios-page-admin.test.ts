@@ -722,6 +722,53 @@ describe("getUserPermissions", () => {
       changeableGroups: [],
     });
   });
+
+  describe("a name its holder hides", () => {
+    beforeEach(() => {
+      tables.user.seed({ id: "dbhider", wikiUsername: null });
+      tables.wikiNameClaim.seed({
+        userId: "dbhider",
+        name: "Secret one",
+        visible: false,
+        rightsPass: true,
+      });
+      tables.wikiUserGroup.seed(
+        { userId: "dbhider", group: "sysop" },
+        { wikiUsername: "Secret one", group: "rollbacker", source: "mw-import" }
+      );
+      tables.wikiBlock.seed({ userId: "dbhider", reason: "account block" });
+    });
+    const hiderCtx = () => ctxFor("dbhider", "user_hider", "hider");
+
+    it("answers as an unknown name: only the name's own rows, never the account's groups or blocks", async () => {
+      const shown = await as(plainCtx()).getUserPermissions({ user: "Secret_one" });
+
+      expect(shown.username).toBe("Secret one");
+      expect(shown.groups.sort()).toEqual(["*", "rollbacker"]);
+      expect(shown.explicitGroups.map((row) => row.group)).toEqual(["rollbacker"]);
+      expect(shown.block).toBeNull();
+
+      tables.wikiBlock.seed({ wikiUsername: "Secret one", reason: "name block" });
+      expect((await anonymous().getUserPermissions({ user: "Secret one" })).block).toMatchObject({
+        reason: "name block",
+      });
+    });
+
+    it("shows its owner the account behind it", async () => {
+      const own = await as(hiderCtx()).getUserPermissions({ user: "Secret one" });
+      expect(own.groups).toEqual(expect.arrayContaining(["user", "sysop", "rollbacker"]));
+      expect(own.block).toMatchObject({ reason: "account block" });
+    });
+
+    it("is still blocked as its owner's account", async () => {
+      await as(sysopCtx()).blockUser({
+        target: { wikiUsername: "Secret one" },
+        reason: "sock",
+        allowUserTalk: true,
+      });
+      expect(tables.wikiBlock.rows[0]).toMatchObject({ userId: "dbhider", reason: "sock" });
+    });
+  });
 });
 
 describe("getLog", () => {

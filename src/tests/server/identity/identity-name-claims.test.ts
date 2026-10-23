@@ -4,8 +4,9 @@ import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-pr
 import {
   createNameClaimService,
   MAX_PENDING_CLAIMS,
-  NAME_CLAIM_HTTP,
   NameClaimError,
+  type NameClaimErrorCode,
+  toNameClaimTrpcError,
 } from "~/server/modules/identity/identity.name-claims";
 import type { ClaimApprovedEvent } from "~/lib/identity/claim-hooks";
 
@@ -386,6 +387,32 @@ describe("refusals", () => {
     );
   });
 
+  it("refuses to approve or link a name another account's handle spells, but not the claimant's own", async () => {
+    // MediaWiki normalises the handle: underscores are spaces, runs of them one, the first letter upper case
+    await db.user.update({ where: { id: "p2" }, data: { handle: "old__name_" } });
+    const claim = await service().request(actor("p1"), { name: "Old name", evidence: null });
+    const link = (name: string) =>
+      service().adminLink(owner, { userId: "p1", name, note: null, mwUserId: null });
+
+    expect(await refusal(service().approve(admin, { claimId: claim.id, note: null }))).toBe(
+      "HANDLE_TAKEN"
+    );
+    expect(await refusal(link("Old_name"))).toBe("HANDLE_TAKEN");
+    await db.user.update({ where: { id: "p2" }, data: { handle: "fresh_name" } });
+    expect(await refusal(link("Fresh name"))).toBe("HANDLE_TAKEN");
+    expect((await db.wikiNameClaim.findMany({})).map((c) => [c.name, c.status])).toEqual([
+      ["Old name", "PENDING"],
+    ]);
+    await expect(
+      service().approve(admin, { claimId: claim.id, note: null })
+    ).resolves.toMatchObject({ status: "APPROVED" });
+
+    // A handle that only starts like the name, and the claimant's own handle, are no obstacle
+    await db.user.update({ where: { id: "p2" }, data: { handle: "second_names" } });
+    await db.user.update({ where: { id: "p1" }, data: { handle: "second_name" } });
+    await expect(link("Second name")).resolves.toMatchObject({ status: "APPROVED" });
+  });
+
   it("uses the exact UI copy and maps each refusal to its tRPC code", async () => {
     const claim = await service().request(actor("p1"), { name: "Old name", evidence: null });
     await expect(
@@ -395,7 +422,7 @@ describe("refusals", () => {
     await expect(
       service().request(actor("p2"), { name: "Old name", evidence: null })
     ).rejects.toThrow("That name already belongs to another account.");
-    expect(NAME_CLAIM_HTTP).toEqual({
+    const http: Record<NameClaimErrorCode, string> = {
       INVALID_NAME: "BAD_REQUEST",
       TAKEN: "CONFLICT",
       ALREADY_REQUESTED: "BAD_REQUEST",
@@ -404,7 +431,18 @@ describe("refusals", () => {
       NOT_PENDING: "BAD_REQUEST",
       NOT_APPROVED: "BAD_REQUEST",
       NOT_ALLOWED: "FORBIDDEN",
-    });
+      HANDLE_TAKEN: "CONFLICT",
+    };
+    for (const [code, trpcCode] of Object.entries(http)) {
+      expect(() =>
+        toNameClaimTrpcError(new NameClaimError(code as NameClaimErrorCode, `why ${code}`))
+      ).toThrow(expect.objectContaining({ code: trpcCode, message: `why ${code}` }));
+    }
+  });
+
+  it("passes any other error through as it is", async () => {
+    const other = new Error("boom");
+    await expect(Promise.reject(other).catch(toNameClaimTrpcError)).rejects.toBe(other);
   });
 });
 

@@ -3,6 +3,7 @@
  * Availability against stored handles is the caller's job; `pickAvailableHandle` only
  * de-duplicates against a set the caller supplies.
  */
+import { claimName } from "~/lib/identity/wiki-names";
 
 export const HANDLE_PATTERN = /^[a-z0-9_]{3,24}$/;
 
@@ -25,7 +26,8 @@ export const RESERVED_HANDLES: ReadonlySet<string> = new Set([
   "new",
 ]);
 
-export type HandleValidation = { ok: true; handle: string } | { ok: false; reason: "format" | "reserved" };
+export type HandleValidation =
+  { ok: true; handle: string } | { ok: false; reason: "format" | "reserved" };
 
 /** Lowercases, strips one leading `@`, trims. */
 export function normalizeHandle(raw: string): string {
@@ -62,7 +64,7 @@ export function slugifyHandle(source: string): string {
 }
 
 /** Returns `base`, else `base_2`, `base_3`, ... keeping the result within 24 characters. */
-export function pickAvailableHandle(base: string, taken: ReadonlySet<string>): string {
+export function pickAvailableHandle(base: string, taken: Pick<ReadonlySet<string>, "has">): string {
   if (!taken.has(base)) return base;
   for (let n = 2; ; n++) {
     const suffix = `_${n}`;
@@ -82,17 +84,22 @@ const BACKFILL_ORDER: readonly BackfillSource[] = ["wiki", "forum", "persona", "
 /**
  * The handle a backfill gives a user: the first name, in order verified wiki name, forum name,
  * personal ThinkPages persona name, primary owned nation name, whose slug has a letter or digit
- * (a name of only symbols slugifies to underscores and is skipped). Null when none qualifies, so the
- * user keeps no handle rather than one minted from a Clerk id or row id.
+ * (a name of only symbols slugifies to underscores and is skipped). A name that is, or whose handle spells, one of the
+ * user's `hiddenNames` (MediaWiki-normalised, any letter case) is skipped too: a handle is public, and a hidden claim
+ * shows nowhere but to its owner. Null when none qualifies, so the user keeps no handle rather than one minted from a
+ * Clerk id or row id.
  */
 export function chooseBackfillHandle(
-  names: BackfillNames
+  names: BackfillNames,
+  hiddenNames: readonly string[]
 ): { source: BackfillSource; handle: string } | null {
+  const key = (name: string) => claimName(name).toLowerCase();
+  const hidden = new Set(hiddenNames.map(key));
   for (const source of BACKFILL_ORDER) {
     const name = names[source]?.trim();
-    if (!name) continue;
+    if (!name || hidden.has(key(name))) continue;
     const handle = slugifyHandle(name);
-    if (/[a-z0-9]/.test(handle)) return { source, handle };
+    if (/[a-z0-9]/.test(handle) && !hidden.has(key(handle))) return { source, handle };
   }
   return null;
 }

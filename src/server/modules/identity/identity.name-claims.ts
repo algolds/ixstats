@@ -5,6 +5,9 @@
  * tags the name's unauthored revisions for the account in that transaction; the claim-approval hooks run only after it
  * commits, outside every lock, and a failing hook never undoes the approval.
  *
+ * A name never approves for one account while another account's passport handle spells it (MediaWiki-normalised);
+ * `setUserHandle` checks the other way round under the same lock.
+ *
  * Plan 409's rule: imported MediaWiki groups pass with a name only when a system owner approved or linked it
  * (`rightsPass`), and an administrator who is not a system owner cannot approve or link a name for their own account.
  */
@@ -15,6 +18,7 @@ import type {
   WikiNameClaimOrigin,
   WikiNameClaimStatus,
 } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 import {
   runClaimApprovedHooks,
   type ClaimApprovedEvent,
@@ -26,7 +30,7 @@ import {
   TAG_TX_OPTIONS,
   untagClaimRevisionsTx,
 } from "~/lib/identity/claim-tags";
-import { checkClaimName, IXWIKI } from "~/lib/identity/wiki-names";
+import { checkClaimName, claimName, handleOfWikiName, IXWIKI } from "~/lib/identity/wiki-names";
 
 export type NameClaimErrorCode =
   | "INVALID_NAME"
@@ -36,7 +40,8 @@ export type NameClaimErrorCode =
   | "NOT_FOUND"
   | "NOT_PENDING"
   | "NOT_APPROVED"
-  | "NOT_ALLOWED";
+  | "NOT_ALLOWED"
+  | "HANDLE_TAKEN";
 
 export class NameClaimError extends Error {
   constructor(
@@ -48,8 +53,8 @@ export class NameClaimError extends Error {
   }
 }
 
-/** The tRPC code each refusal maps to (plain strings: this module does not import tRPC). */
-export const NAME_CLAIM_HTTP: Readonly<
+/** The tRPC code each refusal maps to. */
+const NAME_CLAIM_HTTP: Readonly<
   Record<NameClaimErrorCode, "BAD_REQUEST" | "CONFLICT" | "FORBIDDEN" | "NOT_FOUND">
 > = {
   INVALID_NAME: "BAD_REQUEST",
@@ -60,7 +65,16 @@ export const NAME_CLAIM_HTTP: Readonly<
   NOT_PENDING: "BAD_REQUEST",
   NOT_APPROVED: "BAD_REQUEST",
   NOT_ALLOWED: "FORBIDDEN",
+  HANDLE_TAKEN: "CONFLICT",
 };
+
+/** For a router's `.catch`: a refusal as a tRPC error, its message kept; any other error passes through. */
+export function toNameClaimTrpcError(error: Error): never {
+  if (error instanceof NameClaimError) {
+    throw new TRPCError({ code: NAME_CLAIM_HTTP[error.code], message: error.message });
+  }
+  throw error;
+}
 
 export const MAX_PENDING_CLAIMS = 10;
 
@@ -73,6 +87,7 @@ const MESSAGES: Readonly<Record<Exclude<NameClaimErrorCode, "INVALID_NAME">, str
   NOT_PENDING: "This claim was already decided.",
   NOT_APPROVED: "Only an approved name can be removed.",
   NOT_ALLOWED: "You cannot approve a name for your own account: ask another administrator.",
+  HANDLE_TAKEN: "That name is another player's passport handle.",
 };
 
 export interface ClaimActor {
@@ -97,7 +112,12 @@ export interface NameClaimView {
 
 type ClaimsDb = Pick<
   PrismaClient,
-  "wikiNameClaim" | "wikiRevision" | "wikiRevisionClaimTag" | "adminAuditLog" | "$transaction"
+  | "wikiNameClaim"
+  | "wikiRevision"
+  | "wikiRevisionClaimTag"
+  | "adminAuditLog"
+  | "user"
+  | "$transaction"
 >;
 type Tx = Prisma.TransactionClient;
 
@@ -180,6 +200,19 @@ async function lockClaimTx(tx: Tx, claimId: string): Promise<WikiNameClaim> {
   return claim;
 }
 
+/**
+ * Whether an account other than `userId` has a passport handle that MediaWiki normalises to `name`; the caller holds
+ * the name's lock. Every such handle holds each word of the name, so those narrow the read.
+ */
+async function handleSpellsNameTx(tx: Tx, name: string, userId: string): Promise<boolean> {
+  const words = handleOfWikiName(name).split("_");
+  const users = await tx.user.findMany({
+    where: { NOT: { id: userId }, AND: words.map((word) => ({ handle: { contains: word } })) },
+    select: { handle: true },
+  });
+  return users.some((user) => user.handle !== null && claimName(user.handle) === name);
+}
+
 /** The PENDING and APPROVED claims on a name; the caller holds its lock. */
 const liveClaimsTx = (tx: Tx, name: string) =>
   tx.wikiNameClaim.findMany({
@@ -193,7 +226,7 @@ export function createNameClaimService(
   const now = deps.now ?? (() => new Date());
   const inTx = <T>(work: (tx: Tx) => Promise<T>) => db.$transaction(work, TAG_TX_OPTIONS);
 
-  /** Under the name's lock: the TAKEN check, the approval, the revision tags and the audit row. */
+  /** Under the name's lock: the TAKEN and HANDLE_TAKEN checks, the approval, the revision tags and the audit row. */
   async function approveTx(
     tx: Tx,
     actor: ClaimActor,
@@ -211,6 +244,7 @@ export function createNameClaimService(
       select: { id: true },
     });
     if (holder) throw refuse("TAKEN");
+    if (await handleSpellsNameTx(tx, claim.name, claim.userId)) throw refuse("HANDLE_TAKEN");
     const decidedAt = now();
     const note = clean(opts.note);
     const saved = await tx.wikiNameClaim.update({

@@ -3,7 +3,6 @@
  * remove, the direct link of an old name to an account, and the legacy name search. Thin: the claims service decides,
  * `identity.name-search.ts` reads.
  */
-import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { WikiNameClaimStatus } from "@prisma/client";
 import { isSystemOwner } from "~/lib/auth";
@@ -13,8 +12,7 @@ import { adminProcedure, createTRPCRouter } from "~/server/api/trpc";
 import {
   type ClaimActor,
   createNameClaimService,
-  NAME_CLAIM_HTTP,
-  NameClaimError,
+  toNameClaimTrpcError,
 } from "~/server/modules/identity/identity.name-claims";
 import {
   findLinkTargets,
@@ -36,18 +34,6 @@ const actorOf = (ctx: AdminCtx): ClaimActor => ({
   clerkUserId: ctx.user.clerkUserId,
   isSystemOwner: isSystemOwner(ctx.auth?.userId ?? ""),
 });
-
-/** The service's refusals as tRPC errors, its message kept. */
-async function decide<T>(work: () => Promise<T>): Promise<T> {
-  try {
-    return await work();
-  } catch (error) {
-    if (error instanceof NameClaimError) {
-      throw new TRPCError({ code: NAME_CLAIM_HTTP[error.code], message: error.message });
-    }
-    throw error;
-  }
-}
 
 export const adminNameClaimsRouter = createTRPCRouter({
   listNameClaims: adminProcedure
@@ -88,30 +74,21 @@ export const adminNameClaimsRouter = createTRPCRouter({
     .query(({ ctx, input }) => findLinkTargets(ctx.db, input.query)),
 
   approveNameClaim: adminProcedure.input(DecisionInput).mutation(({ ctx, input }) =>
-    decide(() =>
-      createNameClaimService(ctx.db).approve(actorOf(ctx), {
-        claimId: input.claimId,
-        note: input.note ?? null,
-      })
-    )
+    createNameClaimService(ctx.db)
+      .approve(actorOf(ctx), { claimId: input.claimId, note: input.note ?? null })
+      .catch(toNameClaimTrpcError)
   ),
 
   rejectNameClaim: adminProcedure.input(DecisionInput).mutation(({ ctx, input }) =>
-    decide(() =>
-      createNameClaimService(ctx.db).reject(actorOf(ctx), {
-        claimId: input.claimId,
-        note: input.note ?? null,
-      })
-    )
+    createNameClaimService(ctx.db)
+      .reject(actorOf(ctx), { claimId: input.claimId, note: input.note ?? null })
+      .catch(toNameClaimTrpcError)
   ),
 
   revokeNameClaim: adminProcedure.input(DecisionInput).mutation(({ ctx, input }) =>
-    decide(() =>
-      createNameClaimService(ctx.db).revoke(actorOf(ctx), {
-        claimId: input.claimId,
-        note: input.note ?? null,
-      })
-    )
+    createNameClaimService(ctx.db)
+      .revoke(actorOf(ctx), { claimId: input.claimId, note: input.note ?? null })
+      .catch(toNameClaimTrpcError)
   ),
 
   linkLegacyWikiName: adminProcedure
@@ -124,13 +101,13 @@ export const adminNameClaimsRouter = createTRPCRouter({
       })
     )
     .mutation(({ ctx, input }) =>
-      decide(() =>
-        createNameClaimService(ctx.db).adminLink(actorOf(ctx), {
+      createNameClaimService(ctx.db)
+        .adminLink(actorOf(ctx), {
           userId: input.userId,
           name: input.name,
           note: input.note ?? null,
           mwUserId: input.mwUserId ?? null,
         })
-      )
+        .catch(toNameClaimTrpcError)
     ),
 });

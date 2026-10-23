@@ -1,10 +1,13 @@
 /**
  * Claiming or changing a user's IxStates Passport handle (`ixnayid.setHandle`). A first claim (no
  * stored handle) is free; changing a stored handle is allowed once (`User.handleChangedAt`), and
- * admins may always change theirs. `suggestHandleFor` prefills the WikiOS first-save handle picker.
+ * admins may always change theirs. A handle that MediaWiki normalises to an old wiki name another account holds is
+ * refused, under that name's lock (claim approval checks the other way round, identity.name-claims.ts).
+ * `suggestHandleFor` prefills the WikiOS first-save handle picker.
  */
 import { Prisma } from "@prisma/client";
-import { primaryNameOf } from "~/lib/identity/wiki-names";
+import { lockWikiNameTx } from "~/lib/identity/claim-tags";
+import { claimName, IXWIKI, namesOfUser, ownerOfName } from "~/lib/identity/wiki-names";
 import { db } from "~/server/db";
 import { chooseBackfillHandle, pickAvailableHandle, validateHandle } from "./identity.handle";
 
@@ -55,20 +58,29 @@ export async function setUserHandle(input: {
     throw new HandleClaimError("ALREADY_CHANGED", "You have already changed your handle once.");
   }
 
-  const holder = await db.user.findFirst({
-    where: { handle, NOT: { id: input.userId } },
-    select: { id: true },
-  });
-  if (holder) throw takenError(handle);
-
   try {
-    const saved = await db.user.update({
-      where: { id: input.userId },
-      // Only a change of a stored handle uses up the one self-service change.
-      data: isChange ? { handle, handleChangedAt: new Date() } : { handle },
-      select: { handle: true },
+    return await db.$transaction(async (tx) => {
+      await lockWikiNameTx(tx, IXWIKI, handle);
+      const claimant = await ownerOfName(tx, IXWIKI, handle);
+      if (claimant !== null && claimant !== input.userId) {
+        throw new HandleClaimError(
+          "TAKEN",
+          "That handle belongs to an old wiki name another player holds."
+        );
+      }
+      const holder = await tx.user.findFirst({
+        where: { handle, NOT: { id: input.userId } },
+        select: { id: true },
+      });
+      if (holder) throw takenError(handle);
+      const saved = await tx.user.update({
+        where: { id: input.userId },
+        // Only a change of a stored handle uses up the one self-service change.
+        data: isChange ? { handle, handleChangedAt: new Date() } : { handle },
+        select: { handle: true },
+      });
+      return { handle: saved.handle ?? handle };
     });
-    return { handle: saved.handle ?? handle };
   } catch (error) {
     if (error instanceof Error && isUniqueViolation(error)) throw takenError(handle);
     throw error;
@@ -83,28 +95,44 @@ const TAKEN_PREFIX_LENGTH = 20;
 
 /**
  * The handle the first-save picker offers a handle-less player: from their first shown wiki name, else their forum
- * name, else their nation's name (`chooseBackfillHandle`), numbered past the stored handles. Never a hidden claim's
- * name; null when no name gives a handle.
+ * name, else their nation's name (`chooseBackfillHandle`), numbered past the stored handles and the old wiki names
+ * other players hold (which `setUserHandle` refuses). Never a hidden claim's name, nor a name spelling one; null when
+ * no name gives a handle.
  */
 export async function suggestHandleFor(userId: string): Promise<string | null> {
-  const [user, wiki] = await Promise.all([
+  const [user, claims] = await Promise.all([
     db.user.findUnique({
       where: { id: userId },
       select: { forumUsername: true, country: { select: { name: true } } },
     }),
-    primaryNameOf(db, userId, { shown: true }),
+    namesOfUser(db, userId),
   ]);
-  const choice = chooseBackfillHandle({
-    wiki,
-    forum: user?.forumUsername ?? null,
-    persona: null,
-    nation: user?.country?.name ?? null,
-  });
+  const choice = chooseBackfillHandle(
+    {
+      wiki: claims.find((claim) => claim.visible)?.name ?? null,
+      forum: user?.forumUsername ?? null,
+      persona: null,
+      nation: user?.country?.name ?? null,
+    },
+    claims.filter((claim) => !claim.visible).map((claim) => claim.name)
+  );
   if (!choice) return null;
-  const stored = await db.user.findMany({
-    where: { handle: { startsWith: choice.handle.slice(0, TAKEN_PREFIX_LENGTH) } },
-    select: { handle: true },
-  });
+  const prefix = choice.handle.slice(0, TAKEN_PREFIX_LENGTH);
+  const [stored, othersNames] = await Promise.all([
+    db.user.findMany({ where: { handle: { startsWith: prefix } }, select: { handle: true } }),
+    db.wikiNameClaim.findMany({
+      where: {
+        source: IXWIKI,
+        status: "APPROVED",
+        NOT: { userId },
+        name: { startsWith: claimName(prefix) },
+      },
+      select: { name: true },
+    }),
+  ]);
   const taken = new Set(stored.flatMap((row) => (row.handle ? [row.handle] : [])));
-  return pickAvailableHandle(choice.handle, taken);
+  const claimed = new Set(othersNames.map((claim) => claim.name));
+  return pickAvailableHandle(choice.handle, {
+    has: (handle) => taken.has(handle) || claimed.has(claimName(handle)),
+  });
 }

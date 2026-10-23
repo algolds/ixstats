@@ -125,6 +125,20 @@ export class RightsAdminService {
   }
 
   /**
+   * `resolveTarget` for a lookup `viewerId` makes: a name held only through a hidden claim answers as a name nobody
+   * holds, except to its holder. Blocks and group changes act on the unfiltered `resolveTarget`.
+   */
+  static async resolveShownTarget(
+    wikiUsername: string,
+    viewerId: string | null
+  ): Promise<ResolvedTarget> {
+    const target = await this.resolveTarget({ wikiUsername });
+    if (target.userId === viewerId) return target;
+    const shown = await accountOfWikiName(db, wikiUsername, { shown: true });
+    return shown ? target : { ...target, userId: null };
+  }
+
+  /**
    * The names users go by in logs and lists: the passport handle, else the first name the account shows. An id
    * with no user row is absent from the map.
    */

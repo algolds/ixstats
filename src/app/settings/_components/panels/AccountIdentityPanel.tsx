@@ -75,14 +75,8 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
     onError: (err) => notify.error(err.message || "Failed to unlink Discord"),
   });
 
-  const passportHandle =
-    status?.passportHandle ||
-    status?.forum?.username ||
-    status?.wiki?.username ||
-    (user?.username ? user.username.replace(/_$/, "") : null) ||
-    user?.username ||
-    "me";
-  const passportUrl = `/@${passportHandle}`;
+  // The stored handle only: no other name makes the link (a wiki name may be a claim its owner hides)
+  const passportUrl = status?.handle ? `/@${status.handle}` : null;
   const canChangeHandle = status?.canChangeHandle ?? false;
   const draftHandle = handleDraft.trim().replace(/^@/, "").toLowerCase();
   const canSaveHandle =
@@ -91,9 +85,9 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
     ? `/countries/${userProfile.country.slug}`
     : null;
 
-  const handleCopyPassport = (e: React.MouseEvent) => {
+  const handleCopyPassport = (e: React.MouseEvent, url: string) => {
     e.preventDefault();
-    const fullUrl = `${window.location.origin}${passportUrl}`;
+    const fullUrl = `${window.location.origin}${url}`;
     navigator.clipboard.writeText(fullUrl);
     setCopiedHandle(true);
     notify.success("Profile link copied");
@@ -118,12 +112,14 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
         category="Profile & identity"
         description="Your public passport and connected community accounts."
         actions={
-          <Button asChild variant="secondary" size="sm">
-            <Link href={passportUrl}>
-              <ExternalLink aria-hidden />
-              <span>View public passport</span>
-            </Link>
-          </Button>
+          passportUrl && (
+            <Button asChild variant="secondary" size="sm">
+              <Link href={passportUrl}>
+                <ExternalLink aria-hidden />
+                <span>View public passport</span>
+              </Link>
+            </Button>
+          )
         }
       />
 
@@ -150,7 +146,9 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
 
             <div className="min-w-0 flex-1 space-y-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-label text-title-3">@{passportHandle}</span>
+                <span className="text-label text-title-3">
+                  {status?.handle ? `@${status.handle}` : "No handle yet"}
+                </span>
                 <Badge variant="secondary">
                   <ShieldCheck aria-hidden />
                   Verified
@@ -195,25 +193,26 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={handleCopyPassport}
-              disabled={!status?.passportHandle}
-            >
-              {copiedHandle ? (
-                <>
-                  <Check aria-hidden className="text-success" />
-                  <span>Copied</span>
-                </>
-              ) : (
-                <>
-                  <Copy aria-hidden />
-                  <span>Copy link</span>
-                </>
-              )}
-            </Button>
+            {passportUrl && (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={(e) => handleCopyPassport(e, passportUrl)}
+              >
+                {copiedHandle ? (
+                  <>
+                    <Check aria-hidden className="text-success" />
+                    <span>Copied</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy aria-hidden />
+                    <span>Copy link</span>
+                  </>
+                )}
+              </Button>
+            )}
             <div className="border-separator bg-surface rounded-row border p-0.5">
               <UserButton
                 appearance={{
