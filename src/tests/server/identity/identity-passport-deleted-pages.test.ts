@@ -37,7 +37,7 @@ jest.mock("~/server/db", () => ({
   __esModule: true,
   db: {
     userConnection: { findMany: async () => [] },
-    wikiAccountLink: { findFirst: async () => null },
+    wikiNameClaim: { findMany: async () => [] },
     wikiArticle: jest.requireActual("~/tests/helpers/fake-wiki-db").fakeWikiDb.db.wikiArticle,
     // Prisma's relation filter, for the one shape the loader uses: `where.article.status`.
     wikiRevision: {

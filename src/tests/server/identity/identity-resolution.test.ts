@@ -3,11 +3,13 @@
  * Who a passport handle, an invite's `via` or a URL segment names, through the real resolver over a small user table
  * that answers as Postgres does (Prisma's insensitive `equals` is ILIKE: `%` and `_` are wildcards, `\` escapes).
  *
- * Resolution order: the stored handle (normalised), the viewer's own names (`me`), then forum name, wiki name, Clerk id
- * or id; a country name, slug or id never names a person. Every handle the passport chain produces (stored handle,
- * verified wiki name while wiki attribution is on, forum name, Clerk id) resolves back to its holder, and a computed
- * name another user holds is skipped. With attribution off, or a switch that cannot be read, the chain never emits the
- * wiki name and a link carrying it no longer resolves to the player. A realm's Join panel names an inviter only while
+ * Resolution order: the stored handle (normalised), the viewer's own names (`me`, their forum name and every name they
+ * hold, hidden or not), then forum name, claimed wiki name, Clerk id or id; a country name, slug or id never names a
+ * person. A claimed wiki name names its owner only while the claim is approved and shown (`visible`); a pending,
+ * revoked or hidden claim, or a claims read that fails, names nobody. Every handle the passport chain produces (stored
+ * handle, first shown claimed name while wiki attribution is on, forum name, Clerk id) resolves back to its holder, and
+ * a computed name another user holds is skipped. With attribution off, or a switch that cannot be read, the chain never
+ * emits the wiki name. A realm's Join panel names an inviter only while
  * they hold a nation in that realm (and the realm takes claims). A nation is held only through `Country.ownerUserId`,
  * only in realms the directory lists; the primary nation is one held; Ixnay has no founder.
  *
@@ -21,7 +23,7 @@ jest.mock("~/server/db", () => {
     realm: { findMany: jest.fn() },
     realmClaim: { findMany: jest.fn() },
     thinkpagesAccount: { findFirst: jest.fn() },
-    wikiAccountLink: { findFirst: jest.fn() },
+    wikiNameClaim: { findMany: jest.fn() },
     userConnection: { findMany: jest.fn() },
     lorewardUserStats: { findFirst: jest.fn() },
     wikiRevision: { findFirst: jest.fn() },
@@ -64,7 +66,14 @@ interface Row {
   handle: string | null;
   forumUsername: string | null;
   forumUserId: number | null;
-  wikiUsername: string | null;
+}
+
+/** A wiki name claim (approved unless said otherwise), as `wiki_name_claims` holds it. */
+interface Claim {
+  userId: string;
+  name: string;
+  status: string;
+  visible: boolean;
 }
 
 const mocked = db as unknown as {
@@ -73,7 +82,7 @@ const mocked = db as unknown as {
   realm: { findMany: jest.Mock };
   realmClaim: { findMany: jest.Mock };
   thinkpagesAccount: { findFirst: jest.Mock };
-  wikiAccountLink: { findFirst: jest.Mock };
+  wikiNameClaim: { findMany: jest.Mock };
   userConnection: { findMany: jest.Mock };
   lorewardUserStats: { findFirst: jest.Mock };
   wikiRevision: { findFirst: jest.Mock };
@@ -122,22 +131,45 @@ function usersTable(rows: Row[]) {
   );
 }
 
+interface ClaimWhere {
+  status?: string;
+  visible?: boolean;
+  userId?: { in: string[] };
+  OR?: Array<{ name: { equals: string } }>;
+}
+
+/** The claims table behind the resolver's reads: by owner, by status and `visible`, and by name (ILIKE). */
+function claimsTable(claims: Claim[]) {
+  const fits = (claim: Claim, where: ClaimWhere) =>
+    (!where.status || claim.status === where.status) &&
+    (where.visible === undefined || claim.visible === where.visible) &&
+    (!where.userId || where.userId.in.includes(claim.userId)) &&
+    (!where.OR || where.OR.some((clause) => ilike(claim.name, clause.name.equals)));
+  mocked.wikiNameClaim.findMany.mockImplementation(({ where }: { where: ClaimWhere }) =>
+    Promise.resolve(claims.filter((claim) => fits(claim, where)))
+  );
+}
+
+const claim = (userId: string, name: string, fields: Partial<Claim> = {}): Claim => ({
+  userId,
+  name,
+  status: "APPROVED",
+  visible: true,
+  ...fields,
+});
+
 const row = (id: string, fields: Partial<Row>): Row => ({
   id,
   clerkUserId: `user_${id}_${"x".repeat(24)}`,
   handle: null,
   forumUsername: null,
   forumUserId: null,
-  wikiUsername: null,
   ...fields,
 });
 
 const noForum = { lookupUser: jest.fn().mockResolvedValue(null), getActivity: jest.fn() };
 
-async function roundTrip(user: Row, verifiedWikiName: string | null) {
-  mocked.wikiAccountLink.findFirst.mockResolvedValue(
-    verifiedWikiName ? { username: verifiedWikiName } : null
-  );
+async function roundTrip(user: Row) {
   const handle = await loadPassportHandle(user);
   const identity = await resolveIdentity(handle, null, noForum);
   return { handle, resolvedId: identity?.user?.id ?? null };
@@ -153,11 +185,11 @@ function privacyOf(user: Row, config: Record<string, boolean>) {
 beforeEach(() => {
   jest.resetAllMocks();
   usersTable([]);
+  claimsTable([]);
   for (const delegate of [
     mocked.country.findUnique,
     mocked.country.findFirst,
     mocked.thinkpagesAccount.findFirst,
-    mocked.wikiAccountLink.findFirst,
     mocked.lorewardUserStats.findFirst,
     mocked.wikiRevision.findFirst,
   ]) {
@@ -207,31 +239,35 @@ describe("resolving a segment", () => {
 });
 
 describe("the passport handle chain", () => {
-  it("resolves a stored handle, a verified wiki name, a forum name and a Clerk id back to their user", async () => {
+  it("resolves a stored handle, a claimed wiki name, a forum name and a Clerk id back to their user", async () => {
     const stored = row("a", { handle: "kir" });
-    // Verifying an ixwiki link writes the legacy `User.wikiUsername` the resolver reads.
-    const wiki = row("b", { wikiUsername: "Lyra Wiki", forumUsername: "LyraForum" });
+    const wiki = row("b", { forumUsername: "LyraForum" });
     const forum = row("c", { forumUsername: "Dax_" });
     const bare = row("d", {});
     usersTable([stored, wiki, forum, bare]);
+    claimsTable([claim("b", "Lyra Wiki")]);
 
-    expect(await roundTrip(stored, null)).toEqual({ handle: "kir", resolvedId: "a" });
-    expect(await roundTrip(wiki, "Lyra Wiki")).toEqual({ handle: "Lyra Wiki", resolvedId: "b" });
-    expect(await roundTrip(forum, null)).toEqual({ handle: "Dax_", resolvedId: "c" });
-    expect(await roundTrip(bare, null)).toEqual({ handle: bare.clerkUserId, resolvedId: "d" });
+    expect(await roundTrip(stored)).toEqual({ handle: "kir", resolvedId: "a" });
+    expect(await roundTrip(wiki)).toEqual({ handle: "Lyra Wiki", resolvedId: "b" });
+    expect(await roundTrip(forum)).toEqual({ handle: "Dax_", resolvedId: "c" });
+    expect(await roundTrip(bare)).toEqual({ handle: bare.clerkUserId, resolvedId: "d" });
   });
 
   it("skips a computed name another user holds as a handle or a name", async () => {
     const holder = row("owner", { handle: "bob" });
-    const namesake = row("namesake", { wikiUsername: "Zed", forumUsername: "Bob" });
+    const namesake = row("namesake", { forumUsername: "Bob" });
     const zed = row("zed", { forumUsername: "Zed" });
     usersTable([holder, zed, namesake]);
 
-    expect(await roundTrip(namesake, null)).toEqual({
+    expect(await roundTrip(namesake)).toEqual({
       handle: namesake.clerkUserId,
       resolvedId: "namesake",
     });
-    expect((await roundTrip(namesake, "Zed")).resolvedId).toBe("namesake");
+    claimsTable([claim("namesake", "Zed")]);
+    expect(await roundTrip(namesake)).toEqual({
+      handle: namesake.clerkUserId,
+      resolvedId: "namesake",
+    });
   });
 
   it.each(["%", "H%", "_elvianir", "Helviani_", "Da%"])(
@@ -247,70 +283,113 @@ describe("the passport handle chain", () => {
   it("finds a user by id for a card: the stored handle with no further reads, and null for nobody", async () => {
     usersTable([row("u1", { handle: "kir" })]);
     await expect(loadPassportHandleById("u1")).resolves.toBe("kir");
-    expect(mocked.wikiAccountLink.findFirst).not.toHaveBeenCalled();
+    expect(mocked.wikiNameClaim.findMany).not.toHaveBeenCalled();
     await expect(loadPassportHandleById("gone")).resolves.toBeNull();
   });
 });
 
 describe("the passport handle chain and wiki attribution", () => {
-  const lyra = row("b", { wikiUsername: "Lyra Wiki", forumUsername: "LyraForum" });
-  const bare = row("d", { wikiUsername: "Dee Wiki" });
+  const lyra = row("b", { forumUsername: "LyraForum" });
+  const bare = row("d", {});
 
-  beforeEach(() => usersTable([lyra, bare]));
+  beforeEach(() => {
+    usersTable([lyra, bare]);
+    claimsTable([claim("b", "Lyra Wiki"), claim("d", "Dee Wiki")]);
+  });
 
-  it("uses the verified wiki name while wiki attribution is on", async () => {
+  it("uses the shown claimed name while wiki attribution is on", async () => {
     privacyOf(lyra, { showWikiAttribution: true });
-    expect(await roundTrip(lyra, "Lyra Wiki")).toEqual({ handle: "Lyra Wiki", resolvedId: "b" });
+    expect(await roundTrip(lyra)).toEqual({ handle: "Lyra Wiki", resolvedId: "b" });
   });
 
   it("skips the wiki name when it is off, for the next name that resolves back", async () => {
     privacyOf(lyra, { showWikiAttribution: false });
-    expect(await roundTrip(lyra, "Lyra Wiki")).toEqual({ handle: "LyraForum", resolvedId: "b" });
+    expect(await roundTrip(lyra)).toEqual({ handle: "LyraForum", resolvedId: "b" });
     privacyOf(bare, { showWikiAttribution: false });
-    expect(await roundTrip(bare, "Dee Wiki")).toEqual({
-      handle: bare.clerkUserId,
-      resolvedId: "d",
-    });
+    expect(await roundTrip(bare)).toEqual({ handle: bare.clerkUserId, resolvedId: "d" });
   });
 
   it("treats an unreadable switch as off", async () => {
     mocked.userConnection.findMany.mockRejectedValue(new Error("db down"));
-    expect(await roundTrip(lyra, "Lyra Wiki")).toEqual({ handle: "LyraForum", resolvedId: "b" });
+    expect(await roundTrip(lyra)).toEqual({ handle: "LyraForum", resolvedId: "b" });
   });
 
   it("keeps a stored handle whatever the switch, without reading it", async () => {
-    const kir = row("k", { handle: "kir", wikiUsername: "Kir Wiki" });
+    const kir = row("k", { handle: "kir" });
     usersTable([kir]);
+    claimsTable([claim("k", "Kir Wiki")]);
     privacyOf(kir, { showWikiAttribution: false });
-    expect(await roundTrip(kir, "Kir Wiki")).toEqual({ handle: "kir", resolvedId: "k" });
+    expect(await roundTrip(kir)).toEqual({ handle: "kir", resolvedId: "k" });
     expect(mocked.userConnection.findMany).not.toHaveBeenCalled();
   });
 
-  it("resolves a link carrying the wiki name, or redirects it, only while attribution is on", async () => {
-    privacyOf(lyra, { showWikiAttribution: true });
-    expect((await resolveIdentity("Lyra Wiki", null, noForum))?.user?.id).toBe("b");
-    expect((await resolveHandleUser("lyra wiki"))?.id).toBe("b");
+  it("skips a hidden claim for a handle-less user, and the first shown one names them", async () => {
+    claimsTable([
+      claim("b", "Lyra Secret", { visible: false }),
+      claim("b", "Lyra Wiki"),
+      claim("d", "Dee Wiki", { visible: false }),
+    ]);
+    expect(await roundTrip(lyra)).toEqual({ handle: "Lyra Wiki", resolvedId: "b" });
+    expect(await roundTrip(bare)).toEqual({ handle: bare.clerkUserId, resolvedId: "d" });
+  });
+});
 
-    privacyOf(lyra, { showWikiAttribution: false });
-    expect(await resolveIdentity("Lyra Wiki", null, noForum)).toBeNull();
-    expect(await resolveHandleUser("lyra wiki")).toBeNull();
-    expect(await resolveHandleUser("Lyra Wiki_")).toBeNull();
-    // ...while the player's forum name still resolves
-    expect((await resolveHandleUser("LyraForum"))?.id).toBe("b");
+describe("a claimed wiki name in a link", () => {
+  const old = row("o", { handle: "olden", forumUsername: "OldForum" });
 
-    const kir = row("k", { handle: "kir", wikiUsername: "Kir Wiki" });
-    usersTable([kir]);
-    privacyOf(kir, { showWikiAttribution: true });
-    await expect(resolveCanonicalHandle("Kir Wiki")).resolves.toEqual({ handle: "kir" });
-    privacyOf(kir, { showWikiAttribution: false });
-    await expect(resolveCanonicalHandle("Kir Wiki")).resolves.toBeNull();
-    await expect(resolveCanonicalHandle("kir")).resolves.toEqual({ handle: "kir" });
+  beforeEach(() => usersTable([old, row("v", {})]));
+
+  it("resolves /@Old_name to the claim's owner while it is shown, and not once it is hidden", async () => {
+    claimsTable([claim("o", "Old name")]);
+    expect((await resolveIdentity("@Old_name", null, noForum))?.user?.id).toBe("o");
+    expect((await resolveHandleUser("old name"))?.id).toBe("o");
+    await expect(resolveCanonicalHandle("Old_name")).resolves.toEqual({ handle: "olden" });
+
+    claimsTable([claim("o", "Old name", { visible: false })]);
+    expect(await resolveIdentity("@Old_name", null, noForum)).toBeNull();
+    expect(await resolveHandleUser("old name")).toBeNull();
+    await expect(resolveCanonicalHandle("Old_name")).resolves.toBeNull();
+    // ...while the owner's other names still resolve
+    expect((await resolveHandleUser("OldForum"))?.id).toBe("o");
   });
 
-  it("fails closed: a switch it cannot read resolves no wiki name", async () => {
-    mocked.userConnection.findMany.mockRejectedValue(new Error("db down"));
-    expect(await resolveHandleUser("Lyra Wiki")).toBeNull();
-    expect(await resolveIdentity("Lyra Wiki", null, noForum)).toBeNull();
+  it("resolves the viewer's own hidden claim to themself", async () => {
+    claimsTable([claim("o", "Old name", { visible: false })]);
+    const identity = await resolveIdentity("@Old_name", old.clerkUserId, noForum);
+    expect(identity?.user?.id).toBe("o");
+    expect(identity?.isOwner).toBe(true);
+    // ...and nobody else's
+    expect(await resolveIdentity("@Old_name", row("v", {}).clerkUserId, noForum)).toBeNull();
+  });
+
+  it.each([
+    ["pending", { status: "PENDING" }],
+    ["revoked", { status: "REVOKED" }],
+    ["rejected", { status: "REJECTED" }],
+  ])("names nobody by a %s claim, not even its requester", async (_status, fields) => {
+    claimsTable([claim("o", "Old name", fields)]);
+    expect(await resolveHandleUser("Old name")).toBeNull();
+    expect(await resolveIdentity("@Old_name", old.clerkUserId, noForum)).toBeNull();
+  });
+
+  it("is the shown claimed name on the identity, never a hidden one", async () => {
+    claimsTable([claim("o", "Old name", { visible: false })]);
+    expect((await resolveIdentity("olden", null, noForum))?.wikiName).toBeNull();
+    claimsTable([claim("o", "Old name", { visible: false }), claim("o", "Second name")]);
+    expect((await resolveIdentity("olden", null, noForum))?.wikiName).toBe("Second name");
+  });
+
+  it("fails closed: a claims read that fails resolves no wiki name", async () => {
+    mocked.wikiNameClaim.findMany.mockRejectedValue(new Error("db down"));
+    expect(await resolveHandleUser("Old name")).toBeNull();
+    expect((await resolveHandleUser("OldForum"))?.id).toBe("o");
+  });
+
+  it("never matches a wildcard against a claimed name", async () => {
+    claimsTable([claim("o", "Old name")]);
+    for (const probe of ["%", "Old%", "Ol_ name"]) {
+      expect([probe, await resolveHandleUser(probe)]).toEqual([probe, null]);
+    }
   });
 });
 
@@ -382,14 +461,14 @@ describe("realm invites", () => {
   });
 
   it("name a handle-less inviter by the chain, leaving a hidden wiki name out", async () => {
-    const handleless = row("db_kir", { forumUsername: "Kir Forum", wikiUsername: "Kir Wiki" });
+    const handleless = row("db_kir", { forumUsername: "Kir Forum" });
     usersTable([handleless]);
     mocked.country.findFirst.mockResolvedValue({ id: "c1" });
     await expect(resolveRealmInviter("eurth", "Kir Forum")).resolves.toEqual({
       handle: "Kir Forum",
       displayName: "Kir Forum",
     });
-    mocked.wikiAccountLink.findFirst.mockResolvedValue({ username: "Kir Wiki" });
+    claimsTable([claim("db_kir", "Kir Wiki")]);
     await expect(resolveRealmInviter("eurth", handleless.clerkUserId)).resolves.toMatchObject({
       handle: "Kir Wiki",
     });

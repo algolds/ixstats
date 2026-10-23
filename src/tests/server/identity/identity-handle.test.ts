@@ -3,7 +3,8 @@
  * IxStates Passport handles. A handle is 3 to 24 of `a-z 0-9 _`, normalised, never a reserved word; the backfill
  * makes only valid handles and never a Clerk or row id. `ixnayid.setHandle`: the signed-in user claims one; a taken
  * handle is refused (a unique-constraint race too), and the self-service change is allowed once (admins may always
- * change it). `getStatus` reports the change as used, and the old forum account from the kept columns, writing nothing.
+ * change it). `getStatus` reports the change as used, the old forum account from the kept columns, writing nothing, and
+ * the owner's own first approved wiki name (hidden or not), while the passport handle takes only a shown one.
  *
  * Folds ixnayid-set-handle and ixnayid-forum-readonly.
  */
@@ -12,12 +13,13 @@ jest.mock("~/server/db", () => {
     user: { findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     country: { findUnique: jest.fn().mockResolvedValue(null) },
     thinkpagesAccount: { findFirst: jest.fn().mockResolvedValue(null) },
-    wikiAccountLink: { findFirst: jest.fn().mockResolvedValue(null) },
+    wikiNameClaim: { findMany: jest.fn().mockResolvedValue([]) },
+    userConnection: { findMany: jest.fn().mockResolvedValue([]) },
   };
   return { __esModule: true, db, isDatabaseReadOnly: false };
 });
 
-import { beforeEach, describe, expect, it } from "@jest/globals";
+import { afterEach, beforeEach, describe, expect, it } from "@jest/globals";
 import { Prisma } from "@prisma/client";
 import { createCallerFactory } from "~/server/api/trpc";
 import { ixnayidCoreRouter } from "~/server/api/routers/ixnayid/core";
@@ -71,6 +73,7 @@ describe("a handle", () => {
 
 const mocked = db as unknown as {
   user: { findUnique: jest.Mock; findFirst: jest.Mock; update: jest.Mock };
+  wikiNameClaim: { findMany: jest.Mock };
 };
 const createCaller = createCallerFactory(ixnayidCoreRouter);
 
@@ -222,5 +225,51 @@ describe("ixnayid.getStatus old forum account", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(status.forum).toMatchObject({ linked: true, username: "Kir" });
     expect(mocked.user.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("ixnayid.getStatus wiki name", () => {
+  /** The owner's approved claims, oldest first; a `shown` read keeps the visible ones. */
+  const claims = (rows: Array<{ name: string; visible: boolean }>) =>
+    mocked.wikiNameClaim.findMany.mockImplementation(
+      async ({ where }: { where: { visible?: boolean; status?: string } }) =>
+        rows
+          .filter((row) => !where.visible || row.visible)
+          .map((row) => ({ userId: "db_1", status: "APPROVED", ...row }))
+    );
+
+  afterEach(() => mocked.wikiNameClaim.findMany.mockReset().mockResolvedValue([]));
+
+  it("is the owner's own first approved name even when hidden, and the handle takes only a shown one", async () => {
+    storedUser(null, null);
+    claims([
+      { name: "Hidden Old", visible: false },
+      { name: "Shown Later", visible: true },
+    ]);
+    // Every computed name resolves back to the owner, so the first one the chain may use wins.
+    mocked.user.findFirst.mockResolvedValue({ id: "db_1" });
+    const status = await caller().getStatus();
+    expect(status.wiki).toEqual({
+      linked: true,
+      username: "Hidden Old",
+      isCustomClaimed: true,
+      lastSync: null,
+    });
+    expect(status.passportHandle).toBe("Shown Later");
+    expect(mocked.wikiNameClaim.findMany.mock.calls[0]![0].where).toMatchObject({
+      userId: { in: ["db_1"] },
+      status: "APPROVED",
+    });
+  });
+
+  it("is not linked with no approved claim", async () => {
+    storedUser("kir", null);
+    const status = await caller().getStatus();
+    expect(status.wiki).toEqual({
+      linked: false,
+      username: null,
+      isCustomClaimed: false,
+      lastSync: null,
+    });
   });
 });

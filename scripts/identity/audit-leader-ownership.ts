@@ -1,12 +1,13 @@
 /**
  * Audit nations an IxStates Passport used to credit by leader name. The passport now counts a nation
  * only through `Country.ownerUserId`; this lists unowned countries whose `leader` matches a user's
- * forum name, wiki name or computed handle (case-insensitive), for review before a backfill.
+ * forum name, approved wiki name claim or computed handle (case-insensitive), for review before a backfill.
  * Dry run by default: prints `countryId  name  leader  candidateUserId  matchedBy`.
  * --apply sets `ownerUserId` for countries with exactly one candidate user; ambiguous ones are skipped.
  *   bun scripts/identity/audit-leader-ownership.ts [--apply]
  */
 import { PrismaClient } from "@prisma/client";
+import { namesOfUsers, type ClaimedName } from "~/lib/identity/wiki-names";
 
 const db = new PrismaClient();
 const apply = process.argv.includes("--apply");
@@ -18,7 +19,6 @@ interface UserRow {
   clerkUserId: string;
   handle: string | null;
   forumUsername: string | null;
-  wikiUsername: string | null;
 }
 
 interface CountryRow {
@@ -38,23 +38,13 @@ type NameIndex = Map<string, Map<string, Set<MatchedBy>>>;
 
 const key = (name: string) => name.trim().toLowerCase();
 
-async function loadVerifiedWikiNames(): Promise<Map<string, string>> {
-  const links = await db.wikiAccountLink.findMany({
-    where: { source: "ixwiki", verifiedAt: { not: null } },
-    select: { userId: true, username: true },
-    orderBy: { verifiedAt: "asc" },
-  });
-  const names = new Map<string, string>();
-  for (const link of links) if (!names.has(link.userId)) names.set(link.userId, link.username);
-  return names;
-}
-
 /**
  * The passport handle chain (`passportHandleOf`, identity.passport-handle.ts): stored handle, else
- * verified wiki, forum, Clerk id. Unlike the module, it does not check the name resolves back.
+ * the first shown claimed name, forum, Clerk id. Unlike the module, it does not check the name
+ * resolves back or read the wiki attribution switch.
  */
-function computedHandle(user: UserRow, verifiedWikiName: string | undefined): string {
-  return user.handle || verifiedWikiName || user.forumUsername || user.clerkUserId;
+function computedHandle(user: UserRow, shownWikiName: string | undefined): string {
+  return user.handle || shownWikiName || user.forumUsername || user.clerkUserId;
 }
 
 function addName(index: NameIndex, name: string | null | undefined, userId: string, by: MatchedBy) {
@@ -66,14 +56,15 @@ function addName(index: NameIndex, name: string | null | undefined, userId: stri
   index.set(key(name), users);
 }
 
-function indexUsers(users: UserRow[], wikiNames: Map<string, string>): NameIndex {
+/** Every user's forum name, approved claims (hidden or not: the audit is the admin's) and computed handle. */
+function indexUsers(users: UserRow[], claims: Map<string, ClaimedName[]>): NameIndex {
   const index: NameIndex = new Map();
   for (const user of users) {
-    const verified = wikiNames.get(user.id);
+    const held = claims.get(user.id) ?? [];
     addName(index, user.forumUsername, user.id, "forum");
-    addName(index, user.wikiUsername, user.id, "wiki");
-    addName(index, verified, user.id, "wiki");
-    addName(index, computedHandle(user, verified), user.id, "handle");
+    for (const claim of held) addName(index, claim.name, user.id, "wiki");
+    const shown = held.find((claim) => claim.visible)?.name;
+    addName(index, computedHandle(user, shown), user.id, "handle");
   }
   return index;
 }
@@ -101,7 +92,7 @@ async function applyOwners(unambiguous: Candidate[]): Promise<number> {
 }
 
 async function main(): Promise<void> {
-  const [countries, users, wikiNames] = await Promise.all([
+  const [countries, users] = await Promise.all([
     db.country.findMany({
       where: { ownerUserId: null, leader: { not: null } },
       select: { id: true, name: true, leader: true },
@@ -113,12 +104,16 @@ async function main(): Promise<void> {
         clerkUserId: true,
         handle: true,
         forumUsername: true,
-        wikiUsername: true,
       },
     }),
-    loadVerifiedWikiNames(),
   ]);
-  const index = indexUsers(users, wikiNames);
+  const index = indexUsers(
+    users,
+    await namesOfUsers(
+      db,
+      users.map((user) => user.id)
+    )
+  );
   const perCountry = countries
     .map((country) => candidatesFor(country, index))
     .filter((c) => c.length);

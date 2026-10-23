@@ -1,16 +1,17 @@
 /** @jest-environment node */
 /**
  * How the card surfaces name players, many at once (`loadPlayerNames`), by one rule (`playerDisplayName`): the
- * passport handle (the chain every surface uses: stored handle, verified wiki name while the player shows wiki
- * attribution, forum name, Clerk id) while it is a real name, else the nation the player holds, else nobody ("a
- * player"). One read of the players, then one of the verified wiki names and one of the nations of those with no
- * stored handle, and one of the wiki attribution switch for those with a wiki name, however many rows name them.
+ * passport handle (the chain every surface uses: stored handle, first approved wiki name claim the player shows while
+ * they show wiki attribution, forum name, Clerk id) while it is a real name, else the nation the player holds, else
+ * nobody ("a player"). A hidden claim never names anyone. One read of the players, then one of the shown claimed names
+ * and one of the nations of those with no stored handle, and one of the wiki attribution switch for those with a wiki
+ * name, however many rows name them.
  */
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: {
     user: { findMany: jest.fn() },
-    wikiAccountLink: { findMany: jest.fn() },
+    wikiNameClaim: { findMany: jest.fn() },
     country: { findMany: jest.fn() },
     userConnection: { findMany: jest.fn() },
   },
@@ -36,9 +37,19 @@ const user = (id: string, handle: string | null, forumUsername: string | null = 
   forumUsername,
 });
 
+/** Approved claims, oldest approval first, as the claims read returns them; a `shown` read keeps the visible ones. */
+function claims(rows: Array<{ userId: string; name: string; visible?: boolean }>) {
+  jest
+    .mocked(db.wikiNameClaim.findMany)
+    .mockImplementation((async ({ where }: { where: { visible?: boolean } }) =>
+      rows
+        .map((row) => ({ visible: true, ...row }))
+        .filter((row) => !where.visible || row.visible)) as never);
+}
+
 beforeEach(() => {
   jest.clearAllMocks();
-  jest.mocked(db.wikiAccountLink.findMany).mockResolvedValue([]);
+  claims([]);
   jest.mocked(db.country.findMany).mockResolvedValue([]);
   jest.mocked(db.userConnection.findMany).mockResolvedValue([]);
   jest.mocked(resolveHandleUser).mockResolvedValue(null);
@@ -74,7 +85,7 @@ describe("playerDisplayName", () => {
 });
 
 describe("loadPlayerNames", () => {
-  it("names each player once, by the chain, with one read each of players, wiki names and nations", async () => {
+  it("names each player once, by the chain, with one read each of players, claimed names and nations", async () => {
     jest
       .mocked(db.user.findMany)
       .mockResolvedValue([
@@ -84,10 +95,10 @@ describe("loadPlayerNames", () => {
         user("nat", null),
         user("nul", null),
       ] as never);
-    jest.mocked(db.wikiAccountLink.findMany).mockResolvedValue([
-      { userId: "loa", username: "Takatta Loa" },
-      { userId: "loa", username: "Older Name" },
-    ] as never);
+    claims([
+      { userId: "loa", name: "Takatta Loa" },
+      { userId: "loa", name: "Older Name" },
+    ]);
     // Largest economy first, as the read asks; a nation nobody holds names nobody.
     jest.mocked(db.country.findMany).mockResolvedValue([
       { ownerUserId: "nat", name: "Caphiria" },
@@ -117,15 +128,15 @@ describe("loadPlayerNames", () => {
       where: { id: { in: ["ann", "kir", "loa", "nat", "nul"] } },
       select: { id: true, clerkUserId: true, handle: true, forumUsername: true },
     });
-    // Only a player with no stored handle needs a wiki name or a nation.
-    expect(db.wikiAccountLink.findMany).toHaveBeenCalledTimes(1);
-    expect(jest.mocked(db.wikiAccountLink.findMany).mock.calls[0]![0]).toEqual({
+    // Only a player with no stored handle needs a wiki name or a nation; only an approved, shown claim names one.
+    expect(db.wikiNameClaim.findMany).toHaveBeenCalledTimes(1);
+    expect(jest.mocked(db.wikiNameClaim.findMany).mock.calls[0]![0]).toMatchObject({
       where: {
-        userId: { in: ["kir", "loa", "nat", "nul"] },
         source: "ixwiki",
-        verifiedAt: { not: null },
+        userId: { in: ["kir", "loa", "nat", "nul"] },
+        status: "APPROVED",
+        visible: true,
       },
-      select: { userId: true, username: true },
     });
     expect(db.country.findMany).toHaveBeenCalledTimes(1);
     // The nations a passport lists, in its order (`resolveIdentityNations`).
@@ -142,7 +153,7 @@ describe("loadPlayerNames", () => {
     jest
       .mocked(db.user.findMany)
       .mockResolvedValue([user("kir", null, "Helvianir"), user("nat", null)] as never);
-    jest.mocked(db.wikiAccountLink.findMany).mockRejectedValue(new Error("connection reset"));
+    jest.mocked(db.wikiNameClaim.findMany).mockRejectedValue(new Error("connection reset"));
     jest.mocked(db.country.findMany).mockRejectedValue(new Error("connection reset"));
     jest.mocked(resolveHandleUser).mockResolvedValue({ id: "kir" } as never);
     await expect(loadPlayerNames(["kir", "nat"])).resolves.toEqual(
@@ -162,10 +173,10 @@ describe("loadPlayerNames", () => {
           user("kir", null, "Helvianir"),
           user("ann", "ann"),
         ] as never);
-      jest.mocked(db.wikiAccountLink.findMany).mockResolvedValue([
-        { userId: "loa", username: "Takatta Loa" },
-        { userId: "kir", username: "Kir of the Wiki" },
-      ] as never);
+      claims([
+        { userId: "loa", name: "Takatta Loa" },
+        { userId: "kir", name: "Kir of the Wiki" },
+      ]);
       jest
         .mocked(db.country.findMany)
         .mockResolvedValue([{ ownerUserId: "loa", name: "Loa's nation" }] as never);
@@ -179,7 +190,7 @@ describe("loadPlayerNames", () => {
       );
     });
 
-    it("uses a verified wiki name while the switch is on, reading it once for the batch", async () => {
+    it("uses a shown claimed name while the switch is on, reading it once for the batch", async () => {
       const names = await loadPlayerNames(["loa", "kir", "ann"]);
 
       expect(Object.fromEntries(names)).toEqual({
@@ -187,7 +198,7 @@ describe("loadPlayerNames", () => {
         kir: { handle: "Kir of the Wiki", displayName: "@Kir of the Wiki" },
         ann: { handle: "ann", displayName: "@ann" },
       });
-      // One read, for the players a wiki name could name (no stored handle, a verified link).
+      // One read, for the players a wiki name could name (no stored handle, a shown claim).
       expect(db.userConnection.findMany).toHaveBeenCalledTimes(1);
       expect(jest.mocked(db.userConnection.findMany).mock.calls[0]![0]).toMatchObject({
         where: { userId: { in: ["user_loa", "user_kir"] } },
@@ -208,6 +219,24 @@ describe("loadPlayerNames", () => {
         ann: { handle: "ann", displayName: "@ann" },
       });
       expect(JSON.stringify(Object.fromEntries(names))).not.toContain("Takatta Loa");
+      expect(resolveHandleUser).not.toHaveBeenCalledWith("Takatta Loa");
+    });
+
+    it("never names a player by a hidden claim, whatever the switch", async () => {
+      claims([
+        { userId: "loa", name: "Takatta Loa", visible: false },
+        { userId: "kir", name: "Kir Secret", visible: false },
+        { userId: "kir", name: "Kir of the Wiki" },
+      ]);
+
+      const names = await loadPlayerNames(["loa", "kir", "ann"]);
+
+      expect(Object.fromEntries(names)).toEqual({
+        loa: { handle: "user_loa", displayName: "Loa's nation" },
+        kir: { handle: "Kir of the Wiki", displayName: "@Kir of the Wiki" },
+        ann: { handle: "ann", displayName: "@ann" },
+      });
+      expect(JSON.stringify(Object.fromEntries(names))).not.toMatch(/Takatta Loa|Kir Secret/);
       expect(resolveHandleUser).not.toHaveBeenCalledWith("Takatta Loa");
     });
 

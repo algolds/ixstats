@@ -8,8 +8,8 @@
  * payload for every viewer, the owner included, and is not even loaded. Wiki attribution (SL-4) also keeps the wiki
  * account's work, history and Lorewards from other viewers (never from the owner); "Online status" decides the online
  * flag and "Search engine indexing" the robots metadata; a switch that cannot be read hides. The payload carries the
- * passport handle, never the URL segment. A public read writes nothing, reports the wiki "linked" only for a verified
- * link and asks MediaWiki nothing for a user. Realm rows carry the realm role, never the site role. The card and page
+ * passport handle, never the URL segment. A public read writes nothing, reports the wiki "linked" only for an approved
+ * name claim the holder shows (a hidden claim links nothing) and asks MediaWiki nothing for a user. Realm rows carry the realm role, never the site role. The card and page
  * metadata make no external call and carry no personal field; with link previews off they are generic.
  *
  * Folds identity-passport-handle, -link-privacy, -wiki, -realms, -card, -metadata and identity-showcase-ribbons. The
@@ -19,7 +19,7 @@ jest.mock("~/server/db", () => {
   const db = {
     user: { findUnique: jest.fn(), update: jest.fn() },
     country: { findUnique: jest.fn() },
-    wikiAccountLink: { findFirst: jest.fn() },
+    wikiNameClaim: { findMany: jest.fn() },
     userConnection: { findMany: jest.fn() },
     passportPreference: { findUnique: jest.fn(), upsert: jest.fn() },
     realm: { findMany: jest.fn() },
@@ -103,7 +103,7 @@ import { createMockRouterContext } from "~/tests/helpers/router-context";
 const mocked = db as unknown as {
   user: { findUnique: jest.Mock; update: jest.Mock };
   country: { findUnique: jest.Mock };
-  wikiAccountLink: { findFirst: jest.Mock };
+  wikiNameClaim: { findMany: jest.Mock };
   userConnection: { findMany: jest.Mock };
   passportPreference: { findUnique: jest.Mock; upsert: jest.Mock };
   realm: { findMany: jest.Mock };
@@ -148,6 +148,17 @@ function resolvesTo(
   (resolveIdentity as jest.Mock).mockResolvedValue(identity);
   (resolveUserIdentity as jest.Mock).mockResolvedValue(row ? identity : null);
   return { handle, viewerClerkId };
+}
+
+/** The holder's approved name claims, oldest first (a string is a shown one); a `shown` read keeps the visible ones. */
+function claimed(...claims: Array<string | { name: string; visible: boolean }>) {
+  const rows = claims.map((c) => (typeof c === "string" ? { name: c, visible: true } : c));
+  mocked.wikiNameClaim.findMany.mockImplementation(
+    async ({ where }: { where: { visible?: boolean } }) =>
+      rows
+        .filter((row) => !where.visible || row.visible)
+        .map((row) => ({ userId: holder.id, ...row }))
+  );
 }
 
 /** The holder's stored privacy switches (Settings → Privacy & Security). */
@@ -224,7 +235,7 @@ beforeEach(() => {
   resetPresenceForTests();
   mocked.user.update.mockResolvedValue({});
   mocked.country.findUnique.mockResolvedValue(null);
-  mocked.wikiAccountLink.findFirst.mockResolvedValue(null);
+  claimed();
   mocked.userConnection.findMany.mockResolvedValue([]);
   mocked.passportPreference.findUnique.mockResolvedValue(null);
   mocked.realm.findMany.mockResolvedValue([]);
@@ -406,8 +417,8 @@ describe("what the passport carries", () => {
     expect(passport).not.toHaveProperty("canonicalRedirect");
   });
 
-  it("the verified wiki name in the handle only when it resolves back to the holder", async () => {
-    mocked.wikiAccountLink.findFirst.mockResolvedValue({ username: "Kir Wiki" });
+  it("the shown claimed name in the handle only when it resolves back to the holder", async () => {
+    claimed("Kir Wiki");
     const owners = (byName: Record<string, string>) =>
       (resolveHandleUser as jest.Mock).mockImplementation(async (name: string) =>
         byName[name] ? { id: byName[name] } : null
@@ -417,6 +428,14 @@ describe("what the passport carries", () => {
     expect((await getPassport(resolvesTo(null, user, "me"), forum))?.handle).toBe("Kir Wiki");
     owners({ "Kir Wiki": "db_other", "Kir Forum": "db_1" });
     expect((await getPassport(resolvesTo(null, user, "me"), forum))?.handle).toBe("Kir Forum");
+  });
+
+  it("never a hidden claimed name in the handle, even the owner's", async () => {
+    claimed({ name: "Kir Secret", visible: false });
+    (resolveHandleUser as jest.Mock).mockResolvedValue({ id: "db_1" });
+    const user = { forumUsername: "Kir Forum", wikiUsername: null };
+    expect((await getPassport(resolvesTo("clerk_1", user, "me"), forum))?.handle).toBe("Kir Forum");
+    expect(resolveHandleUser).not.toHaveBeenCalledWith("Kir Secret");
   });
 
   it("the URL segment only for an external wiki or forum identity", async () => {
@@ -445,7 +464,7 @@ describe("the wiki block of a public read", () => {
       "kir-republic"
     );
 
-  it("writes nothing and is not linked without a verified link, even with a wiki name", async () => {
+  it("writes nothing and is not linked without an approved claim, even with a wiki name", async () => {
     loader.loadWikiInfo.mockResolvedValue({
       exists: true,
       userId: 1,
@@ -458,18 +477,23 @@ describe("the wiki block of a public read", () => {
     expect(mocked.user.update).not.toHaveBeenCalled();
   });
 
-  it("is linked once a verified ixwiki link exists, and carries no edit count or groups, asking MediaWiki nothing", async () => {
-    mocked.wikiAccountLink.findFirst.mockResolvedValue({ username: "Kir Republic" });
+  it("is linked once the holder shows an approved claim, and carries no edit count or groups, asking MediaWiki nothing", async () => {
+    claimed("Kir Republic");
     loader.loadWikiInfo.mockResolvedValue(LIVE);
     const passport = await getPassport(countryDerived(), forum);
     expect(passport?.wiki.linked).toBe(true);
-    expect(mocked.wikiAccountLink.findFirst).toHaveBeenCalledWith(
+    expect(mocked.wikiNameClaim.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { userId: "db_1", source: "ixwiki", verifiedAt: { not: null } },
+        where: { source: "ixwiki", userId: { in: ["db_1"] }, status: "APPROVED", visible: true },
       })
     );
     expect(Object.keys(passport?.wiki ?? {}).sort()).toEqual(["linked", "lorewards", "username"]);
     expect(loader.loadWikiInfo).not.toHaveBeenCalled();
+  });
+
+  it("is not linked by a hidden claim", async () => {
+    claimed({ name: "Kir Republic", visible: false });
+    expect((await getPassport(countryDerived(), forum))?.wiki.linked).toBe(false);
   });
 
   it("reports an external wiki name as linked when MediaWiki knows it", async () => {
@@ -488,7 +512,7 @@ describe("the wiki block of a public read", () => {
 
 describe("wiki attribution on the work, the history and the Lorewards", () => {
   beforeEach(() => {
-    mocked.wikiAccountLink.findFirst.mockResolvedValue({ username: "Alex" });
+    claimed("Alex");
     loader.loadLoreStats.mockResolvedValue({ ...LORE_STATS, totalScore: 1200 });
   });
 
@@ -642,7 +666,7 @@ describe("the passport card", () => {
 
   it("names a handle-less holder by the chain, leaving the wiki name out for every viewer when attribution is off", async () => {
     (resolveHandleUser as jest.Mock).mockResolvedValue({ id: holder.id });
-    mocked.wikiAccountLink.findFirst.mockResolvedValue({ username: "Alex_Wiki" });
+    claimed("Alex_Wiki");
     resolvesTo(null, { ...cardHolder, handle: null }, "Alex");
     expect(await card()).toMatchObject({ handle: "Alex_Wiki" });
 

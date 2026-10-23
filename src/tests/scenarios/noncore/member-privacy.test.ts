@@ -102,6 +102,16 @@ beforeEach(async () => {
   await db.wikiAccountLink.create({
     data: { userId: "hana", source: "ixwiki", username: "Hana Wiki", verifiedAt: new Date() },
   });
+  await db.wikiNameClaim.create({
+    data: {
+      userId: "hana",
+      name: "Hana Wiki",
+      status: "APPROVED",
+      origin: "CONVERSION",
+      requestedById: "hana",
+      decidedAt: new Date(),
+    },
+  });
   await db.lorewardUserStats.create({
     data: {
       username: "Hana Wiki",
@@ -206,9 +216,9 @@ it("hides Hana's wiki name everywhere others see her while attribution is off, a
   const status = await ixnayid(as("hana")).getStatus();
   expect(status.passportHandle).not.toMatch(/hana[ _]wiki/i);
   expect(status.wiki).toMatchObject({ linked: true, username: "Hana Wiki" });
-  // Sam's wiki name and his unverified link are neither a link nor a handle
-  await db.wikiAccountLink.create({
-    data: { userId: "sam", source: "ixwiki", username: "Sam Wiki" },
+  // Sam's wiki name and his pending claim are neither a link nor a handle
+  await db.wikiNameClaim.create({
+    data: { userId: "sam", name: "Sam Wiki", origin: "PLAYER", requestedById: "sam" },
   });
   const sams = await ixnayid(as("sam")).getStatus();
   expect(sams.wiki).toMatchObject({ linked: false, username: null });
@@ -580,7 +590,12 @@ it.each([
 
 // Found 2026-10-21: any participant could add anyone to any conversation, past a ThinkTank's invites.
 it.each([
-  ["refuses a member adding someone to a ThinkTank chat, which follows its membership", OMAR, "chat", 0],
+  [
+    "refuses a member adding someone to a ThinkTank chat, which follows its membership",
+    OMAR,
+    "chat",
+    0,
+  ],
   ["refuses adding a third person to a direct message", HANA, "direct", 0],
   ["lets a participant add someone to a group DM", HANA, "dm", 1],
 ] as const)("%s", async (_case, actorId, target, added) => {
@@ -597,7 +612,9 @@ it.each([
   if (added) await adding;
   else await expect(adding).rejects.toMatchObject({ name: "MessagingForbiddenError" });
   expect(
-    await db.conversationParticipant.count({ where: { conversationId, userId: IVY, isActive: true } })
+    await db.conversationParticipant.count({
+      where: { conversationId, userId: IVY, isActive: true },
+    })
   ).toBe(added);
 });
 

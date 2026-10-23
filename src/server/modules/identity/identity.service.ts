@@ -31,7 +31,7 @@ import {
 import { loadRecruitedCount } from "./identity.invites";
 import { loadRealmRoles } from "./identity.realm-roles";
 import type { IdentityCountry } from "./identity.selects";
-import { loadPassportHandle, loadVerifiedWikiName } from "./identity.passport-handle";
+import { loadClaimedWikiName, loadPassportHandle } from "./identity.passport-handle";
 import { resolveIdentity, resolveIdentityNations, resolveUserIdentity } from "./identity.resolve";
 import { loadLinkPrivacy, passportOnline } from "./identity.link-privacy";
 import type {
@@ -155,13 +155,13 @@ function passportAccount(
 function passportWiki(
   identity: ResolvedIdentity,
   wikiInfo: WikiInfo,
-  verifiedWikiName: string | null,
+  claimedWikiName: string | null,
   sections: Pick<ReturnType<typeof redactPassportSections>, "lorewards">
 ) {
   return {
-    // A user's wiki is "linked" only through a verified link (a legacy `User.wikiUsername` proves
-    // nothing). A handle with no user is an external wiki name, linked if it exists.
-    linked: identity.user ? Boolean(verifiedWikiName) : Boolean(wikiInfo?.exists),
+    // A user's wiki is "linked" only through an approved claim they show (a legacy
+    // `User.wikiUsername` proves nothing). A handle with no user is an external wiki name, linked if it exists.
+    linked: identity.user ? Boolean(claimedWikiName) : Boolean(wikiInfo?.exists),
     username: identity.wikiName,
     lorewards: sections.lorewards,
   };
@@ -205,7 +205,7 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
 
   const [
     wikiInfo,
-    verifiedWikiName,
+    claimedWikiName,
     loreStats,
     forumActivity,
     persona,
@@ -215,9 +215,9 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     achievements,
     recruitedCount,
   ] = await Promise.all([
-    // Only an external wiki name needs MediaWiki: a user's wiki is linked by their verified link.
+    // Only an external wiki name needs MediaWiki: a user's wiki is linked by their shown claim.
     user ? null : loadWikiInfo(wikiName),
-    loadVerifiedWikiName(user?.id),
+    loadClaimedWikiName(user?.id),
     showLore ? loadLoreStats(wikiName) : null,
     shown.forumStats && user ? forum.getActivity(user.id).catch(() => null) : null,
     loadPersonalPersona(user),
@@ -232,7 +232,7 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
   const [loreRank, online, handle] = await Promise.all([
     loreStats ? loadLoreRank(loreStats.totalScore) : null,
     passportOnline(identity),
-    user ? loadPassportHandle(user, { verifiedWikiName }) : identity.handle,
+    user ? loadPassportHandle(user, { claimedWikiName }) : identity.handle,
   ]);
 
   const forumStats = toForumStats(forumActivity);
@@ -265,7 +265,7 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     online,
     wiki: hideWiki
       ? { ...HIDDEN_WIKI, username: null }
-      : passportWiki(identity, wikiInfo, verifiedWikiName, sections),
+      : passportWiki(identity, wikiInfo, claimedWikiName, sections),
     forum: passportForum(identity, sections.forumStats),
     /** Credits and collection; null when the owner hides them. */
     vault: sections.vault,

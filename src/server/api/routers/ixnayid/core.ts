@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { namesOfUser } from "~/lib/identity/wiki-names";
 import { createTRPCRouter, lightMutationProcedure, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { HandleClaimError, setUserHandle } from "~/server/modules/identity/identity.handle-claim";
@@ -41,10 +42,7 @@ type LinkedUser = {
   lastDiscordSync: Date | null;
 } | null;
 
-function linkedAccounts(
-  user: LinkedUser,
-  wikiLink: { username: string; verifiedAt: Date | null } | null
-) {
+function linkedAccounts(user: LinkedUser, claimedName: string | null) {
   return {
     forum: {
       linked: !!user?.forumUserId || !!user?.forumUsername,
@@ -52,10 +50,10 @@ function linkedAccounts(
       lastSync: user?.lastForumSync ?? null,
     },
     wiki: {
-      linked: !!wikiLink,
-      username: wikiLink?.username ?? null,
-      isCustomClaimed: !!wikiLink,
-      lastSync: wikiLink?.verifiedAt ?? null,
+      linked: !!claimedName,
+      username: claimedName,
+      isCustomClaimed: !!claimedName,
+      lastSync: null,
     },
     discord: {
       linked: !!user?.discordUserId,
@@ -102,30 +100,27 @@ export const ixnayidCoreRouter = createTRPCRouter({
 
     const country = user ? await resolveUserCountry(user) : null;
 
-    // Wiki is "linked" only through a VERIFIED ixwiki link (token proven on the wiki user page, or
-    // admin-verified). Owning a country or holding an unproven legacy `User.wikiUsername` does not count.
-    const verifiedWikiLink = user
-      ? await db.wikiAccountLink.findFirst({
-          where: { userId: user.id, source: "ixwiki", verifiedAt: { not: null } },
-          select: { username: true, verifiedAt: true },
-        })
-      : null;
+    // Wiki is "linked" only through an APPROVED name claim. Owning a country or holding a legacy
+    // `User.wikiUsername` does not count. The owner's own view shows their first approved name even
+    // while they hide it; the passport handle takes only a shown one.
+    const names = user ? await namesOfUser(db, user.id) : [];
+    const claimedName = names[0]?.name ?? null;
+    const shownName = names.find((n) => n.visible)?.name ?? null;
 
     return {
       /**
        * The passport handle (`loadPassportHandle`): the one every share and invite link carries, so
-       * it skips the wiki name while wiki attribution is off, though `wiki` below still shows it.
+       * it skips a hidden claim, or any wiki name while wiki attribution is off, though `wiki` below
+       * still shows it.
        */
-      passportHandle: user
-        ? await loadPassportHandle(user, { verifiedWikiName: verifiedWikiLink?.username ?? null })
-        : null,
+      passportHandle: user ? await loadPassportHandle(user, { claimedWikiName: shownName }) : null,
       /** The stored IxStates Passport handle, null until one is claimed. */
       handle: user?.handle ?? null,
       /** The single self-service change is still available (admins may always change it). */
       canChangeHandle: !user?.handleChangedAt || callerIsAdmin(ctx),
       countrySlug:
         country?.slug ?? (country?.name ? country.name.toLowerCase().replace(/ /g, "_") : null),
-      ...linkedAccounts(user, verifiedWikiLink),
+      ...linkedAccounts(user, claimedName),
     };
   }),
 
