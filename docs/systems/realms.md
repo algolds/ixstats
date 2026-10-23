@@ -52,7 +52,6 @@ Each row reports only counted facts:
 | `myNationCount`         | Countries in the realm the signed-in viewer owns (0 when signed out)                                                                                                                                                                                                              |
 | `maxNationsPerUser`     | The realm's nation cap (`Realm.settings`, default 1)                                                                                                                                                                                                                              |
 | `board`                 | Always `{ recentPosts, lastPostAt }`: posts in the realm's forum section in the last `FORUM_ACTIVITY_WINDOW_DAYS` (7) days and its latest thread activity, both in real time (not IxTime). Public categories only, and the live board's category is left out (`notBoardCategory`) |
-| `boardMessagesThisWeek` | Messages on the realm's live board in the last `FORUM_ACTIVITY_WINDOW_DAYS` (7) days: visible ones, not the placeholders of messages continued into a thread (`PREVIEWED_BOARD_MESSAGES`). Its own figure, never added to `board.recentPosts`                                     |
 | `openNationPageCount`   | Nation pages of the realm's lore index that no country has taken yet (claimable, `realms.claimNationPage`; the same rule as the realm page's `nationPages`)                                                                                                                       |
 
 Each row also carries `bannerUrl`, `tags` and `foundedAt` (`Realm.foundedAt`, else `createdAt`).
@@ -67,30 +66,66 @@ sorted by name, each with its realm (`id`, `slug`, `name`) and `claimable`:
 
 ### The landing page
 
-`/realms` is the main page for exploring, searching and joining realms (`src/app/realms/page.tsx`, sections in
-`src/app/realms/_components/`). Top to bottom, in the realm pages' gutter (`max-w-6xl`):
+`/realms` is an atlas of worlds (`src/app/realms/page.tsx`, sections in `src/app/realms/_components/`, the card in
+`src/components/realms/RealmCard.tsx`). The page sits on the realms canvas with no boxed sections: a `PageHeader`,
+then a main column and, from `lg`, a 20rem right rail. Below `lg` everything is one column in this order: search,
+atlas, claims, Your realms, feed.
 
-1. **Hero** (`RealmsHero`): what realms are, the totals (realms, nations, open to claim) and one call to action
-   for the viewer. Signed out: **Sign in to play** and **Browse realms**. Signed in with no nation: **Join a
-   realm** (to Open to join, else Browse). Holding nations: **Go to your realms** and **Join another realm**.
-2. **Your realms** (signed in, `YourRealms`): each realm where the viewer holds nations (`realms.myNations`), with
-   its banner and thumbnail from the directory row, "You hold N of cap", each nation with **Play as**
-   (`PlayAsNation`; the active one reads Active) and links to the realm's board and Nations tab. Then **Your
-   claims** (`realms.myClaims`, the `MyClaims` component): each claim's nation and realm, its status (pending
-   review, approved, rejected) and a rejection's reason.
-3. **Search** (`RealmSearch`): one box. Realms match on name, description or tag (client side, over the
-   directory); nations come from `realms.searchNations` once two letters are typed, each showing its realm and a
-   **Claimable** badge (to the realm's Nations tab) or **Claimed**.
-4. **Open to join** (`OpenToJoin`): realms with `openNationCount + openNationPageCount > 0`, most open first, with
-   the count of unclaimed nations and nation pages and a link to the realm's Nations tab, where claiming happens
-   (`ClaimableNations`). It says so when the viewer already holds the realm's cap. Hidden when no realm is open.
-5. **Browse all realms** (`BrowseRealms`): every listed realm as a banner card with links to its page and board,
-   sorted (name, most nations, most active board, newest) and filtered by tag; only tags some realm uses are
-   offered. A card shows "Join · claim a nation" (or "Claim another nation") while the viewer is under the
-   realm's cap, linking to the realm's Nations tab.
-6. **Realm feed** (`RealmFeedPanel`): the ThinkPages feed for one realm. It defaults to the realm of the viewer's
-   active nation (`useViewerRealmId`), or to **All realms** when signed out, and a selector switches between
-   realms and All realms.
+**Header** (`RealmsHeader`): the title "Realms", a subtitle and one action. Newcomers (signed out, or signed in
+without a nation) see "Worlds with their own nations, boards and lore. Claim a nation and play."; everyone sees the
+counts line ("2 realms · 280 nations · 262 open", from `directoryTotals`). The action is **Sign in to play**
+(signed out, back to `/realms`), **Join a realm** (no nation) or **Join another realm** (holds nations, outline);
+the last two link to `#atlas`.
+
+**Main column**
+
+1. **Atlas grid** (`AtlasGrid`): every listed realm as one `RealmCard`, most open nations first (`atlasOrder`),
+   then name. The search box in the rail filters it by name, description and tag. Sort and tag filters show only at
+   `ATLAS_FILTER_MIN` (6) or more realms; only tags some realm uses are offered. Below `md` the grid is a
+   horizontal scroll-snap row with cards at 84% width. The grid ends in a **founding tile**, hidden while a search
+   or tag filter narrows the list: admins see **Found a realm** (to `/admin/maps/studio`), everyone else **Bring
+   your realm** (to the ThinkPages Find a Realm board). With no realm the grid says "No realms are open yet."
+2. **Your claims** (signed in, `MyClaims`): each claim's nation and realm, its status (pending review, approved,
+   rejected) and a rejection's reason (`realms.myClaims`).
+
+**Realm card.** A face band, the realm's crest overlapping its bottom-left, then the name as a stretched link (the
+whole card opens `/r/{slug}`), an "N open" chip (only when N > 0), a two-line description, the tags and the meta
+line ("{N} nations · {board activity}"). The way in links to `/r/{slug}/nations`: **Join** for a newcomer, **Claim
+another** while the viewer holds fewer than the realm's cap, and at the cap no button, just "You hold N of M".
+Both links carry an `aria-label` that names the realm. The face drifts against the pointer (at most 6px by 4px,
+on `springSmooth`) and morphs into the realm page header's face through the shared `ViewTransition`
+`realm-map-{slug}`; reduced motion turns both off.
+
+**Map face** (`RealmMapFace`, `realms.mapFace({ realmSlug })`, `src/server/modules/realms/realms.map-face.ts`). The
+face band uses the first of: the founder's banner, the realm's political map, the crest on the tint field (the
+realm page header passes `showCrest={false}` because it overlays its own thumbnail). The map is only fetched when
+the realm has no banner. It is built in PostGIS and drawn as inline SVG:
+
+- **Projection and framing.** Web Mercator scaled so the world is 1000 units wide, clipped to latitude +/-75
+  degrees (Mercator inflates the poles), framed on the nations alone (never on the land) into a 2.4:1 band with 4%
+  padding. Simplification tolerances stay at or below 1.0 unit (1.5 segfaulted Postgres).
+- **Layers.** Land is the realm's climate layer merged into one shape; nations are grouped by status: open
+  (hatched in tint), claimed (solid tint) and other (NPC, locked, or a region with no country, drawn as land).
+  Polar-cap climate rows are skipped. Colours are Facet tokens, so it follows light, dark and contrast settings.
+- **Caching.** An in-process cache per realm for 1 hour (`CACHE_TTL_MS`); there is no invalidation on map edits and
+  no Redis. The in-flight promise is cached, so concurrent callers share one build. A failed build is logged and
+  remembered as "no face" for 5 minutes (`FAILURE_TTL_MS`); a failed land query is logged and the nations still
+  draw over no land. A realm with no political layer has no face and falls back to the crest.
+- **Access.** `mapFace` is a public, rate-limited procedure that resolves the slug strictly (`mutationRealmId`), so
+  an unknown realm, or a draft the viewer can't see, is NOT_FOUND and nothing is queried.
+
+**Rail**
+
+1. **Search** (`RealmSearch`): one field. Typing filters the atlas; from two characters it lists nation matches
+   below the field (`realms.searchNations`), each with its realm and a **Claimable** badge (to the realm's Nations
+   tab) or **Claimed**.
+2. **Your realms** (signed in, `YourRealms`): each realm where the viewer holds nations (`realms.myNations`) with
+   its crest, name and "N of M"; each nation with **Play as** (`PlayAsNation`; the active one reads Active) and
+   links to the realm's Board and Nations tab.
+3. **Realm feed** (`RealmFeedPanel`): the ThinkPages feed for one realm, up to five compact rows (author,
+   excerpt, time) linking to the post, then an "Open the feed" link to `/dashboard`. It defaults to the realm of the
+   viewer's active nation (`useViewerRealmId`), or to **All realms** when signed out, and a selector switches
+   between realms and All realms.
 
 ## 2. Realm feed filter
 

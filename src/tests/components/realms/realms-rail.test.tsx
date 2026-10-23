@@ -39,12 +39,6 @@ jest.mock("~/app/r/[realm]/_components/PlayAsNation", () => ({
     <button type="button">Play as {countryName}</button>
   ),
 }));
-jest.mock("~/app/r/[realm]/_components/RealmBoardBlock", () => ({
-  RealmBoardBlock: () => <div>board block</div>,
-}));
-jest.mock("~/components/thinkpages/ThinkpagesPost", () => ({
-  ThinkpagesPost: ({ post }: { post: { id: string } }) => <article>full {post.id}</article>,
-}));
 
 beforeEach(() => {
   mockSearchNations.mockReset();
@@ -102,7 +96,6 @@ const DIRECTORY_REALM: DirectoryRealm = {
   myNationCount: 1,
   maxNationsPerUser: 3,
   board: { recentPosts: 0, lastPostAt: null },
-  boardMessagesThisWeek: 0,
 };
 
 describe("YourRealms", () => {
@@ -134,7 +127,7 @@ describe("YourRealms", () => {
   });
 });
 
-describe("RealmFeed compact", () => {
+describe("RealmFeed", () => {
   const posts = Array.from({ length: 7 }, (_, i) => ({
     id: `p${i + 1}`,
     content: `Post ${i + 1} ${"x".repeat(200)}`,
@@ -144,9 +137,8 @@ describe("RealmFeed compact", () => {
 
   it("compact feed shows five rows and links to posts", () => {
     mockGetFeed.mockReturnValue({ data: { posts }, isLoading: false, error: null });
-    render(<RealmFeed realmId="r1" realmSlug="ixnay" compact />);
+    render(<RealmFeed realmId="r1" />);
     expect(screen.getAllByRole("listitem")).toHaveLength(5);
-    expect(screen.queryByText("board block")).toBeNull();
     const first = screen.getAllByRole("link")[0]!;
     expect(first.getAttribute("href")).toBe("/dashboard/post/p1");
     expect(screen.getByText("Author 1")).toBeTruthy();
@@ -169,16 +161,9 @@ describe("RealmFeed compact", () => {
       isLoading: false,
       error: null,
     });
-    render(<RealmFeed realmId="r1" realmSlug="ixnay" compact />);
+    render(<RealmFeed realmId="r1" />);
     const row = screen.getByRole("link");
     expect(row.textContent).toContain("Rich bold");
     expect(row.textContent).not.toContain("<");
-  });
-
-  it("the default feed is unchanged", () => {
-    mockGetFeed.mockReturnValue({ data: { posts }, isLoading: false, error: null });
-    render(<RealmFeed realmId="r1" realmSlug="ixnay" />);
-    expect(screen.getByText("board block")).toBeTruthy();
-    expect(screen.getByText("full p7")).toBeTruthy();
   });
 });

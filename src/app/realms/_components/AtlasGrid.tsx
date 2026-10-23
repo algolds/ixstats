@@ -188,7 +188,7 @@ export function AtlasGrid({
             <p className="text-label-secondary text-body">{emptyMessage(all, query)}</p>
           )}
           {(shown.length > 0 || !filtered) && (
-            <ul className="grid gap-4 max-md:-mx-4 max-md:flex max-md:snap-x max-md:snap-mandatory max-md:scroll-px-4 max-md:overflow-x-auto max-md:px-4 sm:grid-cols-2 xl:grid-cols-3 max-md:[&>li]:shrink-0 max-md:[&>li]:basis-[84%] max-md:[&>li]:snap-start">
+            <ul className="grid gap-4 max-md:-mx-4 max-md:flex max-md:snap-x max-md:snap-mandatory max-md:scroll-px-4 max-md:overflow-x-auto max-md:px-4 max-md:py-1 sm:grid-cols-2 xl:grid-cols-3 max-md:[&>li]:shrink-0 max-md:[&>li]:basis-[84%] max-md:[&>li]:snap-start">
               {shown.map((realm) => (
                 <RealmCard key={realm.id} realm={realm} />
               ))}

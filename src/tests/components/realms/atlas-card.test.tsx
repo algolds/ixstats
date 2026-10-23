@@ -43,7 +43,6 @@ const IXNAY: DirectoryRealm = {
   myNationCount: 0,
   maxNationsPerUser: 3,
   board: { recentPosts: 4, lastPostAt: null },
-  boardMessagesThisWeek: 0,
 };
 
 const renderCard = (over: Partial<DirectoryRealm> = {}) =>
@@ -78,12 +77,15 @@ describe("atlas RealmCard", () => {
 
   it("Join goes to the Nations tab", () => {
     renderCard();
-    expect(screen.getByRole("link", { name: "Join" })).toHaveAttribute("href", "/r/ixnay/nations");
+    expect(screen.getByRole("link", { name: "Join Ixnay" })).toHaveAttribute(
+      "href",
+      "/r/ixnay/nations"
+    );
   });
 
   it("a holder below the cap sees Claim another", () => {
     renderCard({ myNationCount: 1 });
-    expect(screen.getByRole("link", { name: "Claim another" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Claim another nation in Ixnay" })).toHaveAttribute(
       "href",
       "/r/ixnay/nations"
     );
@@ -93,8 +95,10 @@ describe("atlas RealmCard", () => {
   it("at the cap there is no Join, only the holding", () => {
     renderCard({ myNationCount: 3 });
     expect(screen.getByText("You hold 3 of 3")).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Join" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Claim another" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Join Ixnay" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Claim another nation in Ixnay" })
+    ).not.toBeInTheDocument();
   });
 
   it("tags and meta lines", () => {

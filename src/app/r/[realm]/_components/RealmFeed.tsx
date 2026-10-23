@@ -4,9 +4,6 @@ import Link from "next/link";
 import { api } from "~/trpc/react";
 import { timeAgo } from "~/lib/format/compact";
 import { stripHtml } from "~/lib/utils/sanitize-html";
-import { useUser } from "~/context/auth-context";
-import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
-import { RealmBoardBlock } from "./RealmBoardBlock";
 
 /** Posts the compact rail feed lists. */
 const COMPACT_ROWS = 5;
@@ -47,10 +44,13 @@ function CompactRow({ row }: { row: FeedRow }) {
   );
 }
 
-function RealmPosts({ realmId, compact }: { realmId: string | null; compact: boolean }) {
-  const { user } = useUser();
+/**
+ * The rail's ThinkPages feed scoped to one realm (posts by its nations' personas), or to every realm when `realmId`
+ * is null: up to five one-line rows linking to the posts.
+ */
+export function RealmFeed({ realmId }: { realmId: string | null }) {
   const { data, isLoading, error } = api.thinkpages.getFeed.useQuery(
-    { realmId: realmId ?? undefined, limit: compact ? COMPACT_ROWS : 20 },
+    { realmId: realmId ?? undefined, limit: COMPACT_ROWS },
     { staleTime: 15_000 }
   );
 
@@ -64,49 +64,12 @@ function RealmPosts({ realmId, compact }: { realmId: string | null; compact: boo
       </p>
     );
 
-  if (compact) {
-    const rows: FeedRow[] = data.posts.slice(0, COMPACT_ROWS);
-    return (
-      <ul className="flex flex-col gap-1" aria-label="Recent posts">
-        {rows.map((row) => (
-          <CompactRow key={row.id} row={row} />
-        ))}
-      </ul>
-    );
-  }
-
+  const rows: FeedRow[] = data.posts.slice(0, COMPACT_ROWS);
   return (
-    <div className="space-y-4">
-      {data.posts.map((post) => (
-        <ThinkpagesPost
-          key={post.id}
-          post={post}
-          currentUserAccountId={user?.id || "placeholder-disabled"}
-        />
+    <ul className="flex flex-col gap-1" aria-label="Recent posts">
+      {rows.map((row) => (
+        <CompactRow key={row.id} row={row} />
       ))}
-    </div>
-  );
-}
-
-/**
- * The ThinkPages feed scoped to one realm (posts by its nations' personas), or to every realm when `realmId` is
- * null. For one realm whose slug is known, the realm's live board (its newest native board messages) sits above the
- * posts; the old ThinkTank board chat is no longer part of the feed. `compact` is the rail's version: no board
- * block, and up to five one-line rows linking to the posts.
- */
-export function RealmFeed({
-  realmId,
-  realmSlug = null,
-  compact = false,
-}: {
-  realmId: string | null;
-  realmSlug?: string | null;
-  compact?: boolean;
-}) {
-  return (
-    <div className="space-y-4">
-      {!compact && realmId && realmSlug ? <RealmBoardBlock slug={realmSlug} framed /> : null}
-      <RealmPosts realmId={realmId} compact={compact} />
-    </div>
+    </ul>
   );
 }

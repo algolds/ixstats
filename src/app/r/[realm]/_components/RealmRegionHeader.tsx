@@ -139,6 +139,7 @@ export function RealmRegionHeader({
               isSystem: false,
             }}
             bannerUrl={realm.bannerUrl}
+            showCrest={false}
           />
         </SharedElement>
       </div>

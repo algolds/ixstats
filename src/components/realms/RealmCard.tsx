@@ -40,7 +40,14 @@ function JoinAction({ realm }: { realm: DirectoryRealm }) {
           variant={myNationCount > 0 ? "outline" : "default"}
           className="z-raised relative"
         >
-          <Link href={nations}>{myNationCount > 0 ? "Claim another" : "Join"}</Link>
+          <Link
+            href={nations}
+            aria-label={
+              myNationCount > 0 ? `Claim another nation in ${realm.name}` : `Join ${realm.name}`
+            }
+          >
+            {myNationCount > 0 ? "Claim another" : "Join"}
+          </Link>
         </Button>
       )}
       {myNationCount > 0 && (

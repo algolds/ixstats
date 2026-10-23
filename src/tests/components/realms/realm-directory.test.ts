@@ -20,7 +20,6 @@ const BASE: DirectoryRealm = {
   myNationCount: 0,
   maxNationsPerUser: 3,
   board: { recentPosts: 0, lastPostAt: null },
-  boardMessagesThisWeek: 0,
 };
 
 const realm = (over: Partial<DirectoryRealm>): DirectoryRealm => ({ ...BASE, ...over });

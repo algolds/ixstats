@@ -54,11 +54,7 @@ export function RealmFeedPanel({ realms }: { realms: DirectoryRealm[] | undefine
           </Select>
         </div>
       </div>
-      <RealmFeed
-        realmId={selected === ALL ? null : selected}
-        realmSlug={realms?.find((realm) => realm.id === selected)?.slug ?? null}
-        compact
-      />
+      <RealmFeed realmId={selected === ALL ? null : selected} />
       <Link href="/dashboard" className="text-label text-footnote hover:underline">
         Open the feed
       </Link>

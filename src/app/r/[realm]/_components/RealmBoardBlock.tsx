@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { RealmAvatar } from "~/components/realms/RealmAvatar";
 import { BoardPreviewList } from "~/components/thinkpages-forum/realm/BoardPreviewList";
-import { Card } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { realmBoardHref } from "~/lib/thinkpages-forum/links";
 import { cn } from "~/lib/utils";
@@ -11,24 +10,15 @@ import { api } from "~/trpc/react";
 
 interface RealmBoardBlockProps {
   slug: string;
-  /** Draw its own Card (the realm feed); the overview puts it inside a section instead. */
-  framed?: boolean;
-  /** Name the realm under the heading (the feed, which can show any realm); the overview already says which. */
-  showRealm?: boolean;
   className?: string;
 }
 
 /**
  * "On the board": a realm's newest three board messages (persona-safe, as the server shapes them) with a link to the
- * live board. Used by the realm overview and the realm feed. Renders nothing for a realm the viewer cannot see or a
+ * live board. Used by the realm overview. Renders nothing for a realm the viewer cannot see or a
  * failed read, a skeleton while loading. Links use the slug the server returns (the canonical one), not the one asked.
  */
-export function RealmBoardBlock({
-  slug,
-  framed = false,
-  showRealm = true,
-  className,
-}: RealmBoardBlockProps) {
+export function RealmBoardBlock({ slug, className }: RealmBoardBlockProps) {
   const { data, isLoading } = api.thinkpagesForum.realmBoardPreview.useQuery(
     { slug },
     { staleTime: 60_000, refetchOnWindowFocus: false, retry: false }
@@ -42,9 +32,6 @@ export function RealmBoardBlock({
         <RealmAvatar thumbnail={realm.emblemUrl || realm.thumbnail} className="size-9" />
         <div className="min-w-0 flex-1">
           <h3 className="text-label text-headline">On the board</h3>
-          {showRealm ? (
-            <p className="text-label-secondary text-footnote truncate">{realm.name}</p>
-          ) : null}
         </div>
         <Link
           href={realmBoardHref(realm.slug)}
@@ -60,12 +47,5 @@ export function RealmBoardBlock({
       )}
     </>
   );
-  const layout = "flex flex-col gap-3";
-  return framed ? (
-    <Card padding="md" content="entity" className={cn(layout, className)}>
-      {body}
-    </Card>
-  ) : (
-    <div className={cn(layout, className)}>{body}</div>
-  );
+  return <div className={cn("flex flex-col gap-3", className)}>{body}</div>;
 }
