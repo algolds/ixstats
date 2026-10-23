@@ -36,8 +36,6 @@ const row = (over: Partial<LibraryRow> = {}): LibraryRow =>
     marketValue: 1,
     category: "MILITARY",
     subcategory: "army",
-    categorySource: "CLASSIFIER",
-    categoryNeedsReview: false,
     realm: null,
     artLicence: null,
     _count: { CardOwnership: 0, takedowns: 0 },

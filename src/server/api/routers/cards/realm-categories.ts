@@ -11,6 +11,7 @@ import {
   REALM_CATEGORY_SHOWS,
   setRealmCardCategory,
 } from "~/server/modules/cards/cards.realm-categories";
+import { loadCardCategoryRealm } from "~/server/modules/realms/realms.card-categories";
 
 const slug = z.string().min(1).max(100);
 
@@ -26,9 +27,21 @@ export const cardsRealmCategoriesRouter = createTRPCRouter({
         limit: z.number().int().min(1).max(1000).default(50),
       })
     )
-    .query(({ ctx, input }) => listRealmCategoryCards(ctx.db, ctx.user, input)),
+    .query(async ({ ctx, input }) => {
+      const realm = await loadCardCategoryRealm(ctx.db, ctx.user, input.slug, { write: false });
+      return listRealmCategoryCards(ctx.db, realm.id, input);
+    }),
 
   set: rateLimitedMutationProcedure
     .input(z.object({ slug, cardId: z.string().min(1).max(64), choice: CategoryChoiceSchema }))
-    .mutation(({ ctx, input }) => setRealmCardCategory(ctx.db, ctx.user, input)),
+    .mutation(async ({ ctx, input }) => {
+      const realm = await loadCardCategoryRealm(ctx.db, ctx.user, input.slug, { write: true });
+      return setRealmCardCategory(ctx.db, {
+        realmId: realm.id,
+        actor: ctx.user,
+        source: realm.asSiteAdmin ? "ADMIN" : "REALM_OWNER",
+        cardId: input.cardId,
+        choice: input.choice,
+      });
+    }),
 });
