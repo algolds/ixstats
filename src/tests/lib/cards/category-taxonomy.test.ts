@@ -6,6 +6,7 @@ import {
   SUBCATEGORIES,
   categoryLine,
   isSubcategoryOf,
+  sameCategoryChoice,
   subcategoriesOf,
   subcategoryLabel,
 } from "~/lib/cards/category-taxonomy";
@@ -83,4 +84,11 @@ it("writes the category line people read", () => {
   expect(categoryLine("NATION", "former-state")).toBe("Nation · Former state");
   expect(subcategoryLabel("GEOGRAPHY", "river-lake-or-sea")).toBe("River, lake or sea");
   expect(subcategoryLabel("GEOGRAPHY", "nope")).toBeNull();
+});
+
+it("calls two choices the same only when both category and subcategory match", () => {
+  const event = { category: "HISTORY" as const, subcategory: "event" };
+  expect(sameCategoryChoice(event, { ...event })).toBe(true);
+  expect(sameCategoryChoice(event, { ...event, subcategory: null })).toBe(false);
+  expect(sameCategoryChoice(event, { ...event, category: "MILITARY" })).toBe(false);
 });

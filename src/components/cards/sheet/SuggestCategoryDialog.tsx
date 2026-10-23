@@ -59,6 +59,7 @@ export function SuggestCategoryDialog({
       confirmLabel="Send suggestion"
       pending={send.isPending}
       allowUncategorised={false}
+      requireChange
       withNote
       trigger={children}
       notice={

@@ -12,6 +12,7 @@ jest.mock("~/trpc/react", () => ({
 import { api } from "~/trpc/react";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { SuggestCategoryDialog } from "~/components/cards/sheet/SuggestCategoryDialog";
+import type { CategoryChoice } from "~/lib/cards/category-taxonomy";
 
 interface MutationOptions {
   onSuccess: (result: { status: "sent" | "already" }) => void;
@@ -31,14 +32,17 @@ function mockMutation() {
   return { mutate, options };
 }
 
-function renderDialog(onOpenChange = jest.fn()) {
+function renderDialog(
+  onOpenChange = jest.fn(),
+  current: CategoryChoice = { category: null, subcategory: null }
+) {
   render(
     <SuggestCategoryDialog
       open
       onOpenChange={onOpenChange}
       cardId="c1"
       cardTitle="Kiro"
-      current={{ category: null, subcategory: null }}
+      current={current}
     >
       <button type="button">Suggest a category</button>
     </SuggestCategoryDialog>
@@ -65,6 +69,19 @@ it("sends the picked category, subcategory and note", () => {
     choice: { category: "MILITARY", subcategory: "battle-or-war" },
     note: "A battle",
   });
+});
+
+it("sends nothing until the pick differs from the card's own category", () => {
+  const { mutate } = mockMutation();
+  renderDialog(jest.fn(), { category: "HISTORY", subcategory: "event" });
+  const sendButton = screen.getByRole("button", { name: "Send suggestion" });
+  expect(sendButton).toBeDisabled();
+  fireEvent.click(sendButton);
+  expect(mutate).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText("Subcategory"), { target: { value: "__none" } });
+  expect(sendButton).toBeEnabled();
+  fireEvent.change(screen.getByLabelText("Subcategory"), { target: { value: "event" } });
+  expect(sendButton).toBeDisabled();
 });
 
 it("offers no Uncategorised choice", () => {

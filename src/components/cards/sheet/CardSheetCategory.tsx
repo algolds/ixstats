@@ -8,13 +8,14 @@ import { SuggestCategoryDialog } from "./SuggestCategoryDialog";
 
 interface CardSheetCategoryProps {
   card: CardSheetData["card"];
-  /** Only a signed-in player can suggest a category. */
+  /** Only a signed-in player can suggest a category, and never for a retired card. */
   signedIn: boolean;
 }
 
 /**
  * A lore card's category in About ("Uncategorised" when it has none) and, for a signed-in player, a quiet "Suggest a
- * category" that staff review. NS, Special and Trophy cards have no category to show.
+ * category" that staff review (not on a retired card, which takes no suggestions). NS, Special and Trophy cards have
+ * no category to show.
  */
 export function CardSheetCategory({ card, signedIn }: CardSheetCategoryProps) {
   const [open, setOpen] = useState(false);
@@ -22,7 +23,7 @@ export function CardSheetCategory({ card, signedIn }: CardSheetCategoryProps) {
   return (
     <p className="text-callout text-label-secondary">
       Category: {categoryLine(card.category, card.subcategory)}
-      {signedIn && (
+      {signedIn && !card.isRetired && (
         <SuggestCategoryDialog
           open={open}
           onOpenChange={setOpen}

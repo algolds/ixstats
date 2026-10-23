@@ -7,7 +7,12 @@
  */
 import type { CardCategorySuggestionStatus, Prisma, PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { categoryLine, isSubcategoryOf, type CategoryChoice } from "~/lib/cards/category-taxonomy";
+import {
+  categoryLine,
+  isSubcategoryOf,
+  sameCategoryChoice,
+  type CategoryChoice,
+} from "~/lib/cards/category-taxonomy";
 import { recordCardAudit } from "./cards.audit";
 
 export type CategoryEditSource = "ADMIN" | "REALM_OWNER" | "SUGGESTION";
@@ -34,9 +39,6 @@ const WHO: Record<CategoryEditSource, string> = {
   REALM_OWNER: "realm owner",
   SUGGESTION: "a player's suggestion",
 };
-
-const sameChoice = (a: CategoryChoice, b: CategoryChoice) =>
-  a.category === b.category && a.subcategory === b.subcategory;
 
 async function editableCard(tx: Prisma.TransactionClient, input: SetCategoryInput) {
   const card = await tx.card.findUnique({
@@ -77,8 +79,8 @@ async function closeSuggestions(
   const others = open.filter((s) => s.id !== answered);
   const groups: Array<[CardCategorySuggestionStatus, string[]]> = [
     [input.answering?.status ?? "ACCEPTED", open.filter((s) => s.id === answered).map((s) => s.id)],
-    ["ACCEPTED", others.filter((s) => sameChoice(s, input.choice)).map((s) => s.id)],
-    ["CHANGED", others.filter((s) => !sameChoice(s, input.choice)).map((s) => s.id)],
+    ["ACCEPTED", others.filter((s) => sameCategoryChoice(s, input.choice)).map((s) => s.id)],
+    ["CHANGED", others.filter((s) => !sameCategoryChoice(s, input.choice)).map((s) => s.id)],
   ];
   for (const [status, ids] of groups) {
     if (ids.length === 0) continue;
@@ -127,7 +129,7 @@ export async function setCardCategoryTx(
     target: card.id,
     details: `${card.title}: ${from} → ${to} (${WHO[input.source]})`,
   });
-  return { changed: !sameChoice(card, choice) };
+  return { changed: !sameCategoryChoice(card, choice) };
 }
 
 export function setCardCategory(
