@@ -8,12 +8,13 @@ import { MyClaims } from "~/app/r/[realm]/_components/MyClaims";
 import { AtlasGrid } from "./_components/AtlasGrid";
 import { RealmFeedPanel } from "./_components/RealmFeedPanel";
 import { RealmSearch } from "./_components/RealmSearch";
-import { RealmsHero, type ViewerStanding } from "./_components/RealmsHero";
+import { RealmsHeader, type ViewerStanding } from "./_components/RealmsHeader";
 import { YourRealms } from "./_components/YourRealms";
 
 /**
- * The realms landing page: what realms are, the viewer's own realms and claims, one search for realms and
- * nations, the atlas of every listed realm (most open first), and the realm feed.
+ * The realms landing page: the header, the atlas of every listed realm (most open first) and the viewer's
+ * claims in the main column, and a rail with one search for realms and nations, the viewer's own realms and
+ * the realm feed.
  */
 export default function RealmsLandingPage() {
   usePageTitle({ title: "Realms" });
@@ -38,24 +39,27 @@ export default function RealmsLandingPage() {
 
   return (
     <div className="flex w-full flex-col gap-6 p-4 md:p-8">
-      <RealmsHero realms={realms} standing={standing} joinHref="#atlas" />
+      <RealmsHeader realms={realms} standing={standing} />
 
-      {isSignedIn && (
-        <>
-          <YourRealms
-            realms={myRealms}
-            directory={realms}
-            activeCountryId={profile?.countryId ?? mine?.activeCountryId ?? null}
-          />
-          <MyClaims />
-        </>
-      )}
-
-      <RealmSearch query={query} onQueryChange={setQuery} />
-
-      <AtlasGrid realms={realms} isLoading={isLoading} query={query} />
-
-      <RealmFeedPanel realms={realms} />
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+        <div className="flex min-w-0 flex-col gap-6">
+          <AtlasGrid realms={realms} isLoading={isLoading} query={query} />
+          {isSignedIn && <MyClaims />}
+        </div>
+        <aside className="flex flex-col gap-4 max-lg:contents">
+          <div className="max-lg:order-first">
+            <RealmSearch query={query} onQueryChange={setQuery} />
+          </div>
+          {isSignedIn && (
+            <YourRealms
+              realms={myRealms}
+              directory={realms}
+              activeCountryId={profile?.countryId ?? mine?.activeCountryId ?? null}
+            />
+          )}
+          <RealmFeedPanel realms={realms} />
+        </aside>
+      </div>
     </div>
   );
 }
