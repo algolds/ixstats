@@ -267,6 +267,7 @@ model User {
   lastSeenAt          DateTime?
   ownedCountries      Country[]                @relation("CountryOwner")
   wikiAccountLinks    WikiAccountLink[]
+  wikiNameClaims      WikiNameClaim[]          @relation("WikiNameClaims")
   realmClaims         RealmClaim[]
   forumPostReactions  ForumPostReaction[]
   // IxnayID: Discord account linking

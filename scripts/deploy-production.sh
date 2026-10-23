@@ -188,6 +188,8 @@ bunx prisma db execute --schema prisma/schema --file prisma/migrations/202611011
 # Card categories (docs/superpowers/specs/2026-10-23-card-categories-design.md): the category source, confidence and
 # review columns and the suggestions table. Additive and idempotent.
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261102120000_cards_categories/migration.sql || exit 1
+# IxnayID identity (design 2026-10-23): the name claims and revision tag tables. Additive and idempotent.
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261103120000_ixnayid_claims/migration.sql || exit 1
 
 # Sync production database with schema
 echo "🔄 Syncing production database schema..."

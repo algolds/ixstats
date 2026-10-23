@@ -85,6 +85,23 @@ describe("the SQL the deploy runs", () => {
     expect(categories).toBeGreaterThan(at("20261101120000_cards_economy/migration.sql"));
     expect(categories).toBeLessThan(push);
   });
+
+  it("runs the IxnayID claims SQL after the card categories SQL and before the push", () => {
+    const at = (needle: string) => script.indexOf(needle);
+    const claims = at("20261103120000_ixnayid_claims/migration.sql");
+    expect(claims).toBeGreaterThan(at("20261102120000_cards_categories/migration.sql"));
+    expect(claims).toBeLessThan(push);
+  });
+
+  it("keeps one approved owner per wiki name in SQL, where Prisma cannot say it", () => {
+    const body = sql("prisma/migrations/20261103120000_ixnayid_claims/migration.sql");
+    expect(body).toMatch(
+      /CREATE UNIQUE INDEX IF NOT EXISTS "wiki_name_claims_one_approved_key"[\s\S]*WHERE "status" = 'APPROVED'/
+    );
+    expect(body).toMatch(
+      /CREATE UNIQUE INDEX IF NOT EXISTS "wiki_name_claims_one_pending_key"[\s\S]*WHERE "status" = 'PENDING'/
+    );
+  });
 });
 
 /** Each step that must run before db push: a hand-written SQL file or the cards backfill. */
