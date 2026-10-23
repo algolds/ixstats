@@ -8,7 +8,11 @@
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 import type { Right, WikiPermissions } from "~/lib/wiki-os/rights";
 import type { EditConflict } from "~/lib/wiki-os/core/edit-conflict";
-import type { MovePageOptions, MovePageResult, PageActor } from "~/lib/wiki-os/core/page-management-service";
+import type {
+  MovePageOptions,
+  MovePageResult,
+  PageActor,
+} from "~/lib/wiki-os/core/page-management-service";
 import type { RestrictionChange } from "~/lib/wiki-os/core/rights-admin-service";
 import type { WikiAction } from "~/lib/wiki-os/permissions";
 import type { WikitextSave } from "~/lib/wiki-os/services/edit-service";

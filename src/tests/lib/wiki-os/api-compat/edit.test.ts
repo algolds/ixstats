@@ -10,7 +10,11 @@ import { createHash } from "node:crypto";
 import { TRPCError } from "@trpc/server";
 import { EditConflictError } from "~/lib/wiki-os/core/edit-conflict-error";
 import { call, type FakeWikiData, loggedIn, makeWikiDeps } from "./harness";
-import { replaceSection, sectionHeadings, sectionText } from "~/lib/wiki-os/wikitext/section-locator";
+import {
+  replaceSection,
+  sectionHeadings,
+  sectionText,
+} from "~/lib/wiki-os/wikitext/section-locator";
 import { PageBusyError } from "~/lib/wiki-os/core/page-busy-error";
 import { PageOperationError } from "~/lib/wiki-os/core/page-management-service";
 import { toApiError } from "~/lib/wiki-os/api-compat/error-map";
@@ -18,7 +22,18 @@ import { toApiError } from "~/lib/wiki-os/api-compat/error-map";
 describe("action=edit", () => {
   type Body = Record<string, any>;
 
-  const SECTIONED = ["Lead text.", "", "== One ==", "one body", "", "=== One A ===", "a body", "", "== Two ==", "two body"].join("\n");
+  const SECTIONED = [
+    "Lead text.",
+    "",
+    "== One ==",
+    "one body",
+    "",
+    "=== One A ===",
+    "a body",
+    "",
+    "== Two ==",
+    "two body",
+  ].join("\n");
 
   const fresh = (): FakeWikiData => ({
     pages: [
@@ -26,9 +41,27 @@ describe("action=edit", () => {
       { pageId: 2, title: "Sections" },
     ],
     revisions: [
-      { revId: 101, page: "Existing", timestamp: "2026-01-01T10:00:00Z", user: "Heku", content: "Hello world" },
-      { revId: 102, page: "Existing", timestamp: "2026-01-02T10:00:00Z", user: "Tester", content: "Hello brave world" },
-      { revId: 201, page: "Sections", timestamp: "2026-01-03T10:00:00Z", user: "Heku", content: SECTIONED },
+      {
+        revId: 101,
+        page: "Existing",
+        timestamp: "2026-01-01T10:00:00Z",
+        user: "Heku",
+        content: "Hello world",
+      },
+      {
+        revId: 102,
+        page: "Existing",
+        timestamp: "2026-01-02T10:00:00Z",
+        user: "Tester",
+        content: "Hello brave world",
+      },
+      {
+        revId: 201,
+        page: "Sections",
+        timestamp: "2026-01-03T10:00:00Z",
+        user: "Heku",
+        content: SECTIONED,
+      },
     ],
   });
 
@@ -37,7 +70,8 @@ describe("action=edit", () => {
   async function setup(options: Parameters<typeof makeWikiDeps>[1] = {}) {
     const wiki = await makeWikiDeps(fresh(), options);
     const token = await loggedIn(wiki.bot);
-    const edit = (params: Record<string, string>) => wiki.bot.post({ action: "edit", token, formatversion: "2", ...params }) as Promise<Body>;
+    const edit = (params: Record<string, string>) =>
+      wiki.bot.post({ action: "edit", token, formatversion: "2", ...params }) as Promise<Body>;
     const saves = () => wiki.calls.filter((c) => c.name === "saveWikitext");
     return { ...wiki, token, edit, saves };
   }
@@ -45,7 +79,12 @@ describe("action=edit", () => {
   describe("who may edit through api.php", () => {
     it("refuses an anonymous caller with writeapidenied, and a GET with mustbeposted", async () => {
       const { deps } = await setup();
-      const anonymous = (await call(deps, "", { method: "POST", body: { action: "edit", title: "Existing", text: "x", token: "+\\" } })).body as Body;
+      const anonymous = (
+        await call(deps, "", {
+          method: "POST",
+          body: { action: "edit", title: "Existing", text: "x", token: "+\\" },
+        })
+      ).body as Body;
       expect(anonymous.error.code).toBe("writeapidenied");
       const get = (await call(deps, "action=edit&title=Existing&text=x&token=%2B%5C")).body as Body;
       expect(get.error.code).toBe("mustbeposted");
@@ -53,9 +92,23 @@ describe("action=edit", () => {
 
     it("needs the session's token: missing is missingparam, wrong is badtoken", async () => {
       const { bot, saves } = await setup();
-      expect((await bot.post({ action: "edit", title: "Existing", text: "x" }) as Body).error.code).toBe("missingparam");
-      expect((await bot.post({ action: "edit", title: "Existing", text: "x", token: "+\\" }) as Body).error.code).toBe("badtoken");
-      expect((await bot.post({ action: "edit", title: "Existing", text: "x", token: "abcdef+\\" }) as Body).error.code).toBe("badtoken");
+      expect(
+        ((await bot.post({ action: "edit", title: "Existing", text: "x" })) as Body).error.code
+      ).toBe("missingparam");
+      expect(
+        ((await bot.post({ action: "edit", title: "Existing", text: "x", token: "+\\" })) as Body)
+          .error.code
+      ).toBe("badtoken");
+      expect(
+        (
+          (await bot.post({
+            action: "edit",
+            title: "Existing",
+            text: "x",
+            token: "abcdef+\\",
+          })) as Body
+        ).error.code
+      ).toBe("badtoken");
       expect(saves()).toHaveLength(0);
     });
   });
@@ -63,10 +116,20 @@ describe("action=edit", () => {
   describe("parameters", () => {
     it("checks md5 of the text, or of prependtext+appendtext", async () => {
       const { edit, saves } = await setup();
-      expect((await edit({ title: "Existing", text: "new text", md5: "0".repeat(32) })).error.code).toBe("badmd5");
-      expect((await edit({ title: "Existing", appendtext: "b", prependtext: "a", md5: md5("x") })).error.code).toBe("badmd5");
-      expect((await edit({ title: "Existing", text: "new text", md5: md5("new text") })).edit.result).toBe("Success");
-      expect((await edit({ title: "Existing", appendtext: "b", prependtext: "a", md5: md5("ab") })).edit.result).toBe("Success");
+      expect(
+        (await edit({ title: "Existing", text: "new text", md5: "0".repeat(32) })).error.code
+      ).toBe("badmd5");
+      expect(
+        (await edit({ title: "Existing", appendtext: "b", prependtext: "a", md5: md5("x") })).error
+          .code
+      ).toBe("badmd5");
+      expect(
+        (await edit({ title: "Existing", text: "new text", md5: md5("new text") })).edit.result
+      ).toBe("Success");
+      expect(
+        (await edit({ title: "Existing", appendtext: "b", prependtext: "a", md5: md5("ab") })).edit
+          .result
+      ).toBe("Success");
       expect(saves()).toHaveLength(2);
     });
   });
@@ -85,7 +148,12 @@ describe("action=edit", () => {
         newtimestamp: "2026-09-30T12:00:00Z",
       });
       expect(saves()).toHaveLength(1);
-      expect(saves()[0]!.args[1]).toEqual({ title: "Existing", wikitext: "Brand new text", summary: "rewrite", minor: false });
+      expect(saves()[0]!.args[1]).toEqual({
+        title: "Existing",
+        wikitext: "Brand new text",
+        summary: "rewrite",
+        minor: false,
+      });
       // the permission gate runs before the save, on the canonical title
       const order = calls.map((c) => c.name);
       expect(order.indexOf("assertCanEdit")).toBeGreaterThanOrEqual(0);
@@ -101,16 +169,32 @@ describe("action=edit", () => {
     it("creates a page with `new` and oldrevid 0; createonly refuses an existing one; nocreate a missing one", async () => {
       const { edit, saves } = await setup();
       const created = await edit({ title: "Fresh page", text: "I am new" });
-      expect(created.edit).toMatchObject({ result: "Success", new: true, title: "Fresh page", oldrevid: 0, newrevid: 9000 });
-      expect((await edit({ title: "Existing", text: "x", createonly: "" })).error.code).toBe("articleexists");
-      expect((await edit({ title: "Absent", text: "x", nocreate: "" })).error.code).toBe("missingtitle");
+      expect(created.edit).toMatchObject({
+        result: "Success",
+        new: true,
+        title: "Fresh page",
+        oldrevid: 0,
+        newrevid: 9000,
+      });
+      expect((await edit({ title: "Existing", text: "x", createonly: "" })).error.code).toBe(
+        "articleexists"
+      );
+      expect((await edit({ title: "Absent", text: "x", nocreate: "" })).error.code).toBe(
+        "missingtitle"
+      );
       expect(saves()).toHaveLength(1);
     });
 
     it("answers nochange, and saves nothing, when the text is the same", async () => {
       const { edit, saves } = await setup();
       const body = await edit({ title: "Existing", text: "Hello brave world" });
-      expect(body.edit).toEqual({ result: "Success", nochange: true, title: "Existing", pageid: 1, contentmodel: "wikitext" });
+      expect(body.edit).toEqual({
+        result: "Success",
+        nochange: true,
+        title: "Existing",
+        pageid: 1,
+        contentmodel: "wikitext",
+      });
       expect(saves()).toHaveLength(0);
     });
 
@@ -128,7 +212,9 @@ describe("action=edit", () => {
       expect(saves()).toHaveLength(0);
       await edit({ title: "Existing", text: "tab\there\u0001 and\u000B gone\uFFFE" });
       expect((saves()[0]!.args[1] as Body).wikitext).toBe("tab\there and gone");
-      expect((await edit({ title: "Existing", text: "nul\u0000here" })).error.code).toBe("invalidtext");
+      expect((await edit({ title: "Existing", text: "nul\u0000here" })).error.code).toBe(
+        "invalidtext"
+      );
     });
   });
 
@@ -136,7 +222,9 @@ describe("action=edit", () => {
     it("replaces a numbered section (subsections included) and keeps the rest", async () => {
       const { edit, saves } = await setup();
       await edit({ title: "Sections", section: "1", text: "== One ==\nrewritten" });
-      expect((saves()[0]!.args[1] as Body).wikitext).toBe("Lead text.\n\n== One ==\nrewritten\n\n== Two ==\ntwo body");
+      expect((saves()[0]!.args[1] as Body).wikitext).toBe(
+        "Lead text.\n\n== One ==\nrewritten\n\n== Two ==\ntwo body"
+      );
     });
     it("adds a new section with its heading, and a MediaWiki-style summary", async () => {
       const { edit, saves } = await setup();
@@ -158,13 +246,27 @@ describe("action=edit", () => {
   describe("edit conflicts", () => {
     it("accepts the current revision as base and refuses a stale or unknown one, via detectEditConflict", async () => {
       const { edit, calls, saves } = await setup();
-      expect((await edit({ title: "Existing", text: "ok", baserevid: "102" })).edit.result).toBe("Success");
+      expect((await edit({ title: "Existing", text: "ok", baserevid: "102" })).edit.result).toBe(
+        "Success"
+      );
       const stale = await edit({ title: "Existing", text: "late", baserevid: "101" });
-      expect(stale.error).toEqual({ code: "editconflict", info: "Edit conflict detected.", "*": expect.any(String) });
-      expect((await edit({ title: "Existing", text: "late", baserevid: "99999" })).error.code).toBe("editconflict");
-      expect((await edit({ title: "Sections", text: "wrong page", baserevid: "102" })).error.code).toBe("editconflict");
+      expect(stale.error).toEqual({
+        code: "editconflict",
+        info: "Edit conflict detected.",
+        "*": expect.any(String),
+      });
+      expect((await edit({ title: "Existing", text: "late", baserevid: "99999" })).error.code).toBe(
+        "editconflict"
+      );
+      expect(
+        (await edit({ title: "Sections", text: "wrong page", baserevid: "102" })).error.code
+      ).toBe("editconflict");
       expect(saves()).toHaveLength(1);
-      expect(calls.some((c) => c.name === "detectEditConflict" && c.args[0] === "Existing" && c.args[1] === "102")).toBe(true);
+      expect(
+        calls.some(
+          (c) => c.name === "detectEditConflict" && c.args[0] === "Existing" && c.args[1] === "102"
+        )
+      ).toBe(true);
     });
     it("hands the save the head the new text was made from: the request's base, else, for a text built from the stored page, the head it was read at", async () => {
       // (each on a fresh wiki: a save moves the head)
@@ -182,7 +284,9 @@ describe("action=edit", () => {
       expect(await refs({ title: "Sections", appendtext: "\nmore" })).toBe("201");
       expect(await refs({ title: "Sections", prependtext: "Intro\n" })).toBe("201");
       expect(await refs({ title: "Sections", section: "1", text: "== One ==\nx" })).toBe("201");
-      expect(await refs({ title: "Sections", section: "new", text: "body", sectiontitle: "T" })).toBe("201");
+      expect(
+        await refs({ title: "Sections", section: "new", text: "body", sectiontitle: "T" })
+      ).toBe("201");
       // a page that did not exist: nobody may have created it since, whatever else was sent
       expect(await refs({ title: "Brand new", text: "new page", baserevid: "5" })).toBeNull();
       expect(await refs({ title: "Brand newer", text: "new page" })).toBeNull();
@@ -193,14 +297,21 @@ describe("action=edit", () => {
       const { edit, saves } = await setup({
         services: {
           saveWikitext: async () => {
-            throw new EditConflictError({ currentWikitext: "Somebody else's text", currentRevisionRef: "103" });
+            throw new EditConflictError({
+              currentWikitext: "Somebody else's text",
+              currentRevisionRef: "103",
+            });
           },
         },
       });
 
       const body = await edit({ title: "Existing", text: "late", baserevid: "102" });
 
-      expect(body.error).toEqual({ code: "editconflict", info: "Edit conflict detected.", "*": expect.any(String) });
+      expect(body.error).toEqual({
+        code: "editconflict",
+        info: "Edit conflict detected.",
+        "*": expect.any(String),
+      });
       expect(body.edit).toBeUndefined();
       expect(saves()).toHaveLength(0); // (the override is not the recording one)
     });
@@ -209,28 +320,53 @@ describe("action=edit", () => {
       const created = {
         services: {
           saveWikitext: async () => {
-            throw new EditConflictError({ currentWikitext: "Somebody made it", currentRevisionRef: "9" });
+            throw new EditConflictError({
+              currentWikitext: "Somebody made it",
+              currentRevisionRef: "9",
+            });
           },
         },
       };
       const { edit } = await setup(created);
 
-      expect((await edit({ title: "Brand new", text: "x", createonly: "" })).error.code).toBe("articleexists");
+      expect((await edit({ title: "Brand new", text: "x", createonly: "" })).error.code).toBe(
+        "articleexists"
+      );
       // without createonly the same race is an ordinary edit conflict
       expect((await edit({ title: "Brand new", text: "x" })).error.code).toBe("editconflict");
     });
   });
 
   describe("refusals from the shared services", () => {
-    const refuse = (error: Error) => ({ assertCanEdit: async () => { throw error; } });
+    const refuse = (error: Error) => ({
+      assertCanEdit: async () => {
+        throw error;
+      },
+    });
 
     it.each([
       ["blocked: You are blocked from editing.", "FORBIDDEN", "blocked"],
       ["protectedpage: This page is protected from edit (sysop).", "FORBIDDEN", "protectedpage"],
-      ["namespaceprotected: Only administrators can edit this namespace.", "FORBIDDEN", "protectednamespace"],
-      ["titleprotected: This title is protected from creation (sysop).", "FORBIDDEN", "protectedtitle"],
-      ['permissiondenied: You do not have the "edit" right needed to edit this page.', "FORBIDDEN", "permissiondenied"],
-      ["This page was deleted; ask an administrator to restore it", "PRECONDITION_FAILED", "pagedeleted"],
+      [
+        "namespaceprotected: Only administrators can edit this namespace.",
+        "FORBIDDEN",
+        "protectednamespace",
+      ],
+      [
+        "titleprotected: This title is protected from creation (sysop).",
+        "FORBIDDEN",
+        "protectedtitle",
+      ],
+      [
+        'permissiondenied: You do not have the "edit" right needed to edit this page.',
+        "FORBIDDEN",
+        "permissiondenied",
+      ],
+      [
+        "This page was deleted; ask an administrator to restore it",
+        "PRECONDITION_FAILED",
+        "pagedeleted",
+      ],
     ] as const)("maps %s to %s", async (message, code, expected) => {
       const { edit, saves } = await setup({ services: refuse(new TRPCError({ code, message })) });
       const body = await edit({ title: "Existing", text: "x" });
@@ -251,10 +387,34 @@ describe("delete, undelete, move, protect and rollback", () => {
       { pageId: 3, title: "Talk:Alpha", namespace: 1 },
     ],
     revisions: [
-      { revId: 101, page: "Alpha", timestamp: "2026-01-01T10:00:00Z", user: "Heku", content: "good text" },
-      { revId: 102, page: "Alpha", timestamp: "2026-01-02T10:00:00Z", user: "Vandal", content: "vandalised" },
-      { revId: 103, page: "Alpha", timestamp: "2026-01-03T10:00:00Z", user: "Vandal", content: "vandalised again" },
-      { revId: 201, page: "Beta", timestamp: "2026-01-04T10:00:00Z", user: "Heku", content: "only author" },
+      {
+        revId: 101,
+        page: "Alpha",
+        timestamp: "2026-01-01T10:00:00Z",
+        user: "Heku",
+        content: "good text",
+      },
+      {
+        revId: 102,
+        page: "Alpha",
+        timestamp: "2026-01-02T10:00:00Z",
+        user: "Vandal",
+        content: "vandalised",
+      },
+      {
+        revId: 103,
+        page: "Alpha",
+        timestamp: "2026-01-03T10:00:00Z",
+        user: "Vandal",
+        content: "vandalised again",
+      },
+      {
+        revId: 201,
+        page: "Beta",
+        timestamp: "2026-01-04T10:00:00Z",
+        user: "Heku",
+        content: "only author",
+      },
     ],
   });
 
@@ -268,19 +428,32 @@ describe("delete, undelete, move, protect and rollback", () => {
   }
 
   describe("every write action needs a bot session and its token", () => {
-    it.each(["move", "delete", "undelete", "protect", "rollback"])("%s refuses an anonymous POST and a GET", async (action) => {
-      const wiki = await makeWikiDeps(data());
-      const anon = await wiki.bot.post({ action, title: "Alpha", token: "+\\" }) as Body;
-      expect(anon.error.code).toBe("writeapidenied");
-      const get = await wiki.bot.get({ action, title: "Alpha" }) as Body;
-      expect(get.error.code).toBe("mustbeposted");
-    });
+    it.each(["move", "delete", "undelete", "protect", "rollback"])(
+      "%s refuses an anonymous POST and a GET",
+      async (action) => {
+        const wiki = await makeWikiDeps(data());
+        const anon = (await wiki.bot.post({ action, title: "Alpha", token: "+\\" })) as Body;
+        expect(anon.error.code).toBe("writeapidenied");
+        const get = (await wiki.bot.get({ action, title: "Alpha" })) as Body;
+        expect(get.error.code).toBe("mustbeposted");
+      }
+    );
 
-    it.each(["move", "delete", "undelete", "protect"])("%s refuses a wrong token", async (action) => {
-      const { bot } = await setup();
-      const body = (await bot.post({ action, title: "Alpha", from: "Alpha", to: "Gamma", protections: "edit=sysop", token: "nope+\\" })) as Body;
-      expect(body.error.code).toBe("badtoken");
-    });
+    it.each(["move", "delete", "undelete", "protect"])(
+      "%s refuses a wrong token",
+      async (action) => {
+        const { bot } = await setup();
+        const body = (await bot.post({
+          action,
+          title: "Alpha",
+          from: "Alpha",
+          to: "Gamma",
+          protections: "edit=sysop",
+          token: "nope+\\",
+        })) as Body;
+        expect(body.error.code).toBe("badtoken");
+      }
+    );
   });
 
   describe("action=delete", () => {
@@ -289,7 +462,11 @@ describe("delete, undelete, move, protect and rollback", () => {
       const body = await act("delete", { title: "alpha", reason: "junk" });
       expect(body.delete).toEqual({ title: "Alpha", reason: "junk" });
       expect(called("authorize")[0]!.args.slice(1)).toEqual(["delete", "Alpha"]);
-      expect(called("archivePage")[0]!.args).toEqual(["Alpha", "junk", { userId: "u-heku", name: "Heku" }]);
+      expect(called("archivePage")[0]!.args).toEqual([
+        "Alpha",
+        "junk",
+        { userId: "u-heku", name: "Heku" },
+      ]);
     });
   });
 
@@ -297,20 +474,49 @@ describe("delete, undelete, move, protect and rollback", () => {
     it("authorizes undelete, restores, and reports the revision count", async () => {
       const { act, called } = await setup();
       const body = await act("undelete", { title: "Alpha", reason: "oops" });
-      expect(body.undelete).toEqual({ title: "Alpha", revisions: 3, fileversions: 0, reason: "oops" });
+      expect(body.undelete).toEqual({
+        title: "Alpha",
+        revisions: 3,
+        fileversions: 0,
+        reason: "oops",
+      });
       expect(called("authorize")[0]!.args.slice(1)).toEqual(["undelete", "Alpha"]);
-      expect(called("restorePage")[0]!.args).toEqual(["Alpha", "oops", { userId: "u-heku", name: "Heku" }]);
+      expect(called("restorePage")[0]!.args).toEqual([
+        "Alpha",
+        "oops",
+        { userId: "u-heku", name: "Heku" },
+      ]);
     });
   });
 
   describe("action=move", () => {
     it("authorizes the whole move first, then moves, answering from, to and the redirect", async () => {
       const { act, called, calls } = await setup();
-      const body = await act("move", { from: "Alpha", to: "gamma", reason: "rename", movetalk: "" });
-      expect(body.move).toEqual({ from: "Alpha", to: "Gamma", reason: "rename", redirectcreated: true });
-      expect(called("authorizeMove")[0]!.args.slice(1)).toEqual(["Alpha", "Gamma", { moveTalk: true, leaveRedirect: true }]);
+      const body = await act("move", {
+        from: "Alpha",
+        to: "gamma",
+        reason: "rename",
+        movetalk: "",
+      });
+      expect(body.move).toEqual({
+        from: "Alpha",
+        to: "Gamma",
+        reason: "rename",
+        redirectcreated: true,
+      });
+      expect(called("authorizeMove")[0]!.args.slice(1)).toEqual([
+        "Alpha",
+        "Gamma",
+        { moveTalk: true, leaveRedirect: true },
+      ]);
       // a sysop whose grants include delete (deletedhistory + undelete) may also move a deleted page
-      expect(called("movePage")[0]!.args).toEqual(["Alpha", "Gamma", "rename", { userId: "u-heku", name: "Heku" }, { leaveRedirect: true, moveTalk: true, includeArchived: true }]);
+      expect(called("movePage")[0]!.args).toEqual([
+        "Alpha",
+        "Gamma",
+        "rename",
+        { userId: "u-heku", name: "Heku" },
+        { leaveRedirect: true, moveTalk: true, includeArchived: true },
+      ]);
       const order = calls.map((c) => c.name);
       expect(order.indexOf("authorizeMove")).toBeLessThan(order.indexOf("movePage"));
       expect(called("requireRight")).toHaveLength(0);
@@ -328,7 +534,12 @@ describe("delete, undelete, move, protect and rollback", () => {
   describe("action=protect", () => {
     it("authorizes each level, writes the restrictions and answers one object per protection", async () => {
       const { act, called } = await setup();
-      const body = await act("protect", { title: "Alpha", protections: "edit=sysop|move=autoconfirmed", expiry: "infinite", reason: "vandalism" });
+      const body = await act("protect", {
+        title: "Alpha",
+        protections: "edit=sysop|move=autoconfirmed",
+        expiry: "infinite",
+        reason: "vandalism",
+      });
       expect(body.protect).toEqual({
         title: "Alpha",
         reason: "vandalism",
@@ -337,7 +548,10 @@ describe("delete, undelete, move, protect and rollback", () => {
           { move: "autoconfirmed", expiry: "infinity" },
         ],
       });
-      expect(called("authorizeProtection")[0]!.args.slice(1)).toEqual(["Alpha", ["sysop", "autoconfirmed"]]);
+      expect(called("authorizeProtection")[0]!.args.slice(1)).toEqual([
+        "Alpha",
+        ["sysop", "autoconfirmed"],
+      ]);
       expect(called("protectPage")[0]!.args[0]).toMatchObject({
         title: "Alpha",
         reason: "vandalism",
@@ -351,12 +565,38 @@ describe("delete, undelete, move, protect and rollback", () => {
     it("refuses bad protections, expiries and cascade", async () => {
       const { act, called } = await setup();
       expect((await act("protect", { title: "Alpha" })).error.code).toBe("missingparam");
-      expect((await act("protect", { title: "Alpha", protections: "nonsense=sysop" })).error.code).toBe("badvalue");
-      expect((await act("protect", { title: "Alpha", protections: "edit=root" })).error.code).toBe("badvalue");
-      expect((await act("protect", { title: "Alpha", protections: "edit=sysop", expiry: "someday" })).error.code).toBe("invalidexpiry");
-      expect((await act("protect", { title: "Alpha", protections: "edit=sysop", expiry: "2001-01-01T00:00:00Z" })).error.code).toBe("pastexpiry");
-      expect((await act("protect", { title: "Alpha", protections: "edit=sysop|move=sysop", expiry: "1 day|1 day|1 day" })).error.code).toBe("toofewexpiries");
-      expect((await act("protect", { title: "Alpha", protections: "edit=sysop", cascade: "" })).error.code).toBe("cantcascade");
+      expect(
+        (await act("protect", { title: "Alpha", protections: "nonsense=sysop" })).error.code
+      ).toBe("badvalue");
+      expect((await act("protect", { title: "Alpha", protections: "edit=root" })).error.code).toBe(
+        "badvalue"
+      );
+      expect(
+        (await act("protect", { title: "Alpha", protections: "edit=sysop", expiry: "someday" }))
+          .error.code
+      ).toBe("invalidexpiry");
+      expect(
+        (
+          await act("protect", {
+            title: "Alpha",
+            protections: "edit=sysop",
+            expiry: "2001-01-01T00:00:00Z",
+          })
+        ).error.code
+      ).toBe("pastexpiry");
+      expect(
+        (
+          await act("protect", {
+            title: "Alpha",
+            protections: "edit=sysop|move=sysop",
+            expiry: "1 day|1 day|1 day",
+          })
+        ).error.code
+      ).toBe("toofewexpiries");
+      expect(
+        (await act("protect", { title: "Alpha", protections: "edit=sysop", cascade: "" })).error
+          .code
+      ).toBe("cantcascade");
       expect(called("protectPage")).toHaveLength(0);
     });
   });
@@ -365,8 +605,15 @@ describe("delete, undelete, move, protect and rollback", () => {
     it("needs the rollback token, not the csrf one", async () => {
       const wiki = await makeWikiDeps(data());
       await loggedIn(wiki.bot);
-      const csrf = ((await wiki.bot.get({ action: "query", meta: "tokens", formatversion: "2" })) as Body).query.tokens.csrftoken;
-      const body = (await wiki.bot.post({ action: "rollback", title: "Alpha", user: "Vandal", token: csrf })) as Body;
+      const csrf = (
+        (await wiki.bot.get({ action: "query", meta: "tokens", formatversion: "2" })) as Body
+      ).query.tokens.csrftoken;
+      const body = (await wiki.bot.post({
+        action: "rollback",
+        title: "Alpha",
+        user: "Vandal",
+        token: csrf,
+      })) as Body;
       expect(body.error.code).toBe("badtoken");
     });
 
@@ -382,7 +629,10 @@ describe("delete, undelete, move, protect and rollback", () => {
         last_revid: 101,
       });
       expect(called("authorize")[0]!.args.slice(1)).toEqual(["rollback", "Alpha"]);
-      expect(called("requireRestorableWikitext")[0]!.args.slice(1)).toEqual(["Alpha", { wikitext: "good text", title: "Alpha", parked: false }]);
+      expect(called("requireRestorableWikitext")[0]!.args.slice(1)).toEqual([
+        "Alpha",
+        { wikitext: "good text", title: "Alpha", parked: false },
+      ]);
       expect(called("saveWikitext")[0]!.args[1]).toEqual({
         title: "Alpha",
         wikitext: "good text",
@@ -391,9 +641,19 @@ describe("delete, undelete, move, protect and rollback", () => {
       });
     });
     it("refuses a rollback the service will not allow (a blanking, a placeholder)", async () => {
-      const { act, called } = await setup({
-        services: { requireRestorableWikitext: async () => { throw new TRPCError({ code: "PRECONDITION_FAILED", message: "This revision's text has not been imported yet." }); } },
-      }, "rollback");
+      const { act, called } = await setup(
+        {
+          services: {
+            requireRestorableWikitext: async () => {
+              throw new TRPCError({
+                code: "PRECONDITION_FAILED",
+                message: "This revision's text has not been imported yet.",
+              });
+            },
+          },
+        },
+        "rollback"
+      );
       const body = await act("rollback", { title: "Alpha", user: "Vandal" });
       expect(body.error.info).toContain("not been imported");
       expect(called("saveWikitext")).toHaveLength(0);
@@ -413,11 +673,17 @@ describe("purge", () => {
   });
 
   describe("action=purge", () => {
-    const purged = (calls: Array<{ name: string; args: unknown[] }>) => calls.filter((c) => c.name === "purgePage").map((c) => c.args[0]);
+    const purged = (calls: Array<{ name: string; args: unknown[] }>) =>
+      calls.filter((c) => c.name === "purgePage").map((c) => c.args[0]);
 
     it("is refused to an anonymous caller (a purge costs a render)", async () => {
       const wiki = await makeWikiDeps(DATA());
-      const body = (await call(wiki.deps, "action=purge&titles=Alpha&formatversion=2", { method: "POST", body: {} })).body as Body;
+      const body = (
+        await call(wiki.deps, "action=purge&titles=Alpha&formatversion=2", {
+          method: "POST",
+          body: {},
+        })
+      ).body as Body;
       expect(body.error.code).toBe("writeapidenied");
       expect(purged(wiki.calls)).toEqual([]);
     });
@@ -425,7 +691,11 @@ describe("purge", () => {
     it("marks each named page stale and queues its render, answering like MediaWiki", async () => {
       const wiki = await makeWikiDeps(DATA());
       await loggedIn(wiki.bot);
-      const body = (await wiki.bot.post({ action: "purge", titles: "Alpha|Nope|Bad[title", formatversion: "2" })) as Body;
+      const body = (await wiki.bot.post({
+        action: "purge",
+        titles: "Alpha|Nope|Bad[title",
+        formatversion: "2",
+      })) as Body;
       expect(body.batchcomplete).toBe(true);
       expect(body.purge).toEqual([
         { ns: 0, title: "Alpha", purged: true },
@@ -448,13 +718,20 @@ describe("purge", () => {
       };
       const wiki = await makeWikiDeps({ pages, revisions: [] }, { extra: { rateLimit } });
       await loggedIn(wiki.bot);
-      const purge = (names: string[]) => wiki.bot.post({ action: "purge", titles: names.join("|"), formatversion: "2" }) as Promise<Body>;
+      const purge = (names: string[]) =>
+        wiki.bot.post({
+          action: "purge",
+          titles: names.join("|"),
+          formatversion: "2",
+        }) as Promise<Body>;
       const render = () => seen.filter((entry) => entry.bucket === "wiki_api_render");
 
       const first = await purge(pages.slice(0, 50).map((p) => p.title));
       expect(first.purge).toHaveLength(50);
       expect(render()).toHaveLength(50);
-      expect(render().every((entry) => entry.key.startsWith("user:") && entry.max === 60)).toBe(true);
+      expect(render().every((entry) => entry.key.startsWith("user:") && entry.max === 60)).toBe(
+        true
+      );
 
       // 10 more are within the minute, the 11th is not: the whole request is refused before anything is purged
       const before = purged(wiki.calls).length;
@@ -472,7 +749,11 @@ describe("purge", () => {
       const wiki = await makeWikiDeps(DATA());
       await loggedIn(wiki.bot);
       const many = Array.from({ length: 60 }, (_, i) => `P${i}`).join("|");
-      const body = (await wiki.bot.post({ action: "purge", titles: many, formatversion: "2" })) as Body;
+      const body = (await wiki.bot.post({
+        action: "purge",
+        titles: many,
+        formatversion: "2",
+      })) as Body;
       expect(body.error?.code ?? body.purge.length).toBeTruthy();
       expect(body.error?.code).toBe("toomanyvalues");
     });
@@ -495,7 +776,8 @@ describe("section edits find the section MediaWiki would", () => {
 
   describe("sectionHeadings", () => {
     it("ignores heading-looking lines inside comments, nowiki and pre", () => {
-      const text = "<!--\n== hidden ==\n-->\n<nowiki>\n== also hidden ==\n</nowiki>\n<pre>\n== no ==\n</pre>\n== Real ==\nbody";
+      const text =
+        "<!--\n== hidden ==\n-->\n<nowiki>\n== also hidden ==\n</nowiki>\n<pre>\n== no ==\n</pre>\n== Real ==\nbody";
       expect(sectionHeadings(text).map((h) => h.text)).toEqual(["Real"]);
     });
   });
@@ -515,17 +797,22 @@ describe("section edits find the section MediaWiki would", () => {
       );
     });
     it("removes a section when the new text is empty, and answers null for a missing one", () => {
-      expect(replaceSection(PAGE, 3, "")).toBe("Lead text.\n\n== One ==\none body\n\n=== One A ===\na body");
+      expect(replaceSection(PAGE, 3, "")).toBe(
+        "Lead text.\n\n== One ==\none body\n\n=== One A ===\na body"
+      );
       expect(replaceSection(PAGE, 9, "x")).toBeNull();
     });
   });
 
   describe("offsets stay true around characters outside the BMP", () => {
-    const PAGE_WITH_EMOJI = "Lead <!-- note \u{1F600}\u{1F600} -->\n\n== One ==\nbody one\n\n== Two ==\nbody two";
+    const PAGE_WITH_EMOJI =
+      "Lead <!-- note \u{1F600}\u{1F600} -->\n\n== One ==\nbody one\n\n== Two ==\nbody two";
 
     it("masks a comment with astral characters one space per UTF-16 unit, so headings keep their offsets", () => {
       const headings = sectionHeadings(PAGE_WITH_EMOJI);
-      expect(headings.map((h) => PAGE_WITH_EMOJI.slice(h.start, h.start + 3 + h.text.length))).toEqual(["== One", "== Two"]);
+      expect(
+        headings.map((h) => PAGE_WITH_EMOJI.slice(h.start, h.start + 3 + h.text.length))
+      ).toEqual(["== One", "== Two"]);
     });
     it("holds for astral characters inside <nowiki> and <pre> too", () => {
       const page = "<nowiki>\u{1F600}\n== not a heading ==\n\u{1F600}</nowiki>\n== Real ==\ntext";
@@ -541,7 +828,10 @@ describe("section edits find the section MediaWiki would", () => {
       let seed = 7;
       const next = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff);
       for (let round = 0; round < 20_000; round++) {
-        const line = Array.from({ length: 1 + (next() % 16) }, () => alphabet[(next() >> 8) % alphabet.length]).join("");
+        const line = Array.from(
+          { length: 1 + (next() % 16) },
+          () => alphabet[(next() >> 8) % alphabet.length]
+        ).join("");
         const match = old.exec(line);
         const text = match?.[2]?.trim();
         const expected = match && text ? [match[1]!.length, text] : null;
@@ -562,8 +852,13 @@ describe("service refusals as API errors", () => {
     });
 
     it("answers a refused move of a file with immobilenamespace, not selfmove (which is BAD_REQUEST)", () => {
-      expect(toApiError(new PageOperationError("IMMOBILE", "no files"))).toMatchObject({ code: "immobilenamespace", info: "no files" });
-      expect(toApiError(new PageOperationError("BAD_REQUEST", "identical"))).toMatchObject({ code: "invalidparam" });
+      expect(toApiError(new PageOperationError("IMMOBILE", "no files"))).toMatchObject({
+        code: "immobilenamespace",
+        info: "no files",
+      });
+      expect(toApiError(new PageOperationError("BAD_REQUEST", "identical"))).toMatchObject({
+        code: "invalidparam",
+      });
     });
   });
 });

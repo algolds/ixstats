@@ -12,13 +12,7 @@ import { createHmac, randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import { env } from "~/env";
 import { sessionSecretMissing } from "./errors";
 import { rightsForGrants } from "./grants";
-import type {
-  ApiSession,
-  AuthStore,
-  CookieSpec,
-  PermissionLoader,
-  SessionUser,
-} from "./types";
+import type { ApiSession, AuthStore, CookieSpec, PermissionLoader, SessionUser } from "./types";
 import type { WikiPermissions } from "~/lib/wiki-os/rights";
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 
@@ -176,7 +170,8 @@ export function readLoginNonce(value: string | undefined, now: Date): string | n
   const parts = value.split(".");
   if (parts.length !== 3) return null;
   const [issued, random, signature] = parts as [string, string, string];
-  if (!safeEqual(signature, hmac("login-nonce", `${issued}.${random}`).toString("base64url"))) return null;
+  if (!safeEqual(signature, hmac("login-nonce", `${issued}.${random}`).toString("base64url")))
+    return null;
   const age = now.getTime() - Number.parseInt(issued, 36) * 1000;
   return age <= LOGIN_NONCE_TTL_MS && age >= -LOGIN_NONCE_SKEW_MS ? value : null;
 }

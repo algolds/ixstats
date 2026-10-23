@@ -40,7 +40,9 @@ function missingPageId(): Error {
   );
 }
 
-const redirectWhere = (filter: "all" | "redirects" | "nonredirects"): Prisma.WikiArticleWhereInput =>
+const redirectWhere = (
+  filter: "all" | "redirects" | "nonredirects"
+): Prisma.WikiArticleWhereInput =>
   filter === "redirects"
     ? { redirectTargetSlug: { not: null } }
     : filter === "nonredirects"
@@ -58,8 +60,18 @@ const redirectSql = (filter: "all" | "redirects" | "nonredirects"): Prisma.Sql =
 // allpages, backlinks, random
 // ---------------------------------------------------------------------------
 
-type ListedArticle = { pageId: number | null; title: string; namespace: number; redirectTargetSlug: string | null };
-const LIST_SELECT = { pageId: true, title: true, namespace: true, redirectTargetSlug: true } as const;
+type ListedArticle = {
+  pageId: number | null;
+  title: string;
+  namespace: number;
+  redirectTargetSlug: string | null;
+};
+const LIST_SELECT = {
+  pageId: true,
+  title: true,
+  namespace: true,
+  redirectTargetSlug: true,
+} as const;
 
 function toListRow(article: ListedArticle): PageListRow {
   if (article.pageId === null) throw missingPageId();
@@ -93,7 +105,10 @@ export async function listPages(query: ListPagesQuery): Promise<PageListRow[]> {
 }
 
 /** Pages in page id order that match `relation`, from `query.cursor`, with the query's namespace and redirect filters. */
-async function listRelatedPages(relation: Prisma.WikiArticleWhereInput, query: BacklinkQuery): Promise<PageListRow[]> {
+async function listRelatedPages(
+  relation: Prisma.WikiArticleWhereInput,
+  query: BacklinkQuery
+): Promise<PageListRow[]> {
   const rows = await db.wikiArticle.findMany({
     where: {
       ...LIVE_PAGE,
@@ -112,7 +127,10 @@ async function listRelatedPages(relation: Prisma.WikiArticleWhereInput, query: B
 export async function listBacklinks(query: BacklinkQuery): Promise<PageListRow[]> {
   const target = canonicalizeTitle(query.target);
   if (!target) return [];
-  return listRelatedPages({ outgoingLinks: { some: { targetSlug: target.slug, isExternal: false } } }, query);
+  return listRelatedPages(
+    { outgoingLinks: { some: { targetSlug: target.slug, isExternal: false } } },
+    query
+  );
 }
 
 /** Pages that transclude a template (or a Lua module through #invoke), from the last render of each. */
@@ -145,7 +163,11 @@ export async function randomPages(query: RandomPagesQuery): Promise<PageListRow[
  * Page titles that start with or hold `query` (case-insensitive), main namespace, in title order.
  * Selects the title only: a title search never reads a page's text.
  */
-export async function searchTitles(query: string, limit: number, offset: number): Promise<string[]> {
+export async function searchTitles(
+  query: string,
+  limit: number,
+  offset: number
+): Promise<string[]> {
   const rows = await db.wikiArticle.findMany({
     where: {
       ...LIVE_PAGE,
@@ -173,7 +195,9 @@ function memberTypeSql(types: CategoryMemberQuery["types"]): Prisma.Sql {
         ? Prisma.sql`a."namespace" = ${CATEGORY_NAMESPACE}`
         : Prisma.sql`a."namespace" NOT IN (${FILE_NAMESPACE}, ${CATEGORY_NAMESPACE})`
   );
-  return parts.length === 0 || parts.length === 3 ? Prisma.empty : Prisma.sql`AND (${Prisma.join(parts, " OR ")})`;
+  return parts.length === 0 || parts.length === 3
+    ? Prisma.empty
+    : Prisma.sql`AND (${Prisma.join(parts, " OR ")})`;
 }
 
 interface MemberRecord {
@@ -186,16 +210,24 @@ interface MemberRecord {
   addedAt: Date;
 }
 
-export async function listCategoryMembers(query: CategoryMemberQuery): Promise<CategoryMemberRow[]> {
+export async function listCategoryMembers(
+  query: CategoryMemberQuery
+): Promise<CategoryMemberRow[]> {
   const category = canonicalizeTitle(query.category);
   if (!category) return [];
   const ascending = query.dir === "ascending";
   const order = Prisma.raw(ascending ? "ASC" : "DESC");
   const byTime = query.sort === "timestamp";
   // MediaWiki sorts a category by the upper-cased sort key ("uppercase" collation), the title when there is none.
-  const sortExpr = byTime ? Prisma.sql`m."createdAt"` : Prisma.sql`UPPER(COALESCE(m."sortKey", a."title"))`;
+  const sortExpr = byTime
+    ? Prisma.sql`m."createdAt"`
+    : Prisma.sql`UPPER(COALESCE(m."sortKey", a."title"))`;
   const [lower, upper] = ascending ? [query.start, query.end] : [query.end, query.start];
-  const cursorValue = query.cursor ? (byTime ? new Date(query.cursor.sortValue) : query.cursor.sortValue) : null;
+  const cursorValue = query.cursor
+    ? byTime
+      ? new Date(query.cursor.sortValue)
+      : query.cursor.sortValue
+    : null;
   const rows = await db.$queryRaw<MemberRecord[]>(Prisma.sql`
     SELECT a."pageId", a."title", a."namespace", a."redirectTargetSlug", m."sortKey",
            ${byTime ? Prisma.sql`m."createdAt"::text` : sortExpr} AS "sortValue", m."createdAt" AS "addedAt"
@@ -233,7 +265,9 @@ export async function listCategories(query: CategoryListQuery): Promise<Category
   const [lower, upper] = ascending ? [query.start, query.end] : [query.end, query.start];
   // One row per category name (two categories may differ only in their slug), counting the members
   // that are not deleted pages; a name is never split across two pages of the listing.
-  const rows = await db.$queryRaw<Array<{ name: string; members: bigint; hidden: boolean }>>(Prisma.sql`
+  const rows = await db.$queryRaw<
+    Array<{ name: string; members: bigint; hidden: boolean }>
+  >(Prisma.sql`
     SELECT c."name" AS "name", COUNT(m."id") AS "members", bool_or(c."hidden") AS "hidden"
     FROM "wiki_categories" c
     JOIN "wiki_category_members" m ON m."categoryId" = c."id"
@@ -253,11 +287,7 @@ export async function listCategories(query: CategoryListQuery): Promise<Category
 // ---------------------------------------------------------------------------
 
 /** Log entries at or after `ts` (and at `id` or beyond when given) on `side`. */
-function logBoundWhere(
-  side: "gte" | "lte",
-  ts: Date,
-  logId?: number
-): Prisma.WikiLogWhereInput {
+function logBoundWhere(side: "gte" | "lte", ts: Date, logId?: number): Prisma.WikiLogWhereInput {
   const strict = side === "gte" ? "gt" : "lt";
   return logId === undefined
     ? { createdAt: { [side]: ts } }
@@ -330,7 +360,13 @@ async function groupMembers(group: string): Promise<{ ids: string[]; names: stri
   };
 }
 
-const memberFilter = ({ ids, names }: { ids: string[]; names: string[] }): Prisma.WikiAccountLinkWhereInput => ({
+const memberFilter = ({
+  ids,
+  names,
+}: {
+  ids: string[];
+  names: string[];
+}): Prisma.WikiAccountLinkWhereInput => ({
   OR: [{ userId: { in: ids } }, { username: { in: names } }],
 });
 
@@ -354,7 +390,12 @@ export async function listUsers(query: UserListQuery): Promise<UserListRow[]> {
     },
     orderBy: { username: ascending ? "asc" : "desc" },
     take: query.limit + 1,
-    select: { username: true, userId: true, wikiUserId: true, user: { select: { createdAt: true } } },
+    select: {
+      username: true,
+      userId: true,
+      wikiUserId: true,
+      user: { select: { createdAt: true } },
+    },
   });
   const names = links.map((link) => link.username);
   const ids = links.map((link) => link.userId);
@@ -376,7 +417,9 @@ export async function listUsers(query: UserListQuery): Promise<UserListRow[]> {
       : [],
   ]);
   const now = new Date();
-  const editCounts = new Map(edits.flatMap((row) => (row.author ? [[row.author, row._count._all] as const] : [])));
+  const editCounts = new Map(
+    edits.flatMap((row) => (row.author ? [[row.author, row._count._all] as const] : []))
+  );
   return links.map((link) => ({
     name: link.username,
     userId: link.wikiUserId ?? syntheticUserId(link.userId),
@@ -385,7 +428,8 @@ export async function listUsers(query: UserListQuery): Promise<UserListRow[]> {
     groups: groups
       .filter(
         (row) =>
-          (row.userId === link.userId || row.wikiUsername === link.username) && isActive(row.expiresAt, now)
+          (row.userId === link.userId || row.wikiUsername === link.username) &&
+          isActive(row.expiresAt, now)
       )
       .map((row) => row.group),
   }));
@@ -398,13 +442,17 @@ export async function listBlocks(
   return RightsAdminService.listBlocks(limit, cursor);
 }
 
-export async function listProtectedTitles(query: ProtectedTitleQuery): Promise<ProtectedTitleRow[]> {
+export async function listProtectedTitles(
+  query: ProtectedTitleQuery
+): Promise<ProtectedTitleRow[]> {
   const newer = query.dir === "newer";
   const [fromSide, toSide] = newer ? (["gte", "lte"] as const) : (["lte", "gte"] as const);
   const strict = newer ? "gt" : "lt";
   const direction = newer ? "asc" : "desc";
   const now = new Date();
-  const and: Prisma.WikiRestrictionWhereInput[] = [{ OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] }];
+  const and: Prisma.WikiRestrictionWhereInput[] = [
+    { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+  ];
   if (query.from) and.push({ createdAt: { [fromSide]: query.from } });
   if (query.to) and.push({ createdAt: { [toSide]: query.to } });
   if (query.cursor) {
@@ -416,10 +464,23 @@ export async function listProtectedTitles(query: ProtectedTitleQuery): Promise<P
     });
   }
   const rows = await db.wikiRestriction.findMany({
-    where: { source: SOURCE, action: "create", ...(query.level ? { level: query.level } : {}), AND: and },
+    where: {
+      source: SOURCE,
+      action: "create",
+      ...(query.level ? { level: query.level } : {}),
+      AND: and,
+    },
     orderBy: [{ createdAt: direction }, { id: direction }],
     take: query.limit + 1,
-    select: { id: true, title: true, level: true, createdAt: true, reason: true, expiresAt: true, setById: true },
+    select: {
+      id: true,
+      title: true,
+      level: true,
+      createdAt: true,
+      reason: true,
+      expiresAt: true,
+      setById: true,
+    },
   });
   // A title that has a page is protected from editing, not creation: only missing titles are listed.
   const existing = new Set(
