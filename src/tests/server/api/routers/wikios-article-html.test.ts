@@ -540,7 +540,7 @@ describe("getArticleHtml for another wiki's page is sanitized like any other (pl
       length: 4,
       revId: 900,
     });
-    jest.mocked(getArticleAuthors).mockResolvedValue(null);
+    jest.mocked(getArticleAuthors).mockResolvedValue({ creator: null } as never);
     globalThis.fetch = jest.fn(async () =>
       Response.json({ parse: { title: "Bashan Protectorate", text: "<p>Bashan</p>" } })
     ) as typeof fetch;

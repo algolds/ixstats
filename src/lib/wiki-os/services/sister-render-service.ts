@@ -54,11 +54,11 @@ interface ParseAnswer {
 
 /** The `action=parse` request for `article`: the revision WikiOS read, or the page by title. */
 function parseUrl(source: SisterWikiSource, article: WikiArticle): string {
-  const page =
-    article.revId === undefined ? { page: article.title } : { oldid: String(article.revId) };
+  const [key, value] =
+    article.revId === undefined ? ["page", article.title] : ["oldid", String(article.revId)];
   const query = new URLSearchParams({
     action: "parse",
-    ...page,
+    [key]: value,
     prop: "text",
     disablelimitreport: "1",
     disableeditsection: "1",
