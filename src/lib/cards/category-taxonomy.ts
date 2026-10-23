@@ -83,11 +83,12 @@ export function isSubcategoryOf(
   return category !== null && subcategoryLabel(category, subcategory) !== null;
 }
 
-/** "History · Event", "Military", or "Uncategorised". */
+/** "History · Event", "Military", or "Uncategorised"; a subcategory named as its category ("Nation") is said once. */
 export function categoryLine(category: LoreCategory | null, subcategory: string | null): string {
   if (category === null) return UNCATEGORISED_LABEL;
+  const label = getCategoryLabel(category);
   const sub = subcategory === null ? null : subcategoryLabel(category, subcategory);
-  return sub === null ? getCategoryLabel(category) : `${getCategoryLabel(category)} · ${sub}`;
+  return sub === null || sub === label ? label : `${label} · ${sub}`;
 }
 
 export interface CategoryChoice {

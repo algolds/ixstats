@@ -1,8 +1,9 @@
 // src/lib/cards/ns-facts.ts
 /**
  * NationStates card facts (cards refresh §2.1). An NS card keeps facts only, in `Card.metadata.nsData`: the nation
- * (NS card id and name), the NS season, region, category, flag and the NS bank value (`market_value`). Government,
- * badges, trophies and the card stats are gone. Client-safe and pure.
+ * (NS card id and name), the NS season, region, category (NationStates' `<TYPE>`: the nation's pretitle, such as
+ * "Republic", never a card category), flag and the NS bank value (`market_value`). Government, badges, trophies and the
+ * card stats are gone. Client-safe and pure.
  */
 import type { Prisma } from "@prisma/client";
 

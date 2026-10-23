@@ -9,6 +9,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "~/components/ui/dialog";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
@@ -29,6 +30,8 @@ interface CategoryChoiceDialogProps {
   withNote?: boolean;
   /** Shown above the picker, for example a `Signal` saying the player already suggested one. */
   notice?: ReactNode;
+  /** The control that opens it, which gets focus back when it closes. */
+  trigger?: ReactNode;
   /** The note comes trimmed, or null when empty. */
   onConfirm: (choice: CategoryChoice, note: string | null) => void;
 }
@@ -44,6 +47,7 @@ export function CategoryChoiceDialog({
   allowUncategorised = true,
   withNote = false,
   notice,
+  trigger,
   onConfirm,
 }: CategoryChoiceDialogProps) {
   const [draft, setDraft] = useState(initial);
@@ -65,6 +69,7 @@ export function CategoryChoiceDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       {/* With no description, an explicit undefined tells Radix there is none on purpose */}
       <DialogContent
         className="max-w-md"

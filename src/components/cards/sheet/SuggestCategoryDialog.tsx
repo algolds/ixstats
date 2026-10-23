@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { api } from "~/trpc/react";
 import { CategoryChoiceDialog } from "~/components/cards/category/CategoryChoiceDialog";
 import { Signal } from "~/components/ui/signal";
@@ -15,6 +15,8 @@ interface SuggestCategoryDialogProps {
   cardId: string;
   cardTitle: string;
   current: CategoryChoice;
+  /** The control that opens it. */
+  children: ReactNode;
 }
 
 /**
@@ -27,6 +29,7 @@ export function SuggestCategoryDialog({
   cardId,
   cardTitle,
   current,
+  children,
 }: SuggestCategoryDialogProps) {
   // The player already has one open for this card: say so here and keep the dialog up
   const [alreadyOpen, setAlreadyOpen] = useState(false);
@@ -57,6 +60,7 @@ export function SuggestCategoryDialog({
       pending={send.isPending}
       allowUncategorised={false}
       withNote
+      trigger={children}
       notice={
         alreadyOpen && (
           <Signal tone="info" title="You already suggested a category for this card">

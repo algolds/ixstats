@@ -31,6 +31,7 @@ const CARD = {
   realm,
   isBound: false,
   category: "HISTORY",
+  subcategory: "event",
   description: "An empire.",
   wikiSource: "ixwiki",
   wikiArticleTitle: "Caphiria",
@@ -295,6 +296,34 @@ describe("loadCardSheet", () => {
       const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
       expect(sheet!.card.excerpt).not.toMatch(/File:|Caphiria\.png/);
       expect(sheet!.card.excerpt).toMatch(/^An empire\. +See the flag\.$/);
+    });
+  });
+
+  it("returns the card's subcategory, and an NS card's pretitle from its stored facts", async () => {
+    const db = setup();
+    const lore = await sheetFor(db as never, "me", "c1", { from: null, rules });
+    expect(db.card.findUnique.mock.calls[0]![0]).toMatchObject({
+      select: { category: true, subcategory: true },
+    });
+    expect(lore!.card).toMatchObject({ category: "HISTORY", subcategory: "event", ns: null });
+
+    const nsCard = {
+      ...CARD,
+      cardType: "NS",
+      category: null,
+      subcategory: null,
+      nsSeason: 3,
+      metadata: { nsData: { name: "Testlandia", region: "Lazarus", category: "Republic" } },
+    };
+    const nsSheet = await sheetFor(setup({ card: nsCard }) as never, "me", "c1", {
+      from: null,
+      rules,
+    });
+    expect(nsSheet!.card.ns).toEqual({
+      nation: "Testlandia",
+      season: 3,
+      region: "Lazarus",
+      pretitle: "Republic",
     });
   });
 

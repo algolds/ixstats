@@ -78,6 +78,9 @@ it("writes the category line people read", () => {
   expect(categoryLine("HISTORY", "event")).toBe("History · Event");
   expect(categoryLine("MILITARY", null)).toBe("Military");
   expect(categoryLine(null, null)).toBe("Uncategorised");
+  // A subcategory named as its category says it once
+  expect(categoryLine("NATION", "nation")).toBe("Nation");
+  expect(categoryLine("NATION", "former-state")).toBe("Nation · Former state");
   expect(subcategoryLabel("GEOGRAPHY", "river-lake-or-sea")).toBe("River, lake or sea");
   expect(subcategoryLabel("GEOGRAPHY", "nope")).toBeNull();
 });
