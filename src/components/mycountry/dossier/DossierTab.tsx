@@ -34,6 +34,8 @@ import { wikiReaderPath } from "~/lib/wiki-os/config";
  */
 export const DossierTab: React.FC<DossierTabProps> = ({
   countryName,
+  wikiSource,
+  wikiPageTitle,
   countryData,
   viewerClearanceLevel = "PUBLIC",
   flagColors = { primary: "#3b82f6", secondary: "#6366f1", accent: "#8b5cf6" },
@@ -69,6 +71,8 @@ export const DossierTab: React.FC<DossierTabProps> = ({
   // Use the useDossier hook for data management
   const { wikiData, isLoading, handleRefresh, hasAccess } = useDossier({
     countryName,
+    wikiSource,
+    wikiPageTitle,
     countryData,
   });
 

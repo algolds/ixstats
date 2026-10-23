@@ -33,6 +33,11 @@ import { db as mockedDb } from "~/server/db";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { clearTrpcMemoryCache } from "~/lib/cache/trpc-cache";
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
+import {
+  getArticleIntro,
+  getPageImages,
+  getPageSections,
+} from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { economyProcedures } from "~/server/api/routers/countries/economy";
 import { identityProcedures } from "~/server/api/routers/countries/identity";
 import { wikiProcedures } from "~/server/api/routers/countries/wiki";
@@ -210,6 +215,83 @@ describe("countries.getWikiRichIntro", () => {
       ["Urcea", "ixwiki"],
       ["Urcea", "iiwiki"],
     ]);
+  });
+});
+
+describe("countries' wiki readers of a nation with its own wiki (an Eurth nation on IIWiki)", () => {
+  type CountryRow = {
+    id: string;
+    name: string;
+    wikiSource: string | null;
+    wikiPageTitle: string | null;
+  };
+  const findMany = jest.fn<Promise<CountryRow[]>, [{ where: { id: { in: string[] } } }]>();
+  const readers = () =>
+    createCallerFactory(createTRPCRouter(wikiProcedures))(visitorOn({ country: { findMany } }));
+  /** The wikis each bridge reader was asked, in order. */
+  const introWikis = () => jest.mocked(getArticleIntro).mock.calls.map(([t, w]) => [t, w]);
+  const sectionWikis = () => jest.mocked(getPageSections).mock.calls.map(([t, w]) => [t, w]);
+  const imageWikis = () => jest.mocked(getPageImages).mock.calls.map(([t, o]) => [t, o?.wiki]);
+  const SECTIONS = [{ level: 2, title: "History", index: 0 }];
+
+  beforeEach(() => {
+    clearTrpcMemoryCache();
+    jest
+      .mocked(getArticleIntro)
+      .mockReset()
+      .mockResolvedValue({ title: "Afropa", text: "A lead." });
+    jest.mocked(getPageSections).mockReset().mockResolvedValue(SECTIONS);
+    jest.mocked(getPageImages).mockReset().mockResolvedValue(null);
+    jest.mocked(getArticleWikitextShadow).mockReset().mockResolvedValue({
+      wikitext: "== History ==\nAfropa was founded long ago, by people of the southern coast.",
+      revid: null,
+      timestamp: "",
+      fromShadow: false,
+      stale: false,
+    });
+    findMany
+      .mockReset()
+      .mockResolvedValue([
+        { id: "c-afr", name: "Afropa", wikiSource: "iiwiki", wikiPageTitle: "Afropa" },
+      ]);
+  });
+
+  it("reads the intro, sections, images and section previews on its own wiki, never IxWiki", async () => {
+    const byCountry = { countryName: "Afropa", countryId: "c-afr" };
+
+    await expect(readers().getWikiIntro(byCountry)).resolves.toMatchObject({
+      wikiSource: "iiwiki",
+      wikiUrl: "/wiki/Afropa?source=iiwiki",
+    });
+    await readers().getWikiSections(byCountry);
+    await readers().getWikiPageImages(byCountry);
+    await expect(readers().getWikiSectionPreviews(byCountry)).resolves.toEqual([
+      expect.objectContaining({ line: "History", preview: expect.stringContaining("founded") }),
+    ]);
+
+    expect(introWikis()).toEqual([["Afropa", "iiwiki"]]);
+    expect(imageWikis()).toEqual([["Afropa", "iiwiki"]]);
+    expect(sectionWikis().every(([, wiki]) => wiki === "iiwiki")).toBe(true);
+    expect(jest.mocked(getArticleWikitextShadow).mock.calls.map(([t, w]) => [t, w])).toEqual([
+      ["Afropa", "iiwiki"],
+    ]);
+  });
+
+  it("reads its name on its own wiki when it names no page, even when IxWiki has an article of that name", async () => {
+    findMany.mockResolvedValue([
+      { id: "c-urc", name: "Urcea", wikiSource: "iiwiki", wikiPageTitle: null },
+    ]);
+
+    await readers().getWikiIntro({ countryName: "Urcea", countryId: "c-urc" });
+
+    expect(introWikis()).toEqual([["Urcea", "iiwiki"]]);
+  });
+
+  it("still looks a bare name up on IxWiki first", async () => {
+    await readers().getWikiIntro({ countryName: "Afropa" });
+
+    expect(introWikis()).toEqual([["Afropa", "ixwiki"]]);
+    expect(findMany).not.toHaveBeenCalled();
   });
 });
 

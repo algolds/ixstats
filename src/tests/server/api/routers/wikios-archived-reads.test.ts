@@ -69,7 +69,11 @@ import { wikiosUtilitiesRouter } from "~/server/api/routers/wikios/utilities";
 import { wikiosDiscussionsRouter } from "~/server/api/routers/wikios/discussions";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { fakeWikiDb } from "~/tests/helpers/fake-wiki-db";
-import { getArticleHistoryShadow, getArticleWikitextShadow, getRevisionWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
+import {
+  getArticleHistoryShadow,
+  getArticleWikitextShadow,
+  getRevisionWikitextShadow,
+} from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { batchFetchThumbnails } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { MediaAssetService } from "~/lib/wiki-os/core";
 import { downloadMedia } from "~/lib/wiki-os/services/media-download";
@@ -197,6 +201,21 @@ describe.each(READS)("%s", (_name, read) => {
   });
 });
 
+describe("getWikitext of another wiki's page (a country profile's lore)", () => {
+  it("reads the page on that wiki, with no IxWiki revision to base an edit on", async () => {
+    const result = await content(null).getWikitext({ title: "Afropa", wikiSource: "iiwiki" });
+
+    expect(jest.mocked(getArticleWikitextShadow).mock.calls.map(([t, w]) => [t, w])).toEqual([
+      ["Afropa", "iiwiki"],
+    ]);
+    expect(result).toMatchObject({
+      wikitext: "== Geography ==\nHills.",
+      revisionRef: null,
+      revisionRefs: [],
+    });
+  });
+});
+
 describe("revision reads of a deleted page", () => {
   it("getRevisionContent is NOT_FOUND for a reader without deletedhistory, served to a sysop", async () => {
     await expect(history("user").getRevisionContent({ revid: "r1" })).rejects.toMatchObject({
@@ -279,8 +298,10 @@ describe("public reads that must not leak", () => {
           }
         : { auth: null, user: null }
     ) as never;
-  const utilities = (role: string | null) => createCallerFactory(wikiosUtilitiesRouter)(ctxOf(role));
-  const content = (role: string | null) => createCallerFactory(wikiosPageContentRouter)(ctxOf(role));
+  const utilities = (role: string | null) =>
+    createCallerFactory(wikiosUtilitiesRouter)(ctxOf(role));
+  const content = (role: string | null) =>
+    createCallerFactory(wikiosPageContentRouter)(ctxOf(role));
 
   beforeEach(() => {
     jest.clearAllMocks();

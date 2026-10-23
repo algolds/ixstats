@@ -151,6 +151,12 @@ export const ALLOWED_API_PARAMS = [
   "sroffset",
   "iicontinue",
   "continue",
+  // `action=parse` of a sister page's revision (sister-render-service.ts) and a page's image list.
+  "oldid",
+  "page",
+  "disableeditsection",
+  "disablelimitreport",
+  "imlimit",
 ] as const;
 
 export const MEDIA_CORS_HEADERS = {

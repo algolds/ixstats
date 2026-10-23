@@ -16,7 +16,6 @@ import { RedirectNotice } from "~/components/wiki-os/reader/RedirectNotice";
 import { WikiEditBridge } from "~/components/wiki-os/editor/WikiEditBridge";
 import { WikiEditGate } from "~/components/wiki-os/editor/WikiEditGate";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
-import { useIiwikiFallback } from "~/hooks/useIiwikiFallback";
 import {
   articleHtmlInput,
   getWikiBaseUrl,
@@ -151,12 +150,11 @@ export default function ArticlePageClient({
     if (leanUnresolved) void refetch();
   }, [leanUnresolved, refetch]);
   // Until then the cached marker is no data: the page shows its loading state, not an empty article.
-  const serverArticle = leanUnresolved ? undefined : data;
-  // An IIWiki page the server could not render is rendered by the reader's browser.
-  const fallback = useIiwikiFallback(title, wikiSource, Boolean(error) && !serverArticle);
-  const article = serverArticle ?? fallback.article;
-  const notFound = fallback.active ? fallback.missing : error !== null && isNotFoundError(error);
-  const busy = fallback.active ? fallback.failed : error !== null && !isNotFoundError(error);
+  const article = leanUnresolved ? undefined : data;
+  const notFound = error !== null && isNotFoundError(error);
+  const busy = error !== null && !isNotFoundError(error);
+  // An IxWiki redirect is followed by the route; another wiki's is followed by the server's read of it.
+  const shownRedirectFrom = redirectedFrom ?? (isIxWiki ? null : (article?.resolvedFrom ?? null));
 
   // The server's copy of a page with viewer-specific chips is the anonymous one: a signed-in
   // reader asks once more, with their session, for their own chips.
@@ -248,9 +246,11 @@ export default function ArticlePageClient({
           </WikiEditGate>
         ) : (
           <>
-            {redirectedFrom && <RedirectNotice from={redirectedFrom} />}
+            {shownRedirectFrom && (
+              <RedirectNotice from={shownRedirectFrom} wikiSource={wikiSource} />
+            )}
             {aside}
-            {(isLoading || leanUnresolved || fallback.loading) && !article && (
+            {(isLoading || leanUnresolved) && !article && (
               <div className="wikios-loading flex min-h-[300px] flex-col items-center justify-center">
                 <div className="wikios-loading-spinner" />
                 <p className="text-body text-label-secondary mt-4">
@@ -261,14 +261,14 @@ export default function ArticlePageClient({
             {busy && !article && (
               <ArticleBusy
                 title={title}
-                onRetry={() => {
-                  void refetch();
-                  if (fallback.active) fallback.retry();
-                }}
+                onRetry={() => void refetch()}
                 external={
-                  fallback.active
-                    ? { name: WIKI_SOURCES.iiwiki.name, href: publicArticleUrl(title, "iiwiki") }
-                    : undefined
+                  isIxWiki
+                    ? undefined
+                    : {
+                        name: WIKI_SOURCES[wikiSource].name,
+                        href: publicArticleUrl(title, wikiSource),
+                      }
                 }
               />
             )}

@@ -42,7 +42,8 @@ jest.mock("~/lib/wiki-os/core", () => ({
 }));
 jest.mock("~/lib/wiki-os/core/page-management-service", () => ({
   __esModule: true,
-  PageOperationError: jest.requireActual("~/lib/wiki-os/core/page-management-service").PageOperationError,
+  PageOperationError: jest.requireActual("~/lib/wiki-os/core/page-management-service")
+    .PageOperationError,
   PageManagementService: { restoreArticle: jest.fn() },
 }));
 jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
@@ -84,7 +85,11 @@ import { ArticleRepository } from "~/lib/wiki-os/core";
 import { db } from "~/server/db";
 import { wikiosBotPasswordsRouter } from "~/server/api/routers/wikios/bot-passwords";
 import { getVerifiedWikiLink } from "~/lib/wiki-os/storage";
-import { createBotPassword, deleteBotPassword, listBotPasswords } from "~/lib/wiki-os/api-compat/bot-passwords";
+import {
+  createBotPassword,
+  deleteBotPassword,
+  listBotPasswords,
+} from "~/lib/wiki-os/api-compat/bot-passwords";
 import { PageOperationError } from "~/lib/wiki-os/core/page-management-service";
 import { wikiCacheRouter } from "~/server/api/routers/wikiCache";
 import { wikiCacheService } from "~/lib/wiki-os/adapters/ixstates/cache-service";
@@ -97,7 +102,12 @@ const signedIn = () =>
   createCaller(
     createMockRouterContext({
       auth: { userId: "user_1" },
-      user: { id: "db1", clerkUserId: "user_1", wikiUsername: "Linked", role: { name: "user", level: 100 } },
+      user: {
+        id: "db1",
+        clerkUserId: "user_1",
+        wikiUsername: "Linked",
+        role: { name: "user", level: 100 },
+      },
     }) as never
   );
 
@@ -191,7 +201,9 @@ describe("wikios.getEditAccess (F35c)", () => {
       const answerForMissing = await signedOut().getEditAccess({ title: "Vesperia" });
 
       expect(answerForDeleted).toEqual(answerForMissing);
-      expect(answerForDeleted.reason).toBe('You do not have the "edit" right needed to create this page.');
+      expect(answerForDeleted.reason).toBe(
+        'You do not have the "edit" right needed to create this page.'
+      );
     });
 
     it("tells an administrator (deletedhistory) that the page was deleted and cannot be edited", async () => {
@@ -224,7 +236,9 @@ describe("wikios.getEditAccess rate limit (m6)", () => {
     expect(mockCheck.mock.calls[0]?.[1]).toBe("public");
 
     mockCheck.mockResolvedValue({ success: false, remaining: 0, resetAt: new Date() });
-    await expect(signedOut().getEditAccess({ title: "Vesperia" })).rejects.toThrow(/Too many requests/);
+    await expect(signedOut().getEditAccess({ title: "Vesperia" })).rejects.toThrow(
+      /Too many requests/
+    );
   });
 });
 
@@ -262,7 +276,9 @@ describe("bot passwords", () => {
 
     it("needs a verified wiki link, for every procedure", async () => {
       jest.mocked(getVerifiedWikiLink).mockResolvedValue(null);
-      await expect(signedIn().listBotPasswords()).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+      await expect(signedIn().listBotPasswords()).rejects.toMatchObject({
+        code: "PRECONDITION_FAILED",
+      });
       await expect(signedIn().createBotPassword({ appId: "x", grants: [] })).rejects.toMatchObject({
         code: "PRECONDITION_FAILED",
       });
@@ -282,11 +298,23 @@ describe("bot passwords", () => {
 
     it("creates one and returns the login name and the password", async () => {
       jest.mocked(createBotPassword).mockResolvedValue({
-        summary: { id: "bp1", appId: "Pywikibot", grants: ["basic"], createdAt: new Date(), lastUsedAt: null },
+        summary: {
+          id: "bp1",
+          appId: "Pywikibot",
+          grants: ["basic"],
+          createdAt: new Date(),
+          lastUsedAt: null,
+        },
         password: "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567",
       });
-      const result = await signedIn().createBotPassword({ appId: "Pywikibot", grants: ["editpage"] });
-      expect(createBotPassword).toHaveBeenCalledWith("db1", { appId: "Pywikibot", grants: ["editpage"] });
+      const result = await signedIn().createBotPassword({
+        appId: "Pywikibot",
+        grants: ["editpage"],
+      });
+      expect(createBotPassword).toHaveBeenCalledWith("db1", {
+        appId: "Pywikibot",
+        grants: ["editpage"],
+      });
       expect(result).toEqual({
         id: "bp1",
         appId: "Pywikibot",
@@ -347,7 +375,10 @@ describe("the country-profile cache", () => {
       expect(wikiCacheService.clearCountryCache).not.toHaveBeenCalled();
 
       await callerAs("u1").refreshCountryCache({ countryName: "Caphiria" });
-      expect(wikiCacheService.clearCountryCache).toHaveBeenCalledWith("Caphiria");
+      expect(wikiCacheService.clearCountryCache).toHaveBeenCalledWith("Caphiria", "ixwiki");
+
+      await callerAs("u1").refreshCountryCache({ countryName: "Afropa", wikiSource: "iiwiki" });
+      expect(wikiCacheService.clearCountryCache).toHaveBeenCalledWith("Afropa", "iiwiki");
     });
   });
 });

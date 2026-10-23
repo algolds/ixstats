@@ -38,10 +38,11 @@ export const wikiCacheRouter = createTRPCRouter({
     .input(
       z.object({
         countryName: z.string().min(1),
+        wikiSource: z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki"),
       })
     )
     .mutation(async ({ input }) => {
-      wikiCacheService.clearCountryCache(input.countryName);
+      wikiCacheService.clearCountryCache(input.countryName, input.wikiSource);
 
       return {
         success: true,

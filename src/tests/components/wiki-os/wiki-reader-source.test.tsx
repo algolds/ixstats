@@ -3,7 +3,6 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import ArticlePageClient, {
   type ArticlePageClientProps,
 } from "~/app/(wiki-os)/wiki/[...slug]/ArticlePageClient";
-import type { useIiwikiFallback } from "~/hooks/useIiwikiFallback";
 
 const mockUseQuery = jest.fn();
 const mockPrefetch = jest.fn();
@@ -30,18 +29,6 @@ jest.mock("~/trpc/react", () => ({
     }),
     wikios: { getArticleHtml: { useQuery: (...args: unknown[]) => mockUseQuery(...args) } },
   },
-}));
-const inactiveFallback: ReturnType<typeof useIiwikiFallback> = {
-  active: false,
-  article: undefined,
-  loading: false,
-  missing: false,
-  failed: false,
-  retry: jest.fn(),
-};
-const mockFallback = jest.fn((..._args: unknown[]) => inactiveFallback);
-jest.mock("~/hooks/useIiwikiFallback", () => ({
-  useIiwikiFallback: (...args: unknown[]) => mockFallback(...args),
 }));
 jest.mock("~/lib/wiki-os/use-wiki-auth", () => ({
   useWikiAuth: () => ({ isSignedIn: mockSignedIn, isLoaded: mockAuthLoaded }),
@@ -106,7 +93,6 @@ function found(title = article.title) {
 describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockFallback.mockReturnValue(inactiveFallback);
     mockSearch = "";
     mockSignedIn = true;
     mockAuthLoaded = true;
@@ -194,6 +180,25 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
     });
     render(<Reader wikiSource="iiwiki" />);
     expect(screen.queryByText(/does not exist/)).not.toBeInTheDocument();
-    expect(screen.getByText(/not the same as the page/)).toBeInTheDocument();
+    expect(screen.getByText("IIWiki could not be reached")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /open on iiwiki/i })).toHaveAttribute(
+      "href",
+      "https://iiwiki.com/wiki/Portal:Eurth"
+    );
+  });
+  it("says which redirect of another wiki the reader came from, linking to that redirect on its own wiki", () => {
+    mockUseQuery.mockReturnValue({
+      data: { ...article, title: "Bashan Protectorate", resolvedFrom: "Bashan" },
+      isLoading: false,
+      error: null,
+      refetch: jest.fn(),
+    });
+    render(<Reader title="Bashan" wikiSource="iiwiki" />);
+
+    expect(screen.getByRole("note")).toHaveTextContent("(Redirected from Bashan)");
+    expect(screen.getByRole("link", { name: "Bashan" })).toHaveAttribute(
+      "href",
+      "https://iiwiki.com/wiki/Bashan?redirect=no"
+    );
   });
 });
