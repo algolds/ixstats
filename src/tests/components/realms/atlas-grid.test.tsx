@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { AtlasGrid } from "~/app/realms/_components/AtlasGrid";
 import type { DirectoryRealm } from "~/app/realms/_components/realm-directory";
 
@@ -120,6 +120,31 @@ describe("AtlasGrid", () => {
     render(<AtlasGrid realms={undefined} isLoading query="" />);
     const loading = screen.getByLabelText("Loading realms");
     expect(loading.children).toHaveLength(3);
+  });
+
+  it("shows the empty line and the tile with no realms", () => {
+    const { unmount } = render(<AtlasGrid realms={[]} isLoading={false} query="" />);
+    expect(screen.getByText("No realms are open yet.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Bring your realm" })).toBeInTheDocument();
+    unmount();
+    mockIsAdmin = true;
+    render(<AtlasGrid realms={[]} isLoading={false} query="" />);
+    expect(screen.getByRole("link", { name: "Found a realm" })).toBeInTheDocument();
+  });
+
+  it("hides the tile when a tag filter matches nothing", () => {
+    render(
+      <AtlasGrid realms={[...SIX, realm("G", { tags: ["Fantasy"] })]} isLoading={false} query="" />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Fantasy" }));
+    fireEvent.click(screen.getByRole("button", { name: "Roleplay" }));
+    expect(screen.getByText("No realm has every tag you picked.")).toBeInTheDocument();
+    expect(screen.queryByText("Bring your realm")).not.toBeInTheDocument();
+  });
+
+  it("marks the tile link as the stretched link for its focus outline", () => {
+    render(<AtlasGrid realms={[IXNAY]} isLoading={false} query="" />);
+    expect(screen.getByRole("link", { name: "Bring your realm" })).toHaveAttribute("data-stretch");
   });
 
   it("labels the section and anchors it", () => {

@@ -22,12 +22,12 @@ function CallToAction({
   joinHref,
 }: {
   standing: ViewerStanding;
-  /** The section a newcomer joins from: Open to join, else Browse. */
+  /** The atlas a newcomer joins a realm from. */
   joinHref: string;
 }) {
   const browse = (
     <Button asChild variant="outline">
-      <a href="#browse-realms">Browse realms</a>
+      <a href="#atlas">Browse realms</a>
     </Button>
   );
   if (standing === "signed-out")

@@ -12,7 +12,7 @@ import { YourRealms } from "./_components/YourRealms";
 
 /**
  * The realms landing page: what realms are, the viewer's own realms and claims, one search for realms and
- * nations, the realms open to join, every listed realm, and the realm feed.
+ * nations, the atlas of every listed realm (most open first), and the realm feed.
  */
 export default function RealmsLandingPage() {
   usePageTitle({ title: "Realms" });

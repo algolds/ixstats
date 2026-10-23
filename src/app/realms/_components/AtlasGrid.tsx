@@ -50,14 +50,19 @@ const ADVERT_HREF = categoryHref({ key: ADVERT_CATEGORY_KEY });
 function FoundingTile({ isAdmin }: { isAdmin: boolean }) {
   return (
     <li>
-      <Card variant="well" interactive className="relative flex h-full items-start gap-3">
+      <Card
+        variant="well"
+        interactive
+        className="has-[a[data-stretch]:focus-visible]:outline-tint relative flex h-full items-start gap-3 has-[a[data-stretch]:focus-visible]:outline-2 has-[a[data-stretch]:focus-visible]:outline-offset-2"
+      >
         <span className="border-tint text-tint rounded-row flex size-10 shrink-0 items-center justify-center border">
           <Plus className="size-5" aria-hidden="true" />
         </span>
         <div className="min-w-0">
           <Link
+            data-stretch
             href={isAdmin ? FOUND_HREF : ADVERT_HREF}
-            className="text-label text-body font-medium after:absolute after:inset-0 after:content-[''] focus-visible:outline-none"
+            className="text-label text-body font-medium after:absolute after:inset-0 after:content-['']"
           >
             {isAdmin ? "Found a realm" : "Bring your realm"}
           </Link>
@@ -131,7 +136,7 @@ function emptyMessage(realms: DirectoryRealm[], query: string): string | null {
 }
 
 /**
- * Every listed realm as one grid of atlas cards, most open first, ending in the founding tile. A
+ * Every listed realm as one grid of atlas cards, most open first, ending in the founding tile (hidden while a search or tag narrows the list). A
  * scroll-snap row on phones. Sort and tag filters appear from `ATLAS_FILTER_MIN` realms.
  */
 export function AtlasGrid({
@@ -147,6 +152,7 @@ export function AtlasGrid({
   const [tags, setTags] = useState<string[]>([]);
   const [sort, setSort] = useState<SortId>("open");
   const all = realms ?? [];
+  const filtered = query.trim() !== "" || tags.length > 0;
   const showControls = all.length >= ATLAS_FILTER_MIN;
   const shown = useMemo(
     () =>
@@ -176,15 +182,20 @@ export function AtlasGrid({
             <Skeleton key={i} className="rounded-card h-64 w-full" />
           ))}
         </div>
-      ) : shown.length === 0 ? (
-        <p className="text-label-secondary text-body">{emptyMessage(all, query)}</p>
       ) : (
-        <ul className="grid gap-4 max-md:-mx-4 max-md:flex max-md:snap-x max-md:snap-mandatory max-md:scroll-px-4 max-md:overflow-x-auto max-md:px-4 sm:grid-cols-2 xl:grid-cols-3 max-md:[&>li]:shrink-0 max-md:[&>li]:basis-[84%] max-md:[&>li]:snap-start">
-          {shown.map((realm) => (
-            <RealmCard key={realm.id} realm={realm} />
-          ))}
-          <FoundingTile isAdmin={isAdmin} />
-        </ul>
+        <>
+          {shown.length === 0 && (
+            <p className="text-label-secondary text-body">{emptyMessage(all, query)}</p>
+          )}
+          {(shown.length > 0 || !filtered) && (
+            <ul className="grid gap-4 max-md:-mx-4 max-md:flex max-md:snap-x max-md:snap-mandatory max-md:scroll-px-4 max-md:overflow-x-auto max-md:px-4 sm:grid-cols-2 xl:grid-cols-3 max-md:[&>li]:shrink-0 max-md:[&>li]:basis-[84%] max-md:[&>li]:snap-start">
+              {shown.map((realm) => (
+                <RealmCard key={realm.id} realm={realm} />
+              ))}
+              {!filtered && <FoundingTile isAdmin={isAdmin} />}
+            </ul>
+          )}
+        </>
       )}
     </section>
   );
