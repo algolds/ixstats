@@ -7,6 +7,7 @@
  */
 
 import { z } from "zod/v4";
+import { db } from "~/server/db";
 import { createTRPCRouter, lightMutationProcedure, publicProcedure } from "~/server/api/trpc";
 import {
   getWikiActorLabel,
@@ -223,8 +224,8 @@ export const wikiosPageAdminRouter = createTRPCRouter({
     }),
 
   /**
-   * Groups, rights and block of the caller, or, with `user`, of that wiki username (with the explicit
-   * memberships a bureaucrat could remove).
+   * Groups, rights and block of the caller (named by their passport handle), or, with `user`, of that wiki
+   * username (with the explicit memberships a bureaucrat could remove).
    */
   getUserPermissions: publicProcedure
     .input(z.object({ user: z.string().min(1).max(255).optional() }).optional())
@@ -232,12 +233,18 @@ export const wikiosPageAdminRouter = createTRPCRouter({
       const caller = await getWikiPermissions(ctx);
       if (!input?.user) {
         const { internalUserId } = getWikiAuth(ctx);
-        const explicit = await RightsAdminService.explicitGroups({
-          userId: internalUserId,
-          wikiUsername: caller.verifiedWikiUsername,
-        });
+        // the handle is not in the request context yet
+        const [explicit, account] = await Promise.all([
+          RightsAdminService.explicitGroups({
+            userId: internalUserId,
+            wikiUsername: caller.ownUserNames[0] ?? null,
+          }),
+          internalUserId
+            ? db.user.findUnique({ where: { id: internalUserId }, select: { handle: true } })
+            : null,
+        ]);
         return {
-          username: caller.verifiedWikiUsername,
+          username: account?.handle ?? null,
           ...publicPermissions(caller),
           explicitGroups: explicit,
           changeableGroups: changeableGroups(caller.rights),

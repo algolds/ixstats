@@ -2,8 +2,8 @@
 // `jest` is deliberately NOT imported from "@jest/globals" (see cards-archetypes-admin-auth.test.ts):
 // the hoisted jest.mock() factories rely on the ambient global.
 /**
- * The WikiOS routers' gates, one mock set for all of them. Plan 401 (S4 to S8): authorization reads the verified
- * WikiAccountLink, never a typed name; a stash write goes only into the caller's own stashes; the author profile
+ * The WikiOS routers' gates, one mock set for all of them. Plan 401 (S4 to S8): authorization reads the approved
+ * name claims (IxnayID), never a typed name; a stash write goes only into the caller's own stashes; the author profile
  * resolves the requested name only; template previews are signed-in, bounded, sanitised and SHA-256 keyed, and
  * template wikitext cannot be broken out of; write procedures carry limits and every title and query input is capped.
  * The editing router saves and previews only sanitised HTML, keeps to the namespace allowlist and canonical titles,
@@ -17,6 +17,10 @@ jest.mock("~/server/db", () => ({
   db: {
     user: { findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     wikiAccountLink: { findFirst: jest.fn() },
+    wikiNameClaim: {
+      findMany: jest.fn().mockResolvedValue([]),
+      findFirst: jest.fn().mockResolvedValue(null),
+    },
     wikiUserGroup: { findMany: jest.fn().mockResolvedValue([]) },
     wikiBlock: { findMany: jest.fn().mockResolvedValue([]) },
     wikiRestriction: { findMany: jest.fn().mockResolvedValue([]) },
@@ -139,6 +143,7 @@ import { db } from "~/server/db";
 const mockDb = db as unknown as {
   user: { findFirst: jest.Mock; update: jest.Mock };
   wikiAccountLink: { findFirst: jest.Mock };
+  wikiNameClaim: { findMany: jest.Mock };
   wikiArticle: { upsert: jest.Mock; count: jest.Mock };
   wikiRestriction: { findMany: jest.Mock };
   wikiRevision: { findFirst: jest.Mock; create: jest.Mock };
@@ -151,13 +156,31 @@ const mockDb = db as unknown as {
 
 const asCtx = (ctx: unknown) => ctx as never;
 
+/** The approved IxWiki name claim of the signed-in user `db1` (null = none). */
+const mockClaim = (name: string | null, rightsPass = false) =>
+  mockDb.wikiNameClaim.findMany.mockResolvedValue(
+    name
+      ? [
+          {
+            id: "claim-1",
+            userId: "db1",
+            name,
+            visible: true,
+            rightsPass,
+            decidedAt: new Date("2026-01-01"),
+            mwUserId: null,
+          },
+        ]
+      : []
+  );
+
 const userCtx = (wikiUsername: string | null = null) =>
   createMockRouterContext({
     auth: { userId: "user_1" },
     user: { id: "db1", clerkUserId: "user_1", wikiUsername, role: { name: "user", level: 100 } },
   });
 
-describe("S4: wiki identity for authorization is the verified WikiAccountLink", () => {
+describe("S4: wiki identity for authorization is the approved name claim", () => {
   const editCaller = () => createCallerFactory(wikiosEditingRouter)(asCtx(userCtx("Legacy")));
 
   beforeEach(() => {
@@ -170,8 +193,8 @@ describe("S4: wiki identity for authorization is the verified WikiAccountLink", 
     });
   });
 
-  it("forbids User:<name> when User.wikiUsername is set but no verified link exists", async () => {
-    mockDb.wikiAccountLink.findFirst.mockResolvedValue(null);
+  it("forbids User:<name> when User.wikiUsername is set but no approved claim exists", async () => {
+    mockClaim(null);
 
     await expect(
       editCaller().saveWikitext({ title: "User:Legacy/Notes", wikitext: "x" })
@@ -179,44 +202,64 @@ describe("S4: wiki identity for authorization is the verified WikiAccountLink", 
     expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
   });
 
-  it("allows the user's own User: page with a verified link, looked up by internal id", async () => {
-    mockDb.wikiAccountLink.findFirst.mockResolvedValue({
-      username: "Verified",
-      verifiedById: null,
-      mwRegisteredAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-      mwEditCount: 50,
-    });
+  it("allows the user's own User: page through an approved claim, looked up by internal id", async () => {
+    mockClaim("Verified");
 
     await editCaller().saveWikitext({ title: "User:Verified/Notes", wikitext: "x" });
 
     expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(1);
-    expect(mockDb.wikiAccountLink.findFirst).toHaveBeenCalledWith({
-      where: { userId: "db1", source: "ixwiki", verifiedAt: { not: null } },
-      select: { username: true, verifiedById: true, mwRegisteredAt: true, mwEditCount: true },
-    });
+    expect(mockDb.wikiNameClaim.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { source: "ixwiki", userId: { in: ["db1"] }, status: "APPROVED" },
+      })
+    );
+    expect(mockDb.wikiAccountLink.findFirst).not.toHaveBeenCalled();
   });
 
-  it("does not let the legacy wikiUsername satisfy an AUTOCONFIRMED protection", async () => {
+  it("does not let the legacy wikiUsername or a claimed name alone satisfy an AUTOCONFIRMED protection", async () => {
     jest.mocked(ArticleRepository.findBySlug).mockResolvedValue({ status: "PUBLISHED" } as never);
     mockDb.wikiRestriction.findMany.mockResolvedValue([
       { action: "edit", level: "autoconfirmed", expiresAt: null },
     ]);
+    const revisions = (db as unknown as { wikiRevision: { count: jest.Mock } }).wikiRevision;
 
-    mockDb.wikiAccountLink.findFirst.mockResolvedValue(null);
+    mockClaim(null);
     await expect(
       editCaller().saveWikitext({ title: "Guarded", wikitext: "x" })
     ).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
 
-    mockDb.wikiAccountLink.findFirst.mockResolvedValue({
-      username: "Verified",
-      verifiedById: null,
-      mwRegisteredAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-      mwEditCount: 50,
+    // even a system owner's claim: the old MediaWiki account's age and edits are not read
+    mockClaim("Verified", true);
+    await expect(
+      editCaller().saveWikitext({ title: "Guarded", wikitext: "x" })
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
     });
-    await editCaller().saveWikitext({ title: "Guarded", wikitext: "x" });
+
+    // WikiOS's own rule, counting the revisions the claim tagged with the account's id
+    revisions.count.mockResolvedValue(10);
+    const aged = createMockRouterContext({
+      auth: { userId: "user_1" },
+      user: {
+        id: "db1",
+        clerkUserId: "user_1",
+        wikiUsername: "Legacy",
+        createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        role: { name: "user", level: 100 },
+      },
+    });
+    try {
+      await createCallerFactory(wikiosEditingRouter)(asCtx(aged)).saveWikitext({
+        title: "Guarded",
+        wikitext: "x",
+      });
+    } finally {
+      revisions.count.mockResolvedValue(0);
+    }
     expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(1);
+    expect(revisions.count).toHaveBeenCalledWith({ where: { authorId: "db1" } });
   });
 
   it("saveArticle no longer writes User.wikiUsername", async () => {
@@ -696,24 +739,6 @@ describe("S8: bounded inputs on stash, placeholder, profile and discussion endpo
 describe("the editing router (save, preview, page management, rights)", () => {
   const createCaller = createCallerFactory(wikiosEditingRouter);
 
-  /**
-   * The verified WikiAccountLink of the signed-in user (null = no verified link): proven by the account
-   * itself, to a wiki account that is old and active enough to autoconfirm.
-   */
-  const mockVerifiedLink = (username: string | null) =>
-    (
-      db as unknown as { wikiAccountLink: { findFirst: jest.Mock } }
-    ).wikiAccountLink.findFirst.mockResolvedValue(
-      username
-        ? {
-            username,
-            verifiedById: null,
-            mwRegisteredAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-            mwEditCount: 50,
-          }
-        : null
-    );
-
   const userCtx = (wikiUsername: string | null = null) =>
     createMockRouterContext({
       auth: { userId: "user_1" },
@@ -778,7 +803,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
   describe("wikiosEditingRouter namespace allowlist (NEW-1)", () => {
     beforeEach(() => {
       jest.clearAllMocks();
-      mockVerifiedLink("Linked");
+      mockClaim("Linked");
       jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(null);
       jest.mocked(ArticleRepository.saveArticle).mockResolvedValue({
         article: {} as never,
@@ -864,14 +889,14 @@ describe("the editing router (save, preview, page management, rights)", () => {
       expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(2);
     });
 
-    it("refuses another user's page and a user page without a verified linked account", async () => {
+    it("refuses another user's page and a user page whose name the caller does not hold", async () => {
       await expect(
         createCaller(userCtx("Linked") as never).saveWikitext({
           title: "User:Other",
           wikitext: "x",
         })
       ).rejects.toMatchObject({ code: "FORBIDDEN" });
-      mockVerifiedLink(null);
+      mockClaim(null);
       await expect(
         createCaller(userCtx(null) as never).saveWikitext({ title: "User:Linked", wikitext: "x" })
       ).rejects.toMatchObject({ code: "FORBIDDEN" });
@@ -1033,7 +1058,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
 
     beforeEach(() => {
       jest.clearAllMocks();
-      mockVerifiedLink(null);
+      mockClaim(null);
       mockGroups();
       mockBlocks();
       jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(existingArticle());

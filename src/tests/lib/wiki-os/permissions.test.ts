@@ -8,7 +8,7 @@
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: {
-    wikiAccountLink: { findFirst: jest.fn() },
+    wikiNameClaim: { findMany: jest.fn(), findFirst: jest.fn() },
     wikiUserGroup: { findMany: jest.fn() },
     wikiBlock: { findMany: jest.fn() },
     wikiRevision: { count: jest.fn(), findFirst: jest.fn(), groupBy: jest.fn() },
@@ -56,16 +56,16 @@ const FUTURE = new Date("2026-12-01T00:00:00Z");
 
 const perms = (
   groups: Group[],
-  extra: { block?: ActiveBlock | null; verified?: string | null } = {}
+  extra: { block?: ActiveBlock | null; own?: string[] } = {}
 ): WikiPermissions => ({
   groups,
   rights: rightsForGroups(groups),
   block: extra.block ?? null,
-  verifiedWikiUsername: extra.verified ?? null,
+  ownUserNames: extra.own ?? [],
 });
 
 const plain = perms(["*", "user"]);
-const autoconfirmed = perms(["*", "user", "autoconfirmed"], { verified: "Alice" });
+const autoconfirmed = perms(["*", "user", "autoconfirmed"], { own: ["Alice"] });
 const sysop = perms(["*", "user", "sysop"]);
 const interfaceAdmin = perms(["*", "user", "interface-admin"]);
 const owner = perms(["*", "user", "sysop", "bureaucrat", "interface-admin"]);
@@ -99,7 +99,7 @@ describe("decideAction: blocks", () => {
   });
 
   it("refuses every action to a blocked user, with the reason", () => {
-    const blocked = perms(["*", "user", "autoconfirmed"], { block: block(), verified: "Alice" });
+    const blocked = perms(["*", "user", "autoconfirmed"], { block: block(), own: ["Alice"] });
     for (const action of ["edit", "create", "move", "rollback", "upload"] as const) {
       expect(denialCode(blocked, action, "Caphiria")).toBe("blocked");
     }
@@ -114,7 +114,7 @@ describe("decideAction: blocks", () => {
   });
 
   it("lets a blocked user edit their own user talk page when the block allows it", () => {
-    const blocked = perms(["*", "user"], { block: block(), verified: "Alice" });
+    const blocked = perms(["*", "user"], { block: block(), own: ["Alice"] });
     expect(isAllowed(blocked, "edit", "User talk:Alice")).toBe(true);
     expect(isAllowed(blocked, "create", "User talk:Alice/Appeal")).toBe(true);
     expect(denialCode(blocked, "edit", "User talk:Bob")).toBe("blocked");
@@ -123,13 +123,21 @@ describe("decideAction: blocks", () => {
     expect(denialCode(blocked, "move", "User talk:Alice")).toBe("blocked");
   });
 
-  it("refuses the user talk exception when the block forbids it or no wiki account is verified", () => {
+  it("lets a blocked user edit the talk page of any name they hold, the handle's and each claimed name's", () => {
+    const blocked = perms(["*", "user"], { block: block(), own: ["alpha", "Old name"] });
+    expect(isAllowed(blocked, "edit", "User talk:Alpha")).toBe(true);
+    expect(isAllowed(blocked, "edit", "User talk:Old name")).toBe(true);
+    expect(isAllowed(blocked, "edit", "User talk:Old_name/Appeal")).toBe(true);
+    expect(denialCode(blocked, "edit", "User talk:Older name")).toBe("blocked");
+  });
+
+  it("refuses the user talk exception when the block forbids it or the caller holds no name", () => {
     const noTalk = perms(["*", "user"], {
       block: block({ allowUserTalk: false }),
-      verified: "Alice",
+      own: ["Alice"],
     });
     expect(denialCode(noTalk, "edit", "User talk:Alice")).toBe("blocked");
-    const unverified = perms(["*", "user"], { block: block(), verified: null });
+    const unverified = perms(["*", "user"], { block: block() });
     expect(denialCode(unverified, "edit", "User talk:Alice")).toBe("blocked");
   });
 });
@@ -168,7 +176,7 @@ describe("decideAction: namespaces (D9)", () => {
     }
   });
 
-  it("lets a verified owner edit their own user page, but never a script subpage of it", () => {
+  it("lets a name's owner edit their own user page, but never a script subpage of it", () => {
     expect(isAllowed(autoconfirmed, "edit", "User:Alice")).toBe(true);
     expect(isAllowed(autoconfirmed, "edit", "User:Alice/Notes")).toBe(true);
     expect(denialCode(autoconfirmed, "edit", "User:Alice/common.js")).toBe("namespaceprotected");
@@ -317,7 +325,7 @@ describe("decideAction: the action's own right", () => {
 // ---------------------------------------------------------------------------
 
 const mockDb = db as unknown as {
-  wikiAccountLink: { findFirst: jest.Mock };
+  wikiNameClaim: { findMany: jest.Mock; findFirst: jest.Mock };
   wikiUserGroup: { findMany: jest.Mock };
   wikiBlock: { findMany: jest.Mock };
   wikiRevision: { count: jest.Mock };
@@ -336,7 +344,8 @@ const ctx = (clerk = "user_1") => ({
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockDb.wikiAccountLink.findFirst.mockResolvedValue(null);
+  mockDb.wikiNameClaim.findMany.mockResolvedValue([]);
+  mockDb.wikiNameClaim.findFirst.mockResolvedValue(null);
   mockDb.wikiUserGroup.findMany.mockResolvedValue([]);
   mockDb.wikiBlock.findMany.mockResolvedValue([]);
   mockDb.wikiRevision.count.mockResolvedValue(0);
@@ -382,6 +391,27 @@ describe("authorizeAction", () => {
     ]);
     await expect(authorizeAction(ctx(), "edit", "Caphiria")).rejects.toMatchObject({
       message: expect.stringMatching(/^blocked: .*spam/),
+    });
+  });
+
+  it("lets a blocked caller appeal on the talk page of a name they claimed, and nowhere else", async () => {
+    mockDb.wikiBlock.findMany.mockResolvedValue([
+      { reason: "spam", expiresAt: null, allowUserTalk: true },
+    ]);
+    mockDb.wikiNameClaim.findMany.mockResolvedValue([
+      {
+        id: "c1",
+        userId: "db1",
+        name: "Old name",
+        visible: false,
+        rightsPass: false,
+        decidedAt: NOW,
+        mwUserId: null,
+      },
+    ]);
+    await expect(authorizeAction(ctx(), "edit", "User talk:Old name")).resolves.toBeUndefined();
+    await expect(authorizeAction(ctx(), "edit", "User talk:Someone")).rejects.toMatchObject({
+      message: expect.stringMatching(/^blocked: /),
     });
   });
 

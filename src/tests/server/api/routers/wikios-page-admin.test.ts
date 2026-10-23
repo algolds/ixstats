@@ -2,12 +2,14 @@
 // `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factories rely on the ambient global.
 //
 // Plan 409: the page-admin router (move, delete, undelete, protect, block, groups, log) running the real
-// PageManagementService, RightsAdminService and rights engine over an in-memory fake of the WikiOS tables.
-jest.mock("~/server/db", () => ({
-  __esModule: true,
-  db: jest.requireActual("~/tests/helpers/fake-wiki-db").fakeWikiDb.db,
-  isDatabaseReadOnly: true,
-}));
+// PageManagementService, RightsAdminService and rights engine over an in-memory fake of the WikiOS tables (Prisma mode:
+// the name resolver reads a claim's account through its relation). Names reach accounts through approved claims only.
+jest.mock("~/server/db", () => {
+  const fake = jest
+    .requireActual("~/tests/helpers/fake-wiki-db")
+    .createFakeWikiDb({ prisma: true });
+  return { __esModule: true, fake, db: fake.db, isDatabaseReadOnly: true };
+});
 // The kick would run the mirror worker in a timer; the jobs themselves are real (the fake database holds them).
 jest.mock("~/lib/wiki-os/services/mirror-outbox", () => ({
   __esModule: true,
@@ -29,18 +31,27 @@ import { describe, it, expect, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosPageAdminRouter } from "~/server/api/routers/wikios/page-admin";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
-import { fakeWikiDb } from "~/tests/helpers/fake-wiki-db";
+import type { createFakeWikiDb } from "~/tests/helpers/fake-wiki-db";
 
+const { fake: fakeWikiDb } = jest.requireMock("~/server/db") as {
+  fake: ReturnType<typeof createFakeWikiDb>;
+};
 const { tables } = fakeWikiDb;
 const createCaller = createCallerFactory(wikiosPageAdminRouter);
 const DAY = 24 * 60 * 60 * 1000;
 const inFuture = () => new Date(Date.now() + DAY);
 
 /** A signed-in caller. `id` is the WikiOS user id, `clerk` the auth-provider id. */
-const ctxFor = (id: string, clerk: string, name: string, role = "user") =>
+const ctxFor = (id: string, clerk: string, name: string, role = "user", createdAt?: Date) =>
   createMockRouterContext({
     auth: { userId: clerk },
-    user: { id: id, clerkUserId: clerk, wikiUsername: name, role: { name: role, level: 100 } },
+    user: {
+      id: id,
+      clerkUserId: clerk,
+      wikiUsername: name,
+      createdAt,
+      role: { name: role, level: 100 },
+    },
   });
 
 const as = (ctx: ReturnType<typeof ctxFor>) => createCaller(ctx as never);
@@ -48,8 +59,9 @@ const as = (ctx: ReturnType<typeof ctxFor>) => createCaller(ctx as never);
 const ownerCtx = () => ctxFor("dbowner", "user_owner", "Boss", "owner");
 const sysopCtx = () => ctxFor("dbsysop", "user_sysop", "Mod", "admin");
 const plainCtx = () => ctxFor("dbplain", "user_plain", "Newbie");
-/** autoconfirmed through a verified wiki link (seeded in beforeEach). */
-const memberCtx = () => ctxFor("dbmember", "user_member", "Member");
+/** autoconfirmed by WikiOS's own rule: a month old, with the ten revisions its claim tagged (seeded in beforeEach). */
+const memberCtx = () =>
+  ctxFor("dbmember", "user_member", "Member", "user", new Date(Date.now() - 30 * DAY));
 const anonymous = () => createCaller(createMockRouterContext({ auth: null, user: null }) as never);
 
 const logTypes = () => tables.wikiLog.rows.map((row) => `${row.logType}/${row.action}`);
@@ -63,14 +75,18 @@ beforeEach(() => {
     { id: "dbmember", wikiUsername: "Member" },
     { id: "dbvictim", wikiUsername: "Victim" }
   );
-  tables.wikiAccountLink.seed(
-    {
-      userId: "dbmember",
-      source: "ixwiki",
-      username: "Member",
-      verifiedAt: new Date("2026-01-01"),
-    },
-    { userId: "dbvictim", source: "ixwiki", username: "Victim", verifiedAt: new Date("2026-01-01") }
+  tables.wikiNameClaim.seed(
+    { userId: "dbsysop", name: "Mod", decidedAt: new Date("2026-01-01") },
+    { userId: "dbmember", name: "Member", decidedAt: new Date("2026-01-01") },
+    { userId: "dbvictim", name: "Victim", decidedAt: new Date("2026-01-01") }
+  );
+  tables.wikiRevision.seed(
+    ...Array.from({ length: 10 }, (_, i) => ({
+      id: `r-member-${i}`,
+      articleId: "a-elsewhere",
+      author: "Member",
+      authorId: "dbmember",
+    }))
   );
   tables.wikiArticle.seed(
     {
@@ -430,7 +446,7 @@ describe("protectPage / getPageRestrictions", () => {
 });
 
 describe("blockUser / unblockUser / listBlocks", () => {
-  it("blocks a wiki username nobody has linked, and the block follows a later verified link", async () => {
+  it("blocks a wiki username nobody holds, and the block follows a later approved claim", async () => {
     const result = await as(sysopCtx()).blockUser({
       target: { wikiUsername: "vandal_bob" },
       reason: "vandalism",
@@ -452,14 +468,9 @@ describe("blockUser / unblockUser / listBlocks", () => {
     const shown = await anonymous().getUserPermissions({ user: "Vandal bob" });
     expect(shown.block).toMatchObject({ reason: "vandalism", allowUserTalk: true });
 
-    // the wiki account is later linked by a WikiOS user: the block now applies to them
+    // the name is later approved for a WikiOS user, by an ordinary admin: the block now applies to them
     tables.user.seed({ id: "dbbob", wikiUsername: null });
-    tables.wikiAccountLink.seed({
-      userId: "dbbob",
-      source: "ixwiki",
-      username: "Vandal bob",
-      verifiedAt: new Date(),
-    });
+    tables.wikiNameClaim.seed({ userId: "dbbob", name: "Vandal bob", rightsPass: false });
     const bob = ctxFor("dbbob", "user_bob", "Bob");
     expect((await as(bob).getUserPermissions()).block).toMatchObject({ reason: "vandalism" });
   });
@@ -584,6 +595,106 @@ describe("setUserGroups", () => {
     ).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
+  });
+});
+
+describe("imported rights and blocks through claims (plan 409, design decision 5)", () => {
+  beforeEach(() => {
+    tables.wikiUserGroup.seed(
+      { wikiUsername: "Old sysop", group: "sysop", source: "mw-import" },
+      { wikiUsername: "Old sysop", group: "bureaucrat", source: "mw-import" },
+      { wikiUsername: "Old sysop", group: "interface-admin", source: "mw-import" }
+    );
+  });
+
+  const claimOldSysop = (rightsPass: boolean) =>
+    tables.wikiNameClaim.seed({ userId: "dbplain", name: "Old sysop", rightsPass });
+
+  it("an ordinary admin's approval gives the name, never its imported sysop or bureaucrat rows", async () => {
+    claimOldSysop(false);
+
+    const own = await as(plainCtx()).getUserPermissions();
+    expect(own.groups).toEqual(["*", "user"]);
+    expect(own.rights).not.toContain("delete");
+    expect(own.rights).not.toContain("userrights");
+    expect(own.explicitGroups).toEqual([]);
+    expect(own.changeableGroups).toEqual([]);
+
+    await expect(as(plainCtx()).deletePage({ title: "Old name" })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    await expect(
+      as(plainCtx()).setUserGroups({ target: { userId: "dbplain" }, add: ["sysop"] })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      as(plainCtx()).blockUser({ target: { wikiUsername: "Victim" } })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(tables.wikiArticle.rows.find((row) => row.id === "a-old")?.status).toBe("PUBLISHED");
+
+    // and the name's page, shown to anyone, says the same
+    const shown = await anonymous().getUserPermissions({ user: "Old_sysop" });
+    expect(shown.groups).not.toContain("sysop");
+    expect(shown.groups).not.toContain("bureaucrat");
+    expect(shown.explicitGroups).toEqual([]);
+  });
+
+  it("a system owner's approval passes the imported groups", async () => {
+    claimOldSysop(true);
+
+    const own = await as(plainCtx()).getUserPermissions();
+    expect(own.groups).toEqual(expect.arrayContaining(["sysop", "bureaucrat", "interface-admin"]));
+    expect(own.explicitGroups.map((row) => row.group).sort()).toEqual([
+      "bureaucrat",
+      "interface-admin",
+      "sysop",
+    ]);
+    await as(plainCtx()).deletePage({ title: "Old name" });
+    expect(tables.wikiArticle.rows.find((row) => row.id === "a-old")?.status).not.toBe("PUBLISHED");
+  });
+
+  it("the imported block follows the name whoever approved it, and lifting it frees every name", async () => {
+    claimOldSysop(false);
+    tables.wikiNameClaim.seed({ userId: "dbplain", name: "Plain alt", rightsPass: false });
+    tables.wikiBlock.seed(
+      { wikiUsername: "Old sysop", reason: "imported", source: "mw-import" },
+      { wikiUsername: "Plain alt", reason: "alt" }
+    );
+
+    expect((await as(plainCtx()).getUserPermissions()).block).toMatchObject({ reason: "imported" });
+    await expect(
+      as(plainCtx()).movePage({ from: "Old name", to: "New name" })
+    ).rejects.toMatchObject({ message: expect.stringMatching(/^blocked: /) });
+
+    await as(sysopCtx()).unblockUser({ target: { userId: "dbplain" } });
+    expect(tables.wikiBlock.rows).toHaveLength(0);
+    expect((await as(plainCtx()).getUserPermissions()).block).toBeNull();
+  });
+
+  it("a revoked claim takes the name's groups and blocks away again", async () => {
+    tables.wikiNameClaim.seed({
+      userId: "dbplain",
+      name: "Old sysop",
+      rightsPass: true,
+      status: "REVOKED",
+    });
+    tables.wikiBlock.seed({ wikiUsername: "Old sysop", reason: "imported" });
+
+    const own = await as(plainCtx()).getUserPermissions();
+    expect(own.groups).toEqual(["*", "user"]);
+    expect(own.block).toBeNull();
+  });
+});
+
+describe("the caller's own permissions", () => {
+  it("are named by the passport handle, and list the explicit groups of the account's names", async () => {
+    tables.user.rows.find((row) => row.id === "dbmember")!.handle = "member_one";
+    tables.wikiUserGroup.seed({ userId: "dbmember", group: "bureaucrat" });
+
+    const own = await as(memberCtx()).getUserPermissions();
+
+    expect(own.username).toBe("member_one");
+    expect(own.groups).toEqual(expect.arrayContaining(["autoconfirmed", "bureaucrat"]));
+    expect(own.explicitGroups.map((row) => row.group)).toEqual(["bureaucrat"]);
   });
 });
 

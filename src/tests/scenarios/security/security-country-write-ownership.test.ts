@@ -22,6 +22,11 @@ jest.mock("~/server/db", () => ({
     $transaction: jest.fn().mockRejectedValue(new Error("write path reached")),
     wikiDiscussionThread: { findUnique: jest.fn().mockResolvedValue(null) },
     wikiAccountLink: { findFirst: jest.fn().mockResolvedValue(null) },
+    user: { findUnique: jest.fn().mockResolvedValue(null) },
+    wikiNameClaim: {
+      findMany: jest.fn().mockResolvedValue([]),
+      findFirst: jest.fn().mockResolvedValue(null),
+    },
     wikiUserGroup: { findMany: jest.fn().mockResolvedValue([]) },
     wikiBlock: { findMany: jest.fn().mockResolvedValue([]) },
     wikiRevision: { count: jest.fn().mockResolvedValue(0) },

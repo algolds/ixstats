@@ -1404,7 +1404,7 @@ describe("canonicalizeTitle looks at no more than 4,096 characters of a title", 
     });
     expect(parseWikiTitle(`foo${"x".repeat(5_000)}`)).toBeNull();
     // a title no parser can judge is refused to everyone but an administrator, who is let through as before
-    const nobody = { rights: new Set<never>(), linkedWikiUsername: null };
+    const nobody = { rights: new Set<never>(), ownUserNames: [] };
     expect(checkEditPolicy(`foo${"x".repeat(5_000)}`, nobody)).toEqual({
       allowed: false,
       reason: "That page title is not valid.",

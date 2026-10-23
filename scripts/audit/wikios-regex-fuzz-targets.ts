@@ -992,7 +992,7 @@ export const TARGETS: readonly Target[] = [
   }),
   wikitext("namespace-policy#checkEditPolicy", async () => {
     const m = await import("~/lib/wiki-os/namespace-policy");
-    return (s) => m.checkEditPolicy(s, { rights: new Set(), linkedWikiUsername: null });
+    return (s) => m.checkEditPolicy(s, { rights: new Set(), ownUserNames: [] });
   }),
 
   // ---- the helpers outside those folders that read page text (excerpt, lead image, category …) ---

@@ -1,17 +1,17 @@
 /**
  * wiki-user-info.ts — what WikiOS knows about a wiki account, from Postgres alone.
  *
- * The edit count is the account's revisions in `wiki_revisions` (a parked MediaWiki edit is still an
- * edit the account made); the registration date is the one recorded when the account's wiki link was
- * proven, else the date of its first revision, else (for a linked WikiOS user) the WikiOS account's
- * creation; the groups are the rights engine's (explicit `wiki_user_groups` rows, implicit groups and
- * the IxStates role). The account exists when it has revisions, a verified wiki link, Lorewards
- * activity or group memberships. The MediaWiki user id is known only from a verified link; otherwise
- * it is 0 ("unknown"), never an estimate.
+ * The name's account is the one `accountOfWikiName` gives it for anyone to see (an approved claim its owner shows,
+ * else the account whose handle the name spells; a hidden claim gives none). The edit count is the name's revisions
+ * in `wiki_revisions` plus the account's own (a parked MediaWiki edit is still an edit); the registration date is
+ * the date of the first of them, else the account's creation; the groups are the rights engine's (explicit
+ * `wiki_user_groups` rows, implicit groups and the IxStates role). The name exists when it has revisions, an
+ * account, Lorewards activity or group memberships. The MediaWiki user id is known only from an approved claim that
+ * recorded it; otherwise it is 0 ("unknown"), never an estimate.
  */
 
 import { db } from "~/server/db";
-import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import { IXWIKI, accountOfWikiName, claimName } from "~/lib/identity/wiki-names";
 import { loadTargetPermissions } from "~/lib/wiki-os/rights";
 
 export interface WikiUserInfo {
@@ -64,23 +64,13 @@ function decodeName(name: string): string {
 export async function loadWikiUserInfo(username: string): Promise<WikiUserInfo | null> {
   const typed = decodeName(username).replace(/^@/, "").trim();
   if (!typed) return null;
-  const name = normalizeWikiUsername(typed);
+  const name = claimName(typed);
 
-  const link = await db.wikiAccountLink.findFirst({
-    where: { source: "ixwiki", username: name, verifiedAt: { not: null } },
-    select: {
-      userId: true,
-      username: true,
-      wikiUserId: true,
-      mwRegisteredAt: true,
-      user: { select: { createdAt: true } },
-    },
-  });
-  const byAuthor = link
-    ? { OR: [{ author: { equals: name, mode: "insensitive" as const } }, { authorId: link.userId }] }
-    : { author: { equals: name, mode: "insensitive" as const } };
+  const account = await accountOfWikiName(db, name, { shown: true });
+  const byName = { author: { equals: name, mode: "insensitive" as const } };
+  const byAuthor = account ? { OR: [byName, { authorId: account.userId }] } : byName;
 
-  const [editCount, firstRevision, stats, permissions] = await Promise.all([
+  const [editCount, firstRevision, stats, permissions, claim, user] = await Promise.all([
     db.wikiRevision.count({ where: byAuthor }),
     db.wikiRevision.findFirst({
       where: byAuthor,
@@ -91,20 +81,32 @@ export async function loadWikiUserInfo(username: string): Promise<WikiUserInfo |
       where: { username: { equals: name, mode: "insensitive" } },
       select: { username: true },
     }),
-    loadTargetPermissions({ userId: link?.userId ?? null, wikiUsername: name }),
+    loadTargetPermissions({ userId: account?.userId ?? null, wikiUsername: name }),
+    account
+      ? db.wikiNameClaim.findFirst({
+          where: { source: IXWIKI, name, status: "APPROVED", visible: true },
+          select: { mwUserId: true },
+        })
+      : null,
+    account
+      ? db.user.findUnique({ where: { id: account.userId }, select: { createdAt: true } })
+      : null,
   ]);
 
   const exists =
-    editCount > 0 || link !== null || stats !== null || permissions.groups.some((g) => g !== "*");
-  const groups = exists && !permissions.groups.includes("user")
-    ? [...permissions.groups, "user"]
-    : permissions.groups;
+    editCount > 0 ||
+    account !== null ||
+    stats !== null ||
+    permissions.groups.some((g) => g !== "*");
+  const groups =
+    exists && !permissions.groups.includes("user")
+      ? [...permissions.groups, "user"]
+      : permissions.groups;
   return toInfo({
-    canonicalName: link?.username ?? firstRevision?.author ?? stats?.username ?? name,
-    userId: link?.wikiUserId ?? 0,
+    canonicalName: claim ? name : (firstRevision?.author ?? stats?.username ?? name),
+    userId: claim?.mwUserId ?? 0,
     editCount,
-    registration:
-      link?.mwRegisteredAt ?? firstRevision?.createdAt ?? link?.user.createdAt ?? null,
+    registration: firstRevision?.createdAt ?? user?.createdAt ?? null,
     groups: exists ? groups : [],
     exists,
   });
