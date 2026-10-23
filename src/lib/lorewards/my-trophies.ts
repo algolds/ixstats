@@ -1,19 +1,21 @@
 /**
  * The viewer's own Lorewards. A place is theirs when the payout rule pays it to them (`resolveLorewardPlace`): a
- * plain name through their exact verified link, a `wikios>` name through their WikiOS edits. A name they carry
- * proves nothing on its own, so the shared stats row of a name never counts for them.
+ * plain name through their approved name claim on it (shown or hidden: these are the owner's own views), a `wikios>`
+ * name through their WikiOS edits. A name they carry proves nothing on its own, so the shared stats row of a name
+ * never counts for them.
  */
 import type { PrismaClient } from "@prisma/client";
+import { namesOfUser } from "~/lib/identity/wiki-names";
 import type { LorewardPlace, LorewardType } from "~/lib/vault/vault-bonus";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import { importName } from "~/lib/wiki-os/services/import-label";
 import {
+  claimedLorewardUser,
   contestWindow,
   nameSpellings,
   placeOf,
   resolveLorewardPlace,
   scoredEditsAccount,
-  verifiedLorewardUser,
   type LorewardPlaceRef,
 } from "./resolve-user";
 import { calculateStreaks } from "./streaks";
@@ -22,25 +24,25 @@ import { NO_TROPHIES, ownedTrophyCards, type Trophies } from "./trophy-summary";
 
 type MyTrophiesDb = Pick<
   PrismaClient,
-  "wikiAccountLink" | "wikiRevision" | "lorewardEntry" | "cardOwnership"
+  "wikiNameClaim" | "wikiRevision" | "lorewardEntry" | "cardOwnership"
 >;
 
 export interface MyTrophies extends Trophies {
-  /** The viewer's verified ixwiki name, else the label their latest WikiOS edit carries; null with neither. */
+  /** The viewer's first-approved claimed name, else the label their latest WikiOS edit carries; null with neither. */
   wikiUsername: string | null;
-  /** Whether `wikiUsername` is the viewer's verified link, so the name's public record (stats, history) is theirs. */
+  /** Whether `wikiUsername` is a name the viewer holds an approved claim on, so its public record is theirs. */
   verified: boolean;
   /**
-   * Classic-wiki places (plain names) under the viewer's WikiOS labels that no account has verified: a verified link
-   * would claim the ones they made.
+   * Classic-wiki places (plain names) under the viewer's WikiOS labels that no account has claimed: an approved claim
+   * would give them the ones they made.
    */
   unmatched: number;
 }
 
 /** Who the viewer is on the wiki. */
 export interface ViewerNames {
-  /** Their verified ixwiki username, or null. */
-  link: string | null;
+  /** Every ixwiki name they hold an approved claim on (shown or hidden), oldest approval first. */
+  claimed: string[];
   /** The labels their ixwiki WikiOS edits carry, latest first. */
   labels: string[];
   /** When their first ixwiki WikiOS edit was made (ms); Infinity with none. */
@@ -65,16 +67,13 @@ interface TiedPlace {
   date: string;
 }
 
-/** The viewer's verified ixwiki link and the labels of their ixwiki WikiOS edits. */
+/** The viewer's approved ixwiki names and the labels of their ixwiki WikiOS edits. */
 export async function viewerNames(
-  db: Pick<PrismaClient, "wikiAccountLink" | "wikiRevision">,
+  db: Pick<PrismaClient, "wikiNameClaim" | "wikiRevision">,
   userId: string
 ): Promise<ViewerNames> {
-  const [link, rows] = await Promise.all([
-    db.wikiAccountLink.findFirst({
-      where: { userId, source: "ixwiki", verifiedAt: { not: null } },
-      select: { username: true },
-    }),
+  const [claimed, rows] = await Promise.all([
+    namesOfUser(db, userId),
     db.wikiRevision.groupBy({
       by: ["author"],
       where: { authorId: userId, source: "ixwiki", author: { not: null } },
@@ -95,20 +94,20 @@ export async function viewerNames(
   );
   labelled.sort((a, b) => b.last - a.last);
   return {
-    link: link?.username ?? null,
+    claimed: claimed.map((c) => c.name),
     labels: labelled.map((l) => l.label),
     since: Math.min(Infinity, ...labelled.map((l) => l.first)),
   };
 }
 
 function recordedNames(names: ViewerNames): RecordedNames {
-  const plain = [...(names.link ? [names.link] : []), ...names.labels].flatMap(nameSpellings);
+  const plain = [...names.claimed, ...names.labels].flatMap(nameSpellings);
   return { plain: new Set(plain), imported: new Set(names.labels.map(importName)) };
 }
 
 /**
  * Whether a place recorded under one of the viewer's names is theirs. "unmatched": a plain name no account has
- * verified (it may be a classic-wiki win of theirs). "other": the rule pays it to someone else, or to no one.
+ * claimed (it may be a classic-wiki win of theirs). "other": the rule pays it to someone else, or to no one.
  */
 async function tieOf(
   db: MyTrophiesDb,
@@ -124,7 +123,7 @@ async function tieOf(
     return (await resolveLorewardPlace(db, recorded)) === userId ? "tied" : "other";
   }
   if (!holders.has(recorded.wikiUser)) {
-    holders.set(recorded.wikiUser, await verifiedLorewardUser(db, recorded.wikiUser));
+    holders.set(recorded.wikiUser, await claimedLorewardUser(db, recorded.wikiUser));
   }
   const holder = holders.get(recorded.wikiUser);
   if (holder === userId) return "tied";
@@ -193,13 +192,13 @@ function countPlaces(tied: TiedPlace[]): Omit<Trophies, "cards" | "holderHandle"
   return { wins, runnerUps, streak: calculateStreaks(winDays).current };
 }
 
-/** The viewer's trophies: counted from the places tied to them, with the classic-wiki places a link could claim. */
+/** The viewer's trophies: counted from the places tied to them, with the classic-wiki places a claim could give them. */
 export async function loadMyTrophies(
   db: MyTrophiesDb,
   userId: string,
   names: ViewerNames
 ): Promise<MyTrophies> {
-  const wikiUsername = names.link ?? names.labels[0] ?? null;
+  const wikiUsername = names.claimed[0] ?? names.labels[0] ?? null;
   if (!wikiUsername) return { wikiUsername: null, verified: false, unmatched: 0, ...NO_TROPHIES };
   const [{ tied, unmatched }, cards] = await Promise.all([
     tiePlaces(db, userId, names),
@@ -207,7 +206,7 @@ export async function loadMyTrophies(
   ]);
   return {
     wikiUsername,
-    verified: names.link !== null,
+    verified: names.claimed.length > 0,
     unmatched,
     ...countPlaces(tied),
     cards,
@@ -242,12 +241,12 @@ async function raceEntryAuthorIds(
  * rule credits to them (`scoredEditsAccount`).
  */
 export async function myRaceRank(
-  db: Pick<PrismaClient, "wikiAccountLink" | "wikiRevision">,
+  db: Pick<PrismaClient, "wikiNameClaim" | "wikiRevision">,
   race: TodayRace,
   names: ViewerNames,
   userId: string
 ): Promise<number | null> {
-  const authors = new Set([...(names.link ? nameSpellings(names.link) : []), ...names.labels]);
+  const authors = new Set([...names.claimed.flatMap(nameSpellings), ...names.labels]);
   for (const entry of race.entries) {
     if (!authors.has(entry.user)) continue;
     const authorIds = await raceEntryAuthorIds(db, race.date, entry);

@@ -1,10 +1,11 @@
 /** @jest-environment node */
 /**
- * A member's privacy settings decide what other members see. Hana writes on IxWiki as "Hana Wiki" (a verified link,
- * Lorewards medals and a featured-article award) and has no nation. She turns wiki attribution off in Settings →
- * Privacy: every surface that names players stops using her wiki name (display names, messaging, a ThinkTank's
- * roster, feed and join notices, her achievements as others see them, her passport handle), she still sees her own,
- * and turning it back on restores it. A switch that cannot be read hides every wiki name.
+ * A member's privacy settings decide what other members see. Hana writes on IxWiki as "Hana Wiki" (a verified link
+ * and an approved name claim, Lorewards medals and a featured-article award) and has no nation. She turns wiki
+ * attribution off in Settings → Privacy: every surface that names players stops using her wiki name (display names,
+ * messaging, a ThinkTank's roster, feed and join notices, her passport handle), she still sees her own, and turning it
+ * back on restores it. A switch that cannot be read hides every wiki name. Her achievements as others see them follow
+ * her name claim instead: while she keeps it hidden they read no wiki name, and she still sees her own.
  *
  * Her direct messages are open to followers only, with read receipts and online status off. Sam, outside her
  * audience, starts a conversation: it waits in her Requests folder and she is not told. She accepts, and Sam's next
@@ -105,6 +106,7 @@ beforeEach(async () => {
   await db.wikiNameClaim.create({
     data: {
       userId: "hana",
+      source: "ixwiki",
       name: "Hana Wiki",
       status: "APPROVED",
       origin: "CONVERSION",
@@ -205,13 +207,6 @@ it("hides Hana's wiki name everywhere others see her while attribution is off, a
   expect(hanaJoined.length).toBeGreaterThan(0);
   for (const notice of hanaJoined) expect(notice.actorUserName).not.toContain("Hana Wiki");
 
-  expect(await hanasLorewardsSeenBy("omar")).toEqual({
-    bronze: false,
-    awards: 0,
-    namesPage: false,
-  });
-  expect(await hanasLorewardsSeenBy("hana")).toEqual({ bronze: true, awards: 1, namesPage: true });
-
   // Her passport handle (on every share link) skips the wiki name; her own settings still show the link
   const status = await ixnayid(as("hana")).getStatus();
   expect(status.passportHandle).not.toMatch(/hana[ _]wiki/i);
@@ -230,7 +225,30 @@ it("hides Hana's wiki name everywhere others see her while attribution is off, a
   expect(seen.messaging[0]).toBe("Hana Wiki");
   expect(seen.roster[0]).toBe("Hana Wiki");
   expect(seen.feed[0]).toBe("Hana Wiki");
+});
+
+it("reads no wiki name for Hana's achievements as others see them while she keeps her name claim hidden", async () => {
   expect(await hanasLorewardsSeenBy("omar")).toEqual({ bronze: true, awards: 1, namesPage: true });
+
+  await db.wikiNameClaim.updateMany({ where: { userId: "hana" }, data: { visible: false } });
+  expect(await hanasLorewardsSeenBy("omar")).toEqual({
+    bronze: false,
+    awards: 0,
+    namesPage: false,
+  });
+  // A hidden claim still counts for her own view
+  expect(await hanasLorewardsSeenBy("hana")).toEqual({ bronze: true, awards: 1, namesPage: true });
+
+  // A claim she only asked for names her nowhere, not even to herself
+  await db.wikiNameClaim.updateMany({
+    where: { userId: "hana" },
+    data: { visible: true, status: "PENDING" },
+  });
+  expect(await hanasLorewardsSeenBy("hana")).toEqual({
+    bronze: false,
+    awards: 0,
+    namesPage: false,
+  });
 });
 
 it("hides every wiki name when the privacy switches cannot be read", async () => {
@@ -254,11 +272,6 @@ it("hides every wiki name when the privacy switches cannot be read", async () =>
   expect(
     group!.members.map((m) => (m.user as { wikiUsername?: string | null }).wikiUsername ?? null)
   ).toEqual([null, null, null]);
-  expect(await hanasLorewardsSeenBy("omar")).toEqual({
-    bronze: false,
-    awards: 0,
-    namesPage: false,
-  });
 
   jest.restoreAllMocks();
   await post(groupId);

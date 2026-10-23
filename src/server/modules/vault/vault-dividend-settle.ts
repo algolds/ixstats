@@ -36,8 +36,8 @@ const add = (counts: Counts, userId: string, n: number) =>
 /**
  * Sum of each editor's Lorewards candidate scores for the day, by account. A candidate (one name's edits to one page
  * that day) is credited from its scored revisions themselves (`scoredEditsAccount`): the one WikiOS account on all
- * of them, else, when all came from MediaWiki, the name's exact verified-link holder. Mixed revisions, or MediaWiki
- * edits with no link, earn no wiki part.
+ * of them, else, when all came from MediaWiki, the holder of the name's approved claim. Mixed revisions, or MediaWiki
+ * edits under an unclaimed name, earn no wiki part.
  */
 async function loadWikiScores(db: PrismaClient, day: string): Promise<Counts> {
   const { candidates } = await scoreDailyWikiOS(day, undefined, { enrichAll: true });

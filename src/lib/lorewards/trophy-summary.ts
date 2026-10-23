@@ -78,7 +78,7 @@ export async function ownedTrophyCards(
 /**
  * A wiki name's public trophies: counts from that exact name's Lorewards stats (`canonicalWikiName`: MediaWiki names
  * are case-sensitive after the first letter, so "OstroZava" is not "Ostrozava") and the trophy cards held by the
- * platform account `userId` that verified the name (null: none), with that account's passport handle (`handleOf`).
+ * platform account `userId` shown as the name's holder (null: none), with that account's passport handle (`handleOf`).
  */
 export async function loadTrophies(
   db: TrophyDb,

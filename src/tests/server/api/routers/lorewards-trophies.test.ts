@@ -1,7 +1,9 @@
 /** @jest-environment node */
 /**
- * The Lorewards trophies procedures: the viewer's own (their verified wiki link's record, else only the places whose
- * winning edits are all theirs) and any wiki user's public ones, plus the standings. Trophy cards come from the trophy cards the user's account owns.
+ * The Lorewards trophies procedures: the viewer's own (the places their approved name claims hold, hidden ones too,
+ * else only the places whose winning edits are all theirs) and any wiki user's public ones, whose holder is the
+ * owner of the name's approved claim only while they show it, plus the standings. Trophy cards come from the trophy
+ * cards the user's account owns.
  */
 import { beforeEach, describe, expect, it } from "@jest/globals";
 
@@ -121,6 +123,36 @@ const CARD_SUMMARIES = [
   summary("card2", "Tide Charts", "daily", "runner-up"),
 ];
 
+interface Claim {
+  userId: string;
+  name: string;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "REVOKED";
+  visible: boolean;
+}
+interface ClaimWhere {
+  source: string;
+  name?: string;
+  userId?: { in: string[] };
+  status: string;
+  visible?: boolean;
+}
+
+/** The ixwiki name claims the fake database holds; by default the viewer's approved, shown claim on "Ada". */
+let claims: Claim[];
+const claimRow = (c: Claim) => ({
+  id: `claim-${c.name}`,
+  rightsPass: false,
+  decidedAt: new Date("2026-10-01T00:00:00.000Z"),
+  mwUserId: null,
+  ...c,
+});
+const claimMatches = (c: Claim, where: ClaimWhere) =>
+  where.source === "ixwiki" &&
+  (where.name === undefined || c.name === where.name) &&
+  (where.userId === undefined || where.userId.in.includes(c.userId)) &&
+  c.status === where.status &&
+  (where.visible === undefined || c.visible === where.visible);
+
 const settings = (vaultCards: boolean) =>
   ({ visibility: { vaultCards }, signature: null, pinnedRibbonKeys: [] }) as never;
 
@@ -144,8 +176,15 @@ beforeEach(() => {
   db = createMockPrisma();
   jest.useRealTimers();
   jest.mocked(getTodayRace).mockResolvedValue(RACE);
-  jest.mocked(loadPassportSettings).mockResolvedValue(settings(true));
-  db.wikiAccountLink.findFirst.mockResolvedValue({ username: "Ada", userId: "u1" });
+  jest.mocked(loadPassportSettings).mockClear().mockResolvedValue(settings(true));
+  claims = [{ userId: "u1", name: "Ada", status: "APPROVED", visible: true }];
+  db.wikiNameClaim.findFirst.mockImplementation(async ({ where }: { where: ClaimWhere }) => {
+    const claim = claims.find((c) => claimMatches(c, where));
+    return claim ? claimRow(claim) : null;
+  });
+  db.wikiNameClaim.findMany.mockImplementation(async ({ where }: { where: ClaimWhere }) =>
+    claims.filter((c) => claimMatches(c, where)).map(claimRow)
+  );
   db.lorewardEntry.findMany.mockResolvedValue(ADA_PLACES);
   // No WikiOS edits by the viewer; today's race rows were mirrored from MediaWiki (no authorId).
   db.wikiRevision.groupBy.mockImplementation(async ({ by }: { by: string[] }) =>
@@ -156,7 +195,7 @@ beforeEach(() => {
     trophyRow("card1", "Seastead Law", "winner", { contest: "weekly" }),
     trophyRow("card2", "Tide Charts", "runner-up", { contest: "daily" }),
   ]);
-  // The holder's passport handle: here the verified wiki name, as for a player with no stored handle.
+  // The holder's passport handle: here the claimed wiki name, as for a player with no stored handle.
   jest.mocked(loadPassportHandleById).mockClear().mockResolvedValue("Ada");
   db.vaultTransaction.aggregate.mockResolvedValue({ _sum: { credits: 2150 } });
 });
@@ -176,6 +215,54 @@ describe("lorewards.getMyTrophies", () => {
     });
   });
 
+  it("counts the places of the viewer's approved claim, even one they keep hidden", async () => {
+    claims = [{ userId: "u1", name: "Ada", status: "APPROVED", visible: false }];
+    const mine = await viewer().getMyTrophies();
+    expect(mine).toMatchObject({
+      wikiUsername: "Ada",
+      verified: true,
+      unmatched: 0,
+      wins: { daily: 1, weekly: 1, monthly: 0 },
+      runnerUps: 1,
+      todayRank: 2,
+    });
+  });
+
+  it("counts no place under a name the viewer has only asked for", async () => {
+    claims = [{ userId: "u1", name: "Ada", status: "PENDING", visible: true }];
+    const mine = await viewer().getMyTrophies();
+    expect(mine).toMatchObject({ wikiUsername: null, verified: false, todayRank: null });
+  });
+
+  it("counts no place under a label of the viewer's that another account's approved claim holds", async () => {
+    // The viewer's WikiOS edits carry the label "Bo", a classic-wiki name u2 holds: Bo's wins and race entry are u2's.
+    claims = [
+      { userId: "u1", name: "Ada", status: "APPROVED", visible: true },
+      { userId: "u2", name: "Bo", status: "APPROVED", visible: true },
+    ];
+    db.wikiRevision.groupBy.mockImplementation(async ({ by }: { by: string[] }) =>
+      by[0] === "author"
+        ? [
+            {
+              author: "Bo",
+              _min: { createdAt: new Date("2026-10-01T00:00:00.000Z") },
+              _max: { createdAt: new Date("2026-10-19T00:00:00.000Z") },
+            },
+          ]
+        : [{ authorId: null }]
+    );
+    db.lorewardEntry.findMany.mockResolvedValue([
+      ...ADA_PLACES,
+      entry("2026-10-17", { winnerUser: "Bo" }),
+    ]);
+    const mine = await viewer().getMyTrophies();
+    expect(mine).toMatchObject({
+      wikiUsername: "Ada",
+      unmatched: 0,
+      wins: { daily: 1, weekly: 1, monthly: 0 },
+      todayRank: 2,
+    });
+  });
 });
 
 describe("lorewards.getTrophies", () => {
@@ -209,17 +296,28 @@ describe("lorewards.getTrophies", () => {
     expect(loadPassportHandleById).not.toHaveBeenCalled();
   });
 
-  it("shows no cards for a wiki name with no verified link", async () => {
-    db.wikiAccountLink.findFirst.mockResolvedValue(null);
+  it("shows no cards for a wiki name with no approved claim", async () => {
+    claims = [{ userId: "u1", name: "Ada", status: "PENDING", visible: true }];
     const theirs = await signedOut().getTrophies({ username: "Ada" });
     expect(theirs.cards).toEqual([]);
     expect(theirs.holderHandle).toBeNull();
     expect(theirs.wins.daily).toBe(6);
   });
-  it("finds the name's verified link by an exact match on the normalized name", async () => {
+
+  it("never names the owner of a claim they keep hidden", async () => {
+    claims = [{ userId: "u1", name: "Ada", status: "APPROVED", visible: false }];
+    const theirs = await signedOut().getTrophies({ username: "Ada" });
+    expect(theirs.cards).toEqual([]);
+    expect(theirs.holderHandle).toBeNull();
+    expect(theirs.wins.daily).toBe(6);
+    expect(loadPassportSettings).not.toHaveBeenCalled();
+    expect(loadPassportHandleById).not.toHaveBeenCalled();
+  });
+
+  it("finds the name's shown approved claim by an exact match on the normalized name", async () => {
     await signedOut().getTrophies({ username: "ada_lovelace" });
-    expect(db.wikiAccountLink.findFirst).toHaveBeenCalledWith({
-      where: { source: "ixwiki", username: "Ada lovelace", verifiedAt: { not: null } },
+    expect(db.wikiNameClaim.findFirst).toHaveBeenCalledWith({
+      where: { source: "ixwiki", name: "Ada lovelace", status: "APPROVED", visible: true },
       select: { userId: true },
     });
   });

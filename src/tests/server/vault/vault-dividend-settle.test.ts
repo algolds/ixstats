@@ -76,8 +76,8 @@ let config: Map<string, string>;
 const START_KEY = "vault_dividend_started_on";
 let rows: { userId: string; amount: number; idempotencyKey: string; metadata?: object }[];
 let db: PrismaClient;
-/** Verified ixwiki links: username to user id. */
-let links: Map<string, string>;
+/** Approved ixwiki name claims: name to user id. */
+let claims: Map<string, string>;
 
 function group<T extends Dated>(
   data: T[],
@@ -97,9 +97,9 @@ function group<T extends Dated>(
 function buildDb(): PrismaClient {
   const fake = {
     myVault: { findMany: jest.fn(async () => world.vaults) },
-    wikiAccountLink: {
-      findFirst: jest.fn(async ({ where }: { where: { username: string } }) => {
-        const userId = links.get(where.username);
+    wikiNameClaim: {
+      findFirst: jest.fn(async ({ where }: { where: { name: string } }) => {
+        const userId = claims.get(where.name);
         return userId ? { userId } : null;
       }),
     },
@@ -195,7 +195,7 @@ beforeEach(() => {
   rows = [];
   db = buildDb();
   jest.mocked(scoreDailyWikiOS).mockResolvedValue({ candidates: [] } as never);
-  links = new Map();
+  claims = new Map();
   jest.mocked(getYieldBoostMultiplier).mockResolvedValue(0);
   jest.mocked(earnCreditsOnce).mockImplementation(async (_db, input) => {
     const key = input.idempotencyKey;
@@ -327,20 +327,20 @@ describe("settleDividendDay", () => {
     );
   });
 
-  it("credits a wiki line from the scored revisions: their WikiOS author, else the name's link", async () => {
+  it("credits a wiki line from the scored revisions: their WikiOS author, else the name's claim", async () => {
     vault("u1");
     vault("u2");
     vault("u9");
-    links.set("Linked", "u9");
+    claims.set("Linked", "u9");
     jest.mocked(scoreDailyWikiOS).mockResolvedValue({
       candidates: [
-        // Every scored revision came from MediaWiki: the name's verified-link holder.
+        // Every scored revision came from MediaWiki: the name's approved claim holder.
         { user: "Linked", page: "Seneca front", finalScore: 800, authorIds: [null] },
-        // WikiOS edits by u2 under a name u9 verified: u2's, never the link holder's.
+        // WikiOS edits by u2 under a name u9 claimed: u2's, never the claim holder's.
         { user: "Linked", page: "Tide charts", finalScore: 1600, authorIds: ["u2"] },
         // Mixed revisions: no one.
         { user: "Linked", page: "Shared page", finalScore: 4000, authorIds: ["u2", null] },
-        // MediaWiki edits under a name nobody verified: no one.
+        // MediaWiki edits under a name nobody claimed: no one.
         { user: "Stranger", page: "Seneca front", finalScore: 9000, authorIds: [null] },
       ],
     } as never);
