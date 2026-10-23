@@ -1,5 +1,5 @@
 import React from "react";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => ({
   api: {
@@ -48,6 +48,11 @@ jest.mock("~/components/cards/reveal/reveal-feedback", () => ({ playRevealFeedba
 jest.mock("~/hooks/cards/useSheetEconomy", () => ({
   useSheetEconomy: jest.fn(() => ({ data: undefined })),
 }));
+jest.mock("~/hooks/cards/useCopyActions", () => {
+  const mutation = () => ({ mutate: jest.fn(), isPending: false });
+  const actions = { list: mutation(), breakDown: mutation(), fuse: mutation(), sign: mutation() };
+  return { useCopyActions: jest.fn(() => actions) };
+});
 jest.mock("~/hooks/cards/useMarketActions", () => {
   const mutation = () => ({ mutate: jest.fn(), isPending: false });
   const actions = {
@@ -211,6 +216,21 @@ const about = () => screen.getByRole("region", { name: "About" });
 const actionGroup = (name: string) => within(copies()).getByRole("group", { name });
 const actionNames = (group: HTMLElement) =>
   Array.from(group.querySelectorAll("button, a"), (el) => el.textContent);
+const more = () => within(copies()).getByRole("button", { name: "More actions" });
+/** Opens the bar's More actions menu (Radix opens it from the keyboard in jsdom). */
+const openMore = () => {
+  fireEvent.keyDown(more(), { key: "Enter" });
+  return screen.getByRole("menu");
+};
+/** What the More actions menu offers, closing it again. */
+const moreItems = () => {
+  const menu = openMore();
+  const items = within(menu)
+    .getAllByRole("menuitem")
+    .map((item) => item.textContent);
+  fireEvent.keyDown(menu, { key: "Escape" });
+  return items;
+};
 const turnable = () =>
   screen.getByRole("group", { name: "The card. Press Space or F to turn it over." });
 
@@ -387,13 +407,13 @@ describe("CardSheet your copies", () => {
     expect(actionGroup("#40 · Serialised · Level 1")).toBeInTheDocument();
   });
 
-  it("moves the action bar and the card to the copy picked", () => {
+  it("moves the action bar and the card to the copy picked", async () => {
     showSheet(sheet({ copies: five }));
     open();
     fireEvent.click(within(copies()).getByRole("radio", { name: "#3 · Foil · Level 4" }));
-    const bar = actionGroup("#3 · Foil · Level 4");
-    fireEvent.click(within(bar).getByRole("button", { name: "Add to showcase" }));
-    expect(screen.getByRole("alertdialog")).toHaveTextContent("Add o3");
+    expect(actionGroup("#3 · Foil · Level 4")).toContainElement(more());
+    fireEvent.click(within(openMore()).getByRole("menuitem", { name: "Add to showcase" }));
+    expect(await screen.findByRole("alertdialog")).toHaveTextContent("Add o3");
     expect(within(turnable()).getByText("Level 4 · #3")).toBeInTheDocument();
     fireEvent.keyDown(window, { key: "f" });
     expect(within(turnable()).getByText("#3 · Foil")).toBeInTheDocument();
@@ -459,13 +479,14 @@ describe("CardSheet your copies", () => {
     expect(within(copies()).queryByText("Locked")).toBeNull();
   });
 
-  it("groups a free copy's actions into Sell, Workshop and Keep", () => {
+  it("groups a free copy's actions into Sell and Workshop, the rest under More actions", () => {
     showSheet();
     showEconomy(economy());
     open();
     expect(actionNames(actionGroup("Sell"))).toEqual(["List", "Auction", "Trade"]);
-    expect(actionNames(actionGroup("Workshop"))).toEqual(["Fuse", "Break down"]);
-    expect(actionNames(actionGroup("Keep"))).toEqual(["Add to showcase", "Sign"]);
+    expect(actionNames(actionGroup("Workshop"))).toEqual(["Fuse"]);
+    expect(within(copies()).queryByRole("group", { name: "Keep" })).toBeNull();
+    expect(moreItems()).toEqual(["Add to showcase", "Sign", "Break down"]);
     expect(within(actionGroup("Sell")).getByRole("link", { name: "Auction" })).toHaveAttribute(
       "href",
       "/vault/cards/market?tab=selling&sell=o7"
@@ -480,33 +501,53 @@ describe("CardSheet your copies", () => {
     showSheet();
     showEconomy(economy());
     open();
-    const actions = ["Sell", "Workshop", "Keep"].flatMap((name) =>
-      Array.from(actionGroup(name).querySelectorAll("button, a"))
-    );
-    expect(actions).toHaveLength(7);
+    const actions = [
+      ...["Sell", "Workshop"].flatMap((name) =>
+        Array.from(actionGroup(name).querySelectorAll("button, a"))
+      ),
+      more(),
+    ];
+    expect(actions).toHaveLength(5);
     for (const action of actions) expect(action).toHaveClass("bg-fill-3");
   });
 
-  it("keeps each workshop action to its own rule, and leaves the group out when neither is open", () => {
+  it("keeps Fuse, Break down and Sign each to its own rule, and leaves Workshop out without a fusion", () => {
     showSheet();
     showEconomy(economy({ fusion: ["o8", "o9", "o10"] }));
     const view = open();
-    expect(actionNames(actionGroup("Workshop"))).toEqual(["Break down"]);
+    expect(within(copies()).queryByRole("group", { name: "Workshop" })).toBeNull();
+    expect(moreItems()).toEqual(["Add to showcase", "Sign", "Break down"]);
     showEconomy(economy({ breakdownBlocker: "Signed copies can't be broken down" }));
     view.rerender(sheetElement());
     expect(actionNames(actionGroup("Workshop"))).toEqual(["Fuse"]);
+    expect(moreItems()).toEqual(["Add to showcase", "Sign"]);
     showEconomy(economy({ fusion: [], breakdownBlocker: "Locked", canSign: false }));
     view.rerender(sheetElement());
-    expect(within(copies()).queryByRole("group", { name: "Workshop" })).toBeNull();
-    expect(actionNames(actionGroup("Keep"))).toEqual(["Add to showcase"]);
+    expect(moreItems()).toEqual(["Add to showcase"]);
   });
+
+  it.each([
+    ["Sign", "dialog", "Sign Caphiria"],
+    ["Break down", "alertdialog", "Break down this copy for 45 dust?"],
+  ])(
+    "opens %s from More actions, and gives focus back to it on Cancel",
+    async (item, role, title) => {
+      showSheet();
+      showEconomy(economy());
+      open();
+      fireEvent.click(within(openMore()).getByRole("menuitem", { name: item }));
+      const dialog = await screen.findByRole(role, { name: title });
+      fireEvent.keyDown(dialog, { key: "Escape" });
+      await waitFor(() => expect(more()).toHaveFocus());
+    }
+  );
 
   it("offers the auction and the trade before the economy loads, but not the listing or the workshop", () => {
     showSheet();
     open();
     expect(actionNames(actionGroup("Sell"))).toEqual(["Auction", "Trade"]);
     expect(within(copies()).queryByRole("group", { name: "Workshop" })).toBeNull();
-    expect(actionNames(actionGroup("Keep"))).toEqual(["Add to showcase"]);
+    expect(moreItems()).toEqual(["Add to showcase"]);
   });
 
   it.each([
@@ -544,7 +585,7 @@ describe("CardSheet your copies", () => {
     expect(within(copies()).getByText("Bound to your account")).toBeInTheDocument();
     expect(within(copies()).queryByRole("group", { name: "Sell" })).toBeNull();
     expect(within(copies()).queryByRole("link")).toBeNull();
-    expect(actionGroup("Keep")).toBeInTheDocument();
+    expect(moreItems()).toContain("Add to showcase");
   });
 
   it("links a card the viewer lacks to packs, the market and trades", () => {
@@ -653,6 +694,12 @@ describe("CardSheet layout", () => {
     expect(screen.queryByRole("button", { name: /Craft for/ })).toBeNull();
     fireEvent.click(toggle);
     expect(screen.getByRole("button", { name: "Craft for 1,200 dust and 300 IxC" })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "How minting works" }));
+    const help = screen.getByRole("dialog", { name: "Minting" });
+    expect(help).toHaveTextContent(/new Standard copy/);
+    fireEvent.click(within(help).getByRole("button", { name: /Next/ }));
+    expect(help).toHaveTextContent(/Breaking down/);
   });
 
   it("gives a player the price history before anything has sold, for the chart", () => {

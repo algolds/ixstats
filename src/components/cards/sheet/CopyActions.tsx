@@ -1,9 +1,25 @@
 "use client";
 
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useId, useRef, useState, type ReactNode, type RefObject } from "react";
 import Link from "next/link";
-import { ArrowSeparate, Calendar, Combine, EditPencil, Lock, Shop, Trash } from "iconoir-react";
+import {
+  ArrowSeparate,
+  Calendar,
+  Combine,
+  EditPencil,
+  Lock,
+  MediaImageList,
+  MoreHoriz,
+  Shop,
+  Trash,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 import { Tooltip } from "~/components/ui/tooltip";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import {
@@ -55,16 +71,16 @@ interface CopyActionsProps {
 }
 
 /**
- * The action bar for the picked copy, headed by its serial, finish, level, value and facts, in three groups: Sell
- * (list at a fixed price, sell at auction, offer in a trade), Workshop (fuse, break down for dust) and Keep (add to a
- * showcase, sign). A group with nothing to offer is left out. What a copy allows, and what it is worth, come from the
- * server (`cards.getSheetEconomy`); until that arrives only the auction, the trade and the showcase show.
+ * The action bar for the picked copy, headed by its serial, finish, level, value and facts: Sell (list at a fixed
+ * price, sell at auction, offer in a trade) and Workshop (fuse), then More actions (add to a showcase, sign, break down
+ * for dust). A group with nothing to offer is left out. What a copy allows, and what it is worth, come from the server
+ * (`cards.getSheetEconomy`); until that arrives only the auction, the trade and the showcase show.
  */
 export function CopyActions({ held, card, onAddToShowcase }: CopyActionsProps) {
   const { data } = useSheetEconomy(card.id);
   const [open, setOpen] = useState<Open>(null);
   const { focus, settle } = useDialogFocus();
-  const showcaseButton = useRef<HTMLButtonElement>(null);
+  const moreButton = useRef<HTMLButtonElement>(null);
   const headId = useId();
   const { copy, facts } = held;
   const ownershipId = facts.ownershipId;
@@ -73,9 +89,27 @@ export function CopyActions({ held, card, onAddToShowcase }: CopyActionsProps) {
   const sale = saleOf(card.isBound, copy.isLocked, economy);
   // A burn takes the copy away; a listing or a signature only the button that opened the dialog.
   const done = (burned: boolean) => () => {
-    settle(burned ? document.getElementById(COPIES_HEADING_ID) : showcaseButton.current);
+    settle(burned ? document.getElementById(COPIES_HEADING_ID) : moreButton.current);
     setOpen(null);
   };
+  const more: MoreAction[] = [
+    {
+      label: "Add to showcase",
+      icon: <MediaImageList aria-hidden />,
+      run: () => onAddToShowcase(ownershipId),
+    },
+  ];
+  if (economy?.canSign) {
+    more.push({ label: "Sign", icon: <EditPencil aria-hidden />, run: () => setOpen("sign") });
+  }
+  if (economy?.breakdownBlocker === null) {
+    more.push({
+      label: "Break down",
+      icon: <Trash aria-hidden />,
+      destructive: true,
+      run: () => setOpen("breakdown"),
+    });
+  }
 
   return (
     <div role="group" aria-labelledby={headId} className="space-y-3">
@@ -100,23 +134,15 @@ export function CopyActions({ held, card, onAddToShowcase }: CopyActionsProps) {
           ownershipId={ownershipId}
           onList={economy ? () => setOpen("list") : null}
         />
-        {economy && <WorkshopGroup economy={economy} group={group} onOpen={setOpen} />}
-        <ActionGroup label="Keep">
-          <Button
-            ref={showcaseButton}
-            size="sm"
-            variant="secondary"
-            onClick={() => onAddToShowcase(ownershipId)}
-          >
-            Add to showcase
-          </Button>
-          {economy?.canSign && (
-            <Button size="sm" variant="secondary" onClick={() => setOpen("sign")}>
-              <EditPencil aria-hidden />
-              Sign
+        {economy && group && (
+          <ActionGroup label="Workshop">
+            <Button size="sm" variant="secondary" onClick={() => setOpen("fuse")}>
+              <Combine aria-hidden />
+              Fuse
             </Button>
-          )}
-        </ActionGroup>
+          </ActionGroup>
+        )}
+        <MoreActions actions={more} triggerRef={moreButton} />
       </div>
       {data && economy && (
         <CopyDialogs
@@ -179,30 +205,62 @@ function SellGroup({ sale, ownershipId, onList }: SellGroupProps) {
   );
 }
 
-interface WorkshopGroupProps {
-  economy: CopyEconomyView;
-  group: FusionGroupView | null;
-  onOpen: (open: Open) => void;
+interface MoreAction {
+  label: string;
+  icon: ReactNode;
+  destructive?: boolean;
+  run: () => void;
 }
 
-function WorkshopGroup({ economy, group, onOpen }: WorkshopGroupProps) {
-  const breaks = economy.breakdownBlocker === null;
-  if (!group && !breaks) return null;
+/**
+ * The copy's quieter actions behind one button. Each runs once the menu has closed and given focus back to that
+ * button, so the dialog it opens takes the button as its opener and gives focus back to it.
+ */
+function MoreActions({
+  actions,
+  triggerRef,
+}: {
+  actions: MoreAction[];
+  triggerRef: RefObject<HTMLButtonElement | null>;
+}) {
+  const next = useRef<(() => void) | null>(null);
   return (
-    <ActionGroup label="Workshop">
-      {group && (
-        <Button size="sm" variant="secondary" onClick={() => onOpen("fuse")}>
-          <Combine aria-hidden />
-          Fuse
-        </Button>
-      )}
-      {breaks && (
-        <Button size="sm" variant="secondary" onClick={() => onOpen("breakdown")}>
-          <Trash aria-hidden />
-          Break down
-        </Button>
-      )}
-    </ActionGroup>
+    <DropdownMenu>
+      <Tooltip content="More actions">
+        <DropdownMenuTrigger asChild>
+          <Button
+            ref={triggerRef}
+            size="icon-sm"
+            variant="secondary"
+            aria-label="More actions"
+            className="self-start sm:self-end"
+          >
+            <MoreHoriz aria-hidden />
+          </Button>
+        </DropdownMenuTrigger>
+      </Tooltip>
+      <DropdownMenuContent
+        align="end"
+        onCloseAutoFocus={() => {
+          const run = next.current;
+          next.current = null;
+          run?.();
+        }}
+      >
+        {actions.map(({ label, icon, destructive, run }) => (
+          <DropdownMenuItem
+            key={label}
+            variant={destructive ? "destructive" : "default"}
+            onSelect={() => {
+              next.current = run;
+            }}
+          >
+            {icon}
+            {label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

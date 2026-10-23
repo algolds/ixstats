@@ -8,7 +8,7 @@ nextHref: /help/vault/lore-cards
 nextLabel: Lore Cards
 ---
 
-Open a card you own to break a copy down, fuse copies or sign one, and open a card you're missing to craft it. In [Cards → Mine](/vault/cards/mine), **Select** lets you break down, fuse or list several copies at once, and **Dust** shows your dust in each realm. The amounts on this page are the defaults; admins can tune them, and the sheet always shows the current ones.
+Open a card you own to fuse copies, or to break a copy down or sign it from the **More actions** button (…), and open **Mint** at the bottom of any card's sheet to craft it. In [Cards → Mine](/vault/cards/mine), **Select** lets you break down, fuse or list several copies at once, and **Dust** shows your dust in each realm. The amounts on this page are the defaults; admins can tune them, and the sheet always shows the current ones.
 
 ## Finishes
 
@@ -35,7 +35,7 @@ A Foil copy gives 3 times as much and a Holo 9 times, so fusing first never chan
 
 ## Crafting
 
-You can craft a card you're missing, up to Epic, from its realm's dust plus IxC: 8 times the dust a Standard copy gives, plus the rarity's floor value in IxC. A Common costs 40 dust and 10 IxC; an Epic costs 4,000 dust and 1,000 IxC. Open the card's sheet and choose **Craft**. A crafted copy is Standard. Legendary, Special, trophy, bound and retired cards can't be crafted, and crafting needs room in your collection.
+You can craft a card you're missing, up to Epic, from its realm's dust plus IxC: 8 times the dust a Standard copy gives, plus the rarity's floor value in IxC. A Common costs 40 dust and 10 IxC; an Epic costs 4,000 dust and 1,000 IxC. Open the card's sheet, open **Mint** at the bottom and choose **Craft**. A crafted copy is Standard. Legendary, Special, trophy, bound and retired cards can't be crafted, and crafting needs room in your collection.
 
 ## Levels
 

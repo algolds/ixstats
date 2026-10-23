@@ -6,6 +6,7 @@ import { NavArrowDown } from "iconoir-react";
 import { cn } from "~/lib/utils/cn";
 import { Button, focusRing } from "~/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
+import { HeroHelpModal, type HeroHelpStep } from "~/components/ui/hero-help-modal";
 import { Stat } from "~/components/ui/stat";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { CardPriceHistoryChart } from "~/components/cards/display/CardPriceHistoryChart";
@@ -153,22 +154,33 @@ function ListingLine({ listing, cardId, signedIn, onBuy }: ListingLineProps) {
   );
 }
 
+interface FoldProps {
+  id: string;
+  title: string;
+  /** Beside the heading, outside it, so it stays out of the section's name. */
+  aside?: ReactNode;
+  children: ReactNode;
+}
+
 /** A section folded under its heading until opened: the sheet's last ones, Price history and Mint. */
-function Fold({ id, title, children }: { id: string; title: string; children: ReactNode }) {
+function Fold({ id, title, aside, children }: FoldProps) {
   return (
     <Collapsible asChild>
       <section aria-labelledby={id} className="space-y-3">
-        <h3 id={id} className="text-headline">
-          <CollapsibleTrigger
-            className={cn("group flex w-full items-center justify-between rounded-sm", focusRing)}
-          >
-            {title}
-            <NavArrowDown
-              aria-hidden
-              className="text-label-secondary size-4 transition-transform group-data-[state=open]:rotate-180"
-            />
-          </CollapsibleTrigger>
-        </h3>
+        <div className="flex items-center gap-2">
+          <h3 id={id} className="text-headline min-w-0 flex-1">
+            <CollapsibleTrigger
+              className={cn("group flex w-full items-center justify-between rounded-sm", focusRing)}
+            >
+              {title}
+              <NavArrowDown
+                aria-hidden
+                className="text-label-secondary size-4 transition-transform group-data-[state=open]:rotate-180"
+              />
+            </CollapsibleTrigger>
+          </h3>
+          {aside}
+        </div>
         <CollapsibleContent className="space-y-3">{children}</CollapsibleContent>
       </section>
     </Collapsible>
@@ -209,12 +221,32 @@ export function CardSheetPriceHistory({
   );
 }
 
+/** Mint's help: what minting is, where its dust comes from and what it costs. The sheet shows the live price. */
+const MINT_HELP: HeroHelpStep[] = [
+  {
+    title: "What minting does",
+    body: "Minting makes a new Standard copy of this card from its realm's dust and some IxC. You can mint a card you're missing, or another copy of one you hold.",
+  },
+  {
+    title: "Where dust comes from",
+    body: "Breaking down a copy gives dust to its card's realm: more for a rarer card, and more again for a Foil or Holo copy. Each realm's dust is yours alone and can't be traded.",
+  },
+  {
+    title: "What it costs",
+    body: "A rarer card costs more dust and IxC. The button shows this card's price, and how much of that dust you have. Legendary, Special, trophy, bound and retired cards can't be minted, and a new copy needs room in your collection.",
+  },
+];
+
 /** "Mint", folded, last: crafting a Standard copy, for a signed-in player the server offers it to. */
 export function CardSheetCraft({ cardId, signedIn }: { cardId: string; signedIn: boolean }) {
   const { data: economy } = useSheetEconomy(cardId, signedIn);
   if (!signedIn || !economy?.craft) return null;
   return (
-    <Fold id="sheet-mint" title="Mint">
+    <Fold
+      id="sheet-mint"
+      title="Mint"
+      aside={<HeroHelpModal title="Minting" triggerLabel="How minting works" steps={MINT_HELP} />}
+    >
       <CraftButton cardId={cardId} offer={economy.craft} />
     </Fold>
   );
