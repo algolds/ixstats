@@ -11,6 +11,7 @@ import {
   unmappedCategories,
   unmappedInfoboxes,
 } from "~/lib/cards/category-mappings";
+import { classifyLoreArticle } from "~/lib/cards/category-classifier";
 import { isSubcategoryOf } from "~/lib/cards/category-taxonomy";
 
 it.each([
@@ -100,16 +101,36 @@ describe("the community wikis' own categories", () => {
   const wikis = ["ixwiki", "iiwiki"] as const;
 
   it.each([
-    ["Burgoignesc Security Forces", "MILITARY", "unit"],
-    ["Units of the Burgoignesc Security Forces", "MILITARY", "unit"],
-    ["Yonderian Defence Force", "MILITARY", "unit"],
-    ["Ardmore Defense Forces", "MILITARY", "unit"],
     ["Kiravian federal subjects", "GEOGRAPHY", "region-or-province"],
     ["Federal subjects of the Kiravian Federacy", "GEOGRAPHY", "region-or-province"],
   ])("reads %s as %s / %s", (name, category, subcategory) => {
     for (const source of wikis) {
       expect(categoryTargets(name, source)).toEqual([{ category, subcategory }]);
     }
+  });
+
+  it.each([
+    "Burgoignesc Security Forces",
+    "Units of the Burgoignesc Security Forces",
+    "Yonderian Defence Force",
+    "Ardmore Defense Forces",
+  ])("reads %s, a whole national force, as Military with no subcategory", (name) => {
+    for (const source of wikis) {
+      expect(categoryTargets(name, source)).toEqual([{ category: "MILITARY" }]);
+    }
+  });
+
+  it("lets Army of a nation name the subcategory beside its security forces", () => {
+    const army = classifyLoreArticle({
+      title: "Metropolitan Guard",
+      categories: [
+        "Category:Army of Burgundie",
+        "Category:Burgoignesc Security Forces",
+        "Category:Units of the Burgoignesc Security Forces",
+      ],
+      source: "ixwiki",
+    });
+    expect(army).toMatchObject({ category: "MILITARY", subcategory: "army" });
   });
 
   it("reads exactly Politics as Government, with no subcategory", () => {

@@ -370,9 +370,12 @@ export const SHARED_CATEGORY_RULES: readonly CategoryRule[] = [
   ),
 ];
 
-/** The community wikis' shared conventions: a nation's security or defence force, its federal subjects. */
+/**
+ * The community wikis' shared conventions: a nation's security or defence force (its whole armed forces, so no
+ * subcategory: "Army of" beside it names one), its federal subjects.
+ */
 const COMMUNITY_RULES: readonly CategoryRule[] = [
-  rule("MILITARY", "unit", /\b(?:security|defen[cs]e) forces?\b/i),
+  rule("MILITARY", null, /\b(?:security|defen[cs]e) forces?\b/i),
   rule("GEOGRAPHY", "region-or-province", /\bfederal subjects\b/i),
   rule("GOVERNMENT", null, /^politics$/i),
   rule("CULTURE", null, /^ethnic groups\b/i),

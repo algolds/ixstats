@@ -45,9 +45,12 @@ export async function listCategoryClassifications(db: PrismaClient, page: Page) 
   return { rows, total };
 }
 
-/** Players' suggestions waiting for an answer, oldest first. */
+/** Players' suggestions waiting for an answer, oldest first; none on a retired card. */
 export async function listCategorySuggestions(db: PrismaClient, page: Page) {
-  const where = { status: "PENDING" } satisfies Prisma.CardCategorySuggestionWhereInput;
+  const where = {
+    status: "PENDING",
+    card: { isRetired: false },
+  } satisfies Prisma.CardCategorySuggestionWhereInput;
   const [rows, total] = await Promise.all([
     db.cardCategorySuggestion.findMany({
       where,

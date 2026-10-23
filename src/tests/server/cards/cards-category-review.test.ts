@@ -56,17 +56,20 @@ it("lists classifier guesses waiting for review, least confident first, never a 
   });
 });
 
-it("lists pending suggestions oldest first, with the total", async () => {
+it("lists pending suggestions oldest first, with the total, never on a retired card", async () => {
   const db = createMockPrisma();
   db.cardCategorySuggestion.findMany.mockResolvedValue([{ id: "s1" }]);
   db.cardCategorySuggestion.count.mockResolvedValue(7);
   const result = await listCategorySuggestions(db as never, { offset: 50, limit: 50 });
   expect(result).toEqual({ rows: [{ id: "s1" }], total: 7 });
   expect(db.cardCategorySuggestion.findMany.mock.calls[0]![0]).toMatchObject({
-    where: { status: "PENDING" },
+    where: { status: "PENDING", card: { isRetired: false } },
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     skip: 50,
     take: 50,
+  });
+  expect(db.cardCategorySuggestion.count).toHaveBeenCalledWith({
+    where: { status: "PENDING", card: { isRetired: false } },
   });
 });
 

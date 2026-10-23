@@ -107,7 +107,7 @@ it("lists only the realm's lore cards, Uncategorised as no category", async () =
   });
 });
 
-it("lists the cards waiting for review by title, searched as typed", async () => {
+it("lists the cards waiting for review by title, searched as typed, never a retired one", async () => {
   const db = dbFor();
   const rows = [
     { id: "c1", title: "Kiro", category: null, subcategory: null, categoryNeedsReview: true },
@@ -127,6 +127,7 @@ it("lists the cards waiting for review by title, searched as typed", async () =>
     realmId: "eurth",
     cardType: "LORE",
     categoryNeedsReview: true,
+    isRetired: false,
     title: { contains: "50\\%\\_off", mode: "insensitive" },
   };
   expect(args).toEqual({
