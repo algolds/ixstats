@@ -1,16 +1,17 @@
 /**
- * Verified wiki accounts. A link is trusted only after the user places a one-time token on their wiki
- * user page (proves control of the account). Only verified links count for realm claim auto-approval.
+ * Verified sister wiki accounts (IIWiki, AltHistory). A link is trusted only after the user places a one-time token
+ * on their wiki user page (proves control of the account). Only verified links count for realm claim auto-approval.
+ * An old IxWiki name is not a link: it joins an account through a name claim (`identity.name-claims.ts`).
  */
 import { randomBytes } from "node:crypto";
 import type { PrismaClient } from "@prisma/client";
 import {
   normalizeWikiUsername,
   wikiUserPageUrl,
-  type ProofSource,
   type UserPageHistory,
   type WikiUser,
 } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import { SISTER_READER_IDS, type SisterReaderId } from "~/lib/wiki-os/wiki-hosts";
 
 const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 /**
@@ -25,9 +26,7 @@ type WikiLinkErrorCode =
   | "NO_PENDING"
   | "EXPIRED"
   | "TOKEN_NOT_FOUND"
-  | "WIKI_UNREACHABLE"
-  /** An admin link the admin may not make (their own account, a name holding imported groups). */
-  | "NOT_ALLOWED";
+  | "WIKI_UNREACHABLE";
 
 export class WikiLinkError extends Error {
   constructor(
@@ -40,9 +39,9 @@ export class WikiLinkError extends Error {
 }
 
 export interface WikiLinkDeps {
-  fetchWikiUser: (source: ProofSource, username: string) => Promise<WikiUser | null>;
+  fetchWikiUser: (source: SisterReaderId, username: string) => Promise<WikiUser | null>;
   fetchUserPageHistory: (
-    source: ProofSource,
+    source: SisterReaderId,
     username: string,
     since: Date
   ) => Promise<UserPageHistory>;
@@ -50,15 +49,7 @@ export interface WikiLinkDeps {
   newToken?: () => string;
 }
 
-type WikiLinkDb = Pick<PrismaClient, "wikiAccountLink" | "user" | "wikiUserGroup" | "$transaction">;
-/** Shape a transaction client needs to expose for the legacy-column writes below. */
-type WikiLinkTx = Pick<PrismaClient, "wikiAccountLink" | "user" | "wikiUserGroup">;
-
-/** Who is confirming a link by authority: the admin's user row, and whether they are a system owner. */
-export interface AdminLinkActor {
-  adminUserId: string;
-  isSystemOwner: boolean;
-}
+type WikiLinkDb = Pick<PrismaClient, "wikiAccountLink" | "$transaction">;
 
 interface WikiLinkView {
   source: string;
@@ -84,9 +75,8 @@ function proveToken(history: UserPageHistory, token: string, username: string): 
   return firstAppearance?.author === username ? "SAVED_BY_ACCOUNT" : "SAVED_BY_SOMEONE_ELSE";
 }
 
-/** How a wiki reads in an error shown to the player: the main wiki is plain "wiki", a sister keeps its name. */
-const SOURCE_NAME: Record<ProofSource, string> = {
-  ixwiki: "wiki",
+/** How a sister wiki reads in an error shown to the player. */
+const SOURCE_NAME: Record<SisterReaderId, string> = {
   iiwiki: "IIWiki",
   althistory: "AltHistory",
 };
@@ -102,30 +92,11 @@ async function wikiCall<T>(call: () => Promise<T>): Promise<T> {
   }
 }
 
-/** Legacy `User.wikiUsername`/`wikiUserId` columns (45 readers) — kept in sync with ixwiki links only.
- *  A squatter's unverified legacy link loses to the proven/authoritative owner. */
-async function syncIxwikiLegacyColumns(
-  tx: WikiLinkTx,
-  userId: string,
-  username: string,
-  wikiUserId: number | null,
-  verifiedAt: Date
-): Promise<void> {
-  await tx.user.updateMany({
-    where: { wikiUsername: username, id: { not: userId } },
-    data: { wikiUsername: null, wikiUserId: null },
-  });
-  await tx.user.update({
-    where: { id: userId },
-    data: { wikiUsername: username, wikiUserId, lastWikiSync: verifiedAt },
-  });
-}
-
 export function createWikiLinkService(db: WikiLinkDb, deps: WikiLinkDeps) {
   const now = deps.now ?? (() => new Date());
   const newToken = deps.newToken ?? (() => `ixstates-verify-${randomBytes(5).toString("hex")}`);
 
-  async function start(userId: string, source: ProofSource, rawUsername: string) {
+  async function start(userId: string, source: SisterReaderId, rawUsername: string) {
     const wikiUser = await wikiCall(() => deps.fetchWikiUser(source, rawUsername));
     if (!wikiUser)
       throw new WikiLinkError(
@@ -168,7 +139,7 @@ export function createWikiLinkService(db: WikiLinkDb, deps: WikiLinkDeps) {
     return { token, username, expiresAt, userPageUrl: wikiUserPageUrl(source, username) };
   }
 
-  async function confirm(userId: string, source: ProofSource): Promise<{ username: string }> {
+  async function confirm(userId: string, source: SisterReaderId): Promise<{ username: string }> {
     const link = await db.wikiAccountLink.findUnique({
       where: { userId_source: { userId, source } },
     });
@@ -195,115 +166,36 @@ export function createWikiLinkService(db: WikiLinkDb, deps: WikiLinkDeps) {
     }
     // The account's age and edits at proof time decide whether the link alone autoconfirms (plan 409).
     const wikiUser = await wikiCall(() => deps.fetchWikiUser(source, link.username));
-    await db.$transaction(async (tx) => {
-      const verifiedAt = now();
-      // Re-check owner + token atomically: a concurrent start() may have re-owned this row (new
-      // token) while we were waiting on the wiki fetch above.
-      const claimed = await tx.wikiAccountLink.updateMany({
-        where: { id: link.id, userId, token, verifiedAt: null },
-        data: {
-          verifiedAt,
-          token: null,
-          tokenExpiresAt: null,
-          verifiedById: null,
-          mwRegisteredAt: wikiUser?.registration ?? null,
-          mwEditCount: wikiUser?.editCount ?? null,
-        },
-      });
-      if (claimed.count !== 1) {
-        throw new WikiLinkError("NO_PENDING", "Your verification changed — start again");
-      }
-      if (source === "ixwiki") {
-        await syncIxwikiLegacyColumns(tx, userId, link.username, link.wikiUserId, verifiedAt);
-      }
+    // Re-check owner + token atomically: a concurrent start() may have re-owned this row (new
+    // token) while we were waiting on the wiki fetch above.
+    const claimed = await db.wikiAccountLink.updateMany({
+      where: { id: link.id, userId, token, verifiedAt: null },
+      data: {
+        verifiedAt: now(),
+        token: null,
+        tokenExpiresAt: null,
+        verifiedById: null,
+        mwRegisteredAt: wikiUser?.registration ?? null,
+        mwEditCount: wikiUser?.editCount ?? null,
+      },
     });
+    if (claimed.count !== 1) {
+      throw new WikiLinkError("NO_PENDING", "Your verification changed — start again");
+    }
     return { username: link.username };
   }
 
+  async function unlink(userId: string, source: SisterReaderId): Promise<void> {
+    await db.wikiAccountLink.deleteMany({ where: { userId, source } });
+  }
+
   /**
-   * Admin-confirmed link: the admin's authority is the proof, not a token. Used only by the admin
-   * user-management router, never reachable from self-service `linkWiki`. The row records who
-   * confirmed it (`verifiedById`): a link an ordinary admin confirmed never inherits the groups or
-   * blocks waiting for that wiki name (see rights.ts), so an admin cannot claim a MediaWiki
-   * bureaucrat's name. Two refusals enforce the same rule up front, for everyone but a system owner:
-   * a name that already holds pending groups, and the admin's own account.
+   * The sister wiki links (an IxWiki row left from before claims is not one). `pending` only while the code can still
+   * be confirmed — an expired one offers a fresh start (ruling F-4).
    */
-  async function adminVerify(
-    userId: string,
-    source: ProofSource,
-    rawUsername: string,
-    wikiUserId: number | null,
-    actor: AdminLinkActor
-  ): Promise<{ username: string }> {
-    const username = normalizeWikiUsername(rawUsername);
-    const verifiedAt = now();
-    if (userId === actor.adminUserId && !actor.isSystemOwner) {
-      throw new WikiLinkError(
-        "NOT_ALLOWED",
-        "You cannot link your own wiki account: ask another administrator."
-      );
-    }
-    await db.$transaction(async (tx) => {
-      const holder = await tx.wikiAccountLink.findUnique({
-        where: { source_username: { source, username } },
-      });
-      if (holder && holder.userId !== userId && holder.verifiedAt) {
-        throw new WikiLinkError("TAKEN", `${username} is already verified by another player`);
-      }
-      if (source === "ixwiki" && !actor.isSystemOwner) {
-        const pending = await tx.wikiUserGroup.count({ where: { wikiUsername: username } });
-        if (pending > 0) {
-          throw new WikiLinkError(
-            "NOT_ALLOWED",
-            `${username} holds wiki groups that would pass to whoever is linked to it: only a system owner can link this name.`
-          );
-        }
-      }
-      await tx.wikiAccountLink.deleteMany({ where: { userId, source, NOT: { username } } });
-      await tx.wikiAccountLink.upsert({
-        where: { source_username: { source, username } },
-        update: {
-          userId,
-          wikiUserId,
-          verifiedAt,
-          token: null,
-          tokenExpiresAt: null,
-          verifiedById: actor.adminUserId,
-          mwRegisteredAt: null,
-          mwEditCount: null,
-        },
-        create: {
-          userId,
-          source,
-          username,
-          wikiUserId,
-          verifiedAt,
-          verifiedById: actor.adminUserId,
-        },
-      });
-      if (source === "ixwiki") {
-        await syncIxwikiLegacyColumns(tx, userId, username, wikiUserId, verifiedAt);
-      }
-    });
-    return { username };
-  }
-
-  async function unlink(userId: string, source: ProofSource): Promise<void> {
-    await db.$transaction(async (tx) => {
-      await tx.wikiAccountLink.deleteMany({ where: { userId, source } });
-      if (source === "ixwiki") {
-        await tx.user.update({
-          where: { id: userId },
-          data: { wikiUsername: null, wikiUserId: null, lastWikiSync: null },
-        });
-      }
-    });
-  }
-
-  /** `pending` only while the code can still be confirmed — an expired one offers a fresh start (ruling F-4). */
   async function list(userId: string): Promise<WikiLinkView[]> {
     const links = await db.wikiAccountLink.findMany({
-      where: { userId },
+      where: { userId, source: { in: SISTER_READER_IDS } },
       orderBy: { source: "asc" },
     });
     const at = now();
@@ -315,5 +207,5 @@ export function createWikiLinkService(db: WikiLinkDb, deps: WikiLinkDeps) {
     }));
   }
 
-  return { start, confirm, unlink, list, adminVerify };
+  return { start, confirm, unlink, list };
 }

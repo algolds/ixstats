@@ -11,7 +11,6 @@ import { linkDiscordAccount } from "~/lib/discord/user-sync";
 import {
   fetchUserPageHistory,
   fetchWikiUser,
-  PROOF_SOURCES,
 } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { SISTER_READER_IDS } from "~/lib/wiki-os/wiki-hosts";
 import {
@@ -25,10 +24,8 @@ import {
   type ClaimActor,
 } from "~/server/modules/identity/identity.name-claims";
 
-// Verification is for the sister wikis only: an old IxWiki name joins an account through a name claim. Unlinking
-// still takes every proof source, so a player can drop an IxWiki link they verified before claims.
+// Links are for the sister wikis only: an old IxWiki name joins an account through a name claim.
 const sisterSourceInput = z.enum(SISTER_READER_IDS);
-const wikiSourceInput = z.enum(PROOF_SOURCES);
 const wikiLinks = () => createWikiLinkService(db, { fetchWikiUser, fetchUserPageHistory });
 
 function toTrpcError(error: Error): never {
@@ -74,7 +71,7 @@ export const ixnayidLinkingRouter = createTRPCRouter({
     ),
 
   unlinkWikiAccount: rateLimitedMutationProcedure
-    .input(z.object({ source: wikiSourceInput }))
+    .input(z.object({ source: sisterSourceInput }))
     .mutation(async ({ ctx, input }) => {
       await wikiLinks().unlink(ctx.user.id, input.source);
       return { success: true };

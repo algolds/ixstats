@@ -109,4 +109,10 @@ describe("wiki verification is for sister wikis only", () => {
       callerAs("p1").confirmWikiVerification({ source: "ixwiki" as never })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
+
+  it("refuses to unlink an IxWiki link: the IxWiki rows go with the removal SQL", async () => {
+    await expect(
+      callerAs("p1").unlinkWikiAccount({ source: "ixwiki" as never })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
 });

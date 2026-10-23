@@ -1,5 +1,5 @@
 "use client";
-// Master User Identity, MediaWiki Reconciliation, and Discord Bot Sync Control Center
+// Master User Identity, legacy wiki name claims, and Discord Bot Sync Control Center
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
@@ -12,8 +12,6 @@ import {
   Search,
   Book as WikiIcon,
   ChatBubble as DiscordIcon,
-  CheckCircle,
-  WarningCircle,
   RefreshDouble,
   Shield,
   Crown,
@@ -34,19 +32,13 @@ import {
   TableCell,
 } from "~/components/ui/table";
 import { Card } from "~/components/ui/card";
-import { AssignCountryDialog, LinkDiscordDialog, LinkWikiDialog } from "./UsersPanelDialogs";
+import { AssignCountryDialog, LinkDiscordDialog } from "./UsersPanelDialogs";
 import { CountryClaimsTab, DiscordSyncTab } from "./UsersPanelTabs";
 import { usePlayAs } from "./usePlayAs";
 import { OldForumAccountDialog, type OldForumAccountTarget } from "./OldForumAccountDialog";
 import { NameClaimsTab } from "./NameClaimsTab";
 
-const TABS = [
-  "identities",
-  "name-claims",
-  "wiki-reconciliation",
-  "discord-sync",
-  "country-claims",
-] as const;
+const TABS = ["identities", "name-claims", "discord-sync", "country-claims"] as const;
 type UsersTab = (typeof TABS)[number];
 const isTab = (value: string): value is UsersTab => TABS.some((tab) => tab === value);
 
@@ -62,11 +54,9 @@ export function UsersPanel() {
   // Modals state
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [selectedCountry, setSelectedCountry] = useState<string>("");
-  const [wikiUsernameInput, setWikiUsernameInput] = useState("");
   const [discordUsernameInput, setDiscordUsernameInput] = useState("");
   const [discordUserIdInput, setDiscordUserIdInput] = useState("");
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
-  const [isWikiDialogOpen, setIsWikiDialogOpen] = useState(false);
   const [isDiscordDialogOpen, setIsDiscordDialogOpen] = useState(false);
   const [forumUser, setForumUser] = useState<OldForumAccountTarget | null>(null);
 
@@ -78,12 +68,6 @@ export function UsersPanel() {
   } = api.admin.listUserIdentities.useQuery();
 
   const {
-    data: wikiMatrix,
-    isLoading: wikiMatrixLoading,
-    refetch: refetchWikiMatrix,
-  } = api.admin.listMediaWikiReconciliationMatrix.useQuery();
-
-  const {
     data: discordSyncData,
     isLoading: discordSyncLoading,
     refetch: refetchDiscordSync,
@@ -93,26 +77,6 @@ export function UsersPanel() {
 
   const { data: countriesWithUsers, refetch: refetchCountries } =
     api.admin.listCountriesWithUsers.useQuery();
-
-  const linkWikiMutation = api.admin.linkUserWiki.useMutation({
-    onSuccess: () => {
-      notify.success("Success", "MediaWiki account successfully linked");
-      void refetchIdentities();
-      void refetchWikiMatrix();
-      setIsWikiDialogOpen(false);
-      setWikiUsernameInput("");
-    },
-    onError: (err) => notify.error("Error", err.message || "Failed to link Wiki account"),
-  });
-
-  const unlinkWikiMutation = api.admin.unlinkUserWiki.useMutation({
-    onSuccess: () => {
-      notify.success("Success", "MediaWiki account unlinked");
-      void refetchIdentities();
-      void refetchWikiMatrix();
-    },
-    onError: (err) => notify.error("Error", err.message || "Failed to unlink Wiki account"),
-  });
 
   const linkDiscordMutation = api.admin.linkUserDiscord.useMutation({
     onSuccess: () => {
@@ -164,7 +128,7 @@ export function UsersPanel() {
     return (
       user.clerkUserId.toLowerCase().includes(search) ||
       (user.country?.name || "").toLowerCase().includes(search) ||
-      (user.wikiUsername || "").toLowerCase().includes(search) ||
+      user.wikiNames.some((name) => name.toLowerCase().includes(search)) ||
       (user.discordUsername || "").toLowerCase().includes(search) ||
       (user.forumUsername || "").toLowerCase().includes(search)
     );
@@ -176,7 +140,7 @@ export function UsersPanel() {
     <div className="space-y-6">
       <PageHeader
         title="Users and accounts"
-        subtitle="MediaWiki reconciliation, Discord sync, nation links and system roles."
+        subtitle="Old wiki names, Discord sync, nation links and system roles."
       />
 
       {activePlayAs && (
@@ -250,10 +214,6 @@ export function UsersPanel() {
               <WikiIcon className="mr-2 h-3.5 w-3.5" />
               Name claims
             </TabsTrigger>
-            <TabsTrigger value="wiki-reconciliation" className="text-footnote">
-              <WikiIcon className="mr-2 h-3.5 w-3.5" />
-              Wiki reconciliation & alts
-            </TabsTrigger>
             <TabsTrigger value="discord-sync" className="text-footnote">
               <DiscordIcon className="mr-2 h-3.5 w-3.5" />
               Discord bot member sync
@@ -279,7 +239,6 @@ export function UsersPanel() {
               size="sm"
               onClick={() => {
                 void refetchIdentities();
-                void refetchWikiMatrix();
                 if (activeTab === "discord-sync") void refetchDiscordSync();
               }}
               className="gap-1"
@@ -315,7 +274,7 @@ export function UsersPanel() {
                   <TableRow>
                     <TableHead>User / Clerk ID</TableHead>
                     <TableHead>Claimed nation</TableHead>
-                    <TableHead>MediaWiki Account</TableHead>
+                    <TableHead>Old wiki names</TableHead>
                     <TableHead>Discord identity</TableHead>
                     <TableHead>Role & tier</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -354,29 +313,20 @@ export function UsersPanel() {
                       </TableCell>
 
                       <TableCell>
-                        {u.wikiUsername ? (
-                          <div className="space-y-0.5">
-                            <div className="flex items-center gap-2">
+                        {u.wikiNames.length > 0 ? (
+                          <div className="flex flex-wrap items-center gap-1">
+                            {u.wikiNames.map((name) => (
                               <Badge
+                                key={name}
                                 variant="default"
                                 className="bg-wiki/15 text-wiki border-wiki/30 font-semibold"
                               >
-                                {u.wikiUsername}
+                                {name}
                               </Badge>
-                              {u.wikiUserId && (
-                                <span className="text-label-secondary text-footnote">
-                                  #{u.wikiUserId}
-                                </span>
-                              )}
-                            </div>
-                            {u.wikiAlts && u.wikiAlts.length > 0 && (
-                              <div className="text-label-secondary text-footnote">
-                                Alts: <span className="text-label">{u.wikiAlts.join(", ")}</span>
-                              </div>
-                            )}
+                            ))}
                           </div>
                         ) : (
-                          <span className="text-label-secondary text-footnote">Unlinked</span>
+                          <span className="text-label-secondary text-footnote">None</span>
                         )}
                       </TableCell>
 
@@ -439,17 +389,6 @@ export function UsersPanel() {
                             size="sm"
                             onClick={() => {
                               setSelectedUser(u.id);
-                              setWikiUsernameInput(u.wikiUsername || "");
-                              setIsWikiDialogOpen(true);
-                            }}
-                          >
-                            Wiki link
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedUser(u.id);
                               setDiscordUsernameInput(u.discordUsername || "");
                               setDiscordUserIdInput(u.discordUserId || "");
                               setIsDiscordDialogOpen(true);
@@ -474,148 +413,6 @@ export function UsersPanel() {
           <NameClaimsTab />
         </TabsContent>
 
-        {/* TAB 2: WIKI RECONCILIATION & ALTS */}
-        <TabsContent value="wiki-reconciliation" className="mt-4 space-y-4">
-          <Card className="p-4">
-            <div className="mb-4">
-              <h3 className="text-label text-headline">
-                MediaWiki ↔ IxnayID Reconciliation Ledger
-              </h3>
-              <p className="text-label-secondary text-footnote">
-                All 131 MediaWiki accounts cross-referenced with primary nation personas and active
-                user profiles.
-              </p>
-            </div>
-
-            {wikiMatrixLoading ? (
-              <div className="space-y-3 py-4">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <Skeleton key={i} className="rounded-row h-12 w-full" />
-                ))}
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>MediaWiki Account</TableHead>
-                    <TableHead>Target nation</TableHead>
-                    <TableHead>Status & confidence</TableHead>
-                    <TableHead>Matched IxStates User</TableHead>
-                    <TableHead>Notes / Aliases</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {wikiMatrix?.entries?.map((e) => (
-                    <TableRow key={e.wikiUsername}>
-                      <TableCell className="text-label font-semibold">{e.wikiUsername}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="border-separator font-medium">
-                          {e.targetCountry}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {e.status === "ALREADY_LINKED" && (
-                          <Badge variant="success" className="gap-1">
-                            <CheckCircle className="h-3 w-3" /> Linked & verified
-                          </Badge>
-                        )}
-                        {e.status === "ALT_MERGED" && (
-                          <Badge variant="info" className="gap-1">
-                            Alt Merged ({e.isAltFor})
-                          </Badge>
-                        )}
-                        {e.status === "READY_TO_LINK" && (
-                          <Badge variant="warning" className="gap-1">
-                            <WarningCircle className="h-3 w-3" /> Ready to link
-                          </Badge>
-                        )}
-                        {e.status === "UNMATCHED_USER" && (
-                          <Badge variant="outline" className="text-label-secondary">
-                            Awaiting user claim
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {e.matchedUser ? (
-                          <div>
-                            <div className="text-caption font-mono">
-                              {e.matchedUser.clerkUserId}
-                            </div>
-                            <div className="text-label-secondary text-footnote">
-                              {e.matchedUser.countryName}
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-label-secondary text-footnote italic">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-label-secondary text-footnote min-w-48 whitespace-normal">
-                        {e.notes || "—"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {e.matchedUser &&
-                            (activePlayAs === e.matchedUser.clerkUserId ? (
-                              <Button variant="destructive" size="sm" onClick={handleStopPlayAs}>
-                                Active (Stop)
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  handleStartPlayAs(
-                                    e.matchedUser!.clerkUserId,
-                                    e.matchedUser!.countryName
-                                  )
-                                }
-                                className="gap-1"
-                                title={`Play as ${e.matchedUser.clerkUserId}`}
-                              >
-                                <Play className="text-tint h-2.5 w-2.5 fill-current" />
-                                Play as
-                              </Button>
-                            ))}
-                          {e.matchedUser && e.status === "READY_TO_LINK" && (
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                linkWikiMutation.mutate({
-                                  userId: e.matchedUser!.id,
-                                  wikiUsername: e.wikiUsername,
-                                });
-                              }}
-                              disabled={linkWikiMutation.isPending}
-                            >
-                              1-Click Link
-                            </Button>
-                          )}
-                          {e.status === "ALREADY_LINKED" && e.matchedUser && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                unlinkWikiMutation.mutate({
-                                  userId: e.matchedUser!.id,
-                                  source: "ixwiki",
-                                });
-                              }}
-                              className="text-destructive"
-                            >
-                              Unlink
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </Card>
-        </TabsContent>
-
         <DiscordSyncTab
           discordSyncData={discordSyncData}
           discordSyncLoading={discordSyncLoading}
@@ -632,18 +429,6 @@ export function UsersPanel() {
           unassignCountryMutation={unassignCountryMutation}
         />
       </Tabs>
-
-      <LinkWikiDialog
-        open={isWikiDialogOpen}
-        onOpenChange={setIsWikiDialogOpen}
-        username={wikiUsernameInput}
-        onUsernameChange={setWikiUsernameInput}
-        pending={linkWikiMutation.isPending}
-        onSubmit={() => {
-          if (!wikiUsernameInput) return;
-          linkWikiMutation.mutate({ userId: selectedUser, wikiUsername: wikiUsernameInput });
-        }}
-      />
 
       <LinkDiscordDialog
         open={isDiscordDialogOpen}

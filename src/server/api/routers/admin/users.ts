@@ -1,10 +1,8 @@
 // src/server/api/routers/admin/users.ts
-import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { invalidateCache, globalCache } from "~/lib/cache";
-import { isSystemOwner } from "~/lib/auth";
 import { readConfigKeys, writeConfigKeys } from "./_config-kv";
 import {
   adminAssignNation,
@@ -13,16 +11,8 @@ import {
   pointActiveNation,
   releaseNation,
 } from "~/server/modules/realms";
-import {
-  fetchUserPageHistory,
-  fetchWikiUser,
-  PROOF_SOURCES,
-} from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { fetchGuildMembers, suggestLinks } from "./discord-guild";
-import {
-  createWikiLinkService,
-  WikiLinkError,
-} from "~/server/modules/identity/identity.wiki-links";
+import { namesOfUsers } from "~/lib/identity/wiki-names";
 import {
   ForumError,
   linkOldForumAccount,
@@ -31,7 +21,8 @@ import {
 
 /** Forum refusals map 1:1 to tRPC errors. */
 function forumTrpcError(error: Error): never {
-  if (error instanceof ForumError) throw new TRPCError({ code: error.code, message: error.message });
+  if (error instanceof ForumError)
+    throw new TRPCError({ code: error.code, message: error.message });
   throw error;
 }
 
@@ -55,10 +46,6 @@ function forumAuditRow(
     },
   };
 }
-
-/** The wiki-links service for admin link/unlink — the admin's authority stands in for the token proof. */
-const adminWikiLinks = (db: PrismaClient) =>
-  createWikiLinkService(db, { fetchWikiUser, fetchUserPageHistory });
 
 export const adminUsersRouter = createTRPCRouter({
   // List all users and their claimed countries
@@ -262,7 +249,8 @@ export const adminUsersRouter = createTRPCRouter({
 
   // --- IDENTITY & CROSS-PLATFORM LINKING PROCEDURES ---
 
-  // Get full identity matrix across all registered platform users
+  // Get full identity matrix across all registered platform users; the wiki names are the approved claims, hidden
+  // ones too (an administrator sees every name an account holds)
   listUserIdentities: adminProcedure.query(async ({ ctx }) => {
     const users = await ctx.db.user.findMany({
       include: {
@@ -271,81 +259,28 @@ export const adminUsersRouter = createTRPCRouter({
       },
       orderBy: { createdAt: "asc" },
     });
+    const claimed = await namesOfUsers(
+      ctx.db,
+      users.map((u) => u.id)
+    );
 
-    const { getWikiAltsForUser } = await import("~/lib/wiki-os/adapters/ixstates/user-sync");
-
-    return users.map((u) => {
-      const wikiAlts = u.wikiUsername ? getWikiAltsForUser(u.wikiUsername) : [];
-      return {
-        id: u.id,
-        clerkUserId: u.clerkUserId,
-        membershipTier: u.membershipTier || "basic",
-        country: u.country,
-        role: u.role,
-        wikiUsername: u.wikiUsername,
-        wikiUserId: u.wikiUserId,
-        wikiAlts,
-        lastWikiSync: u.lastWikiSync,
-        discordUserId: u.discordUserId,
-        discordUsername: u.discordUsername,
-        lastDiscordSync: u.lastDiscordSync,
-        forumUserId: u.forumUserId,
-        forumUsername: u.forumUsername,
-        lastForumSync: u.lastForumSync,
-        createdAt: u.createdAt,
-        updatedAt: u.updatedAt,
-      };
-    });
+    return users.map((u) => ({
+      id: u.id,
+      clerkUserId: u.clerkUserId,
+      membershipTier: u.membershipTier || "basic",
+      country: u.country,
+      role: u.role,
+      wikiNames: (claimed.get(u.id) ?? []).map((c) => c.name),
+      discordUserId: u.discordUserId,
+      discordUsername: u.discordUsername,
+      lastDiscordSync: u.lastDiscordSync,
+      forumUserId: u.forumUserId,
+      forumUsername: u.forumUsername,
+      lastForumSync: u.lastForumSync,
+      createdAt: u.createdAt,
+      updatedAt: u.updatedAt,
+    }));
   }),
-
-  // Link a user's MediaWiki account (admin manual link / override)
-  linkUserWiki: adminProcedure
-    .input(z.object({ userId: z.string(), wikiUsername: z.string().min(1) }))
-    .mutation(async ({ ctx, input }) => {
-      const { findLinkableWikiAccount } = await import("~/lib/wiki-os/adapters/ixstates/user-sync");
-      const res = await findLinkableWikiAccount(input.userId, input.wikiUsername, ctx.auth?.userId ?? undefined);
-      if (!res.success) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: res.error || "Failed to link MediaWiki account",
-        });
-      }
-
-      // The admin's authority is the proof of ownership here (no token): adminVerify writes the verified
-      // WikiAccountLink row AND the legacy User columns in one transaction, so a TAKEN refusal writes nothing
-      // (ruling F-2). The PostgreSQL fast path hard-codes userId 1 (pg-activity.ts), which is not a real
-      // MediaWiki user id, so treat it as unknown.
-      const wikiUserId = res.wikiUserId && res.wikiUserId > 1 ? res.wikiUserId : null;
-      try {
-        await adminWikiLinks(ctx.db).adminVerify(
-          input.userId,
-          "ixwiki",
-          res.wikiUsername ?? input.wikiUsername,
-          wikiUserId,
-          { adminUserId: ctx.user.id, isSystemOwner: isSystemOwner(ctx.auth?.userId ?? "") }
-        );
-      } catch (err) {
-        if (err instanceof WikiLinkError) {
-          throw new TRPCError({
-            code: err.code === "NOT_ALLOWED" ? "FORBIDDEN" : "CONFLICT",
-            message: err.message,
-          });
-        }
-        throw err;
-      }
-
-      await globalCache.delete(`user_profile:${input.userId}`);
-      return res;
-    }),
-
-  // Revoke a user's wiki link on any wiki (the verified row; ixwiki also clears the legacy columns — ruling F-2)
-  unlinkUserWiki: adminProcedure
-    .input(z.object({ userId: z.string(), source: z.enum(PROOF_SOURCES).default("ixwiki") }))
-    .mutation(async ({ ctx, input }) => {
-      await adminWikiLinks(ctx.db).unlink(input.userId, input.source);
-      await globalCache.delete(`user_profile:${input.userId}`);
-      return { success: true };
-    }),
 
   // Link a user's Discord account (admin manual link / override)
   linkUserDiscord: adminProcedure
@@ -485,49 +420,4 @@ export const adminUsersRouter = createTRPCRouter({
       }
       return { success: true, appliedCount: applied };
     }),
-
-  // Get MediaWiki Master Reconciliation Overview
-  listMediaWikiReconciliationMatrix: adminProcedure.query(async ({ ctx }) => {
-    const { MEDIAWIKI_MAPPING } = await import("~/lib/wiki-os/adapters/ixstates/wiki-mappings");
-    const users = await ctx.db.user.findMany({
-      include: { country: true },
-    });
-
-    const entries = Object.entries(MEDIAWIKI_MAPPING).map(([wikiName, mapInfo]) => {
-      const matchedUser = users.find((u) => {
-        if (!u.country) return false;
-        const cName = (u.country.name || "").toLowerCase();
-        const target = mapInfo.primaryCountry.toLowerCase();
-        return cName === target || cName.includes(target) || target.includes(cName);
-      });
-
-      let status = "UNMATCHED_USER";
-      if (mapInfo.isAltFor) {
-        status = "ALT_MERGED";
-      } else if (matchedUser) {
-        status = matchedUser.wikiUsername === wikiName ? "ALREADY_LINKED" : "READY_TO_LINK";
-      }
-
-      return {
-        wikiUsername: wikiName,
-        targetCountry: mapInfo.primaryCountry,
-        isAltFor: mapInfo.isAltFor,
-        notes: mapInfo.notes,
-        status,
-        matchedUser: matchedUser
-          ? {
-              id: matchedUser.id,
-              clerkUserId: matchedUser.clerkUserId,
-              countryName: matchedUser.country?.name,
-              currentWikiUsername: matchedUser.wikiUsername,
-            }
-          : null,
-      };
-    });
-
-    return {
-      totalMapped: entries.length,
-      entries,
-    };
-  }),
 });

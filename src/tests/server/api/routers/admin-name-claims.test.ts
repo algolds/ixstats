@@ -132,3 +132,38 @@ describe("admin name claims", () => {
     expect(findMany).not.toHaveBeenCalled();
   });
 });
+
+describe("admin identities", () => {
+  it("lists each account's approved names, hidden ones too, and no pending or revoked one", async () => {
+    const claim = (userId: string, name: string, extra: object) =>
+      db.wikiNameClaim.create({
+        data: { userId, name, origin: "PLAYER", requestedById: userId, ...extra },
+      });
+    await claim("p1", "Foo bar", { status: "APPROVED", decidedAt: new Date("2026-10-01") });
+    await claim("p1", "Foo alt", {
+      status: "APPROVED",
+      visible: false,
+      decidedAt: new Date("2026-10-02"),
+    });
+    await claim("p1", "Foo maybe", { status: "PENDING" });
+    await claim("p2", "Baz gone", { status: "REVOKED" });
+
+    const identities = await admin().listUserIdentities();
+    const namesOf = (id: string) => identities.find((u) => u.id === id)?.wikiNames;
+    expect(namesOf("p1")).toEqual(["Foo bar", "Foo alt"]);
+    expect(namesOf("p2")).toEqual([]);
+    expect(identities[0]).not.toHaveProperty("wikiUsername");
+  });
+
+  it("no longer offers an IxWiki account link or the reconciliation matrix", () => {
+    const procedures = Object.keys(adminRouter._def.procedures);
+    // An old IxWiki name joins an account through linkLegacyWikiName; user links are Discord and the old forum only.
+    expect(procedures.filter((name) => /^(un)?linkUser/.test(name)).sort()).toEqual([
+      "linkUserDiscord",
+      "linkUserForum",
+      "unlinkUserDiscord",
+      "unlinkUserForum",
+    ]);
+    expect(procedures.filter((name) => /reconciliation/i.test(name))).toEqual([]);
+  });
+});

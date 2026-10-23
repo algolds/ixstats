@@ -21,45 +21,6 @@ interface DialogBaseProps {
   pending: boolean;
 }
 
-export function LinkWikiDialog({
-  open,
-  onOpenChange,
-  onSubmit,
-  pending,
-  username,
-  onUsernameChange,
-}: DialogBaseProps & { username: string; onUsernameChange: (value: string) => void }) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Link MediaWiki Profile</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-3 py-2">
-          <p className="text-label-secondary text-footnote">
-            Enter the canonical MediaWiki username or known alt (e.g. <code>Kir</code>,{" "}
-            <code>Carthinova</code>, <code>Urcea</code>).
-          </p>
-          <Input
-            placeholder="MediaWiki Username..."
-            value={username}
-            onChange={(e) => onUsernameChange(e.target.value)}
-            className={INPUT_CLASS}
-          />
-        </div>
-        <DialogFooter>
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button size="sm" onClick={onSubmit} disabled={pending}>
-            Save link
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 export function LinkDiscordDialog({
   open,
   onOpenChange,
