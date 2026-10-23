@@ -27,7 +27,7 @@ import { playRevealFeedback } from "~/components/cards/reveal/reveal-feedback";
 import { CardBackProvenance } from "~/components/cards/face/CardBackProvenance";
 import { AddToShowcaseDialog } from "~/components/cards/showcase/AddToShowcaseDialog";
 import { CardSheetCopies } from "./CardSheetCopies";
-import { CardSheetMarket, CardSheetPriceHistory } from "./CardSheetMarket";
+import { CardSheetCraft, CardSheetMarket, CardSheetPriceHistory } from "./CardSheetMarket";
 import { CardSheetAbout } from "./CardSheetAbout";
 import { MuteToggle } from "./economy/MuteToggle";
 import { WishlistToggle } from "./economy/WishlistToggle";
@@ -43,8 +43,8 @@ type Side = "front" | "back";
 const SIDE_SHOWN: Record<Side, string> = { front: "Showing the front", back: "Showing the back" };
 
 /**
- * The one card sheet: no tabs; the card, then Your copies, Market, About and a folded Price history. Stacks on phones.
- * A signed-out visitor sees it only for a card a player shows publicly, and is asked to sign in for any other.
+ * The one card sheet: no tabs; the card, then Your copies, Market, About, and Price history and Mint folded. Stacks on
+ * phones. A signed-out visitor sees it only for a card a player shows publicly, and is asked to sign in for any other.
  */
 export function CardSheet({ cardId, from, onClose }: CardSheetProps) {
   const query = api.cards.getSheet.useQuery({ cardId, from: from ? encodeSheetFrom(from) : null });
@@ -258,6 +258,7 @@ function SheetBody({ sheet }: { sheet: CardSheetData }) {
           recentSales={sheet.market.recentSales}
           signedIn={sheet.signedIn}
         />
+        <CardSheetCraft cardId={card.id} signedIn={sheet.signedIn} />
       </div>
       <AddToShowcaseDialog
         open={showcasing !== null}

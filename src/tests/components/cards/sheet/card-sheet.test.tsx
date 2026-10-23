@@ -50,7 +50,13 @@ jest.mock("~/hooks/cards/useSheetEconomy", () => ({
 }));
 jest.mock("~/hooks/cards/useMarketActions", () => {
   const mutation = () => ({ mutate: jest.fn(), isPending: false });
-  const actions = { wish: mutation(), unwish: mutation(), setMute: mutation(), buy: mutation() };
+  const actions = {
+    wish: mutation(),
+    unwish: mutation(),
+    setMute: mutation(),
+    buy: mutation(),
+    craft: mutation(),
+  };
   return {
     useMarketActions: jest.fn(() => actions),
     useCardMute: jest.fn(() => ({ data: false })),
@@ -72,7 +78,7 @@ jest.mock("next/link", () => ({
   ),
 }));
 import { api } from "~/trpc/react";
-import { useSheetEconomy } from "~/hooks/cards/useSheetEconomy";
+import { useSheetEconomy, type CraftOfferView } from "~/hooks/cards/useSheetEconomy";
 import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { CardSheet } from "~/components/cards/sheet/CardSheet";
@@ -163,9 +169,15 @@ const economy = (
     /** The one fusion group's copies; none when empty. */
     fusion: string[];
     wishlisted: boolean;
+    craft: CraftOfferView | null;
   }> = {}
 ) => {
-  const { fusion = ["o7", "o8", "o9"], wishlisted = false, ...copyOverrides } = overrides;
+  const {
+    fusion = ["o7", "o8", "o9"],
+    wishlisted = false,
+    craft = null,
+    ...copyOverrides
+  } = overrides;
   return {
     cardId: "c1",
     isBound: false,
@@ -185,7 +197,7 @@ const economy = (
       },
     ],
     fusionGroups: fusion.length > 0 ? [{ finish: "FOIL", next: "HOLO", ownershipIds: fusion }] : [],
-    craft: null,
+    craft,
   };
 };
 const useSheet = () => jest.mocked(api.cards.getSheet.useQuery);
@@ -615,6 +627,28 @@ describe("CardSheet layout", () => {
     fireEvent.click(screen.getByRole("button", { name: "Price history" }));
     expect(screen.getByRole("list", { name: "Recent sales" })).toBeInTheDocument();
     expect(screen.queryByText("Value chart")).toBeNull();
+  });
+
+  it("folds Mint last, under the price history, for a card the player can craft", () => {
+    showSheet(sheet({ market: sold }));
+    showEconomy(
+      economy({
+        craft: {
+          cardId: "c1",
+          realmId: "r1",
+          verdict: { ok: true },
+          quote: { dust: 1200, credits: 300 },
+          dust: 1500,
+        },
+      })
+    );
+    open();
+    expect(regionNames()).toEqual(["Your copies", "Market", "About", "Price history", "Mint"]);
+    const toggle = screen.getByRole("button", { name: "Mint" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("button", { name: /Craft for/ })).toBeNull();
+    fireEvent.click(toggle);
+    expect(screen.getByRole("button", { name: "Craft for 1,200 dust and 300 IxC" })).toBeEnabled();
   });
 
   it("gives a player the price history before anything has sold, for the chart", () => {

@@ -9,7 +9,7 @@ export type CraftOfferView = NonNullable<SheetEconomyView["craft"]>;
 export type EconomyNumbers = RouterOutputs["crafting"]["getNumbers"];
 
 /**
- * One card's economy for the signed-in player (the sheet's copy actions and market section share it). The sheet is
+ * One card's economy for the signed-in player (the sheet's copy actions and its Mint section share it). The sheet is
  * public, so a caller that may be signed out passes `enabled`.
  */
 export function useSheetEconomy(cardId: string, enabled = true) {
