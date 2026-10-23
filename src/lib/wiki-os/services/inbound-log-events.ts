@@ -19,10 +19,10 @@ import { toArticleSlug } from "../core/domain-types";
 import { canonicalizeTitle, type CanonicalTitle } from "../core/title";
 import type { JsonValue, LogEvent } from "./inbound-mediawiki";
 import {
+  claimedWikiUserId,
   evictCaches,
   isMirrorUser,
   syncLatestRevision,
-  verifiedWikiUserId,
 } from "./inbound-revision-sync";
 import { enqueueRender, invalidateTemplateDependents } from "./render-service";
 
@@ -41,7 +41,7 @@ interface EventContext {
   event: LogEvent;
   /** The page (or `User:` page) the event is about, canonical; null when the title is not one. */
   canon: CanonicalTitle | null;
-  /** The WikiOS user behind the acting MediaWiki account, when it has a verified link. */
+  /** The account holding the approved claim of the acting MediaWiki name, if anyone. */
   actorUserId: string | null;
 }
 
@@ -505,7 +505,7 @@ export async function applyLogEvent(event: LogEvent): Promise<LogOutcome> {
   const context: EventContext = {
     event,
     canon: canonicalizeTitle(event.title),
-    actorUserId: await verifiedWikiUserId(event.user),
+    actorUserId: await claimedWikiUserId(event.user),
   };
   const applied = await db.$transaction((tx) => handler(tx, context));
   if (applied.outcome !== "applied") return applied.outcome;

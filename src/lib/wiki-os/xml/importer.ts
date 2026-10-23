@@ -3,15 +3,19 @@
  *
  * One page at a time: the title must be a canonical MediaWiki title in the namespace the dump says,
  * the revisions keep their MediaWiki ids, timestamps, authors and summaries (nothing is authored by
- * the importer), and a page's head only moves forward. Importing a dump twice is a no-op; a dump of
- * the full history fills the empty placeholder revisions `sync-ixwiki-full.ts` left behind. All
- * database work for a page is one transaction inside `ArticleRepository.importPageRevisions`.
+ * the importer: a revision has no WikiOS author until, once the page is written, the approved name
+ * claim of its contributor tags it, claim-tags.ts), and a page's head only moves forward. Importing
+ * a dump twice is a no-op; a dump of the full history fills the empty placeholder revisions
+ * `sync-ixwiki-full.ts` left behind. All database work for a page is one transaction inside
+ * `ArticleRepository.importPageRevisions`.
  *
  * A page that fails (invalid title, bad timestamp, a database error) is reported in `errors` and
  * the import goes on with the next one; a dump that turns out to be malformed stops the import
  * there, and what was imported before stays.
  */
 
+import { tagRevisionsOfName } from "~/lib/identity/claim-tags";
+import { IXWIKI } from "~/lib/identity/wiki-names";
 import { db } from "~/server/db";
 import { ArticleRepository } from "../core/article-repository";
 import type { ImportedHead, ImportedRestriction, ImportPageInput } from "../core/article-import";
@@ -66,8 +70,6 @@ interface ImportContext {
   source: string;
   dryRun: boolean;
   canWritePage: ImportOptions["canWritePage"];
-  /** MediaWiki username to WikiOS user id (null: no verified link); one lookup per name per import. */
-  authors: Map<string, string | null>;
 }
 
 /** Prisma opens its messages with "Invalid `client.model.op()` invocation in <file>" and a source frame. */
@@ -146,35 +148,21 @@ function resolveIdentity(page: ImportPage, source: string) {
   return { canon, namespace };
 }
 
-/** Fill `authors` with the verified WikiOS account of each username not seen yet. */
-async function linkAuthors(page: ImportPage, ctx: ImportContext): Promise<void> {
-  const unseen = [
-    ...new Set(
-      page.revisions.flatMap(({ contributor }) =>
-        "username" in contributor && !ctx.authors.has(contributor.username)
-          ? [contributor.username]
-          : []
-      )
-    ),
-  ];
-  if (unseen.length === 0) return;
-
-  const links = await db.wikiAccountLink.findMany({
-    where: { source: ctx.source, username: { in: unseen }, verifiedAt: { not: null } },
-    select: { username: true, userId: true },
-    take: unseen.length,
-  });
-  for (const name of unseen) ctx.authors.set(name, null);
-  for (const link of links) ctx.authors.set(link.username, link.userId);
+/** Puts each named contributor's claimed account (an IxWiki name claim) on their revisions the page now holds. */
+async function tagContributors(page: ImportPage, source: string): Promise<void> {
+  if (source !== IXWIKI) return;
+  const names = new Set(
+    page.revisions.flatMap(({ contributor }) =>
+      "username" in contributor ? [contributor.username] : []
+    )
+  );
+  for (const name of names) await tagRevisionsOfName(db, source, name);
 }
 
-function authorOf(
-  contributor: Contributor,
-  authors: Map<string, string | null>
-): { author: string; authorId: string | null } {
-  if ("deleted" in contributor) return { author: DELETED_AUTHOR, authorId: null };
-  if ("ip" in contributor) return { author: contributor.ip, authorId: null };
-  return { author: contributor.username, authorId: authors.get(contributor.username) ?? null };
+function authorOf(contributor: Contributor): string {
+  if ("deleted" in contributor) return DELETED_AUTHOR;
+  if ("ip" in contributor) return contributor.ip;
+  return contributor.username;
 }
 
 /** Milliseconds since the epoch of a revision's timestamp; throws on anything but a dump timestamp. */
@@ -199,10 +187,10 @@ function checkRevisionNumbers(revision: XmlRevision): void {
  * The page's revisions as stored rows, oldest first, sized and hashed. The hash is always computed
  * from the text; `hashMismatches` counts the revisions whose dump hash says otherwise.
  */
-function toImportedRevisions(
-  page: ImportPage,
-  authors: Map<string, string | null>
-): { revisions: ImportedRevision[]; hashMismatches: number } {
+function toImportedRevisions(page: ImportPage): {
+  revisions: ImportedRevision[];
+  hashMismatches: number;
+} {
   for (const revision of page.revisions) checkRevisionNumbers(revision);
   const ordered = page.revisions
     .map((revision) => ({ revision, time: timestampOf(revision) }))
@@ -220,7 +208,8 @@ function toImportedRevisions(
     const imported: ImportedRevision = {
       mwRevId: revision.id,
       createdAt: new Date(time),
-      ...authorOf(revision.contributor, authors),
+      author: authorOf(revision.contributor),
+      authorId: null,
       summary: revision.comment,
       commentDeleted: revision.commentDeleted,
       textDeleted: revision.textDeleted,
@@ -276,17 +265,16 @@ function headOf(
 }
 
 /** The store-ready page, and what about it is worth a warning. */
-async function buildPageInput(
+function buildPageInput(
   page: ImportPage,
   ctx: ImportContext
-): Promise<{ input: ImportPageInput; warnings: string[] }> {
+): { input: ImportPageInput; warnings: string[] } {
   const { canon, namespace } = resolveIdentity(page, ctx.source);
   const verdict = ctx.canWritePage?.(canon.title, namespace.namespaceId);
   if (verdict && !verdict.allowed) throw new PageRejected(`permission: ${verdict.reason}`);
   if (page.revisions.length === 0) throw new PageRejected("The page has no revisions");
 
-  await linkAuthors(page, ctx);
-  const { revisions, hashMismatches } = toImportedRevisions(page, ctx.authors);
+  const { revisions, hashMismatches } = toImportedRevisions(page);
   const { rules, unknownLevels } = restrictionsFromDump(page.restrictions);
   const warnings = [
     modelWarning(canon.title, page.revisions),
@@ -326,7 +314,7 @@ async function importOnePage(
   summary.pages += 1;
   summary.uploadsSkipped += page.uploads;
   try {
-    const { input, warnings } = await buildPageInput(page, ctx);
+    const { input, warnings } = buildPageInput(page, ctx);
     const result = await ArticleRepository.importPageRevisions(input);
     for (const message of warnings) summary.warnings.push({ title: page.title, message });
     if (result.created) summary.pagesCreated += 1;
@@ -339,6 +327,7 @@ async function importOnePage(
         message: `${result.conflicts} revision(s) already belong to another page and were skipped`,
       });
     }
+    if (!ctx.dryRun) await tagContributors(page, ctx.source);
     return "imported";
   } catch (error) {
     summary.errors.push({ title: page.title, message: messageOf(error) });
@@ -356,7 +345,7 @@ export async function importExport(
   { source = "ixwiki", dryRun = false, onProgress, canWritePage }: ImportOptions = {}
 ): Promise<ImportSummary> {
   const summary = emptySummary();
-  const ctx: ImportContext = { source, dryRun, canWritePage, authors: new Map() };
+  const ctx: ImportContext = { source, dryRun, canWritePage };
   let failuresInARow = 0;
   try {
     for await (const event of events) {

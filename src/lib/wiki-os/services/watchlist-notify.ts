@@ -15,6 +15,7 @@
 // and the notification list read), while `WikiWatchlist.userId` is the internal user id.
 
 import { db } from "~/server/db";
+import { IXWIKI, ownerOfName } from "~/lib/identity/wiki-names";
 import { notificationAPI } from "~/lib/notifications/api";
 import { isNotificationEventEnabled } from "~/lib/notifications/guard";
 import { wikiReaderPath } from "~/lib/wiki-os/config";
@@ -30,7 +31,7 @@ export interface HeadChange {
   editor: string;
   /** The WikiOS user who made it, when known: not notified of their own change. */
   editorUserId?: string | null;
-  /** The MediaWiki account that made it: left out the same way when it is linked to a WikiOS user. */
+  /** The MediaWiki name that made it: the account holding its approved claim is left out the same way. */
   editorWikiUsername?: string | null;
   /** The edit summary, or the reason of a move, delete or restore. */
   summary?: string | null;
@@ -102,15 +103,10 @@ function describeChange(change: HeadChange): NotificationText {
 
 /** The WikiOS users who made the change: not to be told about it. */
 async function actorUserIds(change: HeadChange): Promise<string[]> {
-  const ids: string[] = change.editorUserId ? [change.editorUserId] : [];
-  if (change.editorWikiUsername) {
-    const link = await db.wikiAccountLink.findFirst({
-      where: { source: "ixwiki", username: change.editorWikiUsername, verifiedAt: { not: null } },
-      select: { userId: true },
-    });
-    if (link) ids.push(link.userId);
-  }
-  return ids;
+  const claimant = change.editorWikiUsername
+    ? await ownerOfName(db, IXWIKI, change.editorWikiUsername)
+    : null;
+  return [change.editorUserId, claimant].filter((id): id is string => Boolean(id));
 }
 
 /**

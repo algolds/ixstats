@@ -19,7 +19,7 @@ export interface ImportedRevision {
   createdAt: Date;
   /** Username, IP address or "(deleted)". */
   author: string;
-  /** The WikiOS user, only through a verified WikiAccountLink. */
+  /** The WikiOS user: null on import; an approved name claim tags it afterwards (claim-tags.ts). */
   authorId: string | null;
   summary: string | null;
   /** MediaWiki revision deletion: the dump hides the summary, the text, the author. */

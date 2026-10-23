@@ -6,6 +6,8 @@
  * XML importer makes); a revision that is WikiOS's own text coming back is an echo (it only gives the
  * head its MediaWiki id); anything else is parked: stored in the page's history as a non-current
  * revision, WikiOS's head pushed back to MediaWiki, and the editor notified when we know who they are.
+ * Every stored revision is written with no WikiOS author; the approved name claim of its MediaWiki
+ * editor then tags it (claim-tags.ts), so a revoked claim takes back exactly what it gave.
  * `decideInbound` is the pure rule; this file reads and writes around it.
  *
  * Callers hold the inbound-sync lock (auto-sync-service.ts): revisions of a page must be applied one
@@ -15,7 +17,8 @@
 import { z } from "zod";
 import { db } from "~/server/db";
 import { notificationAPI } from "~/lib/notifications/api";
-import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import { tagRevisionsOfName } from "~/lib/identity/claim-tags";
+import { ownerOfName } from "~/lib/identity/wiki-names";
 import { isMirrorAccount, mirrorBotName } from "../adapters/mediawiki/csrf-cache";
 import { ArticleRepository } from "../core/article-repository";
 import type { ImportedHead, ImportPageInput } from "../core/article-import";
@@ -71,14 +74,24 @@ export function isMirrorUser(user: string | null): boolean {
   return isMirrorAccount(user);
 }
 
-/** The WikiOS user who verified the MediaWiki account `username`, if anyone. */
-export async function verifiedWikiUserId(username: string | null): Promise<string | null> {
-  if (!username) return null;
-  const link = await db.wikiAccountLink.findFirst({
-    where: { source: SOURCE, username: normalizeWikiUsername(username), verifiedAt: { not: null } },
-    select: { userId: true },
-  });
-  return link?.userId ?? null;
+/** The account holding the approved claim of the MediaWiki name `username` (shown or not), if anyone. */
+export async function claimedWikiUserId(username: string | null): Promise<string | null> {
+  return username ? ownerOfName(db, SOURCE, username) : null;
+}
+
+/**
+ * Puts the claimed account on the revisions of `rev`'s editor that were just committed. Best effort: the revision is
+ * stored either way, and one left untagged keeps no author, never a wrong one.
+ */
+async function tagEditor(rev: MediaWikiRevision): Promise<void> {
+  try {
+    await tagRevisionsOfName(db, SOURCE, rev.user);
+  } catch (error) {
+    console.warn(
+      `[WikiAutoSync] Revision ${rev.revid} could not be tagged for its editor's claim:`,
+      error
+    );
+  }
 }
 
 const ARTICLE_SELECT = {
@@ -254,7 +267,7 @@ async function insertEchoRevision(
         source: SOURCE,
         mwRevId: rev.revid,
         author: rev.user ?? DELETED_AUTHOR,
-        authorId: await verifiedWikiUserId(rev.user),
+        authorId: null,
         summary: rev.comment || null,
         minor: rev.minor,
         commentDeleted: rev.commentHidden,
@@ -271,6 +284,7 @@ async function insertEchoRevision(
   });
   // The echo is a live revision dated before the head: it records the live revision before it.
   await fillRevisionParents(db, article.id);
+  await tagEditor(rev);
 }
 
 // ---------------------------------------------------------------------------
@@ -340,7 +354,7 @@ async function fastForward(
         mwRevId: rev.revid,
         createdAt,
         author: rev.user ?? DELETED_AUTHOR,
-        authorId: await verifiedWikiUserId(rev.user),
+        authorId: null,
         summary: rev.comment || null,
         commentDeleted: rev.commentHidden,
         textDeleted: false,
@@ -360,6 +374,7 @@ async function fastForward(
   };
 
   const result = await ArticleRepository.importPageRevisions(input);
+  await tagEditor(rev);
   if (result.inserted === 0 && !result.headUpdated) return "known";
   if (article?.status === "ARCHIVED") await restoreRecreatedPage(article);
   // The page has new text: the caches that serve its intro and wikitext must not keep the old one.
@@ -389,8 +404,7 @@ async function insertParked(
   repush: RevisionJobInput | null
 ): Promise<boolean> {
   const byteSize = Buffer.byteLength(rev.wikitext, "utf8");
-  const authorId = await verifiedWikiUserId(rev.user);
-  return db.$transaction(async (tx) => {
+  const inserted = await db.$transaction(async (tx) => {
     const { count } = await tx.wikiRevision.createMany({
       data: [
         {
@@ -398,7 +412,7 @@ async function insertParked(
           source: SOURCE,
           mwRevId: rev.revid,
           author: rev.user ?? DELETED_AUTHOR,
-          authorId,
+          authorId: null,
           summary: rev.comment || null,
           minor: rev.minor,
           commentDeleted: rev.commentHidden,
@@ -420,15 +434,17 @@ async function insertParked(
     if (count > 0 && repush) await enqueueRevisionJob(tx, repush);
     return count > 0;
   });
+  await tagEditor(rev);
+  return inserted;
 }
 
-/** Tell the MediaWiki account's WikiOS owner (a verified link) that their edit did not go live. */
+/** Tell the account holding the MediaWiki name's approved claim that their edit did not go live. */
 async function notifyParkedEditor(
   rev: MediaWikiRevision,
   canon: CanonicalTitle,
   headRef: string
 ): Promise<void> {
-  const userId = await verifiedWikiUserId(rev.user);
+  const userId = await claimedWikiUserId(rev.user);
   if (!userId) return;
   await notificationAPI.create({
     userId,

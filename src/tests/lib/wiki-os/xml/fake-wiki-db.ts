@@ -1,6 +1,6 @@
 /**
  * An in-memory stand-in for the Prisma delegates the XML importer touches (WikiArticle,
- * WikiRevision, WikiAccountLink, $transaction), with the behaviour the importer relies on: the
+ * WikiRevision, WikiRestriction, WikiNameClaim, $transaction), with the behaviour the importer relies on: the
  * (source, mwRevId) uniqueness, where-filters of the shapes it uses, and a transaction that rolls
  * back everything when its callback throws.
  */
@@ -61,20 +61,12 @@ export interface RestrictionRow {
   reason: string | null;
 }
 
-export interface AccountLinkRow {
-  source: string;
-  username: string;
-  userId: string;
-  verifiedAt: Date | null;
-}
-
 type Where = Record<string, unknown>;
 type Row = Record<string, unknown>;
 
 export const store = {
   articles: [] as ArticleRow[],
   revisions: [] as RevisionRow[],
-  accountLinks: [] as AccountLinkRow[],
   restrictions: [] as RestrictionRow[],
   writes: 0,
   nextId: 1,
@@ -88,7 +80,6 @@ export const rawStatements: string[] = [];
 export function resetStore(): void {
   store.articles = [];
   store.revisions = [];
-  store.accountLinks = [];
   store.restrictions = [];
   store.writes = 0;
   store.nextId = 1;
@@ -276,13 +267,6 @@ const revisionDelegate = {
   },
 };
 
-const accountLinkDelegate = {
-  findMany: async ({ where, select }: { where: Where; select?: Record<string, boolean> }) =>
-    store.accountLinks
-      .filter((row) => matches(row as unknown as Row, where))
-      .map((row) => pick(row, select)),
-};
-
 /** `wikiRestriction.upsert` by the (source, title, action) key; `update` is applied to an existing row. */
 const restrictionDelegate = {
   upsert: async ({
@@ -311,8 +295,9 @@ export function createFakeDbModule() {
   const delegates = {
     wikiArticle: articleDelegate,
     wikiRevision: revisionDelegate,
-    wikiAccountLink: accountLinkDelegate,
     wikiRestriction: restrictionDelegate,
+    /** IxWiki name claims: none is claimed here, so the importer's claim tags (claim-tags.ts) tag nothing. */
+    wikiNameClaim: { findFirst: async (): Promise<null> => null },
     /**
      * Understands the one raw statement the importer makes, `fillRevisionParents` (core/revision-parents.ts): the live
      * revisions of the article (value 1), in (createdAt, id) order, that have no parent get the one before them.

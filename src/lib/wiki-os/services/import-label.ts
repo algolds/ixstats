@@ -1,5 +1,5 @@
 /**
- * The name a WikiOS edit goes out to MediaWiki under when its author has no verified wiki account: `wikios>Label`,
+ * The name a WikiOS edit goes out to MediaWiki under when its author has no shown claimed name: `wikios>Label`,
  * a form MediaWiki keeps as it is and never maps to an account. MediaWiki user names cannot hold `>`, so no
  * MediaWiki editor can carry it.
  */
@@ -31,7 +31,7 @@ function importLabel(author: string | null): string {
   return truncateUtf8(line, MAX_LABEL_BYTES).trim() || UNKNOWN_AUTHOR;
 }
 
-/** The `wikios>Label` name an author with no verified wiki account goes out under. */
+/** The `wikios>Label` name an author with no shown claimed name goes out under. */
 export const importName = (author: string | null): string =>
   `${IMPORT_NAME_START}${importLabel(author)}`;
 
