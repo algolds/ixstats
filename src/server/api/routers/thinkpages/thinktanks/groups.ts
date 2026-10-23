@@ -61,7 +61,7 @@ import { ensurePersonalAccount } from "../personal-account";
 
 type GroupDb = Pick<
   PrismaClient,
-  "thinkshareConversation" | "thinktankGroup" | "user" | "thinkpagesAccount" | "userConnection"
+  "thinkshareConversation" | "thinktankGroup" | "user" | "thinkpagesAccount"
 >;
 
 /** Players' user rows for display (an old wiki name is never one: it is a name claim, shown on the passport). */

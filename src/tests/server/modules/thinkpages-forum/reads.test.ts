@@ -13,7 +13,7 @@ import {
 } from "~/server/modules/thinkpages-forum";
 import { advertGate } from "~/server/modules/thinkpages-forum/advert-access";
 import { summarizeCategories } from "~/server/modules/thinkpages-forum/reads";
-import { privacyConnections, wikiAttributionOff } from "~/tests/helpers/privacy-config-fake";
+import { privacyConnections } from "~/tests/helpers/privacy-config-fake";
 import { boardTopPosters, trendingThreads } from "~/server/modules/thinkpages-forum/board-reads";
 import { latestActivity, listBoards } from "~/server/modules/thinkpages-forum/board-list";
 import { latestPublicThreadPreviews } from "~/server/modules/thinkpages-forum/thread-preview";
@@ -358,7 +358,7 @@ describe("authorsOf", () => {
     });
   });
 
-  it("names a member the same whatever their wiki attribution says, and never reads the switch", async () => {
+  it("names a member by handle, else nation, never by an old wiki name, reading no privacy setting", async () => {
     const db = readDb();
     db.user.findMany.mockResolvedValue([
       { id: "u1", clerkUserId: "c1", handle: "heku", wikiUsername: "Heku", country: null },
@@ -371,7 +371,6 @@ describe("authorsOf", () => {
       },
       { id: "u3", clerkUserId: "c3", handle: null, wikiUsername: "Plain", country: null },
     ]);
-    db.userConnection.findMany.mockResolvedValue(wikiAttributionOff("c1", "c2", "c3"));
     const out = await authorsOf(db as never, ["u1", "u2", "u3"], []);
     expect([...out.users.values()].map((u) => u.name)).toEqual(["heku", "Caphiria", "Member"]);
     expect(db.userConnection.findMany).not.toHaveBeenCalled();

@@ -15,9 +15,16 @@ jest.mock("~/hooks/usePageTitle", () => ({
 jest.mock("~/components/shared/flags/UnifiedCountryFlag", () => ({
   UnifiedCountryFlag: () => null,
 }));
-const passportIndexable = jest.fn<Promise<boolean>, [string]>();
-jest.mock("~/server/modules/identity/identity.link-privacy", () => ({
-  passportIndexable: (handle: string) => passportIndexable(handle),
+/** The Clerk id a passport handle belongs to, and who turned search engine indexing off. */
+const ownerOfHandle = jest.fn<Promise<string | null>, [string]>();
+const switchedOff = jest.fn<Promise<Set<string>>, [unknown, string[], string]>();
+jest.mock("~/server/modules/identity/identity.resolve", () => ({
+  ...jest.requireActual("~/server/modules/identity/identity.resolve"),
+  resolveHandleOwnerClerkId: (handle: string) => ownerOfHandle(handle),
+}));
+jest.mock("~/server/shared/privacy-permissions", () => ({
+  ...jest.requireActual("~/server/shared/privacy-permissions"),
+  usersWithSwitchOff: (db: unknown, ids: string[], key: string) => switchedOff(db, ids, key),
 }));
 
 /** `useQuery` answers from `queries` by procedure path and records its input in `queryInputs`. */
@@ -61,11 +68,17 @@ beforeEach(() => {
 });
 describe("realm passport metadata", () => {
   it("is noindex when the holder turned search engine indexing off", async () => {
-    passportIndexable.mockResolvedValueOnce(false);
+    ownerOfHandle.mockResolvedValueOnce("clerk_alex");
+    switchedOff.mockResolvedValueOnce(new Set(["clerk_alex"]));
     const metadata = await generateMetadata({
       params: Promise.resolve({ realm: "eurth", username: "%40alex" }),
     });
-    expect(passportIndexable).toHaveBeenLastCalledWith("alex");
+    expect(ownerOfHandle).toHaveBeenLastCalledWith("alex");
+    expect(switchedOff).toHaveBeenLastCalledWith(
+      expect.anything(),
+      ["clerk_alex"],
+      "searchEngineIndexing"
+    );
     expect(metadata).toEqual({ robots: { index: false, follow: false } });
   });
 });

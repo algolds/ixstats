@@ -1,8 +1,7 @@
 /**
  * How the card surfaces name players (card sheets, showcases, trades and their history), many at once, by one rule
  * (`playerDisplayName`). One read of the players, then one of the shown claimed ixwiki names and one of the nations of
- * those with no stored handle, and one of the wiki attribution switch, however many rows name them; only the handle
- * chain's resolve-back check runs per player.
+ * those with no stored handle, however many rows name them; only the handle chain's resolve-back check runs per player.
  */
 import { namesOfUsers, type ClaimedName } from "~/lib/identity/wiki-names";
 import { db } from "~/server/db";
@@ -84,7 +83,6 @@ export async function loadPlayerNames(
     claimedWikiNames(unhandled),
     nationNames(unhandled),
   ]);
-  // A shown claimed name names only a player who shows wiki attribution (one switch read for the batch).
   const handles = await loadPassportHandles(users, wikiNames);
   return new Map(
     users.map((user, i): [string, PlayerName] => {

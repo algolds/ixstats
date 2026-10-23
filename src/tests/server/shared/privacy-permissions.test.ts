@@ -43,7 +43,6 @@ import {
   splitDirectMessageRefusals,
   tradeOfferRefusers,
   usersWithSwitchOff,
-  withoutHiddenWikiNames,
 } from "~/server/shared/privacy-permissions";
 import {
   blockedUserClerkIds,
@@ -51,11 +50,6 @@ import {
   recipientsBlockingSender,
 } from "~/server/shared/user-blocks";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
-import {
-  privacyConfigRow,
-  privacyConnections,
-  wikiAttributionOff,
-} from "~/tests/helpers/privacy-config-fake";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 function withConfigs(configs: Record<string, Record<string, unknown> | string>) {
@@ -267,37 +261,7 @@ describe("privacy switches", () => {
     const db = createMockPrisma();
     db.userConnection.findMany.mockRejectedValue(new Error("down"));
     const hidden = await hiddenLinkedNames(db as never, ["a"]);
-    expect([...hidden.discord, ...hidden.wiki]).toEqual(["a", "a"]);
-  });
-});
-
-describe("withoutHiddenWikiNames (wiki attribution off)", () => {
-  const people = [
-    { id: "u_off", clerkUserId: "off", wikiUsername: "Hidden Name", handle: null },
-    { id: "u_on", clerkUserId: "on", wikiUsername: "Shown Name", handle: null },
-    { id: "u_default", clerkUserId: "default", wikiUsername: "Default Name", handle: null },
-    { id: "u_none", clerkUserId: "none", wikiUsername: null, handle: "nowiki" },
-  ];
-
-  it("blanks the wiki name of a user with the switch off and keeps the rest of every row", async () => {
-    const connections = privacyConnections([
-      ...wikiAttributionOff("off"),
-      privacyConfigRow("on", { showWikiAttribution: true }),
-    ]);
-    const out = await withoutHiddenWikiNames({ userConnection: connections } as never, people);
-    expect(out).toEqual([
-      { id: "u_off", clerkUserId: "off", wikiUsername: null, handle: null },
-      people[1],
-      people[2],
-      people[3],
-    ]);
-  });
-  it("fails closed: a read error blanks every wiki name", async () => {
-    const connections = privacyConnections();
-    connections.findMany.mockRejectedValue(new Error("db down"));
-    const out = await withoutHiddenWikiNames({ userConnection: connections } as never, people);
-    expect(out.map((u) => u.wikiUsername)).toEqual([null, null, null, null]);
-    expect(out.map((u) => u.handle)).toEqual([null, null, null, "nowiki"]);
+    expect(hidden).toEqual({ discord: new Set(["a"]) });
   });
 });
 
@@ -377,6 +341,46 @@ describe("users router", () => {
       expect.objectContaining({ where: { source: "ixwiki", name: "Alex", status: "APPROVED" } })
     );
     expect(db.user.findUnique).not.toHaveBeenCalled();
+  });
+  it("blockAccount and muteAccount find a player by handle, never by an old wiki name", async () => {
+    const db = createMockPrisma();
+    db.country.findFirst.mockResolvedValue(null);
+    db.user.findFirst.mockResolvedValue({ id: "db_9", clerkUserId: "clerk_9" });
+    db.userConnection.findFirst.mockResolvedValue(null);
+    db.userConnection.create.mockImplementation(async (args: { data: object }) => args.data);
+    await caller(db).blockAccount({ identifier: "@Alex" });
+    await caller(db).muteAccount({ identifier: "@Alex" });
+    for (const [args] of db.user.findFirst.mock.calls) {
+      expect(JSON.stringify(args)).not.toContain("wikiUsername");
+      expect(args.where.OR).toContainEqual({ handle: { equals: "alex", mode: "insensitive" } });
+    }
+  });
+  it("exportUserData lists every old wiki name claim of the user, whatever its status", async () => {
+    const db = createMockPrisma();
+    db.user.findUnique.mockResolvedValue({ id: "db_1", clerkUserId: "clerk_1", countryId: null });
+    const claims = [
+      {
+        source: "ixwiki",
+        name: "Alex",
+        status: "APPROVED",
+        visible: false,
+        createdAt: new Date(0),
+      },
+      {
+        source: "ixwiki",
+        name: "Alex2",
+        status: "REJECTED",
+        visible: true,
+        createdAt: new Date(1),
+      },
+    ];
+    db.wikiNameClaim.findMany.mockResolvedValue(claims);
+    const out = await caller(db).exportUserData();
+    expect(out.user.wikiNames).toEqual(claims);
+    expect(out.user).not.toHaveProperty("wikiUsername");
+    expect(db.wikiNameClaim.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: "db_1" } })
+    );
   });
 });
 

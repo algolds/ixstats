@@ -40,7 +40,7 @@ async function findTypedCountry(
 const LISTED_USER_SELECT = {
   id: true,
   clerkUserId: true,
-  wikiUsername: true,
+  handle: true,
   discordUsername: true,
   country: { select: { name: true, slug: true, flag: true } },
 } satisfies Prisma.UserSelect;
@@ -48,9 +48,8 @@ type ListedUser = Prisma.UserGetPayload<{ select: typeof LISTED_USER_SELECT }>;
 
 /**
  * The users the block and mute lists name (a row stores a platform or a Clerk id), keyed by both ids: one query,
- * then one batch read of the linked-name switches for the users with a wiki or Discord name (hiddenLinkedNames).
- * The wiki name is blanked for each user with `showWikiAttribution` off and the Discord name for each with
- * `showDiscordTag` off; a read error blanks every one.
+ * then one batch read of the Discord switch for the users with a Discord name (hiddenLinkedNames). The Discord name
+ * is blanked for each user with `showDiscordTag` off; a read error blanks every one.
  */
 async function listedUsers(
   db: Pick<PrismaClient, "user" | "userConnection">,
@@ -63,12 +62,11 @@ async function listedUsers(
     where: { OR: [{ id: { in: ids } }, { clerkUserId: { in: ids } }] },
     select: LISTED_USER_SELECT,
   });
-  const named = rows.filter((u) => u.wikiUsername || u.discordUsername).map((u) => u.clerkUserId);
+  const named = rows.filter((u) => u.discordUsername).map((u) => u.clerkUserId);
   const hidden = await hiddenLinkedNames(db, named);
   for (const row of rows) {
     const user = {
       ...row,
-      wikiUsername: hidden.wiki.has(row.clerkUserId) ? null : row.wikiUsername,
       discordUsername: hidden.discord.has(row.clerkUserId) ? null : row.discordUsername,
     };
     byId.set(user.id, user);
@@ -76,6 +74,9 @@ async function listedUsers(
   }
   return byId;
 }
+
+/** How the block and mute lists name a user: their nation, handle, a Discord tag they show, else "User". */
+const listedLabel = (u: ListedUser) => u.country?.name || u.handle || u.discordUsername || "User";
 
 export interface PrivacyConfig {
   directMessages: "everyone" | "followers" | "verified" | "nobody";
@@ -88,7 +89,6 @@ export interface PrivacyConfig {
   searchEngineIndexing: boolean;
   dmReadReceipts: boolean;
   showDiscordTag: boolean;
-  showWikiAttribution: boolean;
 }
 
 /**
@@ -107,7 +107,6 @@ const DEFAULT_PRIVACY_CONFIG: PrivacyConfig = {
   searchEngineIndexing: true,
   dmReadReceipts: true,
   showDiscordTag: true,
-  showWikiAttribution: true,
 };
 
 /** The stored config merged over the defaults, keeping only known keys. */
@@ -235,7 +234,7 @@ export const usersPreferencesRouter = createTRPCRouter({
         if (c.targetUserId) {
           const u = listed.get(c.targetUserId);
           if (u) {
-            label = u.country?.name || u.wikiUsername || u.discordUsername || "User";
+            label = listedLabel(u);
             subtitle = u.country?.slug ? `@${u.country.slug}` : "IxnayID User";
             avatarUrl = u.country?.flag || null;
           }
@@ -268,7 +267,7 @@ export const usersPreferencesRouter = createTRPCRouter({
 
       const u = c.targetUserId ? listed.get(c.targetUserId) : undefined;
       if (u) {
-        label = u.country?.name || u.wikiUsername || "User";
+        label = listedLabel(u);
         subtitle = u.country?.slug ? `@${u.country.slug}` : "Muted User";
       }
 
@@ -317,7 +316,6 @@ export const usersPreferencesRouter = createTRPCRouter({
         searchEngineIndexing: z.boolean().optional(),
         dmReadReceipts: z.boolean().optional(),
         showDiscordTag: z.boolean().optional(),
-        showWikiAttribution: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -364,7 +362,7 @@ export const usersPreferencesRouter = createTRPCRouter({
       const targetUser = await ctx.db.user.findFirst({
         where: {
           OR: [
-            { wikiUsername: { equals: clean, mode: "insensitive" } },
+            { handle: { equals: clean, mode: "insensitive" } },
             { discordUsername: { equals: clean, mode: "insensitive" } },
             { forumUsername: { equals: clean, mode: "insensitive" } },
             ...(targetCountry ? [{ countryId: targetCountry.id }] : []),
@@ -427,7 +425,7 @@ export const usersPreferencesRouter = createTRPCRouter({
       const targetUser = await ctx.db.user.findFirst({
         where: {
           OR: [
-            { wikiUsername: { equals: clean, mode: "insensitive" } },
+            { handle: { equals: clean, mode: "insensitive" } },
             { discordUsername: { equals: clean, mode: "insensitive" } },
             ...(targetCountry ? [{ countryId: targetCountry.id }] : []),
           ],
@@ -527,6 +525,15 @@ export const usersPreferencesRouter = createTRPCRouter({
       },
     });
 
+    // Every old wiki name the user asked for or holds, whatever became of the claim
+    const wikiNames = user?.id
+      ? await ctx.db.wikiNameClaim.findMany({
+          where: { userId: user.id },
+          select: { source: true, name: true, status: true, visible: true, createdAt: true },
+          orderBy: { createdAt: "asc" },
+        })
+      : [];
+
     return {
       exportedAt: new Date().toISOString(),
       user: {
@@ -534,8 +541,8 @@ export const usersPreferencesRouter = createTRPCRouter({
         membershipTier: user?.membershipTier,
         createdAt: user?.createdAt,
         discordUsername: user?.discordUsername,
-        wikiUsername: user?.wikiUsername,
         forumUsername: user?.forumUsername,
+        wikiNames,
       },
       country: country
         ? {

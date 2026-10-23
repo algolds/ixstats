@@ -10,7 +10,6 @@ import {
   DoubleCheck,
   Globe,
   Discord,
-  OpenBook,
 } from "iconoir-react";
 import type { PrivacyConfig } from "~/server/api/routers/users/preferences";
 
@@ -131,12 +130,5 @@ export const LINKED_NAME_ROWS: SwitchRowSpec[] = [
     label: "Show Discord tag",
     description: "Show your linked Discord username on your passport and in activity",
     icon: Discord,
-  },
-  {
-    key: "showWikiAttribution",
-    id: "show-wiki-attribution",
-    label: "Wiki attribution",
-    description: "Link your wiki name, articles and Lorewards to your passport and country",
-    icon: OpenBook,
   },
 ];

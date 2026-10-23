@@ -42,7 +42,10 @@ async function loadLegacyUsers(db: PrismaClient): Promise<LegacyUserRow[]> {
     SELECT "id" AS "userId", "clerkUserId", "wikiUsername" FROM "User" WHERE "wikiUsername" IS NOT NULL`;
 }
 
-/** Whether a stored privacy config turns wiki attribution off; an unreadable one does not. */
+/**
+ * Whether a stored privacy config turned the retired wiki attribution switch off (the key stays in old configs, which
+ * nothing else reads); an unreadable one did not.
+ */
 function hidesWikiAttribution(status: string): boolean {
   try {
     const parsed: { showWikiAttribution?: boolean } | null = JSON.parse(status);
@@ -52,7 +55,7 @@ function hidesWikiAttribution(status: string): boolean {
   }
 }
 
-/** Clerk ids whose privacy config (as `src/server/shared/privacy-permissions.ts` reads it) hides wiki attribution. */
+/** Clerk ids whose stored privacy config turned wiki attribution off: the conversion keeps their claims hidden. */
 async function loadHiddenClerkIds(db: PrismaClient): Promise<Set<string>> {
   const rows = await db.userConnection.findMany({
     where: { targetUserId: "global_privacy", connectionType: "privacy_config" },

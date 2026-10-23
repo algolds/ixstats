@@ -174,7 +174,7 @@ export type PassportCard =
       /** Raw stored personal ThinkPages persona image; null when none. */
       avatarUrl: string | null;
       primaryNation: PassportCardNation | null;
-      /** Null when hidden (accolades off, or wiki attribution off for visitors) or when there are no stats. */
+      /** Null when hidden (accolades off) or when there are no stats. */
       lorewards: { score: number; rank: number | null } | null;
       realmCount: number;
       nationCount: number;
