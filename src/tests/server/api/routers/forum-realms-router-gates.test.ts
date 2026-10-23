@@ -53,6 +53,7 @@ const PUBLIC = [
   "realms.map.version",
   "realms.map.realmForWikiArticle",
   "realms.directory",
+  "realms.mapFace",
   "realms.searchNations",
   "thinkpages.checkUsernameAvailability",
   "thinkpages.getAccountsByCountry",

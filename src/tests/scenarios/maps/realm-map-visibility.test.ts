@@ -72,6 +72,7 @@ jest.mock("~/server/db", () => ({
 }));
 const buildTile = jest.fn();
 jest.mock("~/server/modules/maps/tile-render", () => ({
+  ...jest.requireActual<typeof import("~/server/modules/maps/tile-render")>("~/server/modules/maps/tile-render"),
   buildTile: (...a: unknown[]) => buildTile(...a),
 }));
 const packedLayerAt = jest.fn();
