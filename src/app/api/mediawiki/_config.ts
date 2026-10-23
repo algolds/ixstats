@@ -157,6 +157,13 @@ export const ALLOWED_API_PARAMS = [
   "disableeditsection",
   "disablelimitreport",
   "imlimit",
+  // The categories backfill's category and template pages (category-backfill.ts), and their continuation.
+  "cllimit",
+  "clshow",
+  "clcontinue",
+  "tllimit",
+  "tlnamespace",
+  "tlcontinue",
 ] as const;
 
 export const MEDIA_CORS_HEADERS = {

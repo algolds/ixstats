@@ -180,6 +180,24 @@ describe("the api.php proxy", () => {
     expect(sent[2]!.get("imlimit")).toBe("50");
   });
 
+  it("forwards the categories backfill's category and template pages, with their continuation", async () => {
+    fetchMock.mockImplementation(async () => Response.json({ query: { pages: [] } }));
+    await apiPhp(
+      "iiwiki",
+      "action=query&titles=Afropa|Bashan&prop=categories|templates&cllimit=max&clshow=!hidden&tllimit=max&tlnamespace=10&clcontinue=1|A&tlcontinue=1|10|B"
+    );
+
+    const sent = new URL(fetchedUrl(fetchMock.mock.calls[0]![0])).searchParams;
+    expect(Object.fromEntries(sent)).toMatchObject({
+      cllimit: "max",
+      clshow: "!hidden",
+      clcontinue: "1|A",
+      tllimit: "max",
+      tlnamespace: "10",
+      tlcontinue: "1|10|B",
+    });
+  });
+
   it("refuses an action iiwiki's list does not allow, and an unknown wiki", async () => {
     expect((await apiPhp("iiwiki", "action=edit")).status).toBe(400);
     expect((await apiPhp("nowhere", "action=query")).status).toBe(404);
