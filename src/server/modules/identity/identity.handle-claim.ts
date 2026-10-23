@@ -1,10 +1,13 @@
 /**
  * Claiming or changing a user's IxStates Passport handle (`ixnayid.setHandle`). A first claim (no
  * stored handle) is free; changing a stored handle is allowed once (`User.handleChangedAt`), and
- * admins may always change theirs. `suggestHandleFor` prefills the WikiOS first-save handle picker.
+ * admins may always change theirs. A handle that MediaWiki normalises to an old wiki name another account holds is
+ * refused, under that name's lock (claim approval checks the other way round, identity.name-claims.ts).
+ * `suggestHandleFor` prefills the WikiOS first-save handle picker.
  */
 import { Prisma } from "@prisma/client";
-import { primaryNameOf } from "~/lib/identity/wiki-names";
+import { lockWikiNameTx } from "~/lib/identity/claim-tags";
+import { IXWIKI, ownerOfName, primaryNameOf } from "~/lib/identity/wiki-names";
 import { db } from "~/server/db";
 import { chooseBackfillHandle, pickAvailableHandle, validateHandle } from "./identity.handle";
 
@@ -55,20 +58,29 @@ export async function setUserHandle(input: {
     throw new HandleClaimError("ALREADY_CHANGED", "You have already changed your handle once.");
   }
 
-  const holder = await db.user.findFirst({
-    where: { handle, NOT: { id: input.userId } },
-    select: { id: true },
-  });
-  if (holder) throw takenError(handle);
-
   try {
-    const saved = await db.user.update({
-      where: { id: input.userId },
-      // Only a change of a stored handle uses up the one self-service change.
-      data: isChange ? { handle, handleChangedAt: new Date() } : { handle },
-      select: { handle: true },
+    return await db.$transaction(async (tx) => {
+      await lockWikiNameTx(tx, IXWIKI, handle);
+      const claimant = await ownerOfName(tx, IXWIKI, handle);
+      if (claimant !== null && claimant !== input.userId) {
+        throw new HandleClaimError(
+          "TAKEN",
+          "That handle belongs to an old wiki name another player holds."
+        );
+      }
+      const holder = await tx.user.findFirst({
+        where: { handle, NOT: { id: input.userId } },
+        select: { id: true },
+      });
+      if (holder) throw takenError(handle);
+      const saved = await tx.user.update({
+        where: { id: input.userId },
+        // Only a change of a stored handle uses up the one self-service change.
+        data: isChange ? { handle, handleChangedAt: new Date() } : { handle },
+        select: { handle: true },
+      });
+      return { handle: saved.handle ?? handle };
     });
-    return { handle: saved.handle ?? handle };
   } catch (error) {
     if (error instanceof Error && isUniqueViolation(error)) throw takenError(handle);
     throw error;

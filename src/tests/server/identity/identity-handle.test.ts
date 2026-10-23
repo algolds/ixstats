@@ -15,8 +15,14 @@ jest.mock("~/server/db", () => {
     user: { findUnique: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), update: jest.fn() },
     country: { findUnique: jest.fn().mockResolvedValue(null) },
     thinkpagesAccount: { findFirst: jest.fn().mockResolvedValue(null) },
-    wikiNameClaim: { findMany: jest.fn().mockResolvedValue([]) },
+    wikiNameClaim: {
+      findMany: jest.fn().mockResolvedValue([]),
+      findFirst: jest.fn().mockResolvedValue(null),
+    },
     userConnection: { findMany: jest.fn().mockResolvedValue([]) },
+    $executeRaw: jest.fn().mockResolvedValue(0),
+    // The transaction client is the same fake
+    $transaction: jest.fn((work: (tx: object) => Promise<object>) => work(db)),
   };
   return { __esModule: true, db, isDatabaseReadOnly: false };
 });
@@ -75,7 +81,8 @@ describe("a handle", () => {
 
 const mocked = db as unknown as {
   user: { findUnique: jest.Mock; findFirst: jest.Mock; findMany: jest.Mock; update: jest.Mock };
-  wikiNameClaim: { findMany: jest.Mock };
+  wikiNameClaim: { findMany: jest.Mock; findFirst: jest.Mock };
+  $executeRaw: jest.Mock;
 };
 const createCaller = createCallerFactory(ixnayidCoreRouter);
 
@@ -147,6 +154,41 @@ describe("ixnayid.setHandle", () => {
       select: { id: true },
     });
     expect(mocked.user.update).not.toHaveBeenCalled();
+  });
+
+  describe("against old wiki names other players hold", () => {
+    beforeEach(() => {
+      mocked.$executeRaw.mockClear();
+      mocked.wikiNameClaim.findFirst.mockClear();
+    });
+    afterEach(() => {
+      mocked.wikiNameClaim.findFirst.mockReset().mockResolvedValue(null);
+    });
+
+    it("refuses a handle MediaWiki normalises to another account's approved claim, under the name's lock", async () => {
+      mocked.wikiNameClaim.findFirst.mockResolvedValue({ userId: "db_2" });
+      await expect(caller().setHandle({ handle: "Old_Sysop" })).rejects.toMatchObject({
+        code: "CONFLICT",
+        message: "That handle belongs to an old wiki name another player holds.",
+      });
+      expect(mocked.wikiNameClaim.findFirst).toHaveBeenCalledWith({
+        where: { source: "ixwiki", name: "Old sysop", status: "APPROVED" },
+        select: { userId: true },
+      });
+      // The lock is the claim path's: one key for the name however it is spelled
+      expect(mocked.$executeRaw.mock.calls[0]).toContain("ixwiki:Old sysop");
+      expect(mocked.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+        mocked.wikiNameClaim.findFirst.mock.invocationCallOrder[0]!
+      );
+      expect(mocked.user.update).not.toHaveBeenCalled();
+    });
+
+    it("lets a player take a handle spelling their own claim", async () => {
+      mocked.wikiNameClaim.findFirst.mockResolvedValue({ userId: "db_1" });
+      await expect(caller().setHandle({ handle: "old_sysop" })).resolves.toEqual({
+        handle: "old_sysop",
+      });
+    });
   });
 
   it("reports a unique-constraint race as taken", async () => {

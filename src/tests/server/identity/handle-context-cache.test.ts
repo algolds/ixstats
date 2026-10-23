@@ -5,7 +5,12 @@
  * (Read-only mode loads the user with one `findUnique`; the cache in front of it is the same in both modes.)
  */
 jest.mock("~/server/db", () => {
-  const db = { user: { findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn() } };
+  const db = {
+    user: { findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
+    wikiNameClaim: { findFirst: jest.fn().mockResolvedValue(null) },
+    $executeRaw: jest.fn().mockResolvedValue(0),
+    $transaction: jest.fn((work: (tx: object) => Promise<object>) => work(db)),
+  };
   return { __esModule: true, db, isDatabaseReadOnly: true };
 });
 jest.mock("@clerk/nextjs/server", () => ({
