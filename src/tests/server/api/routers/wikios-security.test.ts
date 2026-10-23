@@ -177,7 +177,13 @@ const mockClaim = (name: string | null, rightsPass = false) =>
 const userCtx = (wikiUsername: string | null = null) =>
   createMockRouterContext({
     auth: { userId: "user_1" },
-    user: { id: "db1", clerkUserId: "user_1", wikiUsername, role: { name: "user", level: 100 } },
+    user: {
+      id: "db1",
+      clerkUserId: "user_1",
+      handle: "alpha",
+      wikiUsername,
+      role: { name: "user", level: 100 },
+    },
   });
 
 describe("S4: wiki identity for authorization is the approved name claim", () => {
@@ -245,6 +251,7 @@ describe("S4: wiki identity for authorization is the approved name claim", () =>
       user: {
         id: "db1",
         clerkUserId: "user_1",
+        handle: "alpha",
         wikiUsername: "Legacy",
         createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
         role: { name: "user", level: 100 },
@@ -742,7 +749,13 @@ describe("the editing router (save, preview, page management, rights)", () => {
   const userCtx = (wikiUsername: string | null = null) =>
     createMockRouterContext({
       auth: { userId: "user_1" },
-      user: { id: "db1", clerkUserId: "user_1", wikiUsername, role: { name: "user", level: 100 } },
+      user: {
+        id: "db1",
+        clerkUserId: "user_1",
+        handle: "alpha",
+        wikiUsername,
+        role: { name: "user", level: 100 },
+      },
     });
 
   const existingArticle = () => ({ status: "PUBLISHED" }) as never;
@@ -795,6 +808,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
       user: {
         id: "dbadmin",
         clerkUserId: "system_owner_id",
+        handle: "admin",
         wikiUsername: "Admin",
         role: { name: "admin", level: 0 },
       },
@@ -1028,7 +1042,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
 
       expect(PageManagementService.restoreArticle).toHaveBeenCalledWith(
         "Foo bar",
-        { userId: "dbadmin", name: "Admin" },
+        { userId: "dbadmin", name: "admin" },
         "ixwiki"
       );
     });
@@ -1177,7 +1191,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
       await caller.restoreArticle({ title: "foo_bar", realm: "iiwiki" });
       expect(PageManagementService.restoreArticle).toHaveBeenCalledWith(
         "Foo bar",
-        { userId: "dbadmin", name: "Admin" },
+        { userId: "dbadmin", name: "admin" },
         "iiwiki"
       );
 
@@ -1235,6 +1249,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
         user: {
           id: "db2",
           clerkUserId: "user_2",
+          handle: "mod",
           wikiUsername: "Mod",
           role: { name: "admin", level: 10 },
         },

@@ -155,7 +155,7 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
       {
         id: ctx.user.id,
         clerkUserId: ctx.user.clerkUserId,
-        name: ctx.user.wikiUsername ?? ctx.user.discordUsername ?? ctx.user.clerkUserId,
+        name: ctx.user.handle ?? ctx.user.clerkUserId,
       },
       input.enabled
     )

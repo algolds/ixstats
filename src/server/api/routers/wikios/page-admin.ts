@@ -7,7 +7,6 @@
  */
 
 import { z } from "zod/v4";
-import { db } from "~/server/db";
 import { createTRPCRouter, lightMutationProcedure, publicProcedure } from "~/server/api/trpc";
 import {
   getWikiActorLabel,
@@ -232,19 +231,13 @@ export const wikiosPageAdminRouter = createTRPCRouter({
     .query(async ({ input, ctx }) => {
       const caller = await getWikiPermissions(ctx);
       if (!input?.user) {
-        const { internalUserId } = getWikiAuth(ctx);
-        // the handle is not in the request context yet
-        const [explicit, account] = await Promise.all([
-          RightsAdminService.explicitGroups({
-            userId: internalUserId,
-            wikiUsername: caller.ownUserNames[0] ?? null,
-          }),
-          internalUserId
-            ? db.user.findUnique({ where: { id: internalUserId }, select: { handle: true } })
-            : null,
-        ]);
+        const { internalUserId, handle } = getWikiAuth(ctx);
+        const explicit = await RightsAdminService.explicitGroups({
+          userId: internalUserId,
+          wikiUsername: caller.ownUserNames[0] ?? null,
+        });
         return {
-          username: account?.handle ?? null,
+          username: handle,
           ...publicPermissions(caller),
           explicitGroups: explicit,
           changeableGroups: changeableGroups(caller.rights),

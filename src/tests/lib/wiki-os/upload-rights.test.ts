@@ -77,7 +77,14 @@ const ctxFor = (
   createdAt?: Date
 ): WikiAuthContext => ({
   auth: { userId: clerk },
-  user: { id, clerkUserId: clerk, wikiUsername: name, createdAt, role: { name: role, level: 100 } },
+  user: {
+    id,
+    clerkUserId: clerk,
+    handle: name,
+    wikiUsername: name,
+    createdAt,
+    role: { name: role, level: 100 },
+  },
 });
 
 /** autoconfirmed by WikiOS's own rule: a month old, with the ten revisions its claim tagged (seeded in beforeEach). */

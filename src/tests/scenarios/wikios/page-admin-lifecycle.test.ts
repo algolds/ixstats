@@ -10,7 +10,9 @@
  * is deleted, the page again once it is restored, and a moved page under its new name at once.
  */
 jest.mock("~/server/db", () => {
-  const fake = jest.requireActual("~/tests/helpers/fake-wiki-db").createFakeWikiDb({ prisma: true });
+  const fake = jest
+    .requireActual("~/tests/helpers/fake-wiki-db")
+    .createFakeWikiDb({ prisma: true });
   return {
     __esModule: true,
     fake,
@@ -37,7 +39,10 @@ jest.mock("~/lib/auth", () => ({
   SYSTEM_OWNER_IDS: [],
   UserManagementService: jest.fn(),
 }));
-jest.mock("~/lib/auth/system-owner-constants", () => ({ __esModule: true, isSystemOwner: () => false }));
+jest.mock("~/lib/auth/system-owner-constants", () => ({
+  __esModule: true,
+  isSystemOwner: () => false,
+}));
 jest.mock("~/lib/notifications/api", () => ({
   __esModule: true,
   notificationAPI: { create: jest.fn(), createMany: jest.fn().mockResolvedValue([]) },
@@ -74,7 +79,13 @@ const BODY = `{{Infobox country|name=${MARKER}}}\n${MARKER} is a kingdom.\n`;
 const ctxFor = (id: string, clerk: string, name: string, role = "user") =>
   createMockRouterContext({
     auth: { userId: clerk },
-    user: { id, clerkUserId: clerk, wikiUsername: name, role: { name: role, level: 100 } },
+    user: {
+      id,
+      clerkUserId: clerk,
+      handle: name,
+      wikiUsername: name,
+      role: { name: role, level: 100 },
+    },
   }) as never;
 const sysop = () => ctxFor("db-sysop", "clerk-sysop", "Mod", "admin");
 const newcomer = () => ctxFor("db-new", "clerk-new", "Newcomer");
@@ -92,7 +103,10 @@ const readers = (title: string): Array<[string, () => Promise<unknown>]> => [
   ["geo.getFeatureWikiIntro", () => geoWiki().getFeatureWikiIntro({ wikiPageTitle: title })],
   ["geo.parseWikiInfobox", () => geoWiki().parseWikiInfobox({ pageTitle: title })],
   ["countries.getWikiIntro", () => countriesWiki().getWikiIntro({ countryName: title })],
-  ["countries.parseInfobox", () => countriesWiki().parseInfobox({ pageName: title, site: "ixwiki" })],
+  [
+    "countries.parseInfobox",
+    () => countriesWiki().parseInfobox({ pageName: title, site: "ixwiki" }),
+  ],
   ["wikiCache.getCountryProfile", () => wikiCache().getCountryProfile({ countryName: title })],
 ];
 
@@ -124,7 +138,9 @@ const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
 const realFetch = global.fetch;
 
 beforeAll(() => {
-  global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 404, json: async () => ({}) }) as never;
+  global.fetch = jest
+    .fn()
+    .mockResolvedValue({ ok: false, status: 404, json: async () => ({}) }) as never;
 });
 afterAll(() => {
   global.fetch = realFetch;
@@ -159,11 +175,26 @@ beforeEach(() => {
     htmlSyncedAt: new Date("2026-09-01T00:00:00Z"),
     renderedView: buildViewBundle(`<p>${MARKER} is a kingdom.</p>`),
   });
-  tables.wikiRevision.insert({ articleId: page.id, wikitext: BODY, byteSize: BODY.length, author: "Founder" });
-  const talk = tables.wikiArticle.insert({ title: "Talk:Caphiria", slug: "talk:caphiria", namespace: 1, wikitext: "chat" });
+  tables.wikiRevision.insert({
+    articleId: page.id,
+    wikitext: BODY,
+    byteSize: BODY.length,
+    author: "Founder",
+  });
+  const talk = tables.wikiArticle.insert({
+    title: "Talk:Caphiria",
+    slug: "talk:caphiria",
+    namespace: 1,
+    wikitext: "chat",
+  });
   tables.wikiRevision.insert({ articleId: talk.id, wikitext: "chat", byteSize: 4 });
   // edit-protected to autoconfirmed members: the protection belongs to the page and moves with it
-  tables.wikiRestriction.seed({ source: "ixwiki", title: "Caphiria", action: "edit", level: "autoconfirmed" });
+  tables.wikiRestriction.seed({
+    source: "ixwiki",
+    title: "Caphiria",
+    action: "edit",
+    level: "autoconfirmed",
+  });
   tables.wikiWatchlist.seed({ userId: "db-watcher", articleId: page.id });
 });
 
@@ -172,7 +203,9 @@ describe("a sysop moves, deletes and restores Caphiria", () => {
     await expect(
       admin(newcomer()).movePage({ from: "Caphiria", to: "Kingdom of Caphiria", reason: "rename" })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await expect(admin(newcomer()).deletePage({ title: "Caphiria", reason: "spam" })).rejects.toMatchObject({
+    await expect(
+      admin(newcomer()).deletePage({ title: "Caphiria", reason: "spam" })
+    ).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
 
@@ -193,7 +226,11 @@ describe("a sysop moves, deletes and restores Caphiria", () => {
     expect(await showing("Caphiria")).toEqual(ALL_READERS);
 
     // the move: a redirect with its own revision stays behind, the talk page and the protection follow
-    const moved = await admin(sysop()).movePage({ from: "Caphiria", to: "Kingdom of Caphiria", reason: "rename" });
+    const moved = await admin(sysop()).movePage({
+      from: "Caphiria",
+      to: "Kingdom of Caphiria",
+      reason: "rename",
+    });
     expect(moved).toEqual({
       success: true,
       from: "Caphiria",
@@ -202,14 +239,17 @@ describe("a sysop moves, deletes and restores Caphiria", () => {
       talkMoved: true,
     });
     const redirect = article("Caphiria")!;
-    expect(redirect).toMatchObject({ wikitext: "#REDIRECT [[Kingdom of Caphiria]]", redirectTargetSlug: "Kingdom of Caphiria" });
+    expect(redirect).toMatchObject({
+      wikitext: "#REDIRECT [[Kingdom of Caphiria]]",
+      redirectTargetSlug: "Kingdom of Caphiria",
+    });
     expect(tables.wikiRevision.rows.filter((row) => row.articleId === redirect.id)).toEqual([
       expect.objectContaining({ wikitext: "#REDIRECT [[Kingdom of Caphiria]]", author: "Mod" }),
     ]);
     expect(article("Talk:Kingdom of Caphiria")).toBeDefined();
-    expect(tables.wikiRestriction.rows.map((row) => `${row.title}/${row.action}=${row.level}`)).toEqual([
-      "Kingdom of Caphiria/edit=autoconfirmed",
-    ]);
+    expect(
+      tables.wikiRestriction.rows.map((row) => `${row.title}/${row.action}=${row.level}`)
+    ).toEqual(["Kingdom of Caphiria/edit=autoconfirmed"]);
     // one move job per page that moved, written from the old title and tied to the move's log row
     expect(jobs()).toEqual(["move Caphiria", "move Talk:Caphiria"]);
     const moveLogs = tables.wikiLog.rows.map((row) => row.id);
@@ -223,17 +263,23 @@ describe("a sysop moves, deletes and restores Caphiria", () => {
     expect(await shows(() => getArticleIntro("Kingdom of Caphiria", "ixwiki"))).toBe(true);
     expect(await showing("Kingdom of Caphiria")).toEqual(ALL_READERS);
     // the moved page is stale under its new name, and its render was queued
-    expect(jest.mocked(renderArticleViaMediaWiki).mock.calls.map(([, title]) => title)).toContain("Kingdom of Caphiria");
+    expect(jest.mocked(renderArticleViaMediaWiki).mock.calls.map(([, title]) => title)).toContain(
+      "Kingdom of Caphiria"
+    );
 
     await markWatchedVisited("db-watcher", "Kingdom of Caphiria");
 
     // the delete: gone from every reader, NOT_FOUND to a reader without deletedhistory, still there for the sysop
     await admin(sysop()).deletePage({ title: "Kingdom of Caphiria", reason: "spam" });
     expect(await showing("Kingdom of Caphiria")).toEqual([]);
-    await expect(reader(signedOut()).getArticleHtml({ title: "Kingdom of Caphiria" })).rejects.toMatchObject({
+    await expect(
+      reader(signedOut()).getArticleHtml({ title: "Kingdom of Caphiria" })
+    ).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
-    await expect(reader(newcomer()).getArticleHtml({ title: "Kingdom of Caphiria" })).rejects.toMatchObject({
+    await expect(
+      reader(newcomer()).getArticleHtml({ title: "Kingdom of Caphiria" })
+    ).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
     expect(await reader(sysop()).getArticleHtml({ title: "Kingdom of Caphiria" })).toMatchObject({
@@ -250,7 +296,9 @@ describe("a sysop moves, deletes and restores Caphiria", () => {
     jest.mocked(renderArticleViaMediaWiki).mockClear();
     await admin(sysop()).undeletePage({ title: "Kingdom of Caphiria", reason: "not spam" });
     expect(await showing("Kingdom of Caphiria")).toEqual(ALL_READERS);
-    expect(await reader(signedOut()).getArticleHtml({ title: "Kingdom of Caphiria" })).toMatchObject({
+    expect(
+      await reader(signedOut()).getArticleHtml({ title: "Kingdom of Caphiria" })
+    ).toMatchObject({
       title: "Kingdom of Caphiria",
     });
     expect(jobs().at(-1)).toBe("undelete Kingdom of Caphiria");
@@ -259,7 +307,11 @@ describe("a sysop moves, deletes and restores Caphiria", () => {
       "Kingdom of Caphiria",
     ]);
     await settle();
-    expect(notices()).toEqual(["clerk-watcher moved", "clerk-watcher deleted", "clerk-watcher restored"]);
+    expect(notices()).toEqual([
+      "clerk-watcher moved",
+      "clerk-watcher deleted",
+      "clerk-watcher restored",
+    ]);
 
     // and a protection: one protect job with every restriction, a lifted one with a null level
     await admin(sysop()).protectPage({

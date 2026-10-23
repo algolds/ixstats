@@ -231,12 +231,14 @@ const ctxFor = (
     createdAt?: Date | null;
     clerk?: string;
     internal?: string | null;
+    handle?: string | null;
   } = {}
 ) => ({
   auth: { userId: overrides.clerk ?? "user_1" },
   user: {
     id: overrides.internal === undefined ? "db1" : overrides.internal,
     clerkUserId: overrides.clerk ?? "user_1",
+    handle: overrides.handle ?? null,
     role: { name: overrides.role ?? "user" },
     createdAt: overrides.createdAt === undefined ? ago(DAY) : overrides.createdAt,
   },
@@ -415,6 +417,7 @@ describe("getWikiPermissionsForAuthId (callers without a request context)", () =
     mockDb.user.findUnique.mockResolvedValue({
       id: "db9",
       clerkUserId: "user_9",
+      handle: "nine",
       createdAt: ago(DAY),
       role: { id: "r1", name: "admin", level: 10 },
     });
@@ -426,6 +429,7 @@ describe("getWikiPermissionsForAuthId (callers without a request context)", () =
       expect.objectContaining({ where: { clerkUserId: "user_9" } })
     );
     expect(perms.groups).toEqual(expect.arrayContaining(["sysop", "bot"]));
+    expect(perms.ownUserNames).toEqual(["nine"]);
     expect(perms.rights.has("import")).toBe(true);
   });
 
@@ -535,9 +539,7 @@ describe("imported rows attach only through a claim a system owner decided (plan
   it("never attaches imported rows through the passport handle, even one that spells an imported sysop's name", async () => {
     groupRows = [{ wikiUsername: "Old sysop", group: "sysop", expiresAt: null }];
     blockRows = [{ ...PENDING_BLOCK, wikiUsername: "Old sysop" }];
-    mockDb.user.findUnique.mockResolvedValue({ handle: "old_sysop" });
-
-    const perms = await getWikiPermissions(ctxFor());
+    const perms = await getWikiPermissions(ctxFor({ handle: "old_sysop" }));
     expect(perms.ownUserNames).toEqual(["old_sysop"]);
     expect(perms.groups).not.toContain("sysop");
     expect(perms.block).toBeNull();
@@ -627,12 +629,11 @@ describe("the own user page", () => {
   });
 
   it("lists the handle and every approved claim, hidden ones included", async () => {
-    mockDb.user.findUnique.mockResolvedValue({ handle: "alpha" });
     claimsOf("db1", [
       { name: "Old name", rightsPass: false },
       { name: "Private name", rightsPass: false, visible: false },
     ]);
-    expect((await getWikiPermissions(ctxFor())).ownUserNames).toEqual([
+    expect((await getWikiPermissions(ctxFor({ handle: "alpha" }))).ownUserNames).toEqual([
       "alpha",
       "Old name",
       "Private name",
@@ -640,19 +641,21 @@ describe("the own user page", () => {
     expect(mockDb.wikiNameClaim.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({ where: { source: "ixwiki", name: "Alpha", status: "APPROVED" } })
     );
+    // the handle comes with the request context: no extra read of the user row
+    expect(mockDb.user.findUnique).not.toHaveBeenCalled();
   });
 
   it("leaves out the handle when another account holds that name", async () => {
-    mockDb.user.findUnique.mockResolvedValue({ handle: "alpha" });
     mockDb.wikiNameClaim.findFirst.mockResolvedValue({ userId: "someone-else" });
     claimsOf("db1", [{ name: "Old name", rightsPass: false }]);
-    expect((await getWikiPermissions(ctxFor())).ownUserNames).toEqual(["Old name"]);
+    expect((await getWikiPermissions(ctxFor({ handle: "alpha" }))).ownUserNames).toEqual([
+      "Old name",
+    ]);
   });
 
   it("keeps the handle when the account itself holds that name", async () => {
-    mockDb.user.findUnique.mockResolvedValue({ handle: "alpha" });
     mockDb.wikiNameClaim.findFirst.mockResolvedValue({ userId: "db1" });
-    expect((await getWikiPermissions(ctxFor())).ownUserNames).toEqual(["alpha"]);
+    expect((await getWikiPermissions(ctxFor({ handle: "alpha" }))).ownUserNames).toEqual(["alpha"]);
   });
 
   it("is nobody's for a signed-out caller, who has no handle or claims", async () => {

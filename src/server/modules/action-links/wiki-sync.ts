@@ -1,7 +1,8 @@
 /**
  * Writes an approved story chain to its wiki page as a new section, authored under the chain's country name
- * (resolveWikiUsername's country fallback). The owner's edit right was checked at submit. Failures leave
- * `wikiSyncedAt` null; `syncPendingChainWikis` (cron "story-chain-wiki-sync") retries them.
+ * (a system save: no signed-in player makes it, so it names its own author with `authorLabel`). The owner's
+ * edit right was checked at submit. Failures leave `wikiSyncedAt` null; `syncPendingChainWikis` (cron
+ * "story-chain-wiki-sync") retries them.
  */
 import type { PrismaClient } from "@prisma/client";
 import { chainWikiSection } from "~/lib/action-links";
@@ -15,7 +16,12 @@ import { commitWikitextSave } from "~/lib/wiki-os/services/edit-service";
 
 export type WikiSyncDb = Pick<PrismaClient, "storyline">;
 
-const PENDING = { kind: "chain", status: "approved", wikiSyncedAt: null, wikiPageTitle: { not: null } } as const;
+const PENDING = {
+  kind: "chain",
+  status: "approved",
+  wikiSyncedAt: null,
+  wikiPageTitle: { not: null },
+} as const;
 
 /** A native post's permalink (`/thinkpages/post/<id>`) as an absolute IxStates URL. */
 function postUrl(postId: string): string {
@@ -68,9 +74,10 @@ export async function appendChainToWiki(db: WikiSyncDb, storylineId: string): Pr
   }
   if (!existing?.wikitext?.includes(marker)) {
     await commitWikitextSave(
-      { user: { country: { name: chain.country.name } } },
+      {},
       {
         title: chain.wikiPageTitle,
+        authorLabel: chain.country.name,
         wikitext: existing?.wikitext ? `${existing.wikitext}\n\n${section}` : section,
         summary: `Story chain: ${chain.title}`,
         minor: false,

@@ -98,6 +98,11 @@ import { PageOperationError } from "~/lib/wiki-os/core/page-management-service";
 import { wikiCacheRouter } from "~/server/api/routers/wikiCache";
 import { wikiCacheService } from "~/lib/wiki-os/adapters/ixstates/cache-service";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
+import {
+  getArticleHistoryShadow,
+  getRevisionWikitextShadow,
+} from "~/lib/wiki-os/adapters/mediawiki/article-store";
+import { HANDLE_REQUIRED_MESSAGE } from "~/lib/wiki-os/auth";
 
 const createCaller = createCallerFactory(wikiosEditingRouter);
 
@@ -224,6 +229,53 @@ describe("wikios.getEditAccess (F35c)", () => {
     await expect(signedIn().getEditAccess({ title: "a[b" })).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
+  });
+});
+
+describe("the author of a revert or rollback (design decision 9)", () => {
+  const as = (handle: string | null) =>
+    createCaller(
+      createMockRouterContext({
+        auth: { userId: "user_1" },
+        user: { id: "db1", clerkUserId: "user_1", handle, role: { name: "user", level: 100 } },
+      }) as never
+    );
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue({ status: "PUBLISHED" } as never);
+    jest.mocked(ArticleRepository.saveArticle).mockResolvedValue({ revisionId: "r9" } as never);
+    jest
+      .mocked(getRevisionWikitextShadow)
+      .mockResolvedValue({ wikitext: "old text", title: "Vesperia", parked: false } as never);
+    jest.mocked(getArticleHistoryShadow).mockResolvedValue({
+      revisions: [
+        { revid: "r2", user: "vandal" },
+        { revid: "r1", user: "alpha" },
+      ],
+    } as never);
+  });
+
+  it("signs a revert with the caller's passport handle", async () => {
+    await as("alpha").revertToRevision({ title: "Vesperia", revid: "r1" });
+    expect(jest.mocked(ArticleRepository.saveArticle).mock.calls[0]![2]).toBe("alpha");
+  });
+
+  it("refuses a revert and a rollback by a player with no handle, and writes nothing", async () => {
+    await expect(
+      as(null).revertToRevision({ title: "Vesperia", revid: "r1" })
+    ).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message: HANDLE_REQUIRED_MESSAGE,
+    });
+    jest
+      .mocked(db.wikiUserGroup.findMany)
+      .mockResolvedValueOnce([{ group: "rollbacker", expiresAt: null }] as never);
+    await expect(as(null).rollback({ title: "Vesperia" })).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message: HANDLE_REQUIRED_MESSAGE,
+    });
+    expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
   });
 });
 

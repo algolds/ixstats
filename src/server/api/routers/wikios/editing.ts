@@ -15,14 +15,17 @@ import {
 } from "~/server/api/trpc";
 import { wikitextToHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
-import { transformArticleHtml, stripConflictingStyles } from "~/lib/wiki-os/transformers/html-transformer";
+import {
+  transformArticleHtml,
+  stripConflictingStyles,
+} from "~/lib/wiki-os/transformers/html-transformer";
 import {
   getRevisionWikitextShadow,
   getArticleHistoryShadow,
 } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { CloudflareGuardian } from "~/lib/wiki-os/guardian/cloudflare-guardian";
-import { getWikiActorLabel, requireWikiUserId, resolveWikiUsername } from "~/lib/wiki-os/auth";
+import { getWikiActorLabel, requireWikiAuthorName, requireWikiUserId } from "~/lib/wiki-os/auth";
 import {
   authorizeAction,
   canSeeDeletedPages,
@@ -157,7 +160,7 @@ export const wikiosEditingRouter = createTRPCRouter({
       }
       const restoredWikitext = await requireRestorableWikitext(ctx, title, oldRev);
 
-      const authorName = resolveWikiUsername(ctx) ?? "Community Contributor";
+      const authorName = requireWikiAuthorName(ctx);
       const summary = input.summary || `Reverted to revision ${input.revid} via WikiOS`;
 
       // 1. Primary Save: Direct to PostgreSQL (<10ms)
@@ -192,7 +195,9 @@ export const wikiosEditingRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const title = requireCanonicalTitle(input.title);
       await authorizeAction(ctx, "rollback", title);
-      const current = await ArticleRepository.findBySlug(title, "ixwiki", { includeArchived: true });
+      const current = await ArticleRepository.findBySlug(title, "ixwiki", {
+        includeArchived: true,
+      });
       if (current?.status === "ARCHIVED") throw deletedPage();
 
       // Read-through: serve from the PostgreSQL revision history
@@ -223,7 +228,7 @@ export const wikiosEditingRouter = createTRPCRouter({
       }
       const restoredWikitext = await requireRestorableWikitext(ctx, title, oldContent);
 
-      const authorName = resolveWikiUsername(ctx) ?? "Community Contributor";
+      const authorName = requireWikiAuthorName(ctx);
       const summary = `Rolled back edits by ${lastEditor} to revision ${targetRev.revid}`;
 
       // 1. Primary Save: Direct to PostgreSQL
