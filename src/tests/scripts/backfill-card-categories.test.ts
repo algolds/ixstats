@@ -246,7 +246,7 @@ describe("runBackfill", () => {
     expect(query).toHaveBeenCalledTimes(1);
     expect(query.mock.calls[0]![0].titles).toBe("Kiro");
     expect(result.report.counts).toMatchObject({ retired: 1, writes: 1 });
-    expect(db.$executeRaw.mock.calls.map((call) => call.at(-1))).not.toContain("Seed");
+    expect(db.$executeRaw.mock.calls.map((call: string[]) => call.at(-1))).not.toContain("Seed");
   });
 
   it("retires an Abandoned Lore card on apply, after its category write, and not on a dry run", async () => {
