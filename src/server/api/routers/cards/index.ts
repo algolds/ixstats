@@ -5,7 +5,7 @@
  * `api.cards.admin.<tab>.*` (cards refresh spec §2.4).
  *
  * Domains:
- *  - suggestions: free lore card suggestions
+ *  - suggestions: free lore card suggestions, and a lore card's category
  *  - mine:        the caller's copies (the hub's Mine tab)
  *  - explore:     realm shelves, the catalogue grid, regions
  *  - sheet:       the card sheet and the wiki excerpt
