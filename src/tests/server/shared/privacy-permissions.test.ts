@@ -2,7 +2,7 @@
 /**
  * SL-4 privacy, enforced on the server. The direct-message, mention and trade-offer audiences ("followers": the sender
  * follows the recipient, by persona or country; "verified": the sender owns a verified persona) and muted words; the
- * privacy switches (fail closed), the online heartbeat, Clear history, wiki attribution on `users.resolveWikiAuthor`
+ * privacy switches (fail closed), the online heartbeat, Clear history, a hidden wiki name on `users.resolveWikiAuthor`
  * and linked names in trading partner search; and blocks and mutes: a blocked or muted account's posts leave the
  * viewer's feed, a user who blocked someone cannot be messaged by them, and in a group conversation the blocker no
  * longer sees, or is notified of, the blocked account's messages.
@@ -361,19 +361,22 @@ describe("users router", () => {
     await expect(caller(db).clearHistory({ confirm: false } as never)).rejects.toThrow();
     expect(db.notification.deleteMany).not.toHaveBeenCalled();
   });
-  it("resolveWikiAuthor drops the role and country when wiki attribution is off", async () => {
-    const db = dbWithConfigs({ clerk_9: { showWikiAttribution: false } });
-    db.user.findFirst.mockResolvedValue({
-      wikiUsername: "Alex",
-      clerkUserId: "clerk_9",
+  it("resolveWikiAuthor answers null for a name whose claim its owner keeps hidden", async () => {
+    const db = createMockPrisma();
+    db.wikiNameClaim.findFirst.mockResolvedValue({
+      userId: "db_9",
+      visible: false,
+      user: { handle: "alex" },
+    });
+    db.user.findUnique.mockResolvedValue({
       role: { name: "admin", displayName: "Admin" },
       country: { id: "c", name: "Caphiria", slug: "caphiria" },
     });
-    expect(await caller(db).resolveWikiAuthor({ wikiUsername: "Alex" })).toEqual({
-      wikiUsername: "Alex",
-      role: null,
-      country: null,
-    });
+    expect(await caller(db).resolveWikiAuthor({ wikiUsername: "Alex" })).toBeNull();
+    expect(db.wikiNameClaim.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { source: "ixwiki", name: "Alex", status: "APPROVED" } })
+    );
+    expect(db.user.findUnique).not.toHaveBeenCalled();
   });
 });
 

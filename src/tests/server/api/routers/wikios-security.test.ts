@@ -3,8 +3,8 @@
 // the hoisted jest.mock() factories rely on the ambient global.
 /**
  * The WikiOS routers' gates, one mock set for all of them. Plan 401 (S4 to S8): authorization reads the approved
- * name claims (IxnayID), never a typed name; a stash write goes only into the caller's own stashes; the author profile
- * resolves the requested name only; template previews are signed-in, bounded, sanitised and SHA-256 keyed, and
+ * name claims (IxnayID), never a typed name; a stash write goes only into the caller's own stashes; there is no
+ * wikios author profile (IxnayID); template previews are signed-in, bounded, sanitised and SHA-256 keyed, and
  * template wikitext cannot be broken out of; write procedures carry limits and every title and query input is capped.
  * The editing router saves and previews only sanitised HTML, keeps to the namespace allowlist and canonical titles,
  * and needs the right the page's protection asks for (plan 409). Identity is the internal User id, so blurbs and
@@ -33,7 +33,6 @@ jest.mock("~/server/db", () => ({
     wikiMirrorJob: { create: jest.fn() },
     stash: { findMany: jest.fn(), findFirst: jest.fn(), findUnique: jest.fn(), create: jest.fn() },
     stashItem: { upsert: jest.fn(), deleteMany: jest.fn(), findMany: jest.fn() },
-    lorewardUserStats: { findUnique: jest.fn(), count: jest.fn() },
     blurbPrompt: { findUnique: jest.fn() },
     blurbResponse: { findUnique: jest.fn(), create: jest.fn() },
     thinkpagesAccount: { findFirst: jest.fn() },
@@ -136,7 +135,6 @@ import {
 import { wikitextToHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import { PageManagementService } from "~/lib/wiki-os/core/page-management-service";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
-import { privacyConnections } from "~/tests/helpers/privacy-config-fake";
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { db } from "~/server/db";
 
@@ -150,7 +148,6 @@ const mockDb = db as unknown as {
   wikiMirrorJob: { create: jest.Mock };
   stash: { findFirst: jest.Mock; create: jest.Mock };
   stashItem: { upsert: jest.Mock; deleteMany: jest.Mock };
-  lorewardUserStats: { findUnique: jest.Mock; count: jest.Mock };
   $transaction: jest.Mock;
 };
 
@@ -344,111 +341,9 @@ describe("S5: stashPage only writes into the caller's own stashes", () => {
   });
 });
 
-describe("S6: getAuthorProfile resolves the requested name only", () => {
-  const CALLER_COUNTRY = {
-    id: "caller_country",
-    name: "Callerland",
-    slug: "callerland",
-    flag: null,
-  };
-  const OTHER_COUNTRY = { id: "other_country", name: "Otherland", slug: "otherland", flag: null };
-  // the role row as the context carries it, id included: the profile must not leak it
-  const CALLER_ROLE: { name: string; level: number } = Object.assign(
-    { name: "user", level: 100 },
-    { id: "role_caller" }
-  );
-
-  // Profile owners keep wiki attribution on (no stored config): the switch itself is covered in
-  // wikios-author-profile-wiki-attribution.test.ts.
-  const signedInCtx = () =>
-    createMockRouterContext({
-      db: { userConnection: privacyConnections() },
-      auth: { userId: "user_1" },
-      user: {
-        id: "db1",
-        clerkUserId: "user_1",
-        countryId: "caller_country",
-        country: CALLER_COUNTRY,
-        wikiUsername: "Caller",
-        role: CALLER_ROLE,
-      },
-    });
-  const anonymousCtx = () =>
-    createMockRouterContext({
-      db: { userConnection: privacyConnections() },
-      auth: null,
-      user: null,
-    });
-
-  const profile = (ctx: unknown, input?: { username?: string }) =>
-    createCallerFactory(wikiosUserTalkRouter)(asCtx(ctx)).getAuthorProfile(input);
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockDb.wikiAccountLink.findFirst.mockResolvedValue(null);
-    mockDb.user.findFirst.mockResolvedValue(null);
-    mockDb.lorewardUserStats.findUnique.mockResolvedValue(null);
-  });
-
-  it("returns no user data to an anonymous caller when nobody matches the name", async () => {
-    const result = await profile(anonymousCtx(), { username: "Nobody" });
-
-    expect(result).toMatchObject({ username: "Nobody", country: null, role: null });
-    // No `OR` with an undefined clerkUserId (which matches every row): the name is the only filter.
-    expect(mockDb.user.findFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { wikiUsername: "Nobody" } })
-    );
-  });
-
-  it("never gives a signed-in caller their own country under another name", async () => {
-    const result = await profile(signedInCtx(), { username: "Somebody_else" });
-
-    expect(result).toMatchObject({ username: "Somebody_else", country: null, role: null });
-  });
-
-  it("prefers the owner of a verified ixwiki link, by the MediaWiki-normalised name", async () => {
-    mockDb.wikiAccountLink.findFirst.mockResolvedValue({
-      user: { clerkUserId: "user_2", country: OTHER_COUNTRY, role: { name: "member", level: 50 } },
-    });
-
-    const result = await profile(anonymousCtx(), { username: "somebody_else" });
-
-    expect(mockDb.wikiAccountLink.findFirst).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { source: "ixwiki", username: "Somebody else", verifiedAt: { not: null } },
-      })
-    );
-    expect(mockDb.user.findFirst).not.toHaveBeenCalled();
-    expect(result).toMatchObject({ country: OTHER_COUNTRY, role: { name: "member", level: 50 } });
-  });
-
-  it("returns role name and level only, never a role or user id", async () => {
-    mockDb.user.findFirst.mockResolvedValue({
-      clerkUserId: "user_2",
-      country: OTHER_COUNTRY,
-      role: { name: "member", level: 50 },
-    });
-
-    const result = await profile(anonymousCtx(), { username: "Somebody" });
-
-    expect(result?.role).toEqual({ name: "member", level: 50 });
-    expect(JSON.stringify(result)).not.toMatch(/roleId|clerkUserId|role_caller/);
-  });
-
-  it("uses the caller's own record when no name is requested, without leaking the role id", async () => {
-    const result = await profile(signedInCtx());
-
-    expect(mockDb.user.findFirst).not.toHaveBeenCalled();
-    expect(result).toMatchObject({
-      username: "Caller",
-      country: CALLER_COUNTRY,
-      role: { name: "user", level: 100 },
-    });
-    expect(result?.role).not.toHaveProperty("id");
-  });
-
-  it("returns null for an anonymous caller who names nobody", async () => {
-    await expect(profile(anonymousCtx())).resolves.toBeNull();
+describe("S6: there is no author profile endpoint", () => {
+  it("tells who a wiki name is only through users.resolveWikiAuthor, never a wikios profile", () => {
+    expect(Object.keys(wikiosUserTalkRouter._def.procedures)).not.toContain("getAuthorProfile");
   });
 });
 
@@ -664,7 +559,7 @@ describe("S7: unbounded title and query inputs are capped", () => {
 // S5 (forum stash ownership) moved with the XenForo bridge's deletion (phase 4b): the native forum stash refuses
 // another user's stash in src/tests/server/modules/thinkpages-forum/stash.test.ts.
 
-describe("S8: bounded inputs on stash, placeholder, profile and discussion endpoints", () => {
+describe("S8: bounded inputs on stash, placeholder and discussion endpoints", () => {
   const ctx = () => asCtx(userCtx());
 
   it("caps wikios stash ids (64), contentType (32) and titles (512)", async () => {
@@ -696,14 +591,6 @@ describe("S8: bounded inputs on stash, placeholder, profile and discussion endpo
     await expect(
       caller.resolveWikiPlaceholders({ text: "t".repeat(200_001) })
     ).rejects.toMatchObject(bad);
-  });
-
-  it("caps getAuthorProfile's username at 255 characters", async () => {
-    await expect(
-      createCallerFactory(wikiosUserTalkRouter)(ctx()).getAuthorProfile({
-        username: "u".repeat(256),
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 
   it("puts the discussion mutations on the rate-limited procedure builder", () => {

@@ -1,13 +1,13 @@
 /** @jest-environment node */
 /**
- * Pat has a verified IxWiki account ("Ruler"), a Discord tag and a nation. Pat turns wiki attribution and the Discord
- * tag off. A visitor, a member who blocked Pat, an admin and Pat then read every surface that can name Pat: the
- * passport, the player names other pages use, the member's block list, the wiki author profile and the wiki author
- * lookup. Only Pat still sees the wiki name, and nobody sees it tied to Pat's nation. With the switches on, every
- * surface names Pat by the wiki name again; when the switches cannot be read, every surface hides it.
+ * Pat has a verified IxWiki account ("Ruler", also Pat's approved name claim), a Discord tag and a nation. Pat turns
+ * wiki attribution and the Discord tag off, and hides the claim. A visitor, a member who blocked Pat, an admin and Pat
+ * then read every surface that can name Pat: the passport, the player names other pages use, the member's block list
+ * and the wiki author lookup. Only Pat still sees the wiki name, and nobody sees it tied to Pat's nation. With the
+ * switches on and the claim shown, every surface names Pat by the wiki name again; when the switches cannot be read,
+ * every surface that reads them hides it. The wiki author lookup reads the claim's visibility, never a switch.
  *
- * Folds privacy-settings-linked-names (the block-list labels, the one batch read) and
- * wikios-author-profile-wiki-attribution (the author profile's nation and role).
+ * Folds privacy-settings-linked-names (the block-list labels, the one batch read).
  */
 let mockDb: unknown;
 jest.mock("~/server/db", () => ({
@@ -50,7 +50,6 @@ jest.mock("~/server/modules/identity/identity.showcase", () => ({
 import type { PrismaClient } from "@prisma/client";
 import { createCallerFactory } from "~/server/api/trpc";
 import { usersPreferencesRouter } from "~/server/api/routers/users/preferences";
-import { wikiosUserTalkRouter } from "~/server/api/routers/wikios/user-talk";
 import { loadPlayerNames } from "~/server/modules/identity/identity.player-names";
 import { getPassport } from "~/server/modules/identity/identity.service";
 import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-prisma";
@@ -97,6 +96,17 @@ async function seed(db: PrismaClient) {
   await db.wikiAccountLink.create({
     data: { userId: pat.id, source: "ixwiki", username: WIKI_NAME, verifiedAt: new Date() },
   });
+  await db.wikiNameClaim.create({
+    data: {
+      id: "pat-claim",
+      userId: pat.id,
+      name: WIKI_NAME,
+      status: "APPROVED",
+      origin: "PLAYER",
+      requestedById: pat.id,
+      decidedAt: new Date(),
+    },
+  });
   await db.user.create({ data: { ...mel, lastSeenAt: new Date() } });
   await db.user.create({ data: { ...ada, roleId: admin.id, lastSeenAt: new Date() } });
   await db.user.create({
@@ -114,8 +124,12 @@ async function seed(db: PrismaClient) {
   }
 }
 
-/** Pat's and Wren's stored privacy switches, as Settings writes them. */
+/** Pat's and Wren's stored privacy switches, as Settings writes them; Pat's claim shows while wiki attribution is on. */
 async function setSwitches(db: PrismaClient, config: Record<string, boolean>) {
+  await db.wikiNameClaim.update({
+    where: { id: "pat-claim" },
+    data: { visible: config.showWikiAttribution !== false },
+  });
   for (const person of [pat, wren]) {
     const row = privacyConfigRow(person.clerkUserId, config);
     await db.userConnection.upsert({
@@ -151,13 +165,12 @@ function asViewer(viewer: Person | null) {
 /** Every surface that can name Pat, as `viewer` reads it. */
 async function surfaces(viewer: Person | null) {
   const ctx = asViewer(viewer);
-  const [passport, names, profile, author] = await Promise.all([
+  const [passport, names, author] = await Promise.all([
     getPassport({ handle: "Pathfinder", viewerClerkId: viewer?.clerkUserId ?? null }, forum),
     loadPlayerNames([pat.id]),
-    createCallerFactory(wikiosUserTalkRouter)(ctx).getAuthorProfile({ username: WIKI_NAME }),
     createCallerFactory(usersPreferencesRouter)(ctx).resolveWikiAuthor({ wikiUsername: WIKI_NAME }),
   ]);
-  return { passport, name: names.get(pat.id), profile, author };
+  return { passport, name: names.get(pat.id), author };
 }
 
 /** Mel's block list's labels, as Settings → Privacy & Security shows them, sorted: the list has no set order. */
@@ -201,13 +214,12 @@ describe("with wiki attribution and the Discord tag off", () => {
         wiki: { linked: false, username: null, lorewards: null },
       });
       expect(JSON.stringify(seen.name)).not.toMatch(/ruler/i);
-      // The profile asked for by wiki name echoes the name, but never ties it to Pat
-      expect(seen.profile).toMatchObject({ username: WIKI_NAME, country: null, role: null });
-      expect(JSON.stringify(seen.author ?? {})).not.toMatch(/eldoria|member/i);
+      // A hidden claim's name is nobody's to the author lookup
+      expect(seen.author).toBeNull();
     }
   );
 
-  it("Pat still sees the wiki account on their own passport, under the same handle, and their nation on their own profile", async () => {
+  it("Pat still sees the wiki account on their own passport, under the same handle", async () => {
     const own = await surfaces(pat);
     const visitor = await surfaces(null);
     expect(own.passport).toMatchObject({
@@ -215,21 +227,8 @@ describe("with wiki attribution and the Discord tag off", () => {
       wiki: { username: WIKI_NAME },
     });
     expect(own.passport!.handle).not.toMatch(/ruler/i);
-    // Asked for by wiki name, even Pat's own profile does not tie the name to the nation
-    expect(own.profile).toMatchObject({ country: null, role: null });
-    const ownProfile = await createCallerFactory(wikiosUserTalkRouter)(
-      createMockCallerContext({
-        db: mockDb,
-        auth: { userId: pat.clerkUserId },
-        user: {
-          id: pat.id,
-          clerkUserId: pat.clerkUserId,
-          wikiUsername: WIKI_NAME,
-          country: { id: "eldoria", name: "Nation eldoria", slug: "eldoria" },
-        },
-      })
-    ).getAuthorProfile();
-    expect(ownProfile).toMatchObject({ username: WIKI_NAME, country: { id: "eldoria" } });
+    // Asked for by wiki name, even Pat's own lookup does not tie the hidden name to the nation
+    expect(own.author).toBeNull();
   });
 
   it("labels Mel's blocked players by nation, else past the hidden wiki name and Discord tag, from one batch read", async () => {
@@ -257,11 +256,12 @@ describe("with wiki attribution and the Discord tag on", () => {
     const seen = await surfaces(null);
     expect(seen.passport).toMatchObject({ wiki: { linked: true, username: WIKI_NAME } });
     expect(seen.name).toMatchObject({ handle: WIKI_NAME });
-    expect(seen.profile).toMatchObject({
+    expect(seen.author).toMatchObject({
+      wikiUsername: WIKI_NAME,
       country: { id: "eldoria" },
-      role: { name: "member", level: 100 },
+      role: { name: "member", displayName: "Member" },
     });
-    expect(JSON.stringify(seen.profile)).not.toContain(pat.clerkUserId);
+    expect(JSON.stringify(seen.author)).not.toContain(pat.clerkUserId);
     expect(await melsBlockList()).toEqual(["Nation eldoria", "Wren Writes"]);
   });
 
@@ -275,29 +275,25 @@ describe("with wiki attribution and the Discord tag on", () => {
 });
 
 describe("when the switches cannot be read", () => {
-  it.each(VISITORS)(
-    "%s reads no wiki name, no Discord tag and no nation tied to the wiki name",
-    async (_who, viewer) => {
-      await setSwitches(db as unknown as PrismaClient, {
-        showWikiAttribution: true,
-        showDiscordTag: true,
-      });
-      const findMany = db.userConnection.findMany.bind(db.userConnection);
-      const reads = jest
-        .spyOn(db.userConnection, "findMany")
-        .mockImplementation(((args: { where: { connectionType?: string } }) =>
-          args.where.connectionType === "privacy_config"
-            ? Promise.reject(new Error("db down"))
-            : findMany(args)) as never);
-      try {
-        const seen = await surfaces(viewer);
-        expect(JSON.stringify(seen.passport)).not.toContain(WIKI_NAME);
-        expect(JSON.stringify(seen.name)).not.toMatch(/ruler/i);
-        expect(seen.profile).toMatchObject({ country: null, role: null });
-        if (viewer === mel) expect(await melsBlockList()).toEqual(["Nation eldoria", "User"]);
-      } finally {
-        reads.mockRestore();
-      }
+  it.each(VISITORS)("%s reads no wiki name and no Discord tag", async (_who, viewer) => {
+    await setSwitches(db as unknown as PrismaClient, {
+      showWikiAttribution: true,
+      showDiscordTag: true,
+    });
+    const findMany = db.userConnection.findMany.bind(db.userConnection);
+    const reads = jest
+      .spyOn(db.userConnection, "findMany")
+      .mockImplementation(((args: { where: { connectionType?: string } }) =>
+        args.where.connectionType === "privacy_config"
+          ? Promise.reject(new Error("db down"))
+          : findMany(args)) as never);
+    try {
+      const seen = await surfaces(viewer);
+      expect(JSON.stringify(seen.passport)).not.toContain(WIKI_NAME);
+      expect(JSON.stringify(seen.name)).not.toMatch(/ruler/i);
+      if (viewer === mel) expect(await melsBlockList()).toEqual(["Nation eldoria", "User"]);
+    } finally {
+      reads.mockRestore();
     }
-  );
+  });
 });

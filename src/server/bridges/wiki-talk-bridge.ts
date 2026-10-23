@@ -8,14 +8,12 @@ import type { PrismaClient } from "@prisma/client";
 import type { BridgeAdapter, BridgeSyncResult } from "./bridge-types";
 
 import { getArticleWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { primaryNameOf } from "~/lib/identity/wiki-names";
 
 /** Whether the user's talk page has any content (treated as new messages). */
-async function userTalkPageHasMessages(wikiUsername: string): Promise<boolean> {
+async function userTalkPageHasMessages(wikiName: string): Promise<boolean> {
   try {
-    const article = await getArticleWikitext(
-      `User talk:${wikiUsername.replace(/ /g, "_")}`,
-      "ixwiki"
-    );
+    const article = await getArticleWikitext(`User talk:${wikiName.replace(/ /g, "_")}`, "ixwiki");
     return Boolean(article?.wikitext);
   } catch {
     return false;
@@ -30,16 +28,17 @@ export const wikiTalkBridge: BridgeAdapter = {
       messagesCreated: 0,
     };
 
-    // Get user's wiki username
+    // The user's own inbox: their first approved claim (a hidden one too), else their passport handle
     const user = await db.user.findFirst({
       where: { clerkUserId: userId },
-      select: { wikiUsername: true },
+      select: { id: true, handle: true },
     });
+    const wikiName = user ? ((await primaryNameOf(db, user.id)) ?? user.handle) : null;
 
-    if (!user?.wikiUsername) return result;
+    if (!wikiName) return result;
 
-    if (await userTalkPageHasMessages(user.wikiUsername)) {
-      const talkSourceId = `wiki-talk:${user.wikiUsername}`;
+    if (await userTalkPageHasMessages(wikiName)) {
+      const talkSourceId = `wiki-talk:${wikiName}`;
       let talkConv = await db.thinkshareConversation.findFirst({
         where: { source: "wiki", sourceId: talkSourceId },
       });
@@ -48,7 +47,7 @@ export const wikiTalkBridge: BridgeAdapter = {
         talkConv = await db.thinkshareConversation.create({
           data: {
             type: "direct",
-            name: `Talk: ${user.wikiUsername}`,
+            name: `Talk: ${wikiName}`,
             source: "wiki",
             sourceId: talkSourceId,
             isActive: true,

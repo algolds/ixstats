@@ -128,7 +128,7 @@ export async function ixwikiGetSiteStats(): Promise<SiteStats> {
     // A parked edit (a MediaWiki edit that conflicted and never went live) is not an edit of the wiki
     countOrNull(() => db.wikiRevision.count({ where: { source: "ixwiki", parked: false } })),
     countOrNull(() => db.wikiAsset.count()),
-    countOrNull(() => db.user.count({ where: { wikiUsername: { not: null } } })),
+    countOrNull(() => db.user.count({ where: { handle: { not: null } } })),
     countOrNull(async () => {
       const editors = await db.wikiRevision.groupBy({
         by: ["author"],

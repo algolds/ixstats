@@ -26,11 +26,11 @@ export interface MarginAuthor {
 }
 
 interface AuthorRecord {
-  wikiUsername: string | null;
+  handle: string | null;
   country: { name: string } | null;
 }
 
-/** Thread and comment rows name their author by internal id, Clerk id, wiki username or Discord id. */
+/** Thread and comment rows name their author by internal id, Clerk id, passport handle or Discord id. */
 type AuthorIndex = ReadonlyMap<string, AuthorRecord>;
 
 const reactionCounts = z.record(z.string(), z.number()).catch({});
@@ -42,9 +42,9 @@ function viewerIds(ctx: WikiAuthContext): ReadonlySet<string> {
   return ctx.user?.id || ctx.auth?.userId ? new Set(requireWikiUserIds(ctx)) : new Set();
 }
 
-/** A public name: the wiki username, else the IxStates country name, never a Discord handle or an id. */
+/** A public name: the passport handle, else the IxStates country name, never a Discord handle or an id. */
 function displayName(record: AuthorRecord | undefined): string {
-  return record?.wikiUsername?.trim() || record?.country?.name?.trim() || "Unknown user";
+  return record?.handle?.trim() || record?.country?.name?.trim() || "Unknown user";
 }
 
 async function loadAuthors(rawIds: Iterable<string>): Promise<AuthorIndex> {
@@ -56,20 +56,20 @@ async function loadAuthors(rawIds: Iterable<string>): Promise<AuthorIndex> {
       OR: [
         { id: { in: ids } },
         { clerkUserId: { in: ids } },
-        { wikiUsername: { in: ids } },
+        { handle: { in: ids } },
         { discordUserId: { in: ids } },
       ],
     },
     select: {
       id: true,
       clerkUserId: true,
-      wikiUsername: true,
+      handle: true,
       discordUserId: true,
       country: { select: { name: true } },
     },
   });
   for (const user of users) {
-    for (const key of [user.id, user.clerkUserId, user.wikiUsername, user.discordUserId]) {
+    for (const key of [user.id, user.clerkUserId, user.handle, user.discordUserId]) {
       if (key) index.set(key, user);
     }
   }
