@@ -237,7 +237,6 @@ const CATEGORY_ROOTS: Record<LoreCategory, readonly string[]> = {
     "monument",
     "symbol",
     "anthem",
-    "flag",
   ],
   GOVERNMENT: [
     "government",

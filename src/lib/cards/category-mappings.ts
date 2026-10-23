@@ -14,6 +14,11 @@ export interface CategoryTarget {
   subcategory?: string;
 }
 
+/** An infobox's target; `fallback` marks a subcategory it only defaults to, which any other signal's beats. */
+export interface InfoboxTarget extends CategoryTarget {
+  fallback?: true;
+}
+
 export interface CategoryRule extends CategoryTarget {
   pattern: RegExp;
 }
@@ -25,8 +30,12 @@ const target = (category: LoreCategory, subcategory: string | null): CategoryTar
 const boxes = (category: LoreCategory, subcategory: string | null, ...names: string[]) =>
   names.map((name) => [`infobox ${name}`, target(category, subcategory)] as const);
 
+/** Boxes that serve more than their subcategory: Infobox settlement also a state, Infobox military unit a navy. */
+const fallbackBoxes = (category: LoreCategory, subcategory: string, ...names: string[]) =>
+  names.map((name) => [`infobox ${name}`, { category, subcategory, fallback: true }] as const);
+
 /** Infobox template names (lower case, spaces) to their target. */
-export const INFOBOX_RULES: Readonly<Record<string, CategoryTarget>> = Object.fromEntries([
+export const INFOBOX_RULES: Readonly<Record<string, InfoboxTarget>> = Object.fromEntries([
   ...boxes("PEOPLE", "politician", "officeholder", "politician", "prime minister", "president"),
   ...boxes("PEOPLE", "politician", "chancellor", "governor", "mayor"),
   ...boxes("PEOPLE", "ruler-or-royal", "monarch", "royalty", "noble"),
@@ -38,12 +47,14 @@ export const INFOBOX_RULES: Readonly<Record<string, CategoryTarget>> = Object.fr
 
   ...boxes("MILITARY", "battle-or-war", "military conflict", "war", "battle", "siege"),
   ...boxes("MILITARY", "battle-or-war", "civilian attack"),
-  ...boxes("MILITARY", "unit", "military unit"),
+  ...fallbackBoxes("MILITARY", "unit", "military unit"),
   ...boxes("MILITARY", "weapon-or-vehicle", "weapon", "firearm", "military vehicle", "ship"),
+  ...boxes("MILITARY", "weapon-or-vehicle", "ship begin", "aircraft", "aircraft begin"),
+  ...boxes("MILITARY", "weapon-or-vehicle", "aircraft type", "military aircraft"),
   ...boxes("MILITARY", "army", "army"),
   ...boxes("MILITARY", "navy", "navy"),
   ...boxes("MILITARY", "air-force", "air force"),
-  ...boxes("MILITARY", null, "armed forces", "military installation"),
+  ...boxes("MILITARY", null, "armed forces", "national military", "military installation"),
 
   ...boxes("DIPLOMACY", "treaty", "treaty", "accord"),
   ...boxes("DIPLOMACY", "alliance-or-organisation", "international organization", "alliance"),
@@ -52,11 +63,12 @@ export const INFOBOX_RULES: Readonly<Record<string, CategoryTarget>> = Object.fr
   ...boxes("DIPLOMACY", null, "bilateral relations"),
 
   ...boxes("GEOGRAPHY", "region-or-province", "subdivision"),
-  ...boxes("GEOGRAPHY", "city-or-settlement", "settlement", "city", "town", "village"),
+  ...fallbackBoxes("GEOGRAPHY", "city-or-settlement", "settlement"),
+  ...boxes("GEOGRAPHY", "city-or-settlement", "city", "town", "village"),
   ...boxes("GEOGRAPHY", "river-lake-or-sea", "river", "lake", "sea", "ocean", "bay"),
   ...boxes("GEOGRAPHY", "mountain-or-island", "mountain", "mountain range", "island"),
   ...boxes("GEOGRAPHY", "mountain-or-island", "archipelago", "peninsula", "landform"),
-  ...boxes("GEOGRAPHY", "landmark", "protected area", "park"),
+  ...boxes("GEOGRAPHY", "landmark", "protected area", "park", "national park"),
   ...boxes("GEOGRAPHY", null, "valley", "desert", "forest"),
 
   ...boxes("RELIGION", "faith", "religion", "deity"),
@@ -66,10 +78,11 @@ export const INFOBOX_RULES: Readonly<Record<string, CategoryTarget>> = Object.fr
   ...boxes("RELIGION", "clergy", "clergy"),
 
   ...boxes("GOVERNMENT", "agency-or-ministry", "government agency", "ministry"),
+  ...boxes("GOVERNMENT", "agency-or-ministry", "law enforcement agency"),
   ...boxes("GOVERNMENT", "legislature-or-body", "legislature", "parliament", "cabinet"),
   ...boxes("GOVERNMENT", "legislature-or-body", "court", "supreme court"),
   ...boxes("GOVERNMENT", "party", "political party"),
-  ...boxes("GOVERNMENT", "constitution-or-law", "constitution", "law"),
+  ...boxes("GOVERNMENT", "constitution-or-law", "constitution", "law", "court case"),
   ...boxes("GOVERNMENT", "office-or-post", "official post"),
   ...boxes("GOVERNMENT", null, "election"),
 
@@ -78,16 +91,17 @@ export const INFOBOX_RULES: Readonly<Record<string, CategoryTarget>> = Object.fr
   ...boxes("ECONOMY", "trade-route-or-market", "stock exchange"),
   ...boxes("ECONOMY", "industry", "industry"),
 
-  ...boxes("SCIENCE", "technology", "technology", "railway", "train", "aircraft", "spacecraft"),
+  ...boxes("SCIENCE", "technology", "technology", "railway", "train", "spacecraft"),
   ...boxes("SCIENCE", "institution", "observatory", "laboratory", "university", "school"),
   ...boxes("SCIENCE", "institution", "academic institution"),
 
   ...boxes("CULTURE", "art-or-literature", "artwork", "book"),
   ...boxes("CULTURE", "festival-or-tradition", "festival"),
   ...boxes("CULTURE", "language", "language"),
-  ...boxes("CULTURE", "sport", "sports team", "football club"),
-  ...boxes("CULTURE", "media", "newspaper", "television", "broadcasting network"),
-  ...boxes("CULTURE", "music", "musical artist", "album"),
+  ...boxes("CULTURE", "sport", "sports team", "football club", "national football team"),
+  ...boxes("CULTURE", "sport", "olympic games"),
+  ...boxes("CULTURE", "media", "newspaper", "television", "broadcasting network", "film"),
+  ...boxes("CULTURE", "music", "musical artist", "album", "anthem"),
   ...boxes("CULTURE", null, "monument", "building", "museum", "national symbol", "regalia"),
   ...boxes("CULTURE", null, "palace", "castle"),
 
@@ -101,8 +115,11 @@ export const INFOBOX_RULES: Readonly<Record<string, CategoryTarget>> = Object.fr
   ...boxes("SPECIAL", null, "artifact", "relic", "wonder", "anomaly", "mystery"),
 ]);
 
-/** Keys longest first, so a variant ("infobox military person 2") takes its most specific prefix. */
-const INFOBOX_KEYS_LONGEST_FIRST = Object.keys(INFOBOX_RULES).sort((a, b) => b.length - a.length);
+const INFOBOX_ENTRIES = Object.entries(INFOBOX_RULES);
+const INFOBOX_BY_KEY = new Map(INFOBOX_ENTRIES);
+
+/** What may follow a known infobox name in a variant of it: a number, a bracket or a subpage ("/status"). */
+const INFOBOX_VARIANT_SUFFIX = /^(?:\s*\d+|\s*\(.*\)|\/.*)$/;
 
 const rule = (
   category: LoreCategory,
@@ -143,7 +160,7 @@ export const SHARED_CATEGORY_RULES: readonly CategoryRule[] = [
   rule(
     "PEOPLE",
     "artist-or-writer",
-    /\b(?:artists|writers|authors|poets|painters|musicians|composers|novelists|playwrights)\b/i
+    /\b(?:artists|writers|authors|poets|painters|musicians|composers|novelists|playwrights|singers|actors|dancers)\b/i
   ),
   rule(
     "PEOPLE",
@@ -353,13 +370,14 @@ export const SHARED_CATEGORY_RULES: readonly CategoryRule[] = [
   ),
 ];
 
-/** Each wiki's own category conventions, read before the shared rules. IIWiki uses the shared rules alone. */
+/** Each wiki's own category conventions, read before the shared rules. */
 export const WIKI_CATEGORY_RULES: Partial<Record<CardWikiSource, readonly CategoryRule[]>> = {
   ixwiki: [
-    rule("GEOGRAPHY", "region-or-province", /\b(?:subdivisions|estates) of\b/i),
+    rule("GEOGRAPHY", "region-or-province", /\b(?:subdivisions|estates|states) of\b/i),
     rule("NATION", "nation", /\bnpc countries\b/i),
     rule("ECONOMY", "company", /\bbrands\b/i),
   ],
+  iiwiki: [rule("GEOGRAPHY", "region-or-province", /\bstates of\b/i)],
   althistory: [rule("HISTORY", "era-or-period", /\btimelines\b/i)],
   commons: [rule("NATION", "nation", /\b(?:flags|coats of arms|banners) of\b/i)],
 };
@@ -378,13 +396,15 @@ export function templateKey(raw: string): string {
     .toLowerCase();
 }
 
-/** An infobox's target: by its exact name, else by the longest known name it starts with; null when none. */
-export function infoboxTarget(template: string): { target: CategoryTarget; exact: boolean } | null {
+/** An infobox's target: by its exact name, else as a variant of a known name (`INFOBOX_VARIANT_SUFFIX`); null when none. */
+export function infoboxTarget(template: string): { target: InfoboxTarget; exact: boolean } | null {
   const key = templateKey(template);
-  const exact = INFOBOX_RULES[key];
+  const exact = INFOBOX_BY_KEY.get(key);
   if (exact) return { target: exact, exact: true };
-  const prefix = INFOBOX_KEYS_LONGEST_FIRST.find((known) => key.startsWith(known));
-  return prefix === undefined ? null : { target: INFOBOX_RULES[prefix]!, exact: false };
+  const variant = INFOBOX_ENTRIES.find(
+    ([known]) => key.startsWith(known) && INFOBOX_VARIANT_SUFFIX.test(key.slice(known.length))
+  );
+  return variant ? { target: variant[1], exact: false } : null;
 }
 
 const categoryKey = (name: string) => name.replace(/^\s*category\s*:/i, "").trim();

@@ -39,6 +39,9 @@ it.each([
   ["Countries in Audonia", "NATION", "nation"],
   ["Historical countries", "NATION", "former-state"],
   ["Universities", "SCIENCE", "institution"],
+  ["Opera singers", "PEOPLE", "artist-or-writer"],
+  ["Film actors", "PEOPLE", "artist-or-writer"],
+  ["Ballet dancers", "PEOPLE", "artist-or-writer"],
 ])("reads the shared category %s as %s / %s", (name, category, subcategory) => {
   const targets = categoryTargets(`Category:${name}`, "iiwiki").filter(
     (t) => t.category === category
@@ -77,6 +80,12 @@ it("reads a wiki's own categories before the shared ones", () => {
     { category: "ECONOMY", subcategory: "company" },
   ]);
   expect(categoryTargets("Brands", "iiwiki")).toEqual([]);
+  for (const source of ["ixwiki", "iiwiki"] as const) {
+    expect(categoryTargets("States of Cartadania", source)).toEqual([
+      { category: "GEOGRAPHY", subcategory: "region-or-province" },
+    ]);
+  }
+  expect(categoryTargets("States of Cartadania", "althistory")).toEqual([]);
   expect(categoryTargets("Timelines", "althistory")).toEqual([
     { category: "HISTORY", subcategory: "era-or-period" },
   ]);
@@ -113,7 +122,6 @@ it.each([
   ["Infobox ship", "MILITARY", "weapon-or-vehicle"],
   ["Infobox army", "MILITARY", "army"],
   ["Infobox treaty", "DIPLOMACY", "treaty"],
-  ["Infobox settlement", "GEOGRAPHY", "city-or-settlement"],
   ["Infobox subdivision", "GEOGRAPHY", "region-or-province"],
   ["Infobox religion", "RELIGION", "faith"],
   ["Infobox clergy", "RELIGION", "clergy"],
@@ -130,20 +138,79 @@ it.each([
   ["Infobox country", "NATION", "nation"],
   ["Infobox former country", "NATION", "former-state"],
   ["Infobox artifact", "SPECIAL", undefined],
+  ["Infobox law enforcement agency", "GOVERNMENT", "agency-or-ministry"],
+  ["Infobox court case", "GOVERNMENT", "constitution-or-law"],
+  ["Infobox national military", "MILITARY", undefined],
+  ["Infobox national football team", "CULTURE", "sport"],
+  ["Infobox Olympic games", "CULTURE", "sport"],
+  ["Infobox film", "CULTURE", "media"],
+  ["Infobox anthem", "CULTURE", "music"],
+  ["Infobox national park", "GEOGRAPHY", "landmark"],
+  ["Infobox ship begin", "MILITARY", "weapon-or-vehicle"],
+  ["Infobox aircraft", "MILITARY", "weapon-or-vehicle"],
+  ["Infobox aircraft begin", "MILITARY", "weapon-or-vehicle"],
+  ["Infobox aircraft type", "MILITARY", "weapon-or-vehicle"],
+  ["Infobox military aircraft", "MILITARY", "weapon-or-vehicle"],
+  ["Infobox weapon", "MILITARY", "weapon-or-vehicle"],
 ])("maps the infobox %s to %s / %s", (template, category, subcategory) => {
   expect(infoboxTarget(template)?.target).toEqual(
     subcategory ? { category, subcategory } : { category }
   );
 });
 
-it("matches an infobox variant by its longest known prefix", () => {
+it("matches an infobox variant by the known name it extends", () => {
   expect(infoboxTarget("Infobox military person 2")).toEqual({
     target: { category: "PEOPLE", subcategory: "military-figure" },
+    exact: false,
+  });
+  expect(infoboxTarget("Infobox academic institution 2")).toEqual({
+    target: { category: "SCIENCE", subcategory: "institution" },
     exact: false,
   });
   expect(infoboxTarget("Infobox country")?.exact).toBe(true);
   expect(infoboxTarget("Cite web")).toBeNull();
   expect(templateKey("Template:Infobox_Country ")).toBe("infobox country");
+});
+
+it.each([
+  "Infobox country 2",
+  "Infobox country3",
+  "Infobox country (old)",
+  "Infobox country/status",
+])("reads %s as a variant of Infobox country", (template) => {
+  expect(infoboxTarget(template)).toEqual({
+    target: { category: "NATION", subcategory: "nation" },
+    exact: false,
+  });
+});
+
+it.each([
+  "Infobox countryside",
+  "Infobox country club",
+  "Infobox court of appeal",
+  "Infobox pitz club",
+  "Infobox country (old",
+  "Infobox country 2 club",
+  "Infobox country (old) club",
+  "Infobox country club 2",
+  "Infobox xyzzyq 2",
+  "constructor",
+  "toString",
+])("reads %s as no known infobox", (template) => {
+  expect(infoboxTarget(template)).toBeNull();
+});
+
+it("marks the infoboxes whose subcategory is only a default", () => {
+  expect(infoboxTarget("Infobox settlement")?.target).toEqual({
+    category: "GEOGRAPHY",
+    subcategory: "city-or-settlement",
+    fallback: true,
+  });
+  expect(infoboxTarget("Infobox military unit")?.target).toEqual({
+    category: "MILITARY",
+    subcategory: "unit",
+    fallback: true,
+  });
 });
 
 it("names only subcategories the taxonomy lists", () => {
@@ -172,7 +239,9 @@ it("lists the infoboxes no rule reads, for the backfill report", () => {
       "Template:Infobox country",
       "Template:Infobox wine region",
       "Infobox_wine_region",
+      "Template:Infobox countryside",
+      "Template:Infobox country (old)",
       "Template:Cite web",
     ])
-  ).toEqual(["infobox wine region"]);
+  ).toEqual(["infobox wine region", "infobox countryside"]);
 });
