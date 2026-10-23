@@ -1,6 +1,6 @@
 "use client";
 /** A category choice in a dialog, with an optional note: the review queue, a realm owner's edit, a suggestion. */
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -13,6 +13,7 @@ import {
 } from "~/components/ui/dialog";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
+import { focusedElement, refocus } from "~/lib/utils/focus";
 import { sameCategoryChoice, type CategoryChoice } from "~/lib/cards/category-taxonomy";
 import { CategoryPicker } from "./CategoryPicker";
 
@@ -32,7 +33,7 @@ interface CategoryChoiceDialogProps {
   requireChange?: boolean;
   /** Shown above the picker, for example a `Signal` saying the player already suggested one. */
   notice?: ReactNode;
-  /** The control that opens it, which gets focus back when it closes. */
+  /** The control that opens it, which gets focus back when it closes; without one, focus goes back to whatever had it. */
   trigger?: ReactNode;
   /** The note comes trimmed, or null when empty. */
   onConfirm: (choice: CategoryChoice, note: string | null) => void;
@@ -54,6 +55,8 @@ export function CategoryChoiceDialog({
   onConfirm,
 }: CategoryChoiceDialogProps) {
   const [draft, setDraft] = useState(initial);
+  // With no Radix trigger (the queue's and the realm page's Edit), focus goes back to what had it when it opened
+  const opener = useRef<HTMLElement | null>(null);
   const [note, setNote] = useState("");
   // Each opening starts from `initial`, so a closed dialog's unsaved pick never comes back
   const [wasOpen, setWasOpen] = useState(open);
@@ -80,6 +83,17 @@ export function CategoryChoiceDialog({
       <DialogContent
         className="max-w-md"
         {...(description ? {} : { "aria-describedby": undefined })}
+        {...(trigger
+          ? {}
+          : {
+              onOpenAutoFocus: () => {
+                opener.current = focusedElement();
+              },
+              onCloseAutoFocus: (event: Event) => {
+                event.preventDefault();
+                refocus(opener.current);
+              },
+            })}
       >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

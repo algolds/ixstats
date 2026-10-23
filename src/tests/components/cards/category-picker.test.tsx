@@ -1,5 +1,6 @@
 /** The shared category picker: a category, then one of its fixed subcategories. */
-import { fireEvent, render, screen } from "@testing-library/react";
+import React from "react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { CategoryChoice } from "~/lib/cards/category-taxonomy";
 import { CategoryPicker } from "~/components/cards/category/CategoryPicker";
 import { CategoryChoiceDialog } from "~/components/cards/category/CategoryChoiceDialog";
@@ -128,5 +129,33 @@ describe("CategoryChoiceDialog", () => {
     view.rerender(<CategoryChoiceDialog {...props} open />);
     expect((screen.getByLabelText("Category") as HTMLSelectElement).value).toBe("MILITARY");
     expect((screen.getByLabelText("Subcategory") as HTMLSelectElement).value).toBe("army");
+  });
+
+  it("gives focus back to the control that opened it when it has no trigger of its own", async () => {
+    function Opener() {
+      const [open, setOpen] = React.useState(false);
+      return (
+        <>
+          <button type="button" onClick={() => setOpen(true)}>
+            Edit
+          </button>
+          <CategoryChoiceDialog
+            open={open}
+            onOpenChange={setOpen}
+            title="Set the category"
+            initial={ARMY}
+            confirmLabel="Save"
+            pending={false}
+            onConfirm={jest.fn()}
+          />
+        </>
+      );
+    }
+    render(<Opener />);
+    const edit = screen.getByRole("button", { name: "Edit" });
+    edit.focus();
+    fireEvent.click(edit);
+    fireEvent.keyDown(await screen.findByRole("dialog"), { key: "Escape" });
+    await waitFor(() => expect(edit).toHaveFocus());
   });
 });
