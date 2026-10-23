@@ -1,20 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useDebounce } from "~/hooks/useDebounce";
 import { Badge } from "~/components/ui/badge";
 import { SearchField } from "~/components/ui/search-field";
-import { RealmAvatar } from "~/components/realms/RealmAvatar";
-import { plural, realmHref, realmMatches, type DirectoryRealm } from "./realm-directory";
+import { Card } from "~/components/ui/card";
+import { realmHref } from "./realm-directory";
 
 type NationHit = RouterOutputs["realms"]["searchNations"][number];
 
 /** The fewest characters a nation search sends (the procedure's minimum). */
 const NATION_QUERY_MIN = 2;
-/** Realm matches shown before "and N more". */
-const REALM_HITS_SHOWN = 6;
 
 function NationRow({ nation }: { nation: NationHit }) {
   const nationsTab = realmHref(nation.realm.slug, "nations");
@@ -64,7 +61,7 @@ function NationResults({ query }: { query: string }) {
 
   return (
     <div className="flex flex-col gap-1">
-      <h3 className="text-label text-headline">Nations</h3>
+      <h2 className="text-label text-headline">Nations</h2>
       {query.trim().length < NATION_QUERY_MIN ? (
         <p className="text-label-secondary text-footnote">
           Type at least {NATION_QUERY_MIN} letters to find nations.
@@ -84,72 +81,26 @@ function NationResults({ query }: { query: string }) {
   );
 }
 
-function RealmResults({ realms, query }: { realms: DirectoryRealm[]; query: string }) {
-  const hits = realms.filter((realm) => realmMatches(realm, query));
+/**
+ * One search box for the atlas and the nations of every open realm. The query is the page's: the atlas filters
+ * its realms by it, and this card lists the matching nations.
+ */
+export function RealmSearch({
+  query,
+  onQueryChange,
+}: {
+  query: string;
+  onQueryChange: (query: string) => void;
+}) {
   return (
-    <div className="flex flex-col gap-1">
-      <h3 className="text-label text-headline">Realms</h3>
-      {hits.length === 0 ? (
-        <p className="text-label-secondary text-footnote">No realm matches.</p>
-      ) : (
-        <ul className="flex flex-col gap-1" aria-label="Matching realms">
-          {hits.slice(0, REALM_HITS_SHOWN).map((realm) => (
-            <li key={realm.id}>
-              <Link
-                href={realmHref(realm.slug)}
-                className="hover:bg-fill-3 rounded-row flex items-center gap-3 p-2"
-              >
-                <RealmAvatar thumbnail={realm.thumbnail} className="size-8" />
-                <span className="min-w-0 flex-1">
-                  <span className="text-label text-body block truncate">{realm.name}</span>
-                  <span className="text-label-secondary text-footnote block truncate">
-                    {plural(realm.nationCount, "nation")}
-                    {realm.tags.length > 0 && ` · ${realm.tags.join(", ")}`}
-                  </span>
-                </span>
-              </Link>
-            </li>
-          ))}
-          {hits.length > REALM_HITS_SHOWN && (
-            <li className="text-label-secondary text-footnote p-2">
-              and {plural(hits.length - REALM_HITS_SHOWN, "more realm")} below
-            </li>
-          )}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-/** One search for realms (name, description, tags) and nations across the open realms. */
-export function RealmSearch({ realms }: { realms: DirectoryRealm[] | undefined }) {
-  const [query, setQuery] = useState("");
-  const searching = query.trim().length > 0;
-
-  return (
-    <section
-      aria-labelledby="realm-search-heading"
-      className="border-separator bg-surface rounded-card border p-4 md:p-6"
-    >
-      <h2 id="realm-search-heading" className="text-label text-title-3 mb-3">
-        Search
-      </h2>
+    <Card content="input" padding="md" className="flex flex-col gap-3">
       <SearchField
         value={query}
-        onValueChange={setQuery}
+        onValueChange={onQueryChange}
         placeholder="Find a realm or a nation"
         aria-label="Search realms and nations"
       />
-      {searching ? (
-        <div className="mt-4 grid gap-6 md:grid-cols-2">
-          <RealmResults realms={realms ?? []} query={query} />
-          <NationResults query={query} />
-        </div>
-      ) : (
-        <p className="text-label-secondary text-footnote mt-2">
-          Search realms by name, description or tag, and nations in every open realm.
-        </p>
-      )}
-    </section>
+      {query.trim().length > 0 && <NationResults query={query} />}
+    </Card>
   );
 }

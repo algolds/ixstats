@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { api } from "~/trpc/react";
 import { useAuth } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
@@ -16,6 +17,7 @@ import { YourRealms } from "./_components/YourRealms";
  */
 export default function RealmsLandingPage() {
   usePageTitle({ title: "Realms" });
+  const [query, setQuery] = useState("");
   const { isLoaded, isSignedIn } = useAuth();
   const { data: realms, isLoading } = api.realms.directory.useQuery();
   const { data: mine } = api.realms.myNations.useQuery(undefined, { enabled: !!isSignedIn });
@@ -49,9 +51,9 @@ export default function RealmsLandingPage() {
         </>
       )}
 
-      <RealmSearch realms={realms} />
+      <RealmSearch query={query} onQueryChange={setQuery} />
 
-      <AtlasGrid realms={realms} isLoading={isLoading} query="" />
+      <AtlasGrid realms={realms} isLoading={isLoading} query={query} />
 
       <RealmFeedPanel realms={realms} />
     </div>
