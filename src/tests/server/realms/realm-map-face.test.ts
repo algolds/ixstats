@@ -61,3 +61,48 @@ it("clips nations and land to the latitude band before drawing", async () => {
   await getRealmMapFace(db as never, "realm-g", 0);
   for (const [sql] of db.$queryRawUnsafe.mock.calls) expect(sql).toContain("ST_ClipByBox2D");
 });
+describe("failure handling", () => {
+  let errorSpy: jest.SpyInstance;
+  beforeEach(() => {
+    errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+  });
+  afterEach(() => errorSpy.mockRestore());
+
+  it("a rejected build is not retried within the short TTL", async () => {
+    const $queryRawUnsafe = jest.fn().mockRejectedValue(new Error("boom"));
+    const db = { $queryRawUnsafe };
+    expect(await getRealmMapFace(db as never, "realm-fail", 0)).toBeNull();
+    expect(await getRealmMapFace(db as never, "realm-fail", 299_999)).toBeNull();
+    expect($queryRawUnsafe).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+  });
+  it("a rejected build is retried after the short TTL", async () => {
+    const $queryRawUnsafe = jest.fn().mockRejectedValueOnce(new Error("boom"));
+    const db = { $queryRawUnsafe };
+    await getRealmMapFace(db as never, "realm-retry", 0);
+    $queryRawUnsafe.mockResolvedValueOnce([row("open", "M 0 0 z")]).mockResolvedValueOnce([]);
+    const face = await getRealmMapFace(db as never, "realm-retry", 300_001);
+    expect($queryRawUnsafe).toHaveBeenCalledTimes(3);
+    expect(face?.open).toBe("M 0 0 z");
+  });
+  it("concurrent callers share one build", async () => {
+    const db = dbWith([row("open", "M 0 0 z")]);
+    const [a, b, c] = await Promise.all([
+      getRealmMapFace(db as never, "realm-shared", 0),
+      getRealmMapFace(db as never, "realm-shared", 0),
+      getRealmMapFace(db as never, "realm-shared", 0),
+    ]);
+    expect(db.$queryRawUnsafe).toHaveBeenCalledTimes(2);
+    expect(a).toBe(b);
+    expect(b).toBe(c);
+  });
+  it("a land failure keeps the nations", async () => {
+    const $queryRawUnsafe = jest
+      .fn()
+      .mockResolvedValueOnce([row("open", "M 0 0 z")])
+      .mockRejectedValueOnce(new Error("GEOS"));
+    const face = await getRealmMapFace({ $queryRawUnsafe } as never, "realm-land-fail", 0);
+    expect(face).toMatchObject({ open: "M 0 0 z", land: "" });
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+  });
+});

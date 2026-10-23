@@ -608,6 +608,17 @@ describe("realms.mapFace", () => {
     expect(getRealmMapFace).not.toHaveBeenCalled();
   });
 
+  it("mapFace is NOT_FOUND for a hidden draft when the viewer is anonymous", async () => {
+    const findUnique = jest
+      .fn()
+      .mockResolvedValue({ id: "r2", status: "draft", ownerId: "someone-else" });
+    await expect(caller(findUnique).mapFace({ realmSlug: "secret" })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+      message: "Realm not found",
+    });
+    expect(getRealmMapFace).not.toHaveBeenCalled();
+  });
+
   it("mapFace returns the realm's face", async () => {
     const findUnique = jest
       .fn()

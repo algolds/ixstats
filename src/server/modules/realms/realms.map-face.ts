@@ -48,9 +48,13 @@ const LAND_TOLERANCE = 1.0;
 const BAND_ASPECT = 2.4;
 const BAND_PADDING = 0.04;
 const CACHE_TTL_MS = 3_600_000;
+/** How long a failed build is remembered as "no face", so a broken realm is not re-queried on every
+ * card render. Short, so a fixed realm comes back soon. */
+const FAILURE_TTL_MS = 300_000;
 
 // ponytail: per-process cache; move to Redis if IxStats runs more than one instance
-const cache = new Map<string, { expires: number; face: RealmMapFace | null }>();
+/** Holds the in-flight promise, so concurrent callers await one build. */
+const cache = new Map<string, { expires: number; face: Promise<RealmMapFace | null> }>();
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
@@ -122,13 +126,19 @@ function unionExtent(rows: PoliticalRow[]): Extent | null {
 async function buildFace(db: Pick<PrismaClient, "$queryRawUnsafe">, realmId: string): Promise<RealmMapFace | null> {
   const political = await db.$queryRawUnsafe<PoliticalRow[]>(POLITICAL_SQL, realmId, SCALE, NATION_TOLERANCE);
   if (political.length === 0) return null;
-  const [land = null] = await db.$queryRawUnsafe<LandRow[]>(LAND_SQL, realmId, SCALE, LAND_TOLERANCE);
+  const land = await db
+    .$queryRawUnsafe<LandRow[]>(LAND_SQL, realmId, SCALE, LAND_TOLERANCE)
+    .then(([row]) => row?.d ?? "")
+    .catch((error: Error) => {
+      console.error(`[realms] map face land failed for realm ${realmId}; drawing nations only:`, error);
+      return "";
+    });
   const extent = unionExtent(political);
   if (!extent) return null;
   const pathOf = (status: PoliticalRow["status"]) => political.find((r) => r.status === status)?.d ?? "";
   return {
     viewBox: faceViewBox(extent, BAND_ASPECT, BAND_PADDING),
-    land: land?.d ?? "",
+    land,
     open: pathOf("open"),
     claimed: pathOf("claimed"),
     other: pathOf("other"),
@@ -136,16 +146,21 @@ async function buildFace(db: Pick<PrismaClient, "$queryRawUnsafe">, realmId: str
 }
 
 /** A realm's political map as SVG paths grouped by whether a nation can be claimed, held or neither,
- * with the realm's land under them. Null when the realm has no political layer. Cached per process
- * for an hour; `now` is injectable for tests. */
-export async function getRealmMapFace(
+ * with the realm's land under them. Null when the realm has no political layer, or when building it
+ * failed (remembered for five minutes). Cached per process for an hour; concurrent callers share one
+ * build; `now` is injectable for tests. */
+export function getRealmMapFace(
   db: Pick<PrismaClient, "$queryRawUnsafe">,
   realmId: string,
   now = Date.now()
 ): Promise<RealmMapFace | null> {
   const hit = cache.get(realmId);
   if (hit && hit.expires > now) return hit.face;
-  const face = await buildFace(db, realmId);
+  const face = buildFace(db, realmId).catch((error: Error) => {
+    console.error(`[realms] map face failed for realm ${realmId}:`, error);
+    cache.set(realmId, { expires: now + FAILURE_TTL_MS, face: Promise.resolve(null) });
+    return null;
+  });
   cache.set(realmId, { expires: now + CACHE_TTL_MS, face });
   return face;
 }
