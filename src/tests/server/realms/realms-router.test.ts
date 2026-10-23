@@ -620,9 +620,7 @@ describe("realms.mapFace", () => {
   });
 
   it("mapFace returns the realm's face", async () => {
-    const findUnique = jest
-      .fn()
-      .mockResolvedValue({ id: "r1", status: "active", ownerId: "u" });
+    const findUnique = jest.fn().mockResolvedValue({ id: "r1", status: "active", ownerId: "u" });
     (getRealmMapFace as jest.Mock).mockResolvedValue(fixture);
 
     const face = await caller(findUnique).mapFace({ realmSlug: "eurth" });

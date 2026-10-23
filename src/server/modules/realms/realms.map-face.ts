@@ -123,19 +123,31 @@ function unionExtent(rows: PoliticalRow[]): Extent | null {
   return { minX: xmin, minY: -ymax, width: xmax - xmin, height: ymax - ymin };
 }
 
-async function buildFace(db: Pick<PrismaClient, "$queryRawUnsafe">, realmId: string): Promise<RealmMapFace | null> {
-  const political = await db.$queryRawUnsafe<PoliticalRow[]>(POLITICAL_SQL, realmId, SCALE, NATION_TOLERANCE);
+async function buildFace(
+  db: Pick<PrismaClient, "$queryRawUnsafe">,
+  realmId: string
+): Promise<RealmMapFace | null> {
+  const political = await db.$queryRawUnsafe<PoliticalRow[]>(
+    POLITICAL_SQL,
+    realmId,
+    SCALE,
+    NATION_TOLERANCE
+  );
   if (political.length === 0) return null;
   const land = await db
     .$queryRawUnsafe<LandRow[]>(LAND_SQL, realmId, SCALE, LAND_TOLERANCE)
     .then(([row]) => row?.d ?? "")
     .catch((error: Error) => {
-      console.error(`[realms] map face land failed for realm ${realmId}; drawing nations only:`, error);
+      console.error(
+        `[realms] map face land failed for realm ${realmId}; drawing nations only:`,
+        error
+      );
       return "";
     });
   const extent = unionExtent(political);
   if (!extent) return null;
-  const pathOf = (status: PoliticalRow["status"]) => political.find((r) => r.status === status)?.d ?? "";
+  const pathOf = (status: PoliticalRow["status"]) =>
+    political.find((r) => r.status === status)?.d ?? "";
   return {
     viewBox: faceViewBox(extent, BAND_ASPECT, BAND_PADDING),
     land,
