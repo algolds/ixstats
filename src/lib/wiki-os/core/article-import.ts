@@ -369,6 +369,8 @@ export async function importPageRevisions(input: ImportPageInput): Promise<Impor
         title: input.title,
         editor: headRevision.author,
         editorUserId: headRevision.authorId,
+        // an imported revision has no author yet (a name claim tags it after the commit): its claimant goes by name
+        editorWikiUsername: headRevision.author,
         summary: headRevision.summary,
         ...(input.previousRef ? { previousRef: input.previousRef } : {}),
         currentRef: head.mwRevId === null ? null : String(head.mwRevId),

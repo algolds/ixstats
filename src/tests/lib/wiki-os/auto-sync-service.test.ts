@@ -16,7 +16,7 @@ const mockRevisionFindFirst = jest.fn();
 const mockRevisionCreateMany = jest.fn();
 const mockRevisionCreate = jest.fn();
 const mockRevisionUpdateMany = jest.fn();
-const mockAccountLinkFindFirst = jest.fn();
+const mockClaimFindFirst = jest.fn();
 const mockQueryRaw = jest.fn();
 const mockExecuteRaw = jest.fn();
 const mockTransaction = jest.fn();
@@ -47,7 +47,7 @@ jest.mock("~/server/db", () => ({
       create: (...a: unknown[]) => mockRevisionCreate(...a),
       updateMany: (...a: unknown[]) => mockRevisionUpdateMany(...a),
     },
-    wikiAccountLink: { findFirst: (...a: unknown[]) => mockAccountLinkFindFirst(...a) },
+    wikiNameClaim: { findFirst: (...a: unknown[]) => mockClaimFindFirst(...a) },
     wikiMirrorJob: { create: (...a: unknown[]) => mockJobCreate(...a) },
   },
 }));
@@ -55,18 +55,31 @@ jest.mock("~/lib/wiki-os/core/article-repository", () => ({
   ArticleRepository: { importPageRevisions: jest.fn() },
 }));
 jest.mock("~/lib/notifications/api", () => ({ notificationAPI: { create: jest.fn() } }));
+// the claim tags of stored revisions are inbound-claim-tags.test.ts's
+jest.mock("~/lib/identity/claim-tags", () => ({
+  tagRevisionsOfName: jest.fn().mockResolvedValue(0),
+}));
 jest.mock("~/lib/wiki-os/services/inbound-log-events", () => ({ applyLogEvent: jest.fn() }));
 jest.mock("~/lib/wiki-os/services/title-cache-eviction", () => ({
   evictWikiTitleCaches: jest.fn().mockResolvedValue(undefined),
 }));
 
 import { createHash } from "node:crypto";
-import { getInboundSyncStatus, runAutoSyncCycle, syncSinglePage } from "~/lib/wiki-os/services/auto-sync-service";
+import {
+  getInboundSyncStatus,
+  runAutoSyncCycle,
+  syncSinglePage,
+} from "~/lib/wiki-os/services/auto-sync-service";
 import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
 import { notificationAPI } from "~/lib/notifications/api";
 import { applyLogEvent } from "~/lib/wiki-os/services/inbound-log-events";
 import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
-import { decideInbound, type InboundDecision, type InboundHead, type InboundRevision } from "~/lib/wiki-os/services/inbound-decision";
+import {
+  decideInbound,
+  type InboundDecision,
+  type InboundHead,
+  type InboundRevision,
+} from "~/lib/wiki-os/services/inbound-decision";
 
 /** The lease upsert of withJobLock when the lease is free: it returns the caller's own holder (its second value). */
 const leaseFree = async (_strings: TemplateStringsArray, ...values: unknown[]) => [
@@ -302,7 +315,7 @@ beforeEach(() => {
     createdAt: data.createdAt,
   }));
   mockRevisionUpdateMany.mockResolvedValue({ count: 1 });
-  mockAccountLinkFindFirst.mockResolvedValue(null);
+  mockClaimFindFirst.mockResolvedValue(null);
   importPageRevisions.mockImplementation(async (input) => {
     const revision = input.revisions[0]!;
     // What the importer's write leaves behind: the revision is the head and its text the page's.

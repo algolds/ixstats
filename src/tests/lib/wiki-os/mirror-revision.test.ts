@@ -10,7 +10,7 @@
 const mockRevisionFindMany = jest.fn();
 const mockRevisionUpdateMany = jest.fn();
 const mockArticleUpdateMany = jest.fn();
-const mockLinkFindMany = jest.fn();
+const mockClaimFindMany = jest.fn();
 jest.mock("~/lib/wiki-os/config", () =>
   jest
     .requireActual("~/tests/helpers/live-wikios-config")
@@ -23,15 +23,23 @@ jest.mock("~/server/db", () => ({
       updateMany: (...a: unknown[]) => mockRevisionUpdateMany(...a),
     },
     wikiArticle: { updateMany: (...a: unknown[]) => mockArticleUpdateMany(...a) },
-    wikiAccountLink: { findMany: (...a: unknown[]) => mockLinkFindMany(...a) },
+    wikiNameClaim: { findMany: (...a: unknown[]) => mockClaimFindMany(...a) },
   },
 }));
 
 import type { WikiMirrorJob } from "@prisma/client";
 import { ConflictError } from "~/lib/app-error";
-import { getBotSessionAndToken, invalidateCsrfToken, mirrorBotName } from "~/lib/wiki-os/adapters/mediawiki/csrf-cache";
+import {
+  getBotSessionAndToken,
+  invalidateCsrfToken,
+  mirrorBotName,
+} from "~/lib/wiki-os/adapters/mediawiki/csrf-cache";
 import { MediaWikiApiError } from "~/lib/wiki-os/adapters/mediawiki/write-service";
-import { executeRevisionBatch, MAX_BATCH_BYTES, planRevisionBatch } from "~/lib/wiki-os/services/mirror-revision";
+import {
+  executeRevisionBatch,
+  MAX_BATCH_BYTES,
+  planRevisionBatch,
+} from "~/lib/wiki-os/services/mirror-revision";
 import { mwSha1Base36, sha1HexToBase36 } from "~/lib/wiki-os/xml/sha1";
 import { API_URL, createFakeMediaWiki, type RecordedRequest } from "~/tests/helpers/fake-mediawiki";
 import { createHash } from "node:crypto";
@@ -61,12 +69,29 @@ describe("revision jobs", () => {
   /** The revisions the database holds (what the planner reads by id). */
   let stored: Array<ReturnType<typeof revisionRow>> = [];
   const revisionsAre = (...rows: Array<ReturnType<typeof revisionRow>>) => void (stored = rows);
-  /** The verified wiki accounts of WikiOS users: id -> username. */
-  const linksAre = (accounts: Record<string, string>) =>
-    mockLinkFindMany.mockImplementation(async ({ where }: { where: { userId: { in: string[] } } }) =>
-      where.userId.in.flatMap((userId) =>
-        accounts[userId] ? [{ userId, username: accounts[userId] }] : []
-      )
+  /** The approved IxWiki name claims of WikiOS users, oldest approval first: id -> names (`hidden:` a claim not shown). */
+  const claimsAre = (accounts: Record<string, string[]>) =>
+    mockClaimFindMany.mockImplementation(
+      async ({
+        where,
+      }: {
+        where: { userId: { in: string[] }; status: string; visible?: boolean };
+      }) =>
+        where.userId.in.flatMap((userId) =>
+          (accounts[userId] ?? [])
+            .map((entry, at) => ({
+              id: `claim-${userId}-${at}`,
+              userId,
+              name: entry.replace(/^hidden:/, ""),
+              visible: !entry.startsWith("hidden:"),
+              rightsPass: false,
+              decidedAt: new Date(Date.UTC(2026, 0, at + 1)),
+              mwUserId: null,
+            }))
+            .filter(
+              (claim) => where.status === "APPROVED" && (where.visible !== true || claim.visible)
+            )
+        )
     );
 
   /** Plan and send a batch of jobs, as the worker does. */
@@ -114,7 +139,9 @@ describe("revision jobs", () => {
       const head = queue.length > 1 ? queue.shift()! : queue[0]!;
       return {
         query: {
-          pages: [{ title: "Foo bar", revisions: [{ revid: head.revid, sha1: hexSha1(head.text) }] }],
+          pages: [
+            { title: "Foo bar", revisions: [{ revid: head.revid, sha1: hexSha1(head.text) }] },
+          ],
         },
       };
     });
@@ -137,12 +164,13 @@ describe("revision jobs", () => {
     globalThis.fetch = wiki.fetch as unknown as typeof fetch;
 
     revisionsAre(revisionRow());
-    mockRevisionFindMany.mockImplementation(async ({ where }: { where: { id: { in: string[] } } }) =>
-      stored.filter((row) => where.id.in.includes(row.id))
+    mockRevisionFindMany.mockImplementation(
+      async ({ where }: { where: { id: { in: string[] } } }) =>
+        stored.filter((row) => where.id.in.includes(row.id))
     );
     mockRevisionUpdateMany.mockResolvedValue({ count: 1 });
     mockArticleUpdateMany.mockResolvedValue({ count: 1 });
-    linksAre({ "user-1": "Alice" });
+    claimsAre({ "user-1": ["Alice"] });
   });
 
   afterEach(() => {
@@ -195,14 +223,20 @@ describe("revision jobs", () => {
       expect(xml.match(/<page>/g)).toHaveLength(1);
     });
 
-    it("looks the author up by the verified wiki account of the revision's user, else imports the label under the import prefix", async () => {
+    it("looks the author up by the shown name claims of the revision's user, else imports the label under the import prefix", async () => {
       await runRevisionJob(job());
-      expect(mockLinkFindMany).toHaveBeenCalledWith({
-        where: { userId: { in: ["user-1"] }, source: "ixwiki", verifiedAt: { not: null } },
-        select: { userId: true, username: true },
-      });
+      expect(mockClaimFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            source: "ixwiki",
+            userId: { in: ["user-1"] },
+            status: "APPROVED",
+            visible: true,
+          },
+        })
+      );
 
-      linksAre({});
+      claimsAre({});
       await runRevisionJob(job());
       expect(requestsTo("import")[1]?.file?.content).toContain(
         "<username>wikios&gt;Some Country</username>"
@@ -213,10 +247,10 @@ describe("revision jobs", () => {
       expect(requestsTo("import")[2]?.file?.content).toContain(
         "<username>wikios&gt;Community Contributor</username>"
       );
-      expect(mockLinkFindMany).toHaveBeenCalledTimes(2); // none for a revision with no user
+      expect(mockClaimFindMany).toHaveBeenCalledTimes(2); // none for a revision with no user
     });
 
-    describe("attribution: only a verified wiki account is imported as a bare name", () => {
+    describe("attribution: only a shown claimed name is imported as a bare name", () => {
       const authors = async (...rows: Array<ReturnType<typeof revisionRow>>) => {
         revisionsAre(...rows);
         await runBatch(rows.map((row, at) => job({ id: `job-${at}`, revisionId: row.id })));
@@ -224,10 +258,25 @@ describe("revision jobs", () => {
         return [...xml.matchAll(/<username>([^<]+)<\/username>/g)].map((match) => match[1]);
       };
 
-      it("never credits a label that is the name of a real MediaWiki user (no verified link)", async () => {
-        // user-1 verified "Alice"; a save labelled "WikiOSAdmin" with no author id, and one labelled "Alice" by
+      it("sends the author's first shown claimed name as itself, and every other author as wikios>handle", async () => {
+        claimsAre({
+          "user-1": ["hidden:Hidden first", "Old name", "Later name"],
+          "user-2": ["hidden:Secret name"],
+        });
+
+        expect(
+          await authors(
+            revisionRow({ id: "rev-1", author: "alpha", authorId: "user-1" }),
+            revisionRow({ id: "rev-2", author: "alpha", authorId: "user-2" }),
+            revisionRow({ id: "rev-3", author: "alpha", authorId: "user-3" })
+          )
+        ).toEqual(["Old name", "wikios&gt;alpha", "wikios&gt;alpha"]);
+      });
+
+      it("never credits a label that is the name of a real MediaWiki user (no claim)", async () => {
+        // user-1 claimed "Alice"; a save labelled "WikiOSAdmin" with no author id, and one labelled "Alice" by
         // somebody else, are not those accounts
-        linksAre({ "user-1": "Alice" });
+        claimsAre({ "user-1": ["Alice"] });
 
         expect(
           await authors(
@@ -430,7 +479,9 @@ describe("revision jobs", () => {
         /^MediaWiki import failed \(HTTP 413\): <html><head><title>413 Request Entity Too Large/
       );
       // the first 200 characters of the body, no more
-      expect(message.length).toBeLessThanOrEqual("MediaWiki import failed (HTTP 413): ".length + 200);
+      expect(message.length).toBeLessThanOrEqual(
+        "MediaWiki import failed (HTTP 413): ".length + 200
+      );
     });
   });
 
@@ -471,7 +522,7 @@ describe("revision jobs", () => {
       expect(xml).toContain("<username>WikiOSMirror</username>");
       expect(xml).toContain("<comment>Restoring WikiOS revision 90</comment>");
       expect(requestsTo("import")[0]?.params.summary).toBe("Restoring WikiOS revision 90");
-      expect(mockLinkFindMany).not.toHaveBeenCalled();
+      expect(mockClaimFindMany).not.toHaveBeenCalled();
     });
     it("is imported even though the head already has a MediaWiki id: that revision is the one MediaWiki lost", async () => {
       revisionsAre(revisionRow({ mwRevId: 42 }));
@@ -480,7 +531,10 @@ describe("revision jobs", () => {
 
       expect(requestsTo("import")).toHaveLength(1);
       // the head keeps its own id: only a revision with none is stamped
-      expect(mockRevisionUpdateMany.mock.calls[0]?.[0].where).toEqual({ id: "rev-1", mwRevId: null });
+      expect(mockRevisionUpdateMany.mock.calls[0]?.[0].where).toEqual({
+        id: "rev-1",
+        mwRevId: null,
+      });
     });
     it("imports nothing when MediaWiki already holds the head's text: the conflicting edit was superseded", async () => {
       currentRevisionIs(850);
@@ -625,7 +679,9 @@ describe("revision jobs", () => {
                 pages: [
                   {
                     title: "Foo bar",
-                    revisions: [{ revid: 10, sha1: hexSha1(T1), timestamp: "2026-09-27T10:00:00Z" }],
+                    revisions: [
+                      { revid: 10, sha1: hexSha1(T1), timestamp: "2026-09-27T10:00:00Z" },
+                    ],
                   },
                 ],
               },
@@ -798,7 +854,10 @@ describe("page jobs", () => {
       const target = redirects[title];
       if (target && params.redirects) {
         return {
-          query: { redirects: [{ from: title, to: target }], pages: [{ title: target, pageid: 2 }] },
+          query: {
+            redirects: [{ from: title, to: target }],
+            pages: [{ title: target, pageid: 2 }],
+          },
         };
       }
       return {
@@ -860,7 +919,9 @@ describe("page jobs", () => {
     });
     it("fails when the target is taken by another page: both titles exist", async () => {
       wiki.on("move", refuse("articleexists"));
-      wiki.on("query", ({ params }) => ({ query: { pages: [{ title: params.titles, pageid: 1 }] } }));
+      wiki.on("query", ({ params }) => ({
+        query: { pages: [{ title: params.titles, pageid: 1 }] },
+      }));
 
       await expect(runPageJob(moveJob())).rejects.toThrow(/articleexists/);
     });
@@ -914,7 +975,9 @@ describe("page jobs", () => {
       wiki.on("undelete", refuse("cantundelete"));
       pagesExist(["Old name"]);
 
-      await expect(runPageJob(job("undelete", "Old name", { reason: "" }))).resolves.toBeUndefined();
+      await expect(
+        runPageJob(job("undelete", "Old name", { reason: "" }))
+      ).resolves.toBeUndefined();
     });
   });
 

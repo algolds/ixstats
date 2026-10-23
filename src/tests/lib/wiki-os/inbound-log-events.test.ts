@@ -8,6 +8,7 @@ import { ConflictError } from "~/lib/app-error";
 import { applyLogEvent } from "~/lib/wiki-os/services/inbound-log-events";
 import type { LogEvent } from "~/lib/wiki-os/services/inbound-mediawiki";
 import {
+  claimedWikiUserId,
   evictCaches,
   isMirrorUser,
   syncLatestRevision,
@@ -45,7 +46,7 @@ jest.mock("~/server/db", () => ({
 jest.mock("~/lib/wiki-os/services/inbound-revision-sync", () => ({
   evictCaches: jest.fn().mockResolvedValue(undefined),
   isMirrorUser: jest.fn().mockReturnValue(false),
-  verifiedWikiUserId: jest.fn().mockResolvedValue(null),
+  claimedWikiUserId: jest.fn().mockResolvedValue(null),
   syncLatestRevision: jest.fn().mockResolvedValue("known"),
 }));
 jest.mock("~/lib/wiki-os/services/render-service", () => ({
@@ -69,6 +70,7 @@ const loggedRow = () => mockLogCreate.mock.calls[0]?.[0].data;
 beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(isMirrorUser).mockReturnValue(false);
+  jest.mocked(claimedWikiUserId).mockResolvedValue(null);
   mockLogFindUnique.mockResolvedValue(null);
   mockLogCreate.mockResolvedValue({});
   tx.wikiArticle.findUnique.mockResolvedValue(null);
@@ -176,15 +178,6 @@ describe("delete and restore", () => {
     ).rejects.toThrow("HTTP 503");
 
     expect(mockLogCreate).not.toHaveBeenCalled();
-  });
-
-  it("credits the log row to the WikiOS user behind the MediaWiki account when the link is verified", async () => {
-    const { verifiedWikiUserId } = jest.requireMock("~/lib/wiki-os/services/inbound-revision-sync");
-    verifiedWikiUserId.mockResolvedValueOnce("user-7");
-
-    await applyLogEvent(event({ type: "delete", action: "delete", title: "Foo" }));
-
-    expect(loggedRow()).toMatchObject({ userId: "user-7", actorName: "Admin" });
   });
 });
 
@@ -419,6 +412,23 @@ describe("block", () => {
       },
     });
     expect(loggedRow()).toMatchObject({ logType: "block", title: "User:Troll" });
+  });
+
+  it("credits the block to the account holding the approved claim of the blocking admin's name", async () => {
+    jest
+      .mocked(claimedWikiUserId)
+      .mockImplementation(async (name) => (name === "Admin" ? "user-7" : null));
+
+    await expect(applyLogEvent(blockEvent({ sitewide: true }))).resolves.toBe("applied");
+
+    expect(claimedWikiUserId).toHaveBeenCalledWith("Admin");
+    expect(loggedRow()).toMatchObject({ logType: "block", userId: "user-7", actorName: "Admin" });
+  });
+
+  it("credits nobody when no approved claim holds the admin's name", async () => {
+    await applyLogEvent(blockEvent({ sitewide: true }));
+
+    expect(loggedRow()).toMatchObject({ logType: "block", userId: null, actorName: "Admin" });
   });
   it("lifts only the blocks this sync recorded", async () => {
     await expect(applyLogEvent(blockEvent({}, "unblock"))).resolves.toBe("applied");

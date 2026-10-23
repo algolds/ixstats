@@ -15,7 +15,8 @@ type Watch = {
 };
 
 const watches: Watch[] = [];
-const links: Array<{ userId: string; username: string; verifiedAt: Date | null }> = [];
+/** IxWiki name claims (the resolver reads only APPROVED ones, by their stored name). */
+const claims: Array<{ userId: string; name: string; status: string; visible: boolean }> = [];
 const articles: Array<{ id: string; title: string }> = [];
 
 type WatchWhere = {
@@ -71,10 +72,12 @@ jest.mock("~/server/db", () => ({
         return { count: found.length };
       }),
     },
-    wikiAccountLink: {
+    wikiNameClaim: {
       findFirst: jest.fn(
-        async ({ where }: { where: { username: string } }) =>
-          links.find((l) => l.username === where.username && l.verifiedAt) ?? null
+        async ({ where }: { where: { source: string; name: string; status: string } }) =>
+          (where.source === "ixwiki" &&
+            claims.find((c) => c.name === where.name && c.status === where.status)) ||
+          null
       ),
     },
     wikiArticle: {
@@ -141,7 +144,7 @@ const sent = (): Sent[] => mockCreateMany.mock.calls.flatMap(([batch]) => batch 
 beforeEach(() => {
   jest.clearAllMocks();
   watches.length = 0;
-  links.length = 0;
+  claims.length = 0;
   articles.length = 0;
   mockCreateMany.mockResolvedValue([]);
   mockEventEnabled.mockResolvedValue(true);
@@ -212,18 +215,18 @@ describe("notifyWatchers", () => {
     ).toEqual(["clerk_u_a", "clerk_u_c"]);
   });
 
-  it("leaves out a MediaWiki editor whose account is linked to a WikiOS watcher", async () => {
-    watches.push(watch("u_linked"), watch("u_other"));
-    links.push({ userId: "u_linked", username: "Kir", verifiedAt: new Date() });
+  it("leaves out the account holding the approved claim of the MediaWiki editor's name, shown or hidden", async () => {
+    watches.push(watch("u_claimed"), watch("u_other"));
+    claims.push({ userId: "u_claimed", name: "Kir", status: "APPROVED", visible: false });
 
-    await edit({ editorUserId: null, editorWikiUsername: "Kir" });
+    await edit({ editorUserId: null, editorWikiUsername: "kir" });
 
     expect(sent().map((n) => n.userId)).toEqual(["clerk_u_other"]);
   });
 
-  it("does not trust an unverified wiki link to leave someone out", async () => {
-    watches.push(watch("u_linked"));
-    links.push({ userId: "u_linked", username: "Kir", verifiedAt: null });
+  it("does not trust a pending claim to leave someone out", async () => {
+    watches.push(watch("u_claimed"));
+    claims.push({ userId: "u_claimed", name: "Kir", status: "PENDING", visible: true });
 
     await edit({ editorUserId: null, editorWikiUsername: "Kir" });
 

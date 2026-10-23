@@ -2,7 +2,7 @@
  * mirror-revision.ts — `revision` mirror jobs: WikiOS revisions become MediaWiki revisions, a batch at a time.
  *
  * Revisions go out as a one-page XML export through `action=import` with `assignknownusers=1`, so MediaWiki
- * credits each to the account that made it (the verified link of the author; any other author goes out as
+ * credits each to the account that made it (the author's first shown name claim; any other author goes out as
  * `wikios>Label`, never as a bare name that could be a MediaWiki account) at the time it was made. The worker takes
  * every revision job of a title that waits next in line (see `pickBatch`: at most 50 revisions, and about 6 MB of
  * XML, a revision that would pass that waits for the next batch) and imports them in ONE request, oldest first, so a
@@ -29,6 +29,7 @@
 
 import { z } from "zod";
 import { ConflictError } from "~/lib/app-error";
+import { namesOfUsers } from "~/lib/identity/wiki-names";
 import { db } from "~/server/db";
 import { canonicalizeTitle } from "../core/title";
 import {
@@ -42,7 +43,7 @@ import { createExportWriter, escapeXmlText, toXmlTimestamp } from "../xml/export
 import { mwSha1Base36, sha1HexToBase36 } from "../xml/sha1";
 import type { XmlRevision } from "../xml/types";
 import { importName, INTERWIKI_PREFIX } from "./import-label";
-import { MIRROR_SOURCE, revisionPayloadSchema, type RevisionPayload } from "./mirror-outbox";
+import { revisionPayloadSchema, type RevisionPayload } from "./mirror-outbox";
 import type { MirrorJob } from "./mirror-queue";
 
 const DEFAULT_SUMMARY = "WikiOS native edit";
@@ -230,31 +231,30 @@ async function loadRevisions(
   return new Map(rows.map((row) => [row.id, row]));
 }
 
-/** The wiki account each revision's author verified, by WikiOS user id. */
-async function verifiedUsernames(
-  revisions: Iterable<MirroredRevision>
-): Promise<Map<string, string>> {
+/** Each revision author's first shown claimed name (their primary name), by WikiOS user id. */
+async function mirrorNames(revisions: Iterable<MirroredRevision>): Promise<Map<string, string>> {
   const ids = [...new Set([...revisions].flatMap((revision) => revision.authorId ?? []))];
   if (ids.length === 0) return new Map();
-  const links = await db.wikiAccountLink.findMany({
-    where: { userId: { in: ids }, source: MIRROR_SOURCE, verifiedAt: { not: null } },
-    select: { userId: true, username: true },
-  });
-  return new Map(links.map((link) => [link.userId, link.username]));
+  const names = await namesOfUsers(db, ids, { shown: true });
+  return new Map(
+    [...names].flatMap(([userId, claimed]) =>
+      claimed.slice(0, 1).map((first): [string, string] => [userId, first.name])
+    )
+  );
 }
 
 /**
- * The name a revision is imported under. Only a VERIFIED wiki account goes out as itself, which MediaWiki credits to
- * the local account of that name (`assignknownusers`). Every other author is a free-text label (a country, `User_x`,
- * an old `wikiUsername`, anything) that must never be taken for a MediaWiki user or an IP address, so it goes out with
+ * The name a revision is imported under. The claimed name of the revision's author, when they show one, goes out as
+ * itself (MediaWiki credits that account, `assignknownusers`); every other author goes out as `wikios>Label`. The
+ * label (the handle, a country, anything) must never be taken for a MediaWiki user or an IP address, so it carries
  * the import prefix, a form MediaWiki keeps as it is and never maps to an account.
  */
 function contributorName(
   revision: MirroredRevision,
   usernames: ReadonlyMap<string, string>
 ): string {
-  const verified = revision.authorId ? usernames.get(revision.authorId) : undefined;
-  return verified ?? importName(revision.author);
+  const claimed = revision.authorId ? usernames.get(revision.authorId) : undefined;
+  return claimed ?? importName(revision.author);
 }
 
 /** What `revision` would add to the XML: its text as escaped (an `&` takes five bytes) and its tags. */
@@ -282,9 +282,7 @@ export async function planRevisionBatch(jobs: readonly MirrorJob[]): Promise<Rev
   const heads = await loadHeads(restore ? [first] : jobs);
   const candidates = withinBudget(restore ? [first] : jobs, heads, restore);
   const revisions = await loadRevisions(candidates, heads, restore);
-  const usernames = restore
-    ? new Map<string, string>()
-    : await verifiedUsernames(revisions.values());
+  const usernames = restore ? new Map<string, string>() : await mirrorNames(revisions.values());
   const bot = restore ? requireMirrorBot() : null;
   const { model, format } = contentModelFor(first.title);
 

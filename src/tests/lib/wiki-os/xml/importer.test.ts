@@ -2,7 +2,7 @@
 /**
  * Plan 408: the XML importer against an in-memory stand-in for the WikiOS tables (see fake-wiki-db.ts): fresh import,
  * idempotent re-import, placeholder fill, head rules (an older dump or a save that landed meanwhile is never
- * overwritten, a parked revision is never the head), hidden text kept hidden, authors only through verified links,
+ * overwritten, a parked revision is never the head), hidden text kept hidden, no author but through a name claim's tag,
  * errors, dry run and atomicity, restrictions; and the revision planner's twin rules.
  */
 jest.mock("~/server/db", () => jest.requireActual("./fake-wiki-db").createFakeDbModule());
@@ -13,11 +13,15 @@ jest.mock("~/lib/wiki-os/services/render-service", () => ({
 jest.mock("~/lib/wiki-os/services/watchlist-notify", () => ({
   notifyWatchers: jest.fn().mockResolvedValue(0),
 }));
+jest.mock("~/lib/identity/claim-tags", () => ({
+  tagRevisionsOfName: jest.fn().mockResolvedValue(0),
+}));
 jest.mock("~/lib/wiki-os/core/media-asset-service", () => ({
   MediaAssetService: { processContentImages: jest.fn().mockResolvedValue(undefined) },
 }));
 
 import { readFileSync } from "node:fs";
+import { tagRevisionsOfName } from "~/lib/identity/claim-tags";
 import { join } from "node:path";
 import { enqueueRender } from "~/lib/wiki-os/services/render-service";
 import { notifyWatchers } from "~/lib/wiki-os/services/watchlist-notify";
@@ -26,8 +30,20 @@ import { readExport } from "~/lib/wiki-os/xml/import-reader";
 import { importExport, MAX_CONSECUTIVE_WRITE_FAILURES } from "~/lib/wiki-os/xml/importer";
 import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
 import type { XmlRevision } from "~/lib/wiki-os/xml/types";
-import { type ArticleRow, rawStatements, resetStore, type RevisionRow, snapshotStore, store, transactionOptions } from "./fake-wiki-db";
-import { type ExistingRevisionRow, type ImportedRevision, planRevisionImport } from "~/lib/wiki-os/xml/revision-plan";
+import {
+  type ArticleRow,
+  rawStatements,
+  resetStore,
+  type RevisionRow,
+  snapshotStore,
+  store,
+  transactionOptions,
+} from "./fake-wiki-db";
+import {
+  type ExistingRevisionRow,
+  type ImportedRevision,
+  planRevisionImport,
+} from "~/lib/wiki-os/xml/revision-plan";
 
 const FIXTURE = readFileSync(
   join(__dirname, "../../../fixtures/xml/mediawiki-export-0.11.xml"),
@@ -401,6 +417,7 @@ describe("the page's head only moves forward", () => {
       title: "Kingdom of Testia",
       editor: "192.0.2.7",
       editorUserId: null,
+      editorWikiUsername: "192.0.2.7",
       summary: "typo & <nowiki> fix",
       currentRef: "1002",
     });
@@ -569,27 +586,34 @@ describe("redirects read from the head's wikitext", () => {
 });
 
 describe("authors", () => {
-  it("links a revision to a WikiOS user only through a verified account link, one lookup per name", async () => {
-    store.accountLinks.push(
-      { source: "ixwiki", username: "Jane", userId: "user-jane", verifiedAt: new Date() },
-      { source: "ixwiki", username: "Bob the Builder", userId: "user-bob", verifiedAt: null }
-    );
-    const { db } = jest.requireMock("~/server/db") as {
-      db: { wikiAccountLink: { findMany: (...a: unknown[]) => Promise<unknown> } };
-    };
-    const lookup = jest.spyOn(db.wikiAccountLink, "findMany");
-
+  it("imports every revision with no WikiOS author, then tags each page's named contributors once", async () => {
     await importFixture();
 
-    const byAuthor = (name: string) => store.revisions.filter((r) => r.author === name);
-    expect(byAuthor("Jane").every((r) => r.authorId === "user-jane")).toBe(true);
-    expect(byAuthor("Bob the Builder")[0]?.authorId).toBeNull();
-    expect(byAuthor("192.0.2.7")[0]?.authorId).toBeNull();
-    // Page 1 asks for Jane, page 3 for Bob; Jane is cached for pages 2, 4 and 5.
-    expect(lookup).toHaveBeenCalledTimes(2);
-    expect(lookup.mock.calls[0]?.[0]).toMatchObject({
-      where: { source: "ixwiki", username: { in: ["Jane"] }, verifiedAt: { not: null } },
-    });
+    expect(store.revisions.every((r) => r.authorId === null)).toBe(true);
+    // page by page: Jane; Jane; Bob the Builder; Jane; Jane (twice on the file page, tagged once). No IP, no hidden user.
+    expect(
+      jest.mocked(tagRevisionsOfName).mock.calls.map(([, source, name]) => `${source}:${name}`)
+    ).toEqual([
+      "ixwiki:Jane",
+      "ixwiki:Jane",
+      "ixwiki:Bob the Builder",
+      "ixwiki:Jane",
+      "ixwiki:Jane",
+    ]);
+  });
+
+  it("tags nothing on a dry run, nor for a page that was refused", async () => {
+    await importFixture({ dryRun: true });
+    await importFixture({ canWritePage: () => ({ allowed: false, reason: "no" }) });
+
+    expect(tagRevisionsOfName).not.toHaveBeenCalled();
+  });
+
+  it("tags nothing for a dump imported into another wiki: name claims are IxWiki's", async () => {
+    await importFixture({ source: "iiwiki" });
+
+    expect(store.revisions.length).toBeGreaterThan(0);
+    expect(tagRevisionsOfName).not.toHaveBeenCalled();
   });
 });
 
