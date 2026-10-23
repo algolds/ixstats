@@ -39,7 +39,9 @@ function renderDialog(onOpenChange = jest.fn()) {
       cardId="c1"
       cardTitle="Kiro"
       current={{ category: null, subcategory: null }}
-    />
+    >
+      <button type="button">Suggest a category</button>
+    </SuggestCategoryDialog>
   );
   return onOpenChange;
 }

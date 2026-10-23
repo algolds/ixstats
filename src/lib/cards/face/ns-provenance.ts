@@ -7,7 +7,8 @@ export interface NsProvenance {
   nation: string;
   season: number | null;
   region: string | null;
-  category: string | null;
+  /** NationStates' pretitle ("Republic"), which it stores as the card's category. */
+  pretitle: string | null;
 }
 
 /** A whole number above 0, or null: "42abc" and "1.5" are not seasons. */
@@ -27,6 +28,6 @@ export function nsProvenanceOf(card: {
     nation: facts.name ?? card.title,
     season: card.nsSeason ?? positiveInt(facts.season),
     region: facts.region ?? null,
-    category: facts.category ?? null,
+    pretitle: facts.category ?? null,
   };
 }

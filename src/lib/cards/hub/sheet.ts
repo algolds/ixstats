@@ -36,6 +36,7 @@ const SHEET_CARD_SELECT = {
   ...CARD_FACE_SELECT,
   isBound: true,
   category: true,
+  subcategory: true,
   description: true,
   wikiSource: true,
   wikiArticleTitle: true,
@@ -113,6 +114,8 @@ export interface CardSheetData {
     isBound: boolean;
     isRetired: boolean;
     category: LoreCategory | null;
+    /** The category's subcategory id (`category-taxonomy.ts`). */
+    subcategory: string | null;
     description: string | null;
     wikiSource: string | null;
     wikiArticleTitle: string | null;
@@ -424,6 +427,7 @@ function toSheetCard(card: SheetCardRow, value: number): CardSheetData["card"] {
     isBound: card.isBound,
     isRetired: card.isRetired,
     category: card.category,
+    subcategory: card.subcategory,
     description: card.description,
     wikiSource: card.wikiSource,
     wikiArticleTitle: artHidden && card.wikiSource === "commons" ? null : card.wikiArticleTitle,

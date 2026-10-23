@@ -18,6 +18,7 @@ import { parseCardArticleSource } from "~/lib/cards/card-sources";
 import type { NsProvenance } from "~/lib/cards/face/ns-provenance";
 import { cleanWikiUsername } from "~/lib/cards/lore-card-author-info";
 import type { CardSheetData } from "~/lib/cards/hub/sheet";
+import { CardSheetCategory } from "./CardSheetCategory";
 import { RequestTakedownDialog } from "./RequestTakedownDialog";
 
 const AUTHOR_STALE_MS = 60 * 60 * 1000;
@@ -48,9 +49,14 @@ function useArticleAuthor(card: CardSheetData["card"], isLore: boolean): string 
   return stored ?? cleanAuthor(live.data?.authorInfo?.displayAuthor);
 }
 
-/** An NS card's NationStates facts. */
+/** An NS card's NationStates facts, its pretitle by that name. */
 function NsFacts({ ns }: { ns: NsProvenance }) {
-  const facts = [ns.nation, ns.season ? `season ${ns.season}` : null, ns.region, ns.category];
+  const facts = [
+    ns.nation,
+    ns.season ? `season ${ns.season}` : null,
+    ns.region,
+    ns.pretitle ? `Pretitle: ${ns.pretitle}` : null,
+  ];
   return <p className="text-callout text-label-secondary">{facts.filter(Boolean).join(" · ")}</p>;
 }
 
@@ -187,13 +193,13 @@ interface CardSheetAboutProps {
   card: CardSheetData["card"];
   /** The card is retired, so its art shows nowhere and nothing here may show or link it; shown art is credited. */
   artHidden: boolean;
-  /** Only a signed-in player can request a takedown here. */
+  /** Only a signed-in player can request a takedown or suggest a category here. */
   signedIn: boolean;
 }
 
 /**
- * "About": the lore excerpt and wiki link, an NS card's NationStates facts, one credits caption, and the takedown
- * action, which for an NS card sits behind the caption's (i).
+ * "About": the lore excerpt and wiki link, a lore card's category, an NS card's NationStates facts, one credits
+ * caption, and the takedown action, which for an NS card sits behind the caption's (i).
  */
 export function CardSheetAbout({ card, artHidden, signedIn }: CardSheetAboutProps) {
   // A legacy Commons card has no title but still links to its file page.
@@ -216,6 +222,7 @@ export function CardSheetAbout({ card, artHidden, signedIn }: CardSheetAboutProp
       ) : (
         card.description && <p className="text-body text-label-secondary">{card.description}</p>
       )}
+      <CardSheetCategory card={card} signedIn={signedIn} />
       {card.ns && <NsFacts ns={card.ns} />}
       <Credits card={card} writer={writer} />
       {!card.ns && <Takedown card={card} signedIn={signedIn} />}

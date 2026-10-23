@@ -6,6 +6,7 @@ jest.mock("~/trpc/react", () => ({
     cards: {
       getSheet: { useQuery: jest.fn() },
       requestTakedown: { useMutation: jest.fn(() => ({ mutate: jest.fn(), isPending: false })) },
+      suggestCategory: { useMutation: jest.fn(() => ({ mutate: jest.fn(), isPending: false })) },
     },
     loreCards: { getCardAuthorInfo: { useQuery: jest.fn(() => ({ data: undefined })) } },
   },
@@ -112,6 +113,7 @@ const card: CardSheetData["card"] = {
   isBound: false,
   isRetired: false,
   category: "HISTORY",
+  subcategory: "event",
   description: null,
   wikiSource: "ixwiki",
   wikiArticleTitle: "Caphiria",
@@ -126,7 +128,7 @@ const ns = {
   nation: "Testlandia",
   season: 3,
   region: "Lazarus",
-  category: "Civil Rights Lovefest",
+  pretitle: "Republic",
 };
 const copy = (overrides: Partial<SheetCopy> = {}): SheetCopy => ({
   face,
@@ -760,7 +762,7 @@ describe("CardSheet about", () => {
     );
     open();
     expect(
-      within(about()).getByText("Testlandia · season 3 · Lazarus · Civil Rights Lovefest")
+      within(about()).getByText("Testlandia · season 3 · Lazarus · Pretitle: Republic")
     ).toBeInTheDocument();
     expect(within(about()).queryByRole("link", { name: "View on NationStates" })).toBeNull();
     expect(screen.queryByText(/Not affiliated with or endorsed by NationStates/)).toBeNull();
@@ -774,6 +776,43 @@ describe("CardSheet about", () => {
     expect(info).toHaveTextContent(/Not affiliated with or endorsed by NationStates/);
     fireEvent.click(within(info).getByRole("button", { name: "Verify & request takedown" }));
     expect(screen.getByRole("alertdialog")).toHaveTextContent("Takedown for season 3");
+  });
+
+  it("shows a lore card's category in About, and offers a signed-in player a suggestion", async () => {
+    showSheet();
+    open();
+    const line = within(about()).getByText("Category: History · Event");
+    expect(line).toHaveClass("text-callout", "text-label-secondary");
+    const suggest = within(line).getByRole("button", { name: "Suggest a category" });
+    expect(screen.queryByRole("dialog", { name: "Suggest a category" })).toBeNull();
+    fireEvent.click(suggest);
+    const dialog = screen.getByRole("dialog", { name: "Suggest a category" });
+    // The dialog starts from the card's own category
+    expect(within(dialog).getByLabelText("Category")).toHaveValue("HISTORY");
+    expect(within(dialog).getByLabelText("Subcategory")).toHaveValue("event");
+    fireEvent.keyDown(dialog, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "Suggest a category" })).toBeNull();
+    await waitFor(() => expect(suggest).toHaveFocus());
+  });
+
+  it("reads Uncategorised for a lore card with no category, and offers a visitor no suggestion", () => {
+    showSheet(
+      sheet({ card: { ...card, category: null, subcategory: null }, signedIn: false, copies: [] })
+    );
+    open();
+    expect(within(about()).getByText("Category: Uncategorised")).toBeInTheDocument();
+    expect(within(about()).queryByRole("button", { name: "Suggest a category" })).toBeNull();
+  });
+
+  it.each<[string, Partial<CardSheetData["card"]>]>([
+    ["an NS card", { cardType: "NS", wikiArticleTitle: null, wikiSource: null, ns }],
+    ["a Special card", { cardType: "SPECIAL", category: "SPECIAL" }],
+    ["a Trophy card", { cardType: "TROPHY", category: null }],
+  ])("gives %s no category line and no suggestion", (_kind, overrides) => {
+    showSheet(sheet({ card: { ...card, ...overrides } }));
+    open();
+    expect(within(about()).queryByText(/^Category:/)).toBeNull();
+    expect(within(about()).queryByRole("button", { name: "Suggest a category" })).toBeNull();
   });
 
   it("ends a wiki card's About with a quiet takedown request, or the help for a visitor", () => {
