@@ -6,10 +6,12 @@ import {
   WIKI_CATEGORY_RULES,
   categoryTargets,
   infoboxTarget,
+  isAbandonedLore,
   templateKey,
   unmappedCategories,
   unmappedInfoboxes,
 } from "~/lib/cards/category-mappings";
+import { classifyLoreArticle } from "~/lib/cards/category-classifier";
 import { isSubcategoryOf } from "~/lib/cards/category-taxonomy";
 
 it.each([
@@ -93,6 +95,82 @@ it("reads a wiki's own categories before the shared ones", () => {
     categoryTargets("Flags of Ireland", "commons").find((t) => t.category === "NATION")
   ).toEqual({ category: "NATION", subcategory: "nation" });
   expect(categoryTargets("Flags of Ireland", "iiwiki")).toEqual([]);
+});
+
+describe("the community wikis' own categories", () => {
+  const wikis = ["ixwiki", "iiwiki"] as const;
+
+  it.each([
+    ["Kiravian federal subjects", "GEOGRAPHY", "region-or-province"],
+    ["Federal subjects of the Kiravian Federacy", "GEOGRAPHY", "region-or-province"],
+  ])("reads %s as %s / %s", (name, category, subcategory) => {
+    for (const source of wikis) {
+      expect(categoryTargets(name, source)).toEqual([{ category, subcategory }]);
+    }
+  });
+
+  it.each([
+    "Burgoignesc Security Forces",
+    "Units of the Burgoignesc Security Forces",
+    "Yonderian Defence Force",
+    "Ardmore Defense Forces",
+  ])("reads %s, a whole national force, as Military with no subcategory", (name) => {
+    for (const source of wikis) {
+      expect(categoryTargets(name, source)).toEqual([{ category: "MILITARY" }]);
+    }
+  });
+
+  it("lets Army of a nation name the subcategory beside its security forces", () => {
+    const army = classifyLoreArticle({
+      title: "Metropolitan Guard",
+      categories: [
+        "Category:Army of Burgundie",
+        "Category:Burgoignesc Security Forces",
+        "Category:Units of the Burgoignesc Security Forces",
+      ],
+      source: "ixwiki",
+    });
+    expect(army).toMatchObject({ category: "MILITARY", subcategory: "army" });
+  });
+
+  it("reads exactly Politics as Government, with no subcategory", () => {
+    for (const source of wikis) {
+      expect(categoryTargets("Category:Politics", source)).toEqual([{ category: "GOVERNMENT" }]);
+      expect(categoryTargets("Politics of Urcea", source)).toEqual([]);
+    }
+  });
+
+  it("reads Ethnic groups as Culture, with no subcategory, but not the maintenance list", () => {
+    for (const source of wikis) {
+      expect(categoryTargets("Ethnic groups", source)).toEqual([{ category: "CULTURE" }]);
+      expect(categoryTargets("Ethnic groups in Kiravia", source)).toEqual([
+        { category: "CULTURE" },
+      ]);
+      expect(categoryTargets('"Related ethnic groups" needing confirmation', source)).toEqual([]);
+    }
+  });
+
+  it("leaves a country's name and a maintenance category unmapped", () => {
+    expect(
+      unmappedCategories(
+        ["Category:Caphiria", "Category:KRV", "Category:Urcea", "Category:Major Reconstruction"],
+        "ixwiki"
+      )
+    ).toEqual(["Caphiria", "KRV", "Urcea", "Major Reconstruction"]);
+  });
+
+  it("keeps these rules to the community wikis", () => {
+    expect(categoryTargets("Yonderian Defence Force", "commons")).toEqual([]);
+    expect(categoryTargets("Politics", "althistory")).toEqual([]);
+  });
+});
+
+it("knows an article tagged Abandoned Lore, in any case, with or without the namespace", () => {
+  expect(isAbandonedLore(["Category:Urcea", "Category:Abandoned Lore"])).toBe(true);
+  expect(isAbandonedLore([{ title: "Category:abandoned_lore" }])).toBe(true);
+  expect(isAbandonedLore(["ABANDONED LORE"])).toBe(true);
+  expect(isAbandonedLore(["Category:Abandoned Lore drafts", "Lore"])).toBe(false);
+  expect(isAbandonedLore([])).toBe(false);
 });
 
 it.each([

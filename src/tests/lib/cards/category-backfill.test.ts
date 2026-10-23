@@ -20,6 +20,7 @@ const card = (over: Partial<BackfillCard> = {}): BackfillCard => ({
   subcategory: null,
   categorySource: null,
   hasLegacyLabel: true,
+  retired: false,
   ...over,
 });
 
@@ -130,6 +131,20 @@ describe("planCardCategory", () => {
       ).toEqual({ kind: "protected" });
     }
   );
+
+  it("skips a retired card, before anything else", () => {
+    const retired = card({ retired: true, categorySource: "ADMIN" });
+    expect(planCardCategory(retired, read, 0.5)).toEqual({ kind: "retired" });
+    expect(planCardCategory(card({ retired: true }), null, 0.5)).toEqual({ kind: "retired" });
+  });
+
+  it("never flags an Abandoned Lore article for review: the apply retires it", () => {
+    const abandoned = { ...read, categories: [...read.categories, "Category:Abandoned Lore"] };
+    expect(planCardCategory(card(), abandoned, 1.01)).toMatchObject({
+      kind: "write",
+      needsReview: false,
+    });
+  });
 
   it("leaves a card whose wiki stopped answering for the next run, never Uncategorised", () => {
     expect(planCardCategory(card(), null, 0.5)).toEqual({ kind: "unread" });
@@ -376,6 +391,49 @@ describe("buildBackfillReport", () => {
       ["Urcea", 1],
     ]);
     expect(report.unmappedInfoboxes).toEqual([["infobox thing", 1]]);
+  });
+
+  it("counts the retired it skips, and lists the Abandoned Lore cards apart from the review", () => {
+    const abandoned: PageSignals = {
+      categories: ["Category:Abandoned Lore"],
+      templates: [],
+      missing: false,
+    };
+    const rows = [
+      {
+        card: card({ id: "r", title: "History of Ixnay", retired: true }),
+        decision: { kind: "retired" as const },
+        signals: null,
+      },
+      {
+        card: card({ id: "a", title: "Gone Lore" }),
+        decision: write("MILITARY", 0.2),
+        signals: abandoned,
+      },
+      {
+        card: card({ id: "p", title: "Kept Lore", categorySource: "ADMIN" }),
+        decision: { kind: "protected" as const },
+        signals: abandoned,
+      },
+      {
+        card: card({ id: "x", title: "Retired Lore", retired: true }),
+        decision: { kind: "retired" as const },
+        signals: abandoned,
+      },
+    ];
+    const report = buildBackfillReport(rows, meta);
+    expect(report.counts).toMatchObject({ retired: 2, abandoned: 2, review: 0, writes: 1 });
+    expect(report.abandoned).toEqual([
+      { id: "a", title: "Gone Lore", source: "ixwiki" },
+      { id: "p", title: "Kept Lore", source: "ixwiki" },
+    ]);
+    expect(report.cardsPerSource).toEqual({ ixwiki: 2 });
+    expect(report.distribution.overall).toEqual({ MILITARY: 1, UNCATEGORISED: 1 });
+    const text = renderBackfillReport(report);
+    expect(text).toContain("- Retired, skipped: 2");
+    expect(text).toContain("## Abandoned Lore");
+    expect(text).toContain("| Gone Lore | ixwiki |");
+    expect(text).not.toContain("History of Ixnay");
   });
 
   it("escapes a table cell's pipe in the markdown", () => {

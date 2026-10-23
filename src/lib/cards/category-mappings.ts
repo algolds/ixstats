@@ -370,14 +370,26 @@ export const SHARED_CATEGORY_RULES: readonly CategoryRule[] = [
   ),
 ];
 
+/**
+ * The community wikis' shared conventions: a nation's security or defence force (its whole armed forces, so no
+ * subcategory: "Army of" beside it names one), its federal subjects.
+ */
+const COMMUNITY_RULES: readonly CategoryRule[] = [
+  rule("MILITARY", null, /\b(?:security|defen[cs]e) forces?\b/i),
+  rule("GEOGRAPHY", "region-or-province", /\bfederal subjects\b/i),
+  rule("GOVERNMENT", null, /^politics$/i),
+  rule("CULTURE", null, /^ethnic groups\b/i),
+];
+
 /** Each wiki's own category conventions, read before the shared rules. */
 export const WIKI_CATEGORY_RULES: Partial<Record<CardWikiSource, readonly CategoryRule[]>> = {
   ixwiki: [
     rule("GEOGRAPHY", "region-or-province", /\b(?:subdivisions|estates|states) of\b/i),
     rule("NATION", "nation", /\bnpc countries\b/i),
     rule("ECONOMY", "company", /\bbrands\b/i),
+    ...COMMUNITY_RULES,
   ],
-  iiwiki: [rule("GEOGRAPHY", "region-or-province", /\bstates of\b/i)],
+  iiwiki: [rule("GEOGRAPHY", "region-or-province", /\bstates of\b/i), ...COMMUNITY_RULES],
   althistory: [rule("HISTORY", "era-or-period", /\btimelines\b/i)],
   commons: [rule("NATION", "nation", /\b(?:flags|coats of arms|banners) of\b/i)],
 };
@@ -408,6 +420,19 @@ export function infoboxTarget(template: string): { target: InfoboxTarget; exact:
 }
 
 const categoryKey = (name: string) => name.replace(/^\s*category\s*:/i, "").trim();
+
+/** The IxWiki maintenance category of lore its authors gave up on: such an article is not a card. */
+const ABANDONED_LORE = "abandoned lore";
+
+/** Whether an article's categories (`Category:` or not, `{ title }` or a name) include Abandoned Lore, in any case. */
+export function isAbandonedLore(categories: ReadonlyArray<string | { title: string }>): boolean {
+  return categories.some(
+    (entry) =>
+      categoryKey(typeof entry === "string" ? entry : entry.title)
+        .replace(/_/g, " ")
+        .toLowerCase() === ABANDONED_LORE
+  );
+}
 
 /**
  * Every lore category a wiki category names, each with the subcategory of its first matching rule (the wiki's own

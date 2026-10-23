@@ -148,6 +148,17 @@ describe("generateCard for IxWiki", () => {
       mocked.wikiArticle.findMany.mock.calls.some(([args]) => args.where.status === "ARCHIVED")
     ).toBe(true);
   });
+  it("refuses an article tagged Abandoned Lore, in any case", async () => {
+    mocked.wikiCategoryMember.findMany.mockResolvedValue([
+      { category: { name: "Countries" } },
+      { category: { name: "abandoned lore" } },
+    ]);
+    await expect(wikiLoreCardGenerator.generateCard("Caphiria", "ixwiki")).rejects.toMatchObject({
+      name: "ArticleRejected",
+      kind: "abandoned",
+      message: "Its article is tagged Abandoned Lore",
+    });
+  });
   it("refuses a page Postgres lacks or has deleted, without asking a wiki", async () => {
     mocked.wikiArticle.findFirst.mockResolvedValue(null);
 

@@ -2,8 +2,9 @@
  * The categories backfill's pure half (the script is `scripts/cards/backfill-card-categories.ts`):
  *   - `collectPageSignals` reads a 50-title `prop=categories|templates` request whole, every continuation answer
  *     merged per page, each requested title found under its normalized and redirected name;
- *   - `planCardCategory` decides one card: an admin-, realm-owner- or suggestion-set category is never planned over,
- *     a card whose wiki stopped answering waits for the next run, and the rest are classified;
+ *   - `planCardCategory` decides one card: a retired card is skipped, an admin-, realm-owner- or suggestion-set
+ *     category is never planned over, a card whose wiki stopped answering waits for the next run, and the rest are
+ *     classified (an article tagged Abandoned Lore never for review: the apply retires it);
  *   - `buildBackfillReport` and `renderBackfillReport` are the dry run's report, from which the owner reads the
  *     review threshold and the classifier's gaps.
  */
@@ -12,7 +13,7 @@ import { z } from "zod";
 import type { CardWikiSource } from "./card-sources";
 import { classifyLoreArticle, type CategoryClassification } from "./category-classifier";
 import { UNCATEGORISED, type CategoryFilterValue, type LoreCategory } from "./category-enums";
-import { unmappedCategories, unmappedInfoboxes } from "./category-mappings";
+import { isAbandonedLore, unmappedCategories, unmappedInfoboxes } from "./category-mappings";
 import { getCategoryFilterLabel } from "./category-theme";
 import { categoryLine, subcategoryLabel } from "./category-taxonomy";
 
@@ -117,9 +118,12 @@ export interface BackfillCard {
   subcategory: string | null;
   categorySource: string | null;
   hasLegacyLabel: boolean;
+  retired: boolean;
 }
 
 export type BackfillDecision =
+  /** A retired card: the backfill neither classifies nor reports it. */
+  | { kind: "retired" }
   | { kind: "protected" }
   /** A classifier category from an earlier run, left as it is without `--reclassify`. */
   | { kind: "kept" }
@@ -144,6 +148,7 @@ export function planCardCategory(
   threshold: number,
   { reclassify = false }: { reclassify?: boolean } = {}
 ): BackfillDecision {
+  if (card.retired) return { kind: "retired" };
   if (isProtected(card.categorySource)) return { kind: "protected" };
   if (card.categorySource === "CLASSIFIER" && !reclassify) return { kind: "kept" };
   if (card.articleTitle !== null && signals === null) return { kind: "unread" };
@@ -154,10 +159,12 @@ export function planCardCategory(
     templates: signals?.templates,
     source: card.source,
   });
+  const abandoned = isAbandonedLore(signals?.categories ?? []);
   return {
     kind: "write",
     classification,
-    needsReview: classification.category === null || classification.confidence < threshold,
+    needsReview:
+      !abandoned && (classification.category === null || classification.confidence < threshold),
     changed:
       classification.category !== card.category || classification.subcategory !== card.subcategory,
   };
@@ -168,6 +175,13 @@ export interface BackfillRow {
   decision: BackfillDecision;
   signals: PageSignals | null;
 }
+
+/** The cards not yet retired whose article is tagged Abandoned Lore: the apply retires them. */
+export const abandonedRows = (rows: readonly BackfillRow[]): BackfillRow[] =>
+  rows.filter(
+    ({ decision, signals }) =>
+      decision.kind !== "retired" && signals !== null && isAbandonedLore(signals.categories)
+  );
 
 export interface BackfillReportMeta {
   threshold: number;
@@ -186,6 +200,9 @@ interface ReportCard {
 export interface BackfillReport extends BackfillReportMeta {
   cardsPerSource: Partial<Record<CardWikiSource, number>>;
   counts: {
+    /** Retired cards, skipped: every other figure leaves them out. */
+    retired: number;
+    abandoned: number;
     protected: number;
     kept: number;
     unread: number;
@@ -212,6 +229,8 @@ export interface BackfillReport extends BackfillReportMeta {
   /** Writes that move a card from one category to another (or to none). */
   changes: Array<ReportCard & { from: string; to: string }>;
   unread: ReportCard[];
+  /** Cards tagged Abandoned Lore, which the apply retires (none of them waits for review). */
+  abandoned: Array<ReportCard & { id: string }>;
   unmappedCategories: Array<[string, number]>;
   unmappedInfoboxes: Array<[string, number]>;
   /** The `metadata.category` labels an apply deletes: with its writes, and by the final sweep when it runs. */
@@ -307,9 +326,11 @@ function unmappedOf(rows: readonly BackfillRow[]) {
 const isWrite = (row: BackfillRow): row is WriteRow => row.decision.kind === "write";
 
 export function buildBackfillReport(
-  rows: readonly BackfillRow[],
+  allRows: readonly BackfillRow[],
   meta: BackfillReportMeta
 ): BackfillReport {
+  const rows = allRows.filter(({ decision }) => decision.kind !== "retired");
+  const abandoned = abandonedRows(rows);
   const cardsPerSource: BackfillReport["cardsPerSource"] = {};
   for (const { card } of rows) bump(cardsPerSource, card.source);
   const ofKind = (kind: BackfillDecision["kind"]) =>
@@ -323,6 +344,8 @@ export function buildBackfillReport(
     ...meta,
     cardsPerSource,
     counts: {
+      retired: allRows.length - rows.length,
+      abandoned: abandoned.length,
       protected: ofKind("protected").length,
       kept: ofKind("kept").length,
       unread: unread.length,
@@ -338,6 +361,11 @@ export function buildBackfillReport(
     belowThreshold: lists.belowThreshold,
     changes: lists.changes,
     unread: unread.map(({ card }) => ({ title: card.title, source: card.source })),
+    abandoned: abandoned.map(({ card }) => ({
+      id: card.id,
+      title: card.title,
+      source: card.source,
+    })),
     ...unmappedOf(rows),
     legacyLabels: {
       onWrites: writes.filter(({ card }) => card.hasLegacyLabel).length,
@@ -375,6 +403,8 @@ function runSection(report: BackfillReport): string[] {
     "## Run",
     `- Mode: ${report.mode === "apply" ? "apply" : "dry run (nothing written)"}`,
     `- Review threshold: ${report.threshold}`,
+    `- Retired, skipped: ${counts.retired}`,
+    `- Abandoned Lore (the apply retires them; none is for review): ${counts.abandoned}`,
     `- Protected (set by an admin, a realm owner or a suggestion): ${counts.protected}`,
     `- Kept (classified by an earlier run; --reclassify redoes them): ${counts.kept}`,
     `- To write: ${counts.writes} (${counts.review} for review, ${counts.changes} changing a category, ${counts.subcategoryOnly} only a subcategory)`,
@@ -474,6 +504,14 @@ function listSections(report: BackfillReport): string[] {
     ...table(
       ["Title", "Source", "From", "To"],
       report.changes.map(({ title, source, from, to }) => [title, source, from, to])
+    ),
+    "",
+    "## Abandoned Lore",
+    "Cards whose article is tagged Abandoned Lore. The apply retires them; their held copies are kept.",
+    "",
+    ...table(
+      ["Title", "Source"],
+      report.abandoned.map(({ title, source }) => [title, source])
     ),
     "",
     "## Not read",

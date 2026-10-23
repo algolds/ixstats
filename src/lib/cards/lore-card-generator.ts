@@ -18,9 +18,15 @@ import { LORE_CATEGORIES } from "~/lib/lorewards";
 import type { CardAuthorInfo } from "~/types/cards-display";
 import type { LoreCategory as LoreCategoryType } from "./category-enums";
 import { classifyLoreArticle, type CategoryClassification } from "./category-classifier";
+import { isAbandonedLore } from "./category-mappings";
 import { fileNameFromArtworkUrl } from "./art-licence";
 import { cardSourceLabel, type CardArticleSource } from "./card-sources";
-import { ArticleRejected, NOT_ARTICLE_REASON, type LoreCardCandidate } from "./lore-card-candidate";
+import {
+  ABANDONED_LORE_REASON,
+  ArticleRejected,
+  NOT_ARTICLE_REASON,
+  type LoreCardCandidate,
+} from "./lore-card-candidate";
 import { readsPostgres } from "./lore-card-discovery";
 import { qualityScore, type ArticleSignals } from "./rarity-engine";
 import { BOT_REGEX, cleanWikiUsername } from "./lore-card-author-info";
@@ -120,6 +126,9 @@ class WikiLoreCardGenerator {
         "missing",
         `"${articleTitle}" was not found on ${cardSourceLabel(wikiSource)}.`
       );
+    }
+    if (isAbandonedLore(articleData.categories ?? [])) {
+      throw new ArticleRejected("abandoned", ABANDONED_LORE_REASON);
     }
     if (options.requireImage && !articleData.image) {
       throw new ArticleRejected("no-image", `"${articleTitle}" has no usable image.`);

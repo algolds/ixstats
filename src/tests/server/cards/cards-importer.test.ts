@@ -14,7 +14,11 @@ jest.mock("~/server/modules/cards/cards.art-licence", () => ({
 
 import { Prisma } from "@prisma/client";
 import { wikiLoreCardGenerator } from "~/lib/cards/lore-card-generator";
-import { type LoreCardCandidate } from "~/lib/cards/lore-card-candidate";
+import {
+  ABANDONED_LORE_REASON,
+  ArticleRejected,
+  type LoreCardCandidate,
+} from "~/lib/cards/lore-card-candidate";
 import {
   captureArtLicence,
   fileCategories,
@@ -115,6 +119,14 @@ describe("stageArticleCard", () => {
       status: "BLOCKED",
       reason: "Its art is licensed CC BY-NC-SA 4.0, which does not allow commercial use or changes",
     });
+    expect(db.card.create).not.toHaveBeenCalled();
+  });
+  it("refuses to stage an article tagged Abandoned Lore, saying so", async () => {
+    const db = makeDb();
+    generateCard.mockRejectedValue(new ArticleRejected("abandoned", ABANDONED_LORE_REASON));
+    const outcome = await stageArticleCard(db as never, "ixwiki", input("Old Draft"), context);
+    expect(outcome).toEqual({ status: "SKIPPED", reason: "Its article is tagged Abandoned Lore" });
+    expect(capture).not.toHaveBeenCalled();
     expect(db.card.create).not.toHaveBeenCalled();
   });
   it("reads a lost natural-key race as already a card", async () => {

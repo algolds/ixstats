@@ -59,7 +59,7 @@ export interface RealmCategoryListInput {
 const SHOW_WHERE: Record<RealmCategoryShow, Prisma.CardWhereInput> = {
   all: {},
   uncategorised: { category: null },
-  review: { categoryNeedsReview: true },
+  review: { categoryNeedsReview: true, isRetired: false },
 };
 
 /** The realm's lore cards with their category, by title. */
