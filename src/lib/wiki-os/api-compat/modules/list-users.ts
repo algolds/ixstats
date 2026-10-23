@@ -1,8 +1,9 @@
 /**
  * list-users.ts — `list=allusers|blocks|protectedtitles` (plan 410).
  *
- * Users are the accounts with a verified wiki link; their groups are the explicit memberships
- * (`wiki_user_groups`), plus the implicit `*` and `user` that every listed account has.
+ * Users are the accounts with a passport handle, listed by handle; their groups are the explicit memberships
+ * (`wiki_user_groups`, by account or through a rights-passing claimed name), plus the implicit `*` and `user` that
+ * every listed account has.
  */
 
 import { encodeCursor, optionalCursor, takePage } from "../continuation";

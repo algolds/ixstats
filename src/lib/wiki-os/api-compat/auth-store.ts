@@ -2,12 +2,14 @@
  * auth-store.ts — the Prisma side of bot-password logins (plan 410): `WikiBotPassword`,
  * `WikiApiSession`, and the WikiOS user a session or a browser login names.
  *
- * A user is known to api.php by their VERIFIED wiki link (`WikiAccountLink`): the bot logs in as that
- * wiki name, and a save is attributed to it. Nobody without a verified link can log in.
+ * A bot password belongs to the account (IxnayID design decision 11). api.php knows a user by their passport
+ * handle: a bot logs in as `handle@App`, a save is signed with the handle, and an approved claimed name (hidden
+ * or shown) also logs in as an alias, so bots set up under an old wiki name keep running. An account without a
+ * handle cannot log in.
  */
 
 import { db } from "~/server/db";
-import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import { accountOfWikiName, namesOfUser } from "~/lib/identity/wiki-names";
 import type { AuthStore, SessionUser } from "./types";
 
 /**
@@ -25,11 +27,11 @@ export function syntheticUserId(userId: string): number {
 }
 
 /**
- * The user `userId` with their verified wiki name and passport handle (the name a save is signed with), as the
- * permission services read them; null without a verified link.
+ * The user `userId` named by their passport handle, as the permission services read them, with their first
+ * claimed name's MediaWiki id when it is known; null without a handle.
  */
 export async function loadSessionUser(userId: string): Promise<SessionUser | null> {
-  const [user, link] = await Promise.all([
+  const [user, names] = await Promise.all([
     db.user.findUnique({
       where: { id: userId },
       select: {
@@ -40,22 +42,18 @@ export async function loadSessionUser(userId: string): Promise<SessionUser | nul
         role: { select: { id: true, name: true, level: true } },
       },
     }),
-    db.wikiAccountLink.findFirst({
-      where: { userId, source: "ixwiki", verifiedAt: { not: null } },
-      select: { username: true, wikiUserId: true },
-    }),
+    namesOfUser(db, userId),
   ]);
-  if (!user || !link) return null;
+  if (!user?.handle) return null;
   return {
-    name: link.username,
-    mwUserId: link.wikiUserId ?? syntheticUserId(user.id),
+    name: user.handle,
+    mwUserId: names[0]?.mwUserId ?? syntheticUserId(user.id),
     ctx: {
       auth: { userId: user.clerkUserId },
       user: {
         id: user.id,
         clerkUserId: user.clerkUserId,
         handle: user.handle,
-        wikiUsername: link.username,
         createdAt: user.createdAt,
         role: user.role,
       },
@@ -63,22 +61,26 @@ export async function loadSessionUser(userId: string): Promise<SessionUser | nul
   };
 }
 
+/**
+ * The account a bot's login name stands for: the account whose handle it is, as typed; else the account
+ * `accountOfWikiName` finds (an approved claim of any visibility, then the handle the name spells). The typed
+ * handle comes first so a handle still logs in when another account has claimed the wiki name it spells
+ * (`old_name` against `Old name`).
+ */
+async function accountOfLogin(loginName: string): Promise<string | null> {
+  const byHandle = await db.user.findUnique({ where: { handle: loginName }, select: { id: true } });
+  return byHandle?.id ?? (await accountOfWikiName(db, loginName))?.userId ?? null;
+}
+
 export const prismaAuthStore: AuthStore = {
-  async findBotPassword(wikiUsername, appId) {
-    const link = await db.wikiAccountLink.findFirst({
-      where: {
-        source: "ixwiki",
-        username: normalizeWikiUsername(wikiUsername),
-        verifiedAt: { not: null },
-      },
-      select: { userId: true },
-    });
-    if (!link) return null;
+  async findBotPassword(loginName, appId) {
+    const userId = await accountOfLogin(loginName);
+    if (!userId) return null;
     const botPassword = await db.wikiBotPassword.findUnique({
-      where: { userId_appId: { userId: link.userId, appId } },
+      where: { userId_appId: { userId, appId } },
       select: { id: true, userId: true, appId: true, passwordHash: true, grants: true },
     });
-    const user = botPassword ? await loadSessionUser(link.userId) : null;
+    const user = botPassword ? await loadSessionUser(userId) : null;
     return botPassword && user ? { botPassword, user } : null;
   },
 

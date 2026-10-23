@@ -2,31 +2,16 @@
 /**
  * Plan 410: bot passwords (scrypt), sessions, tokens, cookie flags, login/logout, how the caller is
  * resolved, and the grant intersection (effective rights = the user's rights ∩ the grants' rights).
- * The Prisma side of bot logins: only a verified wiki link identifies a user, and sessions are pruned.
+ * The Prisma side of bot logins (IxnayID design decision 11): a bot logs in as `handle@App`, an approved
+ * claimed name is an alias of the same account, and an account without a handle cannot log in.
  *
- * Folds auth-store, in its own block.
+ * Folds auth-store, in its own block, against an in-memory Prisma.
  */
+let mockDb: unknown;
 jest.mock("~/server/db", () => ({
   __esModule: true,
-  db: {
-    wikiAccountLink: { findFirst: jest.fn() },
-    wikiNameClaim: {
-      findMany: jest.fn().mockResolvedValue([]),
-      findFirst: jest.fn().mockResolvedValue(null),
-    },
-    wikiUserGroup: { findMany: jest.fn() },
-    wikiBlock: { findMany: jest.fn() },
-    wikiRevision: { count: jest.fn() },
-    wikiRestriction: { findMany: jest.fn() },
-    user: { findUnique: jest.fn() },
-    wikiBotPassword: { findUnique: jest.fn(), update: jest.fn() },
-    wikiApiSession: {
-      create: jest.fn(),
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      updateMany: jest.fn(),
-      deleteMany: jest.fn(),
-    },
+  get db() {
+    return mockDb;
   },
 }));
 jest.mock("~/lib/auth", () => ({
@@ -69,13 +54,26 @@ import type {
 } from "~/lib/wiki-os/api-compat/types";
 import { authorizeAction } from "~/lib/wiki-os/permissions";
 import { capWikiPermissions, getWikiPermissions, type Right } from "~/lib/wiki-os/rights";
-import { db } from "~/server/db";
-
 import {
   prismaAuthStore,
   loadSessionUser,
   syntheticUserId,
 } from "~/lib/wiki-os/api-compat/auth-store";
+import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-prisma";
+
+/** The client the rights engine reads in the grant tests. */
+const jestDb = {
+  wikiNameClaim: {
+    findMany: jest.fn().mockResolvedValue([]),
+    findFirst: jest.fn().mockResolvedValue(null),
+  },
+  wikiUserGroup: { findMany: jest.fn() },
+  wikiBlock: { findMany: jest.fn() },
+  wikiRevision: { count: jest.fn() },
+  wikiRestriction: { findMany: jest.fn() },
+  user: { findUnique: jest.fn() },
+};
+mockDb = jestDb;
 
 const NOW = new Date("2026-09-30T12:00:00Z");
 const sysopUser: SessionUser = {
@@ -165,12 +163,10 @@ describe("grants", () => {
   describe("capWikiPermissions: effective rights = user rights ∩ grant rights", () => {
     beforeEach(() => {
       jest.clearAllMocks();
-      (db.wikiUserGroup.findMany as jest.Mock).mockResolvedValue([
-        { group: "sysop", expiresAt: null },
-      ]);
-      (db.wikiBlock.findMany as jest.Mock).mockResolvedValue([]);
-      (db.wikiRevision.count as jest.Mock).mockResolvedValue(0);
-      (db.wikiRestriction.findMany as jest.Mock).mockResolvedValue([]);
+      jestDb.wikiUserGroup.findMany.mockResolvedValue([{ group: "sysop", expiresAt: null }]);
+      jestDb.wikiBlock.findMany.mockResolvedValue([]);
+      jestDb.wikiRevision.count.mockResolvedValue(0);
+      jestDb.wikiRestriction.findMany.mockResolvedValue([]);
     });
 
     const makeCtx = () => ({
@@ -190,7 +186,7 @@ describe("grants", () => {
       expect(capped.rights.has("block")).toBe(false);
       // a grant never gives a right the user lacks
       const ctx3 = makeCtx();
-      (db.wikiUserGroup.findMany as jest.Mock).mockResolvedValue([]);
+      jestDb.wikiUserGroup.findMany.mockResolvedValue([]);
       const plain = await capWikiPermissions(ctx3, rightsForGrants(["delete", "editpage"]));
       expect(plain.rights.has("delete")).toBe(false);
       expect(plain.rights.has("edit")).toBe(true);
@@ -437,32 +433,57 @@ describe("resolveSession", () => {
 });
 
 describe("the Prisma auth store", () => {
-  const mdb = db as unknown as {
-    user: { findUnique: jest.Mock };
-    wikiAccountLink: { findFirst: jest.Mock };
-    wikiBotPassword: { findUnique: jest.Mock; update: jest.Mock };
-    wikiApiSession: Record<
-      "create" | "findUnique" | "findMany" | "updateMany" | "deleteMany",
-      jest.Mock
-    >;
-  };
+  let mem: MemoryPrisma;
+  const CREATED = new Date("2020-01-01T00:00:00Z");
 
-  const userRow = {
-    id: "u1",
-    clerkUserId: "user_clerk",
-    handle: "heku",
-    createdAt: new Date("2020-01-01T00:00:00Z"),
-    role: { id: "r", name: "admin", level: 1 },
-  };
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mdb.user.findUnique.mockResolvedValue(userRow);
-    mdb.wikiAccountLink.findFirst.mockResolvedValue({
-      username: "Heku",
-      wikiUserId: 77,
-      userId: "u1",
+  const claim = (userId: string, name: string, over: object = {}) =>
+    mem.wikiNameClaim.create({
+      data: {
+        userId,
+        name,
+        status: "APPROVED",
+        origin: "PLAYER",
+        requestedById: userId,
+        decidedAt: new Date("2026-10-01T00:00:00Z"),
+        ...over,
+      },
     });
+
+  const botPassword = async (userId: string, password: string, appId = "Bot") =>
+    mem.wikiBotPassword.create({
+      data: { userId, appId, passwordHash: await hashBotPassword(password), grants: ["basic"] },
+    });
+
+  const login = (name: string, password: string) =>
+    loginWithBotPassword(prismaAuthStore, { name, password, now: NOW }, "/w/");
+
+  /** The api.php session a successful login's cookie opens. */
+  async function sessionOf(outcome: Awaited<ReturnType<typeof login>>): Promise<ApiSession> {
+    if (outcome.result !== "Success") throw new Error(`login failed: ${outcome.reason}`);
+    const identity = { sessionCookie: outcome.cookie.value, webAuthId: null, anonymousName: "x" };
+    return resolveSession(identity, prismaAuthStore, async () => permissionsOf(["read"]), NOW);
+  }
+
+  beforeEach(async () => {
+    mockDb = mem = createMemoryPrisma();
+    const role = await mem.role.create({
+      data: { name: "member", displayName: "Member", level: 100 },
+    });
+    await mem.user.create({
+      data: {
+        id: "a",
+        clerkUserId: "user_a",
+        handle: "alpha",
+        roleId: role.id,
+        createdAt: CREATED,
+      },
+    });
+    await mem.user.create({ data: { id: "b", clerkUserId: "user_b" } });
+    await claim("a", "Old name", { mwUserId: 77, visible: false });
+  });
+
+  afterAll(() => {
+    mockDb = jestDb;
   });
 
   describe("syntheticUserId", () => {
@@ -477,159 +498,130 @@ describe("the Prisma auth store", () => {
   });
 
   describe("loadSessionUser", () => {
-    it("builds the context the permission services read, named by the verified wiki account", async () => {
-      const user = await loadSessionUser("u1");
-      expect(user).toEqual({
-        name: "Heku",
+    it("names the user by their passport handle, with their first claimed name's MediaWiki id", async () => {
+      const role = await mem.role.findFirst({ select: { id: true, name: true, level: true } });
+      expect(await loadSessionUser("a")).toEqual({
+        name: "alpha",
         mwUserId: 77,
         ctx: {
-          auth: { userId: "user_clerk" },
-          user: {
-            id: "u1",
-            clerkUserId: "user_clerk",
-            handle: "heku",
-            wikiUsername: "Heku",
-            createdAt: userRow.createdAt,
-            role: userRow.role,
-          },
+          auth: { userId: "user_a" },
+          user: { id: "a", clerkUserId: "user_a", handle: "alpha", createdAt: CREATED, role },
         },
-      });
-      expect(mdb.wikiAccountLink.findFirst.mock.calls[0]![0].where).toEqual({
-        userId: "u1",
-        source: "ixwiki",
-        verifiedAt: { not: null },
       });
     });
 
-    it("falls back to a synthetic id when MediaWiki never gave one, and is null without a verified link or user", async () => {
-      mdb.wikiAccountLink.findFirst.mockResolvedValue({
-        username: "Heku",
-        wikiUserId: null,
-        userId: "u1",
-      });
-      expect((await loadSessionUser("u1"))?.mwUserId).toBe(syntheticUserId("u1"));
-      mdb.wikiAccountLink.findFirst.mockResolvedValue(null);
-      expect(await loadSessionUser("u1")).toBeNull();
-      mdb.wikiAccountLink.findFirst.mockResolvedValue({
-        username: "Heku",
-        wikiUserId: 1,
-        userId: "u1",
-      });
-      mdb.user.findUnique.mockResolvedValue(null);
-      expect(await loadSessionUser("u1")).toBeNull();
+    it("falls back to a synthetic id without a claimed MediaWiki id, and is null without a handle or a user", async () => {
+      await mem.wikiNameClaim.deleteMany({});
+      expect((await loadSessionUser("a"))?.mwUserId).toBe(syntheticUserId("a"));
+      await claim("b", "Bee", { mwUserId: 5 });
+      expect(await loadSessionUser("b")).toBeNull();
+      expect(await loadSessionUser("nobody")).toBeNull();
     });
   });
 
-  describe("prismaAuthStore", () => {
-    it("finds a bot password through the verified link of the normalized wiki name", async () => {
-      mdb.wikiBotPassword.findUnique.mockResolvedValue({
-        id: "bp1",
-        userId: "u1",
-        appId: "Bot",
-        passwordHash: "scrypt$a$b",
-        grants: ["basic"],
-      });
-      const found = await prismaAuthStore.findBotPassword("heku_x", "Bot");
-      expect(mdb.wikiAccountLink.findFirst.mock.calls[0]![0].where).toEqual({
-        source: "ixwiki",
-        username: "Heku x",
-        verifiedAt: { not: null },
-      });
-      expect(mdb.wikiBotPassword.findUnique.mock.calls[0]![0].where).toEqual({
-        userId_appId: { userId: "u1", appId: "Bot" },
-      });
-      expect(found?.botPassword.id).toBe("bp1");
-      expect(found?.user.name).toBe("Heku");
+  describe("bot logins", () => {
+    beforeEach(async () => {
+      await botPassword("a", "alpha-secret");
     });
 
-    it("finds nothing for an unlinked name or a missing bot password", async () => {
-      mdb.wikiAccountLink.findFirst.mockResolvedValueOnce(null);
-      expect(await prismaAuthStore.findBotPassword("Nobody", "Bot")).toBeNull();
-      mdb.wikiBotPassword.findUnique.mockResolvedValue(null);
-      expect(await prismaAuthStore.findBotPassword("Heku", "Nope")).toBeNull();
+    it("lets a bot log in as handle@App and as a claimed name@App, both as the same user named by the handle", async () => {
+      const byHandle = await login("alpha@Bot", "alpha-secret");
+      const byAlias = await login("Old_name@Bot", "alpha-secret");
+      expect(byHandle).toMatchObject({ result: "Success", username: "alpha", userId: 77 });
+      expect(byAlias).toMatchObject({ result: "Success", username: "alpha", userId: 77 });
+      for (const session of [await sessionOf(byHandle), await sessionOf(byAlias)]) {
+        expect(session).toMatchObject({ kind: "bot", name: "alpha", userId: 77 });
+        expect(session.ctx.user).toMatchObject({ id: "a", handle: "alpha" });
+      }
     });
 
-    it("creates, reads, extends and deletes sessions", async () => {
-      await prismaAuthStore.createSession({
-        id: "s1",
-        botPasswordId: "bp1",
-        userId: "u1",
-        expiresAt: new Date("2030-01-01T00:00:00Z"),
-      });
-      expect(mdb.wikiApiSession.create.mock.calls[0]![0].data).toMatchObject({
-        id: "s1",
-        botPasswordId: "bp1",
-        userId: "u1",
-      });
+    it("refuses a pending claim's name, a wrong password and an unknown app id", async () => {
+      await claim("a", "Pending name", { status: "PENDING", decidedAt: null });
+      expect((await login("Pending name@Bot", "alpha-secret")).result).toBe("Failed");
+      expect((await login("alpha@Bot", "wrong")).result).toBe("Failed");
+      expect((await login("alpha@Nope", "alpha-secret")).result).toBe("Failed");
+      expect(await mem.wikiApiSession.count()).toBe(0);
+    });
 
-      mdb.wikiApiSession.findUnique.mockResolvedValue({
-        id: "s1",
-        botPasswordId: "bp1",
-        userId: "u1",
-        expiresAt: new Date("2030-01-01T00:00:00Z"),
-        botPassword: { grants: ["basic", "editpage"] },
+    it("refuses an account with no handle, even through its approved claimed name", async () => {
+      await claim("b", "Bee");
+      await botPassword("b", "bee-secret");
+      expect((await login("Bee@Bot", "bee-secret")).result).toBe("Failed");
+    });
+
+    it("lets a handle log in as itself when another account has claimed the name it spells", async () => {
+      await mem.user.create({ data: { id: "c", clerkUserId: "user_c", handle: "old_name" } });
+      await botPassword("c", "c-secret");
+      expect(await login("old_name@Bot", "c-secret")).toMatchObject({
+        result: "Success",
+        username: "old_name",
       });
+      expect(await login("Old name@Bot", "alpha-secret")).toMatchObject({
+        result: "Success",
+        username: "alpha",
+      });
+    });
+  });
+
+  describe("sessions", () => {
+    it("creates, reads, extends and deletes sessions, and drops a session whose user lost their handle", async () => {
+      const { id: botPasswordId } = await botPassword("a", "alpha-secret");
+      const expiresAt = new Date("2030-01-01T00:00:00Z");
+      await prismaAuthStore.createSession({ id: "s1", botPasswordId, userId: "a", expiresAt });
       const found = await prismaAuthStore.findSession("s1");
       expect(found?.session).toEqual({
         id: "s1",
-        botPasswordId: "bp1",
-        userId: "u1",
-        expiresAt: new Date("2030-01-01T00:00:00Z"),
-        grants: ["basic", "editpage"],
+        botPasswordId,
+        userId: "a",
+        expiresAt,
+        grants: ["basic"],
       });
-      expect(found?.user.name).toBe("Heku");
+      expect(found?.user.name).toBe("alpha");
 
       await prismaAuthStore.extendSession("s1", new Date("2031-01-01T00:00:00Z"));
-      expect(mdb.wikiApiSession.updateMany).toHaveBeenCalledWith({
-        where: { id: "s1" },
-        data: { expiresAt: new Date("2031-01-01T00:00:00Z") },
-      });
-      await prismaAuthStore.deleteSession("s1");
-      expect(mdb.wikiApiSession.deleteMany).toHaveBeenCalledWith({ where: { id: "s1" } });
+      expect((await prismaAuthStore.findSession("s1"))?.session.expiresAt).toEqual(
+        new Date("2031-01-01T00:00:00Z")
+      );
 
-      mdb.wikiApiSession.findUnique.mockResolvedValue(null);
+      await mem.user.update({ where: { id: "a" }, data: { handle: null } });
+      expect(await prismaAuthStore.findSession("s1")).toBeNull();
+
+      await prismaAuthStore.deleteSession("s1");
+      expect(await mem.wikiApiSession.count()).toBe(0);
       expect(await prismaAuthStore.findSession("gone")).toBeNull();
     });
 
     it("records when a bot password was last used, and finds a browser user by Clerk id", async () => {
-      await prismaAuthStore.touchBotPassword("bp1", new Date("2026-09-30T12:00:00Z"));
-      expect(mdb.wikiBotPassword.update.mock.calls[0]![0]).toMatchObject({
-        where: { id: "bp1" },
-        data: { lastUsedAt: new Date("2026-09-30T12:00:00Z") },
-      });
-      expect((await prismaAuthStore.findWebUser("user_clerk"))?.name).toBe("Heku");
-      expect(mdb.user.findUnique.mock.calls[0]![0].where).toEqual({ clerkUserId: "user_clerk" });
-      mdb.user.findUnique.mockResolvedValueOnce(null);
+      const { id } = await botPassword("a", "alpha-secret");
+      await prismaAuthStore.touchBotPassword(id, NOW);
+      expect((await mem.wikiBotPassword.findUnique({ where: { id } }))?.lastUsedAt).toEqual(NOW);
+      expect((await prismaAuthStore.findWebUser("user_a"))?.name).toBe("alpha");
+      expect(await prismaAuthStore.findWebUser("user_b")).toBeNull();
       expect(await prismaAuthStore.findWebUser("user_unknown")).toBeNull();
     });
-  });
 
-  describe("pruneSessions", () => {
-    const now = new Date("2026-09-30T12:00:00Z");
+    it("prunes expired sessions, and the oldest ones past the cap for that bot password", async () => {
+      const { id: botPasswordId } = await botPassword("a", "alpha-secret");
+      const later = new Date(NOW.getTime() + SESSION_TTL_MS);
+      const add = (id: string, minutes: number, expiresAt = later) =>
+        mem.wikiApiSession.create({
+          data: {
+            id,
+            botPasswordId,
+            userId: "a",
+            expiresAt,
+            createdAt: new Date(NOW.getTime() + minutes * 60_000),
+          },
+        });
+      await add("expired", 0, new Date(NOW.getTime() - 1));
+      for (const [index, id] of ["old", "mid", "new"].entries()) await add(id, index + 1);
 
-    it("deletes expired sessions, and the oldest ones past the cap for that bot password", async () => {
-      mdb.wikiApiSession.findMany.mockResolvedValue([{ id: "old1" }, { id: "old2" }]);
-      await prismaAuthStore.pruneSessions("bp1", now, 20);
-      expect(mdb.wikiApiSession.deleteMany).toHaveBeenNthCalledWith(1, {
-        where: { expiresAt: { lt: now } },
-      });
-      expect(mdb.wikiApiSession.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { botPasswordId: "bp1" },
-          orderBy: { createdAt: "desc" },
-          skip: 20,
-          select: { id: true },
-        })
-      );
-      expect(mdb.wikiApiSession.deleteMany).toHaveBeenNthCalledWith(2, {
-        where: { id: { in: ["old1", "old2"] } },
-      });
-    });
+      await prismaAuthStore.pruneSessions(botPasswordId, NOW, 2);
+      const left = await mem.wikiApiSession.findMany({ select: { id: true } });
+      expect(left.map((row) => row.id).sort()).toEqual(["mid", "new"]);
 
-    it("deletes nothing more when the bot password is within its cap", async () => {
-      mdb.wikiApiSession.findMany.mockResolvedValue([]);
-      await prismaAuthStore.pruneSessions("bp1", now, 20);
-      expect(mdb.wikiApiSession.deleteMany).toHaveBeenCalledTimes(1);
+      await prismaAuthStore.pruneSessions(botPasswordId, NOW, 2);
+      expect(await mem.wikiApiSession.count()).toBe(2);
     });
   });
 });

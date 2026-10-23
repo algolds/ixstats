@@ -401,7 +401,7 @@ export interface ApiStore {
   listCategories(query: CategoryListQuery): Promise<CategorySummaryRow[]>;
   /** Up to `limit + 1` log entries. */
   findLogs(query: LogQuery): Promise<LogRow[]>;
-  /** Up to `limit + 1` users with a verified wiki account, in name order. */
+  /** Up to `limit + 1` accounts with a passport handle, in handle order. */
   listUsers(query: UserListQuery): Promise<UserListRow[]>;
   /** The blocks in force now, newest first: a page and the continuation. */
   listBlocks(

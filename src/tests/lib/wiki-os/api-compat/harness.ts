@@ -26,12 +26,13 @@ import { rightsForGroups, type Group, type Right } from "~/lib/wiki-os/rights";
 
 export const NOW = new Date("2026-09-30T12:00:00Z");
 
+/** The fake bot's user, as `loadSessionUser` builds one: named by the passport handle, which signs its saves. */
 export const HEKU: SessionUser = {
   name: "Heku",
   mwUserId: 7,
   ctx: {
     auth: { userId: "user_clerk_heku" },
-    user: { id: "u-heku", clerkUserId: "user_clerk_heku", handle: "Heku", wikiUsername: "Heku" },
+    user: { id: "u-heku", clerkUserId: "user_clerk_heku", handle: "Heku" },
   },
 };
 

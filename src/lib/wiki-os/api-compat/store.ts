@@ -26,9 +26,9 @@ import {
   listCategoryMembers,
   listPages,
   listProtectedTitles,
-  listUsers,
   randomPages,
 } from "./store-lists";
+import { authorIds, listUsers } from "./store-users";
 import { filesByName, listFiles } from "./store-files";
 import type {
   ApiStore,
@@ -66,7 +66,7 @@ async function statistics(): Promise<SiteStatistics> {
     db.wikiArticle.count({ where: { ...LIVE_PAGE, namespace: 0, redirectTargetSlug: null } }),
     db.wikiRevision.count({ where: { source: SOURCE, parked: false } }),
     db.wikiArticle.count({ where: { ...LIVE_PAGE, namespace: 6 } }),
-    db.wikiAccountLink.count({ where: { source: SOURCE, verifiedAt: { not: null } } }),
+    db.user.count({ where: { handle: { not: null } } }),
     db.wikiRevision.groupBy({
       by: ["author"],
       where: { source: SOURCE, parked: false, createdAt: { gte: since } },
@@ -218,26 +218,6 @@ async function parentIds(revIds: readonly number[]): Promise<Map<number, number>
     FROM "wiki_revisions" r
     WHERE r."source" = ${SOURCE} AND r."revId" IN (${Prisma.join(revIds)})`);
   return new Map(rows.map((row) => [row.revId, row.parentId ?? 0]));
-}
-
-/** The MediaWiki user id of each author name when a verified link records it. */
-async function authorIds(names: readonly string[]): Promise<Map<string, number>> {
-  const unique = [...new Set(names)];
-  if (unique.length === 0) return new Map();
-  const links = await db.wikiAccountLink.findMany({
-    where: {
-      source: SOURCE,
-      username: { in: unique },
-      verifiedAt: { not: null },
-      wikiUserId: { not: null },
-    },
-    select: { username: true, wikiUserId: true },
-  });
-  return new Map(
-    links.flatMap((link) =>
-      link.wikiUserId === null ? [] : [[link.username, link.wikiUserId] as const]
-    )
-  );
 }
 
 /**

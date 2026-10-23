@@ -2,7 +2,7 @@
  * bot-passwords.ts — Special:BotPasswords: create, list and delete a user's bot passwords (plan 410).
  *
  * The password is generated here, returned once and stored only as an scrypt hash. A user needs a
- * verified wiki link (the router checks), because api.php names the account by it. Deleting a bot
+ * passport handle (the router checks), because api.php names the account by it. Deleting a bot
  * password also ends its sessions (the foreign key cascades).
  */
 

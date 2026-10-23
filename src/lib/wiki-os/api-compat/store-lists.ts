@@ -1,6 +1,7 @@
 /**
  * store-lists.ts — the listing queries of the Prisma `ApiStore` (plan 410): allpages, category
- * members, backlinks, random pages, categories, log events, users, blocks and protected titles.
+ * members, backlinks, random pages, categories, log events, blocks and protected titles (users are in
+ * store-users.ts).
  * Read-only, like the rest of the store (see store.ts).
  */
 
@@ -9,8 +10,6 @@ import { db } from "~/server/db";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import { RightsAdminService } from "~/lib/wiki-os/core/rights-admin-service";
 import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
-import { isActive } from "~/lib/wiki-os/rights";
-import { syntheticUserId } from "./auth-store";
 import type {
   BacklinkQuery,
   BlockListRow,
@@ -25,8 +24,6 @@ import type {
   ProtectedTitleQuery,
   ProtectedTitleRow,
   RandomPagesQuery,
-  UserListQuery,
-  UserListRow,
 } from "./store-types";
 
 const SOURCE = "ixwiki";
@@ -342,98 +339,8 @@ export async function findLogs(query: LogQuery): Promise<LogRow[]> {
 }
 
 // ---------------------------------------------------------------------------
-// allusers, blocks, protected titles
+// blocks, protected titles
 // ---------------------------------------------------------------------------
-
-/** The user ids and wiki names holding `group` explicitly (not expired). */
-async function groupMembers(group: string): Promise<{ ids: string[]; names: string[] }> {
-  const rows = await db.wikiUserGroup.findMany({
-    where: { group },
-    select: { userId: true, wikiUsername: true, expiresAt: true },
-    take: 5000,
-  });
-  const now = new Date();
-  const live = rows.filter((row) => isActive(row.expiresAt, now));
-  return {
-    ids: live.flatMap((row) => row.userId ?? []),
-    names: live.flatMap((row) => row.wikiUsername ?? []),
-  };
-}
-
-const memberFilter = ({
-  ids,
-  names,
-}: {
-  ids: string[];
-  names: string[];
-}): Prisma.WikiAccountLinkWhereInput => ({
-  OR: [{ userId: { in: ids } }, { username: { in: names } }],
-});
-
-export async function listUsers(query: UserListQuery): Promise<UserListRow[]> {
-  const ascending = query.dir === "ascending";
-  const [lower, upper] = ascending ? [query.start, query.end] : [query.end, query.start];
-  const and: Prisma.WikiAccountLinkWhereInput[] = [];
-  if (query.group) and.push(memberFilter(await groupMembers(query.group)));
-  if (query.excludeGroup) and.push({ NOT: memberFilter(await groupMembers(query.excludeGroup)) });
-
-  const links = await db.wikiAccountLink.findMany({
-    where: {
-      source: SOURCE,
-      verifiedAt: { not: null },
-      username: {
-        ...(query.prefix ? { startsWith: query.prefix } : {}),
-        ...(lower ? { gte: lower } : {}),
-        ...(upper ? { lte: upper } : {}),
-      },
-      ...(and.length > 0 ? { AND: and } : {}),
-    },
-    orderBy: { username: ascending ? "asc" : "desc" },
-    take: query.limit + 1,
-    select: {
-      username: true,
-      userId: true,
-      wikiUserId: true,
-      user: { select: { createdAt: true } },
-    },
-  });
-  const names = links.map((link) => link.username);
-  const ids = links.map((link) => link.userId);
-  const [groups, edits] = await Promise.all([
-    links.length === 0
-      ? []
-      : db.wikiUserGroup.findMany({
-          where: { OR: [{ userId: { in: ids } }, { wikiUsername: { in: names } }] },
-          select: { userId: true, wikiUsername: true, group: true, expiresAt: true },
-          // Several rows per user: more than the guard's default 1000 for a full page of users.
-          take: 50_000,
-        }),
-    query.withEditCount && links.length > 0
-      ? db.wikiRevision.groupBy({
-          by: ["author"],
-          where: { source: SOURCE, parked: false, author: { in: names } },
-          _count: { _all: true },
-        })
-      : [],
-  ]);
-  const now = new Date();
-  const editCounts = new Map(
-    edits.flatMap((row) => (row.author ? [[row.author, row._count._all] as const] : []))
-  );
-  return links.map((link) => ({
-    name: link.username,
-    userId: link.wikiUserId ?? syntheticUserId(link.userId),
-    registration: link.user.createdAt,
-    editCount: editCounts.get(link.username) ?? 0,
-    groups: groups
-      .filter(
-        (row) =>
-          (row.userId === link.userId || row.wikiUsername === link.username) &&
-          isActive(row.expiresAt, now)
-      )
-      .map((row) => row.group),
-  }));
-}
 
 export async function listBlocks(
   limit: number,

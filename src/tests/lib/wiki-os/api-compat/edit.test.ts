@@ -18,6 +18,7 @@ import {
 import { PageBusyError } from "~/lib/wiki-os/core/page-busy-error";
 import { PageOperationError } from "~/lib/wiki-os/core/page-management-service";
 import { toApiError } from "~/lib/wiki-os/api-compat/error-map";
+import { HANDLE_REQUIRED_MESSAGE } from "~/lib/wiki-os/auth";
 
 describe("action=edit", () => {
   type Body = Record<string, any>;
@@ -367,6 +368,8 @@ describe("action=edit", () => {
         "PRECONDITION_FAILED",
         "pagedeleted",
       ],
+      // an account without a passport handle may not save (MediaWiki's code for an account an edit is not allowed to)
+      [HANDLE_REQUIRED_MESSAGE, "PRECONDITION_FAILED", "permissiondenied"],
     ] as const)("maps %s to %s", async (message, code, expected) => {
       const { edit, saves } = await setup({ services: refuse(new TRPCError({ code, message })) });
       const body = await edit({ title: "Existing", text: "x" });

@@ -242,7 +242,7 @@ export function expectedToken(session: ApiSession, type: TokenType): string {
 // ---------------------------------------------------------------------------
 
 export interface LoginAttempt {
-  /** `lgname`: `<wiki username>@<AppId>`. */
+  /** `lgname`: `<handle or claimed name>@<AppId>`. */
   name: string;
   password: string;
   now: Date;

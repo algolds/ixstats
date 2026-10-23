@@ -23,12 +23,12 @@ import type { FormatVersion, JsonValue } from "./format";
 import type { ApiParams } from "./params";
 import type { ApiStore } from "./store-types";
 
-/** A WikiOS user as the api.php endpoint sees them: the context the permission services read, and the wiki name. */
+/** A WikiOS user as the api.php endpoint sees them: the context the permission services read, and their name. */
 export interface SessionUser {
   ctx: WikiAuthContext;
-  /** The verified wiki username. */
+  /** The passport handle. */
   name: string;
-  /** The user's MediaWiki user id when known (`WikiAccountLink.wikiUserId`), else 0. */
+  /** The claimed name's MediaWiki user id when known, else synthetic (`syntheticUserId`). */
   mwUserId: number;
 }
 
@@ -50,9 +50,9 @@ export interface ApiSessionRecord {
 
 /** The tables behind bot-password logins (`WikiBotPassword`, `WikiApiSession`) and the user they name. */
 export interface AuthStore {
-  /** The bot password `appId` of the user whose verified wiki account is `wikiUsername`, and that user. */
+  /** The bot password `appId` of the account `loginName` (a handle or an approved claimed name) names, and that user. */
   findBotPassword(
-    wikiUsername: string,
+    loginName: string,
     appId: string
   ): Promise<{ botPassword: BotPasswordRecord; user: SessionUser } | null>;
   touchBotPassword(id: string, usedAt: Date): Promise<void>;
@@ -67,7 +67,7 @@ export interface AuthStore {
   /** After a login: delete every expired session, and all but the `keep` newest of this bot password's. */
   pruneSessions(botPasswordId: string, now: Date, keep: number): Promise<void>;
   deleteSession(id: string): Promise<void>;
-  /** The signed-in browser user (Clerk id) with a verified wiki link, or null. */
+  /** The signed-in browser user (Clerk id) with a passport handle, or null. */
   findWebUser(authId: string): Promise<SessionUser | null>;
 }
 
@@ -76,7 +76,7 @@ export type SessionKind = "anonymous" | "web" | "bot";
 /** Who is asking. Only a bot-password session may write. */
 export interface ApiSession {
   kind: SessionKind;
-  /** The wiki username; for an anonymous caller, their address or "anonymous". */
+  /** The passport handle; for an anonymous caller, their address or "anonymous". */
   name: string;
   /** The MediaWiki user id (0 for anonymous callers and users without one). */
   userId: number;
