@@ -1,6 +1,7 @@
 /**
  * store-lists.ts — the listing queries of the Prisma `ApiStore` (plan 410): allpages, category
- * members, backlinks, random pages, categories, log events, users, blocks and protected titles.
+ * members, backlinks, random pages, categories, log events, blocks and protected titles (users are in
+ * store-users.ts).
  * Read-only, like the rest of the store (see store.ts).
  */
 
@@ -9,8 +10,6 @@ import { db } from "~/server/db";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import { RightsAdminService } from "~/lib/wiki-os/core/rights-admin-service";
 import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
-import { isActive } from "~/lib/wiki-os/rights";
-import { syntheticUserId } from "./auth-store";
 import type {
   BacklinkQuery,
   BlockListRow,
@@ -25,8 +24,6 @@ import type {
   ProtectedTitleQuery,
   ProtectedTitleRow,
   RandomPagesQuery,
-  UserListQuery,
-  UserListRow,
 } from "./store-types";
 
 const SOURCE = "ixwiki";
@@ -40,7 +37,9 @@ function missingPageId(): Error {
   );
 }
 
-const redirectWhere = (filter: "all" | "redirects" | "nonredirects"): Prisma.WikiArticleWhereInput =>
+const redirectWhere = (
+  filter: "all" | "redirects" | "nonredirects"
+): Prisma.WikiArticleWhereInput =>
   filter === "redirects"
     ? { redirectTargetSlug: { not: null } }
     : filter === "nonredirects"
@@ -58,8 +57,18 @@ const redirectSql = (filter: "all" | "redirects" | "nonredirects"): Prisma.Sql =
 // allpages, backlinks, random
 // ---------------------------------------------------------------------------
 
-type ListedArticle = { pageId: number | null; title: string; namespace: number; redirectTargetSlug: string | null };
-const LIST_SELECT = { pageId: true, title: true, namespace: true, redirectTargetSlug: true } as const;
+type ListedArticle = {
+  pageId: number | null;
+  title: string;
+  namespace: number;
+  redirectTargetSlug: string | null;
+};
+const LIST_SELECT = {
+  pageId: true,
+  title: true,
+  namespace: true,
+  redirectTargetSlug: true,
+} as const;
 
 function toListRow(article: ListedArticle): PageListRow {
   if (article.pageId === null) throw missingPageId();
@@ -93,7 +102,10 @@ export async function listPages(query: ListPagesQuery): Promise<PageListRow[]> {
 }
 
 /** Pages in page id order that match `relation`, from `query.cursor`, with the query's namespace and redirect filters. */
-async function listRelatedPages(relation: Prisma.WikiArticleWhereInput, query: BacklinkQuery): Promise<PageListRow[]> {
+async function listRelatedPages(
+  relation: Prisma.WikiArticleWhereInput,
+  query: BacklinkQuery
+): Promise<PageListRow[]> {
   const rows = await db.wikiArticle.findMany({
     where: {
       ...LIVE_PAGE,
@@ -112,7 +124,10 @@ async function listRelatedPages(relation: Prisma.WikiArticleWhereInput, query: B
 export async function listBacklinks(query: BacklinkQuery): Promise<PageListRow[]> {
   const target = canonicalizeTitle(query.target);
   if (!target) return [];
-  return listRelatedPages({ outgoingLinks: { some: { targetSlug: target.slug, isExternal: false } } }, query);
+  return listRelatedPages(
+    { outgoingLinks: { some: { targetSlug: target.slug, isExternal: false } } },
+    query
+  );
 }
 
 /** Pages that transclude a template (or a Lua module through #invoke), from the last render of each. */
@@ -145,7 +160,11 @@ export async function randomPages(query: RandomPagesQuery): Promise<PageListRow[
  * Page titles that start with or hold `query` (case-insensitive), main namespace, in title order.
  * Selects the title only: a title search never reads a page's text.
  */
-export async function searchTitles(query: string, limit: number, offset: number): Promise<string[]> {
+export async function searchTitles(
+  query: string,
+  limit: number,
+  offset: number
+): Promise<string[]> {
   const rows = await db.wikiArticle.findMany({
     where: {
       ...LIVE_PAGE,
@@ -173,7 +192,9 @@ function memberTypeSql(types: CategoryMemberQuery["types"]): Prisma.Sql {
         ? Prisma.sql`a."namespace" = ${CATEGORY_NAMESPACE}`
         : Prisma.sql`a."namespace" NOT IN (${FILE_NAMESPACE}, ${CATEGORY_NAMESPACE})`
   );
-  return parts.length === 0 || parts.length === 3 ? Prisma.empty : Prisma.sql`AND (${Prisma.join(parts, " OR ")})`;
+  return parts.length === 0 || parts.length === 3
+    ? Prisma.empty
+    : Prisma.sql`AND (${Prisma.join(parts, " OR ")})`;
 }
 
 interface MemberRecord {
@@ -186,16 +207,24 @@ interface MemberRecord {
   addedAt: Date;
 }
 
-export async function listCategoryMembers(query: CategoryMemberQuery): Promise<CategoryMemberRow[]> {
+export async function listCategoryMembers(
+  query: CategoryMemberQuery
+): Promise<CategoryMemberRow[]> {
   const category = canonicalizeTitle(query.category);
   if (!category) return [];
   const ascending = query.dir === "ascending";
   const order = Prisma.raw(ascending ? "ASC" : "DESC");
   const byTime = query.sort === "timestamp";
   // MediaWiki sorts a category by the upper-cased sort key ("uppercase" collation), the title when there is none.
-  const sortExpr = byTime ? Prisma.sql`m."createdAt"` : Prisma.sql`UPPER(COALESCE(m."sortKey", a."title"))`;
+  const sortExpr = byTime
+    ? Prisma.sql`m."createdAt"`
+    : Prisma.sql`UPPER(COALESCE(m."sortKey", a."title"))`;
   const [lower, upper] = ascending ? [query.start, query.end] : [query.end, query.start];
-  const cursorValue = query.cursor ? (byTime ? new Date(query.cursor.sortValue) : query.cursor.sortValue) : null;
+  const cursorValue = query.cursor
+    ? byTime
+      ? new Date(query.cursor.sortValue)
+      : query.cursor.sortValue
+    : null;
   const rows = await db.$queryRaw<MemberRecord[]>(Prisma.sql`
     SELECT a."pageId", a."title", a."namespace", a."redirectTargetSlug", m."sortKey",
            ${byTime ? Prisma.sql`m."createdAt"::text` : sortExpr} AS "sortValue", m."createdAt" AS "addedAt"
@@ -233,7 +262,9 @@ export async function listCategories(query: CategoryListQuery): Promise<Category
   const [lower, upper] = ascending ? [query.start, query.end] : [query.end, query.start];
   // One row per category name (two categories may differ only in their slug), counting the members
   // that are not deleted pages; a name is never split across two pages of the listing.
-  const rows = await db.$queryRaw<Array<{ name: string; members: bigint; hidden: boolean }>>(Prisma.sql`
+  const rows = await db.$queryRaw<
+    Array<{ name: string; members: bigint; hidden: boolean }>
+  >(Prisma.sql`
     SELECT c."name" AS "name", COUNT(m."id") AS "members", bool_or(c."hidden") AS "hidden"
     FROM "wiki_categories" c
     JOIN "wiki_category_members" m ON m."categoryId" = c."id"
@@ -253,11 +284,7 @@ export async function listCategories(query: CategoryListQuery): Promise<Category
 // ---------------------------------------------------------------------------
 
 /** Log entries at or after `ts` (and at `id` or beyond when given) on `side`. */
-function logBoundWhere(
-  side: "gte" | "lte",
-  ts: Date,
-  logId?: number
-): Prisma.WikiLogWhereInput {
+function logBoundWhere(side: "gte" | "lte", ts: Date, logId?: number): Prisma.WikiLogWhereInput {
   const strict = side === "gte" ? "gt" : "lt";
   return logId === undefined
     ? { createdAt: { [side]: ts } }
@@ -312,84 +339,8 @@ export async function findLogs(query: LogQuery): Promise<LogRow[]> {
 }
 
 // ---------------------------------------------------------------------------
-// allusers, blocks, protected titles
+// blocks, protected titles
 // ---------------------------------------------------------------------------
-
-/** The user ids and wiki names holding `group` explicitly (not expired). */
-async function groupMembers(group: string): Promise<{ ids: string[]; names: string[] }> {
-  const rows = await db.wikiUserGroup.findMany({
-    where: { group },
-    select: { userId: true, wikiUsername: true, expiresAt: true },
-    take: 5000,
-  });
-  const now = new Date();
-  const live = rows.filter((row) => isActive(row.expiresAt, now));
-  return {
-    ids: live.flatMap((row) => row.userId ?? []),
-    names: live.flatMap((row) => row.wikiUsername ?? []),
-  };
-}
-
-const memberFilter = ({ ids, names }: { ids: string[]; names: string[] }): Prisma.WikiAccountLinkWhereInput => ({
-  OR: [{ userId: { in: ids } }, { username: { in: names } }],
-});
-
-export async function listUsers(query: UserListQuery): Promise<UserListRow[]> {
-  const ascending = query.dir === "ascending";
-  const [lower, upper] = ascending ? [query.start, query.end] : [query.end, query.start];
-  const and: Prisma.WikiAccountLinkWhereInput[] = [];
-  if (query.group) and.push(memberFilter(await groupMembers(query.group)));
-  if (query.excludeGroup) and.push({ NOT: memberFilter(await groupMembers(query.excludeGroup)) });
-
-  const links = await db.wikiAccountLink.findMany({
-    where: {
-      source: SOURCE,
-      verifiedAt: { not: null },
-      username: {
-        ...(query.prefix ? { startsWith: query.prefix } : {}),
-        ...(lower ? { gte: lower } : {}),
-        ...(upper ? { lte: upper } : {}),
-      },
-      ...(and.length > 0 ? { AND: and } : {}),
-    },
-    orderBy: { username: ascending ? "asc" : "desc" },
-    take: query.limit + 1,
-    select: { username: true, userId: true, wikiUserId: true, user: { select: { createdAt: true } } },
-  });
-  const names = links.map((link) => link.username);
-  const ids = links.map((link) => link.userId);
-  const [groups, edits] = await Promise.all([
-    links.length === 0
-      ? []
-      : db.wikiUserGroup.findMany({
-          where: { OR: [{ userId: { in: ids } }, { wikiUsername: { in: names } }] },
-          select: { userId: true, wikiUsername: true, group: true, expiresAt: true },
-          // Several rows per user: more than the guard's default 1000 for a full page of users.
-          take: 50_000,
-        }),
-    query.withEditCount && links.length > 0
-      ? db.wikiRevision.groupBy({
-          by: ["author"],
-          where: { source: SOURCE, parked: false, author: { in: names } },
-          _count: { _all: true },
-        })
-      : [],
-  ]);
-  const now = new Date();
-  const editCounts = new Map(edits.flatMap((row) => (row.author ? [[row.author, row._count._all] as const] : [])));
-  return links.map((link) => ({
-    name: link.username,
-    userId: link.wikiUserId ?? syntheticUserId(link.userId),
-    registration: link.user.createdAt,
-    editCount: editCounts.get(link.username) ?? 0,
-    groups: groups
-      .filter(
-        (row) =>
-          (row.userId === link.userId || row.wikiUsername === link.username) && isActive(row.expiresAt, now)
-      )
-      .map((row) => row.group),
-  }));
-}
 
 export async function listBlocks(
   limit: number,
@@ -398,13 +349,17 @@ export async function listBlocks(
   return RightsAdminService.listBlocks(limit, cursor);
 }
 
-export async function listProtectedTitles(query: ProtectedTitleQuery): Promise<ProtectedTitleRow[]> {
+export async function listProtectedTitles(
+  query: ProtectedTitleQuery
+): Promise<ProtectedTitleRow[]> {
   const newer = query.dir === "newer";
   const [fromSide, toSide] = newer ? (["gte", "lte"] as const) : (["lte", "gte"] as const);
   const strict = newer ? "gt" : "lt";
   const direction = newer ? "asc" : "desc";
   const now = new Date();
-  const and: Prisma.WikiRestrictionWhereInput[] = [{ OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] }];
+  const and: Prisma.WikiRestrictionWhereInput[] = [
+    { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+  ];
   if (query.from) and.push({ createdAt: { [fromSide]: query.from } });
   if (query.to) and.push({ createdAt: { [toSide]: query.to } });
   if (query.cursor) {
@@ -416,10 +371,23 @@ export async function listProtectedTitles(query: ProtectedTitleQuery): Promise<P
     });
   }
   const rows = await db.wikiRestriction.findMany({
-    where: { source: SOURCE, action: "create", ...(query.level ? { level: query.level } : {}), AND: and },
+    where: {
+      source: SOURCE,
+      action: "create",
+      ...(query.level ? { level: query.level } : {}),
+      AND: and,
+    },
     orderBy: [{ createdAt: direction }, { id: direction }],
     take: query.limit + 1,
-    select: { id: true, title: true, level: true, createdAt: true, reason: true, expiresAt: true, setById: true },
+    select: {
+      id: true,
+      title: true,
+      level: true,
+      createdAt: true,
+      reason: true,
+      expiresAt: true,
+      setById: true,
+    },
   });
   // A title that has a page is protected from editing, not creation: only missing titles are listed.
   const existing = new Set(

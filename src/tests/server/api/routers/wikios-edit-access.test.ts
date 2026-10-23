@@ -3,7 +3,7 @@
 //
 // The wiki routers' gates (plan 409, 410): edit access asks the rights engine (signed out, protected, blocked, a
 // namespace the groups cannot write, a deleted page only for who may see it, the public tier), bot passwords need a
-// verified wiki link for every procedure, and the country-profile cache is public to read and needs a sign-in to
+// passport handle for every procedure (a bot logs in as `handle@App`, its claimed names as aliases), and the country-profile cache is public to read and needs a sign-in to
 // refresh.
 const mockCheck = jest.fn();
 jest.mock("~/server/db", () => ({
@@ -63,10 +63,6 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/article-store", () => ({
   getRevisionWikitextShadow: jest.fn(),
   getArticleHistoryShadow: jest.fn(),
 }));
-jest.mock("~/lib/wiki-os/storage", () => ({
-  __esModule: true,
-  getVerifiedWikiLink: jest.fn(),
-}));
 jest.mock("~/lib/wiki-os/api-compat/bot-passwords", () => ({
   __esModule: true,
   listBotPasswords: jest.fn(),
@@ -88,7 +84,6 @@ import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { db } from "~/server/db";
 import { wikiosBotPasswordsRouter } from "~/server/api/routers/wikios/bot-passwords";
-import { getVerifiedWikiLink } from "~/lib/wiki-os/storage";
 import {
   createBotPassword,
   deleteBotPassword,
@@ -98,6 +93,7 @@ import { PageOperationError } from "~/lib/wiki-os/core/page-management-service";
 import { wikiCacheRouter } from "~/server/api/routers/wikiCache";
 import { wikiCacheService } from "~/lib/wiki-os/adapters/ixstates/cache-service";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
+import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-prisma";
 import {
   getArticleHistoryShadow,
   getRevisionWikitextShadow,
@@ -300,22 +296,31 @@ describe("wikios.getEditAccess rate limit (m6)", () => {
 
 describe("bot passwords", () => {
   const createCaller = createCallerFactory(wikiosBotPasswordsRouter);
+  let mem: MemoryPrisma;
   const signedIn = () =>
     createCaller(
       createMockRouterContext({
+        db: mem,
         auth: { userId: "user_1" },
         user: { id: "db1", clerkUserId: "user_1", role: { name: "user", level: 100 } },
       }) as never
     );
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    jest.mocked(getVerifiedWikiLink).mockResolvedValue({
-      username: "Heku",
-      verifiedById: null,
-      mwRegisteredAt: null,
-      mwEditCount: null,
+  const claim = (name: string, over: object = {}) =>
+    mem.wikiNameClaim.create({
+      data: {
+        userId: "db1",
+        name,
+        status: "APPROVED",
+        origin: "PLAYER",
+        requestedById: "db1",
+        ...over,
+      },
     });
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    mem = createMemoryPrisma();
+    await mem.user.create({ data: { id: "db1", clerkUserId: "user_1", handle: "alpha" } });
   });
 
   describe("wikiosBotPasswordsRouter", () => {
@@ -330,25 +335,30 @@ describe("bot passwords", () => {
       warn.mockRestore();
     });
 
-    it("needs a verified wiki link, for every procedure", async () => {
-      jest.mocked(getVerifiedWikiLink).mockResolvedValue(null);
-      await expect(signedIn().listBotPasswords()).rejects.toMatchObject({
+    it("needs a passport handle, for every procedure, even with an approved claimed name", async () => {
+      await mem.user.update({ where: { id: "db1" }, data: { handle: null } });
+      await claim("Old name");
+      const refusal = {
         code: "PRECONDITION_FAILED",
-      });
-      await expect(signedIn().createBotPassword({ appId: "x", grants: [] })).rejects.toMatchObject({
-        code: "PRECONDITION_FAILED",
-      });
-      await expect(signedIn().deleteBotPassword({ id: "bp1" })).rejects.toMatchObject({
-        code: "PRECONDITION_FAILED",
-      });
+        message: "Pick a passport handle in Settings before creating a bot password.",
+      };
+      await expect(signedIn().listBotPasswords()).rejects.toMatchObject(refusal);
+      await expect(signedIn().createBotPassword({ appId: "x", grants: [] })).rejects.toMatchObject(
+        refusal
+      );
+      await expect(signedIn().deleteBotPassword({ id: "bp1" })).rejects.toMatchObject(refusal);
       expect(createBotPassword).not.toHaveBeenCalled();
     });
 
-    it("lists the caller's bot passwords with the grants on offer and their wiki name", async () => {
+    it("lists the caller's bot passwords with the grants on offer, their handle and every approved claimed name", async () => {
       jest.mocked(listBotPasswords).mockResolvedValue([]);
+      await claim("Old name", { visible: false, decidedAt: new Date("2026-10-01T00:00:00Z") });
+      await claim("Second name", { decidedAt: new Date("2026-10-02T00:00:00Z") });
+      await claim("Asked name", { status: "PENDING" });
       const result = await signedIn().listBotPasswords();
       expect(listBotPasswords).toHaveBeenCalledWith("db1");
-      expect(result.wikiUsername).toBe("Heku");
+      expect(result.handle).toBe("alpha");
+      expect(result.aliases).toEqual(["Old name", "Second name"]);
       expect(result.grants.map((g) => g.grant)).toContain("editpage");
     });
 
@@ -374,7 +384,7 @@ describe("bot passwords", () => {
       expect(result).toEqual({
         id: "bp1",
         appId: "Pywikibot",
-        loginName: "Heku@Pywikibot",
+        loginName: "alpha@Pywikibot",
         password: "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567",
       });
     });

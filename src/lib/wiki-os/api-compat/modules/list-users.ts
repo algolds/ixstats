@@ -1,8 +1,9 @@
 /**
  * list-users.ts — `list=allusers|blocks|protectedtitles` (plan 410).
  *
- * Users are the accounts with a verified wiki link; their groups are the explicit memberships
- * (`wiki_user_groups`), plus the implicit `*` and `user` that every listed account has.
+ * Users are the accounts with a passport handle, listed by handle; their groups are the explicit memberships
+ * (`wiki_user_groups`, by account or through a rights-passing claimed name), plus the implicit `*` and `user` that
+ * every listed account has.
  */
 
 import { encodeCursor, optionalCursor, takePage } from "../continuation";
@@ -23,7 +24,14 @@ const escapeHtml = (text: string) =>
 // allusers
 // ---------------------------------------------------------------------------
 
-const AU_PROPS = ["blockinfo", "groups", "implicitgroups", "rights", "editcount", "registration"] as const;
+const AU_PROPS = [
+  "blockinfo",
+  "groups",
+  "implicitgroups",
+  "rights",
+  "editcount",
+  "registration",
+] as const;
 
 async function runAllUsers(rc: ApiContext, p: ApiParams): Promise<ListResult> {
   const props = new Set(p.listOf("prop", AU_PROPS));
@@ -53,7 +61,8 @@ async function runAllUsers(rc: ApiContext, p: ApiParams): Promise<ListResult> {
       );
       const item: JsonObject = { userid: user.userId, name: user.name };
       if (props.has("editcount")) item.editcount = user.editCount;
-      if (props.has("registration")) item.registration = user.registration ? mwTimestamp(user.registration) : null;
+      if (props.has("registration"))
+        item.registration = user.registration ? mwTimestamp(user.registration) : null;
       if (props.has("groups")) item.groups = ["*", "user", ...explicit];
       if (props.has("implicitgroups")) item.implicitgroups = ["*", "user"];
       if (props.has("rights")) item.rights = [...rightsForGroups(["*", "user", ...explicit])];
@@ -63,16 +72,34 @@ async function runAllUsers(rc: ApiContext, p: ApiParams): Promise<ListResult> {
   };
 }
 
-export const allUsers: ListModule = { prefix: "au", resultKey: "allusers", generator: false, run: runAllUsers };
+export const allUsers: ListModule = {
+  prefix: "au",
+  resultKey: "allusers",
+  generator: false,
+  run: runAllUsers,
+};
 
 // ---------------------------------------------------------------------------
 // blocks
 // ---------------------------------------------------------------------------
 
-const BK_PROPS = ["id", "user", "userid", "by", "byid", "timestamp", "expiry", "reason", "range", "flags"] as const;
+const BK_PROPS = [
+  "id",
+  "user",
+  "userid",
+  "by",
+  "byid",
+  "timestamp",
+  "expiry",
+  "reason",
+  "range",
+  "flags",
+] as const;
 
 async function runBlocks(rc: ApiContext, p: ApiParams): Promise<ListResult> {
-  const props = new Set(p.listOf("prop", BK_PROPS, ["id", "user", "by", "timestamp", "expiry", "reason", "flags"]));
+  const props = new Set(
+    p.listOf("prop", BK_PROPS, ["id", "user", "by", "timestamp", "expiry", "reason", "flags"])
+  );
   const limit = p.limit("limit", { fallback: 10, high: rc.highLimits });
   // The log of blocks lists the newest first; WikiOS keeps no other order.
   p.oneOf("dir", ["older"], "older");
@@ -84,21 +111,47 @@ async function runBlocks(rc: ApiContext, p: ApiParams): Promise<ListResult> {
       ...(props.has("user") ? { user: block.target } : {}),
       ...(props.has("by") ? { by: block.blockedBy ?? "" } : {}),
       ...(props.has("timestamp") ? { timestamp: mwTimestamp(block.createdAt) } : {}),
-      ...(props.has("expiry") ? { expiry: block.expiresAt ? mwTimestamp(block.expiresAt) : "infinity" } : {}),
+      ...(props.has("expiry")
+        ? { expiry: block.expiresAt ? mwTimestamp(block.expiresAt) : "infinity" }
+        : {}),
       ...(props.has("reason") ? { reason: block.reason ?? "" } : {}),
-      ...(props.has("flags") ? { automatic: false, anononly: false, nocreate: false, autoblock: false, noemail: false, hidden: false, allowusertalk: block.allowUserTalk, partial: false } : {}),
+      ...(props.has("flags")
+        ? {
+            automatic: false,
+            anononly: false,
+            nocreate: false,
+            autoblock: false,
+            noemail: false,
+            hidden: false,
+            allowusertalk: block.allowUserTalk,
+            partial: false,
+          }
+        : {}),
     })),
     next: nextCursor,
   };
 }
 
-export const blocks: ListModule = { prefix: "bk", resultKey: "blocks", generator: false, run: runBlocks };
+export const blocks: ListModule = {
+  prefix: "bk",
+  resultKey: "blocks",
+  generator: false,
+  run: runBlocks,
+};
 
 // ---------------------------------------------------------------------------
 // protectedtitles
 // ---------------------------------------------------------------------------
 
-const PT_PROPS = ["timestamp", "user", "userid", "comment", "parsedcomment", "expiry", "level"] as const;
+const PT_PROPS = [
+  "timestamp",
+  "user",
+  "userid",
+  "comment",
+  "parsedcomment",
+  "expiry",
+  "level",
+] as const;
 
 async function runProtectedTitles(rc: ApiContext, p: ApiParams): Promise<ListResult> {
   const props = new Set(p.listOf("prop", PT_PROPS, ["timestamp", "level"]));
@@ -108,7 +161,8 @@ async function runProtectedTitles(rc: ApiContext, p: ApiParams): Promise<ListRes
   const cursor = optionalCursor(p.raw("continue"), ["s", "s"] as const);
   const cursorTime = cursor ? new Date(cursor[0]) : undefined;
   if (cursorTime && Number.isNaN(cursorTime.getTime())) throw badContinue();
-  if (levels.length > 1) throw new ApiError("badvalue", "WikiOS lists one protection level at a time.");
+  if (levels.length > 1)
+    throw new ApiError("badvalue", "WikiOS lists one protection level at a time.");
 
   const rows = await rc.deps.store.listProtectedTitles({
     namespaces: namespacesParam(p),
@@ -129,7 +183,9 @@ async function runProtectedTitles(rc: ApiContext, p: ApiParams): Promise<ListRes
       ...(props.has("user") ? { user: row.user ?? "" } : {}),
       ...(props.has("comment") ? { comment: row.comment ?? "" } : {}),
       ...(props.has("parsedcomment") ? { parsedcomment: escapeHtml(row.comment ?? "") } : {}),
-      ...(props.has("expiry") ? { expiry: row.expiresAt ? mwTimestamp(row.expiresAt) : "infinity" } : {}),
+      ...(props.has("expiry")
+        ? { expiry: row.expiresAt ? mwTimestamp(row.expiresAt) : "infinity" }
+        : {}),
       ...(props.has("level") ? { level: row.level } : {}),
     })),
     next: next ? encodeCursor([next.timestamp.toISOString(), next.id]) : null,

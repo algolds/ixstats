@@ -401,10 +401,13 @@ export interface ApiStore {
   listCategories(query: CategoryListQuery): Promise<CategorySummaryRow[]>;
   /** Up to `limit + 1` log entries. */
   findLogs(query: LogQuery): Promise<LogRow[]>;
-  /** Up to `limit + 1` users with a verified wiki account, in name order. */
+  /** Up to `limit + 1` accounts with a passport handle, in handle order. */
   listUsers(query: UserListQuery): Promise<UserListRow[]>;
   /** The blocks in force now, newest first: a page and the continuation. */
-  listBlocks(limit: number, cursor?: string): Promise<{ blocks: BlockListRow[]; nextCursor: string | null }>;
+  listBlocks(
+    limit: number,
+    cursor?: string
+  ): Promise<{ blocks: BlockListRow[]; nextCursor: string | null }>;
   /** Up to `limit + 1` create-protected titles that have no page. */
   listProtectedTitles(query: ProtectedTitleQuery): Promise<ProtectedTitleRow[]>;
   /** The files called these canonical names (no `File:`); a file whose `File:` page was deleted is not there. */

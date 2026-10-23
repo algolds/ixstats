@@ -26,9 +26,9 @@ import {
   listCategoryMembers,
   listPages,
   listProtectedTitles,
-  listUsers,
   randomPages,
 } from "./store-lists";
+import { authorIds, listUsers } from "./store-users";
 import { filesByName, listFiles } from "./store-files";
 import type {
   ApiStore,
@@ -66,8 +66,11 @@ async function statistics(): Promise<SiteStatistics> {
     db.wikiArticle.count({ where: { ...LIVE_PAGE, namespace: 0, redirectTargetSlug: null } }),
     db.wikiRevision.count({ where: { source: SOURCE, parked: false } }),
     db.wikiArticle.count({ where: { ...LIVE_PAGE, namespace: 6 } }),
-    db.wikiAccountLink.count({ where: { source: SOURCE, verifiedAt: { not: null } } }),
-    db.wikiRevision.groupBy({ by: ["author"], where: { source: SOURCE, parked: false, createdAt: { gte: since } } }),
+    db.user.count({ where: { handle: { not: null } } }),
+    db.wikiRevision.groupBy({
+      by: ["author"],
+      where: { source: SOURCE, parked: false, createdAt: { gte: since } },
+    }),
     db.wikiUserGroup.count({ where: { group: "sysop" } }),
   ]);
   return { pages, articles, edits, images, users, activeUsers: active.length, admins };
@@ -153,7 +156,9 @@ async function toPageRows(articles: readonly PageArticle[]): Promise<PageRow[]> 
 /** The page properties MediaWiki reported, as text values; null when none were stored (an unrendered page). */
 function toPageProps(stored: Prisma.JsonValue | null): Record<string, string> | null {
   if (stored === null || typeof stored !== "object" || Array.isArray(stored)) return null;
-  return Object.fromEntries(Object.entries(stored).map(([name, value]) => [name, String(value ?? "")]));
+  return Object.fromEntries(
+    Object.entries(stored).map(([name, value]) => [name, String(value ?? "")])
+  );
 }
 
 async function pagesByTitle(titles: readonly string[]): Promise<PageRow[]> {
@@ -215,30 +220,14 @@ async function parentIds(revIds: readonly number[]): Promise<Map<number, number>
   return new Map(rows.map((row) => [row.revId, row.parentId ?? 0]));
 }
 
-/** The MediaWiki user id of each author name when a verified link records it. */
-async function authorIds(names: readonly string[]): Promise<Map<string, number>> {
-  const unique = [...new Set(names)];
-  if (unique.length === 0) return new Map();
-  const links = await db.wikiAccountLink.findMany({
-    where: {
-      source: SOURCE,
-      username: { in: unique },
-      verifiedAt: { not: null },
-      wikiUserId: { not: null },
-    },
-    select: { username: true, wikiUserId: true },
-  });
-  return new Map(
-    links.flatMap((link) => (link.wikiUserId === null ? [] : [[link.username, link.wikiUserId] as const]))
-  );
-}
-
 /**
  * `rev_sha1` of a legacy row that has none, from the text when the query already read it (never a
  * read made for the hash): null otherwise, and for a revision whose text is deleted.
  */
 function hashOfText(record: RevisionRecord): string | null {
-  return record.wikitext !== undefined && !record.textDeleted ? mwSha1Base36(record.wikitext) : null;
+  return record.wikitext !== undefined && !record.textDeleted
+    ? mwSha1Base36(record.wikitext)
+    : null;
 }
 
 async function toRevisionRows(records: readonly RevisionRecord[]): Promise<RevisionRow[]> {
@@ -289,7 +278,12 @@ async function revisionsById(
 ): Promise<RevisionRow[]> {
   if (revIds.length === 0) return [];
   const records = await db.wikiRevision.findMany({
-    where: { source: SOURCE, parked: false, revId: { in: [...revIds] }, article: { status: { not: "ARCHIVED" } } },
+    where: {
+      source: SOURCE,
+      parked: false,
+      revId: { in: [...revIds] },
+      article: { status: { not: "ARCHIVED" } },
+    },
     select: { ...REVISION_SELECT, ...(withContent ? { wikitext: true } : {}) },
   });
   const rows = await toRevisionRows(records);
@@ -309,11 +303,18 @@ async function revisionHashes(revIds: readonly number[]): Promise<Map<number, st
     },
     select: { revId: true, wikitext: true },
   });
-  return new Map(records.flatMap((record) => (record.revId === null ? [] : [[record.revId, mwSha1Base36(record.wikitext)] as const])));
+  return new Map(
+    records.flatMap((record) =>
+      record.revId === null ? [] : [[record.revId, mwSha1Base36(record.wikitext)] as const]
+    )
+  );
 }
 
 async function revisionByRowId(rowId: string): Promise<RevisionRow | null> {
-  const record = await db.wikiRevision.findFirst({ where: { id: rowId, parked: false }, select: REVISION_SELECT });
+  const record = await db.wikiRevision.findFirst({
+    where: { id: rowId, parked: false },
+    select: REVISION_SELECT,
+  });
   return record ? ((await toRevisionRows([record]))[0] ?? null) : null;
 }
 
@@ -321,7 +322,9 @@ async function revisionCountOf(title: string): Promise<number> {
   return db.wikiRevision.count({ where: { source: SOURCE, parked: false, article: { title } } });
 }
 
-async function pageHtml(articleId: string): Promise<{ html: string | null; fresh: boolean } | null> {
+async function pageHtml(
+  articleId: string
+): Promise<{ html: string | null; fresh: boolean } | null> {
   const row = await db.wikiArticle.findUnique({
     where: { id: articleId },
     select: { contentHtml: true, htmlSyncedAt: true },
@@ -458,7 +461,8 @@ async function linksFrom(query: PerPageQuery): Promise<PerPageResult<LinkRow>> {
   });
   // A page can link to one target from several sections: list the target once.
   const unique = rows.filter(
-    (row, index) => rows.findIndex((r) => r.pageId === row.pageId && r.title === row.title) === index
+    (row, index) =>
+      rows.findIndex((r) => r.pageId === row.pageId && r.title === row.title) === index
   );
   const next = fetched[query.limit];
   return {
@@ -495,7 +499,12 @@ async function categoriesOf(
     where: {
       articleId: { in: [...query.articleIds] },
       ...(names || query.hidden !== undefined
-        ? { category: { ...(names ? { name: { in: names } } : {}), ...(query.hidden === undefined ? {} : { hidden: query.hidden }) } }
+        ? {
+            category: {
+              ...(names ? { name: { in: names } } : {}),
+              ...(query.hidden === undefined ? {} : { hidden: query.hidden }),
+            },
+          }
         : {}),
       ...categoryCursorWhere(query),
     },
@@ -567,7 +576,10 @@ async function templatesOf(query: PerPageQuery): Promise<PerPageResult<LinkRow>>
   const next = fetched[query.limit];
   return {
     rows,
-    next: next && next.article.pageId !== null ? { pageId: next.article.pageId, key: next.templateTitle } : null,
+    next:
+      next && next.article.pageId !== null
+        ? { pageId: next.article.pageId, key: next.templateTitle }
+        : null,
   };
 }
 
@@ -596,7 +608,10 @@ async function imagesOf(query: PerPageQuery): Promise<PerPageResult<LinkRow>> {
   const next = fetched[query.limit];
   return {
     rows,
-    next: next && next.article.pageId !== null ? { pageId: next.article.pageId, key: next.fileName } : null,
+    next:
+      next && next.article.pageId !== null
+        ? { pageId: next.article.pageId, key: next.fileName }
+        : null,
   };
 }
 

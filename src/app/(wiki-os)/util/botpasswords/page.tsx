@@ -68,7 +68,7 @@ export default function BotPasswordsPage() {
   return (
     <AdminPage
       title="Bot passwords"
-      description="Let a bot (Pywikibot, AWB, your own script) use your wiki account through this site's api.php (/w/api.php), with only the rights you grant it."
+      description="Let a bot (Pywikibot, AWB, your own script) use your account through this site's api.php (/w/api.php), with only the rights you grant it."
     >
       {list.isLoading && <Skeleton className="h-40 w-full rounded-xl" />}
       {list.error && (
@@ -110,6 +110,11 @@ export default function BotPasswordsPage() {
         <>
           <section className="space-y-3">
             <h2 className="text-sm font-semibold">Your bot passwords</h2>
+            {data.aliases.length > 0 && (
+              <p className="text-muted-foreground text-sm">
+                Your old wiki names work too: {data.aliases.join(", ")}.
+              </p>
+            )}
             {data.botPasswords.length === 0 ? (
               <p className="text-muted-foreground text-sm">You have not created any yet.</p>
             ) : (
@@ -119,7 +124,7 @@ export default function BotPasswordsPage() {
                     <div className="space-y-1.5">
                       <p className="text-sm font-medium">
                         <code className="font-mono">
-                          {data.wikiUsername}@{row.appId}
+                          {data.handle}@{row.appId}
                         </code>
                       </p>
                       <div className="flex flex-wrap gap-1.5">
@@ -166,7 +171,7 @@ export default function BotPasswordsPage() {
             <FormField
               label="App id"
               htmlFor="bot-app-id"
-              hint="Letters, digits, spaces, underscores and hyphens, at most 32. Your bot logs in as your wiki name, an at sign and this id."
+              hint="Letters, digits, spaces, underscores and hyphens, at most 32. Your bot logs in as your passport handle, an at sign and this id."
             >
               <Input
                 id="bot-app-id"

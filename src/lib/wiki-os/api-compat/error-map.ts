@@ -7,6 +7,7 @@
  */
 
 import { TRPCError } from "@trpc/server";
+import { HANDLE_REQUIRED_MESSAGE } from "~/lib/wiki-os/auth";
 import { PageBusyError } from "~/lib/wiki-os/core/page-busy-error";
 import { PageOperationError } from "~/lib/wiki-os/core/page-management-service";
 import { UploadError } from "~/lib/wiki-os/services/upload-error";
@@ -79,7 +80,11 @@ function fromTrpc(error: TRPCError): ApiError {
     case "NOT_FOUND":
       return new ApiError("missingtitle", error.message);
     case "PRECONDITION_FAILED":
-      return new ApiError("pagedeleted", error.message);
+      // An account with no passport handle may not save: MediaWiki answers an edit the account is not allowed
+      // to make with permissiondenied. The services' other preconditions keep pagedeleted.
+      return error.message === HANDLE_REQUIRED_MESSAGE
+        ? new ApiError("permissiondenied", error.message)
+        : new ApiError("pagedeleted", error.message);
     default:
       return new ApiError("internal_api_error", "The request could not be completed.");
   }
