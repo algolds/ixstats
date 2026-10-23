@@ -27,7 +27,7 @@ const claim = (
   userId: string,
   name: string,
   status: "PENDING" | "APPROVED" | "REJECTED",
-  at: { createdAt: Date; decidedAt?: Date }
+  at: { createdAt: Date; decidedAt?: Date; evidence?: string }
 ) =>
   db.wikiNameClaim.create({
     data: { id, userId, name, status, origin: "PLAYER", requestedById: userId, ...at },
@@ -168,7 +168,10 @@ describe("listClaimQueue", () => {
   beforeEach(async () => {
     await revision("Old two");
     await claim("k-new", "p2", "Old two", "PENDING", { createdAt: day(5) });
-    await claim("k-old", "p1", "Old one", "PENDING", { createdAt: day(1) });
+    await claim("k-old", "p1", "Old one", "PENDING", {
+      createdAt: day(1),
+      evidence: "My alt made these",
+    });
     await claim("k-a", "p1", "Done a", "APPROVED", { createdAt: day(1), decidedAt: day(2) });
     await claim("k-b", "p2", "Done b", "APPROVED", { createdAt: day(1), decidedAt: day(4) });
   });
@@ -182,6 +185,7 @@ describe("listClaimQueue", () => {
         name: "Old one",
         status: "PENDING",
         account: { userId: "p1", handle: "pone", clerkUserId: "user_p1", countryName: "Aurelia" },
+        playerEvidence: "My alt made these",
         evidence: expect.objectContaining({ name: "Old one", wikiosEdits: 0, pendingClaims: 1 }),
       }),
     ]);
@@ -190,6 +194,7 @@ describe("listClaimQueue", () => {
     expect(second.items[0]).toMatchObject({
       id: "k-new",
       account: { userId: "p2", handle: null, clerkUserId: "user_p2", countryName: null },
+      playerEvidence: null,
       evidence: { wikiosEdits: 1 },
     });
     expect(second.items[0]).not.toHaveProperty("user");
