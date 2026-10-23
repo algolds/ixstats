@@ -2,7 +2,7 @@
 
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import React, { useState, useMemo } from "react";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import {
@@ -46,6 +46,11 @@ import {
 } from "~/components/ui/table";
 import { PlayerCardsSheet, type PlayerRef } from "./PlayerCardsSheet";
 
+type VaultUser = RouterOutputs["vault"]["adminListVaults"]["users"][number];
+
+/** A player's name in the directory: their nation, then their passport handle, then their Clerk id. */
+const vaultUserName = (user: VaultUser) => user.country?.name ?? user.handle ?? user.clerkUserId;
+
 export function VaultUserDirectory() {
   const notify = useNotify();
 
@@ -59,7 +64,7 @@ export function VaultUserDirectory() {
     id: string;
     clerkUserId: string;
     displayName: string;
-    country?: { name: string; flag: string } | null;
+    country?: { name: string; flag: string | null } | null;
     credits: number;
   } | null>(null);
 
@@ -176,18 +181,19 @@ export function VaultUserDirectory() {
   };
 
   // Handlers
-  const openDialogFor = (user: any, open: () => void) => {
+  const openDialogFor = (user: VaultUser, open: () => void) => {
     setSelectedUser({
       id: user.id,
       clerkUserId: user.clerkUserId,
-      displayName: user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
+      displayName: vaultUserName(user),
       country: user.country,
       credits: user.vault.credits,
     });
     open();
   };
-  const handleOpenAdjust = (user: any) => openDialogFor(user, () => setIsAdjustOpen(true));
-  const handleOpenCosmetics = (user: any) => openDialogFor(user, () => setIsCosmeticsOpen(true));
+  const handleOpenAdjust = (user: VaultUser) => openDialogFor(user, () => setIsAdjustOpen(true));
+  const handleOpenCosmetics = (user: VaultUser) =>
+    openDialogFor(user, () => setIsCosmeticsOpen(true));
 
   const handleAdjustSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -216,17 +222,17 @@ export function VaultUserDirectory() {
 
   const totalItems = vaultData?.total ?? 0;
   const selectedUserVault = selectedUser
-    ? vaultData?.users?.find((u: any) => u.id === selectedUser.id)?.vault
+    ? vaultData?.users?.find((u) => u.id === selectedUser.id)?.vault
     : null;
 
-  const columns = useMemo<FacetColumn<any>[]>(
+  const columns = useMemo<FacetColumn<VaultUser>[]>(
     () => [
       {
         key: "user",
         header: "User Identification",
         mobileRole: "hero",
-        accessor: (user: any) => user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
-        render: (_val: unknown, user: any) => (
+        accessor: vaultUserName,
+        render: (_val, user) => (
           <div className="flex items-center gap-2">
             {user.country?.flag && (
               <img
@@ -240,11 +246,11 @@ export function VaultUserDirectory() {
                 className="text-label max-w-[200px] truncate font-semibold"
                 title={`Clerk ID: ${user.clerkUserId}`}
               >
-                {user.country?.name ?? user.wikiUsername ?? user.clerkUserId}
+                {vaultUserName(user)}
               </div>
               {user.country?.name && (
                 <div className="text-label-secondary text-footnote flex max-w-[220px] flex-wrap gap-x-2 gap-y-0.5">
-                  {user.wikiUsername && <span>Wiki: {user.wikiUsername}</span>}
+                  {user.handle && <span>@{user.handle}</span>}
                   {user.forumUsername && <span>Forum: {user.forumUsername}</span>}
                   {user.discordUsername && <span>Discord: {user.discordUsername}</span>}
                 </div>
@@ -259,8 +265,8 @@ export function VaultUserDirectory() {
         align: "right",
         sortable: true,
         mobileRole: "badge",
-        accessor: (user: any) => user.vault?.credits ?? 0,
-        render: (_val: unknown, user: any) => (
+        accessor: (user) => user.vault?.credits ?? 0,
+        render: (_val, user) => (
           <span className="text-yellow font-semibold tabular-nums">
             {(user.vault?.credits ?? 0).toLocaleString(undefined, {
               minimumFractionDigits: 2,
@@ -276,8 +282,8 @@ export function VaultUserDirectory() {
         sortable: true,
         mobileRole: "field",
         mobileLabel: "Earned",
-        accessor: (user: any) => user.vault?.lifetimeEarned ?? 0,
-        render: (_val: unknown, user: any) => (
+        accessor: (user) => user.vault?.lifetimeEarned ?? 0,
+        render: (_val, user) => (
           <span className="text-label-secondary text-footnote tabular-nums">
             {(user.vault?.lifetimeEarned ?? 0).toLocaleString(undefined, {
               maximumFractionDigits: 1,
@@ -292,8 +298,8 @@ export function VaultUserDirectory() {
         sortable: true,
         mobileRole: "field",
         mobileLabel: "Spent",
-        accessor: (user: any) => user.vault?.lifetimeSpent ?? 0,
-        render: (_val: unknown, user: any) => (
+        accessor: (user) => user.vault?.lifetimeSpent ?? 0,
+        render: (_val, user) => (
           <span className="text-label-secondary text-footnote tabular-nums">
             {(user.vault?.lifetimeSpent ?? 0).toLocaleString(undefined, {
               maximumFractionDigits: 1,
@@ -306,27 +312,23 @@ export function VaultUserDirectory() {
         header: "Streak",
         align: "center",
         mobileRole: "field",
-        accessor: (user: any) => user.vault?.loginStreak ?? 0,
-        render: (_val: unknown, user: any) => (
-          <Badge variant="warning">{user.vault?.loginStreak ?? 0}d</Badge>
-        ),
+        accessor: (user) => user.vault?.loginStreak ?? 0,
+        render: (_val, user) => <Badge variant="warning">{user.vault?.loginStreak ?? 0}d</Badge>,
       },
       {
         key: "level",
         header: "Level",
         align: "center",
         mobileRole: "field",
-        accessor: (user: any) => user.vault?.vaultLevel ?? 1,
-        render: (_val: unknown, user: any) => (
-          <Badge variant="info">Lvl {user.vault?.vaultLevel ?? 1}</Badge>
-        ),
+        accessor: (user) => user.vault?.vaultLevel ?? 1,
+        render: (_val, user) => <Badge variant="info">Lvl {user.vault?.vaultLevel ?? 1}</Badge>,
       },
       {
         key: "actions",
         header: "Actions",
         align: "center",
         mobileRole: "action",
-        render: (_val: unknown, user: any) => (
+        render: (_val, user) => (
           <div className="flex items-center justify-center">
             <DropdownMenu>
               <DropdownMenuTrigger className="border-separator bg-background text-label hover:bg-fill-4 rounded-control text-caption inline-flex h-8 cursor-pointer items-center justify-center gap-2 border px-3 py-2 select-none">
@@ -342,12 +344,7 @@ export function VaultUserDirectory() {
                   <span>Adjust credits</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() =>
-                    setCardsPlayer({
-                      id: user.id,
-                      displayName: user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
-                    })
-                  }
+                  onClick={() => setCardsPlayer({ id: user.id, displayName: vaultUserName(user) })}
                   className="cursor-pointer gap-2 py-2"
                 >
                   <Gift className="text-blue h-3.5 w-3.5" />

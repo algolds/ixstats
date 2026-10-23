@@ -24,7 +24,6 @@ import {
 import { hasCountryWriteAccess } from "~/server/shared/country-authorization";
 import { redactEconomicBudget } from "~/lib/country/public-record";
 import { clerkPublicProfile } from "~/server/shared/clerk-public-profile";
-import { withoutHiddenWikiNames } from "~/server/shared/privacy-permissions";
 
 const HEAVY_COUNTRY_GEO_OMIT = { geometry: true, centroid: true, boundingBox: true } as const;
 
@@ -33,25 +32,10 @@ const SOVEREIGN_OWNER_SELECT = {
   clerkUserId: true,
   handle: true,
   forumUsername: true,
-  wikiUsername: true,
   membershipTier: true,
   role: { select: { displayName: true, name: true } },
 } satisfies Prisma.UserSelect;
 type SovereignOwner = Prisma.UserGetPayload<{ select: typeof SOVEREIGN_OWNER_SELECT }>;
-
-/**
- * The owner as the country record sends them: with the wiki name blanked while they hide wiki attribution
- * (`showWikiAttribution`; a read error counts as off), so the header, profile and MyCountry pills fall through to the
- * next name. The same for every viewer, the owner included, as the passport handle the pill links to is.
- */
-async function shownOwner(
-  db: Pick<PrismaClient, "userConnection">,
-  owner: SovereignOwner | null
-): Promise<SovereignOwner | null> {
-  if (!owner) return null;
-  const [shown] = await withoutHiddenWikiNames(db, [owner]);
-  return shown ?? null;
-}
 
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
@@ -255,16 +239,11 @@ export const economyProcedures = {
       );
 
       // `country` comes from an `include: any` query, so pin the owner to the shape selected above.
-      const rawUser = await shownOwner(ctx.db, country.owner as SovereignOwner | null);
+      const rawUser = country.owner as SovereignOwner | null;
       const sovereignUser = rawUser
         ? {
             id: rawUser.id,
-            username:
-              rawUser.handle ||
-              rawUser.forumUsername ||
-              rawUser.wikiUsername ||
-              rawUser.clerkUserId ||
-              null,
+            username: rawUser.handle || rawUser.forumUsername || rawUser.clerkUserId || null,
             roleName: rawUser.role?.displayName || rawUser.role?.name || "Sovereign Regent",
             membershipTier: rawUser.membershipTier || "citizen",
           }

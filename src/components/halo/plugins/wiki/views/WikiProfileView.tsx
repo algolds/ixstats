@@ -65,8 +65,10 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
     { enabled: !!countryName, staleTime: 60_000 }
   );
 
-  const wikiUsername =
-    userProfile?.wikiUsername ??
+  // The passport handle names the player and their contributions; an old wiki name is never shown.
+  const handle = userProfile?.handle ?? null;
+  const profileName =
+    handle ??
     (user?.username
       ? user.username.charAt(0).toUpperCase() + user.username.slice(1)
       : (user?.firstName ?? ""));
@@ -244,7 +246,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                     </AvatarGlow>
                     <div>
                       <div className="text-label text-headline flex items-center gap-2">
-                        <span>{wikiUsername || "Wiki profile"}</span>
+                        <span>{profileName || "Wiki profile"}</span>
                         {chatBadge.enabled && (
                           <CrownIcon
                             className="h-3.5 w-3.5 shrink-0"
@@ -285,13 +287,13 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                   <div className="space-y-2">
                     <div className="text-subhead text-label-secondary">Quick actions</div>
                     <div className="space-y-1">
-                      {wikiUsername && (
+                      {handle && (
                         <Button
                           type="button"
                           variant="secondary"
                           onClick={() => {
                             onClose();
-                            navigateWithBasePath(getWikiProfilePath(wikiUsername), router);
+                            navigateWithBasePath(getWikiProfilePath(handle), router);
                           }}
                           className="w-full justify-between"
                         >

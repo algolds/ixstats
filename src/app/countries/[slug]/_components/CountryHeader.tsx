@@ -59,8 +59,7 @@ export function CountryHeader() {
       sovereign={
         c.owner
           ? {
-              username:
-                str(c.owner.handle) ?? str(c.owner.forumUsername) ?? str(c.owner.wikiUsername),
+              username: str(c.owner.handle) ?? str(c.owner.forumUsername),
               roleName: str(c.owner.role?.displayName) ?? str(c.owner.role?.name),
               avatarUrl: str(c.owner.avatarUrl),
               role: str(c.owner.clerkRole) ?? str(c.owner.role?.name),

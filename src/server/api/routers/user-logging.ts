@@ -75,7 +75,7 @@ export const userLoggingRouter = createTRPCRouter({
               { id: { in: Array.from(SYSTEM_OWNER_IDS) } },
             ],
           },
-          select: { id: true, clerkUserId: true, wikiUsername: true, discordUsername: true },
+          select: { id: true },
         });
 
         const submitterName =

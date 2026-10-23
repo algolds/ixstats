@@ -388,16 +388,16 @@ describe("trading partner search", () => {
         id: "u_h",
         clerkUserId: "clerk_h",
         discordUsername: "rosegarden",
+        handle: null,
         forumUsername: null,
-        wikiUsername: null,
         country: { name: "Nowhere", leader: "Someone" },
       },
       {
         id: "u_v",
         clerkUserId: "clerk_v",
         discordUsername: "rosegarden2",
+        handle: null,
         forumUsername: null,
-        wikiUsername: null,
         country: { name: "Elsewhere", leader: "Other" },
       },
     ]);

@@ -19,6 +19,11 @@ import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
 import { publicArticleUrl } from "~/lib/wiki-os/config";
 
+/** A conversation's other participant, named as messaging names them (`batchResolveMessagingAccounts`). */
+interface SharedParticipant {
+  displayName?: string | null;
+}
+
 interface MarginShareModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -147,11 +152,14 @@ export function MarginShareModal({
           {/* ThinkShare dispatch */}
           {recentConversations.length > 0 && (
             <FacetListSection header="Send to conversation" headerAs="h4">
-              {recentConversations.map((c: any) => {
+              {recentConversations.map((c) => {
                 const participantName =
-                  c.participants
-                    ?.map((p: any) => p.user?.wikiUsername || p.user?.discordUsername || "User")
-                    .join(", ") || "Conversation";
+                  c.otherParticipants
+                    .map((p: SharedParticipant) => p.displayName)
+                    .filter(Boolean)
+                    .join(", ") ||
+                  c.name ||
+                  "Conversation";
 
                 return (
                   <FacetRow

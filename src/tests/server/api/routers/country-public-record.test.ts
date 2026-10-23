@@ -1,9 +1,9 @@
 /** @jest-environment node */
 // `jest` is the injected global on purpose: @swc/jest only hoists jest.mock() on the global.
 //
-// The reads behind a country's public profile. The header's owner never reaches a client under their wiki name while
-// wiki attribution is off, failing closed (privacy). The small profile ten screens ask for never selects the geometry
-// blob (plan 404). The intro reads the country's own wiki page and never looks its name up on other wikis when that
+// The reads behind a country's public profile. The header names the owner by their passport handle, then their forum
+// name, and never selects or sends an old wiki name (identity, plan A). The small profile ten screens ask for never
+// selects the geometry blob (plan 404). The intro reads the country's own wiki page and never looks its name up on other wikis when that
 // page is missing, with the name and country caches apart. Crisis statistics count only the crises that list the
 // country, in either stored form. The vitality scores and the World Census never fabricate a missing figure and rank
 // within the country's realm, lower-is-better where it should be. (Who sees the statecraft record is in
@@ -51,11 +51,10 @@ import {
 } from "~/server/shared/mycountry-helpers";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
-import { privacyConfigRow, wikiAttributionOff } from "~/tests/helpers/privacy-config-fake";
 
 const visitorOn = (db: object) => createMockRouterContext({ auth: null, user: null, db }) as never;
 
-describe("countries.getByIdWithEconomicData: the owner's wiki name and wiki attribution", () => {
+describe("countries.getByIdWithEconomicData: the owner is named by their handle, never a wiki name", () => {
   /** The owner as the procedure selects them (SOVEREIGN_OWNER_SELECT in countries/economy.ts). */
   type OwnerRow = Prisma.UserGetPayload<{
     select: {
@@ -63,7 +62,6 @@ describe("countries.getByIdWithEconomicData: the owner's wiki name and wiki attr
       clerkUserId: true;
       handle: true;
       forumUsername: true;
-      wikiUsername: true;
       membershipTier: true;
       role: { select: { displayName: true; name: true } };
     };
@@ -73,7 +71,6 @@ describe("countries.getByIdWithEconomicData: the owner's wiki name and wiki attr
     clerkUserId: "owner_clerk",
     handle: null,
     forumUsername: null,
-    wikiUsername: "Wiki Ruler",
     membershipTier: "citizen",
     role: null,
   };
@@ -93,7 +90,7 @@ describe("countries.getByIdWithEconomicData: the owner's wiki name and wiki attr
   }
   type Db = ReturnType<typeof makeDb>;
   type Read = {
-    owner: { wikiUsername: string | null; forumUsername: string | null } | null;
+    owner: { handle: string | null; forumUsername: string | null } | null;
     sovereignUser: { username: string | null } | null;
   };
   const theOwner = (db: Db) =>
@@ -114,33 +111,31 @@ describe("countries.getByIdWithEconomicData: the owner's wiki name and wiki attr
 
   beforeEach(() => clearTrpcMemoryCache());
 
+  it("never selects the owner's wiki name", async () => {
+    const db = makeDb({ handle: "ruler" });
+    await read(visitorOn(db));
+    const [args] = db.country.findFirst.mock.calls[0] as [
+      { include: { owner: { select: Record<string, boolean> } } },
+    ];
+    expect(args.include.owner.select).toMatchObject({ handle: true, forumUsername: true });
+    expect(args.include.owner.select).not.toHaveProperty("wikiUsername");
+    expect(db.userConnection.findMany).not.toHaveBeenCalled();
+  });
+
   it.each([
     ["a visitor", (db: Db) => visitorOn(db)],
     ["the owner", theOwner],
-  ])("sends %s no wiki name of an owner with the switch off", async (_who, ctxFor) => {
-    const db = makeDb({ forumUsername: "ForumRuler" });
-    db.userConnection.findMany.mockResolvedValue(wikiAttributionOff("owner_clerk"));
-    const record = await read(ctxFor(db));
-    expect(record.owner).toMatchObject({ wikiUsername: null, forumUsername: "ForumRuler" });
-    expect(record.sovereignUser?.username).toBe("ForumRuler");
-    expect(JSON.stringify(record)).not.toContain("Wiki Ruler");
+  ])("names the owner to %s by handle first", async (_who, ctxFor) => {
+    const record = await read(ctxFor(makeDb({ handle: "ruler", forumUsername: "ForumRuler" })));
+    expect(record.owner).toMatchObject({ handle: "ruler", forumUsername: "ForumRuler" });
+    expect(record.sovereignUser?.username).toBe("ruler");
   });
 
-  it("keeps the wiki name of an owner with the switch on", async () => {
-    const db = makeDb();
-    db.userConnection.findMany.mockResolvedValue([
-      privacyConfigRow("owner_clerk", { showWikiAttribution: true }),
-    ]);
-    expect((await read(visitorOn(db))).owner?.wikiUsername).toBe("Wiki Ruler");
-  });
-
-  it("fails closed: a switch it cannot read hides the wiki name", async () => {
-    const db = makeDb();
-    db.userConnection.findMany.mockRejectedValue(new Error("db down"));
-    const record = await read(visitorOn(db));
-    expect(record.owner?.wikiUsername).toBeNull();
-    expect(record.sovereignUser?.username).toBe("owner_clerk");
-    expect(JSON.stringify(record)).not.toContain("Wiki Ruler");
+  it("falls through to the forum name, then the Clerk id", async () => {
+    const forum = await read(visitorOn(makeDb({ forumUsername: "ForumRuler" })));
+    expect(forum.sovereignUser?.username).toBe("ForumRuler");
+    clearTrpcMemoryCache();
+    expect((await read(visitorOn(makeDb()))).sovereignUser?.username).toBe("owner_clerk");
   });
 });
 

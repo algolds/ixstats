@@ -285,7 +285,7 @@ function buildIdentity(
       str(c.coatOfArms) ?? (coatFile ? (resolveImageUrl(coatFile, imageSource) ?? null) : null),
     sovereign: owner
       ? {
-          username: firstStr(owner.handle, owner.forumUsername, owner.wikiUsername),
+          username: firstStr(owner.handle, owner.forumUsername),
           roleName: firstStr(owner.role?.displayName, owner.role?.name),
           avatarUrl: str(owner.avatarUrl),
           role: firstStr(owner.clerkRole, owner.role?.name),

@@ -153,7 +153,6 @@ const SEARCH_SELECT = {
   clerkUserId: true,
   handle: true,
   forumUsername: true,
-  wikiUsername: true,
   discordUsername: true,
   country: { select: { name: true, leader: true } },
 } satisfies Prisma.UserSelect;
@@ -170,32 +169,26 @@ function searchWhere(viewer: Party, text: string): Prisma.UserWhereInput {
       { handle: { startsWith: literal, mode: "insensitive" } },
       { country: { OR: [{ name: term }, { leader: term }] } },
       { forumUsername: term },
-      { wikiUsername: term },
       { discordUsername: term },
     ],
   };
 }
 
-/** Whether a row matched on a name its owner shows: a hidden Discord tag or wiki name (SL-4) matches nothing. */
-function matchesShown(
-  row: SearchRow,
-  needle: string,
-  hidden: { discord: Set<string>; wiki: Set<string> }
-): boolean {
+/** Whether a row matched on a name its owner shows: a hidden Discord tag (SL-4) matches nothing. */
+function matchesShown(row: SearchRow, needle: string, hidden: { discord: Set<string> }): boolean {
   const has = (value: string | null | undefined) => !!value?.toLowerCase().includes(needle);
   return (
     !!row.handle?.toLowerCase().startsWith(needle) ||
     has(row.country?.name) ||
     has(row.country?.leader) ||
     has(row.forumUsername) ||
-    (!hidden.wiki.has(row.clerkUserId) && has(row.wikiUsername)) ||
     (!hidden.discord.has(row.clerkUserId) && has(row.discordUsername))
   );
 }
 
 /**
- * Players matching the typed text: a stored handle's start, a nation's name or leader, a forum name, or a wiki name or
- * Discord tag their owner shows. At most eight, named by the identity rule.
+ * Players matching the typed text: a stored handle's start, a nation's name or leader, a forum name, or a Discord tag
+ * their owner shows. At most eight, named by the identity rule.
  */
 export async function searchTradePartners(
   db: PartnerDb,

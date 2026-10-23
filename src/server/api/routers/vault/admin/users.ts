@@ -2,7 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault/vault-service";
 import { notificationAPI } from "~/lib/notifications/api";
-import { type VaultTransactionType } from "@prisma/client";
+import { type Prisma, type VaultTransactionType } from "@prisma/client";
 import { vaultTransactionTypeEnum } from "../_transactionType";
 
 export const vaultAdminUsersRouter = createTRPCRouter({
@@ -52,14 +52,14 @@ export const vaultAdminUsersRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const whereClause: any = {};
+        const whereClause: Prisma.UserWhereInput = {};
         if (input.search && input.search.trim()) {
           const s = input.search.trim();
           whereClause.OR = [
             { id: { contains: s, mode: "insensitive" } },
             { clerkUserId: { contains: s, mode: "insensitive" } },
+            { handle: { contains: s, mode: "insensitive" } },
             { forumUsername: { contains: s, mode: "insensitive" } },
-            { wikiUsername: { contains: s, mode: "insensitive" } },
             { discordUsername: { contains: s, mode: "insensitive" } },
           ];
         }
@@ -81,9 +81,9 @@ export const vaultAdminUsersRouter = createTRPCRouter({
           users: users.map((u) => ({
             id: u.id,
             clerkUserId: u.clerkUserId,
+            handle: u.handle,
             forumUsername: u.forumUsername,
             discordUsername: u.discordUsername,
-            wikiUsername: u.wikiUsername,
             country: u.country,
             vault: u.vault || {
               credits: 0,
