@@ -3,9 +3,9 @@
  * PENDING review, with its art's licence recorded (licensing drafts §2.5(b)). Art licensed non-commercial or
  * no-derivatives blocks it; a page with a card, or a realm's nation page, is skipped. Every outcome is a value, so
  * one bad page never stops an import job: a failed read of the article, its database read included, is a FAILED
- * outcome. stageArticleCard and stageCommonsFile throw only DiscoveryStopped, when a wiki stops answering the article
- * or licence reads (so the job runner can stop the job), and a failure of the importer's own database reads and
- * writes. stageForAdmin answers an admin procedure with a TRPCError instead.
+ * outcome. stageArticleCard and stageCommonsFile throw only DiscoveryStopped, when a wiki stops answering the article,
+ * licence or file-category reads (so the job runner can stop the job), and a failure of the importer's own database
+ * reads and writes. stageForAdmin answers an admin procedure with a TRPCError instead.
  */
 import { Prisma, type CardRarity, type CardReviewState, type PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
@@ -21,7 +21,7 @@ import {
   type CardArticleSource,
   type CardWikiSource,
 } from "~/lib/cards/card-sources";
-import { classifyLoreArticle } from "~/lib/cards/category-classifier";
+import { classifierColumns, classifyLoreArticle } from "~/lib/cards/category-classifier";
 import { articleHomePage } from "~/lib/cards/home-realm";
 import { wikiFallbackRealm } from "~/lib/cards/legacy-mapping";
 import {
@@ -35,7 +35,12 @@ import { rarityForScore, type RarityThresholds } from "~/lib/cards/rarity-engine
 import { getCurrentIxCardSeason } from "~/lib/cards/season";
 import { getValuationConfig, referenceValue } from "~/lib/cards/valuation";
 import type { CardAuthorInfo } from "~/types/cards-display";
-import { captureArtLicence, wikiQueryFor, type CapturedLicence } from "./cards.art-licence";
+import {
+  captureArtLicence,
+  fileCategories,
+  wikiQueryFor,
+  type CapturedLicence,
+} from "./cards.art-licence";
 import { getRarityThresholds } from "./cards.config";
 
 export interface ImportContext {
@@ -268,7 +273,7 @@ export async function stageArticleCard(
       artwork: read.artwork,
       artworkSource: read.artwork ? "WIKI_FETCHED" : "PROCEDURAL",
       artworkCredit: licence?.attribution ?? null,
-      category: read.classification.category,
+      ...classifierColumns(read.classification),
       cardType: "LORE",
       rarity,
       season: await getCurrentIxCardSeason(db),
@@ -307,9 +312,10 @@ export async function stageCommonsFile(
   if (!licence) return { status: "FAILED", reason: "Wikimedia Commons has no such file" };
   if (licence.status === "RESTRICTED") return blocked(licence);
 
+  const categories = await fileCategories(context.query, fileTitle);
   const title = commonsCardTitle(fileTitle);
   const rarity = rarityForScore(0, context.thresholds);
-  const category = classifyLoreArticle({ title, source: "commons" }).category;
+  const classification = classifyLoreArticle({ title, categories, source: "commons" });
   return createStagedCard(
     db,
     {
@@ -317,7 +323,7 @@ export async function stageCommonsFile(
       artwork: licence.fileUrl,
       artworkSource: "WIKI_FETCHED",
       artworkCredit: licence.attribution,
-      category,
+      ...classifierColumns(classification),
       cardType: "LORE",
       rarity,
       season: await getCurrentIxCardSeason(db),

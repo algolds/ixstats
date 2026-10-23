@@ -8,13 +8,19 @@ jest.mock("~/lib/cards/lore-card-generator", () => ({
 }));
 jest.mock("~/server/modules/cards/cards.art-licence", () => ({
   captureArtLicence: jest.fn(),
+  fileCategories: jest.fn(),
   wikiQueryFor: jest.fn(),
 }));
 
 import { Prisma } from "@prisma/client";
 import { wikiLoreCardGenerator } from "~/lib/cards/lore-card-generator";
 import { type LoreCardCandidate } from "~/lib/cards/lore-card-candidate";
-import { captureArtLicence, wikiQueryFor } from "~/server/modules/cards/cards.art-licence";
+import {
+  captureArtLicence,
+  fileCategories,
+  wikiQueryFor,
+} from "~/server/modules/cards/cards.art-licence";
+import type { WikiQuery } from "~/lib/realms/lore-import";
 import { DEFAULT_RARITY_THRESHOLDS } from "~/lib/cards/rarity-engine";
 import { TRPCError } from "@trpc/server";
 import {
@@ -27,6 +33,7 @@ import { createMockPrisma } from "~/tests/helpers/mock-db";
 
 const generateCard = jest.mocked(wikiLoreCardGenerator.generateCard);
 const capture = jest.mocked(captureArtLicence);
+const fileCats = jest.mocked(fileCategories);
 const context: ImportContext = { query: jest.fn(), thresholds: DEFAULT_RARITY_THRESHOLDS.iiwiki };
 
 const candidate = (overrides: Partial<LoreCardCandidate> = {}): LoreCardCandidate => ({
@@ -77,6 +84,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   generateCard.mockResolvedValue(candidate());
   capture.mockResolvedValue(openLicence);
+  fileCats.mockResolvedValue([]);
 });
 
 describe("stageArticleCard", () => {
@@ -118,6 +126,49 @@ describe("stageArticleCard", () => {
       { status: "SKIPPED", reason: "Already a card" }
     );
   });
+  it("writes the classifier's category, subcategory, confidence and review flag, and no legacy label", async () => {
+    const db = makeDb();
+    generateCard.mockResolvedValue(
+      candidate({
+        classification: {
+          category: "GOVERNMENT",
+          subcategory: "legislature-or-body",
+          confidence: 0.32,
+        },
+      })
+    );
+    await stageArticleCard(db as never, "iiwiki", input("Union Assembly"), context);
+    expect(createdData(db)).toMatchObject({
+      category: "GOVERNMENT",
+      subcategory: "legislature-or-body",
+      categorySource: "CLASSIFIER",
+      categoryConfidence: 0.32,
+      categoryNeedsReview: true,
+    });
+    expect(createdData(db).metadata).not.toHaveProperty("category");
+  });
+  it("stages a confident classification without sending it to review", async () => {
+    const db = makeDb();
+    await stageArticleCard(db as never, "iiwiki", input("Union Assembly"), context);
+    expect(createdData(db)).toMatchObject({
+      category: "GOVERNMENT",
+      categoryConfidence: 0.9,
+      categoryNeedsReview: false,
+    });
+  });
+  it("stages an article nothing classifies as Uncategorised, waiting for review", async () => {
+    const db = makeDb();
+    generateCard.mockResolvedValue(
+      candidate({ classification: { category: null, subcategory: null, confidence: 0 } })
+    );
+    await stageArticleCard(db as never, "iiwiki", input("Union Assembly"), context);
+    expect(createdData(db)).toMatchObject({
+      category: null,
+      subcategory: null,
+      categorySource: "CLASSIFIER",
+      categoryNeedsReview: true,
+    });
+  });
 });
 describe("stageCommonsFile", () => {
   const commons: ImportContext = { ...context, thresholds: DEFAULT_RARITY_THRESHOLDS.commons };
@@ -135,6 +186,62 @@ describe("stageCommonsFile", () => {
       status: "BLOCKED",
     });
     expect(db.card.create).not.toHaveBeenCalled();
+  });
+  it("classifies a Commons file by its file page's categories, not its title alone", async () => {
+    const db = makeDb();
+    capture.mockResolvedValue(flag);
+    fileCats.mockResolvedValue(["Flags of Ireland", "SVG flags"]);
+    await stageCommonsFile(db as never, input("File:Flag of Ireland.svg"), commons);
+    expect(fileCats).toHaveBeenCalledWith(commons.query, "File:Flag of Ireland.svg");
+    expect(createdData(db)).toMatchObject({
+      category: "NATION",
+      subcategory: "nation",
+      categorySource: "CLASSIFIER",
+    });
+    expect(createdData(db).metadata).toEqual({ descriptionUrl: flag.descriptionUrl });
+  });
+  it("stages a Commons file its categories do not classify as Uncategorised, waiting for review", async () => {
+    const db = makeDb();
+    capture.mockResolvedValue({ ...flag, fileTitle: "File:Sunset.jpg" });
+    await stageCommonsFile(db as never, input("File:Sunset.jpg"), commons);
+    expect(createdData(db)).toMatchObject({ category: null, categoryNeedsReview: true });
+  });
+  it("reads no file categories for a file it blocks", async () => {
+    const db = makeDb();
+    capture.mockResolvedValue({ ...flag, licence: "CC BY-NC 2.0", status: "RESTRICTED" });
+    await stageCommonsFile(db as never, input("File:Flag.svg"), commons);
+    expect(fileCats).not.toHaveBeenCalled();
+  });
+});
+describe("fileCategories", () => {
+  const { fileCategories: actualFileCategories } = jest.requireActual<
+    typeof import("~/server/modules/cards/cards.art-licence")
+  >("~/server/modules/cards/cards.art-licence");
+  it("asks for the file page's visible categories and strips their prefix", async () => {
+    const query = jest.fn().mockResolvedValue({
+      query: {
+        pages: [
+          {
+            title: "File:Flag of Ireland.svg",
+            categories: [{ title: "Category:Flags of Ireland" }, { title: "Category:SVG flags" }],
+          },
+        ],
+      },
+    });
+    expect(await actualFileCategories(query as WikiQuery, "File:Flag of Ireland.svg")).toEqual([
+      "Flags of Ireland",
+      "SVG flags",
+    ]);
+    expect(query.mock.calls[0]![0]).toEqual({
+      titles: "File:Flag of Ireland.svg",
+      prop: "categories",
+      clshow: "!hidden",
+      cllimit: "50",
+    });
+  });
+  it("reads a missing page as no categories", async () => {
+    const query = jest.fn().mockResolvedValue({});
+    expect(await actualFileCategories(query as WikiQuery, "File:Gone.svg")).toEqual([]);
   });
 });
 
