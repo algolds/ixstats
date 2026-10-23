@@ -24,7 +24,10 @@ export function syntheticUserId(userId: string): number {
   return 1_000_000_000 + (hash % 1_000_000_000);
 }
 
-/** The user `userId` with their verified wiki name, as the permission services read them; null without a verified link. */
+/**
+ * The user `userId` with their verified wiki name and passport handle (the name a save is signed with), as the
+ * permission services read them; null without a verified link.
+ */
 export async function loadSessionUser(userId: string): Promise<SessionUser | null> {
   const [user, link] = await Promise.all([
     db.user.findUnique({
@@ -32,6 +35,7 @@ export async function loadSessionUser(userId: string): Promise<SessionUser | nul
       select: {
         id: true,
         clerkUserId: true,
+        handle: true,
         createdAt: true,
         role: { select: { id: true, name: true, level: true } },
       },
@@ -50,6 +54,7 @@ export async function loadSessionUser(userId: string): Promise<SessionUser | nul
       user: {
         id: user.id,
         clerkUserId: user.clerkUserId,
+        handle: user.handle,
         wikiUsername: link.username,
         createdAt: user.createdAt,
         role: user.role,
@@ -78,7 +83,11 @@ export const prismaAuthStore: AuthStore = {
   },
 
   async touchBotPassword(id, usedAt) {
-    await db.wikiBotPassword.update({ where: { id }, data: { lastUsedAt: usedAt }, select: { id: true } });
+    await db.wikiBotPassword.update({
+      where: { id },
+      data: { lastUsedAt: usedAt },
+      select: { id: true },
+    });
   },
 
   async createSession(input) {

@@ -44,13 +44,27 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { invalidateCsrfToken } from "~/lib/wiki-os/adapters/mediawiki/csrf-cache";
 import { hashFile, isFileHash } from "~/lib/wiki-os/core/file-hash";
-import { STAGED_FILE_LOCK_NAMESPACE, STAGED_ORPHAN_AGE_MS, sweepStagedOrphans, withStagedFileLock } from "~/lib/wiki-os/services/staged-uploads";
+import {
+  STAGED_FILE_LOCK_NAMESPACE,
+  STAGED_ORPHAN_AGE_MS,
+  sweepStagedOrphans,
+  withStagedFileLock,
+} from "~/lib/wiki-os/services/staged-uploads";
 import { runUploadJob } from "~/lib/wiki-os/services/mirror-upload";
 import type { MirrorJob } from "~/lib/wiki-os/services/mirror-queue";
-import { isStaged, readStaged, releaseStaged, stageBytes } from "~/lib/wiki-os/services/upload-staging";
+import {
+  isStaged,
+  readStaged,
+  releaseStaged,
+  stageBytes,
+} from "~/lib/wiki-os/services/upload-staging";
 import { uploadFile } from "~/lib/wiki-os/services/upload-service";
 import { API_URL, createFakeMediaWiki } from "~/tests/helpers/fake-mediawiki";
-import { advisoryLocks, advisoryLocks as allAdvisoryLocks, fakeWikiDb } from "~/tests/helpers/fake-wiki-db";
+import {
+  advisoryLocks,
+  advisoryLocks as allAdvisoryLocks,
+  fakeWikiDb,
+} from "~/tests/helpers/fake-wiki-db";
 import { STAGED_FILE_PATH } from "~/lib/wiki-os/config";
 
 /** The staged-file locks taken so far (a new File: page's creation takes a lock of its own, for the title: not these). */
@@ -87,7 +101,7 @@ const BYTES = Uint8Array.from([
 const SHA1 = hashFile(BYTES).base36;
 const ctx = {
   auth: { userId: "clerk_1" },
-  user: { id: "user-1", clerkUserId: "clerk_1", wikiUsername: "Heku" },
+  user: { id: "user-1", clerkUserId: "clerk_1", handle: "heku" },
 };
 
 const upload = (filename: string, over: { ignoreWarnings?: boolean } = {}) =>

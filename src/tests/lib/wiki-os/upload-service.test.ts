@@ -37,6 +37,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { TRPCError } from "@trpc/server";
 import "sharp";
+import { HANDLE_REQUIRED_MESSAGE } from "~/lib/wiki-os/auth";
 import { MAX_UPLOAD_BYTES } from "~/lib/wiki-os/config";
 import { hashFile } from "~/lib/wiki-os/core/file-hash";
 import { authorizeAction, requireRight } from "~/lib/wiki-os/permissions";
@@ -74,7 +75,7 @@ const png = (width: number, height: number, salt = 0) =>
 
 const ctx = {
   auth: { userId: "clerk_1" },
-  user: { id: "user-1", clerkUserId: "clerk_1", wikiUsername: "Heku" },
+  user: { id: "user-1", clerkUserId: "clerk_1", handle: "heku" },
 };
 
 let directory: string;
@@ -286,6 +287,25 @@ describe("refusals", () => {
     await expect(uploadFile(request())).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(staged()).toEqual([]);
     expect(tables.wikiAsset.rows).toHaveLength(0);
+    expect(jobs()).toHaveLength(0);
+  });
+
+  it("refuses a player with no passport handle, even over an existing File: page, and stores nothing", async () => {
+    tables.wikiArticle.seed({
+      title: "File:Flag of Eurth.png",
+      source: "ixwiki",
+      wikitext: "old text",
+      status: "PUBLISHED",
+    });
+    const noHandle = { ...ctx, user: { ...ctx.user, handle: null } };
+
+    await expect(uploadFile(request({ ctx: noHandle }))).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message: HANDLE_REQUIRED_MESSAGE,
+    });
+    expect(staged()).toEqual([]);
+    expect(tables.wikiAsset.rows).toHaveLength(0);
+    expect(tables.wikiLog.rows).toHaveLength(0);
     expect(jobs()).toHaveLength(0);
   });
 

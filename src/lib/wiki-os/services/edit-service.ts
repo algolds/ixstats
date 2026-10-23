@@ -12,7 +12,7 @@ import { TRPCError } from "@trpc/server";
 import { ArticleRepository } from "../core";
 import { canonicalizeTitle } from "../core/title";
 import { CloudflareGuardian } from "../guardian/cloudflare-guardian";
-import { isWikiAdmin, resolveWikiUsername, type WikiAuthContext } from "../auth";
+import { isWikiAdmin, requireWikiAuthorName, type WikiAuthContext } from "../auth";
 import { authorizeAction } from "../permissions";
 
 /**
@@ -100,17 +100,23 @@ export interface WikitextSave {
    * the save's transaction, so two saves with the same base cannot both succeed. Omitted: no check.
    */
   expectedHeadRef?: string | null;
+  /**
+   * The author of a save no signed-in player makes, such as the story-chain sync; a player's save is always
+   * signed with their handle.
+   */
+  authorLabel?: string;
 }
 
 /**
- * Save `save.wikitext` as a new revision of `save.title`, authored as the caller (the caller has
- * been authorized): PostgreSQL first (the revision and its mirror job in one transaction,
- * `ArticleRepository.saveArticle`, which also makes the edit-conflict check of `save.expectedHeadRef`),
- * then the edge-cache purge. Throws `EditConflictError` for a save based on a revision that is no longer the head.
+ * Save `save.wikitext` as a new revision of `save.title`, signed with the caller's passport handle (or
+ * `save.authorLabel`; the caller has been authorized): PostgreSQL first (the revision and its mirror job in
+ * one transaction, `ArticleRepository.saveArticle`, which also makes the edit-conflict check of
+ * `save.expectedHeadRef`), then the edge-cache purge. Throws `EditConflictError` for a save based on a revision that is no longer the head,
+ * and PRECONDITION_FAILED, before anything is written, for a player with no handle.
  */
 export async function commitWikitextSave(ctx: WikiAuthContext, save: WikitextSave) {
   const { title, wikitext, summary, minor, expectedHeadRef } = save;
-  const authorName = resolveWikiUsername(ctx) ?? "Community Contributor";
+  const authorName = save.authorLabel ?? requireWikiAuthorName(ctx);
 
   // 1. Primary Save: Direct to PostgreSQL
   const saveResult = await ArticleRepository.saveArticle(

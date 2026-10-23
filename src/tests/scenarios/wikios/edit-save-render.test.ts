@@ -30,7 +30,9 @@
  *   nothing else; an eviction that cannot reach one cache still clears the others and never fails the save.
  */
 jest.mock("~/server/db", () => {
-  const fake = jest.requireActual("~/tests/helpers/fake-wiki-db").createFakeWikiDb({ prisma: true });
+  const fake = jest
+    .requireActual("~/tests/helpers/fake-wiki-db")
+    .createFakeWikiDb({ prisma: true });
   return { __esModule: true, fake, db: fake.db, isDatabaseReadOnly: true };
 });
 jest.mock("~/lib/wiki-os/services/mirror-outbox", () => ({
@@ -44,7 +46,10 @@ jest.mock("~/lib/auth", () => ({
   SYSTEM_OWNER_IDS: [],
   UserManagementService: jest.fn(),
 }));
-jest.mock("~/lib/auth/system-owner-constants", () => ({ __esModule: true, isSystemOwner: () => false }));
+jest.mock("~/lib/auth/system-owner-constants", () => ({
+  __esModule: true,
+  isSystemOwner: () => false,
+}));
 jest.mock("~/lib/notifications/api", () => ({
   __esModule: true,
   notificationAPI: { create: jest.fn(), createMany: jest.fn().mockResolvedValue([]) },
@@ -63,7 +68,10 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosEditingRouter } from "~/server/api/routers/wikios/editing";
 import { wikiosPageContentRouter } from "~/server/api/routers/wikios/page-content";
 import { wikiosHistoryDiffRouter } from "~/server/api/routers/wikios/history-diff";
-import { renderArticleViaMediaWiki, type RenderMetadata } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
+import {
+  renderArticleViaMediaWiki,
+  type RenderMetadata,
+} from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import { getArticleIntro, getRevisionWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { wikiBridgeCache } from "~/lib/wiki-os/adapters/mediawiki/bridge/types";
 import { intelligentLoreCache } from "~/lib/wiki-os/core/intelligent-lore-cache";
@@ -81,7 +89,13 @@ const { tables } = fake;
 const member = () =>
   createMockRouterContext({
     auth: { userId: "clerk-member" },
-    user: { id: "db-member", clerkUserId: "clerk-member", wikiUsername: "Member", role: { name: "user", level: 100 } },
+    user: {
+      id: "db-member",
+      clerkUserId: "clerk-member",
+      handle: "Member",
+      wikiUsername: "Member",
+      role: { name: "user", level: 100 },
+    },
   }) as never;
 const signedOut = () => createMockRouterContext({ auth: null, user: null }) as never;
 const editing = () => createCallerFactory(wikiosEditingRouter)(member());
@@ -89,7 +103,13 @@ const administrator = () =>
   createCallerFactory(wikiosEditingRouter)(
     createMockRouterContext({
       auth: { userId: "clerk-admin" },
-      user: { id: "db-admin", clerkUserId: "clerk-admin", wikiUsername: "Admin", role: { name: "admin", level: 10 } },
+      user: {
+        id: "db-admin",
+        clerkUserId: "clerk-admin",
+        handle: "Admin",
+        wikiUsername: "Admin",
+        role: { name: "admin", level: 10 },
+      },
     }) as never
   );
 const reading = () => createCallerFactory(wikiosPageContentRouter)(signedOut());
@@ -120,17 +140,23 @@ const revisionsOf = (id: string) => tables.wikiRevision.rows.filter((row) => row
 const categoriesOf = (id: string) =>
   tables.wikiCategoryMember.rows
     .filter((row) => row.articleId === id)
-    .map((row) => tables.wikiCategory.rows.find((category) => category.id === row.categoryId)?.name);
+    .map(
+      (row) => tables.wikiCategory.rows.find((category) => category.id === row.categoryId)?.name
+    );
 const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
 const notices = () =>
   jest
     .mocked(notificationAPI.createMany)
-    .mock.calls.flatMap(([inputs]) => inputs.map((input) => `${input.userId} ${(input.metadata as { kind: string }).kind}`));
+    .mock.calls.flatMap(([inputs]) =>
+      inputs.map((input) => `${input.userId} ${(input.metadata as { kind: string }).kind}`)
+    );
 
 const realFetch = global.fetch;
 beforeAll(() => {
   // MediaWiki is never asked; the edge purge after a save is a request that fails quietly
-  global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 404, json: async () => ({}) }) as never;
+  global.fetch = jest
+    .fn()
+    .mockResolvedValue({ ok: false, status: 404, json: async () => ({}) }) as never;
 });
 afterAll(() => {
   global.fetch = realFetch;
@@ -141,13 +167,20 @@ beforeEach(() => {
   fake.reset();
   wikiBridgeCache.clear();
   jest.clearAllMocks();
-  jest.mocked(renderArticleViaMediaWiki).mockImplementation(async (wikitext: string) => parse(wikitext));
+  jest
+    .mocked(renderArticleViaMediaWiki)
+    .mockImplementation(async (wikitext: string) => parse(wikitext));
   tables.user.seed(
     { id: "db-member", clerkUserId: "clerk-member", wikiUsername: "Member" },
     { id: "db-watcher", clerkUserId: "clerk-watcher", wikiUsername: "Watcher" }
   );
   // a verified link to an old, active wiki account: the member is autoconfirmed
-  tables.wikiAccountLink.seed({ userId: "db-member", source: "ixwiki", username: "Member", verifiedAt: new Date("2026-01-01") });
+  tables.wikiAccountLink.seed({
+    userId: "db-member",
+    source: "ixwiki",
+    username: "Member",
+    verifiedAt: new Date("2026-01-01"),
+  });
   const article = tables.wikiArticle.insert({
     title: "Caphiria",
     slug: "caphiria",
@@ -155,11 +188,21 @@ beforeEach(() => {
     htmlSyncedAt: new Date("2026-09-01T00:00:00Z"),
     renderedView: buildViewBundle("<p>Caphiria is a kingdom.</p>"),
   });
-  r1 = tables.wikiRevision.insert({ articleId: article.id, wikitext: V1, byteSize: V1.length, byteDelta: V1.length, mwRevId: 5001, author: "Founder" }).id;
+  r1 = tables.wikiRevision.insert({
+    articleId: article.id,
+    wikitext: V1,
+    byteSize: V1.length,
+    byteDelta: V1.length,
+    mwRevId: 5001,
+    author: "Founder",
+  }).id;
   const old = tables.wikiCategory.insert({ name: "Old", slug: "old" });
   tables.wikiCategoryMember.seed({ articleId: article.id, categoryId: old.id });
   // the editor and another member watch the page: only the other one is told
-  tables.wikiWatchlist.seed({ userId: "db-watcher", articleId: article.id }, { userId: "db-member", articleId: article.id });
+  tables.wikiWatchlist.seed(
+    { userId: "db-watcher", articleId: article.id },
+    { userId: "db-member", articleId: article.id }
+  );
 });
 
 describe("a member edits Caphiria and readers see the new page", () => {
@@ -167,7 +210,9 @@ describe("a member edits Caphiria and readers see the new page", () => {
     const loaded = await reading().getWikitext({ title: "Caphiria" });
     expect(loaded).toMatchObject({ wikitext: V1, revisionRef: "5001" });
     // the country and geo intros read the page through the bridge, which keeps what it read for 30 minutes
-    await expect(getArticleIntro("Caphiria")).resolves.toMatchObject({ text: "Caphiria is a kingdom." });
+    await expect(getArticleIntro("Caphiria")).resolves.toMatchObject({
+      text: "Caphiria is a kingdom.",
+    });
 
     const saved = await editing().saveWikitext({
       title: "Caphiria",
@@ -189,9 +234,9 @@ describe("a member edits Caphiria and readers see the new page", () => {
     });
     expect(page().summary).toMatch(/^Caphiria is an empire in Sarpedon/);
     // one revision job, for the revision the save wrote
-    expect(tables.wikiMirrorJob.rows.map((job) => `${job.kind} ${job.title} ${job.revisionId}`)).toEqual([
-      `revision Caphiria ${r2!.id}`,
-    ]);
+    expect(
+      tables.wikiMirrorJob.rows.map((job) => `${job.kind} ${job.title} ${job.revisionId}`)
+    ).toEqual([`revision Caphiria ${r2!.id}`]);
 
     await settle();
     // one render, of the new text; the watcher (not the editor) was told
@@ -201,7 +246,9 @@ describe("a member edits Caphiria and readers see the new page", () => {
     // the page's sets are the render's: the category the edit removed is gone
     expect(categoriesOf(page().id)).toEqual(["Kingdoms"]);
     expect(tables.wikiTemplateLink.rows.map((row) => row.templateTitle)).toEqual(["Template:Flag"]);
-    expect(tables.wikiLink.rows.map((row) => [row.sourceArticleId, row.targetSlug])).toEqual([[page().id, "sarpedon"]]);
+    expect(tables.wikiLink.rows.map((row) => [row.sourceArticleId, row.targetSlug])).toEqual([
+      [page().id, "sarpedon"],
+    ]);
 
     const view = await reading().getArticleHtml({ title: "Caphiria" });
     expect(view.contentHtml).toContain("Caphiria");
@@ -216,7 +263,11 @@ describe("a member edits Caphiria and readers see the new page", () => {
     await editing().saveWikitext({ title: "Caphiria", wikitext: V2, baseRevisionRef: "5001" });
     const head = revisionsOf(page().id).at(-1)!;
 
-    const second = await editing().saveWikitext({ title: "Caphiria", wikitext: "My older idea", baseRevisionRef: "5001" });
+    const second = await editing().saveWikitext({
+      title: "Caphiria",
+      wikitext: "My older idea",
+      baseRevisionRef: "5001",
+    });
 
     expect(second).toEqual({
       success: false,
@@ -229,7 +280,11 @@ describe("a member edits Caphiria and readers see the new page", () => {
   });
 
   it("stores what XML can carry, and hashes what it stored", async () => {
-    await editing().saveWikitext({ title: "Caphiria", wikitext: "bad \uD800 and \uDC00 end", baseRevisionRef: "5001" });
+    await editing().saveWikitext({
+      title: "Caphiria",
+      wikitext: "bad \uD800 and \uDC00 end",
+      baseRevisionRef: "5001",
+    });
     const surrogates = "bad � and � end";
     expect(page().wikitext).toBe(surrogates);
     expect(revisionsOf(page().id).at(-1)).toMatchObject({
@@ -264,8 +319,18 @@ describe("a member edits Caphiria and readers see the new page", () => {
     const listed = await history().getHistory({ title: "Caphiria" });
     const entries = listed.revisions;
     // newest first: two native edits (row ids) on top of the synced r1 (its MediaWiki rev id)
-    expect(entries.map((entry) => entry.revid)).toEqual([...revisionsOf(page().id).slice(1).map((row) => row.id).reverse(), "5001"]);
-    expect(entries.map((entry) => entry.byteDelta)).toEqual([Buffer.byteLength("\nMore."), Buffer.byteLength(V2) - V1.length, V1.length]);
+    expect(entries.map((entry) => entry.revid)).toEqual([
+      ...revisionsOf(page().id)
+        .slice(1)
+        .map((row) => row.id)
+        .reverse(),
+      "5001",
+    ]);
+    expect(entries.map((entry) => entry.byteDelta)).toEqual([
+      Buffer.byteLength("\nMore."),
+      Buffer.byteLength(V2) - V1.length,
+      V1.length,
+    ]);
 
     const texts = [`${V2}\nMore.`, V2, V1];
     for (const [index, entry] of entries.entries()) {
@@ -274,7 +339,9 @@ describe("a member edits Caphiria and readers see the new page", () => {
         title: "Caphiria",
         source: "ixwiki",
       });
-      await expect(history().getRevisionContent({ revid: entry.revid })).resolves.toMatchObject({ wikitext: texts[index] });
+      await expect(history().getRevisionContent({ revid: entry.revid })).resolves.toMatchObject({
+        wikitext: texts[index],
+      });
     }
     await expect(getRevisionWikitext("9999")).resolves.toBeNull();
     await expect(getRevisionWikitext("cmissing")).resolves.toBeNull();
@@ -303,35 +370,95 @@ describe("a member edits Caphiria and readers see the new page", () => {
   it("saves under the canonical title, and hands the editor every reference of the head with its text", async () => {
     // the head is stamped with MediaWiki's id (5001); a native save adds its row id as the newest head
     const loaded = await reading().getWikitext({ title: "Caphiria" });
-    expect(loaded).toMatchObject({ revisionRef: "5001", revisionRefs: expect.arrayContaining([r1, "5001"]) });
+    expect(loaded).toMatchObject({
+      revisionRef: "5001",
+      revisionRefs: expect.arrayContaining([r1, "5001"]),
+    });
 
     await editing().saveWikitext({ title: "caphiria", wikitext: V2, baseRevisionRef: "5001" });
     expect(tables.wikiArticle.rows.map((row) => row.title)).toEqual(["Caphiria"]);
 
     // a head that cannot be read still leaves the editor the text, with no reference to save against
-    const down = jest.spyOn(tables.wikiRevision, "findMany").mockRejectedValueOnce(new Error("db down"));
-    await expect(reading().getWikitext({ title: "Caphiria" })).resolves.toMatchObject({ wikitext: V2, revisionRef: null, revisionRefs: [] });
+    const down = jest
+      .spyOn(tables.wikiRevision, "findMany")
+      .mockRejectedValueOnce(new Error("db down"));
+    await expect(reading().getWikitext({ title: "Caphiria" })).resolves.toMatchObject({
+      wikitext: V2,
+      revisionRef: null,
+      revisionRefs: [],
+    });
     down.mockRestore();
   });
 
   it("reads a revision whose text is unknown or hidden as unknown, never as an empty page", async () => {
     const id = page().id;
     const at = (day: number) => new Date(`2026-09-0${day}T00:00:00Z`);
-    tables.wikiRevision.insert({ articleId: id, mwRevId: 4001, wikitext: "", byteSize: 4096, createdAt: at(2) }); // imported placeholder
-    tables.wikiRevision.insert({ articleId: id, mwRevId: 4002, wikitext: "", byteSize: 0, createdAt: at(3) }); // synced, empty: unknown
-    tables.wikiRevision.insert({ articleId: id, mwRevId: 4003, wikitext: "", byteSize: 0, textDeleted: true, createdAt: at(4) });
-    const blank = tables.wikiRevision.insert({ articleId: id, wikitext: "", byteSize: 0, createdAt: at(5) }); // native, really empty
-    tables.wikiRevision.insert({ articleId: id, mwRevId: 9001, wikitext: "conflicting text", byteSize: 16, parked: true, createdAt: at(6) });
+    tables.wikiRevision.insert({
+      articleId: id,
+      mwRevId: 4001,
+      wikitext: "",
+      byteSize: 4096,
+      createdAt: at(2),
+    }); // imported placeholder
+    tables.wikiRevision.insert({
+      articleId: id,
+      mwRevId: 4002,
+      wikitext: "",
+      byteSize: 0,
+      createdAt: at(3),
+    }); // synced, empty: unknown
+    tables.wikiRevision.insert({
+      articleId: id,
+      mwRevId: 4003,
+      wikitext: "",
+      byteSize: 0,
+      textDeleted: true,
+      createdAt: at(4),
+    });
+    const blank = tables.wikiRevision.insert({
+      articleId: id,
+      wikitext: "",
+      byteSize: 0,
+      createdAt: at(5),
+    }); // native, really empty
+    tables.wikiRevision.insert({
+      articleId: id,
+      mwRevId: 9001,
+      wikitext: "conflicting text",
+      byteSize: 16,
+      parked: true,
+      createdAt: at(6),
+    });
 
-    await expect(getRevisionWikitext("4001")).resolves.toMatchObject({ wikitext: null, title: "Caphiria" });
+    await expect(getRevisionWikitext("4001")).resolves.toMatchObject({
+      wikitext: null,
+      title: "Caphiria",
+    });
     await expect(getRevisionWikitext("4002")).resolves.toMatchObject({ wikitext: null });
     await expect(getRevisionWikitext("4003")).resolves.toMatchObject({ wikitext: null });
-    await expect(getRevisionWikitext(blank.id)).resolves.toMatchObject({ wikitext: "", parked: false });
-    await expect(getRevisionWikitext("9001")).resolves.toMatchObject({ wikitext: "conflicting text", parked: true });
+    await expect(getRevisionWikitext(blank.id)).resolves.toMatchObject({
+      wikitext: "",
+      parked: false,
+    });
+    await expect(getRevisionWikitext("9001")).resolves.toMatchObject({
+      wikitext: "conflicting text",
+      parked: true,
+    });
 
     // a revision of another wiki is no IxWiki revision
-    const other = tables.wikiArticle.insert({ title: "Caphiria", slug: "caphiria", source: "iiwiki", wikitext: "x" });
-    const foreign = tables.wikiRevision.insert({ articleId: other.id, source: "iiwiki", mwRevId: 7001, wikitext: "x", byteSize: 1 });
+    const other = tables.wikiArticle.insert({
+      title: "Caphiria",
+      slug: "caphiria",
+      source: "iiwiki",
+      wikitext: "x",
+    });
+    const foreign = tables.wikiRevision.insert({
+      articleId: other.id,
+      source: "iiwiki",
+      mwRevId: 7001,
+      wikitext: "x",
+      byteSize: 1,
+    });
     await expect(getRevisionWikitext("7001")).resolves.toBeNull();
     await expect(getRevisionWikitext(foreign.id)).resolves.toBeNull();
   });
@@ -339,18 +466,39 @@ describe("a member edits Caphiria and readers see the new page", () => {
   it("refuses a revert to text it does not have or that never went live, and blanking but for an administrator", async () => {
     const id = page().id;
     const urcea = tables.wikiArticle.insert({ title: "Urcea", slug: "urcea", wikitext: "Urcea." });
-    tables.wikiRevision.insert({ articleId: urcea.id, mwRevId: 4100, wikitext: "Urcea.", byteSize: 6 });
+    tables.wikiRevision.insert({
+      articleId: urcea.id,
+      mwRevId: 4100,
+      wikitext: "Urcea.",
+      byteSize: 6,
+    });
     tables.wikiRevision.insert({ articleId: id, mwRevId: 4001, wikitext: "", byteSize: 4096 }); // never imported
-    tables.wikiRevision.insert({ articleId: id, mwRevId: 9001, wikitext: "conflicting text", byteSize: 16, parked: true });
+    tables.wikiRevision.insert({
+      articleId: id,
+      mwRevId: 9001,
+      wikitext: "conflicting text",
+      byteSize: 16,
+      parked: true,
+    });
     const blank = tables.wikiRevision.insert({ articleId: id, wikitext: "", byteSize: 0 });
-    const blanks = tables.wikiRevision.insert({ articleId: id, wikitext: " \n\t  \n", byteSize: 6 });
+    const blanks = tables.wikiRevision.insert({
+      articleId: id,
+      wikitext: " \n\t  \n",
+      byteSize: 6,
+    });
     const before = revisionsOf(id).length;
-    const revert = (revid: string, as = editing) => as().revertToRevision({ title: "Caphiria", revid });
+    const revert = (revid: string, as = editing) =>
+      as().revertToRevision({ title: "Caphiria", revid });
 
     await expect(revert("4001")).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     await expect(revert("4100")).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(revert("9001")).rejects.toMatchObject({ code: "PRECONDITION_FAILED", message: expect.stringContaining("never went live") });
-    await expect(revert("9001", administrator)).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    await expect(revert("9001")).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message: expect.stringContaining("never went live"),
+    });
+    await expect(revert("9001", administrator)).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+    });
     await expect(revert(blank.id)).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     await expect(revert(blanks.id)).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     expect(revisionsOf(id)).toHaveLength(before);
@@ -364,17 +512,38 @@ describe("a member edits Caphiria and readers see the new page", () => {
   it("rolls back to the last other editor's text, and refuses when every revision is the same editor's", async () => {
     tables.wikiUserGroup.seed({ userId: "db-member", group: "rollbacker" });
     await editing().saveWikitext({ title: "Caphiria", wikitext: V2, baseRevisionRef: "5001" });
-    await editing().saveWikitext({ title: "Caphiria", wikitext: `${V2}\nMore.`, baseRevisionRef: revisionsOf(page().id).at(-1)!.id });
+    await editing().saveWikitext({
+      title: "Caphiria",
+      wikitext: `${V2}\nMore.`,
+      baseRevisionRef: revisionsOf(page().id).at(-1)!.id,
+    });
 
     await editing().rollback({ title: "Caphiria" });
     expect(page().wikitext).toBe(V1);
-    expect(revisionsOf(page().id).at(-1)).toMatchObject({ wikitext: V1, summary: expect.stringContaining("Rolled back edits by Member") });
+    expect(revisionsOf(page().id).at(-1)).toMatchObject({
+      wikitext: V1,
+      summary: expect.stringContaining("Rolled back edits by Member"),
+    });
 
     tables.wikiArticle.insert({ title: "Solo", slug: "solo", wikitext: "two" });
     const solo = tables.wikiArticle.rows.find((row) => row.title === "Solo")!;
-    tables.wikiRevision.insert({ articleId: solo.id, wikitext: "one", byteSize: 3, author: "Member", createdAt: new Date("2026-09-01") });
-    tables.wikiRevision.insert({ articleId: solo.id, wikitext: "two", byteSize: 3, author: "Member", createdAt: new Date("2026-09-02") });
-    await expect(editing().rollback({ title: "Solo" })).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    tables.wikiRevision.insert({
+      articleId: solo.id,
+      wikitext: "one",
+      byteSize: 3,
+      author: "Member",
+      createdAt: new Date("2026-09-01"),
+    });
+    tables.wikiRevision.insert({
+      articleId: solo.id,
+      wikitext: "two",
+      byteSize: 3,
+      author: "Member",
+      createdAt: new Date("2026-09-02"),
+    });
+    await expect(editing().rollback({ title: "Solo" })).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+    });
   });
 
   it("evicts the edited page under every spelling a reader used, and nothing else, even when one cache is down", async () => {
@@ -384,11 +553,17 @@ describe("a member edits Caphiria and readers see the new page", () => {
     jest.spyOn(intelligentLoreCache, "evictTitle").mockRejectedValueOnce(new Error("cache down"));
     jest.spyOn(console, "warn").mockImplementation(() => undefined);
 
-    const saved = await editing().saveWikitext({ title: "Caphiria", wikitext: V2, baseRevisionRef: "5001" });
+    const saved = await editing().saveWikitext({
+      title: "Caphiria",
+      wikitext: V2,
+      baseRevisionRef: "5001",
+    });
     expect(saved).toMatchObject({ success: true });
     await settle();
 
-    expect([...wikiBridgeCache.keys()].filter((key) => key.startsWith("intro:"))).toEqual(["intro:ixwiki:Urcea"]);
+    expect([...wikiBridgeCache.keys()].filter((key) => key.startsWith("intro:"))).toEqual([
+      "intro:ixwiki:Urcea",
+    ]);
     expect((await getArticleIntro("caphiria"))?.text).toMatch(/^Caphiria is an empire in Sarpedon/);
   });
 });

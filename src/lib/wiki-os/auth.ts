@@ -14,6 +14,8 @@ export interface WikiAuthContext {
   user?: {
     id?: string | null;
     clerkUserId?: string | null;
+    /** The passport handle; null until picked. */
+    handle?: string | null;
     wikiUsername?: string | null;
     wikiUserId?: number | null;
     countryId?: string | null;
@@ -28,69 +30,37 @@ export interface WikiAuthIdentity {
   internalUserId: string | null;
   /** Stable account id from the auth provider (Clerk user id). */
   userId: string | null;
-  /** MediaWiki username, either explicitly linked or resolved via Smart Hierarchy. */
-  wikiUsername: string | null;
-  /**
-   * Whether `User.wikiUsername` is set. NOT proof of a linked wiki account: the column can hold a
-   * display fallback, so it must never gate authorization. Use `getVerifiedWikiLink` (storage.ts),
-   * which reads the verified `WikiAccountLink`, for anything security-relevant.
-   */
-  hasLegacyWikiUsername: boolean;
+  /** The passport handle; null until picked. */
+  handle: string | null;
   /** Active country name if affiliated. */
   countryName: string | null;
 }
 
-/** Sanitize a string to be a safe MediaWiki username. */
-function sanitizeMediaWikiUsername(input: string): string {
-  // MediaWiki usernames cannot contain # < > [ ] | { } / @ : =
-  let clean = input
-    .replace(/[#<>[\]|{}/@:=]/g, "")
-    .trim()
-    .replace(/\s+/g, "_");
-  if (!clean) clean = "User";
-  return clean.charAt(0).toUpperCase() + clean.slice(1);
+/** The refusal for a save by a player who has not picked a passport handle yet. */
+export const HANDLE_REQUIRED_MESSAGE = "Pick a passport handle before you save.";
+
+/** The name a player's edits are signed with: their passport handle (design decision 9), else null. */
+export function wikiAuthorName(ctx: WikiAuthContext): string | null {
+  return ctx.user?.handle?.trim() || null;
 }
 
 /**
- * Smart Hierarchy resolution for Wiki author name:
- * 1. User.wikiUsername (if set/linked)
- * 2. Country name (user.country.name)
- * 3. Sanitized Clerk user ID / handle
+ * The passport handle a player's save is signed with. Throws PRECONDITION_FAILED until they pick one, so an
+ * edit is never saved under a country name or an account id.
  */
-export function resolveWikiUsername(ctx: WikiAuthContext): string | null {
-  if (ctx.user?.wikiUsername && ctx.user.wikiUsername.trim() !== "") {
-    return ctx.user.wikiUsername.trim();
-  }
-
-  // Country name fallback
-  if (ctx.user?.country?.name && ctx.user.country.name.trim() !== "") {
-    return sanitizeMediaWikiUsername(ctx.user.country.name.trim());
-  }
-
-  // Fallback to clerk user ID or internal ID
-  const authId = ctx.auth?.userId || ctx.user?.clerkUserId || ctx.user?.id;
-  if (authId) {
-    const shortId = authId.replace(/^user_/, "");
-    return sanitizeMediaWikiUsername(`User_${shortId.slice(0, 8)}`);
-  }
-
-  return null;
+export function requireWikiAuthorName(ctx: WikiAuthContext): string {
+  const name = wikiAuthorName(ctx);
+  if (!name) throw new TRPCError({ code: "PRECONDITION_FAILED", message: HANDLE_REQUIRED_MESSAGE });
+  return name;
 }
 
-/** Read the current identity with Smart Hierarchy. */
+/** Read the current identity. */
 export function getWikiAuth(ctx: WikiAuthContext): WikiAuthIdentity {
-  const userId = ctx.auth?.userId ?? ctx.user?.clerkUserId ?? null;
-  const internalUserId = ctx.user?.id ?? null;
-  const countryName = ctx.user?.country?.name ?? null;
-  const wikiUsername = resolveWikiUsername(ctx);
-  const hasLegacyWikiUsername = Boolean(ctx.user?.wikiUsername?.trim());
-
   return {
-    internalUserId,
-    userId,
-    wikiUsername,
-    hasLegacyWikiUsername,
-    countryName,
+    internalUserId: ctx.user?.id ?? null,
+    userId: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? null,
+    handle: wikiAuthorName(ctx),
+    countryName: ctx.user?.country?.name ?? null,
   };
 }
 
@@ -128,16 +98,18 @@ export function requireWikiAuthId(ctx: WikiAuthContext): string {
 }
 
 /**
+ * The name an action is logged under: the passport handle, else "anonymous". Never an account id: logs are public
+ * (`getLog`), and the actor's id is stored beside the name.
+ */
+export function getWikiActorLabel(ctx: WikiAuthContext): string {
+  return wikiAuthorName(ctx) ?? "anonymous";
+}
+
+/**
  * Whether the current user is a wiki administrator: they hold the `editprotected` right, which
  * comes from the sysop group (explicit, or through their IxStates role). The rights engine is loaded
  * lazily: it reads this seam's `getWikiAuth`, so a static import would be circular.
  */
-/** The name an action is logged under: the linked wiki username, else the IxStates user id. */
-export function getWikiActorLabel(ctx: WikiAuthContext): string {
-  const { wikiUsername, userId } = getWikiAuth(ctx);
-  return wikiUsername ?? userId ?? "anonymous";
-}
-
 export async function isWikiAdmin(ctx: WikiAuthContext): Promise<boolean> {
   const { getWikiPermissions } = await import("~/lib/wiki-os/rights");
   return (await getWikiPermissions(ctx)).rights.has("editprotected");

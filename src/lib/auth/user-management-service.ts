@@ -41,6 +41,7 @@ export class UserManagementService {
           countryId: true,
           roleId: true,
           membershipTier: true,
+          handle: true,
           wikiUsername: true,
           wikiUserId: true,
           lastSeenAt: true,

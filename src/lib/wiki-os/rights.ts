@@ -384,15 +384,8 @@ async function claimStanding(userId: string | null, handle: string | null): Prom
   };
 }
 
-/** The passport handle of the account `userId` (not yet in the request context). */
-async function handleOf(userId: string | null): Promise<string | null> {
-  if (!userId) return null;
-  const user = await db.user.findUnique({ where: { id: userId }, select: { handle: true } });
-  return user?.handle ?? null;
-}
-
 async function loadCtxPermissions(ctx: WikiAuthContext): Promise<WikiPermissions> {
-  const { internalUserId, userId } = getWikiAuth(ctx);
+  const { internalUserId, userId, handle } = getWikiAuth(ctx);
   return loadSubjectPermissions(
     {
       userId: internalUserId,
@@ -400,7 +393,7 @@ async function loadCtxPermissions(ctx: WikiAuthContext): Promise<WikiPermissions
       accountCreatedAt: toDate(ctx.user?.createdAt),
       roleName: ctx.user?.role?.name ?? null,
       isSystemOwner: userId !== null && isSystemOwner(userId),
-      ...(await claimStanding(internalUserId, await handleOf(internalUserId))),
+      ...(await claimStanding(internalUserId, handle)),
     },
     new Date()
   );
@@ -446,6 +439,7 @@ export async function getWikiPermissionsForAuthId(authId: string): Promise<WikiP
     select: {
       id: true,
       clerkUserId: true,
+      handle: true,
       createdAt: true,
       role: { select: { id: true, name: true, level: true } },
     },

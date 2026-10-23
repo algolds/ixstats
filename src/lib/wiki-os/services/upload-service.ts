@@ -22,7 +22,7 @@
  */
 
 import { db } from "~/server/db";
-import { getWikiActorLabel, type WikiAuthContext } from "../auth";
+import { getWikiActorLabel, requireWikiAuthorName, type WikiAuthContext } from "../auth";
 import { getMaxImageArea, getMaxSvgBytes, MAX_UPLOAD_BYTES, UPLOAD_EXTENSIONS } from "../config";
 import { extensionMatches, fileExtension, sniffFile, type SniffedFile } from "../core/file-sniff";
 import { hashFile, sha1Base36ToHex } from "../core/file-hash";
@@ -359,6 +359,8 @@ export async function uploadFile(request: UploadRequest): Promise<UploadResult> 
   const title = requireUploadTitle(request.filename);
   const name = title.slice("File:".length);
   await authorizeAction(ctx, "upload", title);
+  // An upload is signed with the passport handle, like a save (a new file's page is one): no handle, no upload.
+  requireWikiAuthorName(ctx);
 
   const file = checkedFile(request.bytes, name);
   // Everything that can be refused is refused before a byte is staged.

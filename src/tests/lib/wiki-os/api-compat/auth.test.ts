@@ -450,6 +450,7 @@ describe("the Prisma auth store", () => {
   const userRow = {
     id: "u1",
     clerkUserId: "user_clerk",
+    handle: "heku",
     createdAt: new Date("2020-01-01T00:00:00Z"),
     role: { id: "r", name: "admin", level: 1 },
   };
@@ -486,6 +487,7 @@ describe("the Prisma auth store", () => {
           user: {
             id: "u1",
             clerkUserId: "user_clerk",
+            handle: "heku",
             wikiUsername: "Heku",
             createdAt: userRow.createdAt,
             role: userRow.role,

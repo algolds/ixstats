@@ -41,6 +41,7 @@ const READ_ONLY_USER_SELECT = {
   countryId: true,
   roleId: true,
   membershipTier: true,
+  handle: true,
   wikiUsername: true,
   wikiUserId: true,
   lastSeenAt: true,

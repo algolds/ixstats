@@ -259,8 +259,12 @@ it("turns Ana's linked posts into a reviewed chain on the wiki, written once by 
   // Written once, as Aurelia, after the page's text, against its head; the player's title stays on one line
   expect(commitWikitextSave).toHaveBeenCalledTimes(1);
   const [author, save] = jest.mocked(commitWikitextSave).mock.calls[0]!;
-  expect(author).toEqual({ user: { country: { name: "Aurelia" } } });
-  expect(save).toMatchObject({ title: "Northern pact", expectedHeadRef: "rev-9" });
+  expect(author).toEqual({});
+  expect(save).toMatchObject({
+    title: "Northern pact",
+    expectedHeadRef: "rev-9",
+    authorLabel: "Aurelia",
+  });
   const section = save.wikitext.split(`<!-- story-chain:${chainId} -->\n`)[1]!.split("\n");
   expect(save.wikitext.startsWith("Intro.\n\n")).toBe(true);
   expect(section[0]).toMatch(/^== Story chain: Pact == Fake == NOTOC ==$/);

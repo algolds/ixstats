@@ -41,14 +41,20 @@ const createCaller = createCallerFactory(wikiosPageAdminRouter);
 const DAY = 24 * 60 * 60 * 1000;
 const inFuture = () => new Date(Date.now() + DAY);
 
-/** A signed-in caller. `id` is the WikiOS user id, `clerk` the auth-provider id. */
-const ctxFor = (id: string, clerk: string, name: string, role = "user", createdAt?: Date) =>
+/** A signed-in caller. `id` is the WikiOS user id, `clerk` the auth-provider id, `handle` the passport handle. */
+const ctxFor = (
+  id: string,
+  clerk: string,
+  handle: string | null,
+  role = "user",
+  createdAt?: Date
+) =>
   createMockRouterContext({
     auth: { userId: clerk },
     user: {
       id: id,
       clerkUserId: clerk,
-      wikiUsername: name,
+      handle,
       createdAt,
       role: { name: role, level: 100 },
     },
@@ -56,7 +62,8 @@ const ctxFor = (id: string, clerk: string, name: string, role = "user", createdA
 
 const as = (ctx: ReturnType<typeof ctxFor>) => createCaller(ctx as never);
 
-const ownerCtx = () => ctxFor("dbowner", "user_owner", "Boss", "owner");
+/** No passport handle yet: what it does is logged without an id. */
+const ownerCtx = () => ctxFor("dbowner", "user_owner", null, "owner");
 const sysopCtx = () => ctxFor("dbsysop", "user_sysop", "Mod", "admin");
 const plainCtx = () => ctxFor("dbplain", "user_plain", "Newbie");
 /** autoconfirmed by WikiOS's own rule: a month old, with the ten revisions its claim tagged (seeded in beforeEach). */
@@ -687,10 +694,16 @@ describe("imported rights and blocks through claims (plan 409, design decision 5
 
 describe("the caller's own permissions", () => {
   it("are named by the passport handle, and list the explicit groups of the account's names", async () => {
-    tables.user.rows.find((row) => row.id === "dbmember")!.handle = "member_one";
     tables.wikiUserGroup.seed({ userId: "dbmember", group: "bureaucrat" });
+    const member = ctxFor(
+      "dbmember",
+      "user_member",
+      "member_one",
+      "user",
+      new Date(Date.now() - 30 * DAY)
+    );
 
-    const own = await as(memberCtx()).getUserPermissions();
+    const own = await as(member).getUserPermissions();
 
     expect(own.username).toBe("member_one");
     expect(own.groups).toEqual(expect.arrayContaining(["autoconfirmed", "bureaucrat"]));

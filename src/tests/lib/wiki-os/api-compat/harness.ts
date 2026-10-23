@@ -31,7 +31,7 @@ export const HEKU: SessionUser = {
   mwUserId: 7,
   ctx: {
     auth: { userId: "user_clerk_heku" },
-    user: { id: "u-heku", clerkUserId: "user_clerk_heku", wikiUsername: "Heku" },
+    user: { id: "u-heku", clerkUserId: "user_clerk_heku", handle: "Heku", wikiUsername: "Heku" },
   },
 };
 
