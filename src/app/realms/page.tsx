@@ -4,8 +4,7 @@ import { api } from "~/trpc/react";
 import { useAuth } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { MyClaims } from "~/app/r/[realm]/_components/MyClaims";
-import { BrowseRealms } from "./_components/BrowseRealms";
-import { OpenToJoin, openRealms } from "./_components/OpenToJoin";
+import { AtlasGrid } from "./_components/AtlasGrid";
 import { RealmFeedPanel } from "./_components/RealmFeedPanel";
 import { RealmSearch } from "./_components/RealmSearch";
 import { RealmsHero, type ViewerStanding } from "./_components/RealmsHero";
@@ -24,7 +23,6 @@ export default function RealmsLandingPage() {
   const { data: profile } = api.users.getProfile.useQuery(undefined, {
     enabled: myRealms.length > 0,
   });
-  const open = openRealms(realms);
 
   const standing: ViewerStanding = !isLoaded
     ? "loading"
@@ -38,11 +36,7 @@ export default function RealmsLandingPage() {
 
   return (
     <div className="flex w-full flex-col gap-6 p-4 md:p-8">
-      <RealmsHero
-        realms={realms}
-        standing={standing}
-        joinHref={open.length > 0 ? "#open-to-join" : "#browse-realms"}
-      />
+      <RealmsHero realms={realms} standing={standing} joinHref="#atlas" />
 
       {isSignedIn && (
         <>
@@ -57,9 +51,7 @@ export default function RealmsLandingPage() {
 
       <RealmSearch realms={realms} />
 
-      <OpenToJoin realms={open} />
-
-      <BrowseRealms realms={realms} isLoading={isLoading} />
+      <AtlasGrid realms={realms} isLoading={isLoading} query="" />
 
       <RealmFeedPanel realms={realms} />
     </div>
