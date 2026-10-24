@@ -261,13 +261,6 @@ describe("applyPlan", () => {
     const fake = createFakeWikiDb();
     // Kir's name is claimed (a system owner approved it); the claim connects it to the account at read time
     fake.tables.wikiNameClaim.seed({ userId: "dbkir", name: "Kir", rightsPass: true });
-    fake.tables.wikiAccountLink.seed({
-      userId: "dbkir",
-      source: "ixwiki",
-      username: "Kir",
-      verifiedAt: new Date("2026-01-01"),
-      verifiedById: null,
-    });
     fake.tables.wikiArticle.seed({ source: "ixwiki", title: "Caphiria" });
     return { fake, prisma: fake.db as unknown as PrismaClient };
   };

@@ -82,13 +82,13 @@ export async function ownedTrophyCards(
  */
 export async function loadTrophies(
   db: TrophyDb,
-  wikiUsername: string,
+  name: string,
   userId: string | null,
   handleOf: PassportHandleOf
 ): Promise<Trophies> {
   const [stats, cards, holderHandle] = await Promise.all([
     db.lorewardUserStats.findFirst({
-      where: { username: canonicalWikiName(wikiUsername) },
+      where: { username: canonicalWikiName(name) },
     }),
     userId ? ownedTrophyCards(db, userId) : Promise.resolve([]),
     userId ? handleOf(userId) : Promise.resolve(null),

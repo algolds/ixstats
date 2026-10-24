@@ -32,12 +32,11 @@ const people: Row[] = [
     clerkUserId: "member",
     role: USER_ROLE,
     handle: "alice",
-    wikiUsername: "Alice of Eurth",
     email: "alice@example.com",
   },
-  { id: "u_w", clerkUserId: "wiki", role: USER_ROLE, handle: null, wikiUsername: "Bob_Smith" },
-  { id: "u_d1", clerkUserId: "d1", role: USER_ROLE, handle: null, wikiUsername: "Twin" },
-  { id: "u_d2", clerkUserId: "d2", role: USER_ROLE, handle: null, wikiUsername: "Twin" },
+  { id: "u_w", clerkUserId: "wiki", role: USER_ROLE, handle: null },
+  { id: "u_d1", clerkUserId: "d1", role: USER_ROLE, handle: null },
+  { id: "u_d2", clerkUserId: "d2", role: USER_ROLE, handle: null },
 ];
 const categoryModerators: Row[] = [
   { id: "cm1", categoryId: "cat_general", userId: "u_gen", grantedBy: "u_a", createdAt: at(1) },
@@ -56,7 +55,7 @@ describe("resolveMember", () => {
       expect(call[0]!.select).toEqual({ id: true, handle: true });
     }
   });
-  it("finds nobody by an old wiki name, and reads no privacy setting", async () => {
+  it("finds nobody by a name that is not a handle (an old wiki name), and reads no privacy setting", async () => {
     const store = storeWith();
     for (const name of ["Bob_Smith", "Alice of Eurth", "Twin"]) {
       expect(await resolveMember(store.db as never, generalMod, { handle: name })).toBeNull();

@@ -109,7 +109,6 @@ interface ThreadSelectArgs {
 interface AuthorUserRow {
   id: string;
   handle: string | null;
-  wikiUsername: string | null;
   clerkUserId?: string;
   country: { name: string; flag?: string | null } | null;
 }
@@ -251,10 +250,10 @@ describe("authorsOf", () => {
   it("names users handle, then country name, then Member, never the wiki, discord or forum name or clerk id", async () => {
     const db = readDb();
     db.user.findMany.mockResolvedValue([
-      { id: "u1", handle: "heku", wikiUsername: "Heku", country: { name: "Caphiria" } },
-      { id: "u2", handle: null, wikiUsername: "WikiName", country: { name: "Caphiria" } },
-      { id: "u3", handle: null, wikiUsername: null, country: { name: "Aurelia" } },
-      { id: "u4", handle: null, wikiUsername: null, country: null },
+      { id: "u1", handle: "heku", country: { name: "Caphiria" } },
+      { id: "u2", handle: null, country: { name: "Caphiria" } },
+      { id: "u3", handle: null, country: { name: "Aurelia" } },
+      { id: "u4", handle: null, country: null },
     ]);
     db.thinkpagesAccount.findMany.mockResolvedValue([
       {
@@ -303,7 +302,6 @@ describe("authorsOf", () => {
     expect(JSON.stringify([...out.users.values()])).not.toContain("clerk");
     expect(db.user.findMany.mock.calls[0][0].select).not.toHaveProperty("name");
     expect(db.user.findMany.mock.calls[0][0].select).not.toHaveProperty("discordUsername");
-    expect(db.user.findMany.mock.calls[0][0].select).not.toHaveProperty("wikiUsername");
     expect(db.user.findMany.mock.calls[0][0].select.country).toEqual({
       select: { name: true, flag: true },
     });
@@ -316,10 +314,9 @@ describe("authorsOf", () => {
         id: "u1",
         clerkUserId: "c1",
         handle: "heku",
-        wikiUsername: null,
         country: { name: "Caphiria", flag: "/flags/caph.png" },
       },
-      { id: "u2", clerkUserId: "c2", handle: "bee", wikiUsername: null, country: null },
+      { id: "u2", clerkUserId: "c2", handle: "bee", country: null },
     ]);
     db.thinkpagesAccount.findMany.mockImplementation(async (args?: object) =>
       (args as { where: { id?: unknown } }).where.id
@@ -361,15 +358,14 @@ describe("authorsOf", () => {
   it("names a member by handle, else nation, never by an old wiki name, reading no privacy setting", async () => {
     const db = readDb();
     db.user.findMany.mockResolvedValue([
-      { id: "u1", clerkUserId: "c1", handle: "heku", wikiUsername: "Heku", country: null },
+      { id: "u1", clerkUserId: "c1", handle: "heku", country: null },
       {
         id: "u2",
         clerkUserId: "c2",
         handle: null,
-        wikiUsername: "WikiName",
         country: { name: "Caphiria" },
       },
-      { id: "u3", clerkUserId: "c3", handle: null, wikiUsername: "Plain", country: null },
+      { id: "u3", clerkUserId: "c3", handle: null, country: null },
     ]);
     const out = await authorsOf(db as never, ["u1", "u2", "u3"], []);
     expect([...out.users.values()].map((u) => u.name)).toEqual(["heku", "Caphiria", "Member"]);
@@ -584,7 +580,7 @@ describe("board lists, latest activity and Trending", () => {
         },
         user: {
           findMany: jest.fn(async (_args: object) => [
-            { id: "u_x", handle: "heku", wikiUsername: null, country: null },
+            { id: "u_x", handle: "heku", country: null },
           ]),
         },
         thinkpagesAccount: {
@@ -639,7 +635,7 @@ describe("board lists, latest activity and Trending", () => {
         forumPost: { findMany },
         user: {
           findMany: jest.fn(async (_args: object) => [
-            { id: "u_x", handle: "heku", wikiUsername: null, country: null },
+            { id: "u_x", handle: "heku", country: null },
           ]),
         },
         thinkpagesAccount: {
@@ -768,21 +764,18 @@ describe("thread previews", () => {
     {
       id: "u1",
       handle: "jane",
-      wikiUsername: null,
       clerkUserId: "clerk_u1",
       country: { name: "Eurth", flag: "https://flags.example/eurth.png" },
     },
     {
       id: "u2",
       handle: "bob",
-      wikiUsername: null,
       clerkUserId: "clerk_u2",
       country: null,
     },
     {
       id: "u_secret",
       handle: "secretplayer",
-      wikiUsername: null,
       clerkUserId: "clerk_secret",
       country: { name: "Hidden", flag: "https://flags.example/secret.png" },
     },
@@ -951,7 +944,7 @@ describe("public threads", () => {
       user: {
         findMany: jest
           .fn<Promise<object[]>, [object]>()
-          .mockResolvedValue([{ id: "u1", handle: "jane", wikiUsername: null, country: null }]),
+          .mockResolvedValue([{ id: "u1", handle: "jane", country: null }]),
       },
       thinkpagesAccount: {
         findMany: jest
@@ -1211,7 +1204,7 @@ describe("who may be told about a thread", () => {
     });
   });
   describe("naming a member in a notice", () => {
-    type MemberRow = { handle: string | null; wikiUsername: string | null; clerkUserId: string };
+    type MemberRow = { handle: string | null; clerkUserId: string };
     function memberDb(row: MemberRow | null) {
       return {
         user: { findUnique: jest.fn(async (_args: object): Promise<MemberRow | null> => row) },
@@ -1219,11 +1212,11 @@ describe("who may be told about a thread", () => {
     }
     describe("memberName", () => {
       it("names a member by handle, else the fallback, never by their wiki name", async () => {
-        const wikiOnly: MemberRow = { handle: null, wikiUsername: "Wiki Name", clerkUserId: "c1" };
-        const db = memberDb(wikiOnly);
+        const noHandle: MemberRow = { handle: null, clerkUserId: "c1" };
+        const db = memberDb(noHandle);
         expect(await memberName(db as never, "u1", "Member")).toBe("Member");
         expect(
-          await memberName(memberDb({ ...wikiOnly, handle: "heku" }) as never, "u1", "Member")
+          await memberName(memberDb({ ...noHandle, handle: "heku" }) as never, "u1", "Member")
         ).toBe("heku");
         expect(await memberName(memberDb(null) as never, "u1", "Member")).toBe("Member");
         expect(db.user.findUnique.mock.calls[0]?.[0]).toEqual({
@@ -1298,7 +1291,6 @@ describe("the posts that discuss an action", () => {
     {
       id: "u_ann",
       handle: "ann",
-      wikiUsername: null,
       clerkUserId: "clerk_ann",
       country: { name: "Annland", flag: null },
     },

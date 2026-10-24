@@ -113,9 +113,9 @@ describe("useCountryProfileLayer", () => {
   });
 
   it.each([
-    [{ handle: "ruler", forumUsername: "ForumRuler", wikiUsername: "Wiki Ruler" }, "ruler"],
-    [{ handle: null, forumUsername: "ForumRuler", wikiUsername: "Wiki Ruler" }, "ForumRuler"],
-    [{ handle: null, forumUsername: null, wikiUsername: "Wiki Ruler" }, null],
+    [{ handle: "ruler", forumUsername: "ForumRuler" }, "ruler"],
+    [{ handle: null, forumUsername: "ForumRuler" }, "ForumRuler"],
+    [{ handle: null, forumUsername: null }, null],
   ])("names the sovereign %o as %s", (owner, username) => {
     const country = { id: "c-urc", name: "Urcea", owner } as CountryWithEconomicData & {
       owner: typeof owner;

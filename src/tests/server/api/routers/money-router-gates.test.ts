@@ -273,7 +273,7 @@ describe("rate limits", () => {
       "public",
       100,
     ],
-    ["lorewards.getTrophies", "signed out", { wikiUsername: "Kir" }, "public", 100],
+    ["lorewards.getTrophies", "signed out", { username: "Kir" }, "public", 100],
     ["trading.findPartner", "member", { handle: "bob" }, "queries", 120],
     [
       "cardMarket.addToWishlist",

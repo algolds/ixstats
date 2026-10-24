@@ -76,11 +76,11 @@ const logTypes = () => tables.wikiLog.rows.map((row) => `${row.logType}/${row.ac
 beforeEach(() => {
   fakeWikiDb.reset();
   tables.user.seed(
-    { id: "dbowner", wikiUsername: null },
-    { id: "dbsysop", wikiUsername: "Mod" },
-    { id: "dbplain", wikiUsername: null },
-    { id: "dbmember", wikiUsername: "Member" },
-    { id: "dbvictim", wikiUsername: "Victim" }
+    { id: "dbowner" },
+    { id: "dbsysop" },
+    { id: "dbplain" },
+    { id: "dbmember" },
+    { id: "dbvictim" }
   );
   tables.wikiNameClaim.seed(
     { userId: "dbsysop", name: "Mod", decidedAt: new Date("2026-01-01") },
@@ -476,7 +476,7 @@ describe("blockUser / unblockUser / listBlocks", () => {
     expect(shown.block).toMatchObject({ reason: "vandalism", allowUserTalk: true });
 
     // the name is later approved for a WikiOS user, by an ordinary admin: the block now applies to them
-    tables.user.seed({ id: "dbbob", wikiUsername: null });
+    tables.user.seed({ id: "dbbob" });
     tables.wikiNameClaim.seed({ userId: "dbbob", name: "Vandal bob", rightsPass: false });
     const bob = ctxFor("dbbob", "user_bob", "Bob");
     expect((await as(bob).getUserPermissions()).block).toMatchObject({ reason: "vandalism" });
@@ -725,7 +725,7 @@ describe("getUserPermissions", () => {
 
   describe("a name its holder hides", () => {
     beforeEach(() => {
-      tables.user.seed({ id: "dbhider", wikiUsername: null });
+      tables.user.seed({ id: "dbhider" });
       tables.wikiNameClaim.seed({
         userId: "dbhider",
         name: "Secret one",

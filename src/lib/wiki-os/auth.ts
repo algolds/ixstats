@@ -16,8 +16,6 @@ export interface WikiAuthContext {
     clerkUserId?: string | null;
     /** The passport handle; null until picked. */
     handle?: string | null;
-    wikiUsername?: string | null;
-    wikiUserId?: number | null;
     countryId?: string | null;
     country?: { id?: string; name?: string | null; flag?: string | null } | null;
     role?: { id?: string; name?: string | null; level?: number | null } | null;

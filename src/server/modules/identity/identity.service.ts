@@ -164,8 +164,8 @@ function passportWiki(
   sections: Pick<ReturnType<typeof redactPassportSections>, "lorewards">
 ) {
   return {
-    // A user's wiki is "linked" only through an approved claim (a legacy `User.wikiUsername`
-    // proves nothing). A handle with no user is an external wiki name, linked if it exists.
+    // A user's wiki is "linked" only through an approved claim. A handle with no user is an
+    // external wiki name, linked if it exists.
     linked: identity.user ? Boolean(claimedWikiName) : Boolean(wikiInfo?.exists),
     username: identity.user ? claimedWikiName : identity.wikiName,
     lorewards: sections.lorewards,

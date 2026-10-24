@@ -67,7 +67,6 @@ import { resolveIdentity } from "~/server/modules/identity/identity.resolve";
 const user = {
   id: "db_1",
   clerkUserId: "clerk_1",
-  wikiUsername: null,
   createdAt: new Date("2024-01-01"),
   countryId: null,
 };

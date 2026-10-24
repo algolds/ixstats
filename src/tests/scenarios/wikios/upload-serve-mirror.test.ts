@@ -106,7 +106,6 @@ const as = (id: string | null, clerk = `clerk-${id}`, name = id ?? "") =>
             id,
             clerkUserId: clerk,
             handle: name,
-            wikiUsername: name,
             role: { name: "user", level: 100 },
           },
           rateLimitIdentifier: `user:${clerk}`,
@@ -171,11 +170,10 @@ beforeEach(() => {
   }) as never;
 
   tables.user.seed(
-    { id: "member", clerkUserId: "clerk-member", wikiUsername: "Member" },
+    { id: "member", clerkUserId: "clerk-member" },
     {
       id: "newcomer",
       clerkUserId: "clerk-newcomer",
-      wikiUsername: "Newcomer",
       createdAt: new Date(),
     }
   );

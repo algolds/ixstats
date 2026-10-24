@@ -214,11 +214,11 @@ async function standardAchievements(
 }
 
 /** 50k-byte revisions per registered wiki author (empty when the revision table is unpopulated). */
-async function bigEditTally(db: PrismaClient, wikiUsernames: string[]) {
-  if (wikiUsernames.length === 0) return new Map<string, number>();
+async function bigEditTally(db: PrismaClient, claimedNames: string[]) {
+  if (claimedNames.length === 0) return new Map<string, number>();
   try {
     const bigRevs = await db.wikiRevision.findMany({
-      where: { byteDelta: { gte: 50000 }, author: { in: wikiUsernames } },
+      where: { byteDelta: { gte: 50000 }, author: { in: claimedNames } },
       select: { author: true },
     });
     return tally(bigRevs.flatMap((r) => r.author || []));
@@ -235,17 +235,17 @@ interface RegisteredName {
 
 async function oolMedals(
   db: PrismaClient,
-  wikiUsername: string | null | undefined,
+  claimedName: string | null | undefined,
   registered: RegisteredName[],
   totalUsers: number
 ) {
-  const wikiUsernames = registered.map((r) => r.name);
-  const oolStats = wikiUsername
-    ? await db.lorewardUserStats.findUnique({ where: { username: wikiUsername } })
+  const claimedNames = registered.map((r) => r.name);
+  const oolStats = claimedName
+    ? await db.lorewardUserStats.findUnique({ where: { username: claimedName } })
     : null;
-  const activeUserStats = wikiUsernames.length
+  const activeUserStats = claimedNames.length
     ? await db.lorewardUserStats.findMany({
-        where: { username: { in: wikiUsernames, mode: "insensitive" } },
+        where: { username: { in: claimedNames, mode: "insensitive" } },
         select: {
           username: true,
           dailyWins: true,
@@ -259,7 +259,7 @@ async function oolMedals(
   const statsByName = new Map(
     [...activeUserStats].reverse().map((s) => [s.username.toLowerCase(), s])
   );
-  const fiftyKEdits = await bigEditTally(db, wikiUsernames);
+  const fiftyKEdits = await bigEditTally(db, claimedNames);
   const annualWinners = await db.lorewardEntry.findMany({
     where: { type: "annual", status: "approved", winnerUser: { not: null } },
     select: { winnerUser: true },
@@ -285,7 +285,7 @@ async function oolMedals(
     });
   }
 
-  const target = laddersFor(wikiUsername ? wikiUsername.toLowerCase() : "");
+  const target = laddersFor(claimedName ? claimedName.toLowerCase() : "");
   const unlockedAt = (oolStats ? oolStats.updatedAt : new Date()).toISOString();
   return MEDALS.map((medal, tier) => ({
     ...medal,
@@ -302,7 +302,7 @@ async function oolMedals(
 
 async function wikiAwardAchievements(
   db: PrismaClient,
-  wikiUsername: string | null | undefined,
+  claimedName: string | null | undefined,
   accountByName: Map<string, string>,
   totalUsers: number
 ) {
@@ -319,9 +319,9 @@ async function wikiAwardAchievements(
     earnersByAward.set(award.name, earners);
   }
 
-  const userAwards = wikiUsername
+  const userAwards = claimedName
     ? allAwards.filter(
-        (a) => Array.isArray(a.recipientUsers) && a.recipientUsers.includes(wikiUsername)
+        (a) => Array.isArray(a.recipientUsers) && a.recipientUsers.includes(claimedName)
       )
     : [];
   return userAwards.map((a) => ({
@@ -466,7 +466,7 @@ export const achievementsProgressRouter = createTRPCRouter({
               select: { id: true, clerkUserId: true },
             })
           : null;
-        const [wikiUsername = null] = await lorewardsWikiNames(
+        const [claimedName = null] = await lorewardsWikiNames(
           ctx.db,
           userRecord,
           ctx.user?.clerkUserId
@@ -481,10 +481,10 @@ export const achievementsProgressRouter = createTRPCRouter({
           select: { name: true, userId: true },
         });
 
-        const medals = await oolMedals(ctx.db, wikiUsername, registered, totalUsers);
+        const medals = await oolMedals(ctx.db, claimedName, registered, totalUsers);
         const wikiAwards = await wikiAwardAchievements(
           ctx.db,
-          wikiUsername,
+          claimedName,
           new Map(registered.map((r) => [r.name.toLowerCase(), r.userId])),
           totalUsers
         );

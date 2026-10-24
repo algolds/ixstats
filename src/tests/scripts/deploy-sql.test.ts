@@ -100,6 +100,13 @@ describe("the SQL the deploy runs", () => {
     expect(convert).toBeLessThan(push);
   });
 
+  it("drops the legacy wiki columns and IxWiki links after the conversion and before the push", () => {
+    const at = (needle: string) => script.indexOf(needle);
+    const drop = at("20261103120001_ixnayid_drop_legacy/migration.sql");
+    expect(drop).toBeGreaterThan(at("bun scripts/identity/convert-wiki-name-claims.ts --apply"));
+    expect(drop).toBeLessThan(push);
+  });
+
   it("keeps one approved owner per wiki name in SQL, where Prisma cannot say it", () => {
     const body = sql("prisma/migrations/20261103120000_ixnayid_claims/migration.sql");
     expect(body).toMatch(

@@ -81,7 +81,6 @@ const ctxFor = (
     id,
     clerkUserId: clerk,
     handle: name,
-    wikiUsername: name,
     createdAt,
     role: { name: role, level: 100 },
   },
@@ -108,11 +107,7 @@ afterAll(() => {
 
 beforeEach(() => {
   fakeWikiDb.reset();
-  tables.user.seed(
-    { id: "dbplain", wikiUsername: null },
-    { id: "dbmember", wikiUsername: "Member" },
-    { id: "dbsysop", wikiUsername: "Mod" }
-  );
+  tables.user.seed({ id: "dbplain" }, { id: "dbmember" }, { id: "dbsysop" });
   tables.wikiNameClaim.seed({ userId: "dbmember", name: "Member" });
   tables.wikiRevision.seed(
     ...Array.from({ length: 10 }, (_, i) => ({

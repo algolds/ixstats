@@ -165,7 +165,6 @@ describe("map pipeline runs", () => {
     db.user.rows.push({
       clerkUserId: admin.clerkUserId,
       forumUsername: "Ixnay",
-      wikiUsername: null,
     });
     const runs = await listMapPipelineRuns(db, admin, "r1");
     expect(runs).toHaveLength(3);

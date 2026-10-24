@@ -105,9 +105,9 @@ export const ixnayidCoreRouter = createTRPCRouter({
 
     const country = user ? await resolveUserCountry(user) : null;
 
-    // Wiki is "linked" only through an APPROVED name claim. Owning a country or holding a legacy
-    // `User.wikiUsername` does not count. The owner's own view shows their first approved name even
-    // while they hide it; the passport handle takes only a shown one.
+    // Wiki is "linked" only through an APPROVED name claim; owning a country does not count. The
+    // owner's own view shows their first approved name even while they hide it; the passport
+    // handle takes only a shown one.
     const names = user ? await namesOfUser(db, user.id) : [];
     const claimedName = names[0]?.name ?? null;
     const shownName = names.find((n) => n.visible)?.name ?? null;

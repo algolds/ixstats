@@ -39,14 +39,10 @@ it("names each conversation by its other participants", () => {
     {
       id: "c1",
       name: null,
-      otherParticipants: [
-        { displayName: "Urcea", wikiUsername: "Wiki Ruler" },
-        { displayName: "Caphiria" },
-      ],
+      otherParticipants: [{ displayName: "Urcea" }, { displayName: "Caphiria" }],
     },
   ]);
   expect(screen.getByText("Urcea, Caphiria")).toBeTruthy();
-  expect(screen.queryByText(/Wiki Ruler/)).toBeNull();
 });
 
 it("falls back to the conversation's name, then to Conversation", () => {

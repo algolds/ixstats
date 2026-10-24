@@ -110,7 +110,6 @@ const signedIn = () =>
       user: {
         id: "db1",
         clerkUserId: "user_1",
-        wikiUsername: "Linked",
         role: { name: "user", level: 100 },
       },
     }) as never

@@ -97,12 +97,6 @@ describe("users.resolveWikiAuthor", () => {
       country: null,
     });
   });
-
-  it("never reads the legacy wikiUsername column", async () => {
-    await db.user.update({ where: { id: "c" }, data: { wikiUsername: "Legacy" } });
-
-    expect(await resolve("Legacy")).toBeNull();
-  });
 });
 
 describe("users.wikiUserPageOwner", () => {
@@ -185,9 +179,7 @@ describe("the wiki talk bridge", () => {
     ]);
   });
 
-  it("reads nothing for a user with neither a claim nor a handle, whatever the legacy column holds", async () => {
-    await db.user.update({ where: { id: "c" }, data: { wikiUsername: "Legacy" } });
-
+  it("reads nothing for a user with neither a claim nor a handle", async () => {
     const result = await wikiTalkBridge.syncInbound("user_c", asPrisma());
 
     expect(talkPage).not.toHaveBeenCalled();

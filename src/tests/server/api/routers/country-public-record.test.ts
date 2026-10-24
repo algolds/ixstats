@@ -111,14 +111,13 @@ describe("countries.getByIdWithEconomicData: the owner is named by their handle,
 
   beforeEach(() => clearTrpcMemoryCache());
 
-  it("never selects the owner's wiki name", async () => {
+  it("selects the owner's handle and forum name and reads no privacy setting", async () => {
     const db = makeDb({ handle: "ruler" });
     await read(visitorOn(db));
     const [args] = db.country.findFirst.mock.calls[0] as [
       { include: { owner: { select: Record<string, boolean> } } },
     ];
     expect(args.include.owner.select).toMatchObject({ handle: true, forumUsername: true });
-    expect(args.include.owner.select).not.toHaveProperty("wikiUsername");
     expect(db.userConnection.findMany).not.toHaveBeenCalled();
   });
 

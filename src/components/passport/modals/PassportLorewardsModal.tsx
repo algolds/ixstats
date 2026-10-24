@@ -27,7 +27,7 @@ export function PassportLorewardsModal({
   wiki,
   handle,
 }: PassportLorewardsModalProps) {
-  const wikiUsername = wiki?.username || handle;
+  const authorName = wiki?.username || handle;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -40,19 +40,19 @@ export function PassportLorewardsModal({
               <SheetTitle>Lorewards accolades</SheetTitle>
               <SheetDescription className="mt-0.5">
                 Author identity:{" "}
-                <strong className="text-label font-medium">User:{wikiUsername}</strong>
+                <strong className="text-label font-medium">User:{authorName}</strong>
               </SheetDescription>
             </div>
           </div>
         </SheetHeader>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-6">
-          <LorewardsView focus="you" username={wikiUsername} />
+          <LorewardsView focus="you" username={authorName} />
         </div>
 
         <SheetFooter className="border-separator items-center border-t p-6 pt-4 sm:justify-between">
           <Link
-            href={`/util/contributions/${encodeURIComponent(wikiUsername)}`}
+            href={`/util/contributions/${encodeURIComponent(authorName)}`}
             className="text-tint text-footnote inline-flex cursor-pointer items-center gap-2 font-medium hover:underline"
           >
             <BookOpen aria-hidden className="size-3.5" />

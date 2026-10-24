@@ -342,12 +342,24 @@ it("keeps an approval whose wiki write failed, and the cron writes it later", as
 it("names a player's activity by handle, else forum name, never by their old wiki name", async () => {
   await db.user.update({
     where: { id: "ana" },
-    data: { handle: "ana_h", wikiUsername: "Ana Wiki", forumUsername: "AnaF" },
+    data: { handle: "ana_h", forumUsername: "AnaF" },
   });
-  await db.user.update({
-    where: { id: "nils" },
-    data: { wikiUsername: "Nils Wiki", forumUsername: "NilsF" },
-  });
+  await db.user.update({ where: { id: "nils" }, data: { forumUsername: "NilsF" } });
+  for (const [userId, name] of [
+    ["ana", "Ana Wiki"],
+    ["nils", "Nils Wiki"],
+  ] as const) {
+    await db.wikiNameClaim.create({
+      data: {
+        userId,
+        name,
+        status: "APPROVED",
+        origin: "CONVERSION",
+        requestedById: userId,
+        decidedAt: new Date(),
+      },
+    });
+  }
   for (const [id, owner] of [
     ["ana-row", ana],
     ["nils-row", nils],

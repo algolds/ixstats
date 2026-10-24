@@ -119,8 +119,6 @@ const holder = {
   id: "db_1",
   clerkUserId: "clerk_1",
   handle: null as string | null,
-  wikiUsername: "Alex" as string | null,
-  wikiUserId: null,
   forumUserId: 9 as number | null,
   forumUsername: "alex" as string | null,
   discordUserId: "d1",
@@ -130,18 +128,22 @@ const holder = {
 };
 type Holder = typeof holder;
 
-/** The passport `handle` resolves to `user` (null: an external wiki or forum name), as `viewerClerkId` reads it. */
+/**
+ * The passport `handle` resolves to `user` (null: an external wiki or forum name), as `viewerClerkId` reads it. The
+ * user's `wikiName` (the shown claimed name `identity.resolve.ts` gives them) is "Alex" unless the case sets it.
+ */
 function resolvesTo(
   viewerClerkId: string | null,
-  user: Partial<Holder> | null = {},
+  user: (Partial<Holder> & { wikiName?: string | null }) | null = {},
   handle = "alex"
 ) {
-  const row = user && { ...holder, ...user };
+  const { wikiName = "Alex", ...fields } = user ?? {};
+  const row = user && { ...holder, ...fields };
   const identity = {
     handle,
     strippedHandle: handle.replace(/_$/, ""),
     user: row,
-    wikiName: row ? row.wikiUsername : handle,
+    wikiName: row ? wikiName : handle,
     forumUserId: row?.forumUserId ?? null,
     forumUsername: row?.forumUsername ?? null,
     isOwner: Boolean(row && viewerClerkId === row.clerkUserId),
@@ -405,7 +407,7 @@ describe("what the passport carries", () => {
     ],
     [
       "the Clerk id when the user has no other name",
-      { forumUsername: null, wikiUsername: null },
+      { forumUsername: null, wikiName: null },
       "me",
       "clerk_1",
     ],
@@ -425,7 +427,7 @@ describe("what the passport carries", () => {
         byName[name] ? { id: byName[name] } : null
       );
     owners({ "Kir Forum": "db_1", "Kir Wiki": "db_1" });
-    const user = { forumUsername: "Kir Forum", wikiUsername: null };
+    const user = { forumUsername: "Kir Forum", wikiName: null };
     expect((await getPassport(resolvesTo(null, user, "me"), forum))?.handle).toBe("Kir Wiki");
     owners({ "Kir Wiki": "db_other", "Kir Forum": "db_1" });
     expect((await getPassport(resolvesTo(null, user, "me"), forum))?.handle).toBe("Kir Forum");
@@ -434,7 +436,7 @@ describe("what the passport carries", () => {
   it("never a hidden claimed name in the handle, even the owner's", async () => {
     claimed({ name: "Kir Secret", visible: false });
     (resolveHandleUser as jest.Mock).mockResolvedValue({ id: "db_1" });
-    const user = { forumUsername: "Kir Forum", wikiUsername: null };
+    const user = { forumUsername: "Kir Forum", wikiName: null };
     expect((await getPassport(resolvesTo("clerk_1", user, "me"), forum))?.handle).toBe("Kir Forum");
     expect(resolveHandleUser).not.toHaveBeenCalledWith("Kir Secret");
   });
@@ -461,7 +463,7 @@ describe("the wiki block of a public read", () => {
   const countryDerived = () =>
     resolvesTo(
       null,
-      { wikiUsername: "Kir Republic", forumUserId: null, forumUsername: null, countryId: "c1" },
+      { wikiName: "Kir Republic", forumUserId: null, forumUsername: null, countryId: "c1" },
       "kir-republic"
     );
 
@@ -536,7 +538,7 @@ describe("the work, the history and the Lorewards of a shown claim", () => {
     // A hidden claim gives the identity no wiki name (identity.resolve.ts), and the handle chain skips it
     claimed({ name: "Alex", visible: false });
     const chain = await getHistory({
-      ...resolvesTo("visitor", { forumUsername: null, wikiUsername: null }),
+      ...resolvesTo("visitor", { forumUsername: null, wikiName: null }),
       limit: 50,
     });
     expect(chain.items.find((item) => item.type === "realm.joined")?.objectUrl).toBe("/@clerk_1");

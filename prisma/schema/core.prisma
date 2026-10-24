@@ -260,10 +260,6 @@ model User {
   handle               String?                  @unique
   handleChangedAt      DateTime?
   lastForumSync       DateTime?
-  // IxnayID: Wiki account linking
-  wikiUserId          Int?
-  wikiUsername         String?
-  lastWikiSync        DateTime?
   lastSeenAt          DateTime?
   ownedCountries      Country[]                @relation("CountryOwner")
   wikiAccountLinks    WikiAccountLink[]
@@ -309,7 +305,6 @@ model User {
   @@index([isActive])
   @@index([forumUserId])
   @@index([forumUsername])
-  @@index([wikiUserId])
   @@index([discordUserId])
 }
 
@@ -982,21 +977,21 @@ model CustomFieldValue {
   @@index([usageCount])
 }
 
-/// A wiki account (ixwiki / iiwiki / althistory) linked to a user. `verifiedAt` is set only after the
-/// user proved control by placing `token` on their wiki user page. See docs/architecture/realms-framework-spec.md.
+/// A sister-wiki account (iiwiki / althistory) linked to a user. `verifiedAt` is set only after the user proved
+/// control by placing `token` on their wiki user page. Old IxWiki names reach an account only through
+/// `WikiNameClaim`. See docs/architecture/realms-framework-spec.md.
 model WikiAccountLink {
   id             String    @id @default(cuid())
   userId         String
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  source         String    // ixwiki | iiwiki | althistory
+  source         String    // iiwiki | althistory
   username       String    // MediaWiki-normalised (spaces, first letter upper-case)
   wikiUserId     Int?
   token          String?
   tokenExpiresAt DateTime?
   verifiedAt     DateTime?
-  /// null = proven by the account's own token on its wiki user page; set to the admin's user id when an
-  /// admin confirmed the link (`adminVerify`). Pending wiki-username groups and blocks attach to a link
-  /// only when this is null or the verifier is a system owner (plan 409).
+  /// null = proven by the account's own token on its wiki user page; an older row may hold the user id of
+  /// the admin who confirmed the link.
   verifiedById   String?
   /// The wiki account's registration date and edit count when the link was proven (autoconfirmed rule).
   mwRegisteredAt DateTime?

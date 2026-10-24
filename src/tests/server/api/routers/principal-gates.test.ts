@@ -556,7 +556,6 @@ function makeDb(author: { role: { level: number } | null } | null) {
     author && {
       id: "db_author",
       clerkUserId: AUTHOR,
-      wikiUsername: "Wiki Author",
       discordUsername: "authortag",
       ...author,
     }
@@ -584,7 +583,7 @@ describe("users.getUserWithRole returns the role level only", () => {
     const db = makeDb({ role: { level: 20 } });
     const result = await lookUp(db, viewer);
     expect(result).toEqual({ roleLevel: 20 });
-    expect(JSON.stringify(result)).not.toMatch(/Wiki Author|authortag|db_author/);
+    expect(JSON.stringify(result)).not.toMatch(/authortag|db_author/);
   });
   it("is null for an unknown user, one without a role, or a read error", async () => {
     expect(await lookUp(makeDb(null), "clerk_viewer")).toEqual({ roleLevel: null });
@@ -598,7 +597,7 @@ describe("users.getUserWithRole returns the role level only", () => {
 });
 
 describe("users.getProfile names the player by their passport handle", () => {
-  it("sends the handle and the forum name, never an old wiki name", async () => {
+  it("sends the handle and the forum name", async () => {
     const db = createMockPrisma();
     db.user.findUnique.mockResolvedValue({
       id: "db_profile",
@@ -610,7 +609,6 @@ describe("users.getProfile names the player by their passport handle", () => {
       createdAt: new Date(0),
       handle: "ruler",
       forumUsername: "ForumRuler",
-      wikiUsername: "Wiki Ruler",
     });
     db.thinkpagesAccount.findFirst.mockResolvedValue(null);
     const ctx = createMockRouterContext({
@@ -620,6 +618,5 @@ describe("users.getProfile names the player by their passport handle", () => {
     });
     const profile = await createCallerFactory(usersProfileRouter)(ctx as never).getProfile();
     expect(profile).toMatchObject({ handle: "ruler", forumUsername: "ForumRuler" });
-    expect(JSON.stringify(profile)).not.toContain("Wiki Ruler");
   });
 });

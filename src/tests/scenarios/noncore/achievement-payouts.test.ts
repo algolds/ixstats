@@ -291,10 +291,9 @@ it("credits Lorewards wins only through an approved name claim, never a bare, pe
   const ben = await member("ben");
   const cy = await member("cy");
   const dee = await member("dee");
-  await db.user.update({ where: { id: "ben" }, data: { wikiUsername: "Ben Wiki" } });
-  // A verified legacy link alone proves nothing any more
+  // A verified sister-wiki link under the same name proves nothing on IxWiki
   await db.wikiAccountLink.create({
-    data: { userId: ben.id, source: "ixwiki", username: "Ben Wiki", verifiedAt: new Date() },
+    data: { userId: ben.id, source: "iiwiki", username: "Ben Wiki", verifiedAt: new Date() },
   });
   const claim = (userId: string, name: string, status: "APPROVED" | "PENDING" | "REVOKED") =>
     db.wikiNameClaim.create({

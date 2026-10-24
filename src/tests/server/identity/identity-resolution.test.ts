@@ -525,7 +525,6 @@ describe("held nations and realm roles", () => {
       id: "db_kir",
       clerkUserId: "clerk_kir",
       forumUsername: "Kir",
-      wikiUsername: "Kir Wiki",
       countryId: "c_linked",
     } as ResolvedIdentity["user"]
   ): ResolvedIdentity => ({

@@ -7,9 +7,9 @@
  * with no `authorId` under exactly one of the ixwiki names they hold an APPROVED claim on, so a player with no
  * claimed name still has their WikiOS edits counted. Lorewards add up the stats rows of exactly those names (the
  * longest streak is the largest of them, not a sum), so a player with no claimed name reads 0 there. A pending,
- * rejected or revoked claim, a legacy link and the legacy `User.wikiUsername` prove nothing and are never read. A
- * claim its owner keeps hidden still counts: a count names no one. Streaks and the Renaissance week use real UTC
- * days and ISO weeks. Map edits are not loaded here: the account key `mapEditsApproved` belongs to the nation loaders.
+ * rejected or revoked claim proves nothing and is never read. A claim its owner keeps hidden still counts: a count
+ * names no one. Streaks and the Renaissance week use real UTC days and ISO weeks. Map edits are not loaded here: the
+ * account key `mapEditsApproved` belongs to the nation loaders.
  *
  * Loader budget: at most 3 indexed queries each, and never a row list that grows with the user's
  * history. Sums, distinct counts and "is there a week with all three" are single aggregate raw

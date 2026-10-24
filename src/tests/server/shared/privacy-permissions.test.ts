@@ -351,7 +351,6 @@ describe("users router", () => {
     await caller(db).blockAccount({ identifier: "@Alex" });
     await caller(db).muteAccount({ identifier: "@Alex" });
     for (const [args] of db.user.findFirst.mock.calls) {
-      expect(JSON.stringify(args)).not.toContain("wikiUsername");
       expect(args.where.OR).toContainEqual({ handle: { equals: "alex", mode: "insensitive" } });
     }
   });
@@ -377,7 +376,6 @@ describe("users router", () => {
     db.wikiNameClaim.findMany.mockResolvedValue(claims);
     const out = await caller(db).exportUserData();
     expect(out.user.wikiNames).toEqual(claims);
-    expect(out.user).not.toHaveProperty("wikiUsername");
     expect(db.wikiNameClaim.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { userId: "db_1" } })
     );

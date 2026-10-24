@@ -504,7 +504,7 @@ async function acquireAdvisoryLock(key: string, record = true): Promise<void> {
 
 /** The schema's column defaults the Prisma mode gives a row written without them. */
 const PRISMA_DEFAULTS: Record<string, () => Record<string, unknown>> = {
-  user: () => ({ clerkUserId: null, wikiUsername: null, roleId: null, countryId: null }),
+  user: () => ({ clerkUserId: null, roleId: null, countryId: null }),
   wikiArticle: () => ({
     slug: "",
     source: "ixwiki",

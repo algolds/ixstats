@@ -74,6 +74,13 @@ export const CARDS_CATEGORIES_SQL =
 /** IxnayID identity: the wiki name claims (with their partial unique indexes) and revision tag tables; idempotent. */
 export const IXNAYID_CLAIMS_SQL = "prisma/migrations/20261103120000_ixnayid_claims/migration.sql";
 
+/**
+ * IxnayID identity, removal: the legacy User wiki columns and the IxWiki link rows; idempotent. On a fresh database it
+ * runs after `db push`, which never created them, so it has nothing to do.
+ */
+export const IXNAYID_DROP_LEGACY_SQL =
+  "prisma/migrations/20261103120001_ixnayid_drop_legacy/migration.sql";
+
 /** The SQL `db push` cannot apply, in the order it runs (the triggers first: the Atlas SQL backfills through them). */
 export const DB_SETUP_SQL_FILES = [MAP_GEOMETRY_TRIGGERS_SQL, ATLAS_R0_SQL, ATLAS_RA_SQL];
 
@@ -215,6 +222,15 @@ async function main(): Promise<void> {
     "prisma/schema",
     "--file",
     IXNAYID_CLAIMS_SQL,
+  ]);
+  run("bunx", [
+    "prisma",
+    "db",
+    "execute",
+    "--schema",
+    "prisma/schema",
+    "--file",
+    IXNAYID_DROP_LEGACY_SQL,
   ]);
   run("bun", ["scripts/setup/seed-db.ts", "--force"]);
 

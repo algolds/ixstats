@@ -171,20 +171,19 @@ const mockClaim = (name: string | null, rightsPass = false) =>
       : []
   );
 
-const userCtx = (wikiUsername: string | null = null) =>
+const userCtx = () =>
   createMockRouterContext({
     auth: { userId: "user_1" },
     user: {
       id: "db1",
       clerkUserId: "user_1",
       handle: "alpha",
-      wikiUsername,
       role: { name: "user", level: 100 },
     },
   });
 
 describe("S4: wiki identity for authorization is the approved name claim", () => {
-  const editCaller = () => createCallerFactory(wikiosEditingRouter)(asCtx(userCtx("Legacy")));
+  const editCaller = () => createCallerFactory(wikiosEditingRouter)(asCtx(userCtx()));
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -196,7 +195,7 @@ describe("S4: wiki identity for authorization is the approved name claim", () =>
     });
   });
 
-  it("forbids User:<name> when User.wikiUsername is set but no approved claim exists", async () => {
+  it("forbids User:<name> when no approved claim exists", async () => {
     mockClaim(null);
 
     await expect(
@@ -219,7 +218,7 @@ describe("S4: wiki identity for authorization is the approved name claim", () =>
     expect(mockDb.wikiAccountLink.findFirst).not.toHaveBeenCalled();
   });
 
-  it("does not let the legacy wikiUsername or a claimed name alone satisfy an AUTOCONFIRMED protection", async () => {
+  it("does not let a claimed name alone satisfy an AUTOCONFIRMED protection", async () => {
     jest.mocked(ArticleRepository.findBySlug).mockResolvedValue({ status: "PUBLISHED" } as never);
     mockDb.wikiRestriction.findMany.mockResolvedValue([
       { action: "edit", level: "autoconfirmed", expiresAt: null },
@@ -249,7 +248,6 @@ describe("S4: wiki identity for authorization is the approved name claim", () =>
         id: "db1",
         clerkUserId: "user_1",
         handle: "alpha",
-        wikiUsername: "Legacy",
         createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
         role: { name: "user", level: 100 },
       },
@@ -266,7 +264,7 @@ describe("S4: wiki identity for authorization is the approved name claim", () =>
     expect(revisions.count).toHaveBeenCalledWith({ where: { authorId: "db1" } });
   });
 
-  it("saveArticle no longer writes User.wikiUsername", async () => {
+  it("saveArticle never updates the author's user row", async () => {
     const { ArticleRepository: RealArticleRepository } = jest.requireActual<
       typeof import("~/lib/wiki-os/core/article-repository")
     >("~/lib/wiki-os/core/article-repository");
@@ -507,7 +505,7 @@ describe("S7: template wikitext cannot be broken out of", () => {
 });
 
 describe("S7: WikiOS write procedures carry limits", () => {
-  const editCaller = () => createCallerFactory(wikiosEditingRouter)(asCtx(userCtx("Legacy")));
+  const editCaller = () => createCallerFactory(wikiosEditingRouter)(asCtx(userCtx()));
 
   it("rejects wikitext over MediaWiki's 2 MB page limit", async () => {
     await expect(
@@ -633,14 +631,13 @@ describe("S8: bounded inputs on stash, placeholder and discussion endpoints", ()
 describe("the editing router (save, preview, page management, rights)", () => {
   const createCaller = createCallerFactory(wikiosEditingRouter);
 
-  const userCtx = (wikiUsername: string | null = null) =>
+  const userCtx = () =>
     createMockRouterContext({
       auth: { userId: "user_1" },
       user: {
         id: "db1",
         clerkUserId: "user_1",
         handle: "alpha",
-        wikiUsername,
         role: { name: "user", level: 100 },
       },
     });
@@ -665,7 +662,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
     it("forbids saveWikitext on a SYSOP-protected page for a non-admin", async () => {
       jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(existingArticle());
       mockRestrictions({ action: "edit", level: "sysop" });
-      const caller = createCaller(userCtx("Linked") as never);
+      const caller = createCaller(userCtx() as never);
 
       await expect(caller.saveWikitext({ title: "Locked", wikitext: "x" })).rejects.toMatchObject({
         code: "FORBIDDEN",
@@ -681,7 +678,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
     });
 
     it("forbids restoreArticle for a non-admin", async () => {
-      const caller = createCaller(userCtx("Linked") as never);
+      const caller = createCaller(userCtx() as never);
       await expect(caller.restoreArticle({ title: "Page" })).rejects.toMatchObject({
         code: "FORBIDDEN",
       });
@@ -696,7 +693,6 @@ describe("the editing router (save, preview, page management, rights)", () => {
         id: "dbadmin",
         clerkUserId: "system_owner_id",
         handle: "admin",
-        wikiUsername: "Admin",
         role: { name: "admin", level: 0 },
       },
     });
@@ -762,7 +758,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
     ];
 
     it.each(forbidden)("saveWikitext refuses %s for a non-admin", async (title) => {
-      const caller = createCaller(userCtx("Linked") as never);
+      const caller = createCaller(userCtx() as never);
       await expect(caller.saveWikitext({ title, wikitext: "x" })).rejects.toMatchObject({
         code: "FORBIDDEN",
       });
@@ -770,7 +766,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
     });
 
     it.each(forbidden)("revertToRevision refuses %s for a non-admin", async (title) => {
-      const caller = createCaller(userCtx("Linked") as never);
+      const caller = createCaller(userCtx() as never);
       await expect(caller.revertToRevision({ title, revid: "r1" })).rejects.toMatchObject({
         code: "FORBIDDEN",
       });
@@ -778,13 +774,13 @@ describe("the editing router (save, preview, page management, rights)", () => {
     });
 
     it.each(forbidden)("rollback refuses %s for a non-admin", async (title) => {
-      const caller = createCaller(userCtx("Linked") as never);
+      const caller = createCaller(userCtx() as never);
       await expect(caller.rollback({ title })).rejects.toMatchObject({ code: "FORBIDDEN" });
       expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
     });
 
     it("allows an article, the user's own page, and passes the revision id to the export", async () => {
-      const caller = createCaller(userCtx("Linked") as never);
+      const caller = createCaller(userCtx() as never);
       await caller.saveWikitext({ title: "Caphiria", wikitext: "x" });
       await caller.saveWikitext({ title: "User:Linked/Notes", wikitext: "x" });
       expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(2);
@@ -792,14 +788,14 @@ describe("the editing router (save, preview, page management, rights)", () => {
 
     it("refuses another user's page and a user page whose name the caller does not hold", async () => {
       await expect(
-        createCaller(userCtx("Linked") as never).saveWikitext({
+        createCaller(userCtx() as never).saveWikitext({
           title: "User:Other",
           wikitext: "x",
         })
       ).rejects.toMatchObject({ code: "FORBIDDEN" });
       mockClaim(null);
       await expect(
-        createCaller(userCtx(null) as never).saveWikitext({ title: "User:Linked", wikitext: "x" })
+        createCaller(userCtx() as never).saveWikitext({ title: "User:Linked", wikitext: "x" })
       ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 
@@ -836,7 +832,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
     });
 
     it("renders for a signed-in user", async () => {
-      const caller = createCaller(userCtx("Linked") as never);
+      const caller = createCaller(userCtx() as never);
       await expect(caller.previewWikitext({ wikitext: "hi", title: "T" })).resolves.toHaveProperty(
         "html"
       );
@@ -850,7 +846,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
             '<table class="infobox"><tr><td>Capital<img src=x onerror="alert(3)"></td></tr></table>' +
             '<div class="hatnote">Notice <script>alert(4)</script></div>'
         );
-      const caller = createCaller(userCtx("Linked") as never);
+      const caller = createCaller(userCtx() as never);
 
       const { html } = await caller.previewWikitext({ wikitext: "hi", title: "T" });
 
@@ -874,7 +870,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
     });
 
     it("saves, exports and reports the canonical title whatever spelling was sent", async () => {
-      const caller = createCaller(userCtx("Linked") as never);
+      const caller = createCaller(userCtx() as never);
 
       const result = await caller.saveWikitext({ title: "foo_bar", wikitext: "x" });
 
@@ -887,7 +883,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
     });
 
     it("refuses a title MediaWiki would refuse before saving anything", async () => {
-      const caller = createCaller(userCtx("Linked") as never);
+      const caller = createCaller(userCtx() as never);
 
       await expect(caller.saveWikitext({ title: "a[b", wikitext: "x" })).rejects.toMatchObject({
         code: "BAD_REQUEST",
@@ -906,7 +902,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
     });
 
     it("previews against the canonical title", async () => {
-      const caller = createCaller(userCtx("Linked") as never);
+      const caller = createCaller(userCtx() as never);
 
       await caller.previewWikitext({ wikitext: "hi", title: "user_talk:jane" });
 
@@ -914,7 +910,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
     });
 
     it("refuses to preview a title MediaWiki would refuse", async () => {
-      const caller = createCaller(userCtx("Linked") as never);
+      const caller = createCaller(userCtx() as never);
 
       await expect(caller.previewWikitext({ wikitext: "hi", title: "a[b" })).rejects.toMatchObject({
         code: "BAD_REQUEST",
@@ -936,7 +932,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
 
     it("checks the admin right before the title, and refuses an invalid title", async () => {
       await expect(
-        createCaller(userCtx("Linked") as never).restoreArticle({ title: "a[b" })
+        createCaller(userCtx() as never).restoreArticle({ title: "a[b" })
       ).rejects.toMatchObject({ code: "FORBIDDEN" });
       await expect(
         createCaller(adminCtx() as never).restoreArticle({ title: "a[b" })
@@ -1013,7 +1009,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
 
     it("refuses every write to a blocked user, with the block reason", async () => {
       mockBlocks({ reason: "vandalism", allowUserTalk: true });
-      const caller = createCaller(userCtx("Linked") as never);
+      const caller = createCaller(userCtx() as never);
 
       await expect(caller.saveWikitext({ title: "Caphiria", wikitext: "x" })).rejects.toMatchObject(
         {
@@ -1031,7 +1027,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
 
     it("holds create-protection against a new page, and an archived page counts as new", async () => {
       mockRestrictions({ action: "create", level: "sysop" });
-      const caller = createCaller(userCtx("Linked") as never);
+      const caller = createCaller(userCtx() as never);
 
       jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(null);
       await expect(caller.saveWikitext({ title: "Salted", wikitext: "x" })).rejects.toMatchObject({
@@ -1050,7 +1046,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
     });
 
     it("rolls back only for the rollback right", async () => {
-      const caller = createCaller(userCtx("Linked") as never);
+      const caller = createCaller(userCtx() as never);
       await expect(caller.rollback({ title: "Caphiria" })).rejects.toMatchObject({
         message: expect.stringMatching(/^permissiondenied: /),
       });
@@ -1065,7 +1061,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
       mockGroups("rollbacker");
       mockRestrictions({ action: "edit", level: "sysop" });
       await expect(
-        createCaller(userCtx("Linked") as never).rollback({ title: "Caphiria" })
+        createCaller(userCtx() as never).rollback({ title: "Caphiria" })
       ).rejects.toMatchObject({ message: expect.stringMatching(/^protectedpage: /) });
     });
 
@@ -1099,7 +1095,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
     it("will not save over a deleted page: an administrator restores it first", async () => {
       jest.mocked(ArticleRepository.findBySlug).mockResolvedValue({ status: "ARCHIVED" } as never);
       mockGroups("rollbacker");
-      const caller = createCaller(userCtx("Linked") as never);
+      const caller = createCaller(userCtx() as never);
       const refused = {
         code: "PRECONDITION_FAILED",
         message: "This page was deleted; ask an administrator to restore it",
@@ -1117,7 +1113,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
 
     it("checks the caller's rights on a deleted title before telling them it was deleted", async () => {
       jest.mocked(ArticleRepository.findBySlug).mockResolvedValue({ status: "ARCHIVED" } as never);
-      const caller = createCaller(userCtx("Linked") as never);
+      const caller = createCaller(userCtx() as never);
 
       await expect(
         caller.saveWikitext({ title: "Template:Gone", wikitext: "x" })
@@ -1137,7 +1133,6 @@ describe("the editing router (save, preview, page management, rights)", () => {
           id: "db2",
           clerkUserId: "user_2",
           handle: "mod",
-          wikiUsername: "Mod",
           role: { name: "admin", level: 10 },
         },
       });

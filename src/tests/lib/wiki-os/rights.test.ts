@@ -866,8 +866,6 @@ describe("protection levels", () => {
   });
 
   const plain = who(["*", "user"]);
-  // The legacy `User.wikiUsername` column grants nothing: such a user is just a plain user.
-  const legacyUsername = who(["*", "user"]);
   // An autoconfirmed user (WikiOS's own rule: old enough, enough edits).
   const verified = who(["*", "user", "autoconfirmed"]);
   const admin = who(["*", "user", "sysop"]);
@@ -887,13 +885,6 @@ describe("protection levels", () => {
         "edit",
         restriction("autoconfirmed"),
         plain,
-        false,
-      ],
-      [
-        "autoconfirmed level, legacy wikiUsername but no verified account",
-        "edit",
-        restriction("autoconfirmed"),
-        legacyUsername,
         false,
       ],
       [

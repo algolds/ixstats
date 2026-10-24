@@ -83,7 +83,6 @@ const ctxFor = (id: string, clerk: string, name: string, role = "user") =>
       id,
       clerkUserId: clerk,
       handle: name,
-      wikiUsername: name,
       role: { name: role, level: 100 },
     },
   }) as never;
@@ -164,9 +163,9 @@ beforeEach(() => {
     },
   }));
   tables.user.seed(
-    { id: "db-sysop", clerkUserId: "clerk-sysop", wikiUsername: "Mod" },
-    { id: "db-new", clerkUserId: "clerk-new", wikiUsername: "Newcomer", createdAt: new Date() },
-    { id: "db-watcher", clerkUserId: "clerk-watcher", wikiUsername: "Watcher" }
+    { id: "db-sysop", clerkUserId: "clerk-sysop" },
+    { id: "db-new", clerkUserId: "clerk-new", createdAt: new Date() },
+    { id: "db-watcher", clerkUserId: "clerk-watcher" }
   );
   const page = tables.wikiArticle.insert({
     title: "Caphiria",

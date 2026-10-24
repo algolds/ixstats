@@ -117,7 +117,7 @@ beforeEach(() => {
   // Caphiria as both wikis have it: MediaWiki's revision 100 is WikiOS's head, stamped
   const founded = site.editAs("Founder", "Caphiria", "Caphiria is a kingdom.");
   const old = site.editAs("Founder", "Old page", "An old page.");
-  tables.user.seed({ id: "db-watcher", clerkUserId: "clerk-watcher", wikiUsername: "Watcher" });
+  tables.user.seed({ id: "db-watcher", clerkUserId: "clerk-watcher" });
   for (const [title, revision] of [
     ["Caphiria", founded],
     ["Old page", old],

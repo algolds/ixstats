@@ -17,7 +17,7 @@ const asAdmin = (db: ReturnType<typeof createMockPrisma>) =>
   }) as never;
 
 describe("vault.adminListVaults", () => {
-  it("searches by handle and sends the handle, not a wiki name", async () => {
+  it("searches by handle and sends the handle", async () => {
     const db = createMockPrisma();
     db.user.findMany.mockResolvedValue([
       {
@@ -26,7 +26,6 @@ describe("vault.adminListVaults", () => {
         handle: "ruler",
         forumUsername: null,
         discordUsername: null,
-        wikiUsername: "Wiki Ruler",
         country: null,
         vault: null,
       },
@@ -37,9 +36,7 @@ describe("vault.adminListVaults", () => {
     });
     const [args] = db.user.findMany.mock.calls[0] as [{ where: { OR: object[] } }];
     expect(args.where.OR).toContainEqual({ handle: { contains: "rul", mode: "insensitive" } });
-    expect(JSON.stringify(args.where)).not.toContain("wikiUsername");
     expect(result.users[0]).toMatchObject({ handle: "ruler" });
-    expect(JSON.stringify(result)).not.toContain("Wiki Ruler");
   });
 });
 
@@ -75,6 +72,5 @@ describe("vault.adminGetPurchaseLogs", () => {
       { include: { vault: { include: { user: { select: Record<string, boolean> } } } } },
     ];
     expect(args.include.vault.include.user.select).toMatchObject({ handle: true });
-    expect(args.include.vault.include.user.select).not.toHaveProperty("wikiUsername");
   });
 });

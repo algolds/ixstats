@@ -93,7 +93,6 @@ const member = () =>
       id: "db-member",
       clerkUserId: "clerk-member",
       handle: "Member",
-      wikiUsername: "Member",
       role: { name: "user", level: 100 },
     },
   }) as never;
@@ -107,7 +106,6 @@ const administrator = () =>
         id: "db-admin",
         clerkUserId: "clerk-admin",
         handle: "Admin",
-        wikiUsername: "Admin",
         role: { name: "admin", level: 10 },
       },
     }) as never
@@ -171,16 +169,9 @@ beforeEach(() => {
     .mocked(renderArticleViaMediaWiki)
     .mockImplementation(async (wikitext: string) => parse(wikitext));
   tables.user.seed(
-    { id: "db-member", clerkUserId: "clerk-member", wikiUsername: "Member" },
-    { id: "db-watcher", clerkUserId: "clerk-watcher", wikiUsername: "Watcher" }
+    { id: "db-member", clerkUserId: "clerk-member" },
+    { id: "db-watcher", clerkUserId: "clerk-watcher" }
   );
-  // a verified link to an old, active wiki account: the member is autoconfirmed
-  tables.wikiAccountLink.seed({
-    userId: "db-member",
-    source: "ixwiki",
-    username: "Member",
-    verifiedAt: new Date("2026-01-01"),
-  });
   const article = tables.wikiArticle.insert({
     title: "Caphiria",
     slug: "caphiria",

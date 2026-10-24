@@ -153,7 +153,7 @@ beforeEach(() => {
     rmSync(join(uploadDirectory, name), { force: true });
   insertedInTransaction = [];
   // the bot password's account (HEKU in the harness) is a sysop: the real services authorize against these rows
-  tables.user.seed({ id: "u-heku", clerkUserId: "user_clerk_heku", wikiUsername: "Heku" });
+  tables.user.seed({ id: "u-heku", clerkUserId: "user_clerk_heku" });
   tables.wikiUserGroup.seed({ userId: "u-heku", group: "sysop" });
   let inTransaction = false;
   jest.spyOn(db, "$transaction").mockImplementation(async (work) => {

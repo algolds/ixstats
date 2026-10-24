@@ -252,11 +252,7 @@ describe("N13: ThinkTank 'post as yourself'", () => {
 describe("a personal persona's first name", () => {
   const ME = "user_me";
   /** A db with no personal persona yet, whose user row carries `names`. */
-  function newPersonaDb(names: {
-    forumUsername: string | null;
-    handle: string | null;
-    wikiUsername: string;
-  }) {
+  function newPersonaDb(names: { forumUsername: string | null; handle: string | null }) {
     const db = createMockPrisma();
     db.$transaction = jest.fn((cb: (tx: typeof db) => Promise<object>) => cb(db));
     db.thinkpagesPersonalAccount.findUnique.mockResolvedValue(null);
@@ -274,25 +270,20 @@ describe("a personal persona's first name", () => {
       displayName: string;
     }>;
   it("takes the forum name first", async () => {
-    const db = newPersonaDb({
-      forumUsername: "Rowan",
-      handle: "rowan_h",
-      wikiUsername: "Wiki Rowan",
-    });
+    const db = newPersonaDb({ forumUsername: "Rowan", handle: "rowan_h" });
     await expect(created(db)).resolves.toMatchObject({ username: "Rowan", displayName: "Rowan" });
   });
   it("takes the passport handle when there is no forum name", async () => {
-    const db = newPersonaDb({ forumUsername: null, handle: "rowan_h", wikiUsername: "WikiRowan" });
+    const db = newPersonaDb({ forumUsername: null, handle: "rowan_h" });
     await expect(created(db)).resolves.toMatchObject({
       username: "rowan_h",
       displayName: "rowan_h",
     });
   });
-  it("never takes the wiki name", async () => {
-    const db = newPersonaDb({ forumUsername: null, handle: null, wikiUsername: "WikiRowan" });
+  it("takes a member number when there is neither, reading only those two names", async () => {
+    const db = newPersonaDb({ forumUsername: null, handle: null });
     const persona = await created(db);
     expect(persona.username).toMatch(/^member_\d{4}$/);
-    expect(JSON.stringify(db.thinkpagesAccount.create.mock.calls)).not.toContain("WikiRowan");
     expect(db.user.findUnique).toHaveBeenCalledWith({
       where: { clerkUserId: ME },
       select: { forumUsername: true, handle: true },

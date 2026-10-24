@@ -122,7 +122,7 @@ describe("admin name claims", () => {
     ]);
   });
 
-  it("searchWikiUsers answers from the legacy name search, never from User.wikiUsername", async () => {
+  it("searchWikiUsers answers from the legacy name search, reading no user rows", async () => {
     await db.lorewardUserStats.create({ data: { username: "Foo bar", totalScore: 12 } });
     const findMany = jest.spyOn(db.user, "findMany");
 
@@ -152,7 +152,6 @@ describe("admin identities", () => {
     const namesOf = (id: string) => identities.find((u) => u.id === id)?.wikiNames;
     expect(namesOf("p1")).toEqual(["Foo bar", "Foo alt"]);
     expect(namesOf("p2")).toEqual([]);
-    expect(identities[0]).not.toHaveProperty("wikiUsername");
   });
 
   it("no longer offers an IxWiki account link or the reconciliation matrix", () => {

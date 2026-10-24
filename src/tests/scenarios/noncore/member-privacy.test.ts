@@ -1,8 +1,8 @@
 /** @jest-environment node */
 /**
- * A member's privacy settings decide what other members see. Hana writes on IxWiki as "Hana Wiki" (a verified link
- * and an approved name claim, Lorewards medals and a featured-article award) and has no nation; Sam writes as "Sam
- * Wiki" and has the passport handle "samwise". No surface that names players reads a wiki name at all (display names,
+ * A member's privacy settings decide what other members see. Hana writes on IxWiki as "Hana Wiki" (an approved name
+ * claim, Lorewards medals and a featured-article award) and has no nation; Sam asks for "Sam Wiki" and has the
+ * passport handle "samwise". No surface that names players reads a wiki name at all (display names,
  * messaging, a ThinkTank's roster, feed and join notices): they name a player by handle, else their persona, whether
  * her claim is shown or hidden and even when the privacy switches cannot be read, and a persona made while the wiki
  * name was shown loses to the handle. With her claim hidden her passport handle skips the wiki name, and she still sees
@@ -85,17 +85,16 @@ beforeEach(async () => {
   await addIxnay(db as never);
   await addNation(db as never, { id: "omaria", name: "Omaria", baselineDate: new Date() });
   const people = [
-    { id: "hana", wikiUsername: "Hana Wiki" },
-    { id: "sam", wikiUsername: "Sam Wiki", handle: "samwise" },
-    { id: "omar", wikiUsername: null, countryId: "omaria" },
-    { id: "ivy", wikiUsername: null },
+    { id: "hana" },
+    { id: "sam", handle: "samwise" },
+    { id: "omar", countryId: "omaria" },
+    { id: "ivy" },
   ];
   for (const p of people) {
     await db.user.create({
       data: {
         id: p.id,
         clerkUserId: `${p.id}-clerk`,
-        wikiUsername: p.wikiUsername,
         handle: p.handle ?? null,
         countryId: p.countryId ?? null,
         lastSeenAt: new Date(),
@@ -103,9 +102,6 @@ beforeEach(async () => {
     });
   }
   await db.country.update({ where: { id: "omaria" }, data: { ownerUserId: "omar" } });
-  await db.wikiAccountLink.create({
-    data: { userId: "hana", source: "ixwiki", username: "Hana Wiki", verifiedAt: new Date() },
-  });
   await db.wikiNameClaim.create({
     data: {
       userId: "hana",

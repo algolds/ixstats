@@ -2,8 +2,8 @@
 /**
  * Loreward payouts by contest and place. A plain (MediaWiki) name pays only the owner of its APPROVED ixwiki name
  * claim (an exact match on the normalized name); a `wikios>Label` name pays the one WikiOS account behind
- * the label's edits to the winning page in the contest. Never to whoever holds the legacy User.wikiUsername (which
- * could be set without proof), and only for entries from the payout start on.
+ * the label's edits to the winning page in the contest. Never to a user found by the name any other way, and only for
+ * entries from the payout start on.
  */
 jest.mock("~/server/db", () => {
   // The client the payout's transaction runs on: distinct from `db`, so a lock or check made on `db` is caught.
@@ -267,7 +267,7 @@ describe("grantLorewardBonuses, by approved name claim", () => {
     );
   });
 
-  it("pays nobody when only the legacy User.wikiUsername column matches", async () => {
+  it("pays nobody for a plain name no one holds an approved claim on, and looks up no user by it", async () => {
     mocked.wikiNameClaim.findFirst.mockResolvedValue(null);
     mocked.user.findFirst.mockResolvedValue({ id: "u_squatter" });
     expect(await grantLorewardBonuses()).toBe(0);
