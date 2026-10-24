@@ -115,7 +115,8 @@ async function requireLore(ctx: LoreCtx, countryId: string, need: "own" | "write
 
 function canonicalTitleOf(raw: string): string {
   const title = canonicalizeTitle(raw)?.title;
-  if (!title) throw new TRPCError({ code: "BAD_REQUEST", message: "That is not a valid page title." });
+  if (!title)
+    throw new TRPCError({ code: "BAD_REQUEST", message: "That is not a valid page title." });
   return title;
 }
 
@@ -155,7 +156,11 @@ export async function listLorePieces(ctx: LoreCtx, countryId: string): Promise<L
   const country = await loreCountry(countryId);
   if (country?.realmId !== DEFAULT_REALM_ID) return [];
   const [{ members }, rows] = await Promise.all([
-    loadCategoryMembers({ category: loreCategory(country.name), limit: CATEGORY_LIMIT, type: "page" }),
+    loadCategoryMembers({
+      category: loreCategory(country.name),
+      limit: CATEGORY_LIMIT,
+      type: "page",
+    }),
     db.countryLorePage.findMany({
       where: { countryId },
       select: { title: true, type: true, pinned: true, hidden: true },

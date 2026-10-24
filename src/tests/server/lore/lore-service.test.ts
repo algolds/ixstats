@@ -217,9 +217,7 @@ beforeEach(() => {
   store.pages = [];
   wiki.clear();
   jest.mocked(refreshWikiosEditingFlag).mockResolvedValue(true);
-  jest
-    .mocked(hasCountryWriteAccess)
-    .mockImplementation(async (ctx) => ctx.user?.id === OWNER);
+  jest.mocked(hasCountryWriteAccess).mockImplementation(async (ctx) => ctx.user?.id === OWNER);
   jest.mocked(readVisiblePage).mockImplementation(async (_ctx, title) => {
     const page = wiki.get(title);
     return { resolvedTitle: page?.resolvedTitle ?? title, wikitext: page?.wikitext ?? null };
@@ -237,7 +235,12 @@ describe("getLoreAccess", () => {
   });
 
   it("lets a lore team member write without owning the country", async () => {
-    store.authors.push({ countryId: COUNTRY, userId: COAUTHOR, addedById: OWNER, createdAt: new Date() });
+    store.authors.push({
+      countryId: COUNTRY,
+      userId: COAUTHOR,
+      addedById: OWNER,
+      createdAt: new Date(),
+    });
     expect(await getLoreAccess(as(COAUTHOR), COUNTRY)).toEqual({
       enabled: true,
       isOwner: false,
@@ -286,10 +289,38 @@ describe("listLorePieces", () => {
     onWiki("Constantinus I", "{{Infobox settlement}}"); // the curated type wins over the infobox
     onWiki("Aurelian Wars", "{{Infobox military conflict}}");
     store.pages.push(
-      { countryId: COUNTRY, title: "Constantinus I", type: "person", pinned: false, hidden: false, addedById: OWNER },
-      { countryId: COUNTRY, title: "Aurelian Wars", type: "event", pinned: true, hidden: false, addedById: OWNER },
-      { countryId: COUNTRY, title: "Hidden Piece", type: "person", pinned: false, hidden: true, addedById: OWNER },
-      { countryId: COUNTRY, title: "Gone Page", type: "place", pinned: true, hidden: false, addedById: OWNER }
+      {
+        countryId: COUNTRY,
+        title: "Constantinus I",
+        type: "person",
+        pinned: false,
+        hidden: false,
+        addedById: OWNER,
+      },
+      {
+        countryId: COUNTRY,
+        title: "Aurelian Wars",
+        type: "event",
+        pinned: true,
+        hidden: false,
+        addedById: OWNER,
+      },
+      {
+        countryId: COUNTRY,
+        title: "Hidden Piece",
+        type: "person",
+        pinned: false,
+        hidden: true,
+        addedById: OWNER,
+      },
+      {
+        countryId: COUNTRY,
+        title: "Gone Page",
+        type: "place",
+        pinned: true,
+        hidden: false,
+        addedById: OWNER,
+      }
     );
 
     expect(await listLorePieces(signedOut(), COUNTRY)).toEqual([
@@ -341,10 +372,21 @@ describe("the lore team", () => {
   });
 
   it("refuses a non-owner, even a co-author, and adds nobody", async () => {
-    store.authors.push({ countryId: COUNTRY, userId: COAUTHOR, addedById: OWNER, createdAt: new Date() });
-    expect(await refusal(addLoreAuthor(as(COAUTHOR), COUNTRY, "stranger", identity))).toBe("FORBIDDEN");
-    expect(await refusal(addLoreAuthor(as(STRANGER), COUNTRY, "stranger", identity))).toBe("FORBIDDEN");
-    expect(await refusal(addLoreAuthor(signedOut(), COUNTRY, "stranger", identity))).toBe("FORBIDDEN");
+    store.authors.push({
+      countryId: COUNTRY,
+      userId: COAUTHOR,
+      addedById: OWNER,
+      createdAt: new Date(),
+    });
+    expect(await refusal(addLoreAuthor(as(COAUTHOR), COUNTRY, "stranger", identity))).toBe(
+      "FORBIDDEN"
+    );
+    expect(await refusal(addLoreAuthor(as(STRANGER), COUNTRY, "stranger", identity))).toBe(
+      "FORBIDDEN"
+    );
+    expect(await refusal(addLoreAuthor(signedOut(), COUNTRY, "stranger", identity))).toBe(
+      "FORBIDDEN"
+    );
     expect(store.authors).toHaveLength(1);
   });
 
@@ -357,9 +399,9 @@ describe("the lore team", () => {
   });
 
   it("refuses team changes outside the default realm and while editing is off", async () => {
-    expect(
-      await refusal(addLoreAuthor(as(OWNER), OTHER_REALM_COUNTRY, "livia", identity))
-    ).toBe("FORBIDDEN");
+    expect(await refusal(addLoreAuthor(as(OWNER), OTHER_REALM_COUNTRY, "livia", identity))).toBe(
+      "FORBIDDEN"
+    );
     jest.mocked(refreshWikiosEditingFlag).mockResolvedValue(false);
     expect(await refusal(addLoreAuthor(as(OWNER), COUNTRY, "livia", identity))).toBe("FORBIDDEN");
     expect(store.authors).toHaveLength(0);
@@ -392,7 +434,12 @@ describe("the lore team", () => {
 
 describe("curation", () => {
   it("records a piece a co-author wrote, under its canonical title", async () => {
-    store.authors.push({ countryId: COUNTRY, userId: COAUTHOR, addedById: OWNER, createdAt: new Date() });
+    store.authors.push({
+      countryId: COUNTRY,
+      userId: COAUTHOR,
+      addedById: OWNER,
+      createdAt: new Date(),
+    });
     await recordPiece(as(COAUTHOR), COUNTRY, { title: "venceia_old_town", type: "place" });
     expect(store.pages).toEqual([
       expect.objectContaining({ title: "Venceia old town", type: "place", addedById: COAUTHOR }),
@@ -422,7 +469,12 @@ describe("curation", () => {
   });
 
   it("refuses curation by a co-author", async () => {
-    store.authors.push({ countryId: COUNTRY, userId: COAUTHOR, addedById: OWNER, createdAt: new Date() });
+    store.authors.push({
+      countryId: COUNTRY,
+      userId: COAUTHOR,
+      addedById: OWNER,
+      createdAt: new Date(),
+    });
     onWiki("Venceia", "{{Infobox settlement}}");
     expect(
       await refusal(setCuration(as(COAUTHOR), COUNTRY, { title: "Venceia", hidden: true }))
