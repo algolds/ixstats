@@ -236,6 +236,7 @@ Name every group with `aria-label` or `aria-labelledby`. Never hand-roll roving 
 - `Sheet` for tasks, detail views and multi-step flows. It is a right side sheet at 768px and up and a bottom sheet with `medium`/`large` detents below. `size="wide"` is for two-column details.
 - `Dialog` and `AlertDialog` for short confirmations. Popovers, menus and tooltips use the `ui` wrappers.
 - All of them paint `facet-overlay`. Do not restyle their surface.
+- `ContextMenu` (right-click, long-press, Shift+F10) is a shortcut, never the only way in. Put it on things with an identity (a post, a message, a map feature) and render the same items fragment as the thing's visible "More actions" dropdown: the `DropdownMenuItem` family works inside both. Never put it on prose, links, inputs, editors or empty canvas; the trigger already leaves the browser's menu to Shift+right-click, text fields, links, selections and dialogs the thing opens. A menu opened from a canvas point (the map editor) is a `DropdownMenu` on a 1px anchor at that point.
 
 ## 7. Layout
 
