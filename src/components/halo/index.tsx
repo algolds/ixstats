@@ -34,7 +34,7 @@ function CommandPaletteContent({
   diState: ReturnType<typeof useDynamicIslandState>;
   isTourActive?: boolean;
 }) {
-  const { state: diSizeState, setSize } = useHaloSize();
+  const { size: haloSize, setSize } = useHaloSize();
   const [mounted, setMounted] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [diPulseClass, setDiPulseClass] = useState("");
@@ -108,10 +108,10 @@ function CommandPaletteContent({
       if (expandedMode === "search") {
         newSize = SIZE_PRESETS.ULTRA; // 630px wide
       } else if (expandedMode === "notifications") {
-        newSize = diSizeState.size === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.TALL;
+        newSize = haloSize === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.TALL;
       } else if (expandedMode === "settings") {
         newSize =
-          diSizeState.size === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.MEDIUM;
+          haloSize === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.MEDIUM;
       } else if (expandedMode === "mycountry") {
         newSize = SIZE_PRESETS.MEDIUM; // 371px wide — profile/country dropdown
       } else if (expandedMode.startsWith("plugin:")) {

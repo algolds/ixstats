@@ -45,8 +45,8 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [expandedNotificationId, setExpandedNotificationId] = useState<string | null>(null);
   const [locallyDismissedIds, setLocallyDismissedIds] = useState<Set<string>>(new Set());
-  const { state: diSizeState, setSize } = useHaloSize();
-  const isUltra = diSizeState.size === SIZE_PRESETS.ULTRA;
+  const { size: haloSize, setSize } = useHaloSize();
+  const isUltra = haloSize === SIZE_PRESETS.ULTRA;
 
   // ESC to close
   React.useEffect(() => {

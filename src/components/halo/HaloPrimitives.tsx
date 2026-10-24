@@ -3,10 +3,9 @@
 import React, {
   type ReactNode,
   createContext,
-  useCallback,
   useContext,
   useEffect,
-  useReducer,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -19,134 +18,35 @@ import { springSnappy } from "~/lib/design/motion";
 const MAX_HEIGHT_MOBILE_ULTRA = 400;
 const MAX_HEIGHT_MOBILE_MASSIVE = 700;
 
-// Performance optimization constants
-const RESIZE_DEBOUNCE_MS = 100;
-
 import { type SizePresets, type Preset, SIZE_PRESETS, DynamicIslandSizePresets } from "./presets";
 
 export * from "./presets";
 
-type BlobStateType = {
+type HaloSizeContextType = {
   size: SizePresets;
-  previousSize: SizePresets | undefined;
-  animationQueue: Array<{ size: SizePresets; delay: number }>;
-  isAnimating: boolean;
-};
-
-type BlobAction =
-  | { type: "SET_SIZE"; newSize: SizePresets }
-  | { type: "INITIALIZE"; firstState: SizePresets }
-  | {
-      type: "SCHEDULE_ANIMATION";
-      animationSteps: Array<{ size: SizePresets; delay: number }>;
-    }
-  | { type: "ANIMATION_END" };
-
-type BlobContextType = {
-  state: BlobStateType;
-  dispatch: React.Dispatch<BlobAction>;
   setSize: (size: SizePresets) => void;
-  scheduleAnimation: (animationSteps: Array<{ size: SizePresets; delay: number }>) => void;
-  presets: Record<SizePresets, Preset>;
 };
 
-const BlobContext = createContext<BlobContextType | undefined>(undefined);
+const HaloSizeContext = createContext<HaloSizeContextType | undefined>(undefined);
 
-const blobReducer = (state: BlobStateType, action: BlobAction): BlobStateType => {
-  switch (action.type) {
-    case "SET_SIZE":
-      return {
-        ...state,
-        size: action.newSize,
-        previousSize: state.size,
-        isAnimating: false,
-      };
-    case "SCHEDULE_ANIMATION":
-      return {
-        ...state,
-        animationQueue: action.animationSteps,
-        isAnimating: action.animationSteps.length > 0,
-      };
-    case "INITIALIZE":
-      return {
-        ...state,
-        size: action.firstState,
-        previousSize: SIZE_PRESETS.EMPTY,
-        isAnimating: false,
-      };
-    case "ANIMATION_END":
-      return {
-        ...state,
-        isAnimating: false,
-      };
-    default:
-      return state;
-  }
-};
-
-interface DynamicIslandProviderProps {
+interface HaloProviderProps {
   children: React.ReactNode;
   initialSize?: SizePresets;
-  initialAnimation?: Array<{ size: SizePresets; delay: number }>;
 }
 
-export const HaloProvider: React.FC<DynamicIslandProviderProps> = ({
+export const HaloProvider: React.FC<HaloProviderProps> = ({
   children,
   initialSize = SIZE_PRESETS.DEFAULT,
-  initialAnimation = [],
 }) => {
-  const initialState: BlobStateType = {
-    size: initialSize,
-    previousSize: SIZE_PRESETS.EMPTY,
-    animationQueue: initialAnimation,
-    isAnimating: initialAnimation.length > 0,
-  };
+  // useState skips the re-render when the size is unchanged, so setSize needs no guard.
+  const [size, setSize] = useState(initialSize);
+  const contextValue = useMemo(() => ({ size, setSize }), [size]);
 
-  const [state, dispatch] = useReducer(blobReducer, initialState);
-
-  useEffect(() => {
-    const processQueue = async () => {
-      for (const step of state.animationQueue) {
-        await new Promise((resolve) => setTimeout(resolve, step.delay));
-        dispatch({ type: "SET_SIZE", newSize: step.size });
-      }
-      dispatch({ type: "ANIMATION_END" });
-    };
-
-    if (state.animationQueue.length > 0) {
-      processQueue();
-    }
-  }, [state.animationQueue]);
-
-  const setSize = useCallback(
-    (newSize: SizePresets) => {
-      if (newSize !== state.size) {
-        dispatch({ type: "SET_SIZE", newSize });
-      }
-    },
-    [state.size, dispatch]
-  );
-
-  const scheduleAnimation = useCallback(
-    (animationSteps: Array<{ size: SizePresets; delay: number }>) => {
-      dispatch({ type: "SCHEDULE_ANIMATION", animationSteps });
-    },
-    [dispatch]
-  );
-
-  const contextValue = {
-    state,
-    dispatch,
-    setSize,
-    scheduleAnimation,
-    presets: DynamicIslandSizePresets,
-  };
-
-  return <BlobContext.Provider value={contextValue}>{children}</BlobContext.Provider>;
+  return <HaloSizeContext.Provider value={contextValue}>{children}</HaloSizeContext.Provider>;
 };
 
 export const useHaloSize = () => {
-  const context = useContext(BlobContext);
+  const context = useContext(HaloSizeContext);
   if (!context) {
     throw new Error("useHaloSize must be used within a HaloProvider");
   }
@@ -243,11 +143,11 @@ const DynamicIslandContent = ({
   screenSize,
   ...props
 }: DynamicIslandContentProps) => {
-  const { state, presets } = useHaloSize();
-  const currentSize = presets[state.size] ?? DynamicIslandSizePresets.default;
-  const isCompact = isCompactSize(state.size);
+  const { size } = useHaloSize();
+  const currentSize = DynamicIslandSizePresets[size] ?? DynamicIslandSizePresets.default;
+  const isCompact = isCompactSize(size);
 
-  const dimensions = calculateDimensions(state.size, screenSize, currentSize);
+  const dimensions = calculateDimensions(size, screenSize, currentSize);
 
   const [isImpersonating, setIsImpersonating] = useState(false);
 
@@ -297,7 +197,7 @@ const DynamicIslandContent = ({
       observer.disconnect();
     };
     // oxlint-disable-next-line
-  }, [state.size, children]);
+  }, [size, children]);
 
   const isAutoHeight = dimensions.height === "auto";
   const targetHeight = isAutoHeight
@@ -356,45 +256,20 @@ export const Halo = ({ children, id, ...props }: { children: ReactNode; id: stri
     // oxlint-disable-next-line
     setMounted(true);
 
-    let resizeTimeout: NodeJS.Timeout;
+    // One measurement per frame; setScreenSize skips the re-render when the bucket is unchanged.
     let rafId: number | undefined;
-    let isResizing = false;
-
     const handleResize = () => {
-      clearTimeout(resizeTimeout);
-
-      if (!isResizing) {
-        isResizing = true;
-        rafId = requestAnimationFrame(() => {
-          const width = window.innerWidth;
-          const newSize = width <= 640 ? "mobile" : width <= 1024 ? "tablet" : "desktop";
-          // oxlint-disable-next-line
-          if (screenSize !== newSize) {
-            setScreenSize(newSize);
-          }
-          isResizing = false;
-        });
-      }
-
-      resizeTimeout = setTimeout(() => {
-        if (isResizing) {
-          const width = window.innerWidth;
-          const newSize = width <= 640 ? "mobile" : width <= 1024 ? "tablet" : "desktop";
-          if (screenSize !== newSize) {
-            setScreenSize(newSize);
-          }
-          isResizing = false;
-        }
-      }, RESIZE_DEBOUNCE_MS);
+      if (rafId !== undefined) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const width = window.innerWidth;
+        setScreenSize(width <= 640 ? "mobile" : width <= 1024 ? "tablet" : "desktop");
+      });
     };
 
     handleResize();
     window.addEventListener("resize", handleResize, { passive: true });
     return () => {
-      clearTimeout(resizeTimeout);
-      if (rafId) {
-        cancelAnimationFrame(rafId);
-      }
+      if (rafId !== undefined) cancelAnimationFrame(rafId);
       window.removeEventListener("resize", handleResize);
     };
   }, []);
