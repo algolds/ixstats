@@ -19,6 +19,7 @@ import { InactivitySection } from "../../_components/manage/InactivitySection";
 import { LinksSection } from "../../_components/manage/LinksSection";
 import { MapSection } from "../../_components/manage/MapSection";
 import { MapImportSection } from "../../_components/manage/MapImportSection";
+import { ManageNav } from "../../_components/manage/ManageNav";
 import { ManageSection } from "../../_components/manage/ManageSection";
 import { OfficersSection } from "../../_components/manage/OfficersSection";
 import { PollsSection } from "../../_components/manage/PollsSection";
@@ -224,39 +225,12 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
 
   return (
     <div className="grid gap-6 lg:grid-cols-[200px_minmax(0,1fr)]">
-      <nav
-        aria-label="Manage sections"
-        // One scrolling row on small screens; the grouped column from lg up.
-        className="flex gap-1 overflow-x-auto lg:sticky lg:top-24 lg:flex-col lg:gap-4 lg:self-start lg:overflow-visible"
-      >
-        {groups.map((group) => (
-          <div
-            key={group.label}
-            role="group"
-            aria-labelledby={`manage-nav-${group.label}`}
-            className="shrink-0"
-          >
-            <h3
-              id={`manage-nav-${group.label}`}
-              className="text-footnote text-label hidden px-3 pb-1 font-semibold lg:block"
-            >
-              {group.label}
-            </h3>
-            <ul className="flex gap-1 lg:flex-col">
-              {group.sections.map((s) => (
-                <li key={s.id}>
-                  <a
-                    href={`#${s.id}`}
-                    className="rounded-control text-footnote text-label-secondary hover:bg-fill-4 hover:text-label block px-3 py-2 whitespace-nowrap lg:py-1"
-                  >
-                    {s.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </nav>
+      <ManageNav
+        groups={groups.map((g) => ({
+          label: g.label,
+          sections: g.sections.map((sec) => ({ id: sec.id, label: sec.label })),
+        }))}
+      />
 
       <div className="flex min-w-0 flex-col gap-6">
         {manage.archived && (
