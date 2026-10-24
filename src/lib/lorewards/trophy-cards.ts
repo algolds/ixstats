@@ -99,14 +99,59 @@ type TrophyEntry = StoredContestEntry;
 export const metaOf = (value: Prisma.JsonValue | null | undefined): Prisma.JsonObject =>
   isJsonObject(value) ? value : {};
 
+/** Cards per page: an explicit `take` keeps `~/server/db`'s 1,000-row findMany cap off. */
+const CARD_PAGE = 500;
+
+const TROPHY_CARD_SELECT = {
+  id: true,
+  metadata: true,
+  lorewardEntryId: true,
+  lorewardEdition: true,
+} as const;
+
+type TrophyCardRow = Prisma.CardGetPayload<{ select: typeof TROPHY_CARD_SELECT }>;
+
+/**
+ * Every card `where` selects, read in pages of 500 by id so that none is dropped: keyset paging (`id > last`), as
+ * `findContestEntries` reads entries. `where` names no `id` (the page bound takes it).
+ */
+async function findTrophyCards(
+  db: PrismaClient,
+  where: Omit<Prisma.CardWhereInput, "id">
+): Promise<TrophyCardRow[]> {
+  const rows: TrophyCardRow[] = [];
+  let after: string | undefined;
+  for (;;) {
+    const page = await db.card.findMany({
+      where: after ? { ...where, id: { gt: after } } : where,
+      select: TROPHY_CARD_SELECT,
+      orderBy: { id: "asc" },
+      take: CARD_PAGE,
+    });
+    rows.push(...page);
+    const last = page.at(-1);
+    if (page.length < CARD_PAGE || !last) return rows;
+    after = last.id;
+  }
+}
+
 /** Keys (`<entryId>:<edition>`) of the trophy cards that already exist. */
 async function mintedKeys(db: PrismaClient): Promise<Set<string>> {
-  const rows = await db.card.findMany({
-    where: { lorewardEntryId: { not: null } },
-    select: { lorewardEntryId: true, lorewardEdition: true },
-  });
+  const rows = await findTrophyCards(db, { lorewardEntryId: { not: null } });
   return new Set(rows.map((r) => `${r.lorewardEntryId}:${r.lorewardEdition}`));
 }
+
+/** The trophy cards (of the entries `entryIds`, or all of them) that no one owns and that are not retired. */
+const unownedTrophyCards = (db: PrismaClient, entryIds: string[] | null) =>
+  findTrophyCards(db, {
+    lorewardEntryId: entryIds ? { in: entryIds } : { not: null },
+    isRetired: false,
+    CardOwnership: { none: {} },
+  });
+
+/** Whether a card was granted once (and its copy since removed): it is settled, not waiting for a claim. */
+const wasGranted = (card: { metadata: Prisma.JsonValue }) =>
+  Boolean(metaOf(card.metadata).grantedTo);
 
 /** Whether a card of this place of the contest (its entries `entryIds`, read inside the place's lock) exists. */
 async function contestPlaceMinted(
@@ -259,7 +304,7 @@ async function contestPlaceSettled(
     tx.cardOwnership.count({ where: { cards: where } }),
     tx.card.findMany({ where, select: { metadata: true } }),
   ]);
-  return owned > 0 || placeCards.some((card) => Boolean(metaOf(card.metadata).grantedTo));
+  return owned > 0 || placeCards.some(wasGranted);
 }
 
 /**
@@ -295,27 +340,20 @@ async function grantOne(db: PrismaClient, grant: TrophyGrant, userId: string): P
   });
 }
 
-interface UnownedCard {
-  id: string;
-  metadata: Prisma.JsonValue;
-  lorewardEntryId: string | null;
-  lorewardEdition: string | null;
-}
-
 /**
  * The card to grant for each place of each approved contest, and the place to resolve it from: one per contest and
  * place (the chosen entry's card, else its twin's), none while the contest's entries disagree, and none once one of
  * its cards was owned or granted.
  */
 function cardsToGrant(
-  unowned: UnownedCard[],
+  unowned: TrophyCardRow[],
   all: Array<Contest<TrophyEntry>>,
   minted: Set<string>
 ): TrophyGrant[] {
   const waiting = new Map(
     unowned.map((card) => [
       `${card.lorewardEntryId}:${card.lorewardEdition}`,
-      { id: card.id, granted: Boolean(metaOf(card.metadata).grantedTo) },
+      { id: card.id, granted: wasGranted(card) },
     ])
   );
   // A card that exists but is not waiting is owned; one granted before (then removed) stays settled.
@@ -354,15 +392,7 @@ export async function grantUnownedTrophyCards(
   if (scope === null) return { granted: 0 };
   const all = await contests(db, scope);
   const scopedIds = scope ? all.flatMap((contest) => contest.map((entry) => entry.id)) : null;
-  const unowned = await db.card.findMany({
-    where: {
-      lorewardEntryId: scopedIds ? { in: scopedIds } : { not: null },
-      isRetired: false,
-      CardOwnership: { none: {} },
-    },
-    select: { id: true, metadata: true, lorewardEntryId: true, lorewardEdition: true },
-  });
-  const minted = await mintedKeys(db);
+  const [unowned, minted] = await Promise.all([unownedTrophyCards(db, scopedIds), mintedKeys(db)]);
 
   let granted = 0;
   for (const grant of cardsToGrant(unowned, all, minted)) {
@@ -377,11 +407,23 @@ export interface TrophyBackfillReport {
   missing: Record<string, number>;
   minted: number;
   granted: number;
+  /**
+   * Trophy cards that wait for a claim after the run (a dry run: before it): unowned, not retired and never granted.
+   * Their place's name has no approved claim yet, or its `wikios>` name resolves to no one.
+   */
+  waiting: number;
+}
+
+/** How many trophy cards wait for a claim (`TrophyBackfillReport.waiting`). */
+async function waitingCards(db: PrismaClient): Promise<number> {
+  const unowned = await unownedTrophyCards(db, null);
+  return unowned.filter((card) => !wasGranted(card)).length;
 }
 
 /**
  * The one-time history backfill: a trophy card for every recorded place back to 2017, granted where
- * `resolveLorewardPlace` tells the place's account, with no credits. Reports what is missing and writes nothing unless `apply`; idempotent.
+ * `resolveLorewardPlace` tells the place's account, with no credits; the rest wait unowned for a claim. Reports what is
+ * missing and writes nothing unless `apply`; idempotent.
  */
 export async function backfillTrophyCards(
   db: PrismaClient,
@@ -392,8 +434,8 @@ export async function backfillTrophyCards(
     const key = `${entry.type}:${place}`;
     missing[key] = (missing[key] ?? 0) + 1;
   }
-  if (!apply) return { missing, minted: 0, granted: 0 };
+  if (!apply) return { missing, minted: 0, granted: 0, waiting: await waitingCards(db) };
   const { minted } = await mintTrophyCards(db);
   const { granted } = await grantUnownedTrophyCards(db);
-  return { missing, minted, granted };
+  return { missing, minted, granted, waiting: await waitingCards(db) };
 }
