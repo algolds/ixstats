@@ -21,6 +21,7 @@ import {
 import {
   listConflicts,
   markNotified,
+  markSettled,
   pendingRecipients,
   recordConflict,
   setTrailRevision,
@@ -168,6 +169,36 @@ describe("notices", () => {
     await mockDb.wikiConflict.update({ where: { id }, data: { legacyPark: true } });
     const row = await mockDb.wikiConflict.findUniqueOrThrow({ where: { id } });
     expect(pendingRecipients(row)).toEqual([]);
+  });
+});
+
+describe("settling", () => {
+  it("markSettled settles a row only once nobody is left to tell", async () => {
+    const { id } = await recordConflict(mockDb, input(verdict(winner, mine, [mine])));
+    expect(await markSettled(id)).toBe(false);
+    expect((await mockDb.wikiConflict.findUniqueOrThrow({ where: { id } })).settledAt).toBeNull();
+
+    await markNotified(id, "user:u1", "in-app");
+    await markNotified(id, "user:u1", "discord");
+    expect(await markSettled(id)).toBe(true);
+    expect(
+      (await mockDb.wikiConflict.findUniqueOrThrow({ where: { id } })).settledAt
+    ).toBeInstanceOf(Date);
+  });
+
+  it("a merge that adds a loser reopens a settled row; one that adds nothing leaves it settled", async () => {
+    const { id } = await recordConflict(mockDb, input(verdict(winner, mine, [mine])));
+    await markNotified(id, "user:u1", "in-app");
+    await markNotified(id, "user:u1", "discord");
+    await markSettled(id);
+
+    await recordConflict(mockDb, input(verdict(winner, mine, [mine])));
+    expect(
+      (await mockDb.wikiConflict.findUniqueOrThrow({ where: { id } })).settledAt
+    ).not.toBeNull();
+
+    await recordConflict(mockDb, input(verdict(winner, theirs, [mine, theirs])));
+    expect((await mockDb.wikiConflict.findUniqueOrThrow({ where: { id } })).settledAt).toBeNull();
   });
 });
 

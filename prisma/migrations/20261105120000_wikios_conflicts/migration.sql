@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS "wiki_conflicts" (
     "notified" JSONB NOT NULL DEFAULT '[]',
     "trailRevisionId" TEXT,
     "legacyPark" BOOLEAN NOT NULL DEFAULT false,
+    "settledAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     CONSTRAINT "wiki_conflicts_pkey" PRIMARY KEY ("id")
@@ -33,6 +34,10 @@ CREATE TABLE IF NOT EXISTS "wiki_conflicts" (
 CREATE UNIQUE INDEX IF NOT EXISTS "wiki_conflicts_key_key" ON "wiki_conflicts"("key");
 CREATE INDEX IF NOT EXISTS "wiki_conflicts_articleId_createdAt_idx" ON "wiki_conflicts"("articleId", "createdAt");
 CREATE INDEX IF NOT EXISTS "wiki_conflicts_createdAt_idx" ON "wiki_conflicts"("createdAt");
+-- The settling's terminal state (added before this migration reached production): a database that ran the first
+-- version of this file has the table without it.
+ALTER TABLE "wiki_conflicts" ADD COLUMN IF NOT EXISTS "settledAt" TIMESTAMP(3);
+CREATE INDEX IF NOT EXISTS "wiki_conflicts_settledAt_createdAt_idx" ON "wiki_conflicts"("settledAt", "createdAt");
 
 -- One legacy row per parked revision: the parked classic edit is what was overwritten, the WikiOS head named in
 -- parkReason ("conflict:<head ref>", or "conflict:deleted") is the winner. The head's own time is used when it can be

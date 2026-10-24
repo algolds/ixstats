@@ -187,7 +187,10 @@ export async function recordConflict(
   await updateRow(client, row.id, (current) => {
     const stored = decodeChanges(current.overwritten);
     const merged = unionByRef(stored, verdict.overwritten);
-    return merged.length === stored.length ? null : { overwritten: encodeChanges(merged) };
+    // a new loser has to be told: a settled row is open again
+    return merged.length === stored.length
+      ? null
+      : { overwritten: encodeChanges(merged), settledAt: null };
   });
   return { id: row.id, created: false };
 }
@@ -225,6 +228,20 @@ export async function markNotified(
     const added: NoticeMark = { key: recipientKey, channel, at: new Date().toISOString() };
     return { notified: [...marks, added].map((mark) => ({ ...mark })) };
   });
+}
+
+/**
+ * Closes the row once nobody is left to tell (the settler has dealt with the trail): settled rows are not read again
+ * until a merge adds a loser. Judged on the row as it is when written, so a loser merged in meanwhile keeps it open.
+ * True when the row is settled.
+ */
+export async function markSettled(conflictId: string): Promise<boolean> {
+  let settled = false;
+  await updateRow(db, conflictId, (row) => {
+    settled = pendingRecipients(row).length === 0;
+    return settled && !row.settledAt ? { settledAt: new Date() } : null;
+  });
+  return settled;
 }
 
 /** Claims the trail revision for the conflict: true for the one caller that gets there first, false after. */

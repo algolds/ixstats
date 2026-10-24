@@ -8,7 +8,9 @@
  * The talk page is brought over from classic first, so the note is appended to its text, never to a page WikiOS lacks.
  *
  * Every delivery is marked in the row (`markNotified`), so a channel that failed is tried again by the next run and a
- * delivered one never twice. The caller holds the inbound-sync lock (auto-sync-service.ts).
+ * delivered one never twice. A row with nobody left to tell and its trail written (or given up) is settled
+ * (`settledAt`) and not read again until a merge adds a loser. The caller holds the inbound-sync lock
+ * (auto-sync-service.ts).
  */
 import { db } from "~/server/db";
 import { notificationAPI } from "~/lib/notifications/api";
@@ -26,6 +28,7 @@ import {
 } from "./conflict-rule";
 import {
   markNotified,
+  markSettled,
   pendingRecipients,
   toConflictEntry,
   type ConflictLogEntry,
@@ -35,10 +38,11 @@ import { CONFLICT_NOTICE_AUTHOR, talkPageTitle, wikiName } from "./conflict-side
 import { syncLatestRevision } from "./inbound-revision-sync";
 
 const SOURCE = "ixwiki";
-/** Rows read per query while looking for rows with work left. */
-const SCAN_BATCH = 200;
+const DAY_MS = 24 * 60 * 60 * 1000;
 /** A DM that fails is tried again by later runs for this long after the collision, then given up (in-app stands). */
-const DM_RETRY_WINDOW_MS = 24 * 60 * 60 * 1000;
+const DM_RETRY_WINDOW_MS = DAY_MS;
+/** A trail that cannot be written (its winner not in WikiOS yet, an error) is tried again for this long, then given up. */
+const TRAIL_RETRY_WINDOW_MS = DAY_MS;
 /** A link to a page of these namespaces needs a leading colon, or it files the talk page in a category or shows a file. */
 const COLON_NAMESPACES = new Set([6, 14]);
 const CLASSIC_REVISION = /^\d+$/;
@@ -51,7 +55,7 @@ export interface SettleResult {
   notified: number;
   /** Trail revisions written by this run. */
   trails: number;
-  /** Rows with work left after this run (failed, or beyond `limit`). */
+  /** Rows not settled after this run (work left, or beyond `limit`). */
   pending: number;
 }
 
@@ -79,7 +83,6 @@ function contextOf(row: ConflictRow): NoticeContext {
 /** A collision classic won whose trail is not written yet. Only an edit's winner (a revision) can carry one. */
 function needsTrail(row: ConflictRow): boolean {
   return (
-    !row.legacyPark &&
     row.winnerSide === "classic" &&
     row.trailRevisionId === null &&
     row.articleId !== null &&
@@ -87,26 +90,22 @@ function needsTrail(row: ConflictRow): boolean {
   );
 }
 
-function hasWork(row: ConflictRow): boolean {
-  return needsTrail(row) || pendingRecipients(row).length > 0;
+/** Whether the collision is older than `windowMs`. */
+function olderThan(entry: ConflictLogEntry, windowMs: number): boolean {
+  return Date.now() - entry.createdAt.getTime() > windowMs;
 }
 
-/** Every row with someone left to tell or a trail left to write, oldest first. */
-async function rowsWithWork(): Promise<ConflictRow[]> {
-  const found: ConflictRow[] = [];
-  let cursor: string | null = null;
-  let batch: ConflictRow[];
-  do {
-    batch = await db.wikiConflict.findMany({
-      where: { legacyPark: false },
-      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-      take: SCAN_BATCH,
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    });
-    found.push(...batch.filter(hasWork));
-    cursor = batch.at(-1)?.id ?? null;
-  } while (batch.length === SCAN_BATCH);
-  return found;
+/** The rows the settling still owes something: not settled, not legacy (history only). */
+const UNSETTLED = { legacyPark: false, settledAt: null } as const;
+
+/** The account behind a recipient: the Clerk id the notification API takes, and the linked Discord account. */
+function accountOf(userId: string | null) {
+  return userId
+    ? db.user.findUnique({
+        where: { id: userId },
+        select: { clerkUserId: true, discordUserId: true },
+      })
+    : null;
 }
 
 // --- the notices ----------------------------------------------------------------------------------------------------
@@ -127,9 +126,11 @@ function diffHref({ entry, urlPath }: NoticeContext, recipient: NoticeRecipient)
 }
 
 async function tellInApp(context: NoticeContext, recipient: NoticeRecipient): Promise<Delivery> {
-  if (!recipient.userId) return "skipped";
+  const account = await accountOf(recipient.userId);
+  if (!account?.clerkUserId) return "skipped";
+  // the Clerk id, as every notifier passes it: the recipient's preferences and push apply
   await notificationAPI.create({
-    userId: recipient.userId,
+    userId: account.clerkUserId,
     title: "Your edit was overwritten",
     message: noticeMessage(context),
     href: diffHref(context, recipient),
@@ -144,17 +145,11 @@ async function tellOnDiscord(
   context: NoticeContext,
   recipient: NoticeRecipient
 ): Promise<Delivery> {
-  const user = recipient.userId
-    ? await db.user.findUnique({
-        where: { id: recipient.userId },
-        select: { discordUserId: true },
-      })
-    : null;
+  const user = await accountOf(recipient.userId);
   if (!user?.discordUserId) return "skipped";
   const link = `${APP_URL}${CLEAN_BASE_PATH}${diffHref(context, recipient)}`;
   if (await sendDiscordDm(user.discordUserId, `${noticeMessage(context)}\n${link}`)) return "sent";
-  const age = Date.now() - context.entry.createdAt.getTime();
-  return age > DM_RETRY_WINDOW_MS ? "skipped" : "open";
+  return olderThan(context.entry, DM_RETRY_WINDOW_MS) ? "skipped" : "open";
 }
 
 /** A ref of the winner MediaWiki knows: a classic revision id as it is, a WikiOS revision's once mirrored. */
@@ -262,30 +257,53 @@ function verdictOf(entry: ConflictLogEntry): CollisionVerdict {
   };
 }
 
+/** A trail that will never be written: the row settles without it, and the log says why. */
+function giveUpTrail({ entry }: NoticeContext, why: string): Delivery {
+  console.warn(`[WikiConflicts] No trail for conflict ${entry.id}: ${why}.`);
+  return "skipped";
+}
+
 /**
- * The dummy edit that names the overwrite, once the classic winner is in WikiOS's history: before that, WikiOS's head
- * is older than the winner, and copying it would put the old text back on classic.
+ * The dummy edit that names the overwrite, once the classic winner is in WikiOS's history (live, or overwritten since):
+ * before that, WikiOS's head is older than the winner, and copying it would put the old text back on classic.
  */
-async function writeTrail({ entry }: NoticeContext): Promise<Delivery> {
-  if (!entry.articleId) return "skipped";
+async function writeTrail(context: NoticeContext): Promise<Delivery> {
+  const { entry } = context;
+  const page = entry.articleId
+    ? await db.wikiArticle.findUnique({ where: { id: entry.articleId }, select: { id: true } })
+    : null;
+  if (!page) return giveUpTrail(context, "its page is gone");
   const landed = await db.wikiRevision.count({
-    where: { articleId: entry.articleId, mwRevId: Number(entry.winner.ref), parked: false },
+    where: { articleId: page.id, mwRevId: Number(entry.winner.ref) },
   });
   if (landed === 0) return "open";
   const trail = await ArticleRepository.recordTrailRevision({
-    articleId: entry.articleId,
+    articleId: page.id,
     summary: trailSummary(verdictOf(entry), entry.id),
     conflictId: entry.id,
   });
   return trail ? "sent" : "skipped";
 }
 
+/** The trail, tried again by later runs for a day after the collision, then given up. */
+async function settleTrail(context: NoticeContext): Promise<Delivery> {
+  const trail = await attempt("trail", context, () => writeTrail(context));
+  if (trail !== "open" || !olderThan(context.entry, TRAIL_RETRY_WINDOW_MS)) return trail;
+  return giveUpTrail(context, "it could not be written for a day after the collision");
+}
+
 // --- settling -------------------------------------------------------------------------------------------------------
 
-async function settleRow(
-  row: ConflictRow
-): Promise<{ notified: number; trails: number; settled: boolean }> {
-  const context = contextOf(row);
+interface RowOutcome {
+  notified: number;
+  trails: number;
+}
+
+/** Tells each pending recipient on each pending channel; `open` when a delivery is left for the next run. */
+async function tellRecipients(
+  row: ConflictRow,
+  context: NoticeContext
+): Promise<{ notified: number; open: boolean }> {
   let notified = 0;
   let open = false;
   for (const recipient of pendingRecipients(row)) {
@@ -301,28 +319,52 @@ async function settleRow(
       if (delivery === "sent") notified += 1;
     }
   }
-  const trail = needsTrail(row)
-    ? await attempt("trail", context, () => writeTrail(context))
-    : "skipped";
-  return { notified, trails: trail === "sent" ? 1 : 0, settled: !open && trail !== "open" };
+  return { notified, open };
+}
+
+async function settleRow(row: ConflictRow): Promise<RowOutcome> {
+  const context = contextOf(row);
+  const told = await tellRecipients(row, context);
+  const trail = needsTrail(row) ? await settleTrail(context) : "skipped";
+  // a loser merged in meanwhile keeps the row open (markSettled judges the row as it is then)
+  if (!told.open && trail !== "open") await markSettled(row.id);
+  return {
+    notified: told.notified,
+    trails: trail === "sent" ? 1 : 0,
+  };
+}
+
+/** One row; a failure (a database error in the bookkeeping too) leaves it for the next run and the others go on. */
+async function settleIsolated(row: ConflictRow): Promise<RowOutcome> {
+  try {
+    return await settleRow(row);
+  } catch (error) {
+    console.warn(
+      `[WikiConflicts] Settling conflict ${row.id} failed; the next run tries again:`,
+      error
+    );
+    return { notified: 0, trails: 0 };
+  }
 }
 
 /**
  * Tells everyone the conflict log still owes a notice and writes the trails classic winners still lack, for at most
- * `limit` rows, oldest first. The caller holds the inbound-sync lock.
+ * `limit` unsettled rows, oldest first; a row with nothing left is settled and not read again. The caller holds the
+ * inbound-sync lock.
  */
 export async function settleConflicts(limit = 50): Promise<SettleResult> {
-  const rows = await rowsWithWork();
-  const result: SettleResult = {
-    notified: 0,
-    trails: 0,
-    pending: Math.max(0, rows.length - limit),
-  };
-  for (const row of rows.slice(0, limit)) {
-    const settled = await settleRow(row);
-    result.notified += settled.notified;
-    result.trails += settled.trails;
-    if (!settled.settled) result.pending += 1;
+  const rows = await db.wikiConflict.findMany({
+    where: UNSETTLED,
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    take: limit,
+  });
+  const result: SettleResult = { notified: 0, trails: 0, pending: 0 };
+  for (const row of rows) {
+    const outcome = await settleIsolated(row);
+    result.notified += outcome.notified;
+    result.trails += outcome.trails;
   }
+  // what is still open after the run: rows with work left, and those past `limit`
+  result.pending = await db.wikiConflict.count({ where: UNSETTLED });
   return result;
 }

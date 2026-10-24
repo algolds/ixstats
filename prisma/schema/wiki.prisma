@@ -230,11 +230,13 @@ model WikiConflict {
   notified        Json     @default("[]") // { key, channel, at }[]: who has been told, and where
   trailRevisionId String?  // the page-history entry that names the overwrite
   legacyPark      Boolean  @default(false) // made from an old "parked" revision: history only, nobody to tell
+  settledAt       DateTime? // everyone told and the trail written (or given up); a merge that adds a loser clears it
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   @@index([articleId, createdAt])
   @@index([createdAt])
+  @@index([settledAt, createdAt])
   @@map("wiki_conflicts")
 }
 

@@ -174,8 +174,8 @@ beforeEach(() => {
   site = createFakeMediaWikiSite();
   global.fetch = site.fetch as never;
   tables.user.seed(
-    { id: "db-alpha", discordUserId: "disc-alpha" },
-    { id: "db-beta", discordUserId: null }
+    { id: "db-alpha", clerkUserId: "clerk-alpha", discordUserId: "disc-alpha" },
+    { id: "db-beta", clerkUserId: "clerk-beta", discordUserId: null }
   );
 });
 
@@ -193,8 +193,9 @@ describeEachWikiosMode("settleConflicts", () => {
     const first = await settleConflicts();
 
     expect(notify).toHaveBeenCalledTimes(1);
+    // the notification API takes the Clerk id, as every other notifier passes it (preferences, push)
     expect(notify).toHaveBeenCalledWith({
-      userId: "db-alpha",
+      userId: "clerk-alpha",
       title: "Your edit was overwritten",
       message:
         'Your edit to "Caphiria" was replaced by a later edit on classic MediaWiki. Your text is kept in the page history.',
@@ -324,7 +325,7 @@ describeEachWikiosMode("settleConflicts", () => {
 
     expect(headOf("User talk:10.0.0.7").wikitext).toContain(NOTE_HEADING);
     expect(notify).toHaveBeenCalledTimes(1);
-    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ userId: "db-beta" }));
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ userId: "clerk-beta" }));
     // Beta has no Discord linked and no classic name: no DM, no talk page
     expect(dm).not.toHaveBeenCalled();
     expect(article("User talk:Beta")).toBeUndefined();
@@ -496,5 +497,120 @@ describeEachWikiosMode("settleConflicts", () => {
     const note = headOf("User talk:Foo");
     expect(String(note.wikitext).startsWith("Hello Foo.")).toBe(true);
     expect(note.wikitext).toContain(NOTE_HEADING);
+  });
+  it("a classic winner later overwritten itself still gets its trail, once", async () => {
+    const winner = seedCaphiria("Caphiria is an empire.");
+    const id = await collide(change("classic", String(winner), author({})), [
+      change("wikios", "wk-gone", author({ label: "Community Contributor" })),
+    ]);
+    // a later WikiOS save overwrote the classic winner: it is history only now
+    const winnerRow = tables.wikiRevision.rows.find((row) => row.mwRevId === winner)!;
+    Object.assign(winnerRow, { parked: true, parkReason: "overwritten:wk-later" });
+    wikiosHead("Caphiria is an empire in Sarpedon.");
+
+    expect(await settleConflicts()).toEqual({ notified: 0, trails: 1, pending: 0 });
+    expect(headOf("Caphiria")).toMatchObject({
+      author: "WikiOS",
+      wikitext: "Caphiria is an empire in Sarpedon.",
+    });
+    expect(conflictRow(id).trailRevisionId).toBe(headOf("Caphiria").id);
+    expect(await settleConflicts()).toEqual({ notified: 0, trails: 0, pending: 0 });
+    expect(jobs()).toEqual(["revision Caphiria"]);
+  });
+
+  it("a row whose article is gone stops being retried", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    const winner = seedCaphiria("Caphiria is an empire.");
+    const id = await collide(change("classic", String(winner), author({})), [
+      change("wikios", "wk-gone", author({ label: "Community Contributor" })),
+    ]);
+    tables.wikiRevision.rows.length = 0;
+    tables.wikiArticle.rows.length = 0;
+
+    expect(await settleConflicts()).toEqual({ notified: 0, trails: 0, pending: 0 });
+    expect(conflictRow(id).settledAt).toBeInstanceOf(Date);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining(`conflict ${id}`));
+    warn.mockRestore();
+  });
+
+  it("a classic winner that never reaches WikiOS is given up a day after the collision", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    seedCaphiria();
+    const winner = site.editAs("Founder", "Caphiria", "Caphiria is an empire.");
+    const id = await collide(change("classic", String(winner.revid), author({})), [
+      change("wikios", "wk-gone", author({ label: "Community Contributor" })),
+    ]);
+    expect(await settleConflicts()).toEqual({ notified: 0, trails: 0, pending: 1 });
+    expect(conflictRow(id).settledAt).toBeNull();
+
+    conflictRow(id).createdAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+
+    expect(await settleConflicts()).toEqual({ notified: 0, trails: 0, pending: 0 });
+    expect(conflictRow(id).settledAt).toBeInstanceOf(Date);
+    expect(revisionsOf("Caphiria")).toHaveLength(1);
+    warn.mockRestore();
+  });
+
+  it("a row is settled after its last channel and its trail, and a settled row is not read again", async () => {
+    const winner = seedCaphiria("Caphiria is an empire.");
+    const id = await collide(change("classic", String(winner), author({})), [
+      change("wikios", "wk-alpha", author({ userId: "db-alpha" })),
+    ]);
+    dm.mockResolvedValueOnce(false);
+
+    await settleConflicts();
+    expect(conflictRow(id).settledAt).toBeNull(); // the DM is still owed
+    await settleConflicts();
+    expect(conflictRow(id).settledAt).toBeInstanceOf(Date);
+
+    // were the row read again, its emptied marks would send everything a second time
+    conflictRow(id).notified = [];
+    expect(await settleConflicts()).toEqual({ notified: 0, trails: 0, pending: 0 });
+    expect(notify).toHaveBeenCalledTimes(1);
+  });
+
+  it("a merge that adds a loser reopens a settled row, and only the new loser is told", async () => {
+    const winner = seedCaphiria("Caphiria is an empire.");
+    const id = await collide(change("classic", String(winner), author({})), [
+      change("wikios", "wk-alpha", author({ userId: "db-alpha" })),
+    ]);
+    await settleConflicts();
+    expect(conflictRow(id).settledAt).toBeInstanceOf(Date);
+
+    await collide(change("classic", String(winner), author({})), [
+      change("wikios", "wk-beta", author({ userId: "db-beta" })),
+    ]);
+    expect(conflictRow(id).settledAt).toBeNull();
+
+    expect(await settleConflicts()).toEqual({ notified: 1, trails: 0, pending: 0 });
+    expect(notify).toHaveBeenLastCalledWith(expect.objectContaining({ userId: "clerk-beta" }));
+    expect(notify).toHaveBeenCalledTimes(2);
+    expect(conflictRow(id).settledAt).toBeInstanceOf(Date);
+  });
+
+  it("a bookkeeping failure on one row leaves the others to settle", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    seedCaphiria();
+    const first = site.editAs("Foo", "Caphiria", "Caphiria by Foo.");
+    const a = await collide(change("wikios", wikiosHead("WikiOS over Foo."), author({})), [
+      change("classic", String(first.revid), author({ classicName: "Foo" })),
+    ]);
+    const second = site.editAs("Bar", "Caphiria", "Caphiria by Bar.");
+    const b = await collide(change("wikios", wikiosHead("WikiOS over Bar."), author({})), [
+      change("classic", String(second.revid), author({ classicName: "Bar" })),
+    ]);
+    // row A's first mark (markNotified's write) fails
+    jest
+      .spyOn(tables.wikiConflict, "updateMany")
+      .mockRejectedValueOnce(new Error("deadlock detected"));
+
+    const result = await settleConflicts();
+
+    expect(result.pending).toBe(1);
+    expect(conflictRow(a).settledAt).toBeNull();
+    expect(conflictRow(b).settledAt).toBeInstanceOf(Date);
+    expect(headOf("User talk:Bar").wikitext).toContain(NOTE_HEADING);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining(`conflict ${a}`), expect.any(Error));
+    warn.mockRestore();
   });
 });

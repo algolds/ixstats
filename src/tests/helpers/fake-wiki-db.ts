@@ -594,6 +594,7 @@ const PRISMA_DEFAULTS: Record<string, () => Record<string, unknown>> = {
     notified: [],
     trailRevisionId: null,
     legacyPark: false,
+    settledAt: null,
   }),
   notification: () => ({ read: false, dismissed: false }),
 };
