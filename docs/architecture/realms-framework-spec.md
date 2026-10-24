@@ -96,6 +96,12 @@ verification fix; the local, gitignored ledgers (`.superpowers/sdd/2026-09-27-re
 - Settings UI to link and verify wiki accounts (`WikiAccountVerifyRow`, Settings → IxnayID & Passport →
   Linked Accounts) (T7).
 
+_Since 2026-10-23 (IxnayID identity, plan A):_ IxWiki accounts are no longer linked. The IxWiki link rows, the legacy
+`User.wikiUsername` and the backfill's IxWiki link step are gone, and `admin.linkUserWiki` / `unlinkUserWiki` with them;
+old IxWiki names join an account through admin-approved name claims, and an Ixnay claim auto-approves when one of the
+claimant's approved names created the page. IIWiki and AltHistory verification is unchanged, under Settings, Linked
+accounts, Sister wikis. See [Wiki identity](../systems/ixnayid-passport.md#wiki-identity).
+
 **Implemented — Eurth slice, first realm outside Ixnay (tasks E1–E7; status above):**
 
 - `RealmPage` model indexing a realm's lore (titles only, never content) (E1).

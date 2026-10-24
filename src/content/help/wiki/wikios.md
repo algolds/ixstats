@@ -24,9 +24,11 @@ nextLabel: Lorewards
 2. Edit in the **visual** editor (blocks, tables, infoboxes, a slash menu for inserting things, and forms for templates) or switch to **source** mode for wikitext.
 3. Save with a short summary. Your draft is kept in your browser while you work.
 
+WikiOS signs your edits with your passport handle. If you haven't picked one yet, it asks you to before your first save goes out. See [Your handle in WikiOS](/help/getting-started/ixnayid#your-handle-in-wikios).
+
 To start a new article, search for its title and choose **Create this page** on the "does not exist" page.
 
-**Who can edit what:** signed-in players can edit ordinary articles and talk pages. You can edit your own `User:` page once you've [verified your wiki account](/help/getting-started/ixnayid#link-your-wiki-accounts). Other namespaces (templates, modules and so on) are admin-only.
+**Who can edit what:** signed-in players can edit ordinary articles and talk pages. You can edit your own user pages: the `User:` pages of your handle and of your approved [old IxWiki names](/help/getting-started/ixnayid#claim-your-old-ixwiki-names), and their subpages. Other namespaces (templates, modules and so on) are admin-only.
 
 ## Discussing articles
 
@@ -35,17 +37,17 @@ To start a new article, search for its title and choose **Create this page** on 
 
 ## Images
 
-Images come from the wiki's media library; browse it in the [Repository](/util/repository). To add a new file, use the **Upload** button there, **Special:Upload** (`/util/upload`), or the Upload tab of the editor's Insert Image dialog. You can upload PNG, JPEG, GIF, WebP, SVG and PDF files up to 10 MB, and you need the upload right (an autoconfirmed account, which a verified wiki link gives you). The file is checked by what it really is, not by its name, and an SVG with a script in it is refused. It shows on the wiki right away and is sent on to MediaWiki in the background; if the name is taken, or the same file is already uploaded under another name, you are warned first and can still upload anyway. A new file also gets its own **File:** page, with its history and where it is used.
+Images come from the wiki's media library; browse it in the [Repository](/util/repository). To add a new file, use the **Upload** button there, **Special:Upload** (`/util/upload`), or the Upload tab of the editor's Insert Image dialog. You can upload PNG, JPEG, GIF, WebP, SVG and PDF files up to 10 MB, and you need the upload right: an autoconfirmed account, which is at least 4 days old with 10 wiki edits (the old edits of an approved IxWiki name count). The file is checked by what it really is, not by its name, and an SVG with a script in it is refused. It shows on the wiki right away and is sent on to MediaWiki in the background; if the name is taken, or the same file is already uploaded under another name, you are warned first and can still upload anyway. A new file also gets its own **File:** page, with its history and where it is used.
 
 ## Your wiki profile
 
-A player's wiki user profile now opens their [IxnayID passport](/help/getting-started/ixnayid) on the **Work** tab (`/@username?tab=work`), which lists their wiki pages and edits. Contribution lists are also at [/util/contributions](/util/contributions).
+A player's `User:` page (under their handle, or an old IxWiki name they claimed and show) opens their [IxnayID passport](/help/getting-started/ixnayid); the page's old text stays in its history. Author links in the wiki open the passport's **Work** tab (`/@handle?tab=work`), which lists their wiki pages and edits. Contribution lists are also at [/util/contributions](/util/contributions).
 
 ## Lorewards
 
-Lorewards are the community's daily, weekly and monthly awards for wiki writing, picked by the Lorewards bot. Winners and runner-ups are paid IxCredits (edits made in WikiOS earn for your account without a link; wins on the classic wiki need a verified link), every place also becomes a trophy card, your standing shows on your passport and in the Vault, today's race and the standings are on the [Lorewards page](/util/lorewards), and winning articles carry a **Loreward winner** badge. See [Lorewards](/help/wiki/lorewards).
+Lorewards are the community's daily, weekly and monthly awards for wiki writing, picked by the Lorewards bot. Winners and runner-ups are paid IxCredits (edits made in WikiOS earn for your account; wins on the classic wiki count once you've claimed the name they were won under), every place also becomes a trophy card, your standing shows on your passport and in the Vault, today's race and the standings are on the [Lorewards page](/util/lorewards), and winning articles carry a **Loreward winner** badge. See [Lorewards](/help/wiki/lorewards).
 
 ## Good to know
 
 - Templates, Lua modules and the Main Page are still rendered by the classic wiki, so a few pages look slightly different from ordinary articles.
-- Edits are copied to the classic wiki under a shared bot account; your authorship is recorded in WikiOS.
+- Edits are copied to the classic wiki in the background. Each keeps its author there: your approved old IxWiki name when you show one, otherwise `wikios>` and your handle.

@@ -181,14 +181,19 @@ uploaded file; the new `upload` mirror job kind needs no DDL).
 **Rollback:** the files are additive and idempotent, so the running app is unaffected if you stop here. To undo,
 restore the dump taken above (`pg_restore` into a scratch database first; never `docker system prune`).
 
-## 1b. Import the MediaWiki rights (plan 409), after checking who vouched for each wiki link
+## 1b. Import the MediaWiki rights (plan 409), after checking who vouched for each name
 
-`scripts/wikios-import-rights.ts` copies MediaWiki group memberships, protections and blocks into WikiOS. A group or
-block that names a wiki account passes to the IxStates user linked to that account **only if the link is trusted**:
-`wiki_account_links."verifiedById"` is NULL (the account proved it owns the wiki account itself, with the token on its
-wiki user page) or the id of a system owner. The column is new in step 1, so **every link that existed before it reads
-as NULL, including the ones an administrator confirmed by hand**, and would inherit that wiki account's sysop or
-bureaucrat rights. Fix that first:
+`scripts/wikios-import-rights.ts` copies MediaWiki group memberships, protections and blocks into WikiOS. Its group and
+block rows are keyed by wiki username alone; they reach an IxStates account through its **approved old IxWiki name
+claims** (IxnayID identity, [Wiki identity](../systems/ixnayid-passport.md#wiki-identity)). A name's groups pass only
+through a claim with `rightsPass` (a system owner approved or linked it); its blocks follow every approved claim. So
+what matters is which claims carry `rightsPass`.
+
+**If the IxnayID identity deploy has not run yet,** its conversion will turn each verified IxWiki link into an approved
+claim and set `rightsPass` when `wiki_account_links."verifiedById"` is NULL (the account proved the link itself, with
+the token on its wiki user page) or a system owner's id. That column is new in step 1, so **every link that existed
+before it reads as NULL, including the ones an administrator confirmed by hand**, and would carry that name's sysop or
+bureaucrat rights to the account. Fix that first:
 
 ```bash
 # read-only: every verified ixwiki link (the ones an admin confirmed and the ones a player proved look alike here)
@@ -199,17 +204,33 @@ docker exec -i ixstats-postgres psql -U postgres -d ixstats -c \
     order by l.\"verifiedAt\""
 ```
 
-For each link an administrator confirmed (ask the admins; the admin user screen lists who linked whom), record the
-admin who did it, so the link is no longer taken for self-proven:
+For each link an administrator confirmed (ask the admins), record the admin who did it, so the link is no longer taken
+for self-proven:
 
 ```bash
 docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 -c \
   "update wiki_account_links set \"verifiedById\" = '<the confirming admin user id>' where id = '<link id>'"
 ```
 
-An administrator who is not a system owner keeps the link untrusted (it inherits no imported rights by name, which is
-the safe default); a system owner's id makes it trusted. Leave NULL only for links the player proved themselves. Then
-dry-run the import, read its plan, and write:
+An administrator who is not a system owner makes the converted claim carry no imported groups (the safe default); a
+system owner's id makes it carry them. Leave NULL only for links the player proved themselves.
+
+**If the IxnayID identity deploy has run,** the IxWiki links are gone; read the claims that pass groups instead:
+
+```bash
+# read-only: every approved claim whose name's imported groups pass to its account
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -c \
+  "select c.id, c.\"userId\", c.name, c.origin, c.\"decidedById\", c.\"decisionNote\"
+     from wiki_name_claims c
+    where c.source = 'ixwiki' and c.status = 'APPROVED' and c.\"rightsPass\"
+    order by c.name"
+```
+
+For a claim that should not pass groups, an administrator removes it in Admin, Users, Name claims and one who is not a
+system owner links the name again, or clear the flag by hand
+(`update wiki_name_claims set "rightsPass" = false where id = '<claim id>'`).
+
+Then dry-run the import, read its plan, and write:
 
 ```bash
 ( cd "$IX" && bun scripts/wikios-import-rights.ts --api https://ixwiki.com/api.php )          # dry run: no database

@@ -3,12 +3,12 @@
 **Last updated:** 2026-10-21
 
 Prisma schema: `prisma/schema/*.prisma` (<!-- BEGIN_DOCS:COUNT:schemaFiles -->25<!-- END_DOCS:COUNT:schemaFiles --> files, incl. `base.prisma` for datasource/generator and `enums.prisma`)
-Models: **<!-- BEGIN_DOCS:COUNT:models -->381<!-- END_DOCS:COUNT:models -->** (plus <!-- BEGIN_DOCS:COUNT:enums -->44<!-- END_DOCS:COUNT:enums --> enums)
+Models: **<!-- BEGIN_DOCS:COUNT:models -->383<!-- END_DOCS:COUNT:models -->** (plus <!-- BEGIN_DOCS:COUNT:enums -->46<!-- END_DOCS:COUNT:enums --> enums)
 
 ## Domain Groupings
 | Domain | Representative Models |
 | --- | --- |
-| Countries & Identity (`core.prisma`) | `Country`, `NationalIdentity`, `CountryActivity`, `CountryFollow`, `WikiAccountLink` |
+| Countries & Identity (`core.prisma`, `wiki.prisma`) | `Country`, `NationalIdentity`, `CountryActivity`, `CountryFollow`, `WikiAccountLink` (sister wikis only), `WikiNameClaim`, `WikiRevisionClaimTag` |
 | Intelligence & Diplomacy (`intelligence.prisma`, `diplomacy.prisma`) | `IntelligenceBriefing`, `IntelligenceTemplate`, `DiplomaticRelation`, `DiplomaticEvent`, `Embassy`, `EmbassyMission`, `Alliance`, `ForeignPolicyAction`, `NPCPersonality` |
 | Economy & Tax (`economy.prisma`) | `EconomicProfile`, `EconomicIndicator`, `LaborMarket`, `FiscalSystem`, `TaxSystem`, `EconomicComponent`, `TaxComponent`, `CrossBuilderSynergy` |
 | Government, Politics & Issues (`government.prisma`) | `GovernmentComponent`, `ComponentSynergy`, `GovernmentStructure`, `PoliticalParty`, `Legislature`, `Election`, `ElectionResult`, `NationalIssue`, `StorytellerEffect`, `Intent` |
@@ -50,7 +50,7 @@ SELECT * FROM "GovernmentComponent" WHERE countryId = ? AND componentType = ? AN
 ```
 
 ## Migration & Tooling
-- `prisma/migrations/*` – Linear migration history (<!-- BEGIN_DOCS:COUNT:migrations -->62<!-- END_DOCS:COUNT:migrations --> migrations)
+- `prisma/migrations/*` – Linear migration history (<!-- BEGIN_DOCS:COUNT:migrations -->64<!-- END_DOCS:COUNT:migrations --> migrations)
 - `bun run db:migrate:force` – Development migrations (protected by default)
 - `bun run db:migrate:deploy` – Production-safe migration execution
 - `bun run db:studio` – Visual inspection of the database (there is no `db:studio:prod` script)

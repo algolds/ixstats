@@ -63,7 +63,7 @@ it doesn't, it stops with `realms row id="default" (Ixnay) is missing — …` a
 writing anything** (with or without `--apply`). Create that row first — `Country.realmId` depends on it.
 
 The first line is `DRY RUN — pass --apply to write`; the second is `Ixnay realm ownerId: <id>`, which
-must read `system` (Ixnay has no player owner — site admins moderate its claims). Read all five sections
+must read `system` (Ixnay has no player owner — site admins moderate its claims). Read all four sections
 that follow before doing anything else:
 
 1. **Owners** — `owners: <n> to assign, <n> collisions`: `Country.ownerUserId` derived from
@@ -75,9 +75,7 @@ that follow before doing anything else:
 2. **Ixnay realm slug** — `Ixnay slug: default → ixnay` (the current slug, then the new one).
 3. **Visibility** — `private realms → unlisted: <n>`: `private` realms that will flip to `unlisted`
    (private is no longer a valid value).
-4. **Wiki links** — `ixwiki links to record (unverified): <n>`: legacy `User.wikiUsername` rows that
-   will become **unverified** `ixwiki` `WikiAccountLink` rows (players re-verify later from Settings).
-5. **Map layers** — `map layers with no realm → Ixnay: N (M clash with an Ixnay feature, D keys held
+4. **Map layers** — `map layers with no realm → Ixnay: N (M clash with an Ixnay feature, D keys held
    by more than one of them)`, then one `  DUPLICATE <layerType>/<featureId>: <id>, <id>` line per
    duplicated key. Compare `N` to your 1.1 baseline. `M` counts NULL-realm rows whose
    `(layerType, featureId)` Ixnay already has; `D` counts keys shared by two or more NULL-realm rows.
@@ -102,8 +100,8 @@ any write. Fix what the lines name and re-run the dry run first.
 Re-run the dry run afterward (omit `--apply`) as a sanity check — it should report
 `owners: 0 to assign, 0 collisions`, `Ixnay slug: ixnay → ixnay`, `private realms → unlisted: 0` and
 `map layers with no realm → Ixnay: 0 (0 clash with an Ixnay feature, 0 keys held by more than one of
-them)`. The wiki-link count stays above `0` only for users whose legacy username duplicated another's
-(`--apply` printed a `  skip <userId>: …` line for each; they re-verify from Settings).
+them)`. (The script's former IxWiki link step is gone: since the IxnayID identity work, old IxWiki names reach an
+account only through name claims, see [Wiki identity](./ixnayid-passport.md#wiki-identity).)
 
 ### 1.5 Deploy the code
 
@@ -483,8 +481,8 @@ or an officer with the `appearance` power) opens `/r/eurth/manage` and fills in:
 
 Tell players, in order:
 
-1. **Verify your IIWiki account.** In IxStats: `/settings` → **IxnayID & Passport** section → **Linked
-   Accounts** → Manage → the **IIWiki** row → enter your iiwiki username → **Get code**. Paste the shown
+1. **Verify your IIWiki account.** In IxStats: `/settings` → **IxnayID & passport** section → **Linked
+   accounts** → Manage → **Sister wikis** → the **IIWiki** row → enter your iiwiki username → **Get code**. Paste the shown
    token anywhere on your own `User:<YourName>` page on iiwiki **while logged in as that account**, save
    it, then come back and press **Verify**. The code is valid for 24 hours.
 2. **Claim your nation.** Go to `/r/eurth` → **Nations** → find your nation (badged **Unclaimed**) →

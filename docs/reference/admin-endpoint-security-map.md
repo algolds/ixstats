@@ -26,12 +26,16 @@ Covers the `admin.*` tRPC namespace: `src/server/api/routers/admin/*.ts`, merged
 │              unassignUserFromCountry,              │
 │              updateNavigationSettings,             │
 │              inviteUserToBypassWaitlist,           │
-│              listUserIdentities, linkUserWiki,     │
-│              unlinkUserWiki, linkUserDiscord,      │
-│              unlinkUserDiscord,                    │
+│              listUserIdentities, linkUserDiscord,  │
+│              unlinkUserDiscord, linkUserForum,     │
+│              unlinkUserForum,                      │
 │              syncDiscordGuildMembers,              │
-│              applyDiscordAutoAssignments,          │
-│              listMediaWikiReconciliationMatrix     │
+│              applyDiscordAutoAssignments           │
+│  name-claims.ts: listNameClaims,                   │
+│              searchLegacyWikiNames,                │
+│              findNameLinkTargets, approveNameClaim,│
+│              rejectNameClaim, revokeNameClaim,     │
+│              linkLegacyWikiName                    │
 │  countries/: analyzeImport, importRosterData,      │
 │              getAdminAuditLog, getCountryGrid,     │
 │              getCountryDetail                      │
@@ -58,6 +62,13 @@ Covers the `admin.*` tRPC namespace: `src/server/api/routers/admin/*.ts`, merged
 ### 2026-09-27 (plan 312, zero-caller procedure deletion)
 - Deleted: `updateCountryData`, `bulkUpdateCountries`, `syncWithBot`, `getSystemHealth`, `getCalculationFormulas`, `createCustomScenario`, `createGlobalAnnouncement`, `createMaintenanceNotification`.
 - No admin procedure performs its own system-owner check any more, so there is currently no god-mode tier.
+
+### 2026-10-23 (IxnayID identity, plan A)
+- Deleted: `linkUserWiki`, `unlinkUserWiki`, `listMediaWikiReconciliationMatrix` (IxWiki account linking is gone).
+- Added `name-claims.ts` (all `adminProcedure`). `approveNameClaim` and `linkLegacyWikiName` read the caller's system-owner
+  status from `SYSTEM_OWNER_IDS`: only a system owner's decision sets `rightsPass` (imported MediaWiki groups pass with the
+  name), and an administrator who is not a system owner is refused (`FORBIDDEN`) a name for their own account. Neither is
+  a god-mode tier: every administrator can call them.
 
 ## Authorization Flow
 
