@@ -70,6 +70,7 @@ import { thinkpagesForumModRouter } from "./routers/thinkpagesForum/mod";
 import { wikiosRouter } from "./routers/wikios";
 import { wikiCacheRouter } from "./routers/wikiCache";
 import { lorewardsRouter } from "./routers/lorewards";
+import { countryLoreRouter } from "./routers/countryLore";
 import { commonsRouter } from "./routers/commons";
 import { heraldryRouter } from "./routers/heraldry";
 import { blurbsRouter } from "./routers/blurbs";
@@ -150,6 +151,7 @@ export const appRouter = createTRPCRouter({
   wikios: wikiosRouter,
   wikiCache: wikiCacheRouter,
   lorewards: lorewardsRouter,
+  countryLore: countryLoreRouter,
   commons: commonsRouter,
   heraldry: heraldryRouter,
   blurbs: blurbsRouter,
