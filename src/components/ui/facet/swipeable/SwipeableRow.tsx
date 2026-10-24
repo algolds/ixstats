@@ -8,7 +8,8 @@
  * Swiping is pointer-only. Keyboard and assistive technology: a row with no focusable content is
  * itself the tab stop (Enter/Space toggle `Expanded` or open the actions menu, Delete/Backspace run
  * the trailing commit, Escape closes); Shift+F10 or the ContextMenu key opens an "Actions" menu
- * listing the swipe actions. Tray buttons stay in the accessibility tree but out of the tab order.
+ * listing the swipe actions, and so does a right-click, at the pointer, for mouse users who cannot
+ * swipe. Tray buttons stay in the accessibility tree but out of the tab order.
  */
 
 import React, {
@@ -30,6 +31,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { prefersNativeMenu } from "~/components/ui/context-menu";
 import { useSwipePhysics } from "./useSwipePhysics";
 import { GULP_SCALE, SPRING_PRESETS } from "./constants";
 
@@ -299,13 +301,16 @@ function useRowKeyboardAccess(args: {
 
   // Actions menu (Shift+F10 / ContextMenu key)
   const [menuOpen, setMenuOpen] = useState(false);
+  // Where a right-click opened the menu, relative to the row; null anchors it at the row's end.
+  const [menuPoint, setMenuPoint] = useState<{ x: number; y: number } | null>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const menuOpenedAt = useRef(0);
   const openMenu = useCallback(
-    (from: HTMLElement | null) => {
+    (from: HTMLElement | null, point: { x: number; y: number } | null = null) => {
       returnFocusRef.current = from;
       menuOpenedAt.current = Date.now();
       physics.reset();
+      setMenuPoint(point);
       setMenuOpen(true);
     },
     [physics]
@@ -360,9 +365,16 @@ function useRowKeyboardAccess(args: {
   };
 
   // Keyboard-invoked context menus also fire a native `contextmenu` event; keep it from
-  // showing the browser menu on top of ours.
-  const handleContextMenu = (e: React.MouseEvent) => {
-    if (menuOpen || Date.now() - menuOpenedAt.current < 1000) e.preventDefault();
+  // showing the browser menu on top of ours. A right-click opens the menu at the pointer.
+  const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (menuOpen || Date.now() - menuOpenedAt.current < 1000) {
+      e.preventDefault();
+      return;
+    }
+    if (disabled || !hasMenu || prefersNativeMenu(e)) return;
+    e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    openMenu(null, { x: e.clientX - rect.left, y: e.clientY - rect.top });
   };
 
   return {
@@ -370,6 +382,7 @@ function useRowKeyboardAccess(args: {
     hasMenu,
     menuOpen,
     setMenuOpen,
+    menuPoint,
     returnFocusRef,
     rowFocusable,
     trailingCommit,
@@ -384,12 +397,14 @@ function RowActionsMenu({
   actions,
   open,
   onOpenChange,
+  point,
   label,
   returnFocusRef,
 }: {
   actions: RowMenuAction[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  point: { x: number; y: number } | null;
   label: string;
   returnFocusRef: React.RefObject<HTMLElement | null>;
 }) {
@@ -399,11 +414,13 @@ function RowActionsMenu({
         <span
           aria-hidden="true"
           data-swipe-menu-anchor=""
-          className="pointer-events-none absolute top-1/2 right-3 size-px"
+          className={cn("pointer-events-none absolute size-px", !point && "top-1/2 right-3")}
+          style={point ? { left: point.x, top: point.y } : undefined}
         />
       </DropdownMenuTrigger>
       <DropdownMenuContent
-        align="end"
+        align={point ? "start" : "end"}
+        sideOffset={point ? 0 : undefined}
         aria-label={label}
         aria-labelledby={undefined}
         onCloseAutoFocus={(event) => {
@@ -570,6 +587,7 @@ function SwipeableRowRoot({
     hasMenu,
     menuOpen,
     setMenuOpen,
+    menuPoint,
     returnFocusRef,
     rowFocusable,
     trailingCommit,
@@ -654,6 +672,7 @@ function SwipeableRowRoot({
                 actions={menuActions}
                 open={menuOpen}
                 onOpenChange={setMenuOpen}
+                point={menuPoint}
                 label={actionsLabel}
                 returnFocusRef={returnFocusRef}
               />
