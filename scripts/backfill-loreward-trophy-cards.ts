@@ -25,6 +25,7 @@ export function backfillSummary(report: TrophyBackfillReport, apply: boolean): s
     return [
       ...lines,
       `Minted ${report.minted}, granted ${report.granted}, ${report.waiting} wait for a claim.`,
+      `Gave ${report.artworked} earlier trophy cards their article's picture.`,
     ];
   }
   return [

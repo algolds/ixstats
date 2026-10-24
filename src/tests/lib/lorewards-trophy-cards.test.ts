@@ -9,13 +9,16 @@ jest.mock("~/lib/cards/mint", () => ({ mintCopy: jest.fn() }));
 jest.mock("~/lib/cards/home-realm", () => ({
   articleHomeRealm: jest.fn().mockResolvedValue("default"),
 }));
+jest.mock("~/lib/cards/lore-card-ixwiki", () => ({ loadIxwikiPreviews: jest.fn() }));
 
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { ConflictError } from "~/lib/app-error";
 import { mintCopy } from "~/lib/cards/mint";
+import { loadIxwikiPreviews } from "~/lib/cards/lore-card-ixwiki";
 import { matches, storedEntry } from "~/tests/helpers/loreward-entry-store";
 import {
+  artworkTrophyCards,
   backfillTrophyCards,
   grantUnownedTrophyCards,
   mintTrophyCards,
@@ -65,6 +68,8 @@ let placeQueries: Array<{ author: string; title: string }>;
 let creditWrites: string[];
 let failNextCardCreate: boolean;
 let failNextCardCreateAsConflict: boolean;
+/** Each article's lead picture, by its Postgres title, as the preview read answers. */
+let pictures: Map<string, string>;
 
 const entry = (over: Partial<EntryRow> = {}): EntryRow => ({
   id: "e1",
@@ -167,7 +172,11 @@ function buildDb(): PrismaClient {
           take,
         }: {
           where: CardWhere &
-            KeysetWhere & { CardOwnership?: { none: object }; isRetired?: boolean };
+            KeysetWhere & {
+              CardOwnership?: { none: object };
+              isRetired?: boolean;
+              artwork?: null;
+            };
           take?: number;
         }) =>
           keysetPage(
@@ -176,6 +185,7 @@ function buildDb(): PrismaClient {
                 c.lorewardEntryId !== null &&
                 inContestPlace(c, where) &&
                 (where.isRetired === undefined || (c.isRetired ?? false) === where.isRetired) &&
+                (where.artwork !== null || !c.artwork) &&
                 (!where.CardOwnership || !ownerships.some((o) => o.cardId === c.id))
             ),
             where,
@@ -211,10 +221,10 @@ function buildDb(): PrismaClient {
           data,
         }: {
           where: { id: string };
-          data: { metadata: Prisma.JsonObject };
+          data: Partial<CardRow>;
         }) => {
           const row = cards.find((c) => c.id === where.id);
-          if (row) row.metadata = data.metadata;
+          if (row) Object.assign(row, data);
           return row;
         }
       ),
@@ -280,6 +290,16 @@ beforeEach(() => {
   creditWrites = [];
   failNextCardCreate = false;
   failNextCardCreateAsConflict = false;
+  pictures = new Map();
+  jest.mocked(loadIxwikiPreviews).mockImplementation(async (titles) =>
+    titles.map((title) => ({
+      title: title.replace(/ /g, "_"),
+      length: 0,
+      extract: "",
+      categories: [],
+      imageUrl: pictures.get(title) ?? null,
+    }))
+  );
   db = buildDb();
   // The real mintCopy (Task 4) is tested on its own; here it records the copy it would create.
   jest.mocked(mintCopy).mockReset();
@@ -321,6 +341,28 @@ describe("mintTrophyCards", () => {
       entryId: "e1",
       wikiUser: "Kir_Republic",
     });
+  });
+
+  it("shows the article's lead picture, listed for licence review, and procedural art without one", async () => {
+    entries = [entry({ runnerUpUser: "Urcea", runnerUpPage: "Caballian Wars" })];
+    pictures.set("Seneca front", "https://ixwiki.com/images/seneca.jpg");
+
+    await mintTrophyCards(db);
+
+    expect(cards[0]).toMatchObject({
+      artwork: "https://ixwiki.com/images/seneca.jpg",
+      artworkSource: "WIKI_FETCHED",
+      artLicence: { create: { wiki: "ixwiki", status: "UNKNOWN" } },
+    });
+    expect(cards[1]?.artwork).toBeUndefined();
+  });
+
+  it("mints the card without art when the picture read fails", async () => {
+    jest.mocked(loadIxwikiPreviews).mockRejectedValueOnce(new Error("database down"));
+    jest.spyOn(console, "error").mockImplementationOnce(() => undefined);
+
+    expect(await mintTrophyCards(db)).toEqual({ minted: 1 });
+    expect(cards[0]?.artwork).toBeUndefined();
   });
 
   it("mints nothing on a re-run", async () => {
@@ -581,6 +623,7 @@ describe("backfillTrophyCards", () => {
       missing: { "daily:winner": 2, "daily:runner-up": 1, "monthly:winner": 1 },
       minted: 4,
       granted: 0,
+      artworked: 0,
       waiting: 1,
     });
     const waiting = cards.filter((c) => ownersOf(c.id).length === 0);
@@ -594,6 +637,7 @@ describe("backfillTrophyCards", () => {
       missing: {},
       minted: 0,
       granted: 0,
+      artworked: 0,
       waiting: 1,
     });
     expect(cards).toHaveLength(4);
@@ -608,6 +652,7 @@ describe("backfillTrophyCards", () => {
       missing: { "daily:winner": 1 },
       minted: 0,
       granted: 0,
+      artworked: 0,
       waiting: 1,
     });
     expect(cards).toHaveLength(4);
@@ -627,6 +672,8 @@ describe("backfillTrophyCards", () => {
     );
     cards = entries.map((e, i) => ({
       ...legacyCard(`c${pad(i)}`, e.id),
+      // With art already, the art pass reads nothing.
+      artwork: "https://ixwiki.com/images/seneca.jpg",
       rarity: "RARE",
       metadata: { contest: "daily", place: "winner", entryId: e.id, wikiUser: e.winnerUser! },
     }));
@@ -635,8 +682,24 @@ describe("backfillTrophyCards", () => {
       missing: {},
       minted: 0,
       granted: 1,
+      artworked: 0,
       waiting: count - 1,
     });
     expect(ownerships).toEqual([expect.objectContaining({ cardId: `c${pad(count - 1)}` })]);
+  });
+});
+
+describe("artworkTrophyCards", () => {
+  it("gives the cards minted before trophies took art their article's picture, once", async () => {
+    entries = [entry({ runnerUpUser: "Urcea", runnerUpPage: "Caballian Wars" })];
+    await mintTrophyCards(db);
+    pictures.set("Caballian Wars", "https://ixwiki.com/images/caballia.png");
+
+    expect(await artworkTrophyCards(db)).toBe(1);
+    expect(cards.map((c) => c.artwork)).toEqual([
+      undefined,
+      "https://ixwiki.com/images/caballia.png",
+    ]);
+    expect(await artworkTrophyCards(db)).toBe(0);
   });
 });

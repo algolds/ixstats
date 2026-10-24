@@ -10,9 +10,30 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased] — `rose-garden` (1.5)
 
-Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (the ThinkPages forum refresh, 2026-10-17) is
-listed first, then realm nations (2026-10-15), then the Vault collectathon hub (2026-10-14), then the work back to 2026-09-30 → 2026-10-05, then 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22
+Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (the Cards mark and trophy art, 2026-10-24) is
+listed first, then the ThinkPages forum refresh (2026-10-17), then realm nations (2026-10-15), then the Vault collectathon hub (2026-10-14), then the work back to 2026-09-30 → 2026-10-05, then 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22
 work. The version registry (`src/lib/buildVersion.ts`) reads 1.5.0 (the Vault collectathon hub below); the next release candidate is not cut yet.
+
+### 🃏 The Cards Mark, and Trophy Art (2026-10-24)
+
+No version or capability integer moves.
+
+- **IxCards is now Cards.** The back's foot, the pack cover, the Passport's empty collection and the NationStates
+  import screens say Cards.
+- **The Cards mark** (`CardsLogomark`): a perforated stamp in Vault velvet, the platform's first mark of its own for
+  the cards.
+  - Its detailed cut, for 48 px and up, engraves a guilloché seal into the stamp, and the seal's centre is a window onto
+    the card back's lattice.
+  - Its small cut, below 48 px, has five lattice marks cut straight out of the stamp.
+  - On a large card back the detailed cut replaces the Vault mark in the middle, and the lattice window takes the card's
+    rarity colour.
+  - The small cut sits beside "Cards" in the back's foot, on the pack cover and on the Vault's Cards row in the sidebar.
+- **Trophy cards show their article's picture:** each Loreward trophy takes the lead picture of its winning article
+  (the infobox picture, else the first file in the body), read from IxWiki's articles in Postgres, never the wiki's API.
+  - The art is listed in Compliance → Licence review with an unknown licence.
+  - A trophy whose article has no picture keeps its procedural face.
+  - `bun scripts/backfill-loreward-trophy-cards.ts --apply` gives the picture to trophies minted before.
+- **A trophy's back repeats its realm's mark** in its lattice, in place of the Special category icon.
 
 ### 💬 ThinkPages Forum Refresh, Material Palette and Old URLs Removed (2026-10-15 → 10-17) — ThinkPages v3
 

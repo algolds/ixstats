@@ -13,6 +13,7 @@ import { LoreCategory } from "~/lib/cards/category-enums";
 import { CardFinish, CardRarity, CardType } from "~/lib/cards/enums";
 import { articleHomeRealm } from "~/lib/cards/home-realm";
 import { canonicalArticleTitle } from "~/lib/cards/legacy-mapping";
+import { loadIxwikiPreviews } from "~/lib/cards/lore-card-ixwiki";
 import { isJsonObject } from "~/lib/cards/ns-facts";
 import { mintCopy } from "~/lib/cards/mint";
 import { getCurrentIxCardSeason } from "~/lib/cards/season";
@@ -75,6 +76,49 @@ export function trophyCardText(
 }
 
 /**
+ * Each article's lead picture (its infobox or first body file), by the title asked, read from IxWiki's articles in
+ * Postgres; the wiki's API is never asked. An article with none, or not in Postgres, is left out. A failed read gives
+ * none, so a trophy is minted with its procedural art rather than not at all.
+ */
+async function leadPictures(titles: string[]): Promise<Map<string, string>> {
+  if (titles.length === 0) return new Map();
+  try {
+    const previews = await loadIxwikiPreviews(titles);
+    const urls = new Map(
+      previews.flatMap((p) =>
+        p.imageUrl ? [[canonicalArticleTitle(p.title, "ixwiki"), p.imageUrl]] : []
+      )
+    );
+    return new Map(
+      titles.flatMap((title) => {
+        const url = urls.get(canonicalArticleTitle(title, "ixwiki"));
+        return url ? [[title, url]] : [];
+      })
+    );
+  } catch (error) {
+    console.error("[Lorewards] Reading trophy art failed:", error);
+    return new Map();
+  }
+}
+
+/**
+ * A trophy card's art columns for its article's lead picture, with a licence record of unknown status so it is listed
+ * in Compliance → Licence review as an imported Lore card's art is.
+ */
+const trophyArt = (artwork: string) => ({
+  artwork,
+  artworkSource: "WIKI_FETCHED" as const,
+  artLicence: {
+    create: {
+      wiki: "ixwiki",
+      fileUrl: artwork,
+      status: "UNKNOWN" as const,
+      note: "A Loreward trophy's art: its article's lead picture",
+    },
+  },
+});
+
+/**
  * Mints a trophy's one copy for `ownerId`: serial 1 the first time, and that serial again, reissued, once its place
  * changed hands and the copy was voided (§2.4). A trophy is a one-of-one, so a second serial would pass its run. The
  * caller holds the card's serial lock (the grant and an override take it), or created the card in this transaction.
@@ -108,6 +152,7 @@ const TROPHY_CARD_SELECT = {
   metadata: true,
   lorewardEntryId: true,
   lorewardEdition: true,
+  wikiArticleTitle: true,
 } as const;
 
 type TrophyCardRow = Prisma.CardGetPayload<{ select: typeof TROPHY_CARD_SELECT }>;
@@ -177,6 +222,8 @@ async function mintOne(
 
   const rarity = trophyRarity(entry.type, place);
   const userId = await resolveLorewardPlace(db, recorded);
+  const title = page === null ? null : canonicalArticleTitle(page, "ixwiki");
+  const artwork = title === null ? undefined : (await leadPictures([title])).get(title);
   try {
     return await db.$transaction(async (tx) => {
       // One card per contest place: a concurrent sync waits here, then finds this card. An override that wrote the
@@ -197,6 +244,7 @@ async function mintOne(
           wikiSource: "ixwiki",
           totalSupply: 1,
           marketValue: TROPHY_MARKET_VALUE[rarity]!,
+          ...(artwork ? trophyArt(artwork) : {}),
           lorewardEntryId: entry.id,
           lorewardEdition: place,
           metadata: {
@@ -499,6 +547,8 @@ export interface TrophyBackfillReport {
   missing: Record<string, number>;
   minted: number;
   granted: number;
+  /** Trophy cards minted before they took their article's art that were given it (an apply only). */
+  artworked: number;
   /**
    * Trophy cards that wait for a claim after the run (a dry run: before it): unowned, not retired and never granted.
    * Their place's name has no approved claim yet, or its `wikios>` name resolves to no one.
@@ -526,8 +576,38 @@ export async function backfillTrophyCards(
     const key = `${entry.type}:${place}`;
     missing[key] = (missing[key] ?? 0) + 1;
   }
-  if (!apply) return { missing, minted: 0, granted: 0, waiting: await waitingCards(db) };
+  if (!apply) {
+    return { missing, minted: 0, granted: 0, artworked: 0, waiting: await waitingCards(db) };
+  }
   const { minted } = await mintTrophyCards(db);
   const { granted } = await grantUnownedTrophyCards(db);
-  return { missing, minted, granted, waiting: await waitingCards(db) };
+  const artworked = await artworkTrophyCards(db);
+  return { missing, minted, granted, artworked, waiting: await waitingCards(db) };
+}
+
+/** Titles per art read. */
+const ART_CHUNK = 50;
+
+/**
+ * Gives each trophy card with no art its article's lead picture, where the article has one: the cards minted before
+ * trophies took their art. Returns how many were given art; idempotent (a card with art is not read again).
+ */
+export async function artworkTrophyCards(db: PrismaClient): Promise<number> {
+  const bare = await findTrophyCards(db, {
+    lorewardEntryId: { not: null },
+    artwork: null,
+    wikiArticleTitle: { not: null },
+  });
+  let given = 0;
+  for (let i = 0; i < bare.length; i += ART_CHUNK) {
+    const chunk = bare.slice(i, i + ART_CHUNK);
+    const pictures = await leadPictures(chunk.flatMap((card) => card.wikiArticleTitle ?? []));
+    for (const card of chunk) {
+      const artwork = pictures.get(card.wikiArticleTitle ?? "");
+      if (!artwork) continue;
+      await db.card.update({ where: { id: card.id }, data: trophyArt(artwork) });
+      given++;
+    }
+  }
+  return given;
 }

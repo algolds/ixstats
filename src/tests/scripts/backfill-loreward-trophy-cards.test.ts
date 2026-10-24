@@ -9,6 +9,7 @@ const report = {
   missing: { "daily:winner": 2, "weekly:runner-up": 1 },
   minted: 3,
   granted: 1,
+  artworked: 4,
   waiting: 2,
 };
 
@@ -18,8 +19,11 @@ it("dry-runs unless --apply, and --dry-run wins", () => {
   expect(parseBackfillArgs(["--apply", "--dry-run"])).toEqual({ apply: false });
 });
 
-it("ends an apply with what it minted, granted and left waiting for a claim", () => {
-  expect(backfillSummary(report, true).at(-1)).toBe("Minted 3, granted 1, 2 wait for a claim.");
+it("ends an apply with what it minted, granted, left waiting for a claim and gave art", () => {
+  expect(backfillSummary(report, true).slice(-2)).toEqual([
+    "Minted 3, granted 1, 2 wait for a claim.",
+    "Gave 4 earlier trophy cards their article's picture.",
+  ]);
 });
 
 it("ends a dry run with the cards already waiting and how to write", () => {
