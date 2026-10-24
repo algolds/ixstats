@@ -168,8 +168,7 @@ export function MidRibbonPassportDocument({
       <PassportLorewardsModal
         open={isLorewardsModalOpen}
         onOpenChange={setIsLorewardsModalOpen}
-        wiki={data.wiki}
-        handle={data.handle}
+        lorewards={data.wiki.lorewards}
       />
     </div>
   );

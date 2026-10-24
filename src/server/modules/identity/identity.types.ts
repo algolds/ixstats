@@ -1,6 +1,7 @@
 /**
  * Identity module contracts (plan 188): the public passport resolved from a handle.
  */
+import type { LorewardStatsTotal } from "~/lib/lorewards/stats-of-names";
 import type { IdentityUser } from "./identity.selects";
 
 /** A member's own visible posts and threads on the ThinkPages forum (persona content left out). */
@@ -82,17 +83,14 @@ export interface AuthoredArticle {
   updatedAt: Date;
 }
 
-/** Lorewards standing shown on the passport. */
-export interface PassportLorewards {
-  totalScore: number;
-  totalBytes: number;
+/** Lorewards standing shown on the passport: the stats of `names` added up. */
+export interface PassportLorewards extends LorewardStatsTotal {
   rank: number | null;
-  dailyWins: number;
-  dailyRunnerUps: number;
-  weeklyWins: number;
-  monthlyWins: number;
-  currentStreak: number;
-  longestStreak: number;
+  /**
+   * The wiki names summed, oldest approval first: the holder's shown approved names (on their own passport every
+   * approved name, hidden ones too); an identity with no user, its wiki name.
+   */
+  names: string[];
 }
 
 /** Forum counters shown on the passport: the holder's own visible posts and threads. */

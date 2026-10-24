@@ -554,6 +554,103 @@ describe("the work, the history and the Lorewards of a shown claim", () => {
   });
 });
 
+describe("the Lorewards of every claimed name", () => {
+  const SCORES: Record<string, number> = { Alex: 300, "Alex Two": 120, "Alex Hidden": 1000 };
+  /** The loader as `lorewardStatsOfNames` adds up: each name's score, null when none has a row. */
+  const statsOfNames = async (names: readonly string[]) => {
+    const scored = names.filter((name) => name in SCORES);
+    if (scored.length === 0) return null;
+    return { ...LORE_STATS, totalScore: scored.reduce((sum, name) => sum + SCORES[name]!, 0) };
+  };
+  const threeClaims = () => claimed("Alex", "Alex Two", { name: "Alex Hidden", visible: false });
+
+  beforeEach(() => {
+    loader.loadLoreStats.mockImplementation(statsOfNames);
+    loader.loadLoreRank.mockResolvedValue(5);
+  });
+
+  it("sums a visitor's view over the shown names only, oldest first", async () => {
+    threeClaims();
+    const passport = await getPassport(resolvesTo("visitor"), forum);
+    expect(passport?.wiki.lorewards).toMatchObject({
+      totalScore: 420,
+      rank: 5,
+      names: ["Alex", "Alex Two"],
+    });
+    expect(loader.loadLoreStats).toHaveBeenCalledWith(["Alex", "Alex Two"]);
+    expect(loader.loadLoreRank).toHaveBeenCalledWith(420);
+    expect(JSON.stringify(passport)).not.toContain("Alex Hidden");
+  });
+
+  it("sums the owner's own view over every approved name, hidden ones included", async () => {
+    threeClaims();
+    const passport = await getPassport(resolvesTo("clerk_1"), forum);
+    expect(passport?.wiki.lorewards).toMatchObject({
+      totalScore: 1420,
+      names: ["Alex", "Alex Two", "Alex Hidden"],
+    });
+    expect(loader.loadLoreRank).toHaveBeenCalledWith(1420);
+  });
+
+  it("is null for a user with no claim, never the handle's or the resolver's name", async () => {
+    const passport = await getPassport(resolvesTo("clerk_1"), forum);
+    expect(passport?.wiki.lorewards).toBeNull();
+    expect(loader.loadLoreStats).toHaveBeenCalledWith([]);
+  });
+
+  it("reads an external wiki name alone", async () => {
+    const passport = await getPassport(resolvesTo(null, null, "Alex"), forum);
+    expect(passport?.wiki.lorewards).toMatchObject({ totalScore: 300, names: ["Alex"] });
+  });
+
+  describe("when every claim is hidden", () => {
+    // A hidden claim gives the identity no wiki name (identity.resolve.ts).
+    const allHidden = (viewer: string) => resolvesTo(viewer, { wikiName: null });
+
+    beforeEach(() => {
+      claimed({ name: "Alex", visible: false });
+      loader.loadLoreAwards.mockResolvedValue([AWARD]);
+    });
+
+    it("shows the owner their own Lorewards, wiki name and wiki work", async () => {
+      const passport = await getPassport(allHidden("clerk_1"), forum);
+      expect(passport?.wiki).toMatchObject({
+        username: "Alex",
+        lorewards: { totalScore: 300, names: ["Alex"] },
+      });
+
+      const work = await getWork(allHidden("clerk_1"));
+      expect(loader.loadWikiContribs).toHaveBeenCalledWith("Alex");
+      expect(loader.loadCreatedPages).toHaveBeenCalledWith("Alex");
+      expect(work.wikiActivityFeed.some((item) => item.type === "laurel")).toBe(true);
+
+      loader.loadWikiContribs.mockClear();
+      await getHistory({ ...allHidden("clerk_1"), limit: 50 });
+      expect(loader.loadWikiContribs).toHaveBeenCalledWith("Alex");
+    });
+
+    it("shows a visitor none of it", async () => {
+      const passport = await getPassport(allHidden("visitor"), forum);
+      expect(passport?.wiki).toMatchObject({ username: null, lorewards: null });
+      expect(JSON.stringify(passport)).not.toContain("Alex");
+
+      const work = await getWork(allHidden("visitor"));
+      expect(loader.loadWikiContribs).toHaveBeenCalledWith(null);
+      expect(loader.loadLoreAwards).toHaveBeenCalledWith(null);
+      expect(JSON.stringify(work)).not.toContain("Alex");
+    });
+  });
+
+  it("puts the shown names' score on the card, for the owner too", async () => {
+    threeClaims();
+    mocked.passportPreference.findUnique.mockResolvedValue(SHOWN);
+    resolvesTo("clerk_1", { handle: "alex" }, "alex");
+    const card = await getPassportCard({ handle: "alex", viewerClerkId: "clerk_1" });
+    expect(card).toMatchObject({ lorewards: { score: 420, rank: 5 } });
+    expect(loader.loadLoreStats).toHaveBeenCalledWith(["Alex", "Alex Two"]);
+  });
+});
+
 describe("the realm rows", () => {
   const nation = (id: string, realmId: string, gdp: number): IdentityCountry => ({
     id,
