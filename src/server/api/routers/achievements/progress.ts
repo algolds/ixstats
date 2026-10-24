@@ -118,8 +118,8 @@ async function resolveTargetUserId(
 
 /**
  * The approved wiki names whose Lorewards medals and wiki awards the target's list can show, oldest approval first:
- * all of the viewer's own; another player's only those they show (a hidden claim reads as no name). The list shows
- * the first (the primary name). None leaves the medals as for a player with no wiki account and lists no award.
+ * all of the viewer's own; another player's only those they show (a hidden claim reads as no name). The medals sum
+ * their wins and the awards list each name's. None leaves the medals as for a player with no wiki account.
  */
 async function lorewardsWikiNames(
   db: Pick<PrismaClient, "wikiNameClaim">,
@@ -235,14 +235,11 @@ interface RegisteredName {
 
 async function oolMedals(
   db: PrismaClient,
-  claimedName: string | null | undefined,
+  targetNames: readonly string[],
   registered: RegisteredName[],
   totalUsers: number
 ) {
   const claimedNames = registered.map((r) => r.name);
-  const oolStats = claimedName
-    ? await db.lorewardUserStats.findUnique({ where: { username: claimedName } })
-    : null;
   const activeUserStats = claimedNames.length
     ? await db.lorewardUserStats.findMany({
         where: { username: { in: claimedNames, mode: "insensitive" } },
@@ -252,6 +249,7 @@ async function oolMedals(
           weeklyWins: true,
           monthlyWins: true,
           totalScore: true,
+          updatedAt: true,
         },
       })
     : [];
@@ -266,27 +264,37 @@ async function oolMedals(
   });
   const annualWins = tally(annualWinners.flatMap((w) => w.winnerUser || []));
 
-  const laddersFor = (lowerName: string) => {
-    const stats = statsByName.get(lowerName);
+  /** The medals of a set of names, their wins summed (an account's names are one player). */
+  const laddersFor = (names: readonly string[]) => {
+    const lower = names.map((name) => name.toLowerCase());
+    const sum = (count: (name: string) => number) => lower.reduce((n, name) => n + count(name), 0);
     return medalLadder({
-      dailyWins: stats?.dailyWins ?? 0,
-      weeklyWins: stats?.weeklyWins ?? 0,
-      monthlyWins: stats?.monthlyWins ?? 0,
-      annualWins: annualWins.get(lowerName) ?? 0,
-      fiftyKEdits: fiftyKEdits.get(lowerName) ?? 0,
+      dailyWins: sum((name) => statsByName.get(name)?.dailyWins ?? 0),
+      weeklyWins: sum((name) => statsByName.get(name)?.weeklyWins ?? 0),
+      monthlyWins: sum((name) => statsByName.get(name)?.monthlyWins ?? 0),
+      annualWins: sum((name) => annualWins.get(name) ?? 0),
+      fiftyKEdits: sum((name) => fiftyKEdits.get(name) ?? 0),
     });
   };
 
-  // Earning accounts per tier: a player holding several names counts once
-  const earners = MEDALS.map(() => new Set<string>());
+  // Earning accounts per tier: a player holding several names counts once, with their names' wins summed
+  const namesByAccount = new Map<string, string[]>();
   for (const { name, userId } of registered) {
-    laddersFor(name.toLowerCase()).ever.forEach((ever, tier) => {
+    namesByAccount.set(userId, [...(namesByAccount.get(userId) ?? []), name]);
+  }
+  const earners = MEDALS.map(() => new Set<string>());
+  for (const [userId, names] of namesByAccount) {
+    laddersFor(names).ever.forEach((ever, tier) => {
       if (ever > 0) earners[tier]!.add(userId);
     });
   }
 
-  const target = laddersFor(claimedName ? claimedName.toLowerCase() : "");
-  const unlockedAt = (oolStats ? oolStats.updatedAt : new Date()).toISOString();
+  const target = laddersFor(targetNames);
+  const latest = Math.max(
+    0,
+    ...targetNames.map((name) => statsByName.get(name.toLowerCase())?.updatedAt.getTime() ?? 0)
+  );
+  const unlockedAt = (latest ? new Date(latest) : new Date()).toISOString();
   return MEDALS.map((medal, tier) => ({
     ...medal,
     category: "Order of the Lore",
@@ -302,7 +310,7 @@ async function oolMedals(
 
 async function wikiAwardAchievements(
   db: PrismaClient,
-  claimedName: string | null | undefined,
+  targetNames: readonly string[],
   accountByName: Map<string, string>,
   totalUsers: number
 ) {
@@ -319,11 +327,10 @@ async function wikiAwardAchievements(
     earnersByAward.set(award.name, earners);
   }
 
-  const userAwards = claimedName
-    ? allAwards.filter(
-        (a) => Array.isArray(a.recipientUsers) && a.recipientUsers.includes(claimedName)
-      )
-    : [];
+  const userAwards = allAwards.filter((a) => {
+    const recipients = a.recipientUsers;
+    return Array.isArray(recipients) && targetNames.some((name) => recipients.includes(name));
+  });
   return userAwards.map((a) => ({
     key: `wiki-award-${a.id}`,
     title: `${a.name} on ${a.pageTitle}`,
@@ -466,11 +473,7 @@ export const achievementsProgressRouter = createTRPCRouter({
               select: { id: true, clerkUserId: true },
             })
           : null;
-        const [claimedName = null] = await lorewardsWikiNames(
-          ctx.db,
-          userRecord,
-          ctx.user?.clerkUserId
-        );
+        const targetNames = await lorewardsWikiNames(ctx.db, userRecord, ctx.user?.clerkUserId);
 
         const totalUsers = (await ctx.db.user.count()) || 1;
         const standard = await standardAchievements(ctx.db, targetUserId, totalUsers);
@@ -481,10 +484,10 @@ export const achievementsProgressRouter = createTRPCRouter({
           select: { name: true, userId: true },
         });
 
-        const medals = await oolMedals(ctx.db, claimedName, registered, totalUsers);
+        const medals = await oolMedals(ctx.db, targetNames, registered, totalUsers);
         const wikiAwards = await wikiAwardAchievements(
           ctx.db,
-          claimedName,
+          targetNames,
           new Map(registered.map((r) => [r.name.toLowerCase(), r.userId])),
           totalUsers
         );

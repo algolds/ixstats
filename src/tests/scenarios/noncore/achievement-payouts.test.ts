@@ -378,5 +378,9 @@ it("measures global unlock percents among accounts, so a player holding two name
 
   // Two of the four members earned each, Nia once for both of her names
   expect(percentOf((key) => key === "ool-bronze")).toBe(50);
+  // Her medals sum both names' wins, and she lists the award once
+  const bronze = list.find((row) => row.key === "ool-bronze");
+  expect(JSON.parse(bronze?.metadata ?? "{}")).toEqual({ count: 2 });
+  expect(list.filter((row) => row.key.startsWith("wiki-award-"))).toHaveLength(1);
   expect(percentOf((key) => key.startsWith("wiki-award-"))).toBe(50);
 });
