@@ -10,6 +10,7 @@ jest.mock("~/lib/cache", () => ({ invalidateCache: jest.fn() }));
 
 import { describe, expect, it } from "@jest/globals";
 import { parseBotResult } from "~/lib/lorewards/bot-result";
+import { contestIdentity } from "~/lib/lorewards/contest-identity";
 
 const WEEKLY_ERROR =
   "A weekly date is an ISO week (2026-W34) or the week's first day (2026-08-17).";
@@ -85,6 +86,25 @@ describe("parseBotResult", () => {
         status: "pending",
         metadata: "[]",
       },
+    });
+  });
+
+  it("gives a YYYY-MM monthly its UTC range, so it is the same contest as the OOL page's first-day row", () => {
+    const parsed = parseBotResult({ date: "2028-02", type: "monthly" });
+    expect(parsed).toMatchObject({
+      ok: true,
+      result: { date: "2028-02", dateStart: "2028-02-01", dateEnd: "2028-02-29" },
+    });
+    const result = parsed.ok ? parsed.result : null;
+    expect(result && contestIdentity({ ...result })).toBe(
+      contestIdentity({ type: "monthly", date: "2028-02-01", dateStart: null })
+    );
+  });
+
+  it("leaves a monthly it cannot read as a month without a range", () => {
+    expect(parseBotResult({ date: "2026-13", type: "monthly" })).toMatchObject({
+      ok: true,
+      result: { date: "2026-13", dateStart: null, dateEnd: null },
     });
   });
 });

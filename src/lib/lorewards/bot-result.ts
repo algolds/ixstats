@@ -53,13 +53,27 @@ export class BotWeekConflict extends Error {}
 
 const toNumberOrNull = (value: Count) => (value !== undefined ? Number(value) : null);
 
-/** Where the result is stored: a weekly under its ISO week with its range, anything else under its date. */
+const MONTH_KEY = /^(\d{4})-(0[1-9]|1[0-2])$/;
+
+/**
+ * A monthly keyed `YYYY-MM` gets its first and last day (UTC): the range makes it the same contest as the OOL page's
+ * `YYYY-MM-01` row (`contestIdentity`), so the month is never paid twice.
+ */
+function monthRange(date: string): Pick<BotLorewardResult, "dateStart" | "dateEnd"> {
+  const month = MONTH_KEY.exec(date);
+  if (!month) return { dateStart: null, dateEnd: null };
+  const lastDay = new Date(Date.UTC(Number(month[1]), Number(month[2]), 0)).getUTCDate();
+  return { dateStart: `${date}-01`, dateEnd: `${date}-${String(lastDay).padStart(2, "0")}` };
+}
+
+/** Where the result is stored: a weekly under its ISO week with its range, a monthly with its range, a daily as is. */
 function keyOf(
   date: string,
   type: string
 ): Pick<BotLorewardResult, "date" | "dateStart" | "dateEnd"> | null {
-  if (type !== "weekly") return { date, dateStart: null, dateEnd: null };
-  return canonicalWeekly(date);
+  if (type === "weekly") return canonicalWeekly(date);
+  if (type === "monthly") return { date, ...monthRange(date) };
+  return { date, dateStart: null, dateEnd: null };
 }
 
 export function parseBotResult(payload: BotLorewardPayload): BotResultParse {
