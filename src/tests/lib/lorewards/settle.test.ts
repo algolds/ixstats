@@ -21,6 +21,20 @@ import { entryIdsOfName, NOTHING_SETTLED, settleLorewardPlaces } from "~/lib/lor
 
 const findMany = db.lorewardEntry.findMany as unknown as jest.Mock;
 
+/**
+ * The card steps each ran on `db` with `ids`; `db` is checked by identity, as a deep PrismaClient compare overflows the
+ * type checker.
+ */
+function expectCardSteps(ids: string[] | undefined): void {
+  for (const calls of [
+    jest.mocked(mintTrophyCards).mock.calls,
+    jest.mocked(grantUnownedTrophyCards).mock.calls,
+  ]) {
+    expect(calls[0]?.[0] === db).toBe(true);
+    expect(calls[0]?.[1]).toEqual(ids);
+  }
+}
+
 beforeEach(() => {
   jest.mocked(mintTrophyCards).mockReset().mockResolvedValue({ minted: 1 });
   jest.mocked(grantUnownedTrophyCards).mockReset().mockResolvedValue({ granted: 0 });
@@ -45,8 +59,7 @@ describe("settleLorewardPlaces", () => {
       refused: 1,
       payoutsEnabled: true,
     });
-    expect(mintTrophyCards).toHaveBeenCalledWith(db, ["e1"]);
-    expect(grantUnownedTrophyCards).toHaveBeenCalledWith(db, ["e1"]);
+    expectCardSteps(["e1"]);
     expect(grantLorewardBonuses).toHaveBeenCalledWith({ entryIds: ["e1"] });
     expect(error).toHaveBeenCalledWith("[Lorewards] settle mint failed:", expect.any(Error));
     error.mockRestore();
@@ -69,8 +82,7 @@ describe("settleLorewardPlaces", () => {
       refused: 0,
       payoutsEnabled: false,
     });
-    expect(mintTrophyCards).toHaveBeenCalledWith(db, undefined);
-    expect(grantUnownedTrophyCards).toHaveBeenCalledWith(db, undefined);
+    expectCardSteps(undefined);
     expect(grantLorewardBonuses).toHaveBeenCalledWith({});
   });
 

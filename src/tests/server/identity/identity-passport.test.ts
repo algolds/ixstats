@@ -334,7 +334,7 @@ describe("the sections the owner hides", () => {
 
   it("drop only the vault focus when Focus is hidden but the vault is shown", () => {
     const sections: PassportSections = {
-      lorewards: { ...LORE_STATS, rank: 4 },
+      lorewards: { ...LORE_STATS, rank: 4, names: [] },
       forumStats: { messageCount: 1, threadCount: 2 },
       vault: VAULT,
       achievements: SHOWCASE,
