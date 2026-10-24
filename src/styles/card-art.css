@@ -115,6 +115,8 @@
     /* What the edge and gem paint: darkened in the light theme so every rarity reaches 3:1 on the light roles
        (token-contrast.test.ts); the dark theme paints the palette as it is. */
     --card-rarity-paint: color-mix(in srgb, var(--card-rarity) 70%, black);
+    /* The Cards mark's lattice window takes the card's rarity (CardsLogomark). */
+    --cards-centre: var(--card-rarity-paint);
     @variant dark {
       --card-rarity-paint: var(--card-rarity);
     }

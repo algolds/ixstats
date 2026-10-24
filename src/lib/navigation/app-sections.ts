@@ -16,6 +16,7 @@
  */
 
 import type { ComponentType, SVGProps } from "react";
+import { CardsLogomark } from "./icons/CardsLogomark";
 import { DiscordLogomark } from "./icons/DiscordLogomark";
 import { MyCountryLogomark } from "./icons/MyCountryLogomark";
 import { RealmsLogomark } from "./icons/RealmsLogomark";
@@ -296,7 +297,7 @@ export const APPS: readonly AppDefinition[] = [
         id: "cards",
         label: "Cards",
         href: "/vault/cards/mine",
-        icon: MultiplePages,
+        icon: CardsLogomark,
         match: ["/vault/cards", "/vault/import"],
       },
       { id: "store", label: "Store", href: "/vault/store", icon: Cart },

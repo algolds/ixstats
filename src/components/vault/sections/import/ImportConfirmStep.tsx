@@ -64,7 +64,7 @@ export function ImportConfirmStep({
           <div className="text-label-secondary text-body">
             <p className="text-label mb-1 font-semibold">Ready to import</p>
             <p>
-              This will fetch your NationStates trading card deck and create IxCards versions. The
+              This will fetch your NationStates trading card deck and make a card for each one. The
               process takes a few seconds depending on deck size.
             </p>
           </div>

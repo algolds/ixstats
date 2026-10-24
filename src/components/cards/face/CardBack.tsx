@@ -2,7 +2,7 @@ import { useId } from "react";
 import type { CardFinish, LoreCategory } from "@prisma/client";
 import { cn } from "~/lib/utils/cn";
 import { withBasePath } from "~/lib/base-path";
-import { VaultLogomark } from "~/lib/navigation/icons/VaultLogomark";
+import { CardsLogomark } from "~/lib/navigation/icons/CardsLogomark";
 import { backMotif, type BackMotif } from "~/lib/cards/face/back-motif";
 import { CARD_FACE_WIDTH } from "~/lib/cards/face/face-size";
 import { FINISH_LABEL, RARITY_LABEL } from "~/lib/cards/face/labels";
@@ -26,9 +26,9 @@ export interface BackStory {
 }
 
 interface CardBackProps {
-  /** The card, with its category; null for a pull not yet seen (the daily card), which gets the plain IxCards back. */
+  /** The card, with its category; null for a pull not yet seen (the daily card), which gets the plain Cards back. */
   card:
-    | (Pick<CardFaceData, "rarity" | "realm" | "season" | "number"> & {
+    | (Pick<CardFaceData, "rarity" | "realm" | "season" | "number" | "cardType"> & {
         category: LoreCategory | null;
       })
     | null;
@@ -124,13 +124,16 @@ function Lattice({ motif, tile, className, finish }: LatticeProps) {
 }
 
 /**
- * The IxCards back, printed in the rarity's colour: the card's category mark (else its realm's) in a staggered
- * lattice over a fine engraving, the rarity and season at the top, and at the foot the serial and finish, the IxCards
- * wordmark and the card's number. A held copy's story sits in a well in the middle; without one, the Vault mark. A
- * Foil, Holo or Serialised copy's lattice catches the light where the pointer is (`shine`).
+ * The Cards back, printed in the rarity's colour: the card's category mark (else, and always for a trophy, its
+ * realm's) in a staggered lattice over a fine engraving, the rarity and season at the top, and at the foot the serial
+ * and finish, the Cards mark and wordmark and the card's number. A held copy's story sits in a well in the middle;
+ * without one, the Cards mark, its lattice window in the rarity's colour. A Foil, Holo or Serialised copy's lattice
+ * catches the light where the pointer is (`shine`).
  */
 export function CardBack({ card, size, story = null, shine = null, className }: CardBackProps) {
-  const motif = backMotif(card?.category ?? null, card?.realm ?? null);
+  // A trophy's back carries its realm's mark: its Special category says nothing a trophy does not.
+  const category = card?.cardType === "TROPHY" ? null : (card?.category ?? null);
+  const motif = backMotif(category, card?.realm ?? null);
   const large = size === "L";
   const top = card && [card.season ? `Season ${card.season}` : null, RARITY_LABEL[card.rarity]];
   return (
@@ -154,19 +157,26 @@ export function CardBack({ card, size, story = null, shine = null, className }: 
             {top?.filter(Boolean).join(" · ")}
           </p>
           <div className="grid min-h-0 flex-1 place-items-center">
-            {story ? <StoryWell story={story} /> : <VaultLogomark className="text-tint size-1/3" />}
+            {story ? (
+              <StoryWell story={story} />
+            ) : (
+              <CardsLogomark detailed className="text-tint size-1/2" />
+            )}
           </div>
           <div className="text-caption text-label-secondary grid grid-cols-[1fr_auto_1fr] items-end gap-2 tabular-nums">
             <span>
               {story && `#${story.facts.serialNumber} · ${FINISH_LABEL[story.facts.finish]}`}
             </span>
-            <span className="text-headline text-label font-semibold tracking-tight">IxCards</span>
+            <span className="text-headline text-label flex items-center gap-1 font-semibold tracking-tight">
+              <CardsLogomark className="text-tint" />
+              Cards
+            </span>
             <span className="text-right">{card?.number != null && `No. ${card.number}`}</span>
           </div>
         </div>
       ) : (
         <span className="relative grid h-full place-items-center">
-          <VaultLogomark className="text-tint size-1/3" />
+          <CardsLogomark className="text-tint size-1/3" />
         </span>
       )}
     </div>

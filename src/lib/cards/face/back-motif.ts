@@ -12,7 +12,7 @@ export type BackMotif =
   | { kind: "image"; href: string }
   | { kind: "initial"; letter: string };
 
-/** Ixnay's mark, and the plain IxCards back's for a card not yet seen. */
+/** Ixnay's mark, and the plain Cards back's for a card not yet seen. */
 const IX_LOGO = "/images/ix-logo.svg";
 
 /**

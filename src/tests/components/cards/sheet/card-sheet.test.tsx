@@ -377,7 +377,7 @@ describe("CardSheet card", () => {
     // The printed back: rarity at the top; serial and finish, the wordmark and the number at the foot
     expect(within(back).getByText("Epic")).toBeInTheDocument();
     expect(within(back).getByText("#12 · Holo")).toBeInTheDocument();
-    expect(within(back).getByText("IxCards")).toBeInTheDocument();
+    expect(within(back).getByText("Cards")).toBeInTheDocument();
     expect(within(back).getByText("No. 9")).toBeInTheDocument();
     expect(within(back).getByText("For Ann")).toBeInTheDocument();
     expect(within(back).getByText("Signed by Bea on October 3, 2026")).toBeInTheDocument();

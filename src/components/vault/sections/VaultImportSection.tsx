@@ -243,8 +243,8 @@ function ImportDeckTab() {
                     <div className="space-y-2 text-center">
                       <p className="text-label text-title-2">Importing Cards...</p>
                       <p className="text-label-secondary text-body max-w-xs">
-                        Fetching your deck from NationStates and creating IxCards. This may take a
-                        moment.
+                        Fetching your deck from NationStates and making a card for each one. This
+                        may take a moment.
                       </p>
                     </div>
 

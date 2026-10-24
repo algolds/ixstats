@@ -19,6 +19,7 @@
 
 import React, { useMemo, useRef } from "react";
 import { cn } from "~/lib/utils";
+import { CardsLogomark } from "~/lib/navigation/icons/CardsLogomark";
 import type { CardRarity } from "@prisma/client";
 import { parseCardRarity } from "~/lib/cards/enums";
 import {
@@ -407,11 +408,12 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
               )}
               <p
                 className={cn(
-                  "text-center font-semibold text-white/40",
+                  "flex items-center justify-center gap-1 font-semibold text-white/40",
                   size === "sm" ? "text-[7px]" : "text-footnote"
                 )}
               >
-                IxCards
+                <CardsLogomark />
+                Cards
               </p>
             </div>
           </div>

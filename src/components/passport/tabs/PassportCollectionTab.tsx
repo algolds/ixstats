@@ -120,7 +120,7 @@ function CollectorStats({ vault }: { vault: PassportVault }) {
 function TopCards({ vault, handle }: { vault: PassportVault; handle: string }) {
   const sheet = useCardSheet();
 
-  if (vault.totalCards === 0) return <Note>@{handle} has not collected any IxCards yet.</Note>;
+  if (vault.totalCards === 0) return <Note>@{handle} has not collected any cards yet.</Note>;
   return (
     <>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

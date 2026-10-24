@@ -51,7 +51,7 @@ export function ImportNationStep({
           </div>
         </div>
         <p className="text-label-secondary text-body max-w-md">
-          Bring your NationStates trading cards into IxCards. Verify nation ownership and import in
+          Bring your NationStates trading cards into Cards. Verify nation ownership and import in
           minutes.
         </p>
       </div>
