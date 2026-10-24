@@ -192,6 +192,19 @@ set) and the tab bar: **Overview**, **Board**, **Nations**, **Rules** (once the 
 `realms.region.overview` serves the header and front page in one call; it hides draft and generating realms
 from everyone but their staff, like `getBySlug` (§1, visibility rule).
 
+**Hero** (`RealmHeroMap`, 200px tall on phones, 280px from `sm`). A founder's banner fills it. Without one it is
+the realm's live map: the SVG map face paints at once (and is the shared element the atlas card morphs into),
+then, once the browser is idle, `realms.mapGeo({ realmSlug })` loads and a MapLibre map crossfades over it,
+framed like the face (`coverView` in `src/lib/realms/hero-map.ts`). Drag pans; the +/- buttons, Ctrl/Cmd +
+scroll, or two fingers on touch zoom (`cooperativeGestures`, so the page still scrolls); zoom stops at 5.
+Colours are Facet tokens resolved to `rgba()` (claimed solid tint, open hatched, land and unclaimable regions
+neutral) and repaint on a theme change. Hovering a nation shows a card (flag, name, "Claimed by a player",
+"Open to claim" or "Not open to players"); clicking an open nation opens the Nations tab filtered to it
+(`?nation=`), any other country its page. Names appear from 1.5 zoom levels in. "Open full map" goes to
+`/maps?realm=`. `mapGeo` is the face module's GeoJSON twin: each nation as lon/lat GeoJSON (0.1 degree
+simplification, +/-75 degree clip) with its id, name, slug, flag and status, plus the realm's land and the nations'
+bounds, under the same 1 hour cache, failure memory, land fallback and strict access as `mapFace`.
+
 **Overview:** the factbook (or the description), "Read the lore" to the realm's `Portal:` page, the latest five
 board posts, and claimable nations. The sidebar (stacked under the main column below 1024px) has:
 
@@ -262,7 +275,8 @@ read-only (`realmMapAccess`, `realms.map-access.ts`). The world editor's procedu
 region links, linkage validation and Auto-Match, realm labels) resolve the edited realm through `editableMapRealmId`
 (`src/server/api/trpc/realm-scope.ts`) and refuse any other realm with `FORBIDDEN`. Founders and map officers open the
 world editor from **World editor** on `/maps?realm=<slug>`. A map officer renames a region, not the nation linked to
-it; creating a nation from a shape stays with site admins. See [maps.md](maps.md#realm-maps).
+it. They also create a nation from an unlinked shape in their realm (each one recorded in `AdminAuditLog` for site
+admins) and edit the map features of its unclaimed nations. See [maps.md](maps.md#realm-maps).
 
 **Claims reviewers:** `realms.reviewClaim` accepts site admins, the founder, and officers holding `claims` in the
 claim's realm (only the reviewer's own `RealmOfficer` row is read); `realms.listClaims` lists the realms the caller
@@ -289,7 +303,7 @@ embassies, frozen board restrictions, polls and forum categories go with it, and
 
 Sections follow the caller's powers: **Appearance** (banner and thumbnail, each uploaded or given as an `https://`
 address; description; up to five tags from `REALM_TAGS`), **Links** (community links), **Time** (the realm clock; founder and site staff),
-**Factbook** (the WikiOS canvas editor or wikitext; saved as wikitext plus rendered, sanitized HTML), **Rules**
+**Factbook** (the WikiOS canvas editor; saved as wikitext plus rendered, sanitized HTML), **Rules**
 (the same editor; empty text removes the rules), **Officers** (each power with a one-line description), **Claims**
 (the founder and officers holding `claims`; the admin claims list narrowed to the realm, with Approve disabled on an
 officer's own claim),

@@ -1,20 +1,19 @@
 import { z } from "zod";
 import {
   createTRPCRouter,
-  adminProcedure,
   protectedProcedure,
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
-import { editableMapRealmId, realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
+import { editableMapRealmId, realmScopeInput } from "~/server/api/trpc/realm-scope";
 import { isSiteAdmin, type RealmActor } from "~/server/modules/realms";
 import { RealmRegionError } from "~/server/modules/realms/realms.region";
 import { renameGeneratedSlot } from "~/server/modules/realms/realms.slot-rename";
+import { createNationFromShape } from "~/server/modules/realms/realms.shape-nation";
 import { invalidateCache } from "~/lib/cache";
 import { TRPCError } from "@trpc/server";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
-import { IxTime } from "~/lib/ixtime";
 import { assertCountryInFeatureRealm } from "~/server/shared/realm-link-guard";
 import { assertFound, requirePoliticalLayer } from "../../core/shared";
 
@@ -231,56 +230,26 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
     }),
 
   /**
-   * Admin: Create a new Country record from an unclaimed political map feature.
+   * Create a nation from an unclaimed political shape: site admins, or the realm's founder and map officers in their
+   * own realm (audited for site admins).
    */
-  createCountryFromShape: adminProcedure
+  createCountryFromShape: rateLimitedMutationProcedure
     .input(z.object({ featureId: z.string(), name: z.string().min(1), ...realmScopeInput.shape }))
     .mutation(async ({ ctx, input }) => {
-      const realmId = await viewerRealmId(ctx, input.realm);
-      const feature = assertFound(
-        await ctx.db.mapLayer.findFirst({
-          where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
-        }),
-        "Feature not found"
-      );
-      if (feature.countryId) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Feature already linked to a country",
-        });
-      }
-      const slug = input.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "");
-      const ixNow = new Date(IxTime.getCurrentIxTime());
-      const newCountry = await ctx.db.country.create({
-        data: {
-          name: input.name,
-          slug,
-          realmId,
-          geometry: feature.geometry as any,
-          centroid: feature.centroid as any,
-          boundingBox: feature.boundingBox as any,
-          landArea: feature.areaSqKm ?? undefined,
-          areaSqMi: feature.areaSqKm ? feature.areaSqKm * 0.386102 : undefined,
-          economicTier: "developing",
-          isDemo: false,
-          baselineDate: ixNow,
-          lastCalculated: ixNow,
-        } as any,
-      });
-      await ctx.db.mapLayer.update({
-        where: { id: feature.id },
-        data: { countryId: newCountry.id },
-      });
+      const realmId = await editableMapRealmId(ctx, input.realm);
+      const created = await createNationFromShape(
+        ctx.db,
+        ctx.user as RealmActor,
+        realmId,
+        input
+      ).catch(regionError);
       // The link is stored: the map version moves even if the sync fails
       try {
-        await syncCountryGeometryFromMapLayer(ctx.db, newCountry.id);
+        await syncCountryGeometryFromMapLayer(ctx.db, created.countryId);
       } finally {
         await invalidateRealmMap(ctx.db, realmId);
       }
-      broadcastMapUpdate("linkage", newCountry.id, realmId);
-      return { countryId: newCountry.id, name: newCountry.name };
+      broadcastMapUpdate("linkage", created.countryId, realmId);
+      return created;
     }),
 });

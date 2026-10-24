@@ -2,8 +2,8 @@ import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
 import {
   createTRPCRouter,
-  countryOwnerProcedure,
-  standardMutationCountryOwnerProcedure,
+  mapFeatureOwnerProcedure,
+  standardMutationMapFeatureOwnerProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { buildProvinceMergePlan } from "~/lib/maps/province-importer/merge-plan";
@@ -73,7 +73,7 @@ export const geoAdminProvincesRouter = createTRPCRouter({
    * Parse an uploaded province SVG and return parsed province features.
    * Also returns the country border geometry for alignment.
    */
-  parseProvinceUpload: standardMutationCountryOwnerProcedure
+  parseProvinceUpload: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -152,7 +152,7 @@ export const geoAdminProvincesRouter = createTRPCRouter({
    * Commit imported provinces as Subdivision records.
    * Creates all subdivisions in a single transaction.
    */
-  commitProvinceImport: standardMutationCountryOwnerProcedure
+  commitProvinceImport: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -318,7 +318,7 @@ export const geoAdminProvincesRouter = createTRPCRouter({
   /**
    * Get existing subdivisions and country border for province import preview.
    */
-  getProvinceImportPreview: countryOwnerProcedure
+  getProvinceImportPreview: mapFeatureOwnerProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
       assertOwnCountry(ctx, input.countryId, "preview");

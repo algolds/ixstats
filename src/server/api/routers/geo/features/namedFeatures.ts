@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, standardMutationMapFeatureOwnerProcedure } from "~/server/api/trpc";
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { upsertPeak, upsertNamedRiver, upsertNamedLake } from "~/lib/country-geo/named-features";
@@ -8,7 +8,7 @@ import { assertOwnerMayEdit } from "~/server/shared/map-feature-lock";
 
 export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
   // ─── Peak CRUD ───
-  createPeak: standardMutationCountryOwnerProcedure
+  createPeak: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -34,7 +34,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
       return peak;
     }),
 
-  updatePeak: standardMutationCountryOwnerProcedure
+  updatePeak: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -76,7 +76,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
       return peak;
     }),
 
-  deletePeak: standardMutationCountryOwnerProcedure
+  deletePeak: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -103,7 +103,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
     }),
 
   // ─── NamedRiver CRUD ───
-  createNamedRiver: standardMutationCountryOwnerProcedure
+  createNamedRiver: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -126,7 +126,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
       return river;
     }),
 
-  updateNamedRiver: standardMutationCountryOwnerProcedure
+  updateNamedRiver: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -161,7 +161,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
       return river;
     }),
 
-  deleteNamedRiver: standardMutationCountryOwnerProcedure
+  deleteNamedRiver: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -188,7 +188,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
     }),
 
   // ─── NamedLake CRUD ───
-  createNamedLake: standardMutationCountryOwnerProcedure
+  createNamedLake: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -212,7 +212,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
       return lake;
     }),
 
-  updateNamedLake: standardMutationCountryOwnerProcedure
+  updateNamedLake: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -249,7 +249,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
       return lake;
     }),
 
-  deleteNamedLake: standardMutationCountryOwnerProcedure
+  deleteNamedLake: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),

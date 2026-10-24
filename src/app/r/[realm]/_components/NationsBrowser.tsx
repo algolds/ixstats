@@ -16,8 +16,8 @@ import { NationsGrid, type RealmNation } from "./NationsGrid";
 import { NationsStats } from "./NationsStats";
 
 /** Search (name, tier, continent, region), tier and continent filters over the realm's ordered nations. */
-function useNationFilters(nations: RealmNation[]) {
-  const [search, setSearch] = useState("");
+function useNationFilters(nations: RealmNation[], initialSearch = "") {
+  const [search, setSearch] = useState(initialSearch);
   const [tier, setTier] = useState<TierFilter>("all");
   const [continent, setContinent] = useState<string | null>(null);
   const query = useDeferredValue(search).trim().toLowerCase();
@@ -49,14 +49,17 @@ export function NationsBrowser({
   onCountryClick,
   viewerCountryId,
   corner,
+  initialSearch,
 }: {
   nations: RealmNation[];
   isLoading: boolean;
   onCountryClick: (country: CountryCardData) => void;
   viewerCountryId?: string;
   corner: (nation: RealmNation) => React.ReactNode;
+  /** Prefills the search, e.g. from a hero map click on an open nation (`?nation=`). */
+  initialSearch?: string;
 }) {
-  const f = useNationFilters(nations);
+  const f = useNationFilters(nations, initialSearch);
   const feelingLucky = () => {
     const pick = f.filtered[Math.floor(Math.random() * f.filtered.length)];
     if (pick) onCountryClick(pick);

@@ -39,7 +39,6 @@ export function RulesSection({
         editorTitle={`Realm rules ${slug}`}
         initialWikitext={rules.wikitext}
         saveLabel="Save rules"
-        sourceLabel="Rules wikitext"
         saving={save.isPending}
         onSave={(wikitext) => save.mutate({ slug, wikitext })}
       />

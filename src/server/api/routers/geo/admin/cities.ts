@@ -6,7 +6,7 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, standardMutationMapFeatureOwnerProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { lookupCityPoints, upsertCity } from "~/lib/country-geo";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
@@ -40,7 +40,7 @@ export const geoAdminCitiesRouter = createTRPCRouter({
    * Skips cities that fail containment check.
    * Returns the number of cities successfully created.
    */
-  commitCityImport: standardMutationCountryOwnerProcedure
+  commitCityImport: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -118,7 +118,7 @@ export const geoAdminCitiesRouter = createTRPCRouter({
    * - Extracts city points (circles, ellipses, uses, point-like paths)
    * - Extracts province centroids for auto-alignment
    */
-  parseCitySvg: standardMutationCountryOwnerProcedure
+  parseCitySvg: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),

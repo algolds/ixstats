@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, standardMutationMapFeatureOwnerProcedure } from "~/server/api/trpc";
 import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import {
@@ -17,7 +17,7 @@ export const geoFeaturesCitiesRouter = createTRPCRouter({
    * Create a city within the user's country.
    * Auto-approved if the point is inside the country's borders.
    */
-  createCity: standardMutationCountryOwnerProcedure
+  createCity: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -93,7 +93,7 @@ export const geoFeaturesCitiesRouter = createTRPCRouter({
   /**
    * Update a city within the user's country.
    */
-  updateCity: standardMutationCountryOwnerProcedure
+  updateCity: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -171,7 +171,7 @@ export const geoFeaturesCitiesRouter = createTRPCRouter({
   /**
    * Delete a city from the user's country.
    */
-  deleteCity: standardMutationCountryOwnerProcedure
+  deleteCity: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),

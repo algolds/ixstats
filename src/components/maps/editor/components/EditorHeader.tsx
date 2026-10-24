@@ -32,6 +32,7 @@ import {
 } from "./EditorSettingsPopover";
 import { useGeoJsonTransfer } from "./useGeoJsonTransfer";
 import { RealmMapMenu } from "./RealmMapMenu";
+import { useRealmMapDisplay } from "~/components/maps/core/hooks/useRealmMapDisplay";
 
 interface EditorHeaderProps {
   countryInfo: { name: string } | null | undefined;
@@ -145,6 +146,9 @@ export const EditorHeader = React.memo(function EditorHeader({
   onShowShortcuts,
 }: EditorHeaderProps) {
   const importInputRef = React.useRef<HTMLInputElement>(null);
+  // Rivers and relief: site admins, and the realm's own map editors (founder, map officers)
+  const display = useRealmMapDisplay();
+  const showTerrainLayers = isAdmin || !!display?.canEdit;
   const { exportGeoJSON, importGeoJSON } = useGeoJsonTransfer(editor, countryInfo?.name);
 
   const { history } = editor;
@@ -247,7 +251,7 @@ export const EditorHeader = React.memo(function EditorHeader({
         <div className="bg-separator h-4 w-px" />
 
         <div className="flex items-center gap-1">
-          {isAdmin && (
+          {showTerrainLayers && (
             <div className="mr-0.5 flex items-center gap-0.5">
               <HeaderIconButton
                 active={editorVisibleLayers.has("rivers")}

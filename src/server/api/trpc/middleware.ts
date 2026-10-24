@@ -8,7 +8,10 @@ import { rateLimiter } from "~/lib/cache";
 import { isDatabaseReadOnly } from "~/server/db";
 import { isSystemOwner } from "~/lib/auth";
 import { hasPremiumTier, isBetaTesterRole } from "~/lib/auth/premium";
+import type { Country, PrismaClient } from "@prisma/client";
 import { getRoleName, isPrivilegedCountryWriter } from "~/server/shared/country-authorization";
+import { realmMapAccess } from "~/server/modules/realms/realms.map-access";
+import type { RealmActor } from "~/server/modules/realms/realms.access";
 import { touchLastSeen } from "./last-seen";
 import { isPlayAsMoneyPath } from "./impersonation";
 import {
@@ -72,66 +75,96 @@ export const authMiddleware = t.middleware(async ({ ctx, next, path }) => {
   });
 });
 
-/**
- * Country ownership middleware - Validates user owns a country
- */
-export const countryOwnerMiddleware = t.middleware(async ({ ctx, next, path }) => {
-  if (!ctx.auth?.userId || !ctx.user) {
-    throw new Error("UNAUTHORIZED: Authentication required");
-  }
+/** A nation the caller may act as the owner of, besides their own (`countryId` in the raw input), or null. */
+type CountryGrant = (
+  ctx: { db: PrismaClient; user: RealmActor & { countryId?: string | null } },
+  rawInput: unknown
+) => Promise<Country | null>;
 
-  // No impersonation-specific handling needed here: while playing as another user this
-  // evaluates the *target* (the intended play-as behavior), `ctx.auth.userId` is the target's ID
-  // (impersonation.ts rebuilds `auth` without spreading), and decidePlayAs already guarantees the
-  // target cannot outrank the impersonator or carry the impersonator's session claims.
-  const userRole = getRoleName(ctx.user, ctx.auth?.sessionClaims);
-  const isAdmin = isPrivilegedCountryWriter(ctx.auth.userId, userRole);
-  if (isAdmin) {
+/**
+ * The realm's map editors (realmMapAccess: the founder, map officers) act as the owner of an unclaimed nation in
+ * their own realm: its map features (cities, labels, POIs, peaks, rivers, lakes, subdivisions). Ixnay stays with
+ * site admins; owner-level limits (editableByOwner, upload ownership) still apply.
+ */
+const unclaimedNationOfMapEditor: CountryGrant = async ({ db, user }, rawInput) => {
+  const countryId = (rawInput as { countryId?: unknown } | null | undefined)?.countryId;
+  if (typeof countryId !== "string" || countryId === user.countryId) return null;
+  const country = await db.country.findUnique({ where: { id: countryId } });
+  if (!country || country.ownerUserId) return null;
+  return (await realmMapAccess(db, user, country.realmId)).canEdit ? country : null;
+};
+
+/**
+ * Country ownership middleware - Validates user owns a country (or, with `grant`, may act as the owner of the
+ * nation the input names)
+ */
+const ownerMiddleware = (grant?: CountryGrant) =>
+  t.middleware(async ({ ctx, next, path, getRawInput }) => {
+    if (!ctx.auth?.userId || !ctx.user) {
+      throw new Error("UNAUTHORIZED: Authentication required");
+    }
+
+    // No impersonation-specific handling needed here: while playing as another user this
+    // evaluates the *target* (the intended play-as behavior), `ctx.auth.userId` is the target's ID
+    // (impersonation.ts rebuilds `auth` without spreading), and decidePlayAs already guarantees the
+    // target cannot outrank the impersonator or carry the impersonator's session claims.
+    const userRole = getRoleName(ctx.user, ctx.auth?.sessionClaims);
+    const isAdmin = isPrivilegedCountryWriter(ctx.auth.userId, userRole);
+    if (isAdmin) {
+      return next({
+        ctx: {
+          ...ctx,
+          auth: ctx.auth,
+          user: ctx.user,
+          country: null,
+        },
+      });
+    }
+
+    const granted =
+      grant && (await grant({ db: ctx.db, user: ctx.user as RealmActor }, await getRawInput()));
+    if (granted) {
+      return next({ ctx: { ...ctx, auth: ctx.auth, user: ctx.user, country: granted } });
+    }
+
+    if (!ctx.user.countryId) {
+      console.warn(
+        `[COUNTRY_OWNERSHIP] User ${ctx.auth.userId} attempted to access country-specific endpoint without a linked country: ${path || "unknown"}`
+      );
+      throw new ForbiddenError(
+        "Country ownership required. You must create or claim a country before accessing this feature. " +
+          "Visit the Country Builder to get started."
+      );
+    }
+
+    const country =
+      (ctx.user as any).country ||
+      (await ctx.db.country.findUnique({
+        where: { id: ctx.user.countryId },
+      }));
+
+    if (!country) {
+      console.error(
+        `[COUNTRY_OWNERSHIP] User ${ctx.auth.userId} has countryId ${ctx.user.countryId} but country record not found in database`
+      );
+      throw new InternalError(
+        "Your linked country could not be found in the database. " +
+          "This may indicate a data integrity issue. Please contact support."
+      );
+    }
+
     return next({
       ctx: {
         ...ctx,
         auth: ctx.auth,
         user: ctx.user,
-        country: null,
+        country,
       },
     });
-  }
-
-  if (!ctx.user.countryId) {
-    console.warn(
-      `[COUNTRY_OWNERSHIP] User ${ctx.auth.userId} attempted to access country-specific endpoint without a linked country: ${path || "unknown"}`
-    );
-    throw new ForbiddenError(
-      "Country ownership required. You must create or claim a country before accessing this feature. " +
-        "Visit the Country Builder to get started."
-    );
-  }
-
-  const country =
-    (ctx.user as any).country ||
-    (await ctx.db.country.findUnique({
-      where: { id: ctx.user.countryId },
-    }));
-
-  if (!country) {
-    console.error(
-      `[COUNTRY_OWNERSHIP] User ${ctx.auth.userId} has countryId ${ctx.user.countryId} but country record not found in database`
-    );
-    throw new InternalError(
-      "Your linked country could not be found in the database. " +
-        "This may indicate a data integrity issue. Please contact support."
-    );
-  }
-
-  return next({
-    ctx: {
-      ...ctx,
-      auth: ctx.auth,
-      user: ctx.user,
-      country,
-    },
   });
-});
+
+export const countryOwnerMiddleware = ownerMiddleware();
+export const mapFeatureOwnerMiddleware = ownerMiddleware(unclaimedNationOfMapEditor);
 
 interface RateLimitOptions {
   max: number;

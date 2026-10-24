@@ -14,10 +14,11 @@ jest.mock("~/server/shared/map-invalidation", () => ({
 
 jest.mock("~/server/modules/realms/realms.map-face", () => ({
   getRealmMapFace: jest.fn(),
+  getRealmMapGeo: jest.fn(),
 }));
 
 import { realmsRouter } from "~/server/api/routers/realms";
-import { getRealmMapFace } from "~/server/modules/realms/realms.map-face";
+import { getRealmMapFace, getRealmMapGeo } from "~/server/modules/realms/realms.map-face";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { NATION_SEARCH_LIMIT } from "~/server/api/routers/realms/places";
@@ -627,5 +628,31 @@ describe("realms.mapFace", () => {
 
     expect(face).toEqual(fixture);
     expect(getRealmMapFace).toHaveBeenCalledWith(expect.anything(), "r1");
+  });
+});
+
+describe("realms.mapGeo", () => {
+  beforeEach(() => {
+    (getRealmMapGeo as jest.Mock).mockReset();
+  });
+
+  it("mapGeo is NOT_FOUND for a hidden draft when the viewer is anonymous", async () => {
+    const findUnique = jest
+      .fn()
+      .mockResolvedValue({ id: "r2", status: "draft", ownerId: "someone-else" });
+    await expect(caller(findUnique).mapGeo({ realmSlug: "secret" })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+      message: "Realm not found",
+    });
+    expect(getRealmMapGeo).not.toHaveBeenCalled();
+  });
+
+  it("mapGeo returns the realm's hero map", async () => {
+    const findUnique = jest.fn().mockResolvedValue({ id: "r1", status: "active", ownerId: "u" });
+    const geo = { bounds: [0, 0, 1, 1], nations: [], land: null };
+    (getRealmMapGeo as jest.Mock).mockResolvedValue(geo);
+
+    expect(await caller(findUnique).mapGeo({ realmSlug: "atlantis" })).toEqual(geo);
+    expect(getRealmMapGeo).toHaveBeenCalledWith(expect.anything(), "r1");
   });
 });
