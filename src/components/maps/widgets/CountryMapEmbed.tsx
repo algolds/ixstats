@@ -8,8 +8,11 @@
  * Much lighter than MapContainer (2-4 sources vs 10+).
  */
 
+import { useEffect } from "react";
+import { useReducedMotion } from "motion/react";
 import { MapPin, SystemRestart as Loader2 } from "iconoir-react";
 
+import { geometryBounds } from "~/components/maps/widgets/embed-map-layers";
 import { useCountryMapEmbedState } from "~/components/maps/widgets/hooks/useCountryMapEmbedState";
 import { useCountryMapEmbedLayers } from "~/components/maps/widgets/hooks/useCountryMapEmbedLayers";
 
@@ -34,7 +37,12 @@ interface CountryMapEmbedProps {
   boundsPadding?: number;
   highlightCountryIds?: string[];
   highlightCountryNames?: string[];
+  /** Fly the map to one subdivision (fit its bounds) or one point, once the map is ready. */
+  focus?: MapFocus | null;
 }
+
+export type MapFocus =
+  { kind: "subdivision"; id: string } | { kind: "point"; lng: number; lat: number };
 
 export function CountryMapEmbed({
   countryId,
@@ -50,6 +58,7 @@ export function CountryMapEmbed({
   boundsPadding = 40,
   highlightCountryIds,
   highlightCountryNames,
+  focus,
 }: CountryMapEmbedProps) {
   const state = useCountryMapEmbedState({
     countryId,
@@ -69,6 +78,21 @@ export function CountryMapEmbed({
     onFeatureClick,
     boundsPadding,
   });
+
+  const reduceMotion = useReducedMotion();
+  const { mapRef, mapReady, subdivisions } = state;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!focus || !map || !mapReady) return;
+    const duration = reduceMotion ? 0 : 600;
+    if (focus.kind === "point") {
+      map.flyTo({ center: [focus.lng, focus.lat], zoom: 7, duration });
+      return;
+    }
+    const sub = subdivisions.find((s) => s.id === focus.id);
+    const bounds = sub?.geometry ? geometryBounds(sub.geometry) : null;
+    if (bounds) map.fitBounds(bounds, { padding: 40, duration });
+  }, [focus, mapReady, mapRef, reduceMotion, subdivisions]);
 
   if (state.isLoading) {
     return (

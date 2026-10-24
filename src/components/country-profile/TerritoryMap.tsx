@@ -6,6 +6,7 @@ import { Map as MapIcon, NavArrowRight } from "iconoir-react";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils/cn";
+import type { MapFocus } from "~/components/maps/widgets/CountryMapEmbed";
 
 const CountryMapEmbed = dynamic(
   () =>
@@ -25,12 +26,15 @@ export function TerritoryMap({
   hasGeometry,
   isLoading,
   heightClass = "h-72",
+  focus,
   className,
 }: {
   countryId: string;
   hasGeometry: boolean;
   isLoading: boolean;
   heightClass?: string;
+  /** Fly to a region or story pin (the Map tab's lists). */
+  focus?: MapFocus | null;
   className?: string;
 }) {
   if (isLoading) return <Skeleton className={cn("rounded-row w-full", heightClass, className)} />;
@@ -54,6 +58,7 @@ export function TerritoryMap({
         showCities
         showSubdivisions
         boundsPadding={40}
+        focus={focus}
       />
       <Link
         href={`/maps?country=${encodeURIComponent(countryId)}`}

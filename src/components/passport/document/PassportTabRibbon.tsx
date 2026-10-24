@@ -1,134 +1,34 @@
 "use client";
 
-import React from "react";
-import { motion, useReducedMotion } from "motion/react";
 import { Clock, Crown, Globe, Page } from "iconoir-react";
-import { cn } from "~/lib/utils";
-import { hitSlop } from "~/components/ui/button";
-import { REDUCED_MOTION_FADE, springSnappy } from "~/lib/design/motion";
+import {
+  DocumentRibbon,
+  ribbonPanelId,
+  ribbonTabId,
+  type RibbonTab,
+} from "~/components/shared/document/DocumentRibbon";
 import type { PassportTabType } from "../types";
 
-const RIBBON_TABS: Array<{ id: PassportTabType; label: string; icon: typeof Globe }> = [
+const RIBBON_TABS: readonly RibbonTab<PassportTabType>[] = [
   { id: "realms", label: "Realms", icon: Globe },
   { id: "work", label: "Work", icon: Page },
   { id: "collection", label: "Collection", icon: Crown },
   { id: "history", label: "History", icon: Clock },
 ];
 
-/** The DOM id of a ribbon tab (`idBase` from the document's `useId`). */
-export function passportTabId(idBase: string, tab: PassportTabType): string {
-  return `${idBase}-tab-${tab}`;
-}
+/** The DOM id of a passport ribbon tab. */
+export const passportTabId = (idBase: string, tab: PassportTabType) => ribbonTabId(idBase, tab);
 
-/** The DOM id of the tab panel the ribbon controls. */
-export function passportTabPanelId(idBase: string): string {
-  return `${idBase}-panel`;
-}
+/** The DOM id of the passport's tab panel. */
+export const passportTabPanelId = ribbonPanelId;
 
-interface PassportTabRibbonProps {
+/** The passport's ribbon: the shared document ribbon over its four tabs. */
+export function PassportTabRibbon(props: {
   activeTab: PassportTabType;
   onSelectTab: (tab: PassportTabType) => void;
   /** Badge counts for the tabs whose totals are known without loading the tab. */
   counts: Partial<Record<PassportTabType, number>>;
-  /** Shared id prefix with the tab panel (`passportTabPanelId(idBase)`). */
   idBase: string;
+}) {
+  return <DocumentRibbon tabs={RIBBON_TABS} label="Passport sections" {...props} />;
 }
-
-/**
- * The mid-card die-cut index ribbon that switches passport tabs, using the WAI-ARIA tabs pattern:
- * `role="tablist"` of `role="tab"`s with `aria-selected`, the selected tab controls the panel
- * (`passportTabPanelId`), roving tabindex (only the selected tab is in the Tab order), and
- * ←/→/Home/End move focus and select (automatic activation).
- */
-export const PassportTabRibbon = React.memo(function PassportTabRibbon({
-  activeTab,
-  onSelectTab,
-  counts,
-  idBase,
-}: PassportTabRibbonProps) {
-  const shouldReduceMotion = useReducedMotion();
-  const tabRefs = React.useRef<Array<HTMLButtonElement | null>>([]);
-
-  const handleKeyDown = React.useCallback(
-    (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
-      const last = RIBBON_TABS.length - 1;
-      let next: number;
-      switch (event.key) {
-        case "ArrowRight":
-          next = index === last ? 0 : index + 1;
-          break;
-        case "ArrowLeft":
-          next = index === 0 ? last : index - 1;
-          break;
-        case "Home":
-          next = 0;
-          break;
-        case "End":
-          next = last;
-          break;
-        default:
-          return;
-      }
-      event.preventDefault();
-      tabRefs.current[next]?.focus();
-      onSelectTab(RIBBON_TABS[next]!.id);
-    },
-    [onSelectTab]
-  );
-
-  return (
-    <div className="border-separator bg-surface-secondary border-y px-4 py-2 sm:px-6">
-      <div
-        role="tablist"
-        aria-label="Passport sections"
-        aria-orientation="horizontal"
-        className="-my-2 flex scrollbar-none items-center gap-1 overflow-x-auto py-2"
-      >
-        {RIBBON_TABS.map((tab, idx) => {
-          const isActive = activeTab === tab.id;
-          const Icon = tab.icon;
-          const count = counts[tab.id];
-          return (
-            <button
-              key={tab.id}
-              ref={(node) => {
-                tabRefs.current[idx] = node;
-              }}
-              type="button"
-              role="tab"
-              id={passportTabId(idBase, tab.id)}
-              aria-selected={isActive}
-              aria-controls={isActive ? passportTabPanelId(idBase) : undefined}
-              tabIndex={isActive ? 0 : -1}
-              onClick={() => onSelectTab(tab.id)}
-              onKeyDown={(event) => handleKeyDown(event, idx)}
-              className={cn(
-                // The active tab is the inverted (primary) pill. The 28px pill keeps a 44pt hit
-                // area on touch screens (`hitSlop`).
-                hitSlop,
-                "rounded-control text-footnote focus-visible:outline-tint relative flex h-(--control-height-sm) shrink-0 cursor-pointer items-center gap-2 px-3 font-medium focus-visible:outline-2 focus-visible:outline-offset-2",
-                isActive
-                  ? "bg-primary-fill text-on-primary shadow-card"
-                  : "text-label-secondary hover:text-label hover:bg-fill-4"
-              )}
-            >
-              <Icon aria-hidden className="size-3.5" />
-              <span>{tab.label}</span>
-              {count !== undefined && count > 0 && (
-                <motion.span
-                  key={`${tab.id}-${count}`}
-                  initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={shouldReduceMotion ? REDUCED_MOTION_FADE : springSnappy}
-                  className="text-caption rounded-full bg-current/15 px-2 tabular-nums"
-                >
-                  {count}
-                </motion.span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-});

@@ -11,7 +11,7 @@ import type { CommandNavMode } from "../command-nav-mode";
 import { PageHeader, BACKDROP_PLATE } from "~/components/shell/PageHeader";
 import { assetUrl } from "~/lib/base-path";
 import { CountryIdentityStrip } from "~/components/country-profile/CountryIdentityStrip";
-import { FlagTile } from "~/components/country-profile/CountryHero";
+import { FlagTile } from "~/components/country-profile/HeroMedia";
 import { CountryOwnerRibbonRack } from "~/components/achievements/FloatingRibbonRack";
 import { stripHtml } from "~/lib/utils/sanitize-html";
 import { EditMorphButton } from "./EditMorphButton";

@@ -37,11 +37,6 @@ export function rankLabel(rank: number, total: number, realm?: string | null): s
   return realm ? `${base} in ${realm}` : base;
 }
 
-/** The realm a nation's census ranks are drawn from; the primary realm when none is set. */
-export function censusRealmName(realm: { name: string } | null | undefined): string {
-  return realm?.name || "Ixnay";
-}
-
 /** Smooth scrolling unless the OS or the in-app Reduce Motion setting says otherwise. */
 export function scrollBehavior(): ScrollBehavior {
   if (typeof window === "undefined") return "auto";

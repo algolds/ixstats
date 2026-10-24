@@ -58,8 +58,8 @@ export function ElsewhereSection({ slug }: { slug: string | null }) {
             <FacetRow
               leading={<MapPin />}
               title="Geography"
-              subtitle="Land, regions and transport in your factbook"
-              href={`/countries/${slug}/factbook/geography`}
+              subtitle="Land, regions and story pins on your country's map"
+              href={`/countries/${slug}/map`}
             />
           )}
           <FacetRow

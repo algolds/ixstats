@@ -14,6 +14,8 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useUser } from "~/context/auth-context";
 import { useHasPermission, useHasRoleLevel } from "~/hooks/usePermissions";
 import { useHasMycountryPremium } from "~/hooks/useHasMycountryPremium";
+import { useUserCountry } from "~/hooks/useUserCountry";
+import { getNationUrl } from "~/lib/utils/slug-utils";
 import { api } from "~/trpc/react";
 import { stripBasePath } from "~/lib/base-path";
 import {
@@ -64,6 +66,8 @@ export function FacetShell() {
   // Once here so the sidebar and the More sheet never run the queries twice.
   const badges = useNavBadges(signedIn);
   const { forumModerator } = useForumNavFlags(signedIn);
+  // Shares AccountMenu's queries; MyCountry's profile and editor buttons appear once it answers.
+  const { country } = useUserCountry();
   const apps = useMemo(
     () =>
       getVisibleApps(
@@ -103,6 +107,7 @@ export function FacetShell() {
             onToggle={toggle}
             badges={badges}
             onAction={onAction}
+            countryHref={hydrated && country ? getNationUrl(country.name) : undefined}
             signedIn={signedIn}
             vaultCard={
               signedIn ? (

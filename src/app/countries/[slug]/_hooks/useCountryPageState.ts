@@ -5,14 +5,15 @@ import { unsplashService } from "~/lib/media";
 import type { BannerMode, BaseCountryData } from "../_types";
 
 function getBannerPref(countryId?: string): { mode: BannerMode; customUrl?: string } {
-  if (typeof window === "undefined" || !countryId) return { mode: "dynamic" };
+  // The live map ("gradient", shown as Map) unless the owner picked a cover on this device.
+  if (typeof window === "undefined" || !countryId) return { mode: "gradient" };
   try {
     const raw = localStorage.getItem(`banner-pref-${countryId}`);
     if (raw) return JSON.parse(raw) as { mode: BannerMode; customUrl?: string };
   } catch {
     /* ignore */
   }
-  return { mode: "dynamic" };
+  return { mode: "gradient" };
 }
 
 function saveBannerPref(countryId: string, pref: { mode: BannerMode; customUrl?: string }): void {
@@ -25,8 +26,6 @@ function saveBannerPref(countryId: string, pref: { mode: BannerMode; customUrl?:
 }
 
 interface UseCountryPageStateReturn {
-  showCountryActions: boolean;
-  setShowCountryActions: React.Dispatch<React.SetStateAction<boolean>>;
   /** The contextual landscape photo (Unsplash), once loaded. */
   unsplashImageUrl: string | undefined;
   bannerMode: BannerMode;
@@ -50,7 +49,6 @@ export function useCountryPageState(
     | undefined,
   flagUrl?: string | null
 ): UseCountryPageStateReturn {
-  const [showCountryActions, setShowCountryActions] = useState(false);
   const [unsplashImageUrl, setUnsplashImageUrl] = useState<string | undefined>();
 
   const [bannerMode, setBannerModeState] = useState<BannerMode>(
@@ -113,8 +111,6 @@ export function useCountryPageState(
           : null;
 
   return {
-    showCountryActions,
-    setShowCountryActions,
     unsplashImageUrl,
     bannerMode,
     customBannerUrl,

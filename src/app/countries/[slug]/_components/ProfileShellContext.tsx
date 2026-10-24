@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from "react";
 import type { CountryWithEconomicData } from "~/components/mycountry/shared/primitives/CountryDataProvider";
-import type { HeroCover } from "~/components/country-profile/CountryHero";
+import type { HeroCover } from "~/components/country-profile/HeroMedia";
 
 /** What the `(profile)` layout resolves once and shares with the profile and its sub-routes. */
 export interface ProfileShellValue {

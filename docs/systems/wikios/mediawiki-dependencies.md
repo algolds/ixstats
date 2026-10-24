@@ -203,7 +203,7 @@ configuration object, never from a literal:
   `src/app/(wiki-os)/util/search/page.tsx` (a link to WikiOS's own `/wiki/index.php` compatibility path),
   `src/app/admin/realms/_components/ClaimsTab.tsx` (a claimed nation page's history on its own wiki),
   `src/app/admin/cards/compliance/LicenceReview.tsx` (a card art file's page on its own wiki, where its licence is stated), `src/components/cards/display/card-wiki-href.ts`,
-  `src/components/mycountry/dossier/dossier/WikiSectionCard.tsx`, `src/components/wiki-os/commons/CommonsDetailPanel.tsx`,
+  `src/components/wiki-os/commons/CommonsDetailPanel.tsx`,
   `src/components/wiki-os/margin/modals/MarginShareModal.tsx`, `src/components/wiki-os/margin/tabs/MarginMarkupTab.tsx`,
   `src/components/wiki-os/media-search/MyStashTab.tsx` (a stash image's IxWiki file page), `src/components/wiki-os/media-search/WikiRepositoryTab.tsx`, `src/components/wiki-os/media-search/types.ts`, `src/components/wiki-os/reader/ImageLightbox.tsx`, `src/components/wiki-os/reader/ImageLightboxModal.tsx`,
   `src/hooks/useDossier.ts`, `src/lib/wiki-os/xml/export-writer.ts` (the dump's `siteinfo`), `src/lib/wiki-os/sitemap-xml.ts`,

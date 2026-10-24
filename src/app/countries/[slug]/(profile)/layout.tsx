@@ -2,9 +2,8 @@
 
 import { use, useMemo } from "react";
 import Link from "next/link";
-import { useSelectedLayoutSegment } from "next/navigation";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { WarningTriangle, Group as Users } from "iconoir-react";
+import { WarningTriangle } from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { EmptyState } from "~/components/ui/empty-state";
 import {
@@ -18,31 +17,17 @@ import {
 import { Button } from "~/components/ui/button";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { useUserCountry } from "~/hooks/useUserCountry";
-import { CountryActionsMenu } from "~/components/mycountry/dossier/CountryActionsMenu";
 import { CountryDataProvider, useCountryData } from "~/components/mycountry/primitives";
-import { CountryHeader } from "../_components/CountryHeader";
-import { CountryTabs } from "../_components/CountryTabs";
 import { ProfileShellProvider, type ProfileShellValue } from "../_components/ProfileShellContext";
 import { useCountryPageState } from "../_hooks/useCountryPageState";
 import { toCountrySlug } from "../_types";
 import { Card } from "~/components/ui/card";
 
-/** Breadcrumb labels for the deep-dive routes (the Factbook overview is the country's name). */
-const SEGMENT_LABEL: Record<string, string> = {
-  factbook: "Factbook",
-  dossier: "Dossier",
-  activity: "Activity",
-};
-
 /**
  * CountryProfileLayout — persistent country shell (route group `(profile)`). Owns the country
- * query (`CountryDataProvider`), the breadcrumb and Country Actions, and shares the resolved
- * country, flag, ownership and cover with the routes below (`ProfileShellProvider`).
- *
- * - `/countries/[slug]` (this layout's own page) is the Factbook tab's overview, which brings its
- *   hero, tabs and section pills itself (`CommandProfileView`).
- * - `/factbook/<section>`, `/dossier` and `/activity` are the deep-dives: they get the country
- *   header and the tabs here, then render their own route pages.
+ * query (`CountryDataProvider`) and the breadcrumb, and shares the resolved country, flag,
+ * ownership and cover with the routes below (`ProfileShellProvider`). Every tab page (`/`,
+ * `/map`, `/lore`, `/history`) renders the same `CountryDocument`; the old addresses redirect.
  *
  * Every state shares `PAGE_COLUMN`: the page has no Inspector, so it gives the shell's reserved
  * Inspector gutter back and runs from the sidebar to the right edge, capped at 1600px.
@@ -82,15 +67,7 @@ function ProfileShellSkeleton() {
   );
 }
 
-function ProfileBreadcrumb({
-  slug,
-  name,
-  sectionLabel,
-}: {
-  slug: string;
-  name: string;
-  sectionLabel: string | undefined;
-}) {
+function ProfileBreadcrumb({ name }: { name: string }) {
   return (
     <Breadcrumb>
       <BreadcrumbList>
@@ -101,22 +78,8 @@ function ProfileBreadcrumb({
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          {sectionLabel ? (
-            <BreadcrumbLink asChild>
-              <Link href={`/countries/${slug}`}>{name}</Link>
-            </BreadcrumbLink>
-          ) : (
-            <BreadcrumbPage>{name}</BreadcrumbPage>
-          )}
+          <BreadcrumbPage>{name}</BreadcrumbPage>
         </BreadcrumbItem>
-        {sectionLabel && (
-          <>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{sectionLabel}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </>
-        )}
       </BreadcrumbList>
     </Breadcrumb>
   );
@@ -126,21 +89,13 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
   const { country, isLoading, error, currentIxTime } = useCountryData();
   const { userProfile } = useUserCountry();
   const { flagUrl: serviceFlag } = useFlag(country?.name || "");
-  // null on the Factbook overview; "factbook" | "dossier" | "activity" on a deep-dive.
-  const segment = useSelectedLayoutSegment();
   const flagUrl: string | null = country?.flag || serviceFlag || null;
 
   usePageTitle({
     title: country ? `${country.name.replace(/_/g, " ")}` : "Country profile",
   });
 
-  const {
-    showCountryActions,
-    setShowCountryActions,
-    bannerMode,
-    resolvedBannerUrl,
-    setBannerMode,
-  } = useCountryPageState(country, flagUrl);
+  const { bannerMode, resolvedBannerUrl, setBannerMode } = useCountryPageState(country, flagUrl);
 
   const isOwnCountry = !!country?.id && userProfile?.countryId === country.id;
 
@@ -196,37 +151,13 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
   }
 
   const name = country.name.replace(/_/g, " ");
-  const sectionLabel = segment ? SEGMENT_LABEL[segment] : undefined;
 
   return (
     <ProfileShellProvider value={shell}>
       <div {...PAGE_COLUMN}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <ProfileBreadcrumb slug={slug} name={name} sectionLabel={sectionLabel} />
-
-          <Button variant="default" size="sm" onClick={() => setShowCountryActions(true)}>
-            <Users aria-hidden />
-            {isOwnCountry ? "Country management" : "Country actions"}
-          </Button>
-        </div>
-
-        {segment !== null && (
-          <>
-            <CountryHeader />
-            <CountryTabs countrySlug={slug} />
-          </>
-        )}
+        <ProfileBreadcrumb name={name} />
         {children}
       </div>
-
-      <CountryActionsMenu
-        targetCountryId={country.id}
-        targetCountryName={country.name}
-        viewerCountryId={userProfile?.countryId ?? undefined}
-        isOpen={showCountryActions}
-        onClose={() => setShowCountryActions(false)}
-        isOwnCountry={isOwnCountry}
-      />
     </ProfileShellProvider>
   );
 }

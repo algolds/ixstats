@@ -2,7 +2,7 @@
 
 /**
  * useCountryProfileLayer — the one data layer behind the country profile (`/countries/[slug]`,
- * `CommandProfileView`). It fans out the public read queries in parallel and assembles a single
+ * `CountryDocument`). It fans out the public read queries in parallel and assembles a single
  * model — identity, lore, vitals, land, state, world, chronicle and a small owner layer.
  *
  * Rules (docs: src/app/countries/README.md, "Country profile"):
@@ -192,6 +192,13 @@ type GeoBundle = RouterOutputs["countryGeo"]["getCountryGeoBundle"];
 type Row = Record<string, unknown>;
 const rows = (value: unknown): Row[] => (Array.isArray(value) ? (value as Row[]) : []);
 
+/** A story pin's `[lng, lat]` (stored as Json), or null when it is not a pair of numbers. */
+function lngLat(value: unknown): [number, number] | null {
+  return Array.isArray(value) && typeof value[0] === "number" && typeof value[1] === "number"
+    ? [value[0], value[1]]
+    : null;
+}
+
 function toLand(bundle: GeoBundle | undefined, isLoading: boolean) {
   const cities = rows(bundle?.cities).map((c) => ({
     id: String(c.id),
@@ -223,6 +230,7 @@ function toLand(bundle: GeoBundle | undefined, isLoading: boolean) {
       year: typeof p.ixTimeYear === "number" ? p.ixTimeYear : null,
       eraLabel: str(p.eraLabel),
       excerpt: str(p.content)?.slice(0, 220) ?? null,
+      coordinates: lngLat(p.coordinates),
     })),
     neighbors: rows(bundle?.neighbors).map((n) => ({
       name: String(n.displayName ?? n.featureId),

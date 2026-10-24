@@ -47,14 +47,25 @@ const ROLE_BORDER: Record<string, string> = {
 };
 
 /** A pill's leading picture (realm logo, profile picture), or its icon when there is none. */
-function PillImage({ src, round, fallback }: { src?: string | null; round?: boolean; fallback: ReactNode }) {
+function PillImage({
+  src,
+  round,
+  fallback,
+}: {
+  src?: string | null;
+  round?: boolean;
+  fallback: ReactNode;
+}) {
   const url = assetUrl(src);
   if (!url) return fallback;
   return (
     <img
       src={url}
       alt=""
-      className={cn("-ml-1 size-5 shrink-0 object-cover", round ? "rounded-full" : "rounded-sm object-contain")}
+      className={cn(
+        "-ml-1 size-5 shrink-0 object-cover",
+        round ? "rounded-full" : "rounded-sm object-contain"
+      )}
     />
   );
 }
@@ -126,7 +137,12 @@ function MorphPill({
  * "Unclaimed" (with "Claim this nation" when the realm takes claims). Each pill morphs open on its own to show
  * "Primary realm" or the sovereign's role. Pills on `fill-4`, so it sits on any opaque card.
  */
-export function CountryIdentityStrip({ realm, sovereign, claim, className }: CountryIdentityStripProps) {
+export function CountryIdentityStrip({
+  realm,
+  sovereign,
+  claim,
+  className,
+}: CountryIdentityStripProps) {
   const realmName = realm?.name || "Ixnay";
   const realmSlug = realm?.slug || "default";
   const isPrimary = isIxnaySlug(realmSlug);
@@ -134,7 +150,10 @@ export function CountryIdentityStrip({ realm, sovereign, claim, className }: Cou
   const role = sovereign?.role ?? undefined;
 
   return (
-    <nav aria-label="Realm and sovereign" className={cn("flex flex-wrap items-center gap-2", className)}>
+    <nav
+      aria-label="Realm and sovereign"
+      className={cn("flex flex-wrap items-center gap-2", className)}
+    >
       <MorphPill
         href={`/r/${realmSlug}`}
         icon={

@@ -37,9 +37,11 @@ feed tab are not reflected in the URL.
 
 ## Key features
 
-- **Nation hero** (`hero/DashboardHero.tsx`): embedded country map
-  (`CountryMapEmbed`), flag, leader, cosmetics, a "MyCountry" link, and
-  `HeroSnapshotPanels` — a telemetry header bar, four vitality rings (opening
+- **Nation hero** (`hero/DashboardHero.tsx`): renders the shared
+  `CountryHeroCard` (`src/components/shared/country-hero/`, also the country
+  page's header) with the embedded country map (`CountryMapEmbed`) in its media
+  slot, the flag, name and cosmetics, a "MyCountry" link, and
+  `HeroSnapshotPanels`: a telemetry header bar, four vitality rings (opening
   the GDP / population / government-spending / vitality breakdown modals), and
   an executive telemetry micro-bar. The hero is collapsible and starts collapsed
   when the nation has no linked map territory (`countries.getMapLinkStatus`).
@@ -75,7 +77,7 @@ Key files (all under `src/components/dashboard/`):
 | Component                                               | Role                                                                   |
 | ------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `DashboardRouter.tsx`                                   | Top-level orchestration (global stats, map-link status, hero collapse) |
-| `hero/DashboardHero.tsx`, `hero/HeroSnapshotPanels.tsx` | Nation hero and snapshot panels                                        |
+| `hero/DashboardHero.tsx`                                | Nation hero on the shared `CountryHeroCard` (map, cosmetics, MyCountry) |
 | `DashboardColumn.tsx`                                   | Shared content layout: a plain centred column (hero, children)         |
 | `accounts/AccountsSection.tsx`                          | The Accounts section: persona list, create and settings modals         |
 | `accounts/EnhancedAccountManager.tsx`, `accounts/AccountCreationModal.tsx`, `accounts/AccountSettingsModal.tsx`, `accounts/AccountManagerModal.tsx` | Persona management dialogs |

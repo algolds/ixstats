@@ -30,12 +30,15 @@ The public Vault card collection gallery is gone: players' showcases live in the
 
 ## 2. The country profile
 
-`/countries/[slug]` is the **Factbook** tab, which opens on its overview: the hero, key facts and domain tiles of the
-Command view (`CommandProfileView`). The former Profile tab was merged into the Factbook; the other Factbook sections
-(Economy, Labor, Government, Geography) follow as section pills at `/countries/[slug]/factbook/<section>`. The
-`(profile)/layout.tsx` shell loads the country through `CountryDataProvider` and shows the breadcrumb and the
-**Country Actions** menu on every profile route, inside the app's standard page column (`max-w-6xl`, `p-4 md:p-8`).
-Tabs: Factbook (Overview, Economy, Labor, Government, Geography), Dossier and Activity. `/countries/[slug]/modeling` is the economic modeling engine.
+`/countries/[slug]` is **one document, like the passport**: a face (the live map, identity, the dashboard's figures
+and the Country DNA row), the shared ribbon and one panel (`CountryDocument`). The ribbon's four tabs each have
+their own URL and switch in place: **Factbook** (`/countries/[slug]`: three snapshot blocks, Economy & people, State
+and Foreign affairs, each opening its full detail in a sheet, `?sheet=`), **Map** (`/map`), **Lore** (`/lore`: the
+wiki article as one reading column) and **History** (`/history`: chronicle and feed as one timeline). Visitors get
+**Country actions** on the face; the owner's **Manage** turns the face over to the cover choice, the owner strip
+and the editor. `(profile)/layout.tsx` loads the country through `CountryDataProvider` and shows the breadcrumb.
+The old `/activity`, `/dossier` and `/factbook/<section>` addresses redirect. `/countries/[slug]/modeling` is the
+economic scenario sandbox, linked from the Economy & people sheet.
 
 The README linked above lists every tile and its data source. In summary:
 
@@ -48,14 +51,14 @@ The README linked above lists every tile and its data source. In summary:
 | Rankings and relations | `mycountry.getRankings`, `diplomaticCore.getRelationships`, `diplomaticEmbassies.getEmbassies` |
 | Lore | `wikios.getWikitext` (IxWiki), else `wikiCache.getCountryProfile` |
 | Chronicle | Infobox dates, story pins, directives, resolved issues, `mycountry.getCanonFeed` |
-| Activity tab | `activities.getCountryActivity` |
+| History tab (feed) | `activities.getCountryActivity` |
 
 Missing data renders an empty state or drops the section; the profile shows no sample figures.
 
-**Dossier.** `/countries/[slug]/dossier` renders `DossierTab`: wiki sections synced from the nation's article, plus a
-**Native canvas lore** view. Native lore documents are written in the Canvas editor (`NativeLoreCanvasModal`, which
-wraps `WikiVisualEditor`) or imported from `.md`, `.txt` or `.json` files. They are stored in the viewer's own
-browser (`localStorage` key `ixstats_native_lore_<country name>`, `useNativeLore`) and never sent to the server.
+**Lore.** `/countries/[slug]/lore` (formerly Dossier) reads the nation's wiki article (`useDossier`): the
+prologue as a lead, then every chapter in order, with a chapter index. The old browser-only native lore (saved in
+each viewer's localStorage) was removed on 2026-10-24; native lore returns as real WikiOS pages
+(`docs/superpowers/specs/2026-10-24-native-lore-design.md`).
 
 ## 3. Privacy: the public record
 

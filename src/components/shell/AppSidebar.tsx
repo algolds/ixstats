@@ -36,7 +36,13 @@ import {
   type NavBadges,
   type SearchParamsLike,
 } from "~/lib/navigation/app-sections";
-import { SourceList, isListed, isPending, sourceRowClassName } from "./SourceList";
+import {
+  MyCountryLinks,
+  SourceList,
+  isListed,
+  isPending,
+  sourceRowClassName,
+} from "./SourceList";
 import { SidebarFooterLinks } from "./SidebarFooterLinks";
 
 interface AppSidebarProps {
@@ -63,6 +69,8 @@ interface AppSidebarProps {
   onToggle: (id: string) => void;
   badges: NavBadges;
   onAction?: (action: NavAction) => void;
+  /** The user's public country profile (MyCountry's profile and editor buttons). */
+  countryHref?: string;
   className?: string;
 }
 
@@ -260,17 +268,22 @@ function RailApp({
           data-app={app.tint}
           className="w-64 p-2"
         >
-          <Link
-            href={app.href}
-            onClick={close}
-            className={cn(
-              sourceRowClassName,
-              focusRing,
-              "text-headline text-label hover:bg-fill-4"
+          <div className="flex items-center gap-0.5">
+            <Link
+              href={app.href}
+              onClick={close}
+              className={cn(
+                sourceRowClassName,
+                focusRing,
+                "text-headline text-label hover:bg-fill-4 flex-1"
+              )}
+            >
+              {app.label}
+            </Link>
+            {app.id === "mycountry" && list.countryHref && (
+              <MyCountryLinks countryHref={list.countryHref} onNavigate={close} />
             )}
-          >
-            {app.label}
-          </Link>
+          </div>
           <SourceList {...list} variant="popover" app={app} onNavigate={close} />
         </PopoverContent>
       </Popover>
@@ -291,6 +304,7 @@ export function AppSidebar({
   onToggle,
   badges,
   onAction,
+  countryHref,
   className,
 }: AppSidebarProps) {
   const current = getVisibleAppForPath(pathname, apps);
@@ -299,7 +313,7 @@ export function AppSidebar({
   const isCollapsed = collapsed ?? false;
   const mainApps = apps.filter((app) => app.placement !== "footer");
   const footerApps = apps.filter((app) => app.placement === "footer");
-  const list = { pathname, searchParams, apps, expanded, onToggle, badges, onAction };
+  const list = { pathname, searchParams, apps, expanded, onToggle, badges, onAction, countryHref };
 
   return (
     <aside

@@ -21,19 +21,20 @@ To find other realms, search across them or join one, choose **Explore**, which 
 
 ## A country's profile
 
-Select a nation to open its profile at `/countries/<name>`. The header shows its flag, name, key figures and, if it has an active owner, the owner's top achievement ribbons. The profile has three tabs:
+Select a nation to open its profile at `/countries/<name>`. The profile reads like a passport: the top shows its map, flag, name, key figures and standing (and, if it has an active owner, the owner's top achievement ribbons), and four tabs sit underneath:
 
 | Tab | What's there |
 | --- | --- |
-| **Factbook** | Opens on the **Overview**: the nation at a glance, with its vitals, economy, government, land, relations and chronicle. The other pages hold the full figures for **Economy**, **Labor**, **Government** and **Geography** |
-| **Dossier** | Its lore from the wiki, plus lore documents you write in the [Canvas editor](/help/mycountry/canvas-editor), which are kept in your own browser |
-| **Activity** | Its recent activity and history |
+| **Factbook** | The nation at a glance: **Economy & people**, **State** and **Foreign affairs**. Choose **More** on any of them for the full figures |
+| **Map** | Its territory, land facts, regions and map stories. Choose a region or a story to fly the map there |
+| **Lore** | Its wiki article, chapter by chapter |
+| **History** | Its chronicle and recent activity as one timeline |
 
 Every figure comes from live data. Visitors see the nation's public record only: enacted directives and resolved national issues, not drafts, open issues or detailed budgets.
 
 ## Country Actions
 
-Open **Country Actions** on another nation's profile to:
+Choose **Country actions** on another nation's profile to:
 
 - **Follow Nation** to see its activity in your Following feed.
 - **Establish an embassy** there. See [Embassies](/help/diplomacy/embassies).
@@ -41,7 +42,7 @@ Open **Country Actions** on another nation's profile to:
 - **Request a meeting** or **congratulate** them on an achievement.
 - **Copy Profile Link**, or open the nation's wiki article.
 
-On your own nation the menu is called **Country Management**.
+On your own nation the button is **Manage**: it turns the profile's top over to your cover choice, your private to-dos and a link to edit your country.
 
 ## Other ways to explore
 

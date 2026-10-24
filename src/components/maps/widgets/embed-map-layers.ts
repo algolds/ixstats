@@ -484,3 +484,35 @@ export function populateEmbedMap(map: MapLibreMap, o: EmbedLayerOptions) {
     });
   }
 }
+
+type Nested = number | readonly Nested[];
+type Box = [[number, number], [number, number]];
+
+/** The [[minLng, minLat], [maxLng, maxLat]] box around every coordinate of a geometry. */
+export function geometryBounds(geometry: Geometry): Box | null {
+  let box: Box | null = null;
+  const add = (lng: number, lat: number) => {
+    box = box
+      ? [
+          [Math.min(box[0][0], lng), Math.min(box[0][1], lat)],
+          [Math.max(box[1][0], lng), Math.max(box[1][1], lat)],
+        ]
+      : [
+          [lng, lat],
+          [lng, lat],
+        ];
+  };
+  const visit = (value: Nested): void => {
+    if (typeof value === "number") return;
+    const [lng, lat] = value;
+    if (typeof lng === "number" && typeof lat === "number") add(lng, lat);
+    else value.forEach(visit);
+  };
+  if (geometry.type === "GeometryCollection") {
+    for (const part of geometry.geometries) {
+      const b = geometryBounds(part);
+      if (b) visit(b);
+    }
+  } else visit(geometry.coordinates);
+  return box;
+}

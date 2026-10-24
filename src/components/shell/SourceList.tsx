@@ -8,9 +8,10 @@
 import * as React from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { NavArrowLeft, NavArrowRight } from "iconoir-react";
+import { EditPencil, NavArrowLeft, NavArrowRight, ProfileCircle } from "iconoir-react";
 import { cn } from "~/lib/utils/cn";
 import { focusRing } from "~/components/ui/button";
+import { Tooltip } from "~/components/ui/tooltip";
 import { springSmooth } from "~/lib/design/motion";
 import { StreakPill } from "~/components/vault/StreakPill";
 import {
@@ -68,9 +69,14 @@ interface SourceListProps {
   variant?: "sidebar" | "sheet" | "popover";
   /** The single app whose sections a popover lists. */
   app?: AppDefinition;
+  /** The user's public country profile; puts profile and editor buttons on the MyCountry row. */
+  countryHref?: string;
 }
 
-type Ctx = Pick<SourceListProps, "badges" | "onAction" | "onNavigate" | "expanded" | "onToggle"> & {
+type Ctx = Pick<
+  SourceListProps,
+  "badges" | "onAction" | "onNavigate" | "expanded" | "onToggle" | "countryHref"
+> & {
   /** Section ids repeat across apps, so a current section only counts inside its own app. */
   activeAppId: string | undefined;
   activeSectionId: string | undefined;
@@ -102,6 +108,41 @@ function Trailing({ badge }: { badge: NavBadge | undefined }) {
   // Only the `action` kind is left (the union is count | action): the streak pill, else the label as text.
   if (badge.streak) return <StreakPill streak={badge.streak} />;
   return <span className="text-footnote text-label-secondary tabular-nums">{badge.label}</span>;
+}
+
+const trailingButtonClassName = cn(
+  focusRing,
+  "rounded-control text-label-secondary hover:bg-fill-4 hover:text-label grid size-8 shrink-0 place-items-center transition-[background-color,color,scale] duration-fast ease-out-facet active:scale-[0.96] motion-reduce:active:scale-100 pointer-coarse:size-11"
+);
+
+/** The public profile and the editor, as icon buttons beside the MyCountry row (and its rail popover). */
+export function MyCountryLinks({
+  countryHref,
+  onNavigate,
+}: {
+  countryHref: string;
+  onNavigate?: () => void;
+}) {
+  const links = [
+    { href: countryHref, label: "Public profile", Icon: ProfileCircle },
+    { href: "/mycountry/editor", label: "Editor", Icon: EditPencil },
+  ];
+  return (
+    <span className="flex shrink-0">
+      {links.map(({ href, label, Icon }) => (
+        <Tooltip key={href} content={label}>
+          <Link
+            href={href}
+            aria-label={label}
+            onClick={onNavigate}
+            className={trailingButtonClassName}
+          >
+            <Icon aria-hidden className="size-4" />
+          </Link>
+        </Tooltip>
+      ))}
+    </span>
+  );
 }
 
 function ActionRow({ section, action, ctx }: { section: Section; action: NavAction; ctx: Ctx }) {
@@ -283,10 +324,23 @@ function SectionRows({
 
 function AppRow({ app, isCurrent, ctx }: { app: AppDefinition; isCurrent: boolean; ctx: Ctx }) {
   const hasSections = app.sections.length > 0;
-  const open = hasSections && (isCurrent || ctx.expanded.has(app.id));
+  // MyCountry's profile and editor buttons take the expand chevron's place (the row has no room for
+  // both), so outside MyCountry its sections stay closed and the pending dot rides on the mark.
+  const countryHref = app.id === "mycountry" ? ctx.countryHref : undefined;
+  const open = hasSections && (isCurrent || (!countryHref && ctx.expanded.has(app.id)));
   const listId = `source-list-${ctx.indicatorId}-${app.id}`;
   const appBadge = app.badge ? ctx.badges[app.badge] : undefined;
   const pendingInside = app.sections.some((s) => s.badge && isPending(ctx.badges[s.badge]));
+  const dot = !open && pendingInside && (
+    <span
+      role="img"
+      aria-label="Has updates"
+      className={cn(
+        "bg-tint size-2 shrink-0 rounded-full",
+        countryHref && "ring-background absolute -top-0.5 -right-0.5 ring-2"
+      )}
+    />
+  );
   const Icon = app.icon;
   return (
     <li>
@@ -298,40 +352,40 @@ function AppRow({ app, isCurrent, ctx }: { app: AppDefinition; isCurrent: boolea
           className={cn(
             sourceRowClassName,
             focusRing,
-            "flex-1",
+            "min-w-0 flex-1",
             isCurrent ? "text-label font-semibold" : "text-label hover:bg-fill-4"
           )}
         >
           <NavMark current={isCurrent} tint={app.tint}>
             <Icon aria-hidden className="size-5" />
+            {countryHref && dot}
           </NavMark>
           <span className="min-w-0 flex-1 truncate">{app.label}</span>
           <Trailing badge={appBadge} />
-          {!open && pendingInside && (
-            <span
-              role="img"
-              aria-label="Has updates"
-              className="bg-tint size-2 shrink-0 rounded-full"
-            />
-          )}
+          {!countryHref && dot}
         </Link>
-        {hasSections && !isCurrent && (
-          <button
-            type="button"
-            aria-expanded={open}
-            aria-controls={listId}
-            aria-label={`${open ? "Collapse" : "Expand"} ${app.label}`}
-            onClick={() => ctx.onToggle(app.id)}
-            className={cn(
-              focusRing,
-              "rounded-control text-label-secondary hover:bg-fill-4 grid size-9 shrink-0 place-items-center pointer-coarse:size-11"
-            )}
-          >
-            <NavArrowRight
-              aria-hidden
-              className={cn("duration-fast size-4 transition-transform", open && "rotate-90")}
-            />
-          </button>
+        {countryHref ? (
+          <MyCountryLinks countryHref={countryHref} onNavigate={ctx.onNavigate} />
+        ) : (
+          hasSections &&
+          !isCurrent && (
+            <button
+              type="button"
+              aria-expanded={open}
+              aria-controls={listId}
+              aria-label={`${open ? "Collapse" : "Expand"} ${app.label}`}
+              onClick={() => ctx.onToggle(app.id)}
+              className={cn(
+                focusRing,
+                "rounded-control text-label-secondary hover:bg-fill-4 grid size-9 shrink-0 place-items-center pointer-coarse:size-11"
+              )}
+            >
+              <NavArrowRight
+                aria-hidden
+                className={cn("duration-fast size-4 transition-transform", open && "rotate-90")}
+              />
+            </button>
+          )
         )}
       </div>
       {hasSections && (
@@ -412,6 +466,7 @@ export function SourceList({
   onNavigate,
   variant = "sidebar",
   app,
+  countryHref,
 }: SourceListProps) {
   const { current, activeSectionId } = resolveCurrent(pathname, searchParams, apps, badges);
   const ctx: Ctx = {
@@ -420,6 +475,7 @@ export function SourceList({
     onNavigate,
     expanded,
     onToggle,
+    countryHref,
     activeAppId: current?.id,
     activeSectionId,
     // One pill per list: a shared layoutId would make it glide between the rail's separate popovers.

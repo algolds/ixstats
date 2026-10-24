@@ -270,7 +270,7 @@ const MONTHS = [
 ];
 
 /** IxTime ms → fractional in-game year. IxTime is a UTC timestamp on the in-game calendar. */
-function ixTimeToYear(ixTime: number): number {
+export function ixTimeToYear(ixTime: number): number {
   const d = new Date(ixTime);
   const start = Date.UTC(d.getUTCFullYear(), 0, 1);
   return d.getUTCFullYear() + (ixTime - start) / MS_PER_YEAR;
@@ -332,7 +332,7 @@ function excerpt(text: string | null | undefined, max = 180): string | null {
   return clean.length > max ? `${clean.slice(0, max - 1).trimEnd()}…` : clean;
 }
 
-function yearLabel(year: number): string {
+export function yearLabel(year: number): string {
   return year < 0 ? `${Math.abs(year)} BC` : String(year);
 }
 
