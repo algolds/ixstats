@@ -1,6 +1,6 @@
 /**
  * An in-memory `lorewardEntry` table for the Lorewards sync tests. It answers the `where` shapes the sync uses
- * (equality, `in`, `startsWith`, `gte` and `lte`, `not: null`, `OR`, the `date_type` key), so a test reads what a
+ * (equality, `in`, `startsWith`, `gte` and `lte`, `not: null`, `AND`, `OR`, the `date_type` key), so a test reads what a
  * query really selects instead of a canned answer.
  */
 
@@ -58,11 +58,14 @@ function holds(value: Field, condition: Condition): boolean {
   return value !== null;
 }
 
-/** Whether `row` meets `where`: every field condition, and one of `OR` when given. */
+/** Whether `row` meets `where`: every field condition, every one of `AND` and one of `OR` when given. */
 export function matches(row: StoredEntry, where: Where): boolean {
   return Object.entries(where).every(([field, condition]) => {
     if (condition === undefined) return true;
-    if (Array.isArray(condition)) return condition.some((branch) => matches(row, branch));
+    if (Array.isArray(condition)) {
+      const meets = (branch: Where) => matches(row, branch);
+      return field === "AND" ? condition.every(meets) : condition.some(meets);
+    }
     return holds(fieldOf(row, field), condition);
   });
 }
