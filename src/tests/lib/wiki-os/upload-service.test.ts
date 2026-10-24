@@ -45,6 +45,7 @@ import { scheduleMirrorKick, uploadPayloadSchema } from "~/lib/wiki-os/services/
 import { UploadError } from "~/lib/wiki-os/services/upload-error";
 import { uploadFile, type UploadRequest } from "~/lib/wiki-os/services/upload-service";
 import { fakeWikiDb } from "~/tests/helpers/fake-wiki-db";
+import { seedWikiosMode } from "~/tests/helpers/wikios-modes";
 import { MediaAssetService } from "~/lib/wiki-os/core/media-asset-service";
 
 const { tables } = fakeWikiDb;
@@ -90,8 +91,12 @@ afterAll(() => {
   delete process.env.WIKIOS_UPLOAD_DIR;
 });
 
-beforeEach(() => {
+let restoreMode: () => void = () => undefined;
+afterEach(() => restoreMode());
+beforeEach(async () => {
   fakeWikiDb.reset();
+  // v1 with the protections marker the rights import writes (without it WikiOS takes no write)
+  restoreMode = await seedWikiosMode(fakeWikiDb.db, "v1");
   for (const name of readdirSync(directory)) rmSync(join(directory, name), { force: true });
   jest.mocked(authorizeAction).mockClear().mockResolvedValue(undefined);
   jest

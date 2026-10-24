@@ -57,9 +57,10 @@ unless set to `true`** (`src/lib/wiki-os/v1-switch.ts`). Step 6b turns it on.
 **Unsafe before the cutover:**
 
 - Turning `WIKIOS_V1_ENABLED` on before steps 1, 3 and 4. Writes would queue in an outbox with no mirror account, api.php
-  would hand out pages without ids, and background renders would go to the public MediaWiki.
-- Turning the editing toggle on before steps 1, 1b and 3. The toggle refuses only when step 3's mirror settings are
-  missing; it does not check steps 1 and 1b (see below).
+  would hand out pages without ids, and background renders would go to the public MediaWiki. (Writes themselves wait for
+  the protections marker of steps 1 and 1b, see below, but the renders do not.)
+- Steps 1 and 1b are mandatory before any WikiOS write. Until step 1b's `--yes` run has written the protections marker,
+  WikiOS refuses every write in both modes, `WIKIOS_V1_ENABLED` included, and the editing toggle refuses to turn on.
 - `NEXT_PUBLIC_WIKIOS_STANDALONE` in any env file (see step 5).
 
 **The editing toggle (before the cutover):**
@@ -72,15 +73,14 @@ unless set to `true`** (`src/lib/wiki-os/v1-switch.ts`). Step 6b turns it on.
   the mirror, which copies it to classic MediaWiki. Inbound sync, background renders, search and the other readers stay
   on `WIKIOS_V1_ENABLED`. Add `wiki-mirror` to `CRON_ENABLED_JOBS` before the first flip; without it the outbox drains
   only through the in-process run a couple of seconds after each write.
-- **Precondition.** It cannot be turned on while `WIKIOS_MEDIAWIKI_BOT_USER` or `WIKIOS_MEDIAWIKI_BOT_TOKEN` is unset
-  (step 3c); the page lists the missing names. `WIKIOS_MEDIAWIKI_API` is optional: unset, the mirror writes to the
-  internal `api.php`.
-- **Protections caveat.** Run steps 1 (its default protections backfill) and 1b (the rights import, which also copies
-  protections) before the first flip. The toggle does not check them. Until they have run, WikiOS knows only the
-  protections it has seen in MediaWiki's log since its sync started: a page MediaWiki protected before then is
-  unprotected in WikiOS, anyone with wiki rights can edit it there, and the mirror account pushes the edit to MediaWiki
-  past its protection. Template, Module, MediaWiki, File, Project and Help pages are still guarded by the namespace
-  rights. The confirmation dialog says the same.
+- **Preconditions.** It cannot be turned on before the protections import (steps 1 and 1b: the SystemConfig row
+  `wikios_protections_imported_at`, written by step 1b's `--yes` run), nor while `WIKIOS_MEDIAWIKI_BOT_USER` or
+  `WIKIOS_MEDIAWIKI_BOT_TOKEN` is unset (step 3c); the page says which is missing. `WIKIOS_MEDIAWIKI_API` is optional:
+  unset, the mirror writes to the internal `api.php`.
+- **Why the protections come first.** Without them WikiOS knows only the protections it has seen in MediaWiki's log since
+  its sync started: a page MediaWiki protected before then would be open in WikiOS, and the mirror account would push the
+  edit to MediaWiki past its protection. So until the marker exists every WikiOS write (in both modes) is refused with
+  MediaWiki's `readonly` error, saying it waits for the protections import.
 - **Turning it off.** New WikiOS edits are refused; jobs already in the outbox keep draining to MediaWiki. To make them
   wait instead, set `SKIP_MEDIAWIKI_SYNC=true` (restart `ixstats-cron`, `wikios` and IxStates) or drop `wiki-mirror` from
   `CRON_ENABLED_JOBS`.
@@ -154,6 +154,9 @@ The baseline is for step 11. **Rollback:** nothing changed.
 
 ## 1. Apply the WikiOS SQL migrations
 
+**Mandatory before any WikiOS write.** Its `2026-09-30-wikios-rights.sql` backfills an `edit` restriction for every page
+whose legacy protection is still in force; step 1b refuses to run until it has.
+
 The WikiOS plans add hand-written, idempotent SQL under `prisma/manual-migrations/`. Take a dump first, then apply
 the files in filename order, **except `2026-09-30-wikios-lead-image-canonical-path.sql`**: its header says to run it after
 the code is deployed, so it is its own step after step 5 (5b below) and the loop leaves it out:
@@ -182,6 +185,8 @@ uploaded file; the new `upload` mirror job kind needs no DDL).
 restore the dump taken above (`pg_restore` into a scratch database first; never `docker system prune`).
 
 ## 1b. Import the MediaWiki rights (plan 409), after checking who vouched for each name
+
+**Mandatory before any WikiOS write.** Its `--yes` run writes the protections marker WikiOS waits for (below).
 
 `scripts/wikios-import-rights.ts` copies MediaWiki group memberships, protections and blocks into WikiOS. Its group and
 block rows are keyed by wiki username alone; they reach an IxStates account through its **approved old IxWiki name
@@ -237,9 +242,22 @@ Then dry-run the import, read its plan, and write:
 ( cd "$IX" && bun scripts/wikios-import-rights.ts --api https://ixwiki.com/api.php --yes )    # prints the DB host, then writes
 ```
 
+The `--yes` run first checks that step 1's backfill ran: if a protected page has no `edit` restriction it stops with
+"Run step 1 (2026-09-30-wikios-rights.sql) first: N protected pages have no edit restriction" and writes nothing. After the
+import it writes the protections marker, the SystemConfig row `wikios_protections_imported_at` (`{ at, restrictions }`).
+Every process reads it within 15 seconds; until then WikiOS takes no write in either mode. Check it:
+
+```bash
+# read-only: expect one row
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -c \
+  "select value from \"SystemConfig\" where key = 'wikios_protections_imported_at'"
+```
+
 **Rollback:** the import only adds rows, and a re-run adds what is missing without overwriting a decision made in
 WikiOS. Its group and block rows carry `source = 'mw-import'` (`delete from wiki_user_groups where source = 'mw-import'`,
 the same for `wiki_blocks`); the restriction rows it adds are not marked, so undo those from the dump taken in step 1.
+Deleting the marker (`delete from "SystemConfig" where key = 'wikios_protections_imported_at'`) makes WikiOS read-only
+again within 15 seconds.
 
 ## 1c. The api.php session secret (plan 410), before bots use `/w/api.php`
 
@@ -653,7 +671,8 @@ made from the command line, by jobs or by imports do not announce themselves (no
 
 ## 6b. Switch WikiOS v1 on
 
-Only after steps 1 (SQL), 3 (mirror account), 4 (render engine) and 6 (webhook). The switch goes into the env file that
+Only after steps 1 (SQL), 1b (rights import and its protections marker), 3 (mirror account), 4 (render engine) and 6
+(webhook). Without the marker the switch takes no writes: api.php keeps answering `readonly`. The switch goes into the env file that
 IxStates, `ixstats-cron` and the `wikios` process all read (`$WK/.env.production.local` is a link to it, step 5). From here
 on WikiOS takes edits, the mirror copies them to MediaWiki, a conflicting MediaWiki edit is parked, and api.php answers.
 

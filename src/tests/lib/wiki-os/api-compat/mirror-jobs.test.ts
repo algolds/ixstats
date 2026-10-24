@@ -45,6 +45,7 @@ import { join } from "node:path";
 import { createApiDeps } from "~/lib/wiki-os/api-compat/deps";
 import { scheduleMirrorKick } from "~/lib/wiki-os/services/mirror-outbox";
 import { fakeWikiDb } from "~/tests/helpers/fake-wiki-db";
+import { seedWikiosMode } from "~/tests/helpers/wikios-modes";
 import type { RequestFile } from "~/lib/wiki-os/api-compat/types";
 import { loggedIn, makeWikiDeps, type FakeWikiData } from "./harness";
 
@@ -146,9 +147,13 @@ afterAll(() => {
   delete process.env.WIKIOS_UPLOAD_DIR;
 });
 
-beforeEach(() => {
+let restoreMode: () => void = () => undefined;
+afterEach(() => restoreMode());
+beforeEach(async () => {
   jest.clearAllMocks();
   fakeWikiDb.reset();
+  // v1 with the protections marker the rights import writes (without it WikiOS takes no write)
+  restoreMode = await seedWikiosMode(fakeWikiDb.db, "v1");
   for (const name of readdirSync(uploadDirectory))
     rmSync(join(uploadDirectory, name), { force: true });
   insertedInTransaction = [];

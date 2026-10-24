@@ -24,8 +24,7 @@ import { handleApiRequest, type ApiRequestInput } from "~/lib/wiki-os/api-compat
 import type { RequestFile } from "~/lib/wiki-os/api-compat/types";
 import { MAX_UPLOAD_BYTES } from "~/lib/wiki-os/config";
 import { API_DOCREF } from "~/lib/wiki-os/api-compat/format";
-import { refreshWikiosEditingFlag } from "~/lib/wiki-os/editing-switch";
-import { WIKIOS_READONLY_REASON } from "~/lib/wiki-os/v1-switch";
+import { refreshWikiosEditingFlag, wikiosReadonlyReason } from "~/lib/wiki-os/editing-switch";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -192,7 +191,7 @@ async function handle(req: NextRequest): Promise<NextResponse> {
   // MediaWiki's read-only error to every request.
   if (!(await refreshWikiosEditingFlag())) {
     return NextResponse.json(
-      { error: { code: "readonly", info: WIKIOS_READONLY_REASON, "*": API_DOCREF } },
+      { error: { code: "readonly", info: wikiosReadonlyReason(), "*": API_DOCREF } },
       { status: 503, headers: jsonHeaders("readonly") }
     );
   }

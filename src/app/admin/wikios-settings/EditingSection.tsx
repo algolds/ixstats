@@ -38,7 +38,7 @@ export function EditingSection() {
   const switchDisabled =
     !status ||
     status.forcedByEnv ||
-    (!status.enabled && !status.mirrorConfigured) ||
+    (!status.enabled && (!status.mirrorConfigured || !status.protectionsImported)) ||
     setEditing.isPending;
 
   return (
@@ -76,6 +76,11 @@ export function EditingSection() {
           {status.forcedByEnv && (
             <p className="text-label-secondary text-footnote">Forced on by WIKIOS_V1_ENABLED</p>
           )}
+          {!status.protectionsImported && (
+            <p className="text-label-secondary text-footnote">
+              WikiOS takes no edits until the protections import has run (runbook steps 1 and 1b).
+            </p>
+          )}
           {!status.mirrorConfigured && (
             <p className="text-label-secondary text-footnote">
               The MediaWiki mirror is not configured: {status.missing.join(", ")}.
@@ -93,7 +98,7 @@ export function EditingSection() {
             </AlertDialogTitle>
             <AlertDialogDescription className="text-footnote">
               {pending
-                ? "Anyone with wiki rights can edit in WikiOS. Every edit is copied to classic MediaWiki. Page protections set in MediaWiki before WikiOS started syncing are not enforced until the protections backfill (cutover runbook steps 1 and 1b) has run."
+                ? "Anyone with wiki rights can edit in WikiOS. Every edit is copied to classic MediaWiki."
                 : "New WikiOS edits are refused. Edits already made keep copying to MediaWiki."}
             </AlertDialogDescription>
           </AlertDialogHeader>

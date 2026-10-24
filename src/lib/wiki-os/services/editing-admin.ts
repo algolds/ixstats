@@ -1,6 +1,7 @@
 /**
  * The admin side of the WikiOS editing switch (editing-switch.ts): status for /admin/wikios-settings, and the flip,
- * which refuses to turn editing on before the mirror can write, writes an AdminAuditLog row, and DMs the admin.
+ * which refuses to turn editing on before the protections import has run or the mirror can write, writes an
+ * AdminAuditLog row, and DMs the admin.
  */
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
@@ -10,6 +11,7 @@ import {
   isWikiosEditingForcedByEnv,
   refreshWikiosEditingFlag,
   setWikiosEditingFlag,
+  wikiosProtectionsImported,
 } from "~/lib/wiki-os/editing-switch";
 import { db } from "~/server/db";
 import { mirrorMissingSettings } from "./mirror-admin";
@@ -18,6 +20,8 @@ import { MIRROR_SOURCE } from "./mirror-outbox";
 export interface EditingStatus {
   enabled: boolean;
   forcedByEnv: boolean;
+  /** Whether the rights import wrote the protections marker (false when it could not be read either). */
+  protectionsImported: boolean;
   mirrorConfigured: boolean;
   missing: string[];
 }
@@ -28,6 +32,7 @@ export async function getEditingStatus(): Promise<EditingStatus> {
   return {
     enabled: isWikiosEditingEnabled(),
     forcedByEnv: isWikiosEditingForcedByEnv(),
+    protectionsImported: wikiosProtectionsImported() === true,
     mirrorConfigured: missing.length === 0,
     missing,
   };
@@ -46,6 +51,8 @@ export async function setEditing(
   if (before.forcedByEnv)
     refuse("WIKIOS_V1_ENABLED forces WikiOS editing on; change it in the environment.");
   if (before.enabled === enabled) return before;
+  if (enabled && !before.protectionsImported)
+    refuse("Run the protections import first (runbook steps 1 and 1b).");
   if (enabled && !before.mirrorConfigured) {
     refuse(`The MediaWiki mirror is not configured: ${before.missing.join(", ")}.`);
   }

@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
- * The both-modes harness: in each WikiOS mode editing is on, v1 is on only in the v1 mode, and the restore puts
- * WIKIOS_V1_ENABLED back as it was.
+ * The both-modes harness: in each WikiOS mode editing is on (the protections marker included), v1 is on only in the v1
+ * mode, and the restore puts WIKIOS_V1_ENABLED back as it was.
  */
 jest.mock("~/server/db", () => ({
   __esModule: true,
@@ -9,7 +9,11 @@ jest.mock("~/server/db", () => ({
 }));
 
 import { db } from "~/server/db";
-import { isWikiosEditingEnabled, refreshWikiosEditingFlag } from "~/lib/wiki-os/editing-switch";
+import {
+  isWikiosEditingEnabled,
+  refreshWikiosEditingFlag,
+  wikiosProtectionsImported,
+} from "~/lib/wiki-os/editing-switch";
 import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
 import {
   applyWikiosMode,
@@ -36,6 +40,7 @@ describe("applyWikiosMode", () => {
     await refreshWikiosEditingFlag(true);
     expect(isWikiosEditingEnabled()).toBe(true);
     expect(isWikiosV1Enabled()).toBe(mode === "v1");
+    expect(wikiosProtectionsImported()).toBe(true);
     restore();
   });
 
@@ -79,15 +84,17 @@ describe("seedWikiosMode", () => {
     const upsert = jest.fn().mockResolvedValue({});
     const restore = await seedWikiosMode({ systemConfig: { upsert } }, mode);
     expect(isWikiosV1Enabled()).toBe(mode === "v1");
-    if (mode === "editing-switch") {
-      expect(upsert).toHaveBeenCalledWith({
-        where: { key: "wikios_editing_enabled" },
-        create: { key: "wikios_editing_enabled", value: "true" },
-        update: { value: "true" },
-      });
-    } else {
-      expect(upsert).not.toHaveBeenCalled();
-    }
+    // the protections marker in both modes, the switch row only in the editing-switch mode
+    expect(upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { key: "wikios_protections_imported_at" } })
+    );
+    const switchRow = {
+      where: { key: "wikios_editing_enabled" },
+      create: { key: "wikios_editing_enabled", value: "true" },
+      update: { value: "true" },
+    };
+    if (mode === "editing-switch") expect(upsert).toHaveBeenCalledWith(switchRow);
+    else expect(upsert).not.toHaveBeenCalledWith(switchRow);
     restore();
     expect(process.env.WIKIOS_V1_ENABLED).toBe(original);
   });

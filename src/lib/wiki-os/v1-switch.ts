@@ -25,3 +25,14 @@ export function isWikiosV1Enabled(): boolean {
 /** Why a WikiOS write is refused whenever editing is off (MediaWiki's `readonly` error carries it). */
 export const WIKIOS_READONLY_REASON =
   "WikiOS editing is turned off. Classic MediaWiki is still the wiki you edit.";
+
+/**
+ * The SystemConfig row the rights import (scripts/wikios-import-rights.ts) writes once the protections exist in WikiOS:
+ * step 1's default-protections backfill checked, then step 1b's import applied. Value: JSON `{ at, restrictions }`.
+ * Until it exists WikiOS takes no write in either mode (editing-switch.ts).
+ */
+export const WIKIOS_PROTECTIONS_MARKER_KEY = "wikios_protections_imported_at";
+
+/** Why a WikiOS write is refused when editing is on but the protections import has not run. */
+export const WIKIOS_PROTECTIONS_REASON =
+  "WikiOS editing waits for the protections import (runbook steps 1 and 1b).";

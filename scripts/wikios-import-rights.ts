@@ -19,15 +19,18 @@
  *   bun scripts/wikios-import-rights.ts --api https://ixwiki.com/api.php --yes      # write
  *
  * A dry run only calls the wiki and prints the plan: it never connects to a database. `--yes` prints the
- * database host first, then upserts: a row that already exists is left exactly as it is, so a re-run adds
- * what is missing and never overwrites a decision made in WikiOS. Anything that cannot be mapped exactly
- * is listed under "Notes" (an unknown protection level becomes `sysop`: fail closed).
+ * database host first, checks that step 1's default-protections backfill ran (and writes nothing if it did not),
+ * then upserts: a row that already exists is left exactly as it is, so a re-run adds what is missing and never
+ * overwrites a decision made in WikiOS. Last it writes the protections marker (SystemConfig
+ * `wikios_protections_imported_at`), which WikiOS waits for before it takes any write. Anything that cannot be
+ * mapped exactly is listed under "Notes" (an unknown protection level becomes `sysop`: fail closed).
  */
 
 import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { canonicalizeTitle } from "../src/lib/wiki-os/core/title";
 import { normalizeWikiUsername } from "../src/lib/wiki-os/adapters/mediawiki/account-proof";
+import { WIKIOS_PROTECTIONS_MARKER_KEY } from "../src/lib/wiki-os/v1-switch";
 
 export const USER_AGENT = "IxStats-Builder";
 /** The wiki is never asked more often than this. */
@@ -531,6 +534,46 @@ export async function applyPlan(prisma: PrismaClient, plan: ImportPlan): Promise
   };
 }
 
+/**
+ * Step 1 (2026-09-30-wikios-rights.sql) backfills an `edit` restriction for every page whose legacy
+ * `protectionLevel` is still in force. Throws, before anything is written, while a protected page lacks one.
+ */
+export async function assertDefaultProtectionsApplied(prisma: PrismaClient): Promise<void> {
+  const protectedPages = await prisma.wikiArticle.findMany({
+    where: {
+      protectionLevel: { not: "ALL" },
+      OR: [{ protectionExpiry: null }, { protectionExpiry: { gt: new Date() } }],
+    },
+    select: { source: true, title: true },
+  });
+  if (protectedPages.length === 0) return;
+  const editRestrictions = await prisma.wikiRestriction.findMany({
+    where: { action: "edit" },
+    select: { source: true, title: true },
+  });
+  const restricted = new Set(editRestrictions.map((r) => `${r.source}\n${r.title}`));
+  const missing = protectedPages.filter((page) => !restricted.has(`${page.source}\n${page.title}`));
+  if (missing.length > 0) {
+    throw new Error(
+      `Run step 1 (2026-09-30-wikios-rights.sql) first: ${missing.length} protected pages have no edit restriction`
+    );
+  }
+}
+
+/** The marker WikiOS waits for before it takes a write (src/lib/wiki-os/editing-switch.ts). */
+export async function writeProtectionsMarker(
+  prisma: PrismaClient,
+  result: ApplyResult,
+  at: Date
+): Promise<void> {
+  const value = JSON.stringify({ at: at.toISOString(), restrictions: result.restrictions });
+  await prisma.systemConfig.upsert({
+    where: { key: WIKIOS_PROTECTIONS_MARKER_KEY },
+    create: { key: WIKIOS_PROTECTIONS_MARKER_KEY, value },
+    update: { value },
+  });
+}
+
 // ---------------------------------------------------------------------------
 // CLI
 // ---------------------------------------------------------------------------
@@ -585,24 +628,41 @@ function printPlan(plan: ImportPlan): void {
   sample("Notes", plan.notes, (note) => note);
 }
 
-async function runCLI(): Promise<void> {
-  const args = parseArgs(process.argv.slice(2));
+export interface CliDeps {
+  apiClient: (apiUrl: string) => ApiGet;
+  openDatabase: () => PrismaClient;
+  databaseUrl: string | undefined;
+}
+
+const defaultDeps = (): CliDeps => ({
+  apiClient: (apiUrl) => createApiClient(apiUrl),
+  openDatabase: () => new PrismaClient(),
+  databaseUrl: process.env.DATABASE_URL,
+});
+
+export async function runCLI(
+  argv: readonly string[],
+  deps: CliDeps = defaultDeps()
+): Promise<void> {
+  const args = parseArgs(argv);
   console.log(`Reading ${args.api} (read-only, one request per second)…`);
-  const plan = await buildPlan(createApiClient(args.api), new Date());
+  const plan = await buildPlan(deps.apiClient(args.api), new Date());
   printPlan(plan);
 
   if (!args.yes) {
     console.log("\nDry run: nothing was written. Re-run with --yes to write.");
     return;
   }
-  const host = databaseHost(process.env.DATABASE_URL);
+  const host = databaseHost(deps.databaseUrl);
   if (!host) throw new Error("DATABASE_URL is not set or unreadable.");
   console.log(`\nWriting to the database at ${host}…`);
-  const prisma = new PrismaClient();
+  const prisma = deps.openDatabase();
   try {
+    await assertDefaultProtectionsApplied(prisma);
     const result = await applyPlan(prisma, plan);
+    await writeProtectionsMarker(prisma, result, new Date());
     console.log(
-      `Done: ${result.groups} group rows, ${result.restrictions} restrictions, ${result.blocks} blocks.`
+      `Done: ${result.groups} group rows, ${result.restrictions} restrictions, ${result.blocks} blocks; protections marker written.`
     );
   } finally {
     await prisma.$disconnect();
@@ -610,7 +670,7 @@ async function runCLI(): Promise<void> {
 }
 
 if (import.meta.main) {
-  runCLI().catch((error: Error) => {
+  runCLI(process.argv.slice(2)).catch((error: Error) => {
     console.error(`[wikios-import-rights] failed: ${error.message}`);
     process.exitCode = 1;
   });

@@ -14,8 +14,11 @@ import {
   mapProtections,
   parseArgs,
   parseExpiry,
+  runCLI,
+  type ApiGet,
   type ImportPlan,
 } from "../../../scripts/wikios-import-rights";
+import { WIKIOS_PROTECTIONS_MARKER_KEY } from "~/lib/wiki-os/v1-switch";
 import { createFakeWikiDb } from "~/tests/helpers/fake-wiki-db";
 
 const NOW = new Date("2026-09-30T12:00:00Z");
@@ -346,5 +349,98 @@ describe("command line", () => {
     expect(databaseHost("postgresql://user:secret@db.internal/ixstats")).toBe("db.internal:5432");
     expect(databaseHost("not a url")).toBeNull();
     expect(databaseHost(undefined)).toBeNull();
+  });
+});
+
+describe("the protections marker", () => {
+  /** A wiki with one sysop-protected page and nothing else to import. */
+  const wiki: ApiGet = async (params) => {
+    if (params.meta === "siteinfo") return { query: { namespaces: { "0": { id: 0 } } } };
+    if (params.list === "allusers") return { query: { allusers: [] } };
+    if (params.list === "allpages") return { query: { allpages: [{ title: "Caphiria" }] } };
+    if (params.prop === "info") {
+      const protection = [{ type: "edit", level: "sysop", expiry: "infinity" }];
+      return { query: { pages: [{ title: "Caphiria", protection }] } };
+    }
+    if (params.list === "protectedtitles") return { query: { protectedtitles: [] } };
+    return { query: { blocks: [] } };
+  };
+
+  const setup = () => {
+    const fake = createFakeWikiDb();
+    const disconnect = jest.fn(async () => undefined);
+    const prisma = { ...fake.db, $disconnect: disconnect } as unknown as PrismaClient;
+    const deps = {
+      apiClient: () => wiki,
+      openDatabase: jest.fn(() => prisma),
+      databaseUrl: "postgresql://user:secret@localhost:5433/ixstats",
+    };
+    return { fake, deps, disconnect };
+  };
+  const yes = ["--api", "https://w/api.php", "--yes"];
+
+  let log: jest.SpyInstance;
+  beforeEach(() => {
+    log = jest.spyOn(console, "log").mockImplementation(() => {});
+  });
+  afterEach(() => log.mockRestore());
+
+  it("writes the marker after applying, with the restriction count", async () => {
+    const { fake, deps, disconnect } = setup();
+    // step 1's backfill ran: the protected page has its edit restriction
+    fake.tables.wikiArticle.seed({ source: "ixwiki", title: "Old", protectionLevel: "SYSOP" });
+    fake.tables.wikiRestriction.seed({
+      source: "ixwiki",
+      title: "Old",
+      action: "edit",
+      level: "sysop",
+    });
+    const restrictionUpsert = jest.spyOn(fake.db.wikiRestriction, "upsert");
+    const configUpsert = jest.spyOn(fake.db.systemConfig, "upsert");
+
+    await runCLI(yes, deps);
+
+    const marker = fake.tables.systemConfig.rows.find(
+      (row) => row.key === WIKIOS_PROTECTIONS_MARKER_KEY
+    );
+    const value = JSON.parse(String(marker?.value)) as { at: string; restrictions: number };
+    expect(value.restrictions).toBe(1);
+    expect(new Date(value.at).toISOString()).toBe(value.at);
+    expect(configUpsert.mock.invocationCallOrder[0]).toBeGreaterThan(
+      restrictionUpsert.mock.invocationCallOrder[0]!
+    );
+    expect(disconnect).toHaveBeenCalled();
+  });
+
+  it("refuses to write anything while step 1's backfill has not run", async () => {
+    const { fake, deps, disconnect } = setup();
+    // protected before WikiOS synced, and no edit restriction backfilled for it
+    fake.tables.wikiArticle.seed({ source: "ixwiki", title: "Old", protectionLevel: "SYSOP" });
+    // an expired protection and an unprotected page need none
+    fake.tables.wikiArticle.seed({
+      source: "ixwiki",
+      title: "Lapsed",
+      protectionLevel: "SYSOP",
+      protectionExpiry: new Date(PAST),
+    });
+    fake.tables.wikiArticle.seed({ source: "ixwiki", title: "Open" });
+    const upserts = [
+      jest.spyOn(fake.db.wikiRestriction, "upsert"),
+      jest.spyOn(fake.db.wikiUserGroup, "upsert"),
+      jest.spyOn(fake.db.systemConfig, "upsert"),
+    ];
+
+    await expect(runCLI(yes, deps)).rejects.toThrow(
+      "Run step 1 (2026-09-30-wikios-rights.sql) first: 1 protected pages have no edit restriction"
+    );
+    for (const upsert of upserts) expect(upsert).not.toHaveBeenCalled();
+    expect(fake.tables.systemConfig.rows).toHaveLength(0);
+    expect(disconnect).toHaveBeenCalled();
+  });
+
+  it("a dry run writes no marker", async () => {
+    const { deps } = setup();
+    await runCLI(["--api", "https://w/api.php"], deps);
+    expect(deps.openDatabase).not.toHaveBeenCalled();
   });
 });

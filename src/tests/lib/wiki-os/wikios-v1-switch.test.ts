@@ -36,11 +36,12 @@ jest.mock("~/lib/wiki-os/services/staged-uploads", () => ({
 jest.mock("~/lib/discord/admin-dm", () => ({ sendAdminDm: jest.fn(async () => undefined) }));
 
 import { NextRequest } from "next/server";
-import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
+import { isWikiosV1Enabled, WIKIOS_PROTECTIONS_MARKER_KEY, WIKIOS_PROTECTIONS_REASON } from "~/lib/wiki-os/v1-switch";
+import { describeEachWikiosMode } from "~/tests/helpers/wikios-modes";
 import { assertWikiosWritable, decideAction, decideFilePageCreation, requireRight } from "~/lib/wiki-os/permissions";
 import { rightsForGroups, type WikiPermissions } from "~/lib/wiki-os/rights";
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
-import { __resetWikiosEditingCacheForTests, isWikiosEditingEnabled, isWikiosEditingForcedByEnv, refreshWikiosEditingFlag, WIKIOS_EDITING_KEY } from "~/lib/wiki-os/editing-switch";
+import { __resetWikiosEditingCacheForTests, isWikiosEditingEnabled, isWikiosEditingForcedByEnv, refreshWikiosEditingFlag, WIKIOS_EDITING_KEY, wikiosProtectionsImported } from "~/lib/wiki-os/editing-switch";
 import { runMirrorCycle } from "~/lib/wiki-os/services/mirror-worker";
 import { renderStaleBatch } from "~/lib/wiki-os/services/render-service";
 import { repushSkippedParks } from "~/lib/wiki-os/services/inbound-revision-sync";
@@ -48,7 +49,7 @@ import { NativeSearchService } from "~/lib/wiki-os/core/native-search-service";
 import { db } from "~/server/db";
 import type { SystemConfig } from "@prisma/client";
 import { sendAdminDm } from "~/lib/discord/admin-dm";
-import { setEditing } from "~/lib/wiki-os/services/editing-admin";
+import { getEditingStatus, setEditing } from "~/lib/wiki-os/services/editing-admin";
 
 const sysop: WikiPermissions = {
   groups: ["*", "user", "sysop"],
@@ -57,6 +58,16 @@ const sysop: WikiPermissions = {
   ownUserNames: ["Admin"],
 };
 const request = { title: "Aurelia", permissions: sysop, restrictions: [], now: new Date() };
+
+/** The marker the rights import writes once the protections exist (scripts/wikios-import-rights.ts). */
+const markerRow = { value: JSON.stringify({ at: "2026-10-24T00:00:00.000Z", restrictions: 3 }) };
+const isMarker = (args: { where: { key: string } }) =>
+  args.where.key === WIKIOS_PROTECTIONS_MARKER_KEY;
+/** `findUnique` answering the marker row and `flag` for the editing switch row. */
+const answerRows =
+  (flag: { value: string } | null) =>
+  async (args: { where: { key: string } }) =>
+    isMarker(args) ? markerRow : flag;
 
 let was: string | undefined;
 beforeEach(() => {
@@ -192,13 +203,16 @@ describe("admin editing switch (WIKIOS_V1_ENABLED off)", () => {
     await expect(requireRight(ctx, "block")).rejects.toMatchObject({
       message: expect.stringContaining('You do not have the "block" right.'),
     });
-    expect(db.systemConfig.findUnique).toHaveBeenCalledTimes(1);
+    // the switch row and the protections marker
+    expect(db.systemConfig.findUnique).toHaveBeenCalledTimes(2);
   });
 
-  it("the v1 switch forces it on without reading the row", async () => {
+  it("the v1 switch forces it on over a switch row that is off, once the marker is read", async () => {
     process.env.WIKIOS_V1_ENABLED = "true";
+    jest
+      .mocked(db.systemConfig.findUnique)
+      .mockImplementation(answerRows({ value: "false" }) as never);
     await expect(refreshWikiosEditingFlag()).resolves.toBe(true);
-    expect(db.systemConfig.findUnique).not.toHaveBeenCalled();
   });
 
   it("the mirror runs when the switch is on", async () => {
@@ -238,7 +252,7 @@ describe("the editing switch", () => {
     delete process.env.WIKIOS_V1_ENABLED;
     __resetWikiosEditingCacheForTests();
     jest.clearAllMocks();
-    findUnique.mockReset().mockResolvedValue(null);
+    findUnique.mockReset().mockImplementation(answerRows(null) as never);
     upsert.mockReset().mockResolvedValue(configRow("false"));
     jest.useRealTimers();
   });
@@ -254,7 +268,7 @@ describe("the editing switch", () => {
       expect(isWikiosEditingEnabled()).toBe(true);
     });
     it("keeps the last value when the read fails", async () => {
-      findUnique.mockResolvedValueOnce(configRow("true"));
+      findUnique.mockImplementation(answerRows(configRow("true")) as never);
       await refreshWikiosEditingFlag();
       findUnique.mockRejectedValueOnce(new Error("db down"));
       const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
@@ -262,13 +276,73 @@ describe("the editing switch", () => {
       expect(warn).toHaveBeenCalled();
       warn.mockRestore();
     });
+    it("keeps the last value when the read rejects with something other than an Error", async () => {
+      findUnique.mockRejectedValueOnce("db down");
+      const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+      await expect(refreshWikiosEditingFlag(true)).resolves.toBe(false);
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("editing switch"), "db down");
+      warn.mockRestore();
+    });
     it("a stale synchronous read starts a background refresh", async () => {
-      findUnique.mockResolvedValue(configRow("true"));
+      findUnique.mockImplementation(answerRows(configRow("true")) as never);
       expect(isWikiosEditingEnabled()).toBe(false);
       await new Promise((r) => setImmediate(r));
-      expect(findUnique).toHaveBeenCalledTimes(1);
+      expect(findUnique).toHaveBeenCalledTimes(2);
       expect(isWikiosEditingEnabled()).toBe(true);
     });
+  });
+});
+
+describeEachWikiosMode("the protections marker", () => {
+  const findUnique = jest.mocked(db.systemConfig.findUnique);
+  /** The mode's rows without the marker: what the database holds before the rights import. */
+  function withoutMarker() {
+    const modeRows = findUnique.getMockImplementation()!;
+    findUnique.mockImplementation(((args: { where: { key: string } }) =>
+      isMarker(args) ? Promise.resolve(null) : modeRows(args as never)) as never);
+  }
+
+  it("v1 on with no marker refuses a save with the protections reason", async () => {
+    withoutMarker();
+    await expect(refreshWikiosEditingFlag(true)).resolves.toBe(false);
+    expect(decideAction({ ...request, action: "edit" })).toEqual({
+      allowed: false,
+      code: "readonly",
+      reason: WIKIOS_PROTECTIONS_REASON,
+    });
+    expect(decideFilePageCreation(request)).toMatchObject({ reason: WIKIOS_PROTECTIONS_REASON });
+    expect(() => assertWikiosWritable()).toThrow(WIKIOS_PROTECTIONS_REASON);
+    const route = await import("~/app/w/api.php/route");
+    const response = await route.GET(
+      new NextRequest("http://localhost:3000/w/api.php?action=query&meta=siteinfo&format=json")
+    );
+    expect(await response.json()).toMatchObject({
+      error: { code: "readonly", info: WIKIOS_PROTECTIONS_REASON },
+    });
+  });
+
+  it("the marker row lets both modes write", async () => {
+    await expect(refreshWikiosEditingFlag(true)).resolves.toBe(true);
+    expect(wikiosProtectionsImported()).toBe(true);
+    expect(decideAction({ ...request, action: "edit" })).toEqual({ allowed: true });
+    expect(() => assertWikiosWritable()).not.toThrow();
+  });
+
+  it("a marker read that fails before any successful read leaves the sync check on, and a successful read with no row turns it off", async () => {
+    const modeRows = findUnique.getMockImplementation()!;
+    findUnique.mockImplementation(((args: { where: { key: string } }) =>
+      isMarker(args) ? Promise.reject(new Error("db down")) : modeRows(args as never)) as never);
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    await expect(refreshWikiosEditingFlag(true)).resolves.toBe(true);
+    expect(wikiosProtectionsImported()).toBeNull();
+    expect(isWikiosEditingEnabled()).toBe(true);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("protections marker"), "db down");
+    warn.mockRestore();
+
+    withoutMarker();
+    await expect(refreshWikiosEditingFlag(true)).resolves.toBe(false);
+    expect(wikiosProtectionsImported()).toBe(false);
+    expect(isWikiosEditingEnabled()).toBe(false);
   });
 });
 
@@ -287,7 +361,8 @@ describe("switching editing on and off", () => {
     process.env.WIKIOS_MEDIAWIKI_API = "https://wiki.test/api.php";
     __resetWikiosEditingCacheForTests();
     jest.clearAllMocks();
-    jest.mocked(db.systemConfig.findUnique).mockResolvedValue(null);
+    // the rights import has run (the marker row) and the switch row is off (none)
+    jest.mocked(db.systemConfig.findUnique).mockImplementation(answerRows(null) as never);
     // two mirror jobs still wait in the outbox
     jest.mocked(db.wikiMirrorJob.count).mockResolvedValue(2 as never);
   });
@@ -296,6 +371,24 @@ describe("switching editing on and off", () => {
   });
 
   describe("editing admin", () => {
+    it("the admin switch refuses to turn on before the protections import", async () => {
+      jest.mocked(db.systemConfig.findUnique).mockResolvedValue(null);
+      // the protections come first, even when the mirror is not configured either
+      delete process.env.WIKIOS_MEDIAWIKI_BOT_TOKEN;
+      await expect(setEditing(tx as never, actor, true)).rejects.toMatchObject({
+        code: "PRECONDITION_FAILED",
+        message: "Run the protections import first (runbook steps 1 and 1b).",
+      });
+      expect(db.systemConfig.upsert).not.toHaveBeenCalled();
+      expect(audit).not.toHaveBeenCalled();
+    });
+
+    it("reports whether the protections import has run", async () => {
+      await expect(getEditingStatus()).resolves.toMatchObject({ protectionsImported: true });
+      jest.mocked(db.systemConfig.findUnique).mockResolvedValue(null);
+      await expect(getEditingStatus()).resolves.toMatchObject({ protectionsImported: false });
+    });
+
     it("refuses to switch on when the mirror is not configured", async () => {
       delete process.env.WIKIOS_MEDIAWIKI_BOT_TOKEN;
       await expect(setEditing(tx as never, actor, true)).rejects.toMatchObject({
@@ -323,7 +416,9 @@ describe("switching editing on and off", () => {
     });
 
     it("switching off mentions the mirror jobs still draining", async () => {
-      jest.mocked(db.systemConfig.findUnique).mockResolvedValue({ value: "true" } as never);
+      jest
+        .mocked(db.systemConfig.findUnique)
+        .mockImplementation(answerRows({ value: "true" }) as never);
       await setEditing(tx as never, actor, false);
       await flush();
       expect(sendAdminDm).toHaveBeenCalledWith(

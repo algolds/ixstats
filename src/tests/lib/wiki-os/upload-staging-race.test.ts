@@ -65,6 +65,7 @@ import {
   advisoryLocks as allAdvisoryLocks,
   fakeWikiDb,
 } from "~/tests/helpers/fake-wiki-db";
+import { seedWikiosMode } from "~/tests/helpers/wikios-modes";
 import { STAGED_FILE_PATH } from "~/lib/wiki-os/config";
 
 /** The staged-file locks taken so far (a new File: page's creation takes a lock of its own, for the title: not these). */
@@ -131,8 +132,12 @@ afterAll(() => {
   delete process.env.WIKIOS_UPLOAD_DIR;
 });
 
-beforeEach(() => {
+let restoreMode: () => void = () => undefined;
+afterEach(() => restoreMode());
+beforeEach(async () => {
   fakeWikiDb.reset();
+  // v1 with the protections marker the rights import writes (without it WikiOS takes no write)
+  restoreMode = await seedWikiosMode(fakeWikiDb.db, "v1");
   for (const name of readdirSync(directory)) rmSync(join(directory, name), { force: true });
   invalidateCsrfToken();
   process.env.WIKIOS_MEDIAWIKI_API = API_URL;

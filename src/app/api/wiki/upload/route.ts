@@ -28,8 +28,7 @@ import { rateLimiter } from "~/lib/cache/rate-limiter";
 import { MAX_UPLOAD_BYTES, UPLOAD_EXTENSIONS } from "~/lib/wiki-os/config";
 import { UPLOAD_FIELD_LIMITS } from "~/lib/wiki-os/upload-api";
 import { getWikiPermissions } from "~/lib/wiki-os/rights";
-import { refreshWikiosEditingFlag } from "~/lib/wiki-os/editing-switch";
-import { WIKIOS_READONLY_REASON } from "~/lib/wiki-os/v1-switch";
+import { refreshWikiosEditingFlag, wikiosReadonlyReason } from "~/lib/wiki-os/editing-switch";
 import { UploadError } from "~/lib/wiki-os/services/upload-error";
 import { uploadFile } from "~/lib/wiki-os/services/upload-service";
 import { byteLimit, PayloadTooLargeError } from "~/lib/wiki-os/xml/upload-stream";
@@ -100,7 +99,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   // An upload writes a file page: refused, like every WikiOS write, while WikiOS editing is off.
-  if (!(await refreshWikiosEditingFlag())) return fail(503, WIKIOS_READONLY_REASON, "readonly");
+  if (!(await refreshWikiosEditingFlag())) return fail(503, wikiosReadonlyReason(), "readonly");
   const ctx = await createTRPCContext({ headers: req.headers, req });
   if (!ctx.user) return fail(401, "You must be signed in to upload a file.", "mustbeloggedin");
 

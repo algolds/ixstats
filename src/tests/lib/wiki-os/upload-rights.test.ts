@@ -43,6 +43,7 @@ import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 import { capWikiPermissions, type Right } from "~/lib/wiki-os/rights";
 import { uploadFile } from "~/lib/wiki-os/services/upload-service";
 import { fakeWikiDb } from "~/tests/helpers/fake-wiki-db";
+import { seedWikiosMode } from "~/tests/helpers/wikios-modes";
 
 const { tables } = fakeWikiDb;
 
@@ -105,8 +106,12 @@ afterAll(() => {
   delete process.env.WIKIOS_UPLOAD_DIR;
 });
 
-beforeEach(() => {
+let restoreMode: () => void = () => undefined;
+afterEach(() => restoreMode());
+beforeEach(async () => {
   fakeWikiDb.reset();
+  // v1 with the protections marker the rights import writes (without it WikiOS takes no write)
+  restoreMode = await seedWikiosMode(fakeWikiDb.db, "v1");
   tables.user.seed({ id: "dbplain" }, { id: "dbmember" }, { id: "dbsysop" });
   tables.wikiNameClaim.seed({ userId: "dbmember", name: "Member" });
   tables.wikiRevision.seed(

@@ -10,8 +10,11 @@
 // is checked last.
 
 import { TRPCError } from "@trpc/server";
-import { isWikiosEditingEnabled, refreshWikiosEditingFlag } from "~/lib/wiki-os/editing-switch";
-import { WIKIOS_READONLY_REASON } from "~/lib/wiki-os/v1-switch";
+import {
+  isWikiosEditingEnabled,
+  refreshWikiosEditingFlag,
+  wikiosReadonlyReason,
+} from "~/lib/wiki-os/editing-switch";
 import { db } from "~/server/db";
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 import { PageOperationError, talkTitleOf } from "~/lib/wiki-os/core/page-management-service";
@@ -161,7 +164,7 @@ export interface ActionRequest {
 
 /** Whether the caller in `request.permissions` may perform `request.action` on `request.title`. */
 export function decideAction(request: ActionRequest): ActionDecision {
-  if (!isWikiosEditingEnabled()) return deny("readonly", WIKIOS_READONLY_REASON);
+  if (!isWikiosEditingEnabled()) return deny("readonly", wikiosReadonlyReason());
   const { action, title, permissions, restrictions, now } = request;
   const { block, rights, ownUserNames } = permissions;
 
@@ -195,7 +198,7 @@ export function decideAction(request: ActionRequest): ActionDecision {
  * and the right to upload is what lets someone give a new file its page.
  */
 export function decideFilePageCreation(request: Omit<ActionRequest, "action">): ActionDecision {
-  if (!isWikiosEditingEnabled()) return deny("readonly", WIKIOS_READONLY_REASON);
+  if (!isWikiosEditingEnabled()) return deny("readonly", wikiosReadonlyReason());
   const { title, permissions, restrictions, now } = request;
   const { block, rights } = permissions;
   if (block) return deny("blocked", describeBlock(block));
@@ -345,11 +348,12 @@ export async function requireNotBlocked(ctx: WikiAuthContext): Promise<void> {
 }
 
 /**
- * Throws FORBIDDEN (`readonly`) while WikiOS editing is off (editing-switch.ts): for the writes that pass no
- * page-action check of their own (bot passwords, XML imports, api.php). Async callers await `refreshWikiosEditingFlag()` first.
+ * Throws FORBIDDEN (`readonly`) while WikiOS editing is off or waits for the protections import (editing-switch.ts):
+ * for the writes that pass no page-action check of their own (bot passwords, XML imports, api.php). Async callers
+ * await `refreshWikiosEditingFlag()` first.
  */
 export function assertWikiosWritable(): void {
-  if (!isWikiosEditingEnabled()) throw forbidden("readonly", WIKIOS_READONLY_REASON);
+  if (!isWikiosEditingEnabled()) throw forbidden("readonly", wikiosReadonlyReason());
 }
 
 /** Throws FORBIDDEN (`permissiondenied`) unless the caller holds `right`; returns their permissions. */

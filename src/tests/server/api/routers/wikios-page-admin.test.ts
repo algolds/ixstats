@@ -32,6 +32,7 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosPageAdminRouter } from "~/server/api/routers/wikios/page-admin";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import type { createFakeWikiDb } from "~/tests/helpers/fake-wiki-db";
+import { seedWikiosMode } from "~/tests/helpers/wikios-modes";
 
 const { fake: fakeWikiDb } = jest.requireMock("~/server/db") as {
   fake: ReturnType<typeof createFakeWikiDb>;
@@ -73,8 +74,12 @@ const anonymous = () => createCaller(createMockRouterContext({ auth: null, user:
 
 const logTypes = () => tables.wikiLog.rows.map((row) => `${row.logType}/${row.action}`);
 
-beforeEach(() => {
+let restoreMode: () => void = () => undefined;
+afterEach(() => restoreMode());
+beforeEach(async () => {
   fakeWikiDb.reset();
+  // v1 with the protections marker the rights import writes (without it WikiOS takes no write)
+  restoreMode = await seedWikiosMode(fakeWikiDb.db, "v1");
   tables.user.seed(
     { id: "dbowner" },
     { id: "dbsysop" },

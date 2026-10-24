@@ -23,8 +23,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { importVerdict } from "~/lib/wiki-os/permissions";
-import { refreshWikiosEditingFlag } from "~/lib/wiki-os/editing-switch";
-import { WIKIOS_READONLY_REASON } from "~/lib/wiki-os/v1-switch";
+import { refreshWikiosEditingFlag, wikiosReadonlyReason } from "~/lib/wiki-os/editing-switch";
 import { getWikiPermissionsForAuthId, type WikiPermissions } from "~/lib/wiki-os/rights";
 import { readExport } from "~/lib/wiki-os/xml/import-reader";
 import { DEFAULT_MAX_UPLOAD_BYTES, uploadKind } from "~/lib/wiki-os/xml/import-request";
@@ -78,7 +77,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   // An import writes pages: refused, like every WikiOS write, while WikiOS editing is off.
-  if (!(await refreshWikiosEditingFlag())) return fail(WIKIOS_READONLY_REASON, 503);
+  if (!(await refreshWikiosEditingFlag())) return fail(wikiosReadonlyReason(), 503);
   const access = await authorize();
   if ("failure" in access) return access.failure;
   const { permissions } = access;

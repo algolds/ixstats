@@ -69,6 +69,7 @@ import { markWatchedVisited } from "~/lib/wiki-os/services/watchlist-notify";
 import { notificationAPI } from "~/lib/notifications/api";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import type { createFakeWikiDb } from "~/tests/helpers/fake-wiki-db";
+import { seedWikiosMode } from "~/tests/helpers/wikios-modes";
 
 const { fake } = jest.requireMock("~/server/db") as { fake: ReturnType<typeof createFakeWikiDb> };
 const { tables } = fake;
@@ -145,8 +146,12 @@ afterAll(() => {
   global.fetch = realFetch;
 });
 
-beforeEach(() => {
+let restoreMode: () => void = () => undefined;
+afterEach(() => restoreMode());
+beforeEach(async () => {
   fake.reset();
+  // v1 with the protections marker the rights import writes (without it WikiOS takes no write)
+  restoreMode = await seedWikiosMode(fake.db, "v1");
   jest.clearAllMocks();
   wikiBridgeCache.clear();
   wikiCacheService.clearCache();
