@@ -130,7 +130,10 @@ export function YourLorewards({ username, highlightCardId, trophiesOnly }: YourL
               : null
           }
           paid={mine.data && !username ? mine.data.paid : undefined}
-          todayRank={mine.data && !username ? mine.data.todayRank : undefined}
+          // A viewer with no wiki name cannot be in the race, so the figure is left out
+          todayRank={
+            mine.data && !username && mine.data.wikiUsername ? mine.data.todayRank : undefined
+          }
         />
         {trophies.cards.length > 0 ? (
           <TrophyCards

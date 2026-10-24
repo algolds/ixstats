@@ -111,3 +111,17 @@ it("shows a viewer with an approved name no pointer", () => {
   expect(screen.queryByText("Claim your old IxWiki names")).not.toBeInTheDocument();
   expect(screen.getByText("Battle of Kiro")).toBeInTheDocument();
 });
+
+it("leaves today's race out for a viewer with no wiki name, who cannot be in it", () => {
+  mockViewer({ wikiUsername: null, verified: false, unmatched: 0, cards: [] });
+  render(<YourLorewards />);
+  expect(screen.queryByText("Today's race")).not.toBeInTheDocument();
+  expect(screen.queryByText("Not in the top 10")).not.toBeInTheDocument();
+});
+
+it("shows today's race to a viewer with a wiki name", () => {
+  mockViewer({ wikiUsername: "Kir", verified: true, unmatched: 0, cards: [] });
+  render(<YourLorewards />);
+  expect(screen.getByText("Today's race")).toBeInTheDocument();
+  expect(screen.getByText("Not in the top 10")).toBeInTheDocument();
+});

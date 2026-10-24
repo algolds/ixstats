@@ -44,7 +44,7 @@ export function LorewardsView({
           href={contest ? ixstatesLinkHref(VAULT_TROPHIES_PATH) : CONTEST_PATH}
           className="text-tint text-footnote inline-flex items-center gap-0.5 hover:underline"
         >
-          <span>{contest ? "Your trophies in the Vault" : "Today's race and standings"}</span>
+          <span>{contest ? "Your trophies in the Vault" : "Recent winners and history"}</span>
           <ArrowUpRight aria-hidden className="size-3.5" />
         </Link>
       </div>
