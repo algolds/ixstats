@@ -17,6 +17,8 @@ const row = (id: string, date: string, over: Partial<WeeklyRow> = {}): WeeklyRow
   runnerUpBytes: null,
   editCount: 0,
   metadata: null,
+  status: "approved",
+  overriddenAt: null,
   ...over,
 });
 const iso = (id: string, key: string, start: string, end: string, over: Partial<WeeklyRow> = {}) =>
@@ -163,6 +165,38 @@ it("treats an unrecorded runner-up as no disagreement", () => {
     none
   );
   expect(plan.merges[0]?.loserIds).toEqual(["b"]);
+});
+
+it("leaves a week with an overridden or unapproved row, or rows of different statuses, for the admin", () => {
+  const at = new Date("2026-08-20T00:00:00Z");
+  const plan = planWeeklyMerge(
+    [
+      iso("a", "2026-W32", "2026-08-03", "2026-08-09", { overriddenAt: at }),
+      row("b", "2026-08-03"),
+      row("p", "2026-08-10", { status: "pending" }),
+      iso("c", "2026-W34", "2026-08-17", "2026-08-23", { status: "rejected" }),
+      row("d", "2026-08-17", { status: "rejected" }),
+      row("e", "2023-01-01", { overriddenAt: at }),
+    ],
+    none
+  );
+  expect(plan.merges).toEqual([]);
+  expect(plan.unchanged).toBe(0);
+  expect(plan.skipped).toEqual([
+    { key: "2023-W01", ids: ["e"], reason: "overridden or not approved" },
+    { key: "2026-W32", ids: ["a", "b"], reason: "overridden or not approved" },
+    { key: "2026-W33", ids: ["p"], reason: "overridden or not approved" },
+    { key: "2026-W34", ids: ["c", "d"], reason: "overridden or not approved" },
+  ]);
+});
+
+it("leaves an overridden week already under its ISO key unchanged, not skipped", () => {
+  const at = new Date("2026-08-20T00:00:00Z");
+  const plan = planWeeklyMerge(
+    [iso("a", "2026-W32", "2026-08-03", "2026-08-09", { overriddenAt: at })],
+    none
+  );
+  expect(plan).toEqual({ merges: [], skipped: [], unchanged: 1 });
 });
 
 it("refuses a week paid or carded under both rows", () => {

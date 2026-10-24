@@ -132,7 +132,7 @@ it("plans from every weekly row, the payouts under either place and the cards on
     data: { id: "d", date: "2026-07-20", type: "daily", winnerUser: "Kir" },
   });
   await db.lorewardEntry.create({
-    data: { id: "c", date: "2026-07-27", type: "weekly", status: "pending", winnerUser: "Urcea" },
+    data: { id: "c", date: "2026-07-27", type: "weekly", winnerUser: "Urcea" },
   });
   await db.lorewardEntry.create({
     data: {
@@ -166,5 +166,26 @@ it("plans from every weekly row, the payouts under either place and the cards on
       loserIds: ["e"],
       fill: {},
     },
+  ]);
+});
+
+it("reads each row's status and override, and leaves those weeks alone", async () => {
+  const db = createMemoryPrisma();
+  await db.lorewardEntry.create({
+    data: {
+      id: "o",
+      date: "2026-07-20",
+      type: "weekly",
+      overriddenAt: new Date("2026-08-01T00:00:00Z"),
+    },
+  });
+  await db.lorewardEntry.create({
+    data: { id: "p", date: "2026-07-27", type: "weekly", status: "pending" },
+  });
+  const plan = await loadWeeklyPlan(asClient(db));
+  expect(plan.merges).toEqual([]);
+  expect(plan.skipped).toEqual([
+    { key: "2026-W30", ids: ["o"], reason: "overridden or not approved" },
+    { key: "2026-W31", ids: ["p"], reason: "overridden or not approved" },
   ]);
 });

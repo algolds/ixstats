@@ -2,8 +2,9 @@
  * The weekly merge (design decision 18): every weekly row moves to its ISO week key (`contest-week.ts`), and a
  * contest stored twice (the state file's ISO row and the OOL page's date-keyed row) becomes one row. Nothing a payout
  * or a trophy card points at is lost: the paid row survives, the losers' cards move to it, and a week whose rows
- * disagree, or that was paid or carded under two rows, is left as it is for an admin override. Pure: the script
- * (`scripts/lorewards/merge-weekly-keys.ts`) reads the rows and applies the plan.
+ * disagree, that was paid or carded under two rows, or that holds an admin override or a row not approved, is left as
+ * it is for an admin override. Pure: the script (`scripts/lorewards/merge-weekly-keys.ts`) reads the rows and applies
+ * the plan.
  */
 import { isoWeekStart, weeklyKeyOfFirstDay, type WeeklyKey } from "./contest-week";
 
@@ -22,6 +23,8 @@ export interface WeeklyRow {
   runnerUpBytes: number | null;
   editCount: number;
   metadata: string | null;
+  status: string;
+  overriddenAt: Date | null;
 }
 
 export interface WeeklyRefs {
@@ -32,9 +35,16 @@ export interface WeeklyRefs {
 }
 
 export type WeeklySkipReason =
-  "no first day" | "different first days" | "different holders" | "paid twice" | "carded twice";
+  | "no first day"
+  | "different first days"
+  | "overridden or not approved"
+  | "different holders"
+  | "paid twice"
+  | "carded twice";
 
-export type WeeklyFill = Partial<Omit<WeeklyRow, "id" | "date" | "dateStart" | "dateEnd">>;
+export type WeeklyFill = Partial<
+  Omit<WeeklyRow, "id" | "date" | "dateStart" | "dateEnd" | "status" | "overriddenAt">
+>;
 
 /** One contest's rows made one: the survivor takes the key and range, the losers' cards and any column it lacks. */
 export interface WeeklyMerge {
@@ -81,6 +91,10 @@ function holdersAgree(rows: readonly WeeklyRow[]): boolean {
 
 /** Why a contest's rows cannot be one, or null when they can. */
 function refusal(rows: readonly WeeklyRow[], refs: WeeklyRefs): WeeklySkipReason | null {
+  // A merge must never drop an admin override or promote a row that is not approved (statuses that differ included).
+  if (rows.some((r) => r.overriddenAt !== null || r.status !== "approved")) {
+    return "overridden or not approved";
+  }
   if (!holdersAgree(rows)) return "different holders";
   if (rows.filter((r) => refs.paid.has(r.id)).length > 1) return "paid twice";
   const editions = rows.flatMap((r) => refs.cards.get(r.id) ?? []);
@@ -137,15 +151,16 @@ export function planWeeklyMerge(rows: readonly WeeklyRow[], refs: WeeklyRefs): W
     const group = members.map((m) => m.row).sort(byId);
     const ids = group.map((r) => r.id);
     const key = members[0]!.key;
+    // A lone row already under its key needs nothing, whatever its status or override.
+    if (group.length === 1 && isCanonical(group[0]!, key)) {
+      plan.unchanged += 1;
+      continue;
+    }
     const reason = members.some((m) => m.key.dateStart !== key.dateStart)
       ? "different first days"
       : refusal(group, refs);
     if (reason) {
       plan.skipped.push({ key: week, ids, reason });
-      continue;
-    }
-    if (group.length === 1 && isCanonical(group[0]!, key)) {
-      plan.unchanged += 1;
       continue;
     }
     const survivor = survivorOf(group, key, refs);
