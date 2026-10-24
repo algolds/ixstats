@@ -36,7 +36,7 @@ export function OwnerLayer({
         className
       )}
     >
-      <span className="text-caption text-tint inline-flex items-center gap-2">
+      <span className="text-caption text-label inline-flex items-center gap-2">
         <EyeClosed aria-hidden className="size-3.5" />
         Only you can see this
       </span>
@@ -50,7 +50,7 @@ export function OwnerLayer({
       </ul>
       <Link
         href={"/mycountry"}
-        className="text-callout text-tint focus-visible:outline-tint rounded-control-sm ml-auto inline-flex items-center gap-1 font-medium hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+        className="text-callout text-label focus-visible:outline-tint rounded-control-sm ml-auto inline-flex items-center gap-1 font-medium hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
       >
         Open MyCountry
         <NavArrowRight aria-hidden className="size-4" />

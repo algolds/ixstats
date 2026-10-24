@@ -38,7 +38,7 @@ export function StandingBand({
                 key={a.key}
                 className="bg-tint-fill text-footnote text-label rounded-full px-2.5 py-1 tabular-nums"
               >
-                <span className="text-tint font-semibold">#{a.rank}</span> {a.label}
+                <span className="font-semibold">#{a.rank}</span> {a.label}
               </li>
             ))}
             {weaknesses.map((a) => (

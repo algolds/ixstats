@@ -74,7 +74,7 @@ function SheetBody({
           />
           <Link
             href={`/countries/${layer.slug}/modeling`}
-            className="text-callout text-tint focus-visible:outline-tint rounded-control-sm inline-flex items-center gap-1 font-semibold hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="text-callout text-label focus-visible:outline-tint rounded-control-sm inline-flex items-center gap-1 font-semibold underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
           >
             Model scenarios
             <NavArrowRight aria-hidden className="size-4" />

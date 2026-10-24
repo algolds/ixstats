@@ -66,7 +66,7 @@ export function MapTab({ layer }: { layer: CountryProfileLayer }) {
           <h2 className="text-title-3 text-label">Land</h2>
           {area && (
             <p className="flex flex-col gap-0.5">
-              <span className="text-large-title text-tint tabular-nums">{`${formatBig(area)} km²`}</span>
+              <span className="text-large-title text-label tabular-nums">{`${formatBig(area)} km²`}</span>
               <span className="text-footnote text-label-secondary">
                 {vitals.density != null
                   ? `Land area · ${Math.round(vitals.density).toLocaleString("en-US")} people per km²`

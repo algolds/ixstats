@@ -51,7 +51,7 @@ export function SnapshotBlock({
       </div>
       {headline && (
         <p className="flex flex-col gap-0.5">
-          <span className="text-large-title text-tint tabular-nums">{headline.value}</span>
+          <span className="text-large-title text-label tabular-nums">{headline.value}</span>
           <span className="text-footnote text-label-secondary">{headline.label}</span>
         </p>
       )}
