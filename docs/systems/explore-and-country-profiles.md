@@ -55,8 +55,8 @@ The README linked above lists every tile and its data source. In summary:
 
 Missing data renders an empty state or drops the section; the profile shows no sample figures.
 
-**Lore.** `/countries/[slug]/lore` (formerly Dossier) reads the nation's wiki article (`useDossier`): the
-prologue as a lead, then every chapter in order, with a chapter index. The old browser-only native lore (saved in
+**Lore.** `/countries/[slug]/lore` (formerly Dossier) shows the nation's wiki article as WikiOS renders it
+(`wikios.getArticleHtml`), without its infobox, beside WikiOS's contents. The old browser-only native lore (saved in
 each viewer's localStorage) was removed on 2026-10-24; native lore returns as real WikiOS pages
 (`docs/superpowers/specs/2026-10-24-native-lore-design.md`).
 

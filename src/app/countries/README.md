@@ -27,12 +27,12 @@ The profile shell (`(profile)/layout.tsx`) loads the country (`CountryDataProvid
 - **Ribbon** (`DocumentRibbon` in `src/components/shared/document/`, shared with the passport): Factbook · Map · Lore · History.
 - **Factbook** (`country-profile/factbook/`): three snapshot blocks (Economy & people, State, Foreign affairs), each a headline figure, a small visual and a few facts, with **More** opening its sheet (`FactbookSheets`): the Economy and Labor sections as two segments (plus the modeling sandbox link), the Government section, or every relation and embassy (`PublicRelationsList`). The sheets mount the factbook metrics only while open.
 - **Map** (`country-profile/map/MapTab.tsx`): the interactive territory map with its **Open on map** link to the Maps app (the only one), the land facts led by the area, every region by population and the map stories; choosing a region or a story flies the map to it (`CountryMapEmbed`'s `focus`).
-- **Lore** (`country-profile/lore/LoreReader.tsx`): the wiki article as one reading column (the prologue as a lead, then every chapter in article order) beside a chapter index that follows the section being read. Native lore is not shown yet: making it shared, WikiOS-friendly content is a separate project.
+- **Lore** (`country-profile/lore/LoreReader.tsx`): the country's wiki article as WikiOS renders it (`wikios.getArticleHtml`; IxWiki's from Postgres, an Eurth nation's from its own wiki), in WikiOS's article styles (`~/styles/wiki-os.css`), with **Open in WikiOS** and **Edit** above it and WikiOS's contents (`StickyToc`, kept on the section being read by WikiOS's scroll spy) beside it from `lg` up. The infobox (the Factbook holds the facts), the notices and the reader's margin are left out. Native lore is not shown yet: making it shared, WikiOS-friendly content is a separate project.
 - **History** (`country-profile/history/`): the chronicle and the activity feed as one timeline on the in-game calendar (`mergeTimeline`), newest first, with All · Record · Posts · Economic · Diplomatic · Social and a 7/30/90-day range that narrows the feed only.
 
 Pure derivations live in `src/components/country-profile/derive.ts` (`toDnaAxes`, `standingHighlights`, `conditionPillars`, `regionShares`, `earliestFounding`, `stateLeaders`, `diplomaticMatrix`, `relationNodes`), `history/merge-timeline.ts` and `src/lib/country/country-routes.ts`, tested in `src/tests/components/country-profile/` and `src/tests/lib/country-routes.test.ts`.
 
-**Reading style.** Lore uses the wiki Reading face (`--wikios-font-reading`, Geist Sans — the token `.wikios-article-content` reads) at a 38rem measure with 1.7 leading, the opening paragraph set larger as a lead (`LoreProse`, `READING_STYLE`). Titles use Facet text styles; figures use tabular numerals. The unloaded Baskerville serif is not used (pinned in `facet-guards.test.ts`).
+**Reading style.** Lore is set by WikiOS's own article styles (`.wikios-article-content`, the wiki Reading face) at a 44rem measure. Titles use Facet text styles; figures use tabular numerals, in `label` colours: the realm tint paints bars, rules and fills, never text. The unloaded Baskerville serif is not used (pinned in `facet-guards.test.ts`).
 
 ### Data layer
 
@@ -52,7 +52,7 @@ Tested in `src/tests/server/api/routers/country-public-record.test.ts`. When the
 | Part                                                                      | Source                                                                                                                                                        |
 | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Identity                                                                  | `country.nationalIdentity` (via `countries.getByIdWithEconomicData`), then `wikiCache.getCountryProfile` infobox                                              |
-| Lore (prologue + chapters)                                                | `wikios.getWikitext` (IxWiki; follows `#REDIRECT`), split by section heading; non-IxWiki falls back to the `wikiCache.getCountryProfile` overview             |
+| Lore (the article)                                                        | `wikios.getArticleHtml` (IxWiki from Postgres, following `#REDIRECT`; another wiki's page rendered by that wiki's parser), read by the Lore tab itself       |
 | Vitals, condition, economy trend                                          | `countries.getByIdWithEconomicData` (via `CountryDataProvider`)                                                                                               |
 | Land (map, capital, cities, regions, story pins, geo profile, neighbours) | `countryGeo.getCountryGeoBundle`; map embed `CountryMapEmbed` (+ the political layer from `/api/map-layers`)                                                  |
 | Directives, issue outcomes                                                | `countries.getPublicRecord`; owner counts `intent.getTree` + `nationalIssues.getPendingCount` (owner only)                                                    |
@@ -80,7 +80,7 @@ countries/
     ├── _hooks/useCountryPageState.ts # Cover state (saved per country on the device)
     ├── _hooks/useCountryProfileLayer.ts # The profile's data layer
     ├── _types/                       # Domain types for profile pages
-    └── _utils/profileLayer.ts        # Pure helpers: wiki lore, chronicle, formatters (re-exports the public-record rules)
+    └── _utils/profileLayer.ts        # Pure helpers: chronicle, founding dates, formatters (re-exports the public-record rules)
 ```
 
 ## Data sources (verified `api.*`)
@@ -93,7 +93,7 @@ countries/
 | `api.countries.getActivityRingsData`                                          | Telemetry vitality rings (via `CountryDataProvider`)                              |
 | `api.activities.getCountryActivity`                                           | History tab (the feed)                                                            |
 | `api.government.getByCountryId`                                               | State block and sheet (via the profile layer and `useMyCountryMetrics`)           |
-| `api.wikiCache.getCountryProfile`                                             | Lore tab chapters (via `useDossier`)                                              |
+| `api.wikios.getArticleHtml`                                                   | Lore tab (`LoreReader`)                                                           |
 | `api.countryGeo.getCountryGeoBundle`, `GET /api/map-layers` (political layer) | Map embeds (via `useCountryMapEmbed`)                                             |
 | `api.system.getCurrentIxTime`                                                 | Time context                                                                      |
 | `api.users.getProfile`, `api.countries.getByIdAtTime`                         | Viewer identity (`useUserCountry`)                                                |

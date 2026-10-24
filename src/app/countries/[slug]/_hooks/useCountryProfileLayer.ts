@@ -3,7 +3,7 @@
 /**
  * useCountryProfileLayer — the one data layer behind the country profile (`/countries/[slug]`,
  * `CountryDocument`). It fans out the public read queries in parallel and assembles a single
- * model — identity, lore, vitals, land, state, world, chronicle and a small owner layer.
+ * model — identity, vitals, land, state, world, chronicle and a small owner layer.
  *
  * Rules (docs: src/app/countries/README.md, "Country profile"):
  * - Real data only. A missing source yields `null`/`[]`; views show an EmptyState or omit the
@@ -19,25 +19,17 @@ import { api, type RouterOutputs } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { claimableNation } from "~/lib/realms/claimable-nation";
 import { resolveImageUrl } from "~/lib/wiki-os/transformers/image-url";
-import { parseWikiSource, wikiReaderPath, type WikiSource } from "~/lib/wiki-os/config";
+import { parseWikiSource, type WikiSource } from "~/lib/wiki-os/config";
 import type { CountryWithEconomicData } from "~/components/mycountry/shared/primitives/CountryDataProvider";
 import { formatCensusValue } from "~/lib/format/census";
 import {
-  LORE_CHAPTER_KEYWORDS,
   buildChronicle,
   countOwnerDirectives,
-  leadParagraphs,
-  pickLoreSection,
   realNumber,
-  redirectTarget,
   splitCanonFeed,
-  splitWikiSections,
-  wikiToParagraphs,
   yearlySeries,
   type ChronicleEntry,
   type FoundingEvent,
-  type LoreChapter,
-  type LoreSection,
   type PublicDirective,
   type PublicIssueOutcome,
 } from "../_utils/profileLayer";
@@ -57,7 +49,6 @@ const MAP = {
 } as const;
 
 export type ProfileIdentity = ReturnType<typeof buildIdentity>;
-type ProfileLore = ReturnType<typeof buildLore>;
 export type ProfileVitals = ReturnType<typeof buildVitals>;
 export type ProfileLand = ReturnType<typeof toLand>;
 
@@ -125,7 +116,6 @@ export interface CountryProfileLayer {
   countryId: string;
   slug: string;
   identity: ProfileIdentity;
-  lore: ProfileLore;
   vitals: ProfileVitals;
   land: ProfileLand;
   state: ProfileState;
@@ -303,37 +293,6 @@ function buildIdentity(
   };
 }
 
-function buildLore(
-  article: ReturnType<typeof splitWikiSections>,
-  overview: string,
-  founding: FoundingEvent[],
-  page: { title: string; wiki: WikiSource },
-  isLoading: boolean
-) {
-  // Articles missing from the wiki fall back to the cached overview.
-  const lead = leadParagraphs(article.lead);
-  const prologue = lead.length ? lead : wikiToParagraphs(overview, { max: 3 });
-  const chapters: Partial<Record<LoreChapter, LoreSection>> = {};
-  for (const [chapter, keywords] of Object.entries(LORE_CHAPTER_KEYWORDS) as [
-    LoreChapter,
-    readonly string[],
-  ][]) {
-    const section = pickLoreSection(article.sections, keywords, {
-      max: chapter === "history" ? 6 : 3,
-    });
-    if (section) chapters[chapter] = section;
-  }
-  return {
-    articleTitle: page.title,
-    wikiHref: wikiReaderPath(page.title, page.wiki),
-    prologue,
-    chapters,
-    founding,
-    isLoading,
-    isEmpty: !isLoading && prologue.length === 0 && Object.keys(chapters).length === 0,
-  };
-}
-
 function buildVitals(c: Loose) {
   const zero = { allowZero: true };
   return {
@@ -485,22 +444,11 @@ export function useCountryProfileLayer({
   const wikiSource = parseWikiSource(str(c?.wikiSource));
   const articleTitle = str(c?.wikiPageTitle) ?? (c?.name ? String(c.name).replace(/_/g, " ") : "");
 
-  // Lore: the infobox (identity, founding dates) and the article text (chapters).
+  // The infobox: identity and founding dates. The Lore tab reads the article itself (LoreReader).
   const wikiProfile = api.wikiCache.getCountryProfile.useQuery(
     { countryName: articleTitle, wikiSource },
     { enabled: !!articleTitle, ...WIKI }
   );
-  // The article on the country's own wiki (an Eurth nation's on IIWiki).
-  const wikitext = api.wikios.getWikitext.useQuery(
-    { title: articleTitle, wikiSource },
-    { enabled: !!articleTitle, ...WIKI }
-  );
-  const redirect = redirectTarget(wikitext.data?.wikitext);
-  const redirected = api.wikios.getWikitext.useQuery(
-    { title: redirect ?? "", wikiSource },
-    { enabled: !!redirect, ...WIKI }
-  );
-
   // Land, state and world. The public record is server-filtered (enacted directives, resolved
   // issues) and readable signed out.
   const byCountry = { countryId };
@@ -530,23 +478,12 @@ export function useCountryProfileLayer({
   const intents = api.intent.getTree.useQuery(byCountry, ownerOnly);
   const pending = api.nationalIssues.getPendingCount.useQuery(byCountry, ownerOnly);
 
-  const articleText = (redirect ? redirected.data : wikitext.data)?.wikitext ?? "";
-  const loreLoading =
-    wikiProfile.isLoading || wikitext.isLoading || (!!redirect && redirected.isLoading);
-
   return useMemo<CountryProfileLayer | null>(() => {
     if (!c) return null;
     const infobox = wikiProfile.data?.infobox ?? null;
     const identity = buildIdentity(c, infobox, flagUrl, wikiProfile.data?.wikiSource ?? wikiSource);
 
     const founding = infoboxFounding(infobox);
-    const lore = buildLore(
-      splitWikiSections(articleText),
-      wikiProfile.data?.sections?.[0]?.content ?? "",
-      founding,
-      { title: redirect ?? articleTitle, wiki: wikiSource },
-      loreLoading
-    );
 
     const land = toLand(geo.data, geo.isLoading);
     const directives: PublicDirective[] = record.data?.directives ?? [];
@@ -562,7 +499,6 @@ export function useCountryProfileLayer({
       countryId,
       slug: str(c.slug) ?? identity.name.replace(/\s+/g, "_"),
       identity,
-      lore,
       vitals: buildVitals(c),
       land,
       state,
@@ -596,12 +532,8 @@ export function useCountryProfileLayer({
     flagUrl,
     isOwner,
     currentIxTime,
-    articleTitle,
     wikiSource,
-    redirect,
     wikiProfile.data,
-    articleText,
-    loreLoading,
     geo.data,
     geo.isLoading,
     record.data,
