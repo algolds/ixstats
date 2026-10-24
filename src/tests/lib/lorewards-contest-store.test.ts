@@ -4,8 +4,10 @@
  * `~/server/db`'s 1,000-row cap off), and inside a place's lock the contest's entries are read again.
  */
 import { describe, it, expect } from "@jest/globals";
+import { matches, storedEntry, type StoredEntry } from "~/tests/helpers/loreward-entry-store";
 import {
   CONTEST_ENTRY_SELECT,
+  contestsOfEntriesWhere,
   findContestEntries,
   holderStillRecordedTx,
   lockContestPlace,
@@ -56,6 +58,60 @@ describe("findContestEntries", () => {
       take: 500,
     });
     expect(pages.every((page) => !("cursor" in page) && !("skip" in page))).toBe(true);
+  });
+});
+
+describe("contestsOfEntriesWhere", () => {
+  /** A table whose findMany answers the real `where` over `rows`. */
+  type Where = Parameters<typeof matches>[1];
+  const table = (rows: StoredEntry[]) => ({
+    lorewardEntry: {
+      findMany: jest.fn(async ({ where }: { where: Where }) =>
+        rows.filter((row) => matches(row, where))
+      ),
+    },
+  });
+  const daily = storedEntry({ id: "d", date: "2026-10-16" });
+  const iso = storedEntry({
+    id: "w-iso",
+    type: "weekly",
+    date: "2026-W43",
+    dateStart: "2026-10-19",
+    dateEnd: "2026-10-25",
+  });
+  const twin = storedEntry({ id: "w-day", type: "weekly", date: "2026-10-19" });
+
+  it("is null for no ids, and reads nothing", async () => {
+    const db = table([daily]);
+    expect(await contestsOfEntriesWhere(db as never, [])).toBeNull();
+    expect(db.lorewardEntry.findMany).not.toHaveBeenCalled();
+  });
+
+  it("is null when no entry has one of the ids", async () => {
+    expect(await contestsOfEntriesWhere(table([daily]) as never, ["gone"])).toBeNull();
+  });
+
+  it("is the OR of each found contest's entries, once per contest", async () => {
+    const db = table([daily, iso, twin]);
+    const where = await contestsOfEntriesWhere(db as never, ["d", "w-iso", "w-day"]);
+    expect(where).toEqual({
+      OR: [
+        { type: "daily", date: "2026-10-16" },
+        {
+          type: "weekly",
+          OR: [{ dateStart: "2026-10-19" }, { dateStart: null, date: "2026-10-19" }],
+        },
+      ],
+    });
+  });
+
+  it("selects a contest's twin from either of its entries, and no other contest", async () => {
+    const rows = [daily, iso, twin];
+    for (const id of ["w-iso", "w-day"]) {
+      const where = await contestsOfEntriesWhere(table(rows) as never, [id]);
+      const selected = rows.filter((row) => where && matches(row, where as Where));
+      expect(selected.map((row) => row.id)).toEqual(["w-iso", "w-day"]);
+    }
   });
 });
 

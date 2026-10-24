@@ -20,6 +20,7 @@ import { highestIssuedSerialTx, lockCardSerialsTx } from "~/lib/cards/serial-num
 import type { LorewardPlace, LorewardType } from "~/lib/vault/vault-bonus";
 import { contestHolder, contestPlaceKey, groupByContest, type Contest } from "./contest-identity";
 import {
+  contestsOfEntriesWhere,
   findContestEntries,
   holderStillRecordedTx,
   lockContestPlace,
@@ -178,12 +179,13 @@ interface MissingPlace {
 }
 
 /**
- * Every approved daily, weekly and monthly entry, by contest (`groupByContest`: a contest can be stored twice), read
- * in pages so the 1,000-row cap drops none.
+ * Every approved daily, weekly and monthly entry (that `where` also selects, when given), by contest
+ * (`groupByContest`: a contest can be stored twice), read in pages so the 1,000-row cap drops none.
  */
-async function contests(db: PrismaClient) {
+async function contests(db: PrismaClient, where?: Prisma.LorewardEntryWhereInput) {
+  const approved = { status: "approved", type: { in: CONTESTS } };
   return groupByContest(
-    await findContestEntries(db, { status: "approved", type: { in: CONTESTS } })
+    await findContestEntries(db, where ? { AND: [approved, where] } : approved)
   );
 }
 
@@ -194,7 +196,10 @@ const cardKeys = (contest: Contest<TrophyEntry>, place: LorewardPlace) =>
  * The recorded places of the approved contests (or only those holding one of `entryIds`) with no card yet: one card
  * per contest and place, through the entry `contestHolder` chooses, and none while the contest's entries disagree.
  */
-async function missingPlaces(db: PrismaClient, entryIds?: string[]): Promise<MissingPlace[]> {
+async function missingPlaces(
+  db: PrismaClient,
+  entryIds?: readonly string[]
+): Promise<MissingPlace[]> {
   const [all, existing] = await Promise.all([contests(db), mintedKeys(db)]);
 
   const missing: MissingPlace[] = [];
@@ -221,7 +226,7 @@ async function missingPlaces(db: PrismaClient, entryIds?: string[]): Promise<Mis
  */
 export async function mintTrophyCards(
   db: PrismaClient,
-  entryIds?: string[]
+  entryIds?: readonly string[]
 ): Promise<{ minted: number }> {
   const [missing, season] = await Promise.all([
     missingPlaces(db, entryIds),
@@ -338,14 +343,26 @@ function cardsToGrant(
  * Grants each unowned trophy card of an approved contest to its place's account once `resolveLorewardPlace` tells
  * it: one card per contest and place. A card granted before is never granted again: a trophy is bound and stays with
  * the account it was granted to (§3), unless an override of its place clears the grant (§2.4). A retired card (a
- * place an override emptied) waits for an override to fill the place again.
+ * place an override emptied) waits for an override to fill the place again. With `entryIds`, only the cards of the
+ * contests holding one of them (`contestsOfEntriesWhere`, twins included); none for no ids.
  */
-export async function grantUnownedTrophyCards(db: PrismaClient): Promise<{ granted: number }> {
+export async function grantUnownedTrophyCards(
+  db: PrismaClient,
+  entryIds?: readonly string[]
+): Promise<{ granted: number }> {
+  const scope = entryIds === undefined ? undefined : await contestsOfEntriesWhere(db, entryIds);
+  if (scope === null) return { granted: 0 };
+  const all = await contests(db, scope);
+  const scopedIds = scope ? all.flatMap((contest) => contest.map((entry) => entry.id)) : null;
   const unowned = await db.card.findMany({
-    where: { lorewardEntryId: { not: null }, isRetired: false, CardOwnership: { none: {} } },
+    where: {
+      lorewardEntryId: scopedIds ? { in: scopedIds } : { not: null },
+      isRetired: false,
+      CardOwnership: { none: {} },
+    },
     select: { id: true, metadata: true, lorewardEntryId: true, lorewardEdition: true },
   });
-  const [all, minted] = await Promise.all([contests(db), mintedKeys(db)]);
+  const minted = await mintedKeys(db);
 
   let granted = 0;
   for (const grant of cardsToGrant(unowned, all, minted)) {

@@ -22,6 +22,7 @@ import {
   type Contest,
 } from "./contest-identity";
 import {
+  contestsOfEntriesWhere,
   findContestEntries,
   holderStillRecordedTx,
   lockContestPlace,
@@ -31,6 +32,13 @@ import { placeOf, resolveLorewardPlace } from "./resolve-user";
 import { LedgerError } from "~/lib/vault/vault-ledger";
 
 const PAID_PLACES: LorewardPlace[] = ["winner", "runner-up"];
+
+/** One payout run: the places newly paid, the places the ledger refused, and whether bonuses are on. */
+export interface LorewardPayoutRun {
+  paid: number;
+  refused: number;
+  enabled: boolean;
+}
 
 function isPaidType(type: string): type is LorewardType {
   return type === "daily" || type === "weekly" || type === "monthly";
@@ -50,19 +58,23 @@ const monthBefore = (day: string) =>
 
 /**
  * The approved entries a payout can reach: a payout day (a daily's date, a weekly's or monthly's `dateEnd`) on or
- * after `LOREWARD_PAYOUT_START`, plus the first-day twins of the contests that end after it. Read in pages, so the
- * 1,000-row cap never drops one.
+ * after `LOREWARD_PAYOUT_START`, plus the first-day twins of the contests that end after it; with `entryIds`, only
+ * those of the contests holding one of them (`contestsOfEntriesWhere`, twins included), and none for no ids. Read in
+ * pages, so the 1,000-row cap never drops one.
  */
-function paidEntries(): Promise<StoredContestEntry[]> {
+async function paidEntries(entryIds?: readonly string[]): Promise<StoredContestEntry[]> {
   const ranged = { type: { in: ["weekly", "monthly"] } };
-  return findContestEntries(db, {
+  const payable: Prisma.LorewardEntryWhereInput = {
     status: "approved",
     OR: [
       { type: "daily", date: { gte: LOREWARD_PAYOUT_START } },
       { ...ranged, dateEnd: { gte: LOREWARD_PAYOUT_START } },
       { ...ranged, dateEnd: null, date: { gte: monthBefore(LOREWARD_PAYOUT_START) } },
     ],
-  });
+  };
+  if (entryIds === undefined) return findContestEntries(db, payable);
+  const scope = await contestsOfEntriesWhere(db, entryIds);
+  return scope ? findContestEntries(db, { AND: [payable, scope] }) : [];
 }
 
 /**
@@ -148,13 +160,16 @@ async function payPlace(
  * safe to overlap: each place pays inside one transaction holding its advisory lock (`contestPlaceKey`), and only
  * when no entry of the contest was paid for it yet, to anyone, under `lorewardBonusKey(entryId, place)`. So a place
  * pays its first holder only; a later holder (an OOL write, a twin, an admin override after payment) is not paid.
- * Returns the number of newly-granted bonuses.
+ * With `scope.entryIds`, only the contests holding one of them are paid (an empty list pays and reads nothing).
+ * Returns what was newly paid, what the ledger refused, and whether bonuses are on. Called by `settleLorewardPlaces`.
  */
-export async function grantLorewardBonuses(): Promise<number> {
+export async function grantLorewardBonuses(
+  scope: { entryIds?: readonly string[] } = {}
+): Promise<LorewardPayoutRun> {
   const cfg = await getBonusConfig(db);
-  if (!cfg.enabled) return 0;
+  if (!cfg.enabled) return { paid: 0, refused: 0, enabled: false };
   const payouts = await getLorewardPayouts(db);
-  const entries = await paidEntries();
+  const entries = await paidEntries(scope.entryIds);
 
   const outcomes: PlaceOutcome[] = [];
   for (const contest of groupByContest(entries.filter((e) => isPaidType(e.type)))) {
@@ -163,13 +178,13 @@ export async function grantLorewardBonuses(): Promise<number> {
     if (payoutDay(lead) < LOREWARD_PAYOUT_START) continue;
     for (const place of PAID_PLACES) outcomes.push(await payPlace(contest, place, payouts));
   }
-  const granted = outcomes.filter((outcome) => outcome === "paid").length;
+  const paid = outcomes.filter((outcome) => outcome === "paid").length;
   const refused = outcomes.filter((outcome) => outcome === "refused").length;
   if (refused > 0) {
     console.warn(
       `[Lorewards] The ledger refused ${refused} Loreward bonuses (earning is off or in maintenance); their places stay unpaid and are tried again on the next run.`
     );
   }
-  console.log(`[Lorewards] Granted ${granted} new Loreward bonuses.`);
-  return granted;
+  console.log(`[Lorewards] Granted ${paid} new Loreward bonuses.`);
+  return { paid, refused, enabled: true };
 }

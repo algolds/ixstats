@@ -420,6 +420,44 @@ describe("grantUnownedTrophyCards", () => {
   });
 });
 
+describe("grantUnownedTrophyCards over a scope of entries", () => {
+  beforeEach(async () => {
+    entries = [entry(), entry({ id: "e2", date: "2026-10-17", winnerPage: "Caballian Wars" })];
+    await mintTrophyCards(db);
+    claims.set("Kir Republic", "u1");
+  });
+
+  it("grants only the scoped contest's card, and the other waits", async () => {
+    expect(await grantUnownedTrophyCards(db, ["e2"])).toEqual({ granted: 1 });
+    expect(ownerships.map((o) => cards.find((c) => c.id === o.cardId)?.lorewardEntryId)).toEqual([
+      "e2",
+    ]);
+    // The unowned-card read asks only for the scoped contests' cards.
+    expect(db.card.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ lorewardEntryId: { in: ["e2"] } }),
+      })
+    );
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 1 });
+  });
+
+  it("grants a scoped contest's card held by its twin", async () => {
+    entries = weeklyTwins("Kir_Republic", "Kir_Republic");
+    cards = [legacyCard("c-ool", "w-ool")];
+    expect(await grantUnownedTrophyCards(db, ["w-state"])).toEqual({ granted: 1 });
+    expect(ownersOf("c-ool")).toEqual([expect.objectContaining({ ownerId: "u1" })]);
+  });
+
+  it("grants nothing, and reads no card, for an empty scope or unknown entries", async () => {
+    const findMany = db.card.findMany as unknown as jest.Mock;
+    findMany.mockClear();
+    expect(await grantUnownedTrophyCards(db, [])).toEqual({ granted: 0 });
+    expect(await grantUnownedTrophyCards(db, ["gone"])).toEqual({ granted: 0 });
+    expect(findMany).not.toHaveBeenCalled();
+    expect(ownerships).toEqual([]);
+  });
+});
+
 /** A weekly stored twice: by its first day (the OOL page) and as `2026-W42` with its range (the state file). */
 const weeklyTwins = (oolWinner: string, stateWinner: string): EntryRow[] => [
   entry({ id: "w-ool", type: "weekly", date: "2026-10-12", winnerUser: oolWinner }),

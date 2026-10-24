@@ -3,7 +3,12 @@
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
 import type { LorewardPlace } from "~/lib/vault/vault-bonus";
-import { contestEntriesWhere, contestHolder, type ContestEntry } from "./contest-identity";
+import {
+  contestEntriesWhere,
+  contestHolder,
+  contestIdentity,
+  type ContestEntry,
+} from "./contest-identity";
 import { placeOf, type LorewardPlaceRef } from "./resolve-user";
 
 /** Arbitrary constant; identifies these locks in pg_locks (the card serial locks use 7331). */
@@ -51,6 +56,21 @@ export async function findContestEntries(
     if (page.length < PAGE || !last) return rows;
     after = last.id;
   }
+}
+
+/**
+ * The `where` of every entry of the contests holding one of `entryIds` (their twins too, `contestEntriesWhere`), so a
+ * scoped run still reads a contest whole; null when none exists, and no read for no ids.
+ */
+export async function contestsOfEntriesWhere(
+  db: Pick<PrismaClient, "lorewardEntry">,
+  entryIds: readonly string[]
+): Promise<Prisma.LorewardEntryWhereInput | null> {
+  if (entryIds.length === 0) return null;
+  const found = await findContestEntries(db, { id: { in: [...entryIds] } });
+  const contests = new Map(found.map((entry) => [contestIdentity(entry), entry]));
+  if (contests.size === 0) return null;
+  return { OR: [...contests.values()].map((entry) => contestEntriesWhere(entry)) };
 }
 
 /**
