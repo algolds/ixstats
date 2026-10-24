@@ -22,6 +22,7 @@ import {
   numberFieldProblem,
 } from "~/lib/cards/economy-fields";
 import { LOREWARD_PLACES, LOREWARD_TYPES } from "~/lib/vault/loreward-places";
+import { LorewardPayNowButton } from "~/app/admin/_components/platform/LorewardPayNowButton";
 import { fieldNumber } from "./NumberConfigCard";
 
 type Payouts = RouterOutputs["cards"]["admin"]["economy"]["get"]["lorewardPayouts"];
@@ -113,6 +114,13 @@ export function LorewardPayoutsCard({ initial }: { initial: Payouts }) {
         >
           Save payouts
         </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <LorewardPayNowButton />
+          <p className="text-label-secondary text-footnote">
+            Pays every recorded place from 15 October 2026 that is not paid yet, and gives waiting
+            trophy cards to approved names. Each place pays once.
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
