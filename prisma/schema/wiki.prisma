@@ -127,10 +127,10 @@ model WikiRevision {
   textDeleted      Boolean      @default(false)
   commentDeleted   Boolean      @default(false)
   userDeleted      Boolean      @default(false)
-  // Inbound sync (fast-forward or park): a MediaWiki edit that was not made on top of WikiOS's head is kept
-  // here, in the history, but is never the page's current text. Every "latest revision" query filters it out.
+  // Overwritten: a change the later save on the other wiki replaced. It is kept in the history, never the page's
+  // current text, and every "latest revision" query filters it out. `wiki_conflicts` holds the collision.
   parked           Boolean      @default(false)
-  parkReason       String?      // "conflict:<head revision ref>"
+  parkReason       String?      // "overwritten:<winning change's ref>"
   createdAt        DateTime     @default(now())
   claimTags        WikiRevisionClaimTag[]
 
@@ -210,6 +210,32 @@ model WikiMirrorJob {
   @@index([state, nextAttemptAt])
   @@index([source, title, createdAt])
   @@map("wiki_mirror_jobs")
+}
+
+/// One collision between WikiOS and classic MediaWiki: both changed the page from the same base, the later save won on
+/// both wikis, and every overwritten author is told. One row per collision, keyed by `<source>:<article>:<winner ref>`
+/// so the mirror and the inbound cycle record the same one (src/lib/wiki-os/services/conflict-rule.ts).
+model WikiConflict {
+  id              String   @id @default(cuid())
+  key             String   @unique
+  source          String   @default("ixwiki")
+  articleId       String?
+  title           String
+  winnerSide      String   // wikios | classic
+  winnerAction    String   // edit | delete | move | undelete
+  winnerRef       String
+  winnerAt        DateTime
+  baseRef         String?
+  overwritten     Json     // PageChange[]: what the winner replaced
+  notified        Json     @default("[]") // { key, channel, at }[]: who has been told, and where
+  trailRevisionId String?  // the page-history entry that names the overwrite
+  legacyPark      Boolean  @default(false) // made from an old "parked" revision: history only, nobody to tell
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([articleId, createdAt])
+  @@index([createdAt])
+  @@map("wiki_conflicts")
 }
 
 /// Explicit MediaWiki-style group membership (sysop, bureaucrat, interface-admin, bot, ...). A row is keyed by

@@ -58,6 +58,8 @@ bunx prisma db execute --schema prisma/schema --file prisma/migrations/202611021
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261103120000_ixnayid_claims/migration.sql
 bun scripts/identity/convert-wiki-name-claims.ts --apply
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261103120001_ixnayid_drop_legacy/migration.sql
+# The WikiOS conflict log, the old parks as legacy rows, the park re-push jobs retired
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261105120000_wikios_conflicts/migration.sql
 bun run db:push:force
 
 # Verify and auto-heal WikiOS articles and categories in PostgreSQL

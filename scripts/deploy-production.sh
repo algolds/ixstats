@@ -195,6 +195,9 @@ bun scripts/identity/convert-wiki-name-claims.ts --apply || exit 1
 # The IxWiki link rows go (the legacy User columns stay one release, @ignore, for the old app during the build).
 # Refuses if the conversion never ran; idempotent.
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261103120001_ixnayid_drop_legacy/migration.sql || exit 1
+# WikiOS data safety (docs/superpowers/plans/2026-10-24-wikios-data-safety.md): the conflict log, the old parks turned into
+# legacy rows, the park re-push jobs retired. Additive and idempotent.
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261105120000_wikios_conflicts/migration.sql || exit 1
 
 # Sync production database with schema
 echo "🔄 Syncing production database schema..."
