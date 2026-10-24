@@ -5,7 +5,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { ManageSection } from "./ManageSection";
 import { RealmWikitextEditor } from "./RealmWikitextEditor";
 
-/** The factbook, written with the WikiOS canvas editor (or as wikitext source). */
+/** The factbook, written with the WikiOS canvas editor. */
 export function FactbookSection({
   slug,
   realmName,
@@ -40,7 +40,6 @@ export function FactbookSection({
         editorTitle={`Realm factbook ${slug}`}
         initialWikitext={factbook.wikitext}
         saveLabel="Save factbook"
-        sourceLabel="Factbook wikitext"
         saving={save.isPending}
         onSave={(wikitext) => save.mutate({ slug, wikitext })}
       />

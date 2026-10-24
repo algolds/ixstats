@@ -303,7 +303,7 @@ embassies, frozen board restrictions, polls and forum categories go with it, and
 
 Sections follow the caller's powers: **Appearance** (banner and thumbnail, each uploaded or given as an `https://`
 address; description; up to five tags from `REALM_TAGS`), **Links** (community links), **Time** (the realm clock; founder and site staff),
-**Factbook** (the WikiOS canvas editor or wikitext; saved as wikitext plus rendered, sanitized HTML), **Rules**
+**Factbook** (the WikiOS canvas editor; saved as wikitext plus rendered, sanitized HTML), **Rules**
 (the same editor; empty text removes the rules), **Officers** (each power with a one-line description), **Claims**
 (the founder and officers holding `claims`; the admin claims list narrowed to the realm, with Approve disabled on an
 officer's own claim),
