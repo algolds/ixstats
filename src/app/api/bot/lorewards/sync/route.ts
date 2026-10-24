@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
-import { db } from "~/server/db";
-import { recomputeUserStats } from "~/lib/lorewards";
-import { invalidateCache } from "~/lib/cache";
+import {
+  applyBotResult,
+  BotWeekConflict,
+  parseBotResult,
+  type BotLorewardPayload,
+} from "~/lib/lorewards/bot-result";
 import { safeEqual } from "~/lib/security/safe-equal";
 
 export const dynamic = "force-dynamic";
@@ -17,26 +20,7 @@ function hasValidBotKey(request: Request, expectedApiKey: string) {
   );
 }
 
-type Count = number | string | null | undefined;
-
-/** One result the bot pushes. */
-interface BotLorewardPayload {
-  date?: string;
-  type?: string;
-  winnerUser?: string | null;
-  winnerPage?: string | null;
-  winnerScore?: Count;
-  winnerBytes?: Count;
-  runnerUpUser?: string | null;
-  runnerUpPage?: string | null;
-  runnerUpScore?: Count;
-  runnerUpBytes?: Count;
-  status?: string;
-  metadata?: string | null;
-}
-
-const toNumberOrNull = (value: Count) => (value !== undefined ? Number(value) : null);
-
+/** The bot pushes one result: 400 when it cannot be read, 409 when its week's key holds another week. */
 export async function POST(request: Request) {
   const expectedApiKey = process.env.BOT_API_KEY;
   if (!expectedApiKey) {
@@ -52,43 +36,14 @@ export async function POST(request: Request) {
 
   try {
     const payload: BotLorewardPayload = await request.json();
-    const { date, type, winnerUser, runnerUpUser, status = "approved", metadata } = payload;
-
-    if (!date || !type) {
-      return NextResponse.json({ error: "Missing required fields: date, type" }, { status: 400 });
-    }
-
-    const places = {
-      winnerUser: winnerUser ?? null,
-      winnerPage: payload.winnerPage ?? null,
-      winnerScore: toNumberOrNull(payload.winnerScore),
-      winnerBytes: toNumberOrNull(payload.winnerBytes),
-      runnerUpUser: runnerUpUser ?? null,
-      runnerUpPage: payload.runnerUpPage ?? null,
-      runnerUpScore: toNumberOrNull(payload.runnerUpScore),
-      runnerUpBytes: toNumberOrNull(payload.runnerUpBytes),
-    };
-    const rest = { status, metadata: metadata ? String(metadata) : null };
-    // An entry an admin override wrote keeps its places and its status, so a status that withholds a contest stays;
-    // the bot still updates its metadata. The override is checked in the write itself, so one that commits while
-    // this runs is never written over.
-    await db.lorewardEntry.updateMany({
-      where: { date, type, overriddenAt: null },
-      data: { ...places, status },
-    });
-    const entry = await db.lorewardEntry.upsert({
-      where: { date_type: { date, type } },
-      create: { date, type, ...places, ...rest },
-      update: { metadata: rest.metadata, syncedAt: new Date() },
-    });
-
-    if (winnerUser) await recomputeUserStats(winnerUser);
-    if (runnerUpUser) await recomputeUserStats(runnerUpUser);
-
-    await invalidateCache(["lorewards.", "wiki."]);
-
-    return NextResponse.json({ success: true, entry });
+    const parsed = parseBotResult(payload);
+    if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
+    const { entry, settled } = await applyBotResult(parsed.result);
+    return NextResponse.json({ success: true, entry, settled });
   } catch (error) {
+    if (error instanceof BotWeekConflict) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
     console.error("[Lorewards Sync Webhook] Error processing payload:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Internal server error" },
