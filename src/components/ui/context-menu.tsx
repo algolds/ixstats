@@ -13,9 +13,8 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
-  MenuKindContext,
-  menuSurface,
 } from "~/components/ui/dropdown-menu";
+import { MenuKindContext, menuSurface } from "~/components/ui/menu-shared";
 
 /**
  * Right-click (long-press on touch, Shift+F10 or the Menu key) menu for a thing with an identity: a
@@ -27,18 +26,26 @@ function ContextMenu({ ...props }: React.ComponentProps<typeof ContextMenuPrimit
   return <ContextMenuPrimitive.Root data-slot="context-menu" {...props} />;
 }
 
+const TEXT_ENTRY = "input, textarea, select, [contenteditable]:not([contenteditable='false'])";
+
 /**
- * The browser's own menu wins where it is the useful one: Shift+right-click, text fields, a
- * selection inside the trigger, and links inside it (open in new tab). The trigger itself may be
+ * Not the trigger's event: a text field, or something portalled out of it (a dialog the thing
+ * opened, or this menu), whose events still bubble through the React tree.
+ */
+function isForeign(event: React.SyntheticEvent<Element>): boolean {
+  const target = event.target as Element;
+  return !event.currentTarget.contains(target) || !!target.closest(TEXT_ENTRY);
+}
+
+/**
+ * The browser's own menu wins where it is the useful one: Shift+right-click, text fields, portals,
+ * a selection inside the trigger, and links inside it (open in new tab). The trigger itself may be
  * a link.
  */
 export function prefersNativeMenu(event: React.MouseEvent<Element>): boolean {
-  const target = event.target as Element;
+  if (event.shiftKey || isForeign(event)) return true;
   const trigger = event.currentTarget;
-  if (event.shiftKey) return true;
-  if (target.closest("input, textarea, select, [contenteditable]:not([contenteditable='false'])"))
-    return true;
-  const link = target.closest("a[href]");
+  const link = (event.target as Element).closest("a[href]");
   if (link && link !== trigger && trigger.contains(link)) return true;
   const selection = window.getSelection();
   return !!selection && !selection.isCollapsed && trigger.contains(selection.anchorNode);
@@ -63,7 +70,7 @@ function ContextMenuTrigger({
       onKeyDown={(event) => {
         onKeyDown?.(event);
         if (event.key === "ContextMenu" || (event.key === "F10" && event.shiftKey))
-          setNative(false);
+          setNative(isForeign(event));
       }}
       {...props}
     />

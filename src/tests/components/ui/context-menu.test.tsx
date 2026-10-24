@@ -1,4 +1,5 @@
 import "react";
+import { createPortal } from "react-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "~/components/ui/context-menu";
 import { DropdownMenuItem, DropdownMenuSeparator } from "~/components/ui/dropdown-menu";
@@ -26,6 +27,8 @@ function Post({ onEdit = () => {} }: { onEdit?: () => void }) {
       <ContextMenuTrigger asChild>
         <article data-testid="post">
           Body text <a href="/elsewhere">a link</a>
+          {/* A dialog the post opened: portalled, so its events bubble through the trigger in React. */}
+          {createPortal(<div data-testid="dialog">Report</div>, document.body)}
         </article>
       </ContextMenuTrigger>
       <ContextMenuContent>
@@ -61,6 +64,15 @@ describe("ContextMenu", () => {
   it("leaves the browser menu to links inside the trigger", () => {
     render(<Post />);
     expect(rightClick(screen.getByRole("link"))).toBe(true);
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("leaves the browser menu to portals the trigger renders, by mouse or keyboard", () => {
+    render(<Post />);
+    const dialog = screen.getByTestId("dialog");
+    expect(rightClick(dialog)).toBe(true);
+    fireEvent.keyDown(dialog, { key: "F10", shiftKey: true });
+    expect(fireEvent.contextMenu(dialog)).toBe(true);
     expect(screen.queryByRole("menu")).toBeNull();
   });
 

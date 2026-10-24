@@ -8,19 +8,11 @@ import { Circle } from "iconoir-react";
 import { cn } from "~/lib/utils/cn";
 import { SurfaceReset } from "~/components/ui/card";
 import { presentMotionClassName } from "~/components/ui/dialog";
-
-/** Menu surface: the overlay layer. Each menu adds its own transform origin. Shared with `context-menu`. */
-export const menuSurface = "z-popover min-w-[8rem] rounded-row p-1 facet-overlay text-label";
+import { MenuKindContext, menuSurface } from "~/components/ui/menu-shared";
 
 /** Menu rows: nested radius (12 − 4 padding = 8), fill-3 highlight, body text. */
 const menuRow =
   "relative flex cursor-default items-center gap-2 rounded-control-sm min-h-8 px-2 py-1 text-body outline-none select-none transition-colors duration-fast ease-out-facet data-[highlighted]:bg-fill-3 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='text-'])]:text-label-secondary [:where(&)_svg]:size-4";
-
-/**
- * Set to "context" by `ContextMenuContent`: the item components below then render the context-menu
- * primitives, so one items fragment serves both a "More actions" dropdown and a right-click menu.
- */
-export const MenuKindContext = React.createContext<"dropdown" | "context">("dropdown");
 
 // ponytail: both namespaces wrap @radix-ui/react-menu, so their item props are identical.
 const usePrimitive = () =>

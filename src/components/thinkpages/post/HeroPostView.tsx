@@ -14,6 +14,7 @@ import {
   Trash as Trash2,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "~/components/ui/context-menu";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -78,6 +79,24 @@ export function HeroPostView({ post, ctx, state }: HeroPostViewProps) {
     },
   ].filter((item) => item.show);
 
+  // Shared by the "More" dropdown and the post's right-click menu.
+  const items = menuItems.map(({ Icon, label, onClick, danger, separated }) => (
+    <React.Fragment key={label}>
+      {separated && <DropdownMenuSeparator className="bg-border/40" />}
+      <DropdownMenuItem
+        onClick={onClick}
+        className={
+          danger
+            ? cn("text-red hover:bg-red/20 hover:text-red", separated && "font-medium")
+            : "text-label hover:bg-fill-4"
+        }
+      >
+        <Icon />
+        <span>{label}</span>
+      </DropdownMenuItem>
+    </React.Fragment>
+  ));
+
   const stats = [
     { label: "Likes", value: post.likeCount },
     { label: "Reposts", value: post.repostCount },
@@ -85,169 +104,159 @@ export function HeroPostView({ post, ctx, state }: HeroPostViewProps) {
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={springGentle}
-      className="group bg-surface border-separator shadow-card text-label rounded-card relative space-y-4 overflow-hidden border p-5"
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => onAccountClick?.(account.id)}
-            className="shrink-0 transition-transform hover:scale-105"
-          >
-            <AccountAvatar
-              account={account}
-              className="border-separator h-12 w-12 border"
-              fallbackClassName="text-headline"
-            />
-          </button>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <PersonaAuthorCard username={account.username ?? ""}>
-                <button
-                  onClick={() => onAccountClick?.(account.id)}
-                  className="text-headline text-label leading-snug hover:underline"
-                >
-                  {account.displayName}
-                </button>
-              </PersonaAuthorCard>
-              {account.verified && (
-                <span
-                  className="text-body inline-flex h-4 w-4 items-center justify-center"
-                  title="Verified"
-                >
-                  ✅
-                </span>
-              )}
-              {account.country && (
-                <span className="border-separator bg-fill-4 text-label-secondary rounded-control-sm text-caption inline-flex items-center gap-1 border px-2 py-0.5">
-                  {account.country.flag && (
-                    <img
-                      src={normalizeFlagUrl(account.country.flag) ?? undefined}
-                      alt=""
-                      className="rounded-control-sm h-2.5 w-3.5 object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none";
-                      }}
-                    />
-                  )}
-                  {account.country.name}
-                </span>
-              )}
-            </div>
-            <div className="mt-0.5 flex items-center gap-2">
-              <span className="text-label-secondary text-body">@{account.username}</span>
-              <span className="text-label-tertiary text-footnote">·</span>
-              <div
-                className={cn(
-                  "rounded-control-sm text-caption flex items-center gap-1 px-2 py-0.5",
-                  accountTypeColor(account.accountType)
-                )}
+    <ContextMenu>
+      <ContextMenuTrigger asChild disabled={items.length === 0}>
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={springGentle}
+          className="group bg-surface border-separator shadow-card text-label rounded-card relative space-y-4 overflow-hidden border p-5"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => onAccountClick?.(account.id)}
+                className="shrink-0 transition-transform hover:scale-105"
               >
-                <AccountTypeIcon type={account.accountType} className="h-2.5 w-2.5" />
-                <span>{account.accountType}</span>
+                <AccountAvatar
+                  account={account}
+                  className="border-separator h-12 w-12 border"
+                  fallbackClassName="text-headline"
+                />
+              </button>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <PersonaAuthorCard username={account.username ?? ""}>
+                    <button
+                      onClick={() => onAccountClick?.(account.id)}
+                      className="text-headline text-label leading-snug hover:underline"
+                    >
+                      {account.displayName}
+                    </button>
+                  </PersonaAuthorCard>
+                  {account.verified && (
+                    <span
+                      className="text-body inline-flex h-4 w-4 items-center justify-center"
+                      title="Verified"
+                    >
+                      ✅
+                    </span>
+                  )}
+                  {account.country && (
+                    <span className="border-separator bg-fill-4 text-label-secondary rounded-control-sm text-caption inline-flex items-center gap-1 border px-2 py-0.5">
+                      {account.country.flag && (
+                        <img
+                          src={normalizeFlagUrl(account.country.flag) ?? undefined}
+                          alt=""
+                          className="rounded-control-sm h-2.5 w-3.5 object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                          }}
+                        />
+                      )}
+                      {account.country.name}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-0.5 flex items-center gap-2">
+                  <span className="text-label-secondary text-body">@{account.username}</span>
+                  <span className="text-label-tertiary text-footnote">·</span>
+                  <div
+                    className={cn(
+                      "rounded-control-sm text-caption flex items-center gap-1 px-2 py-0.5",
+                      accountTypeColor(account.accountType)
+                    )}
+                  >
+                    <AccountTypeIcon type={account.accountType} className="h-2.5 w-2.5" />
+                    <span>{account.accountType}</span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <div className="relative">
-          <DropdownMenu open={state.showMoreOptions} onOpenChange={state.setShowMoreOptions}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-label-secondary hover:bg-fill-4 hover:text-label size-9 rounded-full"
-              >
-                <MoreHorizontal className="h-5 w-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="border-separator bg-surface w-56">
-              {menuItems.map(({ Icon, label, onClick, danger, separated }) => (
-                <React.Fragment key={label}>
-                  {separated && <DropdownMenuSeparator className="bg-border/40" />}
-                  <DropdownMenuItem
-                    onClick={onClick}
-                    className={
-                      danger
-                        ? cn("text-red hover:bg-red/20 hover:text-red", separated && "font-medium")
-                        : "text-label hover:bg-fill-4"
-                    }
+            <div className="relative">
+              <DropdownMenu open={state.showMoreOptions} onOpenChange={state.setShowMoreOptions}>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-label-secondary hover:bg-fill-4 hover:text-label size-9 rounded-full"
                   >
-                    <Icon />
-                    <span>{label}</span>
-                  </DropdownMenuItem>
-                </React.Fragment>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
-      <PostBody
-        content={post.content}
-        cleanContent={state.cleanPostContent}
-        blurbMeta={state.blurbMeta}
-        sportsBulletin={state.sportsBulletin}
-        account={account}
-        isHero={true}
-      />
-
-      <PostMediaGrid
-        mediaAttachments={state.mediaAttachments}
-        postId={post.id}
-        onOpenLightbox={state.setLightboxMedia}
-      />
-
-      <PostEmbeds post={post} state={state} vizSpacing="mt-3 space-y-3" />
-
-      {Array.isArray(post.hashtags) && post.hashtags.length > 0 && (
-        <div className="flex flex-wrap gap-2 pt-1">
-          {post.hashtags.map((hashtag: string, index: number) => (
-            <Link
-              key={index}
-              href={`/hashtags/${encodeURIComponent(hashtag.replace(/^#/, ""))}`}
-              onClick={(e) => e.stopPropagation()}
-              className="text-body text-blue hover:text-blue font-medium hover:underline"
-            >
-              #{hashtag}
-            </Link>
-          ))}
-        </div>
-      )}
-
-      <div className="text-label-secondary text-body py-1">
-        {timestamp.toLocaleTimeString(undefined, timeFormat)}
-        {" · "}
-        {timestamp.toLocaleDateString(undefined, dateFormat)}
-        {" · ixTime"}
-      </div>
-
-      <div className="border-separator text-label-secondary text-body flex gap-4 border-t border-b py-3 font-medium">
-        {stats.map(({ label, value }) => (
-          <div key={label}>
-            <span className="text-label font-semibold">{value || 0}</span>
-            <span className="text-label-secondary ml-1 font-normal">{label}</span>
+                    <MoreHorizontal className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="border-separator bg-surface w-56">
+                  {items}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-        ))}
-      </div>
 
-      <div className="py-1">
-        <PostActions
-          {...ctx}
-          postId={post.id}
-          post={post}
-          showCounts={false}
-          size="lg"
-          className="w-full justify-around"
-        />
-      </div>
+          <PostBody
+            content={post.content}
+            cleanContent={state.cleanPostContent}
+            blurbMeta={state.blurbMeta}
+            sportsBulletin={state.sportsBulletin}
+            account={account}
+            isHero={true}
+          />
 
-      <PostComposers post={post} state={state} ctx={ctx} />
+          <PostMediaGrid
+            mediaAttachments={state.mediaAttachments}
+            postId={post.id}
+            onOpenLightbox={state.setLightboxMedia}
+          />
 
-      <PostModals post={post} state={state} onAccountClick={onAccountClick} />
-    </motion.div>
+          <PostEmbeds post={post} state={state} vizSpacing="mt-3 space-y-3" />
+
+          {Array.isArray(post.hashtags) && post.hashtags.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {post.hashtags.map((hashtag: string, index: number) => (
+                <Link
+                  key={index}
+                  href={`/hashtags/${encodeURIComponent(hashtag.replace(/^#/, ""))}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-body text-blue hover:text-blue font-medium hover:underline"
+                >
+                  #{hashtag}
+                </Link>
+              ))}
+            </div>
+          )}
+
+          <div className="text-label-secondary text-body py-1">
+            {timestamp.toLocaleTimeString(undefined, timeFormat)}
+            {" · "}
+            {timestamp.toLocaleDateString(undefined, dateFormat)}
+            {" · ixTime"}
+          </div>
+
+          <div className="border-separator text-label-secondary text-body flex gap-4 border-t border-b py-3 font-medium">
+            {stats.map(({ label, value }) => (
+              <div key={label}>
+                <span className="text-label font-semibold">{value || 0}</span>
+                <span className="text-label-secondary ml-1 font-normal">{label}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="py-1">
+            <PostActions
+              {...ctx}
+              postId={post.id}
+              post={post}
+              showCounts={false}
+              size="lg"
+              className="w-full justify-around"
+            />
+          </div>
+
+          <PostComposers post={post} state={state} ctx={ctx} />
+
+          <PostModals post={post} state={state} onAccountClick={onAccountClick} />
+        </motion.div>
+      </ContextMenuTrigger>
+      <ContextMenuContent className="w-56">{items}</ContextMenuContent>
+    </ContextMenu>
   );
 }

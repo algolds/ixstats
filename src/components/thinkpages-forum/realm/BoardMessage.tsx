@@ -6,6 +6,7 @@ import { ArrowRight, Reply as ReplyIcon, Quote } from "iconoir-react";
 import type { ActionCardData } from "~/components/action-links";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { ContextMenu, ContextMenuTrigger } from "~/components/ui/context-menu";
 import { countedPostId } from "~/lib/discussed-in";
 import { timeAgo } from "~/lib/format/compact";
 import { realmBoardHref, threadHref } from "~/lib/thinkpages-forum/links";
@@ -18,7 +19,7 @@ import { canReactToMessage } from "../reactions/can-react";
 import { PostBody } from "../thread/PostBody";
 import type { PostStyle } from "../thread/types";
 import { MessageEditor } from "./MessageEditor";
-import { MessageMenu } from "./MessageMenu";
+import { hasMessageActions, MessageMenu } from "./MessageMenu";
 import type { BoardAccess, BoardMessageData, BoardRealm } from "./types";
 
 interface BoardMessageProps {
@@ -126,101 +127,118 @@ export const BoardMessage = memo(function BoardMessage({
   const placeholder = continued !== null;
 
   return (
-    <article
-      id={`post-${message.id}`}
-      aria-label={`Message from ${author.name}, ${timeAgo(message.createdAt)}`}
-      data-hidden={message.hidden ? "" : undefined}
-      className={cn(
-        "group/message hover:bg-fill-4 flex scroll-mt-24 gap-3.5 px-4 py-4 transition-colors sm:px-5",
-        message.hidden && "bg-fill-4 opacity-70",
-        className
-      )}
-    >
-      <ForumAvatar name={author.name} avatarUrl={author.avatarUrl} size="md" className="mt-0.5" />
-      {editing ? (
-        <MessageEditor
-          message={message}
-          asModerator={editing === "moderator"}
-          tools={tools}
-          onSaved={() => {
-            setEditing(null);
-            onChanged();
-          }}
-          onCancel={() => setEditing(null)}
-        />
-      ) : (
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <MessageAuthor message={message} />
-          {replyTo ? (
-            <Link
-              href={realmBoardHref(realm.slug, replyTo.postId)}
-              className="text-footnote text-label-secondary hover:text-label flex min-w-0 items-center gap-1.5"
-            >
-              <ReplyIcon aria-hidden className="size-3.5 shrink-0" />
-              <span className="min-w-0 truncate">
-                Replying to <span className="text-label">{replyTo.authorName}</span>
-                {`: "${replyTo.excerpt}"`}
-              </span>
-            </Link>
-          ) : null}
-          {placeholder ? null : (
-            <PostBody
-              html={message.contentHtml}
-              style={BOARD_STYLE}
-              cards={cards}
-              cardsReady={cardsReady}
-              cardsErrored={cardsErrored}
-              postId={countedPostId({ id: message.id, persona: author.persona })}
-            />
+    <ContextMenu>
+      {/* The editor keeps the browser's menu (spellcheck), and so does a message with nothing to offer. */}
+      <ContextMenuTrigger
+        asChild
+        disabled={
+          editing !== null || placeholder || !hasMessageActions(message, access, signedIn, tools)
+        }
+      >
+        <article
+          id={`post-${message.id}`}
+          aria-label={`Message from ${author.name}, ${timeAgo(message.createdAt)}`}
+          data-hidden={message.hidden ? "" : undefined}
+          className={cn(
+            "group/message hover:bg-fill-4 flex scroll-mt-24 gap-3.5 px-4 py-4 transition-colors sm:px-5",
+            message.hidden && "bg-fill-4 opacity-70",
+            className
           )}
-          {continued ? <ContinuedLine continued={continued} /> : null}
-          {placeholder ? null : (
-            <div className="flex flex-wrap items-center gap-1">
-              <ReactionBar
-                postId={message.id}
-                counts={message.reactions}
-                mine={message.myReaction}
-                canReact={canReactToMessage(canReact, message)}
-              />
-              {/* With a mouse, Reply, Quote and the menu show on hover or focus, so a long board reads as messages,
-                  not rows of buttons; reactions with counts always show. Touch keeps them visible. */}
-              {access.canPost ? (
-                <span className={cn("flex items-center gap-1", REVEAL)}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={ACTION}
-                    onClick={() => onReply(message)}
-                  >
-                    <ReplyIcon aria-hidden />
-                    Reply
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={ACTION}
-                    onClick={() => onQuote(message)}
-                  >
-                    <Quote aria-hidden />
-                    Quote
-                  </Button>
-                </span>
+        >
+          <ForumAvatar
+            name={author.name}
+            avatarUrl={author.avatarUrl}
+            size="md"
+            className="mt-0.5"
+          />
+          {editing ? (
+            <MessageEditor
+              message={message}
+              asModerator={editing === "moderator"}
+              tools={tools}
+              onSaved={() => {
+                setEditing(null);
+                onChanged();
+              }}
+              onCancel={() => setEditing(null)}
+            />
+          ) : (
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <MessageAuthor message={message} />
+              {replyTo ? (
+                <Link
+                  href={realmBoardHref(realm.slug, replyTo.postId)}
+                  className="text-footnote text-label-secondary hover:text-label flex min-w-0 items-center gap-1.5"
+                >
+                  <ReplyIcon aria-hidden className="size-3.5 shrink-0" />
+                  <span className="min-w-0 truncate">
+                    Replying to <span className="text-label">{replyTo.authorName}</span>
+                    {`: "${replyTo.excerpt}"`}
+                  </span>
+                </Link>
               ) : null}
-              <span className="flex-1" />
-              <span className={REVEAL}>
-                <MessageMenu
-                  message={message}
-                  access={access}
-                  signedIn={signedIn}
-                  tools={tools}
-                  onEdit={(asModerator) => setEditing(asModerator ? "moderator" : "author")}
-                  onChanged={onChanged}
+              {placeholder ? null : (
+                <PostBody
+                  html={message.contentHtml}
+                  style={BOARD_STYLE}
+                  cards={cards}
+                  cardsReady={cardsReady}
+                  cardsErrored={cardsErrored}
+                  postId={countedPostId({ id: message.id, persona: author.persona })}
                 />
-              </span>
+              )}
+              {continued ? <ContinuedLine continued={continued} /> : null}
+              {placeholder ? null : (
+                <div className="flex flex-wrap items-center gap-1">
+                  <ReactionBar
+                    postId={message.id}
+                    counts={message.reactions}
+                    mine={message.myReaction}
+                    canReact={canReactToMessage(canReact, message)}
+                  />
+                  {/* With a mouse, Reply, Quote and the menu show on hover or focus, so a long board reads as messages,
+                  not rows of buttons; reactions with counts always show. Touch keeps them visible. */}
+                  {access.canPost ? (
+                    <span className={cn("flex items-center gap-1", REVEAL)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={ACTION}
+                        onClick={() => onReply(message)}
+                      >
+                        <ReplyIcon aria-hidden />
+                        Reply
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={ACTION}
+                        onClick={() => onQuote(message)}
+                      >
+                        <Quote aria-hidden />
+                        Quote
+                      </Button>
+                    </span>
+                  ) : null}
+                  <span className="flex-1" />
+                  <span className={REVEAL}>
+                    <MessageMenu
+                      message={message}
+                      access={access}
+                      signedIn={signedIn}
+                      tools={tools}
+                      onEdit={(asModerator) => setEditing(asModerator ? "moderator" : "author")}
+                      onChanged={onChanged}
+                      onReply={access.canPost ? () => onReply(message) : undefined}
+                      onQuote={access.canPost ? () => onQuote(message) : undefined}
+                    />
+                  </span>
+                </div>
+              )}
             </div>
           )}
-        </div>
-      )}
-    </article>
+        </article>
+      </ContextMenuTrigger>
+    </ContextMenu>
   );
 });

@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { ContextMenuContent } from "~/components/ui/context-menu";
 import {
   hasModeratorActions,
   ModeratorDialogs,
@@ -31,6 +32,9 @@ interface MessageMenuProps {
   onEdit: (asModerator: boolean) => void;
   /** A moderation action or a continue changed the board. */
   onChanged: () => void;
+  /** Reply and Quote lead the right-click menu when the viewer may post. */
+  onReply?: () => void;
+  onQuote?: () => void;
 }
 
 type Open = ModeratorDialogName | "report" | "continue" | null;
@@ -142,10 +146,28 @@ function MenuDialogs({
   );
 }
 
+/** Whether a message has anything for its menus: Reply and Quote, or any "More actions" item. */
+export function hasMessageActions(
+  message: BoardMessageData,
+  access: BoardAccess,
+  signedIn: boolean,
+  tools: ModeratorTools | null
+): boolean {
+  const { canContinue, canReport, canEdit, moderating } = abilitiesOf(
+    message,
+    access,
+    signedIn,
+    tools,
+    moderatable(message)
+  );
+  return access.canPost || canContinue || canReport || canEdit || moderating;
+}
+
 /**
  * A board message's "More actions" menu: Continue in a thread, Report, Edit, and a moderator's hide or unhide, edit,
  * warn and ban. Each item appears only when the viewer may use it (the server asks again); the menu is left out when
- * it would be empty.
+ * it would be empty. Rendered inside the message's `ContextMenu`, whose right-click menu offers Reply and Quote and
+ * then the same items.
  */
 export function MessageMenu({
   message,
@@ -154,30 +176,43 @@ export function MessageMenu({
   tools,
   onEdit,
   onChanged,
+  onReply,
+  onQuote,
 }: MessageMenuProps) {
   const [open, setOpen] = useState<Open>(null);
   const post = moderatable(message);
   const abilities = abilitiesOf(message, access, signedIn, tools, post);
   const { canContinue, canReport, canEdit, moderating } = abilities;
-  if (!canContinue && !canReport && !canEdit && !moderating) return null;
+  const more = canContinue || canReport || canEdit || moderating;
+  const items = <MenuItems abilities={abilities} post={post} setOpen={setOpen} onEdit={onEdit} />;
 
   return (
     <>
-      <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="More actions"
-            className="text-label-secondary hover:text-label pointer-coarse:min-h-11 pointer-coarse:min-w-11"
-          >
-            <MoreHoriz aria-hidden />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <MenuItems abilities={abilities} post={post} setOpen={setOpen} onEdit={onEdit} />
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <ContextMenuContent>
+        {onReply && onQuote ? (
+          <>
+            <DropdownMenuItem onSelect={onReply}>Reply</DropdownMenuItem>
+            <DropdownMenuItem onSelect={onQuote}>Quote</DropdownMenuItem>
+            {more ? <DropdownMenuSeparator /> : null}
+          </>
+        ) : null}
+        {items}
+      </ContextMenuContent>
+      {more ? (
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="More actions"
+              className="text-label-secondary hover:text-label pointer-coarse:min-h-11 pointer-coarse:min-w-11"
+            >
+              <MoreHoriz aria-hidden />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">{items}</DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
       <MenuDialogs
         message={message}
         post={post}

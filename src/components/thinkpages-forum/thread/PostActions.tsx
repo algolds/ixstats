@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { ContextMenuContent } from "~/components/ui/context-menu";
 import { useNotify } from "~/hooks/useNotify";
 import { postHref } from "~/lib/thinkpages-forum/links";
 import { createUrl } from "~/lib/utils/url-utils";
@@ -55,7 +56,8 @@ const permalinkOf = (postId: string) => `${window.location.origin}${createUrl(po
 
 /**
  * A post's actions: Reply, Quote and Share in the row, and a "More actions" menu holding Report, Edit and the
- * moderator tools. Share copies the permalink; the menu is left out when it would be empty.
+ * moderator tools. Share copies the permalink; the menu is left out when it would be empty. Rendered inside the
+ * post's `ContextMenu`, whose right-click menu offers the row's actions and then the same "More actions" items.
  */
 export function PostActions({
   post,
@@ -83,8 +85,39 @@ export function PostActions({
     }
   };
 
+  const more = canReport || canEdit || moderating;
+  const moreItems = (
+    <>
+      {canReport ? (
+        <DropdownMenuItem onSelect={() => setOpen("report")}>Report</DropdownMenuItem>
+      ) : null}
+      {canEdit ? <DropdownMenuItem onSelect={onEdit}>Edit</DropdownMenuItem> : null}
+      {moderating ? (
+        <>
+          {canReport || canEdit ? <DropdownMenuSeparator /> : null}
+          <ModeratorMenuItems post={post} onOpen={setOpen} onEdit={onModeratorEdit} />
+        </>
+      ) : null}
+    </>
+  );
+
   return (
     <div className="flex flex-wrap items-center gap-1">
+      <ContextMenuContent>
+        {canReply ? (
+          <>
+            <DropdownMenuItem onSelect={onReply}>Reply</DropdownMenuItem>
+            <DropdownMenuItem onSelect={onQuote}>Quote</DropdownMenuItem>
+          </>
+        ) : null}
+        <DropdownMenuItem onSelect={() => void share()}>Copy link</DropdownMenuItem>
+        {more ? (
+          <>
+            <DropdownMenuSeparator />
+            {moreItems}
+          </>
+        ) : null}
+      </ContextMenuContent>
       <ReactionBar
         postId={post.id}
         counts={post.reactions}
@@ -108,25 +141,14 @@ export function PostActions({
         <span className="max-sm:sr-only">Share</span>
       </Button>
       <span className="flex-1" />
-      {canReport || canEdit || moderating ? (
+      {more ? (
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon-sm" aria-label="More actions" className={ACTION}>
               <MoreHoriz aria-hidden />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {canReport ? (
-              <DropdownMenuItem onSelect={() => setOpen("report")}>Report</DropdownMenuItem>
-            ) : null}
-            {canEdit ? <DropdownMenuItem onSelect={onEdit}>Edit</DropdownMenuItem> : null}
-            {moderating ? (
-              <>
-                {canReport || canEdit ? <DropdownMenuSeparator /> : null}
-                <ModeratorMenuItems post={post} onOpen={setOpen} onEdit={onModeratorEdit} />
-              </>
-            ) : null}
-          </DropdownMenuContent>
+          <DropdownMenuContent align="end">{moreItems}</DropdownMenuContent>
         </DropdownMenu>
       ) : null}
       {/* The report dialog is mounted while open only, so a closed post costs no hooks and a reopened form starts empty.
