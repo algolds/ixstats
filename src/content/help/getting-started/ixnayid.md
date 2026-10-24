@@ -18,7 +18,7 @@ Your passport lives at `/@yourname` (also `/id/yourname`). Anyone can view it, s
 
 | Tab | What it shows |
 | --- | --- |
-| Overview | Your featured realm, a showcase (achievements and ribbons, your top cards, Lorewards standing) and affiliations |
+| Overview | Your featured realm, a showcase (achievements and ribbons, your top cards) and affiliations |
 | Realms | Every realm you belong to and the nations you hold |
 | Work | Your wiki pages and edits, Onoma languages, MyLeague clubs and directives |
 | Vault | Collector level, deck value and your top cards: your pinned showcase when it is public, otherwise your six most valuable cards |
@@ -57,13 +57,13 @@ You can claim several names (alts and renames), but each name belongs to one acc
 - its past edits count as yours: in your contributions, toward the 10 edits that unlock uploads and the other autoconfirmed rights, and in achievements;
 - its `User:` page opens your passport;
 - edits you make in WikiOS reach the classic wiki under that name;
-- classic-wiki [Lorewards](/help/wiki/lorewards) won under it count for you;
+- classic-wiki [Lorewards](/help/wiki/lorewards) won under it count for you: places from 15 October 2026 that haven't been paid are paid to you, once, and its trophy cards come to you;
 - claims for nations whose IxWiki page it created are approved at once;
 - bots set up under it keep logging in.
 
 **Show or hide a name.** Each name has a switch. Turned off, the name shows nowhere other players look (your passport, your wiki pages and bylines), but it still counts for you. If you had hidden your wiki name in your privacy settings before, your names start hidden: turn on each one you want shown.
 
-An administrator can remove a name later if it turns out not to be yours. Its edits then stop counting for you; Lorewards already paid stay paid.
+An administrator can remove a name later if it turns out not to be yours. Its edits then stop counting for you, and its Loreward trophy cards go to whoever's claim of the name is approved next; Lorewards already paid stay paid.
 
 ## Link your sister wiki accounts
 

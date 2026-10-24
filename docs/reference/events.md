@@ -61,7 +61,7 @@ Both servers attach to a raw HTTP server's `upgrade` event. They are hosted by:
 | `lore-card-generation` | `0 2 * * *` | — |
 | `card-import-jobs` | `* * * * *` | — |
 | `lorewards-full-sync` | `0 6 * * *` | `cronSchedule_lorewardsScoring` |
-| `lorewards-state-sync` | `*/10 * * * *` | — |
+| `lorewards-ool-backfill` | `20 * * * *` | — |
 | `trade-expiry` | `*/5 * * * *` | — |
 | `sports-season-advance` | `*/15 * * * *` | — |
 | `elections` | `*/10 * * * *` | — |

@@ -19,6 +19,13 @@ The passport is the public face of an IxnayID account. It is readable signed-out
 | History  | `getHistory`            | Cross-platform activity stream, paged                                          |
 
 The front face also carries a stat row (Lorewards, Focus, Forum, IxCredits) and the owner's signature inscription.
+The **Lorewards** stat (`wiki.lorewards`, `PassportStatRow`) shows the holder's rank and score added up over their shown
+approved claimed names (`lorewardStatsOfNames`, `src/lib/lorewards/stats-of-names.ts`: both spellings of each name; the
+streaks are the largest, not a sum; the rank places the summed score among the per-name rows). On their own passport the
+owner's hidden names count too. Selecting it opens the Lorewards sheet (`PassportLorewardsModal`), which renders the
+shared `LorewardsView` (`focus="you"`, see [Achievements → Lorewards](./achievements.md#lorewards)) for one name, with a
+name picker when there are several; its trophy cards follow the holder's Vault cards visibility. There is no Lorewards
+panel on the Overview tab.
 The photo wears the holder's equipped Vault glow and frame and the name carries their badge, for every visitor
 (`PassportPortrait`, `vault.getEquippedCosmeticsFor`; equipping is the opt-in, there is no separate toggle).
 
@@ -30,7 +37,6 @@ Shown on the Overview tab (`components/passport/showcase/PassportShowcase.tsx`).
 
 - **Achievements & ribbons** (`showcase.achievements`): unlocked count out of the active catalogue, total points, the **signature shelf** (the owner's pinned ribbons, or their three rarest when none are pinned), the full **ribbon rack**, and the next few achievements by rarity. Loaded by `loadAchievementsShowcase` (`identity.showcase.ts`) from `UserAchievement` rows keyed by the owner's Clerk id. How ribbons are derived and styled: [Achievements → Ribbons](./achievements.md#ribbons).
 - **Top cards** (`vault.topCards`, on the Collection tab): the holder's display (`displayedCopies`, `src/lib/cards/hub/displayed.ts`): their pinned public showcase, else their six most valuable live copies, one per card. Each is a card face in full colour to every visitor, whatever they hold, since the display shows off the holder's collection ([cards.md](./cards.md#uncollected-cards)), and it opens the card sheet through the holder (`from=holder.<handle>`); a signed-out visitor opens these sheets too, while the holder shows Vault cards, since `cards.getSheet` answers signed out for cards shown in public.
-- **Lorewards standing** (`wiki.lorewards`): rank, score, laurels and best streak. Selecting it opens the Lorewards accolades modal, which renders the shared `LorewardsView` (`focus="you"`, see [Achievements → Lorewards](./achievements.md#lorewards)) for the holder's wiki name; the trophy cards in it follow the holder's Vault cards visibility.
 
 `vault.focus` counts distinct lore categories across the whole live collection (NationStates imports excluded) out of the 12 lore categories, and names the largest.
 
@@ -86,12 +92,12 @@ The passport account is the only IxWiki and WikiOS identity ([design](../superpo
 | See             | The player                                                                                   | `ixnayid.listMyNameClaims`                                                                                                                              | Every claim and status ("Waiting for review", "Approved", "Not approved", "Removed") with the decision note. No notification is sent on a decision.                                                                                                                                                                                                                                                                                         |
 | Approve, reject | An administrator, in Admin, Users, **Name claims** (`src/app/admin/users/NameClaimsTab.tsx`) | `admin.listNameClaims({ status, cursor?, limit })`, `admin.approveNameClaim`, `admin.rejectNameClaim` (`{ claimId, note? }`)                            | The queue by status shows the account (handle, country), the name's evidence (WikiOS edits under either spelling, Lorewards standing, unexpired imported groups, a block in force, who else holds or asks) and the player's own words.                                                                                                                                                                                                      |
 | Link directly   | An administrator, from the tab's **Link an old name** sheet (`LinkLegacyNameSheet.tsx`)      | `admin.searchLegacyWikiNames({ query, limit })`, `admin.findNameLinkTargets({ query })`, `admin.linkLegacyWikiName({ userId, name, note?, mwUserId? })` | For legacy players who never linked. The name search covers WikiOS revision authors, Lorewards names (stats, winners, runners-up) and classic MediaWiki's user list (`list=allusers`, read-only, `fetchClassicWikiUsers`); the account search takes a handle, country or Clerk id. The link approves the account's own pending claim on the name, returns a name it already holds unchanged, or creates and approves an `ADMIN_LINK` claim. |
-| Remove          | An administrator, on an approved claim                                                       | `admin.revokeNameClaim({ claimId, note? })`                                                                                                             | `REVOKED`: every revision tag the claim made is taken back (`authorId` returns to null), payouts already made stay paid (design decision 7), and no hook runs. The name is free again.                                                                                                                                                                                                                                                      |
+| Remove          | An administrator, on an approved claim                                                       | `admin.revokeNameClaim({ claimId, note? })`                                                                                                             | `REVOKED`: every revision tag the claim made is taken back (`authorId` returns to null), payouts already made stay paid (design decision 7). After the commit the revoke hook takes the name's trophy cards back for its next approved owner ([Claim hooks](#claim-hooks)). The name is free again.                                                                                                                                         |
 | Show or hide    | The player, the switch on each pending or approved name                                      | `ixnayid.setNameClaimVisibility({ claimId, visible })`                                                                                                  | See [Visibility](#visibility).                                                                                                                                                                                                                                                                                                                                                                                                              |
 
 The `ixnayid.*` claim procedures are signed-in rate-limited mutations (`listMyNameClaims` a protected query); the `admin.*` ones are `adminProcedure` (`src/server/api/routers/admin/name-claims.ts`, thin: the service decides, `identity.name-search.ts` reads).
 
-**An approval** (approve or link), under the name's lock: refuses when another account holds the name, or when another account's passport handle spells it as MediaWiki normalises it ("That name is another player's passport handle."; `setHandle` refuses the other way round, a handle that spells another account's approved name). It then sets `APPROVED`, the decider, the note and `rightsPass`, tags the name's revisions (below) and writes the audit row, all in the one transaction. The claim-approval hooks run after the commit ([Plan B hook](#plan-b-hook)).
+**An approval** (approve or link), under the name's lock: refuses when another account holds the name, or when another account's passport handle spells it as MediaWiki normalises it ("That name is another player's passport handle."; `setHandle` refuses the other way round, a handle that spells another account's approved name). It then sets `APPROVED`, the decider, the note and `rightsPass`, tags the name's revisions (below) and writes the audit row, all in the one transaction. The claim-approval hooks run after the commit ([Claim hooks](#claim-hooks)).
 
 **The system-owner rule** (plan 409, kept): imported MediaWiki groups (`wiki_user_groups` rows keyed by `wikiUsername`, from `scripts/wikios-import-rights.ts`) pass to the account only through a claim with `rightsPass`, which is set when a **system owner** approved or linked it (or the conversion found a link the account proved with its own token or a system owner confirmed). Imported blocks (`wiki_blocks.wikiUsername`) follow every approved claim. An administrator who is not a system owner cannot approve or link a name for their own account ("You cannot approve a name for your own account: ask another administrator."), and the tab warns them, on a name with imported groups, that the groups stay behind. A player never acts as a system owner.
 
@@ -116,9 +122,18 @@ Each claim has `visible`. A claim its owner hides shows nowhere anyone else look
 
 Its readers include `users.resolveWikiAuthor` and `users.wikiUserPageOwner`, `ixnayid.getStatus` and the passport, WikiOS rights, user info, contributions, watchlist notices and the mirror, the inbound sync, Lorewards and achievements, Ixnay realm claims, the Vault dividend's wiki part and bot-password logins.
 
-### Plan B hook
+### Claim hooks
 
-`src/lib/identity/claim-hooks.ts`: `CLAIM_APPROVED_HOOKS` run, in order, after an approval or admin link commits, outside every transaction and lock, with a `ClaimApprovedEvent` (claim, account, name, time, origin). A hook must be idempotent (an approval may be retried after a crash between the commit and the hooks); one that throws is logged (`[identity] claim hook failed`) and the approval stands. The conversion and the tag backfill run no hooks. Plan A ships the list empty; plan B (Lorewards) appends its payout-and-mint hook.
+`src/lib/identity/claim-hooks.ts`: `CLAIM_APPROVED_HOOKS` run, in order, after an approval or admin link commits, and
+`CLAIM_REVOKED_HOOKS` after a revoke commits, outside every transaction and lock, with a `ClaimApprovedEvent` (claim,
+account, name, time, origin) or a `ClaimRevokedEvent` (claim, the account that held the name, name, time). A hook must
+be idempotent (an approval may be retried after a crash between the commit and the hooks); one that throws is logged
+(`[identity] claim hook failed`, `[identity] claim revoke hook failed`) and the decision stands. The conversion and the
+tag backfill run no hooks: the daily Lorewards full sync pays converted claims. Each list holds one Lorewards hook
+(`src/lib/lorewards/claim-hook.ts`, loaded on demand): an approval settles the contests that record the name (places from
+15 October 2026 pay once, and every place's trophy card back to 2017 is minted and given); a revoke takes the name's
+trophy cards back from the former owner, voided, for the name's next approved owner, and the IxC paid stays paid
+([cards.md](./cards.md#loreward-trophy-cards)).
 
 ### Handles as edit authors
 
@@ -243,3 +258,127 @@ only read.
    the push in `scripts/deploy-production.sh` and the dev chain, an idempotent SQL file with
    `ALTER TABLE "User" DROP COLUMN IF EXISTS` for each. The app then running no longer reads them, so dropping them
    before the build is safe.
+
+---
+
+## Lorewards deploy runbook (owner)
+
+Plan B (Lorewards) goes out in the same deploy as plan A and has no SQL. Nothing here runs from a development machine;
+every command runs in the production app directory, and the read-only checks run with
+`docker exec ixstats-postgres psql -U postgres -d ixstats -c "<query>"`. Steps 1 to 3 run before the deploy, once the
+release is checked out on the server (plan A's step 1; the running app is not touched).
+
+1. **Before: counts and duplicate spellings.** Keep these counts for step 9:
+
+   ```sql
+   select type, date ~ '^\d{4}-W\d{2}$' as iso, count(*) from loreward_entries group by 1,2;
+   select count(*) from cards where "lorewardEntryId" is not null;
+   select count(*), sum(credits) from vault_transactions where source like 'bonus:loreward:%';
+   ```
+
+   Then look for one name kept under two spellings in the stats table:
+
+   ```sql
+   SELECT lower(replace(username,'_',' ')), count(*), string_agg(username,' | ') FROM loreward_user_stats GROUP BY 1 HAVING count(*)>1;
+   ```
+
+   The Passport stat and the Lorewards achievements add up every spelling of a name (`lorewardStatsOfNames`), so a
+   stale duplicate counts twice. Wins add up correctly, since each row counts only the entries recorded under its own
+   spelling, but `totalScore` comes from the main OOL page, and a row left under an older spelling keeps its old score.
+   Merge each pair the query finds: keep the spelling the OOL page uses now, and delete the other row (or set its
+   `totalScore` to 0 while entries still record that spelling). `lower()` also pairs names that differ in case after
+   the first letter, which MediaWiki treats as different people: leave those. The `ixstats_cards` clone has none.
+
+   Then look for bot monthlies with no range. The new webhook gives a monthly keyed `YYYY-MM` its first and last day
+   (UTC), so it is the same contest as the OOL page's `YYYY-MM-01` row; a row stored before has none:
+
+   ```sql
+   SELECT id, date FROM loreward_entries WHERE type='monthly' AND date ~ '^\d{4}-\d{2}$' AND "dateStart" IS NULL;
+   ```
+
+   Each row found is a second contest for its month and needs an admin fix. The clone has none.
+
+2. **The old endpoint and the cron runner.** `/api/lorewards/sync` is deleted. Look for a call to it in the server's
+   crontab and remove the line:
+
+   ```bash
+   crontab -l | grep -n "lorewards/sync"
+   grep -rn "lorewards/sync" /etc/cron.d /etc/crontab
+   ```
+
+   (`/api/bot/lorewards/sync` is the bot webhook and stays.) Then stop the cron runner, `pm2 stop ixstats-cron`, so the
+   old 10-minute state sync stops writing date-keyed weekly rows while the merge runs, and change its job list for the
+   new code: in `ecosystem.config.cjs`, replace `lorewards-state-sync` with `lorewards-ool-backfill` in
+   `CRON_ENABLED_JOBS` and keep `lorewards-full-sync`. The deploy starts it again (step 5).
+
+3. **The weekly merge, before the new code goes live.** The new syncs key every weekly by its UTC ISO week, so merge
+   the date-keyed rows first:
+
+   ```bash
+   bun scripts/lorewards/merge-weekly-keys.ts           # dry run: prints counts, skipped and folds as JSON, writes nothing
+   bun scripts/lorewards/merge-weekly-keys.ts --apply   # applies each merge in its own transaction
+   bun scripts/lorewards/merge-weekly-keys.ts           # again: 0 merges
+   ```
+
+   Read `skipped` in the dry run: each week it leaves alone, with the reason (`different first days`,
+   `different holders`, `paid twice`, `carded twice`, `overridden or not approved`, `no first day`). On the clone the
+   merge made 211 merges and skipped five weeks: 2024-W20, 2026-W01, 2026-W13, 2026-W14 and 2026-W18. Production may
+   differ, so work from its own list. Each skipped week is settled by an admin override in step 6.
+
+4. **Deploy.** `scripts/deploy-production.sh`, with plan A's steps (plan B adds no SQL).
+
+5. **Cron.** The deploy script's `pm2 startOrReload ecosystem.config.cjs --update-env` starts the cron runner with the
+   list from step 2 (if it did not, `pm2 restart ixstats-cron --update-env`). The OOL backfill runs hourly at
+   `20 * * * *` (the current year's OOL page, then it settles what it wrote); the full sync runs at 06:00 UTC. An old
+   name left in the list is only reported as unknown.
+
+6. **Skipped weeks.** Run the merge's dry run again: the old app, until the restart, could still write a date-keyed
+   weekly (the old webhook, or the OOL read inside a page view), so apply again if it plans any merge. Then settle each
+   skipped week in Admin, Bot, Lorewards, **Manual winner override tool**: an override of the week's winner is written
+   to every row of its contest and no sync writes over it.
+
+7. **The trophy backfill.**
+
+   ```bash
+   bun scripts/backfill-loreward-trophy-cards.ts           # dry run: the places missing a card, and the cards waiting for a claim
+   bun scripts/backfill-loreward-trophy-cards.ts --apply   # mints and gives; a second --apply mints 0
+   ```
+
+   It mints a card for every place since 2017 and gives the ones whose name has an approved claim (or whose `wikios>`
+   name resolves); the rest wait, and each later claim approval gives them out. It pays nothing. On the clone the first
+   apply minted 2,846 cards and granted 0 (no claims were approved), and a second run minted 0.
+
+8. **Pay.** Check bonuses are on (Admin, Cards, Economy), then press **Pay now** (there in Loreward payouts, or in
+   Admin, Bot, Lorewards), or wait for the 06:00 UTC full sync. Places from 15 October 2026 whose names have approved
+   claims (the conversion's included: the conversion runs no hooks) pay once; the toast says how many places were paid
+   and how many trophy cards were minted and given, or "Loreward bonuses are off". Pressing it again pays 0.
+
+9. **After.** Run the counts of step 1 again: no date-keyed weekly rows beyond the skipped weeks'
+   (`select count(*) from loreward_entries where type='weekly' and date !~ '^\d{4}-W\d{2}$'`), about one trophy card
+   per contest place, and new `bonus:loreward:` rows only for places from 15 October 2026. Open the Vault Lorewards tab
+   as a player with an approved claim and check their cards and payouts.
+
+10. **The Discord bot** (`/ixwiki/shared/bots/discord`, outside this repo). The bot must POST every approved daily,
+    weekly and monthly result to `https://ixwiki.com/projects/ixstates/api/bot/lorewards/sync` with
+    `Authorization: Bearer <BOT_API_KEY>` (or `x-bot-api-key`) and the body fields the route reads (`date`, `type`,
+    `winnerUser`, `winnerPage`, `winnerScore`, `winnerBytes`, `runnerUpUser`, `runnerUpPage`, `runnerUpScore`,
+    `runnerUpBytes`, `status`, `metadata`). A weekly's `date` is its ISO week in UTC (`2026-W43`) or its first day; a
+    monthly's stays as it sends it today (a `YYYY-MM` key gets its first and last day as its range). Check whether it
+    posts already (`grep -rn "lorewards/sync" /ixwiki/shared/bots/discord`); if it only writes `lorewards-state.json`,
+    add the POST after it approves a result. Answers: 200 with the stored entry and what was settled; 400 when the date
+    cannot be read; 409 when the week's key holds another week (another first day), which needs an admin override of
+    that week.
+
+11. **The admin blacklist still reads the bot's state file.** `lorewards.getBlacklist` (Admin, Bot, Lorewards,
+    **Silent blacklist manager**) reads `/ixwiki/shared/bots/discord/lorewards-state.json`, by design (plan B's open
+    decision 7: it is not a results sync). The bot may keep writing the file.
+
+12. **Watch `exclusiveWikiosNames`.** The Lorewards achievements loader runs it for an account on every evaluation
+    (`src/lib/lorewards/account-names.ts`): it groups the account's ixwiki revisions by author and checks each author
+    against other accounts' revisions. Its cost grows with tagged revisions, so once plan A's tag backfill (step 3) has
+    run, watch it in the weekly slow-query digest.
+
+### Known limits
+
+- A revoke that races a sync can leave a trophy card with the former owner. Nothing sweeps it back; an admin override
+  of its place fixes it.

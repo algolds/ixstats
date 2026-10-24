@@ -10,13 +10,15 @@ nextLabel: Stash
 
 ## What Lorewards are
 
-Lorewards are the community's awards for writing on the wiki. Every day the community's Lorewards bot picks a **winner** and a **runner-up** from that day's wiki edits, and there are also weekly, monthly and yearly winners. Weekly and monthly results record a winner; runner-up places are recorded for the daily contest. Results are published on the wiki's `IxWiki:OOL` pages. IxStats copies the approved results so your laurels, score and streak show across the platform. Nothing here needs to be claimed: you write on the wiki, and the results come to you.
+Lorewards are the community's awards for writing on the wiki. Every day the community's Lorewards bot picks a **winner** and a **runner-up** from that day's wiki edits, and there are also weekly, monthly and yearly winners. Weekly and monthly results record a winner; runner-up places are recorded for the daily contest. Results are published on the wiki's `IxWiki:OOL` pages. IxStats records the approved results so your laurels, score and streak show across the platform. Edits you make in WikiOS count for your account straight away. Wins on the classic wiki count for you once you've claimed the old IxWiki name they were won under (see [What a place pays](#what-a-place-pays)).
 
 ## Winning a Loreward
 
 1. Write on the wiki, in [WikiOS](/help/wiki/wikios) or on the classic wiki.
 2. The Lorewards bot reviews the day's edits and announces the winner and runner-up. Only approved results count.
-3. IxStats copies new results on a schedule, so a new win can take up to a day to show.
+3. The bot sends each approved result to IxStats, so a new win usually shows as soon as it's approved. IxStats also reads the `IxWiki:OOL` pages every hour and fills in any result the bot's message missed.
+
+A weekly contest is filed under its week, Monday to Sunday (UTC).
 
 ## What a place pays
 
@@ -30,18 +32,17 @@ A Loreward pays by contest and place, into your [Vault](/help/vault/overview):
 
 Each place pays once. These amounts apply to results dated 15 October 2026 or later; earlier results keep what they paid, and yearly winners don't pay. Runner-up places are only paid where the results record them, which today is the daily contest. Admins can change the amounts.
 
-Edits made in WikiOS earn for your account; wins on the classic wiki count once you've claimed the name they were won under. When you edit in WikiOS without a claimed name you show, the classic wiki shows your edits under `wikios>` and your WikiOS name, and a place won under that name is paid to your account when every edit under your WikiOS name to the winning page during the contest was yours. If another player's WikiOS name is the same as yours and they edited that page too, nobody is paid for it. A weekly or monthly place won under your `wikios>` name is paid only when the contest recorded its winning page and its dates. A place won under a classic wiki name is paid only to the account holding the **approved** claim of exactly that name. Claim it in [Settings → IxnayID & Passport → Old IxWiki names](/help/getting-started/ixnayid#claim-your-old-ixwiki-names). Results from before the payout date are never back-paid, so claiming later does not pay history.
+Edits made in WikiOS earn for your account; wins on the classic wiki count once you've claimed the name they were won under. When you edit in WikiOS without a claimed name you show, the classic wiki shows your edits under `wikios>` and your WikiOS name, and a place won under that name is paid to your account when every edit under your WikiOS name to the winning page during the contest was yours. If another player's WikiOS name is the same as yours and they edited that page too, nobody is paid for it. A weekly or monthly place won under your `wikios>` name is paid only when the contest recorded its winning page and its dates. A place won under a classic wiki name is paid only to the account holding the **approved** claim of exactly that name. Claim it in [Settings → IxnayID & Passport → Old IxWiki names](/help/getting-started/ixnayid#claim-your-old-ixwiki-names). When an administrator approves your claim, every place won under the name from 15 October 2026 that hasn't been paid is paid to you at once, and its trophy cards come to you. Results from before the payout date are never back-paid, so claiming later does not pay history. A place is never paid twice: one already paid, to anyone, isn't paid again.
 
 ## Trophy cards
 
-Every recorded place, winner or runner-up, in the daily, weekly and monthly contests, has a one-of-one **trophy card** of the winning page. It is a trophy card, bound to the winner, so it stays with you and can't be traded or listed. Monthly winners are Legendary, weekly winners and monthly runner-ups are Epic, and the other places are Rare. Cards exist for results back to 2017. If the winner can't be matched to your account yet (see [What a place pays](#what-a-place-pays)), the card waits and is given to you once it can: for a classic wiki name, when your claim of that name is approved. A claim never applies to a place won under a `wikios>` name. Trophy cards pay nothing and don't count toward your deck value for the daily Vault dividend or the deck-value achievements.
+Every recorded place, winner or runner-up, in the daily, weekly and monthly contests, has a one-of-one **trophy card** of the winning page. It is a trophy card, bound to the winner, so it can't be traded or listed. Monthly winners are Legendary, weekly winners and monthly runner-ups are Epic, and the other places are Rare. Cards exist for results back to 2017. If the winner can't be matched to your account yet (see [What a place pays](#what-a-place-pays)), the card waits and is given to you once it can: for a classic wiki name, when your claim of that name is approved. A claim never applies to a place won under a `wikios>` name. If an administrator removes a claim that turned out not to be the player's, the name's trophy cards leave that account and go to whoever's claim of the name is approved next. IxCredits already paid stay paid. Trophy cards pay nothing and don't count toward your deck value for the daily Vault dividend or the deck-value achievements.
 
 ## Where your Lorewards show
 
-- **The Vault.** Open [Achievements](/vault/achievements) and choose the **Lorewards** tab for your wins, runner-up places, streak, what Lorewards have paid you, your place in today's race and your trophy cards.
-- **WikiOS.** The [Lorewards page](/util/lorewards) shows today's race (the top ten editors so far today, UTC), the all-time standings and the recent winners. It links to your trophies in the Vault.
-- **Your passport.** The front of your [passport](/help/getting-started/ixnayid) has a **Lorewards** stat with your rank and score. Select it to open the same Lorewards view for you: daily, weekly and monthly laurels, runner-up places, your current streak and your trophy cards.
-- **The passport showcase.** The Overview tab's **Lorewards standing** panel shows your rank, score, laurels and best streak.
+- **The Vault.** Open [Achievements](/vault/achievements) and choose the **Lorewards** tab. It always shows your trophy cards, your wins, runner-up places, streak, what Lorewards have paid you and your place in today's race, then your Lorewards achievements, today's race and the standings. If you haven't had an old IxWiki name approved yet, it also shows **Claim your old IxWiki names** with a **Claim a name** button that opens Settings.
+- **WikiOS.** **Lorewards** is in the wiki section of the navigation. The [Lorewards page](/util/lorewards) shows today's race (the top ten editors so far today, UTC), the all-time standings and the recent winners, and links to your trophies in the Vault. In an article, the margin drawer ends with a **Today's race** line: your place and score, and the leader. Select it to open the Lorewards page.
+- **Your passport.** The front of your [passport](/help/getting-started/ixnayid) has a **Lorewards** stat with your rank and score, added up over the old IxWiki names you've claimed and show. Select it to open the Lorewards view: daily, weekly and monthly laurels, runner-up places, your current streak and your trophy cards. If you have several names, pick one at the top.
 - **Winning articles.** An article that won a Loreward shows a **Loreward winner** badge in its header in WikiOS. Select it to open the winner's trophies, and the trophy card once it exists.
 
 ## Score, rank, laurels and streaks
@@ -55,7 +56,7 @@ Every recorded place, winner or runner-up, in the daily, weekly and monthly cont
 
 ## Privacy
 
-Your Lorewards are public by default. To hide them, open your passport, choose **Edit passport** and switch off **Civic accolades**. That hides your Lorewards stat, standing, laurels history and the Lorewards entries in your activity, from everyone. Your trophy cards are listed on a public Lorewards view only while your passport shows your Vault cards.
+Your Lorewards are public by default. To hide them, open your passport, choose **Edit passport** and switch off **Civic accolades**. That hides your Lorewards stat, laurels history and the Lorewards entries in your activity, from everyone. Your trophy cards are listed on a public Lorewards view only while your passport shows your Vault cards.
 
 ## Lore Medals
 
@@ -72,5 +73,5 @@ Lore Medals don't pay IxCredits, don't count toward your achievement points and 
 
 ## Good to know
 
-- Your passport looks up Lorewards by the old IxWiki names you've claimed and show, so claim yours to make sure the right record shows.
+- Your passport adds up the Lorewards of the old IxWiki names you've claimed and show, so claim yours to make sure your whole record shows. On your own passport, your hidden names count too.
 - The full results and rankings are also on the wiki's `IxWiki:OOL` pages.

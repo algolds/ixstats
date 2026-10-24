@@ -234,6 +234,8 @@ WikiOS Margin is an inspector docked to the reader, on top of MediaWiki-style ta
 | Today's race | The top ten editors of the current UTC day, scored live (`lorewards.getTodayRace`, cached 10 minutes) |
 | Payouts and trophy cards | Tiered IxCredits by contest and place and a one-of-one trophy card per recorded place; see [achievements.md](../achievements.md#lorewards) |
 | One view, two homes | `/util/lorewards` (WikiOS, `LorewardsView focus="contest"`) and the Vault's Lorewards tab; the passport modal and the article badge (`?user=<winner>`) open the same view |
+| Nav entry | **Lorewards** in the wiki section of the navigation, after Repository (`src/lib/navigation/app-sections.ts`), opens `/util/lorewards` |
+| Margin race chip | The reader's margin drawer ends with today's race in one line (`MarginRaceChip`): the viewer's place and score (`lorewards.getMyRace`, signed in) and the leader, linking to `/util/lorewards`; neither read runs while the drawer is closed |
 | User stats | Total wins, runner-up finishes, bytes contributed, current and longest streaks |
 | Scoring engine | Evaluates bytes added, prose ratio, edit depth, novelty and topic importance (`lib/lorewards/scoring.ts`); admins tune the weights in Admin → Wiki → Lorewards (`lorewardWeight_<field>`) |
 
