@@ -298,6 +298,8 @@ export function createFakeDbModule() {
     wikiRestriction: restrictionDelegate,
     /** IxWiki name claims: none is claimed here, so the importer's claim tags (claim-tags.ts) tag nothing. */
     wikiNameClaim: { findFirst: async (): Promise<null> => null },
+    /** The editing switch and the protections marker: a test answers them (src/tests/helpers/wikios-modes.ts). */
+    systemConfig: { findUnique: jest.fn() },
     /**
      * Understands the one raw statement the importer makes, `fillRevisionParents` (core/revision-parents.ts): the live
      * revisions of the article (value 1), in (createdAt, id) order, that have no parent get the one before them.

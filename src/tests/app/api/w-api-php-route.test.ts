@@ -5,7 +5,10 @@
  * limit, and a signed-in browser user reading (never writing).
  */
 jest.mock("@clerk/nextjs/server", () => ({ auth: jest.fn() }));
-jest.mock("~/server/db", () => ({ __esModule: true, db: {} }));
+jest.mock("~/server/db", () => ({
+  __esModule: true,
+  db: { systemConfig: { findUnique: jest.fn() } },
+}));
 jest.mock("~/lib/wiki-os/api-compat/deps", () => ({ createApiDeps: jest.fn() }));
 
 import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
@@ -14,6 +17,8 @@ import { auth } from "@clerk/nextjs/server";
 import { createApiDeps } from "~/lib/wiki-os/api-compat/deps";
 import { fakeServices, fakeWiki, makeDeps, HEKU } from "../../lib/wiki-os/api-compat/harness";
 import { MAX_UPLOAD_BYTES } from "~/lib/wiki-os/config";
+import { db } from "~/server/db";
+import { applyWikiosMode } from "~/tests/helpers/wikios-modes";
 
 const mockAuth = jest.mocked(auth) as unknown as jest.Mock;
 const mockCreateDeps = jest.mocked(createApiDeps);
@@ -32,6 +37,15 @@ beforeAll(async () => {
 });
 
 beforeEach(() => mockAuth.mockResolvedValue({ userId: null }));
+
+// v1 with the protections marker the rights import writes (without it WikiOS takes no write)
+let restoreMode: () => void = () => undefined;
+beforeEach(() => {
+  restoreMode = applyWikiosMode("v1", {
+    findUnique: jest.mocked(db.systemConfig.findUnique) as jest.Mock,
+  });
+});
+afterEach(() => restoreMode());
 
 const url = (query = "") => `http://localhost:3000/w/api.php${query ? `?${query}` : ""}`;
 const json = async (response: Response) => (await response.json()) as Record<string, any>;

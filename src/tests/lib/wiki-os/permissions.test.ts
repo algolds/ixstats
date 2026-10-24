@@ -15,6 +15,7 @@ jest.mock("~/server/db", () => ({
     wikiRestriction: { findMany: jest.fn() },
     wikiArticle: { findUnique: jest.fn(), findMany: jest.fn(), findFirst: jest.fn() },
     user: { findUnique: jest.fn() },
+    systemConfig: { findUnique: jest.fn() },
   },
 }));
 jest.mock("~/lib/auth", () => ({
@@ -45,6 +46,7 @@ import {
   type WikiPermissions,
 } from "~/lib/wiki-os/rights";
 import { db } from "~/server/db";
+import { applyWikiosMode } from "~/tests/helpers/wikios-modes";
 
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { getArticleAuthors } from "~/lib/wiki-os/adapters/mediawiki/article-store";
@@ -330,6 +332,7 @@ const mockDb = db as unknown as {
   wikiBlock: { findMany: jest.Mock };
   wikiRevision: { count: jest.Mock };
   wikiRestriction: { findMany: jest.Mock };
+  systemConfig: { findUnique: jest.Mock };
 };
 
 const ctx = (clerk = "user_1") => ({
@@ -351,6 +354,13 @@ beforeEach(() => {
   mockDb.wikiRevision.count.mockResolvedValue(0);
   mockDb.wikiRestriction.findMany.mockResolvedValue([]);
 });
+
+// v1 with the protections marker the rights import writes (without it WikiOS takes no write)
+let restoreMode: () => void = () => undefined;
+beforeEach(() => {
+  restoreMode = applyWikiosMode("v1", { findUnique: mockDb.systemConfig.findUnique });
+});
+afterEach(() => restoreMode());
 
 describe("authorizeAction", () => {
   it("resolves for an allowed action", async () => {

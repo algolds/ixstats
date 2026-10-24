@@ -19,6 +19,14 @@ import { Switch } from "~/components/ui/switch";
 import { api } from "~/trpc/react";
 import { EditPencil } from "iconoir-react";
 
+function editingLine(enabled: boolean, switchedOn: boolean): string {
+  if (enabled) return "On. WikiOS takes edits and copies each one to classic MediaWiki.";
+  if (switchedOn) {
+    return "On, waiting for the protections import (runbook steps 1 and 1b). WikiOS stays read-only until it has run.";
+  }
+  return "Off. WikiOS is read-only; classic MediaWiki is the wiki you edit.";
+}
+
 export function EditingSection() {
   const utils = api.useUtils();
   const { data: status, isLoading } = api.wikios.getEditingStatus.useQuery();
@@ -35,10 +43,12 @@ export function EditingSection() {
     onError: (e) => setError(e.message),
   });
 
+  // The switch shows the stored row, which can be on while editing waits for the protections import.
+  const switchedOn = Boolean(status && (status.forcedByEnv || status.switchOn));
   const switchDisabled =
     !status ||
     status.forcedByEnv ||
-    (!status.enabled && (!status.mirrorConfigured || !status.protectionsImported)) ||
+    (!status.switchOn && (!status.mirrorConfigured || !status.protectionsImported)) ||
     setEditing.isPending;
 
   return (
@@ -58,14 +68,10 @@ export function EditingSection() {
       ) : (
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-4">
-            <p className="text-label text-body">
-              {status.enabled
-                ? "On. WikiOS takes edits and copies each one to classic MediaWiki."
-                : "Off. WikiOS is read-only; classic MediaWiki is the wiki you edit."}
-            </p>
+            <p className="text-label text-body">{editingLine(status.enabled, switchedOn)}</p>
             <Switch
               aria-label="WikiOS editing"
-              checked={status.enabled}
+              checked={switchedOn}
               disabled={switchDisabled}
               onCheckedChange={(next) => {
                 setError(null);
@@ -76,7 +82,7 @@ export function EditingSection() {
           {status.forcedByEnv && (
             <p className="text-label-secondary text-footnote">Forced on by WIKIOS_V1_ENABLED</p>
           )}
-          {!status.protectionsImported && (
+          {!status.protectionsImported && !switchedOn && (
             <p className="text-label-secondary text-footnote">
               WikiOS takes no edits until the protections import has run (runbook steps 1 and 1b).
             </p>

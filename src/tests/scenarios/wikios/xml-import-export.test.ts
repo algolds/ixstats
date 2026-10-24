@@ -31,6 +31,8 @@
 import { gzipSync } from "node:zlib";
 import { NextRequest } from "next/server";
 import { resetStore, snapshotStore, store } from "~/tests/lib/wiki-os/xml/fake-wiki-db";
+import { db } from "~/server/db";
+import { applyWikiosMode } from "~/tests/helpers/wikios-modes";
 
 jest.mock("@clerk/nextjs/server", () => ({ auth: jest.fn() }));
 jest.mock("~/lib/wiki-os/rights", () => ({ getWikiPermissionsForAuthId: jest.fn() }));
@@ -170,6 +172,15 @@ beforeEach(() => {
   jest.mocked(auth).mockResolvedValue({ userId: "user_admin" } as never);
   holding(...SYSOP);
 });
+
+// v1 with the protections marker the rights import writes (without it WikiOS takes no write)
+let restoreMode: () => void = () => undefined;
+beforeEach(() => {
+  restoreMode = applyWikiosMode("v1", {
+    findUnique: jest.mocked(db.systemConfig.findUnique) as jest.Mock,
+  });
+});
+afterEach(() => restoreMode());
 
 describe("Special:Import, then Special:Export, then importing the export again", () => {
   it("picks the request type and the size limit the import page shows", () => {

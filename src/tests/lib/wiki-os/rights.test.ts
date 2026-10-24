@@ -12,6 +12,7 @@ const mockDb = db as unknown as {
   wikiBlock: { findMany: jest.Mock };
   wikiRevision: { count: jest.Mock };
   user: { findUnique: jest.Mock };
+  systemConfig: { findUnique: jest.Mock };
 };
 jest.mock("~/server/db", () => ({
   __esModule: true,
@@ -21,6 +22,7 @@ jest.mock("~/server/db", () => ({
     wikiBlock: { findMany: jest.fn() },
     wikiRevision: { count: jest.fn() },
     user: { findUnique: jest.fn() },
+    systemConfig: { findUnique: jest.fn() },
   },
 }));
 jest.mock("~/lib/auth", () => ({
@@ -47,6 +49,7 @@ import {
 } from "~/lib/wiki-os/rights";
 import { isSystemOwner } from "~/lib/auth";
 import { db } from "~/server/db";
+import { applyWikiosMode } from "~/tests/helpers/wikios-modes";
 import {
   checkEditPolicy,
   type EditPolicyIdentity,
@@ -273,6 +276,13 @@ beforeEach(() => {
   mockDb.wikiBlock.findMany.mockImplementation(fakeFindMany(() => blockRows));
   mockDb.wikiRevision.count.mockResolvedValue(0);
 });
+
+// v1 with the protections marker the rights import writes (without it WikiOS takes no write)
+let restoreMode: () => void = () => undefined;
+beforeEach(() => {
+  restoreMode = applyWikiosMode("v1", { findUnique: mockDb.systemConfig.findUnique });
+});
+afterEach(() => restoreMode());
 
 afterEach(() => {
   jest.useRealTimers();

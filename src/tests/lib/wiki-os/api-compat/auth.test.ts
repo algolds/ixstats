@@ -60,6 +60,7 @@ import {
   syntheticUserId,
 } from "~/lib/wiki-os/api-compat/auth-store";
 import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-prisma";
+import { applyWikiosMode } from "~/tests/helpers/wikios-modes";
 
 /** The client the rights engine reads in the grant tests. */
 const jestDb = {
@@ -72,8 +73,16 @@ const jestDb = {
   wikiRevision: { count: jest.fn() },
   wikiRestriction: { findMany: jest.fn() },
   user: { findUnique: jest.fn() },
+  systemConfig: { findUnique: jest.fn() },
 };
 mockDb = jestDb;
+
+// v1 with the protections marker the rights import writes (without it WikiOS takes no write)
+let restoreMode: () => void = () => undefined;
+beforeEach(() => {
+  restoreMode = applyWikiosMode("v1", { findUnique: jestDb.systemConfig.findUnique });
+});
+afterEach(() => restoreMode());
 
 const NOW = new Date("2026-09-30T12:00:00Z");
 const sysopUser: SessionUser = {

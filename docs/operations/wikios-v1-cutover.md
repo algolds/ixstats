@@ -80,7 +80,9 @@ unless set to `true`** (`src/lib/wiki-os/v1-switch.ts`). Step 6b turns it on.
 - **Why the protections come first.** Without them WikiOS knows only the protections it has seen in MediaWiki's log since
   its sync started: a page MediaWiki protected before then would be open in WikiOS, and the mirror account would push the
   edit to MediaWiki past its protection. So until the marker exists every WikiOS write (in both modes) is refused with
-  MediaWiki's `readonly` error, saying it waits for the protections import.
+  MediaWiki's `readonly` error, saying it waits for the protections import; so is a write whose read of the marker
+  failed before any read of it succeeded. A switch row already on shows as "On, waiting for the protections import" and
+  can still be turned off (written and audited as usual).
 - **Turning it off.** New WikiOS edits are refused; jobs already in the outbox keep draining to MediaWiki. To make them
   wait instead, set `SKIP_MEDIAWIKI_SYNC=true` (restart `ixstats-cron`, `wikios` and IxStates) or drop `wiki-mirror` from
   `CRON_ENABLED_JOBS`.

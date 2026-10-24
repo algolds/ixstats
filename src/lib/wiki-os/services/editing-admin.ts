@@ -11,6 +11,7 @@ import {
   isWikiosEditingForcedByEnv,
   refreshWikiosEditingFlag,
   setWikiosEditingFlag,
+  wikiosEditingSwitchOn,
   wikiosProtectionsImported,
 } from "~/lib/wiki-os/editing-switch";
 import { db } from "~/server/db";
@@ -18,7 +19,10 @@ import { mirrorMissingSettings } from "./mirror-admin";
 import { MIRROR_SOURCE } from "./mirror-outbox";
 
 export interface EditingStatus {
+  /** Whether WikiOS takes writes now: the switch (or v1) and the protections marker. */
   enabled: boolean;
+  /** The admin switch row alone; it can be on while editing waits for the protections import. */
+  switchOn: boolean;
   forcedByEnv: boolean;
   /** Whether the rights import wrote the protections marker (false when it could not be read either). */
   protectionsImported: boolean;
@@ -31,6 +35,7 @@ export async function getEditingStatus(): Promise<EditingStatus> {
   const missing = mirrorMissingSettings();
   return {
     enabled: isWikiosEditingEnabled(),
+    switchOn: wikiosEditingSwitchOn(),
     forcedByEnv: isWikiosEditingForcedByEnv(),
     protectionsImported: wikiosProtectionsImported() === true,
     mirrorConfigured: missing.length === 0,
@@ -50,7 +55,7 @@ export async function setEditing(
   const before = await getEditingStatus();
   if (before.forcedByEnv)
     refuse("WIKIOS_V1_ENABLED forces WikiOS editing on; change it in the environment.");
-  if (before.enabled === enabled) return before;
+  if (before.switchOn === enabled) return before;
   if (enabled && !before.protectionsImported)
     refuse("Run the protections import first (runbook steps 1 and 1b).");
   if (enabled && !before.mirrorConfigured) {
@@ -64,13 +69,13 @@ export async function setEditing(
       targetType: "wikios",
       targetId: "wikios_editing_enabled",
       targetName: "WikiOS editing",
-      changes: JSON.stringify({ from: before.enabled, to: enabled }),
+      changes: JSON.stringify({ from: before.switchOn, to: enabled }),
       adminId: actor.id,
       adminName: actor.name,
     },
   });
   void notify(actor.name, enabled);
-  return { ...before, enabled };
+  return { ...before, switchOn: enabled, enabled: isWikiosEditingEnabled() };
 }
 
 /** Fire-and-forget: a Discord or database hiccup must never fail a switch that already happened. */

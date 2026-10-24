@@ -293,7 +293,7 @@ describe("the editing switch", () => {
   });
 });
 
-describeEachWikiosMode("the protections marker", () => {
+describeEachWikiosMode("the protections marker", (mode) => {
   const findUnique = jest.mocked(db.systemConfig.findUnique);
   /** The mode's rows without the marker: what the database holds before the rights import. */
   function withoutMarker() {
@@ -328,17 +328,49 @@ describeEachWikiosMode("the protections marker", () => {
     expect(() => assertWikiosWritable()).not.toThrow();
   });
 
-  it("a marker read that fails before any successful read leaves the sync check on, and a successful read with no row turns it off", async () => {
+  /** The mode's rows, but the marker read rejects. */
+  function markerReadFails() {
     const modeRows = findUnique.getMockImplementation()!;
     findUnique.mockImplementation(((args: { where: { key: string } }) =>
       isMarker(args) ? Promise.reject(new Error("db down")) : modeRows(args as never)) as never);
+  }
+
+  it("counts editing as on before any read, refuses an awaited write whose marker read failed, and allows it once the marker is read", async () => {
+    // the synchronous check before the first read (the editing-switch mode has not read its row either)
+    expect(isWikiosEditingEnabled()).toBe(mode === "v1");
+    await refreshWikiosEditingFlag(); // let the background read it started settle
+    __resetWikiosEditingCacheForTests();
+
+    const modeRows = findUnique.getMockImplementation()!;
+    markerReadFails();
     const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
-    await expect(refreshWikiosEditingFlag(true)).resolves.toBe(true);
-    expect(wikiosProtectionsImported()).toBeNull();
-    expect(isWikiosEditingEnabled()).toBe(true);
+    await expect(refreshWikiosEditingFlag(true)).resolves.toBe(false);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("protections marker"), "db down");
     warn.mockRestore();
+    expect(decideAction({ ...request, action: "edit" })).toEqual({
+      allowed: false,
+      code: "readonly",
+      reason: WIKIOS_PROTECTIONS_REASON,
+    });
+    const ctx = { auth: { userId: null }, user: null } as never;
+    await expect(requireRight(ctx, "block")).rejects.toThrow(WIKIOS_PROTECTIONS_REASON);
 
+    findUnique.mockImplementation(modeRows);
+    await expect(refreshWikiosEditingFlag(true)).resolves.toBe(true);
+    expect(decideAction({ ...request, action: "edit" })).toEqual({ allowed: true });
+  });
+
+  it("keeps a marker it has read when a later read fails", async () => {
+    await refreshWikiosEditingFlag(true);
+    markerReadFails();
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    await expect(refreshWikiosEditingFlag(true)).resolves.toBe(true);
+    warn.mockRestore();
+    expect(wikiosProtectionsImported()).toBe(true);
+  });
+
+  it("a successful read with no row turns it off", async () => {
+    await refreshWikiosEditingFlag(true);
     withoutMarker();
     await expect(refreshWikiosEditingFlag(true)).resolves.toBe(false);
     expect(wikiosProtectionsImported()).toBe(false);
@@ -387,6 +419,31 @@ describe("switching editing on and off", () => {
       await expect(getEditingStatus()).resolves.toMatchObject({ protectionsImported: true });
       jest.mocked(db.systemConfig.findUnique).mockResolvedValue(null);
       await expect(getEditingStatus()).resolves.toMatchObject({ protectionsImported: false });
+    });
+
+    it("switches off a switch row left on while editing waits for the protections import", async () => {
+      // the row says on, the marker is missing: editing waits, and would start by itself once the import runs
+      jest.mocked(db.systemConfig.findUnique).mockImplementation((async (args: {
+        where: { key: string };
+      }) => (isMarker(args) ? null : { value: "true" })) as never);
+      await expect(getEditingStatus()).resolves.toMatchObject({
+        enabled: false,
+        switchOn: true,
+        protectionsImported: false,
+      });
+
+      const status = await setEditing(tx as never, actor, false);
+      await flush();
+      expect(db.systemConfig.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({ update: { value: "false" } })
+      );
+      expect(audit).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          action: "wikios.editing.disable",
+          changes: JSON.stringify({ from: true, to: false }),
+        }),
+      });
+      expect(status).toMatchObject({ enabled: false, switchOn: false });
     });
 
     it("refuses to switch on when the mirror is not configured", async () => {

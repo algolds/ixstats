@@ -15,6 +15,7 @@
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: {
+    systemConfig: { findUnique: jest.fn() },
     user: { findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     wikiAccountLink: { findFirst: jest.fn() },
     wikiNameClaim: {
@@ -137,6 +138,7 @@ import { PageManagementService } from "~/lib/wiki-os/core/page-management-servic
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { db } from "~/server/db";
+import { applyWikiosMode } from "~/tests/helpers/wikios-modes";
 
 const mockDb = db as unknown as {
   user: { findFirst: jest.Mock; update: jest.Mock };
@@ -181,6 +183,15 @@ const userCtx = () =>
       role: { name: "user", level: 100 },
     },
   });
+
+// v1 with the protections marker the rights import writes (without it WikiOS takes no write)
+let restoreMode: () => void = () => undefined;
+beforeEach(() => {
+  restoreMode = applyWikiosMode("v1", {
+    findUnique: jest.mocked(db.systemConfig.findUnique) as jest.Mock,
+  });
+});
+afterEach(() => restoreMode());
 
 describe("S4: wiki identity for authorization is the approved name claim", () => {
   const editCaller = () => createCallerFactory(wikiosEditingRouter)(asCtx(userCtx()));

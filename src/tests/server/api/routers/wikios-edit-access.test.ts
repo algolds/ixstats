@@ -9,6 +9,7 @@ const mockCheck = jest.fn();
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: {
+    systemConfig: { findUnique: jest.fn() },
     user: { findUnique: jest.fn() },
     wikiAccountLink: { findFirst: jest.fn().mockResolvedValue(null) },
     wikiNameClaim: {
@@ -83,6 +84,7 @@ import { wikiosEditingRouter } from "~/server/api/routers/wikios/editing";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { db } from "~/server/db";
+import { applyWikiosMode } from "~/tests/helpers/wikios-modes";
 import { wikiosBotPasswordsRouter } from "~/server/api/routers/wikios/bot-passwords";
 import {
   createBotPassword,
@@ -114,6 +116,15 @@ const signedIn = () =>
       },
     }) as never
   );
+
+// v1 with the protections marker the rights import writes (without it WikiOS takes no write)
+let restoreMode: () => void = () => undefined;
+beforeEach(() => {
+  restoreMode = applyWikiosMode("v1", {
+    findUnique: jest.mocked(db.systemConfig.findUnique) as jest.Mock,
+  });
+});
+afterEach(() => restoreMode());
 
 // the public tier has room unless a row empties it (the folded routers run behind the same limiter)
 beforeEach(() => {
