@@ -1,14 +1,56 @@
 "use client";
 
+import Link from "next/link";
 import { api } from "~/trpc/react";
-import { useUser } from "~/context/auth-context";
-import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
-import { RealmBoardBlock } from "./RealmBoardBlock";
+import { timeAgo } from "~/lib/format/compact";
+import { stripHtml } from "~/lib/utils/sanitize-html";
 
-function RealmPosts({ realmId }: { realmId: string | null }) {
-  const { user } = useUser();
+/** Posts the compact rail feed lists. */
+const COMPACT_ROWS = 5;
+/** Characters of a post's text a compact row shows. */
+const COMPACT_EXCERPT = 120;
+
+/** The part of a post a compact row reads. */
+interface FeedRow {
+  id: string;
+  content: string;
+  timestamp: string;
+  account: { displayName: string } | null;
+}
+
+function CompactRow({ row }: { row: FeedRow }) {
+  const text = stripHtml(row.content);
+  const excerpt = text.slice(0, COMPACT_EXCERPT);
+  return (
+    <li>
+      <Link
+        href={`/dashboard/post/${row.id}`}
+        className="hover:bg-fill-3 rounded-row flex flex-col gap-0.5 p-2"
+      >
+        <span className="flex items-baseline justify-between gap-2">
+          <span className="text-label text-body truncate">
+            {row.account?.displayName ?? "Someone"}
+          </span>
+          <span className="text-label-secondary text-footnote shrink-0">
+            {timeAgo(row.timestamp)}
+          </span>
+        </span>
+        <span className="text-label-secondary text-footnote">
+          {excerpt}
+          {text.length > COMPACT_EXCERPT && "…"}
+        </span>
+      </Link>
+    </li>
+  );
+}
+
+/**
+ * The rail's ThinkPages feed scoped to one realm (posts by its nations' personas), or to every realm when `realmId`
+ * is null: up to five one-line rows linking to the posts.
+ */
+export function RealmFeed({ realmId }: { realmId: string | null }) {
   const { data, isLoading, error } = api.thinkpages.getFeed.useQuery(
-    { realmId: realmId ?? undefined, limit: 20 },
+    { realmId: realmId ?? undefined, limit: COMPACT_ROWS },
     { staleTime: 15_000 }
   );
 
@@ -22,35 +64,12 @@ function RealmPosts({ realmId }: { realmId: string | null }) {
       </p>
     );
 
+  const rows: FeedRow[] = data.posts.slice(0, COMPACT_ROWS);
   return (
-    <div className="space-y-4">
-      {data.posts.map((post) => (
-        <ThinkpagesPost
-          key={post.id}
-          post={post}
-          currentUserAccountId={user?.id || "placeholder-disabled"}
-        />
+    <ul className="flex flex-col gap-1" aria-label="Recent posts">
+      {rows.map((row) => (
+        <CompactRow key={row.id} row={row} />
       ))}
-    </div>
-  );
-}
-
-/**
- * The ThinkPages feed scoped to one realm (posts by its nations' personas), or to every realm when `realmId` is
- * null. For one realm whose slug is known, the realm's live board (its newest native board messages) sits above the
- * posts; the old ThinkTank board chat is no longer part of the feed.
- */
-export function RealmFeed({
-  realmId,
-  realmSlug = null,
-}: {
-  realmId: string | null;
-  realmSlug?: string | null;
-}) {
-  return (
-    <div className="space-y-4">
-      {realmId && realmSlug ? <RealmBoardBlock slug={realmSlug} framed /> : null}
-      <RealmPosts realmId={realmId} />
-    </div>
+    </ul>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useViewerRealmId } from "~/hooks/useViewerRealmId";
 import {
   Select,
@@ -9,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Card } from "~/components/ui/card";
 import { RealmFeed } from "~/app/r/[realm]/_components/RealmFeed";
 import type { DirectoryRealm } from "./realm-directory";
 
@@ -22,12 +24,14 @@ export function RealmFeedPanel({ realms }: { realms: DirectoryRealm[] | undefine
   const selected = choice ?? viewerRealmId ?? ALL;
 
   return (
-    <section
+    <Card
+      content="feed"
+      padding="md"
       aria-labelledby="realm-feed-heading"
-      className="border-separator bg-surface rounded-card border p-4 md:p-6"
+      className="flex flex-col gap-3"
     >
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 id="realm-feed-heading" className="text-label text-title-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 id="realm-feed-heading" className="text-label text-headline">
           Realm feed
         </h2>
         <div className="text-label-secondary text-footnote flex items-center gap-2">
@@ -50,10 +54,10 @@ export function RealmFeedPanel({ realms }: { realms: DirectoryRealm[] | undefine
           </Select>
         </div>
       </div>
-      <RealmFeed
-        realmId={selected === ALL ? null : selected}
-        realmSlug={realms?.find((realm) => realm.id === selected)?.slug ?? null}
-      />
-    </section>
+      <RealmFeed realmId={selected === ALL ? null : selected} />
+      <Link href="/dashboard" className="text-label text-footnote hover:underline">
+        Open the feed
+      </Link>
+    </Card>
   );
 }

@@ -1,22 +1,25 @@
 "use client";
 
+import { useState } from "react";
 import { api } from "~/trpc/react";
 import { useAuth } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { MyClaims } from "~/app/r/[realm]/_components/MyClaims";
-import { BrowseRealms } from "./_components/BrowseRealms";
-import { OpenToJoin, openRealms } from "./_components/OpenToJoin";
+import { AtlasGrid } from "./_components/AtlasGrid";
 import { RealmFeedPanel } from "./_components/RealmFeedPanel";
+import { RealmGuide } from "./_components/RealmGuide";
 import { RealmSearch } from "./_components/RealmSearch";
-import { RealmsHero, type ViewerStanding } from "./_components/RealmsHero";
+import { RealmsHeader, type ViewerStanding } from "./_components/RealmsHeader";
 import { YourRealms } from "./_components/YourRealms";
 
 /**
- * The realms landing page: what realms are, the viewer's own realms and claims, one search for realms and
- * nations, the realms open to join, every listed realm, and the realm feed.
+ * The realms landing page: the header, the atlas of every listed realm (most open first) and the viewer's
+ * claims in the main column, and a rail with one search for realms and nations, the viewer's own realms, the
+ * realm guide and the realm feed.
  */
 export default function RealmsLandingPage() {
   usePageTitle({ title: "Realms" });
+  const [query, setQuery] = useState("");
   const { isLoaded, isSignedIn } = useAuth();
   const { data: realms, isLoading } = api.realms.directory.useQuery();
   const { data: mine } = api.realms.myNations.useQuery(undefined, { enabled: !!isSignedIn });
@@ -24,7 +27,6 @@ export default function RealmsLandingPage() {
   const { data: profile } = api.users.getProfile.useQuery(undefined, {
     enabled: myRealms.length > 0,
   });
-  const open = openRealms(realms);
 
   const standing: ViewerStanding = !isLoaded
     ? "loading"
@@ -38,30 +40,28 @@ export default function RealmsLandingPage() {
 
   return (
     <div className="flex w-full flex-col gap-6 p-4 md:p-8">
-      <RealmsHero
-        realms={realms}
-        standing={standing}
-        joinHref={open.length > 0 ? "#open-to-join" : "#browse-realms"}
-      />
+      <RealmsHeader realms={realms} standing={standing} />
 
-      {isSignedIn && (
-        <>
-          <YourRealms
-            realms={myRealms}
-            directory={realms}
-            activeCountryId={profile?.countryId ?? mine?.activeCountryId ?? null}
-          />
-          <MyClaims />
-        </>
-      )}
-
-      <RealmSearch realms={realms} />
-
-      <OpenToJoin realms={open} />
-
-      <BrowseRealms realms={realms} isLoading={isLoading} />
-
-      <RealmFeedPanel realms={realms} />
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+        <div className="flex min-w-0 flex-col gap-6">
+          <AtlasGrid realms={realms} isLoading={isLoading} query={query} />
+          {isSignedIn && <MyClaims />}
+        </div>
+        <aside className="flex flex-col gap-4 max-lg:contents">
+          <div className="max-lg:order-first">
+            <RealmSearch query={query} onQueryChange={setQuery} />
+          </div>
+          {isSignedIn && (
+            <YourRealms
+              realms={myRealms}
+              directory={realms}
+              activeCountryId={profile?.countryId ?? mine?.activeCountryId ?? null}
+            />
+          )}
+          <RealmGuide />
+          <RealmFeedPanel realms={realms} />
+        </aside>
+      </div>
     </div>
   );
 }

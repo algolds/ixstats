@@ -48,6 +48,8 @@ export function RealmCrest({ realm, size = "sm", muted = false, className }: Rea
     return (
       <img
         src={proxyCardArtwork(crest)}
+        // Community hosts behind hotlink protection (eurth.org) answer 403 to another site's referrer.
+        referrerPolicy="no-referrer"
         alt=""
         aria-hidden="true"
         loading="lazy"

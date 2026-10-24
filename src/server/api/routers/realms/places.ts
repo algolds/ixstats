@@ -3,13 +3,12 @@
  * board, and the directory's nation search.
  */
 import { Prisma, type PrismaClient } from "@prisma/client";
-import { notBoardCategory, onlyBoardCategory } from "~/lib/thinkpages-forum/categories";
+import { notBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { realmSettings } from "~/server/modules/realms/realms.settings";
 import {
   openNationCounts,
   unclaimedNationPages,
 } from "~/server/modules/realms/realms.open-nations";
-import { PREVIEWED_BOARD_MESSAGES } from "~/server/modules/thinkpages-forum";
 import { DIRECTORY_REALM_WHERE } from "~/server/shared/realm-directory";
 
 /** How far back "forum activity" in the directory looks. */
@@ -73,49 +72,6 @@ async function forumActivityByRealm(
   return activity;
 }
 
-/**
- * Messages on the realms' live boards since `since`: the directory's own "board messages this week" figure, batched
- * for the whole directory in two queries however many realms there are (the realms' public board threads, then one
- * grouped count of their messages). It is never added to `forumActivityByRealm`'s post count (the board stays out of every
- * forum count): public board category, thread not hidden, messages not hidden and not the placeholder line of a
- * message that was continued in a thread.
- */
-async function boardMessagesByRealm(
-  db: PrismaClient,
-  realmIds: string[],
-  since: Date
-): Promise<Map<string, number>> {
-  const threads = await db.forumThread.findMany({
-    where: {
-      hidden: false,
-      category: {
-        scope: "realm",
-        realmId: { in: realmIds },
-        visibility: "public",
-        ...onlyBoardCategory(),
-      },
-    },
-    select: { id: true, category: { select: { realmId: true } } },
-  });
-  const realmOfThread = new Map(threads.map((thread) => [thread.id, thread.category.realmId]));
-  const counts = new Map<string, number>();
-  if (realmOfThread.size === 0) return counts;
-  const rows = await db.forumPost.groupBy({
-    by: ["threadId"],
-    where: {
-      threadId: { in: [...realmOfThread.keys()] },
-      ...PREVIEWED_BOARD_MESSAGES,
-      createdAt: { gte: since },
-    },
-    _count: { _all: true },
-  });
-  for (const row of rows) {
-    const realmId = realmOfThread.get(row.threadId);
-    if (realmId) counts.set(realmId, (counts.get(realmId) ?? 0) + row._count._all);
-  }
-  return counts;
-}
-
 /** Open realms with their nation counts, forum activity and the viewer's own holdings. */
 export async function listRealmDirectory(db: PrismaClient, viewerUserId: string | null) {
   const realms = await db.realm.findMany({
@@ -155,11 +111,8 @@ export async function listRealmDirectory(db: PrismaClient, viewerUserId: string 
     new Map(rows.map((row) => [row.realmId, row._count._all]));
   const mineBy = countBy(mine);
 
-  // Both figures are batched for every realm; the forum counts still exclude the board, which has its own figure.
-  const [boardWeek, boards] = await Promise.all([
-    boardMessagesByRealm(db, realmIds, since),
-    forumActivityByRealm(db, realmIds, since),
-  ]);
+  // Batched for every realm; the forum counts exclude the live board.
+  const boards = await forumActivityByRealm(db, realmIds, since);
   return realms.map(({ settings, _count, foundedAt, createdAt, ...realm }) => ({
     ...realm,
     foundedAt: foundedAt ?? createdAt,
@@ -171,8 +124,6 @@ export async function listRealmDirectory(db: PrismaClient, viewerUserId: string 
     maxNationsPerUser: realmSettings(settings).maxNationsPerUser,
     /** Forum activity in the realm's section: posts in the last week and the latest thread activity. */
     board: boards.get(realm.id)!,
-    /** Board messages in the last week: its own figure, never added to `board.recentPosts`. */
-    boardMessagesThisWeek: boardWeek.get(realm.id) ?? 0,
   }));
 }
 

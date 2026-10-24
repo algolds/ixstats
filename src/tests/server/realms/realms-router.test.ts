@@ -12,7 +12,12 @@ jest.mock("~/server/shared/map-invalidation", () => ({
   invalidateRealmMap: jest.fn().mockResolvedValue(1),
 }));
 
+jest.mock("~/server/modules/realms/realms.map-face", () => ({
+  getRealmMapFace: jest.fn(),
+}));
+
 import { realmsRouter } from "~/server/api/routers/realms";
+import { getRealmMapFace } from "~/server/modules/realms/realms.map-face";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { NATION_SEARCH_LIMIT } from "~/server/api/routers/realms/places";
@@ -578,5 +583,49 @@ describe("system realms", () => {
       expect(REALM_SLUG_PATTERN.test("mine")).toBe(false);
       expect(REALM_SLUG_PATTERN.test("iiwiki-fans")).toBe(true);
     });
+  });
+});
+
+describe("realms.mapFace", () => {
+  const fixture = {
+    viewBox: "0 0 1000 500",
+    land: "M0 0L1 1",
+    open: "",
+    claimed: "M2 2L3 3",
+    other: "",
+  };
+
+  beforeEach(() => {
+    (getRealmMapFace as jest.Mock).mockReset();
+  });
+
+  it("mapFace is NOT_FOUND for an unknown slug", async () => {
+    const findUnique = jest.fn().mockResolvedValue(null);
+    await expect(caller(findUnique).mapFace({ realmSlug: "nope" })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+      message: "Realm not found",
+    });
+    expect(getRealmMapFace).not.toHaveBeenCalled();
+  });
+
+  it("mapFace is NOT_FOUND for a hidden draft when the viewer is anonymous", async () => {
+    const findUnique = jest
+      .fn()
+      .mockResolvedValue({ id: "r2", status: "draft", ownerId: "someone-else" });
+    await expect(caller(findUnique).mapFace({ realmSlug: "secret" })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+      message: "Realm not found",
+    });
+    expect(getRealmMapFace).not.toHaveBeenCalled();
+  });
+
+  it("mapFace returns the realm's face", async () => {
+    const findUnique = jest.fn().mockResolvedValue({ id: "r1", status: "active", ownerId: "u" });
+    (getRealmMapFace as jest.Mock).mockResolvedValue(fixture);
+
+    const face = await caller(findUnique).mapFace({ realmSlug: "eurth" });
+
+    expect(face).toEqual(fixture);
+    expect(getRealmMapFace).toHaveBeenCalledWith(expect.anything(), "r1");
   });
 });

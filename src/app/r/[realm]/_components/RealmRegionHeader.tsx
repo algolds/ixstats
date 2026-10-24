@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChatBubble, Globe, MapPin } from "iconoir-react";
+import { ChatBubble, MapPin } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { ShareSheet } from "~/components/share/ShareSheet";
 import { Badge } from "~/components/ui/badge";
@@ -12,6 +12,8 @@ import { assetUrl } from "~/lib/base-path";
 import { realmHref } from "~/lib/thinkpages-forum/links";
 import { formatRealmSpeed } from "~/lib/realms/realm-clock";
 import { useRealmDate } from "~/hooks/useRealmDate";
+import { RealmMapFace } from "~/components/realms/RealmMapFace";
+import { SharedElement } from "~/components/ui/view-transition";
 
 type Overview = NonNullable<RouterOutputs["realms"]["region"]["overview"]>;
 
@@ -127,18 +129,19 @@ export function RealmRegionHeader({
   return (
     <header className="border-separator bg-surface rounded-card overflow-hidden border">
       <div className="bg-tint-fill relative h-32 w-full sm:h-44">
-        {realm.bannerUrl ? (
-          <img
-            src={assetUrl(realm.bannerUrl) ?? ""}
-            referrerPolicy="no-referrer"
-            alt=""
-            className="h-full w-full object-cover"
+        <SharedElement name={`realm-map-${realm.slug}`}>
+          <RealmMapFace
+            realm={{
+              id: realm.id,
+              slug: realm.slug,
+              name: realm.name,
+              crestUrl: realm.thumbnail,
+              isSystem: false,
+            }}
+            bannerUrl={realm.bannerUrl}
+            showCrest={false}
           />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <Globe className="text-tint size-10" aria-hidden="true" />
-          </div>
-        )}
+        </SharedElement>
       </div>
 
       <div className="flex flex-col gap-4 p-4 md:p-6">
