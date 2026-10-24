@@ -123,9 +123,7 @@ the realm has no banner. It is built in PostGIS and drawn as inline SVG:
 2. **Your realms** (signed in, `YourRealms`): each realm where the viewer holds nations (`realms.myNations`) with
    its crest, name and "N of M"; each nation with **Play as** (`PlayAsNation`; the active one reads Active) and
    links to the realm's Board and Nations tab.
-3. **Realm guide** (`RealmGuide`): three steps in NationStates terms (pick your region, claim your nation, govern
-   and post on the realm board, its RMB) and a link to the help article `/help/world/realms`.
-4. **Realm feed** (`RealmFeedPanel`): the ThinkPages feed for one realm, up to five compact rows (author,
+3. **Realm feed** (`RealmFeedPanel`): the ThinkPages feed for one realm, up to five compact rows (author,
    excerpt, time) linking to the post, then an "Open the feed" link to `/dashboard`. It defaults to the realm of the
    viewer's active nation (`useViewerRealmId`), or to **All realms** when signed out, and a selector switches
    between realms and All realms.

@@ -7,15 +7,14 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { MyClaims } from "~/app/r/[realm]/_components/MyClaims";
 import { AtlasGrid } from "./_components/AtlasGrid";
 import { RealmFeedPanel } from "./_components/RealmFeedPanel";
-import { RealmGuide } from "./_components/RealmGuide";
 import { RealmSearch } from "./_components/RealmSearch";
 import { RealmsHeader, type ViewerStanding } from "./_components/RealmsHeader";
 import { YourRealms } from "./_components/YourRealms";
 
 /**
  * The realms landing page: the header, the atlas of every listed realm (most open first) and the viewer's
- * claims in the main column, and a rail with one search for realms and nations, the viewer's own realms, the
- * realm guide and the realm feed.
+ * claims in the main column, and a rail with one search for realms and nations, the viewer's own realms and
+ * the realm feed.
  */
 export default function RealmsLandingPage() {
   usePageTitle({ title: "Realms" });
@@ -58,7 +57,6 @@ export default function RealmsLandingPage() {
               activeCountryId={profile?.countryId ?? mine?.activeCountryId ?? null}
             />
           )}
-          <RealmGuide />
           <RealmFeedPanel realms={realms} />
         </aside>
       </div>
