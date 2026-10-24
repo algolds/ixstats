@@ -791,6 +791,8 @@ model CountryLorePage {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  country   Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
   @@unique([countryId, title])
   @@index([countryId])
   @@map("country_lore_pages")

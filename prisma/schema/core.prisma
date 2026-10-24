@@ -196,6 +196,7 @@ model Country {
   owner                       User?                         @relation("CountryOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
   realmClaims                 RealmClaim[]
   loreAuthors                 CountryLoreAuthor[]
+  lorePages                   CountryLorePage[]
   /// The nation's key in its realm's outside source (RealmSourceSync), e.g. a community map's nation id
   externalSourceKey           String?
   /// A nation slot the world generator made (Atlas Release A): its figures are derived from the map, not the realm table.

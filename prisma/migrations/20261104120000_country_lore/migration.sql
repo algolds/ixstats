@@ -46,6 +46,10 @@ BEGIN
     ALTER TABLE "country_lore_authors" ADD CONSTRAINT "country_lore_authors_userId_fkey"
       FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'country_lore_pages_countryId_fkey') THEN
+    ALTER TABLE "country_lore_pages" ADD CONSTRAINT "country_lore_pages_countryId_fkey"
+      FOREIGN KEY ("countryId") REFERENCES "Country"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
 END $$;
 
 COMMIT;

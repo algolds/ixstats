@@ -37,13 +37,14 @@ describe("the country-lore migration SQL", () => {
     expect(body).toMatch(/CREATE INDEX IF NOT EXISTS "country_lore_pages_countryId_idx"/);
   });
 
-  it("cascades the lore team with its country and its user, guarded for a re-run", () => {
-    expect(body).toMatch(
-      /"country_lore_authors_countryId_fkey" FOREIGN KEY \("countryId"\) REFERENCES "Country"\("id"\) ON DELETE CASCADE/
+  it.each([
+    ["country_lore_authors", "countryId", "Country"],
+    ["country_lore_authors", "userId", "User"],
+    ["country_lore_pages", "countryId", "Country"],
+  ])("cascades %s.%s to %s, guarded for a re-run", (table, column, target) => {
+    const name = `${table}_${column}_fkey`;
+    expect(body).toContain(
+      `IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = '${name}') THEN ALTER TABLE "${table}" ADD CONSTRAINT "${name}" FOREIGN KEY ("${column}") REFERENCES "${target}"("id") ON DELETE CASCADE ON UPDATE CASCADE; END IF;`
     );
-    expect(body).toMatch(
-      /"country_lore_authors_userId_fkey" FOREIGN KEY \("userId"\) REFERENCES "User"\("id"\) ON DELETE CASCADE/
-    );
-    expect(body).toMatch(/IF NOT EXISTS \(SELECT 1 FROM pg_constraint WHERE conname = 'country_lore_authors_countryId_fkey'\)/);
   });
 });
