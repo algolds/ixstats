@@ -22,7 +22,7 @@ jest.mock("~/server/db", () => {
     userConnection: { findMany: jest.fn().mockResolvedValue([]) },
     $executeRaw: jest.fn().mockResolvedValue(0),
     // The transaction client is the same fake
-    $transaction: jest.fn((work: (tx: object) => Promise<object>) => work(db)),
+    $transaction: jest.fn((work: (tx: object) => Promise<object>): Promise<object> => work(db)),
   };
   return { __esModule: true, db, isDatabaseReadOnly: false };
 });
