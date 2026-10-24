@@ -68,15 +68,16 @@ it("shows each claim's state and a rejected claim's decision note", () => {
   expect(screen.queryByRole("switch", { name: "Show Wrong name on my passport" })).toBeNull();
 });
 
-it("shows the private signal only while a pending or approved claim is hidden", () => {
+it("shows the private signal only while a converted pending or approved claim is hidden", () => {
   renderWith([
     claim("c1", "Shown", "APPROVED"),
-    claim("c2", "Hidden but gone", "REVOKED", { visible: false }),
+    claim("c2", "Hidden but gone", "REVOKED", { visible: false, origin: "CONVERSION" }),
+    claim("c3", "Hidden by the player", "APPROVED", { visible: false }),
   ]);
   expect(screen.queryByText("Private until you confirm")).toBeNull();
   jest.clearAllMocks();
   document.body.innerHTML = "";
-  renderWith([claim("c1", "Hidden", "APPROVED", { visible: false })]);
+  renderWith([claim("c1", "Hidden", "APPROVED", { visible: false, origin: "CONVERSION" })]);
   expect(screen.getByText("Private until you confirm")).toBeInTheDocument();
 });
 

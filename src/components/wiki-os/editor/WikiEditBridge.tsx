@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
-import { useHandleGate } from "~/hooks/useHandleGate";
+import { SaveCancelled, useHandleGate } from "~/hooks/useHandleGate";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import {
@@ -213,7 +213,7 @@ export function WikiEditBridge({
 
   const performSave = useCallback(
     async (save: PendingSave, baseRevisionRef: string | null) => {
-      if (!(await ensureHandle())) throw new Error("A passport handle is needed to save.");
+      if (!(await ensureHandle())) throw new SaveCancelled("A passport handle is needed to save.");
       setSaving(true);
       setConflict(null);
       try {
@@ -340,8 +340,9 @@ export function WikiEditBridge({
         "Article Published",
         "Your changes have been published over the newer version."
       );
-    } catch {
-      notify.error("Save Failed", "Could not save article changes.");
+    } catch (err) {
+      if (!(err instanceof SaveCancelled))
+        notify.error("Save Failed", "Could not save article changes.");
     }
   }, [conflict, performSave, notify]);
 

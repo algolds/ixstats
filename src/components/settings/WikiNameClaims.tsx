@@ -46,7 +46,10 @@ export function WikiNameClaims() {
   });
 
   const list = claims.data ?? [];
-  const anyHidden = list.some((claim) => isLive(claim) && !claim.visible);
+  // Only the conversion hides a claim on its own (attribution was off); a name the player hid needs no note
+  const anyHidden = list.some(
+    (claim) => isLive(claim) && !claim.visible && claim.origin === "CONVERSION"
+  );
   const draft = name.trim();
 
   return (

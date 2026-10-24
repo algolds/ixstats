@@ -3,6 +3,9 @@
 import { useCallback, useRef, useState } from "react";
 import { api } from "~/trpc/react";
 
+/** Thrown by a save the player stopped by closing the handle picker: not a failure, so nothing reports it. */
+export class SaveCancelled extends Error {}
+
 export interface HandleGate {
   /** True at once when the player has a passport handle; else asks for one and answers whether they picked it. */
   ensureHandle(): Promise<boolean>;

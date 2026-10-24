@@ -3,6 +3,7 @@
 
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { api } from "~/trpc/react";
+import { SaveCancelled } from "~/hooks/useHandleGate";
 import { useNotify } from "~/hooks/useNotify";
 import { clearDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
@@ -159,6 +160,7 @@ export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
         );
         return true;
       } catch (err) {
+        if (err instanceof SaveCancelled) return false;
         console.error("Save failed:", err);
         notify.error("Save Failed", "Could not save article changes.");
         return false;
