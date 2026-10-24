@@ -1,5 +1,5 @@
 /** The viewer's Lorewards pane: their trophy cards always, and the pointer to claim an old IxWiki name. */
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 jest.mock("~/trpc/react", () => ({
   api: {
     lorewards: {
@@ -22,7 +22,9 @@ jest.mock("~/components/lorewards/TrophyCards", () => ({
     </ul>
   ),
 }));
-jest.mock("~/components/lorewards/StreakCalendar", () => ({ StreakCalendar: () => null }));
+jest.mock("~/components/lorewards/StreakCalendar", () => ({
+  StreakCalendar: ({ username }: { username: string }) => <p>Calendar of {username}</p>,
+}));
 jest.mock("~/components/lorewards/AwardHistory", () => ({ AwardHistory: () => null }));
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
@@ -33,6 +35,7 @@ interface Mine {
   verified: boolean;
   unmatched: number;
   cards: Array<{ id: string; title: string }>;
+  claimedNames?: string[];
 }
 
 function mockViewer(mine: Mine) {
@@ -45,6 +48,7 @@ function mockViewer(mine: Mine) {
       holderHandle: null,
       paid: 0,
       todayRank: null,
+      claimedNames: mine.verified && mine.wikiUsername ? [mine.wikiUsername] : [],
       ...mine,
     },
     isError: false,
@@ -124,4 +128,25 @@ it("shows today's race to a viewer with a wiki name", () => {
   render(<YourLorewards />);
   expect(screen.getByText("Today's race")).toBeInTheDocument();
   expect(screen.getByText("Not in the top 10")).toBeInTheDocument();
+});
+
+it("lets a viewer holding several names pick which one the calendar and history show", () => {
+  mockViewer({
+    wikiUsername: "Kir",
+    verified: true,
+    unmatched: 0,
+    cards: [],
+    claimedNames: ["Kir", "Kir Old"],
+  });
+  render(<YourLorewards />);
+  expect(screen.getByText("Calendar of Kir")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("radio", { name: "Kir Old" }));
+  expect(screen.getByText("Calendar of Kir Old")).toBeInTheDocument();
+});
+
+it("shows no name picker for a single name", () => {
+  mockViewer({ wikiUsername: "Kir", verified: true, unmatched: 0, cards: [] });
+  render(<YourLorewards />);
+  expect(screen.queryByRole("radiogroup", { name: "Wiki name" })).not.toBeInTheDocument();
+  expect(screen.getByText("Calendar of Kir")).toBeInTheDocument();
 });

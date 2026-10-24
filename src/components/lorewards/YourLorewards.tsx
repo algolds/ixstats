@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { Trophy } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useUser, SignInButton } from "~/context/auth-context";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Stat } from "~/components/ui/stat";
 import { AwardHistory } from "./AwardHistory";
@@ -78,8 +80,12 @@ export function YourLorewards({ username, highlightCardId, trophiesOnly }: YourL
     { enabled: Boolean(username), staleTime: 60_000 }
   );
 
-  // The name's public record (stats row, calendar, history) is the viewer's only through an approved claim.
-  const recordName = username ?? (mine.data?.verified ? mine.data.wikiUsername : null) ?? undefined;
+  // The name's public record (stats row, calendar, history) is the viewer's only through an approved claim; a viewer
+  // holding several picks which one the calendar and history show.
+  const [picked, setPicked] = useState<string | null>(null);
+  const claimedNames = (!username && mine.data?.claimedNames) || [];
+  const ownRecord = picked && claimedNames.includes(picked) ? picked : (claimedNames[0] ?? null);
+  const recordName = username ?? ownRecord ?? undefined;
   const { data: userStats } = api.lorewards.getUserStats.useQuery(
     { username: recordName ?? "" },
     { enabled: Boolean(recordName), staleTime: 60_000 }
@@ -150,6 +156,15 @@ export function YourLorewards({ username, highlightCardId, trophiesOnly }: YourL
           </Card>
         )}
       </LorewardsSection>
+      {recordName && !trophiesOnly && claimedNames.length > 1 && (
+        <SegmentedControl
+          aria-label="Wiki name"
+          size="sm"
+          value={recordName}
+          onValueChange={setPicked}
+          options={claimedNames.map((name) => ({ value: name, label: name }))}
+        />
+      )}
       {recordName && !trophiesOnly && (
         <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-5">
           <div className="lg:col-span-2">

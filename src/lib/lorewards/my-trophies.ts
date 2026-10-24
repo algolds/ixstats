@@ -32,6 +32,8 @@ export interface MyTrophies extends Trophies {
   wikiUsername: string | null;
   /** Whether `wikiUsername` is a name the viewer holds an approved claim on, so its public record is theirs. */
   verified: boolean;
+  /** Every name the viewer holds an approved claim on (their own view, so hidden ones too), oldest approval first. */
+  claimedNames: string[];
   /**
    * Classic-wiki places (plain names) under the viewer's WikiOS labels that no account has claimed: an approved claim
    * would give them the ones they made.
@@ -209,6 +211,7 @@ export async function loadMyTrophies(
   return {
     wikiUsername,
     verified: names.claimed.length > 0,
+    claimedNames: names.claimed,
     unmatched,
     ...countPlaces(tied),
     cards,

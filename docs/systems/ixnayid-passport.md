@@ -133,7 +133,8 @@ tag backfill run no hooks: the daily Lorewards full sync pays converted claims. 
 (`src/lib/lorewards/claim-hook.ts`, loaded on demand): an approval settles the contests that record the name (places from
 15 October 2026 pay once, and every place's trophy card back to 2017 is minted and given); a revoke takes the name's
 trophy cards back from the former owner, voided, for the name's next approved owner, and the IxC paid stays paid
-([cards.md](./cards.md#loreward-trophy-cards)).
+([cards.md](./cards.md#loreward-trophy-cards)). Achievements the name unlocked, and their IxC, also stay with the former
+owner (owner decision, 2026-10-23): a wrong approval is fixed by hand.
 
 ### Handles as edit authors
 
@@ -297,6 +298,17 @@ release is checked out on the server (plan A's step 1; the running app is not to
    ```
 
    Each row found is a second contest for its month and needs an admin fix. The clone has none.
+
+   Then look for stats rows with points and no place (read-only): they show in the standings with nothing behind them.
+   On the clone, Castadilla (778 points, no entry anywhere) was a fixture and was deleted there:
+
+   ```sql
+   SELECT username, "totalScore", "dailyWins", "dailyRunnerUps", "weeklyWins", "monthlyWins" FROM loreward_user_stats
+   WHERE "totalScore" > 0 AND "dailyWins" + "dailyRunnerUps" + "weeklyWins" + "monthlyWins" = 0 ORDER BY "totalScore" DESC;
+   ```
+
+   Before deleting a row, check that no `loreward_entries` row names it as winner or runner-up; a real name with points
+   and no place yet is fine.
 
 2. **The old endpoint and the cron runner.** `/api/lorewards/sync` is deleted. Look for a call to it in the server's
    crontab and remove the line:
