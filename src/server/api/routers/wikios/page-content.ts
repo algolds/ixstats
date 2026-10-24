@@ -40,11 +40,11 @@ import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import {
   assertTitleVisible,
   canSeeDeletedPages,
-  canSeeTitle,
   visibleTitles,
 } from "~/lib/wiki-os/permissions";
 import { getHeadRevisionRefs } from "~/lib/wiki-os/core/edit-conflict";
 import { downloadMedia } from "~/lib/wiki-os/services/media-download";
+import { readVisiblePage } from "~/lib/wiki-os/services/visible-page";
 
 // Register host-app template data provider
 registerTemplateProvider(ixstatsTemplateProvider);
@@ -276,13 +276,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
   checkPageExists: publicProcedure
     .input(z.object({ title: z.string().min(1).max(500) }))
     .query(async ({ input, ctx }) => {
-      const { title: resolvedTitle } = await resolveRedirect(input.title);
-      // A deleted page does not exist for a reader who may not see it.
-      if (!(await canSeeTitle(ctx, resolvedTitle))) return { exists: false, resolvedTitle };
-      const article = await getArticleWikitextShadow(resolvedTitle, "ixwiki", {
-        includeArchived: true, // canSeeTitle above
-      });
-      return { exists: !!article, resolvedTitle };
+      const { resolvedTitle, wikitext } = await readVisiblePage(ctx, input.title);
+      return { exists: wikitext !== null, resolvedTitle };
     }),
 
   /** Batched existence check for rendered wiki links: returns the titles with no article. */

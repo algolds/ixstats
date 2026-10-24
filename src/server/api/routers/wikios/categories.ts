@@ -8,11 +8,14 @@
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure, createRateLimitMiddleware } from "~/server/api/trpc";
 import {
-  getCategoryMembers,
   getParentCategories,
   batchFetchThumbnails,
   type WikiSource,
 } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import {
+  loadCategoryMembers,
+  type CategoryListMember,
+} from "~/lib/wiki-os/services/category-members";
 import { CategoryService } from "~/lib/wiki-os/core/category-service";
 import { db } from "~/server/db";
 import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
@@ -37,69 +40,6 @@ const SISTER_CACHE_TTL_MS = 300_000;
 const sisterJson = <T>(url: string) =>
   fetchMediaWikiJson<T>(url, { userAgent: DEFAULT_USER_AGENT, cacheTtlMs: SISTER_CACHE_TTL_MS });
 
-type CategoryMember = {
-  pageid: number;
-  title: string;
-  type: "page" | "subcat" | "file";
-  ns: number;
-  isSubcategory: boolean;
-  imageUrl?: string | null;
-};
-
-async function loadCategoryMembers(input: {
-  category: string;
-  limit: number;
-  type?: "page" | "subcat" | "file";
-}): Promise<{ members: CategoryMember[]; hasMore: boolean }> {
-  // 1. Fast-path: Native PostgreSQL Category DAG
-  const nativeDetails = await CategoryService.getCategoryDetails(input.category);
-  if (
-    nativeDetails.category &&
-    (nativeDetails.articles.length > 0 || nativeDetails.subcategories.length > 0)
-  ) {
-    const members: CategoryMember[] = [];
-    if (!input.type || input.type === "subcat") {
-      for (const c of nativeDetails.subcategories) {
-        members.push({
-          pageid: 0,
-          title: `Category:${c.name}`,
-          type: "subcat",
-          ns: 14,
-          isSubcategory: true,
-          imageUrl: null,
-        });
-      }
-    }
-    if (!input.type || input.type === "page") {
-      for (const a of nativeDetails.articles) {
-        members.push({
-          pageid: 0,
-          title: a.title,
-          type: "page",
-          ns: 0,
-          isSubcategory: false,
-          imageUrl: null,
-        });
-      }
-    }
-    return { members: members.slice(0, input.limit), hasMore: members.length > input.limit };
-  }
-
-  // 2. Resilient Bridge Fallback (PostgreSQL for IxWiki / HTTP for the sister wikis)
-  const bridgeResult = await getCategoryMembers(input.category, input.limit, input.type);
-  return {
-    members: bridgeResult.members.map((m) => ({
-      pageid: m.pageId ?? 0,
-      title: m.title,
-      type: (m.type ?? "page") as CategoryMember["type"],
-      ns: m.ns ?? 0,
-      isSubcategory: m.isSubcategory ?? false,
-      imageUrl: null,
-    })),
-    hasMore: bridgeResult.hasMore ?? false,
-  };
-}
-
 const spaced = (title: string) => title.replace(/_/g, " ");
 
 function leadImageOf(art: { leadImageUrl: string | null; wikitext: string | null }) {
@@ -107,7 +47,7 @@ function leadImageOf(art: { leadImageUrl: string | null; wikitext: string | null
 }
 
 /** Batch lead-image resolution (local articles first, then MediaWiki thumbnails) for page members. */
-async function attachMemberImages(members: CategoryMember[]) {
+async function attachMemberImages(members: CategoryListMember[]) {
   const pageMembers = members.filter((m) => m.type === "page" || m.ns === 0);
   if (pageMembers.length === 0) return;
 
