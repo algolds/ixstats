@@ -9,7 +9,8 @@
  * `select`/`include`, `where` and `orderBy` follow the relations the WikiOS reads use (an article's revisions and
  * categories, a revision's article, a membership's category), `lt`/`lte`/`gte`/`equals` (with `mode`) and the
  * `increment`/`decrement` updates work, an update stamps `updatedAt`, `withJobLock`'s lease, `fillRevisionParents` and the
- * statements that mark a template's or a file's users stale are modelled, and `onQueryRaw` answers raw queries a test models.
+ * statements that mark a template's or a file's users stale are modelled, `createMany({ skipDuplicates })` honours the
+ * unique columns of UNIQUE_COLUMNS (a conflict's key), and `onQueryRaw` answers raw queries a test models.
  */
 
 import { AsyncLocalStorage } from "node:async_hooks";
@@ -312,6 +313,9 @@ function monotonicNow(): Date {
   return new Date(lastStamp);
 }
 
+/** The unique column `createMany({ skipDuplicates })` checks in the Prisma mode, by table (only where a test needs it). */
+const UNIQUE_COLUMNS: Record<string, string> = { wikiConflict: "key" };
+
 export function createTable(
   defaults: () => Record<string, unknown> = () => ({}),
   name = "",
@@ -358,9 +362,20 @@ export function createTable(
     async create(args: { data: Record<string, unknown> } & FindManyArgs) {
       return project(schema, name, table.insert(args.data), args);
     },
-    async createMany({ data }: { data: Array<Record<string, unknown>>; skipDuplicates?: boolean }) {
-      for (const item of data) table.insert(item);
-      return { count: data.length };
+    async createMany({
+      data,
+      skipDuplicates = false,
+    }: {
+      data: Array<Record<string, unknown>>;
+      skipDuplicates?: boolean;
+    }) {
+      // Prisma mode: `skipDuplicates` leaves out a row whose unique column (UNIQUE_COLUMNS) another row already holds
+      const unique = schema && skipDuplicates ? UNIQUE_COLUMNS[name] : undefined;
+      const fresh = unique
+        ? data.filter((item) => !rows.some((row) => row[unique] === item[unique]))
+        : data;
+      for (const item of fresh) table.insert(item);
+      return { count: fresh.length };
     },
     async findMany(args: FindManyArgs = {}) {
       const { where = {}, orderBy, take, cursor, skip = 0 } = args;
@@ -445,6 +460,7 @@ export interface FakeWikiDb {
   wikiCategoryMember: Table;
   wikiLog: Table;
   wikiMirrorJob: Table;
+  wikiConflict: Table;
   wikiAsset: Table;
   wikiDiscussionThread: Table;
   wikiWatchlist: Table;
@@ -571,6 +587,14 @@ const PRISMA_DEFAULTS: Record<string, () => Record<string, unknown>> = {
     finishedAt: null,
   }),
   wikiWatchlist: () => ({ notificationTime: null, lastViewedTime: new Date(Date.UTC(2026, 0, 1)) }),
+  wikiConflict: () => ({
+    source: "ixwiki",
+    articleId: null,
+    baseRef: null,
+    notified: [],
+    trailRevisionId: null,
+    legacyPark: false,
+  }),
   notification: () => ({ read: false, dismissed: false }),
 };
 
@@ -618,6 +642,7 @@ export function createFakeWikiDb({ prisma = false }: FakeWikiDbOptions = {}) {
     wikiCategoryMember: table("wikiCategoryMember"),
     wikiLog: table("wikiLog", () => ({ comment: null, params: null, articleId: null })),
     wikiMirrorJob: table("wikiMirrorJob", () => ({ state: "pending", attempts: 0, payload: null })),
+    wikiConflict: table("wikiConflict"),
     wikiAsset: table("wikiAsset", () => ({
       thumbnailUrl: null,
       width: null,

@@ -24,6 +24,8 @@ const mockQueryRaw = jest.fn();
 const mockTransactionOptions = jest.fn();
 const mockTxArticleFindUnique = jest.fn();
 const mockExecuteRaw = jest.fn();
+const mockConflictFindUnique = jest.fn();
+const mockConflictUpdateMany = jest.fn();
 
 jest.mock("~/lib/wiki-os/services/mirror-outbox", () => ({
   __esModule: true,
@@ -43,6 +45,10 @@ jest.mock("~/server/db", () => {
       create: (...a: unknown[]) => mockRevisionCreate(...a),
     },
     wikiMirrorJob: { create: (...a: unknown[]) => mockJobCreate(...a) },
+    wikiConflict: {
+      findUnique: (...a: unknown[]) => mockConflictFindUnique(...a),
+      updateMany: (...a: unknown[]) => mockConflictUpdateMany(...a),
+    },
     $queryRaw: (...a: unknown[]) => mockQueryRaw(...a),
     $executeRaw: (...a: unknown[]) => mockExecuteRaw(...a),
   };
@@ -129,6 +135,8 @@ beforeEach(() => {
   mockFindMany.mockResolvedValue([]);
   mockFindFirst.mockResolvedValue(null);
   mockRevisionFindMany.mockResolvedValue([]);
+  mockConflictFindUnique.mockResolvedValue({ trailRevisionId: null });
+  mockConflictUpdateMany.mockResolvedValue({ count: 1 });
 });
 
 describe("ArticleRepository.saveArticle", () => {
@@ -490,6 +498,71 @@ describe("ArticleRepository.saveArticle and the mirror outbox (plan 407)", () =>
     expect(scheduleMirrorKick).not.toHaveBeenCalled();
   });
 });
+describe("ArticleRepository.recordTrailRevision (the classic winner's trail)", () => {
+  const head = { id: "h1", wikitext: "Caphiria is an empire." };
+  const trail = () =>
+    ArticleRepository.recordTrailRevision({
+      articleId: "a1",
+      summary: "Overwrote revision 7 by Foo, saved from the same version (conflict c1)",
+      conflictId: "c1",
+    });
+
+  beforeEach(() => {
+    mockTxArticleFindUnique.mockResolvedValue({ id: "a1", title: "Caphiria", source: "ixwiki" });
+    mockRevisionFindFirst.mockResolvedValue(head);
+    mockRevisionCreate.mockResolvedValue({ id: "t1" });
+  });
+
+  it("recordTrailRevision copies the head text, enqueues one job and refuses a second trail", async () => {
+    await expect(trail()).resolves.toEqual({ revisionId: "t1" });
+
+    expect(mockQueryRaw).toHaveBeenCalled(); // under the page's lock
+    expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
+    expect(mockRevisionCreate.mock.calls[0]![0].data).toMatchObject({
+      articleId: "a1",
+      wikitext: "Caphiria is an empire.",
+      summary: "Overwrote revision 7 by Foo, saved from the same version (conflict c1)",
+      author: "WikiOS",
+      authorId: null,
+      parentRevisionId: "h1",
+      byteSize: 22,
+      byteDelta: 0,
+      minor: true,
+    });
+    expect(mockConflictUpdateMany).toHaveBeenCalledWith({
+      where: { id: "c1", trailRevisionId: null },
+      data: { trailRevisionId: "t1" },
+    });
+    expect(mockJobCreate).toHaveBeenCalledTimes(1);
+    expect(mockJobCreate).toHaveBeenCalledWith({
+      data: {
+        source: "ixwiki",
+        kind: "revision",
+        title: "Caphiria",
+        articleId: "a1",
+        revisionId: "t1",
+      },
+    });
+    expect(scheduleMirrorKick).toHaveBeenCalled();
+    // the text did not change: no render, no watchers
+    expect(enqueueRender).not.toHaveBeenCalled();
+    expect(notifyWatchers).not.toHaveBeenCalled();
+    expect(mockUpsert).not.toHaveBeenCalled();
+
+    mockConflictFindUnique.mockResolvedValue({ trailRevisionId: "t1" });
+    await expect(trail()).resolves.toBeNull();
+    expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
+    expect(mockJobCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it("a trail another writer claimed first answers null and enqueues no job", async () => {
+    mockConflictUpdateMany.mockResolvedValue({ count: 0 });
+
+    await expect(trail()).resolves.toBeNull();
+    expect(mockJobCreate).not.toHaveBeenCalled();
+  });
+});
+
 describe("ArticleRepository.findBySlug", () => {
   it("returns the exact canonical row even when a case-variant row also exists", async () => {
     const rows = new Map([

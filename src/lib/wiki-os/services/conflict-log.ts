@@ -43,7 +43,7 @@ export interface ConflictLogEntry {
   createdAt: Date;
 }
 
-type ConflictRow = Prisma.WikiConflictGetPayload<Record<string, never>>;
+export type ConflictRow = Prisma.WikiConflictGetPayload<Record<string, never>>;
 
 /** How many times a merge retries when another writer changed the row between its read and its write. */
 const MERGE_ATTEMPTS = 5;
@@ -242,7 +242,8 @@ export async function setTrailRevision(
 
 // --- read -----------------------------------------------------------------------------------------------------------
 
-function toEntry(row: ConflictRow): ConflictLogEntry {
+/** A stored row, its JSON decoded. */
+export function toConflictEntry(row: ConflictRow): ConflictLogEntry {
   return {
     id: row.id,
     key: row.key,
@@ -278,5 +279,5 @@ export async function listConflicts(input: {
   });
   const page = rows.slice(0, input.limit);
   const next = rows[input.limit];
-  return { items: page.map(toEntry), nextCursor: next ? next.id : null };
+  return { items: page.map(toConflictEntry), nextCursor: next ? next.id : null };
 }
