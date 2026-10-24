@@ -120,6 +120,20 @@ describe("SwipeableRow keyboard model", () => {
     await waitFor(() => expect(document.activeElement).toBe(button));
   });
 
+  it("opens the same menu on right-click for mouse users, and leaves Shift+right-click to the browser", () => {
+    const onArchive = jest.fn();
+    const { container } = render(<Row onArchive={onArchive} />);
+    const row = container.querySelector<HTMLElement>("[data-swipeable-row]")!;
+
+    expect(fireEvent.contextMenu(row, { shiftKey: true })).toBe(true);
+    expect(screen.queryByRole("menu")).toBeNull();
+
+    expect(fireEvent.contextMenu(row, { clientX: 40, clientY: 10 })).toBe(false);
+    const menu = screen.getByRole("menu", { name: "Actions" });
+    fireEvent.click(within(menu).getByRole("menuitem", { name: "Archive message" }));
+    expect(onArchive).toHaveBeenCalledTimes(1);
+  });
+
   describe("a row with nothing focusable inside", () => {
     beforeEach(() => jest.useFakeTimers());
     afterEach(() => jest.useRealTimers());

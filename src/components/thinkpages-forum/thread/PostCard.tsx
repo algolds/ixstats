@@ -3,6 +3,7 @@
 import { memo, useState } from "react";
 import type { ActionCardData } from "~/components/action-links";
 import { Button } from "~/components/ui/button";
+import { ContextMenu, ContextMenuTrigger } from "~/components/ui/context-menu";
 import { Input } from "~/components/ui/input";
 import { countedPostId } from "~/lib/discussed-in";
 import { cn } from "~/lib/utils/cn";
@@ -176,61 +177,66 @@ export const PostCard = memo(function PostCard({
     onQuote({ postId: post.id, author: author.name, text: htmlToQuoteText(post.contentHtml) });
 
   return (
-    <article
-      id={`post-${post.id}`}
-      data-hidden={post.hidden ? "" : undefined}
-      className={cn(
-        "flex scroll-mt-24 flex-col gap-3 px-4 py-5 sm:px-6",
-        post.hidden && "bg-fill-4 opacity-70",
-        className
-      )}
-    >
-      {editing ? (
-        <PostEditor
-          post={post}
-          style={style}
-          asModerator={editing === "moderator"}
-          onSaveHtml={saveHtml}
-          onSaveWikitext={saveWikitext}
-          onCancel={() => setEditing(null)}
-        />
-      ) : (
-        <>
-          <PostHeader
-            {...author}
-            role={post.role}
-            createdAt={post.createdAt}
-            editedAt={post.editedAt}
-            number={post.number}
-            postId={post.id}
-            hidden={post.hidden === true}
-          />
-          <div className="flex flex-col gap-3 sm:pl-12">
-            <PostBody
-              html={post.contentHtml}
-              style={style}
-              cards={cards}
-              cardsReady={cardsReady}
-              cardsErrored={cardsErrored}
-              postId={countedPostId({ id: post.id, persona: !!post.authorPersonaId })}
-            />
-            <PostActions
+    <ContextMenu>
+      {/* The editor keeps the browser's menu (spellcheck); otherwise right-click offers the post's actions. */}
+      <ContextMenuTrigger asChild disabled={editing !== null}>
+        <article
+          id={`post-${post.id}`}
+          data-hidden={post.hidden ? "" : undefined}
+          className={cn(
+            "flex scroll-mt-24 flex-col gap-3 px-4 py-5 sm:px-6",
+            post.hidden && "bg-fill-4 opacity-70",
+            className
+          )}
+        >
+          {editing ? (
+            <PostEditor
               post={post}
-              canReply={canReply}
-              canReact={canReactToPost(canReact, post)}
-              onReply={onReply}
-              onQuote={quote}
-              // Authors edit their own post while the thread is open; any other member may report it.
-              canEdit={post.isOwn && open}
-              onEdit={() => setEditing("author")}
-              canReport={signedIn && !post.byViewer && !canModerate}
-              canModerate={canModerate}
-              tools={tools}
-              onModeratorEdit={() => setEditing("moderator")}
+              style={style}
+              asModerator={editing === "moderator"}
+              onSaveHtml={saveHtml}
+              onSaveWikitext={saveWikitext}
+              onCancel={() => setEditing(null)}
             />
-          </div>
-        </>
-      )}
-    </article>
+          ) : (
+            <>
+              <PostHeader
+                {...author}
+                role={post.role}
+                createdAt={post.createdAt}
+                editedAt={post.editedAt}
+                number={post.number}
+                postId={post.id}
+                hidden={post.hidden === true}
+              />
+              <div className="flex flex-col gap-3 sm:pl-12">
+                <PostBody
+                  html={post.contentHtml}
+                  style={style}
+                  cards={cards}
+                  cardsReady={cardsReady}
+                  cardsErrored={cardsErrored}
+                  postId={countedPostId({ id: post.id, persona: !!post.authorPersonaId })}
+                />
+                <PostActions
+                  post={post}
+                  canReply={canReply}
+                  canReact={canReactToPost(canReact, post)}
+                  onReply={onReply}
+                  onQuote={quote}
+                  // Authors edit their own post while the thread is open; any other member may report it.
+                  canEdit={post.isOwn && open}
+                  onEdit={() => setEditing("author")}
+                  canReport={signedIn && !post.byViewer && !canModerate}
+                  canModerate={canModerate}
+                  tools={tools}
+                  onModeratorEdit={() => setEditing("moderator")}
+                />
+              </div>
+            </>
+          )}
+        </article>
+      </ContextMenuTrigger>
+    </ContextMenu>
   );
 });

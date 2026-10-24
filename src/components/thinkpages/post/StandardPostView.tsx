@@ -17,6 +17,7 @@ import {
 import Link from "next/link";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "~/components/ui/context-menu";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -113,7 +114,8 @@ function PostContextBanners({ post, blurbMeta }: { post: any; blurbMeta: PostSta
   );
 }
 
-function PostMoreMenu({ post, state }: { post: any; state: PostState }) {
+/** The post's "More post actions" items, shared by its dropdown and its right-click menu. */
+function PostMoreItems({ post, state }: { post: any; state: PostState }) {
   const { isOwnPost, canEdit, canDelete } = state;
   const manage = [
     { show: isOwnPost, Icon: Pin, label: post.pinned ? "Unpin" : "Pin", onClick: state.handlePin },
@@ -140,6 +142,16 @@ function PostMoreMenu({ post, state }: { post: any; state: PostState }) {
   );
 
   return (
+    <>
+      {manage.map(renderItem)}
+      {manage.length > 0 && <DropdownMenuSeparator />}
+      {always.map((item) => renderItem({ ...item, show: true }))}
+    </>
+  );
+}
+
+function PostMoreMenu({ post, state }: { post: any; state: PostState }) {
+  return (
     <DropdownMenu>
       <DropdownMenuTrigger
         className="text-label-secondary hover:text-label hover:bg-fill-3 rounded-full p-2 transition-colors"
@@ -149,9 +161,7 @@ function PostMoreMenu({ post, state }: { post: any; state: PostState }) {
         <MoreHorizontal className="size-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
-        {manage.map(renderItem)}
-        {manage.length > 0 && <DropdownMenuSeparator />}
-        {always.map((item) => renderItem({ ...item, show: true }))}
+        <PostMoreItems post={post} state={state} />
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -169,141 +179,150 @@ export function StandardPostView({
   const { account } = post;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={springGentle}
-      className={cn(
-        "group border-separator bg-surface rounded-card shadow-card relative overflow-hidden border",
-        compact ? "p-3" : "p-4",
-        post.pinned && "border-yellow/40"
-      )}
-    >
-      <PostContextBanners post={post} blurbMeta={state.blurbMeta} />
-
-      <div className="flex gap-3">
-        <button onClick={() => onAccountClick?.(account?.id)} className="shrink-0">
-          <AccountAvatar
-            account={account}
-            className={compact ? "size-8" : "size-10"}
-            fallbackClassName="font-medium"
-          />
-        </button>
-
-        <div className="min-w-0 flex-1">
-          <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-            <PersonaAuthorCard username={account?.username ?? ""}>
-              <button
-                onClick={() => onAccountClick?.(account?.id)}
-                className="text-headline text-label hover:underline"
-              >
-                {account?.displayName}
-              </button>
-            </PersonaAuthorCard>
-
-            {account?.verified && (
-              <span
-                className="text-body inline-flex size-4 items-center justify-center leading-none"
-                title="Verified"
-              >
-                ✅
-              </span>
-            )}
-
-            {account?.bio?.startsWith("Former Nation") && (
-              <Badge variant="default">Former nation</Badge>
-            )}
-
-            <div className={cn("rounded-control-sm p-1", accountTypeColor(account?.accountType))}>
-              <AccountTypeIcon type={account?.accountType} className="size-3.5" />
-            </div>
-
-            <span className="text-body text-label-secondary">@{account?.username}</span>
-
-            <span className="text-body text-label-secondary" aria-hidden="true">
-              ·
-            </span>
-
-            <RelativeTimestamp timestamp={post.timestamp} />
-
-            {post.trending && <Badge variant="warning">Trending</Badge>}
-          </div>
-
-          <div className="text-body mb-3">
-            {post.repostOf ? (
-              <RepostCard
-                post={post}
-                cleanRepostContent={state.cleanRepostContent}
-                repostMediaAttachments={state.repostMediaAttachments}
-                setLightboxMedia={state.setLightboxMedia}
-              />
-            ) : (
-              <PostBody
-                content={post.content}
-                cleanContent={state.cleanPostContent}
-                blurbMeta={state.blurbMeta}
-                sportsBulletin={state.sportsBulletin}
-                account={account}
-                isHero={false}
-              />
-            )}
-          </div>
-
-          <PostMediaGrid
-            mediaAttachments={state.mediaAttachments}
-            postId={post.id}
-            onOpenLightbox={state.setLightboxMedia}
-          />
-
-          <PostEmbeds post={post} state={state} vizSpacing="mt-3 space-y-2" />
-
-          {Array.isArray(post.hashtags) && post.hashtags.length > 0 && (
-            <div className="mb-3 flex flex-wrap gap-1">
-              {post.hashtags.map((hashtag: string, index: number) => (
-                <Link
-                  key={index}
-                  href={`/hashtags/${encodeURIComponent(hashtag.replace(/^#/, ""))}`}
-                  onClick={(e) => e.stopPropagation()}
-                  className="text-body text-tint hover:underline"
-                >
-                  #{hashtag}
-                </Link>
-              ))}
-            </div>
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={springGentle}
+          className={cn(
+            "group border-separator bg-surface rounded-card shadow-card relative overflow-hidden border",
+            compact ? "p-3" : "p-4",
+            post.pinned && "border-yellow/40"
           )}
+        >
+          <PostContextBanners post={post} blurbMeta={state.blurbMeta} />
 
-          <ReactionPills
-            post={post}
-            apiDiscordEmojis={state.apiDiscordEmojis}
-            onOpenReactionsDialog={() => state.setShowReactionsDialog(true)}
-          />
+          <div className="flex gap-3">
+            <button onClick={() => onAccountClick?.(account?.id)} className="shrink-0">
+              <AccountAvatar
+                account={account}
+                className={compact ? "size-8" : "size-10"}
+                fallbackClassName="font-medium"
+              />
+            </button>
 
-          <PostActions
-            {...ctx}
-            postId={post.id}
-            post={post}
-            onReply={() => state.handleReply()}
-            showCounts={true}
-            size="md"
-          />
+            <div className="min-w-0 flex-1">
+              <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                <PersonaAuthorCard username={account?.username ?? ""}>
+                  <button
+                    onClick={() => onAccountClick?.(account?.id)}
+                    className="text-headline text-label hover:underline"
+                  >
+                    {account?.displayName}
+                  </button>
+                </PersonaAuthorCard>
 
-          <div className="flex items-center justify-end">
-            <PostMoreMenu post={post} state={state} />
+                {account?.verified && (
+                  <span
+                    className="text-body inline-flex size-4 items-center justify-center leading-none"
+                    title="Verified"
+                  >
+                    ✅
+                  </span>
+                )}
+
+                {account?.bio?.startsWith("Former Nation") && (
+                  <Badge variant="default">Former nation</Badge>
+                )}
+
+                <div
+                  className={cn("rounded-control-sm p-1", accountTypeColor(account?.accountType))}
+                >
+                  <AccountTypeIcon type={account?.accountType} className="size-3.5" />
+                </div>
+
+                <span className="text-body text-label-secondary">@{account?.username}</span>
+
+                <span className="text-body text-label-secondary" aria-hidden="true">
+                  ·
+                </span>
+
+                <RelativeTimestamp timestamp={post.timestamp} />
+
+                {post.trending && <Badge variant="warning">Trending</Badge>}
+              </div>
+
+              <div className="text-body mb-3">
+                {post.repostOf ? (
+                  <RepostCard
+                    post={post}
+                    cleanRepostContent={state.cleanRepostContent}
+                    repostMediaAttachments={state.repostMediaAttachments}
+                    setLightboxMedia={state.setLightboxMedia}
+                  />
+                ) : (
+                  <PostBody
+                    content={post.content}
+                    cleanContent={state.cleanPostContent}
+                    blurbMeta={state.blurbMeta}
+                    sportsBulletin={state.sportsBulletin}
+                    account={account}
+                    isHero={false}
+                  />
+                )}
+              </div>
+
+              <PostMediaGrid
+                mediaAttachments={state.mediaAttachments}
+                postId={post.id}
+                onOpenLightbox={state.setLightboxMedia}
+              />
+
+              <PostEmbeds post={post} state={state} vizSpacing="mt-3 space-y-2" />
+
+              {Array.isArray(post.hashtags) && post.hashtags.length > 0 && (
+                <div className="mb-3 flex flex-wrap gap-1">
+                  {post.hashtags.map((hashtag: string, index: number) => (
+                    <Link
+                      key={index}
+                      href={`/hashtags/${encodeURIComponent(hashtag.replace(/^#/, ""))}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-body text-tint hover:underline"
+                    >
+                      #{hashtag}
+                    </Link>
+                  ))}
+                </div>
+              )}
+
+              <ReactionPills
+                post={post}
+                apiDiscordEmojis={state.apiDiscordEmojis}
+                onOpenReactionsDialog={() => state.setShowReactionsDialog(true)}
+              />
+
+              <PostActions
+                {...ctx}
+                postId={post.id}
+                post={post}
+                onReply={() => state.handleReply()}
+                showCounts={true}
+                size="md"
+              />
+
+              <div className="flex items-center justify-end">
+                <PostMoreMenu post={post} state={state} />
+              </div>
+
+              <PostComposers post={post} state={state} ctx={ctx} />
+
+              <ThreadReplies
+                post={post}
+                showThread={showThread}
+                state={state}
+                ctx={ctx}
+                ThinkpagesPostComponent={ThinkpagesPostComponent}
+              />
+
+              <PostModals post={post} state={state} onAccountClick={onAccountClick} />
+            </div>
           </div>
-
-          <PostComposers post={post} state={state} ctx={ctx} />
-
-          <ThreadReplies
-            post={post}
-            showThread={showThread}
-            state={state}
-            ctx={ctx}
-            ThinkpagesPostComponent={ThinkpagesPostComponent}
-          />
-
-          <PostModals post={post} state={state} onAccountClick={onAccountClick} />
-        </div>
-      </div>
-    </motion.div>
+        </motion.div>
+      </ContextMenuTrigger>
+      <ContextMenuContent className="w-48">
+        <PostMoreItems post={post} state={state} />
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }

@@ -2,19 +2,23 @@
 
 import * as React from "react";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
+import * as ContextMenuPrimitive from "@radix-ui/react-context-menu";
 import { Circle } from "iconoir-react";
 
 import { cn } from "~/lib/utils/cn";
 import { SurfaceReset } from "~/components/ui/card";
 import { presentMotionClassName } from "~/components/ui/dialog";
-
-/** Menu surface: the overlay layer with an origin-aware pop. */
-const menuSurface =
-  "z-popover min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) rounded-row p-1 facet-overlay text-label";
+import { MenuKindContext, menuSurface } from "~/components/ui/menu-shared";
 
 /** Menu rows: nested radius (12 − 4 padding = 8), fill-3 highlight, body text. */
 const menuRow =
   "relative flex cursor-default items-center gap-2 rounded-control-sm min-h-8 px-2 py-1 text-body outline-none select-none transition-colors duration-fast ease-out-facet data-[highlighted]:bg-fill-3 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='text-'])]:text-label-secondary [:where(&)_svg]:size-4";
+
+// ponytail: both namespaces wrap @radix-ui/react-menu, so their item props are identical.
+const usePrimitive = () =>
+  (React.useContext(MenuKindContext) === "context"
+    ? ContextMenuPrimitive
+    : DropdownMenuPrimitive) as typeof DropdownMenuPrimitive;
 
 function DropdownMenu({ ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
   return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
@@ -39,7 +43,7 @@ function DropdownMenuContent({
         sideOffset={sideOffset}
         className={cn(
           menuSurface,
-          "max-h-(--radix-dropdown-menu-content-available-height) overflow-x-hidden overflow-y-auto",
+          "max-h-(--radix-dropdown-menu-content-available-height) origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto",
           presentMotionClassName,
           className
         )}
@@ -62,8 +66,9 @@ function DropdownMenuItem({
   variant = "default",
   ...props
 }: DropdownMenuItemProps) {
+  const Primitive = usePrimitive();
   return (
-    <DropdownMenuPrimitive.Item
+    <Primitive.Item
       data-slot="dropdown-menu-item"
       data-inset={inset}
       data-variant={variant}
@@ -78,7 +83,8 @@ function DropdownMenuItem({
 }
 
 function DropdownMenuGroup({ ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Group>) {
-  return <DropdownMenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />;
+  const Primitive = usePrimitive();
+  return <Primitive.Group data-slot="dropdown-menu-group" {...props} />;
 }
 
 interface DropdownMenuGroupLabelProps extends React.ComponentProps<
@@ -88,8 +94,9 @@ interface DropdownMenuGroupLabelProps extends React.ComponentProps<
 }
 
 function DropdownMenuGroupLabel({ className, inset, ...props }: DropdownMenuGroupLabelProps) {
+  const Primitive = usePrimitive();
   return (
-    <DropdownMenuPrimitive.Label
+    <Primitive.Label
       data-slot="dropdown-menu-group-label"
       data-inset={inset}
       className={cn("text-footnote text-label-secondary px-2 py-1 data-[inset]:pl-8", className)}
@@ -101,7 +108,8 @@ function DropdownMenuGroupLabel({ className, inset, ...props }: DropdownMenuGrou
 function DropdownMenuRadioGroup({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.RadioGroup>) {
-  return <DropdownMenuPrimitive.RadioGroup data-slot="dropdown-menu-radio-group" {...props} />;
+  const Primitive = usePrimitive();
+  return <Primitive.RadioGroup data-slot="dropdown-menu-radio-group" {...props} />;
 }
 
 function DropdownMenuRadioItem({
@@ -109,19 +117,20 @@ function DropdownMenuRadioItem({
   children,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.RadioItem>) {
+  const Primitive = usePrimitive();
   return (
-    <DropdownMenuPrimitive.RadioItem
+    <Primitive.RadioItem
       data-slot="dropdown-menu-radio-item"
       className={cn(menuRow, "pr-2 pl-8", className)}
       {...props}
     >
       <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
-        <DropdownMenuPrimitive.ItemIndicator>
+        <Primitive.ItemIndicator>
           <Circle className="size-2 fill-current" />
-        </DropdownMenuPrimitive.ItemIndicator>
+        </Primitive.ItemIndicator>
       </span>
       {children}
-    </DropdownMenuPrimitive.RadioItem>
+    </Primitive.RadioItem>
   );
 }
 
@@ -129,8 +138,9 @@ function DropdownMenuSeparator({
   className,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Separator>) {
+  const Primitive = usePrimitive();
   return (
-    <DropdownMenuPrimitive.Separator
+    <Primitive.Separator
       data-slot="dropdown-menu-separator"
       className={cn("bg-separator -mx-1 my-1 h-px", className)}
       {...props}

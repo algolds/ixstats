@@ -1,7 +1,6 @@
 "use client";
 
-import { FacetMaterial } from "~/components/ui/facet";
-import React, { useEffect } from "react";
+import React from "react";
 import { createPortal } from "react-dom";
 import {
   EditPencil as Pencil,
@@ -14,6 +13,13 @@ import {
   Cut as Scissors,
   ZoomIn,
 } from "iconoir-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 
 import type { ContextMenuFeature } from "./types/editor-state";
 
@@ -57,21 +63,6 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
   onSplitCity,
   onZoomTo,
 }: FeatureContextMenuProps) {
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    const handleClickOutside = (e: MouseEvent) => {
-      if (!(e.target as HTMLElement).closest("[data-context-menu]")) onClose();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [onClose]);
-
   const isGap = feature.type === "gap";
   const isCity = feature.type === "city";
   const hasWiki = !!feature.wikiPageTitle;
@@ -109,54 +100,46 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
         !hasWiki && { label: "Link to wiki", icon: BookOpen, onClick: onEdit },
       ]);
 
-  const menuWidth = 208;
-  const menuHeight = (primaryItems.length + secondaryItems.length + 1) * 32 + 8;
-  const clampedX =
-    typeof window !== "undefined" ? Math.min(x, window.innerWidth - menuWidth - 8) : x;
-  const clampedY =
-    typeof window !== "undefined" ? Math.min(y, window.innerHeight - menuHeight - 8) : y;
-
   const renderItem = (item: MenuItem) => (
-    <button
+    <DropdownMenuItem
       key={item.label}
-      role="menuitem"
-      onClick={() => {
-        item.onClick();
-        onClose();
-      }}
-      className={`text-caption flex w-full items-center gap-2 px-3 py-2 text-left transition-[color,background-color,border-color,box-shadow,opacity] duration-100 ${
-        item.danger
-          ? "text-destructive hover:bg-destructive/10 hover:text-destructive"
-          : "text-label hover:bg-fill-3"
-      }`}
+      variant={item.danger ? "destructive" : "default"}
+      onSelect={item.onClick}
     >
-      <item.icon className="text-label-secondary h-3.5 w-3.5 shrink-0" aria-hidden />
-      <span>{item.label}</span>
-    </button>
+      <item.icon aria-hidden />
+      {item.label}
+    </DropdownMenuItem>
   );
 
-  return createPortal(
-    <div
-      data-context-menu
-      className="animate-in fade-in zoom-in-95 z-popover fixed min-w-[208px] origin-top-left duration-100"
-      style={{ left: clampedX, top: clampedY }}
-    >
-      <FacetMaterial
-        layer="overlay"
-        role="menu"
+  // The map hands over a viewport point, so the menu hangs off a fixed 1px anchor there; Radix
+  // then supplies keyboard navigation, typeahead, collision handling and outside-click dismissal.
+  return (
+    <DropdownMenu key={`${x},${y}`} open modal={false} onOpenChange={(open) => !open && onClose()}>
+      {createPortal(
+        <DropdownMenuTrigger asChild>
+          <span
+            aria-hidden
+            className="pointer-events-none fixed size-px"
+            style={{ left: x, top: y }}
+          />
+        </DropdownMenuTrigger>,
+        document.body
+      )}
+      <DropdownMenuContent
+        align="start"
+        sideOffset={0}
         aria-label={`${feature.name} actions`}
-        className="rounded-row overflow-hidden py-2"
+        aria-labelledby={undefined}
+        className="min-w-52"
       >
         {primaryItems.map(renderItem)}
-
         {secondaryItems.length > 0 && (
           <>
-            <div className="bg-separator mx-2 my-1 h-px" />
+            <DropdownMenuSeparator />
             {secondaryItems.map(renderItem)}
           </>
         )}
-      </FacetMaterial>
-    </div>,
-    document.body
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 });
