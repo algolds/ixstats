@@ -6,7 +6,6 @@
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
-import { syncCurrentWinners } from "~/lib/lorewards";
 import type { LorewardEntry, WikiArticleAward } from "@prisma/client";
 
 export const lorewardsAwardsRouter = createTRPCRouter({
@@ -19,7 +18,6 @@ export const lorewardsAwardsRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      await syncCurrentWinners();
       const entries = await db.lorewardEntry.findMany({
         where: {
           status: "approved",

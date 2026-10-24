@@ -129,14 +129,15 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     load: async () => (await import("~/lib/lorewards/sync")).fullSync,
   },
   {
-    // Same lock as lorewards-full-sync: the two never overlap.
-    name: "lorewards-state-sync",
-    defaultSchedule: "*/10 * * * *",
+    // Same lock as lorewards-full-sync: the two never overlap. The bot's webhook is the primary source; this fills its
+    // gaps from the current year's OOL page.
+    name: "lorewards-ool-backfill",
+    defaultSchedule: "20 * * * *",
     lockName: "lorewards",
     timeoutMs: 10 * MINUTE,
     modulePath: "~/lib/lorewards/sync",
-    exportName: "syncFromStateFile",
-    load: async () => (await import("~/lib/lorewards/sync")).syncFromStateFile,
+    exportName: "backfillCurrentYearFromOOL",
+    load: async () => (await import("~/lib/lorewards/sync")).backfillCurrentYearFromOOL,
   },
   {
     name: "trade-expiry",
