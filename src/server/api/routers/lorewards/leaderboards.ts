@@ -6,6 +6,7 @@
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
+import { findEntriesNewestFirst } from "~/lib/lorewards/entry-feed";
 
 export const lorewardsLeaderboardsRouter = createTRPCRouter({
   /** The all-time standings: the top wiki users by total Loreward score. */
@@ -94,18 +95,17 @@ export const lorewardsLeaderboardsRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const entries = await db.lorewardEntry.findMany({
-        where: {
+      const entries = await findEntriesNewestFirst(
+        db,
+        {
           OR: [
             { winnerUser: { equals: input.username, mode: "insensitive" } },
             { runnerUpUser: { equals: input.username, mode: "insensitive" } },
           ],
           status: "approved",
         },
-        orderBy: { date: "desc" },
-        take: input.limit,
-        skip: input.offset,
-      });
+        { take: input.limit, skip: input.offset }
+      );
 
       const total = await db.lorewardEntry.count({
         where: {

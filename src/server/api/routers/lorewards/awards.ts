@@ -7,6 +7,7 @@ import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import type { LorewardEntry, WikiArticleAward } from "@prisma/client";
+import { findEntriesNewestFirst } from "~/lib/lorewards/entry-feed";
 
 export const lorewardsAwardsRouter = createTRPCRouter({
   /** Recent winners feed. */
@@ -18,15 +19,15 @@ export const lorewardsAwardsRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const entries = await db.lorewardEntry.findMany({
-        where: {
+      const entries = await findEntriesNewestFirst(
+        db,
+        {
           status: "approved",
           winnerUser: { not: null },
           ...(input.type && { type: input.type }),
         },
-        orderBy: { date: "desc" },
-        take: input.limit,
-      });
+        { take: input.limit }
+      );
 
       return entries.map((e) => ({
         date: e.date,
