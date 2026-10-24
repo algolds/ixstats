@@ -115,8 +115,7 @@ export const ixnayidCoreRouter = createTRPCRouter({
     return {
       /**
        * The passport handle (`loadPassportHandle`): the one every share and invite link carries, so
-       * it skips a hidden claim, or any wiki name while wiki attribution is off, though `wiki` below
-       * still shows it.
+       * it skips a hidden claim, though `wiki` below still shows it.
        */
       passportHandle: user ? await loadPassportHandle(user, { claimedWikiName: shownName }) : null,
       /** The stored IxStates Passport handle, null until one is claimed. */

@@ -10,7 +10,7 @@
 //   - main / article namespace (0)
 //   - talk namespaces: Talk, User talk, Project talk, File talk, Template talk, Help talk,
 //     Category talk (odd ids 1-15) and Campaign talk (461); plain discussion text, never executed
-//   - their OWN User: page and its subpages, when they have a verified linked wiki account,
+//   - their OWN User: page and its subpages (their passport handle or an approved claimed name),
 //     except script/style/data subpages (.js, .css, .json, .less), which are interface pages
 // Interface pages need the matching interface-admin right: MediaWiki:*.css/.js/.json need
 // editsitecss/editsitejs/editsitejson, User:*/*.css/.js/.json need editusercss/edituserjs/edituserjson,
