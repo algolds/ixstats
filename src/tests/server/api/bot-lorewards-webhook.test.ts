@@ -210,6 +210,25 @@ describe("/api/bot/lorewards/sync weekly keys", () => {
     expect(settleLorewardPlaces).not.toHaveBeenCalled();
   });
 
+  it("answers 409 and keeps the places when another week's row lands after the check", async () => {
+    const rows = [week13()];
+    const store = entryStore(rows);
+    store.findUnique.mockResolvedValueOnce(null);
+    db.lorewardEntry = store;
+
+    const res = await POST(
+      new Request("http://localhost/api/bot/lorewards/sync", {
+        method: "POST",
+        headers: { "x-bot-api-key": KEY },
+        body: JSON.stringify({ date: "2026-03-22", type: "weekly", winnerUser: "Urcea" }),
+      })
+    );
+
+    expect(res.status).toBe(409);
+    expect(rows[0]!.winnerUser).toBe("Rumahoki");
+    expect(settleLorewardPlaces).not.toHaveBeenCalled();
+  });
+
   it("writes a weekly over the stored row of the same week and keeps its range", async () => {
     const rows = [week13()];
 

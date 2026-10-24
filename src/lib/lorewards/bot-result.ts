@@ -93,14 +93,12 @@ export function parseBotResult(payload: BotLorewardPayload): BotResultParse {
   };
 }
 
-/** Throws `BotWeekConflict` when the result's ISO week is stored as a week with another first day. */
-async function refuseOtherWeek({ date, type, dateStart }: BotLorewardResult): Promise<void> {
-  if (type !== "weekly") return;
-  const stored = await db.lorewardEntry.findUnique({
-    where: { date_type: { date, type } },
-    select: { dateStart: true },
-  });
-  if (stored?.dateStart && stored.dateStart !== dateStart) {
+/** Throws `BotWeekConflict` when `stored` is the result's ISO week kept as a week with another first day. */
+function refuseOtherWeek(
+  { date, type, dateStart }: BotLorewardResult,
+  stored: { dateStart: string | null } | null
+): void {
+  if (type === "weekly" && stored?.dateStart && stored.dateStart !== dateStart) {
     throw new BotWeekConflict(
       `Week ${date} is stored as the week from ${stored.dateStart}. Settle it with an admin override.`
     );
@@ -126,13 +124,22 @@ async function settleEntry(entry: LorewardEntry): Promise<SettleResult | null> {
 export async function applyBotResult(
   result: BotLorewardResult
 ): Promise<{ entry: LorewardEntry; settled: SettleResult | null }> {
-  await refuseOtherWeek(result);
   const { date, type, dateStart, dateEnd, places, status, metadata } = result;
+  refuseOtherWeek(
+    result,
+    type === "weekly"
+      ? await db.lorewardEntry.findUnique({
+          where: { date_type: { date, type } },
+          select: { dateStart: true },
+        })
+      : null
+  );
   // An entry an admin override wrote keeps its places and its status, so a status that withholds a contest stays;
-  // the bot still updates its metadata. The override is checked in the write itself, so one that commits while
-  // this runs is never written over.
+  // the bot still updates its metadata. The override, and for a weekly its first day, are checked in the write itself,
+  // so an override or another week's row (the OOL writer) that commits while this runs is never written over.
+  const sameWeek = type === "weekly" ? { OR: [{ dateStart: null }, { dateStart }] } : {};
   await db.lorewardEntry.updateMany({
-    where: { date, type, overriddenAt: null },
+    where: { date, type, overriddenAt: null, ...sameWeek },
     data: { ...places, status },
   });
   const entry = await db.lorewardEntry.upsert({
@@ -140,6 +147,8 @@ export async function applyBotResult(
     create: { date, type, dateStart, dateEnd, ...places, status, metadata },
     update: { metadata, syncedAt: new Date() },
   });
+  // ponytail: a row of another week created since the check keeps its places but takes this metadata; it is not settled
+  refuseOtherWeek(result, entry);
 
   if (places.winnerUser) await recomputeUserStats(places.winnerUser);
   if (places.runnerUpUser) await recomputeUserStats(places.runnerUpUser);
