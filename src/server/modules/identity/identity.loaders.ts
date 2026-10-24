@@ -18,6 +18,7 @@ import type { DirectiveRow } from "./identity.mappers";
 import type { IdentityUser } from "./identity.selects";
 import type { ResolvedIdentity } from "./identity.types";
 import { likeLiteral } from "~/lib/utils/like-literal";
+import { lorewardStatsOfNames, type LorewardStatsTotal } from "~/lib/lorewards/stats-of-names";
 
 /** A case-insensitive exact match: Prisma compiles it to ILIKE, so the value's wildcards are escaped. */
 const insensitive = (value: string) => ({
@@ -74,9 +75,9 @@ export async function loadLoreAwards(wikiName: string | null): Promise<LoreAward
   );
 }
 
-export async function loadLoreStats(wikiName: string | null) {
-  if (!wikiName) return null;
-  return orNull(db.lorewardUserStats.findFirst({ where: { username: insensitive(wikiName) } }));
+/** The Lorewards stats of a holder's names added up (`lorewardStatsOfNames`); null without a row or on a read error. */
+export async function loadLoreStats(names: readonly string[]): Promise<LorewardStatsTotal | null> {
+  return orNull(lorewardStatsOfNames(db, names));
 }
 
 /** 1-based global Lorewards rank, or null when unranked. */

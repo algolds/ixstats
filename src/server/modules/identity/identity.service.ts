@@ -3,6 +3,7 @@
  * passport settings. Each query resolves the handle itself so a passport tab loads only its own
  * data, and each honours the owner's privacy settings (identity.privacy.ts).
  */
+import { namesOfUser, type ClaimedName } from "~/lib/identity/wiki-names";
 import { db } from "~/server/db";
 import { visibleOnlineUserIds } from "~/server/shared/presence";
 import { buildAuthoredArticles, buildWikiActivityFeed } from "./identity.feed";
@@ -32,11 +33,7 @@ import {
 import { loadRecruitedCount } from "./identity.invites";
 import { loadRealmRoles } from "./identity.realm-roles";
 import type { IdentityCountry } from "./identity.selects";
-import {
-  loadClaimedWikiName,
-  loadOwnWikiName,
-  loadPassportHandle,
-} from "./identity.passport-handle";
+import { loadOwnWikiName, loadPassportHandle } from "./identity.passport-handle";
 import { resolveIdentity, resolveIdentityNations, resolveUserIdentity } from "./identity.resolve";
 import type {
   AuthoredArticle,
@@ -113,24 +110,38 @@ async function loadWikiFeed(identity: ResolvedIdentity, visibility: PassportVisi
 
 type WikiInfo = Awaited<ReturnType<typeof loadWikiInfo>>;
 
-type LoreStats = Awaited<ReturnType<typeof loadLoreStats>>;
 type ClerkProfile = Awaited<ReturnType<typeof loadClerkProfile>>;
 
-function toLorewards(stats: LoreStats, rank: number | null): PassportLorewards | null {
+/**
+ * The holder's approved name claims, oldest first, as this viewer may see them: every one on their own passport, the
+ * shown ones for anyone else. None for an identity with no user, or on a read error.
+ */
+async function loadClaimsSeen(identity: ResolvedIdentity): Promise<ClaimedName[]> {
+  const { user } = identity;
+  if (!user) return [];
+  return namesOfUser(db, user.id, identity.isOwner ? undefined : { shown: true }).catch(() => []);
+}
+
+/** The wiki names a passport's Lorewards add up: the claims the viewer sees; an identity with no user, its wiki name. */
+function loreNamesOf(identity: ResolvedIdentity, claims: readonly ClaimedName[]): string[] {
+  if (identity.user) return claims.map((claim) => claim.name);
+  return identity.wikiName ? [identity.wikiName] : [];
+}
+
+/** The Lorewards of several names added up, with the global rank of the sum; null when none has a stats row. */
+async function loadPassportLorewards(names: string[]): Promise<PassportLorewards | null> {
+  const stats = await loadLoreStats(names);
   if (!stats) return null;
-  const { totalScore, totalBytes, dailyWins, dailyRunnerUps, weeklyWins, monthlyWins } = stats;
-  const { currentStreak, longestStreak } = stats;
-  return {
-    totalScore,
-    totalBytes,
-    rank,
-    dailyWins,
-    dailyRunnerUps,
-    weeklyWins,
-    monthlyWins,
-    currentStreak,
-    longestStreak,
-  };
+  return { ...stats, rank: await loadLoreRank(stats.totalScore), names };
+}
+
+/**
+ * The identity as its viewer sees it: on their own passport the owner's wiki name is their first approved name, hidden
+ * or not, so they still see their own wiki work and Lorewards (a hidden claim names them nowhere else).
+ */
+async function asSeenByViewer(identity: ResolvedIdentity): Promise<ResolvedIdentity> {
+  if (!identity.isOwner || !identity.user) return identity;
+  return { ...identity, wikiName: (await loadOwnWikiName(identity.user.id)) ?? identity.wikiName };
 }
 
 /** Counters for a holder with forum content; null without any (or when they could not be read). */
@@ -159,7 +170,7 @@ function passportAccount(
 function passportWiki(
   identity: ResolvedIdentity,
   wikiInfo: WikiInfo,
-  /** The first approved name the user shows, or, on their own passport, their first approved name even if hidden. */
+  /** The first approved name the viewer sees (`loadClaimsSeen`): on their own passport, hidden or not. */
   claimedWikiName: string | null,
   sections: Pick<ReturnType<typeof redactPassportSections>, "lorewards">
 ) {
@@ -204,11 +215,11 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
   const settings = await loadPassportSettings(user?.id);
   const shown = settings.visibility;
 
+  const claimsRead = loadClaimsSeen(identity);
   const [
     wikiInfo,
-    claimedWikiName,
-    ownWikiName,
-    loreStats,
+    claims,
+    lorewards,
     forumActivity,
     persona,
     clerk,
@@ -219,10 +230,11 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
   ] = await Promise.all([
     // Only an external wiki name needs MediaWiki: a user's wiki is linked by their shown claim.
     user ? null : loadWikiInfo(wikiName),
-    loadClaimedWikiName(user?.id),
     // A hidden claim shows nowhere but on its owner's own passport
-    identity.isOwner ? loadOwnWikiName(user?.id) : null,
-    shown.accolades ? loadLoreStats(wikiName) : null,
+    claimsRead,
+    shown.accolades
+      ? claimsRead.then((seen) => loadPassportLorewards(loreNamesOf(identity, seen)))
+      : null,
     shown.forumStats && user ? forum.getActivity(user.id).catch(() => null) : null,
     loadPersonalPersona(user),
     loadClerkProfile(identity),
@@ -233,8 +245,9 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
       : null,
     loadRecruitedCount(user?.id),
   ]);
-  const [loreRank, online, handle] = await Promise.all([
-    loreStats ? loadLoreRank(loreStats.totalScore) : null,
+  // The handle carries a shown name only, the owner's copy included
+  const claimedWikiName = claims.find((claim) => claim.visible)?.name ?? null;
+  const [online, handle] = await Promise.all([
     passportOnline(identity),
     user ? loadPassportHandle(user, { claimedWikiName }) : identity.handle,
   ]);
@@ -243,7 +256,7 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
   // Loaders above already skip most hidden sections; the redaction is the single enforcement point.
   const sections = redactPassportSections(
     {
-      lorewards: toLorewards(loreStats, loreRank),
+      lorewards,
       forumStats,
       vault,
       achievements,
@@ -267,7 +280,7 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     privacy: shown,
     /** Shown online (heartbeat in the last two minutes and `showOnlineStatus` on). */
     online,
-    wiki: passportWiki(identity, wikiInfo, ownWikiName ?? claimedWikiName, sections),
+    wiki: passportWiki(identity, wikiInfo, claims[0]?.name ?? null, sections),
     forum: passportForum(identity, sections.forumStats),
     /** Credits and collection; null when the owner hides them. */
     vault: sections.vault,
@@ -293,12 +306,15 @@ function toCardNation(row: RealmMembership | null): PassportCardNation | null {
   };
 }
 
-/** Lorewards score and rank, or null without loading them when hidden from this viewer. */
-async function loadCardLorewards(identity: ResolvedIdentity, shown: boolean) {
+/**
+ * The Lorewards score and rank of the holder's shown names (the card is public, so never a hidden one, even in the
+ * owner's copy), or null without loading them when the holder hides accolades.
+ */
+async function loadCardLorewards(userId: string, shown: boolean) {
   if (!shown) return null;
-  const stats = await loadLoreStats(identity.wikiName);
-  if (!stats) return null;
-  return { score: stats.totalScore, rank: await loadLoreRank(stats.totalScore) };
+  const claims = await namesOfUser(db, userId, { shown: true }).catch(() => []);
+  const lorewards = await loadPassportLorewards(claims.map((claim) => claim.name));
+  return lorewards && { score: lorewards.totalScore, rank: lorewards.rank };
 }
 
 /**
@@ -318,7 +334,7 @@ export async function getPassportCard(query: IdentityQuery): Promise<PassportCar
     resolveIdentityNations(identity).then((nations) => membershipsOf(identity, nations)),
     loadPersonalPersona(user),
     loadPassportHandle(user),
-    loadCardLorewards(identity, settings.visibility.accolades),
+    loadCardLorewards(user.id, settings.visibility.accolades),
   ]);
   const { primaryNation, realmCount, nationCount } = nationSummaryOf(realms);
   return {
@@ -356,7 +372,8 @@ interface IdentityWork {
 
 /** Tab 3 — creations: WikiOS pages and activity, Onoma packs, MyLeague clubs, directives. */
 export async function getWork(query: IdentityQuery): Promise<IdentityWork> {
-  const identity = await resolveIdentity(query.handle, query.viewerClerkId);
+  const resolved = await resolveIdentity(query.handle, query.viewerClerkId);
+  const identity = resolved && (await asSeenByViewer(resolved));
   if (!identity) {
     return {
       authoredArticles: [],
@@ -396,7 +413,8 @@ export async function getWork(query: IdentityQuery): Promise<IdentityWork> {
 export async function getHistory(
   query: IdentityQuery & { limit: number; cursor?: string | null }
 ): Promise<IdentityHistoryPage> {
-  const identity = await resolveIdentity(query.handle, query.viewerClerkId);
+  const resolved = await resolveIdentity(query.handle, query.viewerClerkId);
+  const identity = resolved && (await asSeenByViewer(resolved));
   if (!identity) return { items: [], nextCursor: null };
   const settings = await loadPassportSettings(identity.user?.id);
   if (!settings.visibility.historyStream) return { items: [], nextCursor: null };

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   Sheet,
@@ -11,23 +12,27 @@ import {
 } from "~/components/ui/sheet";
 import { Trophy, OpenBook as BookOpen } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { LorewardsView } from "~/components/lorewards/LorewardsView";
 import type { PassportWiki } from "../types";
 
 interface PassportLorewardsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  wiki?: PassportWiki;
-  handle: string;
+  /** The holder's Lorewards over the claimed names this viewer sees; null when there are none to show. */
+  lorewards: PassportWiki["lorewards"];
 }
 
+/** The Lorewards of one of the holder's claimed names, picked above the view when there are several. */
 export function PassportLorewardsModal({
   open,
   onOpenChange,
-  wiki,
-  handle,
+  lorewards,
 }: PassportLorewardsModalProps) {
-  const authorName = wiki?.username || handle;
+  const [picked, setPicked] = useState<string | null>(null);
+  const names = lorewards?.names ?? [];
+  const authorName = picked && names.includes(picked) ? picked : names[0];
+  if (!authorName) return null;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -46,7 +51,16 @@ export function PassportLorewardsModal({
           </div>
         </SheetHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-6">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-6">
+          {names.length > 1 && (
+            <SegmentedControl
+              aria-label="Wiki name"
+              size="sm"
+              value={authorName}
+              onValueChange={setPicked}
+              options={names.map((name) => ({ value: name, label: name }))}
+            />
+          )}
           <LorewardsView focus="you" username={authorName} />
         </div>
 
