@@ -1,6 +1,6 @@
 # WikiOS native architecture
 
-**Last updated:** 2026-10-06 (the former `systems/wikios.md` overview is merged in)
+**Last updated:** 2026-10-23 (the former `systems/wikios.md` overview is merged in)
 **WikiOS v1:** PR #52 is merged into `rose-garden` (D20, 2026-10-06) and ships switched off: until `WIKIOS_V1_ENABLED=true`
 (step 6b of the [cutover runbook](../../operations/wikios-v1-cutover.md)) WikiOS reads but refuses every write with
 `readonly`, `/w/api.php` answers `readonly`, and the mirror and background renders do nothing (`src/lib/wiki-os/v1-switch.ts`).  
@@ -27,7 +27,7 @@ WikiOS is the knowledge engine and structured worldbuilding platform for IxState
 - **Native Media & Asset Engine (`MediaAssetService`, plan 411).** Manages the media records in `wiki_assets` (`md5Hash` hashes the filename for MediaWiki's shard path, `sha1` the content). Uploads are native: `services/upload-service.ts` checks the bytes (type sniffed from the first bytes, size, SVG safety), stages them under their SHA-1 in `WIKIOS_UPLOAD_DIR`, serves them at once from `/api/wiki/file/<name>`, creates the `File:` page and queues an `upload` mirror job (`services/mirror-upload.ts`) that sends the same bytes to MediaWiki and then switches the asset to its `/images/` path. No asset row is invented for a name that was never uploaded or fetched. **BlurHash (WK-17):** an upload's BlurHash is computed from its own pixels (`services/image-blurhash.ts`, sharp: PNG, JPEG, GIF and WebP only, a 32 px thumbnail, bounded by `getMaxImageArea` and a 5 s timeout; best effort, so a file that cannot be decoded still uploads with none, and an SVG or PDF never has one) and stored in `wiki_assets.blurhash`; `BlurHashService` (`core/blurhash-service.ts`, no dependency) encodes and decodes the format and draws a hash as a small blurred SVG (`placeholderDataUri`). The `File:` page's image and the editor picker's IxWiki tiles show it behind the picture until it loads (`shared/PlaceholderImage.tsx`); an asset with no hash falls back to the size-only box (`createPlaceholderSvg`). A file re-registered from MediaWiki with a new size loses its old hash. Assets stored before WK-17 get theirs from `bun run wiki:backfill:blurhash` (dry run, then `-- --apply`; `services/blurhash-backfill.ts`: staged uploads are read from the staging directory, others through `downloadMedia`'s host allowlist and 10 MB cap).
 - **No direct MariaDB connection.** The MariaDB pool (`mysql-pool.ts` / `mysql-reader.ts`) was removed on 2026-08-25 (`80eee985d`). Bridge reads are PostgreSQL (`bridge/pg-*.ts`) plus the MediaWiki HTTP Action API.
 - **Inbound recent-changes sync.** `services/auto-sync-service.ts` (`runAutoSyncCycle`) pulls edits made directly on classic MediaWiki into PostgreSQL, from the `wiki-recentchanges` cron job and the `/api/wikios/inbound-sync` webhook.
-- **Outbound mirror (`services/mirror-worker.ts`, plan 407).** A durable outbox (`wiki_mirror_jobs`, written in the same transaction as the edit, move, delete, undelete or protection) applied per title in order by the dedicated `WikiOSMirror` bot: revisions go through `action=import` with `assignknownusers=1`, so MediaWiki credits the real author; failures back off and end `dead` after 8 attempts for an administrator to requeue.
+- **Outbound mirror (`services/mirror-worker.ts`, plan 407).** A durable outbox (`wiki_mirror_jobs`, written in the same transaction as the edit, move, delete, undelete or protection) applied per title in order by the dedicated `WikiOSMirror` bot: revisions go through `action=import` with `assignknownusers=1`, so MediaWiki credits the author's first shown claimed old IxWiki name, and anyone else's edit goes out as `wikios>handle`; failures back off and end `dead` after 8 attempts for an administrator to requeue.
 - **Multi-wiki reader.** `?source=iiwiki|althistory` opens another wiki's page read-only (Sept 2026).
 - **Article sanitizer (`src/lib/utils/sanitize-html.ts`, plan 415).** `sanitizeWikiArticleHtml` keeps the tags and attributes MediaWiki's own Sanitizer allows (legacy `{| border=1 bgcolor=… |}` tables, `<font>`, `<center>`, `<del>`/`<ins>`, ruby, `<bdo>`, `<data>`, list `type`/`start`/`reversed`) and blocks scripts, frames, forms, event handlers and `javascript:`/`data:` URLs. A `<style>` stays only when it is TemplateStyles' own (`data-mw-deduplicate`), and then as CSS confined to `.mw-parser-output` by `scope-template-styles.ts`: the reader gives that class, MediaWiki's own, to each element whose innerHTML is a part of the article (body, infobox, notices, the editors' previews), so a template's CSS never reaches the header, toolbar or margin around it; a selector that asks for the root's siblings is dropped, only `@media` at-rules survive, and `@import`, a `url()` to any host but the wiki's own origin (relative URLs stay), `attr()`, `expression()`, `behavior` and `-moz-binding` are stripped; anything the splitter cannot read with certainty is dropped. `WIKIOS_TEMPLATESTYLES=0` is the emergency lever: it removes every `<style>` again (on when unset, empty, `1`, `true`, `on` or `yes`, off for any other value; part of the sanitizer fingerprint; runbook step 10c in [wikios-v1-cutover.md](../../operations/wikios-v1-cutover.md)). The scoper is tested against an exact oracle (lightningcss): `bun run audit:template-styles` for a deep run.
 - **Cloudflare edge defense (`src/lib/wiki-os/guardian/`).** Non-blocking Cloudflare Zone edge cache purges on save
@@ -41,9 +41,17 @@ WikiOS is the knowledge engine and structured worldbuilding platform for IxState
 ## Engine details
 
 - **Edit policy.** `checkEditPolicy` (`src/lib/wiki-os/namespace-policy.ts`) lets signed-in users edit Main and the
-  talk namespaces, plus their own `User:` page once their wiki account link is verified (not `.js`, `.css`, `.json` or
-  `.less` subpages). Every other namespace is admin-only; Special and Media are never editable. Page protection can't
+  talk namespaces, plus their own user space: the `User:` pages of their passport handle and of their approved old
+  IxWiki names, and their subpages (not `.js`, `.css`, `.json` or `.less` subpages). Every other namespace is admin-only; Special and Media are never editable. Page protection can't
   be set yet.
+- **Identity (IxnayID plan A).** Every edit is signed with the editor's passport handle (`requireWikiAuthorName`,
+  `src/lib/wiki-os/auth.ts`): a save, revert, rollback or upload without one is refused, and the editor asks a
+  handle-less player to pick one before their first save (`HandlePickerDialog`). Old IxWiki names reach an account only
+  through approved name claims, read through one resolver (`src/lib/identity/wiki-names.ts`); an approved claim tags
+  the name's unauthored revisions with the account, and imported and inbound-synced revisions are tagged the same way
+  after they are stored. A root `User:` page of a handle or a shown claimed name redirects to the owner's passport;
+  bot passwords log in as `handle@App`, with claimed names as aliases. See
+  [Wiki identity](../ixnayid-passport.md#wiki-identity).
 - **Search scoring.** Spotlight autocomplete (`NativeSearchService`) is a case-insensitive Prisma `contains` on titles
   that scores exact titles 1.0, prefixes 0.8 and other matches 0.5; it is not typo-tolerant, and there is no
   `pg_trgm` extension or GIN index on `wiki_articles`. Deep search builds a weighted `tsvector` query with snippets at
@@ -269,7 +277,7 @@ WikiOS Margin is an inspector docked to the reader, on top of MediaWiki-style ta
 `getWatchlist`, `getWatchlistFeed`, `isPageWatched`, `watchPage`, `unwatchPage`, `markAllWatchedVisited`, `addAnnotation`, `deleteAnnotation`, `getAnnotations`
 
 **Users** (`user-talk.ts`):
-`getUserInfo`, `getUserContribs`, `getAuthorProfile`, `getBacklinks`
+`getUserInfo`, `getUserContribs`, `getBacklinks`
 
 **Discussions** (`discussions.ts`):
 `getArticleMarginData`, `createThread`, `postComment`, `resolveThread`, `deleteThread`

@@ -1,6 +1,6 @@
 # IxnayID Passport
 
-**Last updated:** 2026-10-17
+**Last updated:** 2026-10-23
 
 **Routes:** `/@user`, `/id/[username]`, `/r/[realm]/@user` (rewrites to `/r/[realm]/u/[username]`) | **Module:** `src/server/modules/identity/` | **Router:** `api.ixnayid` (`src/server/api/routers/ixnayid/`) | **UI:** `src/components/passport/`
 
@@ -68,6 +68,80 @@ The back face also saves:
 
 ---
 
+## Wiki identity
+
+The passport account is the only IxWiki and WikiOS identity ([design](../superpowers/specs/2026-10-23-ixnayid-identity-and-lorewards-design.md), plan A). An old IxWiki (classic MediaWiki) user name reaches an account only through a **name claim** an administrator approved. The old IxWiki link is gone: the user-page token for IxWiki, IxWiki `WikiAccountLink` rows, `User.wikiUsername`, `wikiUserId` and `lastWikiSync`, the `showWikiAttribution` privacy switch, the static MediaWiki reconciliation matrix and `wiki-mappings.ts`. IIWiki and AltHistory linking stays, as [sister wikis](#sister-wikis).
+
+### Name claims
+
+**Data:** `wiki_name_claims` (`WikiNameClaim`, `prisma/schema/wiki.prisma`): account, source (`ixwiki`), name, status (`PENDING`, `APPROVED`, `REJECTED`, `REVOKED`), `visible`, `rightsPass`, origin (`PLAYER`, `ADMIN_LINK`, `CONVERSION`), the player's evidence, the decision note, who asked and who decided, and the MediaWiki user id when an admin link knew it. An account may hold several names (alts, renames). A name has at most one approved owner, and an account at most one open request per name: two partial unique indexes (`wiki_name_claims_one_approved_key`, `wiki_name_claims_one_pending_key`) that live only in the claims SQL (`prisma/migrations/20261103120000_ixnayid_claims/`), since a Prisma schema cannot express them.
+
+**Names** are stored in MediaWiki's form (`claimName`: underscores read as spaces, the first letter upper-cased), up to 85 characters, with none of `# < > [ ] | { }` (so a `wikios>` import label can never be claimed).
+
+**The service** is `createNameClaimService` (`src/server/modules/identity/identity.name-claims.ts`). Every write runs in one transaction under the name's advisory lock (41103, `lockWikiNameTx` in `src/lib/identity/claim-tags.ts`, taken alone; no card or vault lock) and writes an `AdminAuditLog` row (`WIKI_NAME_CLAIM_REQUESTED`, `_VISIBILITY`, `_APPROVED`, `_REJECTED`, `_REVOKED`, `WIKI_NAME_LINKED`). Refusals carry a code (`NameClaimError`) that `toNameClaimTrpcError` turns into a tRPC error with the message kept.
+
+| Step            | Who, where                                                                                   | Procedure                                                                                                                                               | What happens                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| --------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ask             | The player, in Settings, IxnayID & passport, **Old IxWiki names** (`WikiNameClaims`)         | `ixnayid.requestNameClaim({ name, evidence? })`                                                                                                         | A `PENDING` claim (origin `PLAYER`). Refused when the player already holds or asked for the name, when another account holds it ("That name already belongs to another account."), or with 10 requests already waiting. Several players may ask for one name; the first approval wins.                                                                                                                                                      |
+| See             | The player                                                                                   | `ixnayid.listMyNameClaims`                                                                                                                              | Every claim and status ("Waiting for review", "Approved", "Not approved", "Removed") with the decision note. No notification is sent on a decision.                                                                                                                                                                                                                                                                                         |
+| Approve, reject | An administrator, in Admin, Users, **Name claims** (`src/app/admin/users/NameClaimsTab.tsx`) | `admin.listNameClaims({ status, cursor?, limit })`, `admin.approveNameClaim`, `admin.rejectNameClaim` (`{ claimId, note? }`)                            | The queue by status shows the account (handle, country), the name's evidence (WikiOS edits under either spelling, Lorewards standing, unexpired imported groups, a block in force, who else holds or asks) and the player's own words.                                                                                                                                                                                                      |
+| Link directly   | An administrator, from the tab's **Link an old name** sheet (`LinkLegacyNameSheet.tsx`)      | `admin.searchLegacyWikiNames({ query, limit })`, `admin.findNameLinkTargets({ query })`, `admin.linkLegacyWikiName({ userId, name, note?, mwUserId? })` | For legacy players who never linked. The name search covers WikiOS revision authors, Lorewards names (stats, winners, runners-up) and classic MediaWiki's user list (`list=allusers`, read-only, `fetchClassicWikiUsers`); the account search takes a handle, country or Clerk id. The link approves the account's own pending claim on the name, returns a name it already holds unchanged, or creates and approves an `ADMIN_LINK` claim. |
+| Remove          | An administrator, on an approved claim                                                       | `admin.revokeNameClaim({ claimId, note? })`                                                                                                             | `REVOKED`: every revision tag the claim made is taken back (`authorId` returns to null), payouts already made stay paid (design decision 7), and no hook runs. The name is free again.                                                                                                                                                                                                                                                      |
+| Show or hide    | The player, the switch on each pending or approved name                                      | `ixnayid.setNameClaimVisibility({ claimId, visible })`                                                                                                  | See [Visibility](#visibility).                                                                                                                                                                                                                                                                                                                                                                                                              |
+
+The `ixnayid.*` claim procedures are signed-in rate-limited mutations (`listMyNameClaims` a protected query); the `admin.*` ones are `adminProcedure` (`src/server/api/routers/admin/name-claims.ts`, thin: the service decides, `identity.name-search.ts` reads).
+
+**An approval** (approve or link), under the name's lock: refuses when another account holds the name, or when another account's passport handle spells it as MediaWiki normalises it ("That name is another player's passport handle."; `setHandle` refuses the other way round, a handle that spells another account's approved name). It then sets `APPROVED`, the decider, the note and `rightsPass`, tags the name's revisions (below) and writes the audit row, all in the one transaction. The claim-approval hooks run after the commit ([Plan B hook](#plan-b-hook)).
+
+**The system-owner rule** (plan 409, kept): imported MediaWiki groups (`wiki_user_groups` rows keyed by `wikiUsername`, from `scripts/wikios-import-rights.ts`) pass to the account only through a claim with `rightsPass`, which is set when a **system owner** approved or linked it (or the conversion found a link the account proved with its own token or a system owner confirmed). Imported blocks (`wiki_blocks.wikiUsername`) follow every approved claim. An administrator who is not a system owner cannot approve or link a name for their own account ("You cannot approve a name for your own account: ask another administrator."), and the tab warns them, on a name with imported groups, that the groups stay behind. A player never acts as a system owner.
+
+### Visibility
+
+Each claim has `visible`. A claim its owner hides shows nowhere anyone else looks: no profile card or `users.resolveWikiAuthor` answer, no `User:` redirect (the page renders as an unclaimed name's would), no wiki name on the passport, no mirror name (the edit goes out as `wikios>handle`), no public trophies holder. It still counts for rights, blocks, revision tags, Lorewards payouts, achievements, Ixnay realm auto-approval, bot-password login aliases and the owner's own views. The conversion keeps the claims of players who had `showWikiAttribution` off hidden; Settings tells them "Private until you confirm" until they turn each name on.
+
+### Revision tags
+
+`wiki_revision_claim_tags` (`WikiRevisionClaimTag`) logs every `authorId` a claim put on a revision, so a revoke undoes exactly those. `tagClaimRevisionsTx` puts the account on the name's IxWiki revisions (either spelling) that have no author yet; a revision that already has one (a native WikiOS edit, a system save) is never touched. `untagClaimRevisionsTx` sets `undoneAt` and clears the author only where the claim's account is still on it. The inbound MediaWiki sync and the XML importer store a revision with no author and then tag it for its editor's approved claim after the commit (best effort: one left untagged keeps no author, never a wrong one). Contributions, the autoconfirmed rule (4 days and 10 edits), achievements and the Vault dividend count tagged revisions. The past revisions of claims made before the deploy are tagged once by `scripts/identity/tag-claimed-revisions.ts` (runbook step 3).
+
+### The resolver
+
+`src/lib/identity/wiki-names.ts` is the one answer to "who is this wiki name". Only an approved claim identifies anyone; a pending, rejected or revoked claim answers nothing. Anything a person other than the owner sees reads with `{ shown: true }`, so a hidden claim answers nothing there; rights, blocks, tags, payouts and the owner's own views read without it.
+
+| Function                       | Answer                                                                                                                                                                                                                                                                           |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ownerOfName`, `ownersOfNames` | The account holding a name's approved claim                                                                                                                                                                                                                                      |
+| `namesOfUser`, `namesOfUsers`  | Every name an account holds, oldest approval first                                                                                                                                                                                                                               |
+| `primaryNameOf`                | The account's first-approved name (with `shown`, its first shown one)                                                                                                                                                                                                            |
+| `accountOfWikiName`            | The account a `User:` title stands for: its approved claim; with `shown`, a hidden claim answers null and never falls through to a handle; with no approved claim, the account whose handle the name spells (handles are lower-case, so a name with other capitals matches none) |
+
+Its readers include `users.resolveWikiAuthor` and `users.wikiUserPageOwner`, `ixnayid.getStatus` and the passport, WikiOS rights, user info, contributions, watchlist notices and the mirror, the inbound sync, Lorewards and achievements, Ixnay realm claims, the Vault dividend's wiki part and bot-password logins.
+
+### Plan B hook
+
+`src/lib/identity/claim-hooks.ts`: `CLAIM_APPROVED_HOOKS` run, in order, after an approval or admin link commits, outside every transaction and lock, with a `ClaimApprovedEvent` (claim, account, name, time, origin). A hook must be idempotent (an approval may be retried after a crash between the commit and the hooks); one that throws is logged (`[identity] claim hook failed`) and the approval stands. The conversion and the tag backfill run no hooks. Plan A ships the list empty; plan B (Lorewards) appends its payout-and-mint hook.
+
+### Handles as edit authors
+
+The passport handle (`User.handle`) signs every WikiOS edit (design decision 9). `requireWikiAuthorName` (`src/lib/wiki-os/auth.ts`) refuses a save, revert, rollback or upload by an account with no handle (`PRECONDITION_FAILED`, "Pick a passport handle before you save."; `/w/api.php` answers `permissiondenied`), so an edit is never stored under a country name or a Clerk id. Log actor labels read the handle, else "anonymous".
+
+**The first-save handle picker:** before a handle-less player's first save goes out, `useHandleGate` (`src/hooks/useHandleGate.ts`, in `WikiEditBridge`) opens `HandlePickerDialog` ("Pick your passport handle"), prefilled by `ixnayid.suggestHandle` (the first shown claimed name, else the old forum name, else the nation's name, never a hidden claim's name, made free if taken). `ixnayid.setHandle` saves it (3 to 24 lowercase letters, numbers or underscores; the first pick is free and one self-service change follows), clears the request-context cache for that user in this process (`forgetContextUser`), and the save goes on. If the status cannot be read, the save goes on and the server decides.
+
+**The mirror name:** `services/mirror-revision.ts` imports each WikiOS revision into classic MediaWiki under its author's first shown claimed name, which MediaWiki credits to that account (`assignknownusers=1`), else as `wikios>handle`.
+
+### User pages
+
+A root `User:<name>` page whose name is a handle or a shown claimed name redirects (307, since a claim can be revoked) to the owner's passport, `/@handle` (`userView` in `src/app/(wiki-os)/wiki/[...slug]/_views/read-views.tsx`, through `users.wikiUserPageOwner`); `?redirect=no` still redirects, and subpages are not redirected. The old page's text stays in its history and in classic MediaWiki. A hidden claim's page renders as an unclaimed name's (its text and profile card, or a 404 when nobody by that name exists). A player may edit their own user space: their handle's and their approved claimed names' `User:` pages and subpages (not `.js`, `.css`, `.json` or `.less`; `checkEditPolicy`, `src/lib/wiki-os/namespace-policy.ts`).
+
+### Bot passwords
+
+A bot password belongs to the account (design decision 11; `src/lib/wiki-os/api-compat/auth-store.ts`, `wikios.listBotPasswords` / `createBotPassword` / `deleteBotPassword`). An account needs a passport handle to create one ("Pick a passport handle in Settings before creating a bot password.") and logs in as `handle@App`. Every approved claimed name, hidden or shown, works in place of the handle, so bots set up under an old wiki name keep running; `Special:BotPasswords` lists them ("Your old wiki names work too: ..."). A login name is matched to the account whose handle it is, as typed, first, then through `accountOfWikiName`. `list=allusers` on `/w/api.php` lists handles.
+
+### Sister wikis
+
+Settings, IxnayID & passport, Linked accounts, **Sister wikis** keeps IIWiki and AltHistory linking (`WikiAccountVerifyRow`, `src/server/modules/identity/identity.wiki-links.ts`): the player puts a one-time token (valid 24 hours) on their own user page on that wiki while signed in as the account, and `ixnayid.startWikiVerification` / `confirmWikiVerification` / `unlinkWikiAccount` take only `iiwiki` or `althistory`. A verified sister link auto-approves a realm claim for a nation whose page that account created on that wiki; an Ixnay claim auto-approves when one of the claimant's approved IxWiki names (hidden ones count) created the nation's wiki page (`realms.claims.ts`). IxWiki is no longer offered there.
+
+---
+
 ## Known gaps
 
 - `getRealms` and `getWork` are not governed by any toggle (realm memberships and published work are always public).
@@ -77,6 +151,8 @@ The back face also saves:
 ## Related
 
 - [Achievements](./achievements.md)
+- [Settings](./settings.md)
+- [WikiOS](./wikios/WIKIOS.md)
 - [Vault](./myvault.md)
 - [API Reference](../reference/api-complete.md)
 
@@ -84,19 +160,81 @@ The back face also saves:
 
 ## IxnayID identity deploy runbook (owner)
 
-The IxnayID identity work ([design](../superpowers/specs/2026-10-23-ixnayid-identity-and-lorewards-design.md)) makes the
-passport account the only IxWiki and WikiOS identity: old IxWiki names reach an account only through approved name
-claims. Run these steps in order.
+Plan A ships as one deploy (plan B, Lorewards, follows). Nothing here runs from a development machine; every command runs
+in the production app directory. The conversion, the removal SQL and the tag backfill write; the counts and the dry runs
+only read.
 
-1. **Before:** read the legacy identity counts on production and keep the output.
-   `bun scripts/identity/count-legacy-identity.ts`
-2. **Conversion dry run:** print the conversion plan (writes nothing), and read the conflicts before deploying.
-   `bun scripts/identity/convert-wiki-name-claims.ts`
-3. **Deploy:** `scripts/deploy-production.sh` runs, before `db push`, the claims SQL
-   (`20261103120000_ixnayid_claims`), the conversion with `--apply`, then the removal SQL
-   (`20261103120001_ixnayid_drop_legacy`), which refuses to run until the conversion has.
-4. **After deploy:** tag the revisions of claimed names (dry run first, then apply; `--undo` reverses it).
-   `bun scripts/identity/tag-claimed-revisions.ts`, then `bun scripts/identity/tag-claimed-revisions.ts --apply`
-5. **Check:** run the counts again. `revisionsWithAuthorId` grows; the legacy counts read 0 once the columns are gone.
-   `bun scripts/identity/count-legacy-identity.ts`
-6. **Discord bot:** needs no change for plan A.
+1. **Before: counts and the conversion dry run.** Check the release out on the server without deploying it (the same
+   `git fetch` and `git reset --hard FETCH_HEAD` the deploy script starts with; the running app is not touched), then:
+
+   ```bash
+   bun scripts/identity/count-legacy-identity.ts > ~/ixnayid-counts-before.json   # read-only
+   bun scripts/identity/convert-wiki-name-claims.ts                                # dry run: prints the plan, writes nothing
+   ```
+
+   In the counts, read:
+   - `hiddenUsersWithNames`: players who had `showWikiAttribution` off. Their converted claims start hidden and stay
+     private until each player turns the name on in Settings.
+   - `contestedNames`: names two or more accounts hold or asked for (on the `ixstats_cards` clone: `Heku`).
+   - `links`: verified by token, by an administrator, by a system owner, and unverified.
+
+   In the dry run, read `conflicts` (a contested name becomes a `PENDING` claim for each account, none approved), the
+   skips (`EXISTS`, `NAME_TAKEN`, `INVALID`) and the counts by note. A verified link becomes an `APPROVED` claim that
+   keeps who verified it; its imported MediaWiki groups pass only when the account proved the link with its own token or
+   a system owner confirmed it (an administrator's confirmation converts with `rightsPass` off). A link confirmed by hand
+   before `wiki_account_links."verifiedById"` existed reads as self-proved, so record its confirming admin first
+   ([wikios-v1-cutover.md](../operations/wikios-v1-cutover.md) step 1b). An unverified link or a legacy `wikiUsername`
+   becomes `PENDING`. Settle anything surprising after the deploy in Admin, Users, Name claims:
+   approve the right claim of a contested name and reject the others.
+
+2. **Deploy.** `scripts/deploy-production.sh` runs, before `db push`, in order: the claims SQL
+   (`20261103120000_ixnayid_claims`, additive), the conversion with `--apply` (claims plus one
+   `WIKI_NAME_CLAIMS_CONVERTED` audit row; a re-run writes nothing, and a revoked or rejected claim never comes back),
+   then the removal SQL (`20261103120001_ixnayid_drop_legacy`: deletes the IxWiki `wiki_account_links` rows and drops
+   `"User"."wikiUsername"`, `"wikiUserId"` and `"lastWikiSync"`; it refuses to run while that column or an IxWiki link is
+   there and the conversion left no marker). The deploy's `db:backup` dump comes first and is the way back. The old app
+   keeps serving while the new one builds, and anything it does that reads those columns fails until the new server
+   starts: deploy at a quiet hour, or stop the app first.
+
+   Then check that both partial unique indexes survived the push; if either is missing, re-apply the claims SQL
+   (idempotent):
+
+   ```bash
+   docker exec -i ixstats-postgres psql -U postgres -d ixstats -c '\d wiki_name_claims'
+   # lists wiki_name_claims_one_approved_key and wiki_name_claims_one_pending_key
+   bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261103120000_ixnayid_claims/migration.sql
+   ```
+
+3. **Tag the claimed names' past revisions, once.** The conversion tags nothing, so the converted approved claims' old
+   edits still have no author:
+
+   ```bash
+   bun scripts/identity/tag-claimed-revisions.ts           # dry run: each approved claim and how many revisions it would tag
+   bun scripts/identity/tag-claimed-revisions.ts --apply   # tags; a second --apply tags 0
+   ```
+
+   Claims approved in the app later tag their own revisions, so this is a one-off. **`--undo`** takes back **every**
+   live tag, not only this run's: the tags of claims approved or linked in the app since, and of revisions the inbound
+   sync tagged, too. The claims stay approved and the revisions keep their text; only `authorId` returns to null, so
+   contributions lose those edits until `--apply` is run again, which puts back every approved claim's tags. Use it
+   only to back the whole backfill out.
+
+4. **The curated alt.** The removed `KNOWN_WIKI_ALTS` mapped `Carthinova` (and `ixnet>Drunk Uncle Kir`) to `Kir`. Link
+   `Carthinova` to Kir's account by hand: Admin, Users, Name claims, **Link an old name**. Make the link as a system
+   owner if the name's imported groups should pass. The `ixnet>` name is an import label, not a claimable name.
+
+5. **The handle cache is per process.** When a player picks a handle (`ixnayid.setHandle`, also from the WikiOS
+   first-save dialog), the request-context cache entry for them is cleared only in the process that served the pick;
+   another process keeps its cached copy for up to 5 seconds and would refuse their save as handle-less meanwhile. That
+   is fine while production runs one app process; if it ever runs several, expect that short window.
+
+6. **After.** Run the counts again (`bun scripts/identity/count-legacy-identity.ts > ~/ixnayid-counts-after.json`):
+   `revisionsWithAuthorId` grows by the tagged revisions, and the legacy counts read 0 now that the columns and IxWiki
+   links are gone. Check a few approved names: `User:<name>` opens the passport, and contributions list the old edits.
+
+7. **The external Discord bot** (`/ixwiki/shared/bots/discord`, outside this repo) needs no change unless it reads the
+   old link data straight from the database: check with
+   `grep -rnE "wiki_account_links|wikiUsername|wikiUserId" /ixwiki/shared/bots/discord --include=*.js`. A read of
+   `"User"."wikiUsername"` or of IxWiki `wiki_account_links` rows now fails or finds nothing; read approved
+   `wiki_name_claims` instead (`status = 'APPROVED'`, and `visible` for anything shown in public). If it logs in to
+   WikiOS's `/w/api.php` with a bot password, its old wiki-name login keeps working as an alias of the owner's handle.

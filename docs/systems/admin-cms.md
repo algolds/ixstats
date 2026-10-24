@@ -1,6 +1,6 @@
 # 🛡️ Admin CMS & Platform Control Center
 
-**Last updated:** 2026-09-30
+**Last updated:** 2026-10-23
 
 **Parent Platform Layer:** Platform Runtime & Shared Substrate  
 **Subsystems:** Dynamic Reference CMS, Role-Based Access Control (RBAC), Audit Trails, System Oversight  
@@ -113,6 +113,17 @@ System roles seeded by `user-management-service.ts` (lower level = more privileg
 | **owner** (System Owner) | 0 | Full system control; `SYSTEM_OWNER_IDS` are always treated as owners |
 | **admin** (Administrator) | 10 | Administrative access to the admin console and `adminProcedure` endpoints |
 | **user** (Member) | 100 | Standard game and simulation access |
+
+`/admin/users` (`UsersPanel`) also holds the identity tabs. **Identities** lists each account's country, role, Discord, old
+forum account and approved old IxWiki names (hidden ones too: an admin surface). **Name claims** (`NameClaimsTab`) is
+the queue of old IxWiki name claims by status, with each name's evidence (WikiOS edits, Lorewards standing, imported
+groups, a block in force) and Approve, Reject and Remove; its **Link an old name** sheet (`LinkLegacyNameSheet`)
+finds a name in WikiOS revisions, Lorewards and classic MediaWiki's user list, then the account, and links it
+directly. Only a system owner's approval or link passes a name's imported MediaWiki groups, and an administrator who
+is not a system owner cannot decide a name for their own account. Procedures: `admin.listNameClaims`,
+`searchLegacyWikiNames`, `findNameLinkTargets`, `approveNameClaim`, `rejectNameClaim`, `revokeNameClaim`,
+`linkLegacyWikiName` (`src/server/api/routers/admin/name-claims.ts`). See
+[Wiki identity](ixnayid-passport.md#wiki-identity).
 
 The admin layout (`src/app/admin/layout.tsx`) also admits a `staff` role name. There are no built-in `SUPER_ADMIN` or `MODERATOR` roles. `/admin/membership` manages membership tiers, not roles.
 

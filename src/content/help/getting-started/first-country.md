@@ -40,7 +40,7 @@ Your draft saves as you go, so you can leave and come back, even on another devi
 
 1. Go to [Setup](/setup) and choose **Link to Existing Country**, or open a realm from the [realm directory](/realms) and use its claim list.
 2. Search for the nation and submit a claim.
-3. A moderator reviews the claim. If you have verified the wiki account that created the nation's wiki page, the claim is approved at once. Verify your wiki account in [Settings → IxnayID & Passport](/settings) first; see [IxnayID & Your Passport](/help/getting-started/ixnayid).
+3. A moderator reviews the claim. If you created the nation's wiki page, the claim is approved at once: in Ixnay, under an old IxWiki name an administrator approved for your account; in a realm on IIWiki or AltHistory, under your verified account there. Claim your old name or verify your sister wiki in [Settings → IxnayID & Passport](/settings) first; see [IxnayID & Your Passport](/help/getting-started/ixnayid).
 
 Each realm limits how many nations one account can own there (usually one; Premium accounts can hold more where the realm allows). Founding and claims tell you if you are at the limit.
 
@@ -56,4 +56,4 @@ Each realm limits how many nations one account can own there (usually one; Premi
 
 **Does the kind of nation lock anything in?** No. It only sets your starting figures and government; you can change them before you found and later in the editor.
 
-**My claim is pending. What now?** Wait for a moderator, or verify your wiki account and claim again for an instant approval if you created that nation's wiki page.
+**My claim is pending. What now?** Wait for a moderator. If you created that nation's wiki page, claim again once your old IxWiki name is approved (or your sister wiki is verified) for an instant approval.

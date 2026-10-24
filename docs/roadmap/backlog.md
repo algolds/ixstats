@@ -51,7 +51,6 @@ but off · `DEAD` unused code or schema · `DEBT` maintainability · `OPS` an ac
 | Run the web process under PM2 | PL-12 | The template (cron, ws, ixtwitter) is committed; the web app still runs from `start-production.sh` |
 | Promote rose-garden → development → master | PL-14, PL-15 | Dependabot and scheduled workflows read config from `master` only |
 | Gemini workflows: add `GEMINI_API_KEY` or delete them | PL-14, D15 | — |
-| Legacy passport data: clear unverified `wikiUsername` values written before the fix | PA §2 #5 | Lorewards now pays verified links only |
 
 ## 2. Code audit items
 

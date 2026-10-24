@@ -1,6 +1,6 @@
 # Settings
 
-**Last updated:** 2026-10-20
+**Last updated:** 2026-10-23
 **Status:** Live. Every privacy control is enforced (2026-10-06, SL-4); email and push switches appear when the server
 has those channels configured (SL-5). A few other controls are saved but nothing reads them yet; they are marked
 **display-only** below.
@@ -28,7 +28,9 @@ behaviour.
 | View public passport, copy link | Links to `/@<handle>` |
 | Username, primary email | Read-only, from the auth provider |
 | Old forum | Read-only: "Imported as <name>" or "No old-forum account", from `ixnayid.getStatus` (`User.forumUsername`). Self-service linking was retired with the XenForo bridge (phase 4b); staff link it in the admin users panel (Old forum), which attributes the imported posts at once |
-| Wikis (IxWiki, IIWiki, AltHistory) | `ixnayid.startWikiVerification` / `confirmWikiVerification` (user-page token), `unlinkWikiAccount` |
+| Passport handle | `ixnayid.setHandle`: the first pick is free, then one self-service change (admins may always change theirs). WikiOS signs edits with it; a player without one is asked for it before their first WikiOS save. Refused when it spells another account's approved old IxWiki name |
+| Old IxWiki names (`WikiNameClaims`) | `ixnayid.listMyNameClaims`; ask for a name with `requestNameClaim({ name, evidence? })`, which an administrator approves or rejects in Admin, Users, Name claims; the switch on each pending or approved name is `setNameClaimVisibility` (off: the name shows nowhere public but still counts for rights, blocks, edits and payouts). Converted names of players who had `showWikiAttribution` off start hidden, under a "Private until you confirm" notice. See [Wiki identity](./ixnayid-passport.md#wiki-identity) |
+| Sister wikis (IIWiki, AltHistory), under Linked accounts | `ixnayid.startWikiVerification` / `confirmWikiVerification` (user-page token), `unlinkWikiAccount`. IxWiki is no longer offered: old IxWiki names are claims (above) |
 | Discord: unlink | `ixnayid.unlinkDiscord`. Linking happens by signing in with Discord. The row says "receive bot alerts", but no code sends per-user Discord alerts (the Discord code posts to channels) |
 
 ### MyCountry (`country`) — `CountryNationPanel`
@@ -126,7 +128,6 @@ failed settings read hides it too.
 | Appear in invite search | `searchDiscoverable`. When off, ThinkTank owners can't find you in the invite search (`invite-privacy.ts`) |
 | Search engine indexing | `searchEngineIndexing`. Off: your passport (`/@handle`, `/id/[username]`) is served with `robots: noindex, nofollow` (`src/app/id/[username]/layout.tsx`, `passportIndexable`) |
 | Show Discord tag | `showDiscordTag`. Off: other viewers see no Discord affiliation on your passport, your Discord name is not used as your name in the global activity feed, and trading partner search neither shows nor matches it. You still see it on your own passport |
-| Wiki attribution | `showWikiAttribution`. Off: other viewers see no wiki name, wiki groups, Lorewards or award history on your passport and no wiki articles or wiki activity on its Work tab; `users.resolveWikiAuthor` returns your wiki name without your role or country, so wiki bylines and user-page cards don't link to your nation; the activity feed and trading search skip the name |
 | Export your data | `users.exportUserData`: a JSON download of account fields, Vault, card count, preferences and up to 50 recent ThinkPages posts |
 | Clear history | `users.clearHistory({ confirm: true })` after a confirmation dialog, at most 3 times an hour. Deletes your personal notifications (rows addressed to your Clerk or user id; country-wide and global notices stay), your message read receipts and your online-status heartbeat, and the browser forgets its recently viewed wiki articles and forum threads (session storage). It does not touch messages (yours or anyone's), conversation read positions, posts, activity entries, audit logs or settings |
 | Sessions and two-step verification | Opens the auth provider's user profile (Clerk) |
@@ -137,6 +138,11 @@ failed settings read hides it too.
 metrics; server logs are operational and audit records), and nothing is recommended or personalised (feeds are
 chronological or trending for everyone). Stored values for them are ignored and dropped on the next save. The
 `clearSearchHistory` stub is replaced by `clearHistory`.
+
+**Removed** (2026-10-23): the privacy switch `showWikiAttribution`. Visibility now lives on each old IxWiki
+name (the switch under Old IxWiki names, above), and `users.resolveWikiAuthor` reads only shown approved claims (or the
+handle the name spells), so no privacy switch acts on it. The key may remain in old stored configs; only the IxnayID
+conversion read it, to keep those players' converted names hidden.
 
 ### Vault status (`vault`) — `VaultStatusPanel`
 

@@ -22,7 +22,7 @@ Each realm has a page at `/r/<realm>` with its nations and a claim list, and a *
 
 1. Open the realm's page from the [directory](/realms) (or use **Link to Existing Country** in [Setup](/setup) for Ixnay).
 2. In the claim list, choose an unclaimed nation and submit your claim. If the realm has **rules** (its **Rules** tab), read them and tick **I have read the realm's rules** first; you can't claim without it.
-3. A moderator (a site admin or the realm's founder) reviews it. If you've [verified the wiki account](/help/getting-started/ixnayid#link-your-wiki-accounts) that created that nation's wiki page, the claim is approved immediately.
+3. A moderator (a site admin or the realm's founder) reviews it. If you created that nation's wiki page, the claim is approved immediately: in Ixnay, under one of your approved [old IxWiki names](/help/getting-started/ixnayid#claim-your-old-ixwiki-names); in a realm hosted on IIWiki or AltHistory, under your [verified account on that wiki](/help/getting-started/ixnayid#link-your-sister-wiki-accounts).
 
 The directory shows **Join · claim a nation** (or **Claim another nation**) while you're under the realm's limit.
 

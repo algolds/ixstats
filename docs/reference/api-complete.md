@@ -1,18 +1,18 @@
 # Complete tRPC API Reference
 
-**Last updated:** 2026-10-20
+**Last updated:** 2026-10-23
 
 The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
 <!-- BEGIN_DOCS:API_INVENTORY -->
-### Live tRPC API Inventory (78 Routers, 1038 Endpoints)
+### Live tRPC API Inventory (78 Routers, 1047 Endpoints)
 
 | Router Namespace | Q | M | Sub | Total | Primary Source |
 | :--- | :---: | :---: | :---: | :---: | :--- |
 | **`api.achievements`** | 8 | 2 | 0 | **10** | `src/server/api/routers/achievements/index.ts` |
 | **`api.actionLinks`** | 7 | 5 | 0 | **12** | `src/server/api/routers/actionLinks.ts` |
 | **`api.activities`** | 6 | 3 | 0 | **9** | `src/server/api/routers/activities/index.ts` |
-| **`api.admin`** | 36 | 47 | 0 | **83** | `src/server/api/routers/admin/index.ts` |
+| **`api.admin`** | 38 | 49 | 0 | **87** | `src/server/api/routers/admin/index.ts` |
 | **`api.atlas`** | 0 | 0 | 0 | **5** | `src/server/api/routers/atlas/index.ts` |
 | **`api.atomicGovernment`** | 1 | 0 | 0 | **1** | `src/server/api/routers/atomicGovernment.ts` |
 | **`api.autosaveMonitoring`** | 5 | 0 | 0 | **5** | `src/server/api/routers/autosaveMonitoring.ts` |
@@ -53,7 +53,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.historical`** | 1 | 0 | 0 | **1** | `src/server/api/routers/historical/index.ts` |
 | **`api.intelligence`** | 2 | 6 | 0 | **8** | `src/server/api/routers/intelligence/index.ts` |
 | **`api.intent`** | 5 | 3 | 0 | **8** | `src/server/api/routers/intent.ts` |
-| **`api.ixnayid`** | 9 | 7 | 0 | **16** | `src/server/api/routers/ixnayid/index.ts` |
+| **`api.ixnayid`** | 11 | 9 | 0 | **20** | `src/server/api/routers/ixnayid/index.ts` |
 | **`api.legislation`** | 2 | 2 | 0 | **4** | `src/server/api/routers/legislation.ts` |
 | **`api.loreCards`** | 0 | 0 | 0 | **0** | `src/server/api/routers/lore-cards/index.ts` |
 | **`api.lorewards`** | 11 | 4 | 0 | **15** | `src/server/api/routers/lorewards/index.ts` |
@@ -69,7 +69,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.policies`** | 2 | 2 | 0 | **4** | `src/server/api/routers/policies/index.ts` |
 | **`api.polls`** | 2 | 5 | 0 | **7** | `src/server/api/routers/polls/index.ts` |
 | **`api.quickActions`** | 1 | 1 | 0 | **2** | `src/server/api/routers/quickactions/index.ts` |
-| **`api.realms`** | 10 | 5 | 0 | **21** | `src/server/api/routers/realms/index.ts` |
+| **`api.realms`** | 11 | 5 | 0 | **22** | `src/server/api/routers/realms/index.ts` |
 | **`api.resources`** | 1 | 0 | 0 | **1** | `src/server/api/routers/resources.ts` |
 | **`api.security`** | 9 | 17 | 0 | **26** | `src/server/api/routers/security/index.ts` |
 | **`api.smallArmsEquipment`** | 2 | 0 | 0 | **2** | `src/server/api/routers/smallArmsEquipment/index.ts` |
@@ -83,11 +83,11 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.trading`** | 7 | 4 | 0 | **11** | `src/server/api/routers/trading/index.ts` |
 | **`api.transport`** | 5 | 5 | 0 | **10** | `src/server/api/routers/transport/index.ts` |
 | **`api.userLogging`** | 0 | 1 | 0 | **1** | `src/server/api/routers/user-logging.ts` |
-| **`api.users`** | 10 | 12 | 0 | **22** | `src/server/api/routers/users/index.ts` |
+| **`api.users`** | 11 | 12 | 0 | **23** | `src/server/api/routers/users/index.ts` |
 | **`api.vault`** | 17 | 12 | 0 | **29** | `src/server/api/routers/vault/index.ts` |
 | **`api.wikiCache`** | 1 | 1 | 0 | **2** | `src/server/api/routers/wikiCache.ts` |
-| **`api.wikios`** | 71 | 33 | 0 | **106** | `src/server/api/routers/wikios/index.ts` |
-| **TOTALS** | **490** | **534** | **0** | **1038** | **78 registered namespaces** |
+| **`api.wikios`** | 70 | 33 | 0 | **105** | `src/server/api/routers/wikios/index.ts` |
+| **TOTALS** | **495** | **538** | **0** | **1047** | **78 registered namespaces** |
 <!-- END_DOCS:API_INVENTORY -->
 
 > **Generator caveat (2026-09-29):** `docs:sync` counts procedures by static analysis and misses routers built by spreading procedure objects or `mergeRouters`. Counting `appRouter._def.procedures` at runtime gives **77 namespaces / 958 procedures** — the table undercounts `countries` (29, shown as 1), `geoCore` (23, shown as 0), `intelligence` (4, shown as 0) and `sports` (63, shown as 61). Fix the generator rather than editing the table by hand. It also does not follow a router nested inside `mergeRouters` (2026-10-17): `cards` shows 23, and its 64 `cards.admin.*` procedures are listed under [cards Router](#cards-router-87-procedures). It does not follow a re-exported router either: `loreCards` shows 0 for its one procedure, `getCardAuthorInfo`.
@@ -142,10 +142,10 @@ api.countries.searchWiki.useMutation() // { query, site, categoryFilter? }
 api.countries.parseInfobox.useMutation() // { pageName, site }
 ```
 
-### users Router (22 procedures)
+### users Router (23 procedures)
 
 ```typescript
-// Queries (10)
+// Queries (11)
 api.users.getProfile.useQuery()
 api.users.getCurrentUserAbilities.useQuery()
 api.users.getCurrentUserWithRole.useQuery()
@@ -154,7 +154,8 @@ api.users.getMembershipStatus.useQuery()
 api.users.getPreferences.useQuery()
 api.users.getPrivacySettings.useQuery()
 api.users.exportUserData.useQuery()
-api.users.resolveWikiAuthor.useQuery({ wikiUsername })
+api.users.resolveWikiAuthor.useQuery({ wikiUsername }) // the account a shown approved name claim (else the handle the name spells) stands for, with role and nation; null otherwise
+api.users.wikiUserPageOwner.useQuery({ name }) // { handle } of the passport a root User:<name> page redirects to, or null
 api.users.getActiveUsers.useQuery({ limit?, excludeUserId? })
 
 // Mutations (12)
@@ -172,12 +173,44 @@ api.users.removeMutedKeyword.useMutation() // { connectionId }
 api.users.clearSearchHistory.useMutation()
 ```
 
-### admin Router (78 procedures)
+### ixnayid Router (20 procedures)
+
+Accounts, the passport and wiki identity (`src/server/api/routers/ixnayid/`, merged from `core.ts`, `linking.ts` and
+`passport.ts`). Old IxWiki names join an account only through name claims: see
+[Wiki identity](../systems/ixnayid-passport.md#wiki-identity).
+
+```typescript
+// Queries (11)
+api.ixnayid.getStatus.useQuery() // passport handle, stored handle, linked accounts, first approved old IxWiki name
+api.ixnayid.suggestHandle.useQuery() // { handle } the WikiOS first-save picker prefills, or null
+api.ixnayid.listWikiLinks.useQuery() // sister-wiki links (iiwiki, althistory)
+api.ixnayid.listMyNameClaims.useQuery() // the caller's old IxWiki name claims, every status
+api.ixnayid.getPassport.useQuery({ handle })
+api.ixnayid.getRealms.useQuery({ handle, realm? })
+api.ixnayid.getWork.useQuery({ handle })
+api.ixnayid.getHistory.useQuery({ handle, limit?, cursor? })
+api.ixnayid.getRibbons.useQuery({ handle })
+api.ixnayid.getCountryRibbons.useQuery({ countrySlug })
+api.ixnayid.getPassportSettings.useQuery()
+
+// Mutations (9)
+api.ixnayid.setHandle.useMutation() // { handle }; refused when it spells another account's approved old IxWiki name
+api.ixnayid.startWikiVerification.useMutation() // { source: "iiwiki" | "althistory", username }
+api.ixnayid.confirmWikiVerification.useMutation() // { source }
+api.ixnayid.unlinkWikiAccount.useMutation() // { source }
+api.ixnayid.requestNameClaim.useMutation() // { name, evidence? }; a PENDING claim an administrator decides
+api.ixnayid.setNameClaimVisibility.useMutation() // { claimId, visible }
+api.ixnayid.linkDiscord.useMutation()
+api.ixnayid.unlinkDiscord.useMutation()
+api.ixnayid.updatePassportSettings.useMutation() // visibility, signature and pinned ribbons
+```
+
+### admin Router (82 procedures)
 
 All procedures use `adminProcedure` (auth → admin role → input validation → 100 req/min → audit log).
 
 ```typescript
-// Queries (35)
+// Queries (37)
 api.admin.getGlobalStats.useQuery()
 api.admin.getSystemStatus.useQuery()
 api.admin.getConfig.useQuery()
@@ -193,7 +226,9 @@ api.admin.listCountriesWithUsers.useQuery()
 api.admin.getNavigationSettings.useQuery()
 api.admin.listUserIdentities.useQuery()
 api.admin.syncDiscordGuildMembers.useQuery()
-api.admin.listMediaWikiReconciliationMatrix.useQuery()
+api.admin.listNameClaims.useQuery({ status?, cursor?, limit? }) // old IxWiki name claims with each name's evidence, plus viewerIsSystemOwner
+api.admin.searchLegacyWikiNames.useQuery({ query, limit? }) // WikiOS revision authors, Lorewards names and classic MediaWiki's list=allusers
+api.admin.findNameLinkTargets.useQuery({ query }) // accounts by handle, country or Clerk id
 api.admin.getAdminAuditLog.useQuery({ limit?, offset?, action?, targetId? })
 api.admin.getCountryGrid.useQuery({ search?, sortBy?, sortOrder?, tierFilter?, limit?, offset? })
 api.admin.getCountryDetail.useQuery({ countryId })
@@ -214,7 +249,7 @@ api.admin.getThinkPagesStats.useQuery()
 api.admin.getThinkPagesConfig.useQuery()
 api.admin.getCronSchedules.useQuery()
 
-// Mutations (43)
+// Mutations (45)
 api.admin.saveConfig.useMutation() // { globalGrowthFactor, autoUpdate, botSyncEnabled, timeMultiplier, baseInflationRate?, tierGrowthModifiers?, diminishingReturnsThreshold?, diminishingReturnsFactor?, minGrowthFloor? }
 api.admin.setCustomTime.useMutation() // { ixTime, multiplier? }
 api.admin.syncEpochWithData.useMutation() // { targetEpoch, reason? }
@@ -230,8 +265,10 @@ api.admin.assignUserToCountry.useMutation() // { userId, countryId }
 api.admin.unassignUserFromCountry.useMutation() // { userId, countryId }
 api.admin.updateNavigationSettings.useMutation() // { showWikiTab, showLabsTab, showIntelligenceTab, showDefenseTab, showMapsTab, showForumTab, showHelpTab }
 api.admin.inviteUserToBypassWaitlist.useMutation() // { emailAddress, reservedNationName, role? }
-api.admin.linkUserWiki.useMutation() // { userId, wikiUsername }
-api.admin.unlinkUserWiki.useMutation() // { userId, source? }
+api.admin.approveNameClaim.useMutation() // { claimId, note? }; rightsPass only when the caller is a system owner
+api.admin.rejectNameClaim.useMutation() // { claimId, note? }
+api.admin.revokeNameClaim.useMutation() // { claimId, note? }; takes back the claim's revision tags
+api.admin.linkLegacyWikiName.useMutation() // { userId, name, note?, mwUserId? }; approves the name for the account directly
 api.admin.linkUserDiscord.useMutation() // { userId, discordUserId, discordUsername }
 api.admin.unlinkUserDiscord.useMutation() // { userId }
 api.admin.linkUserForum.useMutation() // { userId, xenforoUserId, forumUsername? } (old forum account; attributes its imported posts)
