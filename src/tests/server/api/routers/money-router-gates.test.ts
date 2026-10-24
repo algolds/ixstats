@@ -69,6 +69,7 @@ const PUBLIC = [
 /** The Loreward admin procedures, which are not named admin. */
 const LOREWARD_ADMIN = [
   "lorewards.triggerSync",
+  "lorewards.payNow",
   "lorewards.crossValidate",
   "lorewards.getCrossValidationHistory",
   "lorewards.getBlacklist",

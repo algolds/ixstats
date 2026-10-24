@@ -36,7 +36,9 @@ import {
 } from "~/components/ui/command";
 import { ValueSelect } from "~/components/ui/value-select";
 import { overrideToast } from "~/lib/lorewards/override-form";
+import { fullSyncToast } from "~/lib/lorewards/admin-toasts";
 import { LorewardOverrideCard } from "./LorewardOverrideCard";
+import { LorewardPayNowButton } from "./LorewardPayNowButton";
 
 export function LorewardsBotSection() {
   const notify = useNotify();
@@ -88,13 +90,11 @@ export function LorewardsBotSection() {
     },
   });
 
-  // Admin sync mutation
+  // Admin sync mutation: reads the OOL pages, then settles every place
   const triggerSyncMutation = api.lorewards.triggerSync.useMutation({
-    onSuccess: () => {
-      notify.success(
-        "Database sync complete",
-        "Successfully synchronized state file and OOL page."
-      );
+    onSuccess: (result) => {
+      const toast = fullSyncToast(result);
+      notify[toast.tone](toast.title, toast.message);
     },
     onError: (err) => {
       notify.error("Database sync failed", err.message);
@@ -516,17 +516,13 @@ export function LorewardsBotSection() {
               size="sm"
             >
               {triggerSyncMutation.isPending ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Syncing...
-                </>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <>
-                  <Zap className="h-3.5 w-3.5" />
-                  Trigger full state sync
-                </>
+                <Zap className="h-3.5 w-3.5" />
               )}
+              {triggerSyncMutation.isPending ? "Syncing..." : "Run full sync"}
             </Button>
+            <LorewardPayNowButton />
 
             <div className="ml-auto flex items-center gap-2">
               <Input

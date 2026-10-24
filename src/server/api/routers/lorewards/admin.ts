@@ -7,6 +7,7 @@ import * as fs from "fs";
 import { fullSync, scoreDailyWikiOS } from "~/lib/lorewards";
 import { postToBot, tellBotOfOverride } from "~/lib/lorewards/bot-client";
 import { overrideDateSchema } from "~/lib/lorewards/override-form";
+import { settleLorewardPlaces } from "~/lib/lorewards/settle";
 import { overrideLorewardEntry } from "~/server/modules/cards/cards.trophies";
 
 const OVERRIDE_FIELDS = {
@@ -38,8 +39,11 @@ const wikiosView = (result: WikiOsDaily) => ({
 });
 
 export const lorewardsAdminRouter = createTRPCRouter({
-  /** Admin: trigger full sync from state file + OOL page. */
+  /** Admin: read the OOL pages, recompute the stats, then settle every place (mint, grant, pay). */
   triggerSync: adminProcedure.mutation(() => fullSync()),
+
+  /** Admin: mint, grant and pay every recorded place that is not settled yet; each place pays once. */
+  payNow: adminProcedure.mutation(() => settleLorewardPlaces()),
 
   /** Cross-validate: compare bot picks vs WikiOS picks for a date. */
   crossValidate: adminProcedure

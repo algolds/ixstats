@@ -5,6 +5,11 @@ jest.mock("~/lib/lorewards", () => ({
   fullSync: jest.fn().mockResolvedValue({ ok: true }),
   scoreDailyWikiOS: jest.fn().mockResolvedValue({ winner: null, runnerUp: null, candidates: [] }),
 }));
+jest.mock("~/lib/lorewards/settle", () => ({
+  settleLorewardPlaces: jest
+    .fn()
+    .mockResolvedValue({ minted: 0, granted: 0, paid: 2, refused: 0, payoutsEnabled: true }),
+}));
 jest.mock("~/server/modules/cards/cards.trophies", () => ({
   overrideLorewardEntry: jest.fn().mockResolvedValue({
     reassigned: 1,
@@ -31,6 +36,7 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { lorewardsAdminRouter } from "~/server/api/routers/lorewards/admin";
 import { fullSync, scoreDailyWikiOS } from "~/lib/lorewards";
 import { overrideLorewardEntry } from "~/server/modules/cards/cards.trophies";
+import { settleLorewardPlaces } from "~/lib/lorewards/settle";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockDb } from "~/tests/helpers/transactional-mock-db";
 
@@ -46,11 +52,45 @@ function adminCaller(db = createMockDb()) {
   );
 }
 
+function playerCaller(db = createMockDb()) {
+  return createCaller(
+    createMockRouterContext({
+      auth: { userId: "player_1" },
+      user: { id: "db_player", clerkUserId: "player_1", role: { name: "user", level: 100 } },
+      db,
+    }) as never
+  );
+}
+
 describe("WK-9: Lorewards admin procedures", () => {
   beforeEach(() => {
     (fullSync as jest.Mock).mockClear();
     (scoreDailyWikiOS as jest.Mock).mockClear();
     jest.mocked(overrideLorewardEntry).mockClear();
+    jest.mocked(settleLorewardPlaces).mockClear();
+  });
+
+  it("pays every unpaid place when an admin presses Pay now", async () => {
+    await expect(adminCaller().payNow()).resolves.toEqual({
+      minted: 0,
+      granted: 0,
+      paid: 2,
+      refused: 0,
+      payoutsEnabled: true,
+    });
+    expect(settleLorewardPlaces).toHaveBeenCalledTimes(1);
+    expect(settleLorewardPlaces).toHaveBeenCalledWith();
+  });
+
+  it("refuses Pay now to a player who is not an admin, and pays nothing", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      // adminMiddleware's ForbiddenError, matched by message as the other router gate suites do
+      await expect(playerCaller().payNow()).rejects.toThrow(/Admin privileges required/);
+      expect(settleLorewardPlaces).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
   });
   it("moves an admin's override's trophies with it, then tells the bot what the entry now holds, to announce", async () => {
     const fetchMock = jest.fn().mockResolvedValue({ ok: true, status: 200 });
