@@ -8,15 +8,21 @@ import {
   type NameClaimErrorCode,
   toNameClaimTrpcError,
 } from "~/server/modules/identity/identity.name-claims";
-import type { ClaimApprovedEvent } from "~/lib/identity/claim-hooks";
+import type { ClaimApprovedEvent, ClaimRevokedEvent } from "~/lib/identity/claim-hooks";
 
 let db: MemoryPrisma;
 let events: ClaimApprovedEvent[];
+let revocations: ClaimRevokedEvent[];
 const service = () =>
   createNameClaimService(db, {
     hooks: [
       async (e) => {
         events.push(e);
+      },
+    ],
+    revokedHooks: [
+      async (e) => {
+        revocations.push(e);
       },
     ],
   });
@@ -36,6 +42,7 @@ const refusal = (promise: Promise<object>) =>
 beforeEach(async () => {
   db = createMemoryPrisma();
   events = [];
+  revocations = [];
   for (const id of ["admin", "owner", "p1", "p2"])
     await db.user.create({ data: { id, clerkUserId: `user_${id}` } });
   const article = await db.wikiArticle.create({ data: { title: "Page", wikitext: "" } });
@@ -264,9 +271,10 @@ describe("locks, hooks and audit", () => {
     ]);
   });
 
-  it("runs no hook on a reject or a revoke", async () => {
+  it("runs no approval hook on a reject or a revoke, and no revoke hook on a reject", async () => {
     const one = await service().request(actor("p1"), { name: "Old name", evidence: null });
     await service().reject(admin, { claimId: one.id, note: null });
+    expect(revocations).toEqual([]);
     const two = await service().adminLink(admin, {
       userId: "p2",
       name: "Other",
@@ -276,6 +284,56 @@ describe("locks, hooks and audit", () => {
     events = [];
     await service().revoke(admin, { claimId: two.id, note: null });
     expect(events).toEqual([]);
+  });
+
+  it("runs the revoke hooks only after the revoke commits, with the former owner and the decision time", async () => {
+    const held = await service().adminLink(admin, {
+      userId: "p1",
+      name: "Old name",
+      note: null,
+      mwUserId: null,
+    });
+    const order: string[] = [];
+    const transaction = db.$transaction.bind(db);
+    jest
+      .spyOn(db, "$transaction")
+      .mockImplementation(((...args: Parameters<typeof transaction>) =>
+        transaction(...args).finally(() => order.push("commit"))) as typeof transaction);
+    const at = new Date("2026-10-23T12:00:00Z");
+    const revoking = createNameClaimService(db, {
+      now: () => at,
+      revokedHooks: [
+        async (e) => {
+          order.push("hook");
+          revocations.push(e);
+        },
+      ],
+    });
+    await revoking.revoke(admin, { claimId: held.id, note: null });
+    expect(order).toEqual(["commit", "hook"]);
+    expect(revocations).toEqual([
+      { claimId: held.id, userId: "p1", source: "ixwiki", name: "Old name", revokedAt: at },
+    ]);
+  });
+
+  it("keeps the revoke when a revoke hook throws", async () => {
+    const held = await service().adminLink(admin, {
+      userId: "p1",
+      name: "Old name",
+      note: null,
+      mwUserId: null,
+    });
+    const failing = createNameClaimService(db, {
+      revokedHooks: [
+        async () => {
+          throw new Error("take-back failed");
+        },
+      ],
+    });
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
+    await expect(failing.revoke(admin, { claimId: held.id, note: null })).resolves.toMatchObject({
+      status: "REVOKED",
+    });
   });
 
   it("writes one audit row per decision with the decider, the rights flag and the tag counts", async () => {

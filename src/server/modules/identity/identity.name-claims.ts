@@ -3,7 +3,8 @@
  * approves, rejects or later revokes it, or links a name to an account directly. One account holds a name at a time.
  * Every write runs in one transaction under the name's lock (41103, taken alone) and leaves an audit row. An approval
  * tags the name's unauthored revisions for the account in that transaction; the claim-approval hooks run only after it
- * commits, outside every lock, and a failing hook never undoes the approval.
+ * commits, outside every lock, and a failing hook never undoes the approval. A revoke runs the claim-revoked hooks the
+ * same way.
  *
  * A name never approves for one account while another account's passport handle spells it (MediaWiki-normalised);
  * `setUserHandle` checks the other way round under the same lock.
@@ -21,8 +22,11 @@ import type {
 import { TRPCError } from "@trpc/server";
 import {
   runClaimApprovedHooks,
+  runClaimRevokedHooks,
   type ClaimApprovedEvent,
   type ClaimApprovedHook,
+  type ClaimRevokedEvent,
+  type ClaimRevokedHook,
 } from "~/lib/identity/claim-hooks";
 import {
   lockWikiNameTx,
@@ -221,7 +225,11 @@ const liveClaimsTx = (tx: Tx, name: string) =>
 
 export function createNameClaimService(
   db: ClaimsDb,
-  deps: { hooks?: readonly ClaimApprovedHook[]; now?: () => Date } = {}
+  deps: {
+    hooks?: readonly ClaimApprovedHook[];
+    revokedHooks?: readonly ClaimRevokedHook[];
+    now?: () => Date;
+  } = {}
 ) {
   const now = deps.now ?? (() => new Date());
   const inTx = <T>(work: (tx: Tx) => Promise<T>) => db.$transaction(work, TAG_TX_OPTIONS);
@@ -377,9 +385,12 @@ export function createNameClaimService(
       });
     },
 
-    /** Takes the name back and undoes its revision tags; payouts already made stand (design decision 7). No hook. */
+    /**
+     * Takes the name back and undoes its revision tags; payouts already made stand (design decision 7). The revoke
+     * hooks run after the commit, outside every lock: a failing one is logged and the revoke stands.
+     */
     async revoke(actor: ClaimActor, input: { claimId: string; note: string | null }) {
-      return inTx(async (tx) => {
+      const { view, event } = await inTx(async (tx) => {
         const claim = await lockClaimTx(tx, input.claimId);
         if (claim.status !== "APPROVED") throw refuse("NOT_APPROVED");
         const decidedAt = now();
@@ -394,8 +405,17 @@ export function createNameClaimService(
           untagged,
           note,
         });
-        return toView(saved);
+        const revoked: ClaimRevokedEvent = {
+          claimId: saved.id,
+          userId: saved.userId,
+          source: IXWIKI,
+          name: saved.name,
+          revokedAt: decidedAt,
+        };
+        return { view: toView(saved), event: revoked };
       });
+      await runClaimRevokedHooks(event, deps.revokedHooks);
+      return view;
     },
 
     /**

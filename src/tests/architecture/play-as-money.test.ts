@@ -39,6 +39,8 @@ const NOT_FOLLOWED: Record<string, string> = {
     "imported by every router; the context's user creation pays the new-player bonus",
   [path.join(SRC, "server/cron/jobs.ts")]:
     "the cron registry; its jobs' load() imports run on the cron runner, not in a request",
+  [path.join(SRC, "lib/lorewards/claim-hook.ts")]:
+    "the Lorewards claim hooks; only a name claim's approval, admin link or revoke runs them, and those are admin procedures, which play-as refuses",
 };
 const followed = (file: string) => !Object.keys(NOT_FOLLOWED).some((skip) => file.startsWith(skip));
 

@@ -16,6 +16,7 @@ import { canonicalArticleTitle } from "~/lib/cards/legacy-mapping";
 import { isJsonObject } from "~/lib/cards/ns-facts";
 import { mintCopy } from "~/lib/cards/mint";
 import { getCurrentIxCardSeason } from "~/lib/cards/season";
+import { removeCopyTx } from "~/lib/cards/remove-copy";
 import { highestIssuedSerialTx, lockCardSerialsTx } from "~/lib/cards/serial-number";
 import type { LorewardPlace, LorewardType } from "~/lib/vault/vault-bonus";
 import { contestHolder, contestPlaceKey, groupByContest, type Contest } from "./contest-identity";
@@ -370,6 +371,97 @@ export async function grantUnownedTrophyCards(
     if (userId && (await grantOne(db, grant, userId))) granted++;
   }
   return { granted };
+}
+
+/** One trophy card a revoked account holds a copy of, and the contest place it is held for. */
+interface HeldCard {
+  cardId: string;
+  place: LorewardPlace;
+  entry: TrophyEntry;
+  recorded: LorewardPlaceRef;
+}
+
+/** The cards of the approved contests in `all` that `userId` holds a copy of, each with its place's holder entry. */
+async function cardsHeldBy(
+  db: PrismaClient,
+  all: Array<Contest<TrophyEntry>>,
+  userId: string
+): Promise<HeldCard[]> {
+  const contestOf = new Map(all.flatMap((contest) => contest.map((entry) => [entry.id, contest])));
+  const cards = await db.card.findMany({
+    where: {
+      lorewardEntryId: { in: [...contestOf.keys()] },
+      CardOwnership: { some: { ownerId: userId } },
+    },
+    select: { id: true, lorewardEntryId: true, lorewardEdition: true },
+  });
+  const held: HeldCard[] = [];
+  for (const card of cards) {
+    const contest = contestOf.get(card.lorewardEntryId ?? "");
+    const place = PLACES.find((p) => p === card.lorewardEdition);
+    if (!contest || !place) continue;
+    const holder = contestHolder(contest, place);
+    if ("conflict" in holder) continue;
+    const recorded = placeOf(holder.entry, place);
+    if (recorded) held.push({ cardId: card.id, place, entry: holder.entry, recorded });
+  }
+  return held;
+}
+
+/**
+ * Takes one trophy card's copies back from `userId` and clears its grant, so the card waits for the place's next
+ * account: unless, with both locks held, the place no longer records the listed holder (an override moves its trophy
+ * itself) or still resolves to `userId` (they hold the name again).
+ */
+async function takeBackOne(db: PrismaClient, held: HeldCard, userId: string): Promise<boolean> {
+  return db.$transaction(async (tx) => {
+    // The grant's lock order: the contest place (7332), then the card (7331), then its copy rows
+    await lockContestPlace(tx, contestPlaceKey(held.entry, held.place));
+    await lockCardSerialsTx(tx, held.cardId);
+    if (!(await holderStillRecordedTx(tx, held.entry, held.place, held.recorded))) return false;
+    if ((await resolveLorewardPlace(tx, held.recorded)) === userId) return false;
+    const copies = await tx.cardOwnership.findMany({
+      where: { cardId: held.cardId, ownerId: userId },
+      select: { id: true, cardId: true, ownerId: true, serialNumber: true, finish: true },
+    });
+    if (copies.length === 0) return false;
+    for (const copy of copies) await removeCopyTx(tx, copy, "VOID");
+    const card = await tx.card.findUnique({
+      where: { id: held.cardId },
+      select: { metadata: true },
+    });
+    await tx.card.update({
+      where: { id: held.cardId },
+      data: { metadata: { ...metaOf(card?.metadata), grantedTo: null, grantedAt: null } },
+    });
+    return true;
+  });
+}
+
+/**
+ * After `userId`'s claim on a name is revoked (the owner's decision of 2026-10-23): the trophy cards of the contests
+ * holding `entryIds` (the name's entries, twins included) that `userId` holds and whose place no longer resolves to
+ * them go back to the place, owned by no account; each copy is voided (its serial is reissued to the next holder,
+ * `mintTrophyCopyTx`) and the card's grant cleared, so `grantUnownedTrophyCards` gives it to the name's next approved
+ * owner. No IxC moves. Idempotent: a card `userId` no longer holds is left alone. A card that cannot be taken back is
+ * logged and the rest still are.
+ */
+export async function takeBackTrophyCards(
+  db: PrismaClient,
+  entryIds: readonly string[],
+  userId: string
+): Promise<{ taken: number }> {
+  const scope = await contestsOfEntriesWhere(db, entryIds);
+  if (scope === null) return { taken: 0 };
+  let taken = 0;
+  for (const held of await cardsHeldBy(db, await contests(db, scope), userId)) {
+    try {
+      if (await takeBackOne(db, held, userId)) taken++;
+    } catch (error) {
+      console.error(`[Lorewards] Taking back trophy ${held.cardId} failed:`, error);
+    }
+  }
+  return { taken };
 }
 
 export interface TrophyBackfillReport {

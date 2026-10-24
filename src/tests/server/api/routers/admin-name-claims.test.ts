@@ -4,6 +4,11 @@ jest.mock("~/lib/auth", () => ({
   ...jest.requireActual<object>("~/lib/auth"),
   isSystemOwner: jest.fn((clerkUserId: string) => clerkUserId === "owner_1"),
 }));
+// The routers run the default claim hooks: keep the Lorewards payout and take-back off the real database
+jest.mock("~/lib/lorewards/claim-hook", () => ({
+  lorewardsClaimHook: jest.fn(),
+  lorewardsRevokeHook: jest.fn(),
+}));
 jest.mock("~/lib/wiki-os/adapters/mediawiki/account-proof", () => ({
   ...jest.requireActual<object>("~/lib/wiki-os/adapters/mediawiki/account-proof"),
   fetchClassicWikiUsers: jest.fn(),
@@ -11,6 +16,7 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/account-proof", () => ({
 
 import { createCallerFactory } from "~/server/api/trpc";
 import { adminRouter } from "~/server/api/routers/admin";
+import { lorewardsClaimHook, lorewardsRevokeHook } from "~/lib/lorewards/claim-hook";
 import { fetchClassicWikiUsers } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-prisma";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
@@ -92,9 +98,15 @@ describe("admin name claims", () => {
       decisionNote: "no",
     });
     const held = await admin().linkLegacyWikiName({ userId: "p2", name: "Held", mwUserId: 7 });
+    expect(lorewardsClaimHook).toHaveBeenCalledWith(
+      expect.objectContaining({ claimId: held.id, userId: "p2", name: "Held" })
+    );
     await expect(admin().revokeNameClaim({ claimId: held.id })).resolves.toMatchObject({
       status: "REVOKED",
     });
+    expect(lorewardsRevokeHook).toHaveBeenCalledWith(
+      expect.objectContaining({ claimId: held.id, userId: "p2", name: "Held" })
+    );
     await expect(admin().revokeNameClaim({ claimId: "missing" })).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
