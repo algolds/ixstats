@@ -66,12 +66,19 @@ function second(change: PageChange): number {
   return Math.floor(change.at.getTime() / 1000);
 }
 
+/** Refs compare numerically when both are all digits (classic revision ids), otherwise as strings (cuids, log refs). */
+function compareRefs(a: string, b: string): number {
+  if (a === b) return 0;
+  if (/^\d+$/.test(a) && /^\d+$/.test(b)) {
+    const bigger = BigInt(a) - BigInt(b);
+    if (bigger !== 0n) return bigger > 0n ? 1 : -1;
+  }
+  return a < b ? -1 : 1;
+}
+
 /** Orders two changes by time, then by ref, so the order never depends on argument order. */
 function byTimeThenRef(a: PageChange, b: PageChange): number {
-  const bySecond = second(a) - second(b);
-  if (bySecond !== 0) return bySecond;
-  if (a.ref === b.ref) return 0;
-  return a.ref < b.ref ? -1 : 1;
+  return second(a) - second(b) || compareRefs(a.ref, b.ref);
 }
 
 /** The later of two changes by `at` in whole seconds; the same second goes to the classic one. */
@@ -86,10 +93,23 @@ export function conflictKey(source: string, articleKey: string, winnerRef: strin
   return `${source}:${articleKey}:${winnerRef}`;
 }
 
-/** A branch without repeated refs, oldest first, so the overwritten list reads the same from either side. */
-function orderedBranch(branch: readonly PageChange[]): PageChange[] {
+/**
+ * What the winner overwrote: the losing branch without repeated refs and without anything the winning side also holds
+ * (a shared change is not overwritten), oldest first so the list reads the same from either side. The losing head is
+ * always in it, even if the caller passed an empty branch: an overwrite is never silent.
+ */
+function overwrittenBy(
+  winner: PageChange,
+  winningBranch: readonly PageChange[],
+  loser: PageChange,
+  losingBranch: readonly PageChange[]
+): PageChange[] {
+  const held = new Set([winner.ref, ...winningBranch.map((change) => change.ref)]);
   const byRef = new Map<string, PageChange>();
-  for (const change of branch) if (!byRef.has(change.ref)) byRef.set(change.ref, change);
+  for (const change of losingBranch) {
+    if (!held.has(change.ref) && !byRef.has(change.ref)) byRef.set(change.ref, change);
+  }
+  if (!byRef.has(loser.ref)) byRef.set(loser.ref, loser);
   return [...byRef.values()].sort(byTimeThenRef);
 }
 
@@ -100,9 +120,12 @@ export function decideCollision(
 ): CollisionVerdict {
   const winner = laterChange(input.incoming, input.standing);
   const incomingWins = winner === input.incoming;
+  const loser = incomingWins ? input.standing : input.incoming;
+  const winningBranch = incomingWins ? input.incomingBranch : input.standingBranch;
+  const losingBranch = incomingWins ? input.standingBranch : input.incomingBranch;
   return {
     winner,
-    overwritten: orderedBranch(incomingWins ? input.standingBranch : input.incomingBranch),
+    overwritten: overwrittenBy(winner, winningBranch, loser, losingBranch),
     incomingWins,
     key: conflictKey(source, articleKey, winner.ref),
   };
@@ -202,7 +225,7 @@ function distinct(items: readonly string[]): string[] {
 /** One sentence for the page's trail, e.g. "Overwrote revision 1234 by Foo, saved from the same version (conflict ab12cd)". */
 export function trailSummary(verdict: CollisionVerdict, conflictId: string): string {
   const tail = `saved from the same version (conflict ${conflictId})`;
-  if (verdict.overwritten.length === 0) return `Overwrote nothing, ${tail}`.slice(0, TRAIL_SUMMARY_MAX);
+  if (verdict.overwritten.length === 0) return `Overwrote the earlier change, ${tail}`.slice(0, TRAIL_SUMMARY_MAX);
   const refs = distinct(verdict.overwritten.map((change) => describeRef(change.ref)));
   const names = distinct(verdict.overwritten.map((change) => authorName(change.author)));
   const text = `Overwrote ${joinNamed(refs)} by ${joinNamed(names)}, ${tail}`;
