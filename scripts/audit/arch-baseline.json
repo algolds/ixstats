@@ -14,7 +14,7 @@
   "src/server/api/routers/thinkpages/thinktanks/groups.ts": 859,
   "src/components/sports/league/LeagueCreator.tsx": 829,
   "src/hooks/useMapEditor.ts": 822,
-  "src/app/admin/_components/platform/LorewardsBotSection.tsx": 818,
+  "src/app/admin/_components/platform/LorewardsBotSection.tsx": 814,
   "src/lib/onoma/language-families.ts": 813,
   "src/app/labs/onoma/components/sections/LoanwordsSection.tsx": 810,
   "src/hooks/useWikiNarrator.ts": 806,
