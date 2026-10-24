@@ -5,8 +5,8 @@
  * ThinkPages, ThinkTanks and Vexel. Wiki activity (edits and the Renaissance week) is the user's own
  * revisions: those carrying their `authorId` (WikiOS edits, and classic-wiki edits a name claim tagged), plus rows
  * with no `authorId` under exactly one of the ixwiki names they hold an APPROVED claim on, so a player with no
- * claimed name still has their WikiOS edits counted. Lorewards add up the stats rows of exactly those names (the
- * longest streak is the largest of them, not a sum), so a player with no claimed name reads 0 there. A pending,
+ * claimed name still has their WikiOS edits counted. Lorewards read the stats of the account's approved names and of
+ * the `wikios>` names only its own WikiOS edits carry (design decision 22). A pending,
  * rejected or revoked claim proves nothing and is never read. A claim its owner keeps hidden still counts: a count
  * names no one. Streaks and the Renaissance week use real UTC days and ISO weeks. Map edits are not loaded here: the
  * account key `mapEditsApproved` belongs to the nation loaders.
@@ -21,6 +21,8 @@ import type { Prisma } from "@prisma/client";
 import { weekKey } from "~/lib/achievements/time-buckets";
 import { deckValueOf } from "~/lib/cards/copy-value";
 import { namesOfUser } from "~/lib/identity/wiki-names";
+import { exclusiveWikiosNames } from "~/lib/lorewards/account-names";
+import { lorewardStatsOfNames } from "~/lib/lorewards/stats-of-names";
 import { EXCLUDE_TROPHY_CARDS } from "~/lib/lorewards/trophy-cards";
 import type { MetricContext, MetricLoader } from "./registry";
 
@@ -239,28 +241,26 @@ export const cardsDeckLoader: MetricLoader = {
 };
 
 /**
- * Loreward wins and runner-ups (daily runner-ups only exist) added up over the stats rows of exactly the user's
- * claimed names, the win streak the longest of any of them: MediaWiki usernames are case-sensitive after the first
- * letter, so only the stored name matches, as `resolveLorewardPlace` matches a plain name. Places won under a
- * `wikios>` name are not in these rows.
+ * Loreward wins and runner-ups (daily runner-ups only exist) added up over the stats rows of every name the account
+ * holds (the win streak the longest of any of them): its claimed names, and the `wikios>` names of the edit labels
+ * only its own WikiOS edits carry, so a place credited to `wikios>handle` counts for the one account behind it.
  */
 export const lorewardsLoader: MetricLoader = {
   id: "platform-lorewards",
   scope: "account",
   keys: LOREWARD_KEYS,
   async load(ctx) {
-    const names = await claimedWikiNames(ctx);
-    const rows = names.length
-      ? await ctx.db.lorewardUserStats.findMany({ where: { username: { in: names } } })
-      : [];
-    const sum = (pick: (row: (typeof rows)[number]) => number) =>
-      rows.reduce((total, row) => total + pick(row), 0);
+    const [claimed, wikios] = await Promise.all([
+      claimedWikiNames(ctx),
+      exclusiveWikiosNames(ctx.db, ctx.userId),
+    ]);
+    const total = await lorewardStatsOfNames(ctx.db, [...claimed, ...wikios]);
     return {
-      lorewardDailyWins: sum((r) => r.dailyWins),
-      lorewardWeeklyWins: sum((r) => r.weeklyWins),
-      lorewardMonthlyWins: sum((r) => r.monthlyWins),
-      lorewardRunnerUps: sum((r) => r.dailyRunnerUps),
-      lorewardWinStreak: Math.max(0, ...rows.map((r) => r.longestStreak)),
+      lorewardDailyWins: total?.dailyWins ?? 0,
+      lorewardWeeklyWins: total?.weeklyWins ?? 0,
+      lorewardMonthlyWins: total?.monthlyWins ?? 0,
+      lorewardRunnerUps: total?.dailyRunnerUps ?? 0,
+      lorewardWinStreak: total?.longestStreak ?? 0,
     };
   },
 };

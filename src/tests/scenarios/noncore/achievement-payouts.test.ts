@@ -97,6 +97,8 @@ beforeEach(async () => {
   // handler, so that loader fails every evaluation and its rules stay unmet.
   db.store.onRaw(/AS day FROM "ThinkpagesPost"/, () => []);
   db.store.onRaw(/AS edits,/, () => []);
+  // The Lorewards loader's WikiOS edit labels: none here, so only claimed names count
+  db.store.onRaw(/GROUP BY r\.author HAVING NOT EXISTS/, () => []);
   // The leaderboard's totals, grouped as the SQL groups them
   db.store.onRaw(/FROM "UserAchievement" ua JOIN "Achievement" a/, (_values, _text, store) => {
     const achievements = new Map(store.rows("Achievement").map((a) => [String(a.key), a]));
