@@ -5,14 +5,12 @@ import { Medal, MultiplePages, ShoppingBag, Trophy } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { Skeleton } from "~/components/ui/skeleton";
+import { lorewardsHomeLine } from "~/lib/lorewards/home-line";
 import { pickFeaturedStoreItem } from "~/lib/vault/featured-store-item";
 import { Credits, formatCredits } from "./credits";
 import { IconWell } from "./IconWell";
 import { DailyRewardTile } from "./DailyRewardTile";
 import { VaultTitle } from "./VaultTitle";
-
-const plural = (count: number, one: string) =>
-  `${count.toLocaleString()} ${one}${count === 1 ? "" : "s"}`;
 
 /** One home in the Vault: a whole-row link with a tinted icon, a chevron and a line of status. */
 function Home({
@@ -53,18 +51,10 @@ function AchievementsHome() {
 
 function LorewardsHome() {
   const { data: trophies, isError } = api.lorewards.getMyTrophies.useQuery();
-  const wins = trophies ? trophies.wins.daily + trophies.wins.weekly + trophies.wins.monthly : 0;
   return (
     <Home href="/vault/achievements?tab=lorewards" title="Lorewards" icon={<Medal />}>
       {trophies ? (
-        trophies.wikiUsername === null ? (
-          <span>Edit the wiki to take part</span>
-        ) : (
-          <span className="tabular-nums">
-            {plural(wins, "win")}
-            {trophies.todayRank !== null && ` · Today #${trophies.todayRank}`}
-          </span>
-        )
+        <span className="tabular-nums">{lorewardsHomeLine(trophies)}</span>
       ) : isError ? (
         <Unavailable />
       ) : (
