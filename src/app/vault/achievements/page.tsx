@@ -43,7 +43,8 @@ export default function VaultAchievementsPage() {
       <AchievementsTabs
         achievements={achievements}
         isLoading={achievements === undefined}
-        lorewardsPanel={<VaultLorewardsPanel />}
+        // Signed out, the catalogue never loads: no achievements rather than a skeleton that never ends.
+        lorewardsPanel={<VaultLorewardsPanel achievements={user ? achievements : []} />}
       />
     </div>
   );
