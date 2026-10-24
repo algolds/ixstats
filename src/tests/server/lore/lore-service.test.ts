@@ -134,9 +134,13 @@ jest.mock("~/lib/wiki-os/services/category-members", () => ({
 jest.mock("~/lib/wiki-os/services/visible-page", () => ({
   readVisiblePage: jest.fn(),
 }));
+jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
+  resolveRedirect: jest.fn(),
+}));
 
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { TRPCError } from "@trpc/server";
+import { resolveRedirect } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { refreshWikiosEditingFlag } from "~/lib/wiki-os/editing-switch";
 import { loadCategoryMembers } from "~/lib/wiki-os/services/category-members";
 import { readVisiblePage } from "~/lib/wiki-os/services/visible-page";
@@ -222,6 +226,10 @@ beforeEach(() => {
     const page = wiki.get(title);
     return { resolvedTitle: page?.resolvedTitle ?? title, wikitext: page?.wikitext ?? null };
   });
+  jest.mocked(resolveRedirect).mockImplementation(async (title) => ({
+    title: wiki.get(title)?.resolvedTitle ?? title,
+    fragment: null,
+  }));
   categoryPages();
 });
 
@@ -354,6 +362,23 @@ describe("listLorePieces", () => {
     ]);
   });
 
+  it("keeps a hidden piece hidden after its page is renamed", async () => {
+    categoryPages("New Name");
+    onWiki("Old Name", "{{Infobox person}}", "New Name");
+    onWiki("New Name", "{{Infobox person}}\n[[Category:Caphiria lore]]");
+    store.pages.push({
+      countryId: COUNTRY,
+      title: "Old Name",
+      type: "person",
+      pinned: false,
+      hidden: true,
+      addedById: OWNER,
+    });
+
+    expect(await listLorePieces(signedOut(), COUNTRY)).toEqual([]);
+    expect(readVisiblePage).not.toHaveBeenCalledWith(expect.anything(), "Old Name");
+  });
+
   it("lists nothing for a country outside the default realm", async () => {
     categoryPages("Venceia");
     onWiki("Venceia", "{{Infobox settlement}}");
@@ -440,9 +465,60 @@ describe("curation", () => {
       addedById: OWNER,
       createdAt: new Date(),
     });
+    onWiki("Venceia old town", "{{Infobox settlement}}\n[[Category:caphiria_lore|Old town]]");
     await recordPiece(as(COAUTHOR), COUNTRY, { title: "venceia_old_town", type: "place" });
     expect(store.pages).toEqual([
       expect.objectContaining({ title: "Venceia old town", type: "place", addedById: COAUTHOR }),
+    ]);
+  });
+
+  it("refuses to record a page that is not in the country's lore category, or does not exist", async () => {
+    store.authors.push({
+      countryId: COUNTRY,
+      userId: COAUTHOR,
+      addedById: OWNER,
+      createdAt: new Date(),
+    });
+    onWiki("Main Page", "Welcome\n[[Category:Caphiria]]\n[[:Category:Caphiria lore]]");
+    await expect(
+      recordPiece(as(COAUTHOR), COUNTRY, { title: "Main Page", type: "other" })
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "This page is not in Caphiria lore yet.",
+    });
+    expect(
+      await refusal(recordPiece(as(COAUTHOR), COUNTRY, { title: "Nowhere", type: "place" }))
+    ).toBe("NOT_FOUND");
+    expect(store.pages).toHaveLength(0);
+  });
+
+  it("records a renamed piece under the title it leads to", async () => {
+    onWiki("Venceia", "[[Category:Caphiria lore]]", "Venceia (city)");
+    expect(await recordPiece(as(OWNER), COUNTRY, { title: "Venceia", type: "place" })).toEqual({
+      title: "Venceia (city)",
+    });
+    expect(store.pages).toEqual([expect.objectContaining({ title: "Venceia (city)" })]);
+  });
+
+  it("never un-hides a piece the owner hid when a co-author records it again", async () => {
+    store.authors.push({
+      countryId: COUNTRY,
+      userId: COAUTHOR,
+      addedById: OWNER,
+      createdAt: new Date(),
+    });
+    store.pages.push({
+      countryId: COUNTRY,
+      title: "Venceia",
+      type: "other",
+      pinned: false,
+      hidden: true,
+      addedById: OWNER,
+    });
+    onWiki("Venceia", "{{Infobox settlement}}\n[[Category:Caphiria lore]]");
+    await recordPiece(as(COAUTHOR), COUNTRY, { title: "Venceia", type: "place" });
+    expect(store.pages).toEqual([
+      expect.objectContaining({ title: "Venceia", type: "place", hidden: true, addedById: OWNER }),
     ]);
   });
 

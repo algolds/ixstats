@@ -11,6 +11,8 @@
 import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { resolveRedirect } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { categoryLinks } from "~/lib/wiki-os/api-compat/scan";
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import { refreshWikiosEditingFlag } from "~/lib/wiki-os/editing-switch";
@@ -87,11 +89,13 @@ async function isLoreAuthor(ctx: LoreCtx, countryId: string): Promise<boolean> {
 async function resolveAccess(ctx: LoreCtx, countryId: string) {
   const country = await loreCountry(countryId);
   if (country?.realmId !== DEFAULT_REALM_ID || !(await refreshWikiosEditingFlag())) {
-    return { access: { enabled: false, isOwner: false, canWrite: false }, ownerUserId: null };
+    const access = { enabled: false, isOwner: false, canWrite: false };
+    return { access, ownerUserId: null, countryName: "" };
   }
   const isOwner = await hasCountryWriteAccess(ctx, countryId);
   const canWrite = isOwner || (await isLoreAuthor(ctx, countryId));
-  return { access: { enabled: true, isOwner, canWrite }, ownerUserId: country.ownerUserId };
+  const access = { enabled: true, isOwner, canWrite };
+  return { access, ownerUserId: country.ownerUserId, countryName: country.name };
 }
 
 export async function getLoreAccess(ctx: LoreCtx, countryId: string): Promise<LoreAccess> {
@@ -103,14 +107,28 @@ export async function getLoreAccess(ctx: LoreCtx, countryId: string): Promise<Lo
  * FORBIDDEN, also for a country outside the default realm or while editing is off.
  */
 async function requireLore(ctx: LoreCtx, countryId: string, need: "own" | "write") {
-  const { access, ownerUserId } = await resolveAccess(ctx, countryId);
+  const { access, ownerUserId, countryName } = await resolveAccess(ctx, countryId);
   if (!access.enabled) throw forbidden("Native lore is not available for this country.");
   const userId = ctx.user?.id;
   if (need === "own" && (!access.isOwner || !userId)) {
     throw forbidden("Only the country's owner can do this.");
   }
   if (!access.canWrite || !userId) throw forbidden("You cannot write this country's lore.");
-  return { userId, ownerUserId };
+  return { userId, ownerUserId, countryName };
+}
+
+/** The most category links of a page read when checking it carries the lore category. */
+const CATEGORY_LINKS_READ = 200;
+
+/** A category name as MediaWiki compares it (underscores as spaces, first letter capitalised). */
+const categoryKey = (name: string) => canonicalizeTitle(`Category:${name}`)?.title ?? null;
+
+/** Whether the wikitext puts its page in `Category:<Country> lore` with a `[[Category:…]]` link. */
+function carriesLoreCategory(wikitext: string, countryName: string): boolean {
+  const wanted = categoryKey(loreCategory(countryName));
+  return categoryLinks(wikitext, CATEGORY_LINKS_READ).some(
+    (link) => wanted !== null && categoryKey(link.name) === wanted
+  );
 }
 
 function canonicalTitleOf(raw: string): string {
@@ -129,7 +147,7 @@ interface Curation {
   hidden: boolean;
 }
 
-/** A page the candidates lead to, with every curation row that names it (by its own title or a redirect to it). */
+/** A page the candidates lead to, with the curation rows that name it (by its own title or a redirect to it). */
 interface ListedPage {
   wikitext: string;
   rows: Curation[];
@@ -137,11 +155,28 @@ interface ListedPage {
 
 const spaced = (title: string) => title.replace(/_/g, " ");
 
-function toPiece(title: string, page: ListedPage, curation: ReadonlyMap<string, Curation>) {
-  if (page.rows.some((row) => row.hidden)) return null;
+function toPiece(
+  title: string,
+  page: ListedPage,
+  curation: ReadonlyMap<string, Curation>,
+  hidden: ReadonlySet<string>
+) {
+  if (hidden.has(title)) return null;
   const row = curation.get(title) ?? page.rows[0];
   const type = row && isLoreType(row.type) ? row.type : inferLoreType(page.wikitext);
   return { title, type, pinned: row?.pinned ?? false };
+}
+
+/**
+ * Every title a hidden piece goes by: its row's title and the page that title now leads to, so hiding a page keeps
+ * it hidden after it is renamed (the old title then redirects to the new one, which carries the category).
+ */
+async function hiddenTitles(rows: readonly Curation[]): Promise<Set<string>> {
+  const titles = rows.filter((row) => row.hidden).map((row) => row.title);
+  const resolved = await Promise.all(
+    titles.map(async (title) => (await resolveRedirect(title)).title)
+  );
+  return new Set([...titles, ...resolved]);
 }
 
 const byPinThenTitle = (a: LorePiece, b: LorePiece) =>
@@ -167,13 +202,14 @@ export async function listLorePieces(ctx: LoreCtx, countryId: string): Promise<L
     }),
   ]);
   const curation = new Map(rows.map((row) => [row.title, row]));
+  const hidden = await hiddenTitles(rows);
   const candidates = new Set([
     ...members.map((member) => spaced(member.title)),
-    ...rows.filter((row) => !row.hidden).map((row) => row.title),
+    ...rows.map((row) => row.title),
   ]);
   const reads = await Promise.all(
     [...candidates]
-      .filter((title) => !curation.get(title)?.hidden)
+      .filter((title) => !hidden.has(title))
       .map(async (title) => ({ title, page: await readVisiblePage(ctx, title) }))
   );
 
@@ -187,21 +223,33 @@ export async function listLorePieces(ctx: LoreCtx, countryId: string): Promise<L
     pages.set(page.resolvedTitle, listed);
   }
   return [...pages]
-    .map(([title, page]) => toPiece(title, page, curation))
+    .map(([title, page]) => toPiece(title, page, curation, hidden))
     .filter((piece): piece is LorePiece => piece !== null)
     .sort(byPinThenTitle);
 }
 
 // ── Curation ─────────────────────────────────────────────────────────────────
 
-/** Record a piece the caller (owner or lore team) just wrote, with its type. */
+/**
+ * Record a piece the caller (owner or lore team) just wrote, with its type, under the title it leads to. The page must
+ * carry the country's lore category: adding any other page is the owner's `addExistingPiece`. Recording again sets
+ * only the type, so a piece the owner hid stays hidden.
+ */
 export async function recordPiece(
   ctx: LoreCtx,
   countryId: string,
   input: { title: string; type: LoreType }
 ): Promise<{ title: string }> {
-  const { userId } = await requireLore(ctx, countryId, "write");
-  const title = canonicalTitleOf(input.title);
+  const { userId, countryName } = await requireLore(ctx, countryId, "write");
+  const page = await readVisiblePage(ctx, canonicalTitleOf(input.title));
+  if (page.wikitext === null) throw noSuchPage();
+  if (!carriesLoreCategory(page.wikitext, countryName)) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `This page is not in ${loreCategory(countryName)} yet.`,
+    });
+  }
+  const title = page.resolvedTitle;
   await db.countryLorePage.upsert({
     where: titleKey(countryId, title),
     create: { countryId, title, type: input.type, addedById: userId },
