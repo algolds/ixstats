@@ -69,7 +69,7 @@ sorted by name, each with its realm (`id`, `slug`, `name`) and `claimable`:
 `/realms` is an atlas of worlds (`src/app/realms/page.tsx`, sections in `src/app/realms/_components/`, the card in
 `src/components/realms/RealmCard.tsx`). The page sits on the realms canvas with no boxed sections: a `PageHeader`,
 then a main column and, from `lg`, a 20rem right rail. Below `lg` everything is one column in this order: search,
-atlas, claims, Your realms, feed.
+atlas, claims, Your realms, guide, feed.
 
 **Header** (`RealmsHeader`): the title "Realms", a subtitle and one action. Newcomers (signed out, or signed in
 without a nation) see "Worlds with their own nations, boards and lore. Claim a nation and play."; everyone sees the
@@ -82,9 +82,10 @@ the last two link to `#atlas`.
 1. **Atlas grid** (`AtlasGrid`): every listed realm as one `RealmCard`, most open nations first (`atlasOrder`),
    then name. The search box in the rail filters it by name, description and tag. Sort and tag filters show only at
    `ATLAS_FILTER_MIN` (6) or more realms; only tags some realm uses are offered. Below `md` the grid is a
-   horizontal scroll-snap row with cards at 84% width. The grid ends in a **founding tile**, hidden while a search
-   or tag filter narrows the list: admins see **Found a realm** (to `/admin/maps/studio`), everyone else **Bring
-   your realm** (to the ThinkPages Find a Realm board). With no realm the grid says "No realms are open yet."
+   horizontal scroll-snap row with cards at 84% width. Under the grid sits a **founding chip** (a small outline
+   pill with one line beside it), hidden while a search or tag filter narrows the list: admins see **Found a
+   realm** (to `/admin/maps/studio`), everyone else **Bring your realm** (to the ThinkPages Find a Realm board).
+   With no realm the page says "No realms are open yet." above the chip.
 2. **Your claims** (signed in, `MyClaims`): each claim's nation and realm, its status (pending review, approved,
    rejected) and a rejection's reason (`realms.myClaims`).
 
@@ -122,7 +123,9 @@ the realm has no banner. It is built in PostGIS and drawn as inline SVG:
 2. **Your realms** (signed in, `YourRealms`): each realm where the viewer holds nations (`realms.myNations`) with
    its crest, name and "N of M"; each nation with **Play as** (`PlayAsNation`; the active one reads Active) and
    links to the realm's Board and Nations tab.
-3. **Realm feed** (`RealmFeedPanel`): the ThinkPages feed for one realm, up to five compact rows (author,
+3. **Realm guide** (`RealmGuide`): three steps in NationStates terms (pick your region, claim your nation, govern
+   and post on the realm board, its RMB) and a link to the help article `/help/world/realms`.
+4. **Realm feed** (`RealmFeedPanel`): the ThinkPages feed for one realm, up to five compact rows (author,
    excerpt, time) linking to the post, then an "Open the feed" link to `/dashboard`. It defaults to the realm of the
    viewer's active nation (`useViewerRealmId`), or to **All realms** when signed out, and a selector switches
    between realms and All realms.

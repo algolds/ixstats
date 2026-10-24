@@ -4,7 +4,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Plus } from "iconoir-react";
 import { RealmCard } from "~/components/realms/RealmCard";
-import { Card } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -46,34 +46,20 @@ const SORTERS: Record<SortId, (realms: DirectoryRealm[]) => DirectoryRealm[]> = 
 const FOUND_HREF = "/admin/maps/studio";
 const ADVERT_HREF = categoryHref({ key: ADVERT_CATEGORY_KEY });
 
-/** The last tile of the atlas: admins found a realm in Studio, players post theirs on the Find a Realm board. */
-function FoundingTile({ isAdmin }: { isAdmin: boolean }) {
+/** Under the atlas: admins found a realm in Studio, players post theirs on the Find a Realm board. */
+function FoundingChip({ isAdmin }: { isAdmin: boolean }) {
   return (
-    <li>
-      <Card
-        variant="well"
-        interactive
-        className="has-[a[data-stretch]:focus-visible]:outline-tint relative flex h-full items-start gap-3 has-[a[data-stretch]:focus-visible]:outline-2 has-[a[data-stretch]:focus-visible]:outline-offset-2"
-      >
-        <span className="border-tint text-tint rounded-row flex size-10 shrink-0 items-center justify-center border">
-          <Plus className="size-5" aria-hidden="true" />
-        </span>
-        <div className="min-w-0">
-          <Link
-            data-stretch
-            href={isAdmin ? FOUND_HREF : ADVERT_HREF}
-            className="text-label text-body font-medium after:absolute after:inset-0 after:content-['']"
-          >
-            {isAdmin ? "Found a realm" : "Bring your realm"}
-          </Link>
-          <p className="text-label-secondary text-footnote mt-1">
-            {isAdmin
-              ? "Start a world in Studio, with its map, board and factbook."
-              : "Run a community with its own world? Post it on the Find a Realm board."}
-          </p>
-        </div>
-      </Card>
-    </li>
+    <p className="text-label-secondary text-footnote flex flex-wrap items-center gap-x-3 gap-y-1">
+      <Button asChild variant="outline" size="sm" className="rounded-full">
+        <Link href={isAdmin ? FOUND_HREF : ADVERT_HREF}>
+          <Plus className="size-4" aria-hidden="true" />
+          {isAdmin ? "Found a realm" : "Bring your realm"}
+        </Link>
+      </Button>
+      {isAdmin
+        ? "Start a world in Studio, with its map, board and factbook."
+        : "Run a community with its own world? Post it on the Find a Realm board."}
+    </p>
   );
 }
 
@@ -136,8 +122,9 @@ function emptyMessage(realms: DirectoryRealm[], query: string): string | null {
 }
 
 /**
- * Every listed realm as one grid of atlas cards, most open first, ending in the founding tile (hidden while a search or tag narrows the list). A
- * scroll-snap row on phones. Sort and tag filters appear from `ATLAS_FILTER_MIN` realms.
+ * Every listed realm as one grid of atlas cards, most open first, with the founding chip under it (hidden while a
+ * search or tag narrows the list). A scroll-snap row on phones. Sort and tag filters appear from `ATLAS_FILTER_MIN`
+ * realms.
  */
 export function AtlasGrid({
   realms,
@@ -187,14 +174,14 @@ export function AtlasGrid({
           {shown.length === 0 && (
             <p className="text-label-secondary text-body">{emptyMessage(all, query)}</p>
           )}
-          {(shown.length > 0 || !filtered) && (
+          {shown.length > 0 && (
             <ul className="grid gap-4 max-md:-mx-4 max-md:flex max-md:snap-x max-md:snap-mandatory max-md:scroll-px-4 max-md:overflow-x-auto max-md:px-4 max-md:py-1 sm:grid-cols-2 xl:grid-cols-3 max-md:[&>li]:shrink-0 max-md:[&>li]:basis-[84%] max-md:[&>li]:snap-start">
               {shown.map((realm) => (
                 <RealmCard key={realm.id} realm={realm} />
               ))}
-              {!filtered && <FoundingTile isAdmin={isAdmin} />}
             </ul>
           )}
+          {!filtered && <FoundingChip isAdmin={isAdmin} />}
         </>
       )}
     </section>

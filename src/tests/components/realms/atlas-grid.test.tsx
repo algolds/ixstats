@@ -85,7 +85,7 @@ describe("AtlasGrid", () => {
     expect(screen.queryByText("Eurth")).not.toBeInTheDocument();
   });
 
-  it("says when nothing matches and hides the tile", () => {
+  it("says when nothing matches and hides the chip", () => {
     render(<AtlasGrid realms={[IXNAY, EURTH]} isLoading={false} query="zzz" />);
     expect(screen.getByText("No realm matches “zzz”.")).toBeInTheDocument();
     expect(screen.queryByText("Found a realm")).not.toBeInTheDocument();
@@ -121,7 +121,7 @@ describe("AtlasGrid", () => {
     expect(loading.children).toHaveLength(3);
   });
 
-  it("shows the empty line and the tile with no realms", () => {
+  it("shows the empty line and the chip with no realms", () => {
     const { unmount } = render(<AtlasGrid realms={[]} isLoading={false} query="" />);
     expect(screen.getByText("No realms are open yet.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Bring your realm" })).toBeInTheDocument();
@@ -131,7 +131,7 @@ describe("AtlasGrid", () => {
     expect(screen.getByRole("link", { name: "Found a realm" })).toBeInTheDocument();
   });
 
-  it("hides the tile when a tag filter matches nothing", () => {
+  it("hides the chip when a tag filter matches nothing", () => {
     render(
       <AtlasGrid realms={[...SIX, realm("G", { tags: ["Fantasy"] })]} isLoading={false} query="" />
     );
@@ -141,9 +141,10 @@ describe("AtlasGrid", () => {
     expect(screen.queryByText("Bring your realm")).not.toBeInTheDocument();
   });
 
-  it("marks the tile link as the stretched link for its focus outline", () => {
+  it("puts the founding chip under the grid, not in it", () => {
     render(<AtlasGrid realms={[IXNAY]} isLoading={false} query="" />);
-    expect(screen.getByRole("link", { name: "Bring your realm" })).toHaveAttribute("data-stretch");
+    expect(screen.getByRole("link", { name: "Bring your realm" }).closest("li")).toBeNull();
+    expect(screen.getAllByRole("listitem").map((li) => li.textContent)).toEqual(["Ixnay"]);
   });
 
   it("labels the section and anchors it", () => {
