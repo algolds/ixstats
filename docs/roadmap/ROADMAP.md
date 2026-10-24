@@ -321,7 +321,8 @@ the spine.
   welcome guide no longer promises notes, WK-13).
 - **Stash share links** with a visibility field.
 - **Guardian:** mass-blanking and homoglyph abuse filter.
-- Workstream C packaging; the Lorewards state-file path.
+- Workstream C packaging.
+- ✅ **Lorewards state-file path retired (plan B, 2026-10-23):** the bot's webhook and the IxWiki:OOL pages are the sources, and every sync mints, grants and pays ([achievements.md](../systems/achievements.md#lorewards)).
 - ✅ Real BlurHash (WK-17, 2026-10-06): computed from the pixels on upload, shown behind the `File:` page image and the
   picker's tiles; `bun run wiki:backfill:blurhash` fills existing assets.
 

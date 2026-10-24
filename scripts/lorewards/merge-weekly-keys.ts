@@ -3,7 +3,8 @@
  * duplicates fold into one row per contest (`planWeeklyMerge`). The paid row survives, the losers' trophy cards move to
  * it, and a week whose rows disagree, that was paid or carded under two rows, or that holds an admin override or a row
  * not approved, is reported and left alone.
- * Dry run by default; idempotent. Run it after the deploy, then settle each skipped week with an admin override.
+ * Dry run by default; idempotent. Run it before the new code goes live (the owner runbook in
+ * docs/systems/ixnayid-passport.md), then settle each skipped week with an admin override.
  *   bun scripts/lorewards/merge-weekly-keys.ts           # dry run: prints the plan, writes nothing
  *   bun scripts/lorewards/merge-weekly-keys.ts --apply   # applies each merge in its own transaction
  */

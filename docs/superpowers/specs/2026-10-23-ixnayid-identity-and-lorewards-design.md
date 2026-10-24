@@ -56,6 +56,7 @@ The audits behind this design were read-only:
    - The name's past revisions are tagged with the account (`authorId`). This is logged and undone if the claim is revoked. Contributions, autoconfirmed status and achievements then count them.
    - Unpaid Lorewards places from the payout start (2026-10-15) are paid, and their trophy cards minted. Each place pays exactly once.
 7. **Revoking a claim** undoes the revision tags. Payouts already made stay paid. *(Builder's call: stated to the owner as a guess before they approved; flag it if review finds a problem.)*
+   - *Owner amendment (2026-10-23):* a revoke also moves the name's trophy cards. The former owner's copies are voided (a `VOID` transfer event, no audit row) and each card goes to the name's next approved owner, with serial 1 reissued. IxC already paid stays paid.
 8. **Converting production data:**
    - Verified IxWiki links become **approved** claims, keeping who verified them. That keeps the system-owner rule for rights.
    - Unverified links and legacy `wikiUsername` values become **pending** claims.

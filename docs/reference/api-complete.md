@@ -1097,6 +1097,8 @@ api.lorewards.getTodayRace.useQuery()                           // top 10 of the
 api.lorewards.getStandings.useQuery({ limit? })                 // all-time standings by Loreward score
 api.lorewards.getTrophies.useQuery({ username })                // a wiki user's wins, streak and trophy cards (cards hidden when the holder hides Vault cards)
 api.lorewards.getMyTrophies.useQuery()                          // the viewer's trophies, what Loreward payouts paid, and today's rank
+api.lorewards.getMyRace.useQuery()                              // the viewer's rank and score in today's race (the WikiOS margin chip), or null
+api.lorewards.payNow.useMutation()                              // admin: settle every place (mint, grant, pay); returns { minted, granted, paid, refused, payoutsEnabled }
 ```
 
 ### admin.getSystemStatus — System Status (Admin Only)
