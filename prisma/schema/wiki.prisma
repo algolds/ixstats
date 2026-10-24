@@ -760,3 +760,38 @@ model WikiDiscussionComment {
   @@map("wiki_discussion_comments")
 }
 
+
+/// A user the owner added to a country's lore team: they may write lore pieces for that country (native lore).
+model CountryLoreAuthor {
+  id        String   @id @default(cuid())
+  countryId String
+  userId    String
+  addedById String
+  createdAt DateTime @default(now())
+
+  country   Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([countryId, userId])
+  @@index([userId])
+  @@map("country_lore_authors")
+}
+
+/// The owner's curation of one lore page of a country: its type, and whether it is pinned or hidden (native lore).
+model CountryLorePage {
+  id        String   @id @default(cuid())
+  countryId String
+  /// The canonical wiki title.
+  title     String
+  /// "person" | "place" | "event" | "organisation"
+  type      String
+  pinned    Boolean  @default(false)
+  hidden    Boolean  @default(false)
+  addedById String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([countryId, title])
+  @@index([countryId])
+  @@map("country_lore_pages")
+}
