@@ -7,7 +7,6 @@
  */
 import { beforeEach, describe, expect, it } from "@jest/globals";
 
-jest.mock("~/lib/lorewards", () => ({ syncCurrentWinners: jest.fn() }));
 jest.mock("~/lib/lorewards/today-race", () => ({ getTodayRace: jest.fn() }));
 jest.mock("~/server/db", () => ({ db: {} }));
 jest.mock("~/server/modules/identity/identity.privacy", () => ({

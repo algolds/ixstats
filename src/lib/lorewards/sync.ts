@@ -1,17 +1,16 @@
 /**
- * lorewards-sync.ts
- * Syncs Loreward data from the Discord bot's state file and the OOL wiki page
- * into Prisma for fast queries, leaderboards, and profile dashboards.
+ * Syncs Loreward results into Prisma from the IxWiki:OOL pages: the full history daily (`fullSync`) and the current year
+ * hourly (`backfillCurrentYearFromOOL`). The Discord bot's webhook (`/api/bot/lorewards/sync`) is the primary source;
+ * these fill its gaps. Every sync ends by settling what it wrote (`settleLorewardPlaces`).
  */
 
-import * as fs from "fs";
-import * as path from "path";
 import type { LorewardEntry, Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { parseOOLPage, OOL_YEARS, parseActiveMembers, parseAnnualWinners } from "./ool-parser";
-import { contestEntriesWhere, contestHolder, groupByContest } from "./contest-identity";
+import { contestHolder, groupByContest } from "./contest-identity";
+import { weeklyKeyOfFirstDay } from "./contest-week";
+import { settleLorewardPlaces, type SettleResult } from "./settle";
 import { calculateStreaks } from "./streaks";
-import { grantUnownedTrophyCards, mintTrophyCards } from "./trophy-cards";
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
 import { labelOfImportName } from "~/lib/wiki-os/services/import-label";
 import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
@@ -78,43 +77,6 @@ async function fetchOOLPageWikitext(yearOrKey: number | "main"): Promise<string 
   return isWikiosV1Enabled() ? null : fetchOOLPageFromMediaWiki(pageTitle);
 }
 
-const STATE_FILE = path.resolve("/ixwiki/shared/bots/discord/lorewards-state.json");
-
-interface StateFileResult {
-  winner?: { user: string; page: string; score: number; bytesAdded: number };
-  runnerUp?: { user: string; page: string; score: number; bytesAdded: number };
-  candidates?: Array<{ user: string; page: string; score: number; bytesAdded: number }>;
-  editCount?: number;
-  status?: string;
-  date?: string;
-  // Weekly range fields
-  weekStart?: string;
-  weekEnd?: string;
-  // Monthly range fields
-  monthStart?: string;
-  monthEnd?: string;
-}
-
-interface StateFile {
-  dailyResults?: Record<string, StateFileResult>;
-  weeklyResults?: Record<string, StateFileResult>;
-  monthlyResults?: Record<string, StateFileResult>;
-}
-
-const winnerOf = (r: StateFileResult) => ({
-  winnerUser: r.winner?.user ?? null,
-  winnerPage: r.winner?.page ?? null,
-});
-
-/** Month range from the state file, else derived from a YYYY-MM key (e.g. "2026-03" → Mar 1 - Mar 31). */
-function monthRange(date: string, result: StateFileResult) {
-  if (result.monthStart) return { start: result.monthStart, end: result.monthEnd ?? null };
-  const [year, month] = /^\d{4}-\d{2}$/.test(date) ? date.split("-").map(Number) : [];
-  if (!year || !month) return { start: null, end: null };
-  const lastDay = new Date(year, month, 0).getDate();
-  return { start: `${date}-01`, end: `${date}-${String(lastDay).padStart(2, "0")}` };
-}
-
 /**
  * Writes the place columns of the entries `where` selects, unless an admin override wrote them (`overriddenAt`): no
  * sync writes an override's places again. The mark is checked in the write itself, never read beforehand: an
@@ -125,150 +87,9 @@ const writePlaces = (
   places: Prisma.LorewardEntryUpdateManyMutationInput
 ) => db.lorewardEntry.updateMany({ where: { ...where, overriddenAt: null }, data: places });
 
-/** One state-file result: `places` are its winner and runner-up columns, `rest` the others it updates. */
-interface StateEntryWrite {
-  date: string;
-  type: "daily" | "weekly" | "monthly";
-  create: Omit<Prisma.LorewardEntryCreateInput, "date" | "type">;
-  places: Prisma.LorewardEntryUpdateManyMutationInput;
-  rest?: Prisma.LorewardEntryUpdateInput;
-}
-
-/** What an override writes to every entry of its contest, and its mark. */
-const OVERRIDE_COLUMNS = {
-  winnerUser: true,
-  winnerPage: true,
-  winnerScore: true,
-  winnerBytes: true,
-  runnerUpUser: true,
-  runnerUpPage: true,
-  runnerUpScore: true,
-  runnerUpBytes: true,
-  status: true,
-  overriddenAt: true,
-} as const;
-
 /**
- * The override another entry of a weekly's or monthly's contest holds (the OOL page's, by its first day), for a
- * state-keyed twin the sync creates late: the twin takes its places, status and mark, so the contest never disagrees
- * with itself. Null for a daily, or a contest no override wrote.
- */
-async function contestOverride({ date, type, create }: StateEntryWrite) {
-  if (type === "daily") return null;
-  return db.lorewardEntry.findFirst({
-    where: {
-      ...contestEntriesWhere({ type, date, dateStart: create.dateStart ?? null }),
-      overriddenAt: { not: null },
-    },
-    select: OVERRIDE_COLUMNS,
-  });
-}
-
-/**
- * Creates the entry (taking its contest's override, `contestOverride`), or updates its other columns, then writes its
- * places unless an override holds them.
- */
-async function upsertEntry(write: StateEntryWrite): Promise<void> {
-  const { date, type, create, places, rest } = write;
-  const inherited = await contestOverride(write);
-  await db.lorewardEntry.upsert({
-    where: { date_type: { date, type } },
-    create: { date, type, status: "approved", ...create, ...inherited },
-    update: { ...rest, syncedAt: new Date() },
-  });
-  await writePlaces({ date, type }, places);
-}
-
-async function syncDaily(results: Record<string, StateFileResult> | undefined): Promise<number> {
-  let synced = 0;
-  for (const [date, result] of Object.entries(results ?? {})) {
-    if (result.status !== "approved") continue;
-    const places = {
-      ...winnerOf(result),
-      winnerScore: result.winner?.score ?? null,
-      winnerBytes: result.winner?.bytesAdded ?? null,
-      runnerUpUser: result.runnerUp?.user ?? null,
-      runnerUpPage: result.runnerUp?.page ?? null,
-      runnerUpScore: result.runnerUp?.score ?? null,
-      runnerUpBytes: result.runnerUp?.bytesAdded ?? null,
-    };
-    const rest = {
-      editCount: result.editCount ?? 0,
-      metadata: result.candidates ? JSON.stringify(result.candidates) : null,
-    };
-    await upsertEntry({ date, type: "daily", create: { ...places, ...rest }, places, rest });
-    synced++;
-  }
-
-  return synced;
-}
-
-/** Weekly results carry weekStart/weekEnd for date range display. */
-async function syncWeekly(results: Record<string, StateFileResult> | undefined): Promise<number> {
-  let synced = 0;
-  for (const [date, result] of Object.entries(results ?? {})) {
-    await upsertEntry({
-      date,
-      type: "weekly",
-      create: {
-        dateStart: result.weekStart ?? null,
-        dateEnd: result.weekEnd ?? null,
-        ...winnerOf(result),
-        winnerScore: result.winner?.score ?? null,
-        winnerBytes: result.winner?.bytesAdded ?? null,
-      },
-      places: winnerOf(result),
-      rest: { dateStart: result.weekStart ?? undefined, dateEnd: result.weekEnd ?? undefined },
-    });
-    synced++;
-  }
-
-  return synced;
-}
-
-async function syncMonthly(results: Record<string, StateFileResult> | undefined): Promise<number> {
-  let synced = 0;
-  for (const [date, result] of Object.entries(results ?? {})) {
-    const { start, end } = monthRange(date, result);
-    await upsertEntry({
-      date,
-      type: "monthly",
-      create: {
-        dateStart: start,
-        dateEnd: end,
-        ...winnerOf(result),
-        winnerScore: result.winner?.score ?? null,
-      },
-      places: winnerOf(result),
-      rest: { dateStart: start ?? undefined, dateEnd: end ?? undefined },
-    });
-    synced++;
-  }
-
-  return synced;
-}
-
-/**
- * Sync recent results from the bot's lorewards-state.json file.
- */
-export async function syncFromStateFile(): Promise<number> {
-  let state: StateFile;
-  try {
-    state = JSON.parse(fs.readFileSync(STATE_FILE, "utf-8")) as StateFile;
-  } catch {
-    console.warn("[Lorewards] Could not read state file:", STATE_FILE);
-    return 0;
-  }
-
-  return (
-    (await syncDaily(state.dailyResults)) +
-    (await syncWeekly(state.weeklyResults)) +
-    (await syncMonthly(state.monthlyResults))
-  );
-}
-
-/**
- * Backfill historical entries from ALL OOL wiki pages (2017-2026).
+ * Backfill historical entries from ALL OOL wiki pages (2017-2026), storing only the ones whose key holds none
+ * (`storeHistoryEntry`).
  */
 export async function syncFromOOLPages(): Promise<number> {
   let totalSynced = 0;
@@ -288,33 +109,7 @@ export async function syncFromOOLPages(): Promise<number> {
 
       for (const entry of parsed) {
         // Skip entries with no winner
-        if (!entry.winnerUser) continue;
-
-        // Only insert if not already present
-        const existing = await db.lorewardEntry.findUnique({
-          where: { date_type: { date: entry.date, type: entry.type } },
-        });
-        if (existing) continue;
-        // A weekly or monthly the state file holds under its own key is written there, not stored twice.
-        if (await writeStateTwin(entry)) {
-          yearSynced++;
-          continue;
-        }
-
-        await db.lorewardEntry.create({
-          data: {
-            date: entry.date,
-            type: entry.type,
-            winnerUser: entry.winnerUser,
-            winnerPage: entry.winnerPage,
-            runnerUpUser: entry.runnerUpUser,
-            runnerUpPage: entry.runnerUpPage,
-            status: "approved",
-            month: entry.month,
-            year: entry.year ?? year,
-          },
-        });
-        yearSynced++;
+        if (entry.winnerUser && (await storeHistoryEntry(entry, year))) yearSynced++;
       }
 
       console.log(
@@ -479,22 +274,22 @@ export async function syncFromMainOOLPage(): Promise<number> {
 }
 
 /**
- * Full sync: main OOL page → state file → yearly OOL pages → recompute stats.
+ * Full sync (daily cron `lorewards-full-sync`): main OOL page → yearly OOL pages → recompute stats, then every approved
+ * place settled.
  */
 export async function fullSync(): Promise<{
-  stateEntries: number;
+  members: number;
   oolEntries: number;
   users: number;
-  members: number;
+  settled: SettleResult;
 }> {
   const members = await syncFromMainOOLPage();
-  const stateEntries = await syncFromStateFile();
   const oolEntries = await syncFromOOLPages();
   const users = await recomputeAllStats();
   // Re-apply medal scores from main page (they're canonical, overwrite computed values)
   await syncFromMainOOLPage();
-  await syncTrophyCards();
-  return { stateEntries, oolEntries, users, members };
+  const settled = await settleLorewardPlaces();
+  return { members, oolEntries, users, settled };
 }
 
 type ParsedEntry = ReturnType<typeof parseOOLPage>[number];
@@ -566,22 +361,90 @@ function oolPlaces(
   };
 }
 
+/** Where an OOL entry is stored: its key (`date`) and, for a weekly, its real first and last days. */
+interface StoredKey {
+  date: string;
+  dateStart: string | null;
+  dateEnd: string | null;
+}
+
+/** A parsed entry with where it is stored. */
+interface KeyedEntry {
+  entry: ParsedEntry;
+  key: StoredKey;
+}
+
 /**
- * The stored entries of the parsed entries' keys (`date|type`), and the weekly and monthly entries the state file
- * stores under their own key (`2026-W42`) whose first day (`dateStart`) is a parsed date: the same contest.
+ * A weekly's ISO week key and range (`weeklyKeyOfFirstDay`), anything else its own date. Null for a weekly whose date
+ * is not a day: it is skipped.
  */
-async function storedFor(parsed: ParsedEntry[]) {
-  const dates = [...new Set(parsed.map((entry) => entry.date))];
+function storedKeyOf(entry: ParsedEntry): StoredKey | null {
+  if (entry.type === "weekly") return weeklyKeyOfFirstDay(entry.date);
+  return { date: entry.date, dateStart: null, dateEnd: null };
+}
+
+/**
+ * Whether `stored`, the row at a weekly's ISO key, is another week (another first day, e.g. the bot's Monday-start W13
+ * for the page's Sunday-start week of 22 March). Logged: nothing of the page's week is written over it.
+ */
+function isAnotherWeek(entry: ParsedEntry, key: StoredKey, stored: { dateStart: string | null }) {
+  if (entry.type !== "weekly" || stored.dateStart === key.dateStart) return false;
+  console.warn(
+    `[Lorewards] OOL week ${entry.date} is stored as another week (${key.date}): not written`
+  );
+  return true;
+}
+
+/**
+ * One history entry of an OOL page, stored only when its key holds none: written over its monthly's twin
+ * (`writeStateTwin`), else created under its key (a weekly under its ISO week, with its range). Returns whether it
+ * stored it.
+ */
+async function storeHistoryEntry(entry: ParsedEntry, year: number): Promise<boolean> {
+  const key = storedKeyOf(entry);
+  if (!key) return false;
+  const existing = await db.lorewardEntry.findUnique({
+    where: { date_type: { date: key.date, type: entry.type } },
+    select: { dateStart: true },
+  });
+  if (existing) {
+    // Stored already; another week on the key is logged, and either way nothing is written
+    isAnotherWeek(entry, key, existing);
+    return false;
+  }
+  if (await writeStateTwin(entry)) return true;
+
+  await db.lorewardEntry.create({
+    data: {
+      ...key,
+      type: entry.type,
+      winnerUser: entry.winnerUser,
+      winnerPage: entry.winnerPage,
+      runnerUpUser: entry.runnerUpUser,
+      runnerUpPage: entry.runnerUpPage,
+      status: "approved",
+      month: entry.month,
+      year: entry.year ?? year,
+    },
+  });
+  return true;
+}
+
+/**
+ * The stored entries of the keyed entries (`date|type`, a weekly by its ISO week), and the monthlies the bot stores
+ * under their own key (`2026-10`) whose first day (`dateStart`) is a parsed date: the same contest.
+ */
+async function storedFor(keyed: KeyedEntry[]) {
+  const dates = [...new Set(keyed.map(({ key }) => key.date))];
   const rows = await db.lorewardEntry.findMany({
     where: {
-      OR: [
-        { date: { in: dates } },
-        { type: { in: ["weekly", "monthly"] }, dateStart: { in: dates } },
-      ],
+      OR: [{ date: { in: dates } }, { type: "monthly", dateStart: { in: dates } }],
     },
     select: STORED_PLACES,
   });
-  const twins = rows.filter((row) => row.dateStart !== null && row.dateStart !== row.date);
+  const twins = rows.filter(
+    (row) => row.type === "monthly" && row.dateStart !== null && row.dateStart !== row.date
+  );
   return {
     own: new Map(rows.map((row) => [`${row.date}|${row.type}`, row])),
     twins: new Map(twins.map((row) => [`${row.dateStart}|${row.type}`, row])),
@@ -589,11 +452,12 @@ async function storedFor(parsed: ParsedEntry[]) {
 }
 
 /**
- * The state-keyed entry of a weekly or monthly the OOL page keys by its first day, written with the page's places
- * (under the guard) instead of a second entry. Returns whether there was one.
+ * The bot-keyed entry of a monthly the OOL page keys by its first day, written with the page's places (under the
+ * guard) instead of a second entry. Returns whether there was one; never for a daily or a weekly (a weekly's key is its
+ * ISO week, `storedKeyOf`).
  */
 async function writeStateTwin(entry: ParsedEntry): Promise<boolean> {
-  if (entry.type === "daily") return false;
+  if (entry.type !== "monthly") return false;
   const twin = await db.lorewardEntry.findFirst({
     where: { type: entry.type, dateStart: entry.date },
     select: STORED_PLACES,
@@ -604,23 +468,26 @@ async function writeStateTwin(entry: ParsedEntry): Promise<boolean> {
 }
 
 /**
- * Write one current-year entry of the OOL page: over the entry of its key, else over the state-keyed entry of the
- * same weekly or monthly, else as a new entry. Returns the names it stores.
+ * Write one current-year entry of the OOL page: over the entry of its key, else over the bot-keyed entry of the same
+ * monthly, else as a new entry (a weekly with its range). Returns the entry's id and the names it stores, or null when
+ * the row at a weekly's key is another week (`isAnotherWeek`): nothing is written.
  */
 async function writeOOLEntry(
-  entry: ParsedEntry,
+  { entry, key }: KeyedEntry,
   stored: Awaited<ReturnType<typeof storedFor>>,
   year: number
-): Promise<Array<string | null>> {
-  const key = `${entry.date}|${entry.type}`;
-  const target = stored.own.get(key) ?? stored.twins.get(key);
+): Promise<{ id: string; names: Array<string | null> } | null> {
+  const target =
+    stored.own.get(`${key.date}|${entry.type}`) ?? stored.twins.get(`${entry.date}|${entry.type}`);
+  if (target && isAnotherWeek(entry, key, target)) return null;
   const places = oolPlaces(target, entry);
-  if (!target) {
-    // A contest it does not hold yet: created with the page's places (an upsert, should a writer create it meanwhile)
-    await db.lorewardEntry.upsert({
-      where: { date_type: { date: entry.date, type: entry.type } },
+  // A contest it does not hold yet: created with the page's places (an upsert, should a writer create it meanwhile)
+  const row =
+    target ??
+    (await db.lorewardEntry.upsert({
+      where: { date_type: { date: key.date, type: entry.type } },
       create: {
-        date: entry.date,
+        ...key,
         type: entry.type,
         ...places,
         status: "approved",
@@ -628,70 +495,45 @@ async function writeOOLEntry(
         year: entry.year ?? year,
       },
       update: {},
-    });
-  }
+      select: { id: true, dateStart: true },
+    }));
+  if (!target && isAnotherWeek(entry, key, row)) return null;
   // Updates and corrections made on the wiki, over the stored entry
-  await writePlaces(target ? { id: target.id } : { date: entry.date, type: entry.type }, places);
-  return [places.winnerUser, places.runnerUpUser];
-}
-
-let lastAutoSyncTime = 0;
-const AUTO_SYNC_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes cooldown
-
-/**
- * Automatically sync recent winners from the state file, main OOL page,
- * and current year's OOL wiki page, throttled with a 5-minute cooldown.
- */
-export async function syncCurrentWinners(force = false): Promise<void> {
-  const now = Date.now();
-  if (!force && now - lastAutoSyncTime < AUTO_SYNC_COOLDOWN_MS) {
-    return;
-  }
-  lastAutoSyncTime = now;
-
-  console.log("[Lorewards] Running auto-sync of current winners...");
-  try {
-    // 1. Sync from local bot state file (extremely fast)
-    await syncFromStateFile();
-
-    // 2. Sync main OOL page (fast, updates active member scores)
-    await syncFromMainOOLPage();
-
-    // 3. Sync only the current year's OOL wiki page (updates daily/weekly/monthly wins)
-    const currentYear = new Date().getFullYear();
-    const wikitext = await fetchOOLPageWikitext(currentYear);
-    if (wikitext) {
-      const parsed = parseOOLPage(wikitext, currentYear);
-      const activeUsernames = new Set<string>();
-      const stored = await storedFor(parsed);
-
-      for (const entry of parsed) {
-        if (!entry.winnerUser) continue;
-        for (const name of await writeOOLEntry(entry, stored, currentYear)) {
-          if (name) activeUsernames.add(name);
-        }
-      }
-
-      // Recompute stats for only the users active in the current year to save DB overhead
-      for (const username of activeUsernames) {
-        await recomputeUserStats(username);
-      }
-    }
-
-    console.log("[Lorewards] Auto-sync of current winners completed.");
-  } catch (err) {
-    console.error("[Lorewards] Auto-sync of current winners failed:", err);
-  }
+  await writePlaces({ id: row.id }, places);
+  return { id: row.id, names: [places.winnerUser, places.runnerUpUser] };
 }
 
 /**
- * Trophy cards for the recorded Loreward places: mint the ones that have no card yet, then give each unowned
- * card to its winner once an account can be told behind the place (`resolveLorewardPlace`). Idempotent, and
- * writes no IxCredits.
+ * The OOL gap-filler (hourly cron `lorewards-ool-backfill`): the main OOL page, then the current UTC year's page, written
+ * over stored entries under the override and `wikios>` guards; the touched users' stats recomputed; then the entries it
+ * wrote settled. Replaces `syncCurrentWinners`.
  */
-export async function syncTrophyCards(): Promise<{ minted: number; granted: number }> {
-  const { minted } = await mintTrophyCards(db);
-  const { granted } = await grantUnownedTrophyCards(db);
-  console.log(`[Lorewards] Minted ${minted} trophy cards, granted ${granted}.`);
-  return { minted, granted };
+export async function backfillCurrentYearFromOOL(): Promise<{
+  entries: number;
+  settled: SettleResult;
+}> {
+  await syncFromMainOOLPage();
+  const year = new Date().getUTCFullYear();
+  const wikitext = await fetchOOLPageWikitext(year);
+  if (!wikitext) console.warn(`[Lorewards] Could not fetch OOL/${year}`);
+  const keyed = (wikitext ? parseOOLPage(wikitext, year) : []).flatMap((entry) => {
+    const key = entry.winnerUser ? storedKeyOf(entry) : null;
+    return key ? [{ entry, key }] : [];
+  });
+  const stored = await storedFor(keyed);
+
+  const written: string[] = [];
+  const names = new Set<string>();
+  for (const entry of keyed) {
+    const wrote = await writeOOLEntry(entry, stored, year);
+    if (!wrote) continue;
+    written.push(wrote.id);
+    for (const name of wrote.names) if (name) names.add(name);
+  }
+  // Only the users the current year's page touched, to save DB overhead
+  for (const username of names) await recomputeUserStats(username);
+
+  const settled = await settleLorewardPlaces({ entryIds: written });
+  console.log(`[Lorewards] OOL backfill wrote ${written.length} entries from OOL/${year}.`);
+  return { entries: written.length, settled };
 }
