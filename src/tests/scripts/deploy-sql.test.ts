@@ -100,7 +100,7 @@ describe("the SQL the deploy runs", () => {
     expect(convert).toBeLessThan(push);
   });
 
-  it("drops the legacy wiki columns and IxWiki links after the conversion and before the push", () => {
+  it("deletes the IxWiki links after the conversion and before the push", () => {
     const at = (needle: string) => script.indexOf(needle);
     const drop = at("20261103120001_ixnayid_drop_legacy/migration.sql");
     expect(drop).toBeGreaterThan(at("bun scripts/identity/convert-wiki-name-claims.ts --apply"));

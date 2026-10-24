@@ -260,6 +260,11 @@ model User {
   handle               String?                  @unique
   handleChangedAt      DateTime?
   lastForumSync       DateTime?
+  // ponytail: the legacy IxWiki columns stay one release, unread (@ignore), so the old app keeps working while the new
+  // one builds; the next release deletes these three lines and drops the columns before its push (ixnayid-passport.md).
+  wikiUserId          Int?      @ignore
+  wikiUsername        String?   @ignore
+  lastWikiSync        DateTime? @ignore
   lastSeenAt          DateTime?
   ownedCountries      Country[]                @relation("CountryOwner")
   wikiAccountLinks    WikiAccountLink[]

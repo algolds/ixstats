@@ -190,11 +190,10 @@ only read.
 2. **Deploy.** `scripts/deploy-production.sh` runs, before `db push`, in order: the claims SQL
    (`20261103120000_ixnayid_claims`, additive), the conversion with `--apply` (claims plus one
    `WIKI_NAME_CLAIMS_CONVERTED` audit row; a re-run writes nothing, and a revoked or rejected claim never comes back),
-   then the removal SQL (`20261103120001_ixnayid_drop_legacy`: deletes the IxWiki `wiki_account_links` rows and drops
-   `"User"."wikiUsername"`, `"wikiUserId"` and `"lastWikiSync"`; it refuses to run while that column or an IxWiki link is
-   there and the conversion left no marker). The deploy's `db:backup` dump comes first and is the way back. The old app
-   keeps serving while the new one builds, and anything it does that reads those columns fails until the new server
-   starts: deploy at a quiet hour, or stop the app first.
+   then the removal SQL (`20261103120001_ixnayid_drop_legacy`: deletes the IxWiki `wiki_account_links` rows; it refuses
+   to run while one is there and the conversion left no marker). The deploy's `db:backup` dump comes first and is the
+   way back. `"User"."wikiUsername"`, `"wikiUserId"` and `"lastWikiSync"` stay for this release: the old app reads every
+   User column while the new one builds, and the new schema keeps them as `@ignore` fields it never reads.
 
    Then check that both partial unique indexes survived the push; if either is missing, re-apply the claims SQL
    (idempotent):
@@ -229,8 +228,8 @@ only read.
    is fine while production runs one app process; if it ever runs several, expect that short window.
 
 6. **After.** Run the counts again (`bun scripts/identity/count-legacy-identity.ts > ~/ixnayid-counts-after.json`):
-   `revisionsWithAuthorId` grows by the tagged revisions, and the legacy counts read 0 now that the columns and IxWiki
-   links are gone. Check a few approved names: `User:<name>` opens the passport, and contributions list the old edits.
+   `revisionsWithAuthorId` grows by the tagged revisions, and the IxWiki link counts read 0 (the legacy column values
+   stay until the next release drops them). Check a few approved names: `User:<name>` opens the passport, and contributions list the old edits.
 
 7. **The external Discord bot** (`/ixwiki/shared/bots/discord`, outside this repo) needs no change unless it reads the
    old link data straight from the database: check with
@@ -238,3 +237,9 @@ only read.
    `"User"."wikiUsername"` or of IxWiki `wiki_account_links` rows now fails or finds nothing; read approved
    `wiki_name_claims` instead (`status = 'APPROVED'`, and `visible` for anything shown in public). If it logs in to
    WikiOS's `/w/api.php` with a bot password, its old wiki-name login keeps working as an alias of the owner's handle.
+
+8. **The next release drops the legacy columns.** Once this release runs in production, delete the three `@ignore`
+   lines (`wikiUserId`, `wikiUsername`, `lastWikiSync`) from `model User` in `prisma/schema/core.prisma` and add, before
+   the push in `scripts/deploy-production.sh` and the dev chain, an idempotent SQL file with
+   `ALTER TABLE "User" DROP COLUMN IF EXISTS` for each. The app then running no longer reads them, so dropping them
+   before the build is safe.

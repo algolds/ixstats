@@ -1,8 +1,8 @@
 /** @jest-environment node */
 /**
- * The IxnayID removal SQL (design: "Removal (last)"): it drops the legacy User wiki columns and the IxWiki link rows,
- * refuses while legacy data exists that the conversion never marked, keeps the sister-wiki links, and is a no-op when
- * the deploy runs it again.
+ * The IxnayID removal SQL (design: "Removal (last)"): it deletes the IxWiki link rows, refuses while one exists that
+ * the conversion never marked, keeps the sister-wiki links and the legacy User columns (the old app still reads them
+ * while the new one builds), and is a no-op when the deploy runs it again.
  */
 import { readFileSync } from "node:fs";
 
@@ -22,18 +22,14 @@ describe("the IxnayID removal SQL", () => {
     expect(guard).toMatch(/RAISE EXCEPTION '[^']*convert-wiki-name-claims\.ts --apply'/);
   });
 
-  it("refuses while the legacy column or an IxWiki link is still there to convert", () => {
-    expect(guard).toMatch(
-      /information_schema\.columns WHERE table_schema = current_schema\(\) AND table_name = 'User' AND column_name = 'wikiUsername'/
-    );
+  it("refuses while an IxWiki link is still there to convert", () => {
     expect(guard).toContain(
       `EXISTS (SELECT 1 FROM "wiki_account_links" WHERE "source" = 'ixwiki')`
     );
   });
 
-  it("checks before it deletes or drops anything", () => {
+  it("checks before it deletes anything", () => {
     expect(body.indexOf("DO $$")).toBeLessThan(body.indexOf("DELETE"));
-    expect(body.indexOf("DO $$")).toBeLessThan(body.indexOf("DROP"));
     expect(body).toMatch(/^ ?BEGIN; .* COMMIT; ?$/);
   });
 
@@ -42,13 +38,14 @@ describe("the IxnayID removal SQL", () => {
     expect(deletes).toEqual([`"wiki_account_links" WHERE "source" = 'ixwiki'`]);
   });
 
-  it("drops the three legacy User columns, each only if it is still there", () => {
-    const drops = [...unguarded.matchAll(/DROP COLUMN ([^;]*);/g)].map((m) => m[1]!.trim());
-    expect(drops).toEqual([
-      `IF EXISTS "wikiUsername"`,
-      `IF EXISTS "wikiUserId"`,
-      `IF EXISTS "lastWikiSync"`,
-    ]);
-    expect(unguarded).not.toMatch(/DROP (TABLE|INDEX|TYPE|CONSTRAINT)/i);
+  it("drops nothing, so the old app's User reads keep working until the new one starts", () => {
+    expect(unguarded).not.toMatch(/\b(DROP|ALTER)\b/i);
+  });
+
+  it("keeps the legacy User columns in the schema, unread, for one release", () => {
+    const user = readFileSync("prisma/schema/core.prisma", "utf8").match(/model User \{[\s\S]*?\n\}/)?.[0] ?? "";
+    for (const column of ["wikiUserId", "wikiUsername", "lastWikiSync"]) {
+      expect(user).toMatch(new RegExp(`\\n\\s*${column}\\s+\\w+\\?\\s+@ignore\\n`));
+    }
   });
 });

@@ -75,8 +75,8 @@ export const CARDS_CATEGORIES_SQL =
 export const IXNAYID_CLAIMS_SQL = "prisma/migrations/20261103120000_ixnayid_claims/migration.sql";
 
 /**
- * IxnayID identity, removal: the legacy User wiki columns and the IxWiki link rows; idempotent. On a fresh database it
- * runs after `db push`, which never created them, so it has nothing to do.
+ * IxnayID identity, removal: the IxWiki link rows; idempotent. On a fresh database it runs after `db push`, which
+ * created none, so it has nothing to do.
  */
 export const IXNAYID_DROP_LEGACY_SQL =
   "prisma/migrations/20261103120001_ixnayid_drop_legacy/migration.sql";

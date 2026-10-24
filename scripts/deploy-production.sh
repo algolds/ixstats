@@ -192,8 +192,8 @@ bunx prisma db execute --schema prisma/schema --file prisma/migrations/202611021
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261103120000_ixnayid_claims/migration.sql || exit 1
 # The IxWiki links and legacy wiki names become name claims (design decision 8). A re-run writes nothing.
 bun scripts/identity/convert-wiki-name-claims.ts --apply || exit 1
-# The legacy User wiki columns and the IxWiki link rows go (BEFORE the push, which would drop the columns without the
-# conversion's check). Refuses if the conversion never ran; idempotent.
+# The IxWiki link rows go (the legacy User columns stay one release, @ignore, for the old app during the build).
+# Refuses if the conversion never ran; idempotent.
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261103120001_ixnayid_drop_legacy/migration.sql || exit 1
 
 # Sync production database with schema
