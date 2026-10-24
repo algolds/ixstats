@@ -435,9 +435,9 @@ export default function SetupPage() {
                           <div role="status" className="bg-surface-secondary rounded-row p-4">
                             <p className="text-headline text-label">Claim submitted</p>
                             <p className="text-body text-label-secondary mt-1">
-                              A moderator will review it. Verify your wiki account under Settings,
-                              IxnayID & Passport, Linked accounts to have claims for nations you
-                              created approved instantly.
+                              A moderator will review it. Claim your old IxWiki name under Settings,
+                              IxnayID & Passport, to have claims for nations you created approved
+                              instantly.
                             </p>
                           </div>
                         )}

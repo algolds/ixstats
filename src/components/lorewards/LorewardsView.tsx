@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "iconoir-react";
 import { ixstatesLinkHref } from "~/lib/system/wikios-standalone";
@@ -19,14 +20,22 @@ export interface LorewardsViewProps {
   username?: string;
   /** The trophy card to mark, when an article badge linked to it. */
   highlightCardId?: string;
+  /** The viewer's Loreward achievements (`you` without `username`), passed in by the Vault. */
+  achievements?: ReactNode;
 }
 
 /**
  * The Lorewards view, one component in two homes: WikiOS (`/util/lorewards`, contest focus) and the Vault
- * Achievements Lorewards tab (you focus), and the Passport. It ships in the standalone WikiOS bundle, so it
- * imports nothing that belongs to the Vault only.
+ * Achievements Lorewards tab (you focus: the viewer's trophies, achievements, today's race and the standings), and
+ * the Passport (you focus with `username`: that author's trophies only). It ships in the standalone WikiOS bundle,
+ * so it imports nothing that belongs to the Vault only.
  */
-export function LorewardsView({ focus, username, highlightCardId }: LorewardsViewProps) {
+export function LorewardsView({
+  focus,
+  username,
+  highlightCardId,
+  achievements,
+}: LorewardsViewProps) {
   const contest = focus === "contest";
   return (
     <div className="space-y-6" data-focus={focus}>
@@ -48,8 +57,15 @@ export function LorewardsView({ focus, username, highlightCardId }: LorewardsVie
           <Standings />
           <RecentWinners />
         </>
-      ) : (
+      ) : username ? (
         <YourLorewards username={username} highlightCardId={highlightCardId} />
+      ) : (
+        <>
+          <YourLorewards highlightCardId={highlightCardId} />
+          {achievements}
+          <TodayRace />
+          <Standings />
+        </>
       )}
     </div>
   );
