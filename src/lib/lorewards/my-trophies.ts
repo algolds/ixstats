@@ -20,7 +20,7 @@ import {
 } from "./resolve-user";
 import { calculateStreaks } from "./streaks";
 import type { TodayRace, TodayRaceEntry } from "./today-race";
-import { NO_TROPHIES, ownedTrophyCards, type Trophies } from "./trophy-summary";
+import { ownedTrophyCards, type Trophies } from "./trophy-summary";
 
 type MyTrophiesDb = Pick<
   PrismaClient,
@@ -192,16 +192,18 @@ function countPlaces(tied: TiedPlace[]): Omit<Trophies, "cards" | "holderHandle"
   return { wins, runnerUps, streak: calculateStreaks(winDays).current };
 }
 
-/** The viewer's trophies: counted from the places tied to them, with the classic-wiki places a claim could give them. */
+/**
+ * The viewer's trophies: counted from the places tied to them, with the classic-wiki places a claim could give them.
+ * The trophy cards their account owns always show; with no name at all no place is read.
+ */
 export async function loadMyTrophies(
   db: MyTrophiesDb,
   userId: string,
   names: ViewerNames
 ): Promise<MyTrophies> {
   const wikiUsername = names.claimed[0] ?? names.labels[0] ?? null;
-  if (!wikiUsername) return { wikiUsername: null, verified: false, unmatched: 0, ...NO_TROPHIES };
   const [{ tied, unmatched }, cards] = await Promise.all([
-    tiePlaces(db, userId, names),
+    wikiUsername ? tiePlaces(db, userId, names) : { tied: [], unmatched: 0 },
     ownedTrophyCards(db, userId),
   ]);
   return {
@@ -237,20 +239,20 @@ async function raceEntryAuthorIds(
 }
 
 /**
- * The viewer's place in today's race: the best entry under one of their names whose scored edits the dividend's
+ * The viewer's entry in today's race: the best entry under one of their names whose scored edits the dividend's
  * rule credits to them (`scoredEditsAccount`).
  */
-export async function myRaceRank(
+export async function myRaceEntry(
   db: Pick<PrismaClient, "wikiNameClaim" | "wikiRevision">,
   race: TodayRace,
   names: ViewerNames,
   userId: string
-): Promise<number | null> {
+): Promise<TodayRaceEntry | null> {
   const authors = new Set([...names.claimed.flatMap(nameSpellings), ...names.labels]);
   for (const entry of race.entries) {
     if (!authors.has(entry.user)) continue;
     const authorIds = await raceEntryAuthorIds(db, race.date, entry);
-    if ((await scoredEditsAccount(db, entry.user, authorIds)) === userId) return entry.rank;
+    if ((await scoredEditsAccount(db, entry.user, authorIds)) === userId) return entry;
   }
   return null;
 }

@@ -175,7 +175,7 @@ const signedOut = () =>
 beforeEach(() => {
   db = createMockPrisma();
   jest.useRealTimers();
-  jest.mocked(getTodayRace).mockResolvedValue(RACE);
+  jest.mocked(getTodayRace).mockClear().mockResolvedValue(RACE);
   jest.mocked(loadPassportSettings).mockClear().mockResolvedValue(settings(true));
   claims = [{ userId: "u1", name: "Ada", status: "APPROVED", visible: true }];
   db.wikiNameClaim.findFirst.mockImplementation(async ({ where }: { where: ClaimWhere }) => {
@@ -262,6 +262,61 @@ describe("lorewards.getMyTrophies", () => {
       wins: { daily: 1, weekly: 1, monthly: 0 },
       todayRank: 2,
     });
+  });
+
+  it("a viewer with no wiki name still gets their trophy cards and payouts", async () => {
+    claims = [];
+    db.cardOwnership.findMany.mockResolvedValue([
+      trophyRow("card1", "Seastead Law", "winner", { contest: "weekly" }),
+    ]);
+    db.vaultTransaction.aggregate.mockResolvedValue({ _sum: { credits: 500 } });
+
+    const mine = await viewer().getMyTrophies();
+    expect(mine.cards).toHaveLength(1);
+    expect(mine).toMatchObject({
+      wikiUsername: null,
+      verified: false,
+      unmatched: 0,
+      wins: { daily: 0, weekly: 0, monthly: 0 },
+      runnerUps: 0,
+      paid: 500,
+      todayRank: null,
+    });
+    expect(db.lorewardEntry.findMany).not.toHaveBeenCalled();
+    expect(getTodayRace).not.toHaveBeenCalled();
+  });
+});
+
+describe("lorewards.getMyRace", () => {
+  it("getMyRace gives the viewer's rank and score", async () => {
+    // No claim: the viewer's WikiOS edits carry the label "Kir", and today's race scored them under it.
+    claims = [];
+    jest.mocked(getTodayRace).mockResolvedValue({
+      ...RACE,
+      entries: [
+        { rank: 1, user: "Bo", page: "P1", score: 500, bytesAdded: 1, editCount: 1 },
+        { rank: 2, user: "Kir", page: "P2", score: 412, bytesAdded: 1, editCount: 1 },
+      ],
+    });
+    db.wikiRevision.groupBy.mockImplementation(async ({ by }: { by: string[] }) =>
+      by[0] === "author"
+        ? [
+            {
+              author: "Kir",
+              _min: { createdAt: new Date("2026-10-01T00:00:00.000Z") },
+              _max: { createdAt: new Date("2026-10-20T00:00:00.000Z") },
+            },
+          ]
+        : [{ authorId: "u1" }]
+    );
+
+    expect(await viewer().getMyRace()).toEqual({ entry: { rank: 2, score: 412 } });
+  });
+
+  it("getMyRace is null with no name", async () => {
+    claims = [];
+    expect(await viewer().getMyRace()).toEqual({ entry: null });
+    expect(getTodayRace).not.toHaveBeenCalled();
   });
 });
 
