@@ -19,6 +19,7 @@ import type { IdentityUser } from "./identity.selects";
 import type { ResolvedIdentity } from "./identity.types";
 import { likeLiteral } from "~/lib/utils/like-literal";
 import { lorewardStatsOfNames, type LorewardStatsTotal } from "~/lib/lorewards/stats-of-names";
+import { findEntriesNewestFirst } from "~/lib/lorewards/entry-feed";
 
 /** A case-insensitive exact match: Prisma compiles it to ILIKE, so the value's wildcards are escaped. */
 const insensitive = (value: string) => ({
@@ -64,14 +65,14 @@ export async function loadCreatedPages(wikiName: string | null): Promise<Created
 export async function loadLoreAwards(wikiName: string | null): Promise<LoreAwardRow[]> {
   if (!wikiName) return [];
   return orEmpty(
-    db.lorewardEntry.findMany({
-      where: {
+    findEntriesNewestFirst(
+      db,
+      {
         OR: [{ winnerUser: insensitive(wikiName) }, { runnerUpUser: insensitive(wikiName) }],
         status: "approved",
       },
-      orderBy: { date: "desc" },
-      take: 30,
-    })
+      { take: 30 }
+    )
   );
 }
 
