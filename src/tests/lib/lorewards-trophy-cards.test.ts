@@ -91,6 +91,27 @@ const inContestPlace = (card: CardRow, where: CardWhere) =>
   inList(where.lorewardEntryId?.in, card.lorewardEntryId ?? "") &&
   (!where.lorewardEdition || card.lorewardEdition === where.lorewardEdition);
 
+/** A read's keyset bound: `id: { gt }`, at the top level or in its `AND`. */
+interface KeysetWhere {
+  id?: { gt?: string };
+  AND?: KeysetWhere[];
+}
+
+/** The `~/server/db` guard: a findMany with no `take` returns at most this many rows. */
+const FIND_MANY_CAP = 1000;
+
+/**
+ * The page a read asks for, as Postgres and `~/server/db` answer it: the rows after its keyset bound, by id, `take`
+ * of them, or the 1,000-row cap when it names no `take`.
+ */
+function keysetPage<T extends { id: string }>(rows: T[], where: KeysetWhere, take?: number): T[] {
+  const after = [where, ...(where.AND ?? [])].map((w) => w.id?.gt).find(Boolean);
+  return rows
+    .filter((row) => !after || row.id > after)
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+    .slice(0, take ?? FIND_MANY_CAP);
+}
+
 /** When each contest-place lock was taken (jest's invocation order), among all `$executeRaw` calls. */
 function contestLockOrder(database: PrismaClient): number[] {
   const raw = (database as unknown as { $executeRaw: jest.Mock }).$executeRaw;
@@ -113,8 +134,13 @@ function buildDb(): PrismaClient {
   const fake = {
     lorewardEntry: {
       // The real `where` (the contests read, and the contest re-read inside a place's lock); one page holds them all.
-      findMany: jest.fn(async ({ where }: { where: Parameters<typeof matches>[1] }) =>
-        entries.filter((e) => matches(storedEntry(e), where))
+      findMany: jest.fn(
+        async ({ where, take }: { where: Parameters<typeof matches>[1]; take?: number }) =>
+          keysetPage(
+            entries.filter((e) => matches(storedEntry(e), where)),
+            where as KeysetWhere,
+            take
+          )
       ),
     },
     systemConfig: { findUnique: jest.fn(async () => ({ value: "3" })) },
@@ -138,15 +164,22 @@ function buildDb(): PrismaClient {
       findMany: jest.fn(
         async ({
           where,
+          take,
         }: {
-          where: CardWhere & { CardOwnership?: { none: object }; isRetired?: boolean };
+          where: CardWhere &
+            KeysetWhere & { CardOwnership?: { none: object }; isRetired?: boolean };
+          take?: number;
         }) =>
-          cards.filter(
-            (c) =>
-              c.lorewardEntryId !== null &&
-              inContestPlace(c, where) &&
-              (where.isRetired === undefined || (c.isRetired ?? false) === where.isRetired) &&
-              (!where.CardOwnership || !ownerships.some((o) => o.cardId === c.id))
+          keysetPage(
+            cards.filter(
+              (c) =>
+                c.lorewardEntryId !== null &&
+                inContestPlace(c, where) &&
+                (where.isRetired === undefined || (c.isRetired ?? false) === where.isRetired) &&
+                (!where.CardOwnership || !ownerships.some((o) => o.cardId === c.id))
+            ),
+            where,
+            take
           )
       ),
       count: jest.fn(
@@ -543,10 +576,67 @@ describe("backfillTrophyCards", () => {
     ];
     claims.set("Kir Republic", "u1");
   });
-  it("is idempotent: a second apply finds nothing missing", async () => {
+  it("mints every place, grants the claimed names' cards and leaves the rest waiting", async () => {
+    expect(await backfillTrophyCards(db, true)).toEqual({
+      missing: { "daily:winner": 2, "daily:runner-up": 1, "monthly:winner": 1 },
+      minted: 4,
+      granted: 0,
+      waiting: 1,
+    });
+    const waiting = cards.filter((c) => ownersOf(c.id).length === 0);
+    expect(waiting.map((c) => c.metadata.wikiUser)).toEqual(["Urcea"]);
+  });
+
+  it("is idempotent: a second apply finds nothing missing and the unclaimed card still waits", async () => {
     await backfillTrophyCards(db, true);
 
-    expect(await backfillTrophyCards(db, true)).toEqual({ missing: {}, minted: 0, granted: 0 });
+    expect(await backfillTrophyCards(db, true)).toEqual({
+      missing: {},
+      minted: 0,
+      granted: 0,
+      waiting: 1,
+    });
     expect(cards).toHaveLength(4);
+  });
+
+  it("writes nothing on a dry run, and reports the cards already waiting", async () => {
+    await backfillTrophyCards(db, true);
+    entries.push(entry({ id: "d3", date: "2017-03-20", winnerUser: "Urcea" }));
+    claims.set("Urcea", "u2");
+
+    expect(await backfillTrophyCards(db, false)).toEqual({
+      missing: { "daily:winner": 1 },
+      minted: 0,
+      granted: 0,
+      waiting: 1,
+    });
+    expect(cards).toHaveLength(4);
+    expect(ownerships).toHaveLength(3);
+  });
+
+  it("reads every card past the 1,000-row cap: none minted twice, the last one granted", async () => {
+    const count = FIND_MANY_CAP + 1;
+    const pad = (i: number) => String(i).padStart(4, "0");
+    const day = (i: number) => new Date(Date.UTC(2017, 0, 1) + i * 86_400_000).toISOString();
+    entries = Array.from({ length: count }, (_, i) =>
+      entry({
+        id: `d${pad(i)}`,
+        date: day(i).slice(0, 10),
+        winnerUser: i === count - 1 ? "Kir_Republic" : "Nobody",
+      })
+    );
+    cards = entries.map((e, i) => ({
+      ...legacyCard(`c${pad(i)}`, e.id),
+      rarity: "RARE",
+      metadata: { contest: "daily", place: "winner", entryId: e.id, wikiUser: e.winnerUser! },
+    }));
+
+    expect(await backfillTrophyCards(db, true)).toEqual({
+      missing: {},
+      minted: 0,
+      granted: 1,
+      waiting: count - 1,
+    });
+    expect(ownerships).toEqual([expect.objectContaining({ cardId: `c${pad(count - 1)}` })]);
   });
 });
