@@ -1,4 +1,8 @@
-import { faceViewBox, getRealmMapFace } from "~/server/modules/realms/realms.map-face";
+import {
+  faceViewBox,
+  getRealmMapFace,
+  getRealmMapGeo,
+} from "~/server/modules/realms/realms.map-face";
 
 const row = (status: string, d: string, box = [-10, -5, 10, 5]) => ({
   status,
@@ -125,5 +129,73 @@ describe("failure handling", () => {
     const face = await getRealmMapFace({ $queryRawUnsafe } as never, "realm-land-fail", 0);
     expect(face).toMatchObject({ open: "M 0 0 z", land: "" });
     expect(errorSpy).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("getRealmMapGeo", () => {
+  const square = JSON.stringify({
+    type: "Polygon",
+    coordinates: [
+      [
+        [0, 0],
+        [1, 0],
+        [1, 1],
+        [0, 0],
+      ],
+    ],
+  });
+  const nation = (status: string, id: string | null, box: number[]) => ({
+    status,
+    id,
+    name: id ? `Nation ${id}` : "Wilds",
+    slug: id,
+    flag: null,
+    geometry: square,
+    xmin: box[0],
+    ymin: box[1],
+    xmax: box[2],
+    ymax: box[3],
+  });
+  const geoDb = (nations: object[], land: Promise<object[]>) => ({
+    $queryRawUnsafe: jest.fn().mockResolvedValueOnce(nations).mockReturnValueOnce(land),
+  });
+
+  it("returns each nation as a keyed feature with its status, and the nations' bounds", async () => {
+    const db = geoDb(
+      [nation("claimed", "c1", [-20, -10, 5, 30]), nation("other", null, [0, 0, 40, 12])],
+      Promise.resolve([{ geometry: square }])
+    );
+    const geo = await getRealmMapGeo(db as never, "geo-a", 0);
+    expect(geo?.bounds).toEqual([-20, -10, 40, 30]);
+    expect(geo?.nations.map((f) => f.properties)).toEqual([
+      { key: 0, id: "c1", name: "Nation c1", slug: "c1", flag: null, status: "claimed" },
+      { key: 1, id: null, name: "Wilds", slug: null, flag: null, status: "other" },
+    ]);
+    expect(geo?.nations[0]?.geometry.type).toBe("Polygon");
+    expect(geo?.land?.type).toBe("Polygon");
+  });
+
+  it("keeps the nations when the land query fails", async () => {
+    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const db = geoDb([nation("open", "o1", [0, 0, 1, 1])], Promise.reject(new Error("GEOS")));
+    const geo = await getRealmMapGeo(db as never, "geo-b", 0);
+    expect(geo?.nations).toHaveLength(1);
+    expect(geo?.land).toBeNull();
+    error.mockRestore();
+  });
+
+  it("is null without nations and never asks for land", async () => {
+    const db = geoDb([], Promise.resolve([]));
+    expect(await getRealmMapGeo(db as never, "geo-c", 0)).toBeNull();
+    expect(db.$queryRawUnsafe).toHaveBeenCalledTimes(1);
+  });
+
+  it("binds the realm id and clips to the latitude band", async () => {
+    const db = geoDb([nation("open", "o1", [0, 0, 1, 1])], Promise.resolve([]));
+    await getRealmMapGeo(db as never, "geo'; drop", 0);
+    const [sql, id] = db.$queryRawUnsafe.mock.calls[0] as [string, string];
+    expect(id).toBe("geo'; drop");
+    expect(sql).not.toContain("drop");
+    expect(sql).toContain("ST_ClipByBox2D");
   });
 });

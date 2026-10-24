@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useMemo, useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useAuth } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
@@ -112,6 +112,7 @@ function nationCorner(
 export default function RealmNationsPage({ params }: { params: Promise<{ realm: string }> }) {
   const { realm: slug } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: realm, isLoading } = api.realms.getBySlug.useQuery({ slug });
   const { data: statsResult, isLoading: statsLoading } = api.countries.getAll.useQuery(
     { limit: 1000, realm: slug },
@@ -160,6 +161,7 @@ export default function RealmNationsPage({ params }: { params: Promise<{ realm: 
       ) : (
         <NationsBrowser
           nations={nations}
+          initialSearch={searchParams.get("nation") ?? undefined}
           isLoading={statsLoading || flagsLoading}
           onCountryClick={(c) => router.push(`/countries/${c.slug ?? c.id}`)}
           viewerCountryId={profile?.countryId ?? undefined}

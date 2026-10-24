@@ -54,6 +54,7 @@ const PUBLIC = [
   "realms.map.realmForWikiArticle",
   "realms.directory",
   "realms.mapFace",
+  "realms.mapGeo",
   "realms.searchNations",
   "thinkpages.checkUsernameAvailability",
   "thinkpages.getAccountsByCountry",

@@ -46,7 +46,7 @@ import { realmMapPipelineRouter } from "./map-pipeline";
 import { realmWikiRouter } from "./wiki";
 import { realmNationDefaultsRouter } from "./nation-defaults";
 import { realmSlugWhere } from "~/lib/realms/realm-ids";
-import { getRealmMapFace } from "~/server/modules/realms/realms.map-face";
+import { getRealmMapFace, getRealmMapGeo } from "~/server/modules/realms/realms.map-face";
 import { mutationRealmId } from "~/server/api/trpc/realm-scope";
 
 /** The side effects linkCountry used to run when a nation changed hands; failures are logged, never thrown. */
@@ -353,6 +353,13 @@ export const realmsRouter = createTRPCRouter({
     .input(z.object({ realmSlug: z.string().trim().min(1).max(60) }))
     .query(async ({ ctx, input }) =>
       getRealmMapFace(ctx.db, await mutationRealmId(ctx, input.realmSlug))
+    ),
+
+  /** A realm's live hero map: each nation as lon/lat GeoJSON with its claim status, cached an hour. */
+  mapGeo: rateLimitedPublicProcedure
+    .input(z.object({ realmSlug: z.string().trim().min(1).max(60) }))
+    .query(async ({ ctx, input }) =>
+      getRealmMapGeo(ctx.db, await mutationRealmId(ctx, input.realmSlug))
     ),
 
   /** Nation search on /realms: countries and claimable nation pages in the realms the directory lists. */
