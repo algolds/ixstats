@@ -346,6 +346,7 @@ export const APPS: readonly AppDefinition[] = [
         href: "/util/repository",
         icon: MediaImage,
       },
+      { id: "lorewards", label: "Lorewards", href: "/util/lorewards", icon: Trophy },
       { id: "utilities", label: "Utilities", href: "/util", icon: List },
     ],
   },
