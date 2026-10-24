@@ -26,6 +26,7 @@ import { MarginThreadsTab } from "./tabs/MarginThreadsTab";
 import { MarginMarkupTab } from "./tabs/MarginMarkupTab";
 import { MarginInspectTab } from "./tabs/MarginInspectTab";
 import { MarginHelpModal } from "./modals/MarginHelpModal";
+import { MarginRaceChip } from "./MarginRaceChip";
 
 type MarginTab = "threads" | "markup" | "inspect";
 
@@ -326,6 +327,10 @@ export function WikiMarginDrawer({
                   isAuthenticated={isAuthenticated}
                 />
               )}
+            </div>
+
+            <div className="border-separator shrink-0 border-t px-3 py-2">
+              <MarginRaceChip isAuthenticated={isAuthenticated} enabled={isOpen} />
             </div>
 
             {/* Footer: quick tools */}
