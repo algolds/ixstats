@@ -357,11 +357,11 @@ export function useAutoSelectLinkedFeature({
 }
 
 /**
- * Admin-role users (level <= 10, as in the main navigation) and system owners get the
- * admin tools; the server still authorises every admin procedure itself.
+ * Site admins (level <= 20: owner, admin and staff, as adminProcedure and isSiteAdmin allow) and system
+ * owners get the admin tools; the server still authorises every admin procedure itself.
  */
 export function useIsEditorAdmin() {
   const user = useUser();
-  const hasAdminRole = useHasRoleLevel(10);
+  const hasAdminRole = useHasRoleLevel(20);
   return isSystemOwner(user.user?.id ?? "") || hasAdminRole;
 }

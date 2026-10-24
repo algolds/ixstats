@@ -187,17 +187,10 @@ describe("a region is drawn, checked, made a nation and its border approved", ()
       ["borders", "r_eurth"],
     ]);
 
-    // The admin makes West a nation: its border, centre and area come from the region, and the new country's
+    // The founder makes West a nation: its border, centre and area come from the region, and the new country's
     // baseline and last calculation are the same IxTime instant, not the real time (the economy reads both as IxTime)
-    await expect(
-      linkage(db, "founder").createCountryFromShape({
-        featureId: "west",
-        name: "Westmark",
-        realm: "eurth",
-      })
-    ).rejects.toThrow(/Admin privileges required/);
     const ixBefore = IxTime.getCurrentIxTime();
-    const created = await linkage(db, "admin").createCountryFromShape({
+    const created = await linkage(db, "founder").createCountryFromShape({
       featureId: "west",
       name: "Westmark",
       realm: "eurth",

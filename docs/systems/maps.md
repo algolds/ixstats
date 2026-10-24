@@ -221,8 +221,12 @@ viewer shows it.
   (`geo/features/realm-labels.ts`) call `editableMapRealmId` (`src/server/api/trpc/realm-scope.ts`): the edited
   realm (`?realm=`, else the caller's) once the caller may edit it, else `FORBIDDEN`. A map officer renames a region
   but not the nation linked to it, except a generated slot nobody holds, whose nation is renamed with its region
-  (see Nation slots); creating a nation from a shape and rebuilding adjacency stay admin-only. A draft
-  session is saved only by its own editor. Border edits filed for review record their realm
+  (see Nation slots). The realm's map editors also create a nation from an unlinked shape in their own realm
+  (`createNationFromShape`, `realms.shape-nation.ts`: the realm's nation defaults and a free slug, recorded in
+  `AdminAuditLog` as `REALM_NATION_FROM_SHAPE` for site admins) and edit the map features (cities, labels, POIs,
+  peaks, rivers, lakes, subdivisions and their imports, and transport routes) of the realm's unclaimed nations,
+  acting as their owner (`mapFeatureOwnerProcedure`, `src/server/api/trpc/middleware.ts`); story pins stay with the
+  nation's owner. Rebuilding adjacency stays admin-only. A draft session is saved only by its own editor. Border edits filed for review record their realm
   (`MapEditRequest.realmId`).
 - **Entry points.** Founders and map officers get **World editor** on `/maps?realm=<slug>`; site admins also have
   `/admin/maps/editor?realm=<slug>`. The map import wizard is in `/admin/maps` → **Import a map** for

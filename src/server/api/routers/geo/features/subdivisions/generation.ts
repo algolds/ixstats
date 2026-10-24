@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, standardMutationMapFeatureOwnerProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
@@ -14,7 +14,7 @@ export const geoFeaturesSubdivisionsGenerationRouter = createTRPCRouter({
    * Reduces vertex count using Douglas-Peucker, sanitizes shapes,
    * and snaps shared borders between neighbors.
    */
-  simplifySubdivisions: standardMutationCountryOwnerProcedure
+  simplifySubdivisions: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -91,7 +91,7 @@ export const geoFeaturesSubdivisionsGenerationRouter = createTRPCRouter({
    * provinces using Voronoi tessellation. Each cell is clipped to the country
    * border via clipAndValidatePolygon and bulk-created as an approved Subdivision.
    */
-  commitGeneratedSubdivisions: standardMutationCountryOwnerProcedure
+  commitGeneratedSubdivisions: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),

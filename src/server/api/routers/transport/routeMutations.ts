@@ -7,11 +7,8 @@
 
 import { z } from "zod/v4";
 import type { PrismaClient, Prisma } from "@prisma/client";
-import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
-import {
-  assertCountryResourceWriteAccess,
-  assertCountryWriteAccess,
-} from "~/server/shared/country-authorization";
+import { createTRPCRouter, standardMutationMapFeatureOwnerProcedure } from "~/server/api/trpc";
+import { assertCountryResourceWriteAccess } from "~/server/shared/country-authorization";
 import { resolveTransportRouteCountryId } from "~/server/shared/country-resource-owner";
 import {
   generateTransportNetwork,
@@ -43,12 +40,24 @@ const routePropertiesSchema = z.record(
   z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(z.string()), z.array(z.number())])
 );
 
+/**
+ * Routes are written by the nation's owner and site admins, and by the realm's map editors for its unclaimed nations
+ * (mapFeatureOwnerProcedure grants them the nation as `ctx.country`). A route with no nation stays with site admins.
+ */
+async function assertRouteWriter(
+  ctx: Parameters<typeof assertCountryResourceWriteAccess>[0] & { country?: { id: string } | null },
+  countryId: string | null | undefined
+) {
+  if (countryId && ctx.country?.id === countryId) return;
+  await assertCountryResourceWriteAccess(ctx, countryId, "Transport route");
+}
+
 export const transportRouteMutationsRouter = createTRPCRouter({
   /**
    * Generate transport network procedurally for a country.
    * Available to country owners (generates for their own country) and admins.
    */
-  generateRoutes: standardMutationCountryOwnerProcedure
+  generateRoutes: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -80,7 +89,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      await assertCountryWriteAccess(ctx, input.countryId);
+      await assertRouteWriter(ctx, input.countryId);
 
       // Get country + cities
       const country = await ctx.db.country.findUnique({
@@ -247,7 +256,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       };
     }),
 
-  createRoute: standardMutationCountryOwnerProcedure
+  createRoute: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -260,7 +269,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      await assertCountryWriteAccess(ctx, input.countryId);
+      await assertRouteWriter(ctx, input.countryId);
       const coords = input.geometry.coordinates ?? [];
 
       const { lengthKm, terrainDifficulty } = await computeRouteLengthAndDifficulty(
@@ -311,13 +320,12 @@ export const transportRouteMutationsRouter = createTRPCRouter({
   /**
    * Delete a transport route.
    */
-  deleteRoute: standardMutationCountryOwnerProcedure
+  deleteRoute: standardMutationMapFeatureOwnerProcedure
     .input(z.object({ id: z.string(), countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      await assertCountryResourceWriteAccess(
+      await assertRouteWriter(
         ctx,
-        await resolveTransportRouteCountryId(ctx.db, input.id, input.countryId),
-        "Transport route"
+        await resolveTransportRouteCountryId(ctx.db, input.id, input.countryId)
       );
       const deleted = await ctx.db.transportRoute.delete({ where: { id: input.id } });
       await syncTransportEconomicModifiers(ctx.db, input.countryId);
@@ -325,7 +333,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       return deleted;
     }),
 
-  updateRoute: standardMutationCountryOwnerProcedure
+  updateRoute: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         id: z.string(),
@@ -352,10 +360,9 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      await assertCountryResourceWriteAccess(
+      await assertRouteWriter(
         ctx,
-        await resolveTransportRouteCountryId(ctx.db, input.id, input.countryId),
-        "Transport route"
+        await resolveTransportRouteCountryId(ctx.db, input.id, input.countryId)
       );
       const { id, countryId, ...data } = input;
       const updates: Prisma.TransportRouteUpdateInput = {};
@@ -409,7 +416,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
   /**
    * Update route geometry (path editing).
    */
-  updateRouteGeometry: standardMutationCountryOwnerProcedure
+  updateRouteGeometry: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         id: z.string(),
@@ -418,10 +425,9 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      await assertCountryResourceWriteAccess(
+      await assertRouteWriter(
         ctx,
-        await resolveTransportRouteCountryId(ctx.db, input.id, input.countryId),
-        "Transport route"
+        await resolveTransportRouteCountryId(ctx.db, input.id, input.countryId)
       );
       // Recalculate length and terrain difficulty from new geometry
       const coords = input.geometry.coordinates ?? [];

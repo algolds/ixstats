@@ -8,6 +8,7 @@ import {
   timingMiddleware,
   authMiddleware,
   countryOwnerMiddleware,
+  mapFeatureOwnerMiddleware,
   premiumMiddleware,
   adminMiddleware,
   auditLogMiddleware,
@@ -57,6 +58,17 @@ export const adminProcedure = procedure
   .use(userLoggingMiddleware.admin);
 
 export const standardMutationCountryOwnerProcedure = countryOwnerProcedure
+  .use(standardMutationRateLimit)
+  .use(inputValidationMiddleware);
+
+/** countryOwnerProcedure for a nation's map features: the realm's map editors also act for its unclaimed nations. */
+export const mapFeatureOwnerProcedure = procedure
+  .use(timingMiddleware)
+  .use(authMiddleware)
+  .use(mapFeatureOwnerMiddleware)
+  .use(userLoggingMiddleware.standard);
+
+export const standardMutationMapFeatureOwnerProcedure = mapFeatureOwnerProcedure
   .use(standardMutationRateLimit)
   .use(inputValidationMiddleware);
 

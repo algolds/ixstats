@@ -14,6 +14,8 @@ import { geoEditorQueueRouter } from "~/server/api/routers/geo/editor/queue";
 import { geoEditorLinkageAssignmentRouter } from "~/server/api/routers/geo/editor/linkage/assignment";
 import { geoEditorLinkageValidationRouter } from "~/server/api/routers/geo/editor/linkage/validation";
 import { geoFeaturesRealmLabelsRouter } from "~/server/api/routers/geo/features/realm-labels";
+import { geoFeaturesNamedFeaturesRouter } from "~/server/api/routers/geo/features/namedFeatures";
+import { transportRouteMutationsRouter } from "~/server/api/routers/transport/routeMutations";
 import { realmMapPipelineRouter } from "~/server/api/routers/realms/map-pipeline";
 import { canEditRealmMap, canImportRealmMap } from "~/server/modules/realms/realms.access";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
@@ -50,6 +52,7 @@ function modelMock(): ModelMock {
     findMany: jest.fn().mockResolvedValue([]),
     findFirst: jest.fn().mockResolvedValue(null),
     findUnique: jest.fn().mockResolvedValue(null),
+    count: jest.fn().mockResolvedValue(0),
     create: jest.fn().mockResolvedValue({ id: "created" }),
     update: jest.fn().mockResolvedValue({}),
     updateMany: jest.fn().mockResolvedValue({ count: 1 }),
@@ -462,6 +465,125 @@ describe("linkage and auto-match are realm-scoped", () => {
       ).assignCountryGeometry({ featureId: "F", countryId: "c1", realm: "other" })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(db.mapLayer!.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("nations from unlinked shapes", () => {
+  const shapeDb = () => {
+    const db = realmDb();
+    db.mapLayer!.findFirst!.mockResolvedValue({
+      id: "ml1",
+      featureId: "F",
+      countryId: null,
+      geometry: null,
+      centroid: null,
+      boundingBox: null,
+      areaSqKm: 1000,
+    });
+    db.country!.create!.mockResolvedValue({ id: "c_new", name: "Ostia" });
+    return db;
+  };
+  const create = (db: Db, who: string, realm: string) =>
+    createCallerFactory(geoEditorLinkageAssignmentRouter)(ctxAs(db, who)).createCountryFromShape({
+      featureId: "F",
+      name: "Ostia",
+      realm,
+    });
+
+  it("the founder and a map officer create one in Eurth, linked and audited for site admins", async () => {
+    for (const who of [FOUNDER, MAP_OFFICER]) {
+      const db = shapeDb();
+      await expect(create(db, who, "eurth")).resolves.toEqual({
+        countryId: "c_new",
+        name: "Ostia",
+      });
+      expect(db.country!.create!.mock.calls[0][0].data).toMatchObject({
+        realmId: EURTH,
+        slug: "ostia",
+      });
+      expect(db.mapLayer!.update!.mock.calls[0][0]).toEqual({
+        where: { id: "ml1" },
+        data: { countryId: "c_new" },
+      });
+      expect(db.adminAuditLog!.create!.mock.calls[0][0].data).toMatchObject({
+        action: "REALM_NATION_FROM_SHAPE",
+        targetId: EURTH,
+        adminName: who,
+      });
+    }
+  });
+
+  it("nobody else, and never in Ixnay or another realm", async () => {
+    for (const [who, realm] of [
+      [BOARD_OFFICER, "eurth"],
+      [PLAYER, "eurth"],
+      [FOUNDER, "ixnay"],
+      [MAP_OFFICER, "other"],
+    ] as const) {
+      const db = shapeDb();
+      await expect(create(db, who, realm)).rejects.toMatchObject({ code: "FORBIDDEN" });
+      expect(db.country!.create).not.toHaveBeenCalled();
+    }
+  });
+
+  it("refuses a name the realm already has", async () => {
+    const db = shapeDb();
+    db.country!.findFirst!.mockResolvedValue({ id: "c_old" });
+    await expect(create(db, FOUNDER, "eurth")).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(db.country!.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("map features of a realm's unclaimed nations", () => {
+  const nationDb = (nation: { realmId: string; ownerUserId: string | null }) => {
+    const db = realmDb();
+    db.country!.findUnique!.mockResolvedValue({ id: "c1", ...nation });
+    db.peak!.findFirst!.mockResolvedValue({ id: "p1", countryId: "c1", editableByOwner: true });
+    return db;
+  };
+  const deletePeak = (db: Db, who: string) =>
+    createCallerFactory(geoFeaturesNamedFeaturesRouter)(ctxAs(db, who)).deletePeak({
+      countryId: "c1",
+      peakId: "p1",
+    });
+
+  it("the founder and a map officer edit them in their own realm", async () => {
+    for (const who of [FOUNDER, MAP_OFFICER]) {
+      const db = nationDb({ realmId: EURTH, ownerUserId: null });
+      await deletePeak(db, who);
+      expect(db.peak!.delete).toHaveBeenCalledWith({ where: { id: "p1" } });
+    }
+  });
+
+  it("the founder and a map officer remove their transport routes; a board officer cannot", async () => {
+    const deleteRoute = (db: Db, who: string) =>
+      createCallerFactory(transportRouteMutationsRouter)(ctxAs(db, who)).deleteRoute({
+        id: "t1",
+        countryId: "c1",
+      });
+    for (const who of [FOUNDER, MAP_OFFICER]) {
+      const db = nationDb({ realmId: EURTH, ownerUserId: null });
+      db.transportRoute!.findFirst!.mockResolvedValue({ countryId: "c1" });
+      await deleteRoute(db, who);
+      expect(db.transportRoute!.delete).toHaveBeenCalledWith({ where: { id: "t1" } });
+    }
+    const db = nationDb({ realmId: EURTH, ownerUserId: null });
+    db.transportRoute!.findFirst!.mockResolvedValue({ countryId: "c1" });
+    await expect(deleteRoute(db, BOARD_OFFICER)).rejects.toThrow(/Country ownership required/);
+    expect(db.transportRoute!.delete).not.toHaveBeenCalled();
+  });
+
+  it("not a claimed nation, another realm's, Ixnay's, or as a board officer", async () => {
+    for (const [who, nation] of [
+      [FOUNDER, { realmId: EURTH, ownerUserId: "db_someone" }],
+      [MAP_OFFICER, { realmId: OTHER, ownerUserId: null }],
+      [FOUNDER, { realmId: DEFAULT_REALM_ID, ownerUserId: null }],
+      [BOARD_OFFICER, { realmId: EURTH, ownerUserId: null }],
+    ] as const) {
+      const db = nationDb(nation);
+      await expect(deletePeak(db, who)).rejects.toThrow(/Country ownership required/);
+      expect(db.peak!.delete).not.toHaveBeenCalled();
+    }
   });
 });
 

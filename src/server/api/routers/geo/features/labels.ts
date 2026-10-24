@@ -2,7 +2,7 @@ import { z } from "zod";
 import {
   createTRPCRouter,
   cachedPublicProcedure,
-  standardMutationCountryOwnerProcedure,
+  standardMutationMapFeatureOwnerProcedure,
 } from "~/server/api/trpc";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS, invalidateCache } from "~/lib/cache";
@@ -13,7 +13,7 @@ import { storedRealmLabelRank } from "~/server/modules/maps/realm-labels";
 import { assertFound, assertOwnCountry, coordinatesSchema } from "../core/shared";
 
 export const geoFeaturesLabelsRouter = createTRPCRouter({
-  createMapLabel: standardMutationCountryOwnerProcedure
+  createMapLabel: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -79,7 +79,7 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
       return { id: label.id, text: label.text, status: "approved" as const };
     }),
 
-  updateMapLabel: standardMutationCountryOwnerProcedure
+  updateMapLabel: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -143,7 +143,7 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
       return { id: updated.id, text: updated.text };
     }),
 
-  deleteMapLabel: standardMutationCountryOwnerProcedure
+  deleteMapLabel: standardMutationMapFeatureOwnerProcedure
     .input(z.object({ countryId: z.string(), labelId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       assertOwnCountry(ctx, input.countryId);

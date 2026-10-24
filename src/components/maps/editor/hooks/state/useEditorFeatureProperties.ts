@@ -42,14 +42,6 @@ export function useEditorFeatureProperties({
       { enabled: !!mapSelectedCountry?.featureId }
     );
 
-  const recalculateAreaMutation = api.geoCore.recalculateArea.useMutation({
-    onSuccess: () => {
-      refetchFeatureDetails();
-      notifyFromStore(notifySuccess("Area recalculated"));
-    },
-    onError: (err) => notifyFromStore(notifyFailure("Area recalculation failed", err.message)),
-  });
-
   const updatePropertiesMutation = api.geoEditor.updateFeatureProperties.useMutation({
     onSuccess: () => {
       invalidateMapViews(utils, { list: true });
@@ -152,7 +144,6 @@ export function useEditorFeatureProperties({
     parsedProperties,
     featureDetails,
     refetchFeatureDetails,
-    recalculateAreaMutation,
     updatePropertiesMutation,
     createCountryFromShapeAction,
     createCountryFromShapeMutation,

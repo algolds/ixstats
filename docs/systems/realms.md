@@ -275,7 +275,8 @@ read-only (`realmMapAccess`, `realms.map-access.ts`). The world editor's procedu
 region links, linkage validation and Auto-Match, realm labels) resolve the edited realm through `editableMapRealmId`
 (`src/server/api/trpc/realm-scope.ts`) and refuse any other realm with `FORBIDDEN`. Founders and map officers open the
 world editor from **World editor** on `/maps?realm=<slug>`. A map officer renames a region, not the nation linked to
-it; creating a nation from a shape stays with site admins. See [maps.md](maps.md#realm-maps).
+it. They also create a nation from an unlinked shape in their realm (each one recorded in `AdminAuditLog` for site
+admins) and edit the map features of its unclaimed nations. See [maps.md](maps.md#realm-maps).
 
 **Claims reviewers:** `realms.reviewClaim` accepts site admins, the founder, and officers holding `claims` in the
 claim's realm (only the reviewer's own `RealmOfficer` row is read); `realms.listClaims` lists the realms the caller

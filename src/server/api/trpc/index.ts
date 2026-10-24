@@ -20,6 +20,8 @@ export {
   countryOwnerProcedure,
   adminProcedure,
   standardMutationCountryOwnerProcedure,
+  mapFeatureOwnerProcedure,
+  standardMutationMapFeatureOwnerProcedure,
   lightMutationProcedure,
   rateLimitedMutationProcedure,
   premiumMutationProcedure,

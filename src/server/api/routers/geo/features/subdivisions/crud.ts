@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, standardMutationMapFeatureOwnerProcedure } from "~/server/api/trpc";
 import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { getTerrainForArea } from "~/lib/country-geo";
@@ -15,7 +15,7 @@ export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
    * Create a subdivision within the user's country.
    * Auto-approved if polygon is inside country borders.
    */
-  createSubdivision: standardMutationCountryOwnerProcedure
+  createSubdivision: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -92,7 +92,7 @@ export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
   /**
    * Update a subdivision within the user's country.
    */
-  updateSubdivision: standardMutationCountryOwnerProcedure
+  updateSubdivision: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -209,7 +209,7 @@ export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
   /**
    * Delete a subdivision from the user's country.
    */
-  deleteSubdivision: standardMutationCountryOwnerProcedure
+  deleteSubdivision: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
