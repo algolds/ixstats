@@ -90,22 +90,22 @@ function NoCountryAssigned() {
       <Card className="mx-auto flex max-w-2xl flex-col gap-6 py-6">
         <CardHeader className="text-center">
           <Crown className="text-label-secondary mx-auto mb-4 h-12 w-12" />
-          <CardTitle className="text-title-1">No country assigned</CardTitle>
+          <CardTitle className="text-title-1">No nation yet</CardTitle>
         </CardHeader>
         <CardContent className="text-center">
           <p className="text-label-secondary mb-6">
-            You don't have a country assigned to your account yet. Contact an administrator to claim
-            a country or browse available countries to request ownership.
+            Your account has no nation yet. Found one in the builder, or browse the nations already
+            on the map.
           </p>
           <div className="flex justify-center gap-4">
-            <Button onClick={() => (window.location.href = createAbsoluteUrl("/countries"))}>
-              Browse countries
+            <Button onClick={() => (window.location.href = createAbsoluteUrl("/builder"))}>
+              Found a nation
             </Button>
             <Button
               variant="outline"
-              onClick={() => (window.location.href = createAbsoluteUrl("/admin"))}
+              onClick={() => (window.location.href = createAbsoluteUrl("/countries"))}
             >
-              Contact admin
+              Browse countries
             </Button>
           </div>
         </CardContent>
