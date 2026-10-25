@@ -11,7 +11,8 @@ jest.mock("~/trpc/react", () => ({
     government: {
       getFullByCountryId: {
         useQuery: () => ({
-          data: { budgetAllocations: [{ budgetYear: 2042, allocatedAmount: 30e9 }] },
+          // A past budget year, so it is the budget in effect whatever today's IxTime year is
+          data: { budgetAllocations: [{ budgetYear: 2000, allocatedAmount: 30e9 }] },
         }),
       },
     },
@@ -24,10 +25,6 @@ jest.mock("~/components/mycountry/shared/primitives", () => ({
   useCountryData: () => ({
     country: { currentTotalGdp: 1.5e11, governmentRevenueTotal: 6e9 },
   }),
-}));
-jest.mock("~/lib/government/budget-year", () => ({
-  ...jest.requireActual("~/lib/government/budget-year"),
-  latestBudgetYearUpTo: () => 2042,
 }));
 
 import { buildDepartmentChartData } from "~/components/mycountry/domains/government/budget/budgetSummaries";
