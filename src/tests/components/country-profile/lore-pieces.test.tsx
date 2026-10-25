@@ -263,6 +263,18 @@ describe("LorePieces", () => {
     );
   });
 
+  it("sets a piece's shifted subsections apart from its text, where WikiOS's article styles stop", () => {
+    mockAnswers.Venceia = page("Venceia", "<h3>Old town</h3><h4>Walls</h4><p>Stone.</p>");
+    renderPieces(VISITOR);
+    nearView("Venceia");
+    const venceia = within(chapter("Venceia"));
+    const body = venceia
+      .getByRole("heading", { level: 5, name: "Old town" })
+      .closest(".wikios-article-content");
+    expect(venceia.getByRole("heading", { level: 6, name: "Walls" })).toBeInTheDocument();
+    expect(body).toHaveClass("[&_h5]:font-semibold", "[&_h6]:font-semibold");
+  });
+
   it("shows a placeholder while a near piece loads", () => {
     mockAnswers.Venceia = { isLoading: true, error: null };
     renderPieces(VISITOR);

@@ -135,7 +135,7 @@ export function WritePlaceBar({
       role="group"
       aria-label="Write lore about a place"
       aria-live="polite"
-      className="flex min-h-9 flex-wrap items-center gap-3"
+      className="flex min-h-9 scroll-mt-[calc(var(--shell-top-offset,5rem)+1rem)] flex-wrap items-center gap-3"
     >
       {chosen ? (
         <>

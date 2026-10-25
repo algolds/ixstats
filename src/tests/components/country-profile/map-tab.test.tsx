@@ -325,6 +325,14 @@ describe("MapTab", () => {
       );
     });
 
+    it("stops the bar below the shell's top bar when it scrolls into view", () => {
+      mockAccess = WRITER;
+      render(<MapTab layer={layer} />);
+      expect(screen.getByRole("group", { name: "Write lore about a place" })).toHaveClass(
+        "scroll-mt-[calc(var(--shell-top-offset,5rem)+1rem)]"
+      );
+    });
+
     it("leaves the page where it is on a wide screen, and for a visitor", () => {
       const scrollIntoView = jest.fn();
       Element.prototype.scrollIntoView = scrollIntoView;

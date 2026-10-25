@@ -20,6 +20,13 @@ function PieceLoading({ title }: { title: string }) {
 }
 
 /**
+ * WikiOS's article styles stop at h4, and a piece's headings sit two levels down (its subsections are h5 and h6), so
+ * without these they read as body text.
+ */
+const SHIFTED_HEADINGS =
+  "[&_h5]:mt-6 [&_h5]:mb-2 [&_h5]:font-semibold [&_h5]:text-label [&_h6]:mt-5 [&_h6]:mb-2 [&_h6]:font-semibold [&_h6]:text-label-secondary";
+
+/**
  * The piece's page as WikiOS renders it, in WikiOS's article styles (as the forum's wiki embed shows one). The HTML is
  * WikiOS's sanitized view bundle, with its links under the base path, its ids scoped to the chapter and its headings
  * below the piece's title (`useArticleHtml`). It is fetched once the
@@ -33,7 +40,9 @@ function PieceBody({ title, near }: { title: string; near: boolean }) {
   });
   if (markup) {
     return (
-      <div className="wikios-article-body wikios-article-content max-w-[44rem]">
+      <div
+        className={`wikios-article-body wikios-article-content max-w-[44rem] ${SHIFTED_HEADINGS}`}
+      >
         <div className={ARTICLE_STYLE_ROOT_CLASS} dangerouslySetInnerHTML={markup} />
       </div>
     );

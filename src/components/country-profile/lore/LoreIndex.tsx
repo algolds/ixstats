@@ -5,6 +5,7 @@ import { useReducedMotion } from "motion/react";
 import { StickyToc } from "~/components/wiki-os/reader/StickyToc";
 import type { LoreGroup, LoreListedPiece } from "~/lib/lore/lore-groups";
 import { loreChapterId } from "~/lib/lore/lore-groups";
+import { scrollToChapter } from "~/lib/lore/scroll-to-chapter";
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 
 /** The pieces' part of the index: each group, then a link to each piece's chapter. */
@@ -25,10 +26,8 @@ function PieceIndex({ groups }: { groups: LoreGroup<LoreListedPiece>[] }) {
                   onClick={(event) => {
                     // Scrolled in place, leaving the address (the tab's own URL) alone.
                     event.preventDefault();
-                    document.getElementById(id)?.scrollIntoView({
-                      behavior: reduceMotion ? "auto" : "smooth",
-                      block: "start",
-                    });
+                    const chapter = document.getElementById(id);
+                    if (chapter) scrollToChapter(chapter, reduceMotion ? "auto" : "smooth");
                   }}
                   className="wikios-sticky-toc-item"
                 >
