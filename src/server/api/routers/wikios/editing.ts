@@ -153,10 +153,10 @@ export const wikiosEditingRouter = createTRPCRouter({
     .input(overwrittenInput)
     .mutation(({ input, ctx }) => restoreOverwrittenText(ctx, input)),
 
-  /** Whether the caller may restore that overwritten text (the diff view offers "Restore my text" only then). */
+  /** What the diff view offers for that overwritten text: the restore, editing by hand, or nothing. */
   overwrittenRestorable: rateLimitedPublicProcedure
     .input(overwrittenInput)
-    .query(async ({ input, ctx }) => ({ restorable: await overwrittenRestorable(ctx, input) })),
+    .query(({ input, ctx }) => overwrittenRestorable(ctx, input)),
 
   /**
    * Revert a page to a specific revision.

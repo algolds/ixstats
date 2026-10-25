@@ -9,7 +9,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { RevisionDiffView } from "~/components/wiki-os/history/RevisionDiffView";
 
 let mockSearch = "";
-let mockRestorable = true;
+let mockOffer: string = "restorable";
 let mockRestoreData: object | undefined;
 let mockFromParked = false;
 let mockFromRevid = "wk-1";
@@ -17,6 +17,13 @@ let mockRestorePending = false;
 let mockRestoreError: { message: string } | null = null;
 const mockRestore = jest.fn();
 const mockRestorableQuery = jest.fn();
+const mockInvalidate = {
+  diff: jest.fn(),
+  history: jest.fn(),
+  content: jest.fn(),
+  offer: jest.fn(),
+};
+let mockOnSuccess: ((result: object) => void) | undefined;
 
 jest.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(mockSearch),
@@ -33,6 +40,14 @@ jest.mock("~/components/wiki-os/shared/WikiOSLayout", () => ({
 jest.mock("~/components/diff-viewer", () => ({ DiffViewer: () => <div data-testid="diff" /> }));
 jest.mock("~/trpc/react", () => ({
   api: {
+    useUtils: () => ({
+      wikios: {
+        getDiff: { invalidate: mockInvalidate.diff },
+        getHistory: { invalidate: mockInvalidate.history },
+        getRevisionContent: { invalidate: mockInvalidate.content },
+        overwrittenRestorable: { invalidate: mockInvalidate.offer },
+      },
+    }),
     wikios: {
       getDiff: {
         useQuery: () => ({
@@ -57,16 +72,23 @@ jest.mock("~/trpc/react", () => ({
       overwrittenRestorable: {
         useQuery: (input: object, options: { enabled: boolean }) => {
           mockRestorableQuery(input, options);
-          return { data: options.enabled ? { restorable: mockRestorable } : undefined };
+          const offer =
+            mockOffer === "unavailable"
+              ? { state: "unavailable" }
+              : { state: mockOffer, editHref: "/wiki/Caphiria?action=edit" };
+          return { data: options.enabled ? offer : undefined };
         },
       },
       restoreOverwritten: {
-        useMutation: () => ({
-          mutate: mockRestore,
-          isPending: mockRestorePending,
-          error: mockRestoreError,
-          data: mockRestoreData,
-        }),
+        useMutation: (options: { onSuccess?: (result: object) => void }) => {
+          mockOnSuccess = options.onSuccess;
+          return {
+            mutate: mockRestore,
+            isPending: mockRestorePending,
+            error: mockRestoreError,
+            data: mockRestoreData,
+          };
+        },
       },
     },
   },
@@ -80,7 +102,8 @@ const view = (fromrev?: string) =>
 beforeEach(() => {
   jest.clearAllMocks();
   mockSearch = "";
-  mockRestorable = true;
+  mockOffer = "restorable";
+  mockOnSuccess = undefined;
   mockRestoreData = undefined;
   mockFromParked = false;
   mockFromRevid = "wk-1";
@@ -129,12 +152,44 @@ describe("Restore my text on the notice's diff", () => {
     view("wk-1");
 
     expect(screen.getByRole("button", { name: "Restore my text" })).toBeDisabled();
-    expect(screen.getByText("Only the author of that text can restore it.")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Only the author of that text can restore it."
+    );
+  });
+
+  it("offers editing the page by hand once someone edited it since the conflict", () => {
+    mockSearch = "?conflict=c1";
+    mockOffer = "stale";
+    view("wk-1");
+
+    expect(screen.queryByRole("button", { name: "Restore my text" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Edit the page" })).toHaveAttribute(
+      "href",
+      "/wiki/Caphiria?action=edit"
+    );
+  });
+
+  it("refreshes the diff, the history and the revision once the text is back, and not on a conflict", () => {
+    mockSearch = "?conflict=c1";
+    view("wk-1");
+
+    mockOnSuccess?.({
+      success: false,
+      editConflict: true,
+      currentWikitext: "x",
+      currentRevisionRef: "r",
+    });
+    expect(mockInvalidate.history).not.toHaveBeenCalled();
+    mockOnSuccess?.({ success: true, revisionId: "r9" });
+    expect(mockInvalidate.diff).toHaveBeenCalled();
+    expect(mockInvalidate.history).toHaveBeenCalled();
+    expect(mockInvalidate.content).toHaveBeenCalled();
+    expect(mockInvalidate.offer).toHaveBeenCalled();
   });
 
   it("shows nothing to someone who did not write it", () => {
     mockSearch = "?conflict=c1";
-    mockRestorable = false;
+    mockOffer = "unavailable";
     view("wk-1");
 
     expect(screen.queryByRole("button", { name: "Restore my text" })).toBeNull();
@@ -155,7 +210,9 @@ describe("Restore my text on the notice's diff", () => {
     mockRestoreData = { success: true, revisionId: "r9" };
     view("wk-1");
 
-    expect(screen.getByText("Your text is back, as a new edit of the page.")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Your text is back, as a new edit of the page."
+    );
     expect(screen.queryByRole("button", { name: "Restore my text" })).toBeNull();
   });
 
@@ -171,6 +228,10 @@ describe("Restore my text on the notice's diff", () => {
 
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Someone edited the page since. Nothing was saved"
+    );
+    expect(screen.getByRole("link", { name: "Edit the page" })).toHaveAttribute(
+      "href",
+      "/wiki/Caphiria?action=edit"
     );
   });
 

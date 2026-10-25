@@ -59,3 +59,25 @@ export async function repointArticleHead(
   });
   return true;
 }
+
+/**
+ * A classic restore brought back, as classic's latest revision, the revision `where` names, which WikiOS kept as
+ * overwritten (it lost to the delete the restore undid). It is live again (date and text untouched) only when it would
+ * be the head: no live revision of the page is newer. Under a newer head it stays history only.
+ */
+export async function reviveAsHead(
+  client: Prisma.TransactionClient,
+  where: Prisma.WikiRevisionWhereUniqueInput
+): Promise<void> {
+  const row = await client.wikiRevision.findUnique({
+    where,
+    select: { articleId: true, createdAt: true },
+  });
+  if (!row) return;
+  const newer = await client.wikiRevision.count({
+    where: { articleId: row.articleId, parked: false, createdAt: { gt: row.createdAt } },
+  });
+  if (newer > 0) return;
+  await client.wikiRevision.update({ where, data: { parked: false, parkReason: null } });
+  await repointArticleHead(client, row.articleId);
+}

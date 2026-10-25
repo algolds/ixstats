@@ -73,6 +73,9 @@ const { tables } = fake;
 
 type Row = Record<string, unknown>;
 
+const UNAVAILABLE = { state: "unavailable" };
+const EDIT_HREF = "/wiki/Caphiria?action=edit";
+
 /** A signed-in member (or an administrator) as the routers see them. */
 const as = (name: string, level = 100) =>
   createMockRouterContext({
@@ -387,13 +390,15 @@ describeEachWikiosMode("restoreOverwrittenText", () => {
       await expect(restoreOverwrittenText(as("alpha"), { conflictId, ref })).rejects.toMatchObject({
         code: "BAD_REQUEST",
       });
-      await expect(overwrittenRestorable(as("alpha"), { conflictId, ref })).resolves.toBe(false);
+      await expect(overwrittenRestorable(as("alpha"), { conflictId, ref })).resolves.toEqual(
+        UNAVAILABLE
+      );
     }
     await expect(
       restoreOverwrittenText(as("alpha"), { conflictId, ref: "105" })
     ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
-    await expect(overwrittenRestorable(as("alpha"), { conflictId, ref: "105" })).resolves.toBe(
-      false
+    await expect(overwrittenRestorable(as("alpha"), { conflictId, ref: "105" })).resolves.toEqual(
+      UNAVAILABLE
     );
   });
 
@@ -451,14 +456,137 @@ describeEachWikiosMode("restoreOverwrittenText", () => {
     });
   });
 
+  it("a third party's edit since the notice: the edit conflict, nothing saved, and the offer becomes editing the page", async () => {
+    const { lost, conflictId } = await alphaLostToBob();
+    const ref = lost.id as string;
+    // Gamma edits on top of Bob's winner before Alpha clicks
+    const gamma = await ArticleRepository.saveArticle(
+      {
+        slug: "Caphiria",
+        title: "Caphiria",
+        wikitext: "Gamma's text",
+        editSummary: "",
+        expectedHeadRef: "101",
+      },
+      "db-gamma",
+      "gamma"
+    );
+
+    await expect(overwrittenRestorable(as("alpha"), { conflictId, ref })).resolves.toEqual({
+      state: "stale",
+      editHref: EDIT_HREF,
+    });
+    await expect(restoreOverwrittenText(as("alpha"), { conflictId, ref })).resolves.toEqual({
+      success: false,
+      editConflict: true,
+      currentWikitext: "Gamma's text",
+      currentRevisionRef: toRevisionRef({ id: gamma.revisionId }),
+    });
+    expect(revisionsOf().filter((row) => row.wikitext === "Alpha's text")).toHaveLength(1);
+    expect(page().wikitext).toBe("Gamma's text");
+    expect(revisionJobs()).toEqual(["Caphiria"]);
+  });
+
+  it("the trail written after a classic winner is still the conflict's own page: the restore goes on top of it", async () => {
+    const { lost, conflictId } = await alphaLostToBob();
+    const trail = makeHead(
+      revision({ wikitext: "Bob's text", author: "WikiOS", summary: "Overwrote ..." })
+    );
+    conflictRow(conflictId).trailRevisionId = trail.id;
+    const ref = lost.id as string;
+
+    await expect(overwrittenRestorable(as("alpha"), { conflictId, ref })).resolves.toEqual({
+      state: "restorable",
+      editHref: EDIT_HREF,
+    });
+    const result = await restoreOverwrittenText(as("alpha"), { conflictId, ref });
+
+    expect(result.success).toBe(true);
+    expect(headOf()).toMatchObject({ wikitext: "Alpha's text", parentRevisionId: trail.id });
+  });
+
+  it("a trail that is a log entry is never a base: the winner is", async () => {
+    const { lost, conflictId } = await alphaLostToBob();
+    conflictRow(conflictId).trailRevisionId = "log:wl-3";
+
+    const result = await restoreOverwrittenText(as("alpha"), {
+      conflictId,
+      ref: lost.id as string,
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("text that is already the page's is no restore: no button, a clean refusal, no empty revision and no job", async () => {
+    // Bob's winning edit put back exactly what Alpha wrote
+    const { lost, conflictId } = await alphaLostToBob();
+    revisionRow(revisionsOf().find((row) => row.mwRevId === 101)!.id).wikitext = "Alpha's text";
+    page().wikitext = "Alpha's text";
+    const before = revisionsOf().length;
+    const ref = lost.id as string;
+
+    await expect(overwrittenRestorable(as("alpha"), { conflictId, ref })).resolves.toEqual(
+      UNAVAILABLE
+    );
+    await expect(restoreOverwrittenText(as("alpha"), { conflictId, ref })).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+    });
+    expect(revisionsOf()).toHaveLength(before);
+    expect(revisionJobs()).toEqual([]);
+  });
+
+  it("a revision whose editor MediaWiki hides is nobody's to restore, by account as by claim", async () => {
+    const { lost, conflictId } = await alphaLostToBob({ userDeleted: true });
+
+    await expect(
+      restoreOverwrittenText(as("alpha"), { conflictId, ref: lost.id as string })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      overwrittenRestorable(as("alpha"), { conflictId, ref: lost.id as string })
+    ).resolves.toEqual(UNAVAILABLE);
+  });
+
+  it("offers nothing to a blocked author, on a page they may not edit, or on a deleted page", async () => {
+    const { lost, conflictId } = await alphaLostToBob();
+    const ref = lost.id as string;
+
+    tables.wikiBlock.seed({ userId: "db-alpha", reason: "vandalism" });
+    await expect(overwrittenRestorable(as("alpha"), { conflictId, ref })).resolves.toEqual(
+      UNAVAILABLE
+    );
+    tables.wikiBlock.rows.find((block) => block.userId === "db-alpha")!.userId = "db-nobody";
+
+    tables.wikiRestriction.seed({
+      source: "ixwiki",
+      title: "Caphiria",
+      action: "edit",
+      level: "sysop",
+    });
+    await expect(overwrittenRestorable(as("alpha"), { conflictId, ref })).resolves.toEqual(
+      UNAVAILABLE
+    );
+    tables.wikiRestriction.rows.find((r) => r.title === "Caphiria")!.title = "Elsewhere";
+    await expect(overwrittenRestorable(as("alpha"), { conflictId, ref })).resolves.toMatchObject({
+      state: "restorable",
+    });
+
+    page().status = "ARCHIVED";
+    await expect(overwrittenRestorable(as("alpha"), { conflictId, ref })).resolves.toEqual(
+      UNAVAILABLE
+    );
+  });
+
   it("a signed-out visitor is asked to sign in", async () => {
     const { lost, conflictId } = await alphaLostToBob();
     await expect(
       restoreOverwrittenText(signedOut(), { conflictId, ref: lost.id as string })
     ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    // asked of nobody: no conflict row is even read
+    const findConflict = jest.spyOn(db.wikiConflict, "findUnique");
     await expect(
       overwrittenRestorable(signedOut(), { conflictId, ref: lost.id as string })
-    ).resolves.toBe(false);
+    ).resolves.toEqual(UNAVAILABLE);
+    expect(findConflict).not.toHaveBeenCalled();
   });
 });
 
@@ -468,14 +596,15 @@ describeEachWikiosMode("wikios.restoreOverwritten and wikios.overwrittenRestorab
     const ref = lost.id as string;
 
     await expect(editing(as("alpha")).overwrittenRestorable({ conflictId, ref })).resolves.toEqual({
-      restorable: true,
+      state: "restorable",
+      editHref: EDIT_HREF,
     });
-    await expect(editing(as("beta")).overwrittenRestorable({ conflictId, ref })).resolves.toEqual({
-      restorable: false,
-    });
-    await expect(editing(signedOut()).overwrittenRestorable({ conflictId, ref })).resolves.toEqual({
-      restorable: false,
-    });
+    await expect(editing(as("beta")).overwrittenRestorable({ conflictId, ref })).resolves.toEqual(
+      UNAVAILABLE
+    );
+    await expect(editing(signedOut()).overwrittenRestorable({ conflictId, ref })).resolves.toEqual(
+      UNAVAILABLE
+    );
 
     await expect(editing(as("alpha")).restoreOverwritten({ conflictId, ref })).resolves.toEqual({
       success: true,

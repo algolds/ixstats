@@ -648,8 +648,12 @@ describe.each(WIKIOS_MODES)("inbound revisions through the conflict rule [%s]", 
     const bob = site.editAs("Bob", "Caphiria", "Caphiria is a republic.");
 
     await expect(syncRevisionById(bob.revid)).resolves.toBe("overwritten");
-    // only a classic restore brings an overwritten revision back: the webhook's read of classic's latest does not
+    // only a classic restore brings an overwritten revision back: the webhook's read of classic's latest does not,
+    // nor does a restore whose revision WikiOS's later head still stands over
     await expect(syncLatestRevision("Caphiria")).resolves.toBe("known");
+    await expect(syncLatestRevision("Caphiria", { effectiveAt: new Date() })).resolves.toBe(
+      "known"
+    );
 
     expect(revisionOf(bob.revid)).toMatchObject({
       parked: true,
@@ -663,6 +667,15 @@ describe.each(WIKIOS_MODES)("inbound revisions through the conflict rule [%s]", 
     expect(conflicts[0]).toMatchObject({ winnerSide: "wikios", winnerRef: saved.revisionId });
     expect(overwrittenRefs(conflicts[0]!)).toEqual([String(bob.revid)]);
     expect(jobs()).toEqual(jobsBefore);
+
+    // dated with the head (a restore of a revision as new as it): live again, and the page's text follows
+    revisionRow(revisionOf(bob.revid)!.id).createdAt = revisionRow(saved.revisionId).createdAt;
+    await expect(syncLatestRevision("Caphiria")).resolves.toBe("known");
+    expect(revisionOf(bob.revid)).toMatchObject({ parked: true });
+    await expect(syncLatestRevision("Caphiria", { effectiveAt: new Date() })).resolves.toBe(
+      "known"
+    );
+    expect(revisionOf(bob.revid)).toMatchObject({ parked: false, parkReason: null });
   });
 
   it("a WikiOS revision the mirror stamped with a higher id than a later classic edit from the same base still collides: the classic edit wins, one row, the WikiOS author told", async () => {
