@@ -241,14 +241,15 @@ export async function runPolicyMaintenanceDebits(
           select: { totalBudget: true },
         });
         // No budget to spend from yet: nothing to do (and nothing recorded) until there is.
-        if (structure?.totalBudget == null) continue;
+        const totalBudget = structure?.totalBudget;
+        if (totalBudget == null) continue;
 
         const debit = await debitCountryMaintenance(
           database,
           countryId,
           countryPolicies,
-          structure.totalBudget,
-          nowOf(countryPolicies[0]!.country.realmId)
+          totalBudget,
+          nowOf(countryPolicies[0]!.country?.realmId ?? null)
         );
         result.policiesProcessed += debit.policiesDebited;
         result.totalCostDebited += debit.totalDebited;
