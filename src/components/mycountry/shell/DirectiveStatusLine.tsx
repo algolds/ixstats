@@ -1,39 +1,25 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { ClockRotateRight as FileClock } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { IxTime } from "~/lib/ixtime";
+import { useClockNow, useNationClock } from "~/hooks/useNationClock";
+import { formatRealmCountdown } from "~/lib/realms/nation-time";
 
-/** `cooldownUntil` and `now` are IxTime ms (the server's clock for directive slots), not wall time. */
-export function formatCooldownTime(
-  cooldownUntil: number | null | undefined,
-  now = IxTime.getCurrentIxTime()
-): string {
-  if (!cooldownUntil) return "Resets next weekly cycle";
-  const diffMs = Math.max(0, cooldownUntil - now);
-  if (diffMs <= 0) return "Cooldown expiring soon";
-  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-  const secs = Math.floor((diffMs % (1000 * 60)) / 1000);
-  if (days > 0) return `${days}d ${hours}h ${mins}m`;
-  if (hours > 0) return `${hours}h ${mins}m ${secs}s`;
-  return `${mins}m ${secs}s`;
-}
-
-/** Leaf countdown: ticks every second without re-rendering its parent. */
-export const CooldownTimer = React.memo(function CooldownTimer({
+/**
+ * Leaf countdown to the next directive slot. `cooldownUntil` is on the nation's realm clock (the server's clock for
+ * directive slots); the wait reads in real time at the realm's speed, or "Paused". Ticks without re-rendering its
+ * parent.
+ */
+export const NextDirectiveIn = React.memo(function NextDirectiveIn({
   cooldownUntil,
 }: {
-  cooldownUntil: number | null | undefined;
+  cooldownUntil: number;
 }) {
-  const [now, setNow] = useState(() => IxTime.getCurrentIxTime());
-  useEffect(() => {
-    const id = setInterval(() => setNow(IxTime.getCurrentIxTime()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  return <>{formatCooldownTime(cooldownUntil, now)}</>;
+  const clock = useNationClock();
+  const now = useClockNow(clock, 1000);
+  const countdown = formatRealmCountdown(cooldownUntil, now ?? cooldownUntil, clock);
+  return <>{countdown === "Paused" ? "Paused" : `Next directive in ${countdown}`}</>;
 });
 
 /** How many directives are left this week, or when the next one opens. */
@@ -50,9 +36,7 @@ export function DirectiveStatusLine({ countryId }: { countryId?: string }) {
         <FileClock aria-hidden="true" className="h-3.5 w-3.5" />
         <span>
           {cooldownUntil ? (
-            <>
-              Next directive in <CooldownTimer cooldownUntil={cooldownUntil} />
-            </>
+            <NextDirectiveIn cooldownUntil={cooldownUntil} />
           ) : (
             `All ${cap} directives used · slots reset next week`
           )}

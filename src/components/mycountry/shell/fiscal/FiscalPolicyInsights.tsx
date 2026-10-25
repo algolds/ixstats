@@ -14,6 +14,8 @@ import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { economyFiguresOf } from "~/lib/economy/country-relations";
 import { allocatedInEffect } from "~/components/mycountry/domains/government/budget/budgetSummaries";
+import { useNationClock } from "~/hooks/useNationClock";
+import { currentBudgetYear } from "~/lib/government/budget-year";
 import { fiscalBalancePercent } from "~/components/mycountry/domains/government/budget/budgetTypes";
 import { TAX_CHANNELS, ACCENT_BG } from "./taxChannels";
 import { nationalRevenue } from "./nationalRevenue";
@@ -63,14 +65,18 @@ function deriveFiscalInsights(country: Country) {
 
 /**
  * Revenue left after the budget in effect allocates, as a percent of revenue (the National budget
- * tab's fiscal balance). Null for a visitor (the budget is the owner's) or without revenue.
+ * tab's fiscal balance). Null for a visitor (the budget is the owner's), without revenue, or while
+ * the nation's clock (its budget year) loads.
  */
 function useFiscalBalance(countryId: string, revenue: number | null): number | null {
   const { data: government } = api.government.getFullByCountryId.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
-  const allocated = allocatedInEffect(government?.budgetAllocations ?? []);
+  const clock = useNationClock();
+  const allocated = clock
+    ? allocatedInEffect(government?.budgetAllocations ?? [], currentBudgetYear(clock.now()))
+    : null;
   return revenue != null && allocated != null ? fiscalBalancePercent(revenue, allocated) : null;
 }
 

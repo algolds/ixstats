@@ -3,7 +3,8 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { cn } from "~/lib/utils/cn";
 import { stripHtml } from "~/lib/utils/sanitize-html";
 import type { CountryProfileLayer } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
-import { formatBig, formatIxDate, formatRate } from "~/app/countries/[slug]/_utils/profileLayer";
+import { formatBig, formatRate } from "~/app/countries/[slug]/_utils/profileLayer";
+import { formatRealmDate } from "~/lib/realms/realm-clock";
 import type { BadgeVariant } from "~/components/ui/badge";
 import { diplomaticMatrix, regionShares, relationNodes, stateLeaders } from "../derive";
 import { economyVitals } from "../vitals";
@@ -84,7 +85,10 @@ export function StateBlock({ layer, onMore }: BlockProps) {
   const offices = stateLeaders(state, identity);
   const system = g?.type ?? identity.governmentType;
   const next = e?.upcomingName
-    ? [e.upcomingName, e.upcomingIxTime != null ? formatIxDate(e.upcomingIxTime) : null]
+    ? [
+        e.upcomingName,
+        e.upcomingIxTime != null ? formatRealmDate(e.upcomingIxTime, layer.clock.calendar) : null,
+      ]
         .filter(Boolean)
         .join(" · ")
     : null;

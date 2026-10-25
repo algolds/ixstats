@@ -17,8 +17,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { DiscussionCountsProvider } from "~/components/action-links/DiscussionCountsProvider";
 import type { CountryProfileLayer } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
 import type { ActivityTimeRange, CountryActivityItem } from "~/app/countries/[slug]/_types";
-import { ixTimeToYear } from "~/app/countries/[slug]/_utils/profileLayer";
-import { IxTime } from "~/lib/ixtime";
+import { clockTimeAt, realmFractionalYear } from "~/lib/realms/nation-time";
 import { api } from "~/trpc/react";
 import { filterTimeline, mergeTimeline, type TimelineFilter } from "./merge-timeline";
 import { ActivityRow, ChronicleRow } from "./TimelineRows";
@@ -43,9 +42,6 @@ const PREVIEW = 25;
 /** The feed's first page; a full page means there may be more to fetch. */
 const FEED_PAGE = 20;
 
-/** A real timestamp's place on the in-game calendar (fractional year). */
-const toYear = (ms: number) => ixTimeToYear(IxTime.convertToIxTime(ms));
-
 function safeDate(value: string | number | Date | null | undefined): Date {
   const d = value instanceof Date ? value : new Date(value ?? Date.now());
   return isValid(d) ? d : new Date();
@@ -53,7 +49,7 @@ function safeDate(value: string | number | Date | null | undefined): Date {
 
 /**
  * HistoryTab — the country's history as one timeline, newest first: the chronicle (founding
- * dates, map stories, directives, decisions, diplomacy, on the in-game calendar) merged with the
+ * dates, map stories, directives, decisions, diplomacy, on the country's realm calendar) merged with the
  * activity feed. Record shows the chronicle alone; the range control narrows the feed only, so
  * the chronicle's all-time record stays.
  */
@@ -77,8 +73,11 @@ export function HistoryTab({ layer }: { layer: CountryProfileLayer }) {
       timestamp: safeDate(a.timestamp),
       engagement: a.engagement,
     }));
+    // A real timestamp's place on the country's realm calendar (fractional year).
+    const { clock } = layer;
+    const toYear = (ms: number) => realmFractionalYear(clockTimeAt(clock, ms), clock.calendar);
     return filterTimeline(mergeTimeline(layer.chronicle, feed, toYear), filter);
-  }, [data, layer.chronicle, filter]);
+  }, [data, layer, filter]);
 
   const shown = expanded ? items : items.slice(0, PREVIEW);
   const feedMayHaveMore = (data?.activities.length ?? 0) >= FEED_PAGE;

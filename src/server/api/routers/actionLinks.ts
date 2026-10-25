@@ -78,7 +78,8 @@ export const actionLinksRouter = createTRPCRouter({
       const countries = countryIds.length
         ? await ctx.db.country.findMany({
             where: { id: { in: countryIds } },
-            select: { id: true, name: true, slug: true, flag: true },
+            // realmId: the card dates the action on its nation's realm clock.
+            select: { id: true, name: true, slug: true, flag: true, realmId: true },
           })
         : [];
       const byId = new Map(countries.map((c) => [c.id, c]));

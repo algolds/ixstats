@@ -2,6 +2,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { CountryProfileLayer } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
 import { FactbookTab } from "~/components/country-profile/factbook/FactbookTab";
+import { CLOCK_NOW, DAY, ixnayReader, sixTimesReader } from "~/tests/fixtures/realm-readers";
 
 jest.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(window.location.search),
@@ -13,7 +14,9 @@ jest.mock("~/components/country-profile/factbook/FactbookSheets", () => ({
     ) : null,
 }));
 
-function layer(overrides: { relations?: number } = {}): CountryProfileLayer {
+function layer(
+  overrides: { relations?: number; election?: CountryProfileLayer["state"]["election"] } = {}
+): CountryProfileLayer {
   const relations = Array.from({ length: overrides.relations ?? 1 }, (_, i) => ({
     id: `r${i}`,
     countryId: `c${i}`,
@@ -56,11 +59,12 @@ function layer(overrides: { relations?: number } = {}): CountryProfileLayer {
         judiciary: null,
         departments: [],
       },
-      election: null,
+      election: overrides.election ?? null,
       isLoading: false,
     },
     world: { rankings: [], relations, embassies: [], isLoading: false },
     chronicle: [],
+    clock: ixnayReader(),
   } as unknown as CountryProfileLayer;
 }
 
@@ -120,6 +124,20 @@ describe("FactbookTab", () => {
     render(<FactbookTab layer={layer()} />);
     expect(screen.getByText("Caphirian")).toBeInTheDocument();
     expect(screen.getByText("Caphiric Latin")).toBeInTheDocument();
+  });
+
+  it("dates the next election in the country's realm calendar", () => {
+    const election = {
+      lastName: null,
+      lastIxTime: null,
+      turnout: null,
+      results: [],
+      upcomingName: "General election",
+      upcomingIxTime: CLOCK_NOW + 20 * DAY,
+      totalSeats: 0,
+    };
+    render(<FactbookTab layer={{ ...layer({ election }), clock: sixTimesReader() }} />);
+    expect(screen.getByText("General election · 4 Frostfall 812 AE")).toBeInTheDocument();
   });
 
   it("says so when there are no foreign relations", () => {

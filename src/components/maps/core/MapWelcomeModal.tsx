@@ -22,7 +22,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { IxTime } from "~/lib/ixtime";
+import { useRealmClock } from "~/hooks/useRealmClock";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { formatRealmDate } from "~/lib/realms/realm-clock";
 import { IXWORLD_VERSION } from "~/lib/buildVersion";
 import { wikiReaderPath } from "~/lib/wiki-os/config";
 import { Card } from "~/components/ui/card";
@@ -130,7 +132,19 @@ const CLIMATE_SWATCHES = [
   ["bg-blue", "Boreal (E)"],
 ];
 
-function WorldNotes({ currentIxTime }: { currentIxTime: string }) {
+/** Ixnay's clock in the notes: today's date and how fast it runs (these notes show on Ixnay's map only). */
+function useIxnayClockNote(): { today: string; pace: string } {
+  const clock = useRealmClock(DEFAULT_REALM_ID);
+  const today = useMemo(
+    () => (clock ? formatRealmDate(clock.now(), clock.calendar) : "–"),
+    [clock]
+  );
+  const multiplier = clock?.multiplier ?? 2;
+  return { today, pace: multiplier === 0 ? "is paused" : `moves at ${multiplier}x real time` };
+}
+
+function WorldNotes() {
+  const { today, pace } = useIxnayClockNote();
   return (
     <div className="text-label-secondary text-footnote space-y-2 leading-relaxed">
       <div>
@@ -138,18 +152,18 @@ function WorldNotes({ currentIxTime }: { currentIxTime: string }) {
         <Tooltip
           content={
             <div className="text-footnote space-y-2">
-              <p className="font-semibold">Current IxTime</p>
-              <p className="text-blue tabular-nums">{currentIxTime}</p>
+              <p className="font-semibold">Today in Ixnay</p>
+              <p className="text-blue tabular-nums">{today}</p>
               <p className="text-label-secondary">
-                The in-world clock runs at 2x real time. One real day = two in-game days. All
-                economic cycles, elections, and events follow this clock.
+                Ixnay&apos;s in-world clock {pace}. Its economies, elections and events follow this
+                clock; every other realm runs its own.
               </p>
             </div>
           }
         >
           <strong className={TERM_CLASS}>IxTime</strong>
-        </Tooltip>{" "}
-        is the in-world clock, which moves at 2x real time.
+        </Tooltip>
+        , Ixnay&apos;s in-world clock, which {pace}.
       </div>
       <div>
         The world uses a{" "}
@@ -217,15 +231,6 @@ export function MapWelcomeModal({
     }
   }, [isOpen]);
 
-  // Current IxTime for the tooltip
-  const currentIxTime = useMemo(() => {
-    try {
-      return IxTime.formatIxTime(IxTime.getCurrentIxTime(), true);
-    } catch {
-      return "—";
-    }
-  }, []);
-
   useEffect(() => {
     if (!isMapReady) return;
     try {
@@ -286,7 +291,7 @@ export function MapWelcomeModal({
         {/* IxTime, the climate system and the wiki are Ixnay's; another realm's map has its own. */}
         {onStartTour && (
           <div className="px-6 pb-2">
-            <WorldNotes currentIxTime={currentIxTime} />
+            <WorldNotes />
           </div>
         )}
 

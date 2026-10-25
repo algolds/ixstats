@@ -16,7 +16,8 @@
 
 import { useMemo } from "react";
 import { api, type RouterOutputs } from "~/trpc/react";
-import { IxTime } from "~/lib/ixtime";
+import { clockTimeAt } from "~/lib/realms/nation-time";
+import type { RealmClockReader } from "~/lib/realms/realm-clock";
 import { claimableNation } from "~/lib/realms/claimable-nation";
 import { resolveImageUrl } from "~/lib/wiki-os/transformers/image-url";
 import { parseWikiSource, type WikiSource } from "~/lib/wiki-os/config";
@@ -123,7 +124,8 @@ export interface CountryProfileLayer {
   chronicle: ChronicleEntry[];
   /** Null unless the signed-in viewer owns this country. */
   owner: ProfileOwnerLayer | null;
-  currentIxTime: number;
+  /** The country's realm clock: every in-world date on the profile reads in its calendar. */
+  clock: RealmClockReader;
 }
 
 function str(value: unknown): string | null {
@@ -428,14 +430,15 @@ interface UseCountryProfileLayerOptions {
   flagUrl: string | null;
   /** The signed-in viewer owns this country (reveals the owner layer). */
   isOwner: boolean;
-  currentIxTime: number;
+  /** The country's realm clock (`CountryDataProvider`). */
+  clock: RealmClockReader;
 }
 
 export function useCountryProfileLayer({
   country,
   flagUrl,
   isOwner,
-  currentIxTime,
+  clock,
 }: UseCountryProfileLayerOptions): CountryProfileLayer | null {
   // `getByIdWithEconomicData` returns `any`; narrow the fields this layer reads.
   const c = country as Loose | null | undefined;
@@ -488,7 +491,7 @@ export function useCountryProfileLayer({
     const land = toLand(geo.data, geo.isLoading);
     const directives: PublicDirective[] = record.data?.directives ?? [];
     const issueOutcomes: PublicIssueOutcome[] = record.data?.issueOutcomes ?? [];
-    const { decisions, diplomacy } = splitCanonFeed(canon.data, (ms) => IxTime.convertToIxTime(ms));
+    const { decisions, diplomacy } = splitCanonFeed(canon.data, (ms) => clockTimeAt(clock, ms));
     const state: ProfileState = {
       government: buildGovernment(government.data),
       election: buildElection(election.data),
@@ -508,8 +511,9 @@ export function useCountryProfileLayer({
         embassies.data,
         rankings.isLoading || relations.isLoading
       ),
-      // Lore dates + map story pins + the IxTime record.
+      // Lore dates + map story pins + the record on the country's realm clock.
       chronicle: buildChronicle({
+        calendar: clock.calendar,
         founding,
         storyPins: land.storyPins.map((p) => ({
           id: p.id,
@@ -524,14 +528,14 @@ export function useCountryProfileLayer({
         diplomacy,
       }),
       owner: buildOwner(isOwner, intents.data?.allIntents, pending.data),
-      currentIxTime,
+      clock,
     };
   }, [
     c,
     countryId,
     flagUrl,
     isOwner,
-    currentIxTime,
+    clock,
     wikiSource,
     wikiProfile.data,
     geo.data,

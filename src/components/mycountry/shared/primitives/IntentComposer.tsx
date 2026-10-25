@@ -7,7 +7,7 @@ import type { RouterOutputs } from "~/trpc/react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { useIxTimeStore } from "~/stores/ixtime-store";
+import { useClockNow, useNationClock } from "~/hooks/useNationClock";
 import {
   OFFERED_TIERS,
   categoryLabel,
@@ -147,7 +147,8 @@ export const IntentComposer = React.memo(function IntentComposer({
   onViewActive,
 }: IntentComposerProps) {
   const { country, isViewingOtherCountry, isPublicReadOnly } = useCountryData();
-  const nowIxTime = useIxTimeStore((s) => Math.floor(s.ixTimeTimestamp / 60_000) * 60_000);
+  const clock = useNationClock();
+  const nowIxTime = useClockNow(clock);
   const utils = api.useUtils();
 
   const [query, setQuery] = useState(initialGoal);
@@ -332,6 +333,7 @@ export const IntentComposer = React.memo(function IntentComposer({
               }
               slots={statusQuery.data}
               nowIxTime={nowIxTime}
+              clock={clock}
               followUpOf={followUpOf}
               onClearFollowUp={onFollowUpChange ? () => onFollowUpChange(null) : undefined}
               readOnly={readOnly}

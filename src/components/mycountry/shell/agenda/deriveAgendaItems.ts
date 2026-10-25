@@ -3,12 +3,15 @@ import type { AgendaItem, AgendaUrgency } from "./agendaTypes";
 import { getSeverityRank } from "./agendaTypes";
 import { PHASE_META, directiveTimeline } from "~/components/mycountry/directives/directive-model";
 
-/** One IxTime day in ms. Deadlines and elections are scheduled in IxTime. */
-const IX_DAY_MS = 86_400_000;
-/** An issue deadline this close (IxTime) is "Due soon". */
-const ISSUE_DUE_SOON_IX_MS = 2 * IX_DAY_MS;
-/** An election this close (IxTime) is "Due soon" and needs action. */
-const ELECTION_DUE_SOON_IX_MS = 7 * IX_DAY_MS;
+/**
+ * Deadlines and elections are scheduled on the nation's realm clock; how soon they come is real time at the realm's
+ * speed, so a 6× realm's deadlines turn "Due soon" sooner in game time and a paused realm's never approach.
+ */
+const REAL_DAY_MS = 86_400_000;
+/** An issue deadline a real day away is "Due soon" (two in-world days on Ixnay's ×2). */
+const ISSUE_DUE_SOON_REAL_MS = REAL_DAY_MS;
+/** An election three and a half real days away is "Due soon" and needs action (a week on Ixnay's ×2). */
+const ELECTION_DUE_SOON_REAL_MS = 3.5 * REAL_DAY_MS;
 
 type Timestamp = Date | string | number | null | undefined;
 
@@ -50,7 +53,21 @@ interface AgendaSources {
   intents?: readonly AgendaSourceIntent[];
   /** Elections (`elections.getElections`); only future, not completed or cancelled. */
   elections?: readonly AgendaSourceElection[];
+  /** The nation's realm-clock "now". */
   nowIxTime: number;
+  /** The realm's speed (0: paused). */
+  multiplier: number;
+}
+
+type AgendaClock = Pick<AgendaSources, "nowIxTime" | "multiplier">;
+
+/** `target` (realm-clock ms, still ahead) is within `realMs` of real time at the realm's speed. */
+function dueWithin(
+  target: number,
+  { nowIxTime, multiplier }: AgendaClock,
+  realMs: number
+): boolean {
+  return multiplier > 0 && (target - nowIxTime) / multiplier <= realMs;
 }
 
 /** A Date, ISO string or ms timestamp as ms, or null when missing or invalid. */
@@ -80,16 +97,16 @@ function compareAgendaItems(a: AgendaItem, b: AgendaItem): number {
 const finiteOrNull = (value: number | null | undefined): number | null =>
   typeof value === "number" && Number.isFinite(value) ? value : null;
 
-function issueDeadlineUrgency(deadline: number | null, nowIxTime: number): AgendaUrgency | null {
+function issueDeadlineUrgency(deadline: number | null, clock: AgendaClock): AgendaUrgency | null {
   if (deadline === null) return null;
-  if (deadline <= nowIxTime) return "overdue";
-  return deadline - nowIxTime <= ISSUE_DUE_SOON_IX_MS ? "due-soon" : null;
+  if (deadline <= clock.nowIxTime) return "overdue";
+  return dueWithin(deadline, clock, ISSUE_DUE_SOON_REAL_MS) ? "due-soon" : null;
 }
 
-function issueItem(iss: AgendaSourceIssue, nowIxTime: number): AgendaItem {
+function issueItem(iss: AgendaSourceIssue, clock: AgendaClock): AgendaItem {
   const urgent =
     getSeverityRank(String(iss.severity ?? "").toLowerCase()) >= 3 || (iss.urgency ?? 0) > 70;
-  const urgency = issueDeadlineUrgency(finiteOrNull(iss.deadlineIxTime), nowIxTime);
+  const urgency = issueDeadlineUrgency(finiteOrNull(iss.deadlineIxTime), clock);
   return {
     id: `issue:${iss.id}`,
     kind: "issue",
@@ -147,8 +164,8 @@ const ELECTION_PHASE: Record<string, string> = {
   campaigning: "Campaigning is under way",
 };
 
-function electionItem(el: AgendaSourceElection, nowIxTime: number): AgendaItem {
-  const soon = el.scheduledIxTime - nowIxTime <= ELECTION_DUE_SOON_IX_MS;
+function electionItem(el: AgendaSourceElection, clock: AgendaClock): AgendaItem {
+  const soon = dueWithin(el.scheduledIxTime, clock, ELECTION_DUE_SOON_REAL_MS);
   return {
     id: `election:${el.id}`,
     kind: "election",
@@ -171,20 +188,23 @@ const isUpcoming = (el: AgendaSourceElection, nowIxTime: number) =>
 /**
  * The agenda's items, from real game state only: open national issues (with their deadline
  * pressure folded in), active directives and upcoming elections. Pure: the caller passes the
- * query data and IxTime "now". Timing is relative (see `formatAgendaTime`), never a date.
+ * query data and the nation's realm-clock "now" and speed. Timing is relative (see
+ * `formatAgendaTime`), never a date.
  */
 export function deriveAgendaItems({
   issues = [],
   intents = [],
   elections = [],
   nowIxTime,
+  multiplier,
 }: AgendaSources): AgendaItem[] {
+  const clock = { nowIxTime, multiplier };
   return [
-    ...issues.map((iss) => issueItem(iss, nowIxTime)),
+    ...issues.map((iss) => issueItem(iss, clock)),
     ...intents
       .filter((it) => String(it.status ?? "").toLowerCase() === "active")
       .map((it) => directiveItem(it, nowIxTime)),
-    ...elections.filter((el) => isUpcoming(el, nowIxTime)).map((el) => electionItem(el, nowIxTime)),
+    ...elections.filter((el) => isUpcoming(el, nowIxTime)).map((el) => electionItem(el, clock)),
   ].sort(compareAgendaItems);
 }
 

@@ -3,7 +3,7 @@
  * No React, no server imports, so it is safe on the client and easy to unit test.
  *
  * Engine facts mirrored here (see docs/systems/mycountry.md, "Civil Service Capacity"):
- * - a directive holds its executive bandwidth while it is `active` and inside one IxTime week of its commit
+ * - a directive holds its executive bandwidth while it is `active` and inside one in-world week of its commit
  *   (`DIRECTIVE_EXEC_BANDWIDTH_WINDOW_MS` in src/lib/government/exec-bandwidth.ts, which is server-only);
  * - moderate and extreme directives may spawn a resistance issue that must be resolved before
  *   the directive can be completed (src/lib/intent/resistance.ts, `intent.updateStatus`).
@@ -13,13 +13,12 @@ import type { RouterOutputs } from "~/trpc/react";
 import type { Acceptance, Category, ChangeLine, Tier } from "~/lib/intent/assemble";
 import { consequenceFieldLabel, describeConsequenceBadge } from "~/lib/intent/consequence-labels";
 import type { EffectItem } from "./EffectList";
-import { IxTime } from "~/lib/ixtime";
 
 export type IntentRow = RouterOutputs["intent"]["getTree"]["allIntents"][number];
 export type IntentPackageView = RouterOutputs["intent"]["suggest"]["packages"][number];
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-/** Mirrors DIRECTIVE_EXEC_BANDWIDTH_WINDOW_MS (src/lib/government/exec-bandwidth.ts): one IxTime week. */
+/** Mirrors DIRECTIVE_EXEC_BANDWIDTH_WINDOW_MS (src/lib/government/exec-bandwidth.ts): one week on the realm clock. */
 export const DIRECTIVE_EXECUTION_WINDOW_MS = 7 * DAY_MS;
 
 /** Tiers the composer offers. `structural_unlocked` has no unlock check yet, so it is not shown. */
@@ -172,7 +171,7 @@ interface DirectiveTimeline {
   phase: DirectivePhase;
   /** 0-1 through the execution week (1 once it is over or closed). */
   executionProgress: number;
-  /** IxTime at which the held executive bandwidth is released, when still executing. */
+  /** Realm-clock time at which the held executive bandwidth is released, when still executing. */
   releasesAt: number | null;
   /** Executive bandwidth currently held by this directive (0 unless executing). */
   heldExecBandwidth: number;
@@ -208,29 +207,6 @@ export function directiveTimeline(
       };
     }
   }
-}
-
-/** An IxTime timestamp as a short in-game date, e.g. "Mar 4, 2041". */
-export function formatIxDate(ixTime: number): string {
-  if (!Number.isFinite(ixTime)) return "–";
-  return new Date(ixTime).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  });
-}
-
-/**
- * A stored wall-clock timestamp (a row's createdAt, a relation's lastContact) as the in-game date it fell on, so
- * MyCountry never shows a real-world date beside IxTime ones. `fallback` when there is none.
- */
-export function formatStampAsIxDate(
-  stamp: string | Date | null | undefined,
-  fallback = "N/A"
-): string {
-  const ms = stamp == null ? Number.NaN : new Date(stamp).getTime();
-  return Number.isFinite(ms) ? formatIxDate(IxTime.convertToIxTime(ms)) : fallback;
 }
 
 /** A GDP level shift (0.000583) as a percentage string ("+0.058%"). */
@@ -315,6 +291,6 @@ export function gdpShiftToEffect(shift: number, years: number, key = "gdp"): Eff
     value: formatGdpShift(shift),
     direction: shift > 0 ? "up" : shift < 0 ? "down" : "flat",
     favorable: shift === 0 ? null : shift > 0,
-    caption: `Phased in over ${years} IxTime year${years === 1 ? "" : "s"}, then kept`,
+    caption: `Phased in over ${years} in-world year${years === 1 ? "" : "s"}, then kept`,
   };
 }

@@ -16,9 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { IxTime } from "~/lib/ixtime";
+import { formatRealmDate, type RealmCalendar } from "~/lib/realms/realm-clock";
+import { RealmDayInput } from "~/components/realms/RealmDayInput";
 import { INTENT_TEMPLATES } from "./meeting-scheduler-intents";
-import { fromDateInputValue, toDateInputValue, type TimePreset } from "./meeting-scheduler-logic";
+import { atNineAm, type TimePreset } from "./meeting-scheduler-logic";
 import type { IntentTemplate, MeetingSchedulerProps } from "./meeting-scheduler-types";
 
 const EYEBROW = "text-label-secondary text-eyebrow";
@@ -151,11 +152,14 @@ export function ScheduleFields({
   onPresetChange,
   scheduledIxTime,
   onTimeChange,
+  calendar,
 }: {
   preset: TimePreset;
   onPresetChange: (preset: TimePreset) => void;
   scheduledIxTime: number;
   onTimeChange: (ms: number) => void;
+  /** The host nation's realm calendar: the date is picked and shown in it. */
+  calendar: RealmCalendar;
 }) {
   return (
     <div className="space-y-2">
@@ -174,20 +178,17 @@ export function ScheduleFields({
           <Label htmlFor="custom-date" className={EYEBROW}>
             Date
           </Label>
-          <Input
+          <RealmDayInput
             id="custom-date"
-            type="date"
-            value={toDateInputValue(scheduledIxTime)}
-            onChange={(e) => e.target.value && onTimeChange(fromDateInputValue(e.target.value))}
-            required
+            calendar={calendar}
+            value={scheduledIxTime}
+            onChange={(dayStart) => onTimeChange(atNineAm(dayStart))}
             className="bg-surface border-separator text-footnote max-w-[180px] py-2"
           />
           <div className="bg-fill-4 text-caption text-label-secondary rounded-control-sm flex items-center gap-2 px-3 py-1">
             <Calendar aria-hidden className="h-3.5 w-3.5" />
             <span>Scheduled date</span>
-            <span className="text-label">
-              {IxTime.formatIxTime(scheduledIxTime, false).replace(" (ILT)", "")}
-            </span>
+            <span className="text-label">{formatRealmDate(scheduledIxTime, calendar)}</span>
             <span className="text-label-secondary text-footnote ml-auto font-normal">(09:00)</span>
           </div>
         </Card>

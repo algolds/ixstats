@@ -1,14 +1,17 @@
 "use client";
 
 /**
- * Read-only historical timeline: dragging to a past IxTime makes the host swap the political
+ * Read-only historical timeline: dragging to a past moment makes the host swap the political
  * layer for that snapshot ("Return to present" restores it). Hidden when no BorderHistory exists.
+ * The slider runs on BorderHistory's real-time stamps; its dates read on the viewed realm's clock,
+ * in its calendar.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Clock, Xmark } from "iconoir-react";
-import { api } from "~/trpc/react";
-import { IxTime } from "~/lib/ixtime";
+import { CLOCK_PENDING, clockTimeAt } from "~/lib/realms/nation-time";
+import { formatRealmDate, type RealmClockReader } from "~/lib/realms/realm-clock";
+import { useHistoryRange, useTimelineClock } from "./hooks/useTimelineClock";
 import { Slider } from "~/components/ui/slider";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
@@ -29,6 +32,11 @@ export interface TimelineScrubberProps {
 
 const SCRUB_DEBOUNCE_MS = 200;
 
+/** A real moment as the date it was on the realm's clock, in its calendar ("–" while the clock loads). */
+export function timelineDate(realMs: number, clock: RealmClockReader | null): string {
+  return clock ? formatRealmDate(clockTimeAt(clock, realMs), clock.calendar) : CLOCK_PENDING;
+}
+
 export function TimelineScrubber({
   value,
   onChange,
@@ -39,13 +47,8 @@ export function TimelineScrubber({
   // Collapsed to a small pill by default so the card doesn't sit over the map; it stays open
   // while a past date is selected.
   const [expanded, setExpanded] = useState(false);
-  const { data: range, isLoading: rangeLoading } = api.geoCore.getHistoryRange.useQuery(
-    { realm },
-    {
-      staleTime: 5 * 60_000,
-      gcTime: 30 * 60_000,
-    }
-  );
+  const { data: range, isLoading: rangeLoading } = useHistoryRange(realm);
+  const clock = useTimelineClock(realm);
 
   const hasHistory = !!range && range.minTime !== null;
   const effectivelyHidden = hidden || rangeLoading || !hasHistory;
@@ -84,8 +87,8 @@ export function TimelineScrubber({
   }, [draft, currentValue, maxTime, onChange, effectivelyHidden]);
 
   const label = useMemo(
-    () => (isAtNow ? "Viewing: now" : `Viewing: ${IxTime.formatIxTime(value as number, true)}`),
-    [isAtNow, value]
+    () => (isAtNow ? "Viewing: now" : `Viewing: ${timelineDate(value as number, clock)}`),
+    [isAtNow, value, clock]
   );
 
   if (effectivelyHidden) return null;
@@ -161,11 +164,11 @@ export function TimelineScrubber({
         />
 
         <div className="text-label-secondary text-footnote mt-2 flex items-center justify-between">
-          <span>{IxTime.formatIxTime(minTime)}</span>
+          <span>{timelineDate(minTime, clock)}</span>
           <span className="mx-2 truncate" title={label}>
             {label}
           </span>
-          <span>{IxTime.formatIxTime(maxTime)}</span>
+          <span>{timelineDate(maxTime, clock)}</span>
         </div>
 
         <p className="text-label-secondary text-footnote mt-2 leading-snug">

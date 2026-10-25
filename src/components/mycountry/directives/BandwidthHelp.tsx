@@ -51,7 +51,7 @@ export const BANDWIDTH_USES: ReadonlyArray<{
   {
     key: "delegatedIssues",
     label: "Delegated issues",
-    note: "For 5 IxTime days",
+    note: "For 5 in-world days",
     swatch: "bg-chart-5",
   },
 ];

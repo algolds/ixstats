@@ -29,7 +29,8 @@ import { useNotify } from "~/hooks/useNotify";
 import { useUser } from "~/context/auth-context";
 import { formatExactCurrency } from "~/lib/utils/format-utils";
 import { Card } from "~/components/ui/card";
-import { formatStampAsIxDate } from "~/components/mycountry/directives/directive-model";
+import { useNationClock } from "~/hooks/useNationClock";
+import { formatStampAsClockDate } from "~/lib/realms/nation-time";
 
 interface DiplomaticRelationsListProps {
   countryId: string;
@@ -128,6 +129,7 @@ function RelationCard({
 }) {
   // One band, from the one scale (relation strength), for the badge, the label and the bar.
   const band = getStandingBand(rel.strength);
+  const clock = useNationClock();
   const targetName = rel.targetCountryName || rel.targetCountry || "Unknown Nation";
 
   const sharedBloc = alliances.find((a) =>
@@ -155,7 +157,7 @@ function RelationCard({
           <div className="min-w-0">
             <h4 className="text-label text-headline truncate">{targetName.replace(/_/g, " ")}</h4>
             <p className="text-label-secondary text-footnote">
-              Established: {formatStampAsIxDate(rel.establishedAt)}
+              Established: {formatStampAsClockDate(rel.establishedAt, clock)}
             </p>
             {sharedBloc && (
               <Badge
@@ -251,7 +253,9 @@ function RelationCard({
             <Calendar className="h-3 w-3 shrink-0" />
             Last contact
           </Eyebrow>
-          <span className="text-label font-semibold">{formatStampAsIxDate(rel.lastContact)}</span>
+          <span className="text-label font-semibold">
+            {formatStampAsClockDate(rel.lastContact, clock)}
+          </span>
         </div>
       </div>
     </Card>

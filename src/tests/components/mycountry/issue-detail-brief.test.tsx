@@ -2,9 +2,18 @@
  * The issue brief: a decision refreshes everything it writes (approval and stability on the
  * country record, the feed, directive progress), Delegate is offered when the issue has no
  * enforced deadline, the meeting toast points at Politics, and "Make Directive" only shows where
- * the sheet can open the composer.
+ * the sheet can open the composer. Deadlines and research count down on the nation's realm clock.
  */
 import { render, screen } from "@testing-library/react";
+import { NationClockProvider } from "~/hooks/useNationClock";
+import type { RealmClockReader } from "~/lib/realms/realm-clock";
+import {
+  CLOCK_NOW,
+  DAY,
+  ixnayReader,
+  pausedReader,
+  sixTimesReader,
+} from "~/tests/fixtures/realm-readers";
 
 const mockData: Record<string, object | undefined> = {};
 const mockInvalidated: string[] = [];
@@ -118,4 +127,44 @@ it("shows a free-text effect on its chip instead of an empty label", () => {
   render(<IssueDetailBrief issueId="n-1" />);
   expect(screen.getByText("Stability: Long-term security")).toBeInTheDocument();
   expect(screen.getByText("Economy")).toBeInTheDocument();
+});
+
+describe("deadlines on the nation's clock", () => {
+  const renderWithClock = (clock: RealmClockReader | null, deadlineIxTime: number) => {
+    mockData["nationalIssues.getIssue"] = {
+      ...mockData["nationalIssues.getIssue"],
+      deadlineIxTime,
+    };
+    mockData["nationalIssues.getReconReveal"] = { status: "pending", readyIxTime: deadlineIxTime };
+    return render(
+      <NationClockProvider value={clock}>
+        <IssueDetailBrief issueId="n-1" />
+      </NationClockProvider>
+    );
+  };
+
+  it("counts in-world days left on Ixnay's clock", () => {
+    renderWithClock(ixnayReader(), CLOCK_NOW + 5 * DAY);
+    expect(screen.getByText("5 days remaining")).not.toHaveClass("text-destructive-ink");
+    expect(screen.getByText(/Findings arrive in 5 day\(s\)/)).toBeInTheDocument();
+  });
+
+  it("reads a 6× realm's own clock, urgent sooner in game time", () => {
+    // Five in-world days in a 6× realm are under a day of real time: urgent.
+    renderWithClock(sixTimesReader(), CLOCK_NOW + 5 * DAY);
+    expect(screen.getByText("5 days remaining")).toHaveClass("text-destructive-ink");
+  });
+
+  it("shows Paused instead of a countdown in a paused realm", () => {
+    renderWithClock(pausedReader(), CLOCK_NOW + 5 * DAY);
+    expect(screen.getByText("Paused")).toBeInTheDocument();
+    expect(screen.queryByText(/days remaining/)).toBeNull();
+    expect(screen.getByText(/findings arrive when the realm resumes/)).toBeInTheDocument();
+  });
+
+  it("shows a placeholder while the clock loads", () => {
+    renderWithClock(null, CLOCK_NOW + 5 * DAY);
+    expect(screen.queryByText(/days remaining/)).toBeNull();
+    expect(screen.getByText(/Findings arrive in –/)).toBeInTheDocument();
+  });
 });

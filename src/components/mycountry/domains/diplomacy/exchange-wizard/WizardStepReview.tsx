@@ -3,6 +3,9 @@
 import { Badge } from "~/components/ui/badge";
 import React from "react";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
+import { useNationClock } from "~/hooks/useNationClock";
+import { formatClockDate } from "~/lib/realms/nation-time";
+import { fromWireDate } from "./exchange-wizard-dates";
 import {
   WIZARD_EXCHANGE_TYPES,
   getCountryFlagUrl,
@@ -61,6 +64,7 @@ export const WizardStepReview = React.memo(function WizardStepReview({
   selectedCountry,
 }: WizardStepReviewProps) {
   const typeConfig = WIZARD_EXCHANGE_TYPES[type];
+  const clock = useNationClock();
 
   return (
     <div className="space-y-6">
@@ -124,11 +128,11 @@ export const WizardStepReview = React.memo(function WizardStepReview({
           <div className="grid grid-cols-2 gap-4">
             <ReviewDetail
               label="Start date"
-              value={new Date(data.startDate).toLocaleDateString(undefined, { timeZone: "UTC" })}
+              value={formatClockDate(fromWireDate(data.startDate), clock)}
             />
             <ReviewDetail
               label="End date"
-              value={new Date(data.endDate).toLocaleDateString(undefined, { timeZone: "UTC" })}
+              value={formatClockDate(fromWireDate(data.endDate), clock)}
             />
             <ReviewDetail label="Max participants" value={data.maxParticipants} />
             <ReviewDetail label="Visibility" value={data.isPublic ? "Public" : "Private"} />

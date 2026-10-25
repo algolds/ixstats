@@ -40,7 +40,8 @@ import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
-import { formatStampAsIxDate } from "~/components/mycountry/directives/directive-model";
+import { useNationClock } from "~/hooks/useNationClock";
+import { formatStampAsClockDate } from "~/lib/realms/nation-time";
 
 /** Fields this hub reads from a scenario's `responseOptions` (stored as untyped JSON). */
 interface ScenarioResponseOption {
@@ -234,6 +235,7 @@ function ActiveEventCard({ event, onOpen }: { event: DiplomaticEvent; onOpen: ()
 }
 
 function HistoryEventRow({ event }: { event: DiplomaticEvent }) {
+  const clock = useNationClock();
   return (
     <Card className="rounded-card p-4">
       <div className="flex items-start gap-4">
@@ -250,7 +252,7 @@ function HistoryEventRow({ event }: { event: DiplomaticEvent }) {
           )}
         </div>
         <div className="text-label-secondary text-footnote text-right">
-          {formatStampAsIxDate(event.resolvedAt ?? event.createdAt)}
+          {formatStampAsClockDate(event.resolvedAt ?? event.createdAt, clock)}
         </div>
       </div>
     </Card>

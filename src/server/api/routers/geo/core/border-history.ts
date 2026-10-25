@@ -1,9 +1,10 @@
 /**
  * Border History tRPC procedures.
  *
- * Read-only historical view of the political layer: given a target IxTime,
+ * Read-only historical view of the political layer: given a target time,
  * return the political FeatureCollection as it would have appeared at that
- * time, with each country's geometry replaced by the latest BorderHistory
+ * time (BorderHistory stamps each edit in real time, `changedAt` defaults to now(); clients show the
+ * dates on the realm's clock), with each country's geometry replaced by the latest BorderHistory
  * snapshot whose `changedAt <= asOf` (or the current geometry if no such
  * snapshot exists).
  *
@@ -17,7 +18,6 @@ import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { mergeBordersAsOf } from "~/lib/maps/border-history-asof";
 import { loadLayerWithFallback } from "~/server/modules/maps/layer-loader";
 import { getZoomBucket } from "~/server/modules/maps/layer-lod";
-import { IxTime } from "~/lib/ixtime";
 import { roundToIxDay } from "~/lib/ixtime/day";
 
 /** Most countries one realm's map can hold: a backstop on the history read, which returns one row per country. */
@@ -25,9 +25,10 @@ const MAX_HISTORY_ROWS = 5000;
 
 export const borderHistoryProcedures = {
   /**
-   * Political FeatureCollection as it appeared at the given IxTime.
-   * Accepts an epoch-ms IxTime number (matches `IxTime.getCurrentIxTime()`), taken as the start of its IxTime day:
-   * the cache key is that day too, so one answer serves every scrub position within it.
+   * Political FeatureCollection as it appeared at the given time.
+   * `ixTime` is epoch ms on BorderHistory's real-time stamps (the scrubber's value, inside `getHistoryRange`),
+   * taken as the start of its day: the cache key is that day too, so one answer serves every scrub position
+   * within it.
    */
   getWorldMapAsOf: cachedPublicProcedure
     .input(
@@ -75,21 +76,24 @@ export const borderHistoryProcedures = {
     }),
 
   /**
-   * Slider domain: earliest BorderHistory timestamp of the viewed realm + current IxTime ("now").
+   * Slider domain (real ms, as BorderHistory stamps edits): the viewed realm's earliest edit to now, and the
+   * realm's id so the client dates the range on that realm's clock.
    * Returns `minTime: null` when the realm has no history yet (caller should hide
    * the scrubber in that case).
    */
   getHistoryRange: cachedPublicProcedure
     .input(realmScopeInput.optional())
     .query(async ({ ctx, input }) => {
+      const realmId = await viewerRealmId(ctx, input?.realm);
       const earliest = await ctx.db.borderHistory.findFirst({
-        where: { country: { realmId: await viewerRealmId(ctx, input?.realm) } },
+        where: { country: { realmId } },
         orderBy: { changedAt: "asc" },
         select: { changedAt: true },
       });
       return {
         minTime: earliest?.changedAt.getTime() ?? null,
-        maxTime: IxTime.getCurrentIxTime(),
+        maxTime: Date.now(),
+        realmId,
       };
     }),
 };

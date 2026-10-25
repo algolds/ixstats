@@ -35,7 +35,9 @@ import {
   Cell,
 } from "recharts";
 import { formatPopulation } from "~/lib/utils/format-utils";
-import { IxTime } from "~/lib/ixtime";
+import { useNationClockFor } from "~/hooks/useNationClock";
+import { realmYear } from "~/lib/realms/nation-time";
+import { formatRealmDate, type RealmCalendar } from "~/lib/realms/realm-clock";
 import { cn } from "~/lib/utils/cn";
 import { BaseMetricDetailsModal } from "./BaseMetricDetailsModal";
 import { CHART_TOOLTIP_STYLE, type MetricModalTab, type TimeRange, type ChartType } from "./types";
@@ -98,8 +100,7 @@ const POPULATION_COLOR = "var(--chart-2)";
 const signedTone = (value: number) =>
   value > 0 ? "text-green" : value < 0 ? "text-destructive" : "text-label-secondary";
 
-const formatYearTick = (ts: unknown) => String(IxTime.getCurrentGameYear(ts as number));
-
+/** A point on the country's realm clock, dated and yeared in its calendar. */
 function toChartPoint(
   point: {
     population?: number;
@@ -107,17 +108,19 @@ function toChartPoint(
     populationDensity?: number | null;
     totalGdp?: number;
   },
-  rawTimestamp: string | number | Date
+  rawTimestamp: string | number | Date,
+  calendar: RealmCalendar
 ): PopulationChartDataPoint {
-  const timestamp = IxTime.toTimestamp(rawTimestamp) as number;
+  const timestamp =
+    typeof rawTimestamp === "number" ? rawTimestamp : new Date(rawTimestamp).getTime();
   return {
-    year: IxTime.getCurrentGameYear(timestamp),
+    year: realmYear(timestamp, calendar),
     population: Number(point?.population ?? 0),
     populationGrowthRate: Number(point?.populationGrowthRate ?? 0) * 100,
     populationDensity: point.populationDensity ?? null,
     totalGdp: point.totalGdp ?? 0,
     timestamp,
-    date: IxTime.formatIxTime(timestamp, true),
+    date: formatRealmDate(timestamp, calendar),
   };
 }
 
@@ -131,10 +134,13 @@ function tooltipFormatter(value: unknown, name: unknown): [string, string] {
 function PopulationTrendChart({
   data,
   chartType,
+  calendar,
 }: {
   data: PopulationChartDataPoint[];
   chartType: ChartType;
+  calendar: RealmCalendar;
 }) {
+  const yearOf = (ts: unknown) => realmYear(ts as number, calendar);
   const showsArea = chartType === "area" || chartType === "composed";
   const populationSeries = {
     line: (
@@ -188,7 +194,7 @@ function PopulationTrendChart({
         type="number"
         scale="time"
         name="Time"
-        tickFormatter={formatYearTick}
+        tickFormatter={(ts) => String(yearOf(ts))}
         tickCount={6}
         stroke="var(--color-label-secondary)"
       />
@@ -209,7 +215,7 @@ function PopulationTrendChart({
       <Tooltip
         contentStyle={CHART_TOOLTIP_STYLE}
         formatter={tooltipFormatter}
-        labelFormatter={(label) => `Year ${IxTime.getCurrentGameYear(label as number)}`}
+        labelFormatter={(label) => `Year ${yearOf(label)}`}
       />
       <Legend wrapperStyle={{ fontSize: "11px", opacity: 0.8 }} />
       {populationSeries[chartType === "composed" ? "area" : chartType]}
@@ -439,11 +445,13 @@ function PopulationTrends({
   chartType,
   country,
   trailing,
+  calendar,
 }: {
   chartData: PopulationChartDataPoint[];
   chartType: ChartType;
   country: PopulationCountryData | null | undefined;
   trailing: number | undefined;
+  calendar: RealmCalendar;
 }) {
   if (chartData.length === 0) {
     return <MetricModalLayout.Empty icon={Activity} message="No historical data available" />;
@@ -469,7 +477,7 @@ function PopulationTrends({
         >
           <div className="h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <PopulationTrendChart data={chartData} chartType={chartType} />
+              <PopulationTrendChart data={chartData} chartType={chartType} calendar={calendar} />
             </ResponsiveContainer>
           </div>
         </MetricModalLayout.Panel>
@@ -631,12 +639,22 @@ export function PopulationDetailsModal({
     api.countries.getTopCountriesByPopulation.useQuery({ limit: 15 }, options);
 
   const country: PopulationCountryData | null | undefined = economicData;
+  // The chart's windows and years run on the country's realm clock and calendar (it may be another realm's,
+  // e.g. from the map), never the page's until the country is known.
+  const realmClock = useNationClockFor(economicData ?? null);
+  const clock = economicData ? realmClock : null;
   const isLoading = isEconomicLoading || isHistoricalLoading || isGlobalLoading;
 
   const chartDataFor = (timeRange: TimeRange) =>
-    filterAndSortHistory(historicalData, timeRange, (point, _, rawTimestamp) =>
-      toChartPoint(point, rawTimestamp)
-    );
+    clock
+      ? filterAndSortHistory(
+          historicalData,
+          timeRange,
+          (point, _, rawTimestamp) => toChartPoint(point, rawTimestamp, clock.calendar),
+          100,
+          clock
+        )
+      : [];
 
   const comparison: ComparisonRow[] = country
     ? (topCountries ?? [])
@@ -691,10 +709,11 @@ export function PopulationDetailsModal({
       ) : null;
     }
     if (tab === "trends") {
-      return isHistoricalLoading ? (
+      return isHistoricalLoading || !clock ? (
         <MetricModalLayout.Loading variant="social" mainHeight={400} sidebarCards={0} />
       ) : (
         <PopulationTrends
+          calendar={clock.calendar}
           chartData={chartDataFor(timeRange)}
           chartType={chartType}
           country={country}

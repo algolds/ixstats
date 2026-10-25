@@ -3,7 +3,9 @@
 import { WarningTriangle as AlertTriangle } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { api, type RouterOutputs } from "~/trpc/react";
-import { IxTime } from "~/lib/ixtime";
+import { useNationClock } from "~/hooks/useNationClock";
+import { formatClockDate } from "~/lib/realms/nation-time";
+import type { RealmClockReader } from "~/lib/realms/realm-clock";
 
 interface ElectionStatusCardProps {
   countryId: string;
@@ -13,7 +15,11 @@ interface ElectionStatusCardProps {
 
 type ElectionStatus = NonNullable<RouterOutputs["elections"]["getElectionStatus"]>;
 
-function describeElection(status: ElectionStatus): { headline: string; detail?: string } {
+/** The election's headline and detail; dates read in the nation's realm calendar. */
+export function describeElection(
+  status: ElectionStatus,
+  clock: RealmClockReader | null
+): { headline: string; detail?: string } {
   const { upcoming, minParties } = status;
   if (!status.hasLegislature) {
     return {
@@ -34,7 +40,7 @@ function describeElection(status: ElectionStatus): { headline: string; detail?: 
       detail: "The elections job schedules the next one.",
     };
   }
-  const when = IxTime.formatIxTime(upcoming.scheduledIxTime);
+  const when = formatClockDate(upcoming.scheduledIxTime, clock);
   if (upcoming.isDue) {
     return {
       headline: `${upcoming.name}: polls have closed`,
@@ -52,11 +58,12 @@ function describeElection(status: ElectionStatus): { headline: string; detail?: 
 
 /**
  * Where the country stands in the election lifecycle — what setup is missing, when the
- * (first) election falls due on the IxTime clock, the last result and the seat composition.
+ * (first) election falls due on the nation's realm clock, the last result and the seat composition.
  * Every number comes from `elections.getElectionStatus`; nothing is estimated.
  */
 export function ElectionStatusCard({ countryId, canManage = true }: ElectionStatusCardProps) {
   const utils = api.useUtils();
+  const clock = useNationClock();
   const { data: status } = api.elections.getElectionStatus.useQuery(
     { countryId },
     { enabled: !!countryId, staleTime: 30_000 }
@@ -73,7 +80,7 @@ export function ElectionStatusCard({ countryId, canManage = true }: ElectionStat
 
   const { upcoming, lastElection } = status;
   const needsParties = status.activeParties < status.minParties;
-  const { headline, detail } = describeElection(status);
+  const { headline, detail } = describeElection(status, clock);
   const vacant = status.totalSeats - status.seatedSeats;
 
   return (
@@ -112,7 +119,7 @@ export function ElectionStatusCard({ countryId, canManage = true }: ElectionStat
       {lastElection && (
         <div className="space-y-2">
           <p className="text-caption font-semibold">
-            {lastElection.name} · {IxTime.formatIxTime(lastElection.scheduledIxTime)}
+            {lastElection.name} · {formatClockDate(lastElection.scheduledIxTime, clock)}
             {lastElection.turnout != null ? ` · turnout ${lastElection.turnout}%` : ""}
           </p>
           {lastElection.results.map((r) => (

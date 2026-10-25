@@ -43,7 +43,7 @@ export function DirectiveOutcome({ intentId }: { intentId: string }) {
     items.push({
       ...gdpShiftToEffect(e.value, e.duration ?? 1, e.id),
       caption: e.isActive
-        ? `Phasing in over ${e.duration ?? 1} IxTime year${(e.duration ?? 1) === 1 ? "" : "s"}, then kept`
+        ? `Phasing in over ${e.duration ?? 1} in-world year${(e.duration ?? 1) === 1 ? "" : "s"}, then kept`
         : "Effect ended",
     });
   }

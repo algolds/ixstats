@@ -109,8 +109,8 @@ function DocumentLoading() {
  * forward followed through `popstate`.
  */
 export function CountryDocument({ initialTab }: { initialTab: CountryTab }) {
-  const { slug, country, flagUrl, isOwner, currentIxTime, cover } = useProfileShell();
-  const layer = useCountryProfileLayer({ country, flagUrl, isOwner, currentIxTime });
+  const { slug, country, flagUrl, isOwner, clock, cover } = useProfileShell();
+  const layer = useCountryProfileLayer({ country, flagUrl, isOwner, clock });
   const { userProfile } = useUserCountry();
   const reduceMotion = useReducedMotion();
   const idBase = `country-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;

@@ -15,7 +15,9 @@ import { Badge } from "~/components/ui/badge";
 import { Card } from "~/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart";
 import { XAxis, YAxis, CartesianGrid, Area, Bar, Line, ComposedChart, Legend } from "recharts";
-import { format } from "date-fns";
+import { useNationClockFor } from "~/hooks/useNationClock";
+import { formatRealmMonth } from "~/lib/realms/nation-time";
+import type { RealmCalendar } from "~/lib/realms/realm-clock";
 import { BaseMetricDetailsModal } from "./BaseMetricDetailsModal";
 import type { MetricModalTab, TimeRange, ChartType } from "./types";
 import { MetricModalLayout } from "./MetricModalLayout";
@@ -66,13 +68,14 @@ interface GdpPoint {
 
 function toGdpPoint(
   point: { totalGdp?: number; gdpPerCapita?: number; gdpGrowthRate?: number },
-  rawTimestamp: string | number | Date
+  rawTimestamp: string | number | Date,
+  calendar: RealmCalendar
 ): GdpPoint {
   const timestamp =
     typeof rawTimestamp === "number" ? rawTimestamp : new Date(rawTimestamp).getTime();
   const rate = point.gdpGrowthRate ?? 0;
   return {
-    date: format(new Date(timestamp), "MMM yyyy"),
+    date: formatRealmMonth(timestamp, calendar),
     timestamp,
     totalGdp: (point.totalGdp || 0) / 1e12,
     gdpPerCapita: point.gdpPerCapita,
@@ -485,14 +488,20 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
   );
 
   const isLoading = countryLoading || historicalLoading || globalLoading;
+  // Windows and labels on the country's realm clock and calendar, once the country is known.
+  const realmClock = useNationClockFor(countryData ?? null);
+  const clock = countryData ? realmClock : null;
 
   const processHistoricalData = (timeRange: TimeRange) =>
-    filterAndSortHistory(
-      historicalData,
-      timeRange,
-      (point, _, rawTimestamp) => toGdpPoint(point, rawTimestamp),
-      365
-    );
+    clock
+      ? filterAndSortHistory(
+          historicalData,
+          timeRange,
+          (point, _, rawTimestamp) => toGdpPoint(point, rawTimestamp, clock.calendar),
+          365,
+          clock
+        )
+      : [];
 
   // Summary statistics use a 5y window to match the Population modal's default.
   const stats = computeGdpStats(processHistoricalData("5y"));
@@ -502,7 +511,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
 
   const renderTab = (tab: string, timeRange: TimeRange, chartType: ChartType) => {
     if (tab === "trends") {
-      return historicalLoading ? (
+      return historicalLoading || !clock ? (
         <MetricModalLayout.Loading variant="economy" mainHeight={400} sidebarCards={0} />
       ) : (
         <GdpTrends

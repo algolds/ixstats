@@ -5,6 +5,7 @@
  * never an old wiki name.
  */
 import { renderHook } from "@testing-library/react";
+import { ixnayReader } from "~/tests/fixtures/realm-readers";
 
 jest.mock("~/trpc/react", () => {
   const calls: Array<{ path: string; input: object; options: { enabled?: boolean } | undefined }> =
@@ -58,7 +59,7 @@ describe("useCountryProfileLayer", () => {
     } as CountryWithEconomicData;
 
     renderHook(() =>
-      useCountryProfileLayer({ country, flagUrl: null, isOwner: false, currentIxTime: 0 })
+      useCountryProfileLayer({ country, flagUrl: null, isOwner: false, clock: ixnayReader() })
     );
 
     expect(inputsOf("wikiCache.getCountryProfile")).toContainEqual({
@@ -78,7 +79,7 @@ describe("useCountryProfileLayer", () => {
     };
 
     const { result } = renderHook(() =>
-      useCountryProfileLayer({ country, flagUrl: null, isOwner: false, currentIxTime: 0 })
+      useCountryProfileLayer({ country, flagUrl: null, isOwner: false, clock: ixnayReader() })
     );
 
     expect(result.current?.identity.sovereign?.username).toBe(username);

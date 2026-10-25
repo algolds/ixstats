@@ -14,6 +14,8 @@ import {
 import { Button } from "~/components/ui/button";
 
 import { useNotify } from "~/hooks/useNotify";
+import { useViewerNationClock } from "~/hooks/useNationClock";
+import { Skeleton } from "~/components/ui/skeleton";
 
 import type { AgendaItem, MeetingSchedulerProps } from "./meeting-scheduler-types";
 import { INTENT_TEMPLATES } from "./meeting-scheduler-intents";
@@ -94,11 +96,14 @@ export function MeetingScheduler({
     );
 
   const scheduleMeeting = useScheduleMeeting();
+  // The meeting is the viewer's nation's: its time and date are on that nation's realm clock.
+  const clock = useViewerNationClock();
 
   React.useEffect(() => {
+    if (!open || !clock) return;
     // oxlint-disable-next-line
-    if (open) setScheduledIxTime(presetScheduledTime(timePreset));
-  }, [timePreset, open]);
+    setScheduledIxTime(presetScheduledTime(timePreset, clock.now(), clock.calendar));
+  }, [timePreset, open, clock]);
 
   const handleSelectTemplate = React.useCallback(
     (tpl: (typeof INTENT_TEMPLATES)[0]) => {
@@ -277,12 +282,17 @@ export function MeetingScheduler({
                   onLinkedIntentChange={handleLinkedIntent}
                 />
 
-                <ScheduleFields
-                  preset={timePreset}
-                  onPresetChange={setTimePreset}
-                  scheduledIxTime={scheduledIxTime}
-                  onTimeChange={setScheduledIxTime}
-                />
+                {clock ? (
+                  <ScheduleFields
+                    preset={timePreset}
+                    onPresetChange={setTimePreset}
+                    scheduledIxTime={scheduledIxTime}
+                    onTimeChange={setScheduledIxTime}
+                    calendar={clock.calendar}
+                  />
+                ) : (
+                  <Skeleton className="h-16 w-full" aria-label="Loading your nation's calendar" />
+                )}
               </div>
 
               <DialogFooter className="border-separator mt-auto shrink-0 border-t px-6 py-4">
@@ -299,7 +309,7 @@ export function MeetingScheduler({
                   type="submit"
                   size="sm"
                   className="font-semibold"
-                  disabled={isSubmitting || agendaItems.length === 0 || needsAttendees}
+                  disabled={isSubmitting || !clock || agendaItems.length === 0 || needsAttendees}
                 >
                   {isSubmitting ? "Scheduling" : "Schedule meeting"}
                 </Button>
