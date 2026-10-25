@@ -4,7 +4,6 @@ import React from "react";
 import { EditPencil as Edit, Trash as Trash2, MediaImage as Image } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Progress } from "~/components/ui/progress";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { cn } from "~/lib/utils";
 import { STATUS_CONFIG, type Asset } from "./asset-config";
@@ -107,13 +106,11 @@ function AssetDetails({ asset }: { asset: Asset }) {
         <p className="text-label-secondary text-footnote mt-2 line-clamp-1">{asset.capability}</p>
       )}
 
-      <div className="mt-2">
-        <div className="text-footnote mb-1 flex items-center justify-between">
-          <span className="text-label-secondary">Modernization</span>
-          <span className="font-medium tabular-nums">{asset.modernizationLevel}%</span>
-        </div>
-        <Progress value={asset.modernizationLevel} className="h-1" />
-      </div>
+      {asset.designYear && (
+        <p className="text-label-secondary text-footnote mt-2 tabular-nums">
+          Design year {asset.designYear}
+        </p>
+      )}
     </div>
   );
 }

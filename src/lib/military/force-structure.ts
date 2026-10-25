@@ -56,3 +56,47 @@ export function builderDefenseSpending(
   }
   return typeof amount === "number" && Number.isFinite(amount) && amount > 0 ? amount : null;
 }
+
+/** A branch as the Defense panel and rail read it: rows from `security.getMilitaryBranches`. */
+interface TotalsBranch {
+  activeDuty: number;
+  reserves: number;
+  civilianStaff?: number | null;
+  units: readonly { personnel: number }[];
+  assets: readonly { quantity: number }[];
+  /** The owner's derived state; null for other viewers. */
+  derived: { combatPower: number; readiness: number; personnel: number } | null;
+}
+
+export interface ForceTotals {
+  branches: number;
+  units: number;
+  assets: number;
+  activeDuty: number;
+  reserves: number;
+  /** Personnel assigned to units. */
+  assignedPersonnel: number;
+  /** Derived combat power and personnel-weighted readiness; null when not disclosed to the viewer. */
+  strength: number | null;
+  readiness: number | null;
+}
+
+/** Roll-up of a nation's branches for the Defense panel and rail. */
+export function forceTotals(branches: readonly TotalsBranch[]): ForceTotals {
+  const sum = (pick: (b: TotalsBranch) => number) => branches.reduce((s, b) => s + pick(b), 0);
+  const disclosed = branches.length > 0 && branches.every((b) => b.derived !== null);
+  const personnel = sum((b) => b.derived?.personnel ?? 0);
+  return {
+    branches: branches.length,
+    units: sum((b) => b.units.length),
+    assets: sum((b) => b.assets.reduce((n, a) => n + a.quantity, 0)),
+    activeDuty: sum((b) => b.activeDuty),
+    reserves: sum((b) => b.reserves),
+    assignedPersonnel: sum((b) => b.units.reduce((n, u) => n + u.personnel, 0)),
+    strength: disclosed ? sum((b) => b.derived?.combatPower ?? 0) : null,
+    readiness:
+      disclosed && personnel > 0
+        ? sum((b) => (b.derived?.readiness ?? 0) * (b.derived?.personnel ?? 0)) / personnel
+        : null,
+  };
+}

@@ -5,7 +5,6 @@ import {
   AntennaSignal as Radio,
   Archery as Target,
 } from "iconoir-react";
-import { MILITARY_ERAS } from "~/lib/military/equipment";
 import type { AssetTypeKey, EquipmentPreset } from "~/lib/military/player-catalog";
 
 export type { EquipmentPreset } from "~/lib/military/player-catalog";
@@ -20,9 +19,11 @@ export interface Asset {
   quantity: number;
   acquisitionCost: number;
   maintenanceCost: number;
-  modernizationLevel: number;
   capability: string | null;
   imageUrl?: string | null;
+  /** The catalog item it was procured as, and that design's year. */
+  catalogKey?: string | null;
+  designYear?: number | null;
 }
 
 /** Asset types share one quiet icon colour; type is carried by the icon and label, not hue. */
@@ -39,17 +40,21 @@ export const STATUS_CONFIG = {
   operational: { label: "Operational", color: "border-green/30 text-green" },
   maintenance: { label: "Maintenance", color: "border-yellow/30 text-yellow" },
   reserve: { label: "Reserve", color: "text-label-secondary" },
-  retired: { label: "Retired", color: "text-label-secondary" },
 } as const;
 
-/** Matches the `status` enum of `security.createMilitaryAsset`. */
+/** Matches the `status` enum of `security.updateMilitaryAsset`. */
 type AssetStatusKey = keyof typeof STATUS_CONFIG;
 
 export const isAssetTypeKey = (value: string): value is AssetTypeKey => value in ASSET_TYPE_CONFIG;
 export const isAssetStatusKey = (value: string): value is AssetStatusKey => value in STATUS_CONFIG;
 
-/** Form state; `range` and `payload` are display-only and are not persisted. */
+/**
+ * Form state; `range` and `payload` are display-only and are not persisted. A new asset is a procurement order of a
+ * catalog item (`catalogKey`), built at home or imported (`source`).
+ */
 export interface AssetFormData {
+  catalogKey: string | null;
+  source: "domestic" | "import";
   assetType: AssetTypeKey;
   category: string;
   name: string;
@@ -59,7 +64,6 @@ export interface AssetFormData {
   range: number;
   payload: number;
   status: AssetStatusKey;
-  modernizationLevel: number;
   acquisitionCost: number;
   maintenanceCost: number;
   imageUrl: string;
@@ -72,6 +76,8 @@ const parseAssetStatus = (value?: string): AssetStatusKey =>
 
 export function toFormData(asset: Asset | null): AssetFormData {
   return {
+    catalogKey: asset?.catalogKey ?? null,
+    source: "domestic",
     assetType: parseAssetType(asset?.assetType),
     category: asset?.category ?? "",
     name: asset?.name ?? "",
@@ -81,7 +87,6 @@ export function toFormData(asset: Asset | null): AssetFormData {
     range: 0,
     payload: 0,
     status: parseAssetStatus(asset?.status),
-    modernizationLevel: asset?.modernizationLevel ?? 50,
     acquisitionCost: asset?.acquisitionCost ?? 0,
     maintenanceCost: asset?.maintenanceCost ?? 0,
     imageUrl: asset?.imageUrl || "",
@@ -95,6 +100,7 @@ export function applyEquipmentPreset(
 ): AssetFormData {
   return {
     ...current,
+    catalogKey: equipment.key,
     name: equipment.name,
     category: equipment.category,
     capability: equipment.role ?? equipment.category,
@@ -102,10 +108,6 @@ export function applyEquipmentPreset(
     payload: 0,
     acquisitionCost: equipment.acquisitionCost ?? 0,
     maintenanceCost: equipment.maintenanceCost ?? 0,
-    modernizationLevel:
-      equipment.technologyLevel ??
-      MILITARY_ERAS[equipment.era as keyof typeof MILITARY_ERAS]?.techLevel ??
-      50,
     imageUrl: equipment.imageUrl || "",
   };
 }

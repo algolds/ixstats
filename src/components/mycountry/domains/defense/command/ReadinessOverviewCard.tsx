@@ -8,22 +8,23 @@ import { Progress } from "~/components/ui/progress";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "~/components/ui/sheet";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
+/** Personnel-weighted shares (0 to 100) of the branches' derived readiness, equipment quality and training. */
 interface ReadinessOverviewCardProps {
   averageReadiness: number;
-  averageTechnology: number;
-  averageMorale: number;
+  averageQuality: number;
+  averageTraining: number;
 }
 
 export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
   averageReadiness,
-  averageTechnology,
-  averageMorale,
+  averageQuality,
+  averageTraining,
 }: ReadinessOverviewCardProps) {
-  // Averages of 0-100 branch levels.
+  // Derived on the realm clock from the defense budget; never typed.
   const metrics = [
     { label: "Readiness", title: "Overall readiness", value: averageReadiness },
-    { label: "Technology", title: "Technology level", value: averageTechnology },
-    { label: "Morale", title: "Force morale", value: averageMorale },
+    { label: "Quality", title: "Equipment quality", value: averageQuality },
+    { label: "Training", title: "Training proficiency", value: averageTraining },
   ];
 
   return (
@@ -54,34 +55,31 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
                 <div>
                   <h4 className="mb-2 font-semibold">Overall readiness</h4>
                   <p className="text-label-secondary">
-                    Measures the ability of your forces to deploy and conduct operations
-                    immediately. Factors include equipment availability, personnel training, and
-                    supply stockpiles.
+                    The weakest of personnel fill, equipment on hand, equipment condition and
+                    training, softened a little. It multiplies your combat power.
                   </p>
                 </div>
                 <div>
-                  <h4 className="mb-2 font-semibold">Technology level</h4>
+                  <h4 className="mb-2 font-semibold">Equipment quality</h4>
                   <p className="text-label-secondary">
-                    Reflects the sophistication of your military equipment and systems. Higher
-                    technology levels provide tactical advantages but require more maintenance and
-                    training.
+                    How your equipment compares with the newest designs in your realm. Old designs
+                    lose about 3% a year; research keeps your industry close to the frontier.
                   </p>
                 </div>
                 <div>
-                  <h4 className="mb-2 font-semibold">Force morale</h4>
+                  <h4 className="mb-2 font-semibold">Training proficiency</h4>
                   <p className="text-label-secondary">
-                    Indicates the motivation and esprit de corps of your military personnel. High
-                    morale improves combat effectiveness and reduces desertion rates.
+                    Rises over months when operations and maintenance money pays for training, and
+                    fades with a nine-month half-life when it does not.
                   </p>
                 </div>
                 <div>
                   <h4 className="mb-2 font-semibold">Improving readiness</h4>
                   <ul className="text-label-secondary list-inside list-disc space-y-1">
-                    <li>Increase operations & maintenance budget for better equipment upkeep</li>
-                    <li>Invest in training programs to improve personnel competency</li>
-                    <li>Modernize equipment through procurement to boost technology levels</li>
-                    <li>Maintain competitive salaries and benefits to sustain morale</li>
-                    <li>Conduct regular exercises to maintain operational readiness</li>
+                    <li>Give operations and maintenance enough of the defense budget</li>
+                    <li>Keep enough equipment for your personnel, and enough crews for it</li>
+                    <li>Order newer designs and fund research</li>
+                    <li>Run training exercises</li>
                   </ul>
                 </div>
               </div>

@@ -3,7 +3,6 @@
 import React from "react";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Slider } from "~/components/ui/slider";
 import type { RouterOutputs } from "~/trpc/react";
 
 export type ForceBranch = RouterOutputs["security"]["getMilitaryBranches"][number];
@@ -42,36 +41,6 @@ export function CountField({
         }}
       />
       {hint && <p className="text-label-secondary text-footnote">{hint}</p>}
-    </div>
-  );
-}
-
-/** Labelled 0 to 100 slider with its value. */
-export function LevelField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <Label>{label}</Label>
-        <span className="text-label text-footnote font-medium tabular-nums">
-          {Math.round(value)}%
-        </span>
-      </div>
-      <Slider
-        value={[value]}
-        onValueChange={([v]) => onChange(v ?? 0)}
-        min={0}
-        max={100}
-        step={1}
-        aria-label={label}
-      />
     </div>
   );
 }

@@ -87,9 +87,11 @@ export function AssetDialog({ open, onOpenChange, asset, onCreate, onUpdate }: A
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent size="wide" className="overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>{asset ? "Edit Asset" : "Add New Asset"}</SheetTitle>
+          <SheetTitle>{asset ? "Edit asset" : "Order equipment"}</SheetTitle>
           <SheetDescription>
-            Browse real-world military equipment or create custom assets
+            {asset
+              ? "Rename the asset, note its role or mark its status."
+              : "Pick equipment from the catalog. It is paid over its lead time and enters service on delivery."}
           </SheetDescription>
         </SheetHeader>
 
@@ -125,7 +127,7 @@ export function AssetDialog({ open, onOpenChange, asset, onCreate, onUpdate }: A
           </Button>
           <Button onClick={handleSubmit}>
             <CheckCircle2 className="mr-2 h-4 w-4" />
-            {asset ? "Update Asset" : "Add Asset"}
+            {asset ? "Save asset" : "Place order"}
           </Button>
         </SheetFooter>
       </SheetContent>

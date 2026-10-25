@@ -12,8 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Slider } from "~/components/ui/slider";
-import { Separator } from "~/components/ui/separator";
 import {
   ASSET_TYPE_CONFIG,
   STATUS_CONFIG,
@@ -232,35 +230,25 @@ export const AssetFormFields = React.memo(function AssetFormFields({
         </Select>
       </div>
 
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label>Modernization level</Label>
-          <span className="text-body font-medium tabular-nums">{formData.modernizationLevel}%</span>
+      {formData.catalogKey && (
+        <div className="space-y-2">
+          <Label>Source</Label>
+          <Select
+            value={formData.source}
+            onValueChange={(value) => {
+              if (value === "domestic" || value === "import") onChange({ ...formData, source: value });
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="domestic">Domestic industry</SelectItem>
+              <SelectItem value="import">Import (15% dearer, longer lead time)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <Slider
-          value={[formData.modernizationLevel]}
-          onValueChange={([value]) => onChange({ ...formData, modernizationLevel: value })}
-          max={100}
-          step={1}
-        />
-      </div>
-
-      <Separator />
-
-      <div className="grid grid-cols-2 gap-3">
-        <NumberField
-          label="Acquisition Cost ($)"
-          value={formData.acquisitionCost}
-          onValueChange={(acquisitionCost) => onChange({ ...formData, acquisitionCost })}
-          parse={parseAmount}
-        />
-        <NumberField
-          label="Annual Maintenance ($)"
-          value={formData.maintenanceCost}
-          onValueChange={(maintenanceCost) => onChange({ ...formData, maintenanceCost })}
-          parse={parseAmount}
-        />
-      </div>
+      )}
 
       <EquipmentImageField formData={formData} onChange={onChange} />
     </>

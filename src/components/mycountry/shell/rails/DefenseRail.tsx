@@ -11,7 +11,7 @@ import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { ReadinessOverviewCard } from "~/components/mycountry/domains/defense/command/ReadinessOverviewCard";
-import { militaryStrength } from "~/lib/military/force-structure";
+import { forceTotals } from "~/lib/military/force-structure";
 import {
   DomainActivityCard,
   RailBar,
@@ -47,16 +47,19 @@ interface AssessmentData {
 interface MilitaryBranchRecord {
   id: string;
   name: string;
-  branchType?: string | null;
-  readinessLevel: number;
-  technologyLevel: number;
-  trainingLevel?: number | null;
-  morale: number;
-  annualBudget: number;
-  activeDuty?: number | null;
-  reserves?: number | null;
-  units: { personnel: number | null; readiness: number | null }[];
-  assets: { quantity: number | null; operational: number | null }[];
+  domain: string;
+  activeDuty: number;
+  reserves: number;
+  units: { personnel: number }[];
+  assets: { quantity: number }[];
+  /** The owner's derived state (readiness, quality, training 0–1); null for other viewers. */
+  derived: {
+    readiness: number;
+    quality: number;
+    combatPower: number;
+    personnel: number;
+    subScores: { training: number };
+  } | null;
   updatedAt?: string | Date | null;
   createdAt?: string | Date | null;
 }
@@ -75,27 +78,27 @@ export function DefenseRail({ countryId }: { countryId: string }) {
   const assessment = assessmentRaw as AssessmentData | undefined;
   const branches = branchesRaw as MilitaryBranchRecord[] | undefined;
 
-  const { averageReadiness, averageTechnology, averageMorale } = useMemo(() => {
-    const count = branches?.length ?? 0;
-    if (count === 0) return { averageReadiness: 0, averageTechnology: 0, averageMorale: 0 };
+  const { averageReadiness, averageQuality, averageTraining } = useMemo(() => {
+    const weighted = (pick: (d: NonNullable<MilitaryBranchRecord["derived"]>) => number) => {
+      const rows = (branches ?? []).flatMap((b) => (b.derived ? [b.derived] : []));
+      const people = rows.reduce((s, d) => s + d.personnel, 0);
+      return people > 0 ? Math.round((rows.reduce((s, d) => s + pick(d) * d.personnel, 0) / people) * 100) : 0;
+    };
     return {
-      averageReadiness: Math.round(
-        branches!.reduce((s, b) => s + (b.readinessLevel ?? 0), 0) / count
-      ),
-      averageTechnology: Math.round(
-        branches!.reduce((s, b) => s + (b.technologyLevel ?? 0), 0) / count
-      ),
-      averageMorale: Math.round(branches!.reduce((s, b) => s + (b.morale ?? 0), 0) / count),
+      averageReadiness: weighted((d) => d.readiness),
+      averageQuality: weighted((d) => d.quality),
+      averageTraining: weighted((d) => d.subScores.training),
     };
   }, [branches]);
 
-  const strength = useMemo(() => militaryStrength(branches ?? []), [branches]);
+  const strength = useMemo(() => forceTotals(branches ?? []).strength, [branches]);
 
   const activity = useMemo<ActivityEntry[]>(() => {
     const entries: ActivityEntry[] = [];
 
     branches?.forEach((b) => {
-      const readiness = b.readinessLevel;
+      if (!b.derived) return;
+      const readiness = b.derived.readiness * 100;
       pushRecorded(
         entries,
         {
@@ -133,8 +136,8 @@ export function DefenseRail({ countryId }: { countryId: string }) {
       {/* Strategic Readiness Overview (Sidebar Snapshot Rail) */}
       <ReadinessOverviewCard
         averageReadiness={averageReadiness}
-        averageTechnology={averageTechnology}
-        averageMorale={averageMorale}
+        averageQuality={averageQuality}
+        averageTraining={averageTraining}
       />
 
       {/* Military branches and readiness */}
@@ -147,7 +150,7 @@ export function DefenseRail({ countryId }: { countryId: string }) {
           <RailRow className="flex items-center justify-between gap-2">
             <span className="text-label-secondary">Combat strength</span>
             <span className="text-label font-medium tabular-nums">
-              {Math.round(strength).toLocaleString("en-US")}
+              {strength === null ? "Not disclosed" : Math.round(strength).toLocaleString("en-US")}
             </span>
           </RailRow>
         )}
@@ -155,15 +158,15 @@ export function DefenseRail({ countryId }: { countryId: string }) {
           <RailEmpty>No military branches yet. Combat strength is zero.</RailEmpty>
         ) : (
           branches.slice(0, 4).map((b) => {
-            const readiness = b.readinessLevel;
-            const personnel = b.activeDuty ?? 0;
+            const readiness = (b.derived?.readiness ?? 0) * 100;
+            const personnel = b.activeDuty;
             const tone = readinessTone(readiness);
 
             return (
               <RailRow key={b.id}>
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-label min-w-0 truncate font-medium">
-                    {b.name ?? b.branchType ?? "Military branch"}
+                    {b.name ?? "Military branch"}
                   </span>
                   <span
                     className="text-label shrink-0 tabular-nums"

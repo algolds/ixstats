@@ -36,7 +36,7 @@ import { ASSET_TYPE_CONFIG, AssetCard, AssetDialog, type Asset } from "./assets"
 interface AssetManagerProps {
   countryId?: string;
   branchId?: string;
-  branchType?: string;
+  domain?: string;
   assets?: Asset[];
   onRefetch?: () => void;
 }
@@ -55,15 +55,16 @@ export function AssetManager({
   const notify = useNotify();
   const { canEdit } = useCanEdit();
 
-  const createAsset = api.security.createMilitaryAsset.useMutation({
+  // New equipment arrives through a procurement order; it enters service when its lead time runs out.
+  const orderEquipment = api.security.orderProcurement.useMutation({
     onSuccess: () => {
-      notify.success("Asset created");
+      notify.success("Order placed. The equipment enters service when it is delivered.");
       setShowDialog(false);
       setEditingAsset(null);
       onRefetch();
     },
     onError: (error) => {
-      notify.error(`Failed to create asset: ${error.message}`);
+      notify.error(`Failed to place the order: ${error.message}`);
     },
   });
 
@@ -81,11 +82,11 @@ export function AssetManager({
 
   const deleteAsset = api.security.deleteMilitaryAsset.useMutation({
     onSuccess: () => {
-      notify.success("Asset deleted");
+      notify.success("Asset scrapped");
       onRefetch();
     },
     onError: (error) => {
-      notify.error(`Failed to delete asset: ${error.message}`);
+      notify.error(`Failed to scrap asset: ${error.message}`);
     },
   });
 
@@ -144,7 +145,7 @@ export function AssetManager({
         {canEdit && (
           <Button size="sm" onClick={handleCreate}>
             <Plus className="h-4 w-4" />
-            Add asset
+            Order equipment
           </Button>
         )}
       </div>
@@ -179,7 +180,7 @@ export function AssetManager({
         </div>
       ) : (
         <div className="text-label-secondary border-separator rounded-control text-body border border-dashed py-6 text-center">
-          No assets yet. Add your first asset to get started.
+          No assets yet. Order equipment from the catalog to get started.
         </div>
       )}
 
@@ -210,9 +211,10 @@ export function AssetManager({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this asset?</AlertDialogTitle>
+            <AlertDialogTitle>Scrap this asset?</AlertDialogTitle>
             <AlertDialogDescription>
-              The asset is removed from this branch. This cannot be undone.
+              The asset leaves service and its value leaves the branch&apos;s capital. This cannot be
+              undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -224,7 +226,7 @@ export function AssetManager({
                 setPendingDeleteId(null);
               }}
             >
-              Delete
+              Scrap
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -234,8 +236,30 @@ export function AssetManager({
         open={showDialog}
         onOpenChange={setShowDialog}
         asset={editingAsset}
-        onCreate={(data) => createAsset.mutate({ branchId, asset: data })}
-        onUpdate={(id, data) => updateAsset.mutate({ id, asset: data })}
+        onCreate={(data) => {
+          if (!data.catalogKey) {
+            notify.error("Choose equipment from the catalog: new assets arrive through orders.");
+            return;
+          }
+          orderEquipment.mutate({
+            branchId,
+            catalogKey: data.catalogKey,
+            quantity: Math.max(1, Math.floor(data.quantity)),
+            source: data.source,
+          });
+        }}
+        onUpdate={(id, data) =>
+          updateAsset.mutate({
+            id,
+            asset: {
+              name: data.name,
+              capability: data.capability || null,
+              status: data.status,
+              operational: data.operational,
+              imageUrl: data.imageUrl || null,
+            },
+          })
+        }
       />
     </div>
   );

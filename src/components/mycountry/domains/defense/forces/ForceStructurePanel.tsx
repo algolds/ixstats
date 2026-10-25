@@ -20,7 +20,6 @@ import {
 } from "~/components/ui/alert-dialog";
 import { useNotify } from "~/hooks/useNotify";
 import { useCanEdit } from "~/context/MyCountryEditModeContext";
-import { formatCompactCurrency } from "~/lib/utils/format-utils";
 import { FORCE_LIMITS, forceTotals } from "~/lib/military/force-structure";
 import { BranchCard } from "./BranchCard";
 import { BranchSheet, type BranchFormData } from "./BranchSheet";
@@ -114,7 +113,9 @@ export function ForceStructurePanel({ countryId }: { countryId: string }) {
 
   const submitBranch = (data: BranchFormData) => {
     const editing = branchSheet.branch;
-    if (editing) updateBranch.mutate({ id: editing.id, branch: data });
+    // The domain is fixed once a branch exists.
+    const { domain: _domain, ...identity } = data;
+    if (editing) updateBranch.mutate({ id: editing.id, branch: identity });
     else createBranch.mutate({ countryId, branch: data });
   };
   const submitUnit = (data: UnitFormData) => {
@@ -160,7 +161,11 @@ export function ForceStructurePanel({ countryId }: { countryId: string }) {
       </div>
 
       <Card className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-3 lg:grid-cols-6">
-        <Stat size="sm" label="Combat strength" value={formatCount(totals.strength)} />
+        <Stat
+          size="sm"
+          label="Combat strength"
+          value={totals.strength === null ? "Not disclosed" : formatCount(totals.strength)}
+        />
         <Stat size="sm" label="Branches" value={totals.branches} />
         <Stat size="sm" label="Active duty" value={formatCount(totals.activeDuty)} />
         <Stat size="sm" label="Reserves" value={formatCount(totals.reserves)} />
@@ -172,12 +177,8 @@ export function ForceStructurePanel({ countryId }: { countryId: string }) {
         />
         <Stat
           size="sm"
-          label="Branch budgets"
-          value={
-            totals.annualBudget === null && totals.branches > 0
-              ? "Private"
-              : formatCompactCurrency(totals.annualBudget ?? 0)
-          }
+          label="Readiness"
+          value={totals.readiness === null ? "Not disclosed" : `${Math.round(totals.readiness * 100)}%`}
         />
       </Card>
 
