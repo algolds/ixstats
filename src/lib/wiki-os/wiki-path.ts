@@ -62,6 +62,8 @@ const SPECIAL_PATH = /^special:([^/]*)(?:\/(.*))?$/i;
 const REVISION_REF = /^[A-Za-z0-9_-]{1,64}$/;
 /** Namespace ids come from a query string: digits only. */
 const NAMESPACE_ID = /^\d{1,5}$/;
+/** The highest namespace id `listPages` accepts (MediaWiki's namespaces are 16-bit). */
+const MAX_NAMESPACE_ID = 32767;
 
 /** The first value of the query parameter `key`, or null when it is absent. */
 export function queryParam(query: SearchParamsLike, key: string): string | null {
@@ -132,7 +134,8 @@ function resolveView(query: SearchParamsLike): ArticleView | null {
 // Special pages
 // ---------------------------------------------------------------------------
 
-const SPECIAL_TOOLS: Readonly<Record<string, string>> = {
+/** The special pages that are a WikiOS tool route, by `specialKey`. */
+export const SPECIAL_TOOLS: Readonly<Record<string, string>> = {
   specialpages: "/util",
   utilities: "/util",
   recentchanges: "/util/recent-changes",
@@ -176,17 +179,27 @@ function searchAction(argument: string, query: SearchParamsLike): SpecialAction 
   return redirectTo(withQuery("/util/search", { q: term }));
 }
 
+/**
+ * `?namespace=`: its id; null when absent or not a number (the caller's default); false past MAX_NAMESPACE_ID, which
+ * `listPages` refuses, so the special page is unknown and a link to it stays on IxWiki.
+ */
+function readNamespace(query: SearchParamsLike): number | null | false {
+  const param = queryParam(query, "namespace");
+  if (!param || !NAMESPACE_ID.test(param)) return null;
+  const id = Number(param);
+  return id <= MAX_NAMESPACE_ID ? id : false;
+}
+
 /** `Special:AllPages[/<from>]`: every page of a namespace, starting at `from`. */
 function allPagesAction(argument: string, query: SearchParamsLike): SpecialAction {
-  const namespaceParam = queryParam(query, "namespace");
-  const namespace =
-    namespaceParam && NAMESPACE_ID.test(namespaceParam) ? Number(namespaceParam) : 0;
+  const namespace = readNamespace(query);
+  if (namespace === false) return { type: "unknown" };
   const from = queryParam(query, "from") ?? argument;
   return {
     type: "list-pages",
     mode: "allpages",
     prefix: "",
-    namespace,
+    namespace: namespace ?? 0,
     from: from.replace(/_/g, " "),
   };
 }
@@ -195,11 +208,9 @@ function allPagesAction(argument: string, query: SearchParamsLike): SpecialActio
 function prefixIndexAction(argument: string, query: SearchParamsLike): SpecialAction {
   const text = queryParam(query, "prefix") ?? argument;
   const typed = parseWikiTitle(text);
-  const namespaceParam = queryParam(query, "namespace");
-  const namespace =
-    namespaceParam && NAMESPACE_ID.test(namespaceParam)
-      ? Number(namespaceParam)
-      : (typed?.namespaceId ?? 0);
+  const namespaceParam = readNamespace(query);
+  if (namespaceParam === false) return { type: "unknown" };
+  const namespace = namespaceParam ?? typed?.namespaceId ?? 0;
   const prefix = typed && typed.namespaceId !== 0 ? typed.base : text.replace(/_/g, " ");
   const from = (queryParam(query, "from") ?? "").replace(/_/g, " ");
   return { type: "list-pages", mode: "prefix", prefix, namespace, from };
@@ -254,7 +265,7 @@ const logSpecial: SpecialHandler = (argument, query) =>
 type SpecialHandler = (argument: string, query: SearchParamsLike) => SpecialAction;
 
 /** The rights-model special pages (plan 409): each is a `/util` screen. */
-const ADMIN_SPECIALS: Readonly<Record<string, SpecialHandler>> = {
+export const ADMIN_SPECIALS: Readonly<Record<string, SpecialHandler>> = {
   move: pageAdminSpecial("/util/move"),
   movepage: pageAdminSpecial("/util/move"),
   delete: pageAdminSpecial("/util/delete"),

@@ -26,7 +26,8 @@ import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext
 import { detectMediaType, type MediaType } from "~/lib/wiki-os/transformers/media-theme";
 import type { HighResWikiImageResult } from "~/lib/wiki-os/transformers/resolve-highres-image";
 import { api } from "~/trpc/react";
-import { isMediaWikiUrl, mediaWikiImageUrl } from "~/lib/wiki-os/config";
+import { mediaWikiImageUrl } from "~/lib/wiki-os/config";
+import { imageStashTitle } from "~/lib/wiki-os/stash-content-type";
 import { useUser } from "~/context/auth-context";
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
@@ -259,15 +260,7 @@ export function ImageLightboxModal({
 
   // Stash handler
   const handleStash = useCallback(() => {
-    const isLocal = image.fileUrl ? isMediaWikiUrl(image.fileUrl) : false;
-    const isIiwiki = image.fileUrl?.includes("iiwiki.com");
-    let title = `commons:File:${cleanTitle}`;
-    if (isLocal) {
-      title = `File:${cleanTitle}`;
-    } else if (isIiwiki) {
-      title = `iiwiki:File:${cleanTitle}`;
-    }
-    stashMutation.mutate({ pageTitle: title });
+    stashMutation.mutate({ pageTitle: imageStashTitle(image.fileUrl, cleanTitle) });
   }, [image.fileUrl, cleanTitle, stashMutation]);
 
   return (
