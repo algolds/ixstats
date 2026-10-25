@@ -4,6 +4,7 @@
  * Moved below the router layer to enable server-side invocation without
  * cross-router dependencies (Plan 153).
  */
+import type { PrismaClient } from "@prisma/client";
 import { notificationAPI } from "~/lib/notifications/api";
 import { loadThreatPicture } from "~/lib/military/threat-picture-loader";
 import type { ThreatPicture } from "~/lib/military/threat-picture";
@@ -97,7 +98,10 @@ export interface KnownMetrics {
  * The growth rate MyCountry shows: the projection's effective rate at IxTime now, not the founding
  * `adjustedGdpGrowth` input (which never moves).
  */
-async function projectEffectiveGdpGrowth(db: any, countryId: string): Promise<number | null> {
+async function projectEffectiveGdpGrowth(
+  db: PrismaClient,
+  countryId: string
+): Promise<number | null> {
   const country = await db.country.findUnique({
     where: { id: countryId },
     include: { storytellerEffects: { where: { isActive: true } } },
@@ -287,11 +291,11 @@ export async function evaluateThresholds(
 
 /** Evaluates every active threshold set on a country (each user's set separately). */
 export async function evaluateCountryThresholds(
-  db: any,
+  db: PrismaClient,
   countryId: string,
   known: KnownMetrics = {}
 ): Promise<void> {
-  const owners: Array<{ userId: string }> = await db.intelligenceAlertThreshold.findMany({
+  const owners = await db.intelligenceAlertThreshold.findMany({
     where: { countryId, isActive: true },
     select: { userId: true },
     distinct: ["userId"],

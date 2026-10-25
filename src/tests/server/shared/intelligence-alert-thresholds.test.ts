@@ -140,7 +140,7 @@ describe("evaluateCountryThresholds", () => {
     const db = makeDb();
     const findMany = db.intelligenceAlertThreshold.findMany as jest.Mock;
     findMany.mockImplementationOnce(async () => [{ userId: "u1" }, { userId: "u2" }]);
-    await evaluateCountryThresholds(db, "c1");
+    await evaluateCountryThresholds(db as never, "c1");
     expect(findMany).toHaveBeenNthCalledWith(1, {
       where: { countryId: "c1", isActive: true },
       select: { userId: true },

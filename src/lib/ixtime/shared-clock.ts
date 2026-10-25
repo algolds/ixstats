@@ -8,42 +8,30 @@
  * tRPC context, at most once per CLOCK_REFRESH_TTL_MS. Server-only (it takes a Prisma client);
  * the client bundle keeps using `IxTime` alone.
  */
+import type { PrismaClient } from "@prisma/client";
+import { z } from "zod";
 import { IxTime, type IxTimeClockState } from "./core";
 
 export const IXTIME_CLOCK_CONFIG_KEY = "ixtime_clock_state";
 /** How long a process trusts its copy of the shared clock before reading the row again. */
 export const CLOCK_REFRESH_TTL_MS = 30_000;
 
-interface ClockStore {
-  systemConfig: {
-    findUnique(args: { where: { key: string } }): Promise<{ value: string } | null>;
-    upsert(args: {
-      where: { key: string };
-      create: { key: string; value: string; description: string };
-      update: { value: string };
-    }): Promise<object>;
-  };
-}
+type ClockStore = Pick<PrismaClient, "systemConfig">;
 
 let lastRefreshAt = 0;
 let inFlight: Promise<void> | null = null;
 
-const nullableNumber = (v: unknown): v is number | null =>
-  v === null || (typeof v === "number" && Number.isFinite(v));
+const clockStateSchema = z.object({
+  timeOverride: z.number().finite().nullable(),
+  timeOverrideSetAt: z.number().finite().nullable(),
+  multiplierOverride: z.number().finite().nullable(),
+});
 
 /** The stored state, or null when the row holds something else. */
 export function parseClockState(value: string): IxTimeClockState | null {
   try {
-    const parsed = JSON.parse(value) as Record<string, unknown>;
-    const { timeOverride, timeOverrideSetAt, multiplierOverride } = parsed;
-    if (
-      !nullableNumber(timeOverride) ||
-      !nullableNumber(timeOverrideSetAt) ||
-      !nullableNumber(multiplierOverride)
-    ) {
-      return null;
-    }
-    return { timeOverride, timeOverrideSetAt, multiplierOverride };
+    const parsed = clockStateSchema.safeParse(JSON.parse(value));
+    return parsed.success ? parsed.data : null;
   } catch {
     return null;
   }

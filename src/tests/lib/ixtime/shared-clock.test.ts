@@ -45,13 +45,13 @@ it("another process reads the clock the web process adopted from the bot", async
   const db = store();
   // Web process: the bot pauses the clock at BOT_TIME
   IxTime.adoptBotClock(BOT_TIME, 0);
-  await persistSharedClock(db);
+  await persistSharedClock(db as never);
   expect(db.rows.has(IXTIME_CLOCK_CONFIG_KEY)).toBe(true);
 
   // Cron process: starts on the canonical clock, then loads the shared one
   clearClock();
   expect(IxTime.getCurrentIxTime()).not.toBe(BOT_TIME);
-  await refreshSharedClock(db, { force: true });
+  await refreshSharedClock(db as never, { force: true });
   expect(IxTime.getCurrentIxTime()).toBe(BOT_TIME);
   expect(IxTime.isPaused()).toBe(true);
 });
@@ -59,7 +59,7 @@ it("another process reads the clock the web process adopted from the bot", async
 it("a cleared bot override clears the other processes' clocks", async () => {
   const db = store();
   IxTime.adoptBotClock(BOT_TIME, 0);
-  await persistSharedClock(db);
+  await persistSharedClock(db as never);
   IxTime.applyBotState({
     ixTimeTimestamp: BOT_TIME,
     multiplier: 2,
@@ -67,10 +67,10 @@ it("a cleared bot override clears the other processes' clocks", async () => {
     hasTimeOverride: false,
     hasMultiplierOverride: false,
   });
-  await persistSharedClock(db);
+  await persistSharedClock(db as never);
 
   IxTime.adoptBotClock(BOT_TIME, 0); // a stale local override
-  await refreshSharedClock(db, { force: true });
+  await refreshSharedClock(db as never, { force: true });
   expect(IxTime.getClockState()).toEqual({
     timeOverride: null,
     timeOverrideSetAt: null,
@@ -82,11 +82,11 @@ it("reads the row at most once per TTL unless forced", async () => {
   const db = store();
   jest.useFakeTimers({ now: Date.UTC(2026, 9, 25) });
   try {
-    await refreshSharedClock(db);
-    await refreshSharedClock(db);
+    await refreshSharedClock(db as never);
+    await refreshSharedClock(db as never);
     expect(db.systemConfig.findUnique).toHaveBeenCalledTimes(1);
     jest.setSystemTime(Date.now() + CLOCK_REFRESH_TTL_MS + 1);
-    await refreshSharedClock(db);
+    await refreshSharedClock(db as never);
     expect(db.systemConfig.findUnique).toHaveBeenCalledTimes(2);
   } finally {
     jest.useRealTimers();
@@ -96,10 +96,10 @@ it("reads the row at most once per TTL unless forced", async () => {
 it("keeps the local clock when the row is missing or malformed", async () => {
   const db = store();
   IxTime.adoptBotClock(BOT_TIME, 0);
-  await refreshSharedClock(db, { force: true });
+  await refreshSharedClock(db as never, { force: true });
   expect(IxTime.getCurrentIxTime()).toBe(BOT_TIME);
 
   db.rows.set(IXTIME_CLOCK_CONFIG_KEY, '{"timeOverride":"soon"}');
-  await refreshSharedClock(db, { force: true });
+  await refreshSharedClock(db as never, { force: true });
   expect(IxTime.getCurrentIxTime()).toBe(BOT_TIME);
 });
