@@ -4,22 +4,16 @@ import {
   cachedPublicProcedure,
   standardMutationCountryOwnerProcedure,
 } from "~/server/api/trpc";
-import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
-import { getArticleWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge";
-import { parseEntityAttributesFromWiki } from "~/lib/wiki-os/adapters/ixstates/entity-parser";
 import {
-  checkGeoCompliance,
   getTerrainAtPoint,
   getCountryGeoBundle,
   upsertCity,
   upsertSubdivision,
-  upsertPoi,
   updateGeoRollupMode,
   rebaseNationalFromGeography,
-  distributeSubdivisionDemographicsToCities,
 } from "~/lib/country-geo";
 import { assertOwnerMayEdit } from "~/server/shared/map-feature-lock";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
@@ -46,40 +40,6 @@ const submitterId = (ctx: {
   user?: { clerkUserId?: string | null } | null;
 }) => ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system";
 
-type EntityWhere = { id: string; countryId: string };
-
-/** Per-kind lookup and upsert wiring for populateFromWiki: `keep` fields are copied, `merge` fields take the wiki value when present. */
-const POPULATE_KINDS = {
-  city: {
-    label: "City",
-    find: (db: PrismaClient, where: EntityWhere) => db.city.findFirst({ where }),
-    upsert: upsertCity,
-    keep: ["id", "name", "type", "coordinates", "wikiPageTitle"],
-    merge: [
-      "population",
-      "gdpContribution",
-      "mayorName",
-      "specialization",
-      "elevation",
-      "foundedYear",
-    ],
-  },
-  subdivision: {
-    label: "Subdivision",
-    find: (db: PrismaClient, where: EntityWhere) => db.subdivision.findFirst({ where }),
-    upsert: upsertSubdivision,
-    keep: ["id", "name", "type", "level"],
-    merge: ["population", "gdpContribution", "governorName", "areaSqKm", "capital"],
-  },
-  poi: {
-    label: "POI",
-    find: (db: PrismaClient, where: EntityWhere) => db.pointOfInterest.findFirst({ where }),
-    upsert: upsertPoi,
-    keep: ["id", "name", "category", "coordinates", "icon", "wikiPageTitle"],
-    merge: ["description"],
-  },
-} as const;
-
 export const countryGeoRouter = createTRPCRouter({
   /**
    * Get the unified geographic data bundle for a country.
@@ -93,64 +53,6 @@ export const countryGeoRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       return getCountryGeoBundle(ctx.db, input.countryId);
-    }),
-
-  /**
-   * Run the geographic compliance validator against the current bundle.
-   * Returns a list of issues (errors, warnings, info) describing
-   * population/GDP rollup inconsistencies, capital integrity, founded-year
-   * sanity, and coordinates that fall outside the country's bounding box.
-   */
-  getGeoCompliance: cachedPublicProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const bundle = await getCountryGeoBundle(ctx.db, input.countryId);
-      const bbox = (bundle.boundingBox as [number, number, number, number] | null) ?? null;
-      const issues = checkGeoCompliance({
-        cities: bundle.cities.map((c: any) => ({
-          id: c.id,
-          name: c.name,
-          type: c.type,
-          isNationalCapital: !!c.isNationalCapital,
-          isSubdivisionCapital: !!c.isSubdivisionCapital,
-          population: c.population ?? null,
-          gdpContribution: c.gdpContribution ?? null,
-          coordinates: c.coordinates,
-          foundedYear: c.foundedYear ?? null,
-        })),
-        subdivisions: bundle.subdivisions.map((s: any) => ({
-          id: s.id,
-          name: s.name,
-          type: s.type,
-          population: s.population ?? null,
-          gdpContribution: s.gdpContribution ?? null,
-          capital: s.capital ?? null,
-        })),
-        pois: bundle.pois.map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          coordinates: p.coordinates,
-        })),
-        country: {
-          id: bundle.country.id,
-          name: bundle.country.name,
-          currentPopulation: bundle.country.currentPopulation ?? null,
-          currentTotalGdp: bundle.country.currentTotalGdp ?? null,
-          geoRollupMode: bundle.country.geoRollupMode ?? null,
-        },
-        rollups: bundle.rollups ?? null,
-        boundingBox: bbox,
-      });
-      const summary = {
-        errors: issues.filter((i) => i.severity === "error").length,
-        warnings: issues.filter((i) => i.severity === "warning").length,
-        info: issues.filter((i) => i.severity === "info").length,
-      };
-      return { issues, summary };
     }),
 
   /**
@@ -319,101 +221,5 @@ export const countryGeoRouter = createTRPCRouter({
       broadcastMapUpdate("national-rebase", input.countryId);
 
       return updated;
-    }),
-
-  /**
-   * Distribute subdivision population and GDP down to cities.
-   */
-  distributeSubdivisionDemographics: standardMutationCountryOwnerProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        scaleExisting: z.boolean().default(true),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      assertOwnCountry(ctx, input.countryId);
-      const result = await distributeSubdivisionDemographicsToCities(
-        ctx.db,
-        input.countryId,
-        input.scaleExisting
-      );
-
-      await invalidateCache(GEO_ECONOMY_CACHE_KEYS);
-      broadcastMapUpdate("cities-distribution", input.countryId);
-
-      return result;
-    }),
-
-  /**
-   * Populate a geographic entity (City / Subdivision / POI) by parsing
-   * its linked wiki page infobox. The wiki page title is resolved from
-   * the entity's `wikiPageTitle` field, falling back to the entity's
-   * `name` if not set.
-   *
-   * Fetches the wiki wikitext, runs it through the infobox parser, and
-   * maps parsed fields to the corresponding entity attributes:
-   *   - City:      population, mayorName, gdpContribution, elevation, foundedYear
-   *   - Subdivision: population, governorName, gdpContribution, areaSqKm, capital
-   *   - POI:       description
-   *
-   * Returns a per-field diff (`applied` + `skipped`) so the UI can
-   * surface what was filled in vs. what was missing on the wiki page.
-   */
-  populateFromWiki: standardMutationCountryOwnerProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        kind: z.enum(["city", "subdivision", "poi"]),
-        id: z.string(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      assertOwnCountry(ctx, input.countryId);
-      const { countryId, kind, id } = input;
-      const config = POPULATE_KINDS[kind];
-
-      // 1. Fetch the entity (so we can resolve its wiki title + existing values).
-      const existing = (await config.find(ctx.db, { id, countryId })) as Record<string, any> | null;
-      if (!existing) {
-        throw new TRPCError({ code: "NOT_FOUND", message: `${config.label} not found` });
-      }
-      assertOwnerMayEdit(ctx, existing, config.label.toLowerCase());
-      const wikiTitle: string | null = existing.wikiPageTitle?.trim() || existing.name;
-      if (!wikiTitle) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "No wiki title to look up." });
-      }
-
-      // 2. Fetch the wiki page wikitext.
-      const wikiRes = await getArticleWikitext(wikiTitle, "ixwiki");
-      const wikitext = wikiRes?.wikitext ?? null;
-      if (!wikitext) {
-        return {
-          wikiTitle,
-          templateName: null,
-          applied: [],
-          skipped: [],
-          hasChanges: false,
-          error: `Wiki page "${wikiTitle}" not found or empty.`,
-        };
-      }
-
-      // 3. Parse the infobox and build the diff.
-      const result = parseEntityAttributesFromWiki(wikitext, kind, wikiTitle, existing);
-      if (!result.hasChanges) {
-        return result;
-      }
-
-      // 4. Apply via the existing upsert path (preserves validation + caching).
-      const applied = Object.fromEntries(result.applied.map((f) => [f.field, f.newValue]));
-      await config.upsert(ctx.db, countryId, {
-        ...Object.fromEntries(config.keep.map((f) => [f, existing[f]])),
-        ...Object.fromEntries(config.merge.map((f) => [f, applied[f] ?? existing[f]])),
-        submittedBy: submitterId(ctx),
-      });
-      broadcastMapUpdate(kind, countryId);
-      await invalidateCache(GEO_CACHE_KEYS);
-
-      return result;
     }),
 });

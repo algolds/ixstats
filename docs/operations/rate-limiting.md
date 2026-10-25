@@ -133,7 +133,7 @@ MediaWiki does); the other buckets answer HTTP 429 with `Retry-After`. Redis hol
 
 ### Operation Examples by Tier
 
-**Standard Mutations (60 req/min):** country-owner writes such as `countryGeo.upsertCity`, `countryGeo.populateFromWiki`, `countryGeo.updateGeoRollupMode`.
+**Standard Mutations (60 req/min):** country-owner writes such as `countryGeo.upsertCity`, `countryGeo.upsertSubdivision`, `countryGeo.updateGeoRollupMode`.
 
 **Light Mutations (100 req/min):** `notifications.markAllAsRead`, `notifications.dismissNotification`, `ixnayid` wiki verification, `realms.claimCountry`/`realms.claimNationPage`, `users.setActiveNation`.
 

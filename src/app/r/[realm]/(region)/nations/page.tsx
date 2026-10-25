@@ -47,7 +47,7 @@ function toCard(c: Realm["countries"][number], s: Stats | undefined, flag?: stri
   return {
     ...(optional as Partial<RealmNation>),
     // The card's growth figure is the realised (engine) rate, not the static input.
-    adjustedGdpGrowth: s?.calculatedStats.gdpGrowth || undefined,
+    gdpGrowth: s?.calculatedStats.gdpGrowth ?? undefined,
     id: c.id,
     name: c.name,
     slug: c.slug ?? c.id,

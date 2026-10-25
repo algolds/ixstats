@@ -21,6 +21,11 @@ type EconomicTier =
   | "Unknown"
   | (string & {});
 
+function growthTrend(rate: number): "up" | "down" | "stable" {
+  if (rate > 0) return "up";
+  return rate < 0 ? "down" : "stable";
+}
+
 export interface CountryCardData {
   id: string;
   name: string;
@@ -33,7 +38,8 @@ export interface CountryCardData {
   landArea?: number;
   populationDensity?: number;
   gdpDensity?: number;
-  adjustedGdpGrowth?: number;
+  /** Realised GDP growth as a decimal (0.021 = 2.1%). */
+  gdpGrowth?: number;
   populationGrowthRate?: number;
   flagUrl?: string;
   // Identity & Governance
@@ -128,14 +134,14 @@ function HoverStats({ country }: { country: CountryCardData }) {
           className="font-semibold tabular-nums"
         />
       </QuickStat>
-      {country.adjustedGdpGrowth && (
+      {country.gdpGrowth != null && (
         <QuickStat icon={TrendingUp} label="Growth rate">
           <NumberFlowDisplay
-            value={country.adjustedGdpGrowth * 100}
+            value={country.gdpGrowth * 100}
             format="percentage"
             decimalPlaces={1}
-            trend="up"
-            className="text-green font-semibold tabular-nums"
+            trend={growthTrend(country.gdpGrowth)}
+            className="font-semibold tabular-nums"
           />
         </QuickStat>
       )}

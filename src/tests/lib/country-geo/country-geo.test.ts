@@ -27,7 +27,6 @@ jest.mock("~/lib/maps/geo-validation", () => ({
 }));
 
 import {
-  distributeSubdivisionDemographicsToCities,
   getCountryGeoBundle,
   rebaseNationalFromGeography,
   syncCountryGeometryFromMapLayer,
@@ -222,8 +221,14 @@ describe("national figures and city demographics", () => {
   });
 
   it.each([
-    ["the bottom-up rollup", (db: ReturnType<typeof rebaseDb>) => syncGeographicDemographics(db, "c1")],
-    ["rebase from the map", (db: ReturnType<typeof rebaseDb>) => rebaseNationalFromGeography(db, "c1")],
+    [
+      "the bottom-up rollup",
+      (db: ReturnType<typeof rebaseDb>) => syncGeographicDemographics(db, "c1"),
+    ],
+    [
+      "rebase from the map",
+      (db: ReturnType<typeof rebaseDb>) => rebaseNationalFromGeography(db, "c1"),
+    ],
   ])(
     "%s sets the baseline (so the projection keeps it) and moves the budget with the GDP",
     async (_name, run) => {
@@ -254,43 +259,6 @@ describe("national figures and city demographics", () => {
     await syncGeographicDemographics(db, "c1");
     expect(db.country.update).not.toHaveBeenCalled();
     expect(db.governmentStructure.updateMany).not.toHaveBeenCalled();
-  });
-
-  it("distributes a large subdivision over its cities in one read and one transaction of bounded statements, losing nobody to rounding", async () => {
-    const db = {
-      subdivision: {
-        findMany: jest
-          .fn()
-          .mockResolvedValue([
-            { id: "big", name: "big", population: 1_200_000, gdpContribution: 0 },
-          ]),
-      },
-      city: {
-        findMany: jest.fn().mockResolvedValue(
-          Array.from({ length: 1201 }, (_, n) => ({
-            id: `city-${n}`,
-            name: `city ${n}`,
-            population: 1,
-            subdivisionId: "big",
-          }))
-        ),
-        update: jest.fn(),
-      },
-      $executeRawUnsafe: jest.fn().mockResolvedValue(0),
-      $transaction: jest.fn(async (operations: Promise<unknown>[]) => Promise.all(operations)),
-    };
-
-    const result = await distributeSubdivisionDemographicsToCities(db, "c1", true);
-
-    expect(result).toEqual({ success: true, totalCitiesUpdated: 1201 });
-    expect(db.city.findMany).toHaveBeenCalledTimes(1);
-    expect(db.city.update).not.toHaveBeenCalled();
-    expect(db.$transaction).toHaveBeenCalledTimes(1);
-    const statements: Array<[string, string[], number[], number[]]> =
-      db.$executeRawUnsafe.mock.calls;
-    expect(statements.map(([, ids]) => ids.length)).toEqual([500, 500, 201]);
-    const written = statements.flatMap(([, , populations]) => populations);
-    expect(written.reduce((sum, p) => sum + p, 0)).toBe(1_200_000);
   });
 });
 

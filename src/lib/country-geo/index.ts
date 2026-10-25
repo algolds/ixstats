@@ -1,5 +1,5 @@
 /**
- * src/lib/country-geo/index.ts — Master barrel export for Country Geography, postgis spatial indexes & compliance.
+ * src/lib/country-geo/index.ts — Master barrel export for Country Geography and postgis spatial indexes.
  */
 
 export * from "./bundle";

@@ -615,7 +615,7 @@ The overlay architecture (`src/lib/maps/overlay-registry.ts`) enables declarativ
 Geography serves as the foundational data source across the platform:
 - **Spatial Boundaries**: `MapLayer` plus the cached geometry columns on `Country` (`src/lib/country-geo/sync.ts`) and `BorderHistory` are authoritative for geometry, area, centroid and bounding box. `Territory` is used only by the demo seed. Adjacency is computed live with PostGIS `ST_Touches`.
 - **Settlements**: `City`, `Subdivision`, `PointOfInterest`, `StoryPin`, `Storyline`, `MapLabel` foreign-key linked to `Country.id` (a realm label has no country and names its realm instead).
-- **Admin lock**: `editableByOwner: false` on a subdivision, city, peak, named river or lake stops its country's owner from changing or deleting it (`geoFeatures` update/delete, `countryGeo` upserts of an existing row and `populateFromWiki`, topology cascades; an owner's batch simplify skips it). Admins can always edit (`server/shared/map-feature-lock.ts`). No UI sets the flag yet.
+- **Admin lock**: `editableByOwner: false` on a subdivision, city, peak, named river or lake stops its country's owner from changing or deleting it (`geoFeatures` update/delete, `countryGeo` upserts of an existing row, topology cascades; an owner's batch simplify skips it). Admins can always edit (`server/shared/map-feature-lock.ts`). No UI sets the flag yet.
 - **Attribute Rollups**: `hybrid` (default), `top-down`, and `bottom-up` rollup modes aggregate population and GDP only. Bottom-up overwrites the national figures, and with no approved subdivisions it falls back to the sum of city populations.
 
 ---
