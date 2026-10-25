@@ -100,9 +100,9 @@ export function MeetingScheduler({
   const clock = useViewerNationClock();
 
   React.useEffect(() => {
+    if (!open || !clock) return;
     // oxlint-disable-next-line
-    if (open && clock)
-      setScheduledIxTime(presetScheduledTime(timePreset, clock.now(), clock.calendar));
+    setScheduledIxTime(presetScheduledTime(timePreset, clock.now(), clock.calendar));
   }, [timePreset, open, clock]);
 
   const handleSelectTemplate = React.useCallback(
