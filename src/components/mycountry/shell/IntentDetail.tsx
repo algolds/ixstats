@@ -49,7 +49,7 @@ function statusDot(status: string | null | undefined): string {
         : "bg-label-tertiary";
 }
 
-/** The broker each directive category touches (the server's acceptance map). */
+/** Icon per power broker id (`CATEGORY_TO_BROKER` picks the broker for a category). */
 const BROKER_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
   generals: Shield,
   magnates: Building2,
