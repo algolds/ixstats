@@ -20,3 +20,12 @@ it("derives GDP from population and GDP per capita when the total is missing", (
   } as Country);
   expect(figures).toMatchObject({ population: 1_000_000, totalGdp: 20_000_000_000 });
 });
+
+// P2-10: the Overview Stability tile shows the figure Defense computes, not a dash for a nation with no stored row.
+it("reads the computed internal stability, with the stored row as the fallback", () => {
+  expect(deriveFigures({ name: "Eldoria" } as Country, 62.04).stabilityPct).toBe(62);
+  const stored = { stabilityMetrics: { stabilityScore: 48 } } as Country;
+  expect(deriveFigures(stored, 62.04).stabilityPct).toBe(62);
+  expect(deriveFigures(stored, undefined).stabilityPct).toBe(48);
+  expect(deriveFigures({ name: "Eldoria" } as Country, null).stabilityPct).toBeNull();
+});

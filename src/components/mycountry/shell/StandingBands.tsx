@@ -24,6 +24,7 @@ import { cn } from "~/lib/utils";
 import { assetUrl } from "~/lib/base-path";
 import { Card } from "~/components/ui/card";
 import { BandwidthHelp } from "~/components/mycountry/directives/BandwidthHelp";
+import { useInternalStability } from "~/hooks/useInternalStability";
 
 type RatingLabel = "Optimal" | "Strong" | "Moderate" | "Strained";
 
@@ -128,8 +129,12 @@ function deriveVitality(country: StandingCountry, activityRingsData: ActivityRin
 const positiveOrNull = (value: unknown): number | null =>
   typeof value === "number" && Number.isFinite(value) && value > 0 ? value : null;
 
-/** Population, GDP, approval and stability; null (shown as a dash) when the record has none. */
-export function deriveFigures(country: StandingCountry) {
+/**
+ * Population, GDP, approval and stability; null (shown as a dash) when the record has none.
+ * Stability is the score Defense shows (`security.getInternalStability`, computed on read), with the
+ * stored row as the fallback while that loads.
+ */
+export function deriveFigures(country: StandingCountry, computedStability?: number | null) {
   const population = positiveOrNull(country?.currentPopulation ?? country?.population);
   const gdpPerCapita = positiveOrNull(country?.currentGdpPerCapita);
   const totalGdp =
@@ -140,8 +145,9 @@ export function deriveFigures(country: StandingCountry) {
     totalGdp,
     // Country.publicApproval (0-100), moved by issues and directives
     approvalPct: finiteScore(country?.publicApproval),
-    // InternalStabilityMetrics.stabilityScore (0-100); null until it is computed
-    stabilityPct: finiteScore(country?.stabilityMetrics?.stabilityScore),
+    // Internal stability (0-100): computed, else the stored InternalStabilityMetrics row
+    stabilityPct:
+      finiteScore(computedStability) ?? finiteScore(country?.stabilityMetrics?.stabilityScore),
   };
 }
 
@@ -217,7 +223,11 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
     country,
     activityRingsData
   );
-  const { population, totalGdp, approvalPct, stabilityPct } = deriveFigures(country);
+  const { metrics: stability } = useInternalStability({ countryId });
+  const { population, totalGdp, approvalPct, stabilityPct } = deriveFigures(
+    country,
+    stability?.stabilityScore
+  );
   const ratingLabelText = getRatingLabel(compositeScore);
   // formatCensusValue shows a missing figure as a dash.
   const formattedPop =
