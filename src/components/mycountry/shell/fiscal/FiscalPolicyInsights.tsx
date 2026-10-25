@@ -10,15 +10,14 @@ import {
 } from "iconoir-react";
 import { PercentageFlow } from "~/components/ui/number-flow";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
+import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-import { economicRelationsOf, finiteOrNull } from "~/lib/economy/country-relations";
-import {
-  TAX_CHANNELS,
-  ACCENT_BG,
-  readSavedRates,
-  computeTaxYields,
-  sectorWeightsForProfile,
-} from "./taxChannels";
+import { economyFiguresOf } from "~/lib/economy/country-relations";
+import { allocatedInEffect } from "~/components/mycountry/domains/government/budget/budgetSummaries";
+import { fiscalBalancePercent } from "~/components/mycountry/domains/government/budget/budgetTypes";
+import type { BudgetAllocation } from "~/types/government";
+import { TAX_CHANNELS, ACCENT_BG } from "./taxChannels";
+import { nationalRevenue } from "./nationalRevenue";
 import { RailCard, RailRow, STATUS_FILL, STATUS_TEXT } from "../rails/shared";
 
 type LafferPosition = "below-optimal" | "optimal" | "above-optimal";
@@ -41,27 +40,13 @@ const percentFlow = (value: number | null, decimalPlaces: number) =>
 type Country = ReturnType<typeof useCountryData>["country"];
 
 function deriveFiscalInsights(country: Country) {
-  const { economicProfile: profile, fiscalSystem: fiscal } = economicRelationsOf(country);
-  const gdp = finiteOrNull(country?.currentTotalGdp);
-  const taxEfficiency = finiteOrNull(fiscal?.taxEfficiency);
-
-  const saved = readSavedRates(fiscal);
-  const rates: Record<string, number | null> = {};
-  for (const ch of TAX_CHANNELS) rates[ch.key] = saved[ch.key]?.rate ?? null;
-
-  const sectorWeights = sectorWeightsForProfile(profile);
-  const yields = computeTaxYields(rates, gdp, taxEfficiency, sectorWeights);
-  const total = yields.total;
+  const { currentTotalGdp: gdp } = economyFiguresOf(country);
+  const { total, basis, yields, taxEfficiency } = nationalRevenue(country);
 
   const effectiveTaxBurden = total != null && gdp != null && gdp > 0 ? (total / gdp) * 100 : null;
-  const govRevenue = finiteOrNull(country?.governmentRevenueTotal);
-  const budgetImpact =
-    govRevenue != null && govRevenue > 0 && total != null
-      ? ((total - govRevenue) / govRevenue) * 100
-      : null;
 
   const revenueComposition =
-    total == null || total <= 0
+    basis !== "rates" || total == null || total <= 0
       ? []
       : TAX_CHANNELS.map((ch) => {
           const value = yields.byChannel[ch.key];
@@ -69,24 +54,34 @@ function deriveFiscalInsights(country: Country) {
         });
 
   return {
+    total,
     effectiveTaxBurden,
     lafferPosition: lafferPositionOf(effectiveTaxBurden),
-    budgetImpact,
     collectionEfficiency: taxEfficiency != null ? taxEfficiency * 100 : null,
     revenueComposition,
   };
 }
 
+/**
+ * Revenue left after the budget in effect allocates, as a percent of revenue (the National budget
+ * tab's fiscal balance). Null for a visitor (the budget is the owner's) or without revenue.
+ */
+function useFiscalBalance(countryId: string, revenue: number | null): number | null {
+  const { data: government } = api.government.getFullByCountryId.useQuery(
+    { countryId },
+    { enabled: !!countryId }
+  );
+  const allocations = (government?.budgetAllocations ?? []) as BudgetAllocation[];
+  const allocated = allocatedInEffect(allocations);
+  return revenue != null && allocated != null ? fiscalBalancePercent(revenue, allocated) : null;
+}
+
 /** Fiscal Policy sidebar — reads the saved rates from the country record; "—" where unknown. */
-export function FiscalPolicyInsights({ countryId: _countryId }: { countryId: string }) {
+export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
   const { country } = useCountryData();
-  const {
-    effectiveTaxBurden,
-    lafferPosition,
-    budgetImpact,
-    collectionEfficiency,
-    revenueComposition,
-  } = deriveFiscalInsights(country);
+  const { total, effectiveTaxBurden, lafferPosition, collectionEfficiency, revenueComposition } =
+    deriveFiscalInsights(country);
+  const balance = useFiscalBalance(countryId, total);
   const laffer = LAFFER[lafferPosition ?? "above-optimal"];
 
   return (
@@ -163,37 +158,42 @@ export function FiscalPolicyInsights({ countryId: _countryId }: { countryId: str
       <RailCard title="Fiscal health" icon={ShieldCheck}>
         <div className="grid grid-cols-3 gap-2">
           <RailRow className="p-2">
-            <span className="text-stat-label text-label-secondary block">Efficiency</span>
+            <span className="text-label-secondary text-footnote block">Efficiency</span>
             <p className="text-label text-title-3 mt-0.5 tabular-nums">
               {percentFlow(collectionEfficiency, 0)}
             </p>
           </RailRow>
           <RailRow className="p-2">
-            <span className="text-stat-label text-label-secondary block">Budget Δ</span>
+            <span
+              className="text-label-secondary text-footnote block"
+              title="Revenue left after the budget's allocations"
+            >
+              Balance
+            </span>
             <p
               className={cn(
                 "text-title-3 mt-0.5 tabular-nums",
-                budgetImpact == null
+                balance == null
                   ? "text-label"
-                  : budgetImpact >= 0
+                  : balance >= 0
                     ? STATUS_TEXT.success
                     : STATUS_TEXT.critical
               )}
             >
-              {budgetImpact != null && (
+              {balance != null && (
                 <>
-                  {budgetImpact >= 0 ? (
+                  {balance >= 0 ? (
                     <TrendingUp aria-hidden="true" className="-mt-0.5 mr-0.5 inline h-3 w-3" />
                   ) : (
                     <TrendingDown aria-hidden="true" className="-mt-0.5 mr-0.5 inline h-3 w-3" />
                   )}
                 </>
               )}
-              {percentFlow(budgetImpact != null ? Math.abs(budgetImpact) : null, 1)}
+              {percentFlow(balance != null ? Math.abs(balance) : null, 1)}
             </p>
           </RailRow>
           <RailRow className="p-2">
-            <span className="text-stat-label text-label-secondary block">Burden</span>
+            <span className="text-label-secondary text-footnote block">Burden</span>
             <p
               className={cn(
                 "text-headline mt-0.5",

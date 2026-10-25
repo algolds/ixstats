@@ -11,6 +11,11 @@ export interface BudgetHealthStatus {
  */
 export const REVENUE_CHART_COLORS = ["var(--color-amber-500)"];
 
+/** Revenue left after the allocations, as a percent of revenue; null without revenue. */
+export function fiscalBalancePercent(totalRevenue: number, totalAllocated: number): number | null {
+  return totalRevenue > 0 ? ((totalRevenue - totalAllocated) / totalRevenue) * 100 : null;
+}
+
 /**
  * Fiscal balance of the year's allocations against revenue. Nothing records spending yet, so the
  * allocations stand for it. Unknown when no revenue is recorded.
@@ -19,10 +24,10 @@ export function getBudgetHealthStatus(
   totalRevenue: number,
   totalAllocated: number
 ): BudgetHealthStatus {
-  if (totalRevenue <= 0) {
+  const balancePercent = fiscalBalancePercent(totalRevenue, totalAllocated);
+  if (balancePercent == null) {
     return { status: "unknown", color: "text-label-secondary", label: "No revenue recorded" };
   }
-  const balancePercent = ((totalRevenue - totalAllocated) / totalRevenue) * 100;
 
   if (balancePercent > 5) {
     return {

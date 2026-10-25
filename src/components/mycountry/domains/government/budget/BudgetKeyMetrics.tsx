@@ -4,6 +4,7 @@ import React from "react";
 import type { BudgetSummary, RevenueSummary } from "~/types/government";
 import { formatNumber } from "~/lib/utils/format-utils";
 import { Card } from "~/components/ui/card";
+import { REVENUE_BASIS_NOTE } from "~/components/mycountry/shell/fiscal/nationalRevenue";
 
 interface BudgetKeyMetricsProps {
   budgetSummary: BudgetSummary;
@@ -42,7 +43,7 @@ export function BudgetKeyMetrics({
     {
       label: "Revenue",
       value: formatNumber(revenueSummary.totalRevenue),
-      sub: `${shareOf(revenueSummary.totalTaxRevenue, revenueSummary.totalRevenue)}% tax`,
+      sub: revenueSummary.basis ? REVENUE_BASIS_NOTE[revenueSummary.basis] : "No tax rates set yet",
     },
   ];
 
@@ -51,13 +52,9 @@ export function BudgetKeyMetrics({
       <dl className="divide-separator grid grid-cols-2 divide-y lg:grid-cols-4 lg:divide-x lg:divide-y-0">
         {metrics.map((m) => (
           <div key={m.label} className="min-w-0 p-4">
-            <dt>
-              <span className="text-stat-label text-label-secondary">{m.label}</span>
-            </dt>
+            <dt className="text-label-secondary text-footnote">{m.label}</dt>
             <dd className="text-label text-title-2 mt-1 truncate tabular-nums">{m.value}</dd>
-            <dd className="text-label-secondary text-footnote mt-1 truncate tabular-nums">
-              {m.sub}
-            </dd>
+            <dd className="text-label-secondary text-footnote mt-1 tabular-nums">{m.sub}</dd>
           </div>
         ))}
       </dl>

@@ -29,8 +29,8 @@ interface FiscalSystemRow {
 }
 
 interface IncomeDistributionRow {
-  top10PercentWealth?: number | null;
-  middleClassPercent?: number | null;
+  /** JSON list of `{ name, populationPercent, wealthPercent }`: the only column founding writes. */
+  economicClasses?: string | null;
   intergenerationalMobility?: number | null;
 }
 
@@ -52,6 +52,36 @@ export function economicRelationsOf(country: unknown): CountryEconomicRelations 
     laborMarket: row<LaborMarketRow>(c?.laborMarket),
     fiscalSystem: row<FiscalSystemRow>(c?.fiscalSystem),
     incomeDistribution: row<IncomeDistributionRow>(c?.incomeDistribution),
+  };
+}
+
+/**
+ * The scalar figures the Economy tabs read off the country record. The procedure returns `any`,
+ * so reading through this type makes a misspelt field fail the typecheck instead of rendering "—".
+ */
+export interface CountryEconomyFigures {
+  currentTotalGdp: number | null;
+  /** The engine's annual GDP per capita growth, as a decimal (`calculatedStats.gdpGrowth`). */
+  gdpGrowth: number | null;
+  /** Undefined on the record when never recorded (the engine's stand-in is not shown). */
+  unemploymentRate: number | null;
+  incomeInequalityGini: number | null;
+  /** 0-100. */
+  socialMobilityIndex: number | null;
+  /** The founding revenue: shown only while no tax rate is saved (`nationalRevenue`). */
+  governmentRevenueTotal: number | null;
+}
+
+export function economyFiguresOf(country: unknown): CountryEconomyFigures {
+  const c = row<Record<string, unknown>>(country);
+  const stats = row<Record<string, unknown>>(c?.calculatedStats);
+  return {
+    currentTotalGdp: finiteOrNull(c?.currentTotalGdp),
+    gdpGrowth: finiteOrNull(stats?.gdpGrowth),
+    unemploymentRate: finiteOrNull(c?.unemploymentRate),
+    incomeInequalityGini: finiteOrNull(c?.incomeInequalityGini),
+    socialMobilityIndex: finiteOrNull(c?.socialMobilityIndex),
+    governmentRevenueTotal: finiteOrNull(c?.governmentRevenueTotal),
   };
 }
 
