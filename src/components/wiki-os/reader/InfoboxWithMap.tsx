@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
@@ -50,7 +51,7 @@ export function InfoboxWithMap({ infoboxHtml, articleTitle, markupId }: InfoboxW
 
   const blurbs = blurbData?.pages.flatMap((p) => p.responses) ?? [];
   // a stable object: a new one each render would write the infobox's HTML (and reload its picture) again
-  const infoboxMarkup = useMemo(() => ({ __html: infoboxHtml }), [infoboxHtml]);
+  const infoboxMarkup = useHtmlMarkup(infoboxHtml);
 
   return (
     <aside className="wikios-infobox rounded-row border-separator bg-surface border">

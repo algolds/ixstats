@@ -1,29 +1,10 @@
 /**
- * An article's HTML as the country page shows it. All three transforms work on WikiOS's already-sanitized view
- * bundle and only ever change attribute values or a heading tag's level, by fixed rules, so nothing can be let in:
- * text cannot hold a literal `<` followed by a tag name (it is serialized as `&lt;`), and a double-quoted attribute
- * value cannot hold a literal `"`. Each looks only inside a tag. Pure.
+ * A wiki page's HTML as a chapter of another (a lore piece under its h3 title). Its links get the base path first,
+ * from WikiOS's one helper (`withAppHrefs`, `~/lib/wiki-os/reader-hrefs`). Both transforms here work on WikiOS's
+ * already-sanitized view bundle and only ever change attribute values or a heading tag's level, by fixed rules, so
+ * nothing can be let in: text cannot hold a literal `<` followed by a tag name (it is serialized as `&lt;`), and a
+ * double-quoted attribute value cannot hold a literal `"`. Each looks only inside a tag. Pure.
  */
-
-const LINK = /(<a\b[^>]*?\shref=")(\/[^"]*)"/gi;
-/** The app's own routes in article links; every other root path (`/index.php`, `/api.php`, `/images/`) is MediaWiki's. */
-const APP_PATH = /^\/(?:wiki\/|dashboard\/|@)/;
-
-/** Whether `path` already carries the base path: the base path itself, or it followed by `/`, `?` or `#`. */
-function underBasePath(path: string, basePath: string): boolean {
-  return path === basePath || ["/", "?", "#"].some((next) => path.startsWith(basePath + next));
-}
-
-/**
- * WikiOS stores article links root-relative and without the base path (`/wiki/Title`, `/@handle`): on IxStates's
- * deployment they would leave the app for the classic wiki at the site's root, so each app link gets the base path,
- * as a Next `<Link>` would give it. The same allowlist as WikiOS's reader hrefs (`/wiki/`, `/dashboard/`, `/@`).
- */
-export function linksUnderBasePath(html: string, basePath: string): string {
-  return html.replace(LINK, (match, head: string, path: string) =>
-    APP_PATH.test(path) && !underBasePath(path, basePath) ? `${head}${basePath}${path}"` : match
-  );
-}
 
 const TAG = /<[a-z][^>]*>/gi;
 const ID = /(\sid=")([^"]*)"/gi;

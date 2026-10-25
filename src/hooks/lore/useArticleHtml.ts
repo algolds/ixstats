@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { getBasePath } from "~/lib/base-path";
-import { linksUnderBasePath, scopeArticleIds, shiftArticleHeadings } from "~/lib/lore/piece-links";
+import { scopeArticleIds, shiftArticleHeadings } from "~/lib/lore/piece-html";
 import { articleHtmlInput, type WikiSource } from "~/lib/wiki-os/config";
 import { isLeanResolvable, parseLeanMarker, resolveLeanHtml } from "~/lib/wiki-os/lean-article";
+import { withAppHrefs } from "~/lib/wiki-os/reader-hrefs";
 import { api } from "~/trpc/react";
 
 /** As long as WikiOS keeps a finished article fresh. */
@@ -13,7 +13,7 @@ const ARTICLE_STALE_TIME_MS = 10 * 60 * 1000;
 /**
  * A wiki page's article as WikiOS's reader gets it (`wikios.getArticleHtml`): for IxWiki the view bundle WikiOS
  * rendered and sanitized once per revision, for another wiki its own render, sanitized the same way. `markup` is that
- * HTML, untouched but for its root-relative links, which get the base path (`linksUnderBasePath`), ready for
+ * HTML, untouched but for its root-relative app links, which get the base path (`withAppHrefs`), ready for
  * `dangerouslySetInnerHTML` (one object per HTML string). Null while loading, on an error, or for an empty page.
  *
  * A page shown as a chapter of another (`chapterId`, a lore piece under its h3 title) also gets its ids scoped to the
@@ -39,7 +39,7 @@ export function useArticleHtml(
   const html = unresolved ? null : resolveLeanHtml(marker);
   const markup = useMemo(() => {
     if (!html) return null;
-    const linked = linksUnderBasePath(html, getBasePath());
+    const linked = withAppHrefs(html);
     return {
       __html: chapterId ? shiftArticleHeadings(scopeArticleIds(linked, chapterId)) : linked,
     };

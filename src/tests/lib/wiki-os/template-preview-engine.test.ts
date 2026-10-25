@@ -13,14 +13,12 @@ import { afterEach, beforeEach, describe, expect, it } from "@jest/globals";
 import { getTemplatePreview } from "~/lib/wiki-os/templates/template-engine.server";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { transformImages } from "~/lib/wiki-os/transformers/html-transformer";
-import { transformWikiLinks } from "~/lib/wiki-os/transformers/url-compat";
 import { db } from "~/server/db";
 import { extractTemplateDataJson, parseTemplateData, readTemplateData } from "~/lib/wiki-os/templates/template-data-reader";
 import { type FetchGuard, installFetchGuard } from "~/tests/helpers/fetch-guard";
 
 /** What the in-process compiler makes of the invocation `{{Quote box|text=hi}}`. */
-const compiled = () =>
-  transformWikiLinks(transformImages(parseWikitextToHtml("{{Quote box|text=hi}}", "ixwiki"), "ixwiki"));
+const compiled = () => transformImages(parseWikitextToHtml("{{Quote box|text=hi}}", "ixwiki"), "ixwiki");
 
 let fetchSpy: jest.SpiedFunction<typeof fetch>;
 beforeEach(() => {
@@ -38,6 +36,19 @@ describe("getTemplatePreview", () => {
 
     expect(html).not.toContain("engine");
     expect(html).toBe(compiled());
+  });
+  it("leaves its links bare under a base path: the reader adds the base path at display (withAppHrefs)", async () => {
+    const saved = process.env.NEXT_PUBLIC_BASE_PATH;
+    process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstates";
+    fetchSpy.mockResolvedValue(Response.json({ parse: { text: '<p><a href="/wiki/Quote">q</a></p>' } }));
+    try {
+      const html = await getTemplatePreview("Quote box", { text: "hi" });
+      expect(html).toContain('href="/wiki/Quote"');
+      expect(html).not.toContain("/projects/ixstates");
+    } finally {
+      if (saved === undefined) delete process.env.NEXT_PUBLIC_BASE_PATH;
+      else process.env.NEXT_PUBLIC_BASE_PATH = saved;
+    }
   });
   it("never calls the engine for an invocation that could break out", async () => {
     await expect(getTemplatePreview("Quote box", { text: "a}}b" })).resolves.toBe("Invalid parameter");

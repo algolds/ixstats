@@ -559,10 +559,6 @@ export const TARGETS: readonly Target[] = [
       why: "jsdom builds a DOM at a few microseconds an element in Bun and about 20 in Node: 200,000 characters of one-character elements (`<br>`) take a second in the Jest gate on a quiet machine and two under contention, and the depth guard parses the same page once more (parse5, as jsdom does): at the gate's 100 KB the worst families (`<a>`, `<p>`, `<li>`) take 1.8 to 2.3 s, which fails the 12 times allowance (1.8 s) in the gate, so it is allowed 20 times the budget: the DOM and its parse are the work",
     }
   ),
-  wikitext("transformers/url-compat#titleToWikiOSPath", async () => {
-    const m = await import("~/lib/wiki-os/transformers/url-compat");
-    return (s) => m.titleToWikiOSPath(s);
-  }),
   wikitext(
     "transformers/url-compat#titleToWikiOSRoute",
     async () => {
@@ -571,9 +567,9 @@ export const TARGETS: readonly Target[] = [
     },
     linear(2, "encodeURIComponent writes nine characters for each of these, and that is the work")
   ),
-  html("transformers/url-compat#transformWikiLinks", async () => {
-    const m = await import("~/lib/wiki-os/transformers/url-compat");
-    return (s) => m.transformWikiLinks(s);
+  html("reader-hrefs#withAppHrefs", async () => {
+    const m = await import("~/lib/wiki-os/reader-hrefs");
+    return (s) => m.withAppHrefs(s);
   }),
   wikitext(
     "transformers/wiki-ast-converter#wikitextToAst",

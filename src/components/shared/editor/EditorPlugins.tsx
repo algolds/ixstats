@@ -5,6 +5,8 @@
 import React from "react";
 import { createPlatePlugin } from "platejs/react";
 import { assetUrl } from "~/lib/base-path";
+import { createUrl } from "~/lib/utils/url-utils";
+import { wikiReaderPath } from "~/lib/wiki-os/config";
 
 export const BoldPlugin = createPlatePlugin({
   key: "bold",
@@ -85,7 +87,7 @@ export const WikiLinkPlugin = createPlatePlugin({
     node: ({ children, element, attributes }: any) => (
       <a
         {...attributes}
-        href={`/wiki/${((element?.target as string) || "").replace(/ /g, "_")}`}
+        href={createUrl(wikiReaderPath((element?.target as string) || ""))}
         className="text-wiki font-semibold underline transition-colors hover:opacity-80"
       >
         {children}

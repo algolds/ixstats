@@ -1,11 +1,11 @@
 /**
  * The Lore tab's pure parts: pieces grouped by type in a fixed order (empty groups left out), each piece's chapter
- * anchor, a refusal the owner can act on shown in the server's words, and a piece's links kept under the deployment's
- * base path.
+ * anchor, a refusal the owner can act on shown in the server's words, and a piece's ids and headings made its own as a
+ * chapter (its links under the base path are WikiOS's `withAppHrefs`, in src/tests/lib/wiki-os/reader-hrefs.test.ts).
  */
 import { groupLorePieces, loreChapterId, LORE_GROUP_LABEL } from "~/lib/lore/lore-groups";
 import { eventSeed, placeSeed } from "~/lib/lore/lore-seeds";
-import { linksUnderBasePath, scopeArticleIds, shiftArticleHeadings } from "~/lib/lore/piece-links";
+import { scopeArticleIds, shiftArticleHeadings } from "~/lib/lore/piece-html";
 import { refusalMessage } from "~/lib/lore/writer-messages";
 
 const piece = (title: string, type: "person" | "place" | "event" | "organisation" | "other") => ({
@@ -84,75 +84,6 @@ describe("refusalMessage", () => {
       "Generic"
     );
     expect(refusalMessage(new Error("network"), "Generic")).toBe("Generic");
-  });
-});
-
-describe("linksUnderBasePath", () => {
-  it("puts the base path on /wiki/, /dashboard/ and /@ links", () => {
-    expect(
-      linksUnderBasePath('<p><a href="/wiki/Venceia" title="Venceia">V</a></p>', "/projects/x")
-    ).toBe('<p><a href="/projects/x/wiki/Venceia" title="Venceia">V</a></p>');
-    expect(linksUnderBasePath('<a class="c" href="/dashboard/accounts">C</a>', "/p")).toBe(
-      '<a class="c" href="/p/dashboard/accounts">C</a>'
-    );
-    expect(linksUnderBasePath('<a href="/@livia">L</a>', "/p")).toBe('<a href="/p/@livia">L</a>');
-  });
-
-  it("leaves every other root path where it is: MediaWiki's index.php, api.php, files, other routes", () => {
-    const html = [
-      '<a href="/index.php?title=X">a</a>',
-      '<a href="/index.php?title=Special:Search">b</a>',
-      '<a href="/api.php">c</a>',
-      '<a href="/images/a/ab/File.png">d</a>',
-      '<a href="/w/index.php?title=X">e</a>',
-      '<a href="/countries/caphiria">f</a>',
-      '<a href="/wiki">g</a>',
-      '<a href="/dashboard">h</a>',
-    ].join("");
-    expect(linksUnderBasePath(html, "/p")).toBe(html);
-  });
-
-  it("leaves absolute, protocol-relative, backslash and fragment links", () => {
-    const html = [
-      '<a href="https://iiwiki.com/wiki/B">a</a>',
-      '<a href="//example.com/wiki/x">b</a>',
-      '<a href="/\\evil.com/wiki/x">c</a>',
-      '<a href="#History">d</a>',
-    ].join("");
-    expect(linksUnderBasePath(html, "/p")).toBe(html);
-  });
-
-  it("never doubles a base path, also before ? or #", () => {
-    const html = [
-      '<a href="/projects/ixstates/wiki/A">a</a>',
-      '<a href="/projects/ixstates?x">b</a>',
-      '<a href="/projects/ixstates#a">c</a>',
-    ].join("");
-    expect(linksUnderBasePath(html, "/projects/ixstates")).toBe(html);
-  });
-
-  it("counts a link as under the base path only at a boundary", () => {
-    // A base path that is itself an app path shows the boundary rule: /@app?x and /@app#a are under it,
-    // /@apple is not.
-    expect(linksUnderBasePath('<a href="/@app">a</a>', "/@app")).toBe('<a href="/@app">a</a>');
-    expect(linksUnderBasePath('<a href="/@app/wiki/A">a</a>', "/@app")).toBe(
-      '<a href="/@app/wiki/A">a</a>'
-    );
-    expect(linksUnderBasePath('<a href="/@app?x">a</a>', "/@app")).toBe('<a href="/@app?x">a</a>');
-    expect(linksUnderBasePath('<a href="/@app#a">a</a>', "/@app")).toBe('<a href="/@app#a">a</a>');
-    expect(linksUnderBasePath('<a href="/@apple">a</a>', "/@app")).toBe(
-      '<a href="/@app/@apple">a</a>'
-    );
-  });
-
-  it("touches only links, never text that looks like an attribute", () => {
-    const html = '<p>write href="/wiki/A" like this</p><img src="/wiki/x.png">';
-    expect(linksUnderBasePath(html, "/p")).toBe(html);
-  });
-
-  it("changes nothing without a base path", () => {
-    const html = '<a href="/wiki/A">a</a><a href="/@x">b</a>';
-    expect(linksUnderBasePath(html, "")).toBe(html);
   });
 });
 
