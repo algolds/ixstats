@@ -1218,6 +1218,7 @@ describe("the inbound rule", () => {
     mwRevId: 100,
     sha1: HEAD_SHA1,
     wikitext: HEAD_TEXT,
+    fromClassic: false,
     ...over,
   });
 
@@ -1309,21 +1310,28 @@ describe("the inbound rule", () => {
       expected: "collision",
     },
     {
-      name: "a revision older than the one WikiOS's head is stamped with (a replay after a newer one)",
-      head: head({ mwRevId: 100 }),
+      name: "a revision older than the classic revision WikiOS's head is (a replay after a newer one)",
+      head: head({ mwRevId: 100, fromClassic: true }),
       rev: rev({ revid: 99, parentid: 98 }),
       expected: "older",
     },
     {
       name: "an older revision whose parent is the head's own text is still older (never the head)",
-      head: head({ mwRevId: 100 }),
+      head: head({ mwRevId: 100, fromClassic: true }),
       rev: rev({ revid: 99, parentid: 98 }),
       parentSha1: HEAD_SHA1,
       expected: "older",
     },
     {
+      name: "a lower id than a WikiOS head the mirror stamped is no replay (an import's id is newer than its time): a collision",
+      head: head({ mwRevId: 100, fromClassic: false }),
+      rev: rev({ revid: 99, parentid: 98 }),
+      parentSha1: THIRD_SHA1,
+      expected: "collision",
+    },
+    {
       name: "an older revision with the head's text is an echo, as any of WikiOS's own text",
-      head: head({ mwRevId: 100 }),
+      head: head({ mwRevId: 100, fromClassic: true }),
       rev: rev({ revid: 99, parentid: 98, sha1: HEAD_SHA1 }),
       expected: "echo",
     },

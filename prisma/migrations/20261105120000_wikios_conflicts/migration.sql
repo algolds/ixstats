@@ -102,4 +102,23 @@ WHERE "kind" = 'revision' AND "payload"->>'restore' = 'true' AND "state" IN ('pe
 
 DELETE FROM "SystemConfig" WHERE "key" = 'wikiAutoSync.repushSkipped';
 
+-- Where each revision was saved: 'wikios' (a WikiOS save, stamped later by the mirror) or 'classic' (a MediaWiki
+-- revision brought in by an import or the inbound sync). MediaWiki ids order only classic revisions: the mirror's import
+-- gives a WikiOS revision a new id with its older time. Every row that exists when the column is added was brought in
+-- from classic, except those a WikiOS save queued for the mirror; the backfill runs only then, so a re-run changes
+-- nothing (finished mirror jobs are purged after a month and could no longer tell).
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'wiki_revisions' AND column_name = 'origin'
+    ) THEN
+        ALTER TABLE "wiki_revisions" ADD COLUMN "origin" TEXT NOT NULL DEFAULT 'wikios';
+        UPDATE "wiki_revisions" r SET "origin" = 'classic'
+        WHERE NOT EXISTS (
+            SELECT 1 FROM "wiki_mirror_jobs" j WHERE j."kind" = 'revision' AND j."revisionId" = r."id"
+        );
+    END IF;
+END $$;
+
 COMMIT;

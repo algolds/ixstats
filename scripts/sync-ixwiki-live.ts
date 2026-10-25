@@ -195,6 +195,7 @@ async function syncNamespace(ns: number, prefix: string, name: string, maxPerNs 
                 data: {
                   articleId: article.id,
                   mwRevId: revId,
+                  origin: "classic",
                   author,
                   summary: sanitize(rev?.comment || "Imported from MediaWiki").substring(0, 480),
                   wikitext,
@@ -284,6 +285,7 @@ async function syncRecentChangesAndUserContributions() {
               data: {
                 articleId: article.id,
                 mwRevId: revId,
+                origin: "classic",
                 author: sanitize(rc.user || "MediaWiki Editor"),
                 summary: sanitize(rc.comment || "MediaWiki Edit"),
                 wikitext: "",
@@ -349,6 +351,7 @@ async function syncRecentChangesAndUserContributions() {
                 data: {
                   articleId: article.id,
                   mwRevId: revId,
+                  origin: "classic",
                   author: username,
                   summary: sanitize(c.comment || ""),
                   wikitext: "",

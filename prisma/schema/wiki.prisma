@@ -131,6 +131,9 @@ model WikiRevision {
   // current text, and every "latest revision" query filters it out. `wiki_conflicts` holds the collision.
   parked           Boolean      @default(false)
   parkReason       String?      // "overwritten:<winning change's ref>"
+  /// Where the revision was saved: "wikios" (a WikiOS save, stamped later by the mirror) or "classic" (a MediaWiki
+  /// revision brought in by an import or the inbound sync). MediaWiki ids order only classic revisions.
+  origin           String       @default("wikios")
   createdAt        DateTime     @default(now())
   claimTags        WikiRevisionClaimTag[]
 

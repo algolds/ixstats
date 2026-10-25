@@ -3,8 +3,8 @@
  *
  * How the revision relates to WikiOS's head (`decideInbound`, pure) decides what is written:
  *   - echo: WikiOS's own text coming back; it only gives the head its MediaWiki id;
- *   - older: a revision older than the head's own MediaWiki revision (a replay after a newer one): stored as history,
- *     dated at its own time and never the head;
+ *   - older: a revision older than the classic revision that is WikiOS's head (a replay after a newer one): stored
+ *     as history, dated at its own time and never the head;
  *   - fast-forward: made on top of WikiOS's head: imported as the page's next revision (through
  *     `ArticleRepository.importPageRevisions`, the same write the XML importer makes);
  *   - collision: both wikis changed the page from the same base, and the conflict rule (`decideCollision`) judges the
@@ -18,6 +18,7 @@
  * oldest first.
  */
 
+import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { tagRevisionsOfName } from "~/lib/identity/claim-tags";
 import { ownerOfName } from "~/lib/identity/wiki-names";
@@ -41,6 +42,7 @@ import {
 } from "./conflict-sides";
 import {
   decideInbound,
+  isOlder,
   matchesHead,
   type InboundHead,
   type InboundRelation,
@@ -141,6 +143,7 @@ interface HeadRevision {
   sha1: string | null;
   byteSize: number;
   createdAt: Date;
+  origin: string;
 }
 
 const HEAD_SELECT = {
@@ -149,7 +152,11 @@ const HEAD_SELECT = {
   sha1: true,
   byteSize: true,
   createdAt: true,
+  origin: true,
 } as const;
+
+/** Where a revision this sync writes was saved: MediaWiki, always. */
+const CLASSIC_ORIGIN = "classic";
 
 /** The page's current revision: the newest one that is not parked (overwritten). */
 function loadHeadRevision(articleId: string): Promise<HeadRevision | null> {
@@ -167,9 +174,22 @@ function loadHeadRevision(articleId: string): Promise<HeadRevision | null> {
  * at all has nothing to protect.
  */
 function toInboundHead(article: StoredArticle, headRev: HeadRevision | null): InboundHead | null {
-  if (headRev) return { mwRevId: headRev.mwRevId, sha1: headRev.sha1, wikitext: article.wikitext };
+  if (headRev) {
+    return {
+      mwRevId: headRev.mwRevId,
+      sha1: headRev.sha1,
+      wikitext: article.wikitext,
+      fromClassic: headRev.origin === CLASSIC_ORIGIN,
+    };
+  }
   if (article.wikitext.trim() === "") return null;
-  return { mwRevId: article.mwLatestRevId, sha1: null, wikitext: article.wikitext };
+  // text kept from before revisions were: it came from classic, the revision it was synced from its stamp
+  return {
+    mwRevId: article.mwLatestRevId,
+    sha1: null,
+    wikitext: article.wikitext,
+    fromClassic: true,
+  };
 }
 
 const BASELINE_SUMMARY = "The page's text before its first recorded revision";
@@ -196,6 +216,7 @@ async function insertBaselineRevision(
       createdAt: article.updatedAt,
       wikitext: article.wikitext,
       format: "WIKITEXT",
+      origin: CLASSIC_ORIGIN,
     },
     select: HEAD_SELECT,
   });
@@ -286,6 +307,7 @@ async function insertEchoRevision(
         createdAt,
         wikitext: rev.wikitext,
         format: "WIKITEXT",
+        origin: CLASSIC_ORIGIN,
       },
     ],
     skipDuplicates: true,
@@ -389,11 +411,19 @@ function importInput(page: PageState, createdAt: Date, head: ImportedHead | null
   };
 }
 
-/** Import `rev` as the page's new head, counting at `at` (never before the head it replaces). */
-async function importAsHead(page: PageState, at: Date): Promise<boolean> {
+/**
+ * Import `rev` as the page's new head, counting at `at` (never before the head it replaces). `onHeadApplied`: written
+ * in the import's transaction once the revision is the head; with it, a newer save that landed meanwhile makes the
+ * import write nothing and throw (`HeadNotAppliedError`).
+ */
+async function importAsHead(
+  page: PageState,
+  at: Date,
+  onHeadApplied?: ImportPageInput["onHeadApplied"]
+): Promise<boolean> {
   const { rev, article, headRev } = page;
   const createdAt = laterThan(at, headRev?.createdAt);
-  const input = importInput(page, createdAt, buildHead(rev, createdAt));
+  const input = { ...importInput(page, createdAt, buildHead(rev, createdAt)), onHeadApplied };
   const result = await ArticleRepository.importPageRevisions(input);
   await tagEditor(rev);
   if (result.inserted === 0 && !result.headUpdated) return false;
@@ -415,9 +445,10 @@ function beforeHead(time: Date, headRev: HeadRevision | null): Date {
 
 /** An older revision: stored at its own time, as history (never the head, and the head is left as it is). */
 async function applyOlder(page: PageState): Promise<RevisionOutcome> {
-  const input = importInput(page, beforeHead(page.rev.timestamp, page.headRev), null);
+  const based = await withBaseline(page);
+  const input = importInput(based, beforeHead(based.rev.timestamp, based.headRev), null);
   const result = await ArticleRepository.importPageRevisions(input);
-  await tagEditor(page.rev);
+  await tagEditor(based.rev);
   return result.inserted === 0 ? "known" : "older";
 }
 
@@ -455,22 +486,26 @@ async function judge(
 }
 
 /**
- * The classic edit won: the collision is recorded first (a retry after a failed import finds the same row by its
- * key), then the edit becomes the page's head, bringing back a page WikiOS had deleted.
+ * The classic edit won: it becomes the page's head (bringing back a page WikiOS had deleted) and its conflict row is
+ * written in the same transaction, so nobody is told of an overwrite that did not happen. A WikiOS save that landed
+ * after the verdict was read makes the import write nothing and fail (`HeadNotAppliedError`): the cycle holds the
+ * revision back and judges it again, against that save, next time.
  */
 async function importWinner(
   page: PageState,
   article: StoredArticle,
   verdict: CollisionVerdict
 ): Promise<RevisionOutcome> {
-  await recordConflict(db, {
-    source: SOURCE,
-    articleId: article.id,
-    title: article.title,
-    verdict,
-    baseRef: baseRefOf(page.rev),
-  });
-  return (await importAsHead(page, verdict.winner.at)) ? "won" : "known";
+  const record = async (tx: Prisma.TransactionClient) => {
+    await recordConflict(tx, {
+      source: SOURCE,
+      articleId: article.id,
+      title: article.title,
+      verdict,
+      baseRef: baseRefOf(page.rev),
+    });
+  };
+  return (await importAsHead(page, verdict.winner.at, record)) ? "won" : "known";
 }
 
 /**
@@ -507,6 +542,7 @@ async function keepOverwritten(
           parentRevisionId: headRev?.id ?? null,
           parked: true,
           parkReason: `overwritten:${verdict.winner.ref}`,
+          origin: CLASSIC_ORIGIN,
         },
       ],
       skipDuplicates: true,
@@ -543,7 +579,7 @@ interface ApplyOptions {
  */
 function relationOnDeleted(rev: MediaWikiRevision, head: InboundHead | null): InboundRelation {
   if (isMirrorUser(rev.user)) return "echo";
-  if (head && head.mwRevId !== null && rev.revid < head.mwRevId) return "older";
+  if (isOlder(head, rev.revid)) return "older";
   return rev.parentid === 0 ? "fast-forward" : "collision";
 }
 

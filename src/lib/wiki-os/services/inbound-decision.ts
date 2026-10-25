@@ -4,7 +4,8 @@
  * WikiOS and classic MediaWiki are both editable, so an edit made there is taken as the page's next revision only when
  * its author started from the text WikiOS holds now:
  *   - echo: the text is WikiOS's own (the mirror's export coming back); nothing to import;
- *   - older: a revision older than the one WikiOS's head is stamped with (a replay after a newer one): history only;
+ *   - older: a revision older than the classic revision that is WikiOS's head (a replay after a newer one): history
+ *     only;
  *   - fast-forward: the edit's parent is WikiOS's head (by MediaWiki revision id, or because the parent has exactly
  *     WikiOS's text): import it as a normal revision;
  *   - collision: anything else; both wikis changed the page from the same base, and the conflict rule
@@ -24,6 +25,11 @@ export interface InboundHead {
   sha1: string | null;
   /** The page's text now. */
   wikitext: string;
+  /**
+   * The head came in from classic MediaWiki (not a WikiOS save the mirror stamped). Only then does its MediaWiki id
+   * order it against other classic revisions: the mirror's import gives a WikiOS revision a new id with its older time.
+   */
+  fromClassic: boolean;
 }
 
 export interface InboundRevision {
@@ -60,11 +66,18 @@ export function matchesHead(head: InboundHead, sha1: string): boolean {
   return headHashes(head).has(sha1);
 }
 
+/**
+ * Whether MediaWiki revision `revid` is older than a head that came in from classic. Classic's own ids grow with
+ * time, so a lower one is a replay after a newer one; a WikiOS head's id is its import's and says nothing about time.
+ */
+export function isOlder(head: InboundHead | null, revid: number): boolean {
+  return head !== null && head.fromClassic && head.mwRevId !== null && revid < head.mwRevId;
+}
+
 export function decideInbound({ head, rev, parentSha1 }: InboundInput): InboundRelation {
   if (!head) return "fast-forward";
   if (rev.byMirrorBot || matchesHead(head, rev.sha1)) return "echo";
-  // MediaWiki's ids grow with time: a revision before the head's own was replayed after a newer one, and is history.
-  if (head.mwRevId !== null && rev.revid < head.mwRevId) return "older";
+  if (isOlder(head, rev.revid)) return "older";
 
   if (head.mwRevId !== null && head.mwRevId === rev.parentid) return "fast-forward";
   // The author's base was a MediaWiki revision with exactly WikiOS's text, though not the one WikiOS

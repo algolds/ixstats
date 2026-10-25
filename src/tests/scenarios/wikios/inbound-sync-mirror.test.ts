@@ -592,6 +592,7 @@ describe.each(WIKIOS_MODES)("inbound revisions through the conflict rule [%s]", 
       mwRevId: r2.revid,
       sha1: mwSha1Base36(r2.text),
       author: "Alice",
+      origin: "classic",
       createdAt: new Date(r2.timestamp),
     });
     caphiria.wikitext = r2.text;
@@ -659,6 +660,123 @@ describe.each(WIKIOS_MODES)("inbound revisions through the conflict rule [%s]", 
     expect(conflicts[0]).toMatchObject({ winnerSide: "wikios", winnerRef: saved.revisionId });
     expect(overwrittenRefs(conflicts[0]!)).toEqual([String(bob.revid)]);
     expect(jobs()).toEqual(jobsBefore);
+  });
+
+  it("a WikiOS revision the mirror stamped with a higher id than a later classic edit from the same base still collides: the classic edit wins, one row, the WikiOS author told", async () => {
+    tables.user.seed({ id: "db-kir", clerkUserId: "clerk-kir", handle: "kir" });
+    const w1 = await saveOnHead(
+      "Caphiria is an empire in Sarpedon.",
+      new Date(siteTime() - 60_000),
+      "db-kir"
+    );
+    const c = site.editAs("Bob", "Caphiria", "Caphiria is a republic.");
+    // the mirror's Special:Import gave W1 a newer MediaWiki id than C, with W1's older time
+    revisionRow(w1.revisionId).mwRevId = c.revid + 50;
+
+    await runAutoSyncCycle();
+
+    expect(liveHead("Caphiria").wikitext).toBe("Caphiria is a republic.");
+    expect(revisionOf(c.revid)?.parked).toBe(false);
+    expect(conflictsOf("Caphiria")).toEqual([
+      expect.objectContaining({ winnerSide: "classic", winnerRef: String(c.revid) }),
+    ]);
+    expect(conflictsOf("Caphiria").map(overwrittenRefs)).toEqual([[String(c.revid + 50)]]);
+    expect(jest.mocked(notificationAPI.create)).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "clerk-kir", source: "wikiConflict" })
+    );
+  });
+
+  it("an older revision of a page with text but no revision row keeps that text as a baseline head", async () => {
+    const r1 = site.editAs("Founder", "Legacy", "Legacy, first.");
+    const r2 = site.editAs("Founder", "Legacy", "Legacy, second.");
+    tables.wikiArticle.insert({
+      title: "Legacy",
+      slug: "legacy",
+      wikitext: r2.text,
+      mwPageId: site.pages.get("Legacy")!.pageid,
+      mwLatestRevId: r2.revid,
+    });
+
+    await expect(syncRevisionById(r1.revid)).resolves.toBe("older");
+
+    expect(revisionsOf("Legacy").map((row) => [row.wikitext, row.parked ?? false])).toEqual([
+      [r2.text, false],
+      [r1.text, false],
+    ]);
+    expect(liveHead("Legacy").wikitext).toBe(r2.text);
+    expect(article("Legacy")?.wikitext).toBe(r2.text);
+    expect(tables.wikiConflict.rows).toEqual([]);
+  });
+
+  it("a classic edit whose import fails records no conflict and tells nobody; the next cycle judges it again", async () => {
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
+    tables.user.seed({ id: "db-kir", clerkUserId: "clerk-kir", handle: "kir" });
+    await saveOnHead("Caphiria is an empire in Sarpedon.", new Date(siteTime() - 60_000), "db-kir");
+    const bob = site.editAs("Bob", "Caphiria", "Caphiria is a republic.");
+    const importSpy = jest
+      .spyOn(ArticleRepository, "importPageRevisions")
+      .mockRejectedValueOnce(new Error("lock timeout"));
+
+    await runAutoSyncCycle();
+
+    expect(tables.wikiConflict.rows).toEqual([]);
+    expect(jest.mocked(notificationAPI.create)).not.toHaveBeenCalled();
+    expect(revisionOf(bob.revid)).toBeUndefined();
+
+    await runAutoSyncCycle();
+
+    // Bob's edit is the page's text now (the settling's trail revision copies it on top)
+    expect(revisionOf(bob.revid)?.parked).toBe(false);
+    expect(article("Caphiria")?.wikitext).toBe("Caphiria is a republic.");
+    expect(conflictsOf("Caphiria")).toHaveLength(1);
+    expect(jest.mocked(notificationAPI.create)).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "clerk-kir" })
+    );
+    importSpy.mockRestore();
+  });
+
+  it("a WikiOS save that lands before the import's lock leaves the classic edit to the next cycle, which tells its author", async () => {
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const w1 = await saveOnHead("Caphiria is an empire.", new Date(siteTime() - 60_000));
+    const bob = site.editAs("Bob", "Caphiria", "Caphiria is a republic.");
+    const realImport = ArticleRepository.importPageRevisions;
+    let w2Id = "";
+    const importSpy = jest
+      .spyOn(ArticleRepository, "importPageRevisions")
+      .mockImplementationOnce(async (input) => {
+        // a WikiOS member saves between the cycle's read of the head and the import's page lock
+        const w2 = await ArticleRepository.saveArticle(
+          {
+            slug: "Caphiria",
+            title: "Caphiria",
+            wikitext: "Caphiria is an empire in Sarpedon.",
+            expectedHeadRef: w1.revisionId,
+          },
+          undefined,
+          "Kir"
+        );
+        w2Id = w2.revisionId;
+        return realImport(input);
+      });
+
+    await runAutoSyncCycle();
+
+    expect(tables.wikiConflict.rows).toEqual([]);
+    expect(revisionOf(bob.revid)).toBeUndefined();
+    expect(liveHead("Caphiria").id).toBe(w2Id);
+
+    await runAutoSyncCycle();
+
+    expect(revisionOf(bob.revid)).toMatchObject({
+      parked: true,
+      parkReason: `overwritten:${w2Id}`,
+    });
+    const [conflict] = conflictsOf("Caphiria");
+    expect(conflict).toMatchObject({ winnerSide: "wikios", winnerRef: w2Id });
+    expect(conflict?.notified).toEqual([
+      expect.objectContaining({ key: "name:Bob", channel: "talk-page" }),
+    ]);
+    importSpy.mockRestore();
   });
 
   it("a same-second classic edit wins", async () => {

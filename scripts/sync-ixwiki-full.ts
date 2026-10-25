@@ -199,6 +199,7 @@ async function main() {
               data: {
                 articleId: article.id,
                 mwRevId: revId,
+                origin: "classic",
                 author,
                 summary: sanitize(row.comment_text || "Latest revision"),
                 wikitext,
@@ -265,6 +266,7 @@ async function main() {
               data: {
                 articleId: article.id,
                 mwRevId: revId,
+                origin: "classic",
                 author: sanitize(r.actor_name || "MediaWiki Editor"),
                 summary: sanitize(r.comment_text || ""),
                 wikitext: "", // Historical diff placeholder

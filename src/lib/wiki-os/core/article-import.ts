@@ -57,8 +57,22 @@ export interface ImportPageInput {
    * it: the watchers' notification then links the diff, not just the page.
    */
   previousRef?: string | null;
+  /**
+   * For an import whose head must become the page's head: runs in the import's transaction once it has. When a newer
+   * revision is stored (a save committed before the page lock), the import throws `HeadNotAppliedError` and writes
+   * nothing.
+   */
+  onHeadApplied?: (tx: Prisma.TransactionClient) => Promise<void>;
   /** Read and plan, write nothing. */
   dryRun: boolean;
+}
+
+/** The import's head could not become the page's head: a newer revision is stored. Nothing was written. */
+export class HeadNotAppliedError extends Error {
+  constructor(title: string) {
+    super(`A newer revision of "${title}" was saved while its import waited: nothing was written.`);
+    this.name = "HeadNotAppliedError";
+  }
 }
 
 export interface ImportPageResult {
@@ -209,6 +223,8 @@ async function insertRevisions(
         createdAt: revision.createdAt,
         wikitext: revision.wikitext ?? "",
         format: "WIKITEXT",
+        // a dump's or the inbound sync's revision is MediaWiki's (only those are imported)
+        origin: "classic",
       })),
     });
   }
@@ -321,10 +337,12 @@ async function importInto(
     );
   const head =
     input.head && (!previousHeadAt || input.head.createdAt > previousHeadAt) ? input.head : null;
+  if (input.onHeadApplied && !input.dryRun && !head) throw new HeadNotAppliedError(input.title);
 
   const articleId = input.dryRun
     ? (article?.id ?? null)
     : await writeImport(client, input, article, plan, head, hashed);
+  if (input.onHeadApplied && !input.dryRun) await input.onHeadApplied(client);
   return {
     articleId,
     head,
