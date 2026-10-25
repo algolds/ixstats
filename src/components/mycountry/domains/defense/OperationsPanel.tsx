@@ -5,6 +5,7 @@ import { DeploymentWizard } from "./operations/DeploymentWizard";
 import { ActiveOperations } from "./operations/ActiveOperations";
 import { PvPConflictPanel } from "./operations/PvPConflictPanel";
 import { api } from "~/trpc/react";
+import { useCanEdit } from "~/context/MyCountryEditModeContext";
 
 interface OperationsPanelProps {
   countryId: string;
@@ -12,6 +13,8 @@ interface OperationsPanelProps {
 
 export function OperationsPanel({ countryId }: OperationsPanelProps) {
   const utils = api.useUtils();
+  // Deploying is premium, like the other write controls: the free preview hides it.
+  const { canEdit } = useCanEdit();
 
   const handleOperationCreated = () => {
     void utils.security.getOperations.invalidate({ countryId });
@@ -24,7 +27,9 @@ export function OperationsPanel({ countryId }: OperationsPanelProps) {
           <Swords aria-hidden="true" className="text-red h-4 w-4" />
           <h3 className="text-label text-headline">Military operations</h3>
         </div>
-        <DeploymentWizard countryId={countryId} onSuccess={handleOperationCreated} />
+        {canEdit && (
+          <DeploymentWizard countryId={countryId} onSuccess={handleOperationCreated} />
+        )}
       </div>
 
       <ActiveOperations countryId={countryId} />
