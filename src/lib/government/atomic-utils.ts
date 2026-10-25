@@ -21,7 +21,6 @@ import type { EffectivenessMetrics } from "./tax/atomic-tax-components";
 import { EconomicComponentType } from "~/lib/economy/atomic-data";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 import { ATOMIC_TAX_COMPONENTS } from "./tax/atomic-tax-components";
-import { IxTime } from "~/lib/ixtime";
 import { CONFLICT_PENALTY, findSynergyPair, synergyScoreDelta } from "./synergy-table";
 
 /**
@@ -415,44 +414,4 @@ export function calculateComponentEconomicModifiers(
     unemploymentModifier, // percentage points e.g. -0.5 means -0.5%
     inflationModifier, // percentage points e.g. +1 means +1%
   };
-}
-
-/**
- * Helper to parse a timeToImplement string (e.g. "12 months", "2-3 years")
- * and return the number of months or years to add.
- */
-function parseTimeToImplement(timeStr: string): { months?: number; years?: number } {
-  const str = timeStr.toLowerCase().trim();
-  if (str.includes("month")) {
-    const matches = str.match(/\d+/g);
-    if (matches && matches.length > 0) {
-      const val = parseInt(matches[matches.length - 1]!, 10);
-      return { months: val };
-    }
-    return { months: 12 };
-  }
-  if (str.includes("year")) {
-    const matches = str.match(/\d+/g);
-    if (matches && matches.length > 0) {
-      const val = parseInt(matches[matches.length - 1]!, 10);
-      return { years: val };
-    }
-    return { years: 1 };
-  }
-  return { months: 12 };
-}
-
-/**
- * Calculate future implementation date based on timeToImplement string.
- */
-export function calculateImplementationDate(timeToImplementStr: string): Date {
-  const parsed = parseTimeToImplement(timeToImplementStr);
-  const currentIxTime = IxTime.getCurrentIxTime();
-  let futureTime = currentIxTime;
-  if (parsed.years) {
-    futureTime = IxTime.addYears(currentIxTime, parsed.years);
-  } else if (parsed.months) {
-    futureTime = IxTime.addMonths(currentIxTime, parsed.months);
-  }
-  return new Date(futureTime);
 }

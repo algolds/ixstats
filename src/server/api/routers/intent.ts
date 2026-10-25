@@ -16,7 +16,9 @@ import {
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { IxTime } from "~/lib/ixtime";
+import { currentBudgetYear } from "~/lib/government/budget-year";
+import { formatRealmDate } from "~/lib/realms/realm-clock";
+import { clockForCountry, type RealmClockReader } from "~/server/shared/realm-time";
 import { CountryEventSpine } from "~/lib/activity";
 import {
   declareDirectiveActivity,
@@ -52,7 +54,7 @@ import { createStorytellerEffect } from "~/lib/economy/storyteller-effects";
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEK_MS = 7 * DAY_MS;
 const COOLDOWN_MS = WEEK_MS; // decided: weekly cooldown between intents
-const WEEKLY_CAP = 3; // safety ceiling on directives committed per IxTime-week
+const WEEKLY_CAP = 3; // safety ceiling on directives committed per week of the nation's realm clock
 /** Advisory-lock namespace serialising one nation's directive commits ($executeRaw: the lock returns void). */
 const DIRECTIVE_CAP_LOCK_NAMESPACE = 51001;
 const BUDGET_PCT_MAX = 60; // clamp a single department's allocatedPercent
@@ -67,15 +69,21 @@ const STATUS_TRANSITIONS: Record<string, readonly string[]> = {
   active: ["completed", "abandoned"],
 };
 
-/** Load active Power Brokers for a country (mirrors elections.getPowerBrokers). */
-async function loadBrokers(db: PrismaClient, countryId: string): Promise<ActiveBroker[]> {
+/** Load active Power Brokers for a country at `now` (its clock time; mirrors elections.getPowerBrokers). */
+async function loadBrokers(
+  db: PrismaClient,
+  countryId: string,
+  now: number
+): Promise<ActiveBroker[]> {
   const [components, allocations] = await Promise.all([
     db.governmentComponent.findMany({
       where: { countryId, isActive: true },
       take: 100,
       select: { componentType: true },
     }),
-    loadEffectiveBudget(db, countryId, { take: 50 }).then((budget) => budget.allocations),
+    loadEffectiveBudget(db, countryId, { take: 50, currentYear: currentBudgetYear(now) }).then(
+      (budget) => budget.allocations
+    ),
   ]);
 
   const spendByCategory: Record<string, number> = {};
@@ -95,14 +103,13 @@ function alignedBroker(brokers: ActiveBroker[], category: Category): ActiveBroke
 }
 
 /**
- * Weekly slots: every directive committed in the last IxTime week uses one, whatever its
+ * Weekly slots: every directive committed in the last week of the nation's realm clock (`now`) uses one, whatever its
  * status now. Abandoning (or completing) a directive releases its executive bandwidth but not its slot, so
  * declare → abandon → redeclare cannot exceed the cap. Drafts (`tier: "proposed"`, never
  * committed) don't use a slot. This is the one server value the UI slot counters read
  * (`getStatus`).
  */
-async function cooldownStatus(db: PrismaClient, countryId: string) {
-  const now = IxTime.getCurrentIxTime();
+async function cooldownStatus(db: PrismaClient, countryId: string, now: number) {
   const weekAgo = now - WEEK_MS;
   const recent = await db.intent.findMany({
     where: {
@@ -151,11 +158,16 @@ async function assertCommittableDraft(db: PrismaClient, intentId: string, countr
   }
 }
 
-async function assertUnderWeeklyCap(db: PrismaClient, countryId: string) {
-  const status = await cooldownStatus(db, countryId);
+async function assertUnderWeeklyCap(
+  db: PrismaClient,
+  countryId: string,
+  clock: RealmClockReader,
+  now: number
+) {
+  const status = await cooldownStatus(db, countryId, now);
   if (status.canCommit) return;
   const until = status.cooldownUntil
-    ? ` Next available around ${IxTime.formatIxTime?.(status.cooldownUntil) ?? new Date(status.cooldownUntil).toISOString()}.`
+    ? ` Next available around ${formatRealmDate(status.cooldownUntil, clock.calendar)}.`
     : "";
   throw new TRPCError({
     code: "TOO_MANY_REQUESTS",
@@ -249,12 +261,13 @@ export const intentRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
       const { category, packages } = assemblePackages(input.goal);
-      const status = await cooldownStatus(ctx.db, input.countryId);
+      const now = (await clockForCountry(ctx.db, input.countryId)).now();
+      const status = await cooldownStatus(ctx.db, input.countryId, now);
 
       // broker-weighted acceptance (falls back to tier-based if brokers unavailable)
       let broker: ActiveBroker | undefined;
       try {
-        const brokers = await loadBrokers(ctx.db, input.countryId);
+        const brokers = await loadBrokers(ctx.db, input.countryId, now);
         broker = alignedBroker(brokers, category);
       } catch {
         /* ignore — acceptance stays tier-based */
@@ -293,7 +306,11 @@ export const intentRouter = createTRPCRouter({
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
-      return cooldownStatus(ctx.db, input.countryId);
+      return cooldownStatus(
+        ctx.db,
+        input.countryId,
+        (await clockForCountry(ctx.db, input.countryId)).now()
+      );
     }),
 
   /** Update status of an intent (e.g. mark completed, abandoned). */
@@ -411,7 +428,8 @@ export const intentRouter = createTRPCRouter({
       await assertCountryWriteAccess(ctx, input.countryId);
 
       const { category, packages } = assemblePackages(input.goal);
-      const now = IxTime.getCurrentIxTime();
+      const clock = await clockForCountry(ctx.db, input.countryId);
+      const now = clock.now();
 
       // Foreign policy is gated at classification time (assemble.classifyGoal throws
       // on foreign keywords), so no runtime gate is needed here.
@@ -455,7 +473,7 @@ export const intentRouter = createTRPCRouter({
       // cannot both pass the check with the last free slot.
       const intent = await ctx.db.$transaction(async (tx) => {
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(${DIRECTIVE_CAP_LOCK_NAMESPACE}::int, hashtext(${input.countryId}))`;
-        await assertUnderWeeklyCap(tx as PrismaClient, input.countryId);
+        await assertUnderWeeklyCap(tx as PrismaClient, input.countryId, clock, now);
         return saveActiveIntent(tx as PrismaClient, {
           ...input,
           tier: input.tier as Tier,
@@ -509,6 +527,7 @@ export const intentRouter = createTRPCRouter({
         await spawnIntentResistance({
           db: ctx.db,
           countryId: input.countryId,
+          now,
           intent: { id: intent.id, category, tier: input.tier },
         });
       }

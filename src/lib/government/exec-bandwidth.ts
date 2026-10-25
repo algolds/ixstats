@@ -14,7 +14,8 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
-import { IxTime } from "~/lib/ixtime";
+import { currentBudgetYear } from "~/lib/government/budget-year";
+import { clockForCountry } from "~/server/shared/realm-time";
 import {
   calculateCivilServiceCapacity,
   calculateTotalConsumedStaff,
@@ -73,14 +74,15 @@ export function sumExecBandwidthUsed(breakdown: ExecBandwidthBreakdown): number 
 /**
  * Load a country's executive bandwidth capacity, what consumes it, and what is left. Pass the
  * projected population (`loadProjectedPopulation`) so capacity follows the population the Standing
- * card shows; without it, the stored `currentPopulation` is used.
+ * card shows; without it, the stored `currentPopulation` is used. Windows count on the nation's realm clock (`now`,
+ * read from its realm when omitted).
  */
 export async function loadExecBandwidthState(
   db: PrismaClient,
   countryId: string,
-  options: { population?: number | null } = {}
+  options: { population?: number | null; now?: number } = {}
 ): Promise<ExecBandwidthState> {
-  const now = IxTime.getCurrentIxTime();
+  const now = options.now ?? (await clockForCountry(db, countryId)).now();
   const [
     country,
     structure,
@@ -108,8 +110,10 @@ export async function loadExecBandwidthState(
       select: { componentType: true },
     }),
     db.nationalIssue.count({ where: { countryId, reconReadyIxTime: { gt: now } } }),
-    // The budget in effect: the latest year at or before the current IxTime year
-    loadEffectiveBudget(db, countryId, { take: 50 }).then((budget) => budget.allocations),
+    // The budget in effect: the latest year at or before the nation's current budget year
+    loadEffectiveBudget(db, countryId, { take: 50, currentYear: currentBudgetYear(now) }).then(
+      (budget) => budget.allocations
+    ),
     db.policy.aggregate({
       where: { countryId, status: "active" },
       _sum: { execBandwidthCost: true },
