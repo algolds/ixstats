@@ -9,10 +9,12 @@
  *   issues (`responded`/`auto_resolved`). The server enforces it (`countries.getPublicRecord`);
  *   the filters are shared from `~/lib/country/public-record` and re-exported here.
  * - **One chronicle.** Wiki founding dates, map story pins, directives, decisions and diplomatic
- *   events merge into one timeline on the in-game calendar (`buildChronicle`).
+ *   events merge into one timeline on the country's realm calendar (`buildChronicle`).
  */
 
 import { cleanWikiMarkup } from "~/lib/wiki-os/transformers/wikitext-parser";
+import { formatRealmDate, type RealmCalendar } from "~/lib/realms/realm-clock";
+import { realmFractionalYear } from "~/lib/realms/nation-time";
 import type { PublicDirective, PublicIssueOutcome } from "~/lib/country/public-record";
 
 /** Inline templates that carry prose; `cleanWikiMarkup` would otherwise drop them. */
@@ -63,37 +65,9 @@ export interface ChronicleEntry {
   detail: string | null;
   /** In-game year, fractional for dated events so they sort within a year. */
   year: number;
-  /** "1622" for lore dates, "12 March 2041" for IxTime events. */
+  /** "1622" for lore dates, "12 March 2041" or "14 Frostfall 812 AE" for events on the realm clock. */
   dateLabel: string;
   source: "wiki" | "map" | "ixtime";
-}
-
-const MS_PER_YEAR = 365.25 * 24 * 60 * 60 * 1000;
-const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-
-/** IxTime ms → fractional in-game year. IxTime is a UTC timestamp on the in-game calendar. */
-export function ixTimeToYear(ixTime: number): number {
-  const d = new Date(ixTime);
-  const start = Date.UTC(d.getUTCFullYear(), 0, 1);
-  return d.getUTCFullYear() + (ixTime - start) / MS_PER_YEAR;
-}
-
-export function formatIxDate(ixTime: number): string {
-  const d = new Date(ixTime);
-  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 
 /** First year in a free-text lore date ("12 March 1622", "c. 900 BC", "1848–1851"). */
@@ -127,11 +101,13 @@ interface StoryPinLike {
 interface CanonEventLike {
   id: string;
   title: string;
-  /** In-game time (callers convert real-world timestamps with `IxTime.convertToIxTime`). */
+  /** Time on the country's realm clock (callers convert real-world timestamps with `clockTimeAt`). */
   ixTime: number;
 }
 
 interface ChronicleSources {
+  /** The country's realm calendar: realm-clock events are dated and ordered in it. */
+  calendar: RealmCalendar;
   founding?: readonly FoundingEvent[];
   storyPins?: readonly StoryPinLike[];
   directives?: readonly PublicDirective[];
@@ -158,6 +134,11 @@ export function yearLabel(year: number): string {
  */
 export function buildChronicle(sources: ChronicleSources): ChronicleEntry[] {
   const entries: ChronicleEntry[] = [];
+  const onClock = (ms: number) => ({
+    year: realmFractionalYear(ms, sources.calendar),
+    dateLabel: formatRealmDate(ms, sources.calendar),
+    source: "ixtime" as const,
+  });
 
   for (const [index, f] of (sources.founding ?? []).entries()) {
     const year = parseLoreYear(f.date);
@@ -192,9 +173,7 @@ export function buildChronicle(sources: ChronicleSources): ChronicleEntry[] {
       kind: "directive",
       title: d.goal,
       detail: excerpt(d.summary),
-      year: ixTimeToYear(d.createdIxTime),
-      dateLabel: formatIxDate(d.createdIxTime),
-      source: "ixtime",
+      ...onClock(d.createdIxTime),
     });
   }
 
@@ -207,9 +186,7 @@ export function buildChronicle(sources: ChronicleSources): ChronicleEntry[] {
       kind: "decision",
       title: o.title,
       detail: excerpt(o.decision ? `${o.decision}${o.outcome ? `: ${o.outcome}` : ""}` : o.outcome),
-      year: ixTimeToYear(o.ixTime),
-      dateLabel: formatIxDate(o.ixTime),
-      source: "ixtime",
+      ...onClock(o.ixTime),
     });
   }
 
@@ -220,9 +197,7 @@ export function buildChronicle(sources: ChronicleSources): ChronicleEntry[] {
       kind: "decision",
       title: d.title,
       detail: null,
-      year: ixTimeToYear(d.ixTime),
-      dateLabel: formatIxDate(d.ixTime),
-      source: "ixtime",
+      ...onClock(d.ixTime),
     });
   }
 
@@ -232,9 +207,7 @@ export function buildChronicle(sources: ChronicleSources): ChronicleEntry[] {
       kind: "diplomacy",
       title: e.title,
       detail: null,
-      year: ixTimeToYear(e.ixTime),
-      dateLabel: formatIxDate(e.ixTime),
-      source: "ixtime",
+      ...onClock(e.ixTime),
     });
   }
 

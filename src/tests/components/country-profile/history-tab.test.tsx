@@ -2,6 +2,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { CountryProfileLayer } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
 import { HistoryTab } from "~/components/country-profile/history/HistoryTab";
+import type { RealmClockReader } from "~/lib/realms/realm-clock";
+import { REAL_NOW, ixnayReader, sixTimesReader } from "~/tests/fixtures/realm-readers";
 
 const feedQuery = jest.fn();
 let activities: {
@@ -29,9 +31,10 @@ jest.mock("~/components/action-links/DiscussionCountsProvider", () => ({
 }));
 jest.mock("~/components/action-links/DiscussedIn", () => ({ DiscussedInBadge: () => null }));
 
-const layer = (chronicle: number) =>
+const layer = (chronicle: number, clock: RealmClockReader = ixnayReader()) =>
   ({
     countryId: "c1",
+    clock,
     identity: { name: "Caphiria" },
     chronicle: Array.from({ length: chronicle }, (_, i) => ({
       id: `entry-${i}`,
@@ -100,6 +103,33 @@ describe("HistoryTab", () => {
     fireEvent.click(screen.getByRole("radio", { name: "Economic" }));
     fireEvent.click(screen.getByRole("button", { name: "Show more" }));
     expect(feedQuery).toHaveBeenLastCalledWith(expect.objectContaining({ limit: 50 }));
+  });
+
+  it("places the feed on the country's realm calendar, not Ixnay's", () => {
+    activities = [
+      {
+        id: "a-frost",
+        type: "economic",
+        source: "activity",
+        title: "Harbour reopened",
+        description: "",
+        timestamp: new Date(REAL_NOW).toISOString(),
+      },
+    ];
+    const frost = {
+      ...layer(0, sixTimesReader()),
+      chronicle: [
+        { id: "late", kind: "decision", title: "Late decision", year: 812.5, source: "ixtime" },
+        { id: "early", kind: "decision", title: "Early decision", year: 811.2, source: "ixtime" },
+      ].map((e) => ({ ...e, detail: null, dateLabel: String(Math.floor(e.year)) })),
+    } as unknown as CountryProfileLayer;
+    render(<HistoryTab layer={frost} />);
+    // The feed item fell on 14 Thaw 812 AE: between the two decisions, newest first.
+    const [late, feed, early] = ["Late decision", "Harbour reopened", "Early decision"].map(
+      (text) => screen.getByText(text)
+    );
+    expect(late!.compareDocumentPosition(feed!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(feed!.compareDocumentPosition(early!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("says so when nothing matches", () => {

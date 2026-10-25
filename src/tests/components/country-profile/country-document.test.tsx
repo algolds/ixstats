@@ -1,6 +1,7 @@
 /** The country document: one face, the ribbon, one panel per tab, URLs per tab, and the owner flip. */
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { CountryDocument } from "~/app/countries/[slug]/_components/CountryDocument";
+import { ixnayReader } from "~/tests/fixtures/realm-readers";
 import {
   ProfileShellProvider,
   type ProfileShellValue,
@@ -45,7 +46,7 @@ function shell(isOwner = false): ProfileShellValue {
     country: { id: "c1", name: "Caphiria" } as ProfileShellValue["country"],
     flagUrl: null,
     isOwner,
-    currentIxTime: 0,
+    clock: ixnayReader(),
     cover: { mode: "gradient", url: null, onChange: isOwner ? jest.fn() : undefined },
   };
 }
@@ -123,7 +124,10 @@ describe("CountryDocument", () => {
   it("links the owner's back face to MyCountry and the editor", () => {
     setup("factbook", true);
     fireEvent.click(screen.getByRole("button", { name: "Manage" }));
-    expect(screen.getByRole("link", { name: "Open MyCountry" })).toHaveAttribute("href", "/mycountry");
+    expect(screen.getByRole("link", { name: "Open MyCountry" })).toHaveAttribute(
+      "href",
+      "/mycountry"
+    );
     expect(screen.getByRole("link", { name: "Edit country" })).toHaveAttribute(
       "href",
       "/mycountry/editor"

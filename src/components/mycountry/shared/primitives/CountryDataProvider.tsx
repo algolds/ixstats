@@ -12,6 +12,9 @@ import { Button } from "~/components/ui/button";
 import { createAbsoluteUrl } from "~/lib/utils";
 import { useDevCountryView } from "~/context/DevCountryViewContext";
 import { useDemoMode } from "~/context/DemoModeContext";
+import { useCountryClock } from "~/hooks/useRealmClock";
+import { NationClockProvider } from "~/hooks/useNationClock";
+import type { RealmClockReader } from "~/lib/realms/realm-clock";
 
 import type { RouterOutputs } from "~/trpc/react";
 
@@ -32,6 +35,9 @@ interface CountryDataContextValue {
   economyData: MappedEconomyData;
   systemStatus: SystemStatusData;
   activityRingsData: ActivityRingsOutput | null | undefined;
+  /** The country's realm clock (`useNationClock` below the provider reads the same one). */
+  clock: RealmClockReader | null;
+  /** The country's clock time when the provider last rendered. */
   currentIxTime: number;
   isLoading: boolean;
   error: string | null;
@@ -183,7 +189,6 @@ function useCountryQueries({
     { id: effectiveCountryId },
     { enabled }
   );
-  const ixTime = api.system.getCurrentIxTime.useQuery();
   // The country query takes an id or a slug (the country page passes its slug); the rings query takes only the
   // id, so it waits for the resolved country instead of asking for "Country with ID <slug>".
   const resolvedId = country.data?.id;
@@ -192,7 +197,10 @@ function useCountryQueries({
     { enabled: typeof resolvedId === "string" && resolvedId.length > 0 }
   );
 
-  return { profile, country, ixTime, activityRings, effectiveCountryId, viewCountryId };
+  // The country's "now" is its realm's clock, not Ixnay's (realm time design §1).
+  const clock = useCountryClock(country.data ?? null);
+
+  return { profile, country, clock, activityRings, effectiveCountryId, viewCountryId };
 }
 
 export function CountryDataProvider({
@@ -202,14 +210,13 @@ export function CountryDataProvider({
   isPublicReadOnly = false,
 }: CountryDataProviderProps) {
   const { isViewingOtherCountry } = useDevCountryView();
-  const { profile, country, ixTime, activityRings, effectiveCountryId, viewCountryId } =
+  const { profile, country, clock, activityRings, effectiveCountryId, viewCountryId } =
     useCountryQueries({ userId, countryId, isPublicReadOnly });
   const userProfile = profile.data;
 
-  const currentIxTime =
-    typeof ixTime.data?.currentIxTimeNumber === "number" ? ixTime.data.currentIxTimeNumber : 0;
+  const currentIxTime = clock?.now() ?? 0;
   const isLoading =
-    (!isPublicReadOnly && profile.isLoading) || country.isLoading || ixTime.isLoading;
+    (!isPublicReadOnly && profile.isLoading) || country.isLoading || (!!country.data && !clock);
 
   const blocker = blockingView({
     isLoading,
@@ -231,6 +238,7 @@ export function CountryDataProvider({
       lastUpdate: new Date().toISOString(),
     },
     activityRingsData: activityRings.data ?? null,
+    clock,
     currentIxTime,
     isLoading: false,
     error: (!isPublicReadOnly && profile.error?.message) || country.error?.message || null,
@@ -238,7 +246,11 @@ export function CountryDataProvider({
     isPublicReadOnly,
   };
 
-  return <CountryDataContext.Provider value={value}>{children}</CountryDataContext.Provider>;
+  return (
+    <CountryDataContext.Provider value={value}>
+      <NationClockProvider value={clock}>{children}</NationClockProvider>
+    </CountryDataContext.Provider>
+  );
 }
 
 export function useCountryData(): CountryDataContextValue {

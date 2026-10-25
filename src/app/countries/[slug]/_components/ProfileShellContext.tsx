@@ -3,6 +3,7 @@
 import { createContext, useContext } from "react";
 import type { CountryWithEconomicData } from "~/components/mycountry/shared/primitives/CountryDataProvider";
 import type { HeroCover } from "~/components/country-profile/HeroMedia";
+import type { RealmClockReader } from "~/lib/realms/realm-clock";
 
 /** What the `(profile)` layout resolves once and shares with the profile and its sub-routes. */
 export interface ProfileShellValue {
@@ -12,7 +13,8 @@ export interface ProfileShellValue {
   flagUrl: string | null;
   /** The signed-in viewer owns this country. */
   isOwner: boolean;
-  currentIxTime: number;
+  /** The country's realm clock and calendar. */
+  clock: RealmClockReader;
   /** The cover banner; `onChange` is set for the owner only. */
   cover: HeroCover;
 }

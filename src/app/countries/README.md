@@ -52,7 +52,7 @@ Tested in `src/tests/server/api/routers/country-public-record.test.ts`. When the
 | Part                                                                      | Source                                                                                                                                                        |
 | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Identity                                                                  | `country.nationalIdentity` (via `countries.getByIdWithEconomicData`), then `wikiCache.getCountryProfile` infobox                                              |
-| Lore (the article)                                                        | `wikios.getArticleHtml` (IxWiki from Postgres, following `#REDIRECT`; another wiki's page rendered by that wiki's parser), read by the Lore tab itself       |
+| Lore (the article)                                                        | `wikios.getArticleHtml` (IxWiki from Postgres, following `#REDIRECT`; another wiki's page rendered by that wiki's parser), read by the Lore tab itself        |
 | Vitals, condition, economy trend                                          | `countries.getByIdWithEconomicData` (via `CountryDataProvider`)                                                                                               |
 | Land (map, capital, cities, regions, story pins, geo profile, neighbours) | `countryGeo.getCountryGeoBundle`; map embed `CountryMapEmbed` (+ the political layer from `/api/map-layers`)                                                  |
 | Directives, issue outcomes                                                | `countries.getPublicRecord`; owner counts `intent.getTree` + `nationalIssues.getPendingCount` (owner only)                                                    |
@@ -95,7 +95,7 @@ countries/
 | `api.government.getByCountryId`                                               | State block and sheet (via the profile layer and `useMyCountryMetrics`)           |
 | `api.wikios.getArticleHtml`                                                   | Lore tab (`LoreReader`)                                                           |
 | `api.countryGeo.getCountryGeoBundle`, `GET /api/map-layers` (political layer) | Map embeds (via `useCountryMapEmbed`)                                             |
-| `api.system.getCurrentIxTime`                                                 | Time context                                                                      |
+| `api.realms.region.contextClock` (via `useCountryClock`)                      | Time context: the country's realm clock and calendar (`CountryDataProvider`)      |
 | `api.users.getProfile`, `api.countries.getByIdAtTime`                         | Viewer identity (`useUserCountry`)                                                |
 
 All routers above are registered in `src/server/api/root.ts`.

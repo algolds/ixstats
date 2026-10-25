@@ -86,7 +86,7 @@ function ProfileBreadcrumb({ name }: { name: string }) {
 }
 
 function CountryProfileShell({ slug, children }: { slug: string; children: React.ReactNode }) {
-  const { country, isLoading, error, currentIxTime } = useCountryData();
+  const { country, isLoading, error, clock } = useCountryData();
   const { userProfile } = useUserCountry();
   const { flagUrl: serviceFlag } = useFlag(country?.name || "");
   const flagUrl: string | null = country?.flag || serviceFlag || null;
@@ -101,13 +101,13 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
 
   const shell = useMemo<ProfileShellValue | null>(
     () =>
-      country
+      country && clock
         ? {
             slug,
             country,
             flagUrl,
             isOwner: isOwnCountry,
-            currentIxTime,
+            clock,
             cover: {
               mode: bannerMode,
               url: resolvedBannerUrl,
@@ -115,16 +115,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
             },
           }
         : null,
-    [
-      slug,
-      country,
-      flagUrl,
-      isOwnCountry,
-      currentIxTime,
-      bannerMode,
-      resolvedBannerUrl,
-      setBannerMode,
-    ]
+    [slug, country, flagUrl, isOwnCountry, clock, bannerMode, resolvedBannerUrl, setBannerMode]
   );
 
   if (isLoading) {
