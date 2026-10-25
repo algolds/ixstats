@@ -10,9 +10,9 @@ import { isStandaloneClient } from "~/lib/system/standalone-detection";
 import { useIxTimeStore } from "~/stores/ixtime-store";
 
 /**
- * The hour a greeting goes by: inside a realm, its clock (its calendar's hour; global IxTime for Ixnay and realms
- * without their own clock); outside realms, the viewer's real local hour. Null until hydrated, so the server render
- * and the hydrating pass agree.
+ * The hour a greeting goes by: inside a realm, its clock (its calendar's hour; Ixnay's clock, the IxTime store, for
+ * Ixnay and for a realm whose clock is missing or private); outside realms, the viewer's real local hour. Null until
+ * hydrated, so the server render and the hydrating pass agree.
  */
 export function useContextHour(): number | null {
   const pathname = stripBasePath(usePathname() ?? "/");

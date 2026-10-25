@@ -7,6 +7,11 @@ import { Input } from "~/components/ui/input";
 import { Signal } from "~/components/ui/signal";
 import { isRealmSlug, slugFromName } from "~/lib/worldgen/studio-apply";
 import { api } from "~/trpc/react";
+import {
+  FoundingClockFields,
+  emptyFoundingClock,
+  foundingClockInput,
+} from "~/components/realms/RealmClockFields";
 import { useStudio } from "./StudioContext";
 import { StudioRealmApply } from "./StudioRealmApply";
 
@@ -54,6 +59,7 @@ export function StudioNewRealmSection() {
   const slugId = useId();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState<string | null>(null);
+  const [clockDraft, setClockDraft] = useState(emptyFoundingClock);
   const [created, setCreated] = useState<Created | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -71,13 +77,14 @@ export function StudioNewRealmSection() {
   }
 
   const shownSlug = slug ?? slugFromName(name);
-  const valid = name.trim() !== "" && isRealmSlug(shownSlug);
+  const clock = foundingClockInput(clockDraft);
+  const valid = name.trim() !== "" && isRealmSlug(shownSlug) && !!clock;
   const create = async () => {
-    if (!valid || creating) return;
+    if (!valid || !clock || creating) return;
     setCreating(true);
     setError(null);
     try {
-      const made = await createRealm.mutateAsync({ name: name.trim(), slug: shownSlug });
+      const made = await createRealm.mutateAsync({ name: name.trim(), slug: shownSlug, clock });
       setCreated({ ...made, name: name.trim() });
       void utils.atlas.realms.overview.invalidate();
     } catch (failure) {
@@ -97,6 +104,7 @@ export function StudioNewRealmSection() {
             setCreated(null);
             setName("");
             setSlug(null);
+            setClockDraft(emptyFoundingClock());
           }}
         />
       ) : (
@@ -136,6 +144,7 @@ export function StudioNewRealmSection() {
               </p>
             )}
           </div>
+          <FoundingClockFields value={clockDraft} onChange={setClockDraft} />
           {error && (
             <p role="alert" className="text-destructive text-caption">
               {error}

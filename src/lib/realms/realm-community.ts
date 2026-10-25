@@ -1,6 +1,6 @@
 /**
- * Realm community links and the in-world date (docs/specs/2026-10-05-realm-regions-design.md): what founders and
- * officers with the `appearance` power set, how it is validated and how the date reads. Client-safe.
+ * Realm community links (docs/specs/2026-10-05-realm-regions-design.md): what founders and officers with the
+ * `appearance` power set and how it is validated. Client-safe. (The realm's date is its clock: realm-clock.ts.)
  */
 import { z } from "zod";
 
@@ -64,53 +64,4 @@ export function parseRealmLinks(stored: unknown): RealmLink[] {
     .map((entry) => RealmLinkSchema.safeParse(entry))
     .flatMap((result) => (result.success ? [result.data] : []))
     .slice(0, MAX_REALM_LINKS);
-}
-
-export const MAX_IN_WORLD_LABEL = 60;
-export const MAX_IN_WORLD_ERA = 16;
-export const MAX_IN_WORLD_OFFSET = 100_000;
-
-/**
- * The realm's in-world date (`Realm.settings.inWorldDate`), display only: the simulation keeps the shared IxTime
- * clock. Either a label the founder sets (optionally "as of" a real date), or a year that follows the real one
- * (in-world year = real year + offset, then the era).
- */
-export const InWorldDateSchema = z.discriminatedUnion("mode", [
-  z.object({
-    mode: z.literal("fixed"),
-    label: z.string().trim().min(1).max(MAX_IN_WORLD_LABEL),
-    asOf: z.iso.date().nullish(),
-  }),
-  z.object({
-    mode: z.literal("offset"),
-    offset: z.number().int().min(-MAX_IN_WORLD_OFFSET).max(MAX_IN_WORLD_OFFSET),
-    era: z.string().trim().max(MAX_IN_WORLD_ERA).nullish(),
-  }),
-]);
-
-export type InWorldDate = z.infer<typeof InWorldDateSchema>;
-
-/** The stored setting, or null when it is missing or malformed. */
-export function parseInWorldDate(stored: unknown): InWorldDate | null {
-  const parsed = InWorldDateSchema.safeParse(stored);
-  return parsed.success ? parsed.data : null;
-}
-
-export interface InWorldDateLabel {
-  /** "14 Harvest 1203 AE", or "2041 AE" for a yearly offset. */
-  label: string;
-  /** The real date a fixed label was set for (YYYY-MM-DD), if the founder gave one. */
-  asOf: string | null;
-}
-
-/** How the in-world date reads on `now` (the real date; only the offset mode depends on it). */
-export function formatInWorldDate(
-  setting: InWorldDate | null,
-  now: Date = new Date()
-): InWorldDateLabel | null {
-  if (!setting) return null;
-  if (setting.mode === "fixed") return { label: setting.label, asOf: setting.asOf ?? null };
-  const year = now.getUTCFullYear() + setting.offset;
-  const era = setting.era?.trim();
-  return { label: era ? `${year} ${era}` : `Year ${year}`, asOf: null };
 }

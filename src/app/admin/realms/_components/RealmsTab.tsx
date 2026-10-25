@@ -36,6 +36,12 @@ import {
 } from "~/components/ui/table";
 import { Card } from "~/components/ui/card";
 import { STAFF_FOUNDER_ID } from "~/lib/realms/realm-region";
+import {
+  FoundingClockFields,
+  emptyFoundingClock,
+  foundingClockInput,
+  type FoundingClockDraft,
+} from "~/components/realms/RealmClockFields";
 import { DeleteRealmButton } from "./DeleteRealmButton";
 import { TransferRealmButton } from "./TransferRealmButton";
 
@@ -56,8 +62,15 @@ interface NewRealm {
   name: string;
   description: string;
   visibility: "public" | "unlisted";
+  clock: FoundingClockDraft;
 }
-const EMPTY_REALM: NewRealm = { slug: "", name: "", description: "", visibility: "unlisted" };
+const emptyRealm = (): NewRealm => ({
+  slug: "",
+  name: "",
+  description: "",
+  visibility: "unlisted",
+  clock: emptyFoundingClock(),
+});
 
 /** Decision 15's per-realm cap: a number field while editing, else the realm's current value. */
 function NationCapCell({
@@ -93,17 +106,18 @@ function NewRealmForm() {
   const utils = api.useUtils();
   const notify = useNotify();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState(EMPTY_REALM);
+  const [form, setForm] = useState(emptyRealm);
   const create = api.realms.adminCreateRealm.useMutation({
     onSuccess: (realm) => {
       notify.success("Realm created", `${realm.name} (${realm.slug}) is active.`);
-      setForm(EMPTY_REALM);
+      setForm(emptyRealm());
       setOpen(false);
       void utils.realms.adminListRealms.invalidate();
     },
     onError: (error) => notify.error("Could not create realm", error.message),
   });
-  const valid = REALM_SLUG_PATTERN.test(form.slug) && form.name.trim().length > 0;
+  const clock = foundingClockInput(form.clock);
+  const valid = REALM_SLUG_PATTERN.test(form.slug) && form.name.trim().length > 0 && !!clock;
 
   if (!open) {
     return (
@@ -121,11 +135,13 @@ function NewRealmForm() {
       className="border-separator bg-surface rounded-card grid gap-4 border p-4 sm:grid-cols-2"
       onSubmit={(e) => {
         e.preventDefault();
+        if (!clock) return;
         create.mutate({
           slug: form.slug,
           name: form.name.trim(),
           description: form.description.trim() || undefined,
           visibility: form.visibility,
+          clock,
         });
       }}
     >
@@ -183,6 +199,12 @@ function NewRealmForm() {
             </SelectItem>
           </SelectContent>
         </Select>
+      </div>
+      <div className="sm:col-span-2">
+        <FoundingClockFields
+          value={form.clock}
+          onChange={(draft) => setForm((f) => ({ ...f, clock: draft }))}
+        />
       </div>
       <div className="flex items-end justify-end gap-2">
         <Button type="button" size="sm" variant="outline" onClick={() => setOpen(false)}>
