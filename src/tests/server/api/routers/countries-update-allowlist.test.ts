@@ -13,7 +13,7 @@ jest.mock("~/server/shared/map-invalidation", () => ({
   invalidateRealmMap: jest.fn().mockResolvedValue(1),
 }));
 jest.mock("~/server/shared/intelligence-alert-thresholds", () => ({
-  evaluateThresholds: jest.fn().mockResolvedValue(undefined),
+  evaluateCountryThresholds: jest.fn().mockResolvedValue(undefined),
 }));
 
 import { createTRPCRouter } from "~/server/api/trpc";

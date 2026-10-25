@@ -11,7 +11,7 @@ import {
 } from "~/server/shared/map-invalidation";
 
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
-import { evaluateThresholds } from "~/server/shared/intelligence-alert-thresholds";
+import { evaluateCountryThresholds } from "~/server/shared/intelligence-alert-thresholds";
 import {
   MAX_COUNTRY_NAME_LENGTH,
   checkCountryName,
@@ -66,17 +66,12 @@ const adminUpdateInput = z
 
 type CountryColumnUpdates = Omit<Prisma.CountryUpdateInput, "slug"> & { name?: string };
 
-interface UpdateContext {
-  db: PrismaClient;
-  auth: { userId: string | null } | null;
-}
-
 /** Writes allow-listed scalar columns: a new name through the shared rename, then the map and the alert thresholds. */
-async function applyCountryUpdate(ctx: UpdateContext, id: string, updates: CountryColumnUpdates) {
-  const userProfile = ctx.auth?.userId
-    ? await ctx.db.user.findUnique({ where: { clerkUserId: ctx.auth.userId } })
-    : null;
-
+async function applyCountryUpdate(
+  ctx: { db: PrismaClient },
+  id: string,
+  updates: CountryColumnUpdates
+) {
   // A new name renames through the shared path, so the slug, its redirect and the identity's
   // country name move with it. Checked before the try, so a taken name stays a CONFLICT.
   const rename = await pendingRename(ctx.db, id, updates.name);
@@ -113,20 +108,10 @@ async function applyCountryUpdate(ctx: UpdateContext, id: string, updates: Count
       await invalidateRealmMap(ctx.db, updatedCountry.realmId);
     }
 
-    let targetUserId = userProfile?.id;
-    if (!targetUserId) {
-      const countryOwner = await ctx.db.user.findFirst({
-        where: { ownedCountries: { some: { id } } },
-      });
-      targetUserId = countryOwner?.id;
-    }
-
-    if (targetUserId) {
-      try {
-        await evaluateThresholds(ctx.db, id, targetUserId);
-      } catch (e) {
-        console.error("[Countries API] Error evaluating thresholds on country update:", e);
-      }
+    try {
+      await evaluateCountryThresholds(ctx.db, id);
+    } catch (e) {
+      console.error("[Countries API] Error evaluating thresholds on country update:", e);
     }
 
     return updatedCountry;

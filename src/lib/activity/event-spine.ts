@@ -176,6 +176,17 @@ export class CountryEventSpine {
       );
     }
 
+    // A consequence moved a stat: check the country's intelligence alert thresholds against it
+    if (appliedConsequences.length > 0) {
+      try {
+        const { evaluateCountryThresholds } =
+          await import("~/server/shared/intelligence-alert-thresholds");
+        await evaluateCountryThresholds(db, countryId);
+      } catch (err) {
+        console.error(`[Spine] Failed to evaluate alert thresholds for ${countryId}:`, err);
+      }
+    }
+
     // Write a general entry to the ledger if no consequences were applied, just to document the event
     if (appliedConsequences.length === 0) {
       try {

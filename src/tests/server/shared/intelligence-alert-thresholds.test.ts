@@ -13,6 +13,7 @@ import { describe, it, expect, beforeEach } from "@jest/globals";
 import { notificationAPI } from "~/lib/notifications/api";
 import { loadThreatPicture } from "~/lib/military/threat-picture-loader";
 import {
+  evaluateCountryThresholds,
   evaluateThresholds,
   INTELLIGENCE_ALERTS_HREF,
 } from "~/server/shared/intelligence-alert-thresholds";
@@ -120,5 +121,33 @@ describe("evaluateThresholds", () => {
     (loadThreatPicture as jest.Mock).mockClear();
     await evaluateThresholds(makeDb(), "c1", "u1");
     expect(loadThreatPicture).not.toHaveBeenCalled();
+  });
+
+  // P1-08: gdpGrowthRate is the realised rate (the projection's effectiveGdpGrowth), not the
+  // founding adjustedGdpGrowth input. Here the founding input is 5% but growth now is 1%.
+  it("reads gdpGrowthRate from the effective growth the caller projected", async () => {
+    const db = makeDb(null, "gdpGrowthRate");
+    db.country.findUnique.mockResolvedValue({ id: "c1", adjustedGdpGrowth: 0.05 } as never);
+    await evaluateThresholds(db, "c1", "u1", { effectiveGdpGrowth: 0.01 });
+    expect(db.intelligenceAlert.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ currentValue: 1 }) })
+    );
+  });
+});
+
+describe("evaluateCountryThresholds", () => {
+  it("evaluates each user's thresholds on the country", async () => {
+    const db = makeDb();
+    const findMany = db.intelligenceAlertThreshold.findMany as jest.Mock;
+    findMany.mockImplementationOnce(async () => [{ userId: "u1" }, { userId: "u2" }]);
+    await evaluateCountryThresholds(db, "c1");
+    expect(findMany).toHaveBeenNthCalledWith(1, {
+      where: { countryId: "c1", isActive: true },
+      select: { userId: true },
+      distinct: ["userId"],
+    });
+    expect(findMany).toHaveBeenCalledWith({
+      where: { countryId: "c1", userId: "u2", isActive: true },
+    });
   });
 });
