@@ -351,8 +351,9 @@ async function importOnePage(
 }
 
 /**
- * The pages of a dump, after its origin: nothing at all when the dump is not classic MediaWiki's (judged at the first
- * page, from the `<siteinfo>` read before it), with its refusal as one `(dump)` error in `summary`.
+ * The pages of a dump, after its origin: nothing at all when the dump is not classic MediaWiki's, with its refusal as
+ * one `(dump)` error in `summary`. The origin is judged once, from the `<siteinfo>` read before the first page (or at
+ * the end, for a dump with no page).
  */
 async function* pagesOfAcceptedDump(
   events: AsyncIterable<ImportEvent>,
@@ -361,22 +362,22 @@ async function* pagesOfAcceptedDump(
   summary: ImportSummary
 ): AsyncGenerator<ImportPage> {
   let siteinfo: SiteInfo | null = null;
-  let accepted = false;
+  let judged = false;
+  const accepted = (): boolean => {
+    judged = true;
+    const verdict = checkDumpOrigin(siteinfo, source, classicOrigin);
+    if (!verdict.ok) summary.errors.push({ title: DUMP_ERROR_TITLE, message: verdict.reason });
+    return verdict.ok;
+  };
   for await (const event of events) {
     if (event.type === "siteinfo") {
       siteinfo = event.siteinfo;
       continue;
     }
-    if (!accepted) {
-      const verdict = checkDumpOrigin(siteinfo, source, classicOrigin);
-      if (!verdict.ok) {
-        summary.errors.push({ title: DUMP_ERROR_TITLE, message: verdict.reason });
-        return;
-      }
-      accepted = true;
-    }
+    if (!judged && !accepted()) return;
     yield event.page;
   }
+  if (!judged) accepted();
 }
 
 /**

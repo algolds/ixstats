@@ -13,6 +13,7 @@ jest.mock("~/lib/wiki-os/services/save-rate-limit", () => ({
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { commitWikitextSave } from "~/lib/wiki-os/services/edit-service";
 import { HANDLE_REQUIRED_MESSAGE } from "~/lib/wiki-os/auth";
+import { MEDIAWIKI_NAMESPACE_REASON } from "~/lib/wiki-os/namespace-policy";
 
 const save = { title: "Page", wikitext: "x", summary: "", minor: false };
 const saveArticle = jest.mocked(ArticleRepository.saveArticle);
@@ -54,4 +55,27 @@ it("refuses a handle that is only whitespace", async () => {
 it("lets a system save name its own author", async () => {
   await commitWikitextSave({}, { ...save, authorLabel: "Caphiria" });
   expect(saveArticle.mock.calls[0]![2]).toBe("Caphiria");
+});
+
+it("refuses any save into the MediaWiki: namespace, a system save too, and writes nothing (A8)", async () => {
+  const refusal = {
+    code: "FORBIDDEN",
+    message: `namespaceprotected: ${MEDIAWIKI_NAMESPACE_REASON}`,
+  };
+  await expect(
+    commitWikitextSave({}, { ...save, title: "MediaWiki:Sidebar", authorLabel: "Caphiria" })
+  ).rejects.toMatchObject(refusal);
+  await expect(
+    commitWikitextSave(
+      { auth: { userId: "user_a" }, user: { id: "a", handle: "alpha" } },
+      { ...save, title: "mediawiki:common.js" }
+    )
+  ).rejects.toMatchObject(refusal);
+  expect(saveArticle).not.toHaveBeenCalled();
+  // the talk namespace beside it is not classic's
+  await commitWikitextSave(
+    {},
+    { ...save, title: "MediaWiki talk:Sidebar", authorLabel: "Caphiria" }
+  );
+  expect(saveArticle).toHaveBeenCalledTimes(1);
 });

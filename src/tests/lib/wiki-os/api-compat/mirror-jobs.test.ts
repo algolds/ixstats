@@ -235,12 +235,13 @@ describe("api.php action=edit", () => {
     );
   });
 
-  it("writes the revision of a MediaWiki: page and no job: the mirror account may never write it", async () => {
+  it("writes neither a revision nor a job for a MediaWiki: page: classic is its authority (A8)", async () => {
     const { act } = await setup();
 
-    await act("edit", { title: "MediaWiki:Sidebar", text: "* navigation" });
+    const body = await act("edit", { title: "MediaWiki:Sidebar", text: "* navigation" });
 
-    expect(tables.wikiRevision.rows).toHaveLength(1);
+    expect(body.error).toMatchObject({ code: "protectednamespace" });
+    expect(tables.wikiRevision.rows).toEqual([]);
     expect(jobs()).toEqual([]);
   });
 });

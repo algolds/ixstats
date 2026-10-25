@@ -4,6 +4,7 @@
 
 import { z } from "zod/v4";
 import type { Prisma } from "@prisma/client";
+import { classicOwnsTitle } from "~/lib/wiki-os/namespace-policy";
 import type { Right } from "~/lib/wiki-os/rights";
 
 export interface PageAdminAction {
@@ -39,8 +40,9 @@ const PAGE_ACTIONS: ReadonlyArray<Omit<PageAdminAction, "href"> & { right: Right
     },
   ];
 
-/** The page-management actions the caller may use on `title`: one per right they hold. */
+/** The page-management actions the caller may use on `title`: one per right they hold, none on a page classic owns. */
 export function pageAdminActions(title: string, rights: readonly Right[]): PageAdminAction[] {
+  if (classicOwnsTitle(title)) return [];
   return PAGE_ACTIONS.filter((action) => rights.includes(action.right)).map((action) => ({
     id: action.id,
     label: action.label,

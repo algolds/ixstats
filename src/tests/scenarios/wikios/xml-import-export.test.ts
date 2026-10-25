@@ -455,7 +455,7 @@ describeEachWikiosMode("the import route takes classic MediaWiki dumps only (A8)
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toMatchObject({ pages: 0, errorCount: 1 });
-    expect(body.errors[0]).toMatchObject({ title: "(dump)", message: expect.stringMatching(/comes from iiwiki\.com/) });
+    expect(body.errors[0]).toMatchObject({ title: "(dump)", message: expect.stringMatching(/iiwiki\.com\/wiki\/Main_Page" is not on classic/) });
     expect(store.writes).toBe(0);
   });
 

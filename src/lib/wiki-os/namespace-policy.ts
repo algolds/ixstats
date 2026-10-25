@@ -86,6 +86,9 @@ function interfaceRight(base: string): Right | null {
  */
 export const MEDIAWIKI_NAMESPACE_REASON = `MediaWiki: pages are edited on classic ${wikiosConfig.publicHost}, and WikiOS takes them from there.`;
 
+/** The `MediaWiki:` namespace: classic's alone (see `MEDIAWIKI_NAMESPACE_REASON`). */
+const MEDIAWIKI_NAMESPACE_ID = 8;
+
 /** Unicode spaces MediaWiki folds into a plain space when normalising titles. */
 const TITLE_SPACES = /[\u00A0\u1680\u180E\u2000-\u200A\u2028\u2029\u202F\u205F\u3000_]+/g;
 /**
@@ -157,6 +160,14 @@ export function isOwnUserSpace(base: string, owners: readonly string[]): boolean
   return rootName !== "" && owners.some((owner) => normalizeUserName(owner) === rootName);
 }
 
+/**
+ * Whether `rawTitle` is a `MediaWiki:` page, which no one writes through WikiOS (`MEDIAWIKI_NAMESPACE_REASON`): the
+ * page tools hide their actions for it, and `commitWikitextSave` refuses it even to a system save.
+ */
+export function classicOwnsTitle(rawTitle: string): boolean {
+  return parseWikiTitle(rawTitle)?.namespaceId === MEDIAWIKI_NAMESPACE_ID;
+}
+
 export interface EditPolicyIdentity {
   /** The caller's rights (see `rightsForGroups`). */
   rights: ReadonlySet<Right>;
@@ -198,7 +209,7 @@ export function checkEditPolicy(rawTitle: string, identity: EditPolicyIdentity):
   if (namespaceId === 0 || USER_EDITABLE_TALK_IDS.has(namespaceId)) return ALLOWED;
   if (namespaceId === 2) return checkUserPage(base, identity);
 
-  if (namespaceId === 8) return deny(MEDIAWIKI_NAMESPACE_REASON);
+  if (namespaceId === MEDIAWIKI_NAMESPACE_ID) return deny(MEDIAWIKI_NAMESPACE_REASON);
 
   return isAdmin ? ALLOWED : deny("Only wiki administrators can edit pages in this namespace.");
 }

@@ -943,14 +943,23 @@ describeEachWikiosMode("only classic MediaWiki dumps are imported (A8)", () => {
     [
       "another wiki's base",
       siteinfoXml({ base: "https://iiwiki.com/wiki/Main_Page" }),
-      /comes from iiwiki\.com, not ixwiki\.com/,
+      /base "https:\/\/iiwiki\.com\/wiki\/Main_Page" is not on classic ixwiki\.com/,
     ],
     [
       "a look-alike host",
       siteinfoXml({ base: "https://ixwiki.com.evil.example/wiki/X" }),
-      /comes from ixwiki\.com\.evil\.example/,
+      /base "https:\/\/ixwiki\.com\.evil\.example\/wiki\/X" is not on classic/,
     ],
-    ["a base that is no URL", siteinfoXml({ base: "Main Page" }), /comes from an unknown wiki/],
+    [
+      "another host under classic's",
+      siteinfoXml({ base: "https://forum.ixwiki.com/wiki/X" }),
+      /is not on classic ixwiki\.com/,
+    ],
+    [
+      "a base that is no URL",
+      siteinfoXml({ base: "Main Page" }),
+      /base "Main Page" is not on classic/,
+    ],
   ])("refuses a dump with %s, writing nothing", async (_, head, reason) => {
     const summary = await importRaw(raw(head, PAGE, SECOND), { classicOrigin: CLASSIC_ORIGIN });
 
@@ -972,6 +981,31 @@ describeEachWikiosMode("only classic MediaWiki dumps are imported (A8)", () => {
     expect(onProgress).not.toHaveBeenCalled();
   });
 
+  it.each([
+    [
+      "the www. alias, as links to the wiki are recognised",
+      "https://www.ixwiki.com/wiki/Main_Page",
+    ],
+    ["a protocol-relative base", "//ixwiki.com/wiki/Main_Page"],
+    ["an upper-case host", "https://IXWIKI.com/wiki/Main_Page"],
+  ])("accepts a classic dump whose base is %s", async (_, base) => {
+    const summary = await importRaw(raw(siteinfoXml({ base }), PAGE), {
+      classicOrigin: CLASSIC_ORIGIN,
+    });
+    expect(summary).toMatchObject({ errors: [], pagesCreated: 1 });
+  });
+
+  it("judges a dump with no pages too: a foreign one gets its one error, classic's none", async () => {
+    const options = { classicOrigin: CLASSIC_ORIGIN };
+    expect((await importRaw(raw(siteinfoXml({ generator: "WikiOS 1" })), options)).errors).toEqual([
+      { title: "(dump)", message: expect.stringMatching(/not MediaWiki/) },
+    ]);
+    expect((await importRaw(raw(""), options)).errors).toEqual([
+      { title: "(dump)", message: expect.stringMatching(/has no <siteinfo>/) },
+    ]);
+    expect((await importRaw(raw(siteinfoXml()), options)).errors).toEqual([]);
+  });
+
   it("accepts an ixwiki.com MediaWiki dump", async () => {
     for (const origin of [CLASSIC_ORIGIN, `${CLASSIC_ORIGIN}/`, "http://ixwiki.com"]) {
       resetStore();
@@ -989,18 +1023,12 @@ describeEachWikiosMode("only classic MediaWiki dumps are imported (A8)", () => {
 
   it("refuses every IxWiki dump when classic's origin is not a URL", async () => {
     const summary = await importRaw(raw(siteinfoXml(), PAGE), { classicOrigin: "ixwiki" });
-    expect(summary.errors).toEqual([
-      { title: "(dump)", message: expect.stringMatching(/comes from ixwiki\.com, not classic/) },
-    ]);
+    const notAUrl = /^Classic's origin "ixwiki" is not a URL/;
+    expect(summary.errors).toEqual([{ title: "(dump)", message: expect.stringMatching(notAUrl) }]);
     const neither = await importRaw(raw(siteinfoXml({ base: "Main Page" }), PAGE), {
       classicOrigin: "ixwiki",
     });
-    expect(neither.errors).toEqual([
-      {
-        title: "(dump)",
-        message: expect.stringMatching(/comes from an unknown wiki, not classic/),
-      },
-    ]);
+    expect(neither.errors).toEqual([{ title: "(dump)", message: expect.stringMatching(notAUrl) }]);
     expect(store.writes).toBe(0);
   });
 

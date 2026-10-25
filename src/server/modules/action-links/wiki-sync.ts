@@ -1,7 +1,8 @@
 /**
  * Writes an approved story chain to its wiki page as a new section, authored under the chain's country name
  * (a system save: no signed-in player makes it, so it names its own author with `authorLabel`). The owner's
- * edit right was checked at submit. Failures leave `wikiSyncedAt` null; `syncPendingChainWikis` (cron
+ * edit right was checked at submit. A chain whose page is a `MediaWiki:` page (classic's, spec A8) is skipped and marked
+ * done with a warning. Failures leave `wikiSyncedAt` null; `syncPendingChainWikis` (cron
  * "story-chain-wiki-sync") retries them.
  */
 import type { PrismaClient } from "@prisma/client";
@@ -12,6 +13,7 @@ import { createAbsoluteUrl } from "~/lib/utils/url-utils";
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { getHeadRevisionRefs } from "~/lib/wiki-os/core/edit-conflict";
 import { mediaWikiOrigin } from "~/lib/wiki-os/config";
+import { classicOwnsTitle } from "~/lib/wiki-os/namespace-policy";
 import { commitWikitextSave } from "~/lib/wiki-os/services/edit-service";
 
 export type WikiSyncDb = Pick<PrismaClient, "storyline">;
@@ -42,6 +44,15 @@ export async function appendChainToWiki(db: WikiSyncDb, storylineId: string): Pr
     },
   });
   if (!chain?.wikiPageTitle) return false;
+
+  // A MediaWiki: page is classic's (A8) and no save writes one: a chain submitted before that rule is done, not retried.
+  if (classicOwnsTitle(chain.wikiPageTitle)) {
+    console.warn(
+      `[wiki-sync] story chain ${chain.id} targets ${chain.wikiPageTitle}, a MediaWiki: page edited only on classic; skipped`
+    );
+    await db.storyline.update({ where: { id: chain.id }, data: { wikiSyncedAt: new Date() } });
+    return true;
+  }
 
   // An activity withdrawn since it was linked (an abandoned directive) is no longer public; its text stays off the wiki.
   // A link still on a XenForo post (one the import has not remapped) has no page to point at, so it stays off too.

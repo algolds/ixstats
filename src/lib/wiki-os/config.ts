@@ -147,14 +147,19 @@ export function mediaWikiImageUrl(path: string): string {
   return `${wikiosConfig.publicBaseUrl}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-/** Whether `url` is on the wiki's own host (or its `www.` alias): an absolute or protocol-relative URL. */
-export function isMediaWikiUrl(url: string): boolean {
+/** Whether `url` (absolute or protocol-relative) is on `host` or its `www.` alias. */
+export function isUrlOnHost(url: string, host: string): boolean {
   try {
-    const host = new URL(url, "https://relative.invalid").host;
-    return host === wikiosConfig.publicHost || host === `www.${wikiosConfig.publicHost}`;
+    const found = new URL(url, "https://relative.invalid").host;
+    return found === host || found === `www.${host}`;
   } catch {
     return false;
   }
+}
+
+/** Whether `url` is on the wiki's own host (or its `www.` alias): an absolute or protocol-relative URL. */
+export function isMediaWikiUrl(url: string): boolean {
+  return isUrlOnHost(url, wikiosConfig.publicHost);
 }
 
 /** A regular-expression source matching the wiki's host or its `www.` alias, for detecting a link to it. */

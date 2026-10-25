@@ -18,6 +18,7 @@ import {
   EditConflictError,
   type EditConflict,
 } from "../core/edit-conflict-error";
+import { classicOwnsTitle, MEDIAWIKI_NAMESPACE_REASON } from "../namespace-policy";
 import { authorizeAction } from "../permissions";
 import { assertWikiSaveRate } from "./save-rate-limit";
 
@@ -126,13 +127,20 @@ async function saveArticleOrRefuse(...args: Parameters<typeof ArticleRepository.
  * `save.authorLabel`; the caller has been authorized): PostgreSQL first (the revision and its mirror job in
  * one transaction, `ArticleRepository.saveArticle`, which also makes the edit-conflict check of
  * `save.expectedHeadRef`), then the edge-cache purge. Throws `EditConflictError` for a save based on a revision that is no longer the head,
- * and, before anything is written, PRECONDITION_FAILED for a player with no handle or a page deleted meanwhile and
+ * and, before anything is written, FORBIDDEN for a `MediaWiki:` page (whoever saves), PRECONDITION_FAILED for a player with no handle or a page deleted meanwhile and
  * TOO_MANY_REQUESTS for a player over the wiki-save limit (`assertWikiSaveRate`; a system save and an upload's page
  * are not counted). A null
  * edit (the page has this text already) writes nothing and answers the head with `nullEdit`.
  */
 export async function commitWikitextSave(ctx: WikiAuthContext, save: WikitextSave) {
   const { title, wikitext, summary, minor, expectedHeadRef } = save;
+  // classic is the authority for MediaWiki: pages (A8): no save writes one, a system save included
+  if (classicOwnsTitle(title)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: `namespaceprotected: ${MEDIAWIKI_NAMESPACE_REASON}`,
+    });
+  }
   const authorName = save.authorLabel ?? requireWikiAuthorName(ctx);
   if (save.authorLabel === undefined && !save.uploadPage) await assertWikiSaveRate(ctx);
 

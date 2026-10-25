@@ -11,6 +11,7 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { withBasePath } from "~/lib/base-path";
+import { wikiosConfig } from "~/lib/wiki-os/config";
 import {
   contentTypeFor,
   DEFAULT_MAX_UPLOAD_BYTES,
@@ -110,6 +111,10 @@ export default function WikiImportPage() {
               use <code>bun scripts/wikios-import-xml.ts</code> for larger dumps. Revisions keep
               their MediaWiki ids, times and authors; re-importing a dump changes nothing, and a
               dump never replaces a page&apos;s newer text.
+            </p>
+            <p className="text-muted-foreground text-sm">
+              This page imports MediaWiki dumps from classic {wikiosConfig.publicHost} only, so a
+              WikiOS export cannot be imported back.
             </p>
 
             <form

@@ -339,6 +339,30 @@ it("keeps an approval whose wiki write failed, and the cron writes it later", as
   ).resolves.toBeUndefined();
 });
 
+it("skips, stamps and warns about a chain whose page is a MediaWiki: page: classic is its authority (A8)", async () => {
+  await action("pact-1", "aurelia", "Signed the Northern Pact");
+  await post("p1", "aurelia", "[ixaction=pact-1]");
+  const anas = links(asOwner(db as never, ana));
+  const { id } = await anas.createChain({ title: "Pact" });
+  await anas.addPostToChain({ storylineId: id, postSource: "native", postRef: "p1" });
+  // submitted before MediaWiki: pages were refused at submit (the gate is mocked open here)
+  await anas.submitChain({ storylineId: id, wikiPageTitle: "MediaWiki:Sidebar" });
+  const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+
+  await links(asOwner(db as never, ola)).reviewChain({ storylineId: id, approve: true });
+
+  expect(commitWikitextSave).not.toHaveBeenCalled();
+  expect(getHeadRevisionRefs).not.toHaveBeenCalled();
+  expect((await db.storyline.findUniqueOrThrow({ where: { id } })).wikiSyncedAt).toBeInstanceOf(
+    Date
+  );
+  expect(warn).toHaveBeenCalledWith(expect.stringContaining(`story chain ${id}`));
+  expect(warn).toHaveBeenCalledWith(expect.stringContaining("MediaWiki:Sidebar"));
+  // stamped: the cron never picks it up again
+  expect(await syncPendingChainWikis()).toEqual({ synced: 0, failed: 0 });
+  warn.mockRestore();
+});
+
 it("names a player's activity by handle, else forum name, never by their old wiki name", async () => {
   await db.user.update({
     where: { id: "ana" },
