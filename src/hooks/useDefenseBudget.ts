@@ -6,7 +6,7 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import {
   ESTIMATE_GDP_SHARE,
-  allocatedDefenseBudget,
+  defenseAllocationPercent,
   defenseBudgetRatios,
   estimateDefenseBudget,
   type DefenseBudgetAmounts,
@@ -108,9 +108,7 @@ export function useDefenseBudget({ countryId }: UseDefenseBudgetOptions) {
     setBudgetData((prev) => ({ ...prev, [key]: value }));
   }, []);
 
-  const totalAllocated = useMemo(() => allocatedDefenseBudget(budgetData), [budgetData]);
-  const allocationPercent =
-    budgetData.totalBudget > 0 ? (totalAllocated / budgetData.totalBudget) * 100 : 0;
+  const allocationPercent = useMemo(() => defenseAllocationPercent(budgetData), [budgetData]);
 
   return {
     editingBudget,
