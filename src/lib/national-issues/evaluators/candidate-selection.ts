@@ -5,7 +5,6 @@
  */
 
 import type { NPCPersonality, Prisma, PrismaClient } from "@prisma/client";
-import { IxTime } from "~/lib/ixtime";
 import { INTENT_CATEGORY_TO_TEMPLATE } from "~/lib/intent/resistance";
 import { getNationalIssuesConfig } from "../config";
 import type { CountrySnapshot, EvaluationResult } from "../types";
@@ -25,6 +24,7 @@ export async function resolveMaxIssues(
   countryId: string,
   db: PrismaClient,
   options: { maxIssues?: number; bypassLimits?: boolean } | undefined,
+  now: number,
   result: EvaluationResult
 ): Promise<number | null> {
   const config = getNationalIssuesConfig();
@@ -32,7 +32,7 @@ export async function resolveMaxIssues(
   if (options?.bypassLimits) return maxIssues;
 
   const sevenIxDaysMs = 7 * IX_DAY_MS;
-  const weekAgoIxTime = IxTime.getCurrentIxTime() - sevenIxDaysMs;
+  const weekAgoIxTime = now - sevenIxDaysMs;
   const weeklyCount = await db.nationalIssue.count({
     where: { countryId, createdIxTime: { gte: weekAgoIxTime } },
   });
