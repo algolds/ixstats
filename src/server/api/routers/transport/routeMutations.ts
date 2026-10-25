@@ -18,7 +18,6 @@ import {
 } from "~/lib/economy/transport-generator";
 import { calculateRouteCosts } from "~/lib/economy/transport-costs";
 import { syncResourcePoolModifiers } from "~/server/shared/geo-resource-sync";
-import { syncTransportEconomicModifiers } from "~/server/shared/transport-sync";
 import {
   polylineLengthKm,
   normalizeTerrainDifficulty,
@@ -246,7 +245,6 @@ export const transportRouteMutationsRouter = createTRPCRouter({
         });
       }
 
-      await syncTransportEconomicModifiers(ctx.db, input.countryId);
       await syncResourcePoolModifiers(ctx.db, input.countryId);
 
       return {
@@ -311,7 +309,6 @@ export const transportRouteMutationsRouter = createTRPCRouter({
         } as Prisma.TransportRouteCreateInput,
       });
 
-      await syncTransportEconomicModifiers(ctx.db, input.countryId);
       await syncResourcePoolModifiers(ctx.db, input.countryId);
 
       return route;
@@ -328,7 +325,6 @@ export const transportRouteMutationsRouter = createTRPCRouter({
         await resolveTransportRouteCountryId(ctx.db, input.id, input.countryId)
       );
       const deleted = await ctx.db.transportRoute.delete({ where: { id: input.id } });
-      await syncTransportEconomicModifiers(ctx.db, input.countryId);
       await syncResourcePoolModifiers(ctx.db, input.countryId);
       return deleted;
     }),
@@ -407,7 +403,6 @@ export const transportRouteMutationsRouter = createTRPCRouter({
         data: updates,
       });
 
-      await syncTransportEconomicModifiers(ctx.db, countryId);
       await syncResourcePoolModifiers(ctx.db, countryId);
 
       return updated;
@@ -465,7 +460,6 @@ export const transportRouteMutationsRouter = createTRPCRouter({
         },
       });
 
-      await syncTransportEconomicModifiers(ctx.db, input.countryId);
       await syncResourcePoolModifiers(ctx.db, input.countryId);
 
       return updated;

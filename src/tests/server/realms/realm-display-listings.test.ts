@@ -39,9 +39,6 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
   searchPages: jest.fn(),
 }));
 
-jest.mock("~/server/shared/transport-sync", () => ({
-  syncTransportEconomicModifiers: jest.fn().mockResolvedValue(undefined),
-}));
 jest.mock("~/server/shared/geo-resource-sync", () => ({
   syncResourcePoolModifiers: jest.fn().mockResolvedValue(undefined),
 }));

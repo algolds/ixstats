@@ -105,7 +105,7 @@ When multiple routers need to share common server-side logic (caching, batching,
 - **`layer-cache.ts`**: In-memory cache for assembled map FeatureCollections (populated by the geo router, invalidated by the countries router).
 - **`country-helpers.ts`**: Shared numeric/field validation helpers for country data.
 - **`country-authorization.ts`**: Shared country write-permission checks (`COUNTRY_WRITE_ROLES`).
-- **`realm-link-guard.ts`**, **`geo-resource-sync.ts`**, **`transport-sync.ts`**, **`mycountry-helpers.ts`**: other cross-domain helpers.
+- **`realm-link-guard.ts`**, **`geo-resource-sync.ts`**, **`mycountry-helpers.ts`**: other cross-domain helpers.
 
 The tRPC response cache (key generation + TTLs for `cachedPublicProcedure` and friends) lives in `src/lib/cache/trpc-cache.ts`, not under `src/server/shared/`.
 
