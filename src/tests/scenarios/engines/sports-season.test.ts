@@ -178,7 +178,7 @@ describe("sports-season (memory)", () => {
     });
   });
 
-  it("advances a matchday on real time: one real day after the start, not one IxTime day", async () => {
+  it("advances a matchday on real time: 12 real hours after the start (the old IxTime-day pace)", async () => {
     const season = await lifecycle(asPerson(db as never, w.manager)).startSeason({
       leagueId: w.leagueId,
     });
@@ -189,13 +189,13 @@ describe("sports-season (memory)", () => {
     const opener = (
       await db.sportMatch.findMany({ where: { seasonId: season.id, matchDay: 1 } })
     )[0]!;
-    expect(opener.scheduledIxTime).toBe(START + 86_400_000);
+    expect(opener.scheduledIxTime).toBe(START + 12 * 3_600_000);
 
-    jest.spyOn(Date, "now").mockReturnValue(START + 12 * 3_600_000);
+    jest.spyOn(Date, "now").mockReturnValue(START + 6 * 3_600_000);
     await advanceSportsSeasons(db as never);
     expect(await played()).toBe(0);
 
-    jest.spyOn(Date, "now").mockReturnValue(START + 25 * 3_600_000);
+    jest.spyOn(Date, "now").mockReturnValue(START + 13 * 3_600_000);
     await advanceSportsSeasons(db as never);
     expect(await played()).toBeGreaterThan(0);
   });

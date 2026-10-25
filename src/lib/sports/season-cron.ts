@@ -9,6 +9,7 @@
 
 import { type PrismaClient } from "@prisma/client";
 import { resolveRace, loadLeagueDrivers, createRNG, seedFromString } from "./resolver";
+import { BRACKET_ROUND_GAP_MS } from "./scheduler";
 import { transitionToNextStage } from "./transition";
 import { postMatchDayBulletin } from "./feed-post";
 import { notifyClubMatchResult } from "./club-notify";
@@ -523,7 +524,7 @@ async function advanceBracketRound(
               fighter1Id: a,
               fighter2Id: b,
               status: "scheduled",
-              scheduledIxTime: nowMs + 2 * 24 * 60 * 60 * 1000,
+              scheduledIxTime: nowMs + BRACKET_ROUND_GAP_MS,
               stage: (season as any).activeStage ?? 1,
             } as any,
           });

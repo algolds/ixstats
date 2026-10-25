@@ -37,6 +37,11 @@ run_sql() { docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ER
   playoff gaps were IxTime days (12 real hours at 2x) and are now real days. The exchange keeps its pace: its bidding
   window, award grace, decision delay and activity window were already real days scaled into IxTime.
 
+- **Sports intervals** (same window as the T3 SQL): `run_sql scripts/migrations/2026-10-realm-time/t3b-sports-intervals.sql`
+  halves each league's stored `matchIntervalDays` / `raceIntervalDays` once (marker `intervalsInRealDays`), so leagues
+  keep their old pace on real days. New leagues default to 12 hours between matchdays and 1.5 days between races.
+  On the clone: 1 league (7 → 3.5 days).
+
 ## D1: defense budget and legacy security tables
 
 - **After the realm-time code is deployed** (the old build still reads these tables), and after `bun run db:backup`:

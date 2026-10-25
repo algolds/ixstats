@@ -30,6 +30,7 @@ import {
 import { withBasePath } from "~/lib/base-path";
 import { springSmooth } from "~/lib/design/motion";
 import type { ArchetypeType } from "~/lib/sports";
+import { DEFAULT_MATCH_INTERVAL_DAYS } from "~/lib/sports/scheduler";
 
 const MediaSearchModal = dynamic(
   () =>
@@ -75,6 +76,12 @@ const SPORT_COMMONS_CATEGORIES: Record<string, string> = {
   boxing: "Boxing matches",
 };
 
+/** "12 hours", "1 day", "3.5 days". */
+function intervalLabel(days: number): string {
+  if (days < 1) return `${Math.round(days * 24)} hours`;
+  return `${days} day${days === 1 ? "" : "s"}`;
+}
+
 export function LeagueCreator({
   open,
   onOpenChange,
@@ -103,7 +110,7 @@ export function LeagueCreator({
   const [divisions, setDivisions] = useState(2);
   const [weightClassesRaw, setWeightClassesRaw] = useState("");
   const [raceCount, setRaceCount] = useState(20);
-  const [matchIntervalDays, setMatchIntervalDays] = useState(1);
+  const [matchIntervalDays, setMatchIntervalDays] = useState(DEFAULT_MATCH_INTERVAL_DAYS);
 
   // Cover image suggestion states
   const [coverImage, setCoverImage] = useState<string | null>(null);
@@ -450,18 +457,19 @@ export function LeagueCreator({
           <Input
             id="match-interval"
             type="number"
-            min={1}
+            min={0.5}
             max={30}
+            step={0.5}
             value={matchIntervalDays}
             onChange={(e) => {
-              const val = parseInt(e.target.value, 10);
-              if (!isNaN(val)) setMatchIntervalDays(Math.min(30, Math.max(1, val)));
+              const val = parseFloat(e.target.value);
+              if (!isNaN(val)) setMatchIntervalDays(Math.min(30, Math.max(0.5, val)));
               else if (e.target.value === "") setMatchIntervalDays(0);
             }}
           />
           <p className="text-label-secondary text-footnote">
-            Matches auto-resolve in the background, {matchIntervalDays} day
-            {matchIntervalDays === 1 ? "" : "s"} apart. Use 7 for a weekly schedule.
+            Matches auto-resolve in the background, {intervalLabel(matchIntervalDays)} apart. Use 7
+            for a weekly schedule.
           </p>
         </div>
       )}

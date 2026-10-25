@@ -2,7 +2,7 @@ import { type PrismaClient, type Prisma as PrismaTypes } from "@prisma/client";
 import { getPreset, getSportEmoji, type SportPresetKey } from "./presets";
 import { processAging } from "./aging";
 import { generateCoach, generateRookieClass } from "./talent";
-import { persistSeasonSchedule } from "./scheduler";
+import { DEFAULT_MATCH_INTERVAL_DAYS, persistSeasonSchedule } from "./scheduler";
 import { resolveMatch, type TeamRatingVector } from "./resolver";
 import { teamWageBill } from "./team-rating";
 import { clamp } from "~/lib/utils";
@@ -940,7 +940,7 @@ export async function transitionToNextStage(prisma: Prisma, seasonId: string): P
             awayTeamId: fix.awayTeamId,
             stage: nextStage.id,
             status: "scheduled",
-            scheduledIxTime: nowMs + fix.matchDay * 86400000,
+            scheduledIxTime: nowMs + fix.matchDay * DEFAULT_MATCH_INTERVAL_DAYS * 86_400_000,
           } as any,
         });
       }
