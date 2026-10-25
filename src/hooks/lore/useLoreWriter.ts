@@ -249,6 +249,7 @@ export function useLoreWriter({
       onSerializedWikitext: editor.onSerializedWikitext,
       registerContentReader: editor.registerContentReader,
       onModeChange: editor.onModeChange,
+      onEditorOpened: editor.onEditorOpened,
       onSaveError: (error: Error) => setSaveError(saveRefusalMessage(error)),
       onSaveStart: () => setSaveError(null),
       onSaveSuccess: () => {

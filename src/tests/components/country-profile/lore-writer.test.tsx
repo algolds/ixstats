@@ -26,6 +26,7 @@ interface BridgeProps {
   onSaveError?: (error: Error) => void;
   onSaveStart?: () => void;
   onModeChange?: (mode: "source" | "visual") => void;
+  onEditorOpened?: (opened: { wikitext: string; mode: "source" | "visual" }) => void;
 }
 
 interface PageCheck {
@@ -42,6 +43,8 @@ let mockNormalised = "";
 let mockReports = true;
 /** The mocked editor's content cannot all be converted to wikitext: its reader answers null. */
 let mockIncomplete = false;
+/** The text the mocked bridge opens on instead of the prefill (a restored draft); null: the prefill or the page. */
+let mockOpenedText: string | null = null;
 /** The editor the mocked bridge says is showing. */
 let mockMode: "source" | "visual" = "visual";
 /** How many times a mocked editor has opened. */
@@ -89,7 +92,9 @@ jest.mock("~/components/wiki-os/editor/WikiEditBridge", () => ({
     mockBridge(props);
     React.useEffect(() => {
       mockMounts += 1;
-      const opened = (props.prefillWikitext ?? "") + mockNormalised;
+      const raw = mockOpenedText ?? props.prefillWikitext ?? "";
+      const opened = raw + mockNormalised;
+      props.onEditorOpened?.({ wikitext: raw, mode: mockMode });
       props.registerContentReader?.(() => (mockIncomplete ? null : (mockEditorText ?? opened)));
       props.onModeChange?.(mockMode);
       if (mockReports)
@@ -178,6 +183,7 @@ beforeEach(() => {
   mockNormalised = "";
   mockReports = true;
   mockMode = "visual";
+  mockOpenedText = null;
   mockIncomplete = false;
   mockMounts = 0;
   mockChecking = false;
@@ -1053,5 +1059,85 @@ describe("LoreWriter: final review fixes", () => {
     mockMode = "source";
     renderWriter({ editTitle: "Venceia" });
     expect(screen.queryByText(/\bwords?$/)).toBeNull();
+  });
+});
+
+describe("LoreWriter: source editor baseline", () => {
+  /** Edit opens on the author's earlier source-mode draft: the source editor reports no serialization. */
+  const openOnSourceDraft = () => {
+    mockMode = "source";
+    mockReports = false;
+    mockOpenedText = "My draft.";
+    return renderWriter({ editTitle: "Venceia" });
+  };
+
+  it("keeps what the author wrote in the source editor when they close", () => {
+    const { onClose } = openOnSourceDraft();
+    mockEditorText = "My draft. More written.";
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(getDraft("user_alice", "Venceia")?.wikitext).toBe("My draft. More written.");
+    expect(mockNotifyInfo).toHaveBeenCalledWith("Draft kept", expect.any(String));
+  });
+
+  it("hands what the author wrote over to WikiOS", () => {
+    openOnSourceDraft();
+    mockEditorText = "My draft. More written.";
+    fireEvent.click(screen.getByRole("link", { name: "Open in WikiOS" }));
+    expect(getDraft("user_alice", "Venceia")?.wikitext).toBe("My draft. More written.");
+  });
+
+  it("keeps no draft of an untouched source editor", () => {
+    const { onClose } = openOnSourceDraft();
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(getDraft("user_alice", "Venceia")).toBeNull();
+    expect(mockNotifyInfo).not.toHaveBeenCalled();
+  });
+
+  it("still counts the source edits after a switch to the visual editor serializes them", () => {
+    openOnSourceDraft();
+    mockEditorText = "My draft. More written.";
+    act(() =>
+      lastBridge().onSerializedWikitext?.({
+        wikitext: "My draft. More written.",
+        complete: true,
+        notices: [],
+      })
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(getDraft("user_alice", "Venceia")?.wikitext).toBe("My draft. More written.");
+  });
+
+  it("keeps the restored-draft notice while a source-opened editor's canvas shows the draft unchanged", () => {
+    saveDraft("user_alice", {
+      title: "Venceia",
+      source: "ixwiki",
+      mode: "source",
+      wikitext: "Old",
+    });
+    mockMode = "source";
+    mockReports = false;
+    mockOpenedText = "Old";
+    renderWriter();
+    openEditorOn("Place", "Venceia");
+    const restored = "Your earlier draft of this page was restored.";
+    expect(screen.getByText(restored)).toBeInTheDocument();
+
+    act(() =>
+      lastBridge().onSerializedWikitext?.({ wikitext: "Old", complete: true, notices: [] })
+    );
+    expect(screen.getByText(restored)).toBeInTheDocument();
+
+    act(() =>
+      lastBridge().onSerializedWikitext?.({
+        wikitext: "Old, then more.",
+        complete: true,
+        notices: [],
+      })
+    );
+    expect(screen.queryByText(restored)).toBeNull();
   });
 });

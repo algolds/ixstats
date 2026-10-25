@@ -50,4 +50,34 @@ describe("mapWithConcurrency", () => {
     });
     expect(most).toBe(1);
   });
+
+  it("stops taking items once one fails", async () => {
+    const work = jest.fn(async (n: number) => {
+      if (n === 1) throw new Error("one");
+      await tick();
+      return n;
+    });
+    await expect(mapWithConcurrency([1, 2, 3, 4, 5, 6], 2, work)).rejects.toThrow("one");
+    await tick();
+    await tick();
+    // The other worker finishes the item it holds, and takes no more.
+    expect(work.mock.calls.map(([n]) => n)).toEqual([1, 2]);
+  });
+
+  it.each([Number.NaN, -3, 0.5])(
+    "runs one at a time, and every item, for a limit of %s",
+    async (limit) => {
+      let inFlight = 0;
+      let most = 0;
+      const out = await mapWithConcurrency([1, 2, 3], limit, async (n) => {
+        inFlight += 1;
+        most = Math.max(most, inFlight);
+        await tick();
+        inFlight -= 1;
+        return n;
+      });
+      expect(out).toEqual([1, 2, 3]);
+      expect(most).toBe(1);
+    }
+  );
 });

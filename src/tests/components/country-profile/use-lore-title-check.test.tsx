@@ -55,13 +55,13 @@ describe("useLoreTitleCheck", () => {
     rerender({ title: "Venceia" });
     expect(result.current).toEqual({ status: "checking" });
     expect(mockQuery).toHaveBeenLastCalledWith(
-      { title: "" },
+      { title: "", liveOnly: true },
       expect.objectContaining({ enabled: false })
     );
 
     settle();
     expect(mockQuery).toHaveBeenLastCalledWith(
-      { title: "Venceia" },
+      { title: "Venceia", liveOnly: true },
       expect.objectContaining({ enabled: true })
     );
     expect(result.current).toEqual({ status: "free", title: "Venceia" });

@@ -37,11 +37,7 @@ import {
   SisterRenderError,
 } from "~/lib/wiki-os/services/sister-render-service";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
-import {
-  assertTitleVisible,
-  canSeeDeletedPages,
-  visibleTitles,
-} from "~/lib/wiki-os/permissions";
+import { assertTitleVisible, canSeeDeletedPages, visibleTitles } from "~/lib/wiki-os/permissions";
 import { getHeadRevisionRefs } from "~/lib/wiki-os/core/edit-conflict";
 import { downloadMedia } from "~/lib/wiki-os/services/media-download";
 import { readVisiblePage } from "~/lib/wiki-os/services/visible-page";
@@ -271,12 +267,15 @@ export const wikiosPageContentRouter = createTRPCRouter({
     }),
 
   /**
-   * Check if a page exists in local DB or MediaWiki.
+   * Check if a page exists in local DB or MediaWiki. A deleted page exists for a reader who may see it, unless
+   * `liveOnly` (the lore writer, whose pieces are live pages only) asks for live pages.
    */
   checkPageExists: publicProcedure
-    .input(z.object({ title: z.string().min(1).max(500) }))
+    .input(z.object({ title: z.string().min(1).max(500), liveOnly: z.boolean().optional() }))
     .query(async ({ input, ctx }) => {
-      const { resolvedTitle, wikitext } = await readVisiblePage(ctx, input.title);
+      const { resolvedTitle, wikitext } = await readVisiblePage(ctx, input.title, {
+        includeArchived: !input.liveOnly,
+      });
       return { exists: wikitext !== null, resolvedTitle };
     }),
 

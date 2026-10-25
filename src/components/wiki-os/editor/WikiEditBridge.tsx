@@ -72,6 +72,11 @@ interface WikiEditBridgeProps {
   onSaveStart?: () => void;
   /** The editor showing, as it opens and on each switch (a host's word count reads only the visual editor). */
   onModeChange?: (mode: "source" | "visual") => void;
+  /**
+   * Once, as the first editor opens: the text it opened on (a restored draft, the prefill or the page) and in which
+   * editor. A host tells an edit from none against it; the source editor reports no serialization of its own.
+   */
+  onEditorOpened?: (opened: { wikitext: string; mode: "source" | "visual" }) => void;
 }
 
 /** The page as the editor was opened on: the text and the revision that text is the content of. */
@@ -117,6 +122,7 @@ export function WikiEditBridge({
   onSaveError,
   onSaveStart,
   onModeChange,
+  onEditorOpened,
 }: WikiEditBridgeProps) {
   const notify = useNotify();
   const utils = api.useUtils();
@@ -246,6 +252,23 @@ export function WikiEditBridge({
   const onModeChangeRef = useRef(onModeChange);
   onModeChangeRef.current = onModeChange;
   useEffect(() => onModeChangeRef.current?.(mode), [mode]);
+
+  /** The text the editors open on, once the page has loaded. */
+  const openingText =
+    loaded &&
+    (activeWikitext ??
+      openedOnPrefill ??
+      (newSection ? appendNewSection(loaded.wikitext) : loaded.wikitext));
+  // An older draft waiting for the author's choice leaves the draft question unsettled (`draftResolved` false).
+  const editorReady = openingText !== null && draftResolved;
+  const onEditorOpenedRef = useRef(onEditorOpened);
+  onEditorOpenedRef.current = onEditorOpened;
+  const openedReportedRef = useRef(false);
+  useEffect(() => {
+    if (!editorReady || openedReportedRef.current) return;
+    openedReportedRef.current = true;
+    onEditorOpenedRef.current?.({ wikitext: openingText, mode });
+  }, [editorReady, openingText, mode]);
 
   const lastSerializedRef = useRef<WikitextSerializeResult | null>(null);
   const onSerializedRef = useRef(onSerializedWikitext);
@@ -428,14 +451,11 @@ export function WikiEditBridge({
   }
 
   // Editors mount only once the draft question is settled: they restore drafts on their own.
-  if (loaded === null || !draftResolved) {
+  if (openingText === null || !draftResolved) {
     return <EditorLoading text="Loading article..." />;
   }
 
-  const initialWikitextValue =
-    activeWikitext ??
-    openedOnPrefill ??
-    (newSection ? appendNewSection(loaded.wikitext) : loaded.wikitext);
+  const initialWikitextValue = openingText;
 
   return (
     <div className="wikios-edit-bridge relative min-h-[600px] w-full">
