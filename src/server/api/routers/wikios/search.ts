@@ -13,6 +13,8 @@ import {
   getSiteStats,
   getRandomPage,
   fullTextSearch,
+  type SisterWikiSource,
+  type WikiSearchResult,
   type WikiSource,
 } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import {
@@ -21,8 +23,9 @@ import {
 } from "~/lib/wiki-os/core/native-search-service";
 import { assetUrl } from "~/lib/base-path";
 import { MediaAssetService } from "~/lib/wiki-os/core/media-asset-service";
-import { getMediaWikiApiUrl, DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
+import { getMediaWikiApiUrl, DEFAULT_USER_AGENT, WIKI_SOURCES } from "~/lib/wiki-os/config";
 import { fetchMediaWikiJson } from "~/lib/wiki-os/upstream-fetch";
+import { unlessUnavailable } from "~/lib/wiki-os/upstream-guard";
 import { wikiSourceSchema } from "./_shared";
 
 /** File search reads a sister wiki's API on a miss: one bucket shared with the sister-wiki category reads. */
@@ -33,6 +36,24 @@ export const sisterWikiProcedure = publicProcedure.use(
 /** A sister wiki's answers are reused for 5 minutes. */
 export const SISTER_CACHE_TTL_MS = 300_000;
 
+/**
+ * One sister wiki's part of a search across all wikis. A wiki that cannot be reached adds no results and one warning
+ * naming it, so the other wikis' results still come back; any other error fails the search.
+ */
+async function sisterResultsOrNone(
+  query: string,
+  limit: number,
+  wiki: SisterWikiSource
+): Promise<WikiSearchResult[]> {
+  const results = await unlessUnavailable(searchPages(query, limit, wiki));
+  if (results !== null) return results;
+  console.warn(
+    `[wikios.search] ${WIKI_SOURCES[wiki].name} could not be reached; searched the other wikis without it.`
+  );
+  return [];
+}
+
+/** Searches one wiki's titles. A sister wiki that cannot be reached throws WikiUnavailableError (SERVICE_UNAVAILABLE). */
 const searchWikiTitles = publicProcedure
   .input(
     z.object({
@@ -63,7 +84,9 @@ export const wikiosSearchRouter = createTRPCRouter({
   /**
    * Search articles by title prefix.
    * Supports multi-wiki search: specify a single source or "all" to query
-   * ixwiki, iiwiki, and althistory in parallel.
+   * ixwiki, iiwiki, and althistory in parallel. A single sister wiki that cannot be reached throws
+   * WikiUnavailableError (SERVICE_UNAVAILABLE), never an empty list; "all" is best effort, so an unreachable
+   * sister only leaves its results out.
    */
   search: publicProcedure
     .input(
@@ -92,8 +115,8 @@ export const wikiosSearchRouter = createTRPCRouter({
       if (wikiSource === "all") {
         const [ix, ii, alt] = await Promise.all([
           searchPages(query, limit, "ixwiki"),
-          searchPages(query, limit, "iiwiki"),
-          searchPages(query, limit, "althistory"),
+          sisterResultsOrNone(query, limit, "iiwiki"),
+          sisterResultsOrNone(query, limit, "althistory"),
         ]);
         return [
           ...ix.map((r) => ({ ...r, source: "ixwiki" as const })),

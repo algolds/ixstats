@@ -127,7 +127,9 @@ export const wikiosPageContentRouter = createTRPCRouter({
 
       // Another wiki's page: its wikitext is fetched from that wiki (a redirect followed to the page it names) and
       // rendered by that wiki's own parser (never IxWiki's, whose templates are not its templates), then sanitized
-      // and cached per revision.
+      // and cached per revision. Only a page that wiki does not have is NOT_FOUND: a wiki that cannot be reached
+      // (for the wikitext or the render) throws WikiUnavailableError, which the formatter sends as
+      // SERVICE_UNAVAILABLE (TOO_MANY_REQUESTS when busy), and the reader offers "Open on <wiki>".
       if (wikiSource !== "ixwiki") {
         const article = await getArticleWikitext(input.title, wikiSource);
         if (!article) {
@@ -226,7 +228,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
 
   /**
    * Get raw wikitext for the source editor, or another wiki's page (read only: a country profile's lore), which
-   * has no IxWiki revision to base an edit on.
+   * has no IxWiki revision to base an edit on. Another wiki that cannot be reached is SERVICE_UNAVAILABLE
+   * (WikiUnavailableError), never an empty page.
    */
   getWikitext: publicProcedure
     .input(
@@ -300,7 +303,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
     }),
 
   /**
-   * Get intro with backward compatible input signature { title, wiki }.
+   * Get intro with backward compatible input signature { title, wiki }. Another wiki that cannot be reached is
+   * SERVICE_UNAVAILABLE (WikiUnavailableError); a page it does not have is an empty intro.
    */
   getIntro: publicProcedure
     .input(
@@ -340,7 +344,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
     }),
 
   /**
-   * Get content of a specific section from a wiki article.
+   * Get content of a specific section from a wiki article. Null for a missing page or section; another wiki that
+   * cannot be reached is SERVICE_UNAVAILABLE (WikiUnavailableError).
    */
   getSectionContent: publicProcedure
     .input(
@@ -403,7 +408,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
     }),
 
   /**
-   * Get page images from an article.
+   * Get page images from an article. Another wiki that cannot be reached is SERVICE_UNAVAILABLE
+   * (WikiUnavailableError), never "no images".
    */
   getPageImages: publicProcedure
     .input(
@@ -437,7 +443,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
     }),
 
   /**
-   * Get parsed infobox for a wiki page.
+   * Get parsed infobox for a wiki page. Null for a missing page; another wiki that cannot be reached is
+   * SERVICE_UNAVAILABLE (WikiUnavailableError).
    */
   getInfobox: publicProcedure
     .input(

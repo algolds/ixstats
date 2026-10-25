@@ -103,6 +103,12 @@ import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 import { registerTemplateProvider } from "~/lib/wiki-os/templates/template-resolver";
 import { buildViewBundle } from "~/lib/wiki-os/services/render-service";
 import { getArticleView } from "~/lib/wiki-os/services/article-view-service";
+import { clientErrorOf } from "~/tests/helpers/trpc-client-error";
+
+/** The bridge's real reader of another wiki's wikitext (the barrel is mocked above): it goes through the guard. */
+const realGetArticleWikitext = jest.requireActual<
+  typeof import("~/lib/wiki-os/adapters/mediawiki/bridge/dispatchers")
+>("~/lib/wiki-os/adapters/mediawiki/bridge/dispatchers").getArticleWikitext;
 
 const syncSinglePageMockReset = () => jest.mocked(syncSinglePage).mockClear();
 const caller = () =>
@@ -549,5 +555,80 @@ describe("getArticleHtml for another wiki's page is sanitized like any other (pl
 
     expect(result).toMatchObject({ title: "Bashan Protectorate", resolvedFrom: "Bashan" });
     expect(getArticleAuthors).toHaveBeenCalledWith("Bashan Protectorate", "iiwiki");
+  });
+});
+
+describe("getArticleHtml for another wiki's page that wiki cannot serve (plan 2026-10-25 sister wikis, C3c)", () => {
+  let fetchSpy: jest.SpiedFunction<typeof fetch>;
+  const visitor = () => createMockRouterContext({ auth: null, user: null }) as never;
+  /** A gateway error page: the upstream guard reads it as a wiki that could not be reached. */
+  const down = () =>
+    new Response("<html>502 Bad Gateway</html>", {
+      status: 502,
+      headers: { "content-type": "text/html" },
+    });
+
+  beforeEach(() => {
+    fetchSpy = jest.spyOn(global, "fetch");
+    jest.mocked(getArticleAuthors).mockResolvedValue({ creator: null } as never);
+  });
+  afterEach(() => fetchSpy.mockRestore());
+
+  it("a sister page whose wiki is unreachable is SERVICE_UNAVAILABLE, not NOT_FOUND", async () => {
+    jest.mocked(getArticleWikitext).mockImplementation(realGetArticleWikitext);
+    fetchSpy.mockImplementation(async () => down());
+
+    const error = await clientErrorOf(
+      wikiosPageContentRouter,
+      "getArticleHtml",
+      { title: "Unreachable Bashan", wikiSource: "iiwiki" },
+      visitor()
+    );
+
+    expect(error).toEqual({
+      status: 503,
+      code: "SERVICE_UNAVAILABLE",
+      message: "IIWiki could not be reached just now.",
+    });
+  });
+
+  it("a missing sister page is still NOT_FOUND", async () => {
+    jest.mocked(getArticleWikitext).mockImplementation(realGetArticleWikitext);
+    fetchSpy.mockImplementation(async () =>
+      Response.json({ query: { pages: { "-1": { title: "Nowhere", missing: "" } } } })
+    );
+
+    const error = await clientErrorOf(
+      wikiosPageContentRouter,
+      "getArticleHtml",
+      { title: "Nowhere", wikiSource: "iiwiki" },
+      visitor()
+    );
+
+    expect(error).toMatchObject({ status: 404, code: "NOT_FOUND" });
+  });
+
+  it("a sister page whose wiki stops answering before it renders is SERVICE_UNAVAILABLE, not BAD_GATEWAY", async () => {
+    jest.mocked(getArticleWikitext).mockResolvedValue({
+      title: "Half Bashan",
+      wikitext: "text",
+      pageId: 7,
+      length: 4,
+      revId: 1234,
+    });
+    fetchSpy.mockImplementation(async () => down());
+
+    const error = await clientErrorOf(
+      wikiosPageContentRouter,
+      "getArticleHtml",
+      { title: "Half Bashan", wikiSource: "althistory" },
+      visitor()
+    );
+
+    expect(error).toEqual({
+      status: 503,
+      code: "SERVICE_UNAVAILABLE",
+      message: "AltHistory Wiki could not be reached just now.",
+    });
   });
 });
