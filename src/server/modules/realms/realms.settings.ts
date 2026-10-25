@@ -1,7 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { parseInWorldDate, type InWorldDate } from "~/lib/realms/realm-community";
-import { parseRealmClock, type RealmClock } from "~/lib/realms/realm-clock";
+import type { RealmClock } from "~/lib/realms/realm-clock";
 import { readNationGrowthTable, type NationGrowthTable } from "~/lib/realms/nation-growth-defaults";
 
 const RealmSettingsSchema = z.object({
@@ -29,19 +28,10 @@ export function withMaxNationsPerUser(
   return { ...storedSettings(settings), maxNationsPerUser };
 }
 
-/** The realm's in-world date (`settings.inWorldDate`), or null when unset or malformed. */
-export function realmInWorldDate(
-  settings: Prisma.JsonValue | null | undefined
-): InWorldDate | null {
-  return parseInWorldDate(storedSettings(settings).inWorldDate);
-}
-
-/** The realm's own clock (`settings.clock`), or null: the realm runs on global IxTime. */
-export function realmClock(settings: Prisma.JsonValue | null | undefined): RealmClock | null {
-  return parseRealmClock(storedSettings(settings).clock);
-}
-
-/** `Realm.settings` with the clock set; the in-world date label it replaces is dropped, every other key kept. */
+/**
+ * `Realm.settings` with the clock set (read it with `storedRealmClock` in `~/server/shared/realm-time`); the retired
+ * in-world date label is dropped, every other key kept.
+ */
 export function withRealmClock(
   settings: Prisma.JsonValue | null | undefined,
   clock: RealmClock

@@ -12,6 +12,7 @@ import { assetUrl } from "~/lib/base-path";
 import { realmHref } from "~/lib/thinkpages-forum/links";
 import { formatRealmSpeed } from "~/lib/realms/realm-clock";
 import { useRealmDate } from "~/hooks/useRealmDate";
+import { useRealmClock } from "~/hooks/useRealmClock";
 import { RealmHeroMap } from "~/components/realms/RealmHeroMap";
 
 type Overview = NonNullable<RouterOutputs["realms"]["region"]["overview"]>;
@@ -59,17 +60,6 @@ function StatItem({
   );
 }
 
-/** A fixed in-world date's "as of" real date (YYYY-MM-DD), read as a calendar day. */
-const asOfHint = (asOf: string | null | undefined) =>
-  asOf
-    ? `as of ${new Date(`${asOf}T00:00:00Z`).toLocaleDateString(undefined, {
-        timeZone: "UTC",
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })}`
-    : undefined;
-
 /** The founder's passport when they have a handle, else their nation here. `<Link>` adds the base path. */
 function founderHref(founder: NonNullable<Overview["founder"]>) {
   if (founder.handle) return `/@${encodeURIComponent(founder.handle)}`;
@@ -114,8 +104,8 @@ export function RealmRegionHeader({
   openToClaim: number;
 }) {
   const pathname = usePathname();
-  const { realm, stats, founder, founderTitle, viewer, inWorldDate, speed } = overview;
-  const date = useRealmDate(overview.clock, inWorldDate?.label ?? null);
+  const { realm, stats, founder, founderTitle, viewer, speed } = overview;
+  const date = useRealmDate(useRealmClock(realm.id, overview.clock), overview.date);
   const founderLink = founder ? founderHref(founder) : null;
   const tabs = realmTabs(
     realm.slug,
@@ -206,16 +196,12 @@ export function RealmRegionHeader({
               )
             }
           />
-          {inWorldDate && (
-            <StatItem
-              label="In-world date"
-              value={date}
-              // A realm clock's speed when it is not Ixnay's ×2 ("Paused", "×6"); else the old label's date.
-              hint={
-                speed !== null && speed !== 2 ? formatRealmSpeed(speed) : asOfHint(inWorldDate.asOf)
-              }
-            />
-          )}
+          <StatItem
+            label="In-world date"
+            value={date}
+            // The speed when it is not Ixnay's ×2 ("Paused", "×6").
+            hint={speed !== 2 ? formatRealmSpeed(speed) : undefined}
+          />
         </dl>
 
         {realm.status !== "active" && (

@@ -10,7 +10,7 @@ import {
   realmSlugWhere,
 } from "~/lib/realms/realm-ids";
 import { STAFF_FOUNDER_ID, type HappeningKind, type RealmPower } from "~/lib/realms/realm-region";
-import { formatInWorldDate, parseRealmLinks } from "~/lib/realms/realm-community";
+import { parseRealmLinks } from "~/lib/realms/realm-community";
 import { sanitizeRealmContent, stripHtml } from "~/lib/utils/sanitize-html";
 import { resolveDisplayNames } from "~/server/shared/display-names";
 import { embassyPartners } from "~/server/shared/realm-board";
@@ -24,8 +24,9 @@ import {
   type RealmActor,
 } from "./realms.access";
 import { forumPreview } from "./realms.forum-preview";
-import { realmClock, realmFounderTitle, realmInWorldDate } from "./realms.settings";
+import { realmFounderTitle } from "./realms.settings";
 import { formatRealmDate } from "~/lib/realms/realm-clock";
+import { readerFromSettings, storedRealmClock } from "~/server/shared/realm-time";
 import { realmInactivityDays, realmReclaimWindowExclusive } from "~/lib/realms/realm-content";
 
 type RegionErrorCode = "NOT_FOUND" | "FORBIDDEN" | "CONFLICT" | "BAD_REQUEST";
@@ -263,7 +264,7 @@ export async function getRealmOverview(db: OverviewDb, slug: string, viewer: Rea
         })
       : [];
 
-  const clock = realmClock(realm.settings);
+  const time = readerFromSettings(realm.id, realm.settings);
   return {
     realm: {
       id: realm.id,
@@ -298,13 +299,11 @@ export async function getRealmOverview(db: OverviewDb, slug: string, viewer: Rea
         }
       : null,
     links: parseRealmLinks(realm.communityLinks),
-    // A running clock is the realm's date; until one is switched on, the founder's old label (if any).
-    inWorldDate: clock
-      ? { label: formatRealmDate(clock, Date.now()), asOf: null }
-      : formatInWorldDate(realmInWorldDate(realm.settings)),
-    speed: clock?.multiplier ?? null,
-    /** The realm's own clock, so the header's date runs live; null on global IxTime. */
-    clock,
+    /** The realm's date now, in its calendar ("14 Frostfall 812 AE"). */
+    date: formatRealmDate(time.now(), time.calendar),
+    speed: time.multiplier,
+    /** The realm's clock, so the header's date runs live; null reads Ixnay's clock (IxTime). */
+    clock: time.clock,
     officers: realm.officers.map((o) => ({
       title: o.title,
       powers: o.powers,
@@ -607,8 +606,8 @@ export async function getRealmManage(db: OverviewDb, slug: string, actor: RealmA
     // The clock is the founder's (and site staff's) alone.
     time: isFounder
       ? {
-          clock: realmClock(realm.settings),
-          legacy: realmInWorldDate(realm.settings),
+          realmId: staff.id,
+          clock: storedRealmClock(realm.settings),
           isIxnay: staff.id === DEFAULT_REALM_ID,
           skipsCooldown: isSiteAdmin(actor),
         }

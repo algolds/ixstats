@@ -1,4 +1,4 @@
-export { realmInWorldDate, realmSettings, withMaxNationsPerUser } from "./realms.settings";
+export { realmSettings, withMaxNationsPerUser } from "./realms.settings";
 export {
   capReachedMessage,
   NATION_TIER_CAPS,
