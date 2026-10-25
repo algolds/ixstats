@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { IxTime } from "~/lib/ixtime";
 import type { BotTimeResponse } from "~/types/ixstats";
 import { bearerMatches } from "~/lib/security/safe-equal";
+import { persistSharedClock } from "~/lib/ixtime/shared-clock";
+import { db } from "~/server/db";
 
 const currentIxState = () => ({
   ixTimeTimestamp: IxTime.getCurrentIxTime(),
@@ -49,6 +51,7 @@ export async function POST(request: Request) {
         // Direct sync from a bot command: `/time set` sends its time with multiplier null
         // (keep the speed); `/time speed` sends its current time and new speed
         IxTime.adoptBotClock(ixTimeMs, multiplier);
+        await persistSharedClock(db);
 
         const currentState = currentIxState();
 
@@ -118,6 +121,7 @@ export async function POST(request: Request) {
       hasTimeOverride: botData.hasTimeOverride === true,
       hasMultiplierOverride: botData.hasMultiplierOverride === true,
     });
+    await persistSharedClock(db);
 
     // Get the current state after sync
     const currentState = currentIxState();

@@ -246,10 +246,7 @@ export function useExchangeActions(
         "Are you sure you want to cancel this exchange? This will negatively impact diplomatic relations."
       )
     ) {
-      cancelExchangeMutation.mutate({
-        exchangeId: selectedExchange.id,
-        hostCountryId: primaryCountry.id,
-      });
+      cancelExchangeMutation.mutate({ exchangeId: selectedExchange.id });
     }
   };
 

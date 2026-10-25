@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { IxTime } from "~/lib/ixtime";
 import { requireAdminSession } from "~/server/shared/route-auth";
+import { persistSharedClock } from "~/lib/ixtime/shared-clock";
+import { db } from "~/server/db";
 
 export async function POST(request: Request) {
   try {
@@ -23,6 +25,7 @@ export async function POST(request: Request) {
       console.log("[API] Setting multiplier override to:", multiplier);
       IxTime.setMultiplierOverride(multiplier);
     }
+    await persistSharedClock(db);
 
     // Verify it was set
     const currentTime = IxTime.getCurrentIxTime();

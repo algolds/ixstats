@@ -38,7 +38,7 @@ jest.mock("~/lib/maps/adjacency", () => ({
 }));
 jest.mock("~/lib/maps/map-update-bus", () => ({ broadcastMapUpdate: jest.fn() }));
 jest.mock("~/server/shared/intelligence-alert-thresholds", () => ({
-  evaluateThresholds: jest.fn().mockResolvedValue(undefined),
+  evaluateCountryThresholds: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock("~/server/modules/realms/realms.map", () => ({
   ...jest.requireActual("~/server/modules/realms/realms.map"),

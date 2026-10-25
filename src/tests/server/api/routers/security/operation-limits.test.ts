@@ -85,9 +85,10 @@ describe("peacekeeping", () => {
   it("raises the relation once and records it on the operation", async () => {
     db.militaryOperation.findFirst.mockResolvedValue(null);
     await peacekeeping(500);
+    // Through applyRelationshipImpact, so the stored band follows the strength
     expect(db.diplomaticRelation.update).toHaveBeenCalledWith({
       where: { id: "rel_1" },
-      data: { strength: 60 },
+      data: expect.objectContaining({ strength: 60, relationship: "friendly" }),
     });
     expect(db.militaryOperation.create.mock.calls[0]![0].data.diplomaticImpact).toBe(10);
   });

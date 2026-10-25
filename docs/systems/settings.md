@@ -174,7 +174,7 @@ verification checksum; `nsImport.getVerificationUrl` gives the verification link
 | `users.clearHistory` | protected; per-procedure limit plus 3 an hour; input `{ confirm: true }` |
 | `users.heartbeat` | protected, rate limited (sent by every signed-in tab, not from this page) |
 | `messages.respondToRequest`, `messages.getSeenState` | protected (Messages, not this page) |
-| `countries.update` | protected + `assertCountryWriteAccess` |
+| `countries.update` | protected + `assertCountryWriteAccess`; strict input: `name` and `flag` only (admin columns are `countries.adminUpdate`, admin only) |
 | `countryGeo.updateGeoRollupMode`, `countryGeo.rebaseNationalFromGeography` | country owner, standard mutation rate limit |
 | `thinkpages.updateAccount` | protected |
 | `vault.toggleEquipCosmetic` | protected |

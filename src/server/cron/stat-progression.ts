@@ -15,6 +15,8 @@
  * - The yearly government budget follows GDP: it moves by the same ratio as the stored GDP.
  * - One HistoricalDataPoint per country per IxTime month (HISTORY_PERIOD), skipped when the
  *   period already has one, so reruns are idempotent and history charts stop being synthesised.
+ * - A country with active intelligence alert thresholds has them evaluated against the stored stats
+ *   just written (best-effort: a failing evaluation never fails the run).
  */
 
 import type { PrismaClient } from "@prisma/client";
@@ -29,6 +31,7 @@ import type { CountryStats } from "~/types/ixstats";
 import { scaleBudgetWithGdp } from "~/lib/government/budget-allocations";
 import { gdpScaleRatio } from "~/lib/government/budget-math";
 import { currentBudgetYear } from "~/lib/government/budget-year";
+import { evaluateThresholds } from "~/server/shared/intelligence-alert-thresholds";
 
 /** Countries loaded and projected per batch. */
 const STAT_PROGRESSION_BATCH_SIZE = 50;
@@ -105,6 +108,38 @@ async function writeProjection(
     await tx.country.update({ where: { id: countryId }, data });
     await scaleBudgetWithGdp(tx, countryId, ratio, currentBudgetYear(ixTime));
   });
+}
+
+/** Users with active alert thresholds on each country of the batch. */
+async function thresholdWatchers(db: PrismaClient, ids: string[]) {
+  const rows = await db.intelligenceAlertThreshold.findMany({
+    where: { countryId: { in: ids }, isActive: true },
+    select: { countryId: true, userId: true },
+    distinct: ["countryId", "userId"],
+  });
+  const watchers = new Map<string, string[]>();
+  for (const { countryId, userId } of rows) {
+    watchers.set(countryId, [...(watchers.get(countryId) ?? []), userId]);
+  }
+  return watchers;
+}
+
+/** Evaluates each watcher's thresholds with the growth the projection just computed. */
+async function evaluateWatchedThresholds(
+  db: PrismaClient,
+  countryId: string,
+  userIds: string[] | undefined,
+  stats: CountryStats
+) {
+  for (const userId of userIds ?? []) {
+    try {
+      await evaluateThresholds(db, countryId, userId, {
+        effectiveGdpGrowth: stats.effectiveGdpGrowth,
+      });
+    } catch (err) {
+      console.error(`[stat-progression] Threshold evaluation failed for ${countryId}:`, err);
+    }
+  }
 }
 
 /** Columns the projection reads (prepareBaseCountryData) plus the stored stats it compares. */
@@ -224,12 +259,13 @@ export async function runStatProgression(
     cursor = batch[batch.length - 1]!.id;
 
     const ids = batch.map((c) => c.id);
-    const [components, existingHistory] = await Promise.all([
+    const [components, existingHistory, watchers] = await Promise.all([
       getComponentsStatsDataForCountries(db, ids),
       db.historicalDataPoint.findMany({
         where: { countryId: { in: ids }, ixTimeTimestamp: { gte: periodStart, lt: periodEnd } },
         select: { countryId: true },
       }),
+      thresholdWatchers(db, ids),
     ]);
     const hasHistory = new Set(existingHistory.map((h) => h.countryId));
     const historyRows: Array<ReturnType<typeof historyPointData>> = [];
@@ -253,6 +289,7 @@ export async function runStatProgression(
         } else {
           result.unchanged++;
         }
+        await evaluateWatchedThresholds(db, country.id, watchers.get(country.id), stats);
 
         if (!hasHistory.has(country.id)) {
           historyRows.push(historyPointData(country.id, stats, ixTime));

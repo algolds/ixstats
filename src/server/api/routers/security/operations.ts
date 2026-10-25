@@ -10,6 +10,7 @@ import { createTRPCRouter, publicProcedure, premiumMutationProcedure } from "~/s
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
+import { applyRelationshipImpact } from "~/lib/diplomacy/relationship-impact";
 import {
   assertCountryWriteAccess,
   hasCountryWriteAccess,
@@ -258,11 +259,13 @@ export const securityOperationsRouter = createTRPCRouter({
         });
       }
 
-      if (relation) {
-        await ctx.db.diplomaticRelation.update({
-          where: { id: relation.id },
-          data: { strength: Math.min(100, relation.strength + PEACEKEEPING_RELATION_BONUS) },
-        });
+      if (relation && input.targetCountryId) {
+        await applyRelationshipImpact(
+          ctx.db,
+          input.countryId,
+          input.targetCountryId,
+          PEACEKEEPING_RELATION_BONUS
+        );
       }
 
       // Auto-news: military deployment

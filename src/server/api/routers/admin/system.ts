@@ -8,6 +8,7 @@ import {
   invalidateConfigCache,
 } from "~/lib/config-service";
 import { IxTime } from "~/lib/ixtime";
+import { persistSharedClock } from "~/lib/ixtime/shared-clock";
 import { withJobLock } from "~/lib/system/job-lock";
 import { runStatProgression, type StatProgressionResult } from "~/server/cron/stat-progression";
 import { ActivityHooks } from "~/lib/activity/hooks";
@@ -241,7 +242,7 @@ export const adminSystemRouter = createTRPCRouter({
         multiplier: z.number().optional(),
       })
     )
-    .mutation(async ({ ctx: _ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
       try {
         // Try to set via bot first
         const botResult = await IxTime.setBotTimeOverride(input.ixTime, input.multiplier);
@@ -258,6 +259,7 @@ export const adminSystemRouter = createTRPCRouter({
           if (input.multiplier !== undefined) {
             IxTime.setMultiplierOverride(input.multiplier);
           }
+          await persistSharedClock(ctx.db);
 
           return {
             success: true,

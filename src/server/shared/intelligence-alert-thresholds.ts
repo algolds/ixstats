@@ -4,9 +4,13 @@
  * Moved below the router layer to enable server-side invocation without
  * cross-router dependencies (Plan 153).
  */
+import type { PrismaClient } from "@prisma/client";
 import { notificationAPI } from "~/lib/notifications/api";
 import { loadThreatPicture } from "~/lib/military/threat-picture-loader";
 import type { ThreatPicture } from "~/lib/military/threat-picture";
+import { IxTime } from "~/lib/ixtime";
+import { getEconomicConfigFromDB } from "~/lib/config-service";
+import { getComponentsStatsDataForCountries, projectCountryStats } from "./country-helpers";
 
 /**
  * Where the owner reads and resolves these alerts: the Intelligence alerts card on the
@@ -80,6 +84,40 @@ interface MetricSources {
   embassyCount: number;
   /** Derived on read; loaded only when a threshold watches a security-picture metric. */
   threatPicture: ThreatPicture | null;
+  /** The realised annual GDP growth (decimal) the projection applies now; null when not watched. */
+  effectiveGdpGrowth: number | null;
+}
+
+/** Figures the caller already computed, so the evaluation does not project them again. */
+export interface KnownMetrics {
+  /** `CountryStats.effectiveGdpGrowth` (decimal) from a projection at IxTime now. */
+  effectiveGdpGrowth?: number;
+}
+
+/**
+ * The growth rate MyCountry shows: the projection's effective rate at IxTime now, not the founding
+ * `adjustedGdpGrowth` input (which never moves).
+ */
+async function projectEffectiveGdpGrowth(
+  db: PrismaClient,
+  countryId: string
+): Promise<number | null> {
+  const country = await db.country.findUnique({
+    where: { id: countryId },
+    include: { storytellerEffects: { where: { isActive: true } } },
+  });
+  if (!country) return null;
+  const [components, econConfig] = await Promise.all([
+    getComponentsStatsDataForCountries(db, [countryId]),
+    getEconomicConfigFromDB(db),
+  ]);
+  const stats = projectCountryStats(
+    country,
+    components.get(countryId),
+    econConfig,
+    IxTime.getCurrentIxTime()
+  );
+  return stats.effectiveGdpGrowth ?? null;
 }
 
 /** Metrics read from the derived threat picture (military strength score 0-100, threat count). */
@@ -88,7 +126,7 @@ const THREAT_PICTURE_METRICS = new Set(["militaryStrength", "threatLevel"]);
 /** Threshold metric name -> its current value (null when not recorded). */
 const METRIC_VALUES: Record<string, (m: MetricSources) => number | null> = {
   // GDP
-  gdpGrowthRate: (m) => m.country.adjustedGdpGrowth * 100,
+  gdpGrowthRate: (m) => (m.effectiveGdpGrowth === null ? null : m.effectiveGdpGrowth * 100),
   gdpPerCapita: (m) => m.country.currentGdpPerCapita,
   totalGDP: (m) => m.country.currentTotalGdp,
   // Population
@@ -202,7 +240,8 @@ const NOTIFY_FLAG = {
 export async function evaluateThresholds(
   db: any,
   countryId: string,
-  userId: string
+  userId: string,
+  known: KnownMetrics = {}
 ): Promise<void> {
   const thresholds = await db.intelligenceAlertThreshold.findMany({
     where: { countryId, userId, isActive: true },
@@ -231,6 +270,11 @@ export async function evaluateThresholds(
     )
       ? await loadThreatPicture(db, countryId)
       : null,
+    effectiveGdpGrowth: thresholds.some(
+      (t: { metricName: string }) => t.metricName === "gdpGrowthRate"
+    )
+      ? (known.effectiveGdpGrowth ?? (await projectEffectiveGdpGrowth(db, countryId)))
+      : null,
   };
 
   for (const t of thresholds) {
@@ -242,5 +286,21 @@ export async function evaluateThresholds(
     if (severityBreached && t[NOTIFY_FLAG[severityBreached]]) {
       await raiseBreachAlert(db, countryId, t, severityBreached, val);
     }
+  }
+}
+
+/** Evaluates every active threshold set on a country (each user's set separately). */
+export async function evaluateCountryThresholds(
+  db: PrismaClient,
+  countryId: string,
+  known: KnownMetrics = {}
+): Promise<void> {
+  const owners = await db.intelligenceAlertThreshold.findMany({
+    where: { countryId, isActive: true },
+    select: { userId: true },
+    distinct: ["userId"],
+  });
+  for (const { userId } of owners) {
+    await evaluateThresholds(db, countryId, userId, known);
   }
 }

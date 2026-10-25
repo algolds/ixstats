@@ -18,7 +18,6 @@ import {
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { NationalIssuesEngine } from "~/lib/national-issues";
 import type { ResponseOptionTemplate } from "~/lib/national-issues";
 import { NationalIssuesConsequences } from "~/lib/national-issues";
 import { notificationAPI } from "~/lib/notifications/api";
@@ -68,9 +67,9 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
   // Visitors read resolved outcomes through `countries.getPublicRecord`.
 
   /**
-   * Get issues for a country (the owner's inbox — open issues included). Triggers lazy
-   * evaluation if stale. Owner / privileged roles only; visitors read resolved outcomes through
-   * `countries.getPublicRecord`.
+   * Get issues for a country (the owner's inbox — open issues included). A read never generates:
+   * new issues come from the `national-issues` cron job (and the admin `triggerEvaluation`).
+   * Owner / privileged roles only; visitors read resolved outcomes through `countries.getPublicRecord`.
    */
   getMyIssues: protectedProcedure
     .input(
@@ -95,25 +94,6 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
-
-      // Auto-generation is opt-in (narrative mode is the default). When off, issues
-      // only appear via DM injection (plan 034) or prior generation.
-      if (GAMEPLAY_FLAGS.issuesAutoGenerate) {
-        const shouldEval = await NationalIssuesEngine.shouldEvaluate(
-          input.countryId,
-          ctx.db as any
-        );
-        if (shouldEval) {
-          // Run evaluation in background - don't block the query
-          NationalIssuesEngine.evaluateCountry(
-            input.countryId,
-            ctx.db as any,
-            input.domain ? { forceDomain: input.domain } : undefined
-          ).catch((err) => {
-            console.error("[NationalIssues] Background evaluation failed:", err);
-          });
-        }
-      }
 
       // Build where clause
       const where: any = { countryId: input.countryId };

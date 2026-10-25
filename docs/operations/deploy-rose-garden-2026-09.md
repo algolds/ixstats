@@ -575,7 +575,11 @@ plan 327 (auctions, trades, crafting charges). Then add one name per full cycle 
 
 `wiki-recentchanges` → `lore-card-generation` → `card-values` → `sports-season-advance` → `national-issues` →
 `politics-drift` → `diplomatic-drift` → `elections` → `trade-expiry` → `auction-completion` →
-`policy-maintenance` (it debits treasuries) → `lorewards-full-sync` → `lorewards-state-sync` → `vault-dividend` (last).
+`policy-maintenance` (spending within the year, not a debit) → `lorewards-full-sync` → `lorewards-ool-backfill` →
+`vault-dividend` (last).
+
+The state-file Lorewards sync was retired for `lorewards-ool-backfill`; an older copy of this list named a
+`lorewards-state-sync` job, which does not exist, and the runner exits on an unknown name.
 
 The `passive-income` job was deleted with the Vault hub; its replacement `vault-dividend` and the swap are in step 5a.
 

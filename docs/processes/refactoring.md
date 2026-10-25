@@ -385,9 +385,9 @@ export function validateTaxBrackets(...)
 export function parseSectionContent(...)
 
 // Hooks: Use "use" prefix
-export function useIntelligenceMetrics(...)
-export function useTaxBuilderState(...)
-export function useEmbassyNetworkData(...)
+export function useDefenseBudget(...)
+export function useNationalIssuesToast(...)
+export function useExchangeActions(...)
 
 // Components: Noun-based, descriptive
 export const MetricsOverview = ...

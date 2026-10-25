@@ -10,6 +10,16 @@ type BotClockState = Pick<
   "ixTimeTimestamp" | "multiplier" | "isPaused" | "hasTimeOverride" | "hasMultiplierOverride"
 >;
 
+/**
+ * The local clock's override state. `timeOverrideSetAt` is real (wall-clock) ms, so every process
+ * on the box that loads the same state reads the same IxTime.
+ */
+export interface IxTimeClockState {
+  timeOverride: number | null;
+  timeOverrideSetAt: number | null;
+  multiplierOverride: number | null;
+}
+
 export class IxTime {
   // Real-world epoch: October 4, 2020 UTC
   private static readonly REAL_WORLD_EPOCH = Date.UTC(2020, 9, 4, 0, 0, 0, 0);
@@ -450,6 +460,23 @@ export class IxTime {
         message: `Failed to resume bot time: ${error instanceof Error ? error.message : "Unknown error"}`,
       };
     }
+  }
+
+  /** The override state, for sharing the clock with other processes (lib/ixtime/shared-clock). */
+  static getClockState(): IxTimeClockState {
+    return {
+      timeOverride: this.timeOverride,
+      timeOverrideSetAt: this.timeOverrideSetAt,
+      multiplierOverride: this.multiplierOverride,
+    };
+  }
+
+  /** Adopt another process's override state as is (no re-anchoring: its anchor is already set). */
+  static loadClockState(state: IxTimeClockState): void {
+    const anchored = state.timeOverride !== null && state.timeOverrideSetAt !== null;
+    this.timeOverride = anchored ? state.timeOverride : null;
+    this.timeOverrideSetAt = anchored ? state.timeOverrideSetAt : null;
+    this.multiplierOverride = state.multiplierOverride;
   }
 
   // Legacy fallback methods
