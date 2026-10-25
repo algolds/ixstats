@@ -1,17 +1,16 @@
-import { IxTime } from "~/lib/ixtime";
-
 /**
  * The Recent activity feed: storyteller effects, diplomatic events, decided national issues and
- * ledger rows merged into one wall-clock timeline. Effects are stamped in IxTime
- * (`ixTimeTimestamp`), every other source in real time (`createdAt`), so effects are converted to
- * real time before they are sorted against the rest and before the client prints "2h ago".
+ * ledger rows merged into one wall-clock timeline. Every source is placed by when it was written in
+ * real time (`createdAt`, a decision's `respondedAt`): an effect's `ixTimeTimestamp` is on its
+ * nation's realm clock, which runs at its own speed, pauses and jumps, so it is never compared
+ * with real time.
  */
 
 export const CANON_FEED_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 
-/** The oldest effect stamp (IxTime) inside the feed's 30 real-day window. */
-export function canonFeedEffectSince(nowMs: number): Date {
-  return new Date(IxTime.convertToIxTime(nowMs - CANON_FEED_WINDOW_MS));
+/** The oldest write (real time) inside the feed's 30 real-day window. */
+export function canonFeedSince(nowMs: number): Date {
+  return new Date(nowMs - CANON_FEED_WINDOW_MS);
 }
 
 export interface CanonFeedItem {
@@ -31,7 +30,7 @@ interface CanonFeedSources {
     id: string;
     description: string | null;
     inputType: string;
-    ixTimeTimestamp: Date;
+    createdAt: Date;
   }>;
   events: Array<{ id: string; title: string; createdAt: Date }>;
   decisions: Array<{ id: string; title: string; respondedAt: Date | null; updatedAt: Date }>;
@@ -52,7 +51,7 @@ export function buildCanonFeed(sources: CanonFeedSources, limit: number): CanonF
       kind: "effect" as const,
       title: e.description ?? e.inputType,
       category: e.inputType.toLowerCase().includes("popula") ? "social" : "economic",
-      timestamp: IxTime.convertFromIxTime(e.ixTimeTimestamp.getTime()),
+      timestamp: e.createdAt.getTime(),
     })),
     ...sources.events.map((d) => ({
       id: `dip_${d.id}`,

@@ -6,7 +6,7 @@
  * budget, no NaN or negative figure, and the effectiveness the real write path stores. A form's founding takes its
  * government type and departments; exact figures, renamed institutions and explicit payloads are honoured; the
  * stability matches the stored formula. The catalogues founding reads resolve (archetype bands and forms, every
- * economic component), and a nation created outside the builder (realm claim, world import) starts from the IxTime
+ * economic component), and a nation created outside the builder (realm claim, world import) starts from its realm's time
  * baseline with its tier's growth cap and its realm's growth table.
  *
  * Folds archetype-display, economic-components and baseline-country. The preview equalling the written nation is in
@@ -26,7 +26,6 @@ import {
   EconomicComponentType,
 } from "~/lib/economy/atomic-data";
 import { buildBaselineCountryData } from "~/lib/countries/baseline-country";
-import { IxTime } from "~/lib/ixtime";
 import {
   IXSTATS_NATION_GROWTH_DEFAULTS,
   type NationGrowthTable,
@@ -235,6 +234,7 @@ describe("computeFoundingSnapshot: inputs", () => {
       populationBand: "small",
       wealthBand: "developing",
       econ: { coreIndicators: { totalPopulation: 8_400_000, gdpPerCapita: 61_000, nominalGDP: 0 } },
+      budgetYear: BUDGET_YEAR,
     });
     expect(snapshot.base.population).toBe(8_400_000);
     expect(snapshot.base.gdpPerCapita).toBe(61_000);
@@ -247,6 +247,7 @@ describe("computeFoundingSnapshot: inputs", () => {
       foundation: null,
       governmentFormId: "absolute-monarchy",
       institutionNames: { headOfStateTitle: "Grand Duke", legislatureName: "  " },
+      budgetYear: BUDGET_YEAR,
     });
     const form = getGovernmentForm("absolute-monarchy")!;
     expect(snapshot.governmentStructure).toMatchObject({
@@ -268,6 +269,7 @@ describe("computeFoundingSnapshot: inputs", () => {
         laborMarket: { averageAnnualIncome: 30000 },
         sectors: [],
       },
+      budgetYear: BUDGET_YEAR,
     });
     expect(snapshot.economicTier).toBe("Extravagant");
     const structure = snapshot.economyBuilderState.structure as Record<string, unknown>;
@@ -314,6 +316,7 @@ describe("summary parity with the stored stability formula", () => {
       foundation: { baselinePopulation: 0, baselineGdpPerCapita: 0, landArea: 120_000 },
       populationBand: "medium",
       wealthBand: "wealthy",
+      budgetYear: BUDGET_YEAR,
     });
     const { numbers, base } = snapshot;
     const country = {
@@ -384,12 +387,14 @@ describe("the catalogues founding reads", () => {
 });
 
 describe("a nation created outside the builder (realm claim, world import)", () => {
+  const NOW_MS = Date.UTC(2044, 0, 1);
   beforeEach(() => jest.useFakeTimers().setSystemTime(new Date("2026-09-28T12:00:00Z")));
   afterEach(() => jest.useRealTimers());
 
-  it("starts from the IxTime baseline with the default figures", () => {
-    const data = buildBaselineCountryData("Aurelia");
-    const now = new Date(IxTime.getCurrentIxTime());
+  it("starts from its realm's time now with the default figures", () => {
+    const realmNow = Date.UTC(2046, 2, 14);
+    const data = buildBaselineCountryData("Aurelia", realmNow);
+    const now = new Date(realmNow);
     expect(data).toMatchObject({
       name: "Aurelia",
       // Unknown stays empty, as on Ixnay's countries: every reader shows its own fallback.
@@ -407,11 +412,13 @@ describe("a nation created outside the builder (realm claim, world import)", () 
   });
 
   it("caps GDP growth by its tier and takes the growth defaults of the tier or of its realm", () => {
-    expect(buildBaselineCountryData("Aurelia")).toMatchObject({
+    expect(buildBaselineCountryData("Aurelia", NOW_MS)).toMatchObject({
       maxGdpGrowthRate: 0.0275,
       ...IXSTATS_NATION_GROWTH_DEFAULTS.Strong,
     });
-    expect(buildBaselineCountryData("Borea", { baselineGdpPerCapita: 5_000 })).toMatchObject({
+    expect(
+      buildBaselineCountryData("Borea", NOW_MS, { baselineGdpPerCapita: 5_000 })
+    ).toMatchObject({
       maxGdpGrowthRate: 0.1,
       ...IXSTATS_NATION_GROWTH_DEFAULTS.Impoverished,
     });
@@ -420,7 +427,7 @@ describe("a nation created outside the builder (realm claim, world import)", () 
       Developing: { populationGrowthRate: 0.02, adjustedGdpGrowth: 0.004 },
     };
     expect(
-      buildBaselineCountryData("Calder", { baselineGdpPerCapita: 15_000 }, table)
+      buildBaselineCountryData("Calder", NOW_MS, { baselineGdpPerCapita: 15_000 }, table)
     ).toMatchObject({
       populationGrowthRate: 0.02,
       adjustedGdpGrowth: 0.004,

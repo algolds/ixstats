@@ -9,14 +9,13 @@
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 import { departmentsForForm, governmentTypeForForm } from "~/lib/government/form-departments";
-import { findEffectiveBudgetYear } from "~/lib/government/budget-allocations";
+import { countryBudgetYear, findEffectiveBudgetYear } from "~/lib/government/budget-allocations";
 import {
   allocationAt,
   initialTotalBudget,
   maintenanceByYear,
   nudgeShare,
 } from "~/lib/government/budget-math";
-import { currentBudgetYear } from "~/lib/government/budget-year";
 import { MAINTENANCE_DEBIT_EFFECT } from "~/lib/policies/lifecycle";
 import { inferFormId } from "~/server/shared/founding-snapshot";
 import type { DepartmentCategory } from "~/types/government";
@@ -29,9 +28,9 @@ function notFound(message: string): never {
   throw new TRPCError({ code: "NOT_FOUND", message });
 }
 
-/** The budget year owner edits write to: the budget in effect, else the current year. */
+/** The budget year owner edits write to: the budget in effect, else the current year (on the nation's clock). */
 async function editableBudgetYear(db: Db, countryId: string): Promise<number> {
-  const current = currentBudgetYear();
+  const current = await countryBudgetYear(db, countryId);
   return (await findEffectiveBudgetYear(db, countryId, current)) ?? current;
 }
 
@@ -75,7 +74,7 @@ export async function createGovernmentStructure(
     existing && existing.totalBudget > 0
       ? existing.totalBudget
       : initialTotalBudget(country, revenue);
-  const budgetYear = currentBudgetYear();
+  const budgetYear = await countryBudgetYear(db, countryId);
 
   return db.$transaction(async (tx) => {
     const structure = existing
@@ -161,7 +160,11 @@ export async function nudgeDepartmentShare(
   db: Db,
   input: { countryId: string; category: string; deltaPercent: number; max: number }
 ) {
-  const budgetYear = await findEffectiveBudgetYear(db, input.countryId, currentBudgetYear());
+  const budgetYear = await findEffectiveBudgetYear(
+    db,
+    input.countryId,
+    await countryBudgetYear(db, input.countryId)
+  );
   if (budgetYear === null) return;
   const lines = await db.budgetAllocation.findMany({
     where: { governmentStructure: { countryId: input.countryId }, budgetYear },

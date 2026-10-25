@@ -13,7 +13,7 @@
  * - Activity feed and news generation side effects
  */
 
-import { IxTime } from "~/lib/ixtime";
+import { clockForCountry } from "~/server/shared/realm-time";
 import { createStorytellerEffect } from "~/lib/economy/storyteller-effects";
 import {
   NationalIssuesEngine,
@@ -101,7 +101,7 @@ export class NationalIssuesConsequences {
 
       result.recommendedDirective = chosenOption.recommendedDirective;
 
-      const currentIxTime = IxTime.getCurrentIxTime();
+      const currentIxTime = (await clockForCountry(db, issue.countryId)).now();
 
       // Apply consequences
       let failedGamble = false;

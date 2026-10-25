@@ -6,7 +6,7 @@ import {
   cachedStaticProcedure,
 } from "~/server/api/trpc";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
-import { IxTime } from "~/lib/ixtime";
+import { clockForCountry } from "~/server/shared/realm-time";
 import { getEconomicConfigFromDB } from "~/lib/config-service";
 import type { CountryStats, EconomicConfig } from "~/types/ixstats";
 import { IxStatsCalculator } from "~/lib/economy/calculations";
@@ -117,10 +117,7 @@ function undefinedIfNull<T, K extends keyof T>(source: T, keys: readonly K[]) {
  * The projected figures every read returns in place of the stored (frozen) columns. A figure the
  * nation never recorded stays undefined even though the engine ran on a stand-in for it.
  */
-function projectedColumns(
-  stats: CountryStats,
-  recorded: Parameters<typeof withoutStandIns>[0]
-) {
+function projectedColumns(stats: CountryStats, recorded: Parameters<typeof withoutStandIns>[0]) {
   return {
     currentPopulation: stats.currentPopulation,
     currentGdpPerCapita: stats.currentGdpPerCapita,
@@ -170,14 +167,23 @@ async function findCountryWithEconomics(db: PrismaClient, countryId: string) {
   }
 }
 
-/** The calculator, baseline stats and (epoch-ms) active effects every projection starts from. */
+/**
+ * The calculator, baseline stats and (epoch-ms) active effects every projection starts from, with the nation's time
+ * now on its realm's clock (`now`, the default target).
+ */
 async function startProgression(
   db: PrismaClient,
-  country: { id: string; baselineDate: Date; storytellerEffects: StorytellerEffect[] },
+  country: {
+    id: string;
+    realmId: string;
+    baselineDate: Date;
+    storytellerEffects: StorytellerEffect[];
+  },
   econCfg: EconomicConfig
 ) {
+  const now = (await clockForCountry(db, country)).now();
   const calc = new IxStatsCalculator(econCfg, country.baselineDate.getTime());
-  const componentsData = await getCountryComponentsStatsData(db, country.id);
+  const componentsData = await getCountryComponentsStatsData(db, country.id, now);
   const baselineStats = calc.initializeCountryStats(
     prepareBaseCountryData(country, componentsData)
   );
@@ -185,7 +191,7 @@ async function startProgression(
     ...effect,
     ixTimeTimestamp: effect.ixTimeTimestamp.getTime(),
   }));
-  return { calc, baselineStats, effects };
+  return { calc, baselineStats, effects, now };
 }
 
 export const economyProcedures = {
@@ -203,7 +209,6 @@ export const economyProcedures = {
       })
     )
     .query(async ({ ctx, input }) => {
-      const targetTime = input.timestamp ?? IxTime.getCurrentIxTime();
       const realmId = await viewerRealmId(ctx, input.realm);
       const countryId = await resolveCountryRefId(ctx.db, input.id, realmId);
       if (!countryId) return null;
@@ -212,7 +217,12 @@ export const economyProcedures = {
       if (!country) return null;
 
       const econCfg = await getEconomicConfigFromDB(ctx.db);
-      const { calc, baselineStats, effects } = await startProgression(ctx.db, country, econCfg);
+      const { calc, baselineStats, effects, now } = await startProgression(
+        ctx.db,
+        country,
+        econCfg
+      );
+      const targetTime = input.timestamp ?? now;
 
       const result = calc.calculateTimeProgression(baselineStats, targetTime, effects);
       const projections = Array.from({ length: 5 }, (_, i) => {
@@ -346,9 +356,13 @@ export const economyProcedures = {
 
       if (!country) return null;
 
-      const targetTime = input.timestamp ?? IxTime.getCurrentIxTime();
       const econCfg = await getEconomicConfigFromDB(ctx.db);
-      const { calc, baselineStats, effects } = await startProgression(ctx.db, country, econCfg);
+      const { calc, baselineStats, effects, now } = await startProgression(
+        ctx.db,
+        country,
+        econCfg
+      );
+      const targetTime = input.timestamp ?? now;
 
       const calculatedStats = calc.calculateTimeProgression(baselineStats, targetTime, effects);
 
@@ -451,10 +465,13 @@ export const economyProcedures = {
           throw new Error(`Country with ID ${input.countryId} not found`);
         }
 
-        const currentTime = IxTime.getCurrentIxTime();
         const econCfg = await getEconomicConfigFromDB(ctx.db);
-        const { calc, baselineStats, effects } = await startProgression(ctx.db, country, econCfg);
-        const currentStats = calc.calculateTimeProgression(baselineStats, currentTime, effects);
+        const { calc, baselineStats, effects, now } = await startProgression(
+          ctx.db,
+          country,
+          econCfg
+        );
+        const currentStats = calc.calculateTimeProgression(baselineStats, now, effects);
 
         const popGrowthRate = currentStats.newStats.populationGrowthRate || 0;
         const gdpGrowthRate = currentStats.newStats.effectiveGdpGrowth ?? 0;
@@ -527,7 +544,7 @@ export const economyProcedures = {
                 ? "Stable"
                 : "Monitored",
           },
-          generatedAt: currentTime,
+          generatedAt: now,
         };
       } catch (error) {
         console.error("Failed to generate activity rings data:", error);

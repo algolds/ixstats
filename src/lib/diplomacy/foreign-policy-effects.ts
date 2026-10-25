@@ -2,14 +2,22 @@
  * How a foreign-policy action's economic effects end. Enacting one leaves a GDP level effect on both nations, keyed by
  * the action (`foreignPolicyEffectKey`) and phased in over FP_EFFECT_YEARS. A hostile action ends when its initiator
  * lifts it ("lifted") or when that window closes ("expired"): either way the effects unwind from now on (no
- * rewritten past) and the action leaves the active list, so it no longer blocks a new one.
+ * rewritten past) and the action leaves the active list, so it no longer blocks a new one. The window runs on the
+ * initiator's realm clock (realm time design §2; a cross-realm action is T5's to block).
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { IxTime } from "~/lib/ixtime";
+import { clockTimeAt, realTimeAt } from "~/lib/realms/realm-time-convert";
+import {
+  pickClock,
+  realmClocks,
+  realmNowsOnce,
+  type RealmClockReader,
+} from "~/server/shared/realm-time";
 import { endStorytellerEffects } from "~/lib/economy/storyteller-effects";
 import { COOPERATIVE_FP_TYPES } from "~/lib/diplomacy/proposal-lifecycle";
 
-/** IxTime years over which a foreign-policy action's GDP impact phases in: also a hostile action's lifetime. */
+/** Years (of the initiator's realm clock) over which a foreign-policy action's GDP impact phases in: also a hostile action's lifetime. */
 export const FP_EFFECT_YEARS = 4;
 
 /** `createdBy` of the StorytellerEffects a foreign-policy action leaves on both nations. */
@@ -96,26 +104,37 @@ export async function endForeignPolicyAction(
   });
 }
 
-/** Real-world instant before which an action enacted then has run its FP_EFFECT_YEARS IxTime window. */
-export function hostileActionExpiryCutoff(ixNow: number = IxTime.getCurrentIxTime()): Date {
-  return new Date(IxTime.convertFromIxTime(IxTime.addYears(ixNow, -FP_EFFECT_YEARS)));
+/** Where an action enacted at `enactedAt` (real time) ends its effect window, on the initiator's realm clock. */
+function windowEndOnClock(enactedAt: Date, clock: RealmClockReader): number {
+  return IxTime.addYears(clockTimeAt(clock, enactedAt.getTime()), FP_EFFECT_YEARS);
 }
 
-/** When a hostile action enacted at `enactedAt` (real time) reaches the end of its effect window. */
-export function hostileActionExpiresAt(enactedAt: Date): Date {
-  const enactedIx = IxTime.convertToIxTime(enactedAt.getTime());
-  return new Date(IxTime.convertFromIxTime(IxTime.addYears(enactedIx, FP_EFFECT_YEARS)));
+/**
+ * When a hostile action enacted at `enactedAt` (real time) reaches the end of its effect window, in real time, on its
+ * initiator's realm clock (a paused realm's window ends far out).
+ */
+export function hostileActionExpiresAt(enactedAt: Date, clock: RealmClockReader): Date {
+  return new Date(realTimeAt(clock, windowEndOnClock(enactedAt, clock)));
 }
 
-/** Expires every hostile action whose effect window has closed (the diplomatic-drift cron runs it). */
-export async function expireHostileForeignPolicyActions(db: PrismaClient): Promise<number> {
-  const due = await db.foreignPolicyAction.findMany({
-    where: {
-      status: "active",
-      actionType: { notIn: [...COOPERATIVE_FP_TYPES] },
-      createdAt: { lte: hostileActionExpiryCutoff() },
-    },
-    select: { id: true },
+/**
+ * Expires every hostile action whose effect window has closed on its initiator's realm clock (each realm's now read
+ * once; the diplomatic-drift cron runs it). `clocks`: each realm's clock (a test seam); read from the database when
+ * omitted.
+ */
+export async function expireHostileForeignPolicyActions(
+  db: PrismaClient,
+  clocks?: ReadonlyMap<string, RealmClockReader>
+): Promise<number> {
+  const active = await db.foreignPolicyAction.findMany({
+    where: { status: "active", actionType: { notIn: [...COOPERATIVE_FP_TYPES] } },
+    select: { id: true, createdAt: true, initiator: { select: { realmId: true } } },
+  });
+  const readers = clocks ?? (await realmClocks(db));
+  const nowOf = realmNowsOnce(readers);
+  const due = active.filter(({ createdAt, initiator }) => {
+    const realmId = initiator?.realmId;
+    return nowOf(realmId) >= windowEndOnClock(createdAt, pickClock(readers, realmId));
   });
   let expired = 0;
   for (const { id } of due) {

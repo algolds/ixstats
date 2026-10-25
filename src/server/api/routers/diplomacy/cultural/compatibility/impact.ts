@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { IxTime } from "~/lib/ixtime";
+import { clockForCountry } from "~/server/shared/realm-time";
 import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { exchangeMetrics } from "~/lib/diplomacy/cultural-exchange-lifecycle";
@@ -109,11 +109,14 @@ export const diplomaticCulturalCompatibilityImpactRouter = createTRPCRouter({
         scenarioOutcomes: {},
       };
 
+      // realm-time: the host nation's clock; an exchange between nations of two realms is T5's to block.
+      const hostNow = (await clockForCountry(ctx.db, exchange.hostCountryId)).now();
       const impact = CulturalImpactCalculator.calculateRelationshipImpact(
         exchangeData,
         outcome,
         currentRelationship,
-        history
+        history,
+        hostNow
       );
 
       // Save outcome to database
@@ -167,7 +170,7 @@ export const diplomaticCulturalCompatibilityImpactRouter = createTRPCRouter({
           relationshipStateAfter: impact.newState,
           stateChanged: impact.stateChanged,
         },
-        ixTimeTimestamp: IxTime.getCurrentIxTime(),
+        ixTimeTimestamp: hostNow,
       });
 
       return {

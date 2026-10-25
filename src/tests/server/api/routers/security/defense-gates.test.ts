@@ -40,6 +40,9 @@ jest.mock("~/server/modules/defense", () => {
 });
 jest.mock("~/server/shared/realm-time", () => ({
   clockForCountry: jest.fn(async () => ({ now: () => 5e12, multiplier: 2, paused: false })),
+  // Effect drafts are stamped per realm (storyteller-effects): every realm reads the same fixed clock here.
+  clocksForRealms: jest.fn(async () => new Map()),
+  realmNowsOnce: jest.fn(() => () => 5e12),
 }));
 
 import { newsGenerator } from "~/lib/diplomacy/news-generator";

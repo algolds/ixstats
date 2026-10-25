@@ -7,7 +7,7 @@
  * Architecture:
  * - Template-based with variable substitution (no LLM, no API costs)
  * - JSON expression tree for trigger conditions (safe evaluation, no eval)
- * - Lazy evaluation: runs when player opens inbox, debounced by 5 IxTime minutes
+ * - Lazy evaluation: runs when player opens inbox, debounced by 5 minutes of the nation's realm clock
  * - Supports NPC personality modifiers for probability adjustment
  * - Tiered urgency with auto-resolution for deadline issues
  *
@@ -21,8 +21,8 @@
  * 7. Persist to DB
  */
 
-import { IxTime } from "~/lib/ixtime";
 import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
+import { clockForCountry } from "~/server/shared/realm-time";
 import type { PrismaClient } from "@prisma/client";
 import { getNationalIssuesConfig } from "./config";
 import { buildCountrySnapshot } from "./country-snapshot";
@@ -61,9 +61,10 @@ export class NationalIssuesEngine {
    */
   static async buildCountrySnapshot(
     countryId: string,
-    db: PrismaClient
+    db: PrismaClient,
+    nowMs?: number
   ): Promise<CountrySnapshot | null> {
-    return buildCountrySnapshot(countryId, db);
+    return buildCountrySnapshot(countryId, db, nowMs);
   }
 
   /**
@@ -76,12 +77,12 @@ export class NationalIssuesEngine {
 
   /**
    * Main evaluation entry point. Analyzes a country's state and generates
-   * appropriate issues from the template library.
+   * appropriate issues from the template library, at `options.now` (its realm clock's now when omitted).
    */
   static async evaluateCountry(
     countryId: string,
     db: PrismaClient,
-    options?: { maxIssues?: number; forceDomain?: string; bypassLimits?: boolean }
+    options?: { maxIssues?: number; forceDomain?: string; bypassLimits?: boolean; now?: number }
   ): Promise<EvaluationResult> {
     const startTime = Date.now();
     const result: EvaluationResult = {
@@ -96,7 +97,7 @@ export class NationalIssuesEngine {
 
     try {
       // Build snapshot
-      const snapshot = await this.buildCountrySnapshot(countryId, db);
+      const snapshot = await this.buildCountrySnapshot(countryId, db, options?.now);
       if (!snapshot) {
         result.errors.push(`Country ${countryId} not found`);
         return result;
@@ -111,7 +112,13 @@ export class NationalIssuesEngine {
         return result;
       }
 
-      const maxIssues = await resolveMaxIssues(countryId, db, options, result);
+      const maxIssues = await resolveMaxIssues(
+        countryId,
+        db,
+        options,
+        snapshot.currentIxTime,
+        result
+      );
       if (maxIssues === null) return result;
 
       // Load active templates
@@ -170,13 +177,14 @@ export class NationalIssuesEngine {
   }
 
   /**
-   * Check if an evaluation is needed (debounced by 5 IxTime minutes).
-   * Returns true if the last evaluation was more than 5 IxTime minutes ago.
+   * Check if an evaluation is needed (debounced on the nation's realm clock: `now`, its now when omitted).
+   * Returns true if the last evaluation was longer ago than the debounce.
    */
-  static async shouldEvaluate(countryId: string, db: PrismaClient): Promise<boolean> {
+  static async shouldEvaluate(countryId: string, db: PrismaClient, now?: number): Promise<boolean> {
     const config = getNationalIssuesConfig();
+    const currentIxTime = now ?? (await clockForCountry(db, countryId)).now();
     const sevenIxDaysMs = 7 * 24 * 60 * 60 * 1000;
-    const weekAgoIxTime = IxTime.getCurrentIxTime() - sevenIxDaysMs;
+    const weekAgoIxTime = currentIxTime - sevenIxDaysMs;
 
     // Count issues created for this country in the last 7 IxDays
     const weeklyCount = await db.nationalIssue.count({
@@ -195,7 +203,6 @@ export class NationalIssuesEngine {
 
     if (!lastLog) return true;
 
-    const currentIxTime = IxTime.getCurrentIxTime();
     // Statecraft spine wants a weekly trickle, not a burst: space evaluations ~2 IxDays
     // apart so a country's weekly allotment arrives over the week, not all at once.
     // (The maxIssuesPerWeek cap above still bounds the total.) See plans/statecraft-stage1.md.

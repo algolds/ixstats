@@ -5,7 +5,7 @@ import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { TRPCError } from "@trpc/server";
 import { realmScopeInput, realmWhere, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { DEFAULT_INFLATION_RATE } from "~/lib/economy/calculations";
-import { IxTime } from "~/lib/ixtime";
+import { clocksForRealms, pickClock } from "~/server/shared/realm-time";
 import { LATEST_GROWTH_SELECT, effectiveGrowthOf } from "~/lib/economy/effective-growth";
 
 const MAP_SUMMARY_SELECT = {
@@ -133,6 +133,7 @@ export const listProcedures = {
           orderBy: { name: "asc" },
           select: {
             id: true,
+            realmId: true,
             name: true,
             slug: true,
             flag: true,
@@ -175,6 +176,10 @@ export const listProcedures = {
         }),
         ctx.db.country.count({ where }),
       ]);
+      const clocks = await clocksForRealms(
+        ctx.db,
+        rawCountries.map((c) => c.realmId)
+      );
 
       const countries = rawCountries.map(({ historicalData, ...country }) => {
         // The realised (engine) rate, not the static input (`adjustedGdpGrowth`).
@@ -234,7 +239,7 @@ export const listProcedures = {
             },
             riskFlags: [] as string[],
             tierChangeProjection: {
-              year: new Date(IxTime.getCurrentIxTime()).getUTCFullYear(),
+              year: new Date(pickClock(clocks, country.realmId).now()).getUTCFullYear(),
               newTier: country.economicTier ?? "Unknown",
             },
           },

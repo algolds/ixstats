@@ -25,7 +25,6 @@ import {
 } from "~/lib/government/effectiveness";
 import { getGovernmentForm, type GovernmentInstitutions } from "~/lib/government/forms";
 import { getArchetypeDisplay } from "~/lib/economy/archetypes/display";
-import { currentBudgetYear } from "~/lib/government/budget-year";
 import {
   DEFAULT_FORM_ID,
   departmentsForForm,
@@ -96,8 +95,8 @@ export interface FoundingSnapshotInput {
   taxSystemData?: TaxInput | null;
   governmentStructure?: GovernmentStructureInput | null;
   economyBuilderState?: EconomyBuilderInput | null;
-  /** Budget year for the starting allocations; defaults to the current IxTime year. */
-  budgetYear?: number;
+  /** Budget year for the starting allocations: the current one on the realm's clock. */
+  budgetYear: number;
 }
 
 export interface Baseline {
@@ -1315,7 +1314,7 @@ export function computeFoundingSnapshot(input: FoundingSnapshotInput): FoundingS
   const governmentFormId = governmentTypeForForm(namedForm)
     ? namedForm
     : inferFormId(governmentComponents.map((c) => c.componentType));
-  const budgetYear = input.budgetYear ?? currentBudgetYear();
+  const budgetYear = input.budgetYear;
   const governmentStructure = input.governmentStructure
     ? {
         ...input.governmentStructure,

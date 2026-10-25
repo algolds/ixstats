@@ -33,7 +33,7 @@ export function policyGdpLevelShift(gdpEffect: number | null | undefined): numbe
 
 /**
  * Bring the policy's GDP level effect to its `gdpEffect`. Idempotent: an unchanged policy writes
- * nothing, a changed one appends the difference from now on.
+ * nothing, a changed one appends the difference from now on (its nation's realm clock).
  */
 export async function applyPolicyEffect(db: PrismaClient, policy: PolicyLike): Promise<void> {
   const value = policyGdpLevelShift(policy.gdpEffect);
@@ -55,7 +55,11 @@ export async function applyPolicyEffect(db: PrismaClient, policy: PolicyLike): P
   );
 }
 
-/** End the StorytellerEffect(s) tied to a policy (unwound from now on). */
-export async function clearPolicyEffect(db: PrismaClient, policyId: string): Promise<void> {
-  await endStorytellerEffects(db, { createdBy: POLICY_TAG(policyId) });
+/** End the StorytellerEffect(s) tied to a policy, unwound from `now` (its nation's clock time). */
+export async function clearPolicyEffect(
+  db: PrismaClient,
+  policyId: string,
+  now: number
+): Promise<void> {
+  await endStorytellerEffects(db, { createdBy: POLICY_TAG(policyId) }, now);
 }

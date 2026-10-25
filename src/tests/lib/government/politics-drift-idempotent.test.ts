@@ -7,7 +7,6 @@
  */
 import { ComponentType } from "@prisma/client";
 import { applyGovernmentComponentEffects } from "~/lib/government/component-effects";
-import { IxTime } from "~/lib/ixtime";
 import { evaluateTriggerCondition } from "~/lib/national-issues/evaluators/condition-evaluator";
 import { NATIONAL_ISSUE_TEMPLATES } from "../../../../prisma/seeds/national-issue-templates";
 
@@ -62,16 +61,17 @@ const components = [
   { componentType: ComponentType.WELFARE_STATE, effectivenessScore: 70 },
 ];
 
+/** The nation's clock time the drift tick passes (politics-drift reads it from the realm's clock). */
+const NOW = Date.UTC(2042, 0, 1);
+
 const run = (db: ReturnType<typeof fakeDb>["db"]) =>
   applyGovernmentComponentEffects(db as never, "c1", {
     activeComponents: components,
     allocations: [],
+    now: NOW,
   });
 
 describe("politics-drift component effects", () => {
-  beforeEach(() => jest.spyOn(IxTime, "getCurrentIxTime").mockReturnValue(Date.UTC(2042, 0, 1)));
-  afterEach(() => jest.restoreAllMocks());
-
   it("recomputes political metrics from base + components instead of compounding", async () => {
     const { db, structure } = fakeDb({
       politicalStability: 50,

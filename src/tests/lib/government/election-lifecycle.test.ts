@@ -31,6 +31,9 @@ function resetTables() {
     "electionResult",
     "storytellerEffect",
     "policy",
+    // Realm clocks: no realm rows, so every nation reads Ixnay's clock (IxTime)
+    "realm",
+    "systemConfig",
   ]) {
     tables[k] = [];
   }
@@ -169,12 +172,14 @@ function buildDb() {
   };
   // The cron sweep: legislatures whose country has no upcoming/voting election.
   fakeDb.legislature.findMany = jest.fn(async () =>
-    tables.legislature!.filter(
-      (l) =>
-        !tables.election!.some(
-          (e) => e.countryId === l.countryId && ["upcoming", "voting"].includes(e.status)
-        )
-    )
+    tables
+      .legislature!.filter(
+        (l) =>
+          !tables.election!.some(
+            (e) => e.countryId === l.countryId && ["upcoming", "voting"].includes(e.status)
+          )
+      )
+      .map((l) => ({ ...l, country: tables.country!.find((c) => c.id === l.countryId) }))
   );
 }
 

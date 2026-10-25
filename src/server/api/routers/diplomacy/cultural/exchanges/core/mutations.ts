@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { IxTime } from "~/lib/ixtime";
+import { clockTimeAt } from "~/lib/realms/realm-time-convert";
+import { clockForCountry } from "~/server/shared/realm-time";
 import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
 
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
@@ -118,6 +119,10 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
         }
       }
 
+      // realm-time: the host nation's clock; an exchange between nations of two realms is T5's to block.
+      const hostClock = await clockForCountry(ctx.db, input.hostCountryId);
+      const hostNow = hostClock.now();
+
       // Create the cultural exchange
       const exchange = await ctx.db.culturalExchange.create({
         data: {
@@ -133,7 +138,7 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
           hostCountryFlag: input.hostCountryFlag,
           startDate: new Date(input.startDate),
           endDate: new Date(input.endDate),
-          ixTimeContext: IxTime.getCurrentIxTime(),
+          ixTimeContext: hostNow,
           status: "planning",
         },
       });
@@ -178,7 +183,7 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
           endDate: input.endDate,
           description: input.description,
         },
-        ixTimeTimestamp: IxTime.getCurrentIxTime(),
+        ixTimeTimestamp: hostNow,
       });
 
       // Auto-create cultural_outreach embassy missions if enabled
@@ -194,7 +199,6 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
 
           // Shared mission parameters — identical for every embassy, so compute once
           // and batch-insert with createMany instead of N individual create() calls. (audit B3)
-          const ixTimeNow = IxTime.getCurrentIxTime();
           const duration = Math.ceil(
             (new Date(input.endDate).getTime() - new Date(input.startDate).getTime()) /
               (1000 * 60 * 60 * 24)
@@ -228,8 +232,9 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
               economicReward: 0,
               progress: 0,
               successChance: 65, // Base success chance for cultural missions
-              ixTimeStarted: ixTimeNow,
-              ixTimeCompletes: ixTimeNow + duration * 2, // IxTime runs 2x faster
+              ixTimeStarted: hostNow,
+              // When the mission completes in real time, read on the host nation's clock (its own speed).
+              ixTimeCompletes: clockTimeAt(hostClock, completesAt.getTime()),
               culturalExchangeId: exchange.id,
             })),
           });
@@ -306,7 +311,8 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
           exchangeTitle: exchange.title,
           role: input.role,
         },
-        ixTimeTimestamp: IxTime.getCurrentIxTime(),
+        // realm-time: the joining nation's clock; an exchange between nations of two realms is T5's to block.
+        ixTimeTimestamp: (await clockForCountry(ctx.db, input.countryId)).now(),
       });
 
       return participant;

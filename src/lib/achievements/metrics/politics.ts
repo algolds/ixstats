@@ -1,9 +1,11 @@
 /**
  * Politics metrics (country scope): bills, general elections, cabinet meetings and officials.
- * Real time only: the vote, election and meeting instants are `DateTime`s, never IxTime floats.
+ * Real time only: the vote, election and meeting instants are `DateTime`s, never realm-clock floats
+ * (a legacy bill's vote stamp is mapped back through its nation's realm clock).
  * Counts that need a floor are zeroed until it is met, so every rule reads one metric.
  */
-import { IxTime } from "~/lib/ixtime";
+import { realTimeAt } from "~/lib/realms/realm-time-convert";
+import { clockForCountry, type RealmClockReader } from "~/server/shared/realm-time";
 import {
   MONTH_MS,
   distinctBuckets,
@@ -46,17 +48,18 @@ function parseNotes(reviewNotes: string | null): BillNotes | null {
 
 /**
  * Bills passed by their recorded vote result, so a later repeal or expiry still counts. The vote's
- * real time is `effectiveDate` (set when it passed), else the IxTime of the vote mapped back.
+ * real time is `effectiveDate` (set when it passed), else the vote's stamp on the nation's realm clock mapped back.
  */
-export function lawMetrics(rows: BillRow[]): Record<(typeof LAW_KEYS)[number], number> {
+export function lawMetrics(
+  rows: BillRow[],
+  clock: RealmClockReader
+): Record<(typeof LAW_KEYS)[number], number> {
   const passed = rows.flatMap((row) => {
     const notes = parseNotes(row.reviewNotes);
     if (notes?.voteResult?.passed !== true) return [];
     const votedAt =
       row.effectiveDate ??
-      (notes.votedIxTime === undefined
-        ? null
-        : new Date(IxTime.convertFromIxTime(notes.votedIxTime)));
+      (notes.votedIxTime === undefined ? null : new Date(realTimeAt(clock, notes.votedIxTime)));
     return [votedAt];
   });
   return {
@@ -82,7 +85,7 @@ export const lawsLoader: MetricLoader = {
       },
       select: { effectiveDate: true, reviewNotes: true },
     });
-    return lawMetrics(rows);
+    return lawMetrics(rows, await clockForCountry(db, countryId));
   },
 };
 

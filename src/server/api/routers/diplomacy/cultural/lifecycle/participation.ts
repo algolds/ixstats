@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { IxTime } from "~/lib/ixtime";
+import { clockForCountry } from "~/server/shared/realm-time";
 import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
 
 export const diplomaticCulturalLifecycleParticipationRouter = createTRPCRouter({
@@ -77,7 +77,8 @@ export const diplomaticCulturalLifecycleParticipationRouter = createTRPCRouter({
           exchangeType: exchange.type,
           exchangeTitle: exchange.title,
         },
-        ixTimeTimestamp: IxTime.getCurrentIxTime(),
+        // realm-time: the voting nation's clock; nations of two realms are T5's to keep apart.
+        ixTimeTimestamp: (await clockForCountry(ctx.db, ctx.user.countryId)).now(),
       });
 
       return {
@@ -160,7 +161,8 @@ export const diplomaticCulturalLifecycleParticipationRouter = createTRPCRouter({
           artifactTitle: input.title,
           exchangeType: exchange.type,
         },
-        ixTimeTimestamp: IxTime.getCurrentIxTime(),
+        // realm-time: the contributing nation's clock; nations of two realms are T5's to keep apart.
+        ixTimeTimestamp: (await clockForCountry(ctx.db, countryId)).now(),
       });
 
       return artifact;

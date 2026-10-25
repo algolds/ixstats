@@ -24,7 +24,7 @@ import {
 
 import type { NationalSummary } from "~/types/mycountry";
 import { hasCountryWriteAccess } from "~/server/shared/country-authorization";
-import { buildCanonFeed, canonFeedEffectSince } from "~/lib/mycountry/canon-feed";
+import { buildCanonFeed, canonFeedSince } from "~/lib/mycountry/canon-feed";
 import {
   isBudgetLedgerRow,
   isPublicDirective,
@@ -180,17 +180,17 @@ export const myCountryDashboardRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const effectSince = canonFeedEffectSince(Date.now());
+        const effectSince = canonFeedSince(Date.now());
         const [rawEffects, events, decisions, rawLogs, isOwner] = await Promise.all([
           ctx.db.storytellerEffect.findMany({
-            where: { countryId: input.countryId, ixTimeTimestamp: { gte: effectSince } },
-            orderBy: { ixTimeTimestamp: "desc" },
+            where: { countryId: input.countryId, createdAt: { gte: effectSince } },
+            orderBy: { createdAt: "desc" },
             take: input.limit,
             select: {
               id: true,
               description: true,
               inputType: true,
-              ixTimeTimestamp: true,
+              createdAt: true,
               createdBy: true,
             },
           }),

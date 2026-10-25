@@ -8,7 +8,12 @@ import { deriveBrokers } from "~/lib/statecraft/power-brokers";
 
 type BrokerDb = Pick<
   PrismaClient,
-  "governmentComponent" | "budgetAllocation" | "governmentStructure"
+  | "governmentComponent"
+  | "budgetAllocation"
+  | "governmentStructure"
+  | "country"
+  | "realm"
+  | "systemConfig"
 >;
 
 export async function isBrokerSatisfied(

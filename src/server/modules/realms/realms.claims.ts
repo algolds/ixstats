@@ -37,6 +37,7 @@ import { assignClaimedNation, isUnclaimable, NationOwnershipError } from "./real
 import { capReachedMessage, nationCapacity } from "./realms.nation-cap";
 import type { NationPagePrefill } from "./realms.prefill";
 import { realmNationDefaults } from "./realms.settings";
+import { readerFromSettings } from "~/server/shared/realm-time";
 import { holdStanding, settleMaterialHold } from "./realms.material";
 import {
   REALM_CONTENT_TERMS_VERSION,
@@ -308,6 +309,7 @@ async function createNationCountry(
       data: {
         ...buildBaselineCountryData(
           page.title,
+          readerFromSettings(page.realmId, page.realmSettings).now(),
           prefill?.country,
           realmNationDefaults(page.realmSettings)
         ),

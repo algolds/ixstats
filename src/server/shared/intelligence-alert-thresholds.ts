@@ -8,7 +8,7 @@ import type { PrismaClient } from "@prisma/client";
 import { notificationAPI } from "~/lib/notifications/api";
 import { threatPictureFor } from "~/server/modules/defense";
 import type { ThreatPicture } from "~/lib/military/threat-picture";
-import { IxTime } from "~/lib/ixtime";
+import { clockForCountry } from "./realm-time";
 import { getEconomicConfigFromDB } from "~/lib/config-service";
 import { getComponentsStatsDataForCountries, projectCountryStats } from "./country-helpers";
 
@@ -90,12 +90,12 @@ interface MetricSources {
 
 /** Figures the caller already computed, so the evaluation does not project them again. */
 export interface KnownMetrics {
-  /** `CountryStats.effectiveGdpGrowth` (decimal) from a projection at IxTime now. */
+  /** `CountryStats.effectiveGdpGrowth` (decimal) from a projection now on the nation's realm clock. */
   effectiveGdpGrowth?: number;
 }
 
 /**
- * The growth rate MyCountry shows: the projection's effective rate at IxTime now, not the founding
+ * The growth rate MyCountry shows: the projection's effective rate now on the nation's realm clock, not the founding
  * `adjustedGdpGrowth` input (which never moves).
  */
 async function projectEffectiveGdpGrowth(
@@ -107,16 +107,12 @@ async function projectEffectiveGdpGrowth(
     include: { storytellerEffects: { where: { isActive: true } } },
   });
   if (!country) return null;
+  const now = (await clockForCountry(db, country)).now();
   const [components, econConfig] = await Promise.all([
-    getComponentsStatsDataForCountries(db, [countryId]),
+    getComponentsStatsDataForCountries(db, [countryId], () => now),
     getEconomicConfigFromDB(db),
   ]);
-  const stats = projectCountryStats(
-    country,
-    components.get(countryId),
-    econConfig,
-    IxTime.getCurrentIxTime()
-  );
+  const stats = projectCountryStats(country, components.get(countryId), econConfig, now);
   return stats.effectiveGdpGrowth ?? null;
 }
 

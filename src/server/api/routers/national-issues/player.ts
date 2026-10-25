@@ -24,7 +24,7 @@ import { notificationAPI } from "~/lib/notifications/api";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
 import { withEnforcedDeadline } from "~/lib/national-issues/deadline-visibility";
-import { IxTime } from "~/lib/ixtime";
+import { clockForCountry } from "~/server/shared/realm-time";
 import { revealConsequences } from "~/lib/statecraft/recon";
 import { isAppliedIssueConsequence } from "~/lib/national-issues/projection-effects";
 import { loadExecBandwidthState, RECON_CAPACITY_COST } from "~/lib/government/exec-bandwidth";
@@ -35,7 +35,7 @@ import {
 } from "~/server/shared/country-authorization";
 
 // Statecraft recon (S1.D). Tunables — see plans/statecraft-stage1.md.
-const RECON_DELAY_MS = 1.5 * 24 * 60 * 60 * 1000; // ~1.5 IxTime days; CONSTANT across gov quality (penalty = fog, not time)
+const RECON_DELAY_MS = 1.5 * 24 * 60 * 60 * 1000; // ~1.5 days of the nation's realm clock; CONSTANT across gov quality (penalty = fog, not time)
 
 /**
  * Recon context for a country: its atomic build (for the fog) + Capacity state.
@@ -233,7 +233,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
             "Civil service is over capacity — free up administrative capacity before commissioning more research.",
         });
       }
-      const readyIxTime = IxTime.getCurrentIxTime() + RECON_DELAY_MS;
+      const readyIxTime = (await clockForCountry(ctx.db, issue.countryId)).now() + RECON_DELAY_MS;
       await ctx.db.nationalIssue.update({
         where: { id: input.issueId },
         data: { reconReadyIxTime: readyIxTime },
@@ -256,8 +256,8 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
       });
       await assertCountryResourceWriteAccess(ctx, issue?.countryId, "Issue");
       if (!issue) throw new TRPCError({ code: "NOT_FOUND", message: "Issue not found" });
-      const now = IxTime.getCurrentIxTime();
       if (issue.reconReadyIxTime == null) return { status: "none" as const };
+      const now = (await clockForCountry(ctx.db, issue.countryId)).now();
       if (issue.reconReadyIxTime > now) {
         return { status: "pending" as const, readyIxTime: issue.reconReadyIxTime };
       }
@@ -450,7 +450,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
         });
       }
 
-      const currentIxTime = IxTime.getCurrentIxTime();
+      const currentIxTime = (await clockForCountry(ctx.db, issue.countryId)).now();
 
       await ctx.db.nationalIssue.update({
         where: { id: input.id },

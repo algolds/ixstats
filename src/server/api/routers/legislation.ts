@@ -18,7 +18,7 @@ import {
   type VotingBloc,
   type VoteResult,
 } from "~/lib/statecraft/legislative-vote";
-import { IxTime } from "~/lib/ixtime";
+import { clockForCountry } from "~/server/shared/realm-time";
 import { fogVoteProjection } from "~/lib/statecraft/whip";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
@@ -174,16 +174,19 @@ export const legislationRouter = createTRPCRouter({
       const result = tallyVote(meta.ideologyTarget, blocs, standing / 100);
       const pct = `${result.yesSeats}–${result.noSeats}${result.abstainSeats ? `, ${result.abstainSeats} abstain` : ""}`;
 
+      // The vote is stamped on the nation's realm clock (a passed bill takes effect then).
+      const votedIxTime = (await clockForCountry(ctx.db, bill.countryId)).now();
       // Conditional on the bill still being in committee, so two concurrent votes cannot both apply.
       const claimed = await ctx.db.policy.updateMany({
         where: { id: bill.id, status: "in_committee" },
         data: {
           status: result.passed ? "active" : "rejected",
           effectiveDate: result.passed ? new Date() : undefined,
+          effectiveIxTime: result.passed ? votedIxTime : undefined,
           reviewNotes: JSON.stringify({
             ...meta,
             voteResult: result,
-            votedIxTime: IxTime.getCurrentIxTime(),
+            votedIxTime,
           } satisfies BillMeta),
         },
       });

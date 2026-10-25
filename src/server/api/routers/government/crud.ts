@@ -6,7 +6,7 @@ import {
   assertCountryWriteAccess,
   hasCountryWriteAccess,
 } from "~/server/shared/country-authorization";
-import { rollBudgetForward } from "~/lib/government/budget-allocations";
+import { countryBudgetYear, rollBudgetForward } from "~/lib/government/budget-allocations";
 import { redactGovernmentBudget } from "~/lib/country/public-record";
 
 export const governmentCrudRouter = createTRPCRouter({
@@ -109,13 +109,17 @@ export const governmentCrudRouter = createTRPCRouter({
     }),
 
   /**
-   * Start the current IxTime year's budget by copying the budget in effect (MC-1). Departments
+   * Start the nation's current budget year (on its realm's clock) by copying the budget in effect (MC-1). Departments
    * that already have an allocation for the year keep it.
    */
   startBudgetYear: rateLimitedMutationProcedure
     .input(z.object({ countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
-      return rollBudgetForward(ctx.db, input.countryId);
+      return rollBudgetForward(
+        ctx.db,
+        input.countryId,
+        await countryBudgetYear(ctx.db, input.countryId)
+      );
     }),
 });

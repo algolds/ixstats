@@ -15,7 +15,7 @@ jest.mock("~/lib/diplomacy/news-generator", () => ({ generateDiplomaticNews: jes
 import { IxTime } from "~/lib/ixtime";
 import { runPoliticsDrift } from "~/lib/government/politics-drift-cron";
 import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-prisma";
-import { addIxnay, addNation, addOwner } from "~/tests/helpers/nation-world";
+import { addIxnay, addNation, addOwner, ixnayRunningAt } from "~/tests/helpers/nation-world";
 
 const NOW = Date.UTC(2043, 0, 15);
 let db: MemoryPrisma;
@@ -70,7 +70,7 @@ it("moves party support with the realised growth, not the static input", async (
     },
   });
 
-  await runPoliticsDrift();
+  await runPoliticsDrift({ clocks: ixnayRunningAt(NOW) });
   // 5% growth: +5 points x 0.3 for the governing party, the opposition loses the same
   expect(await support("e-gov")).toBeCloseTo(41.5, 9);
   expect(await support("e-opp")).toBeCloseTo(38.5, 9);
@@ -78,6 +78,6 @@ it("moves party support with the realised growth, not the static input", async (
 
 it("reads the static input before the nation's first history point", async () => {
   await db.country.update({ where: { id: "testland" }, data: { adjustedGdpGrowth: -0.02 } });
-  await runPoliticsDrift();
+  await runPoliticsDrift({ clocks: ixnayRunningAt(NOW) });
   expect(await support("e-gov")).toBeCloseTo(39.4, 9);
 });

@@ -1,11 +1,13 @@
 /**
  * Executive metrics (country scope): national issues, directives, power brokers and budget years.
  * Durations are real time: weeks and months of `createdAt` / `respondedAt` / `updatedAt`, never
- * IxTime. A count that needs a floor ("across 12 weeks") is emitted as a 0/1 flag, or zeroed
- * until its floor is met, so every rule reads one metric.
+ * a realm clock. A count that needs a floor ("across 12 weeks") is emitted as a 0/1 flag, or zeroed
+ * until its floor is met, so every rule reads one metric. Budget years are the nation's own, on its
+ * realm's clock, read at the evaluation's real instant.
  */
-import { IxTime } from "~/lib/ixtime";
 import { currentBudgetYear } from "~/lib/government/budget-year";
+import { clockTimeAt } from "~/lib/realms/realm-time-convert";
+import { clockForCountry, type RealmClockReader } from "~/server/shared/realm-time";
 import { loadEffectiveBudget } from "~/lib/government/budget-allocations";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
 import {
@@ -47,8 +49,6 @@ const COVERAGE_WINDOW_MS = 6 * MONTH_MS;
 const FISCAL_WINDOW_MS = 18 * MONTH_MS;
 /** Budget years before this follow the pre-pivot clock and legacy rows, so they cannot be mapped to real dates. */
 const FISCAL_FIRST_MAPPED_YEAR = 2040;
-const GAME_EPOCH_YEAR = 2028;
-const MAX_GAME_YEAR = 2200;
 
 export interface DirectiveRow {
   id: string;
@@ -217,7 +217,9 @@ export const brokersLoader: MetricLoader = {
         where: { countryId, isActive: true },
         select: { componentType: true },
       }),
-      loadEffectiveBudget(db, countryId, { currentYear: gameYearAt(now) }),
+      loadEffectiveBudget(db, countryId, {
+        currentYear: gameYearAt(await clockForCountry(db, countryId), now),
+      }),
     ]);
     const spendByCategory: Record<string, number> = {};
     for (const { department, allocatedPercent } of budget.allocations) {
@@ -232,29 +234,18 @@ export const brokersLoader: MetricLoader = {
   },
 };
 
-/** The budget year (IxTime game year) in effect at the real instant, as the budget writers see it. */
-const gameYearAt = (at: Date): number => currentBudgetYear(IxTime.convertToIxTime(at.getTime()));
+/** The nation's budget year at the real instant, on its realm's clock, as the budget writers see it. */
+const gameYearAt = (clock: RealmClockReader, at: Date | number): number =>
+  currentBudgetYear(clockTimeAt(clock, typeof at === "number" ? at : at.getTime()));
 
 /**
- * Real start (inclusive) and end (exclusive) of a budget year. A game year is 365.25 IxTime days
- * from the 2028 epoch (`IxTime.getCurrentGameYear`), mapped back to real time.
+ * The nation's budget years that overlap the 18 real months before `now`, oldest first: from the year its realm's
+ * clock read at the window's start to the year it reads now (a faster realm passes more of them).
  */
-const budgetYearSpan = (year: number): { start: number; end: number } => {
-  const startOf = (y: number) =>
-    IxTime.convertFromIxTime(IxTime.addYears(IxTime.getInGameEpoch(), y - GAME_EPOCH_YEAR));
-  return { start: startOf(year), end: startOf(year + 1) };
-};
-
-/** Budget years that overlap the 18 months before `now`, oldest first. */
-export function fiscalWindowYears(now: Date): number[] {
-  const windowStart = now.getTime() - FISCAL_WINDOW_MS;
-  const years: number[] = [];
-  for (let year = GAME_EPOCH_YEAR; year < MAX_GAME_YEAR; year++) {
-    const { start, end } = budgetYearSpan(year);
-    if (start > now.getTime()) break;
-    if (end > windowStart) years.push(year);
-  }
-  return years;
+export function fiscalWindowYears(now: Date, clock: RealmClockReader): number[] {
+  const first = gameYearAt(clock, now.getTime() - FISCAL_WINDOW_MS);
+  const last = gameYearAt(clock, now);
+  return Array.from({ length: Math.max(0, last - first + 1) }, (_, i) => first + i);
 }
 
 /**
@@ -267,9 +258,10 @@ export function fiscalWindowYears(now: Date): number[] {
 export function fiscalStewardFlag(
   now: Date,
   budgetYears: ReadonlySet<number>,
-  ownedSince: Date | null
+  ownedSince: Date | null,
+  clock: RealmClockReader
 ): number {
-  const years = fiscalWindowYears(now);
+  const years = fiscalWindowYears(now, clock);
   const owned = ownedSince !== null && ownedSince.getTime() <= now.getTime() - FISCAL_WINDOW_MS;
   return Number(
     owned &&
@@ -283,10 +275,11 @@ const BUDGET_KEYS = ["budgetCurrentYear", "fiscalSteward18m"] as const;
 
 async function loadBudgetMetrics({ db, countryId, now }: MetricContext) {
   if (!countryId) return zeroed(BUDGET_KEYS);
-  const years = fiscalWindowYears(now);
+  const clock = await clockForCountry(db, countryId);
+  const years = fiscalWindowYears(now, clock);
   const [current, withBudget, country] = await Promise.all([
     db.budgetAllocation.count({
-      where: { governmentStructure: { countryId }, budgetYear: gameYearAt(now) },
+      where: { governmentStructure: { countryId }, budgetYear: gameYearAt(clock, now) },
     }),
     db.budgetAllocation.groupBy({
       by: ["budgetYear"],
@@ -300,7 +293,7 @@ async function loadBudgetMetrics({ db, countryId, now }: MetricContext) {
   const budgetYears = new Set(withBudget.map((g) => g.budgetYear));
   return {
     budgetCurrentYear: current,
-    fiscalSteward18m: fiscalStewardFlag(now, budgetYears, country?.ownedSince ?? null),
+    fiscalSteward18m: fiscalStewardFlag(now, budgetYears, country?.ownedSince ?? null, clock),
   };
 }
 

@@ -1,7 +1,7 @@
 /**
  * Scheduled elections — cron driver.
  *
- * 1. Resolves elections whose `scheduledIxTime` has arrived on the IxTime clock
+ * 1. Resolves elections whose `scheduledIxTime` has arrived on their nation's realm clock
  *    (resolveElection: parties go on the ballot, the shared simulation seats them, and
  *    the next general election is queued a full term later).
  * 2. Sweeps legislatures with no upcoming election and schedules one
@@ -12,10 +12,10 @@
  * has turned over. See election-lifecycle.ts for the lifecycle, election-simulation.ts
  * for the count.
  *
- * ⚠️ Compares against IxTime.getCurrentIxTime(), never the wall clock.
+ * ⚠️ Compares against each nation's realm clock (each realm's now read once per run), never the wall clock.
  */
 import { db } from "~/server/db";
-import { IxTime } from "~/lib/ixtime";
+import { realmClocks, realmNowsOnce } from "~/server/shared/realm-time";
 import { ensureUpcomingElection, resolveElection } from "./election-lifecycle";
 
 interface ElectionCronResult {
@@ -26,16 +26,21 @@ interface ElectionCronResult {
 
 export async function processDueElections(): Promise<ElectionCronResult> {
   const result: ElectionCronResult = { resolved: 0, scheduled: 0, skipped: 0 };
-  const now = IxTime.getCurrentIxTime();
+  const nowOf = realmNowsOnce(await realmClocks(db));
 
-  const due = await db.election.findMany({
-    where: { status: "upcoming", scheduledIxTime: { lte: now } },
-    select: { id: true },
+  const upcoming = await db.election.findMany({
+    where: { status: "upcoming" },
+    select: { id: true, scheduledIxTime: true, country: { select: { realmId: true } } },
   });
+  const due = upcoming.filter((e) => e.scheduledIxTime <= nowOf(e.country.realmId));
 
   for (const election of due) {
     try {
-      const { outcome, nextElectionId } = await resolveElection(db, election.id);
+      const { outcome, nextElectionId } = await resolveElection(
+        db,
+        election.id,
+        nowOf(election.country.realmId)
+      );
       if (outcome !== "resolved") {
         // Most commonly: fewer than 2 active parties. It stays upcoming, and resolves on a
         // later pass once a second party exists.
@@ -53,11 +58,11 @@ export async function processDueElections(): Promise<ElectionCronResult> {
   // First elections (and any missing follow-up) for legislatures with nothing queued.
   const unscheduled = await db.legislature.findMany({
     where: { country: { elections: { none: { status: { in: ["upcoming", "voting"] } } } } },
-    select: { countryId: true },
+    select: { countryId: true, country: { select: { realmId: true } } },
   });
-  for (const { countryId } of unscheduled) {
+  for (const { countryId, country } of unscheduled) {
     try {
-      const ensured = await ensureUpcomingElection(db, countryId);
+      const ensured = await ensureUpcomingElection(db, countryId, { now: nowOf(country.realmId) });
       if (ensured.status === "created") result.scheduled++;
     } catch (err) {
       console.error(`[ElectionCron] Failed to schedule an election for ${countryId}:`, err);

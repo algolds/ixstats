@@ -12,7 +12,8 @@ import { rateLimitedMutationProcedure, readOnlyProcedure } from "~/server/api/tr
 import { invalidateCache, globalCache } from "~/lib/cache";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { ActivityHooks } from "~/lib/activity/hooks";
-import { IxTime } from "~/lib/ixtime";
+import { currentBudgetYear } from "~/lib/government/budget-year";
+import { clockForRealm, ixnayClock } from "~/server/shared/realm-time";
 import { generateSlug } from "~/lib/utils/slug-utils";
 import {
   countryEconomicInputsSchema,
@@ -194,8 +195,11 @@ type FoundingInput = Omit<CreateCountryInput, "realmId" | "foundationCountry"> &
   foundationCountry?: string | null;
 };
 
-/** Reads the foundation and archetype, then computes everything the nation is founded with. */
-async function prepareFounding(db: PrismaClient, input: FoundingInput) {
+/**
+ * Reads the foundation and archetype, then computes everything the nation is founded with; its starting budget is for
+ * `budgetYear` (the current one on its realm's clock).
+ */
+async function prepareFounding(db: PrismaClient, input: FoundingInput, budgetYear: number) {
   const foundation = input.foundationCountry
     ? await findFoundation(db, input.foundationCountry)
     : null;
@@ -214,6 +218,7 @@ async function prepareFounding(db: PrismaClient, input: FoundingInput) {
     taxSystemData: input.taxSystemData,
     governmentStructure: input.governmentStructure,
     economyBuilderState: input.economyBuilderState,
+    budgetYear,
   });
   return { foundation, econ, snapshot };
 }
@@ -268,7 +273,13 @@ export const managementCreateProcedures = {
 
       await ensureDefaultRole(ctx.db, player, userId);
 
-      const { foundation, econ, snapshot } = await prepareFounding(ctx.db, input);
+      // The nation starts at its realm's present: its baseline and first budget year read the realm's clock.
+      const nowMs = (await clockForRealm(ctx.db, realmId)).now();
+      const { foundation, econ, snapshot } = await prepareFounding(
+        ctx.db,
+        input,
+        currentBudgetYear(nowMs)
+      );
       const { taxSystemData, governmentStructure, governmentComponents, economyBuilderState } =
         snapshot;
 
@@ -283,7 +294,7 @@ export const managementCreateProcedures = {
 
       try {
         const result = await ctx.db.$transaction(async (tx) => {
-          const ixNow = new Date(IxTime.getCurrentIxTime());
+          const ixNow = new Date(nowMs);
           const country = await tx.country.create({
             data: {
               ...buildCountryData({
@@ -347,10 +358,12 @@ export const managementCreateProcedures = {
   previewFounding: readOnlyProcedure
     .input(previewFoundingInput)
     .query(async ({ ctx, input }): Promise<FoundingSummary> => {
-      const { snapshot } = await prepareFounding(ctx.db, {
-        ...input,
-        name: input.name?.trim() || "New nation",
-      });
+      // The summary reads no budget year, so the draft's allocations take Ixnay's.
+      const { snapshot } = await prepareFounding(
+        ctx.db,
+        { ...input, name: input.name?.trim() || "New nation" },
+        currentBudgetYear(ixnayClock().now())
+      );
       return snapshot.summary;
     }),
 };
