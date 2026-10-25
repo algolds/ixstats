@@ -8,9 +8,10 @@
  * once, then tracks the formula from there.
  *
  * Reads never write (MC-13): `security.getInternalStability` computes the current values on the
- * fly (`computeInternalStability`). Rows are persisted by the issue path
- * (`ensureInternalStabilityMetrics`, before a delta is applied) and refreshed by the
- * stat-progression job (`refreshStoredInternalStability`).
+ * fly (`computeInternalStability`). Rows are persisted when an event first moves one
+ * (`ensureInternalStabilityMetrics`, which the event spine calls before a delta is applied) and
+ * refreshed, or created for owned countries, by the stat-progression job
+ * (`refreshStoredInternalStability`).
  */
 
 import type { PrismaClient } from "@prisma/client";
@@ -306,14 +307,18 @@ export async function recalculateInternalStability(db: PrismaClient, countryId: 
 
 /**
  * Re-persist every stored stability row from the current formula (stat-progression job), so
- * readers of the stored row see fresh values now that viewing no longer writes. Never throws.
+ * readers of the stored row see fresh values now that viewing no longer writes, and create the
+ * row for every owned country that has none (MyCountry's Standing band reads it). Never throws.
  */
 export async function refreshStoredInternalStability(
   db: PrismaClient
 ): Promise<{ refreshed: number; failed: number }> {
   const result = { refreshed: 0, failed: 0 };
-  const rows = await db.internalStabilityMetrics.findMany({ select: { countryId: true } });
-  for (const { countryId } of rows) {
+  const rows = await db.country.findMany({
+    where: { OR: [{ stabilityMetrics: { isNot: null } }, { ownerUserId: { not: null } }] },
+    select: { id: true },
+  });
+  for (const { id: countryId } of rows) {
     try {
       if (await recalculateInternalStability(db, countryId)) result.refreshed++;
     } catch (err) {

@@ -2,6 +2,7 @@ import { IxTime } from "~/lib/ixtime";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import type { NewsEventType } from "~/lib/diplomacy/news-generator";
 import { ActivityHooks } from "./hooks";
+import { ensureInternalStabilityMetrics } from "~/lib/statecraft/stability-store";
 import type { PrismaClient } from "@prisma/client";
 
 const FIELD_BOUNDS: Record<string, [number, number]> = {
@@ -156,6 +157,16 @@ export class CountryEventSpine {
 
     const currentIxTime = IxTime.getCurrentIxTime();
     const appliedConsequences: AppliedConsequence[] = [];
+
+    // Most countries have no stability row until an event first touches it; create it from the
+    // formula so the delta has a real value to move instead of being skipped.
+    if (consequences.some((c) => c.targetModel === "InternalStabilityMetrics")) {
+      try {
+        await ensureInternalStabilityMetrics(db, countryId);
+      } catch (err) {
+        console.error(`[Spine] Failed to initialise stability metrics for ${countryId}:`, err);
+      }
+    }
 
     for (const consequence of consequences) {
       await this.applyConsequence(
