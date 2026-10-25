@@ -301,21 +301,12 @@ export async function openForeignPolicyAction(db: PrismaClient, input: OpenForei
     throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
   }
 
-  // Normalize country ordering for bilateral trade lookup
-  const [c1, c2] =
-    initiatorId < input.targetId ? [initiatorId, input.targetId] : [input.targetId, initiatorId];
-
-  const trade = await db.bilateralTrade.findUnique({
-    where: { country1Id_country2Id: { country1Id: c1, country2Id: c2 } },
-  });
-
   // Target-scaled impact (shared pure fn — see plans/statecraft-stage2.md).
   const impact = computeForeignPolicyImpact({
     initiator: impactParty(initiator),
     target: impactParty(target),
     actionType: input.actionType,
     severity: input.severity,
-    tradeVolume: trade?.tradeVolume ?? undefined,
   });
 
   // Cooperative actions await the target's consent; hostile ones are unilateral.

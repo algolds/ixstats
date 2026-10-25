@@ -41,6 +41,50 @@ describe("computeForeignPolicyImpact — coercive tools", () => {
   });
 });
 
+describe("computeForeignPolicyImpact — coercive tools hit the target hardest", () => {
+  const big: FPParty = { gdpPerCapita: 20000, population: 160_000_000 }; // 16x mid
+
+  it.each(["sanction", "embargo", "blockade"] as const)(
+    "%s between equal economies: the target takes the main hit, the initiator a quarter of it",
+    (actionType) => {
+      const { initiatorGdpImpact, targetGdpImpact } = computeForeignPolicyImpact({
+        initiator: mid,
+        target: mid,
+        actionType,
+      });
+      expect(targetGdpImpact).toBeLessThan(-0.005);
+      expect(initiatorGdpImpact).toBeCloseTo(targetGdpImpact * 0.25, 12);
+    }
+  );
+
+  it("a moderate sanction on an equal economy costs the target 1% and the initiator 0.25%", () => {
+    const s = computeForeignPolicyImpact({ initiator: mid, target: mid, actionType: "sanction" });
+    expect(s.targetGdpImpact).toBeCloseTo(-0.01, 12);
+    expect(s.initiatorGdpImpact).toBeCloseTo(-0.0025, 12);
+  });
+
+  it("scales by relative size, and the target never takes less than the initiator", () => {
+    const bigOnSmall = computeForeignPolicyImpact({
+      initiator: big,
+      target: mid,
+      actionType: "sanction",
+    });
+    const smallOnBig = computeForeignPolicyImpact({
+      initiator: mid,
+      target: big,
+      actionType: "sanction",
+    });
+    // A larger economy hits harder and pays relatively less; a smaller one hits softer
+    expect(bigOnSmall.targetGdpImpact).toBeCloseTo(-0.02, 12);
+    expect(bigOnSmall.initiatorGdpImpact).toBeCloseTo(-0.00125, 12);
+    expect(smallOnBig.targetGdpImpact).toBeCloseTo(-0.005, 12);
+    expect(smallOnBig.initiatorGdpImpact).toBeCloseTo(-0.005, 12);
+    for (const impact of [bigOnSmall, smallOnBig]) {
+      expect(impact.targetGdpImpact).toBeLessThanOrEqual(impact.initiatorGdpImpact);
+    }
+  });
+});
+
 import { ComponentType } from "@prisma/client";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
 
