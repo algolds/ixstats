@@ -257,6 +257,14 @@ model MilitaryOperation {
   successRating     String?      // "success", "partial", "failure"
   diplomaticImpact  Int          @default(0)
   casualties        Int          @default(0)
+  /// An intervention resolves on the combat model at its end: the seed fixed at launch with its orders hash and commit
+  /// time (realm clock ms), the inputs snapshot (server only) and the outcome band.
+  orders            String?
+  ordersHash        String?
+  committedClockMs  Float?
+  seed              String?
+  inputSnapshot     String?
+  outcomeBand       String?
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
@@ -305,6 +313,17 @@ model MilitaryConflict {
   initiatorCasualties Int      @default(0)
   defenderCasualties  Int      @default(0)
   economicDamage      Float    @default(0)
+  /// Combat resolution: the initiator's orders (JSON) and their hash, the commit time (realm clock ms), the HMAC seed
+  /// fixed at commit (never rerolled; shown once resolved), the inputs snapshot a replay recomputes from (server only),
+  /// and the result.
+  orders              String?
+  ordersHash          String?
+  committedClockMs    Float?
+  seed                String?
+  inputSnapshot       String?
+  outcomeBand         String?
+  margin              Float?
+  engagementDays      Int?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
@@ -345,6 +364,10 @@ model DefensePolicy {
   infrastructureStock Float             @default(0)
   priceIndex          Float             @default(1)
   surgeStartedClockMs Float?
+  /// The defender's declared terrain ("open" … "mountain", "+river" for a river line), used where the map has none.
+  terrainProfile      String?
+  /// An NPC's Richardson response to threats: burden added to its budget's share of GDP (players stay 0).
+  npcBurdenAdjustment Float             @default(0)
   lastTickClockMs     Float             @default(0)
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
