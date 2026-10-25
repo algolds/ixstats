@@ -29,6 +29,7 @@ import {
   calculateModelHealth,
   validateModelParameters,
   generateYearlyProjectionData,
+  economicProfileFromModel,
 } from "~/lib/economy/modeling-engine";
 
 /**
@@ -178,7 +179,7 @@ export function useEconomicModel(
   // Mutation for saving model to database
   const updateEconomicModelMutation = api.economics.updateEconomicProfile.useMutation({
     onSuccess: (data) => {
-      notify.success("Economic model updated successfully!");
+      notify.success("Sector mix and trade balance saved to the economic profile");
       if (data && onModelUpdate) {
         void utils.countries.getByIdWithEconomicData.invalidate({ id: country.id });
       }
@@ -340,90 +341,23 @@ export function useEconomicModel(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Action: Save Model
+  // Action: Save Model. The economic profile keeps the sector mix and trade balance; the other
+  // parameters and policy effects are modelling assumptions with nowhere to be stored.
   const saveModel = useCallback(() => {
     setIsLoading(true);
-    const population = country.population ?? 0;
-    const totalGDP = sectoralOutputs[0]?.totalGDP ?? 0;
-
-    // ADVANCED MODELING: Send full model to backend
-    const modelData = {
+    updateEconomicModelMutation.mutate({
       countryId: country.id,
-      economicData: {
-        nominalGDP: totalGDP,
-        realGDPGrowthRate: parameters.gdpGrowthRate,
-        inflationRate: parameters.inflationRate,
-        currencyExchangeRate: parameters.exchangeRate,
-        unemploymentRate: parameters.unemploymentRate,
-        interestRates: parameters.interestRate,
-        populationGrowthRate: parameters.populationGrowthRate,
-        taxRevenueGDPPercent: parameters.fiscalBalance,
-        tradeBalance: parameters.tradeBalance,
-        // Add other required fields with default values
-        laborForceParticipationRate: 65,
-        employmentRate: 95,
-        totalWorkforce: Math.round(population * 0.65),
-        averageWorkweekHours: 40,
-        minimumWage: 12,
-        averageAnnualIncome: 35000,
-        governmentBudgetGDPPercent: parameters.fiscalBalance + 2,
-        budgetDeficitSurplus: 0,
-        internalDebtGDPPercent: 45,
-        externalDebtGDPPercent: 25,
-        totalDebtGDPRatio: 70,
-        debtPerCapita: (totalGDP * 0.7) / (population || 1),
-        debtServiceCosts: totalGDP * 0.7 * 0.035,
-        povertyRate: 15,
-        incomeInequalityGini: 0.38,
-        socialMobilityIndex: 60,
-        totalGovernmentSpending: (totalGDP * (parameters.fiscalBalance + 2)) / 100,
-        spendingGDPPercent: parameters.fiscalBalance + 2,
-        spendingPerCapita: (totalGDP * (parameters.fiscalBalance + 2)) / 100 / (population || 1),
-        lifeExpectancy: 75,
-        urbanPopulationPercent: 60,
-        ruralPopulationPercent: 40,
-        literacyRate: 90,
-        // ADVANCED MODELING
-        economicModel: {
-          baseYear: parameters.baseYear,
-          projectionYears: parameters.projectionYears,
-          gdpGrowthRate: parameters.gdpGrowthRate,
-          inflationRate: parameters.inflationRate,
-          unemploymentRate: parameters.unemploymentRate,
-          interestRate: parameters.interestRate,
-          exchangeRate: parameters.exchangeRate,
-          populationGrowthRate: parameters.populationGrowthRate,
-          investmentRate: parameters.investmentRate,
-          fiscalBalance: parameters.fiscalBalance,
-          tradeBalance: parameters.tradeBalance,
-          sectoralOutputs: sectoralOutputs.map((s) => ({
-            year: s.year,
-            agriculture: s.agriculture,
-            industry: s.industry,
-            services: s.services,
-            government: s.government,
-            totalGDP: s.totalGDP,
-          })),
-          policyEffects: policyEffects.map((p) => ({
-            name: p.name,
-            description: p.description,
-            gdpEffectPercentage: p.gdpEffectPercentage,
-            inflationEffectPercentage: p.inflationEffectPercentage,
-            employmentEffectPercentage: p.employmentEffectPercentage,
-            yearImplemented: p.yearImplemented,
-            durationYears: p.durationYears,
-          })),
-        },
-      },
-    };
-
-    updateEconomicModelMutation.mutate(modelData);
+      ...economicProfileFromModel(
+        sectoralOutputs,
+        parameters.tradeBalance,
+        country.economicData?.gdp
+      ),
+    });
   }, [
     country.id,
-    country.population,
-    parameters,
+    country.economicData?.gdp,
+    parameters.tradeBalance,
     sectoralOutputs,
-    policyEffects,
     updateEconomicModelMutation,
   ]);
 
