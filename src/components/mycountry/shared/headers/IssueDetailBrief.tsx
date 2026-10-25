@@ -25,7 +25,9 @@ import { Eyebrow } from "~/components/ui/eyebrow";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { api, type RouterOutputs } from "~/trpc/react";
-import { IxTime } from "~/lib/ixtime";
+import { useClockNow, useNationClock } from "~/hooks/useNationClock";
+import { CLOCK_PENDING, realMsUntil } from "~/lib/realms/nation-time";
+import type { RealmClockReader } from "~/lib/realms/realm-clock";
 import { useNotify } from "~/hooks/useNotify";
 import { Card } from "~/components/ui/card";
 
@@ -108,14 +110,41 @@ const REVEAL_TONE: Record<string, string> = {
   questioned: "text-yellow",
 };
 
+/** A deadline is urgent with a day and a half of real time left at the realm's speed (three in-world days on ×2). */
+const URGENT_REAL_MS = 1.5 * DAY_MS;
+
+/** The deadline badge: in-world days left on the nation's clock, "Paused" while its realm is stopped. */
+function deadlineBadgeOf(deadline: number, now: number | null, clock: RealmClockReader | null) {
+  if (now === null || !clock) return { text: CLOCK_PENDING, urgent: false };
+  const daysRemaining = (deadline - now) / DAY_MS;
+  if (daysRemaining <= 0) return { text: "Deadline passed", urgent: true };
+  if (clock.paused) return { text: "Paused", urgent: false };
+  const realLeft = realMsUntil(deadline, now, clock.multiplier) ?? Infinity;
+  return { text: `${Math.ceil(daysRemaining)} days remaining`, urgent: realLeft < URGENT_REAL_MS };
+}
+
+/** When cabinet research reports, in in-world days on the nation's clock. */
+function reconArrivalOf(
+  readyIxTime: number | null | undefined,
+  now: number | null,
+  clock: RealmClockReader | null
+) {
+  if (now === null || !clock) return `Findings arrive in ${CLOCK_PENDING}.`;
+  if (clock.paused) return "Paused: findings arrive when the realm resumes.";
+  const days = Math.max(1, Math.ceil(((readyIxTime ?? 0) - now) / DAY_MS));
+  return `Findings arrive in ${days} day(s).`;
+}
+
 function IssueHero({
   issue,
   isResolved,
   currentIxTime,
+  clock,
 }: {
   issue: Issue;
   isResolved: boolean;
-  currentIxTime: number;
+  currentIxTime: number | null;
+  clock: RealmClockReader | null;
 }) {
   const domain = DOMAIN_CONFIG[issue.domain] ?? DOMAIN_CONFIG.economic!;
   const DomainIcon = domain.icon;
@@ -128,8 +157,9 @@ function IssueHero({
         : "text-label-secondary";
 
   const showDeadline = issue.deadlineIxTime != null && !isResolved;
-  const daysRemaining = showDeadline ? (issue.deadlineIxTime! - currentIxTime) / DAY_MS : 0;
-  const isUrgent = daysRemaining < 3;
+  const deadline = showDeadline
+    ? deadlineBadgeOf(issue.deadlineIxTime!, currentIxTime, clock)
+    : null;
 
   return (
     <Card className="flex flex-col gap-3 p-5">
@@ -141,10 +171,10 @@ function IssueHero({
         <Badge variant="outline" className={cn("capitalize", severityTone)}>
           {severity}
         </Badge>
-        {showDeadline && (
-          <Badge variant={isUrgent ? "destructive" : "outline"}>
-            {isUrgent ? <Flame /> : <Clock />}
-            {daysRemaining <= 0 ? "Deadline passed" : `${Math.ceil(daysRemaining)} days remaining`}
+        {deadline && (
+          <Badge variant={deadline.urgent ? "destructive" : "outline"}>
+            {deadline.urgent ? <Flame /> : <Clock />}
+            {deadline.text}
           </Badge>
         )}
       </div>
@@ -218,11 +248,13 @@ function OutcomeCard({
 function ReconPanel({
   recon,
   currentIxTime,
+  clock,
   isCommissioning,
   onCommission,
 }: {
   recon: ReconData;
-  currentIxTime: number;
+  currentIxTime: number | null;
+  clock: RealmClockReader | null;
   isCommissioning: boolean;
   onCommission: () => void;
 }) {
@@ -253,8 +285,7 @@ function ReconPanel({
       {recon.status === "pending" && (
         <p className="text-label-secondary text-footnote flex items-center gap-2">
           <Clock className="h-3.5 w-3.5" />
-          Your team is researching. Findings arrive in{" "}
-          {Math.max(1, Math.ceil(((recon.readyIxTime ?? 0) - currentIxTime) / DAY_MS))} day(s).
+          Your team is researching. {reconArrivalOf(recon.readyIxTime, currentIxTime, clock)}
         </p>
       )}
       {recon.status === "ready" && (
@@ -407,6 +438,8 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
   const [confirmingOptionId, setConfirmingOptionId] = useState<string | null>(null);
   const [showOutcome, setShowOutcome] = useState(false);
   const [localDirective, setLocalDirective] = useState<string | undefined>(undefined);
+  const clock = useNationClock();
+  const currentIxTime = useClockNow(clock);
 
   const utils = api.useUtils();
   const issueQuery = api.nationalIssues.getIssue.useQuery({ id: issueId }, { enabled: !!issueId });
@@ -489,7 +522,6 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
 
   const isResolved = issue.status === "responded" || issue.status === "auto_resolved";
   const isOpen = !isResolved && !showOutcome;
-  const currentIxTime = IxTime.getCurrentIxTime();
   const canDismiss =
     isOpen &&
     issue.deadlineIxTime == null &&
@@ -523,7 +555,12 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
 
   return (
     <div className="space-y-5 pb-4">
-      <IssueHero issue={issue} isResolved={isResolved} currentIxTime={currentIxTime} />
+      <IssueHero
+        issue={issue}
+        isResolved={isResolved}
+        currentIxTime={currentIxTime}
+        clock={clock}
+      />
 
       {!isOpen && (issue.consequenceLog || options.length > 0) && (
         <OutcomeCard
@@ -538,6 +575,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
         <ReconPanel
           recon={recon}
           currentIxTime={currentIxTime}
+          clock={clock}
           isCommissioning={commissionRecon.isPending}
           onCommission={() => commissionRecon.mutate({ issueId: issue.id })}
         />

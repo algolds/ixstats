@@ -10,22 +10,30 @@ const NationClockContext = createContext<RealmClockReader | null | undefined>(un
 export const NationClockProvider = NationClockContext.Provider;
 
 /**
- * The clock of the nation in view (realm time design §1): `country`'s realm clock when it carries its realm id (a
- * view of one specific nation, e.g. the map's country panel), else the nearest `NationClockProvider`'s. Null while
- * it loads, or outside any nation: show "–" or a skeleton then, never another clock's date.
+ * The clock of the nation in view (realm time design §1): the nearest `NationClockProvider`'s (`CountryDataProvider`
+ * in MyCountry and on country pages). Null while it loads, or outside any nation: show "–" or a skeleton then,
+ * never another clock's date.
  */
-export function useNationClock(
-  country?: { realmId?: string | null } | null
+export function useNationClock(): RealmClockReader | null {
+  return useContext(NationClockContext) ?? null;
+}
+
+/**
+ * The clock of one specific nation (e.g. the map's country panel): its realm's clock when it carries its realm id,
+ * else the provider's (`useNationClock`).
+ */
+export function useNationClockFor(
+  country: { realmId?: string | null } | null | undefined
 ): RealmClockReader | null {
-  const shared = useContext(NationClockContext);
+  const shared = useNationClock();
   const own = typeof country?.realmId === "string" ? country : null;
   const fromCountry = useCountryClock(own);
-  return own ? fromCountry : (shared ?? null);
+  return own ? fromCountry : shared;
 }
 
 /**
  * `reader.now()` re-read every `stepMs` real ms and quantised to `stepMs` of clock time, so derivations keyed on it
- * re-run once a step, not every render. Null while the clock loads (and on the server).
+ * re-run once a step, not every render. Null only while the clock loads.
  */
 export function useClockNow(reader: RealmClockReader | null, stepMs = 60_000): number | null {
   const subscribe = useCallback(
@@ -35,9 +43,6 @@ export function useClockNow(reader: RealmClockReader | null, stepMs = 60_000): n
     },
     [stepMs]
   );
-  return useSyncExternalStore(
-    subscribe,
-    () => (reader ? Math.floor(reader.now() / stepMs) * stepMs : null),
-    () => null
-  );
+  const read = () => (reader ? Math.floor(reader.now() / stepMs) * stepMs : null);
+  return useSyncExternalStore(subscribe, read, read);
 }

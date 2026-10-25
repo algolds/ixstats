@@ -4,7 +4,12 @@
  */
 import React from "react";
 import { act, renderHook } from "@testing-library/react";
-import { NationClockProvider, useClockNow, useNationClock } from "~/hooks/useNationClock";
+import {
+  NationClockProvider,
+  useClockNow,
+  useNationClock,
+  useNationClockFor,
+} from "~/hooks/useNationClock";
 import { CLOCK_NOW, REAL_NOW, ixnayReader, sixTimesReader } from "~/tests/fixtures/realm-readers";
 
 const frost = sixTimesReader();
@@ -19,7 +24,7 @@ const withProvider =
     <NationClockProvider value={value}>{children}</NationClockProvider>
   );
 
-describe("useNationClock", () => {
+describe("useNationClock / useNationClockFor", () => {
   it("reads the provider's clock when no country is given", () => {
     const ixnay = ixnayReader();
     const { result } = renderHook(() => useNationClock(), { wrapper: withProvider(ixnay) });
@@ -27,7 +32,7 @@ describe("useNationClock", () => {
   });
 
   it("prefers the given country's realm clock over the provider's", () => {
-    const { result } = renderHook(() => useNationClock({ realmId: "realm-frost" }), {
+    const { result } = renderHook(() => useNationClockFor({ realmId: "realm-frost" }), {
       wrapper: withProvider(ixnayReader()),
     });
     expect(result.current).toBe(frost);
@@ -35,7 +40,7 @@ describe("useNationClock", () => {
 
   it("falls back to the provider when the country carries no realm id", () => {
     const ixnay = ixnayReader();
-    const { result } = renderHook(() => useNationClock({}), { wrapper: withProvider(ixnay) });
+    const { result } = renderHook(() => useNationClockFor({}), { wrapper: withProvider(ixnay) });
     expect(result.current).toBe(ixnay);
   });
 

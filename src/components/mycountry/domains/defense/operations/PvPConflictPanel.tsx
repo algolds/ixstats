@@ -34,7 +34,8 @@ import { Card } from "~/components/ui/card";
 import { useCanEdit } from "~/context/MyCountryEditModeContext";
 import { useNotify } from "~/hooks/useNotify";
 import { PVP_UNFOUGHT, isUnfoughtConflict } from "~/lib/military/pvp-proposals";
-import { formatStampAsIxDate } from "~/components/mycountry/directives/directive-model";
+import { useNationClock } from "~/hooks/useNationClock";
+import { formatStampAsClockDate } from "~/lib/realms/nation-time";
 
 interface PvPConflictPanelProps {
   countryId: string;
@@ -186,6 +187,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
   // Initiating (challenge, strike) is premium; answering, withdrawing and concluding are not.
   const { canEdit } = useCanEdit();
   const notify = useNotify();
+  const clock = useNationClock();
   const [challengeOpen, setChallengeOpen] = useState(false);
   const [strikeOpen, setStrikeOpen] = useState(false);
   const [targetId, setTargetId] = useState("");
@@ -270,7 +272,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
     if (endsAt.getTime() > Date.now()) {
       return (
         <span className="text-label-secondary text-footnote">
-          Ends {formatStampAsIxDate(endsAt)}
+          Ends {formatStampAsClockDate(endsAt, clock)}
         </span>
       );
     }

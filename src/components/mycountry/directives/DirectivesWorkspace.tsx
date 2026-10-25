@@ -8,7 +8,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { EmptyState } from "~/components/ui/empty-state";
-import { useIxTimeStore } from "~/stores/ixtime-store";
+import { useClockNow, useNationClock } from "~/hooks/useNationClock";
 import { PolicyCreatorSheet } from "~/components/executive/PolicyCreatorSheet";
 import { useCountryData } from "~/components/mycountry/shared/primitives/CountryDataProvider";
 import {
@@ -120,20 +120,27 @@ function DirectivesHeader({
 
 /**
  * The Directives page (`/mycountry/executive`): status up top, then three views: declare a new
- * directive, track the ones in force, and review past directives and outcomes.
+ * directive, track the ones in force, and review past directives and outcomes. Timing reads the
+ * nation's realm clock ("now" each minute); the page waits on a skeleton until it has loaded.
  *
  * The page sits on the canvas; the status strip, composer steps and directives are panes.
  */
-export function DirectivesWorkspace({
+export function DirectivesWorkspace(props: DirectivesWorkspaceProps) {
+  const nowIxTime = useClockNow(useNationClock());
+  if (nowIxTime === null) return <ListSkeleton />;
+  return <DirectivesWorkspaceBody {...props} nowIxTime={nowIxTime} />;
+}
+
+function DirectivesWorkspaceBody({
   countryId,
   initialGoal,
   onCommitted,
   onOpenIntent,
   onOpenIssue,
-}: DirectivesWorkspaceProps) {
+  nowIxTime,
+}: DirectivesWorkspaceProps & { nowIxTime: number }) {
   const { isViewingOtherCountry, isPublicReadOnly } = useCountryData();
   const readOnly = !!isViewingOtherCountry || !!isPublicReadOnly;
-  const nowIxTime = useIxTimeStore((s) => Math.floor(s.ixTimeTimestamp / 60_000) * 60_000);
 
   const [view, setView] = useState<DirectivesView>("new");
   const [followUpOf, setFollowUpOf] = useState<DirectiveRef | null>(null);

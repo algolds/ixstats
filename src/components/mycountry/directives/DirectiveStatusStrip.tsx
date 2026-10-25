@@ -8,7 +8,8 @@ import { Card } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Stat } from "~/components/ui/stat";
 import { cn } from "~/lib/utils";
-import { formatIxCountdown } from "~/lib/statecraft/calendar";
+import { useNationClock } from "~/hooks/useNationClock";
+import { formatRealmCountdown } from "~/lib/realms/nation-time";
 import { BandwidthBar, BandwidthHelp, hasBandwidth } from "./BandwidthHelp";
 
 interface DirectiveStatusStripProps {
@@ -66,6 +67,10 @@ function SlotPips({ left, cap }: { left: number; cap: number }) {
   );
 }
 
+/** "Next opens in 1d 2h" at the realm's speed; "Paused" while the realm's clock is stopped. */
+const nextOpensOf = (countdown: string) =>
+  countdown === "Paused" ? "Paused" : `Next opens in ${countdown}`;
+
 /**
  * The three things that gate a new directive: weekly slots, executive bandwidth, and what is
  * already in force.
@@ -78,6 +83,7 @@ export function DirectiveStatusStrip({
   onShowActive,
 }: DirectiveStatusStripProps) {
   const status = api.intent.getStatus.useQuery({ countryId }, { enabled: !!countryId });
+  const clock = useNationClock();
   const execBandwidth = api.policies.getPolicyReconContext.useQuery(
     { countryId },
     { enabled: !!countryId }
@@ -93,9 +99,9 @@ export function DirectiveStatusStrip({
       ? "Unavailable"
       : " "
     : slots.canCommit
-      ? "Each reopens 7 IxTime days after use"
+      ? "Each reopens 7 in-world days after use"
       : slots.cooldownUntil
-        ? `Next opens in ${formatIxCountdown(slots.cooldownUntil, nowIxTime)}`
+        ? nextOpensOf(formatRealmCountdown(slots.cooldownUntil, nowIxTime, clock))
         : "All used this week";
 
   return (

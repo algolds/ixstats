@@ -9,7 +9,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { DirectiveStatusLine } from "./DirectiveStatusLine";
-import { useIxTimeStore } from "~/stores/ixtime-store";
+import { useClockNow, useNationClock } from "~/hooks/useNationClock";
 import {
   type AgendaItem,
   type AgendaSourceElection,
@@ -53,8 +53,9 @@ function ExecutiveAgendaComponent({
   const storageKey = doneKey(countryId);
   const [doneIds, setDoneIds] = useState<ReadonlySet<string>>(() => readDone(storageKey));
 
-  // IxTime "now", quantised so derivation does not re-run every tick.
-  const nowIxTime = useIxTimeStore((s) => Math.floor(s.ixTimeTimestamp / 60_000) * 60_000);
+  // The nation's realm-clock "now", quantised so derivation does not re-run every tick.
+  const clock = useNationClock();
+  const nowIxTime = useClockNow(clock);
 
   const intentTree = api.intent.getTree.useQuery({ countryId }, { enabled: !!countryId });
   const elections = api.elections.getElections.useQuery(
@@ -66,9 +67,10 @@ function ExecutiveAgendaComponent({
     { enabled: !!countryId, staleTime: 60_000 }
   );
 
-  const isLoading = intentTree.isLoading || issuesData.isLoading;
+  const isLoading = intentTree.isLoading || issuesData.isLoading || nowIxTime === null;
 
   const items = useMemo<AgendaItem[]>(() => {
+    if (nowIxTime === null || !clock) return [];
     const rawIntents = Array.isArray(intentTree.data)
       ? intentTree.data
       : (intentTree.data?.allIntents ?? []);
@@ -77,8 +79,9 @@ function ExecutiveAgendaComponent({
       intents: rawIntents as AgendaSourceIntent[],
       elections: (elections.data ?? []) as AgendaSourceElection[],
       nowIxTime,
+      multiplier: clock.multiplier,
     });
-  }, [intentTree.data, issuesData.data, elections.data, nowIxTime]);
+  }, [intentTree.data, issuesData.data, elections.data, nowIxTime, clock]);
 
   const visible = items.filter((item) => !doneIds.has(item.id));
   const nowMs = useMemo(() => Date.now(), [items]);

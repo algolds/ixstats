@@ -6,7 +6,8 @@ import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
-import { formatIxCountdown } from "~/lib/statecraft/calendar";
+import { formatRealmCountdown } from "~/lib/realms/nation-time";
+import type { RealmClockReader } from "~/lib/realms/realm-clock";
 import { TONE_CLASSES } from "~/components/mycountry/directives/directive-model";
 import { BandwidthHelp, hasBandwidth } from "~/components/mycountry/directives/BandwidthHelp";
 import { FollowUpChip } from "./FollowUpChip";
@@ -20,7 +21,9 @@ interface DeclarePanelProps {
   slots:
     | { usedThisWeek: number; cap: number; canCommit: boolean; cooldownUntil: number | null }
     | undefined;
-  nowIxTime: number;
+  /** The nation's realm-clock "now" and clock: the slot countdown runs at its speed. */
+  nowIxTime: number | null;
+  clock: RealmClockReader | null;
   followUpOf: { id: string; goal: string } | null;
   onClearFollowUp?: () => void;
   readOnly?: boolean;
@@ -55,13 +58,26 @@ function SlotsUsed({ slots }: { slots: Slots }) {
 function blockedReasonOf(
   readOnly: boolean | undefined,
   slots: DeclarePanelProps["slots"],
-  nowIxTime: number
+  nowIxTime: number | null,
+  clock: RealmClockReader | null
 ): string | null {
   if (readOnly) return "You are viewing another nation. Directives are read-only.";
   if (!slots || slots.canCommit) return null;
   return slots.cooldownUntil
-    ? `All ${slots.cap} weekly slots are used. Next slot opens in ${formatIxCountdown(slots.cooldownUntil, nowIxTime)} (IxTime).`
+    ? `All ${slots.cap} weekly slots are used. ${nextSlotOf(slots.cooldownUntil, nowIxTime, clock)}`
     : `All ${slots.cap} weekly slots are used.`;
+}
+
+/** When the next weekly slot opens, in real time at the realm's speed, or that the realm is paused. */
+function nextSlotOf(
+  cooldownUntil: number,
+  nowIxTime: number | null,
+  clock: RealmClockReader | null
+) {
+  const countdown = formatRealmCountdown(cooldownUntil, nowIxTime ?? cooldownUntil, clock);
+  return countdown === "Paused"
+    ? "Paused: the next slot opens when the realm resumes."
+    : `Next slot opens in ${countdown}.`;
 }
 
 /**
@@ -75,6 +91,7 @@ export function DeclarePanel({
   execBandwidth,
   slots,
   nowIxTime,
+  clock,
   followUpOf,
   onClearFollowUp,
   readOnly,
@@ -87,7 +104,7 @@ export function DeclarePanel({
   const available = hasBandwidth(execBandwidth) ? execBandwidth.available : null;
   const availableAfter = available == null ? null : Math.round(available - cost);
   const goesOver = availableAfter != null && availableAfter < 0;
-  const blockedReason = blockedReasonOf(readOnly, slots, nowIxTime);
+  const blockedReason = blockedReasonOf(readOnly, slots, nowIxTime, clock);
 
   return (
     <div className="space-y-4">
@@ -104,7 +121,7 @@ export function DeclarePanel({
             </span>
           }
         >
-          {execBandwidthCost == null ? "–" : `${cost} held for one IxTime week`}
+          {execBandwidthCost == null ? "–" : `${cost} held for one in-world week`}
         </Row>
         <Row label="Available after">
           {execBandwidth === undefined ? (

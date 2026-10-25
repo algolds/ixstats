@@ -30,7 +30,8 @@ import { Card } from "~/components/ui/card";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { useNotify } from "~/hooks/useNotify";
 import { CATEGORY_TO_BROKER } from "~/lib/intent/assemble";
-import { formatStampAsIxDate } from "~/components/mycountry/directives/directive-model";
+import { useNationClock } from "~/hooks/useNationClock";
+import { formatStampAsClockDate } from "~/lib/realms/nation-time";
 
 /** Directive tier → semantic text tone (measured is calm, extreme is a warning sign). */
 const TIER_TONE: Record<string, string> = {
@@ -97,6 +98,7 @@ function IntentHeader({
   onShareToThinkPages: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const clock = useNationClock();
 
   const copySummary = () => {
     if (!intent.summary) return;
@@ -133,7 +135,7 @@ function IntentHeader({
       <div>
         <h2 className="text-label text-title-2">{intent.goal}</h2>
         <p className="text-label-secondary text-footnote mt-1">
-          Enacted on {formatStampAsIxDate(intent.createdAt)}
+          Enacted on {formatStampAsClockDate(intent.createdAt, clock)}
         </p>
       </div>
 

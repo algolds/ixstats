@@ -14,7 +14,9 @@ import {
   FireFlame as Flame,
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
-import { IxTime } from "~/lib/ixtime";
+import { useNationClock } from "~/hooks/useNationClock";
+import { CLOCK_PENDING, realMsUntil } from "~/lib/realms/nation-time";
+import type { RealmClockReader } from "~/lib/realms/realm-clock";
 import { Button } from "~/components/ui/button";
 
 interface IssueCardProps {
@@ -87,31 +89,36 @@ const SEVERITY_BADGE: Record<string, string> = {
   LOW: "bg-fill-3 text-label-secondary border-separator",
 };
 
+const REAL_DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Real time left to a deadline on the nation's realm clock, at its realm's speed ("3d left", "Expired"); "Paused"
+ * while the realm is stopped. Urgent under three real days.
+ */
+export function issueDeadlineOf(
+  deadlineIxTime: number,
+  clock: RealmClockReader | null
+): { text: string; urgent: boolean } {
+  if (!clock) return { text: CLOCK_PENDING, urgent: false };
+  const now = clock.now();
+  if (deadlineIxTime <= now) return { text: "Expired", urgent: true };
+  const realLeft = realMsUntil(deadlineIxTime, now, clock.multiplier);
+  if (realLeft === null) return { text: "Paused", urgent: false };
+  const days = realLeft / REAL_DAY_MS;
+  return { text: `${Math.ceil(days)}d left`, urgent: days < 3 };
+}
+
 function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCardProps) {
   const domainConfig = DOMAIN_CONFIG[issue.domain] ?? DOMAIN_CONFIG.economic!;
   const DomainIcon = domainConfig.icon;
   const severityStyle = SEVERITY_STYLES[issue.severity] ?? SEVERITY_STYLES.medium!;
   const badgeStyle = SEVERITY_BADGE[issue.severity] ?? SEVERITY_BADGE.medium!;
 
+  const clock = useNationClock();
   const hasDeadline = issue.deadlineIxTime != null;
-  let timeRemainingText = "";
-  let isUrgent = false;
-  if (hasDeadline) {
-    const deadlineReal = IxTime.convertFromIxTime(issue.deadlineIxTime!);
-    // oxlint-disable-next-line
-    const nowReal = Date.now();
-    const remaining = deadlineReal - nowReal;
-    const daysRemaining = remaining / (24 * 60 * 60 * 1000);
-    if (daysRemaining <= 0) {
-      timeRemainingText = "Expired";
-      isUrgent = true;
-    } else if (daysRemaining < 3) {
-      timeRemainingText = `${Math.ceil(daysRemaining)}d left`;
-      isUrgent = true;
-    } else {
-      timeRemainingText = `${Math.ceil(daysRemaining)}d left`;
-    }
-  }
+  const deadline = hasDeadline ? issueDeadlineOf(issue.deadlineIxTime!, clock) : null;
+  const timeRemainingText = deadline?.text ?? "";
+  const isUrgent = deadline?.urgent ?? false;
 
   const isNew = issue.status === "pending";
 

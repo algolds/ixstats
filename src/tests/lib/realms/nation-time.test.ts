@@ -64,15 +64,17 @@ describe("nation countdowns", () => {
   it("counts down in real time at the realm's speed", () => {
     // Six in-world days in a 6× realm are one real day.
     expect(realMsUntil(CLOCK_NOW + 6 * DAY, CLOCK_NOW, 6)).toBe(DAY);
-    expect(formatRealmCountdown(CLOCK_NOW + 6 * DAY + 6 * 3_600_000, CLOCK_NOW, 6)).toBe("1d 1h");
-    expect(formatRealmCountdown(CLOCK_NOW + 2 * DAY, CLOCK_NOW, 2)).toBe("1d 0h");
+    const six = sixTimesReader();
+    expect(formatRealmCountdown(CLOCK_NOW + 6 * DAY + 6 * 3_600_000, CLOCK_NOW, six)).toBe("1d 1h");
+    expect(formatRealmCountdown(CLOCK_NOW + 2 * DAY, CLOCK_NOW, ixnayReader())).toBe("1d 0h");
+    expect(formatRealmCountdown(CLOCK_NOW + DAY, CLOCK_NOW, null)).toBe(CLOCK_PENDING);
   });
 
   it("shows Paused instead of a countdown while the realm is stopped", () => {
     const reader = pausedReader();
     expect(reader.paused).toBe(true);
     expect(realMsUntil(CLOCK_NOW + DAY, reader.now(), reader.multiplier)).toBeNull();
-    expect(formatRealmCountdown(CLOCK_NOW + DAY, reader.now(), reader.multiplier)).toBe("Paused");
-    expect(formatRealmCountdown(CLOCK_NOW - DAY, reader.now(), reader.multiplier)).toBe("now");
+    expect(formatRealmCountdown(CLOCK_NOW + DAY, reader.now(), reader)).toBe("Paused");
+    expect(formatRealmCountdown(CLOCK_NOW - DAY, reader.now(), reader)).toBe("now");
   });
 });

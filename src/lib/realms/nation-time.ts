@@ -73,10 +73,15 @@ export function realMsUntil(targetMs: number, nowMs: number, multiplier: number)
 
 /**
  * A live countdown to a time on the nation's clock, in real time at the realm's speed ("2d 4h", "6h 12m", "45m",
- * "now"); "Paused" while the realm's clock is stopped.
+ * "now"); "Paused" while the realm's clock is stopped, `CLOCK_PENDING` while it loads.
  */
-export function formatRealmCountdown(targetMs: number, nowMs: number, multiplier: number): string {
+export function formatRealmCountdown(
+  targetMs: number,
+  nowMs: number,
+  reader: Pick<RealmClockReader, "multiplier"> | null
+): string {
+  if (!reader) return CLOCK_PENDING;
   if (targetMs <= nowMs) return "now";
-  const realMs = realMsUntil(targetMs, nowMs, multiplier);
+  const realMs = realMsUntil(targetMs, nowMs, reader.multiplier);
   return realMs === null ? "Paused" : formatIxCountdown(realMs, 0);
 }

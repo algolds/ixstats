@@ -19,14 +19,15 @@ import { Badge } from "~/components/ui/badge";
 import { Button, buttonVariants } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
 import { cn } from "~/lib/utils";
-import { formatIxCountdown } from "~/lib/statecraft/calendar";
+import { useNationClock } from "~/hooks/useNationClock";
+import { formatClockDate, formatRealmCountdown } from "~/lib/realms/nation-time";
+import type { RealmClockReader } from "~/lib/realms/realm-clock";
 import { DirectiveOutcome } from "./DirectiveOutcome";
 import {
   PHASE_META,
   TONE_CLASSES,
   categoryLabel,
   directiveTimeline,
-  formatIxDate,
   parseChangeLines,
   tierMeta,
   type IntentRow,
@@ -189,11 +190,13 @@ function resistanceSummary(data: LinkedIssues | undefined) {
 function ProgressMeters({
   timeline,
   nowIxTime,
+  clock,
   linked,
   openResistance,
 }: {
   timeline: ReturnType<typeof directiveTimeline>;
   nowIxTime: number;
+  clock: RealmClockReader | null;
   linked: LinkedIssues | undefined;
   openResistance: number;
 }) {
@@ -205,7 +208,7 @@ function ProgressMeters({
         value={timeline.executionProgress}
         detail={
           timeline.releasesAt
-            ? `${timeline.heldExecBandwidth} bandwidth held · ${formatIxCountdown(timeline.releasesAt, nowIxTime)} left`
+            ? `${timeline.heldExecBandwidth} bandwidth held · ${formatRealmCountdown(timeline.releasesAt, nowIxTime, clock)} left`
             : "Done · bandwidth released"
         }
         barClass={TONE_CLASSES[timeline.releasesAt ? "caution" : "info"].bar}
@@ -378,6 +381,7 @@ export function DirectiveCard({
   const panelId = useId();
   const notify = useNotify();
   const utils = api.useUtils();
+  const clock = useNationClock();
 
   const timeline = directiveTimeline(intent, nowIxTime);
   const phase = PHASE_META[timeline.phase];
@@ -419,7 +423,7 @@ export function DirectiveCard({
             {[
               categoryLabel(intent.category),
               tierMeta(intent.tier).label,
-              formatIxDate(intent.createdIxTime),
+              formatClockDate(intent.createdIxTime, clock),
             ].map((text, i) => (
               <React.Fragment key={i}>
                 {i > 0 && (
@@ -446,6 +450,7 @@ export function DirectiveCard({
             <ProgressMeters
               timeline={timeline}
               nowIxTime={nowIxTime}
+              clock={clock}
               linked={linked.data}
               openResistance={openResistance}
             />
