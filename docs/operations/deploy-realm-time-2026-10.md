@@ -82,3 +82,15 @@ run_sql() { docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ER
   government) 7,085 active (0.47%), 101,746 reserves, C-2; Rapa Rapa (5,635 people) 16 active.
 - Expect the realm clocks to log `[realm-time] Realm <id> has no clock` on a database without the T1 SQL; the
   defense sync then reads Ixnay's clock for those nations.
+
+## T2: nation simulation on realm clocks
+
+- No SQL. Every stored IxTime column stays valid: each realm's clock runs on the same timeline, so budget years,
+  history months and effect stamps already recorded keep their meaning.
+- The first `stat-progression` run after the deploy writes each paused realm's nations once (bringing them to their
+  realm's time, so `lastCalculated` marks them done) and skips them afterwards until the realm runs or jumps. A
+  nation whose realm passed months with no run (a date jump, a stopped cron) gets a history point for each of them,
+  at most 120 per run.
+- The budget-year rollover, policy maintenance, politics drift, national-issue generation and elections jobs read
+  each realm's clock once per run; politics drift and issue generation skip paused realms.
+- The admin epoch sync (Admin → System) now moves only Ixnay's nations.

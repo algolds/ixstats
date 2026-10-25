@@ -48,6 +48,8 @@ export interface ApplyContext {
   areaScale: number;
   /** The growth new nations get by tier (`Realm.settings.nationDefaults`); IxStats's defaults when absent. */
   nationDefaults?: NationGrowthTable;
+  /** The realm's time now (its clock): new nations and rebased figures are dated with it. */
+  nowMs: number;
   /** Smooth the borders after writing them: the realm's pipeline `coverage` and every source border by key. */
   borderSmoothing?: {
     coverage: CoverageSettings;
@@ -70,7 +72,10 @@ const SQKM_TO_SQMI = 0.386102;
 const message = (error: unknown) =>
   (error instanceof Error ? error.message : String(error)).slice(0, 300);
 
-/** The stored stats a change of population, GDP per capita or land area gives, through the baseline calculator. */
+/**
+ * The stored stats a change of population, GDP per capita or land area gives, through the baseline calculator, dated
+ * `nowMs` (the realm's time now).
+ */
 export function statsUpdateData(
   country: {
     name: string;
@@ -79,7 +84,8 @@ export function statsUpdateData(
     landArea: number | null;
     continent: string | null;
   },
-  changes: readonly FieldChange[]
+  changes: readonly FieldChange[],
+  nowMs: number
 ) {
   const to = (field: FieldChange["field"]) => changes.find((c) => c.field === field)?.to;
   const population = to("population") as number | undefined;
@@ -89,7 +95,7 @@ export function statsUpdateData(
   const data: Prisma.CountryUpdateInput = {};
   if (continent !== undefined) data.continent = continent;
   if (population === undefined && gdpPerCapita === undefined && landArea === undefined) return data;
-  const base = buildBaselineCountryData(country.name, {
+  const base = buildBaselineCountryData(country.name, nowMs, {
     baselinePopulation: population ?? country.baselinePopulation,
     baselineGdpPerCapita: gdpPerCapita ?? country.baselineGdpPerCapita,
     landArea: landArea ?? country.landArea ?? undefined,
@@ -149,7 +155,7 @@ async function createNations(
       const slug = await freeNationSlug(db, { title: planned.name, realmSlug: ctx.realmSlug });
       const country = await db.country.create({
         data: {
-          ...buildBaselineCountryData(planned.name, initial, ctx.nationDefaults),
+          ...buildBaselineCountryData(planned.name, ctx.nowMs, initial, ctx.nationDefaults),
           slug,
           realmId: ctx.realmId,
           externalSourceKey: planned.key,
@@ -201,6 +207,7 @@ async function refillNations(
 async function updateNations(
   db: PrismaClient,
   plan: SyncPlan,
+  nowMs: number,
   result: AppliedResult
 ): Promise<boolean> {
   let continentChanged = false;
@@ -227,7 +234,7 @@ async function updateNations(
         if (change.field === "officialName") identity.officialName = String(change.to);
       }
       const data: Prisma.CountryUpdateInput = {
-        ...statsUpdateData(country, changes),
+        ...statsUpdateData(country, changes, nowMs),
         ...(update.bindKey && { externalSourceKey: update.key }),
       };
       await db.$transaction(async (tx) => {
@@ -428,7 +435,7 @@ export async function applySyncPlan(
   const readInfobox = pacedInfoboxReader(ctx, deps);
   const created = await createNations(db, ctx, plan.creates, readInfobox, result);
   await refillNations(db, ctx, plan.refills, readInfobox, result);
-  if (await updateNations(db, plan, result)) {
+  if (await updateNations(db, plan, ctx.nowMs, result)) {
     // Features bump the map themselves, but only after their own writes (and not at all when there are none)
     await invalidateRealmMap(db, ctx.realmId).catch((error) =>
       result.errors.push(`Map version: ${message(error)}`)

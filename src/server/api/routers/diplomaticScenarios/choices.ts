@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { CulturalScenario } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
-import { IxTime } from "~/lib/ixtime";
+import { clockForCountry } from "~/server/shared/realm-time";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { applyRelationshipImpact } from "~/lib/diplomacy/relationship-impact";
 
@@ -131,7 +131,8 @@ export const diplomaticScenariosChoicesRouter = createTRPCRouter({
               status: "completed",
               startDate: scenario.createdAt,
               endDate: new Date(),
-              ixTimeContext: IxTime.getCurrentIxTime(),
+              // realm-time: the choosing nation's clock; nations of two realms are T5's to keep apart.
+              ixTimeContext: (await clockForCountry(ctx.db, hostCountry.id)).now(),
               culturalImpact: selectedChoice.effects?.culturalImpact || 0,
               scenarioId: input.scenarioId,
               scenarioType: scenario.type,

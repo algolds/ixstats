@@ -238,8 +238,16 @@ async function deactivateLegacyComponentEffects(db: PrismaClient, countryId: str
   });
 }
 
-/** Moves the keyed component/broker GDP levels to `targets` in place (delta rows only on change). */
-async function syncComponentEffects(db: PrismaClient, countryId: string, targets: LevelTarget[]) {
+/**
+ * Moves the keyed component/broker GDP levels to `targets` in place (delta rows only on change), from `now` (the
+ * nation's clock time; read from its realm when omitted).
+ */
+async function syncComponentEffects(
+  db: PrismaClient,
+  countryId: string,
+  targets: LevelTarget[],
+  now?: number
+) {
   await deactivateLegacyComponentEffects(db, countryId);
   return syncLevelEffects(
     db,
@@ -247,7 +255,8 @@ async function syncComponentEffects(db: PrismaClient, countryId: string, targets
       countryId,
       OR: [{ createdBy: { startsWith: COMPONENT_KEY } }, { createdBy: { startsWith: BROKER_KEY } }],
     },
-    targets
+    targets,
+    now
   );
 }
 
@@ -284,6 +293,8 @@ export async function applyGovernmentComponentEffects(
   preloaded?: {
     activeComponents?: Array<{ componentType: ComponentType; effectivenessScore: number }>;
     allocations?: Array<{ allocatedPercent: number; department: { category: string } }>;
+    /** The nation's clock time the effects start at; read from its realm when omitted. */
+    now?: number;
   }
 ): Promise<{
   effectsCreated: number;
@@ -331,7 +342,8 @@ export async function applyGovernmentComponentEffects(
   const effectsCreated = await syncComponentEffects(
     db,
     countryId,
-    componentLevelTargets(countryId, categoryCounts, effectivenessMultiplier, satisfiedSet)
+    componentLevelTargets(countryId, categoryCounts, effectivenessMultiplier, satisfiedSet),
+    preloaded?.now
   );
   const politicalMetricsUpdated = await applyPoliticalMetrics(
     db,

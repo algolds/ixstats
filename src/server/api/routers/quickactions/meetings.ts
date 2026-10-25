@@ -7,7 +7,8 @@
 
 import { z } from "zod";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
-import { IxTime } from "~/lib/ixtime";
+import { clockTimeAt } from "~/lib/realms/realm-time-convert";
+import { clockForCountry } from "~/server/shared/realm-time";
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
@@ -44,7 +45,7 @@ const meetingInputSchema = z.object({
 
 export const quickActionsMeetingsRouter = createTRPCRouter({
   /**
-   * Create a new cabinet meeting with IxTime sync
+   * Create a new cabinet meeting, timed on the nation's realm clock
    */
   createMeeting: rateLimitedMutationProcedure
     .input(
@@ -58,9 +59,13 @@ export const quickActionsMeetingsRouter = createTRPCRouter({
       await assertCountryWriteAccess(ctx, input.countryId);
       const userId = ctx.auth.userId;
 
+      // A real date picked in the form reads on the nation's realm clock.
       const scheduledIxTime =
         input.meeting.scheduledIxTime ??
-        IxTime.convertToIxTime(input.meeting.scheduledDate.getTime());
+        clockTimeAt(
+          await clockForCountry(ctx.db, input.countryId),
+          input.meeting.scheduledDate.getTime()
+        );
 
       // Create the meeting
       const meeting = await ctx.db.cabinetMeeting.create({

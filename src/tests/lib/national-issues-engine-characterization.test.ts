@@ -431,7 +431,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "39cfd2fbfac298b81bc45e4fd25edef77cfbcd20dcf54c3a90d9d414bdb240b4",
+    digest: "74eafa6df862a1487f0fd4c828eaa42a24c57d29a532431eab5a65a3fd92148d",
   },
   evaluateNeighborFallbackForcedDomain: {
     summary: {
@@ -472,7 +472,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "ffad2aa5deb5de9ffb3815ed78113f6853b7d766c632589d69934c2566651972",
+    digest: "e5afd8151fe54b19f6e714d7042eaff04f1ac0ea276aebb3ea526715da3d318e",
   },
   evaluatePendingCap: {
     summary: {
@@ -500,7 +500,7 @@ const EXPECTED: Record<
         "nationalIssue.count",
       ],
     },
-    digest: "80c00e4e51a6caf42229f94e71389f7351feaa51dd6d058f0dc322b8807b3a6a",
+    digest: "e1ed18e37fd98df4b1bdca46ddd119c992cb95ab805803d97c193cc0c5b96362",
   },
   evaluateWeeklyCapReached: {
     summary: {
@@ -537,7 +537,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "7f54e1ae1e31a9eac405c145838f4557a26d5caf8eab5c99e8a21e6bda61459f",
+    digest: "264eb4ed685fd83f67621794a18576ae93989f5946c899d807f5780077e3d3b6",
   },
   evaluateTargetLookupThrows: {
     summary: {
@@ -575,7 +575,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "f33b1a1c3721348599ba063b27687f2050952c165815dda12b47d3f908a291a5",
+    digest: "9d6c8bba07883789a648872e8f3fdae5924c05eb2b8a33685bfbd7fee05a91fa",
   },
   forceGenerateFollowUp: {
     summary: {
@@ -595,7 +595,7 @@ const EXPECTED: Record<
         "nationalIssue.create",
       ],
     },
-    digest: "e6774ed717bd77829929e1bed739215a6ff8e806ab99c84fbcbd95ac8f96262e",
+    digest: "3f8fdb12f5632b76e8027dd79cc779afb16c5500d11c01b8957536b24f18df27",
   },
   forceGenerateInvalidOptions: {
     summary: {
@@ -614,7 +614,7 @@ const EXPECTED: Record<
         "intent.findMany",
       ],
     },
-    digest: "095b25793896b0d857cba20398a353164fb054623b361eba98cd1cbc40774b78",
+    digest: "9244c8c52fc6215215e1cde6a86a26acc62f616a642b9280a3892630d8ebcdf6",
   },
 };
 
@@ -797,12 +797,12 @@ describe("limits and configuration", () => {
         { nationalIssue: { count: () => weekly }, issueGenerationLog: { findFirst: () => null } },
         []
       );
-    await expect(NationalIssuesEngine.shouldEvaluate("c-astria", dbWith(4) as never)).resolves.toBe(
-      true
-    );
-    await expect(NationalIssuesEngine.shouldEvaluate("c-astria", dbWith(5) as never)).resolves.toBe(
-      false
-    );
+    await expect(
+      NationalIssuesEngine.shouldEvaluate("c-astria", dbWith(4) as never, FIXED_IX_TIME)
+    ).resolves.toBe(true);
+    await expect(
+      NationalIssuesEngine.shouldEvaluate("c-astria", dbWith(5) as never, FIXED_IX_TIME)
+    ).resolves.toBe(false);
   });
 
   it("keeps spawnMode when a partial config is saved", () => {

@@ -21,8 +21,8 @@ import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 
 export type { RealmClockReader } from "~/lib/realms/realm-clock";
 
-type RealmTimeDb = Pick<PrismaClient, "realm" | "systemConfig">;
-type CountryTimeDb = RealmTimeDb & Pick<PrismaClient, "country">;
+export type RealmTimeDb = Pick<PrismaClient, "realm" | "systemConfig">;
+export type CountryTimeDb = RealmTimeDb & Pick<PrismaClient, "country">;
 
 /** How long a process trusts its copy of a realm's stored clock. */
 export const REALM_CLOCK_TTL_MS = CLOCK_REFRESH_TTL_MS;
@@ -114,6 +114,19 @@ export async function realmClocks(db: RealmTimeDb): Promise<Map<string, RealmClo
   return clocks;
 }
 
+/**
+ * The clocks of the realms a request spans (each read once; Ixnay's with no query), for `pickClock`. Cheaper than
+ * `realmClocks` when a page lists nations of one or a few realms.
+ */
+export async function clocksForRealms(
+  db: RealmTimeDb,
+  realmIds: Iterable<string | null | undefined>
+): Promise<Map<string, RealmClockReader>> {
+  const ids = [...new Set([...realmIds].map((id) => id ?? DEFAULT_REALM_ID))];
+  const readers = await Promise.all(ids.map((id) => clockForRealm(db, id)));
+  return new Map(ids.map((id, i) => [id, readers[i]!]));
+}
+
 /** A realm's reader from `realmClocks`' map; a realm it lacks (null: Ixnay) reads Ixnay's clock, logged. */
 export function pickClock(
   clocks: ReadonlyMap<string, RealmClockReader>,
@@ -121,6 +134,25 @@ export function pickClock(
 ): RealmClockReader {
   const id = realmId ?? DEFAULT_REALM_ID;
   return clocks.get(id) ?? (id === DEFAULT_REALM_ID ? ixnayClock() : missingClock(id));
+}
+
+/**
+ * Each realm's time now, read from its clock the first time it is asked and then kept: a cron or a batch takes every
+ * realm's "now" once per run. A realm `clocks` lacks (null: Ixnay) reads as `pickClock` does.
+ */
+export function realmNowsOnce(
+  clocks: ReadonlyMap<string, RealmClockReader>
+): (realmId: string | null | undefined) => number {
+  const nows = new Map<string, number>();
+  return (realmId) => {
+    const id = realmId ?? DEFAULT_REALM_ID;
+    let now = nows.get(id);
+    if (now === undefined) {
+      now = pickClock(clocks, id).now();
+      nows.set(id, now);
+    }
+    return now;
+  };
 }
 
 /** Forget a realm's cached clock (after this process writes it). */

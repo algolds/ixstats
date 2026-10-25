@@ -1,24 +1,34 @@
 /**
  * The budget in effect for a country, and starting a new budget year (MC-1).
  *
- * Budget years follow the IxTime game year, which rolls over about every six real months. A
+ * Budget years follow the game year of the nation's realm clock (Ixnay's rolls over about every six
+ * real months; a faster realm's sooner, a paused realm's never, a date jump's at once). A
  * country's latest budget stays in effect until it sets one for the new year, so readers load
  * the latest year at or before the current one instead of matching the current year exactly.
  * The `budget-year-rollover` cron job reminds owners when the year has rolled over, and
  * `government.startBudgetYear` copies the budget in effect into the new year.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
+import { clockForCountry, type CountryTimeDb } from "~/server/shared/realm-time";
 import { currentBudgetYear } from "./budget-year";
 import { allocationAmount } from "./budget-math";
 
 type BudgetDb =
   Pick<PrismaClient, "budgetAllocation" | "governmentStructure"> | Prisma.TransactionClient;
 
+/** The nation's current budget year, on its realm's clock. */
+export async function countryBudgetYear(
+  db: CountryTimeDb | Prisma.TransactionClient,
+  countryId: string
+): Promise<number> {
+  return currentBudgetYear((await clockForCountry(db, countryId)).now());
+}
+
 /** Latest budget year at or before `currentYear` for the country, or null. */
 export async function findEffectiveBudgetYear(
   db: BudgetDb,
   countryId: string,
-  currentYear: number = currentBudgetYear()
+  currentYear: number
 ): Promise<number | null> {
   const latest = await db.budgetAllocation.findFirst({
     where: { governmentStructure: { countryId }, budgetYear: { lte: currentYear } },
@@ -28,13 +38,16 @@ export async function findEffectiveBudgetYear(
   return latest?.budgetYear ?? null;
 }
 
-/** Allocations (with department category) of the budget in effect for the country. */
+/**
+ * Allocations (with department category) of the budget in effect for the country. `currentYear` defaults to the
+ * nation's budget year on its realm's clock.
+ */
 export async function loadEffectiveBudget(
-  db: BudgetDb,
+  db: BudgetDb & (CountryTimeDb | Prisma.TransactionClient),
   countryId: string,
   opts: { take?: number; currentYear?: number } = {}
 ) {
-  const currentYear = opts.currentYear ?? currentBudgetYear();
+  const currentYear = opts.currentYear ?? (await countryBudgetYear(db, countryId));
   const budgetYear = await findEffectiveBudgetYear(db, countryId, currentYear);
   const allocations =
     budgetYear === null
@@ -60,7 +73,7 @@ export async function loadEffectiveBudget(
 export async function rollBudgetForward(
   db: BudgetDb,
   countryId: string,
-  toYear: number = currentBudgetYear()
+  toYear: number
 ): Promise<{ fromYear: number | null; toYear: number; created: number }> {
   const fromYear = await findEffectiveBudgetYear(db, countryId, toYear - 1);
   if (fromYear === null) return { fromYear: null, toYear, created: 0 };
@@ -106,7 +119,7 @@ export async function scaleBudgetWithGdp(
   db: BudgetDb,
   countryId: string,
   ratio: number,
-  currentYear: number = currentBudgetYear()
+  currentYear: number
 ): Promise<void> {
   if (!Number.isFinite(ratio) || ratio <= 0 || ratio === 1) return;
   const { count } = await db.governmentStructure.updateMany({

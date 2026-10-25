@@ -1,9 +1,11 @@
 /**
  * The one way to write a StorytellerEffect (`DmInputs`) row.
  *
- * - Every row is stamped with IxTime. `getActiveEffects` compares an effect's window with the
- *   country's IxTime baseline, so a wall-clock `new Date()` (2026) is years before every baseline
- *   (2040+) and the effect was silently dropped. A start before the IxTime epoch is refused.
+ * - Every row is stamped with its country's realm clock (realm time design §2): the time the caller
+ *   passes (`ixTime`, its nation's now), else the country's clock read here. `getActiveEffects`
+ *   compares an effect's window with the country's baseline on that clock, so a wall-clock
+ *   `new Date()` (2026) is years before every baseline (2040+) and the effect was silently dropped.
+ *   A start before the IxTime epoch is refused.
  * - Only types an engine reads may be written (`WRITABLE_EFFECT_TYPES`). Growth-type effects
  *   (`gdp_adjustment`, `growth_rate_modifier`, `population_adjustment`) changed the single growth
  *   rate compounded since the baseline, so they rewrote the whole projected history and never
@@ -14,9 +16,14 @@
  */
 import type { Prisma } from "@prisma/client";
 import { IxTime } from "~/lib/ixtime";
+import { clocksForRealms, realmNowsOnce } from "~/server/shared/realm-time";
 import { StorytellerEffectType } from "./calculations";
 
-type EffectDb = Pick<Prisma.TransactionClient, "storytellerEffect">;
+/** Reads and writes effects, and reads a country's realm clock to stamp a draft that has no time. */
+type EffectDb = Pick<
+  Prisma.TransactionClient,
+  "storytellerEffect" | "country" | "realm" | "systemConfig"
+>;
 
 /** Level types: the share in force phases in over `duration` IxTime years, then the full level is kept. */
 export const LEVEL_EFFECT_TYPES: ReadonlySet<string> = new Set<string>([
@@ -46,15 +53,17 @@ export interface StorytellerEffectDraft {
   duration?: number | null;
   createdBy?: string | null;
   worldEventId?: string | null;
-  /** IxTime (ms) the effect starts; defaults to IxTime now. */
+  /** When the effect starts (ms on its country's realm clock); the country's now when omitted. */
   ixTime?: number;
 }
 
+export type StampedEffectDraft = StorytellerEffectDraft & { ixTime: number };
+
 /** The row data for a new effect. Throws on a pre-epoch (wall-clock) start or an unread type. */
 export function storytellerEffectData(
-  draft: StorytellerEffectDraft
+  draft: StampedEffectDraft
 ): Prisma.StorytellerEffectCreateManyInput {
-  const ixTime = draft.ixTime ?? IxTime.getCurrentIxTime();
+  const ixTime = draft.ixTime;
   if (!Number.isFinite(ixTime) || ixTime < IxTime.getInGameEpoch()) {
     throw new Error(
       `StorytellerEffect start ${ixTime} is before the IxTime epoch: pass an IxTime, not a wall-clock date`
@@ -80,8 +89,30 @@ export function storytellerEffectData(
   };
 }
 
+/**
+ * The drafts with their start: the time each passes, else its country's realm clock now (each realm's clock read
+ * once per call).
+ */
+export async function stampEffectDrafts(
+  db: Pick<EffectDb, "country" | "realm" | "systemConfig">,
+  drafts: readonly StorytellerEffectDraft[]
+): Promise<StampedEffectDraft[]> {
+  const unstamped = [
+    ...new Set(drafts.filter((d) => d.ixTime === undefined).map((d) => d.countryId)),
+  ];
+  if (unstamped.length === 0) return drafts as StampedEffectDraft[];
+  const countries = await db.country.findMany({
+    where: { id: { in: unstamped } },
+    select: { id: true, realmId: true },
+  });
+  const realmOf = new Map(countries.map((c) => [c.id, c.realmId]));
+  const nowOf = realmNowsOnce(await clocksForRealms(db, realmOf.values()));
+  return drafts.map((d) => ({ ...d, ixTime: d.ixTime ?? nowOf(realmOf.get(d.countryId)) }));
+}
+
 export async function createStorytellerEffect(db: EffectDb, draft: StorytellerEffectDraft) {
-  return db.storytellerEffect.create({ data: storytellerEffectData(draft) });
+  const [stamped] = await stampEffectDrafts(db, [draft]);
+  return db.storytellerEffect.create({ data: storytellerEffectData(stamped!) });
 }
 
 export async function createStorytellerEffects(
@@ -89,8 +120,9 @@ export async function createStorytellerEffects(
   drafts: StorytellerEffectDraft[]
 ): Promise<number> {
   if (drafts.length === 0) return 0;
+  const stamped = await stampEffectDrafts(db, drafts);
   const result = await db.storytellerEffect.createMany({
-    data: drafts.map((d) => storytellerEffectData(d)),
+    data: stamped.map((d) => storytellerEffectData(d)),
   });
   return result.count;
 }
@@ -203,14 +235,14 @@ async function loadLevelRows(
 
 /**
  * Moves every keyed level effect matching `where` to its target by appending delta rows that
- * start now (IxTime). Unchanged levels write nothing, so running it again is a no-op; a matching
- * key without a target is ended. Returns the number of rows written.
+ * start at `ixTime` (the countries' realm clock now when omitted). Unchanged levels write nothing, so running it again
+ * is a no-op; a matching key without a target is ended. Returns the number of rows written.
  */
 export async function syncLevelEffects(
   db: EffectDb,
   where: Prisma.StorytellerEffectWhereInput,
   targets: readonly LevelTarget[],
-  ixTime: number = IxTime.getCurrentIxTime()
+  ixTime?: number
 ): Promise<number> {
   const drafts = planLevelSync(await loadLevelRows(db, where), targets);
   return createStorytellerEffects(
@@ -221,13 +253,13 @@ export async function syncLevelEffects(
 
 /**
  * Ends the effects matching `where` without rewriting the projected past: level effects get the
- * row that unwinds them from now on (phased over their own duration); any other type is
- * deactivated. Idempotent.
+ * row that unwinds them from `ixTime` on (each country's realm clock now when omitted), phased over their own
+ * duration; any other type is deactivated. Idempotent.
  */
 export async function endStorytellerEffects(
   db: EffectDb,
   where: Prisma.StorytellerEffectWhereInput,
-  ixTime: number = IxTime.getCurrentIxTime()
+  ixTime?: number
 ): Promise<number> {
   const written = await syncLevelEffects(db, where, [], ixTime);
   const levelTypes = [...LEVEL_EFFECT_TYPES];

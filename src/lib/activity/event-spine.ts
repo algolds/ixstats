@@ -1,4 +1,4 @@
-import { IxTime } from "~/lib/ixtime";
+import { clockForCountry } from "~/server/shared/realm-time";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import type { NewsEventType } from "~/lib/diplomacy/news-generator";
 import { ActivityHooks } from "./hooks";
@@ -140,6 +140,8 @@ interface AppliedConsequence {
 interface RecordEventParams {
   db: PrismaClient;
   countryId: string;
+  /** The nation's clock time the event is stamped with (read from its realm when omitted). */
+  now?: number;
   sourceType: "issue" | "policy" | "decision" | "diplomacy" | "election" | "meeting" | "other";
   sourceId?: string;
   description: string;
@@ -171,7 +173,7 @@ export class CountryEventSpine {
       activityHookArgs = [],
     } = params;
 
-    const currentIxTime = IxTime.getCurrentIxTime();
+    const currentIxTime = params.now ?? (await clockForCountry(db, countryId)).now();
     const appliedConsequences: AppliedConsequence[] = [];
 
     // Most countries have no stability row until an event first touches it; create it from the

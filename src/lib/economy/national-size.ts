@@ -2,14 +2,15 @@
  * Setting a nation's size (population and GDP per capita) from outside the stat progression: the
  * country editor's size save, the map's "Rebase stats from map" and the bottom-up rollup.
  *
- * The figures become the new baseline, dated now, so the live projection and the stat
+ * The figures become the new baseline, dated now on the nation's realm clock, so the live projection and the stat
  * progression carry them forward instead of reverting them. The yearly budget follows the GDP
  * step (`gdpScaleRatio` against the stored total GDP), as it does for every projection step.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { IxTime } from "~/lib/ixtime";
 import { scaleBudgetWithGdp } from "~/lib/government/budget-allocations";
 import { gdpScaleRatio } from "~/lib/government/budget-math";
+import { currentBudgetYear } from "~/lib/government/budget-year";
+import { clockForCountry } from "~/server/shared/realm-time";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 
 /** The stored figures a size change starts from. */
@@ -28,14 +29,15 @@ export const SIZE_BEFORE_SELECT = {
   landArea: true,
 } as const;
 
-/** The Country columns a new population and GDP per capita set. */
+/** The Country columns a new population and GDP per capita set, as of `nowMs` on the nation's clock. */
 export function sizeColumns(
   population: number,
   gdpPerCapita: number,
-  before: Omit<SizeBefore, "currentTotalGdp">
+  before: Omit<SizeBefore, "currentTotalGdp">,
+  nowMs: number
 ): Prisma.CountryUpdateInput {
   const totalGdp = population * gdpPerCapita;
-  const ixNow = new Date(IxTime.getCurrentIxTime());
+  const ixNow = new Date(nowMs);
   // The workforce keeps its share of the population; a nation without one gets the usual 65%.
   const workforceShare =
     before.totalWorkforce && before.currentPopulation > 0
@@ -59,7 +61,10 @@ export function sizeColumns(
 }
 
 type SizeDb =
-  | Pick<PrismaClient, "country" | "budgetAllocation" | "governmentStructure">
+  | Pick<
+      PrismaClient,
+      "country" | "budgetAllocation" | "governmentStructure" | "realm" | "systemConfig"
+    >
   | Prisma.TransactionClient;
 
 /**
@@ -74,14 +79,16 @@ export async function rebaseNationalSize(
   before: SizeBefore
 ) {
   const { population, gdpPerCapita } = size;
+  const now = (await clockForCountry(db, countryId)).now();
   const country = await db.country.update({
     where: { id: countryId },
-    data: sizeColumns(population, gdpPerCapita, before),
+    data: sizeColumns(population, gdpPerCapita, before, now),
   });
   await scaleBudgetWithGdp(
     db,
     countryId,
-    gdpScaleRatio(before.currentTotalGdp, population * gdpPerCapita)
+    gdpScaleRatio(before.currentTotalGdp, population * gdpPerCapita),
+    currentBudgetYear(now)
   );
   return country;
 }

@@ -271,6 +271,8 @@ describe("directive resistance guards", () => {
         countryId: "country-1",
         intent,
         tokens: ["economic"],
+        // The nation's clock time (the intent commit passes its own)
+        now: Date.UTC(2042, 0, 1),
       })
     ).resolves.toBeNull();
     expect(forceGenerate).not.toHaveBeenCalled();

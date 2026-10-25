@@ -17,6 +17,7 @@ import type {
 import {
   directiveMetrics,
   fiscalStewardFlag,
+  fiscalWindowYears,
   issueMetrics,
   type DirectiveRow,
   type IssueRow,
@@ -50,6 +51,7 @@ import {
   weekKey,
 } from "~/lib/achievements/time-buckets";
 import { IxTime } from "~/lib/ixtime";
+import { ixnayClockReader, realmClockReader } from "~/lib/realms/realm-clock";
 
 const DAY = 86_400_000;
 const WEEK = 7 * DAY;
@@ -128,6 +130,17 @@ const thirtyIn5RealWeeks = Array.from({ length: 30 }, (_, i) =>
   directive(0, { id: `r${i}`, createdAt: new Date(START + i * DAY) })
 );
 const FISCAL_YEARS = new Set([2040, 2041, 2042, 2043]);
+/** Ixnay's clock (IxTime), and realms whose clocks read mid-2043 at NOW: one at 6×, one paused. */
+const IXNAY = ixnayClockReader("default", { now: () => IxTime.getCurrentIxTime(), multiplier: 2 });
+const realmAt = (multiplier: number) =>
+  realmClockReader("realm", {
+    anchorRealMs: NOW.getTime(),
+    anchorClockMs: Date.UTC(2043, 6, 1),
+    multiplier,
+    changedAt: NOW.getTime(),
+    calendarOffsetMs: 0,
+    era: "",
+  });
 const ownedFor = (months: number) => new Date(NOW.getTime() - months * MONTH_MS);
 
 const EXECUTIVE: Row[] = [
@@ -228,13 +241,23 @@ const EXECUTIVE: Row[] = [
   ],
   [
     "fiscal steward: every year budgeted and 18 months owned",
-    () => fiscalStewardFlag(NOW, FISCAL_YEARS, ownedFor(18)),
+    () => fiscalStewardFlag(NOW, FISCAL_YEARS, ownedFor(18), IXNAY),
     1,
   ],
   [
     "fiscal steward: a millisecond short of 18 months",
-    () => fiscalStewardFlag(NOW, FISCAL_YEARS, new Date(ownedFor(18).getTime() + 1)),
+    () => fiscalStewardFlag(NOW, FISCAL_YEARS, new Date(ownedFor(18).getTime() + 1), IXNAY),
     0,
+  ],
+  [
+    "fiscal steward on a 6× realm: its 18 real months pass ten of its budget years",
+    () => fiscalWindowYears(NOW, realmAt(6)).length,
+    10,
+  ],
+  [
+    "fiscal steward on a paused realm: its 18 real months stay in one budget year",
+    () => fiscalStewardFlag(NOW, new Set([2043]), ownedFor(18), realmAt(0)),
+    1,
   ],
 ];
 
@@ -263,19 +286,24 @@ const POLITICS: Row[] = [
   [
     "failed votes, bills never voted on and unreadable notes pass no law",
     () =>
-      lawMetrics([
-        bill(false, null),
-        bill(undefined, null),
-        { effectiveDate: null, reviewNotes: "not json" },
-        { effectiveDate: null, reviewNotes: null },
-      ]).lawsPassed,
+      lawMetrics(
+        [
+          bill(false, null),
+          bill(undefined, null),
+          { effectiveDate: null, reviewNotes: "not json" },
+          { effectiveDate: null, reviewNotes: null },
+        ],
+        IXNAY
+      ).lawsPassed,
     0,
   ],
   [
-    "a bill without its effective date falls back to the vote's IxTime, mapped to real time",
+    "a bill without its effective date falls back to the vote's realm-clock stamp, mapped to real time",
     () =>
-      lawMetrics([bill(true, null, { votedIxTime: IxTime.convertToIxTime(month(3).getTime()) })])
-        .lawMonths,
+      lawMetrics(
+        [bill(true, null, { votedIxTime: IxTime.convertToIxTime(month(3).getTime()) })],
+        IXNAY
+      ).lawMonths,
     1,
   ],
   [
@@ -284,7 +312,8 @@ const POLITICS: Row[] = [
       lawMetrics(
         Array.from({ length: 13 }, (_, i) =>
           bill(true, new Date(Date.UTC(2026, 0, 15, 12) + i * WEEK))
-        )
+        ),
+        IXNAY
       ).lawMonths,
     4,
   ],

@@ -11,6 +11,7 @@ import { TRPCError } from "@trpc/server";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { computeForeignPolicyImpact } from "~/lib/statecraft/foreign-policy";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { clocksForRealms, pickClock } from "~/server/shared/realm-time";
 import {
   COOPERATIVE_FP_TYPES,
   PROPOSAL_STATUS,
@@ -382,18 +383,23 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
           ...statusFilter,
         },
         include: {
-          initiator: { select: { id: true, name: true, flag: true } },
+          initiator: { select: { id: true, name: true, flag: true, realmId: true } },
           target: { select: { id: true, name: true, flag: true } },
         },
         orderBy: { createdAt: "desc" },
       });
 
-      // A hostile action in force ends with its effect window (or when its initiator lifts it).
+      // A hostile action in force ends with its effect window on its initiator's realm clock (or when its
+      // initiator lifts it).
+      const clocks = await clocksForRealms(
+        ctx.db,
+        actions.map((a) => a.initiator?.realmId)
+      );
       return actions.map((a) => ({
         ...a,
         expiresAt:
           a.status === "active" && !COOPERATIVE_FP.has(a.actionType)
-            ? hostileActionExpiresAt(a.createdAt)
+            ? hostileActionExpiresAt(a.createdAt, pickClock(clocks, a.initiator?.realmId))
             : null,
       }));
     }),

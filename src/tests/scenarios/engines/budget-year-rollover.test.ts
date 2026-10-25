@@ -208,7 +208,12 @@ it("carries the budget across the IxTime year, reminds once, rolls it forward an
 
   // The cron reminds each owned nation behind once; a failed reminder does not stop the others; NPCs get none
   const reminded = await runBudgetYearRollover(db as never);
-  expect(reminded).toMatchObject({ budgetYear: 2043, countriesBehind: 2, notified: 1, failed: 1 });
+  expect(reminded).toMatchObject({
+    budgetYears: { default: 2043 },
+    countriesBehind: 2,
+    notified: 1,
+    failed: 1,
+  });
   const again = await runBudgetYearRollover(db as never);
   expect(again).toMatchObject({ countriesBehind: 2, notified: 1, alreadyNotified: 1, failed: 0 });
   expect(await runBudgetYearRollover(db as never)).toMatchObject({

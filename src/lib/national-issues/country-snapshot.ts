@@ -4,7 +4,7 @@
  */
 
 import type { ComponentType, PrismaClient } from "@prisma/client";
-import { IxTime } from "~/lib/ixtime";
+import { clockForCountry } from "~/server/shared/realm-time";
 import {
   calculateCivilServiceCapacity,
   calculateTotalConsumedStaff,
@@ -23,6 +23,7 @@ function fetchCountryCore(countryId: string, db: PrismaClient) {
     where: { id: countryId },
     select: {
       id: true,
+      realmId: true,
       name: true,
       leader: true,
       governmentType: true,
@@ -295,12 +296,13 @@ function groundedFields(grounded: GroundedSnapshot | null | undefined) {
 }
 
 /**
- * Build a flattened snapshot of all relevant country data.
+ * Build a flattened snapshot of all relevant country data, at `nowMs` (its realm clock's now when omitted).
  * Single optimized query - all template evaluations share this.
  */
 export async function buildCountrySnapshot(
   countryId: string,
-  db: PrismaClient
+  db: PrismaClient,
+  nowMs?: number
 ): Promise<CountrySnapshot | null> {
   const country = await fetchCountryCore(countryId, db);
   if (!country) return null;
@@ -319,7 +321,7 @@ export async function buildCountrySnapshot(
     neighbors,
   ] = await fetchSnapshotRelations(countryId, db);
 
-  const currentIxTime = IxTime.getCurrentIxTime();
+  const currentIxTime = nowMs ?? (await clockForCountry(db, country)).now();
   const ixDate = new Date(currentIxTime);
   const components = classifyComponents(govComps, econComps, taxComps, ixDate);
   const civilServiceCapacity = calculateCivilServiceCapacity(

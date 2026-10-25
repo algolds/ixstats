@@ -3,7 +3,8 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { AppError } from "~/lib/app-error";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
-import { IxTime } from "~/lib/ixtime";
+import { clockTimeAt } from "~/lib/realms/realm-time-convert";
+import { clocksForRealms, pickClock } from "~/server/shared/realm-time";
 import { createStorytellerEffects, endStorytellerEffects } from "~/lib/economy/storyteller-effects";
 import { worldEventEffectDrafts, worldEventImpact } from "~/lib/economy/world-event-effects";
 
@@ -432,14 +433,20 @@ export const adminWorldEventsRouter = createTRPCRouter({
         },
         include: {
           affectedCountries: {
-            include: { country: { select: { id: true, name: true } } },
+            include: { country: { select: { id: true, name: true, realmId: true } } },
           },
         },
       });
 
       // Generate StorytellerEffects for each affected country
-      // (startsAt is a real date; effects run on IxTime.)
+      // (startsAt is a real date; each country's effects start then on its realm's clock.)
       if (input.generateEffects && input.affectedCountryIds.length > 0) {
+        const realmOf = new Map(
+          event.affectedCountries.map(({ country }) => [country.id, country.realmId])
+        );
+        const clocks = await clocksForRealms(ctx.db, realmOf.values());
+        const startOf = (countryId: string) =>
+          clockTimeAt(pickClock(clocks, realmOf.get(countryId)), input.startsAt.getTime());
         await createStorytellerEffects(
           ctx.db,
           input.affectedCountryIds.flatMap((countryId) =>
@@ -449,7 +456,7 @@ export const adminWorldEventsRouter = createTRPCRouter({
               severity: input.severity,
               label: `[WorldEvent: ${input.name}] ${input.description ?? ""}`.trim(),
               duration: input.duration ? Math.round(input.duration) : null,
-              startIxTime: IxTime.convertToIxTime(input.startsAt.getTime()),
+              startIxTime: startOf(countryId),
               worldEventId: event.id,
               createdBy: userId,
             })

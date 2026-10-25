@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { IxTime } from "~/lib/ixtime";
+import { clockForCountry } from "~/server/shared/realm-time";
 import type { PrismaClient } from "@prisma/client";
 import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
 import { NPCPersonalitySystem } from "~/lib/diplomacy/npc-personality";
@@ -162,7 +162,8 @@ export const diplomaticCulturalNpcGenerationRouter = createTRPCRouter({
           diplomaticRisk: template.diplomaticRisk,
           economicCost: template.economicCost,
         },
-        ixTimeTimestamp: IxTime.getCurrentIxTime(),
+        // realm-time: the acting nation's clock; nations of two realms are T5's to keep apart.
+        ixTimeTimestamp: (await clockForCountry(ctx.db, userCountry.id)).now(),
       });
 
       return {

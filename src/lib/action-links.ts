@@ -3,7 +3,7 @@
  * embeds one of its country's ActivityFeed entries as `[ixaction=<id>]`. Pure helpers only; the
  * ownership check and persistence live in `~/server/modules/action-links`.
  */
-import { IxTime } from "~/lib/ixtime";
+import { formatRealmDate, type RealmCalendar } from "~/lib/realms/realm-clock";
 
 export const MAX_ACTIONS_PER_POST = 10;
 
@@ -253,18 +253,23 @@ function plain(text: string): string {
   return out.replace(/\s+/g, " ").trim();
 }
 
-/** The section appended to the chain's wiki page on approval. */
+/**
+ * The section appended to the chain's wiki page on approval. Its dates are on the nation's realm clock (`ixTime`,
+ * `approvedIxTime`) and read in its realm's calendar.
+ */
 export function chainWikiSection(input: {
   title: string;
   approvedIxTime: number;
   entries: ChainWikiEntry[];
+  calendar: RealmCalendar;
 }): string {
+  const date = (ms: number) => formatRealmDate(ms, input.calendar);
   const lines = input.entries.map(
-    (e) => `* ${IxTime.formatIxTime(e.ixTime)}: [${e.url} ${plain(e.title)}] (${plain(e.type)})`
+    (e) => `* ${date(e.ixTime)}: [${e.url} ${plain(e.title)}] (${plain(e.type)})`
   );
   return [
     `== Story chain: ${plain(input.title)} ==`,
-    `''Recorded ${IxTime.formatIxTime(input.approvedIxTime)}.''`,
+    `''Recorded ${date(input.approvedIxTime)}.''`,
     ...lines,
   ].join("\n");
 }

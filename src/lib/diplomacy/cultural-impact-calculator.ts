@@ -18,7 +18,6 @@ import {
   type TransitionContext,
 } from "./markov-engine";
 import type { CulturalScenarioType } from "./cultural-scenario-generator";
-import { IxTime } from "~/lib/ixtime";
 
 interface CulturalExchangeData {
   id: string;
@@ -74,7 +73,8 @@ interface CulturalExchangeHistory {
 
 export class CulturalImpactCalculator {
   /**
-   * Calculate the impact of a cultural exchange on diplomatic relationship
+   * Calculate the impact of a cultural exchange on diplomatic relationship, at `ixTimeNow` (the host nation's realm
+   * clock time).
    */
   static calculateRelationshipImpact(
     exchange: CulturalExchangeData,
@@ -85,7 +85,8 @@ export class CulturalImpactCalculator {
       tradeVolume: number;
       existingCulturalTies: number; // 0-100
     },
-    history: CulturalExchangeHistory
+    history: CulturalExchangeHistory,
+    ixTimeNow: number
   ): RelationshipImpactResult {
     const reasoning: string[] = [];
 
@@ -131,7 +132,7 @@ export class CulturalImpactCalculator {
           targetCountryId: exchange.participantCountryIds[0] || "",
           details: { culturalImpact: outcome.culturalImpactChange },
           timestamp: new Date().toISOString(),
-          ixTimeTimestamp: IxTime.getCurrentIxTime(),
+          ixTimeTimestamp: ixTimeNow,
         },
       ],
       actionHistory: {

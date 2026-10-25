@@ -23,6 +23,8 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createDiplomacyFakeDb } from "~/tests/helpers/diplomacy-fake-db";
 import { IxTime } from "~/lib/ixtime";
+import { realmClockReader } from "~/lib/realms/realm-clock";
+import { ixnayClock } from "~/server/shared/realm-time";
 import {
   FP_EFFECT_YEARS,
   expireHostileForeignPolicyActions,
@@ -216,17 +218,45 @@ describe("expiry with the effect window", () => {
       targetId: "B",
       actionType: "sanction",
     });
-    const expiresAt = hostileActionExpiresAt(state.foreignPolicyActions[0]!.createdAt);
+    const expiresAt = hostileActionExpiresAt(
+      state.foreignPolicyActions[0]!.createdAt,
+      ixnayClock()
+    );
     const listed = await as(db, "uA", "A").getActiveForeignPolicies({ countryId: "A" });
     expect(listed[0]!.expiresAt).toEqual(expiresAt);
 
-    // Not yet: nothing expires
-    expect(await expireHostileForeignPolicyActions(db)).toBe(0);
+    // The initiator's realm clock read NOW when the action was enacted and runs at 2×
+    const enactedAt = state.foreignPolicyActions[0]!.createdAt.getTime();
+    const clocksAfter = (realMs: number, multiplier = 2) =>
+      new Map([
+        [
+          "default",
+          realmClockReader(
+            "default",
+            {
+              anchorRealMs: enactedAt,
+              anchorClockMs: NOW,
+              multiplier,
+              changedAt: enactedAt,
+              calendarOffsetMs: 0,
+              era: "",
+            },
+            () => enactedAt + realMs
+          ),
+        ],
+      ]);
 
-    // FP_EFFECT_YEARS IxTime years later the window has closed
-    IxTime.setTimeOverride(NOW + FP_EFFECT_YEARS * YEAR_MS + 1000);
-    state.foreignPolicyActions[0]!.createdAt = new Date(IxTime.convertFromIxTime(NOW));
-    expect(await expireHostileForeignPolicyActions(db)).toBe(1);
+    // Not yet: nothing expires; a paused realm's window never closes
+    expect(await expireHostileForeignPolicyActions(db, clocksAfter(YEAR_MS))).toBe(0);
+    expect(await expireHostileForeignPolicyActions(db, clocksAfter(10 * YEAR_MS, 0))).toBe(0);
+
+    // FP_EFFECT_YEARS years later on that clock the window has closed
+    expect(
+      await expireHostileForeignPolicyActions(
+        db,
+        clocksAfter((FP_EFFECT_YEARS * YEAR_MS) / 2 + 1000)
+      )
+    ).toBe(1);
     expect(state.foreignPolicyActions.find((a) => a.id === enacted!.id)).toMatchObject({
       status: "expired",
     });

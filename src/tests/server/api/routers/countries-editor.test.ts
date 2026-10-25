@@ -30,6 +30,8 @@ import { createTRPCRouter } from "~/server/api/trpc";
 import { editorProcedures } from "~/server/api/routers/countries/editor";
 import { managementLifecycleProcedures } from "~/server/api/routers/countries/management/lifecycle";
 import { staleMessage } from "~/lib/mycountry/editor-fields";
+import { createRealmClock, withSpeed } from "~/lib/realms/realm-clock";
+import { resetRealmClockCache } from "~/server/shared/realm-time";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import {
   CALLER_COUNTRY,
@@ -38,6 +40,20 @@ import {
 } from "~/tests/helpers/country-idor-context";
 
 type Mock = jest.Mock;
+
+const REALM_NOW = Date.UTC(2046, 2, 14, 9);
+const REAL_NOW = Date.now();
+const REALM_CLOCK = withSpeed(
+  createRealmClock({
+    globalNowMs: REALM_NOW,
+    realNowMs: REAL_NOW,
+    startDate: "1203-03-14",
+    era: "AE",
+    multiplier: 2,
+  }),
+  0,
+  REAL_NOW
+);
 type Model = Record<string, Mock>;
 
 const model = (overrides: Record<string, Mock> = {}): Model => ({
@@ -101,6 +117,7 @@ function storedRows() {
 
 /** Every table the editor could touch, so a test can assert which ones a save left alone. */
 function setup(edit: (rows: ReturnType<typeof storedRows>) => void = () => {}) {
+  resetRealmClockCache();
   const rows = storedRows();
   edit(rows);
   const db: Record<string, Model | Mock> = {
@@ -122,6 +139,9 @@ function setup(edit: (rows: ReturnType<typeof storedRows>) => void = () => {}) {
     economicComponent: model(),
     realmPage: model(),
     countrySlugRedirect: model(),
+    // Testland's realm, its clock paused at REALM_NOW
+    realm: model({ findUnique: jest.fn(async () => ({ settings: { clock: REALM_CLOCK } })) }),
+    systemConfig: model(),
     user: model({
       findUnique: jest.fn().mockResolvedValue({
         id: "db_user_caller",
@@ -399,7 +419,13 @@ describe("what each save writes", () => {
       totalWorkforce: 12_000_000,
       populationDensity: 200,
     });
-    expect(data.baselineDate).toBeInstanceOf(Date);
+    // The new baseline is dated with Testland's realm clock, and its budget year is that clock's
+    expect(data.baselineDate).toEqual(new Date(REALM_NOW));
+    expect(db.budgetAllocation.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { governmentStructure: { countryId }, budgetYear: { lte: 2046 } },
+      })
+    );
     expect(result).toEqual({
       baselinePopulation: 20_000_000,
       baselineGdpPerCapita: 30_000,

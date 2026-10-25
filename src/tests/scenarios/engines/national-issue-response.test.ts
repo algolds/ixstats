@@ -36,6 +36,7 @@ import {
   addNation,
   addOwner,
   asOwner,
+  ixnayRunningAt,
 } from "~/tests/helpers/nation-world";
 
 const issues = createCallerFactory(nationalIssuesPlayerRouter);
@@ -226,7 +227,7 @@ it("raises an issue, refuses a rival, applies the owner's answer and moves the p
   expect(await db.storytellerEffect.count({ where: { createdBy: `issue:${auditId}` } })).toBe(0);
 
   // Two IxTime years on, the stored GDP per head differs from the untouched twin by the two effects, fully phased in
-  await runStatProgression({ db: db as never, ixTime: NOW + 2 * YEAR });
+  await runStatProgression({ db: db as never, clocks: ixnayRunningAt(NOW + 2 * YEAR) });
   const perHead = async (id: string) =>
     (await db.country.findUniqueOrThrow({ where: { id } })).currentGdpPerCapita;
   expect((await perHead("testland")) / (await perHead("twinland"))).toBeCloseTo(1.003 * 0.995, 9);
@@ -240,7 +241,8 @@ it("progresses the stored figures batch by batch, one history point per IxTime m
     data: { baselinePopulation: Number.NaN },
   });
   const before = await db.country.findUniqueOrThrow({ where: { id: "testland" } });
-  const run = (ixTime: number) => runStatProgression({ db: db as never, ixTime, batchSize: 1 });
+  const run = (ixTime: number) =>
+    runStatProgression({ db: db as never, clocks: ixnayRunningAt(ixTime), batchSize: 1 });
   const points = (countryId: string) => db.historicalDataPoint.count({ where: { countryId } });
 
   expect(await run(NOW + YEAR)).toMatchObject({ processed: 3, updated: 2, failed: 1 });

@@ -8,7 +8,7 @@ import {
   ensureUpcomingElection,
   resolveElection,
 } from "~/lib/government/election-lifecycle";
-import { IxTime } from "~/lib/ixtime";
+import { clockForCountry } from "~/server/shared/realm-time";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 // ============================================================
@@ -40,7 +40,7 @@ export const electionsElectionsRouter = createTRPCRouter({
   getElectionStatus: publicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const nowIxTime = IxTime.getCurrentIxTime();
+      const nowIxTime = (await clockForCountry(ctx.db, input.countryId)).now();
       const [legislature, activeParties, upcoming, voting, completedCount, last] =
         await Promise.all([
           ctx.db.legislature.findUnique({
@@ -123,7 +123,7 @@ export const electionsElectionsRouter = createTRPCRouter({
     }),
 
   /**
-   * Count the votes of an election that has fallen due on the IxTime clock, without waiting
+   * Count the votes of an election that has fallen due on the nation's realm clock, without waiting
    * for the elections cron. Only elections already due resolve — the owner cannot call an
    * early vote or re-roll a result. Also schedules the first election if setup is complete.
    */
@@ -132,22 +132,23 @@ export const electionsElectionsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
       const db = ctx.db as PrismaClient;
+      const now = (await clockForCountry(db, input.countryId)).now();
 
       const due = await db.election.findFirst({
         where: {
           countryId: input.countryId,
           status: "upcoming",
-          scheduledIxTime: { lte: IxTime.getCurrentIxTime() },
+          scheduledIxTime: { lte: now },
         },
         orderBy: { scheduledIxTime: "asc" },
         select: { id: true },
       });
       if (!due) {
-        const ensured = await ensureUpcomingElection(db, input.countryId);
+        const ensured = await ensureUpcomingElection(db, input.countryId, { now });
         return { resolved: false as const, reason: "not_due" as const, ensured };
       }
 
-      const { outcome } = await resolveElection(db, due.id);
+      const { outcome } = await resolveElection(db, due.id, now);
       if (outcome === "insufficient_candidates") {
         throw new TRPCError({
           code: "PRECONDITION_FAILED",

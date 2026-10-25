@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { IxTime } from "~/lib/ixtime";
+import { clockForCountry } from "~/server/shared/realm-time";
 import { notificationAPI } from "~/lib/notifications/api";
 import { applyRelationshipImpact } from "~/lib/diplomacy/relationship-impact";
 
@@ -65,7 +65,8 @@ export const diplomaticEmbassiesLifecycleSeveranceRouter = createTRPCRouter({
           eventType: "embassy_severed",
           title: "Diplomatic Relations Severed",
           description: `${embassy.name} has been permanently dismantled and diplomatic relations severed.`,
-          ixTimeTimestamp: IxTime.getCurrentIxTime(),
+          // realm-time: the severing nation's clock; embassies across realms are T5's to block.
+          ixTimeTimestamp: (await clockForCountry(ctx.db, ctx.user.countryId)).now(),
           relationshipImpact: SEVER_RELATIONSHIP_IMPACT,
           severity: "critical",
         },

@@ -8,14 +8,14 @@
  * - Maintenance (PL-8): `maintenanceCost` is an annual figure (e.g. a stipend × population), and
  *   the `policy-maintenance` job runs every 6 h. Each charge is recorded as a PolicyEffectLog row
  *   (`effectType` MAINTENANCE_DEBIT, `notes` "FY<budget year>", `actualEffect` the amount), so a
- *   policy is charged at most once per IxTime budget year however often the job runs.
+ *   policy is charged at most once per budget year (its nation's realm clock) however often the job runs.
  *   Maintenance is spending within the year: it never debits `totalBudget` (a yearly flow), and
  *   a year's charges stop at that year's budget (`chargeMaintenance`).
  */
 import type { PrismaClient } from "@prisma/client";
 import { CountryEventSpine } from "~/lib/activity";
-import { IxTime } from "~/lib/ixtime";
 import { currentBudgetYear } from "~/lib/government/budget-year";
+import { clockForCountry } from "~/server/shared/realm-time";
 import {
   chargeMaintenance,
   maintenanceCharge,
@@ -37,8 +37,8 @@ export function maintenancePeriodKey(budgetYear: number): string {
 type PolicyEndStatus = "repealed" | "expired";
 
 /**
- * End an enacted policy: set its status, clear its simulation effect and log it. Returns false
- * when the policy was not enacted (already ended, or never enacted), so nothing changed.
+ * End an enacted policy: set its status, clear its simulation effect and log it, at its nation's time now. Returns
+ * false when the policy was not enacted (already ended, or never enacted), so nothing changed.
  */
 export async function endPolicy(
   db: PrismaClient,
@@ -52,11 +52,16 @@ export async function endPolicy(
   });
   if (count === 0) return false;
 
-  await clearPolicyEffect(db, policyId);
+  const policy = await db.policy.findUnique({
+    where: { id: policyId },
+    select: { country: { select: { realmId: true } } },
+  });
+  const now = (await clockForCountry(db, policy?.country ?? { realmId: null })).now();
+  await clearPolicyEffect(db, policyId, now);
   await db.policyEffectLog.create({
     data: {
       policyId,
-      appliedIxTime: IxTime.getCurrentIxTime(),
+      appliedIxTime: now,
       effectType: POLICY_ENDED_EFFECT,
       notes: note ? `${status}: ${note}` : status,
     },
@@ -91,8 +96,8 @@ interface MaintenancePolicy {
 }
 
 /**
- * Charge one country's active policies for the current budget year, skipping any policy already
- * charged this year. Charges stop once the year's maintenance reaches `totalBudget`. The
+ * Charge one country's active policies for the budget year at `now` (its nation's clock time), skipping any policy
+ * already charged that year. Charges stop once the year's maintenance reaches `totalBudget`. The
  * PolicyEffectLog markers and the ledger entry are written in one transaction. Returns the
  * policies charged and the total.
  */
@@ -101,11 +106,11 @@ export async function debitCountryMaintenance(
   countryId: string,
   policies: MaintenancePolicy[],
   totalBudget: number,
-  budgetYear: number = currentBudgetYear()
+  now: number
 ): Promise<{ policiesDebited: number; totalDebited: number }> {
   const costed = policies.filter((p) => (p.maintenanceCost || 0) > 0);
   if (costed.length === 0) return { policiesDebited: 0, totalDebited: 0 };
-  const periodKey = maintenancePeriodKey(budgetYear);
+  const periodKey = maintenancePeriodKey(currentBudgetYear(now));
 
   return db.$transaction(async (tx) => {
     const thisYear = await tx.policyEffectLog.findMany({
@@ -126,11 +131,10 @@ export async function debitCountryMaintenance(
       spent,
       due.map((p) => p.maintenanceCost)
     );
-    const appliedIxTime = IxTime.getCurrentIxTime();
     await tx.policyEffectLog.createMany({
       data: due.map((p, i) => ({
         policyId: p.id,
-        appliedIxTime,
+        appliedIxTime: now,
         effectType: MAINTENANCE_DEBIT_EFFECT,
         notes: periodKey,
         actualEffect: maintenanceEffect(charges[i]!),
@@ -142,6 +146,7 @@ export async function debitCountryMaintenance(
     await CountryEventSpine.recordCountryEvent({
       db: tx as PrismaClient,
       countryId,
+      now,
       sourceType: "policy",
       description: `Policy maintenance (${periodKey}): ${total.toLocaleString()} spent on active policies: ${due
         .map((p, i) => `"${p.name}" (${charges[i]!.toLocaleString()})`)

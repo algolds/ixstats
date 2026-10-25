@@ -355,6 +355,7 @@ describe("applying a sync plan", () => {
     wikiSource: "iiwiki",
     attribution: "Map: test",
     areaScale: 1,
+    nowMs: Date.UTC(2046, 2, 14),
   };
   function emptyPlan(over: Partial<SyncPlan> = {}): SyncPlan {
     return {

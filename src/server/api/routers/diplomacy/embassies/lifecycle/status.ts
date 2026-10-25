@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { IxTime } from "~/lib/ixtime";
+import { clockForCountry } from "~/server/shared/realm-time";
 import { notificationAPI } from "~/lib/notifications/api";
 import { applyRelationshipImpact } from "~/lib/diplomacy/relationship-impact";
 
@@ -86,7 +86,8 @@ export const diplomaticEmbassiesLifecycleStatusRouter = createTRPCRouter({
           description: input.reason || `${embassy.name} has been closed`,
           embassyId: embassy.id,
           relationshipImpact: penalties.relationshipPenalty,
-          ixTimeTimestamp: IxTime.getCurrentIxTime(),
+          // realm-time: the guest nation's clock; embassies across realms are T5's to block.
+          ixTimeTimestamp: (await clockForCountry(ctx.db, embassy.guestCountryId)).now(),
         },
       });
 
@@ -185,7 +186,8 @@ export const diplomaticEmbassiesLifecycleStatusRouter = createTRPCRouter({
           title: "Embassy Reopened",
           description: `${embassy.name} has been reopened.`,
           embassyId: embassy.id,
-          ixTimeTimestamp: IxTime.getCurrentIxTime(),
+          // realm-time: the guest nation's clock; embassies across realms are T5's to block.
+          ixTimeTimestamp: (await clockForCountry(ctx.db, embassy.guestCountryId)).now(),
           relationshipImpact: REOPEN_RELATIONSHIP_IMPACT,
           severity: "positive",
         },

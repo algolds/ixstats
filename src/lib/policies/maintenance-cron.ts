@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { db } from "~/server/db";
-import { currentBudgetYear } from "~/lib/government/budget-year";
+import { realmClocks, realmNowsOnce } from "~/server/shared/realm-time";
 import { NationalIssuesEngine } from "~/lib/national-issues/engine";
 import { getNationalIssuesConfig } from "~/lib/national-issues/config";
 import { INTENT_CATEGORY_TO_TEMPLATE, spawnResistanceForIntent } from "~/lib/intent/resistance";
@@ -184,7 +184,7 @@ async function spawnVolatileIssues(): Promise<SpawnVolatileIssuesResult> {
 /**
  * The `policy-maintenance` job (every 6 h): expire lapsed policies, roll volatile risks, then
  * charge each country's active policies as spending within the year — at most once per policy
- * per budget year (PL-8, see ./lifecycle), so reruns within a year charge nothing.
+ * per budget year of its realm's clock (PL-8, see ./lifecycle), so reruns within a year charge nothing.
  */
 export async function runPolicyMaintenanceDebits(
   database: PrismaClient = db
@@ -213,7 +213,13 @@ export async function runPolicyMaintenanceDebits(
     const activePolicies = await findAllById((page) =>
       database.policy.findMany({
         where: { status: "active" },
-        select: { id: true, countryId: true, name: true, maintenanceCost: true },
+        select: {
+          id: true,
+          countryId: true,
+          name: true,
+          maintenanceCost: true,
+          country: { select: { realmId: true } },
+        },
         ...page,
       })
     );
@@ -225,7 +231,8 @@ export async function runPolicyMaintenanceDebits(
       policiesByCountry.set(p.countryId, list);
     }
 
-    const budgetYear = currentBudgetYear();
+    // Each nation is charged for the budget year of its realm's clock, read once per realm.
+    const nowOf = realmNowsOnce(await realmClocks(database));
     for (const [countryId, countryPolicies] of policiesByCountry) {
       try {
         result.countriesProcessed++;
@@ -241,7 +248,7 @@ export async function runPolicyMaintenanceDebits(
           countryId,
           countryPolicies,
           structure.totalBudget,
-          budgetYear
+          nowOf(countryPolicies[0]!.country.realmId)
         );
         result.policiesProcessed += debit.policiesDebited;
         result.totalCostDebited += debit.totalDebited;

@@ -1,11 +1,10 @@
 /**
- * Recent activity merges IxTime-stamped effects with wall-clock rows. Effects are converted to real
- * time first, so a directive effect from yesterday sorts below a ledger row from an hour ago and
- * reads "1d ago", not "just now"; diplomatic events with a severity stay under Diplomacy; ledger
- * narratives state only the change.
+ * Recent activity merges effects with the other rows on real time: an effect is placed by when it was written, never
+ * by its realm-clock stamp, so a directive effect from yesterday sorts below a ledger row from an hour ago and reads
+ * "1d ago", not "just now", however fast (or paused) its realm's clock runs; diplomatic events with a severity stay
+ * under Diplomacy; ledger narratives state only the change.
  */
-import { IxTime } from "~/lib/ixtime";
-import { buildCanonFeed, canonFeedEffectSince } from "~/lib/mycountry/canon-feed";
+import { buildCanonFeed, canonFeedSince } from "~/lib/mycountry/canon-feed";
 import { describeRecord } from "~/components/mycountry/shell/recordNarrative";
 import { timeAgo } from "~/lib/format/compact";
 
@@ -18,7 +17,7 @@ const sources = {
       id: "e1",
       description: "Directive: Balance the budget",
       inputType: "GDP_LEVEL_ADJUSTMENT",
-      ixTimeTimestamp: new Date(IxTime.convertToIxTime(now - 24 * HOUR)),
+      createdAt: new Date(now - 24 * HOUR),
     },
   ],
   events: [{ id: "d1", title: "Border incident", createdAt: new Date(now - 2 * HOUR) }],
@@ -36,7 +35,7 @@ const sources = {
 };
 
 describe("buildCanonFeed", () => {
-  it("sorts IxTime effects on the real-time clock", () => {
+  it("sorts effects on the real-time clock", () => {
     const items = buildCanonFeed(sources, 10);
     expect(items.map((i) => i.id)).toEqual(["log_l1", "dip_d1", "eff_e1"]);
     const effect = items.find((i) => i.kind === "effect")!;
@@ -49,10 +48,8 @@ describe("buildCanonFeed", () => {
     expect(items.find((i) => i.kind === "diplomacy")?.category).toBe("diplomatic");
   });
 
-  it("filters effects with an IxTime window", () => {
-    const since = canonFeedEffectSince(now).getTime();
-    expect(since).toBeGreaterThan(now);
-    expect(Math.abs(IxTime.convertFromIxTime(since) - (now - 30 * 24 * HOUR))).toBeLessThan(1000);
+  it("filters on a 30 real-day window", () => {
+    expect(canonFeedSince(now).getTime()).toBe(now - 30 * 24 * HOUR);
   });
 });
 

@@ -58,6 +58,7 @@ import {
   splitActionTokens,
   withoutActionTokens,
 } from "~/lib/action-links";
+import { IXNAY_CALENDAR } from "~/lib/realms/realm-clock";
 import {
   declareDirectiveActivity,
   withdrawDirectiveActivity,
@@ -417,8 +418,20 @@ describe("the action-token parser", () => {
         title: "Bad ]] [[Title",
         approvedIxTime: 0,
         entries: [{ title: "x]] {{y}}", type: "t", ixTime: 0, url: "https://x" }],
+        calendar: IXNAY_CALENDAR,
       });
       expect(text).not.toMatch(/\]\]|\[\[|\{\{|\}\}/);
+    });
+
+    it("dates the entries in the nation's realm calendar", () => {
+      const text = chainWikiSection({
+        title: "Harbour",
+        approvedIxTime: Date.UTC(2044, 1, 3),
+        entries: [{ title: "Dock", type: "post", ixTime: Date.UTC(2044, 0, 9), url: "https://x" }],
+        calendar: { calendarOffsetMs: 0, era: "AE" },
+      });
+      expect(text).toContain("''Recorded 3 February 2044 AE.''");
+      expect(text).toContain("* 9 January 2044 AE: [https://x Dock] (post)");
     });
 
     it("keeps newline and inline-markup injection on the heading's single line", () => {
@@ -426,6 +439,7 @@ describe("the action-token parser", () => {
         title: "x\n== Fake ==\n__NOTOC__ ~~~~ '''bold &#91; '<'",
         approvedIxTime: 0,
         entries: [{ title: "a\n* b", type: "t\n== T ==", ixTime: 0, url: "https://x" }],
+        calendar: IXNAY_CALENDAR,
       });
       const lines = text.split("\n");
       expect(lines).toHaveLength(3);
