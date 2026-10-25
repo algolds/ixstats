@@ -99,7 +99,7 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
             return (
               <div key={m.label} className="min-w-0 space-y-2">
                 <span
-                  className="text-stat-label text-label-secondary block truncate"
+                  className="text-caption text-label-secondary block truncate"
                   title={m.title}
                 >
                   {m.label}

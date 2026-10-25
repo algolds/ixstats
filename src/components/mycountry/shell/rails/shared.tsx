@@ -126,7 +126,7 @@ export function DomainKpiGrid({ items }: { items: Kpi[] }) {
     <div className="grid grid-cols-3 gap-2">
       {items.map((item) => (
         <Card key={item.label} className="p-2">
-          <span className="text-stat-label text-label-secondary block truncate">{item.label}</span>
+          <span className="text-caption text-label-secondary block truncate">{item.label}</span>
           <p className="text-label text-title-3 mt-0.5 tabular-nums">{item.value}</p>
           {item.sub && <p className="text-label-secondary text-footnote mt-0.5">{item.sub}</p>}
         </Card>

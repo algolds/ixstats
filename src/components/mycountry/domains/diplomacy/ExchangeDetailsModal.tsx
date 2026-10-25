@@ -387,7 +387,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>((props
                 <div key={m.label} className="bg-fill-3 rounded-row p-3 text-center">
                   <dd className="text-label text-title-3 tabular-nums">{m.value}</dd>
                   <dt>
-                    <span className="text-stat-label text-label-secondary">{m.label}</span>
+                    <span className="text-caption text-label-secondary">{m.label}</span>
                   </dt>
                 </div>
               ))}

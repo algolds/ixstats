@@ -134,7 +134,7 @@ MetricModalLayout.StatCard = function MetricModalStatCard({
   return (
     <div className={cn("rounded-row relative overflow-hidden p-4", theme.cardClass, className)}>
       <div className="flex items-center justify-between">
-        <span className="text-stat-label text-label-secondary">{label}</span>
+        <span className="text-caption text-label-secondary">{label}</span>
         <Icon className={cn("h-4 w-4", theme.textHighlight)} />
       </div>
       <div className="mt-2 flex items-baseline gap-2">
@@ -224,7 +224,7 @@ MetricModalLayout.SidePanel = function MetricModalSidePanel({
 
 // 5. Centered figure tile, shown in a grid inside a main panel.
 const TILE_LABEL = {
-  stat: "text-stat-label text-label-secondary mt-1 block",
+  stat: "text-caption text-label-secondary mt-1 block",
   footnote: "text-label-secondary text-footnote mt-1",
 } as const;
 
@@ -277,7 +277,7 @@ MetricModalLayout.Metric = function MetricModalMetric({
 }) {
   return (
     <Card variant="well" padding="none" className="p-3">
-      <span className="text-stat-label text-label-secondary">{label}</span>
+      <span className="text-caption text-label-secondary">{label}</span>
       <div className={cn("text-title-3 mt-1", tone)}>{value}</div>
     </Card>
   );
@@ -334,7 +334,7 @@ MetricModalLayout.Classification = function MetricModalClassification({
     >
       <div>
         {typeof label === "string" ? (
-          <span className="text-stat-label text-label-secondary block">{label}</span>
+          <span className="text-caption text-label-secondary block">{label}</span>
         ) : (
           label
         )}
@@ -379,7 +379,7 @@ MetricModalLayout.Highlight = function MetricModalHighlight({
 }) {
   return (
     <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-      <span className="text-stat-label text-label-secondary mb-1 block">{label}</span>
+      <span className="text-caption text-label-secondary mb-1 block">{label}</span>
       <span className={cn("text-title-2", tone)}>{value}</span>
       {note && <span className="text-label-secondary text-footnote mt-1">{note}</span>}
     </div>

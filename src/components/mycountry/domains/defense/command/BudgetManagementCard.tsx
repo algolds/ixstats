@@ -224,7 +224,7 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
               )}
             </div>
             <div>
-              <span className="text-stat-label text-label-secondary block">% of GDP</span>
+              <span className="text-caption text-label-secondary block">% of GDP</span>
               <div className="text-title-1 mt-1 tabular-nums">
                 <NumberFlowDisplay
                   value={budgetData.gdpPercent}

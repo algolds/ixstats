@@ -236,7 +236,7 @@ function HumanCapitalSection({
             detail: "Technical certified",
           },
           {
-            label: "Youth Unemp.",
+            label: "Youth unemp.",
             value: formatPercent(labor?.youthUnemploymentRate ?? 0),
             detail: "Age 15-24 unemployed",
           },

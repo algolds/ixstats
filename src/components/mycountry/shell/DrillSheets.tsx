@@ -66,9 +66,9 @@ interface DrillSheetsProps {
 function sheetHeading(drill: DrillSheetKind) {
   if (!drill) return { title: "", Icon: Target, meta: null, domainKind: null };
   if (drill.kind === "intent")
-    return { title: "Directive Detail", Icon: Target, meta: null, domainKind: null };
+    return { title: "Directive detail", Icon: Target, meta: null, domainKind: null };
   if (drill.kind === "issue")
-    return { title: "Issue Brief", Icon: AlertTriangle, meta: null, domainKind: null };
+    return { title: "Issue brief", Icon: AlertTriangle, meta: null, domainKind: null };
   const meta = DOMAIN_META[drill.kind as MyCountryDomain];
   return {
     title: meta?.sheetTitle ?? "",

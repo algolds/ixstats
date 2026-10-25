@@ -159,7 +159,7 @@ export function MetricToggleGrid({
 interface ToggleMetricProps {
   variant?: MetricVariant;
   label: string;
-  /** Renders the label in sentence case rather than the uppercase stat style. */
+  /** Renders the label as an eyebrow rather than a caption. */
   eyebrow?: boolean;
   /** Remounts (and so re-animates) the value when it changes. */
   valueKey: string;
@@ -196,7 +196,7 @@ export function ToggleMetric({
       {eyebrow ? (
         <Eyebrow className="block">{label}</Eyebrow>
       ) : (
-        <span className="text-stat-label text-label-secondary block">{label}</span>
+        <span className="text-caption text-label-secondary block">{label}</span>
       )}
       <div
         className={cn("flex items-center gap-2", variant === "card" && "mt-0.5")}
@@ -307,7 +307,7 @@ export function StatGrid({
       {eyebrow ? (
         <Eyebrow className="block">{stat.label}</Eyebrow>
       ) : (
-        <span className="text-stat-label text-label-secondary block">{stat.label}</span>
+        <span className="text-caption text-label-secondary block">{stat.label}</span>
       )}
       <p className={cn(stat.tone ?? "text-label", valueClassName, "mt-0.5")}>{stat.value}</p>
       <p className="text-label-secondary text-footnote mt-0.5">{stat.detail}</p>

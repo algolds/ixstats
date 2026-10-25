@@ -339,7 +339,7 @@ function PerformanceSummary({ metrics }: { metrics: PerformanceMetrics }) {
         </Card>
 
         <Card variant="well" padding="none" className={tileClass}>
-          <span className="text-stat-label text-label-secondary mb-1 block">vs Global Average</span>
+          <span className="text-caption text-label-secondary mb-1 block">vs global average</span>
           <span
             className={cn(
               "text-title-2",
@@ -355,7 +355,7 @@ function PerformanceSummary({ metrics }: { metrics: PerformanceMetrics }) {
         </Card>
 
         <Card variant="well" padding="none" className={tileClass}>
-          <span className="text-stat-label text-label-secondary mb-1 block">World ranking</span>
+          <span className="text-caption text-label-secondary mb-1 block">World ranking</span>
           <span className="text-label text-title-2">#{metrics.rank}</span>
           <span className="text-label-secondary text-footnote mt-0.5">
             of {metrics.totalCountries} countries

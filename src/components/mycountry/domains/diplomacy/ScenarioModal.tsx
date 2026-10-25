@@ -115,7 +115,7 @@ export const ScenarioModal = React.memo<ScenarioModalProps>(
                             <div key={m.label} className="bg-fill-3 rounded-control p-2">
                               <dd className="text-label text-title-3 tabular-nums">{m.value}</dd>
                               <dt>
-                                <span className="text-stat-label text-label-secondary">
+                                <span className="text-caption text-label-secondary">
                                   {m.label}
                                 </span>
                               </dt>

@@ -311,11 +311,11 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
             </div>
             <div className="text-body grid grid-cols-2 gap-3">
               <div>
-                <span className="text-stat-label text-label-secondary block">Daily cost</span>
+                <span className="text-caption text-label-secondary block">Daily cost</span>
                 <p className="font-medium tabular-nums">{formatCurrency(estimatedDailyCost)}</p>
               </div>
               <div>
-                <span className="text-stat-label text-label-secondary block">Annual cost</span>
+                <span className="text-caption text-label-secondary block">Annual cost</span>
                 <p className="font-medium tabular-nums">{formatCurrency(estimatedAnnualCost)}</p>
               </div>
             </div>

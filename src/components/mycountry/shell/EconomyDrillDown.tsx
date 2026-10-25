@@ -159,7 +159,7 @@ function MacroTab({
 
   const metrics = [
     {
-      label: "GDP (Total)",
+      label: "Total GDP",
       value: billions(figures.currentTotalGdp),
       sub: "Gross Domestic Product",
     },

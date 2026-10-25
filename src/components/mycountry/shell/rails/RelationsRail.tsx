@@ -192,7 +192,7 @@ function buildActivity(
 function SectionHeading({ label, count }: { label: string; count: string }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-stat-label text-label-secondary">{label}</span>
+      <span className="text-caption text-label-secondary">{label}</span>
       <span className="text-label-secondary text-footnote tabular-nums">{count}</span>
     </div>
   );

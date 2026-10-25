@@ -27,7 +27,7 @@ export const ExchangeMetrics = React.memo<ExchangeMetricsProps>(({ metrics }) =>
         {items.map((item) => (
           <div key={item.label} className="space-y-1">
             <dt>
-              <span className="text-stat-label text-label-secondary">{item.label}</span>
+              <span className="text-caption text-label-secondary">{item.label}</span>
             </dt>
             <dd className="text-label text-title-1 tabular-nums">{item.value}</dd>
           </div>

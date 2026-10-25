@@ -135,7 +135,7 @@ function ExecutiveOpportunityHeroComponent({
               </p>
               {opportunity.metricLabel && opportunity.metricValue && (
                 <p className="flex flex-col gap-0.5">
-                  <span className="text-stat-label">{opportunity.metricLabel}</span>
+                  <span className="text-caption">{opportunity.metricLabel}</span>
                   <span className="text-label text-headline tabular-nums">
                     {opportunity.metricValue}
                   </span>

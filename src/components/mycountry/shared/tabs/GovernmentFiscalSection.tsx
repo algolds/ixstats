@@ -36,7 +36,7 @@ export function GovernmentFiscalSection({
         columns="three"
         stats={[
           {
-            label: "Tax Revenue % GDP",
+            label: "Tax revenue, % of GDP",
             value: formatPercent(fiscal?.taxRevenueGDPPercent ?? 0),
             detail: "Tax burden ratio",
           },

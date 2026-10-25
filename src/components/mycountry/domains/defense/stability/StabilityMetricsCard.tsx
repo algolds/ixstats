@@ -113,7 +113,7 @@ function StabilityBody({ metrics }: { metrics: StabilityMetrics }) {
     <>
       <div>
         <div className="mb-2 flex items-end justify-between">
-          <span className="text-stat-label text-label-secondary">Overall stability score</span>
+          <span className="text-caption text-label-secondary">Overall stability score</span>
           <span className={cn("text-title-1 tabular-nums", scoreTone(metrics.stabilityScore))}>
             <NumberFlowDisplay value={metrics.stabilityScore} format="decimal" decimalPlaces={1} />
             <span className="text-label-secondary text-body">/100</span>

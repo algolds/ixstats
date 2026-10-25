@@ -67,7 +67,7 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
                   <div className="text-label text-title-1 mb-1">
                     {impact.currentState || "—"}
                   </div>
-                  <span className="text-stat-label text-label-secondary">Before</span>
+                  <span className="text-caption text-label-secondary">Before</span>
                 </div>
                 <ArrowRight className="text-label-secondary h-6 w-6" />
                 <div className="text-center">

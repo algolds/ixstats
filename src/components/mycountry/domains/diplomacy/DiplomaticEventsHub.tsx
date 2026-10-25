@@ -179,7 +179,7 @@ function ImpactPreview({
               {item.suffix}
             </dd>
             <dt>
-              <span className="text-stat-label text-label-secondary">{item.label}</span>
+              <span className="text-caption text-label-secondary">{item.label}</span>
             </dt>
           </div>
         );

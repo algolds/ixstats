@@ -195,7 +195,7 @@ export function AllianceDashboard({
           <div key={stat.label} className="bg-fill-3 rounded-row p-2">
             <dd className="text-label text-title-3 tabular-nums">{stat.value}</dd>
             <dt>
-              <span className="text-stat-label text-label-secondary">{stat.label}</span>
+              <span className="text-caption text-label-secondary">{stat.label}</span>
             </dt>
           </div>
         ))}

@@ -177,7 +177,7 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
           </CardHeader>
           <CardContent className="space-y-4 px-5 pb-5">
             <div className="border-separator flex items-center justify-between border-b pb-4">
-              <span className="text-stat-label text-label-secondary">Security level</span>
+              <span className="text-caption text-label-secondary">Security level</span>
               <div className="text-right">
                 <div className="text-label text-title-1 tabular-nums">
                   {border?.overallSecurityLevel ?? 0}

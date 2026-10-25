@@ -445,7 +445,7 @@ function GdpComparison({
         {globalStats && (
           <MetricModalLayout.Highlights className="flex h-full flex-col justify-between gap-4">
             <MetricModalLayout.Highlight
-              label="vs Global Avg GDP/Capita"
+              label="vs global average GDP per capita"
               value={
                 country.currentGdpPerCapita && globalStats.avgGdpPerCapita > 0
                   ? `${((country.currentGdpPerCapita / globalStats.avgGdpPerCapita - 1) * 100).toFixed(1)}%`
