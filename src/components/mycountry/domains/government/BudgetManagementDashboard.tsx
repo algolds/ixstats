@@ -13,6 +13,7 @@ import { formatNumber, safeFormatCurrency, toTitleCase } from "~/lib/utils";
 import { currentBudgetYear, latestBudgetYearUpTo } from "~/lib/government/budget-year";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
+import { useBudgetEditing } from "~/hooks/useBudgetEditing";
 import type {
   GovernmentStructure,
   GovernmentDepartment,
@@ -34,6 +35,7 @@ import {
   summarizeRevenue,
 } from "./budget";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { CreateGovernmentStructureButton } from "./CreateGovernmentStructureButton";
 
 const VIEW_OPTIONS = [
   { value: "overview", label: "Overview" },
@@ -116,7 +118,27 @@ function NewYearBanner({
   );
 }
 
-/** Props win; otherwise fall back to the country's fetched government. */
+/** For a nation with no departments: the action that creates its form's government. */
+function NoGovernmentBanner({ createFor }: { createFor?: string }) {
+  return (
+    <div
+      role="status"
+      className="rounded-control border-separator flex flex-wrap items-center justify-between gap-3 border px-4 py-3"
+    >
+      <p className="text-label text-body">
+        This government has no departments yet. Create its structure to set a budget and appoint a
+        cabinet.
+      </p>
+      {createFor && <CreateGovernmentStructureButton countryId={createFor} />}
+    </div>
+  );
+}
+
+/**
+ * Props win; otherwise fall back to the country's fetched government. `ownerView` is true when the
+ * fetched budget is the owner's (a visitor's read leaves `totalBudget` out), or when the fetch
+ * found no structure for a country the viewer opened in their console.
+ */
 function useBudgetSources({
   countryId,
   propStructure,
@@ -130,11 +152,13 @@ function useBudgetSources({
   propAllocations?: BudgetAllocation[];
   propRevenue?: RevenueSource[];
 }) {
-  const { data: fetchedGov } = api.government.getFullByCountryId.useQuery(
+  const { data: fetchedGov, isSuccess } = api.government.getFullByCountryId.useQuery(
     { countryId: countryId ?? "" },
     { enabled: !!countryId && !propStructure }
   );
   return {
+    ownerView:
+      !propStructure && isSuccess && (fetchedGov === null || "totalBudget" in (fetchedGov ?? {})),
     governmentStructure: propStructure ?? fetchedGov,
     departments: propDepts ?? (fetchedGov?.departments as GovernmentDepartment[] | undefined) ?? [],
     budgetAllocations:
@@ -174,16 +198,17 @@ export function BudgetManagementDashboard({
   departments: propDepts,
   budgetAllocations: propAllocations,
   revenueSources: propRevenue,
-  onUpdateBudget: _onUpdateBudget,
+  onUpdateBudget,
   isReadOnly = false,
 }: BudgetManagementDashboardProps) {
-  const { governmentStructure, departments, budgetAllocations, revenueSources } = useBudgetSources({
-    countryId,
-    propStructure,
-    propDepts,
-    propAllocations,
-    propRevenue,
-  });
+  const { ownerView, governmentStructure, departments, budgetAllocations, revenueSources } =
+    useBudgetSources({
+      countryId,
+      propStructure,
+      propDepts,
+      propAllocations,
+      propRevenue,
+    });
 
   const [selectedView, setSelectedView] = useState<BudgetView>("overview");
   // The budget in effect is the latest year at or before the current IxTime year: after a
@@ -201,10 +226,21 @@ export function BudgetManagementDashboard({
   const [overviewChartMode, setOverviewChartMode] = useState<"allocation" | "trend">("allocation");
 
   const yearAllocations = budgetAllocations.filter((a) => a.budgetYear === selectedYear);
-  const budgetSummary = summarizeBudget(
-    yearAllocations,
-    departments,
-    governmentStructure?.totalBudget ?? 0
+  const totalBudget = governmentStructure?.totalBudget ?? 0;
+  const budgetSummary = summarizeBudget(yearAllocations, departments, totalBudget);
+  // Owner edits go to the budget in effect, so they are offered only while it is shown.
+  const editableCountry =
+    countryId && ownerView && !isReadOnly && !propAllocations ? countryId : undefined;
+  const editing = useBudgetEditing(
+    editableCountry && governmentStructure && selectedYear === effectiveYear
+      ? editableCountry
+      : undefined,
+    totalBudget,
+    onUpdateBudget
+  );
+  const { data: maintenance } = api.government.getPolicyMaintenance.useQuery(
+    { countryId: editableCountry ?? "" },
+    { enabled: !!editableCountry && !!governmentStructure }
   );
   const revenueSummary = summarizeRevenue(revenueSources);
 
@@ -220,7 +256,10 @@ export function BudgetManagementDashboard({
   }));
   const budgetTrendData = buildTrendData(budgetAllocations);
 
-  const budgetHealth = getBudgetHealthStatus(revenueSummary.totalRevenue, budgetSummary.totalSpent);
+  const budgetHealth = getBudgetHealthStatus(
+    revenueSummary.totalRevenue,
+    budgetSummary.totalAllocated
+  );
 
   return (
     <div className="space-y-6">
@@ -234,6 +273,8 @@ export function BudgetManagementDashboard({
         </div>
       </div>
 
+      {ownerView && departments.length === 0 && <NoGovernmentBanner createFor={editableCountry} />}
+
       {needsNewYearBudget && (
         <NewYearBanner
           currentYear={currentYear}
@@ -246,6 +287,7 @@ export function BudgetManagementDashboard({
       <BudgetKeyMetrics
         budgetSummary={budgetSummary}
         revenueSummary={revenueSummary}
+        maintenanceSpent={maintenance?.[selectedYear] ?? 0}
         formatCurrency={formatCurrency}
       />
 
@@ -276,6 +318,7 @@ export function BudgetManagementDashboard({
                 departments={budgetSummary.departmentAllocations}
                 year={selectedYear}
                 formatNumber={formatNumber}
+                editing={editing}
               />
             ),
             revenue: (

@@ -463,9 +463,6 @@ export interface RevenueSourceInput {
 export interface BudgetSummary {
   totalBudget: number;
   totalAllocated: number;
-  totalSpent: number;
-  totalAvailable: number;
-  utilizationRate: number;
   departmentCount: number;
   /** Every department, highest allocation first; `allocation` is null when it has none this year. */
   departmentAllocations: {

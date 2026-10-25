@@ -62,8 +62,8 @@ export function BudgetOverviewCharts({
         <div className="h-72">
           {overviewChartMode === "allocation" && departmentChartData.length === 0 ? (
             <p className="text-label-secondary text-footnote flex h-full items-center justify-center text-center">
-              No department has an allocation this year. Set allocations in the Government step of
-              the Country Editor.
+              No department has an allocation this year. Set each department's share under
+              Departments.
             </p>
           ) : overviewChartMode === "trend" && budgetTrendData.length < 2 ? (
             <p className="text-label-secondary text-footnote flex h-full items-center justify-center text-center">
@@ -108,13 +108,6 @@ export function BudgetOverviewCharts({
                   name="Allocated"
                   strokeWidth={2}
                 />
-                <Line
-                  type="monotone"
-                  dataKey="spent"
-                  stroke="var(--color-label-secondary)"
-                  name="Spending"
-                  strokeWidth={2}
-                />
               </LineChart>
             </ResponsiveContainer>
           )}
@@ -126,23 +119,29 @@ export function BudgetOverviewCharts({
           <h4 className="text-label text-headline">Revenue sources</h4>
         </div>
         <div className="h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={revenueChartData}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-              <XAxis
-                dataKey="name"
-                stroke="currentColor"
-                className="text-label-secondary text-footnote"
-              />
-              <YAxis stroke="currentColor" className="text-label-secondary text-footnote" />
-              <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-              <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                {revenueChartData.map((entry, index) => (
-                  <Cell key={`revenue-cell-${index}`} fill={entry.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          {revenueChartData.length === 0 ? (
+            <p className="text-label-secondary text-footnote flex h-full items-center justify-center text-center">
+              No revenue sources are recorded for this government yet.
+            </p>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={revenueChartData}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                <XAxis
+                  dataKey="name"
+                  stroke="currentColor"
+                  className="text-label-secondary text-footnote"
+                />
+                <YAxis stroke="currentColor" className="text-label-secondary text-footnote" />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                  {revenueChartData.map((entry, index) => (
+                    <Cell key={`revenue-cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </Card>
     </div>
