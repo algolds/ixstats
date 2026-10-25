@@ -1,5 +1,10 @@
 /** Shared economies and states for the defense model tests. */
-import { starterNation, type EconomyInputs, type NationState } from "~/lib/military/model";
+import {
+  starterNation,
+  type EconomyInputs,
+  type NationState,
+  type PolicyState,
+} from "~/lib/military/model";
 
 export const T0 = 1.9e12;
 
@@ -19,7 +24,10 @@ export function economy(overrides: Partial<EconomyInputs> = {}): EconomyInputs {
   };
 }
 
-export const starter = (econ: EconomyInputs = economy(), policy = {}): NationState =>
+export const starter = (
+  econ: EconomyInputs = economy(),
+  policy: Partial<PolicyState> = {}
+): NationState =>
   starterNation({ econ, clockMs: T0, policy });
 
 export const totalActive = (state: NationState) =>

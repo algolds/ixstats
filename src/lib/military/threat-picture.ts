@@ -4,7 +4,7 @@
  *  - its map neighbours (geo adjacency), their combat strength and the relation with each;
  *  - its pending or active conflicts, the hostile foreign-policy actions in force against it and
  *    the active crises that affect it;
- *  - its own combat strength (`militaryStrength()`),
+ *  - its own combat strength (national combat power from the defense model, realm time D2a),
  * this works out the active threats, a threat score per neighbour, border security and the
  * military strength score (own strength against the strongest rival, 0-100).
  */
