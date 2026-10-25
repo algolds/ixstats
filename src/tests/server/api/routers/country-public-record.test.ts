@@ -316,6 +316,40 @@ describe("crisisEvents.getStatistics country scope", () => {
       countryId: "c1",
     });
     expect(stats).toMatchObject({ activeEvents: 2, criticalEvents: 1, totalEvents: 2 });
+    // Critical among the active ones only: a resolved critical crisis is not "at least one active".
+    expect(stats.activeCriticalEvents).toBe(1);
+  });
+
+  it("counts a resolved critical crisis as critical but not as active critical", async () => {
+    const db = createMockPrisma();
+    db.crisisEvent.findMany.mockResolvedValue([
+      {
+        id: "r",
+        type: "natural",
+        category: "governance",
+        severity: "critical",
+        responseStatus: "resolved",
+        casualties: 0,
+        economicImpact: 0,
+        affectedCountries: '["c1"]',
+      },
+      {
+        id: "a",
+        type: "natural",
+        category: "governance",
+        severity: "low",
+        responseStatus: "pending",
+        casualties: 0,
+        economicImpact: 0,
+        affectedCountries: '["c1"]',
+      },
+    ]);
+    const stats = await createCallerFactory(crisisEventsRouter)(visitorOn(db)).getStatistics({
+      timeframe: "all",
+      countryId: "c1",
+    });
+    expect(stats).toMatchObject({ activeEvents: 1, criticalEvents: 1, activeCriticalEvents: 0 });
+    expect(db.crisisEvent.findMany.mock.calls[0][0].where.timestamp).toBeUndefined();
     // The database narrows first with a contains prefilter on the stored string.
     expect(db.crisisEvent.findMany.mock.calls[0][0].where).toMatchObject({
       affectedCountries: { contains: "c1" },

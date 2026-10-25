@@ -87,9 +87,11 @@ export const crisisEventsRouter = createTRPCRouter({
       const totalEvents = events.length;
       const criticalEvents = events.filter((e) => e.severity === "critical").length;
       const highSeverityEvents = events.filter((e) => e.severity === "high").length;
-      const activeEvents = events.filter((e) =>
+      const active = events.filter((e) =>
         ["pending", "in_progress", "monitoring"].includes(e.responseStatus || "")
-      ).length;
+      );
+      const activeEvents = active.length;
+      const activeCriticalEvents = active.filter((e) => e.severity === "critical").length;
       const resolvedEvents = events.filter((e) => e.responseStatus === "resolved").length;
       const totalCasualties = events.reduce((sum, e) => sum + (e.casualties || 0), 0);
       const totalEconomicImpact = events.reduce((sum, e) => sum + (e.economicImpact || 0), 0);
@@ -111,6 +113,7 @@ export const crisisEventsRouter = createTRPCRouter({
         criticalEvents,
         highSeverityEvents,
         activeEvents,
+        activeCriticalEvents,
         resolvedEvents,
         totalCasualties,
         totalEconomicImpact,
