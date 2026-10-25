@@ -53,7 +53,7 @@ const builds = (revid: number, on: InboundHead) => {
   const parentid = parents.get(revid)!;
   return buildsOnHeadPastQuarantine(
     parentid,
-    { sha1: "x", parentid: parents.get(parentid) ?? null },
+    { sha1: "x", parentid: parents.get(parentid) ?? null, title: null },
     on
   );
 };
@@ -73,6 +73,7 @@ describe.each(WIKIOS_MODES)("a revision built on quarantined revisions [%s]", (m
     fetchHash.mockImplementation(async (revid) => ({
       sha1: "x",
       parentid: parents.get(revid) ?? null,
+      title: "Caphiria",
     }));
   });
   afterEach(() => restore());
@@ -110,10 +111,10 @@ describe.each(WIKIOS_MODES)("a revision built on quarantined revisions [%s]", (m
     await quarantine(101);
     await expect(builds(102, head(null))).resolves.toBe(false);
     await expect(
-      buildsOnHeadPastQuarantine(101, { sha1: null, parentid: null }, head(100))
+      buildsOnHeadPastQuarantine(101, { sha1: null, parentid: null, title: null }, head(100))
     ).resolves.toBe(false);
     await expect(
-      buildsOnHeadPastQuarantine(101, { sha1: null, parentid: 100 }, null)
+      buildsOnHeadPastQuarantine(101, { sha1: null, parentid: 100, title: null }, null)
     ).resolves.toBe(false);
   });
 

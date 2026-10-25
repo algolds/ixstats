@@ -179,6 +179,7 @@ const hashQuerySchema = z.object({
       pages: z
         .array(
           z.looseObject({
+            title: z.string().optional(),
             revisions: z
               .array(
                 z.looseObject({ sha1: z.string().optional(), parentid: z.number().optional() })
@@ -193,12 +194,14 @@ const hashQuerySchema = z.object({
 
 const HEX_SHA1 = /^[0-9a-f]{40}$/i;
 
-/** A revision read without its text: its `rev_sha1` (base 36) and its parent's id. */
+/** A revision read without its text: its `rev_sha1` (base 36), its parent's id and its page's title now. */
 export interface RevisionHash {
   /** null when MediaWiki has no usable hash. */
   sha1: string | null;
   /** 0 for a page's first revision; null when MediaWiki did not say (no such revision). */
   parentid: number | null;
+  /** The title classic has the revision's page at now (moved since, it is the new one); null when it has no such revision. */
+  title: string | null;
 }
 
 /** Revision `revid`'s hash and parent, read without its text. */
@@ -207,11 +210,13 @@ export async function fetchRevisionHash(revid: number): Promise<RevisionHash> {
     { action: "query", revids: String(revid), prop: "revisions", rvprop: "ids|sha1" },
     hashQuerySchema
   );
-  const revision = data.query?.pages?.[0]?.revisions?.[0];
+  const page = data.query?.pages?.[0];
+  const revision = page?.revisions?.[0];
   const hex = revision?.sha1;
   return {
     sha1: hex !== undefined && HEX_SHA1.test(hex) ? sha1HexToBase36(hex) : null,
     parentid: revision?.parentid ?? null,
+    title: page?.title === undefined ? null : plainTitle(page.title),
   };
 }
 

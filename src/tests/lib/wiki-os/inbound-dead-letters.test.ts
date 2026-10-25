@@ -23,12 +23,14 @@ jest.mock("~/lib/wiki-os/services/inbound-revision-sync", () => ({
   syncLatestRevision: jest.fn(),
 }));
 jest.mock("~/lib/wiki-os/services/inbound-log-events", () => ({ applyLogEvent: jest.fn() }));
+jest.mock("~/lib/wiki-os/services/inbound-mediawiki", () => ({ fetchRevisionHash: jest.fn() }));
 jest.mock("~/lib/system/job-lock", () => ({ withJobLock: jest.fn() }));
 
 import { PageOperationError } from "~/lib/wiki-os/core/page-operation-error";
 import { syncLatestRevision, syncRevisionById } from "~/lib/wiki-os/services/inbound-revision-sync";
 import { applyLogEvent } from "~/lib/wiki-os/services/inbound-log-events";
 import { withJobLock } from "~/lib/system/job-lock";
+import { fetchRevisionHash } from "~/lib/wiki-os/services/inbound-mediawiki";
 import {
   QUARANTINE_AFTER,
   clearStepFailure,
@@ -45,6 +47,7 @@ import { WIKIOS_MODES, seedWikiosMode } from "~/tests/helpers/wikios-modes";
 
 const syncRevision = jest.mocked(syncRevisionById);
 const syncLatest = jest.mocked(syncLatestRevision);
+const fetchHash = jest.mocked(fetchRevisionHash);
 const applyEvent = jest.mocked(applyLogEvent);
 const lock = jest.mocked(withJobLock);
 
@@ -97,6 +100,8 @@ describe.each(WIKIOS_MODES)("inbound dead letters [%s]", (mode) => {
     lock.mockImplementation(async (_db, _name, fn) => ({ ran: true, result: await fn() }));
     syncRevision.mockResolvedValue("fast-forward");
     syncLatest.mockResolvedValue("fast-forward");
+    // classic has the revision on the page it was saved to (not moved since)
+    fetchHash.mockResolvedValue({ sha1: "x", parentid: 4, title: "Caphiria" });
     applyEvent.mockResolvedValue("applied");
   });
   afterEach(() => restore());
@@ -390,6 +395,85 @@ describe.each(WIKIOS_MODES)("inbound dead letters [%s]", (mode) => {
       expect(applyEvent).toHaveBeenCalledWith(deletion);
     });
 
+    describe("narrowed by the event's type (fix round 2)", () => {
+      const protect: QuarantinableStep = {
+        ...logStep,
+        key: "log:70",
+        label: "protect/protect Caphiria",
+        payload: { ...deletion, logid: 70, type: "protect", action: "protect" },
+      };
+      const userStep = (type: string, logid: number): QuarantinableStep => ({
+        key: `log:${logid}`,
+        stream: "log",
+        subject: "User:Zed",
+        label: `${type}/${type} User:Zed`,
+        mark: `2026-10-24T10:00:05Z|${logid}`,
+        payload: {
+          ...deletion,
+          logid,
+          type,
+          action: type,
+          title: "User:Zed",
+          params: { newgroups: ["sysop"] },
+        },
+      });
+
+      it("a protect followed by a later edit, or a later event of another kind, is still retried and applies", async () => {
+        const id = await quarantine(protect);
+        const article = await page();
+        await revision(article.id, "classic", "2026-10-24T10:00:09Z");
+        await appliedEvent({ mwLogId: 71, title: "Caphiria", logType: "upload" });
+        await appliedEvent({ mwLogId: 72, title: "Caphiria", logType: "rights" });
+
+        await expect(listQuarantined(10)).resolves.toEqual([
+          expect.objectContaining({ stepKey: "log:70", stale: false }),
+        ]);
+        await expect(retryQuarantined(id)).resolves.toBe("applied");
+        expect(applyEvent).toHaveBeenCalledWith(protect.payload);
+      });
+
+      it.each(["protect", "delete", "move"])(
+        "a protect followed by a later %s of the page is refused",
+        async (logType) => {
+          const id = await quarantine(protect);
+          await appliedEvent({ mwLogId: 71, title: "Caphiria", logType });
+
+          await expect(retryQuarantined(id)).rejects.toEqual(STALE_PAGE);
+          expect(applyEvent).not.toHaveBeenCalled();
+        }
+      );
+
+      it.each([
+        ["rights", "move"],
+        ["rights", "protect"],
+        ["rights", "block"],
+        ["block", "rights"],
+        ["block", "delete"],
+      ])("a %s event followed by a later %s on the user is still retried", async (type, later) => {
+        const id = await quarantine(userStep(type, 80));
+        await appliedEvent({ mwLogId: 81, title: "User:Zed", logType: later });
+
+        await expect(retryQuarantined(id)).resolves.toBe("applied");
+      });
+
+      it.each(["rights", "block"])(
+        "a %s event followed by a later one of its kind is refused",
+        async (type) => {
+          const id = await quarantine(userStep(type, 80));
+          await appliedEvent({ mwLogId: 81, title: "User:Zed", logType: type });
+
+          await expect(retryQuarantined(id)).rejects.toEqual(STALE_USER);
+        }
+      );
+
+      it("a delete stays broad: a later event of any kind, or a later classic edit, refuses it", async () => {
+        const id = await quarantine(logStep);
+        await appliedEvent({ mwLogId: 78, title: "Caphiria", logType: "upload" });
+
+        await expect(retryQuarantined(id)).rejects.toEqual(STALE_PAGE);
+      });
+    });
+
     it("never calls a recent change stale (an older revision is filed as history)", async () => {
       await quarantine(rcStep(5));
       await appliedEvent({ mwLogId: 999, title: "Caphiria" });
@@ -425,6 +509,21 @@ describe.each(WIKIOS_MODES)("inbound dead letters [%s]", (mode) => {
       expect(syncLatest).toHaveBeenCalledWith("Caphiria", { judgeCollisions: true });
       expect(lock.mock.calls[0]?.[1]).toBe("wikios-inbound-sync");
       expect(await rowOf("rc:5")).toMatchObject({ resolvedAt: expect.any(Date) });
+    });
+
+    it("resyncs the page under the title classic has it at now (moved since), or the stored one when classic no longer has the revision", async () => {
+      await failTimes(rcStep(5), QUARANTINE_AFTER);
+      const { id } = (await rowOf("rc:5"))!;
+      fetchHash.mockResolvedValueOnce({ sha1: "x", parentid: 4, title: "Caphiria (state)" });
+
+      await expect(resyncQuarantined(id)).resolves.toBe("applied");
+      expect(fetchHash).toHaveBeenCalledWith(5);
+      expect(syncLatest).toHaveBeenLastCalledWith("Caphiria (state)", { judgeCollisions: true });
+
+      await failTimes(rcStep(6), QUARANTINE_AFTER);
+      fetchHash.mockResolvedValueOnce({ sha1: null, parentid: null, title: null });
+      await expect(resyncQuarantined((await rowOf("rc:6"))!.id)).resolves.toBe("applied");
+      expect(syncLatest).toHaveBeenLastCalledWith("Caphiria", { judgeCollisions: true });
     });
 
     it("a page MediaWiki no longer has is skipped and resolved; a failure counts the attempt", async () => {

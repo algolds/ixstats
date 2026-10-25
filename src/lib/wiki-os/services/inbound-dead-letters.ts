@@ -15,6 +15,7 @@ import { db } from "~/server/db";
 import { withJobLock } from "~/lib/system/job-lock";
 import { PageOperationError } from "~/lib/wiki-os/core/page-operation-error";
 import { applyLogEvent } from "./inbound-log-events";
+import { fetchRevisionHash } from "./inbound-mediawiki";
 import { syncLatestRevision, syncRevisionById } from "./inbound-revision-sync";
 import { staleMessage, staleSubject, storedLogEvent } from "./inbound-stale-steps";
 
@@ -184,7 +185,10 @@ async function runStored(
     : "applied";
 }
 
-/** Bring the page of a stored recent change over from classic as it is now, judged like a cycle's revision. */
+/**
+ * Bring the page of a stored recent change over from classic as it is now, judged like a cycle's revision: the page
+ * the revision is on at classic now (by its id), not the title it had then.
+ */
 async function resyncStored(
   stream: string,
   payload: Prisma.JsonValue
@@ -192,7 +196,9 @@ async function resyncStored(
   if (stream !== "edits") {
     throw new StepRefusal("BAD_REQUEST", "Only an edit's page can be resynced.");
   }
-  const { title } = recentChangePayload.parse(payload);
+  const stored = recentChangePayload.parse(payload);
+  // classic may have moved the page since: its old title then holds a redirect, so ask classic where the page is now
+  const title = (await fetchRevisionHash(stored.revid)).title ?? stored.title;
   return (await syncLatestRevision(title, { judgeCollisions: true })) === "skipped"
     ? "skipped"
     : "applied";

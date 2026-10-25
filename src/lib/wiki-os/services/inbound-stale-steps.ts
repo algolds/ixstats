@@ -4,9 +4,13 @@
  * The sync moves past a quarantined step and applies what classic MediaWiki did after it. A log event replayed after
  * that would undo it: a delete would archive a page classic brought back, a rights change would set the groups it had
  * then (`newgroups` is the whole list), an unblock would lift a later block. So a log event is retried only while
- * nothing later of its subject has been applied in WikiOS: no classic log event with a higher MediaWiki log id about
- * the same page (its title, or the article it names) or the same user, and, for a page, no classic revision saved after
- * it. A recent change is never stale: a revision older than WikiOS's head is filed as history (inbound-decision.ts).
+ * nothing later that it would undo has been applied in WikiOS (a classic log event with a higher MediaWiki log id, about
+ * the same page, by its title or the article it names, or the same user):
+ *   - a delete, restore or move (and any other page event): any later event of the page, or a classic revision saved
+ *     after it;
+ *   - a protect: a later protect, delete or move of the page (an edit does not touch the protection);
+ *   - a rights change or a block: a later event of the same kind about the user.
+ * A recent change is never stale: a revision older than WikiOS's head is filed as history (inbound-decision.ts).
  */
 
 import { z } from "zod";
@@ -18,6 +22,8 @@ const SOURCE = "ixwiki";
 const CLASSIC_ORIGIN = "classic";
 /** Log types about a user (their `title` is `User:Name`), not a page. */
 const USER_EVENTS: ReadonlySet<string> = new Set(["block", "rights"]);
+/** The later log types that overtake a protect: what changes or removes the page's protection. */
+const OVERTAKES_PROTECT = ["protect", "delete", "move"];
 
 /** A log event as a dead letter keeps it: the shape `fetchLogEventsPage` reads. */
 export const storedLogEvent = z.object({
@@ -70,12 +76,21 @@ export async function staleSubject(event: StoredLogEvent): Promise<StaleSubject 
   const laterEvent = await db.wikiLog.findFirst({
     where: {
       mwLogId: { gt: event.logid },
+      ...overtakingTypes(event.type),
       OR: [{ title }, ...(articleIds.length > 0 ? [{ articleId: { in: articleIds } }] : [])],
     },
     select: { id: true },
   });
   if (laterEvent) return subject;
+  // a later edit does not touch a protection (and a user event has no article, so no revision to find)
+  if (event.type === "protect") return null;
   return (await classicRevisionAfter(articleIds, new Date(event.timestamp))) ? subject : null;
+}
+
+/** The later log types that overtake an event of `type`: its own kind for a user event, any for a page event but a protect. */
+function overtakingTypes(type: string): { logType?: string | { in: string[] } } {
+  if (USER_EVENTS.has(type)) return { logType: type };
+  return type === "protect" ? { logType: { in: OVERTAKES_PROTECT } } : {};
 }
 
 /** The refusal of a stale retry, in the words of what it is about. */

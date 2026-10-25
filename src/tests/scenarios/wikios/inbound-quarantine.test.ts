@@ -268,6 +268,32 @@ describe.each(WIKIOS_MODES)("a quarantined inbound step [%s]", (mode) => {
       ]);
     });
 
+    it("a protect followed only by a later classic edit still applies: WikiOS gets the protection classic has (fix round 2)", async () => {
+      const protect: SiteEvent = {
+        logid: nextLogid++,
+        type: "protect",
+        action: "protect",
+        title: "Caphiria",
+        user: "Admin",
+        timestamp: site.now(),
+        comment: "vandalism",
+        params: { details: [{ type: "edit", level: "autoconfirmed", expiry: "infinite" }] },
+        logpage: site.pages.get("Caphiria")!.pageid,
+      };
+      const id = quarantined(protect);
+      site.editAs("Bob", "Caphiria", "Caphiria is a kingdom in Sarpedon.");
+      await runAutoSyncCycle();
+      expect(article("Caphiria")).toMatchObject({ wikitext: "Caphiria is a kingdom in Sarpedon." });
+      expect(tables.wikiRestriction.rows).toEqual([]);
+
+      await expect(retryQuarantined(id)).resolves.toBe("applied");
+
+      expect(tables.wikiRestriction.rows).toEqual([
+        expect.objectContaining({ action: "edit", level: "autoconfirmed" }),
+      ]);
+      expect(article("Caphiria")).toMatchObject({ wikitext: "Caphiria is a kingdom in Sarpedon." });
+    });
+
     it("a log event nothing overtook still applies, and its row is resolved", async () => {
       const block = userEvent("block", "block", "User:Vandal", { sitewide: true }, 1);
       const id = quarantined(block);
@@ -327,5 +353,26 @@ describe.each(WIKIOS_MODES)("a quarantined inbound step [%s]", (mode) => {
     expect(article("Caphiria")).toMatchObject({ wikitext: "Caphiria is an empire." });
     expect(liveHead("Caphiria")).toMatchObject({ mwRevId: r1.revid });
     expect(deadLetter(`rc:${r1.revid}`)).toMatchObject({ resolvedAt: expect.any(Date) });
+  });
+
+  it("resyncs a page classic moved after the quarantine by its new title, not the redirect left at the old one (fix round 2)", async () => {
+    const r1 = site.editAs("Alice", "Caphiria", "Caphiria is an empire.");
+    await quarantineByCycles(r1.revid);
+    // classic moves the page before WikiOS's next cycle: the stored title now holds a redirect on classic
+    site.movePage("Mover", "Caphiria", "Caphiria (state)");
+    const pageId = article("Caphiria")!.id;
+
+    await expect(resyncQuarantined(deadLetter(`rc:${r1.revid}`)!.id)).resolves.toBe("applied");
+
+    const resynced = tables.wikiArticle.rows.find((row) => row.id === pageId)!;
+    expect(resynced.wikitext).toBe("Caphiria is an empire.");
+    expect(deadLetter(`rc:${r1.revid}`)).toMatchObject({ resolvedAt: expect.any(Date) });
+
+    // the next cycle applies the move: the page is at its new title with classic's text, a redirect at the old one
+    await runAutoSyncCycle();
+    expect(article("Caphiria (state)")).toMatchObject({
+      id: pageId,
+      wikitext: "Caphiria is an empire.",
+    });
   });
 });
