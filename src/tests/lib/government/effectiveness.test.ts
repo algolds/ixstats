@@ -288,7 +288,9 @@ describe("component effects", () => {
   it("dates every effect at IxTime.getCurrentIxTime() milliseconds, not ×1000 (plan 329)", async () => {
     const fixed = Date.UTC(2042, 0, 1);
     jest.spyOn(IxTime, "getCurrentIxTime").mockReturnValue(fixed);
-    const createMany = jest.fn().mockResolvedValue({ count: 0 });
+    const createMany = jest.fn(({ data }: { data: object[] }) =>
+      Promise.resolve({ count: data.length })
+    );
     const db = {
       storytellerEffect: {
         findMany: jest.fn().mockResolvedValue([]),

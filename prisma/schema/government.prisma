@@ -65,6 +65,9 @@ model GovernmentStructure {
   ruleOfLaw               Float?                 @default(50)
   corruptionIndex         Float?                 @default(50)
   politicalMetricsUpdated DateTime?
+  /// JSON: the shift government components last applied to each political metric (politics-drift
+  /// carries event deltas by removing it before applying the new one).
+  componentMetricsSnapshot String?
   createdAt               DateTime               @default(now())
   updatedAt               DateTime               @updatedAt
   budgetAllocations       BudgetAllocation[]
