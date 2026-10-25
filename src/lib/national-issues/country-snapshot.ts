@@ -71,6 +71,12 @@ function fetchCountryCore(countryId: string, db: PrismaClient) {
       },
       activeAlliances: true,
       activeTreaties: true,
+      // The realised growth rate stat progression stores each IxTime month (effectiveGdpGrowth)
+      historicalData: {
+        orderBy: { ixTimeTimestamp: "desc" },
+        take: 1,
+        select: { gdpGrowthRate: true },
+      },
     },
   });
 }
@@ -220,9 +226,12 @@ function coreFields(country: CountryCoreRow) {
     currentPopulation: country.currentPopulation,
     currentGdpPerCapita: country.currentGdpPerCapita,
     currentTotalGdp: country.currentTotalGdp,
-    // Stored as a decimal (0.03 = 3%); trigger conditions and the {{gdpGrowth}} variable use
-    // percent, like every other rate in the snapshot.
-    actualGdpGrowth: growthDecimalToPercent(country.actualGdpGrowth),
+    // The realised growth (the latest history point's effective rate), falling back to the founding
+    // `actualGdpGrowth` before stat progression has written one. Both are decimals (0.03 = 3%);
+    // trigger conditions and the {{gdpGrowth}} variable use percent, like every other rate here.
+    actualGdpGrowth: growthDecimalToPercent(
+      country.historicalData?.[0]?.gdpGrowthRate ?? country.actualGdpGrowth
+    ),
     unemploymentRate: country.unemploymentRate ?? 0,
     inflationRate: country.inflationRate ?? 0,
     tradeBalance: country.tradeBalance ?? 0,
