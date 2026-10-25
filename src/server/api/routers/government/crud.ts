@@ -2,8 +2,6 @@
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
-import { detectGovernmentConflicts } from "~/server/services/builderIntegrationService";
-import { GovernmentBuilderStateSchema } from "~/types/government";
 import {
   assertCountryWriteAccess,
   hasCountryWriteAccess,
@@ -108,20 +106,6 @@ export const governmentCrudRouter = createTRPCRouter({
       if (!governmentStructure) return governmentStructure;
       if (await hasCountryWriteAccess(ctx, input.countryId)) return governmentStructure;
       return redactGovernmentBudget(governmentStructure);
-    }),
-
-  // Check for conflicts before creating/updating (the warnings quote the stored budget)
-  checkConflicts: rateLimitedMutationProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        data: GovernmentBuilderStateSchema,
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      await assertCountryWriteAccess(ctx, input.countryId);
-      const warnings = await detectGovernmentConflicts(ctx.db as any, input.countryId, input.data);
-      return { warnings };
     }),
 
   /**
