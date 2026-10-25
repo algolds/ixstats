@@ -28,8 +28,23 @@ jest.mock("~/lib/wiki-os/services/mirror-worker", () => ({
 }));
 
 import type { WikiMirrorJob } from "@prisma/client";
-import { claimJob, failJob, MAX_ATTEMPTS, MAX_BATCH_JOBS, pickBatch, pickRunnable, purgeDoneJobs, reclaimInterruptedJobs } from "~/lib/wiki-os/services/mirror-queue";
-import { enqueueDeleteJob, enqueueMoveJob, enqueueProtectJob, enqueueRevisionJob, scheduleMirrorKick } from "~/lib/wiki-os/services/mirror-outbox";
+import {
+  claimJob,
+  failJob,
+  MAX_ATTEMPTS,
+  MAX_BATCH_JOBS,
+  pickBatch,
+  pickRunnable,
+  purgeDoneJobs,
+  reclaimInterruptedJobs,
+} from "~/lib/wiki-os/services/mirror-queue";
+import {
+  enqueueDeleteJob,
+  enqueueMoveJob,
+  enqueueProtectJob,
+  enqueueRevisionJob,
+  scheduleMirrorKick,
+} from "~/lib/wiki-os/services/mirror-outbox";
 
 const NOW = new Date("2026-10-01T12:00:00Z");
 let counter = 0;
@@ -134,17 +149,19 @@ describe("pickRunnable", () => {
 
 describe("pickBatch", () => {
   const ids = (jobs: readonly WikiMirrorJob[]) => jobs.map((candidate) => candidate.id);
-  it("stops at a restore, a move away from the title and a move to it", () => {
-    for (const blocker of [
-      job({ title: "Foo", payload: { restore: true, summary: "Restoring" } }),
-      move("Foo", "Bar"),
-      move("Other", "Foo"),
-    ]) {
+  it("stops at a move away from the title and a move to it", () => {
+    for (const blocker of [move("Foo", "Bar"), move("Other", "Foo")]) {
       const first = job({ title: "Foo" });
       const after = job({ title: "Foo" });
 
       expect(ids(pickBatch([first, blocker, after], first, NOW))).toEqual([first.id]);
     }
+  });
+  it("batches a revision job whatever its payload says: a leftover park re-push is an ordinary revision", () => {
+    const first = job({ title: "Foo" });
+    const leftover = job({ title: "Foo", payload: { restore: true, summary: "Restoring" } });
+
+    expect(ids(pickBatch([first, leftover], first, NOW))).toEqual([first.id, leftover.id]);
   });
   it("takes at most 50 jobs, or the cap it is given", () => {
     const jobs = Array.from({ length: 60 }, () => job({ title: "Foo" }));
@@ -237,7 +254,11 @@ describe("the outbox", () => {
 
   describe("the inserts", () => {
     it("writes nothing for the MediaWiki: namespace, which the mirror account may never write", async () => {
-      await enqueueRevisionJob(tx, { title: "MediaWiki:Sidebar", articleId: "a1", revisionId: "r1" });
+      await enqueueRevisionJob(tx, {
+        title: "MediaWiki:Sidebar",
+        articleId: "a1",
+        revisionId: "r1",
+      });
       await enqueueRevisionJob(tx, {
         title: "mediawiki:common.css",
         articleId: "a1",
@@ -331,7 +352,10 @@ describe("the outbox", () => {
       scheduleMirrorKick();
       await jest.advanceTimersByTimeAsync(2_000);
 
-      expect(warn).toHaveBeenCalledWith("[WikiMirror] The in-process run failed:", expect.any(Error));
+      expect(warn).toHaveBeenCalledWith(
+        "[WikiMirror] The in-process run failed:",
+        expect.any(Error)
+      );
       warn.mockRestore();
     });
   });

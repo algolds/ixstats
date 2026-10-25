@@ -22,17 +22,13 @@ import { ArticleRepository } from "../core/article-repository";
 import { toRevisionRef } from "../core/domain-types";
 import { EditConflictError } from "../core/edit-conflict-error";
 import { canonicalizeTitle } from "../core/title";
-import {
-  trailSummary,
-  type CollisionVerdict,
-  type NoticeChannel,
-  type NoticeRecipient,
-} from "./conflict-rule";
+import { trailSummary, type NoticeChannel, type NoticeRecipient } from "./conflict-rule";
 import {
   markNotified,
   markSettled,
   pendingRecipients,
   toConflictEntry,
+  verdictOfEntry,
   type ConflictLogEntry,
   type ConflictRow,
 } from "./conflict-log";
@@ -300,17 +296,6 @@ async function attempt(what: string, context: NoticeContext, work: () => Promise
 
 // --- the trail ------------------------------------------------------------------------------------------------------
 
-const NO_AUTHOR = { userId: null, classicName: null, ip: null, label: null };
-
-function verdictOf(entry: ConflictLogEntry): CollisionVerdict {
-  return {
-    winner: { ...entry.winner, author: NO_AUTHOR },
-    overwritten: entry.overwritten,
-    incomingWins: true,
-    key: entry.key,
-  };
-}
-
 /** A trail that will never be written: the row settles without it, and the log says why. */
 function giveUpTrail({ entry }: NoticeContext, why: string): Delivery {
   console.warn(`[WikiConflicts] No trail for conflict ${entry.id}: ${why}.`);
@@ -347,7 +332,7 @@ async function writeTrail(context: NoticeContext): Promise<Delivery> {
   if (!(await winnerLanded(page.id, entry.winner))) return "open";
   const trail = await ArticleRepository.recordTrailRevision({
     articleId: page.id,
-    summary: trailSummary(verdictOf(entry), entry.id),
+    summary: trailSummary(verdictOfEntry(entry), entry.id),
     conflictId: entry.id,
   });
   return trail ? "sent" : "skipped";

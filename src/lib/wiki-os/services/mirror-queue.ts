@@ -6,7 +6,7 @@
  *     waiting out a backoff), and a `dead` job blocks its title until an administrator requeues or discards
  *     it. A move is about two titles, the one it moves from and the one it moves to, and holds both;
  *   - a failed job is tried again after `min(2^attempts x 30 s, 1 h)`, and goes `dead` after 8 attempts.
- *   - the plain revision jobs of a title that wait next in line are tried together, as one batch (`pickBatch`).
+ *   - the revision jobs of a title that wait next in line are tried together, as one batch (`pickBatch`).
  * `pickRunnable`, `pickBatch` and `backoffMs` are pure; the rest reads and writes `wiki_mirror_jobs`. The caller holds the
  * mirror lock (mirror-worker.ts): one runner at a time.
  */
@@ -69,18 +69,11 @@ export function pickRunnable(jobs: readonly MirrorJob[], now: Date): MirrorJob |
   return null;
 }
 
-/** Whether `job` writes a revision as it is (not a restore, which is dated now and goes alone). */
-function isPlainRevision(job: MirrorJob): boolean {
-  return (
-    job.kind === "revision" && !revisionPayloadSchema.safeParse(job.payload ?? {}).data?.restore
-  );
-}
-
 /**
- * The jobs to run together with `first` (the job `pickRunnable` chose): when it is a plain revision job, every plain
- * revision job of its title that waits next in line, up to `maxJobs`, oldest first. The batch stops at the first
- * job of the title (or of a move to it) that is anything else: another kind, a restore, one that is running, dead
- * or waiting out a backoff. Jobs of other titles in between do not matter. Pure.
+ * The jobs to run together with `first` (the job `pickRunnable` chose): when it is a revision job, every revision job
+ * of its title that waits next in line, up to `maxJobs`, oldest first. The batch stops at the first job of the title
+ * (or of a move to it) that is anything else: another kind, one that is running, dead or waiting out a backoff. Jobs
+ * of other titles in between do not matter. Pure.
  */
 export function pickBatch(
   window: readonly MirrorJob[],
@@ -89,11 +82,11 @@ export function pickBatch(
   maxJobs = MAX_BATCH_JOBS
 ): MirrorJob[] {
   const batch = [first];
-  if (!isPlainRevision(first)) return batch;
+  if (first.kind !== "revision") return batch;
   for (const job of window.slice(window.findIndex((candidate) => candidate.id === first.id) + 1)) {
     if (batch.length >= maxJobs) break;
     if (!titlesOf(job).includes(first.title)) continue;
-    const joins = isPlainRevision(job) && job.state === "pending" && job.nextAttemptAt <= now;
+    const joins = job.kind === "revision" && job.state === "pending" && job.nextAttemptAt <= now;
     if (!joins) break;
     batch.push(job);
   }

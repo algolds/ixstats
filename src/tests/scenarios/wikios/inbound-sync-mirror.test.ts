@@ -681,7 +681,8 @@ describe.each(WIKIOS_MODES)("inbound revisions through the conflict rule [%s]", 
     expect(conflictsOf("Caphiria")).toEqual([
       expect.objectContaining({ winnerSide: "classic", winnerRef: String(c.revid) }),
     ]);
-    expect(conflictsOf("Caphiria").map(overwrittenRefs)).toEqual([[String(c.revid + 50)]]);
+    // a WikiOS save keeps its row id as its ref once stamped: the mirror and the cycle name it alike
+    expect(conflictsOf("Caphiria").map(overwrittenRefs)).toEqual([[w1.revisionId]]);
     expect(jest.mocked(notificationAPI.create)).toHaveBeenCalledWith(
       expect.objectContaining({ userId: "clerk-kir", source: "wikiConflict" })
     );
@@ -1007,5 +1008,358 @@ describe.each(WIKIOS_MODES)("inbound revisions through the conflict rule [%s]", 
       "== Your edit to [[Caphiria]] was replaced =="
     );
     expect(jobs()).toContain("revision User talk:Bob pending");
+  });
+});
+
+describe.each(WIKIOS_MODES)("outbound revisions through the conflict rule [%s]", (mode) => {
+  let restoreMode: () => void = () => undefined;
+  beforeEach(async () => {
+    restoreMode = await seedWikiosMode(fake.db, mode);
+    tables.user.seed({ id: "db-kir", clerkUserId: "clerk-kir", handle: "kir" });
+  });
+  afterEach(() => restoreMode());
+
+  /** The site's clock: its last write. */
+  const siteTime = () => Date.parse(site.now());
+  /** Kir's WikiOS save of Caphiria on WikiOS's head (not mirrored yet), counting at `at` when given. */
+  const kirSaves = async (wikitext: string, at?: Date) => {
+    const saved = await ArticleRepository.saveArticle(
+      {
+        slug: "Caphiria",
+        title: "Caphiria",
+        wikitext,
+        expectedHeadRef: toRevisionRef(
+          liveHead("Caphiria") as { id: string; mwRevId: number | null }
+        ),
+      },
+      "db-kir",
+      "Kir"
+    );
+    if (at) revisionRow(saved.revisionId).createdAt = at;
+    return saved;
+  };
+  const siteRevisions = (title = "Caphiria") => site.pages.get(title)?.revisions ?? [];
+  const sentEdits = () => site.wiki.calls().filter((request) => request.params.action === "edit");
+  const caphiriaJob = () =>
+    tables.wikiMirrorJob.rows.find((job) => job.title === "Caphiria" && job.kind === "revision")!;
+  /** History lines that carry a trail: WikiOS's revisions of Caphiria, and MediaWiki's. */
+  const trailLines = () => ({
+    wikios: revisionsOf("Caphiria").filter((row) => String(row.summary ?? "").includes("Overwrote"))
+      .length,
+    classic: siteRevisions().filter((revision) => revision.comment.includes("Overwrote")).length,
+  });
+  const revisionOfMw = (mwRevId: number) =>
+    tables.wikiRevision.rows.find((row) => row.mwRevId === mwRevId);
+  const bobNotices = (row: Record<string, unknown>) =>
+    (row.notified as Array<{ key: string; channel: string }>).filter(
+      (mark) => mark.key === "name:Bob"
+    );
+
+  it("a WikiOS revision later than classic's current from the same base is imported as current, with the trail in its summary on both wikis; one row", async () => {
+    const bob = site.editAs("Bob", "Caphiria", "Caphiria is a republic.");
+    // Kir saves now: the site's clock is an hour behind, so Kir's save is the later one
+    const saved = await kirSaves("Caphiria is an empire in Sarpedon.");
+
+    await expect(runMirrorCycle()).resolves.toMatchObject({ done: 1, failed: 0 });
+
+    expect(site.current("Caphiria")?.text).toBe("Caphiria is an empire in Sarpedon.");
+    const [conflict] = conflictsOf("Caphiria");
+    expect(conflictsOf("Caphiria")).toHaveLength(1);
+    expect(conflict).toMatchObject({ winnerSide: "wikios", winnerRef: saved.revisionId });
+    expect(overwrittenRefs(conflict!)).toEqual([String(bob.revid)]);
+    const trail = `Overwrote revision ${bob.revid} by Bob, saved from the same version (conflict ${conflict!.id})`;
+    expect(revisionRow(saved.revisionId).summary).toContain(trail);
+    const imported = siteRevisions().find((r) => r.text === "Caphiria is an empire in Sarpedon.")!;
+    expect(imported.comment).toContain(trail);
+    expect(trailLines()).toEqual({ wikios: 1, classic: 1 });
+    expect(sentEdits()).toEqual([]);
+    expect(revisionRow(saved.revisionId).mwRevId).toBe(site.current("Caphiria")!.revid);
+  });
+
+  it("a page both wikis created on their own has no base: only classic's current revision is listed overwritten", async () => {
+    site.editAs("Carol", "Ixnay", "Ixnay is a world.");
+    const dana = site.editAs("Dana", "Ixnay", "Ixnay is a planet.");
+    const created = await ArticleRepository.saveArticle(
+      {
+        slug: "Ixnay",
+        title: "Ixnay",
+        wikitext: "Ixnay is a world of empires.",
+        expectedHeadRef: null,
+      },
+      "db-kir",
+      "Kir"
+    );
+
+    await runMirrorCycle();
+
+    expect(conflictsOf("Ixnay")).toEqual([
+      expect.objectContaining({
+        winnerSide: "wikios",
+        winnerRef: created.revisionId,
+        baseRef: null,
+      }),
+    ]);
+    expect(conflictsOf("Ixnay").map(overwrittenRefs)).toEqual([[String(dana.revid)]]);
+    expect(site.current("Ixnay")?.text).toBe("Ixnay is a world of empires.");
+  });
+
+  it("a WikiOS revision earlier than classic's current is imported as history only: no action=edit is sent, the job notes it lost, one row names its author", async () => {
+    const saved = await kirSaves(
+      "Caphiria is an empire in Sarpedon.",
+      new Date(siteTime() - 60_000)
+    );
+    const bob = site.editAs("Bob", "Caphiria", "Caphiria is a republic.");
+
+    await expect(runMirrorCycle()).resolves.toMatchObject({ done: 1, failed: 0 });
+
+    expect(site.current("Caphiria")?.text).toBe("Caphiria is a republic.");
+    expect(sentEdits()).toEqual([]);
+    const imported = siteRevisions().find((r) => r.text === "Caphiria is an empire in Sarpedon.");
+    expect(imported?.user).toBe("wikios>Kir");
+    expect(caphiriaJob()).toMatchObject({ state: "done" });
+    expect(caphiriaJob().payload).toEqual({
+      note: `Lost to MediaWiki revision ${bob.revid} (saved later); imported as history`,
+    });
+    // stamped with its own place in MediaWiki's history; the page's latest revision is still classic's
+    expect(revisionRow(saved.revisionId).mwRevId).toBe(imported?.revid);
+    expect(article("Caphiria")?.mwLatestRevId).not.toBe(imported?.revid);
+    const conflicts = conflictsOf("Caphiria");
+    expect(conflicts).toHaveLength(1);
+    expect(conflicts[0]).toMatchObject({ winnerSide: "classic", winnerRef: String(bob.revid) });
+    expect(conflicts[0]!.overwritten).toEqual([
+      expect.objectContaining({
+        side: "wikios",
+        ref: saved.revisionId,
+        author: expect.objectContaining({ userId: "db-kir", label: "Kir" }),
+      }),
+    ]);
+    expect(trailLines()).toEqual({ wikios: 0, classic: 0 });
+  });
+
+  it("a job queued before a classic edit and run after it still loses by save time", async () => {
+    jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    const saved = await kirSaves(
+      "Caphiria is an empire in Sarpedon.",
+      new Date(siteTime() - 60_000)
+    );
+    // the first attempt's import fails; Bob edits while the job waits out its backoff
+    global.fetch = (async (input: string | URL | Request, init?: RequestInit) =>
+      init?.body instanceof FormData
+        ? new Response("Down.", { status: 503 })
+        : site.fetch(input, init)) as never;
+    await expect(runMirrorCycle()).resolves.toMatchObject({ done: 0, failed: 1 });
+    global.fetch = site.fetch as never;
+    const bob = site.editAs("Bob", "Caphiria", "Caphiria is a republic.");
+    caphiriaJob().nextAttemptAt = new Date(Date.now() - 1);
+
+    await expect(runMirrorCycle()).resolves.toMatchObject({ done: 1, failed: 0 });
+
+    expect(site.current("Caphiria")?.text).toBe("Caphiria is a republic.");
+    expect(sentEdits()).toEqual([]);
+    expect(conflictsOf("Caphiria")).toEqual([
+      expect.objectContaining({ winnerSide: "classic", winnerRef: String(bob.revid) }),
+    ]);
+
+    // the cycle brings Bob's edit over as the head (the settling's trail copies it on top): the same row, Kir told once
+    await runAutoSyncCycle();
+    expect(revisionOfMw(bob.revid)?.parked).toBe(false);
+    expect(liveHead("Caphiria").wikitext).toBe("Caphiria is a republic.");
+    expect(revisionRow(saved.revisionId).parked).toBe(false);
+    expect(conflictsOf("Caphiria")).toHaveLength(1);
+    expect(
+      jest
+        .mocked(notificationAPI.create)
+        .mock.calls.filter(([input]) => input.userId === "clerk-kir")
+    ).toHaveLength(1);
+  });
+
+  it("a winner dated before the mirror's own null revision is promoted by one edit; a loser never is", async () => {
+    // W1 goes out alone; the import's null revision is dated a second after it
+    const w1At = new Date(siteTime() + 10_000);
+    await kirSaves("Caphiria is an empire.", w1At);
+    await runMirrorCycle();
+    const nullRevision = site.current("Caphiria")!;
+    expect(nullRevision.user).toBe(site.mirror);
+    // W2 was saved before that null revision: imported, it lands under it
+    const w2 = await kirSaves("Caphiria is an empire in Sarpedon.", new Date(w1At.getTime() + 500));
+
+    await runMirrorCycle();
+
+    expect(sentEdits()).toHaveLength(1);
+    expect(sentEdits()[0]?.params).toMatchObject({ baserevid: expect.any(String), bot: "1" });
+    expect(site.current("Caphiria")).toMatchObject({
+      text: "Caphiria is an empire in Sarpedon.",
+      user: site.mirror,
+    });
+    expect(revisionRow(w2.revisionId).mwRevId).toBe(site.current("Caphiria")!.revid);
+    expect(conflictsOf("Caphiria")).toEqual([]);
+
+    // a loser: Bob's later edit is already WikiOS's head (the cycle ran first), W3 is older than it
+    const w3 = await kirSaves("Caphiria is a small empire.", new Date(siteTime() - 60_000));
+    const bob = site.editAs("Bob", "Caphiria", "Caphiria is a republic.");
+    await runAutoSyncCycle();
+    expect(liveHead("Caphiria").mwRevId).toBe(bob.revid);
+
+    await runMirrorCycle();
+
+    expect(sentEdits()).toHaveLength(1);
+    expect(site.current("Caphiria")?.text).toBe("Caphiria is a republic.");
+    const job = tables.wikiMirrorJob.rows.find((row) => row.revisionId === w3.revisionId)!;
+    expect(job).toMatchObject({ state: "done" });
+    expect((job.payload as { note: string }).note).toContain(`revision ${bob.revid}`);
+  });
+
+  it.each(["mirror first, then cycle", "cycle first, then mirror"])(
+    "%s: one row, one notice per author, one trail line",
+    async (order) => {
+      const bob = site.editAs("Bob", "Caphiria", "Caphiria is a republic.");
+      const saved = await kirSaves("Caphiria is an empire in Sarpedon.");
+      const steps =
+        order === "mirror first, then cycle"
+          ? [runMirrorCycle, runAutoSyncCycle]
+          : [runAutoSyncCycle, runMirrorCycle];
+
+      for (const step of [...steps, ...steps]) await step();
+
+      expect(conflictsOf("Caphiria")).toHaveLength(1);
+      const [conflict] = conflictsOf("Caphiria");
+      expect(conflict).toMatchObject({ winnerSide: "wikios", winnerRef: saved.revisionId });
+      expect(overwrittenRefs(conflict!)).toEqual([String(bob.revid)]);
+      expect(bobNotices(conflict!)).toEqual([expect.objectContaining({ channel: "talk-page" })]);
+      expect(trailLines()).toEqual({ wikios: 1, classic: 1 });
+      expect(site.current("Caphiria")?.text).toBe("Caphiria is an empire in Sarpedon.");
+      expect(liveHead("Caphiria").id).toBe(saved.revisionId);
+      expect(revisionOfMw(bob.revid)).toMatchObject({
+        parked: true,
+        parkReason: `overwritten:${saved.revisionId}`,
+      });
+      expect(sentEdits().filter((edit) => edit.params.title === "Caphiria")).toEqual([]);
+    }
+  );
+
+  it("a batch that lost still carries the trail of a collision an earlier revision of it won", async () => {
+    const c1 = site.editAs("Bob", "Caphiria", "Caphiria is a republic.");
+    const t1 = Date.parse(c1.timestamp);
+    // W1, saved after Bob's edit, wins over it in the cycle; W2 follows; then Carol saves on classic after both
+    const w1 = await kirSaves("Caphiria is an empire.", new Date(t1 + 1_200));
+    await runAutoSyncCycle();
+    expect(conflictsOf("Caphiria")).toEqual([
+      expect.objectContaining({ winnerRef: w1.revisionId, trailRevisionId: null }),
+    ]);
+    await kirSaves("Caphiria is an empire in Sarpedon.", new Date(t1 + 1_500));
+    site.editAs("Dana", "Ixnay", "Ixnay is a world.");
+    site.editAs("Dana", "Ixnay", "Ixnay is a planet.");
+    const c2 = site.editAs("Carol", "Caphiria", "Caphiria is a duchy.");
+
+    await runMirrorCycle();
+
+    expect(site.current("Caphiria")?.text).toBe("Caphiria is a duchy.");
+    expect(conflictsOf("Caphiria").map((row) => [row.winnerRef, row.trailRevisionId])).toEqual([
+      [w1.revisionId, w1.revisionId],
+      [String(c2.revid), null],
+    ]);
+    const trail = `Overwrote revision ${c1.revid} by Bob`;
+    expect(revisionRow(w1.revisionId).summary).toContain(trail);
+    const imported = siteRevisions().find((r) => r.text === "Caphiria is an empire.");
+    expect(imported?.comment).toContain(trail);
+    expect(trailLines()).toEqual({ wikios: 1, classic: 1 });
+  });
+
+  it("cuts a long summary so MediaWiki keeps the whole trail", async () => {
+    site.editAs("Bob", "Caphiria", "Caphiria is a republic.");
+    const saved = await kirSaves("Caphiria is an empire in Sarpedon.");
+    revisionRow(saved.revisionId).summary = "a".repeat(490);
+
+    await runMirrorCycle();
+
+    const summary = String(revisionRow(saved.revisionId).summary);
+    const [conflict] = conflictsOf("Caphiria");
+    expect(summary.length).toBeLessThanOrEqual(500);
+    expect(summary).toMatch(/^a+; Overwrote revision \d+ by Bob/);
+    expect(summary.endsWith(`(conflict ${conflict!.id})`)).toBe(true);
+  });
+
+  it("a classic current revision whose time MediaWiki leaves out counts as saved now: WikiOS's earlier save loses", async () => {
+    site.editAs("Bob", "Caphiria", "Caphiria is a republic.");
+    // saved now, an hour after Bob by the site's clock: it would win against Bob's real time
+    await kirSaves("Caphiria is an empire in Sarpedon.", new Date(Date.now() - 5_000));
+    global.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+      const response = await site.fetch(input, init);
+      if (new URL(String(input)).searchParams.get("rvlimit") !== "1") return response;
+      const body = (await response.json()) as {
+        query?: { pages?: Array<{ revisions?: Array<{ timestamp?: string }> }> };
+      };
+      for (const revision of body.query?.pages?.[0]?.revisions ?? []) delete revision.timestamp;
+      return new Response(JSON.stringify(body), { status: 200 });
+    }) as never;
+
+    await runMirrorCycle();
+
+    expect(conflictsOf("Caphiria")).toEqual([expect.objectContaining({ winnerSide: "classic" })]);
+    expect((caphiriaJob().payload as { note: string }).note).toMatch(/^Lost to MediaWiki revision/);
+    expect(sentEdits()).toEqual([]);
+  });
+
+  it("a later WikiOS revision outside the batch is not listed as lost with it", async () => {
+    const w1 = await kirSaves("Caphiria is an empire.", new Date(siteTime() - 60_000));
+    const w2 = await kirSaves("Caphiria is an empire in Sarpedon.");
+    // W2's job waits out a backoff: the batch is W1 alone
+    tables.wikiMirrorJob.rows.find((job) => job.revisionId === w2.revisionId)!.nextAttemptAt =
+      new Date(Date.now() + 3_600_000);
+    const bob = site.editAs("Bob", "Caphiria", "Caphiria is a republic.");
+
+    await runMirrorCycle();
+
+    expect(conflictsOf("Caphiria")).toEqual([
+      expect.objectContaining({ winnerSide: "classic", winnerRef: String(bob.revid) }),
+    ]);
+    expect(conflictsOf("Caphiria").map(overwrittenRefs)).toEqual([[w1.revisionId]]);
+  });
+
+  it("the mirror's own null revision is never judged as a classic edit", async () => {
+    await kirSaves("Caphiria is an empire.", new Date(siteTime() - 60_000));
+    site.editAs("Bob", "Caphiria", "Caphiria is a republic.");
+    await runMirrorCycle(); // lost: imported as history, under the import's null revision by the mirror
+    expect(site.current("Caphiria")?.user).toBe(site.mirror);
+
+    await kirSaves("Caphiria is an empire in Sarpedon.", new Date(siteTime() + 60_000));
+    await runMirrorCycle();
+
+    expect(conflictsOf("Caphiria")).toHaveLength(1);
+    expect(site.current("Caphiria")?.text).toBe("Caphiria is an empire in Sarpedon.");
+  });
+
+  it("the mirror's own revisions are never listed as overwritten", async () => {
+    await kirSaves("Caphiria is an empire.", new Date(siteTime() - 60_000));
+    const bob = site.editAs("Bob", "Caphiria", "Caphiria is a republic.");
+    await runMirrorCycle(); // lost: the import's null revision by the mirror is on top
+    // a classic edit lands on the mirror's revision, and a later WikiOS revision overwrites it
+    const carol = site.editAs("Carol", "Caphiria", "Caphiria is a duchy.");
+    const w2 = await kirSaves("Caphiria is a small empire.", new Date(siteTime() + 60_000));
+
+    await runMirrorCycle();
+
+    const won = conflictsOf("Caphiria").find((row) => row.winnerRef === w2.revisionId)!;
+    expect(overwrittenRefs(won)).toEqual([String(bob.revid), String(carol.revid)]);
+  });
+
+  it("a classic delete wins, then that page's queued WikiOS job runs: classic stays deleted and no import is sent", async () => {
+    const lost = await kirSaves(
+      "Caphiria is an empire in Sarpedon.",
+      new Date(siteTime() - 60_000)
+    );
+    site.deletePage("Admin", "Caphiria");
+    await runAutoSyncCycle();
+    expect(revisionRow(lost.revisionId)).toMatchObject({ parked: true });
+
+    await expect(runMirrorCycle()).resolves.toMatchObject({ failed: 0 });
+
+    expect(site.pages.has("Caphiria")).toBe(false);
+    expect(site.wiki.calls().filter((request) => request.params.action === "import")).toEqual([]);
+    expect(caphiriaJob().state).toBe("done");
+    expect((caphiriaJob().payload as { note: string }).note).toMatch(
+      /^Overwritten before it was sent/
+    );
+    expect(revisionRow(lost.revisionId).mwRevId).toBeNull();
   });
 });

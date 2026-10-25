@@ -13,7 +13,7 @@ const SYNCED = new Date("2026-10-01");
 
 function page(
   wikitext: string,
-  revisions: Array<{ wikitext: string; parked: boolean; at: string }>
+  revisions: Array<{ wikitext: string; parked: boolean; at: string; textDeleted?: boolean }>
 ) {
   const row = tables.wikiArticle.insert({
     title: "Caphiria",
@@ -26,6 +26,7 @@ function page(
       articleId: row.id,
       wikitext: revision.wikitext,
       parked: revision.parked,
+      textDeleted: revision.textDeleted ?? false,
       createdAt: new Date(revision.at),
     });
   }
@@ -48,6 +49,18 @@ describe("repointArticleHead", () => {
       redirectTargetSlug: "Ixnay",
       htmlSyncedAt: null,
     });
+  });
+
+  it("skips a revision whose text is hidden: its empty text is never the page's", async () => {
+    const row = page("Lost text.", [
+      { wikitext: "Caphiria is a kingdom.", parked: false, at: "2026-09-01" },
+      { wikitext: "", parked: false, textDeleted: true, at: "2026-09-15" },
+      { wikitext: "Lost text.", parked: true, at: "2026-10-01" },
+    ]);
+
+    await expect(repointArticleHead(client, row.id)).resolves.toBe(true);
+
+    expect(tables.wikiArticle.rows[0]?.wikitext).toBe("Caphiria is a kingdom.");
   });
 
   it("leaves a page whose text is its head's as it is, and one with no live revision", async () => {

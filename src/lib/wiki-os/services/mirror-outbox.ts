@@ -24,15 +24,14 @@ export const MIRROR_LOCK_NAME = "wiki-mirror";
 
 export type MirrorJobKind = "revision" | "move" | "delete" | "undelete" | "protect" | "upload";
 
-/** `revision`: `restore` pushes the page's head again (a park's re-push): dated now, credited to the mirror. */
+/**
+ * `revision`: nothing but the note the worker leaves. A job always sends its revision as it was saved (the park
+ * re-push that sent the head again, dated now, is retired: a lost revision is history, never pushed back).
+ */
 export const revisionPayloadSchema = z.object({
-  restore: z.boolean().default(false),
-  /** The edit summary a restore carries (the revision's own summary is not the reason for this push). */
-  summary: z.string().optional(),
   /** Written when the job is done in a way worth knowing about (see mirror-revision.ts); never by the enqueuer. */
   note: z.string().optional(),
 });
-export type RevisionPayload = z.infer<typeof revisionPayloadSchema>;
 
 export const movePayloadSchema = z.object({
   /** The canonical title the page moved to (the job's own `title` is where it moved from). */
@@ -86,8 +85,6 @@ export interface RevisionJobInput {
   articleId: string;
   revisionId: string;
   source?: string;
-  /** Push the page's head again: `summary` is the edit summary of that push. */
-  restore?: { summary: string };
 }
 
 /**
@@ -113,9 +110,6 @@ function isMirrored(source: string | undefined, titles: readonly string[]): bool
 /** Queue a `revision` job: push WikiOS revision `revisionId` of `title` to MediaWiki. */
 export async function enqueueRevisionJob(tx: Tx, job: RevisionJobInput): Promise<void> {
   if (!isMirrored(job.source, [job.title])) return;
-  const payload: RevisionPayload | undefined = job.restore
-    ? { restore: true, summary: job.restore.summary }
-    : undefined;
   await tx.wikiMirrorJob.create({
     data: {
       source: MIRROR_SOURCE,
@@ -123,7 +117,6 @@ export async function enqueueRevisionJob(tx: Tx, job: RevisionJobInput): Promise
       title: job.title,
       articleId: job.articleId,
       revisionId: job.revisionId,
-      ...(payload ? { payload } : {}),
     },
   });
 }

@@ -39,7 +39,9 @@ import {
   executeRevisionBatch,
   MAX_BATCH_BYTES,
   planRevisionBatch,
+  type BatchCollision,
 } from "~/lib/wiki-os/services/mirror-revision";
+import { revisionPayloadSchema } from "~/lib/wiki-os/services/mirror-outbox";
 import { mwSha1Base36, sha1HexToBase36 } from "~/lib/wiki-os/xml/sha1";
 import { API_URL, createFakeMediaWiki, type RecordedRequest } from "~/tests/helpers/fake-mediawiki";
 import { createHash } from "node:crypto";
@@ -132,21 +134,30 @@ describe("revision jobs", () => {
     );
   }
 
-  /** `prop=revisions` answers with each head in turn (the last one for every query after): the page as MediaWiki has it. */
-  function currentRevisionsAre(heads: Array<{ revid: number; text: string }>) {
-    const queue = [...heads];
-    wiki.on("query", () => {
-      const head = queue.length > 1 ? queue.shift()! : queue[0]!;
+  /** MediaWiki's history of the page, oldest first: the newest is the current revision. */
+  function historyIs(
+    entries: Array<{ revid: number; text: string; timestamp: string; user?: string }>
+  ) {
+    wiki.on("query", ({ params }) => {
+      const newestFirst = [...entries].reverse();
+      const shown = params.rvlimit === "1" ? newestFirst.slice(0, 1) : newestFirst;
       return {
         query: {
           pages: [
-            { title: "Foo bar", revisions: [{ revid: head.revid, sha1: hexSha1(head.text) }] },
+            {
+              title: "Foo bar",
+              revisions: shown.map(({ revid, text, timestamp, user }) => ({
+                revid,
+                sha1: hexSha1(text),
+                timestamp,
+                ...(user ? { user } : {}),
+              })),
+            },
           ],
         },
       };
     });
   }
-
   const importOk = () =>
     wiki.on("import", () => ({ import: [{ ns: 0, title: "Foo bar", revisions: 1 }] }));
   const requestsTo = (action: string): RecordedRequest[] =>
@@ -320,23 +331,20 @@ describe("revision jobs", () => {
         expect(decoded.join("")).not.toContain("\uFFFD");
       });
     });
-    it("asks MediaWiki for the page's current revision and its hash twice: before the import, to know who made the newest revision, and after it, to verify", async () => {
+    it("asks MediaWiki for the page's current revision and its hash once the import is done, to verify it", async () => {
       await runRevisionJob(job());
 
       const calls = wiki.calls();
       const reads = calls.filter((request) => request.params.prop === "revisions");
-      expect(reads).toHaveLength(2);
-      for (const read of reads) {
-        expect(read.params).toMatchObject({
-          action: "query",
-          titles: "Foo bar",
-          rvprop: "ids|sha1|timestamp|user",
-          rvlimit: "1",
-        });
-      }
+      expect(reads).toHaveLength(1);
+      expect(reads[0]?.params).toMatchObject({
+        action: "query",
+        titles: "Foo bar",
+        rvprop: "ids|sha1|timestamp|user",
+        rvlimit: "1",
+      });
       const importAt = calls.findIndex((r) => r.params.action === "import");
-      expect(calls.indexOf(reads[0]!)).toBeLessThan(importAt);
-      expect(calls.indexOf(reads[1]!)).toBeGreaterThan(importAt);
+      expect(calls.indexOf(reads[0]!)).toBeGreaterThan(importAt);
     });
 
     it("stamps the WikiOS revision and the article with the MediaWiki revision that holds the text", async () => {
@@ -397,17 +405,26 @@ describe("revision jobs", () => {
     });
   });
 
-  describe("when MediaWiki has a newer revision", () => {
+  describe("when the import is not MediaWiki's current text", () => {
     beforeEach(() => {
       importOk();
       wiki.on("edit", () => ({ edit: { result: "Success", newrevid: 901 } }));
     });
+    /** The revision's own import, dated when it was made. */
+    const ownImport = { revid: 776, text: TEXT, timestamp: "2026-09-27T10:20:30Z", user: "Alice" };
+    const OTHER = "Another text.\n";
 
-    it("pushes the text as an edit by the bot on top of the current revision, then stamps that revision", async () => {
-      currentRevisionIs(900, "Someone else's text.");
+    it("makes it current by one edit of the mirror account when every revision dated after it is the mirror's own", async () => {
+      historyIs([
+        ownImport,
+        { revid: 777, text: OTHER, timestamp: "2026-09-27T10:25:00Z", user: "WikiOSMirror" },
+        { revid: 778, text: OTHER, timestamp: "2026-09-27T10:30:00Z", user: "WikiOSMirror" },
+      ]);
 
-      await expect(runRevisionJob(job())).resolves.toBe(901);
+      const [outcome] = await runBatch([job()]);
 
+      expect(outcome?.mwRevId).toBe(901);
+      expect(outcome?.note).toContain("made current by one edit");
       const [edit] = requestsTo("edit");
       expect(edit?.params).toMatchObject({
         action: "edit",
@@ -415,31 +432,134 @@ describe("revision jobs", () => {
         text: TEXT,
         summary: "fix the lead (WikiOS)",
         bot: "1",
-        baserevid: "900",
+        baserevid: "778",
       });
       expect(edit?.params.minor).toBeUndefined();
       expect(edit?.order.at(-1)).toBe("token");
       expect(mockRevisionUpdateMany.mock.calls[0]?.[0].data).toEqual({ mwRevId: 901 });
       expect(mockArticleUpdateMany.mock.calls[0]?.[0].data).toMatchObject({ mwLatestRevId: 901 });
     });
-    it("falls back to an edit when MediaWiki hides the hash", async () => {
-      wiki.on("query", () => ({
-        query: { pages: [{ title: "Foo bar", revisions: [{ revid: 900, sha1hidden: true }] }] },
-      }));
+
+    it("never pushes it over a classic editor's later revision: it stays history, stamped with its import, and the job says so", async () => {
+      historyIs([
+        ownImport,
+        { revid: 900, text: OTHER, timestamp: "2026-09-27T10:25:00Z", user: "Bob" },
+        { revid: 902, text: OTHER, timestamp: "2026-09-27T10:30:00Z", user: "WikiOSMirror" },
+      ]);
+
+      const [outcome] = await runBatch([job()]);
+
+      expect(outcome).toMatchObject({
+        mwRevId: 776,
+        note: "MediaWiki has a later revision 900 by a classic editor; imported as history",
+      });
+      expect(requestsTo("edit")).toHaveLength(0);
+      expect(mockRevisionUpdateMany.mock.calls.map(([args]) => args.data.mwRevId)).toEqual([776]);
+      expect(mockArticleUpdateMany).not.toHaveBeenCalled();
+    });
+
+    it("counts a classic revision of the same second as later: a tie goes to classic", async () => {
+      historyIs([
+        ownImport,
+        { revid: 900, text: OTHER, timestamp: "2026-09-27T10:20:30Z", user: "Bob" },
+        { revid: 902, text: OTHER, timestamp: "2026-09-27T10:30:00Z", user: "WikiOSMirror" },
+      ]);
+
+      await expect(runRevisionJob(job())).resolves.toBe(776);
+
+      expect(requestsTo("edit")).toHaveLength(0);
+    });
+
+    it("counts a revision whose author MediaWiki hides as a classic editor's, never the mirror's", async () => {
+      historyIs([
+        ownImport,
+        { revid: 900, text: OTHER, timestamp: "2026-09-27T10:25:00Z" },
+        { revid: 902, text: OTHER, timestamp: "2026-09-27T10:30:00Z", user: "WikiOSMirror" },
+      ]);
 
       await runRevisionJob(job());
 
-      expect(requestsTo("edit")).toHaveLength(1);
+      expect(requestsTo("edit")).toHaveLength(0);
     });
 
     it("fails the job when the edit is refused, and stamps nothing", async () => {
-      currentRevisionIs(900, "Someone else's text.");
+      historyIs([
+        ownImport,
+        { revid: 777, text: OTHER, timestamp: "2026-09-27T10:25:00Z", user: "WikiOSMirror" },
+      ]);
       wiki.on("edit", () => ({ error: { code: "editconflict", info: "Edit conflict." } }));
 
       await expect(runRevisionJob(job())).rejects.toThrow(/editconflict/);
 
       expect(mockRevisionUpdateMany).not.toHaveBeenCalled();
       expect(mockArticleUpdateMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("a batch the conflict rule judged lost", () => {
+    const lost: BatchCollision = {
+      verdict: {
+        winner: {
+          side: "classic",
+          action: "edit",
+          ref: "900",
+          at: new Date("2026-09-27T10:25:00Z"),
+          author: { userId: null, classicName: "Bob", ip: null, label: null },
+        },
+        overwritten: [],
+        incomingWins: false,
+        key: "ixwiki:art-1:900",
+      },
+      conflictId: "c1",
+      wikiosWon: false,
+    };
+
+    it("is imported as history only: no edit, no check of the current text, the revision stamped with its import, the job naming the winner", async () => {
+      importOk();
+      wiki.on("edit", () => ({ edit: { result: "Success", newrevid: 901 } }));
+      historyIs([
+        { revid: 776, text: TEXT, timestamp: "2026-09-27T10:20:30Z", user: "Alice" },
+        { revid: 900, text: "Bob's text.\n", timestamp: "2026-09-27T10:25:00Z", user: "Bob" },
+        {
+          revid: 902,
+          text: "Bob's text.\n",
+          timestamp: "2026-09-27T10:30:00Z",
+          user: "WikiOSMirror",
+        },
+      ]);
+
+      const outcomes = await executeRevisionBatch(await planRevisionBatch([job()]), lost);
+
+      expect(outcomes).toEqual([
+        {
+          job: expect.objectContaining({ id: "job-1" }),
+          mwRevId: 776,
+          note: "Lost to MediaWiki revision 900 (saved later); imported as history",
+        },
+      ]);
+      expect(requestsTo("import")).toHaveLength(1);
+      expect(requestsTo("edit")).toHaveLength(0);
+      expect(wiki.calls().filter((request) => request.params.rvlimit === "1")).toHaveLength(0);
+      expect(mockRevisionUpdateMany.mock.calls.map(([args]) => args.data.mwRevId)).toEqual([776]);
+      expect(mockArticleUpdateMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("an overwritten (parked) revision", () => {
+    it("is never sent: a job whose revision is parked completes with a note, and nothing reaches MediaWiki", async () => {
+      revisionsAre(revisionRow({ parked: true, parkReason: "overwritten:mwlog:7" }));
+
+      const outcomes = await runBatch([job()]);
+
+      expect(outcomes).toEqual([
+        {
+          job: expect.objectContaining({ id: "job-1" }),
+          mwRevId: null,
+          note: "Overwritten before it was sent (overwritten:mwlog:7): kept in WikiOS's history only",
+        },
+      ]);
+      expect(wiki.fetch).not.toHaveBeenCalled();
+      expect(mockRevisionUpdateMany).not.toHaveBeenCalled();
     });
   });
 
@@ -457,8 +577,8 @@ describe("revision jobs", () => {
         expect((failure as MediaWikiApiError).code).toBe(code);
         expect((failure as MediaWikiApiError).message).toContain("You may not import.");
         expect(requestsTo("edit")).toHaveLength(0);
-        // the only read is the one before the import: a refused import is never verified
-        expect(requestsTo("query")).toHaveLength(1);
+        // a refused import is never verified
+        expect(requestsTo("query")).toHaveLength(0);
         expect(wiki.calls().at(-1)?.params.action).toBe("import");
         expect(mockRevisionUpdateMany).not.toHaveBeenCalled();
       }
@@ -498,67 +618,6 @@ describe("revision jobs", () => {
     });
   });
 
-  describe("a restore job (a park's re-push of WikiOS's head)", () => {
-    const restore = (over: Partial<WikiMirrorJob> = {}) =>
-      job({ payload: { restore: true, summary: "Restoring WikiOS revision 90" }, ...over });
-
-    beforeEach(() => {
-      importOk();
-      // before the restore MediaWiki has the conflicting edit; after it, the restored head
-      currentRevisionsAre([
-        { revid: 700, text: "Someone else's text." },
-        { revid: 777, text: TEXT },
-      ]);
-    });
-
-    it("is dated now and credited to the mirror account, with the restore summary", async () => {
-      const before = Date.now();
-      await runRevisionJob(restore());
-
-      const xml = requestsTo("import")[0]?.file?.content ?? "";
-      const stamped = Date.parse(xmlTimestamp(xml) ?? "");
-      expect(stamped).toBeGreaterThanOrEqual(Math.floor(before / 1000) * 1000);
-      expect(stamped).toBeLessThanOrEqual(Date.now());
-      expect(xml).toContain("<username>WikiOSMirror</username>");
-      expect(xml).toContain("<comment>Restoring WikiOS revision 90</comment>");
-      expect(requestsTo("import")[0]?.params.summary).toBe("Restoring WikiOS revision 90");
-      expect(mockClaimFindMany).not.toHaveBeenCalled();
-    });
-    it("is imported even though the head already has a MediaWiki id: that revision is the one MediaWiki lost", async () => {
-      revisionsAre(revisionRow({ mwRevId: 42 }));
-
-      await expect(runRevisionJob(restore())).resolves.toBe(777);
-
-      expect(requestsTo("import")).toHaveLength(1);
-      // the head keeps its own id: only a revision with none is stamped
-      expect(mockRevisionUpdateMany.mock.calls[0]?.[0].where).toEqual({
-        id: "rev-1",
-        mwRevId: null,
-      });
-    });
-    it("imports nothing when MediaWiki already holds the head's text: the conflicting edit was superseded", async () => {
-      currentRevisionIs(850);
-
-      await expect(runRevisionJob(restore())).resolves.toBe(850);
-
-      expect(requestsTo("import")).toHaveLength(0);
-      expect(requestsTo("edit")).toHaveLength(0);
-      expect(mockRevisionUpdateMany.mock.calls[0]?.[0]).toEqual({
-        where: { id: "rev-1", mwRevId: null },
-        data: { mwRevId: 850 },
-      });
-      expect(mockArticleUpdateMany.mock.calls[0]?.[0].data).toMatchObject({ mwLatestRevId: 850 });
-    });
-
-    it("counts the head's text without its trailing whitespace as the same text: that is how an edit saves it", async () => {
-      currentRevisionIs(851, TEXT.trimEnd());
-
-      await expect(runRevisionJob(restore())).resolves.toBe(851);
-
-      expect(requestsTo("import")).toHaveLength(0);
-    });
-  });
-
   describe("a batch of revisions of one title", () => {
     const T1 = "First text.\n";
     const T2 = "Second text.\n";
@@ -576,30 +635,6 @@ describe("revision jobs", () => {
       });
     const jobFor = (n: number, over: Partial<WikiMirrorJob> = {}) =>
       job({ id: `job-${n}`, revisionId: `rev-${n}`, ...over });
-    /** MediaWiki's history of the page, oldest first: the newest is the current revision. */
-    function historyIs(
-      entries: Array<{ revid: number; text: string; timestamp: string; user?: string }>
-    ) {
-      wiki.on("query", ({ params }) => {
-        const newestFirst = [...entries].reverse();
-        const shown = params.rvlimit === "1" ? newestFirst.slice(0, 1) : newestFirst;
-        return {
-          query: {
-            pages: [
-              {
-                title: "Foo bar",
-                revisions: shown.map(({ revid, text, timestamp, user }) => ({
-                  revid,
-                  sha1: hexSha1(text),
-                  timestamp,
-                  ...(user ? { user } : {}),
-                })),
-              },
-            ],
-          },
-        };
-      });
-    }
     /** What an import of rev-1 and rev-2 leaves behind: both, then the null revision (a copy of the newest). */
     const afterImportOfTwo = () =>
       historyIs([
@@ -666,59 +701,6 @@ describe("revision jobs", () => {
       // 12 is the current revision (the newest's stamp); the earlier one is 10, not the look-alike 11/12
       expect(outcomes.map((outcome) => outcome.mwRevId)).toEqual([10, 12]);
     });
-    describe("who made the newer revision is read before the import, not after it", () => {
-      /** `rvlimit=1` answers with each current revision in turn (before the import, then after it); the history is the older pages. */
-      function currentThenAfterImport(
-        answers: Array<{ revid: number; text: string; user: string }>
-      ) {
-        const queue = [...answers];
-        wiki.on("query", ({ params }) => {
-          if (params.rvlimit !== "1") {
-            return {
-              query: {
-                pages: [
-                  {
-                    title: "Foo bar",
-                    revisions: [
-                      { revid: 10, sha1: hexSha1(T1), timestamp: "2026-09-27T10:00:00Z" },
-                    ],
-                  },
-                ],
-              },
-            };
-          }
-          const now = queue.length > 1 ? queue.shift()! : queue[0]!;
-          return {
-            query: {
-              pages: [
-                {
-                  title: "Foo bar",
-                  revisions: [{ revid: now.revid, sha1: hexSha1(now.text), user: now.user }],
-                },
-              ],
-            },
-          };
-        });
-        wiki.on("edit", () => ({ edit: { result: "Success", newrevid: 20 } }));
-      }
-
-      it("blames someone else's edit even though the import's own null revision, by the mirror, is what MediaWiki shows afterwards", async () => {
-        currentThenAfterImport([
-          { revid: 12, text: "A human's text.\n", user: "WikiOSAdmin" }, // before the import
-          { revid: 13, text: "A human's text.\n", user: "WikiOSMirror" }, // after it: the null revision copies that text
-        ]);
-
-        const outcomes = await runBatch([jobFor(1), jobFor(2)]);
-
-        expect(requestsTo("edit")).toHaveLength(1);
-        expect(requestsTo("edit")[0]?.params.baserevid).toBe("13");
-        expect(outcomes[1]?.note).toContain("MediaWiki had a newer revision");
-        expect(outcomes[1]?.note).not.toContain("the mirror's own");
-        expect(outcomes[0]?.note).toContain("MediaWiki had a newer revision");
-        expect(outcomes[0]?.note).not.toContain("the mirror's own");
-      });
-    });
-
     describe("when the newer revision is the mirror's own null revision", () => {
       beforeEach(() => {
         // an earlier import's null revision (the bot's, with another text) is dated after these revisions
@@ -795,14 +777,41 @@ describe("revision jobs", () => {
       });
     });
 
-    it("sends a restore alone, even when revision jobs follow it", async () => {
-      const restore = jobFor(1, { payload: { restore: true, summary: "Restoring" } });
+    it("no job payload accepts restore any more: a leftover park re-push goes out as its revision was saved, with the jobs after it", async () => {
+      const leftover = jobFor(1, { payload: { restore: true, summary: "Restoring" } });
 
-      const plan = await planRevisionBatch([restore, jobFor(2)]);
+      const plan = await planRevisionBatch([leftover, jobFor(2)]);
 
-      expect(plan.restore).toBe(true);
-      expect(plan.members.map((member) => member.job.id)).toEqual(["job-1"]);
-      expect(plan.importSummary).toBe("Restoring");
+      expect(revisionPayloadSchema.parse({ restore: true, summary: "Restoring" })).toEqual({});
+      expect(plan.members.map((member) => member.job.id)).toEqual(["job-1", "job-2"]);
+      expect(plan.importSummary).toBe("edit 2");
+      expect(
+        [...(plan.xml ?? "").matchAll(/<timestamp>([^<]+)<\/timestamp>/g)].map((m) => m[1])
+      ).toEqual(["2026-09-27T10:00:00Z", "2026-09-27T10:00:05Z"]);
+      expect(plan.xml).not.toContain("WikiOSMirror");
+    });
+
+    it("leaves a parked revision out and sends the others", async () => {
+      revisionsAre(
+        row(1, T1, AT1, { parked: true, parkReason: "overwritten:mwlog:7" }),
+        row(2, T2, AT2)
+      );
+
+      const plan = await planRevisionBatch([jobFor(1), jobFor(2)]);
+
+      expect(plan.members.map((member) => member.send)).toEqual([false, true]);
+      expect(plan.xml?.match(/<revision>/g)).toHaveLength(1);
+      expect(plan.xml).not.toContain(T1);
+    });
+
+    it("sends a winner's trail in its revision's summary, and the import's summary without it (the null revision repeats that)", async () => {
+      const trail = "Overwrote revision 900 by Bob, saved from the same version (conflict c1)";
+      revisionsAre(row(1, T1, AT1), row(2, T2, AT2, { summary: `edit 2; ${trail}` }));
+
+      const plan = await planRevisionBatch([jobFor(1), jobFor(2)]);
+
+      expect(plan.xml).toContain(`<comment>edit 2; ${trail}</comment>`);
+      expect(plan.importSummary).toBe("edit 2");
     });
 
     it("fails the batch, for every job to retry, when the import is refused", async () => {

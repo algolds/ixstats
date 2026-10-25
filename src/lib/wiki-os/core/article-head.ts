@@ -35,7 +35,7 @@ export function headFieldsOf(wikitext: string) {
 }
 
 /**
- * Point the article's head columns at its newest live (not parked) revision, marking its view stale, when they hold
+ * Point the article's head columns at its newest live (not parked) revision whose text is not hidden, marking its view stale, when they hold
  * other text. True when they changed; a page with no live revision keeps what it has.
  */
 export async function repointArticleHead(
@@ -43,7 +43,8 @@ export async function repointArticleHead(
   articleId: string
 ): Promise<boolean> {
   const head = await client.wikiRevision.findFirst({
-    where: { articleId, parked: false },
+    // a hidden revision's text is "" by convention, never the page's
+    where: { articleId, parked: false, textDeleted: false },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     select: { wikitext: true },
   });

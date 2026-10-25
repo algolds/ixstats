@@ -83,7 +83,7 @@ async function classicAuthor(user: string | null): Promise<ChangeAuthor> {
  * happened).
  */
 export async function classicChangeOfRevision(
-  rev: MediaWikiRevision,
+  rev: Pick<MediaWikiRevision, "revid" | "timestamp" | "user">,
   effectiveAt?: Date
 ): Promise<PageChange> {
   return {
@@ -117,16 +117,33 @@ const LIVE_REVISION_SELECT = {
   authorId: true,
   author: true,
   createdAt: true,
+  origin: true,
 } as const;
 
 interface LiveRevision extends AuthoredRow {
   id: string;
   mwRevId: number | null;
   createdAt: Date;
+  /** "wikios" for a WikiOS save, "classic" for a MediaWiki revision brought in. */
+  origin: string;
+}
+
+/**
+ * A revision's ref as the conflict log names it. A WikiOS save keeps its row id for good: the mirror stamps it with a
+ * MediaWiki id later, and the mirror and the inbound cycle must name it the same before and after (one conflict key).
+ * A classic revision is named by its MediaWiki id, as classic's side names it.
+ */
+function conflictRefOf(row: Pick<LiveRevision, "id" | "mwRevId" | "origin">): string {
+  return row.origin === "classic" ? toRevisionRef(row) : row.id;
 }
 
 function editOf(row: LiveRevision, author: ChangeAuthor, at = row.createdAt): PageChange {
-  return { side: "wikios", action: "edit", ref: toRevisionRef(row), at, author };
+  return { side: "wikios", action: "edit", ref: conflictRefOf(row), at, author };
+}
+
+/** A WikiOS revision as a change, at its commit time. */
+export async function wikiosEditOf(row: LiveRevision): Promise<PageChange> {
+  return editOf(row, await authorOfWikiosRevision(row));
 }
 
 /** When the page last came back from a deletion, if it ever did. */

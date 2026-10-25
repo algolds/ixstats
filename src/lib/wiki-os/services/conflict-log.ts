@@ -282,6 +282,18 @@ export function toConflictEntry(row: ConflictRow): ConflictLogEntry {
   };
 }
 
+const NO_AUTHOR: ChangeAuthor = { userId: null, classicName: null, ip: null, label: null };
+
+/** A stored row as the rule's verdict, for its trail: the winner (its author is not stored) and what it overwrote. */
+export function verdictOfEntry(entry: ConflictLogEntry): CollisionVerdict {
+  return {
+    winner: { ...entry.winner, author: NO_AUTHOR },
+    overwritten: entry.overwritten,
+    incomingWins: true,
+    key: entry.key,
+  };
+}
+
 /** Newest first. `cursor` is the `nextCursor` of the previous page. */
 export async function listConflicts(input: {
   cursor?: string;

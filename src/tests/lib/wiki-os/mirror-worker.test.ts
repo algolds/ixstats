@@ -16,7 +16,12 @@ import {
 import { requestSignal } from "~/lib/wiki-os/adapters/mediawiki/attempt-scope";
 import { ATTEMPT_TIMEOUT_MS, INTERRUPTED_AFTER_MS } from "~/lib/wiki-os/services/mirror-queue";
 import { CRON_JOBS } from "~/server/cron/jobs";
-import { executeRevisionBatch, planRevisionBatch } from "~/lib/wiki-os/services/mirror-revision";
+import {
+  checkCollision,
+  executeRevisionBatch,
+  planRevisionBatch,
+  type BatchCollision,
+} from "~/lib/wiki-os/services/mirror-revision";
 import { runPageJob } from "~/lib/wiki-os/services/mirror-page-ops";
 import { runUploadJob } from "~/lib/wiki-os/services/mirror-upload";
 import { invalidateTemplateDependents } from "~/lib/wiki-os/services/render-service";
@@ -132,6 +137,7 @@ jest.mock("~/server/db", () => ({
 }));
 jest.mock("~/lib/wiki-os/services/mirror-revision", () => ({
   planRevisionBatch: jest.fn(),
+  checkCollision: jest.fn(),
   executeRevisionBatch: jest.fn(),
 }));
 jest.mock("~/lib/wiki-os/services/mirror-page-ops", () => ({ runPageJob: jest.fn() }));
@@ -151,6 +157,7 @@ jest.mock("~/lib/wiki-os/services/staged-uploads", () => ({
 }));
 
 const planBatch = jest.mocked(planRevisionBatch);
+const judgeBatch = jest.mocked(checkCollision);
 const sendBatch = jest.mocked(executeRevisionBatch);
 /** What sending one revision does (MediaWiki's revision id, or a rejection): the batch sends its jobs in order. */
 const revisionJob = jest.fn<Promise<number | null>, [WikiMirrorJob]>();
@@ -199,11 +206,11 @@ beforeEach(() => {
   // The planner takes every job it is given (a size cap is the real one's business, tested with it).
   planBatch.mockImplementation(async (jobs) => ({
     title: jobs[0].title,
-    restore: false,
     members: jobs.map((job) => ({ job, send: false as const, mwRevId: null })),
     xml: null,
     importSummary: "summary",
   }));
+  judgeBatch.mockResolvedValue(null);
   sendBatch.mockImplementation(async (plan) => {
     const outcomes = [];
     for (const { job } of plan.members) outcomes.push({ job, mwRevId: await revisionJob(job) });
@@ -443,7 +450,6 @@ describe("batches of revision jobs", () => {
     const jobs = [addJob({ title: "Foo" }), addJob({ title: "Foo" }), addJob({ title: "Foo" })];
     planBatch.mockImplementationOnce(async (given) => ({
       title: "Foo",
-      restore: false,
       members: given.slice(0, 2).map((job) => ({ job, send: false as const, mwRevId: null })),
       xml: null,
       importSummary: "summary",
@@ -487,6 +493,100 @@ describe("batches of revision jobs", () => {
     expect(byId(second.id)).toMatchObject({ state: "running", attempts: 0 });
     expect(byId(third.id)).toMatchObject({ state: "pending", attempts: 0 });
   });
+  describe("the conflict rule before a batch is sent", () => {
+    const verdict = (wikiosWon: boolean): BatchCollision => ({
+      verdict: {
+        winner: {
+          side: wikiosWon ? "wikios" : "classic",
+          action: "edit",
+          ref: wikiosWon ? "r1" : "900",
+          at: new Date(),
+          author: { userId: null, classicName: null, ip: null, label: null },
+        },
+        overwritten: [],
+        incomingWins: wikiosWon,
+        key: "k",
+      },
+      conflictId: "c1",
+      wikiosWon,
+    });
+
+    it("sends a batch as planned when there is no collision", async () => {
+      addJob({ title: "Foo" });
+
+      await runMirrorCycle();
+
+      expect(judgeBatch).toHaveBeenCalledWith(await planBatch.mock.results[0]?.value);
+      expect(planBatch).toHaveBeenCalledTimes(1);
+      expect(sendBatch).toHaveBeenCalledWith(await planBatch.mock.results[0]?.value, null);
+    });
+
+    it("plans a batch that lost again (a revision of it may carry an earlier win's trail) and sends it with its verdict", async () => {
+      addJob({ title: "Foo" });
+      addJob({ title: "Foo" });
+      const lost = verdict(false);
+      judgeBatch.mockResolvedValueOnce(lost);
+
+      await expect(runMirrorCycle()).resolves.toMatchObject({ done: 2, failed: 0 });
+
+      expect(planBatch).toHaveBeenCalledTimes(2);
+      expect(sendBatch).toHaveBeenCalledTimes(1);
+      expect(sendBatch).toHaveBeenCalledWith(await planBatch.mock.results[1]?.value, lost);
+    });
+
+    it("plans a batch WikiOS won again, so the trail written into its summary goes out, and sends that plan", async () => {
+      const jobs = [addJob({ title: "Foo" }), addJob({ title: "Foo" })];
+      const won = verdict(true);
+      judgeBatch.mockResolvedValueOnce(won);
+
+      await runMirrorCycle();
+
+      expect(planBatch.mock.calls.map(([given]) => given.map((job) => job.id))).toEqual([
+        jobs.map((job) => job.id),
+        jobs.map((job) => job.id),
+      ]);
+      expect(sendBatch).toHaveBeenCalledTimes(1);
+      expect(sendBatch).toHaveBeenCalledWith(await planBatch.mock.results[1]?.value, won);
+    });
+
+    it("gives back, untried, the jobs the second plan no longer takes: they run in the next batch", async () => {
+      const jobs = [addJob({ title: "Foo" }), addJob({ title: "Foo" })];
+      judgeBatch.mockResolvedValueOnce(verdict(true));
+      const unsent = (given: readonly Row[]) =>
+        given.map((job) => ({ job, send: false as const, mwRevId: null }));
+      planBatch
+        .mockImplementationOnce(async (given) => ({
+          title: "Foo",
+          members: unsent(given),
+          xml: null,
+          importSummary: "summary",
+        }))
+        .mockImplementationOnce(async (given) => ({
+          title: "Foo",
+          members: unsent(given.slice(0, 1)),
+          xml: null,
+          importSummary: "summary",
+        }));
+
+      await expect(runMirrorCycle()).resolves.toMatchObject({ done: 2, failed: 0 });
+
+      expect(planBatch.mock.calls.map(([given]) => given.length)).toEqual([2, 2, 1]);
+      for (const job of jobs) expect(byId(job.id)).toMatchObject({ state: "done", attempts: 1 });
+    });
+
+    it("fails every job of the batch when the check fails, and sends nothing", async () => {
+      const jobs = [addJob({ title: "Foo" }), addJob({ title: "Foo" })];
+      judgeBatch.mockRejectedValueOnce(new Error("MediaWiki down"));
+
+      await expect(runMirrorCycle()).resolves.toMatchObject({ done: 0, failed: 2 });
+
+      expect(sendBatch).not.toHaveBeenCalled();
+      for (const job of jobs) {
+        expect(byId(job.id)).toMatchObject({ state: "pending", lastError: "MediaWiki down" });
+      }
+    });
+  });
+
   it("fails only the jobs not settled yet when an outcome cannot be stored, never one already done", async () => {
     const first = addJob({ title: "Foo" });
     const second = addJob({ title: "Foo" });
@@ -514,6 +614,15 @@ describe("the bounds that keep a lock transaction from expiring mid-attempt", ()
   it("runs everything a revision attempt asks of MediaWiki, and a page operation, inside one attempt scope", async () => {
     const timeout = jest.spyOn(AbortSignal, "timeout");
     const seen: boolean[] = [];
+    // a request made in an attempt's scope is tied to the attempt's signal
+    const tied = jest.spyOn(AbortSignal, "any");
+    const judgedInScope: boolean[] = [];
+    judgeBatch.mockImplementation(async () => {
+      const before = tied.mock.calls.length;
+      seen.push(requestSignal(30_000).aborted);
+      judgedInScope.push(tied.mock.calls.length > before);
+      return null;
+    });
     sendBatch.mockImplementation(async (plan) => {
       seen.push(requestSignal(30_000).aborted);
       return plan.members.map(({ job }) => ({ job, mwRevId: 1 }));
@@ -526,7 +635,8 @@ describe("the bounds that keep a lock transaction from expiring mid-attempt", ()
 
     const attemptScopes = timeout.mock.calls.filter(([ms]) => ms === ATTEMPT_TIMEOUT_MS);
     expect(attemptScopes).toHaveLength(2); // one per attempt, not per call
-    expect(seen).toEqual([false, false]);
+    expect(seen).toEqual([false, false, false]);
+    expect(judgedInScope).toEqual([true]);
     timeout.mockRestore();
   });
 
