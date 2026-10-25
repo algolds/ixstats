@@ -1,23 +1,24 @@
 <?php
 /**
- * WikiOS v1 cutover settings for classic MediaWiki (plan 417).            *** NOT APPLIED ***
+ * WikiOS settings for classic MediaWiki (plan 417, launch hardening B1).
  *
  * Load from /ixwiki/config/LocalSettings.php with:
  *
- *     require_once '/ixwiki/public/projects/ixstats/scripts/ops/mediawiki/wikios-localsettings.php';
+ *     require_once '/ixwiki/config/wikios-localsettings.php';
  *
- * (or copy this file next to LocalSettings.php and require it from there). Apply it in the order given
- * in docs/operations/wikios-v1-cutover.md: steps 6 and 8 differ by ONE line, $wgArticlePath below.
- * To stage it before the cutover, set WIKIOS_KEEP_WIKI_ARTICLE_PATH=1 in the PHP-FPM pool environment
- * (or define( 'WIKIOS_KEEP_WIKI_ARTICLE_PATH', true ) before the require) so $wgArticlePath stays
- * '/wiki/$1' until the nginx takeover is installed.
+ * (a copy of this file next to LocalSettings.php; docs/operations/wikios-v1-cutover.md, step 3a).
  *
- * What it does:
- *   1. Moves classic MediaWiki page URLs to /classic/$1 so WikiOS can own /wiki/*.
- *   2. Points canonical URLs of existing content pages at WikiOS.
- *   3. Defines the `wikios-mirror` group used by the WikiOS bot account (WikiOSMirror), which also uploads files
- *      (plan 411: `upload`, `reupload`; svg and pdf are added to the file types).
- *   4. Notifies WikiOS of every saved page (PageSaveComplete -> /api/wiki/sync-webhook).
+ * What it does by default (loading it changes neither the article path nor the canonical URL):
+ *   1. Defines the `wikios-mirror` group used by the WikiOS bot account (WikiOSMirror) and turns bot passwords on.
+ *      The group also uploads files (plan 411: `upload`, `reupload`; svg and pdf are added to the file types).
+ *   2. Notifies WikiOS of every page saved on the web (PageSaveComplete -> the URL in WIKIOS_WEBHOOK_URL), only
+ *      when both WIKIOS_WEBHOOK_SECRET and WIKIOS_WEBHOOK_URL are set in the PHP-FPM pool environment. Without
+ *      either it sends nothing.
+ *
+ * What only the deferred ixwiki.com takeover turns on, with define( 'WIKIOS_TAKEOVER', true ) before the require
+ * (the IxStates launch never defines it):
+ *   3. Moves classic MediaWiki page URLs to /classic/$1 so WikiOS can own /wiki/*.
+ *   4. Points canonical URLs of existing content pages at WikiOS.
  */
 
 use MediaWiki\Deferred\DeferredUpdates;
@@ -28,34 +29,7 @@ if ( !defined( 'MEDIAWIKI' ) ) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// 1. Classic MediaWiki moves to /classic/ (nginx: `location ^~ /classic/` in wikios-takeover.conf).
-//    $wgScriptPath stays '' and $wgServer stays 'https://ixwiki.com'.
-// ---------------------------------------------------------------------------------------------
-if ( !defined( 'WIKIOS_KEEP_WIKI_ARTICLE_PATH' ) && !getenv( 'WIKIOS_KEEP_WIKI_ARTICLE_PATH' ) ) {
-	$wgArticlePath = '/classic/$1';
-}
-
-// ---------------------------------------------------------------------------------------------
-// 2. Canonical URL -> WikiOS, for the current version of an existing content page only. MediaWiki
-//    marks old revisions (?oldid=) and diffs (?diff=) as articles too, so those are excluded here:
-//    they get no WikiOS canonical (MediaWiki adds none of its own there), which keeps /wiki/Foo (the
-//    current text) from being named as the canonical URL of a specific old revision. Edit forms,
-//    history, Special pages, missing pages and non-content namespaces get none either.
-// ---------------------------------------------------------------------------------------------
-$wgHooks['BeforePageDisplay'][] = static function ( $out, $skin ) {
-	$title = $out->getTitle();
-	if ( !$title || !$out->isArticle() || !$title->exists() || !$title->isContentPage() ) {
-		return;
-	}
-	$request = $out->getRequest();
-	if ( $request->getCheck( 'oldid' ) || $request->getCheck( 'diff' ) ) {
-		return;
-	}
-	$out->setCanonicalUrl( 'https://ixwiki.com/wiki/' . wfUrlencode( $title->getPrefixedDBkey() ) );
-};
-
-// ---------------------------------------------------------------------------------------------
-// 3. The WikiOS mirror bot. Create the account `WikiOSMirror`, add it to this group, and create a
+// 1. The WikiOS mirror bot. Create the account `WikiOSMirror`, add it to this group, and create a
 //    bot password (Special:BotPasswords) with the matching grants. WikiOS logs in as
 //    WikiOSMirror@<bot-name> (env WIKIOS_MEDIAWIKI_BOT_USER / WIKIOS_MEDIAWIKI_BOT_TOKEN).
 // ---------------------------------------------------------------------------------------------
@@ -124,18 +98,23 @@ foreach ( [ 'png', 'gif', 'jpg', 'jpeg', 'webp', 'svg', 'pdf' ] as $extension ) 
 // password leaks. Those pages are edited on classic MediaWiki by a real administrator.
 
 // ---------------------------------------------------------------------------------------------
-// 4. Inbound webhook: tell WikiOS about every saved page, so it imports the edit right away
+// 2. Inbound webhook: tell WikiOS about every saved page, so it imports the edit right away
 //    (src/app/api/wiki/sync-webhook/route.ts: POST, JSON {"title": "..."}, header
 //    x-wiki-webhook-secret, answered 401 without the secret and 503 when WikiOS has none).
 //
-//    The secret comes from the PHP-FPM pool environment, never from this file:
-//        env[WIKIOS_WEBHOOK_SECRET] = <same value as WIKI_SYNC_WEBHOOK_SECRET in the WikiOS env>
+//    The secret and the URL come from the PHP-FPM pool environment, never from this file:
+//        env[WIKIOS_WEBHOOK_SECRET] = <same value as WIKI_SYNC_WEBHOOK_SECRET in the IxStates env>
+//        env[WIKIOS_WEBHOOK_URL] = http://127.0.0.1:3550/projects/ixstates/api/wiki/sync-webhook
 //    in /etc/php/8.4/fpm/pool.d/www.conf (PHP-FPM clears the environment unless it is listed
-//    there), then `systemctl reload php8.4-fpm`. Without it the hook does nothing.
+//    there), then `systemctl reload php8.4-fpm`. The URL is IxStates' own route on its loopback
+//    port, base path included (runbook step 6 checks which base path answers). Without either
+//    value the hook sends nothing and logs which one is missing (debug log group `wikios`, at most
+//    once per request). A save never waits on WikiOS: the request runs after the response, as a
+//    deferred update, with a 3 second timeout, and a failure is only logged.
 //
 //    Only web requests (PHP-FPM) announce their edits. Edits made from the command line
 //    (maintenance/edit.php, importDump.php, job runners, other CLI scripts) run outside the pool
-//    and have no WIKIOS_WEBHOOK_SECRET in their environment, so they send nothing. That is
+//    and have neither value in their environment, so they send nothing. That is
 //    intended: WikiOS' `wiki-recentchanges` cron job (every 10 minutes, runAutoSyncCycle)
 //    reads MediaWiki's recent changes and imports whatever the webhook did not announce.
 // ---------------------------------------------------------------------------------------------
@@ -147,8 +126,21 @@ $wgHooks['PageSaveComplete'][] = static function (
 	$revisionRecord,
 	$editResult
 ) {
-	$secret = getenv( 'WIKIOS_WEBHOOK_SECRET' );
-	if ( $secret === false || $secret === '' ) {
+	$secret = (string)getenv( 'WIKIOS_WEBHOOK_SECRET' );
+	$url = (string)getenv( 'WIKIOS_WEBHOOK_URL' );
+	if ( $secret === '' || $url === '' ) {
+		static $logged = false;
+		if ( !$logged ) {
+			$logged = true;
+			$missing = [];
+			if ( $secret === '' ) {
+				$missing[] = 'WIKIOS_WEBHOOK_SECRET';
+			}
+			if ( $url === '' ) {
+				$missing[] = 'WIKIOS_WEBHOOK_URL';
+			}
+			wfDebugLog( 'wikios', 'sync-webhook not sent: ' . implode( ' and ', $missing ) . ' not set' );
+		}
 		return;
 	}
 
@@ -162,9 +154,9 @@ $wgHooks['PageSaveComplete'][] = static function (
 	$title = $wikiPage->getTitle()->getPrefixedText();
 	$requestFactory = $services->getHttpRequestFactory();
 
-	DeferredUpdates::addCallableUpdate( static function () use ( $requestFactory, $secret, $title ) {
+	DeferredUpdates::addCallableUpdate( static function () use ( $requestFactory, $secret, $url, $title ) {
 		$request = $requestFactory->create(
-			'http://127.0.0.1:3560/api/wiki/sync-webhook',
+			$url,
 			[
 				'method' => 'POST',
 				'postData' => json_encode( [ 'title' => $title ] ),
@@ -182,3 +174,30 @@ $wgHooks['PageSaveComplete'][] = static function (
 		}
 	} );
 };
+
+// ---------------------------------------------------------------------------------------------
+// The deferred ixwiki.com takeover only. Nothing in the IxStates launch defines WIKIOS_TAKEOVER, so
+// loading this file leaves classic's article path and canonical URLs as they are.
+// ---------------------------------------------------------------------------------------------
+if ( defined( 'WIKIOS_TAKEOVER' ) ) {
+	// 3. Classic MediaWiki moves to /classic/ (nginx: `location ^~ /classic/` in wikios-takeover.conf).
+	//    $wgScriptPath stays '' and $wgServer stays 'https://ixwiki.com'.
+	$wgArticlePath = '/classic/$1';
+
+	// 4. Canonical URL -> WikiOS, for the current version of an existing content page only. MediaWiki
+	//    marks old revisions (?oldid=) and diffs (?diff=) as articles too, so those are excluded here:
+	//    they get no WikiOS canonical (MediaWiki adds none of its own there), which keeps /wiki/Foo (the
+	//    current text) from being named as the canonical URL of a specific old revision. Edit forms,
+	//    history, Special pages, missing pages and non-content namespaces get none either.
+	$wgHooks['BeforePageDisplay'][] = static function ( $out, $skin ) {
+		$title = $out->getTitle();
+		if ( !$title || !$out->isArticle() || !$title->exists() || !$title->isContentPage() ) {
+			return;
+		}
+		$request = $out->getRequest();
+		if ( $request->getCheck( 'oldid' ) || $request->getCheck( 'diff' ) ) {
+			return;
+		}
+		$out->setCanonicalUrl( 'https://ixwiki.com/wiki/' . wfUrlencode( $title->getPrefixedDBkey() ) );
+	};
+}

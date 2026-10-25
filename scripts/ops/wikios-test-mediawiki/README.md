@@ -31,9 +31,10 @@ If the `1.45` tag is ever unavailable, change `image:` in `docker-compose.yml` t
 | PHP limits | `php-wikios-import.ini`: `upload_max_filesize` and `post_max_size` of 16M, so a page near 2 MB imports even when escaping makes its XML five times the text, and a 10 MB upload (WikiOS's limit) goes through (the runbook asks the same of production) |
 | Caches | off (parser, main, message), so every `action=parse` renders fresh |
 
-`$wgArticlePath` stays at MediaWiki's default here (`WIKIOS_KEEP_WIKI_ARTICLE_PATH` is defined); the canonical
-URL, the group and the webhook are live. The `ConfirmEdit` extension is not loaded, so the `skipcaptcha` right of
-the group has no effect on this wiki.
+`$wgArticlePath` and the canonical URLs stay at MediaWiki's defaults here, as on production classic: the snippet
+changes them only when `WIKIOS_TAKEOVER` is defined, and nothing defines it. The group, bot passwords and file
+types are live; the webhook is live once both of its variables are set (below). The `ConfirmEdit` extension is not
+loaded, so the `skipcaptcha` right of the group has no effect on this wiki.
 
 ## Point WikiOS at it
 
@@ -43,19 +44,21 @@ set -a; source scripts/ops/wikios-test-mediawiki/.env.test-mediawiki; set +a
 # WIKIOS_MEDIAWIKI_BOT_TOKEN point at http://127.0.0.1:8089
 ```
 
-To try the sync webhook, start the container with `WIKIOS_WEBHOOK_SECRET` set (same value as
-`WIKI_SYNC_WEBHOOK_SECRET` of the WikiOS under test):
+To try the sync webhook, start the container with both `WIKIOS_WEBHOOK_SECRET` (same value as
+`WIKI_SYNC_WEBHOOK_SECRET` of the WikiOS under test) and `WIKIOS_WEBHOOK_URL` (where that WikiOS answers, seen
+from inside the container) set. The hook sends nothing unless it has both:
 
 ```bash
-WIKIOS_WEBHOOK_SECRET=<secret> docker compose --env-file .env.test-mediawiki up -d
+WIKIOS_WEBHOOK_SECRET=<secret> \
+WIKIOS_WEBHOOK_URL=http://host.docker.internal:3000/api/wiki/sync-webhook \
+  docker compose --env-file .env.test-mediawiki up -d
 ```
 
-The hook posts `{"title": "..."}` to `http://127.0.0.1:3560/api/wiki/sync-webhook` with the
-`x-wiki-webhook-secret` header. That address is the container's own loopback, so a WikiOS running on the
-host does not receive it; to watch the request, run a throwaway listener inside the container
-(`docker compose --env-file .env.test-mediawiki exec mediawiki php -S 127.0.0.1:3560 router.php`, with a
-`router.php` that logs the request) and save a page as `WikiOSAdmin`. Edits made by `WikiOSMirror` are
-deliberately not announced (echo guard).
+The hook posts `{"title": "..."}` to `WIKIOS_WEBHOOK_URL` with the `x-wiki-webhook-secret` header, after the save
+has answered (a deferred update with a 3 second timeout, so a WikiOS that is down never holds up a save).
+`host.docker.internal` is the host, so the URL above reaches a WikiOS dev server on port 3000 (dev has no base
+path; production's URL carries `/projects/ixstates`). Save a page as `WikiOSAdmin` and watch the dev server log.
+Edits made by `WikiOSMirror` are deliberately not announced (echo guard).
 
 ## Quick checks
 
