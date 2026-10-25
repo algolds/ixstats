@@ -463,6 +463,26 @@ describe("switching editing on and off", () => {
       expect(db.systemConfig.upsert).not.toHaveBeenCalled();
     });
 
+    it("the editing toggle refuses to turn on and names WIKIOS_MEDIAWIKI_INTERNAL_URL", async () => {
+      // production, with no loopback renderer and no write URL of its own: the mirror would write to the public wiki
+      const nodeEnv = jest.replaceProperty(process.env, "NODE_ENV", "production");
+      delete process.env.WIKIOS_MEDIAWIKI_API;
+      delete process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL;
+      try {
+        await expect(getEditingStatus()).resolves.toMatchObject({
+          mirrorConfigured: false,
+          missing: ["WIKIOS_MEDIAWIKI_INTERNAL_URL"],
+        });
+        await expect(setEditing(tx as never, actor, true)).rejects.toMatchObject({
+          code: "PRECONDITION_FAILED",
+          message: "The MediaWiki mirror is not configured: WIKIOS_MEDIAWIKI_INTERNAL_URL.",
+        });
+        expect(db.systemConfig.upsert).not.toHaveBeenCalled();
+      } finally {
+        nodeEnv.restore();
+      }
+    });
+
     it("switches on: writes the row, audits and DMs", async () => {
       const status = await setEditing(tx as never, actor, true);
       await flush();

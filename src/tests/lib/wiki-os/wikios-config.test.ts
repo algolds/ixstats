@@ -5,7 +5,12 @@
  * lookalike host), the media proxy fetches only the wikis and their CDNs, and each wiki keeps its own file hosts.
  */
 
-import { buildWikiosConfig, isMediaWikiUrl, mediaWikiHostPattern } from "~/lib/wiki-os/config";
+import {
+  buildWikiosConfig,
+  isMediaWikiUrl,
+  loopbackRendererMissing,
+  mediaWikiHostPattern,
+} from "~/lib/wiki-os/config";
 import { isAllowedMediaUrl } from "~/lib/wiki-os/media-hosts";
 import { SISTER_WIKI_HOSTS, sisterWikiFileHosts, sisterWikiHost } from "~/lib/wiki-os/wiki-hosts";
 
@@ -39,6 +44,28 @@ describe("buildWikiosConfig", () => {
   });
   it("refuses a public URL that is not a URL, by name", () => {
     expect(() => buildWikiosConfig({ publicUrl: "not a url" })).toThrow(/NEXT_PUBLIC_MEDIAWIKI_URL/);
+  });
+});
+
+describe("loopbackRendererMissing", () => {
+  const internal = "http://127.0.0.1:8081/api.php";
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it("is missing only in production with no internal URL", () => {
+    expect(loopbackRendererMissing({ NODE_ENV: "production" })).toBe(true);
+    expect(loopbackRendererMissing({ NODE_ENV: "production", WIKIOS_MEDIAWIKI_INTERNAL_URL: "  " })).toBe(true);
+    expect(loopbackRendererMissing({ NODE_ENV: "production", WIKIOS_MEDIAWIKI_INTERNAL_URL: internal })).toBe(false);
+    expect(loopbackRendererMissing({ NODE_ENV: "development" })).toBe(false);
+    expect(loopbackRendererMissing({ NODE_ENV: "test" })).toBe(false);
+    expect(loopbackRendererMissing({})).toBe(false);
+  });
+
+  it("reads the environment at call time, not the configuration frozen at load", () => {
+    jest.replaceProperty(process, "env", { ...process.env, NODE_ENV: "production", WIKIOS_MEDIAWIKI_INTERNAL_URL: "" });
+    expect(loopbackRendererMissing()).toBe(true);
+    jest.replaceProperty(process, "env", { ...process.env, WIKIOS_MEDIAWIKI_INTERNAL_URL: internal });
+    expect(loopbackRendererMissing()).toBe(false);
   });
 });
 

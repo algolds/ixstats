@@ -9,6 +9,7 @@
 
 import { db } from "~/server/db";
 import { mirrorBotName } from "../adapters/mediawiki/csrf-cache";
+import { loopbackRendererMissing } from "../config";
 import { PageOperationError } from "../core/page-management-service";
 import { canonicalizeTitle } from "../core/title";
 import { MIRROR_SOURCE, scheduleMirrorKick } from "./mirror-outbox";
@@ -32,6 +33,11 @@ export interface DeadMirrorJob {
 export interface MirrorStatus {
   /** SKIP_MEDIAWIKI_SYNC=true: the worker is stopped and the jobs accumulate. */
   paused: boolean;
+  /**
+   * Production with no private render engine (WIKIOS_MEDIAWIKI_INTERNAL_URL) and no write URL of its own
+   * (WIKIOS_MEDIAWIKI_API): the worker waits rather than write to the public wiki, and the jobs accumulate.
+   */
+  loopbackMissing: boolean;
   /** Whether the bot account (WIKIOS_MEDIAWIKI_BOT_USER and _TOKEN) is configured: without it every job fails. */
   botConfigured: boolean;
   counts: Record<MirrorState, number>;
@@ -101,6 +107,7 @@ export async function getMirrorStatus(now = new Date()): Promise<MirrorStatus> {
   }
   return {
     paused: process.env.SKIP_MEDIAWIKI_SYNC === "true",
+    loopbackMissing: mirrorWriteUrlMissing(),
     botConfigured: mirrorBotName() !== null && Boolean(process.env.WIKIOS_MEDIAWIKI_BOT_TOKEN),
     counts,
     oldestPendingSeconds: oldest
@@ -113,13 +120,26 @@ export async function getMirrorStatus(now = new Date()): Promise<MirrorStatus> {
   };
 }
 
+/**
+ * Whether the mirror has nowhere it may write (plan 2026-10-25 B3): production with no private render engine
+ * (`loopbackRendererMissing`, config.ts), so the write URL would fall back to the public `api.php`, and no
+ * WIKIOS_MEDIAWIKI_API naming one explicitly. The worker then skips every cycle and the jobs wait. Read at call time.
+ */
+export function mirrorWriteUrlMissing(
+  env: Readonly<Record<string, string | undefined>> = process.env
+): boolean {
+  return loopbackRendererMissing(env) && !env.WIKIOS_MEDIAWIKI_API?.trim();
+}
+
 /** The settings the mirror needs before WikiOS may take edits; empty when it can write to MediaWiki. */
 export function mirrorMissingSettings(): string[] {
   const missing: string[] = [];
   // Read from the environment, not wikiosConfig (frozen at module load), so the answer follows the current process.
-  // The api.php the mirror writes to is not asked for: without WIKIOS_MEDIAWIKI_API it is the internal one.
+  // The api.php the mirror writes to is not asked for: without WIKIOS_MEDIAWIKI_API it is the internal one, which
+  // production must have (`mirrorWriteUrlMissing`).
   if (!process.env.WIKIOS_MEDIAWIKI_BOT_USER?.trim()) missing.push("WIKIOS_MEDIAWIKI_BOT_USER");
   if (!process.env.WIKIOS_MEDIAWIKI_BOT_TOKEN) missing.push("WIKIOS_MEDIAWIKI_BOT_TOKEN");
+  if (mirrorWriteUrlMissing()) missing.push("WIKIOS_MEDIAWIKI_INTERNAL_URL");
   return missing;
 }
 

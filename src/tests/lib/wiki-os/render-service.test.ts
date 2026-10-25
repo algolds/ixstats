@@ -786,6 +786,22 @@ describe("stale pages", () => {
       });
       expect(mockUpdateMany.mock.calls.map(([args]) => args.where.id)).toEqual([a, b, c]);
     });
+    it("renders nothing in production without the loopback: no query, no failure to back off from", async () => {
+      staleArticles(freshIds(2));
+      const env = jest.replaceProperty(process, "env", {
+        ...process.env,
+        NODE_ENV: "production",
+        WIKIOS_MEDIAWIKI_INTERNAL_URL: "",
+      });
+      try {
+        await expect(renderStaleBatch()).resolves.toEqual({ rendered: 0, failed: 0 });
+      } finally {
+        env.restore();
+      }
+
+      expect(mockFindMany).not.toHaveBeenCalled();
+      expect(mockRenderViaMediaWiki).not.toHaveBeenCalled();
+    });
     it("leaves out an article whose render failed, so the rest of the queue is not kept waiting", async () => {
       const [broken, fine] = freshIds(2);
       staleArticles([broken!, fine!]);

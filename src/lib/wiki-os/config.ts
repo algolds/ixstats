@@ -119,6 +119,21 @@ export const wikiosConfig: WikiosConfig = buildWikiosConfig({
   templateStyles: process.env.WIKIOS_TEMPLATESTYLES,
 });
 
+/**
+ * Whether production has no private render engine: `NODE_ENV=production` and `WIKIOS_MEDIAWIKI_INTERNAL_URL` unset or
+ * blank, so `internalApiUrl` above would fall back to the public `api.php` (plan 2026-10-25 B3, "Loopback required").
+ * Renders (`renderArticleViaMediaWiki`, the editor preview, the stale-render batch) and mirror writes (unless
+ * `WIKIOS_MEDIAWIKI_API` names a write URL itself, mirror-admin.ts) then refuse rather than load the public wiki.
+ * The low-volume reads (inbound sync, lore cards, the Lorewards fallback, account proof) keep the public fallback, so
+ * an ordinary deploy without the runbook's step 4 stays safe. Dev and test never count as missing.
+ * Read from `env` at call time, not from the frozen `wikiosConfig`. Server-side only.
+ */
+export function loopbackRendererMissing(
+  env: Readonly<Record<string, string | undefined>> = process.env
+): boolean {
+  return env.NODE_ENV === "production" && !env.WIKIOS_MEDIAWIKI_INTERNAL_URL?.trim();
+}
+
 /** The public origin, with no trailing slash: where a browser reaches the wiki. */
 export function mediaWikiOrigin(): string {
   return wikiosConfig.publicBaseUrl;

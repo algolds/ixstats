@@ -817,6 +817,67 @@ describe.each(WIKIOS_MODES)("the queue's health [%s]", (mode) => {
   const saturationWarnings = () =>
     warn.mock.calls.filter(([title]) => title === "WikiOS mirror queue full");
 
+  describe("in production with no internal URL (B3)", () => {
+    const saved = {
+      internal: process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL,
+      api: process.env.WIKIOS_MEDIAWIKI_API,
+    };
+    let nodeEnv: { restore(): void } | undefined;
+    beforeEach(() => {
+      nodeEnv = jest.replaceProperty(process.env, "NODE_ENV", "production");
+      delete process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL;
+      delete process.env.WIKIOS_MEDIAWIKI_API;
+    });
+    afterEach(() => {
+      nodeEnv?.restore();
+      for (const [name, value] of [
+        ["WIKIOS_MEDIAWIKI_INTERNAL_URL", saved.internal],
+        ["WIKIOS_MEDIAWIKI_API", saved.api],
+      ] as const) {
+        if (value === undefined) delete process.env[name];
+        else process.env[name] = value;
+      }
+    });
+
+    it("with no WIKIOS_MEDIAWIKI_API the mirror skips and touches no job: they stay pending, no attempt spent", async () => {
+      const waiting = addJob({ title: "Foo" });
+      const stuck = addJob({ title: "Bar", state: "running", updatedAt: new Date(0) });
+      const before = rows.map((row) => ({ ...row }));
+
+      await expect(runMirrorCycle()).resolves.toEqual({
+        skipped: true,
+        done: 0,
+        failed: 0,
+        dead: 0,
+      });
+
+      expect(rows).toEqual(before);
+      expect(byId(waiting.id)).toMatchObject({ state: "pending", attempts: 0, lastError: null });
+      expect(byId(stuck.id).state).toBe("running");
+      expect(revisionJob).not.toHaveBeenCalled();
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    it("runs the jobs it kept once the internal URL is set", async () => {
+      const waiting = addJob({ title: "Foo" });
+      await runMirrorCycle();
+      process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL = "http://127.0.0.1:8081/api.php";
+
+      await expect(runMirrorCycle()).resolves.toMatchObject({ skipped: false, done: 1 });
+
+      expect(byId(waiting.id).state).toBe("done");
+    });
+
+    it("with WIKIOS_MEDIAWIKI_API set it runs", async () => {
+      process.env.WIKIOS_MEDIAWIKI_API = "http://127.0.0.1:8089/api.php";
+      const job = addJob({ title: "Foo" });
+
+      await expect(runMirrorCycle()).resolves.toMatchObject({ skipped: false, done: 1 });
+
+      expect(byId(job.id).state).toBe("done");
+    });
+  });
+
   it("a dead job is not in the window but still holds its title: a younger job of that title waits, another title runs", async () => {
     // a full window's worth of dead jobs, one on Foo and a move to Target among them
     const dead = addDeadJobs(WINDOW_SIZE - 2);
