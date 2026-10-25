@@ -94,9 +94,12 @@ export async function loadDefenseBudget(
   const gdp = Math.max(0, country.currentTotalGdp);
   const npc = country.ownerUserId === null;
   const governmentType = structure?.governmentType ?? country.governmentType;
-  const formShare = npc
-    ? npcDefenseShare({ governmentType, region: country.region })
-    : formDefenseShare(governmentFormOf(governmentType));
+  // The form step needs a known government type; without one the chain falls through to 2% of GDP.
+  const formShare = !governmentType
+    ? null
+    : npc
+      ? npcDefenseShare({ governmentType, region: country.region })
+      : formDefenseShare(governmentFormOf(governmentType));
   const budget = resolveDefenseBudget({
     gdp,
     defenseLine: defenseLinesTotal(effective.allocations),
