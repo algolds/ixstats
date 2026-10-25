@@ -177,9 +177,10 @@ DATABASE_URL="$(echo "$DATABASE_URL" | sed -E 's#/ixstats(\?|$)#/ixstats_dryrun\
 docker exec ixstats-postgres dropdb -U postgres ixstats_dryrun
 ```
 
-The script only reads. It projects every country the way the job does (on the shared clock) and prints how many rows
-the run would write, the economic and population tier changes (each economic tier change posts an activity-feed
-milestone), the median GDP change and the ten largest. On the local clone, before a1/a2: 406 of 407 rows, median total
+The script only reads, and exits once it has printed. It projects every country the way the job does (on the shared
+clock) and prints how many rows the run would write, the economic and population tier change counts with one
+`tier change:` line per nation (each economic tier change posts an activity-feed milestone), the median GDP change and
+the ten largest. On the local clone, before a1/a2: 406 of 407 rows, median total
 GDP +0.20%, 0 economic tier changes, 5 population tier changes; the two E2E nations jumped about 87% because their
 baselines were wall-clock dates, which a2 re-stamps. Look at any owned nation with a large jump or an economic tier
 change before enabling the job.
