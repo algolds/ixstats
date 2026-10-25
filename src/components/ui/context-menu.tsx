@@ -57,7 +57,8 @@ function ContextMenuTrigger({
   onKeyDown,
   ...props
 }: React.ComponentProps<typeof ContextMenuPrimitive.Trigger>) {
-  // Decided on the right button's pointerdown, which lands (and re-renders) before `contextmenu`.
+  // Decided on every pointerdown, which re-renders before `contextmenu` (right button) and before
+  // a touch long-press opens (disabling the trigger clears Radix's long-press timer).
   const [native, setNative] = React.useState(false);
   return (
     <ContextMenuPrimitive.Trigger
@@ -65,7 +66,7 @@ function ContextMenuTrigger({
       disabled={disabled || native}
       onPointerDown={(event) => {
         onPointerDown?.(event);
-        if (event.button === 2) setNative(prefersNativeMenu(event));
+        setNative(prefersNativeMenu(event));
       }}
       onKeyDown={(event) => {
         onKeyDown?.(event);

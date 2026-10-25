@@ -1,12 +1,18 @@
 import "react";
 import { createPortal } from "react-dom";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "~/components/ui/context-menu";
 import { DropdownMenuItem, DropdownMenuSeparator } from "~/components/ui/dropdown-menu";
 
 beforeAll(() => {
-  // jsdom has no PointerEvent: without one, fireEvent's pointer events carry no button
-  class TestPointerEvent extends MouseEvent {}
+  // jsdom has no PointerEvent: without one, fireEvent's pointer events carry no button or pointerType
+  class TestPointerEvent extends MouseEvent {
+    readonly pointerType: string;
+    constructor(type: string, init: PointerEventInit = {}) {
+      super(type, init);
+      this.pointerType = init.pointerType ?? "";
+    }
+  }
   globalThis.PointerEvent ??= TestPointerEvent as typeof PointerEvent;
 });
 
@@ -74,6 +80,29 @@ describe("ContextMenu", () => {
     fireEvent.keyDown(dialog, { key: "F10", shiftKey: true });
     expect(fireEvent.contextMenu(dialog)).toBe(true);
     expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  describe("long-press on touch", () => {
+    beforeEach(() => jest.useFakeTimers());
+    afterEach(() => jest.useRealTimers());
+    const longPress = (el: Element) => {
+      fireEvent.pointerDown(el, { pointerType: "touch", button: 0 });
+      act(() => jest.advanceTimersByTime(800));
+    };
+
+    it("opens the menu on the thing", () => {
+      render(<Post />);
+      longPress(screen.getByTestId("post"));
+      expect(screen.getByRole("menu")).toBeInTheDocument();
+    });
+
+    it("leaves dialogs the thing opened, and links inside it, to the browser", () => {
+      render(<Post />);
+      longPress(screen.getByTestId("dialog"));
+      expect(screen.queryByRole("menu")).toBeNull();
+      longPress(screen.getByRole("link"));
+      expect(screen.queryByRole("menu")).toBeNull();
+    });
   });
 
   it("leaves the browser menu to a selection inside the trigger", () => {
