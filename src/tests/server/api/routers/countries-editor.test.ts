@@ -42,16 +42,17 @@ import {
 type Mock = jest.Mock;
 
 const REALM_NOW = Date.UTC(2046, 2, 14, 9);
+const REAL_NOW = Date.now();
 const REALM_CLOCK = withSpeed(
   createRealmClock({
     globalNowMs: REALM_NOW,
-    realNowMs: Date.now(),
+    realNowMs: REAL_NOW,
     startDate: "1203-03-14",
     era: "AE",
     multiplier: 2,
   }),
   0,
-  Date.now()
+  REAL_NOW
 );
 type Model = Record<string, Mock>;
 
