@@ -41,40 +41,28 @@ const DOMAIN_CONFIG: Record<
 > = {
   economic: {
     title: "Economic vitality",
-    description:
-      "Measures GDP growth rate, labor market health, fiscal balance, and inflation stability.",
-    drivers: ["Real GDP Growth", "Employment & Wages", "Fiscal System & Tax Yield"],
+    description: "Scored from GDP per capita, with a bonus or penalty for GDP growth.",
+    drivers: ["GDP per capita", "GDP growth"],
     icon: DollarSign,
   },
   population: {
     title: "Population wellbeing",
-    description: "Assesses public health, education, demographic growth, and societal welfare.",
-    drivers: [
-      "Public Healthcare Access",
-      "Demographic Replacement Rate",
-      "Social Security Coverage",
-    ],
+    description: "Scored from whether the population is growing, and from population density.",
+    drivers: ["Population growth", "Population density"],
     icon: Users,
   },
   diplomatic: {
     title: "Diplomatic standing",
     description:
-      "Evaluates embassy networks, international treaty standing, and regional soft power.",
-    drivers: [
-      "Active Bilateral Embassies",
-      "Alliance Treaties & Pacts",
-      "Global Prestige & Soft Power",
-    ],
+      "Scored from the strength of your relations, embassies, alliances and treaties, less hostile actions against you.",
+    drivers: ["Relation strength", "Embassies", "Alliances and treaties", "Hostile actions"],
     icon: Globe,
   },
   government: {
     title: "Government efficiency",
-    description: "Tracks executive bandwidth use, legislative throughput, and bureaucracy health.",
-    drivers: [
-      "Civil Service Utilization",
-      "Policy Implementation Speed",
-      "Administrative Capacity",
-    ],
+    description:
+      "Your government's effectiveness score, which issues and the government builder move.",
+    drivers: ["Government effectiveness"],
     icon: Building,
   },
 };
