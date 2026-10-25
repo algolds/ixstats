@@ -46,6 +46,7 @@ import {
 } from "~/lib/country/public-record";
 import { generateIntentSummationDraft } from "~/lib/intent/intent-summation";
 import { growthModifierToLevelShift, StorytellerEffectType } from "~/lib/economy/calculations";
+import { createStorytellerEffect } from "~/lib/economy/storyteller-effects";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEK_MS = 7 * DAY_MS;
@@ -493,17 +494,14 @@ export const intentRouter = createTRPCRouter({
           ? growthModifierToLevelShift(pkg.gdpGrowthModifier, GROWTH_EFFECT_YEARS)
           : 0;
       if (levelShift > 0) {
-        await ctx.db.storytellerEffect.create({
-          data: {
-            countryId: input.countryId,
-            ixTimeTimestamp: new Date(now),
-            inputType: StorytellerEffectType.GDP_LEVEL_ADJUSTMENT,
-            value: levelShift,
-            description: `Directive: ${input.goal}`,
-            duration: GROWTH_EFFECT_YEARS,
-            isActive: true,
-            createdBy: `intent:${intent.id}`,
-          },
+        await createStorytellerEffect(ctx.db, {
+          countryId: input.countryId,
+          ixTime: now,
+          inputType: StorytellerEffectType.GDP_LEVEL_ADJUSTMENT,
+          value: levelShift,
+          description: `Directive: ${input.goal}`,
+          duration: GROWTH_EFFECT_YEARS,
+          createdBy: `intent:${intent.id}`,
         });
       }
 

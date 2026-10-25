@@ -3,6 +3,9 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { AppError } from "~/lib/app-error";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
+import { IxTime } from "~/lib/ixtime";
+import { createStorytellerEffects, endStorytellerEffects } from "~/lib/economy/storyteller-effects";
+import { worldEventEffectDrafts, worldEventImpact } from "~/lib/economy/world-event-effects";
 
 export const adminWorldEventsRouter = createTRPCRouter({
   /**
@@ -435,20 +438,23 @@ export const adminWorldEventsRouter = createTRPCRouter({
       });
 
       // Generate StorytellerEffects for each affected country
+      // (startsAt is a real date; effects run on IxTime.)
       if (input.generateEffects && input.affectedCountryIds.length > 0) {
-        const effectsData = input.affectedCountryIds.map((countryId) => ({
-          countryId,
-          ixTimeTimestamp: input.startsAt,
-          inputType: input.type,
-          value: input.severity >= 0.5 ? -input.severity : input.severity,
-          description: `[WorldEvent: ${input.name}] ${input.description ?? ""}`.trim(),
-          duration: input.duration ? Math.round(input.duration) : null,
-          isActive: true,
-          createdBy: userId,
-          worldEventId: event.id,
-        }));
-
-        await ctx.db.storytellerEffect.createMany({ data: effectsData });
+        await createStorytellerEffects(
+          ctx.db,
+          input.affectedCountryIds.flatMap((countryId) =>
+            worldEventEffectDrafts({
+              countryId,
+              type: input.type,
+              severity: input.severity,
+              label: `[WorldEvent: ${input.name}] ${input.description ?? ""}`.trim(),
+              duration: input.duration ? Math.round(input.duration) : null,
+              startIxTime: IxTime.convertToIxTime(input.startsAt.getTime()),
+              worldEventId: event.id,
+              createdBy: userId,
+            })
+          )
+        );
       }
 
       // Audit log
@@ -497,12 +503,9 @@ export const adminWorldEventsRouter = createTRPCRouter({
         },
       });
 
-      // If deactivating, also deactivate linked StorytellerEffects
+      // If deactivating, end its StorytellerEffects (unwound from now; the past is kept)
       if (input.isActive === false) {
-        await ctx.db.storytellerEffect.updateMany({
-          where: { worldEventId: eventId },
-          data: { isActive: false },
-        });
+        await endStorytellerEffects(ctx.db, { worldEventId: eventId });
       }
 
       return event;
@@ -540,32 +543,11 @@ export const adminWorldEventsRouter = createTRPCRouter({
 
       // Project impact based on severity and event type
       const projectedImpacts = countries.map((c) => {
-        const severityMultiplier = input.severity;
-        // Negative events reduce GDP; positive events (peace, tech) boost it
-        const isNegative = [
-          "economic_crisis",
-          "trade_war",
-          "natural_disaster",
-          "pandemic",
-          "political_upheaval",
-          "global_recession",
-          "currency_crisis",
-          "cyber_attack",
-          "climate_disaster",
-          "financial_crisis",
-        ].includes(input.type);
-
-        const gdpImpactPct = isNegative
-          ? -(severityMultiplier * 0.2) // up to -20% at max severity
-          : severityMultiplier * 0.15; // up to +15% boost
-
-        const popImpactPct = isNegative
-          ? -(severityMultiplier * 0.02) // up to -2% population impact
-          : severityMultiplier * 0.01;
-
-        const stabilityImpact = isNegative
-          ? -(severityMultiplier * 30) // up to -30 stability points
-          : severityMultiplier * 10;
+        const {
+          gdp: gdpImpactPct,
+          population: popImpactPct,
+          stability: stabilityImpact,
+        } = worldEventImpact(input.type, input.severity);
 
         const currentGdp = c.currentTotalGdp ?? 0;
         const currentPop = c.currentPopulation ?? 0;

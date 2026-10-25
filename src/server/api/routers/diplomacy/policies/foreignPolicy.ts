@@ -20,6 +20,14 @@ import {
   proposalExpiryCutoff,
 } from "~/lib/diplomacy/proposal-lifecycle";
 import { notifyCountryOwners } from "./notify";
+import { StorytellerEffectType } from "~/lib/economy/calculations";
+import { createStorytellerEffects } from "~/lib/economy/storyteller-effects";
+
+/** IxTime years over which a foreign-policy action's GDP impact phases in. */
+const FP_EFFECT_YEARS = 4;
+
+/** `createdBy` of the StorytellerEffects a foreign-policy action leaves on both nations. */
+export const foreignPolicyEffectKey = (actionId: string) => `fp:${actionId}`;
 
 // Cooperative actions need the target's consent before they take effect; hostile ones
 // are unilateral. See plans/statecraft-stage2.md (S2.C).
@@ -59,7 +67,6 @@ async function rejectExpiredProposal(
 async function enactForeignPolicyEffects(
   db: PrismaClient,
   actionId: string,
-  actorUserId: string,
   claimFrom: "proposed" | null
 ) {
   const action = await db.foreignPolicyAction.findUnique({
@@ -87,15 +94,11 @@ async function enactForeignPolicyEffects(
     where: { country1Id_country2Id: { country1Id: c1, country2Id: c2 } },
   });
 
-  let initiatorInputType = "GDP_ADJUSTMENT";
-  let targetInputType = "GDP_ADJUSTMENT";
-  if (action.actionType === "free_trade") {
-    initiatorInputType = "TRADE_AGREEMENT";
-    targetInputType = "TRADE_AGREEMENT";
-  } else if (action.actionType === "military_alliance") {
-    initiatorInputType = "GROWTH_RATE_MODIFIER";
-    targetInputType = "GROWTH_RATE_MODIFIER";
-  }
+  // GDP impacts are level shifts (0.003 = +0.3% GDP), phased in over FP_EFFECT_YEARS and kept.
+  const inputType =
+    action.actionType === "free_trade"
+      ? StorytellerEffectType.TRADE_AGREEMENT
+      : StorytellerEffectType.GDP_LEVEL_ADJUSTMENT;
 
   const tradeMultiplier =
     action.actionType === "embargo"
@@ -120,30 +123,26 @@ async function enactForeignPolicyEffects(
       });
       if (claimed.count === 0) return false;
     }
-    await tx.storytellerEffect.createMany({
-      data: [
-        {
-          countryId: action.initiatorId,
-          ixTimeTimestamp: new Date(),
-          inputType: initiatorInputType,
-          value: action.initiatorGdpImpact,
-          description: actionDescription,
-          duration: 4,
-          isActive: true,
-          createdBy: actorUserId,
-        },
-        {
-          countryId: action.targetId,
-          ixTimeTimestamp: new Date(),
-          inputType: targetInputType,
-          value: action.targetGdpImpact,
-          description: `Affected by ${action.initiator.name}: ${action.actionType} (${action.severity})`,
-          duration: 4,
-          isActive: true,
-          createdBy: actorUserId,
-        },
-      ],
-    });
+    // Keyed by the action (not the actor) so lifting it can end exactly these effects:
+    // endStorytellerEffects(db, { createdBy: foreignPolicyEffectKey(action.id) }).
+    await createStorytellerEffects(tx, [
+      {
+        countryId: action.initiatorId,
+        inputType,
+        value: action.initiatorGdpImpact,
+        description: actionDescription,
+        duration: FP_EFFECT_YEARS,
+        createdBy: foreignPolicyEffectKey(action.id),
+      },
+      {
+        countryId: action.targetId,
+        inputType,
+        value: action.targetGdpImpact,
+        description: `Affected by ${action.initiator.name}: ${action.actionType} (${action.severity})`,
+        duration: FP_EFFECT_YEARS,
+        createdBy: foreignPolicyEffectKey(action.id),
+      },
+    ]);
     if (relation && newStrength !== null) {
       await tx.diplomaticRelation.update({
         where: { id: relation.id },
@@ -400,12 +399,7 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
       }
 
       // Hostile → enact immediately.
-      const enacted = await enactForeignPolicyEffects(
-        ctx.db as PrismaClient,
-        created.id,
-        ctx.user.id,
-        null
-      );
+      const enacted = await enactForeignPolicyEffects(ctx.db as PrismaClient, created.id, null);
       return enacted ?? created;
     }),
 
@@ -515,11 +509,10 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
         return { status: "declined" as const };
       }
 
-      // Accept: enact the stored effects (the accepting user is the actor of record).
+      // Accept: enact the stored effects.
       const enacted = await enactForeignPolicyEffects(
         ctx.db as PrismaClient,
         action.id,
-        ctx.user.id,
         "proposed"
       );
       if (!enacted || enacted.status !== "active") {

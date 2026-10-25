@@ -6,6 +6,8 @@
  * structure fights at zero strength, so the swing alone decides it.
  */
 import { IxTime } from "~/lib/ixtime";
+import { StorytellerEffectType } from "~/lib/economy/calculations";
+import type { StorytellerEffectDraft } from "~/lib/economy/storyteller-effects";
 
 export { militaryStrength } from "./force-structure";
 
@@ -46,7 +48,13 @@ export function computeConflictOutcome(
   return { initiatorWins, initiatorCasualties, defenderCasualties, economicDamage };
 }
 
-/** The GDP-adjustment storyteller effects a resolved conflict leaves on both nations. */
+/** IxTime years over which a conflict's GDP loss phases in. */
+const CONFLICT_DAMAGE_YEARS = 2;
+
+/**
+ * The GDP level effects a resolved conflict leaves on both nations: each loses its share of
+ * `economicDamage` from GDP per capita, phased in over CONFLICT_DAMAGE_YEARS and kept after.
+ */
 export function conflictEconomicEffects(input: {
   initiator: { id: string; name: string };
   defender: { id: string; name: string };
@@ -54,28 +62,24 @@ export function conflictEconomicEffects(input: {
   createdBy: string;
   /** How a winning defender's effect reads: "defense" for an NPC, "victory" for a player. */
   defenderWinLabel: "defense" | "victory";
-}) {
+}): StorytellerEffectDraft[] {
   const { initiator, defender, outcome } = input;
   const won = outcome.initiatorWins;
   return [
     {
       countryId: initiator.id,
-      ixTimeTimestamp: new Date(),
-      inputType: "GDP_ADJUSTMENT",
+      inputType: StorytellerEffectType.GDP_LEVEL_ADJUSTMENT,
       value: -outcome.economicDamage * (won ? 0.5 : 1.5),
       description: `Military conflict with ${defender.name}: ${won ? "victory" : "defeat"}`,
-      duration: 2,
-      isActive: true,
+      duration: CONFLICT_DAMAGE_YEARS,
       createdBy: input.createdBy,
     },
     {
       countryId: defender.id,
-      ixTimeTimestamp: new Date(),
-      inputType: "GDP_ADJUSTMENT",
+      inputType: StorytellerEffectType.GDP_LEVEL_ADJUSTMENT,
       value: -outcome.economicDamage * (won ? 1.5 : 0.5),
       description: `Military conflict with ${initiator.name}: ${won ? "defeat" : input.defenderWinLabel}`,
-      duration: 2,
-      isActive: true,
+      duration: CONFLICT_DAMAGE_YEARS,
       createdBy: input.createdBy,
     },
   ];

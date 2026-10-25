@@ -152,8 +152,8 @@ describe("foreign-policy proposals", () => {
       inputType: string;
     }>;
     expect(effects.map((e) => [e.countryId, e.inputType])).toEqual([
-      ["A", "TRADE_AGREEMENT"],
-      ["B", "TRADE_AGREEMENT"],
+      ["A", "trade_agreement"],
+      ["B", "trade_agreement"],
     ]);
     expect(db.diplomaticRelation.update).toHaveBeenCalledTimes(1);
     expect(db.bilateralTrade.update.mock.calls[0][0].data.tradeVolume).toBeCloseTo(125);

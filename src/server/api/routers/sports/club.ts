@@ -17,6 +17,7 @@ import { TRPCError } from "@trpc/server";
 import { exchangeService } from "~/lib/vault/exchange-service";
 import { teamWageBill } from "~/lib/sports";
 import { IxTime } from "~/lib/ixtime";
+import { createStorytellerEffect } from "~/lib/economy/storyteller-effects";
 import type { LiveTraceEvent } from "~/lib/sports/live-match";
 import { requireOwnedTeam } from "~/server/api/routers/sports/_shared";
 
@@ -186,16 +187,12 @@ export const sportsClubRouter = createTRPCRouter({
         });
 
         if (team.nationId) {
-          await ctx.db.storytellerEffect.create({
-            data: {
-              countryId: team.nationId,
-              ixTimeTimestamp: IxTime.timestampToDate(IxTime.getCurrentIxTime()),
-              inputType: "sports_saint_blessing",
-              value: 5.0,
-              description: `The home crowd echoes the Invocation of ${input.saintName}. Blessings descend upon the pitch!`,
-              isActive: true,
-              duration: 1,
-            },
+          await createStorytellerEffect(ctx.db, {
+            countryId: team.nationId,
+            inputType: "sports_saint_blessing",
+            value: 5.0,
+            description: `The home crowd echoes the Invocation of ${input.saintName}. Blessings descend upon the pitch!`,
+            duration: 1,
           });
         }
 

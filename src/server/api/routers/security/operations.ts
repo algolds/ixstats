@@ -11,6 +11,11 @@ import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { StorytellerEffectType } from "~/lib/economy/calculations";
+import { createStorytellerEffect, endStorytellerEffects } from "~/lib/economy/storyteller-effects";
+
+/** `createdBy` of a military operation's GDP-drain StorytellerEffect. */
+const operationEffectKey = (operationId: string) => `operation:${operationId}`;
 
 export const securityOperationsRouter = createTRPCRouter({
   // Get active and past operations
@@ -175,19 +180,16 @@ export const securityOperationsRouter = createTRPCRouter({
         });
       }
 
-      // Create storyteller effects for GDP drain
+      // GDP drain: a GDP level effect of -(annual cost / GDP), phased in while the operation
+      // runs; ending the operation unwinds it from then on.
       if (gdpDrain > 0) {
-        await ctx.db.storytellerEffect.create({
-          data: {
-            countryId: input.countryId,
-            ixTimeTimestamp: new Date(),
-            inputType: "GDP_ADJUSTMENT",
-            value: -gdpDrain,
-            description: `Military operation: ${input.name} (${input.operationType})`,
-            duration: input.duration ? Math.ceil(input.duration / 365) : 1,
-            isActive: true,
-            createdBy: userProfile.id,
-          },
+        await createStorytellerEffect(ctx.db, {
+          countryId: input.countryId,
+          inputType: StorytellerEffectType.GDP_LEVEL_ADJUSTMENT,
+          value: -gdpDrain,
+          description: `Military operation: ${input.name} (${input.operationType})`,
+          duration: input.duration ? Math.ceil(input.duration / 365) : 1,
+          createdBy: operationEffectKey(operation.id),
         });
       }
 
@@ -271,14 +273,14 @@ export const securityOperationsRouter = createTRPCRouter({
         },
       });
 
-      // Deactivate storyteller effects for this operation
-      await ctx.db.storytellerEffect.updateMany({
-        where: {
-          countryId: operation.countryId,
-          description: { contains: operation.name },
-          isActive: true,
-        },
-        data: { isActive: false },
+      // End this operation's GDP drain without rewriting the projected past (rows from before
+      // the operation key are matched by their description).
+      await endStorytellerEffects(ctx.db, {
+        countryId: operation.countryId,
+        OR: [
+          { createdBy: operationEffectKey(operation.id) },
+          { description: `Military operation: ${operation.name} (${operation.operationType})` },
+        ],
       });
 
       // Notification: operation completed (fire-and-forget)

@@ -14,6 +14,7 @@
  */
 
 import { IxTime } from "~/lib/ixtime";
+import { createStorytellerEffect } from "~/lib/economy/storyteller-effects";
 import {
   NationalIssuesEngine,
   type ResponseOptionTemplate,
@@ -389,17 +390,14 @@ export class NationalIssuesConsequences {
     const spec = issueConsequenceToEffect(consequence);
     if (!spec) return null;
 
-    await db.storytellerEffect.create({
-      data: {
-        countryId,
-        ixTimeTimestamp: new Date(currentIxTime),
-        inputType: spec.inputType,
-        value: spec.value,
-        description: `National issue: ${issueTitle} (${spec.description})`,
-        duration: spec.duration,
-        isActive: true,
-        createdBy: `issue:${issueId}`,
-      },
+    await createStorytellerEffect(db, {
+      countryId,
+      ixTime: currentIxTime,
+      inputType: spec.inputType,
+      value: spec.value,
+      description: `National issue: ${issueTitle} (${spec.description})`,
+      duration: spec.duration,
+      createdBy: `issue:${issueId}`,
     });
 
     const deltaPct = spec.value * 100;

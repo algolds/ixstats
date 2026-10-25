@@ -17,6 +17,7 @@ import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { createStorytellerEffects } from "~/lib/economy/storyteller-effects";
 import {
   computeConflictOutcome,
   conflictEconomicEffects,
@@ -317,15 +318,16 @@ export const securityConflictsRouter = createTRPCRouter({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Conflict is no longer active." });
       }
 
-      await ctx.db.storytellerEffect.createMany({
-        data: conflictEconomicEffects({
+      await createStorytellerEffects(
+        ctx.db,
+        conflictEconomicEffects({
           initiator: conflict.initiator,
           defender: conflict.defender,
           outcome,
           createdBy: ctx.user?.id ?? "system",
           defenderWinLabel: "victory",
-        }),
-      });
+        })
+      );
 
       const winnerName = outcome.initiatorWins ? conflict.initiator.name : conflict.defender.name;
       for (const side of [conflict.initiator, conflict.defender]) {
@@ -512,15 +514,16 @@ export const securityConflictsRouter = createTRPCRouter({
       });
 
       // Create storyteller effects for economic damage
-      await ctx.db.storytellerEffect.createMany({
-        data: conflictEconomicEffects({
+      await createStorytellerEffects(
+        ctx.db,
+        conflictEconomicEffects({
           initiator,
           defender,
           outcome,
           createdBy: userProfile.id,
           defenderWinLabel: "defense",
-        }),
-      });
+        })
+      );
 
       const winnerName = initiatorWins ? initiator.name : defender.name;
 

@@ -7,6 +7,8 @@
 import type { PrismaClient } from "@prisma/client";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { notificationAPI } from "~/lib/notifications";
+import { StorytellerEffectType } from "~/lib/economy/calculations";
+import { createStorytellerEffect } from "~/lib/economy/storyteller-effects";
 
 // Seat-allocation helpers (single source of truth)
 
@@ -397,19 +399,16 @@ export async function simulateElectionCore(
 
   await updatePoliticalMetrics(db, election.countryId, marginOfVictory);
 
-  // Storyteller effect for economic impact
-  const growthModifier = marginOfVictory > 10 ? 0.003 : marginOfVictory > 5 ? 0.001 : -0.003;
-  await db.storytellerEffect.create({
-    data: {
-      countryId: election.countryId,
-      ixTimeTimestamp: new Date(),
-      inputType: "economic_policy",
-      value: growthModifier,
-      duration: legislature.termLength,
-      description: `Election result: ${marginOfVictory > 10 ? "Decisive victory" : marginOfVictory > 5 ? "Clear win" : "Close election"} - ${sortedResults[0]?.votePercentage.toFixed(1)}% to ${sortedResults[1]?.votePercentage.toFixed(1)}%`,
-      isActive: true,
-      createdBy: "ELECTION_SYSTEM",
-    },
+  // Economic impact: a GDP level shift (+0.3% decisive, +0.1% clear, -0.3% close), phased in
+  // over the new term and kept.
+  const gdpLevelShift = marginOfVictory > 10 ? 0.003 : marginOfVictory > 5 ? 0.001 : -0.003;
+  await createStorytellerEffect(db, {
+    countryId: election.countryId,
+    inputType: StorytellerEffectType.GDP_LEVEL_ADJUSTMENT,
+    value: gdpLevelShift,
+    duration: legislature.termLength,
+    description: `Election result: ${marginOfVictory > 10 ? "Decisive victory" : marginOfVictory > 5 ? "Clear win" : "Close election"} - ${sortedResults[0]?.votePercentage.toFixed(1)}% to ${sortedResults[1]?.votePercentage.toFixed(1)}%`,
+    createdBy: "ELECTION_SYSTEM",
   });
 
   // Party support reflects results

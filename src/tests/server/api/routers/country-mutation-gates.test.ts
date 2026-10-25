@@ -124,7 +124,21 @@ function policiesDb(countryId: string, status = "active") {
         }
       ),
     },
-    storytellerEffect: { updateMany: jest.fn(async (_args: object) => ({ count: 1 })) },
+    storytellerEffect: {
+      findMany: jest.fn(async (_args: object) => [
+        {
+          countryId,
+          inputType: "gdp_level_adjustment",
+          value: 0.02,
+          duration: 1,
+          description: "Active policy: Policy",
+          createdBy: "POLICY:pol_1",
+          worldEventId: null,
+        },
+      ]),
+      createMany: jest.fn(async (args: { data: object[] }) => ({ count: args.data.length })),
+      updateMany: jest.fn(async (_args: object) => ({ count: 1 })),
+    },
     policyEffectLog: { create: jest.fn(async (_args: object) => ({})) },
   };
 }
@@ -257,7 +271,11 @@ const ROWS: Row[] = [
     name: "policies.repealPolicy",
     db: () => policiesDb(FOREIGN_COUNTRY),
     run: (ctx) => policies(ctx).repealPolicy({ policyId: "pol_1" }),
-    writes: (db) => [mock(db, "policy", "updateMany"), mock(db, "storytellerEffect", "updateMany")],
+    writes: (db) => [
+      mock(db, "policy", "updateMany"),
+      mock(db, "storytellerEffect", "createMany"),
+      mock(db, "storytellerEffect", "updateMany"),
+    ],
   },
   ...(["update", "delete"] as const).map((procedure) => ({
     name: `taxSystem.${procedure}`,
@@ -437,9 +455,16 @@ describe("policies.repealPolicy", () => {
       })
     ).resolves.toEqual({ id: "pol_1", status: "repealed", execBandwidthReleased: 15 });
     expect(db.state.policy.status).toBe("repealed");
-    expect(db.storytellerEffect.updateMany).toHaveBeenCalledWith({
-      where: { createdBy: "POLICY:pol_1", isActive: true },
-      data: { isActive: false },
+    // The policy's +2% GDP level is unwound from now on, not deleted from the projected past.
+    expect(db.storytellerEffect.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          createdBy: "POLICY:pol_1",
+          inputType: "gdp_level_adjustment",
+          value: -0.019608,
+          description: "Ended: Active policy: Policy",
+        }),
+      ],
     });
     expect(db.policyEffectLog.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ policyId: "pol_1", notes: "repealed: Too costly" }),
@@ -451,6 +476,7 @@ describe("policies.repealPolicy", () => {
     await expect(
       policiesRouter.createCaller(createIdorContext(db)).repealPolicy({ policyId: "pol_1" })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(db.storytellerEffect.createMany).not.toHaveBeenCalled();
     expect(db.storytellerEffect.updateMany).not.toHaveBeenCalled();
   });
 });
