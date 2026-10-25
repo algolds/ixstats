@@ -179,7 +179,11 @@ const hashQuerySchema = z.object({
       pages: z
         .array(
           z.looseObject({
-            revisions: z.array(z.looseObject({ sha1: z.string().optional() })).optional(),
+            revisions: z
+              .array(
+                z.looseObject({ sha1: z.string().optional(), parentid: z.number().optional() })
+              )
+              .optional(),
           })
         )
         .optional(),
@@ -189,14 +193,26 @@ const hashQuerySchema = z.object({
 
 const HEX_SHA1 = /^[0-9a-f]{40}$/i;
 
-/** `rev_sha1` (base 36) of revision `revid`, read without its text; null when MediaWiki has no usable hash. */
-export async function fetchRevisionSha1(revid: number): Promise<string | null> {
+/** A revision read without its text: its `rev_sha1` (base 36) and its parent's id. */
+export interface RevisionHash {
+  /** null when MediaWiki has no usable hash. */
+  sha1: string | null;
+  /** 0 for a page's first revision; null when MediaWiki did not say (no such revision). */
+  parentid: number | null;
+}
+
+/** Revision `revid`'s hash and parent, read without its text. */
+export async function fetchRevisionHash(revid: number): Promise<RevisionHash> {
   const data = await mediaWikiGet(
     { action: "query", revids: String(revid), prop: "revisions", rvprop: "ids|sha1" },
     hashQuerySchema
   );
-  const hex = data.query?.pages?.[0]?.revisions?.[0]?.sha1;
-  return hex !== undefined && HEX_SHA1.test(hex) ? sha1HexToBase36(hex) : null;
+  const revision = data.query?.pages?.[0]?.revisions?.[0];
+  const hex = revision?.sha1;
+  return {
+    sha1: hex !== undefined && HEX_SHA1.test(hex) ? sha1HexToBase36(hex) : null,
+    parentid: revision?.parentid ?? null,
+  };
 }
 
 // ---------------------------------------------------------------------------

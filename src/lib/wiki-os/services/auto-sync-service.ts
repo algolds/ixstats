@@ -40,6 +40,7 @@ import {
   clearStepFailure,
   countQuarantined,
   loadFailingKeys,
+  loadSettledKeys,
   recordStepFailure,
   type QuarantinableStep,
 } from "./inbound-dead-letters";
@@ -401,9 +402,14 @@ async function runCycle(limit: number): Promise<void> {
     );
     lastStats.pagesChecked = changes.length + events.length;
 
-    const failing = await loadFailingKeys();
+    const steps = [...changes.map(editStep), ...events.map(logStep)];
+    // a quarantined step resolved since (retried, resynced or dismissed) is not run again: the mark is already past it
+    const [failing, settled] = await Promise.all([
+      loadFailingKeys(),
+      loadSettledKeys(steps.map((step) => step.key)),
+    ]);
     const done = await runSteps(
-      [...changes.map(editStep), ...events.map(logStep)],
+      steps.filter((step) => !settled.has(step.key)),
       deadline,
       failing
     );

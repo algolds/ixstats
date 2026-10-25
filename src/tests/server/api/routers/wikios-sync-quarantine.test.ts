@@ -27,6 +27,7 @@ jest.mock("~/lib/wiki-os/services/auto-sync-service", () => ({
 jest.mock("~/lib/wiki-os/services/inbound-dead-letters", () => ({
   __esModule: true,
   listQuarantined: jest.fn(),
+  resyncQuarantined: jest.fn(),
   retryQuarantined: jest.fn(),
   dismissQuarantined: jest.fn(),
 }));
@@ -38,6 +39,7 @@ import { PageOperationError } from "~/lib/wiki-os/core/page-management-service";
 import {
   dismissQuarantined,
   listQuarantined,
+  resyncQuarantined,
   retryQuarantined,
 } from "~/lib/wiki-os/services/inbound-dead-letters";
 
@@ -56,6 +58,7 @@ const signedOut = () => createCaller(createMockRouterContext({ auth: null, user:
 const list = jest.mocked(listQuarantined);
 const retry = jest.mocked(retryQuarantined);
 const dismiss = jest.mocked(dismissQuarantined);
+const resync = jest.mocked(resyncQuarantined);
 
 const step = {
   id: "dl1",
@@ -66,6 +69,8 @@ const step = {
   attempts: 5,
   lastError: "HTTP 500",
   quarantinedAt: new Date("2026-10-24T10:00:00Z"),
+  stale: false,
+  staleReason: null,
 };
 
 beforeEach(() => {
@@ -73,6 +78,7 @@ beforeEach(() => {
   list.mockResolvedValue([step]);
   retry.mockResolvedValue("applied");
   dismiss.mockResolvedValue(undefined);
+  resync.mockResolvedValue("applied");
 });
 
 describe("the quarantined sync steps", () => {
@@ -93,6 +99,22 @@ describe("the quarantined sync steps", () => {
     retry.mockResolvedValueOnce("failed");
     await expect(admin().retryQuarantinedSyncStep({ id: "dl1" })).resolves.toEqual({
       outcome: "failed",
+    });
+  });
+
+  it("resyncs the page of a quarantined edit, and says how it went", async () => {
+    await expect(admin().resyncQuarantinedPage({ id: "dl1" })).resolves.toEqual({
+      outcome: "applied",
+    });
+    expect(resync).toHaveBeenCalledWith("dl1");
+
+    resync.mockResolvedValueOnce("skipped");
+    await expect(admin().resyncQuarantinedPage({ id: "dl1" })).resolves.toEqual({
+      outcome: "skipped",
+    });
+    resync.mockRejectedValueOnce(new PageOperationError("BAD_REQUEST", "Only an edit's page."));
+    await expect(admin().resyncQuarantinedPage({ id: "dl1" })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
     });
   });
 
@@ -123,9 +145,13 @@ describe("the quarantined sync steps", () => {
     await expect(member().dismissQuarantinedSyncStep({ id: "dl1" })).rejects.toThrow(
       /Admin privileges required/
     );
+    await expect(member().resyncQuarantinedPage({ id: "dl1" })).rejects.toThrow(
+      /Admin privileges required/
+    );
     await expect(signedOut().getQuarantinedSyncSteps()).rejects.toThrow(/Authentication required/);
     expect(list).not.toHaveBeenCalled();
     expect(retry).not.toHaveBeenCalled();
     expect(dismiss).not.toHaveBeenCalled();
+    expect(resync).not.toHaveBeenCalled();
   });
 });

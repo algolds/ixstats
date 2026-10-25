@@ -20,12 +20,13 @@ jest.mock("~/server/db", () => ({
 }));
 jest.mock("~/lib/wiki-os/services/inbound-revision-sync", () => ({
   syncRevisionById: jest.fn(),
+  syncLatestRevision: jest.fn(),
 }));
 jest.mock("~/lib/wiki-os/services/inbound-log-events", () => ({ applyLogEvent: jest.fn() }));
 jest.mock("~/lib/system/job-lock", () => ({ withJobLock: jest.fn() }));
 
 import { PageOperationError } from "~/lib/wiki-os/core/page-operation-error";
-import { syncRevisionById } from "~/lib/wiki-os/services/inbound-revision-sync";
+import { syncLatestRevision, syncRevisionById } from "~/lib/wiki-os/services/inbound-revision-sync";
 import { applyLogEvent } from "~/lib/wiki-os/services/inbound-log-events";
 import { withJobLock } from "~/lib/system/job-lock";
 import {
@@ -36,12 +37,14 @@ import {
   listQuarantined,
   loadFailingKeys,
   recordStepFailure,
+  resyncQuarantined,
   retryQuarantined,
   type QuarantinableStep,
 } from "~/lib/wiki-os/services/inbound-dead-letters";
 import { WIKIOS_MODES, seedWikiosMode } from "~/tests/helpers/wikios-modes";
 
 const syncRevision = jest.mocked(syncRevisionById);
+const syncLatest = jest.mocked(syncLatestRevision);
 const applyEvent = jest.mocked(applyLogEvent);
 const lock = jest.mocked(withJobLock);
 
@@ -93,6 +96,7 @@ describe.each(WIKIOS_MODES)("inbound dead letters [%s]", (mode) => {
     restore = await seedWikiosMode(mockDb, mode);
     lock.mockImplementation(async (_db, _name, fn) => ({ ran: true, result: await fn() }));
     syncRevision.mockResolvedValue("fast-forward");
+    syncLatest.mockResolvedValue("fast-forward");
     applyEvent.mockResolvedValue("applied");
   });
   afterEach(() => restore());
@@ -192,6 +196,8 @@ describe.each(WIKIOS_MODES)("inbound dead letters [%s]", (mode) => {
         attempts: 5,
         lastError: "db down",
         quarantinedAt: expect.any(Date),
+        stale: false,
+        staleReason: null,
       });
       await expect(listQuarantined(1)).resolves.toHaveLength(1);
       await expect(countQuarantined()).resolves.toBe(2);
@@ -279,6 +285,170 @@ describe.each(WIKIOS_MODES)("inbound dead letters [%s]", (mode) => {
       );
       expect(syncRevision).not.toHaveBeenCalled();
       expect(await rowOf("rc:5")).toMatchObject({ attempts: 5, resolvedAt: null });
+    });
+  });
+
+  describe("a log step a later classic change has overtaken (fix round 1, C1)", () => {
+    const quarantine = async (step: QuarantinableStep) => {
+      await failTimes(step, QUARANTINE_AFTER);
+      return (await rowOf(step.key))!.id;
+    };
+    const STALE_PAGE = new PageOperationError(
+      "CONFLICT",
+      "A later classic change of this page was applied; retrying would undo it. Dismiss it instead."
+    );
+    const STALE_USER = new PageOperationError(
+      "CONFLICT",
+      "A later classic change of this user was applied; retrying would undo it. Dismiss it instead."
+    );
+    const page = () =>
+      mockDb.wikiArticle.create({
+        data: { title: "Caphiria", wikitext: "Text.", mwPageId: 12 },
+      });
+    const appliedEvent = (data: {
+      mwLogId: number;
+      title: string;
+      articleId?: string | null;
+      logType?: string;
+    }) =>
+      mockDb.wikiLog.create({
+        data: { logType: "protect", action: "protect", actorName: "Carol", ...data },
+      });
+    const revision = (articleId: string, origin: string, createdAt: string) =>
+      mockDb.wikiRevision.create({
+        data: { articleId, wikitext: "Later.", origin, createdAt: new Date(createdAt) },
+      });
+
+    it("refuses a page event when a later classic event of the same title was applied, running nothing", async () => {
+      const id = await quarantine(logStep);
+      await appliedEvent({ mwLogId: 78, title: "Caphiria" });
+
+      await expect(retryQuarantined(id)).rejects.toEqual(STALE_PAGE);
+
+      expect(applyEvent).not.toHaveBeenCalled();
+      expect(await rowOf("log:77")).toMatchObject({ attempts: 5, resolvedAt: null });
+      await expect(listQuarantined(10)).resolves.toEqual([
+        expect.objectContaining({ stepKey: "log:77", stale: true }),
+      ]);
+    });
+
+    it("finds the page by its article (a later event logged at its new title) and by MediaWiki's page id", async () => {
+      const id = await quarantine(logStep);
+      const article = await page();
+      await mockDb.wikiArticle.update({ where: { id: article.id }, data: { title: "Moved" } });
+      await appliedEvent({ mwLogId: 90, title: "Moved", articleId: article.id });
+
+      await expect(retryQuarantined(id)).rejects.toEqual(STALE_PAGE);
+    });
+
+    it("refuses a page event when a classic revision of the page was saved after it", async () => {
+      const id = await quarantine(logStep);
+      const article = await page();
+      await revision(article.id, "classic", "2026-10-24T10:00:03Z");
+
+      await expect(retryQuarantined(id)).rejects.toEqual(STALE_PAGE);
+    });
+
+    it("refuses a user event (rights, block) when a later classic event of that user was applied", async () => {
+      const grant: QuarantinableStep = {
+        key: "log:80",
+        stream: "log",
+        subject: "User:Zed",
+        label: "rights/rights User:Zed",
+        mark: "2026-10-24T10:00:05Z|80",
+        payload: {
+          ...deletion,
+          logid: 80,
+          type: "rights",
+          action: "rights",
+          title: "User:Zed",
+          params: { newgroups: ["sysop"] },
+        },
+      };
+      const id = await quarantine(grant);
+      await appliedEvent({ mwLogId: 81, title: "User:Zed", logType: "rights" });
+
+      await expect(retryQuarantined(id)).rejects.toEqual(STALE_USER);
+      expect(applyEvent).not.toHaveBeenCalled();
+    });
+
+    it("still applies when nothing later is there: earlier events, WikiOS's own, other pages and earlier or WikiOS revisions", async () => {
+      const id = await quarantine(logStep);
+      const article = await page();
+      await appliedEvent({ mwLogId: 76, title: "Caphiria", articleId: article.id });
+      await appliedEvent({ mwLogId: 200, title: "Other page" });
+      await mockDb.wikiLog.create({
+        data: { logType: "delete", action: "delete", title: "Caphiria", actorName: "alpha" },
+      });
+      await revision(article.id, "classic", "2026-10-24T10:00:01Z");
+      await revision(article.id, "wikios", "2026-10-24T10:00:09Z");
+
+      await expect(listQuarantined(10)).resolves.toEqual([
+        expect.objectContaining({ stale: false }),
+      ]);
+      await expect(retryQuarantined(id)).resolves.toBe("applied");
+      expect(applyEvent).toHaveBeenCalledWith(deletion);
+    });
+
+    it("never calls a recent change stale (an older revision is filed as history)", async () => {
+      await quarantine(rcStep(5));
+      await appliedEvent({ mwLogId: 999, title: "Caphiria" });
+
+      await expect(listQuarantined(10)).resolves.toEqual([
+        expect.objectContaining({ stepKey: "rc:5", stale: false }),
+      ]);
+    });
+  });
+
+  describe("a retry with nothing left to apply (fix round 1, M6)", () => {
+    it.each([
+      ["a recent change MediaWiki no longer has", rcStep(5)],
+      ["a log event that cannot be applied", logStep],
+    ])("%s resolves the row as skipped", async (_name, step) => {
+      syncRevision.mockResolvedValue("skipped");
+      applyEvent.mockResolvedValue("skipped");
+      await failTimes(step, QUARANTINE_AFTER);
+
+      await expect(retryQuarantined((await rowOf(step.key))!.id)).resolves.toBe("skipped");
+
+      expect(await rowOf(step.key)).toMatchObject({ resolvedAt: expect.any(Date) });
+    });
+  });
+
+  describe("resyncQuarantined (fix round 1, I3)", () => {
+    it("brings the page of a quarantined recent change over from classic, judged, under the lock, and resolves the row", async () => {
+      await failTimes(rcStep(5), QUARANTINE_AFTER);
+      const { id } = (await rowOf("rc:5"))!;
+
+      await expect(resyncQuarantined(id)).resolves.toBe("applied");
+
+      expect(syncLatest).toHaveBeenCalledWith("Caphiria", { judgeCollisions: true });
+      expect(lock.mock.calls[0]?.[1]).toBe("wikios-inbound-sync");
+      expect(await rowOf("rc:5")).toMatchObject({ resolvedAt: expect.any(Date) });
+    });
+
+    it("a page MediaWiki no longer has is skipped and resolved; a failure counts the attempt", async () => {
+      await failTimes(rcStep(5), QUARANTINE_AFTER);
+      const { id } = (await rowOf("rc:5"))!;
+      syncLatest.mockRejectedValueOnce(new Error("HTTP 503"));
+
+      await expect(resyncQuarantined(id)).resolves.toBe("failed");
+      expect(await rowOf("rc:5")).toMatchObject({ attempts: 6, lastError: "HTTP 503" });
+
+      syncLatest.mockResolvedValueOnce("skipped");
+      await expect(resyncQuarantined(id)).resolves.toBe("skipped");
+      expect(await rowOf("rc:5")).toMatchObject({ resolvedAt: expect.any(Date) });
+    });
+
+    it("refuses a log step, and a step that is not quarantined", async () => {
+      await failTimes(logStep, QUARANTINE_AFTER);
+      await expect(resyncQuarantined((await rowOf("log:77"))!.id)).rejects.toEqual(
+        new PageOperationError("BAD_REQUEST", "Only an edit's page can be resynced.")
+      );
+      await expect(resyncQuarantined("nope")).rejects.toEqual(
+        new PageOperationError("NOT_FOUND", "No quarantined sync step with that id.")
+      );
+      expect(syncLatest).not.toHaveBeenCalled();
     });
   });
 

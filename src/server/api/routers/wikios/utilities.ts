@@ -24,6 +24,7 @@ import { conflictLogPage } from "~/lib/wiki-os/services/conflict-log-view";
 import {
   dismissQuarantined,
   listQuarantined,
+  resyncQuarantined,
   retryQuarantined,
 } from "~/lib/wiki-os/services/inbound-dead-letters";
 import { refusals } from "~/lib/wiki-os/permissions";
@@ -183,10 +184,18 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
     .input(z.object({ limit: z.number().int().min(1).max(200).default(50) }).optional())
     .query(({ input }) => listQuarantined(input?.limit ?? 50)),
 
-  /** Apply a quarantined step again, through the same conflict rule as a cycle; "failed" counts the attempt. */
+  /**
+   * Apply a quarantined step again, through the same conflict rule as a cycle: "skipped" when MediaWiki no longer has
+   * it, "failed" counts the attempt; CONFLICT when a later classic change of its page or user was applied.
+   */
   retryQuarantinedSyncStep: adminProcedure
     .input(rowIdInput)
     .mutation(async ({ input }) => ({ outcome: await refusals(retryQuarantined(input.id)) })),
+
+  /** For a quarantined edit: bring its page over from classic as it is now, judged like a cycle's revision. */
+  resyncQuarantinedPage: adminProcedure
+    .input(rowIdInput)
+    .mutation(async ({ input }) => ({ outcome: await refusals(resyncQuarantined(input.id)) })),
 
   /** Give up on a quarantined step: it leaves the list, and WikiOS keeps what it has for that page. */
   dismissQuarantinedSyncStep: adminProcedure.input(rowIdInput).mutation(async ({ input }) => {

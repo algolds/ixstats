@@ -5,10 +5,11 @@
  */
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
-const mockNotify = { success: jest.fn(), error: jest.fn() };
+const mockNotify = { success: jest.fn(), error: jest.fn(), info: jest.fn() };
 const mockInvalidate = jest.fn();
 const mockRetry = { mutate: jest.fn(), isPending: false };
 const mockDismiss = { mutate: jest.fn(), isPending: false };
+const mockResync = { mutate: jest.fn(), isPending: false };
 let mockSteps: object[] | undefined = [];
 interface MutationOptions {
   onSuccess: (data: { outcome?: string }) => void;
@@ -16,6 +17,7 @@ interface MutationOptions {
 }
 let mockRetryOptions: MutationOptions;
 let mockDismissOptions: MutationOptions;
+let mockResyncOptions: MutationOptions;
 
 jest.mock("~/hooks/useNotify", () => ({ useNotify: () => mockNotify }));
 jest.mock("~/trpc/react", () => ({
@@ -29,6 +31,12 @@ jest.mock("~/trpc/react", () => ({
         useMutation: (options: MutationOptions) => {
           mockRetryOptions = options;
           return mockRetry;
+        },
+      },
+      resyncQuarantinedPage: {
+        useMutation: (options: MutationOptions) => {
+          mockResyncOptions = options;
+          return mockResync;
         },
       },
       dismissQuarantinedSyncStep: {
@@ -52,6 +60,8 @@ const step = (over: object = {}) => ({
   attempts: 5,
   lastError: "MediaWiki returned HTTP 500",
   quarantinedAt: new Date("2026-10-24T10:00:00Z"),
+  stale: false,
+  staleReason: null,
   ...over,
 });
 
@@ -59,6 +69,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockRetry.isPending = false;
   mockDismiss.isPending = false;
+  mockResync.isPending = false;
   mockSteps = [
     step(),
     step({
@@ -150,13 +161,70 @@ describe("InboundQuarantineSection", () => {
 
   it.each([
     ["a retry", mockRetry],
+    ["a resync", mockResync],
     ["a dismissal", mockDismiss],
   ])("disables every button while %s runs", (_name, mutation) => {
     mutation.isPending = true;
     render(<InboundQuarantineSection />);
 
     const buttons = screen.getAllByRole("button");
-    expect(buttons.length).toBe(4);
+    expect(buttons.length).toBe(5);
     for (const button of buttons) expect((button as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("a retry with nothing left to apply says so, not that it applied (M6)", () => {
+    render(<InboundQuarantineSection />);
+    fireEvent.click(within(rowOf("db down")).getByRole("button", { name: /Retry/ }));
+
+    act(() => mockRetryOptions.onSuccess({ outcome: "skipped" }));
+
+    expect(mockNotify.info).toHaveBeenCalledWith(
+      "The change is no longer on MediaWiki; nothing to apply."
+    );
+    expect(mockNotify.success).not.toHaveBeenCalled();
+    expect(mockInvalidate).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("a stale log step cannot be retried, and says why (C1)", () => {
+    const reason =
+      "A later classic change of this page was applied; retrying would undo it. Dismiss it instead.";
+    mockSteps = [
+      step({ id: "dl2", stream: "log", lastError: "db down", stale: true, staleReason: reason }),
+    ];
+    render(<InboundQuarantineSection />);
+
+    const row = rowOf("db down");
+    expect((within(row).getByRole("button", { name: /Retry/ }) as HTMLButtonElement).disabled).toBe(
+      true
+    );
+    expect(within(row).getByText(reason)).toBeTruthy();
+    expect(
+      (within(row).getByRole("button", { name: /Dismiss/ }) as HTMLButtonElement).disabled
+    ).toBe(false);
+  });
+
+  it("resyncs the page of an edit (not of a log event), and says how it went (I3)", () => {
+    render(<InboundQuarantineSection />);
+    expect(within(rowOf("db down")).queryByRole("button", { name: /Resync/ })).toBeNull();
+
+    fireEvent.click(
+      within(rowOf("MediaWiki returned HTTP 500")).getByRole("button", {
+        name: /Resync page from classic/,
+      })
+    );
+    expect(mockResync.mutate).toHaveBeenCalledWith({ id: "dl1" });
+
+    act(() => mockResyncOptions.onSuccess({ outcome: "applied" }));
+    expect(mockNotify.success).toHaveBeenCalledWith("Page resynced from classic");
+    act(() => mockResyncOptions.onSuccess({ outcome: "skipped" }));
+    expect(mockNotify.info).toHaveBeenCalledWith(
+      "The change is no longer on MediaWiki; nothing to apply."
+    );
+    act(() => mockResyncOptions.onSuccess({ outcome: "failed" }));
+    expect(screen.getByRole("alert").textContent).toMatch(/failed again/);
+    act(() => mockResyncOptions.onError({ message: "A sync is running. Try again in a moment." }));
+    expect(screen.getByRole("alert").textContent).toBe("A sync is running. Try again in a moment.");
+    expect(mockInvalidate).toHaveBeenCalledTimes(3);
   });
 });

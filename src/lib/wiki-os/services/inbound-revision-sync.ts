@@ -48,10 +48,11 @@ import {
 import {
   fetchLatestRevision,
   fetchRevision,
-  fetchRevisionSha1,
+  fetchRevisionHash,
   plainTitle,
   type MediaWikiRevision,
 } from "./inbound-mediawiki";
+import { buildsOnHeadPastQuarantine } from "./inbound-quarantined-parents";
 
 const SOURCE = "ixwiki";
 const DELETED_AUTHOR = "(deleted)";
@@ -584,8 +585,12 @@ async function relationFor(
   const relation = decideInbound(input);
   // The parent's hash is only worth a request when the cheap checks find a collision.
   if (relation !== "collision" || rev.parentid <= 0) return { relation, parentSha1: null };
-  const parentSha1 = await fetchRevisionSha1(rev.parentid);
-  return { relation: decideInbound({ ...input, parentSha1 }), parentSha1 };
+  const parent = await fetchRevisionHash(rev.parentid);
+  const decided = decideInbound({ ...input, parentSha1: parent.sha1 });
+  // a parent the sync quarantined is not a collision with the head it was built on (inbound-quarantined-parents.ts)
+  const pastQuarantine =
+    decided === "collision" && (await buildsOnHeadPastQuarantine(rev.parentid, parent, head));
+  return { relation: pastQuarantine ? "fast-forward" : decided, parentSha1: parent.sha1 };
 }
 
 /**

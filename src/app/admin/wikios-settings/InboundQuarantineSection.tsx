@@ -2,7 +2,8 @@
 // src/app/admin/wikios-settings/InboundQuarantineSection.tsx
 // The inbound sync's quarantined steps (classic MediaWiki -> WikiOS): a recent change or log event that failed in five
 // cycles, which the sync moved past so it would not stall. An administrator retries one (it runs through the same
-// conflict rule as a cycle) or dismisses it, after a confirm. The sync status is degraded while any is left.
+// conflict rule as a cycle; a log event a later classic change overtook cannot be retried), resyncs an edit's page from
+// classic, or dismisses it, after a confirm. The sync status is degraded while any is left.
 
 import { useState } from "react";
 import {
@@ -19,7 +20,7 @@ import { Card } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { CheckCircle, Refresh, Trash, WarningTriangle } from "iconoir-react";
+import { CheckCircle, Download, Refresh, Trash, WarningTriangle } from "iconoir-react";
 
 const REFRESH_MS = 30_000;
 
@@ -28,15 +29,23 @@ type QuarantinedStep = RouterOutputs["wikios"]["getQuarantinedSyncSteps"][number
 /** What kind of step a row is, in words. */
 const STREAMS: Record<string, string> = { edits: "Edit", log: "Log event" };
 
+/** A retry or resync that found nothing to apply. */
+const NOTHING_TO_APPLY = "The change is no longer on MediaWiki; nothing to apply.";
+const FAILED_AGAIN = "The step failed again. Its row shows the new error.";
+
+type ActionOutcome = "applied" | "skipped" | "failed";
+
 function QuarantinedRow({
   step,
   busy,
   onRetry,
+  onResync,
   onDismiss,
 }: {
   step: QuarantinedStep;
   busy: boolean;
   onRetry: () => void;
+  onResync: () => void;
   onDismiss: () => void;
 }) {
   return (
@@ -50,14 +59,20 @@ function QuarantinedRow({
         title={step.lastError ?? undefined}
       >
         {step.lastError}
+        {step.staleReason && <div className="text-label whitespace-normal">{step.staleReason}</div>}
       </td>
       <td className="text-label-secondary px-2 py-1.5">
         {step.quarantinedAt ? new Date(step.quarantinedAt).toLocaleString() : null}
       </td>
       <td className="flex gap-1 px-2 py-1.5">
-        <Button size="xs" variant="outline" disabled={busy} onClick={onRetry}>
+        <Button size="xs" variant="outline" disabled={busy || step.stale} onClick={onRetry}>
           <Refresh className="h-3 w-3" /> Retry
         </Button>
+        {step.stream === "edits" && (
+          <Button size="xs" variant="outline" disabled={busy} onClick={onResync}>
+            <Download className="h-3 w-3" /> Resync page from classic
+          </Button>
+        )}
         <Button size="xs" variant="destructive" disabled={busy} onClick={onDismiss}>
           <Trash className="h-3 w-3" /> Dismiss
         </Button>
@@ -79,12 +94,19 @@ export function InboundQuarantineSection() {
 
   const refresh = () => void utils.wikios.getQuarantinedSyncSteps.invalidate();
   const onError = (error: { message: string }) => setFailure(error.message);
+  /** What a retry or resync did, said once the list is refreshed. */
+  const reportOutcome = (applied: string) => (data: { outcome: ActionOutcome }) => {
+    refresh();
+    if (data.outcome === "applied") notify.success(applied);
+    else if (data.outcome === "skipped") notify.info(NOTHING_TO_APPLY);
+    else setFailure(FAILED_AGAIN);
+  };
   const retry = api.wikios.retryQuarantinedSyncStep.useMutation({
-    onSuccess: ({ outcome }) => {
-      refresh();
-      if (outcome === "applied") notify.success("Step applied");
-      else setFailure("The step failed again. Its row shows the new error.");
-    },
+    onSuccess: reportOutcome("Step applied"),
+    onError,
+  });
+  const resync = api.wikios.resyncQuarantinedPage.useMutation({
+    onSuccess: reportOutcome("Page resynced from classic"),
     onError,
   });
   const dismiss = api.wikios.dismissQuarantinedSyncStep.useMutation({
@@ -94,12 +116,13 @@ export function InboundQuarantineSection() {
     },
     onError,
   });
-  // one busy state for the whole section: a retry and a dismissal never run at once
-  const busy = retry.isPending || dismiss.isPending;
+  // one busy state for the whole section: a retry, a resync and a dismissal never run at once
+  const busy = retry.isPending || resync.isPending || dismiss.isPending;
 
-  const startRetry = (id: string) => {
+  /** Start `mutation` on step `id`, the last failure cleared. */
+  const start = (mutation: { mutate: (input: { id: string }) => void }, id: string) => {
     setFailure(null);
-    retry.mutate({ id });
+    mutation.mutate({ id });
   };
   const confirmDismiss = () => {
     setFailure(null);
@@ -156,7 +179,8 @@ export function InboundQuarantineSection() {
                   key={step.id}
                   step={step}
                   busy={busy}
-                  onRetry={() => startRetry(step.id)}
+                  onRetry={() => start(retry, step.id)}
+                  onResync={() => start(resync, step.id)}
                   onDismiss={() => setDismissing(step)}
                 />
               ))}

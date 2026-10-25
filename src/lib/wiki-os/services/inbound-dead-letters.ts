@@ -15,7 +15,8 @@ import { db } from "~/server/db";
 import { withJobLock } from "~/lib/system/job-lock";
 import { PageOperationError } from "~/lib/wiki-os/core/page-operation-error";
 import { applyLogEvent } from "./inbound-log-events";
-import { syncRevisionById } from "./inbound-revision-sync";
+import { syncLatestRevision, syncRevisionById } from "./inbound-revision-sync";
+import { staleMessage, staleSubject, storedLogEvent } from "./inbound-stale-steps";
 
 /** A step is quarantined on this many failed cycles. */
 export const QUARANTINE_AFTER = 5;
@@ -95,9 +96,21 @@ export async function clearStepFailure(stepKey: string): Promise<void> {
 /** Quarantined and neither applied since nor dismissed. */
 const OPEN = { quarantinedAt: { not: null }, resolvedAt: null } as const;
 
-/** The quarantined steps an administrator still has to retry or dismiss, oldest first. */
-export function listQuarantined(limit: number) {
-  return db.wikiSyncDeadLetter.findMany({
+/** Why retrying a stored step would undo a later classic change (a log event overtaken), or null. */
+async function staleReasonOf(stream: string, payload: Prisma.JsonValue): Promise<string | null> {
+  if (stream !== "log") return null;
+  const event = storedLogEvent.safeParse(payload);
+  if (!event.success) return null;
+  const subject = await staleSubject(event.data);
+  return subject ? staleMessage(subject) : null;
+}
+
+/**
+ * The quarantined steps an administrator still has to retry or dismiss, oldest first. `stale`: a later classic change
+ * of the step's page or user was applied, so it can only be dismissed (`staleReason` says so).
+ */
+export async function listQuarantined(limit: number) {
+  const rows = await db.wikiSyncDeadLetter.findMany({
     where: OPEN,
     orderBy: [{ quarantinedAt: "asc" }, { id: "asc" }],
     take: limit,
@@ -110,55 +123,102 @@ export function listQuarantined(limit: number) {
       attempts: true,
       lastError: true,
       quarantinedAt: true,
+      payload: true,
     },
   });
+  return Promise.all(
+    rows.map(async ({ payload, ...row }) => {
+      const staleReason = await staleReasonOf(row.stream, payload);
+      return { ...row, stale: staleReason !== null, staleReason };
+    })
+  );
 }
 
-/** How many quarantined steps are unresolved (the sync status is DEGRADED while any is). */
+/** How many quarantined steps are unresolved (the sync status is DEGRADED while any is); a dismissed one is not. */
 export function countQuarantined(): Promise<number> {
   return db.wikiSyncDeadLetter.count({ where: OPEN });
 }
 
+/**
+ * Of `keys` (a cycle's steps), those quarantined and resolved since: applied by a retry or a resync, or dismissed. The
+ * cycle does not run them again (an rc step at the mark's second comes back every cycle until the mark moves).
+ */
+export async function loadSettledKeys(keys: string[]): Promise<Set<string>> {
+  const rows = await db.wikiSyncDeadLetter.findMany({
+    where: { stepKey: { in: keys }, quarantinedAt: { not: null }, resolvedAt: { not: null } },
+    select: { stepKey: true },
+  });
+  return new Set(rows.map((row) => row.stepKey));
+}
+
+/** A retry or resync this module refuses (not a failure of the step): nothing is counted, the caller is told why. */
+class StepRefusal extends PageOperationError {}
+
 const notQuarantined = () =>
   new PageOperationError("NOT_FOUND", "No quarantined sync step with that id.");
 
-const jsonValue = z.json();
-const recentChangePayload = z.object({ revid: z.number().int().positive() });
-const logEventPayload = z.object({
-  logid: z.number().int(),
-  type: z.string(),
-  action: z.string(),
-  title: z.string(),
-  user: z.string().nullable(),
-  timestamp: z.string(),
-  comment: z.string(),
-  params: z.record(z.string(), jsonValue),
-  pageId: z.number().int().optional(),
+const recentChangePayload = z.object({
+  revid: z.number().int().positive(),
+  title: z.string().min(1),
 });
 
-/** Run a stored step the way the cycle runs it; rejects on a failure or a payload that is not the stream's shape. */
-async function runStored(stream: string, payload: Prisma.JsonValue): Promise<void> {
+/** What a retry or a resync did: applied, nothing left to apply (MediaWiki no longer has it), or failed again. */
+export type RetryOutcome = "applied" | "skipped" | "failed";
+
+/**
+ * Run a stored step the way the cycle runs it: "skipped" when there was nothing to apply. Rejects on a failure, a payload
+ * that is not the stream's shape, and (CONFLICT) a log event a later classic change overtook.
+ */
+async function runStored(
+  stream: string,
+  payload: Prisma.JsonValue
+): Promise<"applied" | "skipped"> {
   if (stream === "log") {
-    await applyLogEvent(logEventPayload.parse(payload));
-    return;
+    const event = storedLogEvent.parse(payload);
+    const subject = await staleSubject(event);
+    if (subject) throw new StepRefusal("CONFLICT", staleMessage(subject));
+    return (await applyLogEvent(event)) === "skipped" ? "skipped" : "applied";
   }
-  await syncRevisionById(recentChangePayload.parse(payload).revid);
+  return (await syncRevisionById(recentChangePayload.parse(payload).revid)) === "skipped"
+    ? "skipped"
+    : "applied";
+}
+
+/** Bring the page of a stored recent change over from classic as it is now, judged like a cycle's revision. */
+async function resyncStored(
+  stream: string,
+  payload: Prisma.JsonValue
+): Promise<"applied" | "skipped"> {
+  if (stream !== "edits") {
+    throw new StepRefusal("BAD_REQUEST", "Only an edit's page can be resynced.");
+  }
+  const { title } = recentChangePayload.parse(payload);
+  return (await syncLatestRevision(title, { judgeCollisions: true })) === "skipped"
+    ? "skipped"
+    : "applied";
 }
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-/** Retry the quarantined step `id` (the lock is held): applied resolves it, a failure counts the attempt. */
-async function retryHeld(id: string): Promise<"applied" | "failed"> {
+type StoredRun = (stream: string, payload: Prisma.JsonValue) => Promise<"applied" | "skipped">;
+
+/**
+ * Run `run` on the quarantined step `id` (the lock is held): done resolves it, a failure counts the attempt. A refusal
+ * (a log event overtaken, a resync of a log step) changes nothing and is thrown.
+ */
+async function attemptHeld(id: string, run: StoredRun): Promise<RetryOutcome> {
   const row = await db.wikiSyncDeadLetter.findFirst({
     where: { id, ...OPEN },
     select: { stream: true, payload: true },
   });
   if (!row) throw notQuarantined();
+  let outcome: "applied" | "skipped";
   try {
-    await runStored(row.stream, row.payload);
+    outcome = await run(row.stream, row.payload);
   } catch (err) {
+    if (err instanceof StepRefusal) throw err;
     await db.wikiSyncDeadLetter.update({
       where: { id },
       data: { attempts: { increment: 1 }, lastError: errorMessage(err).slice(0, ERROR_MAX) },
@@ -166,22 +226,37 @@ async function retryHeld(id: string): Promise<"applied" | "failed"> {
     return "failed";
   }
   await db.wikiSyncDeadLetter.update({ where: { id }, data: { resolvedAt: new Date() } });
-  return "applied";
+  return outcome;
 }
 
-/**
- * Apply a quarantined step again: a recent change through `syncRevisionById`, a log event through `applyLogEvent`, under
- * the inbound lock, so the conflict rule judges it as a cycle would. The collisions it records are settled (and their
- * authors told) by the next cycle. Refuses while a sync holds the lock.
- */
-export async function retryQuarantined(id: string): Promise<"applied" | "failed"> {
-  const outcome = await withJobLock(db, INBOUND_LOCK, () => retryHeld(id), {
+/** `attemptHeld` under the inbound lock; refuses while a sync holds it. */
+async function attempt(id: string, run: StoredRun): Promise<RetryOutcome> {
+  const outcome = await withJobLock(db, INBOUND_LOCK, () => attemptHeld(id, run), {
     timeoutMs: RETRY_LOCK_TIMEOUT_MS,
   });
   if (!outcome.ran) {
     throw new PageOperationError("CONFLICT", "A sync is running. Try again in a moment.");
   }
   return outcome.result;
+}
+
+/**
+ * Apply a quarantined step again: a recent change through `syncRevisionById`, a log event through `applyLogEvent`, under
+ * the inbound lock, so the conflict rule judges it as a cycle would. A log event a later classic change of its page or
+ * user overtook is refused (CONFLICT): replayed, it would undo that change. The collisions it records are settled (and
+ * their authors told) by the next cycle.
+ */
+export function retryQuarantined(id: string): Promise<RetryOutcome> {
+  return attempt(id, runStored);
+}
+
+/**
+ * For a quarantined recent change: bring its page over from classic as it is now (its newest revision, judged with
+ * `judgeCollisions`), under the inbound lock, and resolve the row. For a page left behind when the quarantined revision
+ * is its newest.
+ */
+export function resyncQuarantined(id: string): Promise<RetryOutcome> {
+  return attempt(id, resyncStored);
 }
 
 /** Give up on a quarantined step: it leaves the list, and WikiOS keeps what it has for that page. */

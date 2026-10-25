@@ -44,6 +44,7 @@ jest.mock("~/server/db", () => ({
     wikiArticle: {
       findUnique: (...a: unknown[]) => mockArticleFindUnique(...a),
       findFirst: (...a: unknown[]) => mockArticleFindFirst(...a),
+      findMany: async () => [],
       update: (...a: unknown[]) => mockArticleUpdate(...a),
     },
     wikiRevision: {
@@ -57,6 +58,10 @@ jest.mock("~/server/db", () => ({
     wikiMirrorJob: { create: (...a: unknown[]) => mockJobCreate(...a) },
     get wikiSyncDeadLetter() {
       return mockDeadLetters.wikiSyncDeadLetter;
+    },
+    // what a retry's staleness check reads (inbound-stale-steps.ts)
+    get wikiLog() {
+      return mockDeadLetters.wikiLog;
     },
   },
 }));
@@ -1264,6 +1269,34 @@ describeEachWikiosMode("a step that keeps failing", () => {
       status: "ACTIVE",
       quarantined: 0,
     });
+  });
+
+  it("a dismissed step at the mark's second is not run again and does not keep the status degraded", async () => {
+    // P's revision 5 is the newest change: once quarantined, the mark is its second, so every cycle reads it again
+    await cycles(5, [P5]);
+    expect(config.get(HWM_KEY)).toBe(P5.timestamp);
+    await dismissQuarantined((await deadLetter("rc:5"))!.id);
+
+    const after = await cycle([P5]);
+
+    expect(after.failures).toBe(0);
+    expect(fetchedRevids()).not.toContain(5);
+    expect(await deadLetter("rc:5")).toMatchObject({ attempts: 5 });
+    await expect(getInboundSyncStatus()).resolves.toMatchObject({
+      status: "ACTIVE",
+      quarantined: 0,
+    });
+  });
+
+  it("an open quarantined step read again at the mark's second still runs, and resolves itself once it succeeds", async () => {
+    await cycles(5, [P5]);
+    failingRevisions = new Set();
+
+    await cycle([P5]);
+
+    expect(fetchedRevids()).toContain(5);
+    expect(await deadLetter("rc:5")).toMatchObject({ resolvedAt: expect.any(Date) });
+    await expect(getInboundSyncStatus()).resolves.toMatchObject({ quarantined: 0 });
   });
 
   it("retry applies a quarantined revision and resolves the row", async () => {
