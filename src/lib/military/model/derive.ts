@@ -4,6 +4,7 @@
  * so the strength a player sees is the strength a battle uses.
  */
 import type { AlertLevel, BranchDomain, CLevel } from "./constants";
+import { monthlyLines } from "./budget";
 import { memberPay, mobilisedCount } from "./personnel";
 import {
   branchQuality,
@@ -51,10 +52,13 @@ export interface NationView {
   cLevel: CLevel;
   cev: number;
   alert: AlertLevel;
-  /** Defense budget as a share of GDP (burden m). */
+  /** Defense spending as a share of GDP (burden m): the budget plus the emergency supplement (mobilised pay and
+   * operations beyond the O&M line), which raises crowding-out and collapse risk (D3). */
   burden: number;
+  /** Annual cost of operations beyond the O&M line, drawn outside the budget like the mobilisation supplement. */
+  operationsOverspend: number;
   frontierLagYears: number;
-  /** Annual pay of mobilised reservists, outside the budget (the emergency supplement; D3 feeds it back). */
+  /** Annual pay of mobilised reservists, outside the budget (the emergency supplement, counted in the burden). */
   mobilisationSupplement: number;
   funding: FundingReport;
 }
@@ -163,6 +167,9 @@ export function deriveNation(
   const readiness =
     personnel > 0 ? branches.reduce((sum, b) => sum + b.readiness * b.personnel, 0) / personnel : 0;
   const mobilised = branches.reduce((sum, b) => sum + b.mobilised, 0);
+  const mobilisationSupplement = mobilised * memberPay(state.policy.volunteerShare, econ.gdpPerCapita);
+  const operationsOverspend =
+    12 * Math.max(0, (econ.operationsMonthly ?? 0) - monthlyLines(econ.defenseBudget, state.policy.shares).om);
   return {
     branches,
     combatPower: branches.reduce((sum, b) => sum + b.combatPower, 0),
@@ -170,9 +177,11 @@ export function deriveNation(
     cLevel: cLevel(readiness),
     cev,
     alert: effectiveAlert(state.policy, nowClockMs),
-    burden: econ.gdp > 0 ? econ.defenseBudget / econ.gdp : 0,
+    burden:
+      econ.gdp > 0 ? (econ.defenseBudget + mobilisationSupplement + operationsOverspend) / econ.gdp : 0,
     frontierLagYears: lagYears,
-    mobilisationSupplement: mobilised * memberPay(state.policy.volunteerShare, econ.gdpPerCapita),
+    mobilisationSupplement,
+    operationsOverspend,
     funding: { ...funding.report, slipped: 0 },
   };
 }

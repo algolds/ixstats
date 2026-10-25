@@ -25,6 +25,7 @@ import {
   type StarterBranchSpec,
 } from "~/lib/military/model";
 import { clockForCountry, type RealmClockReader } from "~/server/shared/realm-time";
+import { feedbackSuppressed, syncDefenseFeedback } from "./defense.feedback";
 import { DEFENSE_COUNTRY_SELECT, loadEconomy, type DefenseCountry } from "./defense.economy";
 import {
   assetState,
@@ -355,7 +356,7 @@ export async function syncDefense(
   }
   // Deliveries became asset rows: read them back so quality and enablers count the new kit.
   const finalAssets = advanced.deliveries.length > 0 ? await loadAssets(db, countryId) : assets;
-  return {
+  const snapshot: DefenseSnapshot = {
     country,
     clock,
     nowClockMs,
@@ -367,6 +368,13 @@ export async function syncDefense(
     view: finalAssets === assets ? view : deriveNation(advanced.state, econ, finalAssets, nowClockMs),
     monthsApplied: advanced.months,
   };
+  if (advanced.months > 0 && !feedbackSuppressed()) {
+    // D3: the economy feels the defense posture once per in-game month (idempotent keyed levels).
+    await syncDefenseFeedback(db, snapshot, policy.lastTickClockMs, syncDefense).catch((error) =>
+      console.error(`[defense] Economic feedback failed for ${countryId}`, error)
+    );
+  }
+  return snapshot;
 }
 
 /** Combat power of several nations now (each synced; NPCs get their forces on first touch). */

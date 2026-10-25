@@ -24,6 +24,8 @@ export interface EconomyInputs {
   frontierYear: number;
   /** Manufacturing share of GDP (defaults when unknown). */
   manufacturingShare?: number;
+  /** O&M the nation's active operations draw each month: paid before maintenance and training (research §7.3). */
+  operationsMonthly?: number;
 }
 
 /** The per-country policy record and the national stocks. */
