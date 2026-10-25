@@ -52,7 +52,7 @@ function filled(value: string | null | undefined): boolean {
 }
 
 function missingIdentity(input: ComplianceInput): string[] {
-  const missing = IDENTITY_CHECKS.filter(({ key }) => !filled(input.identity?.[key])).map(
+  const missing: string[] = IDENTITY_CHECKS.filter(({ key }) => !filled(input.identity?.[key])).map(
     ({ label }) => label
   );
   if (!filled(input.flag)) missing.push("Flag");
