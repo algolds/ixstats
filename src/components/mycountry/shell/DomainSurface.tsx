@@ -93,7 +93,7 @@ function DomainSurfaceComponent({
           ) : domain === "politics" ? (
             <PoliticsDrillDown countryId={countryId} />
           ) : (
-            <EconomyDrillDown countryId={countryId} />
+            <EconomyDrillDown countryId={countryId} onDeclare={onDeclare} />
           )}
         </div>
 

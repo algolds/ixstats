@@ -618,7 +618,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
             ) : (
               <Save className="mr-2 h-4 w-4" />
             )}
-            Save model
+            Save to economic profile
           </Button>
         </div>
 

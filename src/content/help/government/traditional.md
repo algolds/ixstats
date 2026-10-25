@@ -26,7 +26,7 @@ Your departments are generated when you found, from your form of government (fiv
 
 ## The government budget
 
-Founding sets your starting budget so that taxes cover spending, split between departments by your starting kind's priorities. Adjust the split in [Economy & Budget → National Budget](/help/mycountry/economy#national-budget).
+Founding sets your starting budget so that taxes cover spending, split between departments by your starting kind's priorities. Adjust the split in [Economy & Budget → Budget](/help/mycountry/economy#budget).
 
 - Some [directives](/help/mycountry/executive) shift department allocations slightly.
 - At the start of each new IxTime year you may get a reminder to set that year's budget.

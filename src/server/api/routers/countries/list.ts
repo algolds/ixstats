@@ -6,6 +6,7 @@ import { TRPCError } from "@trpc/server";
 import { realmScopeInput, realmWhere, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { DEFAULT_INFLATION_RATE } from "~/lib/economy/calculations";
 import { IxTime } from "~/lib/ixtime";
+import { LATEST_GROWTH_SELECT, effectiveGrowthOf } from "~/lib/economy/effective-growth";
 
 const MAP_SUMMARY_SELECT = {
   id: true,
@@ -19,7 +20,7 @@ const MAP_SUMMARY_SELECT = {
   currentPopulation: true,
   currentGdpPerCapita: true,
   currentTotalGdp: true,
-  adjustedGdpGrowth: true,
+  ...LATEST_GROWTH_SELECT,
   landArea: true,
   leader: true,
   governmentType: true,
@@ -40,7 +41,7 @@ function mapSummary(c: Prisma.CountryGetPayload<{ select: typeof MAP_SUMMARY_SEL
     population: c.currentPopulation,
     gdpPerCapita: c.currentGdpPerCapita,
     totalGdp: c.currentTotalGdp,
-    gdpGrowth: c.adjustedGdpGrowth,
+    gdpGrowth: effectiveGrowthOf(c),
     landArea: c.landArea,
     leader: c.leader,
     governmentType: c.governmentType,
@@ -149,7 +150,7 @@ export const listProcedures = {
             areaSqMi: true,
             populationDensity: true,
             gdpDensity: true,
-            adjustedGdpGrowth: true,
+            ...LATEST_GROWTH_SELECT,
             populationGrowthRate: true,
             lifeExpectancy: true,
             literacyRate: true,
@@ -175,7 +176,9 @@ export const listProcedures = {
         ctx.db.country.count({ where }),
       ]);
 
-      const countries = rawCountries.map((country) => {
+      const countries = rawCountries.map(({ historicalData, ...country }) => {
+        // The realised (engine) rate, not the static input (`adjustedGdpGrowth`).
+        const gdpGrowth = effectiveGrowthOf({ ...country, historicalData }) ?? 0;
         const boundingBox = country.boundingBox as
           | [number, number, number, number]
           | { minLat?: number; minLng?: number; maxLat?: number; maxLng?: number }
@@ -220,14 +223,14 @@ export const listProcedures = {
           ...bounds,
           ...centerCoords,
           calculatedStats: {
-            gdpGrowth: country.adjustedGdpGrowth || 0,
+            gdpGrowth,
             populationGrowth: country.populationGrowthRate || 0,
             inflation: country.inflationRate ?? DEFAULT_INFLATION_RATE,
           },
           analytics: {
             growthTrends: {
               avgPopGrowth: country.populationGrowthRate || 0,
-              avgGdpGrowth: country.adjustedGdpGrowth || 0,
+              avgGdpGrowth: gdpGrowth,
             },
             riskFlags: [] as string[],
             tierChangeProjection: {

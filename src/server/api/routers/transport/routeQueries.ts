@@ -21,8 +21,10 @@ import {
   calculateMaintenanceDegradation,
   calculateModalBreakdown,
   estimateIntercityTravelTimes,
+  infrastructureBudgetBillions,
   type DegradationResult,
 } from "~/lib/economy/national-mobility";
+import { currentBudgetYear } from "~/lib/government/budget-year";
 import {
   calculateRouteTravelTime,
   resolveRouteBaseSpeed,
@@ -36,6 +38,28 @@ type MobilityDegradation = Omit<DegradationResult, "fundingRatio"> & {
   budgetedMaintenance?: number;
   requiredMaintenance: number;
 };
+
+/** The network condition from its budget (billions); the budget figures go to the owner only. */
+function maintenanceView(
+  budgeted: number,
+  required: number,
+  ownerView: boolean
+): MobilityDegradation {
+  const { fundingRatio, ...condition } = calculateMaintenanceDegradation({
+    budgetedMaintenance: budgeted,
+    requiredMaintenance: required,
+  });
+  const requiredMaintenance = Math.round(required * 1000) / 1000;
+  return ownerView
+    ? {
+        ...condition,
+        fundingRatio,
+        budgetedMaintenance: Math.round(budgeted * 1000) / 1000,
+        requiredMaintenance,
+      }
+    : { ...condition, requiredMaintenance };
+}
+
 type JsonObject = Record<string, JsonPrimitive | JsonPrimitive[] | Record<string, JsonPrimitive>>;
 
 type JsonGeometry = {
@@ -237,13 +261,14 @@ export const transportRouteQueriesRouter = createTRPCRouter({
    * Get comprehensive National Mobility & Transit Accessibility profile (Phase 2).
    * Public (the factbook's geography tab), but the maintenance budget behind the network's
    * condition (`degradation.budgetedMaintenance`, `degradation.fundingRatio`) goes to the
-   * nation's owner and privileged roles only. Cached per viewer for that reason.
+   * nation's owner and privileged roles only. Cached per viewer for that reason. The budget is
+   * the transport department's live allocation; `degradation` is null when there is none.
    */
   getNationalMobilityProfile: publicProcedure
     .use(userCacheMiddleware)
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const [routes, hubs, cities, budget, country] = await Promise.all([
+      const [routes, hubs, cities, allocations] = await Promise.all([
         ctx.db.transportRoute.findMany({
           where: { countryId: input.countryId },
           select: {
@@ -266,13 +291,13 @@ export const transportRouteQueriesRouter = createTRPCRouter({
           orderBy: { population: "desc" },
           take: 6,
         }),
-        ctx.db.governmentBudget.findUnique({
-          where: { countryId: input.countryId },
-          select: { spendingCategories: true },
-        }),
-        ctx.db.country.findUnique({
-          where: { id: input.countryId },
-          select: { id: true, name: true, currentTotalGdp: true, currentPopulation: true },
+        ctx.db.budgetAllocation.findMany({
+          where: { governmentStructure: { countryId: input.countryId } },
+          select: {
+            budgetYear: true,
+            allocatedAmount: true,
+            department: { select: { name: true, category: true } },
+          },
         }),
       ]);
 
@@ -288,35 +313,11 @@ export const transportRouteQueriesRouter = createTRPCRouter({
           props.maintenanceCost !== undefined ? Number(props.maintenanceCost) : 0;
       }
 
-      // Resolve budgeted infrastructure maintenance
-      let budgetedInfraMaintenance = 0;
-      if (budget?.spendingCategories) {
-        try {
-          const parsed = JSON.parse(budget.spendingCategories) as Array<{
-            category?: string;
-            amount?: number;
-          }>;
-          if (Array.isArray(parsed)) {
-            const infraCat = parsed.find(
-              (c) =>
-                c.category &&
-                (c.category.toLowerCase().includes("infra") ||
-                  c.category.toLowerCase().includes("transport") ||
-                  c.category.toLowerCase().includes("transit"))
-            );
-            if (infraCat && typeof infraCat.amount === "number") {
-              budgetedInfraMaintenance =
-                infraCat.amount > 100_000_000 ? infraCat.amount / 1e9 : infraCat.amount;
-            }
-          }
-        } catch {
-          // JSON parse fallback
-        }
-      }
-
-      if (budgetedInfraMaintenance <= 0 && country?.currentTotalGdp) {
-        budgetedInfraMaintenance = (country.currentTotalGdp * 0.015) / 1e9;
-      }
+      // The transport department's live allocation (the budget is owner-edited); none, no figure.
+      const budgetedInfraMaintenance = infrastructureBudgetBillions(
+        allocations,
+        currentBudgetYear()
+      );
 
       const mobilityRoutes = operationalRoutes.map((r) => ({
         id: r.id,
@@ -337,11 +338,6 @@ export const transportRouteQueriesRouter = createTRPCRouter({
         totalHubs: hubs.length,
         cityCount: cities.length,
         operationalRouteTypes: operationalRoutes.map((r) => r.routeType),
-      });
-
-      const degradation = calculateMaintenanceDegradation({
-        budgetedMaintenance: budgetedInfraMaintenance,
-        requiredMaintenance: totalMaintenanceCost,
       });
 
       const topCitiesFormatted = cities.map((c) => ({
@@ -380,20 +376,15 @@ export const transportRouteQueriesRouter = createTRPCRouter({
           };
         });
 
-      const requiredMaintenance = Math.round(totalMaintenanceCost * 1000) / 1000;
-      const { fundingRatio, ...condition } = degradation;
       // The condition is observable; the budget behind it is the owner's.
-      const degradationOut: MobilityDegradation = (await hasCountryWriteAccess(
-        ctx,
-        input.countryId
-      ))
-        ? {
-            ...condition,
-            fundingRatio,
-            budgetedMaintenance: Math.round(budgetedInfraMaintenance * 1000) / 1000,
-            requiredMaintenance,
-          }
-        : { ...condition, requiredMaintenance };
+      const degradationOut =
+        budgetedInfraMaintenance == null
+          ? null
+          : maintenanceView(
+              budgetedInfraMaintenance,
+              totalMaintenanceCost,
+              await hasCountryWriteAccess(ctx, input.countryId)
+            );
 
       return {
         countryId: input.countryId,

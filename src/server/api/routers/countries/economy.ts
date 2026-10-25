@@ -21,6 +21,7 @@ import {
   getCountryComponentsStatsData,
   resolveCountryRefId,
 } from "./utils";
+import { withoutStandIns } from "~/server/shared/country-helpers";
 import { hasCountryWriteAccess } from "~/server/shared/country-authorization";
 import { redactEconomicBudget } from "~/lib/country/public-record";
 import { clerkPublicProfile } from "~/server/shared/clerk-public-profile";
@@ -112,8 +113,14 @@ function undefinedIfNull<T, K extends keyof T>(source: T, keys: readonly K[]) {
   };
 }
 
-/** The projected figures every read returns in place of the stored (frozen) columns. */
-function projectedColumns(stats: CountryStats) {
+/**
+ * The projected figures every read returns in place of the stored (frozen) columns. A figure the
+ * nation never recorded stays undefined even though the engine ran on a stand-in for it.
+ */
+function projectedColumns(
+  stats: CountryStats,
+  recorded: Parameters<typeof withoutStandIns>[0]
+) {
   return {
     currentPopulation: stats.currentPopulation,
     currentGdpPerCapita: stats.currentGdpPerCapita,
@@ -122,6 +129,7 @@ function projectedColumns(stats: CountryStats) {
     economicTier: stats.economicTier,
     populationTier: stats.populationTier,
     ...undefinedIfNull(stats, STATS_FIELDS),
+    ...withoutStandIns(recorded, stats),
   };
 }
 
@@ -286,7 +294,7 @@ export const economyProcedures = {
           : null,
         sovereignUser,
         ...undefinedIfNull(country, STORED_FIELDS),
-        ...projectedColumns(newStats),
+        ...projectedColumns(newStats, country),
         calculatedStats: {
           // The engine's rate (tier cap, diminishing returns), not the static input.
           gdpGrowth: newStats.effectiveGdpGrowth ?? 0,
@@ -348,7 +356,7 @@ export const economyProcedures = {
         ...country,
         // The stored current* columns are frozen between stat-progression runs; never return
         // them beside the projection.
-        ...projectedColumns(calculatedStats.newStats),
+        ...projectedColumns(calculatedStats.newStats, country),
         calculatedStats: {
           currentPopulation: calculatedStats.newStats.currentPopulation,
           currentGdpPerCapita: calculatedStats.newStats.currentGdpPerCapita,

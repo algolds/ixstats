@@ -31,13 +31,11 @@ import { Badge } from "~/components/ui/badge";
 import { motion } from "motion/react";
 import type { ViewMode } from "~/components/halo/types";
 import { springSnappy } from "~/lib/design/motion";
+import { effectiveGrowthOf } from "~/lib/economy/effective-growth";
 
-function normalizeGrowth(value: number | null | undefined): number {
-  if (!value || !isFinite(value)) return 0;
-  let v = value;
-  while (Math.abs(v) > 50) v /= 100;
-  return Math.min(20, Math.max(-20, v));
-}
+/** A decimal rate (0.03) as the signed percent GrowthArrow shows (3). */
+const asPercent = (rate: number | null | undefined) =>
+  rate != null && Number.isFinite(rate) ? rate * 100 : 0;
 
 const isStandalone = typeof window !== "undefined" && isStandaloneClient();
 
@@ -72,8 +70,9 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
         population: country.currentPopulation ?? 0,
         currentTotalGdp: country.currentTotalGdp ?? 0,
         populationDensity: country.populationDensity ?? null,
-        gdpGrowth: normalizeGrowth(country.realGDPGrowthRate || country.adjustedGdpGrowth),
-        popGrowth: normalizeGrowth(country.populationGrowthRate),
+        // The realised (engine) rate, not the static input.
+        gdpGrowth: asPercent(effectiveGrowthOf(country)),
+        popGrowth: asPercent(country.populationGrowthRate),
       }
     : null;
 

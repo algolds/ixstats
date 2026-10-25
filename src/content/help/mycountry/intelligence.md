@@ -18,7 +18,7 @@ Not at the moment. An earlier intelligence dashboard (briefings, forecasts, aler
 | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | How healthy your nation is overall | The vitality rings and the **Vitality** breakdown on the [MyCountry home page](/help/mycountry/overview)                     |
 | How you rank against other nations | The **World Census** card (realm, region and tier ranks on ten measures) and the [leaderboards](/help/gameplay/leaderboards) |
-| Your economy in detail             | The **Economic Report** tab in [Economy & Budget](/help/mycountry/economy)                                                   |
+| Your economy in detail             | The **Report** tab in [Economy & Budget](/help/mycountry/economy)                                                   |
 | Where your economy is heading      | The [modeling sandbox](/help/economy/modeling)                                                                               |
 | How relations with a nation stand  | The relations panel in [Diplomacy](/help/mycountry/diplomacy); figures about foreign nations are deliberately approximate    |
 | What has changed and why           | The **Recent activity** log on the home page and your nation's history                                                       |

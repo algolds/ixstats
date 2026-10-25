@@ -480,7 +480,11 @@ export interface RevenueSummary {
     amount: number;
     percent: number;
   }[];
-  topRevenueSources: RevenueSource[];
+  topRevenueSources: Array<
+    Pick<RevenueSource, "id" | "name" | "category" | "revenueAmount" | "revenuePercent">
+  >;
+  /** Saved tax rates on today's GDP, the founding estimate, or nothing recorded. */
+  basis: "rates" | "founding" | null;
 }
 
 // Utility Types for Builder/Editor

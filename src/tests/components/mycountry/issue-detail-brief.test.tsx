@@ -106,3 +106,16 @@ it("says where the scheduled meeting lives", () => {
   mockMutationOptions["quickActions.createMeeting"]!.onSuccess!({});
   expect(mockNotify.success).toHaveBeenCalledWith(expect.stringContaining("Cabinet meetings"));
 });
+
+it("shows a free-text effect on its chip instead of an empty label", () => {
+  mockData["nationalIssues.getIssue"] = {
+    ...mockData["nationalIssues.getIssue"],
+    responseOptions: JSON.stringify([
+      { ...option("a"), previewEffects: { stabilityImpact: "Long-term security" } },
+      { ...option("b"), previewEffects: { economicImpact: "positive" } },
+    ]),
+  };
+  render(<IssueDetailBrief issueId="n-1" />);
+  expect(screen.getByText("Stability: Long-term security")).toBeInTheDocument();
+  expect(screen.getByText("Economy")).toBeInTheDocument();
+});

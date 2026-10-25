@@ -230,7 +230,7 @@ export function CountryOverviewTab({
         <StatCard
           icon={TrendingUp}
           label="Growth"
-          value={summary.gdpGrowth != null ? `${summary.gdpGrowth.toFixed(1)}%` : "—"}
+          value={summary.gdpGrowth != null ? `${(summary.gdpGrowth * 100).toFixed(1)}%` : "—"}
           onClick={() => setActiveModal("gdp")}
         />
         <StatCard icon={MapPin} label="Land area" value={formatArea(summary.landArea)} />

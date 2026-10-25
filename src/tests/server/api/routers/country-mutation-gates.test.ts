@@ -519,8 +519,56 @@ describe("taxSystem and economics", () => {
           competitivenessRank: 1.5,
         }),
     ],
+    // WP-B2: fiscal rates are bounded by the Fiscal policy channel ranges.
+    [
+      "a 50% VAT (the channel allows 30%)",
+      () =>
+        economics(createIdorContext(createMockPrisma())).updateFiscalSystem({
+          countryId: CALLER_COUNTRY,
+          salesTaxRate: 50,
+        }),
+    ],
+    [
+      "a negative wealth tax",
+      () =>
+        economics(createIdorContext(createMockPrisma())).updateFiscalSystem({
+          countryId: CALLER_COUNTRY,
+          wealthTaxRate: -5,
+        }),
+    ],
+    [
+      "a 10,000% income tax inside the JSON field",
+      () =>
+        economics(createIdorContext(createMockPrisma())).updateFiscalSystem({
+          countryId: CALLER_COUNTRY,
+          personalIncomeTaxRates: JSON.stringify({ incomeRate: 10_000 }),
+        }),
+    ],
+    [
+      "arbitrary JSON in a rate field",
+      () =>
+        economics(createIdorContext(createMockPrisma())).updateFiscalSystem({
+          countryId: CALLER_COUNTRY,
+          exciseTaxRates: JSON.stringify({ tariffRate: 5, note: { anything: "goes" } }),
+        }),
+    ],
   ])("refuses %s at input validation", async (_label, run) => {
     await expect(run()).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("saves fiscal rates inside the channel ranges, builder excise entries included", async () => {
+    const db = createMockPrisma();
+    db.fiscalSystem.upsert.mockResolvedValue({});
+    await economics(createIdorContext(db)).updateFiscalSystem({
+      countryId: CALLER_COUNTRY,
+      salesTaxRate: 30,
+      personalIncomeTaxRates: JSON.stringify({ incomeRate: 22 }),
+      exciseTaxRates: JSON.stringify([
+        { type: "tobacco", rate: 150 },
+        { type: "tariff", rate: 12 },
+      ]),
+    });
+    expect(db.fiscalSystem.upsert).toHaveBeenCalledTimes(1);
   });
 
   it("creates the tax row if missing, then replaces its categories and atomic components", async () => {

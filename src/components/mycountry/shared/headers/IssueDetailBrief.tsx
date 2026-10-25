@@ -669,20 +669,15 @@ function EffectBadge({
   impact?: string;
   isNumeric?: boolean;
 }) {
-  const isNumber = isNumeric && value != null;
-  if (!isNumber && !impact) return null;
-
-  const tone = isNumber
-    ? value > 0
-      ? "text-green"
-      : value < 0
-        ? "text-destructive"
-        : "text-label-secondary"
-    : (IMPACT_TONE[impact!] ?? "text-label-secondary");
-
-  return (
-    <span className={cn("inline-flex items-center gap-0.5 font-semibold", tone)}>
-      {isNumber ? `${value > 0 ? "+" : ""}${value} ${label}` : label}
-    </span>
+  const chip = (tone: string, text: string) => (
+    <span className={cn("inline-flex items-center gap-0.5 font-semibold", tone)}>{text}</span>
   );
+  if (isNumeric && value != null) {
+    const tone = value > 0 ? "text-green" : value < 0 ? "text-destructive" : "text-label-secondary";
+    return chip(tone, `${value > 0 ? "+" : ""}${value} ${label}`);
+  }
+  if (!impact) return null;
+  // A tone keyword ("positive") reads as the coloured label alone; free text is the effect itself.
+  const tone = IMPACT_TONE[impact];
+  return tone ? chip(tone, label) : chip("text-label-secondary", `${label}: ${impact}`);
 }

@@ -36,6 +36,7 @@ import {
 } from "./budget";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { CreateGovernmentStructureButton } from "./CreateGovernmentStructureButton";
+import type { NationalRevenue } from "~/components/mycountry/shell/fiscal/nationalRevenue";
 
 const VIEW_OPTIONS = [
   { value: "overview", label: "Overview" },
@@ -47,6 +48,8 @@ type BudgetView = (typeof VIEW_OPTIONS)[number]["value"];
 
 interface BudgetManagementDashboardProps {
   countryId?: string;
+  /** The nation's one revenue figure (`nationalRevenue`), the same the other Economy tabs show. */
+  revenue: NationalRevenue;
   governmentStructure?: GovernmentStructure;
   departments?: GovernmentDepartment[];
   budgetAllocations?: BudgetAllocation[];
@@ -194,6 +197,7 @@ function BudgetTitle({
 
 export function BudgetManagementDashboard({
   countryId,
+  revenue,
   governmentStructure: propStructure,
   departments: propDepts,
   budgetAllocations: propAllocations,
@@ -242,7 +246,7 @@ export function BudgetManagementDashboard({
     { countryId: editableCountry ?? "" },
     { enabled: !!editableCountry && !!governmentStructure }
   );
-  const revenueSummary = summarizeRevenue(revenueSources);
+  const revenueSummary = summarizeRevenue(revenue, revenueSources);
 
   const formatCurrency = (amount: number) =>
     safeFormatCurrency(amount, governmentStructure?.budgetCurrency, false, "USD");

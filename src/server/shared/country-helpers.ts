@@ -23,6 +23,24 @@ const COMPONENT_DEFAULTS = {
   activePolicyMaintenanceCost: 0,
 } as const;
 
+/** The engine's stand-ins for inputs a nation never recorded: used in the math, never shown. */
+const ENGINE_STAND_INS = { taxRevenueGDPPercent: 25, unemploymentRate: 5 } as const;
+
+/**
+ * The projected figures whose input the nation never recorded, as undefined: the engine ran on a
+ * stand-in (ENGINE_STAND_INS), so readers show "—" rather than that stand-in as a real figure.
+ */
+export function withoutStandIns(
+  country: { unemploymentRate?: number | null; taxRevenueGDPPercent?: number | null },
+  stats: { unemploymentRate?: number; taxRevenueGDPPercent?: number }
+) {
+  return {
+    unemploymentRate: country.unemploymentRate == null ? undefined : stats.unemploymentRate,
+    taxRevenueGDPPercent:
+      country.taxRevenueGDPPercent == null ? undefined : stats.taxRevenueGDPPercent,
+  };
+}
+
 export const prepareBaseCountryData = (country: any, componentsData?: any): BaseCountryData => ({
   country: country.name,
   continent: country.continent,
@@ -44,8 +62,8 @@ export const prepareBaseCountryData = (country: any, componentsData?: any): Base
   localGrowthFactor: country.localGrowthFactor || 1.0,
 
   totalGovernmentSpending: country.totalGovernmentSpending ?? 0,
-  taxRevenueGDPPercent: country.taxRevenueGDPPercent ?? 25,
-  unemploymentRate: country.unemploymentRate ?? 5,
+  taxRevenueGDPPercent: country.taxRevenueGDPPercent ?? ENGINE_STAND_INS.taxRevenueGDPPercent,
+  unemploymentRate: country.unemploymentRate ?? ENGINE_STAND_INS.unemploymentRate,
   inflationRate: country.inflationRate ?? DEFAULT_INFLATION_RATE,
 
   ...(Object.fromEntries(
@@ -56,27 +74,12 @@ export const prepareBaseCountryData = (country: any, componentsData?: any): Base
   ) as Pick<BaseCountryData, keyof typeof COMPONENT_DEFAULTS>),
 });
 
+/**
+ * One country's component and policy figures for the projection. A read only: a component whose
+ * implementationDate has passed counts as active without writing `isActive` back.
+ */
 export async function getCountryComponentsStatsData(db: any, countryId: string) {
   const now = new Date(IxTime.getCurrentIxTime());
-
-  try {
-    await Promise.all([
-      db.governmentComponent.updateMany({
-        where: { countryId, implementationDate: { lte: now }, isActive: false },
-        data: { isActive: true },
-      }),
-      db.economicComponent.updateMany({
-        where: { countryId, implementationDate: { lte: now }, isActive: false },
-        data: { isActive: true },
-      }),
-      db.taxComponent.updateMany({
-        where: { countryId, implementationDate: { lte: now }, isActive: false },
-        data: { isActive: true },
-      }),
-    ]);
-  } catch (err) {
-    console.error("Failed to self-heal components active state:", err);
-  }
 
   const [gov, econ, tax] = await Promise.all([
     db.governmentComponent.findMany({

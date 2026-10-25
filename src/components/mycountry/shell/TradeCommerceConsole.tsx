@@ -44,7 +44,6 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
   );
 
   const { economicProfile: profile, fiscalSystem: fiscal } = economicRelationsOf(country);
-  const currencySymbol = country?.nationalIdentity?.currencySymbol || "$";
 
   // Saved overall tariff (Fiscal Policy) — the planner's starting rate for every sector.
   const baseTariff = savedTariffRate(fiscal?.exciseTaxRates);
@@ -135,7 +134,6 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
         tradeBalance={tradeBalance}
         totalExports={totalExports}
         totalImports={totalImports}
-        currencySymbol={currencySymbol}
       />
 
       {/* Sector Tariff Planner (not saved) */}
@@ -167,8 +165,8 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
           <p className="text-label-secondary text-footnote flex items-start gap-2">
             <InfoCircle aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>
-              Your saved tariff is the <strong className="text-label">Tariff rate</strong> in the
-              Fiscal Policy tab
+              Your saved tariff is the <strong className="text-label">Import tariff</strong> in the
+              Taxes tab
               {baseTariff != null ? ` (currently ${baseTariff}%)` : " (none saved yet)"}. Sectors
               start at that rate and are weighted by their recorded share of GDP.
             </span>
@@ -176,8 +174,8 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
 
           {sectors.length === 0 ? (
             <p className="text-label-secondary border-separator rounded-row text-footnote border border-dashed py-8 text-center">
-              No economic sectors recorded. Record them in the Country Editor, or add one here to
-              sketch a tariff schedule.
+              No economic sectors are recorded for this nation. Add one here to sketch a tariff
+              schedule.
             </p>
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -198,7 +196,7 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
       </Card>
 
       {/* Bilateral Trade Partners Section */}
-      <TradePartnersManager partners={tradePartners} currencySymbol={currencySymbol} />
+      <TradePartnersManager partners={tradePartners} />
 
       {/* Custom Sector Modal — mounted on open so it starts from the current saved tariff */}
       {isAddSectorOpen && (
@@ -236,11 +234,11 @@ export function TradeCommerceInsights({ countryId }: { countryId: string }) {
     >
       <div className="grid grid-cols-2 gap-2">
         <RailRow className="p-2">
-          <span className="text-stat-label text-label-secondary block">Free trade pacts</span>
+          <span className="text-label-secondary text-footnote block">Free trade pacts</span>
           <p className="text-label text-title-3 mt-0.5 tabular-nums">{ftaCount}</p>
         </RailRow>
         <RailRow className="p-2">
-          <span className="text-stat-label text-label-secondary block">Recorded sectors</span>
+          <span className="text-label-secondary text-footnote block">Recorded sectors</span>
           <p className="text-label text-title-3 mt-0.5 tabular-nums">
             {recordedSectorCount > 0 ? recordedSectorCount : "—"}
           </p>

@@ -14,13 +14,13 @@ interface TradeImpactSummaryProps {
   tradeBalance: number | null;
   totalExports: number | null;
   totalImports: number | null;
-  currencySymbol?: string;
 }
 
-function money(value: number | null, currencySymbol: string): string {
+/** Trade figures come from GDP, which is in US dollars, so they carry "$" (not the national symbol). */
+function money(value: number | null): string {
   if (value == null) return "—";
   const sign = value < 0 ? "-" : "";
-  return `${sign}${currencySymbol}${formatCompact(Math.abs(value))}`;
+  return `${sign}$${formatCompact(Math.abs(value))}`;
 }
 
 export const TradeImpactSummary = React.memo(function TradeImpactSummary({
@@ -30,14 +30,13 @@ export const TradeImpactSummary = React.memo(function TradeImpactSummary({
   tradeBalance,
   totalExports,
   totalImports,
-  currencySymbol = "$",
 }: TradeImpactSummaryProps) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <ImpactTile
         label="Planned tariff yield"
         icon={Percent}
-        value={money(plannedTariffRevenue, currencySymbol)}
+        value={money(plannedTariffRevenue)}
         note={
           <>
             {plannedAverageTariff != null
@@ -59,7 +58,7 @@ export const TradeImpactSummary = React.memo(function TradeImpactSummary({
         value={
           <>
             {tradeBalance != null && tradeBalance > 0 && "+"}
-            {money(tradeBalance, currencySymbol)}
+            {money(tradeBalance)}
           </>
         }
         note={
@@ -74,14 +73,14 @@ export const TradeImpactSummary = React.memo(function TradeImpactSummary({
       <ImpactTile
         label="Annual gross exports"
         icon={Globe2}
-        value={money(totalExports, currencySymbol)}
+        value={money(totalExports)}
         note={totalExports != null ? "From your recorded exports (% of GDP)" : "Not recorded"}
       />
 
       <ImpactTile
         label="Annual gross imports"
         icon={Ship}
-        value={money(totalImports, currencySymbol)}
+        value={money(totalImports)}
         note={totalImports != null ? "From your recorded imports (% of GDP)" : "Not recorded"}
       />
     </div>
@@ -105,7 +104,7 @@ function ImpactTile({
   return (
     <Card className="rounded-card space-y-1 p-4">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-stat-label text-label-secondary">{label}</span>
+        <span className="text-label-secondary text-footnote">{label}</span>
         <Icon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
       </div>
       <p className={cn("text-title-2 tabular-nums", valueClassName ?? "text-label")}>{value}</p>

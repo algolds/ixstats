@@ -406,3 +406,29 @@ export function generateYearlyProjectionData(
   // Calculate projections
   return calculateGdpProjections(params, baseGdp, baseData.population, policies);
 }
+
+const MODEL_SECTORS = ["agriculture", "industry", "services", "government"] as const;
+
+/**
+ * What a saved model writes to `economics.updateEconomicProfile`: the latest modelled year's
+ * sector mix as shares of GDP (the `{ name: percent }` shape `parseSectorBreakdown` reads), and
+ * the trade balance in dollars when GDP is known. Empty when no year has any output.
+ */
+export function economicProfileFromModel(
+  sectoralOutputs: readonly SectorData[],
+  tradeBalanceGdpPercent: number,
+  gdp: number | null | undefined
+): { sectorBreakdown?: string; tradeBalance?: number } {
+  const latest = [...sectoralOutputs]
+    .filter((s) => MODEL_SECTORS.some((k) => s[k] > 0))
+    .sort((a, b) => b.year - a.year)[0];
+  const total = latest ? MODEL_SECTORS.reduce((sum, k) => sum + Math.max(0, latest[k]), 0) : 0;
+  const shares =
+    latest && total > 0
+      ? Object.fromEntries(MODEL_SECTORS.map((k) => [k, (Math.max(0, latest[k]) / total) * 100]))
+      : null;
+  return {
+    ...(shares && { sectorBreakdown: JSON.stringify(shares) }),
+    ...(gdp != null && gdp > 0 && { tradeBalance: (gdp * tradeBalanceGdpPercent) / 100 }),
+  };
+}

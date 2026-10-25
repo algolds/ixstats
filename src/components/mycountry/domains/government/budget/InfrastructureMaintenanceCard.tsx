@@ -73,8 +73,8 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
   }
 
   const { degradation, totalOperationalKm } = profile;
-  // The maintenance budget is served to the nation's owner only.
-  if (degradation.fundingRatio == null || degradation.budgetedMaintenance == null) return null;
+  // No transport department in the budget, or a visitor (the budget is the owner's): no card.
+  if (degradation?.fundingRatio == null || degradation.budgetedMaintenance == null) return null;
   const fundingPercent = Math.min(150, Math.round(degradation.fundingRatio * 100));
 
   const isCritical =
@@ -101,19 +101,19 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
           </div>
         </div>
 
-        <Badge variant="outline" className={cn("capitalize", theme.badge)}>
-          {degradation.conditionLabel} Condition
+        <Badge variant="outline" className={theme.badge}>
+          {degradation.conditionLabel} condition
         </Badge>
       </div>
 
       <div className="mt-4 space-y-2">
         <div className="text-footnote flex flex-wrap items-center justify-between gap-2">
           <span className="text-label-secondary text-footnote flex items-center gap-2">
-            <Coins aria-hidden="true" className="h-3.5 w-3.5" /> Budgeted vs. Required Annual
-            Maintenance
+            <Coins aria-hidden="true" className="h-3.5 w-3.5" /> Transport budget against required
+            maintenance, yearly
           </span>
           <span className="text-label text-caption font-semibold tabular-nums">
-            {degradation.budgetedMaintenance.toFixed(3)}B /{" "}
+            ${degradation.budgetedMaintenance.toFixed(3)}B / $
             {degradation.requiredMaintenance.toFixed(3)}B
             <span className="text-label-secondary ml-2 font-normal">
               ({fundingPercent}% funded)
@@ -134,7 +134,7 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
         <div className="py-3 sm:pr-3">
           <dt className="flex items-center gap-1">
             <Gauge aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
-            <span className="text-stat-label text-label-secondary">Network speed factor</span>
+            <span className="text-label-secondary text-footnote">Network speed factor</span>
           </dt>
           <dd className="mt-2 flex items-baseline gap-2">
             <span className={cn("text-title-2 tabular-nums", theme.text)}>
@@ -155,7 +155,7 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
 
         <div className="py-3 sm:px-3">
           <dt>
-            <span className="text-stat-label text-label-secondary">GDP modifier impact</span>
+            <span className="text-label-secondary text-footnote">GDP modifier impact</span>
           </dt>
           <dd className="mt-2">
             <Delta value={degradation.gdpModifierDelta} />
@@ -165,7 +165,7 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
 
         <div className="py-3 sm:pl-3">
           <dt>
-            <span className="text-stat-label text-label-secondary">Trade efficiency</span>
+            <span className="text-label-secondary text-footnote">Trade efficiency</span>
           </dt>
           <dd className="mt-2">
             <Delta value={degradation.tradeModifierDelta} />
@@ -183,10 +183,10 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onDeclareDirective("Emergency Transport Infrastructure Rehabilitation")}
+            onClick={() => onDeclareDirective("Rehabilitate the national transport network")}
           >
             <Command aria-hidden="true" className="text-yellow h-3.5 w-3.5" />
-            Rehabilitation Directive
+            Declare a rehabilitation Directive
           </Button>
         )}
       </div>

@@ -146,7 +146,7 @@ export const helpSections: HelpSection[] = [
       {
         id: "mycountry-economy",
         title: "Economy & Budget",
-        description: "Economic Report, National Budget, Fiscal Policy and Trade & Commerce.",
+        description: "The Report, Budget, Taxes and Trade tabs.",
         path: "/help/mycountry/economy",
         tags: ["economy", "budget", "taxes", "trade"],
       },
@@ -211,7 +211,7 @@ export const helpSections: HelpSection[] = [
       {
         id: "tax-system",
         title: "Taxes & Revenue",
-        description: "Setting tax rates in Fiscal Policy and what they affect.",
+        description: "Setting tax rates in the Taxes tab and what they affect.",
         path: "/help/economy/tax-system",
         tags: ["taxes", "revenue", "fiscal"],
       },

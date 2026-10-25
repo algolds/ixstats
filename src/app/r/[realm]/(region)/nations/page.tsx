@@ -26,7 +26,6 @@ const OPTIONAL_FIELDS = [
   "landArea",
   "populationDensity",
   "gdpDensity",
-  "adjustedGdpGrowth",
   "populationGrowthRate",
   "continent",
   "region",
@@ -47,6 +46,8 @@ function toCard(c: Realm["countries"][number], s: Stats | undefined, flag?: stri
   const optional = Object.fromEntries(OPTIONAL_FIELDS.map((k) => [k, s?.[k] ?? undefined]));
   return {
     ...(optional as Partial<RealmNation>),
+    // The card's growth figure is the realised (engine) rate, not the static input.
+    adjustedGdpGrowth: s?.calculatedStats.gdpGrowth || undefined,
     id: c.id,
     name: c.name,
     slug: c.slug ?? c.id,

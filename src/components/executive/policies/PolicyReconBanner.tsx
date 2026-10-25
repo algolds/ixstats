@@ -31,7 +31,7 @@ export function PolicyReconBanner({
           <AlertTriangle className="text-yellow h-4 w-4 shrink-0" />
           <div>
             Custom policies in this category need a {departmentKey} department. Add one in the
-            National budget tab, or pick a template.
+            Budget tab, or pick a template.
           </div>
         </div>
       )}

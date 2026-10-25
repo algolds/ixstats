@@ -21,8 +21,9 @@ interface CountryWithEconomicRelations {
   currentGdpPerCapita?: number;
   baselineGdpPerCapita?: number;
   nominalGDP?: number | null;
-  realGDPGrowthRate?: number | null;
   adjustedGdpGrowth?: number | null;
+  /** The engine's realised GDP growth (decimal), on `getByIdWithEconomicData` records. */
+  calculatedStats?: { gdpGrowth?: number | null } | null;
   inflationRate?: number | null;
   currencyExchangeRate?: number | null;
   giniCoefficient?: number | null;
@@ -389,7 +390,9 @@ function applyCoreFields(
   base.core.totalPopulation = population;
   base.core.nominalGDP = totalGdp;
   base.core.gdpPerCapita = gdpPerCapita;
-  base.core.realGDPGrowthRate = country.realGDPGrowthRate ?? country.adjustedGdpGrowth ?? 0;
+  // The engine's realised rate (one unit, decimal), not the mixed-unit stored realGDPGrowthRate.
+  base.core.realGDPGrowthRate =
+    country.calculatedStats?.gdpGrowth ?? country.adjustedGdpGrowth ?? 0;
   base.core.inflationRate = country.inflationRate ?? 0;
   base.core.currencyExchangeRate = country.currencyExchangeRate ?? 1;
   if (country.giniCoefficient != null) base.core.giniCoefficient = country.giniCoefficient;

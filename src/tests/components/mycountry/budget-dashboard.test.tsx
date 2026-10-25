@@ -3,6 +3,8 @@
  * fiscal balance weighs allocations against revenue (nothing records spending, so no utilization); the year's policy
  * maintenance shows as spending; the revenue chart says when nothing is recorded; a nation with no departments gets
  * the create action, and no hint sends anyone to a Country Editor step that does not exist.
+ * WP-B2: revenue is the nation's one figure (`nationalRevenue`: saved rates on today's GDP, else the founding total),
+ * never the sum of the founding RevenueSource rows.
  */
 import "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
@@ -47,6 +49,10 @@ jest.mock("recharts", () => {
 
 import { IxTime } from "~/lib/ixtime";
 import { BudgetManagementDashboard } from "~/components/mycountry/domains/government/BudgetManagementDashboard";
+import { nationalRevenue } from "~/components/mycountry/shell/fiscal/nationalRevenue";
+
+/** A nation with no tax rate saved: its founding revenue stands in. */
+const foundingRevenue = (total: number) => nationalRevenue({ governmentRevenueTotal: total });
 
 const department = (id: string, name: string) => ({
   id,
@@ -99,7 +105,7 @@ const openView = (name: string) =>
 describe("the National budget tab", () => {
   it("weighs allocations against revenue and shows the year's maintenance, with no utilization", () => {
     mockData.gov = government(10e9);
-    render(<BudgetManagementDashboard countryId="testland" />);
+    render(<BudgetManagementDashboard countryId="testland" revenue={foundingRevenue(10e9)} />);
     // 12B allocated against 10B of revenue: a deficit, never "Surplus" from an unrecorded spend
     expect(screen.getAllByText("High deficit").length).toBeGreaterThan(0);
     expect(screen.queryByText("Surplus")).toBeNull();
@@ -110,9 +116,27 @@ describe("the National budget tab", () => {
     expect(document.body.textContent).not.toMatch(/Country Editor/);
   });
 
+  it("shows the saved tax rates on today's GDP as revenue, not the founding revenue rows", () => {
+    // Founding rows say 999B; a 20% income tax on 100B of GDP yields 3.6B (fallback income weight 0.18).
+    mockData.gov = government(999e9);
+    const revenue = nationalRevenue({
+      currentTotalGdp: 100e9,
+      governmentRevenueTotal: 999e9,
+      fiscalSystem: { personalIncomeTaxRates: JSON.stringify({ incomeRate: 20 }) },
+    });
+    render(<BudgetManagementDashboard countryId="testland" revenue={revenue} />);
+    expect(screen.getByText("3.6B")).toBeInTheDocument();
+    expect(screen.getByText("Your tax rates on today's GDP")).toBeInTheDocument();
+    expect(screen.queryByText("999.0B")).toBeNull();
+    // 12B allocated against 3.6B of revenue
+    expect(screen.getAllByText("High deficit").length).toBeGreaterThan(0);
+    openView("Revenue");
+    expect(screen.getByText("Income tax")).toBeInTheDocument();
+  });
+
   it("says when no revenue is recorded instead of drawing an empty chart", () => {
     mockData.gov = government(0);
-    render(<BudgetManagementDashboard countryId="testland" />);
+    render(<BudgetManagementDashboard countryId="testland" revenue={foundingRevenue(0)} />);
     expect(
       screen.getByText("No revenue sources are recorded for this government yet.")
     ).toBeInTheDocument();
@@ -121,7 +145,7 @@ describe("the National budget tab", () => {
 
   it("lets the owner set a share, remove a department and add one", () => {
     mockData.gov = government(20e9);
-    render(<BudgetManagementDashboard countryId="testland" />);
+    render(<BudgetManagementDashboard countryId="testland" revenue={foundingRevenue(20e9)} />);
     openView("Departments");
     expect(screen.queryByText(/Budget utilization|Remaining/)).toBeNull();
 
@@ -154,7 +178,7 @@ describe("the National budget tab", () => {
 
   it("offers a nation with no government the create action", () => {
     mockData.gov = null;
-    render(<BudgetManagementDashboard countryId="testland" />);
+    render(<BudgetManagementDashboard countryId="testland" revenue={foundingRevenue(0)} />);
     fireEvent.click(screen.getByRole("button", { name: "Create government structure" }));
     expect(mockMutate.createStructure).toHaveBeenCalledWith({ countryId: "testland" });
     expect(document.body.textContent).not.toMatch(/Country Editor/);

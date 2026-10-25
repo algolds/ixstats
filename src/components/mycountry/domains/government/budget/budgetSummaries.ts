@@ -7,6 +7,9 @@ import type {
   RevenueSummary,
 } from "~/types/government";
 import type { BudgetTrendItem, DepartmentChartItem } from "./budgetTypes";
+import { TAX_CHANNELS } from "~/components/mycountry/shell/fiscal/taxChannels";
+import type { NationalRevenue } from "~/components/mycountry/shell/fiscal/nationalRevenue";
+import { latestBudgetYearUpTo } from "~/lib/government/budget-year";
 
 const sumOf = <T>(items: T[], pick: (item: T) => number | null | undefined) =>
   items.reduce((total, item) => total + (pick(item) ?? 0), 0);
@@ -40,29 +43,114 @@ export function summarizeBudget(
   };
 }
 
-export function summarizeRevenue(sources: RevenueSource[]): RevenueSummary {
-  const totalRevenue = sumOf(sources, (r) => r.revenueAmount);
-  const totalTaxRevenue = sumOf(
-    sources.filter((r) => r.category?.includes("Tax")),
-    (r) => r.revenueAmount
-  );
-  const revenueBreakdown = REVENUE_CATEGORIES.map((category) => {
+/** Income, corporate, wealth and capital gains taxes; VAT and tariffs are indirect. */
+const DIRECT_TAX_CHANNELS = new Set(["income", "corporate", "wealth", "capGains"]);
+
+function breakdownOf(lines: RevenueSummary["topRevenueSources"], total: number) {
+  return REVENUE_CATEGORIES.map((category) => {
     const amount = sumOf(
-      sources.filter((r) => r.category === category),
+      lines.filter((r) => r.category === category),
       (r) => r.revenueAmount
     );
-    return { category, amount, percent: totalRevenue > 0 ? (amount / totalRevenue) * 100 : 0 };
+    return { category, amount, percent: total > 0 ? (amount / total) * 100 : 0 };
   }).filter((item) => item.amount > 0);
+}
 
+function summaryOf(
+  lines: RevenueSummary["topRevenueSources"],
+  totalRevenue: number,
+  basis: RevenueSummary["basis"]
+): RevenueSummary {
+  const totalTaxRevenue = sumOf(
+    lines.filter((r) => r.category?.includes("Tax")),
+    (r) => r.revenueAmount
+  );
   return {
     totalRevenue,
     totalTaxRevenue,
     totalNonTaxRevenue: totalRevenue - totalTaxRevenue,
-    revenueBreakdown,
-    topRevenueSources: [...sources]
+    revenueBreakdown: breakdownOf(lines, totalRevenue),
+    topRevenueSources: [...lines]
       .sort((a, b) => (b.revenueAmount ?? 0) - (a.revenueAmount ?? 0))
       .slice(0, 5),
+    basis,
   };
+}
+
+/** One line per tax with a yield, from the saved rates. */
+function rateLines(revenue: NationalRevenue, total: number): RevenueSummary["topRevenueSources"] {
+  return TAX_CHANNELS.flatMap((ch) => {
+    const amount = revenue.yields.byChannel[ch.key];
+    if (amount == null) return [];
+    const category: RevenueCategory = DIRECT_TAX_CHANNELS.has(ch.key)
+      ? "Direct Tax"
+      : "Indirect Tax";
+    return [
+      {
+        id: ch.key,
+        name: ch.label,
+        category,
+        revenueAmount: amount,
+        revenuePercent: (amount / total) * 100,
+      },
+    ];
+  });
+}
+
+/** The founding revenue rows, scaled so they add up to the founding total. */
+function foundingLines(
+  total: number,
+  sources: RevenueSource[]
+): RevenueSummary["topRevenueSources"] {
+  const recorded = sumOf(sources, (r) => r.revenueAmount);
+  if (recorded <= 0) {
+    return [
+      {
+        id: "founding",
+        name: "Founding estimate",
+        category: "Direct Tax",
+        revenueAmount: total,
+        revenuePercent: 100,
+      },
+    ];
+  }
+  return sources.map((r) => {
+    const amount = ((r.revenueAmount ?? 0) / recorded) * total;
+    return {
+      id: r.id,
+      name: r.name,
+      category: r.category,
+      revenueAmount: amount,
+      revenuePercent: (amount / total) * 100,
+    };
+  });
+}
+
+/**
+ * The budget's revenue, from the one national figure (`nationalRevenue`): split by tax on the
+ * rates basis; on the founding basis the founding rows give the split, scaled to the total.
+ */
+export function summarizeRevenue(
+  revenue: NationalRevenue,
+  sources: RevenueSource[]
+): RevenueSummary {
+  const total = revenue.total ?? 0;
+  if (revenue.basis === "rates" && total > 0)
+    return summaryOf(rateLines(revenue, total), total, "rates");
+  if (revenue.basis === "founding" && total > 0) {
+    return summaryOf(foundingLines(total, sources), total, "founding");
+  }
+  return summaryOf([], 0, null);
+}
+
+/** What the budget in effect (latest year at or before now) allocates in total. */
+export function allocatedInEffect(allocations: BudgetAllocation[]): number | null {
+  const year = latestBudgetYearUpTo(allocations.map((a) => a.budgetYear));
+  if (year == null) return null;
+  return sumOf(
+    allocations.filter((a) => a.budgetYear === year),
+    (a) => a.allocatedAmount
+  );
 }
 
 export function buildDepartmentChartData(
