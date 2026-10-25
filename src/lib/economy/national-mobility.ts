@@ -443,3 +443,34 @@ export function estimateIntercityTravelTimes(
 
   return links;
 }
+
+interface DepartmentAllocation {
+  budgetYear: number;
+  allocatedAmount: number;
+  department: { name: string; category: string };
+}
+
+const INFRASTRUCTURE_DEPARTMENT = /infra|transport|transit/i;
+
+/**
+ * The yearly budget for maintaining the transport network, in billions of dollars: what the
+ * transport or infrastructure departments are allocated in the budget in effect (the latest
+ * year at or before `currentYear`). Null when the budget has no such department.
+ */
+export function infrastructureBudgetBillions(
+  allocations: readonly DepartmentAllocation[],
+  currentYear: number
+): number | null {
+  const infra = allocations.filter(
+    (a) =>
+      INFRASTRUCTURE_DEPARTMENT.test(a.department.category) ||
+      INFRASTRUCTURE_DEPARTMENT.test(a.department.name)
+  );
+  const years = infra.map((a) => a.budgetYear).filter((year) => year <= currentYear);
+  if (years.length === 0) return null;
+  const year = Math.max(...years);
+  const total = infra
+    .filter((a) => a.budgetYear === year)
+    .reduce((sum, a) => sum + a.allocatedAmount, 0);
+  return total / 1e9;
+}

@@ -587,6 +587,19 @@ describe("transport.getNationalMobilityProfile", () => {
   // Cached per viewer: one read per caller, all in one test so no cache entry leaks across.
   it("shows everyone the network condition and only the owner its maintenance budget", async () => {
     const db = makeDb();
+    // The budget is the transport department's live allocation (WP-B2), not GovernmentBudget categories.
+    db.budgetAllocation.findMany.mockImplementation(async () => [
+      {
+        budgetYear: 2040,
+        allocatedAmount: 3e9,
+        department: { name: "Ministry of Transport", category: "Transportation" },
+      },
+      {
+        budgetYear: 2040,
+        allocatedAmount: 9e9,
+        department: { name: "Ministry of Health", category: "Health" },
+      },
+    ]);
     const read = async (ctx: never) =>
       (
         (await transport(ctx).getNationalMobilityProfile({ countryId: COUNTRY })) as {

@@ -126,6 +126,8 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
 
   const { tami, degradation, modalSummary, topCorridors, totalOperationalKm } = profile;
   const ratingTheme = RATING_THEMES[tami.rating] ?? RATING_THEMES.underdeveloped;
+  // No transport department in the budget: no condition to show.
+  if (!degradation) return null;
   const conditionTextClass =
     CONDITION_TEXT_THEMES[degradation.condition] ?? CONDITION_TEXT_THEMES.adequate;
 
