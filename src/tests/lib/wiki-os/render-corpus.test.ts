@@ -347,6 +347,43 @@ describe("absolute links to a wiki WikiOS reads", () => {
     }
   });
 
+  it("a link whose title climbs out of /wiki/ with dot segments, its slashes escaped or not, stays where it points", () => {
+    const links = [
+      '<a rel="nofollow" class="external text" href="https://iiwiki.com/wiki/a%2F..%2F..%2F..%2Fapi%2Fadmin">a</a>',
+      '<a rel="nofollow" class="external text" href="https://iiwiki.com/wiki/a%2f%2E%2E%2fapi">b</a>',
+      '<a rel="nofollow" class="external text" href="https://althistory.fandom.com/index.php?title=..%2Fapi">c</a>',
+      '<a href="https://ixwiki.com/wiki/%2E%2E" class="extiw" title="ixwiki:..">d</a>',
+    ];
+    for (const source of ["ixwiki", "iiwiki"] as const) {
+      const out = content(links.join(" "), source, "/p");
+      for (const link of links) expect(out).toContain(link);
+      expect(out).not.toContain("/p/wiki/");
+    }
+  });
+
+  it("a fragment's character references are read as the browser reads them, and written back encoded", () => {
+    const out = content(
+      '<a class="external text" href="https://iiwiki.com/wiki/Gallambria#Foo_&quot;bar&quot;">q</a> ' +
+        '<a class="external text" href="https://iiwiki.com/wiki/Gallambria#a&#039;b&#39;c&lt;d&gt;&#x27;&QUOT;">e</a> ' +
+        '<a class="external text" href="https://iiwiki.com/wiki/Gallambria#&amp;quot;">l</a>',
+      "ixwiki"
+    );
+    expect(out).toContain('<a href="/wiki/Gallambria?source=iiwiki#Foo_%22bar%22">q</a>');
+    expect(out).toContain('<a href="/wiki/Gallambria?source=iiwiki#a\'b\'c%3Cd%3E\'%22">e</a>');
+    // &amp;quot; is the text &quot;, not a quote: one decode, never two
+    expect(out).toContain('<a href="/wiki/Gallambria?source=iiwiki#&amp;quot;">l</a>');
+  });
+
+  it("a link to a multi-word talk namespace stays on that wiki; a project page opens in the reader", () => {
+    const talk = '<a rel="nofollow" class="external text" href="https://althistory.fandom.com/wiki/Alternate_History_talk:Foo">t</a>';
+    const out = content(
+      `${talk} <a rel="nofollow" class="external text" href="https://iiwiki.com/wiki/IIWiki:Policy">p</a>`,
+      "ixwiki"
+    );
+    expect(out).toContain(talk);
+    expect(out).toContain('<a href="/wiki/IIWiki:Policy?source=iiwiki">p</a>');
+  });
+
   it("a link with a query stays where it points", () => {
     const links = [
       '<a rel="nofollow" class="external text" href="https://iiwiki.com/wiki/Gallambria?action=history">h</a>',

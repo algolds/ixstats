@@ -33,13 +33,17 @@ export interface WikiLinkTarget {
 
 /**
  * Namespaces WikiOS does not read as articles: files (`Image:` and `Media:` are `File:`'s aliases), special pages,
- * user, category, template, module, help, interface and project pages, and every talk namespace. A link to one opens
- * on that wiki's own site and gets no preview. Matches a title (`User talk:Kir`) and a link path as written
- * (`User_talk%3AKir`). `Portal:` is not here: the reader reads portals as articles. A namespace needs its colon, so
+ * user, category, template, module, help and interface (`MediaWiki:`) pages, and every talk namespace, its name of
+ * one word or several (`Alternate History talk:`). A link to one opens on that wiki's own site and gets no preview.
+ * Matches a title (`User talk:Kir`) and a link path as written (`User_talk%3AKir`). Portals and project pages
+ * (`Project:`, `IxWiki:`) are not here: the reader reads them as articles. A namespace needs its colon, so
  * `Media/Press` is an article.
  */
 export const SITE_NAMESPACE =
-  /^(?:file|image|media|special|user|category|template|module|help|mediawiki|talk|wiki|[a-z]+[ _]talk)(?::|%3a)/iu;
+  /^(?:file|image|media|special|user|category|template|module|help|mediawiki|talk|[a-z][a-z _]*[ _]talk)(?::|%3a)/iu;
+
+/** A title MediaWiki refuses: `.` or `..` as a whole `/` segment (a link to it would climb out of `/wiki/`). */
+const DOT_SEGMENT = /(?:^|\/)\.\.?(?:\/|$)/u;
 
 /** A MediaWiki entry point under `/w/` (`api.php`, `index.php/Foo`, `load.php`): never an article. */
 const ENTRY_POINT = /^[a-z_]+\.php(?:\/|$)/iu;
@@ -63,11 +67,14 @@ function parseHref(href: string): URL | null {
   }
 }
 
-/** The page a `/wiki/` or `/w/` path segment names, or null when it is empty or a malformed escape. */
+/**
+ * The page a `/wiki/` or `/w/` path segment names, or null when it is empty, a malformed escape or a title with a
+ * dot segment (`a%2F..%2Fapi`: `titleUrlPath` would write its `/` back, and the browser would climb out of `/wiki/`).
+ */
 function titled(segment: string, wiki: WikiSource): WikiLinkTarget | null {
   try {
     const title = decodeURIComponent(segment).replace(/_/g, " ").trim();
-    return title ? { title, wiki } : null;
+    return title && !DOT_SEGMENT.test(title) ? { title, wiki } : null;
   } catch {
     return null;
   }

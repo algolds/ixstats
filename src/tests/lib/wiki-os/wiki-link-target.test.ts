@@ -142,7 +142,7 @@ describe("wikiLinkTarget", () => {
       "Help:Editing",
       "User:Livia",
       "Talk:Foo",
-      "Wiki:About",
+      "Alternate_History_talk:Foo",
       "Special%3ASearch",
       "User_talk:Kir",
       "File_talk:Flag.svg",
@@ -317,6 +317,33 @@ describe("absoluteReaderTarget", () => {
     }
   });
 
+  it("a title MediaWiki refuses for its dot segments is null, its slashes escaped or not", () => {
+    for (const path of [
+      "a%2F..%2F..%2F..%2Fapi%2Fadmin",
+      "a%2f..%2fapi",
+      "..",
+      ".",
+      "%2E%2E",
+      "..%2Fapi",
+      "Foo%2F.%2FBar",
+      ".%2FFoo",
+      "Foo%2F.",
+      "Foo/%2E%2E",
+      "Foo%2F..%2F",
+    ]) {
+      expect(absoluteReaderTarget(`https://iiwiki.com/wiki/${path}`)).toBeNull();
+      expect(absoluteReaderTarget(`https://iiwiki.com/index.php?title=${path}`)).toBeNull();
+      expect(wikiLinkTarget(`/wiki/${path}?source=iiwiki`, "")).toBeNull();
+    }
+    // A literal dot segment of the path is the URL's own, resolved as the browser resolves it.
+    expect(absoluteReaderTarget("https://iiwiki.com/wiki/./Foo")?.title).toBe("Foo");
+    expect(absoluteReaderTarget("https://iiwiki.com/index.php?title=./Foo")).toBeNull();
+    // Dots that are not a whole segment are part of a title.
+    for (const title of ["...", "Foo..", "..Foo", "Foo/.../Bar", "Foo/.Bar", "Foo./Bar", "Mr. Foo"]) {
+      expect(absoluteReaderTarget(`https://iiwiki.com/wiki/${encodeURIComponent(title)}`)?.title).toBe(title);
+    }
+  });
+
   it("does not filter namespaces: the caller decides", () => {
     expect(absoluteReaderTarget("https://iiwiki.com/wiki/File:Flag.png")).toEqual({
       wiki: "iiwiki",
@@ -368,6 +395,14 @@ describe("absoluteReaderTarget on hostile input", () => {
 });
 
 describe("SITE_NAMESPACE", () => {
+  it("a long name of words that is no talk namespace answers quickly", () => {
+    const began = performance.now();
+    for (const title of [`${"a ".repeat(100_000)}:`, `${"a_".repeat(100_000)}tal:`, `${"talk ".repeat(40_000)}x`]) {
+      expect(SITE_NAMESPACE.test(title)).toBe(false);
+    }
+    expect(performance.now() - began).toBeLessThan(75 * TIMING_BUDGET_SCALE);
+  });
+
   it("names the namespaces read on the wiki's own site, as written in a link path or as a title", () => {
     for (const title of [
       "File:Flag.png",
@@ -384,11 +419,24 @@ describe("SITE_NAMESPACE", () => {
       "Help:Editing",
       "MediaWiki:Sidebar",
       "Talk:Foo",
-      "Wiki:About",
+      "Alternate History talk:Foo",
+      "Alternate_History_talk%3AFoo",
     ]) {
       expect(SITE_NAMESPACE.test(title)).toBe(true);
     }
-    for (const title of ["Gallambria", "Portal:Eurth", "Filet mignon", "Media/Press", "Notes on Help:Editing"]) {
+    // Project pages are read in the reader: the rule does not exclude them.
+    for (const title of [
+      "Gallambria",
+      "Portal:Eurth",
+      "Filet mignon",
+      "Media/Press",
+      "Notes on Help:Editing",
+      "Wiki:About",
+      "IxWiki:Policy",
+      "Project:About",
+      "Talking points",
+      "Small talks",
+    ]) {
       expect(SITE_NAMESPACE.test(title)).toBe(false);
     }
   });

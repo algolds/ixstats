@@ -33,6 +33,19 @@ const REL_OR_TARGET_ATTR_REGEX = /\s(?:rel|target)="[^"]*"/gu;
 const CLASS_ATTR_REGEX = /\sclass="([^"]*)"/u;
 /** The classes classic gives an external or interwiki link: styling (an arrow icon, a number) a reader link has not. */
 const EXTERNAL_LINK_CLASSES = new Set(["external", "text", "free", "extiw", "autonumber"]);
+/** The character references MediaWiki writes in an attribute value, read in one pass (`&amp;quot;` is `&quot;`). */
+const ATTR_REFERENCE_REGEX = /&(?:amp|quot|lt|gt|#0*39|#x0*27);/giu;
+const ATTR_REFERENCES: Readonly<Record<string, string>> = {
+  "&amp;": "&",
+  "&quot;": '"',
+  "&lt;": "<",
+  "&gt;": ">",
+};
+
+/** An attribute value as the browser reads it, for its `&amp;`, `&quot;`, `&lt;`, `&gt;` and `'` references. */
+function decodeAttribute(value: string): string {
+  return value.replace(ATTR_REFERENCE_REGEX, (ref) => ATTR_REFERENCES[ref.toLowerCase()] ?? "'");
+}
 const QUERY_TITLE_REGEX = /(?:^|&(?:amp;)?)title=([^&]*)/u;
 const QUERY_UPLOAD_FILE_REGEX = /(?:^|&(?:amp;)?)wpDestFile=([^&]*)/u;
 /** `Name?query#fragment` of a `/wiki/` link: the page name, then the wiki's own query (`?action=edit&redlink=1`), then the fragment. */
@@ -120,17 +133,18 @@ function transformIxWikiLinks(html: string, basePath: string): string {
 }
 
 /**
- * The opening tag `tag` of an anchor whose `href` (`&amp;` read as `&`) is an absolute link to an article on a wiki
+ * The opening tag `tag` of an anchor whose `href` (its references decoded) is an absolute link to an article on a wiki
  * WikiOS reads (`absoluteReaderTarget`, outside `SITE_NAMESPACE`), pointed at the reader:
  * `<basePath>/wiki/<title>`, `?source=<wiki>` for a sister wiki, then the fragment. Its `rel` and `target` go, as do
  * the external-link classes (and a `class` left empty). Any other tag is as it was.
  */
 function readerLink(tag: string, basePath: string): string {
   const href = HREF_ATTR_REGEX.exec(tag)?.[1];
-  const target = href === undefined ? null : absoluteReaderTarget(href.replaceAll("&amp;", "&"));
+  const target = href === undefined ? null : absoluteReaderTarget(decodeAttribute(href));
   if (!target || SITE_NAMESPACE.test(target.title)) return tag;
   const source = target.wiki === "ixwiki" ? "" : `?source=${target.wiki}`;
-  // The fragment is percent-encoded but for `&` (and `$`, so the replacements are functions, never patterns).
+  // The URL parser percent-encodes `"`, `<` and `>` in the fragment, but not `&`, `'` or `$` (so the replacements
+  // are functions, never patterns); the attribute is double-quoted, so `'` is safe as it is.
   const path = `${basePath}/wiki/${titleUrlPath(target.title)}${source}${target.fragment.replaceAll("&", "&amp;")}`;
   return tag
     .replace(HREF_ATTR_REGEX, () => ` href="${path}"`)
