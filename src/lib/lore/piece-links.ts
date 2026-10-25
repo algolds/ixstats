@@ -35,13 +35,20 @@ const escapeAttribute = (value: string) =>
   value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 
 /**
+ * Between a prefix and the page's own id. A chapter id (`loreChapterId`) always encodes it (as `.3A`), so a scoped id
+ * names one chapter and one page id: a piece titled "Senate-History" never meets "Senate"'s History section, and a
+ * section named "heading" never meets the chapter's own `<chapter>-heading`.
+ */
+const SCOPE_SEPARATOR = ":";
+
+/**
  * The page's ids made its own: MediaWiki numbers footnotes (`cite_note-1`) and names headings the same way on every
  * page, so several pages on one screen would share ids, and a footnote in one would jump to another's note. Every
- * `id`, every `href="#…"` and every aria id reference gets `<prefix>-`.
+ * `id`, every `href="#…"` and every aria id reference gets `<prefix>:`.
  */
 export function scopeArticleIds(html: string, prefix: string): string {
   const scoped = escapeAttribute(prefix);
-  const scope = (id: string) => `${scoped}-${id}`;
+  const scope = (id: string) => `${scoped}${SCOPE_SEPARATOR}${id}`;
   return html.replace(TAG, (tag) =>
     tag
       .replace(ID, (_m, head: string, id: string) => `${head}${scope(id)}"`)

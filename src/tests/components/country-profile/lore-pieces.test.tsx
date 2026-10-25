@@ -245,8 +245,8 @@ describe("LorePieces", () => {
     renderPieces(VISITOR);
     nearView("Venceia");
     const footnote = within(chapter("Venceia")).getByRole("link", { name: "[1]" });
-    expect(footnote).toHaveAttribute("href", "#lore-piece-Venceia-cite_note-1");
-    const note = document.getElementById("lore-piece-Venceia-cite_note-1");
+    expect(footnote).toHaveAttribute("href", "#lore-piece-Venceia:cite_note-1");
+    const note = document.getElementById("lore-piece-Venceia:cite_note-1");
     expect(note).toHaveTextContent("A note.");
     expect(chapter("Venceia")).toContainElement(note);
   });
@@ -259,7 +259,7 @@ describe("LorePieces", () => {
     expect(venceia.getByRole("heading", { level: 3, name: "Venceia" })).toBeInTheDocument();
     expect(venceia.getByRole("heading", { level: 4, name: "History" })).toHaveAttribute(
       "id",
-      "lore-piece-Venceia-History"
+      "lore-piece-Venceia:History"
     );
   });
 

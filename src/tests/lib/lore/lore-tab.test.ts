@@ -162,8 +162,8 @@ describe("scopeArticleIds", () => {
       '<p>Text<sup id="cite_ref-1" class="reference"><a href="#cite_note-1">[1]</a></sup></p>' +
       '<ol class="references"><li id="cite_note-1"><a href="#cite_ref-1">^</a> A note.</li></ol>';
     expect(scopeArticleIds(html, "lore-piece-Venceia")).toBe(
-      '<p>Text<sup id="lore-piece-Venceia-cite_ref-1" class="reference"><a href="#lore-piece-Venceia-cite_note-1">[1]</a></sup></p>' +
-        '<ol class="references"><li id="lore-piece-Venceia-cite_note-1"><a href="#lore-piece-Venceia-cite_ref-1">^</a> A note.</li></ol>'
+      '<p>Text<sup id="lore-piece-Venceia:cite_ref-1" class="reference"><a href="#lore-piece-Venceia:cite_note-1">[1]</a></sup></p>' +
+        '<ol class="references"><li id="lore-piece-Venceia:cite_note-1"><a href="#lore-piece-Venceia:cite_ref-1">^</a> A note.</li></ol>'
     );
   });
 
@@ -171,19 +171,19 @@ describe("scopeArticleIds", () => {
     const html =
       '<div aria-describedby="a b" aria-labelledby="c" aria-controls="d" aria-owns="e"></div>';
     expect(scopeArticleIds(html, "s")).toBe(
-      '<div aria-describedby="s-a s-b" aria-labelledby="s-c" aria-controls="s-d" aria-owns="s-e"></div>'
+      '<div aria-describedby="s:a s:b" aria-labelledby="s:c" aria-controls="s:d" aria-owns="s:e"></div>'
     );
   });
 
   it("reads an aria reference's ids however they are spaced", () => {
     expect(scopeArticleIds('<i aria-labelledby=" c \td "></i>', "s")).toBe(
-      '<i aria-labelledby="s-c s-d"></i>'
+      '<i aria-labelledby="s:c s:d"></i>'
     );
   });
 
   it("reads attribute names in any case", () => {
     expect(scopeArticleIds('<B ID="x" ARIA-LABELLEDBY="y"><A HREF="#x">a</A></B>', "s")).toBe(
-      '<B ID="s-x" ARIA-LABELLEDBY="s-y"><A HREF="#s-x">a</A></B>'
+      '<B ID="s:x" ARIA-LABELLEDBY="s:y"><A HREF="#s:x">a</A></B>'
     );
   });
 
@@ -194,7 +194,31 @@ describe("scopeArticleIds", () => {
   });
 
   it("escapes a prefix that would break out of the attribute", () => {
-    expect(scopeArticleIds('<b id="x"></b>', 'p"<&')).toBe('<b id="p&quot;&lt;&amp;-x"></b>');
+    expect(scopeArticleIds('<b id="x"></b>', 'p"<&')).toBe('<b id="p&quot;&lt;&amp;:x"></b>');
+  });
+
+  const idsOf = (html: string) => [...html.matchAll(/\sid="([^"]*)"/g)].map((match) => match[1]);
+
+  it("never gives two pieces the same id when a title holds a hyphen", () => {
+    // "Senate" with a section "History" against a piece titled "Senate-History" with a section "History".
+    const senate = scopeArticleIds('<h2 id="History">History</h2>', loreChapterId("Senate"));
+    const hyphenated = scopeArticleIds(
+      '<h2 id="History">History</h2>',
+      loreChapterId("Senate-History")
+    );
+    const chapterIds = [loreChapterId("Senate"), loreChapterId("Senate-History")];
+    const all = [...idsOf(senate), ...idsOf(hyphenated), ...chapterIds];
+    expect(new Set(all).size).toBe(all.length);
+  });
+
+  it("never gives a section the id of the chapter's own heading", () => {
+    const chapter = loreChapterId("Senate");
+    const [section] = idsOf(scopeArticleIds('<h2 id="heading">Heading</h2>', chapter));
+    expect(section).not.toBe(`${chapter}-heading`);
+  });
+
+  it("keeps the separator out of every chapter id, so a prefix ends where the separator starts", () => {
+    expect(loreChapterId("Note: a:b")).not.toContain(":");
   });
 });
 
