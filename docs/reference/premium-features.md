@@ -93,7 +93,7 @@ interface PremiumFeatures {
 | → Diplomatic Events | Event responses | ✅ | ✅ | Crisis responses available |
 | → Intelligence Page | **Analytics dashboard** | ⚠️ Limited | ✅ Full | Nav-gated; route resolves to Defense domain |
 | → Defense & Security | Force management | ⚠️ Read-only preview | ✅ | **PREMIUM GATED** (enforced) |
-| → Map Editor | Territory editing | ✅ | ✅ | `ability.ts` marks it premium, but no UI/route enforces it |
+| → Map Editor | Territory editing | ✅ | ✅ | Free for every owner; geo writes are owner-checked |
 | → Editor | Country editor page | ✅ | ✅ | Available to all |
 | | | | | |
 | **Country Builder** | | | | |

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { KeyCommand as Command, User } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
-import { useHasMycountryPremium } from "~/hooks/useHasMycountryPremium";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import type { CommandNavMode } from "../command-nav-mode";
 import { PageHeader, BACKDROP_PLATE } from "~/components/shell/PageHeader";
@@ -53,8 +52,6 @@ export function UnifiedGlassCommandBar({
   onDeclare,
 }: UnifiedGlassCommandBarProps) {
   const { country } = useCountryData();
-  // The map editor is a MyCountry Premium tool (beta testers included), so others never see the entry.
-  const canUseMapEditor = useHasMycountryPremium("map-editor");
 
   const profileHref = country?.slug ? `/countries/${country.slug}` : "/countries";
 
@@ -119,7 +116,7 @@ export function UnifiedGlassCommandBar({
               <span className="hidden md:inline">Profile</span>
             </Link>
           </Button>
-          <EditMorphButton plate={plate(collapsed)} withMapEditor={canUseMapEditor} />
+          <EditMorphButton plate={plate(collapsed)} />
           <Button
             type="button"
             aria-pressed={isExecutiveMode}

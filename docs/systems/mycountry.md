@@ -10,7 +10,7 @@
 The MyCountry Suite provides sovereign leaders with an executive command environment. Built around the single-page **Command Surface** architecture, it unifies decision-making, foreign relations, macroeconomic planning, and legislative governance into an action-first workflow.
 
 > **Open to every player:** **Overview/Executive**, **Economy**, **Politics**, and **Diplomacy** (`src/lib/auth/ability.ts`).  
-> *(**Defense** — which also serves `/mycountry/intelligence` — and the **Map Editor** are premium-gated: locked behind `PremiumPreviewFrame`. The app sidebar lists Defense only for MyCountry Premium members and beta testers (`requires: "mycountry-premium"` in `src/lib/navigation/app-sections.ts`); the pages keep their premium preview for anyone who arrives by URL.)*
+> *(**Defense** (which also serves `/mycountry/intelligence`) is premium-gated: locked behind `PremiumPreviewFrame`. The **Map Editor** is free for every owner. The app sidebar lists Defense only for MyCountry Premium members and beta testers (`requires: "mycountry-premium"` in `src/lib/navigation/app-sections.ts`); the pages keep their premium preview for anyone who arrives by URL.)*
 
 ---
 

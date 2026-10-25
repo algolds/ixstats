@@ -1,6 +1,6 @@
 /**
  * Who gets the world tools, and the writes they guard: the World tab is offered to the realm's map editors only, the
- * MyCountry map editor to premium users only; a generated nation slot's Claimable switch writes the slot, and Delete
+ * MyCountry map editor to every owner; a generated nation slot's Claimable switch writes the slot, and Delete
  * slot deletes only after a confirmation and never a slot a player holds. The World tab reads a claims status it could
  * not load as a failed lock, not an open one, and a founder's saved recipe is never overwritten by the built-ins that
  * stand in for presets that could not be read, while a recipe naming a preset that is gone becomes Earth-like.
@@ -11,11 +11,8 @@
 import React from "react";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-let canUseMapEditor = false;
-const can = (action: string, subject: string, field?: string) =>
-  action === "access" && subject === "MyCountryFeature" && field === "map-editor"
-    ? canUseMapEditor
-    : false;
+// No premium ability: the header's map editor must not depend on one.
+const can = () => false;
 
 jest.mock("~/trpc/react", () => {
   const { createMockMutation, createMockQuery } = jest.requireActual(
@@ -77,7 +74,7 @@ jest.mock("next/link", () => ({
   ),
 }));
 jest.mock("~/components/providers/AbilityProvider", () => ({
-  useAbility: () => ({ can, cannot: (...args: Parameters<typeof can>) => !can(...args) }),
+  useAbility: () => ({ can, cannot: () => true }),
 }));
 jest.mock("~/hooks/usePermissions", () => ({ useIsBetaTester: () => false }));
 jest.mock("~/components/mycountry/shared/primitives", () => ({
@@ -142,22 +139,14 @@ describe("who is offered the world tools", () => {
     const renderBar = () =>
       render(<UnifiedGlassCommandBar mode="home" onChangeMode={() => undefined} />);
 
-    it("opens the Edit pill into the country and map editors for a premium user", () => {
-      canUseMapEditor = true;
+    it("opens the Edit pill into the country and map editors for an owner without premium", () => {
       renderBar();
       fireEvent.click(screen.getByRole("button", { name: "Edit country or map" }));
       expect(screen.getByRole("link", { name: "Map editor" })).toHaveAttribute(
         "href",
         "/mycountry/map-editor"
       );
-    });
-
-    it("is a plain Edit link for everyone else, with no way to the map editor", () => {
-      canUseMapEditor = false;
-      renderBar();
-      expect(screen.queryByRole("button", { name: "Edit country or map" })).toBeNull();
-      expect(screen.queryByRole("link", { name: "Map editor" })).toBeNull();
-      expect(screen.getByRole("link", { name: "Edit country" })).toHaveAttribute(
+      expect(screen.getByRole("link", { name: "Country editor" })).toHaveAttribute(
         "href",
         "/mycountry/editor#identity"
       );

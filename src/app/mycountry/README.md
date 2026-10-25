@@ -21,7 +21,7 @@ All `page.tsx` files below (except `/mycountry/editor` and `/mycountry/welcome`)
 | `/mycountry/editor`       | —          | own page         | The country editor (`_components/CountryEditor.tsx`): Name, identity, government form, institutions (with policy presets) and size, each section saved on its own mutation with stale-tab checks; deep links by `#hash`; a leave guard for unsaved sections. Budget, taxes and cabinet stay in their consoles. |
 | `/mycountry/welcome`      | —          | own page         | The welcome page after founding (`MYCOUNTRY_WELCOME_PATH`): the nation's `EntityHeader`, "X is founded" and Open MyCountry. Players without a nation go to `/builder`.                                                                                                                                   |
 
-Premium/feature gating uses `useAbility().can("access", "MyCountryFeature", …)` wrapped in `PremiumPreviewFrame`. The sidebar lists Defense only for MyCountry Premium users and beta testers (`requires: "mycountry-premium"` in `src/lib/navigation/app-sections.ts`); Intelligence, Map editor and Editor are reached by URL or the header actions (Map editor for premium users only).
+Premium/feature gating uses `useAbility().can("access", "MyCountryFeature", …)` wrapped in `PremiumPreviewFrame`. The sidebar lists Defense only for MyCountry Premium users and beta testers (`requires: "mycountry-premium"` in `src/lib/navigation/app-sections.ts`); Intelligence, Map editor and Editor are reached by URL or the header actions. The map editor is free for every owner (its geo writes are owner-checked).
 
 ## Key Features
 

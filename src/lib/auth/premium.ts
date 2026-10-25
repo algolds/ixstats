@@ -3,12 +3,12 @@
  * ability (defineAbilityFor) and users.getMembershipStatus share. Beta testers get the same
  * tools (`isBetaTesterRole`), and so do staff, admin and owner roles, which that predicate
  * includes. Because the server gate fronts the whole premiumProcedure surface, that role set
- * can use all of it: PvP/PvNPC conflicts, operations, military asset CRUD,
- * resolveSecurityEvent, the Defense pages and the Map editor. Assigning the beta role is
- * therefore a grant of every one of those.
+ * can use all of it: initiating PvP/PvNPC conflicts, operations, military asset CRUD and the
+ * Defense pages. Assigning the beta role is therefore a grant of every one of those. The map
+ * editor is free for every owner.
  *
- * NEXT_PUBLIC_PREMIUM_FOR_ALL="true" grants premium features (Defense, Intelligence,
- * Map Editor, PvP/PvNPC operations) to every signed-in user — for test and staging builds.
+ * NEXT_PUBLIC_PREMIUM_FOR_ALL="true" grants premium features (Defense, PvP/PvNPC
+ * operations) to every signed-in user — for test and staging builds.
  * It is off unless set, and should stay off in production. It is a NEXT_PUBLIC_ variable
  * so the server gate and the client UI agree (Next.js inlines it into the client bundle at
  * build time, so a change needs a rebuild).

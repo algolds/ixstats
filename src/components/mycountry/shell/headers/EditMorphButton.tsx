@@ -12,18 +12,16 @@ import { editorHref, MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
 interface EditMorphButtonProps {
   /** Pill plate classes when the button sits over the flag. */
   plate?: string;
-  /** Premium: the pill opens into Country | Map. Otherwise it is a plain Edit link. */
-  withMapEditor: boolean;
 }
 
 const EDITOR_HREF = editorHref("identity");
 const MAP_EDITOR_HREF = MYCOUNTRY_MAP_EDITOR_PATH;
 
 /**
- * One Edit pill. For premium users it morphs into a Country | Map pair: on hover with a mouse, or
- * on click (touch and keyboard). It closes on mouse leave, Escape or a click outside.
+ * One Edit pill that morphs into a Country | Map pair: on hover with a mouse, or on click (touch
+ * and keyboard). The map editor is free for every owner. It closes on mouse leave, Escape or a click outside.
  */
-export function EditMorphButton({ plate, withMapEditor }: EditMorphButtonProps) {
+export function EditMorphButton({ plate }: EditMorphButtonProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const firstRef = useRef<HTMLAnchorElement>(null);
@@ -57,17 +55,6 @@ export function EditMorphButton({ plate, withMapEditor }: EditMorphButtonProps) 
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [open]);
-
-  if (!withMapEditor) {
-    return (
-      <Button asChild variant="ghost" className={cn("text-label-secondary", plate)}>
-        <Link href={EDITOR_HREF} aria-label="Edit country" title="Edit country">
-          <EditPencil aria-hidden="true" />
-          <span className="max-md:sr-only">Edit</span>
-        </Link>
-      </Button>
-    );
-  }
 
   const hover = (next: boolean) => (e: React.PointerEvent) => {
     if (e.pointerType === "mouse") setOpen(next);
