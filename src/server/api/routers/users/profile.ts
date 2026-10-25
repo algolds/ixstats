@@ -4,6 +4,7 @@ import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~
 import { UserManagementService } from "~/lib/auth";
 import { globalCache } from "~/lib/cache";
 import { pointActiveNation } from "~/server/modules/realms";
+import { LATEST_GROWTH_SELECT } from "~/lib/economy/effective-growth";
 
 function hydrateProfileDates(profile: any) {
   if (!profile) return profile;
@@ -32,6 +33,8 @@ const COUNTRY_ARGS = {
       where: { isActive: true },
       orderBy: { ixTimeTimestamp: "desc" },
     },
+    // The realised growth rate (`effectiveGrowthOf`) the Halo shows.
+    historicalData: LATEST_GROWTH_SELECT.historicalData,
   },
 } as const;
 
