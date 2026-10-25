@@ -47,16 +47,34 @@ Vault, exchange, cards, achievements, forum/ThinkPages, sports seasons and admin
 
 ## 4. Defense model
 
-- **Budget**: the Defense department's `allocatedAmount` in the budget in effect (decision above). Branch upkeep
-  (personnel × cost per head by branch type + asset maintenance) is the need; funding ratio = budget / need.
-- **Readiness** moves toward `clamp(fundingRatio × 100)` at a fixed rate per in-world month; deployments cost
-  readiness, recovery runs on the realm clock.
-- **Training** rises with time while funded, faster after training operations, decays when underfunded.
-- **Technology** follows the nation's GDP-per-capita tier and its assets' equipment eras.
-- **Morale** follows readiness, recent conflict outcomes and public approval.
-- Stored per branch with a `lastTickClockMs`; brought up to date lazily on read and write from the realm clock
-  (deterministic catch-up, no new cron); a paused realm doesn't move.
-- Branch forms keep structure only (name, type, personnel, assets); the four levels become read-only.
+Researched model: `plans/realm-time/defense-research.md` §7 (86 sources; values marked "designer" there are tunable
+defaults, not evidence) on the inventory in `plans/realm-time/defense-audit-codebase.md`. That §7 is the formula
+reference; this section fixes the owner's choices on top of it.
+
+### 4.1 Owner decisions (defense, 2026-10-25)
+
+| Topic | Decision |
+|---|---|
+| Fidelity | **Hybrid**: branches carry personnel, PIM capital stock and readiness from money and time; catalog assets add quality and specific capabilities. |
+| Branches | **Fixed domains, custom names**: each branch has a domain (land, sea, air, marines, space, strategic missile) that sets capital intensity α, depreciation δ, crew norms and role; the player names it. |
+| Outcomes | **Stochastic with shown odds**: logistic odds on the effective force ratio (k = 2.5, 5% catastrophe tails), outcome bands, HMAC seed bound to the committed orders, 1,000-run preview. |
+| Intel | **Estimates with error bands**: the enemy's power (and so the odds) is shown as a range whose width shrinks with intelligence investment, relations and recon. |
+| Levers | All four: **budget split** (personnel / O&M / procurement / R&D / infrastructure, with Professional / Territorial conscript / Rearm presets), **manpower model** (volunteer share, service months, reserves, mobilisation), **procurement** (catalog orders with lead times), **doctrine and posture** (defensive / balanced / expeditionary; alert levels Peacetime / Elevated / High / War). |
+| Procurement sources | **Domestic + catalog imports**: domestic within industrial capacity; imports from the catalog at +15% cost and longer lead times. No player arms trade yet. |
+| Theatre | **Map-derived with fallback**: terrain from the realm map's altitude/climate layers, front width from border length (force-to-space), reach and supply from distance; when map data is missing, the defender's declared terrain profile. |
+| Mobilisation funding | **Emergency supplement**: mobilising above the budget raises defense spending outside the annual budget; it lifts the burden, crowding-out and collapse risk. |
+| Economic feedback | **Realistic**: crowding-out above 2% of GDP (elasticity −0.15, ~3%/yr convergence), R&D spillover, mobilisation labour hit, burden collapse hazard above 50%, war damage toward −30% GDP on home soil over ~5 years (−10% neighbours), ~25% of casualties are deaths removed from population, civilian losses on war sites. All as level effects on the realm clock. |
+| NPCs | **Derived from their economy**: Defense share by government type/region, forces generated with the same formulas, damped Richardson budget response to threats. |
+| Existing forces | **Reset to a starter force** under the new model (typed readiness/technology/training/morale and free assets are discarded). |
+
+### 4.2 Shape
+- Per-country defense policy record (shares, manpower settings, doctrine, alert) and per-branch state (domain, N,
+  reserves, K, R&D/infrastructure stocks at country level, readiness sub-scores P/S/Rc/T, `lastTickClockMs`).
+- Monthly update on the nation's realm clock, brought up to date lazily on read and write (closed forms for long gaps
+  and date jumps); paused realms don't move.
+- Assets keep their catalog key; orders are rows with lead times and a payment schedule.
+- Budget input: the Defense department line with a fallback chain when a nation has no structure (builder Defense
+  line → government-form default share × spending → 2% of GDP), as the codebase audit recommends.
 
 ## 5. Phases
 
