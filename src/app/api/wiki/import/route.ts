@@ -8,9 +8,11 @@
  * anything else, or no `dryRun`, only reads and reports what would happen. Responds with the import
  * summary as JSON. A larger dump is imported with `scripts/wikios-import-xml.ts`.
  *
- * Each page is authorized on its own (`importVerdict`): a caller who may import but not edit a
- * page's namespace (Template:/Module:/MediaWiki: need `editprotected`, site and user scripts their
- * interface-admin right) gets it skipped and listed in `errors` as `permission: <reason>`.
+ * Only a dump of classic MediaWiki is imported (`checkDumpOrigin`, spec A8): any other is refused whole, as one
+ * `(dump)` error, with nothing written. Each page is authorized on its own (`importVerdict`): a caller who may import
+ * but not edit a page's namespace (Template:/Module: need `editprotected`, user scripts their interface-admin right,
+ * and MediaWiki: pages are refused to everyone, classic being their authority) gets it skipped and listed in `errors`
+ * as `permission: <reason>`.
  *
  * GET answers whether the caller may import at all (and the size limit), for the import page.
  *

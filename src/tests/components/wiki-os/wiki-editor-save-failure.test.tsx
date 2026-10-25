@@ -69,6 +69,14 @@ describe("useWikiEditorState.executeSave refusals", () => {
     );
   });
 
+  it("shows the classic reason when a MediaWiki: page is refused", async () => {
+    const reason =
+      "MediaWiki: pages are edited on classic ixwiki.com, and WikiOS takes them from there.";
+    await saveRejectedWith(refused("FORBIDDEN", `namespaceprotected: ${reason}`));
+
+    expect(mockNotifyError).toHaveBeenCalledWith("Save Failed", reason);
+  });
+
   it("keeps the generic sentence for anything else", async () => {
     await saveRejectedWith(refused("INTERNAL_SERVER_ERROR", "connect ECONNREFUSED db:5432"));
 

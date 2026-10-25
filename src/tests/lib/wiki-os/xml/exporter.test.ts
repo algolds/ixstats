@@ -1,7 +1,8 @@
 /** @jest-environment node */
 /**
  * Plan 408: exporting WikiOS pages as XML, and the whole loop: XML dump -> WikiOS tables -> XML dump -> WikiOS tables
- * (an export is a dump WikiOS itself can import without loss). Published pages only, never a parked or deleted
+ * (an export loses nothing on the way back in; the importer only takes classic MediaWiki's dumps (A8), so the loop
+ * reads the export under MediaWiki's generator name). Published pages only, never a parked or deleted
  * revision as the head, deleted text written as deleted; and the writer's escaping and streaming.
  */
 jest.mock("~/server/db", () => jest.requireActual("./fake-wiki-db").createFakeDbModule());
@@ -28,6 +29,12 @@ const FIXTURE = readFileSync(
 async function* chunks(text: string): AsyncGenerator<string> {
   yield text;
 }
+
+/** The fixture's classic origin, given explicitly so the loop does not lean on the configured host. */
+const FIXTURE_ORIGIN = { classicOrigin: "https://ixwiki.com" };
+/** WikiOS's export as the importer reads a classic dump: MediaWiki's generator name, the configured host's base. */
+const asClassicDump = (xml: string) =>
+  xml.replace("<generator>WikiOS 1</generator>", "<generator>MediaWiki 1.45.1</generator>");
 
 async function collect(source: AsyncIterable<ImportEvent>): Promise<ImportPage[]> {
   const pages: ImportPage[] = [];
@@ -320,14 +327,14 @@ describe("writeExport", () => {
 
 describe("the loop: import, export, import again", () => {
   it("an export of imported history re-imports to exactly the same pages and revisions", async () => {
-    await importExport(readExport(chunks(FIXTURE)));
+    await importExport(readExport(chunks(FIXTURE)), FIXTURE_ORIGIN);
     const first = tables();
     expect(first.articles).toHaveLength(5);
     expect(first.revisions).toHaveLength(7);
     const xml = await exportXml({ source: "ixwiki", history: true });
 
     resetStore();
-    const summary = await importExport(readExport(chunks(xml)));
+    const summary = await importExport(readExport(chunks(asClassicDump(xml))));
 
     expect(summary.errors).toEqual([]);
     expect(summary).toMatchObject({ pages: 5, pagesCreated: 5, revisionsImported: 7 });
@@ -353,7 +360,7 @@ describe("the loop: import, export, import again", () => {
     const xml = await exportXml({ source: "ixwiki", history: true });
 
     resetStore();
-    const summary = await importExport(readExport(chunks(xml)));
+    const summary = await importExport(readExport(chunks(asClassicDump(xml))));
 
     expect(summary).toMatchObject({ revisionsImported: 4, errors: [] });
     const rows = tables().revisions;

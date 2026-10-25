@@ -33,6 +33,7 @@ import { wikiosPageAdminRouter } from "~/server/api/routers/wikios/page-admin";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import type { createFakeWikiDb } from "~/tests/helpers/fake-wiki-db";
 import { seedWikiosMode } from "~/tests/helpers/wikios-modes";
+import { MEDIAWIKI_NAMESPACE_REASON } from "~/lib/wiki-os/namespace-policy";
 
 const { fake: fakeWikiDb } = jest.requireMock("~/server/db") as {
   fake: ReturnType<typeof createFakeWikiDb>;
@@ -371,7 +372,7 @@ describe("deletePage / undeletePage", () => {
     });
   });
 
-  it("keeps site script pages for interface-admins", async () => {
+  it("refuses to delete a MediaWiki: page, even for the owner: classic is its authority (A8)", async () => {
     tables.wikiArticle.seed({
       source: "ixwiki",
       title: "MediaWiki:Common.js",
@@ -379,12 +380,15 @@ describe("deletePage / undeletePage", () => {
       namespace: 8,
       wikitext: "x",
     });
-    await expect(as(sysopCtx()).deletePage({ title: "MediaWiki:Common.js" })).rejects.toMatchObject(
-      {
-        message: expect.stringMatching(/^namespaceprotected: /),
-      }
-    );
-    await as(ownerCtx()).deletePage({ title: "MediaWiki:Common.js" });
+    for (const ctx of [sysopCtx(), ownerCtx()]) {
+      await expect(as(ctx).deletePage({ title: "MediaWiki:Common.js" })).rejects.toMatchObject({
+        code: "FORBIDDEN",
+        message: `namespaceprotected: ${MEDIAWIKI_NAMESPACE_REASON}`,
+      });
+    }
+    expect(
+      tables.wikiArticle.rows.find((row) => row.title === "MediaWiki:Common.js")?.status
+    ).not.toBe("ARCHIVED");
   });
 });
 

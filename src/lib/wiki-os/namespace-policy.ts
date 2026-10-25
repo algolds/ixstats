@@ -12,9 +12,9 @@
 //     Category talk (odd ids 1-15) and Campaign talk (461); plain discussion text, never executed
 //   - their OWN User: page and its subpages (their passport handle or an approved claimed name),
 //     except script/style/data subpages (.js, .css, .json, .less), which are interface pages
-// Interface pages need the matching interface-admin right: MediaWiki:*.css/.js/.json need
-// editsitecss/editsitejs/editsitejson, User:*/*.css/.js/.json need editusercss/edituserjs/edituserjson,
-// and the other MediaWiki: pages need editinterface.
+// User script, style and data pages (User:*/*.css/.js/.json) need editusercss/edituserjs/edituserjson.
+// MediaWiki: pages are refused to everyone: classic ixwiki.com is their authority, and the inbound sync
+// brings them over (spec A8).
 // Everything else needs `editprotected` (the sysop group): Project/IxWiki:, File:, Template:, Help:,
 // Category:, Module:, Campaign:, Gadget*, Widget*, MediaWiki/Module/Gadget talk, other users' pages.
 // Special: and Media: are never editable, by anyone.
@@ -66,17 +66,25 @@ const USER_EDITABLE_TALK_IDS: ReadonlySet<number> = new Set([1, 3, 5, 7, 11, 13,
 /** Subpage suffixes that MediaWiki treats as script/style/data (interface) content. */
 const INTERFACE_SUFFIX = /\.(js|css|json|less)$/i;
 
-/** The right that edits a script (.js), style (.css, .less) or data (.json) page, site-wide or in user space. */
-const INTERFACE_RIGHTS: Readonly<Record<"site" | "user", Readonly<Record<string, Right>>>> = {
-  site: { js: "editsitejs", css: "editsitecss", less: "editsitecss", json: "editsitejson" },
-  user: { js: "edituserjs", css: "editusercss", less: "editusercss", json: "edituserjson" },
+/** The right that edits a user script (.js), style (.css, .less) or data (.json) page. */
+const USER_INTERFACE_RIGHTS: Readonly<Record<string, Right>> = {
+  js: "edituserjs",
+  css: "editusercss",
+  less: "editusercss",
+  json: "edituserjson",
 };
 
-/** The right a script/style/data page under `base` needs, or null when `base` is ordinary text. */
-function interfaceRight(base: string, area: "site" | "user"): Right | null {
+/** The right a user script/style/data page under `base` needs, or null when `base` is ordinary text. */
+function interfaceRight(base: string): Right | null {
   const suffix = INTERFACE_SUFFIX.exec(base)?.[1]?.toLowerCase();
-  return (suffix && INTERFACE_RIGHTS[area][suffix]) || null;
+  return (suffix && USER_INTERFACE_RIGHTS[suffix]) || null;
 }
+
+/**
+ * Why no one saves, moves, deletes, protects or imports a `MediaWiki:` page through WikiOS: classic MediaWiki is the
+ * authority for its interface messages, and the inbound sync brings them over (spec A8).
+ */
+export const MEDIAWIKI_NAMESPACE_REASON = `MediaWiki: pages are edited on classic ${wikiosConfig.publicHost}, and WikiOS takes them from there.`;
 
 /** Unicode spaces MediaWiki folds into a plain space when normalising titles. */
 const TITLE_SPACES = /[\u00A0\u1680\u180E\u2000-\u200A\u2028\u2029\u202F\u205F\u3000_]+/g;
@@ -163,7 +171,7 @@ const deny = (reason: string): EditPolicyResult => ({ allowed: false, reason });
 
 /** A user-space page: the owner's own text, an interface page (its right), or an admin's. */
 function checkUserPage(base: string, identity: EditPolicyIdentity): EditPolicyResult {
-  const scriptRight = interfaceRight(base, "user");
+  const scriptRight = interfaceRight(base);
   if (scriptRight) {
     return identity.rights.has(scriptRight)
       ? ALLOWED
@@ -190,12 +198,7 @@ export function checkEditPolicy(rawTitle: string, identity: EditPolicyIdentity):
   if (namespaceId === 0 || USER_EDITABLE_TALK_IDS.has(namespaceId)) return ALLOWED;
   if (namespaceId === 2) return checkUserPage(base, identity);
 
-  if (namespaceId === 8) {
-    const right = interfaceRight(base, "site") ?? "editinterface";
-    return identity.rights.has(right)
-      ? ALLOWED
-      : deny(`Editing this MediaWiki page needs the ${right} right.`);
-  }
+  if (namespaceId === 8) return deny(MEDIAWIKI_NAMESPACE_REASON);
 
   return isAdmin ? ALLOWED : deny("Only wiki administrators can edit pages in this namespace.");
 }

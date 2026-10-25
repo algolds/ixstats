@@ -3,10 +3,12 @@
  * Scenario: a wiki administrator moves pages between wikis with Special:Import and Special:Export. The page picks
  * `ixwiki.xml.gz` and sends it to POST /api/wiki/import with the type the import helper chooses; a dry run reports and
  * writes nothing; the sysop's real run imports a module, a template, a talk page, a section redirect and an article
- * with history, and skips the site script and user style pages as permission errors, which an interface administrator
- * then imports. Uploading the same dump again changes nothing. Special:Export builds its query for those titles, GET
- * /api/wiki/export streams the dump with every revision, and importing that export into the same database changes
- * nothing; every page goes out in its title's content model, and the redirect keeps its section.
+ * with history, and skips the user script and style pages as permission errors, which an interface administrator
+ * then imports. MediaWiki: pages are refused to everyone with the classic reason (A8: classic is their authority);
+ * the operator's command-line import, which asks no permission, brings them over. Uploading the same dump again
+ * changes nothing. Special:Export builds its query for those titles, GET /api/wiki/export streams the dump with every
+ * revision, every page in its title's content model and the redirect with its section; that export is WikiOS's, not
+ * classic MediaWiki's, so importing it back is refused whole and changes nothing.
  *
  * Real routes, import-request and export-request helpers, reader, importer, ArticleRepository's import, exporter and
  * writer, over the importer's in-memory tables (xml/fake-wiki-db.ts). The render the import queues is a spy.
@@ -32,7 +34,7 @@ import { gzipSync } from "node:zlib";
 import { NextRequest } from "next/server";
 import { resetStore, snapshotStore, store } from "~/tests/lib/wiki-os/xml/fake-wiki-db";
 import { db } from "~/server/db";
-import { applyWikiosMode } from "~/tests/helpers/wikios-modes";
+import { applyWikiosMode, describeEachWikiosMode } from "~/tests/helpers/wikios-modes";
 
 jest.mock("@clerk/nextjs/server", () => ({ auth: jest.fn() }));
 jest.mock("~/lib/wiki-os/rights", () => ({ getWikiPermissionsForAuthId: jest.fn() }));
@@ -64,6 +66,10 @@ import {
   parseTitleList,
 } from "~/lib/wiki-os/xml/export-request";
 import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
+import { wikiosConfig } from "~/lib/wiki-os/config";
+import { MEDIAWIKI_NAMESPACE_REASON } from "~/lib/wiki-os/namespace-policy";
+import { readExport } from "~/lib/wiki-os/xml/import-reader";
+import { importExport } from "~/lib/wiki-os/xml/importer";
 
 const SYSOP = ["read", "edit", "createpage", "createtalk", "import", "editprotected", "editinterface"];
 const INTERFACE = ["editsitecss", "editsitejs", "editsitejson", "editusercss", "edituserjs", "edituserjson"];
@@ -94,8 +100,11 @@ interface DumpPage {
 
 const escape = (text: string) => text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 
-/** A MediaWiki export-0.11 document of `pages`, as Special:Export writes one. */
-function dump(pages: DumpPage[]): string {
+/** Classic's `<base>`: its host is the configured one, the host the importer takes classic dumps from. */
+const CLASSIC_BASE = `${wikiosConfig.publicBaseUrl}/wiki/Main_Page`;
+
+/** A MediaWiki export-0.11 document of `pages`, as classic's Special:Export writes one. */
+function dump(pages: DumpPage[], base = CLASSIC_BASE): string {
   const page = ({ title, ns, id, model = ["wikitext", "text/x-wiki"], redirect, revisions }: DumpPage) =>
     `<page><title>${escape(title)}</title><ns>${ns}</ns><id>${id}</id>${redirect ? `<redirect title="${escape(redirect)}" />` : ""}${revisions
       .map(
@@ -103,7 +112,7 @@ function dump(pages: DumpPage[]): string {
           `<revision><id>${r.id}</id><timestamp>${r.at}</timestamp><contributor><username>${r.user}</username><id>1</id></contributor>${r.minor ? "<minor />" : ""}<comment>${escape(r.comment)}</comment><model>${model[0]}</model><format>${model[1]}</format><text bytes="${Buffer.byteLength(r.text)}" xml:space="preserve">${escape(r.text)}</text><sha1>${mwSha1Base36(r.text)}</sha1></revision>`
       )
       .join("")}</page>`;
-  return `<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" version="0.11" xml:lang="en"><siteinfo><sitename>IxWiki</sitename><dbname>ixwiki</dbname><base>https://ixwiki.com/wiki/Main_Page</base><generator>MediaWiki 1.45.1</generator><case>first-letter</case><namespaces><namespace key="0" case="first-letter" /></namespaces></siteinfo>${pages.map(page).join("")}</mediawiki>`;
+  return `<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" version="0.11" xml:lang="en"><siteinfo><sitename>IxWiki</sitename><dbname>ixwiki</dbname><base>${escape(base)}</base><generator>MediaWiki 1.45.1</generator><case>first-letter</case><namespaces><namespace key="0" case="first-letter" /></namespaces></siteinfo>${pages.map(page).join("")}</mediawiki>`;
 }
 
 const one = (id: number, text: string, user = "Jane"): DumpRevision[] => [
@@ -149,7 +158,12 @@ const PAGES: DumpPage[] = [
   { title: "User:Jane/vector.js", ns: 2, id: 17, model: JS, revisions: one(118, "1;") },
   { title: "User:Jane/data.json", ns: 2, id: 18, model: JSON_MODEL, revisions: one(119, "[]") },
 ];
-const INTERFACE_PAGES = PAGES.slice(11).map((page) => page.title);
+const MEDIAWIKI_PAGES = PAGES.filter((page) => page.ns === 8).map((page) => page.title);
+const INTERFACE_PAGES = PAGES.slice(11)
+  .map((page) => page.title)
+  .filter((title) => !MEDIAWIKI_PAGES.includes(title));
+const REFUSED_PAGES = [...INTERFACE_PAGES, ...MEDIAWIKI_PAGES];
+const CLASSIC_REFUSAL = `permission: ${MEDIAWIKI_NAMESPACE_REASON}`;
 
 /** The file the admin picked, as the import page sends it: the helper's type, the bytes as the body. */
 function pick(name: string, browserType: string, bytes: Uint8Array<ArrayBuffer>, query = "") {
@@ -208,13 +222,13 @@ describe("Special:Import, then Special:Export, then importing the export again",
 
     // a dry run reports what would happen and writes nothing
     const dry = await (await pick("ixwiki.xml.gz", "application/x-gzip", archive)).json();
-    expect(dry).toMatchObject({ dryRun: true, pages: PAGES.length, pagesCreated: PAGES.length - INTERFACE_PAGES.length });
+    expect(dry).toMatchObject({ dryRun: true, pages: PAGES.length, pagesCreated: PAGES.length - REFUSED_PAGES.length });
     expect(store.articles).toEqual([]);
 
-    // the sysop's import: the site script and user style pages are permission errors, the rest is written
+    // the sysop's import: the user script and style pages and the MediaWiki: pages are permission errors, the rest is written
     const real = await (await pick("ixwiki.xml.gz", "application/x-gzip", archive, "?dryRun=false")).json();
-    expect(real).toMatchObject({ dryRun: false, pagesCreated: PAGES.length - INTERFACE_PAGES.length, revisionsImported: 12 });
-    expect(real.errors.map((error: { title: string; message: string }) => error.title).sort()).toEqual([...INTERFACE_PAGES].sort());
+    expect(real).toMatchObject({ dryRun: false, pagesCreated: PAGES.length - REFUSED_PAGES.length, revisionsImported: 12 });
+    expect(real.errors.map((error: { title: string; message: string }) => error.title).sort()).toEqual([...REFUSED_PAGES].sort());
     expect(real.errors.every((error: { message: string }) => error.message.startsWith("permission:"))).toBe(true);
     expect(real.warnings).toEqual([]);
 
@@ -235,15 +249,21 @@ describe("Special:Import, then Special:Export, then importing the export again",
       redirectTargetFragment: "History",
     });
 
-    // the interface administrator takes the pages the sysop could not
+    // the interface administrator takes the user pages the sysop could not; MediaWiki: pages are classic's, for everyone
     holding(...SYSOP, ...INTERFACE);
     const rest = await (await pick("ixwiki.xml.gz", "application/gzip", archive, "?dryRun=false")).json();
-    expect(rest).toMatchObject({ pagesCreated: INTERFACE_PAGES.length, errors: [] });
+    expect(rest).toMatchObject({ pagesCreated: INTERFACE_PAGES.length });
+    expect(rest.errors).toEqual(MEDIAWIKI_PAGES.map((title) => ({ title, message: CLASSIC_REFUSAL })));
+
+    // the operator's command-line import (scripts/wikios-import-xml.ts asks no permission) brings classic's MediaWiki: pages
+    const operator = await importExport(readExport((async function* () { yield dump(PAGES); })()));
+    expect(operator).toMatchObject({ pagesCreated: MEDIAWIKI_PAGES.length, errors: [] });
 
     // the same dump again: everything skipped
     const before = snapshotStore();
     const again = await (await pick("ixwiki.xml.gz", "application/gzip", archive, "?dryRun=false")).json();
-    expect(again).toMatchObject({ pagesCreated: 0, revisionsImported: 0, revisionsSkipped: PAGES.flatMap((page) => page.revisions).length });
+    const notRefused = PAGES.filter((page) => !MEDIAWIKI_PAGES.includes(page.title));
+    expect(again).toMatchObject({ pagesCreated: 0, revisionsImported: 0, revisionsSkipped: notRefused.flatMap((page) => page.revisions).length });
     expect(snapshotStore()).toEqual(before);
 
     // Special:Export: the form's titles become the query, and the route streams every revision
@@ -274,10 +294,11 @@ describe("Special:Import, then Special:Export, then importing the export again",
     expect(xml).toContain("#REDIRECT [[Caphiria#History]]");
     expect(xml).toContain("<title>Talk:Baz &amp; co</title>");
 
-    // the export imported into the database it came from changes nothing
+    // the export is WikiOS's, not classic MediaWiki's: importing it back is refused whole, and changes nothing
     const unchanged = snapshotStore();
     const roundTrip = await (await pick("export.xml", "text/xml", new TextEncoder().encode(xml), "?dryRun=false")).json();
-    expect(roundTrip).toMatchObject({ pagesCreated: 0, revisionsImported: 0, errors: [] });
+    expect(roundTrip).toMatchObject({ pages: 0, pagesCreated: 0, errorCount: 1 });
+    expect(roundTrip.errors).toEqual([{ title: "(dump)", message: expect.stringMatching(/made by "WikiOS 1", not MediaWiki/) }]);
     expect(snapshotStore()).toEqual(unchanged);
   });
 });
@@ -344,6 +365,22 @@ describe("the import route refuses before it writes", () => {
     }
   );
 
+  it("accepts dryRun=false in any letter case", async () => {
+    const res = await post(DUMP, { query: "?dryRun=FALSE" });
+
+    expect((await res.json()).dryRun).toBe(false);
+    expect(store.articles).toHaveLength(3);
+  });
+
+  it("surfaces import warnings", async () => {
+    const xml = dump([{ title: "Foo", ns: 0, id: 1, model: CSS, revisions: one(1, "x") }]);
+
+    const body = await (await post(xml)).json();
+
+    expect(body.warningCount).toBe(1);
+    expect(body.warnings[0]).toMatchObject({ title: "Foo" });
+  });
+
   it.each([["multipart/form-data; boundary=x"], ["application/json"], ["application/octet-stream"], [null]])(
     "answers 415 to Content-Type %j",
     async (type) => {
@@ -399,6 +436,36 @@ describe("the import route refuses before it writes", () => {
     ]);
     holding(...SYSOP);
     expect(await (await post(portal, { query: "?dryRun=false" })).json()).toMatchObject({ pagesCreated: 1, errorCount: 0 });
+  });
+});
+
+describeEachWikiosMode("the import route takes classic MediaWiki dumps only (A8)", () => {
+  const send = (xml: string) =>
+    importRoute(
+      new NextRequest("http://localhost:3000/api/wiki/import?dryRun=false", {
+        method: "POST",
+        body: xml,
+        headers: { "content-type": "application/xml" },
+      })
+    );
+
+  it("refuses another wiki's dump whole, writing nothing", async () => {
+    const res = await send(dump(PAGES.slice(0, 3), "https://iiwiki.com/wiki/Main_Page"));
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toMatchObject({ pages: 0, errorCount: 1 });
+    expect(body.errors[0]).toMatchObject({ title: "(dump)", message: expect.stringMatching(/comes from iiwiki\.com/) });
+    expect(store.writes).toBe(0);
+  });
+
+  it("refuses a MediaWiki: page to an interface administrator with the classic reason, and writes the rest", async () => {
+    holding(...SYSOP, ...INTERFACE);
+    const body = await (await send(dump([PAGES[0]!, ...PAGES.filter((page) => page.ns === 8)]))).json();
+
+    expect(body).toMatchObject({ pagesCreated: 1 });
+    expect(body.errors).toEqual(MEDIAWIKI_PAGES.map((title) => ({ title, message: CLASSIC_REFUSAL })));
+    expect(store.articles.map((article) => article.title)).toEqual(["Caphiria"]);
   });
 });
 

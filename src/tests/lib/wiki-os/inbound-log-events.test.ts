@@ -1287,3 +1287,84 @@ describeEachWikiosMode("classic deletes, moves and restores through the conflict
     expect(tables.wikiLog.rows).toEqual([]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// A8: classic is the authority for blocks and groups. Its events apply in either mode, on top of WikiOS's own.
+// ---------------------------------------------------------------------------
+
+describeEachWikiosMode("classic blocks and groups (A8)", () => {
+  beforeEach(() => {
+    mockFakeTables.on = true;
+  });
+  afterEach(() => {
+    mockFakeTables.on = false;
+  });
+
+  const blockOf = (source: string) =>
+    tables.wikiBlock.rows.find((row) => row.wikiUsername === "Troll" && row.source === source);
+  const groupsOf = (name: string) =>
+    tables.wikiUserGroup.rows
+      .filter((row) => row.wikiUsername === name)
+      .map((row) => [row.group, row.source])
+      .sort();
+
+  it("a classic block and a rights change apply in both modes", async () => {
+    await expect(
+      applyLogEvent(
+        event({
+          type: "block",
+          action: "block",
+          title: "User:Troll",
+          logid: 701,
+          params: { sitewide: true, expiry: "2026-12-01T00:00:00Z", flags: ["nousertalk"] },
+        })
+      )
+    ).resolves.toBe("applied");
+    await expect(
+      applyLogEvent(
+        event({
+          type: "rights",
+          action: "rights",
+          title: "User:Jane",
+          logid: 702,
+          params: { oldgroups: [], newgroups: ["sysop", "autopatrolled"] },
+        })
+      )
+    ).resolves.toBe("applied");
+
+    expect(blockOf("mw-import")).toMatchObject({
+      reason: "because",
+      expiresAt: new Date("2026-12-01T00:00:00Z"),
+      allowUserTalk: false,
+    });
+    expect(groupsOf("Jane")).toEqual([["sysop", "mw-import"]]);
+    expect(tables.wikiLog.rows.map((row) => [row.logType, row.mwLogId])).toEqual([
+      ["block", 701],
+      ["rights", 702],
+    ]);
+  });
+
+  it("a classic unblock and a group removal take back only what classic gave; WikiOS's own block and group stay", async () => {
+    tables.wikiBlock.insert({ wikiUsername: "Troll", source: "wikios", reason: "local" });
+    tables.wikiBlock.insert({ wikiUsername: "Troll", source: "mw-import", reason: "classic" });
+    tables.wikiUserGroup.insert({ wikiUsername: "Jane", group: "sysop", source: "mw-import" });
+    tables.wikiUserGroup.insert({ wikiUsername: "Jane", group: "bot", source: "wikios" });
+
+    await applyLogEvent(
+      event({ type: "block", action: "unblock", title: "User:Troll", logid: 703, params: {} })
+    );
+    await applyLogEvent(
+      event({
+        type: "rights",
+        action: "rights",
+        title: "User:Jane",
+        logid: 704,
+        params: { oldgroups: ["sysop", "bot"], newgroups: [] },
+      })
+    );
+
+    expect(blockOf("mw-import")).toBeUndefined();
+    expect(blockOf("wikios")).toMatchObject({ reason: "local" });
+    expect(groupsOf("Jane")).toEqual([["bot", "wikios"]]);
+  });
+});

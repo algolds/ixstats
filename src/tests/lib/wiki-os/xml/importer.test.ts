@@ -25,11 +25,13 @@ import { tagRevisionsOfName } from "~/lib/identity/claim-tags";
 import { join } from "node:path";
 import { enqueueRender } from "~/lib/wiki-os/services/render-service";
 import { notifyWatchers } from "~/lib/wiki-os/services/watchlist-notify";
-import { createExportWriter } from "~/lib/wiki-os/xml/export-writer";
+import { wikiosConfig } from "~/lib/wiki-os/config";
+import { createExportWriter, DEFAULT_SITEINFO } from "~/lib/wiki-os/xml/export-writer";
 import { readExport } from "~/lib/wiki-os/xml/import-reader";
 import { importExport, MAX_CONSECUTIVE_WRITE_FAILURES } from "~/lib/wiki-os/xml/importer";
 import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
-import type { XmlRevision } from "~/lib/wiki-os/xml/types";
+import type { SiteInfo, XmlRevision } from "~/lib/wiki-os/xml/types";
+import { describeEachWikiosMode } from "~/tests/helpers/wikios-modes";
 import {
   type ArticleRow,
   rawStatements,
@@ -54,8 +56,28 @@ async function* chunks(text: string): AsyncGenerator<string> {
   yield text;
 }
 
+/** Classic MediaWiki, as these tests have it: the dumps below come from it (an explicit origin, not the configured host). */
+const CLASSIC_ORIGIN = "https://ixwiki.com";
+const CLASSIC_SITEINFO: SiteInfo = {
+  ...DEFAULT_SITEINFO,
+  base: `${CLASSIC_ORIGIN}/wiki/Main_Page`,
+  generator: "MediaWiki 1.45.1",
+};
+const siteinfoXml = ({
+  base = CLASSIC_SITEINFO.base,
+  generator = CLASSIC_SITEINFO.generator,
+} = {}) =>
+  `<siteinfo><sitename>IxWiki</sitename><dbname>ixwiki</dbname><base>${base}</base>` +
+  `<generator>${generator}</generator><case>first-letter</case></siteinfo>`;
+/** A hand-written dump with no `<siteinfo>` gets classic's, as Special:Export writes it. */
+const withSiteinfo = (xml: string) =>
+  xml.includes("<siteinfo") ? xml : xml.replace(/^(<mediawiki[^>]*>)/, `$1${siteinfoXml()}`);
+
 const importXml = (xml: string, options: Parameters<typeof importExport>[1] = {}) =>
-  importExport(readExport(chunks(xml)), options);
+  importExport(readExport(chunks(withSiteinfo(xml))), {
+    classicOrigin: CLASSIC_ORIGIN,
+    ...options,
+  });
 const importFixture = (options: Parameters<typeof importExport>[1] = {}) =>
   importXml(FIXTURE, options);
 
@@ -244,7 +266,7 @@ describe("a dump whose newest revision blanks the page (the inbound sync's write
     seedRevision(seeded.id, { wikitext: "Old text.", createdAt: new Date("2025-12-01T00:00:00Z") });
     const xml = (() => {
       const chunks: string[] = [];
-      const writer = createExportWriter((chunk) => void chunks.push(chunk));
+      const writer = createExportWriter((chunk) => void chunks.push(chunk), CLASSIC_SITEINFO);
       const blank: XmlRevision = {
         id: 7001,
         parentId: null,
@@ -626,7 +648,7 @@ describe("redirects", () => {
     let xml = "";
     const writer = createExportWriter((chunk) => {
       xml += chunk;
-    });
+    }, CLASSIC_SITEINFO);
     await writer.start();
     await writer.page({ title, ns: 0, pageId: 9, redirectTitle, revisions });
     await writer.end();
@@ -888,6 +910,181 @@ describe("per-page authorization (plan 409: canWritePage)", () => {
     expect(summary.errors.every((e) => e.message === "permission: no")).toBe(true);
     // a refusal is a rejection, not a database failure: the import never gives up early
     expect(summary.errors.some((e) => e.title === "(dump)")).toBe(false);
+  });
+});
+
+describeEachWikiosMode("only classic MediaWiki dumps are imported (A8)", () => {
+  const PAGE =
+    "<page><title>Caphiria</title><ns>0</ns><id>1</id><revision><id>1</id><timestamp>2026-01-01T00:00:00Z</timestamp>" +
+    "<text>x</text></revision></page>";
+  const SECOND = PAGE.replaceAll("<id>1</id>", "<id>2</id>").replace("Caphiria", "Urcea");
+  const raw = (head: string, ...pages: string[]) =>
+    `<mediawiki version="0.11">${head}${pages.join("")}</mediawiki>`;
+  const importRaw = (xml: string, options: Parameters<typeof importExport>[1] = {}) =>
+    importExport(readExport(chunks(xml)), options);
+
+  it.each([
+    ["no siteinfo", "", /has no <siteinfo>/],
+    [
+      "another generator",
+      siteinfoXml({ generator: "WikiOS 1" }),
+      /made by "WikiOS 1", not MediaWiki/,
+    ],
+    [
+      "a generator that only looks like MediaWiki",
+      siteinfoXml({ generator: "MediaWikiPlus 2" }),
+      /not MediaWiki/,
+    ],
+    [
+      "a generator that names MediaWiki later",
+      siteinfoXml({ generator: "WikiOS over MediaWiki 1.45" }),
+      /not MediaWiki/,
+    ],
+    [
+      "another wiki's base",
+      siteinfoXml({ base: "https://iiwiki.com/wiki/Main_Page" }),
+      /comes from iiwiki\.com, not ixwiki\.com/,
+    ],
+    [
+      "a look-alike host",
+      siteinfoXml({ base: "https://ixwiki.com.evil.example/wiki/X" }),
+      /comes from ixwiki\.com\.evil\.example/,
+    ],
+    ["a base that is no URL", siteinfoXml({ base: "Main Page" }), /comes from an unknown wiki/],
+  ])("refuses a dump with %s, writing nothing", async (_, head, reason) => {
+    const summary = await importRaw(raw(head, PAGE, SECOND), { classicOrigin: CLASSIC_ORIGIN });
+
+    expect(summary.errors).toEqual([{ title: "(dump)", message: expect.stringMatching(reason) }]);
+    expect(summary.pages).toBe(0);
+    expect(store.writes).toBe(0);
+    expect(store.articles).toEqual([]);
+  });
+
+  it("refuses the same dump in a dry run, at its first page", async () => {
+    const onProgress = jest.fn();
+    const summary = await importRaw(raw("", PAGE), {
+      dryRun: true,
+      onProgress,
+      classicOrigin: CLASSIC_ORIGIN,
+    });
+
+    expect(summary.errors).toHaveLength(1);
+    expect(onProgress).not.toHaveBeenCalled();
+  });
+
+  it("accepts an ixwiki.com MediaWiki dump", async () => {
+    for (const origin of [CLASSIC_ORIGIN, `${CLASSIC_ORIGIN}/`, "http://ixwiki.com"]) {
+      resetStore();
+      const summary = await importFixture({ classicOrigin: origin });
+      expect(summary).toMatchObject({ errors: [], pagesCreated: 5 });
+    }
+  });
+
+  it("takes classic's origin from the WikiOS configuration when none is given", async () => {
+    const configured = siteinfoXml({ base: `${wikiosConfig.publicBaseUrl}/wiki/Main_Page` });
+    expect((await importRaw(raw(configured, PAGE))).errors).toEqual([]);
+    const elsewhere = siteinfoXml({ base: "https://elsewhere.example/wiki/Main_Page" });
+    expect((await importRaw(raw(elsewhere, SECOND))).errors).toMatchObject([{ title: "(dump)" }]);
+  });
+
+  it("refuses every IxWiki dump when classic's origin is not a URL", async () => {
+    const summary = await importRaw(raw(siteinfoXml(), PAGE), { classicOrigin: "ixwiki" });
+    expect(summary.errors).toEqual([
+      { title: "(dump)", message: expect.stringMatching(/comes from ixwiki\.com, not classic/) },
+    ]);
+    const neither = await importRaw(raw(siteinfoXml({ base: "Main Page" }), PAGE), {
+      classicOrigin: "ixwiki",
+    });
+    expect(neither.errors).toEqual([
+      {
+        title: "(dump)",
+        message: expect.stringMatching(/comes from an unknown wiki, not classic/),
+      },
+    ]);
+    expect(store.writes).toBe(0);
+  });
+
+  it("judges the dump once, by the siteinfo read before its first page", async () => {
+    const later = siteinfoXml({ generator: "WikiOS 1" });
+    const summary = await importRaw(raw(siteinfoXml(), PAGE, later, SECOND), {
+      classicOrigin: CLASSIC_ORIGIN,
+    });
+    expect(summary).toMatchObject({ errors: [], pagesCreated: 2 });
+
+    resetStore();
+    const refused = await importRaw(raw(later, PAGE, siteinfoXml(), SECOND), {
+      classicOrigin: CLASSIC_ORIGIN,
+    });
+    expect(refused).toMatchObject({ pages: 0, errors: [{ title: "(dump)" }] });
+    expect(store.articles).toEqual([]);
+  });
+
+  it("reads the configured origin, whatever host it names", () => {
+    const saved = process.env.NEXT_PUBLIC_MEDIAWIKI_URL;
+    process.env.NEXT_PUBLIC_MEDIAWIKI_URL = "https://classic.example";
+    let run: typeof importExport = importExport;
+    let read: typeof readExport = readExport;
+    jest.isolateModules(() => {
+      ({ importExport: run } = jest.requireActual<typeof import("~/lib/wiki-os/xml/importer")>(
+        "~/lib/wiki-os/xml/importer"
+      ));
+      ({ readExport: read } = jest.requireActual<typeof import("~/lib/wiki-os/xml/import-reader")>(
+        "~/lib/wiki-os/xml/import-reader"
+      ));
+    });
+    if (saved === undefined) delete process.env.NEXT_PUBLIC_MEDIAWIKI_URL;
+    else process.env.NEXT_PUBLIC_MEDIAWIKI_URL = saved;
+    const judge = async (base: string) =>
+      (await run(read(chunks(raw(siteinfoXml({ base }), PAGE))), { dryRun: true })).errors;
+
+    return Promise.all([
+      expect(judge("https://classic.example/wiki/Main_Page")).resolves.toEqual([]),
+      expect(judge(`${CLASSIC_ORIGIN}/wiki/Main_Page`)).resolves.toMatchObject([
+        { title: "(dump)" },
+      ]),
+    ]);
+  });
+
+  it("asks a sister wiki's dump only to be MediaWiki's, whatever its base", async () => {
+    const sister = siteinfoXml({ base: "https://iiwiki.com/wiki/Main_Page" });
+    const summary = await importRaw(raw(sister, PAGE), {
+      source: "iiwiki",
+      classicOrigin: CLASSIC_ORIGIN,
+    });
+    expect(summary).toMatchObject({ errors: [], pagesCreated: 1 });
+    const notMediaWiki = siteinfoXml({ generator: "WikiOS 1" });
+    expect((await importRaw(raw(notMediaWiki, SECOND), { source: "iiwiki" })).errors).toMatchObject(
+      [{ title: "(dump)" }]
+    );
+  });
+
+  it("orders revisions of the same second by their id", async () => {
+    const page = (first: number, second: number) =>
+      `<page><title>Tie</title><ns>0</ns><id>7</id>` +
+      `<revision><id>${first}</id><timestamp>2026-01-01T00:00:00Z</timestamp><text>rev ${first}</text></revision>` +
+      `<revision><id>${second}</id><timestamp>2026-01-01T00:00:00Z</timestamp><text>rev ${second}</text></revision></page>`;
+
+    await importXml(raw("", page(12, 11)));
+
+    expect(article("Tie").wikitext).toBe("rev 12");
+  });
+
+  it("a revision with no id rejects its page", async () => {
+    const noId = PAGE.replace("<revision><id>1</id>", "<revision>").replace(
+      "</revision>",
+      "</revision><revision><id>9</id><timestamp>2026-01-02T00:00:00Z</timestamp><text>y</text></revision>"
+    );
+
+    const summary = await importXml(raw("", noId, SECOND));
+
+    expect(summary.errors).toEqual([
+      {
+        title: "Caphiria",
+        message:
+          "The revision of 2026-01-01T00:00:00Z has no id: only MediaWiki revisions, which carry one, are imported",
+      },
+    ]);
+    expect(store.articles.map((a) => a.title)).toEqual(["Urcea"]);
   });
 });
 

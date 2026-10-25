@@ -142,6 +142,7 @@ import { wikitextToHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import { PageManagementService } from "~/lib/wiki-os/core/page-management-service";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { ArticleRepository } from "~/lib/wiki-os/core";
+import { MEDIAWIKI_NAMESPACE_REASON } from "~/lib/wiki-os/namespace-policy";
 import { db } from "~/server/db";
 import { applyWikiosMode } from "~/tests/helpers/wikios-modes";
 
@@ -817,7 +818,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
       ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 
-    it("lets a wiki admin edit interface namespaces", async () => {
+    it("lets a wiki admin edit interface namespaces, but not a MediaWiki: page: classic is its authority (A8)", async () => {
       const caller = createCaller(adminCtx() as never);
       await caller.saveWikitext({ title: "Template:Infobox", wikitext: "x" });
       jest.mocked(getRevisionWikitextShadow).mockResolvedValue({
@@ -828,8 +829,18 @@ describe("the editing router (save, preview, page management, rights)", () => {
         fromShadow: true,
         parked: false,
       });
-      await caller.revertToRevision({ title: "MediaWiki:Sidebar", revid: "r1" });
-      expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(2);
+      const classic = {
+        code: "FORBIDDEN",
+        message: `namespaceprotected: ${MEDIAWIKI_NAMESPACE_REASON}`,
+      };
+      await expect(
+        caller.revertToRevision({ title: "MediaWiki:Sidebar", revid: "r1" })
+      ).rejects.toMatchObject(classic);
+      await expect(
+        caller.saveWikitext({ title: "MediaWiki:Sidebar", wikitext: "x" })
+      ).rejects.toMatchObject(classic);
+      await expect(caller.rollback({ title: "MediaWiki:Sidebar" })).rejects.toMatchObject(classic);
+      expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(1);
     });
   });
 

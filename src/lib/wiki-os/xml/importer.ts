@@ -9,6 +9,10 @@
  * `sync-ixwiki-full.ts` left behind. All database work for a page is one transaction inside
  * `ArticleRepository.importPageRevisions`.
  *
+ * Only classic MediaWiki's dumps are imported (spec A8, `checkDumpOrigin`): a dump with no `<siteinfo>`, another
+ * generator or, for IxWiki, another wiki's `<base>` is refused at its first page, whole, with nothing written. A
+ * revision with no id is not MediaWiki's: it rejects its page.
+ *
  * A page that fails (invalid title, bad timestamp, a database error) is reported in `errors` and
  * the import goes on with the next one; a dump that turns out to be malformed stops the import
  * there, and what was imported before stays.
@@ -17,6 +21,7 @@
 import { tagRevisionsOfName } from "~/lib/identity/claim-tags";
 import { IXWIKI } from "~/lib/identity/wiki-names";
 import { db } from "~/server/db";
+import { wikiosConfig } from "../config";
 import { ArticleRepository } from "../core/article-repository";
 import type { ImportedHead, ImportedRestriction, ImportPageInput } from "../core/article-import";
 import { parseRedirect } from "../core/redirect";
@@ -24,10 +29,11 @@ import { canonicalizeTitle, storedNamespace } from "../core/title";
 import type { EditPolicyResult } from "../namespace-policy";
 import { cleanExcerpt } from "../transformers/wikitext-parser";
 import type { ImportEvent, ImportPage } from "./import-reader";
+import { checkDumpOrigin } from "./import-origin";
 import { checkInt4, modelWarning, PageRejected, parseMwTimestamp } from "./import-validation";
 import type { ImportedRevision } from "./revision-plan";
 import { mwSha1Base36 } from "./sha1";
-import type { Contributor, XmlRevision } from "./types";
+import type { Contributor, SiteInfo, XmlRevision } from "./types";
 
 export interface ImportSummary {
   pages: number;
@@ -57,6 +63,8 @@ export interface ImportOptions {
    * command line tools), every page is written.
    */
   canWritePage?: (title: string, namespaceId: number) => EditPolicyResult;
+  /** Classic MediaWiki's origin, whose host an IxWiki dump's `<base>` must have (default: the configured public origin). */
+  classicOrigin?: string;
 }
 
 /** Title used for errors that are about the dump rather than one of its pages. */
@@ -165,22 +173,28 @@ function authorOf(contributor: Contributor): string {
   return contributor.username;
 }
 
-/** Milliseconds since the epoch of a revision's timestamp; throws on anything but a dump timestamp. */
-function timestampOf(revision: XmlRevision): number {
+/** Milliseconds since the epoch of the timestamp of revision `id`; throws on anything but a dump timestamp. */
+function timestampOf(revision: XmlRevision, id: number): number {
   const time = parseMwTimestamp(revision.timestamp);
   if (time === null) {
     throw new PageRejected(
-      `Revision ${revision.id ?? "(no id)"} has an invalid timestamp ${JSON.stringify(revision.timestamp)} ` +
+      `Revision ${id} has an invalid timestamp ${JSON.stringify(revision.timestamp)} ` +
         "(expected YYYY-MM-DDTHH:MM:SSZ)"
     );
   }
   return time;
 }
 
-/** Throws unless the revision's id and declared size fit their columns. */
-function checkRevisionNumbers(revision: XmlRevision): void {
+/** The revision's MediaWiki id; throws unless it has one and it and the declared size fit their columns. */
+function revisionIdOf(revision: XmlRevision): number {
+  if (revision.id === null) {
+    throw new PageRejected(
+      `The revision of ${revision.timestamp} has no id: only MediaWiki revisions, which carry one, are imported`
+    );
+  }
   checkInt4("revision id", revision.id);
-  checkInt4(`size of revision ${revision.id ?? "(no id)"}`, revision.bytes ?? null);
+  checkInt4(`size of revision ${revision.id}`, revision.bytes ?? null);
+  return revision.id;
 }
 
 /**
@@ -191,14 +205,15 @@ function toImportedRevisions(page: ImportPage): {
   revisions: ImportedRevision[];
   hashMismatches: number;
 } {
-  for (const revision of page.revisions) checkRevisionNumbers(revision);
+  // every id and size first (one map runs to the end before the next), then the timestamps
   const ordered = page.revisions
-    .map((revision) => ({ revision, time: timestampOf(revision) }))
-    .sort((a, b) => a.time - b.time || (a.revision.id ?? 0) - (b.revision.id ?? 0));
+    .map((revision) => ({ revision, id: revisionIdOf(revision) }))
+    .map(({ revision, id }) => ({ revision, id, time: timestampOf(revision, id) }))
+    .sort((a, b) => a.time - b.time || a.id - b.id);
 
   let previousSize = 0;
   let hashMismatches = 0;
-  const revisions = ordered.map(({ revision, time }) => {
+  const revisions = ordered.map(({ revision, id, time }) => {
     const text = revision.text;
     const byteSize = text === null ? (revision.bytes ?? 0) : Buffer.byteLength(text, "utf8");
     const computed = text === null ? null : mwSha1Base36(text);
@@ -206,7 +221,7 @@ function toImportedRevisions(page: ImportPage): {
       hashMismatches += 1;
     }
     const imported: ImportedRevision = {
-      mwRevId: revision.id,
+      mwRevId: id,
       createdAt: new Date(time),
       author: authorOf(revision.contributor),
       authorId: null,
@@ -336,21 +351,56 @@ async function importOnePage(
 }
 
 /**
+ * The pages of a dump, after its origin: nothing at all when the dump is not classic MediaWiki's (judged at the first
+ * page, from the `<siteinfo>` read before it), with its refusal as one `(dump)` error in `summary`.
+ */
+async function* pagesOfAcceptedDump(
+  events: AsyncIterable<ImportEvent>,
+  source: string,
+  classicOrigin: string,
+  summary: ImportSummary
+): AsyncGenerator<ImportPage> {
+  let siteinfo: SiteInfo | null = null;
+  let accepted = false;
+  for await (const event of events) {
+    if (event.type === "siteinfo") {
+      siteinfo = event.siteinfo;
+      continue;
+    }
+    if (!accepted) {
+      const verdict = checkDumpOrigin(siteinfo, source, classicOrigin);
+      if (!verdict.ok) {
+        summary.errors.push({ title: DUMP_ERROR_TITLE, message: verdict.reason });
+        return;
+      }
+      accepted = true;
+    }
+    yield event.page;
+  }
+}
+
+/**
  * Import every page of a dump. Never throws: failures are in the returned summary's `errors`
- * (a malformed or truncated dump as one `(dump)` entry). When `MAX_CONSECUTIVE_WRITE_FAILURES`
- * pages in a row fail in the database, the import stops instead of failing every page of the dump.
+ * (a malformed or truncated dump, or one that is not classic MediaWiki's, as one `(dump)` entry). When
+ * `MAX_CONSECUTIVE_WRITE_FAILURES` pages in a row fail in the database, the import stops instead of failing every page
+ * of the dump.
  */
 export async function importExport(
   events: AsyncIterable<ImportEvent>,
-  { source = "ixwiki", dryRun = false, onProgress, canWritePage }: ImportOptions = {}
+  {
+    source = "ixwiki",
+    dryRun = false,
+    onProgress,
+    canWritePage,
+    classicOrigin = wikiosConfig.publicBaseUrl,
+  }: ImportOptions = {}
 ): Promise<ImportSummary> {
   const summary = emptySummary();
   const ctx: ImportContext = { source, dryRun, canWritePage };
   let failuresInARow = 0;
   try {
-    for await (const event of events) {
-      if (event.type !== "page") continue;
-      const outcome = await importOnePage(event.page, ctx, summary);
+    for await (const page of pagesOfAcceptedDump(events, source, classicOrigin, summary)) {
+      const outcome = await importOnePage(page, ctx, summary);
       onProgress?.(summary);
 
       if (outcome === "imported") failuresInARow = 0;

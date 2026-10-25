@@ -457,8 +457,9 @@ export async function visibleTitles(
 /**
  * May a dump import the page `title` (canonical, stored in `namespaceId`) for the caller in
  * `permissions`? The same block and namespace rules as `decideAction` for an import: Template:,
- * Module:, MediaWiki: pages and the like need `editprotected`, site and user script/style/data pages
- * need their interface-admin right. A namespace this wiki does not know (the dump's own prefix) is
+ * Module: pages and the like need `editprotected`, user script/style/data pages need their
+ * interface-admin right, and MediaWiki: pages are refused to everyone (classic is their authority;
+ * the inbound sync brings them). A namespace this wiki does not know (the dump's own prefix) is
  * administrators' only.
  */
 export function importVerdict(

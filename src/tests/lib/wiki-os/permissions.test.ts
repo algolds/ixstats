@@ -45,8 +45,10 @@ import {
   type Group,
   type WikiPermissions,
 } from "~/lib/wiki-os/rights";
+import { MEDIAWIKI_NAMESPACE_REASON } from "~/lib/wiki-os/namespace-policy";
+import { refreshWikiosEditingFlag } from "~/lib/wiki-os/editing-switch";
 import { db } from "~/server/db";
-import { applyWikiosMode } from "~/tests/helpers/wikios-modes";
+import { applyWikiosMode, describeEachWikiosMode } from "~/tests/helpers/wikios-modes";
 
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { getArticleAuthors } from "~/lib/wiki-os/adapters/mediawiki/article-store";
@@ -160,7 +162,8 @@ describe("decideAction: namespaces (D9)", () => {
   ])("denies %s to a plain autoconfirmed user and allows it to a sysop", (title) => {
     expect(denialCode(autoconfirmed, "edit", title)).toBe("namespaceprotected");
     expect(denialCode(autoconfirmed, "create", title)).toBe("namespaceprotected");
-    const allowedForSysop = !/\.(css|js|json)$/.test(title);
+    // site and user script/style/data pages are interface pages; MediaWiki: pages are classic's alone (A8)
+    const allowedForSysop = !/\.(css|js|json)$/.test(title) && !title.startsWith("MediaWiki:");
     expect(isAllowed(sysop, "edit", title)).toBe(allowedForSysop);
   });
 
@@ -170,12 +173,17 @@ describe("decideAction: namespaces (D9)", () => {
     expect(isAllowed(plain, "edit", "User talk:Bob")).toBe(true);
   });
 
-  it("needs interface-admin for site CSS, JS and JSON", () => {
-    for (const title of ["MediaWiki:Common.css", "MediaWiki:Common.js", "MediaWiki:Data.json"]) {
+  it("needs interface-admin for user CSS, JS and JSON", () => {
+    for (const title of ["User:Bob/common.css", "User:Bob/common.js", "User:Bob/data.json"]) {
       expect(denialCode(sysop, "edit", title)).toBe("namespaceprotected");
       expect(isAllowed(interfaceAdmin, "edit", title)).toBe(true);
       expect(isAllowed(owner, "edit", title)).toBe(true);
     }
+  });
+
+  it("leaves MediaWiki talk pages to administrators: only the MediaWiki: namespace itself is classic's", () => {
+    expect(isAllowed(sysop, "edit", "MediaWiki talk:Sidebar")).toBe(true);
+    expect(denialCode(autoconfirmed, "edit", "MediaWiki talk:Sidebar")).toBe("namespaceprotected");
   });
 
   it("lets a name's owner edit their own user page, but never a script subpage of it", () => {
@@ -316,7 +324,7 @@ describe("decideAction: the action's own right", () => {
       "upload",
       "import",
     ] as const) {
-      expect(isAllowed(owner, action, "MediaWiki:Common.js")).toBe(true);
+      expect(isAllowed(owner, action, "User:Bob/common.js")).toBe(true);
     }
     expect(isAllowed(owner, "protect", "Template:Foo", [restriction("edit", "sysop")])).toBe(true);
   });
@@ -438,6 +446,54 @@ describe("authorizeAction", () => {
   });
 });
 
+describeEachWikiosMode("classic is the authority for MediaWiki: pages (A8)", () => {
+  // the switch row is read before the synchronous decision, as every write path does
+  beforeEach(async () => {
+    expect(await refreshWikiosEditingFlag()).toBe(true);
+  });
+
+  const ACTIONS: readonly WikiAction[] = [
+    "edit",
+    "create",
+    "move",
+    "delete",
+    "undelete",
+    "protect",
+    "rollback",
+    "import",
+  ];
+
+  it("an interface admin cannot save, move or delete a MediaWiki: page; the reason names classic", () => {
+    expect(MEDIAWIKI_NAMESPACE_REASON).toMatch(
+      /^MediaWiki: pages are edited on classic .+, and WikiOS takes them from there\.$/
+    );
+    for (const who of [interfaceAdmin, owner]) {
+      for (const title of [
+        "MediaWiki:Sidebar",
+        "MediaWiki:Common.js",
+        "MediaWiki:Gadgets-definition",
+      ]) {
+        for (const action of ACTIONS) {
+          expect(decide(who, action, title)).toEqual({
+            allowed: false,
+            code: "namespaceprotected",
+            reason: MEDIAWIKI_NAMESPACE_REASON,
+          });
+        }
+      }
+    }
+  });
+
+  it("refuses the system owner through authorizeAction with the classic reason", async () => {
+    await expect(
+      authorizeAction(ctx("user_owner"), "edit", "mediawiki:sidebar")
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: `namespaceprotected: ${MEDIAWIKI_NAMESPACE_REASON}`,
+    });
+  });
+});
+
 describe("requireGroupChange", () => {
   it("lets a bureaucrat change the groups on the changeable list only", async () => {
     await expect(requireGroupChange(ctx("user_owner"), ["sysop", "bot"])).resolves.toBeUndefined();
@@ -508,16 +564,12 @@ describe("importVerdict (per-page authorization of a dump)", () => {
     ["Talk:Caphiria", 1],
     ["Template:Infobox", 10],
     ["Module:Foo", 828],
-    ["MediaWiki:Sidebar", 8],
     ["Help:Editing", 12],
   ])("lets a sysop import %s", (title, ns) => {
     expect(verdict(sysop, title, ns).allowed).toBe(true);
   });
 
   it.each([
-    ["MediaWiki:Common.js", 8],
-    ["MediaWiki:Common.css", 8],
-    ["MediaWiki:Gadgets.json", 8],
     ["User:Bob/common.js", 2],
     ["User:Bob/vector.css", 2],
   ])("keeps %s from a sysop and gives it to an interface administrator", (title, ns) => {
@@ -526,12 +578,18 @@ describe("importVerdict (per-page authorization of a dump)", () => {
     expect(verdict(owner, title, ns).allowed).toBe(true);
   });
 
-  it("names the right that is missing", () => {
-    const refused = verdict(sysop, "MediaWiki:Common.js", 8);
-    expect(refused).toEqual({
-      allowed: false,
-      reason: "Editing this MediaWiki page needs the editsitejs right.",
-    });
+  it.each([
+    ["MediaWiki:Sidebar", 8],
+    ["MediaWiki:Common.js", 8],
+    ["MediaWiki:Common.css", 8],
+    ["MediaWiki:Gadgets.json", 8],
+  ])("refuses %s to everyone, naming classic: the inbound sync brings it", (title, ns) => {
+    for (const who of [sysop, interfaceAdmin, owner]) {
+      expect(verdict(who, title, ns)).toEqual({
+        allowed: false,
+        reason: MEDIAWIKI_NAMESPACE_REASON,
+      });
+    }
   });
 
   it("refuses everything to a blocked importer, and Special: pages to everyone", () => {

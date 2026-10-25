@@ -794,7 +794,6 @@ describe("namespaces and interface pages", () => {
       "Caphiria",
       "Template:Infobox country",
       "Module:Foo",
-      "MediaWiki:Common.js",
       "Category:Nations",
       "File:Flag.png",
       "IxWiki:Policy",
@@ -802,13 +801,19 @@ describe("namespaces and interface pages", () => {
     ])("can edit %s", (title) => {
       expect(allowed(title, admin)).toBe(true);
     });
+
+    it.each(["MediaWiki:Common.js", "MediaWiki:Sidebar"])(
+      "cannot edit %s: classic is the authority for MediaWiki: pages (A8)",
+      (title) => {
+        expect(allowed(title, admin)).toBe(false);
+      }
+    );
   });
 
   describe("checkEditPolicy: sysop versus interface-admin (plan 409)", () => {
     it.each([
       "Template:Infobox country",
       "Module:Foo",
-      "MediaWiki:Sidebar",
       "MediaWiki talk:Sidebar",
       "Help:Editing",
       "Category:Nations",
@@ -820,13 +825,10 @@ describe("namespaces and interface pages", () => {
     });
 
     it.each([
-      "MediaWiki:Common.css",
-      "MediaWiki:Common.js",
-      "MediaWiki:Gadgets.json",
-      "MediaWiki:Theme.less",
       "User:Bob/common.js",
       "User:Bob/vector.css",
       "User:Bob/data.json",
+      "User:Bob/theme.less",
     ])("sysop alone cannot edit the interface page %s", (title) => {
       expect(allowed(title, sysop)).toBe(false);
     });
@@ -836,20 +838,21 @@ describe("namespaces and interface pages", () => {
         rights: new Set<Right>(["edit", right]),
         ownUserNames: [],
       });
-      expect(allowed("MediaWiki:Common.css", only("editsitecss"))).toBe(true);
-      expect(allowed("MediaWiki:Common.js", only("editsitecss"))).toBe(false);
-      expect(allowed("MediaWiki:Common.js", only("editsitejs"))).toBe(true);
-      expect(allowed("MediaWiki:Data.json", only("editsitejson"))).toBe(true);
-      expect(allowed("MediaWiki:Sidebar", only("editsitejs"))).toBe(false);
-      expect(allowed("MediaWiki:Sidebar", only("editinterface"))).toBe(true);
       expect(allowed("User:Bob/common.js", only("edituserjs"))).toBe(true);
-      expect(allowed("User:Bob/common.js", only("editsitejs"))).toBe(false);
+      expect(allowed("User:Bob/common.js", only("editusercss"))).toBe(false);
       expect(allowed("User:Bob/vector.css", only("editusercss"))).toBe(true);
+      expect(allowed("User:Bob/theme.less", only("editusercss"))).toBe(true);
+      expect(allowed("User:Bob/data.json", only("edituserjson"))).toBe(true);
+      // no right opens a MediaWiki: page: classic is its authority (A8)
+      for (const right of ["editsitecss", "editsitejs", "editsitejson", "editinterface"] as const) {
+        expect(allowed("MediaWiki:Common.css", only(right))).toBe(false);
+        expect(allowed("MediaWiki:Sidebar", only(right))).toBe(false);
+      }
     });
 
     it("lets interface-admin edit script pages but not other namespaces", () => {
-      expect(allowed("MediaWiki:Common.js", interfaceAdmin)).toBe(true);
-      expect(allowed("MediaWiki:Sidebar", interfaceAdmin)).toBe(true);
+      expect(allowed("MediaWiki:Common.js", interfaceAdmin)).toBe(false);
+      expect(allowed("MediaWiki:Sidebar", interfaceAdmin)).toBe(false);
       expect(allowed("User:Bob/common.js", interfaceAdmin)).toBe(true);
       expect(allowed("Template:Foo", interfaceAdmin)).toBe(false);
       expect(allowed("User:Bob", interfaceAdmin)).toBe(false);
