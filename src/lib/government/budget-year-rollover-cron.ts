@@ -13,7 +13,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { db as defaultDb } from "~/server/db";
 import { notificationAPI } from "~/lib/notifications";
-import { pickClock, realmClocks, type RealmClockReader } from "~/server/shared/realm-time";
+import { realmClocks, realmNowsOnce } from "~/server/shared/realm-time";
 import { currentBudgetYear } from "./budget-year";
 
 const BUDGET_YEAR_NOTIFICATION_SOURCE = "budgetYear";
@@ -63,19 +63,6 @@ async function findCountriesNeedingBudget(
     .filter((c) => c.latestYear < c.budgetYear);
 }
 
-/** Each realm's current budget year, read from its clock once. */
-function realmYears(clocks: ReadonlyMap<string, RealmClockReader>) {
-  const years = new Map<string, number>();
-  return (realmId: string) => {
-    let year = years.get(realmId);
-    if (year === undefined) {
-      year = currentBudgetYear(pickClock(clocks, realmId).now());
-      years.set(realmId, year);
-    }
-    return year;
-  };
-}
-
 export async function runBudgetYearRollover(
   db: PrismaClient = defaultDb
 ): Promise<BudgetYearRolloverResult> {
@@ -87,7 +74,10 @@ export async function runBudgetYearRollover(
     failed: 0,
   };
 
-  const countries = await findCountriesNeedingBudget(db, realmYears(await realmClocks(db)));
+  const nowOf = realmNowsOnce(await realmClocks(db));
+  const countries = await findCountriesNeedingBudget(db, (realmId) =>
+    currentBudgetYear(nowOf(realmId))
+  );
   result.countriesBehind = countries.length;
 
   for (const { countryId, realmId, latestYear, budgetYear } of countries) {

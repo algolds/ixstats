@@ -27,7 +27,12 @@
 import type { PrismaClient } from "@prisma/client";
 import { IxTime } from "~/lib/ixtime";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
-import { pickClock, realmClocks, type RealmClockReader } from "~/server/shared/realm-time";
+import {
+  pickClock,
+  realmClocks,
+  realmNowsOnce,
+  type RealmClockReader,
+} from "~/server/shared/realm-time";
 import { getEconomicConfigFromDB } from "~/lib/config-service";
 import {
   getComponentsStatsDataForCountries,
@@ -254,19 +259,6 @@ function notifyTierChange(
   }
 }
 
-/** Each realm's time now, read from its clock once per run. */
-function realmNows(clocks: ReadonlyMap<string, RealmClockReader>) {
-  const nows = new Map<string, number>();
-  return (realmId: string) => {
-    let now = nows.get(realmId);
-    if (now === undefined) {
-      now = pickClock(clocks, realmId).now();
-      nows.set(realmId, now);
-    }
-    return now;
-  };
-}
-
 /** Each country's latest history point (ms), for the batch. */
 async function latestHistoryPoints(db: PrismaClient, ids: string[]) {
   const rows = await db.historicalDataPoint.groupBy({
@@ -354,7 +346,7 @@ export async function runStatProgression(
   const startedAt = Date.now();
   const db = options.db ?? (await import("~/server/db")).db;
   const clocks = options.clocks ?? (await realmClocks(db));
-  const nowOf = realmNows(clocks);
+  const nowOf = realmNowsOnce(clocks);
   const batchSize = options.batchSize ?? STAT_PROGRESSION_BATCH_SIZE;
   const econConfig = await getEconomicConfigFromDB(db);
 

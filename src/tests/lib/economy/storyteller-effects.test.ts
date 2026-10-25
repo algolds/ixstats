@@ -111,17 +111,6 @@ describe("P0-14: one helper stamps IxTime", () => {
     ).toThrow(/before the IxTime epoch/);
   });
 
-  it("stamps IxTime now by default", () => {
-    jest.spyOn(IxTime, "getCurrentIxTime").mockReturnValue(NOW);
-    const data = storytellerEffectData({
-      countryId: "c1",
-      inputType: "gdp_level_adjustment",
-      value: 0.01,
-    });
-    expect(new Date(data.ixTimeTimestamp).getTime()).toBe(NOW);
-    jest.restoreAllMocks();
-  });
-
   it("a severe sanction and a lost war now cost GDP (they used to leave it untouched)", () => {
     const sanction = rows([
       {

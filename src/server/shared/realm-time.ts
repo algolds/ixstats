@@ -136,6 +136,25 @@ export function pickClock(
   return clocks.get(id) ?? (id === DEFAULT_REALM_ID ? ixnayClock() : missingClock(id));
 }
 
+/**
+ * Each realm's time now, read from its clock the first time it is asked and then kept: a cron or a batch takes every
+ * realm's "now" once per run. A realm `clocks` lacks (null: Ixnay) reads as `pickClock` does.
+ */
+export function realmNowsOnce(
+  clocks: ReadonlyMap<string, RealmClockReader>
+): (realmId: string | null | undefined) => number {
+  const nows = new Map<string, number>();
+  return (realmId) => {
+    const id = realmId ?? DEFAULT_REALM_ID;
+    let now = nows.get(id);
+    if (now === undefined) {
+      now = pickClock(clocks, id).now();
+      nows.set(id, now);
+    }
+    return now;
+  };
+}
+
 /** Forget a realm's cached clock (after this process writes it). */
 export function invalidateRealmClock(realmId: string): void {
   cache.delete(realmId);
