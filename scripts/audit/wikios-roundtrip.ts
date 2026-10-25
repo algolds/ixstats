@@ -12,15 +12,18 @@
  *
  * Sources:
  *   --source db   (default) `wiki_articles.wikitext` of the local Postgres, read-only, and only when
- *                 DATABASE_URL points at localhost.
+ *                 DATABASE_URL points at localhost on a port other than 15433 (the SSH tunnel to production).
  *   --source mw   `action=query&prop=revisions&rvprop=content&rvslots=main` from --mw-api, throttled.
  *
  * Usage:
  *   bun scripts/audit/wikios-roundtrip.ts [--source db|mw] [--mw-api <MediaWiki api.php URL>]
- *     [--pages file.json | --limit N] [--out .bench-out/roundtrip.json] [--interval-ms 1000]
+ *     [--pages file.json | --limit N] [--namespaces all|n,n] [--out .bench-out/roundtrip.json] [--interval-ms 1000]
  *
  * `--mw-api` is required with `--source mw` (there is no production default). `--limit N` (default 50) takes
- * N pages spread evenly over the source. Pages that cannot be measured (not found, empty, fetch failed) are
+ * N pages spread evenly over the source. `--namespaces` (default 0, articles only) picks the namespaces that
+ * `--source db` reads without `--pages`: `all` for every namespace, or a comma list such as `0,10,14`; a full
+ * run is `--namespaces all --limit 1000000`. It is written to `meta.namespaces`, which is null when the pages
+ * came from a title list (`--pages` or `--source mw`). Pages that cannot be measured (not found, empty, fetch failed) are
  * counted as skipped with their reason. Exit code is 0 unless the arguments or the source are invalid; the
  * caller reads the numbers.
  */
@@ -41,6 +44,7 @@ import {
   lineDiff,
   loadPageList,
   parseHttpUrl,
+  parseNamespaces,
   samplePages,
   throttledFetch,
   type Construct,
@@ -48,14 +52,17 @@ import {
 } from "../lib/wikios-harness";
 
 interface CommonConfig {
-  pages: string | null;
   limit: number;
   out: string;
   intervalMs: number;
 }
 
-type DbConfig = CommonConfig & { source: "db" };
-type MwConfig = CommonConfig & { source: "mw"; mwApi: string };
+/** A title list picks the pages, or (db only) the namespaces do; `namespaces` is null for a title list. */
+type TitleList = { pages: string; namespaces: null };
+type DbSelection = TitleList | { pages: null; namespaces: number[] | "all" };
+
+type DbConfig = CommonConfig & DbSelection & { source: "db" };
+type MwConfig = CommonConfig & { source: "mw"; mwApi: string; pages: string | null; namespaces: null };
 type Config = DbConfig | MwConfig;
 
 interface PageInput {
@@ -114,7 +121,16 @@ const mwContentSchema = z.object({
 });
 
 const USAGE =
-  "Usage: bun scripts/audit/wikios-roundtrip.ts [--source db|mw] [--mw-api url (required for mw)] [--pages file | --limit n] [--out file] [--interval-ms n]";
+  "Usage: bun scripts/audit/wikios-roundtrip.ts [--source db|mw] [--mw-api url (required for mw)] [--pages file | --limit n] [--namespaces all|n,n (db without --pages; default 0)] [--out file] [--interval-ms n]";
+
+const NAMESPACES_MISPLACED = "--namespaces applies only to --source db without --pages";
+
+/** `--namespaces` only selects pages for `--source db` without `--pages`; elsewhere a title list does. */
+function dbSelection(pages: string | undefined, namespaces: string | undefined): DbSelection {
+  if (pages === undefined) return { pages: null, namespaces: parseNamespaces(namespaces) };
+  if (namespaces !== undefined) throw new Error(NAMESPACES_MISPLACED);
+  return { pages, namespaces: null };
+}
 
 function parseConfig(argv: string[]): Config {
   const { values } = parseArgs({
@@ -124,6 +140,7 @@ function parseConfig(argv: string[]): Config {
       "mw-api": { type: "string" },
       pages: { type: "string" },
       limit: { type: "string" },
+      namespaces: { type: "string" },
       out: { type: "string" },
       "interval-ms": { type: "string" },
     },
@@ -133,9 +150,11 @@ function parseConfig(argv: string[]): Config {
   const intervalMs = Number.parseInt(values["interval-ms"] ?? "1000", 10);
   if (source !== "db" && source !== "mw") throw new Error("--source must be db or mw");
   if (!(limit >= 1) || !(intervalMs >= 0)) throw new Error("--limit must be >= 1 and --interval-ms >= 0");
-  const common = { pages: values.pages ?? null, limit, out: values.out ?? DEFAULT_OUT, intervalMs };
-  if (source === "db") return { ...common, source };
-  return { ...common, source, mwApi: parseHttpUrl(values["mw-api"], "--mw-api") };
+  const common = { limit, out: values.out ?? DEFAULT_OUT, intervalMs };
+  if (source === "db") return { ...common, ...dbSelection(values.pages, values.namespaces), source };
+  if (values.namespaces !== undefined) throw new Error(NAMESPACES_MISPLACED);
+  const mwApi = parseHttpUrl(values["mw-api"], "--mw-api");
+  return { ...common, source, mwApi, pages: values.pages ?? null, namespaces: null };
 }
 
 // ---------------------------------------------------------------------------
@@ -151,7 +170,9 @@ async function loadFromDb(config: DbConfig): Promise<Loaded> {
   dotenv.config({ path: ".env" });
   const databaseUrl = process.env.DATABASE_URL ?? "";
   if (!isLocalDatabaseUrl(databaseUrl)) {
-    throw new Error("DATABASE_URL does not point at localhost; refusing to read it. Use --source mw instead.");
+    throw new Error(
+      "DATABASE_URL does not point at a local database (localhost, not the production tunnel on 15433); refusing to read it. Use --source mw instead."
+    );
   }
   const { PrismaClient } = await import("@prisma/client");
   const prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
@@ -170,8 +191,9 @@ async function loadFromDb(config: DbConfig): Promise<Loaded> {
         .map((title) => ({ title, reason: "not found in the database" }));
       return { pages, skipped };
     }
+    const { namespaces } = config;
     const all = await prisma.wikiArticle.findMany({
-      where: { source: "ixwiki", namespace: 0 },
+      where: { source: "ixwiki", ...(namespaces === "all" ? {} : { namespace: { in: namespaces } }) },
       select: { id: true },
       orderBy: { title: "asc" },
     });

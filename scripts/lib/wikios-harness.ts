@@ -499,14 +499,82 @@ export function parseTrpcData<T>(body: string, output: z.ZodType<T>): Parsed<T> 
   return { ok: true, data: envelope.data.result.data.json };
 }
 
-/** True when a `DATABASE_URL` points at this machine, the only database the harness may read. */
+/**
+ * Port 15433 on this machine is the SSH `LocalForward` to production Postgres (scripts/dev-local.sh opens it),
+ * so a localhost URL on that port is production, not a local database.
+ */
+const PRODUCTION_TUNNEL_PORT = "15433";
+
+/**
+ * True when a `DATABASE_URL` points at a database on this machine, the only kind the harness may read. A
+ * localhost URL on port 15433 is false: that port is the SSH `LocalForward` to production Postgres.
+ */
 export function isLocalDatabaseUrl(databaseUrl: string): boolean {
   try {
-    const { hostname } = new URL(databaseUrl);
-    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
+    const { hostname, port } = new URL(databaseUrl);
+    const localHost = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
+    return localHost && port !== PRODUCTION_TUNNEL_PORT;
   } catch {
     return false;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Round-trip namespaces and parity settling
+// ---------------------------------------------------------------------------
+
+const NAMESPACE_LIST = /^\d+(?:,\d+)*$/;
+
+/**
+ * The round trip's `--namespaces` option: `undefined` is `[0]` (articles only), `"all"` is every namespace,
+ * and a comma list such as `"0,10,14"` is those namespace numbers.
+ */
+export function parseNamespaces(value: string | undefined): number[] | "all" {
+  if (value === undefined) return [0];
+  if (value === "all") return "all";
+  if (!NAMESPACE_LIST.test(value)) throw new Error("--namespaces must be all or a comma list of namespace numbers");
+  return value.split(",").map(Number);
+}
+
+/** The render state `wikios.getArticleHtml` reports with a view. */
+export interface SettleView {
+  renderQuality?: string;
+  stale?: boolean;
+}
+
+/**
+ * True when a WikiOS view is not yet MediaWiki's render: a locally compiled fallback (the reader stopped
+ * waiting for the renderer) or a stale bundle served while a background render replaces it.
+ */
+export function needsSettling(view: SettleView): boolean {
+  return view.renderQuality === "fallback" || view.stale === true;
+}
+
+export interface SettleOptions {
+  /** Wait before each refetch. */
+  settleMs: number;
+  /** Refetches after the first fetch, at most. */
+  settleTries: number;
+  /** Injected for tests; defaults to a real timer. */
+  wait?: (ms: number) => Promise<void>;
+}
+
+/**
+ * Fetches a view, then refetches it while it `needsSettling`, waiting `settleMs` before each of at most
+ * `settleTries` refetches. Returns the last result: a failure as soon as one happens, else the last view, which
+ * the caller records as unsettled when it still `needsSettling`.
+ */
+export async function fetchUntilSettled<T extends SettleView>(
+  fetchOnce: () => Promise<Parsed<T>>,
+  options: SettleOptions
+): Promise<Parsed<T>> {
+  const wait = options.wait ?? sleep;
+  let result = await fetchOnce();
+  for (let tries = 0; tries < options.settleTries && result.ok && needsSettling(result.data); tries += 1) {
+    await wait(options.settleMs);
+    result = await fetchOnce();
+  }
+  return result;
 }
 
 // ---------------------------------------------------------------------------

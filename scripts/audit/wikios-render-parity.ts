@@ -8,9 +8,16 @@
  * share of pages >= 98, >= 90 and < 70) and the templates that appear most often on the lowest-scoring
  * pages, which is where render fidelity breaks.
  *
+ * A WikiOS view that is a locally compiled fallback (`renderQuality: "fallback"`) or a stale bundle
+ * (`stale: true`) is not MediaWiki's render yet, so it is fetched again after `--settle-ms` (default 8000), at
+ * most `--settle-tries` times (default 3). A scored page keeps the last view's `renderQuality` and `stale`; the
+ * aggregate counts the scored pages still unsettled as `fallbackRenders`. A page that could not be scored has
+ * an `error` and `failedOn` ("mediawiki" or "wikios"), the side that failed.
+ *
  * Usage:
  *   bun scripts/audit/wikios-render-parity.ts --mw-api <MediaWiki api.php URL> [--wikios http://localhost:3000] \
- *     [--pages scripts/bench/pages.default.json] [--sample N] [--out .bench-out/parity.json] [--interval-ms 1000]
+ *     [--pages scripts/bench/pages.default.json] [--sample N] [--out .bench-out/parity.json] [--interval-ms 1000] \
+ *     [--settle-ms 8000] [--settle-tries 3]
  *
  * `--mw-api` is required (there is no production default). Requests are throttled (>= 1 s per host,
  * IxStats-Builder User-Agent for ixwiki.com). The exit code is 0 unless the arguments or the page list are
@@ -25,9 +32,11 @@ import { z } from "zod";
 import {
   ensureParentDir,
   exitWithError,
+  fetchUntilSettled,
   loadPageList,
   mean,
   missingFrom,
+  needsSettling,
   normalizeHtml,
   parseHttpUrl,
   parseTrpcData,
@@ -36,6 +45,7 @@ import {
   throttledFetch,
   trpcQueryUrl,
   type NormalizedDoc,
+  type Parsed,
   type SimilarityScores,
 } from "../lib/wikios-harness";
 
@@ -46,6 +56,8 @@ interface Config {
   sample: number | null;
   out: string;
   intervalMs: number;
+  settleMs: number;
+  settleTries: number;
 }
 
 interface Differences {
@@ -57,9 +69,16 @@ interface Differences {
   headingsMissingInMediaWiki: string[];
 }
 
+type RenderQuality = "rendered" | "fallback";
+
 interface PageResult {
   title: string;
   error?: string;
+  /** The side that failed, set with `error`. */
+  failedOn?: "mediawiki" | "wikios";
+  /** The last WikiOS view's render state (scored pages). */
+  renderQuality?: RenderQuality;
+  stale?: boolean;
   scores?: SimilarityScores;
   templates: string[];
   differences?: Differences;
@@ -86,6 +105,8 @@ interface Aggregate {
   failed: number;
   /** Mean overall score of the scored pages, null when none was scored. */
   meanScore: number | null;
+  /** Scored pages whose last WikiOS view still needed settling (a fallback or stale render). */
+  fallbackRenders: number;
   /** Over every requested page: a page that could not be scored counts as < 70. */
   overRequested: Shares;
   scoredOnly: Shares | null;
@@ -105,15 +126,24 @@ const mwParseSchema = z.object({
     templates: z.array(z.object({ title: z.string() })).default([]),
   }),
 });
-const mwErrorSchema = z.object({ error: z.object({ info: z.string() }) });
+const mwErrorSchema = z.object({ error: z.object({ code: z.string(), info: z.string() }) });
 const articleSchema = z.object({
   contentHtml: z.string(),
   infoboxHtml: z.string().nullish(),
   noticesHtml: z.string().nullish(),
+  renderQuality: z.enum(["rendered", "fallback"]).optional(),
+  stale: z.boolean().optional(),
 });
 
 const USAGE =
-  "Usage: bun scripts/audit/wikios-render-parity.ts --mw-api <api.php url> [--wikios <url>] [--pages file] [--sample n] [--out file] [--interval-ms n]";
+  "Usage: bun scripts/audit/wikios-render-parity.ts --mw-api <api.php url> [--wikios <url>] [--pages file] [--sample n] [--out file] [--interval-ms n] [--settle-ms n] [--settle-tries n]";
+
+/** A non-negative integer option, or its default when it is absent. */
+function nonNegativeInt(value: string | undefined, fallback: number, flag: string): number {
+  const parsed = value === undefined ? fallback : Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0) throw new Error(`${flag} must be a whole number >= 0`);
+  return parsed;
+}
 
 function parseConfig(argv: string[]): Config {
   const { values } = parseArgs({
@@ -125,6 +155,8 @@ function parseConfig(argv: string[]): Config {
       sample: { type: "string" },
       out: { type: "string" },
       "interval-ms": { type: "string" },
+      "settle-ms": { type: "string" },
+      "settle-tries": { type: "string" },
     },
   });
   const sample = values.sample === undefined ? null : Number.parseInt(values.sample, 10);
@@ -139,6 +171,8 @@ function parseConfig(argv: string[]): Config {
     sample,
     out: values.out ?? DEFAULT_OUT,
     intervalMs,
+    settleMs: nonNegativeInt(values["settle-ms"], 8000, "--settle-ms"),
+    settleTries: nonNegativeInt(values["settle-tries"], 3, "--settle-tries"),
   };
 }
 
@@ -152,6 +186,12 @@ interface RenderedPage {
 }
 
 type Fetched<T> = { ok: true; value: T } | { ok: false; error: string };
+
+interface WikiOsView {
+  html: string;
+  renderQuality?: RenderQuality;
+  stale?: boolean;
+}
 
 /** MediaWiki's rendering of a page. `redirects=1` follows redirect pages, as WikiOS does when it resolves a title. */
 async function fetchMediaWiki(title: string, config: Config): Promise<Fetched<RenderedPage>> {
@@ -181,11 +221,14 @@ async function fetchMediaWiki(title: string, config: Config): Promise<Fetched<Re
     return { ok: true, value: { html: parsed.data.parse.text, templates: parsed.data.parse.templates.map((t) => t.title) } };
   }
   const failure = mwErrorSchema.safeParse(payload);
-  return { ok: false, error: `MediaWiki: ${failure.success ? failure.data.error.info : "unexpected parse response"}` };
+  if (!failure.success) return { ok: false, error: "MediaWiki: unexpected parse response" };
+  // The code (e.g. "missingtitle") names a page missing on MediaWiki, whose info says "doesn't exist".
+  const { code, info } = failure.data.error;
+  return { ok: false, error: `MediaWiki: ${code}: ${info}` };
 }
 
-/** WikiOS's rendering: notices, infobox and content HTML from `wikios.getArticleHtml`, in page order. */
-async function fetchWikiOs(title: string, config: Config): Promise<Fetched<string>> {
+/** One `wikios.getArticleHtml` call: notices, infobox and content HTML in page order, with the render state. */
+async function fetchWikiOsOnce(title: string, config: Config): Promise<Parsed<WikiOsView>> {
   const result = await throttledFetch(
     trpcQueryUrl(config.wikios, "wikios.getArticleHtml", { title }),
     { headers: { accept: "application/json" } },
@@ -194,8 +237,15 @@ async function fetchWikiOs(title: string, config: Config): Promise<Fetched<strin
   if (result.status === 0) return { ok: false, error: `WikiOS unreachable: ${result.error ?? ""}`.trim() };
   const parsed = parseTrpcData(result.body, articleSchema);
   if (!parsed.ok) return { ok: false, error: `WikiOS HTTP ${result.status}: ${parsed.error}` };
-  const { noticesHtml, infoboxHtml, contentHtml } = parsed.data;
-  return { ok: true, value: [noticesHtml, infoboxHtml, contentHtml].filter(Boolean).join("\n") };
+  const { noticesHtml, infoboxHtml, contentHtml, renderQuality, stale } = parsed.data;
+  const html = [noticesHtml, infoboxHtml, contentHtml].filter(Boolean).join("\n");
+  return { ok: true, data: { html, renderQuality, stale } };
+}
+
+/** WikiOS's rendering, refetched while it is a fallback or stale view (see the header). */
+async function fetchWikiOs(title: string, config: Config): Promise<Fetched<WikiOsView>> {
+  const result = await fetchUntilSettled(() => fetchWikiOsOnce(title, config), config);
+  return result.ok ? { ok: true, value: result.data } : result;
 }
 
 // ---------------------------------------------------------------------------
@@ -215,13 +265,15 @@ function differences(mediawiki: NormalizedDoc, wikios: NormalizedDoc): Differenc
 
 async function scorePage(title: string, config: Config): Promise<PageResult> {
   const mediawiki = await fetchMediaWiki(title, config);
-  if (!mediawiki.ok) return { title, error: mediawiki.error, templates: [] };
+  if (!mediawiki.ok) return { title, error: mediawiki.error, failedOn: "mediawiki", templates: [] };
   const wikios = await fetchWikiOs(title, config);
-  if (!wikios.ok) return { title, error: wikios.error, templates: mediawiki.value.templates };
+  if (!wikios.ok) return { title, error: wikios.error, failedOn: "wikios", templates: mediawiki.value.templates };
   const mw = normalizeHtml(mediawiki.value.html);
-  const os = normalizeHtml(wikios.value);
+  const os = normalizeHtml(wikios.value.html);
   return {
     title,
+    renderQuality: wikios.value.renderQuality,
+    stale: wikios.value.stale,
     scores: similarity(mw, os),
     templates: mediawiki.value.templates,
     differences: differences(mw, os),
@@ -272,6 +324,7 @@ function aggregate(results: PageResult[]): Aggregate {
     scored: scored.length,
     failed,
     meanScore: scored.length === 0 ? null : mean(scored.map((page) => page.scores.overall)),
+    fallbackRenders: scored.filter(needsSettling).length,
     overRequested: shares(scored, results.length, failed),
     scoredOnly: scored.length === 0 ? null : shares(scored, scored.length, 0),
     templatesOnLowestPages: scored.length === 0 ? [] : templateRows(scored),
@@ -292,7 +345,7 @@ function renderPage(page: ScoredPage): string {
   const { scores, differences: diff } = page;
   const header = `${fixed(scores.overall).padStart(5)}  ${page.title}  (text ${fixed(scores.text)}, links ${fixed(scores.links)}, images ${fixed(scores.images)}, headings ${fixed(scores.headings)}, structure ${fixed(scores.structure)}; n/a = empty on both sides, not compared)`;
   return [
-    header,
+    needsSettling(page) ? `${header}  [still a fallback or stale render after settling]` : header,
     listLine("links missing in WikiOS", diff.linksMissingInWikios),
     listLine("links only in WikiOS", diff.linksMissingInMediaWiki),
     listLine("images missing in WikiOS", diff.imagesMissingInWikios),
@@ -313,12 +366,15 @@ function renderReport(results: PageResult[], config: Config): string {
   const lines = [`# WikiOS render parity — ${results.length} pages`, "", `MediaWiki: ${config.mwApi}   WikiOS: ${config.wikios}`, ""];
   lines.push("## Pages (lowest first)", "");
   lines.push(...[...scored].sort((a, b) => a.scores.overall - b.scores.overall).map(renderPage));
-  for (const page of results.filter((result) => !isScored(result))) lines.push(`  n/a  ${page.title}  (${page.error})`);
+  for (const page of results.filter((result) => !isScored(result))) {
+    lines.push(`  n/a  ${page.title}  (failed on ${page.failedOn}: ${page.error})`);
+  }
   lines.push("", "## Aggregate", "");
   lines.push(`Requested pages: ${total.requested}; scored: ${total.scored}; failed: ${total.failed}`);
   lines.push(renderShares("Over all requested pages (failed count as < 70)", total.overRequested));
   if (total.scoredOnly !== null) lines.push(renderShares("Scored pages only", total.scoredOnly));
   lines.push(`Mean score (scored pages): ${fixed(total.meanScore)}`);
+  lines.push(`Fallback or stale renders after settling (scored pages): ${total.fallbackRenders}`);
   if (scored.length > 0) {
     lines.push("", "## Templates on the lowest-scoring pages", "");
     lines.push(...total.templatesOnLowestPages.map((row) => `${row.lowPages} low / ${row.allPages} all  ${row.template}`));
