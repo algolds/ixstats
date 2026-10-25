@@ -4,7 +4,6 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
-import { IxTime } from "~/lib/ixtime";
 import { getExchangeConfig } from "~/lib/vault/exchange-config";
 import { exchangeService } from "~/lib/vault/exchange-service";
 import { getVaultConfig } from "~/lib/vault/vault-perks";
@@ -138,12 +137,6 @@ export async function listShareMarket(db: Db, userId: string) {
     }));
 }
 
-/** Real-time estimate of when an IxTime instant arrives. */
-function ixToRealDate(ixTime: number): Date {
-  const remainingIx = ixTime - IxTime.getCurrentIxTime();
-  return new Date(Date.now() + remainingIx / Math.max(IxTime.getTimeMultiplier(), 1e-6));
-}
-
 export type ContractScope = "open" | "mine";
 
 /**
@@ -156,11 +149,11 @@ export async function listContracts(db: Db, userId: string, scope: ContractScope
     select: { id: true },
   });
   const myIds = myCompanies.map((c) => c.id);
-  const nowIx = IxTime.getCurrentIxTime();
+  const nowMs = Date.now();
 
   const where =
     scope === "open"
-      ? { status: "OPEN", endIxTime: { gt: nowIx } }
+      ? { status: "OPEN", endIxTime: { gt: nowMs } }
       : {
           OR: [
             { issuerUserId: userId },
@@ -216,8 +209,8 @@ export async function listContracts(db: Db, userId: string, scope: ContractScope
       disputeReason: c.disputeReason,
       resolutionNote: c.resolutionNote,
       role: isIssuer ? "issuer" : isContractor ? "contractor" : "bidder",
-      biddingOpen: c.status === "OPEN" && c.endIxTime > nowIx,
-      biddingClosesAt: ixToRealDate(c.endIxTime),
+      biddingOpen: c.status === "OPEN" && c.endIxTime > nowMs,
+      biddingClosesAt: new Date(c.endIxTime),
       bidCount: c.bids.length,
       bids: visibleBids.map((b) => ({
         id: b.id,

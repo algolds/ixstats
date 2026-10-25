@@ -12,15 +12,14 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
-import { IxTime } from "~/lib/ixtime";
 import { refreshFairValue } from "./companies";
 import { resolveDueDecisions } from "./decisions";
 import { computeSectorIndices } from "./sectors";
 
 export async function runExchangeMarketTick(db: PrismaClient) {
-  const nowIx = IxTime.getCurrentIxTime();
-  const indices = await computeSectorIndices(db, nowIx);
-  const decisionsApplied = await resolveDueDecisions(db, nowIx);
+  const nowMs = Date.now();
+  const indices = await computeSectorIndices(db, nowMs);
+  const decisionsApplied = await resolveDueDecisions(db, nowMs);
   const companies = await db.company.findMany({
     where: { status: "ACTIVE" },
     select: { id: true },

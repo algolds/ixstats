@@ -16,7 +16,6 @@ import {
   rebalanceFunds,
   sellSectorUnits,
 } from "~/lib/exchange/sectors";
-import { IxTime } from "~/lib/ixtime";
 import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
 import { invalidateVaultConfigCache } from "~/lib/vault/vault-perks";
 import { createFakeExchangeDb, type FakeDb } from "~/tests/helpers/fake-exchange-db";
@@ -239,7 +238,7 @@ describe("sector funds", () => {
 });
 
 describe("company decisions", () => {
-  const later = () => IxTime.getCurrentIxTime() + 2 * DAY_MS * IxTime.getTimeMultiplier();
+  const later = () => Date.now() + 2 * DAY_MS;
 
   it("pays an expansion from capital now and applies it once, after the delay", async () => {
     await expect(
@@ -299,5 +298,21 @@ describe("company decisions", () => {
       })
     ).rejects.toMatchObject({ code: "INSUFFICIENT_SOVEREIGNS" });
     expect(fake.tables.companyDecision ?? []).toHaveLength(0);
+  });
+
+  it("waits one real day, stamped on real time", async () => {
+    const before = Date.now();
+    await submitDecision(fake.client, {
+      userId: "alice",
+      companyId: "co",
+      type: "EXPAND",
+      amount: 500,
+      requestId: rid(),
+    });
+    const submitted = fake.tables.companyDecision![0]!.submittedIxTime as number;
+    expect(submitted).toBeGreaterThanOrEqual(before);
+    expect(submitted).toBeLessThanOrEqual(Date.now());
+    expect(await resolveDueDecisions(fake.client, submitted + 0.5 * DAY_MS)).toBe(0);
+    expect(await resolveDueDecisions(fake.client, submitted + 1.5 * DAY_MS)).toBe(1);
   });
 });

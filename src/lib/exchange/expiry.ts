@@ -13,7 +13,6 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
-import { IxTime } from "~/lib/ixtime";
 import { ExchangeError } from "~/lib/vault/exchange-service";
 import { DAY_MS, refundIssuer, transition } from "./contracts";
 import { notifyExchange, type ExchangeNotice } from "./notify";
@@ -32,9 +31,9 @@ export interface ExpiryResult {
 /** Cancel and refund every lapsed OPEN contract. Safe to run as often as you like. */
 export async function expireLapsedContracts(
   db: PrismaClient,
-  nowIx: number = IxTime.getCurrentIxTime()
+  nowMs: number = Date.now()
 ): Promise<ExpiryResult> {
-  const cutoff = nowIx - AWARD_GRACE_DAYS * DAY_MS * IxTime.getTimeMultiplier();
+  const cutoff = nowMs - AWARD_GRACE_DAYS * DAY_MS;
   const lapsed = await db.contract.findMany({
     where: { status: "OPEN", endIxTime: { lt: cutoff } },
     select: { id: true },
@@ -49,7 +48,7 @@ export async function expireLapsedContracts(
       const refunded = await db.$transaction(async (tx) => {
         const before = await transition(tx, id, "OPEN", "CANCELLED", {
           escrow: 0,
-          closedIxTime: nowIx,
+          closedIxTime: nowMs,
           resolutionNote: "Expired: not awarded in time",
         });
         const bids = await tx.contractBid.findMany({

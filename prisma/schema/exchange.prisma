@@ -5,7 +5,9 @@
 //   - cuid() string ids, createdAt/updatedAt wall-clock audit columns
 //   - String columns for type/status/direction (allowed values documented inline),
 //     matching VaultTransaction.type / CardAuction.status
-//   - *IxTime columns are Float epoch-ms from IxTime.getCurrentIxTime() (game time)
+//   - *IxTime / ixTime columns are Float epoch-ms of REAL time (Date.now()) since the realm time
+//     switch (2026-10, scripts/migrations/2026-10-realm-time/t3-platform-real-time.sql); the names
+//     are historical. The exchange is platform-wide, so it runs on no realm's clock.
 //   - Sovereign wallet is isolated from MyVault to protect the IxCredits economy
 
 /// Per-user Sovereign (₷) wallet — Exchange's own currency, isolated from MyVault/IxCredits.
@@ -245,7 +247,7 @@ model ConversionLog {
   @@map("exchange_conversion_logs")
 }
 
-/// A periodic strategic decision queued by a founder, resolved on the IxTime tick.
+/// A periodic strategic decision queued by a founder, resolved on the market tick (real time).
 /// type: EXPAND | RND | ENTER_SECTOR | ACQUIRE | LOBBY | PRICE
 model CompanyDecision {
   id           String   @id @default(cuid())

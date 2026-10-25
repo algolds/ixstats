@@ -20,7 +20,6 @@ import {
 } from "~/lib/exchange/contracts";
 import { AWARD_GRACE_DAYS, expireLapsedContracts } from "~/lib/exchange/expiry";
 import { notifyExchange } from "~/lib/exchange/notify";
-import { IxTime } from "~/lib/ixtime";
 import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
 import { invalidateVaultConfigCache } from "~/lib/vault/vault-perks";
 import { createFakeExchangeDb, type FakeDb } from "~/tests/helpers/fake-exchange-db";
@@ -28,7 +27,7 @@ import { createFakeExchangeDb, type FakeDb } from "~/tests/helpers/fake-exchange
 let fake: FakeDb;
 let seq = 0;
 const rid = () => `request-${++seq}`;
-const ixDays = (d: number) => d * DAY_MS * IxTime.getTimeMultiplier();
+const days = (d: number) => d * DAY_MS;
 
 function setup(config: Record<string, string> = {}) {
   invalidateExchangeConfigCache();
@@ -170,7 +169,7 @@ describe("expireLapsedContracts", () => {
     const bobCo = await found("bob", "Bob Builders");
     await placeBid(fake.client, { userId: "bob", contractId: id, companyId: bobCo, amount: 250 });
     const before = totalMoney();
-    const late = (contract(tenderId).endIxTime as number) + ixDays(AWARD_GRACE_DAYS + 30);
+    const late = (contract(tenderId).endIxTime as number) + days(AWARD_GRACE_DAYS + 30);
 
     const runs = await Promise.all([1, 2, 3].map(() => expireLapsedContracts(fake.client, late)));
     expect(runs.reduce((s, r) => s + r.expired, 0)).toBe(2);
@@ -197,7 +196,22 @@ describe("expireLapsedContracts", () => {
       amount: 400,
     });
     await awardContract(fake.client, { userId: "alice", contractId: id, bidId: bid.id });
-    await expireLapsedContracts(fake.client, (contract(id).endIxTime as number) + ixDays(365));
+    await expireLapsedContracts(fake.client, (contract(id).endIxTime as number) + days(365));
     expect(contract(id)).toMatchObject({ status: "AWARDED", escrow: 400 });
+  });
+
+  it("runs on real time: bidding closes after real days and expiry follows the real grace", async () => {
+    const before = Date.now();
+    const { id } = await b2b(300);
+    const k = contract(id);
+    const end = k.endIxTime as number;
+    expect(end - (k.createdIxTime as number)).toBe(days(1));
+    expect(end).toBeGreaterThanOrEqual(before + days(1));
+    expect(end).toBeLessThanOrEqual(Date.now() + days(1));
+
+    await expireLapsedContracts(fake.client, end + days(AWARD_GRACE_DAYS - 0.5));
+    expect(contract(id).status).toBe("OPEN");
+    await expireLapsedContracts(fake.client, end + days(AWARD_GRACE_DAYS + 0.5));
+    expect(contract(id).status).toBe("CANCELLED");
   });
 });
