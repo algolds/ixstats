@@ -144,7 +144,7 @@ function IssueHero({
         {showDeadline && (
           <Badge variant={isUrgent ? "destructive" : "outline"}>
             {isUrgent ? <Flame /> : <Clock />}
-            {daysRemaining <= 0 ? "DEADLINE EXPIRED" : `${Math.ceil(daysRemaining)} days remaining`}
+            {daysRemaining <= 0 ? "Deadline passed" : `${Math.ceil(daysRemaining)} days remaining`}
           </Badge>
         )}
       </div>
@@ -185,7 +185,7 @@ function OutcomeCard({
       <div className="flex flex-wrap items-center gap-2">
         <CheckCircle className="text-green h-4 w-4" />
         <span className="text-label text-headline">
-          {issue.status === "auto_resolved" ? "Auto-Resolved" : "Decision Made"}
+          {issue.status === "auto_resolved" ? "Auto-resolved" : "Decision made"}
         </span>
       </div>
       {issue.consequenceLog && (
@@ -416,30 +416,42 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
     void utils.nationalIssues.getMyIssues.invalidate();
     void utils.nationalIssues.getPendingCount.invalidate();
   };
+  // A decision writes approval, stability, effects, the ledger and directive progress.
+  const invalidateConsequences = () => {
+    void utils.countries.getByIdWithEconomicData.invalidate();
+    void utils.countries.getActivityRingsData.invalidate();
+    void utils.mycountry.getCanonFeed.invalidate();
+    void utils.intent.getTree.invalidate();
+    void utils.intent.getLinkedIssues.invalidate();
+  };
 
   const respondM = api.nationalIssues.respond.useMutation({
     onSuccess: async (res: { recommendedDirective?: string }) => {
       setShowOutcome(true);
       setConfirmingOptionId(null);
       setLocalDirective(res?.recommendedDirective);
+      invalidateConsequences();
       await utils.nationalIssues.getIssue.invalidate();
-      await utils.nationalIssues.getMyIssues.invalidate();
-      await utils.nationalIssues.getPendingCount.invalidate();
+      invalidateIssues();
     },
     onError: (e: { message?: string }) => notify.error("Failed to submit response", e?.message),
   });
   const dismissM = api.nationalIssues.dismiss.useMutation({
     onSuccess: () => {
-      notify.success("Issue delegated to civil service.");
+      notify.success("Issue delegated to the civil service.");
       invalidateIssues();
+      // Delegating spends executive bandwidth.
+      void utils.policies.getPolicyReconContext.invalidate();
       onClose?.();
     },
     onError: (e: { message?: string }) => notify.error("Failed to delegate issue", e?.message),
   });
   const scheduleMeetingM = api.quickActions.createMeeting.useMutation({
     onSuccess: () => {
-      notify.success("Cabinet Meeting scheduled on your Executive Agenda for next week.");
-      void utils.nationalIssues.getMyIssues.invalidate();
+      notify.success(
+        "Cabinet meeting scheduled for next week. It is in Politics, under Cabinet meetings."
+      );
+      void utils.meetings.getMeetings.invalidate();
       onClose?.();
     },
     onError: (e: { message?: string }) => notify.error("Failed to schedule meeting", e?.message),
@@ -537,10 +549,14 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                 <AlertTriangle className="text-yellow h-3.5 w-3.5" />
                 Executive issue resolution
               </Eyebrow>
-              <span className="text-label-secondary text-footnote">4 action pathways</span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div
+              className={cn(
+                "grid grid-cols-2 gap-2",
+                onDeclare ? "sm:grid-cols-4" : "sm:grid-cols-3"
+              )}
+            >
               <PathwayButton
                 icon={Users}
                 label="Delegate"
@@ -551,7 +567,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
               <PathwayButton
                 icon={Sliders}
                 label="Resolve brief"
-                sub="Base 3 Options"
+                sub={`${options.length} option${options.length === 1 ? "" : "s"}`}
                 onClick={() =>
                   document
                     .getElementById("issue-brief-options")
@@ -560,21 +576,23 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
               />
               <PathwayButton
                 icon={CalendarClock}
-                label={scheduleMeetingM.isPending ? "Scheduling…" : "Set Meeting"}
-                sub="+7d Agenda"
+                label={scheduleMeetingM.isPending ? "Scheduling…" : "Set meeting"}
+                sub="Next week"
                 onClick={handleSetMeeting}
                 disabled={scheduleMeetingM.isPending}
               />
-              <PathwayButton
-                icon={Command}
-                label="Make Directive"
-                sub="Custom Tune"
-                accent
-                onClick={() => {
-                  onClose?.();
-                  onDeclare?.(issue.title);
-                }}
-              />
+              {onDeclare && (
+                <PathwayButton
+                  icon={Command}
+                  label="Make Directive"
+                  sub="Draft your own"
+                  accent
+                  onClick={() => {
+                    onClose?.();
+                    onDeclare(issue.title);
+                  }}
+                />
+              )}
             </div>
           </Card>
 
