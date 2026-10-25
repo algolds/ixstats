@@ -14,7 +14,10 @@ jest.mock("next/dynamic", () => ({
 jest.mock("~/components/providers/AbilityProvider", () => ({
   useAbility: () => ({
     can: (action: string, subject: string, section: string) =>
-      premiumAbility && action === "access" && subject === "MyCountryFeature" && section === "defense",
+      premiumAbility &&
+      action === "access" &&
+      subject === "MyCountryFeature" &&
+      section === "defense",
   }),
 }));
 jest.mock("~/hooks/usePermissions", () => ({ useIsBetaTester: () => false }));
@@ -54,7 +57,9 @@ it("unlocks the Defense drill for a premium user", () => {
 
 // P2-12: the issue brief has no blurb, so its sheet renders no empty description paragraph under the title.
 it("renders no empty description under the issue brief title", () => {
-  render(<DrillSheets drill={{ kind: "issue", issueId: "i1" }} onClose={jest.fn()} countryId="c1" />);
+  render(
+    <DrillSheets drill={{ kind: "issue", issueId: "i1" }} onClose={jest.fn()} countryId="c1" />
+  );
   const dialog = screen.getByRole("dialog");
   expect(screen.getByRole("heading", { name: "Issue brief" })).toBeTruthy();
   expect(dialog.querySelectorAll("p")).toHaveLength(0);

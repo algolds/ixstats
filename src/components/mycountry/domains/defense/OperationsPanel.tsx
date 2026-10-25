@@ -27,9 +27,7 @@ export function OperationsPanel({ countryId }: OperationsPanelProps) {
           <Swords aria-hidden="true" className="text-red h-4 w-4" />
           <h3 className="text-label text-headline">Military operations</h3>
         </div>
-        {canEdit && (
-          <DeploymentWizard countryId={countryId} onSuccess={handleOperationCreated} />
-        )}
+        {canEdit && <DeploymentWizard countryId={countryId} onSuccess={handleOperationCreated} />}
       </div>
 
       <ActiveOperations countryId={countryId} />

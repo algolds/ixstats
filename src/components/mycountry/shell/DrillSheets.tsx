@@ -122,7 +122,9 @@ function DrillSheetsComponent({
             )}
           </div>
           {blurb && (
-            <SheetDescription className="text-label-secondary text-footnote">{blurb}</SheetDescription>
+            <SheetDescription className="text-label-secondary text-footnote">
+              {blurb}
+            </SheetDescription>
           )}
         </SheetHeader>
 

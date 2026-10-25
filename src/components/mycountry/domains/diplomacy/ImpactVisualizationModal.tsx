@@ -64,16 +64,12 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
               <h4 className="text-label text-headline mb-4">Relationship state evolution</h4>
               <div className="flex items-center justify-center gap-4">
                 <div className="text-center">
-                  <div className="text-label text-title-1 mb-1">
-                    {impact.currentState || "—"}
-                  </div>
+                  <div className="text-label text-title-1 mb-1">{impact.currentState || "—"}</div>
                   <span className="text-caption text-label-secondary">Before</span>
                 </div>
                 <ArrowRight className="text-label-secondary h-6 w-6" />
                 <div className="text-center">
-                  <div className="text-label text-title-1 mb-1">
-                    {impact.newState || "—"}
-                  </div>
+                  <div className="text-label text-title-1 mb-1">{impact.newState || "—"}</div>
                   <Eyebrow>After</Eyebrow>
                 </div>
               </div>

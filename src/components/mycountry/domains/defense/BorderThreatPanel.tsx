@@ -218,8 +218,8 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
                 <Globe aria-hidden="true" className="text-label-secondary mb-2 h-8 w-8" />
                 <p className="text-label text-body font-medium">No land neighbors</p>
                 <p className="text-label-secondary text-footnote mt-1 max-w-xs">
-                  Neighbors come from your borders on the map. Draw or link your territory to
-                  assess them.
+                  Neighbors come from your borders on the map. Draw or link your territory to assess
+                  them.
                 </p>
               </div>
             ) : (

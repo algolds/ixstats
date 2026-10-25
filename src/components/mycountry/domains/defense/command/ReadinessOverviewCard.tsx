@@ -98,10 +98,7 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
             const pct = Math.min(100, Math.max(0, m.value));
             return (
               <div key={m.label} className="min-w-0 space-y-2">
-                <span
-                  className="text-caption text-label-secondary block truncate"
-                  title={m.title}
-                >
+                <span className="text-caption text-label-secondary block truncate" title={m.title}>
                   {m.label}
                 </span>
                 <div className="text-label text-title-3 tabular-nums">{Math.round(pct)}%</div>

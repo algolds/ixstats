@@ -70,7 +70,6 @@ const STANCE_OPTIONS: ReadonlyArray<{ value: DiplomaticGoal; label: string }> = 
   { value: "RIVAL", label: "Rival (Direct Rivalry)" },
 ];
 
-
 type EmbassyRow = NonNullable<RouterOutputs["diplomaticEmbassies"]["getEmbassies"]>[number];
 
 /** Relations, plus one derived relation per embassy whose partner has no relation record yet. */
