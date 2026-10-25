@@ -23,6 +23,15 @@ function mockMutation(name: string, opts: SaveCall["opts"]) {
   };
 }
 const lastSave = () => mockCalls[mockCalls.length - 1]!;
+/** What the page first loads; null means `mockState`. */
+const mockLoaded: { current: Record<string, unknown> | null } = { current: null };
+/** The caches a save drops. */
+const mockInvalidate = {
+  countries: jest.fn(),
+  dashboard: jest.fn(),
+  government: jest.fn(),
+  profile: jest.fn(),
+};
 /** What a refetch returns (Reload); null means the state as first loaded. */
 const mockFresh: { current: Record<string, unknown> | null } = { current: null };
 const mockState = {
@@ -55,14 +64,19 @@ const mockState = {
 
 jest.mock("~/trpc/react", () => ({
   api: {
-    useUtils: () => ({ countries: { getEditorState: { invalidate: jest.fn() } } }),
+    useUtils: () => ({
+      countries: { invalidate: mockInvalidate.countries },
+      mycountry: { getCountryDashboard: { invalidate: mockInvalidate.dashboard } },
+      government: { invalidate: mockInvalidate.government },
+      users: { getProfile: { invalidate: mockInvalidate.profile } },
+    }),
     users: {
       getProfile: { useQuery: () => ({ data: { countryId: "c1" }, isSuccess: true }) },
     },
     countries: {
       getEditorState: {
         useQuery: () => ({
-          data: mockState,
+          data: mockLoaded.current ?? mockState,
           isError: false,
           refetch: async () => ({ data: mockFresh.current ?? mockState }),
         }),
@@ -119,7 +133,9 @@ beforeAll(() => {
 beforeEach(() => {
   mockCalls.length = 0;
   mockFresh.current = null;
+  mockLoaded.current = null;
   mockPush.mockClear();
+  Object.values(mockInvalidate).forEach((fn) => fn.mockClear());
 });
 
 describe("the country editor", () => {
@@ -148,6 +164,32 @@ describe("the country editor", () => {
     act(() => lastSave().opts.onSuccess({ identity: { demonym: "Testian" } }));
     expect(screen.getByLabelText("Demonym")).toHaveValue("Testian");
     expect(screen.getByRole("button", { name: "Save culture" })).toBeDisabled();
+    // MyCountry's cached copy of the nation is dropped, so it shows the change at once.
+    expect(mockInvalidate.countries).toHaveBeenCalledTimes(1);
+    expect(mockInvalidate.dashboard).toHaveBeenCalledTimes(1);
+    expect(mockInvalidate.government).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows a capital placed on the map read-only, with the way to the map editor", () => {
+    mockLoaded.current = {
+      ...mockState,
+      nationalIdentity: {
+        ...mockState.nationalIdentity,
+        capitalCity: "Port Test",
+        capitalCityRef: { name: "Port Test" },
+      },
+    };
+    render(<MyCountryEditorPage />);
+    expect(screen.queryByRole("textbox", { name: "Capital city" })).toBeNull();
+    expect(screen.getByText("Port Test")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Rename or move it in the map editor" })
+    ).toHaveAttribute("href", "/mycountry/map-editor");
+    // The rest of the section still edits and saves without the capital.
+    fireEvent.change(screen.getByLabelText("Largest city"), { target: { value: "Big Town" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save capital and language" }));
+    expect(lastSave().input).toMatchObject({ identity: { largestCity: "Big Town" } });
+    expect(lastSave().input.identity).not.toHaveProperty("capitalCity");
   });
 
   it("sends the loaded baseline with a new size", () => {

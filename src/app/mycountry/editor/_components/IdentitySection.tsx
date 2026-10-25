@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { api } from "~/trpc/react";
 import { Label } from "~/components/ui/label";
 import { SegmentedControl } from "~/components/ui/segmented-control";
@@ -13,6 +14,7 @@ import {
   type IdentityFieldSpec,
   type IdentitySectionId,
 } from "~/lib/mycountry/editor-fields";
+import { MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
 import { RealmImageField } from "~/app/r/[realm]/_components/manage/RealmImageField";
 import { EditorSection, SaveButton, TextField, useDraft, useSaveHandlers } from "./EditorSection";
 import { useEditor, useReportDirty, type EditorState } from "./editor-context";
@@ -71,6 +73,24 @@ function ChoiceField({
   );
 }
 
+/** The capital when it is placed on the map: shown here, renamed or moved in the map editor. */
+function MapCapitalField({ name }: { name: string }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <Label id="editor-capitalCity-label">Capital city</Label>
+      <p aria-labelledby="editor-capitalCity-label" className="text-label text-body">
+        {name}
+      </p>
+      <p className="text-label-secondary text-footnote">
+        Placed on the map.{" "}
+        <Link href={MYCOUNTRY_MAP_EDITOR_PATH} className="text-tint underline">
+          Rename or move it in the map editor
+        </Link>
+      </p>
+    </div>
+  );
+}
+
 /**
  * An identity section (Flag and symbols, Capital and language, Culture, Civic standards): its
  * national identity fields, plus the flag and coat of arms in Flag and symbols. Saves only the
@@ -84,6 +104,7 @@ export function IdentitySection({
   saveLabel,
   identity,
   images,
+  mapCapital,
 }: {
   sectionId: IdentitySectionId;
   title: string;
@@ -93,9 +114,13 @@ export function IdentitySection({
   identity: Partial<Record<EditorIdentityKey, string | null>> | null;
   /** The flag and coat of arms, for the section that shows them. */
   images?: Record<EditorCountryImageKey, string | null>;
+  /** The capital city placed on the map, which makes the capital read-only here. */
+  mapCapital?: string | null;
 }) {
   const { countryId } = useEditor();
-  const fields = IDENTITY_FIELDS[sectionId];
+  const fields = IDENTITY_FIELDS[sectionId].filter(
+    (f) => !(mapCapital && f.key === "capitalCity")
+  );
   const initial: Values = Object.fromEntries([
     ...fields.map((f) => [f.key, identity?.[f.key] ?? ""]),
     ...(images ? IMAGE_FIELDS.map((f) => [f.key, images[f.key] ?? ""]) : []),
@@ -175,6 +200,7 @@ export function IdentitySection({
           />
         ))}
       <div className="grid gap-4 sm:grid-cols-2">
+        {mapCapital && sectionId === "language" && <MapCapitalField name={mapCapital} />}
         {fields.map((spec) =>
           spec.options ? (
             <ChoiceField

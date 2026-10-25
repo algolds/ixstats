@@ -2,8 +2,8 @@
 // `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factories rely on the ambient global.
 /**
  * Who may use a gated feature. The client abilities (`defineAbilityFor`): the owner manages everything, an admin users
- * and roles but not system config, database permissions map to abilities, and MyCountry Premium tools (Defense,
- * Intelligence, Map editor) need the premium tier. The server gate (`premiumProcedure`) accepts what the client shows
+ * and roles but not system config, database permissions map to abilities, and the MyCountry Premium tool (Defense)
+ * needs the premium tier, while Intelligence and the Map editor are free. The server gate (`premiumProcedure`) accepts what the client shows
  * them to: premium members, beta testers, staff, admins, owners and the system owner, and nobody else.
  * NEXT_PUBLIC_PREMIUM_FOR_ALL, the test-build switch, opens both and is off by default.
  *
@@ -78,12 +78,9 @@ describe("defineAbilityFor", () => {
     expect(ability.can("access", "MyCountryFeature", "overview")).toBe(true);
     // Intelligence renders the Defense section, which the "defense" lock covers (F34).
     expect(ability.can("access", "MyCountryFeature", "intelligence")).toBe(true);
-    for (const section of ["defense", "map-editor"]) {
-      expect([section, ability.can("access", "MyCountryFeature", section)]).toEqual([
-        section,
-        premium,
-      ]);
-    }
+    // The map editor is free for every owner (decision 3).
+    expect(ability.can("access", "MyCountryFeature", "map-editor")).toBe(true);
+    expect(ability.can("access", "MyCountryFeature", "defense")).toBe(premium);
   });
 
   it("unlocks a tool only when it is free or unlocked for the user", () => {

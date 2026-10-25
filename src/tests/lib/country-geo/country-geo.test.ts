@@ -29,6 +29,7 @@ jest.mock("~/lib/maps/geo-validation", () => ({
 import {
   distributeSubdivisionDemographicsToCities,
   getCountryGeoBundle,
+  rebaseNationalFromGeography,
   syncCountryGeometryFromMapLayer,
   syncGeographicDemographics,
   upsertCity,
@@ -193,6 +194,66 @@ describe("national figures and city demographics", () => {
     await syncGeographicDemographics(db, "c1");
     expect(db.country.update).not.toHaveBeenCalled();
     expect(db.city.aggregate).not.toHaveBeenCalled();
+  });
+
+  /** A nation of 1M people and 10B GDP with a 2B budget; its subdivisions sum to 2M people and 30B. */
+  const rebaseDb = (geoRollupMode = "bottom-up") => ({
+    country: {
+      findUnique: jest.fn().mockResolvedValue({
+        geoRollupMode,
+        currentPopulation: 1_000_000,
+        currentTotalGdp: 10_000_000_000,
+        totalWorkforce: 600_000,
+        landArea: 1_000,
+      }),
+      update: jest.fn(async ({ data }: { data: object }) => ({ id: "c1", ...data })),
+    },
+    subdivision: {
+      aggregate: jest
+        .fn()
+        .mockResolvedValue({ _sum: { population: 2_000_000, gdpContribution: 30_000_000_000 } }),
+    },
+    city: { aggregate: jest.fn() },
+    governmentStructure: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+    budgetAllocation: {
+      findFirst: jest.fn().mockResolvedValue({ budgetYear: 2042 }),
+      updateMany: jest.fn().mockResolvedValue({ count: 3 }),
+    },
+  });
+
+  it.each([
+    ["the bottom-up rollup", (db: ReturnType<typeof rebaseDb>) => syncGeographicDemographics(db, "c1")],
+    ["rebase from the map", (db: ReturnType<typeof rebaseDb>) => rebaseNationalFromGeography(db, "c1")],
+  ])(
+    "%s sets the baseline (so the projection keeps it) and moves the budget with the GDP",
+    async (_name, run) => {
+      const db = rebaseDb();
+      await run(db);
+      const data = db.country.update.mock.calls[0]![0].data;
+      expect(data).toMatchObject({
+        baselinePopulation: 2_000_000,
+        baselineGdpPerCapita: 15_000,
+        currentPopulation: 2_000_000,
+        currentTotalGdp: 30_000_000_000,
+        totalWorkforce: 1_200_000,
+      });
+      expect(data.baselineDate).toBeInstanceOf(Date);
+      expect(db.governmentStructure.updateMany).toHaveBeenCalledWith({
+        where: { countryId: "c1" },
+        data: { totalBudget: { multiply: 3 } },
+      });
+      expect(db.budgetAllocation.updateMany).toHaveBeenCalledWith({
+        where: { governmentStructure: { countryId: "c1" }, budgetYear: 2042 },
+        data: { allocatedAmount: { multiply: 3 }, availableAmount: { multiply: 3 } },
+      });
+    }
+  );
+
+  it("a hybrid nation's figures are left alone by the rollup", async () => {
+    const db = rebaseDb("hybrid");
+    await syncGeographicDemographics(db, "c1");
+    expect(db.country.update).not.toHaveBeenCalled();
+    expect(db.governmentStructure.updateMany).not.toHaveBeenCalled();
   });
 
   it("distributes a large subdivision over its cities in one read and one transaction of bounded statements, losing nobody to rounding", async () => {

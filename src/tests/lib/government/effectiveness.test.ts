@@ -2,19 +2,17 @@
 /**
  * The government corpus. Every government form starts with no conflicting pair, and founding it shows the
  * effectiveness the save (`syncGovernmentComponents`) writes: one formula across the editor, the save and founding.
- * Real infobox government strings map to forms. One synergy table feeds the picker, the per-component arrays, the
- * server save and AtomicEffectivenessService, so they can never disagree. The picker's rules: a template sets its
+ * Real infobox government strings map to forms. One synergy table feeds the picker, the per-component arrays
+ * and the server save, so they can never disagree. The picker's rules: a template sets its
  * whole component set, only defined components count toward the cap, a preset asks before replacing the player's own
  * choices. Component effects are dated in IxTime milliseconds (plan 329).
  *
- * Folds forms, synergy-table, templates, validate-selection, policy-presets, atomic-effectiveness-service and
- * component-effects-timestamp.
+ * Folds forms, synergy-table, templates, validate-selection, policy-presets and component-effects-timestamp.
  */
 import { ComponentType } from "@prisma/client";
 import { IxTime } from "~/lib/ixtime";
 import { foundingGovernmentEffectiveness } from "~/server/shared/founding-snapshot";
 import { syncGovernmentComponents } from "~/server/shared/country-mutation-helpers";
-import { getAtomicEffectivenessService } from "~/server/services/AtomicEffectivenessService";
 import {
   componentInteractions,
   governmentEffectiveness,
@@ -41,9 +39,7 @@ import {
   validateSelection,
 } from "~/lib/government/atomic-utils";
 import {
-  CONFLICT_PENALTY,
   GOVERNMENT_SYNERGY_TABLE,
-  SYNERGY_BONUS,
   checkComponentSynergy,
   findSynergyPair,
   synergyScoreDelta,
@@ -213,43 +209,6 @@ describe("one synergy table", () => {
     expect(metrics.synergyBonus - metrics.conflictPenalty).toBe(serverDelta);
     expect(detectSynergies(selection).length).toBe(metrics.synergyCount);
     expect(detectConflicts(selection).length).toBe(metrics.conflictCount);
-  });
-
-  it("AtomicEffectivenessService scores a synergy and a conflict with the table's points", async () => {
-    let rows: Array<{ id: string; componentType: ComponentType }> = [];
-    const db = {
-      governmentComponent: {
-        findMany: jest.fn(() => Promise.resolve(rows)),
-        findFirst: jest.fn(({ where }: { where: { componentType: ComponentType } }) =>
-          Promise.resolve(rows.find((r) => r.componentType === where.componentType) ?? null)
-        ),
-      },
-      atomicEffectiveness: {
-        upsert: jest.fn(({ create }: { create: object }) => Promise.resolve(create)),
-      },
-      componentSynergy: {
-        findFirst: jest.fn(() => Promise.resolve({ id: "exists" })),
-        create: jest.fn(),
-      },
-    };
-    const service = getAtomicEffectivenessService(db as never);
-    const pairOf = (conflicting: boolean) => {
-      const pair = GOVERNMENT_SYNERGY_TABLE.find(
-        (p) => (p.type === "CONFLICTING") === conflicting
-      )!;
-      return [pair.a, pair.b].map((componentType, i) => ({ id: `r${i}`, componentType }));
-    };
-
-    rows = pairOf(false);
-    expect(await service.calculateEffectiveness("c_synergy")).toMatchObject({
-      synergyBonus: SYNERGY_BONUS,
-      conflictPenalty: 0,
-    });
-    rows = pairOf(true);
-    expect(await service.calculateEffectiveness("c_conflict")).toMatchObject({
-      synergyBonus: 0,
-      conflictPenalty: CONFLICT_PENALTY,
-    });
   });
 });
 

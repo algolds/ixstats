@@ -14,8 +14,8 @@ export type Subjects =
 
 const CRUD_ACTIONS: Actions[] = ["manage", "read", "update", "create", "delete"];
 // "intelligence" is not one: /mycountry/intelligence renders Defense, which the "defense" lock covers,
-// and no intelligence procedure is premium.
-const PREMIUM_SECTIONS = ["defense", "map-editor"];
+// and no intelligence procedure is premium. The map editor is free for every owner.
+const PREMIUM_SECTIONS = ["defense"];
 
 /** A tool id given directly or as `{ toolId }`. */
 const toolIdOf = (value: unknown): string | undefined =>

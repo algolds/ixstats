@@ -1,5 +1,6 @@
 import type { MultiPolygon, Polygon } from "geojson";
 import type { City, PrismaClient, Subdivision } from "@prisma/client";
+import { rebaseNationalSize, SIZE_BEFORE_SELECT } from "~/lib/economy/national-size";
 
 /**
  * Sync helper to keep Country cached geo columns up to date with its MapLayer political geometry.
@@ -271,7 +272,7 @@ export async function syncGeographicDemographics(
   // Fetch the country rollup mode to see if we should sync to the national baseline
   const country = await db.country.findUnique({
     where: { id: countryId },
-    select: { geoRollupMode: true },
+    select: { geoRollupMode: true, ...SIZE_BEFORE_SELECT },
   });
 
   if (!country || country.geoRollupMode !== "bottom-up") {
@@ -287,16 +288,14 @@ export async function syncGeographicDemographics(
 
   // Only subdivisions cover the whole nation. City figures are urban-only, so falling back to them
   // would overwrite the national population/GDP with the urban total; leave the national figures alone.
+  // The sums become the baseline, so the projection keeps them (P0-12).
   if (totalSubPop > 0) {
-    const gdpPerCapita = totalSubGdp / totalSubPop;
-    await db.country.update({
-      where: { id: countryId },
-      data: {
-        currentPopulation: totalSubPop,
-        currentTotalGdp: totalSubGdp,
-        currentGdpPerCapita: gdpPerCapita,
-      },
-    });
+    await rebaseNationalSize(
+      db,
+      countryId,
+      { population: totalSubPop, gdpPerCapita: totalSubGdp / totalSubPop },
+      country
+    );
   }
 }
 
@@ -322,7 +321,8 @@ export async function updateGeoRollupMode(db: any, countryId: string, mode: stri
 }
 
 /**
- * Rebase the country's national population and GDP totals to match geographic sums.
+ * Rebase the country's national population and GDP to match geographic sums: they become the
+ * baseline (dated now) and the yearly budget moves with the GDP.
  */
 export async function rebaseNationalFromGeography(db: any, countryId: string) {
   const subdivisionsSum = await db.subdivision.aggregate({
@@ -347,18 +347,19 @@ export async function rebaseNationalFromGeography(db: any, countryId: string) {
     throw new Error("Cannot rebase: geographic population must be greater than zero.");
   }
 
-  const gdpPerCapita = totalGdp / totalPop;
-
-  const country = await db.country.update({
+  const before = await db.country.findUnique({
     where: { id: countryId },
-    data: {
-      currentPopulation: totalPop,
-      currentTotalGdp: totalGdp,
-      currentGdpPerCapita: gdpPerCapita,
-    },
+    select: SIZE_BEFORE_SELECT,
   });
+  if (!before) throw new Error("Cannot rebase: country not found.");
 
-  return country;
+  // The sums become the baseline, so the projection keeps them (P0-12).
+  return rebaseNationalSize(
+    db,
+    countryId,
+    { population: totalPop, gdpPerCapita: totalGdp / totalPop },
+    before
+  );
 }
 
 type CityDemographics = { id: string; population: number; gdpContribution: number };

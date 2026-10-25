@@ -8,16 +8,9 @@
  *  - crud:       structure reads (getByCountryId / getFullByCountryId) and starting a budget year
  *  - budget:     the owner's National budget edits (structure, departments, allocations) and
  *                policy maintenance spent per year
- *  - components: atomic government components, department hierarchy, political metrics,
- *                effectiveness analysis
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { governmentCrudRouter } from "./crud";
 import { governmentBudgetRouter } from "./budget";
-import { governmentComponentsRouter } from "./components";
 
-export const governmentRouter = mergeRouters(
-  governmentCrudRouter,
-  governmentBudgetRouter,
-  governmentComponentsRouter
-);
+export const governmentRouter = mergeRouters(governmentCrudRouter, governmentBudgetRouter);

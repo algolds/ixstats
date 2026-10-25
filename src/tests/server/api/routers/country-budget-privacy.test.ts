@@ -34,7 +34,6 @@ jest.mock("~/server/shared/mycountry-helpers", () => {
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { governmentCrudRouter } from "~/server/api/routers/government/crud";
-import { governmentComponentsRouter } from "~/server/api/routers/government/components";
 import { governmentBudgetRouter } from "~/server/api/routers/government/budget";
 import { myCountryDashboardRouter } from "~/server/api/routers/mycountry/dashboard";
 import { electionsBrokersRouter } from "~/server/api/routers/elections/brokers";
@@ -292,7 +291,6 @@ type Ctx = (db: Db) => never;
 type Call = (ctx: never) => Promise<unknown>;
 
 const government = createCallerFactory(governmentCrudRouter);
-const governmentComponents = createCallerFactory(governmentComponentsRouter);
 const governmentBudget = createCallerFactory(governmentBudgetRouter);
 const mycountry = createCallerFactory(myCountryDashboardRouter);
 const brokers = createCallerFactory(electionsBrokersRouter);
@@ -402,11 +400,6 @@ const OWNER_ONLY: Array<[string, Call, (db: Db) => jest.Mock]> = [
     "security.getDefenseBudget",
     (ctx) => defense(ctx).getDefenseBudget({ countryId: COUNTRY }),
     (db) => db.defenseBudget.findUnique,
-  ],
-  [
-    "government.getCivilServiceStatus",
-    (ctx) => governmentComponents(ctx).getCivilServiceStatus({ countryId: COUNTRY }),
-    (db) => db.governmentComponent.findMany,
   ],
   [
     "government.getPolicyMaintenance",

@@ -21,7 +21,7 @@ All `page.tsx` files below (except `/mycountry/editor` and `/mycountry/welcome`)
 | `/mycountry/editor`       | —          | own page         | The country editor (`_components/CountryEditor.tsx`): Name, identity, government form, institutions (with policy presets) and size, each section saved on its own mutation with stale-tab checks; deep links by `#hash`; a leave guard for unsaved sections. Budget, taxes and cabinet stay in their consoles. |
 | `/mycountry/welcome`      | —          | own page         | The welcome page after founding (`MYCOUNTRY_WELCOME_PATH`): the nation's `EntityHeader`, "X is founded" and Open MyCountry. Players without a nation go to `/builder`.                                                                                                                                   |
 
-Premium/feature gating uses `useAbility().can("access", "MyCountryFeature", …)` wrapped in `PremiumPreviewFrame`. The sidebar lists Defense only for MyCountry Premium users and beta testers (`requires: "mycountry-premium"` in `src/lib/navigation/app-sections.ts`); Intelligence, Map editor and Editor are reached by URL or the header actions (Map editor for premium users only).
+Premium/feature gating uses `useAbility().can("access", "MyCountryFeature", …)` wrapped in `PremiumPreviewFrame`. The sidebar lists Defense only for MyCountry Premium users and beta testers (`requires: "mycountry-premium"` in `src/lib/navigation/app-sections.ts`); Intelligence, Map editor and Editor are reached by URL or the header actions. The map editor is free for every owner (its geo writes are owner-checked).
 
 ## Key Features
 
@@ -39,7 +39,7 @@ The MyCountry subsystem uses a **4-tier modular domain architecture** located at
 | ----------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Shell**   | `shell/`   | Executive command center (`CommandSurface`, `ExecutiveConsole`, `ExecutiveHome`, `DomainSurface`, `DomainContextRail`, `DrillSheets`, `EconomyDrillDown`, `PoliticsDrillDown`, `rails/`, `agenda/`, `MyCountryRouter`, `mycountry-sections.ts`, `domain-meta.ts`, `status-tone.ts`). |
 | **Shared**  | `shared/`  | Universal reusable primitives (`cards/`, `headers/`, `modals/`, `primitives/`, `tabs/`).                                                                                                                                                                                             |
-| **Domains** | `domains/` | 5 simulation pillar modules: `defense/`, `diplomacy/`, `economy/`, `government/`, `geography/`.                                                                                                                                                                                      |
+| **Domains** | `domains/` | Simulation pillar modules: `defense/`, `diplomacy/`, `government/`.                                                                                                                                                                                      |
 | **Dossier** | `dossier/` | Public country dossier views, factbooks, and Wiki infobox cards.                                                                                                                                                                                                                     |
 
 The Directives page lives in `directives/` (`DirectivesWorkspace`, status strip, directive cards, recorded outcome). Its composer is `shared/primitives/IntentComposer.tsx`, with the steps and preset catalog in `shared/primitives/composer/` (presets in `directive-presets.ts`).
@@ -50,14 +50,14 @@ Key hooks (in `src/hooks/`): `useMyCountryCompliance`, `useMyCountryMetrics`, `u
 
 Verified `api.*` calls used by this route (`src/app/mycountry`, `src/components/mycountry`, and the key hooks):
 
-- **Country / economy:** `api.countries.getByIdWithEconomicData` / `getByIdBasic` / `getByIdAtTime` / `getActivityRingsData` / `getAll`, `api.economics.getEconomyConfiguration` / `updateFiscalSystem`, `api.taxSystem.getByCountryId`, `api.wikiCache.getCountryProfile`, `api.transport.getNationalMobilityProfile`
+- **Country / economy:** `api.countries.getByIdWithEconomicData` / `getByIdBasic` / `getByIdAtTime` / `getActivityRingsData` / `getAll`, `api.economics.updateFiscalSystem`, `api.taxSystem.getByCountryId`, `api.wikiCache.getCountryProfile`, `api.transport.getNationalMobilityProfile`
 - **Overview / canon:** `api.mycountry.getCountryDashboard` / `getCanonFeed`, `api.intelligence.getMyAlerts` / `markAlertRead` / `markAllAlertsRead` / `dismissAlert`, `api.achievements.getRecentByCountry`, `api.thinkpages.createPost`
 - **Executive:** `api.nationalIssues.getMyIssues` / `getIssue` / `markViewed` / `respond` / `dismiss` / `commissionRecon` / `getReconReveal` / `getHistory` / `getPendingCount`, `api.intent.*` (suggest, commit, tree, status, update status, linked issues, outcome, summation draft), `api.policies.getPolicyReconContext` (executive bandwidth), `api.quickActions.createMeeting`, `api.historical.getCountryHistory`
 - **Diplomacy:** `api.diplomaticCore.*` (relationships, shared data, follow, goals), `api.diplomaticEmbassies.*` (establish, close, reopen, delete, profile, cost), `api.diplomaticPolicies.*` (foreign policies, alliances), `api.diplomaticCultural.*` (cultural exchanges), `api.diplomaticScenarios.getAllScenarios` / `recordChoice`
 - **Defense:** `api.security.getSecurityAssessment` / `getMilitaryBranches` / `getBorderSecurity` / `getConflicts` / `getOperations`, plus the military-asset, operation and conflict mutations
 - **Politics:** `api.elections.getElections` / `getCurrentParliament` / `getLegislature` / `getParties`
-- **Government:** `api.government.getByCountryId` / `getFullByCountryId` / `getCivilServiceStatus`
-- **Map editor:** `api.countryGeo.*` (geo bundle, compliance, subdivisions, cities, wiki populate, rollup), `api.geoCore.getCountryGeoProfile`, `api.geoFeatures.update`, `api.cardImages.*`
+- **Government:** `api.government.getByCountryId` / `getFullByCountryId`, plus the National budget writes (`createStructure`, `setAllocation`, `addDepartment`, `removeDepartment`, `getPolicyMaintenance`)
+- **Map editor:** `api.countryGeo.sampleTerrainAt` / `upsertSubdivision`, `api.geoCore.*` (country geometry, features, linkage, geo profile, point info), `api.geoFeatures.*` (feature, city, POI, label and storyline edits), `api.cardImages.*`. Rollup mode and "Rebase stats from map" live in Settings (`CountryNationPanel`)
 - **System:** `api.system.getCurrentIxTime`, `api.users.getProfile` / `getMembershipStatus`, `api.admin.getNavigationSettings`, `api.wikios.getSectionContent`
 
 ## Connections to Other Systems

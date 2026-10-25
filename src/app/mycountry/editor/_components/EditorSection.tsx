@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useNotify } from "~/hooks/useNotify";
+import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
@@ -100,7 +101,9 @@ export function SaveButton({
 /**
  * Success and error handling every section's save shares. A save folds the values the server
  * returns into the page's copy (`apply`), which re-keys this section alone; a refusal because the
- * same fields changed elsewhere puts the section in conflict.
+ * same fields changed elsewhere puts the section in conflict. A save also drops MyCountry's cached
+ * copy of the nation and its government, so going back shows the new name, flag, form, size or
+ * budget at once.
  */
 export function useSaveHandlers<Result>({
   saved,
@@ -113,9 +116,14 @@ export function useSaveHandlers<Result>({
 }) {
   const notify = useNotify();
   const { applySaved, markConflict } = useEditor();
+  const utils = api.useUtils();
   return {
     onSuccess: (result: Result) => {
       applySaved((state) => apply(state, result));
+      void utils.countries.invalidate();
+      void utils.mycountry.getCountryDashboard.invalidate();
+      // The form names the government's offices, and a size change moves the budget.
+      void utils.government.invalidate();
       notify.success(saved);
     },
     onError: (error: { message: string; data?: { code?: string } | null }) => {

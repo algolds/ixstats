@@ -69,6 +69,7 @@ function storedRows() {
       baselinePopulation: 9_000_000,
       baselineGdpPerCapita: 25_000,
       currentPopulation: 10_000_000,
+      currentTotalGdp: 250_000_000_000,
       totalWorkforce: 6_000_000,
       landArea: 100_000,
       updatedAt: new Date("2026-10-20T10:00:00.000Z"),
@@ -323,6 +324,24 @@ describe("what each save writes", () => {
     expect(written(db)).toEqual(["nationalIdentity"]);
   });
 
+  it("saveIdentity refuses a new capital name while the capital is placed on the map, and saves the rest", async () => {
+    const { db, caller } = setup((rows) => {
+      rows.identity.capitalCityId = "city_1";
+    });
+    await expect(caller.saveIdentity(saveCapital)).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Your capital is placed on the map. Rename or move it in the map editor.",
+    });
+    expect(written(db)).toEqual([]);
+
+    await caller.saveIdentity({
+      ...saveCapital,
+      identity: { motto: "" },
+      expected: { identity: { motto: "Onward" } },
+    });
+    expect(written(db)).toEqual(["nationalIdentity"]);
+  });
+
   it("saveGovernmentForm patches the type and names and nothing of departments or components", async () => {
     const { db, caller } = setup();
     const saved = {
@@ -364,8 +383,9 @@ describe("what each save writes", () => {
     expect(written(db)).toEqual(["componentSynergy", "governmentComponent", "governmentStructure"]);
   });
 
-  it("saveSize rebases population and wealth and recalculates what follows, on the country only", async () => {
+  it("saveSize rebases population and wealth, recalculates what follows and moves the budget with the GDP", async () => {
     const { db, caller } = setup();
+    (db.budgetAllocation.findFirst as Mock).mockResolvedValue({ budgetYear: 2042 });
     const result = await caller.saveSize(sizeInput);
     const data = db.country.update.mock.calls[0]![0].data;
     expect(data).toMatchObject({
@@ -386,7 +406,16 @@ describe("what each save writes", () => {
       currentPopulation: 20_000_000,
       currentGdpPerCapita: 30_000,
     });
-    expect(written(db)).toEqual(["country"]);
+    // GDP goes from 250B to 600B: the yearly budget and its allocations move by 2.4.
+    expect(db.governmentStructure.updateMany).toHaveBeenCalledWith({
+      where: { countryId },
+      data: { totalBudget: { multiply: 2.4 } },
+    });
+    expect(db.budgetAllocation.updateMany).toHaveBeenCalledWith({
+      where: { governmentStructure: { countryId }, budgetYear: 2042 },
+      data: { allocatedAmount: { multiply: 2.4 }, availableAmount: { multiply: 2.4 } },
+    });
+    expect(written(db)).toEqual(["budgetAllocation", "country", "governmentStructure"]);
   });
 
   it("rename moves the slug, writes the identity name and leaves a redirect", async () => {

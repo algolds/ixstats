@@ -13,8 +13,8 @@
 import { ComponentType, type Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { IxTime } from "~/lib/ixtime";
 import { globalCache, invalidateCache } from "~/lib/cache";
+import { rebaseNationalSize, SIZE_BEFORE_SELECT } from "~/lib/economy/national-size";
 import { getComponentGroup } from "~/lib/government/component-guide";
 import { isRealmImageUrl } from "~/lib/realms/realm-region";
 import {
@@ -38,7 +38,6 @@ import {
   renameCountryInTx,
 } from "~/server/shared/country-rename";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
-import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 
 const countryInput = z.object({ countryId: z.string().min(1) });
 
@@ -101,6 +100,14 @@ const blankToNull = (value: string | null | undefined) =>
 
 const notFound = () => new TRPCError({ code: "NOT_FOUND", message: "Nation not found" });
 
+/** A capital placed on the map is renamed or moved there, so the text and the map never differ. */
+const MAP_CAPITAL_MESSAGE =
+  "Your capital is placed on the map. Rename or move it in the map editor.";
+
+function refuseIfMapCapital(placed: boolean) {
+  if (placed) throw new TRPCError({ code: "BAD_REQUEST", message: MAP_CAPITAL_MESSAGE });
+}
+
 export const editorProcedures = {
   /** Everything the editor page shows. */
   getEditorState: readOnlyProcedure.input(countryInput).query(async ({ ctx, input }) => {
@@ -120,10 +127,14 @@ export const editorProcedures = {
         baselinePopulation: true,
         baselineGdpPerCapita: true,
         nationalIdentity: {
-          select: Object.fromEntries(EDITOR_IDENTITY_KEYS.map((key) => [key, true])) as Record<
-            EditorIdentityKey,
-            true
-          >,
+          select: {
+            ...(Object.fromEntries(EDITOR_IDENTITY_KEYS.map((key) => [key, true])) as Record<
+              EditorIdentityKey,
+              true
+            >),
+            // The capital placed on the map, if any: the editor then shows the capital read-only.
+            capitalCityRef: { select: { name: true } },
+          },
         },
         governmentStructure: {
           select: {
@@ -247,14 +258,21 @@ export const editorProcedures = {
       if (input.coatOfArms !== undefined) images.coatOfArms = blankToNull(input.coatOfArms);
       const imageKeys = Object.keys(images) as Array<"flag" | "coatOfArms">;
 
+      const movesCapital = identity.capitalCity !== undefined;
       await ctx.db.$transaction(async (tx) => {
         const stored =
           keys.length > 0
             ? ((await tx.nationalIdentity.findUnique({
                 where: { countryId },
-                select: Object.fromEntries(keys.map((key) => [key, true])),
-              })) as Partial<Record<EditorIdentityKey, string | null>> | null)
+                select: {
+                  ...Object.fromEntries(keys.map((key) => [key, true])),
+                  ...(movesCapital && { capitalCityId: true }),
+                },
+              })) as (Partial<Record<EditorIdentityKey, string | null>> & {
+                capitalCityId?: string | null;
+              }) | null)
             : null;
+        refuseIfMapCapital(movesCapital && !!stored?.capitalCityId);
         const storedImages =
           imageKeys.length > 0
             ? await tx.country.findUnique({
@@ -443,7 +461,8 @@ export const editorProcedures = {
   /**
    * Population and wealth. The figures become the nation's new baseline (dated now), so the
    * stat progression projects forward from them instead of reverting them; the totals that
-   * follow from them (total GDP, tiers, densities, workforce) are recalculated. The check is
+   * follow from them (total GDP, tiers, densities, workforce) are recalculated, and the yearly
+   * budget moves with the GDP (`rebaseNationalSize`). The check is
    * against the baseline the page loaded: the stat progression moves the current figures, never
    * the baseline, so it never refuses this save.
    */
@@ -462,13 +481,7 @@ export const editorProcedures = {
       await ctx.db.$transaction(async (tx) => {
         const before = await tx.country.findUnique({
           where: { id: countryId },
-          select: {
-            baselinePopulation: true,
-            baselineGdpPerCapita: true,
-            currentPopulation: true,
-            totalWorkforce: true,
-            landArea: true,
-          },
+          select: { baselinePopulation: true, baselineGdpPerCapita: true, ...SIZE_BEFORE_SELECT },
         });
         if (!before) throw notFound();
         refuseIfChanged(
@@ -476,10 +489,7 @@ export const editorProcedures = {
             !sameNumber(before.baselineGdpPerCapita, expected.baselineGdpPerCapita),
           "population"
         );
-        await tx.country.update({
-          where: { id: countryId },
-          data: sizeColumns(population, gdpPerCapita, before),
-        });
+        await rebaseNationalSize(tx, countryId, { population, gdpPerCapita }, before);
       });
 
       await afterSave(ctx.auth?.userId);
@@ -491,33 +501,3 @@ export const editorProcedures = {
       };
     }),
 };
-
-/** The Country columns a new population and GDP per capita set. Exported for tests. */
-export function sizeColumns(
-  population: number,
-  gdpPerCapita: number,
-  before: { currentPopulation: number; totalWorkforce: number | null; landArea: number | null }
-): Prisma.CountryUpdateInput {
-  const totalGdp = population * gdpPerCapita;
-  const ixNow = new Date(IxTime.getCurrentIxTime());
-  // The workforce keeps its share of the population; a nation without one gets the usual 65%.
-  const workforceShare =
-    before.totalWorkforce && before.currentPopulation > 0
-      ? before.totalWorkforce / before.currentPopulation
-      : 0.65;
-  const land = before.landArea && before.landArea > 0 ? before.landArea : null;
-  return {
-    baselinePopulation: population,
-    baselineGdpPerCapita: gdpPerCapita,
-    baselineDate: ixNow,
-    currentPopulation: population,
-    currentGdpPerCapita: gdpPerCapita,
-    currentTotalGdp: totalGdp,
-    nominalGDP: totalGdp,
-    economicTier: getEconomicTierFromGdpPerCapita(gdpPerCapita),
-    populationTier: getPopulationTierFromPopulation(population),
-    totalWorkforce: Math.round(population * workforceShare),
-    ...(land && { populationDensity: population / land, gdpDensity: totalGdp / land }),
-    lastCalculated: ixNow,
-  };
-}

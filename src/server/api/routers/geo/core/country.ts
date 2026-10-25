@@ -72,12 +72,8 @@ export const countryProcedures = {
         });
       }
 
-      if (!mapLayer) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Country not found`,
-        });
-      }
+      // A nation without drawn territory has no geometry yet: that is a state, not an error.
+      if (!mapLayer) return null;
 
       const rawC = mapLayer.centroid as
         [number, number] | { coordinates?: [number, number] } | null;

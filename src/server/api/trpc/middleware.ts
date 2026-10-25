@@ -350,9 +350,10 @@ export const premiumMiddleware = t.middleware(async ({ ctx, next }) => {
   const membershipTier = ctx.user.membershipTier || "basic";
   // hasPremiumTier also honours NEXT_PUBLIC_PREMIUM_FOR_ALL (test builds). Beta testers and
   // staff/admin/owner roles (isBetaTesterRole), plus the system owner, are admitted too. This
-  // gate fronts the whole premiumProcedure surface, not just Defense: PvP/PvNPC conflicts,
-  // operations, military asset CRUD, resolveSecurityEvent, the Defense pages and the Map
-  // editor. Granting the beta role therefore grants all of those, matching the client.
+  // gate fronts the whole premiumProcedure surface, not just Defense: initiating PvP/PvNPC
+  // conflicts, operations, military asset CRUD and the Defense pages. The map editor is free
+  // (its writes are owner-checked, not premium). Granting the beta role therefore grants all
+  // of those, matching the client.
   const isPremium =
     hasPremiumTier(membershipTier) ||
     isSystemOwner(ctx.auth.userId) ||
