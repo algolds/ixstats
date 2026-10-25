@@ -15,7 +15,8 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
-import { IxTime } from "~/lib/ixtime";
+import { clockTimeAt } from "~/lib/realms/realm-time-convert";
+import { clockForCountry, type RealmClockReader } from "~/server/shared/realm-time";
 import {
   calculateStabilityMetrics,
   type DemographicData,
@@ -94,13 +95,18 @@ function policyStabilityEffect(calculatedEffects: string | null): number {
 }
 
 /**
- * Active policies enacted in the last 90 IxTime days (most recent 50), for the protest term of the formula.
+ * Active policies enacted in the last 90 days of the nation's realm clock (most recent 50), for the protest term of
+ * the formula.
  * Policies carry no popularity figure, so popularity is the decretal's stability effect (a few
  * points either way) scaled ×10 onto the formula's -100..100 range, and the economic impact is
  * the GDP effect (percent) scaled the same way. Policies without either count as neutral.
  */
-async function loadRecentPolicies(db: PrismaClient, countryId: string): Promise<RecentPolicy[]> {
-  const now = IxTime.getCurrentIxTime();
+async function loadRecentPolicies(
+  db: PrismaClient,
+  countryId: string,
+  clock: RealmClockReader
+): Promise<RecentPolicy[]> {
+  const now = clock.now();
   // Bills record when they passed as a real `effectiveDate`; `effectiveIxTime` wins when set.
   const policies = await db.policy.findMany({
     where: { countryId, status: "active", effectiveDate: { not: null } },
@@ -115,7 +121,7 @@ async function loadRecentPolicies(db: PrismaClient, countryId: string): Promise<
     take: 50,
   });
   return policies.flatMap((p) => {
-    const passedIxTime = p.effectiveIxTime ?? IxTime.convertToIxTime(p.effectiveDate!.getTime());
+    const passedIxTime = p.effectiveIxTime ?? clockTimeAt(clock, p.effectiveDate!.getTime());
     const timeSincePassed = Math.max(0, (now - passedIxTime) / DAY_MS);
     if (timeSincePassed >= RECENT_POLICY_DAYS) return [];
     return [
@@ -140,6 +146,7 @@ async function computeFormulaStability(
   const country = await db.country.findUnique({
     where: { id: countryId },
     select: {
+      realmId: true,
       adjustedGdpGrowth: true,
       unemploymentRate: true,
       incomeInequalityGini: true,
@@ -213,7 +220,11 @@ async function computeFormulaStability(
     protestFrequency: 8, // Will be overwritten by calculation
   };
 
-  const recentPolicies = await loadRecentPolicies(db, countryId);
+  const recentPolicies = await loadRecentPolicies(
+    db,
+    countryId,
+    await clockForCountry(db, country)
+  );
 
   return calculateStabilityMetrics(
     economicData,

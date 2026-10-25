@@ -5,12 +5,11 @@
  * Real infobox government strings map to forms. One synergy table feeds the picker, the per-component arrays
  * and the server save, so they can never disagree. The picker's rules: a template sets its
  * whole component set, only defined components count toward the cap, a preset asks before replacing the player's own
- * choices. Component effects are dated in IxTime milliseconds (plan 329).
+ * choices. Component effects are dated in the nation's clock milliseconds (plan 329).
  *
  * Folds forms, synergy-table, templates, validate-selection, policy-presets and component-effects-timestamp.
  */
 import { ComponentType } from "@prisma/client";
-import { IxTime } from "~/lib/ixtime";
 import { foundingGovernmentEffectiveness } from "~/server/shared/founding-snapshot";
 import { syncGovernmentComponents } from "~/server/shared/country-mutation-helpers";
 import {
@@ -244,9 +243,8 @@ describe("the picker's rules", () => {
 describe("component effects", () => {
   afterEach(() => jest.restoreAllMocks());
 
-  it("dates every effect at IxTime.getCurrentIxTime() milliseconds, not ×1000 (plan 329)", async () => {
+  it("dates every effect at the nation's clock time in milliseconds, not ×1000 (plan 329)", async () => {
     const fixed = Date.UTC(2042, 0, 1);
-    jest.spyOn(IxTime, "getCurrentIxTime").mockReturnValue(fixed);
     const createMany = jest.fn(({ data }: { data: object[] }) =>
       Promise.resolve({ count: data.length })
     );
@@ -268,6 +266,7 @@ describe("component effects", () => {
         { componentType: ComponentType.DEMOCRATIC_PROCESS, effectivenessScore: 60 },
       ],
       allocations: [],
+      now: fixed,
     });
 
     expect(result.effectsCreated).toBeGreaterThan(0);
