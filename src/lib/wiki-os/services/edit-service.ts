@@ -1,6 +1,6 @@
 /**
- * edit-service.ts — the one path a wikitext save takes, whoever asks (the editor's `saveWikitext`
- * and the `api.php` `action=edit`).
+ * edit-service.ts — the one path a wikitext save takes, whoever asks (the editor's `saveWikitext`, a
+ * revert or rollback, "Restore my text", and the `api.php` `action=edit`).
  *
  * `assertCanEditArticle` is the permission gate (blocked? namespace? protection? the right?),
  * `commitWikitextSave` the write: PostgreSQL first (`ArticleRepository.saveArticle`: article, an
@@ -13,6 +13,7 @@ import { ArticleRepository } from "../core";
 import { canonicalizeTitle } from "../core/title";
 import { CloudflareGuardian } from "../guardian/cloudflare-guardian";
 import { isWikiAdmin, requireWikiAuthorName, type WikiAuthContext } from "../auth";
+import { EditConflictError, type EditConflict } from "../core/edit-conflict-error";
 import { authorizeAction } from "../permissions";
 
 /**
@@ -121,4 +122,27 @@ export async function commitWikitextSave(ctx: WikiAuthContext, save: WikitextSav
   void CloudflareGuardian.purgeArticleEdgeCache(title);
 
   return saveResult;
+}
+
+/** A save that checked its base (`expectedHeadRef`): saved, or the edit conflict with the page as it is now. */
+export type CheckedSaveOutcome =
+  { success: true; revisionId: string } | ({ success: false; editConflict: true } & EditConflict);
+
+/**
+ * `commitWikitextSave`, with an edit conflict answered rather than thrown: nothing was saved, and the caller gets the
+ * page as it is now and the ref to save on top of it. Any other failure is thrown.
+ */
+export async function saveOrConflict(
+  ctx: WikiAuthContext,
+  save: WikitextSave
+): Promise<CheckedSaveOutcome> {
+  try {
+    const saved = await commitWikitextSave(ctx, save);
+    return { success: true, revisionId: saved.revisionId };
+  } catch (error) {
+    if (error instanceof EditConflictError) {
+      return { success: false, editConflict: true, ...error.conflict };
+    }
+    throw error;
+  }
 }

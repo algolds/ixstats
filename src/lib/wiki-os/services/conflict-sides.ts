@@ -34,6 +34,21 @@ export function isSystemWrite(author: ChangeAuthor): boolean {
   return author.userId === null && author.label === CONFLICT_NOTICE_AUTHOR;
 }
 
+/**
+ * Whether a stored revision is one of WikiOS's own conflict writes (`isSystemWrite`): a WikiOS save by
+ * `CONFLICT_NOTICE_AUTHOR` with no account. A classic editor of that name, or a player whose handle it is, is a person.
+ */
+export function isSystemRevision(row: {
+  origin: string;
+  authorId: string | null;
+  author: string | null;
+}): boolean {
+  return (
+    row.origin !== "classic" &&
+    isSystemWrite({ userId: row.authorId, label: row.author, classicName: null, ip: null })
+  );
+}
+
 /** The wiki a side's save was made on, as the notices name it. */
 export function wikiName(side: WikiSide): string {
   return side === "wikios" ? "WikiOS" : "classic MediaWiki";

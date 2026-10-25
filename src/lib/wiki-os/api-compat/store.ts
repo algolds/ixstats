@@ -14,6 +14,7 @@ import { db } from "~/server/db";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import { toRevisionRef } from "~/lib/wiki-os/core/domain-types";
 import { isActive } from "~/lib/wiki-os/rights";
+import { isSystemRevision } from "~/lib/wiki-os/services/conflict-sides";
 import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
 import { syntheticUserId } from "./auth-store";
 import {
@@ -198,6 +199,7 @@ const REVISION_SELECT = {
   textDeleted: true,
   commentDeleted: true,
   userDeleted: true,
+  origin: true,
   article: { select: { id: true, pageId: true, title: true, namespace: true } },
 } as const;
 
@@ -267,6 +269,7 @@ async function toRevisionRows(records: readonly RevisionRecord[]): Promise<Revis
       textHidden: record.textDeleted,
       commentHidden: record.commentDeleted,
       userHidden: record.userDeleted,
+      systemWrite: isSystemRevision(record),
       isHead: heads.get(article.id)?.revId === revId,
     };
   });

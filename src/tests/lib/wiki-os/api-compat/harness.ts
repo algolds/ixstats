@@ -254,6 +254,8 @@ export interface FakeRevision {
   sha1?: string;
   /** A legacy row: it has no stored hash, so the store gives none unless the text is read for it. */
   legacy?: boolean;
+  /** One of WikiOS's own conflict writes (a trail dummy edit, a talk note). */
+  systemWrite?: boolean;
 }
 
 export interface FakeLog {
@@ -403,6 +405,7 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
       textHidden: rev.textHidden ?? false,
       commentHidden: rev.commentHidden ?? false,
       userHidden: rev.userHidden ?? false,
+      systemWrite: rev.systemWrite ?? false,
       isHead: history.at(-1)?.revId === rev.revId,
     };
   };

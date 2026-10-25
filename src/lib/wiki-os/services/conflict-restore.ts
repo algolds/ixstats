@@ -16,15 +16,16 @@ import { db } from "~/server/db";
 import { ownerOfName } from "~/lib/identity/wiki-names";
 import { requireWikiUserIds, type WikiAuthContext } from "../auth";
 import { isRevisionRef, parseRevisionRef } from "../core/domain-types";
-import { EditConflictError, headMatchesBase, type EditConflict } from "../core/edit-conflict-error";
+import { headMatchesBase } from "../core/edit-conflict-error";
 import { canonicalizeTitle, type CanonicalTitle } from "../core/title";
 import { articleHref } from "../wiki-path";
 import { shortConflictId, toConflictEntry, type ConflictLogEntry } from "./conflict-log";
 import { conflictRefOf } from "./conflict-sides";
 import {
   assertCanEditArticle,
-  commitWikitextSave,
   requireRestorableWikitext,
+  saveOrConflict,
+  type CheckedSaveOutcome,
 } from "./edit-service";
 
 export interface OverwrittenRef {
@@ -39,9 +40,6 @@ export interface OverwrittenRef {
  */
 export type RestoreOffer =
   { state: "restorable" | "stale"; editHref: string } | { state: "unavailable" };
-
-export type RestoreOverwrittenResult =
-  { success: true; revisionId: string } | ({ success: false; editConflict: true } & EditConflict);
 
 const REVISION_SELECT = {
   id: true,
@@ -186,23 +184,15 @@ export function baseOf(entry: Pick<ConflictLogEntry, "trailRevisionId" | "winner
 export async function restoreOverwrittenText(
   ctx: WikiAuthContext,
   input: OverwrittenRef
-): Promise<RestoreOverwrittenResult> {
+): Promise<CheckedSaveOutcome> {
   const { entry, canon, wikitext } = await checkRestore(ctx, input);
-  try {
-    const saved = await commitWikitextSave(ctx, {
-      title: canon.title,
-      wikitext,
-      summary: `Restored my text replaced in conflict ${shortConflictId(input.conflictId)}`,
-      minor: false,
-      expectedHeadRef: baseOf(entry),
-    });
-    return { success: true, revisionId: saved.revisionId };
-  } catch (error) {
-    if (error instanceof EditConflictError) {
-      return { success: false, editConflict: true, ...error.conflict };
-    }
-    throw error;
-  }
+  return saveOrConflict(ctx, {
+    title: canon.title,
+    wikitext,
+    summary: `Restored my text replaced in conflict ${shortConflictId(input.conflictId)}`,
+    minor: false,
+    expectedHeadRef: baseOf(entry),
+  });
 }
 
 /** The page's head now (null: no live revision). */

@@ -114,6 +114,7 @@ const revisionRecord = (overrides = {}) => ({
   textDeleted: false,
   commentDeleted: false,
   userDeleted: false,
+  origin: "wikios",
   article: { id: "a1", pageId: 7, title: "Alpha", namespace: 0 },
   ...overrides,
 });
@@ -204,6 +205,20 @@ describe("revisions", () => {
       textHidden: true,
       content: null,
     });
+  });
+
+  it("marks WikiOS's own conflict writes: a WikiOS save by WikiOS with no account, never a classic WikiOS or a player", async () => {
+    mdb.$queryRaw.mockResolvedValue([]);
+    mdb.wikiNameClaim!.findMany!.mockResolvedValue([]);
+    mdb.wikiRevision!.findMany!.mockResolvedValue([
+      revisionRecord({ revId: 1, id: "r1", author: "WikiOS", authorId: null, origin: "wikios" }),
+      revisionRecord({ revId: 2, id: "r2", author: "WikiOS", authorId: null, origin: "classic" }),
+      revisionRecord({ revId: 3, id: "r3", author: "WikiOS", authorId: "u9", origin: "wikios" }),
+      revisionRecord({ revId: 4, id: "r4", author: "Heku", authorId: null, origin: "wikios" }),
+    ]);
+    const rows = await store.revisionsById([1, 2, 3, 4], false);
+    expect(rows.map((row) => row.systemWrite)).toEqual([true, false, false, false]);
+    expect(mdb.wikiRevision!.findMany!.mock.calls[0]![0].select).toMatchObject({ origin: true });
   });
 
   it("takes sha1 from the text for a legacy row without one, only when the text was read and is not deleted", async () => {

@@ -4,7 +4,8 @@
  * checks and the races after them), delete, undelete, move, protect and rollback through the shared services,
  * action=purge, the section locator section edits rely on, and how the services' refusals reach a bot.
  */
-jest.mock("~/server/db", () => ({ __esModule: true, db: {} }));
+// describeEachWikiosMode answers the switch and marker rows through this mock
+jest.mock("~/server/db", () => ({ __esModule: true, db: { systemConfig: { findUnique: jest.fn() } } }));
 
 import { createHash } from "node:crypto";
 import { TRPCError } from "@trpc/server";
@@ -19,6 +20,8 @@ import { PageBusyError } from "~/lib/wiki-os/core/page-busy-error";
 import { PageOperationError } from "~/lib/wiki-os/core/page-management-service";
 import { toApiError } from "~/lib/wiki-os/api-compat/error-map";
 import { HANDLE_REQUIRED_MESSAGE } from "~/lib/wiki-os/auth";
+import { headMatchesBase } from "~/lib/wiki-os/core/edit-conflict-error";
+import { describeEachWikiosMode } from "~/tests/helpers/wikios-modes";
 
 describe("action=edit", () => {
   type Body = Record<string, any>;
@@ -641,6 +644,7 @@ describe("delete, undelete, move, protect and rollback", () => {
         wikitext: "good text",
         summary: "Reverted edits by Vandal to last revision by Heku",
         minor: false,
+        expectedHeadRef: "103",
       });
     });
     it("refuses a rollback the service will not allow (a blanking, a placeholder)", async () => {
@@ -659,6 +663,106 @@ describe("delete, undelete, move, protect and rollback", () => {
       );
       const body = await act("rollback", { title: "Alpha", user: "Vandal" });
       expect(body.error.info).toContain("not been imported");
+      expect(called("saveWikitext")).toHaveLength(0);
+    });
+  });
+
+  // Plan 2026-10-24 Task 13 (A6): the rollback carries the head it read; WikiOS's own conflict writes are nobody's edit
+  describeEachWikiosMode("action=rollback and the head it read", () => {
+    it("rollback after a newer edit answers editconflict", async () => {
+      const { act, called, data: wiki } = await setup(
+        {
+          services: {
+            // the save as the repository makes it: somebody's edit lands first, then the head check fails
+            saveWikitext: async (_ctx, save) => {
+              wiki.revisions!.push({
+                revId: 104,
+                page: "Alpha",
+                timestamp: "2026-01-04T10:00:00Z",
+                user: "Gamma",
+                content: "newer",
+              });
+              if (!headMatchesBase({ id: "row-104", mwRevId: 104 }, save.expectedHeadRef ?? null)) {
+                throw new EditConflictError({ currentWikitext: "newer", currentRevisionRef: "104" });
+              }
+              return { revisionRowId: "row-9000" };
+            },
+          },
+        },
+        "rollback"
+      );
+
+      const body = await act("rollback", { title: "Alpha", user: "Vandal" });
+
+      expect(body.error.code).toBe("editconflict");
+      expect(called("requireRestorableWikitext")).toHaveLength(1);
+      expect(wiki.revisions!.map((rev) => rev.revId)).toEqual([101, 102, 103, 201, 104]);
+    });
+
+    it("a trail dummy edit on top is nobody's edit: the named editor's edits beneath it roll back on top of it", async () => {
+      const { act, called, data: wiki } = await setup({}, "rollback");
+      wiki.revisions!.push({
+        revId: 104,
+        page: "Alpha",
+        timestamp: "2026-01-03T11:00:00Z",
+        user: "WikiOS",
+        content: "vandalised again",
+        systemWrite: true,
+      });
+
+      const body = await act("rollback", { title: "Alpha", user: "Vandal" });
+
+      expect(body.rollback).toMatchObject({ old_revid: 104, last_revid: 101 });
+      expect(called("saveWikitext")[0]!.args[1]).toMatchObject({
+        wikitext: "good text",
+        expectedHeadRef: "104",
+      });
+      // the trail is not the editor to name
+      const named = await act("rollback", { title: "Alpha", user: "WikiOS" });
+      expect(named.error.code).toBe("alreadyrolled");
+    });
+
+    it("a note below the named editor's edits is where the page goes back to", async () => {
+      const { act, called, data: wiki } = await setup({}, "rollback");
+      wiki.revisions!.push({
+        revId: 199,
+        page: "Beta",
+        timestamp: "2026-01-04T11:00:00Z",
+        user: "WikiOS",
+        content: "only author\n\nA note.",
+        systemWrite: true,
+      });
+      wiki.revisions!.push({
+        revId: 202,
+        page: "Beta",
+        timestamp: "2026-01-04T12:00:00Z",
+        user: "Vandal",
+        content: "vandalised",
+      });
+
+      const body = await act("rollback", { title: "Beta", user: "Vandal" });
+
+      expect(body.rollback).toMatchObject({ old_revid: 202, last_revid: 199 });
+      expect(called("saveWikitext")[0]!.args[1]).toMatchObject({
+        wikitext: "only author\n\nA note.",
+        summary: "Reverted edits by Vandal to last revision by WikiOS",
+      });
+    });
+
+    it("answers onlyauthor when only WikiOS's own writes stand beside the named editor", async () => {
+      const { act, called, data: wiki } = await setup({}, "rollback");
+      wiki.revisions!.push({
+        revId: 202,
+        page: "Beta",
+        timestamp: "2026-01-04T12:00:00Z",
+        user: "WikiOS",
+        content: "only author",
+        systemWrite: true,
+      });
+
+      const body = await act("rollback", { title: "Beta", user: "Heku" });
+
+      expect(body.error.code).toBe("onlyauthor");
       expect(called("saveWikitext")).toHaveLength(0);
     });
   });

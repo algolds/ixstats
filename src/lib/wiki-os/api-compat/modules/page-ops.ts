@@ -22,7 +22,10 @@ import {
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { parseMWDateObject } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
+import { EditConflictError } from "~/lib/wiki-os/core/edit-conflict-error";
 import type { RestrictionChange } from "~/lib/wiki-os/core/rights-admin-service";
+import { planRollback } from "~/lib/wiki-os/services/rollback-plan";
+import type { WikitextSave } from "~/lib/wiki-os/services/edit-service";
 
 // ---------------------------------------------------------------------------
 // delete, undelete
@@ -208,6 +211,20 @@ export async function runProtect(rc: ApiContext): Promise<JsonObject> {
 /** Revisions read when looking for the last edit by someone else. */
 const ROLLBACK_WINDOW = 50;
 
+/** The save of a rollback, made on top of the head it read: an edit that landed since is `editconflict`, nothing saved. */
+async function saveRollback(rc: ApiContext, save: WikitextSave): Promise<string> {
+  try {
+    return (await rc.deps.services.saveWikitext(rc.session.ctx, save)).revisionRowId;
+  } catch (error) {
+    if (error instanceof EditConflictError) throw new ApiError("editconflict", "Edit conflict detected.");
+    throw error;
+  }
+}
+
+/**
+ * MediaWiki's rollback of `user`'s consecutive edits at the top of the page (`planRollback`: WikiOS's own conflict
+ * writes are nobody's edit), saved on top of the head the history was read at.
+ */
 export async function runRollback(rc: ApiContext): Promise<JsonObject> {
   requireBotSession(rc);
   const p = rc.params.scope("", "rollback");
@@ -223,11 +240,11 @@ export async function runRollback(rc: ApiContext): Promise<JsonObject> {
   await services.authorize(rc.session.ctx, "rollback", title);
 
   const history = await store.findRevisions({ articleId: row.articleId, dir: "older", limit: ROLLBACK_WINDOW, withContent: false });
-  const head = history[0];
-  if (!head || head.user !== user) {
+  const plan = planRollback(history.slice(0, ROLLBACK_WINDOW));
+  if (!plan || plan.lastEdit.user !== user) {
     throw new ApiError("alreadyrolled", `The edit(s) by ${user} to ${title} were already rolled back or the page has changed.`);
   }
-  const target = history.slice(0, ROLLBACK_WINDOW).find((rev) => rev.user !== user);
+  const { target } = plan;
   if (!target) throw new ApiError("onlyauthor", "The page you tried to rollback has only one author.");
 
   const [source] = await store.revisionsById([target.revId], true);
@@ -240,7 +257,9 @@ export async function runRollback(rc: ApiContext): Promise<JsonObject> {
   });
   const summary =
     cleanComment(givenSummary ?? `Reverted edits by ${user} to last revision by ${target.user ?? "an unknown user"}`);
-  const { revisionRowId } = await services.saveWikitext(rc.session.ctx, { title, wikitext, summary, minor: false });
+  // the head is the newest live revision, a system write included: the rollback is made on top of it
+  const head = history[0]!;
+  const revisionRowId = await saveRollback(rc, { title, wikitext, summary, minor: false, expectedHeadRef: head.ref });
   const saved = await store.revisionByRowId(revisionRowId);
   return {
     rollback: {

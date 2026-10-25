@@ -164,7 +164,7 @@ export interface SaveArticleInput {
    * The edit-conflict check, made atomically inside the save's transaction (under the article's row lock): the
    * reference (`toRevisionRef`) of the revision the editor based this save on, or null when the editor believes the
    * page does not exist yet. The save throws `EditConflictError` unless that is the page's latest live (not parked)
-   * revision. Omitted: no check (a revert, a rollback, an upload's description page).
+   * revision. Omitted: no check (an upload's description page; a revert and a rollback pass the head they read).
    */
   expectedHeadRef?: string | null;
   namespace?: number;

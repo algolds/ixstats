@@ -28,6 +28,9 @@ import {
 /** How long the two selected revisions stay unchanged before the diff between them is asked for. */
 const DIFF_SETTLE_MS = 250;
 
+/** A revert or rollback that found a newer edit than the one it read (an edit conflict): nothing was saved. */
+const EDITED_SINCE = "Someone edited the page since the history loaded. Nothing was saved.";
+
 interface RevisionItem {
   id: string;
   articleId: string;
@@ -89,8 +92,9 @@ export function ScrubbableRevisionTimeline({
   const utils = api.useUtils();
 
   const revertMutation = api.wikios.revertToRevision.useMutation({
-    onSuccess: () => {
-      setUndoTarget(null);
+    onSuccess: (result) => {
+      // an edit conflict keeps the confirmation open with the reason; the history shows the newer edit either way
+      if (result.success) setUndoTarget(null);
       void utils.wikios.getHistory.invalidate({ title });
     },
   });
@@ -188,14 +192,14 @@ export function ScrubbableRevisionTimeline({
           </div>
         </div>
 
-        {/* Rollback failure: the server's reason (e.g. a revision text that was never imported) */}
-        {rollbackMutation.error && (
+        {/* Rollback failure: the server's reason (e.g. a revision text that was never imported), or an edit since */}
+        {(rollbackMutation.error || rollbackMutation.data?.success === false) && (
           <div
             role="alert"
             className="rounded-row border-red/30 bg-red/10 text-caption text-red flex items-center gap-2 border px-3 py-2"
           >
             <AlertTriangle className="h-4 w-4 shrink-0" />
-            {rollbackMutation.error.message}
+            {rollbackMutation.error?.message ?? EDITED_SINCE}
           </div>
         )}
 
@@ -331,10 +335,10 @@ export function ScrubbableRevisionTimeline({
               <strong>{undoTarget.author || "Community Contributor"}</strong>? This will create a
               new revision restoring the exact text.
             </p>
-            {revertMutation.error && (
+            {(revertMutation.error || revertMutation.data?.success === false) && (
               <p role="alert" className="text-red text-caption flex items-center gap-2">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                {revertMutation.error.message}
+                {revertMutation.error?.message ?? EDITED_SINCE}
               </p>
             )}
             <div className="flex items-center gap-2">

@@ -73,6 +73,8 @@ export interface RevisionRow {
   textHidden: boolean;
   commentHidden: boolean;
   userHidden: boolean;
+  /** One of WikiOS's own conflict writes (a trail dummy edit, a talk note: `isSystemRevision`), nobody's edit. */
+  systemWrite: boolean;
   /** This is the page's newest revision. */
   isHead: boolean;
 }

@@ -885,7 +885,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
 
       const result = await caller.saveWikitext({ title: "foo_bar", wikitext: "x" });
 
-      expect(result.title).toBe("Foo bar");
+      expect(result).toMatchObject({ success: true, title: "Foo bar" });
       expect(ArticleRepository.saveArticle).toHaveBeenCalledWith(
         expect.objectContaining({ slug: "Foo bar", title: "Foo bar" }),
         expect.anything(),

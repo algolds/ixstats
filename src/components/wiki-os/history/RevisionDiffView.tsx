@@ -50,8 +50,12 @@ export function RevisionDiffView({ fromrev, torev, backHref, backLabel }: Revisi
   );
 
   const revertMutation = api.wikios.revertToRevision.useMutation({
-    onSuccess: () => setUndoConfirm(false),
+    // an edit conflict keeps the confirmation open: the alert says nothing was saved
+    onSuccess: (result) => {
+      if (result.success) setUndoConfirm(false);
+    },
   });
+  const reverted = revertMutation.data;
 
   return (
     <WikiOSLayout title="Revision Diff">
@@ -163,7 +167,16 @@ export function RevisionDiffView({ fromrev, torev, backHref, backLabel }: Revisi
                   {revertMutation.error.message}
                 </div>
               )}
-              {revertMutation.isSuccess && (
+              {reverted?.success === false && (
+                <div
+                  role="alert"
+                  className="rounded-row border-red/30 bg-red/10 text-caption text-red flex items-center gap-2 border px-3 py-2"
+                >
+                  <WarningTriangle className="h-4 w-4 shrink-0" />
+                  Someone edited the page since this comparison loaded. Nothing was saved.
+                </div>
+              )}
+              {reverted?.success && (
                 <div className="rounded-row border-green/30 bg-green/10 text-caption text-green flex items-center gap-2 border px-3 py-2">
                   <Check className="h-4 w-4" />
                   Successfully reverted to revision r{data.from.revid}.
