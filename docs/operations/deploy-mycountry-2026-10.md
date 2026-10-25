@@ -14,3 +14,13 @@ Data fixes for the MyCountry fix plan (`plans/mycountry-audit/fix-plan.md`). Eac
    `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/migrations/2026-10-mycountry/a1-storyteller-effects.sql`
    Expect MyCountry GDP to move for nations with sanctions, embargoes, trade agreements, alliances, wars, operations
    or election results: those effects start applying now, phased in over their duration.
+
+## Any time (before or after the code deploy)
+
+- **WP-F, defense** (`f-defense.sql`). Clamps `MilitaryUnit.readiness` to 0-100 (deployments had no floor) and ends
+  PvP challenges that can never be answered (sent to an NPC nation, or unanswered for 14 days) as `winner = 'expired'`,
+  which unblocks new challenges between those pairs. The local clone had no such rows; expect 0 or a handful.
+  `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/migrations/2026-10-mycountry/f-defense.sql`
+  No other WP-F data step: the defense budget starts empty (the card shows the 2% estimate until an owner saves one), the
+  legacy `SecurityAssessment` / `BorderSecurity` rows are no longer read (all were defaults), and the equipment catalog is
+  already seeded in prod (an admin's first catalog create seeds an empty one).
