@@ -66,13 +66,15 @@ effectiveGrowthRate = min(
 | **Very Strong** | Very high income | $55,000 – $64,999 | 1.5% (`0.015`) |
 | **Extravagant** | Ultra high income | $65,000+ | 0.5% (`0.005`) |
 
-The growth floor defaults to `-0.10` (`minGrowthFloor`). Storyteller `GDP_ADJUSTMENT` effects add to the rate and `GROWTH_RATE_MODIFIER` effects multiply it, before the tier cap is applied.
+The cap follows the tier GDP per capita is in: a forward projection compounds piecewise, and each time GDP per capita crosses a tier threshold the rest of the span grows at the new tier's (capped) rate.
 
-Growth effects change the rate for the whole span from `baselineDate` to the target time, so they also reshape the projected path before their own start.
+The growth floor defaults to `-0.10` (`minGrowthFloor`). Legacy Storyteller `GDP_ADJUSTMENT` effects add to the rate and `GROWTH_RATE_MODIFIER` effects multiply it, before the tier cap is applied. They change the rate for the whole span from `baselineDate` to the target time, so they reshape the projected path before their own start; nothing writes them any more (the 2026-10 MyCountry SQL converted the old rows to level effects).
 
-### Level effects (national-issue consequences and directives)
+### Level effects
 
-`GDP_LEVEL_ADJUSTMENT` (`gdp_level_adjustment`) and `POPULATION_LEVEL_ADJUSTMENT` (`population_level_adjustment`) scale GDP per capita or population by `1 + value × phaseIn` after the growth calculation, bypassing the tier cap. `phaseIn` (`levelPhaseIn`) is 0 before the effect's `ixTimeTimestamp`, rises linearly over `duration` IxTime years, and stays 1 afterwards; an effect with no duration applies at once. They never alter the path before they start, and the shift is kept after the duration ends.
+Every StorytellerEffect is written through `src/lib/economy/storyteller-effects.ts`: it stamps IxTime (a pre-epoch, wall-clock start is refused) and accepts only types an engine reads. Level effects are never edited or deactivated, because that would rewrite the projected past: `syncLevelEffects` moves a keyed level (`createdBy`) by appending a delta row from now on, and `endStorytellerEffects` appends the row that unwinds it over its duration.
+
+Effect types are matched case-insensitively. `GDP_LEVEL_ADJUSTMENT` (`gdp_level_adjustment`), `TRADE_AGREEMENT` (`trade_agreement`) and `POPULATION_LEVEL_ADJUSTMENT` (`population_level_adjustment`) scale GDP per capita or population by `1 + value × phaseIn` after the growth calculation, bypassing the tier cap. `phaseIn` (`levelPhaseIn`) is 0 before the effect's `ixTimeTimestamp`, rises linearly over `duration` IxTime years, and stays 1 afterwards; an effect with no duration applies at once. They never alter the path before they start, and the shift is kept after the duration ends.
 
 National-issue resolution (`src/lib/national-issues/projection-effects.ts`) creates them instead of writing fields the projection overwrites:
 
@@ -83,6 +85,20 @@ National-issue resolution (`src/lib/national-issues/projection-effects.ts`) crea
 | `currentPopulation` multiply m | `population_level_adjustment`, no duration | `m − 1`, capped at ±1% |
 
 Growth directives (`routers/intent.ts`) also create a `gdp_level_adjustment`, phased in over 1 IxTime year: `growthModifierToLevelShift(m, 1)` = `(1 + g(1+m)) / (1+g) − 1` at the reference growth `g = 3%` (`REFERENCE_GDP_GROWTH`), where `m` is the package's growth modifier (capped at 0.05).
+
+The other producers:
+
+| Producer | Effect | Value, phase-in |
+| :--- | :--- | :--- |
+| Active policy (`policies/effects-sync.ts`, `POLICY:<id>`) | `gdp_level_adjustment` | `gdpEffect / 100` (+2 = +2%, capped at ±5%), 1 year; unwound when the policy ends |
+| Foreign-policy action (`fp:<id>`) | `trade_agreement` (free trade) or `gdp_level_adjustment` | the action's GDP impact, 4 years |
+| Resolved conflict | `gdp_level_adjustment` | −`economicDamage` × 1.5 (loser) or × 0.5 (winner), 2 years |
+| Military operation (`operation:<id>`) | `gdp_level_adjustment` | −annual cost / GDP, over the operation's years; unwound when it ends |
+| Election result | `gdp_level_adjustment` | +0.3% decisive, +0.1% clear, −0.3% close, over the term |
+| Government components and the Magnates broker (`component:<category>`, `broker:<id>`, via politics-drift) | `gdp_level_adjustment` | 0.15% to 0.4% per component (scaled by effectiveness), +0.5% Magnates, 5 years |
+| Admin world event | `gdp_level_adjustment` + `population_level_adjustment` | up to −20% / −2% (negative types) or +15% / +1% at severity 1, over the event's duration |
+
+`NATURAL_DISASTER` scales population by `1 + v` and total GDP by `1 + 1.5v` at once; `SPECIAL_EVENT` scales population by `1 + 0.5v` and GDP per capita by `1 + 0.8v`.
 
 Any other operation on those fields (`set`, an absolute add to GDP) is dropped: it is not applied, not listed in the issue's consequence log, and not shown in the recon preview.
 
