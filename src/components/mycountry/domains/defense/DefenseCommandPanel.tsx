@@ -6,12 +6,16 @@ import { useSearchParams } from "next/navigation";
 import {
   Shield,
   Archery as Target,
-  Tournament as Swords,
+  Cart,
+  Compass,
   FireFlame as Flame,
-  Group as Users,
+  Group,
+  Community as Users,
 } from "iconoir-react";
 import { SectionTabBar } from "~/components/mycountry/shared/primitives/SectionTabBar";
 import { Skeleton } from "~/components/ui/skeleton";
+import { useDefenseOverview } from "~/hooks/useDefenseConsole";
+import { RedactedDefenseView } from "~/components/mycountry/domains/defense/RedactedDefenseView";
 
 function PanelSkeleton() {
   return (
@@ -23,10 +27,43 @@ function PanelSkeleton() {
 }
 
 // Lazy-load heavy panels per active tab
-const CommandPanel = dynamic(
+const OverviewPanel = dynamic(
   () =>
-    import("~/components/mycountry/domains/defense/CommandPanel").then((m) => ({
-      default: m.CommandPanel,
+    import("~/components/mycountry/domains/defense/OverviewPanel").then((m) => ({
+      default: m.OverviewPanel,
+    })),
+  {
+    ssr: false,
+    loading: PanelSkeleton,
+  }
+);
+
+const PolicyPanel = dynamic(
+  () =>
+    import("~/components/mycountry/domains/defense/PolicyPanel").then((m) => ({
+      default: m.PolicyPanel,
+    })),
+  {
+    ssr: false,
+    loading: PanelSkeleton,
+  }
+);
+
+const BranchesPanel = dynamic(
+  () =>
+    import("~/components/mycountry/domains/defense/branches/BranchesPanel").then((m) => ({
+      default: m.BranchesPanel,
+    })),
+  {
+    ssr: false,
+    loading: PanelSkeleton,
+  }
+);
+
+const ProcurementPanel = dynamic(
+  () =>
+    import("~/components/mycountry/domains/defense/procurement/ProcurementPanel").then((m) => ({
+      default: m.ProcurementPanel,
     })),
   {
     ssr: false,
@@ -38,17 +75,6 @@ const BorderThreatPanel = dynamic(
   () =>
     import("~/components/mycountry/domains/defense/BorderThreatPanel").then((m) => ({
       default: m.BorderThreatPanel,
-    })),
-  {
-    ssr: false,
-    loading: PanelSkeleton,
-  }
-);
-
-const ArsenalPanel = dynamic(
-  () =>
-    import("~/components/mycountry/domains/defense/forces/ArsenalPanel").then((m) => ({
-      default: m.ArsenalPanel,
     })),
   {
     ssr: false,
@@ -82,40 +108,59 @@ interface DefenseCommandPanelProps {
   countryId: string;
 }
 
-const DEFENSE_TABS = ["branches", "threats", "assets", "operations", "stability"] as const;
+const DEFENSE_TABS = [
+  "overview",
+  "policy",
+  "branches",
+  "procurement",
+  "threats",
+  "operations",
+  "stability",
+] as const;
 type DefenseTab = (typeof DEFENSE_TABS)[number];
 
 const isDefenseTab = (value: string | null | undefined): value is DefenseTab =>
   (DEFENSE_TABS as readonly string[]).includes(value ?? "");
 
+const TABS = [
+  { id: "overview" as const, label: "Overview", icon: Shield },
+  { id: "policy" as const, label: "Budget and posture", icon: Compass },
+  { id: "branches" as const, label: "Branches", icon: Group },
+  { id: "procurement" as const, label: "Procurement", icon: Cart },
+  { id: "threats" as const, label: "Threats", icon: Target },
+  { id: "operations" as const, label: "Operations", icon: Flame },
+  { id: "stability" as const, label: "Internal stability", icon: Users },
+];
+
+/**
+ * The Defense page. The owner gets the console (overview, levers, branches, procurement, threats, operations,
+ * stability); anyone else sees the nation's public order of battle.
+ */
 export function DefenseCommandPanel({ countryId }: DefenseCommandPanelProps) {
   // `?tab=operations` (a PvP challenge notification) opens on that tab.
   const requestedTab = useSearchParams()?.get("tab");
   const [activeTab, setActiveTab] = useState<DefenseTab>(() =>
-    isDefenseTab(requestedTab) ? requestedTab : "branches"
+    isDefenseTab(requestedTab) ? requestedTab : "overview"
   );
+  const { redacted, isLoading } = useDefenseOverview(countryId);
 
-  const tabs = [
-    { id: "branches" as const, label: "Branches & readiness", icon: Shield },
-    { id: "threats" as const, label: "Threat vectors", icon: Target },
-    { id: "assets" as const, label: "Forces & arsenal", icon: Swords },
-    { id: "operations" as const, label: "Special operations", icon: Flame },
-    { id: "stability" as const, label: "Internal stability", icon: Users },
-  ];
+  if (isLoading) return <PanelSkeleton />;
+  if (redacted) return <RedactedDefenseView view={redacted} />;
 
   return (
     <div className="space-y-4">
-      {/* Sub-tab switcher (shared with the other domain sections) */}
       <SectionTabBar
-        tabs={tabs}
+        tabs={TABS}
         activeTab={activeTab}
         onChange={setActiveTab}
-        activeClassName="text-red"
+        aria-label="Defense sections"
       />
 
-      {activeTab === "branches" && <CommandPanel countryId={countryId} />}
+      {activeTab === "overview" && <OverviewPanel countryId={countryId} />}
+      {activeTab === "policy" && <PolicyPanel countryId={countryId} />}
+      {activeTab === "branches" && <BranchesPanel countryId={countryId} />}
+      {activeTab === "procurement" && <ProcurementPanel countryId={countryId} />}
       {activeTab === "threats" && <BorderThreatPanel countryId={countryId} />}
-      {activeTab === "assets" && <ArsenalPanel countryId={countryId} />}
       {activeTab === "operations" && <OperationsPanel countryId={countryId} />}
       {activeTab === "stability" && <StabilityPanel countryId={countryId} />}
     </div>

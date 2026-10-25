@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { PieChart } from "iconoir-react";
+import { PercentageCircle } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
@@ -65,7 +65,7 @@ export function BudgetSplitCard({
     <Card content="input">
       <CardHeader className="p-5 pb-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle icon={<PieChart />}>Budget split</CardTitle>
+          <CardTitle icon={<PercentageCircle />}>Budget split</CardTitle>
           {preset && <Badge variant="secondary">{PRESET_COPY[preset].label}</Badge>}
         </div>
         <CardDescription>

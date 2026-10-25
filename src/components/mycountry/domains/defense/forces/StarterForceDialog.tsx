@@ -15,16 +15,9 @@ import {
 } from "~/components/ui/alert-dialog";
 import { useNotify } from "~/hooks/useNotify";
 import { formatCompactCurrency } from "~/lib/utils/format-utils";
-import type { DefenseBudgetSource } from "~/lib/military/model/budget";
+import { BUDGET_SOURCE_COPY } from "../defense-copy";
 import { formatCount } from "./force-fields";
 
-const SOURCE_TEXT: Record<DefenseBudgetSource, string> = {
-  defenseDepartment: "Your Defense department's lines in the national budget fund it",
-  builder: "The Defense spending set when your nation was founded funds it",
-  governmentForm: "Your government form's usual Defense share of spending funds it",
-  estimate: "No Defense spending is recorded, so it assumes 2% of GDP",
-  none: "No GDP or Defense spending is recorded, so it has no budget",
-};
 
 interface StarterForceDialogProps {
   countryId: string;
@@ -81,7 +74,7 @@ export function StarterForceDialog({
               ))}
             </ul>
             <p className="text-label-secondary text-footnote">
-              {formatCompactCurrency(plan.budget)} a year. {SOURCE_TEXT[plan.budgetSource]}.
+              {formatCompactCurrency(plan.budget)} a year. {BUDGET_SOURCE_COPY[plan.budgetSource]}.
             </p>
           </div>
         )}
