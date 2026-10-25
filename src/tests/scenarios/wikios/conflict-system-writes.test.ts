@@ -367,6 +367,54 @@ describe.each(WIKIOS_MODES)("WikiOS's own writes never win or lose by time [%s]"
     ).toEqual([]);
   });
 
+  it("a page WikiOS holds with no revision row, saved in WikiOS, then deleted later on classic: the delete is judged, nothing is recreated", async () => {
+    const synced = site.editAs("Founder", "Legacy", "Legacy text.");
+    tables.wikiArticle.insert({
+      title: "Legacy",
+      slug: "legacy",
+      wikitext: "Legacy text.",
+      mwPageId: site.pages.get("Legacy")!.pageid,
+      mwLatestRevId: synced.revid,
+    });
+    const kir = await saves(
+      "Legacy",
+      "Legacy, edited in WikiOS.",
+      "db-kir",
+      new Date(siteTime() + 100)
+    );
+    site.deletePage("Admin", "Legacy");
+
+    await runMirrorCycle();
+
+    expect(site.pages.has("Legacy")).toBe(false);
+    expect(site.wiki.calls().filter((call) => call.params.action === "import")).toEqual([]);
+    expect(conflictsOf("Legacy")).toEqual([
+      expect.objectContaining({ winnerSide: "classic", winnerAction: "delete" }),
+    ]);
+    expect(revisionRow(kir.revisionId)).toMatchObject({ parked: true });
+  });
+
+  it("a page made in WikiOS and mirrored (no classic page id remembered), saved again, then deleted later on classic: the delete is judged", async () => {
+    await saves("Fresh", "A fresh page.", "db-kir");
+    await runMirrorCycle();
+    expect(article("Fresh")?.mwPageId ?? null).toBeNull();
+    const again = await saves(
+      "Fresh",
+      "A fresh page, again.",
+      "db-kir",
+      new Date(siteTime() + 100)
+    );
+    site.deletePage("Admin", "Fresh");
+
+    await runMirrorCycle();
+
+    expect(site.pages.has("Fresh")).toBe(false);
+    expect(conflictsOf("Fresh")).toEqual([
+      expect.objectContaining({ winnerSide: "classic", winnerAction: "delete" }),
+    ]);
+    expect(revisionRow(again.revisionId)).toMatchObject({ parked: true });
+  });
+
   it("a classic delete WikiOS applied, then a WikiOS restore and save whose undelete never reached classic: the save creates the page there, no row", async () => {
     site.deletePage("Admin", "Caphiria");
     await runAutoSyncCycle();

@@ -325,8 +325,8 @@ export async function markNotified(
 }
 
 /**
- * Takes back one person's mark on one channel: the notice is owed again, and a settled row is open again, so the next
- * settling delivers it. For a talk note a classic edit left out of the page (conflict-note-reopen.ts). True when there
+ * Takes back one person's mark on one channel: the notice is owed again, and a settled row is open again (its first
+ * settle attempt cleared, so a channel's give-up window starts again), so the next settling delivers it. For a talk note a classic edit left out of the page (conflict-note-reopen.ts). True when there
  * was a mark to take back.
  */
 export async function reopenNotice(
@@ -339,7 +339,10 @@ export async function reopenNotice(
     const marks = decodeMarks(row.notified);
     const kept = marks.filter((mark) => mark.key !== recipientKey || mark.channel !== channel);
     reopened = kept.length < marks.length;
-    return reopened ? { notified: kept.map((mark) => ({ ...mark })), settledAt: null } : null;
+    // reopened: the give-up windows start again from the next settle attempt
+    return reopened
+      ? { notified: kept.map((mark) => ({ ...mark })), settledAt: null, firstSettleAt: null }
+      : null;
   });
   return reopened;
 }

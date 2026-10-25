@@ -143,11 +143,13 @@ export interface DeadJobFilter {
   title?: string;
 }
 
+/** A title as a job's is stored, canonical; one that is no title stays as typed. */
+export function deadJobTitle(typed: string): string {
+  return canonicalizeTitle(typed, { source: MIRROR_SOURCE })?.title ?? typed;
+}
+
 const deadJobs = ({ title: typed }: DeadJobFilter) => {
-  const title =
-    typed === undefined
-      ? undefined
-      : (canonicalizeTitle(typed, { source: MIRROR_SOURCE })?.title ?? typed);
+  const title = typed === undefined ? undefined : deadJobTitle(typed);
   return {
     source: MIRROR_SOURCE,
     state: "dead",

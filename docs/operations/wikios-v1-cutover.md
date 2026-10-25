@@ -1294,7 +1294,8 @@ WikiOS's own writes (the trail edits and the talk notes) never win or lose by ti
 is written only while that edit is still the page's head. If a classic editor saved again before a trail or a note
 reached classic, the mirror job sends nothing and finishes with a note saying so, and the next inbound cycle brings the
 classic edit over. A talk note that someone's classic edit of their talk page left out is written again on top of that
-edit by the next settling, once.
+edit by the next settling. Only the newest copy of a note counts: an older copy that never reached classic stays in
+WikiOS's history and is never written again, so a person who archived the newer copy is not sent the note a third time.
 
 Known limits. None of them loses text; each can leave someone untold or a page needing a hand fix:
 

@@ -147,14 +147,27 @@ function deleteOverSystemWrites(
 }
 
 /**
+ * Whether classic had the page as WikiOS knows it: a revision of it carries a MediaWiki id, or the article remembers
+ * classic's page id (a page kept from before revisions were, with its text and no revision row).
+ */
+async function classicHadPage(articleId: string): Promise<boolean> {
+  const known = await db.wikiRevision.count({ where: { articleId, mwRevId: { not: null } } });
+  if (known > 0) return true;
+  const article = await db.wikiArticle.findUnique({
+    where: { id: articleId },
+    select: { mwPageId: true },
+  });
+  return Boolean(article?.mwPageId);
+}
+
+/**
  * The page is gone from classic: its latest deletion, when one is logged, meets the batch (the WikiOS saves MediaWiki
  * has not had, up to `newest`), recorded in the conflict log like any collision. A delete saved after the newest
  * person's save (or in its second) wins: every unsent revision is parked, in one transaction with the row, and nothing
  * is sent, so classic stays deleted. An earlier delete loses: the revisions bring the page back, as MediaWiki's import
  * does, and the deleter is told. A system write never keeps the page alive. Null (a new page, nothing judged) when the
  * page was never deleted there, when WikiOS applied that delete already (the page was made again after it), or when
- * classic never had the page as WikiOS knows it (no revision of it carries a MediaWiki id: an old delete of an
- * unrelated page of that title).
+ * classic never had the page as WikiOS knows it (`classicHadPage`: an old delete of an unrelated page of that title).
  */
 async function judgeDeletion(
   title: string,
@@ -163,13 +176,12 @@ async function judgeDeletion(
 ): Promise<BatchCollision | null> {
   const removal = await latestClassicDelete(title);
   if (!removal || (await classicEventApplied(removal.logid))) return null;
-  const known = await db.wikiRevision.count({ where: { articleId, mwRevId: { not: null } } });
-  if (known === 0) return null;
+  if (!(await classicHadPage(articleId))) return null;
   const standing = await classicChangeOfEvent(removal, "delete");
   const unseen = (await wikiosBranchSince(articleId, 0, null)).filter(
     (change) => change.at <= newest.at
   );
-  const people = unseen.filter((change) => !isSystemWrite(change.author));
+  const people = unseen.filter((change) => !isSystemWrite(change));
   const incoming = people.at(-1);
   const verdict = incoming
     ? decideCollision(MIRROR_SOURCE, articleId, {
@@ -226,7 +238,7 @@ async function judgeAgainstClassic(
     standing: await classicChangeOfEntry(standing),
     // what people changed in WikiOS since the base up to this save; anything later is judged with its own batch
     incomingBranch: wikiosBranch.filter(
-      (change) => change.at <= incoming.at && !isSystemWrite(change.author)
+      (change) => change.at <= incoming.at && !isSystemWrite(change)
     ),
     standingBranch: await Promise.all(branch.map(classicChangeOfEntry)),
   });

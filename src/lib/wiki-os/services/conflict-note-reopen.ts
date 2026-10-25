@@ -10,7 +10,7 @@ import { canonicalizeTitle } from "../core/title";
 import { noticeRecipients, type PageChange } from "./conflict-rule";
 import { reopenNotice, toConflictEntry } from "./conflict-log";
 import { conflictOfNote } from "./conflict-notice-copy";
-import { isSystemRevision, talkPageTitle } from "./conflict-sides";
+import { CONFLICT_NOTICE_AUTHOR, isSystemRevision, talkPageTitle } from "./conflict-sides";
 
 const SOURCE = "ixwiki";
 
@@ -23,14 +23,23 @@ function appendedSection(text: string, parentText: string): string {
   return text.startsWith(before) ? text.slice(before.length).trim() : "";
 }
 
+/** A note of WikiOS's on a talk page: its conflict and the section it appended. */
+interface Note {
+  id: string;
+  articleId: string;
+  createdAt: Date;
+  conflictId: string;
+  section: string;
+}
+
 /** The note `ref` names, with the section it appended; null for a revision that is no system write naming a conflict. */
-async function noteOf(
-  ref: string
-): Promise<{ id: string; conflictId: string; section: string } | null> {
+async function noteOf(ref: string): Promise<Note | null> {
   const row = await db.wikiRevision.findUnique({
     where: { id: ref },
     select: {
       id: true,
+      articleId: true,
+      createdAt: true,
       origin: true,
       author: true,
       authorId: true,
@@ -48,7 +57,31 @@ async function noteOf(
       })
     : null;
   // empty for a revision that appended nothing: every text holds it, so nothing is owed for it
-  return { id: row.id, conflictId, section: appendedSection(row.wikitext, parent?.wikitext ?? "") };
+  return {
+    id: row.id,
+    articleId: row.articleId,
+    createdAt: row.createdAt,
+    conflictId,
+    section: appendedSection(row.wikitext, parent?.wikitext ?? ""),
+  };
+}
+
+/**
+ * Whether the note was sent again since: a later note of the same conflict on the page. The later one is what the
+ * recipient's mark stands for, so an older note (one the mirror withheld) is never owed again after it.
+ */
+async function sentAgain(note: Note): Promise<boolean> {
+  const later = await db.wikiRevision.findFirst({
+    where: {
+      articleId: note.articleId,
+      createdAt: { gt: note.createdAt },
+      authorId: null,
+      author: CONFLICT_NOTICE_AUTHOR,
+      summary: { contains: `(conflict ${note.conflictId})` },
+    },
+    select: { id: true },
+  });
+  return later !== null;
 }
 
 /** The recipients of conflict `conflictId` told by a note on the talk page `title`. */
@@ -69,8 +102,8 @@ async function recipientsTalkedTo(
 
 /**
  * After a classic edit of the talk page `title` became its head over WikiOS's own writes (`skipped`, which it did not
- * build on), each note among them whose section `headText` does not hold is owed again: its recipient's talk-page mark
- * is taken back (`reopenNotice`). Resolves to how many notices are owed again.
+ * build on), each note among them whose section `headText` does not hold, and that was not sent again since, is owed
+ * again: its recipient's talk-page mark is taken back (`reopenNotice`). Resolves to how many notices are owed again.
  */
 export async function reopenSkippedNotes(
   title: string,
@@ -80,7 +113,7 @@ export async function reopenSkippedNotes(
   let reopened = 0;
   for (const change of skipped) {
     const note = await noteOf(change.ref);
-    if (!note || headText.includes(note.section)) continue;
+    if (!note || headText.includes(note.section) || (await sentAgain(note))) continue;
     for (const key of await recipientsTalkedTo(note.conflictId, note.id, title)) {
       if (await reopenNotice(note.conflictId, key, "talk-page")) reopened += 1;
     }

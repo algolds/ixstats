@@ -5,14 +5,15 @@
  *
  * WikiOS's own conflict writes (`isSystemWrite`: trail dummy edits, talk notes) never win or lose by time. They are never
  * the standing change nor in its branch, and a classic edit that meets nothing else since its base is no collision: it
- * is imported as the head over them, and they stay in the history (a talk note it leaves out of the page is owed again,
+ * is imported as the head over them (with no base found, they are all the branch holds: every person's revision is
+ * stamped), and they stay in the history (a talk note it leaves out of the page is owed again,
  * conflict-note-reopen.ts).
  */
 import { decideCollision, type CollisionVerdict, type PageChange } from "./conflict-rule";
 import {
   classicChangeOfRevision,
   isSystemWrite,
-  wikiosBranchFrom,
+  wikiosBranchSince,
   wikiosDeletion,
   wikiosHead,
 } from "./conflict-sides";
@@ -65,16 +66,11 @@ async function verdictOf(
 export async function judgeClassicEdit(edit: ClassicEditToJudge): Promise<InboundJudgement> {
   const deletion = edit.archived ? await wikiosDeletion(edit.articleId) : null;
   if (deletion) return verdictOf(edit, deletion, [deletion], []);
-  const { based, changes } = await wikiosBranchFrom(
-    edit.articleId,
-    edit.rev.parentid,
-    edit.parentSha1
-  );
-  const people = changes.filter((change) => !isSystemWrite(change.author));
-  const skipped = changes.filter((change) => isSystemWrite(change.author));
-  if (based && skipped.length > 0 && people.length === 0) {
-    return { kind: "past-system-writes", skipped };
-  }
+  const changes = await wikiosBranchSince(edit.articleId, edit.rev.parentid, edit.parentSha1);
+  const people = changes.filter((change) => !isSystemWrite(change));
+  const skipped = changes.filter((change) => isSystemWrite(change));
+  // with no base found the branch is what MediaWiki never had: every person's revision is stamped, so none is at stake
+  if (skipped.length > 0 && people.length === 0) return { kind: "past-system-writes", skipped };
   const standing = await wikiosHead(edit.articleId);
   return standing ? verdictOf(edit, standing, people, skipped) : { kind: "none" };
 }

@@ -121,6 +121,67 @@ describe.each(WIKIOS_MODES)("reopenSkippedNotes [%s]", (mode) => {
     ]);
   });
 
+  it("a note sent again since supersedes the first: only the newest note of the conflict on the page can be owed again", async () => {
+    const id = await bobToldOnTalk();
+    const summary = `Your edit to Caphiria was replaced (conflict ${id})`;
+    const first = talkRevision({
+      wikitext: `${BASE}\n\n${SECTION}`,
+      summary,
+      createdAt: new Date("2026-10-24T12:00:00Z"),
+    });
+    const again = talkRevision({
+      wikitext: `${REPLY}\n\n${SECTION}`,
+      summary,
+      createdAt: new Date("2026-10-24T13:00:00Z"),
+    });
+
+    // Bob archived the note sent again; the first, withheld note comes up once more
+    await expect(
+      reopenSkippedNotes(TALK, [asSkipped(first)], `${REPLY}\n\nArchived.`)
+    ).resolves.toBe(0);
+    expect(row(id).notified).toHaveLength(1);
+
+    await expect(reopenSkippedNotes(TALK, [asSkipped(again)], `${BASE}\n\nOther.`)).resolves.toBe(
+      1
+    );
+  });
+
+  it("a later person's edit of the page, or a later note of another conflict, is no note sent again", async () => {
+    const id = await bobToldOnTalk();
+    const note = talkRevision({
+      wikitext: `${BASE}\n\n${SECTION}`,
+      summary: `Your edit to Caphiria was replaced (conflict ${id})`,
+      createdAt: new Date("2026-10-24T12:00:00Z"),
+    });
+    talkRevision({
+      wikitext: `${BASE}\n\n${SECTION}\n\nThanks.`,
+      summary: `Reply (conflict ${id})`,
+      author: "Kir",
+      authorId: "db-kir",
+      createdAt: new Date("2026-10-24T13:00:00Z"),
+    });
+    talkRevision({
+      wikitext: `${BASE}\n\nAnother note.`,
+      summary: "Your edit to Urcea was replaced (conflict other-1)",
+      createdAt: new Date("2026-10-24T14:00:00Z"),
+    });
+
+    await expect(reopenSkippedNotes(TALK, [asSkipped(note)], REPLY)).resolves.toBe(1);
+  });
+
+  it("a reopened row's give-up window starts again: its first settle attempt is cleared", async () => {
+    const id = await bobToldOnTalk();
+    row(id).firstSettleAt = new Date("2026-10-20T00:00:00Z");
+    const note = talkRevision({
+      wikitext: `${BASE}\n\n${SECTION}`,
+      summary: `Your edit to Caphiria was replaced (conflict ${id})`,
+    });
+
+    await reopenSkippedNotes(TALK, [asSkipped(note)], REPLY);
+
+    expect(row(id).firstSettleAt).toBeNull();
+  });
+
   it("a note whose section the new head kept was seen: nothing is owed", async () => {
     const id = await bobToldOnTalk();
     const note = talkRevision({

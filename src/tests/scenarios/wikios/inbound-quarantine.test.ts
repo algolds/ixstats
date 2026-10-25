@@ -45,6 +45,9 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
 }));
 
 import { runAutoSyncCycle } from "~/lib/wiki-os/services/auto-sync-service";
+import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
+import { CONFLICT_NOTICE_AUTHOR } from "~/lib/wiki-os/services/conflict-sides";
+import { notificationAPI } from "~/lib/notifications/api";
 import { resyncQuarantined, retryQuarantined } from "~/lib/wiki-os/services/inbound-dead-letters";
 import { PageOperationError } from "~/lib/wiki-os/core/page-operation-error";
 import { invalidateCsrfToken } from "~/lib/wiki-os/adapters/mediawiki/csrf-cache";
@@ -341,6 +344,31 @@ describe.each(WIKIOS_MODES)("a quarantined inbound step [%s]", (mode) => {
     expect(revisionsOf("Caphiria").find((row) => row.mwRevId === r1.revid)).toBeDefined();
     expect(liveHead("Caphiria")).toMatchObject({ mwRevId: r2.revid });
     expect(tables.wikiConflict.rows).toEqual([]);
+  });
+
+  it("a revision built on a quarantined one, over WikiOS's own unmirrored note on the person's head, fast-forwards: no row, nobody told", async () => {
+    // a system write on top of the stamped head, not mirrored yet (its job waits)
+    await ArticleRepository.saveArticle(
+      {
+        slug: "Caphiria",
+        title: "Caphiria",
+        wikitext: "Caphiria is a kingdom.\n\n== A note ==",
+        expectedHeadRef: String(liveHead("Caphiria").mwRevId),
+      },
+      undefined,
+      CONFLICT_NOTICE_AUTHOR
+    );
+    for (const job of tables.wikiMirrorJob.rows)
+      job.nextAttemptAt = new Date(Date.now() + 3_600_000);
+    const r1 = site.editAs("Alice", "Caphiria", "Caphiria is an empire.");
+    const r2 = site.editAs("Bob", "Caphiria", "Caphiria is an empire in Sarpedon.");
+
+    await quarantineByCycles(r1.revid);
+
+    expect(liveHead("Caphiria")).toMatchObject({ mwRevId: r2.revid, parked: false });
+    expect(tables.wikiConflict.rows).toEqual([]);
+    expect(article("User talk:Founder")).toBeUndefined();
+    expect(notificationAPI.create).not.toHaveBeenCalled();
   });
 
   it("resyncing the page of a quarantined newest revision brings WikiOS level with classic (I3)", async () => {

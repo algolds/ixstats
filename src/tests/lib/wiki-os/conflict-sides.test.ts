@@ -14,7 +14,11 @@ jest.mock("~/server/db", () => {
   return { __esModule: true, fake, db: fake.db, isDatabaseReadOnly: true };
 });
 
-import { CONFLICT_NOTICE_AUTHOR, wikiosHead } from "~/lib/wiki-os/services/conflict-sides";
+import {
+  CONFLICT_NOTICE_AUTHOR,
+  isSystemWrite,
+  wikiosHead,
+} from "~/lib/wiki-os/services/conflict-sides";
 import type { createFakeWikiDb } from "~/tests/helpers/fake-wiki-db";
 import { seedWikiosMode, WIKIOS_MODES } from "~/tests/helpers/wikios-modes";
 
@@ -80,5 +84,25 @@ describe.each(WIKIOS_MODES)("wikiosHead [%s]", (mode) => {
     systemWrite();
 
     await expect(wikiosHead("a1")).resolves.toBeNull();
+  });
+});
+
+describe("isSystemWrite", () => {
+  const author = { userId: null, classicName: null, ip: null, label: CONFLICT_NOTICE_AUTHOR };
+
+  it("is WikiOS's own write: a WikiOS revision (named by its row id) under that name with no account", () => {
+    expect(isSystemWrite({ ref: "ckv0note1", author })).toBe(true);
+  });
+
+  it("a classic revision is never one, whoever made it: it is named by its MediaWiki id or log entry", () => {
+    expect(isSystemWrite({ ref: "103", author })).toBe(false);
+    expect(isSystemWrite({ ref: "mwlog:7", author })).toBe(false);
+  });
+
+  it("nor is a player's save under that name, or anyone else's", () => {
+    expect(isSystemWrite({ ref: "ckv0note1", author: { ...author, userId: "db-fan" } })).toBe(
+      false
+    );
+    expect(isSystemWrite({ ref: "ckv0note1", author: { ...author, label: "Kir" } })).toBe(false);
   });
 });

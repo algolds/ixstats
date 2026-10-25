@@ -230,6 +230,8 @@ describe.each([
 
   it("reads the title as a job's is stored: canonical; one that is no title is matched as typed, never as every job", async () => {
     await admin()[name]({ title: "foo_bar" });
+    // the audit row names the title the action matched
+    expect(audited()[0]).toMatchObject({ targetId: "Foo bar", changes: { title: "Foo bar" } });
     await admin()[name]({ title: "Foo[bar" });
 
     expect(updateMany.mock.calls[0]?.[0]).toMatchObject({

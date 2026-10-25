@@ -15,7 +15,7 @@ jest.mock("~/lib/wiki-os/services/conflict-sides", () => ({
   __esModule: true,
   ...jest.requireActual("~/lib/wiki-os/services/conflict-sides"),
   classicChangeOfRevision: jest.fn(),
-  wikiosBranchFrom: jest.fn(),
+  wikiosBranchSince: jest.fn(),
   wikiosDeletion: jest.fn(),
   wikiosHead: jest.fn(),
 }));
@@ -23,7 +23,7 @@ jest.mock("~/lib/wiki-os/services/conflict-sides", () => ({
 import type { PageChange } from "~/lib/wiki-os/services/conflict-rule";
 import {
   classicChangeOfRevision,
-  wikiosBranchFrom,
+  wikiosBranchSince,
   wikiosDeletion,
   wikiosHead,
 } from "~/lib/wiki-os/services/conflict-sides";
@@ -60,9 +60,9 @@ describeEachWikiosMode("judgeClassicEdit", () => {
     jest.mocked(wikiosDeletion).mockResolvedValue(null);
   });
 
-  it("only WikiOS's own writes since a base it found: no collision, the writes handed back", async () => {
+  it("only WikiOS's own writes since the base: no collision, the writes handed back", async () => {
     const note = system("note", 9);
-    jest.mocked(wikiosBranchFrom).mockResolvedValue({ based: true, changes: [note] });
+    jest.mocked(wikiosBranchSince).mockResolvedValue([note]);
 
     await expect(judgeClassicEdit(edit)).resolves.toEqual({
       kind: "past-system-writes",
@@ -72,9 +72,7 @@ describeEachWikiosMode("judgeClassicEdit", () => {
 
   it("a person's save among them: judged against the person's head, the system writes out of the branch", async () => {
     const kir = person("kir", 2);
-    jest
-      .mocked(wikiosBranchFrom)
-      .mockResolvedValue({ based: true, changes: [kir, system("trail", 9)] });
+    jest.mocked(wikiosBranchSince).mockResolvedValue([kir, system("trail", 9)]);
     jest.mocked(wikiosHead).mockResolvedValue(kir);
 
     const judged = await judgeClassicEdit(edit);
@@ -86,19 +84,32 @@ describeEachWikiosMode("judgeClassicEdit", () => {
     });
   });
 
-  it("with no base found, the person's head is judged as before, even when only system writes are unmirrored", async () => {
-    const kir = person("kir", 9);
-    jest.mocked(wikiosBranchFrom).mockResolvedValue({ based: false, changes: [system("note", 8)] });
-    jest.mocked(wikiosHead).mockResolvedValue(kir);
+  it("only system writes and no base found (a parent WikiOS never had): no collision either, every person's revision is stamped", async () => {
+    const note = system("note", 8);
+    jest.mocked(wikiosBranchSince).mockResolvedValue([note]);
+    jest.mocked(wikiosHead).mockResolvedValue(person("kir", 9));
+
+    await expect(judgeClassicEdit(edit)).resolves.toEqual({
+      kind: "past-system-writes",
+      skipped: [note],
+    });
+  });
+
+  it("a classic editor named WikiOS is a person: the edit is judged against their revision", async () => {
+    // a classic revision WikiOS has is named by its MediaWiki id, never by a row id
+    const namesake = { ...system("103", 8), ref: "103" };
+    jest.mocked(wikiosBranchSince).mockResolvedValue([namesake]);
+    jest.mocked(wikiosHead).mockResolvedValue(namesake);
 
     await expect(judgeClassicEdit(edit)).resolves.toMatchObject({
       kind: "collision",
-      verdict: { incomingWins: false, winner: kir },
+      verdict: { incomingWins: false, winner: namesake },
+      skipped: [],
     });
   });
 
   it("nothing since the base and no head: nothing to judge", async () => {
-    jest.mocked(wikiosBranchFrom).mockResolvedValue({ based: true, changes: [] });
+    jest.mocked(wikiosBranchSince).mockResolvedValue([]);
     jest.mocked(wikiosHead).mockResolvedValue(null);
 
     await expect(judgeClassicEdit(edit)).resolves.toEqual({ kind: "none" });
@@ -112,7 +123,7 @@ describeEachWikiosMode("judgeClassicEdit", () => {
       kind: "collision",
       verdict: { incomingWins: false, winner: deletion },
     });
-    expect(wikiosBranchFrom).not.toHaveBeenCalled();
+    expect(wikiosBranchSince).not.toHaveBeenCalled();
     expect(wikiosHead).not.toHaveBeenCalled();
   });
 });

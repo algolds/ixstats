@@ -13,6 +13,7 @@ import { getWikiPermissions } from "~/lib/wiki-os/rights";
 import { getSiteStats } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getInboundSyncStatus } from "~/lib/wiki-os/services/auto-sync-service";
 import {
+  deadJobTitle,
   discardDeadJobs,
   discardMirrorJob,
   getMirrorStatus,
@@ -182,10 +183,11 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
   /** Try every dead mirror job of a title (or every dead job) again from its first attempt. Audited. */
   requeueDeadMirrorJobs: adminProcedure.input(deadJobsInput).mutation(async ({ ctx, input }) => {
     const count = await requeueDeadJobs(input);
+    const matched = input.title === undefined ? null : deadJobTitle(input.title);
     await auditWikiosAdmin(ctx.db, actorOf(ctx.user), {
       action: "wikios.mirror.requeue-bulk",
-      targetId: input.title ?? "all",
-      changes: { title: input.title ?? null, count },
+      targetId: matched ?? "all",
+      changes: { title: matched, count },
     });
     return { count };
   }),
@@ -193,10 +195,11 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
   /** Give up on every dead mirror job of a title (or every dead job), so the jobs behind them can run. Audited. */
   discardDeadMirrorJobs: adminProcedure.input(deadJobsInput).mutation(async ({ ctx, input }) => {
     const count = await discardDeadJobs(input);
+    const matched = input.title === undefined ? null : deadJobTitle(input.title);
     await auditWikiosAdmin(ctx.db, actorOf(ctx.user), {
       action: "wikios.mirror.discard-bulk",
-      targetId: input.title ?? "all",
-      changes: { title: input.title ?? null, count },
+      targetId: matched ?? "all",
+      changes: { title: matched, count },
     });
     return { count };
   }),

@@ -26,12 +26,19 @@ const SOURCE = "ixwiki";
 /** The author of WikiOS's own conflict writes (talk notes, trail edits); MediaWiki shows it as `wikios>WikiOS`. */
 export const CONFLICT_NOTICE_AUTHOR = "WikiOS";
 
-/**
- * Whether a change is one of WikiOS's own conflict writes (a talk note, a trail dummy edit): written by the settler as
- * `CONFLICT_NOTICE_AUTHOR`, with no account. Such a write never keeps a page alive that a person deleted.
- */
-export function isSystemWrite(author: ChangeAuthor): boolean {
+/** Whether an author is the settler's: `CONFLICT_NOTICE_AUTHOR`, with no account. */
+function isSettler(author: Pick<ChangeAuthor, "userId" | "label">): boolean {
   return author.userId === null && author.label === CONFLICT_NOTICE_AUTHOR;
+}
+
+/**
+ * Whether a change is one of WikiOS's own conflict writes (a talk note, a trail dummy edit): a WikiOS revision, named by
+ * its row id (`conflictRefOf`: a classic revision is named by its MediaWiki id, a log event by its entry), written by
+ * the settler. A classic editor of that name, or a player whose handle it is, is a person. Such a write never wins or
+ * loses by time, and never keeps a page alive that a person deleted.
+ */
+export function isSystemWrite(change: Pick<PageChange, "ref" | "author">): boolean {
+  return isRowRef(change.ref) && isSettler(change.author);
 }
 
 /**
@@ -43,10 +50,7 @@ export function isSystemRevision(row: {
   authorId: string | null;
   author: string | null;
 }): boolean {
-  return (
-    row.origin !== "classic" &&
-    isSystemWrite({ userId: row.authorId, label: row.author, classicName: null, ip: null })
-  );
+  return row.origin !== "classic" && isSettler({ userId: row.authorId, label: row.author });
 }
 
 /** The wiki a side's save was made on, as the notices name it. */
@@ -267,15 +271,15 @@ async function findBase(articleId: string, parentRevId: number, parentSha1: stri
 
 /**
  * WikiOS's changes since the base a classic edit started from (MediaWiki revision `parentRevId`, with text hash
- * `parentSha1` when known): its live revisions after that base, oldest first, and whether that base was found. With no
- * base found, the live revisions MediaWiki has never seen (no MediaWiki id). WikiOS's own conflict writes are among
- * them: a caller judging by time leaves them out (`isSystemWrite`), one parking a lost batch keeps them.
+ * `parentSha1` when known): its live revisions after that base, oldest first. With no base found, the live revisions
+ * MediaWiki has never seen (no MediaWiki id). WikiOS's own conflict writes are among them: a caller judging by time
+ * leaves them out (`isSystemWrite`), one parking a lost batch keeps them.
  */
-export async function wikiosBranchFrom(
+export async function wikiosBranchSince(
   articleId: string,
   parentRevId: number,
   parentSha1: string | null
-): Promise<{ based: boolean; changes: PageChange[] }> {
+): Promise<PageChange[]> {
   const base = await findBase(articleId, parentRevId, parentSha1);
   const rows = await db.wikiRevision.findMany({
     where: {
@@ -287,16 +291,7 @@ export async function wikiosBranchFrom(
     select: LIVE_REVISION_SELECT,
   });
   const names = await shownNames(rows);
-  return { based: base !== null, changes: rows.map((row) => editOf(row, authorFrom(row, names))) };
-}
-
-/** `wikiosBranchFrom`'s changes alone. */
-export async function wikiosBranchSince(
-  articleId: string,
-  parentRevId: number,
-  parentSha1: string | null
-): Promise<PageChange[]> {
-  return (await wikiosBranchFrom(articleId, parentRevId, parentSha1)).changes;
+  return rows.map((row) => editOf(row, authorFrom(row, names)));
 }
 
 /**
@@ -447,7 +442,7 @@ export async function wikiosChangesAgainstDelete(
   const names = await shownNames(rows);
   const edits = rows
     .map((row) => editOf(row, authorFrom(row, names)))
-    .filter((change) => !isSystemWrite(change.author));
+    .filter((change) => !isSystemWrite(change));
   const operations = (await operationChanges({ articleId })).map(({ change }) => change);
   return [...edits, ...operations].sort((a, b) => a.at.getTime() - b.at.getTime());
 }
