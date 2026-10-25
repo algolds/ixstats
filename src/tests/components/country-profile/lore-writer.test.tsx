@@ -25,6 +25,7 @@ interface BridgeProps {
   registerContentReader?: (read: Reader) => void;
   onSaveError?: (error: Error) => void;
   onSaveStart?: () => void;
+  onModeChange?: (mode: "source" | "visual") => void;
 }
 
 interface PageCheck {
@@ -41,6 +42,8 @@ let mockNormalised = "";
 let mockReports = true;
 /** The mocked editor's content cannot all be converted to wikitext: its reader answers null. */
 let mockIncomplete = false;
+/** The editor the mocked bridge says is showing. */
+let mockMode: "source" | "visual" = "visual";
 /** How many times a mocked editor has opened. */
 let mockMounts = 0;
 const mockNotifyInfo = jest.fn();
@@ -88,6 +91,7 @@ jest.mock("~/components/wiki-os/editor/WikiEditBridge", () => ({
       mockMounts += 1;
       const opened = (props.prefillWikitext ?? "") + mockNormalised;
       props.registerContentReader?.(() => (mockIncomplete ? null : (mockEditorText ?? opened)));
+      props.onModeChange?.(mockMode);
       if (mockReports)
         props.onSerializedWikitext?.({
           wikitext: opened,
@@ -98,7 +102,16 @@ jest.mock("~/components/wiki-os/editor/WikiEditBridge", () => ({
       // The editor opens once.
       // oxlint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-    return <div data-testid="bridge" data-title={props.title} />;
+    return (
+      <div data-testid="bridge" data-title={props.title}>
+        <div
+          contentEditable="true"
+          suppressContentEditableWarning
+          tabIndex={-1}
+          data-testid="editable"
+        />
+      </div>
+    );
   },
 }));
 jest.mock("~/trpc/react", () => ({
@@ -164,6 +177,7 @@ beforeEach(() => {
   mockEditorText = null;
   mockNormalised = "";
   mockReports = true;
+  mockMode = "visual";
   mockIncomplete = false;
   mockMounts = 0;
   mockChecking = false;
@@ -991,5 +1005,53 @@ describe("LoreWriter: fix round 2", () => {
       expect(screen.getByRole("alert")).toHaveTextContent(/could not keep your text/);
       expect(screen.queryByRole("button", { name: "Close without keeping" })).toBeNull();
     });
+  });
+});
+
+describe("LoreWriter: final review fixes", () => {
+  it("keeps no draft and says nothing when an untouched edit closes before the editor reported its text", () => {
+    mockReports = false;
+    const { onClose } = renderWriter({ editTitle: "Venceia" });
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(getDraft("user_alice", "Venceia")).toBeNull();
+    expect(mockNotifyInfo).not.toHaveBeenCalled();
+  });
+
+  it("still keeps an edited page's text as a draft on close", () => {
+    const { onClose } = renderWriter({ editTitle: "Venceia" });
+    mockEditorText = "Venceia, rewritten.";
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(getDraft("user_alice", "Venceia")?.wikitext).toBe("Venceia, rewritten.");
+  });
+
+  it("moves focus into the editor when it opens", async () => {
+    renderWriter();
+    openEditorOn("Place", "Venceia");
+    await waitFor(() => expect(screen.getByTestId("editable")).toHaveFocus());
+  });
+
+  it("moves focus into the editor when editing a piece", async () => {
+    renderWriter({ editTitle: "Venceia" });
+    await waitFor(() => expect(screen.getByTestId("editable")).toHaveFocus());
+  });
+
+  it("shows the word count in the visual editor only", () => {
+    renderWriter();
+    openEditorOn("Place", "Venceia");
+    expect(screen.getByText("0 words")).toBeInTheDocument();
+    act(() => lastBridge().onModeChange?.("source"));
+    expect(screen.queryByText(/\bwords?$/)).toBeNull();
+    act(() => lastBridge().onModeChange?.("visual"));
+    expect(screen.getByText("0 words")).toBeInTheDocument();
+  });
+
+  it("hides the word count when the editor opens in source mode", () => {
+    mockMode = "source";
+    renderWriter({ editTitle: "Venceia" });
+    expect(screen.queryByText(/\bwords?$/)).toBeNull();
   });
 });

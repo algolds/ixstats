@@ -1,33 +1,37 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { EditPencil } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { WikiEditBridge } from "~/components/wiki-os/editor/WikiEditBridge";
+import { useFocusEditor } from "~/hooks/lore/useFocusEditor";
 import type { LoreWriterFlow } from "~/hooks/lore/useLoreWriter";
 import { pageEditHref } from "~/lib/wiki-os/page-tools";
 
 /** The writer's header above the editor: WikiOS's editors fill the viewport less what is above them. */
 const EDITOR_FRAME = { "--wikios-chrome-height": "4.5rem" } as CSSProperties;
 
-/** The editor's tools in the writer's header: the word count and "Open in WikiOS". */
+/** The editor's tools in the writer's header: the word count (visual editor only) and "Open in WikiOS". */
 export function LoreEditorTools({
   title,
   words,
   onOpenInWikiOS,
 }: {
   title: string;
-  words: number;
+  /** Null in the source editor, which reports no count. */
+  words: number | null;
   /** Whether to go: false when the author's text could not go over as a draft. */
   onOpenInWikiOS: () => boolean;
 }) {
   return (
     <div className="flex items-center gap-3">
       {/* Read on demand, not announced on every keystroke. */}
-      <span aria-live="off" className="text-footnote text-label-secondary tabular-nums">
-        {words === 1 ? "1 word" : `${words} words`}
-      </span>
+      {words !== null && (
+        <span aria-live="off" className="text-footnote text-label-secondary tabular-nums">
+          {words === 1 ? "1 word" : `${words} words`}
+        </span>
+      )}
       {/* The author's text goes over as their draft (never in the URL); see useLoreWriter. */}
       <Button asChild size="sm" variant="ghost">
         <Link
@@ -82,7 +86,7 @@ function UnkeptTextAlert({ flow }: { flow: LoreWriterFlow }) {
   return (
     <div
       role="alert"
-      className="rounded-row border-red/30 bg-red/10 text-body text-label space-y-2 border p-3"
+      className="rounded-row border-destructive/30 bg-destructive/10 text-body text-label space-y-2 border p-3"
     >
       <p>
         This browser could not keep your text as a draft, so it would be lost.{" "}
@@ -110,13 +114,20 @@ function UnkeptTextAlert({ flow }: { flow: LoreWriterFlow }) {
 /** The lore writer's editor: WikiOS's own editing host, opened on the piece's starting text. */
 export function LoreEditorStep({ flow }: { flow: LoreWriterFlow }) {
   const target = flow.target;
+  const frameRef = useRef<HTMLDivElement>(null);
+  const editorKey = target ? `${flow.editorKey}\n${target.title}\n${target.prefill ?? ""}` : "";
+  useFocusEditor(frameRef, editorKey);
   if (!target) return null;
   return (
-    <div className="wikios-root flex min-h-full flex-col gap-3 p-3" style={EDITOR_FRAME}>
+    <div
+      ref={frameRef}
+      className="wikios-root flex min-h-full flex-col gap-3 p-3"
+      style={EDITOR_FRAME}
+    >
       {flow.saveError && (
         <p
           role="alert"
-          className="rounded-row border-red/30 bg-red/10 text-body text-label border p-3"
+          className="rounded-row border-destructive/30 bg-destructive/10 text-body text-label border p-3"
         >
           {flow.saveError}
         </p>
@@ -124,7 +135,7 @@ export function LoreEditorStep({ flow }: { flow: LoreWriterFlow }) {
       <UnkeptTextAlert flow={flow} />
       {flow.restoredDraft && <RestoredDraftNotice onDiscard={flow.discardDraft} />}
       <WikiEditBridge
-        key={`${flow.editorKey}\n${target.title}\n${target.prefill ?? ""}`}
+        key={editorKey}
         title={target.title}
         initialMode="visual"
         prefillWikitext={target.prefill}

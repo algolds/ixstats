@@ -30,7 +30,10 @@ export function LoreRecordStep({
   }
   return (
     <div className="mx-auto w-full max-w-2xl space-y-4 px-4 py-6">
-      <div role="alert" className="rounded-row border-red/30 bg-red/10 space-y-2 border p-3">
+      <div
+        role="alert"
+        className="rounded-row border-destructive/30 bg-destructive/10 space-y-2 border p-3"
+      >
         <p className="text-body text-label">Your page is saved. It is not on the Lore tab yet.</p>
         <p className="text-footnote text-label">{record.message}</p>
         {record.missingCategory && (

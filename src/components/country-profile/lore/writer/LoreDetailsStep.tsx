@@ -59,7 +59,7 @@ function ExistingPage({
         </Button>
       </div>
       {failure && (
-        <p role="alert" className="text-footnote text-red">
+        <p role="alert" className="text-footnote text-destructive">
           {failure}
         </p>
       )}

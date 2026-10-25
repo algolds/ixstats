@@ -55,7 +55,8 @@ function TeamRows({
     <FacetRow
       key={member.userId}
       title={member.displayName ?? "A player"}
-      subtitle={`@${member.handle}`}
+      // The identity rule's name is often the handle itself: then it shows once.
+      subtitle={member.displayName === `@${member.handle}` ? undefined : `@${member.handle}`}
       trailing={
         <Button
           size="sm"

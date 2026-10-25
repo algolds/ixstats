@@ -160,6 +160,11 @@ export function canonicalizeTitle(
   };
 }
 
+/** A title with every underscore read as a space and nothing else changed, as category members and file rows name it. */
+export function spacedTitle(title: string): string {
+  return title.replace(/_/g, " ");
+}
+
 /** A title's canonical form; the trimmed title, underscores as spaces, when MediaWiki would refuse it. */
 export function canonicalOrTrimmedTitle(raw: string, source = "ixwiki"): string {
   return canonicalizeTitle(raw, { source })?.title ?? raw.replace(/_/g, " ").trim();

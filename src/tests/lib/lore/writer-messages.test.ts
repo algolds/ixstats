@@ -6,6 +6,7 @@ import {
   RECORD_FAILED,
   isMissingCategoryRefusal,
   recordFailureMessage,
+  refusalMessage,
   saveRefusalMessage,
 } from "~/lib/lore/writer-messages";
 import { SAVE_FAILED } from "~/lib/wiki-os/editor/save-failure";
@@ -73,5 +74,67 @@ describe("isMissingCategoryRefusal", () => {
         "Caphiria"
       )
     ).toBe(false);
+  });
+});
+
+describe("refusalMessage: input the server refused as invalid", () => {
+  /** A tRPC input refusal as the client receives it: the Zod issues as JSON, and the flattened errors under data. */
+  const invalid = (issues: object[]) =>
+    Object.assign(new Error(JSON.stringify(issues, null, 2)), {
+      data: { code: "BAD_REQUEST", zodError: { formErrors: [], fieldErrors: {} } },
+    });
+
+  it("says a title is too long", () => {
+    const error = invalid([
+      { origin: "string", code: "too_big", maximum: 255, path: ["title"], message: "Too big" },
+    ]);
+    expect(refusalMessage(error, "Generic")).toBe("That title is too long.");
+  });
+
+  it("asks the author to check a title the server refused for another reason", () => {
+    const error = invalid([
+      { code: "too_small", minimum: 1, path: ["title"], message: "Too small" },
+    ]);
+    expect(refusalMessage(error, "Generic")).toBe("Check the title and try again.");
+  });
+
+  it("asks the owner to check a refused handle", () => {
+    const error = invalid([{ code: "invalid_type", path: ["handle"], message: "Invalid input" }]);
+    expect(refusalMessage(error, "Generic")).toBe("Check the handle and try again.");
+  });
+
+  it("asks to check the entry for any other refused field, never showing the JSON", () => {
+    const error = invalid([{ code: "invalid_value", path: ["type"], message: "Invalid option" }]);
+    expect(refusalMessage(error, "Generic")).toBe("Check what you entered and try again.");
+  });
+
+  it("reads a refusal with validation data but no JSON message as invalid input too", () => {
+    const error = Object.assign(new Error("Input validation failed"), {
+      data: { code: "BAD_REQUEST", zodError: { formErrors: ["bad"], fieldErrors: {} } },
+    });
+    expect(refusalMessage(error, "Generic")).toBe("Check what you entered and try again.");
+  });
+
+  it("reads a JSON issue list without validation data as invalid input", () => {
+    const error = Object.assign(new Error(JSON.stringify([{ code: "too_big", path: ["title"] }])), {
+      data: { code: "BAD_REQUEST" },
+    });
+    expect(refusalMessage(error, "Generic")).toBe("That title is too long.");
+  });
+
+  it("still shows the server's own sentence for a plain refusal", () => {
+    expect(
+      refusalMessage(refusal("BAD_REQUEST", "This page is not in Caphiria lore yet."), "G")
+    ).toBe("This page is not in Caphiria lore yet.");
+  });
+
+  it("shows a sentence that only happens to parse as JSON, such as a number", () => {
+    expect(refusalMessage(refusal("CONFLICT", "42"), "Generic")).toBe("42");
+    expect(refusalMessage(refusal("CONFLICT", "null"), "Generic")).toBe("null");
+  });
+
+  it("never shows JSON that is not a list of issues", () => {
+    const error = refusal("BAD_REQUEST", '{"weird": true}');
+    expect(refusalMessage(error, "Generic")).toBe("Check what you entered and try again.");
   });
 });

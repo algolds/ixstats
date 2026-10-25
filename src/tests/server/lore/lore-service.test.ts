@@ -23,10 +23,13 @@ interface FakePage {
   type: string;
   pinned: boolean;
   hidden: boolean;
+  /** Added by the owner (`addExistingPiece`): listed even without the lore category. */
+  ownerAdded: boolean;
   addedById: string;
 }
-/** A page row as written: the database defaults `pinned` and `hidden` to false. */
-type NewPage = Omit<FakePage, "pinned" | "hidden"> & Partial<Pick<FakePage, "pinned" | "hidden">>;
+type Defaulted = "pinned" | "hidden" | "ownerAdded";
+/** A page row as written: the database defaults `pinned`, `hidden` and `ownerAdded` to false. */
+type NewPage = Omit<FakePage, Defaulted> & Partial<Pick<FakePage, Defaulted>>;
 interface FakeStore {
   countries: Map<string, FakeCountry>;
   authors: FakeAuthor[];
@@ -93,7 +96,7 @@ jest.mock("~/server/db", () => {
         return findPage(args.where.countryId_title);
       }),
       create: jest.fn(async (args: { data: NewPage }) => {
-        const row = { pinned: false, hidden: false, ...args.data };
+        const row = { pinned: false, hidden: false, ownerAdded: false, ...args.data };
         store.pages.push(row);
         return row;
       }),
@@ -112,7 +115,7 @@ jest.mock("~/server/db", () => {
         }) => {
           const row = findPage(args.where.countryId_title);
           if (row) return assignDefined(row, args.update);
-          const created = { pinned: false, hidden: false, ...args.create };
+          const created = { pinned: false, hidden: false, ownerAdded: false, ...args.create };
           store.pages.push(created);
           return created;
         }
@@ -303,6 +306,7 @@ describe("listLorePieces", () => {
         type: "person",
         pinned: false,
         hidden: false,
+        ownerAdded: true,
         addedById: OWNER,
       },
       {
@@ -311,6 +315,7 @@ describe("listLorePieces", () => {
         type: "event",
         pinned: true,
         hidden: false,
+        ownerAdded: true,
         addedById: OWNER,
       },
       {
@@ -319,6 +324,7 @@ describe("listLorePieces", () => {
         type: "person",
         pinned: false,
         hidden: true,
+        ownerAdded: false,
         addedById: OWNER,
       },
       {
@@ -327,6 +333,7 @@ describe("listLorePieces", () => {
         type: "place",
         pinned: true,
         hidden: false,
+        ownerAdded: true,
         addedById: OWNER,
       }
     );
@@ -354,6 +361,7 @@ describe("listLorePieces", () => {
       type: "person",
       pinned: true,
       hidden: false,
+      ownerAdded: false,
       addedById: OWNER,
     });
 
@@ -372,11 +380,128 @@ describe("listLorePieces", () => {
       type: "person",
       pinned: false,
       hidden: true,
+      ownerAdded: false,
       addedById: OWNER,
     });
 
     expect(await listLorePieces(signedOut(), COUNTRY)).toEqual([]);
     expect(readVisiblePage).not.toHaveBeenCalledWith(expect.anything(), "Old Name");
+  });
+
+  const coauthorOnTeam = () =>
+    store.authors.push({
+      countryId: COUNTRY,
+      userId: COAUTHOR,
+      addedById: OWNER,
+      createdAt: new Date(),
+    });
+
+  it("drops a recorded piece once its page leaves the lore category", async () => {
+    coauthorOnTeam();
+    categoryPages("Venceia");
+    onWiki("Venceia", "{{Infobox settlement}}\n[[Category:Caphiria lore]]");
+    await recordPiece(as(COAUTHOR), COUNTRY, { title: "Venceia", type: "place" });
+    expect(await listLorePieces(signedOut(), COUNTRY)).toEqual([
+      { title: "Venceia", type: "place", pinned: false },
+    ]);
+
+    // The category line is reverted: the page is no longer a category member.
+    categoryPages();
+    onWiki("Venceia", "{{Infobox settlement}}");
+    expect(await listLorePieces(signedOut(), COUNTRY)).toEqual([]);
+  });
+
+  it("drops a recorded piece the owner pinned once its page leaves the category", async () => {
+    store.pages.push({
+      countryId: COUNTRY,
+      title: "Venceia",
+      type: "place",
+      pinned: true,
+      hidden: false,
+      ownerAdded: false,
+      addedById: COAUTHOR,
+    });
+    onWiki("Venceia", "{{Infobox settlement}}");
+    expect(await listLorePieces(signedOut(), COUNTRY)).toEqual([]);
+  });
+
+  it("keeps a page the owner added listed without the category, even after a co-author records it", async () => {
+    coauthorOnTeam();
+    onWiki("Constantinus I", "{{Infobox person}}");
+    await addExistingPiece(as(OWNER), COUNTRY, { title: "Constantinus I", type: "person" });
+    expect(store.pages).toEqual([expect.objectContaining({ ownerAdded: true })]);
+    onWiki("Constantinus I", "{{Infobox person}}\n[[Category:Caphiria lore]]");
+    await recordPiece(as(COAUTHOR), COUNTRY, { title: "Constantinus I", type: "person" });
+    onWiki("Constantinus I", "{{Infobox person}}");
+
+    expect(store.pages).toEqual([expect.objectContaining({ ownerAdded: true })]);
+    expect(await listLorePieces(signedOut(), COUNTRY)).toEqual([
+      { title: "Constantinus I", type: "person", pinned: false },
+    ]);
+  });
+
+  it("marks a recorded piece as the owner's once the owner adds it", async () => {
+    coauthorOnTeam();
+    onWiki("Venceia", "{{Infobox settlement}}\n[[Category:Caphiria lore]]");
+    await recordPiece(as(COAUTHOR), COUNTRY, { title: "Venceia", type: "place" });
+    expect(store.pages).toEqual([expect.objectContaining({ ownerAdded: false })]);
+    await addExistingPiece(as(OWNER), COUNTRY, { title: "Venceia", type: "place" });
+    onWiki("Venceia", "{{Infobox settlement}}");
+    expect(await listLorePieces(signedOut(), COUNTRY)).toEqual([
+      { title: "Venceia", type: "place", pinned: false },
+    ]);
+  });
+
+  it("lists the page a redirect in the category leads to, though the page itself is not in it", async () => {
+    categoryPages("Venceia (old)");
+    // A read follows the redirect: it answers the page it leads to.
+    onWiki("Venceia (old)", "{{Infobox settlement}}", "Venceia");
+    onWiki("Venceia", "{{Infobox settlement}}");
+    expect(await listLorePieces(signedOut(), COUNTRY)).toEqual([
+      { title: "Venceia", type: "place", pinned: false },
+    ]);
+  });
+
+  it("keeps a hidden page the owner added hidden", async () => {
+    onWiki("Constantinus I", "{{Infobox person}}");
+    store.pages.push({
+      countryId: COUNTRY,
+      title: "Constantinus I",
+      type: "person",
+      pinned: false,
+      hidden: true,
+      ownerAdded: true,
+      addedById: OWNER,
+    });
+    expect(await listLorePieces(signedOut(), COUNTRY)).toEqual([]);
+  });
+
+  it("reads at most eight pages at once, and still lists every one", async () => {
+    const titles = Array.from({ length: 30 }, (_, i) => `Piece ${String(i).padStart(2, "0")}`);
+    categoryPages(...titles);
+    for (const title of titles) onWiki(title, "{{Infobox person}}");
+    let inFlight = 0;
+    let most = 0;
+    jest.mocked(readVisiblePage).mockImplementation(async (_ctx, title) => {
+      inFlight += 1;
+      most = Math.max(most, inFlight);
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      inFlight -= 1;
+      return { resolvedTitle: title, wikitext: wiki.get(title)?.wikitext ?? null };
+    });
+
+    const pieces = await listLorePieces(signedOut(), COUNTRY);
+    expect(pieces).toHaveLength(30);
+    expect(most).toBe(8);
+  });
+
+  it("never lists a deleted page, even to a reader who may see deleted pages", async () => {
+    categoryPages("Venceia");
+    onWiki("Venceia", "{{Infobox settlement}}");
+    await listLorePieces(as(OWNER), COUNTRY);
+    expect(readVisiblePage).toHaveBeenCalledWith(expect.anything(), "Venceia", {
+      includeArchived: false,
+    });
   });
 
   it("lists nothing for a country outside the default realm", async () => {
@@ -458,6 +583,14 @@ describe("the lore team", () => {
 });
 
 describe("curation", () => {
+  const coauthorOnTeam2 = () =>
+    store.authors.push({
+      countryId: COUNTRY,
+      userId: COAUTHOR,
+      addedById: OWNER,
+      createdAt: new Date(),
+    });
+
   it("records a piece a co-author wrote, under its canonical title", async () => {
     store.authors.push({
       countryId: COUNTRY,
@@ -513,12 +646,14 @@ describe("curation", () => {
       type: "other",
       pinned: false,
       hidden: true,
+      ownerAdded: false,
       addedById: OWNER,
     });
     onWiki("Venceia", "{{Infobox settlement}}\n[[Category:Caphiria lore]]");
     await recordPiece(as(COAUTHOR), COUNTRY, { title: "Venceia", type: "place" });
     expect(store.pages).toEqual([
-      expect.objectContaining({ title: "Venceia", type: "place", hidden: true, addedById: OWNER }),
+      // Nor retypes it: the owner's type stands (see "never retype one that has a record").
+      expect.objectContaining({ title: "Venceia", type: "other", hidden: true, addedById: OWNER }),
     ]);
   });
 
@@ -542,6 +677,31 @@ describe("curation", () => {
 
     await setCuration(as(OWNER), COUNTRY, { title: "Venceia", hidden: true });
     expect(store.pages).toEqual([expect.objectContaining({ pinned: true, hidden: true })]);
+  });
+
+  it("lets a co-author type a new piece but never retype one that has a record", async () => {
+    coauthorOnTeam2();
+    onWiki("Venceia", "{{Infobox settlement}}\n[[Category:Caphiria lore]]");
+    await recordPiece(as(COAUTHOR), COUNTRY, { title: "Venceia", type: "place" });
+    expect(store.pages).toEqual([expect.objectContaining({ type: "place" })]);
+
+    await recordPiece(as(OWNER), COUNTRY, { title: "Venceia", type: "event" });
+    expect(store.pages).toEqual([expect.objectContaining({ type: "event" })]);
+
+    await recordPiece(as(COAUTHOR), COUNTRY, { title: "Venceia", type: "person" });
+    expect(store.pages).toEqual([expect.objectContaining({ type: "event" })]);
+  });
+
+  it("never records, curates or adds a deleted page", async () => {
+    onWiki("Venceia", "{{Infobox settlement}}\n[[Category:Caphiria lore]]");
+    await recordPiece(as(OWNER), COUNTRY, { title: "Venceia", type: "place" });
+    await addExistingPiece(as(OWNER), COUNTRY, { title: "Venceia", type: "place" });
+    await setCuration(as(OWNER), COUNTRY, { title: "Elsewhere page", pinned: true }).catch(
+      () => undefined
+    );
+    const options = jest.mocked(readVisiblePage).mock.calls.map((call) => call[2]);
+    expect(options.length).toBeGreaterThanOrEqual(3);
+    expect(options.every((option) => option?.includeArchived === false)).toBe(true);
   });
 
   it("refuses curation by a co-author", async () => {

@@ -70,6 +70,14 @@ describe("LoreTeam", () => {
     expect(mockTeamQuery).toHaveBeenCalledWith({ countryId: "c_caph" }, { enabled: true });
   });
 
+  it("shows a handle once when the player's name is the handle", () => {
+    mockMembers = [{ userId: "u_livia", handle: "livia", displayName: "@livia" }];
+    render(<LoreTeam countryId="c_caph" active />);
+    const list = within(team()).getByRole("list");
+    expect(within(list).getAllByText("@livia")).toHaveLength(1);
+    expect(within(list).getByRole("button", { name: "Remove @livia" })).toBeInTheDocument();
+  });
+
   it("says when there is no co-author yet", () => {
     mockMembers = [];
     render(<LoreTeam countryId="c_caph" active />);

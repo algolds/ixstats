@@ -70,6 +70,8 @@ interface WikiEditBridgeProps {
   onSaveError?: (error: Error) => void;
   /** A save starts (after the passport handle check): a host clears what it said about the last one. */
   onSaveStart?: () => void;
+  /** The editor showing, as it opens and on each switch (a host's word count reads only the visual editor). */
+  onModeChange?: (mode: "source" | "visual") => void;
 }
 
 /** The page as the editor was opened on: the text and the revision that text is the content of. */
@@ -114,6 +116,7 @@ export function WikiEditBridge({
   registerContentReader: onContentReader,
   onSaveError,
   onSaveStart,
+  onModeChange,
 }: WikiEditBridgeProps) {
   const notify = useNotify();
   const utils = api.useUtils();
@@ -239,6 +242,10 @@ export function WikiEditBridge({
     },
     [mode, title, userId]
   );
+
+  const onModeChangeRef = useRef(onModeChange);
+  onModeChangeRef.current = onModeChange;
+  useEffect(() => onModeChangeRef.current?.(mode), [mode]);
 
   const lastSerializedRef = useRef<WikitextSerializeResult | null>(null);
   const onSerializedRef = useRef(onSerializedWikitext);

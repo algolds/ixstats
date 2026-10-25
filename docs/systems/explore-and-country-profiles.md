@@ -67,9 +67,11 @@ ordinary wiki page about the country: a person, place, event or organisation. It
 like any page, and it is mirrored to classic MediaWiki like any page. IxStates keeps only who may write lore and how the
 owner arranges the pieces.
 
-**Who sees what.** Native lore is for countries in the default (IxWiki) realm, and only while WikiOS editing is on
+**Who sees what.** Native lore is for countries in the default (IxWiki) realm. Reading is always on there: the Lore tab
+lists the pieces whether or not WikiOS takes edits, so pages already in `Category:<Country> lore` show as soon as this
+is deployed. Writing (the entry points, curation and the lore team) is on only while WikiOS editing is on
 (`WIKIOS_V1_ENABLED` or the admin editing switch, `src/lib/wiki-os/editing-switch.ts`). `countryLore.access` answers
-`{ enabled, isOwner, canWrite }`, and the page offers nothing it would refuse:
+`{ enabled, isOwner, canWrite }` for writing, and the page offers nothing it would refuse:
 
 | Viewer | Gets |
 | :--- | :--- |
@@ -77,6 +79,8 @@ owner arranges the pieces.
 | Co-author (the lore team) | Also Write lore on the Lore tab, Edit on each piece, the Map tab's write bar and the History pencil |
 | Owner | Also Pin or Unpin, Hide, Add an existing page, and the lore team on the back face (Manage) |
 
+"Owner" means `hasCountryWriteAccess`: the nation's owner, the player acting as it, and privileged roles. Admins and
+staff (`isPrivilegedCountryWriter`) therefore count as owners on every country, for the lore team and the curation alike.
 Every write is checked again on the server (`requireLore` in `lore.service.ts`). The wiki itself stays open: anyone with
 wiki rights can edit a piece there.
 
@@ -97,7 +101,10 @@ the writer says so and offers to reopen the page to put it back. For a title tha
 page to the Lore tab instead, and a co-author can open it.
 
 **The Lore tab.** `countryLore.list` merges the pages of `Category:<Country> lore` with the pages the owner added by title,
-drops hidden ones, and orders pinned pieces first. Pieces are grouped as People, Places, Events, Organisations and Other
+drops hidden and deleted ones, and orders pinned pieces first. A recorded piece stays listed only while its page is in
+the category; only a page the owner added (`ownerAdded`) lists without it, so a co-author cannot keep an arbitrary page on
+the tab by recording it and then taking the category off. A co-author's record never changes the type of a piece that
+already has one: the owner's type stands. Pieces are grouped as People, Places, Events, Organisations and Other
 (the type comes from the curation record, else from the page's infobox). Each piece is a chapter after the article, read
 inline from `wikios.getArticleHtml` once it nears the viewport. Its ids are scoped to the chapter, so a footnote or a
 contents link lands inside that piece, and its headings sit below the piece's title. The index beside the article lists
@@ -112,7 +119,7 @@ removed co-author loses the entry points on their next page load. A page they al
 then, but the server refuses their lore records at once; on the wiki they stay ordinary editors, like anyone.
 
 **Records.** `country_lore_authors` (country, user, who added them, when) and `country_lore_pages` (country, title,
-type, pinned, hidden), both deleted with their country. Migration:
+type, pinned, hidden, owner-added), both deleted with their country. Migration:
 `prisma/migrations/20261104120000_country_lore/migration.sql` ([runbook](#native-lore-deploy-runbook-owner)).
 
 ## 3. Privacy: the public record

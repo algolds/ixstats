@@ -10,6 +10,8 @@ type ContentReader = (() => string | null) | null;
  */
 export function useLoreEditorText() {
   const [words, setWords] = useState(0);
+  /** Which editor shows: the word count reads only the visual editor's serializations. */
+  const [mode, setMode] = useState<"source" | "visual">("visual");
   /** The canvas reported a text other than the one it opened on: the author has written in this editor. */
   const [edited, setEdited] = useState(false);
   const readerRef = useRef<ContentReader>(null);
@@ -18,7 +20,8 @@ export function useLoreEditorText() {
   const lastRef = useRef<string | null>(null);
 
   return {
-    words,
+    /** The prose word count, or null in the source editor, which reports none. */
+    words: mode === "visual" ? words : null,
     edited,
     /** A new editor opens. */
     reset: () => {
@@ -27,13 +30,15 @@ export function useLoreEditorText() {
     },
     /**
      * The editor's text now when the author changed it from what it opened on (`opening` for an editor that reports
-     * no serialization), or with `always` even unchanged; else null.
+     * no serialization), or with `always` even unchanged; else null. With neither (an existing page whose editor never
+     * reported its text) nothing tells an edit from none, so it counts as none: no draft of an untouched page.
      */
     read: (opening: string | undefined, always: boolean): string | null => {
       const reader = readerRef.current;
       if (!reader) return null;
       const text = reader() ?? lastRef.current;
-      if (text === null || (!always && text === (openedRef.current ?? opening))) return null;
+      const baseline = openedRef.current ?? opening;
+      if (text === null || (!always && (baseline === undefined || text === baseline))) return null;
       return text;
     },
     onSerializedWikitext: (result: { wikitext: string }) => {
@@ -42,6 +47,7 @@ export function useLoreEditorText() {
       lastRef.current = result.wikitext;
       setWords(loreWordCount(result.wikitext));
     },
+    onModeChange: setMode,
     registerContentReader: (read: ContentReader) => {
       readerRef.current = read;
     },

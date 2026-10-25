@@ -17,6 +17,8 @@ type EditorProps = {
   onSave: (text: string, summary: string, minor: boolean) => Promise<void>;
   onSerializedWikitext?: (result: WikitextSerializeResult) => void;
   registerContentReader?: (read: Reader) => void;
+  onSwitchToSource?: (dirty: boolean, content: string) => void;
+  onSwitchToVisual?: (dirty: boolean, wikitext: string) => void;
 };
 
 const MISSING = { wikitext: "", revid: null, timestamp: null, revisionRef: null, revisionRefs: [] };
@@ -92,6 +94,7 @@ interface HostHooks {
   registerContentReader?: (read: Reader) => void;
   onSaveError?: (error: Error) => void;
   onSaveStart?: () => void;
+  onModeChange?: (mode: "source" | "visual") => void;
 }
 
 async function renderBridge(mode: "source" | "visual", hooks: HostHooks) {
@@ -103,6 +106,20 @@ describe("WikiEditBridge host hooks", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     window.localStorage.clear();
+  });
+
+  it("tells the host which editor is showing, as it opens and on each switch", async () => {
+    const onModeChange = jest.fn();
+    await renderBridge("visual", { onModeChange });
+    expect(onModeChange).toHaveBeenLastCalledWith("visual");
+
+    act(() => lastProps(mockVisual).onSwitchToSource?.(false, "Venceia is old."));
+    await screen.findByTestId("source");
+    expect(onModeChange).toHaveBeenLastCalledWith("source");
+
+    act(() => lastProps(mockSource).onSwitchToVisual?.(false, "Venceia is old."));
+    await screen.findByTestId("visual");
+    expect(onModeChange).toHaveBeenLastCalledWith("visual");
   });
 
   it("passes each serialization of the visual editor to the host", async () => {

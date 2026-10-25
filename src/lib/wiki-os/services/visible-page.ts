@@ -15,12 +15,24 @@ export interface VisiblePage {
   wikitext: string | null;
 }
 
-export async function readVisiblePage(ctx: WikiAuthContext, title: string): Promise<VisiblePage> {
+export interface VisiblePageOptions {
+  /**
+   * Whether a deleted page counts for a reader who may see it (the default, as WikiOS's own title checks); false
+   * treats it as missing for every reader, as a listing of live pages needs.
+   */
+  includeArchived?: boolean;
+}
+
+export async function readVisiblePage(
+  ctx: WikiAuthContext,
+  title: string,
+  { includeArchived = true }: VisiblePageOptions = {}
+): Promise<VisiblePage> {
   const { title: resolvedTitle } = await resolveRedirect(title);
   // A deleted page does not exist for a reader who may not see it.
   if (!(await canSeeTitle(ctx, resolvedTitle))) return { resolvedTitle, wikitext: null };
   const article = await getArticleWikitextShadow(resolvedTitle, "ixwiki", {
-    includeArchived: true, // canSeeTitle above
+    includeArchived, // canSeeTitle above
   });
   return { resolvedTitle, wikitext: article?.wikitext ?? null };
 }
