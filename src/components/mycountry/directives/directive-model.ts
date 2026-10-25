@@ -13,6 +13,7 @@ import type { RouterOutputs } from "~/trpc/react";
 import type { Acceptance, Category, ChangeLine, Tier } from "~/lib/intent/assemble";
 import { consequenceFieldLabel, describeConsequenceBadge } from "~/lib/intent/consequence-labels";
 import type { EffectItem } from "./EffectList";
+import { IxTime } from "~/lib/ixtime";
 
 export type IntentRow = RouterOutputs["intent"]["getTree"]["allIntents"][number];
 export type IntentPackageView = RouterOutputs["intent"]["suggest"]["packages"][number];
@@ -218,6 +219,18 @@ export function formatIxDate(ixTime: number): string {
     year: "numeric",
     timeZone: "UTC",
   });
+}
+
+/**
+ * A stored wall-clock timestamp (a row's createdAt, a relation's lastContact) as the in-game date it fell on, so
+ * MyCountry never shows a real-world date beside IxTime ones. `fallback` when there is none.
+ */
+export function formatStampAsIxDate(
+  stamp: string | Date | null | undefined,
+  fallback = "N/A"
+): string {
+  const ms = stamp == null ? Number.NaN : new Date(stamp).getTime();
+  return Number.isFinite(ms) ? formatIxDate(IxTime.convertToIxTime(ms)) : fallback;
 }
 
 /** A GDP level shift (0.000583) as a percentage string ("+0.058%"). */

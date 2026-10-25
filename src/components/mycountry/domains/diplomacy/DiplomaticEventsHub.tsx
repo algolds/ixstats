@@ -40,6 +40,7 @@ import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
+import { formatStampAsIxDate } from "~/components/mycountry/directives/directive-model";
 
 /** Fields this hub reads from a scenario's `responseOptions` (stored as untyped JSON). */
 interface ScenarioResponseOption {
@@ -249,7 +250,7 @@ function HistoryEventRow({ event }: { event: DiplomaticEvent }) {
           )}
         </div>
         <div className="text-label-secondary text-footnote text-right">
-          {new Date(event.resolvedAt ?? event.createdAt).toLocaleDateString()}
+          {formatStampAsIxDate(event.resolvedAt ?? event.createdAt)}
         </div>
       </div>
     </Card>

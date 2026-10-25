@@ -30,6 +30,7 @@ import { Card } from "~/components/ui/card";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { useNotify } from "~/hooks/useNotify";
 import { CATEGORY_TO_BROKER } from "~/lib/intent/assemble";
+import { formatStampAsIxDate } from "~/components/mycountry/directives/directive-model";
 
 /** Directive tier → semantic text tone (measured is calm, extreme is a warning sign). */
 const TIER_TONE: Record<string, string> = {
@@ -132,12 +133,7 @@ function IntentHeader({
       <div>
         <h2 className="text-label text-title-2">{intent.goal}</h2>
         <p className="text-label-secondary text-footnote mt-1">
-          Enacted on{" "}
-          {new Date(intent.createdAt).toLocaleDateString(undefined, {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })}
+          Enacted on {formatStampAsIxDate(intent.createdAt)}
         </p>
       </div>
 

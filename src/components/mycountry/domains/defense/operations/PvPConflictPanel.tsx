@@ -34,6 +34,7 @@ import { Card } from "~/components/ui/card";
 import { useCanEdit } from "~/context/MyCountryEditModeContext";
 import { useNotify } from "~/hooks/useNotify";
 import { PVP_UNFOUGHT, isUnfoughtConflict } from "~/lib/military/pvp-proposals";
+import { formatStampAsIxDate } from "~/components/mycountry/directives/directive-model";
 
 interface PvPConflictPanelProps {
   countryId: string;
@@ -269,7 +270,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
     if (endsAt.getTime() > Date.now()) {
       return (
         <span className="text-label-secondary text-footnote">
-          Ends {endsAt.toLocaleDateString()}
+          Ends {formatStampAsIxDate(endsAt)}
         </span>
       );
     }

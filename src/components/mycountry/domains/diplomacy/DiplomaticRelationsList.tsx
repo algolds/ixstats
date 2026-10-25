@@ -29,6 +29,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { useUser } from "~/context/auth-context";
 import { formatExactCurrency } from "~/lib/utils/format-utils";
 import { Card } from "~/components/ui/card";
+import { formatStampAsIxDate } from "~/components/mycountry/directives/directive-model";
 
 interface DiplomaticRelationsListProps {
   countryId: string;
@@ -69,13 +70,6 @@ const STANCE_OPTIONS: ReadonlyArray<{ value: DiplomaticGoal; label: string }> = 
   { value: "RIVAL", label: "Rival (Direct Rivalry)" },
 ];
 
-const DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-});
-const formatDate = (value: string | Date | undefined | null) =>
-  value ? DATE_FORMAT.format(new Date(value)) : "N/A";
 
 type EmbassyRow = NonNullable<RouterOutputs["diplomaticEmbassies"]["getEmbassies"]>[number];
 
@@ -162,7 +156,7 @@ function RelationCard({
           <div className="min-w-0">
             <h4 className="text-label text-headline truncate">{targetName.replace(/_/g, " ")}</h4>
             <p className="text-label-secondary text-footnote">
-              Established: {formatDate(rel.establishedAt)}
+              Established: {formatStampAsIxDate(rel.establishedAt)}
             </p>
             {sharedBloc && (
               <Badge
@@ -258,7 +252,7 @@ function RelationCard({
             <Calendar className="h-3 w-3 shrink-0" />
             Last contact
           </Eyebrow>
-          <span className="text-label font-semibold">{formatDate(rel.lastContact)}</span>
+          <span className="text-label font-semibold">{formatStampAsIxDate(rel.lastContact)}</span>
         </div>
       </div>
     </Card>
