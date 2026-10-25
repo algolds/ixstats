@@ -59,8 +59,9 @@ export function getBudgetHealthStatus(
 
 export interface DepartmentChartItem {
   name: string;
+  /** Name and share of the total budget, e.g. "Education 18.0%". */
+  label: string;
   allocated: number;
-  percent: number;
   color: string;
 }
 

@@ -155,6 +155,13 @@ export function allocatedInEffect(
   );
 }
 
+/** Slices the allocation chart draws; the rest stay in the Departments list. */
+export const CHART_SLICE_LIMIT = 8;
+
+/**
+ * One slice per department, largest first, each in its own theme chart colour. The label carries
+ * the share of the total budget (`allocatedPercent`, 0-100) so the chart never rescales it.
+ */
 export function buildDepartmentChartData(
   allocations: BudgetAllocation[],
   departments: GovernmentDepartment[]
@@ -162,14 +169,16 @@ export function buildDepartmentChartData(
   return allocations
     .map((allocation) => {
       const department = departments.find((d) => d.id === allocation.departmentId);
+      const name = department?.shortName || department?.name || "Unknown";
       return {
-        name: department?.shortName || department?.name || "Unknown",
+        name,
+        label: `${name} ${(allocation.allocatedPercent ?? 0).toFixed(1)}%`,
         allocated: allocation.allocatedAmount ?? 0,
-        percent: allocation.allocatedPercent ?? 0,
-        color: department?.color || "var(--color-label-secondary)",
       };
     })
-    .sort((a, b) => b.allocated - a.allocated);
+    .sort((a, b) => b.allocated - a.allocated)
+    .slice(0, CHART_SLICE_LIMIT)
+    .map((item, index) => ({ ...item, color: `var(--color-chart-${index + 1})` }));
 }
 
 /**
