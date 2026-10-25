@@ -10,7 +10,11 @@ import { createTRPCRouter, publicProcedure, premiumMutationProcedure } from "~/s
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
-import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import {
+  assertCountryWriteAccess,
+  hasCountryWriteAccess,
+} from "~/server/shared/country-authorization";
+import { redactOperationCosts } from "~/lib/military/owner-redaction";
 import { StorytellerEffectType } from "~/lib/economy/calculations";
 import { createStorytellerEffect, endStorytellerEffects } from "~/lib/economy/storyteller-effects";
 import {
@@ -57,7 +61,7 @@ async function peacekeepingRelation(db: PrismaClient, countryId: string, targetI
 }
 
 export const securityOperationsRouter = createTRPCRouter({
-  // Get active and past operations
+  // Get active and past operations. Personnel and costs are the owner's only.
   getOperations: publicProcedure
     .input(
       z.object({
@@ -77,7 +81,7 @@ export const securityOperationsRouter = createTRPCRouter({
         orderBy: { createdAt: "desc" },
       });
 
-      return operations.map((op) => ({
+      const rows = operations.map((op) => ({
         ...op,
         targetCountry: op.targetCountry
           ? {
@@ -87,6 +91,8 @@ export const securityOperationsRouter = createTRPCRouter({
             }
           : null,
       }));
+      if (await hasCountryWriteAccess(ctx, input.countryId)) return rows;
+      return rows.map(redactOperationCosts);
     }),
 
   // Create a military operation and deploy units/assets

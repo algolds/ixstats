@@ -162,7 +162,9 @@ function ConflictGroup({ title, children }: { title: string; children: React.Rea
 
 function PastConflictRow({ conflict: c, countryId }: { conflict: Conflict; countryId: string }) {
   const outcome = conflictOutcome(c, countryId);
-  const casualties = c.initiatorId === countryId ? c.initiatorCasualties : c.defenderCasualties;
+  // Casualties go to the conflict's parties only (undefined for anyone else).
+  const casualties =
+    (c.initiatorId === countryId ? c.initiatorCasualties : c.defenderCasualties) ?? 0;
   return (
     <div className="border-separator rounded-control text-body border p-3">
       <div className="flex items-center justify-between">
@@ -171,7 +173,7 @@ function PastConflictRow({ conflict: c, countryId }: { conflict: Conflict; count
           <span>vs {opponentOf(c, countryId)?.name ?? "Unknown"}</span>
           <Badge variant={outcome.variant}>{outcome.label}</Badge>
         </div>
-        {(c.initiatorCasualties > 0 || c.defenderCasualties > 0) && (
+        {casualties > 0 && (
           <span className="text-label-secondary text-footnote">{casualties} casualties</span>
         )}
       </div>

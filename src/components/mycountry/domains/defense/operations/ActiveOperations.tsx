@@ -141,21 +141,24 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="text-footnote space-y-1 text-right">
-                  <div className="text-label-secondary flex items-center gap-1">
-                    <Users className="h-3 w-3" />
-                    {op.personnelDeployed.toLocaleString()}
+                {/* Personnel and costs are the owner's only (undefined for anyone else). */}
+                {op.dailyCost !== undefined && (
+                  <div className="text-footnote space-y-1 text-right">
+                    <div className="text-label-secondary flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {(op.personnelDeployed ?? 0).toLocaleString()}
+                    </div>
+                    <div className="text-label flex items-center gap-1 tabular-nums">
+                      <DollarSign aria-hidden="true" className="text-label-secondary h-3 w-3" />
+                      {formatCurrency(op.dailyCost)}/day
+                    </div>
+                    {op.gdpDrain !== undefined && op.gdpDrain > 0 && (
+                      <span className="text-destructive text-footnote">
+                        {(op.gdpDrain * 100).toFixed(3)}% GDP drain
+                      </span>
+                    )}
                   </div>
-                  <div className="text-label flex items-center gap-1 tabular-nums">
-                    <DollarSign aria-hidden="true" className="text-label-secondary h-3 w-3" />
-                    {formatCurrency(op.dailyCost)}/day
-                  </div>
-                  {op.gdpDrain > 0 && (
-                    <span className="text-destructive text-footnote">
-                      {(op.gdpDrain * 100).toFixed(3)}% GDP drain
-                    </span>
-                  )}
-                </div>
+                )}
 
                 {isActive && (
                   <AlertDialog>

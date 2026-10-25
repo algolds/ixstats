@@ -2,11 +2,7 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-  createTRPCRouter,
-  premiumMutationProcedure,
-  protectedProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, premiumMutationProcedure, protectedProcedure } from "~/server/api/trpc";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { IxTime } from "~/lib/ixtime";
 import { FORCE_LIMITS } from "~/lib/military/force-structure";

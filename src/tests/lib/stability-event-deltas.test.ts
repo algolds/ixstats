@@ -125,8 +125,12 @@ function makeDb(
 }
 
 function viewDefensePanel(db: ReturnType<typeof makeDb>) {
+  // The owner views the panel (crime and stability metrics are owner-only).
   const caller = createCallerFactory(securityStabilityRouter)(
-    createMockRouterContext({ db }) as never
+    createMockRouterContext({
+      db,
+      user: { id: "user_db_id_1", clerkUserId: "test_user_clerk_id", countryId: COUNTRY },
+    }) as never
   );
   return caller.getInternalStability({ countryId: COUNTRY });
 }

@@ -18,7 +18,11 @@ import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
-import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import {
+  assertCountryWriteAccess,
+  countriesWithWriteAccess,
+} from "~/server/shared/country-authorization";
+import { redactConflictCosts } from "~/lib/military/owner-redaction";
 import { createStorytellerEffects } from "~/lib/economy/storyteller-effects";
 import {
   computeConflictOutcome,
@@ -518,7 +522,7 @@ export const securityConflictsRouter = createTRPCRouter({
       return { conflictId: conflict.id, status: "resolved" as const, winner: winnerId };
     }),
 
-  // Get conflicts involving a country
+  // Get conflicts involving a country. Casualties and economic damage go to the parties only.
   getConflicts: publicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -533,7 +537,11 @@ export const securityConflictsRouter = createTRPCRouter({
         orderBy: { createdAt: "desc" },
       });
 
-      return conflicts.map(withPvPExpiry).map((c) => ({
+      const parties = await countriesWithWriteAccess(
+        ctx,
+        conflicts.flatMap((c) => [c.initiatorId, c.defenderId])
+      );
+      const rows = conflicts.map(withPvPExpiry).map((c) => ({
         ...c,
         // When an active PvP conflict may be concluded (concludePvPConflict).
         endsAt: c.type === "pvp" && c.status === "active" ? pvpConflictEndsAt(c) : null,
@@ -552,6 +560,9 @@ export const securityConflictsRouter = createTRPCRouter({
             }
           : null,
       }));
+      return rows.map((c) =>
+        parties.has(c.initiatorId) || parties.has(c.defenderId) ? c : redactConflictCosts(c)
+      );
     }),
 
   // Related player nations the caller may challenge via proposePvPConflict.
