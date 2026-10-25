@@ -213,7 +213,14 @@ export const IntentComposer = React.memo(function IntentComposer({
   }, []);
 
   const suggestOne = () => {
-    const preset = randomPreset((country ?? {}) as DirectiveCountrySignals);
+    const record = (country ?? {}) as {
+      publicApproval?: number | null;
+      stabilityMetrics?: { stabilityScore?: number | null } | null;
+    };
+    const preset = randomPreset({
+      publicApproval: record.publicApproval,
+      stabilityScore: record.stabilityMetrics?.stabilityScore,
+    });
     if (preset) chooseGoal(preset.label);
   };
 

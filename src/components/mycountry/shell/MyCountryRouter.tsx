@@ -184,7 +184,7 @@ export function MyCountryRouter() {
 
   return (
     <MobileOptimized enableTouchGestures={true} className="min-h-screen">
-      <AuthenticationGuard redirectPath="/mycountry">
+      <AuthenticationGuard>
         <CountryDataProvider userId={user?.id || "placeholder-disabled"}>
           <MyCountryRouterInner />
         </CountryDataProvider>

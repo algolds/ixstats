@@ -24,6 +24,7 @@ import {
 
 import type { NationalSummary } from "~/types/mycountry";
 import { hasCountryWriteAccess } from "~/server/shared/country-authorization";
+import { buildCanonFeed, canonFeedEffectSince } from "~/lib/mycountry/canon-feed";
 import {
   isBudgetLedgerRow,
   isPublicDirective,
@@ -179,10 +180,10 @@ export const myCountryDashboardRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const effectSince = canonFeedEffectSince(Date.now());
         const [rawEffects, events, decisions, rawLogs, isOwner] = await Promise.all([
           ctx.db.storytellerEffect.findMany({
-            where: { countryId: input.countryId, ixTimeTimestamp: { gte: since } },
+            where: { countryId: input.countryId, ixTimeTimestamp: { gte: effectSince } },
             orderBy: { ixTimeTimestamp: "desc" },
             take: input.limit,
             select: {
@@ -261,52 +262,7 @@ export const myCountryDashboardRouter = createTRPCRouter({
           logs = rawLogs.filter((l) => isPublicSource(logIntentId(l)) && !isBudgetLedgerRow(l));
         }
 
-        type CanonFeedItem = {
-          id: string;
-          kind: "effect" | "diplomacy" | "decision" | "ledger";
-          title: string;
-          category: string;
-          timestamp: number;
-          deltaValue?: number | null;
-          targetField?: string | null;
-          sourceType?: string | null;
-        };
-        const items: CanonFeedItem[] = [
-          ...effects.map((e) => ({
-            id: `eff_${e.id}`,
-            kind: "effect" as const,
-            title: e.description ?? e.inputType,
-            category: e.inputType.toLowerCase().includes("popula") ? "social" : "economic",
-            timestamp: e.ixTimeTimestamp.getTime(),
-          })),
-          ...events.map((d) => ({
-            id: `dip_${d.id}`,
-            kind: "diplomacy" as const,
-            title: d.title,
-            category: d.severity && d.severity !== "info" ? "emergency" : "diplomatic",
-            timestamp: d.createdAt.getTime(),
-          })),
-          ...decisions.map((n) => ({
-            id: `dec_${n.id}`,
-            kind: "decision" as const,
-            title: n.title,
-            category: "governance",
-            timestamp: (n.respondedAt ?? n.updatedAt).getTime(),
-          })),
-          ...logs.map((l) => ({
-            id: `log_${l.id}`,
-            kind: "ledger" as const,
-            title: l.description,
-            category: "ledger",
-            timestamp: l.createdAt.getTime(),
-            deltaValue: l.deltaValue,
-            targetField: l.targetField,
-            sourceType: l.sourceType,
-          })),
-        ];
-
-        items.sort((a, b) => b.timestamp - a.timestamp);
-        return items.slice(0, input.limit);
+        return buildCanonFeed({ effects, events, decisions, logs }, input.limit);
       } catch (error) {
         console.error("[MyCountry CanonFeed] Error:", error);
         return [];

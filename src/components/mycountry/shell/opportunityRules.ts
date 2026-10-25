@@ -1,12 +1,9 @@
 import {
-  Shield,
-  Community as Handshake,
   ScaleFrameEnlarge as Scale,
   StatUp as TrendingUp,
   KeyCommand as Command,
   WarningCircle as AlertCircle,
 } from "iconoir-react";
-import type { RouterOutputs } from "~/trpc/react";
 import type { useCountryData } from "~/components/mycountry/shared/primitives";
 import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
 import { formatGrowthPeek } from "./domain-tiles";
@@ -16,13 +13,13 @@ export type OpportunityDrill = Exclude<DrillSheetKind, { kind: "intent" } | null
 
 export interface Opportunity {
   id: string;
-  domain: "defense" | "diplomacy" | "politics" | "economy" | "intent";
+  domain: "politics" | "economy" | "intent";
   title: string;
   subtitle: string;
   description: string;
   metricLabel?: string;
   metricValue?: string;
-  icon: typeof Shield;
+  icon: typeof Scale;
   tone: StatusTone;
   intentId?: string;
   drillKind?: OpportunityDrill;
@@ -48,12 +45,10 @@ export interface OpportunityContext {
   country: ReturnType<typeof useCountryData>["country"];
   issues: CountryIssueItem[];
   intents: CountryIntentItem[];
-  civilService: RouterOutputs["government"]["getCivilServiceStatus"] | undefined;
+  /** Executive bandwidth (`policies.getPolicyReconContext`), the same sum the Standing band shows. */
+  execBandwidth: { capacity: number; used: number; overCapacity: boolean } | undefined;
   isDismissed: (id: string) => boolean;
 }
-
-const finiteNumber = (value: unknown): number | null =>
-  typeof value === "number" && Number.isFinite(value) ? value : null;
 
 const SEVERITY_RANK: Record<string, number> = { critical: 4, high: 3, medium: 2 };
 const severityOf = (issue: CountryIssueItem) => String(issue.severity ?? "").toLowerCase();
@@ -85,36 +80,21 @@ const issueRule: Rule = ({ issues, isDismissed }) => {
   };
 };
 
-const defenseRule: Rule = ({ country, isDismissed }) => {
-  const readiness = finiteNumber(country?.militaryReadiness ?? country?.readiness);
-  if (readiness === null || readiness >= 85 || isDismissed("defense-readiness")) return null;
-
-  const posture: string | null = country?.defensePosture ?? country?.posture ?? null;
-  return {
-    id: "defense-readiness",
-    domain: "defense",
-    title: "Military readiness is below target",
-    subtitle: "Defense warning",
-    description:
-      "Armed forces readiness is under 85%. Reallocate supplies or adjust your defensive posture.",
-    metricLabel: "Readiness",
-    metricValue: posture ? `${readiness}% · ${posture}` : `${readiness}%`,
-    icon: Shield,
-    tone: "critical",
-    drillKind: { kind: "defense" },
-  };
-};
-
-const civilServiceRule: Rule = ({ civilService, isDismissed }) => {
-  if (!civilService?.overCapacity || isDismissed("civil-service-overcap")) return null;
+const civilServiceRule: Rule = ({ execBandwidth, isDismissed }) => {
+  if (!execBandwidth?.overCapacity || isDismissed("civil-service-overcap")) return null;
+  const pct =
+    execBandwidth.capacity > 0
+      ? Math.round((execBandwidth.used / execBandwidth.capacity) * 100)
+      : null;
   return {
     id: "civil-service-overcap",
     domain: "politics",
     title: "Civil service bottleneck",
     subtitle: "Governance alert",
-    description: "The civil service is over capacity. Add staff slots or rebalance allocations.",
-    metricLabel: "Staff capacity",
-    metricValue: `${civilService.utilizationPercent}% used`,
+    description:
+      "Executive bandwidth is over capacity. Retire a policy or let a directive settle before adding more.",
+    metricLabel: "Executive bandwidth",
+    metricValue: pct === null ? `${execBandwidth.used} used` : `${pct}% used`,
     icon: Scale,
     tone: "warning",
     drillKind: { kind: "politics" },
@@ -122,9 +102,12 @@ const civilServiceRule: Rule = ({ civilService, isDismissed }) => {
 };
 
 const intentRule: Rule = ({ intents, isDismissed }) => {
-  const top = intents.find(
-    (intent) => intent.status?.toLowerCase() === "active" && !isDismissed(`intent-${intent.id}`)
-  );
+  // `intent.getTree` lists oldest first: feature the newest active directive.
+  const top = [...intents]
+    .reverse()
+    .find(
+      (intent) => intent.status?.toLowerCase() === "active" && !isDismissed(`intent-${intent.id}`)
+    );
   if (!top) return null;
   return {
     id: `intent-${top.id}`,
@@ -142,25 +125,6 @@ const intentRule: Rule = ({ intents, isDismissed }) => {
     icon: Command,
     tone: "accent",
     intentId: top.id,
-  };
-};
-
-const diplomacyRule: Rule = ({ country, isDismissed }) => {
-  const embassies = finiteNumber(country?.activeEmbassiesCount ?? country?.embassies?.length) ?? 0;
-  if (embassies <= 0 || isDismissed("diplomacy-opportunity")) return null;
-
-  const stance: string | null = country?.diplomaticStance ?? null;
-  return {
-    id: "diplomacy-opportunity",
-    domain: "diplomacy",
-    title: "Bilateral alliance opportunity",
-    subtitle: "Diplomatic opportunity",
-    description: "Your embassies could support new bilateral accords and trade pacts.",
-    metricLabel: "Embassies",
-    metricValue: stance ? `${embassies} · ${stance}` : `${embassies}`,
-    icon: Handshake,
-    tone: "neutral",
-    drillKind: { kind: "relations" },
   };
 };
 
@@ -186,14 +150,7 @@ const economyRule: Rule = ({ country, isDismissed }) => {
   };
 };
 
-const RULES: Rule[] = [
-  issueRule,
-  defenseRule,
-  civilServiceRule,
-  intentRule,
-  diplomacyRule,
-  economyRule,
-];
+const RULES: Rule[] = [issueRule, civilServiceRule, intentRule, economyRule];
 
 /** The single most pressing thing to show the executive, in fixed priority order. */
 export function deriveOpportunity(ctx: OpportunityContext): Opportunity | null {

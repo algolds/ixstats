@@ -50,22 +50,3 @@ export const PRIORITY_OPTIONS = [
   { value: "high", label: "High" },
   { value: "critical", label: "Critical" },
 ] as const;
-
-export function getMatchingDepartmentCategory(policyCategory: string): string {
-  const mapping: Record<string, string> = {
-    fiscal: "finance",
-    monetary: "finance",
-    trade: "commerce",
-    defense: "defense",
-    education: "education",
-    healthcare: "health",
-    infrastructure: "interior",
-    environment: "interior",
-    governance: "interior",
-    security: "interior",
-    social: "interior",
-    foreign: "foreign",
-    diplomatic: "foreign",
-  };
-  return mapping[policyCategory.toLowerCase()] || "interior";
-}

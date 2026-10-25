@@ -24,10 +24,12 @@ import { NationalIssuesConsequences } from "~/lib/national-issues";
 import { notificationAPI } from "~/lib/notifications/api";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
+import { withEnforcedDeadline } from "~/lib/national-issues/deadline-visibility";
 import { IxTime } from "~/lib/ixtime";
 import { revealConsequences } from "~/lib/statecraft/recon";
 import { isAppliedIssueConsequence } from "~/lib/national-issues/projection-effects";
 import { loadExecBandwidthState, RECON_CAPACITY_COST } from "~/lib/government/exec-bandwidth";
+import { loadProjectedPopulation } from "~/server/shared/projected-population";
 import {
   assertCountryResourceWriteAccess,
   assertCountryWriteAccess,
@@ -43,7 +45,8 @@ const RECON_DELAY_MS = 1.5 * 24 * 60 * 60 * 1000; // ~1.5 IxTime days; CONSTANT 
  * itself lives in lib/government/exec-bandwidth.ts (shared with policies and the MyCountry band).
  */
 async function loadReconContext(db: PrismaClient, countryId: string) {
-  const execBandwidth = await loadExecBandwidthState(db, countryId);
+  const population = await loadProjectedPopulation(db, countryId);
+  const execBandwidth = await loadExecBandwidthState(db, countryId, { population });
   return {
     componentTypes: execBandwidth.componentTypes,
     departmentCategories: execBandwidth.departmentCategories,
@@ -147,7 +150,9 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
       }
 
       return {
-        issues,
+        issues: issues.map((issue) =>
+          withEnforcedDeadline(issue, GAMEPLAY_FLAGS.issuesEnforceDeadlines)
+        ),
         nextCursor,
       };
     }),
@@ -182,7 +187,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
       });
     }
 
-    return issue;
+    return withEnforcedDeadline(issue, GAMEPLAY_FLAGS.issuesEnforceDeadlines);
   }),
 
   /**
@@ -503,14 +508,16 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
         },
       });
 
-      // Count urgent issues separately for badge styling
-      const urgentCount = await ctx.db.nationalIssue.count({
-        where: {
-          countryId: input.countryId,
-          status: { in: ["pending", "viewed"] },
-          deadlineIxTime: { not: null },
-        },
-      });
+      // "Urgent" = open issues with a deadline that is enforced; none while enforcement is off.
+      const urgentCount = GAMEPLAY_FLAGS.issuesEnforceDeadlines
+        ? await ctx.db.nationalIssue.count({
+            where: {
+              countryId: input.countryId,
+              status: { in: ["pending", "viewed"] },
+              deadlineIxTime: { not: null },
+            },
+          })
+        : 0;
 
       return { total: count, urgent: urgentCount };
     }),

@@ -12,6 +12,8 @@ import { TRPCError } from "@trpc/server";
 import { getPolicyDecretals } from "~/lib/policies/registry";
 import type { PrismaClient } from "@prisma/client";
 import { loadExecBandwidthState } from "~/lib/government/exec-bandwidth";
+import { hasPolicyDepartment, policyDepartmentKey } from "~/lib/policies/department-match";
+import { loadProjectedPopulation } from "~/server/shared/projected-population";
 import {
   assertCountryWriteAccess,
   hasCountryWriteAccess,
@@ -19,7 +21,8 @@ import {
 
 /** Policy recon context: the shared executive bandwidth state (lib/government/exec-bandwidth.ts) + an efficiency flag. */
 async function loadPolicyReconContext(db: PrismaClient, countryId: string) {
-  const execBandwidth = await loadExecBandwidthState(db, countryId);
+  const population = await loadProjectedPopulation(db, countryId);
+  const execBandwidth = await loadExecBandwidthState(db, countryId, { population });
   return {
     componentTypes: execBandwidth.componentTypes,
     departmentCategories: execBandwidth.departmentCategories,
@@ -30,25 +33,6 @@ async function loadPolicyReconContext(db: PrismaClient, countryId: string) {
     lowEfficiency: execBandwidth.effectiveness < 45,
     breakdown: execBandwidth.breakdown,
   };
-}
-
-function getMatchingDepartmentCategory(policyCategory: string): string {
-  const mapping: Record<string, string> = {
-    fiscal: "finance",
-    monetary: "finance",
-    trade: "commerce",
-    defense: "defense",
-    education: "education",
-    healthcare: "health",
-    infrastructure: "interior",
-    environment: "interior",
-    governance: "interior",
-    security: "interior",
-    social: "interior",
-    foreign: "foreign",
-    diplomatic: "foreign",
-  };
-  return mapping[policyCategory.toLowerCase()] || "interior";
 }
 
 function getCustomPolicyAttributes(priority: string) {
@@ -114,8 +98,8 @@ export const policiesCrudRouter = createTRPCRouter({
       if (!decretalKey) {
         // Custom policy category-department alignment check
         const cx = await loadPolicyReconContext(ctx.db, input.countryId);
-        const reqDept = getMatchingDepartmentCategory(baseInput.category);
-        if (!cx.departmentCategories.includes(reqDept)) {
+        const reqDept = policyDepartmentKey(baseInput.category);
+        if (!hasPolicyDepartment(cx.departmentCategories, baseInput.category)) {
           throw new TRPCError({
             code: "PRECONDITION_FAILED",
             message: `You must establish an active Department of ${reqDept.charAt(0).toUpperCase() + reqDept.slice(1)} before launching custom policies in this domain.`,

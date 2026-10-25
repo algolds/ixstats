@@ -72,7 +72,7 @@ export function MyCountryComplianceModal({
                         </p>
                       </div>
                       <Badge variant={section.isComplete ? "success" : "outline"}>
-                        {section.isComplete ? "Complete" : "Action Needed"}
+                        {section.isComplete ? "Complete" : "Action needed"}
                       </Badge>
                     </div>
 

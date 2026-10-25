@@ -33,14 +33,16 @@ function ExecutiveHomeComponent({
   const focusParam = searchParams?.get("focus");
 
   useEffect(() => {
+    if (!focusParam) return;
     if (focusParam === "directives") {
       onDeclare();
     } else if (focusParam === "agenda") {
-      const el = document.getElementById("executive-agenda");
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth" });
-      }
+      document.getElementById("executive-agenda")?.scrollIntoView({ behavior: "smooth" });
     }
+    // Consume the param so returning home doesn't act on it again.
+    const url = new URL(window.location.href);
+    url.searchParams.delete("focus");
+    window.history.replaceState(window.history.state, "", url);
   }, [focusParam, onDeclare]);
 
   const feed = api.mycountry.getCanonFeed.useQuery(

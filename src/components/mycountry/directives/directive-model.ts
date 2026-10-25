@@ -227,19 +227,19 @@ export function formatGdpShift(shift: number): string {
   return `${pct >= 0 ? "+" : "−"}${Math.abs(pct).toFixed(digits)}%`;
 }
 
+/** The country-record signals "Suggest one" reads (both are on `getByIdWithEconomicData`). */
 export interface DirectiveCountrySignals {
-  crimeRate?: number | null;
   publicApproval?: number | null;
-  militaryReadiness?: number | null;
+  /** `InternalStabilityMetrics.stabilityScore` (0-100). */
+  stabilityScore?: number | null;
 }
 
 /**
- * The preset domain that best answers the nation's weakest signal (crime, readiness, approval),
- * or null when nothing stands out. Drives the composer's "Suggest one" button.
+ * The preset domain that best answers the nation's weakest signal (stability, then approval), or
+ * null when nothing stands out. Drives the composer's "Suggest one" button.
  */
 export function suggestedDomain(signals: DirectiveCountrySignals): string | null {
-  if ((signals.crimeRate ?? 0) > 50) return "Security";
-  if (signals.militaryReadiness != null && signals.militaryReadiness < 60) return "Defense";
+  if (signals.stabilityScore != null && signals.stabilityScore < 50) return "Security";
   if (signals.publicApproval != null && signals.publicApproval < 50) return "Social";
   return null;
 }

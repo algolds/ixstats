@@ -22,6 +22,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
+import { useNotify } from "~/hooks/useNotify";
 
 interface ThinkPagesShareModalProps {
   isOpen: boolean;
@@ -33,8 +34,10 @@ interface ThinkPagesShareModalProps {
   category?: string;
   summary?: string;
   changesJson?: string;
-  countryName?: string;
-  countrySlug?: string;
+  countryName: string;
+  countrySlug: string;
+  /** "completed" only once the owner completed it; an active directive was declared. */
+  status: string | null | undefined;
 }
 
 export function ThinkPagesShareModal({
@@ -47,9 +50,11 @@ export function ThinkPagesShareModal({
   category = "policy",
   summary,
   changesJson,
-  countryName = "The Government",
-  countrySlug = "Statecraft",
+  countryName,
+  countrySlug,
+  status,
 }: ThinkPagesShareModalProps) {
+  const notify = useNotify();
   const [content, setContent] = useState("");
   const [publishStatus, setPublishStatus] = useState<"idle" | "drafted" | "published">("idle");
 
@@ -61,6 +66,7 @@ export function ThinkPagesShareModal({
         setPublishStatus("drafted");
       }
     },
+    onError: (e) => notify.error("Could not share the directive", e.message),
   });
 
   useEffect(() => {
@@ -86,14 +92,14 @@ export function ThinkPagesShareModal({
 
       const initialText =
         `**Executive summary: ${goal}**\n\n` +
-        `${countryName} completed a ${tier} Directive: "${goal}".\n\n` +
+        `${countryName} ${status === "completed" ? "completed" : "declared"} a ${tier} Directive: "${goal}".\n\n` +
         `**Measures taken:**\n` +
         `• ${changesSummary}\n\n` +
-        `#${countrySlug} #ExecutiveDirective #${category}`;
+        `#${countrySlug.replace(/[^A-Za-z0-9]/g, "")} #ExecutiveDirective #${category}`;
 
       setContent(initialText);
     }
-  }, [isOpen, goal, tier, category, summary, changesJson, countryName, countrySlug]);
+  }, [isOpen, goal, tier, category, summary, changesJson, countryName, countrySlug, status]);
 
   const handlePublish = (visibility: "public" | "draft") => {
     generateM.mutate({

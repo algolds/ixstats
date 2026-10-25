@@ -9,6 +9,11 @@
  * (the check decides on the fresh user row), cultural-artifact-upload-auth, diplomatic-scenarios-record-choice-auth and
  * audit-country-idor (the detector that lists the mutations needing a row).
  */
+// Bandwidth capacity reads the projected population; the projection itself is not under test here.
+jest.mock("~/server/shared/projected-population", () => ({
+  __esModule: true,
+  loadProjectedPopulation: jest.fn(async () => 10_000_000),
+}));
 jest.mock("~/lib/vault/vault-service", () => ({
   __esModule: true,
   vaultService: { earnCredits: jest.fn().mockResolvedValue({ success: true }) },

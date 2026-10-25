@@ -12,11 +12,9 @@ import {
   ShareAndroid as Share2,
   Compass,
   Group as Users2,
-  Globe as Globe2,
   Shield,
   Bank as Landmark,
   City as Building2,
-  GitBranch,
 } from "iconoir-react";
 import { ShareToRealmButton } from "~/components/action-links/ShareToRealmButton";
 import { Badge } from "~/components/ui/badge";
@@ -29,6 +27,9 @@ import { SheetSection } from "./SheetSection";
 import { IntentDiscussions } from "./IntentDiscussions";
 import { ThinkPagesShareModal } from "~/components/mycountry/shared/modals/ThinkPagesShareModal";
 import { Card } from "~/components/ui/card";
+import { useCountryData } from "~/components/mycountry/shared/primitives";
+import { useNotify } from "~/hooks/useNotify";
+import { CATEGORY_TO_BROKER } from "~/lib/intent/assemble";
 
 /** Directive tier → semantic text tone (measured is calm, extreme is a warning sign). */
 const TIER_TONE: Record<string, string> = {
@@ -48,75 +49,14 @@ function statusDot(status: string | null | undefined): string {
         : "bg-label-tertiary";
 }
 
-const CATEGORY_BROKER_MAP: Record<
-  string,
-  { name: string; icon: React.ComponentType<{ className?: string }> }
-> = {
-  defense: { name: "Generals", icon: Shield },
-  security: { name: "Generals", icon: Shield },
-  fiscal: { name: "Magnates", icon: Building2 },
-  economy: { name: "Magnates", icon: Building2 },
-  social: { name: "Party", icon: Users2 },
-  infrastructure: { name: "Technocrats", icon: Compass },
-  religion: { name: "Clergy", icon: Landmark },
-  foreign: { name: "Cabinet Diplomatic Corps", icon: Globe2 },
+/** Icon per power broker id (`CATEGORY_TO_BROKER` picks the broker for a category). */
+const BROKER_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
+  generals: Shield,
+  magnates: Building2,
+  technocrats: Compass,
+  party: Users2,
+  clergy: Landmark,
 };
-
-function IntentBranchingTree({
-  countryId,
-  currentIntentId,
-}: {
-  countryId: string;
-  currentIntentId: string;
-}) {
-  const { data, isLoading } = api.intent.getTree.useQuery({ countryId }, { enabled: !!countryId });
-
-  if (isLoading || !data?.roots?.length) return null;
-
-  return (
-    <SheetSection title="Decision tree" icon={GitBranch}>
-      <ul className="divide-separator divide-y">
-        {data.allIntents.slice(0, 4).map((it) => {
-          const isCurrent = it.id === currentIntentId;
-          return (
-            <li
-              key={it.id}
-              aria-current={isCurrent ? "true" : undefined}
-              className="text-footnote flex items-center justify-between gap-2 py-2 first:pt-0 last:pb-0"
-            >
-              <div className="flex min-w-0 items-center gap-2">
-                <span
-                  aria-hidden="true"
-                  className={cn("h-2 w-2 shrink-0 rounded-full", statusDot(it.status))}
-                />
-                <div className="min-w-0">
-                  <p
-                    className={cn(
-                      "truncate",
-                      isCurrent ? "text-label font-semibold" : "text-label font-medium"
-                    )}
-                  >
-                    {it.goal}
-                  </p>
-                  <p className="text-label-secondary capitalize">
-                    {it.category} · {it.tier}
-                  </p>
-                </div>
-              </div>
-              {isCurrent ? (
-                <Badge variant="outline" className={cn("shrink-0", STATUS_TEXT.accent)}>
-                  This directive
-                </Badge>
-              ) : (
-                <span className="text-label-secondary shrink-0 capitalize">{it.status}</span>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </SheetSection>
-  );
-}
 
 type IntentItem = NonNullable<RouterOutputs["intent"]["getTree"]>["allIntents"][number];
 type LinkedIssues = RouterOutputs["intent"]["getLinkedIssues"] | undefined;
@@ -141,6 +81,7 @@ function IntentHeader({
   intent,
   activityId,
   isUpdating,
+  openResistance,
   onBuildOn,
   onComplete,
   onShareToThinkPages,
@@ -148,6 +89,8 @@ function IntentHeader({
   intent: IntentItem;
   activityId: string | null;
   isUpdating: boolean;
+  /** Open linked resistance issues: the server refuses Complete until they are resolved. */
+  openResistance: number;
   onBuildOn: () => void;
   onComplete: () => void;
   onShareToThinkPages: () => void;
@@ -229,7 +172,8 @@ function IntentHeader({
               variant="outline"
               size="sm"
               onClick={onComplete}
-              disabled={isUpdating}
+              disabled={isUpdating || openResistance > 0}
+              title={openResistance > 0 ? "Resolve the open resistance first" : undefined}
               className={detailButton}
             >
               <CheckCircle2 aria-hidden="true" />
@@ -256,6 +200,8 @@ function IntentHeader({
 }
 
 const RESOLVED_STATUSES = ["responded", "auto_resolved", "dismissed"];
+/** The statuses `intent.updateStatus` treats as open resistance. */
+const OPEN_RESISTANCE = new Set(["pending", "viewed"]);
 
 function issueDotTone(status: string): string {
   if (RESOLVED_STATUSES.includes(status)) return "bg-green";
@@ -327,23 +273,36 @@ function ResistanceProgress({ linked }: { linked: LinkedIssues }) {
   );
 }
 
-function BrokerCard({ category }: { category: string | null | undefined }) {
-  const broker = CATEGORY_BROKER_MAP[category?.toLowerCase() ?? ""] ?? {
-    name: "Cabinet Administration",
-    icon: Command,
-  };
-  const BrokerIcon = broker.icon;
+type Broker = RouterOutputs["elections"]["getPowerBrokers"][number];
+
+function brokerState(broker: Broker): { label: string; variant: "success" | "outline" } {
+  if (broker.satisfied) return { label: "Satisfied", variant: "success" };
+  if (broker.unlocked) return { label: "Wants more funding", variant: "outline" };
+  return { label: "Not in your government", variant: "outline" };
+}
+
+function BrokerCard({ countryId, category }: { countryId: string; category: string }) {
+  const brokerId = CATEGORY_TO_BROKER[category.toLowerCase() as keyof typeof CATEGORY_TO_BROKER];
+  const brokers = api.elections.getPowerBrokers.useQuery(
+    { countryId },
+    { enabled: !!countryId && !!brokerId }
+  );
+  const broker = brokers.data?.find((b) => b.id === brokerId);
+  if (!broker) return null;
+
+  const BrokerIcon = BROKER_ICON[broker.id] ?? Command;
+  const state = brokerState(broker);
   return (
     <Card className="rounded-card flex items-center justify-between gap-3 p-4">
       <div className="flex min-w-0 items-center gap-3">
         <BrokerIcon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
         <div className="min-w-0">
-          <Eyebrow className="block">Aligned power broker</Eyebrow>
+          <p className="text-label-secondary text-footnote">Power broker in this area</p>
           <p className="text-label text-body truncate font-medium">{broker.name}</p>
         </div>
       </div>
-      <Badge variant="success" className="shrink-0">
-        Cabinet aligned
+      <Badge variant={state.variant} className="shrink-0">
+        {state.label}
       </Badge>
     </Card>
   );
@@ -448,18 +407,30 @@ export function IntentDetail({
     { intentId },
     { enabled: !!intentId, staleTime: 5 * 60_000 }
   );
+  const { country } = useCountryData();
+  const notify = useNotify();
   const utils = api.useUtils();
   const updateM = api.intent.updateStatus.useMutation({
     onSuccess: () => {
-      // Abandoning withdraws the directive's public row; refetch so the forum share goes with it.
       void utils.actionLinks.directiveActivity.invalidate({ intentId });
+      void utils.intent.getStatus.invalidate();
+      void utils.policies.getPolicyReconContext.invalidate();
+      notify.success("Directive completed");
       return tree.refetch();
     },
+    onError: (e) => notify.error("Could not complete the directive", e.message),
   });
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const items = tree.data?.allIntents ?? [];
   const intent = items.find((i) => i.id === intentId);
+  const openResistance = (linked.data?.issues ?? []).filter((i) =>
+    OPEN_RESISTANCE.has(i.status)
+  ).length;
+
+  if (tree.isLoading) {
+    return <div className="text-label-secondary text-body py-8 text-center">Loading directive</div>;
+  }
 
   if (!intent) {
     return (
@@ -479,6 +450,7 @@ export function IntentDetail({
         intent={intent}
         activityId={directive.data?.activityId ?? null}
         isUpdating={updateM.isPending}
+        openResistance={openResistance}
         onBuildOn={() => {
           onClose?.();
           onDeclare?.(`Follow-up to "${intent.goal}": `);
@@ -497,6 +469,9 @@ export function IntentDetail({
         category={intent.category}
         summary={intent.summary ?? undefined}
         changesJson={intent.changesJson ?? undefined}
+        countryName={country?.name ?? "The government"}
+        countrySlug={country?.slug ?? country?.name ?? ""}
+        status={intent.status}
       />
 
       {intent.summary && (
@@ -510,8 +485,7 @@ export function IntentDetail({
       ) : null}
 
       <ResistanceProgress linked={linked.data} />
-      <IntentBranchingTree countryId={countryId} currentIntentId={intent.id} />
-      <BrokerCard category={intent.category} />
+      <BrokerCard countryId={countryId} category={intent.category} />
       {changes.length > 0 && <AppliedLineItems changes={changes} />}
       {(parent || followUps.length > 0) && (
         <ChainedInitiatives parent={parent} followUps={followUps} />

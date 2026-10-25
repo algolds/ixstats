@@ -1,7 +1,7 @@
 /**
  * Executive bandwidth — the one place the used/available sum is computed.
  *
- * Capacity comes from population × government effectiveness
+ * Capacity comes from the projected population × government effectiveness
  * (`calculateCivilServiceCapacity`). It is consumed by:
  * - government components' staff (15% relief when the Technocrats broker is satisfied);
  * - in-progress recon Meetings;
@@ -70,10 +70,15 @@ export function sumExecBandwidthUsed(breakdown: ExecBandwidthBreakdown): number 
   );
 }
 
-/** Load a country's executive bandwidth capacity, what consumes it, and what is left. */
+/**
+ * Load a country's executive bandwidth capacity, what consumes it, and what is left. Pass the
+ * projected population (`loadProjectedPopulation`) so capacity follows the population the Standing
+ * card shows; without it, the stored `currentPopulation` is used.
+ */
 export async function loadExecBandwidthState(
   db: PrismaClient,
-  countryId: string
+  countryId: string,
+  options: { population?: number | null } = {}
 ): Promise<ExecBandwidthState> {
   const now = IxTime.getCurrentIxTime();
   const [
@@ -137,7 +142,8 @@ export async function loadExecBandwidthState(
   const isTechnocratsSatisfied = activeBrokers.some((b) => b.id === "technocrats" && b.satisfied);
 
   const effectiveness = structure?.governmentEffectiveness ?? country?.governmentalEfficiency ?? 50;
-  const capacity = calculateCivilServiceCapacity(country?.currentPopulation ?? 0, effectiveness);
+  const population = options.population ?? country?.currentPopulation ?? 0;
+  const capacity = calculateCivilServiceCapacity(population, effectiveness);
 
   const govStaff = calculateTotalConsumedStaff(
     activeComponentTypes.map((type) => type as any),

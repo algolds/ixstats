@@ -43,7 +43,8 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
       label: "Meetings",
       icon: Briefcase,
       iconClass: "text-yellow",
-      action: () => navigateToSection("executive"),
+      // Cabinet meetings live in Politics, next to the cabinet.
+      action: () => navigateToSection("politics"),
     },
     {
       label: "Embassies",
