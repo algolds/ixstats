@@ -159,7 +159,9 @@ function IssueHero({
         )}
       </div>
 
-      <p className="text-label-secondary text-body leading-relaxed">{issue.description}</p>
+      {issue.description && (
+        <p className="text-label-secondary text-body leading-relaxed">{issue.description}</p>
+      )}
       {issue.longDescription && (
         <div className="text-label-secondary border-separator text-footnote border-l-2 pl-3 leading-relaxed whitespace-pre-line">
           {issue.longDescription}

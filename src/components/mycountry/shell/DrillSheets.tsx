@@ -85,12 +85,16 @@ function DrillSheetsComponent({
   onDeclare,
 }: DrillSheetsProps): React.JSX.Element {
   const { title, Icon, meta, domainKind } = sheetHeading(drill);
+  // Only domain sheets carry a blurb. Without one there is no description (an empty one left a blank
+  // paragraph under the issue brief title), and Radix is told so with `aria-describedby={undefined}`.
+  const blurb = meta?.blurb;
   // Same lock as the Defense page: free nations get the read-only preview here too.
   const hasDefenseAccess = useHasMycountryPremium("defense");
 
   return (
     <Sheet open={drill !== null} onOpenChange={(o) => !o && onClose()}>
       <SheetContent
+        {...(blurb ? {} : { "aria-describedby": undefined })}
         side="right"
         className="border-separator bg-surface w-full overflow-y-auto backdrop-blur-xl sm:max-w-xl lg:max-w-2xl"
       >
@@ -117,10 +121,8 @@ function DrillSheetsComponent({
               </Button>
             )}
           </div>
-          {drill && drill.kind !== "intent" && (
-            <SheetDescription className="text-label-secondary text-footnote">
-              {meta?.blurb}
-            </SheetDescription>
+          {blurb && (
+            <SheetDescription className="text-label-secondary text-footnote">{blurb}</SheetDescription>
           )}
         </SheetHeader>
 
