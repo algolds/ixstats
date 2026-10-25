@@ -19,12 +19,10 @@ interface TradePartnerItem {
 
 interface TradePartnersManagerProps {
   partners: TradePartnerItem[];
-  currencySymbol?: string;
 }
 
 export const TradePartnersManager = React.memo(function TradePartnersManager({
   partners,
-  currencySymbol = "$",
 }: TradePartnersManagerProps) {
   if (partners.length === 0) {
     return (
@@ -74,8 +72,7 @@ export const TradePartnersManager = React.memo(function TradePartnersManager({
                 </span>
                 {partner.tradeVolume > 0 && (
                   <span className="text-label-secondary text-footnote block">
-                    Trade volume: {currencySymbol}
-                    {formatCompact(partner.tradeVolume)}
+                    Trade volume: ${formatCompact(partner.tradeVolume)}
                   </span>
                 )}
               </div>
