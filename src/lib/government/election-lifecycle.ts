@@ -1,7 +1,7 @@
 /**
  * Election lifecycle (MC-2) — the glue that makes politics reachable for a real nation.
  *
- *   setup (legislature + parties) → ensureUpcomingElection → [IxTime passes]
+ *   setup (legislature + parties) → ensureUpcomingElection → [the realm's clock passes]
  *   → resolveElection (claim → candidates from parties → simulateElectionCore → follow-up)
  *   → seats carry parties → legislation.holdVote can tally a floor vote.
  *
@@ -11,10 +11,11 @@
  * Callers: `configureLegislature` / `createParty` (immediately), the `elections` cron
  * (sweep + resolution) and the owner's `resolveDueElection` mutation. Pure DB work — no auth.
  *
- * ⚠️ Scheduling uses the IxTime clock (IxTime.getCurrentIxTime()), never the wall clock.
+ * ⚠️ Scheduling uses the nation's realm clock (`clockForCountry`; Ixnay's is IxTime), never the wall clock.
  */
 import type { PrismaClient } from "@prisma/client";
 import { IxTime } from "~/lib/ixtime";
+import { clockForCountry } from "~/server/shared/realm-time";
 import { simulateElectionCore } from "./election-simulation";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -22,7 +23,7 @@ const GAME_YEAR_MS = 365.25 * DAY_MS;
 const DEFAULT_TERM_YEARS = 4;
 
 /**
- * How long after setup the first (or a snap) election is held, in IxTime days.
+ * How long after setup the first (or a snap) election is held, in days of the nation's realm clock.
  * Decision default (ROADMAP D1 is still open): a short campaign window, not an instant seating.
  */
 export const FIRST_ELECTION_DELAY_IX_DAYS = 30;
@@ -55,11 +56,12 @@ function electionName(kind: "first" | "snap" | "general", ixTime: number): strin
  *   last, never earlier than the short window.
  * - `snap: true` (the legislature was dissolved/reconfigured, so every seat is vacant) → an
  *   upcoming election further out than the short window is pulled forward to it.
+ * `now`: the nation's clock time (read from its realm when omitted).
  */
 export async function ensureUpcomingElection(
   db: Db,
   countryId: string,
-  opts: { snap?: boolean } = {}
+  opts: { snap?: boolean; now?: number } = {}
 ): Promise<EnsureElectionResult> {
   const legislature = await db.legislature.findUnique({
     where: { countryId },
@@ -70,7 +72,8 @@ export async function ensureUpcomingElection(
   const activeParties = await db.politicalParty.count({ where: { countryId, isActive: true } });
   if (activeParties < MIN_ELECTION_PARTIES) return { status: "insufficient_parties" };
 
-  const soon = IxTime.getCurrentIxTime() + FIRST_ELECTION_DELAY_IX_DAYS * DAY_MS;
+  const now = opts.now ?? (await clockForCountry(db, countryId)).now();
+  const soon = now + FIRST_ELECTION_DELAY_IX_DAYS * DAY_MS;
 
   const upcoming = await db.election.findFirst({
     where: { countryId, status: "upcoming" },
@@ -165,11 +168,12 @@ type ResolveElectionOutcome = "resolved" | "insufficient_candidates" | "not_clai
  * Resolve one due election: claim it (so the cron and the owner's button can't both count
  * it), put the parties on the ballot, run the shared simulation, then queue the next
  * general election one term later. A failed or unresolvable election is released back to
- * `upcoming` so a later pass can retry it.
+ * `upcoming` so a later pass can retry it. `now`: the nation's clock time (read from its realm when omitted).
  */
 export async function resolveElection(
   db: Db,
-  electionId: string
+  electionId: string,
+  now?: number
 ): Promise<{ outcome: ResolveElectionOutcome; nextElectionId?: string }> {
   const claim = await db.election.updateMany({
     where: { id: electionId, status: "upcoming" },
@@ -216,9 +220,10 @@ export async function resolveElection(
       ? legislature.termLength
       : DEFAULT_TERM_YEARS;
   // Never schedule into the past (e.g. an election counted long after it fell due).
+  const nowMs = now ?? (await clockForCountry(db, election.countryId)).now();
   const nextScheduled = Math.max(
     election.scheduledIxTime + termYears * GAME_YEAR_MS,
-    IxTime.getCurrentIxTime() + FIRST_ELECTION_DELAY_IX_DAYS * DAY_MS
+    nowMs + FIRST_ELECTION_DELAY_IX_DAYS * DAY_MS
   );
   const next = await db.election.create({
     data: {
