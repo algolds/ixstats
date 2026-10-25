@@ -30,7 +30,7 @@ expression from the configured host (`mediaWikiHostPattern()`, `isMediaWikiUrl(u
 | Category | Meaning |
 | --- | --- |
 | **render** | MediaWiki parses wikitext WikiOS sends it (`action=parse&text=`). It never renders `&page=` for content WikiOS owns, and never reads its own copy of a page. |
-| **sync** | Inbound: edits and log events made on classic MediaWiki are imported (fast-forward or parked, plan 406). |
+| **sync** | Inbound: edits and log events made on classic MediaWiki are imported (plan 406); an edit that collides with a WikiOS edit goes through the conflict rule (the later save stands, the other is kept as overwritten history, and its author is told). |
 | **mirror** | Outbound: WikiOS edits are exported to MediaWiki in the background (plan 407). |
 | **account-proof** | Reads that prove a person controls a sister-wiki account, who created a page, or (for an administrator) which old IxWiki user names exist. |
 | **admin-refresh** | An operator presses a button; MediaWiki is the data source of that one action. |
@@ -58,14 +58,15 @@ expression from the configured host (`mediaWikiHostPattern()`, `isMediaWikiUrl(u
 | Call site | What it reads | Notes |
 | --- | --- | --- |
 | `src/lib/wiki-os/services/inbound-mediawiki.ts` `mediaWikiGet` | `list=recentchanges`, `list=logevents`, `prop=revisions` | The only inbound HTTP client. |
-| `src/lib/wiki-os/services/auto-sync-service.ts`, `src/lib/wiki-os/services/inbound-revision-sync.ts` | the above | `wiki-recentchanges` cron job, the `/api/wikios/inbound-sync` and `/api/wiki/sync-webhook` webhooks. `inbound-revision-sync.ts` also re-pushes WikiOS's head after parking a conflicting edit (mirror). An imported revision is stored with no WikiOS author, then tagged with the account holding its editor's approved name claim (`claim-tags.ts`, after the commit), so a revoke takes back exactly what the claim gave. |
+| `src/lib/wiki-os/services/auto-sync-service.ts`, `src/lib/wiki-os/services/inbound-revision-sync.ts` | the above | `wiki-recentchanges` cron job, the `/api/wikios/inbound-sync` and `/api/wiki/sync-webhook` webhooks. A classic edit that collides with a WikiOS edit is judged by the conflict rule (`conflict-rule.ts`): the winner becomes the head, the loser stays in the history as overwritten, and the collision gets one `wiki_conflicts` row; nothing is pushed back to MediaWiki for it. After its steps every cycle settles that log (`conflict-notices.ts`): in-app notices and Discord DMs, talk-page notes and the trail, the last two written in WikiOS and mirrored like any edit. An imported revision is stored with no WikiOS author, then tagged with the account holding its editor's approved name claim (`claim-tags.ts`, after the commit), so a revoke takes back exactly what the claim gave. |
 | `src/lib/wiki-os/services/article-view-service.ts` (via `syncSinglePage`) | one page's newest revision | **On a read path (plan 412):** a request for a page Postgres has no row for imports it from MediaWiki once, so a page created on classic MediaWiki before the next sync cycle is not a 404. Budgeted: one import per title at a time, one try per title per minute, and a limiter shared by the process. |
 
 ### mirror (outbound, plan 407)
 
 A WikiOS write never calls MediaWiki itself. The writer inserts a row into the **outbox** (`wiki_mirror_jobs`, kinds
 `revision`, `move`, `delete`, `undelete`, `protect`, `upload`) in the same transaction as the change (`saveArticle`,
-`movePage`, `archiveArticle`, `restoreArticle`, `RightsAdminService.protect`, the re-push of a parked head, and
+`movePage`, `archiveArticle`, `restoreArticle`, `RightsAdminService.protect`, the conflict settling's talk notes and
+trail revisions, and
 `uploadFile`, which records the asset, the upload log entry and the `upload` job together), so a committed change always
 has its job. This includes every write that arrives through WikiOS's own `/w/api.php` (plan 410):
 it reaches the same services, so one write is one job. The worker applies the jobs per title in order as the dedicated

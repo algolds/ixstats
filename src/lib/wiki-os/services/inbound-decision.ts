@@ -1,21 +1,22 @@
 /**
- * inbound-decision.ts — what a MediaWiki edit means for WikiOS's copy of the page ("fast-forward or park").
+ * inbound-decision.ts — how a MediaWiki edit relates to WikiOS's copy of the page.
  *
- * WikiOS is primary and classic MediaWiki stays editable in parallel, so an edit made there is only
- * taken as the page's next revision when its author started from the text WikiOS holds now:
+ * WikiOS and classic MediaWiki are both editable, so an edit made there is taken as the page's next revision only when
+ * its author started from the text WikiOS holds now:
  *   - echo: the text is WikiOS's own (the mirror's export coming back); nothing to import;
- *   - fast-forward: the edit's parent is WikiOS's head (by MediaWiki revision id, or because the parent
- *     has exactly WikiOS's text): import it as a normal revision;
- *   - park: anything else; the edit is kept in history as a non-current revision and WikiOS's head is
- *     pushed back to MediaWiki.
+ *   - older: a revision older than the one WikiOS's head is stamped with (a replay after a newer one): history only;
+ *   - fast-forward: the edit's parent is WikiOS's head (by MediaWiki revision id, or because the parent has exactly
+ *     WikiOS's text): import it as a normal revision;
+ *   - collision: anything else; both wikis changed the page from the same base, and the conflict rule
+ *     (conflict-rule.ts) decides which save stands.
  * Pure: no database and no network, so every branch is a table test.
  */
 
 import { mwSha1Base36 } from "../xml/sha1";
 
-export type InboundDecision = "echo" | "fast-forward" | "park";
+export type InboundRelation = "echo" | "older" | "fast-forward" | "collision";
 
-/** WikiOS's current revision of a page: the newest one that is not parked. */
+/** WikiOS's current revision of a page: the newest one that is not parked (overwritten). */
 export interface InboundHead {
   /** The MediaWiki revision id carrying this revision, once the mirror stamped it (or an import did). */
   mwRevId: number | null;
@@ -59,13 +60,15 @@ export function matchesHead(head: InboundHead, sha1: string): boolean {
   return headHashes(head).has(sha1);
 }
 
-export function decideInbound({ head, rev, parentSha1 }: InboundInput): InboundDecision {
+export function decideInbound({ head, rev, parentSha1 }: InboundInput): InboundRelation {
   if (!head) return "fast-forward";
   if (rev.byMirrorBot || matchesHead(head, rev.sha1)) return "echo";
+  // MediaWiki's ids grow with time: a revision before the head's own was replayed after a newer one, and is history.
+  if (head.mwRevId !== null && rev.revid < head.mwRevId) return "older";
 
   if (head.mwRevId !== null && head.mwRevId === rev.parentid) return "fast-forward";
   // The author's base was a MediaWiki revision with exactly WikiOS's text, though not the one WikiOS
-  // knows by id: a head the mirror never stamped, or the copy the mirror pushed back after a park.
+  // knows by id: a head the mirror never stamped, or a copy of it the mirror pushed again.
   if (parentSha1 !== null && matchesHead(head, parentSha1)) return "fast-forward";
-  return "park";
+  return "collision";
 }

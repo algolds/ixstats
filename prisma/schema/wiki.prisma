@@ -231,6 +231,7 @@ model WikiConflict {
   trailRevisionId String?  // the page-history entry that names the overwrite
   legacyPark      Boolean  @default(false) // made from an old "parked" revision: history only, nobody to tell
   settledAt       DateTime? // everyone told and the trail written (or given up); a merge that adds a loser clears it
+  firstSettleAt   DateTime? // the settling's first attempt: a trail that cannot be written is given up a day after it
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

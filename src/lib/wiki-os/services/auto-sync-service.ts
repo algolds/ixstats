@@ -3,10 +3,12 @@
  *
  * Reads MediaWiki recent changes and log events and brings them into PostgreSQL in the order they
  * happened, one at a time. A revision made on top of WikiOS's head is imported, WikiOS's own edits
- * coming back are recognised, and a revision that conflicts is parked (inbound-revision-sync.ts holds
- * the rule); deletes, moves, protections, blocks and rights changes are applied from the log
- * (inbound-log-events.ts). runAutoSyncCycle runs from the `wiki-recentchanges` cron job
- * (src/server/cron/jobs.ts) and from the /api/wikios/inbound-sync webhook; there is no in-process daemon.
+ * coming back are recognised, and a revision that collides with a WikiOS edit goes through the conflict
+ * rule (inbound-revision-sync.ts); deletes, moves, protections, blocks and rights changes are applied
+ * from the log (inbound-log-events.ts). After its steps every cycle settles the conflict log
+ * (conflict-notices.ts): the overwritten authors are told and classic winners get their trail.
+ * runAutoSyncCycle runs from the `wiki-recentchanges` cron job (src/server/cron/jobs.ts) and from the
+ * /api/wikios/inbound-sync webhook; there is no in-process daemon.
  *
  * One sync runs at a time across processes (a Postgres advisory lock): revisions of a page must be
  * applied in order, and the cron job, the webhook and the reader's import must not interleave. A failure
@@ -27,12 +29,11 @@ import {
 } from "./inbound-mediawiki";
 import { applyLogEvent } from "./inbound-log-events";
 import {
-  readRepushSkipped,
-  repushSkippedParks,
   syncLatestRevision,
   syncRevisionById,
   type RevisionOutcome,
 } from "./inbound-revision-sync";
+import { settleConflicts } from "./conflict-notices";
 
 export interface AutoSyncStats {
   /** Recent changes and log events read in the last cycle. */
@@ -45,6 +46,8 @@ export interface AutoSyncStats {
   failures: number;
   /** The last failure of the last cycle that had one; null after a clean cycle. */
   lastError: string | null;
+  /** Conflict-log rows the last settling left unsettled (someone still to tell, or a trail to write). */
+  conflictsPending: number;
   lastRunAt: Date | null;
 }
 
@@ -55,6 +58,7 @@ const lastStats: AutoSyncStats = {
   eventsApplied: 0,
   failures: 0,
   lastError: null,
+  conflictsPending: 0,
   lastRunAt: null,
 };
 
@@ -82,15 +86,22 @@ function recordFailure(what: string, err: unknown): void {
 }
 
 /** Outcomes that left WikiOS with a new revision. */
-const CREATED: ReadonlySet<RevisionOutcome> = new Set(["fast-forward", "parked"]);
+const CREATED: ReadonlySet<RevisionOutcome> = new Set([
+  "older",
+  "fast-forward",
+  "won",
+  "overwritten",
+]);
+/** Outcomes that gave the page a new head. */
+const UPDATED: ReadonlySet<RevisionOutcome> = new Set(["fast-forward", "won"]);
 /** Outcomes after which the page exists in WikiOS as MediaWiki has it (or as WikiOS keeps it). */
-const SYNCED: ReadonlySet<RevisionOutcome> = new Set(["known", "echo", "fast-forward", "parked"]);
+const SYNCED: ReadonlySet<RevisionOutcome> = new Set(["known", "echo", ...CREATED]);
 
 /**
  * Sync one page's newest revision (the webhook, the reader's import of a page Postgres lacks). Takes
  * the same lock as the cycle, without waiting: false when a sync is running (the cycle will pick the
  * page up). Never throws: false on any failure, when MediaWiki has no such page, and when the revision
- * is a conflict, which the ordered cycle parks.
+ * collides with a WikiOS edit, which the ordered cycle judges.
  */
 export async function syncSinglePage(title: string): Promise<boolean> {
   try {
@@ -211,7 +222,7 @@ function editStep(rc: RecentChange): SyncStep {
       const outcome = await syncRevisionById(rc.revid);
       return {
         created: CREATED.has(outcome) ? 1 : 0,
-        updated: outcome === "fast-forward" ? 1 : 0,
+        updated: UPDATED.has(outcome) ? 1 : 0,
         applied: 0,
       };
     },
@@ -298,18 +309,25 @@ async function collectOrNothing<T>(what: string, collect: () => Promise<T[]>): P
   }
 }
 
+/**
+ * Tell whoever the conflict log still owes a notice and write the trails it lacks, under the cycle's lock. Never
+ * throws: a failure is counted, and the rows wait for the next cycle.
+ */
+async function settleConflictLog(): Promise<void> {
+  try {
+    const settled = await settleConflicts();
+    lastStats.conflictsPending = settled.pending;
+  } catch (err) {
+    console.error("[WikiAutoSync] Settling the conflict log failed:", errorMessage(err));
+    recordFailure("settling conflicts", err);
+  }
+}
+
 /** One cycle; the lock is held by the caller. Never throws: whatever fails is counted. */
 async function runCycle(limit: number): Promise<void> {
   lastStats.failures = 0;
   lastStats.lastError = null;
   try {
-    // A mirror account configured since parks went without a re-push: push those heads now.
-    const repushed = await repushSkippedParks();
-    if (repushed > 0) {
-      console.log(
-        `[WikiAutoSync] Pushed ${repushed} articles back to MediaWiki that were parked without a re-push.`
-      );
-    }
     const deadline = Date.now() + CYCLE_STEP_BUDGET_MS;
     const [rcMark, logMarkValue] = await Promise.all([
       readHighWater(RC_HWM_KEY),
@@ -347,6 +365,8 @@ async function runCycle(limit: number): Promise<void> {
     console.error("[WikiAutoSync] Cycle failed:", errorMessage(err));
     recordFailure("cycle", err);
   }
+  // after the steps, whatever they did: collisions recorded now (and earlier ones still open) are settled
+  await settleConflictLog();
   lastStats.lastRunAt = new Date();
   await writeStatus();
 }
@@ -386,19 +406,18 @@ const storedStatusSchema = z.object({
   lastRunAt: z.string(),
   failures: z.number(),
   lastError: z.string().nullable(),
+  // absent from a status written before the conflict log was settled
+  conflictsPending: z.number().default(0),
 });
 
 export interface InboundSyncStatus {
-  /**
-   * UNKNOWN: no cycle has run; STALE: none for an hour; DEGRADED: the last one had failures, or an
-   * edit was parked and WikiOS's text could not be pushed back (no mirror account configured).
-   */
+  /** UNKNOWN: no cycle has run; STALE: none for an hour; DEGRADED: the last one had failures. */
   status: "ACTIVE" | "DEGRADED" | "STALE" | "UNKNOWN";
   lastRunAt: string | null;
   failures: number;
   lastError: string | null;
-  /** Articles parked without a re-push because WIKIOS_MEDIAWIKI_BOT_USER is not set: MediaWiki holds an edit WikiOS keeps out. */
-  repushSkipped: string[];
+  /** Conflict-log rows the last cycle left unsettled: overwritten authors not told yet, or a trail not written. */
+  conflictsPending: number;
 }
 
 /** What the last cycle left behind. Best effort: the sync does not depend on its own telemetry. */
@@ -407,6 +426,7 @@ async function writeStatus(): Promise<void> {
     lastRunAt: lastStats.lastRunAt?.toISOString(),
     failures: lastStats.failures,
     lastError: lastStats.lastError,
+    conflictsPending: lastStats.conflictsPending,
   });
   try {
     await db.systemConfig.upsert({
@@ -425,13 +445,12 @@ export async function getInboundSyncStatus(now = new Date()): Promise<InboundSyn
     where: { key: STATUS_KEY },
     select: { value: true },
   });
-  const repushSkipped = await readRepushSkipped();
   const unknown: InboundSyncStatus = {
     status: "UNKNOWN",
     lastRunAt: null,
     failures: 0,
     lastError: null,
-    repushSkipped,
+    conflictsPending: 0,
   };
   if (!row) return unknown;
 
@@ -442,13 +461,12 @@ export async function getInboundSyncStatus(now = new Date()): Promise<InboundSyn
     return unknown;
   }
   const age = now.getTime() - new Date(stored.lastRunAt).getTime();
-  const degraded = stored.failures > 0 || repushSkipped.length > 0;
-  const status = age > STALE_AFTER_MS ? "STALE" : degraded ? "DEGRADED" : "ACTIVE";
+  const status = age > STALE_AFTER_MS ? "STALE" : stored.failures > 0 ? "DEGRADED" : "ACTIVE";
   return {
     status,
     lastRunAt: stored.lastRunAt,
     failures: stored.failures,
     lastError: stored.lastError,
-    repushSkipped,
+    conflictsPending: stored.conflictsPending,
   };
 }

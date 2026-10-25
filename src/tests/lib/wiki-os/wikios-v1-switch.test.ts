@@ -2,8 +2,8 @@
 /**
  * The WikiOS v1 cutover and the editing switch: until it is on, every page action and every write with no page check
  * of its own (rights, imports, bot passwords, api.php) is refused with MediaWiki's readonly code before anything is
- * read, the mirror applies no job and drains what is pending once it goes off, nothing renders in the background and no
- * parked revision is pushed back. The switch row is cached and kept when a read fails; only a configured mirror may
+ * read, the mirror applies no job and drains what is pending once it goes off, and nothing renders in the background.
+ * The switch row is cached and kept when a read fails; only a configured mirror may
  * turn it on, WIKIOS_V1_ENABLED forces it on and keeps it on, and every change is audited and its DM best effort.
  */
 jest.mock("~/server/db", () => ({
@@ -36,15 +36,30 @@ jest.mock("~/lib/wiki-os/services/staged-uploads", () => ({
 jest.mock("~/lib/discord/admin-dm", () => ({ sendAdminDm: jest.fn(async () => undefined) }));
 
 import { NextRequest } from "next/server";
-import { isWikiosV1Enabled, WIKIOS_PROTECTIONS_MARKER_KEY, WIKIOS_PROTECTIONS_REASON } from "~/lib/wiki-os/v1-switch";
+import {
+  isWikiosV1Enabled,
+  WIKIOS_PROTECTIONS_MARKER_KEY,
+  WIKIOS_PROTECTIONS_REASON,
+} from "~/lib/wiki-os/v1-switch";
 import { describeEachWikiosMode } from "~/tests/helpers/wikios-modes";
-import { assertWikiosWritable, decideAction, decideFilePageCreation, requireRight } from "~/lib/wiki-os/permissions";
+import {
+  assertWikiosWritable,
+  decideAction,
+  decideFilePageCreation,
+  requireRight,
+} from "~/lib/wiki-os/permissions";
 import { rightsForGroups, type WikiPermissions } from "~/lib/wiki-os/rights";
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
-import { __resetWikiosEditingCacheForTests, isWikiosEditingEnabled, isWikiosEditingForcedByEnv, refreshWikiosEditingFlag, WIKIOS_EDITING_KEY, wikiosProtectionsImported } from "~/lib/wiki-os/editing-switch";
+import {
+  __resetWikiosEditingCacheForTests,
+  isWikiosEditingEnabled,
+  isWikiosEditingForcedByEnv,
+  refreshWikiosEditingFlag,
+  WIKIOS_EDITING_KEY,
+  wikiosProtectionsImported,
+} from "~/lib/wiki-os/editing-switch";
 import { runMirrorCycle } from "~/lib/wiki-os/services/mirror-worker";
 import { renderStaleBatch } from "~/lib/wiki-os/services/render-service";
-import { repushSkippedParks } from "~/lib/wiki-os/services/inbound-revision-sync";
 import { NativeSearchService } from "~/lib/wiki-os/core/native-search-service";
 import { db } from "~/server/db";
 import type { SystemConfig } from "@prisma/client";
@@ -64,10 +79,8 @@ const markerRow = { value: JSON.stringify({ at: "2026-10-24T00:00:00.000Z", rest
 const isMarker = (args: { where: { key: string } }) =>
   args.where.key === WIKIOS_PROTECTIONS_MARKER_KEY;
 /** `findUnique` answering the marker row and `flag` for the editing switch row. */
-const answerRows =
-  (flag: { value: string } | null) =>
-  async (args: { where: { key: string } }) =>
-    isMarker(args) ? markerRow : flag;
+const answerRows = (flag: { value: string } | null) => async (args: { where: { key: string } }) =>
+  isMarker(args) ? markerRow : flag;
 
 let was: string | undefined;
 beforeEach(() => {
@@ -140,11 +153,6 @@ describe("off: the cron work that writes to MediaWiki or renders through it does
   it("the background render renders nothing", async () => {
     await expect(renderStaleBatch()).resolves.toEqual({ rendered: 0, failed: 0 });
     expect(db.wikiArticle.findMany).not.toHaveBeenCalled();
-  });
-
-  it("no parked revision is pushed back to MediaWiki", async () => {
-    await expect(repushSkippedParks()).resolves.toBe(0);
-    expect(db.systemConfig.findUnique).not.toHaveBeenCalled();
   });
 });
 
@@ -423,9 +431,10 @@ describe("switching editing on and off", () => {
 
     it("switches off a switch row left on while editing waits for the protections import", async () => {
       // the row says on, the marker is missing: editing waits, and would start by itself once the import runs
-      jest.mocked(db.systemConfig.findUnique).mockImplementation((async (args: {
-        where: { key: string };
-      }) => (isMarker(args) ? null : { value: "true" })) as never);
+      jest
+        .mocked(db.systemConfig.findUnique)
+        .mockImplementation((async (args: { where: { key: string } }) =>
+          isMarker(args) ? null : { value: "true" }) as never);
       await expect(getEditingStatus()).resolves.toMatchObject({
         enabled: false,
         switchOn: true,

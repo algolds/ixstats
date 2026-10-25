@@ -8,10 +8,11 @@
  * `/w/api.php`) and the outbound mirror (`wiki-mirror`) then follow the admin editing switch (editing-switch.ts):
  * refused with MediaWiki's `readonly` error and idle (after draining its queue) while that is off. The rest:
  *   - the background renders (`wiki-render-stale`) do nothing;
- *   - the inbound sync never parks a MediaWiki edit: MediaWiki's revision becomes WikiOS's head (the rule
- *     before v1), and no WikiOS text is ever pushed back to MediaWiki;
  *   - the lore-card generator reads IxWiki pages from MediaWiki, not from the tables renders fill.
  * On, WikiOS v1 runs as built: step 7a of docs/operations/wikios-v1-cutover.md turns it on.
+ *
+ * The inbound sync does not depend on it: a MediaWiki edit that collides with a WikiOS edit goes through the same
+ * conflict rule (services/conflict-rule.ts) in every mode, so a WikiOS edit is never silently overwritten.
  *
  * Read at call time, server-side only.
  */

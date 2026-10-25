@@ -2,8 +2,9 @@
 /**
  * Plan 339 Step 2 + plan 406: runAutoSyncCycle is the single recentchanges sync. It keeps a high-water mark in
  * SystemConfig, follows rccontinue, never advances past a failed page, and applies MediaWiki revisions one at a time,
- * oldest first, by the inbound rule (fast-forward, echo or park), which is first given as its own table of cases. The
- * incident regressions the stateful site can play are rows of the inbound-sync-mirror scenario; these are the rest.
+ * oldest first, by the inbound relation (echo, older, fast-forward or collision), which is given as its own table of
+ * cases, and settles the conflict log after its steps. Collisions themselves (the conflict rule) and the incident
+ * regressions the stateful site can play are rows of the inbound-sync-mirror scenario; these are the rest.
  */
 // The mirror's api.php and bot login come from `wikiosConfig`; this test sets their variables as it runs.
 const mockSystemConfigFindUnique = jest.fn();
@@ -60,6 +61,8 @@ jest.mock("~/lib/identity/claim-tags", () => ({
   tagRevisionsOfName: jest.fn().mockResolvedValue(0),
 }));
 jest.mock("~/lib/wiki-os/services/inbound-log-events", () => ({ applyLogEvent: jest.fn() }));
+// the settling itself is conflict-notices.test.ts's; the cycle only has to call it
+jest.mock("~/lib/wiki-os/services/conflict-notices", () => ({ settleConflicts: jest.fn() }));
 jest.mock("~/lib/wiki-os/services/title-cache-eviction", () => ({
   evictWikiTitleCaches: jest.fn().mockResolvedValue(undefined),
 }));
@@ -73,11 +76,12 @@ import {
 import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
 import { notificationAPI } from "~/lib/notifications/api";
 import { applyLogEvent } from "~/lib/wiki-os/services/inbound-log-events";
+import { settleConflicts } from "~/lib/wiki-os/services/conflict-notices";
 import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
 import {
   decideInbound,
-  type InboundDecision,
   type InboundHead,
+  type InboundRelation,
   type InboundRevision,
 } from "~/lib/wiki-os/services/inbound-decision";
 
@@ -99,6 +103,7 @@ const LOG_HWM_KEY = "wikiAutoSync.logHighWater";
 const importPageRevisions = jest.mocked(ArticleRepository.importPageRevisions);
 const notify = jest.mocked(notificationAPI.create);
 const applyEvent = jest.mocked(applyLogEvent);
+const settle = jest.mocked(settleConflicts);
 
 // ---------------------------------------------------------------------------
 // A fake MediaWiki: revisions by id, the newest revision of each title, a recent-changes queue
@@ -286,15 +291,14 @@ beforeEach(() => {
   mockSystemConfigFindUnique.mockResolvedValue(null);
   mockSystemConfigUpsert.mockResolvedValue({});
   applyEvent.mockResolvedValue("applied");
+  settle.mockResolvedValue({ notified: 0, trails: 0, pending: 0 });
   // withJobLock: a lease row (job_leases) taken by one upsert, which returns the holder when the lease was free.
   mockQueryRaw.mockImplementation(leaseFree);
   mockExecuteRaw.mockResolvedValue(0);
   mockJobCreate.mockResolvedValue({});
   mockTransaction.mockImplementation(async (callback: (tx: object) => unknown) =>
     callback({
-      // the park's own transaction: the parked revision and the re-push job are written together
       wikiRevision: { createMany: (...a: unknown[]) => mockRevisionCreateMany(...a) },
-      wikiMirrorJob: { create: (...a: unknown[]) => mockJobCreate(...a) },
     })
   );
   mockArticleFindUnique.mockImplementation(async ({ where }) =>
@@ -604,7 +608,7 @@ describe("log events in the cycle", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Fast-forward, echo, park (plan 406 A)
+// Fast-forward and echo (plan 406 A)
 // ---------------------------------------------------------------------------
 
 describe("fast-forward", () => {
@@ -701,80 +705,6 @@ describe("echo", () => {
     await runAutoSyncCycle();
 
     expect(mockRevisionCreateMany).not.toHaveBeenCalled();
-    expect(mockJobCreate).not.toHaveBeenCalled();
-    expect(notify).not.toHaveBeenCalled();
-  });
-});
-
-describe("park", () => {
-  // The mirror account is configured: a park pushes WikiOS's head back through it.
-  beforeEach(() => {
-    process.env.WIKIOS_MEDIAWIKI_BOT_USER = "Mirror@WikiOS";
-  });
-
-  const parkSetup = () => {
-    article = storedArticle();
-    head = storedHead(90);
-    rcResponses = [{ changes: [change("Foo", 95, 1)] }];
-    mwRevisions = new Map([
-      [92, { title: "Foo", revid: 92, parentid: 90, text: "Some other text." }],
-      [
-        95,
-        {
-          title: "Foo",
-          revid: 95,
-          parentid: 92,
-          user: "carol",
-          text: "A conflicting edit.",
-          comment: "mine",
-          timestamp: "2026-09-27T10:00:01Z",
-        },
-      ],
-    ]);
-  };
-  it("writes the parked revision and the re-push job in one transaction, the job after the revision", async () => {
-    parkSetup();
-    const order: string[] = [];
-    mockRevisionCreateMany.mockImplementation(async () => {
-      order.push("parked revision");
-      return { count: 1 };
-    });
-    mockJobCreate.mockImplementation(async () => void order.push("re-push job"));
-
-    await runAutoSyncCycle();
-
-    expect(order).toEqual(["parked revision", "re-push job"]);
-    // the park's own transaction (the cycle's lock is a lease row, not a transaction)
-    expect(mockTransaction).toHaveBeenCalledTimes(1);
-  });
-
-  it("does not park an edit whose re-push job could not be written: the cycle fails and will read it again", async () => {
-    parkSetup();
-    mockJobCreate.mockRejectedValue(new Error("outbox down"));
-    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
-
-    const stats = await runAutoSyncCycle();
-
-    expect(stats.failures).toBe(1);
-    expect(notify).not.toHaveBeenCalled();
-    consoleError.mockRestore();
-  });
-  it("does not push or notify again for a revision that is already parked (the cycle re-reads its last entry)", async () => {
-    parkSetup();
-    knownRevids = new Set([95]);
-
-    await runAutoSyncCycle();
-
-    expect(mockRevisionCreateMany).not.toHaveBeenCalled();
-    expect(mockJobCreate).not.toHaveBeenCalled();
-  });
-
-  it("does not push or notify when the parked revision was a duplicate insert", async () => {
-    parkSetup();
-    mockRevisionCreateMany.mockResolvedValue({ count: 0 });
-
-    await runAutoSyncCycle();
-
     expect(mockJobCreate).not.toHaveBeenCalled();
     expect(notify).not.toHaveBeenCalled();
   });
@@ -1063,12 +993,11 @@ describe("the sync status the telemetry reads", () => {
     }),
   });
   const now = new Date("2026-09-27T10:05:00Z");
-  /** SystemConfig answers the sync status under its key, and the skipped re-pushes under theirs. */
-  const stored = (status: { value: string } | null, skipped: string[] = []) =>
-    mockSystemConfigFindUnique.mockImplementation(async ({ where }) => {
-      if (where.key === "wikiAutoSync.status") return status;
-      return where.key === "wikiAutoSync.repushSkipped" ? { value: JSON.stringify(skipped) } : null;
-    });
+  /** SystemConfig answers the sync status under its key. */
+  const stored = (status: { value: string } | null) =>
+    mockSystemConfigFindUnique.mockImplementation(async ({ where }) =>
+      where.key === "wikiAutoSync.status" ? status : null
+    );
 
   it("each cycle leaves its outcome in SystemConfig", async () => {
     rcResponses = [{ changes: [change("A", 1, 1)] }];
@@ -1105,6 +1034,17 @@ describe("the sync status the telemetry reads", () => {
     stored({ value: JSON.stringify({ lastRunAt: 5 }) });
     await expect(getInboundSyncStatus(now)).resolves.toMatchObject({ status: "UNKNOWN" });
   });
+  it("carries the conflicts the last cycle left unsettled, none for a row written before it counted them", async () => {
+    stored(statusRow({ conflictsPending: 3 }));
+    await expect(getInboundSyncStatus(now)).resolves.toMatchObject({
+      status: "ACTIVE",
+      conflictsPending: 3,
+    });
+
+    stored(statusRow());
+    await expect(getInboundSyncStatus(now)).resolves.toMatchObject({ conflictsPending: 0 });
+  });
+
   it("is STALE when no cycle has run for an hour (the cron job is not running)", async () => {
     stored(statusRow());
 
@@ -1114,90 +1054,50 @@ describe("the sync status the telemetry reads", () => {
   });
 });
 
-describe("a park never loops: no re-push without a mirror account (plan 406 follow-up)", () => {
-  const SKIPPED_KEY = "wikiAutoSync.repushSkipped";
-  const parkOne = () => {
-    article = storedArticle();
-    head = storedHead(90);
-    rcResponses = [{ changes: [change("Foo", 95, 1)] }];
-    mwRevisions = new Map([
-      [92, { title: "Foo", revid: 92, parentid: 90, text: "Some other text." }],
-      [
-        95,
-        {
-          title: "Foo",
-          revid: 95,
-          parentid: 92,
-          user: "carol",
-          text: "A conflicting edit.",
-          timestamp: "2026-09-27T10:00:01Z",
-        },
-      ],
-    ]);
+describe("settling the conflict log", () => {
+  const deletion: FakeLogEvent = {
+    logid: 1,
+    type: "delete",
+    action: "delete",
+    title: "A",
+    timestamp: "2026-09-27T10:00:01Z",
   };
-  it("marks the article in the telemetry (SystemConfig), once however many times it is parked", async () => {
-    parkOne();
-    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
-    let skipped = JSON.stringify(["Other"]);
-    mockSystemConfigFindUnique.mockImplementation(async ({ where }) =>
-      where.key === SKIPPED_KEY ? { value: skipped } : null
-    );
-    mockSystemConfigUpsert.mockImplementation(async ({ where, update }) => {
-      if (where.key === SKIPPED_KEY) skipped = update.value;
-      return {};
+
+  it("the cycle settles conflicts after its steps, and keeps how many are left", async () => {
+    const order: string[] = [];
+    applyEvent.mockImplementation(async () => {
+      order.push("step");
+      return "applied";
     });
-
-    await runAutoSyncCycle();
-
-    expect(JSON.parse(skipped)).toEqual(["Other", "Foo"]);
-
-    parkOne();
-    await runAutoSyncCycle();
-    expect(JSON.parse(skipped)).toEqual(["Other", "Foo"]);
-    consoleError.mockRestore();
-  });
-
-  it("keeps at most the 50 newest titles", async () => {
-    parkOne();
-    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
-    let skipped = JSON.stringify(Array.from({ length: 50 }, (_, i) => `Page ${i}`));
-    mockSystemConfigFindUnique.mockImplementation(async ({ where }) =>
-      where.key === SKIPPED_KEY ? { value: skipped } : null
-    );
-    mockSystemConfigUpsert.mockImplementation(async ({ where, update }) => {
-      if (where.key === SKIPPED_KEY) skipped = update.value;
-      return {};
+    settle.mockImplementation(async () => {
+      order.push("settle");
+      return { notified: 1, trails: 0, pending: 2 };
     });
+    logResponses = [{ events: [deletion] }];
 
-    await runAutoSyncCycle();
+    const stats = await runAutoSyncCycle();
 
-    const titles: string[] = JSON.parse(skipped);
-    expect(titles).toHaveLength(50);
-    expect(titles.at(-1)).toBe("Foo");
-    expect(titles[0]).toBe("Page 1");
-    consoleError.mockRestore();
+    expect(order).toEqual(["step", "settle"]);
+    expect(stats).toMatchObject({ failures: 0, conflictsPending: 2 });
+    expect(JSON.parse(highWaterWritten("wikiAutoSync.status")!)).toMatchObject({
+      conflictsPending: 2,
+    });
   });
 
-  it("an unset or blank account name is no account", async () => {
-    parkOne();
-    process.env.WIKIOS_MEDIAWIKI_BOT_USER = "  @WikiOS";
+  it("settles after a cycle whose step failed, and counts a settling that fails without throwing", async () => {
     const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    applyEvent.mockRejectedValue(new Error("log down"));
+    settle.mockRejectedValue(new Error("conflicts down"));
+    logResponses = [{ events: [deletion] }];
 
-    await runAutoSyncCycle();
+    const stats = await runAutoSyncCycle();
 
-    expect(mockJobCreate).not.toHaveBeenCalled();
+    expect(settle).toHaveBeenCalledTimes(1);
+    expect(stats).toMatchObject({
+      failures: 2,
+      lastError: "settling conflicts: conflicts down",
+    });
     consoleError.mockRestore();
-  });
-  it("pushes nothing and keeps the list while no account is configured", async () => {
-    const skipped = JSON.stringify(["Foo"]);
-    mockSystemConfigFindUnique.mockImplementation(async ({ where }) =>
-      where.key === SKIPPED_KEY ? { value: skipped } : null
-    );
-
-    await runAutoSyncCycle();
-
-    expect(mockJobCreate).not.toHaveBeenCalled();
-    expect(highWaterWritten(SKIPPED_KEY)).toBeUndefined();
   });
 });
 
@@ -1334,7 +1234,7 @@ describe("the inbound rule", () => {
     head: InboundHead | null;
     rev: InboundRevision;
     parentSha1?: string | null;
-    expected: InboundDecision;
+    expected: InboundRelation;
   }
 
   const rows: Row[] = [
@@ -1388,7 +1288,7 @@ describe("the inbound rule", () => {
       expected: "fast-forward",
     },
     {
-      name: "the head is stamped with an older revision, but the parent has the head's text (a copy pushed back after a park)",
+      name: "the head is stamped with an older revision, but the parent has the head's text (the mirror pushed it again)",
       head: head({ mwRevId: 90 }),
       rev: rev({ parentid: 95 }),
       parentSha1: HEAD_SHA1,
@@ -1399,20 +1299,46 @@ describe("the inbound rule", () => {
       head: head({ mwRevId: null }),
       rev: rev({ parentid: 55 }),
       parentSha1: THIRD_SHA1,
-      expected: "park",
+      expected: "collision",
     },
     {
       name: "the parent is another revision and its hash was not fetched",
       head: head({ mwRevId: 90 }),
       rev: rev({ parentid: 95 }),
       parentSha1: null,
-      expected: "park",
+      expected: "collision",
+    },
+    {
+      name: "a revision older than the one WikiOS's head is stamped with (a replay after a newer one)",
+      head: head({ mwRevId: 100 }),
+      rev: rev({ revid: 99, parentid: 98 }),
+      expected: "older",
+    },
+    {
+      name: "an older revision whose parent is the head's own text is still older (never the head)",
+      head: head({ mwRevId: 100 }),
+      rev: rev({ revid: 99, parentid: 98 }),
+      parentSha1: HEAD_SHA1,
+      expected: "older",
+    },
+    {
+      name: "an older revision with the head's text is an echo, as any of WikiOS's own text",
+      head: head({ mwRevId: 100 }),
+      rev: rev({ revid: 99, parentid: 98, sha1: HEAD_SHA1 }),
+      expected: "echo",
+    },
+    {
+      name: "a head with no MediaWiki stamp has nothing to be older than",
+      head: head({ mwRevId: null }),
+      rev: rev({ revid: 3, parentid: 2 }),
+      parentSha1: THIRD_SHA1,
+      expected: "collision",
     },
     {
       name: "a page created in MediaWiki while WikiOS already has one with other text",
       head: head({ mwRevId: null }),
       rev: rev({ parentid: 0 }),
-      expected: "park",
+      expected: "collision",
     },
   ];
 
@@ -1423,7 +1349,7 @@ describe("the inbound rule", () => {
 
     it("covers every decision", () => {
       expect(new Set(rows.map((row) => row.expected))).toEqual(
-        new Set(["echo", "fast-forward", "park"])
+        new Set(["echo", "older", "fast-forward", "collision"])
       );
       expect(rows.length).toBeGreaterThanOrEqual(8);
     });

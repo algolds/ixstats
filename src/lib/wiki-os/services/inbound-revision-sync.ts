@@ -1,25 +1,27 @@
 /**
  * inbound-revision-sync.ts — import one MediaWiki revision into WikiOS, revision-exact.
  *
- * The inbound rule (plan 406, "fast-forward or park"): a revision whose parent is WikiOS's head is
- * imported as a normal revision (through `ArticleRepository.importPageRevisions`, the same write the
- * XML importer makes); a revision that is WikiOS's own text coming back is an echo (it only gives the
- * head its MediaWiki id); anything else is parked: stored in the page's history as a non-current
- * revision, WikiOS's head pushed back to MediaWiki, and the editor notified when we know who they are.
- * Every stored revision is written with no WikiOS author; the approved name claim of its MediaWiki
- * editor then tags it (claim-tags.ts), so a revoked claim takes back exactly what it gave.
- * `decideInbound` is the pure rule; this file reads and writes around it.
+ * How the revision relates to WikiOS's head (`decideInbound`, pure) decides what is written:
+ *   - echo: WikiOS's own text coming back; it only gives the head its MediaWiki id;
+ *   - older: a revision older than the head's own MediaWiki revision (a replay after a newer one): stored as history,
+ *     dated at its own time and never the head;
+ *   - fast-forward: made on top of WikiOS's head: imported as the page's next revision (through
+ *     `ArticleRepository.importPageRevisions`, the same write the XML importer makes);
+ *   - collision: both wikis changed the page from the same base, and the conflict rule (`decideCollision`) judges the
+ *     two saves by time: a classic edit that won becomes the head; one that lost is kept as an overwritten revision
+ *     (history only). Either way the collision gets its conflict-log row, and the settling (conflict-notices.ts) tells
+ *     whoever was overwritten. Nothing is pushed back to MediaWiki from here.
+ * Every stored revision is written with no WikiOS author; the approved name claim of its MediaWiki editor then tags it
+ * (claim-tags.ts), so a revoked claim takes back exactly what it gave.
  *
- * Callers hold the inbound-sync lock (auto-sync-service.ts): revisions of a page must be applied one
- * at a time, oldest first.
+ * Callers hold the inbound-sync lock (auto-sync-service.ts): revisions of a page must be applied one at a time,
+ * oldest first.
  */
 
-import { z } from "zod";
 import { db } from "~/server/db";
-import { notificationAPI } from "~/lib/notifications/api";
 import { tagRevisionsOfName } from "~/lib/identity/claim-tags";
 import { ownerOfName } from "~/lib/identity/wiki-names";
-import { isMirrorAccount, mirrorBotName } from "../adapters/mediawiki/csrf-cache";
+import { isMirrorAccount } from "../adapters/mediawiki/csrf-cache";
 import { ArticleRepository } from "../core/article-repository";
 import type { ImportedHead, ImportPageInput } from "../core/article-import";
 import { toRevisionRef } from "../core/domain-types";
@@ -29,12 +31,19 @@ import { canonicalizeTitle, storedNamespace, type CanonicalTitle } from "../core
 import { extractLeadImagePath } from "../transformers/image-url";
 import { cleanWikitextExcerpt } from "../transformers/wikitext-parser";
 import { mwSha1Base36 } from "../xml/sha1";
-import { enqueueRevisionJob, type RevisionJobInput } from "./mirror-outbox";
+import { decideCollision, type CollisionVerdict } from "./conflict-rule";
+import { recordConflict } from "./conflict-log";
+import {
+  classicChangeOfRevision,
+  wikiosBranchSince,
+  wikiosDeletion,
+  wikiosHead,
+} from "./conflict-sides";
 import {
   decideInbound,
   matchesHead,
-  type InboundDecision,
   type InboundHead,
+  type InboundRelation,
 } from "./inbound-decision";
 import {
   fetchLatestRevision,
@@ -43,7 +52,6 @@ import {
   plainTitle,
   type MediaWikiRevision,
 } from "./inbound-mediawiki";
-import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
 
 const SOURCE = "ixwiki";
 const SUMMARY_COLUMN_LIMIT = 480;
@@ -54,10 +62,12 @@ const DELETED_AUTHOR = "(deleted)";
 /**
  * What came of one revision:
  *   known: WikiOS already has it;  skipped: nothing to import (revision or page gone, text hidden, title MediaWiki
- *   would refuse);  echo: WikiOS's own text coming back;  fast-forward: imported as the page's new head;
- *   parked: stored as a conflict;  deferred: would be parked, and the caller leaves that to the ordered cycle.
+ *   would refuse);  echo: WikiOS's own text coming back;  older: stored as history (a revision older than the head's);
+ *   fast-forward: imported as the page's new head;  won: a collision the classic edit won, imported as the head;
+ *   overwritten: a collision it lost, kept as history only;  deferred: a collision, left to the ordered cycle.
  */
-export type RevisionOutcome = "known" | "skipped" | "echo" | "fast-forward" | "parked" | "deferred";
+export type RevisionOutcome =
+  "known" | "skipped" | "echo" | "older" | "fast-forward" | "won" | "overwritten" | "deferred";
 
 /**
  * Forget what every cache holds about `title` (a page that came back, was renamed or deleted). Loaded on
@@ -141,7 +151,7 @@ const HEAD_SELECT = {
   createdAt: true,
 } as const;
 
-/** The page's current revision: the newest one that is not parked. */
+/** The page's current revision: the newest one that is not parked (overwritten). */
 function loadHeadRevision(articleId: string): Promise<HeadRevision | null> {
   return db.wikiRevision.findFirst({
     where: { articleId, parked: false },
@@ -165,8 +175,8 @@ function toInboundHead(article: StoredArticle, headRev: HeadRevision | null): In
 const BASELINE_SUMMARY = "The page's text before its first recorded revision";
 
 /**
- * Give a page that has text but no revision row one, holding that text, so that overwriting or parking
- * against it loses nothing: the page's history starts with what WikiOS had. `mwRevId` stamps it when the
+ * Give a page that has text but no revision row one, holding that text, so that overwriting it or judging a
+ * collision against it loses nothing: the page's history starts with what WikiOS had. `mwRevId` stamps it when the
  * MediaWiki revision that came in IS that text.
  */
 async function insertBaselineRevision(
@@ -257,9 +267,7 @@ async function insertEchoRevision(
   rev: MediaWikiRevision
 ): Promise<void> {
   const byteSize = Buffer.byteLength(rev.wikitext, "utf8");
-  const createdAt = headRev
-    ? new Date(Math.min(rev.timestamp.getTime(), headRev.createdAt.getTime() - 1))
-    : rev.timestamp;
+  const createdAt = beforeHead(rev.timestamp, headRev);
   await db.wikiRevision.createMany({
     data: [
       {
@@ -288,7 +296,7 @@ async function insertEchoRevision(
 }
 
 // ---------------------------------------------------------------------------
-// Fast-forward: import the revision through the importer's write
+// Importing: the importer's write, as the head or as history
 // ---------------------------------------------------------------------------
 
 /** The page's head columns for `wikitext`, derived exactly as a save derives them. */
@@ -333,17 +341,24 @@ function laterThan(time: Date, parentTime: Date | undefined): Date {
     : time;
 }
 
-async function fastForward(
-  rev: MediaWikiRevision,
-  canon: CanonicalTitle,
-  article: StoredArticle | null,
-  headRev: HeadRevision | null
-): Promise<RevisionOutcome> {
-  const createdAt = laterThan(rev.timestamp, headRev?.createdAt);
+/** What one inbound revision meets in WikiOS. */
+interface PageState {
+  rev: MediaWikiRevision;
+  canon: CanonicalTitle;
+  article: StoredArticle | null;
+  headRev: HeadRevision | null;
+  head: InboundHead | null;
+  /** `rev_sha1` of the revision's parent, when the decision had to fetch it. */
+  parentSha1: string | null;
+}
+
+/** The importer's input for `rev`, dated `createdAt`; `head` null stores it as history and leaves the head alone. */
+function importInput(page: PageState, createdAt: Date, head: ImportedHead | null): ImportPageInput {
+  const { rev, canon, article, headRev } = page;
   const byteSize = Buffer.byteLength(rev.wikitext, "utf8");
   // A page created anew has no earlier size to be measured against.
   const previousSize = article?.status === "ARCHIVED" ? 0 : (headRev?.byteSize ?? 0);
-  const input: ImportPageInput = {
+  return {
     source: SOURCE,
     ...identityOf(article, canon, rev),
     mwPageId: rev.pageId,
@@ -366,43 +381,108 @@ async function fastForward(
         wikitext: rev.wikitext,
       },
     ],
-    head: buildHead(rev, createdAt),
+    head,
     // watchlist: importPageRevisions tells the page's watchers (once each until they visit) that its head
     // moved, leaving the editor out; the previous head's reference makes their notification a diff link.
     previousRef: headRev ? toRevisionRef(headRev) : null,
     dryRun: false,
   };
+}
 
+/** Import `rev` as the page's new head, counting at `at` (never before the head it replaces). */
+async function importAsHead(page: PageState, at: Date): Promise<boolean> {
+  const { rev, article, headRev } = page;
+  const createdAt = laterThan(at, headRev?.createdAt);
+  const input = importInput(page, createdAt, buildHead(rev, createdAt));
   const result = await ArticleRepository.importPageRevisions(input);
   await tagEditor(rev);
-  if (result.inserted === 0 && !result.headUpdated) return "known";
+  if (result.inserted === 0 && !result.headUpdated) return false;
   if (article?.status === "ARCHIVED") await restoreRecreatedPage(article);
   // The page has new text: the caches that serve its intro and wikitext must not keep the old one.
   await evictCaches(input.title, article?.id);
-  return "fast-forward";
+  return true;
 }
 
-/** A page deleted in WikiOS and created again in MediaWiki is back. */
+/** A page deleted in WikiOS and created again (or edited later) in MediaWiki is back. */
 async function restoreRecreatedPage(article: StoredArticle): Promise<void> {
   await db.wikiArticle.update({ where: { id: article.id }, data: { status: "PUBLISHED" } });
 }
 
+/** `time`, or just before the head when `time` is not before it: a history entry never sorts as the head. */
+function beforeHead(time: Date, headRev: HeadRevision | null): Date {
+  return headRev ? new Date(Math.min(time.getTime(), headRev.createdAt.getTime() - 1)) : time;
+}
+
+/** An older revision: stored at its own time, as history (never the head, and the head is left as it is). */
+async function applyOlder(page: PageState): Promise<RevisionOutcome> {
+  const input = importInput(page, beforeHead(page.rev.timestamp, page.headRev), null);
+  const result = await ArticleRepository.importPageRevisions(input);
+  await tagEditor(page.rev);
+  return result.inserted === 0 ? "known" : "older";
+}
+
 // ---------------------------------------------------------------------------
-// Park: keep the edit, push WikiOS's head back, tell the editor
+// Collisions: the conflict rule judges the two saves
 // ---------------------------------------------------------------------------
 
+/** The revision the classic edit started from, as the conflict log names a base; null for a page it created. */
+function baseRefOf(rev: MediaWikiRevision): string | null {
+  return rev.parentid > 0 ? String(rev.parentid) : null;
+}
+
 /**
- * Insert the revision as parked, or return false when WikiOS already has it. The re-push of WikiOS's head
- * (`repush`, a mirror job that pushes the head again, dated now) is inserted in the same transaction: a
- * committed park always has it.
+ * The rule's verdict on the classic edit against what WikiOS holds: its head and the revisions since the edit's base,
+ * or, for a page WikiOS deleted, that delete. Null when WikiOS holds nothing to judge against.
  */
-async function insertParked(
-  rev: MediaWikiRevision,
+async function judge(
+  page: PageState,
   article: StoredArticle,
-  headRev: HeadRevision | null,
-  reason: string,
-  repush: RevisionJobInput | null
-): Promise<boolean> {
+  effectiveAt: Date | undefined
+): Promise<CollisionVerdict | null> {
+  const deletion = article.status === "ARCHIVED" ? await wikiosDeletion(article.id) : null;
+  const standing = deletion ?? (await wikiosHead(article.id));
+  if (!standing) return null;
+  const incoming = await classicChangeOfRevision(page.rev, effectiveAt);
+  const standingBranch = deletion
+    ? [deletion]
+    : await wikiosBranchSince(article.id, page.rev.parentid, page.parentSha1);
+  return decideCollision(SOURCE, article.id, {
+    incoming,
+    standing,
+    incomingBranch: [incoming],
+    standingBranch,
+  });
+}
+
+/**
+ * The classic edit won: the collision is recorded first (a retry after a failed import finds the same row by its
+ * key), then the edit becomes the page's head, bringing back a page WikiOS had deleted.
+ */
+async function importWinner(
+  page: PageState,
+  article: StoredArticle,
+  verdict: CollisionVerdict
+): Promise<RevisionOutcome> {
+  await recordConflict(db, {
+    source: SOURCE,
+    articleId: article.id,
+    title: article.title,
+    verdict,
+    baseRef: baseRefOf(page.rev),
+  });
+  return (await importAsHead(page, verdict.winner.at)) ? "won" : "known";
+}
+
+/**
+ * The classic edit lost: kept in the page's history as overwritten (never the head) together with its conflict row,
+ * in one transaction. Nothing is queued for MediaWiki: the winner reaches it through its own mirror job.
+ */
+async function keepOverwritten(
+  page: PageState,
+  article: StoredArticle,
+  verdict: CollisionVerdict
+): Promise<RevisionOutcome> {
+  const { rev, headRev } = page;
   const byteSize = Buffer.byteLength(rev.wikitext, "utf8");
   const inserted = await db.$transaction(async (tx) => {
     const { count } = await tx.wikiRevision.createMany({
@@ -423,178 +503,59 @@ async function insertParked(
           createdAt: rev.timestamp,
           wikitext: rev.wikitext,
           format: "WIKITEXT",
-          // A parked revision is never a live one's parent; it records the head it did not fit on.
+          // An overwritten revision is never a live one's parent; it records the head it did not fit on.
           parentRevisionId: headRev?.id ?? null,
           parked: true,
-          parkReason: reason,
+          parkReason: `overwritten:${verdict.winner.ref}`,
         },
       ],
       skipDuplicates: true,
     });
-    if (count > 0 && repush) await enqueueRevisionJob(tx, repush);
+    if (count > 0) {
+      await recordConflict(tx, {
+        source: SOURCE,
+        articleId: article.id,
+        title: article.title,
+        verdict,
+        baseRef: baseRefOf(rev),
+      });
+    }
     return count > 0;
   });
   await tagEditor(rev);
-  return inserted;
-}
-
-/** Tell the account holding the MediaWiki name's approved claim that their edit did not go live. */
-async function notifyParkedEditor(
-  rev: MediaWikiRevision,
-  canon: CanonicalTitle,
-  headRef: string
-): Promise<void> {
-  const userId = await claimedWikiUserId(rev.user);
-  if (!userId) return;
-  await notificationAPI.create({
-    userId,
-    title: "Your MediaWiki edit was not applied",
-    message:
-      `Your edit to "${canon.title}" (revision ${rev.revid}) was not made on the current WikiOS revision. ` +
-      "It was kept in the page history as a conflict, and WikiOS's current text was restored in MediaWiki.",
-    // The reader's own diff view (plan 412): this edit against the head it conflicted with.
-    href: `/wiki/${canon.urlPath}?diff=${rev.revid}&oldid=${headRef}`,
-    category: "wiki",
-    type: "warning",
-    source: "wikiSync",
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Re-pushes the mirror cannot make (no mirror account configured)
-// ---------------------------------------------------------------------------
-
-/** SystemConfig key: the titles of articles whose park was not followed by a re-push, for the telemetry. */
-const REPUSH_SKIPPED_KEY = "wikiAutoSync.repushSkipped";
-const MAX_REPUSH_SKIPPED = 50;
-const titleListSchema = z.array(z.string());
-
-/**
- * Titles of parked articles whose WikiOS head was NOT pushed back to MediaWiki because no mirror account
- * is configured. Without one the push would come back as an edit by an unknown account that the sync
- * cannot tell from a human's: a conflict again, pushed again, forever. The inbound sync status reports
- * the list, so the missing configuration is seen.
- */
-export async function readRepushSkipped(): Promise<string[]> {
-  const row = await db.systemConfig.findUnique({
-    where: { key: REPUSH_SKIPPED_KEY },
-    select: { value: true },
-  });
-  if (!row) return [];
-  try {
-    return titleListSchema.parse(JSON.parse(row.value));
-  } catch {
-    return [];
-  }
-}
-
-async function writeRepushSkipped(titles: string[]): Promise<void> {
-  const value = JSON.stringify(titles);
-  await db.systemConfig.upsert({
-    where: { key: REPUSH_SKIPPED_KEY },
-    create: { key: REPUSH_SKIPPED_KEY, value },
-    update: { value },
-  });
-}
-
-async function markRepushSkipped(title: string): Promise<void> {
-  const titles = await readRepushSkipped();
-  if (!titles.includes(title))
-    await writeRepushSkipped([...titles, title].slice(-MAX_REPUSH_SKIPPED));
-}
-
-/**
- * Once a mirror account is configured, push the head of every article that was parked without a
- * re-push, and clear the list. Resolves to the number of articles pushed.
- */
-export async function repushSkippedParks(): Promise<number> {
-  if (mirrorBotName() === null || !isWikiosV1Enabled()) return 0;
-  const titles = await readRepushSkipped();
-  if (titles.length === 0) return 0;
-
-  let pushed = 0;
-  for (const title of titles) {
-    const article = await db.wikiArticle.findUnique({
-      where: { source_title: { source: SOURCE, title } },
-      select: { id: true, title: true, status: true },
-    });
-    if (!article || article.status === "ARCHIVED") continue;
-    const headRev = await loadHeadRevision(article.id);
-    if (!headRev) continue;
-    await enqueueRevisionJob(db, {
-      title: article.title,
-      articleId: article.id,
-      revisionId: headRev.id,
-      restore: {
-        summary: "Restoring the current WikiOS revision (an edit made here conflicted with it)",
-      },
-    });
-    pushed++;
-  }
-  await writeRepushSkipped([]);
-  return pushed;
-}
-
-/** What a park does after the revision is stored. Best effort: the park itself already happened. */
-async function afterPark(
-  rev: MediaWikiRevision,
-  canon: CanonicalTitle,
-  article: StoredArticle,
-  headRef: string
-): Promise<void> {
-  if (mirrorBotName() === null) {
-    // Never push without a mirror account: its edit could not be told from a human's and would be parked
-    // and pushed again, one edit per cycle, for as long as the page is left alone.
-    console.error(
-      `[WikiAutoSync] WIKIOS_MEDIAWIKI_BOT_USER is not set: the edit ${rev.revid} to "${article.title}" was parked, but WikiOS's text was NOT pushed back to MediaWiki.`
-    );
-    await markRepushSkipped(article.title).catch((error) =>
-      console.warn("[WikiAutoSync] Could not record the skipped re-push:", error)
-    );
-  }
-  try {
-    await notifyParkedEditor(rev, canon, headRef);
-  } catch (error) {
-    console.warn(`[WikiAutoSync] Notifying the editor of a parked edit failed:`, error);
-  }
-}
-
-async function parkRevision(
-  rev: MediaWikiRevision,
-  canon: CanonicalTitle,
-  article: StoredArticle,
-  headRev: HeadRevision | null
-): Promise<RevisionOutcome> {
-  const deleted = article.status === "ARCHIVED";
-  const headRef = headRev ? toRevisionRef(headRev) : "none";
-  // A page WikiOS deleted has no head to push back (that would bring it back to life in MediaWiki), and
-  // without a mirror account the push is held back (afterPark records it).
-  const repush: RevisionJobInput | null =
-    !deleted && headRev && mirrorBotName() !== null
-      ? {
-          title: article.title,
-          articleId: article.id,
-          revisionId: headRev.id,
-          restore: {
-            summary: `Restoring WikiOS revision ${headRef}; your edit (rev ${rev.revid}) was kept in WikiOS history as a conflict`,
-          },
-        }
-      : null;
-  const reason = deleted ? "conflict:deleted" : `conflict:${headRef}`;
-  if (!(await insertParked(rev, article, headRev, reason, repush))) return "known";
-  if (!deleted) await afterPark(rev, canon, article, headRef);
-  return "parked";
+  return inserted ? "overwritten" : "known";
 }
 
 // ---------------------------------------------------------------------------
 // The decision around one revision
 // ---------------------------------------------------------------------------
 
-/** What MediaWiki's page was when the edit was made, as far as the inbound rule can tell. */
-async function decideFor(
+interface ApplyOptions {
+  /** false: a collision is left to the ordered cycle (the webhook and the reader never judge one). */
+  judgeCollisions: boolean;
+  /** When the revision counts, if not at its own save time (a restore that brought it back). */
+  effectiveAt?: Date;
+}
+
+/**
+ * How the revision relates to a page WikiOS deleted: the mirror's own edit is an echo, an older one history, and a
+ * page MediaWiki creates anew comes back; any other edit meets the delete.
+ */
+function relationOnDeleted(rev: MediaWikiRevision, head: InboundHead | null): InboundRelation {
+  if (isMirrorUser(rev.user)) return "echo";
+  if (head && head.mwRevId !== null && rev.revid < head.mwRevId) return "older";
+  return rev.parentid === 0 ? "fast-forward" : "collision";
+}
+
+/** What MediaWiki's page was when the edit was made, as far as the inbound rule can tell; with the parent's hash when fetched. */
+async function relationFor(
   rev: MediaWikiRevision,
+  article: StoredArticle | null,
   head: InboundHead | null
-): Promise<InboundDecision> {
+): Promise<{ relation: InboundRelation; parentSha1: string | null }> {
+  if (article?.status === "ARCHIVED") {
+    return { relation: relationOnDeleted(rev, head), parentSha1: null };
+  }
   const input = {
     head,
     rev: {
@@ -605,21 +566,59 @@ async function decideFor(
     },
     parentSha1: null,
   };
-  const first = decideInbound(input);
-  // The parent's hash is only worth a request when the cheap checks would park the edit.
-  if (first !== "park" || rev.parentid <= 0) return first;
-  return decideInbound({ ...input, parentSha1: await fetchRevisionSha1(rev.parentid) });
+  const relation = decideInbound(input);
+  // The parent's hash is only worth a request when the cheap checks find a collision.
+  if (relation !== "collision" || rev.parentid <= 0) return { relation, parentSha1: null };
+  const parentSha1 = await fetchRevisionSha1(rev.parentid);
+  return { relation: decideInbound({ ...input, parentSha1 }), parentSha1 };
 }
 
-interface ApplyOptions {
-  /** false: a conflict is left to the ordered cycle (the webhook and the reader never park). */
-  parkConflicts: boolean;
+/**
+ * The page's text is about to be overwritten, or judged against: a page that has text but no revision row first gets
+ * one holding that text, so nothing is lost.
+ */
+async function withBaseline(page: PageState): Promise<PageState> {
+  if (!page.article || !page.head || page.headRev) return page;
+  return { ...page, headRev: await insertBaselineRevision(page.article, null) };
 }
+
+async function applyCollision(page: PageState, options: ApplyOptions): Promise<RevisionOutcome> {
+  const { article } = page;
+  if (!options.judgeCollisions || !article) return "deferred";
+  const based = await withBaseline(page);
+  const verdict = await judge(based, article, options.effectiveAt);
+  // Nothing in WikiOS to judge against (a deleted page with no revision and no delete of its own): MediaWiki's stands.
+  if (!verdict) return applyFastForward(based, options);
+  return verdict.incomingWins
+    ? importWinner(based, article, verdict)
+    : keepOverwritten(based, article, verdict);
+}
+
+async function applyFastForward(page: PageState, options: ApplyOptions): Promise<RevisionOutcome> {
+  const based = await withBaseline(page);
+  const imported = await importAsHead(based, options.effectiveAt ?? page.rev.timestamp);
+  return imported ? "fast-forward" : "known";
+}
+
+async function applyEcho(page: PageState): Promise<RevisionOutcome> {
+  if (page.article && page.head) await recordEcho(page.article, page.head, page.headRev, page.rev);
+  return "echo";
+}
+
+const APPLY: Record<
+  InboundRelation,
+  (page: PageState, options: ApplyOptions) => Promise<RevisionOutcome>
+> = {
+  echo: applyEcho,
+  older: applyOlder,
+  "fast-forward": applyFastForward,
+  collision: applyCollision,
+};
 
 /** Apply a fetched revision that WikiOS does not have yet. */
 async function applyRevision(
   rev: MediaWikiRevision,
-  { parkConflicts }: ApplyOptions
+  options: ApplyOptions
 ): Promise<RevisionOutcome> {
   const canon = canonicalizeTitle(rev.title);
   if (!canon) {
@@ -630,36 +629,10 @@ async function applyRevision(
   }
 
   const article = await findStoredArticle(rev, canon);
-  let headRev = article ? await loadHeadRevision(article.id) : null;
+  const headRev = article ? await loadHeadRevision(article.id) : null;
   const head = article ? toInboundHead(article, headRev) : null;
-
-  // A page WikiOS deleted comes back only when MediaWiki creates it anew; an edit of the old page is a conflict.
-  const deletedHere = article?.status === "ARCHIVED";
-  const decided = deletedHere
-    ? rev.parentid === 0
-      ? "fast-forward"
-      : "park"
-    : await decideFor(rev, head);
-  // Before the cutover classic MediaWiki is the wiki of record (WikiOS takes no edits, v1-switch.ts): its
-  // revision becomes WikiOS's head, as before WikiOS v1, and nothing is parked or pushed back.
-  const decision =
-    decided === "park" && !deletedHere && !isWikiosV1Enabled() ? "fast-forward" : decided;
-
-  if (decision === "echo") {
-    if (article && head) await recordEcho(article, head, headRev, rev);
-    return "echo";
-  }
-  // The page's text is about to be overwritten, or an edit parked against it: a page that has text but
-  // no revision row first gets one holding that text, so nothing is lost.
-  const needsBaseline = article !== null && head !== null && headRev === null;
-  if (decision === "fast-forward") {
-    if (article && needsBaseline) headRev = await insertBaselineRevision(article, null);
-    return fastForward(rev, canon, article, headRev);
-  }
-  if (!parkConflicts || !article) return "deferred";
-  // A page WikiOS deleted has no head to hold anything against (and none is pushed back).
-  if (needsBaseline && !deletedHere) headRev = await insertBaselineRevision(article, null);
-  return parkRevision(rev, canon, article, headRev);
+  const { relation, parentSha1 } = await relationFor(rev, article, head);
+  return APPLY[relation]({ rev, canon, article, headRev, head, parentSha1 }, options);
 }
 
 /** Import MediaWiki revision `revid` (a recent-changes entry), unless WikiOS already has it. */
@@ -667,17 +640,21 @@ export async function syncRevisionById(revid: number): Promise<RevisionOutcome> 
   if (await isRevisionKnown(revid)) return "known";
   const rev = await fetchRevision(revid);
   if (!rev) return "skipped";
-  return applyRevision(rev, { parkConflicts: true });
+  return applyRevision(rev, { judgeCollisions: true });
 }
 
 /**
- * Import the newest revision of a page (the webhook, the reader's import of a missing page). Never
- * parks: a conflict, or a revision whose parent WikiOS has not seen, is left to the cycle, which applies
- * revisions oldest first and can tell the two apart.
+ * Import the newest revision of a page (the webhook, the reader's import of a missing page, a restore). Never judges
+ * a collision: that, or a revision whose parent WikiOS has not seen, is left to the cycle, which applies revisions
+ * oldest first and can tell the two apart. `effectiveAt`: when the revision counts (a restore's time), if not at its
+ * own save time.
  */
-export async function syncLatestRevision(title: string): Promise<RevisionOutcome> {
+export async function syncLatestRevision(
+  title: string,
+  options: { effectiveAt?: Date } = {}
+): Promise<RevisionOutcome> {
   const rev = await fetchLatestRevision(plainTitle(title));
   if (!rev) return "skipped";
   if (await isRevisionKnown(rev.revid)) return "known";
-  return applyRevision(rev, { parkConflicts: false });
+  return applyRevision(rev, { judgeCollisions: false, effectiveAt: options.effectiveAt });
 }

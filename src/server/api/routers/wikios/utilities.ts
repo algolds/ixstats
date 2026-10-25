@@ -101,7 +101,7 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
           lastRunAt: null,
           failures: 0,
           lastError: null,
-          repushSkipped: [],
+          conflictsPending: 0,
         })),
       ]);
 

@@ -533,7 +533,7 @@ describeEachWikiosMode("settleConflicts", () => {
     warn.mockRestore();
   });
 
-  it("a classic winner that never reaches WikiOS is given up a day after the collision", async () => {
+  it("a classic winner that never reaches WikiOS is given up a day after the first settle attempt", async () => {
     const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
     seedCaphiria();
     const winner = site.editAs("Founder", "Caphiria", "Caphiria is an empire.");
@@ -543,11 +543,35 @@ describeEachWikiosMode("settleConflicts", () => {
     expect(await settleConflicts()).toEqual({ notified: 0, trails: 0, pending: 1 });
     expect(conflictRow(id).settledAt).toBeNull();
 
-    conflictRow(id).createdAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    conflictRow(id).firstSettleAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
 
     expect(await settleConflicts()).toEqual({ notified: 0, trails: 0, pending: 0 });
     expect(conflictRow(id).settledAt).toBeInstanceOf(Date);
     expect(revisionsOf("Caphiria")).toHaveLength(1);
+    warn.mockRestore();
+  });
+
+  it("a row first settled late still gets 24 h before giving up its trail", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    seedCaphiria();
+    const winner = site.editAs("Founder", "Caphiria", "Caphiria is an empire.");
+    const id = await collide(change("classic", String(winner.revid), author({})), [
+      change("wikios", "wk-gone", author({ label: "Community Contributor" })),
+    ]);
+    // the settling first reaches the row two days after the collision (the sync was down meanwhile)
+    conflictRow(id).createdAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+
+    expect(await settleConflicts()).toEqual({ notified: 0, trails: 0, pending: 1 });
+    const first = conflictRow(id).firstSettleAt as Date;
+    expect(first).toBeInstanceOf(Date);
+    expect(conflictRow(id).settledAt).toBeNull();
+    // a later run keeps the first attempt's time and still waits
+    expect(await settleConflicts()).toEqual({ notified: 0, trails: 0, pending: 1 });
+    expect(conflictRow(id).firstSettleAt).toEqual(first);
+
+    conflictRow(id).firstSettleAt = new Date(Date.now() - 25 * 60 * 60 * 1000);
+    expect(await settleConflicts()).toEqual({ notified: 0, trails: 0, pending: 0 });
+    expect(conflictRow(id).settledAt).toBeInstanceOf(Date);
     warn.mockRestore();
   });
 

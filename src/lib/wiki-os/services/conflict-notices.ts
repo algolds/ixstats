@@ -41,7 +41,10 @@ const SOURCE = "ixwiki";
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** A DM that fails is tried again by later runs for this long after the collision, then given up (in-app stands). */
 const DM_RETRY_WINDOW_MS = DAY_MS;
-/** A trail that cannot be written (its winner not in WikiOS yet, an error) is tried again for this long, then given up. */
+/**
+ * A trail that cannot be written (its winner not in WikiOS yet, an error) is tried again for this long after the row's
+ * first settle attempt, then given up: a sync that was down meanwhile does not eat the window.
+ */
 const TRAIL_RETRY_WINDOW_MS = DAY_MS;
 /** A link to a page of these namespaces needs a leading colon, or it files the talk page in a category or shows a file. */
 const COLON_NAMESPACES = new Set([6, 14]);
@@ -62,18 +65,21 @@ export interface SettleResult {
 /** What every notice of one conflict says. */
 interface NoticeContext {
   entry: ConflictLogEntry;
+  /** When the settling first tried this row. */
+  firstAttemptAt: Date;
   /** The wiki the winner was saved on. */
   wiki: string;
   urlPath: string;
   pageLink: string;
 }
 
-function contextOf(row: ConflictRow): NoticeContext {
+function contextOf(row: ConflictRow, firstAttemptAt: Date): NoticeContext {
   const entry = toConflictEntry(row);
   const canon = canonicalizeTitle(entry.title, { source: entry.source });
   const colon = canon && COLON_NAMESPACES.has(canon.namespaceId) ? ":" : "";
   return {
     entry,
+    firstAttemptAt,
     wiki: wikiName(entry.winner.side),
     urlPath: canon?.urlPath ?? entry.title.replace(/ /g, "_"),
     pageLink: `[[${colon}${entry.title}]]`,
@@ -90,9 +96,20 @@ function needsTrail(row: ConflictRow): boolean {
   );
 }
 
-/** Whether the collision is older than `windowMs`. */
-function olderThan(entry: ConflictLogEntry, windowMs: number): boolean {
-  return Date.now() - entry.createdAt.getTime() > windowMs;
+/** Whether `since` is more than `windowMs` ago. */
+function olderThan(since: Date, windowMs: number): boolean {
+  return Date.now() - since.getTime() > windowMs;
+}
+
+/** When the settling first tried the row: stamped by the first attempt, kept by every later one. */
+async function firstAttemptOf(row: ConflictRow): Promise<Date> {
+  if (row.firstSettleAt) return row.firstSettleAt;
+  const now = new Date();
+  await db.wikiConflict.updateMany({
+    where: { id: row.id, firstSettleAt: null },
+    data: { firstSettleAt: now },
+  });
+  return now;
 }
 
 /** The rows the settling still owes something: not settled, not legacy (history only). */
@@ -149,7 +166,7 @@ async function tellOnDiscord(
   if (!user?.discordUserId) return "skipped";
   const link = `${APP_URL}${CLEAN_BASE_PATH}${diffHref(context, recipient)}`;
   if (await sendDiscordDm(user.discordUserId, `${noticeMessage(context)}\n${link}`)) return "sent";
-  return olderThan(context.entry, DM_RETRY_WINDOW_MS) ? "skipped" : "open";
+  return olderThan(context.entry.createdAt, DM_RETRY_WINDOW_MS) ? "skipped" : "open";
 }
 
 /** A ref of the winner MediaWiki knows: a classic revision id as it is, a WikiOS revision's once mirrored. */
@@ -285,11 +302,11 @@ async function writeTrail(context: NoticeContext): Promise<Delivery> {
   return trail ? "sent" : "skipped";
 }
 
-/** The trail, tried again by later runs for a day after the collision, then given up. */
+/** The trail, tried again by later runs for a day after the first attempt, then given up. */
 async function settleTrail(context: NoticeContext): Promise<Delivery> {
   const trail = await attempt("trail", context, () => writeTrail(context));
-  if (trail !== "open" || !olderThan(context.entry, TRAIL_RETRY_WINDOW_MS)) return trail;
-  return giveUpTrail(context, "it could not be written for a day after the collision");
+  if (trail !== "open" || !olderThan(context.firstAttemptAt, TRAIL_RETRY_WINDOW_MS)) return trail;
+  return giveUpTrail(context, "it could not be written for a day after the first attempt");
 }
 
 // --- settling -------------------------------------------------------------------------------------------------------
@@ -323,7 +340,7 @@ async function tellRecipients(
 }
 
 async function settleRow(row: ConflictRow): Promise<RowOutcome> {
-  const context = contextOf(row);
+  const context = contextOf(row, await firstAttemptOf(row));
   const told = await tellRecipients(row, context);
   const trail = needsTrail(row) ? await settleTrail(context) : "skipped";
   // a loser merged in meanwhile keeps the row open (markSettled judges the row as it is then)

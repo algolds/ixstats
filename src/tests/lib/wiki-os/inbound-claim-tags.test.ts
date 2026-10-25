@@ -3,7 +3,7 @@
 /**
  * IxnayID design decisions 7 and 14: a MediaWiki edit the inbound sync stores is written with no WikiOS author, and the
  * approved name claim of its editor then tags it (claim-tags.ts logs every tag, so a revoke takes it back). The editor of
- * a parked edit is the approved claim's owner, whatever the claim's visibility; a pending claim names nobody.
+ * an overwritten edit is the approved claim's owner, whatever the claim's visibility; a pending claim names nobody.
  *
  * The real auto-sync cycle runs over the in-memory WikiOS tables (Prisma mode) and a MediaWiki that keeps state
  * (fake-mediawiki-site.ts); the tagging itself is claim-tags.test.ts's, so it is a mock here.
@@ -113,7 +113,10 @@ afterEach(() => {
   global.fetch = realFetch;
 });
 
-/** WikiOS's head moves past MediaWiki's (a WikiOS save the mirror has not pushed yet): the next MediaWiki edit parks. */
+/**
+ * WikiOS's head moves past MediaWiki's (a WikiOS save the mirror has not pushed yet, saved now): the next MediaWiki edit,
+ * dated by the site's clock an hour behind, is overwritten by it.
+ */
 function moveWikiOSHeadOn(): void {
   const text = "Caphiria is an empire in Sarpedon.";
   caphiria().wikitext = text;
@@ -125,7 +128,7 @@ function moveWikiOSHeadOn(): void {
     sha1: mwSha1Base36(text),
     author: "alpha",
     authorId: "db-alpha",
-    createdAt: new Date("2026-09-02"),
+    createdAt: new Date(),
   });
 }
 
@@ -168,8 +171,9 @@ describe("a MediaWiki edit stored by the inbound sync", () => {
     expect(seenAtTag[0]).toMatchObject({ mwRevId: edit.revid });
   });
 
-  it("parked: stored with no author, tagged, and the approved claim's owner is told", async () => {
-    claim("db-foo", "Foo bar");
+  it("overwritten: stored with no author, tagged, and the approved claim's owner is told", async () => {
+    tables.user.seed({ id: "db-foo", clerkUserId: "clerk-foo" });
+    claim("db-foo", "Foo bar", { visible: false });
     moveWikiOSHeadOn();
     const edit = site.editAs("Foo bar", "Caphiria", "Caphiria is a republic.");
 
@@ -183,10 +187,10 @@ describe("a MediaWiki edit stored by the inbound sync", () => {
     expect(tag).toHaveBeenCalledWith(expect.anything(), "ixwiki", "Foo bar");
     expect(seenAtTag[0]).toMatchObject({ mwRevId: edit.revid });
     expect(notify).toHaveBeenCalledTimes(1);
-    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ userId: "db-foo" }));
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ userId: "clerk-foo" }));
   });
 
-  it("parked by a name whose claim is only pending: nobody is told", async () => {
+  it("overwritten by a name whose claim is only pending: no account is told", async () => {
     claim("db-foo", "Foo bar", { status: "PENDING" });
     moveWikiOSHeadOn();
     const edit = site.editAs("Foo bar", "Caphiria", "Caphiria is a republic.");
