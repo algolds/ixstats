@@ -1,7 +1,7 @@
 /**
  * In-memory fake of the Prisma delegates the diplomatic-policies router touches
  * (foreign-policy actions, alliances and alliance members). Supports the subset of the
- * Prisma `where` language those procedures use: equality, null, `in`, `lt`/`lte`/`gt`/`gte`,
+ * Prisma `where` language those procedures use: equality, null, `in`/`notIn`, `lt`/`lte`/`gt`/`gte`,
  * `not`, `OR`/`AND`, and the `alliance.members.some` relation filter.
  */
 import { createMockPrisma } from "~/tests/helpers/mock-db";
@@ -28,6 +28,8 @@ function matchValue(value: any, cond: any): boolean {
       switch (op) {
         case "in":
           return (arg as any[]).includes(value);
+        case "notIn":
+          return !(arg as any[]).includes(value);
         case "lt":
           return v != null && v < a;
         case "lte":

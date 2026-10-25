@@ -2,7 +2,36 @@ import { z } from "zod";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
+import type { PrismaClient } from "@prisma/client";
 import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
+import { NPCPersonalitySystem } from "~/lib/diplomacy/npc-personality";
+import { buildNpcObservableData, toMarkovState } from "~/lib/diplomacy/npc-observable-data";
+
+/** A side of a scenario: openness from its observable diplomacy (as the NPC AI reads it), strength from GDP per head. */
+async function scenarioSide(
+  db: Pick<PrismaClient, "diplomaticRelation" | "embassy">,
+  country: { id: string; name: string; currentGdpPerCapita: number | null }
+) {
+  const [relationships, embassies] = await Promise.all([
+    db.diplomaticRelation.findMany({
+      where: { OR: [{ country1: country.id }, { country2: country.id }] },
+    }),
+    db.embassy.findMany({
+      where: { OR: [{ guestCountryId: country.id }, { hostCountryId: country.id }] },
+    }),
+  ]);
+  const personality = NPCPersonalitySystem.calculatePersonality(
+    country.id,
+    country.name,
+    buildNpcObservableData(relationships, embassies)
+  );
+  return {
+    id: country.id,
+    name: country.name,
+    culturalOpenness: personality.traits.culturalOpenness,
+    economicStrength: Math.min(100, Math.round((country.currentGdpPerCapita ?? 0) / 1000)),
+  };
+}
 
 // Helper functions for cultural exchange <-> embassy mission integration
 export const diplomaticCulturalNpcGenerationRouter = createTRPCRouter({
@@ -50,30 +79,33 @@ export const diplomaticCulturalNpcGenerationRouter = createTRPCRouter({
         });
       }
 
-      // Create scenario context
+      // Scenario context from the two nations and their relation as they stand
+      const [country1, country2, existingExchanges] = await Promise.all([
+        scenarioSide(ctx.db, userCountry),
+        scenarioSide(ctx.db, targetCountry),
+        ctx.db.culturalExchange.count({
+          where: {
+            OR: [
+              {
+                hostCountryId: userCountry.id,
+                participatingCountries: { some: { countryId: targetCountry.id } },
+              },
+              {
+                hostCountryId: targetCountry.id,
+                participatingCountries: { some: { countryId: userCountry.id } },
+              },
+            ],
+          },
+        }),
+      ]);
       const scenarioContext = {
         exchangeId: `exchange_${Date.now()}`,
-        exchangeType: "festival",
-        country1: {
-          id: userCountry.id,
-          name: userCountry.name,
-          culturalOpenness: 60,
-          economicStrength: 55,
-        },
-        country2: {
-          id: targetCountry.id,
-          name: targetCountry.name,
-          culturalOpenness: 60,
-          economicStrength: 55,
-        },
-        relationshipState:
-          relationship.status === "alliance"
-            ? ("allied" as const)
-            : relationship.status === "tension"
-              ? ("tense" as const)
-              : ("neutral" as const),
-        relationshipStrength: 50,
-        existingExchanges: 0,
+        exchangeType: input.preferredScenarioType ?? "festival",
+        country1,
+        country2,
+        relationshipState: toMarkovState(relationship.relationship),
+        relationshipStrength: relationship.strength,
+        existingExchanges,
         historicalTensions: false,
         economicTies: Math.min(100, (relationship.tradeVolume || 0) / 10000),
       };

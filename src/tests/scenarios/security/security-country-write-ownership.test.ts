@@ -271,9 +271,19 @@ const legislationDb = () => ({
 });
 const bill = { name: "Act", description: "An act", ideology: "center" as const };
 
+// A running public exchange hosted by a third nation, with room left
 const exchangeDb = () => ({
   culturalExchange: {
-    findUnique: jest.fn().mockResolvedValue(null),
+    findUnique: jest.fn().mockResolvedValue({
+      title: "Festival",
+      type: "festival",
+      status: "active",
+      isPublic: true,
+      maxParticipants: null,
+      hostCountryId: "country_host",
+      hostCountryName: "Hostland",
+      participatingCountries: [],
+    }),
     update: jest.fn().mockResolvedValue({}),
   },
   culturalExchangeParticipant: { create: jest.fn().mockResolvedValue({ id: "p_1" }) },
@@ -286,11 +296,13 @@ const nameEntry = {
   stashId: "standalone",
 };
 
+// A party that never stood in an election is deleted outright
 const partiesDb = () => ({
   politicalParty: {
     findUnique: jest.fn(byId),
     delete: jest.fn(async ({ where }: { where: { id: string } }) => ({ id: where.id })),
   },
+  electionCandidate: { count: jest.fn().mockResolvedValue(0) },
 });
 
 interface Row {

@@ -3,6 +3,9 @@ import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trp
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { exchangeMetrics } from "~/lib/diplomacy/cultural-exchange-lifecycle";
+import { toMarkovState } from "~/lib/diplomacy/npc-observable-data";
 
 export const diplomaticCulturalCompatibilityImpactRouter = createTRPCRouter({
   /**
@@ -23,6 +26,7 @@ export const diplomaticCulturalCompatibilityImpactRouter = createTRPCRouter({
         where: { id: input.exchangeId },
         include: {
           participatingCountries: true,
+          _count: { select: { culturalArtifacts: true, votes: true } },
         },
       });
 
@@ -33,14 +37,23 @@ export const diplomaticCulturalCompatibilityImpactRouter = createTRPCRouter({
         });
       }
 
-      // Get relationship for main participant
+      // The host's government records the outcome of its own exchange.
+      await assertCountryWriteAccess(ctx, exchange.hostCountryId);
+
       const mainParticipant = exchange.participatingCountries[0];
       if (!mainParticipant) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "No participants in exchange",
+          message: "This exchange has no participants, so it has no impact to measure.",
         });
       }
+
+      // Measured from what happened (participants, artifacts, votes); 50 is an ordinary exchange.
+      const metrics = exchangeMetrics({
+        participants: exchange.participatingCountries.length,
+        artifacts: exchange._count.culturalArtifacts,
+        votes: exchange._count.votes,
+      });
 
       const relationship = await ctx.db.diplomaticRelation.findFirst({
         where: {
@@ -62,9 +75,9 @@ export const diplomaticCulturalCompatibilityImpactRouter = createTRPCRouter({
         hostCountryId: exchange.hostCountryId,
         participantCountryIds: exchange.participatingCountries.map((p) => p.countryId),
         status: exchange.status as any,
-        culturalImpact: exchange.culturalImpact,
-        diplomaticValue: exchange.diplomaticValue,
-        participants: exchange.participants,
+        culturalImpact: metrics.culturalImpact,
+        diplomaticValue: metrics.diplomaticValue,
+        participants: exchange.participatingCountries.length,
         startDate: exchange.startDate,
         endDate: exchange.endDate,
       };
@@ -72,19 +85,15 @@ export const diplomaticCulturalCompatibilityImpactRouter = createTRPCRouter({
       const outcome = {
         exchangeId: exchange.id,
         responseChoice: input.responseChoice,
-        culturalImpactChange: exchange.culturalImpact - 50,
-        diplomaticChange: exchange.diplomaticValue - 50,
+        culturalImpactChange: metrics.culturalImpact - 50,
+        diplomaticChange: metrics.diplomaticValue - 50,
         economicCost: exchange.economicCost,
         participantSatisfaction: input.participantSatisfaction,
         publicPerception: input.publicPerception,
       };
 
       const currentRelationship = {
-        state: (relationship?.status === "alliance"
-          ? "allied"
-          : relationship?.status === "tension"
-            ? "tense"
-            : "neutral") as any,
+        state: toMarkovState(relationship?.relationship),
         strength: relationship?.strength || 50,
         tradeVolume: relationship?.tradeVolume || 0,
         existingCulturalTies: 50,
@@ -94,8 +103,8 @@ export const diplomaticCulturalCompatibilityImpactRouter = createTRPCRouter({
         totalExchanges: 1,
         successfulExchanges: 1,
         failedExchanges: 0,
-        averageCulturalImpact: exchange.culturalImpact,
-        averageDiplomaticValue: exchange.diplomaticValue,
+        averageCulturalImpact: metrics.culturalImpact,
+        averageDiplomaticValue: metrics.diplomaticValue,
         exchangeTypeDistribution: { [exchange.type]: 1 },
         scenarioOutcomes: {},
       };
@@ -111,7 +120,7 @@ export const diplomaticCulturalCompatibilityImpactRouter = createTRPCRouter({
       const savedOutcome = await ctx.db.culturalExchangeOutcome.create({
         data: {
           exchangeId: exchange.id,
-          countryId: ctx.user?.countryId || "",
+          countryId: exchange.hostCountryId,
           responseChoice: input.responseChoice,
           culturalImpactChange: outcome.culturalImpactChange,
           diplomaticChange: outcome.diplomaticChange,
@@ -141,7 +150,7 @@ export const diplomaticCulturalCompatibilityImpactRouter = createTRPCRouter({
         outcome.diplomaticChange >= 0;
 
       await DiplomaticChoiceTracker.recordChoice({
-        countryId: ctx.user?.countryId || "",
+        countryId: exchange.hostCountryId,
         type: isSuccess ? "cultural_exchange_success" : "cultural_exchange_failure",
         targetCountry: mainParticipant.countryName,
         targetCountryId: mainParticipant.countryId,

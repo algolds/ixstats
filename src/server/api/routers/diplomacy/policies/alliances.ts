@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
@@ -11,6 +12,7 @@ import {
   isProposalExpired,
 } from "~/lib/diplomacy/proposal-lifecycle";
 import { notifyCountryOwners } from "./notify";
+import { openForeignPolicyAction } from "./foreignPolicy";
 import { allianceInviteProcedures } from "./alliance-invite-procedures";
 import {
   allianceNameTaken,
@@ -18,7 +20,74 @@ import {
   autoRespondNpcAllianceInvite,
 } from "./alliance-invites";
 
-// Helper functions for cultural exchange <-> embassy mission integration
+/** Collective actions that act on a target nation, and the foreign-policy action each member opens toward it. */
+const TARGETED_ALLIANCE_ACTIONS = {
+  collective_sanction: "sanction",
+  trade_bloc: "free_trade",
+} as const;
+
+type TargetedAllianceAction = keyof typeof TARGETED_ALLIANCE_ACTIONS;
+const isTargetedAction = (type: string): type is TargetedAllianceAction =>
+  type in TARGETED_ALLIANCE_ACTIONS;
+
+/** A targeted action needs a target: a real nation that is not in the alliance. */
+async function assertValidAllianceTarget(
+  db: PrismaClient,
+  allianceId: string,
+  targetId: string | undefined
+): Promise<void> {
+  if (!targetId) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Choose the nation this action targets." });
+  }
+  const [target, member] = await Promise.all([
+    db.country.findUnique({ where: { id: targetId }, select: { id: true } }),
+    db.allianceMember.findUnique({
+      where: { allianceId_countryId: { allianceId, countryId: targetId } },
+      select: { isActive: true },
+    }),
+  ]);
+  if (!target) throw new TRPCError({ code: "NOT_FOUND", message: "Target nation not found." });
+  if (member?.isActive) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "An alliance cannot act against one of its own members.",
+    });
+  }
+}
+
+/**
+ * Carries out an approved targeted action: every voting member opens the foreign-policy action through the same path
+ * a player's own proposal takes. A sanction is enacted at once (effects on both sides); a free trade offer waits for
+ * the target's consent. A member that already has one in force, or whose relation forbids it, is skipped.
+ */
+async function executeTargetedAllianceAction(
+  db: PrismaClient,
+  action: { allianceId: string; actionType: TargetedAllianceAction; targetId: string; title: string; description: string | null }
+): Promise<number> {
+  const members = await db.allianceMember.findMany({
+    where: { allianceId: action.allianceId, isActive: true, role: { not: "observer" } },
+    select: { countryId: true },
+  });
+  let opened = 0;
+  for (const member of members) {
+    if (member.countryId === action.targetId) continue;
+    try {
+      await openForeignPolicyAction(db, {
+        initiatorId: member.countryId,
+        targetId: action.targetId,
+        actionType: TARGETED_ALLIANCE_ACTIONS[action.actionType],
+        severity: "moderate",
+        reason: `Alliance action: ${action.title}`,
+        description: action.description ?? undefined,
+      });
+      opened++;
+    } catch (error) {
+      if (!(error instanceof TRPCError)) throw error;
+    }
+  }
+  return opened;
+}
+
 export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
   // ============================================================
   // Alliance / Bloc System (Phase 3)
@@ -387,6 +456,10 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
         });
       }
 
+      if (isTargetedAction(input.actionType)) {
+        await assertValidAllianceTarget(ctx.db as PrismaClient, input.allianceId, input.targetId);
+      }
+
       // Calculate required votes: simple majority of voting members
       const votingMembers = await ctx.db.allianceMember.count({
         where: {
@@ -491,64 +564,28 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
         .filter((v) => v.vote === "against")
         .reduce((sum, v) => sum + v.votingPower, 0);
 
-      const updatedAction = await ctx.db.allianceAction.update({
-        where: { id: input.actionId },
-        data: {
-          votesFor: Math.round(votesFor),
-          votesAgainst: Math.round(votesAgainst),
-          status: votesFor >= action.requiredVotes ? "approved" : "proposed",
-        },
+      const tally = { votesFor: Math.round(votesFor), votesAgainst: Math.round(votesAgainst) };
+      if (votesFor < action.requiredVotes) {
+        return ctx.db.allianceAction.update({ where: { id: input.actionId }, data: tally });
+      }
+
+      // Approved: claimed conditionally, so two final votes landing together carry it out once.
+      const claimed = await ctx.db.allianceAction.updateMany({
+        where: { id: input.actionId, status: "proposed" },
+        data: { ...tally, status: "active" },
       });
-
-      // If approved, execute the action
-      if (updatedAction.status === "approved" && action.status === "proposed") {
-        // For collective sanctions: create individual ForeignPolicyAction per member
-        if (
-          (action.actionType === "collective_sanction" || action.actionType === "trade_bloc") &&
-          action.targetId
-        ) {
-          const members = await ctx.db.allianceMember.findMany({
-            where: { allianceId: action.allianceId, isActive: true, role: { not: "observer" } },
-            select: { countryId: true },
-          });
-
-          const fpType = action.actionType === "collective_sanction" ? "sanction" : "free_trade";
-
-          for (const member of members) {
-            // Skip if action already exists
-            const existing = await ctx.db.foreignPolicyAction.findFirst({
-              where: {
-                initiatorId: member.countryId,
-                targetId: action.targetId,
-                actionType: fpType,
-                status: "active",
-              },
-            });
-
-            if (!existing) {
-              await ctx.db.foreignPolicyAction.create({
-                data: {
-                  initiatorId: member.countryId,
-                  targetId: action.targetId,
-                  actionType: fpType,
-                  category: "trade",
-                  severity: "moderate",
-                  status: "active",
-                  reason: `Alliance action: ${action.title}`,
-                  description: action.description,
-                  relationshipDelta: fpType === "sanction" ? -15 : 10,
-                },
-              });
-            }
-          }
-        }
-
-        // Mark as active
-        await ctx.db.allianceAction.update({
-          where: { id: input.actionId },
-          data: { status: "active" },
+      if (claimed.count === 1 && isTargetedAction(action.actionType) && action.targetId) {
+        await executeTargetedAllianceAction(ctx.db as PrismaClient, {
+          allianceId: action.allianceId,
+          actionType: action.actionType,
+          targetId: action.targetId,
+          title: action.title,
+          description: action.description,
         });
       }
+      const updatedAction = await ctx.db.allianceAction.findUniqueOrThrow({
+        where: { id: input.actionId },
+      });
 
       return updatedAction;
     }),

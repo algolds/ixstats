@@ -255,25 +255,29 @@ function ExchangeActions({
     <>
       {status === "active" && (
         <div className={bar}>
-          <Button className="flex-1" onClick={() => p.onJoin(exchange.id, "participant")}>
-            <User aria-hidden="true" className="h-4 w-4" />
-            Join as participant
-          </Button>
-          <Button
-            variant="outline"
-            className="flex-1"
-            onClick={() => p.onJoin(exchange.id, "observer")}
-          >
-            <Eye className="h-4 w-4" />
-            Observe exchange
-          </Button>
+          {!isHost && (
+            <>
+              <Button className="flex-1" onClick={() => p.onJoin(exchange.id, "participant")}>
+                <User aria-hidden="true" className="h-4 w-4" />
+                Join as participant
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => p.onJoin(exchange.id, "observer")}
+              >
+                <Eye className="h-4 w-4" />
+                Observe exchange
+              </Button>
+            </>
+          )}
           <Button variant="outline" className="flex-1" onClick={p.onUploadArtifact}>
             <Camera className="h-4 w-4" />
             Upload artifact
           </Button>
         </div>
       )}
-      {status === "completed" && (
+      {status === "completed" && isHost && exchange.participatingCountries.length > 0 && (
         <div className={bar}>
           <Button
             variant="secondary"
@@ -282,7 +286,7 @@ function ExchangeActions({
             disabled={p.isCalculating}
           >
             <StatsReport className="h-4 w-4" />
-            {p.isCalculating ? "Calculating…" : "Calculate Impact"}
+            {p.isCalculating ? "Calculating…" : "Calculate impact"}
           </Button>
         </div>
       )}

@@ -12,11 +12,28 @@ import {
   Refresh,
   Group as Users,
   Community as Handshake,
+  Prohibition,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "~/components/ui/alert-dialog";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { FP_PROPOSAL_LABELS, INBOX_QUERY_OPTIONS, formatExpiry } from "./useDiplomacyInbox";
+import {
+  FP_PROPOSAL_LABELS,
+  HOSTILE_ACTION_LABELS,
+  INBOX_QUERY_OPTIONS,
+  formatExpiry,
+} from "./useDiplomacyInbox";
 import { Skeleton } from "~/components/ui/skeleton";
 
 interface DiplomacyInboxProps {
@@ -25,7 +42,7 @@ interface DiplomacyInboxProps {
 
 interface InboxRow {
   key: string;
-  kind: "proposal" | "invite";
+  kind: "proposal" | "invite" | "hostile";
   title: string;
   subtitle: string;
   expiresAt: Date | string;
@@ -49,6 +66,7 @@ export function DiplomacyInbox({ countryId }: DiplomacyInboxProps) {
     opts
   );
   const outgoingInvites = api.diplomaticPolicies.getOutgoingAllianceInvites.useQuery(input, opts);
+  const activePolicies = api.diplomaticPolicies.getActiveForeignPolicies.useQuery(input, opts);
 
   const refresh = () => {
     void utils.diplomaticPolicies.getForeignPolicyProposals.invalidate();
@@ -96,7 +114,16 @@ export function DiplomacyInbox({ countryId }: DiplomacyInboxProps) {
     onError: onError("Could not withdraw the invitation"),
   });
 
+  const liftAction = api.diplomaticPolicies.liftForeignPolicyAction.useMutation({
+    onSuccess: () => {
+      notify.success("Action lifted", "Its economic effects unwind from now on.");
+      refresh();
+    },
+    onError: onError("Could not lift the action"),
+  });
+
   const busy =
+    liftAction.isPending ||
     respondProposal.isPending ||
     respondInvite.isPending ||
     withdrawProposal.isPending ||
@@ -148,6 +175,18 @@ export function DiplomacyInbox({ countryId }: DiplomacyInboxProps) {
       onWithdraw: () => withdrawInvite.mutate({ allianceId: i.allianceId, countryId: i.countryId }),
     })),
   ];
+
+  // Sanctions, embargoes and blockades this nation imposed that are still in force.
+  const inForce: (InboxRow & { onLift: () => void })[] = (activePolicies.data ?? [])
+    .filter((a) => a.initiatorId === countryId && a.expiresAt !== null)
+    .map((a) => ({
+      key: `hostile-${a.id}`,
+      kind: "hostile" as const,
+      title: HOSTILE_ACTION_LABELS[a.actionType] ?? a.actionType,
+      subtitle: `On ${a.target?.name ?? "another nation"}`,
+      expiresAt: a.expiresAt!,
+      onLift: () => liftAction.mutate({ actionId: a.id }),
+    }));
 
   const incomingLoading = incomingProposals.isLoading || incomingInvites.isLoading;
   const incomingError = incomingProposals.error ?? incomingInvites.error;
@@ -225,7 +264,63 @@ export function DiplomacyInbox({ countryId }: DiplomacyInboxProps) {
           </InboxItem>
         ))}
       </InboxSection>
+
+      <InboxSection
+        icon={Prohibition}
+        title="In force"
+        description="Sanctions, embargoes and blockades you imposed. Each ends when its effect window closes, or when you lift it."
+        loading={activePolicies.isLoading}
+        error={activePolicies.error?.message}
+        onRetry={() => void activePolicies.refetch()}
+        emptyText="You have not imposed any sanctions, embargoes or blockades."
+        count={inForce.length}
+      >
+        {inForce.map((row) => (
+          <InboxItem key={row.key} row={row} status="In force">
+            <LiftButton row={row} disabled={busy} />
+          </InboxItem>
+        ))}
+      </InboxSection>
     </div>
+  );
+}
+
+/** Lifting asks first: the action's effects start unwinding at once. */
+function LiftButton({
+  row,
+  disabled,
+}: {
+  row: InboxRow & { onLift: () => void };
+  disabled: boolean;
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          size="sm"
+          variant="outline"
+          className="gap-1"
+          disabled={disabled}
+          aria-label={`Lift: ${row.title} ${row.subtitle.toLowerCase()}`}
+        >
+          <Undo className="h-3.5 w-3.5" />
+          Lift
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Lift this action?</AlertDialogTitle>
+          <AlertDialogDescription>
+            {row.title} {row.subtitle.toLowerCase()} ends now. Its economic effects on both nations
+            unwind from today, and you can impose it again later.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Keep it</AlertDialogCancel>
+          <AlertDialogAction onClick={row.onLift}>Lift</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
@@ -299,7 +394,7 @@ function InboxItem({
   status: string;
   children: React.ReactNode;
 }) {
-  const KindIcon = row.kind === "invite" ? Users : Handshake;
+  const KindIcon = row.kind === "invite" ? Users : row.kind === "hostile" ? Prohibition : Handshake;
   return (
     <li className="border-separator bg-surface rounded-row flex flex-wrap items-center justify-between gap-3 border p-3">
       <div className="flex min-w-0 items-start gap-3">

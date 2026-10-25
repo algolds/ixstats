@@ -22,12 +22,14 @@ import {
 import { notifyCountryOwners } from "./notify";
 import { StorytellerEffectType } from "~/lib/economy/calculations";
 import { createStorytellerEffects } from "~/lib/economy/storyteller-effects";
-
-/** IxTime years over which a foreign-policy action's GDP impact phases in. */
-const FP_EFFECT_YEARS = 4;
-
-/** `createdBy` of the StorytellerEffects a foreign-policy action leaves on both nations. */
-export const foreignPolicyEffectKey = (actionId: string) => `fp:${actionId}`;
+import {
+  FP_EFFECT_YEARS,
+  endForeignPolicyAction,
+  foreignPolicyEffectKey,
+  hostileActionExpiresAt,
+  initiatorEffectDescription,
+  targetEffectDescription,
+} from "~/lib/diplomacy/foreign-policy-effects";
 
 // Cooperative actions need the target's consent before they take effect; hostile ones
 // are unilateral. See plans/statecraft-stage2.md (S2.C).
@@ -113,7 +115,7 @@ async function enactForeignPolicyEffects(
   const newStrength = relation
     ? Math.max(0, Math.min(100, (relation.strength ?? 50) + action.relationshipDelta))
     : null;
-  const actionDescription = `Foreign policy: ${action.actionType} (${action.severity}) ${COOPERATIVE_FP.has(action.actionType) ? "with" : "against"} ${action.target.name}`;
+  const actionDescription = initiatorEffectDescription(action);
 
   const enacted = await db.$transaction(async (tx) => {
     if (claimFrom) {
@@ -124,7 +126,7 @@ async function enactForeignPolicyEffects(
       if (claimed.count === 0) return false;
     }
     // Keyed by the action (not the actor) so lifting it can end exactly these effects:
-    // endStorytellerEffects(db, { createdBy: foreignPolicyEffectKey(action.id) }).
+    // endForeignPolicyAction (lib/diplomacy/foreign-policy-effects.ts).
     await createStorytellerEffects(tx, [
       {
         countryId: action.initiatorId,
@@ -138,7 +140,7 @@ async function enactForeignPolicyEffects(
         countryId: action.targetId,
         inputType,
         value: action.targetGdpImpact,
-        description: `Affected by ${action.initiator.name}: ${action.actionType} (${action.severity})`,
+        description: targetEffectDescription(action),
         duration: FP_EFFECT_YEARS,
         createdBy: foreignPolicyEffectKey(action.id),
       },
@@ -228,6 +230,133 @@ const impactParty = (country: {
   population: country.currentPopulation ?? 1000000,
 });
 
+interface OpenForeignPolicyInput {
+  initiatorId: string;
+  targetId: string;
+  actionType: "embargo" | "sanction" | "free_trade" | "military_alliance" | "blockade";
+  severity: "light" | "moderate" | "severe";
+  reason?: string;
+  description?: string;
+}
+
+/**
+ * Opens a foreign-policy action from one nation toward another: a cooperative one waits for the target's consent
+ * (its owner is notified), a hostile one is enacted at once. The one path for a player's proposal and an approved
+ * alliance collective action.
+ */
+export async function openForeignPolicyAction(db: PrismaClient, input: OpenForeignPolicyInput) {
+  const { initiatorId } = input;
+  if (initiatorId === input.targetId) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Cannot enact foreign policy against your own country.",
+    });
+  }
+
+  // Check relationship strength for validity
+  const relation = await db.diplomaticRelation.findFirst({
+    where: {
+      OR: [
+        { country1: initiatorId, country2: input.targetId },
+        { country1: input.targetId, country2: initiatorId },
+      ],
+    },
+  });
+
+  assertRelationAllowsAction(input.actionType, relation?.strength ?? 50);
+
+  // Stale pending proposals must not block a fresh one.
+  await expireStaleDiplomaticProposals(db, { countryId: initiatorId });
+
+  // Check for existing active action of same type
+  const existingAction = await db.foreignPolicyAction.findFirst({
+    where: {
+      initiatorId,
+      targetId: input.targetId,
+      actionType: input.actionType,
+      status: { in: ["proposed", "active"] },
+    },
+  });
+
+  if (existingAction) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `An active ${input.actionType} already exists against this country.`,
+    });
+  }
+
+  // Get both countries for GDP calculations
+  const [initiator, target] = await Promise.all(
+    [initiatorId, input.targetId].map((id) =>
+      db.country.findUnique({
+        where: { id },
+        select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
+      })
+    )
+  );
+
+  if (!initiator || !target) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
+  }
+
+  // Normalize country ordering for bilateral trade lookup
+  const [c1, c2] =
+    initiatorId < input.targetId
+      ? [initiatorId, input.targetId]
+      : [input.targetId, initiatorId];
+
+  const trade = await db.bilateralTrade.findUnique({
+    where: { country1Id_country2Id: { country1Id: c1, country2Id: c2 } },
+  });
+
+  // Target-scaled impact (shared pure fn — see plans/statecraft-stage2.md).
+  const impact = computeForeignPolicyImpact({
+    initiator: impactParty(initiator),
+    target: impactParty(target),
+    actionType: input.actionType,
+    severity: input.severity,
+    tradeVolume: trade?.tradeVolume ?? undefined,
+  });
+
+  // Cooperative actions await the target's consent; hostile ones are unilateral.
+  const cooperative = COOPERATIVE_FP.has(input.actionType);
+
+  const created = await db.foreignPolicyAction.create({
+    data: {
+      initiatorId,
+      targetId: input.targetId,
+      actionType: input.actionType,
+      category: impact.category,
+      severity: input.severity,
+      status: cooperative ? "proposed" : "active",
+      initiatorGdpImpact: impact.initiatorGdpImpact,
+      targetGdpImpact: impact.targetGdpImpact,
+      relationshipDelta: impact.relationshipDelta,
+      reason: input.reason,
+      description: input.description,
+    },
+    include: {
+      initiator: { select: { id: true, name: true } },
+      target: { select: { id: true, name: true } },
+    },
+  });
+
+  // Cooperative → no effects yet; surfaces to the target via getForeignPolicyProposals.
+  if (cooperative) {
+    await notifyCountryOwners(db, [input.targetId], {
+      title: "Diplomatic Proposal Received",
+      message: `${initiator.name} proposes a ${FP_LABELS[input.actionType] ?? input.actionType} with ${target.name}. Review it in your diplomacy inbox.`,
+      priority: "high",
+      metadata: { foreignPolicyActionId: created.id, actionType: input.actionType },
+    });
+    return { ...created, pendingConsent: true };
+  }
+
+  // Hostile → enact immediately.
+  const enacted = await enactForeignPolicyEffects(db, created.id, null);
+  return enacted ?? created;
+}
+
 export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
   // ============================================================
   // Foreign Policy Actions (Phase 2)
@@ -268,7 +397,14 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
         orderBy: { createdAt: "desc" },
       });
 
-      return actions;
+      // A hostile action in force ends with its effect window (or when its initiator lifts it).
+      return actions.map((a) => ({
+        ...a,
+        expiresAt:
+          a.status === "active" && !COOPERATIVE_FP.has(a.actionType)
+            ? hostileActionExpiresAt(a.createdAt)
+            : null,
+      }));
     }),
 
   // Propose / enact a foreign policy action
@@ -290,117 +426,10 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
         });
       }
 
-      const initiatorId = ctx.user.countryId;
-
-      if (initiatorId === input.targetId) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Cannot enact foreign policy against your own country.",
-        });
-      }
-
-      // Check relationship strength for validity
-      const relation = await ctx.db.diplomaticRelation.findFirst({
-        where: {
-          OR: [
-            { country1: initiatorId, country2: input.targetId },
-            { country1: input.targetId, country2: initiatorId },
-          ],
-        },
+      return openForeignPolicyAction(ctx.db as PrismaClient, {
+        initiatorId: ctx.user.countryId,
+        ...input,
       });
-
-      assertRelationAllowsAction(input.actionType, relation?.strength ?? 50);
-
-      // Stale pending proposals must not block a fresh one.
-      await expireStaleDiplomaticProposals(ctx.db, { countryId: initiatorId });
-
-      // Check for existing active action of same type
-      const existingAction = await ctx.db.foreignPolicyAction.findFirst({
-        where: {
-          initiatorId,
-          targetId: input.targetId,
-          actionType: input.actionType,
-          status: { in: ["proposed", "active"] },
-        },
-      });
-
-      if (existingAction) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: `An active ${input.actionType} already exists against this country.`,
-        });
-      }
-
-      // Get both countries for GDP calculations
-      const [initiator, target] = await Promise.all(
-        [initiatorId, input.targetId].map((id) =>
-          ctx.db.country.findUnique({
-            where: { id },
-            select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
-          })
-        )
-      );
-
-      if (!initiator || !target) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
-      }
-
-      // Normalize country ordering for bilateral trade lookup
-      const [c1, c2] =
-        initiatorId < input.targetId
-          ? [initiatorId, input.targetId]
-          : [input.targetId, initiatorId];
-
-      const trade = await ctx.db.bilateralTrade.findUnique({
-        where: { country1Id_country2Id: { country1Id: c1, country2Id: c2 } },
-      });
-
-      // Target-scaled impact (shared pure fn — see plans/statecraft-stage2.md).
-      const impact = computeForeignPolicyImpact({
-        initiator: impactParty(initiator),
-        target: impactParty(target),
-        actionType: input.actionType,
-        severity: input.severity,
-        tradeVolume: trade?.tradeVolume ?? undefined,
-      });
-
-      // Cooperative actions await the target's consent; hostile ones are unilateral.
-      const cooperative = COOPERATIVE_FP.has(input.actionType);
-
-      const created = await ctx.db.foreignPolicyAction.create({
-        data: {
-          initiatorId,
-          targetId: input.targetId,
-          actionType: input.actionType,
-          category: impact.category,
-          severity: input.severity,
-          status: cooperative ? "proposed" : "active",
-          initiatorGdpImpact: impact.initiatorGdpImpact,
-          targetGdpImpact: impact.targetGdpImpact,
-          relationshipDelta: impact.relationshipDelta,
-          reason: input.reason,
-          description: input.description,
-        },
-        include: {
-          initiator: { select: { id: true, name: true } },
-          target: { select: { id: true, name: true } },
-        },
-      });
-
-      // Cooperative → no effects yet; surfaces to the target via getForeignPolicyProposals.
-      if (cooperative) {
-        await notifyCountryOwners(ctx.db, [input.targetId], {
-          title: "Diplomatic Proposal Received",
-          message: `${initiator.name} proposes a ${FP_LABELS[input.actionType] ?? input.actionType} with ${target.name}. Review it in your diplomacy inbox.`,
-          priority: "high",
-          metadata: { foreignPolicyActionId: created.id, actionType: input.actionType },
-        });
-        return { ...created, pendingConsent: true };
-      }
-
-      // Hostile → enact immediately.
-      const enacted = await enactForeignPolicyEffects(ctx.db as PrismaClient, created.id, null);
-      return enacted ?? created;
     }),
 
   // The target reviews incoming cooperative proposals (free trade / alliance).
@@ -464,6 +493,31 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Proposal is no longer pending." });
       }
       return { status: PROPOSAL_STATUS.withdrawn };
+    }),
+
+  // The initiator lifts a hostile action in force: its effects unwind from now on and it can be imposed again.
+  liftForeignPolicyAction: rateLimitedMutationProcedure
+    .input(z.object({ actionId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const action = await ctx.db.foreignPolicyAction.findUnique({
+        where: { id: input.actionId },
+        select: { id: true, initiatorId: true, actionType: true, status: true },
+      });
+      if (!action) throw new TRPCError({ code: "NOT_FOUND", message: "Action not found." });
+      await assertCountryWriteAccess(ctx, action.initiatorId);
+      if (COOPERATIVE_FP.has(action.actionType)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Only sanctions, embargoes and blockades can be lifted.",
+        });
+      }
+      const lifted =
+        action.status === "active" &&
+        (await endForeignPolicyAction(ctx.db as PrismaClient, action.id, "lifted"));
+      if (!lifted) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This action is no longer in force." });
+      }
+      return { status: "lifted" as const };
     }),
 
   // Foreign consent: the target's owner accepts (enact the stored effects) or declines.

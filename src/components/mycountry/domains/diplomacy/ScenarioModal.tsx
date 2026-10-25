@@ -32,6 +32,8 @@ export interface ResponseOption {
 }
 
 export interface Scenario {
+  /** The saved scenario a response is recorded against. */
+  id?: string;
   title: string;
   narrative: string;
   responseOptions?: ResponseOption[];

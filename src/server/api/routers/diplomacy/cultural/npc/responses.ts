@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
@@ -8,6 +9,20 @@ import {
 } from "~/lib/diplomacy/npc-cultural-participation";
 import { NPCPersonalitySystem } from "~/lib/diplomacy/npc-personality";
 import { buildNpcObservableData } from "~/lib/diplomacy/npc-observable-data";
+import { exchangeMetrics } from "~/lib/diplomacy/cultural-exchange-lifecycle";
+
+/** Share (0-100) of the host's measured exchange outcomes that succeeded; 50 before it has any. */
+async function hostSuccessRate(
+  db: Pick<PrismaClient, "culturalExchangeOutcome">,
+  hostCountryId: string
+): Promise<number> {
+  const where = { exchange: { is: { hostCountryId } } };
+  const [total, succeeded] = await Promise.all([
+    db.culturalExchangeOutcome.count({ where }),
+    db.culturalExchangeOutcome.count({ where: { ...where, culturalImpactChange: { gt: 0 } } }),
+  ]);
+  return total === 0 ? 50 : Math.round((succeeded / total) * 100);
+}
 
 // Helper functions for cultural exchange <-> embassy mission integration
 export const diplomaticCulturalNpcResponsesRouter = createTRPCRouter({
@@ -26,6 +41,7 @@ export const diplomaticCulturalNpcResponsesRouter = createTRPCRouter({
           where: { id: input.exchangeId },
           include: {
             participatingCountries: true,
+            _count: { select: { culturalArtifacts: true, votes: true } },
           },
         });
 
@@ -36,9 +52,20 @@ export const diplomaticCulturalNpcResponsesRouter = createTRPCRouter({
           });
         }
 
-        // Get all participants (excluding the host)
+        // Only nations nobody plays answer through the AI; a player answers for their own nation.
+        const npcIds = new Set(
+          (
+            await ctx.db.country.findMany({
+              where: {
+                id: { in: exchange.participatingCountries.map((p) => p.countryId) },
+                ownerUserId: null,
+              },
+              select: { id: true },
+            })
+          ).map((c) => c.id)
+        );
         const participants = exchange.participatingCountries.filter(
-          (p: { countryId: string }) => p.countryId !== input.hostCountryId
+          (p) => p.countryId !== input.hostCountryId && npcIds.has(p.countryId)
         );
 
         if (participants.length === 0) {
@@ -67,6 +94,14 @@ export const diplomaticCulturalNpcResponsesRouter = createTRPCRouter({
             },
           }),
         ]);
+
+        // The exchange as it stands, and the host's track record, instead of fixed figures
+        const metrics = exchangeMetrics({
+          participants: exchange.participatingCountries.length,
+          artifacts: exchange._count.culturalArtifacts,
+          votes: exchange._count.votes,
+        });
+        const historicalSuccess = await hostSuccessRate(ctx.db, exchange.hostCountryId);
 
         // Generate NPC responses for each participant
         const responses = participants.map((participant: any) => {
@@ -113,9 +148,9 @@ export const diplomaticCulturalNpcResponsesRouter = createTRPCRouter({
               exchangeDetails: {
                 title: exchange.title,
                 description: exchange.description || "",
-                culturalImpact: 50, // Default values - could calculate based on exchange type
-                diplomaticValue: 40,
-                economicCost: 25000,
+                culturalImpact: metrics.culturalImpact,
+                diplomaticValue: metrics.diplomaticValue,
+                economicCost: exchange.economicCost,
                 duration: Math.ceil(
                   (new Date(exchange.endDate).getTime() - new Date(exchange.startDate).getTime()) /
                     (1000 * 60 * 60 * 24)
@@ -124,7 +159,7 @@ export const diplomaticCulturalNpcResponsesRouter = createTRPCRouter({
               existingExchanges:
                 observableData.cultural.highExchangeCount +
                 observableData.cultural.mediumExchangeCount,
-              historicalSuccess: 70, // Default - could track actual success rate
+              historicalSuccess,
             };
 
             // Get AI-generated participation decision

@@ -37,6 +37,7 @@ import {
   Cpu,
 } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
+import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
@@ -317,14 +318,14 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
     refetch: refetchActive,
   } = api.diplomaticScenarios.getAllScenarios.useQuery({
     isActive: true,
-    country1Id: countryId,
+    countryId,
     limit: 50,
   });
 
   const { data: historyData, isLoading: historyLoading } =
     api.diplomaticScenarios.getAllScenarios.useQuery({
       isActive: false,
-      country1Id: countryId,
+      countryId,
       limit: 100,
     });
 
@@ -338,22 +339,28 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
     (s) => new Date(s.expiresAt).getTime() - Date.now() < 24 * HOUR_MS
   ).length;
 
+  const notify = useNotify();
   const respondMutation = api.diplomaticScenarios.recordChoice.useMutation({
     onSuccess: () => {
       void refetchActive();
       setIsResponseDialogOpen(false);
       setSelectedEvent(null);
     },
+    onError: (error) => notify.error("Could not record the response", error.message),
   });
 
   const handleResponse = (action: ResponseAction) => {
     if (!selectedEvent) return;
     const selectedOption = pickResponseOption(selectedEvent.responseOptions || [], action);
+    if (!selectedOption?.id) {
+      notify.error("This event has no responses to choose from");
+      return;
+    }
     respondMutation.mutate({
       scenarioId: selectedEvent.id,
       countryId,
-      choiceId: selectedOption?.id || "default",
-      choiceLabel: selectedOption?.label || "Unknown Choice",
+      choiceId: selectedOption.id,
+      choiceLabel: selectedOption.label ?? selectedOption.id,
     });
   };
 

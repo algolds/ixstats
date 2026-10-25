@@ -603,22 +603,30 @@ describe("diplomatic core", () => {
 });
 
 describe("the embassy mission sweep", () => {
-  it("completes due missions and cancels those of cancelled exchanges, from the drift cron", async () => {
+  it("completes due missions once, paying their rewards into the embassy, and cancels those of cancelled exchanges", async () => {
     const now = new Date("2026-10-05T00:00:00Z");
     type Mission = {
       id: string;
+      embassyId: string;
       status: string;
       progress: number;
       culturalExchangeId: string | null;
       exchangeStatus: string;
       completesAt: Date;
+      experienceReward: number;
+      influenceReward: number;
+      reputationReward: number;
     };
     const mission = (over: Partial<Mission> & { id: string }): Mission => ({
+      embassyId: "emb1",
       status: "active",
       progress: 0,
       culturalExchangeId: "ex1",
       exchangeStatus: "active",
       completesAt: new Date(now.getTime() + DAY),
+      experienceReward: 100,
+      influenceReward: 30,
+      reputationReward: 20,
       ...over,
     });
     const rows = [
@@ -627,25 +635,51 @@ describe("the embassy mission sweep", () => {
       mission({ id: "cancelled", exchangeStatus: "cancelled" }),
       mission({ id: "done", status: "completed", completesAt: new Date(now.getTime() - DAY) }),
     ];
+    const embassy = { id: "emb1", experience: 0, influence: 10, reputation: 90 };
     type Where = {
+      id?: string;
       status: string;
       culturalExchange?: { is: { status: string } };
       culturalExchangeId?: object;
       completesAt?: { lte: Date };
     };
     const matches = (m: Mission, where: Where) =>
+      (where.id ? m.id === where.id : true) &&
       m.status === where.status &&
       (where.culturalExchange ? m.exchangeStatus === where.culturalExchange.is.status : true) &&
       (where.culturalExchangeId ? m.culturalExchangeId != null : true) &&
       (where.completesAt ? m.completesAt.getTime() <= where.completesAt.lte.getTime() : true);
     const missionDb = {
       embassyMission: {
+        findMany: jest.fn(async ({ where }: { where: Where }) =>
+          rows.filter((m) => matches(m, where)).map((m) => ({ ...m }))
+        ),
         updateMany: jest.fn(async ({ where, data }: { where: Where; data: Partial<Mission> }) => {
           const hit = rows.filter((m) => matches(m, where));
           hit.forEach((m) => Object.assign(m, data));
           return { count: hit.length };
         }),
       },
+      embassy: {
+        findUnique: jest.fn(async () => ({ ...embassy })),
+        update: jest.fn(
+          async ({
+            data,
+          }: {
+            data: {
+              experience: { increment: number };
+              influence: { increment: number };
+              reputation: number;
+            };
+          }) => {
+            embassy.experience += data.experience.increment;
+            embassy.influence += data.influence.increment;
+            embassy.reputation = data.reputation;
+            return embassy;
+          }
+        ),
+      },
+      $transaction: jest.fn(async (work: (tx: unknown) => unknown) => work(missionDb)),
     };
     expect(await closeDueEmbassyMissions(missionDb as never, now)).toEqual({
       missionsCompleted: 1,
@@ -657,15 +691,13 @@ describe("the embassy mission sweep", () => {
       cancelled: ["cancelled", 0],
       done: ["completed", 0],
     });
-
-    mockDriftDb.embassyMission.updateMany
-      .mockResolvedValueOnce({ count: 2 }) // cancelled
-      .mockResolvedValueOnce({ count: 3 }); // completed
-    const { runDiplomaticDrift } = await import("~/lib/diplomacy/drift-cron");
-    expect(await runDiplomaticDrift()).toMatchObject({
-      missionsCompleted: 3,
-      missionsCancelled: 2,
+    // Rewards land once; reputation stays on its 0-100 scale
+    expect(embassy).toEqual({ id: "emb1", experience: 100, influence: 40, reputation: 100 });
+    expect(await closeDueEmbassyMissions(missionDb as never, now)).toEqual({
+      missionsCompleted: 0,
+      missionsCancelled: 0,
     });
+    expect(embassy.experience).toBe(100);
   });
 });
 

@@ -7,6 +7,34 @@ import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
+/** Joining needs a running public exchange the nation is not hosting or in already, with room left. */
+function assertJoinable(
+  exchange: {
+    status: string;
+    isPublic: boolean;
+    maxParticipants: number | null;
+    hostCountryId: string;
+    participatingCountries: Array<{ countryId: string }>;
+  } | null,
+  countryId: string
+): asserts exchange {
+  if (!exchange) throw new TRPCError({ code: "NOT_FOUND", message: "Cultural exchange not found" });
+  const refusal =
+    exchange.status !== "active"
+      ? "This exchange is not running."
+      : !exchange.isPublic
+        ? "This exchange is invitation only."
+        : exchange.hostCountryId === countryId
+          ? "You are hosting this exchange."
+          : exchange.participatingCountries.some((p) => p.countryId === countryId)
+            ? "Your nation is already taking part."
+            : exchange.maxParticipants !== null &&
+                exchange.participatingCountries.length >= exchange.maxParticipants
+              ? "This exchange is full."
+              : null;
+  if (refusal) throw new TRPCError({ code: "BAD_REQUEST", message: refusal });
+}
+
 export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
   createCulturalExchange: rateLimitedMutationProcedure
     .input(
@@ -224,17 +252,27 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
         countryId: z.string(),
         countryName: z.string(),
         flagUrl: z.string().optional(),
-        role: z.enum(["co-host", "participant", "observer"]).default("participant"),
+        // Co-hosts are the host's to name; a joiner takes part or observes
+        role: z.enum(["participant", "observer"]).default("participant"),
       })
     )
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
 
-      // Get exchange details for tracking
       const exchange = await ctx.db.culturalExchange.findUnique({
         where: { id: input.exchangeId },
-        select: { title: true, type: true, hostCountryId: true, hostCountryName: true },
+        select: {
+          title: true,
+          type: true,
+          status: true,
+          isPublic: true,
+          maxParticipants: true,
+          hostCountryId: true,
+          hostCountryName: true,
+          participatingCountries: { select: { countryId: true } },
+        },
       });
+      assertJoinable(exchange, input.countryId);
 
       const participant = await ctx.db.culturalExchangeParticipant.create({
         data: {
@@ -257,21 +295,19 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
       });
 
       // Track cultural exchange join
-      if (exchange) {
-        await DiplomaticChoiceTracker.recordChoice({
-          countryId: input.countryId,
-          type: "join_cultural_exchange",
-          targetCountry: exchange.hostCountryName,
-          targetCountryId: exchange.hostCountryId,
-          details: {
-            exchangeId: input.exchangeId,
-            exchangeType: exchange.type,
-            exchangeTitle: exchange.title,
-            role: input.role,
-          },
-          ixTimeTimestamp: IxTime.getCurrentIxTime(),
-        });
-      }
+      await DiplomaticChoiceTracker.recordChoice({
+        countryId: input.countryId,
+        type: "join_cultural_exchange",
+        targetCountry: exchange.hostCountryName,
+        targetCountryId: exchange.hostCountryId,
+        details: {
+          exchangeId: input.exchangeId,
+          exchangeType: exchange.type,
+          exchangeTitle: exchange.title,
+          role: input.role,
+        },
+        ixTimeTimestamp: IxTime.getCurrentIxTime(),
+      });
 
       return participant;
     }),

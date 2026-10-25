@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { api } from "~/trpc/react";
+import { useNotify } from "~/hooks/useNotify";
 import { formatCurrency, formatNumber } from "~/lib/utils/format-utils";
 import { CollectiveActionsPanel } from "./CollectiveActionsPanel";
 import { Card } from "~/components/ui/card";
@@ -67,19 +68,26 @@ export function AllianceDashboard({
   );
 
   const utils = api.useUtils();
+  const notify = useNotify();
   const inviteMutation = api.diplomaticPolicies.inviteMember.useMutation({
-    onSuccess: () => {
+    onSuccess: (result) => {
+      // A nation nobody plays answers at once; a player answers from their inbox.
+      if (result.pending) notify.success("Invitation sent", "It waits for the other nation's answer.");
+      else if (result.status === "active") notify.success("Invitation accepted", "They joined the alliance.");
+      else notify.success("Invitation declined", "They chose not to join.");
       setInviteOpen(false);
       setInviteTarget("");
       void refetch();
       void utils.diplomaticPolicies.getOutgoingAllianceInvites.invalidate();
     },
+    onError: (error) => notify.error("Could not send the invitation", error.message),
   });
 
   const leaveMutation = api.diplomaticPolicies.leaveAlliance.useMutation({
     onSuccess: () => {
       onLeave?.();
     },
+    onError: (error) => notify.error("Could not leave the alliance", error.message),
   });
 
   if (!alliance) return null;

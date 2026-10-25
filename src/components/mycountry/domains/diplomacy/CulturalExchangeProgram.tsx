@@ -131,9 +131,25 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
     updateExchangeMutation.mutate({ exchangeId: selectedExchange.id, ...editFormData });
   };
 
+  const recordScenarioChoice = api.diplomaticScenarios.recordChoice.useMutation({
+    onSuccess: (_, { choiceLabel }) => {
+      notify.success("Response recorded", choiceLabel);
+      setShowScenarioModal(false);
+    },
+    onError: (error) => notify.error("Could not record the response", error.message),
+  });
+
   const handleSelectScenarioResponse = (option: ResponseOption) => {
-    notify.success(`Selected: ${option.label}`);
-    setShowScenarioModal(false);
+    if (!selectedScenario?.id || !option.id) {
+      notify.error("This scenario cannot take a response");
+      return;
+    }
+    recordScenarioChoice.mutate({
+      scenarioId: selectedScenario.id,
+      countryId: primaryCountry.id,
+      choiceId: option.id,
+      choiceLabel: option.label,
+    });
   };
 
   return (

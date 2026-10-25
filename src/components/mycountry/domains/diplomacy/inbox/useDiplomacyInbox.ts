@@ -37,3 +37,9 @@ export const FP_PROPOSAL_LABELS: Record<string, string> = {
   free_trade: "Free trade agreement",
   military_alliance: "Military alliance",
 };
+
+export const HOSTILE_ACTION_LABELS: Record<string, string> = {
+  sanction: "Sanctions",
+  embargo: "Trade embargo",
+  blockade: "Blockade",
+};
