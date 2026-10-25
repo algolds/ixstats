@@ -228,7 +228,6 @@ export function HeroPostView({ post, ctx, state }: HeroPostViewProps) {
             {timestamp.toLocaleTimeString(undefined, timeFormat)}
             {" · "}
             {timestamp.toLocaleDateString(undefined, dateFormat)}
-            {" · ixTime"}
           </div>
 
           <div className="border-separator text-label-secondary text-body flex gap-4 border-t border-b py-3 font-medium">

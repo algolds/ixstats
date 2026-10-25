@@ -100,7 +100,7 @@ export function RelativeTimestamp({ timestamp }: { timestamp: Date | string | nu
   return (
     <span
       className="text-label-secondary text-body cursor-help"
-      title={`IxTime: ${date.toLocaleString()}`}
+      title={date.toLocaleString()}
     >
       {hoursDiff > 24 ? date.toLocaleDateString() : relativeTime}
     </span>
