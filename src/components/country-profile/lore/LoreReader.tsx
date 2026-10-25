@@ -33,6 +33,16 @@ function LoreLoading() {
   );
 }
 
+/** A light stand-in while the pieces are listed, below the article. */
+function PiecesLoading() {
+  return (
+    <div className="max-w-[44rem] space-y-3" role="status" aria-label="Loading lore pieces">
+      <Skeleton className="h-5 w-1/3" />
+      <Skeleton className="h-4 w-2/3" />
+    </div>
+  );
+}
+
 type Article = ReturnType<typeof useArticleHtml>;
 
 /** The country's wiki article, or what stands in for it: loading, no article yet, or a wiki that did not answer. */
@@ -163,6 +173,7 @@ export function LoreReader({ layer }: { layer: CountryProfileLayer }) {
         <article aria-label={`${name} on the wiki`} className="min-w-0">
           <ArticleBody article={article} title={title} name={name} contentRef={contentRef} />
         </article>
+        {listed.isLoading && <PiecesLoading />}
         {listed.isError && (
           <p className="text-callout text-label-secondary">The lore pieces could not be loaded.</p>
         )}

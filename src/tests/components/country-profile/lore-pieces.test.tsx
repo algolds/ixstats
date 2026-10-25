@@ -18,9 +18,6 @@ interface ArticleAnswer {
 const mockArticle = jest.fn();
 let mockAnswers: Record<string, ArticleAnswer>;
 const mockSetCuration = jest.fn();
-let mockPendingTitle: string | null = null;
-/** The last change's input, which a settled mutation keeps. */
-let mockVariablesTitle: string | null = null;
 const mockInvalidate = jest.fn();
 
 jest.mock("~/styles/wiki-os.css", () => ({}));
@@ -37,14 +34,7 @@ jest.mock("~/trpc/react", () => ({
     useUtils: () => ({ countryLore: { list: { invalidate: mockInvalidate } } }),
     countryLore: {
       setCuration: {
-        useMutation: () => ({
-          mutateAsync: mockSetCuration,
-          isPending: mockPendingTitle !== null,
-          variables:
-            (mockPendingTitle ?? mockVariablesTitle) === null
-              ? undefined
-              : { title: mockPendingTitle ?? mockVariablesTitle },
-        }),
+        useMutation: () => ({ mutateAsync: mockSetCuration }),
       },
     },
     wikios: {
@@ -110,6 +100,14 @@ const PIECES: LoreListedPiece[] = [
   { title: "Senate of Caphiria", type: "organisation", pinned: false },
 ];
 
+function deferred() {
+  let resolve: (value: { title: string }) => void = () => undefined;
+  const promise = new Promise<{ title: string }>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+
 const refusal = (code: string, message: string) =>
   Object.assign(new Error(message), { data: { code } });
 
@@ -133,8 +131,6 @@ beforeEach(() => {
   globalThis.IntersectionObserver =
     MockIntersectionObserver as unknown as typeof IntersectionObserver;
   mockArticle.mockClear();
-  mockPendingTitle = null;
-  mockVariablesTitle = null;
   mockSetCuration.mockReset().mockResolvedValue({ title: "x" });
   mockInvalidate.mockClear();
   mockAnswers = {
@@ -241,6 +237,32 @@ describe("LorePieces", () => {
     );
   });
 
+  it("scopes a piece's ids, so its footnote points at its own note", () => {
+    mockAnswers.Venceia = page(
+      "Venceia",
+      '<p>Old<sup id="cite_ref-1"><a href="#cite_note-1">[1]</a></sup></p><ol><li id="cite_note-1">A note.</li></ol>'
+    );
+    renderPieces(VISITOR);
+    nearView("Venceia");
+    const footnote = within(chapter("Venceia")).getByRole("link", { name: "[1]" });
+    expect(footnote).toHaveAttribute("href", "#lore-piece-Venceia-cite_note-1");
+    const note = document.getElementById("lore-piece-Venceia-cite_note-1");
+    expect(note).toHaveTextContent("A note.");
+    expect(chapter("Venceia")).toContainElement(note);
+  });
+
+  it("puts a piece's own sections below its title in the heading order", () => {
+    mockAnswers.Venceia = page("Venceia", '<h2 id="History">History</h2><p>Old.</p>');
+    renderPieces(VISITOR);
+    nearView("Venceia");
+    const venceia = within(chapter("Venceia"));
+    expect(venceia.getByRole("heading", { level: 3, name: "Venceia" })).toBeInTheDocument();
+    expect(venceia.getByRole("heading", { level: 4, name: "History" })).toHaveAttribute(
+      "id",
+      "lore-piece-Venceia-History"
+    );
+  });
+
   it("shows a placeholder while a near piece loads", () => {
     mockAnswers.Venceia = { isLoading: true, error: null };
     renderPieces(VISITOR);
@@ -323,22 +345,56 @@ describe("LorePieces", () => {
     );
   });
 
-  it("holds a piece's pin and hide while its change is in flight, and only that piece's", () => {
-    mockPendingTitle = "Venceia";
+  it("holds each piece's pin and hide while its own change is in flight", async () => {
+    const venceia = deferred();
+    const senate = deferred();
+    mockSetCuration.mockReturnValueOnce(venceia.promise).mockReturnValueOnce(senate.promise);
     renderPieces(OWNER);
-    const venceia = within(chapter("Venceia"));
-    expect(venceia.getByRole("button", { name: "Pin" })).toBeDisabled();
-    expect(venceia.getByRole("button", { name: "Hide" })).toBeDisabled();
-    expect(venceia.getByRole("button", { name: "Edit" })).toBeEnabled();
-    const senate = within(chapter("Senate of Caphiria"));
-    expect(senate.getByRole("button", { name: "Pin" })).toBeEnabled();
-    expect(senate.getByRole("button", { name: "Hide" })).toBeEnabled();
+    fireEvent.click(within(chapter("Venceia")).getByRole("button", { name: "Pin" }));
+    fireEvent.click(within(chapter("Senate of Caphiria")).getByRole("button", { name: "Pin" }));
+    for (const title of ["Venceia", "Senate of Caphiria"]) {
+      expect(within(chapter(title)).getByRole("button", { name: "Pin" })).toBeDisabled();
+      expect(within(chapter(title)).getByRole("button", { name: "Hide" })).toBeDisabled();
+    }
+    expect(within(chapter("Venceia")).getByRole("button", { name: "Edit" })).toBeEnabled();
+    expect(within(chapter("Constantinus I")).getByRole("button", { name: "Unpin" })).toBeEnabled();
+
+    await act(async () => venceia.resolve({ title: "Venceia" }));
+    expect(within(chapter("Venceia")).getByRole("button", { name: "Pin" })).toBeEnabled();
+    expect(
+      within(chapter("Senate of Caphiria")).getByRole("button", { name: "Pin" })
+    ).toBeDisabled();
+    await act(async () => senate.resolve({ title: "Senate of Caphiria" }));
+    expect(
+      within(chapter("Senate of Caphiria")).getByRole("button", { name: "Pin" })
+    ).toBeEnabled();
   });
 
-  it("frees a piece's actions once its change has settled", () => {
-    mockVariablesTitle = "Venceia";
+  it("keeps each piece's own refusal", async () => {
+    mockSetCuration
+      .mockRejectedValueOnce(refusal("CONFLICT", "Venceia is busy."))
+      .mockRejectedValueOnce(refusal("CONFLICT", "The Senate is busy."));
     renderPieces(OWNER);
-    expect(within(chapter("Venceia")).getByRole("button", { name: "Pin" })).toBeEnabled();
+    fireEvent.click(within(chapter("Venceia")).getByRole("button", { name: "Pin" }));
+    await within(chapter("Venceia")).findByRole("alert");
+    fireEvent.click(within(chapter("Senate of Caphiria")).getByRole("button", { name: "Pin" }));
+    await within(chapter("Senate of Caphiria")).findByRole("alert");
+    expect(within(chapter("Venceia")).getByRole("alert")).toHaveTextContent("Venceia is busy.");
+    expect(within(chapter("Senate of Caphiria")).getByRole("alert")).toHaveTextContent(
+      "The Senate is busy."
+    );
+  });
+
+  it("keeps one piece's refusal while another piece changes", async () => {
+    mockSetCuration
+      .mockRejectedValueOnce(refusal("CONFLICT", "Busy."))
+      .mockResolvedValueOnce({ title: "Senate of Caphiria" });
+    renderPieces(OWNER);
+    fireEvent.click(within(chapter("Venceia")).getByRole("button", { name: "Pin" }));
+    await within(chapter("Venceia")).findByRole("alert");
+    fireEvent.click(within(chapter("Senate of Caphiria")).getByRole("button", { name: "Pin" }));
+    await waitFor(() => expect(mockInvalidate).toHaveBeenCalled());
+    expect(within(chapter("Venceia")).getByRole("alert")).toHaveTextContent("Busy.");
   });
 
   it("shows the server's refusal in the piece's chapter only", async () => {

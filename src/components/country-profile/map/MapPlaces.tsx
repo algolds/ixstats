@@ -1,5 +1,6 @@
 "use client";
 
+import type { Ref } from "react";
 import { EditPencil } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
@@ -122,14 +123,18 @@ export function MapPlaces({
 export function WritePlaceBar({
   chosen,
   onWrite,
+  ref,
 }: {
   chosen: ChosenPlace | null;
   onWrite: (seed: LoreSeed) => void;
+  ref?: Ref<HTMLDivElement>;
 }) {
   return (
     <div
+      ref={ref}
       role="group"
       aria-label="Write lore about a place"
+      aria-live="polite"
       className="flex min-h-9 flex-wrap items-center gap-3"
     >
       {chosen ? (

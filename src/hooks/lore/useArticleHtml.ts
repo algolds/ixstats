@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from "react";
 import { getBasePath } from "~/lib/base-path";
-import { linksUnderBasePath } from "~/lib/lore/piece-links";
+import { linksUnderBasePath, scopeArticleIds, shiftArticleHeadings } from "~/lib/lore/piece-links";
 import { articleHtmlInput, type WikiSource } from "~/lib/wiki-os/config";
 import { isLeanResolvable, parseLeanMarker, resolveLeanHtml } from "~/lib/wiki-os/lean-article";
 import { api } from "~/trpc/react";
@@ -15,8 +15,16 @@ const ARTICLE_STALE_TIME_MS = 10 * 60 * 1000;
  * rendered and sanitized once per revision, for another wiki its own render, sanitized the same way. `markup` is that
  * HTML, untouched but for its root-relative links, which get the base path (`linksUnderBasePath`), ready for
  * `dangerouslySetInnerHTML` (one object per HTML string). Null while loading, on an error, or for an empty page.
+ *
+ * A page shown as a chapter of another (`chapterId`, a lore piece under its h3 title) also gets its ids scoped to the
+ * chapter (`scopeArticleIds`: its footnotes find its own notes) and its headings moved below the title
+ * (`shiftArticleHeadings`). Fetched only while `enabled`.
  */
-export function useArticleHtml(title: string, source: WikiSource, enabled = true) {
+export function useArticleHtml(
+  title: string,
+  source: WikiSource,
+  { enabled = true, chapterId }: { enabled?: boolean; chapterId?: string } = {}
+) {
   const { data, isLoading, error, refetch } = api.wikios.getArticleHtml.useQuery(
     articleHtmlInput(title, source),
     { staleTime: ARTICLE_STALE_TIME_MS, retry: false, enabled }
@@ -29,10 +37,13 @@ export function useArticleHtml(title: string, source: WikiSource, enabled = true
     if (unresolved) void refetch();
   }, [unresolved, refetch]);
   const html = unresolved ? null : resolveLeanHtml(marker);
-  const markup = useMemo(
-    () => (html ? { __html: linksUnderBasePath(html, getBasePath()) } : null),
-    [html]
-  );
+  const markup = useMemo(() => {
+    if (!html) return null;
+    const linked = linksUnderBasePath(html, getBasePath());
+    return {
+      __html: chapterId ? shiftArticleHeadings(scopeArticleIds(linked, chapterId)) : linked,
+    };
+  }, [html, chapterId]);
 
   return { data, markup, isLoading: isLoading || unresolved, error };
 }

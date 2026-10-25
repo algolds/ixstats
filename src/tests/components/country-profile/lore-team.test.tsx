@@ -61,7 +61,7 @@ const team = () => screen.getByRole("region", { name: "Lore team" });
 
 describe("LoreTeam", () => {
   it("lists the co-authors by name and handle; one with no name reads as a player", () => {
-    render(<LoreTeam countryId="c_caph" />);
+    render(<LoreTeam countryId="c_caph" active />);
     const list = within(team()).getByRole("list");
     expect(within(list).getByText("Livia Aurelia")).toBeInTheDocument();
     expect(within(list).getByText("@livia")).toBeInTheDocument();
@@ -72,25 +72,25 @@ describe("LoreTeam", () => {
 
   it("says when there is no co-author yet", () => {
     mockMembers = [];
-    render(<LoreTeam countryId="c_caph" />);
+    render(<LoreTeam countryId="c_caph" active />);
     expect(within(team()).getByText("No co-authors yet.")).toBeInTheDocument();
   });
 
   it("says when the team could not be loaded", () => {
     mockTeamFailed = true;
     mockMembers = [];
-    render(<LoreTeam countryId="c_caph" />);
+    render(<LoreTeam countryId="c_caph" active />);
     expect(within(team()).getByText("The lore team could not be loaded.")).toBeInTheDocument();
   });
 
   it("shows a placeholder while the team loads", () => {
     mockMembers = undefined;
-    render(<LoreTeam countryId="c_caph" />);
+    render(<LoreTeam countryId="c_caph" active />);
     expect(within(team()).getByRole("status")).toHaveAccessibleName("Loading the lore team");
   });
 
   it("adds a co-author by handle, then clears the field", async () => {
-    render(<LoreTeam countryId="c_caph" />);
+    render(<LoreTeam countryId="c_caph" active />);
     const field = screen.getByLabelText("IxnayID handle");
     fireEvent.change(field, { target: { value: " cassia " } });
     fireEvent.click(screen.getByRole("button", { name: "Add" }));
@@ -102,7 +102,7 @@ describe("LoreTeam", () => {
   });
 
   it("takes a leading @ off the handle", async () => {
-    render(<LoreTeam countryId="c_caph" />);
+    render(<LoreTeam countryId="c_caph" active />);
     fireEvent.change(screen.getByLabelText("IxnayID handle"), { target: { value: " @ cassia" } });
     fireEvent.submit(screen.getByLabelText("IxnayID handle"));
     await waitFor(() =>
@@ -111,7 +111,7 @@ describe("LoreTeam", () => {
   });
 
   it("does not send an empty handle", () => {
-    render(<LoreTeam countryId="c_caph" />);
+    render(<LoreTeam countryId="c_caph" active />);
     fireEvent.change(screen.getByLabelText("IxnayID handle"), { target: { value: "  @ " } });
     expect(screen.getByRole("button", { name: "Add" })).toBeDisabled();
     fireEvent.submit(screen.getByLabelText("IxnayID handle"));
@@ -120,7 +120,7 @@ describe("LoreTeam", () => {
 
   it("shows the server's refusal and keeps the handle", async () => {
     mockAdd.mockRejectedValue(refusal("NOT_FOUND", "No IxnayID has that handle."));
-    render(<LoreTeam countryId="c_caph" />);
+    render(<LoreTeam countryId="c_caph" active />);
     const field = screen.getByLabelText("IxnayID handle");
     fireEvent.change(field, { target: { value: "nobody" } });
     fireEvent.click(screen.getByRole("button", { name: "Add" }));
@@ -131,7 +131,7 @@ describe("LoreTeam", () => {
 
   it("never shows a server error the owner cannot act on", async () => {
     mockAdd.mockRejectedValue(refusal("INTERNAL_SERVER_ERROR", "unique constraint"));
-    render(<LoreTeam countryId="c_caph" />);
+    render(<LoreTeam countryId="c_caph" active />);
     fireEvent.change(screen.getByLabelText("IxnayID handle"), { target: { value: "x" } });
     fireEvent.click(screen.getByRole("button", { name: "Add" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -140,7 +140,7 @@ describe("LoreTeam", () => {
   });
 
   it("removes a co-author only after the owner confirms", async () => {
-    render(<LoreTeam countryId="c_caph" />);
+    render(<LoreTeam countryId="c_caph" active />);
     fireEvent.click(screen.getByRole("button", { name: "Remove Livia Aurelia" }));
     const confirm = screen.getByRole("alertdialog", {
       name: "Remove Livia Aurelia from the lore team?",
@@ -158,7 +158,7 @@ describe("LoreTeam", () => {
 
   it("shows a refused removal", async () => {
     mockRemove.mockRejectedValue(refusal("FORBIDDEN", "Only the country's owner can do this."));
-    render(<LoreTeam countryId="c_caph" />);
+    render(<LoreTeam countryId="c_caph" active />);
     fireEvent.click(screen.getByRole("button", { name: "Remove Livia Aurelia" }));
     fireEvent.click(screen.getByRole("button", { name: "Remove from the team" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -168,12 +168,20 @@ describe("LoreTeam", () => {
 
   it("clears a refusal on the next try", async () => {
     mockAdd.mockRejectedValueOnce(refusal("CONFLICT", "They are already on the lore team."));
-    render(<LoreTeam countryId="c_caph" />);
+    render(<LoreTeam countryId="c_caph" active />);
     fireEvent.change(screen.getByLabelText("IxnayID handle"), { target: { value: "livia" } });
     fireEvent.click(screen.getByRole("button", { name: "Add" }));
     await screen.findByRole("alert");
     fireEvent.click(screen.getByRole("button", { name: "Add" }));
     await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+  });
+
+  it("asks for the team only once the back face is shown", () => {
+    const { rerender } = render(<LoreTeam countryId="c_caph" active={false} />);
+    expect(mockTeamQuery).toHaveBeenLastCalledWith({ countryId: "c_caph" }, { enabled: false });
+    expect(screen.getByRole("region", { name: "Lore team" })).toBeInTheDocument();
+    rerender(<LoreTeam countryId="c_caph" active />);
+    expect(mockTeamQuery).toHaveBeenLastCalledWith({ countryId: "c_caph" }, { enabled: true });
   });
 
   it("is not shown, nor the team asked for, to anyone but the owner while native lore is on", () => {
@@ -185,7 +193,7 @@ describe("LoreTeam", () => {
     ]) {
       mockAccess = access;
       mockTeamQuery.mockClear();
-      const { container, unmount } = render(<LoreTeam countryId="c_caph" />);
+      const { container, unmount } = render(<LoreTeam countryId="c_caph" active />);
       expect(container).toBeEmptyDOMElement();
       expect(mockTeamQuery).toHaveBeenCalledWith({ countryId: "c_caph" }, { enabled: false });
       unmount();

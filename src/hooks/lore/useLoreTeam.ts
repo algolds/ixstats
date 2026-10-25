@@ -8,13 +8,14 @@ export const TEAM_FAILED = "The lore team could not be changed just now.";
 
 /**
  * The owner's lore team (`countryLore.team`, `addAuthor`, `removeAuthor`), asked for only while the viewer manages
- * it. Each change refreshes the team; a refusal is kept in the server's words when the owner can act on it.
+ * it and it is shown (`active`: the back face is turned). Each change refreshes the team; a refusal is kept in the
+ * server's words when the owner can act on it.
  */
-export function useLoreTeam(countryId: string) {
+export function useLoreTeam(countryId: string, active: boolean) {
   const access = api.countryLore.access.useQuery({ countryId }).data;
   const manages = (access?.enabled ?? false) && (access?.isOwner ?? false);
   const utils = api.useUtils();
-  const team = api.countryLore.team.useQuery({ countryId }, { enabled: manages });
+  const team = api.countryLore.team.useQuery({ countryId }, { enabled: manages && active });
   const add = api.countryLore.addAuthor.useMutation();
   const remove = api.countryLore.removeAuthor.useMutation();
   const [refusal, setRefusal] = useState<string | null>(null);

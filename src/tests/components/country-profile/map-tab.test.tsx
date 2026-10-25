@@ -86,6 +86,19 @@ const layer = {
   },
 } as unknown as CountryProfileLayer;
 
+const realMatchMedia = window.matchMedia;
+/** The viewport as media queries see it: narrow (below lg) or not. */
+function viewport(narrow: boolean) {
+  window.matchMedia = ((query: string) =>
+    ({
+      matches: narrow && query === "(max-width: 1023px)",
+      media: query,
+    }) as MediaQueryList) as typeof window.matchMedia;
+}
+afterEach(() => {
+  window.matchMedia = realMatchMedia;
+});
+
 const lastWriter = () => mockWriter.mock.calls.at(-1)?.[0] as Record<string, unknown>;
 
 beforeEach(() => {
@@ -288,6 +301,43 @@ describe("MapTab", () => {
       expect(screen.getByRole("group", { name: "Write lore about a place" })).toHaveTextContent(
         "Lost pin"
       );
+    });
+
+    it("announces the chosen place politely", () => {
+      mockAccess = WRITER;
+      render(<MapTab layer={layer} />);
+      expect(screen.getByRole("group", { name: "Write lore about a place" })).toHaveAttribute(
+        "aria-live",
+        "polite"
+      );
+    });
+
+    it("brings the bar into view on a narrow screen when a place is chosen", () => {
+      mockAccess = WRITER;
+      const scrollIntoView = jest.fn();
+      Element.prototype.scrollIntoView = scrollIntoView;
+      viewport(true);
+      render(<MapTab layer={layer} />);
+      fireEvent.click(screen.getByRole("button", { name: /Inosia/ }));
+      expect(scrollIntoView).toHaveBeenCalledWith(expect.objectContaining({ block: "nearest" }));
+      expect(scrollIntoView.mock.contexts[0]).toBe(
+        screen.getByRole("group", { name: "Write lore about a place" })
+      );
+    });
+
+    it("leaves the page where it is on a wide screen, and for a visitor", () => {
+      const scrollIntoView = jest.fn();
+      Element.prototype.scrollIntoView = scrollIntoView;
+      viewport(false);
+      mockAccess = WRITER;
+      const { unmount } = render(<MapTab layer={layer} />);
+      fireEvent.click(screen.getByRole("button", { name: /Inosia/ }));
+      unmount();
+      viewport(true);
+      mockAccess = { enabled: true, isOwner: false, canWrite: false };
+      render(<MapTab layer={layer} />);
+      fireEvent.click(screen.getByRole("button", { name: /Inosia/ }));
+      expect(scrollIntoView).not.toHaveBeenCalled();
     });
 
     it("marks the chosen place", () => {

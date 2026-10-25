@@ -15,12 +15,15 @@ import { OwnerLayer } from "./OwnerLayer";
  */
 export function CountryBackFace({
   countryId,
+  shown,
   name,
   cover,
   owner,
   onDone,
 }: {
   countryId: string;
+  /** The back face is turned to: what it holds may load. */
+  shown: boolean;
   name: string;
   cover: HeroCover | null;
   owner: ProfileOwnerLayer | null;
@@ -51,7 +54,7 @@ export function CountryBackFace({
       </div>
       <OwnerLayer owner={owner} />
       {cover?.onChange && <CoverOptions cover={{ ...cover, onChange: cover.onChange }} />}
-      <LoreTeam countryId={countryId} />
+      <LoreTeam countryId={countryId} active={shown} />
     </section>
   );
 }

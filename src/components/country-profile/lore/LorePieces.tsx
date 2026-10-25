@@ -42,7 +42,7 @@ export function LorePieces({ countryId, pieces, canWrite, isOwner, onEdit }: Lor
               piece={piece}
               canWrite={canWrite}
               isOwner={isOwner}
-              busy={curation.busyTitle === piece.title}
+              busy={curation.isBusy(piece.title)}
               refusal={curation.refusalFor(piece.title)}
               onEdit={onEdit}
               onSetPinned={(title, pinned) => void curation.setPinned(title, pinned)}

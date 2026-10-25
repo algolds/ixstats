@@ -33,7 +33,7 @@ const useQuery = jest.fn((_input: { title: string }, _options: object) => ({
 }));
 let country: { name: string; wikiSource: string | null; wikiPageTitle: string | null };
 let mockAccess: { enabled: boolean; isOwner: boolean; canWrite: boolean } | undefined;
-let mockPieces: { data?: Piece[]; isError: boolean };
+let mockPieces: { data?: Piece[]; isError: boolean; isLoading?: boolean };
 const mockWriter = jest.fn();
 const mockAddExisting = jest.fn();
 const mockInvalidate = jest.fn();
@@ -393,6 +393,18 @@ describe("LoreReader", () => {
       answer = { isLoading: false, error: { data: { code: "BAD_GATEWAY" } } };
       render(<LoreReader layer={layer} />);
       expect(screen.getByRole("button", { name: "Add an existing page" })).toBeInTheDocument();
+    });
+
+    it("shows that the pieces are loading, below the article", () => {
+      mockPieces = { isLoading: true, isError: false };
+      render(<LoreReader layer={layer} />);
+      expect(screen.getByText("Founded in 480 BC.")).toBeInTheDocument();
+      expect(screen.getByRole("status", { name: "Loading lore pieces" })).toBeInTheDocument();
+    });
+
+    it("shows no pieces placeholder once the list has loaded", () => {
+      render(<LoreReader layer={layer} />);
+      expect(screen.queryByRole("status", { name: "Loading lore pieces" })).toBeNull();
     });
 
     it("keeps writing open while the article loads", () => {

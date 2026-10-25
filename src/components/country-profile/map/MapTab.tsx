@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useReducedMotion } from "motion/react";
 import { Card } from "~/components/ui/card";
 import { FacetList, FacetListSection } from "~/components/ui/facet-list";
 import type { MapFocus } from "~/components/maps/widgets/CountryMapEmbed";
@@ -12,6 +13,9 @@ import { FactList, type Fact } from "../factbook/SnapshotBlock";
 import { LoreWriter } from "../lore/LoreWriter";
 import { TerritoryMap } from "../TerritoryMap";
 import { MapPlaces, PlaceRow, WritePlaceBar, type ChosenPlace } from "./MapPlaces";
+
+/** The cards stack below lg. */
+const NARROW = "(max-width: 1023px)";
 
 function landFacts({ land }: CountryProfileLayer): Fact[] {
   const p = land.profile;
@@ -56,10 +60,19 @@ export function MapTab({ layer }: { layer: CountryProfileLayer }) {
   const [focus, setFocus] = useState<MapFocus | null>(null);
   const [chosen, setChosen] = useState<ChosenPlace | null>(null);
   const entry = useLoreEntry(layer.countryId);
+  const barRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
   const area = land.areaSqKm ?? vitals.landArea;
   const choose = (place: ChosenPlace) => {
     setChosen(place);
     if (place.focus) setFocus(place.focus);
+    // Stacked (below lg) the lists sit far under the bar: a writer's choice brings it into view.
+    if (window.matchMedia(NARROW).matches) {
+      barRef.current?.scrollIntoView({
+        behavior: reduceMotion ? "auto" : "smooth",
+        block: "nearest",
+      });
+    }
   };
   const row = { chosenKey: chosen?.key ?? null, canWrite: entry.canWrite, onChoose: choose };
 
@@ -72,7 +85,7 @@ export function MapTab({ layer }: { layer: CountryProfileLayer }) {
         heightClass="h-80 md:h-[32rem]"
         focus={focus}
       />
-      {entry.canWrite && <WritePlaceBar chosen={chosen} onWrite={entry.write} />}
+      {entry.canWrite && <WritePlaceBar ref={barRef} chosen={chosen} onWrite={entry.write} />}
       <div className="grid gap-4 lg:grid-cols-3">
         <Card padding="md" className="flex flex-col gap-4">
           <h2 className="text-title-3 text-label">Land</h2>

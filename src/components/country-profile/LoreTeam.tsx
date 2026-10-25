@@ -74,10 +74,11 @@ function TeamRows({
  * LoreTeam: the owner's lore team on the country page's back face
  * (docs/superpowers/specs/2026-10-24-native-lore-design.md, "Co-authors"). Co-authors may write and edit the country's
  * lore from its page; on the wiki they are ordinary editors. The owner adds one by IxnayID handle and removes one after
- * confirming. Shown only to the owner while native lore is on for the country.
+ * confirming. Shown only to the owner while native lore is on for the country; the team is asked for once the back
+ * face is shown (`active`).
  */
-export function LoreTeam({ countryId }: { countryId: string }) {
-  const team = useLoreTeam(countryId);
+export function LoreTeam({ countryId, active }: { countryId: string; active: boolean }) {
+  const team = useLoreTeam(countryId, active);
   const fieldId = useId();
   const [handle, setHandle] = useState("");
   const [removing, setRemoving] = useState<Member | null>(null);

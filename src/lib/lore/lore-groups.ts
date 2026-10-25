@@ -35,7 +35,11 @@ export function groupLorePieces<P extends { type: LoreType }>(
   })).filter((group) => group.pieces.length > 0);
 }
 
-/** A piece's chapter id on the Lore tab; the prefix keeps it apart from the article's own heading ids. */
+/**
+ * A piece's chapter id on the Lore tab; the prefix keeps it apart from the article's own heading ids. Spaces become
+ * underscores and anything else outside URL-safe characters is encoded (`%` read as `.`), so the id needs no escaping
+ * in an attribute or a `#fragment`.
+ */
 export function loreChapterId(title: string): string {
-  return `lore-piece-${title.replace(/\s+/g, "_")}`;
+  return `lore-piece-${encodeURIComponent(title.replace(/\s+/g, "_")).replace(/%/g, ".")}`;
 }

@@ -21,12 +21,16 @@ function PieceLoading({ title }: { title: string }) {
 
 /**
  * The piece's page as WikiOS renders it, in WikiOS's article styles (as the forum's wiki embed shows one). The HTML is
- * WikiOS's sanitized view bundle, with its links under the base path (`useArticleHtml`). It is fetched once the
+ * WikiOS's sanitized view bundle, with its links under the base path, its ids scoped to the chapter and its headings
+ * below the piece's title (`useArticleHtml`). It is fetched once the
  * chapter nears the viewport (`near`), so a long list never fetches every page up front; a page already read shows at
  * once. A page that fails to load, or has nothing to show, says so here and nowhere else.
  */
 function PieceBody({ title, near }: { title: string; near: boolean }) {
-  const { markup, isLoading } = useArticleHtml(title, "ixwiki", near);
+  const { markup, isLoading } = useArticleHtml(title, "ixwiki", {
+    enabled: near,
+    chapterId: loreChapterId(title),
+  });
   if (markup) {
     return (
       <div className="wikios-article-body wikios-article-content max-w-[44rem]">
