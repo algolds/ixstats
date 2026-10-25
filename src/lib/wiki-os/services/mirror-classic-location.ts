@@ -86,8 +86,10 @@ export async function classicTitleOf(articleId: string | null, queuedAs: string)
   });
   const title = owed?.job.title ?? article?.title ?? queuedAs;
   if (!article?.mwPageId) return title;
-  // not found: the title the page was last at in classic, where a delete there is judged; never another page's
+  // not found: the title the page was last at in classic, where a delete there is judged; never another page at a title
+  // it moved through. At the article's own title, another page is one made anew there (a classic editor recreating it
+  // after a delete): the revision rule judges the job against it.
   const location = await findClassicPage(title, article.mwPageId, holdsRevisionOf(articleId));
-  if (location.heldByAnother) throw heldByAnotherError(location, title);
+  if (location.heldByAnother && location.title !== title) throw heldByAnotherError(location, title);
   return location.title;
 }

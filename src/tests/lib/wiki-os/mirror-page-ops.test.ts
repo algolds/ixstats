@@ -981,6 +981,33 @@ describe.each(WIKIOS_MODES)(
       expect(site.pages.has("Caphiria Republic")).toBe(false);
     });
 
+    it("a page a classic editor made anew at the article's own title is judged by the revision rule, never sent to an administrator", async () => {
+      const saved = await ArticleRepository.saveArticle(
+        {
+          slug: "Caphiria",
+          title: "Caphiria",
+          wikitext: "Caphiria is an empire.",
+          expectedHeadRef: toRevisionRef(
+            tables.wikiRevision.rows.find((row) => row.articleId === article("Caphiria")!.id) as {
+              id: string;
+              mwRevId: number | null;
+            }
+          ),
+        },
+        "db-kir",
+        "Kir"
+      );
+      site.deletePage("Admin", "Caphiria");
+      const carol = site.editAs("Carol", "Caphiria", "Caphiria is a city.");
+
+      await mirrorTwice();
+
+      expect(jobOf("revision")).toMatchObject({ state: "done", lastError: null });
+      expect(conflicts()).toHaveLength(1);
+      expect(conflicts()[0]).toMatchObject({ winnerSide: "wikios", winnerRef: saved.revisionId });
+      expect(overwrittenRefs(conflicts()[0]!)).toEqual([String(carol.revid)]);
+    });
+
     it("a classic delete of an unrelated page at a title the page passed through long ago never archives the page", async () => {
       const id = article("Caphiria")!.id;
       site.movePage("Bob", "Caphiria", "Caphiria Republic", { redirect: false });
