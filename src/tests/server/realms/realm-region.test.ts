@@ -7,7 +7,17 @@
 jest.mock("~/server/db", () => ({ db: {} }));
 
 jest.mock("~/lib/ixtime", () => ({
-  IxTime: { getCurrentIxTime: () => Date.UTC(2041, 5, 2, 9, 30) },
+  IxTime: {
+    getCurrentIxTime: () => Date.UTC(2041, 5, 2, 9, 30),
+    getTimeMultiplier: () => 2,
+    setBotTimeOverride: jest.fn(async () => ({ success: true, message: "ok" })),
+    setTimeOverride: jest.fn(),
+    getClockState: () => ({
+      timeOverride: null,
+      timeOverrideSetAt: null,
+      multiplierOverride: null,
+    }),
+  },
 }));
 
 jest.mock("~/lib/cache", () => ({
@@ -20,6 +30,8 @@ jest.mock("~/server/modules/realms/realms.flags", () => ({ deleteLocalFlagImages
 jest.mock("~/lib/auth", () => ({ isSystemOwner: () => false }));
 
 import { realmsRouter } from "~/server/api/routers/realms";
+import { IxTime } from "~/lib/ixtime";
+import { formatRealmDate, parseRealmClock, realmClockNow } from "~/lib/realms/realm-clock";
 import { realmPowers } from "~/server/modules/realms";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
@@ -564,6 +576,125 @@ describe("the realm clock", () => {
   }
   const START = { slug: "eurth", startDate: "1203-03-14", era: "AE", multiplier: 3 };
   describe("realm clock actions", () => {
+    const DAY = 24 * 60 * 60 * 1000;
+    const clockOf = (row: Record<string, unknown>) =>
+      (row.settings as { clock: Record<string, number> }).clock;
+
+    it("sets a clock only for the founder or staff, once, dropping the old in-world date", async () => {
+      const { db, row } = makeDb();
+      await expect(caller(OFFICER, db).startClock(START)).rejects.toMatchObject({
+        code: "FORBIDDEN",
+      });
+      await caller(FOUNDER, db).startClock(START);
+      expect(row.settings).not.toHaveProperty("inWorldDate");
+      expect(clockOf(row).anchorClockMs).toBe(Date.UTC(2041, 5, 2, 9, 30));
+      await expect(caller(ADMIN, db).startClock(START)).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+      });
+    });
+
+    it("changes the speed once a week for the founder, any time for staff", async () => {
+      const { db, row } = makeDb();
+      await caller(FOUNDER, db).startClock(START);
+      // A clock set a week ago, so the founder may change its speed now.
+      clockOf(row).changedAt -= 8 * DAY;
+      await caller(FOUNDER, db).updateClock({ slug: "eurth", multiplier: 6 });
+      await expect(
+        caller(FOUNDER, db).updateClock({ slug: "eurth", multiplier: 0 })
+      ).rejects.toMatchObject({ code: "BAD_REQUEST", message: expect.stringMatching(/again on/) });
+      await caller(ADMIN, db).updateClock({ slug: "eurth", multiplier: 0 });
+      expect(clockOf(row).multiplier).toBe(0);
+    });
+
+    it("saves the founder's months, keeping today's year and refusing a bad calendar", async () => {
+      const { db, row } = makeDb();
+      await caller(FOUNDER, db).startClock(START);
+      const months = [
+        { name: "Thaw", days: 30 },
+        { name: "Frostfall", days: 40 },
+      ];
+      await caller(FOUNDER, db).updateClock({ slug: "eurth", months });
+      expect(clockOf(row)).toMatchObject({ months, era: "AE" });
+      const clock = parseRealmClock(clockOf(row))!;
+      expect(formatRealmDate(realmClockNow(clock, Date.now()), clock)).toMatch(
+        /Frostfall 1203 AE$/
+      );
+      for (const bad of [[], [{ name: "Thaw", days: 101 }], [months[0], months[0]]]) {
+        await expect(
+          caller(FOUNDER, db).updateClock({ slug: "eurth", months: bad })
+        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      }
+      await caller(FOUNDER, db).updateClock({ slug: "eurth", months: null });
+      expect(clockOf(row)).not.toHaveProperty("months");
+    });
+
+    it("jumps forward for the founder once a week, really moving the clock", async () => {
+      const { db, row } = makeDb();
+      await caller(FOUNDER, db).startClock(START);
+      const before = clockOf(row).anchorClockMs;
+      await caller(FOUNDER, db).jumpClock({ slug: "eurth", days: 30 });
+      expect(clockOf(row).anchorClockMs).toBe(before + 30 * DAY);
+      expect(clockOf(row).jumpedAt).toBeGreaterThan(0);
+      await expect(caller(FOUNDER, db).jumpClock({ slug: "eurth", days: 1 })).rejects.toMatchObject(
+        { code: "BAD_REQUEST", message: expect.stringMatching(/jump again on/) }
+      );
+      // Site staff are exempt from the cooldown.
+      await caller(ADMIN, db).jumpClock({ slug: "eurth", days: 1 });
+      expect(clockOf(row).anchorClockMs).toBe(before + 31 * DAY);
+    });
+
+    it("refuses a jump past 5 of the realm's years, backwards, or by an officer", async () => {
+      const { db, row } = makeDb();
+      await caller(FOUNDER, db).startClock(START);
+      await caller(FOUNDER, db).updateClock({
+        slug: "eurth",
+        months: [{ name: "Moon", days: 10 }],
+      });
+      await expect(caller(ADMIN, db).jumpClock({ slug: "eurth", days: 51 })).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+        message: expect.stringMatching(/5 years/),
+      });
+      await expect(caller(FOUNDER, db).jumpClock({ slug: "eurth", days: 0 })).rejects.toMatchObject(
+        { code: "BAD_REQUEST" }
+      );
+      await expect(caller(OFFICER, db).jumpClock({ slug: "eurth", days: 1 })).rejects.toMatchObject(
+        { code: "FORBIDDEN" }
+      );
+      await caller(FOUNDER, db).jumpClock({ slug: "eurth", days: 50 });
+      expect(clockOf(row).jumpedAt).toBeDefined();
+    });
+
+    it("lets only staff jump Ixnay, by moving the bot's IxTime", async () => {
+      const { db } = makeDb({ id: "default", slug: "ixnay", ownerId: "system" });
+      await expect(caller(FOUNDER, db).jumpClock({ slug: "ixnay", days: 3 })).rejects.toMatchObject(
+        { code: "FORBIDDEN" }
+      );
+      await expect(caller(ADMIN, db).jumpClock({ slug: "ixnay", days: 3 })).resolves.toMatchObject({
+        clock: null,
+        botSynced: true,
+      });
+      expect(IxTime.setBotTimeOverride).toHaveBeenCalledWith(Date.UTC(2041, 5, 5, 9, 30));
+      expect(IxTime.setTimeOverride).toHaveBeenCalledWith(Date.UTC(2041, 5, 5, 9, 30));
+      expect(db.systemConfig.upsert).toHaveBeenCalled();
+      expect(db.realm.update).not.toHaveBeenCalled();
+    });
+
+    it("answers the context clock by realm id, and Ixnay's for a realm missing its clock", async () => {
+      const { db } = makeDb();
+      const errors = jest.spyOn(console, "error").mockImplementation(() => undefined);
+      const anyone = realmsRouter.createCaller(
+        createMockRouterContext({ db, auth: null, user: null }) as never
+      ).region;
+      expect(await anyone.contextClock({ realmId: "eurth" })).toEqual({
+        realmId: "eurth",
+        clock: null,
+      });
+      expect(errors).toHaveBeenCalledWith(expect.stringContaining("eurth has no clock"));
+      errors.mockRestore();
+      await caller(FOUNDER, db).startClock(START);
+      expect((await anyone.contextClock({ realmId: "eurth" })).clock).toMatchObject({ era: "AE" });
+    });
+
     it("keeps an unpublished realm's clock private", async () => {
       const { db, row } = makeDb();
       await caller(FOUNDER, db).startClock(START);

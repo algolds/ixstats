@@ -19,8 +19,15 @@ import {
   REALM_TAGS,
 } from "~/lib/realms/realm-region";
 import { RealmLinksSchema } from "~/lib/realms/realm-community";
-import { MAX_REALM_ERA, RealmSpeedSchema, RealmStartDateSchema } from "~/lib/realms/realm-clock";
 import {
+  MAX_JUMP_DAYS,
+  RealmEraSchema,
+  RealmSpeedSchema,
+  RealmStartDateSchema,
+} from "~/lib/realms/realm-clock";
+import { RealmMonthsSchema } from "~/lib/realms/realm-calendar";
+import {
+  jumpRealmClock,
   realmContextClock,
   startRealmClock,
   updateRealmClock,
@@ -143,37 +150,52 @@ export const realmRegionRouter = createTRPCRouter({
       updateRealmAppearance(ctx.db, ctx.user, input).catch(regionError)
     ),
 
-  /** The clock in a context (realm header, Halo greeting); null means global IxTime. Public. */
+  /**
+   * The clock in a context (a realm by id or slug, a country's realm, the viewer's active nation's): `realmId` and
+   * its stored clock; `clock` null reads Ixnay's clock (IxTime). Public. Read it with `useRealmClock`.
+   */
   contextClock: publicProcedure
     .input(
-      z.object({ realm: slug.optional(), country: slug.optional(), active: z.boolean().optional() })
+      z.object({
+        realmId: z.string().min(1).max(100).optional(),
+        realm: slug.optional(),
+        country: slug.optional(),
+        active: z.boolean().optional(),
+      })
     )
-    .query(async ({ ctx, input }) => ({
-      clock: await realmContextClock(ctx.db, input, ctx.user ?? null),
-    })),
+    .query(({ ctx, input }) => realmContextClock(ctx.db, input, ctx.user ?? null)),
 
-  /** Founder or site staff: switch the realm's clock on (once; the start date cannot change later). */
+  /** Founder or site staff: give a realm that lost its clock a new one (every realm gets one at founding). */
   startClock: rateLimitedMutationProcedure
     .input(
       z.object({
         slug,
         startDate: RealmStartDateSchema,
-        era: z.string().trim().max(MAX_REALM_ERA),
+        era: RealmEraSchema,
         multiplier: RealmSpeedSchema,
       })
     )
     .mutation(({ ctx, input }) => startRealmClock(ctx.db, ctx.user, input).catch(regionError)),
 
-  /** Founder or site staff: the speed (founder: once a week) and the era. */
+  /** Founder or site staff: the speed (founder: once a week), the era and the calendar (`months`; null: Gregorian). */
   updateClock: rateLimitedMutationProcedure
     .input(
       z.object({
         slug,
         multiplier: RealmSpeedSchema.optional(),
-        era: z.string().trim().max(MAX_REALM_ERA).optional(),
+        era: RealmEraSchema.optional(),
+        months: RealmMonthsSchema.nullable().optional(),
       })
     )
     .mutation(({ ctx, input }) => updateRealmClock(ctx.db, ctx.user, input).catch(regionError)),
+
+  /**
+   * Founder or site staff: jump the realm's date `days` ahead (time really passes). At most 5 of its years; the
+   * founder once a week. Ixnay: site staff only.
+   */
+  jumpClock: rateLimitedMutationProcedure
+    .input(z.object({ slug, days: z.number().int().min(1).max(MAX_JUMP_DAYS) }))
+    .mutation(({ ctx, input }) => jumpRealmClock(ctx.db, ctx.user, input).catch(regionError)),
 
   updateFactbook: rateLimitedMutationProcedure
     .input(z.object({ slug, wikitext: z.string().max(100_000) }))
