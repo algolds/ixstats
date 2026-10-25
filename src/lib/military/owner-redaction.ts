@@ -4,39 +4,35 @@
  * far and GDP drain, and a conflict's casualties and economic damage (shown to its parties).
  */
 
-const OPERATION_COST_FIELDS = [
-  "personnelDeployed",
-  "dailyCost",
-  "totalCostSoFar",
-  "gdpDrain",
-] as const;
-type OperationCostField = (typeof OPERATION_COST_FIELDS)[number];
+type OperationCostField = "personnelDeployed" | "dailyCost" | "totalCostSoFar" | "gdpDrain";
+type ConflictCostField = "initiatorCasualties" | "defenderCasualties" | "economicDamage";
 
-const CONFLICT_COST_FIELDS = [
-  "initiatorCasualties",
-  "defenderCasualties",
-  "economicDamage",
-] as const;
-type ConflictCostField = (typeof CONFLICT_COST_FIELDS)[number];
-
+/** `T` without `K`, typed so callers can still read the fields (as undefined). */
 type Redacted<T, K extends keyof T> = Omit<T, K> & { [P in K]?: undefined };
-
-function omit<T extends object, K extends keyof T>(row: T, keys: readonly K[]): Redacted<T, K> {
-  const out = { ...row };
-  for (const key of keys) delete out[key];
-  return out;
-}
 
 /** An operation without its personnel and costs. */
 export function redactOperationCosts<T extends Record<OperationCostField, number>>(
   operation: T
 ): Redacted<T, OperationCostField> {
-  return omit(operation, OPERATION_COST_FIELDS);
+  const {
+    personnelDeployed: _personnelDeployed,
+    dailyCost: _dailyCost,
+    totalCostSoFar: _totalCostSoFar,
+    gdpDrain: _gdpDrain,
+    ...rest
+  } = operation;
+  return rest as Redacted<T, OperationCostField>;
 }
 
 /** A conflict without its casualties and economic damage. */
 export function redactConflictCosts<T extends Record<ConflictCostField, number>>(
   conflict: T
 ): Redacted<T, ConflictCostField> {
-  return omit(conflict, CONFLICT_COST_FIELDS);
+  const {
+    initiatorCasualties: _initiatorCasualties,
+    defenderCasualties: _defenderCasualties,
+    economicDamage: _economicDamage,
+    ...rest
+  } = conflict;
+  return rest as Redacted<T, ConflictCostField>;
 }
