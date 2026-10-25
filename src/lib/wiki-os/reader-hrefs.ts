@@ -7,6 +7,9 @@ import { getBasePath } from "~/lib/base-path";
  * The rest of a tag after its `<`, quoted values skipped whole, up to and including its `>`. The serializer leaves `<`
  * and `>` raw inside an attribute value, so a scan that stopped at the first `>`, or started at any `<a`, would stop
  * inside a value or start in one. Sticky: it is only ever tried at one tag's `<`.
+ *
+ * It assumes serializer or DOMPurify output, which always writes attribute values in double quotes: a single-quoted
+ * or unquoted value holding `>` would end the walk early.
  */
 const TAG_REST = /(?:[^>"]|"[^"]*")*>/y;
 /** A link: `<a` and its attributes. `<abbr>`, `<area>` and an `<a>` with no attributes are not. */

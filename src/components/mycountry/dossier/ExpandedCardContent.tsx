@@ -17,7 +17,7 @@ import {
   Tournament as Swords,
   SystemRestart as Loader2,
   Globe,
-  OpenNewWindow as ExternalLink,
+  NavArrowRight,
   Crown,
   Calendar,
 } from "iconoir-react";
@@ -267,7 +267,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                   <Link href={wikiReaderPath(country.name)} onClick={(e) => e.stopPropagation()}>
                     <Globe className="text-label-secondary h-3.5 w-3.5" />
                     View on the wiki
-                    <ExternalLink className="text-label-secondary ml-auto h-3 w-3" />
+                    <NavArrowRight className="text-label-secondary ml-auto h-3 w-3" />
                   </Link>
                 </Button>
               </div>
