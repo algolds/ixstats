@@ -19,8 +19,19 @@ const nameOf = (c: ListedCountry) => c?.name ?? "Unknown";
 const flagOf = (c: ListedCountry) => normalizeFlagUrl(c?.flag) ?? null;
 const slugOf = (c: ListedCountry) => c?.slug ?? null;
 
-/** An embassy as the network view lists it, seen from `countryId`. Budget fields only for funders. */
-function embassyListing(embassy: ListedEmbassy, countryId: string, funders: Set<string>) {
+/** Key of a nation pair, whichever side is first. */
+const pairKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+
+/**
+ * An embassy as the network view lists it, seen from `countryId`. Budget fields only for funders. `strength` is the
+ * pair's relation strength (the one standing scale), null when they have no relation record.
+ */
+function embassyListing(
+  embassy: ListedEmbassy,
+  countryId: string,
+  funders: Set<string>,
+  strengthByPair: Map<string, number>
+) {
   const isHost = embassy.hostCountryId === countryId;
   const budgetVisible = funders.has(embassy.guestCountryId);
   const partnerCountry = isHost ? embassy.guestCountry : embassy.hostCountry;
@@ -45,7 +56,7 @@ function embassyListing(embassy: ListedEmbassy, countryId: string, funders: Set<
     countryFlag: flagOf(partnerCountry),
     countrySlug: slugOf(partnerCountry),
     status: embassy.status,
-    strength: Math.floor((embassy.staffCount || 5) * 8 + (services ? services.length * 10 : 30)),
+    strength: strengthByPair.get(pairKey(embassy.hostCountryId, embassy.guestCountryId)) ?? null,
     role: isHost ? ("host" as const) : ("guest" as const),
     ambassadorName: embassy.ambassadorName,
     location: embassy.location,
@@ -89,7 +100,25 @@ export const diplomaticEmbassiesQueriesEmbassyListingsRouter = createTRPCRouter(
         embassies.map((e) => e.guestCountryId)
       );
 
-      return embassies.map((embassy) => embassyListing(embassy, input.countryId, funders));
+      const partners = embassies.map((e) =>
+        e.hostCountryId === input.countryId ? e.guestCountryId : e.hostCountryId
+      );
+      const relations = await ctx.db.diplomaticRelation.findMany({
+        where: {
+          OR: [
+            { country1: input.countryId, country2: { in: partners } },
+            { country2: input.countryId, country1: { in: partners } },
+          ],
+        },
+        select: { country1: true, country2: true, strength: true },
+      });
+      const strengthByPair = new Map(
+        relations.map((r) => [pairKey(r.country1, r.country2), r.strength])
+      );
+
+      return embassies.map((embassy) =>
+        embassyListing(embassy, input.countryId, funders, strengthByPair)
+      );
     }),
 
   // Embassy Management

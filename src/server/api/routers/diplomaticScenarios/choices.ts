@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { applyRelationshipImpact } from "~/lib/diplomacy/relationship-impact";
 
 type ChoiceOption = {
   id: string;
@@ -97,6 +98,15 @@ export const diplomaticScenariosChoicesRouter = createTRPCRouter({
         });
         if (resolved.count !== 1) {
           throw new TRPCError({ code: "CONFLICT", message: "Scenario was already resolved" });
+        }
+        const relationshipChange = selectedChoice.effects?.relationshipChange ?? 0;
+        if (relationshipChange !== 0) {
+          await applyRelationshipImpact(
+            ctx.db,
+            scenario.country1Id,
+            scenario.country2Id,
+            relationshipChange
+          );
         }
         const updatedScenario = await ctx.db.culturalScenario.findUniqueOrThrow({
           where: { id: input.scenarioId },

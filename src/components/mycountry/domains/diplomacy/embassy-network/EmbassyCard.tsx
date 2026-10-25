@@ -4,17 +4,15 @@ import React from "react";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
-import { City as Building2, ShieldCheck, NavArrowRight as ChevronRight } from "iconoir-react";
+import { City as Building2, NavArrowRight as ChevronRight } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
-import { getStandingBand, getSynergyBand } from "~/lib/diplomacy/relation-bands";
+import { getStandingBand } from "~/lib/diplomacy/relation-bands";
 import { calculateRelativeDevelopment } from "~/lib/diplomacy/relative-development";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
-/**
- * Embassy data with calculated synergies
- */
-interface EmbassyWithSynergies {
+/** An embassy as the network grid shows it. */
+export interface EmbassySummary {
   id: string;
   name: string;
   hostCountry: string;
@@ -22,63 +20,27 @@ interface EmbassyWithSynergies {
   guestCountry: string;
   guestCountryFlag?: string | null;
   status: string;
-  strength: number;
+  /** The pair's relation strength (0-100), null when they have no relation record yet. */
+  strength: number | null;
   /** Economic tiers for the asymmetry badge; the badge is hidden when either is unknown. */
   hostCountryTier?: string | null;
   guestCountryTier?: string | null;
   /** The viewed country's side of the embassy, which sets the badge's point of view. */
   role?: "host" | "guest";
-  totalSynergyScore: number;
-  economicBonus: number;
-  diplomaticBonus: number;
-  culturalBonus: number;
-  synergies: Array<{
-    category: string;
-    matchScore: number;
-    sharedComponents: string[];
-    benefits: {
-      economic: number;
-      diplomatic: number;
-      cultural: number;
-    };
-  }>;
 }
 
 /**
  * Props for EmbassyCard component
  */
 interface EmbassyCardProps {
-  /** Embassy data with calculated synergies */
-  embassy: EmbassyWithSynergies;
+  embassy: EmbassySummary;
   /** Whether the current user owns this country */
   isOwner: boolean;
   /** Callback when card is clicked */
   onClick: () => void;
 }
 
-/**
- * EmbassyCard Component
- *
- * Displays an individual embassy with blended flag header, synergy metrics,
- * and benefit breakdown across economic, diplomatic, and cultural dimensions.
- *
- * Features:
- * - Paired flag header with a centre marker
- * - Embassy details (name, countries, status, strength)
- * - Synergy badge and progress bar
- * - Benefits grid with color-coded bonuses
- * - Click hint for owners
- * - Hover effects for interactive states
- *
- * @example
- * ```tsx
- * <EmbassyCard
- *   embassy={embassyData}
- *   isOwner={true}
- *   onClick={() => setSelectedEmbassyId(embassy.id)}
- * />
- * ```
- */
+/** One embassy: paired flags, the partner pair, and the pair's relationship standing. */
 export const EmbassyCard = React.memo(function EmbassyCard({
   embassy,
   isOwner,
@@ -92,12 +54,7 @@ export const EmbassyCard = React.memo(function EmbassyCard({
     );
   }, [embassy.role, embassy.hostCountryTier, embassy.guestCountryTier]);
 
-  const synergy = getSynergyBand(embassy.totalSynergyScore);
-  const benefits = [
-    { label: "Economic", high: embassy.economicBonus > 0 },
-    { label: "Diplomatic", high: embassy.diplomaticBonus > 0 },
-    { label: "Cultural", high: embassy.culturalBonus > 0 },
-  ];
+  const standing = embassy.strength === null ? null : getStandingBand(embassy.strength);
 
   return (
     <Card
@@ -151,43 +108,30 @@ export const EmbassyCard = React.memo(function EmbassyCard({
               </span>
               <span aria-hidden>·</span>
               <span className="capitalize">{embassy.status}</span>
-              <span aria-hidden>·</span>
-              <span>Standing: {getStandingBand(embassy.strength).label}</span>
             </p>
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-1">
-            <Badge variant="outline" className={synergy.textClass}>
-              <ShieldCheck />
-              {synergy.label} Synergy
+          {asymmetry && (
+            <Badge variant="outline" className="text-label-secondary shrink-0">
+              {asymmetry.label}
             </Badge>
-            {asymmetry && (
-              <Badge variant="outline" className="text-label-secondary">
-                {asymmetry.label}
-              </Badge>
-            )}
-          </div>
+          )}
         </div>
       </CardHeader>
 
       <CardContent className="space-y-3 px-4 pb-4">
         <div className="space-y-2">
           <div className="text-footnote flex items-center justify-between">
-            <Eyebrow>Standing tier</Eyebrow>
-            <span className={cn("font-semibold", synergy.textClass)}>{synergy.label}</span>
+            <Eyebrow>Relationship standing</Eyebrow>
+            <span className={cn("font-semibold", standing?.textClass ?? "text-label-secondary")}>
+              {standing?.label ?? "Not yet rated"}
+            </span>
           </div>
-          <Progress value={embassy.totalSynergyScore} className="h-2" />
+          <Progress
+            value={embassy.strength ?? 0}
+            className="h-2"
+            indicatorClassName={standing?.barClass}
+          />
         </div>
-
-        <dl className="text-footnote grid grid-cols-3 gap-2">
-          {benefits.map((b) => (
-            <div key={b.label} className="bg-fill-3 rounded-control p-2 text-center">
-              <dd className={cn("font-semibold", b.high ? "text-label" : "text-label-secondary")}>
-                {b.high ? "High" : "Standard"}
-              </dd>
-              <dt className="text-label-secondary">{b.label}</dt>
-            </div>
-          ))}
-        </dl>
 
         {isOwner && (
           <div className="border-separator space-y-2 border-t pt-3">

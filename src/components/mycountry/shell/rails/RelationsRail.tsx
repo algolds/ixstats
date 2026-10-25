@@ -10,7 +10,7 @@ import {
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
-import { getStrengthLabel } from "~/lib/statecraft/diplo-intel";
+import { getStandingBand } from "~/lib/diplomacy/relation-bands";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import {
   DomainKpiGrid,
@@ -78,7 +78,7 @@ const PARTNER_FALLBACK = "Partner Nation";
 const isActive = (e: EmbassyItem) => e.status === "ACTIVE" || e.status === "active";
 const memberCountOf = (a: AllianceItem) => a.memberCount ?? a.members?.length ?? 1;
 const stanceOf = (strength: number | null) =>
-  strength != null ? getStrengthLabel(strength) : "Unrated";
+  strength != null ? getStandingBand(strength).label : "Unrated";
 
 /** The other side of an embassy, from this country's point of view. */
 function embassyPartner(e: EmbassyItem, countryId: string) {

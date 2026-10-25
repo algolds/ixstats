@@ -24,7 +24,8 @@ import {
   CheckCircle,
 } from "iconoir-react";
 import { useScrollToFocus } from "~/hooks/useScrollToFocus";
-import { getStrengthLabel } from "~/lib/statecraft/diplo-intel";
+import { getStandingBand } from "~/lib/diplomacy/relation-bands";
+import { useNotify } from "~/hooks/useNotify";
 import { useUser } from "~/context/auth-context";
 import { formatExactCurrency } from "~/lib/utils/format-utils";
 import { Card } from "~/components/ui/card";
@@ -43,7 +44,6 @@ interface RelationRow {
   targetCountryName: string;
   targetCountryFlag: string | null;
   flagUrl?: string | null;
-  relationship: string;
   strength: number;
   establishedAt?: string;
   lastContact?: string;
@@ -59,14 +59,8 @@ type DiplomaticGoal = (typeof DIPLOMATIC_GOALS)[number];
 const isDiplomaticGoal = (value: string): value is DiplomaticGoal =>
   DIPLOMATIC_GOALS.some((goal) => goal === value);
 
-/** Relationship status is semantic (success → destructive), so it keeps its status colour. */
-const STATUS_THEMES: Record<string, { text: string; progress: string }> = {
-  allied: { text: "text-green", progress: "bg-green" },
-  friendly: { text: "text-label", progress: "bg-tint" },
-  neutral: { text: "text-label-secondary", progress: "bg-label-tertiary" },
-  tense: { text: "text-yellow", progress: "bg-yellow" },
-  hostile: { text: "text-destructive", progress: "bg-destructive" },
-};
+/** Standing of a pair with no relation record yet: neutral. */
+const UNRATED_STRENGTH = 50;
 
 const STANCE_OPTIONS: ReadonlyArray<{ value: DiplomaticGoal; label: string }> = [
   { value: "ALLY", label: "Ally (Alliance Pursuit)" },
@@ -112,8 +106,7 @@ function mergeEmbassyRelations(
         targetCountryId: partnerId,
         targetCountryName: partnerName,
         targetCountryFlag: e.countryFlag ?? (isGuest ? e.hostCountryFlag : e.guestCountryFlag),
-        relationship: e.status === "ACTIVE" ? "FRIENDLY" : "NEUTRAL",
-        strength: e.strength,
+        strength: e.strength ?? UNRATED_STRENGTH,
         establishedAt: e.establishedAt,
         tradeVolume: 0,
         goalSelf: null,
@@ -140,8 +133,8 @@ function RelationCard({
   goalPending: boolean;
   onGoalChange: (relationId: string, goal: DiplomaticGoal) => void;
 }) {
-  const statusKey = (rel.relationship || "neutral").toLowerCase();
-  const theme = STATUS_THEMES[statusKey] || STATUS_THEMES.neutral;
+  // One band, from the one scale (relation strength), for the badge, the label and the bar.
+  const band = getStandingBand(rel.strength);
   const targetName = rel.targetCountryName || rel.targetCountry || "Unknown Nation";
 
   const sharedBloc = alliances.find((a) =>
@@ -183,8 +176,8 @@ function RelationCard({
           </div>
         </div>
 
-        <Badge variant="outline" className={cn("shrink-0 capitalize", theme.text)}>
-          {statusKey}
+        <Badge variant="outline" className={cn("shrink-0", band.textClass)}>
+          {band.label}
         </Badge>
       </div>
 
@@ -194,9 +187,9 @@ function RelationCard({
             <Handshake className="h-3 w-3" />
             Relation strength
           </Eyebrow>
-          <span className={cn("font-semibold", theme.text)}>{getStrengthLabel(rel.strength)}</span>
+          <span className={cn("font-semibold", band.textClass)}>{band.label}</span>
         </div>
-        <Progress value={rel.strength} className="h-1.5" indicatorClassName={theme.progress} />
+        <Progress value={rel.strength} className="h-1.5" indicatorClassName={band.barClass} />
       </div>
 
       <div className="border-separator text-footnote mt-3 grid grid-cols-2 gap-2 border-t pt-3">
@@ -292,10 +285,13 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
   );
 
   const utils = api.useUtils();
+  const notify = useNotify();
   const setGoalMutation = api.diplomaticCore.setDiplomaticGoal.useMutation({
     onSuccess: () => {
+      notify.success("Stance updated");
       void utils.diplomaticCore.getRelationships.invalidate();
     },
+    onError: (error) => notify.error("Could not set the stance", error.message),
   });
 
   const allRelations = React.useMemo(

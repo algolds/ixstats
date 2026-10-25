@@ -15,7 +15,7 @@ The diplomacy domain handles international relations, embassy networks, cultural
 
 ### UI Surfaces
 - `src/components/mycountry/shell/DomainSurface.tsx` (Diplomacy Domain) – Full-screen diplomacy view rendering `EmbassiesAndRelationsPanel`
-- `src/components/mycountry/shell/rails/RelationsRail.tsx` – Relations context rail with fogged foreign intel (`src/lib/statecraft/diplo-intel.ts`)
+- `src/components/mycountry/shell/rails/RelationsRail.tsx` – Relations context rail; every standing label comes from `getStandingBand` (`src/lib/diplomacy/relation-bands.ts`, relation strength 0-100)
 - `src/components/mycountry/shell/DrillSheets.tsx` – Slide-over relations sheet
 - `src/components/mycountry/domains/diplomacy/` – Embassy network (`embassy-network/`, `EmbassyCreatorSheet`, `EmbassyDetailSheet`), relations list, cultural exchange wizard/program, `DiplomaticEventsHub`, `ScenarioModal`, shared data
 - `src/components/mycountry/domains/diplomacy/alliances/` – `AllianceDashboard`, `CollectiveActionsPanel` (alliance creation via `AllianceCreatorSheet`)

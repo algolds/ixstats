@@ -385,13 +385,12 @@ api.diplomaticCore.followCountry.useMutation() // { followerCountryId, followedC
 api.diplomaticCore.unfollowCountry.useMutation() // { followerCountryId, followedCountryId }
 ```
 
-### diplomaticEmbassies Router (8 procedures)
+### diplomaticEmbassies Router (7 procedures)
 
 ```typescript
-// Queries (3)
+// Queries (2)
 api.diplomaticEmbassies.getEmbassies.useQuery({ countryId })
 api.diplomaticEmbassies.getEmbassyDetails.useQuery({ embassyId })
-api.diplomaticEmbassies.calculateEstablishmentCost.useQuery({ hostCountryId, guestCountryId, targetLocation? })
 
 // Mutations (5)
 api.diplomaticEmbassies.establishEmbassy.useMutation() // { hostCountryId, guestCountryId, name, location?, ambassadorName? }

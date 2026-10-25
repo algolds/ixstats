@@ -14,3 +14,16 @@ Data fixes for the MyCountry fix plan (`plans/mycountry-audit/fix-plan.md`). Eac
    `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/migrations/2026-10-mycountry/a1-storyteller-effects.sql`
    Expect MyCountry GDP to move for nations with sanctions, embargoes, trade agreements, alliances, wars, operations
    or election results: those effects start applying now, phased in over their duration.
+
+## Any time around the code deploy
+
+- **WP-DE, relationship standing** (`de-relation-bands.sql`). Relations an embassy opened at strength 25 and nothing
+  has moved since go to 55 (where a new embassy's relation now starts: neutral with a little goodwill), and every
+  relation's stored `relationship` becomes the lower-case band of its strength (`allied` ≥ 80, `friendly` ≥ 60,
+  `neutral` ≥ 40, `tense` ≥ 20, else `hostile`). On the `ixstats_wv1` clone (dry run, rolled back): 12 rows moved to
+  55, 4 labels changed.
+  `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/migrations/2026-10-mycountry/de-relation-bands.sql`
+  When `diplomatic-drift` is enabled it now also expires sanctions, embargoes and blockades older than their 4-year
+  IxTime effect window (their GDP effects unwind), moves cultural exchanges planning → active → completed, and pays
+  completed embassy missions' rewards into their embassy. Expect a first run to expire any such action enacted before
+  roughly two real years ago.

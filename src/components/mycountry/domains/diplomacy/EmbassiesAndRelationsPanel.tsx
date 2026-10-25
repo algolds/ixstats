@@ -17,8 +17,6 @@ import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { SectionTabBar } from "~/components/mycountry/shared/primitives/SectionTabBar";
 
-import { useEmbassyNetworkData } from "~/hooks/useEmbassyNetworkData";
-
 import { EmbassyGrid, EmptyState } from "./embassy-network";
 import { DiplomaticRelationsList } from "./DiplomaticRelationsList";
 
@@ -135,10 +133,10 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
   );
 
   const {
-    embassiesWithSynergies,
+    data: embassies = [],
     isLoading: embassiesLoading,
     refetch: refetchEmbassies,
-  } = useEmbassyNetworkData(countryId, isOwner);
+  } = api.diplomaticEmbassies.getEmbassies.useQuery({ countryId });
 
   const { data: relations } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
@@ -149,7 +147,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
     api.diplomaticPolicies.getAlliances.useQuery({ countryId }, { enabled: !!countryId });
 
   const stats = computeStats(
-    embassiesWithSynergies,
+    embassies,
     relations ?? [],
     alliances?.length ?? 0,
     countryId
@@ -222,16 +220,16 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
         <PanelSection
           icon={Building2}
           title="Embassy network"
-          help="Manage your diplomatic embassies. Embassies provide synergy bonuses based on shared government components and improve bilateral relations with host nations."
+          help="Your embassies abroad and the embassies other nations keep with you. Opening one starts formal relations with the host, and cultural exchange missions build its experience, influence and reputation."
           action={
             isOwner && (
               <CreateButton label="Establish embassy" onClick={() => setShowEmbassyCreator(true)} />
             )
           }
         >
-          {embassiesWithSynergies.length > 0 ? (
+          {embassies.length > 0 ? (
             <EmbassyGrid
-              embassies={embassiesWithSynergies}
+              embassies={embassies}
               isOwner={isOwner}
               onEmbassyClick={(id) => setSelectedEmbassyId(id)}
             />

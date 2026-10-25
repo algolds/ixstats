@@ -3,6 +3,11 @@ import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trp
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { notificationAPI } from "~/lib/notifications/api";
+import { applyRelationshipImpact } from "~/lib/diplomacy/relationship-impact";
+
+/** Closing an active embassy costs relation strength; reopening one wins a little back. */
+const CLOSE_RELATIONSHIP_IMPACT = -15;
+const REOPEN_RELATIONSHIP_IMPACT = 5;
 
 export const diplomaticEmbassiesLifecycleStatusRouter = createTRPCRouter({
   /**
@@ -44,20 +49,15 @@ export const diplomaticEmbassiesLifecycleStatusRouter = createTRPCRouter({
         });
       }
 
-      // Calculate diplomatic penalties for closing active embassy
+      // Closing an active embassy costs relation strength, reputation and half its influence
+      // (losses are positive magnitudes: decrementing a negative number raised reputation).
+      const wasActive = embassy.status === "active";
       const penalties = {
-        relationshipPenalty: 0,
-        reputationLoss: 0,
-        influenceLoss: 0,
+        relationshipPenalty: wasActive ? CLOSE_RELATIONSHIP_IMPACT : 0,
+        reputationLoss: wasActive ? Math.min(10, embassy.reputation) : 0,
+        influenceLoss: wasActive ? embassy.influence * 0.5 : 0,
       };
 
-      if (embassy.status === "active") {
-        penalties.relationshipPenalty = -15; // -15% relationship strength
-        penalties.reputationLoss = -10; // -10 reputation points
-        penalties.influenceLoss = embassy.influence * 0.5; // Lose 50% of embassy influence
-      }
-
-      // Close the embassy
       const closedEmbassy = await ctx.db.embassy.update({
         where: { id: input.embassyId },
         data: {
@@ -67,25 +67,13 @@ export const diplomaticEmbassiesLifecycleStatusRouter = createTRPCRouter({
         },
       });
 
-      // Apply relationship penalty
-      if (penalties.relationshipPenalty < 0) {
-        const relation = await ctx.db.diplomaticRelation.findFirst({
-          where: {
-            OR: [
-              { country1: embassy.guestCountryId, country2: embassy.hostCountryId },
-              { country1: embassy.hostCountryId, country2: embassy.guestCountryId },
-            ],
-          },
-        });
-
-        if (relation) {
-          await ctx.db.diplomaticRelation.update({
-            where: { id: relation.id },
-            data: {
-              strength: { increment: penalties.relationshipPenalty },
-            },
-          });
-        }
+      if (wasActive) {
+        await applyRelationshipImpact(
+          ctx.db,
+          embassy.guestCountryId,
+          embassy.hostCountryId,
+          CLOSE_RELATIONSHIP_IMPACT
+        );
       }
 
       // Record diplomatic event
@@ -96,6 +84,8 @@ export const diplomaticEmbassiesLifecycleStatusRouter = createTRPCRouter({
           eventType: "embassy_closed",
           title: "Embassy Closed",
           description: input.reason || `${embassy.name} has been closed`,
+          embassyId: embassy.id,
+          relationshipImpact: penalties.relationshipPenalty,
           ixTimeTimestamp: IxTime.getCurrentIxTime(),
         },
       });
@@ -168,12 +158,23 @@ export const diplomaticEmbassiesLifecycleStatusRouter = createTRPCRouter({
         });
       }
 
-      const reopenedEmbassy = await ctx.db.embassy.update({
-        where: { id: input.embassyId },
-        data: {
-          status: "active",
-        },
+      // Conditional on it still being closed, so a double click reopens (and moves the relation) once.
+      const reopened = await ctx.db.embassy.updateMany({
+        where: { id: input.embassyId, status: "closed" },
+        data: { status: "active" },
       });
+      if (reopened.count !== 1) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Embassy is not closed." });
+      }
+      const reopenedEmbassy = await ctx.db.embassy.findUniqueOrThrow({
+        where: { id: input.embassyId },
+      });
+      await applyRelationshipImpact(
+        ctx.db,
+        embassy.guestCountryId,
+        embassy.hostCountryId,
+        REOPEN_RELATIONSHIP_IMPACT
+      );
 
       // Create diplomatic event
       await ctx.db.diplomaticEvent.create({
@@ -185,7 +186,7 @@ export const diplomaticEmbassiesLifecycleStatusRouter = createTRPCRouter({
           description: `${embassy.name} has been reopened.`,
           embassyId: embassy.id,
           ixTimeTimestamp: IxTime.getCurrentIxTime(),
-          relationshipImpact: 5,
+          relationshipImpact: REOPEN_RELATIONSHIP_IMPACT,
           severity: "positive",
         },
       });

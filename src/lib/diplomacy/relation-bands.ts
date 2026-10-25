@@ -1,93 +1,53 @@
 /**
- * Qualitative Diplomatic Relation & Standing Bands
- * (v2 Design Bible §7: Player-facing state is ALWAYS qualitative bands, never raw math/percentages)
+ * Relationship standing: the one band function and the one scale for every place that shows or stores how two
+ * nations stand (v2 Design Bible §7: player-facing state is a qualitative band, never raw math).
+ *
+ * The scale is `DiplomaticRelation.strength`, 0-100 with neutral at 50 (where drift settles). The band key is also
+ * what `DiplomaticRelation.relationship` stores, always lower case.
  */
 
-type StandingBandKey = "aligned" | "cooperative" | "neutral" | "tense" | "hostile";
+export type StandingBandKey = "allied" | "friendly" | "neutral" | "tense" | "hostile";
 
-interface StandingBandInfo {
+export interface StandingBandInfo {
   key: StandingBandKey;
   label: string;
-  /**
-   * Classes for an outline `<Badge>` showing this band. A single semantic text colour that reads
-   * in both themes (the Badge supplies the border); identical to `textClass`.
-   */
-  badgeClass: string;
   /** Semantic text colour for the band label (success → foreground → muted → warning → destructive). */
   textClass: string;
-  description: string;
+  /** Fill for a strength bar in this band. */
+  barClass: string;
 }
 
-/** Semantic text colour per band, shared by `badgeClass` and `textClass`. */
-const BAND_TEXT: Record<StandingBandKey, string> = {
-  aligned: "text-emerald-600",
-  cooperative: "text-foreground",
-  neutral: "text-muted-foreground",
-  tense: "text-orange-600",
-  hostile: "text-destructive",
-};
-
 const STANDING_BANDS: Record<StandingBandKey, StandingBandInfo> = {
-  aligned: {
-    key: "aligned",
-    label: "Aligned",
-    badgeClass: BAND_TEXT.aligned,
-    textClass: BAND_TEXT.aligned,
-    description:
-      "Deep strategic alignment, shared diplomatic goals, and strong institutional ties.",
-  },
-  cooperative: {
-    key: "cooperative",
-    label: "Cooperative",
-    badgeClass: BAND_TEXT.cooperative,
-    textClass: BAND_TEXT.cooperative,
-    description: "Constructive bilateral relations, active economic exchange, and mutual goodwill.",
-  },
+  allied: { key: "allied", label: "Allied", textClass: "text-green", barClass: "bg-green" },
+  friendly: { key: "friendly", label: "Friendly", textClass: "text-label", barClass: "bg-tint" },
   neutral: {
     key: "neutral",
     label: "Neutral",
-    badgeClass: BAND_TEXT.neutral,
-    textClass: BAND_TEXT.neutral,
-    description: "Standard formal contacts with balanced or non-aligned foreign policy posture.",
+    textClass: "text-label-secondary",
+    barClass: "bg-label-tertiary",
   },
-  tense: {
-    key: "tense",
-    label: "Tense",
-    badgeClass: BAND_TEXT.tense,
-    textClass: BAND_TEXT.tense,
-    description:
-      "Friction on key diplomatic issues, heightened caution, and active dispute monitoring.",
-  },
+  tense: { key: "tense", label: "Tense", textClass: "text-yellow", barClass: "bg-yellow" },
   hostile: {
     key: "hostile",
     label: "Hostile",
-    badgeClass: BAND_TEXT.hostile,
-    textClass: BAND_TEXT.hostile,
-    description: "Severe diplomatic conflict, active sanctions, or military posture confrontation.",
+    textClass: "text-destructive",
+    barClass: "bg-destructive",
   },
 };
 
-/**
- * Maps a numeric relation score (-100 to +100 or 0 to 100) to a qualitative standing band.
- */
-export function getStandingBand(score: number): StandingBandInfo {
-  // Normalize 0..100 range to -100..+100 if input is unsigned percentage
-  const normalized = score <= 1 && score >= -1 ? score * 100 : score;
+/** Strength a newly opened relation starts at: neutral, with the goodwill of opening an embassy. */
+export const OPENING_RELATION_STRENGTH = 55;
 
-  if (normalized >= 60) return STANDING_BANDS.aligned;
-  if (normalized >= 20) return STANDING_BANDS.cooperative;
-  if (normalized >= -20) return STANDING_BANDS.neutral;
-  if (normalized >= -60) return STANDING_BANDS.tense;
-  return STANDING_BANDS.hostile;
+/** Clamps a relation strength to the 0-100 scale (whole points: the column is an integer). */
+export function clampStrength(strength: number): number {
+  return Math.max(0, Math.min(100, Math.round(strength)));
 }
 
-/**
- * Maps a synergy percentage (0 to 100) to a qualitative synergy band.
- */
-export function getSynergyBand(synergyScore: number): StandingBandInfo {
-  if (synergyScore >= 75) return STANDING_BANDS.aligned;
-  if (synergyScore >= 50) return STANDING_BANDS.cooperative;
-  if (synergyScore >= 30) return STANDING_BANDS.neutral;
-  if (synergyScore >= 15) return STANDING_BANDS.tense;
+/** The standing band for a relation strength on the 0-100 scale. */
+export function getStandingBand(strength: number): StandingBandInfo {
+  if (strength >= 80) return STANDING_BANDS.allied;
+  if (strength >= 60) return STANDING_BANDS.friendly;
+  if (strength >= 40) return STANDING_BANDS.neutral;
+  if (strength >= 20) return STANDING_BANDS.tense;
   return STANDING_BANDS.hostile;
 }

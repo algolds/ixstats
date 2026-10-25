@@ -6,6 +6,7 @@ import { notificationAPI } from "~/lib/notifications/api";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { ActivityHooks } from "~/lib/activity";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { OPENING_RELATION_STRENGTH, getStandingBand } from "~/lib/diplomacy/relation-bands";
 
 export const diplomaticEmbassiesEstablishRouter = createTRPCRouter({
   establishEmbassy: rateLimitedMutationProcedure
@@ -21,6 +22,12 @@ export const diplomaticEmbassiesEstablishRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Verify user owns the guest country (the one establishing the embassy); any owned nation counts
       await assertCountryWriteAccess(ctx, input.guestCountryId);
+      if (input.hostCountryId === input.guestCountryId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "A nation cannot open an embassy in itself.",
+        });
+      }
 
       // One embassy per guest↔host pair (enforced by a composite unique). Guard here
       // so a re-try / double-submit returns a clear message instead of a raw P2002.
@@ -118,8 +125,8 @@ export const diplomaticEmbassiesEstablishRouter = createTRPCRouter({
             data: {
               country1: input.guestCountryId,
               country2: input.hostCountryId,
-              relationship: "neutral",
-              strength: 25, // baseline goodwill from opening an embassy
+              relationship: getStandingBand(OPENING_RELATION_STRENGTH).key,
+              strength: OPENING_RELATION_STRENGTH,
               status: "active",
               lastContact: new Date(),
               diplomaticChannels: JSON.stringify(["embassy"]),

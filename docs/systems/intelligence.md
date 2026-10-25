@@ -18,7 +18,7 @@ Intelligence in IxStates is the **recon / fog-of-information** layer: what your 
 | Capability | Code | Status |
 | :--- | :--- | :--- |
 | **Domestic recon on National Issues** | `nationalIssues.commissionRecon` / `getReconReveal` (`src/lib/statecraft/recon.ts`, 20 executive bandwidth reserved per recon) | Built, but gated by `STATECRAFT_SPINE` (default **off**) |
-| **Foreign intel on other nations** | `src/lib/statecraft/diplo-intel.ts` (`revealed` / `questioned` / `greyed` by embassy + relation strength), shown in `RelationsRail` and `DiplomaticRelationsList` | Live |
+| **Foreign intel on other nations** | Relationship standing bands from `src/lib/diplomacy/relation-bands.ts` (the one band function on relation strength 0-100), shown in `RelationsRail`, `DiplomaticRelationsList` and the embassy cards | Live |
 | **Policy fog warnings** | `policies.getPolicyReconContext` → `PolicyReconBanner` (over-capacity, effectiveness < 45%) | Live (warnings only, no numeric masking) |
 | **Fogged whip count** | `legislation.previewBillVote` (`src/lib/statecraft/whip.ts`) | Live |
 | **Threat & border assessment** | `security.getSecurityAssessment`, `security.getBorderSecurity` → `BorderThreatPanel` (Defense) | Live, premium |
