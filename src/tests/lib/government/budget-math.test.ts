@@ -13,7 +13,11 @@ import {
   initialTotalBudget,
   maintenanceByYear,
   maintenanceEffect,
+  nudgeShare,
 } from "~/lib/government/budget-math";
+
+const total = (lines: { allocatedPercent: number }[]) =>
+  lines.reduce((sum, line) => sum + line.allocatedPercent, 0);
 
 describe("allocations", () => {
   it("is worth its share of the budget, clamped to 0 to the max", () => {
@@ -21,6 +25,42 @@ describe("allocations", () => {
     expect(allocationAmount(0, 50)).toBe(0);
     expect(allocationAt(1e10, 70, 60)).toEqual({ allocatedPercent: 60, allocatedAmount: 6e9 });
     expect(allocationAt(1e10, -3)).toEqual({ allocatedPercent: 0, allocatedAmount: 0 });
+  });
+});
+
+describe("a directive's budget nudge", () => {
+  const full = [
+    { id: "finance", allocatedPercent: 10 },
+    { id: "health", allocatedPercent: 40 },
+    { id: "education", allocatedPercent: 50 },
+  ];
+
+  it("takes a raise from the other departments in proportion, so the total stays at 100%", () => {
+    const moved = nudgeShare(full, "finance", 3);
+    expect(moved[0]!.allocatedPercent).toBe(13);
+    // Health and Education give up 3 points 40:50
+    expect(moved[1]!.allocatedPercent).toBeCloseTo(40 - 3 * (40 / 90), 9);
+    expect(moved[2]!.allocatedPercent).toBeCloseTo(50 - 3 * (50 / 90), 9);
+    expect(total(moved)).toBeCloseTo(100, 9);
+  });
+
+  it("uses unallocated room first and leaves a cut unallocated", () => {
+    const partial = [
+      { id: "finance", allocatedPercent: 10 },
+      { id: "health", allocatedPercent: 80 },
+    ];
+    expect(nudgeShare(partial, "finance", 3).map((l) => l.allocatedPercent)).toEqual([13, 80]);
+    expect(nudgeShare(full, "finance", -4).map((l) => l.allocatedPercent)).toEqual([6, 40, 50]);
+  });
+
+  it("brings an over-allocated budget back to 100%, and respects the line's cap", () => {
+    const over = [
+      { id: "finance", allocatedPercent: 13 },
+      { id: "health", allocatedPercent: 90 },
+    ];
+    expect(total(nudgeShare(over, "finance", 1.5))).toBeCloseTo(100, 9);
+    expect(nudgeShare(full, "education", 30, 60)[2]!.allocatedPercent).toBe(60);
+    expect(nudgeShare(full, "unknown", 3)).toEqual(full);
   });
 });
 
@@ -38,6 +78,16 @@ describe("the yearly budget follows GDP", () => {
       3e11 * DEFAULT_BUDGET_SHARE_OF_GDP
     );
     expect(initialTotalBudget({ totalGovernmentSpending: 0, currentTotalGdp: null })).toBe(0);
+  });
+
+  it("starts a new structure at the nation's revenue, so it opens balanced, not in deficit", () => {
+    const noSpending = { totalGovernmentSpending: null, currentTotalGdp: 1.5e11 };
+    // Revenue 6.0B on a 150B GDP: the budget starts at 6.0B, not 30B (20% of GDP).
+    expect(initialTotalBudget(noSpending, 6e9)).toBe(6e9);
+    // Never above the GDP-share default, and recorded spending still comes first.
+    expect(initialTotalBudget(noSpending, 9e10)).toBe(1.5e11 * DEFAULT_BUDGET_SHARE_OF_GDP);
+    expect(initialTotalBudget({ ...noSpending, totalGovernmentSpending: 4e10 }, 6e9)).toBe(4e10);
+    expect(initialTotalBudget(noSpending, 0)).toBe(1.5e11 * DEFAULT_BUDGET_SHARE_OF_GDP);
   });
 });
 

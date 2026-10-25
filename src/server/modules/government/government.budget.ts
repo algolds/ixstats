@@ -10,7 +10,12 @@ import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 import { departmentsForForm, governmentTypeForForm } from "~/lib/government/form-departments";
 import { findEffectiveBudgetYear } from "~/lib/government/budget-allocations";
-import { allocationAt, initialTotalBudget, maintenanceByYear } from "~/lib/government/budget-math";
+import {
+  allocationAt,
+  initialTotalBudget,
+  maintenanceByYear,
+  nudgeShare,
+} from "~/lib/government/budget-math";
 import { currentBudgetYear } from "~/lib/government/budget-year";
 import { MAINTENANCE_DEBIT_EFFECT } from "~/lib/policies/lifecycle";
 import { inferFormId } from "~/server/shared/founding-snapshot";
@@ -33,9 +38,15 @@ async function editableBudgetYear(db: Db, countryId: string): Promise<number> {
 /**
  * Give a nation the default departments of its government form, each with its share of a yearly
  * budget. Creates the structure when there is none; a structure with no departments gets the
- * departments. A structure that already has departments is left alone (CONFLICT).
+ * departments. A structure that already has departments is left alone (CONFLICT). `revenue` is
+ * the nation's yearly revenue as the Economy tabs show it; a new budget starts at it (capped, see
+ * `initialTotalBudget`), so it does not open in deficit.
  */
-export async function createGovernmentStructure(db: Db, countryId: string) {
+export async function createGovernmentStructure(
+  db: Db,
+  countryId: string,
+  revenue?: number | null
+) {
   const [country, departmentCount] = await Promise.all([
     db.country.findUnique({
       where: { id: countryId },
@@ -61,7 +72,9 @@ export async function createGovernmentStructure(db: Db, countryId: string) {
   const formId = inferFormId(country.governmentComponents.map((c) => c.componentType));
   const existing = country.governmentStructure;
   const totalBudget =
-    existing && existing.totalBudget > 0 ? existing.totalBudget : initialTotalBudget(country);
+    existing && existing.totalBudget > 0
+      ? existing.totalBudget
+      : initialTotalBudget(country, revenue);
   const budgetYear = currentBudgetYear();
 
   return db.$transaction(async (tx) => {
@@ -135,6 +148,44 @@ export async function setDepartmentAllocation(
       ...values,
     },
     update: values,
+  });
+}
+
+/**
+ * A directive's budget line (directives still nudge allocations, owner decision 1): move the
+ * largest line of `category` in the budget in effect by `deltaPercent` (to at most `max`). When
+ * that would allocate more than 100%, the other departments give up the excess in proportion to
+ * their shares (`nudgeShare`). Amounts follow shares. No-op without a line of that category.
+ */
+export async function nudgeDepartmentShare(
+  db: Db,
+  input: { countryId: string; category: string; deltaPercent: number; max: number }
+) {
+  const budgetYear = await findEffectiveBudgetYear(db, input.countryId, currentBudgetYear());
+  if (budgetYear === null) return;
+  const lines = await db.budgetAllocation.findMany({
+    where: { governmentStructure: { countryId: input.countryId }, budgetYear },
+    select: {
+      id: true,
+      allocatedPercent: true,
+      department: { select: { category: true } },
+      governmentStructure: { select: { totalBudget: true } },
+    },
+    orderBy: { allocatedPercent: "desc" },
+  });
+  const target = lines.find((line) => line.department.category === input.category);
+  if (!target) return;
+  const totalBudget = target.governmentStructure.totalBudget;
+  const moved = nudgeShare(lines, target.id, input.deltaPercent, input.max).filter(
+    (line, i) => line.allocatedPercent !== lines[i]!.allocatedPercent
+  );
+  await db.$transaction(async (tx) => {
+    for (const line of moved) {
+      await tx.budgetAllocation.update({
+        where: { id: line.id },
+        data: allocationAt(totalBudget, line.allocatedPercent),
+      });
+    }
   });
 }
 
