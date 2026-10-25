@@ -36,6 +36,9 @@ import { useNotify } from "~/hooks/useNotify";
 import { PVP_UNFOUGHT, isUnfoughtConflict } from "~/lib/military/pvp-proposals";
 import { useNationClock } from "~/hooks/useNationClock";
 import { formatStampAsClockDate } from "~/lib/realms/nation-time";
+import { BAND_LABELS, type OutcomeBand } from "~/lib/military/combat";
+import { EngagementPlanner } from "./EngagementPlanner";
+import { CombatResult } from "./CombatResult";
 
 interface PvPConflictPanelProps {
   countryId: string;
@@ -64,10 +67,12 @@ interface TargetDialogProps {
   reason: string;
   onReasonChange: (reason: string) => void;
   notices?: React.ReactNode;
+  mode: "strike" | "pvp";
   submitLabel: string;
   pendingLabel: string;
+  confirmText: string;
   pending: boolean;
-  onSubmit: () => void;
+  onSubmit: (commitment: number) => void;
 }
 
 function TargetDialog(p: TargetDialogProps) {
@@ -78,7 +83,7 @@ function TargetDialog(p: TargetDialogProps) {
           {p.trigger}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{p.title}</DialogTitle>
           <DialogDescription>{p.description}</DialogDescription>
@@ -109,9 +114,18 @@ function TargetDialog(p: TargetDialogProps) {
             />
           </div>
           {p.notices}
-          <Button onClick={p.onSubmit} disabled={!p.targetId || p.pending} className="w-full">
-            {p.pending ? p.pendingLabel : p.submitLabel}
-          </Button>
+          {p.targetId && (
+            <EngagementPlanner
+              key={p.targetId}
+              mode={p.mode}
+              targetId={p.targetId}
+              commitLabel={p.submitLabel}
+              pendingLabel={p.pendingLabel}
+              confirmText={p.confirmText}
+              pending={p.pending}
+              onCommit={p.onSubmit}
+            />
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -175,13 +189,23 @@ function PastConflictRow({ conflict: c, countryId }: { conflict: Conflict; count
           <span>vs {opponentOf(c, countryId)?.name ?? "Unknown"}</span>
           <Badge variant={outcome.variant}>{outcome.label}</Badge>
         </div>
-        {casualties > 0 && (
+        {!c.outcomeBand && casualties > 0 && (
           <span className="text-label-secondary text-footnote">{casualties} casualties</span>
         )}
       </div>
+      <CombatResult
+        band={c.outcomeBand}
+        days={c.engagementDays}
+        casualties={c.outcomeBand ? casualties : null}
+        seed={c.seed}
+        attacker={c.initiatorId === countryId}
+      />
     </div>
   );
 }
+
+const bandSuffix = (band: string | null) =>
+  band && band in BAND_LABELS ? ` (${BAND_LABELS[band as OutcomeBand].toLowerCase()})` : "";
 
 export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
   // Initiating (challenge, strike) is premium; answering, withdrawing and concluding are not.
@@ -193,7 +217,11 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
   const [targetId, setTargetId] = useState("");
   const [reason, setReason] = useState("");
   // Outcome of the last PvNPC strike, shown after the dialog closes.
-  const [strikeResult, setStrikeResult] = useState<{ target: string; won: boolean } | null>(null);
+  const [strikeResult, setStrikeResult] = useState<{
+    target: string;
+    won: boolean;
+    band: string | null;
+  } | null>(null);
 
   const { data: conflicts, refetch } = api.security.getConflicts.useQuery(
     { countryId },
@@ -242,6 +270,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
       setStrikeResult({
         target: conflict.defender?.name ?? "the target",
         won: conflict.winner === countryId,
+        band: conflict.outcomeBand ?? null,
       });
       setStrikeOpen(false);
       setTargetId("");
@@ -303,7 +332,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
               onOpenChange={handleStrikeOpenChange}
               trigger="PvNPC strike"
               title="PvNPC military strike"
-              description="Automatically resolve a military engagement against an NPC nation. Outcome is calculated based on relative military strength."
+              description="Strike an NPC nation that defends with forces from its economy. Read the odds first: the result is rolled once when you commit."
               targetLabel="Target NPC nation"
               placeholder={
                 noNpcTargets ? "No NPC nations among your relations" : "Select target..."
@@ -326,13 +355,16 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                   <Alert message={resolvePvNPCMutation.error?.message} />
                 </>
               }
-              submitLabel="Engage"
-              pendingLabel="Engaging…"
+              mode="strike"
+              submitLabel="Commit strike"
+              pendingLabel="Striking…"
+              confirmText="The strike is rolled once from a seed sealed with these orders. It cannot be rerolled, and both sides take their losses."
               pending={resolvePvNPCMutation.isPending}
-              onSubmit={() =>
+              onSubmit={(commitment) =>
                 resolvePvNPCMutation.mutate({
                   targetCountryId: targetId,
                   reason: reason || undefined,
+                  commitment,
                 })
               }
             />
@@ -360,11 +392,17 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                   <Alert message={proposeMutation.error?.message} />
                 </>
               }
-              submitLabel="Send Challenge"
+              mode="pvp"
+              submitLabel="Send challenge"
               pendingLabel="Sending…"
+              confirmText="Your committed share goes into the orders. When the defender accepts, the seed is sealed; the battle resolves on it when the conflict ends."
               pending={proposeMutation.isPending}
-              onSubmit={() =>
-                proposeMutation.mutate({ defenderId: targetId, reason: reason || undefined })
+              onSubmit={(commitment) =>
+                proposeMutation.mutate({
+                  defenderId: targetId,
+                  reason: reason || undefined,
+                  commitment,
+                })
               }
             />
           </div>
@@ -382,8 +420,8 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
           )}
         >
           {strikeResult.won
-            ? `Victory: your strike on ${strikeResult.target} succeeded. Both economies take a hit; see Past Conflicts.`
-            : `Defeat: the strike on ${strikeResult.target} was repelled. See Past Conflicts for casualties.`}
+            ? `Your strike on ${strikeResult.target} took ground${bandSuffix(strikeResult.band)}. See past conflicts for losses and the seed.`
+            : `Your strike on ${strikeResult.target} was repulsed${bandSuffix(strikeResult.band)}. See past conflicts for losses and the seed.`}
         </div>
       )}
 

@@ -32,6 +32,8 @@ export const OPERATION_COST_GDPPC: Record<OperationType, number> = {
 export const OPERATION_ASSET_UPKEEP = 1.5;
 /** Operations that fight their target on the combat model. */
 export const COMBAT_OPERATIONS: ReadonlySet<OperationType> = new Set(["intervention"]);
+/** Operations that need a target nation (a fight, or the nation whose forces recon watches). */
+export const TARGETED_OPERATIONS: ReadonlySet<OperationType> = new Set(["intervention", "reconnaissance"]);
 
 /** An operation's daily cost: personnel at the type's rate of GDP per capita, plus deployed upkeep. */
 export function operationDailyCost(input: {

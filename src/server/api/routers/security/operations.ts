@@ -20,6 +20,7 @@ import { endStorytellerEffects } from "~/lib/economy/storyteller-effects";
 import {
   COMBAT_OPERATIONS,
   OPERATION_TYPES,
+  TARGETED_OPERATIONS,
   combinedRating,
   operationDailyCost,
 } from "~/lib/military/combat";
@@ -181,8 +182,8 @@ export const securityOperationsRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Target country not found" });
       }
       if (target) assertRealmsMatch(country.realmId, target.realmId);
-      if (COMBAT_OPERATIONS.has(input.operationType) && !target) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "An intervention needs a target nation." });
+      if (TARGETED_OPERATIONS.has(input.operationType) && !target) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This operation needs a target nation." });
       }
 
       // Units and assets must belong to this nation's active branches.

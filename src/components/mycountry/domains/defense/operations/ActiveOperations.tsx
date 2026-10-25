@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
+import { CombatResult } from "./CombatResult";
 import { api } from "~/trpc/react";
 import { formatCurrency } from "~/lib/utils/format-utils";
 import { Card } from "~/components/ui/card";
@@ -153,8 +154,8 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
                       {formatCurrency(op.dailyCost)}/day
                     </div>
                     {op.gdpDrain !== undefined && op.gdpDrain > 0 && (
-                      <span className="text-destructive text-footnote">
-                        {(op.gdpDrain * 100).toFixed(3)}% GDP drain
+                      <span className="text-label-secondary text-footnote">
+                        {(op.gdpDrain * 100).toFixed(3)}% of GDP a year, from the O&amp;M line
                       </span>
                     )}
                   </div>
@@ -178,7 +179,8 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
                         <AlertDialogDescription>
                           This recalls all deployed forces and ends the operation. Units recover
                           readiness: a training exercise leaves them readier than before, other
-                          operations leave them a little worn.
+                          operations leave them a little worn. An intervention fights its target
+                          now, on the seed sealed when it launched.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -217,6 +219,13 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
                 {op.successRating}
               </Badge>
             )}
+            <CombatResult
+              band={op.outcomeBand}
+              days={null}
+              casualties={op.outcomeBand ? op.casualties : null}
+              seed={op.seed}
+              attacker
+            />
           </Card>
         );
       })}
