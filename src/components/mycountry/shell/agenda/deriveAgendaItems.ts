@@ -1,6 +1,7 @@
 import { KeyCommand as Command, WarningCircle as AlertCircle, Megaphone } from "iconoir-react";
 import type { AgendaItem, AgendaUrgency } from "./agendaTypes";
 import { getSeverityRank } from "./agendaTypes";
+import { PHASE_META, directiveTimeline } from "~/components/mycountry/directives/directive-model";
 
 /** One IxTime day in ms. Deadlines and elections are scheduled in IxTime. */
 const IX_DAY_MS = 86_400_000;
@@ -28,7 +29,8 @@ export interface AgendaSourceIntent {
   status?: string | null;
   category?: string | null;
   tier?: string | null;
-  progress?: number | null;
+  /** IxTime the directive was declared; places it in its execution week or in force. */
+  createdIxTime?: number | null;
   createdAt?: Timestamp;
 }
 
@@ -104,17 +106,26 @@ function issueItem(iss: AgendaSourceIssue, nowIxTime: number): AgendaItem {
   };
 }
 
-function directiveItem(it: AgendaSourceIntent): AgendaItem {
-  const progress = finiteOrNull(it.progress);
+/**
+ * An active directive's phase ("Executing" during its execution week, then "In force"). Its stored
+ * progress only moves when linked resistance resolves, so it is not shown.
+ */
+function directivePhaseLabel(it: AgendaSourceIntent, nowIxTime: number): string {
+  const createdIxTime = finiteOrNull(it.createdIxTime);
+  if (createdIxTime === null) return "In progress";
+  const { phase } = directiveTimeline(
+    { status: "active", createdIxTime, execBandwidthCost: 0 },
+    nowIxTime
+  );
+  return PHASE_META[phase].label;
+}
+
+function directiveItem(it: AgendaSourceIntent, nowIxTime: number): AgendaItem {
   return {
     id: `directive:${it.id}`,
     kind: "directive",
     title: it.goal,
-    preview: [
-      "In progress",
-      progress === null ? null : `${Math.round(progress)}% done`,
-      it.category ? capitalize(it.category) : null,
-    ]
+    preview: [directivePhaseLabel(it, nowIxTime), it.category ? capitalize(it.category) : null]
       .filter(Boolean)
       .join(" · "),
     statusLabel: it.tier ? `${capitalize(it.tier)} directive` : "Directive",
@@ -172,7 +183,7 @@ export function deriveAgendaItems({
     ...issues.map((iss) => issueItem(iss, nowIxTime)),
     ...intents
       .filter((it) => String(it.status ?? "").toLowerCase() === "active")
-      .map(directiveItem),
+      .map((it) => directiveItem(it, nowIxTime)),
     ...elections.filter((el) => isUpcoming(el, nowIxTime)).map((el) => electionItem(el, nowIxTime)),
   ].sort(compareAgendaItems);
 }
