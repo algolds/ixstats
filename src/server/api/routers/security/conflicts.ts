@@ -12,7 +12,9 @@ import {
   publicProcedure,
   premiumProcedure,
   premiumMutationProcedure,
+  rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
+import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
@@ -24,6 +26,44 @@ import {
   militaryStrength,
   pvpConflictEndsAt,
 } from "~/lib/military/conflict-outcome";
+import {
+  EXPIRED_PVP_DATA,
+  PVP_UNFOUGHT,
+  stalePvPProposalsBetween,
+  withPvPExpiry,
+} from "~/lib/military/pvp-proposals";
+import { isProposalExpired, proposalExpiresAt } from "~/lib/diplomacy/proposal-lifecycle";
+
+/** Where a defender answers a challenge (the Defense page opens on Special operations). */
+const PVP_CHALLENGE_HREF = "/mycountry/defense?tab=operations";
+
+/**
+ * Nations the caller has diplomatic relations with: player-owned ones (PvP challenge targets) or
+ * unclaimed ones (PvNPC strike targets).
+ */
+async function relatedCountries(db: PrismaClient, clerkUserId: string, playerOwned: boolean) {
+  const userProfile = await db.user.findUnique({
+    where: { clerkUserId },
+    select: { countryId: true },
+  });
+  const countryId = userProfile?.countryId;
+  if (!countryId) return [];
+
+  const relations = await db.diplomaticRelation.findMany({
+    where: { OR: [{ country1: countryId }, { country2: countryId }] },
+    select: { country1: true, country2: true },
+  });
+  const partnerIds = [
+    ...new Set(relations.map((r) => (r.country1 === countryId ? r.country2 : r.country1))),
+  ];
+  if (partnerIds.length === 0) return [];
+
+  return db.country.findMany({
+    where: { id: { in: partnerIds }, ownerUserId: playerOwned ? { not: null } : null },
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
+  });
+}
 
 export const securityConflictsRouter = createTRPCRouter({
   // Propose a PvP conflict (requires mutual acceptance)
@@ -57,6 +97,27 @@ export const securityConflictsRouter = createTRPCRouter({
           message: "Cannot declare conflict against yourself.",
         });
       }
+
+      // Only a player nation can answer a challenge; NPC nations are struck via PvNPC.
+      const defenderCountry = await ctx.db.country.findUnique({
+        where: { id: input.defenderId },
+        select: { ownerUserId: true, owner: { select: { clerkUserId: true } } },
+      });
+      if (!defenderCountry) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
+      }
+      if (!defenderCountry.ownerUserId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "PvP challenges go to player nations. Use a PvNPC strike against NPC nations.",
+        });
+      }
+
+      // A challenge left unanswered past its window no longer blocks a new one.
+      await ctx.db.militaryConflict.updateMany({
+        where: stalePvPProposalsBetween(userProfile.countryId, input.defenderId),
+        data: EXPIRED_PVP_DATA,
+      });
 
       // Check for existing active conflict
       const existing = await ctx.db.militaryConflict.findFirst({
@@ -95,11 +156,7 @@ export const securityConflictsRouter = createTRPCRouter({
 
       // Notification: notify defender about PvP conflict proposal (fire-and-forget)
       try {
-        const defenderCountry = await ctx.db.country.findUnique({
-          where: { id: input.defenderId },
-          select: { name: true, owner: { select: { clerkUserId: true } } },
-        });
-        const defenderUserId = defenderCountry?.owner?.clerkUserId;
+        const defenderUserId = defenderCountry.owner?.clerkUserId;
         if (defenderUserId) {
           await notificationAPI.create({
             userId: defenderUserId,
@@ -109,6 +166,7 @@ export const securityConflictsRouter = createTRPCRouter({
             type: "warning",
             category: "military",
             priority: "high",
+            href: PVP_CHALLENGE_HREF,
             metadata: { conflictId: conflict.id, initiatorId: userProfile.countryId },
           });
         }
@@ -133,8 +191,9 @@ export const securityConflictsRouter = createTRPCRouter({
       return conflict;
     }),
 
-  // Accept or decline a PvP conflict
-  respondToConflict: premiumMutationProcedure
+  // Accept or decline a PvP conflict. Not premium: the challenger picks the defender, who may
+  // answer whatever their tier (initiating stays premium).
+  respondToConflict: rateLimitedMutationProcedure
     .input(
       z.object({
         conflictId: z.string(),
@@ -163,10 +222,21 @@ export const securityConflictsRouter = createTRPCRouter({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Conflict is not in proposed state." });
       }
 
+      if (isProposalExpired(conflict.createdAt)) {
+        await ctx.db.militaryConflict.updateMany({
+          where: { id: conflict.id, status: "proposed" },
+          data: EXPIRED_PVP_DATA,
+        });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `This challenge expired on ${proposalExpiresAt(conflict.createdAt).toISOString().slice(0, 10)} without an answer.`,
+        });
+      }
+
       if (!input.accept) {
         const declined = await ctx.db.militaryConflict.update({
           where: { id: input.conflictId },
-          data: { status: "resolved", winner: "declined" },
+          data: { status: "resolved", winner: PVP_UNFOUGHT.declined },
         });
 
         // Notification: notify initiator of decline (fire-and-forget)
@@ -252,6 +322,32 @@ export const securityConflictsRouter = createTRPCRouter({
       });
 
       return accepted;
+    }),
+
+  // The challenger withdraws a challenge the defender has not answered.
+  withdrawPvPConflict: rateLimitedMutationProcedure
+    .input(z.object({ conflictId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const conflict = await ctx.db.militaryConflict.findUnique({
+        where: { id: input.conflictId },
+        select: { id: true, type: true, initiatorId: true },
+      });
+      if (!conflict || conflict.type !== "pvp") {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Conflict not found." });
+      }
+      await assertCountryWriteAccess(ctx, conflict.initiatorId);
+
+      const withdrawn = await ctx.db.militaryConflict.updateMany({
+        where: { id: conflict.id, status: "proposed" },
+        data: { status: "resolved", winner: PVP_UNFOUGHT.withdrawn },
+      });
+      if (withdrawn.count === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Only a challenge still waiting for an answer can be withdrawn.",
+        });
+      }
+      return { conflictId: conflict.id, status: "resolved" as const };
     }),
 
   // Conclude an active PvP conflict once its duration has run. Either party may call it; the
@@ -379,7 +475,7 @@ export const securityConflictsRouter = createTRPCRouter({
         orderBy: { createdAt: "desc" },
       });
 
-      return conflicts.map((c) => ({
+      return conflicts.map(withPvPExpiry).map((c) => ({
         ...c,
         // When an active PvP conflict may be concluded (concludePvPConflict).
         endsAt: c.type === "pvp" && c.status === "active" ? pvpConflictEndsAt(c) : null,
@@ -400,30 +496,15 @@ export const securityConflictsRouter = createTRPCRouter({
       }));
     }),
 
+  // Related player nations the caller may challenge via proposePvPConflict.
+  getPvPTargets: premiumProcedure.query(({ ctx }) =>
+    relatedCountries(ctx.db, ctx.auth.userId, true)
+  ),
+
   // Related nations the caller may strike via resolvePvNPCConflict: those no user has claimed.
-  getPvNPCTargets: premiumProcedure.query(async ({ ctx }) => {
-    const userProfile = await ctx.db.user.findUnique({
-      where: { clerkUserId: ctx.auth.userId },
-      select: { countryId: true },
-    });
-    const countryId = userProfile?.countryId;
-    if (!countryId) return [];
-
-    const relations = await ctx.db.diplomaticRelation.findMany({
-      where: { OR: [{ country1: countryId }, { country2: countryId }] },
-      select: { country1: true, country2: true },
-    });
-    const partnerIds = [
-      ...new Set(relations.map((r) => (r.country1 === countryId ? r.country2 : r.country1))),
-    ];
-    if (partnerIds.length === 0) return [];
-
-    return ctx.db.country.findMany({
-      where: { id: { in: partnerIds }, ownerUserId: null },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    });
-  }),
+  getPvNPCTargets: premiumProcedure.query(({ ctx }) =>
+    relatedCountries(ctx.db, ctx.auth.userId, false)
+  ),
 
   // Resolve a PvNPC conflict automatically
   resolvePvNPCConflict: premiumMutationProcedure
