@@ -9,6 +9,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure, createRateLimitMiddleware } from "~/server/api/trpc";
 import { Cache } from "~/lib/cache/cache";
 import { fetchMediaWikiJson } from "~/lib/wiki-os/upstream-fetch";
+import { WikiUnavailableError } from "~/lib/wiki-os/upstream-guard";
 import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 
 const COMMONS_API = "https://commons.wikimedia.org/w/api.php";
@@ -229,7 +230,12 @@ export const commonsRouter = createTRPCRouter({
             categoryCountCache.set(cat, total);
             results[cat] = total;
           } catch (error) {
-            if (error instanceof TRPCError && error.code === "TOO_MANY_REQUESTS")
+            // A refusal (Commons' 429 or our own limiter, busy), an outage, or an API `ratelimited` ends the run:
+            // asking on would only open the Commons circuit for everyone.
+            if (
+              error instanceof WikiUnavailableError ||
+              (error instanceof TRPCError && error.code === "TOO_MANY_REQUESTS")
+            )
               rateLimited = true;
             console.error("[Commons Router] Failed to fetch category count:", cat, error);
           }

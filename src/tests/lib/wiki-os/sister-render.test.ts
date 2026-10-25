@@ -16,7 +16,7 @@ import type { WikiArticle } from "~/lib/wiki-os/adapters/mediawiki/bridge/types"
 import { TRPCError } from "@trpc/server";
 import { fetchMediaWikiJson } from "~/lib/wiki-os/upstream-fetch";
 import { upstreamGuard, WikiUnavailableError } from "~/lib/wiki-os/upstream-guard";
-import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
+import { DEFAULT_USER_AGENT, mediaWikiApiUrl } from "~/lib/wiki-os/config";
 
 const PARSED =
   '<div class="mw-parser-output"><table class="infobox"><tr><td><a href="/wiki/Eurth">Eurth</a></td></tr></table>' +
@@ -238,6 +238,46 @@ describe("upstream answers", () => {
   }
 
   describe("fetchMediaWikiJson", () => {
+    it("refuses IxWiki's own internal and public api.php, so its loopback never meets the guard", async () => {
+      const previous = process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL;
+      process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL = "http://127.0.0.1:8089/w/api.php";
+      try {
+        let isolated!: {
+          fetch: typeof fetchMediaWikiJson;
+          apiUrl: typeof mediaWikiApiUrl;
+        };
+        jest.isolateModules(() => {
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          const upstream =
+            require("~/lib/wiki-os/upstream-fetch") as typeof import("~/lib/wiki-os/upstream-fetch");
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          const config = require("~/lib/wiki-os/config") as typeof import("~/lib/wiki-os/config");
+          isolated = { fetch: upstream.fetchMediaWikiJson, apiUrl: config.mediaWikiApiUrl };
+        });
+        const internal = isolated.apiUrl({ internal: true });
+        const external = isolated.apiUrl({ internal: false });
+        expect(new URL(internal).host).not.toBe(new URL(external).host);
+
+        for (const url of [internal, external]) {
+          await expect(isolated.fetch(`${url}?action=query&format=json`)).rejects.toThrow(
+            /never IxWiki's own engine/
+          );
+        }
+        expect(fetchSpy).not.toHaveBeenCalled();
+      } finally {
+        if (previous === undefined) delete process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL;
+        else process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL = previous;
+      }
+    });
+
+    it("the refusal is a programming error, not an unreachable wiki", async () => {
+      const error = await rejection(
+        fetchMediaWikiJson(`${mediaWikiApiUrl({ internal: false })}?action=query`)
+      );
+      expect(error).not.toBeInstanceOf(WikiUnavailableError);
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
     it("HTTP 429 is busy (TOO_MANY_REQUESTS)", async () => {
       fetchSpy.mockImplementation(async () => jsonResponse({}, 429));
       const error = await rejection(fetchMediaWikiJson("https://busy.test/api.php?429"));

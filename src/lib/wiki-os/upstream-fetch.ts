@@ -13,7 +13,7 @@
 
 import { TRPCError } from "@trpc/server";
 import { Cache } from "~/lib/cache/cache";
-import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
+import { DEFAULT_USER_AGENT, mediaWikiApiUrl } from "~/lib/wiki-os/config";
 import { upstreamGuard, WikiUnavailableError, wikiNameForUrl } from "~/lib/wiki-os/upstream-guard";
 
 const DEFAULT_TIMEOUT_MS = 8000;
@@ -44,7 +44,16 @@ function apiErrorCode(body: ApiAnswer | null): string | null {
   return typeof code === "string" && code.length > 0 ? code : null;
 }
 
+/** IxWiki's own api.php hosts, internal and public: never called through the sister guard. */
+const ownHosts = (): string[] =>
+  [true, false].map((internal) => new URL(mediaWikiApiUrl({ internal })).host);
+
 async function requestJson(url: string, userAgent: string, timeoutMs: number): Promise<ApiAnswer> {
+  if (ownHosts().includes(new URL(url).host)) {
+    throw new Error(
+      "fetchMediaWikiJson is for sister wikis and Commons, never IxWiki's own engine"
+    );
+  }
   const res = await upstreamGuard.fetch(url, { timeoutMs, userAgent });
   if (!res.ok) {
     await res.body?.cancel().catch(() => undefined);

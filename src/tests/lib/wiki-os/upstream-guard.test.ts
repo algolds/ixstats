@@ -7,6 +7,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import {
+  HOST_GUARD_OVERRIDES,
   HostGuard,
   type HostGuardOptions,
   SISTER_GUARD_OPTIONS,
@@ -391,6 +392,70 @@ describe("the limiter", () => {
   });
 });
 
+describe("per-host limits", () => {
+  const COMMONS = "https://commons.wikimedia.org/w/api.php?action=query&format=json";
+  const withOverrides = () =>
+    new HostGuard({ ...SISTER_GUARD_OPTIONS, now: () => clock }, HOST_GUARD_OVERRIDES);
+
+  /** How many calls at once `url` lets through before refusing the next as busy. */
+  async function inFlightLimit(g: HostGuard, url: string): Promise<number> {
+    const answers: Array<ReturnType<typeof deferred>> = [];
+    fetchSpy.mockImplementation(() => {
+      const answer = deferred();
+      answers.push(answer);
+      return answer.promise;
+    });
+    const calls: Array<Promise<Response>> = [];
+    let refusal: WikiUnavailableError | null = null;
+    while (refusal === null && calls.length < 100) {
+      const call = g.fetch(url, { timeoutMs: 1000 });
+      const settled = await Promise.race([
+        failureOf(call),
+        new Promise<"pending">((resolve) => setImmediate(() => resolve("pending"))),
+      ]);
+      if (settled === "pending") calls.push(call);
+      else refusal = settled;
+    }
+    for (const answer of answers) answer.resolve(json());
+    await Promise.all(calls);
+    expect(refusal?.reason).toBe("busy");
+    return calls.length;
+  }
+
+  /** How many calls in a row `url` answers before its minute runs out. */
+  async function perMinuteLimit(g: HostGuard, url: string): Promise<number> {
+    fetchSpy.mockImplementation(async () => json());
+    let answered = 0;
+    while ((await failureOf(g.fetch(url, { timeoutMs: 1000 }))) === null && answered < 1000) {
+      answered += 1;
+    }
+    return answered;
+  }
+
+  it("Commons has 16 in flight and 600 a minute; a sister wiki keeps 8 and 240", async () => {
+    expect(HOST_GUARD_OVERRIDES).toEqual({
+      "commons.wikimedia.org": { maxConcurrent: 16, perMinute: 600 },
+    });
+    expect(await inFlightLimit(withOverrides(), COMMONS)).toBe(16);
+    expect(await inFlightLimit(withOverrides(), IIWIKI)).toBe(8);
+    expect(await perMinuteLimit(withOverrides(), COMMONS)).toBe(600);
+    expect(await perMinuteLimit(withOverrides(), IIWIKI)).toBe(240);
+  });
+
+  it("Commons keeps the sister breaker: the fifth failure opens it", async () => {
+    const g = withOverrides();
+    await openCircuit(g, COMMONS);
+    fetchSpy.mockImplementation(async () => json());
+
+    expect((await failureOf(g.fetch(COMMONS, { timeoutMs: 1000 })))?.reason).toBe("circuit-open");
+    expect(fetchSpy).toHaveBeenCalledTimes(5);
+  });
+
+  it("the process guard gives Commons its limits", async () => {
+    expect(await inFlightLimit(upstreamGuard, COMMONS)).toBe(16);
+  });
+});
+
 describe("a 429", () => {
   it("a 429 is busy and counts as a failure", async () => {
     const g = guard({ failureThreshold: 2 });
@@ -446,12 +511,26 @@ describe("wikiNameForUrl", () => {
     ).toBe("IIWiki");
   });
 
+  it("names Wikimedia Commons for its api.php and its relay path, so its outage reads by name", async () => {
+    expect(wikiNameForUrl("https://commons.wikimedia.org/w/api.php?action=query")).toBe(
+      "Wikimedia Commons"
+    );
+    expect(wikiNameForUrl("https://maps.ixwiki.com/api/mediawiki/commons/api.php")).toBe(
+      "Wikimedia Commons"
+    );
+    fetchSpy.mockImplementation(async () => status(503));
+    const error = await failureOf(
+      guard().fetch("https://commons.wikimedia.org/w/api.php?x", { timeoutMs: 1000 })
+    );
+    expect(error?.message).toBe("Wikimedia Commons could not be reached just now.");
+  });
+
   it('names a wiki by its upload host, and calls any other host "The wiki"', () => {
     expect(wikiNameForUrl("https://althistory.fandom.com/api.php")).toBe("AltHistory Wiki");
     expect(wikiNameForUrl("https://static.wikia.nocookie.net/althistory/images/a.png")).toBe(
       "AltHistory Wiki"
     );
-    expect(wikiNameForUrl("https://upload.wikimedia.org/x.png")).toBe("Commons");
+    expect(wikiNameForUrl("https://upload.wikimedia.org/x.png")).toBe("Wikimedia Commons");
     expect(wikiNameForUrl("https://example.org:8443/api.php")).toBe("The wiki");
     expect(wikiNameForUrl("https://maps.ixwiki.com/api/mediawiki/nowhere/api.php")).toBe(
       "The wiki"

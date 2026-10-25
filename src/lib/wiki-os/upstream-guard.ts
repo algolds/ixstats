@@ -10,7 +10,9 @@
 //     when a circuit opens and one when it closes; those name the host, which stays on the server.
 //   - A limiter (`OutboundLimiter`): 8 calls in flight, and a token bucket that holds 240 calls (a burst of 240) and
 //     refills at 4 a second (240 a minute). Past either the call is refused as busy with no request, and that refusal
-//     is not a failure of the wiki.
+//     is not a failure of the wiki. Wikimedia Commons, browsed interactively (a category browser fires several queries
+//     at once, autocomplete one per keystroke), gets 16 in flight and 600 a minute (`HOST_GUARD_OVERRIDES`), with the
+//     same breaker.
 // A failure throws `WikiUnavailableError`, which the tRPC formatter (`src/server/api/trpc/init.ts`) turns into
 // SERVICE_UNAVAILABLE (503), or TOO_MANY_REQUESTS (429) when the reason is `busy`. The client sees the message ("IIWiki
 // could not be reached just now.") and `{ wiki, reason }`, never the URL, a host or the upstream answer: a host that is
@@ -32,7 +34,14 @@
 import { AppError } from "~/lib/app-error";
 import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 import { OutboundLimiter, ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
-import { SISTER_WIKI_HOSTS, SISTER_WIKI_IDS, sisterWikiHost } from "~/lib/wiki-os/wiki-hosts";
+import {
+  SISTER_WIKI_HOSTS,
+  SISTER_WIKI_IDS,
+  sisterWikiHost,
+  type SisterWikiId,
+} from "~/lib/wiki-os/wiki-hosts";
+
+const isSisterWikiId = (id: string): id is SisterWikiId => sisterWikiHost(id) !== null;
 
 /** Why a wiki gave no answer: it failed (`unreachable`), it is resting after failures (`circuit-open`), or it or we said busy. */
 export type UnavailableReason = "unreachable" | "circuit-open" | "busy";
@@ -70,6 +79,14 @@ export const SISTER_GUARD_OPTIONS: HostGuardOptions = {
   maxOpenMs: 300_000,
   maxConcurrent: 8,
   perMinute: 240,
+};
+
+/** Limits of one host that differ from the guard's own, by `URL.host`. The breaker is the same for every host. */
+export type HostLimits = Partial<Pick<HostGuardOptions, "maxConcurrent" | "perMinute">>;
+
+/** Commons is browsed interactively, so it gets more room than a sister wiki's page reads. */
+export const HOST_GUARD_OVERRIDES: Readonly<Record<string, HostLimits>> = {
+  "commons.wikimedia.org": { maxConcurrent: 16, perMinute: 600 },
 };
 
 export interface GuardedRequest {
@@ -195,7 +212,10 @@ export class HostGuard {
   private readonly hosts = new Map<string, HostEntry>();
   private readonly now: () => number;
 
-  constructor(private readonly options: HostGuardOptions) {
+  constructor(
+    private readonly options: HostGuardOptions,
+    private readonly hostLimits: Readonly<Record<string, HostLimits>> = {}
+  ) {
     this.now = options.now ?? (() => Date.now());
   }
 
@@ -246,12 +266,13 @@ export class HostGuard {
   private entryFor(host: string): HostEntry {
     let entry = this.hosts.get(host);
     if (!entry) {
+      const limits = { ...this.options, ...this.hostLimits[host] };
       entry = {
         circuit: new Circuit(this.options),
         limiter: new OutboundLimiter({
           name: host,
-          maxConcurrent: this.options.maxConcurrent,
-          perMinute: this.options.perMinute,
+          maxConcurrent: limits.maxConcurrent,
+          perMinute: limits.perMinute,
           now: this.now,
         }),
       };
@@ -262,7 +283,7 @@ export class HostGuard {
 }
 
 /** The process's guard for the sister wikis: one per process (see the header). */
-export const upstreamGuard = new HostGuard(SISTER_GUARD_OPTIONS);
+export const upstreamGuard = new HostGuard(SISTER_GUARD_OPTIONS, HOST_GUARD_OVERRIDES);
 
 /** `/api/mediawiki/<id>/api.php`: the api.php proxy, which the development relay is. */
 const RELAY_PATH = /^\/api\/mediawiki\/([^/]+)\/api\.php$/;
@@ -270,19 +291,26 @@ const RELAY_PATH = /^\/api\/mediawiki\/([^/]+)\/api\.php$/;
 /** What a client may be told a host is called when it is not a listed wiki: never the host itself. */
 const UNLISTED_WIKI = "The wiki";
 
+/** Names an outage message gives a listed wiki in place of its short `name` ("Commons" alone says little). */
+const OUTAGE_NAMES: Partial<Record<SisterWikiId, string>> = { commons: "Wikimedia Commons" };
+
+/** The name an outage message gives the listed wiki `id`. */
+const outageName = (id: SisterWikiId): string => OUTAGE_NAMES[id] ?? SISTER_WIKI_HOSTS[id].name;
+
 /** The name people know a wiki by, for the wiki `url` points at; "The wiki" when it is not a listed wiki. */
 export function wikiNameForUrl(url: string): string {
   const parsed = new URL(url);
   const relayed = RELAY_PATH.exec(parsed.pathname)?.[1];
-  const viaRelay = relayed === undefined ? null : sisterWikiHost(relayed);
-  if (viaRelay) return viaRelay.name;
+  if (relayed !== undefined && isSisterWikiId(relayed)) return outageName(relayed);
   const hostname = parsed.hostname.replace(/^www\./, "");
-  const listed = SISTER_WIKI_IDS.map((id) => SISTER_WIKI_HOSTS[id]).find(
-    (host) =>
+  const listed = SISTER_WIKI_IDS.find((id) => {
+    const host = SISTER_WIKI_HOSTS[id];
+    return (
       new URL(host.origin).hostname === hostname ||
       (host.mediaHosts as readonly string[]).includes(hostname)
-  );
-  return listed?.name ?? UNLISTED_WIKI;
+    );
+  });
+  return listed ? outageName(listed) : UNLISTED_WIKI;
 }
 
 /** `work`'s result, or null when its wiki was unavailable; any other error is rethrown. */
