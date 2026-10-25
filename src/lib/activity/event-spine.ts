@@ -4,6 +4,7 @@ import type { NewsEventType } from "~/lib/diplomacy/news-generator";
 import { ActivityHooks } from "./hooks";
 import { ensureInternalStabilityMetrics } from "~/lib/statecraft/stability-store";
 import type { PrismaClient } from "@prisma/client";
+import { DEFAULT_INFLATION_RATE, DEFAULT_UNEMPLOYMENT_RATE } from "~/lib/economy/calculations";
 
 const FIELD_BOUNDS: Record<string, [number, number]> = {
   // Country fields
@@ -47,6 +48,21 @@ const FIELD_BOUNDS: Record<string, [number, number]> = {
   policingEffectiveness: [0, 100],
   justiceSystemEfficiency: [0, 100],
 };
+
+/**
+ * Stats the engine reads with a documented default when none is stored (percent). A consequence on
+ * an unset one starts from that default, so a directive's "Inflation -0.6" applies.
+ */
+const NULL_BASE_DEFAULTS: Record<string, number> = {
+  inflationRate: DEFAULT_INFLATION_RATE,
+  unemploymentRate: DEFAULT_UNEMPLOYMENT_RATE,
+};
+
+/** The value a consequence moves from: the stored number, else the engine default, else null. */
+function baseValueOf(field: string, stored: unknown): number | null {
+  if (typeof stored === "number" && Number.isFinite(stored)) return stored;
+  return NULL_BASE_DEFAULTS[field] ?? null;
+}
 
 function clampField(field: string, value: number): number {
   const bounds = FIELD_BOUNDS[field];
@@ -267,10 +283,10 @@ export class CountryEventSpine {
       });
       if (!record) return;
 
-      // An unset (null) stat has no baseline to move from: skip it rather than treating it
-      // as 0 (subtracting from a missing unemployment rate used to write 0% unemployment).
-      const previousValue = record[consequence.targetField];
-      if (typeof previousValue !== "number" || !Number.isFinite(previousValue)) return;
+      // An unset (null) stat moves from the engine's default (inflation 2%, unemployment 5%);
+      // one with no default is skipped, never treated as 0 (that used to write 0% unemployment).
+      const previousValue = baseValueOf(consequence.targetField, record[consequence.targetField]);
+      if (previousValue === null) return;
 
       const operation = OPERATIONS[consequence.operation];
       if (!operation) return;

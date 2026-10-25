@@ -183,24 +183,40 @@ describe("the country event spine", () => {
     });
   });
 
-  it("skips a stat that has no stored value instead of treating it as 0", async () => {
-    const db = spineDb({ unemploymentRate: null });
+  it("skips a stat that has no stored value and no engine default, instead of treating it as 0", async () => {
+    const db = spineDb({ publicApproval: null });
     const results = await CountryEventSpine.recordCountryEvent({
       db: db as never,
       countryId,
       sourceType: "decision",
       description: "Directive",
       consequences: [
-        {
-          targetModel: "Country",
-          targetField: "unemploymentRate",
-          operation: "subtract",
-          value: 0.6,
-        },
+        { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 },
       ],
     });
     expect(results).toHaveLength(0);
     expect(db.country.update).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["inflationRate", 2, 1.4],
+    ["unemploymentRate", 5, 4.4],
+  ])("moves an unset %s from the engine default (%s%%)", async (field, base, expected) => {
+    const db = spineDb({ [field]: null });
+    const results = await CountryEventSpine.recordCountryEvent({
+      db: db as never,
+      countryId,
+      sourceType: "decision",
+      description: "Directive",
+      consequences: [{ targetModel: "Country", targetField: field, operation: "subtract", value: 0.6 }],
+    });
+    expect(results).toEqual([
+      expect.objectContaining({ previousValue: base, newValue: expect.closeTo(expected, 9) }),
+    ]);
+    expect(db.country.update).toHaveBeenCalledWith({
+      where: { id: countryId },
+      data: { [field]: expect.closeTo(expected, 9) },
+    });
   });
 });
 
