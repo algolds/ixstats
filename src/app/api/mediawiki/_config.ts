@@ -35,12 +35,10 @@ export interface WikiConfig {
   apiUrl: () => string;
   /** api.php URL used to resolve `Special:FilePath` via `imageinfo` (may differ, e.g. iiwiki dev proxy). */
   imageInfoApiUrl: () => string;
-  /** Origins allowed to call the api.php proxy cross-origin. */
+  /** Origins allowed to call the api.php proxy cross-origin; `"*"` lets any origin call it. */
   corsOrigins: readonly string[];
   /** Read-only MediaWiki actions the api.php proxy will forward. */
   allowedActions: readonly string[];
-  /** Detect a Cloudflare challenge page and answer 503 instead of passing HTML through. */
-  detectCloudflare: boolean;
   /** Retries (with back-off) when `imageinfo` resolution answers 403. */
   resolveRetries: number;
   /** Sub-path prefix whose files are fetched through wsrv.nl instead of the origin. */
@@ -64,7 +62,6 @@ export const WIKIS = {
     // hand outside callers MediaWiki's copy of a page WikiOS has deleted. Only the media proxy
     // (`ixwiki/[...path]`, image files) still reaches IxWiki's MediaWiki from here.
     allowedActions: [],
-    detectCloudflare: false,
     resolveRetries: 0,
   },
   // The sister wikis, one per entry of wiki-hosts.ts.
@@ -89,7 +86,6 @@ function sisterWikiConfig(id: SisterWikiId): WikiConfig {
       ? ["*"]
       : [host.origin, ...host.proxy.extraCorsOrigins, ...DEV_ORIGINS],
     allowedActions: READ_ACTIONS,
-    detectCloudflare: host.proxy.detectCloudflare,
     resolveRetries: host.proxy.resolveRetries,
     ...(host.proxy.directImagePrefix && { directImagePrefix: host.proxy.directImagePrefix }),
   };
@@ -173,13 +169,20 @@ export const MEDIA_CORS_HEADERS = {
   "Cross-Origin-Resource-Policy": "cross-origin",
 } as const;
 
+function allowedOrigin(wiki: WikiConfig, origin: string | null): string {
+  if (wiki.corsOrigins.includes("*")) return "*";
+  return origin !== null && wiki.corsOrigins.includes(origin) ? origin : wiki.siteUrl;
+}
+
+/**
+ * The api.php proxy's CORS headers. A wiki open to every origin says `*`; otherwise a listed `origin` is echoed back and
+ * any other caller is told the wiki's own origin, so an origin the wiki does not list is never reflected. The answer
+ * depends on `Origin`, so it carries `Vary: Origin`: a shared cache never hands one origin's header to another.
+ */
 export function apiCorsHeaders(wiki: WikiConfig, origin: string | null): Record<string, string> {
-  const allowed =
-    wiki.corsOrigins.includes("*") || (origin && wiki.corsOrigins.includes(origin))
-      ? (origin ?? "*")
-      : (wiki.corsOrigins[0] ?? "*");
   return {
-    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Origin": allowedOrigin(wiki, origin),
+    Vary: "Origin",
     "Access-Control-Allow-Methods": "GET, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     "Access-Control-Max-Age": "86400",

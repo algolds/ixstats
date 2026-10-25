@@ -36,9 +36,24 @@ export const sisterWikiProcedure = publicProcedure.use(
 /** A sister wiki's answers are reused for 5 minutes. */
 export const SISTER_CACHE_TTL_MS = 300_000;
 
+/** A sister's "could not be reached" warning is logged at most this often per wiki: typeahead searches per keystroke. */
+const UNREACHABLE_WARNING_MS = 60_000;
+/** When each sister's warning was last logged. */
+const unreachableWarnedAt = new Map<SisterWikiSource, number>();
+
+function warnUnreachable(wiki: SisterWikiSource): void {
+  const now = Date.now();
+  if (now - (unreachableWarnedAt.get(wiki) ?? -Infinity) < UNREACHABLE_WARNING_MS) return;
+  unreachableWarnedAt.set(wiki, now);
+  console.warn(
+    `[wikios.search] ${WIKI_SOURCES[wiki].name} could not be reached; searched the other wikis without it.`
+  );
+}
+
 /**
- * One sister wiki's part of a search across all wikis. A wiki that cannot be reached adds no results and one warning
- * naming it, so the other wikis' results still come back; any other error fails the search.
+ * One sister wiki's part of a search across all wikis. A wiki that cannot be reached adds no results and a warning
+ * naming it (at most once a minute per wiki), so the other wikis' results still come back; any other error fails the
+ * search.
  */
 async function sisterResultsOrNone(
   query: string,
@@ -47,9 +62,7 @@ async function sisterResultsOrNone(
 ): Promise<WikiSearchResult[]> {
   const results = await unlessUnavailable(searchPages(query, limit, wiki));
   if (results !== null) return results;
-  console.warn(
-    `[wikios.search] ${WIKI_SOURCES[wiki].name} could not be reached; searched the other wikis without it.`
-  );
+  warnUnreachable(wiki);
   return [];
 }
 

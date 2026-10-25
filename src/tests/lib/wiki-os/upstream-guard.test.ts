@@ -2,14 +2,17 @@
 /**
  * The per-host guard in front of outbound wiki API calls (upstream-guard.ts): a breaker that opens after five
  * failures in a row (a Cloudflare challenge counts), probes once after its cooldown and doubles the cooldown up to
- * five minutes, a limiter of 8 in flight and 240 a minute per host, and the typed error the tRPC formatter turns
- * into SERVICE_UNAVAILABLE or TOO_MANY_REQUESTS.
+ * five minutes, a limiter of 8 in flight and 240 a minute per host, a second limiter for the api.php proxy's lane (8
+ * and 120) behind the same breaker, and the typed error the tRPC formatter turns into SERVICE_UNAVAILABLE or
+ * TOO_MANY_REQUESTS.
  */
 import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import {
+  type GuardLane,
   HOST_GUARD_OVERRIDES,
   HostGuard,
   type HostGuardOptions,
+  PROXY_LANE_LIMITS,
   SISTER_GUARD_OPTIONS,
   WikiUnavailableError,
   unlessUnavailable,
@@ -398,7 +401,7 @@ describe("per-host limits", () => {
     new HostGuard({ ...SISTER_GUARD_OPTIONS, now: () => clock }, HOST_GUARD_OVERRIDES);
 
   /** How many calls at once `url` lets through before refusing the next as busy. */
-  async function inFlightLimit(g: HostGuard, url: string): Promise<number> {
+  async function inFlightLimit(g: HostGuard, url: string, lane?: GuardLane): Promise<number> {
     const answers: Array<ReturnType<typeof deferred>> = [];
     fetchSpy.mockImplementation(() => {
       const answer = deferred();
@@ -408,7 +411,7 @@ describe("per-host limits", () => {
     const calls: Array<Promise<Response>> = [];
     let refusal: WikiUnavailableError | null = null;
     while (refusal === null && calls.length < 100) {
-      const call = g.fetch(url, { timeoutMs: 1000 });
+      const call = g.fetch(url, { timeoutMs: 1000, lane });
       const settled = await Promise.race([
         failureOf(call),
         new Promise<"pending">((resolve) => setImmediate(() => resolve("pending"))),
@@ -423,10 +426,10 @@ describe("per-host limits", () => {
   }
 
   /** How many calls in a row `url` answers before its minute runs out. */
-  async function perMinuteLimit(g: HostGuard, url: string): Promise<number> {
+  async function perMinuteLimit(g: HostGuard, url: string, lane?: GuardLane): Promise<number> {
     fetchSpy.mockImplementation(async () => json());
     let answered = 0;
-    while ((await failureOf(g.fetch(url, { timeoutMs: 1000 }))) === null && answered < 1000) {
+    while ((await failureOf(g.fetch(url, { timeoutMs: 1000, lane }))) === null && answered < 1000) {
       answered += 1;
     }
     return answered;
@@ -453,6 +456,68 @@ describe("per-host limits", () => {
 
   it("the process guard gives Commons its limits", async () => {
     expect(await inFlightLimit(upstreamGuard, COMMONS)).toBe(16);
+  });
+
+  it("the proxy lane has 8 in flight and 120 a minute on every host, Commons included", async () => {
+    expect(PROXY_LANE_LIMITS).toEqual({ maxConcurrent: 8, perMinute: 120 });
+    expect(await inFlightLimit(withOverrides(), IIWIKI, "proxy")).toBe(8);
+    expect(await inFlightLimit(withOverrides(), COMMONS, "proxy")).toBe(8);
+    expect(await perMinuteLimit(withOverrides(), IIWIKI, "proxy")).toBe(120);
+    expect(await perMinuteLimit(withOverrides(), COMMONS, "proxy")).toBe(120);
+  });
+});
+
+describe("the proxy lane", () => {
+  it("proxy traffic that uses up its own minute leaves WikiOS's reads their whole budget", async () => {
+    const g = guard();
+    fetchSpy.mockImplementation(async () => json());
+    for (let i = 0; i < 120; i++) await g.fetch(IIWIKI, { timeoutMs: 1000, lane: "proxy" });
+    const refused = await failureOf(g.fetch(IIWIKI, { timeoutMs: 1000, lane: "proxy" }));
+    expect(refused?.reason).toBe("busy");
+    expect(fetchSpy).toHaveBeenCalledTimes(120);
+
+    for (let i = 0; i < 240; i++) await g.fetch(IIWIKI, { timeoutMs: 1000 });
+    expect((await failureOf(g.fetch(IIWIKI, { timeoutMs: 1000, lane: "wikios" })))?.reason).toBe(
+      "busy"
+    );
+    expect(fetchSpy).toHaveBeenCalledTimes(360);
+  });
+
+  it("proxy calls in flight hold none of WikiOS's slots", async () => {
+    const g = guard();
+    const answers = Array.from({ length: 8 }, () => deferred());
+    let next = 0;
+    fetchSpy.mockImplementation(() => answers[next++]!.promise);
+    const inFlight = answers.map(() => g.fetch(IIWIKI, { timeoutMs: 1000, lane: "proxy" }));
+    expect((await failureOf(g.fetch(IIWIKI, { timeoutMs: 1000, lane: "proxy" })))?.reason).toBe(
+      "busy"
+    );
+    fetchSpy.mockImplementationOnce(async () => json());
+    expect((await g.fetch(IIWIKI, { timeoutMs: 1000 })).status).toBe(200);
+    for (const answer of answers) answer.resolve(json());
+    await Promise.all(inFlight);
+  });
+
+  it("the lanes share the breaker: failures through the proxy open the circuit for WikiOS's reads", async () => {
+    const g = guard();
+    fetchSpy.mockImplementation(async () => status(503));
+    for (let i = 0; i < 5; i++)
+      await failureOf(g.fetch(IIWIKI, { timeoutMs: 1000, lane: "proxy" }));
+    fetchSpy.mockImplementation(async () => json());
+
+    expect((await failureOf(g.fetch(IIWIKI, { timeoutMs: 1000 })))?.reason).toBe("circuit-open");
+    expect(fetchSpy).toHaveBeenCalledTimes(5);
+  });
+
+  it("a circuit WikiOS's reads opened refuses the proxy too, with no request", async () => {
+    const g = guard();
+    await openCircuit(g);
+    fetchSpy.mockImplementation(async () => json());
+
+    expect((await failureOf(g.fetch(IIWIKI, { timeoutMs: 1000, lane: "proxy" })))?.reason).toBe(
+      "circuit-open"
+    );
+    expect(fetchSpy).toHaveBeenCalledTimes(5);
   });
 });
 

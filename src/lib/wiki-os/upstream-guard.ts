@@ -13,6 +13,12 @@
 //     is not a failure of the wiki. Wikimedia Commons, browsed interactively (a category browser fires several queries
 //     at once, autocomplete one per keystroke), gets 16 in flight and 600 a minute (`HOST_GUARD_OVERRIDES`), with the
 //     same breaker.
+//   - Two lanes. That limiter is WikiOS's own reads' (`lane: "wikios"`, the default). The public api.php proxy
+//     (`src/app/api/mediawiki/[wiki]/api.php/route.ts`) spends a second limiter per host (`lane: "proxy"`, 8 in flight
+//     and 120 a minute, `PROXY_LANE_LIMITS`), so anonymous proxy traffic, even within its per-IP limit, can never use
+//     up the budget WikiOS's readers need. Both lanes share the host's breaker: an outage either one sees is the
+//     other's too, and the proxy sends nothing to a wiki WikiOS already knows is down. So a wiki can see 8 + 8 in
+//     flight and 240 + 120 a minute from one process (before C3d the proxy had no bound but its per-IP limit).
 // A failure throws `WikiUnavailableError`, which the tRPC formatter (`src/server/api/trpc/init.ts`) turns into
 // SERVICE_UNAVAILABLE (503), or TOO_MANY_REQUESTS (429) when the reason is `busy`. The client sees the message ("IIWiki
 // could not be reached just now.") and `{ wiki, reason }`, never the URL, a host or the upstream answer: a host that is
@@ -89,11 +95,22 @@ export const HOST_GUARD_OVERRIDES: Readonly<Record<string, HostLimits>> = {
   "commons.wikimedia.org": { maxConcurrent: 16, perMinute: 600 },
 };
 
+/** Whose budget a call spends: WikiOS's own reads, or the public api.php proxy (see the header). */
+export type GuardLane = "wikios" | "proxy";
+
+/** The proxy lane's limits, on every host. */
+export const PROXY_LANE_LIMITS: Readonly<Required<HostLimits>> = {
+  maxConcurrent: 8,
+  perMinute: 120,
+};
+
 export interface GuardedRequest {
   /** Clamped to `MAX_TIMEOUT_MS`; a value that is not a positive finite number uses `DEFAULT_TIMEOUT_MS`. */
   timeoutMs: number;
   /** Defaults to `DEFAULT_USER_AGENT` (`IxStats-Builder`, which the sister wikis allow-list). */
   userAgent?: string;
+  /** Defaults to `wikios`. */
+  lane?: GuardLane;
 }
 
 /** The timeout of a request whose `timeoutMs` is not a positive finite number. */
@@ -205,7 +222,7 @@ async function send(url: string, request: GuardedRequest): Promise<Response | Un
 
 interface HostEntry {
   circuit: Circuit;
-  limiter: OutboundLimiter;
+  limiters: Record<GuardLane, OutboundLimiter>;
 }
 
 export class HostGuard {
@@ -230,7 +247,7 @@ export class HostGuard {
     const ticket = entry.circuit.admit(this.now());
     if (ticket === null) throw new WikiUnavailableError(wiki, "circuit-open");
     try {
-      return await entry.limiter.run(() =>
+      return await entry.limiters[request.lane ?? "wikios"].run(() =>
         this.attempt(url, request, { wiki, host }, entry.circuit, ticket)
       );
     } catch (error) {
@@ -269,12 +286,19 @@ export class HostGuard {
       const limits = { ...this.options, ...this.hostLimits[host] };
       entry = {
         circuit: new Circuit(this.options),
-        limiter: new OutboundLimiter({
-          name: host,
-          maxConcurrent: limits.maxConcurrent,
-          perMinute: limits.perMinute,
-          now: this.now,
-        }),
+        limiters: {
+          wikios: new OutboundLimiter({
+            name: host,
+            maxConcurrent: limits.maxConcurrent,
+            perMinute: limits.perMinute,
+            now: this.now,
+          }),
+          proxy: new OutboundLimiter({
+            name: `${host} (proxy)`,
+            ...PROXY_LANE_LIMITS,
+            now: this.now,
+          }),
+        },
       };
       this.hosts.set(host, entry);
     }

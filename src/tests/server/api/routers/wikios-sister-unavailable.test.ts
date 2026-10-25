@@ -5,8 +5,9 @@
 // wikis, C3c). A read of IIWiki or AltHistory that cannot reach it reaches the client as SERVICE_UNAVAILABLE ("IIWiki
 // could not be reached just now."), through the tRPC formatter: a page, its wikitext, intro, section, images and
 // infobox, a search of that one wiki, its categories.
-// A search across all wikis is best effort: a sister that cannot be reached adds nothing (and one warning naming it),
-// so IxWiki's results still come back.
+// A search across all wikis is best effort: a sister that cannot be reached adds nothing (and a warning naming it, at
+// most once a minute per wiki, since composer typeahead searches on every keystroke), so IxWiki's results still come
+// back.
 //
 // The sister reads are real (bridge, http-reader, upstream guard); only `fetch` is spied, answering by host. IxWiki's
 // own search is stubbed, and so is `resolveRedirect` (IxWiki's redirects, which live in Postgres).
@@ -222,6 +223,37 @@ describe("a search across all wikis is best effort", () => {
     expect(results).toEqual([expect.objectContaining({ title: "Aurelia", source: "ixwiki" })]);
     expect(searchWarnings()).toHaveLength(2);
     expect(searchWarnings().join(" ")).toMatch(/IIWiki.*AltHistory Wiki/);
+  });
+
+  it("a sister that stays down is warned about once a minute, not on every keystroke", async () => {
+    answers.iiwiki = opensearch(["Bashan"]);
+
+    for (const query of ["B", "Ba", "Bas"]) await search().search({ query, wikiSource: "all" });
+    expect(searchWarnings()).toEqual([expect.stringContaining("AltHistory Wiki")]);
+
+    now += 59_999;
+    await search().search({ query: "Bash", wikiSource: "all" });
+    expect(searchWarnings()).toHaveLength(1);
+
+    now += 1;
+    await search().search({ query: "Basha", wikiSource: "all" });
+    expect(searchWarnings()).toEqual([
+      expect.stringContaining("AltHistory Wiki"),
+      expect.stringContaining("AltHistory Wiki"),
+    ]);
+  });
+
+  it("each sister has its own minute: a second wiki going down is still warned about", async () => {
+    answers.iiwiki = opensearch(["Bashan"]);
+    await search().search({ query: "Bashan minute", wikiSource: "all" });
+
+    answers.iiwiki = down;
+    await search().search({ query: "Bashan minute 2", wikiSource: "all" });
+
+    expect(searchWarnings()).toEqual([
+      expect.stringContaining("AltHistory Wiki"),
+      expect.stringContaining("IIWiki"),
+    ]);
   });
 
   it("with every wiki answering, nothing is warned", async () => {

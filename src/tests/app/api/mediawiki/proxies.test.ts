@@ -2,7 +2,10 @@
 /**
  * The MediaWiki proxy routes. Plan 418: the read-only api.php proxy forwards nothing to IxWiki's MediaWiki (WikiOS
  * serves /w/api.php itself, and the proxy could return a page WikiOS has deleted); a sister wiki's allowed reads
- * still go through, unchanged. The two media proxies: /api/mediawiki/<sister wiki>/... (iiwiki, Commons) and
+ * still go through, unchanged, through the upstream guard on its own "proxy" lane (its own limiter, the host's shared
+ * breaker; plan 2026-10-25 sister wikis, C3d): a success is cacheable for five minutes and varies by Origin; an
+ * unreachable wiki, a challenge page or an open circuit is 503 and a busy one 429, each with Retry-After; every answer
+ * but a success is no-store. The two media proxies: /api/mediawiki/<sister wiki>/... (iiwiki, Commons) and
  * /api/mediawiki/ixwiki/....
  * Both are rate limited per client on the wiki_media bucket, read the catch-all exactly once, never relay an upstream
  * error body, and render SVG inline only as an image (a navigation downloads it, under a sandboxing CSP). The sister-
@@ -43,6 +46,7 @@ import { GET as apiPhpGet } from "~/app/api/mediawiki/[wiki]/api.php/route";
 import { GET as sisterGet } from "~/app/api/mediawiki/[wiki]/[...path]/route";
 import { GET as ixwikiGet } from "~/app/api/mediawiki/ixwiki/[...path]/route";
 import { mediaWikiOrigin } from "~/lib/wiki-os/config";
+import { upstreamGuard } from "~/lib/wiki-os/upstream-guard";
 import {
   extractLeadImage,
   getCommonsProxyUrl,
@@ -117,10 +121,188 @@ beforeEach(() => {
 afterEach(() => jest.restoreAllMocks());
 
 describe("the api.php proxy", () => {
-  const apiPhp = (wiki: string, query: string) =>
-    apiPhpGet(new NextRequest(`http://localhost:3000/api/mediawiki/${wiki}/api.php?${query}`), {
-      params: Promise.resolve({ wiki }),
+  const apiPhp = (wiki: string, query: string, headers?: Record<string, string>) =>
+    apiPhpGet(
+      new NextRequest(`http://localhost:3000/api/mediawiki/${wiki}/api.php?${query}`, { headers }),
+      { params: Promise.resolve({ wiki }) }
+    );
+  const CACHEABLE = "public, max-age=300, s-maxage=300, stale-while-revalidate=600";
+  const challenge = (code: number) =>
+    new Response("<html><title>Just a moment...</title><script>cf_chl_opt={}</script></html>", {
+      status: code,
+      headers: { "content-type": "text/html; charset=UTF-8" },
     });
+
+  /**
+   * The clock moves an hour on per test, past any cooldown and refilling every minute's budget: the guard's breakers
+   * and limiters last as long as the module, so a circuit an earlier test opened lets this test's first call through
+   * as its probe.
+   */
+  let now = 1_000_000;
+  beforeEach(() => {
+    now += 3_600_000;
+    jest.spyOn(Date, "now").mockImplementation(() => now);
+  });
+
+  it("a success is cacheable for five minutes and varies by Origin", async () => {
+    fetchMock.mockResolvedValue(Response.json({ query: { pages: [] } }));
+    const res = await apiPhp("iiwiki", "action=query&titles=Bashan", {
+      origin: "https://www.iiwiki.com",
+    });
+    expect(res.status).toBe(200);
+    expect(res.headers.get("cache-control")).toBe(CACHEABLE);
+    expect(res.headers.get("vary")).toBe("Origin");
+    expect(res.headers.get("access-control-allow-origin")).toBe("https://www.iiwiki.com");
+  });
+
+  it("never reflects an origin it does not list; a wiki open to every origin answers *", async () => {
+    fetchMock.mockImplementation(async () => Response.json({ query: { pages: [] } }));
+    const evil = { origin: "https://evil.example" };
+    const listed = await apiPhp("iiwiki", "action=query&titles=Bashan", evil);
+    const open = await apiPhp("althistory", "action=query&titles=Bashan", evil);
+    const bare = await apiPhp("althistory", "action=query&titles=Bashan");
+    expect(listed.headers.get("access-control-allow-origin")).toBe("https://iiwiki.com");
+    expect(open.headers.get("access-control-allow-origin")).toBe("*");
+    expect(bare.headers.get("access-control-allow-origin")).toBe("*");
+  });
+
+  it("calls the wiki through the upstream guard's proxy lane with a 15 second timeout", async () => {
+    fetchMock.mockResolvedValue(Response.json({ query: { pages: [] } }));
+    const guarded = jest.spyOn(upstreamGuard, "fetch");
+    await apiPhp("iiwiki", "action=query&titles=Bashan");
+    expect(guarded).toHaveBeenCalledWith(
+      "https://iiwiki.com/api.php?action=query&titles=Bashan&format=json",
+      { timeoutMs: 15_000, lane: "proxy" }
+    );
+  });
+
+  it.each([
+    ["a gateway error page", async () => new Response("<html>502</html>", { status: 502 })],
+    ["a 500 in JSON", async () => Response.json({ error: "db" }, { status: 500 })],
+    [
+      "a refused connection",
+      async (): Promise<Response> => {
+        throw new TypeError("fetch failed");
+      },
+    ],
+  ])(
+    "an unreachable wiki is 503 with no-store and Retry-After, never 500 (%s)",
+    async (_case, answer) => {
+      fetchMock.mockImplementation(answer);
+      const res = await apiPhp("iiwiki", "action=query&titles=Bashan");
+      expect(res.status).toBe(503);
+      expect(await res.json()).toEqual({
+        error: "IIWiki could not be reached just now.",
+        unavailable: true,
+      });
+      expect(res.headers.get("cache-control")).toBe("no-store");
+      expect(res.headers.get("retry-after")).toBe("30");
+    }
+  );
+
+  it.each([403, 200])("a Cloudflare challenge page is 503 unavailable (HTTP %i)", async (code) => {
+    fetchMock.mockImplementation(async () => challenge(code));
+    const res = await apiPhp("iiwiki", "action=query&titles=Bashan");
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({
+      error: "IIWiki could not be reached just now.",
+      unavailable: true,
+    });
+    expect(res.headers.get("cache-control")).toBe("no-store");
+  });
+
+  it("an open circuit sends no request", async () => {
+    fetchMock.mockImplementation(async () => new Response("<html>502</html>", { status: 502 }));
+    for (let i = 0; i < 5; i++) await apiPhp("althistory", "action=query&titles=Bashan");
+    expect(fetchMock).toHaveBeenCalledTimes(5);
+
+    const res = await apiPhp("althistory", "action=query&titles=Bashan");
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({
+      error: "AltHistory Wiki could not be reached just now.",
+      unavailable: true,
+    });
+    expect(res.headers.get("retry-after")).toBe("30");
+    expect(res.headers.get("cache-control")).toBe("no-store");
+    expect(fetchMock).toHaveBeenCalledTimes(5);
+  });
+
+  it("a wiki that says it is busy is 429 with no-store and Retry-After 10", async () => {
+    fetchMock.mockImplementation(async () => Response.json({}, { status: 429 }));
+    const res = await apiPhp("iiwiki", "action=query&titles=Bashan");
+    expect(res.status).toBe(429);
+    expect(await res.json()).toEqual({ error: "IIWiki is busy; try again shortly." });
+    expect(res.headers.get("retry-after")).toBe("10");
+    expect(res.headers.get("cache-control")).toBe("no-store");
+  });
+
+  it("proxy traffic past its own 120 a minute is told busy, and WikiOS's own reads still go out", async () => {
+    fetchMock.mockImplementation(async () => Response.json({ query: { pages: [] } }));
+    for (let i = 0; i < 120; i++) {
+      expect((await apiPhp("iiwiki", `action=query&titles=Page_${i}`)).status).toBe(200);
+    }
+    const refused = await apiPhp("iiwiki", "action=query&titles=One_more");
+    expect(refused.status).toBe(429);
+    expect(refused.headers.get("retry-after")).toBe("10");
+    expect(refused.headers.get("cache-control")).toBe("no-store");
+    expect(fetchMock).toHaveBeenCalledTimes(120);
+
+    const wikiosRead = await upstreamGuard.fetch(
+      "https://iiwiki.com/api.php?action=query&titles=Bashan&format=json",
+      { timeoutMs: 1000 }
+    );
+    expect(wikiosRead.status).toBe(200);
+  });
+
+  it.each([
+    ["a wiki's own 404", async () => Response.json({ error: "nope" }, { status: 404 })],
+    [
+      "a JSON answer that does not parse",
+      async () => new Response('{"query":', { headers: { "content-type": "application/json" } }),
+    ],
+  ])("an unexpected failure is 502 with no-store, not 500 (%s)", async (_case, answer) => {
+    fetchMock.mockImplementation(answer);
+    const res = await apiPhp("iiwiki", "action=query&titles=Bashan");
+    expect(res.status).toBe(502);
+    expect(await res.json()).toEqual({ error: "Failed to proxy request to IIWiki" });
+    expect(res.headers.get("cache-control")).toBe("no-store");
+  });
+
+  it("the rate-limit, invalid-action and unknown-wiki answers are not cacheable", async () => {
+    const invalid = await apiPhp("iiwiki", "action=edit");
+    const unknown = await apiPhp("nowhere", "action=query");
+    const notProxied = await apiPhp("ixwiki", "action=query");
+    mockRateCheck.mockResolvedValue({
+      success: false,
+      remaining: 0,
+      resetAt: new Date(now + 30_000),
+    });
+    const limited = await apiPhp("iiwiki", "action=query&titles=Bashan");
+
+    expect([invalid, unknown, notProxied, limited].map((r) => r.status)).toEqual([
+      400, 404, 410, 429,
+    ]);
+    for (const res of [invalid, unknown, notProxied, limited]) {
+      expect(res.headers.get("cache-control")).toBe("no-store");
+    }
+    expect(limited.headers.get("retry-after")).toBe("30");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("only allowlisted parameters are forwarded", async () => {
+    fetchMock.mockResolvedValue(Response.json({ query: { pages: [] } }));
+    await apiPhp("iiwiki", "action=query&titles=Bashan&lgpassword=x&token=y&evil=1");
+    const sent = new URL(fetchedUrl(fetchMock.mock.calls[0]![0])).searchParams;
+    expect([...sent.keys()]).toEqual(["action", "titles", "format"]);
+  });
+
+  it("always asks the wiki for JSON: format is forced and a JSONP callback is dropped", async () => {
+    fetchMock.mockResolvedValue(Response.json({ query: { pages: [] } }));
+    await apiPhp("iiwiki", "action=query&titles=Bashan&format=xml&callback=steal");
+    const sent = new URL(fetchedUrl(fetchMock.mock.calls[0]![0])).searchParams;
+    expect(sent.get("format")).toBe("json");
+    expect(sent.has("callback")).toBe(false);
+  });
 
   it.each([
     "action=query&list=allpages",
