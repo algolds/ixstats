@@ -47,7 +47,11 @@ jest.mock("~/server/db", () => {
       update: (...a: unknown[]) => mockUpdate(...a),
       create: (...a: unknown[]) => mockCreate(...a),
     },
-    wikiRevision: { create: (...a: unknown[]) => mockRevisionCreate(...a) },
+    wikiRevision: {
+      create: (...a: unknown[]) => mockRevisionCreate(...a),
+      // a restore points the page at its live head: these pages have no revision rows
+      findFirst: async () => null,
+    },
     wikiLink: { updateMany: (...a: unknown[]) => mockLinkUpdateMany(...a) },
     wikiLog: { create: (...a: unknown[]) => mockLogCreate(...a) },
     wikiMirrorJob: { create: (...a: unknown[]) => mockJobCreate(...a) },

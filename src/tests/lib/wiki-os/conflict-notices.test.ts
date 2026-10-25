@@ -628,8 +628,12 @@ describeEachWikiosMode("settleConflicts", () => {
     expect(notify).toHaveBeenCalledWith(expect.objectContaining({ href: history }));
     expect(dm).toHaveBeenCalledWith("disc-alpha", expect.stringContaining(history));
     expect(revisionsOf("Caphiria")).toHaveLength(1);
+    // Alpha lost a move: the note names it, and links the log (their move) and the history (the winner)
     expect(headOf("User talk:Alpha").wikitext).toContain(
-      "([{{fullurl:Caphiria|action=history}} history])"
+      "== Your move of [[Caphiria]] was replaced =="
+    );
+    expect(headOf("User talk:Alpha").wikitext).toContain(
+      "([{{fullurl:Special:Log|page=Caphiria}} log], [{{fullurl:Caphiria|action=history}} history])"
     );
 
     tables.wikiLog.insert({
@@ -686,6 +690,61 @@ describeEachWikiosMode("settleConflicts", () => {
     expect(jobs()).toEqual([]);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("its page is deleted"));
     warn.mockRestore();
+  });
+
+  it("a classic deleter who lost to a later WikiOS edit is told the page was kept, with the log and history, never a diff", async () => {
+    seedCaphiria();
+    const head = wikiosHead("Caphiria is an empire.");
+    const id = await collide(change("wikios", head, author({})), [
+      {
+        ...change("classic", "mwlog:91", author({ userId: "db-beta", classicName: "Beta" })),
+        action: "delete",
+      },
+    ]);
+
+    expect(await settleConflicts()).toEqual({ notified: 2, trails: 0, pending: 0 });
+
+    expect(notify).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Your deletion was overwritten",
+        message:
+          'Your deletion of "Caphiria" was replaced by a later edit on WikiOS. The page was kept.',
+        href: `/wiki/Caphiria?action=history&conflict=${id}`,
+      })
+    );
+    const note = headOf("User talk:Beta");
+    expect(note.summary).toBe("Your deletion of Caphiria was replaced");
+    expect(note.wikitext).toContain(
+      "== Your deletion of [[Caphiria]] was replaced ==\n" +
+        "A later edit on WikiOS replaced your deletion " +
+        "([{{fullurl:Special:Log|page=Caphiria}} log], [{{fullurl:Caphiria|action=history}} history]). " +
+        "The page was kept; delete it again if it should still go."
+    );
+  });
+
+  it("a restorer whose restore a later classic deletion replaced is told the page stays deleted, with the log linked once", async () => {
+    seedCaphiria();
+    article("Caphiria")!.status = "ARCHIVED";
+    const id = await collide({ ...change("classic", "mwlog:92", author({})), action: "delete" }, [
+      {
+        ...change("wikios", "log:wk-restore", author({ userId: "db-beta", classicName: "Beta" })),
+        action: "undelete",
+      },
+    ]);
+
+    await settleConflicts();
+
+    expect(notify).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message:
+          'Your restore of "Caphiria" was replaced by a later deletion on classic MediaWiki. The page stays deleted.',
+        href: `/util/log?title=Caphiria&conflict=${id}`,
+      })
+    );
+    expect(headOf("User talk:Beta").wikitext).toContain(
+      "replaced your restore ([{{fullurl:Special:Log|page=Caphiria}} log]). " +
+        "The page stays deleted; restore it again if it should come back."
+    );
   });
 
   it("a bookkeeping failure on one row leaves the others to settle", async () => {

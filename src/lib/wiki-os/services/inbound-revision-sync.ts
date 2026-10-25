@@ -24,13 +24,11 @@ import { tagRevisionsOfName } from "~/lib/identity/claim-tags";
 import { ownerOfName } from "~/lib/identity/wiki-names";
 import { isMirrorAccount } from "../adapters/mediawiki/csrf-cache";
 import { ArticleRepository } from "../core/article-repository";
+import { headFieldsOf } from "../core/article-head";
 import type { ImportedHead, ImportPageInput } from "../core/article-import";
 import { toRevisionRef } from "../core/domain-types";
 import { fillRevisionParents } from "../core/revision-parents";
-import { parseRedirect } from "../core/redirect";
 import { canonicalizeTitle, storedNamespace, type CanonicalTitle } from "../core/title";
-import { extractLeadImagePath } from "../transformers/image-url";
-import { cleanWikitextExcerpt } from "../transformers/wikitext-parser";
 import { mwSha1Base36 } from "../xml/sha1";
 import { decideCollision, type CollisionVerdict } from "./conflict-rule";
 import { recordConflict } from "./conflict-log";
@@ -56,9 +54,6 @@ import {
 } from "./inbound-mediawiki";
 
 const SOURCE = "ixwiki";
-const SUMMARY_COLUMN_LIMIT = 480;
-/** The excerpt is the lead of the article: cleaning more than this is wasted work on a 2 MB page. */
-const EXCERPT_SOURCE_LENGTH = 20_000;
 const DELETED_AUTHOR = "(deleted)";
 
 /**
@@ -323,23 +318,7 @@ async function insertEchoRevision(
 
 /** The page's head columns for `wikitext`, derived exactly as a save derives them. */
 function buildHead(rev: MediaWikiRevision, createdAt: Date): ImportedHead {
-  const words = rev.wikitext.split(/\s+/).filter(Boolean).length;
-  const redirect = parseRedirect(rev.wikitext);
-  return {
-    createdAt,
-    mwRevId: rev.revid,
-    wikitext: rev.wikitext,
-    summary:
-      cleanWikitextExcerpt(rev.wikitext.slice(0, EXCERPT_SOURCE_LENGTH), 300).slice(
-        0,
-        SUMMARY_COLUMN_LIMIT
-      ) || null,
-    wordCount: words,
-    readingTime: Math.max(1, Math.ceil(words / 200)),
-    redirectTargetSlug: redirect?.title ?? null,
-    redirectTargetFragment: redirect?.fragment ?? null,
-    leadImageUrl: extractLeadImagePath(rev.wikitext),
-  };
+  return { createdAt, mwRevId: rev.revid, ...headFieldsOf(rev.wikitext) };
 }
 
 /** The page's identity: the stored row's own (a moved page is renamed by its move event), else the canonical title's. */

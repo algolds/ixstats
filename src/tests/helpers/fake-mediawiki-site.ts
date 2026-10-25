@@ -8,7 +8,7 @@
  *     the importing account, dated now; neither shows in recent changes (an import is a log entry there);
  *   - an edit by anyone is a new revision on top of the current one, and a recent change;
  *   - an upload stores the file's SHA-1 and creates the file page when it is missing.
- * `editAs` and `deletePage` are the editors working on MediaWiki directly.
+ * `editAs`, `deletePage` and `restorePage` are the editors working on MediaWiki directly.
  */
 import { createHash } from "node:crypto";
 import { createFakeMediaWiki, type RecordedRequest } from "./fake-mediawiki";
@@ -92,6 +92,8 @@ export function createFakeMediaWikiSite(options: FakeMediaWikiSiteOptions = {}) 
   const wiki = createFakeMediaWiki();
   const mirror = options.mirrorAccount ?? "WikiOSMirror";
   const pages = new Map<string, SitePage>();
+  /** Deleted pages, kept as MediaWiki keeps them (unreadable) until a restore. */
+  const deleted = new Map<string, SitePage>();
   const recentChanges: RecentChange[] = [];
   const logEvents: SiteLogEvent[] = [];
   const failing = new Set<number>();
@@ -289,8 +291,17 @@ export function createFakeMediaWikiSite(options: FakeMediaWikiSiteOptions = {}) 
     },
     /** A page an administrator deleted on MediaWiki: gone, and a log event. */
     deletePage(user: string, title: string, comment = "spam") {
+      const page = pages.get(title);
+      if (page) deleted.set(title, page);
       pages.delete(title);
       logEvents.push({ logid: nextLogid++, type: "delete", action: "delete", title, user, timestamp: tick(), comment, params: {} });
+    },
+    /** A deleted page an administrator restored: back with its revisions (same ids), and a log event. */
+    restorePage(user: string, title: string, comment = "restored") {
+      const page = deleted.get(title);
+      if (page) pages.set(title, page);
+      deleted.delete(title);
+      logEvents.push({ logid: nextLogid++, type: "delete", action: "restore", title, user, timestamp: tick(), comment, params: {} });
     },
     /** The revision answers HTTP 500 until `recover`. */
     failRevision: (revid: number) => failing.add(revid),

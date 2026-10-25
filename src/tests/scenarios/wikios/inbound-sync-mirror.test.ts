@@ -67,6 +67,7 @@ import { syncLatestRevision, syncRevisionById } from "~/lib/wiki-os/services/inb
 import { toRevisionRef } from "~/lib/wiki-os/core/domain-types";
 import { runMirrorCycle } from "~/lib/wiki-os/services/mirror-worker";
 import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
+import { PageManagementService } from "~/lib/wiki-os/core/page-management-service";
 import { invalidateCsrfToken } from "~/lib/wiki-os/adapters/mediawiki/csrf-cache";
 import { getArticleIntro } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { wikiBridgeCache } from "~/lib/wiki-os/adapters/mediawiki/bridge/types";
@@ -927,6 +928,68 @@ describe.each(WIKIOS_MODES)("inbound revisions through the conflict rule [%s]", 
     expect(conflictsOf("Caphiria")).toEqual([
       expect.objectContaining({ winnerRef: String(restored.revid), winnerAt: restoredAt }),
     ]);
+  });
+
+  it("a classic delete that wins over an unmirrored WikiOS edit, then a classic restore: the page's text and render are MediaWiki's revision, never the loser's", async () => {
+    const kingdom = site.current("Caphiria")!;
+    const lost = await saveOnHead(
+      "Caphiria is an empire in Sarpedon.",
+      new Date(siteTime() - 60_000)
+    );
+    site.deletePage("Admin", "Caphiria");
+
+    await runAutoSyncCycle();
+
+    expect(revisionRow(lost.revisionId)).toMatchObject({ parked: true });
+    expect(article("Caphiria")).toMatchObject({ status: "ARCHIVED", wikitext: kingdom.text });
+
+    site.restorePage("Admin", "Caphiria");
+    jest.mocked(renderArticleViaMediaWiki).mockClear();
+    // the restored revision is one WikiOS has: it comes back "known", nothing is imported
+    await runAutoSyncCycle();
+    await settle();
+
+    expect(article("Caphiria")).toMatchObject({ status: "PUBLISHED", wikitext: kingdom.text });
+    expect(liveHead("Caphiria").mwRevId).toBe(kingdom.revid);
+    const rendered = jest.mocked(renderArticleViaMediaWiki).mock.calls.map(([text]) => text);
+    expect(rendered).toContain(kingdom.text);
+    expect(rendered).not.toContain("Caphiria is an empire in Sarpedon.");
+  });
+
+  it("a deleted page whose text is an overwritten revision's renders its live head once restored, from classic or in WikiOS", async () => {
+    /** The page as an older delete left it: archived, its text a parked loser's. */
+    const leaveStale = (title: string) => {
+      const row = article(title)!;
+      tables.wikiRevision.insert({
+        articleId: row.id,
+        wikitext: "Lost text.",
+        author: "Kir",
+        parked: true,
+        parkReason: "overwritten:mwlog:1",
+        createdAt: new Date("2026-10-01"),
+      });
+      Object.assign(row, { status: "ARCHIVED", wikitext: "Lost text." });
+    };
+    leaveStale("Caphiria");
+    leaveStale("Old page");
+    site.deletePage("Admin", "Old page");
+    site.restorePage("Admin", "Old page");
+    jest.mocked(renderArticleViaMediaWiki).mockClear();
+
+    await runAutoSyncCycle();
+    await PageManagementService.restoreArticle("Caphiria", {
+      userId: "db-watcher",
+      name: "Watcher",
+    });
+    await settle();
+
+    expect(article("Old page")).toMatchObject({ status: "PUBLISHED", wikitext: "An old page." });
+    expect(article("Caphiria")).toMatchObject({
+      status: "PUBLISHED",
+      wikitext: "Caphiria is a kingdom.",
+    });
+    const rendered = jest.mocked(renderArticleViaMediaWiki).mock.calls.map(([text]) => text);
+    expect(rendered).not.toContain("Lost text.");
   });
 
   it("the cycle settles conflicts after its steps", async () => {

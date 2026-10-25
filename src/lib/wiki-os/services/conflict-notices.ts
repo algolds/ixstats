@@ -36,6 +36,7 @@ import {
   type ConflictLogEntry,
   type ConflictRow,
 } from "./conflict-log";
+import { lossOf, noticeCopy } from "./conflict-notice-copy";
 import { CONFLICT_NOTICE_AUTHOR, talkPageTitle, wikiName } from "./conflict-sides";
 import { syncLatestRevision } from "./inbound-revision-sync";
 
@@ -132,21 +133,30 @@ function accountOf(userId: string | null) {
 
 // --- the notices ----------------------------------------------------------------------------------------------------
 
-function noticeMessage({ entry, wiki }: NoticeContext): string {
-  return `Your edit to "${entry.title}" was replaced by a later edit on ${wiki}. Your text is kept in the page history.`;
+/** The words of `recipient`'s notice (conflict-notice-copy.ts). */
+function copyOf({ entry, wiki, pageLink }: NoticeContext, recipient: NoticeRecipient) {
+  return noticeCopy({
+    title: entry.title,
+    pageLink,
+    wiki,
+    winner: entry.winner.action,
+    loss: lossOf(entry.overwritten, recipient),
+  });
 }
 
 /**
- * Where the notice sends the recipient in WikiOS: the diff of an edit winner against their newest overwritten change;
- * the page's log for a delete (the page is gone); its history for a move or an undelete (no revision to diff).
+ * Where the notice sends the recipient in WikiOS: the page's log when the winner was a deletion (the page is gone); the
+ * diff of an edit winner against the recipient's newest edit; otherwise the page's history (no two revisions to diff).
  */
 function noticeHref({ entry, urlPath }: NoticeContext, recipient: NoticeRecipient): string {
   const conflict = `conflict=${encodeURIComponent(entry.id)}`;
   const { action, ref } = entry.winner;
   if (action === "delete") return `/util/log?title=${encodeURIComponent(entry.title)}&${conflict}`;
-  if (action !== "edit") return `/wiki/${urlPath}?action=history&${conflict}`;
-  const oldid = recipient.refs.at(-1) ?? ref;
-  return `/wiki/${urlPath}?diff=${encodeURIComponent(ref)}&oldid=${encodeURIComponent(oldid)}&${conflict}`;
+  const newest = recipient.refs.at(-1);
+  if (action !== "edit" || !newest || lossOf(entry.overwritten, recipient) !== "edit") {
+    return `/wiki/${urlPath}?action=history&${conflict}`;
+  }
+  return `/wiki/${urlPath}?diff=${encodeURIComponent(ref)}&oldid=${encodeURIComponent(newest)}&${conflict}`;
 }
 
 async function tellInApp(context: NoticeContext, recipient: NoticeRecipient): Promise<Delivery> {
@@ -155,8 +165,8 @@ async function tellInApp(context: NoticeContext, recipient: NoticeRecipient): Pr
   // the Clerk id, as every notifier passes it: the recipient's preferences and push apply
   await notificationAPI.create({
     userId: account.clerkUserId,
-    title: "Your edit was overwritten",
-    message: noticeMessage(context),
+    title: copyOf(context, recipient).title,
+    message: copyOf(context, recipient).message,
     href: noticeHref(context, recipient),
     category: "wiki",
     type: "warning",
@@ -172,7 +182,8 @@ async function tellOnDiscord(
   const user = await accountOf(recipient.userId);
   if (!user?.discordUserId) return "skipped";
   const link = `${APP_URL}${CLEAN_BASE_PATH}${noticeHref(context, recipient)}`;
-  if (await sendDiscordDm(user.discordUserId, `${noticeMessage(context)}\n${link}`)) return "sent";
+  const { message } = copyOf(context, recipient);
+  if (await sendDiscordDm(user.discordUserId, `${message}\n${link}`)) return "sent";
   return olderThan(context.entry.createdAt, DM_RETRY_WINDOW_MS) ? "skipped" : "open";
 }
 
@@ -186,32 +197,38 @@ async function classicRefOf(ref: string): Promise<string | null> {
   return revision?.mwRevId ? String(revision.mwRevId) : null;
 }
 
-/**
- * The note's link to the winner: the diff from `newest` (the recipient's newest revision) when MediaWiki knows an edit
- * winner; the page's log for a delete, its history for a move or an undelete.
- */
-async function winnerLink({ entry }: NoticeContext, newest: string | undefined) {
-  const { action, ref } = entry.winner;
-  if (action === "delete") {
-    return `[{{fullurl:Special:Log|page=${encodeURIComponent(entry.title)}}} log]`;
-  }
-  if (action !== "edit") return `[{{fullurl:${entry.title}|action=history}} history]`;
-  const winner = await classicRefOf(ref);
-  return winner && newest ? `[[Special:Diff/${newest}/${winner}|diff]]` : null;
+/** A classic wikitext link to the page's log (its deletions, moves and restores). */
+function logLink(title: string): string {
+  return `[{{fullurl:Special:Log|page=${encodeURIComponent(title)}}} log]`;
 }
 
-/** The note: a link to each of the recipient's revisions, and to the winner (see `winnerLink`). */
+/**
+ * The note's link to the winner: the page's log for a deletion; the diff from `newest` (the recipient's newest
+ * revision) when MediaWiki knows an edit winner; otherwise the page's history.
+ */
+async function winnerLink({ entry }: NoticeContext, newest: string | undefined): Promise<string> {
+  const { action, ref } = entry.winner;
+  if (action === "delete") return logLink(entry.title);
+  const winner = action === "edit" && newest ? await classicRefOf(ref) : null;
+  if (winner) return `[[Special:Diff/${newest}/${winner}|diff]]`;
+  return `[{{fullurl:${entry.title}|action=history}} history]`;
+}
+
+/**
+ * The note: a link to each of the recipient's revisions, to the log when what they lost was a deletion, move or
+ * restore, and to the winner (see `winnerLink`).
+ */
 async function talkSection(context: NoticeContext, recipient: NoticeRecipient): Promise<string> {
+  const copy = copyOf(context, recipient);
   const revisions = recipient.refs.filter((ref) => CLASSIC_REVISION.test(ref));
   const links = revisions.map((ref) => `[[Special:PermanentLink/${ref}|revision ${ref}]]`);
+  // what they lost was a deletion, move or restore: it is in the log
+  if (lossOf(context.entry.overwritten, recipient) !== "edit") {
+    links.push(logLink(context.entry.title));
+  }
   const winner = await winnerLink(context, revisions.at(-1));
-  if (winner) links.push(winner);
-  const which = links.length > 0 ? ` (${links.join(", ")})` : "";
-  return [
-    `== Your edit to ${context.pageLink} was replaced ==`,
-    `A later edit on ${context.wiki} replaced your edit${which}. ` +
-      "Your text is still in the page history; edit the page again to bring it back.",
-  ].join("\n");
+  if (!links.includes(winner)) links.push(winner);
+  return [copy.heading, copy.body(` (${links.join(", ")})`)].join("\n");
 }
 
 /** The talk page as WikiOS has it: its text and the head a save must still find (null: no revision yet). */
@@ -248,7 +265,7 @@ async function writeTalkNote(
       title: canon.title,
       source: SOURCE,
       wikitext: appendSection(page.wikitext, await talkSection(context, recipient)),
-      editSummary: `Your edit to ${context.entry.title} was replaced`,
+      editSummary: copyOf(context, recipient).summary,
       expectedHeadRef: page.headRef,
     },
     undefined,

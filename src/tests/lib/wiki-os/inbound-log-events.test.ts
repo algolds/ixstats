@@ -22,6 +22,8 @@ const { tables } = fake;
 
 const tx = {
   wikiArticle: { findUnique: jest.fn(), update: jest.fn(), delete: jest.fn() },
+  // a restore points the page at its live head: these pages have no revision rows
+  wikiRevision: { findFirst: jest.fn().mockResolvedValue(null) },
   wikiRestriction: {
     deleteMany: jest.fn(),
     upsert: jest.fn(),

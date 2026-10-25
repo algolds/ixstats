@@ -7,6 +7,7 @@
 
 import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
+import { repointArticleHead } from "./article-head";
 import { toArticleSlug } from "./domain-types";
 import { lockTitleForCreation } from "./page-lock";
 import { canonicalizeTitle, NAMESPACE_CANONICAL_NAMES, type CanonicalTitle } from "./title";
@@ -491,6 +492,8 @@ export class PageManagementService {
         },
         select: { id: true },
       });
+      // the page renders from its newest live revision, never the text of one overwritten while it was deleted
+      await repointArticleHead(tx, article.id);
       const log = await tx.wikiLog.create({
         data: {
           logType: "delete",

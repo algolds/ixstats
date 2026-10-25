@@ -19,6 +19,7 @@ import type { Prisma } from "@prisma/client";
 import { ConflictError } from "~/lib/app-error";
 import { db } from "~/server/db";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import { repointArticleHead } from "../core/article-head";
 import { toArticleSlug } from "../core/domain-types";
 import { canonicalizeTitle, type CanonicalTitle } from "../core/title";
 import {
@@ -290,6 +291,8 @@ async function applyRemoval(
   await tx.wikiArticle.update({ where: { id: article.id }, data: { status: "ARCHIVED" } });
   if (verdict) {
     await parkOverwritten(tx, article.id, verdict);
+    // the page's text is the newest revision left live, never a parked loser's (a restore renders from it)
+    await repointArticleHead(tx, article.id);
     await recordVerdict(tx, article, verdict);
   }
   return afterRemoval(canon, article.id);
@@ -317,6 +320,8 @@ async function applyRestore(
       where: { id: deleted.id },
       data: { status: "PUBLISHED", htmlSyncedAt: null },
     });
+    // a restored revision WikiOS already has is "known" and not imported again: render from the live head
+    await repointArticleHead(tx, deleted.id);
     if (verdict) await recordVerdict(tx, deleted, verdict);
   }
   return {
