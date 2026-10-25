@@ -37,11 +37,13 @@ import {
 } from "./conflict-page-ops";
 import { changeOfOperationJob, classicChangeOfEvent, verdictAsShown } from "./conflict-sides";
 import type { LogEvent } from "./inbound-mediawiki";
+import { findClassicPage } from "./mirror-classic-location";
 import { classicChangeOfEntry, withTrail } from "./mirror-collision";
 import {
   byTime,
   classicPage,
-  isWikiosOwn,
+  isClassicEdit,
+  latestClassicDelete,
   latestClassicEvent,
   recentHistory,
   stampedIn,
@@ -55,9 +57,12 @@ export interface PageRuling {
   lost: string | null;
   /** The reason to send: WikiOS's, with the trail of the collision the operation won. */
   reason: string;
-  /** A move: the title classic has the page at now (where a classic move WikiOS's later move won over took it). */
+  /**
+   * The title classic has the page at now: for a move, where a classic move WikiOS's later move won over took it; for a
+   * delete, where an earlier classic move took it.
+   */
   from: string;
-  /** A move: the page is deleted in classic, and WikiOS's later move brings it back first. */
+  /** A move: the page is deleted in classic (at `from`), and WikiOS's later move brings it back first. */
   undeleteFirst: boolean;
 }
 
@@ -126,24 +131,26 @@ async function winnerAgainst(
 }
 
 /**
- * A delete against the classic revisions WikiOS has not had (a classic editor's, not stamped on any revision of the
- * article). The first one saved after the delete (or in its second) brought the page back, as the cycle judges it: it
- * wins, and nothing is sent. With none after it, the delete wins over all of them, and their authors are told.
+ * A delete of the page at `title` against the classic revisions WikiOS has not had there (a classic editor's edits, not
+ * stamped on any revision of the article; a move's or a protection's null revision is no edit). The first one saved
+ * after the delete (or in its second) brought the page back, as the cycle judges it: it wins, and nothing is sent. With
+ * none after it, the delete wins over all of them, and their authors are told.
  */
-async function ruleDelete(judged: JudgedJob): Promise<Outcome> {
-  const { job, articleId, change } = judged;
-  const history = [...(await recentHistory(job.title))].sort(byTime);
+async function ruleDeleteOverEdits(judged: JudgedJob, title: string): Promise<Outcome> {
+  const { articleId, change } = judged;
+  const sendHere: Outcome = { from: title, undeleteFirst: false };
+  const history = [...(await recentHistory(title))].sort(byTime);
   const stamped = await stampedIn(
     articleId,
     history.map((entry) => entry.revid)
   );
   const unseen = await Promise.all(
     history
-      .filter((entry) => !isWikiosOwn(entry) && !stamped.has(entry.revid))
+      .filter((entry) => isClassicEdit(entry, history) && !stamped.has(entry.revid))
       .map(classicChangeOfEntry)
   );
   const newest = unseen.at(-1);
-  if (!newest) return asIs(job);
+  if (!newest) return sendHere;
   const against = (standing: PageChange, branch: readonly PageChange[]) =>
     decideCollision(MIRROR_SOURCE, articleId, {
       incoming: change,
@@ -154,8 +161,56 @@ async function ruleDelete(judged: JudgedJob): Promise<Outcome> {
   const verdict =
     unseen.map((edit) => against(edit, [edit])).find((each) => !each.incomingWins) ??
     against(newest, unseen);
-  await record(judged, verdict, job.title);
-  return verdict.incomingWins ? asIs(job) : lost(verdict.winner);
+  await record(judged, verdict, title);
+  return verdict.incomingWins ? sendHere : lost(verdict.winner);
+}
+
+/** Classic's latest move of `title` (by a classic editor) to a title other than `except`, and where it went. */
+async function classicMoveOf(
+  title: string,
+  except: string | null
+): Promise<{ moved: LogEvent; target: string } | null> {
+  const moved = await latestClassicEvent(title, "move", CLASSIC_MOVE_ACTIONS);
+  const target = moved ? classicMoveTarget(moved) : null;
+  return moved && target && target !== except ? { moved, target } : null;
+}
+
+/** Who won between the job's operation (with `branch`, the WikiOS changes that go with it) and classic's move `moved`. */
+async function winnerAgainstMove(
+  judged: JudgedJob,
+  moved: LogEvent,
+  branch: readonly PageChange[],
+  titleOf: (verdict: CollisionVerdict) => string
+): Promise<Winner | null> {
+  const standing = await classicChangeOfEvent(moved, "move");
+  return winnerAgainst(judged, moved, titleOf, async () =>
+    decideCollision(MIRROR_SOURCE, judged.articleId, {
+      incoming: judged.change,
+      standing,
+      incomingBranch: branch,
+      standingBranch: [standing],
+    })
+  );
+}
+
+/**
+ * A delete. Against classic's move of the page it never saw first: a later move wins (the page lives on where classic
+ * moved it, and nothing is sent); an earlier one loses, and the delete follows the page to where classic has it. Then
+ * against the classic edits there (`ruleDeleteOverEdits`).
+ */
+async function ruleDelete(judged: JudgedJob): Promise<Outcome> {
+  const { job } = judged;
+  const classic = await classicMoveOf(job.title, null);
+  const winner = classic
+    ? await winnerAgainstMove(judged, classic.moved, [judged.change], (verdict) =>
+        verdict.winner.side === "classic" ? classic.target : job.title
+      )
+    : null;
+  if (!classic || !winner) return ruleDeleteOverEdits(judged, job.title);
+  if (winner.side === "classic") return lost(winner);
+  // where classic has the page now (gone from classic as well: nothing to delete there, and MediaWiki says so)
+  const location = await findClassicPage(classic.target, classic.moved.pageId ?? null);
+  return ruleDeleteOverEdits(judged, location.title);
 }
 
 /** An undelete against the page's latest classic delete it never saw: a later delete keeps the page deleted. */
@@ -193,34 +248,55 @@ async function ruleMoveOfDeleted(judged: JudgedJob): Promise<Outcome> {
 }
 
 /**
+ * WikiOS's move won over classic's earlier move of the page: it moves classic's page (the one the move log names) from
+ * where classic has it now. A retry finds it moved already. Classic deleted the page there since: that delete is judged
+ * (a later one wins, and nothing is sent; an earlier one loses, and the page comes back before it moves).
+ */
+async function followMovedPage(
+  judged: JudgedJob,
+  classic: { moved: LogEvent; target: string },
+  to: string
+): Promise<Outcome> {
+  const pageId = classic.moved.pageId ?? null;
+  const location = await findClassicPage(classic.target, pageId);
+  if (location.found) return { from: location.title, undeleteFirst: false };
+  const there = await classicPage(to, true);
+  if (there.exists && (pageId === null || there.pageId === pageId)) {
+    return { from: to, undeleteFirst: false };
+  }
+  const removal = await latestClassicDelete(location.title);
+  if (!removal) throw new Error(`Classic MediaWiki has the page of "${judged.job.title}" nowhere`);
+  const winner = await winnerAgainst(
+    judged,
+    removal,
+    () => location.title,
+    () => judgeClassicDelete(judged.articleId, removal)
+  );
+  if (winner?.side === "classic") return lost(winner);
+  return { from: location.title, undeleteFirst: true };
+}
+
+/**
  * A move against the page's latest classic move it never saw, to another title: a later classic move wins, and the move
- * (with the moves built on it) is not sent; an earlier one loses, and classic's page moves from where classic put it.
- * Otherwise (no such move, or one WikiOS had before its own) the page may be deleted in classic (`ruleMoveOfDeleted`).
+ * (with the moves built on it) is not sent; an earlier one loses, and classic's page moves from where classic put it
+ * (`followMovedPage`). Otherwise (no such move, or one WikiOS had before its own) the page may be deleted in classic
+ * (`ruleMoveOfDeleted`).
  */
 async function ruleMove(judged: JudgedJob): Promise<Outcome> {
   const { job, articleId, change } = judged;
   const { to } = movePayloadSchema.parse(job.payload);
-  const moved = await latestClassicEvent(job.title, "move", CLASSIC_MOVE_ACTIONS);
-  const target = moved ? classicMoveTarget(moved) : null;
   // a classic move to the same title is the same move: MediaWiki answers that it is done
-  if (moved && target && target !== to) {
-    const standing = await classicChangeOfEvent(moved, "move");
-    const winner = await winnerAgainst(
-      judged,
-      moved,
-      (verdict) => (verdict.winner.side === "classic" ? target : to),
-      async () =>
-        decideCollision(MIRROR_SOURCE, articleId, {
-          incoming: change,
-          standing,
-          incomingBranch: await moveChain({ change, articleId }),
-          standingBranch: [standing],
-        })
-    );
-    if (winner)
-      return winner.side === "classic" ? lost(winner) : { from: target, undeleteFirst: false };
-  }
-  return ruleMoveOfDeleted(judged);
+  const classic = await classicMoveOf(job.title, to);
+  const winner = classic
+    ? await winnerAgainstMove(
+        judged,
+        classic.moved,
+        await moveChain({ change, articleId }),
+        (verdict) => (verdict.winner.side === "classic" ? classic.target : to)
+      )
+    : null;
+  if (!classic || !winner) return ruleMoveOfDeleted(judged);
+  return winner.side === "classic" ? lost(winner) : followMovedPage(judged, classic, to);
 }
 
 const RULES: Readonly<Partial<Record<string, (judged: JudgedJob) => Promise<Outcome>>>> = {

@@ -296,6 +296,8 @@ const OPERATION_ACTIONS: Readonly<Record<string, ChangeAction>> = {
 export interface OperationJob {
   id: string;
   kind: string;
+  /** The title the operation is about: where a move moves from. */
+  title: string;
   logId: string | null;
   articleId: string | null;
   payload: Prisma.JsonValue;
@@ -344,7 +346,15 @@ export async function operationChanges(
       ...where,
     },
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-    select: { id: true, kind: true, logId: true, articleId: true, payload: true, createdAt: true },
+    select: {
+      id: true,
+      kind: true,
+      title: true,
+      logId: true,
+      articleId: true,
+      payload: true,
+      createdAt: true,
+    },
   });
   return changesOfJobs(jobs);
 }

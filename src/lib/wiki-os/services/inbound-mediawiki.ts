@@ -270,6 +270,7 @@ const logEventsSchema = z.object({
           comment: z.string().optional(),
           // PHP encodes an empty parameter list as [] rather than {}.
           params: z.union([z.record(z.string(), z.json()), z.array(z.json())]).optional(),
+          logpage: z.number().optional(),
         })
       ),
     })
@@ -287,6 +288,8 @@ export interface LogEvent {
   timestamp: string;
   comment: string;
   params: Record<string, JsonValue>;
+  /** MediaWiki's `log_page`: the page the entry is about (for a move, the page that moved), when it says. */
+  pageId?: number;
 }
 
 /** One `list=logevents` request (all log types: the sync picks the ones it applies). */
@@ -312,6 +315,7 @@ export async function fetchLogEventsPage(
       timestamp: event.timestamp ?? "",
       comment: sanitize(event.comment),
       params: event.params === undefined || Array.isArray(event.params) ? {} : event.params,
+      ...(event.logpage ? { pageId: event.logpage } : {}),
     })),
     next: data.continue ?? null,
   };

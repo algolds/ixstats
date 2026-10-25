@@ -7,6 +7,7 @@
  * the later move wins. A redirect WikiOS's losing moves left behind is archived with them, so no WikiOS redirect points
  * at a page that is gone. Callers hold the inbound-sync lock (inbound-log-events.ts applies the event).
  */
+import { repointArticleHead } from "../core/article-head";
 import { toArticleSlug } from "../core/domain-types";
 import { canonicalizeTitle, type CanonicalTitle } from "../core/title";
 import {
@@ -30,6 +31,7 @@ import {
   type JudgedPage,
   type Tx,
 } from "./inbound-event-rule";
+import { wikiosDeletion } from "./conflict-sides";
 import type { LogEvent } from "./inbound-mediawiki";
 import { evictCaches, syncLatestRevision } from "./inbound-revision-sync";
 import { enqueueRender, invalidateTemplateDependents } from "./render-service";
@@ -51,12 +53,18 @@ async function bringOver(title: string): Promise<void> {
 }
 
 /**
- * Archive the redirects WikiOS's move `move` and the moves built on it left behind (each at its old title, pointing at
- * its new one): the moves lost, so they point at a name the page no longer has. Returns the titles they were at.
+ * Archive the redirects WikiOS's moves of the article logged at `since` or later (and `first`, the move they built on)
+ * left behind, each at its old title pointing at its new one: the moves lost, or the page is gone, so they point at
+ * nothing. Returns the titles they were at.
  */
-export async function archiveMoveRedirects(tx: Tx, move: WikiosMove): Promise<string[]> {
-  const later = await wikiosMovesSince(move.articleId, move.change.at);
-  const chain = [move, ...later.filter((each) => each.change.ref !== move.change.ref)];
+export async function archiveMoveRedirects(
+  tx: Tx,
+  articleId: string,
+  since: Date,
+  first?: Pick<WikiosMove, "from" | "to">
+): Promise<string[]> {
+  const later = await wikiosMovesSince(articleId, since);
+  const chain = first ? [first, ...later] : later;
   for (const { from, to } of chain) {
     await tx.wikiArticle.updateMany({
       where: { source: SOURCE, title: from, redirectTargetSlug: to, status: { not: "ARCHIVED" } },
@@ -181,9 +189,37 @@ async function applyContestedMove(
   const moved =
     page.title === target.title ? { clash: null } : await renameTo(tx, page, target, event.logid);
   if (!moved) return SKIPPED;
-  const redirects = await archiveMoveRedirects(tx, wikios);
+  const redirects = await archiveMoveRedirects(tx, wikios.articleId, wikios.change.at, wikios);
   await recordVerdict(tx, { id: page.id, title: target.title }, verdict);
   return renamed(event, page.id, canon.title, target, moved.clash, [page.title, ...redirects]);
+}
+
+/**
+ * A classic move of a page WikiOS deleted itself, a delete the mover never saw (owed to MediaWiki, or held back by the
+ * mirror because this move beat it): the later one wins. Either way the page takes the name classic gave it, so classic's
+ * redirect can come over at the old one; a move that wins brings the page back, one that loses leaves it deleted.
+ */
+async function applyMoveOfDeleted(
+  tx: Tx,
+  event: LogEvent,
+  canon: CanonicalTitle,
+  target: CanonicalTitle,
+  page: JudgedPage
+): Promise<Applied> {
+  const deletion = await wikiosDeletion(page.id);
+  const verdict = deletion ? await collide(event, "move", page.id, deletion, [deletion]) : null;
+  const result = await renameTo(tx, page, target, event.logid);
+  if (!result) return SKIPPED;
+  if (verdict?.incomingWins) {
+    // Its view was built for a page that was out of the link graph and the category lists: stale.
+    await tx.wikiArticle.update({
+      where: { id: page.id },
+      data: { status: "PUBLISHED", htmlSyncedAt: null },
+    });
+    await repointArticleHead(tx, page.id);
+  }
+  if (verdict) await recordVerdict(tx, { id: page.id, title: target.title }, verdict);
+  return renamed(event, page.id, canon.title, target, result.clash);
 }
 
 /** A classic move of a page WikiOS never moved (or already at its new name): renamed as MediaWiki has it. */
@@ -195,7 +231,7 @@ async function applyPlainMove(
 ): Promise<Applied> {
   const moved = await tx.wikiArticle.findUnique({
     where: { source_title: { source: SOURCE, title: canon.title } },
-    select: { id: true },
+    select: { id: true, status: true },
   });
   if (!moved) {
     // A page WikiOS never held, or one already at its new name (an earlier try renamed it): nothing to rename; the
@@ -211,7 +247,9 @@ async function applyPlainMove(
     };
   }
 
-  const result = await renameTo(tx, { id: moved.id, title: canon.title }, target, event.logid);
+  const page = { id: moved.id, title: canon.title };
+  if (moved.status === "ARCHIVED") return applyMoveOfDeleted(tx, event, canon, target, page);
+  const result = await renameTo(tx, page, target, event.logid);
   if (!result) return SKIPPED;
   return renamed(event, moved.id, canon.title, target, result.clash);
 }

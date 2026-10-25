@@ -27,6 +27,10 @@ jest.mock("~/server/db", () => ({
   },
 }));
 
+// Where classic has the page has its own suite (mirror-page-ops.test.ts): here the job's own title.
+jest.mock("~/lib/wiki-os/services/mirror-classic-location", () => ({
+  classicTitleOf: jest.fn(async (_articleId: string | null, queuedAs: string) => queuedAs),
+}));
 // The conflict rule's ruling on a page job has its own suite (mirror-page-ops.test.ts): here every operation goes out.
 jest.mock("~/lib/wiki-os/services/mirror-page-rule", () => ({
   rulePageJob: jest.fn(async (job: { title: string }, reason: string) => ({

@@ -27,6 +27,7 @@ const revisionsPageSchema = z.object({
           .array(
             z.looseObject({
               revid: z.number(),
+              parentid: z.number().optional(),
               sha1: z.string().optional(),
               timestamp: z.string().optional(),
               user: z.string().optional(),
@@ -52,6 +53,8 @@ export interface CurrentRevision {
 /** One revision of the page's history as MediaWiki lists it. */
 export interface HistoryEntry {
   revid: number;
+  /** The revision it was saved on; 0 for the page's first. */
+  parentid: number;
   /** In base 36; null when MediaWiki hides it. */
   sha1: string | null;
   /** As MediaWiki writes it, to the second ("2026-09-27T10:00:00Z"). */
@@ -107,10 +110,11 @@ export async function recentHistory(title: string): Promise<HistoryEntry[]> {
       },
       revisionsPageSchema
     );
-    for (const { revid, sha1, timestamp, user } of data.query.pages[0]?.revisions ?? []) {
+    for (const { revid, parentid, sha1, timestamp, user } of data.query.pages[0]?.revisions ?? []) {
       if (timestamp) {
         history.push({
           revid,
+          parentid: parentid ?? 0,
           sha1: sha1 ? sha1HexToBase36(sha1) : null,
           timestamp,
           user: user ?? null,
@@ -133,6 +137,24 @@ export function isWikiosOwn(entry: Pick<HistoryEntry, "user">): boolean {
   return (
     isMirrorAccount(entry.user) || (entry.user !== null && labelOfImportName(entry.user) !== null)
   );
+}
+
+/**
+ * A null revision: the text of the revision it was saved on, unchanged. MediaWiki writes one on a page it moves or
+ * protects, credited to whoever did it and dated then; it changes nothing and is never a recent change (the inbound
+ * sync never imports it), so it is no edit for the conflict rule. Read against `history`, which holds its parent.
+ */
+export function isNullRevision(
+  entry: Pick<HistoryEntry, "parentid" | "sha1">,
+  history: readonly HistoryEntry[]
+): boolean {
+  const parent = history.find((candidate) => candidate.revid === entry.parentid);
+  return parent !== undefined && entry.sha1 !== null && entry.sha1 === parent.sha1;
+}
+
+/** A classic editor's edit in `history`: not WikiOS's own revision, and not a null revision (a move, a protection). */
+export function isClassicEdit(entry: HistoryEntry, history: readonly HistoryEntry[]): boolean {
+  return !isWikiosOwn(entry) && !isNullRevision(entry, history);
 }
 
 /**
@@ -171,7 +193,8 @@ export function laterClassicRevision(
   const second = toXmlTimestamp(revision.createdAt);
   const imports = new Set(findImported(history, batch, null).values());
   const later = history.filter(
-    (entry) => entry.timestamp >= second && !imports.has(entry.revid) && !isWikiosOwn(entry)
+    (entry) =>
+      entry.timestamp >= second && !imports.has(entry.revid) && isClassicEdit(entry, history)
   );
   return later.at(-1)?.revid ?? null;
 }
@@ -194,6 +217,7 @@ const pageInfoSchema = z.object({
     pages: z.array(
       z.looseObject({
         title: z.string(),
+        pageid: z.number().optional(),
         missing: z.boolean().optional(),
         redirect: z.boolean().optional(),
       })
@@ -201,9 +225,11 @@ const pageInfoSchema = z.object({
   }),
 });
 
-/** A title as classic MediaWiki has it: the page's title, whether it exists, and whether it is a redirect. */
+/** A title as classic MediaWiki has it: the page's title and id, whether it exists, and whether it is a redirect. */
 export interface ClassicPage {
   title: string;
+  /** MediaWiki's page id; null when the page does not exist. */
+  pageId: number | null;
   exists: boolean;
   redirect: boolean;
 }
@@ -225,6 +251,7 @@ export async function classicPage(title: string, followRedirects: boolean): Prom
   const page = data.query.pages[0];
   return {
     title: page?.title ?? title,
+    pageId: page?.missing === true ? null : (page?.pageid ?? null),
     exists: page?.missing !== true,
     redirect: page?.redirect === true,
   };

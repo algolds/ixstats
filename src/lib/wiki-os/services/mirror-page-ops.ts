@@ -9,8 +9,7 @@
 
 import { z } from "zod";
 import { MediaWikiApiError, postMediaWikiAction } from "../adapters/mediawiki/write-service";
-import { CLASSIC_MOVE_ACTIONS, classicMoveTarget } from "./conflict-page-ops";
-import { classicPage, latestClassicEvent } from "./mirror-history";
+import { classicPage } from "./mirror-history";
 import {
   movePayloadSchema,
   protectPayloadSchema,
@@ -25,9 +24,6 @@ const ackSchema = z.looseObject({});
 
 /** Codes a move answers with when its work may already be done: the target is taken, or the source is gone. */
 const MOVE_RACE_CODES: ReadonlySet<string> = new Set(["articleexists", "missingtitle"]);
-
-/** The most moves followed to find where classic has a page now. */
-const MAX_MOVE_HOPS = 5;
 
 /** What a page job leaves to know about once done: why it sent nothing. */
 export interface PageJobResult {
@@ -70,20 +66,6 @@ async function sendMove(from: string, to: string, reason: string, leaveRedirect:
   }
 }
 
-/** Where classic has the page that was at `title`: there, at the end of its redirect, or where classic moved it. */
-async function whereClassicHas(title: string): Promise<string> {
-  let at = title;
-  for (let hop = 0; hop < MAX_MOVE_HOPS; hop++) {
-    const page = await classicPage(at, true);
-    if (page.exists) return page.title;
-    const moved = await latestClassicEvent(at, "move", CLASSIC_MOVE_ACTIONS);
-    const next = moved ? classicMoveTarget(moved) : null;
-    if (!next) return at;
-    at = next;
-  }
-  return at;
-}
-
 /**
  * WikiOS's move of `old` to `to` won over an earlier classic move of the page: classic's page moves from where classic
  * has it, leaving nothing behind (WikiOS never had that title). Classic's old title then reads as WikiOS's does: a
@@ -97,8 +79,7 @@ async function moveFromElsewhere(
   reason: string,
   leaveRedirect: boolean
 ): Promise<void> {
-  const source = await whereClassicHas(elsewhere);
-  await sendMove(source, to, reason, false);
+  await sendMove(elsewhere, to, reason, false);
   const left = await classicPage(old, false);
   if (left.exists ? left.redirect : leaveRedirect) {
     await postMediaWikiAction(
@@ -120,7 +101,7 @@ async function sendUndelete(title: string, reason: string): Promise<void> {
 
 async function runMove(job: MirrorJob, ruling: PageRuling): Promise<void> {
   const { to, leaveRedirect } = movePayloadSchema.parse(job.payload);
-  if (ruling.undeleteFirst) await sendUndelete(job.title, ruling.reason);
+  if (ruling.undeleteFirst) await sendUndelete(ruling.from, ruling.reason);
   if (ruling.from === job.title) return sendMove(job.title, to, ruling.reason, leaveRedirect);
   return moveFromElsewhere(job.title, ruling.from, to, ruling.reason, leaveRedirect);
 }
@@ -128,7 +109,7 @@ async function runMove(job: MirrorJob, ruling: PageRuling): Promise<void> {
 async function runDelete(job: MirrorJob, ruling: PageRuling): Promise<void> {
   try {
     await postMediaWikiAction(
-      { action: "delete", title: job.title, reason: ruling.reason },
+      { action: "delete", title: ruling.from, reason: ruling.reason },
       ackSchema
     );
   } catch (error) {

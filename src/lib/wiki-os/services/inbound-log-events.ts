@@ -24,11 +24,13 @@ import { canonicalizeTitle, type CanonicalTitle } from "../core/title";
 import type { CollisionVerdict } from "./conflict-rule";
 import { parkOverwritten } from "./conflict-log";
 import {
+  articleClassicHasAt,
   CLASSIC_DELETE_ACTIONS,
   classicEventApplied,
   contestingWikiosMove,
   judgeClassicDelete,
   moveChain,
+  type HeldElsewhere,
   type WikiosMove,
 } from "./conflict-page-ops";
 import { unmirroredWikiosChanges } from "./conflict-sides";
@@ -195,32 +197,36 @@ async function archiveJudged(
 }
 
 /**
- * A classic delete of a title WikiOS moved its page away from, a move the deleter never saw: the delete is judged
- * against the moved page (the move and what WikiOS changed since), not against the redirect left at the title. A delete
- * that wins removes the page wherever WikiOS put it, and the redirects WikiOS's moves left with it.
+ * A classic delete of a page WikiOS has under another title, its changes that put it there ones the deleter never saw: a
+ * move away from the deleted title, or a move that beat classic's move to it. The delete is judged against the page (and
+ * those changes), not against what WikiOS has at the title. A delete that wins removes the page wherever WikiOS put it,
+ * and the redirects WikiOS's moves left with it.
  */
-async function removeMovedPage(
+async function removePageElsewhere(
   tx: Tx,
   event: LogEvent,
   canon: CanonicalTitle,
-  move: WikiosMove
+  held: HeldElsewhere,
+  first?: WikiosMove
 ): Promise<Applied> {
   const page = await tx.wikiArticle.findUnique({
-    where: { id: move.articleId },
+    where: { id: held.articleId },
     select: { id: true, title: true, status: true },
   });
   if (!page || page.status === "ARCHIVED") return afterRemoval(canon, page?.id ?? null);
-  const verdict = await judgeClassicDelete(page.id, event, await moveChain(move));
+  const verdict = await judgeClassicDelete(page.id, event, held.changes);
   if (verdict && !verdict.incomingWins) return keepWikios(tx, page, verdict);
   await archiveJudged(tx, page, verdict);
-  const redirects = await archiveMoveRedirects(tx, move);
+  const since = held.changes[0]?.at ?? new Date(event.timestamp);
+  const redirects = await archiveMoveRedirects(tx, page.id, since, first);
   return afterRemoval(canon, page.id, [page.title, ...redirects]);
 }
 
 /**
  * A classic delete. A page WikiOS has live is judged against its changes the deleter never saw: a later one keeps it
  * (the delete is recorded as overwritten); otherwise it is archived, and what it overwrote is recorded. A title WikiOS
- * moved the page away from is judged against the moved page (`removeMovedPage`).
+ * moved the page away from, or one classic has a page at that WikiOS has elsewhere, is judged against that page
+ * (`removePageElsewhere`).
  */
 async function applyRemoval(
   tx: Tx,
@@ -231,8 +237,11 @@ async function applyRemoval(
   const move = await contestingWikiosMove(canon.title, event);
   // at the title: nothing, or the redirect WikiOS's move left there
   if (move && (!article || article.redirectTargetSlug === move.to)) {
-    return removeMovedPage(tx, event, canon, move);
+    const held = { articleId: move.articleId, changes: await moveChain(move) };
+    return removePageElsewhere(tx, event, canon, held, move);
   }
+  const held = article ? null : await articleClassicHasAt(canon.title, event);
+  if (held) return removePageElsewhere(tx, event, canon, held);
   if (!article || article.status === "ARCHIVED") return afterRemoval(canon, article?.id ?? null);
   const verdict = await judgeClassicDelete(article.id, event);
   if (verdict && !verdict.incomingWins) return keepWikios(tx, article, verdict);

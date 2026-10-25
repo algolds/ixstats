@@ -38,6 +38,7 @@ import { ConflictError } from "~/lib/app-error";
 import { namesOfUsers } from "~/lib/identity/wiki-names";
 import { db } from "~/server/db";
 import { canonicalizeTitle } from "../core/title";
+import { classicTitleOf } from "./mirror-classic-location";
 import { executeMediaWikiWrite, postMediaWikiAction } from "../adapters/mediawiki/write-service";
 import { contentModelFor } from "../xml/content-model";
 import { createExportWriter, escapeXmlText, toXmlTimestamp } from "../xml/export-writer";
@@ -268,11 +269,13 @@ function unsentMember(job: MirrorJob, head: RevisionHead | undefined): BatchMemb
 export async function planRevisionBatch(jobs: readonly MirrorJob[]): Promise<RevisionBatchPlan> {
   const first = jobs[0];
   if (!first) throw new Error("A revision batch needs a job");
+  // the jobs may be queued under a title the page no longer has in classic: they go where it is
+  const title = await classicTitleOf(first.articleId, first.title);
   const heads = await loadHeads(jobs);
   const candidates = withinBudget(jobs, heads);
   const revisions = await loadRevisions(candidates, heads);
   const usernames = await mirrorNames(revisions.values());
-  const { model, format } = contentModelFor(first.title);
+  const { model, format } = contentModelFor(title);
 
   const members: BatchMember[] = [];
   const sending: MirroredRevision[] = [];
@@ -314,8 +317,8 @@ export async function planRevisionBatch(jobs: readonly MirrorJob[]): Promise<Rev
   });
   await writer.start();
   await writer.page({
-    title: first.title,
-    ns: canonicalizeTitle(first.title, { source: first.source })?.namespaceId ?? 0,
+    title,
+    ns: canonicalizeTitle(title, { source: first.source })?.namespaceId ?? 0,
     pageId: null,
     revisions: revisionsToSend(),
   });
@@ -323,7 +326,7 @@ export async function planRevisionBatch(jobs: readonly MirrorJob[]): Promise<Rev
 
   const newest = sending.at(-1);
   return {
-    title: first.title,
+    title,
     members,
     xml: newest ? chunks.join("") : null,
     importSummary: newest ? importSummaryOf(newest) : DEFAULT_SUMMARY,

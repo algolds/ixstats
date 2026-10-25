@@ -157,6 +157,43 @@ export async function contestingWikiosMove(
   );
 }
 
+/** A WikiOS article classic has at a title WikiOS does not, and the WikiOS changes that put it elsewhere. */
+export interface HeldElsewhere {
+  articleId: string;
+  /** WikiOS's changes classic had not had when the event happened (its moves away, oldest first). */
+  changes: PageChange[];
+}
+
+/**
+ * The WikiOS article classic has at `title` though WikiOS has it elsewhere, for a classic event there (a delete): the one
+ * the mirror already judged that event against (its row), or the one a classic move took to `title` whose WikiOS move
+ * away beat it and is still owed to MediaWiki. Null when classic has no such page there.
+ */
+export async function articleClassicHasAt(
+  title: string,
+  event: LogEvent
+): Promise<HeldElsewhere | null> {
+  const ruled = await conflictWonBy(`mwlog:${event.logid}`);
+  if (ruled?.articleId) {
+    const changes = ruled.overwritten.filter((change) => change.side === "wikios");
+    return { articleId: ruled.articleId, changes };
+  }
+  const moved = await db.wikiLog.findFirst({
+    where: {
+      logType: "move",
+      mwLogId: { not: null },
+      articleId: { not: null },
+      params: { path: ["target_title"], equals: title },
+    },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    select: { articleId: true },
+  });
+  if (!moved?.articleId) return null;
+  const owed = await operationChanges({ articleId: moved.articleId, kind: "move" });
+  const changes = owed.map(({ change }) => change);
+  return changes.length > 0 ? { articleId: moved.articleId, changes } : null;
+}
+
 /**
  * The rule's verdict on a classic delete against what the deleter never saw of the article in WikiOS
  * (`wikiosChangesAgainstDelete`, plus `also`: a WikiOS change the caller knows the delete met, such as a move already

@@ -36,6 +36,8 @@ import {
 import {
   byTime,
   currentRevision,
+  isClassicEdit,
+  isNullRevision,
   isWikiosOwn,
   latestClassicDelete,
   recentHistory,
@@ -93,17 +95,17 @@ export function classicChangeOfEntry(entry: {
 async function classicSince(
   title: string,
   articleId: string
-): Promise<{ base: HistoryEntry | null; branch: HistoryEntry[] }> {
+): Promise<{ base: HistoryEntry | null; branch: HistoryEntry[]; history: HistoryEntry[] }> {
   const history = [...(await recentHistory(title))].sort(byTime);
   const stamped = await stampedIn(
     articleId,
     history.map((entry) => entry.revid)
   );
   const baseAt = history.reduce((at, entry, index) => (stamped.has(entry.revid) ? index : at), -1);
-  if (baseAt === -1) return { base: null, branch: [] };
+  if (baseAt === -1) return { base: null, branch: [], history };
   // nothing after the base is stamped: the base is the newest revision WikiOS has
-  const branch = history.slice(baseAt + 1).filter((entry) => !isWikiosOwn(entry));
-  return { base: history[baseAt] ?? null, branch };
+  const branch = history.slice(baseAt + 1).filter((entry) => isClassicEdit(entry, history));
+  return { base: history[baseAt] ?? null, branch, history };
 }
 
 /**
@@ -181,9 +183,11 @@ async function judgeAgainstClassic(
   if (!current) return judgeDeletion(title, articleId, incoming);
   if ((await stampedIn(articleId, [current.revid])).size > 0) return null;
 
-  const { base, branch } = await classicSince(title, articleId);
-  // behind the mirror's own revisions (an import's null revision), the newest a classic editor made
-  const standing = isWikiosOwn(current) ? branch.at(-1) : current;
+  const { base, branch, history } = await classicSince(title, articleId);
+  // behind the mirror's own revisions (an import's null revision) or a move's null revision, the newest classic edit
+  const listed = history.find((entry) => entry.revid === current.revid);
+  const edited = !isWikiosOwn(current) && !(listed && isNullRevision(listed, history));
+  const standing = edited ? current : branch.at(-1);
   if (!standing) return null;
   const wikiosBranch = await wikiosBranchSince(articleId, base?.revid ?? 0, base?.sha1 ?? null);
   const verdict = decideCollision(MIRROR_SOURCE, articleId, {

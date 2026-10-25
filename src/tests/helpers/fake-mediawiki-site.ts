@@ -52,6 +52,8 @@ interface SiteLogEvent {
   timestamp: string;
   comment: string;
   params: Record<string, unknown>;
+  /** MediaWiki's `log_page`: the page the entry is about (for a move, the page that moved). */
+  logpage?: number;
 }
 
 const hex = (text: string | Uint8Array) => createHash("sha1").update(text).digest("hex");
@@ -198,12 +200,20 @@ export function createFakeMediaWikiSite(options: FakeMediaWikiSiteOptions = {}) 
     return { title: shown, pageid: page.pageid, ...(redirectTarget(current(page)?.text) ? { redirect: true } : {}) };
   }
 
+  /** A revision with its parent's text by `user`, as MediaWiki writes for a move or a protection; never a recent change. */
+  function nullRevision(user: string, title: string, comment: string) {
+    const page = pages.get(title)!;
+    addRevision(title, { text: current(page)?.text ?? "", user, comment, timestamp: tick(), minor: true }, false, page.ns);
+  }
+
   /** `from` renamed to `to` by `user` (its id and revisions go with it), with a redirect left unless `redirect` is false. */
   function move(user: string, from: string, to: string, redirect: boolean, comment: string) {
     const page = pages.get(from)!;
     pages.delete(from);
     page.title = to;
     pages.set(to, page);
+    // MediaWiki records a move on the page itself: a null revision (its parent's text) by the mover, not a recent change
+    nullRevision(user, to, `${user} moved page [[${from}]] to [[${to}]]`);
     if (redirect) {
       addRevision(from, { text: `#REDIRECT [[${to}]]`, user, comment, timestamp: tick(), minor: false }, false, page.ns);
     }
@@ -216,6 +226,7 @@ export function createFakeMediaWikiSite(options: FakeMediaWikiSiteOptions = {}) 
       timestamp: tick(),
       comment,
       params: { target_title: to, target_ns: page.ns, ...(redirect ? {} : { suppressredirect: true }) },
+      logpage: page.pageid,
     });
   }
 
@@ -368,6 +379,21 @@ export function createFakeMediaWikiSite(options: FakeMediaWikiSiteOptions = {}) 
     /** A page an editor moved on MediaWiki: renamed, a redirect left unless `redirect` is false, and a log event. */
     movePage(user: string, from: string, to: string, { redirect = true, comment = "renamed" } = {}) {
       move(user, from, to, redirect, comment);
+    },
+    /** A page an administrator protected on MediaWiki: a null revision on it by them, and a log event. */
+    protectPage(user: string, title: string, comment = "protected") {
+      nullRevision(user, title, `Protected "[[${title}]]": ${comment}`);
+      logEvents.push({
+        logid: nextLogid++,
+        type: "protect",
+        action: "protect",
+        title,
+        user,
+        timestamp: tick(),
+        comment,
+        params: { details: [{ type: "edit", level: "autoconfirmed", expiry: "infinite" }] },
+        logpage: pages.get(title)!.pageid,
+      });
     },
     /** A page an administrator deleted on MediaWiki: gone, and a log event. */
     deletePage(user: string, title: string, comment = "spam") {
