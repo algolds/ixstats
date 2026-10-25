@@ -40,8 +40,8 @@ import {
   POLICY_TYPES,
   POLICY_CATEGORIES,
   PRIORITY_OPTIONS,
-  getMatchingDepartmentCategory,
 } from "./policies/policy-creator-constants";
+import { findPolicyDepartment, policyDepartmentKey } from "~/lib/policies/department-match";
 import { PolicyTargetMetrics, type TargetMetric } from "./policies/PolicyTargetMetrics";
 import { PolicyTemplateSliders } from "./policies/PolicyTemplateSliders";
 import { PolicyReconBanner } from "./policies/PolicyReconBanner";
@@ -289,10 +289,14 @@ export function PolicyCreatorSheet({
     }
   }, [formCategory, formPriority, selectedTemplateKey]);
 
-  const departmentKey = getMatchingDepartmentCategory(formCategory);
-  const targetDepartment = (country as any)?.departments?.find(
-    (d: any) => d.category?.toLowerCase() === departmentKey.toLowerCase()
+  // Custom policies need a managing department (the server checks the same match).
+  const { data: government } = api.government.getByCountryId.useQuery(
+    { countryId },
+    { enabled: open && !!countryId }
   );
+  const departmentKey = policyDepartmentKey(formCategory);
+  const targetDepartment = findPolicyDepartment(government?.departments ?? [], formCategory);
+  const needsDepartment = !isTemplate && !targetDepartment;
 
   const calculatedEffects = currentTemplate
     ? currentTemplate.calculate(sliderSettings, country)
@@ -317,8 +321,7 @@ export function PolicyCreatorSheet({
   });
 
   const isPending = createPolicyMutation.isPending;
-  const cannotSubmit =
-    isPending || !formTitle.trim() || !formDescription.trim() || !targetDepartment;
+  const cannotSubmit = isPending || !formTitle.trim() || !formDescription.trim() || needsDepartment;
 
   const createPolicy = () => {
     if (!formTitle.trim() || !formDescription.trim()) return;
@@ -379,6 +382,7 @@ export function PolicyCreatorSheet({
               reconContext={reconContext}
               targetDepartment={targetDepartment}
               departmentKey={departmentKey}
+              needsDepartment={needsDepartment}
             />
 
             <div className="space-y-3">
