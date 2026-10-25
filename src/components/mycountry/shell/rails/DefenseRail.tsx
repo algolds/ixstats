@@ -135,7 +135,6 @@ export function DefenseRail({ countryId }: { countryId: string }) {
         averageReadiness={averageReadiness}
         averageTechnology={averageTechnology}
         averageMorale={averageMorale}
-        branches={branches}
       />
 
       {/* Military branches and readiness */}

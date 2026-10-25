@@ -29,6 +29,7 @@ import {
 import { api } from "~/trpc/react";
 import { formatCurrency } from "~/lib/utils/format-utils";
 import { Card } from "~/components/ui/card";
+import { useNotify } from "~/hooks/useNotify";
 
 interface ActiveOperationsProps {
   countryId: string;
@@ -58,14 +59,17 @@ const SUCCESS_RATING_BADGE: Record<string, BadgeVariant> = {
 
 export function ActiveOperations({ countryId }: ActiveOperationsProps) {
   const [showCompleted, setShowCompleted] = useState(false);
+  const notify = useNotify();
 
   const { data: operations, refetch } = api.security.getOperations.useQuery(
     { countryId, includeCompleted: showCompleted },
     { enabled: !!countryId }
   );
 
+  // The server rates the outcome (how much of the planned duration ran).
   const endMutation = api.security.endOperation.useMutation({
     onSuccess: () => void refetch(),
+    onError: (error) => notify.error(`Could not end the operation: ${error.message}`),
   });
 
   if (!operations || operations.length === 0) {
@@ -125,7 +129,7 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
                     {op.targetCountry && (
                       <>
                         {" "}
-                        — Target:{" "}
+                        · Target:{" "}
                         <span className="text-label font-medium">{op.targetCountry.name}</span>
                       </>
                     )}
@@ -167,10 +171,11 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>End Operation?</AlertDialogTitle>
+                        <AlertDialogTitle>End operation?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          This will recall all deployed forces and end the operation. Unit readiness
-                          will partially recover.
+                          This recalls all deployed forces and ends the operation. Units recover
+                          readiness: a training exercise leaves them readier than before, other
+                          operations leave them a little worn.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -179,12 +184,7 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
                         </AlertDialogClose>
                         <AlertDialogClose asChild>
                           <Button
-                            onClick={() =>
-                              endMutation.mutate({
-                                operationId: op.id,
-                                successRating: "success",
-                              })
-                            }
+                            onClick={() => endMutation.mutate({ operationId: op.id })}
                             disabled={endMutation.isPending}
                           >
                             End operation
