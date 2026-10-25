@@ -22,6 +22,7 @@ import {
 import { notifyCountryOwners } from "./notify";
 import { StorytellerEffectType } from "~/lib/economy/calculations";
 import { createStorytellerEffects } from "~/lib/economy/storyteller-effects";
+import { getStandingBand } from "~/lib/diplomacy/relation-bands";
 import {
   FP_EFFECT_YEARS,
   endForeignPolicyAction,
@@ -150,6 +151,7 @@ async function enactForeignPolicyEffects(
         where: { id: relation.id },
         data: {
           strength: newStrength,
+          relationship: getStandingBand(newStrength).key,
           lastContact: new Date(),
           tradeVolume:
             action.actionType === "embargo" || action.actionType === "blockade"

@@ -206,6 +206,8 @@ function makeDb({ ownerUserId = "owner_db" }: { ownerUserId?: string } = {}) {
         embassyRow("theirs", COUNTRY, THIRD), // a third nation's mission in the owned nation
       ]),
     },
+    // The listing carries each pair's relation strength
+    diplomaticRelation: { findMany: jest.fn(async () => []) },
     storytellerEffect: {
       findMany: jest.fn(async () => [
         {

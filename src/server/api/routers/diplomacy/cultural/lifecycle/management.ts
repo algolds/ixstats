@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { clampStrength, getStandingBand } from "~/lib/diplomacy/relation-bands";
 
 export const diplomaticCulturalLifecycleManagementRouter = createTRPCRouter({
   // Update cultural exchange (only title and description)
@@ -116,10 +117,12 @@ export const diplomaticCulturalLifecycleManagementRouter = createTRPCRouter({
 
           if (relationship) {
             // Apply penalty
+            const strength = clampStrength(relationship.strength - relationshipPenalty);
             await ctx.db.diplomaticRelation.update({
               where: { id: relationship.id },
               data: {
-                strength: Math.max(0, relationship.strength - relationshipPenalty),
+                strength,
+                relationship: getStandingBand(strength).key,
                 culturalExchange:
                   relationship.culturalExchange === "High"
                     ? "Medium"
