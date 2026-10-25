@@ -40,7 +40,7 @@ At the top of `rewrites()`, before `passportRewrites` is used:
 ```js
   async rewrites() {
     // WikiOS standalone owns only /wiki/* and its own assets: no IxStates passport rewrites,
-    // /projects/* rewrites, or the ixwiki.com proxy rewrite (src/proxy.ts redirects everything else).
+    // /projects/* rewrites (src/proxy.ts redirects everything else).
     if (process.env.NEXT_PUBLIC_WIKIOS_STANDALONE === "true") {
       return [];
     }
@@ -48,21 +48,6 @@ At the top of `rewrites()`, before `passportRewrites` is used:
     // ...rest of the function unchanged
   },
 ```
-
-## 3. Required by the plan: drop the `/api/ixwiki-proxy` rewrite
-
-In the same function, delete this entry from `baseRewrites`:
-
-```js
-      {
-        source: "/api/ixwiki-proxy/:path*",
-        destination: "https://ixwiki.com/:path*",
-      },
-```
-
-Nothing under `src/` uses `/api/ixwiki-proxy` any more, and once `ixwiki.com/wiki/*` is WikiOS a
-proxy from the app back to `https://ixwiki.com` would loop through nginx. This edit also affects the
-IxStates build (same `next.config.js`), so redeploy IxStates afterwards with its usual deploy script.
 
 ## Check (no build needed)
 

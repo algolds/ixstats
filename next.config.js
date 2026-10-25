@@ -208,10 +208,6 @@ const config = {
 
     const baseRewrites = [
       ...passportRewrites,
-      {
-        source: "/api/ixwiki-proxy/:path*",
-        destination: "https://ixwiki.com/:path*",
-      },
       // In development (basePath is empty), rewrite production base path routes to root
       // so that dynamic assets (e.g. Discord images, uploads) load correctly in dev.
       ...(basePath ? [] : [{ source: "/projects/ixstates/:path*", destination: "/:path*" }]),
