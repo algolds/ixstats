@@ -4,7 +4,7 @@ import { useAbility } from "~/components/providers/AbilityProvider";
 import { useIsBetaTester } from "~/hooks/usePermissions";
 
 /** MyCountry sections the premium ability gates (`PREMIUM_SECTIONS` in `~/lib/auth/ability`). */
-type PremiumSection = "defense" | "intelligence" | "map-editor";
+type PremiumSection = "defense" | "map-editor";
 
 /**
  * Whether the user gets MyCountry's premium tools: the premium ability (premium tier, owner,

@@ -330,7 +330,7 @@ describe("summary parity with the stored stability formula", () => {
       },
       governmentStructure: {
         findUnique: jest.fn().mockResolvedValue({
-          politicalStability: 0.5,
+          politicalStability: 50,
           politicalPolarization: 50,
           democracyIndex: 50,
           electionCycle: 4,

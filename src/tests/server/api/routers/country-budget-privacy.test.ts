@@ -174,7 +174,7 @@ function makeDb({ ownerUserId = "owner_db" }: { ownerUserId?: string } = {}) {
         { allocatedPercent: 40, department: { category: "Defense" } },
       ]),
     },
-    defenseBudget: { findFirst: jest.fn(async () => ({ totalBudget: 9e9 })) },
+    defenseBudget: { findUnique: jest.fn(async () => ({ totalBudget: 9e9 })) },
     transportRoute: {
       findMany: jest.fn(async () => [
         {
@@ -399,7 +399,7 @@ const OWNER_ONLY: Array<[string, Call, (db: Db) => jest.Mock]> = [
   [
     "security.getDefenseBudget",
     (ctx) => defense(ctx).getDefenseBudget({ countryId: COUNTRY }),
-    (db) => db.defenseBudget.findFirst,
+    (db) => db.defenseBudget.findUnique,
   ],
   [
     "government.getCivilServiceStatus",

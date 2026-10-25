@@ -13,8 +13,9 @@ import {
  * Military Equipment Catalog Router
  *
  * The MilitaryEquipmentCatalog table is the source of truth for the equipment templates
- * players pick from in the Defense asset dialog. The built-in data in ~/lib/military seeds
- * an empty catalog on first read and is the fallback when the table can't be read.
+ * players pick from in the Defense asset dialog. The built-in data in ~/lib/military seeds an
+ * empty catalog (the seed script, or an admin's first catalog create) and is what players get
+ * while the table is empty or can't be read. No query writes.
  *
  * Public endpoints: player catalog (active items + manufacturers)
  * Admin endpoints: CRUD operations with audit logging
@@ -46,8 +47,8 @@ const equipmentFields = {
 };
 
 /**
- * Seed an empty catalog (and manufacturer list) from the built-in data. `db:seed` doesn't run
- * in production, so this is what first fills the tables there.
+ * Seed an empty catalog (and manufacturer list) from the built-in data. Idempotent. `db:seed`
+ * doesn't run in production, so an admin's first catalog create fills the tables there.
  */
 async function ensureCatalogSeeded(db: PrismaClient) {
   const [equipmentCount, manufacturerCount] = await Promise.all([
@@ -176,12 +177,11 @@ const PLAIN_FIELDS = [
 
 export const militaryEquipmentCatalogRouter = createTRPCRouter({
   /**
-   * Active catalog items as player equipment templates, plus the manufacturer list.
-   * Falls back to the built-in data if the catalog can't be read.
+   * Active catalog items as player equipment templates, plus the manufacturer list. Read-only:
+   * the built-in data stands in while the catalog is empty or can't be read.
    */
   getPlayerCatalog: publicProcedure.query(async ({ ctx }) => {
     try {
-      await ensureCatalogSeeded(ctx.db);
       const [rows, manufacturers] = await Promise.all([
         ctx.db.militaryEquipmentCatalog.findMany({
           where: { isActive: true },
@@ -193,6 +193,13 @@ export const militaryEquipmentCatalogRouter = createTRPCRouter({
           select: { key: true, name: true, country: true },
         }),
       ]);
+      if (rows.length === 0) {
+        return {
+          equipment: builtinEquipmentPresets(),
+          manufacturers: manufacturers.length > 0 ? manufacturers : builtinManufacturers(),
+          source: "builtin" as const,
+        };
+      }
       return {
         equipment: rows.map(catalogRowToPreset),
         manufacturers,
@@ -222,8 +229,6 @@ export const militaryEquipmentCatalogRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        await ensureCatalogSeeded(ctx.db);
-
         const equipment = await ctx.db.militaryEquipmentCatalog.findMany({
           where: {
             ...(input.includeInactive ? {} : { isActive: true }),
@@ -279,6 +284,7 @@ export const militaryEquipmentCatalogRouter = createTRPCRouter({
               : null,
         },
         async () => {
+          await ensureCatalogSeeded(ctx.db);
           const manufacturer = await resolveManufacturerKey(ctx.db, input.manufacturer);
 
           const equipment = await ctx.db.militaryEquipmentCatalog.create({

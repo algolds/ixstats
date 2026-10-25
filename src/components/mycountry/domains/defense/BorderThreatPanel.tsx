@@ -4,12 +4,9 @@ import {
   Shield,
   Globe,
   WarningTriangle as AlertTriangle,
-  Group as Users,
-  SeaWaves as Anchor,
   Archery as Crosshair,
-  ArrowSeparate as ArrowRightLeft,
 } from "iconoir-react";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { ScrollArea } from "~/components/ui/scroll-area";
@@ -78,25 +75,9 @@ function StatItem({
   );
 }
 
-function ThreatRow({
-  threat,
-}: {
-  threat: {
-    id: string;
-    neighborName: string;
-    borderType: string;
-    threatLevel: string;
-    threatScore: number;
-    militaryThreat?: number | null;
-    terrorismRisk?: number | null;
-    smugglingRisk?: number | null;
-    refugeeFlow?: number | null;
-    politicalStability?: number | null;
-    diplomaticRelations?: string;
-    borderLength?: number | null;
-    notes?: string | null;
-  };
-}) {
+type NeighborThreat = RouterOutputs["security"]["getBorderSecurity"]["neighborThreats"][number];
+
+function ThreatRow({ threat }: { threat: NeighborThreat }) {
   const level =
     threatLevelConfig[threat.threatLevel as keyof typeof threatLevelConfig] ??
     threatLevelConfig.low;
@@ -112,16 +93,9 @@ function ThreatRow({
             <Globe aria-hidden="true" className="text-label-secondary h-4 w-4" />
             <h4 className="text-label text-headline">{threat.neighborName}</h4>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline" className="capitalize">
-              {threat.borderType.replace("_", " ")}
-            </Badge>
-            {threat.borderLength != null && (
-              <span className="text-label-secondary text-footnote">
-                {threat.borderLength.toLocaleString()} km
-              </span>
-            )}
-          </div>
+          <Badge variant="outline" className="capitalize">
+            {threat.borderType} border
+          </Badge>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="outline" className={level.color}>
@@ -147,45 +121,19 @@ function ThreatRow({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <MetricItem label="Military" value={threat.militaryThreat} icon={Crosshair} />
-        <MetricItem label="Terrorism" value={threat.terrorismRisk} icon={AlertTriangle} />
-        <MetricItem label="Smuggling" value={threat.smugglingRisk} icon={ArrowRightLeft} />
-        <MetricItem label="Refugee flow" value={threat.refugeeFlow} icon={Users} />
+      <div className="text-footnote flex items-center justify-between">
+        <span className="text-label-secondary flex items-center gap-1.5">
+          <Crosshair aria-hidden="true" className="h-3.5 w-3.5" />
+          Their share of our combined strength
+        </span>
+        <span className="font-medium tabular-nums">{threat.militaryThreat}%</span>
       </div>
-
-      {threat.politicalStability != null && (
-        <div className="text-footnote flex items-center justify-between">
-          <span className="text-label-secondary">Political stability</span>
-          <span className="font-medium tabular-nums">{threat.politicalStability}/100</span>
-        </div>
-      )}
 
       {threat.notes && (
         <p className="text-label-secondary border-separator text-footnote border-t pt-3 leading-relaxed">
           {threat.notes}
         </p>
       )}
-    </div>
-  );
-}
-
-function MetricItem({
-  label,
-  value,
-  icon: Icon,
-}: {
-  label: string;
-  value?: number | null;
-  icon: React.ElementType;
-}) {
-  return (
-    <div className="flex items-center gap-2 py-1">
-      <Icon aria-hidden="true" className="text-label-secondary h-3.5 w-3.5 shrink-0" />
-      <div className="min-w-0">
-        <span className="text-stat-label text-label-secondary block truncate">{label}</span>
-        <div className="text-label text-headline tabular-nums">{value ?? 0}</div>
-      </div>
     </div>
   );
 }
@@ -213,7 +161,8 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
       <div>
         <h3 className="text-label text-title-3">Border security</h3>
         <p className="text-label-secondary text-body">
-          Neighbor threat assessments and frontier readiness
+          Worked out from your map neighbors, their forces, your relations and any conflicts or
+          hostile actions between you
         </p>
       </div>
 
@@ -224,9 +173,7 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
               <Shield aria-hidden="true" className="text-red h-4 w-4" />
               Border security overview
             </h4>
-            <p className="text-label-secondary text-footnote">
-              Current frontier posture and coverage
-            </p>
+            <p className="text-label-secondary text-footnote">Current frontier posture</p>
           </CardHeader>
           <CardContent className="space-y-4 px-5 pb-5">
             <div className="border-separator flex items-center justify-between border-b pb-4">
@@ -243,24 +190,11 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
             </div>
 
             <div className="divide-separator divide-y">
+              <StatItem label="Land neighbors" value={border?.landBorders ?? 0} icon={Globe} />
               <StatItem
-                label="Border length"
-                value={
-                  border?.borderLength != null ? `${border.borderLength.toLocaleString()} km` : "—"
-                }
-                icon={Globe}
-              />
-              <StatItem label="Land borders" value={border?.landBorders ?? 0} icon={Anchor} />
-              <StatItem
-                label="Maritime borders"
-                value={border?.maritimeBorders ?? 0}
-                icon={Anchor}
-              />
-              <StatItem label="Checkpoints" value={border?.checkpoints ?? 0} icon={Shield} />
-              <StatItem
-                label="Surveillance systems"
-                value={border?.surveillanceSystems ?? 0}
-                icon={Crosshair}
+                label="Active threats"
+                value={border?.activeThreatCount ?? 0}
+                icon={AlertTriangle}
               />
             </div>
           </CardContent>
@@ -274,7 +208,7 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
             </h4>
             <p className="text-label-secondary text-footnote">
               {threats.length === 0
-                ? "No assessments recorded"
+                ? "No land neighbors on the map"
                 : `${threats.length} neighbor${threats.length === 1 ? "" : "s"} assessed`}
             </p>
           </CardHeader>
@@ -282,11 +216,10 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
             {threats.length === 0 ? (
               <div className="border-separator rounded-control flex flex-col items-center justify-center border border-dashed py-10 text-center">
                 <Globe aria-hidden="true" className="text-label-secondary mb-2 h-8 w-8" />
-                <p className="text-label text-body font-medium">
-                  No neighbor threat assessments recorded yet.
-                </p>
+                <p className="text-label text-body font-medium">No land neighbors</p>
                 <p className="text-label-secondary text-footnote mt-1 max-w-xs">
-                  Intelligence has not assessed any neighboring borders yet.
+                  Neighbors come from your borders on the map. Draw or link your territory to
+                  assess them.
                 </p>
               </div>
             ) : (

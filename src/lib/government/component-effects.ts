@@ -52,9 +52,12 @@ const BROKER_EFFECTS: Array<{ id: string; value: number; description: string }> 
 const COMPONENT_KEY = "component:";
 const BROKER_KEY = "broker:";
 
-/** Political metric → stored fallback, delta scale (deltas are fractions) and clamp range. */
+/**
+ * Political metric → stored fallback, delta scale and clamp range. Every metric is stored on a
+ * 0-100 scale; deltas (component and broker shifts) are fractions of it (0.1 = 10 points).
+ */
 const POLITICAL_METRICS = {
-  politicalStability: { fallback: 0.5, scale: 1, min: 0, max: 1 },
+  politicalStability: { fallback: 50, scale: 100, min: 0, max: 100 },
   democracyIndex: { fallback: 50, scale: 100, min: 0, max: 100 },
   governmentEffectiveness: { fallback: 50, scale: 100, min: 0, max: 100 },
   ruleOfLaw: { fallback: 50, scale: 100, min: 0, max: 100 },
@@ -255,6 +258,7 @@ function politicalTarget(
   spendByCategory: Record<string, number>
 ): PoliticalDelta {
   const deltas = computePoliticalDeltas(activeComponents);
+  // Fractions of the 0-100 stability scale, like the component deltas (0.1 = +10 points).
   const stabilityShifts: Array<[applies: boolean, shift: number]> = [
     [satisfiedSet.has("party"), 0.1],
     [satisfiedSet.has("clergy"), 0.05],

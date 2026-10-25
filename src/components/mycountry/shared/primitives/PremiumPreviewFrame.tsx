@@ -8,7 +8,7 @@ import { MyCountryEditModeProvider } from "~/context/MyCountryEditModeContext";
 import { Card } from "~/components/ui/card";
 
 interface PremiumPreviewFrameProps {
-  feature: "intelligence" | "defense";
+  feature: "defense";
   /** True when the current user is NOT premium (render real content, read-only). */
   locked: boolean;
   children: React.ReactNode;
@@ -17,10 +17,6 @@ interface PremiumPreviewFrameProps {
 
 const FEATURE_META: Record<PremiumPreviewFrameProps["feature"], { label: string; blurb: string }> =
   {
-    intelligence: {
-      label: "Intelligence",
-      blurb: "Read-only preview. Upgrade to act on briefings.",
-    },
     defense: {
       label: "Defense",
       blurb: "Read-only preview. Upgrade to build forces and launch operations.",

@@ -5,9 +5,13 @@ jest.mock("~/lib/notifications/api", () => ({
   __esModule: true,
   notificationAPI: { create: jest.fn() },
 }));
+jest.mock("~/lib/military/threat-picture-loader", () => ({
+  loadThreatPicture: jest.fn(async () => ({ militaryStrength: 12, activeThreatCount: 3 })),
+}));
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { notificationAPI } from "~/lib/notifications/api";
+import { loadThreatPicture } from "~/lib/military/threat-picture-loader";
 import {
   evaluateThresholds,
   INTELLIGENCE_ALERTS_HREF,
@@ -15,13 +19,13 @@ import {
 
 const create = notificationAPI.create as unknown as jest.Mock;
 
-function makeDb(existingAlert: object | null = null) {
+function makeDb(existingAlert: object | null = null, metricName = "publicApproval") {
   return {
     intelligenceAlertThreshold: {
       findMany: jest.fn(async () => [
         {
           id: "t1",
-          metricName: "publicApproval",
+          metricName,
           alertType: "governance",
           criticalMin: 20,
           criticalMax: null,
@@ -94,5 +98,27 @@ describe("evaluateThresholds", () => {
     });
     expect(db.intelligenceAlert.create).not.toHaveBeenCalled();
     expect(create).not.toHaveBeenCalled();
+  });
+
+  // P1-21: militaryStrength and threatLevel read the threat picture derived on read, not the
+  // SecurityAssessment table nothing writes.
+  it("reads militaryStrength from the derived threat picture", async () => {
+    const db = makeDb(null, "militaryStrength");
+    await evaluateThresholds(db, "c1", "u1");
+    expect(loadThreatPicture).toHaveBeenCalledWith(db, "c1");
+    expect(db.intelligenceAlert.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          title: "militaryStrength breached critical threshold",
+          currentValue: 12,
+        }),
+      })
+    );
+  });
+
+  it("does not derive the threat picture for other metrics", async () => {
+    (loadThreatPicture as jest.Mock).mockClear();
+    await evaluateThresholds(makeDb(), "c1", "u1");
+    expect(loadThreatPicture).not.toHaveBeenCalled();
   });
 });

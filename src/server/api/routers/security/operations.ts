@@ -10,15 +10,58 @@ import { createTRPCRouter, publicProcedure, premiumMutationProcedure } from "~/s
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
-import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import {
+  assertCountryWriteAccess,
+  hasCountryWriteAccess,
+} from "~/server/shared/country-authorization";
+import { redactOperationCosts } from "~/lib/military/owner-redaction";
 import { StorytellerEffectType } from "~/lib/economy/calculations";
 import { createStorytellerEffect, endStorytellerEffects } from "~/lib/economy/storyteller-effects";
+import {
+  DEPLOY_READINESS_COST,
+  PEACEKEEPING_BONUS_WINDOW_IXDAYS,
+  PEACEKEEPING_RELATION_BONUS,
+  READINESS_MAX,
+  READINESS_MIN,
+  ixDaysAgo,
+  operationSuccessRating,
+  readinessRecovery,
+} from "~/lib/military/operation-rules";
+import { IxTime } from "~/lib/ixtime";
+import { isBrokerSatisfied } from "~/server/modules/security/brokers";
+import type { PrismaClient } from "@prisma/client";
 
 /** `createdBy` of a military operation's GDP-drain StorytellerEffect. */
 const operationEffectKey = (operationId: string) => `operation:${operationId}`;
 
+/**
+ * The relation a new peacekeeping operation raises: the one with its target, unless an earlier
+ * peacekeeping operation by this nation already raised it within the window (null then).
+ */
+async function peacekeepingRelation(db: PrismaClient, countryId: string, targetId: string) {
+  const recentBonus = await db.militaryOperation.findFirst({
+    where: {
+      countryId,
+      targetCountryId: targetId,
+      operationType: "peacekeeping",
+      diplomaticImpact: { gt: 0 },
+      createdAt: { gte: ixDaysAgo(PEACEKEEPING_BONUS_WINDOW_IXDAYS) },
+    },
+    select: { id: true },
+  });
+  if (recentBonus) return null;
+  return db.diplomaticRelation.findFirst({
+    where: {
+      OR: [
+        { country1: countryId, country2: targetId },
+        { country1: targetId, country2: countryId },
+      ],
+    },
+  });
+}
+
 export const securityOperationsRouter = createTRPCRouter({
-  // Get active and past operations
+  // Get active and past operations. Personnel and costs are the owner's only.
   getOperations: publicProcedure
     .input(
       z.object({
@@ -38,7 +81,7 @@ export const securityOperationsRouter = createTRPCRouter({
         orderBy: { createdAt: "desc" },
       });
 
-      return operations.map((op) => ({
+      const rows = operations.map((op) => ({
         ...op,
         targetCountry: op.targetCountry
           ? {
@@ -48,6 +91,8 @@ export const securityOperationsRouter = createTRPCRouter({
             }
           : null,
       }));
+      if (await hasCountryWriteAccess(ctx, input.countryId)) return rows;
+      return rows.map(redactOperationCosts);
     }),
 
   // Create a military operation and deploy units/assets
@@ -73,6 +118,13 @@ export const securityOperationsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
+
+      if (input.operationType === "peacekeeping" && input.personnelDeployed <= 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "A peacekeeping operation must deploy personnel.",
+        });
+      }
 
       const userProfile = await ctx.db.user.findUnique({
         where: { clerkUserId: ctx.auth.userId },
@@ -133,6 +185,12 @@ export const securityOperationsRouter = createTRPCRouter({
       const gdp = (country.currentGdpPerCapita ?? 10000) * (country.currentPopulation ?? 1000000);
       const gdpDrain = gdp > 0 ? annualCost / gdp : 0;
 
+      // Peacekeeping raises the relation with its target once per target per window.
+      const relation =
+        input.operationType === "peacekeeping" && input.targetCountryId
+          ? await peacekeepingRelation(ctx.db, input.countryId, input.targetCountryId)
+          : null;
+
       // Create the operation
       const operation = await ctx.db.militaryOperation.create({
         data: {
@@ -146,6 +204,9 @@ export const securityOperationsRouter = createTRPCRouter({
           dailyCost,
           gdpDrain,
           duration: input.duration,
+          startIxTime: IxTime.getCurrentIxTime(),
+          readinessImpact: -DEPLOY_READINESS_COST,
+          diplomaticImpact: relation ? PEACEKEEPING_RELATION_BONUS : 0,
         },
         include: {
           targetCountry: { select: { id: true, name: true } },
@@ -162,10 +223,14 @@ export const securityOperationsRouter = createTRPCRouter({
           })),
         });
 
-        // Reduce unit readiness
+        // Deployed units lose readiness, never below zero.
         await ctx.db.militaryUnit.updateMany({
           where: { id: { in: unitIds } },
-          data: { readiness: { decrement: 10 } },
+          data: { readiness: { decrement: DEPLOY_READINESS_COST } },
+        });
+        await ctx.db.militaryUnit.updateMany({
+          where: { id: { in: unitIds }, readiness: { lt: READINESS_MIN } },
+          data: { readiness: READINESS_MIN },
         });
       }
 
@@ -193,22 +258,11 @@ export const securityOperationsRouter = createTRPCRouter({
         });
       }
 
-      // Diplomatic impact for certain operation types
-      if (input.targetCountryId && input.operationType === "peacekeeping") {
-        const relation = await ctx.db.diplomaticRelation.findFirst({
-          where: {
-            OR: [
-              { country1: input.countryId, country2: input.targetCountryId },
-              { country1: input.targetCountryId, country2: input.countryId },
-            ],
-          },
+      if (relation) {
+        await ctx.db.diplomaticRelation.update({
+          where: { id: relation.id },
+          data: { strength: Math.min(100, relation.strength + PEACEKEEPING_RELATION_BONUS) },
         });
-        if (relation) {
-          await ctx.db.diplomaticRelation.update({
-            where: { id: relation.id },
-            data: { strength: Math.min(100, relation.strength + 10) },
-          });
-        }
       }
 
       // Auto-news: military deployment
@@ -222,14 +276,10 @@ export const securityOperationsRouter = createTRPCRouter({
       return operation;
     }),
 
-  // Recall a deployment / end an operation
+  // Recall a deployment / end an operation. The server rates the outcome from how much of the
+  // planned duration ran, and recalled units recover readiness (training gains overall).
   endOperation: premiumMutationProcedure
-    .input(
-      z.object({
-        operationId: z.string(),
-        successRating: z.enum(["success", "partial", "failure"]).optional(),
-      })
-    )
+    .input(z.object({ operationId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const operation = await ctx.db.militaryOperation.findUnique({
         where: { id: input.operationId },
@@ -252,25 +302,34 @@ export const securityOperationsRouter = createTRPCRouter({
         data: { status: "recalled", recalledAt: new Date() },
       });
 
-      // Restore partial unit readiness (+5 per recalled unit)
-      const unitDeployments = operation.deployments.filter(
-        (d) => d.unitId && d.status === "deployed"
-      );
-      if (unitDeployments.length > 0) {
-        const unitIds = unitDeployments.map((d) => d.unitId!);
+      // Recalled units recover readiness, never above 100 (more with the Generals satisfied).
+      const unitIds = operation.deployments
+        .filter((d) => d.unitId && d.status === "deployed")
+        .map((d) => d.unitId!);
+      if (unitIds.length > 0) {
+        const generals = await isBrokerSatisfied(ctx.db, operation.countryId, "generals");
         await ctx.db.militaryUnit.updateMany({
           where: { id: { in: unitIds } },
-          data: { readiness: { increment: 5 } },
+          data: {
+            readiness: { increment: readinessRecovery(operation.operationType, generals) },
+          },
+        });
+        await ctx.db.militaryUnit.updateMany({
+          where: { id: { in: unitIds }, readiness: { gt: READINESS_MAX } },
+          data: { readiness: READINESS_MAX },
         });
       }
 
-      // End operation
+      // End operation. Rows from before startIxTime was stamped fall back to their creation.
+      const endIxTime = IxTime.getCurrentIxTime();
+      const successRating = operationSuccessRating({
+        durationIxDays: operation.duration,
+        startIxTime: operation.startIxTime || IxTime.convertToIxTime(operation.createdAt.getTime()),
+        endIxTime,
+      });
       const updated = await ctx.db.militaryOperation.update({
         where: { id: input.operationId },
-        data: {
-          status: "completed",
-          successRating: input.successRating,
-        },
+        data: { status: "completed", successRating, endIxTime },
       });
 
       // End this operation's GDP drain without rewriting the projected past (rows from before
@@ -290,11 +349,11 @@ export const securityOperationsRouter = createTRPCRouter({
             userId: ctx.auth.userId,
             countryId: operation.countryId,
             title: "Operation Complete",
-            message: `Operation "${operation.name}" ended: ${input.successRating ?? "completed"}`,
+            message: `Operation "${operation.name}" ended: ${successRating}`,
             type: "info",
             category: "military",
             priority: "high",
-            metadata: { operationId: input.operationId, result: input.successRating },
+            metadata: { operationId: input.operationId, result: successRating },
           });
         }
       } catch (err) {

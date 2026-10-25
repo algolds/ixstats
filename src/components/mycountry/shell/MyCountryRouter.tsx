@@ -26,7 +26,8 @@ const SECTION_TITLES: Record<MyCountrySection, string> = {
   executive: "Executive Directives",
   economy: "Economy & Budget",
   diplomacy: "Diplomatic Operations",
-  intelligence: "Intelligence Dashboard",
+  // /mycountry/intelligence renders the Defense section.
+  intelligence: "Defense & Security",
   defense: "Defense & Security",
   politics: "Political Landscape",
   "map-editor": "Map Editor",

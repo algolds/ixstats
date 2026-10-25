@@ -57,7 +57,8 @@ model GovernmentStructure {
   totalBudget             Float                  @default(0)
   fiscalYear              String                 @default("Calendar Year")
   budgetCurrency          String                 @default("USD")
-  politicalStability      Float?                 @default(0.5)
+  /// 0-100, like the other political metrics.
+  politicalStability      Float?                 @default(50)
   politicalPolarization   Float?                 @default(50)
   democracyIndex          Float?                 @default(50)
   electionCycle           Int?                   @default(4)
