@@ -9,7 +9,56 @@ import {
   type ConflictFields,
   type PoliticsFields,
   type TechFields,
+  type PlaceFields,
+  type OrganisationFields,
 } from "./WikitextTemplates";
+
+interface FieldRow<K extends string> {
+  key: K;
+  label: string;
+  placeholder: string;
+}
+
+const PLACE_ROWS: readonly FieldRow<keyof PlaceFields>[] = [
+  { key: "settlementType", label: "Settlement type", placeholder: "e.g. City" },
+  { key: "subdivision", label: "Subdivision", placeholder: "e.g. Latium" },
+  { key: "coordinates", label: "Coordinates", placeholder: "e.g. {{coord|41.9|12.5}}" },
+  { key: "population", label: "Population", placeholder: "e.g. 2,400,000" },
+];
+
+const ORGANISATION_ROWS: readonly FieldRow<keyof OrganisationFields>[] = [
+  { key: "type", label: "Type", placeholder: "e.g. Legislature" },
+  { key: "founded", label: "Founded", placeholder: "e.g. 1012" },
+  { key: "headquarters", label: "Headquarters", placeholder: "e.g. Venceia" },
+  { key: "leader", label: "Leader", placeholder: "e.g. Princeps of the Senate" },
+];
+
+/** One labelled text input per row, editing `value[row.key]`. */
+function FieldRows<K extends string>({
+  rows,
+  value,
+  onChange,
+}: {
+  rows: readonly FieldRow<K>[];
+  value: Record<K, string>;
+  onChange: (next: Record<K, string>) => void;
+}) {
+  return (
+    <>
+      {rows.map((row) => (
+        <label key={row.key} className="block space-y-1">
+          <span className="text-footnote text-label-secondary">{row.label}</span>
+          <Input
+            type="text"
+            placeholder={row.placeholder}
+            value={value[row.key]}
+            onChange={(e) => onChange({ ...value, [row.key]: e.target.value })}
+          />
+        </label>
+      ))}
+    </>
+  );
+}
 
 interface MetadataStepProps {
   pageType: PageType;
@@ -27,6 +76,10 @@ interface MetadataStepProps {
   setPoliticsFields: (fields: PoliticsFields) => void;
   techFields: TechFields;
   setTechFields: (fields: TechFields) => void;
+  placeFields: PlaceFields;
+  setPlaceFields: (fields: PlaceFields) => void;
+  organisationFields: OrganisationFields;
+  setOrganisationFields: (fields: OrganisationFields) => void;
 }
 
 export function MetadataStep({
@@ -45,6 +98,10 @@ export function MetadataStep({
   setPoliticsFields,
   techFields,
   setTechFields,
+  placeFields,
+  setPlaceFields,
+  organisationFields,
+  setOrganisationFields,
 }: MetadataStepProps) {
   return (
     <div className="space-y-4">
@@ -308,6 +365,18 @@ export function MetadataStep({
               />
             </label>
           </>
+        )}
+
+        {pageType === "place" && (
+          <FieldRows rows={PLACE_ROWS} value={placeFields} onChange={setPlaceFields} />
+        )}
+
+        {pageType === "organisation" && (
+          <FieldRows
+            rows={ORGANISATION_ROWS}
+            value={organisationFields}
+            onChange={setOrganisationFields}
+          />
         )}
 
         {pageType === "tech" && (

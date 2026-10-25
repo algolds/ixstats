@@ -15,6 +15,7 @@ import {
   setEditorBase,
   type WikiEditorDraft,
 } from "~/lib/wiki-os/editor/draft-store";
+import { openingPrefill } from "~/lib/wiki-os/editor/prefill";
 import { SAVE_FAILED, saveFailureMessage } from "~/lib/wiki-os/editor/save-failure";
 import { appendNewSection, NEW_SECTION_HEADING } from "~/lib/wiki-os/wikitext/new-section";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
@@ -47,6 +48,11 @@ interface WikiEditBridgeProps {
   initialSection?: string;
   /** "Add topic": open on the page's text with an empty new section appended (`?section=new`). */
   newSection?: boolean;
+  /**
+   * The starting text of a page that does not exist (the load answered with no revision and no text), such as a
+   * create template. Ignored for an existing page, and when the load fails.
+   */
+  prefillWikitext?: string;
   onClose: () => void;
   onSaveSuccess?: () => void;
 }
@@ -86,6 +92,7 @@ export function WikiEditBridge({
   initialMode = "source",
   initialSection,
   newSection = false,
+  prefillWikitext,
   onClose,
   onSaveSuccess,
 }: WikiEditBridgeProps) {
@@ -100,6 +107,8 @@ export function WikiEditBridge({
   const [activeWikitext, setActiveWikitext] = useState<string | null>(null);
   /** Frozen when the editor opens (later refetches must not move the base under the user's text). */
   const [loaded, setLoaded] = useState<LoadedPage | null>(null);
+  /** The prefill, when the page proved missing as the editor opened: decided once, with `loaded`. */
+  const [openedOnPrefill, setOpenedOnPrefill] = useState<string | null>(null);
   const [staleDraft, setStaleDraft] = useState<WikiEditorDraft | null>(null);
   const [draftResolved, setDraftResolved] = useState(false);
   /** Changes when the editors must start over from new text (Load current version). */
@@ -121,6 +130,7 @@ export function WikiEditBridge({
   const {
     data: wikitextData,
     isLoading: wtLoading,
+    isError: wtFailed,
     isFetchedAfterMount,
     refetch: refetchWikitext,
   } = api.wikios.getWikitext.useQuery(
@@ -137,6 +147,7 @@ export function WikiEditBridge({
       wikitext: wikitextData?.wikitext ?? "",
       ...revisionOf(wikitextData?.revisionRef ?? null, wikitextData?.revisionRefs),
     });
+    setOpenedOnPrefill(openingPrefill(prefillWikitext, wikitextData, wtFailed));
   }
 
   // Drafts saved from any editor component are stamped with the revision this editor was loaded from.
@@ -378,7 +389,9 @@ export function WikiEditBridge({
   }
 
   const initialWikitextValue =
-    activeWikitext ?? (newSection ? appendNewSection(loaded.wikitext) : loaded.wikitext);
+    activeWikitext ??
+    openedOnPrefill ??
+    (newSection ? appendNewSection(loaded.wikitext) : loaded.wikitext);
 
   return (
     <div className="wikios-edit-bridge relative min-h-[600px] w-full">

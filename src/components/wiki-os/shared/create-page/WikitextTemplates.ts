@@ -48,64 +48,113 @@ export interface TechFields {
   application: string;
 }
 
-export function generateWikitext(
-  pageType: PageType,
-  title: string,
-  fields: {
-    personFields: PersonFields;
-    companyFields: CompanyFields;
-    historyFields: HistoryFields;
-    countryFields: CountryFields;
-    conflictFields: ConflictFields;
-    politicsFields: PoliticsFields;
-    techFields: TechFields;
-  }
-): string {
-  const {
-    personFields,
-    companyFields,
-    historyFields,
-    countryFields,
-    conflictFields,
-    politicsFields,
-    techFields,
-  } = fields;
+export interface PlaceFields {
+  settlementType: string;
+  subdivision: string;
+  coordinates: string;
+  population: string;
+}
 
-  switch (pageType) {
-    case "person":
-      return `{{Infobox person
+export interface OrganisationFields {
+  type: string;
+  founded: string;
+  headquarters: string;
+  leader: string;
+}
+
+/** Every type's form fields; a group left out is empty. */
+export interface TemplateFields {
+  personFields: PersonFields;
+  companyFields: CompanyFields;
+  historyFields: HistoryFields;
+  countryFields: CountryFields;
+  conflictFields: ConflictFields;
+  politicsFields: PoliticsFields;
+  techFields: TechFields;
+  placeFields: PlaceFields;
+  organisationFields: OrganisationFields;
+}
+
+export interface GenerateWikitextOptions {
+  /** Category names (without `Category:`), appended as one `[[Category:…]]` line each. */
+  categories?: readonly string[];
+}
+
+export const EMPTY_TEMPLATE_FIELDS: TemplateFields = {
+  personFields: { birthDate: "", birthPlace: "", nationality: "", occupation: "" },
+  companyFields: { type: "", industry: "", founder: "", headquarters: "" },
+  historyFields: { date: "", location: "", participants: "", result: "" },
+  countryFields: { capital: "", governmentType: "", leaderName: "", currency: "" },
+  conflictFields: { date: "", place: "", combatant1: "", combatant2: "" },
+  politicsFields: { leader: "", founder: "", ideology: "", colors: "" },
+  techFields: { inventor: "", year: "", application: "" },
+  placeFields: { settlementType: "", subdivision: "", coordinates: "", population: "" },
+  organisationFields: { type: "", founded: "", headquarters: "", leader: "" },
+};
+
+/** A lore type's sections: headings only, no prose (the author writes the body). */
+function loreSections(headings: readonly string[]): string {
+  const sections = headings.map((heading) => `== ${heading} ==\n`).join("\n");
+  return `${sections}\n== References ==\n<references />`;
+}
+
+type TemplateBuilder = (title: string, fields: TemplateFields) => string;
+
+/** Each type's page text: its infobox and sections. A blank page has none. */
+const TEMPLATES: Record<PageType, TemplateBuilder> = {
+  blank: () => "",
+  person: (title, { personFields: f }) => `{{Infobox person
 | name          = ${title}
 | image         = 
 | caption       = 
-| birth_date    = ${personFields.birthDate}
-| birth_place   = ${personFields.birthPlace}
-| nationality   = ${personFields.nationality}
-| occupation    = ${personFields.occupation}
+| birth_date    = ${f.birthDate}
+| birth_place   = ${f.birthPlace}
+| nationality   = ${f.nationality}
+| occupation    = ${f.occupation}
 }}
 
-== Biography ==
-Write biography details here...
+${loreSections(["Early life", "Career", "Legacy"])}`,
+  place: (title, { placeFields: f }) => `{{Infobox settlement
+| name             = ${title}
+| image_skyline    = 
+| settlement_type  = ${f.settlementType}
+| subdivision_type = Subdivision
+| subdivision_name = ${f.subdivision}
+| coordinates      = ${f.coordinates}
+| population_total = ${f.population}
+}}
 
-== Career ==
-Write career details here...
+${loreSections(["History", "Geography", "Culture"])}`,
+  history: (title, { historyFields: f }) => `{{Infobox event
+| name          = ${title}
+| image         = 
+| caption       = 
+| date          = ${f.date}
+| location      = ${f.location}
+| participants  = ${f.participants}
+| result        = ${f.result}
+}}
 
-== Personal Life ==
-Write personal life details here...
+${loreSections(["Background", "Course", "Aftermath"])}`,
+  organisation: (title, { organisationFields: f }) => `{{Infobox organization
+| name          = ${title}
+| image         = 
+| type          = ${f.type}
+| founded       = ${f.founded}
+| headquarters  = ${f.headquarters}
+| leader_title  = Leader
+| leader_name   = ${f.leader}
+}}
 
-== See Also ==
-* Related pages
-
-== References ==
-<references />`;
-    case "company":
-      return `{{Infobox company
+${loreSections(["History", "Structure", "Activities"])}`,
+  company: (title, { companyFields: f }) => `{{Infobox company
 | name          = ${title}
 | logo          = 
-| type          = ${companyFields.type}
-| industry      = ${companyFields.industry}
+| type          = ${f.type}
+| industry      = ${f.industry}
 | foundation    = 
-| founder       = ${companyFields.founder}
-| headquarters  = ${companyFields.headquarters}
+| founder       = ${f.founder}
+| headquarters  = ${f.headquarters}
 | area_served   = 
 | key_people    = 
 | products      = 
@@ -126,47 +175,18 @@ Write operations details here...
 * Related pages
 
 == References ==
-<references />`;
-    case "history":
-      return `{{Infobox historical event
-| event_name    = ${title}
-| image         = 
-| caption       = 
-| date          = ${historyFields.date}
-| location      = ${historyFields.location}
-| result        = ${historyFields.result}
-| participants  = ${historyFields.participants}
-}}
-
-== Background ==
-Write background details here...
-
-== The Event ==
-Write details of the event here...
-
-== Aftermath ==
-Write aftermath details here...
-
-== Legacy ==
-Write significance and legacy here...
-
-== See Also ==
-* Related pages
-
-== References ==
-<references />`;
-    case "country":
-      return `{{Infobox country
+<references />`,
+  country: (title, { countryFields: f }) => `{{Infobox country
 | common_name   = ${title}
 | image_flag    = 
 | image_coat    = 
 | national_anthem = 
-| capital       = ${countryFields.capital}
-| government_type = ${countryFields.governmentType}
+| capital       = ${f.capital}
+| government_type = ${f.governmentType}
 | leader_title1 = Leader
-| leader_name1  = ${countryFields.leaderName}
+| leader_name1  = ${f.leaderName}
 | population_estimate = 
-| currency      = ${countryFields.currency}
+| currency      = ${f.currency}
 }}
 
 == Etymology ==
@@ -188,14 +208,13 @@ Write economy details here...
 * Related pages
 
 == References ==
-<references />`;
-    case "conflict":
-      return `{{Infobox military conflict
+<references />`,
+  conflict: (title, { conflictFields: f }) => `{{Infobox military conflict
 | conflict      = ${title}
-| date          = ${conflictFields.date}
-| place         = ${conflictFields.place}
-| combatant1    = ${conflictFields.combatant1}
-| combatant2    = ${conflictFields.combatant2}
+| date          = ${f.date}
+| place         = ${f.place}
+| combatant1    = ${f.combatant1}
+| combatant2    = ${f.combatant2}
 }}
 
 == Background ==
@@ -211,14 +230,13 @@ Write peace terms and political outcome here...
 * Related pages
 
 == References ==
-<references />`;
-    case "politics":
-      return `{{Infobox political party
+<references />`,
+  politics: (title, { politicsFields: f }) => `{{Infobox political party
 | party_name     = ${title}
-| leader         = ${politicsFields.leader}
-| founder        = ${politicsFields.founder}
-| ideology       = ${politicsFields.ideology}
-| colors         = ${politicsFields.colors}
+| leader         = ${f.leader}
+| founder        = ${f.founder}
+| ideology       = ${f.ideology}
+| colors         = ${f.colors}
 }}
 
 == History ==
@@ -234,13 +252,12 @@ Write electoral history here...
 * Related pages
 
 == References ==
-<references />`;
-    case "tech":
-      return `{{Infobox invention
+<references />`,
+  tech: (title, { techFields: f }) => `{{Infobox invention
 | name         = ${title}
-| inventor     = ${techFields.inventor}
-| year         = ${techFields.year}
-| application  = ${techFields.application}
+| inventor     = ${f.inventor}
+| year         = ${f.year}
+| application  = ${f.application}
 }}
 
 == Overview ==
@@ -256,8 +273,30 @@ Write impact details here...
 * Related pages
 
 == References ==
-<references />`;
-    default:
-      return "";
-  }
+<references />`,
+};
+
+/** Link and template markup cannot be part of a category name: `[[Category:…]]` must stay one link. */
+const CATEGORY_MARKUP = /[[\]{}|\r\n]/g;
+
+/** One `[[Category:…]]` line per distinct, non-empty name, in order. */
+function categoryLines(categories: readonly string[]): string {
+  const names = categories.map((name) => name.replace(CATEGORY_MARKUP, "").trim()).filter(Boolean);
+  return [...new Set(names)].map((name) => `[[Category:${name}]]`).join("\n");
+}
+
+/**
+ * The starting wikitext of a new page of `pageType`: the type's infobox (from `fields`; a group left out is empty)
+ * and section headings, then `options.categories` as category lines.
+ */
+export function generateWikitext(
+  pageType: PageType,
+  title: string,
+  fields: Partial<TemplateFields>,
+  options: GenerateWikitextOptions = {}
+): string {
+  const body = TEMPLATES[pageType](title, { ...EMPTY_TEMPLATE_FIELDS, ...fields });
+  const categories = categoryLines(options.categories ?? []);
+  if (!categories) return body;
+  return body ? `${body}\n\n${categories}` : categories;
 }

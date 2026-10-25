@@ -7,6 +7,8 @@ import {
   ShieldAlert,
   Bank as Landmark,
   Sparks as Sparkles,
+  MapPin,
+  Community,
 } from "iconoir-react";
 import { type PageType } from "../CreatePageModal";
 import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
@@ -29,6 +31,18 @@ export function TypeStep({ pageType, setPageType }: TypeStepProps) {
       label: "Person",
       icon: User,
       desc: "Biography, career info & infobox",
+    },
+    {
+      id: "place",
+      label: "Place",
+      icon: MapPin,
+      desc: "City or settlement, its region and population",
+    },
+    {
+      id: "organisation",
+      label: "Organisation",
+      icon: Community,
+      desc: "Institution, its founding, seat and leader",
     },
     {
       id: "company",

@@ -26,6 +26,7 @@ import {
 import type { ArticleMode } from "~/lib/wiki-os/types";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { isLeanResolvable, parseLeanMarker } from "~/lib/wiki-os/lean-article";
+import { readPrefillParam } from "~/lib/wiki-os/editor/prefill";
 
 // The Main Page is its own chunk: an article never downloads it. It stays server-rendered (its data
 // is in the first HTML), so the chunk is preloaded for that page, not fetched after hydration.
@@ -104,6 +105,8 @@ export default function ArticlePageClient({
   // `?action=edit` opens the editor, for IxWiki pages only; `?margin` opens Margin, same.
   const isEditAction = isIxWiki && searchParams.get("action") === "edit";
   const isMarginParam = isIxWiki && Boolean(searchParams.get("margin"));
+  // `?prefill=` (CreatePageModal's template): the editor opens on it only for a page that does not exist.
+  const prefillWikitext = readPrefillParam(searchParams.get("prefill")) ?? undefined;
   const isMainPage = title === "Main Page";
   const [mode, setMode] = useState<ArticleMode>(
     isIxWiki && initialEdit ? initialEdit.mode : "reading"
@@ -240,6 +243,7 @@ export default function ArticlePageClient({
                   : undefined
               }
               newSection={initialEdit?.section === "new"}
+              prefillWikitext={prefillWikitext}
               onClose={handleExitEdit}
               onSaveSuccess={handleSaveSuccess}
             />

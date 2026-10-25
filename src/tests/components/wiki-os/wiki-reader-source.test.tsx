@@ -146,6 +146,29 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
     expect(mockEditor).not.toHaveBeenCalled();
     expect(mockRenderer).toHaveBeenCalled();
   });
+  describe("?prefill= on the edit URL (native lore plan Task 3: CreatePageModal's template reaches the editor)", () => {
+    const openEdit = (search: string) => {
+      mockSearch = search;
+      found();
+      render(<Reader title="Venceia" initialEdit={{ mode: "visual", section: null }} />);
+      return mockEditor.mock.calls.at(-1)![0] as { prefillWikitext?: string };
+    };
+
+    it("hands the editor the decoded prefill", () => {
+      const query = new URLSearchParams({
+        action: "edit",
+        prefill: "{{Infobox settlement\n}}\r\n+&#",
+      });
+
+      expect(openEdit(query.toString()).prefillWikitext).toBe("{{Infobox settlement\n}}\n+&#");
+    });
+
+    it("hands it nothing without a prefill, or for one over the limit", () => {
+      expect(openEdit("action=edit").prefillWikitext).toBeUndefined();
+      const huge = new URLSearchParams({ action: "edit", prefill: "x".repeat(20_000) });
+      expect(openEdit(huge.toString()).prefillWikitext).toBeUndefined();
+    });
+  });
   describe("a busy answer (TOO_MANY_REQUESTS) is not a missing page (plan 404 review)", () => {
     const busyError = Object.assign(new Error("Importing pages from MediaWiki is busy"), {
       data: { code: "TOO_MANY_REQUESTS" },

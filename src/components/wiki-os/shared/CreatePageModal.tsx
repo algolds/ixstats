@@ -12,7 +12,7 @@ import {
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "~/components/ui/sheet";
-import { generateWikitext } from "./create-page/WikitextTemplates";
+import { EMPTY_TEMPLATE_FIELDS, generateWikitext } from "./create-page/WikitextTemplates";
 import { TitleStep } from "./create-page/TitleStep";
 import { TypeStep } from "./create-page/TypeStep";
 import { MetadataStep } from "./create-page/MetadataStep";
@@ -22,8 +22,23 @@ interface CreatePageModalProps {
   onClose: () => void;
 }
 
-export type PageType =
-  "blank" | "person" | "company" | "history" | "country" | "conflict" | "politics" | "tech";
+export const PAGE_TYPES = [
+  "blank",
+  "person",
+  "place",
+  "organisation",
+  "company",
+  "history",
+  "country",
+  "conflict",
+  "politics",
+  "tech",
+] as const;
+
+export type PageType = (typeof PAGE_TYPES)[number];
+
+const isPageType = (value: string): value is PageType =>
+  (PAGE_TYPES as readonly string[]).includes(value);
 
 export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
   const router = useRouter();
@@ -72,6 +87,10 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
     colors: "",
   });
   const [techFields, setTechFields] = useState({ inventor: "", year: "", application: "" });
+  const [placeFields, setPlaceFields] = useState(EMPTY_TEMPLATE_FIELDS.placeFields);
+  const [organisationFields, setOrganisationFields] = useState(
+    EMPTY_TEMPLATE_FIELDS.organisationFields
+  );
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -93,20 +112,8 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
         const params = new URLSearchParams(window.location.search);
         initialTitle = params.get("wiki_title") || params.get("title") || "";
         const typeParam = params.get("wiki_type") || params.get("type");
-        if (
-          typeParam &&
-          [
-            "blank",
-            "person",
-            "company",
-            "history",
-            "country",
-            "conflict",
-            "politics",
-            "tech",
-          ].includes(typeParam)
-        ) {
-          initialType = typeParam as PageType;
+        if (typeParam && isPageType(typeParam)) {
+          initialType = typeParam;
         }
       }
 
@@ -179,6 +186,8 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
       conflictFields,
       politicsFields,
       techFields,
+      placeFields,
+      organisationFields,
     });
     onClose();
 
@@ -232,6 +241,10 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
             setPoliticsFields={setPoliticsFields}
             techFields={techFields}
             setTechFields={setTechFields}
+            placeFields={placeFields}
+            setPlaceFields={setPlaceFields}
+            organisationFields={organisationFields}
+            setOrganisationFields={setOrganisationFields}
           />
         )}
 
