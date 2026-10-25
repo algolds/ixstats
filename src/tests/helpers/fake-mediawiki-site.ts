@@ -234,7 +234,17 @@ export function createFakeMediaWikiSite(options: FakeMediaWikiSiteOptions = {}) 
     const page = pages.get(title);
     if (page) deleted.set(title, page);
     pages.delete(title);
-    logEvents.push({ logid: nextLogid++, type: "delete", action: "delete", title, user, timestamp: tick(), comment, params: {} });
+    logEvents.push({
+      logid: nextLogid++,
+      type: "delete",
+      action: "delete",
+      title,
+      user,
+      timestamp: tick(),
+      comment,
+      params: {},
+      ...(page ? { logpage: page.pageid } : {}),
+    });
   }
 
   function restore(user: string, title: string, comment: string) {

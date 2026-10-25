@@ -37,7 +37,7 @@ import {
 } from "./conflict-page-ops";
 import { changeOfOperationJob, classicChangeOfEvent, verdictAsShown } from "./conflict-sides";
 import type { LogEvent } from "./inbound-mediawiki";
-import { findClassicPage } from "./mirror-classic-location";
+import { findClassicPage, heldByAnotherError } from "./mirror-classic-location";
 import { classicChangeOfEntry, withTrail } from "./mirror-collision";
 import {
   byTime,
@@ -210,6 +210,11 @@ async function ruleDelete(judged: JudgedJob): Promise<Outcome> {
   if (winner.side === "classic") return lost(winner);
   // where classic has the page now (gone from classic as well: nothing to delete there, and MediaWiki says so)
   const location = await findClassicPage(classic.target, classic.moved.pageId ?? null);
+  if (location.heldByAnother) {
+    return {
+      lost: `The page is no longer on MediaWiki; an unrelated page now holds ${location.title}`,
+    };
+  }
   return ruleDeleteOverEdits(judged, location.title);
 }
 
@@ -264,6 +269,8 @@ async function followMovedPage(
   if (there.exists && (pageId === null || there.pageId === pageId)) {
     return { from: to, undeleteFirst: false };
   }
+  // never undelete into, or move, a page that is not this one
+  if (location.heldByAnother) throw heldByAnotherError(location, judged.job.title);
   const removal = await latestClassicDelete(location.title);
   if (!removal) throw new Error(`Classic MediaWiki has the page of "${judged.job.title}" nowhere`);
   const winner = await winnerAgainst(

@@ -18,6 +18,8 @@ const MAX_MOVE_HOPS = 5;
 export interface ClassicLocation {
   title: string;
   found: boolean;
+  /** Not found, and another page holds `title`: never one to act on. */
+  heldByAnother: boolean;
 }
 
 /**
@@ -29,17 +31,26 @@ export async function findClassicPage(
   pageId: number | null
 ): Promise<ClassicLocation> {
   let at = title;
+  let occupied = false;
   for (let hop = 0; hop < MAX_MOVE_HOPS; hop++) {
     const page = await classicPage(at, true);
     if (page.exists && (pageId === null || page.pageId === pageId)) {
-      return { title: page.title, found: true };
+      return { title: page.title, found: true, heldByAnother: false };
     }
+    occupied = page.exists;
     const moved = await latestClassicEvent(at, "move", CLASSIC_MOVE_ACTIONS);
     const next = moved ? classicMoveTarget(moved) : null;
     if (!next) break;
     at = next;
   }
-  return { title: at, found: false };
+  return { title: at, found: false, heldByAnother: occupied };
+}
+
+/** The error of a job that would have to act on a page that is not its own: an administrator looks at it. */
+export function heldByAnotherError(location: ClassicLocation, title: string): Error {
+  return new Error(
+    `An unrelated page now holds "${location.title}" in classic MediaWiki, where the page of "${title}" was last`
+  );
 }
 
 /**
@@ -57,6 +68,10 @@ export async function classicTitleOf(articleId: string | null, queuedAs: string)
   });
   const title = owed?.job.title ?? article?.title ?? queuedAs;
   if (!article?.mwPageId) return title;
-  // not found: the title the page was last at in classic, where a delete there is judged
-  return (await findClassicPage(title, article.mwPageId)).title;
+  // not found: the title the page was last at in classic, where a delete there is judged; never another page's
+  const location = await findClassicPage(title, article.mwPageId);
+  // at the article's own title, a page with another id is its page made anew there (deleted, then brought back by a
+  // WikiOS save or recreated in classic): the revision rule judges that. Another page at a title it moved through is not.
+  if (location.heldByAnother && location.title !== title) throw heldByAnotherError(location, title);
+  return location.title;
 }

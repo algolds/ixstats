@@ -167,7 +167,8 @@ export interface HeldElsewhere {
 /**
  * The WikiOS article classic has at `title` though WikiOS has it elsewhere, for a classic event there (a delete): the one
  * the mirror already judged that event against (its row), or the one a classic move took to `title` whose WikiOS move
- * away beat it and is still owed to MediaWiki. Null when classic has no such page there.
+ * away beat it and is still owed to MediaWiki, when the event is about that page (its MediaWiki page id). Null when
+ * classic has no such page there.
  */
 export async function articleClassicHasAt(
   title: string,
@@ -189,6 +190,12 @@ export async function articleClassicHasAt(
     select: { articleId: true },
   });
   if (!moved?.articleId) return null;
+  // the deleted page is the article's own (a delete's log names the page it deleted), never another page made there
+  const article = await db.wikiArticle.findUnique({
+    where: { id: moved.articleId },
+    select: { mwPageId: true },
+  });
+  if (article?.mwPageId !== event.pageId) return null;
   const owed = await operationChanges({ articleId: moved.articleId, kind: "move" });
   const changes = owed.map(({ change }) => change);
   return changes.length > 0 ? { articleId: moved.articleId, changes } : null;

@@ -849,3 +849,103 @@ describe.each(WIKIOS_MODES)(
     });
   }
 );
+
+describe.each(WIKIOS_MODES)(
+  "an unrelated page at the title classic's page passed through [%s]",
+  (mode) => {
+    let restoreMode: () => void = () => undefined;
+    beforeEach(async () => {
+      restoreMode = await seedWikiosMode(fake.db, mode);
+    });
+    afterEach(() => restoreMode());
+
+    /** Classic moves Caphiria to Caphiria Republic, deletes it there, and Quinn makes a new page under that title. */
+    const moveDeleteRecreate = () => {
+      site.movePage("Bob", "Caphiria", "Caphiria Republic", { redirect: false });
+      site.deletePage("Admin", "Caphiria Republic");
+      return site.editAs("Quinn", "Caphiria Republic", "Caphiria Republic is a band.");
+    };
+    /** Quinn's page as Quinn made it: one revision, never merged with anything, never moved or deleted. */
+    const expectQuinnUntouched = (quinn: { revid: number }) => {
+      expect(
+        site.pages.get("Caphiria Republic")?.revisions.map((revision) => revision.revid)
+      ).toEqual([quinn.revid]);
+      expect(sent("undelete")).toEqual([]);
+      expect(sent("import")).toEqual([]);
+      expect(sent("move")).toEqual([]);
+      expect(sent("delete")).toEqual([]);
+      // no row about Quinn's page: neither Quinn told of an overwrite, nor a loss to Quinn's revision (the WikiOS
+      // change's win over Bob's earlier move is a real collision, and stays)
+      expect(JSON.stringify(conflicts())).not.toContain("Quinn");
+      expect(conflicts().map((row) => row.winnerRef)).not.toContain(String(quinn.revid));
+    };
+
+    it("a WikiOS delete sends nothing and notes that an unrelated page holds the title", async () => {
+      const quinn = moveDeleteRecreate();
+      await PageManagementService.archiveArticle("Caphiria", "spam", KIR);
+      dateOperation("delete", new Date(siteTime() + 60_000));
+
+      await mirrorTwice();
+
+      expect(jobOf("delete").state).toBe("done");
+      expect(noteOf("delete")).toBe(
+        "The page is no longer on MediaWiki; an unrelated page now holds Caphiria Republic"
+      );
+      expectQuinnUntouched(quinn);
+    });
+
+    it("a WikiOS move fails for an administrator, and nothing is undeleted into the unrelated page", async () => {
+      const quinn = moveDeleteRecreate();
+      await PageManagementService.movePage("Caphiria", "Caphirian Empire", "rename", KIR);
+      dateOperation("move", new Date(siteTime() + 60_000));
+
+      await mirrorTwice();
+
+      expect(jobOf("move").state).toBe("pending");
+      expect(String(jobOf("move").lastError)).toContain("unrelated page");
+      expectQuinnUntouched(quinn);
+    });
+
+    it("a WikiOS revision fails for an administrator, and is never imported over the unrelated page", async () => {
+      const quinn = moveDeleteRecreate();
+      await ArticleRepository.saveArticle(
+        {
+          slug: "Caphiria",
+          title: "Caphiria",
+          wikitext: "Caphiria is an empire.",
+          expectedHeadRef: toRevisionRef(
+            tables.wikiRevision.rows.find((row) => row.articleId === article("Caphiria")!.id) as {
+              id: string;
+              mwRevId: number | null;
+            }
+          ),
+        },
+        "db-kir",
+        "Kir"
+      );
+
+      await mirrorTwice();
+
+      expect(jobOf("revision").state).toBe("pending");
+      expect(String(jobOf("revision").lastError)).toContain("unrelated page");
+      expectQuinnUntouched(quinn);
+    });
+
+    it("a classic delete of an unrelated page at a title the page passed through long ago never archives the page", async () => {
+      const id = article("Caphiria")!.id;
+      site.movePage("Bob", "Caphiria", "Caphiria Republic", { redirect: false });
+      site.movePage("Bob", "Caphiria Republic", "Republic of Caphiria", { redirect: false });
+      await PageManagementService.movePage("Caphiria", "Caphirian Empire", "rename", KIR);
+      // after Bob's moves (WikiOS's move wins over them), before the delete
+      dateOperation("move", new Date(siteTime()));
+      site.editAs("Quinn", "Caphiria Republic", "Caphiria Republic is a band.");
+      site.deletePage("Admin", "Caphiria Republic");
+
+      await cycleTwice();
+      await mirrorTwice();
+
+      expect(articleById(id)).toMatchObject({ title: "Caphirian Empire", status: "PUBLISHED" });
+      expect(conflicts().filter((row) => row.winnerAction === "delete")).toEqual([]);
+    });
+  }
+);
