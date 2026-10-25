@@ -12,7 +12,10 @@
 -- 3. GovernmentStructure."politicalStability" moves from 0-1 to 0-100 (like the other political metrics), together
 --    with the component shift politics-drift last applied to it ("componentMetricsSnapshot", same fraction scale),
 --    and the column default becomes 50. A row at or below 1 is on the old scale.
--- 4. Country."baselineDate" loses its wall-clock default (every create path sets an IxTime baseline).
+-- 4. Country."baselineDate" loses its wall-clock default (every create path sets an IxTime baseline). Rows the
+--    default stamped with wall-clock time (before the 2028 in-game epoch) get the IxTime of that moment (IxTime's
+--    canonical formula after the 2025-07-27 pivot: 2040-01-01 + 2 x real time elapsed), so they stop projecting
+--    about 16 IxTime years at once.
 
 BEGIN;
 
@@ -63,6 +66,10 @@ WHERE "politicalStability" <= 1;
 ALTER TABLE "GovernmentStructure" ALTER COLUMN "politicalStability" SET DEFAULT 50;
 
 -- 4. No wall-clock baseline
+UPDATE "Country"
+SET "baselineDate" = TIMESTAMP '2040-01-01 00:00:00' + ("baselineDate" - TIMESTAMP '2025-07-27 00:00:00') * 2
+WHERE "baselineDate" >= TIMESTAMP '2025-07-27 00:00:00' AND "baselineDate" < TIMESTAMP '2028-01-01 00:00:00';
+
 ALTER TABLE "Country" ALTER COLUMN "baselineDate" DROP DEFAULT;
 
 COMMIT;
@@ -71,3 +78,4 @@ COMMIT;
 --   SELECT id, name, "inflationRate" FROM "Country" WHERE abs("inflationRate") > 0 AND abs("inflationRate") < 0.2;
 --   SELECT id, name FROM "Country" WHERE abs("adjustedGdpGrowth") > 0 AND abs("adjustedGdpGrowth") < 1e-6;
 --   SELECT "countryId", "politicalStability" FROM "GovernmentStructure" WHERE "politicalStability" <= 1;
+--   SELECT id, name, "baselineDate" FROM "Country" WHERE "baselineDate" < TIMESTAMP '2028-01-01 00:00:00';

@@ -21,8 +21,10 @@ Data fixes for the MyCountry fix plan (`plans/mycountry-audit/fix-plan.md`). Eac
    It converts fraction `inflationRate` rows to percent and nulls the corrupt ones (about 1e-34), restores the
    legacy corrupt `adjustedGdpGrowth`/`actualGdpGrowth` values (3e-34 becomes 0.03) and nulls the corrupt
    `realGDPGrowthRate`, moves `GovernmentStructure.politicalStability` (and its `componentMetricsSnapshot` shift) from
-   0-1 to 0-100 with a column default of 50, and drops `Country.baselineDate`'s wall-clock default. The schema
+   0-1 to 0-100 with a column default of 50, re-stamps the `baselineDate` rows that default wrote in wall-clock time
+   with their IxTime, and drops `Country.baselineDate`'s wall-clock default. The schema
    carries the same two default changes, so run `db:generate` with the deploy. Expect MyCountry inflation to show the
    stored figure (every read showed a fixed 0.02), and the "Foreign investment boom" and "Crisis mediation" issues to
    become possible for nations with political stability above 50. On the clone: 3 inflation rows converted, 3
-   nulled, 5 growth rows restored, 16 stability rows (0.35-0.6 became 35-60).
+   nulled, 5 growth rows restored, 16 stability rows (0.35-0.6 became 35-60), 3 baselines re-stamped (the E2E and
+   test nations, 2026 became 2041-2042).
