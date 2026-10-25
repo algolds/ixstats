@@ -2,6 +2,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { cachedStaticProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
+import { unlessUnavailable } from "~/lib/wiki-os/upstream-guard";
 import { searchWiki as searchWikiService } from "~/lib/wiki-os/core/native-search-service";
 import { parseInfobox as parseInfoboxParser } from "~/lib/wiki-os/transformers/infobox-parser";
 import {
@@ -125,7 +126,8 @@ export const wikiProcedures = {
           return cached;
         }
 
-        const article = await getArticleWikitextShadow(pageName, site);
+        // A wiki that cannot be reached is NOT_FOUND here, as a missing page.
+        const article = await unlessUnavailable(getArticleWikitextShadow(pageName, site));
         if (!article) {
           throw new TRPCError({
             code: "NOT_FOUND",

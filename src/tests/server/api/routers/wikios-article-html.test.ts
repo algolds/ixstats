@@ -516,9 +516,9 @@ describe("getArticleHtml for another wiki's page is sanitized like any other (pl
       '<div class="mw-parser-output"><div class="hatnote">Notice <script>n()</script></div>' +
       '<table class="infobox"><tr><td>Box <script>i()</script></td></tr></table>' +
       "<p>Body <script>b()</script></p></div>";
-    globalThis.fetch = jest.fn(
-      async () =>
-        new Response(JSON.stringify({ parse: { title: "Eurth", text: parsed } }), { status: 200 })
+    // A JSON answer: the upstream guard treats any other body as a wiki that could not be reached.
+    globalThis.fetch = jest.fn(async () =>
+      Response.json({ parse: { title: "Eurth", text: parsed } })
     ) as typeof fetch;
     jest.mocked(sanitizeWikiArticleHtml).mockImplementation((html: string) => `SANITIZED(${html})`);
 

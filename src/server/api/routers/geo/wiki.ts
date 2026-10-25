@@ -18,7 +18,10 @@ import {
   parseCoordTemplate,
 } from "~/lib/wiki-os/transformers/infobox-parser";
 
-/** Ixnay's lookup order: ixwiki (direct DB, fast), then iiwiki (HTTP). */
+/**
+ * Ixnay's lookup order: ixwiki (direct DB, fast), then iiwiki (HTTP). A wiki that cannot be reached is passed over
+ * like one without the page (`unlessUnavailable`), so the lookup goes on to the next.
+ */
 const IXNAY_WIKIS: readonly WikiSource[] = ["ixwiki", "iiwiki"];
 
 /**
@@ -47,9 +50,10 @@ export const geoWikiRouter = createTRPCRouter({
       if (!name) return null;
 
       const { getArticleIntro } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
+      const { unlessUnavailable } = await import("~/lib/wiki-os/upstream-guard");
 
       for (const wiki of await realmWikis(ctx, input.realm)) {
-        const result = await getArticleIntro(name, wiki);
+        const result = await unlessUnavailable(getArticleIntro(name, wiki));
         if (result?.text) {
           return {
             extract: result.text.substring(0, 400),
@@ -70,9 +74,10 @@ export const geoWikiRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const title = input.pageTitle.trim();
       const { getArticleWikitext } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
+      const { unlessUnavailable } = await import("~/lib/wiki-os/upstream-guard");
 
       for (const wiki of await realmWikis(ctx, input.realm)) {
-        const article = await getArticleWikitext(title, wiki);
+        const article = await unlessUnavailable(getArticleWikitext(title, wiki));
         if (!article) continue;
 
         const pageUrl = wikiReaderPath(article.title, wiki);
@@ -135,10 +140,11 @@ export const geoWikiRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       const { searchPages } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
+      const { unlessUnavailable } = await import("~/lib/wiki-os/upstream-guard");
 
       for (const wiki of await realmWikis(ctx, input.realm)) {
-        const results = await searchPages(input.query, input.limit, wiki);
-        if (results.length > 0) {
+        const results = await unlessUnavailable(searchPages(input.query, input.limit, wiki));
+        if (results?.length) {
           return {
             wikiSource: wiki,
             results: results.map((r) => ({

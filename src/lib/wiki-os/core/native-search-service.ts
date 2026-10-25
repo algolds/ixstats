@@ -19,6 +19,8 @@ import { resolveStoredImageUrl } from "../transformers/image-url";
 import { cleanWikiMarkup } from "../transformers/wikitext-parser";
 import { toArticleSlug } from "./domain-types";
 import { likeLiteral } from "~/lib/utils/like-literal";
+import type { WikiSource } from "~/lib/wiki-os/config";
+import { WikiUnavailableError } from "~/lib/wiki-os/upstream-guard";
 
 const SNIPPET_FALLBACK = "WikiOS article entry.";
 
@@ -507,11 +509,13 @@ import { extractIntroFromWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridg
 export { extractIntroFromWikitext };
 
 /**
- * Retrieves summary/intro for an article from PostgreSQL (a sister wiki's page falls back to its own wiki).
+ * Retrieves summary/intro for an article from PostgreSQL (a sister wiki's page falls back to its own wiki). A sister
+ * wiki that cannot be reached throws WikiUnavailableError, never an empty intro; any other failure of the fallback is
+ * logged and reads as no intro.
  */
 export async function getArticleSummaryFromShadow(
   title: string,
-  source = "ixwiki"
+  source: WikiSource = "ixwiki"
 ): Promise<{ title: string; intro: string; leadImageUrl?: string | null }> {
   // `title` arrives already URL-decoded (a "%" in it is part of the title): never decode again.
   const cleanTitle = title.replace(/_/g, " ").trim();
@@ -550,7 +554,7 @@ export async function getArticleSummaryFromShadow(
   // Fallback to the bridge (PostgreSQL for IxWiki, HTTP for a sister wiki)
   try {
     const { getArticleWikitext } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
-    const res = await getArticleWikitext(cleanTitle, source as any);
+    const res = await getArticleWikitext(cleanTitle, source);
     if (res?.wikitext) {
       return {
         title: res.title || cleanTitle,
@@ -559,6 +563,7 @@ export async function getArticleSummaryFromShadow(
       };
     }
   } catch (err) {
+    if (err instanceof WikiUnavailableError) throw err;
     console.error("[SearchService] Bridge intro fallback error:", err);
   }
 

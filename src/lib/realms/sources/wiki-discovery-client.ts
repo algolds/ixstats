@@ -5,9 +5,9 @@
  * why, and every later query stops at once, so the caller returns what it gathered with `blocked` set. A card import
  * run also sends the lore-card generator's own article reads through `pace`, so one client paces all of its reads.
  *
- * It never marks the host offline for the rest of the app (the bridge reader's `fetchExternalWiki` does, for a
- * minute, after two refusals in a row): a refused discovery says nothing about whether readers can see the wiki's
- * pages.
+ * It never marks the host offline for the rest of the app (the upstream guard in front of the readers does, after
+ * five failures in a row, `upstream-guard.ts`): a refused discovery says nothing about whether readers can see the
+ * wiki's pages.
  */
 import type { z } from "zod";
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl, type WikiSource } from "~/lib/wiki-os/config";
