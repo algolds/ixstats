@@ -47,3 +47,15 @@ run_sql() { docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ER
   `NeighborThreatAssessment` 0, `SecurityThreat` 0, `ThreatIncident` 0, `SecurityEvent` 0. Nothing is migrated: the
   assessment and border rows were never written past their defaults, and the one `DefenseBudget` row is replaced by
   the nation's Defense department allocation in the National budget (on the clone it is the E2E Testland test row).
+
+## T2: nation simulation on realm clocks
+
+- No SQL. Every stored IxTime column stays valid: each realm's clock runs on the same timeline, so budget years,
+  history months and effect stamps already recorded keep their meaning.
+- The first `stat-progression` run after the deploy writes each paused realm's nations once (bringing them to their
+  realm's time, so `lastCalculated` marks them done) and skips them afterwards until the realm runs or jumps. A
+  nation whose realm passed months with no run (a date jump, a stopped cron) gets a history point for each of them,
+  at most 120 per run.
+- The budget-year rollover, policy maintenance, politics drift, national-issue generation and elections jobs read
+  each realm's clock once per run; politics drift and issue generation skip paused realms.
+- The admin epoch sync (Admin → System) now moves only Ixnay's nations.
