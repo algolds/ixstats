@@ -6,9 +6,9 @@
  */
 
 import { type NextRequest, NextResponse } from "next/server";
+import { appOrigin, appUrl, wikiPermalink } from "~/lib/app-url";
+import { parseWikiSource } from "~/lib/wiki-os/config";
 import { db } from "~/server/db";
-
-const SITE_URL = "https://ixstats.com";
 
 interface FeedItem {
   id: string;
@@ -44,14 +44,18 @@ export async function GET(req: NextRequest, context: { params: Promise<{ type: s
       parked: true,
       byteDelta: true,
       createdAt: true,
-      article: { select: { title: true, slug: true } },
+      article: { select: { title: true } },
     },
   });
 
+  // Entry ids are tag URIs on the app's host (earlier ids named another host: a reader may list those entries once more).
+  const host = new URL(appOrigin()).host;
+  const source = parseWikiSource(realm);
+  const home = appUrl("/wiki/Main_Page");
   const feedItems: FeedItem[] = revisions.map((r) => ({
-    id: `tag:ixstats.com,${r.createdAt.toISOString().slice(0, 10)}:wiki:rev:${r.id}`,
+    id: `tag:${host},${r.createdAt.toISOString().slice(0, 10)}:wiki:rev:${r.id}`,
     title: `${r.article.title} (${r.byteDelta >= 0 ? `+${r.byteDelta}` : r.byteDelta})${r.parked ? ` (${PARKED_NOTE})` : ""}`,
-    link: `${SITE_URL}/wiki/${r.article.slug}`,
+    link: wikiPermalink(r.article.title, source),
     summary: r.summary || (r.minor ? "Minor edit" : "Updated article content"),
     author: r.author || "WikiOS Contributor",
     updated: r.createdAt.toISOString(),
@@ -62,7 +66,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ type: s
     return NextResponse.json({
       version: "https://jsonfeed.org/version/1.1",
       title: "WikiOS Recent Changes Feed",
-      home_page_url: `${SITE_URL}/wiki`,
+      home_page_url: home,
       feed_url: req.url,
       description: "Live feed of recent edits, creations, and improvements in WikiOS.",
       items: feedItems.map((item) => ({
@@ -101,9 +105,9 @@ export async function GET(req: NextRequest, context: { params: Promise<{ type: s
 <feed xmlns="http://www.w3.org/2005/Atom">
   <title>WikiOS Recent Changes (${escapeXml(realm)})</title>
   <subtitle>Live syndicate feed of encyclopedia revisions and lore documents.</subtitle>
-  <link href="${SITE_URL}/wiki" />
+  <link href="${home}" />
   <link rel="self" href="${escapeXml(req.url)}" />
-  <id>${SITE_URL}/wiki/feed/recent-changes</id>
+  <id>${appUrl("/wiki/feed/recent-changes")}</id>
   <updated>${updatedIso}</updated>${entries}
 </feed>`;
 

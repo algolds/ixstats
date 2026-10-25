@@ -222,6 +222,36 @@ describeEachWikiosMode("settleConflicts", () => {
     expect(dm).toHaveBeenCalledTimes(1);
   });
 
+  it("the DM's diff link is absolute on the app URL under production's base path, the base path once", async () => {
+    const keys = ["APP_URL", "NEXT_PUBLIC_APP_URL", "BASE_PATH", "NEXT_PUBLIC_BASE_PATH"] as const;
+    const env = process.env as Record<string, string | undefined>;
+    const saved = keys.map((key) => [key, env[key]] as const);
+    for (const key of keys) delete env[key];
+    env.NEXT_PUBLIC_APP_URL = "https://ixwiki.com/projects/ixstates";
+    env.BASE_PATH = "/projects/ixstates";
+    try {
+      const winner = seedCaphiria("Caphiria is an empire.");
+      const id = await collide(change("classic", String(winner), author({ userId: "db-alpha" })), [
+        change("wikios", "wk-alpha", author({ userId: "db-alpha", label: "Alpha" })),
+      ]);
+
+      await settleConflicts();
+
+      expect(dm.mock.calls[0]![1]).toContain(
+        `\nhttps://ixwiki.com/projects/ixstates/wiki/Caphiria?diff=${winner}&oldid=wk-alpha&conflict=${id}`
+      );
+      // the in-app notice stays a bare path: the notification's link adds the base path itself
+      expect(notify.mock.calls[0]![0].href).toBe(
+        `/wiki/Caphiria?diff=${winner}&oldid=wk-alpha&conflict=${id}`
+      );
+    } finally {
+      for (const [key, value] of saved) {
+        if (value === undefined) delete env[key];
+        else env[key] = value;
+      }
+    }
+  });
+
   it("writes a classic-only editor's note on their talk page in WikiOS, mirrored like any edit", async () => {
     seedCaphiria();
     const foo = site.editAs("Foo", "Caphiria", "Caphiria is a republic.");

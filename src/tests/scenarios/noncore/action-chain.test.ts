@@ -174,7 +174,21 @@ beforeEach(async () => {
 });
 afterEach(() => jest.restoreAllMocks());
 
+const env = process.env as Record<string, string | undefined>;
+const APP_ENV = ["APP_URL", "NEXT_PUBLIC_APP_URL", "BASE_PATH", "NEXT_PUBLIC_BASE_PATH"] as const;
+const savedAppEnv = APP_ENV.map((key) => [key, env[key]] as const);
+afterEach(() => {
+  for (const [key, value] of savedAppEnv) {
+    if (value === undefined) delete env[key];
+    else env[key] = value;
+  }
+});
+
 it("turns Ana's linked posts into a reviewed chain on the wiki, written once by one approval", async () => {
+  // the section's post links are IxStates permalinks: the app URL's origin and the base path, once
+  for (const key of APP_ENV) delete env[key];
+  env.NEXT_PUBLIC_APP_URL = "https://app.example.org/projects/ixstates";
+  env.BASE_PATH = "/projects/ixstates";
   // The directive's row: one public row, idempotent, saying only what the public record says
   expect(await declareDirectiveActivity(db as never, DIRECTIVE)).toBe("dir-int1");
   expect(await declareDirectiveActivity(db as never, DIRECTIVE)).toBe("dir-int1");
@@ -269,6 +283,11 @@ it("turns Ana's linked posts into a reviewed chain on the wiki, written once by 
   expect(save.wikitext.startsWith("Intro.\n\n")).toBe(true);
   expect(section[0]).toMatch(/^== Story chain: Pact == Fake == NOTOC ==$/);
   expect(section.filter((line) => line.startsWith("* "))).toHaveLength(2);
+  for (const line of section.filter((entry) => entry.startsWith("* "))) {
+    expect(line).toMatch(
+      /\[https:\/\/app\.example\.org\/projects\/ixstates\/thinkpages\/post\/p[12] /
+    );
+  }
   expect(
     (await db.storyline.findUniqueOrThrow({ where: { id: chainId } })).wikiSyncedAt
   ).toBeInstanceOf(Date);

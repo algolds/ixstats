@@ -6,7 +6,7 @@
  */
 
 import { DOMParser, type Element as XmlElement, type Node as XmlNode } from "@xmldom/xmldom";
-import { APP_URL, CLEAN_BASE_PATH } from "./site-url";
+import { appUrl, wikiPermalink } from "~/lib/app-url";
 
 function decodeHtmlEntities(str: string): string {
   if (!str) return "";
@@ -81,11 +81,10 @@ export function htmlToDiscordMarkdown(html: string): string {
 }
 
 /** Site-relative links become absolute so they work outside IxStates. */
-const absoluteUrl = (href: string) =>
-  href.startsWith("/") && !href.startsWith("//") ? `${APP_URL}${CLEAN_BASE_PATH}${href}` : href;
+const absoluteUrl = (href: string) => (href.startsWith("/") ? appUrl(href) : href);
 
 const wikiEmbedMarkdown = (title: string, summary: string, source: string) => {
-  const wikiUrl = `${APP_URL}${CLEAN_BASE_PATH}/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
+  const wikiUrl = wikiPermalink(title);
   return `\n**Wiki Embed: [${title}](${wikiUrl})**\n*Source: ${source}*\n> ${summary}\n`;
 };
 

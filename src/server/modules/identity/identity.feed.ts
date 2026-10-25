@@ -2,11 +2,8 @@
  * Pure builders for the passport's WikiOS work: authored pages and the wiki activity feed.
  * (Moved from routers/ixnayid/passport-feed.ts, now typed.)
  */
-import type {
-  AuthoredArticle,
-  WikiActivityItem,
-  WikiActivityType,
-} from "./identity.types";
+import type { AuthoredArticle, WikiActivityItem, WikiActivityType } from "./identity.types";
+import { wikiReaderPath } from "~/lib/wiki-os/config";
 
 export interface AuthoredArticleRow {
   id: string;
@@ -124,7 +121,7 @@ function revisionItems(revisions: NativeRevisionRow[]): WikiActivityItem[] {
         rev.summary || (rev.minor ? "Minor formatting & copyedit" : "Revised article content"),
       byteDiff: null,
       timestamp: new Date(rev.createdAt).toISOString(),
-      url: `/wiki/${encodeURIComponent(articleSlug || title)}`,
+      url: wikiReaderPath(title),
       parked: rev.parked,
     };
   });
@@ -153,7 +150,7 @@ function contribItems(contribs: WikiContribRow[]): WikiActivityItem[] {
         summary: c.rev_comment || (c.is_new ? "Created new article" : "MediaWiki article revision"),
         byteDiff: c.rev_len,
         timestamp: new Date(timestamp).toISOString(),
-        url: `/wiki/${encodeURIComponent(c.page_title)}`,
+        url: wikiReaderPath(c.page_title),
         parked: c.parked,
       },
     ];
@@ -172,7 +169,7 @@ function commentItems(comments: DiscussionCommentRow[]): WikiActivityItem[] {
         comment.content.length > 120 ? `${comment.content.slice(0, 117)}...` : comment.content,
       byteDiff: null,
       timestamp: new Date(comment.createdAt).toISOString(),
-      url: articleTitle ? `/wiki/${encodeURIComponent(articleTitle)}` : `/wiki`,
+      url: articleTitle ? wikiReaderPath(articleTitle) : `/wiki`,
     };
   });
 }
@@ -202,7 +199,7 @@ function laurelItems(awards: LoreAwardRow[], wikiName: string | null): WikiActiv
       summary: `${distinction} (${isWinner ? "Winner" : "Runner-Up"}${score ? ` · +${score} pts` : ""})`,
       byteDiff: null,
       timestamp: new Date(award.date).toISOString(),
-      url: `/wiki/${encodeURIComponent(articleName)}`,
+      url: wikiReaderPath(articleName),
     };
   });
 }
