@@ -612,6 +612,82 @@ describeEachWikiosMode("settleConflicts", () => {
     expect(conflictRow(id).settledAt).toBeInstanceOf(Date);
   });
 
+  it("a classic move winner gets its trail once the move is in WikiOS; its notices link the page history, not a diff", async () => {
+    seedCaphiria("Caphiria is an empire.");
+    const winner: PageChange = { ...change("classic", "mwlog:77", author({})), action: "move" };
+    const id = await collide(winner, [
+      {
+        ...change("wikios", "log:wk-move", author({ userId: "db-alpha", classicName: "Alpha" })),
+        action: "move",
+      },
+    ]);
+
+    // the classic move's event has not been applied in WikiOS yet: the trail waits for it
+    expect(await settleConflicts()).toEqual({ notified: 3, trails: 0, pending: 1 });
+    const history = `/wiki/Caphiria?action=history&conflict=${id}`;
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ href: history }));
+    expect(dm).toHaveBeenCalledWith("disc-alpha", expect.stringContaining(history));
+    expect(revisionsOf("Caphiria")).toHaveLength(1);
+    expect(headOf("User talk:Alpha").wikitext).toContain(
+      "([{{fullurl:Caphiria|action=history}} history])"
+    );
+
+    tables.wikiLog.insert({
+      logType: "move",
+      action: "move",
+      title: "Caphiria",
+      actorName: "Founder",
+      mwLogId: 77,
+      articleId: article("Caphiria")!.id,
+    });
+
+    expect(await settleConflicts()).toEqual({ notified: 0, trails: 1, pending: 0 });
+    expect(headOf("Caphiria")).toMatchObject({
+      author: "WikiOS",
+      wikitext: "Caphiria is an empire.",
+    });
+    expect(conflictRow(id).trailRevisionId).toBe(headOf("Caphiria").id);
+    expect(jobs()).toEqual(["revision User talk:Alpha", "revision Caphiria"]);
+  });
+
+  it("a classic delete winner gets no trail; its row settles once its notices are done, which link the log", async () => {
+    // the page is live again here (restored since): a delete winner never takes a trail, live page or not
+    seedCaphiria("Caphiria is an empire.");
+    const winner: PageChange = { ...change("classic", "mwlog:78", author({})), action: "delete" };
+    const id = await collide(winner, [
+      change("wikios", "wk-beta", author({ userId: "db-beta", classicName: "Beta" })),
+    ]);
+
+    expect(await settleConflicts()).toEqual({ notified: 2, trails: 0, pending: 0 });
+
+    expect(conflictRow(id).settledAt).toBeInstanceOf(Date);
+    expect(conflictRow(id).trailRevisionId).toBeNull();
+    expect(revisionsOf("Caphiria")).toHaveLength(1);
+    expect(notify).toHaveBeenCalledWith(
+      expect.objectContaining({ href: `/util/log?title=Caphiria&conflict=${id}` })
+    );
+    const note = String(headOf("User talk:Beta").wikitext);
+    expect(note).toContain("[{{fullurl:Special:Log|page=Caphiria}} log]");
+    expect(note).not.toContain("Special:Diff");
+    expect(jobs()).toEqual(["revision User talk:Beta"]);
+  });
+
+  it("a classic winner whose page was deleted since gets no trail, and its row settles", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    const winner = seedCaphiria("Caphiria is an empire.");
+    const id = await collide(change("classic", String(winner), author({})), [
+      change("wikios", "wk-gone", author({ label: "Community Contributor" })),
+    ]);
+    article("Caphiria")!.status = "ARCHIVED";
+
+    expect(await settleConflicts()).toEqual({ notified: 0, trails: 0, pending: 0 });
+    expect(conflictRow(id).settledAt).toBeInstanceOf(Date);
+    expect(revisionsOf("Caphiria")).toHaveLength(1);
+    expect(jobs()).toEqual([]);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("its page is deleted"));
+    warn.mockRestore();
+  });
+
   it("a bookkeeping failure on one row leaves the others to settle", async () => {
     const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
     seedCaphiria();

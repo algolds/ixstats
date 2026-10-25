@@ -7,11 +7,19 @@
  * the repository or the sync, so that import stays free of cycles.
  */
 import { isIP } from "node:net";
+import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { namesOfUsers, ownerOfName, type ClaimedName } from "~/lib/identity/wiki-names";
 import { toRevisionRef } from "../core/domain-types";
-import type { ChangeAuthor, NoticeRecipient, PageChange, WikiSide } from "./conflict-rule";
-import type { MediaWikiRevision } from "./inbound-mediawiki";
+import type {
+  ChangeAction,
+  ChangeAuthor,
+  NoticeRecipient,
+  PageChange,
+  WikiSide,
+} from "./conflict-rule";
+import type { LogEvent, MediaWikiRevision } from "./inbound-mediawiki";
+import { movePayloadSchema } from "./mirror-outbox";
 
 const SOURCE = "ixwiki";
 
@@ -58,27 +66,46 @@ export async function authorOfWikiosRevision(row: AuthoredRow): Promise<ChangeAu
   return authorFrom(row, await shownNames([row]));
 }
 
+/** A classic user as an author: their classic name (or address) and the account holding that name's approved claim. */
+async function classicAuthor(user: string | null): Promise<ChangeAuthor> {
+  const ip = user !== null && isIP(user) !== 0 ? user : null;
+  const name = ip ? null : user;
+  return {
+    userId: name ? await ownerOfName(db, SOURCE, name) : null,
+    classicName: name,
+    ip,
+    label: null,
+  };
+}
+
 /**
  * A classic revision as a change: at its save time, or at `effectiveAt` (a restore that brought it back counts when it
- * happened). Its editor is their classic name (or address) and the account holding that name's approved claim.
+ * happened).
  */
 export async function classicChangeOfRevision(
   rev: MediaWikiRevision,
   effectiveAt?: Date
 ): Promise<PageChange> {
-  const ip = rev.user !== null && isIP(rev.user) !== 0 ? rev.user : null;
-  const name = ip ? null : rev.user;
   return {
     side: "classic",
     action: "edit",
     ref: String(rev.revid),
     at: effectiveAt ?? rev.timestamp,
-    author: {
-      userId: name ? await ownerOfName(db, SOURCE, name) : null,
-      classicName: name,
-      ip,
-      label: null,
-    },
+    author: await classicAuthor(rev.user),
+  };
+}
+
+/** A classic log event (a delete, move or restore) as a change: `action`, at the moment MediaWiki logged it. */
+export async function classicChangeOfEvent(
+  event: LogEvent,
+  action: ChangeAction
+): Promise<PageChange> {
+  return {
+    side: "classic",
+    action,
+    ref: `mwlog:${event.logid}`,
+    at: new Date(event.timestamp),
+    author: await classicAuthor(event.user),
   };
 }
 
@@ -188,4 +215,99 @@ export async function wikiosDeletion(articleId: string): Promise<PageChange | nu
     at: log.createdAt,
     author: await authorOfWikiosRevision({ authorId: log.userId, author: log.actorName }),
   };
+}
+
+// --- what MediaWiki has not seen yet ----------------------------------------------------------------------------------
+
+/**
+ * A page operation's mirror job that MediaWiki may not have had yet: queued, being sent, or dead (still owed: only an
+ * administrator's discard gives it up).
+ */
+const UNSENT_JOB_STATES = ["pending", "running", "dead"];
+
+const OPERATION_ACTIONS: Readonly<Record<string, ChangeAction>> = {
+  move: "move",
+  delete: "delete",
+  undelete: "undelete",
+};
+
+interface OperationJob {
+  kind: string;
+  logId: string | null;
+  articleId: string | null;
+  payload: Prisma.JsonValue;
+  createdAt: Date;
+}
+
+/** Each unsent operation job with its change: at its log row's time (the job's own, if the row is gone), by its actor. */
+async function operationChanges(
+  where: Prisma.WikiMirrorJobWhereInput
+): Promise<Array<{ job: OperationJob; change: PageChange }>> {
+  const jobs = await db.wikiMirrorJob.findMany({
+    where: {
+      kind: { in: Object.keys(OPERATION_ACTIONS) },
+      state: { in: UNSENT_JOB_STATES },
+      logId: { not: null },
+      ...where,
+    },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    select: { kind: true, logId: true, articleId: true, payload: true, createdAt: true },
+  });
+  if (jobs.length === 0) return [];
+  const logs = await db.wikiLog.findMany({
+    where: { id: { in: jobs.flatMap((job) => (job.logId ? [job.logId] : [])) } },
+    select: { id: true, userId: true, actorName: true, createdAt: true },
+  });
+  const byId = new Map(logs.map((log) => [log.id, log]));
+  const names = await shownNames(logs.map((log) => ({ authorId: log.userId, author: null })));
+  return jobs.flatMap((job) => {
+    const action = OPERATION_ACTIONS[job.kind];
+    if (!action) return [];
+    const log = byId.get(job.logId ?? "");
+    const row = { authorId: log?.userId ?? null, author: log?.actorName ?? null };
+    const change: PageChange = {
+      side: "wikios",
+      action,
+      ref: `log:${job.logId}`,
+      at: log?.createdAt ?? job.createdAt,
+      author: authorFrom(row, names),
+    };
+    return [{ job, change }];
+  });
+}
+
+/**
+ * What WikiOS changed on the page that MediaWiki has not seen yet, oldest first: its live revisions with no MediaWiki
+ * id (a baseline row holds classic's own text and is not one), and its moves, deletes and undeletes whose mirror jobs are
+ * still owed, at the time each was logged.
+ */
+export async function unmirroredWikiosChanges(articleId: string): Promise<PageChange[]> {
+  const rows = await db.wikiRevision.findMany({
+    where: { articleId, parked: false, mwRevId: null, origin: { not: "classic" } },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    select: LIVE_REVISION_SELECT,
+  });
+  const names = await shownNames(rows);
+  const edits = rows.map((row) => editOf(row, authorFrom(row, names)));
+  const operations = (await operationChanges({ articleId })).map(({ change }) => change);
+  return [...edits, ...operations].sort((a, b) => a.at.getTime() - b.at.getTime());
+}
+
+/** A WikiOS move of `title` that MediaWiki has not had yet: the change, the moved article and where WikiOS put it. */
+export interface UnsentWikiosMove {
+  change: PageChange;
+  articleId: string;
+  to: string;
+}
+
+/** The newest WikiOS move away from `title` whose mirror job is still owed; null when there is none. */
+export async function unsentWikiosMove(title: string): Promise<UnsentWikiosMove | null> {
+  const moves = await operationChanges({ source: SOURCE, kind: "move", title });
+  for (const { job, change } of moves.reverse()) {
+    const payload = movePayloadSchema.safeParse(job.payload);
+    if (payload.success && job.articleId) {
+      return { change, articleId: job.articleId, to: payload.data.to };
+    }
+  }
+  return null;
 }

@@ -7,6 +7,10 @@
  * is applied once (its MediaWiki log id is kept in the `wiki_logs` row it writes), every applied event
  * writes that row, and anything WikiOS's own mirror account did is ignored: it is WikiOS's own act coming
  * back. Events that are WikiOS's to ignore (uploads, imports, new accounts, patrols) never reach a handler.
+ *
+ * A delete, restore or move goes through the conflict rule (conflict-rule.ts) against what WikiOS changed and MediaWiki
+ * has not seen yet: the later change wins whatever its kind, the loser is recorded in the conflict log (whose settling
+ * tells its author), and an event that loses is still applied, so its log row is written and it is never judged again.
  * Callers hold the inbound-sync lock.
  */
 
@@ -17,6 +21,19 @@ import { db } from "~/server/db";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { toArticleSlug } from "../core/domain-types";
 import { canonicalizeTitle, type CanonicalTitle } from "../core/title";
+import {
+  decideCollision,
+  type ChangeAction,
+  type CollisionVerdict,
+  type PageChange,
+} from "./conflict-rule";
+import { recordConflict } from "./conflict-log";
+import {
+  classicChangeOfEvent,
+  unmirroredWikiosChanges,
+  unsentWikiosMove,
+  type UnsentWikiosMove,
+} from "./conflict-sides";
 import type { JsonValue, LogEvent } from "./inbound-mediawiki";
 import {
   claimedWikiUserId,
@@ -97,9 +114,20 @@ async function alreadyApplied(logid: number): Promise<boolean> {
   return row !== null;
 }
 
-/** Import what MediaWiki has at `title` (the redirect a move left, the page a restore brought back). */
+/** Import what MediaWiki has at `title` (the redirect a move left). */
 async function bringOver(title: string): Promise<void> {
   await syncLatestRevision(title);
+}
+
+/**
+ * Import the revision a restore brought back, counting at the restore's time. The cycle applies the restore, so a
+ * collision is judged here: the revision never comes through the recent changes again.
+ */
+async function bringBackRestored(title: string, event: LogEvent): Promise<void> {
+  await syncLatestRevision(title, {
+    effectiveAt: new Date(event.timestamp),
+    judgeCollisions: true,
+  });
 }
 
 /**
@@ -134,10 +162,66 @@ async function writeLog(
 }
 
 // ---------------------------------------------------------------------------
+// The conflict rule: a classic event against what MediaWiki has not seen of WikiOS's changes
+// ---------------------------------------------------------------------------
+
+/** A page as a verdict is recorded against it. */
+interface JudgedPage {
+  id: string;
+  title: string;
+}
+
+/** The rule's verdict on the classic event against WikiOS's `standing` change, `standingBranch` its changes since. */
+async function collide(
+  event: LogEvent,
+  action: ChangeAction,
+  articleId: string,
+  standing: PageChange,
+  standingBranch: readonly PageChange[]
+): Promise<CollisionVerdict> {
+  const incoming = await classicChangeOfEvent(event, action);
+  return decideCollision(SOURCE, articleId, {
+    incoming,
+    standing,
+    incomingBranch: [incoming],
+    standingBranch,
+  });
+}
+
+/** The verdict against WikiOS's unseen changes (oldest first, the newest standing); null when there are none. */
+async function judgeEvent(
+  event: LogEvent,
+  action: ChangeAction,
+  articleId: string,
+  unseen: readonly PageChange[]
+): Promise<CollisionVerdict | null> {
+  const standing = unseen.at(-1);
+  return standing ? collide(event, action, articleId, standing, unseen) : null;
+}
+
+async function recordVerdict(tx: Tx, page: JudgedPage, verdict: CollisionVerdict): Promise<void> {
+  await recordConflict(tx, {
+    source: SOURCE,
+    articleId: page.id,
+    title: page.title,
+    verdict,
+    baseRef: null,
+  });
+}
+
+/** The classic event lost: WikiOS keeps what it has, and the event counts as applied, recorded with its author overwritten. */
+async function keepWikios(tx: Tx, page: JudgedPage, verdict: CollisionVerdict): Promise<Applied> {
+  await recordVerdict(tx, page, verdict);
+  return { outcome: "applied", articleId: page.id };
+}
+
+// ---------------------------------------------------------------------------
 // delete: delete and restore
 // ---------------------------------------------------------------------------
 
 const DELETE_ACTIONS: ReadonlySet<string> = new Set(["delete", "delete_redir", "delete_redir2"]);
+
+type StoredPage = { id: string; title: string; status: string } | null;
 
 async function applyDelete(tx: Tx, { event, canon }: EventContext): Promise<Applied> {
   if (!canon) return SKIPPED;
@@ -146,39 +230,104 @@ async function applyDelete(tx: Tx, { event, canon }: EventContext): Promise<Appl
 
   const article = await tx.wikiArticle.findUnique({
     where: { source_title: { source: SOURCE, title: canon.title } },
-    select: { id: true, status: true },
+    select: { id: true, title: true, status: true },
   });
-  if (restoring) {
-    const brought = article?.status === "ARCHIVED";
-    if (article && brought) {
-      // Its view was built for a page that was out of the link graph and the category lists: stale.
-      await tx.wikiArticle.update({
-        where: { id: article.id },
-        data: { status: "PUBLISHED", htmlSyncedAt: null },
-      });
-    }
-    return {
-      outcome: "applied",
-      articleId: article?.id ?? null,
-      afterCommit: async () => {
-        if (article && brought) enqueueRender(article.id, { background: true });
-        // The page that came back has its latest revision from MediaWiki (a new page id, maybe new text).
-        await bringOver(canon.title);
-        await evictCaches(canon.title, article?.id);
-        // A restored template or module: the pages that use it render with it again.
-        void invalidateTemplateDependents(canon.title);
-      },
-    };
+  return restoring
+    ? applyRestore(tx, event, canon, article)
+    : applyRemoval(tx, event, canon, article);
+}
+
+/**
+ * A delete that won: the WikiOS revisions it overwrote become history only, under its ref, so a page that comes back
+ * has the text MediaWiki kept.
+ */
+async function parkOverwritten(
+  tx: Tx,
+  articleId: string,
+  verdict: CollisionVerdict
+): Promise<void> {
+  const revisions = verdict.overwritten
+    .filter((change) => change.side === "wikios" && change.action === "edit")
+    .map((change) => change.ref);
+  if (revisions.length === 0) return;
+  await tx.wikiRevision.updateMany({
+    where: { articleId, id: { in: revisions }, parked: false },
+    data: { parked: true, parkReason: `overwritten:${verdict.winner.ref}` },
+  });
+}
+
+function afterRemoval(canon: CanonicalTitle, articleId: string | null): Applied {
+  return {
+    outcome: "applied",
+    articleId,
+    afterCommit: async () => {
+      await evictCaches(canon.title, articleId);
+      // A deleted template or module: the pages that use it render without it.
+      void invalidateTemplateDependents(canon.title);
+    },
+  };
+}
+
+/**
+ * A classic delete. A page WikiOS has live is judged against its changes MediaWiki has not seen: a later one keeps it
+ * (the delete is recorded as overwritten); otherwise it is archived, and what it overwrote is recorded.
+ */
+async function applyRemoval(
+  tx: Tx,
+  event: LogEvent,
+  canon: CanonicalTitle,
+  article: StoredPage
+): Promise<Applied> {
+  if (!article || article.status === "ARCHIVED") return afterRemoval(canon, article?.id ?? null);
+  const verdict = await judgeEvent(
+    event,
+    "delete",
+    article.id,
+    await unmirroredWikiosChanges(article.id)
+  );
+  if (verdict && !verdict.incomingWins) return keepWikios(tx, article, verdict);
+
+  await tx.wikiArticle.update({ where: { id: article.id }, data: { status: "ARCHIVED" } });
+  if (verdict) {
+    await parkOverwritten(tx, article.id, verdict);
+    await recordVerdict(tx, article, verdict);
   }
-  if (article && article.status !== "ARCHIVED") {
-    await tx.wikiArticle.update({ where: { id: article.id }, data: { status: "ARCHIVED" } });
+  return afterRemoval(canon, article.id);
+}
+
+/**
+ * A classic restore. A page WikiOS deleted itself, the delete not yet in MediaWiki, is judged against that delete: a
+ * later delete keeps it deleted (the restore is recorded as overwritten). A page that comes back has its latest revision
+ * brought over, counting at the restore's time.
+ */
+async function applyRestore(
+  tx: Tx,
+  event: LogEvent,
+  canon: CanonicalTitle,
+  article: StoredPage
+): Promise<Applied> {
+  const deleted = article?.status === "ARCHIVED" ? article : null;
+  if (deleted) {
+    const unseen = await unmirroredWikiosChanges(deleted.id);
+    const deletes = unseen.filter((change) => change.action === "delete");
+    const verdict = await judgeEvent(event, "undelete", deleted.id, deletes);
+    if (verdict && !verdict.incomingWins) return keepWikios(tx, deleted, verdict);
+    // Its view was built for a page that was out of the link graph and the category lists: stale.
+    await tx.wikiArticle.update({
+      where: { id: deleted.id },
+      data: { status: "PUBLISHED", htmlSyncedAt: null },
+    });
+    if (verdict) await recordVerdict(tx, deleted, verdict);
   }
   return {
     outcome: "applied",
     articleId: article?.id ?? null,
     afterCommit: async () => {
+      if (deleted) enqueueRender(deleted.id, { background: true });
+      // The page that came back has its latest revision from MediaWiki (a new page id, maybe new text).
+      await bringBackRestored(canon.title, event);
       await evictCaches(canon.title, article?.id);
-      // A deleted template or module: the pages that use it render without it.
+      // A restored template or module: the pages that use it render with it again.
       void invalidateTemplateDependents(canon.title);
     },
   };
@@ -220,47 +369,31 @@ async function archiveOutOfTheWay(
   return true;
 }
 
-async function applyMove(tx: Tx, { event, canon }: EventContext): Promise<Applied> {
-  if (event.action !== "move" && event.action !== "move_redir") return IGNORED;
-  // A `File:` page that moves in MediaWiki is renamed here like any page, but its `wiki_assets` row (name, hash key,
-  // slug, URL) is NOT re-keyed in v1: the asset keeps its old name until it is registered again under the new one.
-  // (WikiOS refuses to move files itself; both are post-v1, see the follow-ups, F37.)
-  const target = moveTarget(event);
-  if (!canon || !target) return SKIPPED;
-
-  const moved = await tx.wikiArticle.findUnique({
-    where: { source_title: { source: SOURCE, title: canon.title } },
-    select: { id: true },
-  });
-  if (!moved) {
-    // A page WikiOS never held, or one already at its new name (an earlier try renamed it, or WikiOS
-    // moved it first): nothing to rename; the redirect MediaWiki left is still to be brought over.
-    const renamed = await tx.wikiArticle.findUnique({
-      where: { source_title: { source: SOURCE, title: target.title } },
-      select: { id: true },
-    });
-    return {
-      outcome: "applied",
-      articleId: renamed?.id ?? null,
-      afterCommit: renamed && leftRedirect(event) ? () => bringOver(canon.title) : undefined,
-    };
-  }
-
+/**
+ * Rename `page` to `target`, its protections with it, after freeing the title (`archiveOutOfTheWay`). Returns the page
+ * that was moved out of the way, if any; null when a page WikiOS has holds the title (nothing is renamed).
+ */
+async function renameTo(
+  tx: Tx,
+  page: JudgedPage,
+  target: CanonicalTitle,
+  logid: number
+): Promise<{ clash: { id: string } | null } | null> {
   const clash = await tx.wikiArticle.findUnique({
     where: { source_title: { source: SOURCE, title: target.title } },
     select: { id: true, status: true, redirectTargetSlug: true },
   });
-  if (clash && !(await archiveOutOfTheWay(tx, clash, target, event.logid))) {
+  if (clash && !(await archiveOutOfTheWay(tx, clash, target, logid))) {
     console.warn(
-      `[WikiAutoSync] Not renaming "${canon.title}": "${target.title}" exists in WikiOS.`
+      `[WikiAutoSync] Not renaming "${page.title}": "${target.title}" exists in WikiOS.`
     );
-    return SKIPPED;
+    return null;
   }
 
   const { legacyProtectionLevel, PageManagementService } = await pageManagement();
-  const edit = await PageManagementService.moveRestrictions(tx, SOURCE, canon.title, target.title);
+  const edit = await PageManagementService.moveRestrictions(tx, SOURCE, page.title, target.title);
   await tx.wikiArticle.update({
-    where: { id: moved.id },
+    where: { id: page.id },
     data: {
       title: target.title,
       slug: target.slug,
@@ -272,21 +405,117 @@ async function applyMove(tx: Tx, { event, canon }: EventContext): Promise<Applie
       htmlSyncedAt: null,
     },
   });
+  return { clash };
+}
+
+/**
+ * A page renamed from the event's title `from` to `target`: what follows once the move is committed. `elsewhere`: the
+ * title WikiOS had moved it to, when a classic move won over WikiOS's.
+ */
+function renamed(
+  event: LogEvent,
+  movedId: string,
+  from: string,
+  target: CanonicalTitle,
+  clash: { id: string } | null,
+  elsewhere: string | null = null
+): Applied {
+  const oldTitles = elsewhere ? [from, elsewhere] : [from];
   return {
     outcome: "applied",
-    articleId: moved.id,
+    articleId: movedId,
     afterCommit: async () => {
-      enqueueRender(moved.id, { background: true });
+      enqueueRender(movedId, { background: true });
       // MediaWiki left a redirect at the old title: that page is new to WikiOS.
-      if (leftRedirect(event)) await bringOver(canon.title);
-      await evictCaches(canon.title, moved.id);
-      await evictCaches(target.title, moved.id);
+      if (leftRedirect(event)) await bringOver(from);
+      for (const title of oldTitles) await evictCaches(title, movedId);
+      await evictCaches(target.title, movedId);
       if (clash) await evictCaches(target.title, clash.id);
       // A moved template or module: its users render with the new name, or find the old one a redirect.
-      void invalidateTemplateDependents(canon.title);
+      for (const title of oldTitles) void invalidateTemplateDependents(title);
       void invalidateTemplateDependents(target.title);
     },
   };
+}
+
+/**
+ * A classic move of a page WikiOS moved elsewhere, its move not yet in MediaWiki: the later move wins. A classic move
+ * that wins renames the page from where WikiOS put it, and the redirect WikiOS left at the old title (pointing at a name
+ * the page no longer has) goes, so MediaWiki's redirect is brought over in its place; one that loses leaves the page
+ * where WikiOS has it.
+ */
+async function applyContestedMove(
+  tx: Tx,
+  event: LogEvent,
+  canon: CanonicalTitle,
+  target: CanonicalTitle,
+  wikios: UnsentWikiosMove
+): Promise<Applied> {
+  const page = await tx.wikiArticle.findUnique({
+    where: { id: wikios.articleId },
+    select: { id: true, title: true },
+  });
+  if (!page) return SKIPPED;
+  const verdict = await collide(event, "move", page.id, wikios.change, [wikios.change]);
+  if (!verdict.incomingWins) return keepWikios(tx, page, verdict);
+
+  // an event applied again finds the page already at its new name
+  const moved =
+    page.title === target.title ? { clash: null } : await renameTo(tx, page, target, event.logid);
+  if (!moved) return SKIPPED;
+  await tx.wikiArticle.updateMany({
+    where: {
+      source: SOURCE,
+      title: canon.title,
+      redirectTargetSlug: wikios.to,
+      status: { not: "ARCHIVED" },
+    },
+    data: { status: "ARCHIVED", htmlSyncedAt: null },
+  });
+  await recordVerdict(tx, { id: page.id, title: target.title }, verdict);
+  return renamed(event, page.id, canon.title, target, moved.clash, wikios.to);
+}
+
+async function applyMove(tx: Tx, { event, canon }: EventContext): Promise<Applied> {
+  if (event.action !== "move" && event.action !== "move_redir") return IGNORED;
+  // A `File:` page that moves in MediaWiki is renamed here like any page, but its `wiki_assets` row (name, hash key,
+  // slug, URL) is NOT re-keyed in v1: the asset keeps its old name until it is registered again under the new one.
+  // (WikiOS refuses to move files itself; both are post-v1, see the follow-ups, F37.)
+  const target = moveTarget(event);
+  if (!canon || !target) return SKIPPED;
+
+  const wikios = await unsentWikiosMove(canon.title);
+  if (wikios?.to === target.title) {
+    // WikiOS moved the page to the same title: both wikis agree, and there is nothing to rename
+    return {
+      outcome: "applied",
+      articleId: wikios.articleId,
+      afterCommit: leftRedirect(event) ? () => bringOver(canon.title) : undefined,
+    };
+  }
+  if (wikios) return applyContestedMove(tx, event, canon, target, wikios);
+
+  const moved = await tx.wikiArticle.findUnique({
+    where: { source_title: { source: SOURCE, title: canon.title } },
+    select: { id: true },
+  });
+  if (!moved) {
+    // A page WikiOS never held, or one already at its new name (an earlier try renamed it): nothing to rename; the
+    // redirect MediaWiki left is still to be brought over.
+    const already = await tx.wikiArticle.findUnique({
+      where: { source_title: { source: SOURCE, title: target.title } },
+      select: { id: true },
+    });
+    return {
+      outcome: "applied",
+      articleId: already?.id ?? null,
+      afterCommit: already && leftRedirect(event) ? () => bringOver(canon.title) : undefined,
+    };
+  }
+
+  const result = await renameTo(tx, { id: moved.id, title: canon.title }, target, event.logid);
+  if (!result) return SKIPPED;
+  return renamed(event, moved.id, canon.title, target, result.clash);
 }
 
 // ---------------------------------------------------------------------------

@@ -30,7 +30,7 @@ expression from the configured host (`mediaWikiHostPattern()`, `isMediaWikiUrl(u
 | Category | Meaning |
 | --- | --- |
 | **render** | MediaWiki parses wikitext WikiOS sends it (`action=parse&text=`). It never renders `&page=` for content WikiOS owns, and never reads its own copy of a page. |
-| **sync** | Inbound: edits and log events made on classic MediaWiki are imported (plan 406); an edit that collides with a WikiOS edit goes through the conflict rule (the later save stands, the other is kept as overwritten history, and its author is told). |
+| **sync** | Inbound: edits and log events made on classic MediaWiki are imported (plan 406); an edit, delete, move or restore that collides with a WikiOS change MediaWiki has not seen yet goes through the conflict rule (the later change stands whatever its kind, the other is kept as overwritten history, and its author is told). |
 | **mirror** | Outbound: WikiOS edits are exported to MediaWiki in the background (plan 407). |
 | **account-proof** | Reads that prove a person controls a sister-wiki account, who created a page, or (for an administrator) which old IxWiki user names exist. |
 | **admin-refresh** | An operator presses a button; MediaWiki is the data source of that one action. |

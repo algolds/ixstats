@@ -680,17 +680,21 @@ export async function syncRevisionById(revid: number): Promise<RevisionOutcome> 
 }
 
 /**
- * Import the newest revision of a page (the webhook, the reader's import of a missing page, a restore). Never judges
- * a collision: that, or a revision whose parent WikiOS has not seen, is left to the cycle, which applies revisions
- * oldest first and can tell the two apart. `effectiveAt`: when the revision counts (a restore's time), if not at its
- * own save time.
+ * Import the newest revision of a page (the webhook, the reader's import of a missing page, a restore). A collision,
+ * or a revision whose parent WikiOS has not seen, is left to the cycle, which applies revisions oldest first and can
+ * tell the two apart; only a caller inside the cycle (a restore it applies) passes `judgeCollisions`, since a restored
+ * revision never comes through the recent changes again. `effectiveAt`: when the revision counts (a restore's time),
+ * if not at its own save time.
  */
 export async function syncLatestRevision(
   title: string,
-  options: { effectiveAt?: Date } = {}
+  options: { effectiveAt?: Date; judgeCollisions?: boolean } = {}
 ): Promise<RevisionOutcome> {
   const rev = await fetchLatestRevision(plainTitle(title));
   if (!rev) return "skipped";
   if (await isRevisionKnown(rev.revid)) return "known";
-  return applyRevision(rev, { judgeCollisions: false, effectiveAt: options.effectiveAt });
+  return applyRevision(rev, {
+    judgeCollisions: options.judgeCollisions ?? false,
+    effectiveAt: options.effectiveAt,
+  });
 }

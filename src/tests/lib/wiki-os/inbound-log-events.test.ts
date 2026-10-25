@@ -14,6 +14,11 @@ import {
   syncLatestRevision,
 } from "~/lib/wiki-os/services/inbound-revision-sync";
 import { enqueueRender, invalidateTemplateDependents } from "~/lib/wiki-os/services/render-service";
+import type { createFakeWikiDb } from "~/tests/helpers/fake-wiki-db";
+import { describeEachWikiosMode } from "~/tests/helpers/wikios-modes";
+
+const { fake } = jest.requireMock("~/server/db") as { fake: ReturnType<typeof createFakeWikiDb> };
+const { tables } = fake;
 
 const tx = {
   wikiArticle: { findUnique: jest.fn(), update: jest.fn(), delete: jest.fn() },
@@ -33,16 +38,36 @@ const tx = {
 };
 const mockLogFindUnique = jest.fn();
 const mockLogCreate = jest.fn();
+/**
+ * Off: the handlers' transaction is the `tx` mock above and the log row goes to the mocks (the per-handler tests). On:
+ * everything runs over the in-memory WikiOS tables (Prisma mode), for the conflict rule's cases.
+ */
+const mockFakeTables = { on: false };
 
-jest.mock("~/server/db", () => ({
-  db: {
-    $transaction: (cb: (t: typeof tx) => unknown) => cb(tx),
-    wikiLog: {
-      findUnique: (...a: unknown[]) => mockLogFindUnique(...a),
-      create: (...a: unknown[]) => mockLogCreate(...a),
+jest.mock("~/server/db", () => {
+  const fake = jest
+    .requireActual("~/tests/helpers/fake-wiki-db")
+    .createFakeWikiDb({ prisma: true });
+  // describeEachWikiosMode answers the switch and marker rows through a mock
+  fake.tables.systemConfig.findUnique = jest.fn();
+  const legacyLog = new Proxy(fake.db.wikiLog, {
+    get: (target, prop) => {
+      if (prop === "findUnique") return (...a: unknown[]) => mockLogFindUnique(...a);
+      if (prop === "create") return (...a: unknown[]) => mockLogCreate(...a);
+      return target[prop];
     },
-  },
-}));
+  });
+  const db = new Proxy(fake.db, {
+    get: (target, prop) => {
+      if (!mockFakeTables.on && prop === "$transaction") {
+        return (cb: (t: typeof tx) => unknown) => cb(tx);
+      }
+      if (!mockFakeTables.on && prop === "wikiLog") return legacyLog;
+      return target[prop];
+    },
+  });
+  return { __esModule: true, fake, db };
+});
 jest.mock("~/lib/wiki-os/services/inbound-revision-sync", () => ({
   evictCaches: jest.fn().mockResolvedValue(undefined),
   isMirrorUser: jest.fn().mockReturnValue(false),
@@ -69,6 +94,7 @@ const loggedRow = () => mockLogCreate.mock.calls[0]?.[0].data;
 
 beforeEach(() => {
   jest.clearAllMocks();
+  fake.reset();
   jest.mocked(isMirrorUser).mockReturnValue(false);
   jest.mocked(claimedWikiUserId).mockResolvedValue(null);
   mockLogFindUnique.mockResolvedValue(null);
@@ -165,7 +191,7 @@ describe("delete and restore", () => {
       data: { status: "PUBLISHED", htmlSyncedAt: null },
     });
     expect(enqueueRender).toHaveBeenCalledWith("art-1", { background: true });
-    expect(syncLatestRevision).toHaveBeenCalledWith("Foo");
+    expect(syncLatestRevision).toHaveBeenCalledWith("Foo", expect.anything());
     expect(evictCaches).toHaveBeenCalledWith("Foo", "art-1");
     expect(loggedRow()).toMatchObject({ action: "restore", articleId: "art-1" });
   });
@@ -586,5 +612,428 @@ describe("the log row and the unique MediaWiki log id", () => {
     await expect(
       applyLogEvent(event({ type: "delete", action: "delete", title: "Foo" }))
     ).rejects.toThrow("db down");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The conflict rule: a classic delete, move or restore against what WikiOS changed and MediaWiki has not seen yet
+// ---------------------------------------------------------------------------
+
+const BASE_AT = new Date("2026-09-01T00:00:00Z");
+
+const pageOf = (title: string) => tables.wikiArticle.rows.find((row) => row.title === title);
+const revisionRow = (id: string) => tables.wikiRevision.rows.find((row) => row.id === id)!;
+const conflictRows = () => tables.wikiConflict.rows;
+
+/** A page both wikis have: WikiOS's head is MediaWiki's revision `mwRevId`. */
+function seedPage(title: string, mwRevId: number): string {
+  const row = tables.wikiArticle.insert({
+    title,
+    slug: title.replace(/ /g, "_").toLowerCase(),
+    wikitext: `${title} text.`,
+    mwLatestRevId: mwRevId,
+  });
+  tables.wikiRevision.insert({
+    articleId: row.id,
+    wikitext: `${title} text.`,
+    mwRevId,
+    author: "Founder",
+    origin: "classic",
+    createdAt: BASE_AT,
+  });
+  return row.id;
+}
+
+/** A WikiOS save of the page by Kir, not mirrored yet (no MediaWiki id). */
+function wikiosEdit(articleId: string, at: string): string {
+  return tables.wikiRevision.insert({
+    articleId,
+    wikitext: "Kir's text.",
+    author: "Kir",
+    authorId: "db-kir",
+    createdAt: new Date(at),
+  }).id;
+}
+
+/** A WikiOS page operation by Kir at `at` with its mirror job still queued; returns its log row's id. */
+function wikiosOperation(
+  articleId: string,
+  kind: "move" | "delete" | "undelete",
+  title: string,
+  at: string,
+  payload: Record<string, unknown> = { reason: "" }
+): string {
+  const log = tables.wikiLog.insert({
+    logType: kind === "move" ? "move" : "delete",
+    action: kind === "undelete" ? "restore" : kind,
+    title,
+    actorName: "Kir",
+    userId: "db-kir",
+    articleId,
+    mwLogId: null,
+    createdAt: new Date(at),
+  });
+  tables.wikiMirrorJob.insert({ kind, title, articleId, logId: log.id, payload });
+  return log.id;
+}
+
+/** WikiOS moved `from` to `to` at `at` (leaving a redirect), and MediaWiki has not been told yet. */
+function wikiosMove(articleId: string, from: string, to: string, at: string) {
+  Object.assign(pageOf(from)!, { title: to, slug: to.replace(/ /g, "_").toLowerCase() });
+  const redirect = tables.wikiArticle.insert({
+    title: from,
+    slug: from.replace(/ /g, "_").toLowerCase(),
+    wikitext: `#REDIRECT [[${to}]]`,
+    redirectTargetSlug: to,
+  });
+  tables.wikiRevision.insert({
+    articleId: redirect.id,
+    wikitext: `#REDIRECT [[${to}]]`,
+    author: "Kir",
+    authorId: "db-kir",
+    createdAt: new Date(at),
+  });
+  const logId = wikiosOperation(articleId, "move", from, at, {
+    to,
+    reason: "",
+    leaveRedirect: true,
+  });
+  return { logId, redirectId: redirect.id };
+}
+
+const KIR = { userId: "db-kir", classicName: null, ip: null, label: "Kir" };
+const ADMIN = { userId: null, classicName: "Admin", ip: null, label: null };
+
+describeEachWikiosMode("classic deletes, moves and restores through the conflict rule", () => {
+  beforeEach(() => {
+    mockFakeTables.on = true;
+  });
+  afterEach(() => {
+    mockFakeTables.on = false;
+  });
+
+  const deleteAt = (title: string, timestamp: string, logid = 501) =>
+    event({ type: "delete", action: "delete", title, timestamp, logid });
+
+  it("a classic delete after an unmirrored WikiOS edit removes the page; the WikiOS author is listed overwritten", async () => {
+    const id = seedPage("Caphiria", 100);
+    const edit = wikiosEdit(id, "2026-10-24T11:00:00Z");
+
+    await expect(applyLogEvent(deleteAt("Caphiria", "2026-10-24T12:00:00Z"))).resolves.toBe(
+      "applied"
+    );
+
+    expect(pageOf("Caphiria")?.status).toBe("ARCHIVED");
+    expect(conflictRows()).toHaveLength(1);
+    expect(conflictRows()[0]).toMatchObject({
+      articleId: id,
+      title: "Caphiria",
+      winnerSide: "classic",
+      winnerAction: "delete",
+      winnerRef: "mwlog:501",
+      winnerAt: new Date("2026-10-24T12:00:00Z"),
+      overwritten: [
+        {
+          side: "wikios",
+          action: "edit",
+          ref: edit,
+          at: "2026-10-24T11:00:00.000Z",
+          author: KIR,
+        },
+      ],
+    });
+    // overwritten: history only, under the winner's ref
+    expect(revisionRow(edit)).toMatchObject({ parked: true, parkReason: "overwritten:mwlog:501" });
+    expect(tables.wikiLog.rows.find((row) => row.mwLogId === 501)).toMatchObject({
+      articleId: id,
+      action: "delete",
+    });
+  });
+
+  it("a classic delete before a WikiOS edit MediaWiki had not seen does not archive; the deleter is listed overwritten", async () => {
+    const id = seedPage("Caphiria", 100);
+    const edit = wikiosEdit(id, "2026-10-24T13:00:00Z");
+
+    await expect(applyLogEvent(deleteAt("Caphiria", "2026-10-24T12:00:00Z"))).resolves.toBe(
+      "applied"
+    );
+
+    expect(pageOf("Caphiria")?.status).toBe("PUBLISHED");
+    expect(revisionRow(edit)).toMatchObject({ parked: false, parkReason: null });
+    expect(conflictRows()).toHaveLength(1);
+    expect(conflictRows()[0]).toMatchObject({
+      winnerSide: "wikios",
+      winnerAction: "edit",
+      winnerRef: edit,
+      overwritten: [
+        {
+          side: "classic",
+          action: "delete",
+          ref: "mwlog:501",
+          at: "2026-10-24T12:00:00.000Z",
+          author: ADMIN,
+        },
+      ],
+    });
+    // the event is applied all the same: its log row is written, so it is never judged again
+    expect(tables.wikiLog.rows.find((row) => row.mwLogId === 501)).toMatchObject({
+      articleId: id,
+    });
+    expect(evictCaches).not.toHaveBeenCalled();
+  });
+
+  it("a classic delete or restore that meets nothing MediaWiki has not seen records no conflict", async () => {
+    const quiet = seedPage("Quiet", 100);
+    // a page's text from before revisions were kept is classic's own, not a WikiOS change
+    tables.wikiRevision.insert({
+      articleId: quiet,
+      wikitext: "Quiet text.",
+      author: null,
+      origin: "classic",
+      createdAt: new Date("2026-10-24T11:00:00Z"),
+    });
+    const both = seedPage("Both", 101);
+    wikiosOperation(both, "delete", "Both", "2026-10-24T13:00:00Z");
+    pageOf("Both")!.status = "ARCHIVED";
+    // WikiOS's delete reached MediaWiki before the classic restore did
+    const mirrored = seedPage("Mirrored", 102);
+    wikiosOperation(mirrored, "delete", "Mirrored", "2026-10-24T13:00:00Z");
+    tables.wikiMirrorJob.rows.at(-1)!.state = "done";
+    pageOf("Mirrored")!.status = "ARCHIVED";
+
+    await applyLogEvent(deleteAt("Quiet", "2026-10-24T12:00:00Z", 601));
+    await applyLogEvent(deleteAt("Both", "2026-10-24T12:00:00Z", 602));
+    await applyLogEvent(
+      event({
+        type: "delete",
+        action: "restore",
+        title: "Mirrored",
+        timestamp: "2026-10-24T12:00:00Z",
+        logid: 603,
+      })
+    );
+
+    expect(pageOf("Quiet")?.status).toBe("ARCHIVED");
+    expect(pageOf("Both")?.status).toBe("ARCHIVED");
+    expect(pageOf("Mirrored")?.status).toBe("PUBLISHED");
+    expect(conflictRows()).toEqual([]);
+    expect(tables.wikiRevision.rows.filter((row) => row.parked)).toEqual([]);
+  });
+
+  it("a restore brings the latest revision over counting at the restore's time", async () => {
+    seedPage("Caphiria", 100);
+    pageOf("Caphiria")!.status = "ARCHIVED";
+
+    await expect(
+      applyLogEvent(
+        event({
+          type: "delete",
+          action: "restore",
+          title: "Caphiria",
+          timestamp: "2026-10-24T12:00:00Z",
+        })
+      )
+    ).resolves.toBe("applied");
+
+    expect(pageOf("Caphiria")?.status).toBe("PUBLISHED");
+    // judged by the cycle (it holds the lock), at the restore's time
+    expect(syncLatestRevision).toHaveBeenCalledWith("Caphiria", {
+      effectiveAt: new Date("2026-10-24T12:00:00Z"),
+      judgeCollisions: true,
+    });
+    expect(conflictRows()).toEqual([]);
+  });
+
+  it("a classic restore later than WikiOS's unsent delete brings the page back; an earlier one leaves it deleted", async () => {
+    const later = seedPage("Later", 100);
+    // an edit before WikiOS's delete comes back with the page: a restore overwrites only the delete
+    wikiosEdit(later, "2026-10-24T10:00:00Z");
+    const laterDelete = wikiosOperation(later, "delete", "Later", "2026-10-24T11:00:00Z");
+    const earlier = seedPage("Earlier", 101);
+    const earlierDelete = wikiosOperation(earlier, "delete", "Earlier", "2026-10-24T13:00:00Z");
+    for (const title of ["Later", "Earlier"]) pageOf(title)!.status = "ARCHIVED";
+    const restore = (title: string, logid: number) =>
+      event({ type: "delete", action: "restore", title, timestamp: "2026-10-24T12:00:00Z", logid });
+
+    await expect(applyLogEvent(restore("Later", 701))).resolves.toBe("applied");
+    await expect(applyLogEvent(restore("Earlier", 702))).resolves.toBe("applied");
+
+    expect(pageOf("Later")?.status).toBe("PUBLISHED");
+    expect(pageOf("Earlier")?.status).toBe("ARCHIVED");
+    expect(syncLatestRevision).toHaveBeenCalledTimes(1);
+    expect(syncLatestRevision).toHaveBeenCalledWith("Later", expect.anything());
+    const byArticle = (articleId: string) =>
+      conflictRows().find((row) => row.articleId === articleId);
+    expect(byArticle(later)).toMatchObject({
+      winnerSide: "classic",
+      winnerAction: "undelete",
+      winnerRef: "mwlog:701",
+      overwritten: [{ side: "wikios", action: "delete", ref: `log:${laterDelete}`, author: KIR }],
+    });
+    expect(byArticle(earlier)).toMatchObject({
+      winnerSide: "wikios",
+      winnerAction: "delete",
+      winnerRef: `log:${earlierDelete}`,
+      overwritten: [{ side: "classic", action: "undelete", ref: "mwlog:702", author: ADMIN }],
+    });
+  });
+
+  it("a classic move later than a pending WikiOS move wins; an earlier one loses", async () => {
+    const won = seedPage("Old A", 100);
+    const lostMove = wikiosMove(won, "Old A", "WikiOS A", "2026-10-24T11:00:00Z");
+    const lost = seedPage("Old B", 101);
+    const keptMove = wikiosMove(lost, "Old B", "WikiOS B", "2026-10-24T13:00:00Z");
+    const classicMove = (title: string, target: string, logid: number) =>
+      event({
+        type: "move",
+        action: "move",
+        title,
+        timestamp: "2026-10-24T12:00:00Z",
+        logid,
+        params: { target_title: target, target_ns: 0 },
+      });
+
+    await expect(applyLogEvent(classicMove("Old A", "Classic A", 801))).resolves.toBe("applied");
+    await expect(applyLogEvent(classicMove("Old B", "Classic B", 802))).resolves.toBe("applied");
+
+    const byArticle = (articleId: string) =>
+      conflictRows().find((row) => row.articleId === articleId);
+    // the later classic move renames the page from where WikiOS put it; WikiOS's move is overwritten
+    expect(tables.wikiArticle.rows.find((row) => row.id === won)?.title).toBe("Classic A");
+    expect(pageOf("WikiOS A")).toBeUndefined();
+    expect(byArticle(won)).toMatchObject({
+      title: "Classic A",
+      winnerSide: "classic",
+      winnerAction: "move",
+      winnerRef: "mwlog:801",
+      overwritten: [{ side: "wikios", action: "move", ref: `log:${lostMove.logId}`, author: KIR }],
+    });
+    // the redirect WikiOS left points nowhere now: it goes, and classic's redirect is brought over in its place
+    expect(tables.wikiArticle.rows.find((row) => row.id === lostMove.redirectId)?.status).toBe(
+      "ARCHIVED"
+    );
+    expect(syncLatestRevision).toHaveBeenCalledWith("Old A");
+    expect(evictCaches).toHaveBeenCalledWith("WikiOS A", won);
+
+    // the earlier classic move leaves the title as WikiOS has it; the classic mover is overwritten
+    expect(tables.wikiArticle.rows.find((row) => row.id === lost)?.title).toBe("WikiOS B");
+    expect(pageOf("Classic B")).toBeUndefined();
+    expect(tables.wikiArticle.rows.find((row) => row.id === keptMove.redirectId)?.status).toBe(
+      "PUBLISHED"
+    );
+    expect(byArticle(lost)).toMatchObject({
+      title: "WikiOS B",
+      winnerSide: "wikios",
+      winnerAction: "move",
+      winnerRef: `log:${keptMove.logId}`,
+      overwritten: [{ side: "classic", action: "move", ref: "mwlog:802", author: ADMIN }],
+    });
+    expect(syncLatestRevision).not.toHaveBeenCalledWith("Old B");
+    expect(tables.wikiLog.rows.filter((row) => row.mwLogId !== null)).toHaveLength(2);
+  });
+
+  it("a winning classic move whose redirect import failed is applied again harmlessly", async () => {
+    const id = seedPage("Old A", 100);
+    wikiosMove(id, "Old A", "WikiOS A", "2026-10-24T11:00:00Z");
+    tables.wikiRestriction.insert({
+      source: "ixwiki",
+      title: "WikiOS A",
+      action: "edit",
+      level: "sysop",
+    });
+    const classicMove = event({
+      type: "move",
+      action: "move",
+      title: "Old A",
+      timestamp: "2026-10-24T12:00:00Z",
+      params: { target_title: "Classic A", target_ns: 0 },
+    });
+    jest.mocked(syncLatestRevision).mockRejectedValueOnce(new Error("MediaWiki returned HTTP 503"));
+
+    await expect(applyLogEvent(classicMove)).rejects.toThrow("HTTP 503");
+    await expect(applyLogEvent(classicMove)).resolves.toBe("applied");
+
+    expect(tables.wikiArticle.rows.find((row) => row.id === id)?.title).toBe("Classic A");
+    expect(tables.wikiRestriction.rows).toEqual([
+      expect.objectContaining({ title: "Classic A", action: "edit", level: "sysop" }),
+    ]);
+    expect(conflictRows()).toHaveLength(1);
+    expect(tables.wikiLog.rows.filter((row) => row.mwLogId === 501)).toHaveLength(1);
+  });
+
+  it("against several pending WikiOS moves away from the title, the newest one stands", async () => {
+    const id = seedPage("Old A", 100);
+    wikiosOperation(id, "move", "Old A", "2026-10-24T10:00:00Z", {
+      to: "Far A",
+      reason: "",
+      leaveRedirect: false,
+    });
+    wikiosOperation(id, "move", "Far A", "2026-10-24T10:30:00Z", {
+      to: "Old A",
+      reason: "",
+      leaveRedirect: false,
+    });
+    const newest = wikiosOperation(id, "move", "Old A", "2026-10-24T11:00:00Z", {
+      to: "Near A",
+      reason: "",
+      leaveRedirect: false,
+    });
+    Object.assign(pageOf("Old A")!, { title: "Near A", slug: "near_a" });
+
+    await expect(
+      applyLogEvent(
+        event({
+          type: "move",
+          action: "move",
+          title: "Old A",
+          timestamp: "2026-10-24T12:00:00Z",
+          params: { target_title: "Classic A", target_ns: 0 },
+        })
+      )
+    ).resolves.toBe("applied");
+
+    expect(tables.wikiArticle.rows.find((row) => row.id === id)?.title).toBe("Classic A");
+    expect(conflictRows()[0]).toMatchObject({
+      overwritten: [{ side: "wikios", action: "move", ref: `log:${newest}` }],
+    });
+  });
+
+  it("a classic move to the title WikiOS moved the page to records no conflict and renames nothing", async () => {
+    const id = seedPage("Old C", 100);
+    const move = wikiosMove(id, "Old C", "New C", "2026-10-24T11:00:00Z");
+
+    await expect(
+      applyLogEvent(
+        event({
+          type: "move",
+          action: "move",
+          title: "Old C",
+          timestamp: "2026-10-24T12:00:00Z",
+          params: { target_title: "New C", target_ns: 0 },
+        })
+      )
+    ).resolves.toBe("applied");
+
+    expect(tables.wikiArticle.rows.find((row) => row.id === id)?.title).toBe("New C");
+    expect(tables.wikiArticle.rows.find((row) => row.id === move.redirectId)).toMatchObject({
+      title: "Old C",
+      status: "PUBLISHED",
+    });
+    expect(conflictRows()).toEqual([]);
+    expect(tables.wikiLog.rows.find((row) => row.mwLogId === 501)).toMatchObject({ articleId: id });
+  });
+
+  it("the mirror account's log events stay ignored", async () => {
+    jest.mocked(isMirrorUser).mockReturnValue(true);
+    const id = seedPage("Caphiria", 100);
+    wikiosEdit(id, "2026-10-24T11:00:00Z");
+
+    await expect(
+      applyLogEvent({ ...deleteAt("Caphiria", "2026-10-24T12:00:00Z"), user: "WikiOSMirror" })
+    ).resolves.toBe("ignored");
+
+    expect(pageOf("Caphiria")?.status).toBe("PUBLISHED");
+    expect(conflictRows()).toEqual([]);
+    expect(tables.wikiLog.rows).toEqual([]);
   });
 });

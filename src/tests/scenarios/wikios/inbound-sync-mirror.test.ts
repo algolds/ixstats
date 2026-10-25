@@ -910,6 +910,25 @@ describe.each(WIKIOS_MODES)("inbound revisions through the conflict rule [%s]", 
     expect(liveHead("Ixnay")).toMatchObject({ mwRevId: carol.revid, createdAt: restoredAt });
   });
 
+  it("a restored revision that collides with WikiOS's head is judged by the cycle at the restore's time", async () => {
+    const restored = site.editAs("Dana", "Caphiria", "Caphiria is a republic.");
+    // WikiOS saved after the classic edit, but before the restore that brought it back
+    await saveOnHead(
+      "Caphiria is an empire in Sarpedon.",
+      new Date(Date.parse(restored.timestamp) + 60_000)
+    );
+    const restoredAt = new Date(Date.parse(restored.timestamp) + 3_600_000);
+
+    await expect(
+      syncLatestRevision("Caphiria", { effectiveAt: restoredAt, judgeCollisions: true })
+    ).resolves.toBe("won");
+
+    expect(liveHead("Caphiria")).toMatchObject({ mwRevId: restored.revid, createdAt: restoredAt });
+    expect(conflictsOf("Caphiria")).toEqual([
+      expect.objectContaining({ winnerRef: String(restored.revid), winnerAt: restoredAt }),
+    ]);
+  });
+
   it("the cycle settles conflicts after its steps", async () => {
     await saveOnHead("Caphiria is an empire in Sarpedon.");
     site.editAs("Bob", "Caphiria", "Caphiria is a republic.");

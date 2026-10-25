@@ -1,7 +1,9 @@
 /**
  * Settling the conflict log: every author a collision overwrote is told, once per channel, and a collision classic
- * MediaWiki won gets its trail. The channels (conflict-rule.ts decides who gets which):
- *   - in-app: a WikiOS notification with the diff of the winner against their text;
+ * MediaWiki won gets its trail (a delete, which leaves no page, gets none). The channels (conflict-rule.ts decides who
+ * gets which):
+ *   - in-app: a WikiOS notification with the diff of the winner against their text (the page's log or history when the
+ *     winner was a delete, move or undelete);
  *   - discord: the same as a Discord DM, when the account has Discord linked;
  *   - talk-page: a section on their classic user talk page.
  * The talk note and the trail are written in WikiOS and mirrored out like any edit; nothing here writes to MediaWiki.
@@ -86,13 +88,16 @@ function contextOf(row: ConflictRow, firstAttemptAt: Date): NoticeContext {
   };
 }
 
-/** A collision classic won whose trail is not written yet. Only an edit's winner (a revision) can carry one. */
+/** The classic winners that leave a page behind to carry a trail: an edit, a move, an undelete (never a delete). */
+const TRAIL_ACTIONS: ReadonlySet<string> = new Set(["edit", "move", "undelete"]);
+
+/** A collision classic won whose trail is not written yet. */
 function needsTrail(row: ConflictRow): boolean {
   return (
     row.winnerSide === "classic" &&
     row.trailRevisionId === null &&
     row.articleId !== null &&
-    CLASSIC_REVISION.test(row.winnerRef)
+    TRAIL_ACTIONS.has(row.winnerAction)
   );
 }
 
@@ -131,15 +136,17 @@ function noticeMessage({ entry, wiki }: NoticeContext): string {
   return `Your edit to "${entry.title}" was replaced by a later edit on ${wiki}. Your text is kept in the page history.`;
 }
 
-/** WikiOS's diff of the winner against the recipient's newest overwritten change. */
-function diffHref({ entry, urlPath }: NoticeContext, recipient: NoticeRecipient): string {
-  const oldid = recipient.refs.at(-1) ?? entry.winner.ref;
-  const query = [
-    `diff=${encodeURIComponent(entry.winner.ref)}`,
-    `oldid=${encodeURIComponent(oldid)}`,
-    `conflict=${encodeURIComponent(entry.id)}`,
-  ].join("&");
-  return `/wiki/${urlPath}?${query}`;
+/**
+ * Where the notice sends the recipient in WikiOS: the diff of an edit winner against their newest overwritten change;
+ * the page's log for a delete (the page is gone); its history for a move or an undelete (no revision to diff).
+ */
+function noticeHref({ entry, urlPath }: NoticeContext, recipient: NoticeRecipient): string {
+  const conflict = `conflict=${encodeURIComponent(entry.id)}`;
+  const { action, ref } = entry.winner;
+  if (action === "delete") return `/util/log?title=${encodeURIComponent(entry.title)}&${conflict}`;
+  if (action !== "edit") return `/wiki/${urlPath}?action=history&${conflict}`;
+  const oldid = recipient.refs.at(-1) ?? ref;
+  return `/wiki/${urlPath}?diff=${encodeURIComponent(ref)}&oldid=${encodeURIComponent(oldid)}&${conflict}`;
 }
 
 async function tellInApp(context: NoticeContext, recipient: NoticeRecipient): Promise<Delivery> {
@@ -150,7 +157,7 @@ async function tellInApp(context: NoticeContext, recipient: NoticeRecipient): Pr
     userId: account.clerkUserId,
     title: "Your edit was overwritten",
     message: noticeMessage(context),
-    href: diffHref(context, recipient),
+    href: noticeHref(context, recipient),
     category: "wiki",
     type: "warning",
     source: "wikiConflict",
@@ -164,7 +171,7 @@ async function tellOnDiscord(
 ): Promise<Delivery> {
   const user = await accountOf(recipient.userId);
   if (!user?.discordUserId) return "skipped";
-  const link = `${APP_URL}${CLEAN_BASE_PATH}${diffHref(context, recipient)}`;
+  const link = `${APP_URL}${CLEAN_BASE_PATH}${noticeHref(context, recipient)}`;
   if (await sendDiscordDm(user.discordUserId, `${noticeMessage(context)}\n${link}`)) return "sent";
   return olderThan(context.entry.createdAt, DM_RETRY_WINDOW_MS) ? "skipped" : "open";
 }
@@ -179,13 +186,26 @@ async function classicRefOf(ref: string): Promise<string | null> {
   return revision?.mwRevId ? String(revision.mwRevId) : null;
 }
 
-/** The note: a link to each of the recipient's revisions, and the diff when MediaWiki knows the winner. */
+/**
+ * The note's link to the winner: the diff from `newest` (the recipient's newest revision) when MediaWiki knows an edit
+ * winner; the page's log for a delete, its history for a move or an undelete.
+ */
+async function winnerLink({ entry }: NoticeContext, newest: string | undefined) {
+  const { action, ref } = entry.winner;
+  if (action === "delete") {
+    return `[{{fullurl:Special:Log|page=${encodeURIComponent(entry.title)}}} log]`;
+  }
+  if (action !== "edit") return `[{{fullurl:${entry.title}|action=history}} history]`;
+  const winner = await classicRefOf(ref);
+  return winner && newest ? `[[Special:Diff/${newest}/${winner}|diff]]` : null;
+}
+
+/** The note: a link to each of the recipient's revisions, and to the winner (see `winnerLink`). */
 async function talkSection(context: NoticeContext, recipient: NoticeRecipient): Promise<string> {
   const revisions = recipient.refs.filter((ref) => CLASSIC_REVISION.test(ref));
   const links = revisions.map((ref) => `[[Special:PermanentLink/${ref}|revision ${ref}]]`);
-  const winner = await classicRefOf(context.entry.winner.ref);
-  const newest = revisions.at(-1);
-  if (winner && newest) links.push(`[[Special:Diff/${newest}/${winner}|diff]]`);
+  const winner = await winnerLink(context, revisions.at(-1));
+  if (winner) links.push(winner);
   const which = links.length > 0 ? ` (${links.join(", ")})` : "";
   return [
     `== Your edit to ${context.pageLink} was replaced ==`,
@@ -280,20 +300,34 @@ function giveUpTrail({ entry }: NoticeContext, why: string): Delivery {
   return "skipped";
 }
 
+/** Whether the classic winner is in WikiOS: an edit's revision (live, or overwritten since), a move's or undelete's event. */
+async function winnerLanded(
+  articleId: string,
+  winner: ConflictLogEntry["winner"]
+): Promise<boolean> {
+  if (winner.action === "edit") {
+    return (await db.wikiRevision.count({ where: { articleId, mwRevId: Number(winner.ref) } })) > 0;
+  }
+  const mwLogId = Number(winner.ref.replace(/^mwlog:/, ""));
+  return (await db.wikiLog.count({ where: { mwLogId } })) > 0;
+}
+
 /**
- * The dummy edit that names the overwrite, once the classic winner is in WikiOS's history (live, or overwritten since):
- * before that, WikiOS's head is older than the winner, and copying it would put the old text back on classic.
+ * The dummy edit that names the overwrite, once the classic winner is in WikiOS (`winnerLanded`): before that, WikiOS's
+ * head is older than the winner, and copying it would put the old text back on classic. A page deleted since takes no
+ * trail: its mirror job would bring the page back on classic.
  */
 async function writeTrail(context: NoticeContext): Promise<Delivery> {
   const { entry } = context;
   const page = entry.articleId
-    ? await db.wikiArticle.findUnique({ where: { id: entry.articleId }, select: { id: true } })
+    ? await db.wikiArticle.findUnique({
+        where: { id: entry.articleId },
+        select: { id: true, status: true },
+      })
     : null;
   if (!page) return giveUpTrail(context, "its page is gone");
-  const landed = await db.wikiRevision.count({
-    where: { articleId: page.id, mwRevId: Number(entry.winner.ref) },
-  });
-  if (landed === 0) return "open";
+  if (page.status === "ARCHIVED") return giveUpTrail(context, "its page is deleted");
+  if (!(await winnerLanded(page.id, entry.winner))) return "open";
   const trail = await ArticleRepository.recordTrailRevision({
     articleId: page.id,
     summary: trailSummary(verdictOf(entry), entry.id),
