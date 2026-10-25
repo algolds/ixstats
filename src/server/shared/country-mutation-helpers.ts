@@ -9,7 +9,7 @@ import {
   governmentEffectiveness,
   NEW_COMPONENT_EFFECTIVENESS,
 } from "~/lib/government/effectiveness";
-import { currentBudgetYear } from "~/lib/government/budget-year";
+import { countryBudgetYear } from "~/lib/government/budget-allocations";
 
 type TxClient = Prisma.TransactionClient;
 
@@ -314,7 +314,12 @@ const REVENUE_SOURCE_FIELDS = [
  * one missing from the input is removed. The input links departments by index ("0", "1", …),
  * as the builder does, or by id or name.
  */
-async function syncDepartments(tx: TxClient, governmentStructureId: string, govInput: any) {
+async function syncDepartments(
+  tx: TxClient,
+  countryId: string,
+  governmentStructureId: string,
+  govInput: any
+) {
   const departments: any[] = govInput.departments;
   const existing = await tx.governmentDepartment.findMany({
     where: { governmentStructureId },
@@ -373,10 +378,13 @@ async function syncDepartments(tx: TxClient, governmentStructureId: string, govI
 
   if (Array.isArray(govInput.budgetAllocations)) {
     const seenAlloc = new Set<string>();
+    // A line without a year is for the nation's current budget year, on its realm's clock.
+    let currentYear: number | undefined;
     for (const alloc of govInput.budgetAllocations) {
       const realDeptId = deptIdMap.get(String(alloc.departmentId));
       if (!realDeptId) continue;
-      const budgetYear = alloc.budgetYear ?? currentBudgetYear();
+      const budgetYear =
+        alloc.budgetYear ?? (currentYear ??= await countryBudgetYear(tx, countryId));
       const dedupeKey = `${realDeptId}:${budgetYear}`;
       if (seenAlloc.has(dedupeKey)) continue;
       seenAlloc.add(dedupeKey);
@@ -427,7 +435,7 @@ export async function syncGovernmentStructure(
   const governmentStructureId = govStructure.id;
 
   if (nonEmptyArray(govInput.departments))
-    await syncDepartments(tx, governmentStructureId, govInput);
+    await syncDepartments(tx, countryId, governmentStructureId, govInput);
 
   if (Array.isArray(govInput.revenueSources)) {
     // The editor only loads active sources, so inactive ones are left alone.

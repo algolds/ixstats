@@ -4,6 +4,7 @@
  * away after each test; the scenarios that use this have no Postgres variant.
  */
 import type { PrismaClient } from "@prisma/client";
+import { createRealmClock, withSpeed } from "~/lib/realms/realm-clock";
 import { createMockCallerContext, type MockCallerContext } from "~/tests/helpers/router-context";
 
 type Db = PrismaClient;
@@ -18,6 +19,35 @@ export interface Owner {
 export async function addIxnay(db: Db): Promise<void> {
   await db.realm.create({
     data: { id: "default", slug: "ixnay", name: "Ixnay", ownerId: "system", status: "published" },
+  });
+}
+
+/**
+ * A realm whose clock reads `nowMs` at this moment and runs at `multiplier` (0 pauses it), as a founder leaves it.
+ * Call `resetRealmClockCache()` (`~/server/shared/realm-time`) between tests that reuse a realm id.
+ */
+export async function addRealm(
+  db: Db,
+  id: string,
+  clock: { nowMs: number; multiplier: number }
+): Promise<void> {
+  const real = Date.now();
+  const started = createRealmClock({
+    globalNowMs: clock.nowMs,
+    realNowMs: real,
+    startDate: "1200-01-01",
+    era: "AE",
+    multiplier: 1,
+  });
+  await db.realm.create({
+    data: {
+      id,
+      slug: id,
+      name: `Realm ${id}`,
+      ownerId: "system",
+      status: "published",
+      settings: { clock: withSpeed(started, clock.multiplier, real) },
+    },
   });
 }
 
@@ -62,6 +92,8 @@ export interface NationSeed {
   /** The budget year its allocations are for; no allocations when omitted. */
   budgetYear?: number;
   totalBudget?: number;
+  /** Its realm; Ixnay when omitted. */
+  realmId?: string;
 }
 
 /**
@@ -74,6 +106,7 @@ export async function addNation(db: Db, seed: NationSeed): Promise<{ structureId
       id: seed.id,
       name: seed.name ?? `Nation ${seed.id}`,
       slug: seed.id,
+      ...(seed.realmId ? { realmId: seed.realmId } : {}),
       baselinePopulation: 10_000_000,
       baselineGdpPerCapita: 30_000,
       baselineDate: seed.baselineDate,

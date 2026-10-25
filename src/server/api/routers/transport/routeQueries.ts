@@ -24,7 +24,7 @@ import {
   infrastructureBudgetBillions,
   type DegradationResult,
 } from "~/lib/economy/national-mobility";
-import { currentBudgetYear } from "~/lib/government/budget-year";
+import { countryBudgetYear } from "~/lib/government/budget-allocations";
 import {
   calculateRouteTravelTime,
   resolveRouteBaseSpeed,
@@ -268,7 +268,7 @@ export const transportRouteQueriesRouter = createTRPCRouter({
     .use(userCacheMiddleware)
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const [routes, hubs, cities, allocations] = await Promise.all([
+      const [routes, hubs, cities, allocations, budgetYear] = await Promise.all([
         ctx.db.transportRoute.findMany({
           where: { countryId: input.countryId },
           select: {
@@ -299,6 +299,7 @@ export const transportRouteQueriesRouter = createTRPCRouter({
             department: { select: { name: true, category: true } },
           },
         }),
+        countryBudgetYear(ctx.db, input.countryId),
       ]);
 
       let totalOperationalKm = 0;
@@ -314,10 +315,7 @@ export const transportRouteQueriesRouter = createTRPCRouter({
       }
 
       // The transport department's live allocation (the budget is owner-edited); none, no figure.
-      const budgetedInfraMaintenance = infrastructureBudgetBillions(
-        allocations,
-        currentBudgetYear()
-      );
+      const budgetedInfraMaintenance = infrastructureBudgetBillions(allocations, budgetYear);
 
       const mobilityRoutes = operationalRoutes.map((r) => ({
         id: r.id,

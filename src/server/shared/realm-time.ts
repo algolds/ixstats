@@ -21,8 +21,8 @@ import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 
 export type { RealmClockReader } from "~/lib/realms/realm-clock";
 
-type RealmTimeDb = Pick<PrismaClient, "realm" | "systemConfig">;
-type CountryTimeDb = RealmTimeDb & Pick<PrismaClient, "country">;
+export type RealmTimeDb = Pick<PrismaClient, "realm" | "systemConfig">;
+export type CountryTimeDb = RealmTimeDb & Pick<PrismaClient, "country">;
 
 /** How long a process trusts its copy of a realm's stored clock. */
 export const REALM_CLOCK_TTL_MS = CLOCK_REFRESH_TTL_MS;

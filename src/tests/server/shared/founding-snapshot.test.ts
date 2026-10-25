@@ -235,6 +235,7 @@ describe("computeFoundingSnapshot: inputs", () => {
       populationBand: "small",
       wealthBand: "developing",
       econ: { coreIndicators: { totalPopulation: 8_400_000, gdpPerCapita: 61_000, nominalGDP: 0 } },
+      budgetYear: BUDGET_YEAR,
     });
     expect(snapshot.base.population).toBe(8_400_000);
     expect(snapshot.base.gdpPerCapita).toBe(61_000);
@@ -247,6 +248,7 @@ describe("computeFoundingSnapshot: inputs", () => {
       foundation: null,
       governmentFormId: "absolute-monarchy",
       institutionNames: { headOfStateTitle: "Grand Duke", legislatureName: "  " },
+      budgetYear: BUDGET_YEAR,
     });
     const form = getGovernmentForm("absolute-monarchy")!;
     expect(snapshot.governmentStructure).toMatchObject({
@@ -268,6 +270,7 @@ describe("computeFoundingSnapshot: inputs", () => {
         laborMarket: { averageAnnualIncome: 30000 },
         sectors: [],
       },
+      budgetYear: BUDGET_YEAR,
     });
     expect(snapshot.economicTier).toBe("Extravagant");
     const structure = snapshot.economyBuilderState.structure as Record<string, unknown>;
@@ -314,6 +317,7 @@ describe("summary parity with the stored stability formula", () => {
       foundation: { baselinePopulation: 0, baselineGdpPerCapita: 0, landArea: 120_000 },
       populationBand: "medium",
       wealthBand: "wealthy",
+      budgetYear: BUDGET_YEAR,
     });
     const { numbers, base } = snapshot;
     const country = {
