@@ -4,6 +4,7 @@ import { adminProcedure, createTRPCRouter } from "~/server/api/trpc";
 import { atlasError } from "./errors";
 import { isIxnaySlug } from "~/lib/realms/realm-ids";
 import { REALM_SLUG_PATTERN } from "~/lib/realms/realm-slug";
+import { RealmFoundingClockSchema } from "~/lib/realms/realm-clock";
 import { measureRealm } from "~/server/modules/maps/realm-calibration";
 import { adminWorldStatus } from "~/server/modules/maps/world-import.status";
 import { createRealmFromWorld } from "~/server/modules/realms/realms.create-from-world";
@@ -39,6 +40,8 @@ export const atlasStudioRouter = createTRPCRouter({
           .string()
           .regex(REALM_SLUG_PATTERN, "2-40 lower-case letters, digits or hyphens (not mine)")
           .refine((slug) => !isIxnaySlug(slug), "That slug names Ixnay"),
+        /** Every realm is founded with a clock: its start date, era and speed (default ×2). */
+        clock: RealmFoundingClockSchema,
       })
     )
     .mutation(({ ctx, input }) => createRealmFromWorld(ctx.db, ctx.user, input).catch(atlasError)),

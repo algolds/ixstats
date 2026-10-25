@@ -26,6 +26,9 @@ import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 const createCaller = createCallerFactory(appRouter);
 
+/** A founding clock (start date, era, speed) every new realm needs. */
+const CLOCK = { startDate: "1203-03-14", era: "AE", multiplier: 2 };
+
 const FAMILIES = ["thinkpagesForum", "thinkpagesForumMod", "realms", "thinkpages"] as const;
 
 /** The procedures anyone may call signed out. A new public one fails the sweep below until it is named here. */
@@ -298,8 +301,15 @@ describe("input bounds", () => {
       "a realm slug with a space",
       "admin",
       "realms.adminCreateRealm",
-      { slug: "eu rth", name: "Eurth", visibility: "public" },
+      { slug: "eu rth", name: "Eurth", visibility: "public", clock: CLOCK },
       "slug",
+    ],
+    [
+      "a realm founded without a start date",
+      "admin",
+      "realms.adminCreateRealm",
+      { slug: "eurth", name: "Eurth", visibility: "public", clock: { era: "AE" } },
+      "clock.startDate",
     ],
     [
       "a nation cap of 21",
@@ -313,8 +323,15 @@ describe("input bounds", () => {
       "a studio realm on a reserved slug",
       "admin",
       "atlas.studio.createRealm",
-      { name: "X", slug: "ixnay" },
+      { name: "X", slug: "ixnay", clock: CLOCK },
       "slug",
+    ],
+    [
+      "a studio realm founded without a clock",
+      "admin",
+      "atlas.studio.createRealm",
+      { name: "X", slug: "new-world" },
+      "clock",
     ],
     [
       "a XenForo id of 0",

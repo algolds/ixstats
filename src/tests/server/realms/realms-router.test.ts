@@ -31,6 +31,8 @@ import {
 } from "~/server/modules/realms";
 import { DEFAULT_REALM_ID, resolveViewerRealmId } from "~/server/modules/realms";
 import { REALM_SLUG_PATTERN } from "~/lib/realms/realm-slug";
+import { IxTime } from "~/lib/ixtime";
+import { formatRealmDate, parseRealmClock } from "~/lib/realms/realm-clock";
 import { SYSTEM_REALM_IDS } from "~/lib/realms/realm-ids";
 import {
   findRealmIdBySlug,
@@ -261,6 +263,7 @@ describe("realm invites through the router", () => {
 });
 
 describe("realms.adminCreateRealm", () => {
+  const CLOCK = { startDate: "1203-03-14", era: "AE" };
   const admin = { id: "db_admin", clerkUserId: "admin_1", role: { name: "admin", level: 10 } };
   const createMany = jest.fn().mockResolvedValue({ count: 4 });
   const threadCreateMany = jest.fn().mockResolvedValue({ count: 1 });
@@ -292,6 +295,7 @@ describe("realms.adminCreateRealm", () => {
       slug: "eurth",
       name: "Eurth",
       visibility: "public",
+      clock: CLOCK,
     });
     expect(threadCreateMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -300,12 +304,45 @@ describe("realms.adminCreateRealm", () => {
     );
   });
 
+  it("founds the realm with its clock: continuous with Ixnay's time, the start date, era and ×2", async () => {
+    const create = jest.fn().mockResolvedValue({ id: "r1", slug: "eurth", name: "Eurth" });
+    const before = IxTime.getCurrentIxTime();
+    await adminCaller(create).adminCreateRealm({
+      slug: "eurth",
+      name: "Eurth",
+      visibility: "public",
+      clock: CLOCK,
+    });
+    const clock = parseRealmClock(create.mock.calls[0][0].data.settings.clock);
+    expect(clock).toMatchObject({ multiplier: 2, era: "AE" });
+    expect(clock!.anchorClockMs).toBeGreaterThanOrEqual(before);
+    expect(clock!.anchorClockMs - before).toBeLessThan(60_000);
+    expect(formatRealmDate(clock!.anchorClockMs, clock!)).toBe("14 March 1203 AE");
+  });
+
+  it("refuses a realm founded without a clock", async () => {
+    const create = jest.fn();
+    await expect(
+      adminCaller(create).adminCreateRealm({
+        slug: "eurth",
+        name: "Eurth",
+        visibility: "public",
+      } as never)
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(create).not.toHaveBeenCalled();
+  });
+
   it("rolls the realm back when seeding its categories fails (N3)", async () => {
     transaction.mockClear();
     createMany.mockRejectedValueOnce(new Error("connection reset"));
     const create = jest.fn().mockResolvedValue({ id: "r1", slug: "eurth", name: "Eurth" });
     await expect(
-      adminCaller(create).adminCreateRealm({ slug: "eurth", name: "Eurth", visibility: "public" })
+      adminCaller(create).adminCreateRealm({
+        slug: "eurth",
+        name: "Eurth",
+        visibility: "public",
+        clock: CLOCK,
+      })
     ).rejects.toThrow("connection reset");
     expect(transaction).toHaveBeenCalledTimes(1);
     expect(create).toHaveBeenCalledTimes(1);

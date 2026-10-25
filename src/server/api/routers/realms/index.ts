@@ -33,6 +33,7 @@ import {
 import { fetchNationPagePrefill } from "~/server/modules/realms/realms.prefill";
 import { fetchPageCreator } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { REALM_SLUG_PATTERN } from "~/lib/realms/realm-slug";
+import { RealmFoundingClockSchema } from "~/lib/realms/realm-clock";
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { ActivityHooks } from "~/lib/activity/hooks";
@@ -297,6 +298,8 @@ export const realmsRouter = createTRPCRouter({
         description: z.string().max(1000).optional(),
         visibility: z.enum(["public", "unlisted"]),
         ownerId: z.string().min(1).optional(),
+        /** Every realm is founded with a clock: its start date, era and speed (default ×2). */
+        clock: RealmFoundingClockSchema,
       })
     )
     .mutation(({ ctx, input }) =>

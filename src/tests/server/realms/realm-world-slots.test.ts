@@ -366,7 +366,13 @@ describe("the Atlas studio's realms", () => {
 
     it("creates a draft, unlisted realm owned by the calling admin, and seeds its forum categories", async () => {
       const { api, create, createMany } = caller(admin, jest.fn().mockResolvedValue(made));
-      await expect(api.createRealm({ name: " New world ", slug: "new-world" })).resolves.toEqual({
+      await expect(
+        api.createRealm({
+          name: " New world ",
+          slug: "new-world",
+          clock: { startDate: "0812-01-01", era: "AE", multiplier: 3 },
+        })
+      ).resolves.toEqual({
         realmId: "r_new",
         slug: "new-world",
       });
@@ -377,6 +383,9 @@ describe("the Atlas studio's realms", () => {
           ownerId: admin.clerkUserId,
           visibility: "unlisted",
           status: "draft",
+          settings: {
+            clock: expect.objectContaining({ multiplier: 3, era: "AE" }),
+          },
         },
       });
       expect(createMany).toHaveBeenCalledWith(
