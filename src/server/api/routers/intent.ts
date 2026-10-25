@@ -34,6 +34,7 @@ import {
 import { spawnIntentResistance } from "~/lib/intent/resistance";
 import { deriveBrokers, type ActiveBroker } from "~/lib/statecraft/power-brokers";
 import { loadEffectiveBudget } from "~/lib/government/budget-allocations";
+import { allocationAt } from "~/lib/government/budget-math";
 import {
   assertCountryResourceWriteAccess,
   assertCountryWriteAccess,
@@ -227,16 +228,17 @@ async function applyBudgetChanges(
         },
         // most-recent budget year, then the largest line in that category
         orderBy: [{ budgetYear: "desc" }, { allocatedPercent: "desc" }],
+        include: { governmentStructure: { select: { totalBudget: true } } },
       });
       if (alloc) {
+        // The amount follows the share, so the budget console's totals move with the directive.
         await db.budgetAllocation.update({
           where: { id: alloc.id },
-          data: {
-            allocatedPercent: Math.max(
-              0,
-              Math.min(BUDGET_PCT_MAX, alloc.allocatedPercent + bc.deltaPercent!)
-            ),
-          },
+          data: allocationAt(
+            alloc.governmentStructure.totalBudget,
+            alloc.allocatedPercent + bc.deltaPercent!,
+            BUDGET_PCT_MAX
+          ),
         });
       }
     } catch {

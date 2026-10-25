@@ -188,6 +188,8 @@ export const IntentComposer = React.memo(function IntentComposer({
         utils.mycountry.getCanonFeed,
         utils.nationalIssues.getMyIssues,
         utils.countries.getByIdWithEconomicData,
+        // A directive's budget line moves an allocation the National budget shows.
+        utils.government.getFullByCountryId,
       ]) {
         void endpoint.invalidate();
       }
