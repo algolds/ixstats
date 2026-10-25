@@ -89,8 +89,11 @@ export const TERRAIN_LABELS: Record<TerrainClass, string> = {
 
 /** A river line on the front adds this to the terrain factor (designer). */
 export const RIVER_LINE_BONUS = 0.2;
-/** River length in the border band, as a share of the border, that makes a river line (designer). */
-export const RIVER_LINE_SHARE = 0.25;
+/**
+ * River length within ~5 km of the border, as a share of the border, that makes a river line (designer; on the clone
+ * about a third of Ixnay's land borders pass, those that follow a river rather than cross one).
+ */
+export const RIVER_LINE_SHARE = 0.5;
 /** Most a map-derived terrain factor reaches (mountain plus a river line). */
 export const MAX_TERRAIN_FACTOR = TERRAIN_FACTOR.mountain + RIVER_LINE_BONUS;
 

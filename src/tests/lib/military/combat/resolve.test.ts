@@ -132,7 +132,8 @@ describe("theatre", () => {
     expect(mapTerrain(facts())!.terrain).toBeCloseTo(1, 9);
     expect(mapTerrain(facts({ elevationAreas: [0, 0, 0, 0, 100] }))!.terrain).toBeCloseTo(1.6, 9);
     expect(mapTerrain(facts({ climateAreas: { Ar: 100 } }))!.terrain).toBeCloseTo(1.2, 9);
-    const river = mapTerrain(facts({ riverKm: 300 }))!;
+    expect(mapTerrain(facts({ riverKm: 300 }))!.riverLine).toBe(false); // rivers crossing, not along
+    const river = mapTerrain(facts({ riverKm: 600 }))!;
     expect(river).toEqual({ terrain: 1.2, riverLine: true });
   });
 
