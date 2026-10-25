@@ -46,6 +46,7 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosUtilitiesRouter } from "~/server/api/routers/wikios/utilities";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { db } from "~/server/db";
+import { scheduleMirrorKick } from "~/lib/wiki-os/services/mirror-outbox";
 
 const createCaller = createCallerFactory(wikiosUtilitiesRouter);
 const caller = (role: string, level: number, clerk = "user_x") =>
@@ -71,7 +72,24 @@ describe("getMirrorStatus", () => {
     await expect(admin().getMirrorStatus()).resolves.toMatchObject({
       counts: { dead: 1, pending: 0 },
       dead: [],
+      windowSaturated: false,
     });
+  });
+
+  it("says the window is saturated when a full window of jobs waits that is not finished and not dead", async () => {
+    const groupBy = jest.mocked(db.wikiMirrorJob.groupBy) as jest.Mock;
+    groupBy.mockResolvedValueOnce([
+      { state: "pending", _count: { _all: 990 } },
+      { state: "running", _count: { _all: 10 } },
+      { state: "dead", _count: { _all: 5_000 } },
+    ]);
+    await expect(admin().getMirrorStatus()).resolves.toMatchObject({ windowSaturated: true });
+
+    groupBy.mockResolvedValueOnce([
+      { state: "pending", _count: { _all: 999 } },
+      { state: "dead", _count: { _all: 5_000 } },
+    ]);
+    await expect(admin().getMirrorStatus()).resolves.toMatchObject({ windowSaturated: false });
   });
 
   it("never carries the bot's password", async () => {
@@ -96,7 +114,10 @@ describe("getMirrorStatus", () => {
 describe.each([
   [
     "requeueMirrorJob",
-    { where: { id: "j1", source: "ixwiki", state: "dead" }, data: { state: "pending", attempts: 0, nextAttemptAt: expect.any(Date) } },
+    {
+      where: { id: "j1", source: "ixwiki", state: "dead" },
+      data: { state: "pending", attempts: 0, lastError: null, nextAttemptAt: expect.any(Date) },
+    },
   ],
   [
     "discardMirrorJob",
@@ -127,5 +148,54 @@ describe.each([
     await expect(admin()[name]({ id: "x".repeat(65) })).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
+  });
+});
+
+describe.each([
+  [
+    "requeueDeadMirrorJobs",
+    { state: "pending", attempts: 0, lastError: null, nextAttemptAt: expect.any(Date) },
+  ],
+  ["discardDeadMirrorJobs", { state: "discarded" }],
+] as const)("%s", (name, data) => {
+  it("acts on the dead jobs of a title, or on every dead job, and answers how many", async () => {
+    updateMany.mockResolvedValue({ count: 3 });
+
+    await expect(admin()[name]({ title: "Foo" })).resolves.toEqual({ count: 3 });
+    expect(updateMany.mock.calls[0]?.[0]).toEqual({
+      where: { source: "ixwiki", state: "dead", title: "Foo" },
+      data,
+    });
+
+    await expect(admin()[name]({})).resolves.toEqual({ count: 3 });
+    expect(updateMany.mock.calls[1]?.[0]).toEqual({
+      where: { source: "ixwiki", state: "dead" },
+      data,
+    });
+  });
+
+  it("kicks the worker only when a job changed", async () => {
+    updateMany.mockResolvedValue({ count: 0 });
+    await expect(admin()[name]({})).resolves.toEqual({ count: 0 });
+    expect(scheduleMirrorKick).not.toHaveBeenCalled();
+
+    updateMany.mockResolvedValue({ count: 2 });
+    await admin()[name]({});
+    expect(scheduleMirrorKick).toHaveBeenCalledTimes(1);
+  });
+
+  it("refuses a member and a visitor, and touches nothing", async () => {
+    await expect(member()[name]({})).rejects.toThrow(/Admin privileges required/);
+    await expect(signedOut()[name]({ title: "Foo" })).rejects.toThrow(/Authentication required/);
+
+    expect(updateMany).not.toHaveBeenCalled();
+  });
+
+  it("refuses an empty or oversized title", async () => {
+    await expect(admin()[name]({ title: "" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(admin()[name]({ title: "x".repeat(256) })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+    expect(updateMany).not.toHaveBeenCalled();
   });
 });

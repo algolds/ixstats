@@ -23,8 +23,17 @@ import { runUploadJob } from "~/lib/wiki-os/services/mirror-upload";
 import { invalidateTemplateDependents } from "~/lib/wiki-os/services/render-service";
 import { sweepStagedOrphansIfDue } from "~/lib/wiki-os/services/staged-uploads";
 import { discordWebhook } from "~/lib/discord/webhook";
-import { alertDeadJobs } from "~/lib/wiki-os/services/mirror-alerts";
+import {
+  alertDeadJobs,
+  ATTEMPT_KEY,
+  DEAD_ALERT_KEY,
+  SATURATION_ALERT_KEY,
+} from "~/lib/wiki-os/services/mirror-alerts";
+import { discardDeadJobs, requeueDeadJobs } from "~/lib/wiki-os/services/mirror-admin";
+import { WINDOW_SIZE } from "~/lib/wiki-os/services/mirror-queue";
 import { withJobLock } from "~/lib/system/job-lock";
+import { WIKIOS_MODES, seedWikiosMode } from "~/tests/helpers/wikios-modes";
+import { db } from "~/server/db";
 
 type Row = WikiMirrorJob;
 let rows: Row[] = [];
@@ -148,6 +157,10 @@ jest.mock("~/lib/discord/webhook", () => ({
   },
 }));
 jest.mock("~/lib/system/job-lock", () => ({ withJobLock: jest.fn() }));
+jest.mock("~/lib/wiki-os/services/mirror-outbox", () => ({
+  ...jest.requireActual("~/lib/wiki-os/services/mirror-outbox"),
+  scheduleMirrorKick: jest.fn(),
+}));
 jest.mock("~/lib/wiki-os/services/staged-uploads", () => ({
   sweepStagedOrphansIfDue: jest.fn(),
 }));
@@ -729,6 +742,22 @@ describe("the dead-job warning holds back", () => {
     expect(warn).toHaveBeenLastCalledWith("WikiOS mirror job dead", "revision Bar: MediaWiki 503");
   });
 
+  it("stamps a failed attempt of several jobs the same way", async () => {
+    warn.mockResolvedValue(false);
+    for (const title of ["A", "B", "C"])
+      addJob({ state: "dead", title, lastError: "MediaWiki 503" });
+
+    const now = at(0);
+    await alertDeadJobs(now);
+
+    expect(warn).toHaveBeenCalledWith(
+      "WikiOS mirror jobs dead",
+      expect.stringContaining("3 mirror jobs")
+    );
+    expect(config.has(DEAD_ALERT_KEY)).toBe(false);
+    expect(config.get(ATTEMPT_KEY)).toBe(now.toISOString());
+  });
+
   it("for 5 minutes after Discord did not take one, so a dead webhook is not tried in every cycle", async () => {
     warn.mockResolvedValue(false);
     addJob({ state: "dead", lastError: "MediaWiki 503" });
@@ -737,5 +766,234 @@ describe("the dead-job warning holds back", () => {
     expect(warn).toHaveBeenCalledTimes(1);
     await alertDeadJobs(at(5));
     expect(warn).toHaveBeenCalledTimes(2);
+  });
+});
+
+// Plan 2026-10-24 Task 11 (A4): dead jobs leave the window but keep holding their titles, a full window is reported,
+// and an administrator requeues or discards the dead jobs in bulk. Every case runs in both WikiOS modes.
+describe.each(WIKIOS_MODES)("the queue's health [%s]", (mode) => {
+  let restoreMode: () => void = () => undefined;
+  beforeEach(async () => {
+    jest.mocked(discordWebhook.isEnabled).mockReturnValue(true);
+    restoreMode = await seedWikiosMode(db, mode);
+  });
+  afterEach(() => restoreMode());
+
+  /** `count` dead jobs, each of its own title, older than anything added after them. */
+  const addDeadJobs = (count: number) =>
+    Array.from({ length: count }, (_, i) =>
+      addJob(
+        { title: `Dead ${i}`, state: "dead", attempts: 8, lastError: "MediaWiki down" },
+        1e9 - i
+      )
+    );
+  const saturationWarnings = () =>
+    warn.mock.calls.filter(([title]) => title === "WikiOS mirror queue full");
+
+  it("a dead job is not in the window but still holds its title: a younger job of that title waits, another title runs", async () => {
+    // a full window's worth of dead jobs, one on Foo and a move to Target among them
+    const dead = addDeadJobs(WINDOW_SIZE - 2);
+    addJob({ title: "Foo", state: "dead", attempts: 8 }, 1e9 - WINDOW_SIZE);
+    addJob(
+      {
+        kind: "move",
+        title: "Old",
+        payload: { to: "Target", reason: "", leaveRedirect: true },
+        revisionId: null,
+        state: "dead",
+        attempts: 8,
+      },
+      1e9 - WINDOW_SIZE - 1
+    );
+    const sameTitle = addJob({ title: "Foo" });
+    const toTarget = addJob({ title: "Target" });
+    const other = addJob({ title: "Bar" });
+
+    const result = await runMirrorCycle();
+
+    expect(result).toMatchObject({ done: 1, failed: 0 });
+    expect(byId(other.id).state).toBe("done");
+    expect(byId(sameTitle.id)).toMatchObject({ state: "pending", attempts: 0 });
+    expect(byId(toTarget.id)).toMatchObject({ state: "pending", attempts: 0 });
+    expect(dead.every((job) => byId(job.id).state === "dead")).toBe(true);
+  });
+
+  it("1000 dead jobs no longer starve the window: a pending job behind them runs", async () => {
+    addDeadJobs(WINDOW_SIZE);
+    const behind = addJob({ title: "Behind" });
+
+    await expect(runMirrorCycle()).resolves.toMatchObject({ done: 1 });
+
+    expect(byId(behind.id)).toMatchObject({ state: "done", attempts: 1 });
+    expect(saturationWarnings()).toHaveLength(0); // dead jobs do not fill the window
+  });
+
+  it("warns once in 30 minutes when the window is full and stamps only a delivered warning", async () => {
+    // a full window of jobs all waiting out a backoff: nothing runs, nothing drains
+    for (let i = 0; i < WINDOW_SIZE; i++) {
+      addJob({ title: `Page ${i}`, attempts: 1, nextAttemptAt: new Date(Date.now() + 3_600_000) });
+    }
+    warn.mockResolvedValue(false); // Discord does not take it
+
+    await runMirrorCycle();
+    expect(saturationWarnings()).toHaveLength(1);
+    expect(saturationWarnings()[0]?.[1]).toContain(`${WINDOW_SIZE} mirror jobs`);
+    expect(config.has(SATURATION_ALERT_KEY)).toBe(false);
+
+    warn.mockResolvedValue(true);
+    await runMirrorCycle(); // not stamped, so tried again, and delivered
+    expect(saturationWarnings()).toHaveLength(2);
+    const stamped = config.get(SATURATION_ALERT_KEY);
+    expect(stamped).toBeDefined();
+
+    await runMirrorCycle(); // held back
+    expect(saturationWarnings()).toHaveLength(2);
+    config.set(SATURATION_ALERT_KEY, new Date(Date.now() - 31 * 60_000).toISOString());
+    await runMirrorCycle();
+    expect(saturationWarnings()).toHaveLength(3);
+    // one below full is not full
+    rows.pop();
+    config.delete(SATURATION_ALERT_KEY);
+    await runMirrorCycle();
+    expect(saturationWarnings()).toHaveLength(3);
+  });
+
+  it("looks up nothing and sends nothing about a full window when no Discord webhook is configured", async () => {
+    jest.mocked(discordWebhook.isEnabled).mockReturnValue(false);
+    for (let i = 0; i < WINDOW_SIZE; i++) {
+      addJob({ title: `Page ${i}`, attempts: 1, nextAttemptAt: new Date(Date.now() + 3_600_000) });
+    }
+
+    await runMirrorCycle();
+
+    expect(warn).not.toHaveBeenCalled();
+    expect(config.has(SATURATION_ALERT_KEY)).toBe(false);
+  });
+
+  // Restored from f5bf69fa9^ (plan 407): the dead-job warning names only the jobs that died since the last one.
+  it("holds the next warning back for 30 minutes, and then names the jobs that died meanwhile, only those", async () => {
+    const first = addJob({ title: "First", attempts: 7 });
+    revisionJob.mockRejectedValue(new Error("MediaWiki down"));
+    await runMirrorCycle();
+    expect(warn).toHaveBeenCalledTimes(1);
+
+    addJob({ title: "Second", attempts: 7 });
+    await runMirrorCycle();
+    await runMirrorCycle();
+    expect(warn).toHaveBeenCalledTimes(1); // held back
+
+    // 31 minutes later: the first warning, and the death of the first job, are that far back
+    config.set(DEAD_ALERT_KEY, new Date(Date.now() - 31 * 60_000).toISOString());
+    byId(first.id).updatedAt = new Date(Date.now() - 32 * 60_000);
+    await runMirrorCycle();
+
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(warn).toHaveBeenLastCalledWith(
+      "WikiOS mirror job dead",
+      "revision Second: MediaWiki down"
+    );
+    await runMirrorCycle();
+    expect(warn).toHaveBeenCalledTimes(2); // nothing new
+  });
+
+  // Restored from f5bf69fa9^ (plan 407).
+  it("forgets the jobs that finished long ago, discarded ones too", async () => {
+    const month = 31 * 24 * 60 * 60_000;
+    addJob({ state: "done" }).updatedAt = new Date(Date.now() - month);
+    addJob({ state: "discarded" }).updatedAt = new Date(Date.now() - month);
+    const dead = addJob({ state: "dead", title: "Other" });
+    dead.updatedAt = new Date(Date.now() - month);
+    const recent = addJob({ state: "done" });
+
+    await runMirrorCycle();
+
+    // only finished jobs go; a dead one stays, however old
+    expect(rows.map((row) => row.id)).toEqual([dead.id, recent.id]);
+  });
+
+  it("requeues every dead job of a title, and only dead ones", async () => {
+    const deadFoo = [
+      addJob({ title: "Foo", state: "dead", attempts: 8, lastError: "MediaWiki down" }),
+      // due later by this process's clock (another process failed it): a requeued job is due now
+      addJob({
+        title: "Foo",
+        state: "dead",
+        attempts: 8,
+        lastError: "MediaWiki down",
+        nextAttemptAt: new Date(Date.now() + 3_600_000),
+      }),
+    ];
+    const deadBar = addJob({ title: "Bar", state: "dead", attempts: 8, lastError: "gone" });
+    const discarded = addJob({
+      title: "Foo",
+      state: "discarded",
+      attempts: 8,
+      lastError: "gave up",
+    });
+    const pending = addJob({ title: "Foo", attempts: 2, lastError: "MediaWiki 503" });
+
+    await expect(requeueDeadJobs({ title: "Foo" })).resolves.toBe(2);
+
+    for (const job of deadFoo) {
+      expect(byId(job.id)).toMatchObject({ state: "pending", attempts: 0, lastError: null });
+      expect(byId(job.id).nextAttemptAt.getTime()).toBeLessThanOrEqual(Date.now());
+    }
+    expect(byId(deadBar.id)).toMatchObject({ state: "dead", attempts: 8, lastError: "gone" });
+    expect(byId(discarded.id)).toMatchObject({ state: "discarded", lastError: "gave up" });
+    expect(byId(pending.id)).toMatchObject({
+      state: "pending",
+      attempts: 2,
+      lastError: "MediaWiki 503",
+    });
+    // they run again, oldest first, through the conflict rule as any job does
+    await runMirrorCycle();
+    expect(judgeBatch).toHaveBeenCalled();
+    expect(planBatch.mock.calls[0]?.[0].map((job) => job.id)).toEqual([
+      deadFoo[0]!.id,
+      deadFoo[1]!.id,
+      pending.id,
+    ]);
+    expect(byId(deadBar.id).state).toBe("dead");
+    // with no title, every dead job
+    await expect(requeueDeadJobs({})).resolves.toBe(1);
+    expect(byId(deadBar.id)).toMatchObject({ state: "pending", attempts: 0, lastError: null });
+  });
+
+  it("discards every dead job, and the title's younger jobs run next", async () => {
+    const deadFoo = addJob({
+      title: "Foo",
+      state: "dead",
+      attempts: 8,
+      lastError: "MediaWiki down",
+    });
+    const deadMove = addJob({
+      kind: "move",
+      title: "Old",
+      payload: { to: "Bar", reason: "", leaveRedirect: true },
+      revisionId: null,
+      state: "dead",
+      attempts: 8,
+      lastError: "MediaWiki down",
+    });
+    const behindFoo = addJob({ title: "Foo" });
+    const behindBar = addJob({ title: "Bar" });
+
+    await runMirrorCycle();
+    expect(revisionJob).not.toHaveBeenCalled();
+
+    await expect(discardDeadJobs({ title: "Foo" })).resolves.toBe(1);
+    expect(byId(deadMove.id).state).toBe("dead");
+    await runMirrorCycle();
+    expect(byId(behindFoo.id).state).toBe("done");
+    expect(byId(behindBar.id).state).toBe("pending");
+
+    await expect(discardDeadJobs({})).resolves.toBe(1);
+    await runMirrorCycle();
+    expect(byId(behindBar.id).state).toBe("done");
+    // discarded, not done: the error that killed them stays on the row
+    for (const job of [deadFoo, deadMove]) {
+      expect(byId(job.id)).toMatchObject({ state: "discarded", lastError: "MediaWiki down" });
+    }
+    await expect(discardDeadJobs({})).resolves.toBe(0);
   });
 });

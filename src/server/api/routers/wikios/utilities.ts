@@ -13,8 +13,10 @@ import { getWikiPermissions } from "~/lib/wiki-os/rights";
 import { getSiteStats } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getInboundSyncStatus } from "~/lib/wiki-os/services/auto-sync-service";
 import {
+  discardDeadJobs,
   discardMirrorJob,
   getMirrorStatus,
+  requeueDeadJobs,
   requeueMirrorJob,
 } from "~/lib/wiki-os/services/mirror-admin";
 import { getEditingStatus, setEditing } from "~/lib/wiki-os/services/editing-admin";
@@ -22,6 +24,8 @@ import { conflictLogPage } from "~/lib/wiki-os/services/conflict-log-view";
 import { refusals } from "~/lib/wiki-os/permissions";
 
 const mirrorJobInput = z.object({ id: z.string().min(1).max(64) });
+/** The dead jobs of one title, or every dead job when no title is given. */
+const deadJobsInput = z.object({ title: z.string().min(1).max(255).optional() });
 
 const DiagnosticListInput = z.object({
   realm: z.string().default("ixwiki"),
@@ -145,6 +149,16 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
     await refusals(discardMirrorJob(input.id));
     return { success: true as const };
   }),
+
+  /** Try every dead mirror job of a title (or every dead job) again from its first attempt. */
+  requeueDeadMirrorJobs: adminProcedure
+    .input(deadJobsInput)
+    .mutation(async ({ input }) => ({ count: await requeueDeadJobs(input) })),
+
+  /** Give up on every dead mirror job of a title (or every dead job), so the jobs behind them can run. */
+  discardDeadMirrorJobs: adminProcedure
+    .input(deadJobsInput)
+    .mutation(async ({ input }) => ({ count: await discardDeadJobs(input) })),
 
   /** The conflict log, newest first: every collision, what won, what it overwrote and who was told. */
   listConflicts: adminProcedure

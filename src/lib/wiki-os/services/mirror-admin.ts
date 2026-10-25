@@ -2,14 +2,16 @@
  * mirror-admin.ts — what an administrator sees of the outbound mirror, and what they can do about a dead job.
  *
  * A dead job means classic MediaWiki is out of sync for that title until the job is requeued (tried again, from
- * the first attempt) or discarded (given up on: it stops blocking the jobs behind it). Both only apply to dead
- * jobs: a job that is pending or running is the worker's.
+ * the first attempt) or discarded (given up on: it stops blocking the jobs behind it), one by one or all the dead jobs
+ * of a title (or every dead job) at once. Both only apply to dead jobs: a job that is pending or running is the
+ * worker's.
  */
 
 import { db } from "~/server/db";
 import { mirrorBotName } from "../adapters/mediawiki/csrf-cache";
 import { PageOperationError } from "../core/page-management-service";
 import { MIRROR_SOURCE, scheduleMirrorKick } from "./mirror-outbox";
+import { WINDOW_SIZE } from "./mirror-queue";
 
 const STATES = ["pending", "running", "done", "dead", "discarded"] as const;
 type MirrorState = (typeof STATES)[number];
@@ -41,6 +43,11 @@ export interface MirrorStatus {
   uploadsWaiting: number;
   /** The last dead jobs, newest first. */
   dead: DeadMirrorJob[];
+  /**
+   * The worker's window is full: at least `WINDOW_SIZE` jobs wait that are neither finished nor dead, so the mirror
+   * is falling behind (the operators are warned on Discord too).
+   */
+  windowSaturated: boolean;
 }
 
 export async function getMirrorStatus(now = new Date()): Promise<MirrorStatus> {
@@ -98,6 +105,7 @@ export async function getMirrorStatus(now = new Date()): Promise<MirrorStatus> {
       : null,
     uploadsWaiting,
     dead: dead.map(({ updatedAt, ...job }) => ({ ...job, diedAt: updatedAt })),
+    windowSaturated: counts.pending + counts.running >= WINDOW_SIZE,
   };
 }
 
@@ -113,14 +121,58 @@ export function mirrorMissingSettings(): string[] {
 
 const noDeadJob = () => new PageOperationError("NOT_FOUND", "No dead mirror job with that id.");
 
+/** A requeued job: pending, due now, from its first attempt, its old error cleared. */
+const requeued = () => ({
+  state: "pending",
+  attempts: 0,
+  lastError: null,
+  nextAttemptAt: new Date(),
+});
+/** Discarded: given up on, the error that killed it kept on the row. */
+const DISCARDED = { state: "discarded" } as const;
+
+/** Which dead jobs a bulk action covers: every one, or the ones of `title` (the job's own title). */
+export interface DeadJobFilter {
+  title?: string;
+}
+
+const deadJobs = ({ title }: DeadJobFilter) => ({
+  source: MIRROR_SOURCE,
+  state: "dead",
+  ...(title === undefined ? {} : { title }),
+});
+
 /** Try a dead job again from its first attempt; it blocks nothing once it succeeds. */
 export async function requeueMirrorJob(id: string): Promise<void> {
   const { count } = await db.wikiMirrorJob.updateMany({
     where: { id, source: MIRROR_SOURCE, state: "dead" },
-    data: { state: "pending", attempts: 0, nextAttemptAt: new Date() },
+    data: requeued(),
   });
   if (count === 0) throw noDeadJob();
   scheduleMirrorKick();
+}
+
+/** Change the dead jobs `filter` covers, kick the worker when any changed, and say how many did. */
+async function updateDeadJobs(
+  filter: DeadJobFilter,
+  data: ReturnType<typeof requeued> | typeof DISCARDED
+): Promise<number> {
+  const { count } = await db.wikiMirrorJob.updateMany({ where: deadJobs(filter), data });
+  if (count > 0) scheduleMirrorKick();
+  return count;
+}
+
+/**
+ * Try every dead job of a title (or every dead job) again from its first attempt. They run in their order, through
+ * the conflict rule like any job.
+ */
+export function requeueDeadJobs(filter: DeadJobFilter): Promise<number> {
+  return updateDeadJobs(filter, requeued());
+}
+
+/** Give up on every dead job of a title (or every dead job): its title is free, so the younger jobs run next. */
+export function discardDeadJobs(filter: DeadJobFilter): Promise<number> {
+  return updateDeadJobs(filter, DISCARDED);
 }
 
 /**
@@ -130,7 +182,7 @@ export async function requeueMirrorJob(id: string): Promise<void> {
 export async function discardMirrorJob(id: string): Promise<void> {
   const { count } = await db.wikiMirrorJob.updateMany({
     where: { id, source: MIRROR_SOURCE, state: "dead" },
-    data: { state: "discarded" },
+    data: DISCARDED,
   });
   if (count === 0) throw noDeadJob();
   scheduleMirrorKick();

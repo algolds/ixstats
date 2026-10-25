@@ -31,12 +31,15 @@ import type { WikiMirrorJob } from "@prisma/client";
 import {
   claimJob,
   failJob,
+  loadDeadTitles,
+  loadWindow,
   MAX_ATTEMPTS,
   MAX_BATCH_JOBS,
   pickBatch,
   pickRunnable,
   purgeDoneJobs,
   reclaimInterruptedJobs,
+  WINDOW_SIZE,
 } from "~/lib/wiki-os/services/mirror-queue";
 import {
   enqueueDeleteJob,
@@ -144,6 +147,51 @@ describe("pickRunnable", () => {
     const other = job({ title: "New" });
 
     expect(pickRunnable([broken, other], NOW)).toBe(broken);
+  });
+
+  it("a dead job is not in the window but still holds its title: a younger job of that title waits, another title runs", () => {
+    const sameTitle = job({ title: "Foo" });
+    const toTarget = job({ title: "Target" });
+    const other = job({ title: "Bar" });
+    // the titles the dead jobs hold: a revision job's own, and both titles of a dead move
+    const held = new Set(["Foo", "Old", "Target"]);
+
+    expect(pickRunnable([sameTitle, toTarget, other], NOW, held)).toBe(other);
+    expect(pickRunnable([sameTitle, toTarget], NOW, held)).toBeNull();
+    // the hold is the dead jobs' only: the window's own holders still add to it, and the set given is not touched
+    expect(pickRunnable([job({ title: "Bar", state: "running" }), other], NOW, held)).toBeNull();
+    expect([...held]).toEqual(["Foo", "Old", "Target"]);
+    // nothing dead: the same window runs its oldest job
+    expect(pickRunnable([sameTitle, other], NOW)).toBe(sameTitle);
+  });
+});
+
+describe("the window and the dead jobs' titles", () => {
+  it("leaves dead jobs out of the window, as it does finished ones: at most WINDOW_SIZE jobs, oldest first", async () => {
+    mockFindMany.mockResolvedValue([]);
+
+    await loadWindow();
+
+    expect(WINDOW_SIZE).toBe(1_000);
+    expect(mockFindMany).toHaveBeenCalledWith({
+      where: { source: "ixwiki", state: { notIn: ["done", "discarded", "dead"] } },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      take: WINDOW_SIZE,
+    });
+  });
+
+  it("holds the titles of every dead job and the destination of a dead move", async () => {
+    mockFindMany.mockResolvedValue([
+      job({ title: "Foo", state: "dead" }),
+      move("Old", "New", { state: "dead" }),
+      job({ kind: "move", title: "Broken", payload: { nonsense: true }, state: "dead" }),
+    ]);
+
+    await expect(loadDeadTitles()).resolves.toEqual(new Set(["Foo", "Old", "New", "Broken"]));
+    expect(mockFindMany).toHaveBeenCalledWith({
+      where: { source: "ixwiki", state: "dead" },
+      select: { kind: true, title: true, payload: true },
+    });
   });
 });
 

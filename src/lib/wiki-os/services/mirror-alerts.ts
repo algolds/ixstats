@@ -10,6 +10,10 @@
  * refuses it leaves that time as it was, so jobs nobody was told of are not held back for 30 minutes. The failed
  * attempt is stamped on its own (`ATTEMPT_KEY`) and the next one waits `ATTEMPT_BACKOFF_MS`, so a dead webhook is tried
  * every few minutes, not in every cycle of the worker (each try can wait out the webhook's 10 s timeout).
+ *
+ * The same throttle warns when the worker's window is saturated (`alertWindowSaturated`): a full window of jobs that
+ * are neither finished nor dead means the mirror is falling behind, at most one message in 30 minutes, the time
+ * kept under its own key and only once Discord has accepted the message.
  */
 
 import { db } from "~/server/db";
@@ -22,10 +26,16 @@ export const DEAD_ALERT_KEY = "wikiMirror.deadAlertAt";
 export const ATTEMPT_KEY = "wikiMirror.deadAlertAttemptAt";
 /** After a failed delivery, the next attempt waits this long. */
 export const ATTEMPT_BACKOFF_MS = 5 * 60_000;
+/** When the last saturated-window warning was delivered. */
+export const SATURATION_ALERT_KEY = "wikiMirror.saturationAlertAt";
 /** Jobs named in the message; the rest are counted. */
 const MAX_JOBS_LISTED = 5;
 /** Discord's embed description holds 4096 characters; a job's last error can be 2000. */
 const LINE_LIMIT = 300;
+
+/** Whether `at` (a warning delivered then) is less than 30 minutes before `now`. */
+const sentWithinInterval = (at: Date | null, now: Date) =>
+  at !== null && now.getTime() - at.getTime() < DEAD_ALERT_INTERVAL_MS;
 
 async function timeAt(key: string): Promise<Date | null> {
   const row = await db.systemConfig.findUnique({
@@ -55,7 +65,7 @@ const stamp = (key: string, at: Date) =>
 export async function alertDeadJobs(now = new Date()): Promise<void> {
   if (!discordWebhook.isEnabled()) return;
   const last = await timeAt(DEAD_ALERT_KEY);
-  if (last && now.getTime() - last.getTime() < DEAD_ALERT_INTERVAL_MS) return;
+  if (sentWithinInterval(last, now)) return;
   const attempted = await timeAt(ATTEMPT_KEY);
   if (attempted && now.getTime() - attempted.getTime() < ATTEMPT_BACKOFF_MS) return;
 
@@ -91,4 +101,18 @@ export async function alertDeadJobs(now = new Date()): Promise<void> {
     );
   }
   await stamp(delivered ? DEAD_ALERT_KEY : ATTEMPT_KEY, now);
+}
+
+/**
+ * Warn that the worker's window is full (`size` jobs that are neither finished nor dead), unless a warning was
+ * delivered less than 30 minutes ago. Remembered only when Discord delivered it.
+ */
+export async function alertWindowSaturated(size: number, now = new Date()): Promise<void> {
+  if (!discordWebhook.isEnabled()) return;
+  if (sentWithinInterval(await timeAt(SATURATION_ALERT_KEY), now)) return;
+  const delivered = await discordWebhook.sendWarning(
+    "WikiOS mirror queue full",
+    `At least ${size} mirror jobs are waiting, a full window: the mirror is falling behind and classic MediaWiki lags WikiOS.`
+  );
+  if (delivered) await stamp(SATURATION_ALERT_KEY, now);
 }

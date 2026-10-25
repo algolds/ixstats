@@ -1,7 +1,8 @@
 "use client";
 // src/app/admin/wikios-settings/MirrorStatusSection.tsx
-// The outbound mirror's outbox (WikiOS -> classic MediaWiki): jobs by state, the uploads still waiting, and the dead
-// jobs, which an administrator requeues (tried again) or discards (given up on).
+// The outbound mirror's outbox (WikiOS -> classic MediaWiki): jobs by state, the uploads still waiting, whether the
+// worker's window is full, and the dead jobs, which an administrator requeues (tried again) or discards (given up on),
+// one by one or all of a page's (or every one) at once, after a confirm.
 
 import { useState } from "react";
 import {
@@ -15,6 +16,8 @@ import {
 } from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -38,6 +41,106 @@ function Stat({ label, value, alert = false }: { label: string; value: string; a
       <div className={`text-body font-semibold tabular-nums ${alert ? "text-red" : "text-label"}`}>
         {value}
       </div>
+    </div>
+  );
+}
+
+type BulkAction = "requeue" | "discard";
+
+/** The confirm's words and its button, per bulk action. */
+const BULK_COPY: Record<
+  BulkAction,
+  { verb: string; body: string; confirm: string; variant: "default" | "destructive" }
+> = {
+  requeue: {
+    verb: "Requeue",
+    body: "They are tried again from their first attempt, in the order they were written, and the conflict rule judges them like any job.",
+    confirm: "Requeue jobs",
+    variant: "default",
+  },
+  discard: {
+    verb: "Discard",
+    body: "They never reached classic MediaWiki. Discarding gives up on them: they are kept as discarded (not done), MediaWiki stays out of step for their pages until someone edits them again, and the jobs queued behind them can run.",
+    confirm: "Discard jobs",
+    variant: "destructive",
+  },
+};
+
+/** What a bulk action covers, in the confirm's words. */
+const scopeOf = (title: string) =>
+  title ? `every dead job of \u201c${title}\u201d` : "every dead job";
+
+const BulkIcon = ({ action }: { action: BulkAction }) =>
+  action === "discard" ? <Trash className="h-3.5 w-3.5" /> : <Refresh className="h-3.5 w-3.5" />;
+
+/**
+ * Requeue or discard the dead jobs of one page (the title typed in), or every dead job when no title is given.
+ * Both ask first.
+ */
+function DeadJobsBulkActions({ onDone }: { onDone: (message: string) => void }) {
+  const notify = useNotify();
+  const [title, setTitle] = useState("");
+  const [confirming, setConfirming] = useState<{ action: BulkAction; title: string } | null>(null);
+  const onError = (error: { message: string }) => notify.error("Error", error.message);
+  const requeue = api.wikios.requeueDeadMirrorJobs.useMutation({
+    onSuccess: ({ count }) => onDone(`${count} dead job${count === 1 ? "" : "s"} requeued`),
+    onError,
+  });
+  const discard = api.wikios.discardDeadMirrorJobs.useMutation({
+    onSuccess: ({ count }) => onDone(`${count} dead job${count === 1 ? "" : "s"} discarded`),
+    onError,
+  });
+  const busy = requeue.isPending || discard.isPending;
+  const ask = (action: BulkAction) => setConfirming({ action, title: title.trim() });
+  const run = () => {
+    if (!confirming) return;
+    const input = confirming.title ? { title: confirming.title } : {};
+    (confirming.action === "requeue" ? requeue : discard).mutate(input);
+    setConfirming(null);
+  };
+
+  return (
+    <div className="flex flex-wrap items-end gap-2">
+      <div className="min-w-48 flex-1 space-y-1">
+        <Label htmlFor="mirror-dead-title" className="text-label-secondary text-footnote">
+          Page (leave empty for every dead job)
+        </Label>
+        <Input
+          id="mirror-dead-title"
+          value={title}
+          maxLength={255}
+          placeholder="All pages"
+          onChange={(event) => setTitle(event.target.value)}
+        />
+      </div>
+      <Button size="sm" variant="outline" disabled={busy} onClick={() => ask("requeue")}>
+        <BulkIcon action="requeue" /> Requeue dead jobs
+      </Button>
+      <Button size="sm" variant="destructive" disabled={busy} onClick={() => ask("discard")}>
+        <BulkIcon action="discard" /> Discard dead jobs
+      </Button>
+
+      <AlertDialog open={confirming !== null} onOpenChange={(open) => !open && setConfirming(null)}>
+        {confirming && (
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <WarningTriangle className="text-red h-5 w-5" />
+                {BULK_COPY[confirming.action].verb} {scopeOf(confirming.title)}?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-footnote">
+                {BULK_COPY[confirming.action].body}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogClose>Cancel</AlertDialogClose>
+              <Button variant={BULK_COPY[confirming.action].variant} disabled={busy} onClick={run}>
+                <BulkIcon action={confirming.action} /> {BULK_COPY[confirming.action].confirm}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        )}
+      </AlertDialog>
     </div>
   );
 }
@@ -96,6 +199,16 @@ export function MirrorStatusSection() {
             </div>
           )}
 
+          {status.windowSaturated && (
+            <div className="rounded-row border-yellow/30 bg-yellow/10 text-footnote text-label flex items-start gap-2 border p-3">
+              <WarningTriangle className="text-yellow mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                The worker&rsquo;s window is full: at least 1,000 jobs are waiting to run, so the
+                mirror is falling behind and classic MediaWiki lags WikiOS.
+              </span>
+            </div>
+          )}
+
           {status.uploadsWaiting > 0 && (
             <div className="border-separator bg-surface-secondary text-label-secondary text-footnote rounded-row flex items-start gap-2 border p-3">
               <WarningTriangle className="text-tint mt-0.5 h-4 w-4 shrink-0" />
@@ -129,57 +242,60 @@ export function MirrorStatusSection() {
               No dead jobs: MediaWiki is in step with WikiOS.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="text-footnote w-full text-left">
-                <thead className="text-label-secondary">
-                  <tr>
-                    <th className="px-2 py-1 font-medium">Job</th>
-                    <th className="px-2 py-1 font-medium">Page</th>
-                    <th className="px-2 py-1 font-medium">Attempts</th>
-                    <th className="px-2 py-1 font-medium">Last error</th>
-                    <th className="px-2 py-1 font-medium">Died</th>
-                    <th className="px-2 py-1" />
-                  </tr>
-                </thead>
-                <tbody className="divide-separator divide-y">
-                  {status.dead.map((job) => (
-                    <tr key={job.id}>
-                      <td className="px-2 py-1.5 font-mono">{job.kind}</td>
-                      <td className="text-label px-2 py-1.5 font-medium">{job.title}</td>
-                      <td className="px-2 py-1.5">{job.attempts}</td>
-                      <td
-                        className="text-label-secondary max-w-xs truncate px-2 py-1.5"
-                        title={job.lastError ?? undefined}
-                      >
-                        {job.lastError}
-                      </td>
-                      <td className="text-label-secondary px-2 py-1.5">
-                        {new Date(job.diedAt).toLocaleString()}
-                      </td>
-                      <td className="flex gap-1 px-2 py-1.5">
-                        <Button
-                          size="xs"
-                          variant="outline"
-                          disabled={busy}
-                          onClick={() => requeue.mutate({ id: job.id })}
-                        >
-                          <Refresh className="h-3 w-3" /> Requeue
-                        </Button>
-                        <Button
-                          size="xs"
-                          variant="destructive"
-                          disabled={busy}
-                          onClick={() =>
-                            setDiscarding({ id: job.id, kind: job.kind, title: job.title })
-                          }
-                        >
-                          <Trash className="h-3 w-3" /> Discard
-                        </Button>
-                      </td>
+            <div className="space-y-3">
+              <DeadJobsBulkActions onDone={(message) => onSuccess(message)()} />
+              <div className="overflow-x-auto">
+                <table className="text-footnote w-full text-left">
+                  <thead className="text-label-secondary">
+                    <tr>
+                      <th className="px-2 py-1 font-medium">Job</th>
+                      <th className="px-2 py-1 font-medium">Page</th>
+                      <th className="px-2 py-1 font-medium">Attempts</th>
+                      <th className="px-2 py-1 font-medium">Last error</th>
+                      <th className="px-2 py-1 font-medium">Died</th>
+                      <th className="px-2 py-1" />
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-separator divide-y">
+                    {status.dead.map((job) => (
+                      <tr key={job.id}>
+                        <td className="px-2 py-1.5 font-mono">{job.kind}</td>
+                        <td className="text-label px-2 py-1.5 font-medium">{job.title}</td>
+                        <td className="px-2 py-1.5">{job.attempts}</td>
+                        <td
+                          className="text-label-secondary max-w-xs truncate px-2 py-1.5"
+                          title={job.lastError ?? undefined}
+                        >
+                          {job.lastError}
+                        </td>
+                        <td className="text-label-secondary px-2 py-1.5">
+                          {new Date(job.diedAt).toLocaleString()}
+                        </td>
+                        <td className="flex gap-1 px-2 py-1.5">
+                          <Button
+                            size="xs"
+                            variant="outline"
+                            disabled={busy}
+                            onClick={() => requeue.mutate({ id: job.id })}
+                          >
+                            <Refresh className="h-3 w-3" /> Requeue
+                          </Button>
+                          <Button
+                            size="xs"
+                            variant="destructive"
+                            disabled={busy}
+                            onClick={() =>
+                              setDiscarding({ id: job.id, kind: job.kind, title: job.title })
+                            }
+                          >
+                            <Trash className="h-3 w-3" /> Discard
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </>

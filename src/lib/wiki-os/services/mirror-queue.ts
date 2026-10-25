@@ -5,6 +5,8 @@
  *   - per-title FIFO: a job waits for every older job of its title that is not done (pending, running, or
  *     waiting out a backoff), and a `dead` job blocks its title until an administrator requeues or discards
  *     it. A move is about two titles, the one it moves from and the one it moves to, and holds both;
+ *   - dead jobs are not in the window (`loadWindow`), so any number of them cannot crowd out the jobs that can run;
+ *     their titles are read on their own (`loadDeadTitles`) and seed what `pickRunnable` holds;
  *   - a failed job is tried again after `min(2^attempts x 30 s, 1 h)`, and goes `dead` after 8 attempts.
  *   - the revision jobs of a title that wait next in line are tried together, as one batch (`pickBatch`).
  * `pickRunnable`, `pickBatch` and `backoffMs` are pure; the rest reads and writes `wiki_mirror_jobs`. The caller holds the
@@ -20,8 +22,11 @@ export const MAX_ATTEMPTS = 8;
 export const MAX_BATCH_JOBS = 50;
 const BACKOFF_BASE_MS = 30_000;
 const BACKOFF_MAX_MS = 60 * 60_000;
-/** The oldest not-done jobs a pick looks at: enough to see every blocker of the jobs it could run. */
-const WINDOW_SIZE = 1_000;
+/**
+ * The oldest not-done jobs a pick looks at: enough to see every blocker of the jobs it could run (a dead job's hold
+ * comes from `loadDeadTitles`). A window this full is saturated: the worker warns (mirror-alerts.ts).
+ */
+export const WINDOW_SIZE = 1_000;
 /**
  * All the MediaWiki calls of one attempt together (the login, an import that can take two minutes, the checks, the
  * fallback edit) are cut off after this (see adapters/mediawiki/attempt-scope.ts), which is what the worker's lock
@@ -40,6 +45,8 @@ export type MirrorJob = WikiMirrorJob;
  * administrator gave up on a dead job: MediaWiki never got it). Neither holds its title, and neither is in the window.
  */
 const FINISHED_STATES = ["done", "discarded"] as const;
+/** The jobs the window leaves out: the finished ones, and the dead ones (which still hold their titles). */
+const OUT_OF_WINDOW = [...FINISHED_STATES, "dead"] as const;
 
 /** The wait before attempt number `attempts + 1`, after `attempts` failed ones: 60 s, 2 min, 4 min ... capped at 1 h. */
 export function backoffMs(attempts: number): number {
@@ -47,7 +54,7 @@ export function backoffMs(attempts: number): number {
 }
 
 /** The titles a job is ordered by: its own, and for a move the one it moves to. */
-function titlesOf(job: MirrorJob): string[] {
+function titlesOf(job: Pick<MirrorJob, "kind" | "title" | "payload">): string[] {
   if (job.kind !== "move") return [job.title];
   const move = movePayloadSchema.safeParse(job.payload);
   return move.success ? [job.title, move.data.to] : [job.title];
@@ -55,16 +62,20 @@ function titlesOf(job: MirrorJob): string[] {
 
 /**
  * The next job to run among `jobs` (the not-done jobs, oldest first): the first pending job that is due and
- * whose titles no older not-done job holds. Anything older that is not done, whatever its state, holds its
- * titles for everything younger.
+ * whose titles neither an older not-done job nor a dead job (`held`, from `loadDeadTitles`) holds. Anything older
+ * that is not done, whatever its state, holds its titles for everything younger.
  */
-export function pickRunnable(jobs: readonly MirrorJob[], now: Date): MirrorJob | null {
-  const held = new Set<string>();
+export function pickRunnable(
+  jobs: readonly MirrorJob[],
+  now: Date,
+  held: ReadonlySet<string> = new Set()
+): MirrorJob | null {
+  const holding = new Set(held);
   for (const job of jobs) {
     const titles = titlesOf(job);
-    const free = titles.every((title) => !held.has(title));
+    const free = titles.every((title) => !holding.has(title));
     if (free && job.state === "pending" && job.nextAttemptAt <= now) return job;
-    for (const title of titles) held.add(title);
+    for (const title of titles) holding.add(title);
   }
   return null;
 }
@@ -93,13 +104,25 @@ export function pickBatch(
   return batch;
 }
 
-/** The oldest not-done jobs, oldest first. */
+/** The oldest jobs that are neither finished nor dead, oldest first. */
 export function loadWindow(): Promise<MirrorJob[]> {
   return db.wikiMirrorJob.findMany({
-    where: { source: MIRROR_SOURCE, state: { notIn: [...FINISHED_STATES] } },
+    where: { source: MIRROR_SOURCE, state: { notIn: [...OUT_OF_WINDOW] } },
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     take: WINDOW_SIZE,
   });
+}
+
+/**
+ * The titles the dead jobs hold (their own, and a dead move's destination): no job of those titles runs until an
+ * administrator requeues or discards the dead job, so a younger job never overtakes it on MediaWiki.
+ */
+export async function loadDeadTitles(): Promise<Set<string>> {
+  const dead = await db.wikiMirrorJob.findMany({
+    where: { source: MIRROR_SOURCE, state: "dead" },
+    select: { kind: true, title: true, payload: true },
+  });
+  return new Set(dead.flatMap(titlesOf));
 }
 
 /**

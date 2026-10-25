@@ -6,7 +6,9 @@
  * (mirror-revision.ts), the page operations one by one through their own API calls (mirror-page-ops.ts), and an
  * uploaded file through `action=upload` (mirror-upload.ts). A failed
  * job is retried with backoff and ends up `dead` after 8 attempts (the operators are warned on Discord, at most once
- * in 30 minutes: mirror-alerts.ts); a login that fails is a failure of the job, never an anonymous write.
+ * in 30 minutes: mirror-alerts.ts); a login that fails is a failure of the job, never an anonymous write. A dead job
+ * leaves the window but holds its titles until an administrator requeues or discards it, and a window that is full
+ * of jobs still to run is reported the same way (`alertWindowSaturated`).
  *
  * It runs from the `wiki-mirror` cron job (src/server/cron/jobs.ts, which holds the job lock) and in-process
  * shortly after a write (`scheduleMirrorKick`, which takes the same lock through `runMirrorCycleLocked`), so only
@@ -16,7 +18,7 @@
 
 import { db } from "~/server/db";
 import { withJobLock } from "~/lib/system/job-lock";
-import { alertDeadJobs } from "./mirror-alerts";
+import { alertDeadJobs, alertWindowSaturated } from "./mirror-alerts";
 import { MIRROR_LOCK_NAME, MIRROR_SOURCE } from "./mirror-outbox";
 import { runPageJob, type PageJobResult } from "./mirror-page-ops";
 import { runUploadJob } from "./mirror-upload";
@@ -26,6 +28,7 @@ import {
   claimJob,
   completeJob,
   failJob,
+  loadDeadTitles,
   loadWindow,
   MAX_BATCH_JOBS,
   pickBatch,
@@ -33,6 +36,7 @@ import {
   purgeDoneJobs,
   releaseJobs,
   reclaimInterruptedJobs,
+  WINDOW_SIZE,
   type MirrorJob,
 } from "./mirror-queue";
 import { checkCollision } from "./mirror-collision";
@@ -188,11 +192,13 @@ export async function runMirrorCycle({
 
   const startedAt = Date.now();
   let dead = 0;
+  let saturated = 0;
   await reclaimInterruptedJobs();
   while (result.done + result.failed < maxJobs && Date.now() - startedAt < deadlineMs) {
     const now = new Date();
-    const window = await loadWindow();
-    const next = pickRunnable(window, now);
+    const [window, held] = await Promise.all([loadWindow(), loadDeadTitles()]);
+    if (window.length >= WINDOW_SIZE) saturated = window.length;
+    const next = pickRunnable(window, now, held);
     if (!next) break;
     const batch = pickBatch(
       window,
@@ -215,6 +221,7 @@ export async function runMirrorCycle({
   result.dead = dead;
   await purgeDoneJobs();
   await alertDeadJobs();
+  if (saturated > 0) await alertWindowSaturated(saturated);
   // a leftover file is not worth failing a cycle over
   await sweepStagedOrphansIfDue().catch((error: unknown) =>
     console.warn("[WikiMirror] Sweeping orphaned staged files failed:", error)
