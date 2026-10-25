@@ -78,6 +78,15 @@ describe("loopbackRendererMissing", () => {
     }
   });
 
+  it("in production counts an internal URL that is IxStates itself as missing: a render would recurse into WikiOS", () => {
+    const app = { NODE_ENV: "production", BASE_PATH: "/projects/ixstates", PORT: "3550" };
+    for (const url of ["http://127.0.0.1:3550/projects/ixstates/w/api.php", "http://localhost:3550/api.php"]) {
+      expect(loopbackRendererMissing({ ...app, WIKIOS_MEDIAWIKI_INTERNAL_URL: url })).toBe(true);
+      expect(loopbackRendererMissing({ ...app, NODE_ENV: "development", WIKIOS_MEDIAWIKI_INTERNAL_URL: url })).toBe(false);
+    }
+    expect(loopbackRendererMissing({ ...app, WIKIOS_MEDIAWIKI_INTERNAL_URL: internal })).toBe(false);
+  });
+
   it("reads the environment at call time, not the configuration frozen at load", () => {
     jest.replaceProperty(process, "env", { ...process.env, NODE_ENV: "production", WIKIOS_MEDIAWIKI_INTERNAL_URL: "" });
     expect(loopbackRendererMissing()).toBe(true);

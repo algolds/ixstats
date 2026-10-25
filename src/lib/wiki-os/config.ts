@@ -121,8 +121,8 @@ export const wikiosConfig: WikiosConfig = buildWikiosConfig({
 
 /**
  * Whether production has no private render engine: `NODE_ENV=production` and `WIKIOS_MEDIAWIKI_INTERNAL_URL` unset,
- * blank or on the public wiki's host (`isMediaWikiUrl`), so server-side calls would load the public `api.php` (plan
- * 2026-10-25 B3, "Loopback required").
+ * blank, on the public wiki's host (`isMediaWikiUrl`) or IxStates itself (`isIxStatesUrl`), so server-side calls would
+ * load the public `api.php` or loop back into WikiOS (plan 2026-10-25 B3, "Loopback required").
  * Renders (`renderArticleViaMediaWiki`, the editor preview, the stale-render batch) and mirror writes (unless
  * `WIKIOS_MEDIAWIKI_API` names a private write URL itself, `mirrorWriteUrlProblem`) then refuse rather than load the public wiki.
  * The low-volume reads (inbound sync, lore cards, the Lorewards fallback, account proof) keep the public fallback, so
@@ -134,8 +134,9 @@ export function loopbackRendererMissing(
 ): boolean {
   if (env.NODE_ENV !== "production") return false;
   const internal = env.WIKIOS_MEDIAWIKI_INTERNAL_URL?.trim();
-  // On the public wiki's host it is not private: it counts as missing.
-  return !internal || isMediaWikiUrl(internal);
+  // On the public wiki's host it is not private, and IxStates itself would parse through WikiOS's own api.php and
+  // recurse: either counts as missing.
+  return !internal || isMediaWikiUrl(internal) || isIxStatesUrl(internal, env);
 }
 
 /** Hosts that only this server reaches (`URL.hostname` is lower-case and brackets IPv6). */
@@ -170,10 +171,7 @@ export function mirrorWriteUrlProblem(
   if (env.NODE_ENV !== "production") return null;
   const api = env.WIKIOS_MEDIAWIKI_API?.trim();
   if (api) return isMediaWikiUrl(api) || isIxStatesUrl(api, env) ? "WIKIOS_MEDIAWIKI_API" : null;
-  const internal = env.WIKIOS_MEDIAWIKI_INTERNAL_URL?.trim() ?? "";
-  return loopbackRendererMissing(env) || isIxStatesUrl(internal, env)
-    ? "WIKIOS_MEDIAWIKI_INTERNAL_URL"
-    : null;
+  return loopbackRendererMissing(env) ? "WIKIOS_MEDIAWIKI_INTERNAL_URL" : null;
 }
 
 /** Whether the mirror has nowhere it may write: the worker then skips every cycle and the jobs wait. */

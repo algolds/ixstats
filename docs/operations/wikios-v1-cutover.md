@@ -439,17 +439,31 @@ IxStates release that touches WikiOS code. `deploy-production.sh` has no lock: n
 Some of IxStates' files are asked for at the root of ixwiki.com, without the base path: the reader's fonts
 (`src/styles/typography.css` and the font preloads load `/fonts/…`), and uploaded flags and pictures where a page still
 shows the stored path (`/images/uploads/…`, kept without the base path). This release gives the WikiOS pages' uploads the
-base path, but the fonts still load from the root. Check from the server that both answer (read-only):
+base path, but the fonts still load from the root. Check from the server that both answer (read-only).
+
+This step runs before 4b lets the server's own requests through Cloudflare, so ask the local nginx directly:
+`--resolve` sends `ixwiki.com` to `127.0.0.1` and skips Cloudflare. `-k` is there because the origin's certificate may
+be Cloudflare's origin certificate, which curl does not trust; the check only reads a status and a content type.
 
 ```bash
-curl -s -o /dev/null -A IxStats-Builder -w '%{http_code} %{content_type}\n' 'https://ixwiki.com/fonts/Schibsted%20Grotesk-500.ttf'
-UP=$(ls -p "$IX/public/images/uploads" | grep -v / | head -1); echo "$UP"          # an existing upload's file name
-curl -s -o /dev/null -A IxStats-Builder -w '%{http_code} %{content_type}\n' "https://ixwiki.com/images/uploads/$UP"
+# the upload directory: UPLOAD_DIR when IxStates' env files set it, else the checkout's public/images/uploads
+grep -n '^UPLOAD_DIR=' "$IX/.env.production" "$IX/.env.production.local" 2>/dev/null
+UPDIR="$IX/public/images/uploads"          # or the UPLOAD_DIR value the grep printed
+UP=$(ls -p "$UPDIR" 2>/dev/null | grep -v / | head -1); echo "upload: '$UP'"
+[ -n "$UP" ] || echo "STOP: no upload file found in $UPDIR"
+LOCAL='--resolve ixwiki.com:443:127.0.0.1 -k'
+curl -s -o /dev/null $LOCAL -A IxStats-Builder -w '%{http_code} %{content_type}\n' 'https://ixwiki.com/fonts/Schibsted%20Grotesk-500.ttf'
+curl -s -o /dev/null $LOCAL -A IxStats-Builder -w '%{http_code} %{content_type}\n' "https://ixwiki.com/images/uploads/$UP"
 ```
 
-Expect `200` with a font type (`font/ttf`, `application/font-sfnt`, `application/x-font-ttf` or
-`application/octet-stream`) for the first, and `200` with an `image/…` type for the second.
+If the `echo` printed `STOP`, or the upload name is empty, stop: find an existing upload's file name (an uploaded flag's
+`/images/uploads/<file>` in the database, for example) before going on, or the second check reads nothing. Expect `200`
+with a font type (`font/ttf`, `application/font-sfnt`, `application/x-font-ttf` or `application/octet-stream`) for the
+first, and `200` with an `image/…` type for the second.
 
+- **`000`** (nothing listens for `ixwiki.com` on the server's port 443, so the request never left): run the two `curl`
+  lines again without `$LOCAL`, through Cloudflare. There a `403` with `text/html` is Cloudflare's challenge or the bot
+  defense, not missing files: finish step 4b first, then repeat this check.
 - **A `404`, or a `text/html` answer** (classic MediaWiki's page, or a redirect to it): stop and ask the owner. The usual
   fix is an nginx `location` in the `ixwiki.com` server block that serves the checkout's files, for example
   `location ^~ /fonts/ { alias /ixwiki/public/projects/ixstats/public/fonts/; }` (and the same for `/images/uploads/`).
@@ -1237,13 +1251,17 @@ DOCROOT=<the root value printed in step 4>
 curl -s https://ixwiki.com/robots.txt | tee "$BK/robots.public.before"
 ls -l "$DOCROOT/robots.txt"
 diff "$BK/robots.public.before" "$DOCROOT/robots.txt" && echo "served from the static file"
-grep -niE '^\s*disallow:\s*/(projects|\s*$)' "$DOCROOT/robots.txt"         # must print nothing
+# the User-agent: * group only (from its line to the next User-agent line that follows a rule):
+awk 'tolower($0) ~ /^[[:space:]]*user-agent:/ { if (rules) star = 0; rules = 0; if ($0 ~ /:[[:space:]]*\*[[:space:]]*$/) star = 1; next }
+     NF { rules = 1 } star' "$DOCROOT/robots.txt" | grep -niE '^\s*disallow:\s*/(projects|\s*$)'    # must print nothing
 ```
 
 - **If there is no static file, or the `diff` shows that something else serves `/robots.txt`** (MediaWiki, an extension,
   an nginx rule, or Cloudflare's managed `robots.txt`), stop and ask the owner.
-- **If the last `grep` prints a line,** classic already keeps crawlers out of `/projects/` (or out of everything). Stop and
-  ask the owner to confirm that IxStates' wiki pages should be crawled before adding an `Allow` for them.
+- **If the last `grep` prints a line,** classic's `User-agent: *` group already keeps crawlers out of `/projects/` (or out
+  of everything). Stop and ask the owner to confirm that IxStates' wiki pages should be crawled before adding an `Allow`
+  for them. A site-wide `Disallow: /` in a named group (an AI-bot group, say) is expected and is not a stop: the check
+  reads only the `User-agent: *` group, and such a group is left as it is below.
 
 Take the rules from IxStates on loopback and check them (read-only):
 
@@ -1275,8 +1293,11 @@ sudoedit "$DOCROOT/robots.txt"
 Purge `https://ixwiki.com/robots.txt` in Cloudflare (Caching, Configuration, Custom Purge, by URL), then check:
 
 ```bash
-curl -s https://ixwiki.com/robots.txt | grep -c '/projects/ixstates/'     # 13 for each group you edited
+curl -s https://ixwiki.com/robots.txt | grep -c '/projects/ixstates/'     # 13 × the number of groups you edited
 ```
+
+The count is 13 times the number of groups that received the lines: 13 for `User-agent: *` alone, 26 with one named
+group as well, and so on.
 
 A `Disallow` stops crawling, not indexing: a `?source=` URL a search engine has already indexed is not removed by it, and
 the crawler no longer fetches the page to see its `noindex`. To drop one that shows in results, use the search engine's
