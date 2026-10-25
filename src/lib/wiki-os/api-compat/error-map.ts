@@ -79,6 +79,9 @@ function fromTrpc(error: TRPCError): ApiError {
         : new ApiError("invalidparam", error.message);
     case "NOT_FOUND":
       return new ApiError("missingtitle", error.message);
+    // the wiki-save rate limit (save-rate-limit.ts)
+    case "TOO_MANY_REQUESTS":
+      return new ApiError("ratelimited", error.message);
     case "PRECONDITION_FAILED":
       // An account with no passport handle may not save: MediaWiki answers an edit the account is not allowed
       // to make with permissiondenied. The services' other preconditions keep pagedeleted.

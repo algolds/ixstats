@@ -5,6 +5,10 @@ jest.mock("~/lib/wiki-os/core", () => ({ ArticleRepository: { saveArticle: jest.
 jest.mock("~/lib/wiki-os/guardian/cloudflare-guardian", () => ({
   CloudflareGuardian: { purgeArticleEdgeCache: jest.fn() },
 }));
+// the save limit is save-rate-limit.test.ts's
+jest.mock("~/lib/wiki-os/services/save-rate-limit", () => ({
+  assertWikiSaveRate: jest.fn().mockResolvedValue(undefined),
+}));
 
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { commitWikitextSave } from "~/lib/wiki-os/services/edit-service";

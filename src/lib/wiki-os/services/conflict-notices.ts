@@ -20,7 +20,7 @@ import { sendDiscordDm } from "~/lib/discord/user-dm";
 import { APP_URL, CLEAN_BASE_PATH } from "~/lib/discord/site-url";
 import { ArticleRepository } from "../core/article-repository";
 import { toRevisionRef } from "../core/domain-types";
-import { EditConflictError } from "../core/edit-conflict-error";
+import { DeletedPageError, EditConflictError } from "../core/edit-conflict-error";
 import { canonicalizeTitle } from "../core/title";
 import { trailSummary, type NoticeChannel, type NoticeRecipient } from "./conflict-rule";
 import {
@@ -262,18 +262,24 @@ async function writeTalkNote(
   // Classic's talk page first: a revision WikiOS cannot fit on its head yet is the cycle's, and the note waits for it.
   if ((await syncLatestRevision(canon.title)) === "deferred") return "open";
   const page = await readTalkPage(canon.title);
-  await ArticleRepository.saveArticle(
-    {
-      slug: canon.slug,
-      title: canon.title,
-      source: SOURCE,
-      wikitext: appendSection(page.wikitext, await talkSection(context, recipient)),
-      editSummary: copyOf(context, recipient).summary,
-      expectedHeadRef: page.headRef,
-    },
-    undefined,
-    CONFLICT_NOTICE_AUTHOR
-  );
+  try {
+    await ArticleRepository.saveArticle(
+      {
+        slug: canon.slug,
+        title: canon.title,
+        source: SOURCE,
+        wikitext: appendSection(page.wikitext, await talkSection(context, recipient)),
+        editSummary: copyOf(context, recipient).summary,
+        expectedHeadRef: page.headRef,
+      },
+      undefined,
+      CONFLICT_NOTICE_AUTHOR
+    );
+  } catch (error) {
+    // a deleted talk page takes no note: the note would bring the page back on classic, and it stays deleted
+    if (error instanceof DeletedPageError) return "skipped";
+    throw error;
+  }
   return "sent";
 }
 

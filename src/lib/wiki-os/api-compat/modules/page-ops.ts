@@ -24,7 +24,11 @@ import { parseMWDateObject } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import { EditConflictError } from "~/lib/wiki-os/core/edit-conflict-error";
 import type { RestrictionChange } from "~/lib/wiki-os/core/rights-admin-service";
-import { planRollback, ROLLBACK_WINDOW } from "~/lib/wiki-os/services/rollback-plan";
+import {
+  NOTHING_TO_ROLL_BACK,
+  planRollback,
+  ROLLBACK_WINDOW,
+} from "~/lib/wiki-os/services/rollback-plan";
 import type { WikitextSave } from "~/lib/wiki-os/services/edit-service";
 
 // ---------------------------------------------------------------------------
@@ -208,14 +212,21 @@ export async function runProtect(rc: ApiContext): Promise<JsonObject> {
 // rollback
 // ---------------------------------------------------------------------------
 
-/** The save of a rollback, made on top of the head it read: an edit that landed since is `editconflict`, nothing saved. */
+/**
+ * The save of a rollback, made on top of the head it read: an edit that landed since is `editconflict`, and a page that
+ * has the text to roll back to already is `alreadyrolled` (MediaWiki's answer to a rollback that changes nothing).
+ * Nothing is saved either way.
+ */
 async function saveRollback(rc: ApiContext, save: WikitextSave): Promise<string> {
+  let saved: { revisionRowId: string; nullEdit: boolean };
   try {
-    return (await rc.deps.services.saveWikitext(rc.session.ctx, save)).revisionRowId;
+    saved = await rc.deps.services.saveWikitext(rc.session.ctx, save);
   } catch (error) {
     if (error instanceof EditConflictError) throw new ApiError("editconflict", "Edit conflict detected.");
     throw error;
   }
+  if (saved.nullEdit) throw new ApiError("alreadyrolled", NOTHING_TO_ROLL_BACK);
+  return saved.revisionRowId;
 }
 
 /**

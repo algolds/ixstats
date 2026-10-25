@@ -255,6 +255,11 @@ function summaryOf(edited: EditedText, given: string): string {
   return edited.summaryPrefix ? `${edited.summaryPrefix} ${given}`.trim() : given;
 }
 
+/** MediaWiki's answer to an edit that changed nothing: no revision, no new id. */
+const noChange = (title: string, pageid: number, contentmodel: string): JsonObject => ({
+  edit: { result: "Success", nochange: true, title, pageid, contentmodel },
+});
+
 export async function runEdit(rc: ApiContext): Promise<JsonObject> {
   requireBotSession(rc);
   const p = rc.params.scope("", "edit");
@@ -276,14 +281,13 @@ export async function runEdit(rc: ApiContext): Promise<JsonObject> {
   }
   const bases = row ? await baseRefs(rc, request, title, row.articleId) : [];
   if (await baseConflicts(rc, bases, title)) throw editConflict();
-  if (row && wikitext === normalized(base)) {
-    return { edit: { result: "Success", nochange: true, title, pageid: row.pageId, contentmodel: model } };
-  }
+  if (row && wikitext === normalized(base)) return noChange(title, row.pageId, model);
 
   // The save checks, atomically, that the page is still at the revision the text was made from (see expectedHeadOf).
   let revisionRowId: string;
+  let nullEdit: boolean;
   try {
-    ({ revisionRowId } = await rc.deps.services.saveWikitext(rc.session.ctx, {
+    ({ revisionRowId, nullEdit } = await rc.deps.services.saveWikitext(rc.session.ctx, {
       title,
       wikitext,
       summary: cleanComment(summaryOf(edited, request.summary)),
@@ -295,6 +299,9 @@ export async function runEdit(rc: ApiContext): Promise<JsonObject> {
     // a page that did not exist and was created meanwhile: for `createonly` that is what it refuses
     throw !row && request.createOnly ? articleExists() : editConflict();
   }
+  // the page got this text after it was read here: the save wrote nothing (a null edit needs a page that had a head,
+  // so the page was there when it was read)
+  if (nullEdit) return noChange(title, row?.pageId ?? 0, model);
   const saved = await rc.deps.store.revisionByRowId(revisionRowId);
   return {
     edit: {

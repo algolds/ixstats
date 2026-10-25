@@ -13,8 +13,13 @@ import { ArticleRepository } from "../core";
 import { canonicalizeTitle } from "../core/title";
 import { CloudflareGuardian } from "../guardian/cloudflare-guardian";
 import { isWikiAdmin, requireWikiAuthorName, type WikiAuthContext } from "../auth";
-import { EditConflictError, type EditConflict } from "../core/edit-conflict-error";
+import {
+  DeletedPageError,
+  EditConflictError,
+  type EditConflict,
+} from "../core/edit-conflict-error";
 import { authorizeAction } from "../permissions";
+import { assertWikiSaveRate } from "./save-rate-limit";
 
 /**
  * The refusal for saving over a deleted (archived) page. Its old revisions stay in the table and the
@@ -95,9 +100,20 @@ export interface WikitextSave {
   expectedHeadRef?: string | null;
   /**
    * The author of a save no signed-in player makes, such as the story-chain sync; a player's save is always
-   * signed with their handle.
+   * signed with their handle. A system save: the wiki-save rate limit does not count it. Set only by server code,
+   * never from a request.
    */
   authorLabel?: string;
+}
+
+/** `ArticleRepository.saveArticle`, with a page deleted under the save answered as `deletedPage()`. */
+async function saveArticleOrRefuse(...args: Parameters<typeof ArticleRepository.saveArticle>) {
+  try {
+    return await ArticleRepository.saveArticle(...args);
+  } catch (error) {
+    if (error instanceof DeletedPageError) throw deletedPage();
+    throw error;
+  }
 }
 
 /**
@@ -105,28 +121,35 @@ export interface WikitextSave {
  * `save.authorLabel`; the caller has been authorized): PostgreSQL first (the revision and its mirror job in
  * one transaction, `ArticleRepository.saveArticle`, which also makes the edit-conflict check of
  * `save.expectedHeadRef`), then the edge-cache purge. Throws `EditConflictError` for a save based on a revision that is no longer the head,
- * and PRECONDITION_FAILED, before anything is written, for a player with no handle.
+ * and, before anything is written, PRECONDITION_FAILED for a player with no handle or a page deleted meanwhile and
+ * TOO_MANY_REQUESTS for a player over the wiki-save limit (`assertWikiSaveRate`; a system save is not counted). A null
+ * edit (the page has this text already) writes nothing and answers the head with `nullEdit`.
  */
 export async function commitWikitextSave(ctx: WikiAuthContext, save: WikitextSave) {
   const { title, wikitext, summary, minor, expectedHeadRef } = save;
   const authorName = save.authorLabel ?? requireWikiAuthorName(ctx);
+  if (save.authorLabel === undefined) await assertWikiSaveRate(ctx);
 
   // 1. Primary Save: Direct to PostgreSQL
-  const saveResult = await ArticleRepository.saveArticle(
+  const saveResult = await saveArticleOrRefuse(
     { slug: title, title, wikitext, editSummary: summary, minor, expectedHeadRef },
     ctx.auth?.userId ?? undefined,
     authorName
   );
 
-  // 2. Edge cache purge (the save queued its own MediaWiki mirror job in its transaction)
-  void CloudflareGuardian.purgeArticleEdgeCache(title);
+  // 2. Edge cache purge (the save queued its own MediaWiki mirror job in its transaction); a null edit changed nothing
+  if (!saveResult.nullEdit) void CloudflareGuardian.purgeArticleEdgeCache(title);
 
   return saveResult;
 }
 
-/** A save that checked its base (`expectedHeadRef`): saved, or the edit conflict with the page as it is now. */
+/**
+ * A save that checked its base (`expectedHeadRef`): saved (`nullEdit`: the page had the text already, and
+ * `revisionId` is its head), or the edit conflict with the page as it is now.
+ */
 export type CheckedSaveOutcome =
-  { success: true; revisionId: string } | ({ success: false; editConflict: true } & EditConflict);
+  | { success: true; revisionId: string; nullEdit: boolean }
+  | ({ success: false; editConflict: true } & EditConflict);
 
 /**
  * `commitWikitextSave`, with an edit conflict answered rather than thrown: nothing was saved, and the caller gets the
@@ -138,7 +161,7 @@ export async function saveOrConflict(
 ): Promise<CheckedSaveOutcome> {
   try {
     const saved = await commitWikitextSave(ctx, save);
-    return { success: true, revisionId: saved.revisionId };
+    return { success: true, revisionId: saved.revisionId, nullEdit: saved.nullEdit };
   } catch (error) {
     if (error instanceof EditConflictError) {
       return { success: false, editConflict: true, ...error.conflict };

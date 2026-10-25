@@ -1,6 +1,6 @@
 /**
  * edit-conflict-error.ts — the pure half of edit-conflict detection: what names a revision, whether a base names the
- * page's head, and the error a save throws when it does not.
+ * page's head, the error a save throws when it does not, and the one it throws for a page deleted under it.
  *
  * `ArticleRepository.saveArticle` makes the check inside its transaction, under the article's row lock, so it cannot
  * import the module that reads the repository (edit-conflict.ts); both import this one.
@@ -42,5 +42,16 @@ export class EditConflictError extends Error {
   constructor(readonly conflict: EditConflict) {
     super("Edit conflict: the page was changed since this edit was based on it");
     this.name = "EditConflictError";
+  }
+}
+
+/**
+ * Thrown by a save of a page that is deleted (archived) when the save holds the page's lock: a delete that committed
+ * after the permission gate read the page. Nothing was written; `commitWikitextSave` answers it as `deletedPage()`.
+ */
+export class DeletedPageError extends Error {
+  constructor(readonly title: string) {
+    super(`"${title}" was deleted; it cannot be saved until it is restored`);
+    this.name = "DeletedPageError";
   }
 }

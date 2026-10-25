@@ -202,6 +202,25 @@ describe("action=edit", () => {
       expect(saves()).toHaveLength(0);
     });
 
+    describeEachWikiosMode("a null edit only the save can see", () => {
+      it("api.php answers nochange for a null edit", async () => {
+        // the page got this text after the module read it: the save writes nothing and says so
+        const saveWikitext = jest.fn(async () => ({ revisionRowId: "row-102", nullEdit: true }));
+        const { edit } = await setup({ services: { saveWikitext } });
+
+        const body = await edit({ title: "Existing", text: "Hello again" });
+
+        expect(body.edit).toEqual({
+          result: "Success",
+          nochange: true,
+          title: "Existing",
+          pageid: 1,
+          contentmodel: "wikitext",
+        });
+        expect(saveWikitext).toHaveBeenCalledTimes(1);
+      });
+    });
+
     it("normalizes line endings and trailing whitespace like MediaWiki's save", async () => {
       const { edit, saves } = await setup();
       await edit({ title: "Existing", text: "line one\r\nline two  \r\n\r\n" });
@@ -685,7 +704,7 @@ describe("delete, undelete, move, protect and rollback", () => {
               if (!headMatchesBase({ id: "row-104", mwRevId: 104 }, save.expectedHeadRef ?? null)) {
                 throw new EditConflictError({ currentWikitext: "newer", currentRevisionRef: "104" });
               }
-              return { revisionRowId: "row-9000" };
+              return { revisionRowId: "row-9000", nullEdit: false };
             },
           },
         },
@@ -772,6 +791,27 @@ describe("delete, undelete, move, protect and rollback", () => {
         wikitext: "only author\n\nA note.",
         summary: "Reverted edits by Vandal to last revision by WikiOS",
       });
+    });
+
+    it("answers alreadyrolled when the text to roll back to is the page's text already, and saves nothing", async () => {
+      const { act, called, data: wiki } = await setup({}, "rollback");
+      // the vandal put the good text back themselves
+      wiki.revisions!.push({
+        revId: 104,
+        page: "Alpha",
+        timestamp: "2026-01-03T11:00:00Z",
+        user: "Vandal",
+        content: "good text",
+      });
+
+      const body = await act("rollback", { title: "Alpha", user: "Vandal" });
+
+      expect(body.error).toMatchObject({
+        code: "alreadyrolled",
+        info: "There is nothing to roll back: the page already has that text.",
+      });
+      expect(called("saveWikitext")).toHaveLength(1);
+      expect(wiki.revisions!.map((rev) => rev.revId)).toEqual([101, 102, 103, 201, 104]);
     });
 
     it("answers onlyauthor when only WikiOS's own writes stand beside the named editor", async () => {

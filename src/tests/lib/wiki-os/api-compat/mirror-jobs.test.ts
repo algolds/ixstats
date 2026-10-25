@@ -98,7 +98,7 @@ async function setup(
     services: {
       // the real save, then the same revision in the harness's fake store (it answers the module's own reads)
       saveWikitext: async (ctx, save) => {
-        await real.saveWikitext(ctx, save);
+        const saved = await real.saveWikitext(ctx, save);
         const revId = nextRevId++;
         wiki.revisions!.push({
           revId,
@@ -108,7 +108,7 @@ async function setup(
           comment: save.summary,
           content: save.wikitext,
         });
-        return { revisionRowId: `row-${revId}` };
+        return { revisionRowId: `row-${revId}`, nullEdit: saved.nullEdit };
       },
       movePage: real.movePage,
       archivePage: real.archivePage,

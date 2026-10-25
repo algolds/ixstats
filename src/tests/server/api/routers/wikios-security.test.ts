@@ -25,7 +25,12 @@ jest.mock("~/server/db", () => ({
     wikiUserGroup: { findMany: jest.fn().mockResolvedValue([]) },
     wikiBlock: { findMany: jest.fn().mockResolvedValue([]) },
     wikiRestriction: { findMany: jest.fn().mockResolvedValue([]) },
-    wikiArticle: { upsert: jest.fn(), count: jest.fn().mockResolvedValue(0) },
+    wikiArticle: {
+      upsert: jest.fn(),
+      count: jest.fn().mockResolvedValue(0),
+      // the locked row's status, read by the save (a live page)
+      findUnique: jest.fn().mockResolvedValue(null),
+    },
     wikiRevision: {
       findFirst: jest.fn(),
       create: jest.fn(),
@@ -144,7 +149,7 @@ const mockDb = db as unknown as {
   user: { findFirst: jest.Mock; update: jest.Mock };
   wikiAccountLink: { findFirst: jest.Mock };
   wikiNameClaim: { findMany: jest.Mock };
-  wikiArticle: { upsert: jest.Mock; count: jest.Mock };
+  wikiArticle: { upsert: jest.Mock; count: jest.Mock; findUnique: jest.Mock };
   wikiRestriction: { findMany: jest.Mock };
   wikiRevision: { findFirst: jest.Mock; create: jest.Mock };
   wikiMirrorJob: { create: jest.Mock };
@@ -203,6 +208,7 @@ describe("S4: wiki identity for authorization is the approved name claim", () =>
     jest.mocked(ArticleRepository.saveArticle).mockResolvedValue({
       article: {} as never,
       revisionId: "rev-1" as never,
+      nullEdit: false,
     });
   });
 
@@ -716,6 +722,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
       jest.mocked(ArticleRepository.saveArticle).mockResolvedValue({
         article: {} as never,
         revisionId: "rev-1" as never,
+        nullEdit: false,
       });
       jest.mocked(getRevisionWikitextShadow).mockResolvedValue({
         wikitext: "old",
@@ -877,6 +884,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
       jest.mocked(ArticleRepository.saveArticle).mockResolvedValue({
         article: {} as never,
         revisionId: "rev-1" as never,
+        nullEdit: false,
       });
     });
 
@@ -973,6 +981,7 @@ describe("the editing router (save, preview, page management, rights)", () => {
       jest.mocked(ArticleRepository.saveArticle).mockResolvedValue({
         article: {} as never,
         revisionId: "rev-1" as never,
+        nullEdit: false,
       });
       jest.mocked(getRevisionWikitextShadow).mockResolvedValue({
         wikitext: "old",

@@ -11,6 +11,10 @@
 /** Revisions read when looking for the last edit by someone else. */
 export const ROLLBACK_WINDOW = 50;
 
+/** The refusal of a rollback whose target's text is the page's text already (the save would be a null edit). */
+export const NOTHING_TO_ROLL_BACK =
+  "There is nothing to roll back: the page already has that text.";
+
 /** A revision as a rollback reads it. */
 export interface RollbackCandidate {
   /** The author's name; edits by the same name are one editor's. */

@@ -1001,6 +1001,14 @@ export function fakeServices(data: FakeWikiData, overrides: Partial<ApiServices>
       }
     ),
     saveWikitext: record("saveWikitext", async (_ctx, save) => {
+      // the repository's null edit: the page's head has this text already, nothing is written
+      const head = (data.revisions ?? [])
+        .filter((r) => r.page === save.title)
+        .sort((a, b) => a.timestamp.localeCompare(b.timestamp) || a.revId - b.revId)
+        .at(-1);
+      if (head && head.content === save.wikitext) {
+        return { revisionRowId: `row-${head.revId}`, nullEdit: true };
+      }
       const pages = (data.pages ??= []);
       if (!pages.some((p) => p.title === save.title)) {
         pages.push({
@@ -1019,7 +1027,7 @@ export function fakeServices(data: FakeWikiData, overrides: Partial<ApiServices>
         minor: save.minor,
         content: save.wikitext,
       });
-      return { revisionRowId: `row-${revId}` };
+      return { revisionRowId: `row-${revId}`, nullEdit: false };
     }),
     movePage: record("movePage", async (from: string, to: string) => ({
       success: true,

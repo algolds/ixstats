@@ -9,7 +9,11 @@ const mockTransaction = (...args: Parameters<typeof model.db.$transaction>) =>
   model.db.$transaction(...args);
 jest.mock("~/server/db", () => ({
   __esModule: true,
-  db: { $transaction: (...args: unknown[]) => (mockTransaction as (...a: unknown[]) => unknown)(...args) },
+  db: {
+    $transaction: (...args: unknown[]) => (mockTransaction as (...a: unknown[]) => unknown)(...args),
+    // describeEachWikiosMode answers the switch and marker rows through this mock
+    systemConfig: { findUnique: jest.fn() },
+  },
 }));
 jest.mock("~/lib/wiki-os/services/mirror-outbox", () => ({
   __esModule: true,
@@ -26,11 +30,33 @@ jest.mock("~/lib/wiki-os/services/watchlist-notify", () => ({
 jest.mock("~/lib/wiki-os/guardian/cloudflare-guardian", () => ({
   CloudflareGuardian: { purgeArticleEdgeCache: jest.fn() },
 }));
+// the caches a save evicts are title-cache-eviction's tests' (the model has no lore tables)
+jest.mock("~/lib/wiki-os/services/title-cache-eviction", () => ({
+  __esModule: true,
+  evictWikiTitleCaches: jest.fn(),
+}));
+// the save limit is save-rate-limit.test.ts's; the gate's rights are the permission tests'
+jest.mock("~/lib/wiki-os/services/save-rate-limit", () => ({
+  __esModule: true,
+  assertWikiSaveRate: jest.fn().mockResolvedValue(undefined),
+}));
+jest.mock("~/lib/wiki-os/permissions", () => ({
+  __esModule: true,
+  ...jest.requireActual("~/lib/wiki-os/permissions"),
+  authorizeAction: jest.fn().mockResolvedValue(undefined),
+}));
 
+import { TRPCError } from "@trpc/server";
 import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
 import { EditConflictError } from "~/lib/wiki-os/core/edit-conflict-error";
 import { createLockingWikiDb } from "~/tests/helpers/locking-wiki-db";
-import { commitWikitextSave } from "~/lib/wiki-os/services/edit-service";
+import { assertCanEditArticle, commitWikitextSave, deletedPage } from "~/lib/wiki-os/services/edit-service";
+import { DeletedPageError } from "~/lib/wiki-os/core/edit-conflict-error";
+import { enqueueRender } from "~/lib/wiki-os/services/render-service";
+import { scheduleMirrorKick } from "~/lib/wiki-os/services/mirror-outbox";
+import { notifyWatchers } from "~/lib/wiki-os/services/watchlist-notify";
+import { describeEachWikiosMode } from "~/tests/helpers/wikios-modes";
+import { createApiDeps } from "~/lib/wiki-os/api-compat/deps";
 import { type FakeWikiData, loggedIn, makeWikiDeps } from "./api-compat/harness";
 
 let model = createLockingWikiDb();
@@ -136,6 +162,103 @@ describe("saves that make no check (a revert, a rollback)", () => {
   });
 });
 
+describeEachWikiosMode("a save racing a delete (Task 14, A7)", () => {
+  const ctx = { auth: { userId: "clerk-heku" }, user: { id: "heku", handle: "Heku" } };
+
+  it("a save racing a delete is refused inside the transaction", async () => {
+    await save("base text", null);
+    // the gate reads the page while it is live, and the delete commits right after that read
+    const gate = jest.spyOn(ArticleRepository, "findBySlug").mockImplementation(async () => {
+      const live = model.committed.articles[0]!;
+      model.committed.articles = [{ ...live, status: "ARCHIVED" }];
+      return { ...live, status: "PUBLISHED" } as never;
+    });
+
+    await assertCanEditArticle(ctx, "Foo");
+    const refused = await commitWikitextSave(ctx, {
+      title: "Foo",
+      wikitext: "my edit",
+      summary: "",
+      minor: false,
+    }).catch((error: TRPCError) => error);
+    gate.mockRestore();
+
+    expect(refused).toBeInstanceOf(TRPCError);
+    expect((refused as TRPCError).code).toBe("PRECONDITION_FAILED");
+    expect((refused as TRPCError).message).toBe(deletedPage().message);
+    // nothing written: the one revision and the one job of the first save
+    expect(revisionRows()).toHaveLength(1);
+    expect(model.committed.jobs).toHaveLength(1);
+    expect(model.committed.articles[0]).toMatchObject({ status: "ARCHIVED", wikitext: "base text" });
+  });
+
+  it("the repository throws DeletedPageError for a deleted page, even for its own text", async () => {
+    await save("base text", null);
+    model.committed.articles = [{ ...model.committed.articles[0]!, status: "ARCHIVED" }];
+
+    await expect(save("base text")).rejects.toBeInstanceOf(DeletedPageError);
+    await expect(save("other text")).rejects.toBeInstanceOf(DeletedPageError);
+    expect(revisionRows()).toHaveLength(1);
+  });
+});
+
+describeEachWikiosMode("null edits (Task 14, A7)", () => {
+  it("a null edit writes no revision and no mirror job and returns the head", async () => {
+    const first = await save("same text", null);
+    const before = { ...model.committed.articles[0]! };
+    jest.clearAllMocks();
+
+    const again = await save("same text", first.revisionId);
+
+    expect(again).toMatchObject({ revisionId: first.revisionId, nullEdit: true });
+    expect(again.article).toMatchObject({ id: before.id, title: "Foo", wikitext: "same text" });
+    expect(first).toMatchObject({ nullEdit: false });
+    expect(revisionRows()).toHaveLength(1);
+    expect(model.committed.jobs).toHaveLength(1);
+    // the row is left as it was: no new editor, no new sync time, the view not marked stale
+    expect(model.committed.articles[0]).toEqual(before);
+    expect(enqueueRender).not.toHaveBeenCalled();
+    expect(scheduleMirrorKick).not.toHaveBeenCalled();
+    expect(notifyWatchers).not.toHaveBeenCalled();
+  });
+
+  it("is a null edit without a base too", async () => {
+    const first = await save("same text", null);
+
+    await expect(save("same text")).resolves.toMatchObject({
+      revisionId: first.revisionId,
+      nullEdit: true,
+    });
+    expect(revisionRows()).toHaveLength(1);
+  });
+
+  it("still makes the edit-conflict check first: the same text on a stale base is a conflict", async () => {
+    const { revisionId: base } = await save("base text", null);
+    await save("newer text", base);
+
+    await expect(save("newer text", base)).rejects.toBeInstanceOf(EditConflictError);
+    expect(revisionRows()).toHaveLength(2);
+  });
+
+  it("records a revision for a page whose text has none yet (a row with no revision is not a head)", async () => {
+    model.committed.articles.push({
+      id: "art-stub",
+      source: "ixwiki",
+      title: "Foo",
+      wikitext: "stub text",
+      status: "PUBLISHED",
+      protectionLevel: "ALL",
+      protectionExpiry: null,
+    });
+
+    const saved = await save("stub text");
+
+    expect(saved.nullEdit).toBe(false);
+    expect(revisionRows()).toHaveLength(1);
+    expect(model.committed.jobs).toHaveLength(1);
+  });
+});
+
 describe("the model itself: without the locks the same scenarios go wrong (the tests above can fail)", () => {
   beforeEach(() => {
     model = createLockingWikiDb({ locks: false });
@@ -187,10 +310,8 @@ describe("through api.php", () => {
 
   async function setup() {
     const wiki = await makeWikiDeps(data(), {
-      // the real save; the harness answers the module's own reads
-      services: {
-        saveWikitext: async (ctx, save) => ({ revisionRowId: (await commitWikitextSave(ctx, save)).revisionId }),
-      },
+      // the real save, as the endpoint's own deps make it; the harness answers the module's own reads
+      services: { saveWikitext: createApiDeps().services.saveWikitext },
     });
     const token = await loggedIn(wiki.bot);
     const edit = (params: Record<string, string>) =>
@@ -240,6 +361,26 @@ describe("through api.php", () => {
 
       expect(bodies.every((body) => body.edit?.result === "Success")).toBe(true);
       expect(revisions()).toHaveLength(3);
+    });
+  });
+
+  describeEachWikiosMode("a null edit", () => {
+    it("api.php answers nochange for a null edit", async () => {
+      const { edit } = await setup();
+      await edit({ title: "Alpha", text: "new text" });
+
+      // the module still reads "good text", so only the save can tell the text is the page's already
+      const body = await edit({ title: "Alpha", text: "new text" });
+
+      expect(body.edit).toEqual({
+        result: "Success",
+        nochange: true,
+        title: "Alpha",
+        pageid: 1,
+        contentmodel: "wikitext",
+      });
+      expect(revisions()).toHaveLength(2);
+      expect(model.committed.jobs).toHaveLength(1);
     });
   });
 

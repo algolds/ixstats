@@ -17,20 +17,18 @@ import {
   type WikiArticleEntity,
   type WikiRevisionSummary,
 } from "./domain-types";
-import { EditConflictError, headMatchesBase } from "./edit-conflict-error";
+import { DeletedPageError, EditConflictError, headMatchesBase } from "./edit-conflict-error";
 import { lockPageForSave, SAVE_TRANSACTION } from "./page-lock";
 import { retryableWhenBusy } from "./page-busy-error";
-import { parseRedirect } from "./redirect";
 import { canonicalizeTitle } from "./title";
 import { stripXmlForbiddenControlChars } from "../xml/control-chars";
 import { mwSha1Base36 } from "../xml/sha1";
-import { cleanWikitextExcerpt } from "../transformers/wikitext-parser";
 import { enqueueRevisionJob, scheduleMirrorKick } from "../services/mirror-outbox";
 import { enqueueRender, invalidateDependents } from "../services/render-service";
 import { notifyWatchers } from "../services/watchlist-notify";
-import { setTrailRevision } from "../services/conflict-log";
-import { CONFLICT_NOTICE_AUTHOR } from "../services/conflict-sides";
 import { importPageRevisions } from "./article-import";
+import { recordTrailRevision } from "./trail-revision";
+import { deriveSaveFields, LOCKED_ROW_SELECT, toSavedEntity } from "./article-save-fields";
 
 /**
  * Forget what every cache holds about a page whose text a save changed: the bridge's intro and wikitext (the
@@ -46,10 +44,6 @@ async function evictTitleCaches(title: string, source: string, articleId: string
   }
 }
 
-/** `WikiArticle.summary` is a VarChar(500); the excerpt stays under it. */
-const MAX_EXCERPT_LENGTH = 480;
-/** The excerpt is the lead of the article: cleaning more than this is wasted work on a 2 MB page. */
-const EXCERPT_SOURCE_LENGTH = 20_000;
 /** Category names shown with an article view. */
 const MAX_VIEW_CATEGORIES = 50;
 
@@ -223,80 +217,6 @@ function toArticleRecord(article: ArticleRow): ArticleRecord {
 }
 
 /**
- * What a save derives from its text alone: the excerpt (search snippets, link previews; from the
- * text, never the edit summary), the redirect target, the word count and the reading time.
- */
-function deriveSaveFields(input: SaveArticleInput, wikitext: string, providedHtml?: string) {
-  const excerpt =
-    input.excerpt?.slice(0, MAX_EXCERPT_LENGTH) ??
-    (cleanWikitextExcerpt(wikitext.slice(0, EXCERPT_SOURCE_LENGTH), 300).slice(
-      0,
-      MAX_EXCERPT_LENGTH
-    ) ||
-      null);
-  const redirect = parseRedirect(wikitext);
-  const words = (wikitext || providedHtml || "").split(/\s+/).filter(Boolean).length;
-  return {
-    excerpt,
-    redirectTargetSlug: redirect?.title ?? null,
-    redirectTargetFragment: redirect?.fragment ?? null,
-    words,
-    readingTime: Math.max(1, Math.ceil(words / 200)),
-  };
-}
-
-type SaveFields = ReturnType<typeof deriveSaveFields>;
-
-interface SavedRow {
-  id: string;
-  title: string;
-  source: string;
-  wikitext: string;
-  namespace: number;
-  namespacePrefix: string | null;
-  protectionLevel: string;
-  protectionExpiry: Date | null;
-  syncedAt: Date;
-  updatedAt: Date;
-}
-
-/** The entity `saveArticle` answers with: the saved row plus what the save derived. */
-function toSavedEntity(
-  row: SavedRow,
-  fields: SaveFields,
-  providedHtml: string | undefined,
-  authorId: string | undefined
-): WikiArticleEntity {
-  return {
-    id: toArticleId(row.id),
-    slug: toArticleSlug(row.title),
-    title: row.title,
-    source: row.source,
-    status: "PUBLISHED",
-    format: "STRUCTURED_JSON",
-    contentHtml: providedHtml ?? "",
-    contentJson: null,
-    wikitext: row.wikitext,
-    summary: fields.excerpt,
-    namespace: row.namespace,
-    namespacePrefix: row.namespacePrefix,
-    protectionLevel: row.protectionLevel,
-    protectionExpiry: row.protectionExpiry,
-    infoboxData: null,
-    readingTime: fields.readingTime,
-    wordCount: fields.words,
-    viewCount: 0,
-    leadImageUrl: null,
-    redirectTargetSlug: fields.redirectTargetSlug,
-    redirectTargetFragment: fields.redirectTargetFragment,
-    authorId: authorId ?? null,
-    lastEditorId: authorId ?? null,
-    createdAt: row.syncedAt,
-    updatedAt: row.updatedAt,
-  };
-}
-
-/**
  * Resolve `slug` to one row: (a) the canonical title, (b) the one row whose lower-case slug matches
  * (a case variant of the title), then (c) the legacy case-insensitive match. Each step is the
  * finders' own query, so the caller's `select` decides what is read.
@@ -360,14 +280,27 @@ async function conflictOf(
   });
 }
 
-/** Thrown inside the trail's transaction when another writer claimed the conflict's trail first: rolls it back. */
-class TrailTaken extends Error {}
+/**
+ * The page's row as a save finds it once it holds the lock (null: no row yet). A deleted page is refused here, inside
+ * the transaction: the permission gate read the page before a delete that committed since.
+ */
+async function readLockedRow(tx: SaveTransaction, source: string, title: string) {
+  const row = await tx.wikiArticle.findUnique({
+    where: { source_title: { source, title } },
+    select: LOCKED_ROW_SELECT,
+  });
+  if (row?.status === "ARCHIVED") throw new DeletedPageError(title);
+  return row;
+}
 
-export interface TrailRevisionInput {
-  articleId: string;
-  /** The trail: `trailSummary` of the conflict. */
-  summary: string;
-  conflictId: string;
+/** The User row id of the author, given as a User id or a Clerk id; null when no row has it. */
+async function resolveDbUserId(tx: SaveTransaction, authorId: string | undefined) {
+  if (!authorId) return null;
+  const user = await tx.user.findFirst({
+    where: { OR: [{ id: authorId }, { clerkUserId: authorId }] },
+    select: { id: true },
+  });
+  return user?.id ?? null;
 }
 
 export class ArticleRepository {
@@ -436,7 +369,8 @@ export class ArticleRepository {
    * Save an article and create an append-only revision ledger entry (<10ms). The saves of one page run one at a time
    * (the page is locked first, see `lockPageForSave`), the new revision records the live revision it was made on top
    * of (`parentRevisionId`), and with `input.expectedHeadRef` the save throws `EditConflictError` unless that is
-   * still the page's latest live revision: the check and the write are one atomic step.
+   * still the page's latest live revision: the check and the write are one atomic step. A page deleted meanwhile throws
+   * `DeletedPageError`. A null edit (the head already has this text) writes nothing, and answers the head (`nullEdit`).
    */
   static async saveArticle(
     input: SaveArticleInput,
@@ -445,6 +379,7 @@ export class ArticleRepository {
   ): Promise<{
     article: WikiArticleEntity;
     revisionId: RevisionId;
+    nullEdit: boolean;
   }> {
     const source = input.source || "ixwiki";
     const canon = canonicalizeTitle(input.title || input.slug, { source });
@@ -464,6 +399,7 @@ export class ArticleRepository {
         // 0. Queue behind any other save of this page, then read the head it left: the edit-conflict check, the byte
         // delta and the new revision's parent all come from this one read.
         const lockedId = await lockPageForSave(tx, source, title);
+        const locked = await readLockedRow(tx, source, title);
         const previous = await loadHeadForSave(tx, source, title, lockedId);
         if (
           input.expectedHeadRef !== undefined &&
@@ -472,21 +408,14 @@ export class ArticleRepository {
           throw await conflictOf(tx, source, title, previous);
         }
 
-        // Resolve DB user id if Clerk ID or username was provided
-        let resolvedDbUserId: string | null = null;
-        if (authorId) {
-          const user = await tx.user.findFirst({
-            where: {
-              OR: [{ id: authorId }, { clerkUserId: authorId }],
-            },
-            select: { id: true },
-          });
-          if (user) resolvedDbUserId = user.id;
-        }
-
         // Is the text any different? Compared in the database: the stored text never crosses the wire.
         const textUnchanged =
           (await tx.wikiArticle.count({ where: { source, title, wikitext } })) > 0;
+        // A null edit: the head has this text already. No revision, no mirror job, no render; the row is left alone.
+        if (textUnchanged && previous && locked) {
+          return { nullEdit: true as const, row: { ...locked, wikitext }, head: previous };
+        }
+        const resolvedDbUserId = await resolveDbUserId(tx, authorId);
 
         // 1. Upsert WikiArticle
         const article = await tx.wikiArticle.upsert({
@@ -577,9 +506,16 @@ export class ArticleRepository {
           source,
         });
 
-        return { article, revision, textUnchanged, previous };
+        return { nullEdit: false as const, article, revision, textUnchanged, previous };
       }, SAVE_TRANSACTION)
       .catch(retryableWhenBusy);
+    if (result.nullEdit) {
+      return {
+        article: toSavedEntity(result.row, fields, providedHtml, authorId),
+        revisionId: toRevisionId(result.head.id),
+        nullEdit: true,
+      };
+    }
     // The job is committed: let the mirror worker send it to MediaWiki in a moment, not at the next cron minute.
     scheduleMirrorKick();
 
@@ -606,70 +542,12 @@ export class ArticleRepository {
     return {
       article: toSavedEntity(result.article, fields, providedHtml, authorId),
       revisionId: toRevisionId(result.revision.id),
+      nullEdit: false,
     };
   }
 
-  /**
-   * The trail of a conflict classic MediaWiki won: a revision with the head's text (parented on the head, byte delta 0),
-   * by `CONFLICT_NOTICE_AUTHOR`, and its mirror job, so the trail reaches both wikis. Made under the page's lock, and it
-   * claims the conflict's trail in the same transaction: null when the conflict already has one. A system write: no
-   * permission check, no rate limit, never skipped as a null edit; the text does not change, so no render and no watchers.
-   */
-  static async recordTrailRevision(
-    input: TrailRevisionInput
-  ): Promise<{ revisionId: string } | null> {
-    const recorded = await db
-      .$transaction(async (tx) => {
-        const article = await tx.wikiArticle.findUnique({
-          where: { id: input.articleId },
-          select: { id: true, title: true, source: true },
-        });
-        if (!article) throw new Error(`No article ${input.articleId} to record a trail on`);
-        await lockPageForSave(tx, article.source, article.title);
-        const conflict = await tx.wikiConflict.findUnique({
-          where: { id: input.conflictId },
-          select: { trailRevisionId: true },
-        });
-        if (conflict?.trailRevisionId) return null;
-        const head = await tx.wikiRevision.findFirst({
-          where: { articleId: article.id, parked: false },
-          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-          select: { id: true, wikitext: true },
-        });
-        if (!head) throw new Error(`"${article.title}" has no revision to record a trail on`);
-        const byteSize = Buffer.byteLength(head.wikitext, "utf8");
-        const revision = await tx.wikiRevision.create({
-          data: {
-            articleId: article.id,
-            wikitext: head.wikitext,
-            summary: input.summary,
-            minor: true,
-            source: article.source,
-            author: CONFLICT_NOTICE_AUTHOR,
-            authorId: null,
-            parentRevisionId: head.id,
-            byteSize,
-            byteDelta: 0,
-            sha1: mwSha1Base36(head.wikitext),
-          },
-          select: { id: true },
-        });
-        if (!(await setTrailRevision(tx, input.conflictId, revision.id))) throw new TrailTaken();
-        await enqueueRevisionJob(tx, {
-          title: article.title,
-          articleId: article.id,
-          revisionId: revision.id,
-          source: article.source,
-        });
-        return { revisionId: revision.id };
-      }, SAVE_TRANSACTION)
-      .catch((error: Error) => {
-        if (error instanceof TrailTaken) return null;
-        return retryableWhenBusy(error);
-      });
-    if (recorded) scheduleMirrorKick();
-    return recorded;
-  }
+  /** The trail of a conflict classic MediaWiki won, a system write (trail-revision.ts). */
+  static recordTrailRevision = recordTrailRevision;
 
   /** Imports one page's revisions from an XML dump, atomically (article-import.ts). */
   static importPageRevisions = importPageRevisions;

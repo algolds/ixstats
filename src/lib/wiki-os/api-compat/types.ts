@@ -176,8 +176,14 @@ export interface ApiServices {
   ): Promise<string>;
   /** `detectEditConflict`: has the page moved on from the revision `baseRef` names? */
   detectEditConflict(title: string, baseRef: string | undefined): Promise<EditConflict | null>;
-  /** Save a revision (PostgreSQL, then the MediaWiki mirror and the cache purge); answers the new revision's row id. */
-  saveWikitext(ctx: WikiAuthContext, save: WikitextSave): Promise<{ revisionRowId: string }>;
+  /**
+   * Save a revision (PostgreSQL, then the MediaWiki mirror and the cache purge); answers the new revision's row id, or
+   * for a null edit (`nullEdit`: the page had the text already, nothing written) the head's.
+   */
+  saveWikitext(
+    ctx: WikiAuthContext,
+    save: WikitextSave
+  ): Promise<{ revisionRowId: string; nullEdit: boolean }>;
   movePage(
     from: string,
     to: string,

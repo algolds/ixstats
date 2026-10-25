@@ -27,7 +27,7 @@ import {
   saveOrConflict,
   type CheckedSaveOutcome,
 } from "./edit-service";
-import { planRollback, ROLLBACK_WINDOW } from "./rollback-plan";
+import { NOTHING_TO_ROLL_BACK, planRollback, ROLLBACK_WINDOW } from "./rollback-plan";
 
 const SOURCE = "ixwiki";
 
@@ -37,16 +37,27 @@ export type RevertResult =
 
 const precondition = (message: string) => new TRPCError({ code: "PRECONDITION_FAILED", message });
 
+const NOTHING_TO_REVERT = "There is nothing to revert: the page already has that revision's text.";
+
 /** The page's head now, as a ref (`toRevisionRef`); null when it has no live revision. */
 async function liveHeadRef(title: string): Promise<string | null> {
   const { revisions } = await getArticleHistoryShadow(title, 1);
   return revisions[0]?.revid ?? null;
 }
 
-/** Saves `wikitext` as a new edit of `title` on top of `headRef`, the head the caller read. */
+/**
+ * Saves `wikitext` as a new edit of `title` on top of `headRef`, the head the caller read. A page that has the text
+ * already (the save was a null edit, nothing written) is refused with `unchanged`.
+ */
 async function saveOnHead(
   ctx: WikiAuthContext,
-  save: { title: string; wikitext: string; summary: string; headRef: string | null }
+  save: {
+    title: string;
+    wikitext: string;
+    summary: string;
+    headRef: string | null;
+    unchanged: string;
+  }
 ): Promise<RevertResult> {
   const { title, wikitext, summary, headRef } = save;
   const outcome = await saveOrConflict(ctx, {
@@ -56,7 +67,9 @@ async function saveOnHead(
     minor: false,
     expectedHeadRef: headRef,
   });
-  return outcome.success ? { ...outcome, title } : outcome;
+  if (!outcome.success) return outcome;
+  if (outcome.nullEdit) throw precondition(save.unchanged);
+  return { success: true, title, revisionId: outcome.revisionId };
 }
 
 /**
@@ -79,6 +92,7 @@ export async function revertPage(
     wikitext,
     summary: input.summary || `Reverted to revision ${revid} via WikiOS`,
     headRef: input.baseRevisionRef ?? (await liveHeadRef(title)),
+    unchanged: NOTHING_TO_REVERT,
   });
 }
 
@@ -138,5 +152,6 @@ export async function rollbackPage(
     wikitext: await requireRestorableWikitext(ctx, title, oldContent),
     summary: `Rolled back edits by ${plan.lastEdit.user} to revision ${plan.target.revid}`,
     headRef: baseRevisionRef ?? revisions[0]!.revid,
+    unchanged: NOTHING_TO_ROLL_BACK,
   });
 }

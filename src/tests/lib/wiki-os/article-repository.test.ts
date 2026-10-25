@@ -8,8 +8,9 @@ import { notifyWatchers } from "~/lib/wiki-os/services/watchlist-notify";
 import { scheduleMirrorKick } from "~/lib/wiki-os/services/mirror-outbox";
 import { Prisma } from "@prisma/client";
 import { InternalError } from "~/lib/app-error";
-import { EditConflictError } from "~/lib/wiki-os/core/edit-conflict-error";
+import { DeletedPageError, EditConflictError } from "~/lib/wiki-os/core/edit-conflict-error";
 import { PageBusyError } from "~/lib/wiki-os/core/page-busy-error";
+import { describeEachWikiosMode } from "~/tests/helpers/wikios-modes";
 
 const mockUpsert = jest.fn();
 const mockCount = jest.fn();
@@ -67,6 +68,8 @@ jest.mock("~/server/db", () => {
         findMany: (...a: unknown[]) => mockFindMany(...a),
         findFirst: (...a: unknown[]) => mockFindFirst(...a),
       },
+      // describeEachWikiosMode answers the switch and marker rows through this mock
+      systemConfig: { findUnique: jest.fn() },
     },
   };
 });
@@ -195,7 +198,15 @@ describe("ArticleRepository.saveArticle and the rendered view (plan 404)", () =>
     expect(mockRevisionCreate.mock.calls[0]?.[0].data).not.toHaveProperty("textDeleted", true);
     expect(enqueueRender).toHaveBeenCalledTimes(1);
   });
-  it("leaves the view and the queue alone when the saved text is the text already stored", async () => {
+  it("compares the text in the database: a count on the title and the new wikitext, nothing read back", async () => {
+    await save("new text");
+
+    expect(mockCount).toHaveBeenCalledTimes(1);
+    expect(mockCount.mock.calls[0]?.[0]).toEqual({
+      where: { source: "ixwiki", title: "Foo", wikitext: "new text" },
+    });
+  });
+  it("leaves the view and the queue alone when the saved text is the text of a row with no revision yet", async () => {
     mockCount.mockResolvedValue(1);
 
     await save("same text");
@@ -204,7 +215,7 @@ describe("ArticleRepository.saveArticle and the rendered view (plan 404)", () =>
     expect(args.update).not.toHaveProperty("htmlSyncedAt");
     expect(args.update).not.toHaveProperty("contentHtml");
     expect(enqueueRender).not.toHaveBeenCalled();
-    // The revision is still recorded: a null edit is an edit.
+    // The page had no revision (no head to return), so its text is recorded as one.
     expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
   });
   it("queues no render when the transaction failed", async () => {
@@ -490,6 +501,14 @@ describe("ArticleRepository.saveArticle and the mirror outbox (plan 407)", () =>
     expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
     expect(mockJobCreate).not.toHaveBeenCalled();
   });
+  it("names the saved page by its canonical title, not the spelling that was typed", async () => {
+    await ArticleRepository.saveArticle({ slug: "foo_bar", title: "", wikitext: "text" });
+
+    expect(mockJobCreate.mock.calls[0]?.[0].data).toMatchObject({
+      kind: "revision",
+      title: "Foo bar",
+    });
+  });
   it("fails the save, and queues nothing after it, when the job cannot be written", async () => {
     mockJobCreate.mockRejectedValue(new Error("outbox down"));
 
@@ -498,6 +517,83 @@ describe("ArticleRepository.saveArticle and the mirror outbox (plan 407)", () =>
     expect(scheduleMirrorKick).not.toHaveBeenCalled();
   });
 });
+describeEachWikiosMode(
+  "ArticleRepository.saveArticle: deleted pages and null edits (Task 14, A7)",
+  () => {
+    const page = {
+      id: "a1",
+      title: "Foo",
+      source: "ixwiki",
+      status: "PUBLISHED",
+      namespace: 0,
+      namespacePrefix: null,
+      protectionLevel: "ALL",
+      protectionExpiry: null,
+      syncedAt: new Date("2026-10-01T00:00:00Z"),
+      updatedAt: new Date("2026-10-01T00:00:00Z"),
+    };
+    const save = (wikitext = "same text") =>
+      ArticleRepository.saveArticle({ slug: "Foo", title: "Foo", wikitext }, "user-1", "Heku");
+
+    it("reads the locked row's status (never its text) after the lock, and refuses a deleted page before writing", async () => {
+      const order: string[] = [];
+      mockQueryRaw.mockImplementation(async () => {
+        order.push("lock");
+        return [{ id: "a1" }];
+      });
+      mockTxArticleFindUnique.mockImplementation(async () => {
+        order.push("status");
+        return { ...page, status: "ARCHIVED" };
+      });
+
+      await expect(save()).rejects.toBeInstanceOf(DeletedPageError);
+
+      expect(order).toEqual(["lock", "status"]);
+      const read = mockTxArticleFindUnique.mock.calls[0]?.[0];
+      expect(read.where).toEqual({ source_title: { source: "ixwiki", title: "Foo" } });
+      expect(read.select).toMatchObject({ status: true });
+      expect(read.select).not.toHaveProperty("wikitext");
+      expect(mockUpsert).not.toHaveBeenCalled();
+      expect(mockRevisionCreate).not.toHaveBeenCalled();
+      expect(mockJobCreate).not.toHaveBeenCalled();
+      expect(scheduleMirrorKick).not.toHaveBeenCalled();
+    });
+
+    it("a null edit writes no revision and no mirror job and returns the head", async () => {
+      mockTxArticleFindUnique.mockResolvedValue(page);
+      mockRevisionFindFirst.mockResolvedValue({ id: "h1", mwRevId: 41, byteSize: 9 });
+      mockCount.mockResolvedValue(1);
+
+      const saved = await save();
+
+      expect(saved.nullEdit).toBe(true);
+      expect(saved.revisionId).toBe("h1");
+      expect(saved.article).toMatchObject({ id: "a1", title: "Foo", wikitext: "same text" });
+      expect(mockUpsert).not.toHaveBeenCalled();
+      expect(mockRevisionCreate).not.toHaveBeenCalled();
+      expect(mockJobCreate).not.toHaveBeenCalled();
+      expect(scheduleMirrorKick).not.toHaveBeenCalled();
+      expect(enqueueRender).not.toHaveBeenCalled();
+      expect(invalidateDependents).not.toHaveBeenCalled();
+      expect(notifyWatchers).not.toHaveBeenCalled();
+    });
+
+    it("is no null edit when the text changed", async () => {
+      mockUpsert.mockImplementation(async (args: { create: { title: string } }) =>
+        savedRow(args.create.title)
+      );
+      mockTxArticleFindUnique.mockResolvedValue(page);
+      mockRevisionFindFirst.mockResolvedValue({ id: "h1", mwRevId: 41, byteSize: 9 });
+
+      const saved = await save("other text");
+
+      expect(saved).toMatchObject({ nullEdit: false, revisionId: "r1" });
+      expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
+      expect(mockJobCreate).toHaveBeenCalledTimes(1);
+    });
+  }
+);
+
 describe("ArticleRepository.recordTrailRevision (the classic winner's trail)", () => {
   const head = { id: "h1", wikitext: "Caphiria is an empire." };
   const trail = () =>

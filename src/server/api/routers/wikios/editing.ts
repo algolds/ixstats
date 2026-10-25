@@ -147,7 +147,7 @@ export const wikiosEditingRouter = createTRPCRouter({
         title: z.string().min(1).max(500),
         revid: z.string().min(1).max(64),
         summary: z.string().max(500).optional(),
-        baseRevisionRef: z.string().max(64).optional(),
+        baseRevisionRef: z.string().min(1).max(64).optional(),
       })
     )
     .mutation(({ input, ctx }) =>
@@ -163,7 +163,7 @@ export const wikiosEditingRouter = createTRPCRouter({
     .input(
       z.object({
         title: z.string().min(1).max(500),
-        baseRevisionRef: z.string().max(64).optional(),
+        baseRevisionRef: z.string().min(1).max(64).optional(),
       })
     )
     .mutation(({ input, ctx }) =>

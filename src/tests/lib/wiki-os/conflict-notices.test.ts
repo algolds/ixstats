@@ -472,6 +472,42 @@ describeEachWikiosMode("settleConflicts", () => {
     expect(revisionsOf("Caphiria")).toHaveLength(1);
   });
 
+  it("a deleted talk page takes no note, and the row does not try it again", async () => {
+    seedCaphiria();
+    const foo = site.editAs("Foo", "Caphiria", "Caphiria is a republic.");
+    const id = await collide(change("wikios", wikiosHead("Caphiria is an empire."), author({})), [
+      change("classic", String(foo.revid), author({ classicName: "Foo" })),
+    ]);
+    const talk = tables.wikiArticle.insert({
+      title: "User talk:Foo",
+      slug: "user_talk:foo",
+      namespace: 3,
+      wikitext: "Old talk.",
+      status: "ARCHIVED",
+    });
+    tables.wikiRevision.insert({
+      articleId: talk.id,
+      wikitext: "Old talk.",
+      byteSize: 9,
+      sha1: mwSha1Base36("Old talk."),
+      author: "Bar",
+      createdAt: new Date("2026-09-01"),
+    });
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    const first = await settleConflicts();
+    const second = await settleConflicts();
+
+    expect(first.pending).toBe(0);
+    expect(second).toEqual({ notified: 0, trails: 0, pending: 0 });
+    expect(revisionsOf("User talk:Foo")).toHaveLength(1);
+    expect(article("User talk:Foo")).toMatchObject({ status: "ARCHIVED", wikitext: "Old talk." });
+    expect(jobs()).toEqual([]);
+    expect(conflictRow(id).settledAt).not.toBeNull();
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
   it("a talk page edited meanwhile leaves the note pending for the next run", async () => {
     seedCaphiria();
     const foo = site.editAs("Foo", "Caphiria", "Caphiria is a republic.");

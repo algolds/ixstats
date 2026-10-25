@@ -616,3 +616,71 @@ describeEachWikiosMode("wikios.revertToRevision carries the head it read", () =>
     expect(page().wikitext).toBe("Lost text");
   });
 });
+
+describeEachWikiosMode("a rollback or revert that would change nothing (Task 14, A7)", () => {
+  it("a rollback whose target text equals the head's answers nothing to roll back, and saves nothing", async () => {
+    revision({ wikitext: "Bob's text", author: "Bob" });
+    revision({ wikitext: "Vandal's text", author: "Vandal" });
+    // the vandal put the text back themselves
+    revision({ wikitext: "Bob's text", author: "Vandal" });
+    const before = revisionsOf().length;
+
+    await expect(editing().rollback({ title: "Vesperia" })).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message: "There is nothing to roll back: the page already has that text.",
+    });
+    expect(revisionsOf()).toHaveLength(before);
+    expect(fake.tables.wikiMirrorJob.rows).toHaveLength(0);
+  });
+
+  it("a revert to text equal to the head's answers nothing to revert, and saves nothing", async () => {
+    const old = revision({ wikitext: "Old text", author: "Bob" });
+    revision({ wikitext: "New text", author: "Carol" });
+    revision({ wikitext: "Old text", author: "Carol" });
+    const before = revisionsOf().length;
+
+    await expect(
+      editing().revertToRevision({ title: "Vesperia", revid: String(old.id) })
+    ).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message: "There is nothing to revert: the page already has that revision's text.",
+    });
+    expect(revisionsOf()).toHaveLength(before);
+  });
+
+  it("an unchanged save from the editor succeeds as a null edit on the head, with no new revision", async () => {
+    const head = revision({ wikitext: "Same text", author: "Bob" });
+
+    const result = await editing().saveWikitext({
+      title: "Vesperia",
+      wikitext: "Same text",
+      baseRevisionRef: String(head.id),
+    });
+
+    expect(result).toEqual({
+      success: true,
+      revisionId: head.id,
+      nullEdit: true,
+      title: "Vesperia",
+    });
+    expect(revisionsOf()).toHaveLength(1);
+  });
+});
+
+describeEachWikiosMode("baseRevisionRef of a revert and a rollback (Task 14)", () => {
+  it.each([
+    ["empty", ""],
+    ["longer than 64 characters", "9".repeat(65)],
+  ])("refuses a base that is %s, before anything is read", async (_, baseRevisionRef) => {
+    const old = revision({ wikitext: "Old text", author: "Bob" });
+    revision({ wikitext: "New text", author: "Carol" });
+
+    await expect(editing().rollback({ title: "Vesperia", baseRevisionRef })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+    await expect(
+      editing().revertToRevision({ title: "Vesperia", revid: String(old.id), baseRevisionRef })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(revisionsOf()).toHaveLength(2);
+  });
+});

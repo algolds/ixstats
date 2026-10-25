@@ -219,7 +219,7 @@ describeEachWikiosMode("restoreOverwrittenText", () => {
       ref: lost.id as string,
     });
 
-    expect(result).toEqual({ success: true, revisionId: expect.any(String) });
+    expect(result).toEqual({ success: true, revisionId: expect.any(String), nullEdit: false });
     const restored = revisionRow(result.success ? result.revisionId : "");
     expect(headOf().id).toBe(restored.id);
     expect(restored).toMatchObject({
@@ -609,6 +609,7 @@ describeEachWikiosMode("wikios.restoreOverwritten and wikios.overwrittenRestorab
     await expect(editing(as("alpha")).restoreOverwritten({ conflictId, ref })).resolves.toEqual({
       success: true,
       revisionId: expect.any(String),
+      nullEdit: false,
     });
     await expect(editing(signedOut()).restoreOverwritten({ conflictId, ref })).rejects.toThrow(
       /Authentication required/

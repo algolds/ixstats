@@ -70,9 +70,10 @@ const services: ApiServices = {
   authorizeProtection,
   requireRestorableWikitext,
   detectEditConflict: (title, baseRef) => detectEditConflict(title, baseRef),
-  saveWikitext: async (ctx, save) => ({
-    revisionRowId: (await commitWikitextSave(ctx, save)).revisionId,
-  }),
+  saveWikitext: async (ctx, save) => {
+    const saved = await commitWikitextSave(ctx, save);
+    return { revisionRowId: saved.revisionId, nullEdit: saved.nullEdit };
+  },
   movePage: (from, to, reason, actor, options) =>
     PageManagementService.movePage(from, to, reason, actor, "ixwiki", options),
   archivePage: async (title, reason, actor) => {
