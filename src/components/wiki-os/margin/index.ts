@@ -5,6 +5,5 @@ export { MarginGutterPins } from "./MarginGutterPins";
 export { SelectionCapsule, type SelectionPayload } from "./SelectionCapsule";
 export { MarginThreadsTab, LORE_DIMENSIONS } from "./tabs/MarginThreadsTab";
 export { MarginMarkupTab } from "./tabs/MarginMarkupTab";
-export { MarginInspectTab } from "./tabs/MarginInspectTab";
 export { MarginShareModal } from "./modals/MarginShareModal";
 export { MarginUserAvatar, type CommentAuthor } from "./shared/MarginUserAvatar";
