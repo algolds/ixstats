@@ -80,6 +80,7 @@ function ExecutiveAgendaComponent({
       elections: (elections.data ?? []) as AgendaSourceElection[],
       nowIxTime,
       multiplier: clock.multiplier,
+      calendar: clock.calendar,
     });
   }, [intentTree.data, issuesData.data, elections.data, nowIxTime, clock]);
 
