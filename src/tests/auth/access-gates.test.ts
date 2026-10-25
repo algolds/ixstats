@@ -76,7 +76,9 @@ describe("defineAbilityFor", () => {
   ])("gives the %s tier the premium sections: %s", (tier, premium) => {
     const ability = defineAbilityFor("user", [], tier, []);
     expect(ability.can("access", "MyCountryFeature", "overview")).toBe(true);
-    for (const section of ["defense", "intelligence", "map-editor"]) {
+    // Intelligence renders the Defense section, which the "defense" lock covers (F34).
+    expect(ability.can("access", "MyCountryFeature", "intelligence")).toBe(true);
+    for (const section of ["defense", "map-editor"]) {
       expect([section, ability.can("access", "MyCountryFeature", section)]).toEqual([
         section,
         premium,

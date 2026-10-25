@@ -129,3 +129,16 @@ describe("endOperation", () => {
     });
   });
 });
+
+it("endOperation ends only its own GDP drain: by its key, or a legacy row's exact description (F28)", async () => {
+  db.militaryOperation.findUnique.mockResolvedValue(operation("training", 30));
+  await operations().endOperation({ operationId: "op_1" });
+  const scope = {
+    countryId: OWN,
+    OR: [
+      { createdBy: "operation:op_1" },
+      { description: "Military operation: Northwind (training)" },
+    ],
+  };
+  expect(db.storytellerEffect.updateMany.mock.calls[0]![0].where.AND[0]).toEqual(scope);
+});
