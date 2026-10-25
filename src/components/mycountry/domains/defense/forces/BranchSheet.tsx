@@ -22,50 +22,41 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import {
-  BRANCH_TYPES,
-  BRANCH_TYPE_LABELS,
+  BRANCH_DOMAINS,
+  DOMAIN_LABELS,
   FORCE_LIMITS,
-  type BranchTypeKey,
+  type BranchDomain,
 } from "~/lib/military/force-structure";
-import { CountField, LevelField, TextField, type ForceBranch } from "./force-fields";
+import { CountField, TextField, type ForceBranch } from "./force-fields";
 
+/** A branch's identity; its headcount, equipment and readiness come from the defense budget. */
 export interface BranchFormData {
-  branchType: BranchTypeKey;
+  domain: BranchDomain;
   name: string;
   motto: string;
   description: string;
   established: string;
-  activeDuty: number;
-  reserves: number;
   civilianStaff: number;
-  annualBudget: number;
-  budgetPercent: number;
-  readinessLevel: number;
-  technologyLevel: number;
-  trainingLevel: number;
-  morale: number;
-  deploymentCapacity: number;
-  sustainmentCapacity: number;
 }
+
+/** A starter name for a domain until the player names the branch. */
+const DEFAULT_NAMES: Record<BranchDomain, string> = {
+  land: "Army",
+  sea: "Navy",
+  air: "Air force",
+  marines: "Marines",
+  space: "Space force",
+  strategic_missile: "Strategic missile force",
+};
 
 function toForm(branch: ForceBranch | null): BranchFormData {
   return {
-    branchType: (branch?.branchType as BranchTypeKey | undefined) ?? "army",
-    name: branch?.name ?? BRANCH_TYPE_LABELS.army,
+    domain: branch?.domain ?? "land",
+    name: branch?.name ?? DEFAULT_NAMES.land,
     motto: branch?.motto ?? "",
     description: branch?.description ?? "",
     established: branch?.established ?? "",
-    activeDuty: branch?.activeDuty ?? 0,
-    reserves: branch?.reserves ?? 0,
     civilianStaff: branch?.civilianStaff ?? 0,
-    annualBudget: branch?.annualBudget ?? 0,
-    budgetPercent: branch?.budgetPercent ?? 0,
-    readinessLevel: branch?.readinessLevel ?? 50,
-    technologyLevel: branch?.technologyLevel ?? 50,
-    trainingLevel: branch?.trainingLevel ?? 50,
-    morale: branch?.morale ?? 50,
-    deploymentCapacity: branch?.deploymentCapacity ?? 50,
-    sustainmentCapacity: branch?.sustainmentCapacity ?? 50,
   };
 }
 
@@ -77,7 +68,7 @@ interface BranchSheetProps {
   onSubmit: (data: BranchFormData) => void;
 }
 
-/** Create or edit a military branch: identity, personnel and budget, readiness and capability. */
+/** Create or edit a military branch's identity. Its strength grows from the defense budget on the realm clock. */
 export function BranchSheet({ open, onOpenChange, branch, pending, onSubmit }: BranchSheetProps) {
   const [form, setForm] = useState<BranchFormData>(() => toForm(branch));
 
@@ -89,15 +80,14 @@ export function BranchSheet({ open, onOpenChange, branch, pending, onSubmit }: B
   const set = <K extends keyof BranchFormData>(key: K, value: BranchFormData[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
-  const assigned = branch?.units.reduce((s, u) => s + u.personnel, 0) ?? 0;
-
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent size="wide" className="overflow-y-auto">
         <SheetHeader>
           <SheetTitle>{branch ? `Edit ${branch.name}` : "New military branch"}</SheetTitle>
           <SheetDescription>
-            Personnel, readiness and equipment all feed your combat strength.
+            Personnel, equipment and readiness grow from your defense budget. A new branch starts
+            empty.
           </SheetDescription>
         </SheetHeader>
 
@@ -112,29 +102,27 @@ export function BranchSheet({ open, onOpenChange, branch, pending, onSubmit }: B
           <section className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="branch-type">Branch type</Label>
+                <Label htmlFor="branch-domain">Domain</Label>
                 <Select
-                  value={form.branchType}
+                  value={form.domain}
+                  disabled={!!branch}
                   onValueChange={(value) => {
-                    const next = value as BranchTypeKey;
+                    const next = value as BranchDomain;
                     setForm((prev) => ({
                       ...prev,
-                      branchType: next,
-                      // Follow the type's default name until the player names the branch.
-                      name:
-                        prev.name === BRANCH_TYPE_LABELS[prev.branchType]
-                          ? BRANCH_TYPE_LABELS[next]
-                          : prev.name,
+                      domain: next,
+                      // Follow the domain's default name until the player names the branch.
+                      name: prev.name === DEFAULT_NAMES[prev.domain] ? DEFAULT_NAMES[next] : prev.name,
                     }));
                   }}
                 >
-                  <SelectTrigger id="branch-type">
+                  <SelectTrigger id="branch-domain">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {BRANCH_TYPES.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {BRANCH_TYPE_LABELS[type]}
+                    {BRANCH_DOMAINS.map((domain) => (
+                      <SelectItem key={domain} value={domain}>
+                        {DOMAIN_LABELS[domain]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -179,79 +167,13 @@ export function BranchSheet({ open, onOpenChange, branch, pending, onSubmit }: B
           <Separator />
 
           <section className="space-y-4">
-            <h3 className="text-label text-headline">Personnel and budget</h3>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <CountField
-                id="branch-active"
-                label="Active duty"
-                value={form.activeDuty}
-                max={FORCE_LIMITS.maxActiveDuty}
-                onChange={(v) => set("activeDuty", v)}
-                hint={assigned > 0 ? `${assigned.toLocaleString("en-US")} in units` : undefined}
-              />
-              <CountField
-                id="branch-reserves"
-                label="Reserves"
-                value={form.reserves}
-                max={FORCE_LIMITS.maxReserves}
-                onChange={(v) => set("reserves", v)}
-              />
-              <CountField
-                id="branch-civilians"
-                label="Civilian staff"
-                value={form.civilianStaff}
-                max={FORCE_LIMITS.maxCivilianStaff}
-                onChange={(v) => set("civilianStaff", v)}
-              />
-              <CountField
-                id="branch-budget"
-                label="Annual budget"
-                value={form.annualBudget}
-                max={FORCE_LIMITS.maxBudget}
-                onChange={(v) => set("annualBudget", v)}
-              />
-              <CountField
-                id="branch-budget-share"
-                label="Share of defense budget (%)"
-                value={form.budgetPercent}
-                max={100}
-                onChange={(v) => set("budgetPercent", v)}
-              />
-            </div>
-          </section>
-
-          <Separator />
-
-          <section className="space-y-4">
-            <h3 className="text-label text-headline">Readiness and capability</h3>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <LevelField
-                label="Readiness"
-                value={form.readinessLevel}
-                onChange={(v) => set("readinessLevel", v)}
-              />
-              <LevelField
-                label="Technology"
-                value={form.technologyLevel}
-                onChange={(v) => set("technologyLevel", v)}
-              />
-              <LevelField
-                label="Training"
-                value={form.trainingLevel}
-                onChange={(v) => set("trainingLevel", v)}
-              />
-              <LevelField label="Morale" value={form.morale} onChange={(v) => set("morale", v)} />
-              <LevelField
-                label="Deployment capacity"
-                value={form.deploymentCapacity}
-                onChange={(v) => set("deploymentCapacity", v)}
-              />
-              <LevelField
-                label="Sustainment capacity"
-                value={form.sustainmentCapacity}
-                onChange={(v) => set("sustainmentCapacity", v)}
-              />
-            </div>
+            <CountField
+              id="branch-civilians"
+              label="Civilian staff"
+              value={form.civilianStaff}
+              max={FORCE_LIMITS.maxCivilianStaff}
+              onChange={(v) => set("civilianStaff", v)}
+            />
           </section>
         </form>
 

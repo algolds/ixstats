@@ -27,9 +27,10 @@ import { createStorytellerEffects } from "~/lib/economy/storyteller-effects";
 import {
   computeConflictOutcome,
   conflictEconomicEffects,
-  militaryStrength,
   pvpConflictEndsAt,
 } from "~/lib/military/conflict-outcome";
+import { nationalCombatPower } from "~/server/modules/defense";
+import { clockForCountry, type RealmClockReader } from "~/server/shared/realm-time";
 import {
   EXPIRED_PVP_DATA,
   PVP_UNFOUGHT,
@@ -45,12 +46,14 @@ import {
 
 /**
  * A PvNPC strike's target must be a nation the striker has relations with, in the same realm,
- * and not struck by it within the cooldown (the UI's target list, enforced on the server).
+ * and not struck by it within the cooldown on the striker's realm clock (the UI's target list,
+ * enforced on the server).
  */
 async function assertStrikeAllowed(
   db: PrismaClient,
   initiator: { id: string; realmId: string },
-  target: { id: string; name: string; realmId: string }
+  target: { id: string; name: string; realmId: string },
+  clock: RealmClockReader
 ) {
   const [relation, lastStrike] = await Promise.all([
     db.diplomaticRelation.findFirst({
@@ -67,7 +70,7 @@ async function assertStrikeAllowed(
         type: "pvnpc",
         initiatorId: initiator.id,
         defenderId: target.id,
-        createdAt: { gte: ixDaysAgo(PVNPC_STRIKE_COOLDOWN_IXDAYS) },
+        createdAt: { gte: ixDaysAgo(PVNPC_STRIKE_COOLDOWN_IXDAYS, clock) },
       },
       orderBy: { createdAt: "desc" },
       select: { createdAt: true },
@@ -80,10 +83,12 @@ async function assertStrikeAllowed(
     });
   }
   if (lastStrike) {
-    const next = ixDaysLater(lastStrike.createdAt, PVNPC_STRIKE_COOLDOWN_IXDAYS);
+    const next = ixDaysLater(lastStrike.createdAt, PVNPC_STRIKE_COOLDOWN_IXDAYS, clock);
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: `You struck ${target.name} recently. You can strike again on ${next.toISOString().slice(0, 10)}.`,
+      message: next
+        ? `You struck ${target.name} recently. You can strike again on ${next.toISOString().slice(0, 10)}.`
+        : `You struck ${target.name} recently. Your realm's clock is paused, so the cooldown waits for it.`,
     });
   }
 }
@@ -137,7 +142,7 @@ export const securityConflictsRouter = createTRPCRouter({
         pvpRules: z
           .object({
             victoryConditions: z.string(),
-            maxDuration: z.number(), // IxTime days
+            maxDuration: z.number(), // in-game days on the realm clock
             stakes: z.string(),
           })
           .optional(),
@@ -331,12 +336,14 @@ export const securityConflictsRouter = createTRPCRouter({
         return declined;
       }
 
+      const clock = await clockForCountry(ctx.db, conflict.defenderId);
       const accepted = await ctx.db.militaryConflict.update({
         where: { id: input.conflictId },
         data: {
           defenderApproved: true,
           status: "active",
           startDate: new Date(),
+          startClockMs: clock.now(),
         },
         include: {
           initiator: { select: { id: true, name: true } },
@@ -438,25 +445,24 @@ export const securityConflictsRouter = createTRPCRouter({
       if (conflict.status !== "active") {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Conflict is not active." });
       }
-      const endsAt = pvpConflictEndsAt(conflict);
-      if (endsAt && endsAt.getTime() > Date.now()) {
+      const window = pvpConflictEndsAt(conflict, await clockForCountry(ctx.db, input.countryId));
+      if (window && !window.over) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: `Hostilities continue until ${endsAt.toISOString().slice(0, 10)}.`,
+          message: window.endsAt
+            ? `Hostilities continue until ${window.endsAt.toISOString().slice(0, 10)}.`
+            : "Hostilities continue: your realm's clock is paused.",
         });
       }
 
-      const [initiatorBranches, defenderBranches] = await Promise.all(
-        [conflict.initiatorId, conflict.defenderId].map((countryId) =>
-          ctx.db.militaryBranch.findMany({
-            where: { countryId, isActive: true },
-            include: { units: true, assets: true },
-          })
-        )
-      );
+      // D3 seam: each side's national combat power on its realm clock feeds the resolver.
+      const strengths = await nationalCombatPower(ctx.db, [
+        conflict.initiatorId,
+        conflict.defenderId,
+      ]);
       const outcome = computeConflictOutcome(
-        militaryStrength(initiatorBranches ?? []),
-        militaryStrength(defenderBranches ?? [])
+        strengths[conflict.initiatorId] ?? 0,
+        strengths[conflict.defenderId] ?? 0
       );
       const winnerId = outcome.initiatorWins ? conflict.initiatorId : conflict.defenderId;
 
@@ -541,10 +547,15 @@ export const securityConflictsRouter = createTRPCRouter({
         ctx,
         conflicts.flatMap((c) => [c.initiatorId, c.defenderId])
       );
+      const clock = await clockForCountry(ctx.db, input.countryId);
       const rows = conflicts.map(withPvPExpiry).map((c) => ({
         ...c,
-        // When an active PvP conflict may be concluded (concludePvPConflict).
-        endsAt: c.type === "pvp" && c.status === "active" ? pvpConflictEndsAt(c) : null,
+        // When an active PvP conflict may be concluded (concludePvPConflict), on the realm clock;
+        // null while the realm is paused.
+        endsAt:
+          c.type === "pvp" && c.status === "active"
+            ? (pvpConflictEndsAt(c, clock)?.endsAt ?? null)
+            : null,
         initiator: c.initiator
           ? {
               id: c.initiator.id,
@@ -606,16 +617,7 @@ export const securityConflictsRouter = createTRPCRouter({
         });
       }
 
-      // Get both countries' military data
-      const [initiatorBranches, defenderBranches, initiator, defender] = await Promise.all([
-        ctx.db.militaryBranch.findMany({
-          where: { countryId: userProfile.countryId, isActive: true },
-          include: { units: true, assets: true },
-        }),
-        ctx.db.militaryBranch.findMany({
-          where: { countryId: input.targetCountryId, isActive: true },
-          include: { units: true, assets: true },
-        }),
+      const [initiator, defender] = await Promise.all([
         ctx.db.country.findUnique({
           where: { id: userProfile.countryId },
           select: STRIKE_COUNTRY_FIELDS,
@@ -629,11 +631,14 @@ export const securityConflictsRouter = createTRPCRouter({
       if (!initiator || !defender) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
       }
-      await assertStrikeAllowed(ctx.db, initiator, defender);
+      await assertStrikeAllowed(ctx.db, initiator, defender, await clockForCountry(ctx.db, initiator));
 
+      // D3 seam: national combat power on each side's realm clock; the NPC defends with forces
+      // derived from its economy (created on first touch).
+      const strengths = await nationalCombatPower(ctx.db, [initiator.id, defender.id]);
       const outcome = computeConflictOutcome(
-        militaryStrength(initiatorBranches),
-        militaryStrength(defenderBranches)
+        strengths[initiator.id] ?? 0,
+        strengths[defender.id] ?? 0
       );
       const {
         initiatorWins,

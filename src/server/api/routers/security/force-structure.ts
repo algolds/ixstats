@@ -1,11 +1,8 @@
 /**
- * Force-structure authoring (MC-3, decision D2): country owners create, edit and delete their
- * military branches and units, or start from a force planned from their builder data. Restores
- * the CRUD plan 312 deleted, on today's conventions: premium + per-procedure rate limit, the
- * canonical country-write check (owner, acting user or privileged role) and bounded inputs.
- *
- * Strength (`~/lib/military/force-structure`) reads these rows, so PvNPC strikes and PvP
- * resolution reflect what the player authored.
+ * Force-structure authoring (MC-3; realm time D2a): country owners name, describe, add and delete their branches
+ * and organise units. Headcounts, capital and readiness are derived from the defense budget on the nation's realm
+ * clock (`~/server/modules/defense`), so no strength is typed here. Premium + per-procedure rate limit, the canonical
+ * country-write check (owner, acting user or privileged role) and bounded inputs.
  */
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -15,15 +12,13 @@ import {
   assertCountryResourceWriteAccess,
   assertCountryWriteAccess,
 } from "~/server/shared/country-authorization";
+import { BRANCH_DOMAINS, FORCE_LIMITS } from "~/lib/military/force-structure";
 import {
-  BRANCH_TYPES,
-  FORCE_LIMITS,
-  builderDefenseSpending,
-  planStarterForce,
-  populationPersonnelCap,
-} from "~/lib/military/force-structure";
-import { defenseAllocationAmount } from "~/lib/military/defense-budget";
-import { loadEffectiveBudget } from "~/lib/government/budget-allocations";
+  createEmptyBranch,
+  previewStarterForce,
+  seedStarterBranches,
+  setBranchAllocation,
+} from "~/server/modules/defense";
 
 // ===========================
 // Input Validation Schemas
@@ -51,27 +46,17 @@ const optionalImageUrl = z
   .nullable()
   .optional();
 
-const level = z.number().finite().min(0).max(100);
 const headcount = (max: number) => z.number().int().min(0).max(max);
 
+/** A branch's identity; its numbers come from the model. */
 export const militaryBranchInputSchema = z.object({
-  branchType: z.enum(BRANCH_TYPES),
+  domain: z.enum(BRANCH_DOMAINS),
   name: z.string().trim().min(1, "Branch name is required").max(100),
   motto: optionalText(200),
   description: optionalText(2000),
   established: optionalText(50),
   imageUrl: optionalImageUrl,
-  activeDuty: headcount(FORCE_LIMITS.maxActiveDuty).default(0),
-  reserves: headcount(FORCE_LIMITS.maxReserves).default(0),
   civilianStaff: headcount(FORCE_LIMITS.maxCivilianStaff).default(0),
-  annualBudget: z.number().finite().min(0).max(FORCE_LIMITS.maxBudget).default(0),
-  budgetPercent: level.default(0),
-  readinessLevel: level.default(50),
-  technologyLevel: level.default(50),
-  trainingLevel: level.default(50),
-  morale: level.default(50),
-  deploymentCapacity: level.default(50),
-  sustainmentCapacity: level.default(50),
 });
 
 export const militaryUnitInputSchema = z.object({
@@ -83,29 +68,17 @@ export const militaryUnitInputSchema = z.object({
   commanderName: optionalText(100),
   commanderRank: optionalText(100),
   headquarters: optionalText(100),
-  readiness: level.default(50),
   imageUrl: optionalImageUrl,
 });
 
-/** `.partial()` keeps zod defaults, which would reset omitted fields on update; strip them. */
+/** `.partial()` keeps zod defaults, which would reset omitted fields on update; strip them. The domain is fixed. */
 const branchUpdateSchema = militaryBranchInputSchema
-  .extend({
-    activeDuty: headcount(FORCE_LIMITS.maxActiveDuty),
-    reserves: headcount(FORCE_LIMITS.maxReserves),
-    civilianStaff: headcount(FORCE_LIMITS.maxCivilianStaff),
-    annualBudget: z.number().finite().min(0).max(FORCE_LIMITS.maxBudget),
-    budgetPercent: level,
-    readinessLevel: level,
-    technologyLevel: level,
-    trainingLevel: level,
-    morale: level,
-    deploymentCapacity: level,
-    sustainmentCapacity: level,
-  })
+  .omit({ domain: true })
+  .extend({ civilianStaff: headcount(FORCE_LIMITS.maxCivilianStaff) })
   .partial();
 
 const unitUpdateSchema = militaryUnitInputSchema
-  .extend({ personnel: headcount(FORCE_LIMITS.maxUnitPersonnel), readiness: level })
+  .extend({ personnel: headcount(FORCE_LIMITS.maxUnitPersonnel) })
   .partial();
 
 // ===========================
@@ -144,35 +117,6 @@ async function loadWritableUnit(ctx: AuthCtx, unitId: string) {
   return unit;
 }
 
-/** Active duty plus reserves across the nation's active branches may not pass 25% of population. */
-async function assertWithinPopulation(
-  db: Db,
-  countryId: string,
-  personnel: number,
-  excludeBranchId?: string
-) {
-  const [country, others] = await Promise.all([
-    db.country.findUnique({ where: { id: countryId }, select: { currentPopulation: true } }),
-    db.militaryBranch.aggregate({
-      where: {
-        countryId,
-        isActive: true,
-        ...(excludeBranchId ? { id: { not: excludeBranchId } } : {}),
-      },
-      _sum: { activeDuty: true, reserves: true },
-    }),
-  ]);
-  const cap = populationPersonnelCap(country?.currentPopulation);
-  if (cap === null) return;
-  const total = (others._sum.activeDuty ?? 0) + (others._sum.reserves ?? 0) + personnel;
-  if (total > cap) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: `Active duty plus reserves across all branches (${fmt(total)}) cannot exceed 25% of the population (${fmt(cap)}).`,
-    });
-  }
-}
-
 /** Unit personnel in a branch is drawn from its active duty and reserves. */
 async function assertUnitsFit(
   db: Db,
@@ -189,7 +133,7 @@ async function assertUnitsFit(
   if (total > branchPersonnel) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: `Units would hold ${fmt(total)} personnel but the branch has ${fmt(branchPersonnel)} active duty and reserves. Raise the branch's personnel first.`,
+      message: `Units would hold ${fmt(total)} personnel but the branch has ${fmt(branchPersonnel)} active duty and reserves.`,
     });
   }
 }
@@ -199,6 +143,7 @@ async function assertUnitsFit(
 // ===========================
 
 export const securityForceStructureRouter = createTRPCRouter({
+  // A new branch starts empty and grows from the defense budget on the realm clock.
   createMilitaryBranch: premiumMutationProcedure
     .input(z.object({ countryId: z.string().min(1), branch: militaryBranchInputSchema }))
     .mutation(async ({ ctx, input }) => {
@@ -213,36 +158,38 @@ export const securityForceStructureRouter = createTRPCRouter({
           message: `A nation can have at most ${FORCE_LIMITS.maxBranchesPerCountry} branches.`,
         });
       }
-      await assertWithinPopulation(
-        ctx.db,
-        input.countryId,
-        input.branch.activeDuty + input.branch.reserves
-      );
-
-      return ctx.db.militaryBranch.create({
-        data: { countryId: input.countryId, ...input.branch },
-      });
+      const { domain, name, ...identity } = input.branch;
+      return createEmptyBranch(ctx.db, { countryId: input.countryId, domain, name, identity });
     }),
 
   updateMilitaryBranch: premiumMutationProcedure
     .input(z.object({ id: z.string().min(1), branch: branchUpdateSchema }))
     .mutation(async ({ ctx, input }) => {
       const branch = await loadWritableBranch(ctx, input.id);
-
-      const { activeDuty, reserves } = input.branch;
-      if (activeDuty !== undefined || reserves !== undefined) {
-        const personnel = (activeDuty ?? branch.activeDuty) + (reserves ?? branch.reserves);
-        await assertUnitsFit(ctx.db, branch.id, personnel, 0);
-        if (branch.isActive) {
-          await assertWithinPopulation(ctx.db, branch.countryId, personnel, branch.id);
-        }
-      }
-
       return ctx.db.militaryBranch.update({ where: { id: branch.id }, data: input.branch });
     }),
 
-  // Hard delete: units and assets cascade. Deployments keep their (now dangling) unit ids as
-  // history, and achievement counts cannot be farmed with soft-deleted rows.
+  // The branch's effort share across branches and its desired strength (null follows the budget).
+  setBranchAllocation: premiumMutationProcedure
+    .input(
+      z.object({
+        id: z.string().min(1),
+        effortShare: z.number().finite().min(0).max(1).optional(),
+        targetActive: headcount(FORCE_LIMITS.maxActiveDuty).nullable().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const branch = await loadWritableBranch(ctx, input.id);
+      return setBranchAllocation(ctx.db, {
+        countryId: branch.countryId,
+        branchId: branch.id,
+        effortShare: input.effortShare,
+        targetActive: input.targetActive,
+      });
+    }),
+
+  // Hard delete: units, assets and orders cascade (the branch's capital is lost). Deployments keep their (now
+  // dangling) unit ids as history, and achievement counts cannot be farmed with soft-deleted rows.
   deleteMilitaryBranch: premiumMutationProcedure
     .input(z.object({ id: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
@@ -299,56 +246,20 @@ export const securityForceStructureRouter = createTRPCRouter({
       return { id: unit.id };
     }),
 
-  // The starter force a nation with no branches would get, for the confirm dialog.
+  // The starter force the nation's budget gives (the equilibrium the reset applies), for the confirm dialog.
   previewStarterForceStructure: premiumProcedure
     .input(z.object({ countryId: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
-      return loadStarterPlan(ctx.db, input.countryId);
+      return previewStarterForce(ctx.db, input.countryId);
     }),
 
-  // Create army, navy and air force sized from population and the builder's Defense spending.
-  // Only for a nation with no active branches, so it never duplicates authored structure.
+  // A nation's forces exist from its first read (its starter force, once). After deleting every branch this adds
+  // empty army, navy and air force branches that grow from the budget.
   seedStarterForceStructure: premiumMutationProcedure
     .input(z.object({ countryId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
-
-      const existing = await ctx.db.militaryBranch.count({
-        where: { countryId: input.countryId, isActive: true },
-      });
-      if (existing > 0) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "This nation already has military branches.",
-        });
-      }
-
-      const plan = await loadStarterPlan(ctx.db, input.countryId);
-      await ctx.db.militaryBranch.createMany({
-        data: plan.branches.map((b) => ({ countryId: input.countryId, ...b })),
-      });
-      return { created: plan.branches.length, budgetSource: plan.budgetSource };
+      return seedStarterBranches(ctx.db, input.countryId);
     }),
 });
-
-async function loadStarterPlan(db: Db, countryId: string) {
-  const [country, governmentBudget, effectiveBudget] = await Promise.all([
-    db.country.findUnique({
-      where: { id: countryId },
-      select: { currentPopulation: true, currentTotalGdp: true },
-    }),
-    db.governmentBudget.findUnique({
-      where: { countryId },
-      select: { spendingCategories: true },
-    }),
-    loadEffectiveBudget(db, countryId),
-  ]);
-  if (!country) throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
-  return planStarterForce({
-    population: country.currentPopulation,
-    totalGdp: country.currentTotalGdp,
-    defenseAllocation: defenseAllocationAmount(effectiveBudget.allocations),
-    builderDefenseSpending: builderDefenseSpending(governmentBudget?.spendingCategories),
-  });
-}

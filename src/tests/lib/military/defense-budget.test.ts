@@ -2,8 +2,7 @@
  * Realm time D1: the defense budget is the National budget's Defense department line in the
  * budget in effect. No separate defense budget row, estimate or category split remains.
  */
-import { defenseAllocationAmount, defenseLineOf } from "~/lib/military/defense-budget";
-import { planStarterForce } from "~/lib/military/force-structure";
+import { defenseLineOf } from "~/lib/military/defense-budget";
 
 const departments = [
   { id: "d_fin", name: "Treasury", category: "Finance" },
@@ -36,6 +35,8 @@ describe("defenseLineOf", () => {
       departmentName: "Royal Army Command",
       allocatedAmount: 12e9,
       allocatedPercent: 12,
+      // D2: the model's budget sums every Defense line (8% + 12%).
+      totalDefenseAmount: 20e9,
       totalBudget: 100e9,
       budgetYear: 2040,
     });
@@ -76,41 +77,5 @@ describe("defenseLineOf", () => {
     expect(defenseLineOf({ departments: departments.slice(0, 1) }, 2040)).toEqual({
       kind: "no-department",
     });
-  });
-});
-
-describe("defenseAllocationAmount", () => {
-  it("is the largest Defense line's amount, or null without one", () => {
-    const lines = [
-      { allocatedAmount: 5, allocatedPercent: 5, department: { category: "Defense" } },
-      { allocatedAmount: 40, allocatedPercent: 40, department: { category: "Finance" } },
-      { allocatedAmount: 9, allocatedPercent: 9, department: { category: "Defense" } },
-    ];
-    expect(defenseAllocationAmount(lines)).toBe(9);
-    expect(defenseAllocationAmount(lines.slice(1, 2))).toBeNull();
-  });
-});
-
-describe("planStarterForce", () => {
-  const base = { population: 10_000_000, totalGdp: 500e9 };
-
-  it("funds the starter force from the Defense department line first", () => {
-    const plan = planStarterForce({
-      ...base,
-      defenseAllocation: 20e9,
-      builderDefenseSpending: 10e9,
-    });
-    expect(plan.budgetSource).toBe("defenseDepartment");
-    expect(plan.branches.reduce((sum, b) => sum + b.annualBudget, 0)).toBe(20e9);
-  });
-
-  it("falls back to the builder's Defense spending, then 2% of GDP", () => {
-    expect(
-      planStarterForce({ ...base, defenseAllocation: null, builderDefenseSpending: 10e9 })
-        .budgetSource
-    ).toBe("builder");
-    expect(
-      planStarterForce({ ...base, defenseAllocation: 0, builderDefenseSpending: null }).budgetSource
-    ).toBe("estimate");
   });
 });

@@ -4,13 +4,13 @@
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { loadThreatPicture } from "~/lib/military/threat-picture-loader";
+import { threatPictureFor } from "~/server/modules/defense";
 
 export const securityBordersRouter = createTRPCRouter({
   getBorderSecurity: publicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const picture = await loadThreatPicture(ctx.db, input.countryId);
+      const picture = await threatPictureFor(ctx.db, input.countryId);
       return {
         countryId: input.countryId,
         overallSecurityLevel: picture.borderSecurity,

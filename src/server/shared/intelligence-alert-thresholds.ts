@@ -6,7 +6,7 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { notificationAPI } from "~/lib/notifications/api";
-import { loadThreatPicture } from "~/lib/military/threat-picture-loader";
+import { threatPictureFor } from "~/server/modules/defense";
 import type { ThreatPicture } from "~/lib/military/threat-picture";
 import { IxTime } from "~/lib/ixtime";
 import { getEconomicConfigFromDB } from "~/lib/config-service";
@@ -268,7 +268,7 @@ export async function evaluateThresholds(
     threatPicture: thresholds.some((t: { metricName: string }) =>
       THREAT_PICTURE_METRICS.has(t.metricName)
     )
-      ? await loadThreatPicture(db, countryId)
+      ? await threatPictureFor(db, countryId)
       : null,
     effectiveGdpGrowth: thresholds.some(
       (t: { metricName: string }) => t.metricName === "gdpGrowthRate"

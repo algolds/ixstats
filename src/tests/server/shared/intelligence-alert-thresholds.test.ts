@@ -5,13 +5,14 @@ jest.mock("~/lib/notifications/api", () => ({
   __esModule: true,
   notificationAPI: { create: jest.fn() },
 }));
-jest.mock("~/lib/military/threat-picture-loader", () => ({
-  loadThreatPicture: jest.fn(async () => ({ militaryStrength: 12, activeThreatCount: 3 })),
+// Realm time D2a: the threat picture reads the defense model's combat power through the defense module.
+jest.mock("~/server/modules/defense", () => ({
+  threatPictureFor: jest.fn(async () => ({ militaryStrength: 12, activeThreatCount: 3 })),
 }));
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { notificationAPI } from "~/lib/notifications/api";
-import { loadThreatPicture } from "~/lib/military/threat-picture-loader";
+import { threatPictureFor as loadThreatPicture } from "~/server/modules/defense";
 import {
   evaluateCountryThresholds,
   evaluateThresholds,

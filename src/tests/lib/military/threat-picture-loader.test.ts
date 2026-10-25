@@ -1,5 +1,8 @@
 /** @jest-environment node */
-/** P1-21: the loader feeds map neighbours, live conflicts, hostile actions and this nation's crises. */
+/**
+ * P1-21: the loader feeds map neighbours, live conflicts, hostile actions and this nation's crises. Realm time D2a:
+ * combat power comes from the defense model through `readStrengths`, foreign-policy expiry from the realm clock.
+ */
 jest.mock("~/lib/national-issues/neighbors", () => ({
   resolveNeighbors: jest.fn(async () => [
     { name: "Bigland", countryId: "n1" },
@@ -11,12 +14,7 @@ import { loadThreatPicture } from "~/lib/military/threat-picture-loader";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
 const DAY = 24 * 60 * 60 * 1000;
-const branch = (countryId: string, personnel: number) => ({
-  countryId,
-  readinessLevel: 100,
-  units: [{ personnel, readiness: 100 }],
-  assets: [],
-});
+const STRENGTHS: Record<string, number> = { c1: 1000, n1: 3000, far: 500 };
 
 it("derives the picture from neighbours, live conflicts, hostile actions and own crises", async () => {
   const db = createMockPrisma();
@@ -75,13 +73,21 @@ it("derives the picture from neighbours, live conflicts, hostile actions and own
       affectedCountries: '["c10"]',
     },
   ]);
-  db.militaryBranch.findMany.mockImplementation(
-    async ({ where }: { where: { countryId: unknown } }) =>
-      where.countryId === "c1" ? [branch("c1", 1000)] : [branch("n1", 3000), branch("far", 500)]
+  const readStrengths = jest.fn(async (ids: readonly string[]) =>
+    Object.fromEntries(ids.map((id) => [id, STRENGTHS[id] ?? 0]))
   );
+  const nowClockMs = 2e12;
 
-  const p = await loadThreatPicture(db as never, "c1");
+  const p = await loadThreatPicture(db as never, "c1", { readStrengths, nowClockMs });
 
+  expect(readStrengths).toHaveBeenCalledWith(["c1", "n1", "far"]);
+  expect(db.foreignPolicyAction.findMany).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: expect.objectContaining({
+        OR: [{ expiryIxTime: null }, { expiryIxTime: { gt: nowClockMs } }],
+      }),
+    })
+  );
   expect(p.landBorders).toBe(1);
   expect(p.neighborThreats[0]).toMatchObject({ neighborName: "Bigland", militaryThreat: 75 });
   expect(p.threats.map((t) => t.threatName)).toEqual([

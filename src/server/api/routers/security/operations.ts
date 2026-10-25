@@ -19,17 +19,17 @@ import { redactOperationCosts } from "~/lib/military/owner-redaction";
 import { StorytellerEffectType } from "~/lib/economy/calculations";
 import { createStorytellerEffect, endStorytellerEffects } from "~/lib/economy/storyteller-effects";
 import {
-  DEPLOY_READINESS_COST,
+  GENERALS_READINESS_MULTIPLIER,
   PEACEKEEPING_BONUS_WINDOW_IXDAYS,
   PEACEKEEPING_RELATION_BONUS,
-  READINESS_MAX,
-  READINESS_MIN,
   ixDaysAgo,
   operationSuccessRating,
-  readinessRecovery,
 } from "~/lib/military/operation-rules";
+import { DEPLOY_CONDITION_COST } from "~/lib/military/model";
 import { IxTime } from "~/lib/ixtime";
 import { isBrokerSatisfied } from "~/server/modules/security/brokers";
+import { applyOperationReadiness } from "~/server/modules/defense";
+import { clockForCountry, type RealmClockReader } from "~/server/shared/realm-time";
 import type { PrismaClient } from "@prisma/client";
 
 /** `createdBy` of a military operation's GDP-drain StorytellerEffect. */
@@ -37,16 +37,22 @@ const operationEffectKey = (operationId: string) => `operation:${operationId}`;
 
 /**
  * The relation a new peacekeeping operation raises: the one with its target, unless an earlier
- * peacekeeping operation by this nation already raised it within the window (null then).
+ * peacekeeping operation by this nation already raised it within the window on its realm clock
+ * (null then).
  */
-async function peacekeepingRelation(db: PrismaClient, countryId: string, targetId: string) {
+async function peacekeepingRelation(
+  db: PrismaClient,
+  countryId: string,
+  targetId: string,
+  clock: RealmClockReader
+) {
   const recentBonus = await db.militaryOperation.findFirst({
     where: {
       countryId,
       targetCountryId: targetId,
       operationType: "peacekeeping",
       diplomaticImpact: { gt: 0 },
-      createdAt: { gte: ixDaysAgo(PEACEKEEPING_BONUS_WINDOW_IXDAYS) },
+      createdAt: { gte: ixDaysAgo(PEACEKEEPING_BONUS_WINDOW_IXDAYS, clock) },
     },
     select: { id: true },
   });
@@ -114,7 +120,7 @@ export const securityOperationsRouter = createTRPCRouter({
         personnelDeployed: z.number().min(0).default(0),
         unitIds: z.array(z.string()).optional().default([]),
         assetIds: z.array(z.string()).optional().default([]),
-        duration: z.number().min(1).optional(), // Planned IxTime days
+        duration: z.number().min(1).optional(), // Planned in-game days on the realm clock
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -138,7 +144,13 @@ export const securityOperationsRouter = createTRPCRouter({
       // Get country GDP for cost calculation
       const country = await ctx.db.country.findUnique({
         where: { id: input.countryId },
-        select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
+        select: {
+          id: true,
+          name: true,
+          realmId: true,
+          currentGdpPerCapita: true,
+          currentPopulation: true,
+        },
       });
 
       if (!country) {
@@ -162,7 +174,7 @@ export const securityOperationsRouter = createTRPCRouter({
                 id: { in: input.assetIds },
                 branch: { countryId: input.countryId, isActive: true },
               },
-              select: { id: true, maintenanceCost: true },
+              select: { id: true, maintenanceCost: true, quantity: true },
             })
           : [],
       ]);
@@ -178,8 +190,12 @@ export const securityOperationsRouter = createTRPCRouter({
       const unitIds = ownUnits.map((u) => u.id);
       const assetIds = ownAssets.map((a) => a.id);
 
-      // Calculate daily cost: (personnel * $200/day) + (asset maintenance * 1.5x)
-      const assetMaintenanceCost = ownAssets.reduce((sum, a) => sum + (a.maintenanceCost ?? 0), 0);
+      // Daily cost: personnel at $200/day plus 1.5x the deployed assets' upkeep. Catalog
+      // maintenanceCost is annual per unit, so it is spread over the year and counted per unit.
+      const assetMaintenanceCost = ownAssets.reduce(
+        (sum, a) => sum + ((a.maintenanceCost ?? 0) * Math.max(1, a.quantity ?? 1)) / 365,
+        0
+      );
 
       const dailyCost = input.personnelDeployed * 200 + assetMaintenanceCost * 1.5;
       const annualCost = dailyCost * 365;
@@ -187,9 +203,10 @@ export const securityOperationsRouter = createTRPCRouter({
       const gdpDrain = gdp > 0 ? annualCost / gdp : 0;
 
       // Peacekeeping raises the relation with its target once per target per window.
+      const clock = await clockForCountry(ctx.db, country);
       const relation =
         input.operationType === "peacekeeping" && input.targetCountryId
-          ? await peacekeepingRelation(ctx.db, input.countryId, input.targetCountryId)
+          ? await peacekeepingRelation(ctx.db, input.countryId, input.targetCountryId, clock)
           : null;
 
       // Create the operation
@@ -205,8 +222,8 @@ export const securityOperationsRouter = createTRPCRouter({
           dailyCost,
           gdpDrain,
           duration: input.duration,
-          startIxTime: IxTime.getCurrentIxTime(),
-          readinessImpact: -DEPLOY_READINESS_COST,
+          startIxTime: clock.now(),
+          readinessImpact: -DEPLOY_CONDITION_COST * 100,
           diplomaticImpact: relation ? PEACEKEEPING_RELATION_BONUS : 0,
         },
         include: {
@@ -224,15 +241,6 @@ export const securityOperationsRouter = createTRPCRouter({
           })),
         });
 
-        // Deployed units lose readiness, never below zero.
-        await ctx.db.militaryUnit.updateMany({
-          where: { id: { in: unitIds } },
-          data: { readiness: { decrement: DEPLOY_READINESS_COST } },
-        });
-        await ctx.db.militaryUnit.updateMany({
-          where: { id: { in: unitIds }, readiness: { lt: READINESS_MIN } },
-          data: { readiness: READINESS_MIN },
-        });
       }
 
       // Create deployments for assets
@@ -245,6 +253,14 @@ export const securityOperationsRouter = createTRPCRouter({
           })),
         });
       }
+
+      // The deployed branches' equipment condition wears (the model's readiness, not a typed one).
+      await applyOperationReadiness(ctx.db, {
+        countryId: input.countryId,
+        unitIds,
+        assetIds,
+        change: "deploy",
+      });
 
       // GDP drain: a GDP level effect of -(annual cost / GDP), phased in while the operation
       // runs; ending the operation unwinds it from then on.
@@ -305,26 +321,21 @@ export const securityOperationsRouter = createTRPCRouter({
         data: { status: "recalled", recalledAt: new Date() },
       });
 
-      // Recalled units recover readiness, never above 100 (more with the Generals satisfied).
-      const unitIds = operation.deployments
-        .filter((d) => d.unitId && d.status === "deployed")
-        .map((d) => d.unitId!);
-      if (unitIds.length > 0) {
-        const generals = await isBrokerSatisfied(ctx.db, operation.countryId, "generals");
-        await ctx.db.militaryUnit.updateMany({
-          where: { id: { in: unitIds } },
-          data: {
-            readiness: { increment: readinessRecovery(operation.operationType, generals) },
-          },
-        });
-        await ctx.db.militaryUnit.updateMany({
-          where: { id: { in: unitIds }, readiness: { gt: READINESS_MAX } },
-          data: { readiness: READINESS_MAX },
-        });
-      }
+      // A training exercise lifts the deployed branches' training (10% more with the Generals
+      // satisfied); any other operation leaves a reset bill on their equipment condition.
+      const deployed = operation.deployments.filter((d) => d.status === "deployed");
+      const generals = await isBrokerSatisfied(ctx.db, operation.countryId, "generals");
+      await applyOperationReadiness(ctx.db, {
+        countryId: operation.countryId,
+        unitIds: deployed.flatMap((d) => (d.unitId ? [d.unitId] : [])),
+        assetIds: deployed.flatMap((d) => (d.assetId ? [d.assetId] : [])),
+        change: operation.operationType === "training" ? "trainingEnded" : "operationEnded",
+        generalsMultiplier: generals ? GENERALS_READINESS_MULTIPLIER : 1,
+      });
 
-      // End operation. Rows from before startIxTime was stamped fall back to their creation.
-      const endIxTime = IxTime.getCurrentIxTime();
+      // End operation on the nation's realm clock. Rows from before startIxTime was stamped fall
+      // back to their creation (on Ixnay's timeline, which every realm clock shares).
+      const endIxTime = (await clockForCountry(ctx.db, operation.countryId)).now();
       const successRating = operationSuccessRating({
         durationIxDays: operation.duration,
         startIxTime: operation.startIxTime || IxTime.convertToIxTime(operation.createdAt.getTime()),

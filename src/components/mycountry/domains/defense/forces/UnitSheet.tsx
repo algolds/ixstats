@@ -20,10 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { FORCE_LIMITS, UNIT_TYPES, type BranchTypeKey } from "~/lib/military/force-structure";
+import { FORCE_LIMITS, UNIT_TYPES, type BranchDomain } from "~/lib/military/force-structure";
 import {
   CountField,
-  LevelField,
   TextField,
   formatCount,
   type ForceBranch,
@@ -39,20 +38,18 @@ export interface UnitFormData {
   commanderName: string;
   commanderRank: string;
   headquarters: string;
-  readiness: number;
 }
 
-function toForm(unit: ForceUnit | null, branchType: BranchTypeKey): UnitFormData {
+function toForm(unit: ForceUnit | null, domain: BranchDomain): UnitFormData {
   return {
     name: unit?.name ?? "",
-    unitType: unit?.unitType ?? UNIT_TYPES[branchType]?.[0] ?? "unit",
+    unitType: unit?.unitType ?? UNIT_TYPES[domain]?.[0] ?? "unit",
     designation: unit?.designation ?? "",
     description: unit?.description ?? "",
     personnel: unit?.personnel ?? 0,
     commanderName: unit?.commanderName ?? "",
     commanderRank: unit?.commanderRank ?? "",
     headquarters: unit?.headquarters ?? "",
-    readiness: unit?.readiness ?? 50,
   };
 }
 
@@ -67,13 +64,13 @@ interface UnitSheetProps {
 
 /** Create or edit a formation inside a branch. Its personnel is drawn from the branch's pool. */
 export function UnitSheet({ open, onOpenChange, branch, unit, pending, onSubmit }: UnitSheetProps) {
-  const branchType = (branch?.branchType as BranchTypeKey | undefined) ?? "army";
-  const [form, setForm] = useState<UnitFormData>(() => toForm(unit, branchType));
+  const domain: BranchDomain = branch?.domain ?? "land";
+  const [form, setForm] = useState<UnitFormData>(() => toForm(unit, domain));
 
   useEffect(() => {
     // oxlint-disable-next-line
-    if (open) setForm(toForm(unit, branchType));
-  }, [unit, open, branchType]);
+    if (open) setForm(toForm(unit, domain));
+  }, [unit, open, domain]);
 
   const set = <K extends keyof UnitFormData>(key: K, value: UnitFormData[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -82,7 +79,7 @@ export function UnitSheet({ open, onOpenChange, branch, unit, pending, onSubmit 
   const assignedElsewhere =
     branch?.units.filter((u) => u.id !== unit?.id).reduce((s, u) => s + u.personnel, 0) ?? 0;
   const available = Math.max(0, pool - assignedElsewhere);
-  const unitTypes = UNIT_TYPES[branchType] ?? [];
+  const unitTypes = UNIT_TYPES[domain] ?? [];
   const typeOptions = unitTypes.includes(form.unitType) ? unitTypes : [form.unitType, ...unitTypes];
 
   return (
@@ -171,11 +168,6 @@ export function UnitSheet({ open, onOpenChange, branch, unit, pending, onSubmit 
               onChange={(v) => set("headquarters", v)}
             />
           </div>
-          <LevelField
-            label="Readiness"
-            value={form.readiness}
-            onChange={(v) => set("readiness", v)}
-          />
           <div className="space-y-2">
             <Label htmlFor="unit-description">Description (optional)</Label>
             <Textarea

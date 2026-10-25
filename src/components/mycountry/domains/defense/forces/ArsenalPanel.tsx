@@ -62,7 +62,7 @@ export function ArsenalPanel({ countryId }: { countryId: string }) {
         key={branch.id}
         countryId={countryId}
         branchId={branch.id}
-        branchType={branch.branchType}
+        domain={branch.domain}
         assets={branch.assets}
         onRefetch={() => void utils.security.getMilitaryBranches.invalidate({ countryId })}
       />

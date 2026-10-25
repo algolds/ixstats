@@ -13,11 +13,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Progress } from "~/components/ui/progress";
-import {
-  BRANCH_TYPE_LABELS,
-  branchStrength,
-  type BranchTypeKey,
-} from "~/lib/military/force-structure";
+import { DOMAIN_LABELS } from "~/lib/military/force-structure";
 import { formatCount, type ForceBranch, type ForceUnit } from "./force-fields";
 
 interface BranchCardProps {
@@ -63,7 +59,7 @@ function UnitRow({
           </Badge>
         </div>
         <div className="text-label-secondary text-footnote truncate">
-          {formatCount(unit.personnel)} personnel · {Math.round(unit.readiness)}% ready
+          {formatCount(unit.personnel)} personnel
           {commander ? ` · ${commander}` : ""}
           {unit.headquarters ? ` · ${unit.headquarters}` : ""}
         </div>
@@ -108,7 +104,8 @@ export function BranchCard({
 }: BranchCardProps) {
   const assigned = branch.units.reduce((s, u) => s + u.personnel, 0);
   const assetCount = branch.assets.reduce((s, a) => s + a.quantity, 0);
-  const typeLabel = BRANCH_TYPE_LABELS[branch.branchType as BranchTypeKey] ?? branch.branchType;
+  const typeLabel = DOMAIN_LABELS[branch.domain];
+  const derived = branch.derived;
   const Chevron = expanded ? NavArrowDown : NavArrowRight;
 
   return (
@@ -139,17 +136,22 @@ export function BranchCard({
               label={`Units (${formatCount(assigned)} assigned)`}
               value={branch.units.length}
             />
-            <Figure label="Combat strength" value={formatCount(branchStrength(branch))} />
+            <Figure
+              label="Combat strength"
+              value={derived ? formatCount(derived.combatPower) : "Not disclosed"}
+            />
           </div>
-          <div className="mt-3">
-            <div className="text-footnote mb-1 flex items-center justify-between">
-              <span className="text-label-secondary">Readiness</span>
-              <span className="text-label font-medium tabular-nums">
-                {Math.round(branch.readinessLevel)}%
-              </span>
+          {derived && (
+            <div className="mt-3">
+              <div className="text-footnote mb-1 flex items-center justify-between">
+                <span className="text-label-secondary">Readiness</span>
+                <span className="text-label font-medium tabular-nums">
+                  {Math.round(derived.readiness * 100)}% · {derived.cLevel}
+                </span>
+              </div>
+              <Progress value={derived.readiness * 100} className="h-1" />
             </div>
-            <Progress value={branch.readinessLevel} className="h-1" />
-          </div>
+          )}
         </div>
         {canEdit && (
           <div className="flex shrink-0 items-center gap-1">
