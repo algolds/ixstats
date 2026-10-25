@@ -32,7 +32,11 @@ export function CreateGovernmentStructureButton({ countryId }: { countryId: stri
   });
 
   return (
-    <Button size="sm" onClick={() => create.mutate({ countryId, revenue })} disabled={create.isPending}>
+    <Button
+      size="sm"
+      onClick={() => create.mutate({ countryId, revenue })}
+      disabled={create.isPending}
+    >
       <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
       {create.isPending ? "Creating…" : "Create government structure"}
     </Button>

@@ -134,7 +134,10 @@ describe("defense budget helpers", () => {
     expect(raw * 100).toBeGreaterThan(100);
     expect(defenseAllocationPercent(saved)).toBe(100);
     expect(
-      defenseAllocationPercent({ ...saved, procurement: saved.procurement + saved.totalBudget / 100 })
+      defenseAllocationPercent({
+        ...saved,
+        procurement: saved.procurement + saved.totalBudget / 100,
+      })
     ).toBeCloseTo(101, 9);
     expect(defenseAllocationPercent({ ...saved, totalBudget: 0 })).toBe(0);
   });

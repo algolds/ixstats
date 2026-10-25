@@ -208,7 +208,9 @@ describe("the country event spine", () => {
       countryId,
       sourceType: "decision",
       description: "Directive",
-      consequences: [{ targetModel: "Country", targetField: field, operation: "subtract", value: 0.6 }],
+      consequences: [
+        { targetModel: "Country", targetField: field, operation: "subtract", value: 0.6 },
+      ],
     });
     expect(results).toEqual([
       expect.objectContaining({ previousValue: base, newValue: expect.closeTo(expected, 9) }),
