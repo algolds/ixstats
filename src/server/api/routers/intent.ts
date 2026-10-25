@@ -489,6 +489,7 @@ export const intentRouter = createTRPCRouter({
       const applied = await CountryEventSpine.recordCountryEvent({
         db: ctx.db,
         countryId: input.countryId,
+        now,
         sourceType: "decision",
         sourceId: intent.id,
         description: `Intent (${input.tier}): ${input.goal}`,

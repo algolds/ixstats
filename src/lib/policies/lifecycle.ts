@@ -146,6 +146,7 @@ export async function debitCountryMaintenance(
     await CountryEventSpine.recordCountryEvent({
       db: tx as PrismaClient,
       countryId,
+      now,
       sourceType: "policy",
       description: `Policy maintenance (${periodKey}): ${total.toLocaleString()} spent on active policies: ${due
         .map((p, i) => `"${p.name}" (${charges[i]!.toLocaleString()})`)

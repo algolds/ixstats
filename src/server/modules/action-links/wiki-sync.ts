@@ -7,7 +7,8 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { chainWikiSection } from "~/lib/action-links";
-import { IxTime } from "~/lib/ixtime";
+import { clockTimeAt } from "~/lib/realms/realm-time-convert";
+import { clockForCountry, type CountryTimeDb } from "~/server/shared/realm-time";
 import { postHref } from "~/lib/thinkpages-forum/links";
 import { createAbsoluteUrl } from "~/lib/utils/url-utils";
 import { ArticleRepository } from "~/lib/wiki-os/core";
@@ -16,7 +17,7 @@ import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 import { classicOwnsTitle } from "~/lib/wiki-os/namespace-policy";
 import { commitWikitextSave } from "~/lib/wiki-os/services/edit-service";
 
-export type WikiSyncDb = Pick<PrismaClient, "storyline">;
+export type WikiSyncDb = Pick<PrismaClient, "storyline"> & CountryTimeDb;
 
 const PENDING = {
   kind: "chain",
@@ -34,7 +35,7 @@ export async function appendChainToWiki(db: WikiSyncDb, storylineId: string): Pr
   const chain = await db.storyline.findFirst({
     where: { id: storylineId, ...PENDING },
     include: {
-      country: { select: { name: true } },
+      country: { select: { name: true, realmId: true } },
       actionLinks: {
         orderBy: { chainOrder: "asc" },
         include: {
@@ -54,6 +55,8 @@ export async function appendChainToWiki(db: WikiSyncDb, storylineId: string): Pr
     return true;
   }
 
+  // Dates read on the nation's realm clock and calendar.
+  const clock = await clockForCountry(db, chain.country);
   // An activity withdrawn since it was linked (an abandoned directive) is no longer public; its text stays off the wiki.
   // A link still on a XenForo post (one the import has not remapped) has no page to point at, so it stays off too.
   const entries = chain.actionLinks
@@ -61,7 +64,7 @@ export async function appendChainToWiki(db: WikiSyncDb, storylineId: string): Pr
     .map((l) => ({
       title: l.activity.title,
       type: l.activity.type,
-      ixTime: IxTime.convertToIxTime(l.activity.createdAt.getTime()),
+      ixTime: clockTimeAt(clock, l.activity.createdAt.getTime()),
       url: postUrl(l.postRef),
     }));
   if (entries.length === 0) {
@@ -73,8 +76,9 @@ export async function appendChainToWiki(db: WikiSyncDb, storylineId: string): Pr
   const marker = `<!-- story-chain:${chain.id} -->`;
   const section = `${marker}\n${chainWikiSection({
     title: chain.title,
-    approvedIxTime: IxTime.convertToIxTime((chain.reviewedAt ?? new Date()).getTime()),
+    approvedIxTime: clockTimeAt(clock, (chain.reviewedAt ?? new Date()).getTime()),
     entries,
+    calendar: clock.calendar,
   })}`;
   // Head first, then text: findBySlug swallows read errors as null, so a page that exists but cannot be read
   // must abort rather than be overwritten by the section alone. The head ref also makes a concurrent edit conflict.
