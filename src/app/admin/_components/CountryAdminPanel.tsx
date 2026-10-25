@@ -112,10 +112,11 @@ export function CountryAdminPanel() {
     currentValue: boolean
   ) => {
     try {
-      await updateMutation.mutateAsync({
-        id: countryId,
-        [field]: !currentValue,
-      });
+      await updateMutation.mutateAsync(
+        field === "hideDiplomaticOps"
+          ? { id: countryId, hideDiplomaticOps: !currentValue }
+          : { id: countryId, hideStratcommIntel: !currentValue }
+      );
       notify.success("Profile visibility updated");
       void refetch();
     } catch (err: any) {
