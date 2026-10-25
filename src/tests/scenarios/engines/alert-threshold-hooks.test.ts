@@ -18,7 +18,7 @@ import { IxTime } from "~/lib/ixtime";
 import { CountryEventSpine } from "~/lib/activity/event-spine";
 import { runStatProgression } from "~/server/cron/stat-progression";
 import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-prisma";
-import { addIxnay, addNation } from "~/tests/helpers/nation-world";
+import { addIxnay, addNation, ixnayRunningAt } from "~/tests/helpers/nation-world";
 
 const YEAR = 365.25 * 86_400_000;
 const NOW = Date.UTC(2043, 0, 15);
@@ -54,7 +54,7 @@ it("stat progression raises an alert for a threshold the GDP it just stored brea
   await watch("totalGDP", { criticalMax: 3e11 });
   expect(await alerts()).toHaveLength(0);
 
-  await runStatProgression({ db: db as never, ixTime: NOW + YEAR / 2 });
+  await runStatProgression({ db: db as never, clocks: ixnayRunningAt(NOW + YEAR / 2) });
 
   const raised = await alerts();
   expect(raised).toHaveLength(1);

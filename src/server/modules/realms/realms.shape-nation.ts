@@ -11,6 +11,7 @@ import { freeNationSlug } from "./realms.claims";
 import { realmMapAccess } from "./realms.map-access";
 import { RealmRegionError } from "./realms.region";
 import { realmNationDefaults } from "./realms.settings";
+import { readerFromSettings } from "~/server/shared/realm-time";
 
 export const SHAPE_NATION_ACTION = "REALM_NATION_FROM_SHAPE";
 
@@ -51,6 +52,7 @@ export async function createNationFromShape(
       data: {
         ...buildBaselineCountryData(
           name,
+          readerFromSettings(realmId, realm.settings).now(),
           { landArea: area },
           realmNationDefaults(realm.settings as Prisma.JsonValue)
         ),

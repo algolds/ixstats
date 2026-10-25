@@ -50,6 +50,7 @@ import { canModerateRealm, type RealmActor } from "./realms.access";
 import { fetchNationPagePrefill } from "./realms.prefill";
 import { applySyncPlan, type ApplyDeps } from "./realms.source-apply";
 import { realmNationDefaults } from "./realms.settings";
+import { readerFromSettings } from "~/server/shared/realm-time";
 import { realmSlugWhere } from "~/lib/realms/realm-ids";
 
 type SyncErrorCode = "NOT_FOUND" | "FORBIDDEN" | "BAD_REQUEST" | "CONFLICT";
@@ -582,6 +583,7 @@ async function executeRun(
         attribution: settingsAttribution(config.settings),
         areaScale: scaleAreaToRadius(1, realmRadiusKm(realm.settings)),
         nationDefaults: realmNationDefaults(realm.settings),
+        nowMs: readerFromSettings(input.realmId, realm.settings).now(),
         borderSmoothing: borderSmoothing(realm.settings, snapshot),
       },
       plan,

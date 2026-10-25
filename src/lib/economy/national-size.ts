@@ -61,7 +61,10 @@ export function sizeColumns(
 }
 
 type SizeDb =
-  | Pick<PrismaClient, "country" | "budgetAllocation" | "governmentStructure" | "realm" | "systemConfig">
+  | Pick<
+      PrismaClient,
+      "country" | "budgetAllocation" | "governmentStructure" | "realm" | "systemConfig"
+    >
   | Prisma.TransactionClient;
 
 /**

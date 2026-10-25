@@ -25,10 +25,7 @@ import {
   type DegradationResult,
 } from "~/lib/economy/national-mobility";
 import { countryBudgetYear } from "~/lib/government/budget-allocations";
-import {
-  calculateRouteTravelTime,
-  resolveRouteBaseSpeed,
-} from "~/lib/economy/travel-time";
+import { calculateRouteTravelTime, resolveRouteBaseSpeed } from "~/lib/economy/travel-time";
 
 type JsonPrimitive = string | number | boolean | null;
 
@@ -69,7 +66,7 @@ type JsonGeometry = {
 };
 
 function toGeometry(val: Prisma.JsonValue): Geometry {
-  return (val as JsonGeometry) as Geometry;
+  return val as JsonGeometry as Geometry;
 }
 
 interface RouteProperties {
@@ -135,7 +132,10 @@ export const transportRouteQueriesRouter = createTRPCRouter({
             gdpPerCapita: r.country?.currentGdpPerCapita ?? null,
             economicTier: r.country?.economicTier ?? null,
             population: r.country?.currentPopulation ?? null,
-            speedKmh: (r as { speedKmh?: number | null }).speedKmh ?? (r.properties as JsonObject | null)?.speed_kmh ?? null,
+            speedKmh:
+              (r as { speedKmh?: number | null }).speedKmh ??
+              (r.properties as JsonObject | null)?.speed_kmh ??
+              null,
             ...((r.properties as JsonObject | null) ?? {}),
           },
         })),
@@ -184,7 +184,10 @@ export const transportRouteQueriesRouter = createTRPCRouter({
             routeType: r.routeType,
             status: r.status,
             lengthKm: r.lengthKm,
-            speedKmh: (r as { speedKmh?: number | null }).speedKmh ?? (r.properties as JsonObject | null)?.speed_kmh ?? null,
+            speedKmh:
+              (r as { speedKmh?: number | null }).speedKmh ??
+              (r.properties as JsonObject | null)?.speed_kmh ??
+              null,
             terrainDifficulty: r.terrainDifficulty,
             isInternational: r.isInternational,
             builtYear: r.builtYear,
@@ -342,9 +345,7 @@ export const transportRouteQueriesRouter = createTRPCRouter({
         id: c.id,
         name: c.name,
         population: c.population,
-        coordinates: Array.isArray(c.coordinates)
-          ? (c.coordinates as [number, number])
-          : null,
+        coordinates: Array.isArray(c.coordinates) ? (c.coordinates as [number, number]) : null,
       }));
 
       const intercityLinks = estimateIntercityTravelTimes(topCitiesFormatted, mobilityRoutes);

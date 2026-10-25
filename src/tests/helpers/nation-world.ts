@@ -4,7 +4,12 @@
  * away after each test; the scenarios that use this have no Postgres variant.
  */
 import type { PrismaClient } from "@prisma/client";
-import { createRealmClock, withSpeed } from "~/lib/realms/realm-clock";
+import {
+  createRealmClock,
+  ixnayClockReader,
+  withSpeed,
+  type RealmClockReader,
+} from "~/lib/realms/realm-clock";
 import { createMockCallerContext, type MockCallerContext } from "~/tests/helpers/router-context";
 
 type Db = PrismaClient;
@@ -49,6 +54,20 @@ export async function addRealm(
       settings: { clock: withSpeed(started, clock.multiplier, real) },
     },
   });
+}
+
+/**
+ * Realm clocks for a cron run (`clocks` option) where Ixnay reads `ixnayNowMs` and runs (not paused), whatever the
+ * frozen IxTime of the test says; `others` are added as they are.
+ */
+export function ixnayRunningAt(
+  ixnayNowMs: number,
+  others: ReadonlyMap<string, RealmClockReader> = new Map()
+): Map<string, RealmClockReader> {
+  return new Map([
+    ...others,
+    ["default", ixnayClockReader("default", { now: () => ixnayNowMs, multiplier: 2 })],
+  ]);
 }
 
 /** A player, acting as `countryId` when given (and owning it). */

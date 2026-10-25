@@ -114,6 +114,19 @@ export async function realmClocks(db: RealmTimeDb): Promise<Map<string, RealmClo
   return clocks;
 }
 
+/**
+ * The clocks of the realms a request spans (each read once; Ixnay's with no query), for `pickClock`. Cheaper than
+ * `realmClocks` when a page lists nations of one or a few realms.
+ */
+export async function clocksForRealms(
+  db: RealmTimeDb,
+  realmIds: Iterable<string | null | undefined>
+): Promise<Map<string, RealmClockReader>> {
+  const ids = [...new Set([...realmIds].map((id) => id ?? DEFAULT_REALM_ID))];
+  const readers = await Promise.all(ids.map((id) => clockForRealm(db, id)));
+  return new Map(ids.map((id, i) => [id, readers[i]!]));
+}
+
 /** A realm's reader from `realmClocks`' map; a realm it lacks (null: Ixnay) reads Ixnay's clock, logged. */
 export function pickClock(
   clocks: ReadonlyMap<string, RealmClockReader>,

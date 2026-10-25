@@ -23,6 +23,7 @@ import { baselineBounds } from "~/lib/worldgen/baseline";
 import type { DevelopmentLevel } from "~/lib/worldgen/v2/types";
 import { freeNationSlug } from "~/server/modules/realms/realms.claims";
 import { realmNationDefaults } from "~/server/modules/realms/realms.settings";
+import { readerFromSettings } from "~/server/shared/realm-time";
 import type { RealmActor } from "~/server/modules/realms/realms.access";
 import { loadImportRealm, MapImportError, type ImportRealm } from "./map-import.realm";
 import { assertMapUnchangedSince } from "./world-import.check";
@@ -170,6 +171,7 @@ async function createNation(
     data: {
       ...buildBaselineCountryData(
         name,
+        readerFromSettings(realm.id, realm.settings as Prisma.JsonValue).now(),
         initialFigures(nation, level),
         realmNationDefaults(realm.settings as Prisma.JsonValue)
       ),

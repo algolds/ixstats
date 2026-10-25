@@ -1,5 +1,4 @@
 import { mapTaxComponentTypeToId } from "~/lib/enums";
-import { IxTime } from "~/lib/ixtime";
 import {
   assertPersistableStats,
   DEFAULT_INFLATION_RATE,
@@ -77,10 +76,10 @@ export const prepareBaseCountryData = (country: any, componentsData?: any): Base
 
 /**
  * One country's component and policy figures for the projection. A read only: a component whose
- * implementationDate has passed counts as active without writing `isActive` back.
+ * implementationDate has passed by `nowMs` (the nation's clock) counts as active without writing `isActive` back.
  */
-export async function getCountryComponentsStatsData(db: any, countryId: string) {
-  const now = new Date(IxTime.getCurrentIxTime());
+export async function getCountryComponentsStatsData(db: any, countryId: string, nowMs: number) {
+  const now = new Date(nowMs);
 
   const [gov, econ, tax] = await Promise.all([
     db.governmentComponent.findMany({
@@ -175,13 +174,14 @@ function classifyComponentsStatsData(
 
 /**
  * Batch form of getCountryComponentsStatsData for jobs: four queries for the whole batch and no
- * writes (classification already treats a due implementationDate as active).
+ * writes (classification already treats a due implementationDate as active). `nowOf` is each
+ * country's time on its realm's clock.
  */
 export async function getComponentsStatsDataForCountries(
   db: any,
-  countryIds: string[]
+  countryIds: string[],
+  nowOf: (countryId: string) => number
 ): Promise<Map<string, ComponentsStatsData>> {
-  const now = new Date(IxTime.getCurrentIxTime());
   const where = { countryId: { in: countryIds } };
   const select = { countryId: true, componentType: true, implementationDate: true, isActive: true };
   type Row = ComponentRow & { countryId: string };
@@ -211,7 +211,7 @@ export async function getComponentsStatsDataForCountries(
         byCountry(econ, id),
         byCountry(tax, id),
         byCountry(policies, id),
-        now
+        new Date(nowOf(id))
       )
     );
   }

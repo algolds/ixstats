@@ -31,7 +31,14 @@ import { myCountryFirstStepsRouter } from "~/server/api/routers/mycountry/first-
 import { runStatProgression } from "~/server/cron/stat-progression";
 import { inferFormId } from "~/server/shared/founding-snapshot";
 import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-prisma";
-import { addIxnay, addNation, addOwner, asOwner, type Owner } from "~/tests/helpers/nation-world";
+import {
+  addIxnay,
+  addNation,
+  addOwner,
+  asOwner,
+  type Owner,
+  ixnayRunningAt,
+} from "~/tests/helpers/nation-world";
 
 const government = createCallerFactory(governmentRouter);
 const intents = createCallerFactory(intentRouter);
@@ -222,7 +229,7 @@ it("moves the yearly budget and the budget in effect with GDP, and starts the ne
   });
   const reviewed = (await allocations("testland", 2043)).map((a) => a.lastReviewed.getTime());
 
-  await runStatProgression({ db: db as never, ixTime: NOW + YEAR / 2 });
+  await runStatProgression({ db: db as never, clocks: ixnayRunningAt(NOW + YEAR / 2) });
   const gdp = (await db.country.findUniqueOrThrow({ where: { id: "testland" } })).currentTotalGdp;
   const ratio = gdp / 3e11;
   expect(ratio).not.toBeCloseTo(1, 3);

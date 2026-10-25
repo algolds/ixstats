@@ -3,7 +3,6 @@
  * nation created by an approved claim (realms ruling E-f). Callers add the slug and any realm/wiki fields.
  * Its growth comes from the realm's per-tier table (`Realm.settings.nationDefaults`), else IxStats's defaults.
  */
-import { IxTime } from "~/lib/ixtime";
 import { getDefaultEconomicConfig } from "~/lib/config-service";
 import { IxStatsCalculator } from "~/lib/economy/calculations";
 import {
@@ -33,8 +32,8 @@ export interface BaselineCountryInitial {
   lifeExpectancy?: number;
 }
 
-function baselineFields(name: string, initial: BaselineCountryInitial) {
-  const now = new Date(IxTime.getCurrentIxTime());
+function baselineFields(name: string, nowMs: number, initial: BaselineCountryInitial) {
+  const now = new Date(nowMs);
   return {
     name,
     continent: initial.continent || null,
@@ -66,14 +65,15 @@ function indicatorFields(initial: BaselineCountryInitial, totalGdp: number) {
 
 /**
  * A new country's create data: defaults, growth from `growth` for its tier (the cap from the IxStats tier rule),
- * then the calculator's current stats and tiers at the present IxTime.
+ * then the calculator's current stats and tiers, dated `nowMs`: its realm's time now (`readerFromSettings`).
  */
 export function buildBaselineCountryData(
   name: string,
+  nowMs: number,
   initial: BaselineCountryInitial = {},
   growth: NationGrowthTable = IXSTATS_NATION_GROWTH_DEFAULTS
 ) {
-  const base = baselineFields(name, initial);
+  const base = baselineFields(name, nowMs, initial);
   const { populationGrowthRate, adjustedGdpGrowth, maxGdpGrowthRate } = nationGrowthFor(
     base.baselineGdpPerCapita,
     growth
@@ -95,7 +95,10 @@ export function buildBaselineCountryData(
     projected2040GdpPerCapita: base.baselineGdpPerCapita * 1.25,
     localGrowthFactor: 1.0,
   };
-  const { newStats } = calculator.calculateTimeProgression(calculator.initializeCountryStats(seed));
+  const { newStats } = calculator.calculateTimeProgression(
+    calculator.initializeCountryStats(seed),
+    nowMs
+  );
   return {
     ...base,
     currentPopulation: newStats.currentPopulation,

@@ -41,7 +41,12 @@ beforeEach(async () => {
     ["frostland", "frozen"],
     ["swiftland", "fast"],
   ] as const) {
-    await addNation(db as never, { id, realmId, baselineDate: new Date(IXNAY_NOW), budgetYear: 2041 });
+    await addNation(db as never, {
+      id,
+      realmId,
+      baselineDate: new Date(IXNAY_NOW),
+      budgetYear: 2041,
+    });
     await addOwner(db as never, `${id}-owner`, id);
   }
 });
@@ -90,6 +95,9 @@ it("reminds each nation for its realm's year, and a forward jump rolls the pause
   const second = await runBudgetYearRollover(db as never);
   expect(second.budgetYears).toMatchObject({ frozen: 2042 });
   expect(notify).toHaveBeenCalledWith(
-    expect.objectContaining({ countryId: "frostland", metadata: { budgetYear: 2042, carriedForwardFrom: 2041 } })
+    expect.objectContaining({
+      countryId: "frostland",
+      metadata: { budgetYear: 2042, carriedForwardFrom: 2041 },
+    })
   );
 });

@@ -1,6 +1,6 @@
 /**
  * Read-only dry run of a `stat-progression` run (docs/operations/deploy-mycountry-2026-10.md). Projects every country
- * the way the job does (projectCountryStats at IxTime now) and prints what the first run would change, without
+ * the way the job does (projectCountryStats at its realm's time now; paused realms skipped) and prints what the first run would change, without
  * writing anything, naming every nation whose economic or population tier would change. Point DATABASE_URL at a
  * copy of production:
  *
@@ -11,7 +11,7 @@
 import { PrismaClient } from "@prisma/client";
 import { IxTime } from "~/lib/ixtime";
 import { getEconomicConfigFromDB } from "~/lib/config-service";
-import { refreshSharedClock } from "~/lib/ixtime/shared-clock";
+import { pickClock, realmClocks } from "~/server/shared/realm-time";
 import {
   getComponentsStatsDataForCountries,
   projectCountryStats,
@@ -41,15 +41,19 @@ export function tierChanges(
 }
 
 async function main(db: PrismaClient) {
-  await refreshSharedClock(db, { force: true });
+  const clocks = await realmClocks(db);
   const ixTime = IxTime.getCurrentIxTime();
   const cfg = await getEconomicConfigFromDB(db);
-  const countries = await db.country.findMany({
-    include: { storytellerEffects: { where: { isActive: true } } },
-  });
+  const countries = (
+    await db.country.findMany({
+      include: { storytellerEffects: { where: { isActive: true } } },
+    })
+  ).filter((c) => !pickClock(clocks, c.realmId).paused);
+  const nowOf = new Map(countries.map((c) => [c.id, pickClock(clocks, c.realmId).now()]));
   const components = await getComponentsStatsDataForCountries(
     db,
-    countries.map((c) => c.id)
+    countries.map((c) => c.id),
+    (id) => nowOf.get(id)!
   );
 
   let written = 0;
@@ -57,8 +61,9 @@ async function main(db: PrismaClient) {
   const populationLines: string[] = [];
   const changes: Array<{ name: string; gdp: number; pop: number; tier: string }> = [];
   for (const c of countries) {
-    const stats = projectCountryStats(c, components.get(c.id), cfg, ixTime);
-    const next = projectedStatsUpdate(stats, ixTime);
+    const now = nowOf.get(c.id)!;
+    const stats = projectCountryStats(c, components.get(c.id), cfg, now);
+    const next = projectedStatsUpdate(stats, now);
     const name = `${c.name}${c.ownerUserId ? " (owned)" : ""}`;
     if (!isProjectionUnchanged(c, next)) written++;
     const tiers = tierChanges(name, c, next);

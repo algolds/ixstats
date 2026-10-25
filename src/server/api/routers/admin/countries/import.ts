@@ -5,7 +5,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { getEconomicConfigFromDB } from "~/lib/config-service";
-import { IxTime } from "~/lib/ixtime";
+import { clockForRealm } from "~/server/shared/realm-time";
 import { parseRosterFile } from "~/lib/admin/roster-parser";
 import type { ImportAnalysis, BaseCountryData } from "~/types/ixstats";
 import { generateSlug } from "~/lib/utils";
@@ -230,6 +230,8 @@ export const adminCountriesImportRouter = createTRPCRouter({
           },
         });
         const existingMap = new Map(existingCountries.map((c) => [c.name, c]));
+        // The roster is Ixnay's: new nations start at Ixnay's present.
+        const ixnayNow = new Date((await clockForRealm(ctx.db, DEFAULT_REALM_ID)).now());
         let created = 0;
         let updated = 0;
         let skipped = 0;
@@ -242,8 +244,8 @@ export const adminCountriesImportRouter = createTRPCRouter({
               await ctx.db.country.create({
                 data: {
                   ...rosterCountryData(country),
-                  baselineDate: new Date(IxTime.getCurrentIxTime()),
-                  lastCalculated: new Date(IxTime.getCurrentIxTime()),
+                  baselineDate: ixnayNow,
+                  lastCalculated: ixnayNow,
                 },
               });
               created++;
@@ -317,7 +319,7 @@ export const adminCountriesImportRouter = createTRPCRouter({
         await ctx.db.calculationLog.create({
           data: {
             timestamp: new Date(),
-            ixTimeTimestamp: new Date(IxTime.getCurrentIxTime()),
+            ixTimeTimestamp: ixnayNow,
             countriesUpdated: created + updated,
             executionTimeMs: 0,
             globalGrowthFactor: (await getEconomicConfigFromDB(ctx.db)).globalGrowthFactor,

@@ -243,12 +243,13 @@ export class IxStatsCalculator {
   /**
    * Calculate country stats for a specific point in time
    */
+  /** `targetTime`: the nation's clock time to project to (its realm's now for the present). */
   calculateTimeProgression(
     baselineStats: CountryStats,
-    targetTime?: number,
+    targetTime: number,
     effects: StorytellerEffectRecord[] = []
   ): StatsCalculationResult {
-    const targetTimeMs = targetTime || IxTime.getCurrentIxTime();
+    const targetTimeMs = targetTime;
     const baselineTimeMs = this.baselineDate;
 
     const yearsFromBaseline = IxTime.getYearsElapsed(baselineTimeMs, targetTimeMs);
@@ -325,7 +326,10 @@ export class IxStatsCalculator {
       ),
       unemploymentRate: Math.max(
         0,
-        Math.min(100, (baselineStats.unemploymentRate ?? DEFAULT_UNEMPLOYMENT_RATE) + mods.unemploymentModifier)
+        Math.min(
+          100,
+          (baselineStats.unemploymentRate ?? DEFAULT_UNEMPLOYMENT_RATE) + mods.unemploymentModifier
+        )
       ),
       // Percent, like every writer (issue and directive consequences move it in points).
       inflationRate: Math.max(
