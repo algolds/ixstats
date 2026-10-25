@@ -75,6 +75,78 @@ beforeEach(() => {
 });
 
 describe("recordConflict", () => {
+  describe("a classic loser that another WikiOS winner already overwrote", () => {
+    const classicLoser = change({
+      side: "classic",
+      ref: "900",
+      author: author({ classicName: "Zed" }),
+    });
+    const later = (ref: string, minutes: number) =>
+      change({ side: "wikios", ref, at: new Date(Date.UTC(2026, 9, 24, 10, minutes)) });
+    const wonBy = (wikios: PageChange) =>
+      decideCollision("ixwiki", "art-1", {
+        incoming: wikios,
+        standing: classicLoser,
+        incomingBranch: [wikios],
+        standingBranch: [classicLoser],
+      });
+
+    it("joins that row, settled or not: the winner stays, nobody is told twice", async () => {
+      const first = await recordConflict(mockDb, input(wonBy(later("w1", 10))));
+      await markNotified(first.id, "name:Zed", "talk-page");
+      await expect(markSettled(first.id)).resolves.toBe(true);
+
+      const second = await recordConflict(mockDb, input(wonBy(later("w2", 20))));
+
+      expect(second).toEqual({ id: first.id, created: false });
+      expect(await mockDb.wikiConflict.count()).toBe(1);
+      const row = await mockDb.wikiConflict.findUniqueOrThrow({ where: { id: first.id } });
+      expect(row).toMatchObject({ winnerRef: "w1" });
+      expect(row.settledAt).toBeInstanceOf(Date);
+      expect(pendingRecipients(row)).toEqual([]);
+    });
+
+    it("only looks at rows of the same article", async () => {
+      await recordConflict(mockDb, { ...input(wonBy(later("w1", 10))), articleId: "art-2" });
+
+      const here = await recordConflict(mockDb, input(wonBy(later("w2", 20))));
+
+      expect(here.created).toBe(true);
+    });
+
+    it("never joins an old park's row, which tells nobody", async () => {
+      const legacy = await recordConflict(mockDb, input(wonBy(later("w1", 10))));
+      await mockDb.wikiConflict.update({ where: { id: legacy.id }, data: { legacyPark: true } });
+
+      const fresh = await recordConflict(mockDb, input(wonBy(later("w2", 20))));
+
+      expect(fresh.created).toBe(true);
+    });
+
+    it("is another collision when the winner is classic's, or the loser another change", async () => {
+      await recordConflict(mockDb, input(wonBy(later("w1", 10))));
+      const otherLoser = change({
+        side: "classic",
+        ref: "901",
+        author: author({ classicName: "Zed" }),
+      });
+      await recordConflict(
+        mockDb,
+        input(
+          decideCollision("ixwiki", "art-1", {
+            incoming: later("w2", 20),
+            standing: otherLoser,
+            incomingBranch: [later("w2", 20)],
+            standingBranch: [otherLoser],
+          })
+        )
+      );
+      await recordConflict(mockDb, input(verdict(winner, mine, [mine])));
+
+      expect(await mockDb.wikiConflict.count()).toBe(3);
+    });
+  });
+
   it("records one row per collision whichever side records it first", async () => {
     const fromMirror = verdict(winner, mine, [mine]);
     const fromInbound = verdict(mine, winner, [mine]);

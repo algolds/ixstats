@@ -12,13 +12,14 @@
 import { db } from "~/server/db";
 import { repointArticleHead } from "../core/article-head";
 import {
+  conflictKey,
   decideCollision,
   trailSummary,
   type CollisionVerdict,
   type PageChange,
 } from "./conflict-rule";
 import {
-  parkOverwritten,
+  parkRevisions,
   recordConflict,
   setTrailRevision,
   toConflictEntry,
@@ -28,6 +29,7 @@ import {
 import {
   classicChangeOfEvent,
   classicChangeOfRevision,
+  isSystemWrite,
   wikiosBranchSince,
   wikiosEditOf,
 } from "./conflict-sides";
@@ -101,33 +103,59 @@ async function classicSince(
 }
 
 /**
- * The page is gone from classic: its latest deletion, when one is logged, meets the batch, recorded in the conflict log
- * like any collision. A delete saved after the revision (or in its second) wins: the revisions it overwrote are parked,
- * in one transaction with the row, and nothing is sent, so classic stays deleted. An earlier delete loses: the revision
- * brings the page back, as MediaWiki's import does, and the deleter is told. Null when the page was never deleted there.
+ * The verdict when nothing but system writes (`isSystemWrite`) meets a classic delete: the delete stands over them,
+ * whenever they were written, as no person's save is lost. Nobody is told; the row keeps the record.
+ */
+function deleteOverSystemWrites(
+  articleId: string,
+  removal: PageChange,
+  writes: readonly PageChange[]
+): CollisionVerdict {
+  return {
+    winner: removal,
+    overwritten: writes,
+    incomingWins: false,
+    key: conflictKey(MIRROR_SOURCE, articleId, removal.ref),
+  };
+}
+
+/**
+ * The page is gone from classic: its latest deletion, when one is logged, meets the batch (the WikiOS saves MediaWiki
+ * has not had, up to `newest`), recorded in the conflict log like any collision. A delete saved after the newest
+ * person's save (or in its second) wins: every unsent revision is parked, in one transaction with the row, and nothing
+ * is sent, so classic stays deleted. An earlier delete loses: the revisions bring the page back, as MediaWiki's import
+ * does, and the deleter is told. A system write never keeps the page alive. Null when the page was never deleted there.
  */
 async function judgeDeletion(
   title: string,
   articleId: string,
-  incoming: PageChange
+  newest: PageChange
 ): Promise<BatchCollision | null> {
   const removal = await latestClassicDelete(title);
   if (!removal) return null;
   const standing = await classicChangeOfEvent(removal, "delete");
-  const unseen = await wikiosBranchSince(articleId, 0, null);
-  const verdict = decideCollision(MIRROR_SOURCE, articleId, {
-    incoming,
-    standing,
-    incomingBranch: unseen.filter((change) => change.at <= incoming.at),
-    standingBranch: [standing],
-  });
+  const unseen = (await wikiosBranchSince(articleId, 0, null)).filter(
+    (change) => change.at <= newest.at
+  );
+  const people = unseen.filter((change) => !isSystemWrite(change.author));
+  const incoming = people.at(-1);
+  const verdict = incoming
+    ? decideCollision(MIRROR_SOURCE, articleId, {
+        incoming,
+        standing,
+        incomingBranch: people,
+        standingBranch: [standing],
+      })
+    : deleteOverSystemWrites(articleId, standing, unseen);
   const input = { source: MIRROR_SOURCE, articleId, title, verdict, baseRef: null };
   const id = await db.$transaction(async (tx) => {
     const recorded = await recordConflict(tx, input);
-    // a delete that won overwrote WikiOS revisions (a WikiOS winner overwrote only the delete: nothing to park)
-    await parkOverwritten(tx, articleId, verdict);
-    // the page never shows a parked loser's text
-    await repointArticleHead(tx, articleId);
+    if (!verdict.incomingWins) {
+      // the system writes go with the people's saves the delete overwrote: sent, they would bring the page back
+      await parkRevisions(tx, articleId, unseen, standing.ref);
+      // the page never shows a parked loser's text
+      await repointArticleHead(tx, articleId);
+    }
     return recorded.id;
   });
   return { verdict, conflictId: id, wikiosWon: verdict.incomingWins };

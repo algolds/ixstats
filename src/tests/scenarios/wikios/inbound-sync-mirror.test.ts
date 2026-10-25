@@ -1497,6 +1497,89 @@ describe.each(WIKIOS_MODES)("outbound revisions through the conflict rule [%s]",
     expect(conflictsOf("Caphiria")).toEqual([]);
   });
 
+  it("a save landing between the mirror and the cycle joins the delete's row: one row, one notice, one trail line", async () => {
+    site.deletePage("Bob", "Caphiria");
+    const w1 = await kirSaves("Caphiria is an empire.");
+    await runMirrorCycle(); // W1 wins over Bob's delete and brings the page back
+    await kirSaves("Caphiria is an empire in Sarpedon.", new Date(Date.now() + 1_000));
+
+    await runAutoSyncCycle();
+    await runMirrorCycle(); // W2's job
+
+    expect(conflictsOf("Caphiria")).toHaveLength(1);
+    const [conflict] = conflictsOf("Caphiria");
+    expect(conflict).toMatchObject({ winnerSide: "wikios", winnerRef: w1.revisionId });
+    expect(bobNotices(conflict!)).toEqual([expect.objectContaining({ channel: "talk-page" })]);
+    expect(trailLines()).toEqual({ wikios: 1, classic: 1 });
+    expect(article("Caphiria")?.status).toBe("PUBLISHED");
+    expect(site.current("Caphiria")?.text).toBe("Caphiria is an empire in Sarpedon.");
+  });
+
+  it("a save landing between the mirror and the cycle joins the edit's row: one row, one notice, one trail line", async () => {
+    const bob = site.editAs("Bob", "Caphiria", "Caphiria is a republic.");
+    const w1 = await kirSaves("Caphiria is an empire.");
+    await runMirrorCycle(); // W1 is later than Bob's edit: it wins
+    await kirSaves("Caphiria is an empire in Sarpedon.", new Date(Date.now() + 1_000));
+
+    await runAutoSyncCycle();
+    await runMirrorCycle(); // W2's job
+
+    expect(conflictsOf("Caphiria")).toHaveLength(1);
+    const [conflict] = conflictsOf("Caphiria");
+    expect(conflict).toMatchObject({ winnerSide: "wikios", winnerRef: w1.revisionId });
+    expect(overwrittenRefs(conflict!)).toEqual([String(bob.revid)]);
+    expect(bobNotices(conflict!)).toEqual([expect.objectContaining({ channel: "talk-page" })]);
+    expect(trailLines()).toEqual({ wikios: 1, classic: 1 });
+    expect(revisionOfMw(bob.revid)?.parked).toBe(true);
+  });
+
+  it("a system write never brings back a page classic deleted: parked, nothing sent", async () => {
+    site.deletePage("Bob", "Caphiria");
+    // a settler's write (a talk note, a trail) saved after the delete
+    const note = await ArticleRepository.saveArticle(
+      {
+        slug: "Caphiria",
+        title: "Caphiria",
+        wikitext: "Caphiria is a kingdom.\n\nA note.",
+        expectedHeadRef: toRevisionRef(
+          liveHead("Caphiria") as { id: string; mwRevId: number | null }
+        ),
+      },
+      undefined,
+      "WikiOS"
+    );
+
+    await runMirrorCycle();
+
+    expect(site.pages.has("Caphiria")).toBe(false);
+    expect(site.wiki.calls().filter((request) => request.params.action === "import")).toEqual([]);
+    expect(revisionRow(note.revisionId)).toMatchObject({ parked: true });
+    expect(conflictsOf("Caphiria")).toEqual([
+      expect.objectContaining({ winnerSide: "classic", winnerAction: "delete" }),
+    ]);
+  });
+
+  it("a classic delete that beats a person's save parks the system writes sent with it too", async () => {
+    const w1 = await kirSaves("Caphiria is an empire.", new Date(siteTime() - 60_000));
+    site.deletePage("Bob", "Caphiria");
+    const note = await ArticleRepository.saveArticle(
+      {
+        slug: "Caphiria",
+        title: "Caphiria",
+        wikitext: "Caphiria is an empire.\n\nA note.",
+        expectedHeadRef: w1.revisionId,
+      },
+      undefined,
+      "WikiOS"
+    );
+
+    await runMirrorCycle();
+
+    expect(site.pages.has("Caphiria")).toBe(false);
+    expect(revisionRow(w1.revisionId)).toMatchObject({ parked: true });
+    expect(revisionRow(note.revisionId)).toMatchObject({ parked: true });
+  });
+
   it("names and links an overwritten WikiOS revision MediaWiki has by its MediaWiki id, in the trail and on a claimed name's talk page", async () => {
     tables.wikiNameClaim.seed({
       userId: "db-kir",

@@ -27,6 +27,14 @@ const SOURCE = "ixwiki";
 /** The author of WikiOS's own conflict writes (talk notes, trail edits); MediaWiki shows it as `wikios>WikiOS`. */
 export const CONFLICT_NOTICE_AUTHOR = "WikiOS";
 
+/**
+ * Whether a change is one of WikiOS's own conflict writes (a talk note, a trail dummy edit): written by the settler as
+ * `CONFLICT_NOTICE_AUTHOR`, with no account. Such a write never keeps a page alive that a person deleted.
+ */
+export function isSystemWrite(author: ChangeAuthor): boolean {
+  return author.userId === null && author.label === CONFLICT_NOTICE_AUTHOR;
+}
+
 /** The wiki a side's save was made on, as the notices name it. */
 export function wikiName(side: WikiSide): string {
   return side === "wikios" ? "WikiOS" : "classic MediaWiki";
@@ -350,7 +358,8 @@ export async function unmirroredWikiosChanges(articleId: string): Promise<PageCh
 /**
  * What a classic delete logged at `at` meets in WikiOS, oldest first: what MediaWiki had not seen (as
  * `unmirroredWikiosChanges`), and the WikiOS saves the mirror already sent that were saved in the delete's second or
- * later: the deleter never saw those either. A sent save from before that second was there to see, and is not one.
+ * later: the deleter never saw those either. A sent save from before that second was there to see, and is not one; nor
+ * is a system write (`isSystemWrite`).
  */
 export async function wikiosChangesAgainstDelete(
   articleId: string,
@@ -368,7 +377,9 @@ export async function wikiosChangesAgainstDelete(
     select: LIVE_REVISION_SELECT,
   });
   const names = await shownNames(rows);
-  const edits = rows.map((row) => editOf(row, authorFrom(row, names)));
+  const edits = rows
+    .map((row) => editOf(row, authorFrom(row, names)))
+    .filter((change) => !isSystemWrite(change.author));
   const operations = (await operationChanges({ articleId })).map(({ change }) => change);
   return [...edits, ...operations].sort((a, b) => a.at.getTime() - b.at.getTime());
 }

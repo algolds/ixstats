@@ -828,6 +828,38 @@ describeEachWikiosMode("classic deletes, moves and restores through the conflict
     ]);
   });
 
+  it("a settler's trail dummy edit dated after a classic delete never keeps the page: it is archived", async () => {
+    const id = seedPage("Caphiria", 100);
+    tables.wikiRevision.insert({
+      articleId: id,
+      wikitext: "Caphiria text.",
+      author: "WikiOS",
+      authorId: null,
+      summary: "Overwrote revision 99 by Zed, saved from the same version (conflict c1)",
+      createdAt: new Date("2026-10-24T13:00:00Z"),
+    });
+
+    await applyLogEvent(deleteAt("Caphiria", "2026-10-24T12:00:00Z"));
+
+    expect(pageOf("Caphiria")?.status).toBe("ARCHIVED");
+    expect(conflictRows()).toEqual([]);
+  });
+
+  it("a person's save whose label happens to be WikiOS's still keeps the page", async () => {
+    const id = seedPage("Caphiria", 100);
+    tables.wikiRevision.insert({
+      articleId: id,
+      wikitext: "A person's text.",
+      author: "WikiOS",
+      authorId: "db-kir",
+      createdAt: new Date("2026-10-24T13:00:00Z"),
+    });
+
+    await applyLogEvent(deleteAt("Caphiria", "2026-10-24T12:00:00Z"));
+
+    expect(pageOf("Caphiria")?.status).toBe("PUBLISHED");
+  });
+
   it("an overwritten WikiOS revision never keeps a page classic deleted", async () => {
     const id = seedPage("Caphiria", 100);
     const lost = wikiosEdit(id, "2026-10-24T13:00:00Z");

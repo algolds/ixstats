@@ -156,15 +156,65 @@ async function updateRow(
   throw new Error(`conflict ${conflictId} kept changing under this writer`);
 }
 
+/** Adds what `changes` lists and the row does not to its overwritten; the winner is never touched. */
+async function mergeOverwritten(
+  client: Client,
+  conflictId: string,
+  changes: readonly PageChange[]
+): Promise<void> {
+  await updateRow(client, conflictId, (current) => {
+    const stored = decodeChanges(current.overwritten);
+    const merged = unionByRef(stored, changes);
+    // a new loser has to be told: a settled row is open again
+    return merged.length === stored.length
+      ? null
+      : { overwritten: encodeChanges(merged), settledAt: null };
+  });
+}
+
+/**
+ * The row in which a WikiOS winner already overwrote one of the classic changes this verdict overwrites (settled or
+ * not). The mirror and the inbound cycle can name different WikiOS winners for one classic loser (a save lands between
+ * them): that loser lost once, in that row. Only a WikiOS winner overwrites classic changes, so only such rows match.
+ */
+async function rowOverwritingLoser(
+  client: Client,
+  input: RecordConflictInput
+): Promise<ConflictRow | null> {
+  const losers = new Set(
+    input.verdict.overwritten
+      .filter((change) => change.side === "classic")
+      .map((change) => change.ref)
+  );
+  // a classic winner overwrote WikiOS's changes only: nothing to look for (and no query)
+  if (losers.size === 0 || !input.articleId) return null;
+  const rows = await client.wikiConflict.findMany({
+    // an old park's row tells nobody: a loser merged there would never be told
+    where: { articleId: input.articleId, legacyPark: false },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+  });
+  return (
+    rows.find((row) => decodeChanges(row.overwritten).some((change) => losers.has(change.ref))) ??
+    null
+  );
+}
+
 /**
  * Records a collision once. The first caller creates the row; every later one (the other wiki's cycle, a second loser
- * of the same winner) merges what it overwrote into it by `ref` and leaves the winner as it was.
+ * of the same winner) merges what it overwrote into it by `ref` and leaves the winner as it was. A WikiOS-won verdict
+ * whose classic loser another WikiOS winner already overwrote merges into that row (`rowOverwritingLoser`): one row,
+ * one notice, one trail per lost classic change.
  */
 export async function recordConflict(
   client: Client,
   input: RecordConflictInput
 ): Promise<{ id: string; created: boolean }> {
   const { verdict } = input;
+  const earlier = await rowOverwritingLoser(client, input);
+  if (earlier) {
+    await mergeOverwritten(client, earlier.id, verdict.overwritten);
+    return { id: earlier.id, created: false };
+  }
   const made = await client.wikiConflict.createMany({
     data: [
       {
@@ -184,14 +234,7 @@ export async function recordConflict(
   });
   const row = await client.wikiConflict.findUniqueOrThrow({ where: { key: verdict.key } });
   if (made.count === 1) return { id: row.id, created: true };
-  await updateRow(client, row.id, (current) => {
-    const stored = decodeChanges(current.overwritten);
-    const merged = unionByRef(stored, verdict.overwritten);
-    // a new loser has to be told: a settled row is open again
-    return merged.length === stored.length
-      ? null
-      : { overwritten: encodeChanges(merged), settledAt: null };
-  });
+  await mergeOverwritten(client, row.id, verdict.overwritten);
   return { id: row.id, created: false };
 }
 
@@ -204,13 +247,23 @@ export async function parkOverwritten(
   articleId: string,
   verdict: CollisionVerdict
 ): Promise<void> {
-  const revisions = verdict.overwritten
-    .filter((change) => change.side === "wikios" && change.action === "edit")
-    .map((change) => change.ref);
-  if (revisions.length === 0) return;
+  const revisions = verdict.overwritten.filter(
+    (change) => change.side === "wikios" && change.action === "edit"
+  );
+  await parkRevisions(tx, articleId, revisions, verdict.winner.ref);
+}
+
+/** WikiOS revisions `changes` become history only (overwritten), under `winnerRef`. */
+export async function parkRevisions(
+  tx: Prisma.TransactionClient,
+  articleId: string,
+  changes: readonly PageChange[],
+  winnerRef: string
+): Promise<void> {
+  if (changes.length === 0) return;
   await tx.wikiRevision.updateMany({
-    where: { articleId, id: { in: revisions }, parked: false },
-    data: { parked: true, parkReason: `overwritten:${verdict.winner.ref}` },
+    where: { articleId, id: { in: changes.map((change) => change.ref) }, parked: false },
+    data: { parked: true, parkReason: `overwritten:${winnerRef}` },
   });
 }
 
