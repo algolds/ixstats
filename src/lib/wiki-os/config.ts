@@ -123,7 +123,7 @@ export const wikiosConfig: WikiosConfig = buildWikiosConfig({
  * Whether production has no private render engine: `NODE_ENV=production` and `WIKIOS_MEDIAWIKI_INTERNAL_URL` unset or
  * blank, so `internalApiUrl` above would fall back to the public `api.php` (plan 2026-10-25 B3, "Loopback required").
  * Renders (`renderArticleViaMediaWiki`, the editor preview, the stale-render batch) and mirror writes (unless
- * `WIKIOS_MEDIAWIKI_API` names a write URL itself, mirror-admin.ts) then refuse rather than load the public wiki.
+ * `WIKIOS_MEDIAWIKI_API` names a private write URL itself, `mirrorWriteUrlProblem`) then refuse rather than load the public wiki.
  * The low-volume reads (inbound sync, lore cards, the Lorewards fallback, account proof) keep the public fallback, so
  * an ordinary deploy without the runbook's step 4 stays safe. Dev and test never count as missing.
  * Read from `env` at call time, not from the frozen `wikiosConfig`. Server-side only.
@@ -132,6 +132,31 @@ export function loopbackRendererMissing(
   env: Readonly<Record<string, string | undefined>> = process.env
 ): boolean {
   return env.NODE_ENV === "production" && !env.WIKIOS_MEDIAWIKI_INTERNAL_URL?.trim();
+}
+
+/** The setting that leaves the mirror nowhere it may write in production (`mirrorWriteUrlProblem`). */
+export type MirrorWriteUrlProblem = "WIKIOS_MEDIAWIKI_INTERNAL_URL" | "WIKIOS_MEDIAWIKI_API";
+
+/**
+ * Why the mirror may not write in production (plan 2026-10-25 B3), or null when it may. The write URL is
+ * WIKIOS_MEDIAWIKI_API when set, else the internal one: so a WIKIOS_MEDIAWIKI_API on the public wiki's host is refused
+ * whether or not the internal URL is set, and without it the private render engine must be configured
+ * (`loopbackRendererMissing`). Dev and test are never refused. Read from `env` at call time. Server-side only.
+ */
+export function mirrorWriteUrlProblem(
+  env: Readonly<Record<string, string | undefined>> = process.env
+): MirrorWriteUrlProblem | null {
+  if (env.NODE_ENV !== "production") return null;
+  const api = env.WIKIOS_MEDIAWIKI_API?.trim();
+  if (api) return isMediaWikiUrl(api) ? "WIKIOS_MEDIAWIKI_API" : null;
+  return loopbackRendererMissing(env) ? "WIKIOS_MEDIAWIKI_INTERNAL_URL" : null;
+}
+
+/** Whether the mirror has nowhere it may write: the worker then skips every cycle and the jobs wait. */
+export function mirrorWriteUrlMissing(
+  env: Readonly<Record<string, string | undefined>> = process.env
+): boolean {
+  return mirrorWriteUrlProblem(env) !== null;
 }
 
 /** The public origin, with no trailing slash: where a browser reaches the wiki. */

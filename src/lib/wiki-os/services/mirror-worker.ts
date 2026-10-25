@@ -13,14 +13,13 @@
  * It runs from the `wiki-mirror` cron job (src/server/cron/jobs.ts, which holds the job lock) and in-process
  * shortly after a write (`scheduleMirrorKick`, which takes the same lock through `runMirrorCycleLocked`), so only
  * one runner works at a time across processes. `SKIP_MEDIAWIKI_SYNC=true` stops the worker; jobs accumulate. So does
- * production with no private render engine and no WIKIOS_MEDIAWIKI_API (`mirrorWriteUrlMissing`). Once an hour a cycle
+ * production with nowhere private to write (`mirrorWriteUrlMissing`, config.ts). Once an hour a cycle
  * also deletes the orphaned staged upload files (staged-uploads.ts).
  */
 
 import { db } from "~/server/db";
 import { withJobLock } from "~/lib/system/job-lock";
 import { alertDeadJobs, alertWindowSaturated } from "./mirror-alerts";
-import { mirrorWriteUrlMissing } from "./mirror-admin";
 import { MIRROR_LOCK_NAME, MIRROR_SOURCE } from "./mirror-outbox";
 import { runPageJob, type PageJobResult } from "./mirror-page-ops";
 import { runUploadJob } from "./mirror-upload";
@@ -52,6 +51,7 @@ import {
 import { invalidateTemplateDependents } from "./render-service";
 import { sweepStagedOrphansIfDue } from "./staged-uploads";
 import { refreshWikiosEditingFlag } from "~/lib/wiki-os/editing-switch";
+import { mirrorWriteUrlMissing } from "~/lib/wiki-os/config";
 
 const DEFAULT_MAX_JOBS = 50;
 /** No new batch starts after this long (the cron job's lock allows a cycle `MAX_CYCLE_MS`). */

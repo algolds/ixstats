@@ -150,16 +150,22 @@ function DeadJobsBulkActions({
   );
 }
 
-/** Why the worker is not writing, the stop first: SKIP_MEDIAWIKI_SYNC, then the missing loopback, then the bot. */
+/**
+ * Why the worker is not writing, the stop first: SKIP_MEDIAWIKI_SYNC, then the missing loopback, then a write URL on
+ * the public wiki, then the bot.
+ */
 function mirrorWarning(status: {
   paused: boolean;
   loopbackMissing: boolean;
+  publicWriteUrl: boolean;
   botConfigured: boolean;
 }): string {
   if (status.paused)
     return "The mirror worker is stopped (SKIP_MEDIAWIKI_SYNC): jobs accumulate and nothing is lost.";
   if (status.loopbackMissing)
     return "The mirror waits for WIKIOS_MEDIAWIKI_INTERNAL_URL, the private render engine: jobs accumulate and nothing is lost.";
+  if (status.publicWriteUrl)
+    return "WIKIOS_MEDIAWIKI_API points at the public wiki: the mirror waits for a private write URL, jobs accumulate and nothing is lost.";
   return "No mirror bot account is configured (WIKIOS_MEDIAWIKI_BOT_USER and WIKIOS_MEDIAWIKI_BOT_TOKEN): every job fails.";
 }
 
@@ -220,7 +226,10 @@ export function MirrorStatusSection() {
         <Skeleton className="rounded-row h-16 w-full" />
       ) : (
         <>
-          {(status.paused || status.loopbackMissing || !status.botConfigured) && (
+          {(status.paused ||
+            status.loopbackMissing ||
+            status.publicWriteUrl ||
+            !status.botConfigured) && (
             <div className="rounded-row border-yellow/30 bg-yellow/10 text-footnote text-label flex items-start gap-2 border p-3">
               <WarningTriangle className="text-yellow mt-0.5 h-4 w-4 shrink-0" />
               <span>{mirrorWarning(status)}</span>

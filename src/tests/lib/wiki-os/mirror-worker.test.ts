@@ -876,6 +876,26 @@ describe.each(WIKIOS_MODES)("the queue's health [%s]", (mode) => {
 
       expect(byId(job.id).state).toBe("done");
     });
+
+    it("refuses a WIKIOS_MEDIAWIKI_API on the public wiki, even with the internal URL set: jobs stay pending", async () => {
+      process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL = "http://127.0.0.1:8081/api.php";
+      process.env.WIKIOS_MEDIAWIKI_API = "https://ixwiki.com/api.php";
+      const job = addJob({ title: "Foo" });
+
+      await expect(runMirrorCycle()).resolves.toMatchObject({ skipped: true, done: 0 });
+
+      expect(byId(job.id)).toMatchObject({ state: "pending", attempts: 0, lastError: null });
+      expect(revisionJob).not.toHaveBeenCalled();
+    });
+
+    it("writes through a container hostname", async () => {
+      process.env.WIKIOS_MEDIAWIKI_API = "http://mediawiki:8080/api.php";
+      const job = addJob({ title: "Foo" });
+
+      await expect(runMirrorCycle()).resolves.toMatchObject({ skipped: false, done: 1 });
+
+      expect(byId(job.id).state).toBe("done");
+    });
   });
 
   it("a dead job is not in the window but still holds its title: a younger job of that title waits, another title runs", async () => {

@@ -47,7 +47,7 @@ import { wikiosUtilitiesRouter } from "~/server/api/routers/wikios/utilities";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { db } from "~/server/db";
 import { scheduleMirrorKick } from "~/lib/wiki-os/services/mirror-outbox";
-import { mirrorMissingSettings, mirrorWriteUrlMissing } from "~/lib/wiki-os/services/mirror-admin";
+import { mirrorMissingSettings } from "~/lib/wiki-os/services/mirror-admin";
 
 const createCaller = createCallerFactory(wikiosUtilitiesRouter);
 /** The audit log the router writes through `ctx.db`. */
@@ -123,7 +123,10 @@ describe("getMirrorStatus", () => {
     delete process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL;
     delete process.env.WIKIOS_MEDIAWIKI_API;
     try {
-      await expect(admin().getMirrorStatus()).resolves.toMatchObject({ loopbackMissing: true });
+      await expect(admin().getMirrorStatus()).resolves.toMatchObject({
+        loopbackMissing: true,
+        publicWriteUrl: false,
+      });
       expect(mirrorMissingSettings()).toContain("WIKIOS_MEDIAWIKI_INTERNAL_URL");
 
       // an explicit write URL is the operator's choice: the mirror may write through it
@@ -144,23 +147,28 @@ describe("getMirrorStatus", () => {
     }
   });
 
-  it("needs a write URL only in production: dev and test write as before", () => {
-    expect(mirrorWriteUrlMissing({ NODE_ENV: "production" })).toBe(true);
-    expect(mirrorWriteUrlMissing({ NODE_ENV: "production", WIKIOS_MEDIAWIKI_API: " " })).toBe(true);
-    expect(
-      mirrorWriteUrlMissing({
-        NODE_ENV: "production",
-        WIKIOS_MEDIAWIKI_API: "http://127.0.0.1:8089/api.php",
-      })
-    ).toBe(false);
-    expect(
-      mirrorWriteUrlMissing({
-        NODE_ENV: "production",
-        WIKIOS_MEDIAWIKI_INTERNAL_URL: "http://127.0.0.1:8081/api.php",
-      })
-    ).toBe(false);
-    expect(mirrorWriteUrlMissing({ NODE_ENV: "development" })).toBe(false);
-    expect(mirrorWriteUrlMissing({ NODE_ENV: "test" })).toBe(false);
+  it("in production, a WIKIOS_MEDIAWIKI_API on the public wiki is named as the problem", async () => {
+    const nodeEnv = jest.replaceProperty(process.env, "NODE_ENV", "production");
+    const internal = process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL;
+    const api = process.env.WIKIOS_MEDIAWIKI_API;
+    process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL = "http://127.0.0.1:8081/api.php";
+    process.env.WIKIOS_MEDIAWIKI_API = "https://ixwiki.com/api.php";
+    try {
+      await expect(admin().getMirrorStatus()).resolves.toMatchObject({
+        loopbackMissing: false,
+        publicWriteUrl: true,
+      });
+      expect(mirrorMissingSettings()).toContain(
+        "WIKIOS_MEDIAWIKI_API (it points at the public wiki)"
+      );
+      expect(mirrorMissingSettings()).not.toContain("WIKIOS_MEDIAWIKI_INTERNAL_URL");
+    } finally {
+      nodeEnv.restore();
+      if (internal === undefined) delete process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL;
+      else process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL = internal;
+      if (api === undefined) delete process.env.WIKIOS_MEDIAWIKI_API;
+      else process.env.WIKIOS_MEDIAWIKI_API = api;
+    }
   });
 
   it("refuses a member and a visitor", async () => {

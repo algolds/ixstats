@@ -10,6 +10,8 @@ import {
   isMediaWikiUrl,
   loopbackRendererMissing,
   mediaWikiHostPattern,
+  mirrorWriteUrlMissing,
+  mirrorWriteUrlProblem,
 } from "~/lib/wiki-os/config";
 import { isAllowedMediaUrl } from "~/lib/wiki-os/media-hosts";
 import { SISTER_WIKI_HOSTS, sisterWikiFileHosts, sisterWikiHost } from "~/lib/wiki-os/wiki-hosts";
@@ -66,6 +68,36 @@ describe("loopbackRendererMissing", () => {
     expect(loopbackRendererMissing()).toBe(true);
     jest.replaceProperty(process, "env", { ...process.env, WIKIOS_MEDIAWIKI_INTERNAL_URL: internal });
     expect(loopbackRendererMissing()).toBe(false);
+  });
+});
+
+describe("mirrorWriteUrlMissing", () => {
+  const prod = { NODE_ENV: "production" };
+  const internal = "http://127.0.0.1:8081/api.php";
+
+  it("needs a write URL only in production: dev and test write as before", () => {
+    expect(mirrorWriteUrlMissing(prod)).toBe(true);
+    expect(mirrorWriteUrlMissing({ ...prod, WIKIOS_MEDIAWIKI_API: " " })).toBe(true);
+    expect(mirrorWriteUrlMissing({ ...prod, WIKIOS_MEDIAWIKI_API: "http://127.0.0.1:8089/api.php" })).toBe(false);
+    expect(mirrorWriteUrlMissing({ ...prod, WIKIOS_MEDIAWIKI_INTERNAL_URL: internal })).toBe(false);
+    expect(mirrorWriteUrlMissing({ NODE_ENV: "development" })).toBe(false);
+    expect(mirrorWriteUrlMissing({ NODE_ENV: "test" })).toBe(false);
+  });
+
+  it("in production refuses a WIKIOS_MEDIAWIKI_API on the public wiki host, even with the internal URL set", () => {
+    for (const api of ["https://ixwiki.com/api.php", "https://www.ixwiki.com/w/api.php", "//ixwiki.com/api.php"]) {
+      expect(mirrorWriteUrlProblem({ ...prod, WIKIOS_MEDIAWIKI_API: api })).toBe("WIKIOS_MEDIAWIKI_API");
+      expect(mirrorWriteUrlMissing({ ...prod, WIKIOS_MEDIAWIKI_INTERNAL_URL: internal, WIKIOS_MEDIAWIKI_API: api })).toBe(true);
+    }
+    expect(mirrorWriteUrlProblem(prod)).toBe("WIKIOS_MEDIAWIKI_INTERNAL_URL");
+  });
+
+  it("allows a private host or a container hostname, and the public host outside production", () => {
+    for (const api of ["http://127.0.0.1:8089/api.php", "http://mediawiki:8080/api.php", "http://10.0.0.5/w/api.php"]) {
+      expect(mirrorWriteUrlProblem({ ...prod, WIKIOS_MEDIAWIKI_API: api })).toBeNull();
+    }
+    expect(mirrorWriteUrlProblem({ NODE_ENV: "development", WIKIOS_MEDIAWIKI_API: "https://ixwiki.com/api.php" })).toBeNull();
+    expect(mirrorWriteUrlProblem({ NODE_ENV: "test", WIKIOS_MEDIAWIKI_API: "https://ixwiki.com/api.php" })).toBeNull();
   });
 });
 

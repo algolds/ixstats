@@ -206,8 +206,17 @@ describe("in production with no internal URL (B3: the loopback renderer is requi
   afterEach(() => jest.restoreAllMocks());
 
   it("a render sends no request and returns null, and says why once per process", async () => {
-    await expect(parsoid.renderArticleViaMediaWiki("[[Eurth]] text", "Aurelia")).resolves.toBeNull();
-    await expect(parsoid.renderArticleViaMediaWiki("[[Eurth]] text", "Aurelia")).resolves.toBeNull();
+    // a fresh module: whether an earlier case already warned must not matter
+    let fresh!: typeof parsoid;
+    jest.isolateModules(() => {
+      fresh = jest.requireActual<typeof parsoid>("~/lib/wiki-os/adapters/mediawiki/parsoid");
+    });
+    expect(fresh).not.toBe(parsoid);
+    await parsoid.renderArticleViaMediaWiki("[[Eurth]] text", "Aurelia");
+    warn.mockClear();
+
+    await expect(fresh.renderArticleViaMediaWiki("[[Eurth]] text", "Aurelia")).resolves.toBeNull();
+    await expect(fresh.renderArticleViaMediaWiki("[[Eurth]] text", "Aurelia")).resolves.toBeNull();
 
     expect(fetchSpy).not.toHaveBeenCalled();
     const named = warn.mock.calls.filter(([message]) =>
