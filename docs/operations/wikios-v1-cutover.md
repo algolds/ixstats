@@ -112,8 +112,9 @@ docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 <
 ( cd "$IX" && bun run db:push:force )
 ```
 
-Both files are idempotent, so the deploy running them again changes nothing. Check after (read-only): most rows should
-be `classic`, since every imported revision is.
+Both files are idempotent, so the deploy running them again changes nothing. Both are additive (new tables, a new
+column), and they have no rollback of their own: the only way back is the dump taken in step 1. Check after (read-only):
+most rows should be `classic`, since every imported revision is.
 
 ```bash
 docker exec -i ixstats-postgres psql -U postgres -d ixstats -c "select origin, count(*) from wiki_revisions group by origin"
@@ -790,19 +791,22 @@ made from the command line, by jobs or by imports do not announce themselves (no
 
 Do this before step 6b, and before anyone turns the editing toggle on.
 
+**This launch has no takeover.** WikiOS runs inside IxStates, and ixwiki.com stays classic. There is no separate
+`wikios` process to check or restart in 6a and 6b: only IxStates and `ixstats-cron`.
+
 **The wiki-save limit needs `RATE_LIMIT_ENABLED`.** Every person's save (the editor, api.php, revert, rollback, "Restore
 my text") takes one from a per-account bucket: 8 a minute for a new account, 30 for an autoconfirmed or confirmed one,
 none counted for a holder of `noratelimit` (sysop, bot). The limit lives in the shared rate limiter, which counts nothing
 unless `RATE_LIMIT_ENABLED` is exactly `true`. Unset means `true`. Any other value (`false`, `1`, `True`) turns the limiter
-off, and the save limit with it. Check every env file IxStates, `ixstats-cron` and `wikios` read:
+off, and the save limit with it. Check every env file IxStates and `ixstats-cron` read:
 
 ```bash
 grep -n '^RATE_LIMIT_ENABLED=' "$IX/.env.production" "$IX/.env.production.local" 2>/dev/null   # nothing, or =true / ="true"
-grep -n 'RATE_LIMIT_ENABLED' "$WK/ecosystem.wikios.config.cjs" "$IX/ecosystem.config.cjs"      # nothing, or "true"
+grep -n 'RATE_LIMIT_ENABLED' "$IX/ecosystem.config.cjs"                                         # nothing, or "true"
 ```
 
-If a line says anything else, change it to `RATE_LIMIT_ENABLED=true` (back the file up with `bk` first) and restart the
-three processes.
+If a line says anything else, change it to `RATE_LIMIT_ENABLED=true` (back the file up with `bk` first). Then restart
+`ixstats-cron` (`pm2 restart ixstats-cron --update-env`) and IxStates (its usual restart).
 
 **Story chains aimed at a `MediaWiki:` page.** An approved story chain whose wiki section is not written yet
 (`wikiSyncedAt` is null) is retried by the story-chain cron job. A chain whose page is a `MediaWiki:` page is now skipped:
@@ -829,23 +833,25 @@ MediaWiki's own group table) or remove them. Do not change anything on the serve
 ## 6b. Switch WikiOS v1 on
 
 Only after steps 1 (SQL), 1b (rights import and its protections marker), 3 (mirror account), 4 (render engine), 6
-(webhook) and 6a. Without the marker the switch takes no writes: api.php keeps answering `readonly`. The switch goes into the env file that
-IxStates, `ixstats-cron` and the `wikios` process all read (`$WK/.env.production.local` is a link to it, step 5). From here
-on WikiOS takes edits, the mirror copies them to MediaWiki, and api.php answers. When WikiOS and classic both change a
-page, the later save stands on both wikis and the overwritten editor is told (step 10d).
+(webhook) and 6a. Without the marker the switch takes no writes: api.php keeps answering `readonly`. The switch goes into
+the env file that IxStates and `ixstats-cron` both read, `$IX/.env.production.local`. This launch has no `wikios`
+process (no takeover), so nothing else needs it. From here on WikiOS takes edits inside IxStates, the mirror copies them
+to MediaWiki, and api.php answers. When WikiOS and classic both change a page, the later save stands on both wikis and
+the overwritten editor is told (step 10d).
 
 ```bash
 bk "$IX/.env.production.local" env.production.local.step6b
 grep -q '^WIKIOS_V1_ENABLED=' "$IX/.env.production.local" || ( umask 077; printf '\nWIKIOS_V1_ENABLED=true\n' >> "$IX/.env.production.local" )
 grep -c '^WIKIOS_V1_ENABLED=true$' "$IX/.env.production.local"          # expect 1
-pm2 restart wikios --update-env && pm2 restart ixstats-cron --update-env
+pm2 restart ixstats-cron --update-env
 # and IxStates itself, its usual restart, so it reads the file again
-curl -s 'http://127.0.0.1:3560/w/api.php?action=query&meta=siteinfo&format=json' | jq -r '.error.code // "ok"'   # not "readonly"
+# IxStates' own api.php, on loopback under its base path (use /projects/ixstats instead if that is the one that answers):
+curl -s 'http://127.0.0.1:3550/projects/ixstates/w/api.php?action=query&meta=siteinfo&format=json' | jq -r '.error.code // "ok"'   # not "readonly"
 ```
 
 Then add `wiki-mirror` and `wiki-render-stale` to `CRON_ENABLED_JOBS` (step 7b explains the render backlog).
 
-**Rollback:** `sudo cp -a "$BK/env.production.local.step6b" "$IX/.env.production.local"`, the same restarts. WikiOS
+**Rollback:** `sudo cp -a "$BK/env.production.local.step6b" "$IX/.env.production.local"`, the same two restarts. WikiOS
 follows the editing toggle again (read-only unless it is on: turn it off in `/admin/wikios-settings` too). Jobs already
 in the outbox keep draining to MediaWiki while `wiki-mirror` runs; to make them wait there, also set
 `SKIP_MEDIAWIKI_SYNC=true` in the same file before the restarts, or drop `wiki-mirror` from `CRON_ENABLED_JOBS`.
@@ -1284,19 +1290,41 @@ page, and an edit-summary trail on the winning revision. Each collision is one r
 quarantined (Inbound sync quarantine), and a mirror job that fails eight times is dead (MediaWiki Mirror Outbox); both
 sections say what failed and offer a retry.
 
-Known limits. None of them loses text; each can leave someone untold or a base slightly off:
+WikiOS's own writes (the trail edits and the talk notes) never win or lose by time. The trail of a classic edit that won
+is written only while that edit is still the page's head. If a classic editor saved again before a trail or a note
+reached classic, the mirror job sends nothing and finishes with a note saying so, and the next inbound cycle brings the
+classic edit over. A talk note that someone's classic edit of their talk page left out is written again on top of that
+edit by the next settling, once.
+
+Known limits. None of them loses text; each can leave someone untold or a page needing a hand fix:
 
 - **Two classic moves after one WikiOS move.** When classic moves a page twice after a WikiOS move of it, only the first
   classic move is judged against the WikiOS move. The page ends up where the second move put it, but the second mover is
   not told that a WikiOS move was overwritten.
-- **A talk note to a deleted classic talk page.** When the overwritten editor's classic user talk page is deleted, the note
-  is recorded as undelivered (the Conflict log says "Not delivered: talk page deleted") and is never retried. Their
-  other notices still go out.
-- **A restore's base in the settling window.** "Restore my text" is refused as stale when the page changed after the
-  revision the conflict was judged against. When classic won, that revision is the trail, a null revision written some
-  time after the win with the page's text at that moment. If someone edited the page between the win and the trail, the
-  trail copies their text, so a restore does not see their edit as newer and can replace it without an edit conflict.
-  Their edit stays in the history.
+- **A talk note that cannot be delivered.** When the overwritten editor's classic user talk page is deleted, the note is
+  recorded as undelivered (the Conflict log says "Not delivered: talk page deleted") and is never retried. A talk page
+  that refuses the note for a day, and a Discord DM that fails for a day, are given up the same way ("Not delivered: the
+  talk page refused the note for a day", "Not delivered: the Discord DM failed for a day"). Their other notices still go
+  out.
+- **A same-millisecond tie.** A classic revision that a classic restore brought back, dated to the same millisecond as a
+  WikiOS revision, can stay below it instead of becoming the head. Fix the page by hand: if its step is in Inbound sync
+  quarantine, use "Resync page from classic"; otherwise open the page's history in WikiOS and revert to that classic
+  revision (a new edit, which the mirror copies to classic).
+- **A classic recreate quarantined after a WikiOS delete.** If a classic editor recreated a page that WikiOS deleted, and
+  that step is quarantined, resync the page from classic before you retry the step.
+- **A second classic move after a dead WikiOS move.** Before you requeue a dead WikiOS move job, open the page's classic
+  move log (`Special:Log/move` for the page). If classic moved the page more than once since, the requeued move is judged
+  against the first classic move only, so check where the page is and move it by hand if needed.
+
+What the operator does:
+
+- **"Not delivered" in the Conflict log.** For every notice marked "Not delivered", tell the person by hand: on their
+  classic talk page, or by Discord, with a link to the page's history.
+- **After you discard a dead WikiOS move**, classic keeps the page at its old title. Later WikiOS edits and protections
+  of the page are mirrored to that classic page (found by its page id), never to a second page at the new title. Move it
+  by hand on classic if both wikis should use the new title.
+- **Every outbox and quarantine action is audited.** Requeue, discard (one job or in bulk), retry, dismiss and resync
+  each write an admin audit log row naming who did it and which ids or how many.
 
 ## 11. Footprint measurement
 
