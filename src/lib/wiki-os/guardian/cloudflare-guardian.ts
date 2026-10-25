@@ -22,8 +22,9 @@ export class CloudflareGuardian {
    * title: the URLs purged are its canonical, percent-encoded ones (`/wiki/<urlPath>`, the form a
    * browser asks for: a space or an accent in a title is not purged by its raw spelling): classic's
    * page on the wiki's host (the mirror changes it) and the reader's page on the app's URL and base
-   * path (app-url.ts). Cloudflare's answer is read: a refused purge, or one with no app URL to build
-   * on, is logged, never thrown.
+   * path (app-url.ts). With no app URL to build on (production, NEXT_PUBLIC_APP_URL unset), classic's
+   * page is still purged and the reader's is skipped with a warning. Cloudflare's answer is read: a
+   * refused purge is logged, never thrown.
    */
   static async purgeArticleEdgeCache(title: string, realm = "ixwiki"): Promise<void> {
     const apiToken = process.env.CLOUDFLARE_API_TOKEN;
@@ -34,11 +35,17 @@ export class CloudflareGuardian {
     const canon = canonicalizeTitle(title, { source: realm });
     if (!canon) return; // not a title MediaWiki would accept: there is no page of that name to purge
 
+    const purgeUrls = [`${mediaWikiOrigin()}/wiki/${canon.urlPath}`];
     try {
-      const purgeUrls = [
-        `${mediaWikiOrigin()}/wiki/${canon.urlPath}`,
-        appUrl(`/wiki/${canon.urlPath}`),
-      ];
+      purgeUrls.push(appUrl(`/wiki/${canon.urlPath}`));
+    } catch (err) {
+      console.warn(
+        `[CloudflareGuardian] Only classic's page is purged for ${canon.title}: no app URL (NEXT_PUBLIC_APP_URL).`,
+        err
+      );
+    }
+
+    try {
       const res = await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}/purge_cache`, {
         method: "POST",
         headers: {

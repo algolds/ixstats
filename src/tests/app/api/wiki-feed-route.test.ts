@@ -31,7 +31,13 @@ const get = (type: string, query = "") =>
   });
 
 const env = process.env as Record<string, string | undefined>;
-const ENV_KEYS = ["APP_URL", "NEXT_PUBLIC_APP_URL", "BASE_PATH", "NEXT_PUBLIC_BASE_PATH"] as const;
+const ENV_KEYS = [
+  "APP_URL",
+  "NEXT_PUBLIC_APP_URL",
+  "BASE_PATH",
+  "NEXT_PUBLIC_BASE_PATH",
+  "NODE_ENV",
+] as const;
 const savedEnv = Object.fromEntries(ENV_KEYS.map((key) => [key, env[key]]));
 
 describe("GET /api/wiki/feed/[type]", () => {
@@ -130,5 +136,21 @@ describe("GET /api/wiki/feed/[type]", () => {
       expect(body).not.toContain("ixstats.com");
       expect(body).not.toContain("/projects/ixstates/projects/ixstates");
     }
+  });
+
+  it("answers 503, uncached and with Retry-After, when production has no app URL", async () => {
+    for (const key of ENV_KEYS) delete env[key];
+    env.NODE_ENV = "production";
+    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+
+    for (const type of ["recent-changes.atom", "recent-changes.json"]) {
+      const res = await get(type);
+      expect(res.status).toBe(503);
+      expect(res.headers.get("Retry-After")).toBe("300");
+      expect(res.headers.get("Cache-Control")).toBe("no-store");
+    }
+    expect(findMany).not.toHaveBeenCalled();
+    expect(error.mock.calls[0]!.map(String).join(" ")).toMatch(/NEXT_PUBLIC_APP_URL/);
+    error.mockRestore();
   });
 });

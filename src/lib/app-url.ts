@@ -4,28 +4,40 @@
  * on the wiki) is built here. Only the origin of the variable is read, so a base path written into it is never doubled.
  *
  * With neither set (or not an http(s) URL): dev uses the wiki's origin, which also serves IxStates under its base path;
- * production throws, naming the variable, because a link on the wrong host is worse than an error. The check runs when
- * a link is built, never at import, so a missing variable fails only the links that need it.
+ * production throws, naming the variable, because a link on the wrong host is worse than an error. In production a
+ * loopback host (`localhost`, `*.localhost`, `127.0.0.1`, `[::1]`, `0.0.0.0`: `.env.example`'s value) counts as missing
+ * too, and the other variable is not tried. The check runs when a link is built, never at import, so a missing
+ * variable fails only the links that need it.
  *
  * Server and client safe: no MediaWiki calls.
  */
 import { withBasePath } from "~/lib/base-path";
 import { mediaWikiOrigin, wikiReaderPath, type WikiSource } from "~/lib/wiki-os/config";
 
-/** The http(s) origin of `value`, or null when it is unset or not such a URL. */
-function httpOrigin(value: string | undefined): string | null {
+/** Hosts no visitor can reach IxStates on (`URL.hostname` is lower-case and brackets IPv6). */
+const LOOPBACK_HOST = /^(?:localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)$|\.localhost$/;
+
+/** `value` as an http(s) URL, or null when it is unset or not such a URL. */
+function httpUrl(value: string | undefined): URL | null {
   if (!value || !URL.canParse(value)) return null;
   const url = new URL(value);
-  return /^https?:$/.test(url.protocol) ? url.origin : null;
+  return /^https?:$/.test(url.protocol) ? url : null;
 }
 
-/** IxStates' public origin (`https://ixwiki.com`), with no path. Throws in production when it is not configured. */
+/**
+ * IxStates' public origin (`https://ixwiki.com`), with no path. Throws in production when it is not configured or is a
+ * loopback host. Each variable is read by its literal name, so Next inlines `NEXT_PUBLIC_APP_URL` in client bundles.
+ */
 export function appOrigin(): string {
-  const origin = httpOrigin(process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL);
-  if (origin) return origin;
-  if (process.env.NODE_ENV === "production") {
+  const [name, value] = process.env.APP_URL
+    ? ["APP_URL", process.env.APP_URL]
+    : ["NEXT_PUBLIC_APP_URL", process.env.NEXT_PUBLIC_APP_URL];
+  const production = process.env.NODE_ENV === "production";
+  const url = httpUrl(value);
+  if (url && !(production && LOOPBACK_HOST.test(url.hostname))) return url.origin;
+  if (production) {
     throw new Error(
-      "NEXT_PUBLIC_APP_URL (or APP_URL) is not set to an http(s) URL: IxStates has no public origin to build an absolute link on."
+      `${name} is not a public http(s) URL (${value ?? "unset"}): set NEXT_PUBLIC_APP_URL (or APP_URL) to IxStates' public origin; no absolute link is built on a wrong host.`
     );
   }
   return new URL(mediaWikiOrigin()).origin;

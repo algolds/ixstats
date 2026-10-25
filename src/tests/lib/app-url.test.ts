@@ -150,6 +150,46 @@ describe("appOrigin in production", () => {
     expect(appOrigin()).toBe("https://ixwiki.com");
   });
 
+  it("a loopback APP_URL counts as missing: it throws naming APP_URL, never falling through to NEXT_PUBLIC_APP_URL", () => {
+    const { appOrigin } = load({
+      NODE_ENV: "production",
+      APP_URL: "http://localhost:3000",
+      NEXT_PUBLIC_APP_URL: "https://ixwiki.com",
+    });
+    expect(() => appOrigin()).toThrow(
+      /^APP_URL is not a public http\(s\) URL \(http:\/\/localhost:3000\)/
+    );
+  });
+
+  it.each([
+    "http://localhost:3000",
+    "http://LOCALHOST",
+    "http://127.0.0.1:3550",
+    "http://[::1]:3000",
+    "http://0.0.0.0:3000",
+    "http://ixstates.localhost",
+  ])("a loopback NEXT_PUBLIC_APP_URL (%s) counts as missing", (value) => {
+    const { appOrigin } = load({ NODE_ENV: "production", NEXT_PUBLIC_APP_URL: value });
+    expect(() => appOrigin()).toThrow(/^NEXT_PUBLIC_APP_URL is not a public http\(s\) URL/);
+  });
+
+  it.each([
+    "https://ixwiki.com",
+    "https://mylocalhost.org",
+    "https://mylocalhost",
+    "https://127x0x0x1",
+    "https://localhost.example.org",
+    "https://127.0.0.10.example",
+  ])("a public host that only looks like loopback (%s) is used", (value) => {
+    const { appOrigin } = load({ NODE_ENV: "production", NEXT_PUBLIC_APP_URL: value });
+    expect(appOrigin()).toBe(new URL(value).origin);
+  });
+
+  it("in development a localhost APP_URL is used as it is", () => {
+    const { appUrl } = load({ NODE_ENV: "development", APP_URL: "http://localhost:3000" });
+    expect(appUrl("/wiki/X")).toBe("http://localhost:3000/wiki/X");
+  });
+
   it("an absolute URL needs no origin, so it never throws", () => {
     const { appUrl } = load({ NODE_ENV: "production" });
     expect(appUrl("https://cdn.discordapp.com/a.png")).toBe("https://cdn.discordapp.com/a.png");

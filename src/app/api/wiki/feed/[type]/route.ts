@@ -24,7 +24,28 @@ interface FeedItem {
 /** What an overwritten revision's title says, as the history and recent changes say it. */
 const PARKED_NOTE = "overwritten";
 
+/** The app's host for the entry ids, or null when production has no app URL (app-url.ts throws, and says why). */
+function appHost(): string | null {
+  try {
+    return new URL(appOrigin()).host;
+  } catch (error) {
+    console.error("[wiki feed] No app URL to link the entries on:", error);
+    return null;
+  }
+}
+
+/** The feed while the app URL is missing: a temporary outage, never cached. */
+const UNAVAILABLE_HEADERS = { "Retry-After": "300", "Cache-Control": "no-store" };
+
 export async function GET(req: NextRequest, context: { params: Promise<{ type: string }> }) {
+  // Entry ids are tag URIs on the app's host (earlier ids named another host: a reader may list those entries once more).
+  const host = appHost();
+  if (!host) {
+    return new NextResponse("The feed is unavailable: NEXT_PUBLIC_APP_URL is not configured.", {
+      status: 503,
+      headers: UNAVAILABLE_HEADERS,
+    });
+  }
   const { type } = await context.params;
   const search = req.nextUrl.searchParams;
   const isJson = type.endsWith(".json") || search.get("format") === "json";
@@ -48,8 +69,6 @@ export async function GET(req: NextRequest, context: { params: Promise<{ type: s
     },
   });
 
-  // Entry ids are tag URIs on the app's host (earlier ids named another host: a reader may list those entries once more).
-  const host = new URL(appOrigin()).host;
   const source = parseWikiSource(realm);
   const home = appUrl("/wiki/Main_Page");
   const feedItems: FeedItem[] = revisions.map((r) => ({

@@ -79,13 +79,14 @@ describe("CloudflareGuardian.purgeArticleEdgeCache", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("in production with no app URL, sends nothing and logs the reason, never throws", async () => {
+  it("purges classic's URL only, warns naming NEXT_PUBLIC_APP_URL", async () => {
     env.NODE_ENV = "production";
     const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
 
     await expect(CloudflareGuardian.purgeArticleEdgeCache("Holy See")).resolves.toBeUndefined();
 
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(String(warn.mock.calls[0]?.[1])).toMatch(/NEXT_PUBLIC_APP_URL/);
+    expect(purgedFiles()).toEqual([`${mediaWikiOrigin()}/wiki/Holy_See`]);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]!.map(String).join(" ")).toMatch(/NEXT_PUBLIC_APP_URL/);
   });
 });
