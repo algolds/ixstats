@@ -4,6 +4,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { SystemRestart as Loader2, Plus, Group as Users, Xmark as X } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
+import { useNotify } from "~/hooks/useNotify";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
@@ -190,6 +191,7 @@ function CabinetBody({
 
 export function CabinetPanel({ countryId }: CabinetPanelProps) {
   const utils = api.useUtils();
+  const notify = useNotify();
   const [dialogDepartmentId, setDialogDepartmentId] = useState<string | null>(null);
   const [form, setForm] = useState<AppointFormState>(initialForm);
   const setField = (key: keyof AppointFormState, value: string) =>
@@ -212,12 +214,14 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
       setDialogDepartmentId(null);
       setForm(initialForm());
     },
+    onError: (error) => notify.error("Could not appoint the official", error.message),
   });
 
   const remove = api.meetings.removeOfficial.useMutation({
     onSuccess: () => {
       void utils.meetings.getOfficials.invalidate();
     },
+    onError: (error) => notify.error("Could not remove the official", error.message),
   });
 
   const departments = structure?.departments ?? [];

@@ -139,6 +139,10 @@ function delegate(name: string) {
       Object.assign(row, data);
       return out(row);
     }),
+    upsert: jest.fn(async ({ where, update, create }: Row) => {
+      const row = tables[name]!.find((r) => matches(r, where));
+      return out(row ? Object.assign(row, update) : insert(create));
+    }),
     updateMany: jest.fn(async ({ where, data }: Row) => {
       const rows = tables[name]!.filter((r) => matches(r, where));
       rows.forEach((r) => Object.assign(r, data));
@@ -156,6 +160,9 @@ const fakeDb: Record<string, any> = {};
 function buildDb() {
   resetTables();
   for (const name of Object.keys(tables)) fakeDb[name] = delegate(name);
+  fakeDb.$transaction = jest.fn(async (work: (tx: typeof fakeDb) => Promise<unknown>) =>
+    work(fakeDb)
+  );
   fakeDb.governmentStructure = {
     findUnique: jest.fn(async () => null),
     update: jest.fn(),

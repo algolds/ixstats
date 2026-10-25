@@ -2,7 +2,18 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Button } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "~/components/ui/alert-dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import {
@@ -14,6 +25,7 @@ import {
 } from "~/components/ui/select";
 import { FloppyDisk as Save, CheckCircle } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { useNotify } from "~/hooks/useNotify";
 
 type SelectionMethod =
   "elected" | "appointed" | "sortition" | "hereditary" | "ex-officio" | "corporatist";
@@ -129,6 +141,42 @@ function SaveLabel({ saved, exists }: { saved: boolean; exists: boolean }) {
       <Icon className="h-4 w-4" />
       {saved ? "Saved" : exists ? "Update legislature" : "Create legislature"}
     </>
+  );
+}
+
+/** Reconfiguring a seated legislature dissolves it, so the save asks first. */
+function DissolveConfirm({
+  disabled,
+  saved,
+  onConfirm,
+}: {
+  disabled: boolean;
+  saved: boolean;
+  onConfirm: () => void;
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button disabled={disabled} size="sm" className="w-full gap-2">
+          <SaveLabel saved={saved} exists />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Dissolve the legislature?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Every seat becomes vacant and a snap election is called. Bills cannot go to a vote
+            until the election seats the parties again.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Keep it</AlertDialogCancel>
+          <AlertDialogAction className={buttonVariants({ variant: "destructive" })} onClick={onConfirm}>
+            Dissolve and update
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
@@ -303,6 +351,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
   }, [formData.chamberType, formData.name, formData.totalSeats, formData.electoralSystem]);
 
   const utils = api.useUtils();
+  const notify = useNotify();
   const configureLegislature = api.elections.configureLegislature.useMutation({
     onSuccess: () => {
       refetch();
@@ -312,6 +361,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     },
+    onError: (error) => notify.error("Could not save the legislature", error.message),
   });
 
   const patchForm = (patch: Partial<typeof formData>) =>
@@ -489,20 +539,28 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
             />
           )}
 
-          {legislature && (
-            <p className="text-label-secondary text-footnote">
-              Updating the legislature dissolves it: every seat becomes vacant and a snap election
-              is called.
-            </p>
+          {legislature ? (
+            <>
+              <p className="text-label-secondary text-footnote">
+                Updating the legislature dissolves it: every seat becomes vacant and a snap election
+                is called.
+              </p>
+              <DissolveConfirm
+                disabled={!formData.name || configureLegislature.isPending}
+                saved={saved}
+                onConfirm={handleSave}
+              />
+            </>
+          ) : (
+            <Button
+              onClick={handleSave}
+              disabled={!formData.name || configureLegislature.isPending}
+              size="sm"
+              className="w-full gap-2"
+            >
+              <SaveLabel saved={saved} exists={false} />
+            </Button>
           )}
-          <Button
-            onClick={handleSave}
-            disabled={!formData.name || configureLegislature.isPending}
-            size="sm"
-            className="w-full gap-2"
-          >
-            <SaveLabel saved={saved} exists={!!legislature} />
-          </Button>
         </div>
       </CardContent>
     </Card>

@@ -76,10 +76,10 @@ export function GovernmentMetricsEditor({ countryId }: GovernmentMetricsEditorPr
     const map: Record<string, number> = {
       politicalStability: Math.round((govStructure.politicalStability ?? 0.5) * 100),
       democracyIndex: Math.round(govStructure.democracyIndex ?? 50),
-      politicalPolarization: Math.round(govStructure.politicalPolarization ?? 30),
+      politicalPolarization: Math.round(govStructure.politicalPolarization ?? 50),
       governmentEffectiveness: Math.round(govStructure.governmentEffectiveness ?? 50),
       ruleOfLaw: Math.round(govStructure.ruleOfLaw ?? 50),
-      corruptionIndex: Math.round(govStructure.corruptionIndex ?? 30),
+      corruptionIndex: Math.round(govStructure.corruptionIndex ?? 50),
       electionCycle: govStructure.electionCycle ?? 4,
     };
     return map[key] ?? 0;

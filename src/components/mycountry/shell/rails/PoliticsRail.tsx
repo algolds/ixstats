@@ -10,7 +10,7 @@ import {
   CheckSquare as Vote,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { computeApproval } from "~/lib/government/approval";
+import { approvalKpiValue } from "~/lib/government/approval";
 import { ParliamentHemicycle } from "~/components/executive/politics/ParliamentHemicycle";
 import {
   DomainKpiGrid,
@@ -100,22 +100,24 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
     { enabled: !!countryId, staleTime: 30_000 }
   );
 
+  // Same query (and cache entry) as the CountryDataProvider: approval is Country.publicApproval.
+  const { data: country } = api.countries.getByIdWithEconomicData.useQuery(
+    { id: countryId },
+    { enabled: !!countryId }
+  );
+
   const parties = partiesRaw as PartyItem[] | undefined;
   const elections = electionsRaw as ElectionItem[] | undefined;
   const legislature = legislatureRaw as LegislatureItem | undefined;
   const parliament = parliamentRaw as ParliamentData | null | undefined;
 
   const kpis = useMemo<Kpi[]>(() => {
-    const approval = computeApproval(
-      (parties ?? []).map((p) => ({ id: p.id, currentSupport: p.currentSupport ?? 0 })),
-      null
-    );
     return [
       { label: "Parties", value: parties?.length ?? 0 },
       { label: "Seats", value: legislature?.totalSeats ?? 0 },
-      { label: "Approval", value: `${approval}%` },
+      { label: "Approval", value: approvalKpiValue(country?.publicApproval) },
     ];
-  }, [parties, legislature]);
+  }, [parties, legislature, country?.publicApproval]);
 
   const activity = useMemo<ActivityEntry[]>(() => {
     const entries: ActivityEntry[] = [];

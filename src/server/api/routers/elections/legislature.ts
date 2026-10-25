@@ -52,55 +52,36 @@ export const electionsLegislatureRouter = createTRPCRouter({
       );
       const computedTotalSeats = chambers.reduce((acc, c) => acc + c.seats, 0);
 
-      let legislature = await ctx.db.legislature.findUnique({
-        where: { countryId: input.countryId },
-      });
-
-      if (legislature) {
-        legislature = await ctx.db.legislature.update({
-          where: { countryId: input.countryId },
-          data: {
-            name: input.name,
-            chamberType: input.chamberType,
-            totalSeats: computedTotalSeats,
-            electoralSystem: input.electoralSystem,
-            termLength: input.termLength,
-            electionCycle: input.electionCycle,
-          },
-        });
-      } else {
-        legislature = await ctx.db.legislature.create({
-          data: {
-            countryId: input.countryId,
-            name: input.name,
-            chamberType: input.chamberType,
-            totalSeats: computedTotalSeats,
-            electoralSystem: input.electoralSystem,
-            termLength: input.termLength,
-            electionCycle: input.electionCycle,
-          },
-        });
-      }
-
-      await ctx.db.legislativeSeat.deleteMany({
-        where: { legislatureId: legislature.id },
-      });
-
-      const seatsToCreate = [];
-      let seatNumber = 1;
-      for (const chamber of chambers) {
-        for (let i = 0; i < chamber.seats; i++) {
-          seatsToCreate.push({
-            legislatureId: legislature.id,
+      const settings = {
+        name: input.name,
+        chamberType: input.chamberType,
+        totalSeats: computedTotalSeats,
+        electoralSystem: input.electoralSystem,
+        termLength: input.termLength,
+        electionCycle: input.electionCycle,
+      };
+      const seatsFor = (legislatureId: string) => {
+        let seatNumber = 1;
+        return chambers.flatMap((chamber) =>
+          Array.from({ length: chamber.seats }, () => ({
+            legislatureId,
             seatNumber: seatNumber++,
             region: chamber.name,
             isActive: true,
-          });
-        }
-      }
+          }))
+        );
+      };
 
-      await ctx.db.legislativeSeat.createMany({
-        data: seatsToCreate,
+      // One transaction: a failure part-way never leaves the chamber without its seats.
+      const legislature = await ctx.db.$transaction(async (tx) => {
+        const row = await tx.legislature.upsert({
+          where: { countryId: input.countryId },
+          update: settings,
+          create: { countryId: input.countryId, ...settings },
+        });
+        await tx.legislativeSeat.deleteMany({ where: { legislatureId: row.id } });
+        await tx.legislativeSeat.createMany({ data: seatsFor(row.id) });
+        return row;
       });
 
       // MC-2: the seats above are vacant. Schedule the first election — or, when the

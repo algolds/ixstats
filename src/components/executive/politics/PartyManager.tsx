@@ -2,7 +2,18 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Button } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "~/components/ui/alert-dialog";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -23,6 +34,7 @@ import {
 import { Plus, Trash as Trash2, EditPencil as Pencil } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useScrollToFocus } from "~/hooks/useScrollToFocus";
+import { useNotify } from "~/hooks/useNotify";
 import { ColorPickerInput } from "~/components/ui/color-picker";
 import { Slider } from "~/components/ui/slider";
 import { IDEOLOGY_OPTIONS } from "./ideologies";
@@ -81,6 +93,7 @@ function PartyRow({
               {ideologyLabel(party.ideology)}
             </Badge>
             {party.leaderName && <span>Led by {party.leaderName}</span>}
+            {!party.isActive && <span>Inactive</span>}
           </div>
         </div>
       </div>
@@ -98,15 +111,36 @@ function PartyRow({
         >
           <Pencil className="h-3 w-3" />
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onDelete}
-          aria-label={`Delete ${party.name}`}
-          className="text-red hover:text-red h-7 w-7 p-0"
-        >
-          <Trash2 className="h-3 w-3" />
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-label={`Delete ${party.name}`}
+              className="text-red hover:text-red h-7 w-7 p-0"
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete {party.name}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                A party that has stood in an election is made inactive instead, so past results
+                keep it. Otherwise it is removed and its seats become vacant.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Keep it</AlertDialogCancel>
+              <AlertDialogAction
+                className={buttonVariants({ variant: "destructive" })}
+                onClick={onDelete}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
@@ -199,6 +233,7 @@ function PartyFormFields({
 
 export function PartyManager({ countryId, focusId }: PartyManagerProps) {
   const utils = api.useUtils();
+  const notify = useNotify();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingParty, setEditingParty] = useState<string | null>(null);
   const [formData, setFormData] = useState<PartyForm>(EMPTY_FORM);
@@ -223,6 +258,7 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
       setFormData(EMPTY_FORM);
       setDialogOpen(false);
     },
+    onError: (error) => notify.error("Could not create the party", error.message),
   });
 
   const updateParty = api.elections.updateParty.useMutation({
@@ -232,9 +268,18 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
       setDialogOpen(false);
       setEditingParty(null);
     },
+    onError: (error) => notify.error("Could not update the party", error.message),
   });
 
-  const deleteParty = api.elections.deleteParty.useMutation({ onSuccess: refresh });
+  const deleteParty = api.elections.deleteParty.useMutation({
+    onSuccess: (result) => {
+      if (result.deactivated) {
+        notify.success("Party made inactive", "It stood in an election, so its results are kept");
+      }
+      refresh();
+    },
+    onError: (error) => notify.error("Could not delete the party", error.message),
+  });
 
   function startEdit(party: Party) {
     setEditingParty(party.id);
@@ -259,7 +304,7 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
       baseSupport: formData.baseSupport,
     };
     if (editingParty) {
-      updateParty.mutate({ id: editingParty, ...fields, currentSupport: formData.baseSupport });
+      updateParty.mutate({ id: editingParty, ...fields });
     } else {
       createParty.mutate({ countryId, ...fields });
     }

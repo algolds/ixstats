@@ -18,7 +18,6 @@ import {
   type VotingBloc,
   type VoteResult,
 } from "~/lib/statecraft/legislative-vote";
-import { computeApproval } from "~/lib/government/approval";
 import { IxTime } from "~/lib/ixtime";
 import { fogVoteProjection } from "~/lib/statecraft/whip";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
@@ -80,18 +79,13 @@ async function loadBlocs(db: PrismaClient, countryId: string): Promise<VotingBlo
   return [...blocMap.values()];
 }
 
-/** Government standing (0-100) = approval from party support + political stability. */
+/** Government standing (0-100) = the nation's public approval (50 when it has none yet). */
 async function getGovernmentBacking(db: PrismaClient, countryId: string): Promise<number> {
-  const parties = await db.politicalParty.findMany({
-    where: { countryId, isActive: true },
-    select: { id: true, currentSupport: true },
+  const country = await db.country.findUnique({
+    where: { id: countryId },
+    select: { publicApproval: true },
   });
-  if (parties.length === 0) return 50;
-  const structure = await db.governmentStructure.findUnique({
-    where: { countryId },
-    select: { politicalStability: true },
-  });
-  return computeApproval(parties, structure?.politicalStability ?? null);
+  return country?.publicApproval ?? 50;
 }
 
 export const legislationRouter = createTRPCRouter({
@@ -171,7 +165,7 @@ export const legislationRouter = createTRPCRouter({
         throw new TRPCError({
           code: "BAD_REQUEST",
           message:
-            "No seated legislature yet — bills can go to a vote once an election seats the parties",
+            "No seated legislature yet. Bills can go to a vote once an election seats the parties.",
         });
       }
 
@@ -180,8 +174,9 @@ export const legislationRouter = createTRPCRouter({
       const result = tallyVote(meta.ideologyTarget, blocs, standing / 100);
       const pct = `${result.yesSeats}–${result.noSeats}${result.abstainSeats ? `, ${result.abstainSeats} abstain` : ""}`;
 
-      await ctx.db.policy.update({
-        where: { id: bill.id },
+      // Conditional on the bill still being in committee, so two concurrent votes cannot both apply.
+      const claimed = await ctx.db.policy.updateMany({
+        where: { id: bill.id, status: "in_committee" },
         data: {
           status: result.passed ? "active" : "rejected",
           effectiveDate: result.passed ? new Date() : undefined,
@@ -192,6 +187,9 @@ export const legislationRouter = createTRPCRouter({
           } satisfies BillMeta),
         },
       });
+      if (claimed.count !== 1) {
+        throw new TRPCError({ code: "CONFLICT", message: "This bill has already been voted on" });
+      }
 
       // Passed bills become real: ride the proven policy → sim effect channel.
       if (result.passed) {
@@ -243,6 +241,8 @@ export const legislationRouter = createTRPCRouter({
       if (!bill || bill.policyType !== "legislative_bill") {
         throw new TRPCError({ code: "NOT_FOUND", message: "Bill not found" });
       }
+      // The whip count is the government's own intelligence: owner (or privileged roles) only.
+      await assertCountryWriteAccess(ctx, bill.countryId);
       const meta = parseMeta(bill.reviewNotes);
       if (!meta) return { available: false as const, reason: "Bill is missing vote metadata." };
 
@@ -250,7 +250,7 @@ export const legislationRouter = createTRPCRouter({
       if (blocs.length === 0) {
         return {
           available: false as const,
-          reason: "No seated legislature to whip yet — the next election seats the parties.",
+          reason: "No seated legislature to whip yet. The next election seats the parties.",
         };
       }
 

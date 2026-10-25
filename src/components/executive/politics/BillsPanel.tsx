@@ -12,6 +12,7 @@ import {
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
+import { useNotify } from "~/hooks/useNotify";
 import {
   Sheet,
   SheetContent,
@@ -90,6 +91,7 @@ function WhipCount({ billId }: { billId: string }) {
 }
 
 export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
+  const notify = useNotify();
   const [isOpen, setIsOpen] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
@@ -111,9 +113,11 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
       setShowForm(false);
       void refetch();
     },
+    onError: (error) => notify.error("Could not propose the bill", error.message),
   });
   const holdVote = api.legislation.holdVote.useMutation({
     onSuccess: () => void refetch(),
+    onError: (error) => notify.error("Could not hold the vote", error.message),
   });
 
   const committeeCount = bills?.filter((b) => b.status === "in_committee").length ?? 0;

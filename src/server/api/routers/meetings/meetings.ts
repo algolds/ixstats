@@ -4,7 +4,10 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { notificationHooks } from "~/lib/notifications/hooks";
-import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import {
+  assertCountryWriteAccess,
+  countriesWithWriteAccess,
+} from "~/server/shared/country-authorization";
 
 export const meetingsMeetingsRouter = createTRPCRouter({
   // ==================== CABINET MEETINGS ====================
@@ -82,7 +85,7 @@ export const meetingsMeetingsRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      return await ctx.db.cabinetMeeting.findMany({
+      const meetings = await ctx.db.cabinetMeeting.findMany({
         where: {
           OR: [{ countryId: input.countryId }, { targetCountryId: input.countryId }],
         },
@@ -94,5 +97,20 @@ export const meetingsMeetingsRouter = createTRPCRouter({
           actionItems: true,
         },
       });
+      // Notes, decisions and agenda outcomes belong to the governments at the table: redacted for everyone else.
+      const writable = await countriesWithWriteAccess(
+        ctx,
+        meetings.flatMap((m) => [m.countryId, m.targetCountryId])
+      );
+      return meetings.map((m) =>
+        writable.has(m.countryId) || (m.targetCountryId !== null && writable.has(m.targetCountryId))
+          ? m
+          : {
+              ...m,
+              notes: null,
+              decisions: [],
+              agendaItems: m.agendaItems.map((a) => ({ ...a, outcome: null })),
+            }
+      );
     }),
 });

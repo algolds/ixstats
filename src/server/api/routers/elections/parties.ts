@@ -108,7 +108,7 @@ export const electionsPartiesRouter = createTRPCRouter({
         leaderName: z.string().max(100).optional(),
         platform: z.string().optional(),
         baseSupport: z.number().min(0).max(100).optional(),
-        currentSupport: z.number().min(0).max(100).optional(),
+        // currentSupport is not settable: drift and election results move it
         isActive: z.boolean().optional(),
       })
     )
@@ -138,6 +138,13 @@ export const electionsPartiesRouter = createTRPCRouter({
       }
       await assertCountryWriteAccess(ctx, party.countryId);
 
-      return ctx.db.politicalParty.delete({ where: { id: input.id } });
+      // A party that stood in an election keeps its row (candidates and results cascade from it): deactivate it.
+      const candidacies = await ctx.db.electionCandidate.count({ where: { partyId: input.id } });
+      if (candidacies > 0) {
+        await ctx.db.politicalParty.update({ where: { id: input.id }, data: { isActive: false } });
+        return { id: input.id, deactivated: true };
+      }
+      await ctx.db.politicalParty.delete({ where: { id: input.id } });
+      return { id: input.id, deactivated: false };
     }),
 });
