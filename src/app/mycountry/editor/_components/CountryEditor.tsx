@@ -92,6 +92,7 @@ export function editorGroups(state: EditorState, reloads: SectionReloads = {}): 
               icon={<Language />}
               saveLabel="Save capital and language"
               identity={identity}
+              mapCapital={identity?.capitalCityRef?.name ?? null}
             />
           ),
         },

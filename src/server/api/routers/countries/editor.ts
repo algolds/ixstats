@@ -100,6 +100,14 @@ const blankToNull = (value: string | null | undefined) =>
 
 const notFound = () => new TRPCError({ code: "NOT_FOUND", message: "Nation not found" });
 
+/** A capital placed on the map is renamed or moved there, so the text and the map never differ. */
+const MAP_CAPITAL_MESSAGE =
+  "Your capital is placed on the map. Rename or move it in the map editor.";
+
+function refuseIfMapCapital(placed: boolean) {
+  if (placed) throw new TRPCError({ code: "BAD_REQUEST", message: MAP_CAPITAL_MESSAGE });
+}
+
 export const editorProcedures = {
   /** Everything the editor page shows. */
   getEditorState: readOnlyProcedure.input(countryInput).query(async ({ ctx, input }) => {
@@ -119,10 +127,14 @@ export const editorProcedures = {
         baselinePopulation: true,
         baselineGdpPerCapita: true,
         nationalIdentity: {
-          select: Object.fromEntries(EDITOR_IDENTITY_KEYS.map((key) => [key, true])) as Record<
-            EditorIdentityKey,
-            true
-          >,
+          select: {
+            ...(Object.fromEntries(EDITOR_IDENTITY_KEYS.map((key) => [key, true])) as Record<
+              EditorIdentityKey,
+              true
+            >),
+            // The capital placed on the map, if any: the editor then shows the capital read-only.
+            capitalCityRef: { select: { name: true } },
+          },
         },
         governmentStructure: {
           select: {
@@ -246,14 +258,21 @@ export const editorProcedures = {
       if (input.coatOfArms !== undefined) images.coatOfArms = blankToNull(input.coatOfArms);
       const imageKeys = Object.keys(images) as Array<"flag" | "coatOfArms">;
 
+      const movesCapital = identity.capitalCity !== undefined;
       await ctx.db.$transaction(async (tx) => {
         const stored =
           keys.length > 0
             ? ((await tx.nationalIdentity.findUnique({
                 where: { countryId },
-                select: Object.fromEntries(keys.map((key) => [key, true])),
-              })) as Partial<Record<EditorIdentityKey, string | null>> | null)
+                select: {
+                  ...Object.fromEntries(keys.map((key) => [key, true])),
+                  ...(movesCapital && { capitalCityId: true }),
+                },
+              })) as (Partial<Record<EditorIdentityKey, string | null>> & {
+                capitalCityId?: string | null;
+              }) | null)
             : null;
+        refuseIfMapCapital(movesCapital && !!stored?.capitalCityId);
         const storedImages =
           imageKeys.length > 0
             ? await tx.country.findUnique({

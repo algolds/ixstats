@@ -324,6 +324,24 @@ describe("what each save writes", () => {
     expect(written(db)).toEqual(["nationalIdentity"]);
   });
 
+  it("saveIdentity refuses a new capital name while the capital is placed on the map, and saves the rest", async () => {
+    const { db, caller } = setup((rows) => {
+      rows.identity.capitalCityId = "city_1";
+    });
+    await expect(caller.saveIdentity(saveCapital)).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Your capital is placed on the map. Rename or move it in the map editor.",
+    });
+    expect(written(db)).toEqual([]);
+
+    await caller.saveIdentity({
+      ...saveCapital,
+      identity: { motto: "" },
+      expected: { identity: { motto: "Onward" } },
+    });
+    expect(written(db)).toEqual(["nationalIdentity"]);
+  });
+
   it("saveGovernmentForm patches the type and names and nothing of departments or components", async () => {
     const { db, caller } = setup();
     const saved = {
