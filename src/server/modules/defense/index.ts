@@ -2,7 +2,14 @@
  * Defense module (realm time D2a): persistence and loading for the defense model in `~/lib/military/model`.
  * Routers stay thin and call these.
  */
-export { syncDefense, ensureStarterForce, nationalCombatPower, assetTypeForCategory } from "./defense.sync";
+export {
+  syncDefense,
+  ensureStarterForce,
+  nationalCombatPower,
+  assetTypeForCategory,
+  withTx,
+  type DefenseDb,
+} from "./defense.sync";
 export type { DefenseSnapshot } from "./defense.sync";
 export { loadEconomy, loadDefenseBudget, realmMedianGdpPerCapita, frontierYearAt } from "./defense.economy";
 export {

@@ -3,7 +3,7 @@
  * Defense lines with the fallback chain), the realm's median GDP per capita (CEV) and the realm's frontier year, all
  * on the nation's realm clock.
  */
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { loadEffectiveBudget } from "~/lib/government/budget-allocations";
 import { currentBudgetYear } from "~/lib/government/budget-year";
 import { builderDefenseSpending } from "~/lib/military/force-structure";
@@ -56,7 +56,7 @@ const MEDIAN_TTL_MS = 10 * 60 * 1000;
 const medians = new Map<string, { value: number; at: number }>();
 
 /** Median GDP per capita of a realm's nations (cached per process for 10 minutes). */
-export async function realmMedianGdpPerCapita(db: PrismaClient, realmId: string): Promise<number> {
+export async function realmMedianGdpPerCapita(db: Prisma.TransactionClient, realmId: string): Promise<number> {
   const hit = medians.get(realmId);
   if (hit && Date.now() - hit.at < MEDIAN_TTL_MS) return hit.value;
   const rows = await db.country.findMany({
@@ -76,7 +76,7 @@ export const resetRealmMedianCache = () => medians.clear();
 
 /** The defense budget and the step of the fallback chain that gave it. */
 export async function loadDefenseBudget(
-  db: PrismaClient,
+  db: Prisma.TransactionClient,
   country: DefenseCountry,
   clock: RealmClockReader
 ): Promise<{ amount: number; source: DefenseBudgetSource }> {
@@ -115,7 +115,7 @@ export async function loadDefenseBudget(
 
 /** Everything the model reads for one nation now. */
 export async function loadEconomy(
-  db: PrismaClient,
+  db: Prisma.TransactionClient,
   country: DefenseCountry,
   clock: RealmClockReader
 ): Promise<{ econ: EconomyInputs; budgetSource: DefenseBudgetSource }> {

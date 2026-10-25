@@ -144,6 +144,11 @@ export const MIN_HEALTHY_PROCUREMENT_SHARE = 0.2;
 export const FALLBACK_GDP_SHARE = 0.02;
 /** Government spending as a share of GDP when the nation records none (budget-math initialTotalBudget). */
 export const FALLBACK_SPENDING_GDP_SHARE = 0.2;
+/**
+ * Recorded government spending below this share of GDP is an unscaled budget (the audit found structure budgets not
+ * reconciled with GDP), so the form step uses 20% of GDP instead (designer).
+ */
+export const MIN_PLAUSIBLE_SPENDING_GDP_SHARE = 0.05;
 /** A defense figure above this share of GDP is bad data and skipped (old starter rule). */
 export const MAX_PLAUSIBLE_BURDEN = 0.5;
 

@@ -37,6 +37,14 @@ import {
 } from "./defense.mapping";
 
 type Tx = Prisma.TransactionClient;
+/** The client or a transaction: the reset script runs every nation inside one rolled-back transaction. */
+export type DefenseDb = Prisma.TransactionClient;
+
+/** Run `fn` in a transaction, or in the one `db` already is. */
+export async function withTx<T>(db: DefenseDb, fn: (tx: Tx) => Promise<T>): Promise<T> {
+  const client = db as DefenseDb & Partial<Pick<PrismaClient, "$transaction">>;
+  return client.$transaction ? client.$transaction(fn) : fn(db);
+}
 
 /** Effort a branch of a domain without a starter share gets at the reset (designer). */
 const EXTRA_DOMAIN_EFFORT: Record<BranchDomain, number> = {
@@ -63,7 +71,7 @@ export interface DefenseSnapshot {
   monthsApplied: number;
 }
 
-async function loadCountry(db: PrismaClient, countryId: string): Promise<DefenseCountry> {
+async function loadCountry(db: DefenseDb, countryId: string): Promise<DefenseCountry> {
   const country = await db.country.findUnique({
     where: { id: countryId },
     select: DEFENSE_COUNTRY_SELECT,
@@ -73,7 +81,7 @@ async function loadCountry(db: PrismaClient, countryId: string): Promise<Defense
 }
 
 /** Wear per branch from operations under way: the heaviest operation any of its units or assets is deployed on. */
-async function operationWear(db: PrismaClient, countryId: string, branchIds: string[]) {
+async function operationWear(db: DefenseDb, countryId: string, branchIds: string[]) {
   const wear = new Map<string, number>(branchIds.map((id) => [id, 1]));
   const deployments = await db.deployment.findMany({
     where: { status: "deployed", operation: { countryId, status: "active" } },
@@ -100,7 +108,7 @@ async function operationWear(db: PrismaClient, countryId: string, branchIds: str
   return wear;
 }
 
-async function loadAssets(db: PrismaClient, countryId: string): Promise<AssetState[]> {
+async function loadAssets(db: DefenseDb, countryId: string): Promise<AssetState[]> {
   const rows = await db.militaryAsset.findMany({
     where: { branch: { countryId, isActive: true } },
     select: { branchId: true, catalogKey: true, quantity: true, acquisitionCost: true, designYear: true },
@@ -139,7 +147,7 @@ function starterSpecs(branches: readonly MilitaryBranch[]): StarterBranchSpec[] 
  * concurrent creator wins the unique policy row and this call returns false.
  */
 export async function ensureStarterForce(
-  db: PrismaClient,
+  db: DefenseDb,
   country: DefenseCountry,
   econ: EconomyInputs,
   clockMs: number
@@ -157,7 +165,7 @@ export async function ensureStarterForce(
   });
   const view = deriveNation(starter, econ, [], clockMs);
   try {
-    await db.$transaction(async (tx) => {
+    await withTx(db, async (tx) => {
       await tx.defensePolicy.create({
         data: { countryId: country.id, ...policyData(starter.policy, clockMs) },
       });
@@ -188,7 +196,7 @@ export async function ensureStarterForce(
   }
 }
 
-async function readState(db: PrismaClient, countryId: string) {
+async function readState(db: DefenseDb, countryId: string) {
   const [policy, branches, orders] = await Promise.all([
     db.defensePolicy.findUnique({ where: { countryId } }),
     db.militaryBranch.findMany({
@@ -258,7 +266,7 @@ class StaleTick extends Error {}
 
 /** Persist an advance: CAS on the policy's tick, then branches, orders and deliveries. */
 async function persistAdvance(
-  db: PrismaClient,
+  db: DefenseDb,
   input: {
     policyId: string;
     previousTickMs: number;
@@ -268,7 +276,7 @@ async function persistAdvance(
   }
 ) {
   const { state, view } = input;
-  await db.$transaction(async (tx) => {
+  await withTx(db, async (tx) => {
     const claimed = await tx.defensePolicy.updateMany({
       where: { id: input.policyId, lastTickClockMs: input.previousTickMs },
       data: policyData(state.policy, state.lastTickClockMs),
@@ -301,7 +309,7 @@ async function persistAdvance(
  * move, so nothing ticks. Retries once when another reader advanced the same months first.
  */
 export async function syncDefense(
-  db: PrismaClient,
+  db: DefenseDb,
   countryId: string,
   attempt = 0
 ): Promise<DefenseSnapshot> {
@@ -363,7 +371,7 @@ export async function syncDefense(
 
 /** Combat power of several nations now (each synced; NPCs get their forces on first touch). */
 export async function nationalCombatPower(
-  db: PrismaClient,
+  db: DefenseDb,
   countryIds: readonly string[]
 ): Promise<Record<string, number>> {
   const unique = [...new Set(countryIds)];

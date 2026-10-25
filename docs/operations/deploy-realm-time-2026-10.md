@@ -47,3 +47,33 @@ run_sql() { docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ER
   `NeighborThreatAssessment` 0, `SecurityThreat` 0, `ThreatIncident` 0, `SecurityEvent` 0. Nothing is migrated: the
   assessment and border rows were never written past their defaults, and the one `DefenseBudget` row is replaced by
   the nation's Defense department allocation in the National budget (on the clone it is the E2E Testland test row).
+
+## D2a: defense model core
+
+- **In the deploy window** (old build stopped: it reads the dropped columns; new build not started: it reads the new
+  ones; `ixstats-cron` stopped), after `bun run db:backup`:
+  `run_sql scripts/migrations/2026-10-realm-time/d2a-defense-model.sql`. It gives `MilitaryBranch` a `domain`
+  (from the old `branchType`: navy and coast guard → sea, air force → air, marines → marines, space force → space,
+  everything else → land) and the model's state columns (effort share, capital, readiness sub-scores, mobilisation,
+  `lastTickClockMs`; headcounts become fractional), drops `branchType`, the `BranchType` enum and the typed
+  `readinessLevel`, `technologyLevel`, `trainingLevel`, `morale`, `annualBudget`, `budgetPercent`,
+  `deploymentCapacity`, `sustainmentCapacity`, `MilitaryUnit.readiness` and `MilitaryAsset.modernizationLevel`, adds
+  `MilitaryAsset.catalogKey`/`designYear`, `MilitaryConflict.startClockMs`, the `DefensePolicy` and
+  `ProcurementOrder` tables and their enums, and **deletes free assets** (rows without a catalog key: every asset
+  today; owner decision). Branch names, mottos, images and units are kept. A re-run changes nothing.
+- Then, from the new build's checkout (same window): `bun scripts/defense/reset-starter-forces.ts --apply`. Every
+  nation without a `DefensePolicy` gets its starter force: the equilibrium of its defense budget (the Defense
+  department lines summed, else the builder's Defense figure, else its government form's Defense share of spending,
+  else 2% of GDP), on its existing branches or a new army, navy and air force; NPCs get the same from their economy
+  (conscript-heavy forms take the territorial split). Idempotent: nations with a policy are skipped, and a nation the
+  new build reads first gets the same starter force lazily. The report prints the active-share distribution (sanity
+  band 0.2–1.1% of population), budget sources, C-levels and sample nations.
+- Dry run on the clone `ixstats_wv1` (2026-10-25, `bun scripts/defense/reset-starter-forces.ts`, the SQL and the
+  reset inside one transaction, rolled back; `DefensePolicy` absent and `readinessLevel` still present afterwards):
+  407 nations reset, active share min 0.24% / median 0.28% / max 0.47%, none outside the band; budget sources
+  estimate 316, government form 89, Defense department 1, builder 1; C-2 404, C-3 3. Caphiria 1,880,297 active
+  (0.30%), 2,256,356 reserves, 2,818bn capital, C-2 (3.63% of GDP from its form's share of recorded spending); E2E
+  Testland 14,205 active (0.28%), 17,045 reserves, 7.9bn, C-2 (its 3bn Defense line); Iles Evangeline (1.5M, military
+  government) 7,085 active (0.47%), 101,746 reserves, C-2; Rapa Rapa (5,635 people) 16 active.
+- Expect the realm clocks to log `[realm-time] Realm <id> has no clock` on a database without the T1 SQL; the
+  defense sync then reads Ixnay's clock for those nations.

@@ -8,6 +8,7 @@ import {
   FALLBACK_SPENDING_GDP_SHARE,
   MAX_PLAUSIBLE_BURDEN,
   MIN_HEALTHY_PROCUREMENT_SHARE,
+  MIN_PLAUSIBLE_SPENDING_GDP_SHARE,
   SHARE_PRESETS,
   type BudgetShares,
   type SharePreset,
@@ -109,7 +110,7 @@ function formAmount(input: BudgetChainInput): number | null {
   if (input.formDefenseShare === null || input.gdp <= 0) return null;
   const recorded = input.governmentSpending;
   const spending =
-    recorded !== null && recorded > 0 && recorded <= input.gdp
+    recorded !== null && recorded >= input.gdp * MIN_PLAUSIBLE_SPENDING_GDP_SHARE && recorded <= input.gdp
       ? recorded
       : input.gdp * FALLBACK_SPENDING_GDP_SHARE;
   const amount = spending * input.formDefenseShare;

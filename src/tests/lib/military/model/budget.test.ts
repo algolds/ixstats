@@ -98,6 +98,10 @@ describe("resolveDefenseBudget fallback chain", () => {
       source: "governmentForm",
     });
     expect(resolveDefenseBudget({ ...base, formDefenseShare: 0.1 }).amount).toBeCloseTo(20e9);
+    // An unscaled structure budget (under 5% of GDP) reads as unknown spending.
+    expect(resolveDefenseBudget({ ...base, formDefenseShare: 0.1, governmentSpending: 1e9 }).amount).toBeCloseTo(
+      20e9
+    );
   });
 
   it("then 2% of GDP, and nothing without a GDP", () => {
