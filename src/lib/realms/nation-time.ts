@@ -1,6 +1,13 @@
 import { IxTime } from "~/lib/ixtime";
 import { formatIxCountdown } from "~/lib/statecraft/calendar";
-import { addCalendarYears, calendarParts, partsToCalendarMs } from "./realm-calendar";
+import {
+  addCalendarYears,
+  calendarParts,
+  DAY_MS,
+  monthDays,
+  partsToCalendarMs,
+  realmMonthNames,
+} from "./realm-calendar";
 import {
   formatRealmDate,
   realmClockNow,
@@ -63,6 +70,29 @@ export function realmFractionalYear(clockMs: number, calendar: RealmCalendar): n
   const start = partsToCalendarMs({ year, month: 0, day: 1 }, calendar.months) ?? calendarMs;
   const length = addCalendarYears(start, 1, calendar.months) - start;
   return length > 0 ? year + (calendarMs - start) / length : year;
+}
+
+/** "Frostfall 812", "June 2041": the calendar month a clock time falls in (chart axes and labels). */
+export function formatRealmMonth(clockMs: number, calendar: RealmCalendar): string {
+  const { year, month } = calendarParts(clockMs + calendar.calendarOffsetMs, calendar.months);
+  return `${realmMonthNames(calendar.months)[month]} ${year}`;
+}
+
+/**
+ * The clock time `months` calendar months on (negative: back), the day clamped to the month's length and the time of
+ * day kept: chart windows ("the last 6 months") in the realm's own months.
+ */
+export function addRealmMonths(clockMs: number, months: number, calendar: RealmCalendar): number {
+  const calendarMs = clockMs + calendar.calendarOffsetMs;
+  const parts = calendarParts(calendarMs, calendar.months);
+  const perYear = realmMonthNames(calendar.months).length;
+  const total = parts.year * perYear + parts.month + months;
+  const year = Math.floor(total / perYear);
+  const month = total - year * perYear;
+  const day = Math.min(parts.day, monthDays(year, month, calendar.months));
+  const start = partsToCalendarMs({ year, month, day }, calendar.months) ?? calendarMs;
+  const timeOfDay = ((calendarMs % DAY_MS) + DAY_MS) % DAY_MS;
+  return start + timeOfDay - calendar.calendarOffsetMs;
 }
 
 /** Real ms until the clock reaches `targetMs` at its speed, or null while it is paused. */

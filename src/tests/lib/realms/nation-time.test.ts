@@ -10,6 +10,8 @@ import {
   formatRealmCountdown,
   formatStampAsClockDate,
   realMsUntil,
+  addRealmMonths,
+  formatRealmMonth,
   realmFractionalYear,
   realmYear,
 } from "~/lib/realms/nation-time";
@@ -57,6 +59,27 @@ describe("nation dates", () => {
     expect(realmYear(CLOCK_NOW, calendar)).toBe(812);
     expect(realmYear(CLOCK_NOW + 60 * DAY, calendar)).toBe(813);
     expect(realmFractionalYear(CLOCK_NOW, calendar)).toBeCloseTo(812 + 13 / 70 + 9.5 / 24 / 70, 6);
+  });
+});
+
+describe("realm months", () => {
+  it("labels and steps months in the realm's calendar", () => {
+    const calendar = sixTimesReader().calendar;
+    expect(formatRealmMonth(CLOCK_NOW, calendar)).toBe("Thaw 812");
+    // Two Frostfall months back from 14 Thaw 812 is 14 Thaw 811; one is 14 Frostfall 811.
+    expect(formatClockDate(addRealmMonths(CLOCK_NOW, -1, calendar), sixTimesReader())).toBe(
+      "14 Frostfall 811 AE"
+    );
+    expect(formatClockDate(addRealmMonths(CLOCK_NOW, -2, calendar), sixTimesReader())).toBe(
+      "14 Thaw 811 AE"
+    );
+  });
+
+  it("steps Gregorian months like IxTime did, clamping the day", () => {
+    const calendar = ixnayReader().calendar;
+    expect(addRealmMonths(Date.UTC(2041, 2, 31, 9), -1, calendar)).toBe(Date.UTC(2041, 1, 28, 9));
+    expect(addRealmMonths(CLOCK_NOW, -12, calendar)).toBe(Date.UTC(2040, 5, 2, 9, 30));
+    expect(formatRealmMonth(CLOCK_NOW, calendar)).toBe("June 2041");
   });
 });
 
