@@ -8,6 +8,7 @@ import {
   invalidateConfigCache,
 } from "~/lib/config-service";
 import { IxTime } from "~/lib/ixtime";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { persistSharedClock } from "~/lib/ixtime/shared-clock";
 import { withJobLock } from "~/lib/system/job-lock";
 import { runStatProgression, type StatProgressionResult } from "~/server/cron/stat-progression";
@@ -329,8 +330,10 @@ export const adminSystemRouter = createTRPCRouter({
       const _timeDifference = input.targetEpoch - currentEpoch;
       const yearsDifference = IxTime.getYearsElapsed(currentEpoch, input.targetEpoch);
 
-      // Update all countries' baseline dates to the new epoch
+      // Move Ixnay's nations' baseline dates to the new epoch: the bot clock is Ixnay's, and every other realm's
+      // nations run on their own realm's clock.
       const updateResult = await ctx.db.country.updateMany({
+        where: { realmId: DEFAULT_REALM_ID },
         data: {
           baselineDate: new Date(input.targetEpoch),
           lastCalculated: new Date(input.targetEpoch),
