@@ -255,6 +255,11 @@ describe("/maps shows only the viewed realm's map", () => {
 
     expect(wheres(db, "mapLayer", "findFirst").map(realmOf)).toEqual([EURTH, EURTH, undefined]);
   });
+
+  it("a country without drawn territory has no geometry (null, not a Country not found error)", async () => {
+    const caller = geoCaller(ctxFor(emptyDb(), eurthViewer()));
+    await expect(caller.getCountryGeometry({ countryId: "c_no_territory" })).resolves.toBeNull();
+  });
 });
 
 describe("a country's geo profile uses its own realm's base layers", () => {
