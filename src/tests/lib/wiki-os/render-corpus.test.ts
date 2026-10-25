@@ -18,7 +18,7 @@ import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 import { appendSectionEditLinks, removeSectionEditLinks, transformArticleHtml, transformImages } from "~/lib/wiki-os/transformers/html-transformer";
 import { mapSrcsetUrls } from "~/lib/wiki-os/transformers/srcset";
 import { slimArticleHtml, templateStyleIdentifiers } from "~/lib/wiki-os/transformers/slim-html";
-import { buildViewBundle } from "~/lib/wiki-os/services/render-service";
+import { buildViewBundle, RENDERER_VERSION } from "~/lib/wiki-os/services/render-service";
 import { extractLeadImage, extractLeadImageFromHtml, extractLeadImageFromWikitext, extractLeadImagePath, getImagePath, getImageUrl, getMd5ShardPath, HERO_IMAGE_WIDTH, heroImage, isNoticeOrUtilityIcon, resolveStoredImageUrl } from "~/lib/wiki-os/transformers/image-url";
 import { currentProfileHref, currentProfileLinks } from "~/lib/wiki-os/legacy-profile-links";
 import { articleSeo, descriptionFromHtml, leadImageUrl } from "~/lib/wiki-os/article-seo";
@@ -80,6 +80,13 @@ const IXWIKI_ARTICLE =
     '<a href="/index.php?action=edit&amp;redlink=1" class="new">y</a>',
     '<a href="/wiki/Gallambria" title="Gallambria">Gallambria</a> <a href="/wiki/Gallambria#History" title="Gallambria">history</a>',
     '<a href="/wiki/File:Map.png" class="mw-file-description">map</a> <a href="/wiki/Special:Random">random</a>',
+    '<a href="/wiki/File%3AFlag.svg">flag</a> <a href="/wiki/Special%3ARecentChanges">rc</a>',
+    '<a href="/wiki/Special:WhatLinksHere/Gallambria">w</a> <a href="/wiki/Special:WhatLinksHere?target=Gallambria&amp;namespace=0">wq</a>',
+    '<a href="/wiki/Special:FilePath/Map.png">fp</a> <a href="/wiki/Special:FilePath?file=Map.png">fpq</a>',
+    '<a href="/wiki/Special:Nonexistent">x</a> <a href="/wiki/Special:Diff/abc/def/ghi">bad diff</a> <a href="/wiki/Special:Constructor">proto</a>',
+    '<a href="/wiki/special:Nonexistent">lc</a> <a href="/wiki/Special%3aNonexistent">esc</a>',
+    '<a href="/wiki/Special:Move?wpReason=x&amp;target=A%7CB">bad move</a> <a href="/wiki/Special:Move?wpReason=x&amp;target=Gallambria">move</a>',
+    '<a href="https://ixwiki.com/wiki/File:Map.png">abs file</a> <a href="//evil.example/wiki/Special:Random">pr</a> <a href="https://evil.example/wiki/Special:Random">ext</a>',
     '<a href="/wiki/User:Kir" title="User:Kir">Kir</a>',
     '<a href="/thinkpages/profile/jane">Jane</a>',
   ].join(" ") +
@@ -139,14 +146,48 @@ const IXWIKI_ARTICLE_EXPECTED: Array<[string, Expectation[]]> = [
     ],
   ],
   [
-    "articles and user pages are read in-app; files and special pages open on IxWiki; no source parameter",
+    "articles and user pages are read in-app; no source parameter",
     [
       ["content", "+", 'href="/wiki/Gallambria"'],
       ["content", "+", 'href="/wiki/Gallambria#History"'],
       ["content", "+", 'href="/wiki/User:Kir"'],
-      ["content", "+", `href="${ORIGIN}/wiki/File:Map.png" rel="noreferrer"`],
-      ["content", "+", `href="${ORIGIN}/wiki/Special:Random" rel="noreferrer"`],
       ["content", "-", "source="],
+    ],
+  ],
+  [
+    "files and the special pages WikiOS has are read in-app",
+    [
+      ["content", "+", 'href="/wiki/File:Map.png" class="mw-file-description"'],
+      ["content", "+", 'href="/wiki/File%3AFlag.svg">'],
+      ["content", "+", 'href="/wiki/Special:Random">'],
+      ["content", "+", 'href="/wiki/Special%3ARecentChanges">'],
+      ["content", "+", 'href="/wiki/Special:WhatLinksHere/Gallambria">'],
+      ["content", "+", 'href="/wiki/Special:WhatLinksHere?target=Gallambria&amp;namespace=0">'],
+      ["content", "+", 'href="/wiki/Special:Move?wpReason=x&amp;target=Gallambria">'],
+      ["content", "-", `${ORIGIN}/wiki/File:Map.png" rel`],
+      ["content", "-", `${ORIGIN}/wiki/Special:Random"`],
+      ["content", "-", `${ORIGIN}/wiki/Special:WhatLinksHere`],
+    ],
+  ],
+  [
+    "Special:FilePath and a special WikiOS lacks stay on IxWiki",
+    [
+      ["content", "+", `href="${ORIGIN}/wiki/Special:FilePath/Map.png" rel="noreferrer"`],
+      ["content", "+", `href="${ORIGIN}/wiki/Special:FilePath?file=Map.png" rel="noreferrer"`],
+      ["content", "+", `href="${ORIGIN}/wiki/Special:Nonexistent" rel="noreferrer"`],
+      ["content", "+", `href="${ORIGIN}/wiki/Special:Diff/abc/def/ghi" rel="noreferrer"`],
+      ["content", "+", `href="${ORIGIN}/wiki/Special:Constructor" rel="noreferrer"`],
+      ["content", "+", `href="${ORIGIN}/wiki/special:Nonexistent" rel="noreferrer"`],
+      ["content", "+", `href="${ORIGIN}/wiki/Special%3aNonexistent" rel="noreferrer"`],
+      ["content", "+", `href="${ORIGIN}/wiki/Special:Move?wpReason=x&amp;target=A%7CB" rel="noreferrer"`],
+    ],
+  ],
+  [
+    "links that are not classic's own root-relative /wiki/ path are left as they were",
+    [
+      ["content", "+", '<a href="https://ixwiki.com/wiki/File:Map.png">abs file</a>'],
+      ["content", "+", '<a href="//evil.example/wiki/Special:Random">pr</a>'],
+      ["content", "+", '<a href="https://evil.example/wiki/Special:Random">ext</a>'],
     ],
   ],
   [
@@ -162,6 +203,18 @@ const IXWIKI_ARTICLE_EXPECTED: Array<[string, Expectation[]]> = [
 describe("MediaWiki's HTML of an IxWiki article", () => {
   const out = parts(transformArticleHtml(IXWIKI_ARTICLE, "", "ixwiki"));
   it.each(IXWIKI_ARTICLE_EXPECTED)("%s", (_behaviour, expectations) => check(out, expectations));
+
+  it("files and in-app specials take the base path they are given; FilePath stays on IxWiki", () => {
+    const html = '<a href="/wiki/File:Map.png">m</a> <a href="/wiki/Special:Random">r</a> <a href="/wiki/Special:FilePath/Map.png">f</a>';
+    const content = transformArticleHtml(html, "/projects/ixstates", "ixwiki").contentHtml;
+    expect(content).toContain('href="/projects/ixstates/wiki/File:Map.png"');
+    expect(content).toContain('href="/projects/ixstates/wiki/Special:Random"');
+    expect(content).toContain(`href="${ORIGIN}/wiki/Special:FilePath/Map.png" rel="noreferrer"`);
+  });
+
+  it("the renderer version changed, so stored bundles re-render", () => {
+    expect(RENDERER_VERSION.startsWith("5:")).toBe(true);
+  });
 });
 
 // ---------------------------------------------------------------------------------------------------------------
