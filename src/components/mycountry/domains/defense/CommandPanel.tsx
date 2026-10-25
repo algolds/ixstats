@@ -14,11 +14,11 @@ export function CommandPanel({ countryId }: CommandPanelProps) {
     editingBudget,
     setEditingBudget,
     budgetData,
-    currentYear,
+    isEstimate,
+    isSaving,
     handleSaveBudget,
     handleTotalBudgetChange,
     handleCategoryChange,
-    totalAllocated,
     allocationPercent,
   } = useDefenseBudget({ countryId });
 
@@ -27,14 +27,14 @@ export function CommandPanel({ countryId }: CommandPanelProps) {
       <ForceStructurePanel countryId={countryId} />
       <BudgetManagementCard
         budgetData={budgetData}
+        isEstimate={isEstimate}
+        isSaving={isSaving}
         editingBudget={editingBudget}
         setEditingBudget={setEditingBudget}
         handleSaveBudget={handleSaveBudget}
         handleTotalBudgetChange={handleTotalBudgetChange}
         handleCategoryChange={handleCategoryChange}
-        totalAllocated={totalAllocated}
         allocationPercent={allocationPercent}
-        currentYear={currentYear}
       />
     </div>
   );
