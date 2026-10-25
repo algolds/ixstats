@@ -74,7 +74,7 @@ export function GovernmentMetricsEditor({ countryId }: GovernmentMetricsEditorPr
   const getValue = (key: string): number => {
     if (!govStructure) return 0;
     const map: Record<string, number> = {
-      politicalStability: Math.round((govStructure.politicalStability ?? 0.5) * 100),
+      politicalStability: Math.round(govStructure.politicalStability ?? 50),
       democracyIndex: Math.round(govStructure.democracyIndex ?? 50),
       politicalPolarization: Math.round(govStructure.politicalPolarization ?? 30),
       governmentEffectiveness: Math.round(govStructure.governmentEffectiveness ?? 50),

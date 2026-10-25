@@ -15,13 +15,13 @@ interface PartySupport {
 }
 
 /**
- * Approval = the leading party's support, nudged by stability (0..1 → ±10 pts).
+ * Approval = the leading party's support, nudged by political stability (0..100 → ±10 pts).
  * Returns 0..100, rounded.
  */
-export function computeApproval(parties: PartySupport[], stability01: number | null): number {
-  if (parties.length === 0) return Math.round((stability01 ?? 0.5) * 100);
+export function computeApproval(parties: PartySupport[], stability: number | null): number {
+  if (parties.length === 0) return Math.round(stability ?? 50);
   const leader = parties.reduce((a, b) => (b.currentSupport > a.currentSupport ? b : a));
-  const stabilityAdj = ((stability01 ?? 0.5) - 0.5) * 20; // ±10
+  const stabilityAdj = ((stability ?? 50) - 50) / 5; // ±10
   return Math.max(0, Math.min(100, Math.round(leader.currentSupport + stabilityAdj)));
 }
 

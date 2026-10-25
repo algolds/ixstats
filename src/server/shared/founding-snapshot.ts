@@ -38,7 +38,10 @@ import {
   type PopulationBandId,
   type WealthBandId,
 } from "~/lib/builder/founding-bands";
-import { calculateStabilityMetrics } from "~/lib/statecraft/stability-formulas";
+import {
+  calculateStabilityMetrics,
+  stabilityInputsFromStored,
+} from "~/lib/statecraft/stability-formulas";
 import { getDefaultEconomicConfig } from "~/lib/config-service";
 import { IxTime } from "~/lib/ixtime";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/lib/tier-utils";
@@ -493,13 +496,16 @@ const ZERO_FALLBACK_FIELDS: ReadonlyArray<readonly [NumberKey, Getter]> = [
   ["literacyRate", (e) => e.demographics?.literacyRate],
 ];
 
-/** Growth and inflation inputs arrive as percents; only an absent value (not 0) takes the default. */
+/**
+ * Growth and inflation inputs arrive as percents; only an absent value (not 0) takes the default.
+ * Growth rates are stored as decimals (the projection's unit), inflation stays a percent.
+ */
 const RATE_FIELDS: ReadonlyArray<readonly [NumberKey, Getter]> = [
   ["adjustedGdpGrowth", (e) => pct(e.coreIndicators?.realGDPGrowthRate)],
   ["actualGdpGrowth", (e) => pct(e.coreIndicators?.realGDPGrowthRate)],
   ["realGDPGrowthRate", (e) => pct(e.coreIndicators?.realGDPGrowthRate)],
   ["populationGrowthRate", (e) => pct(e.demographics?.populationGrowthRate)],
-  ["inflationRate", (e) => pct(e.coreIndicators?.inflationRate)],
+  ["inflationRate", (e) => e.coreIndicators?.inflationRate],
 ];
 
 type Defaults = Record<NumberKey, number>;
@@ -540,7 +546,7 @@ function legacyDefaults(base: Baseline): Partial<Defaults> {
     actualGdpGrowth: 0.025,
     realGDPGrowthRate: 0.025,
     populationGrowthRate: 0.008,
-    inflationRate: 0.02,
+    inflationRate: 2,
   };
 }
 
@@ -1155,16 +1161,21 @@ export interface FoundedCountryFigures {
  * `computeFormulaStability` (lib/statecraft/stability-store) assembles for a country, read from
  * the founded columns. A new nation has no economic profile, demographics diversity, political
  * metrics or recent policies yet, so those take the same fallbacks and schema defaults the
- * store would read (corruption 30, diversity 50, political stability 0.5, polarization 50,
+ * store would read (corruption 30, diversity 50, political stability 50, polarization 50,
  * democracy index 50, election cycle 4).
  */
 export function foundingStability(country: FoundedCountryFigures): number {
   const population = country.currentPopulation;
+  const units = stabilityInputsFromStored({
+    gdpGrowthDecimal: country.adjustedGdpGrowth,
+    gini: country.incomeInequalityGini,
+    politicalStability: 50,
+  });
   return calculateStabilityMetrics(
     {
-      gdpGrowth: country.realGDPGrowthRate ?? country.adjustedGdpGrowth ?? 2.5,
+      gdpGrowth: units.gdpGrowth,
       unemploymentRate: country.unemploymentRate ?? 5.0,
-      giniIndex: country.incomeInequalityGini ?? 35,
+      giniIndex: units.giniIndex,
       inflationRate: country.inflationRate ?? 2.0,
       gdpPerCapita: country.currentGdpPerCapita ?? 35000,
       povertyRate: country.povertyRate ?? 12,
@@ -1185,7 +1196,7 @@ export function foundingStability(country: FoundedCountryFigures): number {
       populationDensity: country.populationDensity ?? 100,
     },
     {
-      politicalStability: 0.5,
+      politicalStability: units.politicalStability,
       politicalPolarization: 50,
       electionCycle: 4,
       democracyIndex: 50,

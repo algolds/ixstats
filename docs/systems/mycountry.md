@@ -195,7 +195,7 @@ A nation's issues are its private inbox. Every `nationalIssues` player procedure
 - `users.createCountry` (`users/country-linking.ts`, marked legacy) is a second creation path with no UI.
 - The gameplay flag `ISSUES_ENFORCE_DEADLINES` defaults off. Issue content comes from `data/national-issues-config.json`.
 - Stat surfaces mix projections and stored values: MyCountry shows the projection, while rankings and vitality read the stored `current*` columns. The `stat-progression` cron job persists the projection into those columns (see [economy](./economy.md)); until it is enabled in `CRON_ENABLED_JOBS` they move only on the admin recalculation.
-- Other statecraft code: `src/lib/statecraft/stability-formulas.ts` (used by `security/stability.ts`), `calendar.ts` and `growth-calculations.ts`.
+- Other statecraft code: `src/lib/statecraft/stability-formulas.ts` (used by `security/stability.ts`) and `calendar.ts`.
 
 ---
 

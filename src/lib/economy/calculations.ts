@@ -96,6 +96,11 @@ function nextTierThreshold(gdpPerCapita: number, rate: number): number | null {
   return null;
 }
 
+/** Inflation is a percent (2 = 2%); the bounds match the event spine's guardrail. */
+export const DEFAULT_INFLATION_RATE = 2;
+const MIN_INFLATION_RATE = -5;
+const MAX_INFLATION_RATE = 100;
+
 /** Floor for the summed annual population growth rate; keeps `1 + rate` positive. */
 const MIN_POPULATION_GROWTH_RATE = -0.5;
 
@@ -210,6 +215,14 @@ export class IxStatsCalculator {
       implementingGovComponents: baseData.implementingGovComponents,
       implementingEconComponents: baseData.implementingEconComponents,
       implementingTaxComponents: baseData.implementingTaxComponents,
+
+      // Stored rates the projection adjusts by component modifiers (dropping them here made
+      // every read show the defaults instead of the stored values).
+      totalGovernmentSpending: baseData.totalGovernmentSpending,
+      taxRevenueGDPPercent: baseData.taxRevenueGDPPercent,
+      unemploymentRate: baseData.unemploymentRate,
+      inflationRate: baseData.inflationRate,
+      activePolicyMaintenanceCost: baseData.activePolicyMaintenanceCost,
     };
   }
 
@@ -244,6 +257,11 @@ export class IxStatsCalculator {
         oldStats: baselineStats,
         newStats: {
           ...baselineStats,
+          effectiveGdpGrowth: this.currentGdpGrowthRate(
+            baselineStats,
+            baselineStats.gdpPerCapita,
+            this.getActiveEffects(effects, baselineTimeMs, targetTimeMs)
+          ),
           lastCalculated: new Date(targetTimeMs),
         },
         timeElapsed: 0,
@@ -286,6 +304,7 @@ export class IxStatsCalculator {
 
     const updatedStats: CountryStats = {
       ...baselineStats,
+      effectiveGdpGrowth: this.currentGdpGrowthRate(baselineStats, newGdpPerCapita, activeEffects),
       currentPopulation: newPopulation,
       currentGdpPerCapita: newGdpPerCapita,
       currentTotalGdp: newTotalGdp,
@@ -306,9 +325,13 @@ export class IxStatsCalculator {
         0,
         Math.min(100, (baselineStats.unemploymentRate ?? 5) + mods.unemploymentModifier)
       ),
+      // Percent, like every writer (issue and directive consequences move it in points).
       inflationRate: Math.max(
-        -0.5,
-        Math.min(2, (baselineStats.inflationRate ?? 0.02) + mods.inflationModifier)
+        MIN_INFLATION_RATE,
+        Math.min(
+          MAX_INFLATION_RATE,
+          (baselineStats.inflationRate ?? DEFAULT_INFLATION_RATE) + mods.inflationModifier
+        )
       ),
     };
 
@@ -398,6 +421,25 @@ export class IxStatsCalculator {
       currentTier = this.calculateEconomicTier(rate > 0 ? threshold! : threshold! * (1 - 1e-9));
     }
     return gdpPerCapita;
+  }
+
+  /**
+   * The growth rate the projection applies going forward from `gdpPerCapita`: its tier's rate,
+   * with diminishing returns as the forward projection applies them.
+   */
+  private currentGdpGrowthRate(
+    baselineStats: CountryStats,
+    gdpPerCapita: number,
+    effects: StorytellerEffectRecord[]
+  ): number {
+    return this.effectiveGdpGrowthRate(
+      baselineStats.adjustedGdpGrowth,
+      this.calculateEconomicTier(gdpPerCapita),
+      effects,
+      baselineStats.localGrowthFactor || 1,
+      baselineStats.gdpPerCapita,
+      1
+    );
   }
 
   /** Annual GDP per capita growth rate for a tier: factors, legacy growth effects, cap, floor. */

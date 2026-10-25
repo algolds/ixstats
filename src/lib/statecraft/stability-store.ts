@@ -8,9 +8,10 @@
  * once, then tracks the formula from there.
  *
  * Reads never write (MC-13): `security.getInternalStability` computes the current values on the
- * fly (`computeInternalStability`). Rows are persisted by the issue path
- * (`ensureInternalStabilityMetrics`, before a delta is applied) and refreshed by the
- * stat-progression job (`refreshStoredInternalStability`).
+ * fly (`computeInternalStability`). Rows are persisted when an event first moves one
+ * (`ensureInternalStabilityMetrics`, which the event spine calls before a delta is applied) and
+ * refreshed, or created for owned countries, by the stat-progression job
+ * (`refreshStoredInternalStability`).
  */
 
 import type { PrismaClient } from "@prisma/client";
@@ -23,6 +24,7 @@ import {
   type PoliticalData,
   type RecentPolicy,
   type StabilityMetrics,
+  stabilityInputsFromStored,
 } from "./stability-formulas";
 
 export const STABILITY_NUMERIC_FIELDS = [
@@ -138,7 +140,6 @@ async function computeFormulaStability(
   const country = await db.country.findUnique({
     where: { id: countryId },
     select: {
-      realGDPGrowthRate: true,
       adjustedGdpGrowth: true,
       unemploymentRate: true,
       incomeInequalityGini: true,
@@ -172,10 +173,15 @@ async function computeFormulaStability(
     }),
   ]);
 
+  const units = stabilityInputsFromStored({
+    gdpGrowthDecimal: country.adjustedGdpGrowth,
+    gini: country.incomeInequalityGini,
+    politicalStability: government?.politicalStability,
+  });
   const economicData: EconomicData = {
-    gdpGrowth: country.realGDPGrowthRate ?? country.adjustedGdpGrowth ?? 2.5,
+    gdpGrowth: units.gdpGrowth,
     unemploymentRate: country.unemploymentRate ?? 5.0,
-    giniIndex: country.incomeInequalityGini ?? 35,
+    giniIndex: units.giniIndex,
     inflationRate: country.inflationRate ?? 2.0,
     gdpPerCapita: country.currentGdpPerCapita ?? 35000,
     povertyRate: country.povertyRate ?? 12,
@@ -200,7 +206,7 @@ async function computeFormulaStability(
   };
 
   const politicalData: PoliticalData = {
-    politicalStability: government?.politicalStability ?? 0.5,
+    politicalStability: units.politicalStability,
     politicalPolarization: government?.politicalPolarization ?? 50,
     electionCycle: government?.electionCycle ?? 4,
     democracyIndex: government?.democracyIndex ?? 50,
@@ -301,14 +307,18 @@ export async function recalculateInternalStability(db: PrismaClient, countryId: 
 
 /**
  * Re-persist every stored stability row from the current formula (stat-progression job), so
- * readers of the stored row see fresh values now that viewing no longer writes. Never throws.
+ * readers of the stored row see fresh values now that viewing no longer writes, and create the
+ * row for every owned country that has none (MyCountry's Standing band reads it). Never throws.
  */
 export async function refreshStoredInternalStability(
   db: PrismaClient
 ): Promise<{ refreshed: number; failed: number }> {
   const result = { refreshed: 0, failed: 0 };
-  const rows = await db.internalStabilityMetrics.findMany({ select: { countryId: true } });
-  for (const { countryId } of rows) {
+  const rows = await db.country.findMany({
+    where: { OR: [{ stabilityMetrics: { isNot: null } }, { ownerUserId: { not: null } }] },
+    select: { id: true },
+  });
+  for (const { id: countryId } of rows) {
     try {
       if (await recalculateInternalStability(db, countryId)) result.refreshed++;
     } catch (err) {

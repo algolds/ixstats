@@ -385,7 +385,11 @@ const TIER_EXEC_BANDWIDTH: Record<Tier, number> = {
 
 /** How long a directive's growth modifier stays active, in IxTime years. */
 export const GROWTH_EFFECT_YEARS = 1;
-/** Same ceiling as active policies (lib/policies/effects-sync.ts MAX_GROWTH_SWING). */
+/**
+ * Ceiling on a directive's relative growth modifier (±5%), before commit() turns it into a GDP
+ * level shift (growthModifierToLevelShift). Policies cap their level shift separately
+ * (lib/policies/effects-sync.ts MAX_GDP_LEVEL_SHIFT).
+ */
 const MAX_GROWTH_MODIFIER = 0.05;
 
 function scale(c: IntentConsequence, f: number): IntentConsequence {

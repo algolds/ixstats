@@ -251,7 +251,10 @@ async function reassignSeats(
   }
 }
 
-/** A comfortable win steadies the government; a razor-thin one shakes it. Democracy index +2. */
+/**
+ * A comfortable win steadies the government; a razor-thin one shakes it (political stability is
+ * 0-100: +5, +2, -5 or -10 points). Democracy index +2.
+ */
 async function updatePoliticalMetrics(
   db: PrismaClient,
   countryId: string,
@@ -261,13 +264,13 @@ async function updatePoliticalMetrics(
   if (!govStructure) return;
 
   const stabilityDelta =
-    marginOfVictory > 15 ? 0.05 : marginOfVictory > 5 ? 0.02 : marginOfVictory > 2 ? -0.05 : -0.1;
+    marginOfVictory > 15 ? 5 : marginOfVictory > 5 ? 2 : marginOfVictory > 2 ? -5 : -10;
   await db.governmentStructure.update({
     where: { countryId },
     data: {
       politicalStability: Math.max(
         0,
-        Math.min(1, (govStructure.politicalStability ?? 0.5) + stabilityDelta)
+        Math.min(100, (govStructure.politicalStability ?? 50) + stabilityDelta)
       ),
       democracyIndex: Math.min(100, (govStructure.democracyIndex ?? 50) + 2),
       politicalMetricsUpdated: new Date(),

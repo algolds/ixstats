@@ -134,6 +134,7 @@ beforeEach(async () => {
       currentPopulation: 1,
       currentGdpPerCapita: 1,
       currentTotalGdp: 1,
+      baselineDate,
       economicTier: "Developing",
       populationTier: "1",
     },

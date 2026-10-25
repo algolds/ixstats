@@ -1,6 +1,10 @@
 import { mapTaxComponentTypeToId } from "~/lib/enums";
 import { IxTime } from "~/lib/ixtime";
-import { assertPersistableStats, IxStatsCalculator } from "~/lib/economy/calculations";
+import {
+  assertPersistableStats,
+  DEFAULT_INFLATION_RATE,
+  IxStatsCalculator,
+} from "~/lib/economy/calculations";
 import type { BaseCountryData, CountryStats, EconomicConfig } from "~/types/ixstats";
 
 const validateGrowthRate = (value: number | null | undefined): number => {
@@ -42,7 +46,7 @@ export const prepareBaseCountryData = (country: any, componentsData?: any): Base
   totalGovernmentSpending: country.totalGovernmentSpending ?? 0,
   taxRevenueGDPPercent: country.taxRevenueGDPPercent ?? 25,
   unemploymentRate: country.unemploymentRate ?? 5,
-  inflationRate: country.inflationRate ?? 0.02,
+  inflationRate: country.inflationRate ?? DEFAULT_INFLATION_RATE,
 
   ...(Object.fromEntries(
     Object.entries(COMPONENT_DEFAULTS).map(([key, fallback]) => [

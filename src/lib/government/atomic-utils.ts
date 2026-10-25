@@ -388,9 +388,9 @@ export function calculateComponentEconomicModifiers(
         unemploymentModifier += component.employmentImpact.unemploymentModifier || 0;
       }
       if (type === "PLANNED_ECONOMY" || type === "STATE_CAPITALISM") {
-        inflationModifier += 0.01;
+        inflationModifier += 1;
       } else if (type === "KNOWLEDGE_ECONOMY" || type === "FREE_TRADE") {
-        inflationModifier -= 0.005;
+        inflationModifier -= 0.5;
       }
     }
   });
@@ -413,7 +413,7 @@ export function calculateComponentEconomicModifiers(
     maintenanceCost,
     taxRevenueModifier, // percentage points e.g. +0.5 means +0.5%
     unemploymentModifier, // percentage points e.g. -0.5 means -0.5%
-    inflationModifier, // decimal fraction e.g. +0.01 means +1%
+    inflationModifier, // percentage points e.g. +1 means +1%
   };
 }
 

@@ -16,7 +16,6 @@ import {
 import { formatCompactCurrency, formatExactCurrency, formatPercent } from "~/lib/utils";
 import { StatUp as TrendingUp, Building } from "iconoir-react";
 import { SectorBreakdownCard } from "~/components/mycountry/shared/primitives";
-import { smartNormalizeGrowthRate } from "~/lib/statecraft/growth-calculations";
 import { tradeFigures } from "~/lib/economy/trade-figures";
 import { parseSectorBreakdown } from "~/lib/economy/sector-breakdown";
 import { EconomyTradeSection } from "./EconomyTradeSection";
@@ -42,14 +41,7 @@ function GdpMetric({
       label={isPerCapita ? "GDP per Capita" : "Total GDP"}
       valueKey={metricView.economyGdp}
       value={isPerCapita ? gdpPerCapita : compactGdp}
-      aside={
-        <GrowthBadge
-          value={smartNormalizeGrowthRate(
-            country.realGDPGrowthRate || country.adjustedGdpGrowth,
-            0
-          )}
-        />
-      }
+      aside={<GrowthBadge value={(country.calculatedStats?.gdpGrowth ?? 0) * 100} />}
       detail={
         isPerCapita
           ? `${country.economicTier ? `${country.economicTier} · ` : ""}${compactGdp} total`

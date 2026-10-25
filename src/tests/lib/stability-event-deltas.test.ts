@@ -22,6 +22,7 @@ jest.mock("~/lib/auth/system-owner-constants", () => ({
 }));
 jest.mock("~/lib/statecraft/stability-formulas", () => ({
   __esModule: true,
+  ...jest.requireActual("~/lib/statecraft/stability-formulas"),
   calculateStabilityMetrics: jest.fn(),
 }));
 jest.mock("~/lib/diplomacy/news-generator", () => ({ generateDiplomaticNews: jest.fn() }));
@@ -39,6 +40,7 @@ import { describe, it, expect, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { securityStabilityRouter } from "~/server/api/routers/security/stability";
 import { NationalIssuesConsequences } from "~/lib/national-issues/consequences";
+import { CountryEventSpine } from "~/lib/activity/event-spine";
 import { calculateStabilityMetrics } from "~/lib/statecraft/stability-formulas";
 import {
   refreshStoredInternalStability,
@@ -60,8 +62,12 @@ function makeDb(
   initialRow: Record<string, unknown> | null = null,
   policies: Record<string, unknown>[] = []
 ) {
-  const state = { row: initialRow ? { id: "ism1", countryId: COUNTRY, ...initialRow } : null } as {
+  const state = {
+    row: initialRow ? { id: "ism1", countryId: COUNTRY, ...initialRow } : null,
+    owned: false,
+  } as {
     row: Record<string, unknown> | null;
+    owned: boolean;
   };
   const db = {
     state,
@@ -73,6 +79,8 @@ function makeDb(
         currentGdpPerCapita: 30_000,
       })),
       update: jest.fn(async () => ({})),
+      // The refresh job's list: countries with a row, plus owned ones (`owned`).
+      findMany: jest.fn(async () => (state.row || state.owned ? [{ id: COUNTRY }] : [])),
     },
     economicProfile: { findUnique: jest.fn(async () => null) },
     demographics: { findUnique: jest.fn(async () => null) },
@@ -80,7 +88,6 @@ function makeDb(
     policy: { findMany: jest.fn(async () => policies) },
     internalStabilityMetrics: {
       findUnique: jest.fn(async () => (state.row ? { ...state.row } : null)),
-      findMany: jest.fn(async () => (state.row ? [{ countryId: COUNTRY }] : [])),
       upsert: jest.fn(
         async (args: { create: Record<string, unknown>; update: Record<string, unknown> }) => {
           state.row = state.row ? { ...state.row, ...args.update } : { id: "ism1", ...args.create };
@@ -187,6 +194,44 @@ describe("stability event deltas", () => {
     expect(db.internalStabilityMetrics.upsert).not.toHaveBeenCalled();
     expect(db.internalStabilityMetrics.update).not.toHaveBeenCalled();
     expect(db.state.row).toBeNull();
+  });
+
+  it("creates the row for a directive's stability consequence (no issue path involved)", async () => {
+    formulaMock.mockReturnValue(formula(70));
+    const db = makeDb();
+
+    const applied = await CountryEventSpine.recordCountryEvent({
+      db: db as never,
+      countryId: COUNTRY,
+      sourceType: "decision",
+      sourceId: "intent1",
+      description: "Intent (measured): secure the borders",
+      consequences: [
+        {
+          targetModel: "InternalStabilityMetrics",
+          targetField: "stabilityScore",
+          operation: "add",
+          value: 1,
+        },
+      ],
+    });
+
+    expect(db.state.row?.stabilityScore).toBe(71);
+    expect(applied).toEqual([expect.objectContaining({ previousValue: 70, newValue: 71 })]);
+  });
+
+  it("the refresh job creates the row for an owned country that has none", async () => {
+    formulaMock.mockReturnValue(formula(64));
+    const db = makeDb();
+    db.state.owned = true;
+
+    expect(await refreshStoredInternalStability(db as never)).toEqual({ refreshed: 1, failed: 0 });
+    expect(db.state.row?.stabilityScore).toBe(64);
+    expect(db.country.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { OR: [{ stabilityMetrics: { isNot: null } }, { ownerUserId: { not: null } }] },
+      })
+    );
   });
 
   it("keeps a legacy row's stored values once, then tracks the formula from there", async () => {

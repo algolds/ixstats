@@ -8,7 +8,7 @@ import {
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { IxTime } from "~/lib/ixtime";
 import { getEconomicConfigFromDB } from "~/lib/config-service";
-import type { EconomicConfig } from "~/types/ixstats";
+import type { CountryStats, EconomicConfig } from "~/types/ixstats";
 import { IxStatsCalculator } from "~/lib/economy/calculations";
 import { tradeFigures } from "~/lib/economy/trade-figures";
 import { getEconomicTierFromGdpPerCapita } from "~/types/ixstats";
@@ -37,7 +37,8 @@ const SOVEREIGN_OWNER_SELECT = {
 } satisfies Prisma.UserSelect;
 type SovereignOwner = Prisma.UserGetPayload<{ select: typeof SOVEREIGN_OWNER_SELECT }>;
 
-const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+/** One IxTime year (IxTime counts 365.25 days). */
+const ONE_YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
 
 const LEAN_INCLUDE = {
   storytellerEffects: { where: { isActive: true }, orderBy: { ixTimeTimestamp: "desc" } },
@@ -111,19 +112,43 @@ function undefinedIfNull<T, K extends keyof T>(source: T, keys: readonly K[]) {
   };
 }
 
+/** The projected figures every read returns in place of the stored (frozen) columns. */
+function projectedColumns(stats: CountryStats) {
+  return {
+    currentPopulation: stats.currentPopulation,
+    currentGdpPerCapita: stats.currentGdpPerCapita,
+    currentTotalGdp: stats.currentTotalGdp,
+    nominalGDP: stats.currentTotalGdp,
+    economicTier: stats.economicTier,
+    populationTier: stats.populationTier,
+    ...undefinedIfNull(stats, STATS_FIELDS),
+  };
+}
+
+/** The IxTime calendar year of an IxTime timestamp. */
+const ixYear = (ixTime: number) => new Date(ixTime).getUTCFullYear();
+
 function flagsWhere(checks: Record<string, boolean>): string[] {
   return Object.keys(checks).filter((flag) => checks[flag]);
 }
 
-/** The first projected year whose GDP per capita crosses the next economic-tier threshold. */
-function projectTierChange(thresholds: number[], currentGdpPc: number, projectedGdpPc: number[]) {
+/**
+ * The first projected IxTime year (projections are one IxTime year apart from `fromIxTime`) whose
+ * GDP per capita crosses the next economic-tier threshold.
+ */
+function projectTierChange(
+  thresholds: number[],
+  currentGdpPc: number,
+  projectedGdpPc: number[],
+  fromIxTime: number
+) {
   const nextTier = [...thresholds]
     .sort((a, b) => a - b)
     .find((threshold) => threshold > currentGdpPc);
   const crossing = nextTier ? projectedGdpPc.findIndex((gdpPc) => gdpPc >= nextTier) : -1;
   if (crossing < 0) return null;
   return {
-    year: new Date().getFullYear() + crossing + 1,
+    year: ixYear(fromIxTime) + crossing + 1,
     newTier: getEconomicTierFromGdpPerCapita(projectedGdpPc[crossing]!),
   };
 }
@@ -235,7 +260,8 @@ export const economyProcedures = {
       const tierChangeProjection = projectTierChange(
         Object.values(econCfg.economicTierThresholds),
         result.newStats.currentGdpPerCapita,
-        projections.map((p) => p.stats.currentGdpPerCapita)
+        projections.map((p) => p.stats.currentGdpPerCapita),
+        targetTime
       );
 
       // `country` comes from an `include: any` query, so pin the owner to the shape selected above.
@@ -259,25 +285,20 @@ export const economyProcedures = {
           ? { ...rawUser, avatarUrl: clerkProfile.imageUrl, clerkRole: clerkProfile.role }
           : null,
         sovereignUser,
-        currentPopulation: newStats.currentPopulation,
-        currentGdpPerCapita: newStats.currentGdpPerCapita,
-        currentTotalGdp: newStats.currentTotalGdp,
-        nominalGDP: newStats.currentTotalGdp,
-        economicTier: newStats.economicTier,
-        populationTier: newStats.populationTier,
         ...undefinedIfNull(country, STORED_FIELDS),
-        ...undefinedIfNull(newStats, STATS_FIELDS),
+        ...projectedColumns(newStats),
         calculatedStats: {
-          gdpGrowth: newStats.adjustedGdpGrowth || 0,
+          // The engine's rate (tier cap, diminishing returns), not the static input.
+          gdpGrowth: newStats.effectiveGdpGrowth ?? 0,
           populationGrowth: newStats.populationGrowthRate || 0,
         },
         projections: projections.map((p) => ({
-          year: new Date(p.ixTime).getFullYear(),
+          year: ixYear(p.ixTime),
           gdp: p.stats.currentTotalGdp,
           population: p.stats.currentPopulation,
         })),
         historical: historical.map((h) => ({
-          year: new Date(h.ixTimeTimestamp).getFullYear(),
+          year: ixYear(h.ixTimeTimestamp.getTime()),
           gdp: h.totalGdp,
           population: h.population,
         })),
@@ -287,8 +308,8 @@ export const economyProcedures = {
           volatility: { popVolatility, gdpVolatility },
           riskFlags,
           tierChangeProjection: tierChangeProjection ?? {
-            year: new Date().getFullYear(),
-            newTier: country.economicTier,
+            year: ixYear(targetTime),
+            newTier: newStats.economicTier,
           },
           vulnerabilities,
         },
@@ -325,6 +346,9 @@ export const economyProcedures = {
 
       return {
         ...country,
+        // The stored current* columns are frozen between stat-progression runs; never return
+        // them beside the projection.
+        ...projectedColumns(calculatedStats.newStats),
         calculatedStats: {
           currentPopulation: calculatedStats.newStats.currentPopulation,
           currentGdpPerCapita: calculatedStats.newStats.currentGdpPerCapita,
@@ -425,21 +449,18 @@ export const economyProcedures = {
         const currentStats = calc.calculateTimeProgression(baselineStats, currentTime, effects);
 
         const popGrowthRate = currentStats.newStats.populationGrowthRate || 0;
+        const gdpGrowthRate = currentStats.newStats.effectiveGdpGrowth ?? 0;
 
         const calculateEconomicVitality = () => {
           const gdpScore = Math.min(100, (currentStats.newStats.currentGdpPerCapita / 50000) * 100);
-          const growthBonus = Math.min(
-            20,
-            Math.max(-20, currentStats.newStats.adjustedGdpGrowth * 400)
-          );
+          const growthBonus = Math.min(20, Math.max(-20, gdpGrowthRate * 400));
           return Math.min(100, Math.max(0, gdpScore * 0.7 + growthBonus + 30));
         };
 
         const calculatePopulationWellbeing = () => {
           const growthHealth = popGrowthRate > 0 ? 70 : 40;
-          const densityFactor = country.populationDensity
-            ? Math.max(50, 100 - country.populationDensity / 500)
-            : 60;
+          const density = currentStats.newStats.populationDensity;
+          const densityFactor = density ? Math.max(50, 100 - density / 500) : 60;
           return (growthHealth + densityFactor) / 2;
         };
 
@@ -452,15 +473,9 @@ export const economyProcedures = {
         );
         const diplomaticInputs = vitalityExtras.diplomaticInputs;
 
-        const economicVitality =
-          country.economicVitality && country.economicVitality > 5
-            ? country.economicVitality
-            : calculateEconomicVitality();
-
-        const populationWellbeing =
-          country.populationWellbeing && country.populationWellbeing > 5
-            ? country.populationWellbeing
-            : calculatePopulationWellbeing();
+        // Computed every time: the stored vitality columns are stale (nothing writes them).
+        const economicVitality = calculateEconomicVitality();
+        const populationWellbeing = calculatePopulationWellbeing();
 
         return {
           economicVitality: Math.round(economicVitality),
@@ -469,7 +484,7 @@ export const economyProcedures = {
           governmentalEfficiency,
           economicMetrics: {
             gdpPerCapita: `$${currentStats.newStats.currentGdpPerCapita.toLocaleString()}`,
-            growthRate: `${(currentStats.newStats.adjustedGdpGrowth * 100).toFixed(1)}%`,
+            growthRate: `${(gdpGrowthRate * 100).toFixed(1)}%`,
             tier: currentStats.newStats.economicTier,
           },
           populationMetrics: {

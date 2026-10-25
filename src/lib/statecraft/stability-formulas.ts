@@ -36,6 +36,38 @@ export interface PoliticalData {
   protestFrequency: number; // Events per year
 }
 
+/** The stored columns the formula's unit-sensitive inputs come from. */
+export interface StoredStabilityUnits {
+  /** `Country.adjustedGdpGrowth`: a decimal (0.03 = 3%). */
+  gdpGrowthDecimal: number | null | undefined;
+  /** `Country.incomeInequalityGini`: a 0-1 fraction (the event spine bounds it there). */
+  gini: number | null | undefined;
+  /** `GovernmentStructure.politicalStability`: 0-100. */
+  politicalStability: number | null | undefined;
+}
+
+const finite = (value: number | null | undefined): value is number =>
+  typeof value === "number" && Number.isFinite(value);
+
+/**
+ * The formula's inputs in the units it expects (growth in percent, Gini 0-100, political
+ * stability on the World Bank -2.5..2.5 scale) from the stored columns' units. Missing values
+ * take the usual defaults (2.5% growth, Gini 35, stability 50); a Gini of 0 counts as missing.
+ */
+export function stabilityInputsFromStored(stored: StoredStabilityUnits): {
+  gdpGrowth: number;
+  giniIndex: number;
+  politicalStability: number;
+} {
+  const gini = finite(stored.gini) && stored.gini > 0 ? stored.gini : null;
+  const stability = finite(stored.politicalStability) ? stored.politicalStability : 50;
+  return {
+    gdpGrowth: finite(stored.gdpGrowthDecimal) ? stored.gdpGrowthDecimal * 100 : 2.5,
+    giniIndex: gini === null ? 35 : gini <= 1 ? gini * 100 : gini,
+    politicalStability: Math.max(0, Math.min(100, stability)) / 20 - 2.5,
+  };
+}
+
 export interface RecentPolicy {
   type: string;
   popularityImpact: number; // -100 to 100
