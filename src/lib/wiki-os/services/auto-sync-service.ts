@@ -13,7 +13,8 @@
  * One sync runs at a time across processes (a Postgres advisory lock): revisions of a page must be
  * applied in order, and the cron job, the webhook and the reader's import must not interleave. A failure
  * is logged and counted, never swallowed; each cycle leaves its outcome in SystemConfig for the health
- * telemetry (`getInboundSyncStatus`).
+ * telemetry (`getInboundSyncStatus`). A step that fails in five cycles is quarantined to a dead-letter row
+ * (inbound-dead-letters.ts) and the mark moves past it, so one bad step cannot stall the sync.
  */
 
 import { z } from "zod";
@@ -34,6 +35,14 @@ import {
   type RevisionOutcome,
 } from "./inbound-revision-sync";
 import { settleConflicts } from "./conflict-notices";
+import {
+  INBOUND_LOCK,
+  clearStepFailure,
+  countQuarantined,
+  loadFailingKeys,
+  recordStepFailure,
+  type QuarantinableStep,
+} from "./inbound-dead-letters";
 
 export interface AutoSyncStats {
   /** Recent changes and log events read in the last cycle. */
@@ -62,8 +71,6 @@ const lastStats: AutoSyncStats = {
   lastRunAt: null,
 };
 
-/** The advisory lock every sync takes (see `withJobLock`: held by an open transaction, released with it). */
-const INBOUND_LOCK = "wikios-inbound-sync";
 /** A cycle's lock is held at most this long (its cron job is cut off at 10 minutes). */
 const CYCLE_LOCK_TIMEOUT_MS = 12 * 60_000;
 /** A cycle starts no new step after this long: it must end well inside the lock above, with its marks correct. */
@@ -188,7 +195,7 @@ async function collectList<T>(
   return entries;
 }
 
-type Stream = "edits" | "log";
+type Stream = QuarantinableStep["stream"];
 
 interface StepResult {
   /** The step left WikiOS with a new revision / a changed page / an applied log event. */
@@ -197,15 +204,13 @@ interface StepResult {
   applied: number;
 }
 
-/** One recent change or log event, in the order MediaWiki recorded it. */
-interface SyncStep {
-  stream: Stream;
+/**
+ * One recent change or log event, in the order MediaWiki recorded it. `mark` is what the stream's high-water mark
+ * becomes once it is done (a timestamp, for the log with its id); `subject` is what a failure holds back (later steps
+ * about the same page wait for the retry); `key` and `payload` are its dead-letter row's.
+ */
+interface SyncStep extends QuarantinableStep {
   timestamp: string;
-  /** What the stream's high-water mark becomes once this step is done (a timestamp, for the log with its id). */
-  mark: string;
-  /** What a failure holds back: later steps about the same page wait for the retry. */
-  subject: string;
-  label: string;
   run: () => Promise<StepResult>;
 }
 
@@ -213,11 +218,13 @@ const NOTHING: StepResult = { created: 0, updated: 0, applied: 0 };
 
 function editStep(rc: RecentChange): SyncStep {
   return {
+    key: `rc:${rc.revid}`,
     stream: "edits",
     timestamp: rc.timestamp,
     mark: rc.timestamp,
     subject: plainTitle(rc.title),
     label: rc.title,
+    payload: { ...rc },
     run: async () => {
       const outcome = await syncRevisionById(rc.revid);
       return {
@@ -231,11 +238,13 @@ function editStep(rc: RecentChange): SyncStep {
 
 function logStep(event: LogEvent): SyncStep {
   return {
+    key: `log:${event.logid}`,
     stream: "log",
     timestamp: event.timestamp,
     mark: `${event.timestamp}${LOG_MARK_SEPARATOR}${event.logid}`,
     subject: plainTitle(event.title),
     label: `${event.type}/${event.action} ${event.title}`,
+    payload: { ...event },
     run: async () => ({ ...NOTHING, applied: (await applyLogEvent(event)) === "applied" ? 1 : 0 }),
   };
 }
@@ -256,12 +265,70 @@ interface StepsResult extends StepResult {
 }
 
 /**
+ * Count a failed step in the dead letters: true when that quarantines it (its fifth failed cycle, or it already was),
+ * so it holds nothing back. A failure that cannot be counted holds the mark, as an uncounted failure always did.
+ */
+async function quarantines(step: SyncStep, err: unknown): Promise<boolean> {
+  try {
+    const { quarantined, attempts } = await recordStepFailure(step, errorMessage(err));
+    if (quarantined) {
+      console.warn(
+        `[WikiAutoSync] ${step.label} has failed in ${attempts} cycles: quarantined, the sync moves past it.`
+      );
+    }
+    return quarantined;
+  } catch (countErr) {
+    console.error(
+      `[WikiAutoSync] Could not count the failure of ${step.label}:`,
+      errorMessage(countErr)
+    );
+    return false;
+  }
+}
+
+/** A step that failed before has succeeded: its count goes (a failure to forget it is counted, not fatal). */
+async function forgetFailure(step: SyncStep): Promise<void> {
+  try {
+    await clearStepFailure(step.key);
+  } catch (err) {
+    console.error(
+      `[WikiAutoSync] Could not clear the failures of ${step.label}:`,
+      errorMessage(err)
+    );
+    recordFailure(`clearing ${step.label}`, err);
+  }
+}
+
+/** Run one step into `result`; true when its failure holds its page and its stream back (it was not quarantined). */
+async function runStep(step: SyncStep, result: StepResult, failing: Set<string>): Promise<boolean> {
+  let done: StepResult;
+  try {
+    done = await step.run();
+  } catch (err) {
+    console.error(`[WikiAutoSync] Error syncing ${step.label}:`, errorMessage(err));
+    recordFailure(step.label, err);
+    return !(await quarantines(step, err));
+  }
+  result.created += done.created;
+  result.updated += done.updated;
+  result.applied += done.applied;
+  if (failing.has(step.key)) await forgetFailure(step);
+  return false;
+}
+
+/**
  * Run the steps in order until `deadline`. A stream's high-water mark never passes a step that was not
  * applied: not a failed one (retried next cycle), not one held back because an earlier step about the same
  * page failed (applied before the revision it builds on, it would be wrong), and not one the deadline cut
- * off. Steps about other pages still run after a failure.
+ * off. Steps about other pages still run after a failure. The exception is a quarantined step (failed in
+ * QUARANTINE_AFTER cycles): it holds nothing back, so the mark moves past it and the page's later steps run.
+ * `failing` are the keys with a dead-letter row, whose success clears it.
  */
-async function runSteps(steps: SyncStep[], deadline: number): Promise<StepsResult> {
+async function runSteps(
+  steps: SyncStep[],
+  deadline: number,
+  failing: Set<string>
+): Promise<StepsResult> {
   const result: StepsResult = { ...NOTHING, highWater: { edits: null, log: null } };
   const blocked = new Set<string>();
   const failedStreams = new Set<Stream>();
@@ -273,20 +340,9 @@ async function runSteps(steps: SyncStep[], deadline: number): Promise<StepsResul
       );
       break;
     }
-    if (blocked.has(step.subject)) {
+    if (blocked.has(step.subject) || (await runStep(step, result, failing))) {
+      blocked.add(step.subject);
       failedStreams.add(step.stream);
-    } else {
-      try {
-        const done = await step.run();
-        result.created += done.created;
-        result.updated += done.updated;
-        result.applied += done.applied;
-      } catch (err) {
-        console.error(`[WikiAutoSync] Error syncing ${step.label}:`, errorMessage(err));
-        recordFailure(step.label, err);
-        blocked.add(step.subject);
-        failedStreams.add(step.stream);
-      }
     }
     if (!failedStreams.has(step.stream) && step.timestamp) {
       result.highWater[step.stream] = step.mark;
@@ -345,7 +401,12 @@ async function runCycle(limit: number): Promise<void> {
     );
     lastStats.pagesChecked = changes.length + events.length;
 
-    const done = await runSteps([...changes.map(editStep), ...events.map(logStep)], deadline);
+    const failing = await loadFailingKeys();
+    const done = await runSteps(
+      [...changes.map(editStep), ...events.map(logStep)],
+      deadline,
+      failing
+    );
     if (done.highWater.edits && done.highWater.edits !== rcMark) {
       await writeHighWater(RC_HWM_KEY, done.highWater.edits);
     }
@@ -411,13 +472,18 @@ const storedStatusSchema = z.object({
 });
 
 export interface InboundSyncStatus {
-  /** UNKNOWN: no cycle has run; STALE: none for an hour; DEGRADED: the last one had failures. */
+  /**
+   * UNKNOWN: no cycle has run; STALE: none for an hour; DEGRADED: the last one had failures, or a quarantined step is
+   * unresolved.
+   */
   status: "ACTIVE" | "DEGRADED" | "STALE" | "UNKNOWN";
   lastRunAt: string | null;
   failures: number;
   lastError: string | null;
   /** Conflict-log rows the last cycle left unsettled: overwritten authors not told yet, or a trail not written. */
   conflictsPending: number;
+  /** Quarantined steps nobody has retried or dismissed yet (read live, not from the last cycle). */
+  quarantined: number;
 }
 
 /** What the last cycle left behind. Best effort: the sync does not depend on its own telemetry. */
@@ -441,16 +507,17 @@ async function writeStatus(): Promise<void> {
 
 /** Whether the inbound sync is running and how its last cycle went (read from the database, so any process can ask). */
 export async function getInboundSyncStatus(now = new Date()): Promise<InboundSyncStatus> {
-  const row = await db.systemConfig.findUnique({
-    where: { key: STATUS_KEY },
-    select: { value: true },
-  });
+  const [row, quarantined] = await Promise.all([
+    db.systemConfig.findUnique({ where: { key: STATUS_KEY }, select: { value: true } }),
+    countQuarantined(),
+  ]);
   const unknown: InboundSyncStatus = {
     status: "UNKNOWN",
     lastRunAt: null,
     failures: 0,
     lastError: null,
     conflictsPending: 0,
+    quarantined,
   };
   if (!row) return unknown;
 
@@ -461,12 +528,14 @@ export async function getInboundSyncStatus(now = new Date()): Promise<InboundSyn
     return unknown;
   }
   const age = now.getTime() - new Date(stored.lastRunAt).getTime();
-  const status = age > STALE_AFTER_MS ? "STALE" : stored.failures > 0 ? "DEGRADED" : "ACTIVE";
+  const degraded = stored.failures > 0 || quarantined > 0;
+  const status = age > STALE_AFTER_MS ? "STALE" : degraded ? "DEGRADED" : "ACTIVE";
   return {
     status,
     lastRunAt: stored.lastRunAt,
     failures: stored.failures,
     lastError: stored.lastError,
     conflictsPending: stored.conflictsPending,
+    quarantined,
   };
 }

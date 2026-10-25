@@ -17,6 +17,7 @@ import { WikiOSUtilitiesDeck } from "~/components/wiki-os/utilities/WikiOSUtilit
 import { EditingSection } from "./EditingSection";
 import { MirrorStatusSection } from "./MirrorStatusSection";
 import { ConflictLogSection } from "./ConflictLogSection";
+import { InboundQuarantineSection } from "./InboundQuarantineSection";
 
 export function WikiOSSettingsPanel() {
   usePageTitle({ title: "Admin - WikiOS Settings" });
@@ -35,6 +36,8 @@ export function WikiOSSettingsPanel() {
       <EditingSection />
 
       <MirrorStatusSection />
+
+      <InboundQuarantineSection />
 
       <ConflictLogSection />
 

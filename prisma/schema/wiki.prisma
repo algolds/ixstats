@@ -244,6 +244,28 @@ model WikiConflict {
   @@map("wiki_conflicts")
 }
 
+/// An inbound sync step (a classic recent change or log event) that keeps failing. Its failed cycles are counted; after
+/// five it is quarantined (`quarantinedAt`) and the cycle's high-water mark moves past it, so one bad step cannot stall
+/// the sync. The step's payload is kept for an administrator to retry it; a success resolves the row.
+model WikiSyncDeadLetter {
+  id            String    @id @default(cuid())
+  stepKey       String    @unique // "rc:<revid>" | "log:<logid>"
+  stream        String    // edits | log
+  subject       String    // the page the step is about
+  label         String
+  mark          String    // the stream's high-water mark once the step is done
+  payload       Json      // what a retry runs: the recent change or the log event
+  attempts      Int       @default(0)
+  lastError     String?   @db.VarChar(2000)
+  quarantinedAt DateTime?
+  resolvedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([quarantinedAt])
+  @@map("wiki_sync_dead_letters")
+}
+
 /// Explicit MediaWiki-style group membership (sysop, bureaucrat, interface-admin, bot, ...). A row is keyed by
 /// the WikiOS user, or by the MediaWiki username alone while that user has not yet verified a wiki link.
 model WikiUserGroup {

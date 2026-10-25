@@ -21,9 +21,15 @@ import {
 } from "~/lib/wiki-os/services/mirror-admin";
 import { getEditingStatus, setEditing } from "~/lib/wiki-os/services/editing-admin";
 import { conflictLogPage } from "~/lib/wiki-os/services/conflict-log-view";
+import {
+  dismissQuarantined,
+  listQuarantined,
+  retryQuarantined,
+} from "~/lib/wiki-os/services/inbound-dead-letters";
 import { refusals } from "~/lib/wiki-os/permissions";
 
-const mirrorJobInput = z.object({ id: z.string().min(1).max(64) });
+/** A mirror job or a quarantined sync step, by id. */
+const rowIdInput = z.object({ id: z.string().min(1).max(64) });
 /** The dead jobs of one title, or every dead job when no title is given. */
 const deadJobsInput = z.object({ title: z.string().min(1).max(255).optional() });
 
@@ -107,6 +113,7 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
           failures: 0,
           lastError: null,
           conflictsPending: 0,
+          quarantined: 0,
         })),
       ]);
 
@@ -139,13 +146,13 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
   getMirrorStatus: adminProcedure.query(() => getMirrorStatus()),
 
   /** Try a dead mirror job again from its first attempt. */
-  requeueMirrorJob: adminProcedure.input(mirrorJobInput).mutation(async ({ input }) => {
+  requeueMirrorJob: adminProcedure.input(rowIdInput).mutation(async ({ input }) => {
     await refusals(requeueMirrorJob(input.id));
     return { success: true as const };
   }),
 
   /** Give up on a dead mirror job, so the jobs behind it for its title can run. */
-  discardMirrorJob: adminProcedure.input(mirrorJobInput).mutation(async ({ input }) => {
+  discardMirrorJob: adminProcedure.input(rowIdInput).mutation(async ({ input }) => {
     await refusals(discardMirrorJob(input.id));
     return { success: true as const };
   }),
@@ -170,6 +177,22 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
       })
     )
     .query(({ input }) => conflictLogPage(input)),
+
+  /** The inbound sync's quarantined steps (failed in five cycles, the sync moved past them), oldest first. */
+  getQuarantinedSyncSteps: adminProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(200).default(50) }).optional())
+    .query(({ input }) => listQuarantined(input?.limit ?? 50)),
+
+  /** Apply a quarantined step again, through the same conflict rule as a cycle; "failed" counts the attempt. */
+  retryQuarantinedSyncStep: adminProcedure
+    .input(rowIdInput)
+    .mutation(async ({ input }) => ({ outcome: await refusals(retryQuarantined(input.id)) })),
+
+  /** Give up on a quarantined step: it leaves the list, and WikiOS keeps what it has for that page. */
+  dismissQuarantinedSyncStep: adminProcedure.input(rowIdInput).mutation(async ({ input }) => {
+    await refusals(dismissQuarantined(input.id));
+    return { success: true as const };
+  }),
 
   /** The admin WikiOS editing switch: on/off, forced by WIKIOS_V1_ENABLED, and whether the mirror can write. */
   getEditingStatus: adminProcedure.query(() => getEditingStatus()),

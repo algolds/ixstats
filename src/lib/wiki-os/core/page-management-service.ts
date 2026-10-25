@@ -16,6 +16,7 @@ import { enqueueRender, invalidateTemplateDependents } from "../services/render-
 import { evictWikiTitleCaches } from "../services/title-cache-eviction";
 import { notifyWatchers, type HeadChange } from "../services/watchlist-notify";
 import { PageReports } from "./page-reports";
+import { PageOperationError } from "./page-operation-error";
 
 export type { MediaUsageItem } from "./page-reports";
 
@@ -32,19 +33,7 @@ export interface PageActor {
   name: string;
 }
 
-/** IMMOBILE: the page is in a namespace WikiOS does not move pages in (the bot API's `immobilenamespace`). */
-export type PageOperationErrorCode = "NOT_FOUND" | "CONFLICT" | "BAD_REQUEST" | "IMMOBILE";
-
-/** A refusal the caller can act on (no such page, the destination exists); routers map it to a TRPCError. */
-export class PageOperationError extends Error {
-  constructor(
-    readonly code: PageOperationErrorCode,
-    message: string
-  ) {
-    super(message);
-    this.name = "PageOperationError";
-  }
-}
+export { PageOperationError, type PageOperationErrorCode } from "./page-operation-error";
 
 /** The `File:` namespace. */
 const FILE_NAMESPACE = 6;

@@ -22,6 +22,8 @@ const mockQueryRaw = jest.fn();
 const mockExecuteRaw = jest.fn();
 const mockTransaction = jest.fn();
 const mockJobCreate = jest.fn();
+// the dead letters are a real table (in memory): the quarantine is counted across cycles
+let mockDeadLetters: MemoryPrisma;
 jest.mock("~/lib/wiki-os/config", () =>
   jest
     .requireActual("~/tests/helpers/live-wikios-config")
@@ -33,7 +35,10 @@ jest.mock("~/server/db", () => ({
     $queryRaw: (...a: unknown[]) => mockQueryRaw(...a),
     $executeRaw: (...a: unknown[]) => mockExecuteRaw(...a),
     systemConfig: {
-      findUnique: (...a: unknown[]) => mockSystemConfigFindUnique(...a),
+      // the mock itself (not a wrapper), so describeEachWikiosMode can answer the mode's rows through it
+      get findUnique() {
+        return mockSystemConfigFindUnique;
+      },
       upsert: (...a: unknown[]) => mockSystemConfigUpsert(...a),
     },
     wikiArticle: {
@@ -50,6 +55,9 @@ jest.mock("~/server/db", () => ({
     },
     wikiNameClaim: { findFirst: (...a: unknown[]) => mockClaimFindFirst(...a) },
     wikiMirrorJob: { create: (...a: unknown[]) => mockJobCreate(...a) },
+    get wikiSyncDeadLetter() {
+      return mockDeadLetters.wikiSyncDeadLetter;
+    },
   },
 }));
 jest.mock("~/lib/wiki-os/core/article-repository", () => ({
@@ -68,6 +76,7 @@ jest.mock("~/lib/wiki-os/services/title-cache-eviction", () => ({
 }));
 
 import { createHash } from "node:crypto";
+import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-prisma";
 import {
   getInboundSyncStatus,
   runAutoSyncCycle,
@@ -77,6 +86,8 @@ import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
 import { notificationAPI } from "~/lib/notifications/api";
 import { applyLogEvent } from "~/lib/wiki-os/services/inbound-log-events";
 import { settleConflicts } from "~/lib/wiki-os/services/conflict-notices";
+import { dismissQuarantined, retryQuarantined } from "~/lib/wiki-os/services/inbound-dead-letters";
+import { describeEachWikiosMode } from "~/tests/helpers/wikios-modes";
 import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
 import {
   decideInbound,
@@ -278,6 +289,7 @@ const storedHead = (mwRevId: number | null, over: Partial<StoredHead> = {}): Sto
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockDeadLetters = createMemoryPrisma();
   delete process.env.WIKIOS_MEDIAWIKI_BOT_USER;
   rcResponses = [];
   logResponses = [];
@@ -1051,6 +1063,224 @@ describe("the sync status the telemetry reads", () => {
     await expect(getInboundSyncStatus(new Date("2026-09-27T11:00:01Z"))).resolves.toMatchObject({
       status: "STALE",
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// A step that keeps failing is quarantined, and the mark moves past it (A5)
+// ---------------------------------------------------------------------------
+
+describeEachWikiosMode("a step that keeps failing", () => {
+  /** SystemConfig as a table: the marks and the status a cycle writes are what the next one reads. */
+  let config: Map<string, string>;
+  const START = "2026-09-27T09:00:00Z";
+  let consoleError: jest.SpyInstance;
+  let consoleWarn: jest.SpyInstance;
+
+  beforeEach(() => {
+    config = new Map([
+      [HWM_KEY, START],
+      [LOG_HWM_KEY, `${START}|0`],
+    ]);
+    // the mode's own rows (the switch, the protections marker) still answer through it
+    const modeRows = mockSystemConfigFindUnique.getMockImplementation();
+    mockSystemConfigFindUnique.mockImplementation(async (args: { where: { key: string } }) => {
+      const value = config.get(args.where.key);
+      return value === undefined ? (modeRows?.(args) ?? null) : { value };
+    });
+    mockSystemConfigUpsert.mockImplementation(
+      async (args: { where: { key: string }; update: { value: string } }) => {
+        config.set(args.where.key, args.update.value);
+        return {};
+      }
+    );
+    consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    consoleWarn = jest.spyOn(console, "warn").mockImplementation(() => {});
+  });
+  afterEach(() => {
+    consoleError.mockRestore();
+    consoleWarn.mockRestore();
+  });
+
+  /** One cycle that reads `changes` and `events` (from the stored marks). */
+  const cycle = async (changes: Change[], events: FakeLogEvent[] = []) => {
+    rcResponses = [{ changes }];
+    logResponses = [{ events }];
+    fetchMock.mockClear();
+    return runAutoSyncCycle();
+  };
+  const cycles = async (times: number, changes: Change[], events: FakeLogEvent[] = []) => {
+    for (let i = 0; i < times; i++) await cycle(changes, events);
+  };
+  const deadLetter = (stepKey: string) =>
+    mockDeadLetters.wikiSyncDeadLetter.findUnique({ where: { stepKey } });
+
+  // P's revision 5 fails (MediaWiki answers 500 for it); Q's revision 6, a second later, is fine.
+  const P5 = change("P", 5, 1);
+  const P7 = change("P", 7, 3);
+  const Q6 = change("Q", 6, 2);
+  beforeEach(() => {
+    failingRevisions = new Set([5]);
+    mwRevisions = new Map([
+      [5, { title: "P", revid: 5, text: "P five." }],
+      [6, { title: "Q", revid: 6, text: "Q six." }],
+      [7, { title: "P", revid: 7, parentid: 5, text: "P seven." }],
+    ]);
+  });
+
+  it("four failures still hold the mark", async () => {
+    await cycles(4, [P5, Q6]);
+
+    expect(config.get(HWM_KEY)).toBe(START);
+    expect(await deadLetter("rc:5")).toMatchObject({ attempts: 4, quarantinedAt: null });
+  });
+
+  it("a step failing for the fifth cycle is quarantined and the mark moves past it", async () => {
+    await cycles(4, [P5, Q6]);
+    const fifth = await cycle([P5, Q6]);
+
+    expect(config.get(HWM_KEY)).toBe(Q6.timestamp);
+    expect(fifth.failures).toBe(1);
+    expect(await deadLetter("rc:5")).toMatchObject({
+      stream: "edits",
+      subject: "P",
+      label: "P",
+      mark: P5.timestamp,
+      payload: { title: "P", revid: 5, timestamp: P5.timestamp },
+      attempts: 5,
+      lastError: "MediaWiki returned HTTP 500",
+      quarantinedAt: expect.any(Date),
+      resolvedAt: null,
+    });
+    expect(consoleWarn).toHaveBeenCalledWith(expect.stringContaining("quarantined"));
+
+    // the next cycle reads past it: the quarantined step does not run again
+    const next = await cycle([Q6]);
+    expect(next.failures).toBe(0);
+    expect(fetchedRevids()).not.toContain(5);
+  });
+
+  it("later steps of the same page run once it is quarantined", async () => {
+    await cycles(4, [P5, P7]);
+    expect(importPageRevisions).not.toHaveBeenCalled();
+    expect(applyEvent).not.toHaveBeenCalled();
+
+    await cycle(
+      [P5, P7],
+      [
+        {
+          logid: 9,
+          type: "protect",
+          action: "protect",
+          title: "P",
+          timestamp: "2026-09-27T10:00:04Z",
+        },
+      ]
+    );
+
+    expect(importPageRevisions.mock.calls.map(([input]) => input.revisions[0]?.mwRevId)).toEqual([
+      7,
+    ]);
+    expect(applyEvent.mock.calls.map(([event]) => event.logid)).toEqual([9]);
+    expect(config.get(HWM_KEY)).toBe(P7.timestamp);
+    expect(config.get(LOG_HWM_KEY)).toBe("2026-09-27T10:00:04Z|9");
+  });
+
+  it("a log event failing for the fifth cycle is quarantined with the event as it was read, and its mark moves on", async () => {
+    const protect: FakeLogEvent = {
+      logid: 4,
+      type: "protect",
+      action: "protect",
+      title: "R",
+      timestamp: "2026-09-27T10:00:01Z",
+    };
+    applyEvent.mockRejectedValue(new Error("db down"));
+
+    await cycles(4, [], [protect]);
+    expect(config.get(LOG_HWM_KEY)).toBe(`${START}|0`);
+    await cycle([], [protect]);
+
+    expect(config.get(LOG_HWM_KEY)).toBe("2026-09-27T10:00:01Z|4");
+    expect(await deadLetter("log:4")).toMatchObject({
+      stream: "log",
+      subject: "R",
+      label: "protect/protect R",
+      mark: "2026-09-27T10:00:01Z|4",
+      payload: expect.objectContaining({ logid: 4, type: "protect", title: "R" }),
+      quarantinedAt: expect.any(Date),
+    });
+
+    // a retry hands applyLogEvent the event the cycle read
+    applyEvent.mockReset();
+    applyEvent.mockResolvedValue("applied");
+    const row = (await deadLetter("log:4"))!;
+    await expect(retryQuarantined(row.id)).resolves.toBe("applied");
+    expect(applyEvent).toHaveBeenCalledWith(row.payload);
+    expect(applyEvent.mock.calls[0]?.[0]).toMatchObject({ logid: 4, title: "R" });
+  });
+
+  it("a step that succeeds after failing clears its count", async () => {
+    await cycles(3, [P5, Q6]);
+    expect(await deadLetter("rc:5")).toMatchObject({ attempts: 3 });
+
+    failingRevisions = new Set();
+    await cycle([P5, Q6]);
+    expect(await deadLetter("rc:5")).toBeNull();
+    expect(config.get(HWM_KEY)).toBe(Q6.timestamp);
+
+    // failing again later counts from one: four more failures do not quarantine it
+    failingRevisions = new Set([7]);
+    await cycles(4, [P7]);
+    expect(await deadLetter("rc:7")).toMatchObject({ attempts: 4, quarantinedAt: null });
+  });
+
+  it("a failure that cannot be counted holds the mark, as before", async () => {
+    jest
+      .spyOn(mockDeadLetters.wikiSyncDeadLetter, "upsert")
+      .mockRejectedValue(new Error("dead letters down"));
+
+    await cycles(6, [P5, Q6]);
+
+    expect(config.get(HWM_KEY)).toBe(START);
+    expect(consoleError).toHaveBeenCalledWith(
+      expect.stringContaining("Could not count"),
+      "dead letters down"
+    );
+  });
+
+  it("the status is DEGRADED while a quarantined step is unresolved", async () => {
+    await cycles(5, [P5, Q6]);
+    const clean = await cycle([Q6]);
+    expect(clean.failures).toBe(0);
+
+    await expect(getInboundSyncStatus()).resolves.toMatchObject({
+      status: "DEGRADED",
+      failures: 0,
+      quarantined: 1,
+    });
+
+    await dismissQuarantined((await deadLetter("rc:5"))!.id);
+    await expect(getInboundSyncStatus()).resolves.toMatchObject({
+      status: "ACTIVE",
+      quarantined: 0,
+    });
+  });
+
+  it("retry applies a quarantined revision and resolves the row", async () => {
+    await cycles(5, [P5, Q6]);
+    const row = (await deadLetter("rc:5"))!;
+    importPageRevisions.mockClear();
+
+    failingRevisions = new Set();
+    await expect(retryQuarantined(row.id)).resolves.toBe("applied");
+
+    expect(importPageRevisions).toHaveBeenCalledTimes(1);
+    expect(importPageRevisions.mock.calls[0]?.[0].revisions[0]).toMatchObject({
+      mwRevId: 5,
+      wikitext: "P five.",
+    });
+    expect(await deadLetter("rc:5")).toMatchObject({ resolvedAt: expect.any(Date) });
+    await expect(getInboundSyncStatus()).resolves.toMatchObject({ quarantined: 0 });
   });
 });
 

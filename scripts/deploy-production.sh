@@ -198,6 +198,9 @@ bunx prisma db execute --schema prisma/schema --file prisma/migrations/202611031
 # WikiOS data safety (docs/superpowers/plans/2026-10-24-wikios-data-safety.md): the conflict log, the old parks turned into
 # legacy rows, the park re-push jobs retired. Additive and idempotent.
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261105120000_wikios_conflicts/migration.sql || exit 1
+# WikiOS data safety (A5): the inbound sync's dead letters (a step failing five cycles is quarantined and the mark moves
+# past it). Additive and idempotent.
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261105120001_wikios_sync_dead_letters/migration.sql || exit 1
 
 # Sync production database with schema
 echo "🔄 Syncing production database schema..."

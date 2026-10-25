@@ -461,6 +461,7 @@ export interface FakeWikiDb {
   wikiLog: Table;
   wikiMirrorJob: Table;
   wikiConflict: Table;
+  wikiSyncDeadLetter: Table;
   wikiAsset: Table;
   wikiDiscussionThread: Table;
   wikiWatchlist: Table;
@@ -645,6 +646,12 @@ export function createFakeWikiDb({ prisma = false }: FakeWikiDbOptions = {}) {
     wikiLog: table("wikiLog", () => ({ comment: null, params: null, articleId: null })),
     wikiMirrorJob: table("wikiMirrorJob", () => ({ state: "pending", attempts: 0, payload: null })),
     wikiConflict: table("wikiConflict"),
+    wikiSyncDeadLetter: table("wikiSyncDeadLetter", () => ({
+      attempts: 0,
+      lastError: null,
+      quarantinedAt: null,
+      resolvedAt: null,
+    })),
     wikiAsset: table("wikiAsset", () => ({
       thumbnailUrl: null,
       width: null,
