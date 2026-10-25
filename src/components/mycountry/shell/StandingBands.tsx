@@ -125,12 +125,16 @@ function deriveVitality(country: StandingCountry, activityRingsData: ActivityRin
   return { ringScores, rings, knownRings, compositeScore };
 }
 
-function deriveFigures(country: StandingCountry) {
-  const population = country?.currentPopulation ?? country?.population ?? 0;
+const positiveOrNull = (value: unknown): number | null =>
+  typeof value === "number" && Number.isFinite(value) && value > 0 ? value : null;
+
+/** Population, GDP, approval and stability; null (shown as "—") when the record has none. */
+export function deriveFigures(country: StandingCountry) {
+  const population = positiveOrNull(country?.currentPopulation ?? country?.population);
+  const gdpPerCapita = positiveOrNull(country?.currentGdpPerCapita);
   const totalGdp =
-    country?.currentTotalGdp ??
-    country?.gdp ??
-    (population && country?.currentGdpPerCapita ? population * country.currentGdpPerCapita : 0);
+    positiveOrNull(country?.currentTotalGdp ?? country?.gdp) ??
+    (population !== null && gdpPerCapita !== null ? population * gdpPerCapita : null);
   return {
     population,
     totalGdp,
@@ -215,9 +219,12 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
   );
   const { population, totalGdp, approvalPct, stabilityPct } = deriveFigures(country);
   const ratingLabelText = getRatingLabel(compositeScore);
-  const formattedPop = showExactPop
-    ? Math.round(population).toLocaleString()
-    : formatCompact(population);
+  const formattedPop =
+    population === null
+      ? "—"
+      : showExactPop
+        ? Math.round(population).toLocaleString()
+        : formatCompact(population);
 
   // Executive bandwidth used/capacity; directive slots go in the tooltip
   const execBandwidthData = execBandwidthQuery.data;
@@ -300,7 +307,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                 <DollarSign aria-hidden="true" className="text-label-secondary size-3.5" />
                 <span className="text-label-secondary">GDP</span>
                 <strong className="text-label font-semibold tabular-nums">
-                  ${formatCompact(totalGdp)}
+                  {totalGdp === null ? "—" : `$${formatCompact(totalGdp)}`}
                 </strong>
               </span>
             </div>
