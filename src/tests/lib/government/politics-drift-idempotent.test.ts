@@ -8,6 +8,8 @@
 import { ComponentType } from "@prisma/client";
 import { applyGovernmentComponentEffects } from "~/lib/government/component-effects";
 import { IxTime } from "~/lib/ixtime";
+import { evaluateTriggerCondition } from "~/lib/national-issues/evaluators/condition-evaluator";
+import { NATIONAL_ISSUE_TEMPLATES } from "../../../../prisma/seeds/national-issue-templates";
 
 interface Row {
   countryId: string;
@@ -126,5 +128,33 @@ describe("politics-drift component effects", () => {
     const second = await run(db);
     expect(second.effectsCreated).toBe(0);
     expect(effects).toHaveLength(first.effectsCreated);
+  });
+
+  it("keeps stability on the 0-100 scale the issue templates trigger on", async () => {
+    const { db, structure } = fakeDb({
+      politicalStability: null, // a fresh structure: the 0-100 fallback (50) applies
+      democracyIndex: 50,
+      governmentEffectiveness: 50,
+      ruleOfLaw: 50,
+      componentMetricsSnapshot: null,
+    });
+    await run(db);
+
+    jest.spyOn(Math, "random").mockReturnValue(0);
+    const gated = NATIONAL_ISSUE_TEMPLATES.filter((t) =>
+      t.triggerConditions.includes("politicalStability")
+    );
+    expect(gated.map((t) => t.slug).sort()).toEqual([
+      "crisis_mediation",
+      "foreign_investment_boom",
+    ]);
+    const snapshot = {
+      politicalStability: structure.politicalStability,
+      actualGdpGrowth: 4,
+      activeEmbassyCount: 5,
+    } as never;
+    for (const template of gated) {
+      expect(evaluateTriggerCondition(JSON.parse(template.triggerConditions), snapshot)).toBe(true);
+    }
   });
 });

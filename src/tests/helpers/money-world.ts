@@ -91,6 +91,7 @@ export async function addCountry(
       currentPopulation: 1,
       currentGdpPerCapita: 1,
       currentTotalGdp: 1,
+      baselineDate: new Date(Date.UTC(2040, 0, 1)),
       economicTier: "Developing",
       populationTier: "Micro",
     },

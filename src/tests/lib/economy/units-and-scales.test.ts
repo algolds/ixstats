@@ -5,6 +5,7 @@
  *   "inflation rises" consequence above 2% vanished), defaults to 2 and moves by component modifiers in points.
  * - The displayed GDP growth is the engine's rate (tier cap and diminishing returns included), not the static input.
  */
+import { Prisma } from "@prisma/client";
 import { IxStatsCalculator } from "~/lib/economy/calculations";
 import { calculateComponentEconomicModifiers } from "~/lib/government/atomic-utils";
 import { getDefaultEconomicConfig } from "~/lib/config-service";
@@ -84,5 +85,20 @@ describe("effective GDP growth", () => {
     const { calc, stats } = baseline({ gdpPerCapita: 70_000, adjustedGdpGrowth: 0.03 });
     const { newStats } = calc.calculateTimeProgression(stats, ONE_YEAR_LATER, []);
     expect(historyPointData("c1", newStats, ONE_YEAR_LATER).gdpGrowthRate).toBeCloseTo(0.00321, 5);
+  });
+});
+
+describe("schema defaults", () => {
+  const field = (model: string, name: string) =>
+    Prisma.dmmf.datamodel.models
+      .find((m) => m.name === model)!
+      .fields.find((f) => f.name === name)!;
+
+  it("Country.baselineDate has no wall-clock default (every create sets an IxTime baseline)", () => {
+    expect(field("Country", "baselineDate").hasDefaultValue).toBe(false);
+  });
+
+  it("GovernmentStructure.politicalStability defaults to the middle of its 0-100 scale", () => {
+    expect(field("GovernmentStructure", "politicalStability").default).toBe(50);
   });
 });
