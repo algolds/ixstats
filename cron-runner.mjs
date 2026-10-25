@@ -33,6 +33,7 @@ async function main() {
     { recordCronRun, alertCronFailure },
     { db },
     { env },
+    { refreshSharedClock },
   ] = await Promise.all([
     import("./src/server/cron/jobs.js"),
     import("./src/server/cron/scheduler.js"),
@@ -40,6 +41,7 @@ async function main() {
     import("./src/lib/system/cron-runs.js"),
     import("./src/server/db.js"),
     import("./src/env.js"),
+    import("./src/lib/ixtime/shared-clock.js"),
   ]);
 
   // Fail loudly: every job module must import, enabled or not, so a broken path can never
@@ -86,6 +88,8 @@ async function main() {
   const runLocked = async (job) => {
     const startedAt = new Date();
     try {
+      // Run on the Discord bot's clock as the web process adopted it, not this process's own
+      await refreshSharedClock(db, { force: true });
       const outcome = await withJobLock(db, job.lockName, runs.get(job.name), {
         timeoutMs: job.timeoutMs,
       });

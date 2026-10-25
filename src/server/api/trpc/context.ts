@@ -7,6 +7,7 @@ import { getAuth, verifyToken } from "@clerk/nextjs/server";
 import type { PrismaClient } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import { db, isDatabaseReadOnly } from "~/server/db";
+import { refreshSharedClock } from "~/lib/ixtime/shared-clock";
 import { Cache } from "~/lib/cache";
 import { UnauthorizedError } from "~/lib/app-error";
 import { UserManagementService, isSystemOwner } from "~/lib/auth";
@@ -192,6 +193,9 @@ async function loadContextUser(userId: string): Promise<ContextUser | null> {
 export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequest }) => {
   const state: AuthState = { auth: null };
   let user: ContextUser | null = null;
+
+  // The bot's clock as persisted by whichever process adopted it (read at most every 30 s)
+  await refreshSharedClock(db);
 
   try {
     // Try to get auth from request first (for app router)

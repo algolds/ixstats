@@ -143,6 +143,9 @@ The `IxTime` class provides synchronous static methods for fast in-process time 
 - `IxTime.predictIxTimeAfterRealHours(realHours, multiplier?)`: Forward-predicts in-game timestamp given real hours elapsed.
 - `IxTime.setNaturalMultiplier(multiplier)`: Restores speed to the canonical era multiplier or flags custom manual override.
 
+### Shared clock across processes (`shared-clock.ts`)
+The bot pushes its clock to one web process (`/api/ixtime/sync-from-bot`, the admin sync and set-override/set-natural routes), which adopts it in memory and persists the override state (`IxTime.getClockState()`) to the `ixtime_clock_state` SystemConfig row. Every other server process loads it with `refreshSharedClock(db)`: the tRPC context at most once per 30 s, and the cron runner before every job (forced). So stored stats, history months, elections, budget years and drift run on the same "now" as MyCountry's on-read numbers, and a restarted web process picks the override up again without waiting for the bot. No row (the bot never pushed an override) leaves each process on the canonical clock. Server-only; the browser keeps using `IxTime` alone.
+
 ### 2. `sync.ts` — Synchronization Manager (`IxTimeSyncManager`)
 A server-side singleton managing cross-service consistency:
 - **Sync Targets**: Registers the Discord bot (`http://localhost:3001` or `IXTIME_BOT_URL`).

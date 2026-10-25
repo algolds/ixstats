@@ -3,6 +3,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
+import { persistSharedClock } from "~/lib/ixtime/shared-clock";
 import type { AdminPageBotStatusView } from "~/types/ixstats";
 
 export const adminBotRouter = createTRPCRouter({
@@ -50,9 +51,10 @@ export const adminBotRouter = createTRPCRouter({
   }),
 
   // Bot control operations
-  syncBot: adminProcedure.mutation(async ({ ctx: _ctx }) => {
+  syncBot: adminProcedure.mutation(async ({ ctx }) => {
     try {
       const result = await IxTime.syncWithBot();
+      if (result.success) await persistSharedClock(ctx.db);
       return result;
     } catch (error) {
       console.error("Failed to sync bot:", error);
