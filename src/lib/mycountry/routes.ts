@@ -1,3 +1,5 @@
+import { COMPLIANCE_GOVERNMENT_TYPE, COMPLIANCE_NO_GOVERNMENT } from "./compliance";
+
 /**
  * MyCountry destinations other apps link to. Plain paths: Next's `<Link>` and router add the base
  * path themselves.
@@ -64,7 +66,8 @@ export const MYCOUNTRY_ECONOMY_PATH = "/mycountry/economy";
 
 /**
  * Where the profile checklist's Review goes for its first incomplete section: identity and the
- * government type are edited in the editor, budget, economy and taxes in their consoles.
+ * form of government are edited in the editor, departments and allocations in the National budget
+ * tab, tax rates in the Fiscal policy tab.
  */
 export function complianceReviewHref(
   section: { id: string; missing: readonly string[] } | undefined
@@ -72,12 +75,10 @@ export function complianceReviewHref(
   switch (section?.id) {
     case "government": {
       const needsEditor = section.missing.some(
-        (item) => item === "Government type" || item.startsWith("Create a government structure")
+        (item) => item === COMPLIANCE_GOVERNMENT_TYPE || item === COMPLIANCE_NO_GOVERNMENT
       );
       return needsEditor ? editorHref("government") : MYCOUNTRY_BUDGET_PATH;
     }
-    case "economy":
-      return MYCOUNTRY_ECONOMY_PATH;
     case "taxes":
       return MYCOUNTRY_TAX_PATH;
     default:
