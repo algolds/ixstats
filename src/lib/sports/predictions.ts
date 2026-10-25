@@ -1,5 +1,4 @@
 import type { PrismaClient } from "@prisma/client";
-import { IxTime } from "../ixtime";
 import { exchangeService } from "~/lib/vault/exchange-service";
 
 type PredictionOutcome = "home" | "away" | "draw";
@@ -67,7 +66,7 @@ export async function resolveMatchPredictions(
     const open = await prisma.sportPrediction.findMany({ where: { matchId, status: "open" } });
     if (open.length === 0) return;
 
-    const now = IxTime.getCurrentIxTime();
+    const now = Date.now();
     const settlements = computeParimutuel(open, outcome);
     const userById = new Map(open.map((p) => [p.id, p.userId]));
 

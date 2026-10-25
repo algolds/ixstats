@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Link as LinkIcon } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { timeAgo } from "~/lib/format/compact";
-import { IxTime } from "~/lib/ixtime";
 import { postHref } from "~/lib/thinkpages-forum/links";
 import type { PersonaType } from "~/lib/thinkpages-forum/persona-type";
 import { AuthorLine } from "../AuthorMark";
@@ -40,9 +39,7 @@ interface PostHeaderProps {
 }
 
 const absolute = (date: Date) =>
-  `${date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })} · IxTime ${IxTime.formatIxTime(
-    IxTime.convertToIxTime(date.getTime())
-  )}`;
+  date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 
 /**
  * A post's header: the avatar, the shared author line (name, flag or voice chip, role and state badges), the relative

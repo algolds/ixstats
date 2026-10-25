@@ -14,7 +14,6 @@ import {
   protectedProcedure,
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
-import { IxTime } from "~/lib/ixtime";
 import { notificationHooks } from "~/lib/notifications/hooks";
 import {
   pickDisplayName,
@@ -632,8 +631,8 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
           content: input.content,
           hashtags: JSON.stringify(allTags),
           visibility: "thinktank",
-          // Realm-board posts also show in the realm feed, which orders by real time (as main-feed posts are).
-          ixTimeTimestamp: board ? new Date() : new Date(IxTime.getCurrentIxTime()),
+          // Forum posts are stamped with real time, like every other feed post.
+          ixTimeTimestamp: new Date(),
           mediaAttachments: input.mediaUrls
             ? {
                 create: input.mediaUrls.map((url) => ({

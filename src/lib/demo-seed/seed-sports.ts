@@ -6,7 +6,6 @@
  */
 
 import { type PrismaClient } from "@prisma/client";
-import { IxTime } from "../ixtime";
 import { seedCaphirianSoccerLeague, seedYonderreSoccerLeague } from "./sports/seed-soccer";
 import { seedOHLHockeyLeague } from "./sports/seed-hockey";
 import { seedF1League } from "./sports/seed-f1";
@@ -29,7 +28,7 @@ export async function seedSportsLeagues(
   options?: SeedingOptions
 ): Promise<number> {
   let count = 0;
-  const ixNow = IxTime.getCurrentIxTime();
+  const nowMs = Date.now();
 
   if (!options) {
     const existing = await prisma.sportLeague.count({ where: { isCanonical: true } });
@@ -45,19 +44,19 @@ export async function seedSportsLeagues(
   const seedBoxing = options ? !!options.seedBoxing : true;
 
   if (seedCaphirian) {
-    count += await seedCaphirianSoccerLeague(prisma, userId, ixNow);
+    count += await seedCaphirianSoccerLeague(prisma, userId, nowMs);
   }
   if (seedYonderre) {
-    count += await seedYonderreSoccerLeague(prisma, userId, ixNow);
+    count += await seedYonderreSoccerLeague(prisma, userId, nowMs);
   }
   if (seedOHL) {
-    count += await seedOHLHockeyLeague(prisma, userId, ixNow);
+    count += await seedOHLHockeyLeague(prisma, userId, nowMs);
   }
   if (seedF1) {
-    count += await seedF1League(prisma, userId, ixNow);
+    count += await seedF1League(prisma, userId, nowMs);
   }
   if (seedBoxing) {
-    count += await seedBoxingLeague(prisma, userId, ixNow);
+    count += await seedBoxingLeague(prisma, userId, nowMs);
   }
 
   return count;

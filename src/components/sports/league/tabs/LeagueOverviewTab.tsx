@@ -175,7 +175,7 @@ export function LeagueOverviewTab({
 
                 {nextMatchIxTime && (
                   <div className="pt-1">
-                    <NextMatchCountdown targetIxTime={nextMatchIxTime} />
+                    <NextMatchCountdown targetMs={nextMatchIxTime} />
                   </div>
                 )}
 

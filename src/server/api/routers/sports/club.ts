@@ -16,7 +16,6 @@ import {
 import { TRPCError } from "@trpc/server";
 import { exchangeService } from "~/lib/vault/exchange-service";
 import { teamWageBill } from "~/lib/sports";
-import { IxTime } from "~/lib/ixtime";
 import { createStorytellerEffect } from "~/lib/economy/storyteller-effects";
 import type { LiveTraceEvent } from "~/lib/sports/live-match";
 import { requireOwnedTeam } from "~/server/api/routers/sports/_shared";
@@ -391,8 +390,8 @@ export const sportsClubRouter = createTRPCRouter({
     }),
 
   getLiveActivities: protectedProcedure.query(async ({ ctx }) => {
-    const LIVE_WINDOW_IXMS = 10 * 60 * 1000;
-    const now = IxTime.getCurrentIxTime();
+    const LIVE_WINDOW_MS = 10 * 60 * 1000;
+    const now = Date.now();
 
     const myTeams = await ctx.db.sportTeam.findMany({
       where: { ownerUserId: ctx.user.id },
@@ -404,7 +403,7 @@ export const sportsClubRouter = createTRPCRouter({
     const matches = await ctx.db.sportMatch.findMany({
       where: {
         status: "completed",
-        resolvedIxTime: { gte: now - LIVE_WINDOW_IXMS, lte: now },
+        resolvedIxTime: { gte: now - LIVE_WINDOW_MS, lte: now },
         OR: [{ homeTeamId: { in: teamIds } }, { awayTeamId: { in: teamIds } }],
       },
       include: {
@@ -421,7 +420,7 @@ export const sportsClubRouter = createTRPCRouter({
       leagueName: m.season.league.name,
       sportPreset: m.season.league.sportPreset,
       resolvedIxTime: m.resolvedIxTime!,
-      windowMs: LIVE_WINDOW_IXMS,
+      windowMs: LIVE_WINDOW_MS,
       homeTeamId: m.homeTeamId,
       awayTeamId: m.awayTeamId,
       homeTeam: m.homeTeam,

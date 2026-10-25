@@ -26,7 +26,7 @@ const { caphirianTeams: CAPHIRIAN_TEAMS, yonderreTeams: YONDERRE_TEAMS } = sport
 export async function seedCaphirianSoccerLeague(
   prisma: Prisma,
   userId: string,
-  ixNow: number
+  nowMs: number
 ): Promise<number> {
   let count = 0;
   const leagueSeed = hashString("Caphirian Imperial League");
@@ -80,7 +80,7 @@ export async function seedCaphirianSoccerLeague(
         shortName: config.name.split(" ")[0] ?? config.name,
         city: "Venceia",
         color: config.color,
-        foundedIxTime: ixNow - 1440 * 365 * (40 + (i % 25)),
+        foundedIxTime: nowMs - 1440 * 365 * (40 + (i % 25)),
         patronSaint: config.patronSaint,
         nationId: caphCountryId,
       },
@@ -137,8 +137,8 @@ export async function seedCaphirianSoccerLeague(
     teams.push({ id: team.id, name: config.name, players, createdPlayers, coach });
   }
 
-  const seasonStart = ixNow - 259200;
-  const seasonEnd = ixNow - 7200;
+  const seasonStart = nowMs - 259200;
+  const seasonEnd = nowMs - 7200;
   const season = await prisma.sportSeason.create({
     data: {
       leagueId: league.id,
@@ -294,7 +294,7 @@ export async function seedCaphirianSoccerLeague(
 export async function seedYonderreSoccerLeague(
   prisma: Prisma,
   userId: string,
-  ixNow: number
+  nowMs: number
 ): Promise<number> {
   let count = 0;
   const leagueSeed = hashString("Ligue Yonderoise");
@@ -335,7 +335,7 @@ export async function seedYonderreSoccerLeague(
         shortName,
         city: "Toubourg",
         color: meta.color,
-        foundedIxTime: ixNow - 1440 * 365 * (25 + (i % 15)),
+        foundedIxTime: nowMs - 1440 * 365 * (25 + (i % 15)),
         nationId: yondCountryId,
       },
     });

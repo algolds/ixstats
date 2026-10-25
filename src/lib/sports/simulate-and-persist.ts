@@ -1,7 +1,7 @@
 /**
  * One path for "simulate a scheduled SportMatch and persist it" (plans 345 Step 1 + 320).
  *
- * The match-day button, the single-match button, the full-season sim and the IxTime
+ * The match-day button, the single-match button, the full-season sim and the auto-advance
  * cron all call simulateAndPersistMatch, so a match scores the same whichever path
  * advances it (knockout bouts go through simulateAndPersistBout, same snapshot + seed):
  *   1. build a replayable SimulationSnapshot (seed, ratings, rosters, morale, tactics,
@@ -14,7 +14,6 @@
  * Call it inside `db.$transaction` so the claim and the standings commit together.
  */
 import type { Prisma, StorytellerEffect } from "@prisma/client";
-import { IxTime } from "../ixtime";
 import { resolveMatch } from "./resolver";
 import { createRNG, seedFromString } from "./rng";
 import { computeTeamRatingVector, getTeamModifiers } from "./team-rating";
@@ -362,7 +361,7 @@ async function buildSimulationSnapshot(
     homeAdvantage: (rivalry?.intensity ?? 0) > 70 ? 65 : 55,
     homeTeamSnapshot: snapshotTeam(match.homeTeam, league.sportPreset, homeModifiers),
     awayTeamSnapshot: snapshotTeam(match.awayTeam, league.sportPreset, awayModifiers),
-    capturedIxTime: IxTime.getCurrentIxTime(),
+    capturedIxTime: Date.now(),
   };
   return { snapshot, rivalry: rivalry ?? null };
 }

@@ -11,7 +11,6 @@ import {
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { persistSeasonSchedule } from "~/lib/sports";
-import { IxTime } from "~/lib/ixtime";
 import { recalculateStandings } from "./helpers";
 import { TEAM_BADGE } from "~/server/api/routers/sports/_shared";
 import { assertOwnsLeague, viewerCanManageLeague } from "~/server/api/routers/sports/league-access";
@@ -133,7 +132,7 @@ export const leaguesScheduleRouter = createTRPCRouter({
             homeScore: input.homeScore,
             awayScore: input.awayScore,
             status: "completed",
-            resolvedIxTime: IxTime.getCurrentIxTime(),
+            resolvedIxTime: Date.now(),
           },
         });
 
@@ -180,7 +179,7 @@ export const leaguesScheduleRouter = createTRPCRouter({
 
         await persistSeasonSchedule(ctx.db, {
           seasonId: season.id,
-          startIxTime: IxTime.getCurrentIxTime(),
+          startIxTime: Date.now(),
           league: season.league,
           teams: season.league.teams,
         });

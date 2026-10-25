@@ -11,7 +11,6 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
-import { IxTime } from "~/lib/ixtime";
 import { getExchangeConfig } from "~/lib/vault/exchange-config";
 import {
   ExchangeError,
@@ -104,7 +103,7 @@ export async function refreshFairValue(tx: Db, companyId: string): Promise<void>
       companyId,
       fairValue: breakdown.fairValue,
       breakdown: { ...breakdown },
-      recordedIxTime: IxTime.getCurrentIxTime(),
+      recordedIxTime: Date.now(),
     },
   });
 }
@@ -173,7 +172,7 @@ export async function foundCompany(db: PrismaClient, input: FoundCompanyInput) {
         });
       }
 
-      const now = IxTime.getCurrentIxTime();
+      const now = Date.now();
       const pricePerShare = round2(cfg.charterFee / FOUNDER_SHARES);
       const company = await tx.company.create({
         data: {

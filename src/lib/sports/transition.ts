@@ -1,5 +1,4 @@
 import { type PrismaClient, type Prisma as PrismaTypes } from "@prisma/client";
-import { IxTime } from "../ixtime";
 import { getPreset, getSportEmoji, type SportPresetKey } from "./presets";
 import { processAging } from "./aging";
 import { generateCoach, generateRookieClass } from "./talent";
@@ -539,7 +538,7 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
     }
 
     const nextSeasonNumber = season.seasonNumber + 1;
-    const startIxTime = IxTime.getCurrentIxTime();
+    const startIxTime = Date.now();
     const newSeason = await tx.sportSeason.create({
       data: {
         leagueId: season.leagueId,
@@ -568,7 +567,7 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
       data: {
         seasonId: newSeason.id,
         players: rookies as any,
-        generatedIxTime: IxTime.getCurrentIxTime(),
+        generatedIxTime: Date.now(),
       },
     });
 
@@ -835,7 +834,7 @@ async function createBrackets(
   stageId: number,
   pairings: Array<[string, string]>
 ) {
-  const ixNow = IxTime.getCurrentIxTime();
+  const nowMs = Date.now();
   for (const [i, [team1Id, team2Id]] of pairings.entries()) {
     await prisma.sportBracket.create({
       data: {
@@ -845,7 +844,7 @@ async function createBrackets(
         fighter2Id: team2Id,
         stage: stageId,
         status: "scheduled",
-        scheduledIxTime: ixNow + (i + 1) * 3600000,
+        scheduledIxTime: nowMs + (i + 1) * 3600000,
       } as any,
     });
   }
@@ -931,7 +930,7 @@ export async function transitionToNextStage(prisma: Prisma, seasonId: string): P
             : [];
       await createBrackets(prisma, seasonId, nextStage.id, pairings);
     } else if (nextStage.type === "league" || nextStage.type === "round_robin") {
-      const ixNow = IxTime.getCurrentIxTime();
+      const nowMs = Date.now();
       for (const fix of roundRobinFixtures(qualified)) {
         await prisma.sportMatch.create({
           data: {
@@ -941,7 +940,7 @@ export async function transitionToNextStage(prisma: Prisma, seasonId: string): P
             awayTeamId: fix.awayTeamId,
             stage: nextStage.id,
             status: "scheduled",
-            scheduledIxTime: ixNow + fix.matchDay * 86400000,
+            scheduledIxTime: nowMs + fix.matchDay * 86400000,
           } as any,
         });
       }

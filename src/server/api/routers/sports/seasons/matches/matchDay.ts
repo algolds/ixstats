@@ -2,7 +2,7 @@
  * Sports Seasons — Match Day Simulation Router
  *
  * Both procedures go through simulateAndPersistMatch (seeded, snapshotted, atomically
- * claimed) — the same path as the full-season sim and the IxTime cron.
+ * claimed) — the same path as the full-season sim and the auto-advance cron.
  */
 
 import { z } from "zod";

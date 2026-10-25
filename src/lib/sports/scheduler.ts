@@ -1,22 +1,22 @@
 import type { PrismaClient } from "@prisma/client";
 import type { ArchetypeType } from "./presets";
 
-const ONE_IXDAY_MS = 86_400_000;
+const ONE_DAY_MS = 86_400_000;
 
 /**
- * IxTime gap between consecutive matchdays, read from a league's `settings` JSON.
- * Defaults to 1 IxDay (current behavior). Set `matchIntervalDays: 7` for a
- * weekly (in IxTime) cadence.
+ * Real-time gap between consecutive matchdays, read from a league's `settings` JSON.
+ * Defaults to 1 day. Set `matchIntervalDays: 7` for a weekly cadence. Sports are
+ * platform-wide, so they run on real time, not on a realm clock.
  */
 export function matchIntervalMs(settings: unknown): number {
   const days = (settings as { matchIntervalDays?: number } | null)?.matchIntervalDays;
-  return (typeof days === "number" && days > 0 ? days : 1) * ONE_IXDAY_MS;
+  return (typeof days === "number" && days > 0 ? days : 1) * ONE_DAY_MS;
 }
 
-/** IxTime gap between races; defaults to 3 IxDays. Override via `raceIntervalDays`. */
+/** Real-time gap between races; defaults to 3 days. Override via `raceIntervalDays`. */
 export function raceIntervalMs(settings: unknown): number {
   const days = (settings as { raceIntervalDays?: number } | null)?.raceIntervalDays;
-  return (typeof days === "number" && days > 0 ? days : 3) * ONE_IXDAY_MS;
+  return (typeof days === "number" && days > 0 ? days : 3) * ONE_DAY_MS;
 }
 
 interface Fixture {

@@ -17,7 +17,6 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
-import { IxTime } from "~/lib/ixtime";
 import {
   ExchangeError,
   earnSovereignsTx,
@@ -192,7 +191,7 @@ interface ContractTerms {
   description?: string;
   sectorKey: SectorKey;
   value: number;
-  /** Real days bids stay open (converted to IxTime for `endIxTime`). */
+  /** Real days bids stay open. */
   biddingDays: number;
   requestId: string;
 }
@@ -213,7 +212,7 @@ function assertValue(value: number) {
 }
 
 function contractData(input: ContractTerms, key: string) {
-  const now = IxTime.getCurrentIxTime();
+  const now = Date.now();
   return {
     title: input.title.trim(),
     description: input.description?.trim() || null,
@@ -223,7 +222,7 @@ function contractData(input: ContractTerms, key: string) {
     status: "OPEN",
     issuerUserId: input.userId,
     createdIxTime: now,
-    endIxTime: now + input.biddingDays * DAY_MS * IxTime.getTimeMultiplier(),
+    endIxTime: now + input.biddingDays * DAY_MS,
     idempotencyKey: key,
   };
 }
@@ -365,7 +364,7 @@ export async function placeBid(db: PrismaClient, input: PlaceBidInput) {
     const company = await requireOwnedCompany(tx, input.companyId, input.userId);
     const contract = await tx.contract.findUnique({ where: { id: input.contractId } });
     if (!contract) throw new ExchangeError("NOT_FOUND", "Contract not found");
-    if (contract.status !== "OPEN" || contract.endIxTime <= IxTime.getCurrentIxTime()) {
+    if (contract.status !== "OPEN" || contract.endIxTime <= Date.now()) {
       throw new ExchangeError("CONFLICT", "Bidding on this contract has closed");
     }
     if (contract.issuerCompanyId === input.companyId || contract.issuerUserId === input.userId) {
@@ -391,7 +390,7 @@ export async function placeBid(db: PrismaClient, input: PlaceBidInput) {
         contractId: contract.id,
         companyId: input.companyId,
         amount: input.amount,
-        createdIxTime: IxTime.getCurrentIxTime(),
+        createdIxTime: Date.now(),
       },
     });
   });
@@ -491,7 +490,7 @@ export async function completeContract(
     await requireIssuer(tx, input.contractId, input.userId);
     const before = await transition(tx, input.contractId, "AWARDED", "COMPLETED", {
       escrow: 0,
-      closedIxTime: IxTime.getCurrentIxTime(),
+      closedIxTime: Date.now(),
     });
     await payContractor(tx, before, before.escrow);
     const founder = await founderOf(tx, before.winnerCompanyId);
@@ -518,7 +517,7 @@ export async function cancelContract(
     await requireIssuer(tx, input.contractId, input.userId);
     const before = await transition(tx, input.contractId, "OPEN", "CANCELLED", {
       escrow: 0,
-      closedIxTime: IxTime.getCurrentIxTime(),
+      closedIxTime: Date.now(),
     });
     await tx.contractBid.updateMany({
       where: { contractId: input.contractId },
@@ -540,7 +539,7 @@ export async function releaseContract(
     await requireContractor(tx, input.contractId, input.userId);
     const before = await transition(tx, input.contractId, "AWARDED", "CANCELLED", {
       escrow: 0,
-      closedIxTime: IxTime.getCurrentIxTime(),
+      closedIxTime: Date.now(),
     });
     await refundIssuer(tx, before, before.escrow, "close");
     await penaliseContractor(tx, before.winnerCompanyId!, before.awardedBidId);
@@ -604,7 +603,7 @@ export async function resolveDispute(
     const before = await transition(tx, input.contractId, "DISPUTED", to, {
       escrow: 0,
       resolutionNote: input.note.trim(),
-      closedIxTime: IxTime.getCurrentIxTime(),
+      closedIxTime: Date.now(),
     });
     if (input.outcome === "PAY_CONTRACTOR") {
       await payContractor(tx, before, before.escrow);

@@ -98,10 +98,7 @@ export function RelativeTimestamp({ timestamp }: { timestamp: Date | string | nu
   const hoursDiff = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 
   return (
-    <span
-      className="text-label-secondary text-body cursor-help"
-      title={`IxTime: ${date.toLocaleString()}`}
-    >
+    <span className="text-label-secondary text-body cursor-help" title={date.toLocaleString()}>
       {hoursDiff > 24 ? date.toLocaleDateString() : relativeTime}
     </span>
   );

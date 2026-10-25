@@ -6,7 +6,7 @@ import type { MatchDayResultLine, StandingMover } from "./feed-bulletins";
  * then asynchronously enrich it with LLM narration and mirror it to Discord.
  *
  * Best-effort: never throws into the simulation. Shared by the manual
- * `simulateMatchDay` mutation and the IxTime auto-advance cron so both paths
+ * `simulateMatchDay` mutation and the auto-advance cron so both paths
  * post identical bulletins.
  */
 export async function postMatchDayBulletin(

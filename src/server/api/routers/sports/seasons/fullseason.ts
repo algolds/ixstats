@@ -3,7 +3,6 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { assertCanManageLeague } from "~/server/api/routers/sports/league-access";
-import { IxTime } from "~/lib/ixtime";
 import { resolveRace, loadLeagueDrivers, transitionToNextStage, simpleHash } from "~/lib/sports";
 import { outcomeFromScores, resolveMatchPredictions } from "~/lib/sports/predictions";
 import {
@@ -101,7 +100,7 @@ async function createNextRound(
   nextRound: number,
   winners: string[]
 ) {
-  const scheduledIxTime = IxTime.getCurrentIxTime();
+  const scheduledIxTime = Date.now();
   const pow2 = 2 ** Math.ceil(Math.log2(winners.length));
   for (let i = 0; i < pow2 / 2; i++) {
     const fighter1Id = winners[i];
@@ -144,7 +143,7 @@ async function simulateStageBrackets(
       if (completedInRound === 0) return;
     }
 
-    // Same seeded, snapshotted, atomically-claimed bout path as the IxTime cron.
+    // Same seeded, snapshotted, atomically-claimed bout path as the auto-advance cron.
     for (const bout of pending) {
       const fighter1 = teamsMap.get(bout.fighter1Id);
       const fighter2 = teamsMap.get(bout.fighter2Id);
@@ -248,7 +247,7 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
 
         await ctx.db.sportSeason.update({
           where: { id: input.seasonId },
-          data: { status: "completed", endIxTime: IxTime.getCurrentIxTime(), championTeamId },
+          data: { status: "completed", endIxTime: Date.now(), championTeamId },
         });
 
         return {

@@ -279,6 +279,23 @@ describe("SL-1: group posts", () => {
       expect.objectContaining({ data: expect.objectContaining({ accountId: "acc_mine" }) })
     );
   });
+
+  it("createGroupPost stamps a ThinkTank post with real time, never IxTime", async () => {
+    const db = makeDb(group({ settings: JSON.stringify({ allowPersonaPosting: true }) }));
+    db.thinkpagesAccount.findFirst.mockResolvedValue({ id: "acc_mine" });
+    db.thinkpagesPost.create.mockResolvedValue({ id: "p1" });
+    const before = Date.now();
+    await callerAs(MEMBER, db).createGroupPost({
+      groupId: "g1",
+      accountId: "acc_mine",
+      content: "hi",
+    });
+    const stamp = (
+      db.thinkpagesPost.create.mock.calls[0][0].data.ixTimeTimestamp as Date
+    ).getTime();
+    expect(stamp).toBeGreaterThanOrEqual(before);
+    expect(stamp).toBeLessThanOrEqual(Date.now());
+  });
 });
 
 describe("SL-2: private group content is for members only", () => {

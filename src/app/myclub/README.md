@@ -6,7 +6,7 @@ Personal franchise management surface of the IxStates sports simulation. Claim a
 MyLeague competition, then manage its roster, tactics, transfers, and finances across seasons.
 MyClub is the **owner-facing** counterpart to MyLeague (the public competition layer).
 
-**Depends on:** MyLeague (`api.sports.*`), IxTime, the Sovereign (₷) credit economy via `exchangeService`.
+**Depends on:** MyLeague (`api.sports.*`), real time (sports run on no realm clock), the Sovereign (₷) credit economy via `exchangeService`.
 All routes require authentication (`AuthenticationGuard` in `layout.tsx`).
 
 ## Routes

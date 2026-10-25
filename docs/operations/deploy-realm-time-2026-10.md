@@ -18,3 +18,18 @@ run_sql() { docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ER
   `NeighborThreatAssessment` 0, `SecurityThreat` 0, `ThreatIncident` 0, `SecurityEvent` 0. Nothing is migrated: the
   assessment and border rows were never written past their defaults, and the one `DefenseBudget` row is replaced by
   the nation's Defense department allocation in the National budget (on the clone it is the E2E Testland test row).
+
+## T3: platform systems on real time
+
+- **In the same window as the realm-time code deploy** (between stopping the old build and starting the new one, with
+  `ixstats-cron` stopped so the sports and exchange jobs don't run against half-converted rows), after
+  `bun run db:backup`: `run_sql scripts/migrations/2026-10-realm-time/t3-platform-real-time.sql`. It converts the
+  exchange and sports `*IxTime` / `ixTime` Float columns from IxTime to real epoch-ms (the inverse of
+  `IxTime.convertToIxTime`, honouring the bot's `ixtime_clock_state` override) and gives ThinkTank posts stamped with
+  IxTime their `createdAt`. Only values above 2035-01-01 convert, so a re-run changes nothing. Dry run on the clone
+  `ixstats_wv1` (2026-10-25, rolled back): `exchange_transactions` 46, `sport_seasons` 7, `sport_matches` 2126,
+  `sport_rookie_classes` 5, `sport_teams` 18 rows; the converted transaction stamps land within 1 ms of `createdAt`;
+  a second pass updates 0 rows.
+- Expect sports to run at half their old real-time pace: `matchIntervalDays` / `raceIntervalDays` and the bracket and
+  playoff gaps were IxTime days (12 real hours at 2x) and are now real days. The exchange keeps its pace: its bidding
+  window, award grace, decision delay and activity window were already real days scaled into IxTime.

@@ -1,7 +1,7 @@
 "use client";
 
 import { api } from "~/trpc/react";
-import { IxTime } from "~/lib/ixtime";
+import { formatMatchDate } from "~/components/sports/league/NextMatchCountdown";
 import { withBasePath } from "~/lib/base-path";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Card } from "~/components/ui/card";
@@ -91,7 +91,7 @@ export function ClubResultsCard({ teamId }: { teamId: string }) {
   }
 
   const { lastMatch, comparison, recent } = data;
-  const fmt = (ix: number | null) => (ix ? IxTime.formatIxTime(ix) : "—");
+  const fmt = (ms: number | null) => (ms ? formatMatchDate(ms) : "—");
 
   return (
     <Card padding="lg" className="space-y-6 overflow-hidden">

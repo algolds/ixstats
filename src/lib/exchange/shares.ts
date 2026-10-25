@@ -16,7 +16,6 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
-import { IxTime } from "~/lib/ixtime";
 import {
   ExchangeError,
   earnSovereignsTx,
@@ -114,7 +113,7 @@ export async function issueShares(
         );
       }
 
-      const now = IxTime.getCurrentIxTime();
+      const now = Date.now();
       const pricePerShare = primaryPricePerShare(company.fairValue, company.sharesOutstanding);
       await tx.company.update({
         where: { id: company.id },
@@ -193,7 +192,7 @@ export async function listShares(
           shares: input.shares,
           sharesListed: input.shares,
           pricePerShare: input.pricePerShare,
-          createdIxTime: IxTime.getCurrentIxTime(),
+          createdIxTime: Date.now(),
           idempotencyKey: key,
         },
       });

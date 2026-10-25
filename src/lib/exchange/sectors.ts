@@ -20,7 +20,6 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
-import { IxTime } from "~/lib/ixtime";
 import {
   ExchangeError,
   earnSovereignsTx,
@@ -110,9 +109,9 @@ export function rebalanceFunds(
 /** Activity per sector right now (see the header for the formula). */
 export async function measureSectorActivity(
   db: Db,
-  nowIx: number
+  nowMs: number
 ): Promise<Record<SectorKey, number>> {
-  const since = nowIx - ACTIVITY_WINDOW_DAYS * DAY_MS * IxTime.getTimeMultiplier();
+  const since = nowMs - ACTIVITY_WINDOW_DAYS * DAY_MS;
   const [companies, contracts] = await Promise.all([
     db.company.findMany({
       where: { status: "ACTIVE" },
@@ -143,10 +142,10 @@ export interface IndexRun {
 /** Recompute every index, rebalance the funds and record history, in one transaction. */
 export async function computeSectorIndices(
   db: PrismaClient,
-  nowIx: number = IxTime.getCurrentIxTime()
+  nowMs: number = Date.now()
 ): Promise<IndexRun[]> {
   await ensureSectorIndices(db);
-  const activity = await measureSectorActivity(db, nowIx);
+  const activity = await measureSectorActivity(db, nowMs);
   return db.$transaction(async (tx) => {
     for (const key of [...SECTOR_KEYS].sort()) await lockSector(tx, key);
     const rows = await tx.sectorIndex.findMany({ where: { sectorKey: { in: [...SECTOR_KEYS] } } });
@@ -168,10 +167,10 @@ export async function computeSectorIndices(
       const fund = fromCents(funds.get(n.row.sectorKey) ?? toCents(n.row.fundSovereigns));
       await tx.sectorIndex.update({
         where: { id: n.row.id },
-        data: { value: n.value, baseTotal: n.base, computedIxTime: nowIx, fundSovereigns: fund },
+        data: { value: n.value, baseTotal: n.base, computedIxTime: nowMs, fundSovereigns: fund },
       });
       await tx.sectorIndexHistory.create({
-        data: { sectorKey: n.row.sectorKey, value: n.value, recordedIxTime: nowIx },
+        data: { sectorKey: n.row.sectorKey, value: n.value, recordedIxTime: nowMs },
       });
       runs.push({
         sectorKey: n.row.sectorKey,

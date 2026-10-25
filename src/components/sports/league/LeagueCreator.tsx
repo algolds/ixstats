@@ -245,7 +245,7 @@ export function LeagueCreator({
       settings.raceCount = raceCount;
     }
 
-    // IxTime days between matchdays — drives the background auto-advance cadence.
+    // Real days between matchdays: drives the background auto-advance cadence.
     settings.matchIntervalDays = matchIntervalDays;
 
     try {
@@ -446,7 +446,7 @@ export function LeagueCreator({
       {/* Match cadence (table-based archetypes) */}
       {!isCircuit && !isBoxing && (
         <div className="space-y-2">
-          <Label htmlFor="match-interval">IxDays between matchdays</Label>
+          <Label htmlFor="match-interval">Days between matchdays</Label>
           <Input
             id="match-interval"
             type="number"
@@ -460,11 +460,8 @@ export function LeagueCreator({
             }}
           />
           <p className="text-label-secondary text-footnote">
-            Matches auto-resolve in the background on the IxTime clock. {matchIntervalDays} IxDay
-            {matchIntervalDays === 1 ? "" : "s"} ≈ {(matchIntervalDays / 2).toLocaleString()}{" "}
-            real-world day
-            {matchIntervalDays === 2 ? "" : "s"} between matchdays. Use 7 for a weekly (in-world)
-            schedule.
+            Matches auto-resolve in the background, {matchIntervalDays} day
+            {matchIntervalDays === 1 ? "" : "s"} apart. Use 7 for a weekly schedule.
           </p>
         </div>
       )}

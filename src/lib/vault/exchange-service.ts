@@ -23,7 +23,6 @@
 
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { ConflictError } from "~/lib/app-error";
-import { IxTime } from "~/lib/ixtime";
 import { getExchangeConfig } from "./exchange-config";
 
 /** Sovereign ledger transaction types (stored as String, matching VaultTransaction.type). */
@@ -158,7 +157,7 @@ export async function getOrCreateWallet(userIdOrClerkId: string, db: Db) {
         balanceAfter: seed,
         type: "ADMIN_ADJUSTMENT",
         source: "WALLET_SEED",
-        ixTime: IxTime.getCurrentIxTime(),
+        ixTime: Date.now(),
         idempotencyKey: `exchange:wallet_seed:${user.id}`,
       },
     });
@@ -232,7 +231,7 @@ export async function earnSovereignsTx(
       type: input.type,
       source: input.source,
       metadata: toJson(input.metadata),
-      ixTime: IxTime.getCurrentIxTime(),
+      ixTime: Date.now(),
       idempotencyKey: input.idempotencyKey ?? null,
     },
   });
@@ -280,7 +279,7 @@ export async function spendSovereignsTx(
       type: input.type,
       source: input.source,
       metadata: toJson(input.metadata),
-      ixTime: IxTime.getCurrentIxTime(),
+      ixTime: Date.now(),
       idempotencyKey: input.idempotencyKey ?? null,
     },
   });

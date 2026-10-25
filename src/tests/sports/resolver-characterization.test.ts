@@ -12,7 +12,6 @@
 import { beforeEach, describe, it, expect, jest } from "@jest/globals";
 import type { Prisma } from "@prisma/client";
 import { createHash } from "crypto";
-import { IxTime } from "~/lib/ixtime";
 import { createRNG, resolveMatch } from "~/lib/sports/resolver";
 import type { ExtendedMatchResult, TeamRatingVector } from "~/lib/sports/types";
 import type { RosterPlayer } from "~/lib/sports/resolvers";
@@ -428,7 +427,7 @@ const base = {
 describe("computeLiveMatchState", () => {
   it("mid-broadcast reveals only events up to the current minute", () => {
     // 50% through 100ms window -> minute 40 of 80 -> first goal (t=10) only
-    const s = computeLiveMatchState({ ...base, nowIxTime: 1050 });
+    const s = computeLiveMatchState({ ...base, nowMs: 1050 });
     expect(s.minute).toBe(40);
     expect(s.homeScore).toBe(1);
     expect(s.awayScore).toBe(0);
@@ -436,7 +435,7 @@ describe("computeLiveMatchState", () => {
   });
 });
 
-const FIXED_IXTIME = 1_900_000_000_000;
+const FIXED_IXTIME = 1_790_000_000_000; // real epoch-ms: sports run on real time
 const POSITIONS = ["GK", "CB", "CB", "FB", "FB", "CM", "CM", "CM", "AM", "W", "ST", "ST"];
 
 function team(
@@ -598,7 +597,7 @@ function claimArgs(fake: ReturnType<typeof fakeDb>): ClaimArgs {
 describe("simulateAndPersistMatch", () => {
   beforeEach(() => {
     jest.restoreAllMocks();
-    jest.spyOn(IxTime, "getCurrentIxTime").mockReturnValue(FIXED_IXTIME);
+    jest.spyOn(Date, "now").mockReturnValue(FIXED_IXTIME);
   });
 
   it("persists an identical result + snapshot for the same match, whatever the roster order", async () => {
@@ -665,7 +664,7 @@ describe("simulateAndPersistBout", () => {
 
   beforeEach(() => {
     jest.restoreAllMocks();
-    jest.spyOn(IxTime, "getCurrentIxTime").mockReturnValue(FIXED_IXTIME);
+    jest.spyOn(Date, "now").mockReturnValue(FIXED_IXTIME);
   });
 
   it("claims a bout once, persists the same result on every run and replays it from its stored snapshot", async () => {

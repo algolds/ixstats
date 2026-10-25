@@ -16,7 +16,6 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
-import { IxTime } from "~/lib/ixtime";
 import { ExchangeError } from "~/lib/vault/exchange-service";
 import { SECTOR_KEYS, refreshFairValue, requireOwnedCompany, type SectorKey } from "./companies";
 import { DAY_MS } from "./contracts";
@@ -101,7 +100,7 @@ export async function submitDecision(db: PrismaClient, input: SubmitDecisionInpu
         companyId: company.id,
         type: input.type,
         payload: { ...payload },
-        submittedIxTime: IxTime.getCurrentIxTime(),
+        submittedIxTime: Date.now(),
       },
     });
     await refreshFairValue(tx, company.id);
@@ -115,9 +114,9 @@ export async function submitDecision(db: PrismaClient, input: SubmitDecisionInpu
  */
 export async function resolveDueDecisions(
   db: PrismaClient,
-  nowIx: number = IxTime.getCurrentIxTime()
+  nowMs: number = Date.now()
 ): Promise<number> {
-  const cutoff = nowIx - DECISION_DELAY_DAYS * DAY_MS * IxTime.getTimeMultiplier();
+  const cutoff = nowMs - DECISION_DELAY_DAYS * DAY_MS;
   const due = await db.companyDecision.findMany({
     where: { appliedIxTime: null, submittedIxTime: { lte: cutoff } },
     take: 500,
@@ -133,7 +132,7 @@ export async function resolveDueDecisions(
           : { sectorKey: payload.sectorKey ?? null };
       const { count } = await tx.companyDecision.updateMany({
         where: { id: d.id, appliedIxTime: null },
-        data: { appliedIxTime: nowIx, effect },
+        data: { appliedIxTime: nowMs, effect },
       });
       if (count !== 1) return false;
       const company = await tx.company.findUnique({

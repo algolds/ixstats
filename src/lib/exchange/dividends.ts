@@ -10,7 +10,6 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
-import { IxTime } from "~/lib/ixtime";
 import { ExchangeError, earnSovereignsTx, isUniqueViolation } from "~/lib/vault/exchange-service";
 import { refreshFairValue, requireOwnedCompany } from "./companies";
 import { assertExchangeOpen, type Db } from "./guards";
@@ -79,7 +78,7 @@ export async function declareDividend(
           amount: paid,
           shareCount: holders.reduce((s, h) => s + h.shares, 0),
           holderCount: split.payouts.length,
-          ixTime: IxTime.getCurrentIxTime(),
+          ixTime: Date.now(),
           idempotencyKey: key,
         },
       });
