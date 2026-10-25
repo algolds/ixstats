@@ -72,7 +72,7 @@ describe("politics-drift component effects", () => {
 
   it("recomputes political metrics from base + components instead of compounding", async () => {
     const { db, structure } = fakeDb({
-      politicalStability: 0.5,
+      politicalStability: 50,
       democracyIndex: 50,
       governmentEffectiveness: 50,
       ruleOfLaw: 50,
@@ -81,7 +81,8 @@ describe("politics-drift component effects", () => {
 
     await run(db);
     const afterFirst = { ...structure };
-    expect(afterFirst.politicalStability).toBeGreaterThan(0.5);
+    // 0-100 scale: 2 Power Distribution (+3 each) and 1 Legitimacy (+2.5) component.
+    expect(afterFirst.politicalStability).toBeCloseTo(58.5, 9);
     expect(afterFirst.democracyIndex).toBeGreaterThan(50);
 
     await run(db);
@@ -93,7 +94,7 @@ describe("politics-drift component effects", () => {
 
   it("carries an event delta applied between runs", async () => {
     const { db, structure } = fakeDb({
-      politicalStability: 0.5,
+      politicalStability: 50,
       democracyIndex: 50,
       governmentEffectiveness: 50,
       ruleOfLaw: 50,
@@ -109,7 +110,7 @@ describe("politics-drift component effects", () => {
 
   it("writes GDP level effects once, keyed per category, and nothing on the next runs", async () => {
     const { db, effects } = fakeDb({
-      politicalStability: 0.5,
+      politicalStability: 50,
       democracyIndex: 50,
       governmentEffectiveness: 50,
       ruleOfLaw: 50,

@@ -23,6 +23,7 @@ import {
   type PoliticalData,
   type RecentPolicy,
   type StabilityMetrics,
+  stabilityInputsFromStored,
 } from "./stability-formulas";
 
 export const STABILITY_NUMERIC_FIELDS = [
@@ -138,7 +139,6 @@ async function computeFormulaStability(
   const country = await db.country.findUnique({
     where: { id: countryId },
     select: {
-      realGDPGrowthRate: true,
       adjustedGdpGrowth: true,
       unemploymentRate: true,
       incomeInequalityGini: true,
@@ -172,10 +172,15 @@ async function computeFormulaStability(
     }),
   ]);
 
+  const units = stabilityInputsFromStored({
+    gdpGrowthDecimal: country.adjustedGdpGrowth,
+    gini: country.incomeInequalityGini,
+    politicalStability: government?.politicalStability,
+  });
   const economicData: EconomicData = {
-    gdpGrowth: country.realGDPGrowthRate ?? country.adjustedGdpGrowth ?? 2.5,
+    gdpGrowth: units.gdpGrowth,
     unemploymentRate: country.unemploymentRate ?? 5.0,
-    giniIndex: country.incomeInequalityGini ?? 35,
+    giniIndex: units.giniIndex,
     inflationRate: country.inflationRate ?? 2.0,
     gdpPerCapita: country.currentGdpPerCapita ?? 35000,
     povertyRate: country.povertyRate ?? 12,
@@ -200,7 +205,7 @@ async function computeFormulaStability(
   };
 
   const politicalData: PoliticalData = {
-    politicalStability: government?.politicalStability ?? 0.5,
+    politicalStability: units.politicalStability,
     politicalPolarization: government?.politicalPolarization ?? 50,
     electionCycle: government?.electionCycle ?? 4,
     democracyIndex: government?.democracyIndex ?? 50,

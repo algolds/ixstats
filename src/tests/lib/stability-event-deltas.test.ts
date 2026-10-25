@@ -22,6 +22,7 @@ jest.mock("~/lib/auth/system-owner-constants", () => ({
 }));
 jest.mock("~/lib/statecraft/stability-formulas", () => ({
   __esModule: true,
+  ...jest.requireActual("~/lib/statecraft/stability-formulas"),
   calculateStabilityMetrics: jest.fn(),
 }));
 jest.mock("~/lib/diplomacy/news-generator", () => ({ generateDiplomaticNews: jest.fn() }));
