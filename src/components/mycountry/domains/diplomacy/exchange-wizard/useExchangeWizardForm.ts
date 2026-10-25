@@ -3,6 +3,8 @@
 import React, { useMemo, useState } from "react";
 import { api } from "~/trpc/react";
 import { useNationClock } from "~/hooks/useNationClock";
+import { useActingRealmId } from "~/hooks/useActingRealmId";
+import { nationsInRealm } from "~/lib/realms/same-realm";
 import { realmDayStart } from "~/components/realms/RealmDayInput";
 import { toWireDate } from "./exchange-wizard-dates";
 import {
@@ -67,12 +69,13 @@ export function useExchangeWizardForm(hostCountry: WizardHostCountry) {
   // Get selected country data
   const selectedCountry = countriesData?.countries?.find((c) => c.id === participantCountryId);
 
-  // Filter countries excluding host
+  // Nations of the host's realm, excluding the host
+  const realmId = useActingRealmId();
   const availableCountries = useMemo(() => {
-    return (countriesData?.countries ?? [])
+    return nationsInRealm(countriesData?.countries ?? [], realmId)
       .filter((c) => c.id !== hostCountry.id)
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [countriesData, hostCountry.id]);
+  }, [countriesData, hostCountry.id, realmId]);
 
   // Toggle objective
   const toggleObjective = (objective: string) => {

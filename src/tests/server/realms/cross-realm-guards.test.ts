@@ -266,6 +266,39 @@ describe("cultural exchanges", () => {
 });
 
 describe("relations, scenarios and summits", () => {
+  it("mark which related nations share the nation's realm, for the invite pickers", async () => {
+    const at = new Date();
+    const relation = (id: string, other: string) => ({
+      id,
+      country1: CALLER_COUNTRY,
+      country2: other,
+      relationship: "neutral",
+      strength: 50,
+      treaties: null,
+      diplomaticChannels: null,
+      lastContact: at,
+      establishedAt: at,
+      status: "active",
+    });
+    const ctx = realmContext({});
+    ctx.db.country.findMany = jest.fn(async () =>
+      Object.entries(REALM_OF).map(([id, realmId]) => ({ id, name: id, flag: null, realmId }))
+    );
+    ctx.db.diplomaticRelation = {
+      findMany: jest
+        .fn()
+        .mockResolvedValue([relation("r1", NEIGHBOUR), relation("r2", FOREIGN_COUNTRY)]),
+    };
+    ctx.db.diplomaticEvent = { findMany: jest.fn().mockResolvedValue([]) };
+    const rows = await createCallerFactory(diplomaticCoreRouter)(ctx as never).getRelationships({
+      countryId: CALLER_COUNTRY,
+    });
+    expect(rows.map((r) => [r.targetCountryId, r.sameRealm])).toEqual([
+      [NEIGHBOUR, true],
+      [FOREIGN_COUNTRY, false],
+    ]);
+  });
+
   it("set no goal on a relation with a nation of another realm", async () => {
     const caller = createCallerFactory(diplomaticCoreRouter)(
       realmContext({
