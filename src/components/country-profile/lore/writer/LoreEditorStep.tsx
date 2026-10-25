@@ -19,7 +19,8 @@ export function LoreEditorTools({
 }: {
   title: string;
   words: number;
-  onOpenInWikiOS: () => void;
+  /** Whether to go: false when the author's text could not go over as a draft. */
+  onOpenInWikiOS: () => boolean;
 }) {
   return (
     <div className="flex items-center gap-3">
@@ -29,7 +30,12 @@ export function LoreEditorTools({
       </span>
       {/* The author's text goes over as their draft (never in the URL); see useLoreWriter. */}
       <Button asChild size="sm" variant="ghost">
-        <Link href={pageEditHref(title, null, { mode: "visual" })} onClick={onOpenInWikiOS}>
+        <Link
+          href={pageEditHref(title, null, { mode: "visual" })}
+          onClick={(event) => {
+            if (!onOpenInWikiOS()) event.preventDefault();
+          }}
+        >
           <EditPencil aria-hidden="true" />
           Open in WikiOS
         </Link>
@@ -69,6 +75,38 @@ function RestoredDraftNotice({ onDiscard }: { onDiscard: () => void }) {
   );
 }
 
+/** The browser would not keep the author's text as a draft: they copy it, keep writing, or leave without it. */
+function UnkeptTextAlert({ flow }: { flow: LoreWriterFlow }) {
+  const leaving = flow.unkept?.leaving;
+  if (!leaving) return null;
+  return (
+    <div
+      role="alert"
+      className="rounded-row border-red/30 bg-red/10 text-body text-label space-y-2 border p-3"
+    >
+      <p>
+        This browser could not keep your text as a draft, so it would be lost.{" "}
+        {leaving === "close"
+          ? "Copy it before you close, or keep writing here."
+          : "Copy it before you open WikiOS, or keep writing here."}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" onClick={flow.copyUnkept}>
+          Copy my text
+        </Button>
+        <Button size="sm" variant="outline" onClick={flow.dismissUnkept}>
+          Keep writing
+        </Button>
+        {leaving === "close" && (
+          <Button size="sm" variant="ghost" onClick={flow.closeWithoutKeeping}>
+            Close without keeping
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /** The lore writer's editor: WikiOS's own editing host, opened on the piece's starting text. */
 export function LoreEditorStep({ flow }: { flow: LoreWriterFlow }) {
   const target = flow.target;
@@ -83,6 +121,7 @@ export function LoreEditorStep({ flow }: { flow: LoreWriterFlow }) {
           {flow.saveError}
         </p>
       )}
+      <UnkeptTextAlert flow={flow} />
       {flow.restoredDraft && <RestoredDraftNotice onDiscard={flow.discardDraft} />}
       <WikiEditBridge
         key={`${flow.editorKey}\n${target.title}\n${target.prefill ?? ""}`}

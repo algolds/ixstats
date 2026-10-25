@@ -44,6 +44,8 @@ let mockIncomplete = false;
 /** How many times a mocked editor has opened. */
 let mockMounts = 0;
 const mockNotifyInfo = jest.fn();
+/** Whether the page's own click handler stopped the last link from navigating. */
+let mockLinkPrevented = false;
 let mockAccess: { enabled: boolean; isOwner: boolean; canWrite: boolean };
 let mockPages: Record<string, PageCheck>;
 let mockChecking = false;
@@ -59,8 +61,9 @@ jest.mock("next/link", () => ({
     <a
       href={href}
       onClick={(event) => {
-        event.preventDefault();
         onClick?.(event);
+        mockLinkPrevented = event.defaultPrevented;
+        event.preventDefault();
       }}
     >
       {children}
@@ -406,6 +409,7 @@ describe("LoreWriter: the editor", () => {
     renderWriter();
     openEditorOn("Place", "Venceia");
     fireEvent.click(screen.getByRole("link", { name: "Open in WikiOS" }));
+    expect(mockLinkPrevented).toBe(false);
 
     expect(getDraft("user_alice", "Venceia")?.wikitext).toContain("{{Infobox settlement");
   });
@@ -863,5 +867,129 @@ describe("LoreWriter: fix round 1", () => {
     openEditorOn("Place", "Venceia");
     act(() => lastBridge().onClose());
     expect(mockNotifyInfo).not.toHaveBeenCalled();
+  });
+});
+
+describe("LoreWriter: fix round 2", () => {
+  const restored = "Your earlier draft of this page was restored.";
+  const draftOf = (wikitext: string) =>
+    saveDraft("user_alice", { title: "Venceia", source: "ixwiki", mode: "visual", wikitext });
+
+  /** The author types: the canvas reports the new text, and the editor holds it. */
+  function typeInEditor(text: string) {
+    act(() => lastBridge().onSerializedWikitext?.({ wikitext: text, complete: true, notices: [] }));
+    mockEditorText = text;
+  }
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it("hides the restored-draft notice and its action once the author types", () => {
+    draftOf("Old");
+    renderWriter();
+    openEditorOn("Place", "Venceia");
+    expect(screen.getByText(restored)).toBeInTheDocument();
+
+    typeInEditor("Old, and a new line.");
+    expect(screen.queryByText(restored)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Start from the form instead" })).toBeNull();
+    expect(getDraft("user_alice", "Venceia")?.wikitext).toBe("Old");
+  });
+
+  it("judges each new editor afresh: writing in an earlier one does not hide a later draft notice", () => {
+    saveDraft("user_alice", {
+      title: "Venceia Nova",
+      source: "ixwiki",
+      mode: "visual",
+      wikitext: "Old",
+    });
+    renderWriter();
+    openEditorOn("Place", "Venceia");
+    typeInEditor("Venceia, a first try.");
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start again from the form" }));
+    typeTitle("Venceia Nova");
+    fireEvent.click(openEditorButton());
+
+    expect(screen.getByText(restored)).toBeInTheDocument();
+  });
+
+  it("takes the confirm away too when the author types while it is open", () => {
+    draftOf("Old");
+    renderWriter();
+    openEditorOn("Place", "Venceia");
+    fireEvent.click(screen.getByRole("button", { name: "Start from the form instead" }));
+
+    typeInEditor("Old, and a new line.");
+    expect(screen.queryByRole("button", { name: "Discard the draft" })).toBeNull();
+  });
+
+  it("never discards typed text, even from an editor that reports no serialization", () => {
+    mockReports = false;
+    draftOf("Old");
+    renderWriter();
+    openEditorOn("Place", "Venceia");
+    const mounts = mockMounts;
+    fireEvent.click(screen.getByRole("button", { name: "Start from the form instead" }));
+    mockEditorText = "Typed in this session.";
+    fireEvent.click(screen.getByRole("button", { name: "Discard the draft" }));
+
+    expect(getDraft("user_alice", "Venceia")?.wikitext).toBe("Old");
+    expect(mockMounts).toBe(mounts);
+    expect(screen.queryByText(restored)).toBeNull();
+  });
+
+  describe("when the browser cannot keep a draft", () => {
+    const writeText = jest.fn();
+
+    beforeEach(() => {
+      jest.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+        throw new Error("QuotaExceededError");
+      });
+      writeText.mockReset().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: { writeText },
+      });
+    });
+
+    it("keeps the writer open and says the text could not be kept, instead of Draft kept", () => {
+      const { onClose } = renderWriter();
+      openEditorOn("Place", "Venceia");
+      mockEditorText = "Venceia, my long story.";
+      act(() => lastBridge().onClose());
+
+      expect(onClose).not.toHaveBeenCalled();
+      expect(mockNotifyInfo).not.toHaveBeenCalled();
+      expect(screen.getByRole("alert")).toHaveTextContent(/could not keep your text/);
+      expect(screen.getByTestId("bridge")).toBeInTheDocument();
+    });
+
+    it("copies the text, closes without it, or goes back to writing", async () => {
+      const { onClose } = renderWriter();
+      openEditorOn("Place", "Venceia");
+      mockEditorText = "Venceia, my long story.";
+      fireEvent.click(screen.getByRole("button", { name: "Close" }));
+
+      fireEvent.click(screen.getByRole("button", { name: "Copy my text" }));
+      await waitFor(() => expect(writeText).toHaveBeenCalledWith("Venceia, my long story."));
+
+      fireEvent.click(screen.getByRole("button", { name: "Keep writing" }));
+      expect(screen.queryByRole("alert")).toBeNull();
+      expect(onClose).not.toHaveBeenCalled();
+
+      act(() => lastBridge().onClose());
+      fireEvent.click(screen.getByRole("button", { name: "Close without keeping" }));
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not leave for WikiOS when the text cannot go over as a draft", () => {
+      renderWriter();
+      openEditorOn("Place", "Venceia");
+      fireEvent.click(screen.getByRole("link", { name: "Open in WikiOS" }));
+
+      expect(mockLinkPrevented).toBe(true);
+      expect(screen.getByRole("alert")).toHaveTextContent(/could not keep your text/);
+      expect(screen.queryByRole("button", { name: "Close without keeping" })).toBeNull();
+    });
   });
 });

@@ -10,6 +10,8 @@ type ContentReader = (() => string | null) | null;
  */
 export function useLoreEditorText() {
   const [words, setWords] = useState(0);
+  /** The canvas reported a text other than the one it opened on: the author has written in this editor. */
+  const [edited, setEdited] = useState(false);
   const readerRef = useRef<ContentReader>(null);
   /** The text as the editor opened (its first serialization), to tell an edit from none. */
   const openedRef = useRef<string | null>(null);
@@ -17,9 +19,11 @@ export function useLoreEditorText() {
 
   return {
     words,
+    edited,
     /** A new editor opens. */
     reset: () => {
       openedRef.current = null;
+      setEdited(false);
     },
     /**
      * The editor's text now when the author changed it from what it opened on (`opening` for an editor that reports
@@ -34,6 +38,7 @@ export function useLoreEditorText() {
     },
     onSerializedWikitext: (result: { wikitext: string }) => {
       openedRef.current ??= result.wikitext;
+      if (result.wikitext !== openedRef.current) setEdited(true);
       lastRef.current = result.wikitext;
       setWords(loreWordCount(result.wikitext));
     },
