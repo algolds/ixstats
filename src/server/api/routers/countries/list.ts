@@ -4,6 +4,8 @@ import { publicProcedure, cachedPublicProcedure, cachedStaticProcedure } from "~
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { TRPCError } from "@trpc/server";
 import { realmScopeInput, realmWhere, viewerRealmId } from "~/server/api/trpc/realm-scope";
+import { DEFAULT_INFLATION_RATE } from "~/lib/economy/calculations";
+import { IxTime } from "~/lib/ixtime";
 
 const MAP_SUMMARY_SELECT = {
   id: true,
@@ -220,7 +222,7 @@ export const listProcedures = {
           calculatedStats: {
             gdpGrowth: country.adjustedGdpGrowth || 0,
             populationGrowth: country.populationGrowthRate || 0,
-            inflation: country.inflationRate || 0.02,
+            inflation: country.inflationRate ?? DEFAULT_INFLATION_RATE,
           },
           analytics: {
             growthTrends: {
@@ -229,7 +231,7 @@ export const listProcedures = {
             },
             riskFlags: [] as string[],
             tierChangeProjection: {
-              year: new Date().getFullYear(),
+              year: new Date(IxTime.getCurrentIxTime()).getUTCFullYear(),
               newTier: country.economicTier ?? "Unknown",
             },
           },

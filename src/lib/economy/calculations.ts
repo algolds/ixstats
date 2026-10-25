@@ -96,6 +96,11 @@ function nextTierThreshold(gdpPerCapita: number, rate: number): number | null {
   return null;
 }
 
+/** Inflation is a percent (2 = 2%); the bounds match the event spine's guardrail. */
+export const DEFAULT_INFLATION_RATE = 2;
+const MIN_INFLATION_RATE = -5;
+const MAX_INFLATION_RATE = 100;
+
 /** Floor for the summed annual population growth rate; keeps `1 + rate` positive. */
 const MIN_POPULATION_GROWTH_RATE = -0.5;
 
@@ -210,6 +215,14 @@ export class IxStatsCalculator {
       implementingGovComponents: baseData.implementingGovComponents,
       implementingEconComponents: baseData.implementingEconComponents,
       implementingTaxComponents: baseData.implementingTaxComponents,
+
+      // Stored rates the projection adjusts by component modifiers (dropping them here made
+      // every read show the defaults instead of the stored values).
+      totalGovernmentSpending: baseData.totalGovernmentSpending,
+      taxRevenueGDPPercent: baseData.taxRevenueGDPPercent,
+      unemploymentRate: baseData.unemploymentRate,
+      inflationRate: baseData.inflationRate,
+      activePolicyMaintenanceCost: baseData.activePolicyMaintenanceCost,
     };
   }
 
@@ -306,9 +319,13 @@ export class IxStatsCalculator {
         0,
         Math.min(100, (baselineStats.unemploymentRate ?? 5) + mods.unemploymentModifier)
       ),
+      // Percent, like every writer (issue and directive consequences move it in points).
       inflationRate: Math.max(
-        -0.5,
-        Math.min(2, (baselineStats.inflationRate ?? 0.02) + mods.inflationModifier)
+        MIN_INFLATION_RATE,
+        Math.min(
+          MAX_INFLATION_RATE,
+          (baselineStats.inflationRate ?? DEFAULT_INFLATION_RATE) + mods.inflationModifier
+        )
       ),
     };
 

@@ -493,13 +493,16 @@ const ZERO_FALLBACK_FIELDS: ReadonlyArray<readonly [NumberKey, Getter]> = [
   ["literacyRate", (e) => e.demographics?.literacyRate],
 ];
 
-/** Growth and inflation inputs arrive as percents; only an absent value (not 0) takes the default. */
+/**
+ * Growth and inflation inputs arrive as percents; only an absent value (not 0) takes the default.
+ * Growth rates are stored as decimals (the projection's unit), inflation stays a percent.
+ */
 const RATE_FIELDS: ReadonlyArray<readonly [NumberKey, Getter]> = [
   ["adjustedGdpGrowth", (e) => pct(e.coreIndicators?.realGDPGrowthRate)],
   ["actualGdpGrowth", (e) => pct(e.coreIndicators?.realGDPGrowthRate)],
   ["realGDPGrowthRate", (e) => pct(e.coreIndicators?.realGDPGrowthRate)],
   ["populationGrowthRate", (e) => pct(e.demographics?.populationGrowthRate)],
-  ["inflationRate", (e) => pct(e.coreIndicators?.inflationRate)],
+  ["inflationRate", (e) => e.coreIndicators?.inflationRate],
 ];
 
 type Defaults = Record<NumberKey, number>;
@@ -540,7 +543,7 @@ function legacyDefaults(base: Baseline): Partial<Defaults> {
     actualGdpGrowth: 0.025,
     realGDPGrowthRate: 0.025,
     populationGrowthRate: 0.008,
-    inflationRate: 0.02,
+    inflationRate: 2,
   };
 }
 
