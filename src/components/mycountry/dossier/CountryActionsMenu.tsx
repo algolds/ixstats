@@ -26,6 +26,7 @@ import { editorHref, MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
 import { api, type RouterInputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useCountryDiplomacyActions } from "./useCountryDiplomacyActions";
+import { useViewerPostingAccount } from "~/hooks/useViewerPostingAccount";
 import { cn } from "~/lib/utils";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -36,6 +37,17 @@ import { Button, buttonVariants } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import dynamic from "next/dynamic";
 import { useMountOnFirstOpen } from "~/components/wiki-os/shared/useMountOnFirstOpen";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "~/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -105,6 +117,7 @@ function CongratulateRow({
   targetCountryName,
   achievements,
   viewerCountryId,
+  postingAccountId,
   disabled,
   sending,
   onSend,
@@ -112,6 +125,8 @@ function CongratulateRow({
   targetCountryName: string;
   achievements: Array<{ id: string; title: string; description?: string | null }>;
   viewerCountryId: string | undefined;
+  /** The viewer's ThinkPages account that posts for their nation. */
+  postingAccountId: string | null;
   /** Another action in the menu is in flight (the row's own sending state is `sending`). */
   disabled: boolean;
   sending: boolean;
@@ -125,6 +140,10 @@ function CongratulateRow({
       notify.error("You need to sign in to send congratulations");
       return;
     }
+    if (!postingAccountId) {
+      notify.error("Create a ThinkPages account to post congratulations");
+      return;
+    }
     if (!selected) {
       notify.error("Please select an achievement to congratulate");
       return;
@@ -133,7 +152,7 @@ function CongratulateRow({
     if (!achievement) return;
 
     onSend({
-      accountId: viewerCountryId,
+      accountId: postingAccountId,
       content:
         `Congratulations to ${targetCountryName} on ${achievement.title}. ${achievement.description ?? ""}`.trim(),
       visibility: "public" as const,
@@ -201,6 +220,8 @@ export function CountryActionsMenu({
     },
     onError: (error) => notify.error(`Failed to send congratulations: ${error.message}`),
   });
+
+  const postingAccountId = useViewerPostingAccount(viewerCountryId, isOpen && !isOwnCountry);
 
   const { data: recentAchievements } = api.achievements.getRecentByCountry.useQuery(
     { countryId: targetCountryId, limit: 5 },
@@ -279,6 +300,7 @@ export function CountryActionsMenu({
                       targetCountryName={targetCountryName}
                       achievements={recentAchievements}
                       viewerCountryId={viewerCountryId}
+                      postingAccountId={postingAccountId}
                       disabled={isBusy}
                       sending={congratulation.isPending}
                       onSend={congratulation.mutate}
@@ -312,13 +334,13 @@ export function CountryActionsMenu({
 
                 <ActionGroup label="Foreign policy">
                   {HOSTILE_PROPOSALS.map(([icon, label, policy]) => (
-                    <ActionRow
+                    <HostileActionRow
                       key={policy}
                       icon={icon}
                       label={label}
-                      onClick={() => diplomacy.proposeForeignPolicy(policy)}
+                      targetCountryName={targetCountryName}
+                      onConfirm={() => diplomacy.proposeForeignPolicy(policy)}
                       disabled={needsViewer}
-                      destructive
                     />
                   ))}
                 </ActionGroup>
@@ -383,6 +405,55 @@ function ActionGroup({ label, children }: { label: string; children: React.React
       <Eyebrow className="block px-1">{label}</Eyebrow>
       {children}
     </section>
+  );
+}
+
+/** A sanction or embargo takes effect at once, so its row asks first. */
+function HostileActionRow({
+  icon: Icon,
+  label,
+  targetCountryName,
+  onConfirm,
+  disabled,
+}: {
+  icon: IconType;
+  label: string;
+  targetCountryName: string;
+  onConfirm: () => void;
+  disabled: boolean;
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          disabled={disabled}
+          className={cn(ACTION_ROW_CLASS, "text-destructive")}
+        >
+          <Icon className="text-destructive h-4 w-4" />
+          {label}
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            {label} on {targetCountryName}?
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            It takes effect at once, with no consent needed: both economies take the hit, phased in
+            over four years, and relations cool. You can lift it later from your diplomacy inbox.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction className={buttonVariants({ variant: "destructive" })} onClick={onConfirm}>
+            {label}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 

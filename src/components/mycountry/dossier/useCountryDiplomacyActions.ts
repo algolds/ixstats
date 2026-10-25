@@ -6,6 +6,9 @@ import { useNotify } from "~/hooks/useNotify";
 
 export type ForeignPolicyType = "free_trade" | "military_alliance" | "sanction" | "embargo";
 
+/** Cooperative actions wait for the other nation's consent; hostile ones take effect at once. */
+const isCooperative = (type: ForeignPolicyType) => type === "free_trade" || type === "military_alliance";
+
 const POLICY_LABELS: Record<ForeignPolicyType, string> = {
   free_trade: "Free trade agreement",
   military_alliance: "Military alliance",
@@ -57,7 +60,7 @@ export function useCountryDiplomacyActions({
 
   const establishEmbassyMutation = api.diplomaticEmbassies.establishEmbassy.useMutation({
     onSuccess: () => {
-      notify.success(`Embassy construction initiated with ${targetCountryName}`);
+      notify.success(`Embassy opened in ${targetCountryName}`);
       onProposed?.();
     },
     onError: (error) => notify.error(`Failed to establish embassy: ${error.message}`),
@@ -65,8 +68,12 @@ export function useCountryDiplomacyActions({
 
   const foreignPolicyMutation = api.diplomaticPolicies.proposeForeignPolicyAction.useMutation({
     onSuccess: (_, variables) => {
+      const type = variables.actionType as ForeignPolicyType;
+      const label = POLICY_LABELS[type] ?? "Action";
       notify.success(
-        `${POLICY_LABELS[variables.actionType as ForeignPolicyType] ?? "Action"} proposed to ${targetCountryName}`
+        isCooperative(type)
+          ? `${label} proposed to ${targetCountryName}`
+          : `${label} imposed on ${targetCountryName}`
       );
       onProposed?.();
     },

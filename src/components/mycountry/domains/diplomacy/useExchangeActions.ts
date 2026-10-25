@@ -4,6 +4,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { uploadImageFile } from "~/lib/media/upload-image";
 import type { ArtifactUploadData } from "./ArtifactUploadForm";
 import type { Scenario } from "./ScenarioModal";
+import { useViewerPostingAccount } from "~/hooks/useViewerPostingAccount";
 import {
   EXCHANGE_TYPES,
   type CulturalExchange,
@@ -53,6 +54,7 @@ function useExchangeMutations(cb: ExchangeMutationCallbacks) {
     generateScenarioMutation: cx.generateCulturalScenario.useMutation({
       onSuccess: (data) => {
         cb.onScenario({
+          id: data.scenario.id,
           title: data.scenario.title,
           narrative: data.scenario.narrative,
           responseOptions: data.responseOptions,
@@ -104,6 +106,7 @@ export function useExchangeActions(
   const [isUploadingArtifactFile, setIsUploadingArtifactFile] = useState(false);
   const [votedExchanges, setVotedExchanges] = useState<Set<string>>(new Set());
   const mutations = useExchangeMutations(callbacks);
+  const postingAccountId = useViewerPostingAccount(primaryCountry.id);
   const {
     createExchangeMutation,
     joinExchangeMutation,
@@ -204,9 +207,13 @@ export function useExchangeActions(
 
   const handleShareToThinkPages = () => {
     if (!selectedExchange) return;
+    if (!postingAccountId) {
+      notify.error("Create a ThinkPages account to share exchanges");
+      return;
+    }
     const typeConfig = EXCHANGE_TYPES[selectedExchange.type];
     shareToThinkPagesMutation.mutate({
-      accountId: primaryCountry.id,
+      accountId: postingAccountId,
       content: `${typeConfig.emoji} **${selectedExchange.title}**\n\n${selectedExchange.description}\n\n#CulturalExchange #${selectedExchange.type}`,
       visibility: "public",
       hashtags: ["cultural-exchange", selectedExchange.type],
