@@ -154,6 +154,42 @@ describe("renderSisterArticle: the answer", () => {
     expect(out.noticesHtml).toBeNull();
   });
 
+  it("an off-host image in a sister page is dropped; the wiki's own image is proxied", async () => {
+    fetchSpy.mockImplementation(async () =>
+      answer(
+        '<div class="mw-parser-output"><table class="infobox"><tr><td><img src="//evil.test/i.gif" alt="i">' +
+          '<img src="https://iiwiki.com/images/a/ab/Flag.png" alt="flag"></td></tr></table>' +
+          '<p><img src="https://evil.test/track.gif" alt="t"><img src="/images/thumb/b/bc/Map.png/220px-Map.png" ' +
+          'srcset="https://evil.test/m.png 2x" alt="map"></p></div>'
+      )
+    );
+
+    const out = await renderSisterArticle("iiwiki", article());
+
+    expect(out.infoboxHtml).toContain('src="/api/mediawiki/iiwiki/images/a/ab/Flag.png"');
+    expect(out.contentHtml).toContain(
+      'src="/api/mediawiki/iiwiki/images/thumb/b/bc/Map.png/220px-Map.png"'
+    );
+    expect(`${out.contentHtml}${out.infoboxHtml}`).not.toContain("evil.test");
+    expect(out.contentHtml).not.toContain("srcset");
+  });
+
+  it("a Fandom CDN image of an AltHistory page loads its file through the proxy", async () => {
+    fetchSpy.mockImplementation(async () =>
+      answer(
+        '<div class="mw-parser-output"><p><img src="data:image/gif;base64,R0lGOD" class="lazyload" alt="f" ' +
+          'data-src="https://static.wikia.nocookie.net/althistory/images/c/c4/Flag.png/revision/latest?cb=2"></p></div>'
+      )
+    );
+
+    const out = await renderSisterArticle("althistory", article());
+
+    expect(out.contentHtml).toContain(
+      'src="/api/mediawiki/althistory/wiki/Special:FilePath/Flag.png"'
+    );
+    expect(out.contentHtml).not.toContain("nocookie");
+  });
+
   it("keeps a TemplateStyles block of the sister wiki, scoped to the article", async () => {
     fetchSpy.mockImplementation(async () =>
       answer(

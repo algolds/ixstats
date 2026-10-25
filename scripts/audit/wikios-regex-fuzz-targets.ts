@@ -421,6 +421,10 @@ export const TARGETS: readonly Target[] = [
     const m = await import("~/lib/wiki-os/transformers/html-transformer");
     return (s) => m.transformImages(s);
   }),
+  html("transformers/html-transformer#transformImages@sister", async () => {
+    const m = await import("~/lib/wiki-os/transformers/html-transformer");
+    return (s) => m.transformImages(s, "althistory");
+  }),
   html("transformers/html-transformer#stripConflictingStyles", async () => {
     const m = await import("~/lib/wiki-os/transformers/html-transformer");
     return (s) => m.stripConflictingStyles(s);
@@ -823,6 +827,23 @@ export const TARGETS: readonly Target[] = [
       why: "DOMPurify builds a DOM, about 2.6 microseconds a character in Bun and about 5 in Node on a page of one-character elements (and the depth guard parses the page once more: `<a>` takes 2.3 s at the gate's 100 KB, which fails a 12 times allowance): the DOM and its parse are the work. Elements that share an id are quadratic (jsdom's named properties: 29,000 `<h2 id=\"a\">` took 4.3 s), which is why the run stops at 200,000 characters; its depth is bounded (past 400 the source is shown escaped)",
     }
   ),
+  markup(
+    "lib/utils/sanitize-sister-html#sanitizeSisterHtml",
+    async () => {
+      const m = await import("~/lib/utils/sanitize-sister-html");
+      return (s) => m.sanitizeSisterHtml(s, "althistory", { embed: false });
+    },
+    {
+      maxChars: 200_000,
+      scale: 0.5,
+      slowFactor: 20,
+      why: "sanitizeWikiArticleHtml's DOM and depth guard (see it), plus a URL parse per src, srcset candidate and link, and a lex of each style attribute, each linear in its value",
+    }
+  ),
+  wikitext("sister-media#sisterMediaPath", async () => {
+    const m = await import("~/lib/wiki-os/sister-media");
+    return (s) => m.sisterMediaPath(`https://static.wikia.nocookie.net/althistory/images/a/ab/${s}`, "althistory");
+  }),
 
   // ---- templates/ ------------------------------------------------------------------------------
   html("templates/chip-markers#markTemplateChips", async () => {
@@ -953,6 +974,10 @@ export const TARGETS: readonly Target[] = [
   html("transformers/srcset#mapSrcsetUrls", async () => {
     const m = await import("~/lib/wiki-os/transformers/srcset");
     return (s) => m.mapSrcsetUrls(s, (url) => url);
+  }),
+  html("transformers/srcset#filterSrcset", async () => {
+    const m = await import("~/lib/wiki-os/transformers/srcset");
+    return (s) => m.filterSrcset(s, (url) => (url.length % 2 === 0 ? url : null));
   }),
 
   // ---- api-compat/ (the api.php surface reads page text and request strings) -----------------------

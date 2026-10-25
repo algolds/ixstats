@@ -510,10 +510,10 @@ describe("pictures", () => {
       "/api/mediawiki/iiwiki/images/thumb/a/ab/F.png/450px-F.png 1.5x, /api/mediawiki/iiwiki/images/thumb/a/ab/F.png/600px-F.png 2x, /api/mediawiki/iiwiki/images/thumb/c/cd/G.png/300px-G.png 3x",
     ],
     [
-      "a candidate already proxied, or on a CDN, is left alone",
+      "another wiki's proxied candidate is left alone (the sanitizer drops it); its own CDN file goes through Special:FilePath",
       "althistory",
       "/api/mediawiki/iiwiki/images/a/ab/F.png 1x, https://static.wikia.nocookie.net/althistory/images/a/ab/F.png 2x",
-      "/api/mediawiki/iiwiki/images/a/ab/F.png 1x, https://static.wikia.nocookie.net/althistory/images/a/ab/F.png 2x",
+      "/api/mediawiki/iiwiki/images/a/ab/F.png 1x, /api/mediawiki/althistory/wiki/Special:FilePath/F.png 2x",
     ],
   ])("srcset: %s", (_behaviour, wiki, srcset, expected) => {
     const out = transformImages(withSrcset(srcset), wiki);
@@ -521,6 +521,16 @@ describe("pictures", () => {
     expect(out).not.toMatch(/images\/?https?:/);
     expect(out).not.toContain(`${ORIGIN}${ORIGIN}`);
     expect(transformImages(out, wiki)).toBe(out); // idempotent
+  });
+
+  it("a sister page's src goes through its media proxy; data-src and another host's src are left to the sanitizer", () => {
+    const out = transformImages(
+      '<img src="https://iiwiki.com/images/a/ab/F.png" data-src="/images/b/bc/G.png"><img src="https://evil.test/x.png">',
+      "iiwiki"
+    );
+    expect(out).toContain('src="/api/mediawiki/iiwiki/images/a/ab/F.png"');
+    expect(out).toContain('data-src="/images/b/bc/G.png"');
+    expect(out).toContain('src="https://evil.test/x.png"');
   });
 
   const img = (name: string, attrs = "") => `<img src="https://ixwiki.com/images/a/ab/${name}" ${attrs}>`;

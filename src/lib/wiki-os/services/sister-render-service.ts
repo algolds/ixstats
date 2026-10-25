@@ -9,11 +9,12 @@
  * agent and goes through the upstream guard (upstream-guard.ts: a breaker and a limiter per host), so a wiki that
  * cannot be reached throws WikiUnavailableError, which is never cached. An answer for another page (a relay that
  * drops `oldid` parses an empty page called "API") is refused. The answer is transformed for the
- * reader and sanitized like any other article HTML (another wiki's HTML is as untrusted as a user's), and cached
+ * reader and sanitized by `sanitizeSisterHtml`, the trust boundary for another wiki's HTML (images only through its
+ * media proxy, no off-host `url()` or fixed positioning, external links inert), and cached
  * per `(source, title, revision)` for ten minutes, 200 pages: a page that changes has a new revision, so it is never
  * served stale, and a reader who opens a sister page twice does not render it twice.
  */
-import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
+import { sanitizeSisterHtml } from "~/lib/utils/sanitize-sister-html";
 import { Cache } from "~/lib/cache";
 import { readSisterJson } from "~/lib/wiki-os/adapters/mediawiki/bridge/http-reader";
 import type { SisterWikiSource, WikiArticle } from "~/lib/wiki-os/adapters/mediawiki/bridge/types";
@@ -87,10 +88,11 @@ async function renderOnItsWiki(
   }
 
   const transformed = transformArticleHtml(stripConflictingStyles(html), "", source);
+  const sanitize = (part: string) => sanitizeSisterHtml(part, source, { embed: false });
   return {
-    contentHtml: sanitizeWikiArticleHtml(transformed.contentHtml),
-    infoboxHtml: transformed.infoboxHtml ? sanitizeWikiArticleHtml(transformed.infoboxHtml) : null,
-    noticesHtml: transformed.noticesHtml ? sanitizeWikiArticleHtml(transformed.noticesHtml) : null,
+    contentHtml: sanitize(transformed.contentHtml),
+    infoboxHtml: transformed.infoboxHtml ? sanitize(transformed.infoboxHtml) : null,
+    noticesHtml: transformed.noticesHtml ? sanitize(transformed.noticesHtml) : null,
     toc: transformed.toc,
   };
 }

@@ -7,6 +7,7 @@
  * - sanitizeHtml(): Balanced - for general use cases
  * - sanitizeWikiArticleHtml(): WikiOS article HTML (Parsoid/MediaWiki markup, MediaWiki's legacy tags and
  *   attributes, and TemplateStyles <style> blocks, scoped to the article)
+ * - sanitizeSisterHtml() (sanitize-sister-html.ts): another wiki's HTML, on top of the article sanitizer
  *
  * Uses DOMPurify in the browser and DOMPurify + jsdom on the server (SSR, tRPC, API routes).
  */
@@ -14,7 +15,7 @@
 import DOMPurify, { type Config } from "dompurify";
 import { mediaWikiOrigin, wikiosConfig } from "~/lib/wiki-os/config";
 import { DOM_DEPTH_CEILING, tagsNestTooDeep } from "~/lib/wiki-os/transformers/inert-dom";
-import { scopeTemplateStyles } from "./scope-template-styles";
+import { scopeTemplateStyles, type StylePolicy } from "./scope-template-styles";
 
 type Purifier = typeof DOMPurify;
 type StyleSanitizer = (style: Element) => void;
@@ -70,39 +71,50 @@ const TEMPLATE_STYLES_ATTRIBUTE = "data-mw-deduplicate";
  * Keeps a `<style>` only when it is TemplateStyles' own: an HTML element, carrying `data-mw-deduplicate`,
  * holding nothing but text, whose CSS the scoper leaves something of. It then holds that scoped CSS and no
  * other attribute; anything else is removed (DOMPurify treats a node a hook detached as removed).
+ * `policy` is what the CSS may name and keep: by default the page and the wiki's own origin.
  */
-const sanitizeTemplateStyle: StyleSanitizer = (style) => {
-  const text = Array.from(style.childNodes).every((child) => child.nodeType === 3)
-    ? (style.textContent ?? "")
-    : "";
-  const css =
-    wikiosConfig.templateStyles &&
-    style.namespaceURI === HTML_NAMESPACE &&
-    style.hasAttribute(TEMPLATE_STYLES_ATTRIBUTE)
-      ? scopeTemplateStyles(text, new URL(mediaWikiOrigin()).origin)
+const templateStyleFilter =
+  (policy?: StylePolicy): StyleSanitizer =>
+  (style) => {
+    const text = Array.from(style.childNodes).every((child) => child.nodeType === 3)
+      ? (style.textContent ?? "")
       : "";
-  if (!css) {
-    style.remove();
-    return;
-  }
-  const kept = style.getAttribute(TEMPLATE_STYLES_ATTRIBUTE) ?? "";
-  for (const name of style.getAttributeNames()) style.removeAttribute(name);
-  style.setAttribute(TEMPLATE_STYLES_ATTRIBUTE, kept);
-  style.textContent = css;
-};
+    const css =
+      wikiosConfig.templateStyles &&
+      style.namespaceURI === HTML_NAMESPACE &&
+      style.hasAttribute(TEMPLATE_STYLES_ATTRIBUTE)
+        ? scopeTemplateStyles(text, policy ?? new URL(mediaWikiOrigin()).origin)
+        : "";
+    if (!css) {
+      style.remove();
+      return;
+    }
+    const kept = style.getAttribute(TEMPLATE_STYLES_ATTRIBUTE) ?? "";
+    for (const name of style.getAttributeNames()) style.removeAttribute(name);
+    style.setAttribute(TEMPLATE_STYLES_ATTRIBUTE, kept);
+    style.textContent = css;
+  };
 
 let articlePurifier: Purifier | null = null;
 
-/** The article's own instance: the shared hooks plus the `<style>` filter, which no other sanitizer wants. */
-function getArticlePurifier(): Purifier {
-  if (articlePurifier) return articlePurifier;
+/**
+ * An instance of its own with the shared hooks and the TemplateStyles `<style>` filter (with `policy`, when given).
+ * Exported for the sister wikis' sanitizer (`sanitize-sister-html.ts`), which adds its own hooks to one.
+ */
+export function createArticlePurifier(policy?: StylePolicy): Purifier {
   const created = createPurifier(true);
   installSharedHooks(created);
+  const sanitizeTemplateStyle = templateStyleFilter(policy);
   created.addHook("uponSanitizeElement", (node, data) => {
     if (data.tagName === "style") sanitizeTemplateStyle(node as Element);
   });
-  articlePurifier = created;
   return created;
+}
+
+/** The article's own instance: the shared hooks plus the `<style>` filter, which no other sanitizer wants. */
+function getArticlePurifier(): Purifier {
+  articlePurifier ??= createArticlePurifier();
+  return articlePurifier;
 }
 
 /**
@@ -383,7 +395,8 @@ const MEDIAWIKI_MARKUP_ATTRIBUTES = [
   "rbspan",
 ];
 
-const WIKI_ARTICLE_SANITIZE_CONFIG: Config = {
+/** The article config: also the sister wikis' (`sanitize-sister-html.ts`). */
+export const WIKI_ARTICLE_SANITIZE_CONFIG: Config = {
   ...WIKI_CONTENT_SANITIZE_CONFIG,
   ALLOWED_TAGS: [
     ...WIKI_CONTENT_SANITIZE_CONFIG.ALLOWED_TAGS,
@@ -478,6 +491,16 @@ export function wikiArticleSanitizerFingerprint(): string {
  */
 export function sanitizeWikiArticleHtml(html: string): string {
   if (!html) return "";
+  return (
+    nestedTooDeepSource(html) ?? getArticlePurifier().sanitize(html, WIKI_ARTICLE_SANITIZE_CONFIG)
+  );
+}
+
+/**
+ * `html` as its escaped source when the parser nests it past DOM_DEPTH_CEILING; null when it may be sanitized. Shared
+ * with the sister wikis' sanitizer (`sanitize-sister-html.ts`).
+ */
+export function nestedTooDeepSource(html: string): string | null {
   // ponytail: jsdom's DOM, which DOMPurify runs on a server, is quadratic in nesting depth (6,000 `<s>` took 5 s, 12,000 take
   // 20): HTML the parser nests past DOM_DEPTH_CEILING (400; real pages nest a few dozen) is shown as its escaped source,
   // which is safe and one pass. A server asks the parser how deep (tags alone do not say: `<span><div></span>` and
@@ -489,11 +512,9 @@ export function sanitizeWikiArticleHtml(html: string): string {
           require("../wiki-os/transformers/dom-depth") as typeof import("../wiki-os/transformers/dom-depth")
         ).nestsTooDeep(html)
       : tagsNestTooDeep(html);
-  if (tooDeep) {
-    const escaped = html.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    return `<pre class="wikios-fallback-plain">${escaped}</pre>`;
-  }
-  return getArticlePurifier().sanitize(html, WIKI_ARTICLE_SANITIZE_CONFIG);
+  if (!tooDeep) return null;
+  const escaped = html.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return `<pre class="wikios-fallback-plain">${escaped}</pre>`;
 }
 
 /**

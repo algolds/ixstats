@@ -51,6 +51,10 @@ jest.mock("~/lib/utils/sanitize-html", () => ({
   sanitizeWikiArticleHtml: jest.fn((html: string) => html),
   wikiArticleSanitizerFingerprint: () => "test",
 }));
+jest.mock("~/lib/utils/sanitize-sister-html", () => ({
+  __esModule: true,
+  sanitizeSisterHtml: jest.fn((html: string) => html),
+}));
 jest.mock("~/lib/wiki-os/services/auto-sync-service", () => ({
   __esModule: true,
   syncSinglePage: jest.fn(),
@@ -97,7 +101,7 @@ const rendered = (html: string) => ({
     properties: {},
   },
 });
-import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
+import { sanitizeSisterHtml } from "~/lib/utils/sanitize-sister-html";
 import { syncSinglePage } from "~/lib/wiki-os/services/auto-sync-service";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 import { registerTemplateProvider } from "~/lib/wiki-os/templates/template-resolver";
@@ -507,7 +511,7 @@ describe("getArticleHtml for another wiki's page is sanitized like any other (pl
   const realFetch = globalThis.fetch;
   afterEach(() => {
     globalThis.fetch = realFetch;
-    jest.mocked(sanitizeWikiArticleHtml).mockImplementation((html: string) => html);
+    jest.mocked(sanitizeSisterHtml).mockImplementation((html: string) => html);
   });
 
   it("passes the body, the infobox and the notices through the sanitizer before serving them", async () => {
@@ -526,14 +530,17 @@ describe("getArticleHtml for another wiki's page is sanitized like any other (pl
     globalThis.fetch = jest.fn(async () =>
       Response.json({ parse: { title: "Eurth", text: parsed } })
     ) as typeof fetch;
-    jest.mocked(sanitizeWikiArticleHtml).mockImplementation((html: string) => `SANITIZED(${html})`);
+    jest.mocked(sanitizeSisterHtml).mockImplementation((html: string) => `SANITIZED(${html})`);
 
     const result = await caller().getArticleHtml({ title: "Eurth", wikiSource: "iiwiki" });
 
     expect(result.contentHtml).toMatch(/^SANITIZED\(/);
     expect(result.infoboxHtml).toMatch(/^SANITIZED\(.*Box/);
     expect(result.noticesHtml).toMatch(/^SANITIZED\(.*Notice/);
-    expect(sanitizeWikiArticleHtml).toHaveBeenCalledTimes(3);
+    expect(sanitizeSisterHtml).toHaveBeenCalledTimes(3);
+    expect(
+      jest.mocked(sanitizeSisterHtml).mock.calls.map(([, wiki, options]) => [wiki, options])
+    ).toEqual(Array.from({ length: 3 }, () => ["iiwiki", { embed: false }]));
     expect(result).toMatchObject({ wikiSource: "iiwiki", stale: false, renderQuality: "rendered" });
   });
 
