@@ -117,7 +117,7 @@ export function DefenseRail({ countryId }: { countryId: string }) {
           id: `threat-${t.id}`,
           icon: critical ? AlertTriangle : ShieldAlert,
           iconColor: critical ? STATUS_TEXT.critical : STATUS_TEXT.warning,
-          text: `${t.threatName ?? "Threat"} — ${t.severity ?? "monitoring"}`,
+          text: `${t.threatName ?? "Threat"} · ${t.severity ?? "monitoring"}`,
         },
         t.lastUpdated,
         t.detectedAt,
