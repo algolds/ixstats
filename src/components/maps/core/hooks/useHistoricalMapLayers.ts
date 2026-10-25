@@ -1,14 +1,16 @@
 import { useMemo, useState } from "react";
 import type { FeatureCollection } from "geojson";
 import { api } from "~/trpc/react";
-import { IxTime } from "~/lib/ixtime";
+import { clockTimeAt, realmYear } from "~/lib/realms/nation-time";
+import { useTimelineClock } from "./useTimelineClock";
 import type { MapLayerType } from "~/lib/maps/map-config";
 import type { MapLayerData } from "../IxWorldMap";
 
 /**
- * Timeline scrubber state. When the user scrubs to a past IxTime (`null` = "now"), the "as-of"
- * political FeatureCollection replaces the political layer. Until that query returns, the live
- * layer stays so the map doesn't blink.
+ * Timeline scrubber state. When the user scrubs to a past moment (`null` = "now"; real ms, as
+ * BorderHistory stamps edits), the "as-of" political FeatureCollection replaces the political
+ * layer. Until that query returns, the live layer stays so the map doesn't blink. The scrubbed
+ * year is the viewed realm's, on its clock and calendar (null while that clock loads).
  */
 export function useHistoricalMapLayers(
   mapLayers: MapLayerData[],
@@ -16,6 +18,7 @@ export function useHistoricalMapLayers(
   realm: string | undefined
 ) {
   const [historicalIxTime, setHistoricalIxTime] = useState<number | null>(null);
+  const clock = useTimelineClock(realm);
 
   const { data: historicalPolitical } = api.geoCore.getWorldMapAsOf.useQuery(
     { ixTime: historicalIxTime as number, realm },
@@ -40,6 +43,9 @@ export function useHistoricalMapLayers(
     activeMapLayers,
     historicalIxTime,
     setHistoricalIxTime,
-    historicalYear: historicalIxTime === null ? null : IxTime.getCurrentGameYear(historicalIxTime),
+    historicalYear:
+      historicalIxTime === null || !clock
+        ? null
+        : realmYear(clockTimeAt(clock, historicalIxTime), clock.calendar),
   };
 }

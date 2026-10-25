@@ -428,4 +428,13 @@ describe("border history reads stay in the viewer's realm", () => {
       country: { realmId: EURTH },
     });
   });
+
+  it("the history range runs on real time (edits are stamped in real time) and names the realm", async () => {
+    const db = historyDb();
+    const before = Date.now();
+    const range = await viewerOfEurth(db).getHistoryRange();
+    expect(range.realmId).toBe(EURTH);
+    expect(range.maxTime).toBeGreaterThanOrEqual(before);
+    expect(range.maxTime).toBeLessThanOrEqual(Date.now());
+  });
 });
