@@ -29,6 +29,7 @@ import { IxTime } from "~/lib/ixtime";
 import { revealConsequences } from "~/lib/statecraft/recon";
 import { isAppliedIssueConsequence } from "~/lib/national-issues/projection-effects";
 import { loadExecBandwidthState, RECON_CAPACITY_COST } from "~/lib/government/exec-bandwidth";
+import { loadProjectedPopulation } from "~/server/shared/projected-population";
 import {
   assertCountryResourceWriteAccess,
   assertCountryWriteAccess,
@@ -44,7 +45,8 @@ const RECON_DELAY_MS = 1.5 * 24 * 60 * 60 * 1000; // ~1.5 IxTime days; CONSTANT 
  * itself lives in lib/government/exec-bandwidth.ts (shared with policies and the MyCountry band).
  */
 async function loadReconContext(db: PrismaClient, countryId: string) {
-  const execBandwidth = await loadExecBandwidthState(db, countryId);
+  const population = await loadProjectedPopulation(db, countryId);
+  const execBandwidth = await loadExecBandwidthState(db, countryId, { population });
   return {
     componentTypes: execBandwidth.componentTypes,
     departmentCategories: execBandwidth.departmentCategories,

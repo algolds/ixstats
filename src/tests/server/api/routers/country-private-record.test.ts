@@ -64,6 +64,11 @@ jest.mock("~/lib/gameplay-flags", () => {
     GAMEPLAY_FLAGS: { ...actual.GAMEPLAY_FLAGS, statecraftSpine: true },
   };
 });
+// Bandwidth capacity reads the projected population; the projection itself is not under test here.
+jest.mock("~/server/shared/projected-population", () => ({
+  __esModule: true,
+  loadProjectedPopulation: jest.fn(async () => 10_000_000),
+}));
 jest.mock("~/lib/government/exec-bandwidth", () => {
   const actual = jest.requireActual("~/lib/government/exec-bandwidth");
   return {
