@@ -5,6 +5,7 @@ import { Button } from "~/components/ui/button";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useNationClock } from "~/hooks/useNationClock";
 import { formatClockDate } from "~/lib/realms/nation-time";
+import { electionDisplayName } from "~/lib/realms/realm-year";
 import type { RealmClockReader } from "~/lib/realms/realm-clock";
 
 interface ElectionStatusCardProps {
@@ -43,7 +44,7 @@ export function describeElection(
   const when = formatClockDate(upcoming.scheduledIxTime, clock);
   if (upcoming.isDue) {
     return {
-      headline: `${upcoming.name}: polls have closed`,
+      headline: `${electionDisplayName(upcoming.name, upcoming.scheduledIxTime, clock?.calendar)}: polls have closed`,
       detail: `Voting ended ${when}. Results are counted by the elections job, or count them now.`,
     };
   }
@@ -119,7 +120,8 @@ export function ElectionStatusCard({ countryId, canManage = true }: ElectionStat
       {lastElection && (
         <div className="space-y-2">
           <p className="text-caption font-semibold">
-            {lastElection.name} · {formatClockDate(lastElection.scheduledIxTime, clock)}
+            {electionDisplayName(lastElection.name, lastElection.scheduledIxTime, clock?.calendar)}{" "}
+            · {formatClockDate(lastElection.scheduledIxTime, clock)}
             {lastElection.turnout != null ? ` · turnout ${lastElection.turnout}%` : ""}
           </p>
           {lastElection.results.map((r) => (

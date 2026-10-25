@@ -11,6 +11,7 @@ import {
 } from "~/components/ui/select";
 import { formatNumber, safeFormatCurrency, toTitleCase } from "~/lib/utils";
 import { currentBudgetYear, latestBudgetYearUpTo } from "~/lib/government/budget-year";
+import { formatBudgetYear } from "~/lib/realms/realm-year";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
 import { useBudgetEditing } from "~/hooks/useBudgetEditing";
@@ -60,24 +61,29 @@ interface BudgetManagementDashboardProps {
   isReadOnly?: boolean;
 }
 
+/** A stored budget year as the nation's calendar labels it. */
+type YearLabel = (year: number) => string;
+
 function YearSelect({
   value,
   currentYear,
   onChange,
+  yearLabel,
 }: {
   value: number;
   currentYear: number;
   onChange: (year: number) => void;
+  yearLabel: YearLabel;
 }) {
   return (
     <Select value={String(value)} onValueChange={(v) => onChange(parseInt(v, 10))}>
-      <SelectTrigger className="text-footnote h-9 w-24 tabular-nums" aria-label="Budget year">
+      <SelectTrigger className="text-footnote h-9 w-28 tabular-nums" aria-label="Budget year">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
         {Array.from({ length: 5 }, (_, i) => currentYear - i).map((year) => (
           <SelectItem key={year} value={String(year)} className="tabular-nums">
-            {year}
+            {yearLabel(year)}
           </SelectItem>
         ))}
       </SelectContent>
@@ -91,17 +97,21 @@ function NewYearBanner({
   effectiveYear,
   startFrom,
   onStarted,
+  yearLabel,
 }: {
   currentYear: number;
   effectiveYear: number;
   startFrom?: string;
   onStarted: (year: number) => void;
+  yearLabel: YearLabel;
 }) {
   const notify = useNotify();
   const utils = api.useUtils();
   const startBudgetYear = api.government.startBudgetYear.useMutation({
     onSuccess: async (result) => {
-      notify.success(`FY${result.toYear} budget started from FY${result.fromYear}`);
+      notify.success(
+        `FY ${yearLabel(result.toYear)} budget started from FY ${yearLabel(result.fromYear)}`
+      );
       onStarted(result.toYear);
       await utils.government.getFullByCountryId.invalidate({ countryId: startFrom ?? "" });
     },
@@ -113,8 +123,8 @@ function NewYearBanner({
       className="rounded-control border-yellow/40 flex flex-wrap items-center justify-between gap-3 border px-4 py-3"
     >
       <p className="text-label text-body">
-        A new fiscal year has begun. Your FY{effectiveYear} budget stays in effect until you set the
-        FY{currentYear} budget.
+        A new fiscal year has begun. Your FY {yearLabel(effectiveYear)} budget stays in effect until
+        you set the FY {yearLabel(currentYear)} budget.
       </p>
       {startFrom && (
         <Button
@@ -124,7 +134,7 @@ function NewYearBanner({
         >
           {startBudgetYear.isPending
             ? "Starting…"
-            : `Start FY${currentYear} budget from FY${effectiveYear}`}
+            : `Start FY ${yearLabel(currentYear)} budget from FY ${yearLabel(effectiveYear)}`}
         </Button>
       )}
     </div>
@@ -184,6 +194,7 @@ function useBudgetSources({
 function BudgetTitle({
   structure,
   year,
+  yearLabel,
 }: {
   structure?: {
     governmentName?: string | null;
@@ -191,6 +202,7 @@ function BudgetTitle({
     fiscalYear?: string | null;
   } | null;
   year: number;
+  yearLabel: YearLabel;
 }) {
   return (
     <div className="min-w-0">
@@ -199,7 +211,7 @@ function BudgetTitle({
       </h2>
       <p className="text-label-secondary text-footnote mt-0.5">
         {structure?.governmentType ? `${toTitleCase(structure.governmentType)} • ` : ""}
-        {year} {structure?.fiscalYear ?? "FY"}
+        {yearLabel(year)} {structure?.fiscalYear ?? "FY"}
       </p>
     </div>
   );
@@ -209,11 +221,18 @@ function BudgetTitle({
 export function BudgetManagementDashboard(props: BudgetManagementDashboardProps) {
   const clock = useNationClock();
   if (!clock) return <Skeleton className="rounded-card h-96 w-full" aria-label="Loading budget" />;
-  return <BudgetManagementBody {...props} currentYear={currentBudgetYear(clock.now())} />;
+  return (
+    <BudgetManagementBody
+      {...props}
+      currentYear={currentBudgetYear(clock.now())}
+      yearLabel={(year) => formatBudgetYear(year, clock)}
+    />
+  );
 }
 
 function BudgetManagementBody({
   currentYear,
+  yearLabel,
   countryId,
   revenue,
   governmentStructure: propStructure,
@@ -222,7 +241,7 @@ function BudgetManagementBody({
   revenueSources: propRevenue,
   onUpdateBudget,
   isReadOnly = false,
-}: BudgetManagementDashboardProps & { currentYear: number }) {
+}: BudgetManagementDashboardProps & { currentYear: number; yearLabel: YearLabel }) {
   const { ownerView, governmentStructure, departments, budgetAllocations, revenueSources } =
     useBudgetSources({
       countryId,
@@ -275,7 +294,10 @@ function BudgetManagementBody({
     percent: item.percent,
     color: REVENUE_CHART_COLORS[idx % REVENUE_CHART_COLORS.length] ?? "var(--color-amber-500)",
   }));
-  const budgetTrendData = buildTrendData(budgetAllocations);
+  const budgetTrendData = buildTrendData(budgetAllocations).map((item) => ({
+    ...item,
+    year: yearLabel(Number(item.year)),
+  }));
 
   const budgetHealth = getBudgetHealthStatus(
     revenueSummary.totalRevenue,
@@ -285,9 +307,14 @@ function BudgetManagementBody({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <BudgetTitle structure={governmentStructure} year={selectedYear} />
+        <BudgetTitle structure={governmentStructure} year={selectedYear} yearLabel={yearLabel} />
         <div className="flex items-center gap-3">
-          <YearSelect value={selectedYear} currentYear={currentYear} onChange={setSelectedYear} />
+          <YearSelect
+            value={selectedYear}
+            currentYear={currentYear}
+            onChange={setSelectedYear}
+            yearLabel={yearLabel}
+          />
           <Badge variant="outline" className={budgetHealth.color}>
             {budgetHealth.label}
           </Badge>
@@ -302,6 +329,7 @@ function BudgetManagementBody({
           effectiveYear={effectiveYear}
           startFrom={countryId && !isReadOnly && !propAllocations ? countryId : undefined}
           onStarted={setSelectedYear}
+          yearLabel={yearLabel}
         />
       )}
 

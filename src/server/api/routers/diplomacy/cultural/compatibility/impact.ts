@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { clockForCountry } from "~/server/shared/realm-time";
+import { assertSameRealm } from "~/server/shared/same-realm-guard";
 import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { exchangeMetrics } from "~/lib/diplomacy/cultural-exchange-lifecycle";
@@ -47,6 +48,7 @@ export const diplomaticCulturalCompatibilityImpactRouter = createTRPCRouter({
           message: "This exchange has no participants, so it has no impact to measure.",
         });
       }
+      await assertSameRealm(ctx.db, exchange.hostCountryId, mainParticipant.countryId);
 
       // Measured from what happened (participants, artifacts, votes); 50 is an ordinary exchange.
       const metrics = exchangeMetrics({
@@ -109,7 +111,6 @@ export const diplomaticCulturalCompatibilityImpactRouter = createTRPCRouter({
         scenarioOutcomes: {},
       };
 
-      // realm-time: the host nation's clock; an exchange between nations of two realms is T5's to block.
       const hostNow = (await clockForCountry(ctx.db, exchange.hostCountryId)).now();
       const impact = CulturalImpactCalculator.calculateRelationshipImpact(
         exchangeData,

@@ -51,7 +51,8 @@ jest.mock("recharts", () => {
 });
 
 import { NationClockProvider } from "~/hooks/useNationClock";
-import { ixnayReader } from "~/tests/fixtures/realm-readers";
+import { ixnayReader, sixTimesReader } from "~/tests/fixtures/realm-readers";
+import { currentBudgetYear } from "~/lib/government/budget-year";
 import { BudgetManagementDashboard } from "~/components/mycountry/domains/government/BudgetManagementDashboard";
 import { nationalRevenue } from "~/components/mycountry/shell/fiscal/nationalRevenue";
 
@@ -207,5 +208,25 @@ describe("the National budget tab", () => {
       revenue: 6e9,
     });
     mockData.country = undefined;
+  });
+});
+
+describe("budget years on the nation's calendar", () => {
+  it("labels the budget year with the realm calendar's year, not the shared timeline's", () => {
+    const frost = sixTimesReader();
+    const year = currentBudgetYear(frost.now());
+    const gov = government(10e9);
+    mockData.gov = {
+      ...gov,
+      budgetAllocations: gov.budgetAllocations.map((a) => ({ ...a, budgetYear: year })),
+    };
+    render(<BudgetManagementDashboard countryId="testland" revenue={foundingRevenue(10e9)} />, {
+      wrapper: ({ children }) => (
+        <NationClockProvider value={frost}>{children}</NationClockProvider>
+      ),
+    });
+    expect(screen.getByRole("combobox", { name: "Budget year" })).toHaveTextContent("812 AE");
+    expect(screen.getByText(/812 AE FY/)).toBeInTheDocument();
+    expect(document.body.textContent).not.toContain(String(year));
   });
 });

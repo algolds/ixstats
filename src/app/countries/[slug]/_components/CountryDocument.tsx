@@ -195,6 +195,7 @@ export function CountryDocument({ initialTab }: { initialTab: CountryTab }) {
       <CountryActionsMenu
         targetCountryId={country.id}
         targetCountryName={country.name}
+        targetRealmId={clock.realmId}
         viewerCountryId={userProfile?.countryId ?? undefined}
         isOpen={actionsOpen}
         onClose={() => setActionsOpen(false)}

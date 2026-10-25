@@ -5,6 +5,8 @@ import { TRPCError } from "@trpc/server";
 
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { groupIncidentsByCountry } from "~/lib/diplomacy/incidents";
+import { assertSameRealm } from "~/server/shared/same-realm-guard";
+import { sameRealm } from "~/lib/realms/same-realm";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 export const diplomaticCoreRelationsRouter = createTRPCRouter({
@@ -26,12 +28,15 @@ export const diplomaticCoreRelationsRouter = createTRPCRouter({
         });
 
         // Batch-lookup country names and flags for all referenced countries
-        const allCountryIds = [...new Set(relations.flatMap((r) => [r.country1, r.country2]))];
+        const allCountryIds = [
+          ...new Set([input.countryId, ...relations.flatMap((r) => [r.country1, r.country2])]),
+        ];
         const countries = await ctx.db.country.findMany({
           where: { id: { in: allCountryIds } },
-          select: { id: true, name: true, flag: true },
+          select: { id: true, name: true, flag: true, realmId: true },
         });
         const countryMap = new Map(countries.map((c) => [c.id, c]));
+        const selfRealm = countryMap.get(input.countryId)?.realmId;
 
         // Batch-fetch recent diplomatic events for the viewer (one query, not per relation)
         const events = await ctx.db.diplomaticEvent.findMany({
@@ -82,6 +87,8 @@ export const diplomaticCoreRelationsRouter = createTRPCRouter({
             establishedAt: relation.establishedAt.toISOString(),
             goalSelf,
             goalTarget,
+            // Country actions (alliance invites, proposals) need it: nations of two realms do not interact.
+            sameRealm: sameRealm(selfRealm, targetInfo?.realmId),
           };
         });
 
@@ -132,6 +139,7 @@ export const diplomaticCoreRelationsRouter = createTRPCRouter({
           message: "You do not have permission to update this relationship's goals.",
         });
       }
+      await assertSameRealm(ctx.db, relation.country1, relation.country2);
 
       const updateData: any = {};
       if (isCountry1) {

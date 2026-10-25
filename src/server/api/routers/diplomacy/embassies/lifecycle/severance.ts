@@ -65,7 +65,7 @@ export const diplomaticEmbassiesLifecycleSeveranceRouter = createTRPCRouter({
           eventType: "embassy_severed",
           title: "Diplomatic Relations Severed",
           description: `${embassy.name} has been permanently dismantled and diplomatic relations severed.`,
-          // realm-time: the severing nation's clock; embassies across realms are T5's to block.
+          // The severing nation's clock. Severing is not guarded, so an embassy from before the realm rule can go.
           ixTimeTimestamp: (await clockForCountry(ctx.db, ctx.user.countryId)).now(),
           relationshipImpact: SEVER_RELATIONSHIP_IMPACT,
           severity: "critical",

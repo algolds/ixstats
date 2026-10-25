@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { clockForCountry } from "~/server/shared/realm-time";
+import { assertSameRealm } from "~/server/shared/same-realm-guard";
 import { notificationAPI } from "~/lib/notifications/api";
 import { applyRelationshipImpact } from "~/lib/diplomacy/relationship-impact";
 
@@ -86,7 +87,7 @@ export const diplomaticEmbassiesLifecycleStatusRouter = createTRPCRouter({
           description: input.reason || `${embassy.name} has been closed`,
           embassyId: embassy.id,
           relationshipImpact: penalties.relationshipPenalty,
-          // realm-time: the guest nation's clock; embassies across realms are T5's to block.
+          // The guest nation's clock. Closing is not guarded, so an embassy from before the realm rule can close.
           ixTimeTimestamp: (await clockForCountry(ctx.db, embassy.guestCountryId)).now(),
         },
       });
@@ -158,6 +159,7 @@ export const diplomaticEmbassiesLifecycleStatusRouter = createTRPCRouter({
           message: "Embassy is not closed.",
         });
       }
+      await assertSameRealm(ctx.db, embassy.guestCountryId, embassy.hostCountryId);
 
       // Conditional on it still being closed, so a double click reopens (and moves the relation) once.
       const reopened = await ctx.db.embassy.updateMany({
@@ -186,7 +188,6 @@ export const diplomaticEmbassiesLifecycleStatusRouter = createTRPCRouter({
           title: "Embassy Reopened",
           description: `${embassy.name} has been reopened.`,
           embassyId: embassy.id,
-          // realm-time: the guest nation's clock; embassies across realms are T5's to block.
           ixTimeTimestamp: (await clockForCountry(ctx.db, embassy.guestCountryId)).now(),
           relationshipImpact: REOPEN_RELATIONSHIP_IMPACT,
           severity: "positive",

@@ -4,6 +4,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
+import { assertRealmsMatch } from "~/server/shared/same-realm-guard";
 
 /**
  * Diplomatic Scenarios Router
@@ -241,6 +242,7 @@ export const diplomaticScenariosScenariosRouter = createTRPCRouter({
             message: "One or both countries not found",
           });
         }
+        assertRealmsMatch(country1.realmId, country2.realmId);
 
         const scenario = await ctx.db.culturalScenario.create({
           data: {

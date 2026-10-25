@@ -214,12 +214,12 @@ export const CORE_COMMANDS: CommandEntry[] = [
     keywords: ["browse", "directory", "nations", "search countries", "states", "world"],
   },
   {
-    name: "Global leaderboards",
+    name: "Leaderboards",
     path: "/leaderboards",
     icon: Trophy,
     category: "Geography",
-    description: "World rankings by GDP, population and stability",
-    keywords: ["rankings", "leaderboards", "top", "score", "economy", "gdp", "tier"],
+    description: "Rankings of a realm's nations by GDP, population and stability",
+    keywords: ["rankings", "leaderboards", "top", "score", "economy", "gdp", "tier", "global"],
   },
   {
     name: "Found a nation",

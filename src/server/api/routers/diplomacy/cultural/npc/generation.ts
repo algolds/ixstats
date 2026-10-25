@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { clockForCountry } from "~/server/shared/realm-time";
+import { assertRealmsMatch } from "~/server/shared/same-realm-guard";
 import type { PrismaClient } from "@prisma/client";
 import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
 import { NPCPersonalitySystem } from "~/lib/diplomacy/npc-personality";
@@ -78,6 +79,7 @@ export const diplomaticCulturalNpcGenerationRouter = createTRPCRouter({
           message: "Country not found",
         });
       }
+      assertRealmsMatch(userCountry.realmId, targetCountry.realmId);
 
       // Scenario context from the two nations and their relation as they stand
       const [country1, country2, existingExchanges] = await Promise.all([
@@ -162,7 +164,6 @@ export const diplomaticCulturalNpcGenerationRouter = createTRPCRouter({
           diplomaticRisk: template.diplomaticRisk,
           economicCost: template.economicCost,
         },
-        // realm-time: the acting nation's clock; nations of two realms are T5's to keep apart.
         ixTimeTimestamp: (await clockForCountry(ctx.db, userCountry.id)).now(),
       });
 

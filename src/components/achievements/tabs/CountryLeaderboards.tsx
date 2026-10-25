@@ -26,6 +26,7 @@ import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { Card } from "~/components/ui/card";
 import { PodiumCard, Row } from "./leaderboard-parts";
+import { LeaderboardRealmSelect } from "./LeaderboardRealmSelect";
 
 const CATEGORIES = [
   { id: "all", label: "All categories" },
@@ -116,7 +117,7 @@ export function CountryLeaderboards() {
   const [activeDomain, setActiveDomain] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [limit, setLimit] = useState<number>(25);
-  // ?realm=<slug> ranks that realm; without it the server uses the viewer's active nation's realm.
+  // ?realm=<slug> ranks that realm (the selector sets it); without it the server uses the viewer's active nation's realm.
   const realm = useSearchParams().get("realm") ?? undefined;
 
   const { data: effectiveAchievements } = api.achievements.getLeaderboard.useQuery(
@@ -164,13 +165,15 @@ export function CountryLeaderboards() {
     <Card padding="lg" className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-label text-title-2">World leaderboards</h2>
+          <h2 className="text-label text-title-2">Realm leaderboards</h2>
           <p className="text-label-secondary text-footnote">
-            Rankings across {active.label.toLowerCase()} • top {limit} nations
+            Rankings across {active.label.toLowerCase()} • top {limit} nations of one realm, since
+            each realm runs at its own speed
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          <LeaderboardRealmSelect realmParam={realm} />
           <SearchField
             size="sm"
             placeholder="Search nations"

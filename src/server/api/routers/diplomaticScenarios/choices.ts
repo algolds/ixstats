@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { clockForCountry } from "~/server/shared/realm-time";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { assertSameRealm } from "~/server/shared/same-realm-guard";
 import { applyRelationshipImpact } from "~/lib/diplomacy/relationship-impact";
 
 type ChoiceOption = {
@@ -58,6 +59,7 @@ export const diplomaticScenariosChoicesRouter = createTRPCRouter({
         }
 
         assertScenarioOpenFor(scenario, input.countryId);
+        await assertSameRealm(ctx.db, scenario.country1Id, scenario.country2Id);
 
         // Parse response options to find selected choice
         const responseOptions = scenario.responseOptions
@@ -131,7 +133,6 @@ export const diplomaticScenariosChoicesRouter = createTRPCRouter({
               status: "completed",
               startDate: scenario.createdAt,
               endDate: new Date(),
-              // realm-time: the choosing nation's clock; nations of two realms are T5's to keep apart.
               ixTimeContext: (await clockForCountry(ctx.db, hostCountry.id)).now(),
               culturalImpact: selectedChoice.effects?.culturalImpact || 0,
               scenarioId: input.scenarioId,
