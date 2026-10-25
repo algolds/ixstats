@@ -14,6 +14,10 @@ export interface EquipmentPreset {
   name: string;
   /** Display category, such as "Main Battle Tank". */
   category: string;
+  /** Catalog category ("aircraft", "naval", "vehicle", "missile", "support"): which branches may hold it. */
+  catalogCategory?: string;
+  /** Catalog subcategory ("tank", "frigate"): sets the production lead time. */
+  subcategory?: string | null;
   era?: string;
   /** Manufacturer key (or name, for catalog rows created before keys were stored). */
   manufacturer?: string;
@@ -83,6 +87,8 @@ export function catalogRowToPreset(row: CatalogEquipmentRow): EquipmentPreset {
     type: ASSET_TYPE_BY_CATEGORY[row.category] ?? "installation",
     name: row.name,
     category: asString(capabilities.category) ?? row.subcategory ?? row.category,
+    catalogCategory: row.category,
+    subcategory: row.subcategory,
     era: row.era,
     manufacturer: row.manufacturer,
     role: asString(capabilities.role),

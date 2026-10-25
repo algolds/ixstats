@@ -3,7 +3,10 @@
  * (owner decision: other nations' strength reaches them as intelligence estimates, D3).
  */
 import {
+  MONTH_MS,
   alertEffectiveAt,
+  capacityDraw,
+  domesticCapacity,
   shareWarnings,
   type BranchView,
   type BudgetWarning,
@@ -35,6 +38,26 @@ function branchSummary(snapshot: DefenseSnapshot, view: BranchView) {
   };
 }
 
+/** Domestic industry now: monthly capacity, what open orders draw on it, and the newest design year it can build. */
+function procurementCapacity(snapshot: DefenseSnapshot) {
+  const { policy, orders } = snapshot.state;
+  const surgeMonths =
+    policy.surgeStartedClockMs === null
+      ? null
+      : Math.max(0, (snapshot.nowClockMs - policy.surgeStartedClockMs) / MONTH_MS);
+  return {
+    capacityMonthly: domesticCapacity({
+      gdp: snapshot.econ.gdp,
+      manufacturingShare: snapshot.econ.manufacturingShare,
+      surgeMonths,
+      priceIndex: policy.priceIndex,
+    }),
+    capacityUsedMonthly: orders.reduce((sum, o) => sum + capacityDraw(o), 0),
+    frontierYear: snapshot.econ.frontierYear,
+    accessibleYear: snapshot.econ.frontierYear - snapshot.view.frontierLagYears,
+  };
+}
+
 /** The owner's view: policy, budget, totals, every branch's derived state. */
 export function defenseOverview(snapshot: DefenseSnapshot) {
   const { policy } = snapshot.state;
@@ -60,6 +83,13 @@ export function defenseOverview(snapshot: DefenseSnapshot) {
     frontierLagYears: view.frontierLagYears,
     mobilisationSupplement: view.mobilisationSupplement,
     funding: view.funding,
+    // The economy the levers' previews rerun the model on, and the industry procurement draws on.
+    economy: {
+      population: snapshot.econ.population,
+      gdpPerCapita: snapshot.econ.gdpPerCapita,
+      gdp: snapshot.econ.gdp,
+    },
+    procurement: procurementCapacity(snapshot),
     warnings: warnings(snapshot),
     branches: view.branches.map((b) => branchSummary(snapshot, b)),
   };

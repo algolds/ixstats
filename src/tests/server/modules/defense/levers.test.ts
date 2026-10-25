@@ -29,6 +29,7 @@ import {
   applyOperationReadiness,
   cancelProcurementOrder,
   createEmptyBranch,
+  defenseOverview,
   demobiliseReserves,
   mobiliseReserves,
   orderProcurement,
@@ -124,6 +125,27 @@ describe("procurement", () => {
         source: "domestic",
       })
     ).rejects.toThrow(/beyond your industry's technology/);
+  });
+
+  it("shows the owner the industry's capacity, what open orders draw, and the newest design it can build", async () => {
+    await catalogItem({ key: "TANK", category: "vehicle", subcategory: "tank", era: "CONTEMPORARY", acquisitionCost: 5e6 });
+    const before = defenseOverview(await syncDefense(D(), "c1"));
+    await orderProcurement(D(), {
+      countryId: "c1",
+      branchId: branchOf("land").id as string,
+      catalogKey: "TANK",
+      quantity: 10,
+      source: "domestic",
+    });
+    const after = defenseOverview(await syncDefense(D(), "c1"));
+    expect(before.procurement.capacityMonthly).toBeGreaterThan(0);
+    expect(after.procurement.capacityUsedMonthly - before.procurement.capacityUsedMonthly).toBeCloseTo(
+      (10 * 5e6) / 24
+    );
+    expect(after.procurement.accessibleYear).toBeCloseTo(
+      after.procurement.frontierYear - after.frontierLagYears
+    );
+    expect(after.economy).toMatchObject({ population: 27e6, gdpPerCapita: 21_000 });
   });
 
   it("refuses equipment the branch's domain cannot hold", async () => {

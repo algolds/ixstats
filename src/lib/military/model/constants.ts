@@ -252,6 +252,13 @@ export const LEAD_MONTHS_BY_SUBCATEGORY: Record<string, number> = {
 };
 export const DEFAULT_LEAD_MONTHS = 18;
 
+/** Which branch domains may hold a catalog category (categories not listed fit any branch). */
+export const CATALOG_CATEGORY_DOMAINS: Readonly<Record<string, readonly BranchDomain[]>> = {
+  aircraft: ["air", "sea", "land", "marines"],
+  naval: ["sea", "marines"],
+  vehicle: ["land", "marines"],
+};
+
 /** Catalog era → design year for quality decay (designer, era midpoints). */
 export const ERA_DESIGN_YEAR: Record<string, number> = {
   COLD_WAR: 1975,

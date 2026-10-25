@@ -6,6 +6,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import {
+  CATALOG_CATEGORY_DOMAINS,
   MONTH_MS,
   capacityDraw,
   domesticCapacity,
@@ -21,13 +22,6 @@ import { syncDefense } from "./defense.sync";
 export const MAX_OPEN_ORDERS = 100;
 export const MAX_ORDER_QUANTITY = 10_000;
 
-/** Which branch domains may hold a catalog category. */
-const DOMAINS_BY_CATEGORY: Record<string, readonly BranchDomain[]> = {
-  aircraft: ["air", "sea", "land", "marines"],
-  naval: ["sea", "marines"],
-  vehicle: ["land", "marines"],
-};
-
 const fmt = (n: number) => Math.round(n).toLocaleString("en-US");
 
 function assertFits(input: {
@@ -35,7 +29,7 @@ function assertFits(input: {
   category: string;
   name: string;
 }) {
-  const allowed = DOMAINS_BY_CATEGORY[input.category];
+  const allowed = CATALOG_CATEGORY_DOMAINS[input.category];
   if (allowed && !allowed.includes(input.domain)) {
     throw new TRPCError({
       code: "BAD_REQUEST",
