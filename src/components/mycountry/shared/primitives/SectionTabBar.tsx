@@ -42,9 +42,9 @@ function iconAccent(classes: string | undefined): string {
 
 /**
  * The sub-tab bar shared by the MyCountry domain sections (Economy, Politics, Diplomacy,
- * Defense): a Facet `SegmentedControl` exposed as a tablist. More than five sections
- * scroll horizontally; the active section's icon takes the domain accent and counts sit in the
- * segment's badge slot.
+ * Defense): a Facet `SegmentedControl` exposed as a tablist. Labels are never cut short: on a
+ * narrow screen (a 375px phone) the strip scrolls sideways instead. The active section's icon
+ * takes the domain accent and counts sit in the segment's badge slot.
  */
 export function SectionTabBar<Id extends string>({
   tabs,
@@ -57,13 +57,14 @@ export function SectionTabBar<Id extends string>({
   return (
     <SegmentedControl<Id>
       asTabs
+      scrollable
       aria-label={ariaLabel}
       className={cn("max-w-full", className)}
       value={activeTab}
       onValueChange={onChange}
       options={tabs.map(({ id, label, icon: Icon, badge, activeClassName: tabActive }) => ({
         value: id,
-        label: <span className="truncate">{label}</span>,
+        label,
         "aria-label": label,
         icon: (
           <Icon
