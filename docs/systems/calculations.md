@@ -86,6 +86,8 @@ National-issue resolution (`src/lib/national-issues/projection-effects.ts`) crea
 
 Growth directives (`routers/intent.ts`) also create a `gdp_level_adjustment`, phased in over 1 IxTime year: `growthModifierToLevelShift(m, 1)` = `(1 + g(1+m)) / (1+g) − 1` at the reference growth `g = 3%` (`REFERENCE_GDP_GROWTH`), where `m` is the package's growth modifier (capped at 0.05).
 
+Any other operation on those fields (`set`, an absolute add to GDP) is dropped: it is not applied, not listed in the issue's consequence log, and not shown in the recon preview.
+
 The other producers:
 
 | Producer | Effect | Value, phase-in |
@@ -99,8 +101,6 @@ The other producers:
 | Admin world event | `gdp_level_adjustment` + `population_level_adjustment` | up to −20% / −2% (negative types) or +15% / +1% at severity 1, over the event's duration |
 
 `NATURAL_DISASTER` scales population by `1 + v` and total GDP by `1 + 1.5v` at once; `SPECIAL_EVENT` scales population by `1 + 0.5v` and GDP per capita by `1 + 0.8v`.
-
-Any other operation on those fields (`set`, an absolute add to GDP) is dropped: it is not applied, not listed in the issue's consequence log, and not shown in the recon preview.
 
 ### High GDP per Capita Diminishing Returns
 For nations whose baseline GDP per capita exceeds `$60,000` (`diminishingReturnsThreshold`), a logarithmic diminishing return modifier (factor `0.5`, `diminishingReturnsFactor`) dampens growth after the tier cap:
