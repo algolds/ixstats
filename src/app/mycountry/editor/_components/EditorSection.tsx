@@ -102,7 +102,8 @@ export function SaveButton({
  * Success and error handling every section's save shares. A save folds the values the server
  * returns into the page's copy (`apply`), which re-keys this section alone; a refusal because the
  * same fields changed elsewhere puts the section in conflict. A save also drops MyCountry's cached
- * copy of the nation, so going back shows the new name, flag, form or size at once.
+ * copy of the nation and its government, so going back shows the new name, flag, form, size or
+ * budget at once.
  */
 export function useSaveHandlers<Result>({
   saved,
@@ -121,6 +122,8 @@ export function useSaveHandlers<Result>({
       applySaved((state) => apply(state, result));
       void utils.countries.invalidate();
       void utils.mycountry.getCountryDashboard.invalidate();
+      // The form names the government's offices, and a size change moves the budget.
+      void utils.government.invalidate();
       notify.success(saved);
     },
     onError: (error: { message: string; data?: { code?: string } | null }) => {

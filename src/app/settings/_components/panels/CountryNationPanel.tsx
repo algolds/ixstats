@@ -79,6 +79,9 @@ export function CountryNationPanel({
     onSuccess: () => {
       notify.success("Map sync mode updated");
       void refetchGeo();
+      // Bottom-up rebases the national figures (and the budget with them).
+      void utils.countries.invalidate();
+      void utils.government.invalidate();
     },
     onError: (err) => notify.error(err.message || "Failed to update sync mode"),
   });
@@ -88,6 +91,7 @@ export function CountryNationPanel({
       notify.success("National baseline rebased from map");
       void refetchGeo();
       void utils.countries.invalidate();
+      void utils.government.invalidate();
       void utils.countryGeo.invalidate();
       void utils.users.invalidate();
     },

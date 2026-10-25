@@ -29,6 +29,7 @@ const mockLoaded: { current: Record<string, unknown> | null } = { current: null 
 const mockInvalidate = {
   countries: jest.fn(),
   dashboard: jest.fn(),
+  government: jest.fn(),
   profile: jest.fn(),
 };
 /** What a refetch returns (Reload); null means the state as first loaded. */
@@ -66,6 +67,7 @@ jest.mock("~/trpc/react", () => ({
     useUtils: () => ({
       countries: { invalidate: mockInvalidate.countries },
       mycountry: { getCountryDashboard: { invalidate: mockInvalidate.dashboard } },
+      government: { invalidate: mockInvalidate.government },
       users: { getProfile: { invalidate: mockInvalidate.profile } },
     }),
     users: {
@@ -165,6 +167,7 @@ describe("the country editor", () => {
     // MyCountry's cached copy of the nation is dropped, so it shows the change at once.
     expect(mockInvalidate.countries).toHaveBeenCalledTimes(1);
     expect(mockInvalidate.dashboard).toHaveBeenCalledTimes(1);
+    expect(mockInvalidate.government).toHaveBeenCalledTimes(1);
   });
 
   it("shows a capital placed on the map read-only, with the way to the map editor", () => {
