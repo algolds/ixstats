@@ -131,8 +131,8 @@ type CatalogFacts = Pick<
 export function catalogRole(capabilities: string | null | undefined): string | null {
   if (!capabilities) return null;
   try {
-    const parsed: { role?: unknown } = JSON.parse(capabilities);
-    return typeof parsed.role === "string" ? parsed.role : null;
+    const parsed: { role?: string | number | boolean | null } | null = JSON.parse(capabilities);
+    return typeof parsed?.role === "string" ? parsed.role : null;
   } catch {
     return null;
   }
