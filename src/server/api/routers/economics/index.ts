@@ -7,15 +7,9 @@
  * Domains:
  *  - profile: economic profile, labor market, demographics (core get/update)
  *  - fiscal:  fiscal system, income distribution, government budget (get/update)
- *  - config:  comprehensive economy configuration save/get (transaction endpoints)
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { economicsProfileRouter } from "./profile";
 import { economicsFiscalRouter } from "./fiscal";
-import { economicsConfigRouter } from "./config";
 
-export const economicsRouter = mergeRouters(
-  economicsProfileRouter,
-  economicsFiscalRouter,
-  economicsConfigRouter
-);
+export const economicsRouter = mergeRouters(economicsProfileRouter, economicsFiscalRouter);

@@ -36,7 +36,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.diplomaticScenarios`** | 4 | 4 | 0 | **8** | `src/server/api/routers/diplomaticScenarios/index.ts` |
 | **`api.economicArchetypes`** | 2 | 4 | 0 | **6** | `src/server/api/routers/economicArchetypes/index.ts` |
 | **`api.economicComponents`** | 3 | 1 | 0 | **4** | `src/server/api/routers/economicComponents/index.ts` |
-| **`api.economics`** | 1 | 2 | 0 | **3** | `src/server/api/routers/economics/index.ts` |
+| **`api.economics`** | 0 | 2 | 0 | **2** | `src/server/api/routers/economics/index.ts` |
 | **`api.elections`** | 6 | 5 | 0 | **11** | `src/server/api/routers/elections/index.ts` |
 | **`api.exchange`** | 8 | 25 | 0 | **33** | `src/server/api/routers/exchange/index.ts` |
 | **`api.formulas`** | 1 | 2 | 0 | **3** | `src/server/api/routers/formulas.ts` |
@@ -47,7 +47,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.geoFeatures`** | 5 | 34 | 0 | **39** | `src/server/api/routers/geo/features/index.ts` |
 | **`api.geoSovereignty`** | 2 | 3 | 0 | **5** | `src/server/api/routers/geo/sovereignty.ts` |
 | **`api.geoWiki`** | 3 | 0 | 0 | **3** | `src/server/api/routers/geo/wiki.ts` |
-| **`api.government`** | 3 | 4 | 0 | **7** | `src/server/api/routers/government/index.ts` |
+| **`api.government`** | 3 | 5 | 0 | **8** | `src/server/api/routers/government/index.ts` |
 | **`api.governmentComponents`** | 2 | 1 | 0 | **3** | `src/server/api/routers/governmentComponents/index.ts` |
 | **`api.heraldry`** | 6 | 6 | 0 | **12** | `src/server/api/routers/heraldry/index.ts` |
 | **`api.historical`** | 1 | 0 | 0 | **1** | `src/server/api/routers/historical/index.ts` |
@@ -309,12 +309,9 @@ api.admin.saveCronSchedules.useMutation() // { cronSchedule_lorewardsScoring, cr
 api.atomicGovernment.getComponents.useQuery({ countryId })
 ```
 
-### economics Router (3 procedures)
+### economics Router (2 procedures)
 
 ```typescript
-// Queries (1)
-api.economics.getEconomyConfiguration.useQuery({ countryId })
-
 // Mutations (2)
 api.economics.updateEconomicProfile.useMutation() // { countryId, gdpGrowthVolatility?, economicComplexity?, innovationIndex?, competitivenessRank?, easeOfDoingBusiness?, corruptionIndex?, sectorBreakdown?, exportsGDPPercent?, importsGDPPercent?, tradeBalance? }
 api.economics.updateFiscalSystem.useMutation() // { countryId, personalIncomeTaxRates?, corporateTaxRates?, salesTaxRate?, propertyTaxRate?, payrollTaxRate?, exciseTaxRates?, wealthTaxRate?, spendingByCategory?, fiscalBalanceGDPPercent?, primaryBalanceGDPPercent?, taxEfficiency? }
@@ -333,16 +330,15 @@ api.taxSystem.delete.useMutation() // { countryId }
 api.taxSystem.checkConflicts.useMutation() // { countryId, data }
 ```
 
-### government Router (10 procedures)
+### government Router (8 procedures)
 
 ```typescript
-// Queries (4)
+// Queries (3)
 api.government.getByCountryId.useQuery({ countryId, budgetYearsLimit?, includeSubDepartments?, includeSubBudgets?, revenueSourcesLimit? })
 api.government.getFullByCountryId.useQuery({ countryId })
-api.government.getCivilServiceStatus.useQuery({ countryId })
 api.government.getPolicyMaintenance.useQuery({ countryId }) // owner: maintenance spent per budget year
 
-// Mutations (6, owner-checked)
+// Mutations (5, owner-checked)
 api.government.startBudgetYear.useMutation() // { countryId }
 api.government.createStructure.useMutation() // { countryId }: the form's default departments and allocations
 api.government.setAllocation.useMutation() // { countryId, departmentId, allocatedPercent }: amount follows
@@ -1056,12 +1052,6 @@ establishEmbassy.mutate({
   hostCountryId: "clx9b...", guestCountryId: "clx...", name: "Embassy of Innovation",
   location: "Techville", ambassadorName: "Ambassador Jane Smith"
 });
-```
-
-### economics.getEconomyConfiguration — Economy Configuration
-
-```typescript
-const { data: config } = api.economics.getEconomyConfiguration.useQuery({ countryId: "clx..." });
 ```
 
 ### thinkpages.createPost — Create Post

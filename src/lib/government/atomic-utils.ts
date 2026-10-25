@@ -421,7 +421,7 @@ export function calculateComponentEconomicModifiers(
  * Helper to parse a timeToImplement string (e.g. "12 months", "2-3 years")
  * and return the number of months or years to add.
  */
-export function parseTimeToImplement(timeStr: string): { months?: number; years?: number } {
+function parseTimeToImplement(timeStr: string): { months?: number; years?: number } {
   const str = timeStr.toLowerCase().trim();
   if (str.includes("month")) {
     const matches = str.match(/\d+/g);
