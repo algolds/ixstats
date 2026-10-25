@@ -183,8 +183,8 @@ async function spawnVolatileIssues(): Promise<SpawnVolatileIssuesResult> {
 
 /**
  * The `policy-maintenance` job (every 6 h): expire lapsed policies, roll volatile risks, then
- * debit each country's active policies — at most once per policy per budget year (PL-8, see
- * ./lifecycle), so reruns within a year debit nothing.
+ * charge each country's active policies as spending within the year — at most once per policy
+ * per budget year (PL-8, see ./lifecycle), so reruns within a year charge nothing.
  */
 export async function runPolicyMaintenanceDebits(
   database: PrismaClient = db
@@ -233,13 +233,14 @@ export async function runPolicyMaintenanceDebits(
           where: { countryId },
           select: { totalBudget: true },
         });
-        // No budget to debit from yet: nothing to do (and nothing recorded) until there is.
+        // No budget to spend from yet: nothing to do (and nothing recorded) until there is.
         if (structure?.totalBudget == null) continue;
 
         const debit = await debitCountryMaintenance(
           database,
           countryId,
           countryPolicies,
+          structure.totalBudget,
           budgetYear
         );
         result.policiesProcessed += debit.policiesDebited;

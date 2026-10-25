@@ -25,7 +25,6 @@ export function summarizeBudget(
   totalBudget: number
 ): BudgetSummary {
   const totalAllocated = sumOf(allocations, (a) => a.allocatedAmount);
-  const totalSpent = sumOf(allocations, (a) => a.spentAmount);
   const departmentAllocations = departments
     .map((department) => ({
       department,
@@ -36,9 +35,6 @@ export function summarizeBudget(
   return {
     totalBudget,
     totalAllocated,
-    totalSpent,
-    totalAvailable: totalAllocated - totalSpent,
-    utilizationRate: totalAllocated > 0 ? (totalSpent / totalAllocated) * 100 : 0,
     departmentCount: departments.length,
     departmentAllocations,
   };
@@ -79,8 +75,6 @@ export function buildDepartmentChartData(
       return {
         name: department?.shortName || department?.name || "Unknown",
         allocated: allocation.allocatedAmount ?? 0,
-        spent: allocation.spentAmount ?? 0,
-        available: allocation.availableAmount ?? 0,
         percent: allocation.allocatedPercent ?? 0,
         color: department?.color || "var(--color-label-secondary)",
       };
@@ -88,7 +82,10 @@ export function buildDepartmentChartData(
     .sort((a, b) => b.allocated - a.allocated);
 }
 
-/** Allocated and spent per recorded budget year, oldest first. Revenue has no history, so no revenue line. */
+/**
+ * Allocated per recorded budget year, oldest first. Revenue has no history, so no revenue line;
+ * nothing records spending yet (`spentAmount` has no writer), so no spending line either.
+ */
 export function buildTrendData(allocations: BudgetAllocation[]): BudgetTrendItem[] {
   const years = [...new Set(allocations.map((a) => a.budgetYear))].sort((a, b) => a - b);
   return years.map((year) => {
@@ -96,7 +93,6 @@ export function buildTrendData(allocations: BudgetAllocation[]): BudgetTrendItem
     return {
       year: String(year),
       budget: sumOf(inYear, (a) => a.allocatedAmount),
-      spent: sumOf(inYear, (a) => a.spentAmount),
     };
   });
 }

@@ -123,23 +123,43 @@ const byId = ({ where }: { where: { id: string } }) => {
 const echoCreate = async ({ data }: { data: object }) => ({ id: "row_new", ...data });
 const moduleTransaction = jest.mocked(moduleDb.$transaction);
 
-const governmentData = {
-  structure: {
-    governmentName: "Test Government",
-    governmentType: "Federal Republic" as const,
-    totalBudget: 1000,
-    fiscalYear: "2026",
-    budgetCurrency: "USD",
+/** A department row, when `departmentId` belongs to the country the query names. */
+const ownDepartmentRow = async ({
+  where,
+}: {
+  where: { id: string; governmentStructure: { countryId: string } };
+}) =>
+  countryOf(where.id) === where.governmentStructure.countryId
+    ? { id: where.id, governmentStructureId: "gs_1", governmentStructure: { totalBudget: 1000 } }
+    : null;
+const governmentDb = (departments = 0) => ({
+  country: {
+    findUnique: jest.fn(async ({ where }: { where: { id: string } }) =>
+      OWNER[where.id]
+        ? {
+            id: where.id,
+            name: "Testland",
+            ownerUserId: OWNER[where.id],
+            cities: [],
+            createdAt: new Date(0),
+            totalGovernmentSpending: 1000,
+            currentTotalGdp: 5000,
+            governmentComponents: [],
+            governmentStructure: null,
+          }
+        : null
+    ),
   },
-  departments: [],
-  budgetAllocations: [],
-  revenueSources: [],
-};
-const governmentDb = (existing: object | null = null) => ({
-  governmentStructure: {
-    findUnique: jest.fn().mockResolvedValue(existing),
-    create: jest.fn(),
-    update: jest.fn(),
+  governmentStructure: { findUnique: jest.fn().mockResolvedValue({ id: "gs_1" }) },
+  governmentDepartment: {
+    count: jest.fn().mockResolvedValue(departments),
+    findFirst: jest.fn(ownDepartmentRow),
+    create: jest.fn(writeReached),
+    delete: jest.fn(writeReached),
+  },
+  budgetAllocation: {
+    findFirst: jest.fn().mockResolvedValue({ budgetYear: 2040 }),
+    upsert: jest.fn(writeReached),
   },
   $transaction: jest.fn(writeReached),
 });
@@ -283,18 +303,48 @@ interface Row {
 /* eslint-disable @typescript-eslint/no-explicit-any -- one table over routers of different shapes */
 const caller = (router: any, ctx: MockCallerContext): any => createCallerFactory(router)(ctx);
 const ROWS: Row[] = [
-  ...(["create", "update"] as const).map((procedure) => ({
-    name: `government.${procedure}`,
-    run: (ctx: MockCallerContext, t: Target) =>
-      caller(governmentRouter, ctx)[procedure]({
+  {
+    name: "government.createStructure",
+    run: (ctx, t) => caller(governmentRouter, ctx).createStructure({ countryId: COUNTRY[t] }),
+    db: () => governmentDb(),
+    write: (db) => db.$transaction as jest.Mock,
+    reach: "write path reached",
+  },
+  {
+    name: "government.setAllocation",
+    run: (ctx, t) =>
+      caller(governmentRouter, ctx).setAllocation({
         countryId: COUNTRY[t],
-        data: governmentData,
-        skipConflictCheck: true,
+        departmentId: `dept_${t}`,
+        allocatedPercent: 12,
       }),
     db: () => governmentDb(),
-    write: (db: Db) => db.$transaction as jest.Mock,
+    write: (db) => (db.budgetAllocation as { upsert: jest.Mock }).upsert,
     reach: "write path reached",
-  })),
+  },
+  {
+    name: "government.addDepartment",
+    run: (ctx, t) =>
+      caller(governmentRouter, ctx).addDepartment({
+        countryId: COUNTRY[t],
+        name: "Ministry of Fisheries",
+        category: "Agriculture",
+      }),
+    db: () => governmentDb(),
+    write: (db) => (db.governmentDepartment as { create: jest.Mock }).create,
+    reach: "write path reached",
+  },
+  {
+    name: "government.removeDepartment",
+    run: (ctx, t) =>
+      caller(governmentRouter, ctx).removeDepartment({
+        countryId: COUNTRY[t],
+        departmentId: `dept_${t}`,
+      }),
+    db: () => governmentDb(),
+    write: (db) => (db.governmentDepartment as { delete: jest.Mock }).delete,
+    reach: "write path reached",
+  },
   {
     name: "meetings.createMeeting",
     run: (ctx, t) =>
@@ -544,25 +594,33 @@ describe("and the details each country mutation adds", () => {
   const member = (db: Db) => context("member", db);
   const admin = (db: Db) => context("admin", db);
 
-  it("government: a refused write reads no structure, and create still answers CONFLICT when one exists", async () => {
+  it("government: a refused write reads no departments, a structure is created once, and another country's department is NOT_FOUND", async () => {
+    const government = (db: Db) => createCallerFactory(governmentRouter)(member(db));
     const db = governmentDb();
-    await expect(
-      createCallerFactory(governmentRouter)(member(db)).create({
-        countryId: FOREIGN,
-        data: governmentData,
-        skipConflictCheck: true,
-      })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    expect(db.governmentStructure.findUnique).not.toHaveBeenCalled();
+    await expect(government(db).createStructure({ countryId: FOREIGN })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    expect(db.governmentDepartment.count).not.toHaveBeenCalled();
 
-    const existing = governmentDb({ id: "gs_1", countryId: OWN });
+    const staffed = governmentDb(9);
+    await expect(government(staffed).createStructure({ countryId: OWN })).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
+    expect(staffed.$transaction).not.toHaveBeenCalled();
+
+    const own = governmentDb();
     await expect(
-      createCallerFactory(governmentRouter)(member(existing)).create({
+      government(own).setAllocation({
         countryId: OWN,
-        data: governmentData,
-        skipConflictCheck: true,
+        departmentId: "dept_foreign",
+        allocatedPercent: 10,
       })
-    ).rejects.toMatchObject({ code: "CONFLICT" });
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(
+      government(own).removeDepartment({ countryId: OWN, departmentId: "dept_foreign" })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(own.budgetAllocation.upsert).not.toHaveBeenCalled();
+    expect(own.governmentDepartment.delete).not.toHaveBeenCalled();
   });
 
   it("meetings, policies and quick actions record the caller as organiser or author, whatever userId was sent", async () => {

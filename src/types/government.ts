@@ -74,6 +74,9 @@ const DepartmentInputSchema = z.object({
   functions: z.array(z.string()).optional(),
 });
 
+/** A department's category, as the budget console offers it. */
+export const DepartmentCategorySchema = DepartmentInputSchema.shape.category;
+
 /** Bounds for `budgetYear`, an IxTime game year (see ~/lib/government/budget-year). */
 export const BUDGET_YEAR_MIN = 1900;
 export const BUDGET_YEAR_MAX = 3000;
@@ -460,9 +463,6 @@ export interface RevenueSourceInput {
 export interface BudgetSummary {
   totalBudget: number;
   totalAllocated: number;
-  totalSpent: number;
-  totalAvailable: number;
-  utilizationRate: number;
   departmentCount: number;
   /** Every department, highest allocation first; `allocation` is null when it has none this year. */
   departmentAllocations: {

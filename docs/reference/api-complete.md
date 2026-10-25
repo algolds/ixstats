@@ -333,18 +333,21 @@ api.taxSystem.delete.useMutation() // { countryId }
 api.taxSystem.checkConflicts.useMutation() // { countryId, data }
 ```
 
-### government Router (6 procedures)
+### government Router (10 procedures)
 
 ```typescript
-// Queries (3)
+// Queries (4)
 api.government.getByCountryId.useQuery({ countryId, budgetYearsLimit?, includeSubDepartments?, includeSubBudgets?, revenueSourcesLimit? })
 api.government.getFullByCountryId.useQuery({ countryId })
 api.government.getCivilServiceStatus.useQuery({ countryId })
+api.government.getPolicyMaintenance.useQuery({ countryId }) // owner: maintenance spent per budget year
 
-// Mutations (3)
-api.government.checkConflicts.useMutation() // { countryId, data }
-api.government.create.useMutation() // { countryId, data, skipConflictCheck? }
-api.government.update.useMutation() // { countryId, data, skipConflictCheck? }
+// Mutations (6, owner-checked)
+api.government.startBudgetYear.useMutation() // { countryId }
+api.government.createStructure.useMutation() // { countryId }: the form's default departments and allocations
+api.government.setAllocation.useMutation() // { countryId, departmentId, allocatedPercent }: amount follows
+api.government.addDepartment.useMutation() // { countryId, name, category }
+api.government.removeDepartment.useMutation() // { countryId, departmentId }
 ```
 
 ---

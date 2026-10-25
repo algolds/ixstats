@@ -197,7 +197,8 @@ const LATER = new Date(FOUNDED.getTime() + FOUNDING_GRACE_MS + 60_000);
 
 function firstStepsDb(
   rows: {
-    budgetAllocations?: Array<{ updatedAt: Date }>;
+    /** `lastReviewed`: the owner's last budget edit (founding writes it during the grace window). */
+    budgetAllocations?: Array<{ lastReviewed: Date }>;
     fiscal?: { updatedAt: Date } | null;
     tax?: { updatedAt: Date } | null;
     officials?: number;
@@ -223,9 +224,9 @@ function firstStepsDb(
       update: jest.fn(async (_args: { where: { id: string }; data: object }) => own),
     },
     budgetAllocation: {
-      // Mirrors the `updatedAt > threshold` filter the query sends.
-      findFirst: jest.fn(async ({ where }: { where: { updatedAt: { gt: Date } } }) =>
-        (rows.budgetAllocations ?? []).some((row) => row.updatedAt > where.updatedAt.gt)
+      // Mirrors the `lastReviewed > threshold` filter the query sends.
+      findFirst: jest.fn(async ({ where }: { where: { lastReviewed: { gt: Date } } }) =>
+        (rows.budgetAllocations ?? []).some((row) => row.lastReviewed > where.lastReviewed.gt)
           ? { id: "alloc_1" }
           : null
       ),
@@ -543,7 +544,7 @@ describe("taxSystem and economics", () => {
 describe("the first-steps checklist", () => {
   it("ticks each step from the rows its console writes, not the rows founding wrote", async () => {
     const db = firstStepsDb({
-      budgetAllocations: [{ updatedAt: DURING_FOUNDING }, { updatedAt: LATER }],
+      budgetAllocations: [{ lastReviewed: DURING_FOUNDING }, { lastReviewed: LATER }],
       fiscal: { updatedAt: LATER },
       tax: { updatedAt: DURING_FOUNDING },
       officials: 2,

@@ -5,18 +5,19 @@
  * `api.government.*` is byte-identical to the former monolith — no call sites change.
  *
  * Domains:
- *  - crud:       structure reads (getByCountryId / getFullByCountryId) and conflict check
- *  - lifecycle:  full create / update of the government structure (departments, budgets, revenue)
+ *  - crud:       structure reads (getByCountryId / getFullByCountryId) and starting a budget year
+ *  - budget:     the owner's National budget edits (structure, departments, allocations) and
+ *                policy maintenance spent per year
  *  - components: atomic government components, department hierarchy, political metrics,
  *                effectiveness analysis
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { governmentCrudRouter } from "./crud";
-import { governmentLifecycleRouter } from "./lifecycle";
+import { governmentBudgetRouter } from "./budget";
 import { governmentComponentsRouter } from "./components";
 
 export const governmentRouter = mergeRouters(
   governmentCrudRouter,
-  governmentLifecycleRouter,
+  governmentBudgetRouter,
   governmentComponentsRouter
 );

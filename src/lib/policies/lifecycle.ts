@@ -6,14 +6,21 @@
  * - Simulation: an active policy's growth effect is a StorytellerEffect tagged `POLICY:<id>`
  *   (./effects-sync); ending the policy clears it.
  * - Maintenance (PL-8): `maintenanceCost` is an annual figure (e.g. a stipend × population), and
- *   the `policy-maintenance` job runs every 6 h. Each debit is recorded as a PolicyEffectLog row
- *   (`effectType` MAINTENANCE_DEBIT, `notes` "FY<budget year>"), so a policy is debited at most
- *   once per IxTime budget year however often the job runs.
+ *   the `policy-maintenance` job runs every 6 h. Each charge is recorded as a PolicyEffectLog row
+ *   (`effectType` MAINTENANCE_DEBIT, `notes` "FY<budget year>", `actualEffect` the amount), so a
+ *   policy is charged at most once per IxTime budget year however often the job runs.
+ *   Maintenance is spending within the year: it never debits `totalBudget` (a yearly flow), and
+ *   a year's charges stop at that year's budget (`chargeMaintenance`).
  */
 import type { PrismaClient } from "@prisma/client";
 import { CountryEventSpine } from "~/lib/activity";
 import { IxTime } from "~/lib/ixtime";
 import { currentBudgetYear } from "~/lib/government/budget-year";
+import {
+  chargeMaintenance,
+  maintenanceCharge,
+  maintenanceEffect,
+} from "~/lib/government/budget-math";
 import { clearPolicyEffect } from "./effects-sync";
 
 /** Statuses in which a policy is enacted (and can be repealed or expire). */
@@ -84,14 +91,16 @@ interface MaintenancePolicy {
 }
 
 /**
- * Debit one country's active policies for the current budget year, skipping any policy already
- * debited this year. The debit and its PolicyEffectLog markers are written in one transaction.
- * Returns the policies debited and the total.
+ * Charge one country's active policies for the current budget year, skipping any policy already
+ * charged this year. Charges stop once the year's maintenance reaches `totalBudget`. The
+ * PolicyEffectLog markers and the ledger entry are written in one transaction. Returns the
+ * policies charged and the total.
  */
 export async function debitCountryMaintenance(
   db: PrismaClient,
   countryId: string,
   policies: MaintenancePolicy[],
+  totalBudget: number,
   budgetYear: number = currentBudgetYear()
 ): Promise<{ policiesDebited: number; totalDebited: number }> {
   const costed = policies.filter((p) => (p.maintenanceCost || 0) > 0);
@@ -99,50 +108,45 @@ export async function debitCountryMaintenance(
   const periodKey = maintenancePeriodKey(budgetYear);
 
   return db.$transaction(async (tx) => {
-    const done = await tx.policyEffectLog.findMany({
+    const thisYear = await tx.policyEffectLog.findMany({
       where: {
-        policyId: { in: costed.map((p) => p.id) },
+        policy: { countryId },
         effectType: MAINTENANCE_DEBIT_EFFECT,
         notes: periodKey,
       },
-      select: { policyId: true },
+      select: { policyId: true, actualEffect: true },
     });
-    const debited = new Set(done.map((d) => d.policyId));
-    const due = costed.filter((p) => !debited.has(p.id));
+    const charged = new Set(thisYear.map((d) => d.policyId));
+    const due = costed.filter((p) => !charged.has(p.id));
     if (due.length === 0) return { policiesDebited: 0, totalDebited: 0 };
 
+    const spent = thisYear.reduce((sum, row) => sum + maintenanceCharge(row.actualEffect), 0);
+    const charges = chargeMaintenance(
+      totalBudget,
+      spent,
+      due.map((p) => p.maintenanceCost)
+    );
     const appliedIxTime = IxTime.getCurrentIxTime();
     await tx.policyEffectLog.createMany({
-      data: due.map((p) => ({
+      data: due.map((p, i) => ({
         policyId: p.id,
         appliedIxTime,
         effectType: MAINTENANCE_DEBIT_EFFECT,
         notes: periodKey,
-        actualEffect: JSON.stringify({ totalBudget: -p.maintenanceCost }),
+        actualEffect: maintenanceEffect(charges[i]!),
       })),
     });
 
-    const total = due.reduce((sum, p) => sum + p.maintenanceCost, 0);
-    const applied = await CountryEventSpine.recordCountryEvent({
+    const total = charges.reduce((sum, charge) => sum + charge, 0);
+    // A ledger entry only: maintenance is spending within the year, not a debit of the budget.
+    await CountryEventSpine.recordCountryEvent({
       db: tx as PrismaClient,
       countryId,
       sourceType: "policy",
-      description: `Policy Maintenance (${periodKey}): debited total cost of ${total.toLocaleString()} from budget for active policies: ${due
-        .map((p) => `"${p.name}" (${p.maintenanceCost.toLocaleString()})`)
+      description: `Policy maintenance (${periodKey}): ${total.toLocaleString()} spent on active policies: ${due
+        .map((p, i) => `"${p.name}" (${charges[i]!.toLocaleString()})`)
         .join(", ")}`,
-      consequences: due.map((p) => ({
-        targetModel: "GovernmentStructure",
-        targetField: "totalBudget",
-        operation: "subtract" as const,
-        value: p.maintenanceCost,
-        effectType: "POLICY_MAINTENANCE",
-      })),
     });
-    // The spine logs and skips a consequence it cannot apply (e.g. no budget yet); roll the
-    // period markers back with it so the policy is debited on a later run instead of never.
-    if (applied.length !== due.length) {
-      throw new Error(`applied ${applied.length} of ${due.length} maintenance debits`);
-    }
     return { policiesDebited: due.length, totalDebited: total };
   });
 }

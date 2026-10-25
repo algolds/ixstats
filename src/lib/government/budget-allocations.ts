@@ -9,8 +9,10 @@
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { currentBudgetYear } from "./budget-year";
+import { allocationAmount } from "./budget-math";
 
-type BudgetDb = Pick<PrismaClient, "budgetAllocation"> | Prisma.TransactionClient;
+type BudgetDb =
+  Pick<PrismaClient, "budgetAllocation" | "governmentStructure"> | Prisma.TransactionClient;
 
 /** Latest budget year at or before `currentYear` for the country, or null. */
 export async function findEffectiveBudgetYear(
@@ -51,8 +53,9 @@ export async function loadEffectiveBudget(
 }
 
 /**
- * Start `toYear`'s budget by copying the budget in effect before it. Departments that already
- * have a `toYear` allocation are left alone (`skipDuplicates` on the department/year key).
+ * Start `toYear`'s budget by copying the shares of the budget in effect before it, each worth its
+ * share of today's `totalBudget` (which has followed GDP since). Departments that already have a
+ * `toYear` allocation are left alone (`skipDuplicates` on the department/year key).
  */
 export async function rollBudgetForward(
   db: BudgetDb,
@@ -62,27 +65,59 @@ export async function rollBudgetForward(
   const fromYear = await findEffectiveBudgetYear(db, countryId, toYear - 1);
   if (fromYear === null) return { fromYear: null, toYear, created: 0 };
 
-  const previous = await db.budgetAllocation.findMany({
-    where: { governmentStructure: { countryId }, budgetYear: fromYear },
-    select: {
-      governmentStructureId: true,
-      departmentId: true,
-      allocatedAmount: true,
-      allocatedPercent: true,
-      notes: true,
-    },
-  });
+  const [previous, structure] = await Promise.all([
+    db.budgetAllocation.findMany({
+      where: { governmentStructure: { countryId }, budgetYear: fromYear },
+      select: {
+        governmentStructureId: true,
+        departmentId: true,
+        allocatedPercent: true,
+        notes: true,
+      },
+    }),
+    db.governmentStructure.findUnique({ where: { countryId }, select: { totalBudget: true } }),
+  ]);
+  const totalBudget = structure?.totalBudget ?? 0;
   const { count } = await db.budgetAllocation.createMany({
-    data: previous.map((a) => ({
-      governmentStructureId: a.governmentStructureId,
-      departmentId: a.departmentId,
-      budgetYear: toYear,
-      allocatedAmount: a.allocatedAmount,
-      allocatedPercent: a.allocatedPercent,
-      availableAmount: a.allocatedAmount,
-      notes: a.notes,
-    })),
+    data: previous.map((a) => {
+      const allocatedAmount = allocationAmount(totalBudget, a.allocatedPercent);
+      return {
+        governmentStructureId: a.governmentStructureId,
+        departmentId: a.departmentId,
+        budgetYear: toYear,
+        allocatedAmount,
+        allocatedPercent: a.allocatedPercent,
+        availableAmount: allocatedAmount,
+        notes: a.notes,
+      };
+    }),
     skipDuplicates: true,
   });
   return { fromYear, toYear, created: count };
+}
+
+/**
+ * Move a country's yearly budget with its GDP: `totalBudget` and the allocations of the budget in
+ * effect are multiplied by `ratio` (see `gdpScaleRatio`). Past years keep their amounts. Shares
+ * are unchanged, so amounts stay `totalBudget × allocatedPercent / 100`. `updatedAt` moves,
+ * `lastReviewed` (the owner's last edit) does not.
+ */
+export async function scaleBudgetWithGdp(
+  db: BudgetDb,
+  countryId: string,
+  ratio: number,
+  currentYear: number = currentBudgetYear()
+): Promise<void> {
+  if (!Number.isFinite(ratio) || ratio <= 0 || ratio === 1) return;
+  const { count } = await db.governmentStructure.updateMany({
+    where: { countryId },
+    data: { totalBudget: { multiply: ratio } },
+  });
+  if (count === 0) return;
+  const budgetYear = await findEffectiveBudgetYear(db, countryId, currentYear);
+  if (budgetYear === null) return;
+  await db.budgetAllocation.updateMany({
+    where: { governmentStructure: { countryId }, budgetYear },
+    data: { allocatedAmount: { multiply: ratio }, availableAmount: { multiply: ratio } },
+  });
 }

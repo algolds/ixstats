@@ -8,13 +8,19 @@ import { Card } from "~/components/ui/card";
 interface BudgetKeyMetricsProps {
   budgetSummary: BudgetSummary;
   revenueSummary: RevenueSummary;
+  /** Policy maintenance spent in the year shown: spending within the year, not a debit. */
+  maintenanceSpent: number;
   formatCurrency: (amount: number) => string;
 }
+
+const shareOf = (part: number, whole: number) =>
+  whole > 0 ? ((part / whole) * 100).toFixed(1) : "0";
 
 /** Four headline budget figures in one card, separated by hairlines rather than tinted tiles. */
 export function BudgetKeyMetrics({
   budgetSummary,
   revenueSummary,
+  maintenanceSpent,
   formatCurrency,
 }: BudgetKeyMetricsProps) {
   const metrics = [
@@ -26,25 +32,17 @@ export function BudgetKeyMetrics({
     {
       label: "Allocated",
       value: formatNumber(budgetSummary.totalAllocated),
-      sub: `${
-        budgetSummary.totalBudget > 0
-          ? ((budgetSummary.totalAllocated / budgetSummary.totalBudget) * 100).toFixed(1)
-          : 0
-      }% of total`,
+      sub: `${shareOf(budgetSummary.totalAllocated, budgetSummary.totalBudget)}% of total`,
     },
     {
-      label: "Utilized",
-      value: formatNumber(budgetSummary.totalSpent),
-      sub: `${budgetSummary.utilizationRate.toFixed(1)}% utilization`,
+      label: "Policy maintenance",
+      value: formatNumber(maintenanceSpent),
+      sub: `${shareOf(maintenanceSpent, budgetSummary.totalBudget)}% of the year's budget`,
     },
     {
       label: "Revenue",
       value: formatNumber(revenueSummary.totalRevenue),
-      sub: `${
-        revenueSummary.totalTaxRevenue > 0
-          ? ((revenueSummary.totalTaxRevenue / revenueSummary.totalRevenue) * 100).toFixed(1)
-          : 0
-      }% tax`,
+      sub: `${shareOf(revenueSummary.totalTaxRevenue, revenueSummary.totalRevenue)}% tax`,
     },
   ];
 

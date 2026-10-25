@@ -20,6 +20,7 @@ import { Label } from "~/components/ui/label";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Textarea } from "~/components/ui/textarea";
 import { cn } from "~/lib/utils";
+import { CreateGovernmentStructureButton } from "~/components/mycountry/domains/government/CreateGovernmentStructureButton";
 
 interface CabinetPanelProps {
   countryId: string;
@@ -151,10 +152,12 @@ function DepartmentRow({
 }
 
 function CabinetBody({
+  countryId,
   loading,
   departments,
   render,
 }: {
+  countryId: string;
   loading: boolean;
   departments: Department[];
   render: (dept: Department) => React.ReactNode;
@@ -171,9 +174,10 @@ function CabinetBody({
       <div className="text-label-secondary text-body flex flex-col items-center justify-center py-8 text-center">
         <Users className="mb-2 h-8 w-8 opacity-40" />
         <p>No government departments yet.</p>
-        <p className="text-footnote mt-1">
-          Create a government structure, then appoint officials here.
+        <p className="text-footnote mt-1 mb-3">
+          Create your government&apos;s departments, then appoint officials here.
         </p>
+        <CreateGovernmentStructureButton countryId={countryId} />
       </div>
     );
   }
@@ -267,6 +271,7 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
 
         <CardContent className="pt-0">
           <CabinetBody
+            countryId={countryId}
             loading={structureLoading || officialsLoading}
             departments={departments}
             render={(dept) => (

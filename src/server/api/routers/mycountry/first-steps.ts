@@ -136,8 +136,10 @@ export const myCountryFirstStepsRouter = createTRPCRouter({
       const ownTitle = canonicalizeTitle(linkedTitle ?? country.name, { source: pageWiki });
 
       const [budgetChange, fiscal, tax, officials, wikiArticle, capital] = await Promise.all([
+        // `lastReviewed` moves only on an owner's budget edit (or a budget year they start), not
+        // when stat progression moves amounts with GDP or a generated structure is written.
         ctx.db.budgetAllocation.findFirst({
-          where: { governmentStructure: { countryId }, updatedAt: { gt: after } },
+          where: { governmentStructure: { countryId }, lastReviewed: { gt: after } },
           select: { id: true },
         }),
         ctx.db.fiscalSystem.findUnique({ where: { countryId }, select: { updatedAt: true } }),

@@ -35,6 +35,7 @@ import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { governmentCrudRouter } from "~/server/api/routers/government/crud";
 import { governmentComponentsRouter } from "~/server/api/routers/government/components";
+import { governmentBudgetRouter } from "~/server/api/routers/government/budget";
 import { myCountryDashboardRouter } from "~/server/api/routers/mycountry/dashboard";
 import { electionsBrokersRouter } from "~/server/api/routers/elections/brokers";
 import { securityDefenseRouter } from "~/server/api/routers/security/defense";
@@ -164,6 +165,7 @@ function makeDb({ ownerUserId = "owner_db" }: { ownerUserId?: string } = {}) {
     },
     governmentStructure: { findUnique: jest.fn(async () => structuredClone(STRUCTURE)) },
     governmentComponent: { findMany: jest.fn(async () => []) },
+    policyEffectLog: { findMany: jest.fn(async () => []) },
     economicComponent: { findMany: jest.fn(async () => []) },
     taxComponent: { findMany: jest.fn(async () => []) },
     budgetAllocation: {
@@ -289,6 +291,7 @@ type Call = (ctx: never) => Promise<unknown>;
 
 const government = createCallerFactory(governmentCrudRouter);
 const governmentComponents = createCallerFactory(governmentComponentsRouter);
+const governmentBudget = createCallerFactory(governmentBudgetRouter);
 const mycountry = createCallerFactory(myCountryDashboardRouter);
 const brokers = createCallerFactory(electionsBrokersRouter);
 const defense = createCallerFactory(securityDefenseRouter);
@@ -384,36 +387,6 @@ describe.each([
   });
 });
 
-describe("government.checkConflicts", () => {
-  const data = {
-    structure: {
-      governmentName: "Grand Council",
-      governmentType: "Federal Republic" as const,
-      totalBudget: 1,
-      fiscalYear: "Calendar Year",
-      budgetCurrency: "USD",
-    },
-    departments: [],
-    budgetAllocations: [],
-    revenueSources: [],
-  };
-
-  it("is FORBIDDEN for another player (its warnings quote the stored budget)", async () => {
-    const db = makeDb();
-    await expect(
-      government(otherPlayer(db)).checkConflicts({ countryId: COUNTRY, data })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    expect(db.governmentStructure.findUnique).not.toHaveBeenCalled();
-  });
-
-  it("quotes the stored budget to the owner", async () => {
-    const res = await government(owner(makeDb())).checkConflicts({ countryId: COUNTRY, data });
-    expect(res.warnings).toEqual(
-      expect.arrayContaining([expect.objectContaining({ currentValue: TOTAL_BUDGET })])
-    );
-  });
-});
-
 // ─── Owner-only readers ─────────────────────────────────────────────────────
 
 /** The call, and the budget read that must not happen for a refused caller. */
@@ -432,6 +405,11 @@ const OWNER_ONLY: Array<[string, Call, (db: Db) => jest.Mock]> = [
     "government.getCivilServiceStatus",
     (ctx) => governmentComponents(ctx).getCivilServiceStatus({ countryId: COUNTRY }),
     (db) => db.governmentComponent.findMany,
+  ],
+  [
+    "government.getPolicyMaintenance",
+    (ctx) => governmentBudget(ctx).getPolicyMaintenance({ countryId: COUNTRY }),
+    (db) => db.policyEffectLog.findMany,
   ],
 ];
 
