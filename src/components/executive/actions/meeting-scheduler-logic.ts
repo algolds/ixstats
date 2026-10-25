@@ -1,4 +1,4 @@
-import { IxTime } from "~/lib/ixtime";
+import { parseRealmDate, type RealmCalendar } from "~/lib/realms/realm-clock";
 import type { IntentTemplate } from "./meeting-scheduler-types";
 
 export type TimePreset = "immediately" | "tomorrow" | "custom";
@@ -12,22 +12,41 @@ export interface RosterOfficial {
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const NINE_AM_MS = 9 * 60 * 60 * 1000;
 
-/** 09:00 UTC on the same UTC day as `ms`. */
-const nineAmUtc = (ms: number) =>
-  Date.parse(`${new Date(ms).toISOString().slice(0, 10)}T09:00:00Z`);
+/**
+ * Meetings are scheduled on the host nation's realm clock: `now` is its time, and a picked day is a day of its
+ * calendar, held at 09:00 of that day.
+ */
 
-export function presetScheduledTime(preset: TimePreset): number {
-  const now = IxTime.getCurrentIxTime();
+/** 09:00 of the calendar day the clock time `ms` falls on. */
+const nineAmOn = (ms: number, calendar: RealmCalendar) =>
+  Math.floor((ms + calendar.calendarOffsetMs) / DAY_MS) * DAY_MS +
+  NINE_AM_MS -
+  calendar.calendarOffsetMs;
+
+export function presetScheduledTime(
+  preset: TimePreset,
+  now: number,
+  calendar: RealmCalendar
+): number {
   if (preset === "immediately") return now;
-  return preset === "tomorrow" ? now + DAY_MS : nineAmUtc(now + DAY_MS);
+  return preset === "tomorrow" ? now + DAY_MS : nineAmOn(now + DAY_MS, calendar);
 }
 
-/** `YYYY-MM-DD` (UTC) for a date input. */
-export const toDateInputValue = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+/** `YYYY-MM-DD` of the (Gregorian) calendar day a clock time falls on, for a date input. */
+export const toDateInputValue = (ms: number, calendar: RealmCalendar) =>
+  new Date(ms + calendar.calendarOffsetMs).toISOString().slice(0, 10);
 
-/** A picked `YYYY-MM-DD` day, scheduled for 09:00 UTC. */
-export const fromDateInputValue = (value: string) => Date.parse(`${value}T09:00:00Z`);
+/** A picked `YYYY-MM-DD` calendar day, scheduled for 09:00, as clock time. */
+export const fromDateInputValue = (value: string, calendar: RealmCalendar) =>
+  Date.parse(`${value}T09:00:00Z`) - calendar.calendarOffsetMs;
+
+/** A typed date of a custom calendar ("14 Frostfall 812"), at 09:00, or null when it is no date of it. */
+export function fromRealmDateText(text: string, calendar: RealmCalendar): number | null {
+  const start = parseRealmDate(text, calendar);
+  return start === null ? null : start + NINE_AM_MS;
+}
 
 type RoleHolder = Pick<RosterOfficial, "title" | "role">;
 

@@ -16,9 +16,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { IxTime } from "~/lib/ixtime";
+import { useState } from "react";
+import { formatRealmDate, type RealmCalendar } from "~/lib/realms/realm-clock";
 import { INTENT_TEMPLATES } from "./meeting-scheduler-intents";
-import { fromDateInputValue, toDateInputValue, type TimePreset } from "./meeting-scheduler-logic";
+import {
+  fromDateInputValue,
+  fromRealmDateText,
+  toDateInputValue,
+  type TimePreset,
+} from "./meeting-scheduler-logic";
 import type { IntentTemplate, MeetingSchedulerProps } from "./meeting-scheduler-types";
 
 const EYEBROW = "text-label-secondary text-eyebrow";
@@ -146,16 +152,61 @@ export function GuestCountrySelect({
   );
 }
 
+/** A day of the realm's calendar: the date picker for Gregorian months, typed text for the founder's own. */
+function CalendarDayInput({
+  calendar,
+  value,
+  onChange,
+}: {
+  calendar: RealmCalendar;
+  value: number;
+  onChange: (ms: number) => void;
+}) {
+  const [text, setText] = useState(() => formatRealmDate(value, calendar));
+  const className = "bg-surface border-separator text-footnote max-w-[180px] py-2";
+  if (!calendar.months?.length) {
+    return (
+      <Input
+        id="custom-date"
+        type="date"
+        value={toDateInputValue(value, calendar)}
+        onChange={(e) => e.target.value && onChange(fromDateInputValue(e.target.value, calendar))}
+        required
+        className={className}
+      />
+    );
+  }
+  const parsed = fromRealmDateText(text, calendar);
+  return (
+    <Input
+      id="custom-date"
+      value={text}
+      placeholder={formatRealmDate(value, { ...calendar, era: "" })}
+      aria-invalid={parsed === null}
+      onChange={(e) => {
+        setText(e.target.value);
+        const ms = fromRealmDateText(e.target.value, calendar);
+        if (ms !== null) onChange(ms);
+      }}
+      required
+      className={className}
+    />
+  );
+}
+
 export function ScheduleFields({
   preset,
   onPresetChange,
   scheduledIxTime,
   onTimeChange,
+  calendar,
 }: {
   preset: TimePreset;
   onPresetChange: (preset: TimePreset) => void;
   scheduledIxTime: number;
   onTimeChange: (ms: number) => void;
+  /** The host nation's realm calendar: the date is picked and shown in it. */
+  calendar: RealmCalendar;
 }) {
   return (
     <div className="space-y-2">
@@ -174,20 +225,11 @@ export function ScheduleFields({
           <Label htmlFor="custom-date" className={EYEBROW}>
             Date
           </Label>
-          <Input
-            id="custom-date"
-            type="date"
-            value={toDateInputValue(scheduledIxTime)}
-            onChange={(e) => e.target.value && onTimeChange(fromDateInputValue(e.target.value))}
-            required
-            className="bg-surface border-separator text-footnote max-w-[180px] py-2"
-          />
+          <CalendarDayInput calendar={calendar} value={scheduledIxTime} onChange={onTimeChange} />
           <div className="bg-fill-4 text-caption text-label-secondary rounded-control-sm flex items-center gap-2 px-3 py-1">
             <Calendar aria-hidden className="h-3.5 w-3.5" />
             <span>Scheduled date</span>
-            <span className="text-label">
-              {IxTime.formatIxTime(scheduledIxTime, false).replace(" (ILT)", "")}
-            </span>
+            <span className="text-label">{formatRealmDate(scheduledIxTime, calendar)}</span>
             <span className="text-label-secondary text-footnote ml-auto font-normal">(09:00)</span>
           </div>
         </Card>

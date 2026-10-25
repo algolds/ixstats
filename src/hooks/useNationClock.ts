@@ -2,7 +2,8 @@
 
 import { createContext, useCallback, useContext, useSyncExternalStore } from "react";
 import type { RealmClockReader } from "~/lib/realms/realm-clock";
-import { useCountryClock } from "~/hooks/useRealmClock";
+import { useCountryClock, useRealmClock } from "~/hooks/useRealmClock";
+import { useViewerRealmId } from "~/hooks/useViewerRealmId";
 
 const NationClockContext = createContext<RealmClockReader | null | undefined>(undefined);
 
@@ -29,6 +30,16 @@ export function useNationClockFor(
   const own = typeof country?.realmId === "string" ? country : null;
   const fromCountry = useCountryClock(own);
   return own ? fromCountry : shared;
+}
+
+/**
+ * The clock of the viewer's own nation (its realm's; Ixnay without one), for what they act on as their nation from
+ * any page, e.g. scheduling a meeting from another country's profile. Null while their profile loads.
+ */
+export function useViewerNationClock(): RealmClockReader | null {
+  const realmId = useViewerRealmId();
+  const reader = useRealmClock(realmId);
+  return realmId === undefined ? null : reader;
 }
 
 /**
