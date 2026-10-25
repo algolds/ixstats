@@ -212,6 +212,7 @@ export async function updateSubdivisionSpatialProfile(
       JOIN "Country" co ON co.id = s."countryId"
       JOIN map_layers ml ON ml."layerType" = 'climate' AND ml."isActive" = true AND ml.geom_postgis IS NOT NULL
         AND ml."worldId" = co."realmId"
+        AND ml.geom_postgis && s.geom_postgis
       WHERE s.id = $1
         AND ST_Intersects(ST_MakeValid(s.geom_postgis), ST_MakeValid(ml.geom_postgis))
     `,
@@ -250,6 +251,7 @@ export async function updateSubdivisionSpatialProfile(
       JOIN "Country" co ON co.id = s."countryId"
       JOIN map_layers ml ON ml."layerType" = 'altitudes' AND ml."isActive" = true AND ml.geom_postgis IS NOT NULL
         AND ml."worldId" = co."realmId"
+        AND ml.geom_postgis && s.geom_postgis
       WHERE s.id = $1
         AND ST_Intersects(ST_MakeValid(s.geom_postgis), ST_MakeValid(ml.geom_postgis))
     `,
@@ -299,6 +301,7 @@ export async function updateSubdivisionSpatialProfile(
       JOIN "Country" co ON co.id = s."countryId"
       JOIN map_layers ml ON ml."layerType" = 'rivers' AND ml."isActive" = true AND ml.geom_postgis IS NOT NULL
         AND ml."worldId" = co."realmId"
+        AND ml.geom_postgis && s.geom_postgis
       WHERE s.id = $1
         AND ST_Intersects(ST_MakeValid(s.geom_postgis), ST_MakeValid(ml.geom_postgis))
     `,
@@ -313,6 +316,7 @@ export async function updateSubdivisionSpatialProfile(
       JOIN "Country" co ON co.id = s."countryId"
       JOIN map_layers ml ON ml."layerType" = 'lakes' AND ml."isActive" = true AND ml.geom_postgis IS NOT NULL
         AND ml."worldId" = co."realmId"
+        AND ml.geom_postgis && s.geom_postgis
       WHERE s.id = $1
         AND ST_Intersects(ST_MakeValid(s.geom_postgis), ST_MakeValid(ml.geom_postgis))
     `,

@@ -52,6 +52,7 @@ export async function resolveNeighbors(countryId: string, db: PrismaClient): Pro
          AND ml2.id != ml1.id
          AND ml1.geom_postgis IS NOT NULL
          AND ml2.geom_postgis IS NOT NULL
+         AND ml2.geom_postgis && ml1.geom_postgis
          AND ST_Intersects(ST_MakeValid(ml1.geom_postgis), ST_MakeValid(ml2.geom_postgis))
        WHERE ml1.id = $1`,
       mapLayer.id

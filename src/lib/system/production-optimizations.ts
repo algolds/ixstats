@@ -151,6 +151,8 @@ class MemoryOptimizer {
  */
 class DatabaseOptimizer {
   private static pgStatStatementsAvailable: boolean | null = null;
+  /** Calls per query at the previous check: pg_stat_statements is cumulative, so only growth is news. */
+  private static lastCalls = new Map<string, bigint>();
 
   /**
    * Optimize database connection for production
@@ -181,22 +183,27 @@ class DatabaseOptimizer {
 
       // PostgreSQL slow query analysis using pg_stat_statements
       // Requires pg_stat_statements extension to be enabled
-      const stats = await db.$queryRaw`
+      // COPY is pg_dump (backups), not app traffic.
+      const stats = await db.$queryRaw<
+        Array<{ query: string; calls: bigint; total_exec_time: number; mean_exec_time: number }>
+      >`
         SELECT
           query,
           calls,
           total_exec_time,
           mean_exec_time
         FROM pg_stat_statements
-        WHERE mean_exec_time > 10
+        WHERE mean_exec_time > 10 AND query NOT LIKE 'COPY %'
         ORDER BY mean_exec_time DESC
         LIMIT 10
       `;
 
       this.pgStatStatementsAvailable = true;
 
-      if ((stats as any[]).length > 0) {
-        console.warn("[DatabaseOptimizer] Slow queries detected:", stats);
+      const ranSinceLastCheck = stats.filter((s) => s.calls > (this.lastCalls.get(s.query) ?? 0n));
+      this.lastCalls = new Map(stats.map((s) => [s.query, s.calls]));
+      if (ranSinceLastCheck.length > 0) {
+        console.warn("[DatabaseOptimizer] Slow queries detected:", ranSinceLastCheck);
       }
     } catch {
       // Disable future checks if pg_stat_statements is not available
