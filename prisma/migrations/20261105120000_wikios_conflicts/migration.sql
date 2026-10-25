@@ -104,20 +104,37 @@ DELETE FROM "SystemConfig" WHERE "key" = 'wikiAutoSync.repushSkipped';
 
 -- Where each revision was saved: 'wikios' (a WikiOS save, stamped later by the mirror) or 'classic' (a MediaWiki
 -- revision brought in by an import or the inbound sync). MediaWiki ids order only classic revisions: the mirror's import
--- gives a WikiOS revision a new id with its older time. Every row that exists when the column is added was brought in
--- from classic, except those a WikiOS save queued for the mirror; the backfill runs only then, so a re-run changes
--- nothing (finished mirror jobs are purged after a month and could no longer tell).
+-- gives a WikiOS revision a new id with its older time. The backfill runs only when the column is added, so a re-run
+-- never touches what the code wrote since. A row is classic only when it carries a MediaWiki id that it came in with:
+-- api.php's trigger (prisma/manual-migrations/2026-09-30-wikios-api.sql) gave a MediaWiki row revId = mwRevId, while
+-- a WikiOS save keeps its own sequence revId after the mirror stamps it. A row a WikiOS save queued for the mirror stays
+-- wikios as well (finished jobs are purged after a month, so that alone could not tell). Without revId (the api.php SQL
+-- not applied, so WikiOS never took a save), the MediaWiki id and the jobs decide. The author is no signal: imported
+-- classic rows are tagged with the account holding their editor's claim.
 DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
-        WHERE table_name = 'wiki_revisions' AND column_name = 'origin'
+        WHERE table_schema = current_schema() AND table_name = 'wiki_revisions' AND column_name = 'origin'
     ) THEN
         ALTER TABLE "wiki_revisions" ADD COLUMN "origin" TEXT NOT NULL DEFAULT 'wikios';
-        UPDATE "wiki_revisions" r SET "origin" = 'classic'
-        WHERE NOT EXISTS (
-            SELECT 1 FROM "wiki_mirror_jobs" j WHERE j."kind" = 'revision' AND j."revisionId" = r."id"
-        );
+        IF EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = current_schema() AND table_name = 'wiki_revisions' AND column_name = 'revId'
+        ) THEN
+            UPDATE "wiki_revisions" r SET "origin" = 'classic'
+            WHERE r."mwRevId" IS NOT NULL
+              AND r."revId" = r."mwRevId"
+              AND NOT EXISTS (
+                  SELECT 1 FROM "wiki_mirror_jobs" j WHERE j."kind" = 'revision' AND j."revisionId" = r."id"
+              );
+        ELSE
+            UPDATE "wiki_revisions" r SET "origin" = 'classic'
+            WHERE r."mwRevId" IS NOT NULL
+              AND NOT EXISTS (
+                  SELECT 1 FROM "wiki_mirror_jobs" j WHERE j."kind" = 'revision' AND j."revisionId" = r."id"
+              );
+        END IF;
     END IF;
 END $$;
 
