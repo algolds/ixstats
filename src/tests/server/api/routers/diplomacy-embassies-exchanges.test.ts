@@ -28,7 +28,10 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { diplomaticEmbassiesRouter } from "~/server/api/routers/diplomacy/embassies";
 import { diplomaticCulturalRouter } from "~/server/api/routers/diplomacy/cultural";
 import { diplomaticScenariosRouter } from "~/server/api/routers/diplomaticScenarios";
-import { advanceCulturalExchanges, exchangeMetrics } from "~/lib/diplomacy/cultural-exchange-lifecycle";
+import {
+  advanceCulturalExchanges,
+  exchangeMetrics,
+} from "~/lib/diplomacy/cultural-exchange-lifecycle";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 import {
   CALLER_COUNTRY,
@@ -50,7 +53,9 @@ function relationDelegate(strength: number | null) {
       row ? [{ country1: CALLER_COUNTRY, country2: FOREIGN_COUNTRY, strength: row.strength }] : []
     ),
     create: jest.fn(async ({ data }: { data: object }) => data),
-    update: jest.fn(async ({ data }: { data: Record<string, unknown> }) => Object.assign(row!, data)),
+    update: jest.fn(async ({ data }: { data: Record<string, unknown> }) =>
+      Object.assign(row!, data)
+    ),
   };
 }
 
@@ -68,10 +73,18 @@ describe("embassies", () => {
     });
     const caller = embassies(ctx as never);
     await expect(
-      caller.establishEmbassy({ hostCountryId: CALLER_COUNTRY, guestCountryId: CALLER_COUNTRY, name: "Self" })
+      caller.establishEmbassy({
+        hostCountryId: CALLER_COUNTRY,
+        guestCountryId: CALLER_COUNTRY,
+        name: "Self",
+      })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
 
-    await caller.establishEmbassy({ hostCountryId: FOREIGN_COUNTRY, guestCountryId: CALLER_COUNTRY, name: "E" });
+    await caller.establishEmbassy({
+      hostCountryId: FOREIGN_COUNTRY,
+      guestCountryId: CALLER_COUNTRY,
+      name: "E",
+    });
     expect(relation.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ strength: 55, relationship: "neutral" }),
     });
@@ -99,11 +112,13 @@ describe("embassies", () => {
         findUnique: jest.fn(async () => ({ ...embassy })),
         findUniqueOrThrow: jest.fn(async () => ({ ...embassy })),
         update: embassyUpdate,
-        updateMany: jest.fn(async ({ where, data }: { where: { status: string }; data: { status: string } }) => {
-          if (embassy.status !== where.status) return { count: 0 };
-          embassy.status = data.status;
-          return { count: 1 };
-        }),
+        updateMany: jest.fn(
+          async ({ where, data }: { where: { status: string }; data: { status: string } }) => {
+            if (embassy.status !== where.status) return { count: 0 };
+            embassy.status = data.status;
+            return { count: 1 };
+          }
+        ),
         delete: jest.fn().mockResolvedValue(embassy),
       },
       diplomaticRelation: relation,
@@ -120,7 +135,9 @@ describe("embassies", () => {
 
     await caller.reopenEmbassy({ embassyId: "e1" });
     expect(relation.row!.strength).toBe(50);
-    await expect(caller.reopenEmbassy({ embassyId: "e1" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(caller.reopenEmbassy({ embassyId: "e1" })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
     expect(relation.row!.strength).toBe(50);
 
     await caller.deleteEmbassy({ embassyId: "e1" });
@@ -149,7 +166,9 @@ describe("embassies", () => {
         },
         diplomaticRelation: relationDelegate(strength),
       });
-      return embassies(createIdorContext(db as never) as never).getEmbassies({ countryId: CALLER_COUNTRY });
+      return embassies(createIdorContext(db as never) as never).getEmbassies({
+        countryId: CALLER_COUNTRY,
+      });
     };
     expect((await listed(72))[0]!.strength).toBe(72);
     expect((await listed(null))[0]!.strength).toBeNull();
@@ -161,9 +180,27 @@ describe("cultural exchanges", () => {
     const now = new Date("2026-10-25T00:00:00Z");
     const day = 86_400_000;
     const rows = [
-      { id: "starting", status: "planning", startDate: new Date(now.getTime() - day), endDate: new Date(now.getTime() + day), counts: [1, 2, 3] },
-      { id: "ending", status: "active", startDate: new Date(now.getTime() - 9 * day), endDate: new Date(now.getTime() - day), counts: [2, 0, 0] },
-      { id: "racing", status: "planning", startDate: new Date(now.getTime() - day), endDate: new Date(now.getTime() + day), counts: [0, 0, 0] },
+      {
+        id: "starting",
+        status: "planning",
+        startDate: new Date(now.getTime() - day),
+        endDate: new Date(now.getTime() + day),
+        counts: [1, 2, 3],
+      },
+      {
+        id: "ending",
+        status: "active",
+        startDate: new Date(now.getTime() - 9 * day),
+        endDate: new Date(now.getTime() - day),
+        counts: [2, 0, 0],
+      },
+      {
+        id: "racing",
+        status: "planning",
+        startDate: new Date(now.getTime() - day),
+        endDate: new Date(now.getTime() + day),
+        counts: [0, 0, 0],
+      },
     ];
     const updateMany = jest.fn(async ({ where }: { where: { id: string } }) => ({
       count: where.id === "racing" ? 0 : 1,
@@ -173,7 +210,11 @@ describe("cultural exchanges", () => {
         findMany: jest.fn(async () =>
           rows.map((r) => ({
             ...r,
-            _count: { participatingCountries: r.counts[0], culturalArtifacts: r.counts[1], votes: r.counts[2] },
+            _count: {
+              participatingCountries: r.counts[0],
+              culturalArtifacts: r.counts[1],
+              votes: r.counts[2],
+            },
           }))
         ),
         updateMany,
@@ -185,7 +226,11 @@ describe("cultural exchanges", () => {
     });
     expect(updateMany).toHaveBeenCalledWith({
       where: { id: "starting", status: "planning" },
-      data: { status: "active", participants: 1, ...exchangeMetrics({ participants: 1, artifacts: 2, votes: 3 }) },
+      data: {
+        status: "active",
+        participants: 1,
+        ...exchangeMetrics({ participants: 1, artifacts: 2, votes: 3 }),
+      },
     });
     expect(updateMany.mock.calls[1]![0]).toMatchObject({
       where: { id: "ending", status: "active" },
@@ -211,7 +256,11 @@ describe("cultural exchanges", () => {
         culturalExchange: { findUnique: jest.fn().mockResolvedValue(row), update: jest.fn() },
         culturalExchangeParticipant: { create: jest.fn().mockResolvedValue({ id: "p1" }) },
       }) as never
-    ).joinCulturalExchange({ exchangeId: "ex1", countryId: CALLER_COUNTRY, countryName: "Testland" });
+    ).joinCulturalExchange({
+      exchangeId: "ex1",
+      countryId: CALLER_COUNTRY,
+      countryName: "Testland",
+    });
 
   it("can be joined only while running, public, not hosted by the joiner, not joined yet and not full", async () => {
     await expect(joinAs(exchange())).resolves.toMatchObject({ id: "p1" });
@@ -243,13 +292,18 @@ describe("cultural exchanges", () => {
       return { call, create };
     };
     const base = {
-      ...exchange({ status: "completed", economicCost: 0, startDate: new Date(), endDate: new Date() }),
+      ...exchange({
+        status: "completed",
+        economicCost: 0,
+        startDate: new Date(),
+        endDate: new Date(),
+      }),
       _count: { culturalArtifacts: 0, votes: 0 },
     };
     await expect(measured(base).call).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await expect(
-      measured({ ...base, hostCountryId: CALLER_COUNTRY }).call
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(measured({ ...base, hostCountryId: CALLER_COUNTRY }).call).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
 
     const { call, create } = measured({
       ...base,
@@ -272,7 +326,12 @@ describe("cultural exchanges", () => {
     const db = createMockPrisma({
       culturalExchange: {
         findUnique: jest.fn().mockResolvedValue({
-          ...exchange({ economicCost: 1000, description: "", startDate: new Date(), endDate: new Date() }),
+          ...exchange({
+            economicCost: 1000,
+            description: "",
+            startDate: new Date(),
+            endDate: new Date(),
+          }),
           participatingCountries: [
             { countryId: "npc", countryName: "Npcland", role: "participant" },
             { countryId: "player", countryName: "Playerland", role: "participant" },
@@ -285,7 +344,9 @@ describe("cultural exchanges", () => {
       diplomaticRelation: { findMany: jest.fn().mockResolvedValue([]) },
       embassy: { findMany: jest.fn().mockResolvedValue([]) },
     });
-    const responses = await cultural(createIdorContext(db as never) as never).getNPCCulturalResponses({
+    const responses = await cultural(
+      createIdorContext(db as never) as never
+    ).getNPCCulturalResponses({
       exchangeId: "ex1",
       hostCountryId: FOREIGN_COUNTRY,
     });
@@ -299,7 +360,10 @@ describe("cultural exchanges", () => {
 describe("diplomatic scenarios", () => {
   it("are found on either side, and the history holds only finished ones", async () => {
     const db = createMockPrisma({
-      culturalScenario: { findMany: jest.fn().mockResolvedValue([]), count: jest.fn().mockResolvedValue(0) },
+      culturalScenario: {
+        findMany: jest.fn().mockResolvedValue([]),
+        count: jest.fn().mockResolvedValue(0),
+      },
     });
     const caller = scenarios(createIdorContext(db as never) as never);
     await caller.getAllScenarios({ countryId: CALLER_COUNTRY, isActive: false });
@@ -327,7 +391,9 @@ describe("diplomatic scenarios", () => {
       status: "active",
       createdAt: new Date(),
       expiresAt: new Date(Date.now() + 86_400_000),
-      responseOptions: JSON.stringify([{ id: "warm", label: "Warm", effects: { relationshipChange: 8 } }]),
+      responseOptions: JSON.stringify([
+        { id: "warm", label: "Warm", effects: { relationshipChange: 8 } },
+      ]),
       tags: "[]",
     };
     const relation = relationDelegate(50);

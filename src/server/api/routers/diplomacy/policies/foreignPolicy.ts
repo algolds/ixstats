@@ -303,9 +303,7 @@ export async function openForeignPolicyAction(db: PrismaClient, input: OpenForei
 
   // Normalize country ordering for bilateral trade lookup
   const [c1, c2] =
-    initiatorId < input.targetId
-      ? [initiatorId, input.targetId]
-      : [input.targetId, initiatorId];
+    initiatorId < input.targetId ? [initiatorId, input.targetId] : [input.targetId, initiatorId];
 
   const trade = await db.bilateralTrade.findUnique({
     where: { country1Id_country2Id: { country1Id: c1, country2Id: c2 } },

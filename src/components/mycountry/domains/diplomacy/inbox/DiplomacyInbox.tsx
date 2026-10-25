@@ -177,16 +177,20 @@ export function DiplomacyInbox({ countryId }: DiplomacyInboxProps) {
   ];
 
   // Sanctions, embargoes and blockades this nation imposed that are still in force.
-  const inForce: (InboxRow & { onLift: () => void })[] = (activePolicies.data ?? [])
-    .filter((a) => a.initiatorId === countryId && a.expiresAt !== null)
-    .map((a) => ({
-      key: `hostile-${a.id}`,
-      kind: "hostile" as const,
-      title: HOSTILE_ACTION_LABELS[a.actionType] ?? a.actionType,
-      subtitle: `On ${a.target?.name ?? "another nation"}`,
-      expiresAt: a.expiresAt!,
-      onLift: () => liftAction.mutate({ actionId: a.id }),
-    }));
+  const inForce: (InboxRow & { onLift: () => void })[] = (activePolicies.data ?? []).flatMap((a) =>
+    a.initiatorId === countryId && a.expiresAt
+      ? [
+          {
+            key: `hostile-${a.id}`,
+            kind: "hostile" as const,
+            title: HOSTILE_ACTION_LABELS[a.actionType] ?? a.actionType,
+            subtitle: `On ${a.target?.name ?? "another nation"}`,
+            expiresAt: a.expiresAt,
+            onLift: () => liftAction.mutate({ actionId: a.id }),
+          },
+        ]
+      : []
+  );
 
   const incomingLoading = incomingProposals.isLoading || incomingInvites.isLoading;
   const incomingError = incomingProposals.error ?? incomingInvites.error;

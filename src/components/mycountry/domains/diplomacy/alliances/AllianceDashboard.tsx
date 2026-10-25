@@ -72,9 +72,10 @@ export function AllianceDashboard({
   const inviteMutation = api.diplomaticPolicies.inviteMember.useMutation({
     onSuccess: (result) => {
       // A nation nobody plays answers at once; a player answers from their inbox.
-      if (result.pending) notify.success("Invitation sent", "It waits for the other nation's answer.");
-      else if (result.status === "active") notify.success("Invitation accepted", "They joined the alliance.");
-      else notify.success("Invitation declined", "They chose not to join.");
+      const answer = "status" in result ? result.status : null;
+      if (answer === "active") notify.success("Invitation accepted", "They joined the alliance.");
+      else if (answer) notify.success("Invitation declined", "They chose not to join.");
+      else notify.success("Invitation sent", "It waits for the other nation's answer.");
       setInviteOpen(false);
       setInviteTarget("");
       void refetch();

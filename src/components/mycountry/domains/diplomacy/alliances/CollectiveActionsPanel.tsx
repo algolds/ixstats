@@ -48,7 +48,8 @@ const STATUS_CONFIG: Record<string, { icon: typeof Clock; color: string }> = {
   expired: { icon: MinusCircle, color: "text-label-secondary" },
 };
 
-type AllianceActionType = "collective_sanction" | "shared_defense" | "trade_bloc" | "joint_statement";
+type AllianceActionType =
+  "collective_sanction" | "shared_defense" | "trade_bloc" | "joint_statement";
 
 const ACTION_TYPES: ReadonlyArray<{ value: AllianceActionType; label: string }> = [
   { value: "joint_statement", label: "Joint statement" },

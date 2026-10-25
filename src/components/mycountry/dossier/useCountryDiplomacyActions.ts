@@ -7,7 +7,8 @@ import { useNotify } from "~/hooks/useNotify";
 export type ForeignPolicyType = "free_trade" | "military_alliance" | "sanction" | "embargo";
 
 /** Cooperative actions wait for the other nation's consent; hostile ones take effect at once. */
-const isCooperative = (type: ForeignPolicyType) => type === "free_trade" || type === "military_alliance";
+const isCooperative = (type: ForeignPolicyType) =>
+  type === "free_trade" || type === "military_alliance";
 
 const POLICY_LABELS: Record<ForeignPolicyType, string> = {
   free_trade: "Free trade agreement",

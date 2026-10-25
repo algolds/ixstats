@@ -52,7 +52,9 @@ interface EndableAction {
  * The effect rows an action left. Rows written before effects were keyed by the action carry the actor's user id, so
  * they are matched by nation and description (their "Ended:" rows too, so an ended group is never unwound twice).
  */
-export function foreignPolicyEffectWhere(action: EndableAction): Prisma.StorytellerEffectWhereInput {
+export function foreignPolicyEffectWhere(
+  action: EndableAction
+): Prisma.StorytellerEffectWhereInput {
   const own = initiatorEffectDescription(action);
   const theirs = targetEffectDescription(action);
   return {

@@ -165,13 +165,16 @@ function DissolveConfirm({
         <AlertDialogHeader>
           <AlertDialogTitle>Dissolve the legislature?</AlertDialogTitle>
           <AlertDialogDescription>
-            Every seat becomes vacant and a snap election is called. Bills cannot go to a vote
-            until the election seats the parties again.
+            Every seat becomes vacant and a snap election is called. Bills cannot go to a vote until
+            the election seats the parties again.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Keep it</AlertDialogCancel>
-          <AlertDialogAction className={buttonVariants({ variant: "destructive" })} onClick={onConfirm}>
+          <AlertDialogAction
+            className={buttonVariants({ variant: "destructive" })}
+            onClick={onConfirm}
+          >
             Dissolve and update
           </AlertDialogAction>
         </AlertDialogFooter>

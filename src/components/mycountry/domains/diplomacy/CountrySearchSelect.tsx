@@ -21,7 +21,12 @@ interface CountrySearchSelectProps {
 }
 
 /** Pick a nation: a name search reaches every nation, and the list shows the first 200 matches. */
-export function CountrySearchSelect({ value, onSelect, excludeIds, label }: CountrySearchSelectProps) {
+export function CountrySearchSelect({
+  value,
+  onSelect,
+  excludeIds,
+  label,
+}: CountrySearchSelectProps) {
   const [search, setSearch] = useState("");
   const { data } = api.countries.getAll.useQuery(
     { limit: 200, offset: 0, search: search.trim() || undefined },

@@ -22,7 +22,11 @@ export interface ExchangeMetrics {
 
 const clampMetric = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
 
-export function exchangeMetrics({ participants, artifacts, votes }: ExchangeActivity): ExchangeMetrics {
+export function exchangeMetrics({
+  participants,
+  artifacts,
+  votes,
+}: ExchangeActivity): ExchangeMetrics {
   return {
     culturalImpact: clampMetric(30 + 15 * participants + 5 * artifacts),
     diplomaticValue: clampMetric(30 + 10 * participants + 2 * votes),
@@ -33,7 +37,10 @@ export function exchangeMetrics({ participants, artifacts, votes }: ExchangeActi
 type ExchangeStatus = "planning" | "active" | "completed";
 
 /** The status an unfinished exchange should have at `now`. */
-export function exchangeStatusAt(exchange: { startDate: Date; endDate: Date }, now: Date): ExchangeStatus {
+export function exchangeStatusAt(
+  exchange: { startDate: Date; endDate: Date },
+  now: Date
+): ExchangeStatus {
   if (exchange.endDate.getTime() <= now.getTime()) return "completed";
   if (exchange.startDate.getTime() <= now.getTime()) return "active";
   return "planning";

@@ -77,7 +77,9 @@ export const diplomaticScenariosScenariosRouter = createTRPCRouter({
               },
         ];
         if (input.countryId) {
-          where.AND.push({ OR: [{ country1Id: input.countryId }, { country2Id: input.countryId }] });
+          where.AND.push({
+            OR: [{ country1Id: input.countryId }, { country2Id: input.countryId }],
+          });
         }
 
         // Type filter (stored in database as type field)

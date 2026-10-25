@@ -33,7 +33,9 @@ jest.mock("~/trpc/react", () => ({
     },
     achievements: {
       getRecentByCountry: {
-        useQuery: () => ({ data: [{ id: "a1", title: "First Port", description: "Opened a port" }] }),
+        useQuery: () => ({
+          data: [{ id: "a1", title: "First Port", description: "Opened a port" }],
+        }),
       },
     },
   },

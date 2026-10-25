@@ -448,7 +448,10 @@ function HostileActionRow({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction className={buttonVariants({ variant: "destructive" })} onClick={onConfirm}>
+          <AlertDialogAction
+            className={buttonVariants({ variant: "destructive" })}
+            onClick={onConfirm}
+          >
             {label}
           </AlertDialogAction>
         </AlertDialogFooter>

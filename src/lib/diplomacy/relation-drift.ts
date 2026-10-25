@@ -26,7 +26,8 @@ const NEUTRAL_STRENGTH = 50;
 
 /** Drift when both sides declared a goal. */
 function pairedDrift(g1: string, g2: string): DriftRule {
-  if (g1 === "ALLY" && g2 === "ALLY") return { drift: 3, reason: "Aligned goals (Alliance pursuit)" };
+  if (g1 === "ALLY" && g2 === "ALLY")
+    return { drift: 3, reason: "Aligned goals (Alliance pursuit)" };
   if (g1 === "RIVAL" && g2 === "RIVAL") return { drift: -3, reason: "Mutual rivalry" };
   if ((g1 === "ALLY" && g2 === "RIVAL") || (g1 === "RIVAL" && g2 === "ALLY")) {
     return { drift: -2, reason: "Pain point: direct goal conflict (Ally vs. Rival)" };

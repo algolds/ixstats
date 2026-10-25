@@ -62,7 +62,13 @@ async function assertValidAllianceTarget(
  */
 async function executeTargetedAllianceAction(
   db: PrismaClient,
-  action: { allianceId: string; actionType: TargetedAllianceAction; targetId: string; title: string; description: string | null }
+  action: {
+    allianceId: string;
+    actionType: TargetedAllianceAction;
+    targetId: string;
+    title: string;
+    description: string | null;
+  }
 ): Promise<number> {
   const members = await db.allianceMember.findMany({
     where: { allianceId: action.allianceId, isActive: true, role: { not: "observer" } },
@@ -209,35 +215,37 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
       });
 
       // Create alliance and add founder as first member
-      const alliance = await ctx.db.alliance.create({
-        data: {
-          ...(founderCountry?.realmId && { realmId: founderCountry.realmId }),
-          name: input.name,
-          shortName: input.shortName,
-          type: input.type,
-          description: input.description,
-          charter: input.charter,
-          color: input.color,
-          visibility: input.visibility,
-          joinPolicy: input.joinPolicy,
-          memberCount: 1,
-          members: {
-            create: {
-              countryId: ctx.user.countryId,
-              role: "founder",
-              votingPower: 1.0, // Standard 1 vote per member
-              contributionLevel: "high",
+      const alliance = await ctx.db.alliance
+        .create({
+          data: {
+            ...(founderCountry?.realmId && { realmId: founderCountry.realmId }),
+            name: input.name,
+            shortName: input.shortName,
+            type: input.type,
+            description: input.description,
+            charter: input.charter,
+            color: input.color,
+            visibility: input.visibility,
+            joinPolicy: input.joinPolicy,
+            memberCount: 1,
+            members: {
+              create: {
+                countryId: ctx.user.countryId,
+                role: "founder",
+                votingPower: 1.0, // Standard 1 vote per member
+                contributionLevel: "high",
+              },
             },
           },
-        },
-        include: {
-          members: {
-            include: {
-              country: { select: { id: true, name: true } },
+          include: {
+            members: {
+              include: {
+                country: { select: { id: true, name: true } },
+              },
             },
           },
-        },
-      }).catch(allianceNameTaken);
+        })
+        .catch(allianceNameTaken);
 
       // Auto-news: alliance formed
       void generateDiplomaticNews(ctx.db, ctx.user.countryId, "alliance_formed", {

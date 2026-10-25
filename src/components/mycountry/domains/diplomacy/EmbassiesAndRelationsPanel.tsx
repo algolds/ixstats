@@ -146,12 +146,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
   const { data: alliances, refetch: refetchAlliances } =
     api.diplomaticPolicies.getAlliances.useQuery({ countryId }, { enabled: !!countryId });
 
-  const stats = computeStats(
-    embassies,
-    relations ?? [],
-    alliances?.length ?? 0,
-    countryId
-  );
+  const stats = computeStats(embassies, relations ?? [], alliances?.length ?? 0, countryId);
   const countryName = country?.name ?? "Your Country";
 
   if (embassiesLoading) {

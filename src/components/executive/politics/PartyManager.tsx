@@ -126,8 +126,8 @@ function PartyRow({
             <AlertDialogHeader>
               <AlertDialogTitle>Delete {party.name}?</AlertDialogTitle>
               <AlertDialogDescription>
-                A party that has stood in an election is made inactive instead, so past results
-                keep it. Otherwise it is removed and its seats become vacant.
+                A party that has stood in an election is made inactive instead, so past results keep
+                it. Otherwise it is removed and its seats become vacant.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

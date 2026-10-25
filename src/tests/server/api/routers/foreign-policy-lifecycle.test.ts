@@ -127,13 +127,20 @@ describe("lifting a hostile action", () => {
   it("the initiator lifts an embargo: its effects unwind on both sides and it can be imposed again", async () => {
     const { db, state, effects } = world();
     const alpha = as(db, "uA", "A");
-    const embargo = await alpha.proposeForeignPolicyAction({ targetId: "B", actionType: "embargo" });
+    const embargo = await alpha.proposeForeignPolicyAction({
+      targetId: "B",
+      actionType: "embargo",
+    });
     expect(embargo).toMatchObject({ status: "active" });
-    expect(effects.filter((e) => e.createdBy === foreignPolicyEffectKey(embargo!.id))).toHaveLength(2);
+    expect(effects.filter((e) => e.createdBy === foreignPolicyEffectKey(embargo!.id))).toHaveLength(
+      2
+    );
     expect(levelSum(effects, "B")).toBeLessThan(0);
 
     // Only its initiator lifts it
-    await expect(as(db, "uB", "B").liftForeignPolicyAction({ actionId: embargo!.id })).rejects.toMatchObject({
+    await expect(
+      as(db, "uB", "B").liftForeignPolicyAction({ actionId: embargo!.id })
+    ).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
 
@@ -257,7 +264,10 @@ describe("alliance collective actions", () => {
         actions.find((a) => a.id === where.id)
       ),
       update: jest.fn(async ({ where, data }: { where: { id: string }; data: object }) =>
-        Object.assign(actions.find((a) => a.id === where.id)!, data)
+        Object.assign(
+          actions.find((a) => a.id === where.id)!,
+          data
+        )
       ),
       updateMany: jest.fn(
         async ({ where, data }: { where: { id: string; status: string }; data: object }) => {
@@ -287,7 +297,11 @@ describe("alliance collective actions", () => {
     const { db } = allianceWorld();
     const alpha = as(db, "uA", "A");
     await expect(
-      alpha.proposeAllianceAction({ allianceId: "al1", actionType: "collective_sanction", title: "Sanction" })
+      alpha.proposeAllianceAction({
+        allianceId: "al1",
+        actionType: "collective_sanction",
+        title: "Sanction",
+      })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     await expect(
       alpha.proposeAllianceAction({

@@ -195,7 +195,10 @@ describe("cabinet meetings", () => {
       .fn()
       .mockResolvedValue([]);
     const [own, foreign] = await meetings(ctx as never).getMeetings({ countryId: FOREIGN_COUNTRY });
-    expect(own).toMatchObject({ notes: "Agreed to cut the port budget", decisions: [{ id: "d1" }] });
+    expect(own).toMatchObject({
+      notes: "Agreed to cut the port budget",
+      decisions: [{ id: "d1" }],
+    });
     expect(foreign).toMatchObject({
       notes: null,
       decisions: [],
