@@ -303,4 +303,28 @@ describe("generateMetadata (plan 412 step 2)", () => {
     await expect(metadata(["a%5Bb"])).rejects.toThrow("not-found");
     await expect(metadata(["Special:NoSuchThing"])).rejects.toThrow("not-found");
   });
+
+  it("a ?source= page is noindex and its canonical is not IxStates (B7)", async () => {
+    const meta = await metadata(["Aurelia"], { source: "iiwiki" });
+
+    expect(meta.robots).toMatchObject({ index: false });
+    expect(meta.alternates?.canonical).toBeUndefined();
+    expect(mockArticlePrefetch).not.toHaveBeenCalled();
+    // A sister wiki's Main Page is no exception.
+    expect((await metadata(["Main_Page"], { source: "althistory" })).robots).toMatchObject({
+      index: false,
+    });
+  });
+
+  it("an IxWiki article's canonical is classic's /wiki/ URL (B7, verify only)", async () => {
+    const meta = await metadata(["Aurelia"]);
+
+    expect(meta.alternates?.canonical).toBe("https://ixwiki.com/wiki/Aurelia");
+    expect(meta.openGraph?.url).toBe("https://ixwiki.com/wiki/Aurelia");
+    expect(meta.robots).toBeUndefined();
+    // A non-reading view points at the same classic URL and is not indexed.
+    const history = await metadata(["Aurelia"], { action: "history" });
+    expect(history.alternates?.canonical).toBe("https://ixwiki.com/wiki/Aurelia");
+    expect(history.robots).toMatchObject({ index: false });
+  });
 });

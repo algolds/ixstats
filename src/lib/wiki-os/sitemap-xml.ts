@@ -1,6 +1,7 @@
 /**
  * sitemap-xml.ts — the XML of the sitemap index and of one sitemap file, and robots.txt. Pure:
- * `origin` is the public host ("https://ixwiki.com"), the entries come from `sitemap-service`.
+ * `origin` is the public host ("https://ixwiki.com"), the entries come from `sitemap-service`;
+ * robots.txt takes the app's base path.
  */
 
 import { canonicalizeTitle } from "./core/title";
@@ -52,23 +53,31 @@ export function sitemapPageXml(origin: string, entries: readonly SitemapEntry[])
   return `${XML_HEAD}<urlset xmlns="${XMLNS}">\n${urls}</urlset>\n`;
 }
 
-/** robots.txt: read the articles, leave the tools and every view of a page that is not its text. */
-export function robotsTxt(origin: string): string {
-  return [
-    "User-agent: *",
-    "Allow: /wiki/",
-    "Disallow: /util/",
-    "Disallow: /api/",
-    "Disallow: /wiki/Special:",
-    "Disallow: /*?action=",
-    "Disallow: /*?*action=",
-    "Disallow: /*?oldid=",
-    "Disallow: /*?*oldid=",
-    "Disallow: /*?diff=",
-    "Disallow: /*?*diff=",
-    "Disallow: /*?*redirect=no",
-    "",
-    `Sitemap: ${origin}/wiki-sitemap`,
-    "",
-  ].join("\n");
+/** The paths robots.txt allows (`Allow`) and leaves (`Disallow`), relative to the app's base path. */
+const ROBOTS_RULES: readonly (readonly ["Allow" | "Disallow", string])[] = [
+  ["Allow", "/wiki/"],
+  ["Disallow", "/util/"],
+  ["Disallow", "/api/"],
+  ["Disallow", "/wiki/Special:"],
+  ["Disallow", "/*?action="],
+  ["Disallow", "/*?*action="],
+  ["Disallow", "/*?oldid="],
+  ["Disallow", "/*?*oldid="],
+  ["Disallow", "/*?diff="],
+  ["Disallow", "/*?*diff="],
+  ["Disallow", "/*?*redirect=no"],
+  // Another wiki's page read through WikiOS: that wiki's own copy is the one to index.
+  ["Disallow", "/*?source="],
+  ["Disallow", "/*?*source="],
+];
+
+/**
+ * robots.txt: read the articles, leave the tools, every view of a page that is not its text and
+ * every `?source=` page. Each rule sits under `basePath` (empty at the root, `/projects/ixstates` in
+ * production), so the rules cover only the app's own paths. No `Sitemap:` line: the canonical URLs
+ * are classic's, and the `/wiki-sitemap` routes belong to the deferred takeover.
+ */
+export function robotsTxt(basePath: string): string {
+  const rules = ROBOTS_RULES.map(([kind, path]) => `${kind}: ${basePath}${path}`);
+  return ["User-agent: *", ...rules, ""].join("\n");
 }

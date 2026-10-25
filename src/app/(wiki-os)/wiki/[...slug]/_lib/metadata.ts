@@ -51,10 +51,11 @@ function articleMetadata(data: ArticleHtml): Metadata {
 }
 
 /**
- * The metadata of `/wiki/<path>`: an article's own title, description, canonical URL (WikiOS is the
- * canonical host, plan D12) and card; edit, history, diff, revision and info views are not indexed
- * and point at the article. Another wiki's page is client-rendered and sets its own. Tool, special
- * and raw routes redirect, so they have none.
+ * The metadata of `/wiki/<path>`: an article's own title, description, canonical URL and card; edit,
+ * history, diff, revision and info views are not indexed and point at the article. The canonical URL
+ * stays on classic ixwiki.com (owner, 2026-10-24: WikiOS runs inside IxStates, classic is the public
+ * wiki). Another wiki's page (`?source=`) is not indexed and claims no canonical URL: its own wiki's
+ * copy is the one to index. Tool, special and raw routes redirect, so they have none.
  *
  * A page that does not exist is `notFound()` here as well as in the page, so the decision does not
  * depend on which of the two Next resolves first. The 404, 307 and 308 status lines only survive
@@ -67,7 +68,8 @@ export async function articleTargetMetadata(
   query: SearchParamsLike
 ): Promise<Metadata> {
   const { canon, view, source } = target;
-  if (source !== "ixwiki" || canon.title === "Main Page") return {};
+  if (source !== "ixwiki") return { robots: NO_INDEX };
+  if (canon.title === "Main Page") return {};
 
   const canonical = `${publicOrigin()}/wiki/${canon.urlPath}`;
   if (view.type !== "read") {
