@@ -16,8 +16,13 @@ import {
   hasCountryWriteAccess,
 } from "~/server/shared/country-authorization";
 import { redactOperationCosts } from "~/lib/military/owner-redaction";
-import { StorytellerEffectType } from "~/lib/economy/calculations";
-import { createStorytellerEffect, endStorytellerEffects } from "~/lib/economy/storyteller-effects";
+import { endStorytellerEffects } from "~/lib/economy/storyteller-effects";
+import {
+  COMBAT_OPERATIONS,
+  OPERATION_TYPES,
+  combinedRating,
+  operationDailyCost,
+} from "~/lib/military/combat";
 import {
   GENERALS_READINESS_MULTIPLIER,
   PEACEKEEPING_BONUS_WINDOW_IXDAYS,
@@ -29,10 +34,16 @@ import { DEPLOY_CONDITION_COST } from "~/lib/military/model";
 import { IxTime } from "~/lib/ixtime";
 import { isBrokerSatisfied } from "~/server/modules/security/brokers";
 import { applyOperationReadiness } from "~/server/modules/defense";
+import {
+  CROSS_REALM_MESSAGE,
+  newBattleId,
+  resolveIntervention,
+  sealIntervention,
+} from "~/server/modules/combat";
 import { clockForCountry, type RealmClockReader } from "~/server/shared/realm-time";
 import type { PrismaClient } from "@prisma/client";
 
-/** `createdBy` of a military operation's GDP-drain StorytellerEffect. */
+/** `createdBy` of a military operation's GDP-drain StorytellerEffect (operations before D3; now paid from O&M). */
 const operationEffectKey = (operationId: string) => `operation:${operationId}`;
 
 /**
@@ -67,6 +78,14 @@ async function peacekeepingRelation(
   });
 }
 
+/** An operation row without its server-only battle inputs, and without the seed until it has ended. */
+function withoutBattleInputs<T extends { status: string; inputSnapshot?: string | null; orders?: string | null; seed?: string | null }>(
+  operation: T
+): Omit<T, "inputSnapshot" | "orders"> {
+  const { inputSnapshot: _snapshot, orders: _orders, ...rest } = operation;
+  return { ...rest, seed: operation.status === "completed" ? (operation.seed ?? null) : null };
+}
+
 export const securityOperationsRouter = createTRPCRouter({
   // Get active and past operations. Personnel and costs are the owner's only.
   getOperations: publicProcedure
@@ -88,7 +107,7 @@ export const securityOperationsRouter = createTRPCRouter({
         orderBy: { createdAt: "desc" },
       });
 
-      const rows = operations.map((op) => ({
+      const rows = operations.map(withoutBattleInputs).map((op) => ({
         ...op,
         targetCountry: op.targetCountry
           ? {
@@ -107,13 +126,7 @@ export const securityOperationsRouter = createTRPCRouter({
     .input(
       z.object({
         countryId: z.string(),
-        operationType: z.enum([
-          "peacekeeping",
-          "defense_pact",
-          "blockade",
-          "intervention",
-          "training",
-        ]),
+        operationType: z.enum(OPERATION_TYPES),
         name: z.string().min(2),
         description: z.string().optional(),
         targetCountryId: z.string().optional(),
@@ -157,6 +170,23 @@ export const securityOperationsRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
       }
 
+      // Operations against another nation stay inside the realm.
+      const target = input.targetCountryId
+        ? await ctx.db.country.findUnique({
+            where: { id: input.targetCountryId },
+            select: { id: true, realmId: true },
+          })
+        : null;
+      if (input.targetCountryId && !target) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Target country not found" });
+      }
+      if (target && target.realmId !== country.realmId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: CROSS_REALM_MESSAGE });
+      }
+      if (COMBAT_OPERATIONS.has(input.operationType) && !target) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "An intervention needs a target nation." });
+      }
+
       // Units and assets must belong to this nation's active branches.
       const [ownUnits, ownAssets] = await Promise.all([
         input.unitIds.length > 0
@@ -165,7 +195,7 @@ export const securityOperationsRouter = createTRPCRouter({
                 id: { in: input.unitIds },
                 branch: { countryId: input.countryId, isActive: true },
               },
-              select: { id: true },
+              select: { id: true, personnel: true },
             })
           : [],
         input.assetIds.length > 0
@@ -190,17 +220,26 @@ export const securityOperationsRouter = createTRPCRouter({
       const unitIds = ownUnits.map((u) => u.id);
       const assetIds = ownAssets.map((a) => a.id);
 
-      // Daily cost: personnel at $200/day plus 1.5x the deployed assets' upkeep. Catalog
-      // maintenanceCost is annual per unit, so it is spread over the year and counted per unit.
-      const assetMaintenanceCost = ownAssets.reduce(
-        (sum, a) => sum + ((a.maintenanceCost ?? 0) * Math.max(1, a.quantity ?? 1)) / 365,
-        0
-      );
+      // Deployed units bring their own headcount; a typed figure only stands in when no units go.
+      const personnelDeployed =
+        ownUnits.length > 0
+          ? ownUnits.reduce((sum, u) => sum + (u.personnel ?? 0), 0)
+          : input.personnelDeployed;
 
-      const dailyCost = input.personnelDeployed * 200 + assetMaintenanceCost * 1.5;
-      const annualCost = dailyCost * 365;
-      const gdp = (country.currentGdpPerCapita ?? 10000) * (country.currentPopulation ?? 1000000);
-      const gdpDrain = gdp > 0 ? annualCost / gdp : 0;
+      // Daily cost on the Defense budget's O&M line (the monthly tick pays operations first): personnel at the
+      // operation type's rate of GDP per capita, plus 1.5x the deployed assets' annual upkeep per day.
+      const dailyCost = operationDailyCost({
+        type: input.operationType,
+        personnel: personnelDeployed,
+        gdpPerCapita: country.currentGdpPerCapita ?? 0,
+        assetMaintenanceAnnual: ownAssets.reduce(
+          (sum, a) => sum + (a.maintenanceCost ?? 0) * Math.max(1, a.quantity ?? 1),
+          0
+        ),
+      });
+      const gdp = (country.currentGdpPerCapita ?? 0) * (country.currentPopulation ?? 0);
+      // Shown as the operation's share of GDP a year; no longer a GDP effect of its own.
+      const gdpDrain = gdp > 0 ? (dailyCost * 365) / gdp : 0;
 
       // Peacekeeping raises the relation with its target once per target per window.
       const clock = await clockForCountry(ctx.db, country);
@@ -209,16 +248,31 @@ export const securityOperationsRouter = createTRPCRouter({
           ? await peacekeepingRelation(ctx.db, input.countryId, input.targetCountryId, clock)
           : null;
 
+      // An intervention is sealed now (orders, commit time, seed) and fought on the combat model when it ends.
+      const operationId = newBattleId();
+      const seal =
+        COMBAT_OPERATIONS.has(input.operationType) && target
+          ? await sealIntervention(ctx.db, {
+              operationId,
+              countryId: input.countryId,
+              targetId: target.id,
+              personnel: personnelDeployed,
+              days: input.duration ?? null,
+            })
+          : {};
+
       // Create the operation
       const operation = await ctx.db.militaryOperation.create({
         data: {
+          id: operationId,
+          ...seal,
           countryId: input.countryId,
           operationType: input.operationType,
           name: input.name,
           description: input.description,
           targetCountryId: input.targetCountryId,
           status: "active",
-          personnelDeployed: input.personnelDeployed,
+          personnelDeployed,
           dailyCost,
           gdpDrain,
           duration: input.duration,
@@ -262,19 +316,6 @@ export const securityOperationsRouter = createTRPCRouter({
         change: "deploy",
       });
 
-      // GDP drain: a GDP level effect of -(annual cost / GDP), phased in while the operation
-      // runs; ending the operation unwinds it from then on.
-      if (gdpDrain > 0) {
-        await createStorytellerEffect(ctx.db, {
-          countryId: input.countryId,
-          inputType: StorytellerEffectType.GDP_LEVEL_ADJUSTMENT,
-          value: -gdpDrain,
-          description: `Military operation: ${input.name} (${input.operationType})`,
-          duration: input.duration ? Math.ceil(input.duration / 365) : 1,
-          createdBy: operationEffectKey(operation.id),
-        });
-      }
-
       if (relation && input.targetCountryId) {
         await applyRelationshipImpact(
           ctx.db,
@@ -288,11 +329,11 @@ export const securityOperationsRouter = createTRPCRouter({
       void generateDiplomaticNews(ctx.db as any, input.countryId, "military_deployed", {
         countryName: country.name,
         operationName: input.name,
-        personnel: input.personnelDeployed,
+        personnel: personnelDeployed,
         targetName: operation.targetCountry?.name,
       });
 
-      return operation;
+      return withoutBattleInputs(operation);
     }),
 
   // Recall a deployment / end an operation. The server rates the outcome from how much of the
@@ -336,14 +377,33 @@ export const securityOperationsRouter = createTRPCRouter({
       // End operation on the nation's realm clock. Rows from before startIxTime was stamped fall
       // back to their creation (on Ixnay's timeline, which every realm clock shares).
       const endIxTime = (await clockForCountry(ctx.db, operation.countryId)).now();
-      const successRating = operationSuccessRating({
+      const durationRating = operationSuccessRating({
         durationIxDays: operation.duration,
         startIxTime: operation.startIxTime || IxTime.convertToIxTime(operation.createdAt.getTime()),
         endIxTime,
       });
+      // Claim the end once, then fight a sealed intervention against the target's real forces.
+      const claimed = await ctx.db.militaryOperation.updateMany({
+        where: { id: input.operationId, status: { in: ["active", "planned"] } },
+        data: { status: "completed", endIxTime },
+      });
+      if (claimed.count === 0) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Operation is not active." });
+      }
+      const battle = await resolveIntervention(ctx.db, operation);
+      const successRating = combinedRating(durationRating, battle?.result.band ?? null);
       const updated = await ctx.db.militaryOperation.update({
         where: { id: input.operationId },
-        data: { status: "completed", successRating, endIxTime },
+        data: {
+          successRating,
+          ...(battle
+            ? {
+                outcomeBand: battle.result.band,
+                casualties: battle.data.initiatorCasualties,
+                inputSnapshot: battle.data.inputSnapshot,
+              }
+            : {}),
+        },
       });
 
       // End this operation's GDP drain without rewriting the projected past (rows from before
@@ -378,6 +438,6 @@ export const securityOperationsRouter = createTRPCRouter({
         );
       }
 
-      return updated;
+      return withoutBattleInputs(updated);
     }),
 });

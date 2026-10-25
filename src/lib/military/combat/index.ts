@@ -12,3 +12,4 @@ export * from "./rng";
 export * from "./resolve";
 export * from "./intel";
 export * from "./preview";
+export * from "./operations";

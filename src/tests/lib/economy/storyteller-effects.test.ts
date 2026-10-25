@@ -16,7 +16,7 @@ import {
   type LevelRow,
   type StorytellerEffectDraft,
 } from "~/lib/economy/storyteller-effects";
-import { conflictEconomicEffects } from "~/lib/military/conflict-outcome";
+import { engagementEffectDrafts } from "~/lib/military/conflict-outcome";
 import { policyGdpLevelShift, POLICY_PHASE_IN_YEARS } from "~/lib/policies/effects-sync";
 import { worldEventEffectDrafts } from "~/lib/economy/world-event-effects";
 import { IxTime } from "~/lib/ixtime";
@@ -123,21 +123,19 @@ describe("P0-14: one helper stamps IxTime", () => {
     const at = NOW + 4 * YEAR;
     expect(gdppc(at, sanction) / gdppc(at)).toBeCloseTo(0.9925, 6);
 
+    // Five years of full-intensity war on c1's soil: the GDP level gap reaches −30% (realm time D3).
+    const side = (engaged: number) => ({ engaged, casualties: 0, deaths: 0, branches: [] });
     const war = rows(
-      conflictEconomicEffects({
-        initiator: { id: "c1", name: "A" },
-        defender: { id: "c2", name: "B" },
-        outcome: {
-          initiatorWins: false,
-          initiatorCasualties: 0,
-          defenderCasualties: 0,
-          economicDamage: 0.02,
-        },
-        createdBy: "u1",
-        defenderWinLabel: "victory",
+      engagementEffectDrafts({
+        battleKey: "conflict:k1",
+        attacker: { id: "c2", name: "B", population: 1e8 },
+        defender: { id: "c1", name: "A", population: 1e8 },
+        neighbourIds: [],
+        result: { days: 5 * 365.25, attacker: side(400_000), defender: side(400_000) },
       }).filter((d) => d.countryId === "c1")
     );
-    expect(gdppc(at, war) / gdppc(at)).toBeCloseTo(0.97, 6);
+    const end = NOW + 5 * YEAR;
+    expect(gdppc(end, war) / gdppc(end)).toBeCloseTo(0.7, 6);
   });
 });
 
