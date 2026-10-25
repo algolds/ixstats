@@ -6,7 +6,9 @@
  *     waiting out a backoff), and a `dead` job blocks its title until an administrator requeues or discards
  *     it. A move is about two titles, the one it moves from and the one it moves to, and holds both;
  *   - dead jobs are not in the window (`loadWindow`), so any number of them cannot crowd out the jobs that can run;
- *     their titles are read on their own (`loadDeadTitles`) and seed what `pickRunnable` holds;
+ *     their titles are read on their own (`loadDeadTitles`, with the oldest dead job of each) and hold every job of
+ *     the title written after that dead job, in `pickRunnable` and `pickBatch`. A job written before it (the oldest
+ *     of a dead batch, requeued alone) still runs;
  *   - a failed job is tried again after `min(2^attempts x 30 s, 1 h)`, and goes `dead` after 8 attempts.
  *   - the revision jobs of a title that wait next in line are tried together, as one batch (`pickBatch`).
  * `pickRunnable`, `pickBatch` and `backoffMs` are pure; the rest reads and writes `wiki_mirror_jobs`. The caller holds the
@@ -39,6 +41,10 @@ const DONE_RETENTION_MS = 30 * 24 * 60 * 60_000;
 const LAST_ERROR_LIMIT = 2_000;
 
 export type MirrorJob = WikiMirrorJob;
+/** Where a job stands in the queue's order: by `createdAt`, then by `id` (as `loadWindow` sorts). */
+export type QueuePosition = Pick<MirrorJob, "createdAt" | "id">;
+/** Per title a dead job holds, the oldest such dead job: every job of the title written after it waits. */
+export type DeadHolds = ReadonlyMap<string, QueuePosition>;
 
 /**
  * The states of a job that is over: `done` (it reached MediaWiki, or there was nothing to send) and `discarded` (an
@@ -60,20 +66,32 @@ function titlesOf(job: Pick<MirrorJob, "kind" | "title" | "payload">): string[] 
   return move.success ? [job.title, move.data.to] : [job.title];
 }
 
+/** Whether `job` comes after `position` in the queue's order. */
+const writtenAfter = (job: QueuePosition, position: QueuePosition) =>
+  job.createdAt.getTime() === position.createdAt.getTime()
+    ? job.id > position.id
+    : job.createdAt > position.createdAt;
+
+/** Whether a dead job (`held`, from `loadDeadTitles`) holds `title` against `job`: it was written before `job`. */
+function deadHolds(held: DeadHolds, title: string, job: QueuePosition): boolean {
+  const dead = held.get(title);
+  return dead !== undefined && writtenAfter(job, dead);
+}
+
 /**
  * The next job to run among `jobs` (the not-done jobs, oldest first): the first pending job that is due and
- * whose titles neither an older not-done job nor a dead job (`held`, from `loadDeadTitles`) holds. Anything older
- * that is not done, whatever its state, holds its titles for everything younger.
+ * whose titles neither an older not-done job nor an older dead job (`held`, from `loadDeadTitles`) holds. Anything
+ * older that is not done, whatever its state, holds its titles for everything younger.
  */
 export function pickRunnable(
   jobs: readonly MirrorJob[],
   now: Date,
-  held: ReadonlySet<string> = new Set()
+  held: DeadHolds = new Map()
 ): MirrorJob | null {
-  const holding = new Set(held);
+  const holding = new Set<string>();
   for (const job of jobs) {
     const titles = titlesOf(job);
-    const free = titles.every((title) => !holding.has(title));
+    const free = titles.every((title) => !holding.has(title) && !deadHolds(held, title, job));
     if (free && job.state === "pending" && job.nextAttemptAt <= now) return job;
     for (const title of titles) holding.add(title);
   }
@@ -83,21 +101,27 @@ export function pickRunnable(
 /**
  * The jobs to run together with `first` (the job `pickRunnable` chose): when it is a revision job, every revision job
  * of its title that waits next in line, up to `maxJobs`, oldest first. The batch stops at the first job of the title
- * (or of a move to it) that is anything else: another kind, one that is running, dead or waiting out a backoff. Jobs
- * of other titles in between do not matter. Pure.
+ * (or of a move to it) that is anything else: another kind, one that is running, dead or waiting out a backoff, or one
+ * written after a dead job of the title (`held`), which must not land before that dead job. Jobs of other titles in
+ * between do not matter. Pure.
  */
 export function pickBatch(
   window: readonly MirrorJob[],
   first: MirrorJob,
   now: Date,
-  maxJobs = MAX_BATCH_JOBS
+  maxJobs = MAX_BATCH_JOBS,
+  held: DeadHolds = new Map()
 ): MirrorJob[] {
   const batch = [first];
   if (first.kind !== "revision") return batch;
   for (const job of window.slice(window.findIndex((candidate) => candidate.id === first.id) + 1)) {
     if (batch.length >= maxJobs) break;
     if (!titlesOf(job).includes(first.title)) continue;
-    const joins = job.kind === "revision" && job.state === "pending" && job.nextAttemptAt <= now;
+    const joins =
+      job.kind === "revision" &&
+      job.state === "pending" &&
+      job.nextAttemptAt <= now &&
+      !deadHolds(held, first.title, job);
     if (!joins) break;
     batch.push(job);
   }
@@ -114,15 +138,24 @@ export function loadWindow(): Promise<MirrorJob[]> {
 }
 
 /**
- * The titles the dead jobs hold (their own, and a dead move's destination): no job of those titles runs until an
- * administrator requeues or discards the dead job, so a younger job never overtakes it on MediaWiki.
+ * The titles the dead jobs hold (their own, and a dead move's destination), each with its oldest dead job: no job of
+ * those titles written after it runs until an administrator requeues or discards the dead job, so a younger job never
+ * overtakes it on MediaWiki.
  */
-export async function loadDeadTitles(): Promise<Set<string>> {
+export async function loadDeadTitles(): Promise<Map<string, QueuePosition>> {
   const dead = await db.wikiMirrorJob.findMany({
     where: { source: MIRROR_SOURCE, state: "dead" },
-    select: { kind: true, title: true, payload: true },
+    select: { id: true, createdAt: true, kind: true, title: true, payload: true },
   });
-  return new Set(dead.flatMap(titlesOf));
+  const holds = new Map<string, QueuePosition>();
+  for (const job of dead) {
+    for (const title of titlesOf(job)) {
+      const oldest = holds.get(title);
+      if (!oldest || writtenAfter(oldest, job))
+        holds.set(title, { createdAt: job.createdAt, id: job.id });
+    }
+  }
+  return holds;
 }
 
 /**

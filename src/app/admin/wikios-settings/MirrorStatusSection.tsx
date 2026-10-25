@@ -4,7 +4,7 @@
 // worker's window is full, and the dead jobs, which an administrator requeues (tried again) or discards (given up on),
 // one by one or all of a page's (or every one) at once, after a confirm.
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -47,22 +47,33 @@ function Stat({ label, value, alert = false }: { label: string; value: string; a
 
 type BulkAction = "requeue" | "discard";
 
-/** The confirm's words and its button, per bulk action. */
+/**
+ * The confirm's words, its button and its icon, per bulk action: a discard gives up on jobs (destructive, a red
+ * warning), a requeue only tries them again.
+ */
 const BULK_COPY: Record<
   BulkAction,
-  { verb: string; body: string; confirm: string; variant: "default" | "destructive" }
+  {
+    verb: string;
+    body: string;
+    confirm: string;
+    variant: "default" | "destructive";
+    titleIcon: ReactNode;
+  }
 > = {
   requeue: {
     verb: "Requeue",
     body: "They are tried again from their first attempt, in the order they were written, and the conflict rule judges them like any job.",
     confirm: "Requeue jobs",
     variant: "default",
+    titleIcon: <Refresh className="text-tint h-5 w-5" />,
   },
   discard: {
     verb: "Discard",
     body: "They never reached classic MediaWiki. Discarding gives up on them: they are kept as discarded (not done), MediaWiki stays out of step for their pages until someone edits them again, and the jobs queued behind them can run.",
     confirm: "Discard jobs",
     variant: "destructive",
+    titleIcon: <WarningTriangle className="text-red h-5 w-5" />,
   },
 };
 
@@ -75,27 +86,21 @@ const BulkIcon = ({ action }: { action: BulkAction }) =>
 
 /**
  * Requeue or discard the dead jobs of one page (the title typed in), or every dead job when no title is given.
- * Both ask first.
+ * Both ask first. `busy` is the section's: no action starts while another one of the section runs.
  */
-function DeadJobsBulkActions({ onDone }: { onDone: (message: string) => void }) {
-  const notify = useNotify();
+function DeadJobsBulkActions({
+  busy,
+  onRun,
+}: {
+  busy: boolean;
+  onRun: (action: BulkAction, input: { title?: string }) => void;
+}) {
   const [title, setTitle] = useState("");
   const [confirming, setConfirming] = useState<{ action: BulkAction; title: string } | null>(null);
-  const onError = (error: { message: string }) => notify.error("Error", error.message);
-  const requeue = api.wikios.requeueDeadMirrorJobs.useMutation({
-    onSuccess: ({ count }) => onDone(`${count} dead job${count === 1 ? "" : "s"} requeued`),
-    onError,
-  });
-  const discard = api.wikios.discardDeadMirrorJobs.useMutation({
-    onSuccess: ({ count }) => onDone(`${count} dead job${count === 1 ? "" : "s"} discarded`),
-    onError,
-  });
-  const busy = requeue.isPending || discard.isPending;
   const ask = (action: BulkAction) => setConfirming({ action, title: title.trim() });
   const run = () => {
     if (!confirming) return;
-    const input = confirming.title ? { title: confirming.title } : {};
-    (confirming.action === "requeue" ? requeue : discard).mutate(input);
+    onRun(confirming.action, confirming.title ? { title: confirming.title } : {});
     setConfirming(null);
   };
 
@@ -125,7 +130,7 @@ function DeadJobsBulkActions({ onDone }: { onDone: (message: string) => void }) 
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2">
-                <WarningTriangle className="text-red h-5 w-5" />
+                {BULK_COPY[confirming.action].titleIcon}
                 {BULK_COPY[confirming.action].verb} {scopeOf(confirming.title)}?
               </AlertDialogTitle>
               <AlertDialogDescription className="text-footnote">
@@ -165,7 +170,21 @@ export function MirrorStatusSection() {
     onSuccess: onSuccess("Mirror job discarded"),
     onError,
   });
-  const busy = requeue.isPending || discard.isPending;
+  const jobsDone =
+    (verb: string) =>
+    ({ count }: { count: number }) =>
+      onSuccess(`${count} dead job${count === 1 ? "" : "s"} ${verb}`)();
+  const requeueAll = api.wikios.requeueDeadMirrorJobs.useMutation({
+    onSuccess: jobsDone("requeued"),
+    onError,
+  });
+  const discardAll = api.wikios.discardDeadMirrorJobs.useMutation({
+    onSuccess: jobsDone("discarded"),
+    onError,
+  });
+  // one busy state for the whole section: a row action and a bulk action never run at once
+  const busy =
+    requeue.isPending || discard.isPending || requeueAll.isPending || discardAll.isPending;
   /** The dead job an administrator is being asked to confirm giving up on. */
   const [discarding, setDiscarding] = useState<{ id: string; kind: string; title: string } | null>(
     null
@@ -203,8 +222,9 @@ export function MirrorStatusSection() {
             <div className="rounded-row border-yellow/30 bg-yellow/10 text-footnote text-label flex items-start gap-2 border p-3">
               <WarningTriangle className="text-yellow mt-0.5 h-4 w-4 shrink-0" />
               <span>
-                The worker&rsquo;s window is full: at least 1,000 jobs are waiting to run, so the
-                mirror is falling behind and classic MediaWiki lags WikiOS.
+                The worker&rsquo;s window is full: at least {status.windowSize.toLocaleString()}{" "}
+                jobs are waiting to run, so the mirror is falling behind and classic MediaWiki lags
+                WikiOS.
               </span>
             </div>
           )}
@@ -243,7 +263,12 @@ export function MirrorStatusSection() {
             </div>
           ) : (
             <div className="space-y-3">
-              <DeadJobsBulkActions onDone={(message) => onSuccess(message)()} />
+              <DeadJobsBulkActions
+                busy={busy}
+                onRun={(action, input) =>
+                  (action === "requeue" ? requeueAll : discardAll).mutate(input)
+                }
+              />
               <div className="overflow-x-auto">
                 <table className="text-footnote w-full text-left">
                   <thead className="text-label-secondary">
@@ -319,7 +344,7 @@ export function MirrorStatusSection() {
             <AlertDialogClose>Cancel</AlertDialogClose>
             <Button
               variant="destructive"
-              disabled={discard.isPending}
+              disabled={busy}
               onClick={() => {
                 if (discarding) discard.mutate({ id: discarding.id });
                 setDiscarding(null);

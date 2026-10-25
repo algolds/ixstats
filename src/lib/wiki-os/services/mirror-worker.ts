@@ -196,7 +196,12 @@ export async function runMirrorCycle({
   await reclaimInterruptedJobs();
   while (result.done + result.failed < maxJobs && Date.now() - startedAt < deadlineMs) {
     const now = new Date();
-    const [window, held] = await Promise.all([loadWindow(), loadDeadTitles()]);
+    // The dead jobs' holds first, then the window, one after the other: an administrator may requeue a dead job at
+    // any moment (no lock). Read in this order, a job requeued in between is held for by the first read or is in the
+    // window of the second; read the other way round (or together) it can be in neither, and a younger job of its
+    // title would overtake it.
+    const held = await loadDeadTitles();
+    const window = await loadWindow();
     if (window.length >= WINDOW_SIZE) saturated = window.length;
     const next = pickRunnable(window, now, held);
     if (!next) break;
@@ -204,7 +209,8 @@ export async function runMirrorCycle({
       window,
       next,
       now,
-      Math.min(MAX_BATCH_JOBS, maxJobs - result.done - result.failed)
+      Math.min(MAX_BATCH_JOBS, maxJobs - result.done - result.failed),
+      held
     );
     const tried = await runJobs(batch);
     // Nothing could be claimed: another runner is working these jobs (it should never be, the lock is held).

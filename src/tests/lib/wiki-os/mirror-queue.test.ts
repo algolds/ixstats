@@ -83,6 +83,18 @@ const move = (from: string, to: string, over: Partial<WikiMirrorJob> = {}) =>
     ...over,
   });
 
+/** What `loadDeadTitles` reads from `dead`: the oldest dead job of each title a dead job holds. */
+const holdsOf = (dead: readonly WikiMirrorJob[]) => {
+  const holds = new Map<string, { createdAt: Date; id: string }>();
+  for (const one of dead) {
+    const titles =
+      one.kind === "move" ? [one.title, (one.payload as { to: string }).to] : [one.title];
+    for (const title of titles)
+      if (!holds.has(title)) holds.set(title, { createdAt: one.createdAt, id: one.id });
+  }
+  return holds;
+};
+
 beforeEach(() => {
   jest.clearAllMocks();
   counter = 0;
@@ -150,19 +162,47 @@ describe("pickRunnable", () => {
   });
 
   it("a dead job is not in the window but still holds its title: a younger job of that title waits, another title runs", () => {
+    // the dead jobs, older than the window: a revision job of Foo, and a move from Old to Target
+    const deadFoo = job({ title: "Foo", state: "dead" });
+    const deadMove = move("Old", "Target", { state: "dead" });
     const sameTitle = job({ title: "Foo" });
     const toTarget = job({ title: "Target" });
     const other = job({ title: "Bar" });
-    // the titles the dead jobs hold: a revision job's own, and both titles of a dead move
-    const held = new Set(["Foo", "Old", "Target"]);
+    const held = holdsOf([deadFoo, deadMove]);
 
     expect(pickRunnable([sameTitle, toTarget, other], NOW, held)).toBe(other);
     expect(pickRunnable([sameTitle, toTarget], NOW, held)).toBeNull();
-    // the hold is the dead jobs' only: the window's own holders still add to it, and the set given is not touched
+    // the window's own holders still add to the dead jobs' holds, and the map given is not touched
     expect(pickRunnable([job({ title: "Bar", state: "running" }), other], NOW, held)).toBeNull();
-    expect([...held]).toEqual(["Foo", "Old", "Target"]);
+    expect([...held.keys()]).toEqual(["Foo", "Old", "Target"]);
     // nothing dead: the same window runs its oldest job
     expect(pickRunnable([sameTitle, other], NOW)).toBe(sameTitle);
+  });
+
+  it("requeuing the oldest dead job of a batch runs it alone; the younger dead ones still hold, and R6 does not join the batch", () => {
+    // R1..R5 died together; R1 was requeued (pending again), R2..R5 are still dead, R6 and R7 were written after them
+    const r1 = job({ title: "Foo" });
+    const stillDead = [2, 3, 4, 5].map(() => job({ title: "Foo", state: "dead" }));
+    const r6 = job({ title: "Foo" });
+    const r7 = job({ title: "Foo" });
+    const held = holdsOf(stillDead);
+    const window = [r1, r6, r7];
+
+    expect(pickRunnable(window, NOW, held)).toBe(r1);
+    expect(pickBatch(window, r1, NOW, MAX_BATCH_JOBS, held)).toEqual([r1]);
+    // R1 done: R6 is younger than the oldest dead job of Foo, so it waits
+    expect(pickRunnable([r6, r7], NOW, held)).toBeNull();
+    // with nothing dead, R1, R6 and R7 go together
+    expect(pickBatch(window, r1, NOW)).toEqual(window);
+  });
+
+  it("holds a title against a job written in the same instant as the dead job only when its id sorts after it", () => {
+    const dead = job({ id: "job-m", title: "Foo", state: "dead" });
+    const before = job({ id: "job-a", title: "Foo", createdAt: dead.createdAt });
+    const after = job({ id: "job-z", title: "Foo", createdAt: dead.createdAt });
+
+    expect(pickRunnable([before], NOW, holdsOf([dead]))).toBe(before);
+    expect(pickRunnable([after], NOW, holdsOf([dead]))).toBeNull();
   });
 });
 
@@ -180,17 +220,32 @@ describe("the window and the dead jobs' titles", () => {
     });
   });
 
-  it("holds the titles of every dead job and the destination of a dead move", async () => {
-    mockFindMany.mockResolvedValue([
-      job({ title: "Foo", state: "dead" }),
-      move("Old", "New", { state: "dead" }),
-      job({ kind: "move", title: "Broken", payload: { nonsense: true }, state: "dead" }),
-    ]);
+  it("holds the titles of every dead job and the destination of a dead move, from the oldest dead job of each", async () => {
+    const foo = job({ title: "Foo", state: "dead" });
+    const moving = move("Old", "Foo", { state: "dead" });
+    const broken = job({
+      kind: "move",
+      title: "Broken",
+      payload: { nonsense: true },
+      state: "dead",
+    });
+    const youngerFoo = job({ title: "Foo", state: "dead" });
+    const olderOld = job({ title: "Old", state: "dead", createdAt: new Date(0) });
+    // in any order: the oldest of each title is kept
+    mockFindMany.mockResolvedValue([foo, broken, youngerFoo, moving, olderOld]);
 
-    await expect(loadDeadTitles()).resolves.toEqual(new Set(["Foo", "Old", "New", "Broken"]));
+    const holds = await loadDeadTitles();
+
+    expect(holds).toEqual(
+      new Map([
+        ["Foo", { createdAt: foo.createdAt, id: foo.id }],
+        ["Broken", { createdAt: broken.createdAt, id: broken.id }],
+        ["Old", { createdAt: olderOld.createdAt, id: olderOld.id }],
+      ])
+    );
     expect(mockFindMany).toHaveBeenCalledWith({
       where: { source: "ixwiki", state: "dead" },
-      select: { kind: true, title: true, payload: true },
+      select: { id: true, createdAt: true, kind: true, title: true, payload: true },
     });
   });
 });

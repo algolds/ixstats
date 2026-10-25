@@ -28,8 +28,13 @@ import {
   ATTEMPT_KEY,
   DEAD_ALERT_KEY,
   SATURATION_ALERT_KEY,
+  SATURATION_ATTEMPT_KEY,
 } from "~/lib/wiki-os/services/mirror-alerts";
-import { discardDeadJobs, requeueDeadJobs } from "~/lib/wiki-os/services/mirror-admin";
+import {
+  discardDeadJobs,
+  requeueDeadJobs,
+  requeueMirrorJob,
+} from "~/lib/wiki-os/services/mirror-admin";
 import { WINDOW_SIZE } from "~/lib/wiki-os/services/mirror-queue";
 import { withJobLock } from "~/lib/system/job-lock";
 import { WIKIOS_MODES, seedWikiosMode } from "~/tests/helpers/wikios-modes";
@@ -42,9 +47,13 @@ const racedClaims = new Set<string>();
 /** Ids of jobs whose outcome cannot be stored (the database fails when the job is marked done). */
 const storeFails = new Set<string>();
 let counter = 0;
+/** Runs once, right after the next read of the window (what another process does in between two reads). */
+let afterWindowRead: (() => void) | null = null;
 
 const matches = (row: Row, where: Record<string, unknown>): boolean =>
   Object.entries(where).every(([key, condition]) => {
+    if (key === "OR")
+      return (condition as Record<string, unknown>[]).some((one) => matches(row, one));
     const value = (row as unknown as Record<string, unknown>)[key];
     if (condition !== null && typeof condition === "object" && !(condition instanceof Date)) {
       const cond = condition as {
@@ -53,7 +62,16 @@ const matches = (row: Row, where: Record<string, unknown>): boolean =>
         gt?: Date;
         in?: unknown[];
         notIn?: unknown[];
+        path?: string[];
+        equals?: unknown;
       };
+      if ("path" in cond) {
+        const at = cond.path!.reduce<unknown>(
+          (inner, step) => (inner as Record<string, unknown> | null)?.[step],
+          value
+        );
+        return at === cond.equals;
+      }
       if ("not" in cond) return value !== cond.not;
       if ("gt" in cond) return (value as Date) > (cond.gt as Date);
       if ("in" in cond) return (cond.in as unknown[]).includes(value);
@@ -95,17 +113,24 @@ jest.mock("~/server/db", () => ({
       }: {
         where: Record<string, unknown>;
         take: number;
-        orderBy?: { updatedAt?: "desc" };
-      }) =>
-        rows
+        orderBy?: { updatedAt?: "desc" } | object[];
+      }) => {
+        const found = rows
           .filter((row) => matches(row, where))
           .sort((a, b) =>
-            orderBy?.updatedAt === "desc"
+            !Array.isArray(orderBy) && orderBy?.updatedAt === "desc"
               ? b.updatedAt.getTime() - a.updatedAt.getTime()
               : a.createdAt.getTime() - b.createdAt.getTime() || a.id.localeCompare(b.id)
           )
           .slice(0, take)
-          .map((row) => ({ ...row })),
+          .map((row) => ({ ...row }));
+        if (Array.isArray(orderBy) && afterWindowRead) {
+          const between = afterWindowRead;
+          afterWindowRead = null;
+          between();
+        }
+        return found;
+      },
       findUnique: async ({ where }: { where: { id: string } }) => {
         const row = rows.find((candidate) => candidate.id === where.id);
         return row ? { ...row } : null;
@@ -209,6 +234,7 @@ beforeEach(() => {
   counter = 0;
   racedClaims.clear();
   storeFails.clear();
+  afterWindowRead = null;
   config.clear();
   delete process.env.SKIP_MEDIAWIKI_SYNC;
   revisionJob.mockReset().mockResolvedValue(555);
@@ -775,6 +801,7 @@ describe.each(WIKIOS_MODES)("the queue's health [%s]", (mode) => {
   let restoreMode: () => void = () => undefined;
   beforeEach(async () => {
     jest.mocked(discordWebhook.isEnabled).mockReturnValue(true);
+    warn.mockResolvedValue(true);
     restoreMode = await seedWikiosMode(db, mode);
   });
   afterEach(() => restoreMode());
@@ -818,6 +845,73 @@ describe.each(WIKIOS_MODES)("the queue's health [%s]", (mode) => {
     expect(dead.every((job) => byId(job.id).state === "dead")).toBe(true);
   });
 
+  it("reads the dead jobs' holds before the window: a job requeued between the two reads still runs before the younger ones", async () => {
+    const x = addJob({ title: "T", state: "dead", attempts: 8, lastError: "MediaWiki down" });
+    const y = addJob({ title: "T" });
+    // an administrator requeues X just after the worker read the window (X was dead then, so not in it)
+    afterWindowRead = () =>
+      Object.assign(byId(x.id), { state: "pending", attempts: 0, lastError: null });
+    const order: string[] = [];
+    revisionJob.mockImplementation(async (job) => {
+      order.push(job.id);
+      return 600;
+    });
+
+    await runMirrorCycle();
+    await runMirrorCycle(); // the cycle that read X as dead ran nothing of T; this one runs X first
+
+    expect(order).toEqual([x.id, y.id]);
+  });
+
+  it("requeuing the oldest dead job of a batch runs it alone; the younger dead ones still hold, and R6 does not join the batch", async () => {
+    const batch = [1, 2, 3, 4, 5].map(() =>
+      addJob({ title: "Foo", state: "dead", attempts: 8, lastError: "MediaWiki down" })
+    );
+    const r6 = addJob({ title: "Foo" });
+    const r7 = addJob({ title: "Foo" });
+
+    await requeueMirrorJob(batch[0]!.id);
+    await runMirrorCycle();
+
+    expect(planBatch).toHaveBeenCalledTimes(1);
+    expect(planBatch.mock.calls[0]?.[0].map((job) => job.id)).toEqual([batch[0]!.id]);
+    expect(byId(batch[0]!.id).state).toBe("done");
+    for (const job of batch.slice(1)) expect(byId(job.id).state).toBe("dead");
+    for (const job of [r6, r7])
+      expect(byId(job.id)).toMatchObject({ state: "pending", attempts: 0 });
+  });
+
+  it("requeues and discards by title the dead moves into that title too", async () => {
+    const intoFoo = addJob({
+      kind: "move",
+      title: "Old",
+      payload: { to: "Foo", reason: "", leaveRedirect: true },
+      revisionId: null,
+      state: "dead",
+      attempts: 8,
+    });
+    const elsewhere = addJob({
+      kind: "move",
+      title: "Other",
+      payload: { to: "Bar", reason: "", leaveRedirect: true },
+      revisionId: null,
+      state: "dead",
+      attempts: 8,
+    });
+    const behind = addJob({ title: "Foo" });
+
+    await expect(requeueDeadJobs({ title: "Foo" })).resolves.toBe(1);
+    expect(byId(intoFoo.id)).toMatchObject({ state: "pending", attempts: 0 });
+    expect(byId(elsewhere.id).state).toBe("dead");
+
+    byId(intoFoo.id).state = "dead";
+    await expect(discardDeadJobs({ title: "Foo" })).resolves.toBe(1);
+    expect(byId(intoFoo.id).state).toBe("discarded");
+    expect(byId(elsewhere.id).state).toBe("dead");
+    await runMirrorCycle();
+    expect(byId(behind.id).state).toBe("done");
+  });
+
   it("1000 dead jobs no longer starve the window: a pending job behind them runs", async () => {
     addDeadJobs(WINDOW_SIZE);
     const behind = addJob({ title: "Behind" });
@@ -840,8 +934,13 @@ describe.each(WIKIOS_MODES)("the queue's health [%s]", (mode) => {
     expect(saturationWarnings()[0]?.[1]).toContain(`${WINDOW_SIZE} mirror jobs`);
     expect(config.has(SATURATION_ALERT_KEY)).toBe(false);
 
+    // a failed delivery is stamped on its own: not tried again for 5 minutes
+    expect(config.get(SATURATION_ATTEMPT_KEY)).toBeDefined();
     warn.mockResolvedValue(true);
-    await runMirrorCycle(); // not stamped, so tried again, and delivered
+    await runMirrorCycle();
+    expect(saturationWarnings()).toHaveLength(1);
+    config.set(SATURATION_ATTEMPT_KEY, new Date(Date.now() - 5 * 60_000 - 1).toISOString());
+    await runMirrorCycle(); // after the backoff: tried again, and delivered
     expect(saturationWarnings()).toHaveLength(2);
     const stamped = config.get(SATURATION_ALERT_KEY);
     expect(stamped).toBeDefined();

@@ -73,6 +73,7 @@ describe("getMirrorStatus", () => {
       counts: { dead: 1, pending: 0 },
       dead: [],
       windowSaturated: false,
+      windowSize: 1_000,
     });
   });
 
@@ -163,7 +164,12 @@ describe.each([
 
     await expect(admin()[name]({ title: "Foo" })).resolves.toEqual({ count: 3 });
     expect(updateMany.mock.calls[0]?.[0]).toEqual({
-      where: { source: "ixwiki", state: "dead", title: "Foo" },
+      // the jobs of the title, and the moves into it
+      where: {
+        source: "ixwiki",
+        state: "dead",
+        OR: [{ title: "Foo" }, { kind: "move", payload: { path: ["to"], equals: "Foo" } }],
+      },
       data,
     });
 

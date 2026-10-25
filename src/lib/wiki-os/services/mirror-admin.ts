@@ -48,6 +48,8 @@ export interface MirrorStatus {
    * is falling behind (the operators are warned on Discord too).
    */
   windowSaturated: boolean;
+  /** How many jobs the worker's window holds (`WINDOW_SIZE`): `windowSaturated` means this many wait. */
+  windowSize: number;
 }
 
 export async function getMirrorStatus(now = new Date()): Promise<MirrorStatus> {
@@ -106,6 +108,7 @@ export async function getMirrorStatus(now = new Date()): Promise<MirrorStatus> {
     uploadsWaiting,
     dead: dead.map(({ updatedAt, ...job }) => ({ ...job, diedAt: updatedAt })),
     windowSaturated: counts.pending + counts.running >= WINDOW_SIZE,
+    windowSize: WINDOW_SIZE,
   };
 }
 
@@ -131,7 +134,10 @@ const requeued = () => ({
 /** Discarded: given up on, the error that killed it kept on the row. */
 const DISCARDED = { state: "discarded" } as const;
 
-/** Which dead jobs a bulk action covers: every one, or the ones of `title` (the job's own title). */
+/**
+ * Which dead jobs a bulk action covers: every one, or the ones that hold `title` (the jobs of that title, and the
+ * moves into it).
+ */
 export interface DeadJobFilter {
   title?: string;
 }
@@ -139,7 +145,9 @@ export interface DeadJobFilter {
 const deadJobs = ({ title }: DeadJobFilter) => ({
   source: MIRROR_SOURCE,
   state: "dead",
-  ...(title === undefined ? {} : { title }),
+  ...(title === undefined
+    ? {}
+    : { OR: [{ title }, { kind: "move", payload: { path: ["to"], equals: title } }] }),
 });
 
 /** Try a dead job again from its first attempt; it blocks nothing once it succeeds. */
