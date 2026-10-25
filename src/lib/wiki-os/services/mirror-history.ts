@@ -257,6 +257,23 @@ export async function classicPage(title: string, followRedirects: boolean): Prom
   };
 }
 
+/** `prop=info` by page id: a missing page comes back with its id and no title. */
+const pageByIdSchema = z.object({
+  query: z.object({
+    pages: z.array(z.looseObject({ title: z.string().optional() })),
+  }),
+});
+
+/** Where classic MediaWiki has the page with id `pageId` now (its moves follow it); null when it has no such page. */
+export async function classicTitleOfPageId(pageId: number): Promise<string | null> {
+  const data = await getMediaWikiAction(
+    { action: "query", prop: "info", pageids: String(pageId) },
+    pageByIdSchema
+  );
+  // a missing page comes back with no title
+  return data.query.pages[0]?.title ?? null;
+}
+
 /** The title's `type` log entries in classic MediaWiki (a few of them), newest first. */
 async function titleLog(title: string, type: "delete" | "move"): Promise<LogEvent[]> {
   const { entries } = await fetchLogEventsPage({

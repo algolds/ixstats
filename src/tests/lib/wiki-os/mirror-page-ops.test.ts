@@ -42,6 +42,7 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
 import { runAutoSyncCycle } from "~/lib/wiki-os/services/auto-sync-service";
 import { runMirrorCycle } from "~/lib/wiki-os/services/mirror-worker";
 import { PageManagementService } from "~/lib/wiki-os/core/page-management-service";
+import { RightsAdminService } from "~/lib/wiki-os/core/rights-admin-service";
 import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
 import { toRevisionRef } from "~/lib/wiki-os/core/domain-types";
 import { notificationAPI } from "~/lib/notifications/api";
@@ -698,6 +699,69 @@ describe.each(WIKIOS_MODES)(
       expect(site.current("Caphirian Empire")?.text).toBe("Caphiria is an empire.");
       expect(site.current("Caphiria")?.text).toBe("#REDIRECT [[Caphirian Empire]]");
       expect(tables.wikiMirrorJob.rows.every((job) => job.state === "done")).toBe(true);
+    });
+
+    it("a WikiOS protection queued before the cycle saw a classic move protects the page where classic has it, never the redirect", async () => {
+      site.wiki.on("protect", ({ params }) => ({ protect: { title: params.title } }));
+      await RightsAdminService.protect({
+        title: "Caphiria",
+        changes: [{ action: "edit", level: "sysop", expiresAt: null }],
+        reason: "vandalism",
+        actor: KIR,
+      });
+      site.movePage("Bob", "Caphiria", "Caphiria Republic");
+
+      await mirrorTwice();
+
+      expect(sent("protect").map((request) => request.params.title)).toEqual(["Caphiria Republic"]);
+      expect(jobOf("protect")).toMatchObject({ state: "done" });
+      // found by its title: its page id is never asked for
+      expect(site.wiki.calls().filter((request) => request.params.pageids)).toEqual([]);
+    });
+
+    it("after an administrator discards a dead WikiOS move, the page's revisions go where classic has it by its page id: no second page", async () => {
+      await PageManagementService.movePage(
+        "Caphiria",
+        "Caphirian Empire",
+        "rename",
+        KIR,
+        "ixwiki",
+        {
+          leaveRedirect: false,
+        }
+      );
+      // the move's job went dead and was discarded: classic keeps the page at its old title
+      jobOf("move").state = "discarded";
+      await kirSaves("Caphirian Empire", "Caphiria is an empire.");
+
+      await mirrorTwice();
+
+      expect(site.pages.has("Caphirian Empire")).toBe(false);
+      expect(site.current("Caphiria")?.text).toBe("Caphiria is an empire.");
+      expect(tables.wikiMirrorJob.rows.filter((job) => job.kind === "revision")).toEqual([
+        expect.objectContaining({ state: "done" }),
+      ]);
+    });
+
+    it("after a discarded dead WikiOS move, a page someone made on classic at the new title is left alone: the revision goes to the page by its id", async () => {
+      await PageManagementService.movePage(
+        "Caphiria",
+        "Caphirian Empire",
+        "rename",
+        KIR,
+        "ixwiki",
+        {
+          leaveRedirect: false,
+        }
+      );
+      jobOf("move").state = "discarded";
+      site.editAs("Carol", "Caphirian Empire", "An unrelated page.");
+      await kirSaves("Caphirian Empire", "Caphiria is an empire.");
+
+      await mirrorTwice();
+
+      expect(site.current("Caphirian Empire")?.text).toBe("An unrelated page.");
+      expect(site.current("Caphiria")?.text).toBe("Caphiria is an empire.");
     });
 
     it("a revision of a page someone made anew at a title classic once moved away goes to that page", async () => {

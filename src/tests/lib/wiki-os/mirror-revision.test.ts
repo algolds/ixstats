@@ -57,7 +57,6 @@ import {
   planRevisionBatch,
 } from "~/lib/wiki-os/services/mirror-revision";
 import type { BatchCollision } from "~/lib/wiki-os/services/mirror-collision";
-import { revisionPayloadSchema } from "~/lib/wiki-os/services/mirror-outbox";
 import { mwSha1Base36, sha1HexToBase36 } from "~/lib/wiki-os/xml/sha1";
 import { API_URL, createFakeMediaWiki, type RecordedRequest } from "~/tests/helpers/fake-mediawiki";
 import { createHash } from "node:crypto";
@@ -818,7 +817,6 @@ describeEachWikiosMode("revision jobs", () => {
 
       const plan = await planRevisionBatch([leftover, jobFor(2)]);
 
-      expect(revisionPayloadSchema.parse({ restore: true, summary: "Restoring" })).toEqual({});
       expect(plan.members.map((member) => member.job.id)).toEqual(["job-1", "job-2"]);
       expect(plan.importSummary).toBe("edit 2");
       expect(

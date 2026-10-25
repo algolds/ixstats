@@ -17,11 +17,12 @@ interface FeedItem {
   summary: string;
   author: string;
   updated: string;
-  /** A MediaWiki edit that did not go live (conflict): listed, never the page's live text. */
+  /** Overwritten: a later save on the other wiki replaced it. Listed, never the page's live text. */
   parked: boolean;
 }
 
-const PARKED_NOTE = "conflict — not live";
+/** What an overwritten revision's title says, as the history and recent changes say it. */
+const PARKED_NOTE = "overwritten";
 
 export async function GET(req: NextRequest, context: { params: Promise<{ type: string }> }) {
   const { type } = await context.params;
@@ -49,7 +50,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ type: s
 
   const feedItems: FeedItem[] = revisions.map((r) => ({
     id: `tag:ixstats.com,${r.createdAt.toISOString().slice(0, 10)}:wiki:rev:${r.id}`,
-    title: `${r.article.title} (${r.byteDelta >= 0 ? `+${r.byteDelta}` : r.byteDelta})${r.parked ? ` — ${PARKED_NOTE}` : ""}`,
+    title: `${r.article.title} (${r.byteDelta >= 0 ? `+${r.byteDelta}` : r.byteDelta})${r.parked ? ` (${PARKED_NOTE})` : ""}`,
     link: `${SITE_URL}/wiki/${r.article.slug}`,
     summary: r.summary || (r.minor ? "Minor edit" : "Updated article content"),
     author: r.author || "WikiOS Contributor",
@@ -71,7 +72,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ type: s
         content_text: item.summary,
         date_modified: item.updated,
         authors: [{ name: item.author }],
-        // JSON Feed extension (names start with an underscore): a conflict, listed but not live.
+        // JSON Feed extension (names start with an underscore): overwritten, listed but not live.
         _parked: item.parked,
       })),
     });

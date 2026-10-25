@@ -68,10 +68,10 @@ describe("GET /api/wiki/feed/[type]", () => {
     };
 
     expect(atom.match(/<entry>/g)).toHaveLength(2);
-    expect(atom).toContain("<title>Urcea (+120) — conflict — not live</title>");
+    expect(atom).toContain("<title>Urcea (+120) (overwritten)</title>");
     expect(atom.match(/<category term="parked"/g)).toHaveLength(1);
     expect(json.items.map((item) => item._parked)).toEqual([true, false]);
-    expect(json.items[0]?.title).toBe("Urcea (+120) — conflict — not live");
+    expect(json.items[0]?.title).toBe("Urcea (+120) (overwritten)");
     expect(json.items[1]?.title).toBe("Urcea (+120)");
     // The query keeps parked rows: it must not filter them out.
     expect(findMany.mock.calls[0]?.[0].where).not.toHaveProperty("parked");

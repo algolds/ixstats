@@ -4,7 +4,7 @@
  * recent changes and log events, files. It answers the reads the inbound sync and the mirror make (`prop=revisions` by
  * title or revid, `prop=imageinfo`, `list=recentchanges`, `list=logevents`) and the writes the mirror makes
  * (`action=import` of an export-0.11 file, `action=edit`, `action=upload`, `action=move`, `action=delete`,
- * `action=undelete`) and `prop=info` (with `redirects`), as MediaWiki would:
+ * `action=undelete`) and `prop=info` (with `redirects`, or by `pageids`), as MediaWiki would:
  *   - an import adds the revisions it carries (an older one goes into the history, not on top) and a null revision by
  *     the importing account, dated now; neither shows in recent changes (an import is a log entry there);
  *   - an edit by anyone is a new revision on top of the current one, and a recent change;
@@ -264,6 +264,11 @@ export function createFakeMediaWikiSite(options: FakeMediaWikiSiteOptions = {}) 
         (entry) => (!params.letitle || entry.title === params.letitle) && (!params.letype || entry.type === params.letype)
       );
       return { query: { logevents: listFrom(listed, params, "le") } };
+    }
+    if (params.prop === "info" && params.pageids) {
+      // a page by its id, wherever moves took it; a deleted page's id is missing, as in MediaWiki
+      const page = [...pages.values()].find((candidate) => candidate.pageid === Number(params.pageids));
+      return { query: { pages: [page ? pageInfo(page.title, false) : { pageid: Number(params.pageids), missing: true }] } };
     }
     if (params.prop === "info") return { query: { pages: [pageInfo(params.titles ?? "", params.redirects !== undefined)] } };
     if (params.prop === "imageinfo") {

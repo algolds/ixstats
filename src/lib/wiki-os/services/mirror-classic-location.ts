@@ -9,7 +9,13 @@
 import { db } from "~/server/db";
 import { CLASSIC_MOVE_ACTIONS, classicMoveTarget } from "./conflict-page-ops";
 import { operationChanges } from "./conflict-sides";
-import { classicPage, latestClassicEvent, recentHistory, stampedIn } from "./mirror-history";
+import {
+  classicPage,
+  classicTitleOfPageId,
+  latestClassicEvent,
+  recentHistory,
+  stampedIn,
+} from "./mirror-history";
 
 /** The most moves followed to find where classic has a page now. */
 const MAX_MOVE_HOPS = 5;
@@ -75,7 +81,10 @@ export function heldByAnotherError(location: ClassicLocation, title: string): Er
  * The title an article's revisions go to in classic MediaWiki: where classic has the article's page (by its MediaWiki
  * page id), starting from where WikiOS has it now (a classic move the cycle applied renamed it) or, while a WikiOS move
  * of it is owed to MediaWiki, from the title that move goes from. That follows a classic move WikiOS has not applied
- * yet. A page WikiOS knows no MediaWiki id of goes to that title; `queuedAs`, the job's own, for a job with no article.
+ * yet. Found nowhere along that way, it is where classic's page id is now, if classic still has that page: a WikiOS
+ * move an administrator discarded left the page at its old title in classic, and a write must not make a second page
+ * (nor go to an unrelated page someone made at the new title). A page WikiOS knows no MediaWiki id of goes to that
+ * title; `queuedAs`, the job's own, for a job with no article.
  */
 export async function classicTitleOf(articleId: string | null, queuedAs: string): Promise<string> {
   if (!articleId) return queuedAs;
@@ -90,6 +99,10 @@ export async function classicTitleOf(articleId: string | null, queuedAs: string)
   // it moved through. At the article's own title, another page is one made anew there (a classic editor recreating it
   // after a delete): the revision rule judges the job against it.
   const location = await findClassicPage(title, article.mwPageId, holdsRevisionOf(articleId));
+  if (location.found) return location.title;
+  // classic's page by its id, wherever it is; a deleted page has none, and is judged where it was last
+  const byId = await classicTitleOfPageId(article.mwPageId);
+  if (byId) return byId;
   if (location.heldByAnother && location.title !== title) throw heldByAnotherError(location, title);
   return location.title;
 }

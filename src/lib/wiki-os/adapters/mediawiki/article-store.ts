@@ -101,7 +101,10 @@ export async function getRevisionWikitextShadow(
   title: string;
   source: string;
   timestamp: string;
-  /** A MediaWiki edit that did not go live (conflict): never the text a revert or restore may put back. */
+  /**
+   * Overwritten: a later save on the other wiki replaced it. Viewable, never the live text; its text can come back
+   * only as a new edit (a revert, or its author's "Restore my text").
+   */
   parked: boolean;
   fromShadow: boolean;
 } | null> {

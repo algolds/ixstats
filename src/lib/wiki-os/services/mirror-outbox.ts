@@ -24,15 +24,6 @@ export const MIRROR_LOCK_NAME = "wiki-mirror";
 
 export type MirrorJobKind = "revision" | "move" | "delete" | "undelete" | "protect" | "upload";
 
-/**
- * `revision`: nothing but the note the worker leaves. A job always sends its revision as it was saved (the park
- * re-push that sent the head again, dated now, is retired: a lost revision is history, never pushed back).
- */
-export const revisionPayloadSchema = z.object({
-  /** Written when the job is done in a way worth knowing about (see mirror-revision.ts); never by the enqueuer. */
-  note: z.string().optional(),
-});
-
 export const movePayloadSchema = z.object({
   /** The canonical title the page moved to (the job's own `title` is where it moved from). */
   to: z.string(),

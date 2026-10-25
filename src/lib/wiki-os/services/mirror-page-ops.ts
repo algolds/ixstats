@@ -9,6 +9,7 @@
 
 import { z } from "zod";
 import { MediaWikiApiError, postMediaWikiAction } from "../adapters/mediawiki/write-service";
+import { classicTitleOf } from "./mirror-classic-location";
 import { classicPage } from "./mirror-history";
 import {
   movePayloadSchema,
@@ -135,9 +136,11 @@ function protectionParams({ restrictions }: ProtectPayload): {
 
 async function runProtect(job: MirrorJob): Promise<PageJobResult> {
   const payload = protectPayloadSchema.parse(job.payload);
+  // where classic has the page (a classic move WikiOS has not applied yet), as for its revisions; never its redirect
+  const title = await classicTitleOf(job.articleId, job.title);
   // MediaWiki answers a protection that is already in force with a success, so there is no race to excuse.
   await postMediaWikiAction(
-    { action: "protect", title: job.title, reason: payload.reason, ...protectionParams(payload) },
+    { action: "protect", title, reason: payload.reason, ...protectionParams(payload) },
     ackSchema
   );
   return {};

@@ -48,7 +48,10 @@ export interface RevisionContent {
   /** The wiki the revision belongs to (always "ixwiki" here). */
   source: string;
   timestamp: string;
-  /** A MediaWiki edit that did not go live (conflict): it can be viewed, but never restored. */
+  /**
+   * Overwritten: a later save on the other wiki replaced it. It can be viewed, and its text can come back only as a new
+   * edit (a revert, or its author's "Restore my text"), never as the live text in place.
+   */
   parked: boolean;
 }
 
