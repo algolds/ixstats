@@ -55,10 +55,13 @@ export function DatabaseExplorer() {
             <div className="bg-fill-3 rounded-control border-separator border p-4">
               <div className="text-label-secondary text-footnote flex items-center gap-2">
                 <Database className="h-4 w-4" />
-                <span>Global GDP Aggregate</span>
+                <span>GDP across all realms</span>
               </div>
               <p className="text-label text-title-1 mt-2">
                 {isLoading ? "..." : `$${(globalStats?.globalGDP ?? 0).toFixed(2)}T`}
+              </p>
+              <p className="text-label-secondary text-caption mt-1">
+                Mixes realms that run at different speeds
               </p>
             </div>
           </div>

@@ -98,7 +98,10 @@ export function AllianceDashboard({
     ? [
         ...new Map(
           relationships
-            .filter((r) => !alliance.members.some((m) => m.countryId === r.targetCountryId))
+            .filter(
+              (r) =>
+                r.sameRealm && !alliance.members.some((m) => m.countryId === r.targetCountryId)
+            )
             .map((r) => [
               r.targetCountryId,
               { id: r.targetCountryId, name: r.targetCountry ?? r.targetCountryId },

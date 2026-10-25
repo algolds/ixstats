@@ -6,6 +6,7 @@ import { notificationAPI } from "~/lib/notifications/api";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { ActivityHooks } from "~/lib/activity";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { assertSameRealm } from "~/server/shared/same-realm-guard";
 import { OPENING_RELATION_STRENGTH, getStandingBand } from "~/lib/diplomacy/relation-bands";
 
 export const diplomaticEmbassiesEstablishRouter = createTRPCRouter({
@@ -28,6 +29,7 @@ export const diplomaticEmbassiesEstablishRouter = createTRPCRouter({
           message: "A nation cannot open an embassy in itself.",
         });
       }
+      await assertSameRealm(ctx.db, input.guestCountryId, input.hostCountryId);
 
       // One embassy per guest↔host pair (enforced by a composite unique). Guard here
       // so a re-try / double-submit returns a clear message instead of a raw P2002.

@@ -339,6 +339,13 @@ function Step1EventType({
   );
 }
 
+/**
+ * The rule for an event spanning realms: allowed, with each nation's effects on its own realm's clock (createWorldEvent
+ * reads the real start on each nation's clock; durations are years of that clock).
+ */
+export const WORLD_EVENT_REALM_NOTE =
+  "Nations of different realms can share an event. Each nation's effects start at the same real moment and last the event's years on its own realm's clock, so a faster realm lives through them sooner and a paused one waits.";
+
 function Step2Scope({
   scope,
   selectedIds,
@@ -367,6 +374,7 @@ function Step2Scope({
           { value: "targeted", label: "Targeted countries", icon: <Swords aria-hidden /> },
         ]}
       />
+      <p className="text-label-secondary text-footnote mb-4">{WORLD_EVENT_REALM_NOTE}</p>
 
       {scope === "targeted" ? (
         <CountrySelector selectedIds={selectedIds} onSelectionChange={onSelectionChange} />
@@ -681,7 +689,7 @@ function Step5Confirm({
             <p className="text-label-secondary text-footnote">
               This will create storyteller effects for {form.affectedCountryIds.length} countries
               and immediately affect their economic calculations. This action can be reversed by
-              deactivating the event.
+              deactivating the event. {WORLD_EVENT_REALM_NOTE}
             </p>
           </div>
         </div>

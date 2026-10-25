@@ -19,4 +19,6 @@ export interface DiplomaticRelationDto {
   goalSelf?: string | null;
   goalTarget?: string | null;
   recentActivity?: string | null;
+  /** Whether the other nation is in this nation's realm: only then can they act on each other as countries. */
+  sameRealm: boolean;
 }

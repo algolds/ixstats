@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Search } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { useActingRealmId } from "~/hooks/useActingRealmId";
+import { nationsInRealm } from "~/lib/realms/same-realm";
 import { Input } from "~/components/ui/input";
 import {
   Select,
@@ -20,7 +22,10 @@ interface CountrySearchSelectProps {
   label: string;
 }
 
-/** Pick a nation: a name search reaches every nation, and the list shows the first 200 matches. */
+/**
+ * Pick a nation of the acting nation's realm (nations of two realms do not interact): a name search reaches every
+ * such nation, and the list shows the first 200 matches.
+ */
 export function CountrySearchSelect({
   value,
   onSelect,
@@ -32,7 +37,10 @@ export function CountrySearchSelect({
     { limit: 200, offset: 0, search: search.trim() || undefined },
     { staleTime: 5 * 60 * 1000 }
   );
-  const countries = (data?.countries ?? []).filter((c) => !excludeIds.includes(c.id));
+  const realmId = useActingRealmId();
+  const countries = nationsInRealm(data?.countries ?? [], realmId).filter(
+    (c) => !excludeIds.includes(c.id)
+  );
 
   return (
     <div className="space-y-2">

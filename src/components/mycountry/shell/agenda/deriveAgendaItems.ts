@@ -1,6 +1,8 @@
 import { KeyCommand as Command, WarningCircle as AlertCircle, Megaphone } from "iconoir-react";
 import type { AgendaItem, AgendaUrgency } from "./agendaTypes";
 import { getSeverityRank } from "./agendaTypes";
+import type { RealmCalendar } from "~/lib/realms/realm-calendar";
+import { electionDisplayName } from "~/lib/realms/realm-year";
 import { PHASE_META, directiveTimeline } from "~/components/mycountry/directives/directive-model";
 
 /**
@@ -55,11 +57,13 @@ interface AgendaSources {
   elections?: readonly AgendaSourceElection[];
   /** The nation's realm-clock "now". */
   nowIxTime: number;
+  /** The nation's calendar, for the year in an election's name (as stored when omitted). */
+  calendar?: RealmCalendar;
   /** The realm's speed (0: paused). */
   multiplier: number;
 }
 
-type AgendaClock = Pick<AgendaSources, "nowIxTime" | "multiplier">;
+type AgendaClock = Pick<AgendaSources, "nowIxTime" | "multiplier" | "calendar">;
 
 /** `target` (realm-clock ms, still ahead) is within `realMs` of real time at the realm's speed. */
 function dueWithin(
@@ -169,7 +173,7 @@ function electionItem(el: AgendaSourceElection, clock: AgendaClock): AgendaItem 
   return {
     id: `election:${el.id}`,
     kind: "election",
-    title: el.name || "Election",
+    title: el.name ? electionDisplayName(el.name, el.scheduledIxTime, clock.calendar) : "Election",
     preview: ELECTION_PHASE[String(el.status ?? "").toLowerCase()] ?? "Scheduled",
     statusLabel: ELECTION_LABEL[String(el.electionType ?? "").toLowerCase()] ?? "General election",
     icon: Megaphone,
@@ -197,8 +201,9 @@ export function deriveAgendaItems({
   elections = [],
   nowIxTime,
   multiplier,
+  calendar,
 }: AgendaSources): AgendaItem[] {
-  const clock = { nowIxTime, multiplier };
+  const clock = { nowIxTime, multiplier, calendar };
   return [
     ...issues.map((iss) => issueItem(iss, clock)),
     ...intents

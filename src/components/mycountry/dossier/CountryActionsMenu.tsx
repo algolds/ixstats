@@ -26,6 +26,7 @@ import { editorHref, MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
 import { api, type RouterInputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useCountryDiplomacyActions } from "./useCountryDiplomacyActions";
+import { SAME_REALM_MESSAGE } from "~/lib/realms/same-realm";
 import { useViewerPostingAccount } from "~/hooks/useViewerPostingAccount";
 import { cn } from "~/lib/utils";
 import { useRouter } from "next/navigation";
@@ -74,6 +75,8 @@ const MeetingScheduler = dynamic(
 interface CountryActionsMenuProps {
   targetCountryId: string;
   targetCountryName: string;
+  /** The target's realm, when known: its diplomacy rows need the viewer's nation in the same realm. */
+  targetRealmId?: string | null;
   viewerCountryId?: string;
   isOpen: boolean;
   onClose: () => void;
@@ -194,6 +197,7 @@ function CongratulateRow({
 export function CountryActionsMenu({
   targetCountryId,
   targetCountryName,
+  targetRealmId,
   viewerCountryId,
   isOpen,
   onClose,
@@ -209,6 +213,7 @@ export function CountryActionsMenu({
     viewerCountryId,
     targetCountryId,
     targetCountryName,
+    targetRealmId,
     followStatusEnabled: !!viewerCountryId,
     onProposed: onClose,
   });
@@ -263,6 +268,8 @@ export function CountryActionsMenu({
   // A sending congratulation also locks the diplomacy rows so nothing is double-submitted.
   const isBusy = diplomacy.isPending || congratulation.isPending;
   const needsViewer = !viewerCountryId || isBusy;
+  // Country-to-country rows need both nations in one realm; following and messages stay open.
+  const needsSameRealm = needsViewer || diplomacy.crossRealm;
 
   return (
     <>
@@ -309,17 +316,22 @@ export function CountryActionsMenu({
                 </ActionGroup>
 
                 <ActionGroup label="Diplomacy">
+                  {diplomacy.crossRealm && (
+                    <p className="text-label-secondary text-footnote px-1">
+                      {SAME_REALM_MESSAGE} for embassies, meetings and proposals.
+                    </p>
+                  )}
                   <ActionRow
                     icon={Building2}
                     label={diplomacy.isEmbassyPending ? "Constructing…" : "Construct Embassy"}
                     onClick={diplomacy.establishEmbassy}
-                    disabled={needsViewer}
+                    disabled={needsSameRealm}
                   />
                   <ActionRow
                     icon={Calendar}
                     label="Request meeting"
                     onClick={requestMeeting}
-                    disabled={needsViewer}
+                    disabled={needsSameRealm}
                   />
                   {DIPLOMACY_PROPOSALS.map(([icon, label, policy]) => (
                     <ActionRow
@@ -327,7 +339,7 @@ export function CountryActionsMenu({
                       icon={icon}
                       label={label}
                       onClick={() => diplomacy.proposeForeignPolicy(policy)}
-                      disabled={needsViewer}
+                      disabled={needsSameRealm}
                     />
                   ))}
                 </ActionGroup>
@@ -340,7 +352,7 @@ export function CountryActionsMenu({
                       label={label}
                       targetCountryName={targetCountryName}
                       onConfirm={() => diplomacy.proposeForeignPolicy(policy)}
-                      disabled={needsViewer}
+                      disabled={needsSameRealm}
                     />
                   ))}
                 </ActionGroup>
@@ -350,7 +362,7 @@ export function CountryActionsMenu({
             <ActionGroup label="Quick links">
               <ActionRow
                 icon={Trophy}
-                label="Global leaderboard"
+                label="Leaderboards"
                 onClick={() => go("/leaderboards")}
               />
               <WikiLinkPreview title={targetCountryName}>

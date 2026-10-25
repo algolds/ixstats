@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { clockForCountry } from "~/server/shared/realm-time";
+import { assertSameRealm } from "~/server/shared/same-realm-guard";
 import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
 
 export const diplomaticCulturalLifecycleParticipationRouter = createTRPCRouter({
@@ -35,6 +36,7 @@ export const diplomaticCulturalLifecycleParticipationRouter = createTRPCRouter({
           message: "Cultural exchange not found",
         });
       }
+      await assertSameRealm(ctx.db, ctx.user.countryId, exchange.hostCountryId);
 
       // Get country name for vote record
       const country = await ctx.db.country.findUnique({
@@ -77,7 +79,6 @@ export const diplomaticCulturalLifecycleParticipationRouter = createTRPCRouter({
           exchangeType: exchange.type,
           exchangeTitle: exchange.title,
         },
-        // realm-time: the voting nation's clock; nations of two realms are T5's to keep apart.
         ixTimeTimestamp: (await clockForCountry(ctx.db, ctx.user.countryId)).now(),
       });
 
@@ -121,6 +122,8 @@ export const diplomaticCulturalLifecycleParticipationRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Cultural exchange not found" });
       }
 
+      await assertSameRealm(ctx.db, countryId, exchange.hostCountryId);
+
       // The host never gets a participant row (createCulturalExchange only adds the
       // invited country), so it is allowed alongside participants.
       if (exchange.hostCountryId !== countryId) {
@@ -161,7 +164,6 @@ export const diplomaticCulturalLifecycleParticipationRouter = createTRPCRouter({
           artifactTitle: input.title,
           exchangeType: exchange.type,
         },
-        // realm-time: the contributing nation's clock; nations of two realms are T5's to keep apart.
         ixTimeTimestamp: (await clockForCountry(ctx.db, countryId)).now(),
       });
 

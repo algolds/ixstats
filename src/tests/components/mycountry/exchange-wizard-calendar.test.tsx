@@ -3,7 +3,10 @@ import React from "react";
 import { fireEvent, render, renderHook, screen } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => ({
-  api: { countries: { getAll: { useQuery: () => ({ data: undefined, isLoading: false }) } } },
+  api: {
+    countries: { getAll: { useQuery: () => ({ data: undefined, isLoading: false }) } },
+    users: { getProfile: { useQuery: () => ({ data: undefined }) } },
+  },
 }));
 
 import { WizardStepSettings } from "~/components/mycountry/domains/diplomacy/exchange-wizard/WizardStepSettings";

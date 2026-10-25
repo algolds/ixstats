@@ -28,6 +28,21 @@ describe("describeElection", () => {
     );
   });
 
+  it("names a due election by its year in the realm calendar, not the stored game year", () => {
+    const due = {
+      ...status(CLOCK_NOW),
+      upcoming: {
+        name: "General Election (Year 2041)",
+        scheduledIxTime: CLOCK_NOW,
+        isDue: true,
+        isFirst: false,
+      },
+    } as unknown as Parameters<typeof describeElection>[0];
+    expect(describeElection(due, sixTimesReader()).headline).toBe(
+      "General Election (812 AE): polls have closed"
+    );
+  });
+
   it("shows a placeholder while the clock loads", () => {
     expect(describeElection(status(CLOCK_NOW), null).headline).toBe("Next election: –");
   });
