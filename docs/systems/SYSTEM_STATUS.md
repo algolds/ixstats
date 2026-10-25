@@ -1,7 +1,7 @@
 # IxStates System Status
 
 **Platform:** 1.5.0 "Lobster Crosby", Release Candidate (integration branch `rose-garden`)
-**Last verified:** 2026-10-05, against the code at `rose-garden` @ `6d53b0c` (after PRs #48–#49 and the 2026-10-05 docs audit); the Vault, Lorewards and Exchange rows were updated on 2026-10-14 for the collectathon hub release, and the card rows on 2026-10-17 for the cards hub
+**Last verified:** 2026-10-05, against the code at `rose-garden` @ `6d53b0c` (after PRs #48–#49 and the 2026-10-05 docs audit); the Vault, Lorewards and Exchange rows were updated on 2026-10-14 for the collectathon hub release, and the card rows on 2026-10-17 for the cards hub, and the WikiOS rows on 2026-10-25 for native lore
 **Version registry:** [`src/lib/buildVersion.ts`](../../src/lib/buildVersion.ts) · **Versioning spec:** [`docs/reference/revision.md`](../reference/revision.md)
 **Open work:** [`ROADMAP.md`](../roadmap/ROADMAP.md) (the plan) · [`pending-features.md`](../history/roadmap/pending-features.md) · [`code-audit-2026-09-30.md`](../history/roadmap/code-audit-2026-09-30.md)
 
@@ -61,7 +61,8 @@ found several that are partly built, read-only, or broken, so each row now carri
 
 | Subsystem | Version | Routes | Routers / code | Status | Notes |
 |---|:---:|---|---|:---:|---|
-| Native lore engine | WikiOS v1 | `/wiki/*`, `/util/*` | `wikios/`, `src/lib/wiki-os/` | ✅ Live | PostgreSQL store with inbound MediaWiki recent-changes sync; no MariaDB path. Rendering, templates and Lua still come from MediaWiki. WikiOS v1 (#52, D20) is merged and switched off (`WIKIOS_V1_ENABLED`): WikiOS reads but takes no edits, uploads or api.php requests until the cutover |
+| Native lore engine | WikiOS v1 | `/wiki/*`, `/util/*` | `wikios/`, `src/lib/wiki-os/` | ✅ Live | PostgreSQL store with inbound MediaWiki recent-changes sync; no MariaDB path. Rendering, templates and Lua still come from MediaWiki. WikiOS v1 (#52, D20) is merged and switched off (`WIKIOS_V1_ENABLED`): WikiOS reads but takes no edits, uploads or api.php requests until the cutover. Editing (the env switch or the admin editing switch, `src/lib/wiki-os/editing-switch.ts`) is built and not yet on in production; it launches with WikiOS v1 inside IxStates, and ixwiki.com stays classic ([cutover](../operations/wikios-v1-cutover.md)) |
+| Native lore pieces | — | `/countries/[slug]/lore` | `countryLore.ts`, `src/server/modules/lore/`, `components/country-profile/lore/` | 🟡 Built, off | A country's people, places, events and organisations as ordinary wiki pages, written from the country page by the owner and a lore team, listed on the Lore tab by `Category:<Country> lore` with owner pins and hides ([explore-and-country-profiles.md](explore-and-country-profiles.md#native-lore)). Built on `rose-garden` (2026-10-25); it follows WikiOS editing, so it launches with WikiOS v1. Needs the `country_lore` SQL (runbook on that page) |
 | Multi-wiki reading | — | `/wiki/[slug]?source=` | `wikios/` | ✅ Live | Other wikis' pages are read-only |
 | Canvas editor (Plate) | Canvas v1 | `/wiki/<title>?action=edit` | `wikios/editing.ts`, `components/wiki-os/editor/plate/` | ✅ Live | WikiAST, slash menu, TemplateData forms |
 | MediaWiki export | — | — | `services/mirror-worker.ts` (+ `mirror-outbox.ts`, `mirror-queue.ts`) | ✅ Live | Durable outbox (`wiki_mirror_jobs`), per-title FIFO, backoff and dead letter; revisions imported with the real author (plan 407) |
