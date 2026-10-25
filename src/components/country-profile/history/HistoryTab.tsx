@@ -17,10 +17,14 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { DiscussionCountsProvider } from "~/components/action-links/DiscussionCountsProvider";
 import type { CountryProfileLayer } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
 import type { ActivityTimeRange, CountryActivityItem } from "~/app/countries/[slug]/_types";
+import type { ChronicleEntry } from "~/app/countries/[slug]/_utils/profileLayer";
 import { ixTimeToYear } from "~/app/countries/[slug]/_utils/profileLayer";
+import { useLoreEntry } from "~/hooks/lore/useLoreEntry";
+import { eventSeed } from "~/lib/lore/lore-seeds";
 import { IxTime } from "~/lib/ixtime";
 import { api } from "~/trpc/react";
 import { filterTimeline, mergeTimeline, type TimelineFilter } from "./merge-timeline";
+import { LoreWriter } from "../lore/LoreWriter";
 import { ActivityRow, ChronicleRow } from "./TimelineRows";
 
 const FILTERS: { value: TimelineFilter; label: string; icon: typeof Activity }[] = [
@@ -55,12 +59,17 @@ function safeDate(value: string | number | Date | null | undefined): Date {
  * HistoryTab — the country's history as one timeline, newest first: the chronicle (founding
  * dates, map stories, directives, decisions, diplomacy, on the in-game calendar) merged with the
  * activity feed. Record shows the chronicle alone; the range control narrows the feed only, so
- * the chronicle's all-time record stays.
+ * the chronicle's all-time record stays. Owner and co-authors write about a chronicle entry in the
+ * tab's one lore writer ("Write about this event", seeded with its title and date).
  */
 export function HistoryTab({ layer }: { layer: CountryProfileLayer }) {
   const [filter, setFilter] = useState<TimelineFilter>("all");
   const [timeRange, setTimeRange] = useState<ActivityTimeRange>("30d");
   const [expanded, setExpanded] = useState(false);
+  const entry = useLoreEntry(layer.countryId);
+  const writeAbout = entry.canWrite
+    ? (chronicle: ChronicleEntry) => entry.write(eventSeed(chronicle.title, chronicle.dateLabel))
+    : undefined;
   const { data, isLoading } = api.activities.getCountryActivity.useQuery({
     countryId: layer.countryId,
     limit: expanded ? 50 : FEED_PAGE,
@@ -123,7 +132,7 @@ export function HistoryTab({ layer }: { layer: CountryProfileLayer }) {
           <ol className="flex flex-col">
             {shown.map((i) =>
               i.chronicle ? (
-                <ChronicleRow key={i.id} entry={i.chronicle} />
+                <ChronicleRow key={i.id} entry={i.chronicle} onWrite={writeAbout} />
               ) : i.activity ? (
                 <ActivityRow key={i.id} item={i.activity} />
               ) : null
@@ -136,6 +145,7 @@ export function HistoryTab({ layer }: { layer: CountryProfileLayer }) {
           Show more
         </Button>
       )}
+      <LoreWriter countryId={layer.countryId} countryName={layer.identity.name} {...entry.writer} />
     </div>
   );
 }

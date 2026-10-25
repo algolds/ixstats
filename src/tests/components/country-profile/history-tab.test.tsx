@@ -1,9 +1,15 @@
-/** The History tab: chronicle and feed as one list, with filter chips and a feed-only range. */
-import { fireEvent, render, screen } from "@testing-library/react";
+/**
+ * The History tab: chronicle and feed as one list, with filter chips and a feed-only range. Native lore (plan Task 5):
+ * owner and co-authors get "Write about this event" on each chronicle entry, which opens the tab's one lore writer on
+ * an Event seeded with the entry's title and date; nobody else is offered it, and feed items never are.
+ */
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { CountryProfileLayer } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
 import { HistoryTab } from "~/components/country-profile/history/HistoryTab";
 
 const feedQuery = jest.fn();
+const mockWriter = jest.fn();
+let mockAccess: { enabled: boolean; isOwner: boolean; canWrite: boolean } | undefined;
 let activities: {
   id: string;
   type: string;
@@ -12,8 +18,15 @@ let activities: {
   description: string;
   timestamp: string;
 }[] = [];
+jest.mock("~/components/country-profile/lore/LoreWriter", () => ({
+  LoreWriter: (props: { open: boolean }) => {
+    mockWriter(props);
+    return props.open ? <div role="dialog" aria-label="Lore writer" /> : null;
+  },
+}));
 jest.mock("~/trpc/react", () => ({
   api: {
+    countryLore: { access: { useQuery: () => ({ data: mockAccess }) } },
     activities: {
       getCountryActivity: {
         useQuery: (input: unknown) => {
@@ -44,8 +57,12 @@ const layer = (chronicle: number) =>
     })),
   }) as unknown as CountryProfileLayer;
 
+const lastWriter = () => mockWriter.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+
 beforeEach(() => {
   feedQuery.mockClear();
+  mockWriter.mockClear();
+  mockAccess = { enabled: true, isOwner: false, canWrite: false };
   activities = [
     {
       id: "a1",
@@ -106,5 +123,43 @@ describe("HistoryTab", () => {
     activities = [];
     render(<HistoryTab layer={layer(0)} />);
     expect(screen.getByText("Nothing in this period")).toBeInTheDocument();
+  });
+
+  describe("writing about an event", () => {
+    it("is not offered to a visitor, nor while access is unknown", () => {
+      for (const access of [undefined, { enabled: true, isOwner: false, canWrite: false }]) {
+        mockAccess = access;
+        const { unmount } = render(<HistoryTab layer={layer(2)} />);
+        expect(screen.queryByRole("button", { name: "Write about this event" })).toBeNull();
+        expect(lastWriter()).toEqual(expect.objectContaining({ open: false }));
+        unmount();
+      }
+    });
+
+    it("is on every chronicle entry for a writer, and never on a feed item", () => {
+      mockAccess = { enabled: true, isOwner: false, canWrite: true };
+      render(<HistoryTab layer={layer(2)} />);
+      expect(screen.getAllByRole("button", { name: "Write about this event" })).toHaveLength(2);
+      const feedItem = screen.getByText("Trade surplus").closest("li")!;
+      expect(within(feedItem).queryByRole("button", { name: "Write about this event" })).toBeNull();
+    });
+
+    it("opens the writer on an Event seeded with the entry's title and date", () => {
+      mockAccess = { enabled: true, isOwner: true, canWrite: true };
+      render(<HistoryTab layer={layer(2)} />);
+      const founding = screen.getByText("Kingdom founded").closest("li")!;
+      fireEvent.click(within(founding).getByRole("button", { name: "Write about this event" }));
+      expect(screen.getByRole("dialog", { name: "Lore writer" })).toBeInTheDocument();
+      expect(lastWriter()).toEqual(
+        expect.objectContaining({
+          open: true,
+          countryId: "c1",
+          countryName: "Caphiria",
+          seed: { type: "event", title: "Kingdom founded", date: "480 BC" },
+        })
+      );
+      act(() => (lastWriter().onClose as () => void)());
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
   });
 });

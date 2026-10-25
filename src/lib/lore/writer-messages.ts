@@ -16,8 +16,8 @@ export const DELETED_TITLE =
 
 export const RECORD_FAILED = "It could not be added to the Lore tab just now.";
 
-/** The record refusals written for the author (`recordPiece`). */
-const RECORD_SHOWN: ReadonlySet<string> = new Set([
+/** The lore refusals written for the author or the owner (record, curation, lore team). */
+const REFUSALS_SHOWN: ReadonlySet<string> = new Set([
   "BAD_REQUEST",
   "FORBIDDEN",
   "NOT_FOUND",
@@ -32,9 +32,14 @@ export function saveRefusalMessage(error: FailedCall): string {
   return saveFailureMessage(error);
 }
 
-export function recordFailureMessage(error: FailedCall): string {
+/** The server's sentence for a lore refusal the reader can act on, else `fallback`, so no server detail leaks. */
+export function refusalMessage(error: FailedCall, fallback: string): string {
   const code = error.data?.code;
-  return code && RECORD_SHOWN.has(code) ? error.message : RECORD_FAILED;
+  return code && REFUSALS_SHOWN.has(code) ? error.message : fallback;
+}
+
+export function recordFailureMessage(error: FailedCall): string {
+  return refusalMessage(error, RECORD_FAILED);
 }
 
 /** The record was refused because the saved page does not carry `Category:<Country> lore`. */

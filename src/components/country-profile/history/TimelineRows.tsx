@@ -3,6 +3,7 @@ import {
   Activity,
   ChatBubble as MessageSquare,
   CheckCircle,
+  EditPencil,
   Flash as Zap,
   TriangleFlag as Flag,
   Globe,
@@ -15,6 +16,7 @@ import {
   Trophy,
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 import { DiscussedInBadge } from "~/components/action-links/DiscussedIn";
 import { escapeHtml, sanitizeUserContent } from "~/lib/utils";
 import type { CountryActivityItem } from "~/app/countries/[slug]/_types";
@@ -86,17 +88,46 @@ function Row({ icon: Glyph, children }: { icon: Icon; children: React.ReactNode 
   );
 }
 
-export function ChronicleRow({ entry }: { entry: ChronicleEntry }) {
+/**
+ * A chronicle entry. For owner and co-authors (`onWrite`), "Write about this event" opens the lore writer on it.
+ */
+export function ChronicleRow({
+  entry,
+  onWrite,
+}: {
+  entry: ChronicleEntry;
+  onWrite?: (entry: ChronicleEntry) => void;
+}) {
   return (
     <Row icon={KIND_ICON[entry.kind]}>
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="text-footnote text-label-secondary tabular-nums">{entry.dateLabel}</span>
-        <Badge variant={entry.source === "ixtime" ? "secondary" : "default"}>
-          {CHRONICLE_KIND_LABEL[entry.kind]}
-        </Badge>
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="text-footnote text-label-secondary tabular-nums">
+              {entry.dateLabel}
+            </span>
+            <Badge variant={entry.source === "ixtime" ? "secondary" : "default"}>
+              {CHRONICLE_KIND_LABEL[entry.kind]}
+            </Badge>
+          </div>
+          <p className="text-headline text-label mt-1">{entry.title}</p>
+          {entry.detail && (
+            <p className="text-callout text-label-secondary mt-0.5">{entry.detail}</p>
+          )}
+        </div>
+        {onWrite && (
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            aria-label="Write about this event"
+            title="Write about this event"
+            className="text-label-secondary shrink-0"
+            onClick={() => onWrite(entry)}
+          >
+            <EditPencil aria-hidden="true" />
+          </Button>
+        )}
       </div>
-      <p className="text-headline text-label mt-1">{entry.title}</p>
-      {entry.detail && <p className="text-callout text-label-secondary mt-0.5">{entry.detail}</p>}
     </Row>
   );
 }

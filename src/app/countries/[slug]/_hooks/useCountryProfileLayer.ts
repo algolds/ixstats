@@ -196,6 +196,8 @@ function toLand(bundle: GeoBundle | undefined, isLoading: boolean) {
     population: realNumber(c.population),
     isCapital: c.isNationalCapital === true,
     isPort: c.isPort === true,
+    coordinates: lngLat(c.coordinates),
+    subdivisionId: str(c.subdivisionId),
   }));
   const capital = cities.find((c) => c.isCapital) ?? null;
   const geoProfile = (bundle?.geoProfile ?? null) as Row | null;

@@ -2,12 +2,16 @@
 
 import { useState } from "react";
 import { Card } from "~/components/ui/card";
-import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { FacetList, FacetListSection } from "~/components/ui/facet-list";
 import type { MapFocus } from "~/components/maps/widgets/CountryMapEmbed";
 import type { CountryProfileLayer } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
 import { formatBig, yearLabel } from "~/app/countries/[slug]/_utils/profileLayer";
+import { useLoreEntry } from "~/hooks/lore/useLoreEntry";
+import { placeSeed } from "~/lib/lore/lore-seeds";
 import { FactList, type Fact } from "../factbook/SnapshotBlock";
+import { LoreWriter } from "../lore/LoreWriter";
 import { TerritoryMap } from "../TerritoryMap";
+import { MapPlaces, PlaceRow, WritePlaceBar, type ChosenPlace } from "./MapPlaces";
 
 function landFacts({ land }: CountryProfileLayer): Fact[] {
   const p = land.profile;
@@ -43,14 +47,21 @@ function landFacts({ land }: CountryProfileLayer): Fact[] {
 
 /**
  * MapTab — the map's one home: the interactive territory map (with its link to the Maps app),
- * the land facts led by the area, every region by population and the map stories; choosing a
- * region or a story flies the map to it.
+ * the land facts led by the area, every region by population, the cities and the map stories;
+ * choosing one flies the map to it. Owner and co-authors write about the chosen place in the
+ * tab's one lore writer ("Write about this place", seeded with its title and location).
  */
 export function MapTab({ layer }: { layer: CountryProfileLayer }) {
   const { land, vitals } = layer;
   const [focus, setFocus] = useState<MapFocus | null>(null);
+  const [chosen, setChosen] = useState<ChosenPlace | null>(null);
+  const entry = useLoreEntry(layer.countryId);
   const area = land.areaSqKm ?? vitals.landArea;
-  const regions = [...land.subdivisions].sort((a, b) => (b.population ?? 0) - (a.population ?? 0));
+  const choose = (place: ChosenPlace) => {
+    setChosen(place);
+    if (place.focus) setFocus(place.focus);
+  };
+  const row = { chosenKey: chosen?.key ?? null, canWrite: entry.canWrite, onChoose: choose };
 
   return (
     <div className="flex flex-col gap-4">
@@ -61,6 +72,7 @@ export function MapTab({ layer }: { layer: CountryProfileLayer }) {
         heightClass="h-80 md:h-[32rem]"
         focus={focus}
       />
+      {entry.canWrite && <WritePlaceBar chosen={chosen} onWrite={entry.write} />}
       <div className="grid gap-4 lg:grid-cols-3">
         <Card padding="md" className="flex flex-col gap-4">
           <h2 className="text-title-3 text-label">Land</h2>
@@ -77,24 +89,8 @@ export function MapTab({ layer }: { layer: CountryProfileLayer }) {
           <FactList facts={landFacts(layer)} />
         </Card>
         <Card padding="md" className="flex min-w-0 flex-col gap-3">
-          <h2 className="text-title-3 text-label">Regions</h2>
-          {regions.length > 0 ? (
-            <FacetList variant="plain" className="max-h-96 overflow-y-auto">
-              <FacetListSection>
-                {regions.map((r) => (
-                  <FacetRow
-                    key={r.id}
-                    title={r.name}
-                    subtitle={r.type}
-                    trailing={r.population ? formatBig(r.population) : undefined}
-                    onClick={() => setFocus({ kind: "subdivision", id: r.id })}
-                  />
-                ))}
-              </FacetListSection>
-            </FacetList>
-          ) : (
-            <p className="text-footnote text-label-secondary">No regions on the map yet.</p>
-          )}
+          <h2 className="text-title-3 text-label">Places</h2>
+          <MapPlaces land={land} {...row} />
         </Card>
         <Card padding="md" className="flex min-w-0 flex-col gap-3">
           <h2 className="text-title-3 text-label">Map stories</h2>
@@ -102,17 +98,21 @@ export function MapTab({ layer }: { layer: CountryProfileLayer }) {
             <FacetList variant="plain" className="max-h-96 overflow-y-auto">
               <FacetListSection>
                 {land.storyPins.map((pin) => {
-                  const when = pin.eraLabel ?? (pin.year != null ? yearLabel(pin.year) : undefined);
                   const point = pin.coordinates;
-                  return point ? (
-                    <FacetRow
+                  return (
+                    <PlaceRow
                       key={pin.id}
-                      title={pin.title}
-                      subtitle={when}
-                      onClick={() => setFocus({ kind: "point", lng: point[0], lat: point[1] })}
+                      place={{
+                        key: `pin:${pin.id}`,
+                        title: pin.title,
+                        focus: point ? { kind: "point", lng: point[0], lat: point[1] } : null,
+                        seed: placeSeed(pin.title, point),
+                      }}
+                      subtitle={
+                        pin.eraLabel ?? (pin.year != null ? yearLabel(pin.year) : undefined)
+                      }
+                      {...row}
                     />
-                  ) : (
-                    <FacetRow key={pin.id} title={pin.title} subtitle={when} />
                   );
                 })}
               </FacetListSection>
@@ -122,6 +122,7 @@ export function MapTab({ layer }: { layer: CountryProfileLayer }) {
           )}
         </Card>
       </div>
+      <LoreWriter countryId={layer.countryId} countryName={layer.identity.name} {...entry.writer} />
     </div>
   );
 }

@@ -28,6 +28,11 @@ jest.mock("~/components/country-profile/ProfileFace", () => ({
     </div>
   ),
 }));
+jest.mock("~/components/country-profile/LoreTeam", () => ({
+  LoreTeam: ({ countryId }: { countryId: string }) => (
+    <section aria-label="Lore team" data-country={countryId} />
+  ),
+}));
 jest.mock("~/components/country-profile/factbook/FactbookTab", () => ({
   FactbookTab: () => <p>Factbook panel</p>,
 }));
@@ -128,6 +133,11 @@ describe("CountryDocument", () => {
       "href",
       "/mycountry/editor"
     );
+  });
+
+  it("puts the lore team on the owner's back face", () => {
+    setup("factbook", true);
+    expect(screen.getByRole("region", { name: "Lore team" })).toHaveAttribute("data-country", "c1");
   });
 
   it("lets the owner flip the face to manage it, and returns focus on Done", () => {
