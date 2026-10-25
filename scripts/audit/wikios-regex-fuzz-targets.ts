@@ -571,6 +571,21 @@ export const TARGETS: readonly Target[] = [
     const m = await import("~/lib/wiki-os/reader-hrefs");
     return (s) => m.withAppHrefs(s);
   }),
+  // A hovered link's href is page text too (a sanitized article's <a href>): read under the base path, as an
+  // absolute link to a sister reader and as a legacy /w/ link.
+  html("wiki-link-target#wikiLinkTarget@app-href", async () => {
+    const m = await import("~/lib/wiki-os/wiki-link-target");
+    return (s) =>
+      m.wikiLinkTarget(`/projects/ixstates/wiki/${s}?source=iiwiki`, "/projects/ixstates");
+  }),
+  html("wiki-link-target#wikiLinkTarget@reader-href", async () => {
+    const m = await import("~/lib/wiki-os/wiki-link-target");
+    return (s) => m.wikiLinkTarget(`https://www.iiwiki.com/wiki/${s}`, "/projects/ixstates");
+  }),
+  html("wiki-link-target#wikiLinkTarget@legacy-href", async () => {
+    const m = await import("~/lib/wiki-os/wiki-link-target");
+    return (s) => m.wikiLinkTarget(`/w/${s}`, "");
+  }),
   wikitext(
     "transformers/wiki-ast-converter#wikitextToAst",
     async () => {
