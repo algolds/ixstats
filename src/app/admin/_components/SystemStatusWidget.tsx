@@ -8,7 +8,10 @@ import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Card } from "~/components/ui/card";
 
-/** The console's live status: IxTime, bot connection and system health. */
+/**
+ * The console's live status: Ixnay's clock (IxTime, bot-synced; every other realm runs its own clock, see
+ * Manage > Time), bot connection and system health.
+ */
 function useSystemStatus() {
   const [liveFormattedTime, setLiveFormattedTime] = useState("");
 
@@ -24,7 +27,7 @@ function useSystemStatus() {
 
   const { data: configData } = api.admin.getConfig.useQuery();
 
-  // Poll local IxTime calculations to match server progress
+  // Poll Ixnay's clock locally to match server progress
   useEffect(() => {
     const update = () => {
       const ix = IxTime.getCurrentIxTime();
@@ -78,8 +81,9 @@ export function SystemStatusStrip({ className }: { className?: string }) {
         <Shield aria-hidden className="text-tint size-4" />
         System console
       </span>
-      <span className="flex items-center gap-2" title="Current IxTime">
+      <span className="flex items-center gap-2" title="Ixnay's clock (IxTime)">
         <Clock aria-hidden className="text-label-secondary size-3.5" />
+        <span className="text-label-secondary">Ixnay clock</span>
         <span className="text-label font-medium">
           {s.liveFormattedTime || s.systemStatus?.ixTime?.formattedIxTime || "N/A"}
         </span>

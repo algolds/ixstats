@@ -24,7 +24,10 @@ import {
 import { Input } from "~/components/ui/input";
 import { Checkbox } from "~/components/ui/checkbox";
 import type { BaseCountryData } from "~/types/ixstats";
+// The roster import is Ixnay's (admin/countries/import.ts writes Ixnay's nations only), so its epoch is
+// Ixnay's clock: IxTime, shown in Ixnay's calendar.
 import { IxTime } from "~/lib/ixtime";
+import { formatRealmDate, IXNAY_CALENDAR } from "~/lib/realms/realm-clock";
 
 interface ImportChange {
   type: "new" | "update";
@@ -297,8 +300,8 @@ export function ImportPreviewDialog({
                   Epoch time synchronization
                 </h4>
                 <p className="text-footnote text-yellow mb-3">
-                  Sync the game epoch with your imported data to ensure accurate tracking. This
-                  aligns the baseline calculation date with your roster data.
+                  Sync Ixnay's game epoch with the imported roster to keep tracking accurate. This
+                  aligns the baseline calculation date of Ixnay's nations with the roster data.
                 </p>
 
                 <label className="mb-3 flex cursor-pointer items-center">
@@ -315,21 +318,22 @@ export function ImportPreviewDialog({
                   <div className="ml-6 space-y-2">
                     <div className="text-footnote text-yellow">
                       <p>
-                        <strong>Current Epoch:</strong>{" "}
-                        {IxTime.formatIxTime(IxTime.getInGameEpoch())}
+                        <strong>Ixnay&apos;s epoch:</strong>{" "}
+                        {formatRealmDate(IxTime.getInGameEpoch(), IXNAY_CALENDAR)}
                       </p>
                       <p>
-                        <strong>Target Epoch:</strong> {IxTime.formatIxTime(targetEpoch)}
+                        <strong>Target epoch:</strong>{" "}
+                        {formatRealmDate(targetEpoch, IXNAY_CALENDAR)}
                       </p>
                       <p>
-                        <strong>Time Difference:</strong>{" "}
+                        <strong>Time difference:</strong>{" "}
                         {IxTime.getYearsElapsed(IxTime.getInGameEpoch(), targetEpoch).toFixed(1)}{" "}
                         years
                       </p>
                     </div>
 
                     <div className="flex items-center space-x-2">
-                      <label className="text-footnote text-yellow">Target Year:</label>
+                      <label className="text-footnote text-yellow">Target year:</label>
                       <Input
                         type="number"
                         value={new Date(targetEpoch).getFullYear()}
