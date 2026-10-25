@@ -257,6 +257,11 @@ export class IxStatsCalculator {
         oldStats: baselineStats,
         newStats: {
           ...baselineStats,
+          effectiveGdpGrowth: this.currentGdpGrowthRate(
+            baselineStats,
+            baselineStats.gdpPerCapita,
+            this.getActiveEffects(effects, baselineTimeMs, targetTimeMs)
+          ),
           lastCalculated: new Date(targetTimeMs),
         },
         timeElapsed: 0,
@@ -299,6 +304,7 @@ export class IxStatsCalculator {
 
     const updatedStats: CountryStats = {
       ...baselineStats,
+      effectiveGdpGrowth: this.currentGdpGrowthRate(baselineStats, newGdpPerCapita, activeEffects),
       currentPopulation: newPopulation,
       currentGdpPerCapita: newGdpPerCapita,
       currentTotalGdp: newTotalGdp,
@@ -415,6 +421,25 @@ export class IxStatsCalculator {
       currentTier = this.calculateEconomicTier(rate > 0 ? threshold! : threshold! * (1 - 1e-9));
     }
     return gdpPerCapita;
+  }
+
+  /**
+   * The growth rate the projection applies going forward from `gdpPerCapita`: its tier's rate,
+   * with diminishing returns as the forward projection applies them.
+   */
+  private currentGdpGrowthRate(
+    baselineStats: CountryStats,
+    gdpPerCapita: number,
+    effects: StorytellerEffectRecord[]
+  ): number {
+    return this.effectiveGdpGrowthRate(
+      baselineStats.adjustedGdpGrowth,
+      this.calculateEconomicTier(gdpPerCapita),
+      effects,
+      baselineStats.localGrowthFactor || 1,
+      baselineStats.gdpPerCapita,
+      1
+    );
   }
 
   /** Annual GDP per capita growth rate for a tier: factors, legacy growth effects, cap, floor. */

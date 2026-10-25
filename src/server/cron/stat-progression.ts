@@ -78,7 +78,7 @@ export function historyPointData(countryId: string, stats: CountryStats, ixTime:
     gdpPerCapita: stats.currentGdpPerCapita,
     totalGdp: stats.currentTotalGdp,
     populationGrowthRate: stats.populationGrowthRate,
-    gdpGrowthRate: stats.adjustedGdpGrowth,
+    gdpGrowthRate: stats.effectiveGdpGrowth ?? stats.adjustedGdpGrowth, // the realised (engine) rate
     landArea: stats.landArea ?? null,
     populationDensity: stats.populationDensity ?? null,
     gdpDensity: stats.gdpDensity ?? null,

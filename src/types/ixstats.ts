@@ -32,7 +32,6 @@ export enum StorytellerEffectType {
   SPECIAL_EVENT = "special_event",
   TRADE_AGREEMENT = "trade_agreement",
   NATURAL_DISASTER = "natural_disaster",
-  ECONOMIC_POLICY = "economic_policy",
 }
 
 // Base country data from Excel roster
@@ -112,6 +111,13 @@ export interface CountryStats extends BaseCountryData {
   // Growth modifiers
   localGrowthFactor: number;
   globalGrowthFactor: number;
+
+  /**
+   * Annual GDP per capita growth (decimal) the projection applies at `lastCalculated`: the input
+   * rate after factors, effects, the tier cap and diminishing returns. What surfaces show as GDP
+   * growth; set by `calculateTimeProgression`.
+   */
+  effectiveGdpGrowth?: number;
 
   // Historical data (optional)
   historicalData?: HistoricalDataPoint[];

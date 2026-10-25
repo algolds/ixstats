@@ -8,6 +8,7 @@
 import { IxStatsCalculator } from "~/lib/economy/calculations";
 import { calculateComponentEconomicModifiers } from "~/lib/government/atomic-utils";
 import { getDefaultEconomicConfig } from "~/lib/config-service";
+import { historyPointData } from "~/server/cron/stat-progression";
 import type { BaseCountryData, CountryStats } from "~/types/ixstats";
 
 const BASELINE = Date.UTC(2040, 0, 1);
@@ -60,5 +61,28 @@ describe("inflation is a percent", () => {
       calculateComponentEconomicModifiers([], ["FREE_TRADE"] as never[], []).inflationModifier
     ).toBe(-0.5);
     expect(projectInflation(2, ["PLANNED_ECONOMY"])).toBe(3);
+  });
+});
+
+describe("effective GDP growth", () => {
+  it("is the rate the engine grows GDP per capita at, after the tier cap and diminishing returns", () => {
+    const { calc, stats } = baseline({ gdpPerCapita: 70_000, adjustedGdpGrowth: 0.03 });
+    const { newStats } = calc.calculateTimeProgression(stats, ONE_YEAR_LATER, []);
+
+    // Repro G: input 3%, Extravagant cap 0.5%, then diminishing returns.
+    expect(newStats.effectiveGdpGrowth).toBeCloseTo(newStats.currentGdpPerCapita / 70_000 - 1, 6);
+    expect(newStats.effectiveGdpGrowth).toBeCloseTo(0.00321, 5);
+  });
+
+  it("is reported at the baseline instant too", () => {
+    const { calc, stats } = baseline({ gdpPerCapita: 30_000, adjustedGdpGrowth: 0.03 });
+    const { newStats } = calc.calculateTimeProgression(stats, BASELINE, []);
+    expect(newStats.effectiveGdpGrowth).toBeGreaterThan(0.03);
+  });
+
+  it("is the growth a history point records, not the static input", () => {
+    const { calc, stats } = baseline({ gdpPerCapita: 70_000, adjustedGdpGrowth: 0.03 });
+    const { newStats } = calc.calculateTimeProgression(stats, ONE_YEAR_LATER, []);
+    expect(historyPointData("c1", newStats, ONE_YEAR_LATER).gdpGrowthRate).toBeCloseTo(0.00321, 5);
   });
 });
