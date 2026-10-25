@@ -48,10 +48,16 @@ export interface TechFields {
   application: string;
 }
 
+export interface Coordinates {
+  lat: number;
+  lng: number;
+}
+
 export interface PlaceFields {
   settlementType: string;
   subdivision: string;
-  coordinates: string;
+  /** Written as `{{coord|lat|lng}}`; left empty when absent or off the globe. */
+  coordinates?: Coordinates;
   population: string;
 }
 
@@ -88,7 +94,7 @@ export const EMPTY_TEMPLATE_FIELDS: TemplateFields = {
   conflictFields: { date: "", place: "", combatant1: "", combatant2: "" },
   politicsFields: { leader: "", founder: "", ideology: "", colors: "" },
   techFields: { inventor: "", year: "", application: "" },
-  placeFields: { settlementType: "", subdivision: "", coordinates: "", population: "" },
+  placeFields: { settlementType: "", subdivision: "", population: "" },
   organisationFields: { type: "", founded: "", headquarters: "", leader: "" },
 };
 
@@ -96,6 +102,35 @@ export const EMPTY_TEMPLATE_FIELDS: TemplateFields = {
 function loreSections(headings: readonly string[]): string {
   const sections = headings.map((heading) => `== ${heading} ==\n`).join("\n");
   return `${sections}\n== References ==\n<references />`;
+}
+
+/**
+ * A typed field value as a template parameter's text: newlines collapse to spaces (a new line starting with `|`
+ * would open a new parameter), template braces become entities and a pipe becomes `{{!}}`, so the value stays one
+ * parameter and renders as typed. Braces go first: `{{!}}` is the one template this writes.
+ */
+function param(value: string): string {
+  return value
+    .replace(/\r\n?|\n/g, " ")
+    .replaceAll("{{", "&#123;&#123;")
+    .replaceAll("}}", "&#125;&#125;")
+    .replaceAll("|", "{{!}}");
+}
+
+/** Typed latitude and longitude as a point: both must be numbers on the globe, else none. */
+export function coordinatesFrom(lat: string, lng: string): Coordinates | undefined {
+  if (lat.trim() === "" || lng.trim() === "") return undefined;
+  const point = { lat: Number(lat), lng: Number(lng) };
+  return isOnGlobe(point) ? point : undefined;
+}
+
+function isOnGlobe({ lat, lng }: Coordinates): boolean {
+  return Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+}
+
+/** `{{coord|lat|lng}}` for a point on the globe; empty otherwise. */
+function coord(point: Coordinates | undefined): string {
+  return point && isOnGlobe(point) ? `{{coord|${point.lat}|${point.lng}}}` : "";
 }
 
 type TemplateBuilder = (title: string, fields: TemplateFields) => string;
@@ -107,21 +142,21 @@ const TEMPLATES: Record<PageType, TemplateBuilder> = {
 | name          = ${title}
 | image         = 
 | caption       = 
-| birth_date    = ${f.birthDate}
-| birth_place   = ${f.birthPlace}
-| nationality   = ${f.nationality}
-| occupation    = ${f.occupation}
+| birth_date    = ${param(f.birthDate)}
+| birth_place   = ${param(f.birthPlace)}
+| nationality   = ${param(f.nationality)}
+| occupation    = ${param(f.occupation)}
 }}
 
 ${loreSections(["Early life", "Career", "Legacy"])}`,
   place: (title, { placeFields: f }) => `{{Infobox settlement
 | name             = ${title}
 | image_skyline    = 
-| settlement_type  = ${f.settlementType}
+| settlement_type  = ${param(f.settlementType)}
 | subdivision_type = Subdivision
-| subdivision_name = ${f.subdivision}
-| coordinates      = ${f.coordinates}
-| population_total = ${f.population}
+| subdivision_name = ${param(f.subdivision)}
+| coordinates      = ${coord(f.coordinates)}
+| population_total = ${param(f.population)}
 }}
 
 ${loreSections(["History", "Geography", "Culture"])}`,
@@ -129,32 +164,32 @@ ${loreSections(["History", "Geography", "Culture"])}`,
 | name          = ${title}
 | image         = 
 | caption       = 
-| date          = ${f.date}
-| location      = ${f.location}
-| participants  = ${f.participants}
-| result        = ${f.result}
+| date          = ${param(f.date)}
+| location      = ${param(f.location)}
+| participants  = ${param(f.participants)}
+| result        = ${param(f.result)}
 }}
 
 ${loreSections(["Background", "Course", "Aftermath"])}`,
   organisation: (title, { organisationFields: f }) => `{{Infobox organization
 | name          = ${title}
 | image         = 
-| type          = ${f.type}
-| founded       = ${f.founded}
-| headquarters  = ${f.headquarters}
+| type          = ${param(f.type)}
+| founded       = ${param(f.founded)}
+| headquarters  = ${param(f.headquarters)}
 | leader_title  = Leader
-| leader_name   = ${f.leader}
+| leader_name   = ${param(f.leader)}
 }}
 
 ${loreSections(["History", "Structure", "Activities"])}`,
   company: (title, { companyFields: f }) => `{{Infobox company
 | name          = ${title}
 | logo          = 
-| type          = ${f.type}
-| industry      = ${f.industry}
+| type          = ${param(f.type)}
+| industry      = ${param(f.industry)}
 | foundation    = 
-| founder       = ${f.founder}
-| headquarters  = ${f.headquarters}
+| founder       = ${param(f.founder)}
+| headquarters  = ${param(f.headquarters)}
 | area_served   = 
 | key_people    = 
 | products      = 
@@ -181,12 +216,12 @@ Write operations details here...
 | image_flag    = 
 | image_coat    = 
 | national_anthem = 
-| capital       = ${f.capital}
-| government_type = ${f.governmentType}
+| capital       = ${param(f.capital)}
+| government_type = ${param(f.governmentType)}
 | leader_title1 = Leader
-| leader_name1  = ${f.leaderName}
+| leader_name1  = ${param(f.leaderName)}
 | population_estimate = 
-| currency      = ${f.currency}
+| currency      = ${param(f.currency)}
 }}
 
 == Etymology ==
@@ -211,10 +246,10 @@ Write economy details here...
 <references />`,
   conflict: (title, { conflictFields: f }) => `{{Infobox military conflict
 | conflict      = ${title}
-| date          = ${f.date}
-| place         = ${f.place}
-| combatant1    = ${f.combatant1}
-| combatant2    = ${f.combatant2}
+| date          = ${param(f.date)}
+| place         = ${param(f.place)}
+| combatant1    = ${param(f.combatant1)}
+| combatant2    = ${param(f.combatant2)}
 }}
 
 == Background ==
@@ -233,10 +268,10 @@ Write peace terms and political outcome here...
 <references />`,
   politics: (title, { politicsFields: f }) => `{{Infobox political party
 | party_name     = ${title}
-| leader         = ${f.leader}
-| founder        = ${f.founder}
-| ideology       = ${f.ideology}
-| colors         = ${f.colors}
+| leader         = ${param(f.leader)}
+| founder        = ${param(f.founder)}
+| ideology       = ${param(f.ideology)}
+| colors         = ${param(f.colors)}
 }}
 
 == History ==
@@ -255,9 +290,9 @@ Write electoral history here...
 <references />`,
   tech: (title, { techFields: f }) => `{{Infobox invention
 | name         = ${title}
-| inventor     = ${f.inventor}
-| year         = ${f.year}
-| application  = ${f.application}
+| inventor     = ${param(f.inventor)}
+| year         = ${param(f.year)}
+| application  = ${param(f.application)}
 }}
 
 == Overview ==
@@ -276,8 +311,11 @@ Write impact details here...
 <references />`,
 };
 
-/** Link and template markup cannot be part of a category name: `[[Category:…]]` must stay one link. */
-const CATEGORY_MARKUP = /[[\]{}|\r\n]/g;
+/**
+ * Link, template and tag markup, and a section anchor (`#`), cannot be part of a category name: `[[Category:…]]` must
+ * stay one link to one category.
+ */
+const CATEGORY_MARKUP = /[[\]{}|#<>\r\n]/g;
 
 /** One `[[Category:…]]` line per distinct, non-empty name, in order. */
 function categoryLines(categories: readonly string[]): string {

@@ -4,7 +4,10 @@
  * (`Infobox organization`), History switches to `Infobox event` (`Infobox historical event` does not exist on
  * ixwiki), each lore type carries its own section headings, and `options.categories` appends category lines.
  */
-import { generateWikitext } from "~/components/wiki-os/shared/create-page/WikitextTemplates";
+import {
+  coordinatesFrom,
+  generateWikitext,
+} from "~/components/wiki-os/shared/create-page/WikitextTemplates";
 
 const LORE_CATEGORIES = { categories: ["Caphiria lore", "Caphiria"] };
 
@@ -17,7 +20,7 @@ describe("generateWikitext lore types", () => {
         placeFields: {
           settlementType: "City",
           subdivision: "Latium",
-          coordinates: "{{coord|41.9|12.5}}",
+          coordinates: { lat: 41.9, lng: 12.5 },
           population: "2,400,000",
         },
       },
@@ -90,6 +93,81 @@ describe("generateWikitext lore types", () => {
   it("fills missing field groups with empty values", () => {
     expect(generateWikitext("place", "Venceia", {})).toMatch(/\| settlement_type\s+= \n/);
   });
+
+  it("writes no coordinates without them, or for ones off the globe", () => {
+    const place = (coordinates?: { lat: number; lng: number }) =>
+      generateWikitext("place", "Venceia", {
+        placeFields: { settlementType: "", subdivision: "", population: "", coordinates },
+      });
+
+    expect(place()).toMatch(/\| coordinates\s+= \n/);
+    expect(place({ lat: 91, lng: 0 })).toMatch(/\| coordinates\s+= \n/);
+    expect(place({ lat: 0, lng: -181 })).toMatch(/\| coordinates\s+= \n/);
+    expect(place({ lat: Number.NaN, lng: 0 })).toMatch(/\| coordinates\s+= \n/);
+    expect(place({ lat: -90, lng: 180 })).toMatch(/\| coordinates\s+= \{\{coord\|-90\|180\}\}\n/);
+  });
+});
+
+describe("coordinatesFrom (the generic creator's latitude and longitude inputs)", () => {
+  it("is the point when both are numbers on the globe", () => {
+    expect(coordinatesFrom("41.9", " 12.5 ")).toEqual({ lat: 41.9, lng: 12.5 });
+    expect(coordinatesFrom("0", "0")).toEqual({ lat: 0, lng: 0 });
+  });
+
+  it.each([
+    ["", "12.5"],
+    ["41.9", "  "],
+    ["north", "12.5"],
+    ["90.1", "0"],
+    ["0", "180.5"],
+  ])("is none for %j, %j", (lat, lng) => {
+    expect(coordinatesFrom(lat, lng)).toBeUndefined();
+  });
+});
+
+describe("generateWikitext field escaping", () => {
+  const PARAM_LINE = /^\| [a-z_]+\s*= /;
+
+  it("escapes a pipe and template braces so the value stays one parameter, intact once rendered", () => {
+    const text = generateWikitext("organisation", "Senate", {
+      organisationFields: { type: "a|b}} {{x", founded: "", headquarters: "", leader: "" },
+    });
+
+    expect(text).toMatch(/\| type\s+= a\{\{!\}\}b&#125;&#125; &#123;&#123;x\n/);
+    // the infobox still opens once and closes once, on its own line
+    expect(text.match(/\{\{Infobox/g)).toHaveLength(1);
+    expect(text.split("\n").filter((line) => line === "}}")).toHaveLength(1);
+  });
+
+  it("collapses newlines, so a newline then a pipe cannot start a new parameter", () => {
+    const text = generateWikitext("place", "Venceia", {
+      placeFields: {
+        settlementType: "",
+        subdivision: "Latium\n| population_total = 9\r\n|image_skyline=x.png",
+        population: "",
+      },
+    });
+
+    expect(text).toMatch(
+      /\| subdivision_name = Latium \{\{!\}\} population_total = 9 \{\{!\}\}image_skyline=x\.png\n/
+    );
+    const infobox = text.slice(0, text.indexOf("\n}}\n"));
+    const params = infobox.split("\n").filter((line) => PARAM_LINE.test(line));
+    expect(params.filter((line) => line.startsWith("| population_total"))).toHaveLength(1);
+    expect(params.filter((line) => line.startsWith("| image_skyline"))).toHaveLength(1);
+  });
+
+  it("escapes every type's fields, and leaves the title as written", () => {
+    const text = generateWikitext("person", "Aurelius|II", {
+      personFields: { birthDate: "1|2", birthPlace: "}}", nationality: "{{", occupation: "a\nb" },
+    });
+
+    expect(text).toMatch(/\| name\s+= Aurelius\|II\n/);
+    expect(text).toMatch(/\| birth_date\s+= 1\{\{!\}\}2\n/);
+    expect(text).toMatch(/\| birth_place\s+= &#125;&#125;\n/);
+    expect(text).toMatch(/\| nationality\s+= &#123;&#123;\n/);
+    expect(text).toMatch(/\| occupation\s+= a b\n/);
+  });
 });
 
 describe("generateWikitext categories", () => {
@@ -120,6 +198,12 @@ describe("generateWikitext categories", () => {
     );
 
     expect(text).toBe("[[Category:Caphiriaxy]]\n[[Category:Caphiria]]");
+  });
+
+  it("drops a section anchor and tag brackets from a category name", () => {
+    expect(generateWikitext("blank", "Senate", {}, { categories: ["Caph#iria<b>lore</b>"] })).toBe(
+      "[[Category:Caphiriablore/b]]"
+    );
   });
 
   it("keeps the other create-page types' templates", () => {

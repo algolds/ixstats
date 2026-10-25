@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { type PageType } from "../CreatePageModal";
 import { Input } from "~/components/ui/input";
 import {
@@ -11,6 +11,8 @@ import {
   type TechFields,
   type PlaceFields,
   type OrganisationFields,
+  type Coordinates,
+  coordinatesFrom,
 } from "./WikitextTemplates";
 
 interface FieldRow<K extends string> {
@@ -19,10 +21,9 @@ interface FieldRow<K extends string> {
   placeholder: string;
 }
 
-const PLACE_ROWS: readonly FieldRow<keyof PlaceFields>[] = [
+const PLACE_ROWS: readonly FieldRow<Exclude<keyof PlaceFields, "coordinates">>[] = [
   { key: "settlementType", label: "Settlement type", placeholder: "e.g. City" },
   { key: "subdivision", label: "Subdivision", placeholder: "e.g. Latium" },
-  { key: "coordinates", label: "Coordinates", placeholder: "e.g. {{coord|41.9|12.5}}" },
   { key: "population", label: "Population", placeholder: "e.g. 2,400,000" },
 ];
 
@@ -34,14 +35,14 @@ const ORGANISATION_ROWS: readonly FieldRow<keyof OrganisationFields>[] = [
 ];
 
 /** One labelled text input per row, editing `value[row.key]`. */
-function FieldRows<K extends string>({
+function FieldRows<K extends string, V extends Record<K, string>>({
   rows,
   value,
   onChange,
 }: {
   rows: readonly FieldRow<K>[];
-  value: Record<K, string>;
-  onChange: (next: Record<K, string>) => void;
+  value: V;
+  onChange: (next: V) => void;
 }) {
   return (
     <>
@@ -57,6 +58,47 @@ function FieldRows<K extends string>({
         </label>
       ))}
     </>
+  );
+}
+
+/** Latitude and longitude as typed; the point is set only while both are numbers on the globe. */
+function CoordinateInputs({
+  value,
+  onChange,
+}: {
+  value: Coordinates | undefined;
+  onChange: (next: Coordinates | undefined) => void;
+}) {
+  const [lat, setLat] = useState(value ? String(value.lat) : "");
+  const [lng, setLng] = useState(value ? String(value.lng) : "");
+  const update = (nextLat: string, nextLng: string) => {
+    setLat(nextLat);
+    setLng(nextLng);
+    onChange(coordinatesFrom(nextLat, nextLng));
+  };
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      <label className="block space-y-1">
+        <span className="text-footnote text-label-secondary">Latitude</span>
+        <Input
+          type="number"
+          inputMode="decimal"
+          placeholder="e.g. 41.9"
+          value={lat}
+          onChange={(e) => update(e.target.value, lng)}
+        />
+      </label>
+      <label className="block space-y-1">
+        <span className="text-footnote text-label-secondary">Longitude</span>
+        <Input
+          type="number"
+          inputMode="decimal"
+          placeholder="e.g. 12.5"
+          value={lng}
+          onChange={(e) => update(lat, e.target.value)}
+        />
+      </label>
+    </div>
   );
 }
 
@@ -368,7 +410,13 @@ export function MetadataStep({
         )}
 
         {pageType === "place" && (
-          <FieldRows rows={PLACE_ROWS} value={placeFields} onChange={setPlaceFields} />
+          <>
+            <FieldRows rows={PLACE_ROWS} value={placeFields} onChange={setPlaceFields} />
+            <CoordinateInputs
+              value={placeFields.coordinates}
+              onChange={(coordinates) => setPlaceFields({ ...placeFields, coordinates })}
+            />
+          </>
         )}
 
         {pageType === "organisation" && (

@@ -7,7 +7,12 @@
 import { PREFILL_MAX_LENGTH, openingPrefill, readPrefillParam } from "~/lib/wiki-os/editor/prefill";
 import { pageEditHref } from "~/lib/wiki-os/page-tools";
 
+/**
+ * `wikios.getWikitext` for ixwiki: `revid` is always null there, and `timestamp` is set only for a stored row that has
+ * text. A missing page is all empty; an existing page always has text, even when its head ref could not be read.
+ */
 const missing = { wikitext: "", revid: null, timestamp: null, revisionRef: null, revisionRefs: [] };
+const STORED = "2026-10-25T00:00:00.000Z";
 
 describe("readPrefillParam", () => {
   it("is null when the parameter is absent or empty", () => {
@@ -61,19 +66,29 @@ describe("openingPrefill", () => {
   });
 
   it.each([
-    ["the page has text", { ...missing, wikitext: "Existing" }],
-    ["the page has a revision ref", { ...missing, revisionRef: "rev-1" }],
-    ["the page has revision refs", { ...missing, revisionRefs: ["rev-1"] }],
-    ["the page has a MediaWiki rev_id (its head ref could not be read)", { ...missing, revid: 42 }],
     [
-      "the page has a timestamp (a stored row, its head ref unread)",
-      { ...missing, timestamp: "2026-10-25T00:00:00.000Z" },
+      "the page exists with its head revision",
+      {
+        wikitext: "Existing",
+        revid: null,
+        timestamp: STORED,
+        revisionRef: "rev-1",
+        revisionRefs: ["rev-1", "1"],
+      },
     ],
+    [
+      "the page exists but its head ref could not be read (the server answers revisionRef null)",
+      { wikitext: "Existing", revid: null, timestamp: STORED, revisionRef: null, revisionRefs: [] },
+    ],
+    ["the load names a revision ref", { ...missing, revisionRef: "rev-1" }],
+    ["the load names revision refs", { ...missing, revisionRefs: ["rev-1"] }],
+    // Another wiki's shape (getWikitext's sister-wiki branch): its page id as `revid`, never a revision ref.
+    ["the load names a page id as revid", { ...missing, revid: 42 }],
   ])("is null when %s", (_label, page) => {
     expect(openingPrefill("{{Infobox person}}", page, false)).toBeNull();
   });
 
-  it("treats an absent revid, timestamp or revisionRefs as none", () => {
+  it("treats an absent revid or revisionRefs as none", () => {
     expect(openingPrefill("P", { wikitext: "", revisionRef: null }, false)).toBe("P");
   });
 });

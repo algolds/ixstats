@@ -77,6 +77,45 @@ describe("CreatePageModal lore types", () => {
     expect(pushedPrefill()).toMatch(/\| subdivision_name\s+= Latium\n/);
   });
 
+  it("takes a Place's coordinates as latitude and longitude and writes {{coord}}", async () => {
+    openAt("title=Venceia&type=place");
+    await next();
+    await next();
+
+    fireEvent.change(await screen.findByLabelText("Latitude"), { target: { value: "41.9" } });
+    fireEvent.change(screen.getByLabelText("Longitude"), { target: { value: "12.5" } });
+    fireEvent.click(screen.getByRole("button", { name: /create page/i }));
+
+    await waitFor(() => expect(mockPush).toHaveBeenCalled());
+    expect(pushedPrefill()).toMatch(/\| coordinates\s+= \{\{coord\|41\.9\|12\.5\}\}\n/);
+  });
+
+  it("keeps the longitude when the latitude is typed after it", async () => {
+    openAt("title=Venceia&type=place");
+    await next();
+    await next();
+
+    fireEvent.change(await screen.findByLabelText("Longitude"), { target: { value: "12.5" } });
+    fireEvent.change(screen.getByLabelText("Latitude"), { target: { value: "41.9" } });
+    fireEvent.click(screen.getByRole("button", { name: /create page/i }));
+
+    await waitFor(() => expect(mockPush).toHaveBeenCalled());
+    expect(pushedPrefill()).toMatch(/\| coordinates\s+= \{\{coord\|41\.9\|12\.5\}\}\n/);
+  });
+
+  it("writes no coordinates while only one of the pair is filled in", async () => {
+    openAt("title=Venceia&type=place");
+    await next();
+    await next();
+
+    fireEvent.change(await screen.findByLabelText("Latitude"), { target: { value: "41.9" } });
+    fireEvent.change(screen.getByLabelText("Longitude"), { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: /create page/i }));
+
+    await waitFor(() => expect(mockPush).toHaveBeenCalled());
+    expect(pushedPrefill()).toMatch(/\| coordinates\s+= \n/);
+  });
+
   it("ignores an unknown ?type= (a blank page)", async () => {
     openAt("title=Venceia&type=shrine");
 

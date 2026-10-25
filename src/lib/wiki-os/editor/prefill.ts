@@ -27,19 +27,22 @@ export function readPrefillParam(raw: string | null): string | null {
 export interface LoadedPageProbe {
   wikitext: string;
   revid?: number | null;
-  timestamp?: string | null;
   revisionRef: string | null;
   revisionRefs?: readonly string[];
 }
 
-/** The load answered, and named no revision, no stored row and no text: the page does not exist. */
+/**
+ * The load answered with no text and no revision: the page does not exist. On ixwiki the text is what decides:
+ * `getWikitext` answers `revisionRef: null` for an existing page whose head lookup failed, `revid` is always null
+ * there, and a page with a stored row always has text (`getArticleWikitextShadow` returns nothing for an empty row).
+ * The revision checks hold for a blanked page that still has a head; `revid` is another wiki's page id.
+ */
 function isMissingPage(page: LoadedPageProbe): boolean {
   return (
     page.wikitext === "" &&
     page.revisionRef === null &&
     (page.revisionRefs ?? []).length === 0 &&
-    (page.revid ?? null) === null &&
-    (page.timestamp ?? null) === null
+    (page.revid ?? null) === null
   );
 }
 
