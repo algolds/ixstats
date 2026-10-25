@@ -33,6 +33,7 @@ import {
   HOSTILE_ACTION_LABELS,
   INBOX_QUERY_OPTIONS,
   formatExpiry,
+  liftConfirmSentence,
 } from "./useDiplomacyInbox";
 import { Skeleton } from "~/components/ui/skeleton";
 
@@ -177,7 +178,9 @@ export function DiplomacyInbox({ countryId }: DiplomacyInboxProps) {
   ];
 
   // Sanctions, embargoes and blockades this nation imposed that are still in force.
-  const inForce: (InboxRow & { onLift: () => void })[] = (activePolicies.data ?? []).flatMap((a) =>
+  const inForce: (InboxRow & { onLift: () => void; liftSentence: string })[] = (
+    activePolicies.data ?? []
+  ).flatMap((a) =>
     a.initiatorId === countryId && a.expiresAt
       ? [
           {
@@ -186,6 +189,7 @@ export function DiplomacyInbox({ countryId }: DiplomacyInboxProps) {
             title: HOSTILE_ACTION_LABELS[a.actionType] ?? a.actionType,
             subtitle: `On ${a.target?.name ?? "another nation"}`,
             expiresAt: a.expiresAt,
+            liftSentence: liftConfirmSentence(a.actionType, a.target?.name),
             onLift: () => liftAction.mutate({ actionId: a.id }),
           },
         ]
@@ -294,7 +298,7 @@ function LiftButton({
   row,
   disabled,
 }: {
-  row: InboxRow & { onLift: () => void };
+  row: InboxRow & { onLift: () => void; liftSentence: string };
   disabled: boolean;
 }) {
   return (
@@ -305,7 +309,7 @@ function LiftButton({
           variant="outline"
           className="gap-1"
           disabled={disabled}
-          aria-label={`Lift: ${row.title} ${row.subtitle.toLowerCase()}`}
+          aria-label={`Lift: ${row.title} ${row.subtitle}`}
         >
           <Undo className="h-3.5 w-3.5" />
           Lift
@@ -315,8 +319,8 @@ function LiftButton({
         <AlertDialogHeader>
           <AlertDialogTitle>Lift this action?</AlertDialogTitle>
           <AlertDialogDescription>
-            {row.title} {row.subtitle.toLowerCase()} ends now. Its economic effects on both nations
-            unwind from today, and you can impose it again later.
+            {row.liftSentence} The effects on both economies unwind from today, and you can take
+            this action again later.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

@@ -43,3 +43,22 @@ export const HOSTILE_ACTION_LABELS: Record<string, string> = {
   embargo: "Trade embargo",
   blockade: "Blockade",
 };
+
+/** What lifting ends, with its verb: plural sanctions "end", one embargo or blockade "ends". */
+const LIFT_SUBJECTS: Record<string, string> = {
+  sanction: "The sanctions on {target} end now.",
+  embargo: "The trade embargo on {target} ends now.",
+  blockade: "The blockade on {target} ends now.",
+};
+
+/** The lift confirm's first sentence, naming the target as it is displayed ("The sanctions on E2E Bravoland end now."). */
+export function liftConfirmSentence(
+  actionType: string,
+  targetName: string | null | undefined
+): string {
+  const target = targetName ? targetName.replace(/_/g, " ") : "the other nation";
+  return (LIFT_SUBJECTS[actionType] ?? "This action on {target} ends now.").replace(
+    "{target}",
+    target
+  );
+}
