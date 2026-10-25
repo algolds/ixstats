@@ -134,6 +134,8 @@ export function RevisionDiffView({ fromrev, torev, backHref, backLabel }: Revisi
                             revertMutation.mutate({
                               title: revContent.title,
                               revid: data.from.revid,
+                              // valid only while the newer revision compared is still the head
+                              baseRevisionRef: data.to.revid,
                               summary: `Reverted revision ${data.to.revid}${data.to.user ? ` by ${data.to.user}` : ""}`,
                             });
                           }
@@ -173,7 +175,7 @@ export function RevisionDiffView({ fromrev, torev, backHref, backLabel }: Revisi
                   className="rounded-row border-red/30 bg-red/10 text-caption text-red flex items-center gap-2 border px-3 py-2"
                 >
                   <WarningTriangle className="h-4 w-4 shrink-0" />
-                  Someone edited the page since this comparison loaded. Nothing was saved.
+                  The page has edits newer than this revision. Nothing was saved.
                 </div>
               )}
               {reverted?.success && (

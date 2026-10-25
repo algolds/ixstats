@@ -137,8 +137,9 @@ export const wikiosEditingRouter = createTRPCRouter({
     .query(({ input, ctx }) => overwrittenRestorable(ctx, input)),
 
   /**
-   * Revert a page to a specific revision: its text saved as a new edit, on top of the head read now (see
-   * revert-service.ts). An edit that lands meanwhile returns the edit conflict, as a save does.
+   * Revert a page to a specific revision: its text saved as a new edit, on top of `baseRevisionRef` (the newest revision
+   * the reader saw; absent: the head read now, see revert-service.ts). A newer edit returns the edit conflict, as a save
+   * does.
    */
   revertToRevision: lightMutationProcedure
     .input(
@@ -146,6 +147,7 @@ export const wikiosEditingRouter = createTRPCRouter({
         title: z.string().min(1).max(500),
         revid: z.string().min(1).max(64),
         summary: z.string().max(500).optional(),
+        baseRevisionRef: z.string().max(64).optional(),
       })
     )
     .mutation(({ input, ctx }) =>
@@ -153,12 +155,20 @@ export const wikiosEditingRouter = createTRPCRouter({
     ),
 
   /**
-   * Quick rollback: undoes the consecutive edits of the page's last editor, on top of the head the history was read
-   * at (see revert-service.ts). An edit that lands meanwhile returns the edit conflict, as a save does.
+   * Quick rollback: undoes the consecutive edits of the page's last editor, on top of `baseRevisionRef` (the newest
+   * revision the reader saw; absent: the head the history was read at, see revert-service.ts). A newer edit returns the
+   * edit conflict, as a save does.
    */
   rollback: lightMutationProcedure
-    .input(z.object({ title: z.string().min(1).max(500) }))
-    .mutation(({ input, ctx }) => rollbackPage(ctx, requireCanonicalTitle(input.title))),
+    .input(
+      z.object({
+        title: z.string().min(1).max(500),
+        baseRevisionRef: z.string().max(64).optional(),
+      })
+    )
+    .mutation(({ input, ctx }) =>
+      rollbackPage(ctx, requireCanonicalTitle(input.title), input.baseRevisionRef)
+    ),
 
   /**
    * Restore an Archived Article

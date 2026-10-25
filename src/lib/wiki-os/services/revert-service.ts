@@ -27,12 +27,9 @@ import {
   saveOrConflict,
   type CheckedSaveOutcome,
 } from "./edit-service";
-import { planRollback } from "./rollback-plan";
+import { planRollback, ROLLBACK_WINDOW } from "./rollback-plan";
 
 const SOURCE = "ixwiki";
-
-/** Revisions read when looking for the last edit by someone else. */
-const ROLLBACK_WINDOW = 50;
 
 export type RevertResult =
   | { success: true; title: string; revisionId: string }
@@ -62,10 +59,13 @@ async function saveOnHead(
   return outcome.success ? { ...outcome, title } : outcome;
 }
 
-/** Brings the text of revision `input.revid` back as a new edit of `title`, on top of the head read now. */
+/**
+ * Brings the text of revision `input.revid` back as a new edit of `title`, on top of `input.baseRevisionRef` (the newest
+ * revision the reader saw), else of the head read now (api.php, an older client).
+ */
 export async function revertPage(
   ctx: WikiAuthContext,
-  input: { title: string; revid: string; summary?: string }
+  input: { title: string; revid: string; summary?: string; baseRevisionRef?: string }
 ): Promise<RevertResult> {
   const { title, revid } = input;
   await assertCanEditArticle(ctx, title);
@@ -78,7 +78,7 @@ export async function revertPage(
     title,
     wikitext,
     summary: input.summary || `Reverted to revision ${revid} via WikiOS`,
-    headRef: await liveHeadRef(title),
+    headRef: input.baseRevisionRef ?? (await liveHeadRef(title)),
   });
 }
 
@@ -98,10 +98,15 @@ async function systemWriteRefs(revisions: readonly HistoryRevision[]): Promise<S
 
 /**
  * Undoes the consecutive edits of `title`'s last editor (`planRollback`): the text of the revision before them is saved
- * as a new edit, on top of the head the history was read at. Refuses a page with nothing older by anyone else (a
- * single revision included).
+ * as a new edit, on top of `baseRevisionRef` (the newest revision the reader saw: while it is still the head, the last
+ * editor is the one they saw), else of the head the history was read at. Refuses a page with no person's edit, or with
+ * nothing older by anyone else (a single revision included).
  */
-export async function rollbackPage(ctx: WikiAuthContext, title: string): Promise<RevertResult> {
+export async function rollbackPage(
+  ctx: WikiAuthContext,
+  title: string,
+  baseRevisionRef?: string
+): Promise<RevertResult> {
   await authorizeAction(ctx, "rollback", title);
   const current = await ArticleRepository.findBySlug(title, SOURCE, { includeArchived: true });
   if (current?.status === "ARCHIVED") throw deletedPage();
@@ -110,9 +115,14 @@ export async function rollbackPage(ctx: WikiAuthContext, title: string): Promise
   const { revisions } = await getArticleHistoryShadow(title, ROLLBACK_WINDOW);
   const system = await systemWriteRefs(revisions);
   const plan = planRollback(
-    revisions.map((revision) => ({ ...revision, systemWrite: system.has(revision.revid) }))
+    revisions.map((revision) => ({
+      ...revision,
+      systemWrite: system.has(revision.revid),
+      changedText: revision.byteDelta !== 0,
+    }))
   );
-  if (!plan?.target) {
+  if (!plan) throw precondition("There is no edit by a person to roll back.");
+  if (!plan.target) {
     throw precondition("All revisions are by the same user, so there is nothing to roll back to.");
   }
 
@@ -127,6 +137,6 @@ export async function rollbackPage(ctx: WikiAuthContext, title: string): Promise
     title,
     wikitext: await requireRestorableWikitext(ctx, title, oldContent),
     summary: `Rolled back edits by ${plan.lastEdit.user} to revision ${plan.target.revid}`,
-    headRef: revisions[0]!.revid,
+    headRef: baseRevisionRef ?? revisions[0]!.revid,
   });
 }

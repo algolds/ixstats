@@ -24,7 +24,7 @@ import { parseMWDateObject } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import { EditConflictError } from "~/lib/wiki-os/core/edit-conflict-error";
 import type { RestrictionChange } from "~/lib/wiki-os/core/rights-admin-service";
-import { planRollback } from "~/lib/wiki-os/services/rollback-plan";
+import { planRollback, ROLLBACK_WINDOW } from "~/lib/wiki-os/services/rollback-plan";
 import type { WikitextSave } from "~/lib/wiki-os/services/edit-service";
 
 // ---------------------------------------------------------------------------
@@ -208,9 +208,6 @@ export async function runProtect(rc: ApiContext): Promise<JsonObject> {
 // rollback
 // ---------------------------------------------------------------------------
 
-/** Revisions read when looking for the last edit by someone else. */
-const ROLLBACK_WINDOW = 50;
-
 /** The save of a rollback, made on top of the head it read: an edit that landed since is `editconflict`, nothing saved. */
 async function saveRollback(rc: ApiContext, save: WikitextSave): Promise<string> {
   try {
@@ -240,7 +237,9 @@ export async function runRollback(rc: ApiContext): Promise<JsonObject> {
   await services.authorize(rc.session.ctx, "rollback", title);
 
   const history = await store.findRevisions({ articleId: row.articleId, dir: "older", limit: ROLLBACK_WINDOW, withContent: false });
-  const plan = planRollback(history.slice(0, ROLLBACK_WINDOW));
+  const plan = planRollback(
+    history.slice(0, ROLLBACK_WINDOW).map((rev) => ({ ...rev, changedText: rev.sizeDiff !== 0 }))
+  );
   if (!plan || plan.lastEdit.user !== user) {
     throw new ApiError("alreadyrolled", `The edit(s) by ${user} to ${title} were already rolled back or the page has changed.`);
   }

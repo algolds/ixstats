@@ -86,13 +86,17 @@ const newest = () =>
     .at(-1)!;
 
 let clock = Date.parse("2026-10-24T11:00:00Z");
-/** A revision of Vesperia, each one a second after the last; a live one is the page's text. */
+/**
+ * A revision of Vesperia, each one a second after the last; a live one is the page's text. Its byte delta is against
+ * the page's text, as a save records it: a trail (the head's text again) has none, a talk note adds its note.
+ */
 function revision(over: Row): Row {
   clock += 1000;
   const wikitext = String(over.wikitext ?? "text");
   const row = tables.wikiRevision.insert({
     articleId: page().id,
     byteSize: wikitext.length,
+    byteDelta: wikitext.length - String(page().wikitext).length,
     sha1: mwSha1Base36(wikitext),
     parked: false,
     origin: "wikios",
@@ -341,6 +345,19 @@ describeEachWikiosMode("wikios.rollback carries the head it read", () => {
     expect(page().wikitext).toBe("Bob's text");
   });
 
+  it("a trail just below the editor's run is passed over: the page goes back to the revision it copied", async () => {
+    const bob = revision({ wikitext: "Bob's text", author: "Bob" });
+    revision({ wikitext: "Bob's text", author: CONFLICT_NOTICE_AUTHOR, minor: true });
+    revision({ wikitext: "Alice's text", author: "Alice" });
+
+    await editing().rollback({ title: "Vesperia" });
+
+    expect(newest()).toMatchObject({
+      wikitext: "Bob's text",
+      summary: `Rolled back edits by Alice to revision ${String(bob.id)}`,
+    });
+  });
+
   it("a talk note below the editor's run is where the page goes back to: the note is kept", async () => {
     revision({ wikitext: "Welcome.", author: "Carol", origin: "classic", mwRevId: 700 });
     const note = revision({
@@ -425,13 +442,67 @@ describeEachWikiosMode("wikios.rollback carries the head it read", () => {
     expect(revisionsOf()).toHaveLength(before);
   });
 
-  it("refuses when every revision is WikiOS's own", async () => {
+  it("refuses when every revision is WikiOS's own: there is no person's edit to roll back", async () => {
     revision({ wikitext: "Note one.", author: CONFLICT_NOTICE_AUTHOR });
-    revision({ wikitext: "Note two.", author: CONFLICT_NOTICE_AUTHOR });
+    revision({ wikitext: "Note one. Note two.", author: CONFLICT_NOTICE_AUTHOR });
 
     await expect(editing().rollback({ title: "Vesperia" })).rejects.toMatchObject({
       code: "PRECONDITION_FAILED",
+      message: "There is no edit by a person to roll back.",
     });
+  });
+
+  it("a talk note inside the editor's run ends it: the page goes back to the note, which is kept", async () => {
+    revision({ wikitext: "Alice's text", author: "Alice" });
+    revision({ wikitext: "Bob one", author: "Bob" });
+    const note = revision({
+      wikitext: "Bob one\n\nYour edit was replaced.",
+      author: CONFLICT_NOTICE_AUTHOR,
+    });
+    revision({ wikitext: "Bob two", author: "Bob" });
+
+    await editing().rollback({ title: "Vesperia" });
+
+    expect(newest()).toMatchObject({
+      wikitext: "Bob one\n\nYour edit was replaced.",
+      summary: `Rolled back edits by Bob to revision ${String(note.id)}`,
+    });
+  });
+
+  it("a rollback based on the head the user saw conflicts after Bob's edit, and Bob is not rolled back", async () => {
+    revision({ wikitext: "Alice's text", author: "Alice" });
+    const seenHead = revision({ wikitext: "Vandal's text", author: "Vandal" });
+    const bob = revision({ wikitext: "Bob's text", author: "Bob" });
+    const before = revisionsOf().length;
+
+    const result = await editing().rollback({
+      title: "Vesperia",
+      baseRevisionRef: String(seenHead.id),
+    });
+
+    expect(result).toEqual({
+      success: false,
+      editConflict: true,
+      currentWikitext: "Bob's text",
+      currentRevisionRef: bob.id,
+    });
+    expect(revisionsOf()).toHaveLength(before);
+    expect(page().wikitext).toBe("Bob's text");
+  });
+
+  it("a rollback based on the head the user saw saves on it while it is still the head", async () => {
+    revision({ wikitext: "Alice's text", author: "Alice" });
+    const head = revision({ wikitext: "Vandal's text", author: "Vandal", mwRevId: 4321 });
+    const seen = watchSaves();
+
+    const result = await editing().rollback({
+      title: "Vesperia",
+      baseRevisionRef: String(head.id),
+    });
+
+    expect(result).toMatchObject({ success: true });
+    expect(seen).toEqual([head.id]);
+    expect(page().wikitext).toBe("Alice's text");
   });
 });
 
@@ -469,6 +540,44 @@ describeEachWikiosMode("wikios.revertToRevision carries the head it read", () =>
     });
     expect(revisionsOf()).toHaveLength(3);
     expect(page().wikitext).toBe("Gamma's text");
+  });
+
+  it("a revert based on an older head than the live one is an edit conflict, nothing saved", async () => {
+    const old = revision({ wikitext: "Old text", author: "Bob" });
+    const seenHead = revision({ wikitext: "New text", author: "Bob" });
+    // Carol saves after Alice opened the history
+    const carol = revision({ wikitext: "Carol's text", author: "Carol" });
+    const before = revisionsOf().length;
+
+    const result = await editing().revertToRevision({
+      title: "Vesperia",
+      revid: String(old.id),
+      baseRevisionRef: String(seenHead.id),
+    });
+
+    expect(result).toEqual({
+      success: false,
+      editConflict: true,
+      currentWikitext: "Carol's text",
+      currentRevisionRef: carol.id,
+    });
+    expect(revisionsOf()).toHaveLength(before);
+    expect(page().wikitext).toBe("Carol's text");
+  });
+
+  it("a revert based on the live head saves on it, by its MediaWiki id too", async () => {
+    const old = revision({ wikitext: "Old text", author: "Bob" });
+    revision({ wikitext: "New text", author: "Carol", mwRevId: 4321 });
+    const seen = watchSaves();
+
+    const result = await editing().revertToRevision({
+      title: "Vesperia",
+      revid: String(old.id),
+      baseRevisionRef: "4321",
+    });
+
+    expect(result).toMatchObject({ success: true });
+    expect(seen).toEqual(["4321"]);
   });
 
   it("signs the revert with the summary given, else names the revision", async () => {

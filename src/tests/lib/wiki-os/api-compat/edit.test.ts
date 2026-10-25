@@ -722,6 +722,31 @@ describe("delete, undelete, move, protect and rollback", () => {
       expect(named.error.code).toBe("alreadyrolled");
     });
 
+    it.each([
+      ["a trail (no text change) inside the run does not end it", "vandalised", 101, "good text"],
+      [
+        "a talk note inside the run ends it, and its text is kept",
+        "vandalised\n\nA note.",
+        104,
+        "vandalised\n\nA note.",
+      ],
+    ])("%s", async (_, content, target, wikitext) => {
+      const { act, called, data: wiki } = await setup({}, "rollback");
+      wiki.revisions!.push({
+        revId: 104,
+        page: "Alpha",
+        timestamp: "2026-01-02T12:00:00Z",
+        user: "WikiOS",
+        content,
+        systemWrite: true,
+      });
+
+      const body = await act("rollback", { title: "Alpha", user: "Vandal" });
+
+      expect(body.rollback).toMatchObject({ old_revid: 103, last_revid: target });
+      expect(called("saveWikitext")[0]!.args[1]).toMatchObject({ wikitext });
+    });
+
     it("a note below the named editor's edits is where the page goes back to", async () => {
       const { act, called, data: wiki } = await setup({}, "rollback");
       wiki.revisions!.push({

@@ -19,7 +19,10 @@ type MutationOptions = { onSuccess?: (result: object) => void };
 let mockRevertData: object | undefined;
 let mockRollbackData: object | undefined;
 let mockRevertOptions: MutationOptions = {};
+let mockRevisionContent: object | undefined;
 const mockInvalidate = jest.fn();
+const mockRevert = jest.fn();
+const mockRollback = jest.fn();
 
 jest.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams("") }));
 jest.mock("next/link", () => ({
@@ -43,7 +46,7 @@ jest.mock("~/trpc/react", () => ({
         useMutation: (options: MutationOptions) => {
           mockRevertOptions = options;
           return {
-            mutate: jest.fn(),
+            mutate: mockRevert,
             reset: jest.fn(),
             isPending: false,
             error: null,
@@ -53,7 +56,7 @@ jest.mock("~/trpc/react", () => ({
       },
       rollback: {
         useMutation: () => ({
-          mutate: jest.fn(),
+          mutate: mockRollback,
           isPending: false,
           error: null,
           data: mockRollbackData,
@@ -75,7 +78,7 @@ jest.mock("~/trpc/react", () => ({
           error: null,
         }),
       },
-      getRevisionContent: { useQuery: () => ({ data: undefined }) },
+      getRevisionContent: { useQuery: () => ({ data: mockRevisionContent }) },
     },
   },
 }));
@@ -104,7 +107,47 @@ beforeEach(() => {
   mockRevertData = undefined;
   mockRollbackData = undefined;
   mockRevertOptions = {};
+  mockRevisionContent = undefined;
   mockInvalidate.mockClear();
+  mockRevert.mockClear();
+  mockRollback.mockClear();
+});
+
+describe("the base a revert or rollback is made on: the newest live revision the reader saw", () => {
+  it("the timeline sends its newest live revision with a rollback and a revert, never an overwritten one", () => {
+    render(
+      <ScrubbableRevisionTimeline
+        title="Foo"
+        revisions={[
+          { ...revision("9001", "carol"), parked: true },
+          revision("r3", "bob"),
+          revision("r2", "bob"),
+          revision("r1", "amy"),
+        ]}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Rollback bob" }));
+    expect(mockRollback).toHaveBeenCalledWith({ title: "Foo", baseRevisionRef: "r3" });
+
+    fireEvent.click(screen.getByRole("button", { name: /Revert to this version/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm revert" }));
+    expect(mockRevert).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Foo", baseRevisionRef: "r3" })
+    );
+  });
+
+  it("the diff view sends the newer revision it compares: the revert holds only while that is the head", () => {
+    mockRevisionContent = { title: "Foo", wikitext: "old" };
+    render(<RevisionDiffView torev="12" backHref="/wiki/Foo" backLabel="Back" />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Revert to r11/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm Revert" }));
+
+    expect(mockRevert).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Foo", revid: "11", baseRevisionRef: "12" })
+    );
+  });
 });
 
 describe("ScrubbableRevisionTimeline after a revert or rollback", () => {
@@ -152,7 +195,7 @@ describe("RevisionDiffView after a revert", () => {
     view();
 
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "Someone edited the page since this comparison loaded. Nothing was saved."
+      "The page has edits newer than this revision. Nothing was saved."
     );
     expect(screen.queryByText(/Successfully reverted/)).toBeNull();
   });

@@ -2,11 +2,14 @@
  * What a rollback undoes, and where it takes the page, from the page's live revisions newest first (pure; the editor's
  * `rollback` and api.php's `action=rollback` both read it).
  *
- * A rollback undoes the consecutive edits of the page's last editor. WikiOS's own conflict writes (a trail dummy edit,
- * a talk note: `isSystemRevision`) are nobody's edit: they are never the last editor, and one between that editor's
- * edits does not end the run. One below the run is where the page goes back to: a talk note's text is kept that way,
- * and a trail has its parent's text anyway.
+ * A rollback undoes the consecutive edits of the page's last editor. WikiOS's own conflict writes (`isSystemRevision`)
+ * are nobody's edit, so they are never the last editor. A trail dummy edit (the head's text again, no change) is
+ * passed over: it never ends the run, and the revision below it has its text anyway. A talk note changes the text, and
+ * that text must not be lost: the first note met, inside the run or below it, is where the page goes back to.
  */
+
+/** Revisions read when looking for the last edit by someone else. */
+export const ROLLBACK_WINDOW = 50;
 
 /** A revision as a rollback reads it. */
 export interface RollbackCandidate {
@@ -14,6 +17,8 @@ export interface RollbackCandidate {
   user: string | null;
   /** One of WikiOS's own conflict writes. */
   systemWrite: boolean;
+  /** Whether it changed the page's text: a talk note does, a trail dummy edit does not. */
+  changedText: boolean;
 }
 
 export interface RollbackPlan<T> {
@@ -30,16 +35,11 @@ export function planRollback<T extends RollbackCandidate>(
   const start = newestFirst.findIndex((revision) => !revision.systemWrite);
   if (start < 0) return null;
   const lastEdit = newestFirst[start]!;
-  // the newest system write since the last editor's latest edit: the page's text just below the run, if it ends here
-  let below: T | null = null;
-  for (const revision of newestFirst.slice(start + 1)) {
-    if (revision.systemWrite) {
-      below ??= revision;
-    } else if (revision.user !== lastEdit.user) {
-      return { lastEdit, target: below ?? revision };
-    } else {
-      below = null;
-    }
-  }
-  return { lastEdit, target: below };
+  // a trail is passed over; a talk note, or another editor's edit, ends the run and is where the page goes back to
+  const target = newestFirst
+    .slice(start + 1)
+    .find((revision) =>
+      revision.systemWrite ? revision.changedText : revision.user !== lastEdit.user
+    );
+  return { lastEdit, target: target ?? null };
 }

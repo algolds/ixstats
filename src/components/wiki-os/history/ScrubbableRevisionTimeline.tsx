@@ -179,7 +179,10 @@ export function ScrubbableRevisionTimeline({
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => rollbackMutation.mutate({ title })}
+                // made on the newest live revision shown: an edit since is a conflict, never rolled back unseen
+                onClick={() =>
+                  rollbackMutation.mutate({ title, baseRevisionRef: liveRevisions[0]?.id })
+                }
                 disabled={rollbackMutation.isPending}
                 className="bg-red/10 text-red hover:bg-red/20"
               >
@@ -349,6 +352,7 @@ export function ScrubbableRevisionTimeline({
                   revertMutation.mutate({
                     title,
                     revid: undoTarget.id,
+                    baseRevisionRef: liveRevisions[0]?.id,
                     summary: `Reverted to revision ${undoTarget.id}${undoTarget.author ? ` by ${undoTarget.author}` : ""}`,
                   });
                 }}
