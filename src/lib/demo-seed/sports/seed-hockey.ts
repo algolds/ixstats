@@ -13,7 +13,7 @@ const { ohlTeams: OHL_TEAMS, historicOhlRecords: HISTORIC_OHL_RECORDS } = sports
 export async function seedOHLHockeyLeague(
   prisma: Prisma,
   userId: string,
-  ixNow: number
+  nowMs: number
 ): Promise<number> {
   let count = 0;
   const tierradorCountry = await prisma.country.findFirst({
@@ -51,7 +51,7 @@ export async function seedOHLHockeyLeague(
         shortName,
         city: meta.city,
         color: meta.color,
-        foundedIxTime: ixNow - 1440 * 365 * (40 + (i % 20)),
+        foundedIxTime: nowMs - 1440 * 365 * (40 + (i % 20)),
         nationId: countryId,
       },
     });
@@ -64,8 +64,8 @@ export async function seedOHLHockeyLeague(
       leagueId: league.id,
       seasonNumber: 1,
       status: "completed",
-      startIxTime: ixNow - 518400,
-      endIxTime: ixNow - 7200,
+      startIxTime: nowMs - 518400,
+      endIxTime: nowMs - 7200,
     },
   });
   count++;

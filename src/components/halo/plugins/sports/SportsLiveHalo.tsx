@@ -4,13 +4,12 @@
  * SportsLiveHalo — Halo "Live Activity" plugin for match tracking.
  *
  * Mounted globally. When one of the user's clubs has a match resolving inside its
- * IxTime broadcast window, it registers a high-priority Halo plugin that takes over
+ * real-time broadcast window, it registers a high-priority Halo plugin that takes over
  * the capsule with a live ticking scoreboard replayed deterministically from the match trace.
  */
 
 import React, { useEffect, useMemo, useState } from "react";
 import { AntennaSignal as Radio } from "iconoir-react";
-import { IxTime } from "~/lib/ixtime";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { useDIPlugin } from "~/components/halo/plugin-context";
@@ -27,7 +26,7 @@ function shortFor(t: { name: string; shortName?: string | null }): string {
   return t.shortName || t.name.slice(0, 3).toUpperCase();
 }
 
-/** Recompute live state once per second off the shared IxTime clock. */
+/** Recompute live state once per second off the real clock. */
 function useLiveMatchState(match: LiveActivityMatch | null) {
   const [tick, setTick] = useState(0);
   useEffect(() => {
@@ -42,7 +41,7 @@ function useLiveMatchState(match: LiveActivityMatch | null) {
     return computeLiveMatchState({
       trace: match.trace,
       resolvedIxTime: match.resolvedIxTime,
-      nowIxTime: IxTime.getCurrentIxTime(),
+      nowMs: Date.now(),
       windowMs: match.windowMs,
       finalHomeScore: match.finalHomeScore,
       finalAwayScore: match.finalAwayScore,

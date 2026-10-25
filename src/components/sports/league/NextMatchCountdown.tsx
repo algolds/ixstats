@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { Clock } from "iconoir-react";
-import { IxTime } from "~/lib/ixtime";
+
+/** A fixture's real date and time in the viewer's locale. */
+export function formatMatchDate(ms: number): string {
+  return new Date(ms).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}
 
 function formatRemaining(ms: number): string {
   const totalMin = Math.floor(ms / 60000);
@@ -15,15 +19,14 @@ function formatRemaining(ms: number): string {
 }
 
 /**
- * Live countdown to the next scheduled fixture. The fixture is anchored to an
- * IxTime instant; the real-world wait is the IxTime gap divided by the clock
- * multiplier. Ticks once per second.
+ * Live countdown to the next scheduled fixture, a real-time instant (sports run on
+ * real time). Ticks once per second.
  */
 export function NextMatchCountdown({
-  targetIxTime,
+  targetMs,
   label = "Next matchday",
 }: {
-  targetIxTime: number;
+  targetMs: number;
   label?: string;
 }) {
   const [, setTick] = useState(0);
@@ -32,17 +35,16 @@ export function NextMatchCountdown({
     return () => clearInterval(id);
   }, []);
 
-  const now = IxTime.getCurrentIxTime();
-  const mult = IxTime.getDefaultMultiplier() || 2;
-  const realRemainingMs = Math.max(0, (targetIxTime - now) / mult);
-  const due = targetIxTime <= now;
+  const now = Date.now();
+  const remainingMs = Math.max(0, targetMs - now);
+  const due = targetMs <= now;
 
   return (
     <span className="text-label-secondary text-footnote flex items-center gap-2">
       <Clock className="h-3 w-3 shrink-0" />
       <span className="truncate">
-        {label}: {IxTime.formatIxTime(targetIxTime)}
-        {due ? " · resolving…" : ` · in ${formatRemaining(realRemainingMs)}`}
+        {label}: {formatMatchDate(targetMs)}
+        {due ? " · resolving…" : ` · in ${formatRemaining(remainingMs)}`}
       </span>
     </span>
   );

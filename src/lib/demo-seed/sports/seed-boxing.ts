@@ -14,7 +14,7 @@ const { boxingFighters: BOXING_FIGHTERS } = sportsData;
 export async function seedBoxingLeague(
   prisma: Prisma,
   userId: string,
-  ixNow: number
+  nowMs: number
 ): Promise<number> {
   let count = 0;
   const leagueSeed = hashString("ICC Heavyweight Grand Prix");
@@ -53,7 +53,7 @@ export async function seedBoxingLeague(
         name: fighterName,
         shortName: `${BOXING_FIGHTERS.firstNames[i]} ${BOXING_FIGHTERS.lastNames[i]}`,
         color: BOXING_FIGHTERS.colors[i] || "#dc2626",
-        foundedIxTime: ixNow - 1440 * 365 * 5,
+        foundedIxTime: nowMs - 1440 * 365 * 5,
       },
     });
     count++;
@@ -90,8 +90,8 @@ export async function seedBoxingLeague(
     });
   }
 
-  const seasonStart = ixNow - 129600;
-  const seasonEnd = ixNow - 7200;
+  const seasonStart = nowMs - 129600;
+  const seasonEnd = nowMs - 7200;
   const season = await prisma.sportSeason.create({
     data: {
       leagueId: league.id,

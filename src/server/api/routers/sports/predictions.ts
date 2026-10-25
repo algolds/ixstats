@@ -10,7 +10,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
-import { IxTime } from "~/lib/ixtime";
 import { exchangeService } from "~/lib/vault/exchange-service";
 import { MAX_PREDICTION_STAKE, MIN_PREDICTION_STAKE } from "~/lib/sports/predictions";
 
@@ -82,7 +81,7 @@ export const sportsPredictionsRouter = createTRPCRouter({
           throw new TRPCError({ code: "NOT_FOUND", message: "Match not found" });
         }
 
-        const now = IxTime.getCurrentIxTime();
+        const now = Date.now();
         if (match.status !== "scheduled" || match.scheduledIxTime <= now) {
           throw new TRPCError({
             code: "BAD_REQUEST",

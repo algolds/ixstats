@@ -16,7 +16,6 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { sportsRouter } from "~/server/api/routers/sports";
 import { sportsPredictionsRouter } from "~/server/api/routers/sports/predictions";
 import { exchangeService } from "~/lib/vault/exchange-service";
-import { IxTime } from "~/lib/ixtime";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
@@ -139,7 +138,7 @@ describe("placePrediction", () => {
       id: "m1",
       seasonId: "s1",
       status: "scheduled",
-      scheduledIxTime: IxTime.getCurrentIxTime() + 3_600_000,
+      scheduledIxTime: Date.now() + 3_600_000,
       ...matchOverrides,
     });
     db.sportPrediction.findFirst.mockResolvedValue(null);
@@ -180,7 +179,7 @@ describe("placePrediction", () => {
 
   it.each([
     ["a completed match", { status: "completed" }],
-    ["a scheduled match past kickoff", { scheduledIxTime: IxTime.getCurrentIxTime() - 1000 }],
+    ["a scheduled match past kickoff", { scheduledIxTime: Date.now() - 1000 }],
   ])("rejects %s", async (_name, overrides) => {
     const db = predictionDb(overrides);
     await expect(place("user_a", db, { stake: 10 })).rejects.toThrow(/closed/);

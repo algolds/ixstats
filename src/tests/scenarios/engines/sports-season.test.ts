@@ -35,7 +35,6 @@ jest.mock("~/lib/sports/commentary/narrator", () => ({
 jest.mock("~/lib/notifications/api", () => ({ notificationAPI: { create: jest.fn() } }));
 
 import type { PrismaClient } from "@prisma/client";
-import { IxTime } from "~/lib/ixtime";
 import { advanceSportsSeasons } from "~/lib/sports/season-cron";
 import { decidedAfterRegulation } from "~/lib/sports/match-outcome";
 import { SPORTS_TROPHY_TITLE } from "~/lib/sports/trophy-titles";
@@ -71,7 +70,7 @@ const club = createCallerFactory(sportsClubRouter);
 const teams = createCallerFactory(sportsTeamsRouter);
 const leagues = createCallerFactory(leaguesCrudRouter);
 
-const START = Date.UTC(2042, 2, 1);
+const START = Date.UTC(2026, 9, 1); // real time: sports run on no realm clock
 const TICKETS = 5000 * 15 * 0.6 * 0.5; // capacity × price × 0.6 × popularity share, per home match
 const BASE_FEE = 1000;
 const WIN_BONUS = 500;
@@ -157,7 +156,6 @@ beforeEach(() => {
   jest.spyOn(console, "info").mockImplementation(() => undefined);
 });
 afterEach(() => {
-  IxTime.clearTimeOverride();
   jest.restoreAllMocks();
 });
 
@@ -173,11 +171,31 @@ describe("sports-season (memory)", () => {
       { id },
     ]);
     mockDb = db;
-    IxTime.setTimeOverride(START);
+    jest.spyOn(Date, "now").mockReturnValue(START);
     w = await seed(db as never, "m-", 12);
     await db.realm.create({
       data: { id: "default", slug: "ixnay", name: "Ixnay", ownerId: "system" },
     });
+  });
+
+  it("advances a matchday on real time: one real day after the start, not one IxTime day", async () => {
+    const season = await lifecycle(asPerson(db as never, w.manager)).startSeason({
+      leagueId: w.leagueId,
+    });
+    const played = async () =>
+      (await db.sportMatch.findMany({ where: { seasonId: season.id } })).filter(
+        (m) => m.status === "completed"
+      ).length;
+    const opener = (await db.sportMatch.findMany({ where: { seasonId: season.id, matchDay: 1 } }))[0]!;
+    expect(opener.scheduledIxTime).toBe(START + 86_400_000);
+
+    jest.spyOn(Date, "now").mockReturnValue(START + 12 * 3_600_000);
+    await advanceSportsSeasons(db as never);
+    expect(await played()).toBe(0);
+
+    jest.spyOn(Date, "now").mockReturnValue(START + 25 * 3_600_000);
+    await advanceSportsSeasons(db as never);
+    expect(await played()).toBeGreaterThan(0);
   });
 
   it("plays a season: one settlement, one payout per club, a rebuilt table, then season 2", async () => {
@@ -338,7 +356,7 @@ describe("sports-season (memory)", () => {
 
     // The cron plays the rest, refunds the drawn pool (hockey has no draws) and turns the season over
     const players = await db.sportPlayer.findMany({ select: { id: true, age: true } });
-    IxTime.setTimeOverride(START + 365 * 86_400_000);
+    jest.spyOn(Date, "now").mockReturnValue(START + 365 * 86_400_000);
     await advanceSportsSeasons(db as never);
 
     const refunds = await db.sportPrediction.findMany({ where: { matchId: second!.id } });

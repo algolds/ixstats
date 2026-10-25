@@ -18,7 +18,6 @@ import {
   assertCanManageLeague,
   viewerCanManageLeague,
 } from "~/server/api/routers/sports/league-access";
-import { IxTime } from "~/lib/ixtime";
 import { computeMatchRevenue } from "~/lib/sports/match-revenue";
 import { TEAM_BADGE, requireOwnedTeam } from "~/server/api/routers/sports/_shared";
 import { persistSeasonSchedule, transitionSeasonAction } from "~/lib/sports";
@@ -201,7 +200,7 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
         });
         const seasonNumber = (maxSeason?.seasonNumber ?? 0) + 1;
 
-        const startIxTime = IxTime.getCurrentIxTime();
+        const startIxTime = Date.now();
 
         const season = await ctx.db.sportSeason.create({
           data: {
