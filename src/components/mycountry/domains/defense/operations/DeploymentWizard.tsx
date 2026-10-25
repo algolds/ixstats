@@ -80,7 +80,12 @@ const OP_TYPES = [
     icon: GraduationCap,
     description: "Improve readiness",
   },
-] as const satisfies readonly { value: OperationType }[];
+] as const satisfies readonly {
+  value: OperationType;
+  label: string;
+  icon: typeof Shield;
+  description: string;
+}[];
 
 export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps) {
   const notify = useNotify();
@@ -274,8 +279,8 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
 
           {branches && allUnits.length === 0 && allAssets.length === 0 && (
             <p className="border-separator rounded-control text-label-secondary text-footnote border border-dashed p-3">
-              No units or assets to deploy yet. Build your force under Branches, then assign its units
-              here.
+              No units or assets to deploy yet. Build your force under Branches, then assign its
+              units here.
             </p>
           )}
 
@@ -345,7 +350,10 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
           <Button
             onClick={handleDeploy}
             disabled={
-              !canEdit || !name.trim() || (needsTarget && !targetCountryId) || createOperation.isPending
+              !canEdit ||
+              !name.trim() ||
+              (needsTarget && !targetCountryId) ||
+              createOperation.isPending
             }
             className="w-full"
           >

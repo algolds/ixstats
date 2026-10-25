@@ -110,7 +110,9 @@ function NewYearBanner({
   const startBudgetYear = api.government.startBudgetYear.useMutation({
     onSuccess: async (result) => {
       notify.success(
-        `FY ${yearLabel(result.toYear)} budget started from FY ${yearLabel(result.fromYear)}`
+        result.fromYear === null
+          ? `FY ${yearLabel(result.toYear)} budget started`
+          : `FY ${yearLabel(result.toYear)} budget started from FY ${yearLabel(result.fromYear)}`
       );
       onStarted(result.toYear);
       await utils.government.getFullByCountryId.invalidate({ countryId: startFrom ?? "" });
