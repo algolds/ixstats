@@ -216,7 +216,7 @@ describe("MediaWiki's HTML of an IxWiki article", () => {
   });
 
   it("the renderer version changed, so stored bundles re-render", () => {
-    expect(RENDERER_VERSION.startsWith("5:")).toBe(true);
+    expect(RENDERER_VERSION.startsWith("6:")).toBe(true);
   });
 });
 
@@ -283,6 +283,128 @@ describe("another wiki's page", () => {
     expect(fandom).toContain('href="/wiki/Gallambria?source=althistory#Top"');
     expect(fandom).toContain('href="https://althistory.fandom.com/wiki/Special:Search?search=x" rel="noreferrer"');
     expect(fandom).not.toContain("redlink");
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// Absolute links to a wiki WikiOS reads (external links and the iiwiki:/althistory: interwiki prefixes)
+// ---------------------------------------------------------------------------------------------------------------
+
+const content = (html: string, source: "ixwiki" | "iiwiki" | "althistory", basePath = "") =>
+  transformArticleHtml(`<div class="mw-parser-output"><p>${html}</p></div>`, basePath, source).contentHtml;
+
+describe("absolute links to a wiki WikiOS reads", () => {
+  it("an external link to an iiwiki or althistory article opens in the reader with ?source=, its fragment kept and its external styling dropped", () => {
+    const out = content(
+      '<a rel="nofollow" class="external text" href="https://iiwiki.com/wiki/Gallambria#History" target="_blank">G</a> ' +
+        '<a class="external free" rel="nofollow noopener" href="https://www.iiwiki.com/wiki/Caf%C3%A9_Royale">c</a> ' +
+        '<a rel="nofollow" class="external autonumber" href="https://althistory.fandom.com/index.php?title=New+World&amp;">[1]</a> ' +
+        '<a rel="nofollow" class="external autonumber" href="https://iiwiki.com/wiki/Eurth">[2]</a> ' +
+        '<a rel="nofollow" class="external text" href="//althistory.fandom.com/index.php?title=New_World">n</a> ' +
+        '<a class="external text plainlinks" href="https://althistory.fandom.com/wiki/Napoleon%27s_World#a$&amp;b">n</a>',
+      "ixwiki"
+    );
+    expect(out).toContain('<a href="/wiki/Gallambria?source=iiwiki#History">G</a>');
+    expect(out).toContain('<a href="/wiki/Caf%C3%A9_Royale?source=iiwiki">c</a>');
+    expect(out).toContain('<a href="/wiki/New_World?source=althistory">n</a>');
+    expect(out).toContain('<a class="plainlinks" href="/wiki/Napoleon\'s_World?source=althistory#a$&amp;b">n</a>');
+    // title=X& is a query of more than the title: it stays where it points
+    expect(out).toContain('href="https://althistory.fandom.com/index.php?title=New+World&amp;"');
+    expect(out).toContain('<a href="/wiki/Eurth?source=iiwiki">[2]</a>');
+    expect(out.match(/nofollow/gu)).toHaveLength(1); // the [1] that stays
+    expect(out).not.toContain("_blank");
+    expect(out).not.toContain("external text");
+  });
+
+  it("an interwiki link classic rendered from [[iiwiki:X]] or [[althistory:X]] (class extiw, title iiwiki:X) opens in the reader with ?source=, its extiw class dropped", () => {
+    const out = content(
+      '<a href="https://iiwiki.com/wiki/Gallambria" class="extiw" title="iiwiki:Gallambria">Gallambria</a> ' +
+        '<a href="https://althistory.fandom.com/wiki/Napoleon%27s_World#Map" class="extiw" title="althistory:Napoleon\'s World">NW</a>',
+      "ixwiki",
+      "/projects/ixstates"
+    );
+    expect(out).toContain(
+      '<a href="/projects/ixstates/wiki/Gallambria?source=iiwiki" title="iiwiki:Gallambria">Gallambria</a>'
+    );
+    expect(out).toContain(
+      '<a href="/projects/ixstates/wiki/Napoleon\'s_World?source=althistory#Map" title="althistory:Napoleon\'s World">NW</a>'
+    );
+    expect(out).not.toContain("extiw");
+  });
+
+  it("a link to a sister file, special or user page stays on that wiki", () => {
+    const links = [
+      '<a rel="nofollow" class="external text" href="https://iiwiki.com/wiki/File:Flag.png">f</a>',
+      '<a href="https://iiwiki.com/wiki/Special:Random" class="extiw" title="iiwiki:Special:Random">r</a>',
+      '<a rel="nofollow" class="external text" href="https://althistory.fandom.com/wiki/User:Kir">u</a>',
+      '<a rel="nofollow" class="external text" href="https://althistory.fandom.com/wiki/User_talk:Kir">ut</a>',
+      '<a rel="nofollow" class="external text" href="https://iiwiki.com/index.php?title=Category:Eurth">c</a>',
+      '<a rel="nofollow" class="external text" href="https://iiwiki.com/wiki/Template%3AInfobox">t</a>',
+    ];
+    for (const source of ["ixwiki", "iiwiki"] as const) {
+      const out = content(links.join(" "), source);
+      for (const link of links) expect(out).toContain(link);
+    }
+  });
+
+  it("a link with a query stays where it points", () => {
+    const links = [
+      '<a rel="nofollow" class="external text" href="https://iiwiki.com/wiki/Gallambria?action=history">h</a>',
+      '<a rel="nofollow" class="external text" href="https://iiwiki.com/index.php?title=Gallambria&amp;oldid=12">o</a>',
+      '<a rel="nofollow" class="external text" href="https://althistory.fandom.com/index.php?curid=4">c</a>',
+      '<a rel="nofollow" class="external text" href="https://ixwiki.com/wiki/Burgundie?source=iiwiki">s</a>',
+      '<a rel="nofollow" class="external text" href="https://example.com/wiki/Gallambria">x</a>',
+      '<a rel="nofollow" class="external text" href="https://iiwiki.com.evil.test/wiki/Gallambria">e</a>',
+      '<a rel="nofollow" class="external text" href="https://iiwiki.com/wiki/100%_Foo">m</a>',
+      "<a rel=\"nofollow\" class=\"external text\" href='https://iiwiki.com/wiki/Gallambria'>q</a>",
+    ];
+    for (const source of ["ixwiki", "iiwiki", "althistory"] as const) {
+      const out = content(links.join(" "), source);
+      for (const link of links) expect(out).toContain(link);
+    }
+  });
+
+  it("an iiwiki page's absolute link to IxWiki or AltHistory opens in the reader", () => {
+    const out = content(
+      '<a rel="nofollow" class="external text" href="https://ixwiki.com/wiki/Burgundie#Economy">B</a> ' +
+        '<a rel="nofollow" class="external text" href="https://www.ixwiki.com/index.php?title=Burgundie">B2</a> ' +
+        '<a href="https://althistory.fandom.com/wiki/Napoleon%27s_World" class="extiw" title="althistory:Napoleon\'s World">NW</a> ' +
+        '<a rel="nofollow" class="external text" href="https://iiwiki.com/wiki/Gallambria">G</a>',
+      "iiwiki"
+    );
+    expect(out).toContain('<a href="/wiki/Burgundie#Economy">B</a>');
+    expect(out).toContain('<a href="/wiki/Burgundie">B2</a>');
+    expect(out).toContain('<a href="/wiki/Napoleon\'s_World?source=althistory" title="althistory:Napoleon\'s World">NW</a>');
+    expect(out).toContain('<a href="/wiki/Gallambria?source=iiwiki">G</a>');
+  });
+
+  it("an IxWiki page's own index.php?title= link, title alone, opens in the reader; one with a query stays on IxWiki", () => {
+    const out = content(
+      '<a href="/index.php?title=Burgundie">b</a> <a href="/index.php?title=Burgundie&amp;action=history">h</a>',
+      "ixwiki"
+    );
+    expect(out).toContain('<a href="/wiki/Burgundie">b</a>');
+    expect(out).toContain(`href="${ORIGIN}/index.php?title=Burgundie&amp;action=history" rel="noreferrer"`);
+  });
+
+  it("a page of absolute links, or one tag of endless attributes, is rewritten in linear time", () => {
+    const links = '<a rel="nofollow" class="external text" href="https://iiwiki.com/wiki/A#b">a</a>'.repeat(20_000);
+    const attributes = `<a href="https://iiwiki.com/wiki/A"${' rel="x" target="y" class="extiw"'.repeat(20_000)}>a</a>`;
+    const unclosed = '<a href="https://iiwiki.com/wiki/A'.repeat(20_000);
+    const began = performance.now();
+    const out = content(links, "ixwiki");
+    content(attributes, "iiwiki");
+    content(unclosed, "althistory");
+    expect(performance.now() - began).toBeLessThan(500 * TIMING_BUDGET_SCALE);
+    expect(out).not.toContain("iiwiki.com");
+  });
+
+  it("a class of nothing but external styling goes; other attributes stay in place", () => {
+    const out = content(
+      '<a data-rel="x" class="extiw" href="https://iiwiki.com/wiki/Gallambria" data-class="y" id="g">G</a>',
+      "ixwiki"
+    );
+    expect(out).toContain('<a data-rel="x" href="/wiki/Gallambria?source=iiwiki" data-class="y" id="g">G</a>');
   });
 });
 

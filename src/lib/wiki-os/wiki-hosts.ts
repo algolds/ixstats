@@ -95,6 +95,11 @@ export const SISTER_READER_IDS = SISTER_WIKI_IDS.filter(
   (id): id is SisterReaderId => SISTER_WIKI_HOSTS[id].reader
 );
 
+/** Other hosts a sister reader is reached at, besides its origin and `www.` (a link to one is that wiki's). */
+export const READER_HOST_ALIASES: Partial<Record<SisterReaderId, readonly string[]>> = {
+  iiwiki: ["iiwiki.us"],
+};
+
 /** The sister wiki's own api.php (no development proxy). */
 export function sisterWikiApiUrl(host: SisterWikiHost): string {
   return `${host.origin}${host.apiPath}`;

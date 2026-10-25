@@ -586,6 +586,19 @@ export const TARGETS: readonly Target[] = [
     const m = await import("~/lib/wiki-os/wiki-link-target");
     return (s) => m.wikiLinkTarget(`/w/${s}`, "");
   }),
+  html("wiki-link-target#absoluteReaderTarget", async () => {
+    const m = await import("~/lib/wiki-os/wiki-link-target");
+    return (s) => m.absoluteReaderTarget(`https://althistory.fandom.com/index.php?title=${s}`);
+  }),
+  // The link pass of each wiki's page, alone: every anchor of the page is read for an absolute reader link.
+  html("transformers/html-links#transformLinks@ixwiki", async () => {
+    const m = await import("~/lib/wiki-os/transformers/html-links");
+    return (s) => m.transformLinks(s, "/projects/ixstates", "ixwiki");
+  }),
+  html("transformers/html-links#transformLinks@sister", async () => {
+    const m = await import("~/lib/wiki-os/transformers/html-links");
+    return (s) => m.transformLinks(s, "", "iiwiki");
+  }),
   wikitext(
     "transformers/wiki-ast-converter#wikitextToAst",
     async () => {

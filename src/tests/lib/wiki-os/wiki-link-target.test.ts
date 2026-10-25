@@ -6,7 +6,7 @@
  * reads is that wiki's article. Anything WikiOS cannot preview (files, specials, other namespaces, other sites, the
  * wiki's entry points) is null, and no href makes it throw.
  */
-import { wikiLinkTarget } from "~/lib/wiki-os/wiki-link-target";
+import { absoluteReaderTarget, SITE_NAMESPACE, wikiLinkTarget } from "~/lib/wiki-os/wiki-link-target";
 import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 
 const BASE = "/projects/ixstates";
@@ -60,6 +60,13 @@ describe("wikiLinkTarget", () => {
     });
   });
 
+  it("https://iiwiki.com/index.php?title=Foo, title alone, is iiwiki's Foo", () => {
+    expect(wikiLinkTarget("https://iiwiki.com/index.php?title=Foo_Bar", BASE)).toEqual({
+      title: "Foo Bar",
+      wiki: "iiwiki",
+    });
+  });
+
   it("an absolute link to IxWiki's host is IxWiki's article", () => {
     const foo = { title: "Foo", wiki: "ixwiki" };
     expect(wikiLinkTarget("https://ixwiki.com/wiki/Foo", BASE)).toEqual(foo);
@@ -103,6 +110,8 @@ describe("wikiLinkTarget", () => {
 
   it("/w/api.php is no article", () => {
     expect(wikiLinkTarget("/w/api.php", BASE)).toBeNull();
+    expect(wikiLinkTarget("/w/api.php/Foo", "")).toBeNull();
+    expect(wikiLinkTarget(`${BASE}/w/index.php/Foo_Bar`, BASE)).toBeNull();
     expect(wikiLinkTarget("/w/api.php?action=query", "")).toBeNull();
     expect(wikiLinkTarget("/w/index.php?title=Foo", "")).toBeNull();
     expect(wikiLinkTarget(`${BASE}/w/load.php`, BASE)).toBeNull();
@@ -135,7 +144,10 @@ describe("wikiLinkTarget", () => {
       "Talk:Foo",
       "Wiki:About",
       "Special%3ASearch",
-      "Special/Random",
+      "User_talk:Kir",
+      "File_talk:Flag.svg",
+      "Module:Infobox",
+      "MediaWiki:Sidebar",
     ]) {
       expect(wikiLinkTarget(`${BASE}/wiki/${title}`, BASE)).toBeNull();
       expect(wikiLinkTarget(`https://iiwiki.com/wiki/${title}`, BASE)).toBeNull();
@@ -150,6 +162,23 @@ describe("wikiLinkTarget", () => {
       title: "Notes on Help:Editing",
       wiki: "ixwiki",
     });
+    // A namespace needs its colon: a subpage whose name starts like one is an article.
+    expect(wikiLinkTarget("/wiki/Media/Press", "")).toEqual({ title: "Media/Press", wiki: "ixwiki" });
+    expect(wikiLinkTarget("/wiki/Special/Random", "")).toEqual({
+      title: "Special/Random",
+      wiki: "ixwiki",
+    });
+  });
+
+  it("Portal: pages preview: the reader reads them as articles", () => {
+    expect(wikiLinkTarget("/wiki/Portal:Eurth?source=iiwiki", "")).toEqual({
+      title: "Portal:Eurth",
+      wiki: "iiwiki",
+    });
+    expect(wikiLinkTarget("https://iiwiki.com/wiki/Portal:Eurth", BASE)).toEqual({
+      title: "Portal:Eurth",
+      wiki: "iiwiki",
+    });
   });
 
   it("other sites, other paths and non-links are null", () => {
@@ -157,7 +186,9 @@ describe("wikiLinkTarget", () => {
       "https://example.com/wiki/Foo",
       "https://iiwiki.com.evil.test/wiki/Foo",
       "https://notiiwiki.com/wiki/Foo",
-      "https://iiwiki.com/index.php?title=Foo",
+      "https://iiwiki.com/index.php?title=Foo&action=edit",
+      "https://iiwiki.com/index.php?curid=12",
+      "https://iiwiki.com:8443/wiki/Foo",
       "https://ixwiki.com/projects/ixstates/dashboard",
       "javascript://iiwiki.com/wiki/Foo",
       "ftp://iiwiki.com/wiki/Foo",
@@ -196,5 +227,169 @@ describe("wikiLinkTarget", () => {
     wikiLinkTarget(`https://iiwiki.com/wiki/${"a_".repeat(50_000)}`, BASE);
     wikiLinkTarget(`/w/${"a".repeat(100_000)}`, BASE);
     expect(performance.now() - began).toBeLessThan(75 * TIMING_BUDGET_SCALE);
+  });
+});
+
+describe("absoluteReaderTarget", () => {
+  it("an iiwiki article, on its origin or www.: title decoded with spaces, fragment kept", () => {
+    expect(absoluteReaderTarget("https://iiwiki.com/wiki/C%C3%B4te_d%27Or#History")).toEqual({
+      wiki: "iiwiki",
+      title: "Côte d'Or",
+      fragment: "#History",
+    });
+    expect(absoluteReaderTarget("https://www.iiwiki.com/wiki/Gallambria")).toEqual({
+      wiki: "iiwiki",
+      title: "Gallambria",
+      fragment: "",
+    });
+    expect(absoluteReaderTarget("http://iiwiki.us/wiki/Gallambria")).toEqual({
+      wiki: "iiwiki",
+      title: "Gallambria",
+      fragment: "",
+    });
+    expect(absoluteReaderTarget("//iiwiki.com/wiki/Gallambria")).toEqual({
+      wiki: "iiwiki",
+      title: "Gallambria",
+      fragment: "",
+    });
+  });
+
+  it("reads the href as a browser does: scheme and host in any case, leading space, backslashes for slashes", () => {
+    const gallambria = { wiki: "iiwiki", title: "Gallambria", fragment: "" };
+    expect(absoluteReaderTarget("HTTPS://IIWIKI.COM/wiki/Gallambria")).toEqual(gallambria);
+    expect(absoluteReaderTarget("  https://iiwiki.com/wiki/Gallambria")).toEqual(gallambria);
+    expect(absoluteReaderTarget("\\\\iiwiki.com/wiki/Gallambria")).toEqual(gallambria);
+    expect(absoluteReaderTarget("https:\\\\iiwiki.com/wiki/Gallambria")).toEqual(gallambria);
+  });
+
+  it("an althistory article", () => {
+    expect(absoluteReaderTarget("https://althistory.fandom.com/wiki/Napoleon%27s_World#Map")).toEqual({
+      wiki: "althistory",
+      title: "Napoleon's World",
+      fragment: "#Map",
+    });
+  });
+
+  it("an article on IxWiki's host", () => {
+    expect(absoluteReaderTarget("https://ixwiki.com/wiki/Burgundie/Economy")).toEqual({
+      wiki: "ixwiki",
+      title: "Burgundie/Economy",
+      fragment: "",
+    });
+    expect(absoluteReaderTarget("https://www.ixwiki.com/wiki/Burgundie")).toEqual({
+      wiki: "ixwiki",
+      title: "Burgundie",
+      fragment: "",
+    });
+  });
+
+  it("index.php?title= with title as its only parameter, + and %20 as spaces", () => {
+    expect(absoluteReaderTarget("https://iiwiki.com/index.php?title=Foo_Bar#Top")).toEqual({
+      wiki: "iiwiki",
+      title: "Foo Bar",
+      fragment: "#Top",
+    });
+    expect(absoluteReaderTarget("https://althistory.fandom.com/index.php?title=New+World%20Order")).toEqual({
+      wiki: "althistory",
+      title: "New World Order",
+      fragment: "",
+    });
+    expect(absoluteReaderTarget("https://ixwiki.com/index.php?title=C%2B%2B")).toEqual({
+      wiki: "ixwiki",
+      title: "C++",
+      fragment: "",
+    });
+  });
+
+  it("a query other than title is null", () => {
+    for (const href of [
+      "https://iiwiki.com/wiki/Foo?action=history",
+      "https://iiwiki.com/wiki/Foo?oldid=12#Top",
+      "https://ixwiki.com/wiki/Foo?source=iiwiki",
+      "https://iiwiki.com/index.php?title=Foo&action=edit",
+      "https://iiwiki.com/index.php?action=edit&title=Foo",
+      "https://iiwiki.com/index.php?title=Foo&",
+      "https://iiwiki.com/index.php?oldid=12",
+      "https://iiwiki.com/index.php?title=",
+      "https://iiwiki.com/index.php",
+    ]) {
+      expect(absoluteReaderTarget(href)).toBeNull();
+    }
+  });
+
+  it("does not filter namespaces: the caller decides", () => {
+    expect(absoluteReaderTarget("https://iiwiki.com/wiki/File:Flag.png")).toEqual({
+      wiki: "iiwiki",
+      title: "File:Flag.png",
+      fragment: "",
+    });
+  });
+
+  it("a malformed escape is null, not a throw", () => {
+    expect(() => absoluteReaderTarget("https://iiwiki.com/wiki/100%_Foo")).not.toThrow();
+    expect(absoluteReaderTarget("https://iiwiki.com/wiki/100%_Foo")).toBeNull();
+    expect(absoluteReaderTarget("https://iiwiki.com/index.php?title=%E0%A4%A")).toBeNull();
+    expect(absoluteReaderTarget("http://[bad/wiki/Foo")).toBeNull();
+  });
+
+  it("a relative link, another host, another path or scheme is null", () => {
+    for (const href of [
+      "/wiki/Foo",
+      "/wiki/Foo?source=iiwiki",
+      "wiki/Foo",
+      "#Foo",
+      "",
+      "https://example.com/wiki/Foo",
+      "https://iiwiki.com.evil.test/wiki/Foo",
+      "https://commons.wikimedia.org/wiki/Foo",
+      "https://iiwiki.com/w/Foo",
+      "https://iiwiki.com/w/index.php?title=Foo",
+      "https://iiwiki.com/index.php/Foo",
+      "https://iiwiki.com/index.php/Foo?title=Bar",
+      "https://iiwiki.com/index.php5?title=Foo",
+      "https://iiwiki.com/wiki/",
+      "ftp://iiwiki.com/wiki/Foo",
+      "javascript://iiwiki.com/wiki/Foo",
+    ]) {
+      expect(absoluteReaderTarget(href)).toBeNull();
+    }
+  });
+});
+
+describe("absoluteReaderTarget on hostile input", () => {
+  it("a long crafted href answers quickly", () => {
+    const began = performance.now();
+    absoluteReaderTarget(" ".repeat(100_000));
+    absoluteReaderTarget(`${" ".repeat(100_000)}/x`);
+    absoluteReaderTarget(`https://iiwiki.com/index.php?title=${"%".repeat(100_000)}`);
+    absoluteReaderTarget(`https://iiwiki.com/wiki/${"a_".repeat(50_000)}#${"&".repeat(50_000)}`);
+    expect(performance.now() - began).toBeLessThan(75 * TIMING_BUDGET_SCALE);
+  });
+});
+
+describe("SITE_NAMESPACE", () => {
+  it("names the namespaces read on the wiki's own site, as written in a link path or as a title", () => {
+    for (const title of [
+      "File:Flag.png",
+      "file%3AFlag.png",
+      "Image:Flag.png",
+      "Media:Flag.png",
+      "Special:Random",
+      "User:Kir",
+      "User_talk:Kir",
+      "User talk:Kir",
+      "Category:Eurth",
+      "Template:Infobox",
+      "Module:Infobox",
+      "Help:Editing",
+      "MediaWiki:Sidebar",
+      "Talk:Foo",
+      "Wiki:About",
+    ]) {
+      expect(SITE_NAMESPACE.test(title)).toBe(true);
+    }
+    for (const title of ["Gallambria", "Portal:Eurth", "Filet mignon", "Media/Press", "Notes on Help:Editing"]) {
+      expect(SITE_NAMESPACE.test(title)).toBe(false);
+    }
   });
 });
