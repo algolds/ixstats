@@ -35,8 +35,8 @@ import {
   reclaimInterruptedJobs,
   type MirrorJob,
 } from "./mirror-queue";
+import { checkCollision } from "./mirror-collision";
 import {
-  checkCollision,
   executeRevisionBatch,
   planRevisionBatch,
   type BatchOutcome,
@@ -78,25 +78,20 @@ export interface MirrorCycleResult {
   dead: number;
 }
 
-/**
- * Send a planned batch: the conflict rule judges it against MediaWiki first (`checkCollision`). After a collision a
- * trail may have been written into a summary since the plan was made, so the batch is planned again for the XML to
- * carry it (a plan that takes fewer jobs now gives the rest back). A batch that lost goes out as history only.
- */
-async function sendRevisionBatch(
-  plan: RevisionBatchPlan,
-  handled: readonly MirrorJob[]
-): Promise<BatchOutcome[]> {
-  const collision = await checkCollision(plan);
-  if (!collision) return executeRevisionBatch(plan, null);
-  const again = await planRevisionBatch(handled);
-  await releaseJobs(handled.slice(again.members.length).map((job) => job.id));
-  return executeRevisionBatch(again, collision);
+/** The jobs `plan` takes; the rest of `jobs` are given back untried (pending again, the attempt not counted). */
+async function keepPlanned(
+  jobs: readonly MirrorJob[],
+  plan: RevisionBatchPlan
+): Promise<readonly MirrorJob[]> {
+  await releaseJobs(jobs.slice(plan.members.length).map((job) => job.id));
+  return jobs.slice(0, plan.members.length);
 }
 
 /**
  * Settle a batch of revision jobs of one title: all of them, as the plan allows (a size cap leaves the tail for the
- * next batch). Nothing is stored until MediaWiki has answered. A failure of MediaWiki fails every job of the batch;
+ * next batch). The conflict rule judges the batch against MediaWiki first (`checkCollision`); after a collision a trail
+ * may have been written into a summary, or a lost revision parked, since the plan was made, so the batch is planned
+ * again. Nothing is stored until MediaWiki has answered. A failure of MediaWiki fails every job the batch still holds;
  * a failure to store an outcome fails only the jobs not settled yet, never one already marked done.
  */
 async function runRevisionBatch(claimed: readonly MirrorJob[]): Promise<MirrorJob[]> {
@@ -105,10 +100,14 @@ async function runRevisionBatch(claimed: readonly MirrorJob[]): Promise<MirrorJo
   let outcomes: BatchOutcome[];
   try {
     plan = await planRevisionBatch(claimed);
-    handled = claimed.slice(0, plan.members.length);
-    await releaseJobs(claimed.slice(handled.length).map((job) => job.id));
-    const planned = plan;
-    outcomes = await withinAttempt(ATTEMPT_TIMEOUT_MS, () => sendRevisionBatch(planned, handled));
+    handled = await keepPlanned(claimed, plan);
+    outcomes = await withinAttempt(ATTEMPT_TIMEOUT_MS, async () => {
+      const collision = await checkCollision(plan);
+      if (!collision) return executeRevisionBatch(plan, null);
+      plan = await planRevisionBatch(handled);
+      handled = await keepPlanned(handled, plan);
+      return executeRevisionBatch(plan, collision);
+    });
   } catch (error) {
     return failAll(handled, error);
   }

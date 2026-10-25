@@ -28,7 +28,7 @@ import {
   type CollisionVerdict,
   type PageChange,
 } from "./conflict-rule";
-import { recordConflict } from "./conflict-log";
+import { parkOverwritten, recordConflict } from "./conflict-log";
 import {
   classicChangeOfEvent,
   unmirroredWikiosChanges,
@@ -236,25 +236,6 @@ async function applyDelete(tx: Tx, { event, canon }: EventContext): Promise<Appl
   return restoring
     ? applyRestore(tx, event, canon, article)
     : applyRemoval(tx, event, canon, article);
-}
-
-/**
- * A delete that won: the WikiOS revisions it overwrote become history only, under its ref, so a page that comes back
- * has the text MediaWiki kept.
- */
-async function parkOverwritten(
-  tx: Tx,
-  articleId: string,
-  verdict: CollisionVerdict
-): Promise<void> {
-  const revisions = verdict.overwritten
-    .filter((change) => change.side === "wikios" && change.action === "edit")
-    .map((change) => change.ref);
-  if (revisions.length === 0) return;
-  await tx.wikiRevision.updateMany({
-    where: { articleId, id: { in: revisions }, parked: false },
-    data: { parked: true, parkReason: `overwritten:${verdict.winner.ref}` },
-  });
 }
 
 function afterRemoval(canon: CanonicalTitle, articleId: string | null): Applied {

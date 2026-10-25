@@ -14,12 +14,11 @@
  * one, the second revision of a quick pair is older than the first one's null revision and never becomes current;
  * imported together, the newest revision does.
  *
- * Before anything is sent, `checkCollision` asks the conflict rule (conflict-rule.ts) about the batch's newest revision
- * against MediaWiki's current one, when that is a classic editor's revision WikiOS has not seen: the later save wins,
- * by the time each was saved on its own wiki (a tie goes to classic), however late the job runs. The collision goes in
- * the conflict log. A WikiOS winner carries the trail in its summary (written in the database first, so the XML has
- * it); a batch that lost is imported as history only (never current: MediaWiki keeps the later save) and nothing is
- * pushed for it. A parked (overwritten) revision is never sent at all: a classic delete that won keeps the page gone.
+ * Before anything is sent, `checkCollision` (mirror-collision.ts) asks the conflict rule about the batch against what
+ * classic has, and records any collision: a WikiOS winner carries its trail in its summary; a batch that lost to a
+ * later edit is imported as history only (never current: MediaWiki keeps the later save, and the null revision says
+ * "Imported as history"), with nothing pushed for it. A parked (overwritten) revision is never sent at all: a classic
+ * delete that won keeps the page gone.
  *
  * The import answers with no revision ids, so the result is checked and read back:
  *   - the newest revision's text must be MediaWiki's current text. It is stamped on that WikiOS revision and on the
@@ -39,44 +38,32 @@ import { ConflictError } from "~/lib/app-error";
 import { namesOfUsers } from "~/lib/identity/wiki-names";
 import { db } from "~/server/db";
 import { canonicalizeTitle } from "../core/title";
-import {
-  executeMediaWikiWrite,
-  getMediaWikiAction,
-  postMediaWikiAction,
-} from "../adapters/mediawiki/write-service";
-import { isMirrorAccount } from "../adapters/mediawiki/csrf-cache";
+import { executeMediaWikiWrite, postMediaWikiAction } from "../adapters/mediawiki/write-service";
 import { contentModelFor } from "../xml/content-model";
 import { createExportWriter, escapeXmlText, toXmlTimestamp } from "../xml/export-writer";
-import { mwSha1Base36, sha1HexToBase36 } from "../xml/sha1";
+import { mwSha1Base36 } from "../xml/sha1";
 import type { XmlRevision } from "../xml/types";
-import { decideCollision, trailSummary, type CollisionVerdict } from "./conflict-rule";
+import { importName, INTERWIKI_PREFIX } from "./import-label";
+import { withoutTrail, type BatchCollision } from "./mirror-collision";
 import {
-  recordConflict,
-  setTrailRevision,
-  toConflictEntry,
-  verdictOfEntry,
-  type ConflictRow,
-} from "./conflict-log";
-import { classicChangeOfRevision, wikiosBranchSince, wikiosEditOf } from "./conflict-sides";
-import { importName, INTERWIKI_PREFIX, labelOfImportName } from "./import-label";
-import { MIRROR_SOURCE } from "./mirror-outbox";
+  currentRevision,
+  findImported,
+  laterClassicRevision,
+  recentHistory,
+  type CurrentRevision,
+  type HistoryEntry,
+} from "./mirror-history";
 import type { MirrorJob } from "./mirror-queue";
 
 const DEFAULT_SUMMARY = "WikiOS native edit";
 const SUMMARY_LIMIT = 480;
-/** The most of an edit summary MediaWiki keeps, in characters (its comment store cuts the rest). */
-const COMMENT_LIMIT = 500;
-/** Between a summary and the trail appended to it. */
-const TRAIL_SEPARATOR = "; ";
-/** A trail as `trailSummary` writes it, at the end of a summary. */
-const TRAIL_AT_END = /(?:^|; )Overwrote .+ \(conflict [A-Za-z0-9]+\)$/s;
 /** A batch takes no revision that would grow its XML past this size (the first revision always goes in). */
 export const MAX_BATCH_BYTES = 6 * 1024 * 1024;
 /** What a revision's XML adds besides its text: its tags, timestamp, contributor and summary. */
 const REVISION_XML_OVERHEAD = 2_000;
-/** Pages of the page's history read to find the revisions of a batch. */
-const MAX_HISTORY_PAGES = 4;
 
+/** The summary of a lost batch's import (and of its null revision, which becomes classic's current one). */
+const LOST_IMPORT_SUMMARY = "Imported as history";
 const PROMOTED_NOTE =
   "MediaWiki's newer revisions were the mirror's own (null revisions of earlier imports, dated after this revision): this text was made current by one edit";
 const UNMATCHED_NOTE =
@@ -95,26 +82,6 @@ const importResultSchema = z.looseObject({
   import: z.array(z.looseObject({ title: z.string(), revisions: z.number() })),
 });
 
-const revisionsPageSchema = z.object({
-  query: z.object({
-    pages: z.array(
-      z.looseObject({
-        revisions: z
-          .array(
-            z.looseObject({
-              revid: z.number(),
-              sha1: z.string().optional(),
-              timestamp: z.string().optional(),
-              user: z.string().optional(),
-            })
-          )
-          .optional(),
-      })
-    ),
-  }),
-  continue: z.looseObject({ rvcontinue: z.string().optional() }).optional(),
-});
-
 export interface MirroredRevision {
   id: string;
   wikitext: string;
@@ -126,26 +93,6 @@ export interface MirroredRevision {
   mwRevId: number | null;
   sha1: string | null;
   origin: string;
-}
-
-export interface CurrentRevision {
-  revid: number;
-  /** `rev_sha1` in MediaWiki's base 36; null when MediaWiki hides it. */
-  sha1: string | null;
-  /** Who made it; null when MediaWiki hides that. */
-  user: string | null;
-  /** When it was saved (MediaWiki's `rev_timestamp`). */
-  timestamp: Date;
-}
-
-/** One revision of the page's history as MediaWiki lists it. */
-interface HistoryEntry {
-  revid: number;
-  /** In base 36; null when MediaWiki hides it. */
-  sha1: string | null;
-  /** As MediaWiki writes it, to the second ("2026-09-27T10:00:00Z"). */
-  timestamp: string;
-  user: string | null;
 }
 
 /** One job of a batch: its revision goes into the import, or there is nothing to send for it. */
@@ -172,14 +119,6 @@ export interface RevisionBatchPlan {
   importSummary: string;
 }
 
-/** What the conflict rule made of a batch against MediaWiki's current revision (see `checkCollision`). */
-export interface BatchCollision {
-  verdict: CollisionVerdict;
-  conflictId: string;
-  /** The batch's newest revision won: it goes out with its trail. False: the batch lost and is history only. */
-  wikiosWon: boolean;
-}
-
 /** What became of one job of a batch. */
 export interface BatchOutcome {
   job: MirrorJob;
@@ -196,16 +135,8 @@ function summaryOf(revision: MirroredRevision): string {
 
 /** The summary of the import: the revision's own, without a trail (the import revision carries that, once). */
 function importSummaryOf(revision: MirroredRevision): string {
-  const own = revision.summary?.replace(TRAIL_AT_END, "").trim();
+  const own = revision.summary && withoutTrail(revision.summary).trim();
   return (own || DEFAULT_SUMMARY).slice(0, SUMMARY_LIMIT);
-}
-
-/** `summary` with `trail` at its end, the summary cut so MediaWiki keeps the whole trail. */
-function withTrail(summary: string | null, trail: string): string {
-  const own = summary?.trim();
-  if (!own) return trail;
-  const room = COMMENT_LIMIT - trail.length - TRAIL_SEPARATOR.length;
-  return room > 0 ? `${own.slice(0, room)}${TRAIL_SEPARATOR}${trail}` : trail;
 }
 
 /** The size, stamp and park of each job's revision: all a batch needs to be decided before any text is read. */
@@ -404,262 +335,6 @@ function sentOf(plan: RevisionBatchPlan): SentMember[] {
 }
 
 // ---------------------------------------------------------------------------
-// MediaWiki's side of the page
-// ---------------------------------------------------------------------------
-
-/** MediaWiki's current revision of `title`; null when the page does not exist there. */
-async function currentRevision(title: string): Promise<CurrentRevision | null> {
-  const data = await getMediaWikiAction(
-    {
-      action: "query",
-      prop: "revisions",
-      titles: title,
-      rvprop: "ids|sha1|timestamp|user",
-      rvlimit: "1",
-    },
-    revisionsPageSchema
-  );
-  const revision = data.query.pages[0]?.revisions?.[0];
-  if (!revision) return null;
-  return {
-    revid: revision.revid,
-    sha1: revision.sha1 ? sha1HexToBase36(revision.sha1) : null,
-    user: revision.user ?? null,
-    // never missing in practice; if it were, the classic revision counts as saved now: it wins, nothing is lost
-    timestamp: revision.timestamp ? new Date(revision.timestamp) : new Date(),
-  };
-}
-
-/**
- * The page's history, oldest revision first (a few pages of it: the batch's revisions are among the newest).
- */
-async function recentHistory(title: string): Promise<HistoryEntry[]> {
-  const history: HistoryEntry[] = [];
-  let cursor: string | undefined;
-  for (let page = 0; page < MAX_HISTORY_PAGES; page++) {
-    const data = await getMediaWikiAction(
-      {
-        action: "query",
-        prop: "revisions",
-        titles: title,
-        rvprop: "ids|sha1|timestamp|user",
-        rvlimit: "max",
-        ...(cursor ? { rvcontinue: cursor } : {}),
-      },
-      revisionsPageSchema
-    );
-    for (const { revid, sha1, timestamp, user } of data.query.pages[0]?.revisions ?? []) {
-      if (timestamp) {
-        history.push({
-          revid,
-          sha1: sha1 ? sha1HexToBase36(sha1) : null,
-          timestamp,
-          user: user ?? null,
-        });
-      }
-    }
-    cursor = data.continue?.rvcontinue;
-    if (!cursor) break;
-  }
-  return history.sort((a, b) => a.revid - b.revid);
-}
-
-/** MediaWiki's history order: by time, then by id. */
-function byTime(a: HistoryEntry, b: HistoryEntry): number {
-  return a.timestamp === b.timestamp ? a.revid - b.revid : a.timestamp < b.timestamp ? -1 : 1;
-}
-
-/** A revision WikiOS wrote itself: by the mirror account, or imported under the `wikios>` prefix. */
-function isWikiosOwn(entry: Pick<HistoryEntry, "user">): boolean {
-  return (
-    isMirrorAccount(entry.user) || (entry.user !== null && labelOfImportName(entry.user) !== null)
-  );
-}
-
-/**
- * The MediaWiki revision of each of `revisions` (oldest first), found by hash and timestamp in `history` (the first,
- * in import order, that nobody claimed yet, so identical revisions of one second are told apart); `except` is the
- * current revision, which the import's null revision may share a hash and a second with.
- */
-function findImported(
-  history: readonly HistoryEntry[],
-  revisions: readonly MirroredRevision[],
-  except: number | null
-): Map<string, number> {
-  const pool = history.filter((entry) => entry.revid !== except && entry.sha1 !== null);
-  const found = new Map<string, number>();
-  for (const revision of revisions) {
-    const sha1 = mwSha1Base36(revision.wikitext);
-    const timestamp = toXmlTimestamp(revision.createdAt);
-    const at = pool.findIndex((entry) => entry.sha1 === sha1 && entry.timestamp === timestamp);
-    const [entry] = at === -1 ? [] : pool.splice(at, 1);
-    if (entry) found.set(revision.id, entry.revid);
-  }
-  return found;
-}
-
-/**
- * The newest revision of `history` dated after `revision` (the same second counts: a tie goes to classic) that a
- * classic editor made; null when every one is WikiOS's own (the mirror's null revisions, its imports). The revision's
- * own import is not one.
- */
-function laterClassicRevision(
-  history: readonly HistoryEntry[],
-  revision: MirroredRevision
-): number | null {
-  const second = toXmlTimestamp(revision.createdAt);
-  const own = findImported(history, [revision], null).get(revision.id);
-  const later = history.filter(
-    (entry) => entry.timestamp >= second && entry.revid !== own && !isWikiosOwn(entry)
-  );
-  return later.at(-1)?.revid ?? null;
-}
-
-/** The MediaWiki ids among `revids` that a revision of the article carries (WikiOS has that revision). */
-async function stampedIn(articleId: string, revids: readonly number[]): Promise<Set<number>> {
-  if (revids.length === 0) return new Set();
-  const rows = await db.wikiRevision.findMany({
-    where: { articleId, mwRevId: { in: [...revids] } },
-    select: { mwRevId: true },
-  });
-  return new Set(rows.flatMap((row) => row.mwRevId ?? []));
-}
-
-// ---------------------------------------------------------------------------
-// The conflict rule, before anything is sent
-// ---------------------------------------------------------------------------
-
-/**
- * The classic side of a collision: the revisions classic editors made since the newest one WikiOS has (the base), and
- * that base. With no base in the history read, none (the rule still counts classic's current revision).
- */
-async function classicSince(
-  title: string,
-  articleId: string
-): Promise<{ base: HistoryEntry | null; branch: HistoryEntry[] }> {
-  const history = [...(await recentHistory(title))].sort(byTime);
-  const stamped = await stampedIn(
-    articleId,
-    history.map((entry) => entry.revid)
-  );
-  const baseAt = history.reduce((at, entry, index) => (stamped.has(entry.revid) ? index : at), -1);
-  if (baseAt === -1) return { base: null, branch: [] };
-  // nothing after the base is stamped: the base is the newest revision WikiOS has
-  const branch = history.slice(baseAt + 1).filter((entry) => !isWikiosOwn(entry));
-  return { base: history[baseAt] ?? null, branch };
-}
-
-/**
- * The rule's verdict on `revision` (the batch's newest) against MediaWiki's current revision, recorded in the conflict
- * log. Null when there is nothing to judge: the page is not in MediaWiki, its current revision is the mirror's own, or
- * WikiOS has it already (the inbound sync brought it over and judged it then).
- */
-async function judgeAgainstClassic(
-  title: string,
-  articleId: string,
-  revision: MirroredRevision
-): Promise<BatchCollision | null> {
-  const current = await currentRevision(title);
-  if (!current || isMirrorAccount(current.user)) return null;
-  if ((await stampedIn(articleId, [current.revid])).size > 0) return null;
-
-  const { base, branch } = await classicSince(title, articleId);
-  const incoming = await wikiosEditOf(revision);
-  const wikiosBranch = await wikiosBranchSince(articleId, base?.revid ?? 0, base?.sha1 ?? null);
-  const verdict = decideCollision(MIRROR_SOURCE, articleId, {
-    incoming,
-    standing: await classicChangeOfRevision(current),
-    // what WikiOS changed since the base up to this revision; anything later is judged with its own batch
-    incomingBranch: wikiosBranch.filter((change) => change.at <= incoming.at),
-    standingBranch: await Promise.all(
-      branch.map((entry) =>
-        classicChangeOfRevision({
-          revid: entry.revid,
-          user: entry.user,
-          timestamp: new Date(entry.timestamp),
-        })
-      )
-    ),
-  });
-  const { id } = await recordConflict(db, {
-    source: MIRROR_SOURCE,
-    articleId,
-    title,
-    verdict,
-    baseRef: base ? String(base.revid) : null,
-  });
-  return { verdict, conflictId: id, wikiosWon: verdict.incomingWins };
-}
-
-/** Puts the trail of `row` (a collision `revision` won) in the revision's summary, once: true for the one that does. */
-async function writeTrail(row: ConflictRow, revision: MirroredRevision): Promise<boolean> {
-  const trail = trailSummary(verdictOfEntry(toConflictEntry(row)), row.id);
-  return db.$transaction(async (tx) => {
-    if (!(await setTrailRevision(tx, row.id, revision.id))) return false;
-    await tx.wikiRevision.update({
-      where: { id: revision.id },
-      data: { summary: withTrail(revision.summary, trail) },
-    });
-    return true;
-  });
-}
-
-/**
- * The collisions a revision of the batch won that have no trail yet (judged here, or by the inbound cycle before the
- * job ran): each winner's summary gets its trail, exactly once. The last one written, or null for none.
- */
-async function writeTrails(
-  articleId: string,
-  revisions: readonly MirroredRevision[]
-): Promise<BatchCollision | null> {
-  const byId = new Map(revisions.map((revision) => [revision.id, revision]));
-  const rows = await db.wikiConflict.findMany({
-    where: {
-      articleId,
-      winnerSide: "wikios",
-      winnerRef: { in: [...byId.keys()] },
-      trailRevisionId: null,
-    },
-    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-  });
-  let written: BatchCollision | null = null;
-  for (const row of rows) {
-    const revision = byId.get(row.winnerRef);
-    if (revision && (await writeTrail(row, revision))) {
-      written = {
-        verdict: verdictOfEntry(toConflictEntry(row)),
-        conflictId: row.id,
-        wikiosWon: true,
-      };
-    }
-  }
-  return written;
-}
-
-/**
- * Ask the conflict rule about a planned batch before it is sent: its newest revision against MediaWiki's current one
- * (see `judgeAgainstClassic`), by the time each was saved on its own wiki, however late the job runs. A collision is
- * recorded in the conflict log (one row, whichever of the mirror and the inbound cycle sees it first): `wikiosWon`
- * false means the batch lost and is history only. Every collision a revision of the batch won, here or one the inbound
- * cycle judged before the job ran, has its trail written into that revision's summary in the database, once. The
- * caller plans the batch again whenever this resolves to a collision, so the XML carries the trails. Null when there
- * is nothing to judge and no trail to write.
- */
-export async function checkCollision(plan: RevisionBatchPlan): Promise<BatchCollision | null> {
-  const sent = sentOf(plan);
-  const newest = sent.at(-1);
-  const articleId = newest?.job.articleId;
-  if (!newest || !articleId) return null;
-  const judged = await judgeAgainstClassic(plan.title, articleId, newest.revision);
-  // a revision of a batch that lost can have won an earlier collision: its history line names that one
-  const trailed = await writeTrails(
-    articleId,
-    sent.map((member) => member.revision)
-  );
-  return judged ?? trailed;
-}
-
-// ---------------------------------------------------------------------------
 // Sending
 // ---------------------------------------------------------------------------
 
@@ -741,14 +416,22 @@ type HeadFate =
  * Whether the import made `head` (the batch's newest revision, not judged lost) MediaWiki's current text; if not, it
  * is promoted by one edit only when every revision dated after it is WikiOS's own, else it stays history.
  */
-async function headFate(title: string, head: SentMember): Promise<HeadFate> {
+async function headFate(
+  title: string,
+  head: SentMember,
+  sent: readonly SentMember[]
+): Promise<HeadFate> {
   const current = await currentRevision(title);
   const except = current?.revid ?? null;
   if (current !== null && current.sha1 === mwSha1Base36(head.revision.wikitext)) {
     return { kind: "current", revid: current.revid, history: null, except };
   }
   const history = await recentHistory(title);
-  const later = laterClassicRevision(history, head.revision);
+  const later = laterClassicRevision(
+    history,
+    head.revision,
+    sent.map((member) => member.revision)
+  );
   if (later !== null) return { kind: "history", later, history, except };
   return {
     kind: "promoted",
@@ -817,7 +500,7 @@ async function settleImported(
   // A batch whose last job had nothing to send (its text is already in MediaWiki) has no newest text to verify.
   const last = plan.members.at(-1);
   const head = last?.send ? last : null;
-  const fate = head ? await headFate(plan.title, head) : null;
+  const fate = head ? await headFate(plan.title, head, sent) : null;
   const current = fate && fate.kind !== "history" ? fate : null;
   const historical = current ? sent.slice(0, -1) : sent;
   const imported = await stampFromHistory(
@@ -858,8 +541,14 @@ export async function executeRevisionBatch(
       member.send ? { job: member.job, mwRevId: null } : unsentOutcome(member)
     );
   }
-  await postImport({ ...plan, xml: plan.xml });
-  return collision && !collision.wikiosWon
+  const lost = collision !== null && !collision.wikiosWon;
+  // a lost batch's null revision becomes classic's current one: it must not read as the loser's edit
+  await postImport({
+    ...plan,
+    xml: plan.xml,
+    importSummary: lost ? LOST_IMPORT_SUMMARY : plan.importSummary,
+  });
+  return collision && lost
     ? settleLost(plan, sent, collision.verdict.winner.ref)
     : settleImported(plan, sent);
 }

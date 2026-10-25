@@ -33,7 +33,13 @@ import {
   type ConflictRow,
 } from "./conflict-log";
 import { lossOf, noticeCopy } from "./conflict-notice-copy";
-import { CONFLICT_NOTICE_AUTHOR, talkPageTitle, wikiName } from "./conflict-sides";
+import {
+  CONFLICT_NOTICE_AUTHOR,
+  shownRefs,
+  talkPageTitle,
+  verdictAsShown,
+  wikiName,
+} from "./conflict-sides";
 import { syncLatestRevision } from "./inbound-revision-sync";
 
 const SOURCE = "ixwiki";
@@ -216,7 +222,8 @@ async function winnerLink({ entry }: NoticeContext, newest: string | undefined):
  */
 async function talkSection(context: NoticeContext, recipient: NoticeRecipient): Promise<string> {
   const copy = copyOf(context, recipient);
-  const revisions = recipient.refs.filter((ref) => CLASSIC_REVISION.test(ref));
+  // their WikiOS revisions MediaWiki has are linked by their MediaWiki ids
+  const revisions = (await shownRefs(recipient.refs)).filter((ref) => CLASSIC_REVISION.test(ref));
   const links = revisions.map((ref) => `[[Special:PermanentLink/${ref}|revision ${ref}]]`);
   // what they lost was a deletion, move or restore: it is in the log
   if (lossOf(context.entry.overwritten, recipient) !== "edit") {
@@ -332,7 +339,7 @@ async function writeTrail(context: NoticeContext): Promise<Delivery> {
   if (!(await winnerLanded(page.id, entry.winner))) return "open";
   const trail = await ArticleRepository.recordTrailRevision({
     articleId: page.id,
-    summary: trailSummary(verdictOfEntry(entry), entry.id),
+    summary: trailSummary(await verdictAsShown(verdictOfEntry(entry)), entry.id),
     conflictId: entry.id,
   });
   return trail ? "sent" : "skipped";

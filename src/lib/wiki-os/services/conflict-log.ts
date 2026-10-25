@@ -195,6 +195,25 @@ export async function recordConflict(
   return { id: row.id, created: false };
 }
 
+/**
+ * A change that won and leaves no page to show the losers on (a delete): the WikiOS revisions it overwrote become
+ * history only, under its ref, never NULL, so a page that comes back has the text MediaWiki kept.
+ */
+export async function parkOverwritten(
+  tx: Prisma.TransactionClient,
+  articleId: string,
+  verdict: CollisionVerdict
+): Promise<void> {
+  const revisions = verdict.overwritten
+    .filter((change) => change.side === "wikios" && change.action === "edit")
+    .map((change) => change.ref);
+  if (revisions.length === 0) return;
+  await tx.wikiRevision.updateMany({
+    where: { articleId, id: { in: revisions }, parked: false },
+    data: { parked: true, parkReason: `overwritten:${verdict.winner.ref}` },
+  });
+}
+
 // --- notices --------------------------------------------------------------------------------------------------------
 
 /**

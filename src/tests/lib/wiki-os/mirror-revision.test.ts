@@ -39,8 +39,8 @@ import {
   executeRevisionBatch,
   MAX_BATCH_BYTES,
   planRevisionBatch,
-  type BatchCollision,
 } from "~/lib/wiki-os/services/mirror-revision";
+import type { BatchCollision } from "~/lib/wiki-os/services/mirror-collision";
 import { revisionPayloadSchema } from "~/lib/wiki-os/services/mirror-outbox";
 import { mwSha1Base36, sha1HexToBase36 } from "~/lib/wiki-os/xml/sha1";
 import { API_URL, createFakeMediaWiki, type RecordedRequest } from "~/tests/helpers/fake-mediawiki";
@@ -538,6 +538,8 @@ describe("revision jobs", () => {
         },
       ]);
       expect(requestsTo("import")).toHaveLength(1);
+      // the null revision becomes classic's current one: it never reads as the loser's edit
+      expect(requestsTo("import")[0]?.params.summary).toBe("Imported as history");
       expect(requestsTo("edit")).toHaveLength(0);
       expect(wiki.calls().filter((request) => request.params.rvlimit === "1")).toHaveLength(0);
       expect(mockRevisionUpdateMany.mock.calls.map(([args]) => args.data.mwRevId)).toEqual([776]);
@@ -775,6 +777,23 @@ describe("revision jobs", () => {
         expect(plan.members.map((member) => member.job.id)).toEqual(["job-1"]);
         expect(Buffer.byteLength(plan.xml ?? "")).toBeGreaterThan(MAX_BATCH_BYTES);
       });
+    });
+
+    it("never takes another revision of the batch for a classic editor's: two of one second by a claimed name are promoted", async () => {
+      const SAME = new Date("2026-09-27T10:00:05.100Z");
+      revisionsAre(row(1, T1, SAME), row(2, T2, new Date("2026-09-27T10:00:05.700Z")));
+      // both imports credited to the claimed name "Alice"; MediaWiki kept the first current (same second)
+      historyIs([
+        { revid: 10, text: T1, timestamp: "2026-09-27T10:00:05Z", user: "Alice" },
+        { revid: 11, text: T2, timestamp: "2026-09-27T10:00:05Z", user: "Alice" },
+        { revid: 12, text: T1, timestamp: "2026-09-27T10:05:00Z", user: "WikiOSMirror" },
+      ]);
+      wiki.on("edit", () => ({ edit: { result: "Success", newrevid: 20 } }));
+
+      const outcomes = await runBatch([jobFor(1), jobFor(2)]);
+
+      expect(requestsTo("edit")).toHaveLength(1);
+      expect(outcomes.map((outcome) => outcome.mwRevId)).toEqual([10, 20]);
     });
 
     it("no job payload accepts restore any more: a leftover park re-push goes out as its revision was saved, with the jobs after it", async () => {

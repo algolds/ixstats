@@ -16,12 +16,8 @@ import {
 import { requestSignal } from "~/lib/wiki-os/adapters/mediawiki/attempt-scope";
 import { ATTEMPT_TIMEOUT_MS, INTERRUPTED_AFTER_MS } from "~/lib/wiki-os/services/mirror-queue";
 import { CRON_JOBS } from "~/server/cron/jobs";
-import {
-  checkCollision,
-  executeRevisionBatch,
-  planRevisionBatch,
-  type BatchCollision,
-} from "~/lib/wiki-os/services/mirror-revision";
+import { executeRevisionBatch, planRevisionBatch } from "~/lib/wiki-os/services/mirror-revision";
+import { checkCollision, type BatchCollision } from "~/lib/wiki-os/services/mirror-collision";
 import { runPageJob } from "~/lib/wiki-os/services/mirror-page-ops";
 import { runUploadJob } from "~/lib/wiki-os/services/mirror-upload";
 import { invalidateTemplateDependents } from "~/lib/wiki-os/services/render-service";
@@ -137,9 +133,9 @@ jest.mock("~/server/db", () => ({
 }));
 jest.mock("~/lib/wiki-os/services/mirror-revision", () => ({
   planRevisionBatch: jest.fn(),
-  checkCollision: jest.fn(),
   executeRevisionBatch: jest.fn(),
 }));
+jest.mock("~/lib/wiki-os/services/mirror-collision", () => ({ checkCollision: jest.fn() }));
 jest.mock("~/lib/wiki-os/services/mirror-page-ops", () => ({ runPageJob: jest.fn() }));
 jest.mock("~/lib/wiki-os/services/mirror-upload", () => ({ runUploadJob: jest.fn() }));
 jest.mock("~/lib/wiki-os/services/render-service", () => ({
@@ -572,6 +568,32 @@ describe("batches of revision jobs", () => {
 
       expect(planBatch.mock.calls.map(([given]) => given.length)).toEqual([2, 2, 1]);
       for (const job of jobs) expect(byId(job.id)).toMatchObject({ state: "done", attempts: 1 });
+    });
+
+    it("leaves a job the second plan gave back untouched when the batch then fails", async () => {
+      const jobs = [addJob({ title: "Foo" }), addJob({ title: "Foo" })];
+      judgeBatch.mockResolvedValueOnce(verdict(true));
+      const unsent = (given: readonly Row[]) =>
+        given.map((job) => ({ job, send: false as const, mwRevId: null }));
+      planBatch
+        .mockImplementationOnce(async (given) => ({
+          title: "Foo",
+          members: unsent(given),
+          xml: null,
+          importSummary: "summary",
+        }))
+        .mockImplementationOnce(async (given) => ({
+          title: "Foo",
+          members: unsent(given.slice(0, 1)),
+          xml: null,
+          importSummary: "summary",
+        }));
+      sendBatch.mockRejectedValueOnce(new Error("MediaWiki down"));
+
+      await runMirrorCycle();
+
+      expect(byId(jobs[0]!.id)).toMatchObject({ attempts: 1, lastError: "MediaWiki down" });
+      expect(byId(jobs[1]!.id)).toMatchObject({ state: "pending", attempts: 0, lastError: null });
     });
 
     it("fails every job of the batch when the check fails, and sends nothing", async () => {

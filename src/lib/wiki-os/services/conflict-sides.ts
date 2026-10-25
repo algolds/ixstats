@@ -14,6 +14,7 @@ import { toRevisionRef } from "../core/domain-types";
 import type {
   ChangeAction,
   ChangeAuthor,
+  CollisionVerdict,
   NoticeRecipient,
   PageChange,
   WikiSide,
@@ -37,6 +38,42 @@ export function talkPageTitle(
 ): string | null {
   const name = recipient.classicName ?? recipient.ip;
   return name ? `User talk:${name}` : null;
+}
+
+// --- refs as people read them ----------------------------------------------------------------------------------------
+
+/** A ref that names a WikiOS revision by its row id (not a MediaWiki id, not a log entry). */
+function isRowRef(ref: string): boolean {
+  return !/^\d+$/.test(ref) && !ref.includes(":");
+}
+
+/**
+ * Each ref as people read it in a trail or a talk note: a WikiOS revision MediaWiki has is named by its MediaWiki id
+ * ("revision 1234"), never its row id; anything else stays as it is. The conflict log keeps the row ids.
+ */
+export async function shownRefs(refs: readonly string[]): Promise<string[]> {
+  const ids = refs.filter(isRowRef);
+  const rows =
+    ids.length > 0
+      ? await db.wikiRevision.findMany({
+          where: { id: { in: ids } },
+          select: { id: true, mwRevId: true },
+        })
+      : [];
+  const byId = new Map(rows.flatMap((row) => (row.mwRevId ? [[row.id, String(row.mwRevId)]] : [])));
+  return refs.map((ref) => byId.get(ref) ?? ref);
+}
+
+/** The verdict with its overwritten changes named as people read them (see `shownRefs`), for a trail. */
+export async function verdictAsShown(verdict: CollisionVerdict): Promise<CollisionVerdict> {
+  const refs = await shownRefs(verdict.overwritten.map((change) => change.ref));
+  return {
+    ...verdict,
+    overwritten: verdict.overwritten.map((change, at) => ({
+      ...change,
+      ref: refs[at] ?? change.ref,
+    })),
+  };
 }
 
 // --- authors --------------------------------------------------------------------------------------------------------
