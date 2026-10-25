@@ -32,6 +32,7 @@ import { diplomaticCulturalRouter } from "~/server/api/routers/diplomacy/cultura
 import { diplomaticCoreRouter } from "~/server/api/routers/diplomacy/core";
 import { diplomaticPoliciesRouter } from "~/server/api/routers/diplomacy/policies";
 import { diplomaticScenariosChoicesRouter } from "~/server/api/routers/diplomaticScenarios/choices";
+import { diplomaticScenariosRouter } from "~/server/api/routers/diplomaticScenarios";
 import { meetingsMeetingsRouter } from "~/server/api/routers/meetings/meetings";
 import { SAME_REALM_MESSAGE, nationsInRealm, sameRealm } from "~/lib/realms/same-realm";
 import { assertSameRealm } from "~/server/shared/same-realm-guard";
@@ -47,9 +48,12 @@ import {
 const NEIGHBOUR = "country_neighbour";
 /** The caller's nation under a cuid id, for procedures that validate one. */
 const SCENARIO_NATION = "ckcountrya0000000000001";
+/** A nation of the far realm under a cuid id. */
+const FAR_NATION = "ckcountryf0000000000009";
 const REALM_OF: Record<string, string> = {
   [CALLER_COUNTRY]: "default",
   [SCENARIO_NATION]: "default",
+  [FAR_NATION]: "realm_far",
   [NEIGHBOUR]: "default",
   [FOREIGN_COUNTRY]: "realm_far",
 };
@@ -342,6 +346,30 @@ describe("relations, scenarios and summits", () => {
       })
     ).rejects.toMatchObject(refused);
     expect(updateMany).not.toHaveBeenCalled();
+  });
+
+  it("let an admin write no scenario between nations of two realms", async () => {
+    const create = jest.fn();
+    const ctx = realmContext({
+      culturalScenario: { create },
+      auditLog: { create: jest.fn().mockResolvedValue({}) },
+    });
+    ctx.user!.role = { name: "admin" };
+    await expect(
+      createCallerFactory(diplomaticScenariosRouter)(ctx as never).createScenario({
+        type: "festival",
+        title: "T",
+        narrative: "N",
+        country1Id: SCENARIO_NATION,
+        country2Id: FAR_NATION,
+        responseOptions: [],
+        culturalImpact: 10,
+        diplomaticRisk: 10,
+        economicCost: 10,
+        expiresAt: new Date(Date.now() + 86_400_000),
+      })
+    ).rejects.toMatchObject(refused);
+    expect(create).not.toHaveBeenCalled();
   });
 
   it("request no summit with a nation of another realm", async () => {
