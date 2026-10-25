@@ -32,12 +32,13 @@ const ENGINE_STAND_INS = { taxRevenueGDPPercent: 25, unemploymentRate: 5 } as co
  */
 export function withoutStandIns(
   country: { unemploymentRate?: number | null; taxRevenueGDPPercent?: number | null },
-  stats: { unemploymentRate?: number; taxRevenueGDPPercent?: number }
+  stats: { unemploymentRate?: number | null; taxRevenueGDPPercent?: number | null }
 ) {
   return {
-    unemploymentRate: country.unemploymentRate == null ? undefined : stats.unemploymentRate,
+    unemploymentRate:
+      country.unemploymentRate == null ? undefined : (stats.unemploymentRate ?? undefined),
     taxRevenueGDPPercent:
-      country.taxRevenueGDPPercent == null ? undefined : stats.taxRevenueGDPPercent,
+      country.taxRevenueGDPPercent == null ? undefined : (stats.taxRevenueGDPPercent ?? undefined),
   };
 }
 

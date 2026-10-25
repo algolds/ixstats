@@ -15,7 +15,6 @@ import { cn } from "~/lib/utils";
 import { economyFiguresOf } from "~/lib/economy/country-relations";
 import { allocatedInEffect } from "~/components/mycountry/domains/government/budget/budgetSummaries";
 import { fiscalBalancePercent } from "~/components/mycountry/domains/government/budget/budgetTypes";
-import type { BudgetAllocation } from "~/types/government";
 import { TAX_CHANNELS, ACCENT_BG } from "./taxChannels";
 import { nationalRevenue } from "./nationalRevenue";
 import { RailCard, RailRow, STATUS_FILL, STATUS_TEXT } from "../rails/shared";
@@ -71,8 +70,7 @@ function useFiscalBalance(countryId: string, revenue: number | null): number | n
     { countryId },
     { enabled: !!countryId }
   );
-  const allocations = (government?.budgetAllocations ?? []) as BudgetAllocation[];
-  const allocated = allocatedInEffect(allocations);
+  const allocated = allocatedInEffect(government?.budgetAllocations ?? []);
   return revenue != null && allocated != null ? fiscalBalancePercent(revenue, allocated) : null;
 }
 

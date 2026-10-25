@@ -9,3 +9,8 @@ export function approvalKpiValue(publicApproval: number | null | undefined): str
     ? `${Math.round(publicApproval)}%`
     : "—";
 }
+
+/** True when a party support move is big enough to be newsworthy (default 5 points). */
+export function isNewsworthySwing(prev: number, next: number, threshold = 5): boolean {
+  return Math.abs(next - prev) >= threshold;
+}

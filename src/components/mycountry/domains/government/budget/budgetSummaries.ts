@@ -144,7 +144,9 @@ export function summarizeRevenue(
 }
 
 /** What the budget in effect (latest year at or before now) allocates in total. */
-export function allocatedInEffect(allocations: BudgetAllocation[]): number | null {
+export function allocatedInEffect(
+  allocations: Pick<BudgetAllocation, "budgetYear" | "allocatedAmount">[]
+): number | null {
   const year = latestBudgetYearUpTo(allocations.map((a) => a.budgetYear));
   if (year == null) return null;
   return sumOf(
