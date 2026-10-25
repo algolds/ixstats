@@ -133,10 +133,6 @@ export const diplomaticEmbassiesQueriesEmbassyListingsRouter = createTRPCRouter(
             orderBy: { createdAt: "desc" },
             take: 10,
           },
-          upgrades: {
-            where: { status: { in: ["available", "in_progress", "completed"] } },
-            orderBy: { createdAt: "desc" },
-          },
           hostCountry: { select: { name: true } },
           guestCountry: { select: { name: true } },
         },
@@ -159,11 +155,8 @@ export const diplomaticEmbassiesQueriesEmbassyListingsRouter = createTRPCRouter(
         missions: embassy.missions.map((m) =>
           m.status === "active" ? { ...m, progress: missionTimeProgress(m) } : m
         ),
-        upgrades: embassy.upgrades,
-        nextLevelRequirement: embassy.level * 1000 + 500, // Experience needed for next level
         maintenanceDue:
           embassy.lastMaintenancePaid < new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-        canUpgrade: embassy.experience >= embassy.level * 1000 + 500,
         availableMissions: embassy.currentMissions < embassy.maxMissions,
         // Profile fields
         description: embassy.description ?? null,

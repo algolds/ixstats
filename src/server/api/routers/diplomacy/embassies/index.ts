@@ -6,8 +6,8 @@
  * and root.ts still imports `./routers/diplomacy/embassies` (now resolved to this index.ts).
  *
  * Domains:
- *  - queries:   read-only embassy lookups, cost/upgrade calculators
- *  - establish: embassy establishment and upgrades
+ *  - queries:   read-only embassy lookups
+ *  - establish: embassy establishment
  *  - lifecycle: embassy close / reopen / delete
  *  - budget:    maintenance payment, budget allocation, profile updates
  */
