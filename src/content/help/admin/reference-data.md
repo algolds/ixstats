@@ -33,7 +33,7 @@ The first time the catalog is opened it's filled with the 20 built-in archetypes
 
 ## Military equipment
 
-The equipment browser players use to add assets in [Defense](/help/defense/equipment) lists the active items in this catalog, with their manufacturer, era, cost, technology level and image. Adding, editing or deactivating an item changes what players can pick from. Loading an item fills in a new asset's details; assets already in a nation's arsenal don't change.
+The procurement catalog players order from in [Defense](/help/defense/equipment) lists the active items in this catalog, with their manufacturer, era, cost and image. An item's era sets its design year (and so its quality and whether a nation's industry can build it), and its subcategory sets its production lead time. Adding, editing or deactivating an item changes what players can order; equipment already in service and open orders don't change.
 
 The first time the catalog is opened it's filled with the built-in equipment and manufacturers, which you can then edit. If the catalog can't be read, the browser falls back to the built-in list.
 

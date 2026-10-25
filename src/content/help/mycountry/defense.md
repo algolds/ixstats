@@ -1,50 +1,60 @@
 ---
 title: Defense & Security
-description: Branches and readiness, threats, forces, operations and internal stability.
+description: Your armed forces, built from your defense budget over time on your realm's clock.
 badge: Defense
-nextHref: /help/defense/equipment
-nextLabel: The Equipment Catalog
+nextHref: /help/defense/forces
+nextLabel: How Your Forces Are Built
 ---
 
 ## What this section is for
 
-The Defense section of MyCountry ([/mycountry/defense](/mycountry/defense)) models your armed forces and internal security: military branches, units and equipment, readiness, border threats, operations, conflicts with other nations, and your stability score. It has five tabs: **Branches & Readiness**, **Threat Vectors**, **Forces & Arsenal**, **Special Operations** and **Internal Stability**.
+The Defense section of MyCountry ([/mycountry/defense](/mycountry/defense)) is your defense staff's console. You don't type in how many soldiers you have or how ready they are: your **defense budget** pays for people, equipment and training, and your forces grow, wear and train month by month on your realm's clock. You steer them with a few levers and see the result as readiness ratings and combat power, the same numbers battles use.
+
+It has seven tabs: **Overview**, **Budget and posture**, **Branches**, **Procurement**, **Threats**, **Operations** and **Internal stability**.
 
 > [!WARNING]
-> **Defense is a MyCountry Premium feature.** Every player can open it, but without [Premium](/help/getting-started/premium) it's a read-only preview: creating assets, planning operations, conflicts and editing the defense budget need Premium.
+> **Defense is a MyCountry Premium feature.** Every player can open it, but without [Premium](/help/getting-started/premium) it's a read-only preview: you see your overview and your current settings, but the levers, orders and operations need Premium.
 
-## Branches & Readiness
+## Overview
 
-Your branches (army, navy, air force and so on), their readiness and your overall defense posture, plus your defense budget. The defense budget is your Defense department's line in the [National budget](/help/mycountry/economy): changing its share here changes that line, and the other way round. A nation with no government structure or no Defense department is offered one first. Deployments lower a unit's readiness by 10; recalling it restores 5.
+- **National force**: combat power, active personnel and reserves, your **defense burden** (defense spending as a share of GDP, and where the budget figure comes from), the alert level in effect (and when a raised alert takes effect), your doctrine, the **human factor** (how effective your forces are for their size against your realm's average nation) and how far your industry lags the newest designs.
+- **National readiness**: a rating from C-1 to C-4 with its four areas, the weakest one named with what lifts it. See [How Your Forces Are Built](/help/defense/forces#readiness-and-c-levels).
+- **Warnings**: problems in how the budget is spent, each with what to do about it.
+- **Branches**: each branch's rating, weakest area, personnel and combat power.
+- **Defense budget**: your Defense department lines in the [National budget](/help/mycountry/economy), added together. Changing the share here changes the largest line, and the other way round. A nation with no government structure or no Defense department is offered one first.
 
-## Threat Vectors
+## Budget and posture
 
-Threats and border security, including assessments of your neighbours.
+The national levers. See [How Your Forces Are Built](/help/defense/forces#the-levers) for what each one does.
 
-## Forces & Arsenal
+- **Budget split**: how the defense budget divides between personnel, operations and maintenance, procurement, research and infrastructure, with three presets. Before you save, it shows what the new split would buy.
+- **Manpower**: all-volunteer, mixed or conscription, how long conscripts serve, and how long people stay in the reserve.
+- **Reserves and mobilisation**: your reserve by branch, calling reservists up and sending them home.
+- **Doctrine and posture**: doctrine, alert level, which upkeep comes first, and the production surge.
 
-Your units and the equipment they hold.
+## Branches
 
-1. Open **Forces & Arsenal**.
-2. Add a branch or unit, and set its size.
-3. Add equipment from the [catalog](/help/defense/equipment) to a unit.
+Your branches grouped by domain (land, sea, air, marines, space, strategic missile). You name each one; its domain decides what it is like. Each shows its rating and readiness areas, active personnel against what the budget funds, reserves and mobilised reservists, combat power, the value and quality of its equipment, and its plan: its weight in the national effort and an optional strength cap. Expand a branch to see its equipment (mark it in maintenance or reserve, or scrap it) and its units.
 
-## Special Operations
+A new branch starts empty and grows from the budget. **Start from my nation's data** adds an army, a navy and an air force when you have none.
 
-Plan and track operations such as peacekeeping, defense pacts, blockades, interventions and training.
+## Procurement
 
-1. Start the deployment wizard, choose the operation type and objective, then pick the units and assets to commit.
-2. While an operation is active it costs money every day: personnel × $200 per day plus 1.5× the maintenance of the assets involved.
-3. Recall forces when you're done.
+Domestic industry's capacity and the newest design it can build, open orders, and the [equipment catalog](/help/defense/equipment). Orders are paid over time and delivered on your realm's calendar.
 
-You can also propose a conflict with another player's nation (they're notified and it's posted as news) or resolve a conflict with a computer-run nation.
+## Threats
 
-## Internal Stability
+Your neighbours and the threats you face, worked out from their strength against yours, your relations and any conflicts.
+
+## Operations
+
+Plan and track operations such as peacekeeping, defense pacts, blockades, interventions and training, and propose or answer conflicts with other nations. Deployed branches wear their equipment faster; a training exercise leaves them better trained. Operation durations and windows run on your realm's clock, so a paused realm's operations wait.
+
+## Internal stability
 
 Your stability score and what moves it. See [Internal Stability](/help/defense/stability).
 
 ## Good to know
 
-- Defense actions are not yet logged to your nation's change log the way directives and issues are.
-- Operations and conflicts don't currently change your GDP.
+- Other nations see only your public order of battle (branch names, rough headcounts, doctrine and visible alert), not your readiness, equipment or budget.
 - A defense [directive](/help/mycountry/executive) raises stability without needing Premium.

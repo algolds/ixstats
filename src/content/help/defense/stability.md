@@ -3,7 +3,7 @@ title: Internal Stability
 description: Your stability score and what moves it.
 badge: Defense
 prevHref: /help/defense/equipment
-prevLabel: The Equipment Catalog
+prevLabel: Procurement and the Catalog
 ---
 
 ## What stability is

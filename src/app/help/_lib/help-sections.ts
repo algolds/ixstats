@@ -311,16 +311,23 @@ export const helpSections: HelpSection[] = [
       {
         id: "mycountry-defense",
         title: "Defense & Security",
-        description: "Branches, threats, forces, operations and internal stability.",
+        description: "The Defense console: overview, levers, branches, procurement and operations.",
         path: "/help/mycountry/defense",
         tags: ["defense", "military", "premium", "operations"],
       },
       {
+        id: "forces",
+        title: "How Your Forces Are Built",
+        description: "How money becomes troops, equipment and readiness; C-levels, levers and mobilisation.",
+        path: "/help/defense/forces",
+        tags: ["defense", "readiness", "budget", "mobilisation", "military"],
+      },
+      {
         id: "equipment",
-        title: "The Equipment Catalog",
-        description: "Browse real-world aircraft, ships, vehicles and weapons for your forces.",
+        title: "Procurement and the Catalog",
+        description: "Order real-world aircraft, ships, vehicles and weapons, built at home or imported.",
         path: "/help/defense/equipment",
-        tags: ["defense", "equipment", "military"],
+        tags: ["defense", "equipment", "procurement", "military"],
       },
       {
         id: "stability",
