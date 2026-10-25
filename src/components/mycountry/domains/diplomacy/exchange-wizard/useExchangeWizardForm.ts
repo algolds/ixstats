@@ -2,7 +2,9 @@
 
 import React, { useMemo, useState } from "react";
 import { api } from "~/trpc/react";
-import { IxTime } from "~/lib/ixtime";
+import { useNationClock } from "~/hooks/useNationClock";
+import { realmDayStart } from "~/components/realms/RealmDayInput";
+import { toWireDate } from "./exchange-wizard-dates";
 import {
   WIZARD_EXCHANGE_TYPES,
   WIZARD_STEP_COUNT,
@@ -31,20 +33,20 @@ export function useExchangeWizardForm(hostCountry: WizardHostCountry) {
   // Country search
   const [countrySearch, setCountrySearch] = useState("");
 
-  // Get current IxTime as a date string for the calendar
-  const currentIxTimeDate = useMemo(() => {
-    const ixTime = IxTime.getCurrentIxTime();
-    const date = new Date(ixTime);
-    return date.toISOString().split("T")[0]; // YYYY-MM-DD format
-  }, []);
+  // Today on the host nation's realm clock, as the server's YYYY-MM-DD ("" while the clock loads).
+  const clock = useNationClock();
+  const todayDate = useMemo(
+    () => (clock ? toWireDate(realmDayStart(clock.now(), clock.calendar)) : ""),
+    [clock]
+  );
 
-  // Initialize start date to current IxTime if empty
+  // Initialize start date to today if empty
   React.useEffect(() => {
-    if (!startDate) {
+    if (!startDate && todayDate) {
       // oxlint-disable-next-line
-      setStartDate(currentIxTimeDate);
+      setStartDate(todayDate);
     }
-  }, [currentIxTimeDate, startDate]);
+  }, [todayDate, startDate]);
 
   // Fetch countries for selection
   const { data: countriesData, isLoading: isLoadingCountries } = api.countries.getAll.useQuery({
@@ -134,7 +136,8 @@ export function useExchangeWizardForm(hostCountry: WizardHostCountry) {
     setMaxParticipants,
     countrySearch,
     setCountrySearch,
-    currentIxTimeDate,
+    todayDate,
+    calendar: clock?.calendar ?? null,
     isLoadingCountries,
     narrativePlaceholder,
     selectedCountry,

@@ -75,7 +75,8 @@ export function CulturalExchangeWizard({
             onStartDateChange={form.setStartDate}
             endDate={data.endDate}
             onEndDateChange={form.setEndDate}
-            currentIxTimeDate={form.currentIxTimeDate}
+            todayDate={form.todayDate}
+            calendar={form.calendar}
             maxParticipants={data.maxParticipants}
             onMaxParticipantsChange={form.setMaxParticipants}
             isPublic={data.isPublic}

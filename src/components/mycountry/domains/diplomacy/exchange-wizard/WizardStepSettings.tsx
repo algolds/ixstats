@@ -5,13 +5,20 @@ import { Calendar, Eye, EyeClosed, Group } from "iconoir-react";
 import { Input } from "~/components/ui/input";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
+import { Skeleton } from "~/components/ui/skeleton";
+import { RealmDayInput } from "~/components/realms/RealmDayInput";
+import { formatRealmDate, type RealmCalendar } from "~/lib/realms/realm-clock";
+import { fromWireDate, toWireDate } from "./exchange-wizard-dates";
 
 interface WizardStepSettingsProps {
   startDate: string;
   onStartDateChange: (value: string) => void;
   endDate: string;
   onEndDateChange: (value: string) => void;
-  currentIxTimeDate: string;
+  /** Today on the host nation's realm clock (`YYYY-MM-DD`). */
+  todayDate: string;
+  /** The host nation's realm calendar; null while its clock loads. */
+  calendar: RealmCalendar | null;
   maxParticipants: number;
   onMaxParticipantsChange: (value: number) => void;
   isPublic: boolean;
@@ -24,12 +31,14 @@ export const WizardStepSettings = React.memo(function WizardStepSettings({
   onStartDateChange,
   endDate,
   onEndDateChange,
-  currentIxTimeDate,
+  todayDate,
+  calendar,
   maxParticipants,
   onMaxParticipantsChange,
   isPublic,
   onIsPublicChange,
 }: WizardStepSettingsProps) {
+  const today = fromWireDate(todayDate);
   return (
     <div className="space-y-4">
       <div>
@@ -43,37 +52,39 @@ export const WizardStepSettings = React.memo(function WizardStepSettings({
         <div className="space-y-2">
           <Label htmlFor="startDate" className="text-label flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            Start Date (IxTime) *
+            Start date *
           </Label>
-          <Input
-            id="startDate"
-            type="date"
-            value={startDate}
-            min={currentIxTimeDate}
-            onChange={(e) => onStartDateChange(e.target.value)}
-          />
+          {calendar ? (
+            <RealmDayInput
+              id="startDate"
+              calendar={calendar}
+              value={fromWireDate(startDate)}
+              min={today}
+              onChange={(ms) => onStartDateChange(toWireDate(ms))}
+            />
+          ) : (
+            <Skeleton className="h-9 w-full" />
+          )}
           <p className="text-label-secondary text-footnote">
-            Today in IxTime:{" "}
-            {new Date(currentIxTimeDate).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-              timeZone: "UTC",
-            })}
+            Today: {calendar && today !== null ? formatRealmDate(today, calendar) : "–"}
           </p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="endDate" className="text-label flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            End Date (IxTime) *
+            End date *
           </Label>
-          <Input
-            id="endDate"
-            type="date"
-            value={endDate}
-            min={startDate || currentIxTimeDate}
-            onChange={(e) => onEndDateChange(e.target.value)}
-          />
+          {calendar ? (
+            <RealmDayInput
+              id="endDate"
+              calendar={calendar}
+              value={fromWireDate(endDate)}
+              min={fromWireDate(startDate) ?? today}
+              onChange={(ms) => onEndDateChange(toWireDate(ms))}
+            />
+          ) : (
+            <Skeleton className="h-9 w-full" />
+          )}
           <p className="text-label-secondary text-footnote">Must be after start date</p>
         </div>
       </div>

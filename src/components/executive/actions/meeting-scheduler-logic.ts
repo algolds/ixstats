@@ -1,4 +1,4 @@
-import { parseRealmDate, type RealmCalendar } from "~/lib/realms/realm-clock";
+import type { RealmCalendar } from "~/lib/realms/realm-clock";
 import type { IntentTemplate } from "./meeting-scheduler-types";
 
 export type TimePreset = "immediately" | "tomorrow" | "custom";
@@ -34,19 +34,8 @@ export function presetScheduledTime(
   return preset === "tomorrow" ? now + DAY_MS : nineAmOn(now + DAY_MS, calendar);
 }
 
-/** `YYYY-MM-DD` of the (Gregorian) calendar day a clock time falls on, for a date input. */
-export const toDateInputValue = (ms: number, calendar: RealmCalendar) =>
-  new Date(ms + calendar.calendarOffsetMs).toISOString().slice(0, 10);
-
-/** A picked `YYYY-MM-DD` calendar day, scheduled for 09:00, as clock time. */
-export const fromDateInputValue = (value: string, calendar: RealmCalendar) =>
-  Date.parse(`${value}T09:00:00Z`) - calendar.calendarOffsetMs;
-
-/** A typed date of a custom calendar ("14 Frostfall 812"), at 09:00, or null when it is no date of it. */
-export function fromRealmDateText(text: string, calendar: RealmCalendar): number | null {
-  const start = parseRealmDate(text, calendar);
-  return start === null ? null : start + NINE_AM_MS;
-}
+/** A picked calendar day (its start, as clock time), held at 09:00. */
+export const atNineAm = (dayStartClockMs: number) => dayStartClockMs + NINE_AM_MS;
 
 type RoleHolder = Pick<RosterOfficial, "title" | "role">;
 
