@@ -60,4 +60,23 @@ describe("Discord links on the app URL", () => {
     expect(embed?.author.icon_url).toBe("https://ixwiki.com/projects/ixstates/u/ana.png");
     expect(embed?.image.url).toBe("https://ixwiki.com/projects/ixstates/images/discord/a.png");
   });
+
+  it("an upload's root path (stored without the base path) gets the base path once, in media and the author image", () => {
+    const embeds = formatThinkPagesEmbed(
+      { id: "p2", content: "Pictures", ixTimeTimestamp: "2026-10-25T00:00:00.000Z" },
+      {
+        displayName: "Ana",
+        username: "ana",
+        verified: false,
+        profileImageUrl: "/images/uploads/ana.png",
+      },
+      ["/images/uploads/a.png", "/images/uploads/b.png", "https://cdn.example/c.png"]
+    ) as Array<{ author?: { icon_url: string }; image: { url: string } }>;
+    expect(embeds[0]?.author?.icon_url).toBe(`${APP}/images/uploads/ana.png`);
+    expect(embeds.map((embed) => embed.image.url)).toEqual([
+      `${APP}/images/uploads/a.png`,
+      `${APP}/images/uploads/b.png`,
+      "https://cdn.example/c.png",
+    ]);
+  });
 });

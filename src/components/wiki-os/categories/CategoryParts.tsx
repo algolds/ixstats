@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 import { Page as FileText, Folder, ArrowLeft } from "iconoir-react";
+import { assetUrl } from "~/lib/base-path";
 
 export interface CategoryMember {
   title: string;
@@ -142,7 +143,8 @@ export function CategoryPageCard({
   flagUrl?: string | null;
   detail?: string | null;
 }) {
-  const displayImage = imageUrl || flagUrl;
+  // Uploaded flags and proxied images are root paths stored without the base path.
+  const displayImage = assetUrl(imageUrl || flagUrl);
   const isFlag = !imageUrl && !!flagUrl;
 
   return (

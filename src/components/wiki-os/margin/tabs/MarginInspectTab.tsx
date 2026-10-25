@@ -17,6 +17,7 @@ import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { formatCompact } from "~/lib/format/compact";
 import { ixstatesHref } from "~/lib/system/wikios-standalone";
+import { assetUrl } from "~/lib/base-path";
 
 interface MarginInspectTabProps {
   articleTitle: string;
@@ -181,7 +182,7 @@ export function MarginInspectTab({
             <div className="flex min-w-0 items-center gap-2">
               {matchedCountry.flagUrl ? (
                 <img
-                  src={matchedCountry.flagUrl}
+                  src={assetUrl(matchedCountry.flagUrl) ?? undefined}
                   alt={matchedCountry.name}
                   className="rounded-control-sm border-separator h-6 w-8 border object-cover"
                 />

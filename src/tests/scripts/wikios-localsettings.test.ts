@@ -1,13 +1,14 @@
 /** @jest-environment node */
 // Workstream B1: the classic MediaWiki snippet that production loads at launch. There is no PHP on the dev box,
 // so these guards read the snippet and the test wiki's files as text. Loading the snippet must never move classic
-// (article path, canonical URL) unless WIKIOS_TAKEOVER is defined, and the sync webhook goes to the URL in the
+// (article path, canonical URL) unless WIKIOS_TAKEOVER is defined as true, and the sync webhook goes to the URL in the
 // pool environment, never to a hard-coded address.
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 const SNIPPET = "scripts/ops/mediawiki/wikios-localsettings.php";
-const TAKEOVER_IF = "if ( defined( 'WIKIOS_TAKEOVER' ) )";
+// `define( 'WIKIOS_TAKEOVER', false )` must not turn the takeover on: only the constant set to true does.
+const TAKEOVER_IF = "if ( defined( 'WIKIOS_TAKEOVER' ) && WIKIOS_TAKEOVER === true )";
 
 const read = (file: string): string => readFileSync(file, "utf8");
 
@@ -103,6 +104,12 @@ describe("wikios-localsettings.php", () => {
     expect(canonical.length).toBeGreaterThan(0);
     for (const at of [...assignments, ...canonical, ...canonicalHook])
       expect(inTakeover(at)).toBe(true);
+  });
+
+  it("tests the takeover only as the constant defined and true, never as merely defined", () => {
+    const checks = codeOffsetsOf("defined( 'WIKIOS_TAKEOVER' )");
+    expect(checks.length).toBeGreaterThan(0);
+    for (const at of checks) expect(php.startsWith(TAKEOVER_IF, at - "if ( ".length)).toBe(true);
   });
 
   it("no file names WIKIOS_KEEP_WIKI_ARTICLE_PATH", () => {

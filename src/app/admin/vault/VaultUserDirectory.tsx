@@ -45,6 +45,7 @@ import {
   TableCell,
 } from "~/components/ui/table";
 import { PlayerCardsSheet, type PlayerRef } from "./PlayerCardsSheet";
+import { assetUrl } from "~/lib/base-path";
 
 type VaultUser = RouterOutputs["vault"]["adminListVaults"]["users"][number];
 
@@ -236,7 +237,7 @@ export function VaultUserDirectory() {
           <div className="flex items-center gap-2">
             {user.country?.flag && (
               <img
-                src={user.country.flag}
+                src={assetUrl(user.country.flag) ?? undefined}
                 alt=""
                 className="rounded-control-sm h-4 w-6 shrink-0 object-cover"
               />
@@ -422,7 +423,7 @@ export function VaultUserDirectory() {
                 <div className="mt-0.5 flex items-center gap-2">
                   {selectedUser.country?.flag && (
                     <img
-                      src={selectedUser.country.flag}
+                      src={assetUrl(selectedUser.country.flag) ?? undefined}
                       alt=""
                       className="rounded-control-sm h-4 w-6 shrink-0 object-cover"
                     />
@@ -550,7 +551,7 @@ export function VaultUserDirectory() {
                 <div className="mt-0.5 flex items-center gap-2">
                   {selectedUser.country?.flag && (
                     <img
-                      src={selectedUser.country.flag}
+                      src={assetUrl(selectedUser.country.flag) ?? undefined}
                       alt=""
                       className="rounded-control-sm h-4 w-6"
                     />
@@ -663,7 +664,7 @@ export function VaultUserDirectory() {
                 <div className="mt-0.5 flex items-center gap-2">
                   {selectedUser.country?.flag && (
                     <img
-                      src={selectedUser.country.flag}
+                      src={assetUrl(selectedUser.country.flag) ?? undefined}
                       alt=""
                       className="rounded-control-sm h-4 w-6 shrink-0 object-cover"
                     />

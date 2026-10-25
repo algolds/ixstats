@@ -124,8 +124,9 @@ export async function getMirrorStatus(now = new Date()): Promise<MirrorStatus> {
   };
 }
 
-/** How the missing settings name a WIKIOS_MEDIAWIKI_API on the public wiki's host. */
-const PUBLIC_WRITE_URL = "WIKIOS_MEDIAWIKI_API (it points at the public wiki)";
+/** How the missing settings name a WIKIOS_MEDIAWIKI_API on the public wiki's host or on IxStates itself. */
+const PUBLIC_WRITE_URL =
+  "WIKIOS_MEDIAWIKI_API (it points at the public wiki or at IxStates itself)";
 
 /** The settings the mirror needs before WikiOS may take edits; empty when it can write to MediaWiki. */
 export function mirrorMissingSettings(): string[] {

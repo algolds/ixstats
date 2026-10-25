@@ -165,7 +165,7 @@ function mirrorWarning(status: {
   if (status.loopbackMissing)
     return "The mirror waits for WIKIOS_MEDIAWIKI_INTERNAL_URL, the private render engine: jobs accumulate and nothing is lost.";
   if (status.publicWriteUrl)
-    return "WIKIOS_MEDIAWIKI_API points at the public wiki: the mirror waits for a private write URL, jobs accumulate and nothing is lost.";
+    return "WIKIOS_MEDIAWIKI_API points at the public wiki or at IxStates itself: the mirror waits for a private write URL, jobs accumulate and nothing is lost.";
   return "No mirror bot account is configured (WIKIOS_MEDIAWIKI_BOT_USER and WIKIOS_MEDIAWIKI_BOT_TOKEN): every job fails.";
 }
 

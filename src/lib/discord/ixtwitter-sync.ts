@@ -19,7 +19,7 @@ import { buildDiscordPollObject } from "./poll";
 import { ordinal, parseSportsBulletin, type SportsBulletinData } from "~/lib/sports/feed-bulletins";
 import { cleanPostContent } from "./thinkpages-feed";
 import { htmlToDiscordMarkdown } from "./markdown";
-import { appOrigin, appUrl } from "~/lib/app-url";
+import { appUrl } from "~/lib/app-url";
 import { withBasePath } from "~/lib/base-path";
 import { APP_TINTS } from "~/lib/design/tokens";
 
@@ -680,7 +680,8 @@ const SPORT_EMBED_COLORS: Record<string, number> = {
 
 /** The embed plus one image-only embed per extra media URL (Discord shows several images that way). */
 function withMedia(embed: Record<string, any>, mediaUrls?: string[]): any[] {
-  const urls = (mediaUrls ?? []).map((u) => (u.startsWith("http") ? u : `${appOrigin()}${u}`));
+  // appUrl keeps an absolute URL and gives a root path the base path once (uploads are stored without it).
+  const urls = (mediaUrls ?? []).map((u) => appUrl(u));
   if (urls.length === 0) return [embed];
   embed.image = { url: urls[0] };
   return [embed, ...urls.slice(1).map((image) => ({ url: embed.url, image: { url: image } }))];
@@ -740,9 +741,7 @@ export function formatThinkPagesEmbed(
   const author = {
     name: `${account.displayName} (@${account.username})${account.verified ? " \u2705" : ""}`,
     icon_url: account.profileImageUrl
-      ? account.profileImageUrl.startsWith("http")
-        ? account.profileImageUrl
-        : `${appOrigin()}${account.profileImageUrl}`
+      ? appUrl(account.profileImageUrl)
       : "https://via.placeholder.com/150/4F46E5/FFFFFF?text=User",
     url,
   };

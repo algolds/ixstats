@@ -327,4 +327,15 @@ describe("generateMetadata (plan 412 step 2)", () => {
     expect(history.alternates?.canonical).toBe("https://ixwiki.com/wiki/Aurelia");
     expect(history.robots).toMatchObject({ index: false });
   });
+
+  it("the Main Page's canonical is classic's Main Page, so it never duplicates it; its other views are not indexed", async () => {
+    const meta = await metadata(["Main_Page"]);
+
+    expect(meta.alternates?.canonical).toBe("https://ixwiki.com/wiki/Main_Page");
+    expect(meta.robots).toBeUndefined();
+    expect(mockArticlePrefetch).not.toHaveBeenCalled(); // the Main Page has its own view, not an article read
+    const history = await metadata(["Main_Page"], { action: "history" });
+    expect(history.alternates?.canonical).toBe("https://ixwiki.com/wiki/Main_Page");
+    expect(history.robots).toMatchObject({ index: false });
+  });
 });

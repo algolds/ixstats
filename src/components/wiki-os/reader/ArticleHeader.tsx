@@ -16,6 +16,7 @@ import { CategoryBreadcrumb } from "./CategoryBreadcrumb";
 import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
 import { detectMediaType } from "~/lib/wiki-os/transformers/media-theme";
 import { heroImage } from "~/lib/wiki-os/transformers/image-url";
+import { assetUrl } from "~/lib/base-path";
 import type { FlagColors } from "~/lib/flags/flag-color-extractor";
 import { TocButton } from "./ArticleToc";
 import { EditorialMastheadHeader } from "./headers/EditorialMastheadHeader";
@@ -144,12 +145,14 @@ export function WikiOSHeader({
   tocLength = 0,
   onTocClick,
 }: ArticleHeaderProps) {
-  const rawBackdropUrl: string | null =
+  // An uploaded flag or a proxied image is a root path stored without the base path: it gets it here.
+  const rawBackdropUrl = assetUrl(
     typeof countryData?.flagUrl === "string"
       ? countryData.flagUrl
       : typeof featuredImageUrl === "string"
         ? featuredImageUrl
-        : null;
+        : null
+  );
 
   // The hero's picture: a thumbnail 1280 px wide of a larger photo (never the full file, which
   // was the page's biggest download), else the file itself; and its shape, known before any pixel.

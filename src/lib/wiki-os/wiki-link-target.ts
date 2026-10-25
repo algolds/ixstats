@@ -7,7 +7,8 @@
 //     at display, `withAppHrefs`); its wiki is `?source=`, read as the reader reads it (`parseWikiSource`);
 //   - a legacy `/w/<title>`, IxWiki's, unless it names one of the wiki's entry points (`/w/api.php`);
 //   - an absolute (or protocol-relative) http(s) link to `/wiki/<title>` on IxWiki's public host or a sister
-//     reader's origin (each with its `www.` alias; iiwiki also as `iiwiki.us`).
+//     reader's origin (each with its `www.` alias; iiwiki also as `iiwiki.us`);
+//   - an absolute IxStates permalink on IxWiki's host under the base path, read as an app link (`permalinkTarget`).
 // Any other first segment is not the base path (`/other/wiki/X` is no link). A title WikiOS has no preview for
 // (`NO_PREVIEW_TITLE`), an empty one or a malformed percent escape gives null; no href throws.
 
@@ -85,6 +86,18 @@ function absoluteTarget(url: URL): WikiLinkTarget | null {
   return wiki ? titled(url.pathname.slice("/wiki/".length), wiki) : null;
 }
 
+/**
+ * An absolute IxStates permalink (`https://ixwiki.com/projects/ixstates/wiki/X`, or its `/w/` form), as feeds and
+ * Discord emit them (`appUrl`): IxStates is served on IxWiki's host under the base path, so it reads as an app link,
+ * `?source=` included. Null without a base path, where the prefix would be just another first segment.
+ */
+function permalinkTarget(url: URL, basePath: string): WikiLinkTarget | null {
+  if (!basePath || (url.protocol !== "https:" && url.protocol !== "http:")) return null;
+  // appTarget then needs /wiki/ or /w/ right after the base path, so it counts only at a segment boundary.
+  if (!url.pathname.startsWith(basePath) || !isMediaWikiUrl(url.origin)) return null;
+  return appTarget(url, basePath);
+}
+
 /** The article a hovered link's `href` points at, under the deployment's `basePath` ("" for none), or null. */
 export function wikiLinkTarget(href: string, basePath: string): WikiLinkTarget | null {
   const url = parseHref(href);
@@ -92,6 +105,6 @@ export function wikiLinkTarget(href: string, basePath: string): WikiLinkTarget |
   const target =
     href.startsWith("/") && url.host === RELATIVE_HOST
       ? appTarget(url, basePath)
-      : absoluteTarget(url);
+      : (permalinkTarget(url, basePath) ?? absoluteTarget(url));
   return target && !NO_PREVIEW_TITLE.test(target.title) ? target : null;
 }

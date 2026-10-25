@@ -9,6 +9,7 @@ import { Button } from "~/components/ui/button";
 import type { CulturalExchange } from "./cultural-exchange-types";
 import { EXCHANGE_TYPES, STATUS_STYLES } from "./cultural-exchange-types";
 import { Card } from "~/components/ui/card";
+import { assetUrl } from "~/lib/base-path";
 
 interface ExchangeCardProps {
   exchange: CulturalExchange;
@@ -40,7 +41,11 @@ function FlagTile({
       title={name}
     >
       {flagUrl ? (
-        <img src={flagUrl} alt={`${name} flag`} className="h-full w-full object-cover" />
+        <img
+          src={assetUrl(flagUrl) ?? undefined}
+          alt={`${name} flag`}
+          className="h-full w-full object-cover"
+        />
       ) : (
         <span className="text-label-secondary text-headline flex h-full w-full items-center justify-center">
           {name.charAt(0)}

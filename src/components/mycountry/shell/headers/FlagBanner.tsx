@@ -1,7 +1,9 @@
 "use client";
 
+import { assetUrl } from "~/lib/base-path";
+
 interface FlagBannerProps {
-  /** The country's flag; nothing renders without one. */
+  /** The country's flag (an upload's root path gets the base path); nothing renders without one. */
   src: string | null | undefined;
   /**
    * The image failed to load. The owner decides what that means (the MyCountry header drops the
@@ -20,10 +22,11 @@ interface FlagBannerProps {
  * otherwise show only its middle stripe. Biasing up keeps cantons, top bands and emblems.
  */
 export function FlagBanner({ src, onError }: FlagBannerProps) {
-  if (!src) return null;
+  const resolved = assetUrl(src);
+  if (!resolved) return null;
   return (
     <img
-      src={src}
+      src={resolved}
       alt=""
       decoding="async"
       onError={onError}

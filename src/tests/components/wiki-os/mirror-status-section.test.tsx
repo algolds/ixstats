@@ -45,7 +45,7 @@ const LOOPBACK =
   "The mirror waits for WIKIOS_MEDIAWIKI_INTERNAL_URL, the private render engine: jobs accumulate and nothing is lost.";
 
 const PUBLIC =
-  "WIKIOS_MEDIAWIKI_API points at the public wiki: the mirror waits for a private write URL, jobs accumulate and nothing is lost.";
+  "WIKIOS_MEDIAWIKI_API points at the public wiki or at IxStates itself: the mirror waits for a private write URL, jobs accumulate and nothing is lost.";
 
 describe("the mirror outbox warning", () => {
   it("names WIKIOS_MEDIAWIKI_INTERNAL_URL when the loopback is missing", () => {

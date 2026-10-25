@@ -24,6 +24,7 @@ import { SettingsGroup, SettingsRow, SettingsSelectRow } from "../primitives";
 import { Input } from "~/components/ui/input";
 import { getCountryPath } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
+import { assetUrl } from "~/lib/base-path";
 
 interface CountryNationPanelProps {
   country: {
@@ -190,7 +191,7 @@ export function CountryNationPanel({
                 <div className="flex flex-col items-center gap-2">
                   <div className="border-border/60 bg-muted/60 relative h-16 w-24 overflow-hidden rounded-lg border shadow-xs">
                     <img
-                      src={uploadedFlagUrl}
+                      src={assetUrl(uploadedFlagUrl) ?? undefined}
                       alt="Flag preview"
                       className="h-full w-full object-cover"
                     />

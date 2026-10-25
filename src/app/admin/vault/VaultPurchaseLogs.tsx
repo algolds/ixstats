@@ -6,6 +6,7 @@ import { Badge } from "~/components/ui/badge";
 import { Cart as ShoppingCart, Calendar } from "iconoir-react";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { FacetDataTable, type FacetColumn } from "~/components/ui/data-table";
+import { assetUrl } from "~/lib/base-path";
 
 interface PurchaseLog {
   id: string;
@@ -36,7 +37,7 @@ export function VaultPurchaseLogs() {
           <div className="flex items-center gap-2">
             {log.user.flag && (
               <img
-                src={log.user.flag}
+                src={assetUrl(log.user.flag) ?? undefined}
                 alt=""
                 className="rounded-control-sm h-4 w-6 shrink-0 object-cover"
               />

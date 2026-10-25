@@ -17,6 +17,7 @@ import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
 import type { EditorFeatureDetails, PropertiesPanelCountry } from "../types/editor-state";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { Card } from "~/components/ui/card";
+import { assetUrl } from "~/lib/base-path";
 
 export interface WorldCountryProfileProps {
   mapSelectedCountry: SelectedCountry;
@@ -224,7 +225,7 @@ function DatabaseRecordCard({
       <div className="space-y-1">
         {details.flagUrl && (
           <img
-            src={details.flagUrl}
+            src={assetUrl(details.flagUrl) ?? undefined}
             alt={`${countryName} flag`}
             className="border-separator rounded-control shadow-card mb-2 aspect-video w-full border object-cover"
           />

@@ -2,6 +2,7 @@
 
 import { Globe, MapPin, Hexagon, Bank as Landmark } from "iconoir-react";
 import { useFlag } from "~/hooks/useUnifiedFlags";
+import { assetUrl } from "~/lib/base-path";
 
 export const TYPE_META: Record<string, { icon: typeof Globe; label: string }> = {
   country: { icon: Globe, label: "Countries" },
@@ -19,7 +20,7 @@ export function FlagIcon({ name, realm }: { name: string; realm?: string }) {
   if (!flagUrl) return null;
   return (
     <img
-      src={flagUrl}
+      src={assetUrl(flagUrl) ?? undefined}
       alt=""
       className="border-separator h-3.5 w-5 shrink-0 rounded-xs border object-cover"
     />

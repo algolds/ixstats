@@ -2,6 +2,7 @@
 
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { assetUrl } from "~/lib/base-path";
 
 interface NationSwitcherProps {
   /** Called after a successful switch (e.g. to close the menu the switcher sits in). */
@@ -47,7 +48,7 @@ export function NationSwitcher({ onSwitched, className }: NationSwitcherProps) {
               >
                 {nation.flag ? (
                   <img
-                    src={nation.flag}
+                    src={assetUrl(nation.flag) ?? undefined}
                     alt=""
                     className="border-separator h-4 w-6 shrink-0 rounded-sm border object-cover"
                   />

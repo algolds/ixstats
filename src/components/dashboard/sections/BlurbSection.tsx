@@ -22,6 +22,7 @@ import { useUser } from "~/context/auth-context";
 import { cn } from "~/lib/utils";
 import { timeAgo as formatRelativeTime } from "~/lib/format/compact";
 import { Card } from "~/components/ui/card";
+import { assetUrl } from "~/lib/base-path";
 
 export function BlurbSection() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -211,7 +212,11 @@ function BlurbResponseCard({ response: r }: { response: any }) {
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           {countryFlag ? (
-            <img src={countryFlag} alt="" className="h-3.5 w-5 rounded-xs object-cover" />
+            <img
+              src={assetUrl(countryFlag) ?? undefined}
+              alt=""
+              className="h-3.5 w-5 rounded-xs object-cover"
+            />
           ) : (
             <UnifiedCountryFlag
               showTooltip={false}

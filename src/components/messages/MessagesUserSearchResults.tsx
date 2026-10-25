@@ -2,6 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { assetUrl } from "~/lib/base-path";
 
 interface MessagesUserSearchResultsProps {
   query: string;
@@ -45,7 +46,7 @@ export function MessagesUserSearchResults({
             disabled={disabled}
             leading={
               <Avatar className="size-8">
-                <AvatarImage src={user.country?.flag ?? undefined} />
+                <AvatarImage src={assetUrl(user.country?.flag) ?? undefined} />
                 <AvatarFallback className="bg-fill-3 text-caption text-label-secondary">
                   {(user.country?.name ?? user.displayName ?? "?")
                     .split(" ")

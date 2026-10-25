@@ -177,9 +177,10 @@ $wgHooks['PageSaveComplete'][] = static function (
 
 // ---------------------------------------------------------------------------------------------
 // The deferred ixwiki.com takeover only. Nothing in the IxStates launch defines WIKIOS_TAKEOVER, so
-// loading this file leaves classic's article path and canonical URLs as they are.
+// loading this file leaves classic's article path and canonical URLs as they are. Only the constant set
+// to true turns it on: define( 'WIKIOS_TAKEOVER', false ) leaves it off.
 // ---------------------------------------------------------------------------------------------
-if ( defined( 'WIKIOS_TAKEOVER' ) ) {
+if ( defined( 'WIKIOS_TAKEOVER' ) && WIKIOS_TAKEOVER === true ) {
 	// 3. Classic MediaWiki moves to /classic/ (nginx: `location ^~ /classic/` in wikios-takeover.conf).
 	//    $wgScriptPath stays '' and $wgServer stays 'https://ixwiki.com'.
 	$wgArticlePath = '/classic/$1';

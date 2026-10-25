@@ -13,7 +13,7 @@ import type {
 import { RealmMapFace } from "~/components/realms/RealmMapFace";
 import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
 import { SharedElement } from "~/components/ui/view-transition";
-import { getMapGlyphsUrl } from "~/lib/base-path";
+import { getMapGlyphsUrl, assetUrl } from "~/lib/base-path";
 import type { CardRealmBadge } from "~/lib/cards/face/types";
 import { loadMaplibre } from "~/lib/maps/load-maplibre";
 import { MAP_SYMBOL_FONTS } from "~/lib/maps/map-config";
@@ -329,7 +329,7 @@ function HoverCard({
       <span className="text-label text-footnote flex items-center gap-2 font-medium">
         {nation.flag && (
           <img
-            src={nation.flag}
+            src={assetUrl(nation.flag) ?? undefined}
             alt=""
             referrerPolicy="no-referrer"
             className="h-3 w-5 shrink-0 rounded-sm object-cover"

@@ -8,6 +8,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
+import { assetUrl } from "~/lib/base-path";
 
 type LinkedArticle = { title: string; url: string };
 
@@ -22,7 +23,11 @@ function ResponseCard({ response: r }: { response: any }) {
     >
       <div className="mb-2 flex items-center gap-2">
         {r.country?.flag && (
-          <img src={r.country.flag} alt="" className="rounded-control-sm h-3.5 w-5 object-cover" />
+          <img
+            src={assetUrl(r.country.flag) ?? undefined}
+            alt=""
+            className="rounded-control-sm h-3.5 w-5 object-cover"
+          />
         )}
         <Link
           href={`/wiki/${encodeURIComponent((r.country?.name ?? "").replace(/ /g, "_"))}`}

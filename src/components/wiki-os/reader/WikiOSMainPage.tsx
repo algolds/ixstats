@@ -13,6 +13,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { WikiHeroMaster, type WikiHeroVariant } from "./hero";
 import { EditorialMainPageContent, SculptedMainPageContent } from "./main";
+import { assetUrl } from "~/lib/base-path";
 
 const STORAGE_KEY = "wikios:heroVariant";
 /** The page's data is built once a minute on the server. */
@@ -87,7 +88,7 @@ function BlurbPromptModal({
               <div className="mb-2 flex items-center gap-2">
                 {r.country?.flag && (
                   <img
-                    src={r.country.flag}
+                    src={assetUrl(r.country.flag) ?? undefined}
                     alt=""
                     className="rounded-control-sm h-3.5 w-5 object-cover"
                   />

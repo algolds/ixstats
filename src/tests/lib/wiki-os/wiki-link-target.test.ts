@@ -66,6 +66,35 @@ describe("wikiLinkTarget", () => {
     expect(wikiLinkTarget("https://www.ixwiki.com/wiki/Foo?oldid=12#Top", BASE)).toEqual(foo);
   });
 
+  it("an absolute IxStates permalink on IxWiki's host is IxWiki's article, with its ?source= (feeds, Discord)", () => {
+    const foo = { title: "Foo", wiki: "ixwiki" };
+    expect(wikiLinkTarget(`https://ixwiki.com${BASE}/wiki/Foo`, BASE)).toEqual(foo);
+    expect(wikiLinkTarget(`https://www.ixwiki.com${BASE}/wiki/Foo#History`, BASE)).toEqual(foo);
+    expect(wikiLinkTarget(`//ixwiki.com${BASE}/wiki/Foo`, BASE)).toEqual(foo);
+    expect(wikiLinkTarget(`https://ixwiki.com${BASE}/w/Foo_Bar`, BASE)).toEqual({
+      title: "Foo Bar",
+      wiki: "ixwiki",
+    });
+    expect(wikiLinkTarget(`https://ixwiki.com${BASE}/wiki/Foo?source=iiwiki`, BASE)).toEqual({
+      title: "Foo",
+      wiki: "iiwiki",
+    });
+    // its entry points, other app pages, a prefix that is not at a segment boundary and another host are not
+    expect(wikiLinkTarget(`https://ixwiki.com${BASE}/w/api.php`, BASE)).toBeNull();
+    expect(wikiLinkTarget(`https://ixwiki.com${BASE}/dashboard/accounts`, BASE)).toBeNull();
+    expect(wikiLinkTarget(`https://ixwiki.com${BASE}x/wiki/Foo`, BASE)).toBeNull();
+    expect(wikiLinkTarget(`https://example.com${BASE}/wiki/Foo`, BASE)).toBeNull();
+    expect(wikiLinkTarget(`https://iiwiki.com${BASE}/wiki/Foo`, BASE)).toBeNull();
+    expect(wikiLinkTarget(`ftp://ixwiki.com${BASE}/wiki/Foo`, BASE)).toBeNull();
+    // without a base path the prefix is just another first segment
+    expect(wikiLinkTarget(`https://ixwiki.com${BASE}/wiki/Foo`, "")).toBeNull();
+    // and with no base path an absolute IxWiki link stays classic's: its /w/ form and ?source= are not read
+    expect(wikiLinkTarget("https://ixwiki.com/w/Foo", "")).toBeNull();
+    expect(wikiLinkTarget("https://ixwiki.com/wiki/Foo?source=iiwiki", "")).toEqual(foo);
+    // nor is a bare classic link when there is a base path
+    expect(wikiLinkTarget("https://ixwiki.com/wiki/Foo?source=iiwiki", BASE)).toEqual(foo);
+  });
+
   it("another first segment is not the base path: /other/wiki/Foo is no link", () => {
     expect(wikiLinkTarget("/other/wiki/Foo", BASE)).toBeNull();
     expect(wikiLinkTarget("/other/wiki/Foo", "")).toBeNull();

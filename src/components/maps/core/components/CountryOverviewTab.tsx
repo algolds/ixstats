@@ -30,6 +30,7 @@ import {
   formatArea,
 } from "~/components/maps/core/hooks/useCountryInfoPanelState";
 import { Card } from "~/components/ui/card";
+import { assetUrl } from "~/lib/base-path";
 
 interface CountryOverviewTabProps {
   summary: any;
@@ -95,7 +96,9 @@ function CountryPill({
       className={flag || suffix ? "gap-1 rounded-full" : "rounded-full"}
       onClick={onClick}
     >
-      {flag && <img src={flag} alt="" className="h-3 w-4 rounded-xs object-cover" />}
+      {flag && (
+        <img src={assetUrl(flag) ?? undefined} alt="" className="h-3 w-4 rounded-xs object-cover" />
+      )}
       {name}
       {suffix}
     </Button>
@@ -129,7 +132,7 @@ function SovereignSection({
         >
           {sovereign.flag && (
             <img
-              src={sovereign.flag}
+              src={assetUrl(sovereign.flag) ?? undefined}
               alt=""
               className="border-separator h-3.5 w-5 rounded-xs border object-cover"
             />

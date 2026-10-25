@@ -18,6 +18,7 @@ import { useFlag } from "~/hooks/useUnifiedFlags";
 import type { CountryImageData } from "~/lib/media";
 import { cn } from "~/lib/utils";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
+import { assetUrl } from "~/lib/base-path";
 
 interface MetricGridItem {
   id: string;
@@ -98,7 +99,7 @@ function BackgroundLayer({ background }: { background: BackgroundImage }) {
           />
         ) : flagUrl ? (
           <img
-            src={flagUrl}
+            src={assetUrl(flagUrl) ?? undefined}
             alt="Flag Wash Background"
             className="h-full w-full object-cover opacity-15 blur-[24px] saturate-[0.35]"
           />

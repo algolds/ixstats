@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type CSSProperties } from "react";
+import { assetUrl } from "~/lib/base-path";
 import { cn } from "~/lib/utils/cn";
 
 /** Fades the circle out toward the card's content (left), so it never competes with the text. */
@@ -10,7 +11,7 @@ const FADE_LEFT: CSSProperties = {
 };
 
 interface FlagWatermarkProps {
-  /** Flag image; nothing renders without one (or when it fails to load). */
+  /** Flag image (an upload's root path gets the base path); nothing renders without one (or when it fails to load). */
   src: string | null | undefined;
   className?: string;
 }
@@ -22,7 +23,8 @@ interface FlagWatermarkProps {
  */
 export function FlagWatermark({ src, className }: FlagWatermarkProps) {
   const [failed, setFailed] = useState(false);
-  if (!src || failed) return null;
+  const resolved = assetUrl(src);
+  if (!resolved || failed) return null;
   return (
     <div
       aria-hidden="true"
@@ -34,7 +36,7 @@ export function FlagWatermark({ src, className }: FlagWatermarkProps) {
       )}
     >
       <img
-        src={src}
+        src={resolved}
         alt=""
         loading="lazy"
         decoding="async"

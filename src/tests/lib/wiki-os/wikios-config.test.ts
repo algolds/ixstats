@@ -63,6 +63,21 @@ describe("loopbackRendererMissing", () => {
     expect(loopbackRendererMissing({})).toBe(false);
   });
 
+  it("in production counts an internal URL on the public wiki host as missing", () => {
+    for (const url of [
+      "https://ixwiki.com/api.php",
+      "https://www.ixwiki.com/w/api.php",
+      "//ixwiki.com/api.php",
+    ]) {
+      expect(
+        loopbackRendererMissing({ NODE_ENV: "production", WIKIOS_MEDIAWIKI_INTERNAL_URL: url })
+      ).toBe(true);
+      expect(
+        loopbackRendererMissing({ NODE_ENV: "development", WIKIOS_MEDIAWIKI_INTERNAL_URL: url })
+      ).toBe(false);
+    }
+  });
+
   it("reads the environment at call time, not the configuration frozen at load", () => {
     jest.replaceProperty(process, "env", { ...process.env, NODE_ENV: "production", WIKIOS_MEDIAWIKI_INTERNAL_URL: "" });
     expect(loopbackRendererMissing()).toBe(true);
@@ -90,6 +105,71 @@ describe("mirrorWriteUrlMissing", () => {
       expect(mirrorWriteUrlMissing({ ...prod, WIKIOS_MEDIAWIKI_INTERNAL_URL: internal, WIKIOS_MEDIAWIKI_API: api })).toBe(true);
     }
     expect(mirrorWriteUrlProblem(prod)).toBe("WIKIOS_MEDIAWIKI_INTERNAL_URL");
+  });
+
+  it("in production refuses a write URL that points at IxStates itself: under its base path, or on its loopback port", () => {
+    const app = { ...prod, BASE_PATH: "/projects/ixstates", PORT: "3550" };
+    for (const api of [
+      "http://127.0.0.1:3550/projects/ixstates/w/api.php",
+      "http://10.0.0.5/projects/ixstates/w/api.php",
+      "http://127.0.0.1:3550/w/api.php",
+      "http://localhost:3550/api.php",
+      "http://[::1]:3550/api.php",
+    ]) {
+      expect(mirrorWriteUrlProblem({ ...app, WIKIOS_MEDIAWIKI_API: api })).toBe(
+        "WIKIOS_MEDIAWIKI_API"
+      );
+      expect(mirrorWriteUrlProblem({ ...app, WIKIOS_MEDIAWIKI_INTERNAL_URL: api })).toBe(
+        "WIKIOS_MEDIAWIKI_INTERNAL_URL"
+      );
+    }
+    // NEXT_PUBLIC_BASE_PATH counts too, and a production server without PORT listens on 3550 (start-production.sh)
+    expect(
+      mirrorWriteUrlProblem({
+        ...prod,
+        NEXT_PUBLIC_BASE_PATH: "/projects/ixstates",
+        WIKIOS_MEDIAWIKI_API: "http://x/projects/ixstates",
+      })
+    ).toBe("WIKIOS_MEDIAWIKI_API");
+    expect(
+      mirrorWriteUrlProblem({ ...prod, WIKIOS_MEDIAWIKI_API: "http://127.0.0.1:3550/api.php" })
+    ).toBe("WIKIOS_MEDIAWIKI_API");
+    // classic on its own loopback port, or a path that only starts like the base path, is not IxStates
+    for (const api of [
+      "http://127.0.0.1:8081/api.php",
+      "http://127.0.0.1:8081/w/api.php",
+      "http://10.0.0.5/projects/ixstates-classic/api.php",
+      "http://10.0.0.5:3550/api.php",
+    ]) {
+      expect(mirrorWriteUrlProblem({ ...app, WIKIOS_MEDIAWIKI_API: api })).toBeNull();
+    }
+    expect(
+      mirrorWriteUrlProblem({
+        ...app,
+        WIKIOS_MEDIAWIKI_INTERNAL_URL: "http://127.0.0.1:8081/api.php",
+      })
+    ).toBeNull();
+    expect(
+      mirrorWriteUrlProblem({
+        NODE_ENV: "development",
+        BASE_PATH: "/projects/ixstates",
+        WIKIOS_MEDIAWIKI_API: "http://127.0.0.1:3550/projects/ixstates/w/api.php",
+      })
+    ).toBeNull();
+  });
+
+  it("reads a base path written with a trailing slash, and an unparseable write URL is not IxStates", () => {
+    const trailing = { ...prod, BASE_PATH: "/projects/ixstates/" };
+    expect(
+      mirrorWriteUrlProblem({ ...trailing, WIKIOS_MEDIAWIKI_API: "http://10.0.0.5/projects/ixstates/w/api.php" })
+    ).toBe("WIKIOS_MEDIAWIKI_API");
+    expect(mirrorWriteUrlProblem({ ...trailing, WIKIOS_MEDIAWIKI_API: "http://[::1" })).toBeNull();
+    // PORT names the app's port when set
+    const port = { ...prod, PORT: "3600" };
+    expect(mirrorWriteUrlProblem({ ...port, WIKIOS_MEDIAWIKI_API: "http://127.0.0.1:3600/api.php" })).toBe(
+      "WIKIOS_MEDIAWIKI_API"
+    );
+    expect(mirrorWriteUrlProblem({ ...port, WIKIOS_MEDIAWIKI_API: "http://127.0.0.1:3550/api.php" })).toBeNull();
   });
 
   it("allows a private host or a container hostname, and the public host outside production", () => {

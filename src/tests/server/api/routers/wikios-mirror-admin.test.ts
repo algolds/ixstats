@@ -159,7 +159,7 @@ describe("getMirrorStatus", () => {
         publicWriteUrl: true,
       });
       expect(mirrorMissingSettings()).toContain(
-        "WIKIOS_MEDIAWIKI_API (it points at the public wiki)"
+        "WIKIOS_MEDIAWIKI_API (it points at the public wiki or at IxStates itself)"
       );
       expect(mirrorMissingSettings()).not.toContain("WIKIOS_MEDIAWIKI_INTERNAL_URL");
     } finally {
