@@ -3,12 +3,15 @@
  * run the mirror and the inbound sync against each other: pages with their revisions (text, author, time, parent),
  * recent changes and log events, files. It answers the reads the inbound sync and the mirror make (`prop=revisions` by
  * title or revid, `prop=imageinfo`, `list=recentchanges`, `list=logevents`) and the writes the mirror makes
- * (`action=import` of an export-0.11 file, `action=edit`, `action=upload`), as MediaWiki would:
+ * (`action=import` of an export-0.11 file, `action=edit`, `action=upload`, `action=move`, `action=delete`,
+ * `action=undelete`) and `prop=info` (with `redirects`), as MediaWiki would:
  *   - an import adds the revisions it carries (an older one goes into the history, not on top) and a null revision by
  *     the importing account, dated now; neither shows in recent changes (an import is a log entry there);
  *   - an edit by anyone is a new revision on top of the current one, and a recent change;
  *   - an upload stores the file's SHA-1 and creates the file page when it is missing.
- * `editAs`, `deletePage` and `restorePage` are the editors working on MediaWiki directly.
+ *   - a move renames the page (same id, same revisions) and leaves a redirect unless told not to; a delete and an
+ *     undelete keep the page's revisions; each is a log entry.
+ * `editAs`, `movePage`, `deletePage` and `restorePage` are the editors working on MediaWiki directly.
  */
 import { createHash } from "node:crypto";
 import { createFakeMediaWiki, type RecordedRequest } from "./fake-mediawiki";
@@ -183,14 +186,65 @@ export function createFakeMediaWikiSite(options: FakeMediaWikiSiteOptions = {}) 
     return ordered.slice(0, limit);
   }
 
+  /** The page a redirect's text points at; null when the text is not a redirect. */
+  const redirectTarget = (text: string | undefined) => /^#REDIRECT \[\[([^\]]+)\]\]/i.exec(text ?? "")?.[1] ?? null;
+
+  /** `prop=info` of a title: following one redirect when asked, as MediaWiki does. */
+  function pageInfo(title: string, followRedirects: boolean): object {
+    const target = redirectTarget(current(pages.get(title))?.text);
+    const shown = followRedirects && target ? target : title;
+    const page = pages.get(shown);
+    if (!page) return { title: shown, missing: true };
+    return { title: shown, pageid: page.pageid, ...(redirectTarget(current(page)?.text) ? { redirect: true } : {}) };
+  }
+
+  /** `from` renamed to `to` by `user` (its id and revisions go with it), with a redirect left unless `redirect` is false. */
+  function move(user: string, from: string, to: string, redirect: boolean, comment: string) {
+    const page = pages.get(from)!;
+    pages.delete(from);
+    page.title = to;
+    pages.set(to, page);
+    if (redirect) {
+      addRevision(from, { text: `#REDIRECT [[${to}]]`, user, comment, timestamp: tick(), minor: false }, false, page.ns);
+    }
+    logEvents.push({
+      logid: nextLogid++,
+      type: "move",
+      action: "move",
+      title: from,
+      user,
+      timestamp: tick(),
+      comment,
+      params: { target_title: to, target_ns: page.ns, ...(redirect ? {} : { suppressredirect: true }) },
+    });
+  }
+
+  function remove(user: string, title: string, comment: string) {
+    const page = pages.get(title);
+    if (page) deleted.set(title, page);
+    pages.delete(title);
+    logEvents.push({ logid: nextLogid++, type: "delete", action: "delete", title, user, timestamp: tick(), comment, params: {} });
+  }
+
+  function restore(user: string, title: string, comment: string) {
+    const page = deleted.get(title);
+    if (page) pages.set(title, page);
+    deleted.delete(title);
+    logEvents.push({ logid: nextLogid++, type: "delete", action: "restore", title, user, timestamp: tick(), comment, params: {} });
+  }
+
   function query(request: RecordedRequest): object {
     const { params } = request;
     if (params.list === "recentchanges") {
       return { query: { recentchanges: listFrom(recentChanges, params, "rc") } };
     }
     if (params.list === "logevents") {
-      return { query: { logevents: listFrom(logEvents, params, "le") } };
+      const listed = logEvents.filter(
+        (entry) => (!params.letitle || entry.title === params.letitle) && (!params.letype || entry.type === params.letype)
+      );
+      return { query: { logevents: listFrom(listed, params, "le") } };
     }
+    if (params.prop === "info") return { query: { pages: [pageInfo(params.titles ?? "", params.redirects !== undefined)] } };
     if (params.prop === "imageinfo") {
       const page = pages.get(params.titles ?? "");
       return {
@@ -271,6 +325,28 @@ export function createFakeMediaWikiSite(options: FakeMediaWikiSiteOptions = {}) 
     return { upload: { result: "Success", filename: params.filename } };
   });
 
+  wiki.on("move", ({ params }) => {
+    const from = params.from ?? "";
+    const to = params.to ?? "";
+    if (from === to) return { error: { code: "selfmove", info: "The title is the same" } };
+    if (!pages.has(from)) return { error: { code: "missingtitle", info: "The page you specified doesn't exist." } };
+    if (pages.has(to)) return { error: { code: "articleexists", info: "A page of that name already exists." } };
+    move(mirror, from, to, params.noredirect === undefined, params.reason ?? "");
+    return { move: { from, to } };
+  });
+  wiki.on("delete", ({ params }) => {
+    const title = params.title ?? "";
+    if (!pages.has(title)) return { error: { code: "missingtitle", info: "The page you specified doesn't exist." } };
+    remove(mirror, title, params.reason ?? "");
+    return { delete: { title } };
+  });
+  wiki.on("undelete", ({ params }) => {
+    const title = params.title ?? "";
+    if (!deleted.has(title)) return { error: { code: "cantundelete", info: "Couldn't undelete." } };
+    restore(mirror, title, params.reason ?? "");
+    return { undelete: { title } };
+  });
+
   /** `fetch` that answers a failing revision with HTTP 500, and everything else from the site. */
   const fetch = async (input: string | URL | Request, init?: RequestInit) => {
     const revids = new URL(String(input)).searchParams.get("revids");
@@ -289,20 +365,22 @@ export function createFakeMediaWikiSite(options: FakeMediaWikiSiteOptions = {}) 
     editAs(user: string, title: string, text: string, comment = "edit") {
       return addRevision(title, { text, user, comment, timestamp: tick(), minor: false }, true);
     },
+    /** A page an editor moved on MediaWiki: renamed, a redirect left unless `redirect` is false, and a log event. */
+    movePage(user: string, from: string, to: string, { redirect = true, comment = "renamed" } = {}) {
+      move(user, from, to, redirect, comment);
+    },
     /** A page an administrator deleted on MediaWiki: gone, and a log event. */
     deletePage(user: string, title: string, comment = "spam") {
-      const page = pages.get(title);
-      if (page) deleted.set(title, page);
-      pages.delete(title);
-      logEvents.push({ logid: nextLogid++, type: "delete", action: "delete", title, user, timestamp: tick(), comment, params: {} });
+      remove(user, title, comment);
     },
     /** A deleted page an administrator restored: back with its revisions (same ids), and a log event. */
     restorePage(user: string, title: string, comment = "restored") {
-      const page = deleted.get(title);
-      if (page) pages.set(title, page);
-      deleted.delete(title);
-      logEvents.push({ logid: nextLogid++, type: "delete", action: "restore", title, user, timestamp: tick(), comment, params: {} });
+      restore(user, title, comment);
     },
+    /** Deleted pages, by title. */
+    deleted,
+    /** The log, oldest first. */
+    logEvents,
     /** The revision answers HTTP 500 until `recover`. */
     failRevision: (revid: number) => failing.add(revid),
     recover: (revid: number) => failing.delete(revid),

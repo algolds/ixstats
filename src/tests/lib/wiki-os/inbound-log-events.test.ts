@@ -1112,6 +1112,167 @@ describeEachWikiosMode("classic deletes, moves and restores through the conflict
     expect(tables.wikiLog.rows.find((row) => row.mwLogId === 501)).toMatchObject({ articleId: id });
   });
 
+  /**
+   * WikiOS moved `from` to `to` at `at` as PageManagementService logs it (the titles in the log entry's params), leaving a
+   * redirect; `state` is its mirror job's ("done": MediaWiki has had it).
+   */
+  function loggedMove(articleId: string, from: string, to: string, at: string, state = "pending") {
+    const logId = wikiosMove(articleId, from, to, at).logId;
+    Object.assign(
+      tables.wikiLog.rows.find((row) => row.id === logId)!,
+      {
+        title: to,
+        params: { oldTitle: from, newTitle: to },
+      }
+    );
+    tables.wikiMirrorJob.rows.find((job) => job.logId === logId)!.state = state;
+    return logId;
+  }
+  const classicMoveAt = (title: string, target: string, timestamp: string, logid = 801) =>
+    event({
+      type: "move",
+      action: "move",
+      title,
+      timestamp,
+      logid,
+      params: { target_title: target, target_ns: 0 },
+    });
+  /** Published WikiOS redirects that point at a title no published page has. */
+  const danglingRedirects = () =>
+    tables.wikiArticle.rows
+      .filter((row) => row.status !== "ARCHIVED" && row.redirectTargetSlug)
+      .filter(
+        (row) =>
+          !tables.wikiArticle.rows.some(
+            (page) => page.title === row.redirectTargetSlug && page.status !== "ARCHIVED"
+          )
+      )
+      .map((row) => row.title);
+
+  it("a classic move earlier than a WikiOS move the mirror already sent loses: the page stays where WikiOS moved it", async () => {
+    const id = seedPage("Old A", 100);
+    const move = loggedMove(id, "Old A", "WikiOS A", "2026-10-24T12:00:00Z", "done");
+
+    await expect(
+      applyLogEvent(classicMoveAt("Old A", "Classic A", "2026-10-24T11:00:00Z"))
+    ).resolves.toBe("applied");
+
+    expect(tables.wikiArticle.rows.find((row) => row.id === id)?.title).toBe("WikiOS A");
+    expect(pageOf("Old A")).toMatchObject({ redirectTargetSlug: "WikiOS A", status: "PUBLISHED" });
+    expect(pageOf("Classic A")).toBeUndefined();
+    expect(conflictRows()).toEqual([
+      expect.objectContaining({
+        winnerSide: "wikios",
+        winnerRef: `log:${move}`,
+        overwritten: [expect.objectContaining({ ref: "mwlog:801" })],
+      }),
+    ]);
+    expect(syncLatestRevision).not.toHaveBeenCalled();
+  });
+
+  it("a classic move of a redirect WikiOS's sent move left, made after that move, renames the redirect", async () => {
+    const id = seedPage("Old A", 100);
+    loggedMove(id, "Old A", "WikiOS A", "2026-10-24T11:00:00Z", "done");
+
+    await applyLogEvent(classicMoveAt("Old A", "Classic A", "2026-10-24T12:00:00Z"));
+
+    expect(tables.wikiArticle.rows.find((row) => row.id === id)?.title).toBe("WikiOS A");
+    expect(pageOf("Classic A")).toMatchObject({ redirectTargetSlug: "WikiOS A" });
+    expect(conflictRows()).toEqual([]);
+  });
+
+  it("a classic delete of a title WikiOS moved its page away from is judged against the move: a later one removes the page and its redirect", async () => {
+    const won = seedPage("Old A", 100);
+    const lostMove = loggedMove(won, "Old A", "WikiOS A", "2026-10-24T11:00:00Z");
+    const kept = seedPage("Old B", 101);
+    const keptMove = loggedMove(kept, "Old B", "WikiOS B", "2026-10-24T13:00:00Z");
+
+    await applyLogEvent(deleteAt("Old A", "2026-10-24T12:00:00Z", 501));
+    await applyLogEvent(deleteAt("Old B", "2026-10-24T12:00:00Z", 502));
+
+    expect(tables.wikiArticle.rows.find((row) => row.id === won)?.status).toBe("ARCHIVED");
+    expect(pageOf("Old A")?.status).toBe("ARCHIVED");
+    expect(tables.wikiArticle.rows.find((row) => row.id === kept)?.status).toBe("PUBLISHED");
+    expect(pageOf("Old B")?.status).toBe("PUBLISHED");
+    expect(danglingRedirects()).toEqual([]);
+    expect(conflictRows()).toEqual([
+      expect.objectContaining({
+        articleId: won,
+        winnerRef: "mwlog:501",
+        overwritten: [expect.objectContaining({ ref: `log:${lostMove}` })],
+      }),
+      expect.objectContaining({
+        articleId: kept,
+        winnerRef: `log:${keptMove}`,
+        overwritten: [expect.objectContaining({ ref: "mwlog:502" })],
+      }),
+    ]);
+  });
+
+  it("a classic delete of a title WikiOS moved away from records nothing when WikiOS deleted the moved page too", async () => {
+    const id = seedPage("Old A", 100);
+    loggedMove(id, "Old A", "WikiOS A", "2026-10-24T11:00:00Z");
+    Object.assign(
+      tables.wikiArticle.rows.find((row) => row.id === id)!,
+      { status: "ARCHIVED" }
+    );
+    wikiosOperation(id, "delete", "WikiOS A", "2026-10-24T13:00:00Z");
+
+    await expect(applyLogEvent(deleteAt("Old A", "2026-10-24T12:00:00Z"))).resolves.toBe("applied");
+
+    expect(tables.wikiArticle.rows.find((row) => row.id === id)?.status).toBe("ARCHIVED");
+    expect(conflictRows()).toEqual([]);
+  });
+
+  it("a winning classic move over a chain of WikiOS moves archives every redirect they left, and all of them are overwritten", async () => {
+    const id = seedPage("Old A", 100);
+    const first = loggedMove(id, "Old A", "Mid A", "2026-10-24T10:00:00Z");
+    const second = loggedMove(id, "Mid A", "Far A", "2026-10-24T10:30:00Z");
+
+    await applyLogEvent(classicMoveAt("Old A", "Classic A", "2026-10-24T12:00:00Z"));
+
+    expect(tables.wikiArticle.rows.find((row) => row.id === id)?.title).toBe("Classic A");
+    expect(pageOf("Old A")?.status).toBe("ARCHIVED");
+    expect(pageOf("Mid A")?.status).toBe("ARCHIVED");
+    expect(danglingRedirects()).toEqual([]);
+    expect(conflictRows()[0]).toMatchObject({
+      winnerRef: "mwlog:801",
+      overwritten: [
+        expect.objectContaining({ ref: `log:${first}` }),
+        expect.objectContaining({ ref: `log:${second}` }),
+      ],
+    });
+  });
+
+  it("a classic move the mirror already ruled the winner (its WikiOS move held back) renames the page from where WikiOS put it", async () => {
+    const id = seedPage("Old A", 100);
+    const move = loggedMove(id, "Old A", "WikiOS A", "2026-10-24T11:00:00Z", "done");
+    tables.wikiConflict.insert({
+      key: `ixwiki:${id}:mwlog:801`,
+      articleId: id,
+      title: "Classic A",
+      winnerSide: "classic",
+      winnerAction: "move",
+      winnerRef: "mwlog:801",
+      winnerAt: new Date("2026-10-24T12:00:00Z"),
+      overwritten: [
+        {
+          side: "wikios",
+          action: "move",
+          ref: `log:${move}`,
+          at: "2026-10-24T11:00:00.000Z",
+          author: KIR,
+        },
+      ],
+    });
+
+    await applyLogEvent(classicMoveAt("Old A", "Classic A", "2026-10-24T12:00:00Z"));
+
+    expect(tables.wikiArticle.rows.find((row) => row.id === id)?.title).toBe("Classic A");
+    expect(pageOf("Old A")?.status).toBe("ARCHIVED");
+    expect(conflictRows()).toHaveLength(1);
+  });
+
   it("the mirror account's log events stay ignored", async () => {
     jest.mocked(isMirrorUser).mockReturnValue(true);
     const id = seedPage("Caphiria", 100);

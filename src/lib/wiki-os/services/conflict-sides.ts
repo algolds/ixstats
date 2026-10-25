@@ -20,7 +20,6 @@ import type {
   WikiSide,
 } from "./conflict-rule";
 import type { LogEvent, MediaWikiRevision } from "./inbound-mediawiki";
-import { movePayloadSchema } from "./mirror-outbox";
 
 const SOURCE = "ixwiki";
 
@@ -293,7 +292,9 @@ const OPERATION_ACTIONS: Readonly<Record<string, ChangeAction>> = {
   undelete: "undelete",
 };
 
-interface OperationJob {
+/** A page operation's mirror job, as far as its change is read from it. */
+export interface OperationJob {
+  id: string;
   kind: string;
   logId: string | null;
   articleId: string | null;
@@ -301,20 +302,13 @@ interface OperationJob {
   createdAt: Date;
 }
 
-/** Each unsent operation job with its change: at its log row's time (the job's own, if the row is gone), by its actor. */
-async function operationChanges(
-  where: Prisma.WikiMirrorJobWhereInput
+/**
+ * Each operation job with its change: at its log row's time (the job's own, if the row is gone), by its actor. A job's
+ * change is named `log:<its log row>` (`job:<id>` for one with no row), as every reader of WikiOS's side names it.
+ */
+async function changesOfJobs(
+  jobs: readonly OperationJob[]
 ): Promise<Array<{ job: OperationJob; change: PageChange }>> {
-  const jobs = await db.wikiMirrorJob.findMany({
-    where: {
-      kind: { in: Object.keys(OPERATION_ACTIONS) },
-      state: { in: UNSENT_JOB_STATES },
-      logId: { not: null },
-      ...where,
-    },
-    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-    select: { kind: true, logId: true, articleId: true, payload: true, createdAt: true },
-  });
   if (jobs.length === 0) return [];
   const logs = await db.wikiLog.findMany({
     where: { id: { in: jobs.flatMap((job) => (job.logId ? [job.logId] : [])) } },
@@ -330,12 +324,35 @@ async function operationChanges(
     const change: PageChange = {
       side: "wikios",
       action,
-      ref: `log:${job.logId}`,
+      ref: job.logId ? `log:${job.logId}` : `job:${job.id}`,
       at: log?.createdAt ?? job.createdAt,
       author: authorFrom(row, names),
     };
     return [{ job, change }];
   });
+}
+
+/** Each unsent operation job matching `where`, with its change (see `changesOfJobs`), oldest first. */
+export async function operationChanges(
+  where: Prisma.WikiMirrorJobWhereInput
+): Promise<Array<{ job: OperationJob; change: PageChange }>> {
+  const jobs = await db.wikiMirrorJob.findMany({
+    where: {
+      kind: { in: Object.keys(OPERATION_ACTIONS) },
+      state: { in: UNSENT_JOB_STATES },
+      logId: { not: null },
+      ...where,
+    },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    select: { id: true, kind: true, logId: true, articleId: true, payload: true, createdAt: true },
+  });
+  return changesOfJobs(jobs);
+}
+
+/** The change a move, delete or undelete job carries; null for a job of another kind. */
+export async function changeOfOperationJob(job: OperationJob): Promise<PageChange | null> {
+  const [found] = await changesOfJobs([job]);
+  return found?.change ?? null;
 }
 
 /**
@@ -382,23 +399,4 @@ export async function wikiosChangesAgainstDelete(
     .filter((change) => !isSystemWrite(change.author));
   const operations = (await operationChanges({ articleId })).map(({ change }) => change);
   return [...edits, ...operations].sort((a, b) => a.at.getTime() - b.at.getTime());
-}
-
-/** A WikiOS move of `title` that MediaWiki has not had yet: the change, the moved article and where WikiOS put it. */
-export interface UnsentWikiosMove {
-  change: PageChange;
-  articleId: string;
-  to: string;
-}
-
-/** The newest WikiOS move away from `title` whose mirror job is still owed; null when there is none. */
-export async function unsentWikiosMove(title: string): Promise<UnsentWikiosMove | null> {
-  const moves = await operationChanges({ source: SOURCE, kind: "move", title });
-  for (const { job, change } of moves.reverse()) {
-    const payload = movePayloadSchema.safeParse(job.payload);
-    if (payload.success && job.articleId) {
-      return { change, articleId: job.articleId, to: payload.data.to };
-    }
-  }
-  return null;
 }

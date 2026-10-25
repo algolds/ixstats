@@ -13,7 +13,7 @@
 
 import type { WikiMirrorJob } from "@prisma/client";
 import { db } from "~/server/db";
-import { MIRROR_SOURCE, movePayloadSchema, revisionPayloadSchema } from "./mirror-outbox";
+import { MIRROR_SOURCE, movePayloadSchema } from "./mirror-outbox";
 
 export const MAX_ATTEMPTS = 8;
 /** Most revision jobs of one title imported together. */
@@ -139,14 +139,17 @@ export function completeJob(
   mwRevId: number | null,
   note?: string
 ): Promise<MirrorJob> {
-  const payload = revisionPayloadSchema.safeParse(job.payload ?? {});
+  // the note joins what the payload holds (a page operation's title, reason): nothing it had is dropped
+  const { payload } = job;
+  const kept =
+    payload !== null && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
   return db.wikiMirrorJob.update({
     where: { id: job.id },
     data: {
       state: "done",
       lastError: null,
       ...(mwRevId === null ? {} : { mwRevId }),
-      ...(note ? { payload: { ...payload.data, note } } : {}),
+      ...(note ? { payload: { ...kept, note } } : {}),
     },
   });
 }

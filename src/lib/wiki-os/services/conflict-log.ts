@@ -366,6 +366,24 @@ export function verdictOfEntry(entry: ConflictLogEntry): CollisionVerdict {
   };
 }
 
+/** The rows of an article (old parks left out: they decide nothing), oldest first. */
+export async function conflictsOfArticle(articleId: string): Promise<ConflictLogEntry[]> {
+  const rows = await db.wikiConflict.findMany({
+    where: { articleId, legacyPark: false },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+  });
+  return rows.map(toConflictEntry);
+}
+
+/** The row in which the change `winnerRef` won (old parks left out); null when it won none. */
+export async function conflictWonBy(winnerRef: string): Promise<ConflictLogEntry | null> {
+  const row = await db.wikiConflict.findFirst({
+    where: { winnerRef, legacyPark: false },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+  });
+  return row ? toConflictEntry(row) : null;
+}
+
 /** Newest first. `cursor` is the `nextCursor` of the previous page. */
 export async function listConflicts(input: {
   cursor?: string;

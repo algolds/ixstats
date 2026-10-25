@@ -16,8 +16,8 @@ import { fetchLogEventsPage, type LogEvent } from "./inbound-mediawiki";
 
 /** Pages of the page's history read to find the revisions of a batch. */
 const MAX_HISTORY_PAGES = 4;
-/** Delete-log entries read to find a title's latest deletion. */
-const DELETE_LOG_LIMIT = "50";
+/** Log entries read to find a title's latest deletion or move. */
+const TITLE_LOG_LIMIT = "50";
 
 const revisionsPageSchema = z.object({
   query: z.object({
@@ -189,19 +189,75 @@ export async function stampedIn(
   return new Set(rows.flatMap((row) => row.mwRevId ?? []));
 }
 
+const pageInfoSchema = z.object({
+  query: z.object({
+    pages: z.array(
+      z.looseObject({
+        title: z.string(),
+        missing: z.boolean().optional(),
+        redirect: z.boolean().optional(),
+      })
+    ),
+  }),
+});
+
+/** A title as classic MediaWiki has it: the page's title, whether it exists, and whether it is a redirect. */
+export interface ClassicPage {
+  title: string;
+  exists: boolean;
+  redirect: boolean;
+}
+
+/**
+ * The page `title` is in classic MediaWiki; with `followRedirects`, a redirect stands for the page it points to (so
+ * `title` is the target's, and `exists` says whether the target is there).
+ */
+export async function classicPage(title: string, followRedirects: boolean): Promise<ClassicPage> {
+  const data = await getMediaWikiAction(
+    {
+      action: "query",
+      prop: "info",
+      titles: title,
+      ...(followRedirects ? { redirects: "1" } : {}),
+    },
+    pageInfoSchema
+  );
+  const page = data.query.pages[0];
+  return {
+    title: page?.title ?? title,
+    exists: page?.missing !== true,
+    redirect: page?.redirect === true,
+  };
+}
+
+/** The title's `type` log entries in classic MediaWiki (a few of them), newest first. */
+async function titleLog(title: string, type: "delete" | "move"): Promise<LogEvent[]> {
+  const { entries } = await fetchLogEventsPage({
+    letype: type,
+    letitle: title,
+    lelimit: TITLE_LOG_LIMIT,
+  });
+  return entries.filter((event) => event.type === type && event.title === title);
+}
+
 /**
  * The title's latest deletion in classic MediaWiki (its delete log, newest first); null when it was never deleted
  * there.
  */
 export async function latestClassicDelete(title: string): Promise<LogEvent | null> {
-  const { entries } = await fetchLogEventsPage({
-    letype: "delete",
-    letitle: title,
-    lelimit: DELETE_LOG_LIMIT,
-  });
-  return (
-    entries.find(
-      (event) => event.type === "delete" && event.action === "delete" && event.title === title
-    ) ?? null
-  );
+  return (await titleLog(title, "delete")).find((event) => event.action === "delete") ?? null;
+}
+
+/**
+ * The title's latest `type` log entry in classic MediaWiki when it is one of `actions` by a classic editor: null when
+ * there is none, when the latest is another action (a restore after a delete), or when the mirror account made it
+ * (WikiOS's own act, which WikiOS has).
+ */
+export async function latestClassicEvent(
+  title: string,
+  type: "delete" | "move",
+  actions: ReadonlySet<string>
+): Promise<LogEvent | null> {
+  const [latest] = await titleLog(title, type);
+  return latest && actions.has(latest.action) && !isMirrorAccount(latest.user) ? latest : null;
 }

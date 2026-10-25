@@ -61,7 +61,7 @@ const TRAIL_SEPARATOR = "; ";
 const TRAIL_AT_END = /(?:^|; )Overwrote .+ \(conflict [A-Za-z0-9]+\)$/s;
 
 /** `summary` with `trail` at its end, the summary cut so MediaWiki keeps the whole trail. */
-function withTrail(summary: string | null, trail: string): string {
+export function withTrail(summary: string | null, trail: string): string {
   const own = summary?.trim();
   if (!own) return trail;
   const room = COMMENT_LIMIT - trail.length - TRAIL_SEPARATOR.length;
@@ -73,8 +73,12 @@ export function withoutTrail(summary: string): string {
   return summary.replace(TRAIL_AT_END, "");
 }
 
-/** A classic revision as a change, at its save time. */
-function classicChange(entry: { revid: number; user: string | null; timestamp: string | Date }) {
+/** A classic revision of the page's history as a change, at its save time. */
+export function classicChangeOfEntry(entry: {
+  revid: number;
+  user: string | null;
+  timestamp: string | Date;
+}) {
   return classicChangeOfRevision({
     revid: entry.revid,
     user: entry.user,
@@ -184,10 +188,10 @@ async function judgeAgainstClassic(
   const wikiosBranch = await wikiosBranchSince(articleId, base?.revid ?? 0, base?.sha1 ?? null);
   const verdict = decideCollision(MIRROR_SOURCE, articleId, {
     incoming,
-    standing: await classicChange(standing),
+    standing: await classicChangeOfEntry(standing),
     // what WikiOS changed since the base up to this revision; anything later is judged with its own batch
     incomingBranch: wikiosBranch.filter((change) => change.at <= incoming.at),
-    standingBranch: await Promise.all(branch.map(classicChange)),
+    standingBranch: await Promise.all(branch.map(classicChangeOfEntry)),
   });
   const { id } = await recordConflict(db, {
     source: MIRROR_SOURCE,

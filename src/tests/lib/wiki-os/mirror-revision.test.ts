@@ -27,6 +27,16 @@ jest.mock("~/server/db", () => ({
   },
 }));
 
+// The conflict rule's ruling on a page job has its own suite (mirror-page-ops.test.ts): here every operation goes out.
+jest.mock("~/lib/wiki-os/services/mirror-page-rule", () => ({
+  rulePageJob: jest.fn(async (job: { title: string }, reason: string) => ({
+    lost: null,
+    reason,
+    from: job.title,
+    undeleteFirst: false,
+  })),
+}));
+
 import type { WikiMirrorJob } from "@prisma/client";
 import { ConflictError } from "~/lib/app-error";
 import {
@@ -937,7 +947,7 @@ describe("page jobs", () => {
       wiki.on("move", refuse("missingtitle"));
       pagesExist(["New name"]);
 
-      await expect(runPageJob(moveJob())).resolves.toBeUndefined();
+      await expect(runPageJob(moveJob())).resolves.toEqual({});
     });
     it("fails when the old title is a redirect to some other page", async () => {
       wiki.on("move", refuse("articleexists"));
@@ -980,9 +990,7 @@ describe("page jobs", () => {
     it("is done when the page is already gone", async () => {
       wiki.on("delete", refuse("missingtitle"));
 
-      await expect(
-        runPageJob(job("delete", "Old name", { reason: "spam" }))
-      ).resolves.toBeUndefined();
+      await expect(runPageJob(job("delete", "Old name", { reason: "spam" }))).resolves.toEqual({});
     });
   });
 
@@ -1003,9 +1011,7 @@ describe("page jobs", () => {
       wiki.on("undelete", refuse("cantundelete"));
       pagesExist(["Old name"]);
 
-      await expect(
-        runPageJob(job("undelete", "Old name", { reason: "" }))
-      ).resolves.toBeUndefined();
+      await expect(runPageJob(job("undelete", "Old name", { reason: "" }))).resolves.toEqual({});
     });
   });
 

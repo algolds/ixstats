@@ -18,7 +18,7 @@ import { db } from "~/server/db";
 import { withJobLock } from "~/lib/system/job-lock";
 import { alertDeadJobs } from "./mirror-alerts";
 import { MIRROR_LOCK_NAME, MIRROR_SOURCE } from "./mirror-outbox";
-import { runPageJob } from "./mirror-page-ops";
+import { runPageJob, type PageJobResult } from "./mirror-page-ops";
 import { runUploadJob } from "./mirror-upload";
 import { withinAttempt } from "../adapters/mediawiki/attempt-scope";
 import {
@@ -141,6 +141,13 @@ async function failAll(jobs: readonly MirrorJob[], error: unknown): Promise<Mirr
   return Promise.all(jobs.map((job) => failJob(job, message)));
 }
 
+/** An upload or a page operation, as one call (or two) to MediaWiki; a page operation may resolve to a note. */
+async function runOneJob(job: MirrorJob): Promise<PageJobResult> {
+  if (job.kind !== "upload") return runPageJob(job);
+  await runUploadJob(job);
+  return {};
+}
+
 /**
  * Make the MediaWiki change of `candidates` (one job, or the revision jobs of one title that go together) and
  * resolve to the jobs as stored afterwards. Every attempt counts for every job it carried.
@@ -157,10 +164,9 @@ async function runJobs(candidates: readonly MirrorJob[]): Promise<MirrorJob[]> {
   if (!job) return [];
   if (job.kind === "revision") return runRevisionBatch(claimed);
   try {
-    await withinAttempt(ATTEMPT_TIMEOUT_MS, () =>
-      job.kind === "upload" ? runUploadJob(job) : runPageJob(job)
-    );
-    return [await completeJob(job, null)];
+    // a page operation the conflict rule ruled lost sends nothing and is done with its note
+    const { note } = await withinAttempt(ATTEMPT_TIMEOUT_MS, () => runOneJob(job));
+    return [await completeJob(job, null, note)];
   } catch (error) {
     return failAll(claimed, error);
   }

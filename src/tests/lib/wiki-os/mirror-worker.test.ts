@@ -212,7 +212,7 @@ beforeEach(() => {
     for (const { job } of plan.members) outcomes.push({ job, mwRevId: await revisionJob(job) });
     return outcomes;
   });
-  pageJob.mockResolvedValue(undefined);
+  pageJob.mockResolvedValue({});
   uploadJob.mockResolvedValue(undefined);
   jest.mocked(sweepStagedOrphansIfDue).mockResolvedValue(null);
   jest.spyOn(console, "warn").mockImplementation(() => undefined);
@@ -238,6 +238,24 @@ describe("runMirrorCycle", () => {
     expect(revisionJob).toHaveBeenCalledTimes(1);
     expect(invalidateTemplateDependents).toHaveBeenCalledTimes(1);
     expect(invalidateTemplateDependents).toHaveBeenCalledWith("Template:Box", "ixwiki");
+    expect(rows.map((row) => row.state)).toEqual(["done", "done"]);
+  });
+
+  it("completes a page operation the conflict rule ruled lost with its note, keeping its payload", async () => {
+    pageJob.mockResolvedValue({ note: "Lost to a later edit in MediaWiki" });
+    const job = addJob({
+      kind: "delete",
+      title: "Old",
+      payload: { reason: "spam" },
+      revisionId: null,
+    });
+
+    await expect(runMirrorCycle()).resolves.toMatchObject({ done: 1, failed: 0 });
+
+    expect(byId(job.id)).toMatchObject({
+      state: "done",
+      payload: { reason: "spam", note: "Lost to a later edit in MediaWiki" },
+    });
   });
   it("keeps the order of one title after a failure: a job behind a backing-off one waits, other titles go on", async () => {
     const failing = addJob({
@@ -649,7 +667,10 @@ describe("the bounds that keep a lock transaction from expiring mid-attempt", ()
       seen.push(requestSignal(30_000).aborted);
       return plan.members.map(({ job }) => ({ job, mwRevId: 1 }));
     });
-    pageJob.mockImplementation(async () => void seen.push(requestSignal(30_000).aborted));
+    pageJob.mockImplementation(async () => {
+      seen.push(requestSignal(30_000).aborted);
+      return {};
+    });
     addJob({ title: "Foo" });
     addJob({ kind: "delete", title: "Bar", payload: { reason: "" }, revisionId: null });
 
