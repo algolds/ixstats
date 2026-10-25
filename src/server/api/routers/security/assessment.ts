@@ -1,16 +1,16 @@
-// Security assessment, derived on read (owner decision 4): military strength from the force
-// structure against the nation's neighbours and rivals, threats from its conflicts, the hostile
+// Security assessment, derived on read (owner decision 4): military strength from the defense
+// model's combat power (realm time D2a) against the nation's neighbours and rivals, threats from its conflicts, the hostile
 // foreign-policy actions against it and its active crises. Nothing is stored.
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { loadThreatPicture } from "~/lib/military/threat-picture-loader";
+import { threatPictureFor } from "~/server/modules/defense";
 
 export const securityAssessmentRouter = createTRPCRouter({
   getSecurityAssessment: publicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const picture = await loadThreatPicture(ctx.db, input.countryId);
+      const picture = await threatPictureFor(ctx.db, input.countryId);
       return {
         countryId: input.countryId,
         overallSecurityScore: picture.overallSecurityScore,

@@ -1,7 +1,8 @@
 /** @jest-environment node */
 /**
- * P1-22: deploying units clamps readiness at 0; ending an operation recovers readiness (more for
- * training, and with the Generals satisfied), clamps at 100, and the server rates the outcome.
+ * P1-22 / realm time D2a: operations move the defense model's derived readiness, not a typed one. Deploying wears
+ * the deployed branches' condition; a training exercise lifts their training (10% more with the Generals satisfied);
+ * other operations leave a reset bill. Operations are stamped and rated on the nation's realm clock.
  */
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
 jest.mock("~/server/db", () => ({
@@ -13,9 +14,15 @@ jest.mock("~/server/db", () => ({
   isDatabaseReadOnly: false,
 }));
 
+jest.mock("~/server/modules/defense", () => ({ applyOperationReadiness: jest.fn(async () => 1) }));
+const REALM_NOW = 2.1e12;
+jest.mock("~/server/shared/realm-time", () => ({
+  clockForCountry: jest.fn(async () => ({ now: () => REALM_NOW, multiplier: 2, paused: false })),
+}));
+
 import { newsGenerator } from "~/lib/diplomacy/news-generator";
+import { applyOperationReadiness } from "~/server/modules/defense";
 import { notificationAPI } from "~/lib/notifications/api";
-import { IxTime } from "~/lib/ixtime";
 import { createCallerFactory } from "~/server/api/trpc";
 import { securityOperationsRouter } from "~/server/api/routers/security/operations";
 import { createMockPrisma, type MockPrismaProxy } from "~/tests/helpers/mock-db";
@@ -53,12 +60,15 @@ const operation = (operationType: string, ranIxDays: number, duration: number | 
   operationType,
   status: "active",
   duration,
-  startIxTime: IxTime.getCurrentIxTime() - ranIxDays * DAY,
+  startIxTime: REALM_NOW - ranIxDays * DAY,
   createdAt: new Date(),
   deployments: [{ unitId: "unit_1", status: "deployed" }],
 });
 
+const readiness = applyOperationReadiness as jest.Mock;
+
 beforeEach(() => {
+  readiness.mockClear();
   db = createMockPrisma();
   db.user.findUnique.mockResolvedValue({ id: "u_owner", countryId: OWN });
   db.country.findUnique.mockResolvedValue({
@@ -72,7 +82,7 @@ beforeEach(() => {
   db.governmentComponent.findMany.mockResolvedValue([]);
 });
 
-it("createOperation clamps deployed units' readiness at 0", async () => {
+it("createOperation wears the deployed branches and stamps the realm clock", async () => {
   db.militaryUnit.findMany.mockResolvedValue([{ id: "unit_1" }]);
   db.militaryOperation.create.mockResolvedValue({ id: "op_1", targetCountry: null });
   await operations().createOperation({
@@ -81,24 +91,34 @@ it("createOperation clamps deployed units' readiness at 0", async () => {
     name: "Northwind",
     unitIds: ["unit_1"],
   });
-  expect(db.militaryUnit.updateMany).toHaveBeenCalledWith({
-    where: { id: { in: ["unit_1"] }, readiness: { lt: 0 } },
-    data: { readiness: 0 },
+  expect(readiness).toHaveBeenCalledWith(db, {
+    countryId: OWN,
+    unitIds: ["unit_1"],
+    assetIds: [],
+    change: "deploy",
   });
+  expect(db.militaryOperation.create.mock.calls[0]![0].data.startIxTime).toBe(REALM_NOW);
+  expect(db.militaryUnit.updateMany).not.toHaveBeenCalled();
 });
 
 describe("endOperation", () => {
-  it("gives training units a net gain and clamps at 100", async () => {
+  it("lifts the trained branches' training", async () => {
     db.militaryOperation.findUnique.mockResolvedValue(operation("training", 30));
     await operations().endOperation({ operationId: "op_1" });
-    expect(db.militaryUnit.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: ["unit_1"] } },
-      data: { readiness: { increment: 20 } },
+    expect(readiness).toHaveBeenCalledWith(db, {
+      countryId: OWN,
+      unitIds: ["unit_1"],
+      assetIds: [],
+      change: "trainingEnded",
+      generalsMultiplier: 1,
     });
-    expect(db.militaryUnit.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: ["unit_1"] }, readiness: { gt: 100 } },
-      data: { readiness: 100 },
-    });
+    expect(db.militaryOperation.update.mock.calls[0]![0].data.endIxTime).toBe(REALM_NOW);
+  });
+
+  it("leaves a reset bill after any other operation", async () => {
+    db.militaryOperation.findUnique.mockResolvedValue(operation("blockade", 30));
+    await operations().endOperation({ operationId: "op_1" });
+    expect(readiness.mock.calls[0]![1]).toMatchObject({ change: "operationEnded" });
   });
 
   it("recovers 10% more with the Generals satisfied", async () => {
@@ -111,9 +131,9 @@ describe("endOperation", () => {
       { allocatedPercent: 20, department: { category: "Defense" } },
     ]);
     await operations().endOperation({ operationId: "op_1" });
-    expect(db.militaryUnit.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: ["unit_1"] } },
-      data: { readiness: { increment: 22 } },
+    expect(readiness.mock.calls[0]![1]).toMatchObject({
+      change: "trainingEnded",
+      generalsMultiplier: 1.1,
     });
   });
 

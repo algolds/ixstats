@@ -2,6 +2,10 @@
  * The defense budget is the National budget's Defense department line (realm time design, owner
  * decision): the Defense department's allocation in the budget in effect. The Defense page reads
  * it from the government budget and edits it through `government.setAllocation`.
+ *
+ * D2 sums every Defense-category line (an army ministry and an admiralty both fund defense): the
+ * model's budget is `defenseLinesTotal` (`~/lib/military/model`); `defenseLineOf` still names the
+ * largest line, the one the page edits, and reports the sum as `totalDefenseAmount`.
  */
 import { latestBudgetYearUpTo } from "~/lib/government/budget-year";
 import type { DepartmentCategory } from "~/types/government";
@@ -22,13 +26,6 @@ interface DepartmentLike {
   category: string;
 }
 
-/** A budget line with its department's category, as `loadEffectiveBudget` returns it. */
-interface CategorisedLine {
-  allocatedAmount: number;
-  allocatedPercent: number;
-  department: { category: string };
-}
-
 export type DefenseLine =
   | { kind: "no-structure" }
   | { kind: "no-department" }
@@ -38,6 +35,8 @@ export type DefenseLine =
       departmentName: string;
       allocatedAmount: number;
       allocatedPercent: number;
+      /** Every Defense line of that year, summed: the budget the defense model reads. */
+      totalDefenseAmount: number;
       totalBudget: number;
       /** The budget in effect, or null when no year has allocations yet. */
       budgetYear: number | null;
@@ -82,15 +81,8 @@ export function defenseLineOf(
     departmentName: best.name,
     allocatedAmount: line?.allocatedAmount ?? 0,
     allocatedPercent: line?.allocatedPercent ?? 0,
+    totalDefenseAmount: defense.reduce((sum, d) => sum + (lineFor(d.id)?.allocatedAmount ?? 0), 0),
     totalBudget: government?.totalBudget ?? 0,
     budgetYear,
   };
-}
-
-/** The largest Defense allocation among one year's budget lines, or null when there is none. */
-export function defenseAllocationAmount(lines: readonly CategorisedLine[]): number | null {
-  const defense = lines.filter((line) => line.department.category === DEFENSE_CATEGORY);
-  if (defense.length === 0) return null;
-  return defense.reduce((top, line) => (line.allocatedPercent > top.allocatedPercent ? line : top))
-    .allocatedAmount;
 }

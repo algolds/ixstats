@@ -181,19 +181,6 @@ export function redactEconomicBudget<T extends object>(country: T): T {
   return out as T;
 }
 
-/** A military branch without its budget (`annualBudget`, `budgetPercent` omitted). */
-export function redactMilitaryBranchBudget<
-  T extends { annualBudget?: unknown; budgetPercent?: unknown },
->(
-  branch: T
-): Omit<T, "annualBudget" | "budgetPercent"> & {
-  annualBudget?: undefined;
-  budgetPercent?: undefined;
-} {
-  const { annualBudget: _annualBudget, budgetPercent: _budgetPercent, ...rest } = branch;
-  return rest;
-}
-
 /**
  * True for a ledger entry that reveals a budget figure: one that moves a budget model or the
  * structure's `totalBudget` (policy maintenance debits it), or a policy entry whose text cites

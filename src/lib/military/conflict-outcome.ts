@@ -1,15 +1,15 @@
 /**
  * Battle outcome for a military conflict (Plan 163 / 191), shared by the instant PvNPC strike
- * and the PvP resolution once a conflict's duration has run. Each side's strength comes from its
- * authored force structure (`militaryStrength` in ./force-structure): branch and unit personnel
- * weighted by readiness, operational assets, and a quality factor. A nation with no force
- * structure fights at zero strength, so the swing alone decides it.
+ * and the PvP resolution once a conflict's duration has run.
+ *
+ * Realm time D2a: each side's strength is its national combat power from the defense model
+ * (`nationalCombatPower` in `~/server/modules/defense`, CP = Σ R × CEV × Q̄ × A × K^α N^(1−α) on
+ * its realm clock), and NPCs field forces derived from their economy. SEAM FOR D3: this resolver
+ * is still the old swing-and-ratio one, only fed the new strength; D3 replaces
+ * `computeConflictOutcome` with the seeded, odds-shown TNDM-lite resolution (research §7.5).
  */
-import { IxTime } from "~/lib/ixtime";
 import { StorytellerEffectType } from "~/lib/economy/calculations";
 import type { StorytellerEffectDraft } from "~/lib/economy/storyteller-effects";
-
-export { militaryStrength } from "./force-structure";
 
 export interface ConflictOutcome {
   initiatorWins: boolean;
@@ -85,22 +85,45 @@ export function conflictEconomicEffects(input: {
   ];
 }
 
-/** IxTime days a PvP conflict runs when its rules set no `maxDuration`. */
+/** In-game days a PvP conflict runs when its rules set no `maxDuration`. */
 export const DEFAULT_PVP_DURATION_IXDAYS = 14;
 
-/** When an active PvP conflict may be concluded: start + its rules' IxTime duration. */
-export function pvpConflictEndsAt(conflict: {
-  startDate: Date | null;
-  pvpRules: string | null;
-}): Date | null {
-  if (!conflict.startDate) return null;
-  let ixDays = DEFAULT_PVP_DURATION_IXDAYS;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** The realm clock as the PvP window reads it (a `RealmClockReader`). */
+interface PvPClock {
+  now(): number;
+  multiplier: number;
+}
+
+function pvpDurationDays(pvpRules: string | null): number {
   try {
-    const rules = conflict.pvpRules ? JSON.parse(conflict.pvpRules) : null;
-    if (typeof rules?.maxDuration === "number" && rules.maxDuration > 0) ixDays = rules.maxDuration;
+    const rules = pvpRules ? JSON.parse(pvpRules) : null;
+    if (typeof rules?.maxDuration === "number" && rules.maxDuration > 0) return rules.maxDuration;
   } catch {
     /* malformed rules: use the default duration */
   }
-  const realDays = ixDays / IxTime.getDefaultMultiplier();
-  return new Date(new Date(conflict.startDate).getTime() + realDays * 24 * 60 * 60 * 1000);
+  return DEFAULT_PVP_DURATION_IXDAYS;
+}
+
+/**
+ * When an active PvP conflict may be concluded: its rules' duration in in-game days after it started, on the realm
+ * clock (`startClockMs`; conflicts accepted before it was stored estimate it from `startDate` at today's speed).
+ * `over` once the clock has passed it; `endsAt` the real instant at today's speed, null while the realm is paused
+ * (the conflict waits for the clock).
+ */
+export function pvpConflictEndsAt(
+  conflict: { startDate: Date | null; startClockMs?: number | null; pvpRules: string | null },
+  clock: PvPClock,
+  realNow: number = Date.now()
+): { over: boolean; endsAt: Date | null } | null {
+  if (!conflict.startDate) return null;
+  const clockNow = clock.now();
+  const start =
+    conflict.startClockMs ??
+    clockNow - (realNow - new Date(conflict.startDate).getTime()) * clock.multiplier;
+  const remaining = start + pvpDurationDays(conflict.pvpRules) * DAY_MS - clockNow;
+  if (remaining <= 0) return { over: true, endsAt: new Date(realNow) };
+  if (clock.multiplier <= 0) return { over: false, endsAt: null };
+  return { over: false, endsAt: new Date(realNow + remaining / clock.multiplier) };
 }

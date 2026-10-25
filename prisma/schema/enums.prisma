@@ -278,17 +278,6 @@ enum Difficulty {
   TRANSFORMATIONAL
 }
 
-enum BranchType {
-  army
-  navy
-  air_force
-  space_force
-  marines
-  cyber_command
-  special_forces
-  coast_guard
-}
-
 enum AssetType {
   aircraft
   ship

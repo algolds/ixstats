@@ -1,41 +1,34 @@
 /**
  * Loads what `deriveThreatPicture` needs for one nation. Read-only: neighbours come from the
  * political map (`resolveNeighbors`, cached, empty without a map layer), the rest from conflicts,
- * foreign-policy actions, crises and the force structure.
+ * foreign-policy actions and crises. Combat power comes from the defense model through
+ * `readStrengths` (the defense module's `nationalCombatPower`), and foreign-policy expiry is read
+ * against the nation's realm clock (`nowClockMs`).
  */
 import type { PrismaClient } from "@prisma/client";
-import { IxTime } from "~/lib/ixtime";
 import { COOPERATIVE_FP_TYPES } from "~/lib/diplomacy/proposal-lifecycle";
 import { parseAffectedCountries } from "~/lib/maps/crisis-affected-countries";
 import { resolveNeighbors } from "~/lib/national-issues/neighbors";
-import { militaryStrength } from "./force-structure";
 import { withPvPExpiry } from "./pvp-proposals";
 import { deriveThreatPicture, type ThreatPicture } from "./threat-picture";
 
 /** Crisis response states that count as still active (as in `crisisEvents.getActive`). */
 const ACTIVE_CRISIS_STATUSES = ["pending", "in_progress", "monitoring"];
 
-const branchesWithForces = { units: true, assets: true } as const;
-
-async function strengthsByCountry(db: PrismaClient, countryIds: string[]) {
-  const strengths: Record<string, number> = {};
-  if (countryIds.length === 0) return strengths;
-  const branches = await db.militaryBranch.findMany({
-    where: { countryId: { in: countryIds }, isActive: true },
-    include: branchesWithForces,
-  });
-  for (const id of countryIds) {
-    strengths[id] = militaryStrength(branches.filter((b) => b.countryId === id));
-  }
-  return strengths;
+export interface ThreatPictureSources {
+  /** Combat power of each nation (derived, on its realm clock). */
+  readStrengths: (countryIds: readonly string[]) => Promise<Record<string, number>>;
+  /** The nation's realm clock now. */
+  nowClockMs: number;
 }
 
 export async function loadThreatPicture(
   db: PrismaClient,
-  countryId: string
+  countryId: string,
+  sources: ThreatPictureSources
 ): Promise<ThreatPicture> {
-  const nowIx = IxTime.getCurrentIxTime();
-  const [neighbors, relations, conflictRows, actions, crisisRows, ownBranches] = await Promise.all([
+  const nowIx = sources.nowClockMs;
+  const [neighbors, relations, conflictRows, actions, crisisRows] = await Promise.all([
     resolveNeighbors(countryId, db),
     db.diplomaticRelation.findMany({
       where: { OR: [{ country1: countryId }, { country2: countryId }] },
@@ -66,10 +59,6 @@ export async function loadThreatPicture(
         affectedCountries: { contains: countryId },
       },
       select: { id: true, title: true, severity: true, timestamp: true, affectedCountries: true },
-    }),
-    db.militaryBranch.findMany({
-      where: { countryId, isActive: true },
-      include: branchesWithForces,
     }),
   ]);
 
@@ -103,10 +92,10 @@ export async function loadThreatPicture(
   const rivalIds = [
     ...new Set([...conflicts.map((c) => c.opponentId), ...actions.map((a) => a.initiatorId)]),
   ].filter((id) => !neighborIds.includes(id));
-  const strengths = await strengthsByCountry(db, [...neighborIds, ...rivalIds]);
+  const strengths = await sources.readStrengths([countryId, ...neighborIds, ...rivalIds]);
 
   return deriveThreatPicture({
-    ownStrength: militaryStrength(ownBranches),
+    ownStrength: strengths[countryId] ?? 0,
     neighbors: neighborList.map((n) => ({
       countryId: n.countryId,
       name: n.name,

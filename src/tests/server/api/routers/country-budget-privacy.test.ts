@@ -31,6 +31,16 @@ jest.mock("~/server/shared/mycountry-helpers", () => {
   };
 });
 
+// Realm time D2a: the order of battle is brought up to date on the realm clock first; the owner gets each branch's
+// derived state.
+jest.mock("~/server/modules/defense", () => ({
+  __esModule: true,
+  syncDefense: jest.fn(async () => ({
+    view: { branches: [{ id: "army", readiness: 0.88, cLevel: "C-2", combatPower: 42_000 }] },
+  })),
+  scrapAsset: jest.fn(),
+}));
+
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { governmentCrudRouter } from "~/server/api/routers/government/crud";
@@ -194,7 +204,26 @@ function makeDb({ ownerUserId = "owner_db" }: { ownerUserId?: string } = {}) {
     },
     militaryBranch: {
       findMany: jest.fn(async () => [
-        { id: "army", name: "Army", annualBudget: 9e9, budgetPercent: 12, units: [], assets: [] },
+        {
+          id: "army",
+          name: "Army",
+          activeDuty: 51_234.6,
+          reserves: 10_000.2,
+          capital: 9e9,
+          readinessPersonnel: 1,
+          readinessEquipment: 1,
+          readinessCondition: 0.9,
+          readinessTraining: 0.85,
+          reserveTraining: 0.6,
+          mobilisationOrder: 0,
+          mobilisationOrderedClockMs: null,
+          mobilised: 0,
+          effortShare: 0.55,
+          targetActive: null,
+          lastTickClockMs: 2e12,
+          units: [],
+          assets: [],
+        },
       ]),
     },
     embassy: {
@@ -520,16 +549,17 @@ describe("isBudgetLedgerRow", () => {
 describe("security.getMilitaryBranches", () => {
   const read = (ctx: never) => military(ctx).getMilitaryBranches({ countryId: COUNTRY });
 
-  it.each(VISITORS)("serves %s branches without their budget", async (_who, ctxFor) => {
+  it.each(VISITORS)("serves %s the public order of battle, no internals", async (_who, ctxFor) => {
     const [branch] = (await read(ctxFor(makeDb()))) as Array<Record<string, unknown>>;
-    expect(branch).toMatchObject({ name: "Army" });
-    expect(branch).not.toHaveProperty("annualBudget");
-    expect(branch).not.toHaveProperty("budgetPercent");
+    expect(branch).toMatchObject({ name: "Army", activeDuty: 51_235, reserves: 10_000, derived: null });
+    for (const field of ["capital", "readinessCondition", "readinessTraining", "effortShare", "mobilised"]) {
+      expect(branch).not.toHaveProperty(field);
+    }
   });
 
-  it.each(OWNERS)("serves %s the branch budgets", async (_who, ctxFor) => {
+  it.each(OWNERS)("serves %s the branch internals and derived state", async (_who, ctxFor) => {
     const [branch] = (await read(ctxFor(makeDb()))) as Array<Record<string, unknown>>;
-    expect(branch).toMatchObject({ annualBudget: 9e9, budgetPercent: 12 });
+    expect(branch).toMatchObject({ capital: 9e9, derived: { cLevel: "C-2", combatPower: 42_000 } });
   });
 });
 

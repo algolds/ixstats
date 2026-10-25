@@ -136,6 +136,7 @@ model Country {
   stabilityMetrics            InternalStabilityMetrics? @relation("CountryStabilityMetrics")
   laborMarket                 LaborMarket?
   militaryBranches            MilitaryBranch[]          @relation("CountryMilitaryBranches")
+  defensePolicy               DefensePolicy?            @relation("CountryDefensePolicy")
   personalityAssignment       NPCPersonalityAssignment?
   nationalIdentity            NationalIdentity?
   slugRedirects               CountrySlugRedirect[]

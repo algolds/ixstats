@@ -1,9 +1,11 @@
 /** @jest-environment node */
 /**
  * The Defense routers' gates. A nation's force structure is authored by its owner or an admin, never by a stranger,
- * and only with MyCountry Premium; every field and total stays within bounds; an operation deploys only the nation's
- * own units. A PvP conflict is concluded only by the owner of a party, only once its IxTime duration has run, and
- * never twice; PvNPC targets are only unowned nations; and the MC-13 reads derive on read.
+ * and only with MyCountry Premium; every field and total stays within bounds and no strength is typed (realm time
+ * D2a: headcounts, capital and readiness are derived); an operation deploys only the nation's own units. A PvP
+ * conflict is concluded only by the owner of a party, only once its duration has run on the realm clock, and never
+ * twice, on the nations' derived combat power; PvNPC targets are only unowned nations; and the MC-13 reads derive on
+ * read.
  *
  * Folds pvp-conclude, pvnpc-targets, security-assessment-read-only and security-border-read-only.
  */
@@ -18,7 +20,35 @@ jest.mock("~/server/db", () => ({
   isDatabaseReadOnly: false,
 }));
 
+// The defense module's model and persistence are tested on their own; here it is a seam.
+jest.mock("~/server/modules/defense", () => {
+  const { loadThreatPicture } = jest.requireActual("~/lib/military/threat-picture-loader");
+  const zero = async (ids: readonly string[]) => Object.fromEntries(ids.map((id) => [id, 0]));
+  return {
+    createEmptyBranch: jest.fn(async (_db: unknown, input: object) => ({ id: "b_new", ...input })),
+    previewStarterForce: jest.fn(async () => ({ branches: [] })),
+    seedStarterBranches: jest.fn(async () => ({ created: 3, budgetSource: "estimate" })),
+    setBranchAllocation: jest.fn(async () => ({ id: "b1" })),
+    scrapAsset: jest.fn(async () => ({ id: "a1", capitalRemoved: 0 })),
+    syncDefense: jest.fn(),
+    applyOperationReadiness: jest.fn(async () => 0),
+    nationalCombatPower: jest.fn(async () => ({ country_1: 100_000, country_2: 10 })),
+    threatPictureFor: jest.fn((db: unknown, countryId: string) =>
+      loadThreatPicture(db, countryId, { readStrengths: zero, nowClockMs: 0 })
+    ),
+  };
+});
+jest.mock("~/server/shared/realm-time", () => ({
+  clockForCountry: jest.fn(async () => ({ now: () => 5e12, multiplier: 2, paused: false })),
+}));
+
 import { newsGenerator } from "~/lib/diplomacy/news-generator";
+import {
+  createEmptyBranch,
+  scrapAsset,
+  seedStarterBranches,
+  setBranchAllocation,
+} from "~/server/modules/defense";
 import { FORCE_LIMITS } from "~/lib/military/force-structure";
 import { notificationAPI } from "~/lib/notifications/api";
 import { createCallerFactory } from "~/server/api/trpc";
@@ -64,7 +94,7 @@ function ctxFor(who: Who, countryId?: string) {
 const forces = (who: Who) => createCallerFactory(securityForceStructureRouter)(ctxFor(who));
 const military = (who: Who) => createCallerFactory(securityMilitaryRouter)(ctxFor(who));
 
-const branchInput = { branchType: "army" as const, name: "Royal Army", activeDuty: 50_000 };
+const branchInput = { domain: "land" as const, name: "Royal Army" };
 const storedBranch = {
   id: "b1",
   countryId: OWN,
@@ -74,6 +104,7 @@ const storedBranch = {
 };
 
 beforeEach(() => {
+  jest.clearAllMocks();
   db = createMockPrisma();
   mockNews.mockReset().mockResolvedValue("post_1");
   mockNotify.mockReset().mockResolvedValue("notification_1");
@@ -138,6 +169,10 @@ const forceWrites = () => [
   db.militaryUnit.update,
   db.militaryUnit.delete,
   db.militaryAsset.update,
+  createEmptyBranch as jest.Mock,
+  seedStarterBranches as jest.Mock,
+  setBranchAllocation as jest.Mock,
+  scrapAsset as jest.Mock,
 ];
 
 describe("who authors a nation's force structure", () => {
@@ -152,7 +187,7 @@ describe("who authors a nation's force structure", () => {
     [
       "an admin edits any nation's branch",
       "admin",
-      (w: Who) => forces(w).updateMilitaryBranch({ id: "b1", branch: { morale: 80 } }),
+      (w: Who) => forces(w).updateMilitaryBranch({ id: "b1", branch: { motto: "Onward" } }),
       null,
     ],
     [
@@ -176,7 +211,7 @@ describe("who authors a nation's force structure", () => {
     [
       "a stranger edits a branch",
       "stranger",
-      (w: Who) => forces(w).updateMilitaryBranch({ id: "b1", branch: { readinessLevel: 90 } }),
+      (w: Who) => forces(w).updateMilitaryBranch({ id: "b1", branch: { name: "Mine now" } }),
       "FORBIDDEN",
     ],
     [
@@ -204,6 +239,18 @@ describe("who authors a nation's force structure", () => {
       "FORBIDDEN",
     ],
     [
+      "a stranger sets a branch's allocation",
+      "stranger",
+      (w: Who) => forces(w).setBranchAllocation({ id: "b1", effortShare: 0.9 }),
+      "FORBIDDEN",
+    ],
+    [
+      "a stranger scraps an asset",
+      "stranger",
+      (w: Who) => military(w).deleteMilitaryAsset({ id: "a1" }),
+      "FORBIDDEN",
+    ],
+    [
       "a stranger seeds the starter force",
       "stranger",
       (w: Who) => forces(w).seedStarterForceStructure({ countryId: OWN }),
@@ -222,7 +269,7 @@ describe("who authors a nation's force structure", () => {
     await expect(
       forces("free").createMilitaryBranch({ countryId: OWN, branch: branchInput })
     ).rejects.toThrow(/Premium/);
-    expect(db.militaryBranch.create).not.toHaveBeenCalled();
+    expect(createEmptyBranch).not.toHaveBeenCalled();
   });
 
   it("returns NOT_FOUND for a missing branch or unit", async () => {
@@ -232,7 +279,7 @@ describe("who authors a nation's force structure", () => {
     });
     db.militaryUnit.findUnique.mockResolvedValueOnce(null);
     await expect(
-      forces("owner").updateMilitaryUnit({ id: "nope", unit: { readiness: 10 } })
+      forces("owner").updateMilitaryUnit({ id: "nope", unit: { personnel: 10 } })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 });
@@ -240,18 +287,45 @@ describe("who authors a nation's force structure", () => {
 describe("force structure input bounds", () => {
   it.each([
     ["an empty name", { name: "" }],
-    ["negative active duty", { activeDuty: -1 }],
-    ["fractional active duty", { activeDuty: 1.5 }],
-    ["reserves over the cap", { reserves: FORCE_LIMITS.maxReserves + 1 }],
-    ["readiness over 100", { readinessLevel: 101 }],
-    ["a budget far over the cap", { annualBudget: FORCE_LIMITS.maxBudget * 10 }],
+    ["negative civilian staff", { civilianStaff: -1 }],
     ["a javascript: image URL", { imageUrl: "javascript:alert(1)" }],
-    ["an unknown branch type", { branchType: "navy_seals" as never }],
+    ["an unknown domain", { domain: "navy_seals" as never }],
   ])("refuses a branch with %s", async (_case, field) => {
     await expect(
       forces("owner").createMilitaryBranch({ countryId: OWN, branch: { ...branchInput, ...field } })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(db.militaryBranch.create).not.toHaveBeenCalled();
+    expect(createEmptyBranch).not.toHaveBeenCalled();
+  });
+
+  it("never takes typed strength: headcount, readiness and budget fields do not reach the branch", async () => {
+    const typed = { activeDuty: 5_000_000, readinessLevel: 100, annualBudget: 1e12, morale: 100 };
+    await forces("owner").createMilitaryBranch({
+      countryId: OWN,
+      branch: { ...branchInput, ...typed } as typeof branchInput,
+    });
+    const input = (createEmptyBranch as jest.Mock).mock.calls[0]![1];
+    expect(JSON.stringify(input)).not.toMatch(/activeDuty|readinessLevel|annualBudget|morale/);
+    await forces("owner").updateMilitaryBranch({
+      id: "b1",
+      branch: { name: "Army", ...typed } as { name: string },
+    });
+    expect(db.militaryBranch.update.mock.calls[0]![0].data).toEqual({ name: "Army" });
+  });
+
+  it("bounds a branch's allocation", async () => {
+    await expect(
+      forces("owner").setBranchAllocation({ id: "b1", effortShare: 1.5 })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(
+      forces("owner").setBranchAllocation({ id: "b1", targetActive: FORCE_LIMITS.maxActiveDuty + 1 })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await forces("owner").setBranchAllocation({ id: "b1", targetActive: null });
+    expect(setBranchAllocation).toHaveBeenCalledWith(db, {
+      countryId: OWN,
+      branchId: "b1",
+      effortShare: undefined,
+      targetActive: null,
+    });
   });
 
   it("refuses a unit over the personnel cap, and an asset with more operational than it holds", async () => {
@@ -280,41 +354,22 @@ describe("force structure input bounds", () => {
     ).rejects.toThrow(/at most/);
   });
 
-  it("keeps total personnel within a quarter of the population", async () => {
-    db.militaryBranch.aggregate.mockResolvedValueOnce({
-      _sum: { activeDuty: 2_000_000, reserves: 400_000 },
-    });
-    await expect(
-      forces("owner").createMilitaryBranch({
-        countryId: OWN,
-        branch: { ...branchInput, activeDuty: 200_000 },
-      })
-    ).rejects.toThrow(/25% of the population/);
-  });
-
-  it("keeps unit personnel within the branch's active duty and reserves, both ways", async () => {
+  it("keeps unit personnel within the branch's active duty and reserves", async () => {
     db.militaryUnit.aggregate.mockResolvedValueOnce({ _sum: { personnel: 55_000 } });
     await expect(
       forces("owner").createMilitaryUnit({
         branchId: "b1",
         unit: { name: "2nd Division", unitType: "division", personnel: 10_000 },
       })
-    ).rejects.toThrow(/Raise the branch's personnel/);
-    db.militaryUnit.aggregate.mockResolvedValueOnce({ _sum: { personnel: 40_000 } });
-    await expect(
-      forces("owner").updateMilitaryBranch({
-        id: "b1",
-        branch: { activeDuty: 20_000, reserves: 0 },
-      })
-    ).rejects.toThrow(/Raise the branch's personnel/);
+    ).rejects.toThrow(/active duty and reserves/);
   });
 
-  it("refuses the starter force when the nation already has branches", async () => {
-    db.militaryBranch.count.mockResolvedValueOnce(2);
-    await expect(
-      forces("owner").seedStarterForceStructure({ countryId: OWN })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(db.militaryBranch.createMany).not.toHaveBeenCalled();
+  it("seeds through the defense module (starter force once; empty branches after deleting them all)", async () => {
+    await expect(forces("owner").seedStarterForceStructure({ countryId: OWN })).resolves.toEqual({
+      created: 3,
+      budgetSource: "estimate",
+    });
+    expect(seedStarterBranches).toHaveBeenCalledWith(db, OWN);
   });
 
   it("deploys only units in the nation's own active branches", async () => {
@@ -375,11 +430,6 @@ describe("security.concludePvPConflict", () => {
   });
 
   it("resolves a due conflict once: writes the outcome, ends it, damages both economies", async () => {
-    const branch = (personnel: number) => ({ units: [{ personnel, readiness: 100 }], assets: [] });
-    db.militaryBranch.findMany
-      .mockResolvedValueOnce([branch(100_000)])
-      .mockResolvedValueOnce([branch(10)]);
-
     const res = await conclude("user_2", "country_2", "country_2");
 
     expect(res.status).toBe("resolved");
