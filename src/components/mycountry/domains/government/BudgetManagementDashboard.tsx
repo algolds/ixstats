@@ -14,6 +14,8 @@ import { currentBudgetYear, latestBudgetYearUpTo } from "~/lib/government/budget
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
 import { useBudgetEditing } from "~/hooks/useBudgetEditing";
+import { useNationClock } from "~/hooks/useNationClock";
+import { Skeleton } from "~/components/ui/skeleton";
 import type {
   GovernmentStructure,
   GovernmentDepartment,
@@ -58,14 +60,22 @@ interface BudgetManagementDashboardProps {
   isReadOnly?: boolean;
 }
 
-function YearSelect({ value, onChange }: { value: number; onChange: (year: number) => void }) {
+function YearSelect({
+  value,
+  currentYear,
+  onChange,
+}: {
+  value: number;
+  currentYear: number;
+  onChange: (year: number) => void;
+}) {
   return (
     <Select value={String(value)} onValueChange={(v) => onChange(parseInt(v, 10))}>
       <SelectTrigger className="text-footnote h-9 w-24 tabular-nums" aria-label="Budget year">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        {Array.from({ length: 5 }, (_, i) => currentBudgetYear() - i).map((year) => (
+        {Array.from({ length: 5 }, (_, i) => currentYear - i).map((year) => (
           <SelectItem key={year} value={String(year)} className="tabular-nums">
             {year}
           </SelectItem>
@@ -195,7 +205,15 @@ function BudgetTitle({
   );
 }
 
-export function BudgetManagementDashboard({
+/** The National budget, its years counted on the nation's realm clock (a skeleton until it is known). */
+export function BudgetManagementDashboard(props: BudgetManagementDashboardProps) {
+  const clock = useNationClock();
+  if (!clock) return <Skeleton className="rounded-card h-96 w-full" aria-label="Loading budget" />;
+  return <BudgetManagementBody {...props} currentYear={currentBudgetYear(clock.now())} />;
+}
+
+function BudgetManagementBody({
+  currentYear,
   countryId,
   revenue,
   governmentStructure: propStructure,
@@ -204,7 +222,7 @@ export function BudgetManagementDashboard({
   revenueSources: propRevenue,
   onUpdateBudget,
   isReadOnly = false,
-}: BudgetManagementDashboardProps) {
+}: BudgetManagementDashboardProps & { currentYear: number }) {
   const { ownerView, governmentStructure, departments, budgetAllocations, revenueSources } =
     useBudgetSources({
       countryId,
@@ -215,9 +233,8 @@ export function BudgetManagementDashboard({
     });
 
   const [selectedView, setSelectedView] = useState<BudgetView>("overview");
-  // The budget in effect is the latest year at or before the current IxTime year: after a
-  // rollover the previous year's budget stays in effect until the new one is started.
-  const currentYear = currentBudgetYear();
+  // The budget in effect is the latest year at or before the nation's current budget year: after
+  // a rollover the previous year's budget stays in effect until the new one is started.
   const effectiveYear =
     latestBudgetYearUpTo(
       budgetAllocations.map((a) => a.budgetYear),
@@ -270,7 +287,7 @@ export function BudgetManagementDashboard({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <BudgetTitle structure={governmentStructure} year={selectedYear} />
         <div className="flex items-center gap-3">
-          <YearSelect value={selectedYear} onChange={setSelectedYear} />
+          <YearSelect value={selectedYear} currentYear={currentYear} onChange={setSelectedYear} />
           <Badge variant="outline" className={budgetHealth.color}>
             {budgetHealth.label}
           </Badge>

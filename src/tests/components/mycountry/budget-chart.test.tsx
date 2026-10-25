@@ -11,7 +11,7 @@ jest.mock("~/trpc/react", () => ({
     government: {
       getFullByCountryId: {
         useQuery: () => ({
-          // A past budget year, so it is the budget in effect whatever today's IxTime year is
+          // A past budget year, so it is the budget in effect whatever the nation's budget year is
           data: { budgetAllocations: [{ budgetYear: 2000, allocatedAmount: 30e9 }] },
         }),
       },
@@ -29,6 +29,8 @@ jest.mock("~/components/mycountry/shared/primitives", () => ({
 
 import { buildDepartmentChartData } from "~/components/mycountry/domains/government/budget/budgetSummaries";
 import { FiscalPolicyInsights } from "~/components/mycountry/shell/fiscal/FiscalPolicyInsights";
+import { NationClockProvider } from "~/hooks/useNationClock";
+import { ixnayReader } from "~/tests/fixtures/realm-readers";
 
 const departments = Array.from({ length: 10 }, (_, i) => ({
   id: `d${i}`,
@@ -63,7 +65,11 @@ describe("the budget allocation chart", () => {
 describe("the fiscal health balance", () => {
   it("shows a deficit as a negative balance", () => {
     // Revenue 6.0B against 30.0B allocated: (6 - 30) / 6 = -400%
-    render(<FiscalPolicyInsights countryId="testland" />);
+    render(
+      <NationClockProvider value={ixnayReader()}>
+        <FiscalPolicyInsights countryId="testland" />
+      </NationClockProvider>
+    );
     expect(screen.getByText("-400.0%")).toBeTruthy();
     expect(screen.queryByText("400.0%")).toBeNull();
   });

@@ -50,7 +50,8 @@ jest.mock("recharts", () => {
   return new Proxy({}, { get: () => Stub });
 });
 
-import { IxTime } from "~/lib/ixtime";
+import { NationClockProvider } from "~/hooks/useNationClock";
+import { ixnayReader } from "~/tests/fixtures/realm-readers";
 import { BudgetManagementDashboard } from "~/components/mycountry/domains/government/BudgetManagementDashboard";
 import { nationalRevenue } from "~/components/mycountry/shell/fiscal/nationalRevenue";
 
@@ -89,14 +90,14 @@ const government = (revenue: number) => ({
       : [],
 });
 
-beforeAll(() => {
-  IxTime.setMultiplierOverride(0);
-  IxTime.setTimeOverride(Date.UTC(2043, 3, 1));
-});
-afterAll(() => {
-  IxTime.clearMultiplierOverride();
-  IxTime.clearTimeOverride();
-});
+/** The nation's realm clock stands in April 2043: budget year 2043. */
+const nationClock = ixnayReader(() => Date.UTC(2043, 3, 1));
+const renderInNation = (ui: React.ReactElement) =>
+  render(ui, {
+    wrapper: ({ children }) => (
+      <NationClockProvider value={nationClock}>{children}</NationClockProvider>
+    ),
+  });
 beforeEach(() => {
   for (const key of Object.keys(mockMutate)) delete mockMutate[key];
 });
@@ -108,7 +109,9 @@ const openView = (name: string) =>
 describe("the National budget tab", () => {
   it("weighs allocations against revenue and shows the year's maintenance, with no utilization", () => {
     mockData.gov = government(10e9);
-    render(<BudgetManagementDashboard countryId="testland" revenue={foundingRevenue(10e9)} />);
+    renderInNation(
+      <BudgetManagementDashboard countryId="testland" revenue={foundingRevenue(10e9)} />
+    );
     // 12B allocated against 10B of revenue: a deficit, never "Surplus" from an unrecorded spend
     expect(screen.getAllByText("High deficit").length).toBeGreaterThan(0);
     expect(screen.queryByText("Surplus")).toBeNull();
@@ -127,7 +130,7 @@ describe("the National budget tab", () => {
       governmentRevenueTotal: 999e9,
       fiscalSystem: { personalIncomeTaxRates: JSON.stringify({ incomeRate: 20 }) },
     });
-    render(<BudgetManagementDashboard countryId="testland" revenue={revenue} />);
+    renderInNation(<BudgetManagementDashboard countryId="testland" revenue={revenue} />);
     expect(screen.getByText("3.6B")).toBeInTheDocument();
     expect(screen.getByText("Your tax rates on today's GDP")).toBeInTheDocument();
     expect(screen.queryByText("999.0B")).toBeNull();
@@ -139,7 +142,7 @@ describe("the National budget tab", () => {
 
   it("says when no revenue is recorded instead of drawing an empty chart", () => {
     mockData.gov = government(0);
-    render(<BudgetManagementDashboard countryId="testland" revenue={foundingRevenue(0)} />);
+    renderInNation(<BudgetManagementDashboard countryId="testland" revenue={foundingRevenue(0)} />);
     expect(
       screen.getByText("No revenue sources are recorded for this government yet.")
     ).toBeInTheDocument();
@@ -148,7 +151,9 @@ describe("the National budget tab", () => {
 
   it("lets the owner set a share, remove a department and add one", () => {
     mockData.gov = government(20e9);
-    render(<BudgetManagementDashboard countryId="testland" revenue={foundingRevenue(20e9)} />);
+    renderInNation(
+      <BudgetManagementDashboard countryId="testland" revenue={foundingRevenue(20e9)} />
+    );
     openView("Departments");
     expect(screen.queryByText(/Budget utilization|Remaining/)).toBeNull();
 
@@ -181,7 +186,7 @@ describe("the National budget tab", () => {
 
   it("offers a nation with no government the create action", () => {
     mockData.gov = null;
-    render(<BudgetManagementDashboard countryId="testland" revenue={foundingRevenue(0)} />);
+    renderInNation(<BudgetManagementDashboard countryId="testland" revenue={foundingRevenue(0)} />);
     fireEvent.click(screen.getByRole("button", { name: "Create government structure" }));
     expect(mockMutate.createStructure).toHaveBeenCalledWith({
       countryId: "testland",
@@ -193,7 +198,9 @@ describe("the National budget tab", () => {
   it("sends the nation's revenue with the create action, so the new budget starts balanced", () => {
     mockData.gov = null;
     mockData.country = { currentTotalGdp: 1.5e11, governmentRevenueTotal: 6e9 };
-    render(<BudgetManagementDashboard countryId="testland" revenue={foundingRevenue(6e9)} />);
+    renderInNation(
+      <BudgetManagementDashboard countryId="testland" revenue={foundingRevenue(6e9)} />
+    );
     fireEvent.click(screen.getByRole("button", { name: "Create government structure" }));
     expect(mockMutate.createStructure).toHaveBeenLastCalledWith({
       countryId: "testland",

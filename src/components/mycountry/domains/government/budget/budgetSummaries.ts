@@ -143,11 +143,15 @@ export function summarizeRevenue(
   return summaryOf([], 0, null);
 }
 
-/** What the budget in effect (latest year at or before now) allocates in total. */
+/** What the budget in effect (latest year at or before `currentYear`, the nation's) allocates in total. */
 export function allocatedInEffect(
-  allocations: Pick<BudgetAllocation, "budgetYear" | "allocatedAmount">[]
+  allocations: Pick<BudgetAllocation, "budgetYear" | "allocatedAmount">[],
+  currentYear: number
 ): number | null {
-  const year = latestBudgetYearUpTo(allocations.map((a) => a.budgetYear));
+  const year = latestBudgetYearUpTo(
+    allocations.map((a) => a.budgetYear),
+    currentYear
+  );
   if (year == null) return null;
   return sumOf(
     allocations.filter((a) => a.budgetYear === year),
