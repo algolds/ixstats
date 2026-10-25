@@ -70,6 +70,6 @@ describe("useMyCountryCompliance", () => {
     const { result } = renderHook(() => useMyCountryCompliance());
     const taxes = result.current.sections.find((s) => s.id === "taxes");
     expect(taxes?.missing).toEqual(["Tax rates"]);
-    expect(complianceReviewHref(taxes)).toBe("/mycountry/economy?tab=monetary");
+    expect(complianceReviewHref(taxes)).toBe("/mycountry/economy?tab=taxes");
   });
 });

@@ -22,7 +22,7 @@ The model health score at the bottom summarises how sustainable the scenario loo
 
 ## Saving
 
-**Save Economic Model** stores your scenario's parameters on your nation's economic profile so you can come back to them. It doesn't change your live GDP, growth or tier; those follow the rules in [How Your Economy Is Calculated](/help/economy/calculations).
+**Save to economic profile** writes the scenario's latest sector mix and its trade balance to your nation's economic profile (the sector breakdown the Economy tabs show). The other parameters and policy effects are not saved. It doesn't change your live GDP, growth or tier; those follow the rules in [How Your Economy Is Calculated](/help/economy/calculations).
 
 ## Good to know
 

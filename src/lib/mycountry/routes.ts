@@ -11,22 +11,32 @@ export const MYCOUNTRY_PATH = "/mycountry";
 export const MYCOUNTRY_WELCOME_PATH = "/mycountry/welcome";
 
 /** The Economy section's tabs, as `?tab=` takes them. */
-export const ECONOMY_TABS = ["macro", "fiscal", "monetary", "trade"] as const;
+export const ECONOMY_TABS = ["report", "budget", "taxes", "trade"] as const;
 export type EconomyTab = (typeof ECONOMY_TABS)[number];
 
-export function isEconomyTab(value: string | null | undefined): value is EconomyTab {
-  return ECONOMY_TABS.includes(value as EconomyTab);
+/** Tab ids older links carry: "fiscal" was the budget, "monetary" the tax rates. */
+const LEGACY_ECONOMY_TABS: Record<string, EconomyTab> = {
+  macro: "report",
+  fiscal: "budget",
+  monetary: "taxes",
+};
+
+/** The tab a `?tab=` value opens (old ids included), or null when it names none. */
+export function economyTabFromParam(value: string | null | undefined): EconomyTab | null {
+  if (!value) return null;
+  if ((ECONOMY_TABS as readonly string[]).includes(value)) return value as EconomyTab;
+  return LEGACY_ECONOMY_TABS[value] ?? null;
 }
 
-/** The Economy section opened on one tab ("fiscal" is National budget, "monetary" Fiscal policy). */
+/** The Economy section opened on one tab. */
 export function economyTabHref(tab: EconomyTab): string {
   return `/mycountry/economy?tab=${tab}`;
 }
 
 /** The National budget console. */
-export const MYCOUNTRY_BUDGET_PATH = economyTabHref("fiscal");
-/** The Fiscal policy console, where tax rates are set. */
-export const MYCOUNTRY_TAX_PATH = economyTabHref("monetary");
+export const MYCOUNTRY_BUDGET_PATH = economyTabHref("budget");
+/** The tax rates console, where tax rates are set. */
+export const MYCOUNTRY_TAX_PATH = economyTabHref("taxes");
 /** The Politics section, which opens on the cabinet. */
 export const MYCOUNTRY_CABINET_PATH = "/mycountry/politics";
 /** The nation's map editor, where cities (the capital among them) are placed. */
@@ -66,8 +76,8 @@ export const MYCOUNTRY_ECONOMY_PATH = "/mycountry/economy";
 
 /**
  * Where the profile checklist's Review goes for its first incomplete section: identity and the
- * form of government are edited in the editor, departments and allocations in the National budget
- * tab, tax rates in the Fiscal policy tab.
+ * form of government are edited in the editor, departments and allocations in the Budget tab, tax
+ * rates in the Taxes tab.
  */
 export function complianceReviewHref(
   section: { id: string; missing: readonly string[] } | undefined

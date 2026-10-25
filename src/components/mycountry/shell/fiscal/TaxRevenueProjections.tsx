@@ -31,9 +31,7 @@ export function TaxRevenueProjections({ yields }: TaxRevenueProjectionsProps) {
                   aria-hidden="true"
                   className={cn("h-2 w-2 shrink-0 rounded-full", ACCENT_BG[ch.accent])}
                 />
-                <span className="text-stat-label text-label-secondary truncate">
-                  {ch.shortLabel}
-                </span>
+                <span className="text-label-secondary text-footnote truncate">{ch.shortLabel}</span>
               </div>
               <p className="text-label text-title-3 tabular-nums">
                 {value != null ? <CurrencyFlow value={value} decimalPlaces={2} /> : "—"}

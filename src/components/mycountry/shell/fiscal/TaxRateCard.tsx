@@ -7,6 +7,17 @@ import { CurrencyFlow, PercentageFlow } from "~/components/ui/number-flow";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "~/components/ui/alert-dialog";
 import { type TaxChannel, ACCENT_BG } from "./taxChannels";
 import { Card } from "~/components/ui/card";
 import { RateInput } from "../RateInput";
@@ -15,12 +26,48 @@ interface TaxRateCardProps {
   channel: TaxChannel;
   /** The saved or edited rate; null when the nation hasn't set this tax. */
   rate: number | null;
-  /** True when the rate comes from builder brackets — shown read-only (top rate). */
+  /** True when the rate comes from builder brackets: read-only (top rate) until flattened. */
   bracketed: boolean;
   yieldValue: number | null;
   totalYield: number | null;
   onChange: (value: number) => void;
   onCommit: (value: number) => void;
+}
+
+/** Replaces a bracket list with one flat rate (the top bracket's, within the slider's range). */
+function FlattenBracketsButton({
+  channel,
+  topRate,
+  onConfirm,
+}: {
+  channel: TaxChannel;
+  topRate: number;
+  onConfirm: (flatRate: number) => void;
+}) {
+  const flatRate = Math.min(Math.max(topRate, channel.min), channel.max);
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button type="button" variant="outline" size="sm" className="h-11 sm:h-7">
+          Use one rate
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Replace the brackets with one rate?</AlertDialogTitle>
+          <AlertDialogDescription>
+            {channel.label} becomes a flat {flatRate}%
+            {flatRate === topRate ? ", the top bracket rate" : `, the most this tax allows`}, which
+            you can then change. The bracket list is replaced and cannot be restored here.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Keep brackets</AlertDialogCancel>
+          <AlertDialogAction onClick={() => onConfirm(flatRate)}>Use one rate</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 }
 
 function TaxRateCardComponent({
@@ -33,6 +80,9 @@ function TaxRateCardComponent({
   onCommit,
 }: TaxRateCardProps) {
   const [isLocked, setIsLocked] = useState(true);
+  // Flattened in this session: editable at once, before the refetched record drops the brackets.
+  const [flattened, setFlattened] = useState(false);
+  const isBracketed = bracketed && !flattened;
   const contributionPct =
     yieldValue != null && totalYield != null && totalYield > 0
       ? (yieldValue / totalYield) * 100
@@ -41,7 +91,7 @@ function TaxRateCardComponent({
   const sliderValue = rate ?? channel.min;
 
   const handleToggleLock = () => {
-    if (bracketed) return;
+    if (isBracketed) return;
     if (!isLocked) {
       if (rate != null) onCommit(rate);
       setIsLocked(true);
@@ -60,18 +110,18 @@ function TaxRateCardComponent({
             variant="ghost"
             size="icon"
             onClick={handleToggleLock}
-            disabled={bracketed}
+            disabled={isBracketed}
             aria-pressed={!isLocked}
             aria-label={
-              bracketed
+              isBracketed
                 ? `${channel.label} is set by tax brackets`
                 : isLocked
                   ? `Edit ${channel.label} rate`
                   : `Save and lock ${channel.label} rate`
             }
             title={
-              bracketed
-                ? "Set by tax brackets in the Country Editor"
+              isBracketed
+                ? "Set by tax brackets"
                 : isLocked
                   ? "Locked. Click to edit the rate"
                   : "Editing. Click to save and lock the rate"
@@ -91,10 +141,10 @@ function TaxRateCardComponent({
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
-          {!isLocked && <span className="text-stat-label text-tint">Editing</span>}
+          {!isLocked && <span className="text-tint text-footnote">Editing</span>}
           {rate != null ? (
             <span className="text-label text-title-3 tabular-nums">
-              {bracketed && <span className="text-label-secondary text-footnote mr-1">Top</span>}
+              {isBracketed && <span className="text-label-secondary text-footnote mr-1">Top</span>}
               <PercentageFlow value={rate} decimalPlaces={1} />
             </span>
           ) : (
@@ -140,11 +190,24 @@ function TaxRateCardComponent({
         />
       </div>
 
+      {isBracketed && rate != null && (
+        <div className="text-footnote flex flex-wrap items-center justify-between gap-2">
+          <span className="text-label-secondary">Set by tax brackets</span>
+          <FlattenBracketsButton
+            channel={channel}
+            topRate={rate}
+            onConfirm={(flatRate) => {
+              setFlattened(true);
+              setIsLocked(false);
+              onCommit(flatRate);
+            }}
+          />
+        </div>
+      )}
+
       {/* Yield preview */}
       <div className="text-footnote flex items-center justify-between gap-2">
-        <span className="text-label-secondary">
-          {bracketed ? "Set by brackets in the Country Editor" : "Yield contribution"}
-        </span>
+        <span className="text-label-secondary">Yield contribution</span>
         <span className="text-label font-semibold tabular-nums">
           {yieldValue != null ? <CurrencyFlow value={yieldValue} decimalPlaces={1} /> : "—"}
         </span>

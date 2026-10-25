@@ -15,11 +15,11 @@ Trade shows up in three places: the **Trade & Commerce** tab of [Economy & Budge
 ## The Trade & Commerce tab
 
 - **Trade summary.** Exports, imports and the trade balance, worked out from the exports and imports (as a share of GDP) you recorded for your nation, applied to your current GDP. If none are recorded they show "—". These are not a record of real trade with other nations.
-- **Sector Tariff Planner.** Sliders for tariffs by sector, with the planner's average tariff and the tariff revenue it would raise on your recorded imports. The planner starts from your nation's recorded sectors, each at your saved Fiscal Policy tariff rate and weighted by its share of GDP. You can add sectors to try ideas out.
+- **Sector Tariff Planner.** Sliders for tariffs by sector, with the planner's average tariff and the tariff revenue it would raise on your recorded imports. The planner starts from your nation's recorded sectors, each at your saved import tariff and weighted by its share of GDP. You can add sectors to try ideas out.
 - **Bilateral Trade Agreements & Partners.** The nations you have relations with. A **Trade treaty** badge means a trade treaty is recorded with that nation; otherwise **Propose FTA** opens their country page so you can propose one (see below).
 
 > [!WARNING]
-> **The Sector Tariff Planner isn't saved.** It's marked **Not saved** in the tab: use it to try out a tariff schedule. It resets when you leave the page and doesn't change your economy. The tariff that is saved for your nation is the **Tariff rate** in [Fiscal Policy](/help/economy/tax-system).
+> **The Sector Tariff Planner isn't saved.** It's marked **Not saved** in the tab: use it to try out a tariff schedule. It resets when you leave the page and doesn't change your economy. The tariff that is saved for your nation is the **Import tariff** in [Taxes](/help/economy/tax-system).
 
 ## Trade agreements
 
@@ -38,4 +38,4 @@ Roads, rail and sea routes you draw (or generate) in the [map editor](/help/myco
 ## Tips
 
 - If you want trade to shape your story, record agreements and routes; those are saved and visible to others.
-- Keep the Fiscal Policy tariff rate in line with the story you tell: it's the tariff figure that's stored for your nation.
+- Keep the import tariff in the Taxes tab in line with the story you tell: it's the tariff figure that's stored for your nation.

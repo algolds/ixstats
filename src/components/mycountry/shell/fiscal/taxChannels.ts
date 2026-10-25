@@ -1,5 +1,6 @@
 import { parseSectorBreakdown } from "~/lib/economy/sector-breakdown";
 import type { CountryEconomicRelations } from "~/lib/economy/country-relations";
+import { TAX_RATE_LIMITS } from "~/lib/economy/tax-rate-limits";
 export interface TaxChannel {
   key: string;
   label: string;
@@ -21,8 +22,7 @@ export const TAX_CHANNELS: TaxChannel[] = [
     label: "Corporate tax",
     shortLabel: "Corp",
     dbField: "corporateTaxRates",
-    min: 0,
-    max: 50,
+    ...TAX_RATE_LIMITS.corporate,
     step: 0.5,
     accent: "emerald",
     accentClass: "text-green",
@@ -33,8 +33,7 @@ export const TAX_CHANNELS: TaxChannel[] = [
     label: "Income tax",
     shortLabel: "Income",
     dbField: "personalIncomeTaxRates",
-    min: 0,
-    max: 60,
+    ...TAX_RATE_LIMITS.income,
     step: 0.5,
     accent: "cyan",
     accentClass: "text-cyan",
@@ -42,11 +41,10 @@ export const TAX_CHANNELS: TaxChannel[] = [
   },
   {
     key: "vat",
-    label: "VAT / Sales Tax",
+    label: "VAT and sales tax",
     shortLabel: "VAT",
     dbField: "salesTaxRate",
-    min: 0,
-    max: 30,
+    ...TAX_RATE_LIMITS.vat,
     step: 0.5,
     accent: "amber",
     accentClass: "text-yellow",
@@ -54,11 +52,10 @@ export const TAX_CHANNELS: TaxChannel[] = [
   },
   {
     key: "tariff",
-    label: "Tariff rate",
+    label: "Import tariff",
     shortLabel: "Tariff",
     dbField: "exciseTaxRates",
-    min: 0,
-    max: 25,
+    ...TAX_RATE_LIMITS.tariff,
     step: 0.5,
     accent: "indigo",
     accentClass: "text-indigo",
@@ -69,8 +66,7 @@ export const TAX_CHANNELS: TaxChannel[] = [
     label: "Wealth tax",
     shortLabel: "Wealth",
     dbField: "wealthTaxRate",
-    min: 0,
-    max: 10,
+    ...TAX_RATE_LIMITS.wealth,
     step: 0.1,
     accent: "blue",
     accentClass: "text-blue",
@@ -79,10 +75,9 @@ export const TAX_CHANNELS: TaxChannel[] = [
   {
     key: "capGains",
     label: "Capital gains tax",
-    shortLabel: "Cap Gains",
+    shortLabel: "Cap gains",
     dbField: "capitalGainsTax",
-    min: 0,
-    max: 40,
+    ...TAX_RATE_LIMITS.capGains,
     step: 0.5,
     accent: "red",
     accentClass: "text-red",
@@ -115,7 +110,7 @@ interface SavedRate {
   rate: number | null;
   /**
    * True when the field holds the builder's bracket list (`[{ bracket|size, rate }]`). The
-   * console shows the top rate read-only rather than flattening the brackets on save.
+   * console shows the top rate read-only until the owner confirms replacing it with one rate.
    */
   bracketed: boolean;
 }

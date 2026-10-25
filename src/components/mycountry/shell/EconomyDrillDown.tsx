@@ -21,12 +21,14 @@ import { SectionTabBar } from "~/components/mycountry/shared/primitives/SectionT
 import { parseSectorBreakdown } from "~/lib/economy/sector-breakdown";
 import {
   economicRelationsOf,
+  economyFiguresOf,
   finiteOrNull,
-  savedTariffRate,
 } from "~/lib/economy/country-relations";
+import { incomeSharesOf } from "~/lib/economy/income-classes";
+import { nationalRevenue, REVENUE_BASIS_NOTE } from "./fiscal/nationalRevenue";
 import { Card } from "~/components/ui/card";
 import { SheetSection } from "./SheetSection";
-import { isEconomyTab, type EconomyTab } from "~/lib/mycountry/routes";
+import { economyTabFromParam, type EconomyTab } from "~/lib/mycountry/routes";
 
 const BudgetManagementDashboard = dynamic(
   () =>
@@ -74,7 +76,7 @@ const InfrastructureMaintenanceCard = dynamic(
   }
 );
 
-/** A captioned figure: eyebrow label, value, optional footnote. */
+/** A captioned figure: label, value, optional footnote. */
 function StatTile({
   label,
   value,
@@ -91,7 +93,7 @@ function StatTile({
 }) {
   return (
     <Card className={cn(roomy ? "rounded-card p-4" : "rounded-row p-2", className)}>
-      <span className="text-stat-label text-label-secondary block">{label}</span>
+      <span className="text-label-secondary text-footnote block">{label}</span>
       <p className={cn("text-label text-title-3 tabular-nums", roomy ? "mt-1" : "mt-0.5")}>
         {value}
       </p>
@@ -116,11 +118,12 @@ function giniLabel(raw: number | null): string {
 type Country = ReturnType<typeof useCountryData>["country"];
 type Dashboard = RouterOutputs["mycountry"]["getCountryDashboard"];
 
+// Short labels so all four fit a phone-width bar without truncating.
 const TABS: Array<{ id: EconomyTab; label: string; icon: typeof TrendingUp }> = [
-  { id: "macro" as const, label: "Economic report", icon: TrendingUp },
-  { id: "fiscal" as const, label: "National budget", icon: Landmark },
-  { id: "monetary" as const, label: "Fiscal policy", icon: Coins },
-  { id: "trade" as const, label: "Trade & commerce", icon: Globe2 },
+  { id: "report", label: "Report", icon: TrendingUp },
+  { id: "budget", label: "Budget", icon: Landmark },
+  { id: "taxes", label: "Taxes", icon: Coins },
+  { id: "trade", label: "Trade", icon: Globe2 },
 ];
 
 /** Whole dollars as billions, e.g. "$1.25B"; "—" when missing or zero. */
@@ -133,10 +136,12 @@ function MacroTab({
   country,
   countryId,
   dashboard,
+  onDeclare,
 }: {
   country: Country;
   countryId: string;
   dashboard: Dashboard | undefined;
+  onDeclare?: (goal: string) => void;
 }) {
   // Economy relation rows ride along on the country record (getByIdWithEconomicData).
   const {
@@ -144,16 +149,18 @@ function MacroTab({
     laborMarket: labor,
     incomeDistribution: income,
   } = economicRelationsOf(country);
+  const figures = economyFiguresOf(country);
   const sectors = parseSectorBreakdown(profile?.sectorBreakdown);
   const complexity = finiteOrNull(profile?.economicComplexity);
-  const growth = country?.realGdpGrowthRate;
+  const growth = figures.gdpGrowth;
   const medianWage = finiteOrNull(labor?.medianWage);
-  const mobility = finiteOrNull(income?.intergenerationalMobility);
+  const shares = incomeSharesOf(income?.economicClasses);
+  const mobility = figures.socialMobilityIndex ?? finiteOrNull(income?.intergenerationalMobility);
 
   const metrics = [
     {
       label: "GDP (Total)",
-      value: billions(country?.currentTotalGdp),
+      value: billions(figures.currentTotalGdp),
       sub: "Gross Domestic Product",
     },
     {
@@ -192,7 +199,7 @@ function MacroTab({
       >
         {sectors.length === 0 ? (
           <p className="text-label-secondary text-footnote py-2 text-center">
-            No sector breakdown recorded. Add one in the Country Editor (Economics step).
+            No sector breakdown is recorded for this nation.
           </p>
         ) : (
           <div className="text-footnote grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -230,7 +237,7 @@ function MacroTab({
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <StatTile
             label="Unemployment"
-            value={pct(finiteOrNull(country?.unemploymentRate))}
+            value={pct(figures.unemploymentRate)}
             note="Nominal rate"
           />
           <StatTile
@@ -256,18 +263,20 @@ function MacroTab({
         icon={Scale}
         accessory={
           <Badge variant="default" className="tabular-nums">
-            Gini {giniLabel(finiteOrNull(country?.incomeInequalityGini))}
+            Gini {giniLabel(figures.incomeInequalityGini)}
           </Badge>
         }
       >
         <div className="grid grid-cols-3 gap-3">
           <StatTile
             label="Top 10% wealth share"
-            value={pct(finiteOrNull(income?.top10PercentWealth))}
+            value={pct(shares.top10WealthShare)}
+            note="From income classes"
           />
           <StatTile
             label="Middle class share"
-            value={pct(finiteOrNull(income?.middleClassPercent))}
+            value={pct(shares.middleClassShare)}
+            note="Of the population"
           />
           <StatTile
             label="Social mobility"
@@ -276,23 +285,16 @@ function MacroTab({
         </div>
       </SheetSection>
 
-      <InfrastructureMaintenanceCard countryId={countryId} />
+      <InfrastructureMaintenanceCard countryId={countryId} onDeclareDirective={onDeclare} />
     </div>
   );
 }
 
 function FiscalTab({ country, countryId }: { country: Country; countryId: string }) {
-  const { economicProfile: profile, fiscalSystem: fiscal } = economicRelationsOf(country);
-  const gdp = finiteOrNull(country?.currentTotalGdp);
-  const taxEfficiency = finiteOrNull(fiscal?.taxEfficiency);
-
-  // Tariff revenue: saved Fiscal Policy tariff rate on recorded imports, net of tax efficiency.
-  const tariffRate = savedTariffRate(fiscal?.exciseTaxRates);
-  const importsPct = finiteOrNull(profile?.importsGDPPercent);
-  const tariffRevenue =
-    gdp != null && importsPct != null && tariffRate != null && taxEfficiency != null
-      ? gdp * (importsPct / 100) * (tariffRate / 100) * taxEfficiency
-      : null;
+  // The one revenue figure: saved rates on today's GDP, else the founding estimate.
+  const revenue = nationalRevenue(country);
+  const tariffRevenue = revenue.yields.byChannel.tariff ?? null;
+  const efficiency = revenue.taxEfficiency;
 
   return (
     <div className="space-y-4">
@@ -304,38 +306,47 @@ function FiscalTab({ country, countryId }: { country: Country; countryId: string
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <StatTile
             label="Tax revenue yield"
-            value={billions(country?.governmentRevenueTotal, " / yr")}
-            note="Sourced from the Fiscal Policy tab"
+            value={billions(revenue.total, " / yr")}
+            note={revenue.basis ? REVENUE_BASIS_NOTE[revenue.basis] : "No tax rates set yet"}
           />
           <StatTile
             label="Trade tariff revenue"
-            value={tariffRevenue != null ? `$${(tariffRevenue / 1e9).toFixed(2)}B / yr` : "—"}
-            note="Fiscal Policy tariff rate on recorded imports"
+            value={billions(tariffRevenue, " / yr")}
+            note={
+              efficiency == null
+                ? "Import tariff yield, before collection losses"
+                : "Import tariff yield after collection"
+            }
           />
           <StatTile
             label="Tax system efficiency"
-            value={taxEfficiency != null ? `${Math.round(taxEfficiency * 100)}%` : "—"}
+            value={pct(efficiency != null ? efficiency * 100 : null, 0)}
             note="Collection efficiency"
             className="col-span-2 sm:col-span-1"
           />
         </div>
       </SheetSection>
 
-      <BudgetManagementDashboard countryId={countryId} />
+      <BudgetManagementDashboard countryId={countryId} revenue={revenue} />
     </div>
   );
 }
 
 interface EconomyDrillDownProps {
   countryId: string;
+  /** Opens the Directive composer with a goal (the infrastructure card's rehabilitation). */
+  onDeclare?: (goal: string) => void;
 }
 
-/** Economy drill-down: macro, fiscal, monetary and trade tabs. Shared between the drill sheet and the full-page economy surface. */
-function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.JSX.Element {
-  // `?tab=` opens a console directly (the First steps links); the bar takes over from there.
+/** Economy drill-down: report, budget, taxes and trade tabs. Shared between the drill sheet and the full-page economy surface. */
+function EconomyDrillDownComponent({
+  countryId,
+  onDeclare,
+}: EconomyDrillDownProps): React.JSX.Element {
+  // `?tab=` opens a console directly (the First steps links, old ids too); the bar takes over.
   const tabParam = useSearchParams()?.get("tab");
-  const [activeTab, setActiveTab] = useState<EconomyTab>(() =>
-    isEconomyTab(tabParam) ? tabParam : "macro"
+  const [activeTab, setActiveTab] = useState<EconomyTab>(
+    () => economyTabFromParam(tabParam) ?? "report"
   );
   const { country } = useCountryData();
   const { data: dashboard } = api.mycountry.getCountryDashboard.useQuery(
@@ -346,11 +357,16 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
   return (
     <div className="space-y-4">
       <SectionTabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
-      {activeTab === "macro" && (
-        <MacroTab country={country} countryId={countryId} dashboard={dashboard} />
+      {activeTab === "report" && (
+        <MacroTab
+          country={country}
+          countryId={countryId}
+          dashboard={dashboard}
+          onDeclare={onDeclare}
+        />
       )}
-      {activeTab === "fiscal" && <FiscalTab country={country} countryId={countryId} />}
-      {activeTab === "monetary" && <FiscalPolicyConsole countryId={countryId} />}
+      {activeTab === "budget" && <FiscalTab country={country} countryId={countryId} />}
+      {activeTab === "taxes" && <FiscalPolicyConsole countryId={countryId} />}
       {activeTab === "trade" && <TradeCommerceConsole countryId={countryId} />}
     </div>
   );

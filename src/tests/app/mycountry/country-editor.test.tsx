@@ -211,6 +211,6 @@ describe("the country editor", () => {
     expect(mockPush).not.toHaveBeenCalled();
 
     fireEvent.click(within(dialog).getByRole("button", { name: "Leave" }));
-    expect(mockPush).toHaveBeenCalledWith("/mycountry/economy?tab=fiscal");
+    expect(mockPush).toHaveBeenCalledWith("/mycountry/economy?tab=budget");
   });
 });

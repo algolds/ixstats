@@ -1,6 +1,6 @@
 ---
 title: Taxes & Revenue
-description: Setting tax rates in Fiscal Policy, what they affect, and what they don't.
+description: Setting tax rates in the Taxes tab, what they affect, and what they don't.
 badge: Economy & Government
 prevHref: /help/economy/calculations
 prevLabel: How Your Economy Is Calculated
@@ -10,11 +10,11 @@ nextLabel: Trade & Commerce
 
 ## Where taxes are set
 
-Your national tax rates are in [MyCountry → Economy](/mycountry/economy) → **Fiscal Policy**, under **National Tax Rate Controls**. Founding sets starting rates from the kind of nation you chose; a tax you haven't set yet is marked **Not set** and has no revenue projection until you set it.
+Your national tax rates are in [MyCountry → Economy](/mycountry/economy) → **Taxes**, under **National Tax Rate Controls**. Founding sets starting rates from the kind of nation you chose; a tax you haven't set yet is marked **Not set** and has no revenue projection until you set it.
 
 ## How to change a tax rate
 
-1. Open [Economy & Budget](/mycountry/economy) and choose **Fiscal Policy**.
+1. Open [Economy & Budget](/mycountry/economy) and choose **Taxes**.
 2. Click the lock on a tax to unlock it, then move its slider. The rate saves when you let go and is there when you come back.
 3. Check **Tax Revenue Projections** to see what each tax contributes.
 4. Check the insights panel, which places your overall tax burden against an "optimal zone" of 15–35%.
@@ -23,18 +23,18 @@ Your national tax rates are in [MyCountry → Economy](/mycountry/economy) → *
 | --- | --- | --- |
 | Income tax | 0–60% | 24% |
 | Corporate tax | 0–50% | 21% |
-| VAT / sales tax | 0–30% | 15% |
-| Tariff rate | 0–25% | 4.5% |
+| VAT and sales tax | 0–30% | 15% |
+| Import tariff | 0–25% | 4.5% |
 | Wealth tax | 0–10% | 1.5% |
 | Capital gains tax | 0–40% | 15% |
 
-- **Brackets.** Some older nations have income or corporate tax stored as brackets. The tab shows the top rate read-only; brackets can't be changed at the moment.
+- **Brackets.** Some older nations have income or corporate tax stored as brackets. The tab shows the top rate read-only. **Use one rate** replaces the brackets with that top rate (after a confirm), and you can then move it like any other tax.
 - **Projections.** Revenue is your GDP × rate × how much of the economy each tax reaches, reduced by your recorded collection efficiency. With no efficiency recorded, projections are shown before collection losses. Without a GDP figure, projections show "—".
 
 ## What tax rates affect
 
-- **Revenue figures:** projected revenue per tax and your total.
-- **The budget picture:** revenue versus department spending in [National Budget](/help/mycountry/economy#national-budget).
+- **Revenue figures:** projected revenue per tax and your total. This is the one revenue figure every Economy tab shows; until you save a rate, your founding estimate stands in.
+- **The budget picture:** revenue versus department spending in [Budget](/help/mycountry/economy#budget).
 
 ## What they don't affect (yet)
 

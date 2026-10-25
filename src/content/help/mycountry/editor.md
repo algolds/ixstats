@@ -47,6 +47,6 @@ If you follow a link or go back with unsaved changes, the editor asks **Leave wi
 ## Things the editor doesn't do
 
 - **Budget and departments** are in [Economy & Budget](/help/mycountry/economy).
-- **Tax rates** are set in [Economy & Budget → Fiscal Policy](/help/mycountry/economy).
+- **Tax rates** are set in [Economy & Budget → Taxes](/help/mycountry/economy).
 - **Cabinet, parties and the legislature** are in [Politics](/help/mycountry/politics).
 - **Territory** (cities, provinces, routes) is edited on the map; see [Editing Your Territory](/help/mycountry/map-editor).
