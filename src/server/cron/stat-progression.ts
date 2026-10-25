@@ -12,6 +12,7 @@
  * - A country whose projection equals its stored stats (within STAT_UNCHANGED_TOLERANCE) is not
  *   written. `force` writes every country (the admin button).
  * - Only projected columns are written (`projectedStatsUpdate`); baselines are never touched.
+ * - The yearly government budget follows GDP: it moves by the same ratio as the stored GDP.
  * - One HistoricalDataPoint per country per IxTime month (HISTORY_PERIOD), skipped when the
  *   period already has one, so reruns are idempotent and history charts stop being synthesised.
  */
@@ -25,6 +26,9 @@ import {
   projectedStatsUpdate,
 } from "~/server/shared/country-helpers";
 import type { CountryStats } from "~/types/ixstats";
+import { scaleBudgetWithGdp } from "~/lib/government/budget-allocations";
+import { gdpScaleRatio } from "~/lib/government/budget-math";
+import { currentBudgetYear } from "~/lib/government/budget-year";
 
 /** Countries loaded and projected per batch. */
 const STAT_PROGRESSION_BATCH_SIZE = 50;
@@ -83,6 +87,24 @@ export function historyPointData(countryId: string, stats: CountryStats, ixTime:
     populationDensity: stats.populationDensity ?? null,
     gdpDensity: stats.gdpDensity ?? null,
   };
+}
+
+/**
+ * Write a country's projection and move its yearly budget by the same GDP ratio, in one
+ * transaction, so the budget follows every GDP step exactly once.
+ */
+async function writeProjection(
+  db: PrismaClient,
+  countryId: string,
+  storedGdp: number,
+  data: ProjectedUpdate,
+  ixTime: number
+) {
+  const ratio = gdpScaleRatio(storedGdp, data.currentTotalGdp);
+  await db.$transaction(async (tx) => {
+    await tx.country.update({ where: { id: countryId }, data });
+    await scaleBudgetWithGdp(tx, countryId, ratio, currentBudgetYear(ixTime));
+  });
 }
 
 /** Columns the projection reads (prepareBaseCountryData) plus the stored stats it compares. */
@@ -219,7 +241,7 @@ export async function runStatProgression(
         const data = projectedStatsUpdate(stats, ixTime);
 
         if (options.force || !isProjectionUnchanged(country, data)) {
-          await db.country.update({ where: { id: country.id }, data });
+          await writeProjection(db, country.id, country.currentTotalGdp, data, ixTime);
           result.updated++;
           if (country.economicTier && country.economicTier !== data.economicTier) {
             notifyTierChange(options.onEconomicTierChange, {

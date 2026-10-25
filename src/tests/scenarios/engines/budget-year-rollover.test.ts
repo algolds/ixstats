@@ -1,11 +1,13 @@
 /** @jest-environment node */
 /**
  * The budget year is the IxTime game year. In FY2042 Testland's power brokers read the 2042 budget, and the
- * policy-maintenance job, run twice, expires a lapsed policy and debits each active one once. The IxTime year turns
+ * policy-maintenance job, run twice, expires a lapsed policy and charges each active one once, as spending within the
+ * year: the yearly budget itself is never debited. The IxTime year turns
  * over: the 2042 budget stays in effect, the rollover cron reminds each owned nation behind on its budget once (one
  * failed reminder does not stop the others), and a nation with no budget gets nothing. The owner starts FY2043, which
- * copies the budget in effect without overwriting the line already set, and the brokers follow it. In 2043 the job
- * debits once more, and a policy enacted later in the year is debited alone.
+ * copies the shares of the budget in effect, each worth its share of today's budget, without overwriting the line
+ * already set, and the brokers follow it. In 2043 the job charges once more, and a policy enacted later in the year is
+ * charged alone; a policy that costs more than the year's budget has left is charged only what is left.
  *
  * Folds budget-rollover (carry-forward, the no-overwrite roll, once-per-year reminders, nothing without a budget),
  * budget-year (the IxTime game year, MC-1), elections-brokers-budget-year (brokers read the budget in effect across
@@ -27,6 +29,7 @@ import { currentBudgetYear } from "~/lib/government/budget-year";
 import { loadEffectiveBudget, rollBudgetForward } from "~/lib/government/budget-allocations";
 import { runBudgetYearRollover } from "~/lib/government/budget-year-rollover-cron";
 import { runPolicyMaintenanceDebits } from "~/lib/policies/maintenance-cron";
+import { maintenanceByYear } from "~/lib/government/budget-math";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
 import { createCallerFactory } from "~/server/api/trpc";
 import { electionsBrokersRouter } from "~/server/api/routers/elections/brokers";
@@ -77,6 +80,14 @@ async function addPolicy(
 
 const totalBudget = async (countryId: string) =>
   (await db.governmentStructure.findUniqueOrThrow({ where: { countryId } })).totalBudget;
+/** Maintenance spent per budget year, from the charge markers. */
+const maintenanceSpent = async () =>
+  maintenanceByYear(
+    await db.policyEffectLog.findMany({
+      where: { effectType: "MAINTENANCE_DEBIT", policy: { countryId: "testland" } },
+      select: { notes: true, actualEffect: true },
+    })
+  );
 const debitMarkers = (notes: string) =>
   db.policyEffectLog.findMany({
     where: { effectType: "MAINTENANCE_DEBIT", notes },
@@ -173,7 +184,9 @@ it("carries the budget across the IxTime year, reminds once, rolls it forward an
   expect(first).toMatchObject({ policiesExpired: 1, totalCostDebited: 1500 });
   expect((await db.policy.findUniqueOrThrow({ where: { id: "lapsed" } })).status).toBe("expired");
   expect(await runPolicyMaintenanceDebits(db as never)).toMatchObject({ totalCostDebited: 0 });
-  expect(await totalBudget("testland")).toBe(BUDGET - 1500);
+  // Spending within the year: the yearly budget is not debited
+  expect(await totalBudget("testland")).toBe(BUDGET);
+  expect(await maintenanceSpent()).toEqual({ 2042: 1500 });
   expect(await debitMarkers("FY2042")).toEqual([{ policyId: "p1" }, { policyId: "p2" }]);
 
   // The IxTime year turns over: 2042's budget stays in effect for the brokers and every reader
@@ -251,12 +264,20 @@ it("carries the budget across the IxTime year, reminds once, rolls it forward an
     totalCostDebited: 200,
   });
   expect(await runPolicyMaintenanceDebits(db as never)).toMatchObject({ totalCostDebited: 0 });
-  expect(await totalBudget("testland")).toBe(BUDGET - 1500 - 1500 - 200);
+  expect(await totalBudget("testland")).toBe(BUDGET);
+  expect(await maintenanceSpent()).toEqual({ 2042: 1500, 2043: 1700 });
   expect(await debitMarkers("FY2043")).toEqual([
     { policyId: "p1" },
     { policyId: "p2" },
     { policyId: "p3" },
   ]);
+  // A policy costing more than the year's budget has left is charged only what is left: never below zero
+  await addPolicy("p4", "testland", 2 * BUDGET);
+  expect(await runPolicyMaintenanceDebits(db as never)).toMatchObject({
+    totalCostDebited: BUDGET - 1700,
+  });
+  expect(await maintenanceSpent()).toEqual({ 2042: 1500, 2043: BUDGET });
+  expect(await totalBudget("testland")).toBe(BUDGET);
   // A nation with no government has no budget to debit, and keeps no marker
   expect(await db.policyEffectLog.count({ where: { policyId: "orphan" } })).toBe(0);
 });
