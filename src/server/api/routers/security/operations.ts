@@ -34,8 +34,8 @@ import { DEPLOY_CONDITION_COST } from "~/lib/military/model";
 import { IxTime } from "~/lib/ixtime";
 import { isBrokerSatisfied } from "~/server/modules/security/brokers";
 import { applyOperationReadiness } from "~/server/modules/defense";
+import { assertRealmsMatch } from "~/server/shared/same-realm-guard";
 import {
-  CROSS_REALM_MESSAGE,
   newBattleId,
   resolveIntervention,
   sealIntervention,
@@ -180,9 +180,7 @@ export const securityOperationsRouter = createTRPCRouter({
       if (input.targetCountryId && !target) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Target country not found" });
       }
-      if (target && target.realmId !== country.realmId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: CROSS_REALM_MESSAGE });
-      }
+      if (target) assertRealmsMatch(country.realmId, target.realmId);
       if (COMBAT_OPERATIONS.has(input.operationType) && !target) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "An intervention needs a target nation." });
       }

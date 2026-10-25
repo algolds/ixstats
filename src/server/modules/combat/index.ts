@@ -2,7 +2,7 @@
  * Combat module (realm time D3): the theatre from the map, engagements built from the defense model, the odds screen,
  * seeded commits and resolutions, force losses, and the cross-realm guard. Routers stay thin and call these.
  */
-export { CROSS_REALM_MESSAGE, assertSameRealm, buildEngagement, combatSide, normaliseOrders } from "./combat.engagement";
+export { buildEngagement, combatSide, normaliseOrders } from "./combat.engagement";
 export type { Engagement, EngagementOrders } from "./combat.engagement";
 export { loadTheatre, mapTheatreFacts, resetTheatreCache } from "./combat.theatre";
 export { combatOdds, type CombatOdds } from "./combat.odds";

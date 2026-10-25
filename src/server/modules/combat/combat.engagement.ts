@@ -4,7 +4,6 @@
  * alert in effect and the attacker's signals. Both nations must be in the same realm.
  */
 import type { PrismaClient } from "@prisma/client";
-import { TRPCError } from "@trpc/server";
 import {
   DEFAULT_COMMITMENT,
   MAX_ENGAGEMENT_DAYS,
@@ -16,14 +15,8 @@ import {
   type EngagementSetup,
 } from "~/lib/military/combat";
 import { syncDefense, type DefenseSnapshot } from "~/server/modules/defense";
+import { assertRealmsMatch } from "~/server/shared/same-realm-guard";
 import { loadTheatre } from "./combat.theatre";
-
-export const CROSS_REALM_MESSAGE = "Both nations must be in the same realm";
-
-/** Refuse a conflict or operation between nations of different realms. */
-export function assertSameRealm(a: { realmId: string }, b: { realmId: string }) {
-  if (a.realmId !== b.realmId) throw new TRPCError({ code: "FORBIDDEN", message: CROSS_REALM_MESSAGE });
-}
 
 /** One side as combat reads it from the defense model. */
 export function combatSide(snapshot: DefenseSnapshot): CombatSide {
@@ -84,7 +77,7 @@ export async function buildEngagement(db: PrismaClient, orders: EngagementOrders
     syncDefense(db, orders.attackerId),
     syncDefense(db, orders.defenderId),
   ]);
-  assertSameRealm(attacker.country, defender.country);
+  assertRealmsMatch(attacker.country.realmId, defender.country.realmId);
   const theatre = await loadTheatre(db, attacker.country, defender.country);
   const policy = attacker.state.policy;
   const surprise = surpriseLevel({

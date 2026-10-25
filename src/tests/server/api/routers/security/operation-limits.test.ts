@@ -15,7 +15,6 @@ jest.mock("~/server/db", () => ({
 
 // The combat model and its persistence are tested on their own; here the strike is a seam.
 jest.mock("~/server/modules/combat", () => ({
-  CROSS_REALM_MESSAGE: "Both nations must be in the same realm",
   newBattleId: () => "op_new",
   sealIntervention: jest.fn(async () => ({})),
   resolveIntervention: jest.fn(async () => null),
@@ -134,7 +133,7 @@ describe("operations on the combat model", () => {
         targetCountryId: "country_far",
         personnelDeployed: 100,
       })
-    ).rejects.toMatchObject({ code: "FORBIDDEN", message: "Both nations must be in the same realm" });
+    ).rejects.toMatchObject({ code: "BAD_REQUEST", message: "Both nations must be in the same realm" });
     expect(db.militaryOperation.create).not.toHaveBeenCalled();
   });
 
@@ -199,7 +198,7 @@ describe("PvNPC strikes", () => {
       country(where.id, where.id === OWN ? "default" : "other_realm")
     );
     await expect(strike()).rejects.toMatchObject({
-      code: "FORBIDDEN",
+      code: "BAD_REQUEST",
       message: "Both nations must be in the same realm",
     });
     expect(db.militaryConflict.create).not.toHaveBeenCalled();

@@ -40,7 +40,6 @@ jest.mock("~/server/modules/defense", () => {
 });
 // The combat model (seeded resolution, losses, effects) is tested on its own; here it is a seam.
 jest.mock("~/server/modules/combat", () => ({
-  CROSS_REALM_MESSAGE: "Both nations must be in the same realm",
   concludePvP: jest.fn(async () => ({ winner: "country_1", result: { band: "success" } })),
   newBattleId: () => "op_new",
   sealIntervention: jest.fn(async () => ({})),

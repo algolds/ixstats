@@ -21,9 +21,9 @@ jest.mock("~/lib/government/budget-allocations", () => ({
 }));
 
 import { MONTH_MS } from "~/lib/military/model";
+import { SAME_REALM_MESSAGE } from "~/lib/realms/same-realm";
 import { FEEDBACK_KEYS } from "~/lib/military/economy/feedback";
 import {
-  CROSS_REALM_MESSAGE,
   buildEngagement,
   combatOdds,
   combatSeed,
@@ -142,7 +142,7 @@ describe("cross-realm guard", () => {
   it("refuses an engagement between nations of different realms", async () => {
     await expect(
       buildEngagement(asDb(), normaliseOrders({ mode: "strike", attackerId: "player", defenderId: "elsewhere", days: 3 }))
-    ).rejects.toThrow(CROSS_REALM_MESSAGE);
+    ).rejects.toThrow(SAME_REALM_MESSAGE);
   });
 });
 

@@ -26,7 +26,6 @@ import { redactConflictCosts } from "~/lib/military/owner-redaction";
 import { pvpConflictEndsAt, pvpDurationDays } from "~/lib/military/conflict-outcome";
 import { MAX_ENGAGEMENT_DAYS, MIN_COMMITMENT, TERRAIN_CLASSES, formatDeclaredTerrain } from "~/lib/military/combat";
 import {
-  CROSS_REALM_MESSAGE,
   combatOdds,
   commitStrike,
   concludePvP,
@@ -34,6 +33,7 @@ import {
   sealPvP,
 } from "~/server/modules/combat";
 import { syncDefense } from "~/server/modules/defense";
+import { assertRealmsMatch } from "~/server/shared/same-realm-guard";
 import { clockForCountry, type RealmClockReader } from "~/server/shared/realm-time";
 import {
   EXPIRED_PVP_DATA,
@@ -80,9 +80,7 @@ async function assertStrikeAllowed(
       select: { createdAt: true },
     }),
   ]);
-  if (initiator.realmId !== target.realmId) {
-    throw new TRPCError({ code: "FORBIDDEN", message: CROSS_REALM_MESSAGE });
-  }
+  assertRealmsMatch(initiator.realmId, target.realmId);
   if (!relation) {
     throw new TRPCError({
       code: "FORBIDDEN",
@@ -206,9 +204,7 @@ export const securityConflictsRouter = createTRPCRouter({
         where: { id: userProfile.countryId },
         select: { realmId: true },
       });
-      if (initiatorCountry && initiatorCountry.realmId !== defenderCountry.realmId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: CROSS_REALM_MESSAGE });
-      }
+      if (initiatorCountry) assertRealmsMatch(initiatorCountry.realmId, defenderCountry.realmId);
       if (!defenderCountry.ownerUserId) {
         throw new TRPCError({
           code: "BAD_REQUEST",

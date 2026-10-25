@@ -16,7 +16,6 @@ jest.mock("~/server/db", () => ({
 
 jest.mock("~/server/modules/defense", () => ({ applyOperationReadiness: jest.fn(async () => 1) }));
 jest.mock("~/server/modules/combat", () => ({
-  CROSS_REALM_MESSAGE: "Both nations must be in the same realm",
   newBattleId: () => "op_new",
   sealIntervention: jest.fn(async () => ({})),
   resolveIntervention: jest.fn(async () => null),
