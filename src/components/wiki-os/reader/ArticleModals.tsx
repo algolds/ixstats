@@ -8,7 +8,7 @@ import {
   OpenNewWindow as ExternalLink,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
+import { OverwrittenBadge } from "~/components/wiki-os/shared/OverwrittenBadge";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -118,7 +118,7 @@ export function QuickHistoryModal({
               </div>
               {rev.parked && (
                 <div className="pt-0.5">
-                  <ParkedBadge />
+                  <OverwrittenBadge />
                 </div>
               )}
               {rev.comment && (

@@ -40,6 +40,8 @@ export interface ConflictLogEntry {
   notified: NoticeMark[];
   trailRevisionId: string | null;
   legacyPark: boolean;
+  /** Everyone told and the trail written (or given up); null while the settling owes something. */
+  settledAt: Date | null;
   createdAt: Date;
 }
 
@@ -331,6 +333,14 @@ export async function setTrailRevision(
 
 // --- read -----------------------------------------------------------------------------------------------------------
 
+/** How many characters of an id name it to people (a restore's summary, the admin log). */
+const SHORT_ID_LENGTH = 8;
+
+/** An id (a conflict's, a revision's) as people read it: its last characters; a cuid's first ones are its time. */
+export function shortConflictId(id: string): string {
+  return id.slice(-SHORT_ID_LENGTH);
+}
+
 /** A stored row, its JSON decoded. */
 export function toConflictEntry(row: ConflictRow): ConflictLogEntry {
   return {
@@ -350,6 +360,7 @@ export function toConflictEntry(row: ConflictRow): ConflictLogEntry {
     notified: decodeMarks(row.notified),
     trailRevisionId: row.trailRevisionId,
     legacyPark: row.legacyPark,
+    settledAt: row.settledAt,
     createdAt: row.createdAt,
   };
 }

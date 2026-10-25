@@ -40,6 +40,13 @@ import {
   deletedPage,
   requireRestorableWikitext,
 } from "~/lib/wiki-os/services/edit-service";
+import {
+  overwrittenRestorable,
+  restoreOverwrittenText,
+} from "~/lib/wiki-os/services/conflict-restore";
+
+/** A conflict and one revision it overwrote, as the notice's diff names them. */
+const overwrittenInput = z.object({ conflictId: z.string().max(64), ref: z.string().max(64) });
 
 /** The reason of a refusal as a reader sees it: the message without its MediaWiki-style code (`protectedpage: `). */
 const reasonOf = (message: string): string => message.replace(/^[a-z]+: /, "");
@@ -137,6 +144,19 @@ export const wikiosEditingRouter = createTRPCRouter({
         throw error;
       }
     }),
+
+  /**
+   * "Restore my text": the caller's text a collision overwrote, saved again as a new edit on the page's head (see
+   * conflict-restore.ts). An edit that landed meanwhile returns the edit conflict, as a save does.
+   */
+  restoreOverwritten: lightMutationProcedure
+    .input(overwrittenInput)
+    .mutation(({ input, ctx }) => restoreOverwrittenText(ctx, input)),
+
+  /** Whether the caller may restore that overwritten text (the diff view offers "Restore my text" only then). */
+  overwrittenRestorable: rateLimitedPublicProcedure
+    .input(overwrittenInput)
+    .query(async ({ input, ctx }) => ({ restorable: await overwrittenRestorable(ctx, input) })),
 
   /**
    * Revert a page to a specific revision.

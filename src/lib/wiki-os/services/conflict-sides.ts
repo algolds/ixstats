@@ -177,7 +177,7 @@ interface LiveRevision extends AuthoredRow {
  * MediaWiki id later, and the mirror and the inbound cycle must name it the same before and after (one conflict key).
  * A classic revision is named by its MediaWiki id, as classic's side names it.
  */
-function conflictRefOf(row: Pick<LiveRevision, "id" | "mwRevId" | "origin">): string {
+export function conflictRefOf(row: Pick<LiveRevision, "id" | "mwRevId" | "origin">): string {
   return row.origin === "classic" ? toRevisionRef(row) : row.id;
 }
 

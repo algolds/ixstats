@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { User as UserIcon, Clock, GitCommit } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
+import { OverwrittenBadge } from "~/components/wiki-os/shared/OverwrittenBadge";
 import { DashedNotice, UtilitySearchShell, useSearchTerm } from "./UtilitySearchShell";
 
 const shortDate = new Intl.DateTimeFormat("en-US", {
@@ -82,7 +82,7 @@ export function ContributionsLedger({
                         m
                       </span>
                     )}
-                    {c.parked && <ParkedBadge />}
+                    {c.parked && <OverwrittenBadge />}
                   </div>
 
                   <div className="min-w-0">

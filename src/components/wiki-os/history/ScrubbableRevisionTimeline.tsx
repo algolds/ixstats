@@ -12,7 +12,7 @@ import {
   WarningTriangle as AlertTriangle,
 } from "iconoir-react";
 import { DiffViewer } from "~/components/diff-viewer";
-import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
+import { OverwrittenBadge } from "~/components/wiki-os/shared/OverwrittenBadge";
 import { useDebounce } from "~/hooks/useDebounce";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
@@ -36,7 +36,7 @@ interface RevisionItem {
   minor: boolean;
   byteSize: number;
   byteDelta?: number;
-  /** A MediaWiki edit that conflicted with WikiOS's head: in the history, never the live text. */
+  /** Overwritten: a later save on the other wiki replaced it; in the history with its text, not the live text. */
   parked?: boolean;
   createdAt: Date | string;
 }
@@ -103,7 +103,7 @@ export function ScrubbableRevisionTimeline({
 
   const targetRev = revisions[targetRevIndex];
   const compareRev = revisions[compareRevIndex];
-  // Rollback works on the page's real revisions: a parked one never was the latest.
+  // Rollback works on the page's live revisions: an overwritten one is not the latest.
   const liveRevisions = revisions.filter((r) => !r.parked);
   // ...and of an author with a name: one that MediaWiki revision deletion hid (a null) is not offered
   const canRollback =
@@ -255,7 +255,7 @@ export function ScrubbableRevisionTimeline({
                   m
                 </span>
               )}
-              {targetRev?.parked && <ParkedBadge />}
+              {targetRev?.parked && <OverwrittenBadge />}
             </div>
             <div className="text-label-secondary text-footnote">
               {targetRev && new Date(targetRev.createdAt).toLocaleString()}
@@ -278,7 +278,7 @@ export function ScrubbableRevisionTimeline({
                   {revisions.map((r, idx) => (
                     <SelectItem key={r.id} value={String(idx)}>
                       {idx === 0 ? "Latest" : `r${r.id}`} • {r.author || "Community Contributor"}
-                      {r.parked ? " (conflict, not live)" : ""}
+                      {r.parked ? " (overwritten)" : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -287,7 +287,7 @@ export function ScrubbableRevisionTimeline({
             <div className="text-label text-footnote flex items-center gap-2">
               <User className="text-label-secondary h-3.5 w-3.5" />
               <span className="font-medium">{compareRev?.author || "Community Contributor"}</span>
-              {compareRev?.parked && <ParkedBadge />}
+              {compareRev?.parked && <OverwrittenBadge />}
             </div>
             <div className="text-label-secondary text-footnote">
               {compareRev && new Date(compareRev.createdAt).toLocaleString()}
@@ -302,25 +302,19 @@ export function ScrubbableRevisionTimeline({
             <span className="text-label-secondary text-footnote">
               Comparing <strong>r{targetRev.id}</strong> against <strong>r{compareRev.id}</strong>
             </span>
-            {compareRev.parked ? (
-              // a parked revision was never the page's text: there is nothing to go back to
-              <span className="text-label-secondary text-footnote">
-                r{compareRev.id} never went live, so it cannot be restored.
-              </span>
-            ) : (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  revertMutation.reset();
-                  setUndoTarget(compareRev);
-                }}
-                className="bg-yellow/10 text-yellow hover:bg-yellow/20"
-              >
-                <Undo className="h-3.5 w-3.5" />
-                Revert to this version
-              </Button>
-            )}
+            {/* an overwritten revision keeps its text: it can be brought back like any other */}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                revertMutation.reset();
+                setUndoTarget(compareRev);
+              }}
+              className="bg-yellow/10 text-yellow hover:bg-yellow/20"
+            >
+              <Undo className="h-3.5 w-3.5" />
+              Revert to this version
+            </Button>
           </div>
         )}
 

@@ -5,7 +5,7 @@ import { useState, useMemo } from "react";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
-import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
+import { OverwrittenBadge } from "~/components/wiki-os/shared/OverwrittenBadge";
 import Link from "next/link";
 import { formatMWTimeAgo, parseMWDateObject } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import {
@@ -25,7 +25,7 @@ interface RawChange {
   type: "edit" | "new" | "log";
   oldLen: number;
   newLen: number;
-  /** A MediaWiki edit that conflicted with WikiOS's head: listed, but never the page's live text. */
+  /** Overwritten: a later save on the other wiki replaced it. Listed, but never the page's live text. */
   parked?: boolean;
 }
 
@@ -270,7 +270,7 @@ export default function RecentChangesPage() {
                             <span className="wikios-rc-edit-time">
                               {formatMWTimeAgo(edit.timestamp)}
                             </span>
-                            {edit.parked && <ParkedBadge />}
+                            {edit.parked && <OverwrittenBadge />}
                             {action.isPill ? (
                               <span
                                 className={`text-caption inline-flex items-center rounded-full px-2 py-0.5 ${action.pillClass}`}
@@ -291,7 +291,7 @@ export default function RecentChangesPage() {
                     group.edits[0] &&
                     (() => {
                       const action = getSemanticAction(group.edits[0]);
-                      const parked = group.edits[0].parked ? <ParkedBadge /> : null;
+                      const parked = group.edits[0].parked ? <OverwrittenBadge /> : null;
                       return action.isPill ? (
                         <div className="text-footnote mt-1 flex items-center gap-2 pl-6">
                           <span

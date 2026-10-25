@@ -24,7 +24,7 @@ import { tagRevisionsOfName } from "~/lib/identity/claim-tags";
 import { ownerOfName } from "~/lib/identity/wiki-names";
 import { isMirrorAccount } from "../adapters/mediawiki/csrf-cache";
 import { ArticleRepository } from "../core/article-repository";
-import { headFieldsOf } from "../core/article-head";
+import { headFieldsOf, repointArticleHead } from "../core/article-head";
 import type { ImportedHead, ImportPageInput } from "../core/article-import";
 import { toRevisionRef } from "../core/domain-types";
 import { fillRevisionParents } from "../core/revision-parents";
@@ -650,6 +650,21 @@ async function applyRevision(
   return APPLY[relation]({ rev, canon, article, headRev, head, parentSha1 }, options);
 }
 
+/**
+ * A classic restore brought back, as the page's latest revision, one WikiOS kept as overwritten (it lost to the delete
+ * the restore undid): it is live again as it was (date and text untouched), and the page's text follows its head.
+ */
+async function reviveRestored(revid: number): Promise<void> {
+  await db.$transaction(async (tx) => {
+    const where = { source_mwRevId: { source: SOURCE, mwRevId: revid } };
+    const row = await tx.wikiRevision.findUnique({ where, select: { articleId: true } });
+    if (!row) return;
+    // a live one stays as it is: nothing to clear, and its page already shows its head
+    await tx.wikiRevision.update({ where, data: { parked: false, parkReason: null } });
+    await repointArticleHead(tx, row.articleId);
+  });
+}
+
 /** Import MediaWiki revision `revid` (a recent-changes entry), unless WikiOS already has it. */
 export async function syncRevisionById(revid: number): Promise<RevisionOutcome> {
   if (await isRevisionKnown(revid)) return "known";
@@ -671,7 +686,11 @@ export async function syncLatestRevision(
 ): Promise<RevisionOutcome> {
   const rev = await fetchLatestRevision(plainTitle(title));
   if (!rev) return "skipped";
-  if (await isRevisionKnown(rev.revid)) return "known";
+  if (await isRevisionKnown(rev.revid)) {
+    // a restore (`effectiveAt`) made a revision WikiOS kept as overwritten classic's text again
+    if (options.effectiveAt) await reviveRestored(rev.revid);
+    return "known";
+  }
   return applyRevision(rev, {
     judgeCollisions: options.judgeCollisions ?? false,
     effectiveAt: options.effectiveAt,

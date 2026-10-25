@@ -232,6 +232,41 @@ describe.each(WIKIOS_MODES)("WikiOS page operations through the conflict rule [%
       expect(articleById(id).status).toBe("ARCHIVED");
     });
 
+    it("a WikiOS delete that won over a classic edit it never saw, then a classic restore: both wikis show the restored head, and nobody is told twice", async () => {
+      const id = caphiriaId();
+      const bob = site.editAs("Bob", "Caphiria", "Caphiria is a republic.");
+      await PageManagementService.archiveArticle("Caphiria", "spam", KIR);
+      // WikiOS deleted the page a second after Bob's edit, without having seen it
+      dateOperation("delete", new Date(siteTime() + 1000));
+      await runInOrder(steps);
+      expect(site.pages.has("Caphiria")).toBe(false);
+      expect(conflicts()).toHaveLength(1);
+      const toldBefore = jest.mocked(notificationAPI.create).mock.calls.length;
+
+      // later, an administrator restores the page on classic: Bob's revision is its head there again
+      site.restorePage("Admin", "Caphiria");
+      await runInOrder(steps);
+
+      const classicHead = site.pages.get("Caphiria")!.revisions.at(-1)!;
+      const wikiosHead = tables.wikiRevision.rows
+        .filter((row) => row.articleId === id && !row.parked)
+        .sort((a, b) => (a.createdAt as Date).getTime() - (b.createdAt as Date).getTime())
+        .at(-1)!;
+      // one head on both wikis: Bob's text, the same MediaWiki revision
+      expect(articleById(id)).toMatchObject({ status: "PUBLISHED", wikitext: bob.text });
+      expect(classicHead.text).toBe(bob.text);
+      expect(wikiosHead).toMatchObject({ wikitext: bob.text, mwRevId: classicHead.revid });
+      // the restore came after the delete reached classic: a later action, no new collision, nobody told again
+      expect(conflicts()).toHaveLength(1);
+      expect(conflicts()[0]!.notified).toEqual([expect.objectContaining({ key: "name:Bob" })]);
+      expect(jest.mocked(notificationAPI.create).mock.calls.length).toBe(toldBefore);
+      const talkNotes = tables.wikiRevision.rows.filter(
+        (row) => row.articleId === article("User talk:Bob")?.id
+      );
+      expect(talkNotes).toHaveLength(1);
+      expect(tables.wikiMirrorJob.rows.every((job) => job.state === "done")).toBe(true);
+    });
+
     it("a WikiOS move older than a classic move of the same page is not sent", async () => {
       const id = caphiriaId();
       await PageManagementService.movePage("Caphiria", "Caphirian Empire", "rename", KIR);

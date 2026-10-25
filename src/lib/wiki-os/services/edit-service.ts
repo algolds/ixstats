@@ -44,26 +44,18 @@ export async function assertCanEditArticle(
 }
 
 /**
- * The wikitext a revert or rollback may save over `title`, from the revision it restores. Throws
- * when the revision is parked (a MediaWiki edit that conflicted with the page's text and never went
- * live: it was never the page, so there is nothing to go back to), when the text was never imported
- * (a placeholder must not blank the page), when the revision belongs to another page, or when it
- * would blank a page that has text (admins may). Text that is only whitespace counts as blank on
- * both sides.
+ * The wikitext a revert, rollback or "Restore my text" may save over `title`, from the revision it
+ * brings back. An overwritten revision (one a later save on the other wiki replaced, kept in the
+ * history) is restorable like any other. Throws when the text was never imported (a placeholder must
+ * not blank the page), when the revision belongs to another page, or when it would blank a page that
+ * has text (admins may). Text that is only whitespace counts as blank on both sides.
  */
 export async function requireRestorableWikitext(
   ctx: WikiAuthContext,
   title: string,
-  revision: { wikitext: string | null; title: string; parked: boolean }
+  revision: { wikitext: string | null; title: string }
 ): Promise<string> {
   const { wikitext } = revision;
-  if (revision.parked) {
-    throw new TRPCError({
-      code: "PRECONDITION_FAILED",
-      message:
-        "That revision never went live (a MediaWiki edit that conflicted with the page's text), so it cannot be restored.",
-    });
-  }
   if (wikitext === null) {
     throw new TRPCError({
       code: "PRECONDITION_FAILED",

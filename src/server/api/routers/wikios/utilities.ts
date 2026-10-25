@@ -18,6 +18,7 @@ import {
   requeueMirrorJob,
 } from "~/lib/wiki-os/services/mirror-admin";
 import { getEditingStatus, setEditing } from "~/lib/wiki-os/services/editing-admin";
+import { conflictLogPage } from "~/lib/wiki-os/services/conflict-log-view";
 import { refusals } from "~/lib/wiki-os/permissions";
 
 const mirrorJobInput = z.object({ id: z.string().min(1).max(64) });
@@ -144,6 +145,17 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
     await refusals(discardMirrorJob(input.id));
     return { success: true as const };
   }),
+
+  /** The conflict log, newest first: every collision, what won, what it overwrote and who was told. */
+  listConflicts: adminProcedure
+    .input(
+      z.object({
+        cursor: z.string().max(64).optional(),
+        limit: z.number().int().min(1).max(100).default(50),
+        articleId: z.string().max(64).optional(),
+      })
+    )
+    .query(({ input }) => conflictLogPage(input)),
 
   /** The admin WikiOS editing switch: on/off, forced by WIKIOS_V1_ENABLED, and whether the mirror can write. */
   getEditingStatus: adminProcedure.query(() => getEditingStatus()),

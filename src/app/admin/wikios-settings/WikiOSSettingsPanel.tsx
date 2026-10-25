@@ -16,6 +16,7 @@ import {
 import { WikiOSUtilitiesDeck } from "~/components/wiki-os/utilities/WikiOSUtilitiesDeck";
 import { EditingSection } from "./EditingSection";
 import { MirrorStatusSection } from "./MirrorStatusSection";
+import { ConflictLogSection } from "./ConflictLogSection";
 
 export function WikiOSSettingsPanel() {
   usePageTitle({ title: "Admin - WikiOS Settings" });
@@ -34,6 +35,8 @@ export function WikiOSSettingsPanel() {
       <EditingSection />
 
       <MirrorStatusSection />
+
+      <ConflictLogSection />
 
       <div className="border-separator space-y-6 border-t pt-6">
         <WikiLinkStatusSection countriesData={countriesData} isLoading={countriesLoading} />

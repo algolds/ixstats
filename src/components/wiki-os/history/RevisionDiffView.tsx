@@ -5,6 +5,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   ViewColumns2 as Columns2,
@@ -18,6 +19,7 @@ import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { DiffViewer } from "~/components/diff-viewer";
 import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { RestoreOverwrittenButton } from "./RestoreOverwrittenButton";
 
 export interface RevisionDiffViewProps {
   /** The older revision's reference; undefined means "the revision before `torev`". */
@@ -32,6 +34,8 @@ export interface RevisionDiffViewProps {
 export function RevisionDiffView({ fromrev, torev, backHref, backLabel }: RevisionDiffViewProps) {
   const [layout, setLayout] = useState<"unified" | "split">("unified");
   const [undoConfirm, setUndoConfirm] = useState(false);
+  // the conflict an overwritten author's notice names: the diff then offers them their text back
+  const conflictId = useSearchParams().get("conflict") ?? "";
 
   const { data, isLoading, error } = api.wikios.getDiff.useQuery(
     { fromrev: fromrev || undefined, torev },
@@ -100,12 +104,10 @@ export function RevisionDiffView({ fromrev, torev, backHref, backLabel }: Revisi
                     ]}
                   />
 
-                  {/* Undo Button (a parked revision was never the page's text: nothing to go back to) */}
-                  {data.from.parked ? (
-                    <span className="text-label-secondary text-caption">
-                      r{data.from.revid} never went live, so it cannot be restored.
-                    </span>
-                  ) : !undoConfirm ? (
+                  <RestoreOverwrittenButton conflictId={conflictId} revisionRef={data.from.revid} />
+
+                  {/* Undo Button (an overwritten revision keeps its text: it can be brought back too) */}
+                  {!undoConfirm ? (
                     <Button
                       variant="secondary"
                       size="sm"

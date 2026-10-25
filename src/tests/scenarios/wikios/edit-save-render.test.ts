@@ -459,7 +459,7 @@ describe("a member edits Caphiria and readers see the new page", () => {
     await expect(getRevisionWikitext(foreign.id)).resolves.toBeNull();
   });
 
-  it("refuses a revert to text it does not have or that never went live, and blanking but for an administrator", async () => {
+  it("refuses a revert to text it does not have, and blanking but for an administrator; an overwritten revision's text comes back", async () => {
     const id = page().id;
     const urcea = tables.wikiArticle.insert({ title: "Urcea", slug: "urcea", wikitext: "Urcea." });
     tables.wikiRevision.insert({
@@ -488,13 +488,6 @@ describe("a member edits Caphiria and readers see the new page", () => {
 
     await expect(revert("4001")).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     await expect(revert("4100")).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(revert("9001")).rejects.toMatchObject({
-      code: "PRECONDITION_FAILED",
-      message: expect.stringContaining("never went live"),
-    });
-    await expect(revert("9001", administrator)).rejects.toMatchObject({
-      code: "PRECONDITION_FAILED",
-    });
     await expect(revert(blank.id)).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     await expect(revert(blanks.id)).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     expect(revisionsOf(id)).toHaveLength(before);
@@ -503,6 +496,10 @@ describe("a member edits Caphiria and readers see the new page", () => {
     // an administrator may blank the page
     await revert(blank.id, administrator);
     expect(page().wikitext).toBe("");
+
+    // an overwritten revision (kept in the history with its text) is restored like any other
+    await revert("9001");
+    expect(page().wikitext).toBe("conflicting text");
   });
 
   it("rolls back to the last other editor's text, and refuses when every revision is the same editor's", async () => {

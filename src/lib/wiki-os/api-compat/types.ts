@@ -168,11 +168,11 @@ export interface ApiServices {
     title: string,
     levels: ReadonlyArray<"autoconfirmed" | "sysop" | null>
   ): Promise<void>;
-  /** The text a rollback may save from `revision` (refuses a parked revision, a placeholder, another page's revision, a blanking). */
+  /** The text a rollback may save from `revision` (refuses a placeholder, another page's revision, a blanking). */
   requireRestorableWikitext(
     ctx: WikiAuthContext,
     title: string,
-    revision: { wikitext: string | null; title: string; parked: boolean }
+    revision: { wikitext: string | null; title: string }
   ): Promise<string>;
   /** `detectEditConflict`: has the page moved on from the revision `baseRef` names? */
   detectEditConflict(title: string, baseRef: string | undefined): Promise<EditConflict | null>;

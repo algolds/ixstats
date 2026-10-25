@@ -634,7 +634,7 @@ describe("delete, undelete, move, protect and rollback", () => {
       expect(called("authorize")[0]!.args.slice(1)).toEqual(["rollback", "Alpha"]);
       expect(called("requireRestorableWikitext")[0]!.args.slice(1)).toEqual([
         "Alpha",
-        { wikitext: "good text", title: "Alpha", parked: false },
+        { wikitext: "good text", title: "Alpha" },
       ]);
       expect(called("saveWikitext")[0]!.args[1]).toEqual({
         title: "Alpha",

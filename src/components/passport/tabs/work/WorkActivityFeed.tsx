@@ -14,7 +14,7 @@ import {
 } from "iconoir-react";
 import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
+import { OverwrittenBadge } from "~/components/wiki-os/shared/OverwrittenBadge";
 import type { WorkPayload } from "../../types";
 import { formatWorkDay, WORK_LINK, WORK_ROW, WorkSectionTitle } from "./WorkSection";
 
@@ -89,7 +89,7 @@ export const WorkActivityFeed = React.memo(function WorkActivityFeed({
                       {formatWorkDay(item.timestamp)}
                     </span>
                     {item.byteDiff !== null && <ByteDiff bytes={item.byteDiff} />}
-                    {item.parked && <ParkedBadge />}
+                    {item.parked && <OverwrittenBadge />}
                   </div>
 
                   <h3 className="text-label text-headline truncate">{item.title}</h3>

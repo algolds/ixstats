@@ -648,6 +648,8 @@ describe.each(WIKIOS_MODES)("inbound revisions through the conflict rule [%s]", 
     const bob = site.editAs("Bob", "Caphiria", "Caphiria is a republic.");
 
     await expect(syncRevisionById(bob.revid)).resolves.toBe("overwritten");
+    // only a classic restore brings an overwritten revision back: the webhook's read of classic's latest does not
+    await expect(syncLatestRevision("Caphiria")).resolves.toBe("known");
 
     expect(revisionOf(bob.revid)).toMatchObject({
       parked: true,
