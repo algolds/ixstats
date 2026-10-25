@@ -10,6 +10,7 @@
  */
 import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
+import { isLoreType, loreCategory, type LoreType } from "~/lib/lore/lore-types";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { resolveRedirect } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { categoryLinks } from "~/lib/wiki-os/api-compat/scan";
@@ -20,7 +21,7 @@ import { loadCategoryMembers } from "~/lib/wiki-os/services/category-members";
 import { readVisiblePage } from "~/lib/wiki-os/services/visible-page";
 import { db } from "~/server/db";
 import { hasCountryWriteAccess } from "~/server/shared/country-authorization";
-import { inferLoreType, isLoreType, loreCategory, type LoreType } from "./lore.infer";
+import { inferLoreType } from "./lore.infer";
 
 /** The caller, as WikiOS reads and the country write check see them (a tRPC context). */
 export type LoreCtx = WikiAuthContext & Parameters<typeof hasCountryWriteAccess>[0];

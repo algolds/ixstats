@@ -55,6 +55,12 @@ interface WikiEditBridgeProps {
   prefillWikitext?: string;
   onClose: () => void;
   onSaveSuccess?: () => void;
+  /** Each serialization of the visual editor, after every change (a host's word count). */
+  onSerializedWikitext?: (result: WikitextSerializeResult) => void;
+  /** A reader of the mounted editor's content as it is now, in either mode, and null when it goes away. */
+  registerContentReader?: (read: (() => string | null) | null) => void;
+  /** A save the server refused (an edit conflict is not one: the bridge shows it). The save still fails. */
+  onSaveError?: (error: Error) => void;
 }
 
 /** The page as the editor was opened on: the text and the revision that text is the content of. */
@@ -95,6 +101,9 @@ export function WikiEditBridge({
   prefillWikitext,
   onClose,
   onSaveSuccess,
+  onSerializedWikitext,
+  registerContentReader: onContentReader,
+  onSaveError,
 }: WikiEditBridgeProps) {
   const notify = useNotify();
   const utils = api.useUtils();
@@ -120,8 +129,11 @@ export function WikiEditBridge({
   const pendingSave = useRef<PendingSave | null>(null);
   /** Reads the mounted editor's content as it is now (see the editors' `registerContentReader`). */
   const readContentRef = useRef<(() => string | null) | null>(null);
+  const onContentReaderRef = useRef(onContentReader);
+  onContentReaderRef.current = onContentReader;
   const registerContentReader = useCallback((read: (() => string | null) | null) => {
     readContentRef.current = read;
+    onContentReaderRef.current?.(read);
   }, []);
 
   // Single Authoritative Fetch via getWikitext (read-through Postgres + MediaWiki fallback)
@@ -219,9 +231,14 @@ export function WikiEditBridge({
   );
 
   const lastSerializedRef = useRef<WikitextSerializeResult | null>(null);
+  const onSerializedRef = useRef(onSerializedWikitext);
+  onSerializedRef.current = onSerializedWikitext;
   const setLastSerialized = useCallback((result: WikitextSerializeResult) => {
     lastSerializedRef.current = result;
+    onSerializedRef.current?.(result);
   }, []);
+  const onSaveErrorRef = useRef(onSaveError);
+  onSaveErrorRef.current = onSaveError;
 
   const performSave = useCallback(
     async (save: PendingSave, baseRevisionRef: string | null) => {
@@ -229,13 +246,18 @@ export function WikiEditBridge({
       setSaving(true);
       setConflict(null);
       try {
-        const result = await saveWikitext.mutateAsync({
-          title,
-          wikitext: save.wikitext,
-          summary: save.summary,
-          minor: save.minor,
-          baseRevisionRef: baseRevisionRef ?? undefined,
-        });
+        const result = await saveWikitext
+          .mutateAsync({
+            title,
+            wikitext: save.wikitext,
+            summary: save.summary,
+            minor: save.minor,
+            baseRevisionRef: baseRevisionRef ?? undefined,
+          })
+          .catch((error: Error) => {
+            onSaveErrorRef.current?.(error);
+            throw error;
+          });
 
         if (!result.success) {
           pendingSave.current = save;

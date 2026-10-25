@@ -15,19 +15,19 @@ import {
   coordinatesFrom,
 } from "./WikitextTemplates";
 
-interface FieldRow<K extends string> {
+export interface FieldRow<K extends string> {
   key: K;
   label: string;
   placeholder: string;
 }
 
-const PLACE_ROWS: readonly FieldRow<Exclude<keyof PlaceFields, "coordinates">>[] = [
+export const PLACE_ROWS: readonly FieldRow<Exclude<keyof PlaceFields, "coordinates">>[] = [
   { key: "settlementType", label: "Settlement type", placeholder: "e.g. City" },
   { key: "subdivision", label: "Subdivision", placeholder: "e.g. Latium" },
   { key: "population", label: "Population", placeholder: "e.g. 2,400,000" },
 ];
 
-const ORGANISATION_ROWS: readonly FieldRow<keyof OrganisationFields>[] = [
+export const ORGANISATION_ROWS: readonly FieldRow<keyof OrganisationFields>[] = [
   { key: "type", label: "Type", placeholder: "e.g. Legislature" },
   { key: "founded", label: "Founded", placeholder: "e.g. 1012" },
   { key: "headquarters", label: "Headquarters", placeholder: "e.g. Venceia" },
@@ -35,7 +35,7 @@ const ORGANISATION_ROWS: readonly FieldRow<keyof OrganisationFields>[] = [
 ];
 
 /** One labelled text input per row, editing `value[row.key]`. */
-function FieldRows<K extends string, V extends Record<K, string>>({
+export function FieldRows<K extends string, V extends Record<K, string>>({
   rows,
   value,
   onChange,
@@ -62,7 +62,7 @@ function FieldRows<K extends string, V extends Record<K, string>>({
 }
 
 /** Latitude and longitude as typed; the point is set only while both are numbers on the globe. */
-function CoordinateInputs({
+export function CoordinateInputs({
   value,
   onChange,
 }: {

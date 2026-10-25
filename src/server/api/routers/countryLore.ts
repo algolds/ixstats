@@ -11,7 +11,7 @@ import {
   rateLimitedMutationProcedure,
   readOnlyProcedure,
 } from "~/server/api/trpc";
-import { LORE_TYPES } from "~/server/modules/lore/lore.infer";
+import { LORE_TYPES } from "~/lib/lore/lore-types";
 import {
   addExistingPiece,
   addLoreAuthor,

@@ -3,7 +3,8 @@
  * A lore piece's type, read from the first infobox of its wikitext when the owner's curation does not name one, and
  * the category every piece of a country carries.
  */
-import { inferLoreType, loreCategory } from "~/server/modules/lore/lore.infer";
+import { loreCategory } from "~/lib/lore/lore-types";
+import { inferLoreType } from "~/server/modules/lore/lore.infer";
 
 describe("inferLoreType", () => {
   it.each([

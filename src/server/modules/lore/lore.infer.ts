@@ -1,11 +1,10 @@
 /**
- * A native lore piece's type and its country's lore category (docs/superpowers/specs/2026-10-24-native-lore-design.md).
+ * A native lore piece's type, read from its wikitext (docs/superpowers/specs/2026-10-24-native-lore-design.md).
  * The type groups pieces on the Lore tab: the owner's curation names it, or it is read from the page's first infobox.
- * Pure: no database, no wiki reads.
+ * Pure: no database, no wiki reads. The types and the category are in ~/lib/lore (client-safe).
  */
 
-export const LORE_TYPES = ["person", "place", "event", "organisation", "other"] as const;
-export type LoreType = (typeof LORE_TYPES)[number];
+import type { LoreType } from "~/lib/lore/lore-types";
 
 /** Each ixwiki infobox a lore piece is written with (lower case, spaced), and the type it gives. */
 const INFOBOX_TYPES: ReadonlyMap<string, LoreType> = new Map([
@@ -27,14 +26,4 @@ export function inferLoreType(wikitext: string): LoreType {
   if (!name) return "other";
   const key = name.replace(/_/g, " ").replace(/\s+/g, " ").trim().toLowerCase();
   return INFOBOX_TYPES.get(key) ?? "other";
-}
-
-/** Whether a stored curation type is one of the lore types (anything else reads as "other"). */
-export function isLoreType(value: string): value is LoreType {
-  return (LORE_TYPES as readonly string[]).includes(value);
-}
-
-/** The category every lore piece of a country carries (without the `Category:` prefix). */
-export function loreCategory(countryName: string): string {
-  return `${countryName.replace(/_/g, " ")} lore`;
 }
