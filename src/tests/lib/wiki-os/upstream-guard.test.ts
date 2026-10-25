@@ -96,6 +96,36 @@ describe("the request", () => {
     expect(headers.get("Api-User-Agent")).toBe("Contact/1.0");
   });
 
+  it.each([
+    ["Infinity", Number.POSITIVE_INFINITY, 12_000],
+    ["NaN", Number.NaN, 12_000],
+    ["a negative value", -5, 12_000],
+    ["zero", 0, 12_000],
+    ["ten minutes", 600_000, 30_000],
+    ["thirty seconds", 30_000, 30_000],
+  ])(
+    "a timeout of %s becomes %i ms and is not a failure of the wiki",
+    async (_label, timeoutMs, used) => {
+      const timeoutSpy = jest.spyOn(AbortSignal, "timeout");
+      const g = guard({ failureThreshold: 1 });
+      fetchSpy.mockImplementation(async () => json());
+      expect((await g.fetch(IIWIKI, { timeoutMs })).status).toBe(200);
+      expect(timeoutSpy).toHaveBeenCalledWith(used);
+      expect((await g.fetch(IIWIKI, { timeoutMs: 1000 })).status).toBe(200);
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+    }
+  );
+
+  it('an unlisted host never reaches the client: the error says "The wiki", the log names the host', async () => {
+    const g = guard({ failureThreshold: 1 });
+    fetchSpy.mockImplementation(async () => status(503));
+    const error = await failureOf(g.fetch("http://127.0.0.1:8080/w/api.php", { timeoutMs: 1000 }));
+    expect(error?.message).toBe("The wiki could not be reached just now.");
+    expect(error?.context).toEqual({ wiki: "The wiki", reason: "unreachable" });
+    expect(`${error?.message} ${JSON.stringify(error?.context)}`).not.toMatch(/127\.0\.0\.1|8080/);
+    expect(String(warnSpy.mock.calls[0]![0])).toContain("127.0.0.1:8080");
+  });
+
   it("the timeout signal aborts after timeoutMs", async () => {
     fetchSpy.mockImplementation(async () => json());
     await guard().fetch(IIWIKI, { timeoutMs: 20 });
@@ -139,7 +169,7 @@ describe("the breaker", () => {
     expect((await failureOf(g.fetch(IIWIKI, { timeoutMs: 1000 })))?.reason).toBe("unreachable");
     expect(fetchSpy).toHaveBeenCalledTimes(5);
     expect(warnSpy).toHaveBeenCalledTimes(1);
-    expect(String(warnSpy.mock.calls[0]![0])).toMatch(/IIWiki.*5 failures.*30 s/);
+    expect(String(warnSpy.mock.calls[0]![0])).toMatch(/IIWiki \(iiwiki\.com\).*5 failures.*30 s/);
     const sixth = await failureOf(g.fetch(IIWIKI, { timeoutMs: 1000 }));
     expect(sixth?.reason).toBe("circuit-open");
     expect(sixth?.wiki).toBe("IIWiki");
@@ -199,7 +229,7 @@ describe("the breaker", () => {
     probeAnswer.resolve(json());
     expect((await probe).status).toBe(200);
     expect(warnSpy).toHaveBeenCalledTimes(1);
-    expect(String(warnSpy.mock.calls[0]![0])).toMatch(/IIWiki.*closed/);
+    expect(String(warnSpy.mock.calls[0]![0])).toMatch(/IIWiki \(iiwiki\.com\).*closed/);
 
     fetchSpy.mockImplementation(async () => json());
     expect((await g.fetch(IIWIKI, { timeoutMs: 1000 })).status).toBe(200);
@@ -283,6 +313,22 @@ describe("the breaker", () => {
     clock += 30_000;
     fetchSpy.mockImplementation(async () => json());
     expect((await g.fetch(IIWIKI, { timeoutMs: 1000 })).status).toBe(200);
+  });
+
+  it("a late success while the circuit is open leaves the reopen log counting every failure", async () => {
+    const g = guard({ failureThreshold: 1 });
+    const lateSuccess = deferred();
+    fetchSpy.mockImplementationOnce(() => lateSuccess.promise);
+    const slow = g.fetch(IIWIKI, { timeoutMs: 1000 });
+    fetchSpy.mockImplementationOnce(async () => status(503));
+    await failureOf(g.fetch(IIWIKI, { timeoutMs: 1000 }));
+    lateSuccess.resolve(json());
+    await slow;
+    clock += 30_000;
+    fetchSpy.mockImplementation(async () => status(503));
+    warnSpy.mockClear();
+    await failureOf(g.fetch(IIWIKI, { timeoutMs: 1000 }));
+    expect(String(warnSpy.mock.calls[0]![0])).toContain("after 2 failures in a row");
   });
 
   it("hosts are independent", async () => {
@@ -400,17 +446,17 @@ describe("wikiNameForUrl", () => {
     ).toBe("IIWiki");
   });
 
-  it("names a wiki by its upload host, and falls back to the host", () => {
+  it('names a wiki by its upload host, and calls any other host "The wiki"', () => {
     expect(wikiNameForUrl("https://althistory.fandom.com/api.php")).toBe("AltHistory Wiki");
     expect(wikiNameForUrl("https://static.wikia.nocookie.net/althistory/images/a.png")).toBe(
       "AltHistory Wiki"
     );
     expect(wikiNameForUrl("https://upload.wikimedia.org/x.png")).toBe("Commons");
-    expect(wikiNameForUrl("https://example.org:8443/api.php")).toBe("example.org:8443");
+    expect(wikiNameForUrl("https://example.org:8443/api.php")).toBe("The wiki");
     expect(wikiNameForUrl("https://maps.ixwiki.com/api/mediawiki/nowhere/api.php")).toBe(
-      "maps.ixwiki.com"
+      "The wiki"
     );
-    expect(wikiNameForUrl("https://notiiwiki.com/api.php")).toBe("notiiwiki.com");
+    expect(wikiNameForUrl("https://notiiwiki.com/api.php")).toBe("The wiki");
   });
 });
 

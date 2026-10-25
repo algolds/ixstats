@@ -7,12 +7,17 @@
 //     which is how a Cloudflare challenge looks) open it for 30 s; meanwhile every call fails fast with no request.
 //     Then exactly one probe goes out while other calls keep failing fast. A successful probe closes the breaker and
 //     resets it; a failed one reopens it for twice as long as last time, never more than 5 minutes. One `console.warn`
-//     when a circuit opens and one when it closes.
-//   - A limiter (`OutboundLimiter`): 8 calls in flight and 240 a minute. Past either the call is refused as busy with
-//     no request, and that refusal is not a failure of the wiki.
+//     when a circuit opens and one when it closes; those name the host, which stays on the server.
+//   - A limiter (`OutboundLimiter`): 8 calls in flight, and a token bucket that holds 240 calls (a burst of 240) and
+//     refills at 4 a second (240 a minute). Past either the call is refused as busy with no request, and that refusal
+//     is not a failure of the wiki.
 // A failure throws `WikiUnavailableError`, which the tRPC formatter (`src/server/api/trpc/init.ts`) turns into
 // SERVICE_UNAVAILABLE (503), or TOO_MANY_REQUESTS (429) when the reason is `busy`. The client sees the message ("IIWiki
-// could not be reached just now.") and `{ wiki, reason }`, never the URL or the upstream answer.
+// could not be reached just now.") and `{ wiki, reason }`, never the URL, a host or the upstream answer: a host that is
+// not a listed wiki is "The wiki" (`wikiNameForUrl`).
+//
+// JSON API calls only. A non-JSON 2xx is a failure (that is how a challenge page is caught), so file bytes or
+// `action=raw` routed through here would trip the breaker on healthy wikis.
 //
 // State is per process, in memory, and costs no timer: time is read from the clock when a call arrives, so nothing
 // keeps the process alive and nothing leaks between tests. Production runs the Next server and server.mjs's cron jobs;
@@ -68,9 +73,21 @@ export const SISTER_GUARD_OPTIONS: HostGuardOptions = {
 };
 
 export interface GuardedRequest {
+  /** Clamped to `MAX_TIMEOUT_MS`; a value that is not a positive finite number uses `DEFAULT_TIMEOUT_MS`. */
   timeoutMs: number;
   /** Defaults to `DEFAULT_USER_AGENT` (`IxStats-Builder`, which the sister wikis allow-list). */
   userAgent?: string;
+}
+
+/** The timeout of a request whose `timeoutMs` is not a positive finite number. */
+export const DEFAULT_TIMEOUT_MS = 12_000;
+/** The longest a request may wait. */
+export const MAX_TIMEOUT_MS = 30_000;
+
+function timeoutOf(timeoutMs: number): number {
+  return Number.isFinite(timeoutMs) && timeoutMs > 0
+    ? Math.min(timeoutMs, MAX_TIMEOUT_MS)
+    : DEFAULT_TIMEOUT_MS;
 }
 
 /** How a call was let through: an ordinary call, or the one probe of a circuit past its cooldown. */
@@ -114,7 +131,8 @@ class Circuit {
       this.probing = false;
       return true;
     }
-    this.failures = 0;
+    // A call admitted before the circuit opened leaves the count of an open circuit alone (the log reports it).
+    if (this.openUntil === null) this.failures = 0;
     return false;
   }
 
@@ -151,11 +169,12 @@ function verdictOf(response: Response): "ok" | "unreachable" | "busy" {
 /** The wiki's answer, or why there is none. */
 async function send(url: string, request: GuardedRequest): Promise<Response | UnavailableReason> {
   const userAgent = request.userAgent ?? DEFAULT_USER_AGENT;
+  const signal = AbortSignal.timeout(timeoutOf(request.timeoutMs));
   let response: Response;
   try {
     response = await fetch(url, {
       headers: { "User-Agent": userAgent, "Api-User-Agent": userAgent, Accept: "application/json" },
-      signal: AbortSignal.timeout(request.timeoutMs),
+      signal,
     });
   } catch {
     return "unreachable";
@@ -180,14 +199,20 @@ export class HostGuard {
     this.now = options.now ?? (() => Date.now());
   }
 
-  /** GET `url` (JSON expected). Returns the response for a 2xx JSON answer or a 4xx other than 403/429. */
+  /**
+   * GET `url`, a JSON API call. Returns the response for a 2xx JSON answer or a 4xx other than 403/429. Never route
+   * file bytes or `action=raw` through it: a non-JSON answer counts as a failure and would trip the breaker.
+   */
   async fetch(url: string, request: GuardedRequest): Promise<Response> {
     const wiki = wikiNameForUrl(url);
-    const entry = this.entryFor(new URL(url).host);
+    const host = new URL(url).host;
+    const entry = this.entryFor(host);
     const ticket = entry.circuit.admit(this.now());
     if (ticket === null) throw new WikiUnavailableError(wiki, "circuit-open");
     try {
-      return await entry.limiter.run(() => this.attempt(url, request, wiki, entry.circuit, ticket));
+      return await entry.limiter.run(() =>
+        this.attempt(url, request, { wiki, host }, entry.circuit, ticket)
+      );
     } catch (error) {
       if (!(error instanceof ThrottledError)) throw error;
       entry.circuit.release(ticket);
@@ -198,20 +223,20 @@ export class HostGuard {
   private async attempt(
     url: string,
     request: GuardedRequest,
-    wiki: string,
+    { wiki, host }: { wiki: string; host: string },
     circuit: Circuit,
     ticket: Ticket
   ): Promise<Response> {
     const outcome = await send(url, request);
     if (outcome instanceof Response) {
       if (circuit.succeed(ticket))
-        console.warn(`[upstream-guard] ${wiki}: circuit closed; requests resume.`);
+        console.warn(`[upstream-guard] ${wiki} (${host}): circuit closed; requests resume.`);
       return outcome;
     }
     const cooldown = circuit.fail(ticket, this.now());
     if (cooldown !== null) {
       console.warn(
-        `[upstream-guard] ${wiki}: circuit open after ${circuit.failureCount} failures in a row; ` +
+        `[upstream-guard] ${wiki} (${host}): circuit open after ${circuit.failureCount} failures in a row; ` +
           `next try in ${cooldown / 1000} s.`
       );
     }
@@ -242,7 +267,10 @@ export const upstreamGuard = new HostGuard(SISTER_GUARD_OPTIONS);
 /** `/api/mediawiki/<id>/api.php`: the api.php proxy, which the development relay is. */
 const RELAY_PATH = /^\/api\/mediawiki\/([^/]+)\/api\.php$/;
 
-/** The name people know a wiki by, for the wiki `url` points at; its host when it is not a listed wiki. */
+/** What a client may be told a host is called when it is not a listed wiki: never the host itself. */
+const UNLISTED_WIKI = "The wiki";
+
+/** The name people know a wiki by, for the wiki `url` points at; "The wiki" when it is not a listed wiki. */
 export function wikiNameForUrl(url: string): string {
   const parsed = new URL(url);
   const relayed = RELAY_PATH.exec(parsed.pathname)?.[1];
@@ -254,7 +282,7 @@ export function wikiNameForUrl(url: string): string {
       new URL(host.origin).hostname === hostname ||
       (host.mediaHosts as readonly string[]).includes(hostname)
   );
-  return listed?.name ?? parsed.host;
+  return listed?.name ?? UNLISTED_WIKI;
 }
 
 /** `work`'s result, or null when its wiki was unavailable; any other error is rethrown. */
