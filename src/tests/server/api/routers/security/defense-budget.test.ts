@@ -16,6 +16,7 @@ jest.mock("~/server/db", () => ({
 import { createCallerFactory } from "~/server/api/trpc";
 import { securityDefenseRouter } from "~/server/api/routers/security/defense";
 import {
+  defenseAllocationPercent,
   estimateDefenseBudget,
   formatAmountInput,
   parseAmountInput,
@@ -118,6 +119,27 @@ describe("defense budget helpers", () => {
       rdteCosts: 2,
       militaryConstruction: 1,
     });
+  });
+
+  it("reads a fully allocated budget as 100%, not over budget, despite float drift", () => {
+    // The 2% estimate's categories sum to 100.00000000000003% of this total
+    const saved = estimateDefenseBudget(661814081.1318916 / 0.02);
+    const raw =
+      (saved.personnelCosts +
+        saved.operationsMaintenance +
+        saved.procurement +
+        saved.rdteCosts +
+        saved.militaryConstruction) /
+      saved.totalBudget;
+    expect(raw * 100).toBeGreaterThan(100);
+    expect(defenseAllocationPercent(saved)).toBe(100);
+    expect(
+      defenseAllocationPercent({
+        ...saved,
+        procurement: saved.procurement + saved.totalBudget / 100,
+      })
+    ).toBeCloseTo(101, 9);
+    expect(defenseAllocationPercent({ ...saved, totalBudget: 0 })).toBe(0);
   });
 
   it("shows an amount with separators, not a raw float, and reads it back", () => {

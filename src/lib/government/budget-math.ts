@@ -5,6 +5,8 @@
  * - `totalBudget` is a yearly flow. It follows GDP: when the projected GDP moves, the budget and
  *   the allocations of the budget in effect move by the same ratio.
  * - An allocation's amount is always `totalBudget × allocatedPercent / 100`.
+ * - A directive's budget nudge never allocates more than 100%: the other departments give up the
+ *   excess in proportion to their shares (`nudgeShare`).
  * - Policy maintenance is spending within a budget year. It never debits `totalBudget`, and what
  *   a year spends on maintenance never exceeds that year's budget.
  */
@@ -41,6 +43,41 @@ export function allocationAt(
   return { allocatedPercent, allocatedAmount: allocationAmount(totalBudget, allocatedPercent) };
 }
 
+/** Most a budget may allocate in total, in percent of `totalBudget`. */
+const BUDGET_TOTAL_PERCENT = 100;
+
+export interface ShareLine {
+  id: string;
+  allocatedPercent: number;
+}
+
+/**
+ * Move one line's share by `delta` (clamped to 0 to `max`). When the shares would then add up to
+ * more than 100%, every other line gives up the excess in proportion to its share, so the budget
+ * never allocates more than its total. A cut leaves the freed share unallocated. Returns every
+ * line with its new share; unknown `id` returns the lines unchanged.
+ */
+export function nudgeShare<T extends ShareLine>(
+  lines: readonly T[],
+  id: string,
+  delta: number,
+  max: number = ALLOCATION_PERCENT_MAX
+): T[] {
+  const target = lines.find((line) => line.id === id);
+  if (!target) return [...lines];
+  const next = clampPercent(target.allocatedPercent + delta, max);
+  const othersTotal = lines.reduce(
+    (sum, line) => (line.id === id ? sum : sum + line.allocatedPercent),
+    0
+  );
+  const room = BUDGET_TOTAL_PERCENT - next;
+  const factor = othersTotal > room && othersTotal > 0 ? room / othersTotal : 1;
+  return lines.map((line) => ({
+    ...line,
+    allocatedPercent: line.id === id ? next : line.allocatedPercent * factor,
+  }));
+}
+
 /**
  * The ratio a yearly budget moves by when GDP goes from `previousGdp` to `nextGdp`. 1 when either
  * figure is missing or not positive, so a bad projection never zeroes a budget.
@@ -52,15 +89,21 @@ export function gdpScaleRatio(
   return finitePositive(previousGdp) && finitePositive(nextGdp) ? nextGdp / previousGdp : 1;
 }
 
-/** The yearly budget a new government structure starts with: recorded spending, else a share of GDP. */
-export function initialTotalBudget(country: {
-  totalGovernmentSpending: number | null;
-  currentTotalGdp: number | null;
-}): number {
+/**
+ * The yearly budget a new government structure starts with: the nation's recorded spending; else
+ * its yearly revenue, so the new budget starts balanced, capped at the GDP-share default; else
+ * that default (a share of GDP).
+ */
+export function initialTotalBudget(
+  country: { totalGovernmentSpending: number | null; currentTotalGdp: number | null },
+  revenue?: number | null
+): number {
   if (finitePositive(country.totalGovernmentSpending)) return country.totalGovernmentSpending;
-  return finitePositive(country.currentTotalGdp)
+  const gdpShare = finitePositive(country.currentTotalGdp)
     ? country.currentTotalGdp * DEFAULT_BUDGET_SHARE_OF_GDP
     : 0;
+  if (!finitePositive(revenue)) return gdpShare;
+  return gdpShare > 0 ? Math.min(revenue, gdpShare) : revenue;
 }
 
 /**

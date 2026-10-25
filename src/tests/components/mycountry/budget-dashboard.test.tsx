@@ -16,7 +16,7 @@ function mockMutation(name: string) {
     return { mutate: mockMutate[name], isPending: false };
   };
 }
-const mockData: { gov: unknown } = { gov: null };
+const mockData: { gov: unknown; country: unknown } = { gov: null, country: undefined };
 
 jest.mock("~/trpc/react", () => {
   const invalidate = { invalidate: jest.fn() };
@@ -26,6 +26,9 @@ jest.mock("~/trpc/react", () => {
         government: { getFullByCountryId: invalidate, getByCountryId: invalidate },
         mycountry: { getFirstSteps: invalidate },
       }),
+      countries: {
+        getByIdWithEconomicData: { useQuery: () => ({ data: mockData.country }) },
+      },
       government: {
         getFullByCountryId: { useQuery: () => ({ data: mockData.gov, isSuccess: true }) },
         getPolicyMaintenance: { useQuery: () => ({ data: { 2043: 1_500_000_000 } }) },
@@ -180,7 +183,22 @@ describe("the National budget tab", () => {
     mockData.gov = null;
     render(<BudgetManagementDashboard countryId="testland" revenue={foundingRevenue(0)} />);
     fireEvent.click(screen.getByRole("button", { name: "Create government structure" }));
-    expect(mockMutate.createStructure).toHaveBeenCalledWith({ countryId: "testland" });
+    expect(mockMutate.createStructure).toHaveBeenCalledWith({
+      countryId: "testland",
+      revenue: undefined,
+    });
     expect(document.body.textContent).not.toMatch(/Country Editor/);
+  });
+
+  it("sends the nation's revenue with the create action, so the new budget starts balanced", () => {
+    mockData.gov = null;
+    mockData.country = { currentTotalGdp: 1.5e11, governmentRevenueTotal: 6e9 };
+    render(<BudgetManagementDashboard countryId="testland" revenue={foundingRevenue(6e9)} />);
+    fireEvent.click(screen.getByRole("button", { name: "Create government structure" }));
+    expect(mockMutate.createStructure).toHaveBeenLastCalledWith({
+      countryId: "testland",
+      revenue: 6e9,
+    });
+    mockData.country = undefined;
   });
 });

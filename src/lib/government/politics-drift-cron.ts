@@ -17,6 +17,7 @@ import { isNewsworthySwing } from "./approval";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
 import { loadEffectiveBudget } from "./budget-allocations";
+import { LATEST_GROWTH_SELECT, effectiveGrowthOf } from "~/lib/economy/effective-growth";
 
 interface PoliticsDriftResult {
   countriesProcessed: number;
@@ -46,7 +47,7 @@ export async function runPoliticsDrift(): Promise<PoliticsDriftResult> {
       // Party support drift
       const [parties, country, allocations, components] = await Promise.all([
         db.politicalParty.findMany({ where: { countryId, isActive: true } }),
-        db.country.findUnique({ where: { id: countryId }, select: { adjustedGdpGrowth: true } }),
+        db.country.findUnique({ where: { id: countryId }, select: LATEST_GROWTH_SELECT }),
         loadEffectiveBudget(db, countryId).then((budget) => budget.allocations),
         db.governmentComponent.findMany({
           where: { countryId, isActive: true },
@@ -65,8 +66,10 @@ export async function runPoliticsDrift(): Promise<PoliticsDriftResult> {
       const isPartyBrokerSatisfied = activeBrokers.some((b) => b.id === "party" && b.satisfied);
 
       if (parties.length >= 2) {
-        // Economy influence in percentage points (good growth helps the governing party).
-        const econMod = clamp((country?.adjustedGdpGrowth ?? 0) * 100, -5, 5);
+        // Economy influence in percentage points (good growth helps the governing party): the
+        // realised growth (latest history point), else the static input.
+        const growth = country ? effectiveGrowthOf(country) : null;
+        const econMod = clamp((growth ?? 0) * 100, -5, 5);
         const governing = parties.reduce((a, b) => (b.currentSupport > a.currentSupport ? b : a));
         const oppositionSplit = parties.length - 1;
 

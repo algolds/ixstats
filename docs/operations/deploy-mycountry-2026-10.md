@@ -107,6 +107,15 @@ only shortens the time the old build errors.
    catalog is already seeded.
    `run_sql scripts/migrations/2026-10-mycountry/f-defense.sql`
 
+6. **r1, sanctions in force** (`r1-coercive-fp-effects.sql`). Any time; run it again after the code deploy if a
+   sanction, embargo or blockade was imposed in between. Re-values the GDP level effects of the coercive actions
+   still in force with the new rule: the target takes the main hit (moderate sanction between equal economies:
+   target -1%, initiator -0.25%), both scaled by relative size. The old rule charged the initiator 0.5-1.2% and the
+   target a few millionths. Lifting or expiry still unwinds them exactly. Clone dry run (read-only preview): 2
+   actions, Maresteyn's severe sanction on Varshan (target -1.05%, initiator -0.53%) and Caphiria's moderate embargo
+   on Pelaxia (target -3%, initiator -0.19%), one effect row per side each.
+   `run_sql scripts/migrations/2026-10-mycountry/r1-coercive-fp-effects.sql`
+
 ## 4. Code deploy and the IxWorld rebuild
 
 Run rose-garden step 5 (`./scripts/deploy-production.sh`). It runs the migration SQL files, `db push` (stop and read

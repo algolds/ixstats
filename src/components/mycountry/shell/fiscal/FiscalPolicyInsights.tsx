@@ -164,7 +164,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
           <RailRow className="p-2">
             <span
               className="text-label-secondary text-footnote block"
-              title="Revenue left after the budget's allocations"
+              title="Revenue left after the budget's allocations, as a share of revenue. Below zero is a deficit."
             >
               Balance
             </span>
@@ -187,7 +187,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
                   )}
                 </>
               )}
-              {percentFlow(balance != null ? Math.abs(balance) : null, 1)}
+              {percentFlow(balance, 1)}
             </p>
           </RailRow>
           <RailRow className="p-2">

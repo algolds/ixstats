@@ -34,7 +34,7 @@ import {
 import { spawnIntentResistance } from "~/lib/intent/resistance";
 import { deriveBrokers, type ActiveBroker } from "~/lib/statecraft/power-brokers";
 import { loadEffectiveBudget } from "~/lib/government/budget-allocations";
-import { allocationAt } from "~/lib/government/budget-math";
+import { nudgeDepartmentShare } from "~/server/modules/government/government.budget";
 import {
   assertCountryResourceWriteAccess,
   assertCountryWriteAccess,
@@ -217,33 +217,21 @@ async function saveActiveIntent(
 }
 
 /** Structured budget deltas (bounded; never a core stat). Best-effort: a missing row leaves the line descriptive only. */
+/** Each budget line of the package nudges its department's share (the rest give way, see the module). */
 async function applyBudgetChanges(
   db: PrismaClient,
   countryId: string,
   changes: IntentPackage["changes"]
 ) {
-  for (const bc of changes.filter((c) => c.kind === "budget" && c.deptCategory && c.deltaPercent)) {
+  for (const bc of changes) {
+    if (bc.kind !== "budget" || !bc.deptCategory || !bc.deltaPercent) continue;
     try {
-      const alloc = await db.budgetAllocation.findFirst({
-        where: {
-          governmentStructure: { countryId },
-          department: { category: bc.deptCategory! },
-        },
-        // most-recent budget year, then the largest line in that category
-        orderBy: [{ budgetYear: "desc" }, { allocatedPercent: "desc" }],
-        include: { governmentStructure: { select: { totalBudget: true } } },
+      await nudgeDepartmentShare(db, {
+        countryId,
+        category: bc.deptCategory,
+        deltaPercent: bc.deltaPercent,
+        max: BUDGET_PCT_MAX,
       });
-      if (alloc) {
-        // The amount follows the share, so the budget console's totals move with the directive.
-        await db.budgetAllocation.update({
-          where: { id: alloc.id },
-          data: allocationAt(
-            alloc.governmentStructure.totalBudget,
-            alloc.allocatedPercent + bc.deltaPercent!,
-            BUDGET_PCT_MAX
-          ),
-        });
-      }
     } catch {
       /* budget row missing / structure absent — line stays descriptive only */
     }

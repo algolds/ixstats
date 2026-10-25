@@ -41,6 +41,16 @@ export function isOverAllocated(amounts: DefenseBudgetAmounts): boolean {
   return allocatedDefenseBudget(amounts) > amounts.totalBudget + 0.01;
 }
 
+/**
+ * The categories' share of the total, in percent. Float drift in saved amounts (450000000.0000001)
+ * never reads as over 100%: past 100 only when `isOverAllocated`.
+ */
+export function defenseAllocationPercent(amounts: DefenseBudgetAmounts): number {
+  if (amounts.totalBudget <= 0) return 0;
+  const percent = (allocatedDefenseBudget(amounts) / amounts.totalBudget) * 100;
+  return isOverAllocated(amounts) ? percent : Math.min(percent, 100);
+}
+
 /** Share of GDP and per-capita figures stored with a saved budget. */
 export function defenseBudgetRatios(
   totalBudget: number,

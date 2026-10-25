@@ -98,6 +98,8 @@ function nextTierThreshold(gdpPerCapita: number, rate: number): number | null {
 
 /** Inflation is a percent (2 = 2%); the bounds match the event spine's guardrail. */
 export const DEFAULT_INFLATION_RATE = 2;
+/** Unemployment is a percent (5 = 5%), read when a nation has none stored. */
+export const DEFAULT_UNEMPLOYMENT_RATE = 5;
 const MIN_INFLATION_RATE = -5;
 const MAX_INFLATION_RATE = 100;
 
@@ -323,7 +325,7 @@ export class IxStatsCalculator {
       ),
       unemploymentRate: Math.max(
         0,
-        Math.min(100, (baselineStats.unemploymentRate ?? 5) + mods.unemploymentModifier)
+        Math.min(100, (baselineStats.unemploymentRate ?? DEFAULT_UNEMPLOYMENT_RATE) + mods.unemploymentModifier)
       ),
       // Percent, like every writer (issue and directive consequences move it in points).
       inflationRate: Math.max(

@@ -179,6 +179,27 @@ it("moves a directive's allocation amount with its share", async () => {
   )!;
   expect(defense.allocatedPercent).toBeCloseTo(26.5, 9);
   expect(defense.allocatedAmount).toBeCloseTo(1e10 * 0.265, 3);
+  // The other departments give the 1.5 points up in proportion: the budget stays at 100%
+  const after = await allocations("testland", 2043);
+  expect(after.reduce((sum, a) => sum + a.allocatedPercent, 0)).toBeCloseTo(100, 9);
+  const education = after.find((a) => a.department.category === "Education")!;
+  expect(education.allocatedPercent).toBeCloseTo(30 * (73.5 / 75), 9);
+  for (const a of after) {
+    expect(a.allocatedAmount).toBeCloseTo((1e10 * a.allocatedPercent) / 100, 3);
+  }
+});
+
+it("starts a new government's budget at the nation's revenue", async () => {
+  await addNation(db as never, { id: "bareland", baselineDate: new Date(NOW - YEAR) });
+  await db.governmentStructure.delete({ where: { countryId: "bareland" } });
+  const lena = await addOwner(db as never, "lena", "bareland");
+  await government(asOwner(db as never, lena)).createStructure({
+    countryId: "bareland",
+    revenue: 6e9,
+  });
+  expect((await structureOf("bareland")).totalBudget).toBe(6e9);
+  const created = await allocations("bareland", 2043);
+  expect(created.reduce((sum, a) => sum + a.allocatedAmount, 0)).toBeCloseTo(6e9, 0);
 });
 
 it("moves the yearly budget and the budget in effect with GDP, and starts the next year from it", async () => {

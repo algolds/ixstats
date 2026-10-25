@@ -73,20 +73,19 @@ export function BudgetOverviewCharts({
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={departmentChartData.slice(0, 8)}
+                  data={departmentChartData}
                   cx="50%"
-                  cy="50%"
-                  outerRadius={90}
+                  cy="45%"
+                  outerRadius="70%"
                   dataKey="allocated"
-                  label={({ name, percent }: { name?: string; percent?: number }) =>
-                    `${name ?? ""}: ${((percent ?? 0) * 100).toFixed(1)}%`
-                  }
+                  nameKey="label"
                 >
-                  {departmentChartData.slice(0, 8).map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  {departmentChartData.map((entry) => (
+                    <Cell key={entry.name} fill={entry.color} />
                   ))}
                 </Pie>
                 <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
               </PieChart>
             </ResponsiveContainer>
           ) : (
@@ -98,7 +97,12 @@ export function BudgetOverviewCharts({
                   stroke="currentColor"
                   className="text-label-secondary text-footnote"
                 />
-                <YAxis stroke="currentColor" className="text-label-secondary text-footnote" />
+                <YAxis
+                  stroke="currentColor"
+                  className="text-label-secondary text-footnote"
+                  width={72}
+                  tickFormatter={(value: number) => formatCurrency(value)}
+                />
                 <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                 <Legend />
                 <Line
@@ -132,7 +136,12 @@ export function BudgetOverviewCharts({
                   stroke="currentColor"
                   className="text-label-secondary text-footnote"
                 />
-                <YAxis stroke="currentColor" className="text-label-secondary text-footnote" />
+                <YAxis
+                  stroke="currentColor"
+                  className="text-label-secondary text-footnote"
+                  width={72}
+                  tickFormatter={(value: number) => formatCurrency(value)}
+                />
                 <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                 <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                   {revenueChartData.map((entry, index) => (
