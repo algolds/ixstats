@@ -59,9 +59,9 @@ function ExecutiveOpportunityHeroComponent({
   );
 
   const intentTree = api.intent.getTree.useQuery({ countryId }, { enabled: !!countryId });
-  const civilService = api.government.getCivilServiceStatus.useQuery(
+  const execBandwidth = api.policies.getPolicyReconContext.useQuery(
     { countryId },
-    { enabled: !!countryId }
+    { enabled: !!countryId, refetchInterval: 20_000 }
   );
   const issuesData = api.nationalIssues.getMyIssues.useQuery(
     { countryId: countryId ?? "", status: "active" },
@@ -74,7 +74,7 @@ function ExecutiveOpportunityHeroComponent({
     intents: (Array.isArray(intentTree.data)
       ? intentTree.data
       : (intentTree.data?.allIntents ?? [])) as CountryIntentItem[],
-    civilService: civilService.data,
+    execBandwidth: execBandwidth.data,
     isDismissed: (id) => dismissedIds.includes(id),
   });
 
@@ -157,8 +157,6 @@ function ExecutiveOpportunityHeroComponent({
 }
 
 const DRILL_LABEL: Record<Opportunity["domain"], string> = {
-  defense: "defense",
-  diplomacy: "relations",
   politics: "politics",
   economy: "economy",
   intent: "details",
