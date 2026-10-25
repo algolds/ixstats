@@ -30,14 +30,10 @@ import { toRevisionRef } from "../core/domain-types";
 import { fillRevisionParents } from "../core/revision-parents";
 import { canonicalizeTitle, storedNamespace, type CanonicalTitle } from "../core/title";
 import { mwSha1Base36 } from "../xml/sha1";
-import { decideCollision, type CollisionVerdict } from "./conflict-rule";
+import type { CollisionVerdict } from "./conflict-rule";
 import { recordConflict } from "./conflict-log";
-import {
-  classicChangeOfRevision,
-  wikiosBranchSince,
-  wikiosDeletion,
-  wikiosHead,
-} from "./conflict-sides";
+import { reopenSkippedNotes } from "./conflict-note-reopen";
+import { judgeClassicEdit } from "./inbound-judge";
 import {
   decideInbound,
   isOlder,
@@ -442,30 +438,6 @@ function baseRefOf(rev: MediaWikiRevision): string | null {
 }
 
 /**
- * The rule's verdict on the classic edit against what WikiOS holds: its head and the revisions since the edit's base,
- * or, for a page WikiOS deleted, that delete. Null when WikiOS holds nothing to judge against.
- */
-async function judge(
-  page: PageState,
-  article: StoredArticle,
-  effectiveAt: Date | undefined
-): Promise<CollisionVerdict | null> {
-  const deletion = article.status === "ARCHIVED" ? await wikiosDeletion(article.id) : null;
-  const standing = deletion ?? (await wikiosHead(article.id));
-  if (!standing) return null;
-  const incoming = await classicChangeOfRevision(page.rev, effectiveAt);
-  const standingBranch = deletion
-    ? [deletion]
-    : await wikiosBranchSince(article.id, page.rev.parentid, page.parentSha1);
-  return decideCollision(SOURCE, article.id, {
-    incoming,
-    standing,
-    incomingBranch: [incoming],
-    standingBranch,
-  });
-}
-
-/**
  * The classic edit won: it becomes the page's head (bringing back a page WikiOS had deleted) and its conflict row is
  * written in the same transaction, so nobody is told of an overwrite that did not happen. A WikiOS save that landed
  * after the verdict was read makes the import write nothing and fail (`HeadNotAppliedError`): the cycle holds the
@@ -606,12 +578,36 @@ async function applyCollision(page: PageState, options: ApplyOptions): Promise<R
   const { article } = page;
   if (!options.judgeCollisions || !article) return "deferred";
   const based = await withBaseline(page);
-  const verdict = await judge(based, article, options.effectiveAt);
+  const judged = await judgeClassicEdit({
+    articleId: article.id,
+    archived: article.status === "ARCHIVED",
+    rev: page.rev,
+    parentSha1: page.parentSha1,
+    effectiveAt: options.effectiveAt,
+  });
   // Nothing in WikiOS to judge against (a deleted page with no revision and no delete of its own): MediaWiki's stands.
-  if (!verdict) return applyFastForward(based, options);
+  if (judged.kind === "none") return applyFastForward(based, options);
+  // Only WikiOS's own conflict writes since the edit's base: MediaWiki's stands. A collision: the rule decides.
+  const outcome =
+    judged.kind === "past-system-writes"
+      ? await applyFastForward(based, options)
+      : await applyVerdict(based, article, judged.verdict);
+  // the edit is the head now: a talk note of WikiOS's it left out is owed again
+  if (outcome === "fast-forward" || outcome === "won") {
+    await reopenSkippedNotes(article.title, judged.skipped, page.rev.wikitext);
+  }
+  return outcome;
+}
+
+/** A collision's verdict applied: a classic edit that won becomes the head; one that lost is kept as overwritten. */
+function applyVerdict(
+  page: PageState,
+  article: StoredArticle,
+  verdict: CollisionVerdict
+): Promise<RevisionOutcome> {
   return verdict.incomingWins
-    ? importWinner(based, article, verdict)
-    : keepOverwritten(based, article, verdict);
+    ? importWinner(page, article, verdict)
+    : keepOverwritten(page, article, verdict);
 }
 
 async function applyFastForward(page: PageState, options: ApplyOptions): Promise<RevisionOutcome> {

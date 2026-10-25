@@ -117,3 +117,16 @@ export function noticeCopy(input: CopyInput): NoticeCopy {
     summary: `${yours} ${input.title} was replaced`,
   };
 }
+
+/** The conflict a talk note's summary names at its end. */
+const NOTE_CONFLICT = /\(conflict ([\w-]+)\)$/;
+
+/** The talk note's edit summary with its conflict named at the end, as a trail names one: it finds the row again. */
+export function noteSummary(summary: string, conflictId: string): string {
+  return `${summary} (conflict ${conflictId})`;
+}
+
+/** The conflict id `noteSummary` put at the end of a summary; null for any other summary. */
+export function conflictOfNote(summary: string | null): string | null {
+  return NOTE_CONFLICT.exec(summary ?? "")?.[1] ?? null;
+}

@@ -361,6 +361,96 @@ describeEachWikiosMode("settleConflicts", () => {
 
     expect(await settleConflicts()).toEqual({ notified: 1, trails: 0, pending: 0 });
     expect(dm).toHaveBeenLastCalledWith("disc-beta", expect.any(String));
+    // the given-up DM is never counted as told: marked undelivered, and the admin log says so
+    expect(conflictRow(id).notified).toContainEqual(
+      expect.objectContaining({
+        key: "user:db-beta",
+        channel: "discord",
+        undelivered: "dm-gave-up",
+      })
+    );
+    const { items } = await conflictLogPage({ limit: 10 });
+    expect(items[0]!.notices).toContainEqual(
+      expect.objectContaining({
+        channel: "discord",
+        undelivered: "Not delivered: the Discord DM failed for a day",
+      })
+    );
+  });
+
+  it("a DM that keeps throwing is given up a day after the collision too, marked undelivered", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    const winner = seedCaphiria("Caphiria is an empire.");
+    const id = await collide(change("classic", String(winner), author({})), [
+      change("wikios", "wk-alpha", author({ userId: "db-alpha" })),
+    ]);
+    dm.mockRejectedValue(new Error("Discord down"));
+
+    expect(await settleConflicts()).toMatchObject({ notified: 1, pending: 1 });
+    conflictRow(id).createdAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    expect(await settleConflicts()).toEqual({ notified: 0, trails: 0, pending: 0 });
+
+    expect(conflictRow(id).notified).toContainEqual(
+      expect.objectContaining({
+        key: "user:db-alpha",
+        channel: "discord",
+        undelivered: "dm-gave-up",
+      })
+    );
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("dm-gave-up"));
+    dm.mockReset();
+    dm.mockResolvedValue(true);
+    warn.mockRestore();
+  });
+
+  it("a notice delivered after its channel's window is told, never given up", async () => {
+    seedCaphiria();
+    const id = await collide(change("wikios", wikiosHead("Caphiria is an empire."), author({})), [
+      change("classic", "4242", author({ ip: "10.0.0.7" })),
+    ]);
+    conflictRow(id).firstSettleAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    conflictRow(id).createdAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+
+    expect(await settleConflicts()).toEqual({ notified: 1, trails: 0, pending: 0 });
+    expect(conflictRow(id).notified).toEqual([
+      expect.not.objectContaining({ undelivered: expect.anything() }),
+    ]);
+  });
+
+  it("a talk page that keeps refusing the note is tried for a day after the first attempt, then marked undelivered: the row settles", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    seedCaphiria();
+    const id = await collide(change("wikios", wikiosHead("Caphiria is an empire."), author({})), [
+      change("classic", "4242", author({ ip: "10.0.0.7" })),
+    ]);
+    const save = jest
+      .spyOn(ArticleRepository, "saveArticle")
+      .mockRejectedValue(new Error("the talk page refuses it"));
+
+    expect(await settleConflicts()).toEqual({ notified: 0, trails: 0, pending: 1 });
+    expect(await settleConflicts()).toEqual({ notified: 0, trails: 0, pending: 1 });
+    expect(conflictRow(id).notified).toEqual([]);
+    conflictRow(id).firstSettleAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+
+    expect(await settleConflicts()).toEqual({ notified: 0, trails: 0, pending: 0 });
+    expect(conflictRow(id).notified).toEqual([
+      expect.objectContaining({
+        key: "ip:10.0.0.7",
+        channel: "talk-page",
+        undelivered: "talk-page-refused",
+      }),
+    ]);
+    expect(conflictRow(id).settledAt).not.toBeNull();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("talk-page-refused"));
+    const { items } = await conflictLogPage({ limit: 10 });
+    expect(items[0]!.notices).toEqual([
+      expect.objectContaining({
+        channel: "talk-page",
+        undelivered: "Not delivered: the talk page refused the note for a day",
+      }),
+    ]);
+    save.mockRestore();
+    warn.mockRestore();
   });
 
   it("an in-app notice that fails is left for the next run", async () => {
@@ -556,7 +646,8 @@ describeEachWikiosMode("settleConflicts", () => {
     expect(String(note.wikitext).startsWith("Hello Foo.")).toBe(true);
     expect(note.wikitext).toContain(NOTE_HEADING);
   });
-  it("a classic winner later overwritten itself still gets its trail, once", async () => {
+  it("a classic winner overwritten since, or edited on, gets no trail: a dummy edit over a later edit names nothing; the row settles", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
     const winner = seedCaphiria("Caphiria is an empire.");
     const id = await collide(change("classic", String(winner), author({})), [
       change("wikios", "wk-gone", author({ label: "Community Contributor" })),
@@ -566,13 +657,27 @@ describeEachWikiosMode("settleConflicts", () => {
     Object.assign(winnerRow, { parked: true, parkReason: "overwritten:wk-later" });
     wikiosHead("Caphiria is an empire in Sarpedon.");
 
+    expect(await settleConflicts()).toEqual({ notified: 0, trails: 0, pending: 0 });
+    expect(headOf("Caphiria")).toMatchObject({ wikitext: "Caphiria is an empire in Sarpedon." });
+    expect(headOf("Caphiria").author).not.toBe("WikiOS");
+    expect(conflictRow(id)).toMatchObject({ trailRevisionId: null, settledAt: expect.any(Date) });
+    expect(jobs()).toEqual([]);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("edited after its winner"));
+    warn.mockRestore();
+  });
+
+  it("the trail is written while the classic winner is the head", async () => {
+    const winner = seedCaphiria("Caphiria is an empire.");
+    const id = await collide(change("classic", String(winner), author({})), [
+      change("wikios", "wk-gone", author({ label: "Community Contributor" })),
+    ]);
+
     expect(await settleConflicts()).toEqual({ notified: 0, trails: 1, pending: 0 });
     expect(headOf("Caphiria")).toMatchObject({
       author: "WikiOS",
-      wikitext: "Caphiria is an empire in Sarpedon.",
+      wikitext: "Caphiria is an empire.",
     });
     expect(conflictRow(id).trailRevisionId).toBe(headOf("Caphiria").id);
-    expect(await settleConflicts()).toEqual({ notified: 0, trails: 0, pending: 0 });
     expect(jobs()).toEqual(["revision Caphiria"]);
   });
 
@@ -771,7 +876,8 @@ describeEachWikiosMode("settleConflicts", () => {
       })
     );
     const note = headOf("User talk:Beta");
-    expect(note.summary).toBe("Your deletion of Caphiria was replaced");
+    // the note names its conflict, so a classic edit that leaves it out owes it again (conflict-note-reopen.ts)
+    expect(note.summary).toBe(`Your deletion of Caphiria was replaced (conflict ${id})`);
     expect(note.wikitext).toContain(
       "== Your deletion of [[Caphiria]] was replaced ==\n" +
         "A later edit on WikiOS replaced your deletion " +

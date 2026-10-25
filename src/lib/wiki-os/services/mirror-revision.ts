@@ -45,7 +45,7 @@ import { createExportWriter, escapeXmlText, toXmlTimestamp } from "../xml/export
 import { mwSha1Base36 } from "../xml/sha1";
 import type { XmlRevision } from "../xml/types";
 import { importName, INTERWIKI_PREFIX } from "./import-label";
-import { withoutTrail, type BatchCollision } from "./mirror-collision";
+import { withoutTrail, type BatchCollision, type BatchWithheld } from "./mirror-collision";
 import {
   currentRevision,
   findImported,
@@ -74,6 +74,11 @@ function lostNote(winnerRef: string): string {
 }
 function laterNote(revid: number): string {
   return `MediaWiki has a later revision ${revid} by a classic editor; imported as history`;
+}
+const HELD_BACK_NOTE =
+  "WikiOS's own write (a trail or a talk note) after a save that lost to a later classic edit: not sent, kept in WikiOS's history";
+function withheldNote(classicRef: number): string {
+  return `WikiOS's own write (a trail or a talk note) met MediaWiki revision ${classicRef} by a classic editor, which WikiOS has not had yet: not sent, kept in WikiOS's history`;
 }
 function overwrittenNote(parkReason: string | null): string {
   return `Overwritten before it was sent (${parkReason ?? "overwritten"}): kept in WikiOS's history only`;
@@ -264,9 +269,13 @@ function unsentMember(job: MirrorJob, head: RevisionHead | undefined): BatchMemb
  * build its XML. A revision the inbound sync already stamped, one that went with its page, and one that was overwritten
  * (parked) are settled without being sent; the batch takes no revision that would grow its XML past `MAX_BATCH_BYTES`,
  * except the first (decided from the revisions' sizes first, so the text of the jobs left for the next batch is never
- * read, then checked against the XML as escaped). Only reads: nothing is claimed or sent yet.
+ * read, then checked against the XML as escaped). `heldBack`: revisions a lost batch keeps back (`BatchCollision`),
+ * settled with a note and never sent. Only reads: nothing is claimed or sent yet.
  */
-export async function planRevisionBatch(jobs: readonly MirrorJob[]): Promise<RevisionBatchPlan> {
+export async function planRevisionBatch(
+  jobs: readonly MirrorJob[],
+  heldBack: readonly string[] = []
+): Promise<RevisionBatchPlan> {
   const first = jobs[0];
   if (!first) throw new Error("A revision batch needs a job");
   // the jobs may be queued under a title the page no longer has in classic: they go where it is
@@ -289,6 +298,8 @@ export async function planRevisionBatch(jobs: readonly MirrorJob[]): Promise<Rev
       const revision = head && isSent(head) ? revisions.get(head.id) : undefined;
       if (!revision) {
         members.push(unsentMember(job, head));
+      } else if (heldBack.includes(revision.id)) {
+        members.push({ job, send: false, mwRevId: null, note: HELD_BACK_NOTE });
       } else if (sending.length > 0 && bytes + xmlSizeOf(revision) > MAX_BATCH_BYTES) {
         return;
       } else {
@@ -554,4 +565,15 @@ export async function executeRevisionBatch(
   return collision && lost
     ? settleLost(plan, sent, collision.verdict.winner.ref)
     : settleImported(plan, sent);
+}
+
+/**
+ * A batch `checkCollision` withheld (system writes only, against a classic change WikiOS has not seen): nothing is sent,
+ * and every job is done with a note; its revisions stay WikiOS's history.
+ */
+export function withheldOutcomes(plan: RevisionBatchPlan, withheld: BatchWithheld): BatchOutcome[] {
+  const note = withheldNote(withheld.classicRef);
+  return plan.members.map((member) =>
+    member.send ? { job: member.job, mwRevId: null, note } : unsentOutcome(member)
+  );
 }

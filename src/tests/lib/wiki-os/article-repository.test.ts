@@ -615,18 +615,33 @@ describeEachWikiosMode(
 );
 
 describe("ArticleRepository.recordTrailRevision (the classic winner's trail)", () => {
-  const head = { id: "h1", wikitext: "Caphiria is an empire." };
-  const trail = () =>
+  const head = { id: "h1", wikitext: "Caphiria is an empire.", mwRevId: 8 };
+  const trail = (winnerMwRevId: number | null = 8) =>
     ArticleRepository.recordTrailRevision({
       articleId: "a1",
       summary: "Overwrote revision 7 by Foo, saved from the same version (conflict c1)",
       conflictId: "c1",
+      winnerMwRevId,
     });
 
   beforeEach(() => {
     mockTxArticleFindUnique.mockResolvedValue({ id: "a1", title: "Caphiria", source: "ixwiki" });
     mockRevisionFindFirst.mockResolvedValue(head);
     mockRevisionCreate.mockResolvedValue({ id: "t1" });
+  });
+
+  it("writes no trail over an edit made after the classic winner: the head is not the winner's revision", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    await expect(trail(7)).resolves.toBeNull();
+
+    expect(mockRevisionCreate).not.toHaveBeenCalled();
+    expect(mockJobCreate).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("a winner that is no revision (a move, an undelete) takes its trail on whatever head the page has", async () => {
+    await expect(trail(null)).resolves.toEqual({ revisionId: "t1" });
   });
 
   it("recordTrailRevision copies the head text, enqueues one job and refuses a second trail", async () => {

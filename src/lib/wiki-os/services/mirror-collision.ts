@@ -8,9 +8,15 @@
  * A winner carries the trail in its summary (written in the database, so the XML has it). A batch that lost to an edit
  * is imported as history only (mirror-revision.ts); one that lost to a delete is parked and sends nothing, so classic
  * stays deleted.
+ *
+ * WikiOS's own conflict writes (`isSystemRevision`: trail dummy edits, talk notes) never win or lose by time. A batch
+ * that also carries a person's save is judged by that person's newest save, the system writes going along as history.
+ * A batch of system writes only that meets a classic change WikiOS has not seen is withheld: nothing is sent and no row
+ * is written, its revisions stay WikiOS's history, and the inbound cycle brings the classic change over as usual.
  */
 import { db } from "~/server/db";
 import { repointArticleHead } from "../core/article-head";
+import { classicEventApplied } from "./conflict-page-ops";
 import {
   conflictKey,
   decideCollision,
@@ -29,6 +35,7 @@ import {
 import {
   classicChangeOfEvent,
   classicChangeOfRevision,
+  isSystemRevision,
   isSystemWrite,
   wikiosBranchSince,
   wikiosEditOf,
@@ -53,6 +60,20 @@ export interface BatchCollision {
   conflictId: string;
   /** The batch's newest revision won: it goes out with its trail. False: the batch lost. */
   wikiosWon: boolean;
+  /**
+   * A batch that lost: its system writes after the person's save that was judged, sent nothing (dated after that save,
+   * one could become classic's current revision over the later classic change). Kept as WikiOS's history.
+   */
+  heldBack?: readonly string[];
+}
+
+/**
+ * A batch of system writes only that met a classic change WikiOS has not seen (`classicRef`, its revision): nothing is
+ * sent and nothing is recorded.
+ */
+export interface BatchWithheld {
+  withheld: true;
+  classicRef: number;
 }
 
 /** The most of an edit summary MediaWiki keeps, in characters (its comment store cuts the rest). */
@@ -130,7 +151,10 @@ function deleteOverSystemWrites(
  * has not had, up to `newest`), recorded in the conflict log like any collision. A delete saved after the newest
  * person's save (or in its second) wins: every unsent revision is parked, in one transaction with the row, and nothing
  * is sent, so classic stays deleted. An earlier delete loses: the revisions bring the page back, as MediaWiki's import
- * does, and the deleter is told. A system write never keeps the page alive. Null when the page was never deleted there.
+ * does, and the deleter is told. A system write never keeps the page alive. Null (a new page, nothing judged) when the
+ * page was never deleted there, when WikiOS applied that delete already (the page was made again after it), or when
+ * classic never had the page as WikiOS knows it (no revision of it carries a MediaWiki id: an old delete of an
+ * unrelated page of that title).
  */
 async function judgeDeletion(
   title: string,
@@ -138,7 +162,9 @@ async function judgeDeletion(
   newest: PageChange
 ): Promise<BatchCollision | null> {
   const removal = await latestClassicDelete(title);
-  if (!removal) return null;
+  if (!removal || (await classicEventApplied(removal.logid))) return null;
+  const known = await db.wikiRevision.count({ where: { articleId, mwRevId: { not: null } } });
+  if (known === 0) return null;
   const standing = await classicChangeOfEvent(removal, "delete");
   const unseen = (await wikiosBranchSince(articleId, 0, null)).filter(
     (change) => change.at <= newest.at
@@ -168,19 +194,20 @@ async function judgeDeletion(
 }
 
 /**
- * The rule's verdict on `revision` (the batch's newest) against what classic has, recorded in the conflict log. Null
- * when there is nothing to judge: classic's current revision is one WikiOS has (the inbound sync brought it over and
- * judged it then), or no classic editor saved since WikiOS's last revision there (only the mirror's own revisions
- * follow it).
+ * The rule's verdict on the batch (`sent`, oldest first, `newest` its last) against what classic has, recorded in the
+ * conflict log: its newest person's save against classic's newest unseen change (a deletion is judged with every
+ * revision of the batch, `judgeDeletion`). Null when there is nothing to judge: classic's current revision is one WikiOS has (the inbound sync
+ * brought it over and judged it then), or no classic editor saved since WikiOS's last revision there (only the mirror's
+ * own revisions follow it). Withheld when the batch is system writes only and a classic editor saved since.
  */
 async function judgeAgainstClassic(
   title: string,
   articleId: string,
-  revision: MirroredRevision
-): Promise<BatchCollision | null> {
-  const incoming = await wikiosEditOf(revision);
+  newest: MirroredRevision,
+  sent: readonly MirroredRevision[]
+): Promise<BatchCollision | BatchWithheld | null> {
   const current = await currentRevision(title);
-  if (!current) return judgeDeletion(title, articleId, incoming);
+  if (!current) return judgeDeletion(title, articleId, await wikiosEditOf(newest));
   if ((await stampedIn(articleId, [current.revid])).size > 0) return null;
 
   const { base, branch, history } = await classicSince(title, articleId);
@@ -189,12 +216,18 @@ async function judgeAgainstClassic(
   const edited = !isWikiosOwn(current) && !(listed && isNullRevision(listed, history));
   const standing = edited ? current : branch.at(-1);
   if (!standing) return null;
+  // a system write wins or loses nothing by time: the newest person's save is judged, or nothing is sent
+  const person = sent.filter((revision) => !isSystemRevision(revision)).at(-1);
+  if (!person) return { withheld: true, classicRef: standing.revid };
+  const incoming = await wikiosEditOf(person);
   const wikiosBranch = await wikiosBranchSince(articleId, base?.revid ?? 0, base?.sha1 ?? null);
   const verdict = decideCollision(MIRROR_SOURCE, articleId, {
     incoming,
     standing: await classicChangeOfEntry(standing),
-    // what WikiOS changed since the base up to this revision; anything later is judged with its own batch
-    incomingBranch: wikiosBranch.filter((change) => change.at <= incoming.at),
+    // what people changed in WikiOS since the base up to this save; anything later is judged with its own batch
+    incomingBranch: wikiosBranch.filter(
+      (change) => change.at <= incoming.at && !isSystemWrite(change.author)
+    ),
     standingBranch: await Promise.all(branch.map(classicChangeOfEntry)),
   });
   const { id } = await recordConflict(db, {
@@ -204,7 +237,14 @@ async function judgeAgainstClassic(
     verdict,
     baseRef: base ? String(base.revid) : null,
   });
-  return { verdict, conflictId: id, wikiosWon: verdict.incomingWins };
+  if (verdict.incomingWins) return { verdict, conflictId: id, wikiosWon: true };
+  const after = sent.slice(sent.indexOf(person) + 1);
+  return {
+    verdict,
+    conflictId: id,
+    wikiosWon: false,
+    heldBack: after.map((revision) => revision.id),
+  };
 }
 
 /** Puts the trail of `row` (a collision `revision` won) in the revision's summary, once: true for the one that does. */
@@ -258,19 +298,21 @@ async function writeTrails(
  * `judgeAgainstClassic`). `wikiosWon` false means the batch lost: history only after an edit, nothing sent after a
  * delete. Every collision a revision of the batch won, here or one the inbound cycle judged before the job ran, has its
  * trail written into that revision's summary in the database, once. The caller plans the batch again whenever this
- * resolves to a collision, so the XML carries the trails and leaves the parked revisions out. Null when there is
+ * resolves to a collision, so the XML carries the trails and leaves the parked revisions out. Withheld (`BatchWithheld`)
+ * for a batch of system writes only that met an unseen classic change: the caller sends nothing. Null when there is
  * nothing to judge and no trail to write.
  */
-export async function checkCollision(plan: RevisionBatchPlan): Promise<BatchCollision | null> {
-  const sent = plan.members.flatMap((member) => (member.send ? [member] : []));
-  const newest = sent.at(-1);
+export async function checkCollision(
+  plan: RevisionBatchPlan
+): Promise<BatchCollision | BatchWithheld | null> {
+  const members = plan.members.flatMap((member) => (member.send ? [member] : []));
+  const newest = members.at(-1);
   const articleId = newest?.job.articleId;
   if (!newest || !articleId) return null;
-  const judged = await judgeAgainstClassic(plan.title, articleId, newest.revision);
+  const sent = members.map((member) => member.revision);
+  const judged = await judgeAgainstClassic(plan.title, articleId, newest.revision, sent);
+  if (judged && "withheld" in judged) return judged;
   // a revision of a batch that lost can have won an earlier collision: its history line names that one
-  const trailed = await writeTrails(
-    articleId,
-    sent.map((member) => member.revision)
-  );
+  const trailed = await writeTrails(articleId, sent);
   return judged ?? trailed;
 }

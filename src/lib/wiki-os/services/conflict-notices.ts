@@ -33,7 +33,7 @@ import {
   type ConflictRow,
   type UndeliveredReason,
 } from "./conflict-log";
-import { lossOf, noticeCopy } from "./conflict-notice-copy";
+import { lossOf, noteSummary, noticeCopy } from "./conflict-notice-copy";
 import {
   CONFLICT_NOTICE_AUTHOR,
   shownRefs,
@@ -45,8 +45,16 @@ import { syncLatestRevision } from "./inbound-revision-sync";
 
 const SOURCE = "ixwiki";
 const DAY_MS = 24 * 60 * 60 * 1000;
-/** A DM that fails is tried again by later runs for this long after the collision, then given up (in-app stands). */
+/**
+ * A DM that fails is tried again by later runs for this long after the collision, then given up and marked undelivered
+ * (in-app stands).
+ */
 const DM_RETRY_WINDOW_MS = DAY_MS;
+/**
+ * A talk note that cannot be saved (the talk page keeps refusing it) is tried again for this long after the row's
+ * first settle attempt, then given up and marked undelivered: a row never stays open for good, starving the others.
+ */
+const TALK_RETRY_WINDOW_MS = DAY_MS;
 /**
  * A trail that cannot be written (its winner not in WikiOS yet, an error) is tried again for this long after the row's
  * first settle attempt, then given up: a sync that was down meanwhile does not eat the window.
@@ -189,8 +197,7 @@ async function tellOnDiscord(
   if (!user?.discordUserId) return "skipped";
   const link = `${APP_URL}${CLEAN_BASE_PATH}${noticeHref(context, recipient)}`;
   const { message } = copyOf(context, recipient);
-  if (await sendDiscordDm(user.discordUserId, `${message}\n${link}`)) return "sent";
-  return olderThan(context.entry.createdAt, DM_RETRY_WINDOW_MS) ? "skipped" : "open";
+  return (await sendDiscordDm(user.discordUserId, `${message}\n${link}`)) ? "sent" : "open";
 }
 
 /** A ref of the winner MediaWiki knows: a classic revision id as it is, a WikiOS revision's once mirrored. */
@@ -273,7 +280,8 @@ async function writeTalkNote(
         title: canon.title,
         source: SOURCE,
         wikitext: appendSection(page.wikitext, await talkSection(context, recipient)),
-        editSummary: copyOf(context, recipient).summary,
+        // it names its conflict: a classic edit that leaves it out owes it again (conflict-note-reopen.ts)
+        editSummary: noteSummary(copyOf(context, recipient).summary, context.entry.id),
         expectedHeadRef: page.headRef,
       },
       undefined,
@@ -298,6 +306,44 @@ const CHANNELS: Record<
   discord: tellOnDiscord,
   "talk-page": writeTalkNote,
 };
+
+/** How long a channel that keeps failing is tried, from when, and why it is marked undelivered after. */
+const GIVE_UP: Readonly<
+  Partial<
+    Record<
+      NoticeChannel,
+      { since: (context: NoticeContext) => Date; windowMs: number; reason: UndeliveredReason }
+    >
+  >
+> = {
+  discord: {
+    since: (context) => context.entry.createdAt,
+    windowMs: DM_RETRY_WINDOW_MS,
+    reason: "dm-gave-up",
+  },
+  "talk-page": {
+    since: (context) => context.firstAttemptAt,
+    windowMs: TALK_RETRY_WINDOW_MS,
+    reason: "talk-page-refused",
+  },
+};
+
+/** A delivery left open past its channel's window (`GIVE_UP`) is given up: undelivered, and the log says why. */
+function givenUp(
+  channel: NoticeChannel,
+  context: NoticeContext,
+  recipient: NoticeRecipient,
+  delivery: Delivery
+): Delivery {
+  const rule = GIVE_UP[channel];
+  if (delivery !== "open" || !rule || !olderThan(rule.since(context), rule.windowMs)) {
+    return delivery;
+  }
+  console.warn(
+    `[WikiConflicts] The ${channel} notice for ${recipient.key} on conflict ${context.entry.id} is given up: ${rule.reason}.`
+  );
+  return { undelivered: rule.reason };
+}
 
 /** One attempt; a failure (a talk page saved meanwhile included) is left for the next run. */
 async function attempt(what: string, context: NoticeContext, work: () => Promise<Delivery>) {
@@ -337,7 +383,8 @@ async function winnerLanded(
 /**
  * The dummy edit that names the overwrite, once the classic winner is in WikiOS (`winnerLanded`): before that, WikiOS's
  * head is older than the winner, and copying it would put the old text back on classic. A page deleted since takes no
- * trail: its mirror job would bring the page back on classic.
+ * trail: its mirror job would bring the page back on classic. Nor does a page edited after its edit winner
+ * (`recordTrailRevision` checks under the lock): the row settles without one.
  */
 async function writeTrail(context: NoticeContext): Promise<Delivery> {
   const { entry } = context;
@@ -354,6 +401,7 @@ async function writeTrail(context: NoticeContext): Promise<Delivery> {
     articleId: page.id,
     summary: trailSummary(await verdictAsShown(verdictOfEntry(entry)), entry.id),
     conflictId: entry.id,
+    winnerMwRevId: entry.winner.action === "edit" ? Number(entry.winner.ref) : null,
   });
   return trail ? "sent" : "skipped";
 }
@@ -381,9 +429,10 @@ async function tellRecipients(
   let open = false;
   for (const recipient of pendingRecipients(row)) {
     for (const channel of recipient.channels) {
-      const delivery = await attempt(`${channel} notice`, context, () =>
+      const tried = await attempt(`${channel} notice`, context, () =>
         CHANNELS[channel](context, recipient)
       );
+      const delivery = givenUp(channel, context, recipient, tried);
       if (delivery === "open") {
         open = true;
         continue;

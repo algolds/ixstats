@@ -216,12 +216,28 @@ async function lastUndeleteAt(articleId: string): Promise<Date | null> {
 }
 
 /**
- * WikiOS's head (its newest live revision) as a change, counting at the later of its commit and the page's last
- * undelete: a restore counts when it happened. Null for a page with no revision.
+ * The revisions that are a person's, as a filter: every one but WikiOS's own conflict writes (`isSystemRevision`),
+ * written null-safe (a revision with no author is a person's).
+ */
+function personRevisions(): Prisma.WikiRevisionWhereInput {
+  return {
+    OR: [
+      { authorId: { not: null } },
+      { author: null },
+      { author: { not: CONFLICT_NOTICE_AUTHOR } },
+      { origin: "classic" },
+    ],
+  };
+}
+
+/**
+ * WikiOS's head as a collision sees it, as a change: its newest live revision that is a person's (a trail dummy edit or
+ * a talk note never stands against a classic edit: a system write wins or loses nothing by time), counting at the later
+ * of its commit and the page's last undelete: a restore counts when it happened. Null for a page with no such revision.
  */
 export async function wikiosHead(articleId: string): Promise<PageChange | null> {
   const head = await db.wikiRevision.findFirst({
-    where: { articleId, parked: false },
+    where: { articleId, parked: false, ...personRevisions() },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     select: LIVE_REVISION_SELECT,
   });
@@ -251,14 +267,15 @@ async function findBase(articleId: string, parentRevId: number, parentSha1: stri
 
 /**
  * WikiOS's changes since the base a classic edit started from (MediaWiki revision `parentRevId`, with text hash
- * `parentSha1` when known): its live revisions after that base, oldest first. With no base found, the live revisions
- * MediaWiki has never seen (no MediaWiki id).
+ * `parentSha1` when known): its live revisions after that base, oldest first, and whether that base was found. With no
+ * base found, the live revisions MediaWiki has never seen (no MediaWiki id). WikiOS's own conflict writes are among
+ * them: a caller judging by time leaves them out (`isSystemWrite`), one parking a lost batch keeps them.
  */
-export async function wikiosBranchSince(
+export async function wikiosBranchFrom(
   articleId: string,
   parentRevId: number,
   parentSha1: string | null
-): Promise<PageChange[]> {
+): Promise<{ based: boolean; changes: PageChange[] }> {
   const base = await findBase(articleId, parentRevId, parentSha1);
   const rows = await db.wikiRevision.findMany({
     where: {
@@ -270,7 +287,16 @@ export async function wikiosBranchSince(
     select: LIVE_REVISION_SELECT,
   });
   const names = await shownNames(rows);
-  return rows.map((row) => editOf(row, authorFrom(row, names)));
+  return { based: base !== null, changes: rows.map((row) => editOf(row, authorFrom(row, names))) };
+}
+
+/** `wikiosBranchFrom`'s changes alone. */
+export async function wikiosBranchSince(
+  articleId: string,
+  parentRevId: number,
+  parentSha1: string | null
+): Promise<PageChange[]> {
+  return (await wikiosBranchFrom(articleId, parentRevId, parentSha1)).changes;
 }
 
 /**

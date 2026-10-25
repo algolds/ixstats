@@ -22,8 +22,12 @@ import {
 type Client = Prisma.TransactionClient | typeof db;
 type JsonObject = { [key: string]: Prisma.JsonValue };
 
-/** Why a channel could not reach its recipient, for good: the row settles, and the log says the notice never arrived. */
-export type UndeliveredReason = "talk-page-deleted";
+/**
+ * Why a channel could not reach its recipient, for good: the row settles, and the log says the notice never arrived.
+ * talk-page-deleted: the talk page is deleted; talk-page-refused: saving the note kept failing for a day; dm-gave-up:
+ * the Discord DM kept failing for a day.
+ */
+export type UndeliveredReason = "talk-page-deleted" | "talk-page-refused" | "dm-gave-up";
 
 export interface NoticeMark {
   key: string;
@@ -58,7 +62,11 @@ const MERGE_ATTEMPTS = 5;
 const SIDES: readonly WikiSide[] = ["wikios", "classic"];
 const ACTIONS: readonly ChangeAction[] = ["edit", "delete", "move", "undelete"];
 const CHANNELS: readonly NoticeChannel[] = ["in-app", "discord", "talk-page"];
-const UNDELIVERED_REASONS: readonly UndeliveredReason[] = ["talk-page-deleted"];
+const UNDELIVERED_REASONS: readonly UndeliveredReason[] = [
+  "talk-page-deleted",
+  "talk-page-refused",
+  "dm-gave-up",
+];
 
 // --- the JSON shapes ------------------------------------------------------------------------------------------------
 
@@ -314,6 +322,26 @@ export async function markNotified(
       : { key: recipientKey, channel, at };
     return { notified: [...marks, added].map((mark) => ({ ...mark })) };
   });
+}
+
+/**
+ * Takes back one person's mark on one channel: the notice is owed again, and a settled row is open again, so the next
+ * settling delivers it. For a talk note a classic edit left out of the page (conflict-note-reopen.ts). True when there
+ * was a mark to take back.
+ */
+export async function reopenNotice(
+  conflictId: string,
+  recipientKey: string,
+  channel: NoticeChannel
+): Promise<boolean> {
+  let reopened = false;
+  await updateRow(db, conflictId, (row) => {
+    const marks = decodeMarks(row.notified);
+    const kept = marks.filter((mark) => mark.key !== recipientKey || mark.channel !== channel);
+    reopened = kept.length < marks.length;
+    return reopened ? { notified: kept.map((mark) => ({ ...mark })), settledAt: null } : null;
+  });
+  return reopened;
 }
 
 /**

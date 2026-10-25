@@ -60,6 +60,8 @@ const NOUNS: Readonly<Record<ChangeAction, string>> = {
 
 const UNDELIVERED: Readonly<Record<UndeliveredReason, string>> = {
   "talk-page-deleted": "Not delivered: talk page deleted",
+  "talk-page-refused": "Not delivered: the talk page refused the note for a day",
+  "dm-gave-up": "Not delivered: the Discord DM failed for a day",
 };
 
 const NO_AUTHOR = { userId: null, classicName: null, ip: null, label: null };

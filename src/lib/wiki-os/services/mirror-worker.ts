@@ -43,6 +43,7 @@ import { checkCollision } from "./mirror-collision";
 import {
   executeRevisionBatch,
   planRevisionBatch,
+  withheldOutcomes,
   type BatchOutcome,
   type RevisionBatchPlan,
 } from "./mirror-revision";
@@ -108,7 +109,9 @@ async function runRevisionBatch(claimed: readonly MirrorJob[]): Promise<MirrorJo
     outcomes = await withinAttempt(ATTEMPT_TIMEOUT_MS, async () => {
       const collision = await checkCollision(plan);
       if (!collision) return executeRevisionBatch(plan, null);
-      plan = await planRevisionBatch(handled);
+      // system writes only, against a classic change WikiOS has not had: nothing goes out
+      if ("withheld" in collision) return withheldOutcomes(plan, collision);
+      plan = await planRevisionBatch(handled, collision.heldBack);
       handled = await keepPlanned(handled, plan);
       return executeRevisionBatch(plan, collision);
     });

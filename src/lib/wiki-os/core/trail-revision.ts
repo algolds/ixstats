@@ -20,14 +20,20 @@ export interface TrailRevisionInput {
   /** The trail: `trailSummary` of the conflict. */
   summary: string;
   conflictId: string;
+  /**
+   * The classic edit that won, by its MediaWiki id: the trail is written only while it is the page's head. Null for a
+   * winner that is no revision (a move, an undelete).
+   */
+  winnerMwRevId: number | null;
 }
 
 /**
  * The trail of a conflict classic MediaWiki won: a revision with the head's text (parented on the head, byte delta 0),
  * by `CONFLICT_NOTICE_AUTHOR`, and its mirror job, so the trail reaches both wikis. Made under the page's lock, and it
- * claims the conflict's trail in the same transaction: null when the conflict already has one or the page is deleted
- * (read under the lock; the caller settles the row without a trail either way). A system write: no
- * permission check, no rate limit, never skipped as a null edit; the text does not change, so no render and no watchers.
+ * claims the conflict's trail in the same transaction: null when the conflict already has one, the page is deleted, or
+ * an edit winner is no longer the head (someone edited since: a dummy edit over a later edit names nothing). All read
+ * under the lock; the caller settles the row without a trail either way. A system write: no permission check, no rate
+ * limit, never skipped as a null edit; the text does not change, so no render and no watchers.
  */
 export async function recordTrailRevision(
   input: TrailRevisionInput
@@ -60,9 +66,15 @@ export async function recordTrailRevision(
       const head = await tx.wikiRevision.findFirst({
         where: { articleId: article.id, parked: false },
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-        select: { id: true, wikitext: true },
+        select: { id: true, wikitext: true, mwRevId: true },
       });
       if (!head) throw new Error(`"${article.title}" has no revision to record a trail on`);
+      if (input.winnerMwRevId !== null && head.mwRevId !== input.winnerMwRevId) {
+        console.warn(
+          `[WikiConflicts] No trail for conflict ${input.conflictId}: the page was edited after its winner.`
+        );
+        return null;
+      }
       const byteSize = Buffer.byteLength(head.wikitext, "utf8");
       const revision = await tx.wikiRevision.create({
         data: {

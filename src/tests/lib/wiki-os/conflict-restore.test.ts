@@ -488,9 +488,14 @@ describeEachWikiosMode("restoreOverwrittenText", () => {
   });
 
   it("the trail written after a classic winner is still the conflict's own page: the restore goes on top of it", async () => {
-    const { lost, conflictId } = await alphaLostToBob();
+    const { lost, bob, conflictId } = await alphaLostToBob();
     const trail = makeHead(
-      revision({ wikitext: "Bob's text", author: "WikiOS", summary: "Overwrote ..." })
+      revision({
+        wikitext: "Bob's text",
+        author: "WikiOS",
+        summary: "Overwrote ...",
+        parentRevisionId: bob.id,
+      })
     );
     conflictRow(conflictId).trailRevisionId = trail.id;
     const ref = lost.id as string;
@@ -503,6 +508,45 @@ describeEachWikiosMode("restoreOverwrittenText", () => {
 
     expect(result.success).toBe(true);
     expect(headOf()).toMatchObject({ wikitext: "Alpha's text", parentRevisionId: trail.id });
+  });
+
+  it("a trail written over someone's edit on top of the winner is no base: the restore is an edit conflict and their edit stays", async () => {
+    const { lost, conflictId } = await alphaLostToBob();
+    // Gamma saves on top of Bob's winner before the trail is written; the trail copies Gamma's text
+    const gamma = await ArticleRepository.saveArticle(
+      {
+        slug: "Caphiria",
+        title: "Caphiria",
+        wikitext: "Gamma's text",
+        editSummary: "",
+        expectedHeadRef: "101",
+      },
+      "db-gamma",
+      "gamma"
+    );
+    const trail = makeHead(
+      revision({
+        wikitext: "Gamma's text",
+        author: "WikiOS",
+        summary: "Overwrote ...",
+        parentRevisionId: gamma.revisionId,
+        createdAt: new Date(Date.now() + 1000),
+      })
+    );
+    conflictRow(conflictId).trailRevisionId = trail.id;
+    const ref = lost.id as string;
+
+    await expect(overwrittenRestorable(as("alpha"), { conflictId, ref })).resolves.toEqual({
+      state: "stale",
+      editHref: EDIT_HREF,
+    });
+    await expect(restoreOverwrittenText(as("alpha"), { conflictId, ref })).resolves.toMatchObject({
+      success: false,
+      editConflict: true,
+      currentWikitext: "Gamma's text",
+    });
+    expect(revisionsOf().filter((row) => row.wikitext === "Alpha's text")).toHaveLength(1);
+    expect(page().wikitext).toBe("Gamma's text");
   });
 
   it("a trail that is a log entry is never a base: the winner is", async () => {

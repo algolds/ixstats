@@ -2,8 +2,9 @@
  * "Restore my text": an author whose text a collision overwrote brings it back with one click, from the notice's diff.
  * The text is saved as a new edit through the one save path (`commitWikitextSave`: the permission gate, the
  * edit-conflict check, the mirror job), so nothing in either wiki's history is rewritten and the overwritten revision
- * stays as it was. It is saved on the page the conflict left (`baseOf`: its trail, else its winner): if anyone edited
- * since, the author gets the edit conflict and edits the page by hand, so a later edit is never replaced unseen.
+ * stays as it was. It is saved on the page the conflict left (`baseOf`: its trail on the winner, else the winner): if
+ * anyone edited since, the author gets the edit conflict and edits the page by hand, so a later edit is never replaced
+ * unseen.
  *
  * Who may restore what is read from the conflict row: the ref must be one of the text revisions the row lists as
  * overwritten (never judged by a revision's park reason, which can name a later winner than the row's), WikiOS must have
@@ -171,10 +172,22 @@ async function checkRestore(ctx: WikiAuthContext, input: OverwrittenRef): Promis
   return { entry, articleId, canon, wikitext };
 }
 
-/** The page the conflict left: its trail revision once written (a `log:` entry is no revision), else its winner. */
-export function baseOf(entry: Pick<ConflictLogEntry, "trailRevisionId" | "winner">): string {
+/**
+ * The page the conflict left: its trail revision when that was written straight on the winner, else the winner (a
+ * WikiOS winner is its own trail). A trail parented on any other revision copied someone's later edit, so a restore on it
+ * would replace that edit unseen: the winner is the base then, and the restore is stale.
+ */
+export async function baseOf(
+  entry: Pick<ConflictLogEntry, "trailRevisionId" | "winner" | "articleId">
+): Promise<string> {
   const trail = entry.trailRevisionId;
-  return trail && !trail.startsWith("log:") ? trail : entry.winner.ref;
+  if (!trail) return entry.winner.ref;
+  // (a `log:` trail is no revision: no row, so the winner)
+  const [row, winner] = await Promise.all([
+    db.wikiRevision.findUnique({ where: { id: trail }, select: { parentRevisionId: true } }),
+    entry.articleId ? findRevision(entry.articleId, entry.winner.ref) : null,
+  ]);
+  return winner && row?.parentRevisionId === winner.id ? trail : entry.winner.ref;
 }
 
 /**
@@ -191,7 +204,7 @@ export async function restoreOverwrittenText(
     wikitext,
     summary: `Restored my text replaced in conflict ${shortConflictId(input.conflictId)}`,
     minor: false,
-    expectedHeadRef: baseOf(entry),
+    expectedHeadRef: await baseOf(entry),
   });
 }
 
@@ -222,7 +235,7 @@ export async function overwrittenRestorable(
   }
   const head = await liveHead(checked.articleId);
   return {
-    state: headMatchesBase(head, baseOf(checked.entry)) ? "restorable" : "stale",
+    state: headMatchesBase(head, await baseOf(checked.entry)) ? "restorable" : "stale",
     editHref: articleHref(checked.canon, { action: "edit" }),
   };
 }
