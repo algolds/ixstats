@@ -1414,26 +1414,86 @@ describe.each(WIKIOS_MODES)("outbound revisions through the conflict rule [%s]",
     expect(tables.wikiConflict.rows).toEqual([]);
   });
 
-  it("a classic delete in the same second as the WikiOS revision wins: a tie goes to classic", async () => {
-    site.deletePage("Admin", "Caphiria");
+  it.each(["mirror first, then cycle", "cycle first, then mirror"])(
+    "a classic delete in the same second as the WikiOS revision wins, %s: classic stays deleted, WikiOS archived, one row",
+    async (order) => {
+      site.deletePage("Bob", "Caphiria");
+      const deletedAt = Date.parse(site.now());
+      const w1 = await kirSaves("Caphiria is an empire in Sarpedon.", new Date(deletedAt + 900));
+      const steps =
+        order === "mirror first, then cycle"
+          ? [runMirrorCycle, runAutoSyncCycle]
+          : [runAutoSyncCycle, runMirrorCycle];
+
+      for (const step of steps) await step();
+
+      expect(site.pages.has("Caphiria")).toBe(false);
+      expect(site.wiki.calls().filter((request) => request.params.action === "import")).toEqual([]);
+      expect(article("Caphiria")?.status).toBe("ARCHIVED");
+      expect(revisionRow(w1.revisionId)).toMatchObject({ parked: true });
+      expect(conflictsOf("Caphiria")).toEqual([
+        expect.objectContaining({ winnerSide: "classic", winnerAction: "delete" }),
+      ]);
+    }
+  );
+
+  it.each(["mirror first, then cycle", "cycle first, then mirror"])(
+    "a WikiOS revision saved after classic's delete brings the page back, %s: WikiOS stays live, one row, the deleter told once, one trail line",
+    async (order) => {
+      site.deletePage("Bob", "Caphiria");
+      // Kir saves now: an hour after Bob's delete by the site's clock
+      const w1 = await kirSaves("Caphiria is an empire in Sarpedon.");
+      const steps =
+        order === "mirror first, then cycle"
+          ? [runMirrorCycle, runAutoSyncCycle]
+          : [runAutoSyncCycle, runMirrorCycle];
+
+      for (const step of [...steps, ...steps]) await step();
+
+      expect(site.current("Caphiria")?.text).toBe("Caphiria is an empire in Sarpedon.");
+      expect(article("Caphiria")?.status).toBe("PUBLISHED");
+      expect(liveHead("Caphiria").id).toBe(w1.revisionId);
+      expect(conflictsOf("Caphiria")).toHaveLength(1);
+      const [conflict] = conflictsOf("Caphiria");
+      expect(conflict).toMatchObject({ winnerSide: "wikios", winnerRef: w1.revisionId });
+      expect(overwrittenRefs(conflict!)).toEqual([expect.stringMatching(/^mwlog:\d+$/)]);
+      expect(bobNotices(conflict!)).toEqual([expect.objectContaining({ channel: "talk-page" })]);
+      expect(trailLines()).toEqual({ wikios: 1, classic: 1 });
+    }
+  );
+
+  it("a classic delete meets a WikiOS save the mirror sent in its own second: the delete wins the tie, and its author is told", async () => {
+    site.deletePage("Bob", "Caphiria");
     const deletedAt = Date.parse(site.now());
-    await kirSaves("Caphiria is an empire in Sarpedon.", new Date(deletedAt + 900));
+    const w1 = await kirSaves("Caphiria is an empire in Sarpedon.", new Date(deletedAt + 900));
+    // sent already: stamped, its job done
+    revisionRow(w1.revisionId).mwRevId = 9_000;
+    caphiriaJob().state = "done";
 
-    await runMirrorCycle();
+    await runAutoSyncCycle();
 
-    expect(site.pages.has("Caphiria")).toBe(false);
+    expect(article("Caphiria")?.status).toBe("ARCHIVED");
     expect(conflictsOf("Caphiria")).toEqual([
       expect.objectContaining({ winnerSide: "classic", winnerAction: "delete" }),
     ]);
+    expect(conflictsOf("Caphiria").map(overwrittenRefs)).toEqual([[w1.revisionId]]);
   });
 
-  it("a WikiOS revision later than classic's delete brings the page back, as the import does", async () => {
-    site.deletePage("Admin", "Caphiria");
-    await kirSaves("Caphiria is an empire in Sarpedon.");
+  it("a classic revision WikiOS has is never judged as a WikiOS save against a classic delete", async () => {
+    site.deletePage("Bob", "Caphiria");
+    const caphiria = article("Caphiria")!;
+    tables.wikiRevision.insert({
+      articleId: caphiria.id,
+      wikitext: "Caphiria is a republic.",
+      byteSize: 23,
+      mwRevId: 9_001,
+      author: "Carol",
+      origin: "classic",
+      createdAt: new Date(siteTime() + 5_000),
+    });
 
-    await runMirrorCycle();
+    await runAutoSyncCycle();
 
-    expect(site.current("Caphiria")?.text).toBe("Caphiria is an empire in Sarpedon.");
     expect(conflictsOf("Caphiria")).toEqual([]);
   });
 

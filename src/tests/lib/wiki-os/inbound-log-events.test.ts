@@ -784,6 +784,61 @@ describeEachWikiosMode("classic deletes, moves and restores through the conflict
     expect(evictCaches).not.toHaveBeenCalled();
   });
 
+  it("a classic delete earlier than a WikiOS move MediaWiki has not had does not archive; the move wins", async () => {
+    const id = seedPage("Caphiria", 100);
+    const move = wikiosOperation(id, "move", "Caphiria", "2026-10-24T13:00:00Z", {
+      to: "Caphiria Empire",
+      reason: "",
+      leaveRedirect: true,
+    });
+
+    await applyLogEvent(deleteAt("Caphiria", "2026-10-24T12:00:00Z"));
+
+    expect(pageOf("Caphiria")?.status).toBe("PUBLISHED");
+    expect(conflictRows()).toEqual([
+      expect.objectContaining({
+        winnerSide: "wikios",
+        winnerAction: "move",
+        winnerRef: `log:${move}`,
+      }),
+    ]);
+  });
+
+  it("a classic delete later than a WikiOS save the mirror already sent in an earlier second records no conflict", async () => {
+    const id = seedPage("Caphiria", 100);
+    const sent = wikiosEdit(id, "2026-10-24T11:00:00Z");
+    revisionRow(sent).mwRevId = 101;
+
+    await applyLogEvent(deleteAt("Caphiria", "2026-10-24T12:00:00Z"));
+
+    expect(pageOf("Caphiria")?.status).toBe("ARCHIVED");
+    expect(conflictRows()).toEqual([]);
+  });
+
+  it("a classic delete earlier than a WikiOS save the mirror already sent does not archive: the save wins", async () => {
+    const id = seedPage("Caphiria", 100);
+    const sent = wikiosEdit(id, "2026-10-24T13:00:00Z");
+    revisionRow(sent).mwRevId = 101;
+
+    await applyLogEvent(deleteAt("Caphiria", "2026-10-24T12:00:00Z"));
+
+    expect(pageOf("Caphiria")?.status).toBe("PUBLISHED");
+    expect(conflictRows()).toEqual([
+      expect.objectContaining({ winnerSide: "wikios", winnerRef: sent }),
+    ]);
+  });
+
+  it("an overwritten WikiOS revision never keeps a page classic deleted", async () => {
+    const id = seedPage("Caphiria", 100);
+    const lost = wikiosEdit(id, "2026-10-24T13:00:00Z");
+    Object.assign(revisionRow(lost), { parked: true, parkReason: "overwritten:200" });
+
+    await applyLogEvent(deleteAt("Caphiria", "2026-10-24T12:00:00Z"));
+
+    expect(pageOf("Caphiria")?.status).toBe("ARCHIVED");
+    expect(conflictRows()).toEqual([]);
+  });
+
   it("a classic delete or restore that meets nothing MediaWiki has not seen records no conflict", async () => {
     const quiet = seedPage("Quiet", 100);
     // a page's text from before revisions were kept is classic's own, not a WikiOS change

@@ -347,6 +347,32 @@ export async function unmirroredWikiosChanges(articleId: string): Promise<PageCh
   return [...edits, ...operations].sort((a, b) => a.at.getTime() - b.at.getTime());
 }
 
+/**
+ * What a classic delete logged at `at` meets in WikiOS, oldest first: what MediaWiki had not seen (as
+ * `unmirroredWikiosChanges`), and the WikiOS saves the mirror already sent that were saved in the delete's second or
+ * later: the deleter never saw those either. A sent save from before that second was there to see, and is not one.
+ */
+export async function wikiosChangesAgainstDelete(
+  articleId: string,
+  at: Date
+): Promise<PageChange[]> {
+  const second = new Date(Math.floor(at.getTime() / 1000) * 1000);
+  const rows = await db.wikiRevision.findMany({
+    where: {
+      articleId,
+      parked: false,
+      origin: { not: "classic" },
+      OR: [{ mwRevId: null }, { createdAt: { gte: second } }],
+    },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    select: LIVE_REVISION_SELECT,
+  });
+  const names = await shownNames(rows);
+  const edits = rows.map((row) => editOf(row, authorFrom(row, names)));
+  const operations = (await operationChanges({ articleId })).map(({ change }) => change);
+  return [...edits, ...operations].sort((a, b) => a.at.getTime() - b.at.getTime());
+}
+
 /** A WikiOS move of `title` that MediaWiki has not had yet: the change, the moved article and where WikiOS put it. */
 export interface UnsentWikiosMove {
   change: PageChange;

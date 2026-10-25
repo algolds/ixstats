@@ -32,6 +32,7 @@ import { parkOverwritten, recordConflict } from "./conflict-log";
 import {
   classicChangeOfEvent,
   unmirroredWikiosChanges,
+  wikiosChangesAgainstDelete,
   unsentWikiosMove,
   type UnsentWikiosMove,
 } from "./conflict-sides";
@@ -251,7 +252,7 @@ function afterRemoval(canon: CanonicalTitle, articleId: string | null): Applied 
 }
 
 /**
- * A classic delete. A page WikiOS has live is judged against its changes MediaWiki has not seen: a later one keeps it
+ * A classic delete. A page WikiOS has live is judged against its changes the deleter never saw: a later one keeps it
  * (the delete is recorded as overwritten); otherwise it is archived, and what it overwrote is recorded.
  */
 async function applyRemoval(
@@ -261,12 +262,8 @@ async function applyRemoval(
   article: StoredPage
 ): Promise<Applied> {
   if (!article || article.status === "ARCHIVED") return afterRemoval(canon, article?.id ?? null);
-  const verdict = await judgeEvent(
-    event,
-    "delete",
-    article.id,
-    await unmirroredWikiosChanges(article.id)
-  );
+  const against = await wikiosChangesAgainstDelete(article.id, new Date(event.timestamp));
+  const verdict = await judgeEvent(event, "delete", article.id, against);
   if (verdict && !verdict.incomingWins) return keepWikios(tx, article, verdict);
 
   await tx.wikiArticle.update({ where: { id: article.id }, data: { status: "ARCHIVED" } });

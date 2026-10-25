@@ -101,10 +101,10 @@ async function classicSince(
 }
 
 /**
- * The page is gone from classic: its latest deletion, when one is logged, meets the batch. A delete saved after the
- * revision (or in its second) wins: the revisions it overwrote are parked, in one transaction with the row, and nothing
- * is sent, so classic stays deleted. Null when the page was never deleted there, or the delete is the earlier one (the
- * revision brings the page back, as MediaWiki's import does).
+ * The page is gone from classic: its latest deletion, when one is logged, meets the batch, recorded in the conflict log
+ * like any collision. A delete saved after the revision (or in its second) wins: the revisions it overwrote are parked,
+ * in one transaction with the row, and nothing is sent, so classic stays deleted. An earlier delete loses: the revision
+ * brings the page back, as MediaWiki's import does, and the deleter is told. Null when the page was never deleted there.
  */
 async function judgeDeletion(
   title: string,
@@ -121,21 +121,16 @@ async function judgeDeletion(
     incomingBranch: unseen.filter((change) => change.at <= incoming.at),
     standingBranch: [standing],
   });
-  if (verdict.incomingWins) return null;
+  const input = { source: MIRROR_SOURCE, articleId, title, verdict, baseRef: null };
   const id = await db.$transaction(async (tx) => {
-    const recorded = await recordConflict(tx, {
-      source: MIRROR_SOURCE,
-      articleId,
-      title,
-      verdict,
-      baseRef: null,
-    });
+    const recorded = await recordConflict(tx, input);
+    // a delete that won overwrote WikiOS revisions (a WikiOS winner overwrote only the delete: nothing to park)
     await parkOverwritten(tx, articleId, verdict);
     // the page never shows a parked loser's text
     await repointArticleHead(tx, articleId);
     return recorded.id;
   });
-  return { verdict, conflictId: id, wikiosWon: false };
+  return { verdict, conflictId: id, wikiosWon: verdict.incomingWins };
 }
 
 /**
