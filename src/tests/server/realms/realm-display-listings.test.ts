@@ -74,9 +74,6 @@ jest.mock("~/lib/activity/hooks", () => ({
   },
 }));
 
-jest.mock("~/lib/economy/atomic-integration.server", () => ({
-  calculateCountryDataWithAtomicEnhancement: jest.fn().mockResolvedValue({}),
-}));
 jest.mock("~/lib/admin/roster-parser", () => ({ parseRosterFile: jest.fn() }));
 
 import { db as mockedDb } from "~/server/db";
