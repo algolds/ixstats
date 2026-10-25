@@ -1,5 +1,5 @@
-// Internal stability. Security events are gone: nothing ever wrote SecurityEvent rows, and the
-// threats a nation faces are derived on read from conflicts, hostile actions and crises
+// Internal stability. Security events are gone (nothing ever wrote them; the table is dropped), and
+// the threats a nation faces are derived on read from conflicts, hostile actions and crises
 // (`~/lib/military/threat-picture`).
 
 import { z } from "zod";

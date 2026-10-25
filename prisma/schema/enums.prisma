@@ -304,33 +304,6 @@ enum AssetStatus {
   retired
 }
 
-enum ThreatType {
-  military
-  terrorism
-  insurgency
-  cyber
-  organized_crime
-  espionage
-  nuclear
-  biological
-  natural_disaster
-}
-
-enum ThreatSeverity {
-  existential
-  critical
-  high
-  moderate
-  low
-}
-
-enum ThreatStatus {
-  monitoring
-  responding
-  contained
-  resolved
-}
-
 /// *
 ///  * CardType - Classification of card types
 enum CardType {

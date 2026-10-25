@@ -99,7 +99,6 @@ function makeDb(
         return { ...state.row };
       }),
     },
-    securityEvent: { findMany: jest.fn(async () => []) },
     nationalIssue: {
       findUnique: jest.fn(async () => ({
         id: "issue1",

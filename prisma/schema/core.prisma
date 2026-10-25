@@ -107,7 +107,6 @@ model Country {
   geom_postgis                Unsupported("geometry")?
   atomicEconomicImpacts       AtomicEconomicImpact[]    @relation("AtomicEconomicImpacts")
   atomicEffectiveness         AtomicEffectiveness?
-  borderSecurity              BorderSecurity?           @relation("CountryBorderSecurity")
   budgetScenarios             BudgetScenario[]          @relation("CountryBudgetScenarios")
   componentChanges            ComponentChangeLog[]      @relation("CountryComponentChanges")
   changeLogs                  CountryChangeLog[]        @relation("CountryChangeLogs")
@@ -119,7 +118,6 @@ model Country {
   moodMetrics                 CountryMoodMetric[]
   polls                       Poll[]                    @relation("CountryPolls")
   crossBuilderSynergies       CrossBuilderSynergy[]     @relation("CountryCrossBuilderSynergies")
-  defenseBudget               DefenseBudget?            @relation("CountryDefenseBudget")
   demographics                Demographics?
   storytellerEffects          StorytellerEffect[]
   economicComponents          EconomicComponent[]       @relation("CountryEconomicComponents")
@@ -141,9 +139,6 @@ model Country {
   personalityAssignment       NPCPersonalityAssignment?
   nationalIdentity            NationalIdentity?
   slugRedirects               CountrySlugRedirect[]
-  securityAssessment         SecurityAssessment?       @relation("CountrySecurityAssessment")
-  securityEvents              SecurityEvent[]           @relation("CountrySecurityEvents")
-  securityThreats             SecurityThreat[]          @relation("CountrySecurityThreats")
   taxComponents               TaxComponent[]            @relation("CountryTaxComponents")
   taxSystem                   TaxSystem?
   thinkpagesAccounts          ThinkpagesAccount[]       @relation("ThinkpagesAccounts")

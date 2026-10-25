@@ -101,8 +101,8 @@ describe("evaluateThresholds", () => {
     expect(create).not.toHaveBeenCalled();
   });
 
-  // P1-21: militaryStrength and threatLevel read the threat picture derived on read, not the
-  // SecurityAssessment table nothing writes.
+  // P1-21: militaryStrength and threatLevel read the threat picture derived on read (the old
+  // assessment table nothing wrote is dropped).
   it("reads militaryStrength from the derived threat picture", async () => {
     const db = makeDb(null, "militaryStrength");
     await evaluateThresholds(db, "c1", "u1");

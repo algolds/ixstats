@@ -37,11 +37,10 @@ const WRITABLE_MODELS_IN_READONLY = new Set(
     NationalIssue NationalIssueConsequence CrisisEvent ThinkpagesAccount ThinkpagesPost
     MediaAttachment`,
     // New models cloned by demo-seed system
-    `DefenseBudget SecurityAssessment AtomicEffectiveness GovernmentDepartment
+    `AtomicEffectiveness GovernmentDepartment
     GovernmentOfficial BudgetAllocation SubBudgetCategory RevenueSource GovernmentComponent
     ComponentSynergy EconomicComponent TaxComponent CrossBuilderSynergy TaxSystem TaxCategory
-    TaxBracket TaxExemption TaxDeduction TaxPolicy BorderSecurity NeighborThreatAssessment
-    SecurityThreat ThreatIncident SecurityEvent Territory Subdivision City PointOfInterest
+    TaxBracket TaxExemption TaxDeduction TaxPolicy Territory Subdivision City PointOfInterest
     VitalityHistory ComponentEffectivenessHistory NPCPersonalityAssignment CardBackgroundImage
     IntelligenceAlertThreshold`,
     // Diplomacy (all writable models for gameplay + demo seed)

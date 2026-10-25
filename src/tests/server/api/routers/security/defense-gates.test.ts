@@ -3,7 +3,7 @@
  * The Defense routers' gates. A nation's force structure is authored by its owner or an admin, never by a stranger,
  * and only with MyCountry Premium; every field and total stays within bounds; an operation deploys only the nation's
  * own units. A PvP conflict is concluded only by the owner of a party, only once its IxTime duration has run, and
- * never twice; PvNPC targets are only unowned nations; and the MC-13 reads return defaults without writing a row.
+ * never twice; PvNPC targets are only unowned nations; and the MC-13 reads derive on read.
  *
  * Folds pvp-conclude, pvnpc-targets, security-assessment-read-only and security-border-read-only.
  */
@@ -458,7 +458,7 @@ describe("reads that never write (MC-13), derived on read (P1-21)", () => {
     }
   });
 
-  it("security.getSecurityAssessment derives the assessment and writes nothing", async () => {
+  it("security.getSecurityAssessment derives the assessment", async () => {
     const caller = createCallerFactory(securityAssessmentRouter)(
       createMockCallerContext({ auth: null, user: null, db })
     );
@@ -468,16 +468,12 @@ describe("reads that never write (MC-13), derived on read (P1-21)", () => {
       activeThreatCount: 0,
       activeThreats: [],
     });
-    expect(db.securityAssessment.findUnique).not.toHaveBeenCalled();
-    expect(db.securityAssessment.create).not.toHaveBeenCalled();
   });
 
-  it("security.getBorderSecurity derives border security from neighbours and writes nothing", async () => {
+  it("security.getBorderSecurity derives border security from neighbours", async () => {
     const caller = createCallerFactory(securityBordersRouter)(createMockCallerContext({ db }));
     await expect(caller.getBorderSecurity({ countryId: "c1" })).resolves.toEqual(
       expect.objectContaining({ countryId: "c1", landBorders: 0, neighborThreats: [] })
     );
-    expect(db.borderSecurity.create).not.toHaveBeenCalled();
-    expect(db.borderSecurity.upsert).not.toHaveBeenCalled();
   });
 });
