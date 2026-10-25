@@ -184,9 +184,12 @@ function useCountryQueries({
     { enabled }
   );
   const ixTime = api.system.getCurrentIxTime.useQuery();
+  // The country query takes an id or a slug (the country page passes its slug); the rings query takes only the
+  // id, so it waits for the resolved country instead of asking for "Country with ID <slug>".
+  const resolvedId = country.data?.id;
   const activityRings = api.countries.getActivityRingsData.useQuery(
-    { countryId: effectiveCountryId },
-    { enabled }
+    { countryId: typeof resolvedId === "string" ? resolvedId : "" },
+    { enabled: typeof resolvedId === "string" && resolvedId.length > 0 }
   );
 
   return { profile, country, ixTime, activityRings, effectiveCountryId, viewCountryId };
