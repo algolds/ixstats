@@ -6,7 +6,9 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { actionToken, actionTypeLabel } from "~/lib/action-links";
-import { IxTime } from "~/lib/ixtime";
+import { useViewerNationClock } from "~/hooks/useNationClock";
+import { formatStampAsClockDate } from "~/lib/realms/nation-time";
+import type { RealmClockReader } from "~/lib/realms/realm-clock";
 import { api, type RouterOutputs } from "~/trpc/react";
 
 type PickRow = RouterOutputs["actionLinks"]["myActivities"][number];
@@ -19,9 +21,18 @@ const TYPE_ICON: Record<string, ComponentType<{ className?: string }>> = {
   social: Group,
 };
 
-function ActionRow({ row, onPick }: { row: PickRow; onPick: () => void }) {
+function ActionRow({
+  row,
+  clock,
+  onPick,
+}: {
+  row: PickRow;
+  /** The viewer's nation's realm clock: its actions are dated in its calendar. */
+  clock: RealmClockReader | null;
+  onPick: () => void;
+}) {
   const Icon = TYPE_ICON[row.type] ?? RssFeed;
-  const when = IxTime.formatIxTime(IxTime.convertToIxTime(new Date(row.createdAt).getTime()));
+  const when = formatStampAsClockDate(row.createdAt, clock);
   return (
     <li>
       <button
@@ -54,6 +65,7 @@ export function ActionPicker({ onPick }: { onPick: (token: string) => void }) {
     { search: term || undefined },
     { enabled: open }
   );
+  const clock = useViewerNationClock();
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -76,6 +88,7 @@ export function ActionPicker({ onPick }: { onPick: (token: string) => void }) {
             <ActionRow
               key={row.id}
               row={row}
+              clock={clock}
               onPick={() => {
                 onPick(actionToken(row.id));
                 setOpen(false);
