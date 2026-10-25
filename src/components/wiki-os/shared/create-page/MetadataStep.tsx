@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { type PageType } from "../CreatePageModal";
 import { Input } from "~/components/ui/input";
 import {
   type PersonFields,
@@ -13,7 +12,8 @@ import {
   type OrganisationFields,
   type Coordinates,
   coordinatesFrom,
-} from "./WikitextTemplates";
+  type PageType,
+} from "~/lib/wiki-os/create-page/wikitext-templates";
 
 export interface FieldRow<K extends string> {
   key: K;

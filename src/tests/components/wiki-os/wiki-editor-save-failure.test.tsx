@@ -4,6 +4,7 @@
  */
 import { act, renderHook } from "@testing-library/react";
 import { useWikiEditorState } from "~/components/wiki-os/editor/hooks/useWikiEditorState";
+import { SaveRefusalShown } from "~/lib/wiki-os/editor/save-failure";
 
 const mockNotifyError = jest.fn();
 const mockNotifySuccess = jest.fn();
@@ -81,5 +82,15 @@ describe("useWikiEditorState.executeSave refusals", () => {
     await saveRejectedWith(refused("INTERNAL_SERVER_ERROR", "connect ECONNREFUSED db:5432"));
 
     expect(mockNotifyError).toHaveBeenCalledWith("Save Failed", "Could not save article changes.");
+  });
+
+  it("adds no notice of its own for a refusal its host already shows, and the save still fails", async () => {
+    const saved = await saveRejectedWith(
+      new SaveRefusalShown("This page was deleted", { cause: new Error("deleted") })
+    );
+
+    expect(saved).toBe(false);
+    expect(mockNotifyError).not.toHaveBeenCalled();
+    expect(mockNotifySuccess).not.toHaveBeenCalled();
   });
 });

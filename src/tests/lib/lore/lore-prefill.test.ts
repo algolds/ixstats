@@ -7,7 +7,7 @@ import {
   LORE_PAGE_TYPE,
   lorePrefill,
   seedLoreFields,
-} from "~/components/country-profile/lore/writer/lore-prefill";
+} from "~/lib/lore/lore-prefill";
 
 describe("LORE_PAGE_TYPE", () => {
   it("maps each lore type to the create flow's template", () => {

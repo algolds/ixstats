@@ -16,7 +16,11 @@ import {
   type WikiEditorDraft,
 } from "~/lib/wiki-os/editor/draft-store";
 import { openingPrefill } from "~/lib/wiki-os/editor/prefill";
-import { SAVE_FAILED, saveFailureMessage } from "~/lib/wiki-os/editor/save-failure";
+import {
+  SAVE_FAILED,
+  SaveRefusalShown,
+  saveFailureMessage,
+} from "~/lib/wiki-os/editor/save-failure";
 import { appendNewSection, NEW_SECTION_HEADING } from "~/lib/wiki-os/wikitext/new-section";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { HandlePickerDialog } from "./HandlePickerDialog";
@@ -59,8 +63,13 @@ interface WikiEditBridgeProps {
   onSerializedWikitext?: (result: WikitextSerializeResult) => void;
   /** A reader of the mounted editor's content as it is now, in either mode, and null when it goes away. */
   registerContentReader?: (read: (() => string | null) | null) => void;
-  /** A save the server refused (an edit conflict is not one: the bridge shows it). The save still fails. */
+  /**
+   * A save the server refused (an edit conflict is not one: the bridge shows it). The host shows the reason: the save
+   * fails as `SaveRefusalShown`, so the editor adds no notice of its own.
+   */
   onSaveError?: (error: Error) => void;
+  /** A save starts (after the passport handle check): a host clears what it said about the last one. */
+  onSaveStart?: () => void;
 }
 
 /** The page as the editor was opened on: the text and the revision that text is the content of. */
@@ -104,6 +113,7 @@ export function WikiEditBridge({
   onSerializedWikitext,
   registerContentReader: onContentReader,
   onSaveError,
+  onSaveStart,
 }: WikiEditBridgeProps) {
   const notify = useNotify();
   const utils = api.useUtils();
@@ -239,10 +249,13 @@ export function WikiEditBridge({
   }, []);
   const onSaveErrorRef = useRef(onSaveError);
   onSaveErrorRef.current = onSaveError;
+  const onSaveStartRef = useRef(onSaveStart);
+  onSaveStartRef.current = onSaveStart;
 
   const performSave = useCallback(
     async (save: PendingSave, baseRevisionRef: string | null) => {
       if (!(await ensureHandle())) throw new SaveCancelled("A passport handle is needed to save.");
+      onSaveStartRef.current?.();
       setSaving(true);
       setConflict(null);
       try {
@@ -255,8 +268,10 @@ export function WikiEditBridge({
             baseRevisionRef: baseRevisionRef ?? undefined,
           })
           .catch((error: Error) => {
-            onSaveErrorRef.current?.(error);
-            throw error;
+            const host = onSaveErrorRef.current;
+            if (!host) throw error;
+            host(error);
+            throw new SaveRefusalShown(error.message, { cause: error });
           });
 
         if (!result.success) {
@@ -375,7 +390,7 @@ export function WikiEditBridge({
         "Your changes have been published over the newer version."
       );
     } catch (err) {
-      if (!(err instanceof SaveCancelled))
+      if (!(err instanceof SaveCancelled || err instanceof SaveRefusalShown))
         notify.error("Save Failed", err instanceof Error ? saveFailureMessage(err) : SAVE_FAILED);
     }
   }, [conflict, performSave, notify]);

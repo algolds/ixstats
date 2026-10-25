@@ -8,7 +8,7 @@ import { Input } from "~/components/ui/input";
 import { useLoreTitleCheck, type LoreTitleCheck } from "~/hooks/lore/useLoreTitleCheck";
 import type { LoreType } from "~/lib/lore/lore-types";
 import { wikiReaderPath } from "~/lib/wiki-os/config";
-import type { LoreFields } from "./lore-prefill";
+import type { LoreFields } from "~/lib/lore/lore-prefill";
 import { LoreFieldsForm } from "./LoreFieldsForm";
 
 const TITLE_ID = "lore-writer-title";

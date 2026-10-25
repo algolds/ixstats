@@ -35,7 +35,14 @@ function OpenLoreWriter({ countryId, countryName, onClose, seed, editTitle }: Lo
   const inEditor = flow.phase === "editor" && flow.target !== null;
   return (
     <Dialog open onOpenChange={(next) => !next && flow.requestClose()}>
-      <DialogContent className="flex h-dvh max-h-dvh w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 p-0">
+      <DialogContent
+        className="flex h-dvh max-h-dvh w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 p-0"
+        // The editor's own menus (the slash menu, dialogs) use Escape: it never closes the writer while it is open.
+        // Close, the editor's Cancel and Back are the ways out.
+        onEscapeKeyDown={(event) => {
+          if (flow.phase === "editor") event.preventDefault();
+        }}
+      >
         <div className="border-separator flex flex-wrap items-center gap-3 border-b px-4 py-3 pr-14">
           {inEditor && flow.target?.prefill !== undefined && (
             <Button size="sm" variant="ghost" onClick={flow.backToDetails}>

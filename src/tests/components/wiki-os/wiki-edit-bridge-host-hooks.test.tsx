@@ -8,6 +8,7 @@ import React from "react";
 import { act, render, screen } from "@testing-library/react";
 import { WikiEditBridge } from "~/components/wiki-os/editor/WikiEditBridge";
 import type { WikitextSerializeResult } from "~/components/wiki-os/editor/plate/wiki-wikitext";
+import { SaveRefusalShown } from "~/lib/wiki-os/editor/save-failure";
 
 type Reader = (() => string | null) | null;
 
@@ -90,6 +91,7 @@ interface HostHooks {
   onSerializedWikitext?: (result: WikitextSerializeResult) => void;
   registerContentReader?: (read: Reader) => void;
   onSaveError?: (error: Error) => void;
+  onSaveStart?: () => void;
 }
 
 async function renderBridge(mode: "source" | "visual", hooks: HostHooks) {
@@ -132,7 +134,7 @@ describe("WikiEditBridge host hooks", () => {
     }
   );
 
-  it("tells the host why a save was refused, and still fails the save", async () => {
+  it("tells the host why a save was refused, and fails the save as already shown (no second notice)", async () => {
     const onSaveError = jest.fn();
     const refusal = Object.assign(new Error("This page was deleted; ask an administrator"), {
       data: { code: "PRECONDITION_FAILED" },
@@ -140,11 +142,48 @@ describe("WikiEditBridge host hooks", () => {
     mockMutate.mockRejectedValue(refusal);
     await renderBridge("source", { onSaveError });
 
+    let failure: Error | null = null;
     await act(async () => {
-      await expect(lastProps(mockSource).onSave("text", "", false)).rejects.toBe(refusal);
+      failure = await lastProps(mockSource)
+        .onSave("text", "", false)
+        .then(
+          () => null,
+          (error: Error) => error
+        );
     });
 
     expect(onSaveError).toHaveBeenCalledWith(refusal);
+    expect(failure).toBeInstanceOf(SaveRefusalShown);
+    expect((failure as Error | null)?.cause).toBe(refusal);
+  });
+
+  it("fails a refused save with the server's error when no host shows it", async () => {
+    const refusal = Object.assign(new Error("Slow down"), { data: { code: "TOO_MANY_REQUESTS" } });
+    mockMutate.mockRejectedValue(refusal);
+    await renderBridge("source", {});
+
+    await act(async () => {
+      await expect(lastProps(mockSource).onSave("text", "", false)).rejects.toBe(refusal);
+    });
+  });
+
+  it("tells the host when a save starts", async () => {
+    const onSaveStart = jest.fn();
+    mockMutate.mockImplementation(() => {
+      expect(onSaveStart).toHaveBeenCalledTimes(1);
+      return Promise.resolve({
+        success: true,
+        revisionId: "r1",
+        nullEdit: false,
+        title: "Venceia",
+      });
+    });
+    await renderBridge("source", { onSaveStart });
+
+    await act(async () => {
+      await lastProps(mockSource).onSave("text", "", false);
+    });
+    expect(mockMutate).toHaveBeenCalled();
   });
 
   it("does not call an edit conflict a refused save (the bridge shows the conflict)", async () => {

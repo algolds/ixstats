@@ -3,16 +3,16 @@
  * create flow's template for the piece's type, filled from the writer's form, then the country's lore category and
  * its own category. Field values go in raw: `generateWikitext` escapes them. Pure.
  */
-import { loreCategory, type LoreType } from "~/lib/lore/lore-types";
-import type { PageType } from "~/components/wiki-os/shared/CreatePageModal";
+import { loreCategory, type LoreType } from "./lore-types";
 import {
   EMPTY_TEMPLATE_FIELDS,
   generateWikitext,
   type HistoryFields,
   type OrganisationFields,
+  type PageType,
   type PersonFields,
   type PlaceFields,
-} from "~/components/wiki-os/shared/create-page/WikitextTemplates";
+} from "~/lib/wiki-os/create-page/wikitext-templates";
 
 /** The create flow's template each lore type is written with; Other has none (category lines only). */
 export const LORE_PAGE_TYPE: Readonly<Record<LoreType, PageType>> = {

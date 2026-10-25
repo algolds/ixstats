@@ -4,18 +4,23 @@ import {
   seedLoreFields,
   type LoreFieldSeed,
   type LoreFields,
-} from "~/components/country-profile/lore/writer/lore-prefill";
-import type { WikitextSerializeResult } from "~/components/wiki-os/editor/plate/wiki-wikitext";
+} from "~/lib/lore/lore-prefill";
+import { useNotify } from "~/hooks/useNotify";
 import type { LoreType } from "~/lib/lore/lore-types";
-import { loreWordCount } from "~/lib/lore/word-count";
 import {
   isMissingCategoryRefusal,
   recordFailureMessage,
   saveRefusalMessage,
 } from "~/lib/lore/writer-messages";
-import { clearDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
+import {
+  clearDraft,
+  getDraft,
+  saveDraft,
+  type WikiEditorDraft,
+} from "~/lib/wiki-os/editor/draft-store";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { api } from "~/trpc/react";
+import { useLoreEditorText } from "./useLoreEditorText";
 
 export interface LoreWriterSeed extends LoreFieldSeed {
   type?: LoreType;
@@ -36,8 +41,6 @@ export interface LoreEditorTarget {
 export type LoreRecordState =
   { status: "pending" } | { status: "failed"; message: string; missingCategory: boolean };
 
-type ContentReader = (() => string | null) | null;
-
 interface LoreWriterOptions {
   countryId: string;
   countryName: string;
@@ -45,6 +48,10 @@ interface LoreWriterOptions {
   editTitle?: string;
   onClose: () => void;
 }
+
+/** WikiOS's editor opens on a draft of the title (as the bridge restores one) instead of `prefill`. */
+const opensOnDraft = (draft: WikiEditorDraft | null, prefill: string) =>
+  draft !== null && Boolean(draft.wikitext || draft.html) && draft.wikitext !== prefill;
 
 function openingPhase(seed: LoreWriterSeed | undefined, editTitle: string | undefined): LorePhase {
   if (editTitle) return "editor";
@@ -84,7 +91,9 @@ export function useLoreWriter({
 }: LoreWriterOptions) {
   const { user } = useWikiAuth();
   const userId = user?.id ?? null;
+  const notify = useNotify();
   const calls = useLoreCalls(countryId);
+  const editor = useLoreEditorText();
   const [phase, setPhase] = useState<LorePhase>(() => openingPhase(seed, editTitle));
   const [type, setType] = useState<LoreType | null>(seed?.type ?? null);
   const [title, setTitle] = useState(seed?.title ?? "");
@@ -95,26 +104,25 @@ export function useLoreWriter({
   );
   const [saveError, setSaveError] = useState<string | null>(null);
   const [record, setRecord] = useState<LoreRecordState | null>(null);
-  const [words, setWords] = useState(0);
-  const readerRef = useRef<ContentReader>(null);
-  /** The editor's text as it opened (its first serialization), to tell an edit from none. */
-  const openedRef = useRef<string | null>(null);
+  /** The editor opened on the author's earlier draft of the title, not the form's text. */
+  const [restoredDraft, setRestoredDraft] = useState(false);
+  /** Changes when the editor must open again from scratch (the draft was discarded). */
+  const [editorKey, setEditorKey] = useState(0);
   const savedRef = useRef(false);
 
   /** The editor's text when the author changed it (or always, with `always`), else null. */
-  const editorText = (always: boolean): string | null => {
-    const text = readerRef.current?.() ?? null;
-    if (text === null || (!always && text === (openedRef.current ?? target?.prefill))) return null;
-    return text;
-  };
+  const editorText = (always: boolean) => editor.read(target?.prefill, always);
 
   const keepAsDraft = (pageTitle: string, text: string) =>
     saveDraft(userId, { title: pageTitle, source: "ixwiki", mode: "visual", wikitext: text });
 
   const openEditor = (next: LoreEditorTarget) => {
-    openedRef.current = null;
+    editor.reset();
     savedRef.current = false;
     setSaveError(null);
+    setRestoredDraft(
+      next.prefill !== undefined && opensOnDraft(getDraft(userId, next.title), next.prefill)
+    );
     setTarget(next);
     setPhase("editor");
   };
@@ -137,7 +145,13 @@ export function useLoreWriter({
   const requestClose = () => {
     // The editor's reader is gone once it closed, so only an open, unsaved editor's text is kept.
     const text = target && !savedRef.current ? editorText(false) : null;
-    if (target && text !== null) keepAsDraft(target.title, text);
+    if (target && text !== null) {
+      keepAsDraft(target.title, text);
+      notify.info(
+        "Draft kept",
+        `Your text is kept as a draft of ${target.title}. It opens again when you write under this title.`
+      );
+    }
     onClose();
   };
 
@@ -150,7 +164,9 @@ export function useLoreWriter({
     target,
     saveError,
     record,
-    words,
+    words: editor.words,
+    restoredDraft,
+    editorKey,
     setTitle,
     setFields,
     chooseType: (next: LoreType) => {
@@ -191,6 +207,14 @@ export function useLoreWriter({
       const text = target ? editorText(target.prefill !== undefined) : null;
       if (target && text !== null) keepAsDraft(target.title, text);
     },
+    /** Discard the restored draft (the author confirmed) and open the editor again on the form's text. */
+    discardDraft: () => {
+      if (!target) return;
+      clearDraft(userId, target.title);
+      editor.reset();
+      setRestoredDraft(false);
+      setEditorKey((key) => key + 1);
+    },
     retryRecord: () => {
       if (target) void runRecord(target.title);
     },
@@ -199,14 +223,10 @@ export function useLoreWriter({
       if (target) openEditor({ title: target.title, records: true });
     },
     bridge: {
-      onSerializedWikitext: (result: WikitextSerializeResult) => {
-        openedRef.current ??= result.wikitext;
-        setWords(loreWordCount(result.wikitext));
-      },
-      registerContentReader: (read: ContentReader) => {
-        readerRef.current = read;
-      },
+      onSerializedWikitext: editor.onSerializedWikitext,
+      registerContentReader: editor.registerContentReader,
       onSaveError: (error: Error) => setSaveError(saveRefusalMessage(error)),
+      onSaveStart: () => setSaveError(null),
       onSaveSuccess: () => {
         savedRef.current = true;
         setSaveError(null);

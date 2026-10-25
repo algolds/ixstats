@@ -26,3 +26,9 @@ export function saveFailureMessage(error: SaveError): string {
   const code = error.data?.code;
   return code && SHOWN_CODES.has(code) ? error.message.replace(REASON_CODE, "") : SAVE_FAILED;
 }
+
+/**
+ * A refused save whose reason the editor's host already shows (the lore writer's alert): the save fails, and the
+ * editor adds no notice of its own. The server's error is the `cause`.
+ */
+export class SaveRefusalShown extends Error {}

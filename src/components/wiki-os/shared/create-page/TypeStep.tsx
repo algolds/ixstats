@@ -10,7 +10,7 @@ import {
   MapPin,
   Community,
 } from "iconoir-react";
-import { type PageType } from "../CreatePageModal";
+import type { PageType } from "~/lib/wiki-os/create-page/wikitext-templates";
 import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
 
 interface TypeStepProps {

@@ -4,10 +4,7 @@
  * (`Infobox organization`), History switches to `Infobox event` (`Infobox historical event` does not exist on
  * ixwiki), each lore type carries its own section headings, and `options.categories` appends category lines.
  */
-import {
-  coordinatesFrom,
-  generateWikitext,
-} from "~/components/wiki-os/shared/create-page/WikitextTemplates";
+import { coordinatesFrom, generateWikitext } from "~/lib/wiki-os/create-page/wikitext-templates";
 
 const LORE_CATEGORIES = { categories: ["Caphiria lore", "Caphiria"] };
 

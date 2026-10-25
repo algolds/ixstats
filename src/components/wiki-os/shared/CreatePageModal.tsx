@@ -12,7 +12,12 @@ import {
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "~/components/ui/sheet";
-import { EMPTY_TEMPLATE_FIELDS, generateWikitext } from "./create-page/WikitextTemplates";
+import {
+  EMPTY_TEMPLATE_FIELDS,
+  generateWikitext,
+  isPageType,
+  type PageType,
+} from "~/lib/wiki-os/create-page/wikitext-templates";
 import { TitleStep } from "./create-page/TitleStep";
 import { TypeStep } from "./create-page/TypeStep";
 import { MetadataStep } from "./create-page/MetadataStep";
@@ -21,24 +26,6 @@ interface CreatePageModalProps {
   open: boolean;
   onClose: () => void;
 }
-
-export const PAGE_TYPES = [
-  "blank",
-  "person",
-  "place",
-  "organisation",
-  "company",
-  "history",
-  "country",
-  "conflict",
-  "politics",
-  "tech",
-] as const;
-
-export type PageType = (typeof PAGE_TYPES)[number];
-
-const isPageType = (value: string): value is PageType =>
-  (PAGE_TYPES as readonly string[]).includes(value);
 
 export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
   const router = useRouter();

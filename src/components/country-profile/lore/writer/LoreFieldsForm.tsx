@@ -7,12 +7,9 @@ import {
   PLACE_ROWS,
   type FieldRow,
 } from "~/components/wiki-os/shared/create-page/MetadataStep";
-import type {
-  HistoryFields,
-  PersonFields,
-} from "~/components/wiki-os/shared/create-page/WikitextTemplates";
+import type { HistoryFields, PersonFields } from "~/lib/wiki-os/create-page/wikitext-templates";
 import type { LoreType } from "~/lib/lore/lore-types";
-import type { LoreFields } from "./lore-prefill";
+import type { LoreFields } from "~/lib/lore/lore-prefill";
 
 const PERSON_ROWS: readonly FieldRow<keyof PersonFields>[] = [
   { key: "birthDate", label: "Birth date", placeholder: "e.g. 12 March 1961" },

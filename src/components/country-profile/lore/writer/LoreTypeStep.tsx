@@ -41,7 +41,10 @@ export function LoreTypeStep({
   value: LoreType | null;
   onContinue: (type: LoreType) => void;
 }) {
-  const [choice, setChoice] = useState<LoreType | null>(value);
+  // Only a type with a card starts chosen: a seeded Other has none, so Continue waits for a choice.
+  const [choice, setChoice] = useState<LoreType | null>(
+    TYPES.some((type) => type.value === value) ? value : null
+  );
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6 px-4 py-6">
       <p className="text-headline text-label">What is this piece about?</p>

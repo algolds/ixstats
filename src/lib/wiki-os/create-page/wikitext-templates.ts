@@ -1,4 +1,25 @@
-import { type PageType } from "../CreatePageModal";
+/**
+ * The WikiOS create flow's page types and the starting wikitext of each (its infobox and sections), shared by the
+ * generic create sheet and the lore writer. Pure.
+ */
+
+export const PAGE_TYPES = [
+  "blank",
+  "person",
+  "place",
+  "organisation",
+  "company",
+  "history",
+  "country",
+  "conflict",
+  "politics",
+  "tech",
+] as const;
+
+export type PageType = (typeof PAGE_TYPES)[number];
+
+export const isPageType = (value: string): value is PageType =>
+  (PAGE_TYPES as readonly string[]).includes(value);
 
 export interface PersonFields {
   birthDate: string;

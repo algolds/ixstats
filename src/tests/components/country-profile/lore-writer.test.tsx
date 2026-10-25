@@ -9,7 +9,7 @@ import React from "react";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { LoreWriter } from "~/components/country-profile/lore/LoreWriter";
 import type { WikitextSerializeResult } from "~/components/wiki-os/editor/plate/wiki-wikitext";
-import { getDraft } from "~/lib/wiki-os/editor/draft-store";
+import { getDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
 import { pageEditHref } from "~/lib/wiki-os/page-tools";
 import { DELETED_TITLE, RECORD_FAILED } from "~/lib/lore/writer-messages";
 
@@ -24,6 +24,7 @@ interface BridgeProps {
   onSerializedWikitext?: (result: WikitextSerializeResult) => void;
   registerContentReader?: (read: Reader) => void;
   onSaveError?: (error: Error) => void;
+  onSaveStart?: () => void;
 }
 
 interface PageCheck {
@@ -38,6 +39,11 @@ let mockEditorText: string | null = null;
 let mockNormalised = "";
 /** Whether the mocked editor reports its serialization (the visual editor does, the source editor does not). */
 let mockReports = true;
+/** The mocked editor's content cannot all be converted to wikitext: its reader answers null. */
+let mockIncomplete = false;
+/** How many times a mocked editor has opened. */
+let mockMounts = 0;
+const mockNotifyInfo = jest.fn();
 let mockAccess: { enabled: boolean; isOwner: boolean; canWrite: boolean };
 let mockPages: Record<string, PageCheck>;
 let mockChecking = false;
@@ -61,6 +67,9 @@ jest.mock("next/link", () => ({
     </a>
   ),
 }));
+jest.mock("~/hooks/useNotify", () => ({
+  useNotify: () => ({ info: mockNotifyInfo, success: jest.fn(), error: jest.fn() }),
+}));
 jest.mock("~/hooks/useDebounce", () => ({ useDebounce: <T,>(value: T) => value }));
 jest.mock("~/lib/wiki-os/use-wiki-auth", () => ({
   useWikiAuth: () => ({
@@ -73,8 +82,9 @@ jest.mock("~/components/wiki-os/editor/WikiEditBridge", () => ({
   WikiEditBridge: function MockBridge(props: BridgeProps) {
     mockBridge(props);
     React.useEffect(() => {
+      mockMounts += 1;
       const opened = (props.prefillWikitext ?? "") + mockNormalised;
-      props.registerContentReader?.(() => mockEditorText ?? opened);
+      props.registerContentReader?.(() => (mockIncomplete ? null : (mockEditorText ?? opened)));
       if (mockReports)
         props.onSerializedWikitext?.({
           wikitext: opened,
@@ -151,6 +161,8 @@ beforeEach(() => {
   mockEditorText = null;
   mockNormalised = "";
   mockReports = true;
+  mockIncomplete = false;
+  mockMounts = 0;
   mockChecking = false;
   mockAccess = { enabled: true, isOwner: true, canWrite: true };
   mockPages = {};
@@ -657,5 +669,199 @@ describe("LoreWriter: editing a piece", () => {
 
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(getDraft("user_alice", "Venceia")).toBeNull();
+  });
+});
+
+describe("LoreWriter: fix round 1", () => {
+  const kept = /Your text from the editor is kept/;
+
+  it("does not close on Escape in the editor, where the editor's own menus use it", () => {
+    const { onClose } = renderWriter();
+    openEditorOn("Place", "Venceia");
+    fireEvent.keyDown(screen.getByTestId("bridge"), { key: "Escape" });
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByTestId("bridge")).toBeInTheDocument();
+  });
+
+  it("still closes on Escape before the editor", () => {
+    const { onClose } = renderWriter();
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the last serialized text when the editor's content cannot all be converted", () => {
+    renderWriter();
+    openEditorOn("Place", "Venceia");
+    act(() =>
+      lastBridge().onSerializedWikitext?.({
+        wikitext: "Venceia, partly.",
+        complete: false,
+        notices: [],
+      })
+    );
+    mockIncomplete = true;
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+
+    expect(screen.getByText(kept)).toBeInTheDocument();
+    expect(getDraft("user_alice", "Venceia")?.wikitext).toBe("Venceia, partly.");
+  });
+
+  it("hands the last serialized text to WikiOS when the content cannot all be converted", () => {
+    renderWriter();
+    openEditorOn("Place", "Venceia");
+    act(() =>
+      lastBridge().onSerializedWikitext?.({
+        wikitext: "Venceia, partly.",
+        complete: false,
+        notices: [],
+      })
+    );
+    mockIncomplete = true;
+    fireEvent.click(screen.getByRole("link", { name: "Open in WikiOS" }));
+    expect(getDraft("user_alice", "Venceia")?.wikitext).toBe("Venceia, partly.");
+  });
+
+  it("keeps nothing once the editor has gone (start again, then close)", () => {
+    renderWriter();
+    openEditorOn("Place", "Venceia");
+    act(() =>
+      lastBridge().onSerializedWikitext?.({ wikitext: "Venceia.", complete: true, notices: [] })
+    );
+    mockEditorText = "Venceia.";
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start again from the form" }));
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+
+    expect(getDraft("user_alice", "Venceia")).toBeNull();
+  });
+
+  it("does not announce the word count on every keystroke", () => {
+    renderWriter();
+    openEditorOn("Place", "Venceia");
+    const count = screen.getByText("0 words");
+    expect(count).toHaveAttribute("aria-live", "off");
+    expect(count).not.toHaveAttribute("role", "status");
+  });
+
+  it("clears a refusal when the next save starts", () => {
+    renderWriter({ editTitle: "Venceia" });
+    act(() => lastBridge().onSaveError?.(refusal("TOO_MANY_REQUESTS", "Slow down a little.")));
+    expect(screen.getByRole("alert")).toHaveTextContent("Slow down a little.");
+    act(() => lastBridge().onSaveStart?.());
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("leaves Continue off when an Other seed goes back to the types (no card is chosen)", () => {
+    renderWriter({ seed: { type: "other", title: "Notes on Caphiria" } });
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+
+    expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
+    for (const radio of screen.getAllByRole("radio")) {
+      expect(radio).toHaveAttribute("aria-checked", "false");
+    }
+  });
+
+  it("says when an earlier draft of the title opens instead of the form's text", () => {
+    saveDraft("user_alice", {
+      title: "Venceia",
+      source: "ixwiki",
+      mode: "visual",
+      wikitext: "Old",
+    });
+    renderWriter();
+    openEditorOn("Place", "Venceia");
+    expect(screen.getByText("Your earlier draft of this page was restored.")).toBeInTheDocument();
+  });
+
+  it("starts from the form only after the author confirms discarding the draft", () => {
+    saveDraft("user_alice", {
+      title: "Venceia",
+      source: "ixwiki",
+      mode: "visual",
+      wikitext: "Old",
+    });
+    renderWriter();
+    openEditorOn("Place", "Venceia");
+    const mounts = mockMounts;
+
+    fireEvent.click(screen.getByRole("button", { name: "Start from the form instead" }));
+    expect(getDraft("user_alice", "Venceia")?.wikitext).toBe("Old");
+    fireEvent.click(screen.getByRole("button", { name: "Keep the draft" }));
+    expect(getDraft("user_alice", "Venceia")?.wikitext).toBe("Old");
+    expect(mockMounts).toBe(mounts);
+
+    fireEvent.click(screen.getByRole("button", { name: "Start from the form instead" }));
+    fireEvent.click(screen.getByRole("button", { name: "Discard the draft" }));
+    expect(getDraft("user_alice", "Venceia")).toBeNull();
+    expect(mockMounts).toBe(mounts + 1);
+    expect(lastBridge().prefillWikitext).toContain("{{Infobox settlement");
+    expect(screen.queryByText("Your earlier draft of this page was restored.")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Discard the draft" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Start from the form instead" })).toBeNull();
+  });
+
+  it("says nothing of an empty draft", () => {
+    saveDraft("user_alice", { title: "Venceia", source: "ixwiki", mode: "visual", wikitext: "" });
+    renderWriter();
+    openEditorOn("Place", "Venceia");
+    expect(screen.queryByText("Your earlier draft of this page was restored.")).toBeNull();
+  });
+
+  it("says nothing of drafts when the saved page is reopened to fix its record", async () => {
+    mockRecord.mockRejectedValueOnce(
+      refusal("BAD_REQUEST", "This page is not in Caphiria lore yet.")
+    );
+    saveDraft("user_alice", {
+      title: "Venceia",
+      source: "ixwiki",
+      mode: "visual",
+      wikitext: "Old",
+    });
+    renderWriter();
+    openEditorOn("Place", "Venceia");
+    act(() => lastBridge().onSaveSuccess?.());
+    await screen.findByRole("alert");
+    fireEvent.click(screen.getByRole("button", { name: "Edit the page" }));
+
+    expect(screen.queryByText("Your earlier draft of this page was restored.")).toBeNull();
+  });
+
+  it("says nothing of a draft that is the author's own carried text", () => {
+    renderWriter();
+    openEditorOn("Place", "Venceia");
+    mockEditorText = "Venceia, my long story.";
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    fireEvent.click(openEditorButton());
+    expect(screen.queryByText("Your earlier draft of this page was restored.")).toBeNull();
+  });
+
+  it("says nothing of drafts when editing a page (WikiOS settles those itself)", () => {
+    saveDraft("user_alice", {
+      title: "Venceia",
+      source: "ixwiki",
+      mode: "visual",
+      wikitext: "Old",
+    });
+    renderWriter({ editTitle: "Venceia" });
+    expect(screen.queryByText("Your earlier draft of this page was restored.")).toBeNull();
+  });
+
+  it("tells the author their text was kept as a draft when the editor closes unsaved", () => {
+    renderWriter();
+    openEditorOn("Place", "Venceia");
+    mockEditorText = "Venceia, my long story.";
+    act(() => lastBridge().onClose());
+    expect(mockNotifyInfo).toHaveBeenCalledWith(
+      "Draft kept",
+      expect.stringContaining("Your text is kept as a draft")
+    );
+  });
+
+  it("says nothing of a draft when nothing was written", () => {
+    renderWriter();
+    openEditorOn("Place", "Venceia");
+    act(() => lastBridge().onClose());
+    expect(mockNotifyInfo).not.toHaveBeenCalled();
   });
 });
