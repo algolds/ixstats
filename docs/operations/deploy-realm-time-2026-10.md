@@ -20,5 +20,5 @@ run_sql() { docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ER
   `sport_rookie_classes` 5, `sport_teams` 18 rows; the converted transaction stamps land within 1 ms of `createdAt`;
   a second pass updates 0 rows.
 - Expect sports to run at half their old real-time pace: `matchIntervalDays` / `raceIntervalDays` and the bracket and
-  playoff gaps were IxTime days (12 real hours at 2x) and are now real days. Exchange bidding windows were already
-  real days; the award grace (3 days) and decision delay (1 day) are now real days too (they were IxTime days).
+  playoff gaps were IxTime days (12 real hours at 2x) and are now real days. The exchange keeps its pace: its bidding
+  window, award grace, decision delay and activity window were already real days scaled into IxTime.
