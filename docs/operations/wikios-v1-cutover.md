@@ -20,11 +20,11 @@ build described in step 5.
 **Order matters.** Every production command in this runbook is launch-time: run by hand, step by step, in this order.
 None has been run yet.
 
-- **Launch steps (this launch):** 0, 1, 1b, 1c, 2, 3, 4, 4b, 5b, 6, 6a, 6b, 6c, 6d, 7b, and the IxStates rows of 10
+- **Launch steps (this launch):** 0, 1, 1b, 1c, 2, 2a, 3, 4, 4b, 5b, 6, 6a, 6b, 6c, 6d, 7b, and the IxStates rows of 10
   with 10d. Two parts of them run before step 2's deploy: step 4's loopback server with its env line, and step 6a's app
-  URL check (step 2 says why). None of these steps changes what the public sees on ixwiki.com: loading the snippet in
-  step 3 changes neither classic's article path nor its canonical link, and step 6d only adds IxStates' rules to
-  classic's `robots.txt`. Step 6b lets the wiki inside IxStates take edits, and step 6c moves the bots to it.
+  URL check (step 2 says why). Few of these steps change what the public sees on ixwiki.com: loading the snippet in
+  step 3 changes neither classic's article path nor its canonical link, though it lets every uploader on classic upload
+  SVG and PDF files (3a), and step 6d only adds IxStates' rules to classic's `robots.txt`. Step 6b lets the wiki inside IxStates take edits, and step 6c moves the bots to it.
 - **Deferred takeover steps (not run at this launch):** 5 (the separate `wikios` process on `127.0.0.1:3560`), 7 (its
   checks), 8 (the cutover: nginx first, then one `LocalSettings.php` line), 9, 9a, 10a and 10b (they prepare step 8),
   11 and 12 (the full rollback). Every `:3560` line in this runbook belongs to them.
@@ -434,6 +434,30 @@ IxStates release that touches WikiOS code. `deploy-production.sh` has no lock: n
 
 **Rollback:** the usual IxStates rollback (`bun run deploy:rollback`).
 
+## 2a. Fonts and uploads at the site root (read-only, after step 2)
+
+Some of IxStates' files are asked for at the root of ixwiki.com, without the base path: the reader's fonts
+(`src/styles/typography.css` and the font preloads load `/fonts/…`), and uploaded flags and pictures where a page still
+shows the stored path (`/images/uploads/…`, kept without the base path). This release gives the WikiOS pages' uploads the
+base path, but the fonts still load from the root. Check from the server that both answer (read-only):
+
+```bash
+curl -s -o /dev/null -A IxStats-Builder -w '%{http_code} %{content_type}\n' 'https://ixwiki.com/fonts/Schibsted%20Grotesk-500.ttf'
+UP=$(ls -p "$IX/public/images/uploads" | grep -v / | head -1); echo "$UP"          # an existing upload's file name
+curl -s -o /dev/null -A IxStats-Builder -w '%{http_code} %{content_type}\n' "https://ixwiki.com/images/uploads/$UP"
+```
+
+Expect `200` with a font type (`font/ttf`, `application/font-sfnt`, `application/x-font-ttf` or
+`application/octet-stream`) for the first, and `200` with an `image/…` type for the second.
+
+- **A `404`, or a `text/html` answer** (classic MediaWiki's page, or a redirect to it): stop and ask the owner. The usual
+  fix is an nginx `location` in the `ixwiki.com` server block that serves the checkout's files, for example
+  `location ^~ /fonts/ { alias /ixwiki/public/projects/ixstats/public/fonts/; }` (and the same for `/images/uploads/`).
+  The owner decides: do not edit nginx for this yourself.
+
+The `schibsted-punct-*.woff2` fonts are tracked in git now, so the deploy carries them: they no longer need copying by
+hand.
+
 ## 3. MediaWiki side: the `wikios-mirror` group, the mirror account, its bot password
 
 The group must exist **before** the account is put into it: `createAndPromote --custom-groups` silently ignores a
@@ -462,9 +486,10 @@ Append this one line to `/ixwiki/config/LocalSettings.php`:
 require_once '/ixwiki/config/wikios-localsettings.php';
 ```
 
-The snippet changes neither the article path nor the canonical URL unless `WIKIOS_TAKEOVER` is defined before the
-`require_once`, and this launch never defines it (only the deferred step 8b does). By default it adds the
-`wikios-mirror` group, the bot-password grants and the file types, and the save webhook, which sends nothing until step 6
+The snippet changes neither the article path nor the canonical URL unless `WIKIOS_TAKEOVER` is defined as `true` before
+the `require_once` (`define( 'WIKIOS_TAKEOVER', false )` leaves it off), and this launch never defines it (only the
+deferred step 8b does). By default it adds the `wikios-mirror` group, the bot-password grants and the file types, and
+the save webhook, which sends nothing until step 6
 gives PHP-FPM both its secret and its URL. Until then, each web save on classic may write one line to MediaWiki's
 `wikios` debug log ("sync-webhook not sent: ... not set"), when `$wgDebugLogGroups['wikios']` is configured; that is
 expected.
@@ -490,7 +515,8 @@ file that exists; `upload_by_url` is not needed, the file travels in the request
 
 **MediaWiki must accept the same file types as WikiOS** (png, jpg, jpeg, gif, webp, svg, pdf; plan 411): the snippet adds
 `svg` and `pdf` to `$wgFileExtensions` when they are missing, and a file the wiki cannot take ends the job dead with
-`filetype-banned`. Check what the wiki accepts and what a bot password may do:
+`filetype-banned`. `$wgFileExtensions` is classic's setting for every uploader, not only the mirror account, so this is
+a change the public does see: from this step, anyone who may upload on classic can upload SVG and PDF files. Check what the wiki accepts and what a bot password may do:
 
 ```bash
 curl -s 'https://ixwiki.com/api.php?action=query&meta=siteinfo&siprop=fileextensions&format=json' | jq -r '[.query.fileextensions[].ext] | join(" ")'
@@ -664,7 +690,10 @@ grep -n '^WIKIOS_MEDIAWIKI_API=' "$IX/.env.production" "$IX/.env.production.loca
 ```
 
 A value on the public wiki host (`https://ixwiki.com/api.php`, its `www.` alias, or `//ixwiki.com/...`) is refused: the
-mirror waits and its admin section names the variable. Delete the line (back the file up with `bk` first), and the mirror
+mirror waits and its admin section names the variable. So is a value that is IxStates itself, where the mirror would
+write into WikiOS: a path under the base path (`http://127.0.0.1:3550/projects/ixstates/w/api.php`) or a loopback host on
+IxStates' port (`PORT`, else 3550). `WIKIOS_MEDIAWIKI_INTERNAL_URL` is held to the same two rules: on the public wiki host
+it counts as unset. Delete the line (back the file up with `bk` first), and the mirror
 writes through the internal URL above.
 
 **Rollback:** `sudo rm /etc/nginx/conf.d/wikios-render-internal.conf && sudo nginx -t && sudo systemctl reload nginx`, and
@@ -816,11 +845,9 @@ ln -sfn "$IX/.env.production.local" "$WK/.env.production.local"           # runt
 ( umask 077; printf 'NEXT_PUBLIC_IXSTATES_URL=%s\n' "$IXSTATES_URL" > "$WK/.env.wikios-build" )   # build-time, WikiOS only
 ls -l "$WK"
 
-# Uploads (plan 411): WikiOS keeps an uploaded file here until the mirror's `upload` job has put it in MediaWiki, and serves it
-# from here meanwhile. IxStates (the cron job that runs the mirror) and WikiOS (the process that takes uploads) must use the
-# SAME directory, so it goes into the env file both read. It is part of the backups until no upload is waiting.
-sudo mkdir -p /ixwiki/shared/wikios-uploads && sudo chown "$USER": /ixwiki/shared/wikios-uploads && chmod 750 /ixwiki/shared/wikios-uploads
-grep -q '^WIKIOS_UPLOAD_DIR=' "$IX/.env.production.local" || ( umask 077; printf '\nWIKIOS_UPLOAD_DIR=/ixwiki/shared/wikios-uploads\n' >> "$IX/.env.production.local" )
+# Uploads (plan 411): WIKIOS_UPLOAD_DIR is set at launch, in step 6a. This process reads the same env file (linked above),
+# so it uses the same directory as IxStates: check it is there.
+grep -c '^WIKIOS_UPLOAD_DIR=' "$IX/.env.production.local"          # 1 (step 6a)
 
 "$IX/scripts/deploy-wikios.sh"      # builds (several GB of RAM), rsyncs, pm2 startOrReload --update-env, health probe
 pm2 status wikios
@@ -908,7 +935,7 @@ constant. A raster of more than 12.5 megapixels is refused as too large (MediaWi
 a bigger one); if the wiki's `LocalSettings.php` raised `$wgMaxImageArea`, set `WIKIOS_MAX_IMAGE_AREA` (pixels) in the same
 env file to the same number, or WikiOS refuses what MediaWiki would take. An SVG is refused above 5,000,000 bytes (the scan that proves it safe costs about a second at 10 MB; MediaWiki
 deployments commonly cap SVGs at a few megabytes): set `WIKIOS_MAX_SVG_BYTES` (bytes) in the same env file to change it. It cannot
-go above the 10,000,000-byte upload limit, which holds first. The upload directory is `WIKIOS_UPLOAD_DIR` (step 5); the admin panel's mirror section says how many uploaded
+go above the 10,000,000-byte upload limit, which holds first. The upload directory is `WIKIOS_UPLOAD_DIR` (step 6a); the admin panel's mirror section says how many uploaded
 files MediaWiki does not hold yet, and until it says none, that directory is the only copy of them. Once an hour the mirror worker deletes files in it that are older than 24 hours and that no asset is served from and no unfinished upload job (a dead one included) names: the leftovers of a crash between staging and the database commit.
 
 **Rollback:** `pm2 delete wikios && pm2 save`. The `next.config.js` edits do not affect the IxStates build; to take them
@@ -1070,12 +1097,32 @@ Expect no rows. For each row, change its `wikiPageTitle` before launch (or accep
 harmless, and removing them is a code change for a later release. Ask the owner whether to keep them (matching
 MediaWiki's own group table) or remove them. Do not change anything on the server for this.
 
+**The upload directory (plan 411), before step 6b.** WikiOS keeps an uploaded file in `WIKIOS_UPLOAD_DIR` until the
+mirror's `upload` job has put it in MediaWiki, and serves it from there meanwhile. Without the variable it uses
+`.wikios-uploads` inside the checkout, which a deploy can replace. IxStates (which takes the uploads) and `ixstats-cron`
+(which runs the mirror) must use the same directory, so it goes into the env file both read. Pick a directory outside
+the checkout that the server's backups cover: it is the only copy of a file until MediaWiki holds it.
+
+```bash
+sudo mkdir -p /ixwiki/shared/wikios-uploads && sudo chown "$USER": /ixwiki/shared/wikios-uploads && chmod 750 /ixwiki/shared/wikios-uploads
+bk "$IX/.env.production.local" env.production.local.uploads
+grep -q '^WIKIOS_UPLOAD_DIR=' "$IX/.env.production.local" || ( umask 077; printf '\nWIKIOS_UPLOAD_DIR=/ixwiki/shared/wikios-uploads\n' >> "$IX/.env.production.local" )
+grep -c '^WIKIOS_UPLOAD_DIR=' "$IX/.env.production.local"          # 1
+```
+
+If you cannot see that the backups include `/ixwiki/shared/wikios-uploads`, ask the owner before step 6b. IxStates and
+`ixstats-cron` read the line on the restarts of step 6b. No migration is needed: an upload is refused until WikiOS
+editing is on (step 6b), so no file can be waiting in another directory.
+
+**Rollback:** `sudo cp -a "$BK/env.production.local.uploads" "$IX/.env.production.local"` before step 6b (the empty
+directory can stay).
+
 **`Template:Sister`** must exist on classic (step 3d).
 
 ## 6b. Switch WikiOS v1 on
 
-Only after steps 1 (SQL), 1b (rights import and its protections marker), 3 (mirror account), 4 (render engine), 6
-(webhook) and 6a. Without the marker the switch takes no writes: api.php keeps answering `readonly`. The switch goes into
+Only after steps 1 (SQL), 1b (rights import and its protections marker), 3 (mirror account), 4 (render engine), 4b
+(the server's own requests let through), 6 (webhook) and 6a. Without the marker the switch takes no writes: api.php keeps answering `readonly`. The switch goes into
 the env file that IxStates and `ixstats-cron` both read, `$IX/.env.production.local`. This launch has no `wikios`
 process (no takeover), so nothing else needs it. From here on WikiOS takes edits inside IxStates, the mirror copies them
 to MediaWiki, and api.php answers. When WikiOS and classic both change a page, the later save stands on both wikis and
@@ -1100,7 +1147,8 @@ in the outbox keep draining to MediaWiki while `wiki-mirror` runs; to make them 
 
 ## 6c. Bots on `/w/api.php` (after steps 1c and 6b)
 
-Bots move from classic's `api.php` to IxStates' MediaWiki-compatible one. Everything here is launch-time.
+Bots move from classic's `api.php` to IxStates' MediaWiki-compatible one. Everything here is launch-time, and only after
+steps 1c (the api.php session secret, without which no bot login holds) and 6b.
 
 - **On the server:** `http://127.0.0.1:3550/projects/ixstates/w/api.php` (the base path that answered in step 6). It
   passes neither Cloudflare nor the bot defense.
@@ -1205,9 +1253,19 @@ grep -c Sitemap "$BK/ixstates-robots.txt"                # 0
 grep -c '/projects/ixstates/' "$BK/ixstates-robots.txt"  # 13 (one Allow, twelve Disallow)
 ```
 
-Any other count means the deploy does not carry this release yet: stop. Otherwise paste the 13 `Allow` and `Disallow`
-lines into the existing `User-agent: *` group of classic's file, so there is no second `User-agent: *` group (if the file
-has no such group, add the whole block at the end):
+Any other count means the deploy does not carry this release yet: stop. A crawler obeys only the most specific group
+that names it, so a `User-agent: Googlebot` group means Googlebot never reads the `User-agent: *` rules. List the groups
+(read-only):
+
+```bash
+grep -niE '^\s*user-agent:' "$DOCROOT/robots.txt"
+```
+
+Paste the 13 `Allow` and `Disallow` lines into the existing `User-agent: *` group of classic's file, so there is no second
+`User-agent: *` group (if the file has no such group, add the whole block at the end). Then paste the same 13 lines into
+every named crawler group (Googlebot, Bingbot and so on), except a group that blocks the whole site (`Disallow: /`): its
+`Allow` would open IxStates' pages to a crawler classic keeps out, so leave that group as it is. If a group shares its
+rules among several `User-agent` lines, or you cannot tell where a group ends, stop and ask the owner.
 
 ```bash
 bk "$DOCROOT/robots.txt" robots.txt.6d
@@ -1217,7 +1275,7 @@ sudoedit "$DOCROOT/robots.txt"
 Purge `https://ixwiki.com/robots.txt` in Cloudflare (Caching, Configuration, Custom Purge, by URL), then check:
 
 ```bash
-curl -s https://ixwiki.com/robots.txt | grep -c '/projects/ixstates/'     # 13
+curl -s https://ixwiki.com/robots.txt | grep -c '/projects/ixstates/'     # 13 for each group you edited
 ```
 
 A `Disallow` stops crawling, not indexing: a `?source=` URL a search engine has already indexed is not removed by it, and
@@ -1772,7 +1830,7 @@ arrive in a commit, never as a hand edit on the server (`deploy-production.sh` r
 |------|------|------|
 | `/ixwiki/public/projects/ixstats/next.config.js` | tracked: `resolveBasePath()` WikiOS branch; `rewrites()` early return; `"iconoir-react"` and `"motion/react"` added to `experimental.optimizePackageImports` (deferred takeover build) | 5 |
 | `/ixwiki/public/projects/ixstats/public/fonts/HostGrotesk/HostGrotesk[wght].ttf` | tracked since 2026-10-06; must exist: `next/font/local` fails the build without it | 5 |
-| `/ixwiki/public/projects/ixstats/.env.production.local` | `WIKIOS_API_SESSION_SECRET` (1c); `WIKIOS_MEDIAWIKI_BOT_USER`, `WIKIOS_MEDIAWIKI_BOT_TOKEN`, `WIKIOS_MEDIAWIKI_INTERNAL_URL` (never `NEXT_PUBLIC_WIKIOS_STANDALONE`; `WIKIOS_MEDIAWIKI_API` absent or private, 4); `WIKIOS_UPLOAD_DIR` (plan 411); `NEXT_PUBLIC_APP_URL` / `APP_URL` `https://ixwiki.com`, base path absent or `/projects/ixstates`, the same in `.env.production` (6a); `RATE_LIMIT_ENABLED` unset or `true` (6a); `WIKIOS_V1_ENABLED=true` (6b) | 1c, 3c, 4, 5, 6a, 6b |
+| `/ixwiki/public/projects/ixstats/.env.production.local` | `WIKIOS_API_SESSION_SECRET` (1c); `WIKIOS_MEDIAWIKI_BOT_USER`, `WIKIOS_MEDIAWIKI_BOT_TOKEN`, `WIKIOS_MEDIAWIKI_INTERNAL_URL` (never `NEXT_PUBLIC_WIKIOS_STANDALONE`; `WIKIOS_MEDIAWIKI_API` absent or private, 4); `WIKIOS_UPLOAD_DIR` (plan 411, 6a); `NEXT_PUBLIC_APP_URL` / `APP_URL` `https://ixwiki.com`, base path absent or `/projects/ixstates`, the same in `.env.production` (6a); `RATE_LIMIT_ENABLED` unset or `true` (6a); `WIKIOS_V1_ENABLED=true` (6b) | 1c, 3c, 4, 5, 6a, 6b |
 | `/ixwiki/shared/wikios-uploads/` | new directory (750): the staging directory of uploads waiting for the mirror; in the backups until none is waiting | 5 |
 | `/ixwiki/public/projects/ixstats/ecosystem.config.cjs` | `CRON_ENABLED_JOBS` for `ixstats-cron` names `wiki-render-stale`, `wiki-mirror` and `wiki-recentchanges` (then `pm2 restart ixstats-cron --update-env`) | 7b |
 | `/ixwiki/public/wikios/ecosystem.wikios.config.cjs` | new, from the `.example`; `WIKIOS_LEAN_FLIGHT: "1"` added to `env` in 9a | 5, 9a |
@@ -1788,7 +1846,7 @@ arrive in a commit, never as a hand edit on the server (`deploy-production.sh` r
 | `/etc/fail2ban/jail.d/ixwiki-bots.conf` | `ignoreip` in the three ixwiki jails | 4b |
 | `/etc/ixwiki-defense.conf`, `/etc/fail2ban/jail.d/ixwiki-bots.conf` | per-IP limit 240; `maxretry` x 4 | 10b |
 | `/ixwiki/shared/bots/discord/.env` | MediaWiki API URL on IxStates' loopback `/w/api.php`; the new bot password | 6c |
-| classic's `robots.txt` (`$DOCROOT/robots.txt`) | IxStates' 13 `Allow` / `Disallow` lines in its `User-agent: *` group | 6d |
+| classic's `robots.txt` (`$DOCROOT/robots.txt`) | IxStates' 13 `Allow` / `Disallow` lines in its `User-agent: *` group and each named crawler group that does not block the whole site | 6d |
 
 ## Later
 
