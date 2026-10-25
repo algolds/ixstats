@@ -180,6 +180,21 @@ describe("directive routing of a department's goal", () => {
     expect(classifyGoal("Fund national mental health initiatives").category).toBe("social");
   });
 
+  it("routes tuition and childcare subsidies to their social departments", () => {
+    const tuition = assemblePackages("Subsidize university tuition grants");
+    expect(tuition.category).toBe("social");
+    expect(tuition.packages[1]!.changes.find((c) => c.kind === "budget")).toMatchObject({
+      deptCategory: "Education",
+    });
+    const childcare = assemblePackages("Subsidize childcare for working families");
+    expect(childcare.category).toBe("social");
+    expect(childcare.packages[1]!.changes.find((c) => c.kind === "budget")).toMatchObject({
+      deptCategory: "Social Services",
+    });
+    // A subsidy with no social subject still reads fiscal
+    expect(classifyGoal("Subsidize domestic manufacturing exports").category).not.toBe("social");
+  });
+
   it("names the mandate the directive carries, never promising to enact a separate policy", () => {
     const labels = assemblePackages("Cut the government budget deficit").packages.flatMap((p) =>
       p.changes.map((c) => c.label)

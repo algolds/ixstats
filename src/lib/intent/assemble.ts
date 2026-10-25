@@ -125,6 +125,11 @@ const KEYWORDS: Record<Category, string[]> = {
     "healthcare",
     "health",
     "education",
+    "university",
+    "tuition",
+    "teacher",
+    "childcare",
+    "famil",
     "welfare",
     "poverty",
     "pension",
@@ -211,7 +216,11 @@ const DEPARTMENT_FOCUS: { category: Category; keywords: string[]; dept: string }
     keywords: ["education", "school", "teacher", "university", "tuition"],
     dept: "Education",
   },
-  { category: "social", keywords: ["pension", "welfare", "poverty"], dept: "Social Services" },
+  {
+    category: "social",
+    keywords: ["pension", "welfare", "poverty", "childcare"],
+    dept: "Social Services",
+  },
 ];
 
 /** The department a goal's budget line moves, and the line's name. */
