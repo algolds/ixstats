@@ -362,7 +362,7 @@ export function CountryActionsMenu({
             <ActionGroup label="Quick links">
               <ActionRow
                 icon={Trophy}
-                label="Global leaderboard"
+                label="Leaderboards"
                 onClick={() => go("/leaderboards")}
               />
               <WikiLinkPreview title={targetCountryName}>
