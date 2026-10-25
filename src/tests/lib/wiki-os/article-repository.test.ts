@@ -694,6 +694,25 @@ describe("ArticleRepository.recordTrailRevision (the classic winner's trail)", (
     expect(scheduleMirrorKick).not.toHaveBeenCalled();
   });
 
+  it("logs the skip under the lock as the check before the lock does, and only then", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      await expect(trail()).resolves.toEqual({ revisionId: "t1" });
+      expect(warn).not.toHaveBeenCalled();
+
+      mockTxArticleFindUnique
+        .mockResolvedValueOnce({ id: "a1", title: "Caphiria", source: "ixwiki" })
+        .mockResolvedValueOnce({ status: "ARCHIVED" });
+      await expect(trail()).resolves.toBeNull();
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn).toHaveBeenCalledWith(
+        "[WikiConflicts] No trail for conflict c1: its page is deleted."
+      );
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
   it("a trail another writer claimed first answers null and enqueues no job", async () => {
     mockConflictUpdateMany.mockResolvedValue({ count: 0 });
 

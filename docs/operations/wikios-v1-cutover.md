@@ -31,6 +31,8 @@ unless set to `true`** (`src/lib/wiki-os/v1-switch.ts`). Step 6b turns it on.
   fail: the four columns are new and empty (NULLs are never duplicates), and the stash key is weaker than the old one. Run
   `bun run db:push:force` by hand first and answer yes, as for the Realms push in the rose-garden runbook (5a); the deploy
   script's own push then has nothing to do. Pushed alone, a deploy script stops at that prompt without changing anything.
+  Before any hand push of a release with the data-safety plan in it, read "The data-safety SQL runs before the push"
+  below: three files must run first.
 - **Reading.** Articles, history, diffs, categories, Special pages and search work. Full-text search uses the old query,
   because the search vector stays empty until step 1's `search-indexes.sql`.
 - **No writes, unless an administrator turns editing on.** With the switch off, WikiOS writes follow a second switch,
@@ -62,6 +64,71 @@ unless set to `true`** (`src/lib/wiki-os/v1-switch.ts`). Step 6b turns it on.
 - Steps 1 and 1b are mandatory before any WikiOS write. Until step 1b's `--yes` run has written the protections marker,
   WikiOS refuses every write in both modes, `WIKIOS_V1_ENABLED` included, and the editing toggle refuses to turn on.
 - `NEXT_PUBLIC_WIKIOS_STANDALONE` in any env file (see step 5).
+
+**The data-safety SQL runs before the push (plan 2026-10-24, WikiOS data safety):**
+
+That plan adds two migration files: `prisma/migrations/20261105120000_wikios_conflicts/migration.sql` (the conflict log,
+and an `origin` column on `wiki_revisions` that says whether each revision was saved in WikiOS or on classic) and
+`prisma/migrations/20261105120001_wikios_sync_dead_letters/migration.sql` (the inbound quarantine). They must run in this
+order, and all before `db push`:
+
+1. `prisma/manual-migrations/2026-09-30-wikios-api.sql` (part of step 1's loop). It gives every revision that came from
+   MediaWiki `revId = mwRevId`.
+2. `20261105120000_wikios_conflicts`. When it adds `origin`, it labels each existing revision once: `classic` when
+   `revId = mwRevId` and no mirror job names it, `wikios` otherwise. It needs file 1 for that. Without the `revId` column
+   it falls back to "has a MediaWiki id and no mirror job", which can label as `classic` a WikiOS save whose finished
+   mirror job was already purged. With a `revId` column that `db push` created but file 1 never filled, every row stays
+   `wikios`.
+3. `20261105120001_wikios_sync_dead_letters`.
+4. `db push`. A push that runs before file 2 creates `origin` itself (default `wikios`), and file 2 then skips its
+   labelling, because it only labels when it adds the column.
+
+A wrong label does not lose text, but every revision wrongly marked `wikios` makes later classic edits to its page look
+like collisions: conflict rows and notices for edits that did not conflict.
+
+How `scripts/deploy-production.sh` really runs them: after its database backup it runs a fixed list of migration files
+with `bunx prisma db execute` (Atlas Studio, Vault hub, the forum readers drop, the cards phases, IxnayID), then
+`20261105120000_wikios_conflicts`, then `20261105120001_wikios_sync_dead_letters`, then `bun run db:push:force`. So inside
+the deploy, files 2 and 3 run before the push, in that order. The deploy runs nothing from `prisma/manual-migrations/`, so
+file 1 is yours to run first (step 1), and no hand push may run before the deploy has run file 2.
+
+Check before that deploy (read-only):
+
+```bash
+# 0 = file 1 has run. An error saying "revId" does not exist means it has not: run step 1 first.
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -c \
+  "select count(*) from wiki_revisions where \"mwRevId\" is not null and \"revId\" is null"
+# no row = file 2 has not run and no push has added origin yet (the expected state)
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -c \
+  "select column_name from information_schema.columns where table_name = 'wiki_revisions' and column_name = 'origin'"
+```
+
+If you need the hand push for the unique-constraint prompt (above), run files 2 and 3 by hand first, after file 1, then
+push:
+
+```bash
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 < "$IX/prisma/migrations/20261105120000_wikios_conflicts/migration.sql"
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 < "$IX/prisma/migrations/20261105120001_wikios_sync_dead_letters/migration.sql"
+( cd "$IX" && bun run db:push:force )
+```
+
+Both files are idempotent, so the deploy running them again changes nothing. Check after (read-only): most rows should
+be `classic`, since every imported revision is.
+
+```bash
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -c "select origin, count(*) from wiki_revisions group by origin"
+```
+
+If every row is `wikios`, the labelling was skipped (a push went first, or file 1 had not run). After running file 1, apply
+the labelling by hand once. It is file 2's own rule, so a WikiOS save, whose `revId` comes from WikiOS's sequence, is never
+marked `classic`:
+
+```bash
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 -c \
+  "update wiki_revisions r set origin = 'classic'
+    where r.\"mwRevId\" is not null and r.\"revId\" = r.\"mwRevId\"
+      and not exists (select 1 from wiki_mirror_jobs j where j.kind = 'revision' and j.\"revisionId\" = r.id)"
+```
 
 **The editing toggle (before the cutover):**
 
@@ -425,12 +492,43 @@ rights, `suppressredirect` included, come with `createeditmovepage`; `delete` ca
 protection, for the page-operation mirror jobs of plan 407).
 `editprotected`, `import` and `importupload` are intentional: see the comments in
 `scripts/ops/mediawiki/wikios-localsettings.php`. **No** `editinterface` or `editsiteconfig`: WikiOS keeps
-`Template:`, `Module:` and `MediaWiki:` admin-only.
+`Template:` and `Module:` admin-only, and `MediaWiki:` pages are classic-only for everyone, administrators included (spec
+A8). WikiOS refuses every save, move, delete and protect of a `MediaWiki:` page, and a `MediaWiki:` page in a web XML
+import (`/util/import`), with "MediaWiki: pages are edited on classic ixwiki.com, and WikiOS takes them from there."
+Classic's versions come over through the inbound sync and the command-line import of classic's dump (step 5). The
+mirror account never writes one either.
 
 `WIKI_SYNC_WEBHOOK_SECRET` (at least 32 characters) already exists in that file; step 6 gives MediaWiki the same value.
 
 **Rollback:** restore `sudo cp -a "$BK/env.production.local" "$IX/.env.production.local"`, and delete the bot password
 on `Special:BotPasswords` while logged in as `WikiOSMirror` (or block the account). Nothing public depends on it yet.
+
+### 3d. Create `Template:Sister` on classic
+
+Cross-wiki transclusion is written as an ordinary template, `{{Sister|iiwiki|Title}}` (spec C4). Classic shows it as a
+small link box ("From iiwiki: Title"); WikiOS's live embed is part of the sister-wiki work (spec Workstream C), not of this
+release, and until it ships WikiOS shows the same link box. The template namespace is admin-only, so an administrator
+creates the page on classic. Write the text to a file and save it with MediaWiki's `edit` script (or paste it on classic
+as an administrator):
+
+```bash
+cat > /tmp/sister.wikitext <<'EOF'
+<div class="sister-link">From {{{1|}}}: {{#switch:{{{1|}}}
+ |iiwiki=[https://iiwiki.com/wiki/{{urlencode:{{{2|}}}|WIKI}} {{{2|}}}]
+ |althistory=[https://althistory.fandom.com/wiki/{{urlencode:{{{2|}}}|WIKI}} {{{2|}}}]
+ |#default={{{2|}}}
+}}</div><noinclude>
+Usage: <code><nowiki>{{Sister|iiwiki|Title}}</nowiki></code>, optionally with <code>section=</code>,
+<code>infobox=yes</code> or <code>card=yes</code>. Classic shows this link box; WikiOS renders the embed.
+</noinclude>
+EOF
+mwmaint edit --user '<your admin name>' --summary 'Sister wiki link box' Template:Sister < /tmp/sister.wikitext
+rm /tmp/sister.wikitext
+curl -s 'https://ixwiki.com/api.php?action=parse&text=%7B%7BSister%7Ciiwiki%7CCaphiria%7D%7D&contentmodel=wikitext&format=json' | jq -r '.parse.text["*"]' | head -5
+```
+
+A command-line edit does not call the webhook; the `wiki-recentchanges` job brings the page into WikiOS within 10
+minutes. **Rollback:** delete `Template:Sister` on classic.
 
 ## 4. Private render engine on loopback
 
@@ -570,6 +668,23 @@ The script saves and restores the IxStats `.next` and, on a failed health probe,
 on the **first** deploy there is none, so it says so and leaves the new release in place for inspection (`pm2 logs
 wikios`). Private and loopback only: `HOSTNAME=127.0.0.1` in the ecosystem file, nothing public points at port 3560 yet.
 
+### Before a full XML import: the dump must be classic's (spec A8)
+
+WikiOS imports only classic MediaWiki's own dumps: the `<siteinfo>` must be there, its `<generator>` must start with
+`MediaWiki `, and, for IxWiki, its `<base>` must be on classic's host (the host of `NEXT_PUBLIC_MEDIAWIKI_URL`,
+`ixwiki.com`). The `www.` alias (`https://www.ixwiki.com/...`) and a protocol-relative base (`//ixwiki.com/...`) are
+accepted. Any other host refuses the whole dump: the summary has one `(dump)` error and nothing is written, in a dry run
+too. Check the head of the dump before the full import:
+
+```bash
+zcat -f /tmp/ixwiki.xml.gz | head -c 20000 | grep -m2 -oE '<(generator|base)>[^<]*</(generator|base)>'
+# expect:  <generator>MediaWiki 1.45.1</generator>  and  <base>https://ixwiki.com/wiki/Main_Page</base>
+```
+
+A WikiOS export (`Special:Export`, generator `WikiOS 1`) cannot be imported back, by design: a page must come from
+classic, or it would exist in WikiOS but never on classic. A sister wiki's dump (`--source iiwiki` or `althistory`) is held
+to the first two rules only.
+
 ### Optional: raise the web XML import limit
 
 The admin page `/util/import` (route `POST /api/wiki/import`) takes a MediaWiki XML dump, plain or gzipped, as the
@@ -671,12 +786,53 @@ made from the command line, by jobs or by imports do not announce themselves (no
 
 **Rollback:** `sudo cp -a "$BK/www.conf" /etc/php/8.4/fpm/pool.d/www.conf && sudo php-fpm8.4 -t && sudo systemctl reload php8.4-fpm`.
 
+## 6a. Before the first WikiOS write: the save limit, story chains and two decisions
+
+Do this before step 6b, and before anyone turns the editing toggle on.
+
+**The wiki-save limit needs `RATE_LIMIT_ENABLED`.** Every person's save (the editor, api.php, revert, rollback, "Restore
+my text") takes one from a per-account bucket: 8 a minute for a new account, 30 for an autoconfirmed or confirmed one,
+none counted for a holder of `noratelimit` (sysop, bot). The limit lives in the shared rate limiter, which counts nothing
+unless `RATE_LIMIT_ENABLED` is exactly `true`. Unset means `true`. Any other value (`false`, `1`, `True`) turns the limiter
+off, and the save limit with it. Check every env file IxStates, `ixstats-cron` and `wikios` read:
+
+```bash
+grep -n '^RATE_LIMIT_ENABLED=' "$IX/.env.production" "$IX/.env.production.local" 2>/dev/null   # nothing, or =true / ="true"
+grep -n 'RATE_LIMIT_ENABLED' "$WK/ecosystem.wikios.config.cjs" "$IX/ecosystem.config.cjs"      # nothing, or "true"
+```
+
+If a line says anything else, change it to `RATE_LIMIT_ENABLED=true` (back the file up with `bk` first) and restart the
+three processes.
+
+**Story chains aimed at a `MediaWiki:` page.** An approved story chain whose wiki section is not written yet
+(`wikiSyncedAt` is null) is retried by the story-chain cron job. A chain whose page is a `MediaWiki:` page is now skipped:
+it is marked done with a warning in the log, and its text never reaches the wiki. List them before launch, so their
+authors can be told and the chain pointed at another page (read-only):
+
+```bash
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -c \
+  "select id, title, \"countryId\", \"wikiPageTitle\", \"reviewedAt\" from storylines
+    where kind = 'chain' and status = 'approved' and \"wikiSyncedAt\" is null
+      and \"wikiPageTitle\" ilike 'MediaWiki:%'"
+```
+
+Expect no rows. For each row, change its `wikiPageTitle` before launch (or accept that it is skipped).
+
+**Owner decision: the site-editing rights.** WikiOS still grants `editinterface` (sysop, interface-admin) and
+`editsitecss`, `editsitejs` and `editsitejson` (interface-admin) in `src/lib/wiki-os/rights.ts`, and they still show on
+`Special:ListGroupRights`. Nothing reads them any more: no `MediaWiki:` page can be written through WikiOS. They are
+harmless, and removing them is a code change for a later release. Ask the owner whether to keep them (matching
+MediaWiki's own group table) or remove them. Do not change anything on the server for this.
+
+**`Template:Sister`** must exist on classic (step 3d).
+
 ## 6b. Switch WikiOS v1 on
 
-Only after steps 1 (SQL), 1b (rights import and its protections marker), 3 (mirror account), 4 (render engine) and 6
-(webhook). Without the marker the switch takes no writes: api.php keeps answering `readonly`. The switch goes into the env file that
+Only after steps 1 (SQL), 1b (rights import and its protections marker), 3 (mirror account), 4 (render engine), 6
+(webhook) and 6a. Without the marker the switch takes no writes: api.php keeps answering `readonly`. The switch goes into the env file that
 IxStates, `ixstats-cron` and the `wikios` process all read (`$WK/.env.production.local` is a link to it, step 5). From here
-on WikiOS takes edits, the mirror copies them to MediaWiki, a conflicting MediaWiki edit is parked, and api.php answers.
+on WikiOS takes edits, the mirror copies them to MediaWiki, and api.php answers. When WikiOS and classic both change a
+page, the later save stands on both wikis and the overwritten editor is told (step 10d).
 
 ```bash
 bk "$IX/.env.production.local" env.production.local.step6b
@@ -1000,6 +1156,7 @@ and the article is there.
 | Webhook | `pm2 logs wikios \| grep sync-webhook`; 401 means the two secrets differ, 503 means WikiOS has none, 429 means more than 600 a minute |
 | Discord DMs | disk alert, PHP-FPM watchdog and bot-defense alerts reach the admin through `ixwiki-notify.sh` |
 | Disk | `df -h /` (WikiOS logs go to `/var/log/pm2/`, rotated at 50M x 5; nginx logs rotate through `/etc/logrotate.d/nginx`) |
+| Conflicts and queues | `/admin/wikios-settings`: Conflict log, Inbound sync quarantine and MediaWiki Mirror Outbox (step 10d) |
 
 ### 10a. PHP-FPM watchdog: make it probe MediaWiki, not WikiOS (before step 8)
 
@@ -1117,6 +1274,30 @@ value (`ture`, `enabled`) keeps it **off**: check with the `curl` above that the
 
 **Rollback:** the same lines, in reverse.
 
+### 10d. Conflicts between WikiOS and classic, and the known limits
+
+When WikiOS and classic both change a page (an edit, a delete, a move or an undelete), the later save by its actual save
+time wins on both wikis; a tie within the same second goes to classic. Every overwritten editor is told: an in-app notice
+(and a Discord DM when their account is linked) with a "Restore my text" button, a short note on their classic user talk
+page, and an edit-summary trail on the winning revision. Each collision is one row of the Conflict log in
+`/admin/wikios-settings`. The overwritten revision stays in both histories. An inbound step that keeps failing is
+quarantined (Inbound sync quarantine), and a mirror job that fails eight times is dead (MediaWiki Mirror Outbox); both
+sections say what failed and offer a retry.
+
+Known limits. None of them loses text; each can leave someone untold or a base slightly off:
+
+- **Two classic moves after one WikiOS move.** When classic moves a page twice after a WikiOS move of it, only the first
+  classic move is judged against the WikiOS move. The page ends up where the second move put it, but the second mover is
+  not told that a WikiOS move was overwritten.
+- **A talk note to a deleted classic talk page.** When the overwritten editor's classic user talk page is deleted, the note
+  is recorded as undelivered (the Conflict log says "Not delivered: talk page deleted") and is never retried. Their
+  other notices still go out.
+- **A restore's base in the settling window.** "Restore my text" is refused as stale when the page changed after the
+  revision the conflict was judged against. When classic won, that revision is the trail, a null revision written some
+  time after the win with the page's text at that moment. If someone edited the page between the win and the trail, the
+  trail copies their text, so a restore does not see their edit as newer and can replace it without an edit conflict.
+  Their edit stays in the history.
+
 ## 11. Footprint measurement
 
 Compare with `baseline.txt` from step 0 (run once traffic has settled, then again a day later):
@@ -1167,7 +1348,7 @@ Every one of them is copied into `$BK` before its first edit.
 |------|------|------|
 | `/ixwiki/public/projects/ixstats/next.config.js` | `resolveBasePath()` WikiOS branch; `rewrites()` early return; **remove the `/api/ixwiki-proxy` rewrite**; `"iconoir-react"` and `"motion/react"` added to `experimental.optimizePackageImports` | 5 |
 | `/ixwiki/public/projects/ixstats/public/fonts/HostGrotesk/HostGrotesk[wght].ttf` | must exist (gitignored directory): `next/font/local` fails the build without it | 5 |
-| `/ixwiki/public/projects/ixstats/.env.production.local` | `WIKIOS_API_SESSION_SECRET` (1c); `WIKIOS_MEDIAWIKI_BOT_USER`, `WIKIOS_MEDIAWIKI_BOT_TOKEN`, `WIKIOS_MEDIAWIKI_INTERNAL_URL` (never `NEXT_PUBLIC_WIKIOS_STANDALONE`); `WIKIOS_UPLOAD_DIR` (plan 411); `WIKIOS_V1_ENABLED=true` (6b) | 1c, 3c, 4, 5, 6b |
+| `/ixwiki/public/projects/ixstats/.env.production.local` | `WIKIOS_API_SESSION_SECRET` (1c); `WIKIOS_MEDIAWIKI_BOT_USER`, `WIKIOS_MEDIAWIKI_BOT_TOKEN`, `WIKIOS_MEDIAWIKI_INTERNAL_URL` (never `NEXT_PUBLIC_WIKIOS_STANDALONE`); `WIKIOS_UPLOAD_DIR` (plan 411); `RATE_LIMIT_ENABLED` unset or `true` (6a); `WIKIOS_V1_ENABLED=true` (6b) | 1c, 3c, 4, 5, 6a, 6b |
 | `/ixwiki/shared/wikios-uploads/` | new directory (750): the staging directory of uploads waiting for the mirror; in the backups until none is waiting | 5 |
 | `/ixwiki/public/projects/ixstats/ecosystem.config.cjs` | `CRON_ENABLED_JOBS` for `ixstats-cron` names `wiki-render-stale`, `wiki-mirror` and `wiki-recentchanges` (then `pm2 restart ixstats-cron --update-env`) | 7b |
 | `/ixwiki/public/wikios/ecosystem.wikios.config.cjs` | new, from the `.example`; `WIKIOS_LEAN_FLIGHT: "1"` added to `env` in 9a | 5, 9a |

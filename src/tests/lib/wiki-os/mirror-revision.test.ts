@@ -24,6 +24,8 @@ jest.mock("~/server/db", () => ({
     },
     wikiArticle: { updateMany: (...a: unknown[]) => mockArticleUpdateMany(...a) },
     wikiNameClaim: { findMany: (...a: unknown[]) => mockClaimFindMany(...a) },
+    // the switch and marker rows, answered per WikiOS mode by describeEachWikiosMode
+    systemConfig: { findUnique: jest.fn() },
   },
 }));
 
@@ -60,8 +62,9 @@ import { mwSha1Base36, sha1HexToBase36 } from "~/lib/wiki-os/xml/sha1";
 import { API_URL, createFakeMediaWiki, type RecordedRequest } from "~/tests/helpers/fake-mediawiki";
 import { createHash } from "node:crypto";
 import { runPageJob } from "~/lib/wiki-os/services/mirror-page-ops";
+import { describeEachWikiosMode } from "~/tests/helpers/wikios-modes";
 
-describe("revision jobs", () => {
+describeEachWikiosMode("revision jobs", () => {
   const realFetch = globalThis.fetch;
   let wiki: ReturnType<typeof createFakeMediaWiki>;
 
@@ -858,7 +861,7 @@ describe("revision jobs", () => {
   });
 });
 
-describe("page jobs", () => {
+describeEachWikiosMode("page jobs", () => {
   const realFetch = globalThis.fetch;
   let wiki: ReturnType<typeof createFakeMediaWiki>;
 

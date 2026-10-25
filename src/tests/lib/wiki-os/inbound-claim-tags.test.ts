@@ -50,6 +50,7 @@ import { notificationAPI } from "~/lib/notifications/api";
 import { createFakeMediaWikiSite } from "~/tests/helpers/fake-mediawiki-site";
 import { API_URL } from "~/tests/helpers/fake-mediawiki";
 import type { createFakeWikiDb } from "~/tests/helpers/fake-wiki-db";
+import { seedWikiosMode, WIKIOS_MODES } from "~/tests/helpers/wikios-modes";
 
 const { fake } = jest.requireMock("~/server/db") as { fake: ReturnType<typeof createFakeWikiDb> };
 const { tables } = fake;
@@ -132,88 +133,97 @@ function moveWikiOSHeadOn(): void {
   });
 }
 
-describe("claimedWikiUserId", () => {
-  it("is the approved claim's owner, whether or not they show it; nobody for a pending claim or no name", async () => {
-    claim("db-foo", "Foo bar", { visible: false });
-    claim("db-pend", "Pending name", { status: "PENDING" });
-
-    expect(await claimedWikiUserId("Foo_bar")).toBe("db-foo");
-    expect(await claimedWikiUserId("Pending name")).toBeNull();
-    expect(await claimedWikiUserId("Nobody")).toBeNull();
-    expect(await claimedWikiUserId(null)).toBeNull();
+// The inbound cycle stores and tags the same way in either WikiOS mode: every case runs in both.
+describe.each(WIKIOS_MODES)("inbound claim tags [%s]", (mode) => {
+  let restoreMode: () => void = () => undefined;
+  beforeEach(async () => {
+    restoreMode = await seedWikiosMode(fake.db, mode);
   });
-});
+  afterEach(() => restoreMode());
 
-describe("a MediaWiki edit stored by the inbound sync", () => {
-  it("fast-forwarded: stored with no author, then tagged through the editor's name", async () => {
-    claim("db-foo", "Foo bar");
-    const edit = site.editAs("Foo bar", "Caphiria", "Caphiria is an empire.");
+  describe("claimedWikiUserId", () => {
+    it("is the approved claim's owner, whether or not they show it; nobody for a pending claim or no name", async () => {
+      claim("db-foo", "Foo bar", { visible: false });
+      claim("db-pend", "Pending name", { status: "PENDING" });
 
-    await runAutoSyncCycle();
-
-    expect(revisionOf(edit.revid)).toMatchObject({
-      author: "Foo bar",
-      authorId: null,
-      parked: false,
+      expect(await claimedWikiUserId("Foo_bar")).toBe("db-foo");
+      expect(await claimedWikiUserId("Pending name")).toBeNull();
+      expect(await claimedWikiUserId("Nobody")).toBeNull();
+      expect(await claimedWikiUserId(null)).toBeNull();
     });
-    expect(tag).toHaveBeenCalledTimes(1);
-    expect(tag).toHaveBeenCalledWith(expect.anything(), "ixwiki", "Foo bar");
-    expect(seenAtTag[0]).toMatchObject({ mwRevId: edit.revid });
   });
 
-  it("an echo stored as its own revision: no author, then tagged", async () => {
-    const edit = site.editAs("Foo bar", "Caphiria", "Caphiria is a kingdom.");
+  describe("a MediaWiki edit stored by the inbound sync", () => {
+    it("fast-forwarded: stored with no author, then tagged through the editor's name", async () => {
+      claim("db-foo", "Foo bar");
+      const edit = site.editAs("Foo bar", "Caphiria", "Caphiria is an empire.");
 
-    await runAutoSyncCycle();
+      await runAutoSyncCycle();
 
-    expect(revisionOf(edit.revid)).toMatchObject({ author: "Foo bar", authorId: null });
-    expect(tag).toHaveBeenCalledWith(expect.anything(), "ixwiki", "Foo bar");
-    expect(seenAtTag[0]).toMatchObject({ mwRevId: edit.revid });
-  });
-
-  it("overwritten: stored with no author, tagged, and the approved claim's owner is told", async () => {
-    tables.user.seed({ id: "db-foo", clerkUserId: "clerk-foo" });
-    claim("db-foo", "Foo bar", { visible: false });
-    moveWikiOSHeadOn();
-    const edit = site.editAs("Foo bar", "Caphiria", "Caphiria is a republic.");
-
-    await runAutoSyncCycle();
-
-    expect(revisionOf(edit.revid)).toMatchObject({
-      author: "Foo bar",
-      authorId: null,
-      parked: true,
+      expect(revisionOf(edit.revid)).toMatchObject({
+        author: "Foo bar",
+        authorId: null,
+        parked: false,
+      });
+      expect(tag).toHaveBeenCalledTimes(1);
+      expect(tag).toHaveBeenCalledWith(expect.anything(), "ixwiki", "Foo bar");
+      expect(seenAtTag[0]).toMatchObject({ mwRevId: edit.revid });
     });
-    expect(tag).toHaveBeenCalledWith(expect.anything(), "ixwiki", "Foo bar");
-    expect(seenAtTag[0]).toMatchObject({ mwRevId: edit.revid });
-    expect(notify).toHaveBeenCalledTimes(1);
-    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ userId: "clerk-foo" }));
-  });
 
-  it("overwritten by a name whose claim is only pending: no account is told", async () => {
-    claim("db-foo", "Foo bar", { status: "PENDING" });
-    moveWikiOSHeadOn();
-    const edit = site.editAs("Foo bar", "Caphiria", "Caphiria is a republic.");
+    it("an echo stored as its own revision: no author, then tagged", async () => {
+      const edit = site.editAs("Foo bar", "Caphiria", "Caphiria is a kingdom.");
 
-    await runAutoSyncCycle();
+      await runAutoSyncCycle();
 
-    expect(revisionOf(edit.revid)).toMatchObject({ parked: true, authorId: null });
-    expect(notify).not.toHaveBeenCalled();
-  });
+      expect(revisionOf(edit.revid)).toMatchObject({ author: "Foo bar", authorId: null });
+      expect(tag).toHaveBeenCalledWith(expect.anything(), "ixwiki", "Foo bar");
+      expect(seenAtTag[0]).toMatchObject({ mwRevId: edit.revid });
+    });
 
-  it("is kept when the tagging fails: the edit is stored and the cycle goes on", async () => {
-    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
-    tag.mockRejectedValueOnce(new Error("lock timeout"));
-    const edit = site.editAs("Foo bar", "Caphiria", "Caphiria is an empire.");
+    it("overwritten: stored with no author, tagged, and the approved claim's owner is told", async () => {
+      tables.user.seed({ id: "db-foo", clerkUserId: "clerk-foo" });
+      claim("db-foo", "Foo bar", { visible: false });
+      moveWikiOSHeadOn();
+      const edit = site.editAs("Foo bar", "Caphiria", "Caphiria is a republic.");
 
-    await runAutoSyncCycle();
+      await runAutoSyncCycle();
 
-    expect(revisionOf(edit.revid)).toMatchObject({ authorId: null, parked: false });
-    expect(caphiria().wikitext).toBe("Caphiria is an empire.");
-    expect(warn).toHaveBeenCalledWith(
-      expect.stringContaining("could not be tagged"),
-      expect.any(Error)
-    );
-    warn.mockRestore();
+      expect(revisionOf(edit.revid)).toMatchObject({
+        author: "Foo bar",
+        authorId: null,
+        parked: true,
+      });
+      expect(tag).toHaveBeenCalledWith(expect.anything(), "ixwiki", "Foo bar");
+      expect(seenAtTag[0]).toMatchObject({ mwRevId: edit.revid });
+      expect(notify).toHaveBeenCalledTimes(1);
+      expect(notify).toHaveBeenCalledWith(expect.objectContaining({ userId: "clerk-foo" }));
+    });
+
+    it("overwritten by a name whose claim is only pending: no account is told", async () => {
+      claim("db-foo", "Foo bar", { status: "PENDING" });
+      moveWikiOSHeadOn();
+      const edit = site.editAs("Foo bar", "Caphiria", "Caphiria is a republic.");
+
+      await runAutoSyncCycle();
+
+      expect(revisionOf(edit.revid)).toMatchObject({ parked: true, authorId: null });
+      expect(notify).not.toHaveBeenCalled();
+    });
+
+    it("is kept when the tagging fails: the edit is stored and the cycle goes on", async () => {
+      const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+      tag.mockRejectedValueOnce(new Error("lock timeout"));
+      const edit = site.editAs("Foo bar", "Caphiria", "Caphiria is an empire.");
+
+      await runAutoSyncCycle();
+
+      expect(revisionOf(edit.revid)).toMatchObject({ authorId: null, parked: false });
+      expect(caphiria().wikitext).toBe("Caphiria is an empire.");
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining("could not be tagged"),
+        expect.any(Error)
+      );
+      warn.mockRestore();
+    });
   });
 });

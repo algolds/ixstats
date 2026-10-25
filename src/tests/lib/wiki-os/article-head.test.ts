@@ -5,6 +5,7 @@
  */
 import { headFieldsOf, repointArticleHead } from "~/lib/wiki-os/core/article-head";
 import { createFakeWikiDb } from "~/tests/helpers/fake-wiki-db";
+import { seedWikiosMode, WIKIOS_MODES } from "~/tests/helpers/wikios-modes";
 
 const fake = createFakeWikiDb({ prisma: true });
 const { tables } = fake;
@@ -35,7 +36,13 @@ function page(
 
 beforeEach(() => fake.reset());
 
-describe("repointArticleHead", () => {
+describe.each(WIKIOS_MODES)("repointArticleHead [%s]", (mode) => {
+  let restoreMode: () => void = () => undefined;
+  beforeEach(async () => {
+    restoreMode = await seedWikiosMode(fake.db, mode);
+  });
+  afterEach(() => restoreMode());
+
   it("puts the page's text and derived columns on its newest live revision, its view stale", async () => {
     const row = page("Lost text.", [
       { wikitext: "#REDIRECT [[Ixnay]]", parked: false, at: "2026-09-01" },

@@ -48,7 +48,7 @@ import { join } from "node:path";
 import { createApiDeps } from "~/lib/wiki-os/api-compat/deps";
 import { scheduleMirrorKick } from "~/lib/wiki-os/services/mirror-outbox";
 import { fakeWikiDb } from "~/tests/helpers/fake-wiki-db";
-import { seedWikiosMode } from "~/tests/helpers/wikios-modes";
+import { seedWikiosMode, WIKIOS_MODES } from "~/tests/helpers/wikios-modes";
 import type { RequestFile } from "~/lib/wiki-os/api-compat/types";
 import { loggedIn, makeWikiDeps, type FakeWikiData } from "./harness";
 
@@ -91,9 +91,10 @@ const data = (): FakeWikiData => ({
 /** Whether the job inserts happened inside a `$transaction`, in the order they were made. */
 let insertedInTransaction: boolean[] = [];
 
-async function setup(
-  { tokenType = "csrf", moreRevisions = [] }: { tokenType?: string; moreRevisions?: NonNullable<FakeWikiData["revisions"]> } = {}
-) {
+async function setup({
+  tokenType = "csrf",
+  moreRevisions = [],
+}: { tokenType?: string; moreRevisions?: NonNullable<FakeWikiData["revisions"]> } = {}) {
   const wiki = data();
   wiki.revisions!.push(...moreRevisions);
   let nextRevId = 9000;
@@ -155,8 +156,6 @@ afterEach(() => restoreMode());
 beforeEach(async () => {
   jest.clearAllMocks();
   fakeWikiDb.reset();
-  // v1 with the protections marker the rights import writes (without it WikiOS takes no write)
-  restoreMode = await seedWikiosMode(fakeWikiDb.db, "v1");
   for (const name of readdirSync(uploadDirectory))
     rmSync(join(uploadDirectory, name), { force: true });
   insertedInTransaction = [];
@@ -199,174 +198,198 @@ beforeEach(async () => {
 
 afterEach(() => jest.restoreAllMocks());
 
-describe("api.php action=edit", () => {
-  it("inserts one revision job, in the save's own transaction, for the revision it wrote", async () => {
-    const { act } = await setup();
-
-    const body = await act("edit", { title: "Alpha", text: "new text", summary: "via api.php" });
-
-    expect(body.edit.result).toBe("Success");
-    expect(tables.wikiRevision.rows).toHaveLength(1);
-    expect(jobs()).toHaveLength(1);
-    expect(jobs()[0]).toMatchObject({
-      source: "ixwiki",
-      kind: "revision",
-      title: "Alpha",
-      articleId: "a-alpha",
-      revisionId: tables.wikiRevision.rows[0]!.id,
-      state: "pending",
-    });
-    // inserted inside the transaction that wrote the revision, not after it
-    expect(insertedInTransaction).toEqual([true]);
-    expect(scheduleMirrorKick).toHaveBeenCalledTimes(1);
+// Each WikiOS mode with the protections marker the rights import writes (without it WikiOS takes no write).
+describe.each(WIKIOS_MODES)("api.php mirror jobs [%s]", (mode) => {
+  beforeEach(async () => {
+    restoreMode = await seedWikiosMode(fakeWikiDb.db, mode);
   });
 
-  it("inserts one job per edit, and none for an edit that is refused", async () => {
-    const { act } = await setup();
+  describe("api.php action=edit", () => {
+    it("inserts one revision job, in the save's own transaction, for the revision it wrote", async () => {
+      const { act } = await setup();
 
-    await act("edit", { title: "Alpha", text: "one" });
-    await act("edit", { title: "Alpha", text: "two" });
-    const refused = await act("edit", { title: "Alpha", text: "three", md5: "0".repeat(32) });
+      const body = await act("edit", { title: "Alpha", text: "new text", summary: "via api.php" });
 
-    expect(refused.error.code).toBe("badmd5");
-    expect(summary()).toEqual(["revision:Alpha", "revision:Alpha"]);
-    expect(jobs().map((job) => job.revisionId)).toEqual(
-      tables.wikiRevision.rows.map((row) => row.id)
-    );
-  });
-
-  it("writes neither a revision nor a job for a MediaWiki: page: classic is its authority (A8)", async () => {
-    const { act } = await setup();
-
-    const body = await act("edit", { title: "MediaWiki:Sidebar", text: "* navigation" });
-
-    expect(body.error).toMatchObject({ code: "protectednamespace" });
-    expect(tables.wikiRevision.rows).toEqual([]);
-    expect(jobs()).toEqual([]);
-  });
-});
-describe("api.php action=upload", () => {
-  const PNG = Uint8Array.from([
-    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52, 0, 0, 0, 8,
-    0, 0, 0, 8, 8, 6, 0, 0, 0, 1,
-  ]);
-  const part = (bytes: Uint8Array = PNG): Record<string, RequestFile> => ({
-    file: { filename: "x.png", contentType: "image/png", bytes },
-  });
-
-  it("queues the new File: page's revision job and then the upload job, both for its title, and stages the file", async () => {
-    const { act } = await setup();
-
-    const body = await act(
-      "upload",
-      { filename: "Flag of Eurth.png", comment: "A flag", text: "== Summary ==\nThe flag." },
-      part()
-    );
-
-    expect(body.upload.result).toBe("Success");
-    expect(summary()).toEqual(["revision:File:Flag of Eurth.png", "upload:File:Flag of Eurth.png"]);
-    expect(jobs()[1]).toMatchObject({
-      kind: "upload",
-      state: "pending",
-      payload: { comment: "A flag" },
-    });
-    expect(tables.wikiAsset.rows).toHaveLength(1);
-    expect(tables.wikiLog.rows.map((row) => `${row.logType}/${row.action}`)).toEqual([
-      "upload/upload",
-    ]);
-    // each job went in with the change itself (the page's save, the asset and the log)
-    expect(insertedInTransaction).toEqual([true, true]);
-  });
-
-  it("stages nothing and queues nothing for a page text that is too long or has a NUL (review M2)", async () => {
-    const { act } = await setup();
-
-    const tooLong = await act(
-      "upload",
-      { filename: "Flag.png", text: "x".repeat(3_000_000) },
-      part()
-    );
-    const nul = await act("upload", { filename: "Flag.png", text: "a\u0000b" }, part());
-
-    expect([tooLong.error.code, nul.error.code]).toEqual(["toobig", "invalidtext"]);
-    expect(jobs()).toEqual([]);
-    expect(tables.wikiArticle.rows.filter((row) => row.title === "File:Flag.png")).toEqual([]);
-    expect(readdirSync(uploadDirectory)).toEqual([]);
-  });
-});
-
-describe("api.php move, delete, undelete and protect", () => {
-  it("action=delete queues one delete job with the reason, in the delete's transaction", async () => {
-    const { act } = await setup();
-
-    await act("delete", { title: "Alpha", reason: "junk" });
-
-    expect(jobs()).toHaveLength(1);
-    expect(jobs()[0]).toMatchObject({
-      kind: "delete",
-      title: "Alpha",
-      payload: { reason: "junk" },
-    });
-    expect(insertedInTransaction).toEqual([true]);
-  });
-  it("action=move queues one move job per page that moved: the page, and its talk page when it goes along", async () => {
-    const { act } = await setup();
-
-    const alone = await act("move", { from: "Alpha", to: "Gamma", reason: "rename" });
-    expect(alone.move.from).toBe("Alpha");
-    expect(summary()).toEqual(["move:Alpha->Gamma"]);
-
-    fakeWikiDb.reset();
-    tables.wikiArticle.seed(
-      {
-        id: "a-alpha",
+      expect(body.edit.result).toBe("Success");
+      expect(tables.wikiRevision.rows).toHaveLength(1);
+      expect(jobs()).toHaveLength(1);
+      expect(jobs()[0]).toMatchObject({
         source: "ixwiki",
+        kind: "revision",
         title: "Alpha",
-        slug: "alpha",
-        namespace: 0,
-        wikitext: "good text",
-      },
-      {
-        id: "a-talk",
-        source: "ixwiki",
-        title: "Talk:Alpha",
-        slug: "talk:alpha",
-        namespace: 1,
-        wikitext: "talk",
-      }
-    );
-    const withTalk = await act("move", { from: "Alpha", to: "Gamma", movetalk: "" });
-    expect(withTalk.move.talkto).toBe("Talk:Gamma");
-    expect(summary()).toEqual(["move:Alpha->Gamma", "move:Talk:Alpha->Talk:Gamma"]);
-    expect(insertedInTransaction.every(Boolean)).toBe(true);
-  });
-
-  it("action=move refuses a File: page with immobilenamespace (files cannot be moved in WikiOS yet), and queues nothing", async () => {
-    tables.wikiArticle.seed({ id: "a-file", source: "ixwiki", title: "File:Flag.png", slug: "file:flag.png", namespace: 6, wikitext: "A flag." });
-    const { act } = await setup();
-
-    const out = await act("move", { from: "File:Flag.png", to: "File:Banner.png", reason: "rename" });
-    const into = await act("move", { from: "Alpha", to: "File:Banner.png" });
-
-    expect(out.error).toMatchObject({ code: "immobilenamespace", info: "Files cannot be moved in WikiOS yet; move them on classic MediaWiki." });
-    expect(into.error.code).toBe("immobilenamespace");
-    expect(jobs()).toEqual([]);
-    expect(tables.wikiArticle.rows.map((row) => row.title)).toContain("File:Flag.png");
-  });
-
-  it("queues nothing for a write the service refuses", async () => {
-    const { act } = await setup();
-    tables.wikiArticle.reset(); // MediaWiki lists the page, WikiOS holds no article for it
-
-    const missing = await act("delete", { title: "Alpha" });
-    const cascade = await act("protect", {
-      title: "Alpha",
-      protections: "edit=sysop",
-      cascade: "",
+        articleId: "a-alpha",
+        revisionId: tables.wikiRevision.rows[0]!.id,
+        state: "pending",
+      });
+      // inserted inside the transaction that wrote the revision, not after it
+      expect(insertedInTransaction).toEqual([true]);
+      expect(scheduleMirrorKick).toHaveBeenCalledTimes(1);
     });
 
-    expect(missing.error.code).toBe("missingtitle");
-    expect(cascade.error.code).toBe("cantcascade");
-    expect(jobs()).toEqual([]);
+    it("inserts one job per edit, and none for an edit that is refused", async () => {
+      const { act } = await setup();
+
+      await act("edit", { title: "Alpha", text: "one" });
+      await act("edit", { title: "Alpha", text: "two" });
+      const refused = await act("edit", { title: "Alpha", text: "three", md5: "0".repeat(32) });
+
+      expect(refused.error.code).toBe("badmd5");
+      expect(summary()).toEqual(["revision:Alpha", "revision:Alpha"]);
+      expect(jobs().map((job) => job.revisionId)).toEqual(
+        tables.wikiRevision.rows.map((row) => row.id)
+      );
+    });
+
+    it("writes neither a revision nor a job for a MediaWiki: page: classic is its authority (A8)", async () => {
+      const { act } = await setup();
+
+      const body = await act("edit", { title: "MediaWiki:Sidebar", text: "* navigation" });
+
+      expect(body.error).toMatchObject({ code: "protectednamespace" });
+      expect(tables.wikiRevision.rows).toEqual([]);
+      expect(jobs()).toEqual([]);
+    });
+  });
+  describe("api.php action=upload", () => {
+    const PNG = Uint8Array.from([
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52, 0, 0, 0,
+      8, 0, 0, 0, 8, 8, 6, 0, 0, 0, 1,
+    ]);
+    const part = (bytes: Uint8Array = PNG): Record<string, RequestFile> => ({
+      file: { filename: "x.png", contentType: "image/png", bytes },
+    });
+
+    it("queues the new File: page's revision job and then the upload job, both for its title, and stages the file", async () => {
+      const { act } = await setup();
+
+      const body = await act(
+        "upload",
+        { filename: "Flag of Eurth.png", comment: "A flag", text: "== Summary ==\nThe flag." },
+        part()
+      );
+
+      expect(body.upload.result).toBe("Success");
+      expect(summary()).toEqual([
+        "revision:File:Flag of Eurth.png",
+        "upload:File:Flag of Eurth.png",
+      ]);
+      expect(jobs()[1]).toMatchObject({
+        kind: "upload",
+        state: "pending",
+        payload: { comment: "A flag" },
+      });
+      expect(tables.wikiAsset.rows).toHaveLength(1);
+      expect(tables.wikiLog.rows.map((row) => `${row.logType}/${row.action}`)).toEqual([
+        "upload/upload",
+      ]);
+      // each job went in with the change itself (the page's save, the asset and the log)
+      expect(insertedInTransaction).toEqual([true, true]);
+    });
+
+    it("stages nothing and queues nothing for a page text that is too long or has a NUL (review M2)", async () => {
+      const { act } = await setup();
+
+      const tooLong = await act(
+        "upload",
+        { filename: "Flag.png", text: "x".repeat(3_000_000) },
+        part()
+      );
+      const nul = await act("upload", { filename: "Flag.png", text: "a\u0000b" }, part());
+
+      expect([tooLong.error.code, nul.error.code]).toEqual(["toobig", "invalidtext"]);
+      expect(jobs()).toEqual([]);
+      expect(tables.wikiArticle.rows.filter((row) => row.title === "File:Flag.png")).toEqual([]);
+      expect(readdirSync(uploadDirectory)).toEqual([]);
+    });
+  });
+
+  describe("api.php move, delete, undelete and protect", () => {
+    it("action=delete queues one delete job with the reason, in the delete's transaction", async () => {
+      const { act } = await setup();
+
+      await act("delete", { title: "Alpha", reason: "junk" });
+
+      expect(jobs()).toHaveLength(1);
+      expect(jobs()[0]).toMatchObject({
+        kind: "delete",
+        title: "Alpha",
+        payload: { reason: "junk" },
+      });
+      expect(insertedInTransaction).toEqual([true]);
+    });
+    it("action=move queues one move job per page that moved: the page, and its talk page when it goes along", async () => {
+      const { act } = await setup();
+
+      const alone = await act("move", { from: "Alpha", to: "Gamma", reason: "rename" });
+      expect(alone.move.from).toBe("Alpha");
+      expect(summary()).toEqual(["move:Alpha->Gamma"]);
+
+      fakeWikiDb.reset();
+      tables.wikiArticle.seed(
+        {
+          id: "a-alpha",
+          source: "ixwiki",
+          title: "Alpha",
+          slug: "alpha",
+          namespace: 0,
+          wikitext: "good text",
+        },
+        {
+          id: "a-talk",
+          source: "ixwiki",
+          title: "Talk:Alpha",
+          slug: "talk:alpha",
+          namespace: 1,
+          wikitext: "talk",
+        }
+      );
+      const withTalk = await act("move", { from: "Alpha", to: "Gamma", movetalk: "" });
+      expect(withTalk.move.talkto).toBe("Talk:Gamma");
+      expect(summary()).toEqual(["move:Alpha->Gamma", "move:Talk:Alpha->Talk:Gamma"]);
+      expect(insertedInTransaction.every(Boolean)).toBe(true);
+    });
+
+    it("action=move refuses a File: page with immobilenamespace (files cannot be moved in WikiOS yet), and queues nothing", async () => {
+      tables.wikiArticle.seed({
+        id: "a-file",
+        source: "ixwiki",
+        title: "File:Flag.png",
+        slug: "file:flag.png",
+        namespace: 6,
+        wikitext: "A flag.",
+      });
+      const { act } = await setup();
+
+      const out = await act("move", {
+        from: "File:Flag.png",
+        to: "File:Banner.png",
+        reason: "rename",
+      });
+      const into = await act("move", { from: "Alpha", to: "File:Banner.png" });
+
+      expect(out.error).toMatchObject({
+        code: "immobilenamespace",
+        info: "Files cannot be moved in WikiOS yet; move them on classic MediaWiki.",
+      });
+      expect(into.error.code).toBe("immobilenamespace");
+      expect(jobs()).toEqual([]);
+      expect(tables.wikiArticle.rows.map((row) => row.title)).toContain("File:Flag.png");
+    });
+
+    it("queues nothing for a write the service refuses", async () => {
+      const { act } = await setup();
+      tables.wikiArticle.reset(); // MediaWiki lists the page, WikiOS holds no article for it
+
+      const missing = await act("delete", { title: "Alpha" });
+      const cascade = await act("protect", {
+        title: "Alpha",
+        protections: "edit=sysop",
+        cascade: "",
+      });
+
+      expect(missing.error.code).toBe("missingtitle");
+      expect(cascade.error.code).toBe("cantcascade");
+      expect(jobs()).toEqual([]);
+    });
   });
 });

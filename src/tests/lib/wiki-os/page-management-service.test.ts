@@ -354,4 +354,15 @@ describe("PageManagementService and the mirror outbox (plan 407)", () => {
 
     expect(mockJobCreate).not.toHaveBeenCalled();
   });
+
+  it("writes no job for a realm that has no MediaWiki to mirror to", async () => {
+    mockFindFirst.mockResolvedValue({ id: "a1", title: "Old name", status: "PUBLISHED" });
+
+    await PageManagementService.archiveArticle("Old name", "spam", actor, "iiwiki");
+    expect(mockJobCreate).not.toHaveBeenCalled();
+
+    // the same delete on ixwiki, which classic mirrors, writes its job
+    await PageManagementService.archiveArticle("Old name", "spam", actor, "ixwiki");
+    expect(mockJobCreate).toHaveBeenCalledTimes(1);
+  });
 });

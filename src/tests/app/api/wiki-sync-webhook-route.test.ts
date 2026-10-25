@@ -162,6 +162,50 @@ describe("/api/wikios/inbound-sync", () => {
     expect(runAutoSyncCycle).toHaveBeenLastCalledWith(50);
   });
 
+  it("never puts the secret in the bucket key", async () => {
+    await inboundPost(request(INBOUND, { "x-wiki-webhook-secret": SECRET }, {}));
+    const [identifier] = jest.mocked(rateLimiter.check).mock.calls[0] ?? [];
+    expect(identifier).toBeDefined();
+    expect(identifier).not.toContain(SECRET);
+  });
+
+  it("uses the same bucket wherever the request claims to come from", async () => {
+    await inboundPost(
+      request(INBOUND, { "x-wiki-webhook-secret": SECRET, "x-forwarded-for": "1.1.1.1" }, {})
+    );
+    await inboundGet(
+      request(INBOUND, {
+        Authorization: `Bearer ${SECRET}`,
+        "cf-connecting-ip": "2.2.2.2",
+        "x-forwarded-for": "3.3.3.3",
+      })
+    );
+    const [first, second] = jest.mocked(rateLimiter.check).mock.calls.map(([id]) => id);
+    expect(first).toBeDefined();
+    expect(first).toBe(second);
+  });
+
+  it("counts a wrong secret against the strict bucket of the client, not a secret bucket", async () => {
+    const res = await inboundPost(
+      request(
+        INBOUND,
+        { "x-wiki-webhook-secret": "x".repeat(SECRET.length), "x-real-ip": "4.4.4.4" },
+        {}
+      )
+    );
+    expect(res.status).toBe(401);
+    expect(rateLimiter.check).toHaveBeenCalledWith("ip:4.4.4.4", "wikios-inbound-sync", STRICT);
+  });
+
+  it("uses the strict per-client bucket when no secret is configured", async () => {
+    setSecret(undefined);
+    const res = await inboundGet(
+      request(INBOUND, { "x-wiki-webhook-secret": SECRET, "cf-connecting-ip": "5.5.5.5" })
+    );
+    expect(res.status).toBe(503);
+    expect(rateLimiter.check).toHaveBeenCalledWith("ip:5.5.5.5", "wikios-inbound-sync", STRICT);
+  });
+
   it("keeps its own rate-limit namespace, apart from the page-sync webhook's", async () => {
     await inboundPost(request(INBOUND, { "x-wiki-webhook-secret": SECRET }, {}));
     await webhook({ "x-wiki-webhook-secret": SECRET });

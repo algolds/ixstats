@@ -45,7 +45,13 @@ export async function recordTrailRevision(
         where: { id: article.id },
         select: { status: true },
       });
-      if (live?.status === "ARCHIVED") return null;
+      if (live?.status === "ARCHIVED") {
+        // the same line the pre-lock check in conflict-notices.ts logs
+        console.warn(
+          `[WikiConflicts] No trail for conflict ${input.conflictId}: its page is deleted.`
+        );
+        return null;
+      }
       const conflict = await tx.wikiConflict.findUnique({
         where: { id: input.conflictId },
         select: { trailRevisionId: true },

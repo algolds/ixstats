@@ -28,6 +28,7 @@ import { runUploadJob } from "~/lib/wiki-os/services/mirror-upload";
 import { isStaged, stageBytes } from "~/lib/wiki-os/services/upload-staging";
 import { API_URL, createFakeMediaWiki } from "~/tests/helpers/fake-mediawiki";
 import { fakeWikiDb } from "~/tests/helpers/fake-wiki-db";
+import { seedWikiosMode, WIKIOS_MODES } from "~/tests/helpers/wikios-modes";
 
 const { db, tables } = fakeWikiDb;
 const realFetch = globalThis.fetch;
@@ -148,164 +149,173 @@ afterEach(() => {
   globalThis.fetch = realFetch;
 });
 
-describe("uploading a staged file", () => {
-  it("sends the staged bytes unchanged, as the bot, with the page text and the uploader in the comment, and the token last", async () => {
-    const bytes = png(1);
-    const sha1 = await stagedUpload(bytes);
-    imageInfo(null);
-    wiki.on("upload", () => ({ upload: { result: "Success", filename: "Flag_of_Eurth.png" } }));
+// Uploads go out the same way whichever switch takes writes: every case runs in both WikiOS modes.
+describe.each(WIKIOS_MODES)("the upload mirror [%s]", (mode) => {
+  let restoreMode: () => void = () => undefined;
+  beforeEach(async () => {
+    restoreMode = await seedWikiosMode(fakeWikiDb.db, mode);
+  });
+  afterEach(() => restoreMode());
 
-    await runUploadJob(uploadJob(sha1));
+  describe("uploading a staged file", () => {
+    it("sends the staged bytes unchanged, as the bot, with the page text and the uploader in the comment, and the token last", async () => {
+      const bytes = png(1);
+      const sha1 = await stagedUpload(bytes);
+      imageInfo(null);
+      wiki.on("upload", () => ({ upload: { result: "Success", filename: "Flag_of_Eurth.png" } }));
 
-    const [call] = calls("upload");
-    expect(call?.method).toBe("POST");
-    expect(call?.params).toMatchObject({
-      action: "upload",
-      filename: "Flag of Eurth.png",
-      ignorewarnings: "1",
-      comment: "First upload (uploaded in WikiOS by Heku)",
-      text: "== Summary ==\nThe flag.",
-      format: "json",
+      await runUploadJob(uploadJob(sha1));
+
+      const [call] = calls("upload");
+      expect(call?.method).toBe("POST");
+      expect(call?.params).toMatchObject({
+        action: "upload",
+        filename: "Flag of Eurth.png",
+        ignorewarnings: "1",
+        comment: "First upload (uploaded in WikiOS by Heku)",
+        text: "== Summary ==\nThe flag.",
+        format: "json",
+      });
+      expect(call?.params.token).toBe("csrf-token+\\x");
+      expect(call?.order.at(-1)).toBe("token");
+      expect(call?.file).toMatchObject({
+        field: "file",
+        filename: "Flag of Eurth.png",
+        type: "image/png",
+      });
+      expect(sha1Of(call!.file!.bytes)).toBe(sha1Of(bytes));
     });
-    expect(call?.params.token).toBe("csrf-token+\\x");
-    expect(call?.order.at(-1)).toBe("token");
-    expect(call?.file).toMatchObject({
-      field: "file",
-      filename: "Flag of Eurth.png",
-      type: "image/png",
+
+    it("asks MediaWiki for the file's hash first, so a retry never makes a second version", async () => {
+      const bytes = png(2);
+      const sha1 = await stagedUpload(bytes);
+      imageInfo(sha1Of(bytes));
+
+      await runUploadJob(uploadJob(sha1));
+
+      expect(calls("upload")).toHaveLength(0);
+      const [ask] = calls("query");
+      expect(ask?.params).toMatchObject({
+        prop: "imageinfo",
+        iiprop: "sha1",
+        titles: "File:Flag of Eurth.png",
+      });
+      // ... and it is still finished: served from MediaWiki, the staged copy released
+      expect(String(tables.wikiAsset.rows[0]?.url)).toContain("/images/");
+      expect(await isStaged(sha1)).toBe(false);
     });
-    expect(sha1Of(call!.file!.bytes)).toBe(sha1Of(bytes));
-  });
+    it("fails the job, and switches nothing, when the pages that use the file cannot be marked stale; the retry does both (review minor 2)", async () => {
+      const bytes = png(21);
+      const sha1 = await stagedUpload(bytes);
+      imageInfo(null);
+      wiki.on("upload", () => ({ upload: { result: "Success" } }));
+      jest.spyOn(db, "$executeRaw").mockRejectedValueOnce(new Error("db down"));
 
-  it("asks MediaWiki for the file's hash first, so a retry never makes a second version", async () => {
-    const bytes = png(2);
-    const sha1 = await stagedUpload(bytes);
-    imageInfo(sha1Of(bytes));
+      await expect(runUploadJob(uploadJob(sha1))).rejects.toThrow("db down");
 
-    await runUploadJob(uploadJob(sha1));
+      // one transaction: the asset still serves the staged copy, which is still there
+      expect(tables.wikiAsset.rows[0]?.url).toBe(`${STAGED_FILE_PATH}Flag_of_Eurth.png`);
+      expect(await isStaged(sha1)).toBe(true);
 
-    expect(calls("upload")).toHaveLength(0);
-    const [ask] = calls("query");
-    expect(ask?.params).toMatchObject({
-      prop: "imageinfo",
-      iiprop: "sha1",
-      titles: "File:Flag of Eurth.png",
+      // the retry finds the file in MediaWiki already, and finishes
+      imageInfo(sha1Of(bytes));
+      await runUploadJob(uploadJob(sha1));
+      expect(String(tables.wikiAsset.rows[0]?.url)).toContain("/images/");
+      expect(await isStaged(sha1)).toBe(false);
+      expect(calls("upload")).toHaveLength(1);
     });
-    // ... and it is still finished: served from MediaWiki, the staged copy released
-    expect(String(tables.wikiAsset.rows[0]?.url)).toContain("/images/");
-    expect(await isStaged(sha1)).toBe(false);
-  });
-  it("fails the job, and switches nothing, when the pages that use the file cannot be marked stale; the retry does both (review minor 2)", async () => {
-    const bytes = png(21);
-    const sha1 = await stagedUpload(bytes);
-    imageInfo(null);
-    wiki.on("upload", () => ({ upload: { result: "Success" } }));
-    jest.spyOn(db, "$executeRaw").mockRejectedValueOnce(new Error("db down"));
 
-    await expect(runUploadJob(uploadJob(sha1))).rejects.toThrow("db down");
+    it("is done when MediaWiki refuses the upload as no change and its hash agrees", async () => {
+      const bytes = png(4);
+      const sha1 = await stagedUpload(bytes);
+      let asked = 0;
+      wiki.on("query", () => ({
+        query: {
+          pages: [
+            ++asked === 1
+              ? { title: "File:Flag of Eurth.png", missing: true }
+              : { title: "File:Flag of Eurth.png", imageinfo: [{ sha1: sha1Of(bytes) }] },
+          ],
+        },
+      }));
+      wiki.on("upload", () => ({
+        error: { code: "fileexists-no-change", info: "an exact duplicate" },
+      }));
 
-    // one transaction: the asset still serves the staged copy, which is still there
-    expect(tables.wikiAsset.rows[0]?.url).toBe(`${STAGED_FILE_PATH}Flag_of_Eurth.png`);
-    expect(await isStaged(sha1)).toBe(true);
-
-    // the retry finds the file in MediaWiki already, and finishes
-    imageInfo(sha1Of(bytes));
-    await runUploadJob(uploadJob(sha1));
-    expect(String(tables.wikiAsset.rows[0]?.url)).toContain("/images/");
-    expect(await isStaged(sha1)).toBe(false);
-    expect(calls("upload")).toHaveLength(1);
-  });
-
-  it("is done when MediaWiki refuses the upload as no change and its hash agrees", async () => {
-    const bytes = png(4);
-    const sha1 = await stagedUpload(bytes);
-    let asked = 0;
-    wiki.on("query", () => ({
-      query: {
-        pages: [
-          ++asked === 1
-            ? { title: "File:Flag of Eurth.png", missing: true }
-            : { title: "File:Flag of Eurth.png", imageinfo: [{ sha1: sha1Of(bytes) }] },
-        ],
-      },
-    }));
-    wiki.on("upload", () => ({
-      error: { code: "fileexists-no-change", info: "an exact duplicate" },
-    }));
-
-    await expect(runUploadJob(uploadJob(sha1))).resolves.toBeUndefined();
-    expect(String(tables.wikiAsset.rows[0]?.url)).toContain("/images/");
-  });
-  it("fails, for the retry and the alert, when the staged file is gone and MediaWiki does not hold it", async () => {
-    const sha1 = await stagedUpload(png(9));
-    rmSync(join(directory, sha1));
-    imageInfo(null);
-
-    await expect(runUploadJob(uploadJob(sha1))).rejects.toThrow(
-      "is gone, and MediaWiki does not hold it"
-    );
-    expect(calls("upload")).toHaveLength(0);
-  });
-
-  it("finishes a job whose staged file is gone when MediaWiki holds the bytes (a run that died after the upload)", async () => {
-    const bytes = png(10);
-    const sha1 = await stagedUpload(bytes);
-    rmSync(join(directory, sha1));
-    imageInfo(sha1Of(bytes));
-
-    await runUploadJob(uploadJob(sha1));
-
-    expect(String(tables.wikiAsset.rows[0]?.url)).toContain("/images/");
-  });
-});
-
-describe("what the staged copy is kept for", () => {
-  it("keeps the copy of an older version that another upload job still names, and the asset on its newer version", async () => {
-    const older = png(11);
-    const newer = png(12);
-    const olderSha1 = await stagedUpload(older);
-    const newerSha1 = await stagedUpload(newer); // the asset row is now on the newer version
-    tables.wikiMirrorJob.seed(
-      uploadJob(olderSha1, { id: "job-up-1" }),
-      uploadJob(newerSha1, { id: "job-up-2", state: "pending", attempts: 0 })
-    );
-    imageInfo(null);
-    wiki.on("upload", () => ({ upload: { result: "Success" } }));
-
-    await runUploadJob(uploadJob(olderSha1, { id: "job-up-1" }));
-
-    // the asset's newer version is still waiting for its own job: nothing was switched, both copies stay
-    expect(tables.wikiAsset.rows[0]).toMatchObject({
-      sha1: newerSha1,
-      url: `${STAGED_FILE_PATH}Flag_of_Eurth.png`,
+      await expect(runUploadJob(uploadJob(sha1))).resolves.toBeUndefined();
+      expect(String(tables.wikiAsset.rows[0]?.url)).toContain("/images/");
     });
-    expect(await isStaged(newerSha1)).toBe(true);
-    // the older copy is no longer anyone's but this job's: released
-    expect(await isStaged(olderSha1)).toBe(false);
+    it("fails, for the retry and the alert, when the staged file is gone and MediaWiki does not hold it", async () => {
+      const sha1 = await stagedUpload(png(9));
+      rmSync(join(directory, sha1));
+      imageInfo(null);
+
+      await expect(runUploadJob(uploadJob(sha1))).rejects.toThrow(
+        "is gone, and MediaWiki does not hold it"
+      );
+      expect(calls("upload")).toHaveLength(0);
+    });
+
+    it("finishes a job whose staged file is gone when MediaWiki holds the bytes (a run that died after the upload)", async () => {
+      const bytes = png(10);
+      const sha1 = await stagedUpload(bytes);
+      rmSync(join(directory, sha1));
+      imageInfo(sha1Of(bytes));
+
+      await runUploadJob(uploadJob(sha1));
+
+      expect(String(tables.wikiAsset.rows[0]?.url)).toContain("/images/");
+    });
   });
 
-  it("keeps a copy that a dead upload job needs for its requeue, and one a duplicate asset still serves", async () => {
-    const bytes = png(13);
-    const sha1 = await stagedUpload(bytes);
-    tables.wikiMirrorJob.seed(uploadJob(sha1, { id: "job-dead", state: "dead", attempts: 8 }));
-    imageInfo(sha1Of(bytes));
+  describe("what the staged copy is kept for", () => {
+    it("keeps the copy of an older version that another upload job still names, and the asset on its newer version", async () => {
+      const older = png(11);
+      const newer = png(12);
+      const olderSha1 = await stagedUpload(older);
+      const newerSha1 = await stagedUpload(newer); // the asset row is now on the newer version
+      tables.wikiMirrorJob.seed(
+        uploadJob(olderSha1, { id: "job-up-1" }),
+        uploadJob(newerSha1, { id: "job-up-2", state: "pending", attempts: 0 })
+      );
+      imageInfo(null);
+      wiki.on("upload", () => ({ upload: { result: "Success" } }));
 
-    await runUploadJob(uploadJob(sha1, { id: "job-up-1" }));
-    expect(await isStaged(sha1)).toBe(true);
+      await runUploadJob(uploadJob(olderSha1, { id: "job-up-1" }));
 
-    // an asset under another name still serves the same bytes from the staging directory
-    tables.wikiMirrorJob.reset();
-    tables.wikiAsset.seed({
-      title: "Copy.png",
-      slug: "copy.png",
-      filename: "Copy.png",
-      md5Hash: "c".repeat(32),
-      url: `${STAGED_FILE_PATH}Copy.png`,
-      mimeType: "image/png",
-      sizeBytes: bytes.length,
-      sha1,
+      // the asset's newer version is still waiting for its own job: nothing was switched, both copies stay
+      expect(tables.wikiAsset.rows[0]).toMatchObject({
+        sha1: newerSha1,
+        url: `${STAGED_FILE_PATH}Flag_of_Eurth.png`,
+      });
+      expect(await isStaged(newerSha1)).toBe(true);
+      // the older copy is no longer anyone's but this job's: released
+      expect(await isStaged(olderSha1)).toBe(false);
     });
-    await runUploadJob(uploadJob(sha1, { id: "job-up-1" }));
-    expect(await isStaged(sha1)).toBe(true);
+
+    it("keeps a copy that a dead upload job needs for its requeue, and one a duplicate asset still serves", async () => {
+      const bytes = png(13);
+      const sha1 = await stagedUpload(bytes);
+      tables.wikiMirrorJob.seed(uploadJob(sha1, { id: "job-dead", state: "dead", attempts: 8 }));
+      imageInfo(sha1Of(bytes));
+
+      await runUploadJob(uploadJob(sha1, { id: "job-up-1" }));
+      expect(await isStaged(sha1)).toBe(true);
+
+      // an asset under another name still serves the same bytes from the staging directory
+      tables.wikiMirrorJob.reset();
+      tables.wikiAsset.seed({
+        title: "Copy.png",
+        slug: "copy.png",
+        filename: "Copy.png",
+        md5Hash: "c".repeat(32),
+        url: `${STAGED_FILE_PATH}Copy.png`,
+        mimeType: "image/png",
+        sizeBytes: bytes.length,
+        sha1,
+      });
+      await runUploadJob(uploadJob(sha1, { id: "job-up-1" }));
+      expect(await isStaged(sha1)).toBe(true);
+    });
   });
 });
