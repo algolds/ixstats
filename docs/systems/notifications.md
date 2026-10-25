@@ -115,7 +115,7 @@ Server writers include achievements, auctions and card market, budget year rollo
 alliances, policies, influence), follows, forum, government, legislation, meetings, national issues, polls,
 quick actions, security, tax system, ThinkPages posts, ThinkTanks, trading offers, country linking, Vault admin and
 daily claims, messaging, and the intelligence alert thresholds (`server/shared/intelligence-alert-thresholds.ts`,
-called from `countries.update`).
+called from `countries.update` / `adminUpdate`, the `stat-progression` job and event-spine consequences).
 
 `notifyAdminAction` sets `deliveryMethod` (`modal`, `dynamic-island` or `toast`), but the tray does not read
 `deliveryMethod`; every row is shown the same way.

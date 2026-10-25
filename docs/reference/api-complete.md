@@ -98,7 +98,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 
 ## Core Systems
 
-### countries Router (34 procedures)
+### countries Router (35 procedures)
 
 Country reads are split across `list`, `economy`, `identity`, `management`, `wiki`, `atomic` and `flags` modules and spread into one namespace (`flags` is nested: `api.countries.flags.*`).
 
@@ -130,8 +130,9 @@ api.countries.checkNameAvailable.useQuery({ countryId, name })
 api.countries.getByNameWithAtomic.useQuery({ name, realm? })
 api.countries.flags.resolveBatch.useQuery({ countryNames, fallbackPolicy? })
 
-// Mutations (9)
-api.countries.update.useMutation() // { id, ...fields } (passthrough)
+// Mutations (10)
+api.countries.update.useMutation() // { id, name?, flag? } (strict: any other key is BAD_REQUEST)
+api.countries.adminUpdate.useMutation() // admin: { id, name?, continent?, region?, currentPopulation?, currentGdpPerCapita?, currentTotalGdp?, hideDiplomaticOps?, hideStratcommIntel? }
 api.countries.createCountry.useMutation() // { name, foundationCountry, economicInputs?, governmentComponents?, taxSystemData?, governmentStructure?, economyBuilderState?, archetypeId? }
 api.countries.rename.useMutation() // { countryId, name, expected: { name } }; the old slug redirects
 api.countries.saveIdentity.useMutation() // one editor section's identity fields, with the values it loaded
