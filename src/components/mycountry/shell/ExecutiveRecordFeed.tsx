@@ -1,14 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
-import {
-  NavArrowDown as ChevronDown,
-  NavArrowRight,
-  ArrowUp,
-  ArrowDown,
-  ArrowUpRight,
-} from "iconoir-react";
+import { NavArrowDown as ChevronDown, NavArrowRight, ArrowUp, ArrowDown } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -26,12 +19,11 @@ import {
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Card } from "~/components/ui/card";
 
-type FeedFilter = "all" | "diplomatic" | "military" | "economic" | "political";
+type FeedFilter = "all" | "diplomatic" | "economic" | "political";
 
 const FEED_FILTERS: ReadonlyArray<{ id: FeedFilter; label: string }> = [
   { id: "all", label: "All" },
   { id: "diplomatic", label: "Diplomacy" },
-  { id: "military", label: "Defense" },
   { id: "economic", label: "Economy" },
   { id: "political", label: "Politics" },
 ];
@@ -41,7 +33,6 @@ type FeedDrill = Exclude<DrillSheetKind, { kind: "intent" } | null>;
 /** Category substrings that put an item under each filter. */
 const FILTER_KEYWORDS: Record<Exclude<FeedFilter, "all">, string[]> = {
   diplomatic: ["diplo"],
-  military: ["milit", "defen", "secur"],
   economic: ["econ", "ledger"],
   political: ["polit", "elect", "gov"],
 };
@@ -49,9 +40,6 @@ const FILTER_KEYWORDS: Record<Exclude<FeedFilter, "all">, string[]> = {
 const DRILL_BY_CATEGORY: Record<string, FeedDrill> = {
   diplomatic: { kind: "relations" },
   diplomacy: { kind: "relations" },
-  military: { kind: "defense" },
-  defense: { kind: "defense" },
-  security: { kind: "defense" },
   economic: { kind: "economy" },
   ledger: { kind: "economy" },
 };
@@ -65,13 +53,11 @@ function RecordRow({
   item,
   isExpanded,
   onToggle,
-  countrySlug,
   onOpenDrill,
 }: {
   item: CanonFeedItem;
   isExpanded: boolean;
   onToggle: () => void;
-  countrySlug?: string;
   onOpenDrill?: (drill: FeedDrill) => void;
 }) {
   const meta = (item.category && CATEGORY_STYLE[item.category]) || CATEGORY_STYLE.ledger!;
@@ -166,18 +152,6 @@ function RecordRow({
                 <NavArrowRight aria-hidden="true" className="opacity-60" />
               </Button>
             )}
-            <Button asChild variant="ghost" size="sm" className="text-label-secondary h-11 sm:h-8">
-              <Link
-                href={
-                  countrySlug
-                    ? `/mycountry/changelog?country=${countrySlug}`
-                    : "/mycountry/changelog"
-                }
-              >
-                Full ledger
-                <ArrowUpRight aria-hidden="true" className="size-3.5" />
-              </Link>
-            </Button>
           </div>
         </div>
       )}
@@ -187,11 +161,9 @@ function RecordRow({
 
 export function ExecutiveRecordFeed({
   items,
-  countrySlug,
   onOpenDrill,
 }: {
   items: CanonFeedItem[];
-  countrySlug?: string;
   onOpenDrill?: (drill: FeedDrill) => void;
 }) {
   const [visibleCount, setVisibleCount] = useState(5);
@@ -251,7 +223,6 @@ export function ExecutiveRecordFeed({
                   item={item}
                   isExpanded={expandedId === item.id}
                   onToggle={() => setExpandedId((prev) => (prev === item.id ? null : item.id))}
-                  countrySlug={countrySlug}
                   onOpenDrill={onOpenDrill}
                 />
               ))}
