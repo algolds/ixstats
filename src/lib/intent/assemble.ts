@@ -175,6 +175,12 @@ const KEYWORDS: Record<Category, string[]> = {
   ],
 };
 
+/**
+ * Words that say how a goal is paid for, not what it is about: they count half, so "increase
+ * public education funding" is a social goal, not a fiscal one ("fund" alone still reads fiscal).
+ */
+const WEAK_KEYWORDS = new Set(["fund"]);
+
 // category → real GovernmentDepartment.category (for budget writes)
 const CATEGORY_TO_DEPT: Record<Category, string> = {
   defense: "Defense",
@@ -194,6 +200,30 @@ export const CATEGORY_TO_BROKER: Record<Category, string | null> = {
   security: "party",
 };
 const NOTCH_PERCENT = 1.5; // one budget "notch" = +1.5 allocatedPercent
+
+/**
+ * Goals that name a department inside a broad category: their budget line goes to that department
+ * instead of the category's default (social → Health).
+ */
+const DEPARTMENT_FOCUS: { category: Category; keywords: string[]; dept: string }[] = [
+  {
+    category: "social",
+    keywords: ["education", "school", "teacher", "university", "tuition"],
+    dept: "Education",
+  },
+  { category: "social", keywords: ["pension", "welfare", "poverty"], dept: "Social Services" },
+];
+
+/** The department a goal's budget line moves, and the line's name. */
+function budgetTargetOf(cat: Category, goal: string): { dept: string; line: string } {
+  const g = goal.toLowerCase();
+  const focus = DEPARTMENT_FOCUS.find(
+    (f) => f.category === cat && f.keywords.some((k) => g.includes(k))
+  );
+  return focus
+    ? { dept: focus.dept, line: focus.dept }
+    : { dept: CATEGORY_TO_DEPT[cat], line: RECIPES[cat].budgetLine };
+}
 
 /** Nudge base acceptance by the aligned broker's disposition. Pure + testable. */
 export function weightAcceptance(
@@ -239,7 +269,10 @@ export function classifyGoal(goal: string): { category: Category } {
   let best: Category | null = null;
   let bestHits = 0;
   for (const cat of Object.keys(KEYWORDS) as Category[]) {
-    const hits = KEYWORDS[cat].filter((k) => g.includes(k)).length;
+    const hits = KEYWORDS[cat].reduce(
+      (sum, k) => (g.includes(k) ? sum + (WEAK_KEYWORDS.has(k) ? 0.5 : 1) : sum),
+      0
+    );
     if (hits > bestHits) {
       bestHits = hits;
       best = cat;
@@ -396,9 +429,9 @@ function scale(c: IntentConsequence, f: number): IntentConsequence {
   return { ...c, value: Math.round(c.value * f * 100) / 100 };
 }
 
-// oxlint-disable-next-line typescript/no-unused-vars
-function buildPackage(tier: Tier, cat: Category, goal: string, target?: string): IntentPackage {
+function buildPackage(tier: Tier, cat: Category, goal: string): IntentPackage {
   const r = RECIPES[cat];
+  const budget = budgetTargetOf(cat, goal);
   const f = TIER_SCALE[tier];
   const changes: ChangeLine[] = [];
   const consequences: IntentConsequence[] = [];
@@ -407,9 +440,9 @@ function buildPackage(tier: Tier, cat: Category, goal: string, target?: string):
   const notches = tier === "measured" ? 1 : tier === "moderate" ? 2 : 3;
   changes.push({
     kind: "budget",
-    label: `${r.budgetLine} budget +${notches} notch${notches > 1 ? "es" : ""}`,
-    detail: "reallocated from the general fund",
-    deptCategory: CATEGORY_TO_DEPT[cat],
+    label: `${budget.line} budget +${notches} notch${notches > 1 ? "es" : ""}`,
+    detail: "from spare budget, then the other departments in proportion",
+    deptCategory: budget.dept,
     deltaPercent: notches * NOTCH_PERCENT,
   });
 
@@ -435,10 +468,11 @@ function buildPackage(tier: Tier, cat: Category, goal: string, target?: string):
     });
     consequences.push(scale(r.improve, 2.2));
   } else {
+    // The directive carries the mandate itself; no separate Policy row is created.
     changes.push({
       kind: "policy",
-      label: `Enact "${r.policyName}"`,
-      detail: tier === "extreme" ? "an aggressive mandate" : "a targeted mandate",
+      label: `"${r.policyName}" mandate`,
+      detail: `${tier === "extreme" ? "an aggressive" : "a targeted"} mandate carried by this directive`,
     });
     consequences.push(scale(r.improve, f));
     consequences.push(scale(r.strain, f));

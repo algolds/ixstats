@@ -166,7 +166,28 @@ describe("revealConsequences — fog is the build's blind spots", () => {
   });
 });
 
-import { classifyGoal } from "~/lib/intent/assemble";
+import { assemblePackages, classifyGoal } from "~/lib/intent/assemble";
+
+describe("directive routing of a department's goal", () => {
+  it("routes 'Increase public education funding' to Education, not Treasury", () => {
+    const { category, packages } = assemblePackages("Increase public education funding");
+    expect(category).toBe("social");
+    const budget = packages[1]!.changes.find((c) => c.kind === "budget")!;
+    expect(budget).toMatchObject({ deptCategory: "Education", deltaPercent: 3 });
+    expect(budget.label).toMatch(/^Education budget/);
+    // A goal that is only about money still reads fiscal
+    expect(classifyGoal("Establish a sovereign wealth fund").category).toBe("fiscal");
+    expect(classifyGoal("Fund national mental health initiatives").category).toBe("social");
+  });
+
+  it("names the mandate the directive carries, never promising to enact a separate policy", () => {
+    const labels = assemblePackages("Cut the government budget deficit").packages.flatMap((p) =>
+      p.changes.map((c) => c.label)
+    );
+    expect(labels).toContain('"Fiscal Adjustment Act" mandate');
+    expect(labels.some((label) => label.startsWith("Enact"))).toBe(false);
+  });
+});
 
 describe("classifyGoal over real goal texts", () => {
   it.each([
