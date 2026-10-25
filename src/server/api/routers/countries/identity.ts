@@ -24,6 +24,7 @@ export const identityProcedures = {
           landArea: true,
           populationDensity: true,
           centroid: true,
+          realmId: true,
         },
       });
       const country = pickCountryRef(rows, input.id);
@@ -44,6 +45,7 @@ export const identityProcedures = {
         landArea: country.landArea,
         populationDensity: country.populationDensity,
         centroid: country.centroid,
+        realmId: country.realmId,
       };
     }),
 

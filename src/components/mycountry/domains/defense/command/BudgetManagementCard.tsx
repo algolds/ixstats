@@ -17,6 +17,8 @@ import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "~/components/ui/sheet";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { useCanEdit } from "~/context/MyCountryEditModeContext";
+import { useNationClock } from "~/hooks/useNationClock";
+import { formatBudgetYear } from "~/lib/realms/realm-year";
 import { CreateGovernmentStructureButton } from "~/components/mycountry/domains/government/CreateGovernmentStructureButton";
 import { ALLOCATION_PERCENT_MAX } from "~/lib/government/budget-math";
 import type { DefenseLine } from "~/lib/military/defense-budget";
@@ -60,8 +62,8 @@ function BudgetGuide() {
             <h4 className="mb-2 font-semibold">Where it comes from</h4>
             <p className="text-label-secondary">
               Your defense budget is every Defense department line in the National budget, added
-              together. Here you edit the largest of them; a change in the National budget shows here
-              too.
+              together. Here you edit the largest of them; a change in the National budget shows
+              here too.
             </p>
           </div>
           <div>
@@ -218,6 +220,8 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
   // The free Defense preview shows the budget read-only.
   const { canEdit } = useCanEdit();
   const hasLine = line.kind === "line";
+  const clock = useNationClock();
+  const yearLabel = (year: number) => (clock ? formatBudgetYear(year, clock) : String(year));
   return (
     <Card content="data">
       <CardHeader className="p-5 pb-4">
@@ -231,7 +235,7 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
             <p className="text-label-secondary text-body mt-1">
               {hasLine
                 ? `The ${line.departmentName} line of the national budget${
-                    line.budgetYear !== null ? ` for FY${line.budgetYear}` : ""
+                    line.budgetYear !== null ? ` for ${yearLabel(line.budgetYear)}` : ""
                   }`
                 : "The Defense department's line of the national budget"}
             </p>

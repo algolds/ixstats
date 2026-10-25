@@ -32,6 +32,8 @@ import { PageAdminMenuItems } from "~/components/wiki-os/admin/PageAdminMenuItem
 interface WikiCountry {
   id?: string;
   name?: string | null;
+  /** The country's realm: country actions across realms are refused, so the menu disables them up front. */
+  realmId?: string | null;
 }
 
 export interface WikiPageToolsProps {
@@ -92,6 +94,7 @@ function CountryActionsDialog({
     <CountryActionsMenu
       targetCountryId={country.id ?? ""}
       targetCountryName={country.name ?? "Country"}
+      targetRealmId={country.realmId ?? null}
       viewerCountryId={userProfile?.countryId ?? undefined}
       isOpen={open}
       onClose={onClose}

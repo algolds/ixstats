@@ -175,9 +175,10 @@ export function EventWizard({ onCreated }: EventWizardProps) {
       severity: form.severity,
       duration: form.duration,
       affectedCountryIds: form.affectedCountryIds,
+      allCountries: form.scope === "global",
     },
     {
-      enabled: step === 4 && form.affectedCountryIds.length > 0,
+      enabled: step === 4 && (form.scope === "global" || form.affectedCountryIds.length > 0),
       refetchOnWindowFocus: false,
     }
   );
@@ -209,6 +210,7 @@ export function EventWizard({ onCreated }: EventWizardProps) {
       duration: form.duration,
       startsAt,
       affectedCountryIds: form.affectedCountryIds,
+      allCountries: form.scope === "global",
       generateEffects: true,
       parameters: {
         scope: form.scope,

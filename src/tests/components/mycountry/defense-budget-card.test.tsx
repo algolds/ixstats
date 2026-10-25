@@ -52,7 +52,7 @@ function renderCard(opts: { line?: DefenseLine; canEdit?: boolean; editing?: boo
 it("shows the Defense department line of the national budget", () => {
   renderCard({});
   expect(
-    screen.getByText(/The Ministry of Defence line of the national budget for FY2040/)
+    screen.getByText(/The Ministry of Defence line of the national budget for 2040/)
   ).toBeTruthy();
   expect(screen.getByText("8000000000")).toBeTruthy();
   expect(screen.getByText("100000000000")).toBeTruthy();
