@@ -46,7 +46,7 @@ export function CountryAdminPanel() {
   } | null>(null);
 
   // Mutation for updating country
-  const updateMutation = api.countries.update.useMutation();
+  const updateMutation = api.countries.adminUpdate.useMutation();
 
   // Prepare country list
   const countries = useMemo(() => {
