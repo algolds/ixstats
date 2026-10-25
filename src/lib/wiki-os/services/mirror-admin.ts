@@ -10,6 +10,7 @@
 import { db } from "~/server/db";
 import { mirrorBotName } from "../adapters/mediawiki/csrf-cache";
 import { PageOperationError } from "../core/page-management-service";
+import { canonicalizeTitle } from "../core/title";
 import { MIRROR_SOURCE, scheduleMirrorKick } from "./mirror-outbox";
 import { WINDOW_SIZE } from "./mirror-queue";
 
@@ -136,19 +137,25 @@ const DISCARDED = { state: "discarded" } as const;
 
 /**
  * Which dead jobs a bulk action covers: every one, or the ones that hold `title` (the jobs of that title, and the
- * moves into it).
+ * moves into it). The title is read as a job's is stored, canonical ("foo_bar" is "Foo bar").
  */
 export interface DeadJobFilter {
   title?: string;
 }
 
-const deadJobs = ({ title }: DeadJobFilter) => ({
-  source: MIRROR_SOURCE,
-  state: "dead",
-  ...(title === undefined
-    ? {}
-    : { OR: [{ title }, { kind: "move", payload: { path: ["to"], equals: title } }] }),
-});
+const deadJobs = ({ title: typed }: DeadJobFilter) => {
+  const title =
+    typed === undefined
+      ? undefined
+      : (canonicalizeTitle(typed, { source: MIRROR_SOURCE })?.title ?? typed);
+  return {
+    source: MIRROR_SOURCE,
+    state: "dead",
+    ...(title === undefined
+      ? {}
+      : { OR: [{ title }, { kind: "move", payload: { path: ["to"], equals: title } }] }),
+  };
+};
 
 /** Try a dead job again from its first attempt; it blocks nothing once it succeeds. */
 export async function requeueMirrorJob(id: string): Promise<void> {

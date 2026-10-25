@@ -49,13 +49,22 @@ import { db } from "~/server/db";
 import { scheduleMirrorKick } from "~/lib/wiki-os/services/mirror-outbox";
 
 const createCaller = createCallerFactory(wikiosUtilitiesRouter);
+/** The audit log the router writes through `ctx.db`. */
+const auditCreate = jest.fn();
 const caller = (role: string, level: number, clerk = "user_x") =>
   createCaller(
     createMockRouterContext({
       auth: { userId: clerk },
-      user: { id: "db1", clerkUserId: clerk, role: { name: role, level } },
+      user: { id: "db1", clerkUserId: clerk, handle: "ana", role: { name: role, level } },
+      db: { adminAuditLog: { create: auditCreate } },
     }) as never
   );
+/** The audit rows written, as the router wrote them. */
+const audited = () =>
+  auditCreate.mock.calls.map(([args]) => {
+    const { data } = args as { data: Record<string, string> };
+    return { ...data, changes: JSON.parse(data.changes) as unknown };
+  });
 const admin = () => caller("admin", 10);
 const member = () => caller("user", 100);
 const signedOut = () => createCaller(createMockRouterContext({ auth: null, user: null }) as never);
@@ -131,10 +140,27 @@ describe.each([
     expect(updateMany.mock.calls[0]?.[0]).toMatchObject(expected);
   });
 
-  it("answers NOT_FOUND for a job that is not dead", async () => {
+  it("answers NOT_FOUND for a job that is not dead, and audits nothing", async () => {
     updateMany.mockResolvedValue({ count: 0 });
 
     await expect(admin()[name]({ id: "j1" })).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(auditCreate).not.toHaveBeenCalled();
+  });
+
+  it("writes the audit row: who, what, and the job's id", async () => {
+    await admin()[name]({ id: "j1" });
+
+    expect(audited()).toEqual([
+      {
+        action: name === "requeueMirrorJob" ? "wikios.mirror.requeue" : "wikios.mirror.discard",
+        targetType: "wikiMirrorJob",
+        targetId: "j1",
+        targetName: "Dead mirror job",
+        changes: { id: "j1" },
+        adminId: "db1",
+        adminName: "ana",
+      },
+    ]);
   });
 
   it("refuses a member and a visitor, and touches nothing", async () => {
@@ -177,6 +203,44 @@ describe.each([
     expect(updateMany.mock.calls[1]?.[0]).toEqual({
       where: { source: "ixwiki", state: "dead" },
       data,
+    });
+  });
+
+  it("writes the audit row: who, what, the title (or all) and how many", async () => {
+    updateMany.mockResolvedValue({ count: 3 });
+
+    await admin()[name]({ title: "Foo" });
+    await admin()[name]({});
+
+    const action =
+      name === "requeueDeadMirrorJobs"
+        ? "wikios.mirror.requeue-bulk"
+        : "wikios.mirror.discard-bulk";
+    expect(audited()).toEqual([
+      expect.objectContaining({
+        action,
+        targetId: "Foo",
+        changes: { title: "Foo", count: 3 },
+        adminId: "db1",
+        adminName: "ana",
+      }),
+      expect.objectContaining({ action, targetId: "all", changes: { title: null, count: 3 } }),
+    ]);
+  });
+
+  it("reads the title as a job's is stored: canonical; one that is no title is matched as typed, never as every job", async () => {
+    await admin()[name]({ title: "foo_bar" });
+    await admin()[name]({ title: "Foo[bar" });
+
+    expect(updateMany.mock.calls[0]?.[0]).toMatchObject({
+      where: {
+        OR: [{ title: "Foo bar" }, { kind: "move", payload: { path: ["to"], equals: "Foo bar" } }],
+      },
+    });
+    expect(updateMany.mock.calls[1]?.[0]).toMatchObject({
+      where: {
+        OR: [{ title: "Foo[bar" }, { kind: "move", payload: { path: ["to"], equals: "Foo[bar" } }],
+      },
     });
   });
 

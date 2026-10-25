@@ -44,13 +44,22 @@ import {
 } from "~/lib/wiki-os/services/inbound-dead-letters";
 
 const createCaller = createCallerFactory(wikiosUtilitiesRouter);
+/** The audit log the router writes through `ctx.db`. */
+const auditCreate = jest.fn();
 const caller = (role: string, level: number) =>
   createCaller(
     createMockRouterContext({
       auth: { userId: "user_x" },
       user: { id: "db1", clerkUserId: "user_x", role: { name: role, level } },
+      db: { adminAuditLog: { create: auditCreate } },
     }) as never
   );
+/** The audit rows written: action, target and what changed. */
+const audited = () =>
+  auditCreate.mock.calls.map(([args]) => {
+    const { data } = args as { data: Record<string, string> };
+    return [data.action, data.targetId, JSON.parse(data.changes) as unknown, data.adminName];
+  });
 const admin = () => caller("admin", 10);
 const member = () => caller("user", 100);
 const signedOut = () => createCaller(createMockRouterContext({ auth: null, user: null }) as never);
@@ -123,6 +132,20 @@ describe("the quarantined sync steps", () => {
       success: true,
     });
     expect(dismiss).toHaveBeenCalledWith("dl1");
+  });
+
+  it("audits a retry, a resync and a dismissal with the step's id and the outcome; a refusal writes nothing", async () => {
+    await admin().retryQuarantinedSyncStep({ id: "dl1" });
+    await admin().resyncQuarantinedPage({ id: "dl2" });
+    await admin().dismissQuarantinedSyncStep({ id: "dl3" });
+    dismiss.mockRejectedValueOnce(new PageOperationError("NOT_FOUND", "No quarantined step."));
+    await expect(admin().dismissQuarantinedSyncStep({ id: "x" })).rejects.toBeDefined();
+
+    expect(audited()).toEqual([
+      ["wikios.quarantine.retry", "dl1", { id: "dl1", outcome: "applied" }, "user_x"],
+      ["wikios.quarantine.resync", "dl2", { id: "dl2", outcome: "applied" }, "user_x"],
+      ["wikios.quarantine.dismiss", "dl3", { id: "dl3" }, "user_x"],
+    ]);
   });
 
   it("answers NOT_FOUND for a step that is not quarantined and CONFLICT while a sync runs", async () => {

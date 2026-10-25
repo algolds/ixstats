@@ -28,6 +28,17 @@ import {
   retryQuarantined,
 } from "~/lib/wiki-os/services/inbound-dead-letters";
 import { refusals } from "~/lib/wiki-os/permissions";
+import { auditWikiosAdmin, type WikiosAdminActor } from "~/lib/wiki-os/services/wikios-admin-audit";
+
+/** The administrator an audit row names. */
+const actorOf = (user: {
+  id: string;
+  clerkUserId: string;
+  handle: string | null;
+}): WikiosAdminActor => ({
+  id: user.id,
+  name: user.handle ?? user.clerkUserId,
+});
 
 /** A mirror job or a quarantined sync step, by id. */
 const rowIdInput = z.object({ id: z.string().min(1).max(64) });
@@ -146,27 +157,49 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
    */
   getMirrorStatus: adminProcedure.query(() => getMirrorStatus()),
 
-  /** Try a dead mirror job again from its first attempt. */
-  requeueMirrorJob: adminProcedure.input(rowIdInput).mutation(async ({ input }) => {
+  /** Try a dead mirror job again from its first attempt. Audited. */
+  requeueMirrorJob: adminProcedure.input(rowIdInput).mutation(async ({ ctx, input }) => {
     await refusals(requeueMirrorJob(input.id));
+    await auditWikiosAdmin(ctx.db, actorOf(ctx.user), {
+      action: "wikios.mirror.requeue",
+      targetId: input.id,
+      changes: { id: input.id },
+    });
     return { success: true as const };
   }),
 
-  /** Give up on a dead mirror job, so the jobs behind it for its title can run. */
-  discardMirrorJob: adminProcedure.input(rowIdInput).mutation(async ({ input }) => {
+  /** Give up on a dead mirror job, so the jobs behind it for its title can run. Audited. */
+  discardMirrorJob: adminProcedure.input(rowIdInput).mutation(async ({ ctx, input }) => {
     await refusals(discardMirrorJob(input.id));
+    await auditWikiosAdmin(ctx.db, actorOf(ctx.user), {
+      action: "wikios.mirror.discard",
+      targetId: input.id,
+      changes: { id: input.id },
+    });
     return { success: true as const };
   }),
 
-  /** Try every dead mirror job of a title (or every dead job) again from its first attempt. */
-  requeueDeadMirrorJobs: adminProcedure
-    .input(deadJobsInput)
-    .mutation(async ({ input }) => ({ count: await requeueDeadJobs(input) })),
+  /** Try every dead mirror job of a title (or every dead job) again from its first attempt. Audited. */
+  requeueDeadMirrorJobs: adminProcedure.input(deadJobsInput).mutation(async ({ ctx, input }) => {
+    const count = await requeueDeadJobs(input);
+    await auditWikiosAdmin(ctx.db, actorOf(ctx.user), {
+      action: "wikios.mirror.requeue-bulk",
+      targetId: input.title ?? "all",
+      changes: { title: input.title ?? null, count },
+    });
+    return { count };
+  }),
 
-  /** Give up on every dead mirror job of a title (or every dead job), so the jobs behind them can run. */
-  discardDeadMirrorJobs: adminProcedure
-    .input(deadJobsInput)
-    .mutation(async ({ input }) => ({ count: await discardDeadJobs(input) })),
+  /** Give up on every dead mirror job of a title (or every dead job), so the jobs behind them can run. Audited. */
+  discardDeadMirrorJobs: adminProcedure.input(deadJobsInput).mutation(async ({ ctx, input }) => {
+    const count = await discardDeadJobs(input);
+    await auditWikiosAdmin(ctx.db, actorOf(ctx.user), {
+      action: "wikios.mirror.discard-bulk",
+      targetId: input.title ?? "all",
+      changes: { title: input.title ?? null, count },
+    });
+    return { count };
+  }),
 
   /** The conflict log, newest first: every collision, what won, what it overwrote and who was told. */
   listConflicts: adminProcedure
@@ -186,20 +219,37 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
 
   /**
    * Apply a quarantined step again, through the same conflict rule as a cycle: "skipped" when MediaWiki no longer has
-   * it, "failed" counts the attempt; CONFLICT when a later classic change of its page or user was applied.
+   * it, "failed" counts the attempt; CONFLICT when a later classic change of its page or user was applied. Audited.
    */
-  retryQuarantinedSyncStep: adminProcedure
-    .input(rowIdInput)
-    .mutation(async ({ input }) => ({ outcome: await refusals(retryQuarantined(input.id)) })),
+  retryQuarantinedSyncStep: adminProcedure.input(rowIdInput).mutation(async ({ ctx, input }) => {
+    const outcome = await refusals(retryQuarantined(input.id));
+    await auditWikiosAdmin(ctx.db, actorOf(ctx.user), {
+      action: "wikios.quarantine.retry",
+      targetId: input.id,
+      changes: { id: input.id, outcome },
+    });
+    return { outcome };
+  }),
 
-  /** For a quarantined edit: bring its page over from classic as it is now, judged like a cycle's revision. */
-  resyncQuarantinedPage: adminProcedure
-    .input(rowIdInput)
-    .mutation(async ({ input }) => ({ outcome: await refusals(resyncQuarantined(input.id)) })),
+  /** For a quarantined edit: bring its page over from classic as it is now, judged like a cycle's revision. Audited. */
+  resyncQuarantinedPage: adminProcedure.input(rowIdInput).mutation(async ({ ctx, input }) => {
+    const outcome = await refusals(resyncQuarantined(input.id));
+    await auditWikiosAdmin(ctx.db, actorOf(ctx.user), {
+      action: "wikios.quarantine.resync",
+      targetId: input.id,
+      changes: { id: input.id, outcome },
+    });
+    return { outcome };
+  }),
 
-  /** Give up on a quarantined step: it leaves the list, and WikiOS keeps what it has for that page. */
-  dismissQuarantinedSyncStep: adminProcedure.input(rowIdInput).mutation(async ({ input }) => {
+  /** Give up on a quarantined step: it leaves the list, and WikiOS keeps what it has for that page. Audited. */
+  dismissQuarantinedSyncStep: adminProcedure.input(rowIdInput).mutation(async ({ ctx, input }) => {
     await refusals(dismissQuarantined(input.id));
+    await auditWikiosAdmin(ctx.db, actorOf(ctx.user), {
+      action: "wikios.quarantine.dismiss",
+      targetId: input.id,
+      changes: { id: input.id },
+    });
     return { success: true as const };
   }),
 
