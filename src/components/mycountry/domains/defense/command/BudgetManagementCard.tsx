@@ -35,15 +35,6 @@ interface BudgetManagementCardProps {
   onAddDefenseDepartment: () => void;
 }
 
-/** Typical shares of a defense budget, shown as a read-only guide. */
-const TYPICAL_SPLIT = [
-  ["Personnel", "35 to 45%", "pay, benefits and pensions"],
-  ["Operations and maintenance", "25 to 35%", "exercises, training and upkeep"],
-  ["Procurement", "10 to 20%", "new equipment, vehicles, ships and aircraft"],
-  ["Research and development", "5 to 15%", "the next generation of equipment"],
-  ["Military construction", "3 to 8%", "bases and installations"],
-] as const;
-
 function BudgetGuide() {
   return (
     <Sheet>
@@ -68,23 +59,19 @@ function BudgetGuide() {
           <div>
             <h4 className="mb-2 font-semibold">Where it comes from</h4>
             <p className="text-label-secondary">
-              Your defense budget is the Defense department&apos;s line in the National budget. A
-              change here changes that line, and a change in the National budget shows here.
+              Your defense budget is every Defense department line in the National budget, added
+              together. Here you edit the largest of them; a change in the National budget shows here
+              too.
             </p>
           </div>
           <div>
-            <h4 className="mb-2 font-semibold">A typical split, as a guide</h4>
-            <p className="text-label-secondary mb-2">
-              Most nations spend their defense budget roughly like this. It is a guide only; the
-              budget is set as one line.
+            <h4 className="mb-2 font-semibold">How it is spent</h4>
+            <p className="text-label-secondary">
+              The budget split under Budget and posture divides it between personnel, operations and
+              maintenance, procurement, research and infrastructure. Each line buys only its own
+              thing: pay keeps people, upkeep keeps them trained and their equipment working,
+              procurement buys equipment.
             </p>
-            <ul className="text-label-secondary list-inside list-disc space-y-1">
-              {TYPICAL_SPLIT.map(([label, share, what]) => (
-                <li key={label}>
-                  <strong>{label}</strong> ({share}): {what}
-                </li>
-              ))}
-            </ul>
           </div>
         </div>
       </SheetContent>
@@ -140,13 +127,14 @@ function ShareEditor({
 }
 
 function LineFigures({ line }: { line: LineData }) {
+  const severalLines = line.totalDefenseAmount > line.allocatedAmount + 0.5;
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-4">
         <div>
           <span className="text-caption text-label-secondary block">Defense budget</span>
           <div className="text-title-1 mt-1 tabular-nums">
-            $<NumberFlowDisplay value={line.allocatedAmount} format="compact" />
+            $<NumberFlowDisplay value={line.totalDefenseAmount} format="compact" />
           </div>
         </div>
         <div>
@@ -156,6 +144,13 @@ function LineFigures({ line }: { line: LineData }) {
           </div>
         </div>
       </div>
+      {severalLines && (
+        <p className="text-label-secondary text-footnote">
+          All Defense lines together. The {line.departmentName} line is $
+          {Math.round(line.allocatedAmount).toLocaleString("en-US")} of it and is the one you edit
+          here.
+        </p>
+      )}
       <div>
         <div className="mb-2 flex items-center justify-between">
           <span className="text-body">Share of the national budget</span>

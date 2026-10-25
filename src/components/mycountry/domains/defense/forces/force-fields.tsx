@@ -76,3 +76,6 @@ export function TextField({
 }
 
 export const formatCount = (n: number) => Math.round(n).toLocaleString("en-US");
+
+/** A 0–1 ratio as a whole percent. */
+export const formatPercent = (ratio: number) => `${Math.round(ratio * 100)}%`;

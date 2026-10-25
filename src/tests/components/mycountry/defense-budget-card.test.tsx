@@ -23,6 +23,7 @@ const defenseLine: DefenseLine = {
   departmentName: "Ministry of Defence",
   allocatedAmount: 8e9,
   allocatedPercent: 8,
+  totalDefenseAmount: 8e9,
   totalBudget: 100e9,
   budgetYear: 2040,
 };
@@ -58,6 +59,12 @@ it("shows the Defense department line of the national budget", () => {
   expect(screen.getByText("Share of the national budget")).toBeTruthy();
   expect(screen.queryByText(/2% of GDP/)).toBeNull();
   expect(screen.queryByText("Procurement")).toBeNull();
+});
+
+it("shows every Defense line summed and names the one it edits", () => {
+  renderCard({ line: { ...defenseLine, totalDefenseAmount: 11e9 } });
+  expect(screen.getByText("11000000000")).toBeTruthy();
+  expect(screen.getByText(/The Ministry of Defence line is \$8,000,000,000 of it/)).toBeTruthy();
 });
 
 it("opens the share editor for the owner", () => {
