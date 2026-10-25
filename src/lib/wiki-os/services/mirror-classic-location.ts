@@ -9,7 +9,7 @@
 import { db } from "~/server/db";
 import { CLASSIC_MOVE_ACTIONS, classicMoveTarget } from "./conflict-page-ops";
 import { operationChanges } from "./conflict-sides";
-import { classicPage, latestClassicEvent } from "./mirror-history";
+import { classicPage, latestClassicEvent, recentHistory, stampedIn } from "./mirror-history";
 
 /** The most moves followed to find where classic has a page now. */
 const MAX_MOVE_HOPS = 5;
@@ -23,18 +23,21 @@ export interface ClassicLocation {
 }
 
 /**
- * Where classic has the page with id `pageId` (any page there when null), starting at `title`: there or at the end of
- * its redirect, or where classic's moves took it from there (a few of them).
+ * Where classic has the page with id `pageId` (any page there when null; or a page `isOurs` says is the page's own),
+ * starting at `title`: there or at the end of its redirect, or where classic's moves took it from there (a few of them).
  */
 export async function findClassicPage(
   title: string,
-  pageId: number | null
+  pageId: number | null,
+  isOurs?: (title: string) => Promise<boolean>
 ): Promise<ClassicLocation> {
   let at = title;
   let occupied = false;
   for (let hop = 0; hop < MAX_MOVE_HOPS; hop++) {
     const page = await classicPage(at, true);
-    if (page.exists && (pageId === null || page.pageId === pageId)) {
+    const ours = page.exists && (pageId === null || page.pageId === pageId);
+    // a title with no page has no history: `isOurs` never holds there
+    if (ours || (isOurs && (await isOurs(page.title)))) {
       return { title: page.title, found: true, heldByAnother: false };
     }
     occupied = page.exists;
@@ -44,6 +47,21 @@ export async function findClassicPage(
     at = next;
   }
   return { title: at, found: false, heldByAnother: occupied };
+}
+
+/**
+ * Whether the classic page at a title holds a revision the article has (stamped with its MediaWiki id): the article's
+ * own page under a new page id, such as one a WikiOS save brought back after a delete. As `findClassicPage`'s `isOurs`.
+ */
+export function holdsRevisionOf(articleId: string): (title: string) => Promise<boolean> {
+  return async (title) => {
+    const history = await recentHistory(title);
+    const stamped = await stampedIn(
+      articleId,
+      history.map((entry) => entry.revid)
+    );
+    return stamped.size > 0;
+  };
 }
 
 /** The error of a job that would have to act on a page that is not its own: an administrator looks at it. */
@@ -69,9 +87,7 @@ export async function classicTitleOf(articleId: string | null, queuedAs: string)
   const title = owed?.job.title ?? article?.title ?? queuedAs;
   if (!article?.mwPageId) return title;
   // not found: the title the page was last at in classic, where a delete there is judged; never another page's
-  const location = await findClassicPage(title, article.mwPageId);
-  // at the article's own title, a page with another id is its page made anew there (deleted, then brought back by a
-  // WikiOS save or recreated in classic): the revision rule judges that. Another page at a title it moved through is not.
-  if (location.heldByAnother && location.title !== title) throw heldByAnotherError(location, title);
+  const location = await findClassicPage(title, article.mwPageId, holdsRevisionOf(articleId));
+  if (location.heldByAnother) throw heldByAnotherError(location, title);
   return location.title;
 }

@@ -931,6 +931,56 @@ describe.each(WIKIOS_MODES)(
       expectQuinnUntouched(quinn);
     });
 
+    /** Kir's save of Caphiria, mirrored after Bob moved the page and an administrator deleted it: it brings it back. */
+    const saveBringsBack = async () => {
+      await ArticleRepository.saveArticle(
+        {
+          slug: "Caphiria",
+          title: "Caphiria",
+          wikitext: "Caphiria is an empire.",
+          expectedHeadRef: toRevisionRef(
+            tables.wikiRevision.rows.find((row) => row.articleId === article("Caphiria")!.id) as {
+              id: string;
+              mwRevId: number | null;
+            }
+          ),
+        },
+        "db-kir",
+        "Kir"
+      );
+      site.movePage("Bob", "Caphiria", "Caphiria Republic", { redirect: false });
+      site.deletePage("Admin", "Caphiria Republic");
+      await mirrorTwice();
+      // the save won over the delete it never saw: the page is back at classic's title, under a new page id
+      expect(site.current("Caphiria Republic")?.text).toBe("Caphiria is an empire.");
+    };
+
+    it("the page a WikiOS save brought back at classic's title (a new page id) is the page's own: a later WikiOS delete deletes it", async () => {
+      await saveBringsBack();
+      await PageManagementService.archiveArticle("Caphiria", "spam", KIR);
+      dateOperation("delete", new Date(Date.now() + 60_000));
+
+      await mirrorTwice();
+      await cycleTwice();
+
+      expect(noteOf("delete")).toBeUndefined();
+      expect(sent("delete").map((request) => request.params.title)).toEqual(["Caphiria Republic"]);
+      expect(site.pages.has("Caphiria Republic")).toBe(false);
+      expect(article("Caphiria Republic")?.status ?? article("Caphiria")?.status).toBe("ARCHIVED");
+    });
+
+    it("the page a WikiOS save brought back at classic's title is the page's own: a later WikiOS move moves it", async () => {
+      await saveBringsBack();
+      await PageManagementService.movePage("Caphiria", "Caphirian Empire", "rename", KIR);
+      dateOperation("move", new Date(Date.now() + 60_000));
+
+      await mirrorTwice();
+
+      expect(jobOf("move").state).toBe("done");
+      expect(site.current("Caphirian Empire")?.text).toBe("Caphiria is an empire.");
+      expect(site.pages.has("Caphiria Republic")).toBe(false);
+    });
+
     it("a classic delete of an unrelated page at a title the page passed through long ago never archives the page", async () => {
       const id = article("Caphiria")!.id;
       site.movePage("Bob", "Caphiria", "Caphiria Republic", { redirect: false });
