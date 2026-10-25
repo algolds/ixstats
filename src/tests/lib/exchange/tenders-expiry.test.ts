@@ -16,7 +16,7 @@ import {
   completeContract,
   createContract,
   createGovernmentContract,
-  placeBid
+  placeBid,
 } from "~/lib/exchange/contracts";
 import { AWARD_GRACE_DAYS, expireLapsedContracts } from "~/lib/exchange/expiry";
 import { notifyExchange } from "~/lib/exchange/notify";

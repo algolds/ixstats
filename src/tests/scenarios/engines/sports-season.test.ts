@@ -186,7 +186,9 @@ describe("sports-season (memory)", () => {
       (await db.sportMatch.findMany({ where: { seasonId: season.id } })).filter(
         (m) => m.status === "completed"
       ).length;
-    const opener = (await db.sportMatch.findMany({ where: { seasonId: season.id, matchDay: 1 } }))[0]!;
+    const opener = (
+      await db.sportMatch.findMany({ where: { seasonId: season.id, matchDay: 1 } })
+    )[0]!;
     expect(opener.scheduledIxTime).toBe(START + 86_400_000);
 
     jest.spyOn(Date, "now").mockReturnValue(START + 12 * 3_600_000);

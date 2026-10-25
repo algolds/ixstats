@@ -118,9 +118,7 @@ describe("sports season & simulation procedures require the league's manager", (
         }),
     ],
   ])("%s rejects an ordinary user", async (_name, run) => {
-    await expect(run(callerAs(OTHER_DB_ID, mockDb()))).rejects.toThrow(
-      /Admin privileges required/
-    );
+    await expect(run(callerAs(OTHER_DB_ID, mockDb()))).rejects.toThrow(/Admin privileges required/);
   });
 });
 
