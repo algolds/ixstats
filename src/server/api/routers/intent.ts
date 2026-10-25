@@ -53,6 +53,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEK_MS = 7 * DAY_MS;
 const COOLDOWN_MS = WEEK_MS; // decided: weekly cooldown between intents
 const WEEKLY_CAP = 3; // safety ceiling on directives committed per IxTime-week
+/** Advisory-lock namespace serialising one nation's directive commits ($executeRaw: the lock returns void). */
+const DIRECTIVE_CAP_LOCK_NAMESPACE = 51001;
 const BUDGET_PCT_MAX = 60; // clamp a single department's allocatedPercent
 
 /**
@@ -450,7 +452,6 @@ export const intentRouter = createTRPCRouter({
       if (!pkg) throw new TRPCError({ code: "BAD_REQUEST", message: "Unknown tier." });
 
       if (input.intentId) await assertCommittableDraft(ctx.db, input.intentId, input.countryId);
-      await assertUnderWeeklyCap(ctx.db, input.countryId);
 
       // Auto-summation prose — ThinkPages draft-ready (push deferred to phase 6).
       const country = await ctx.db.country.findUnique({
@@ -462,13 +463,19 @@ export const intentRouter = createTRPCRouter({
         pkg.changes.map((c) => c.label).join("; ") +
         ".";
 
-      const intent = await saveActiveIntent(ctx.db, {
-        ...input,
-        tier: input.tier as Tier,
-        category,
-        pkg,
-        summary,
-        now,
+      // The cap check and the row it counts are one step under a per-nation lock, so two concurrent commits
+      // cannot both pass the check with the last free slot.
+      const intent = await ctx.db.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(${DIRECTIVE_CAP_LOCK_NAMESPACE}::int, hashtext(${input.countryId}))`;
+        await assertUnderWeeklyCap(tx as PrismaClient, input.countryId);
+        return saveActiveIntent(tx as PrismaClient, {
+          ...input,
+          tier: input.tier as Tier,
+          category,
+          pkg,
+          summary,
+          now,
+        });
       });
 
       // Apply the package through the spine (bounded + audited + narrated), linked to the

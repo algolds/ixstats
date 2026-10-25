@@ -429,3 +429,29 @@ it.each([
     allowed ? to : from
   );
 });
+
+it("two commits racing for the week's last slot: one is refused (the cap check and the row are one locked step)", async () => {
+  for (const goal of ["Earlier one", "Earlier two"]) {
+    await db.intent.create({
+      data: {
+        countryId: "testland",
+        goal,
+        tier: "measured",
+        category: "economy",
+        status: "active",
+        changesJson: "[]",
+        createdIxTime: NOW,
+      },
+    });
+  }
+  const owner = intents(asOwner(db as never, lena));
+  const raced = await Promise.allSettled([
+    owner.commit({ countryId: "testland", goal: CRIME, tier: "measured" }),
+    owner.commit({ countryId: "testland", goal: CRIME, tier: "measured" }),
+  ]);
+  expect(raced.map((r) => r.status).sort()).toEqual(["fulfilled", "rejected"]);
+  expect(raced.find((r) => r.status === "rejected")).toMatchObject({
+    reason: { code: "TOO_MANY_REQUESTS" },
+  });
+  expect(await db.intent.count({ where: { tier: { not: "proposed" } } })).toBe(3);
+});
