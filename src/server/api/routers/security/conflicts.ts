@@ -33,6 +33,64 @@ import {
   withPvPExpiry,
 } from "~/lib/military/pvp-proposals";
 import { isProposalExpired, proposalExpiresAt } from "~/lib/diplomacy/proposal-lifecycle";
+import {
+  PVNPC_STRIKE_COOLDOWN_IXDAYS,
+  ixDaysAgo,
+  ixDaysLater,
+} from "~/lib/military/operation-rules";
+
+/**
+ * A PvNPC strike's target must be a nation the striker has relations with, in the same realm,
+ * and not struck by it within the cooldown (the UI's target list, enforced on the server).
+ */
+async function assertStrikeAllowed(
+  db: PrismaClient,
+  initiator: { id: string; realmId: string },
+  target: { id: string; name: string; realmId: string }
+) {
+  const [relation, lastStrike] = await Promise.all([
+    db.diplomaticRelation.findFirst({
+      where: {
+        OR: [
+          { country1: initiator.id, country2: target.id },
+          { country1: target.id, country2: initiator.id },
+        ],
+      },
+      select: { id: true },
+    }),
+    db.militaryConflict.findFirst({
+      where: {
+        type: "pvnpc",
+        initiatorId: initiator.id,
+        defenderId: target.id,
+        createdAt: { gte: ixDaysAgo(PVNPC_STRIKE_COOLDOWN_IXDAYS) },
+      },
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true },
+    }),
+  ]);
+  if (!relation || initiator.realmId !== target.realmId) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Strikes target NPC nations you have diplomatic relations with in your realm.",
+    });
+  }
+  if (lastStrike) {
+    const next = ixDaysLater(lastStrike.createdAt, PVNPC_STRIKE_COOLDOWN_IXDAYS);
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `You struck ${target.name} recently. You can strike again on ${next.toISOString().slice(0, 10)}.`,
+    });
+  }
+}
+
+const STRIKE_COUNTRY_FIELDS = {
+  id: true,
+  name: true,
+  realmId: true,
+  currentGdpPerCapita: true,
+  currentPopulation: true,
+} as const;
 
 /** Where a defender answers a challenge (the Defense page opens on Special operations). */
 const PVP_CHALLENGE_HREF = "/mycountry/defense?tab=operations";
@@ -549,17 +607,18 @@ export const securityConflictsRouter = createTRPCRouter({
         }),
         ctx.db.country.findUnique({
           where: { id: userProfile.countryId },
-          select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
+          select: STRIKE_COUNTRY_FIELDS,
         }),
         ctx.db.country.findUnique({
           where: { id: input.targetCountryId },
-          select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
+          select: STRIKE_COUNTRY_FIELDS,
         }),
       ]);
 
       if (!initiator || !defender) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
       }
+      await assertStrikeAllowed(ctx.db, initiator, defender);
 
       const outcome = computeConflictOutcome(
         militaryStrength(initiatorBranches),

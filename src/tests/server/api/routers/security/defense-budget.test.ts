@@ -26,7 +26,12 @@ import { createMockCallerContext } from "~/tests/helpers/router-context";
 const OWN = "country_1";
 const USERS = {
   owner: { id: "u_owner", countryId: OWN, membershipTier: "mycountry_premium", role: null },
-  stranger: { id: "u_other", countryId: "country_2", membershipTier: "mycountry_premium", role: null },
+  stranger: {
+    id: "u_other",
+    countryId: "country_2",
+    membershipTier: "mycountry_premium",
+    role: null,
+  },
   free: { id: "u_free", countryId: OWN, membershipTier: "basic", role: null },
 } as const;
 type Who = keyof typeof USERS;

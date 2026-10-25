@@ -13,9 +13,41 @@ import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { StorytellerEffectType } from "~/lib/economy/calculations";
 import { createStorytellerEffect, endStorytellerEffects } from "~/lib/economy/storyteller-effects";
+import {
+  PEACEKEEPING_BONUS_WINDOW_IXDAYS,
+  PEACEKEEPING_RELATION_BONUS,
+  ixDaysAgo,
+} from "~/lib/military/operation-rules";
+import type { PrismaClient } from "@prisma/client";
 
 /** `createdBy` of a military operation's GDP-drain StorytellerEffect. */
 const operationEffectKey = (operationId: string) => `operation:${operationId}`;
+
+/**
+ * The relation a new peacekeeping operation raises: the one with its target, unless an earlier
+ * peacekeeping operation by this nation already raised it within the window (null then).
+ */
+async function peacekeepingRelation(db: PrismaClient, countryId: string, targetId: string) {
+  const recentBonus = await db.militaryOperation.findFirst({
+    where: {
+      countryId,
+      targetCountryId: targetId,
+      operationType: "peacekeeping",
+      diplomaticImpact: { gt: 0 },
+      createdAt: { gte: ixDaysAgo(PEACEKEEPING_BONUS_WINDOW_IXDAYS) },
+    },
+    select: { id: true },
+  });
+  if (recentBonus) return null;
+  return db.diplomaticRelation.findFirst({
+    where: {
+      OR: [
+        { country1: countryId, country2: targetId },
+        { country1: targetId, country2: countryId },
+      ],
+    },
+  });
+}
 
 export const securityOperationsRouter = createTRPCRouter({
   // Get active and past operations
@@ -73,6 +105,13 @@ export const securityOperationsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
+
+      if (input.operationType === "peacekeeping" && input.personnelDeployed <= 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "A peacekeeping operation must deploy personnel.",
+        });
+      }
 
       const userProfile = await ctx.db.user.findUnique({
         where: { clerkUserId: ctx.auth.userId },
@@ -133,6 +172,12 @@ export const securityOperationsRouter = createTRPCRouter({
       const gdp = (country.currentGdpPerCapita ?? 10000) * (country.currentPopulation ?? 1000000);
       const gdpDrain = gdp > 0 ? annualCost / gdp : 0;
 
+      // Peacekeeping raises the relation with its target once per target per window.
+      const relation =
+        input.operationType === "peacekeeping" && input.targetCountryId
+          ? await peacekeepingRelation(ctx.db, input.countryId, input.targetCountryId)
+          : null;
+
       // Create the operation
       const operation = await ctx.db.militaryOperation.create({
         data: {
@@ -146,6 +191,7 @@ export const securityOperationsRouter = createTRPCRouter({
           dailyCost,
           gdpDrain,
           duration: input.duration,
+          diplomaticImpact: relation ? PEACEKEEPING_RELATION_BONUS : 0,
         },
         include: {
           targetCountry: { select: { id: true, name: true } },
@@ -193,22 +239,11 @@ export const securityOperationsRouter = createTRPCRouter({
         });
       }
 
-      // Diplomatic impact for certain operation types
-      if (input.targetCountryId && input.operationType === "peacekeeping") {
-        const relation = await ctx.db.diplomaticRelation.findFirst({
-          where: {
-            OR: [
-              { country1: input.countryId, country2: input.targetCountryId },
-              { country1: input.targetCountryId, country2: input.countryId },
-            ],
-          },
+      if (relation) {
+        await ctx.db.diplomaticRelation.update({
+          where: { id: relation.id },
+          data: { strength: Math.min(100, relation.strength + PEACEKEEPING_RELATION_BONUS) },
         });
-        if (relation) {
-          await ctx.db.diplomaticRelation.update({
-            where: { id: relation.id },
-            data: { strength: Math.min(100, relation.strength + 10) },
-          });
-        }
       }
 
       // Auto-news: military deployment

@@ -168,7 +168,9 @@ describe("security.withdrawPvPConflict", () => {
 });
 
 it("security.getPvPTargets lists only related player nations", async () => {
-  db.diplomaticRelation.findMany.mockResolvedValue([{ country1: "country_1", country2: "country_2" }]);
+  db.diplomaticRelation.findMany.mockResolvedValue([
+    { country1: "country_1", country2: "country_2" },
+  ]);
   db.country.findMany.mockResolvedValue([{ id: "country_2", name: "Defenderland" }]);
   await conflicts("challenger").getPvPTargets();
   expect(db.country.findMany).toHaveBeenCalledWith(
