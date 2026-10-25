@@ -31,6 +31,9 @@ import {
 } from "~/components/ui/select";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { Card } from "~/components/ui/card";
+import { useCanEdit } from "~/context/MyCountryEditModeContext";
+import { useNotify } from "~/hooks/useNotify";
+import { PVP_UNFOUGHT, isUnfoughtConflict } from "~/lib/military/pvp-proposals";
 
 interface PvPConflictPanelProps {
   countryId: string;
@@ -118,13 +121,21 @@ type Conflict = NonNullable<RouterOutputs["security"]["getConflicts"]>[number];
 const opponentOf = (c: Conflict, countryId: string) =>
   c.initiatorId === countryId ? c.defender : c.initiator;
 
+const UNFOUGHT_LABELS: Record<string, string> = {
+  [PVP_UNFOUGHT.declined]: "Declined",
+  [PVP_UNFOUGHT.withdrawn]: "Withdrawn",
+  [PVP_UNFOUGHT.expired]: "Expired",
+};
+
+const CONFLICT_TYPE_LABELS: Record<string, string> = { pvp: "PvP", pvnpc: "PvNPC" };
+
 /** Result badge/icon for a resolved conflict from `countryId`'s point of view. */
 function conflictOutcome(c: Conflict, countryId: string) {
-  if (c.winner === "draw" || c.winner === "declined") {
+  if (c.winner === "draw" || isUnfoughtConflict(c.winner)) {
     return {
       icon: <HandshakeIcon aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />,
       variant: "default" as const,
-      label: c.winner === "declined" ? "Declined" : "Draw",
+      label: UNFOUGHT_LABELS[c.winner ?? ""] ?? "Draw",
     };
   }
   return c.winner === countryId
@@ -151,7 +162,9 @@ function ConflictGroup({ title, children }: { title: string; children: React.Rea
 
 function PastConflictRow({ conflict: c, countryId }: { conflict: Conflict; countryId: string }) {
   const outcome = conflictOutcome(c, countryId);
-  const casualties = c.initiatorId === countryId ? c.initiatorCasualties : c.defenderCasualties;
+  // Casualties go to the conflict's parties only (undefined for anyone else).
+  const casualties =
+    (c.initiatorId === countryId ? c.initiatorCasualties : c.defenderCasualties) ?? 0;
   return (
     <div className="border-separator rounded-control text-body border p-3">
       <div className="flex items-center justify-between">
@@ -160,7 +173,7 @@ function PastConflictRow({ conflict: c, countryId }: { conflict: Conflict; count
           <span>vs {opponentOf(c, countryId)?.name ?? "Unknown"}</span>
           <Badge variant={outcome.variant}>{outcome.label}</Badge>
         </div>
-        {(c.initiatorCasualties > 0 || c.defenderCasualties > 0) && (
+        {casualties > 0 && (
           <span className="text-label-secondary text-footnote">{casualties} casualties</span>
         )}
       </div>
@@ -169,6 +182,9 @@ function PastConflictRow({ conflict: c, countryId }: { conflict: Conflict; count
 }
 
 export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
+  // Initiating (challenge, strike) is premium; answering, withdrawing and concluding are not.
+  const { canEdit } = useCanEdit();
+  const notify = useNotify();
   const [challengeOpen, setChallengeOpen] = useState(false);
   const [strikeOpen, setStrikeOpen] = useState(false);
   const [targetId, setTargetId] = useState("");
@@ -181,10 +197,12 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
     { enabled: !!countryId }
   );
 
-  const { data: relationships } = api.diplomaticCore.getRelationships.useQuery(
-    { countryId },
-    { enabled: challengeOpen }
-  );
+  // Only player nations among the caller's relations; NPC nations cannot answer a challenge.
+  const pvpTargetsQuery = api.security.getPvPTargets.useQuery(undefined, {
+    enabled: challengeOpen,
+    retry: false,
+  });
+  const targetCountries = pvpTargetsQuery.data ?? [];
 
   // Only unclaimed (NPC) related nations; resolvePvNPCConflict rejects player nations.
   const npcTargetsQuery = api.security.getPvNPCTargets.useQuery(undefined, {
@@ -204,6 +222,12 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
 
   const respondMutation = api.security.respondToConflict.useMutation({
     onSuccess: () => void refetch(),
+    onError: (error) => notify.error(`Could not answer the challenge: ${error.message}`),
+  });
+
+  const withdrawMutation = api.security.withdrawPvPConflict.useMutation({
+    onSuccess: () => void refetch(),
+    onError: (error) => notify.error(`Could not withdraw the challenge: ${error.message}`),
   });
 
   const concludeMutation = api.security.concludePvPConflict.useMutation({
@@ -228,17 +252,6 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
     setTargetId("");
     if (open) resolvePvNPCMutation.reset();
   };
-
-  const targetCountries = relationships
-    ? [
-        ...new Map(
-          relationships.map((r) => [
-            r.targetCountryId,
-            { id: r.targetCountryId, name: r.targetCountry ?? r.targetCountryId },
-          ])
-        ).values(),
-      ]
-    : [];
 
   const allConflicts = conflicts ?? [];
   const pendingForMe = allConflicts.filter(
@@ -280,66 +293,79 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
           <Swords aria-hidden="true" className="text-red h-4 w-4" />
           Military conflicts
         </h3>
-        <div className="flex gap-2">
-          <TargetDialog
-            open={strikeOpen}
-            onOpenChange={handleStrikeOpenChange}
-            trigger="PvNPC strike"
-            title="PvNPC military strike"
-            description="Automatically resolve a military engagement against an NPC nation. Outcome is calculated based on relative military strength."
-            targetLabel="Target NPC nation"
-            placeholder={noNpcTargets ? "No NPC nations among your relations" : "Select target..."}
-            reasonPlaceholder="Casus belli..."
-            options={npcTargets ?? []}
-            targetId={targetId}
-            onTargetChange={setTargetId}
-            reason={reason}
-            onReasonChange={setReason}
-            notices={
-              <>
-                <Alert message={npcTargetsQuery.error?.message} />
-                {noNpcTargets && (
-                  <p className="text-label-secondary text-footnote">
-                    Strikes target NPC (unclaimed) nations you have diplomatic relations with. Open
-                    relations with one under Diplomacy first.
-                  </p>
-                )}
-                <Alert message={resolvePvNPCMutation.error?.message} />
-              </>
-            }
-            submitLabel="Engage"
-            pendingLabel="Engaging…"
-            pending={resolvePvNPCMutation.isPending}
-            onSubmit={() =>
-              resolvePvNPCMutation.mutate({
-                targetCountryId: targetId,
-                reason: reason || undefined,
-              })
-            }
-          />
-          <TargetDialog
-            open={challengeOpen}
-            onOpenChange={setChallengeOpen}
-            trigger="PvP challenge"
-            title="Challenge player nation"
-            description="Both sides must agree to rules before combat begins. This prevents metagaming."
-            targetLabel="Target nation"
-            placeholder="Select target..."
-            reasonPlaceholder="Explain the conflict..."
-            options={targetCountries}
-            targetId={targetId}
-            onTargetChange={setTargetId}
-            reason={reason}
-            onReasonChange={setReason}
-            notices={<Alert message={proposeMutation.error?.message} />}
-            submitLabel="Send Challenge"
-            pendingLabel="Sending…"
-            pending={proposeMutation.isPending}
-            onSubmit={() =>
-              proposeMutation.mutate({ defenderId: targetId, reason: reason || undefined })
-            }
-          />
-        </div>
+        {canEdit && (
+          <div className="flex gap-2">
+            <TargetDialog
+              open={strikeOpen}
+              onOpenChange={handleStrikeOpenChange}
+              trigger="PvNPC strike"
+              title="PvNPC military strike"
+              description="Automatically resolve a military engagement against an NPC nation. Outcome is calculated based on relative military strength."
+              targetLabel="Target NPC nation"
+              placeholder={
+                noNpcTargets ? "No NPC nations among your relations" : "Select target..."
+              }
+              reasonPlaceholder="Casus belli..."
+              options={npcTargets ?? []}
+              targetId={targetId}
+              onTargetChange={setTargetId}
+              reason={reason}
+              onReasonChange={setReason}
+              notices={
+                <>
+                  <Alert message={npcTargetsQuery.error?.message} />
+                  {noNpcTargets && (
+                    <p className="text-label-secondary text-footnote">
+                      Strikes target NPC (unclaimed) nations you have diplomatic relations with.
+                      Open relations with one under Diplomacy first.
+                    </p>
+                  )}
+                  <Alert message={resolvePvNPCMutation.error?.message} />
+                </>
+              }
+              submitLabel="Engage"
+              pendingLabel="Engaging…"
+              pending={resolvePvNPCMutation.isPending}
+              onSubmit={() =>
+                resolvePvNPCMutation.mutate({
+                  targetCountryId: targetId,
+                  reason: reason || undefined,
+                })
+              }
+            />
+            <TargetDialog
+              open={challengeOpen}
+              onOpenChange={setChallengeOpen}
+              trigger="PvP challenge"
+              title="Challenge player nation"
+              description="Both sides must agree to rules before combat begins. This prevents metagaming."
+              targetLabel="Target nation"
+              reasonPlaceholder="Explain the conflict..."
+              options={targetCountries}
+              targetId={targetId}
+              onTargetChange={setTargetId}
+              reason={reason}
+              onReasonChange={setReason}
+              placeholder={
+                pvpTargetsQuery.data?.length === 0
+                  ? "No player nations among your relations"
+                  : "Select target..."
+              }
+              notices={
+                <>
+                  <Alert message={pvpTargetsQuery.error?.message} />
+                  <Alert message={proposeMutation.error?.message} />
+                </>
+              }
+              submitLabel="Send Challenge"
+              pendingLabel="Sending…"
+              pending={proposeMutation.isPending}
+              onSubmit={() =>
+                proposeMutation.mutate({ defenderId: targetId, reason: reason || undefined })
+              }
+            />
+          </div>
+        )}
       </div>
 
       {strikeResult && (
@@ -412,11 +438,22 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                       {opponentOf(c, countryId)?.name ?? "Unknown"}
                     </span>
                   </span>
-                  <Badge variant="outline">{c.type.toUpperCase()}</Badge>
+                  <Badge variant="outline">{CONFLICT_TYPE_LABELS[c.type] ?? c.type}</Badge>
                   <Badge variant="outline" className="capitalize">
                     {c.status}
                   </Badge>
                   {c.endsAt && concludeControl(c)}
+                  {c.status === "proposed" && c.initiatorId === countryId && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="ml-auto"
+                      onClick={() => withdrawMutation.mutate({ conflictId: c.id })}
+                      disabled={withdrawMutation.isPending}
+                    >
+                      Withdraw
+                    </Button>
+                  )}
                 </div>
               </Card>
             ))}

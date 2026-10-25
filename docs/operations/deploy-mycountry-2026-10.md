@@ -28,3 +28,13 @@ Data fixes for the MyCountry fix plan (`plans/mycountry-audit/fix-plan.md`). Eac
    become possible for nations with political stability above 50. On the clone: 3 inflation rows converted, 3
    nulled, 5 growth rows restored, 16 stability rows (0.35-0.6 became 35-60), 3 baselines re-stamped (the E2E and
    test nations, 2026 became 2041-2042).
+
+## Any time (before or after the code deploy)
+
+- **WP-F, defense** (`f-defense.sql`). Clamps `MilitaryUnit.readiness` to 0-100 (deployments had no floor) and ends
+  PvP challenges that can never be answered (sent to an NPC nation, or unanswered for 14 days) as `winner = 'expired'`,
+  which unblocks new challenges between those pairs. The local clone had no such rows; expect 0 or a handful.
+  `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/migrations/2026-10-mycountry/f-defense.sql`
+  No other WP-F data step: the defense budget starts empty (the card shows the 2% estimate until an owner saves one), the
+  legacy `SecurityAssessment` / `BorderSecurity` rows are no longer read (all were defaults), and the equipment catalog is
+  already seeded in prod (an admin's first catalog create seeds an empty one).

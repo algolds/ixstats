@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import {
   Shield,
   Archery as Target,
@@ -81,10 +82,18 @@ interface DefenseCommandPanelProps {
   countryId: string;
 }
 
+const DEFENSE_TABS = ["branches", "threats", "assets", "operations", "stability"] as const;
+type DefenseTab = (typeof DEFENSE_TABS)[number];
+
+const isDefenseTab = (value: string | null | undefined): value is DefenseTab =>
+  (DEFENSE_TABS as readonly string[]).includes(value ?? "");
+
 export function DefenseCommandPanel({ countryId }: DefenseCommandPanelProps) {
-  const [activeTab, setActiveTab] = useState<
-    "branches" | "threats" | "assets" | "operations" | "stability"
-  >("branches");
+  // `?tab=operations` (a PvP challenge notification) opens on that tab.
+  const requestedTab = useSearchParams()?.get("tab");
+  const [activeTab, setActiveTab] = useState<DefenseTab>(() =>
+    isDefenseTab(requestedTab) ? requestedTab : "branches"
+  );
 
   const tabs = [
     { id: "branches" as const, label: "Branches & readiness", icon: Shield },

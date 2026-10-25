@@ -445,30 +445,37 @@ it("security.getPvNPCTargets lists only nations no player owns", async () => {
   );
 });
 
-describe("reads that never write (MC-13)", () => {
-  it("security.getSecurityAssessment returns defaults for a country with no assessment", async () => {
-    db.securityAssessment.findUnique.mockResolvedValue(null);
+describe("reads that never write (MC-13), derived on read (P1-21)", () => {
+  beforeEach(() => {
+    for (const model of [
+      "diplomaticRelation",
+      "militaryConflict",
+      "foreignPolicyAction",
+      "crisisEvent",
+      "militaryBranch",
+    ] as const) {
+      db[model].findMany.mockResolvedValue([]);
+    }
+  });
+
+  it("security.getSecurityAssessment derives the assessment and writes nothing", async () => {
     const caller = createCallerFactory(securityAssessmentRouter)(
       createMockCallerContext({ auth: null, user: null, db })
     );
     await expect(caller.getSecurityAssessment({ countryId: "c_1" })).resolves.toMatchObject({
       countryId: "c_1",
-      overallSecurityScore: 60,
-      securityLevel: "moderate",
+      militaryStrength: 0,
+      activeThreatCount: 0,
+      activeThreats: [],
     });
+    expect(db.securityAssessment.findUnique).not.toHaveBeenCalled();
     expect(db.securityAssessment.create).not.toHaveBeenCalled();
   });
 
-  it("security.getBorderSecurity returns defaults for a country with no row", async () => {
-    db.borderSecurity.findUnique.mockResolvedValue(null);
+  it("security.getBorderSecurity derives border security from neighbours and writes nothing", async () => {
     const caller = createCallerFactory(securityBordersRouter)(createMockCallerContext({ db }));
     await expect(caller.getBorderSecurity({ countryId: "c1" })).resolves.toEqual(
-      expect.objectContaining({
-        countryId: "c1",
-        overallSecurityLevel: 70,
-        securityStatus: "moderate",
-        neighborThreats: [],
-      })
+      expect.objectContaining({ countryId: "c1", landBorders: 0, neighborThreats: [] })
     );
     expect(db.borderSecurity.create).not.toHaveBeenCalled();
     expect(db.borderSecurity.upsert).not.toHaveBeenCalled();

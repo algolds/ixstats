@@ -5,12 +5,12 @@
  * `api.security.*` is byte-identical to the former monolith — no call sites change.
  *
  * Domains:
- *  - assessment: security assessment + threat catalog (threats, intelligence, incidents)
+ *  - assessment: security assessment, derived on read (~/lib/military/threat-picture)
  *  - military:   order of battle read and military assets
  *  - force-structure: branch and unit authoring, starter force (MC-3)
  *  - defense:    defense budget, overview, and intelligence metrics
- *  - stability:  internal stability and security events
- *  - borders:    border security and neighbor threats
+ *  - stability:  internal stability (owner-only metrics)
+ *  - borders:    border security and neighbor threats, derived on read
  *  - operations: active operations and PvP/PvNPC conflicts
  */
 import { mergeRouters } from "~/server/api/trpc";

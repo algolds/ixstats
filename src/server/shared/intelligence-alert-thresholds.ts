@@ -5,6 +5,8 @@
  * cross-router dependencies (Plan 153).
  */
 import { notificationAPI } from "~/lib/notifications/api";
+import { loadThreatPicture } from "~/lib/military/threat-picture-loader";
+import type { ThreatPicture } from "~/lib/military/threat-picture";
 
 /**
  * Where the owner reads and resolves these alerts: the Intelligence alerts card on the
@@ -76,7 +78,12 @@ interface MetricSources {
   realTime: Awaited<ReturnType<typeof calculateRealTimeMetrics>>;
   activeRelationships: number;
   embassyCount: number;
+  /** Derived on read; loaded only when a threshold watches a security-picture metric. */
+  threatPicture: ThreatPicture | null;
 }
+
+/** Metrics read from the derived threat picture (military strength score 0-100, threat count). */
+const THREAT_PICTURE_METRICS = new Set(["militaryStrength", "threatLevel"]);
 
 /** Threshold metric name -> its current value (null when not recorded). */
 const METRIC_VALUES: Record<string, (m: MetricSources) => number | null> = {
@@ -90,8 +97,8 @@ const METRIC_VALUES: Record<string, (m: MetricSources) => number | null> = {
   populationWellbeing: (m) => m.country.populationWellbeing,
   // Security
   securityScore: (m) => m.realTime.security,
-  militaryStrength: (m) => m.country.securityAssessment?.militaryStrength ?? null,
-  threatLevel: (m) => m.country.securityAssessment?.activeThreatCount ?? null,
+  militaryStrength: (m) => m.threatPicture?.militaryStrength ?? null,
+  threatLevel: (m) => m.threatPicture?.activeThreatCount ?? null,
   // Diplomatic
   diplomaticStanding: (m) => m.country.diplomaticStanding,
   activeRelationships: (m) => m.activeRelationships,
@@ -202,10 +209,7 @@ export async function evaluateThresholds(
   });
   if (thresholds.length === 0) return;
 
-  const country = await db.country.findUnique({
-    where: { id: countryId },
-    include: { securityAssessment: true },
-  });
+  const country = await db.country.findUnique({ where: { id: countryId } });
   if (!country) return;
 
   const activeRelationships = await db.diplomaticRelation.count({
@@ -222,6 +226,11 @@ export async function evaluateThresholds(
     realTime: await calculateRealTimeMetrics(db, countryId),
     activeRelationships,
     embassyCount,
+    threatPicture: thresholds.some((t: { metricName: string }) =>
+      THREAT_PICTURE_METRICS.has(t.metricName)
+    )
+      ? await loadThreatPicture(db, countryId)
+      : null,
   };
 
   for (const t of thresholds) {

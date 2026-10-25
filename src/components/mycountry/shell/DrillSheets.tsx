@@ -17,6 +17,8 @@ import { countrySheetHref } from "~/lib/country/country-routes";
 import { DOMAIN_META, type MyCountryDomain } from "./domain-meta";
 import { IntentDetail } from "./IntentDetail";
 import { IssueDetailBrief } from "~/components/mycountry/shared/headers/IssueDetailBrief";
+import { PremiumPreviewFrame } from "~/components/mycountry/shared/primitives";
+import { useHasMycountryPremium } from "~/hooks/useHasMycountryPremium";
 
 const PoliticsDrillDown = dynamic(
   () => import("./PoliticsDrillDown").then((m) => ({ default: m.PoliticsDrillDown })),
@@ -83,6 +85,8 @@ function DrillSheetsComponent({
   onDeclare,
 }: DrillSheetsProps): React.JSX.Element {
   const { title, Icon, meta, domainKind } = sheetHeading(drill);
+  // Same lock as the Defense page: free nations get the read-only preview here too.
+  const hasDefenseAccess = useHasMycountryPremium("defense");
 
   return (
     <Sheet open={drill !== null} onOpenChange={(o) => !o && onClose()}>
@@ -132,7 +136,11 @@ function DrillSheetsComponent({
           <IssueDetailBrief issueId={drill.issueId} onDeclare={onDeclare} onClose={onClose} />
         )}
         {drill?.kind === "relations" && <EmbassiesAndRelationsPanel countryId={countryId} />}
-        {drill?.kind === "defense" && <DefenseCommandPanel countryId={countryId} />}
+        {drill?.kind === "defense" && (
+          <PremiumPreviewFrame feature="defense" locked={!hasDefenseAccess}>
+            <DefenseCommandPanel countryId={countryId} />
+          </PremiumPreviewFrame>
+        )}
         {drill?.kind === "politics" && <PoliticsDrillDown countryId={countryId} />}
         {drill?.kind === "economy" && <EconomyDrillDown countryId={countryId} />}
       </SheetContent>

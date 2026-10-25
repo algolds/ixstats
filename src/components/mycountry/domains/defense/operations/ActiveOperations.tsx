@@ -29,6 +29,7 @@ import {
 import { api } from "~/trpc/react";
 import { formatCurrency } from "~/lib/utils/format-utils";
 import { Card } from "~/components/ui/card";
+import { useNotify } from "~/hooks/useNotify";
 
 interface ActiveOperationsProps {
   countryId: string;
@@ -58,14 +59,17 @@ const SUCCESS_RATING_BADGE: Record<string, BadgeVariant> = {
 
 export function ActiveOperations({ countryId }: ActiveOperationsProps) {
   const [showCompleted, setShowCompleted] = useState(false);
+  const notify = useNotify();
 
   const { data: operations, refetch } = api.security.getOperations.useQuery(
     { countryId, includeCompleted: showCompleted },
     { enabled: !!countryId }
   );
 
+  // The server rates the outcome (how much of the planned duration ran).
   const endMutation = api.security.endOperation.useMutation({
     onSuccess: () => void refetch(),
+    onError: (error) => notify.error(`Could not end the operation: ${error.message}`),
   });
 
   if (!operations || operations.length === 0) {
@@ -125,7 +129,7 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
                     {op.targetCountry && (
                       <>
                         {" "}
-                        — Target:{" "}
+                        · Target:{" "}
                         <span className="text-label font-medium">{op.targetCountry.name}</span>
                       </>
                     )}
@@ -137,21 +141,24 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="text-footnote space-y-1 text-right">
-                  <div className="text-label-secondary flex items-center gap-1">
-                    <Users className="h-3 w-3" />
-                    {op.personnelDeployed.toLocaleString()}
+                {/* Personnel and costs are the owner's only (undefined for anyone else). */}
+                {op.dailyCost !== undefined && (
+                  <div className="text-footnote space-y-1 text-right">
+                    <div className="text-label-secondary flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {(op.personnelDeployed ?? 0).toLocaleString()}
+                    </div>
+                    <div className="text-label flex items-center gap-1 tabular-nums">
+                      <DollarSign aria-hidden="true" className="text-label-secondary h-3 w-3" />
+                      {formatCurrency(op.dailyCost)}/day
+                    </div>
+                    {op.gdpDrain !== undefined && op.gdpDrain > 0 && (
+                      <span className="text-destructive text-footnote">
+                        {(op.gdpDrain * 100).toFixed(3)}% GDP drain
+                      </span>
+                    )}
                   </div>
-                  <div className="text-label flex items-center gap-1 tabular-nums">
-                    <DollarSign aria-hidden="true" className="text-label-secondary h-3 w-3" />
-                    {formatCurrency(op.dailyCost)}/day
-                  </div>
-                  {op.gdpDrain > 0 && (
-                    <span className="text-destructive text-footnote">
-                      {(op.gdpDrain * 100).toFixed(3)}% GDP drain
-                    </span>
-                  )}
-                </div>
+                )}
 
                 {isActive && (
                   <AlertDialog>
@@ -167,10 +174,11 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>End Operation?</AlertDialogTitle>
+                        <AlertDialogTitle>End operation?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          This will recall all deployed forces and end the operation. Unit readiness
-                          will partially recover.
+                          This recalls all deployed forces and ends the operation. Units recover
+                          readiness: a training exercise leaves them readier than before, other
+                          operations leave them a little worn.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -179,12 +187,7 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
                         </AlertDialogClose>
                         <AlertDialogClose asChild>
                           <Button
-                            onClick={() =>
-                              endMutation.mutate({
-                                operationId: op.id,
-                                successRating: "success",
-                              })
-                            }
+                            onClick={() => endMutation.mutate({ operationId: op.id })}
                             disabled={endMutation.isPending}
                           >
                             End operation

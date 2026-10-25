@@ -3,7 +3,8 @@
 // built-in equipment data in ./equipment and ./equipment-extended.
 //
 // Used by prisma/seeds/military-equipment-catalog.ts and by the militaryEquipment router,
-// which seeds an empty catalog on first read (db:seed doesn't run in production).
+// which seeds an empty catalog on an admin's first catalog create (db:seed doesn't run in
+// production). Reads never seed.
 
 import {
   DEFENSE_MANUFACTURERS,

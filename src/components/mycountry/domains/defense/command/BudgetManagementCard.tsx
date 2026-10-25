@@ -25,6 +25,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "~/co
 import { cn } from "~/lib/utils";
 import { type BudgetData, BUDGET_CATEGORIES } from "~/hooks/useDefenseBudget";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
+import { useCanEdit } from "~/context/MyCountryEditModeContext";
+import {
+  formatAmountInput,
+  parseAmountInput,
+  type DefenseBudgetCategoryKey,
+} from "~/lib/military/defense-budget";
 
 /** Map icon name strings to iconoir components */
 const ICON_MAP = {
@@ -37,26 +43,54 @@ const ICON_MAP = {
 
 interface BudgetManagementCardProps {
   budgetData: BudgetData;
+  /** True when no budget is saved yet and the figures are the 2% of GDP estimate. */
+  isEstimate: boolean;
+  isSaving: boolean;
   editingBudget: boolean;
   setEditingBudget: (editing: boolean) => void;
   handleSaveBudget: () => void;
   handleTotalBudgetChange: (value: number) => void;
-  handleCategoryChange: (key: string, value: number) => void;
-  totalAllocated: number;
+  handleCategoryChange: (key: DefenseBudgetCategoryKey, value: number) => void;
   allocationPercent: number;
-  currentYear: number;
+}
+
+/** A whole-currency amount, shown with separators ("5,668,857,676") while it is edited. */
+function AmountInput({
+  value,
+  onChange,
+  label,
+  className,
+}: {
+  value: number;
+  onChange: (value: number) => void;
+  label: string;
+  className?: string;
+}) {
+  return (
+    <Input
+      type="text"
+      inputMode="numeric"
+      aria-label={label}
+      value={formatAmountInput(value)}
+      onChange={(e) => onChange(parseAmountInput(e.target.value))}
+      className={cn("tabular-nums", className)}
+    />
+  );
 }
 
 export const BudgetManagementCard = React.memo(function BudgetManagementCard({
   budgetData,
+  isEstimate,
+  isSaving,
   editingBudget,
   setEditingBudget,
   handleSaveBudget,
   handleTotalBudgetChange,
   handleCategoryChange,
   allocationPercent,
-  currentYear,
 }: BudgetManagementCardProps) {
+  // The free Defense preview shows the budget read-only.
+  const { canEdit } = useCanEdit();
   return (
     <Card>
       <CardHeader className="p-5 pb-4">
@@ -64,7 +98,7 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <DollarSign aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
-              <h3 className="text-label text-title-3">Defense budget · FY {currentYear}</h3>
+              <h3 className="text-label text-title-3">Defense budget</h3>
               <Sheet>
                 <SheetTrigger asChild>
                   <Button
@@ -144,37 +178,42 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
               </Sheet>
             </div>
             <p className="text-label-secondary text-body mt-1">
-              Allocate resources across defense categories
+              {isEstimate
+                ? "Estimate: 2% of GDP split by typical shares. Save a budget to set your own."
+                : "Allocate resources across defense categories"}
             </p>
           </div>
-          {editingBudget ? (
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => setEditingBudget(false)}>
-                Cancel
+          {canEdit &&
+            (editingBudget ? (
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => setEditingBudget(false)}>
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleSaveBudget} disabled={isSaving}>
+                  <Save className="mr-2 h-4 w-4" />
+                  {isSaving ? "Saving…" : "Save budget"}
+                </Button>
+              </div>
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => setEditingBudget(true)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Edit budget
               </Button>
-              <Button size="sm" onClick={handleSaveBudget}>
-                <Save className="mr-2 h-4 w-4" />
-                Save budget
-              </Button>
-            </div>
-          ) : (
-            <Button size="sm" variant="outline" onClick={() => setEditingBudget(true)}>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit budget
-            </Button>
-          )}
+            ))}
         </div>
       </CardHeader>
       <CardContent className="space-y-6 px-5 pb-5">
         <div className="border-separator rounded-control border p-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Eyebrow className="block">Total defense budget</Eyebrow>
-              {editingBudget ? (
-                <Input
-                  type="number"
+              <Eyebrow className="block">
+                {isEstimate ? "Estimated defense budget" : "Total defense budget"}
+              </Eyebrow>
+              {editingBudget && canEdit ? (
+                <AmountInput
+                  label="Total defense budget"
                   value={budgetData.totalBudget}
-                  onChange={(e) => handleTotalBudgetChange(parseFloat(e.target.value) || 0)}
+                  onChange={handleTotalBudgetChange}
                   className="mt-1"
                 />
               ) : (
@@ -225,7 +264,7 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
         <div className="space-y-4">
           {BUDGET_CATEGORIES.map((category) => {
             const Icon = ICON_MAP[category.iconName];
-            const value = budgetData[category.key as keyof BudgetData] as number;
+            const value = budgetData[category.key];
             const percent = budgetData.totalBudget > 0 ? (value / budgetData.totalBudget) * 100 : 0;
 
             return (
@@ -239,14 +278,12 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
                     <span className="text-label-secondary text-footnote w-12 text-right">
                       <NumberFlowDisplay value={percent} format="percentage" decimalPlaces={1} />
                     </span>
-                    {editingBudget ? (
-                      <Input
-                        type="number"
+                    {editingBudget && canEdit ? (
+                      <AmountInput
+                        label={category.label}
                         value={value}
-                        onChange={(e) =>
-                          handleCategoryChange(category.key, parseFloat(e.target.value) || 0)
-                        }
-                        className="text-body h-8 w-32"
+                        onChange={(v) => handleCategoryChange(category.key, v)}
+                        className="text-body h-8 w-36"
                       />
                     ) : (
                       <span className="text-body w-32 text-right font-medium">
