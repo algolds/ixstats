@@ -31,6 +31,7 @@ import {
   verdictOfEntry,
   type ConflictLogEntry,
   type ConflictRow,
+  type UndeliveredReason,
 } from "./conflict-log";
 import { lossOf, noticeCopy } from "./conflict-notice-copy";
 import {
@@ -55,8 +56,11 @@ const TRAIL_RETRY_WINDOW_MS = DAY_MS;
 const COLON_NAMESPACES = new Set([6, 14]);
 const CLASSIC_REVISION = /^\d+$/;
 
-/** sent: delivered; skipped: nothing to deliver on this channel (settled all the same); open: try again next run. */
-type Delivery = "sent" | "skipped" | "open";
+/**
+ * sent: delivered; skipped: nothing to deliver on this channel (settled all the same); open: try again next run;
+ * `{ undelivered }`: given up for good, settled all the same but marked so the log does not count it as told.
+ */
+type Delivery = "sent" | "skipped" | "open" | { undelivered: UndeliveredReason };
 
 export interface SettleResult {
   /** Notices delivered by this run. */
@@ -277,8 +281,11 @@ async function writeTalkNote(
     );
   } catch (error) {
     // a deleted talk page takes no note: the note would bring the page back on classic, and it stays deleted
-    if (error instanceof DeletedPageError) return "skipped";
-    throw error;
+    if (!(error instanceof DeletedPageError)) throw error;
+    console.warn(
+      `[WikiConflicts] No talk note for ${recipient.key} on conflict ${context.entry.id}: the talk page ${canon.title} is deleted.`
+    );
+    return { undelivered: "talk-page-deleted" };
   }
   return "sent";
 }
@@ -381,7 +388,8 @@ async function tellRecipients(
         open = true;
         continue;
       }
-      await markNotified(row.id, recipient.key, channel);
+      const undelivered = typeof delivery === "object" ? delivery.undelivered : undefined;
+      await markNotified(row.id, recipient.key, channel, undelivered);
       if (delivery === "sent") notified += 1;
     }
   }

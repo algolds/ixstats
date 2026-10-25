@@ -22,10 +22,15 @@ import {
 type Client = Prisma.TransactionClient | typeof db;
 type JsonObject = { [key: string]: Prisma.JsonValue };
 
+/** Why a channel could not reach its recipient, for good: the row settles, and the log says the notice never arrived. */
+export type UndeliveredReason = "talk-page-deleted";
+
 export interface NoticeMark {
   key: string;
   channel: NoticeChannel;
   at: string;
+  /** Set when the notice was given up undelivered; absent for a notice that was delivered or had nothing to deliver. */
+  undelivered?: UndeliveredReason;
 }
 
 export interface ConflictLogEntry {
@@ -53,6 +58,7 @@ const MERGE_ATTEMPTS = 5;
 const SIDES: readonly WikiSide[] = ["wikios", "classic"];
 const ACTIONS: readonly ChangeAction[] = ["edit", "delete", "move", "undelete"];
 const CHANNELS: readonly NoticeChannel[] = ["in-app", "discord", "talk-page"];
+const UNDELIVERED_REASONS: readonly UndeliveredReason[] = ["talk-page-deleted"];
 
 // --- the JSON shapes ------------------------------------------------------------------------------------------------
 
@@ -100,7 +106,9 @@ function decodeMarks(value: Prisma.JsonValue): NoticeMark[] {
     const key = text(item.key);
     const channel = oneOf(CHANNELS, text(item.channel));
     const at = text(item.at);
-    return key && channel && at ? [{ key, channel, at }] : [];
+    const undelivered = oneOf(UNDELIVERED_REASONS, text(item.undelivered));
+    if (!key || !channel || !at) return [];
+    return [undelivered ? { key, channel, at, undelivered } : { key, channel, at }];
   });
 }
 
@@ -294,12 +302,16 @@ export function pendingRecipients(row: {
 export async function markNotified(
   conflictId: string,
   recipientKey: string,
-  channel: NoticeChannel
+  channel: NoticeChannel,
+  undelivered?: UndeliveredReason
 ): Promise<void> {
   await updateRow(db, conflictId, (row) => {
     const marks = decodeMarks(row.notified);
     if (marks.some((mark) => mark.key === recipientKey && mark.channel === channel)) return null;
-    const added: NoticeMark = { key: recipientKey, channel, at: new Date().toISOString() };
+    const at = new Date().toISOString();
+    const added: NoticeMark = undelivered
+      ? { key: recipientKey, channel, at, undelivered }
+      : { key: recipientKey, channel, at };
     return { notified: [...marks, added].map((mark) => ({ ...mark })) };
   });
 }

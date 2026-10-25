@@ -15,6 +15,7 @@ import {
   setEditorBase,
   type WikiEditorDraft,
 } from "~/lib/wiki-os/editor/draft-store";
+import { SAVE_FAILED, saveFailureMessage } from "~/lib/wiki-os/editor/save-failure";
 import { appendNewSection, NEW_SECTION_HEADING } from "~/lib/wiki-os/wikitext/new-section";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { HandlePickerDialog } from "./HandlePickerDialog";
@@ -342,7 +343,7 @@ export function WikiEditBridge({
       );
     } catch (err) {
       if (!(err instanceof SaveCancelled))
-        notify.error("Save Failed", "Could not save article changes.");
+        notify.error("Save Failed", err instanceof Error ? saveFailureMessage(err) : SAVE_FAILED);
     }
   }, [conflict, performSave, notify]);
 

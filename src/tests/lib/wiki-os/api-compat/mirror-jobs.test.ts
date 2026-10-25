@@ -10,7 +10,10 @@ jest.mock("~/server/db", () => ({
   db: jest.requireActual("~/tests/helpers/fake-wiki-db").fakeWikiDb.db,
 }));
 jest.mock("~/lib/cache/rate-limiter", () => ({
-  rateLimiter: { check: jest.fn().mockResolvedValue({ success: true, resetAt: new Date(0) }) },
+  rateLimiter: {
+    isEnabled: () => true,
+    check: jest.fn().mockResolvedValue({ success: true, resetAt: new Date(0) }),
+  },
 }));
 // the kick would run the mirror worker in a timer; the jobs themselves are real
 jest.mock("~/lib/wiki-os/services/mirror-outbox", () => ({

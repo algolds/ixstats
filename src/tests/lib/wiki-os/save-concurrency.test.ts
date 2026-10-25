@@ -240,6 +240,18 @@ describeEachWikiosMode("null edits (Task 14, A7)", () => {
     expect(revisionRows()).toHaveLength(2);
   });
 
+  it("records a revision over a head whose text is hidden (revision deletion): the hidden one must not stay the page's", async () => {
+    const first = await save("same text", null);
+    model.committed.revisions[0]!.textDeleted = true;
+
+    const saved = await save("same text", first.revisionId);
+
+    expect(saved.nullEdit).toBe(false);
+    expect(saved.revisionId).not.toBe(first.revisionId);
+    expect(revisionRows()).toHaveLength(2);
+    expect(model.committed.jobs).toHaveLength(2);
+  });
+
   it("records a revision for a page whose text has none yet (a row with no revision is not a head)", async () => {
     model.committed.articles.push({
       id: "art-stub",

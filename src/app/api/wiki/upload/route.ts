@@ -60,6 +60,7 @@ function refusal(error: unknown): NextResponse | null {
     return fail(error.code === "file-too-large" ? 413 : 400, error.message, error.code);
   }
   if (!(error instanceof TRPCError)) return null;
+  if (error.code === "TOO_MANY_REQUESTS") return fail(429, error.message, "ratelimited");
   // The rights engine writes its reason code first ("protectedpage: ...").
   const code = /^([a-z-]+):/.exec(error.message)?.[1];
   const status = { FORBIDDEN: 403, UNAUTHORIZED: 401, BAD_REQUEST: 400, PRECONDITION_FAILED: 409 }[

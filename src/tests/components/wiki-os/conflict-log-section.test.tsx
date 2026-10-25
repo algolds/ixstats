@@ -70,7 +70,13 @@ describe("ConflictLogSection", () => {
             ],
             notices: [
               { who: "alpha", channel: "in-app", at: "2026-10-24T12:01:00Z" },
-              { who: "Carol", channel: "talk-page", at: "2026-10-24T12:01:00Z" },
+              { who: "Carol", channel: "talk-page", at: "2026-10-24T12:01:00Z", undelivered: null },
+              {
+                who: "10.0.0.7",
+                channel: "talk-page",
+                at: "2026-10-24T12:01:00Z",
+                undelivered: "Not delivered: talk page deleted",
+              },
             ],
             trail: "revision 150",
           }),
@@ -105,6 +111,8 @@ describe("ConflictLogSection", () => {
     expect(cells.getByText("revision 102, on classic MediaWiki")).toBeInTheDocument();
     expect(cells.getByText("alpha, in-app")).toBeInTheDocument();
     expect(cells.getByText("Carol, talk page")).toBeInTheDocument();
+    expect(cells.getByText("10.0.0.7, talk page")).toBeInTheDocument();
+    expect(cells.getAllByText("Not delivered: talk page deleted")).toHaveLength(1);
     expect(cells.getByText("pending")).toBeInTheDocument();
 
     const old = within(legacy!);

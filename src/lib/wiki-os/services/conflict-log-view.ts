@@ -5,7 +5,12 @@
  * wiki) is named by its kind, and a `log:<id>` trail is a log entry, never looked up as a revision.
  */
 import type { ChangeAction, NoticeChannel, PageChange, WikiSide } from "./conflict-rule";
-import { listConflicts, shortConflictId, type ConflictLogEntry } from "./conflict-log";
+import {
+  listConflicts,
+  shortConflictId,
+  type ConflictLogEntry,
+  type UndeliveredReason,
+} from "./conflict-log";
 import { shownRefs } from "./conflict-sides";
 
 export interface ShownChange {
@@ -24,6 +29,8 @@ export interface ShownNotice {
   who: string;
   channel: NoticeChannel;
   at: string;
+  /** Why the notice never arrived, as the log says it; null for one that was delivered. */
+  undelivered: string | null;
 }
 
 /** legacy: an old park, history only (nobody is told); settled: everyone told; pending: the settling owes something. */
@@ -49,6 +56,10 @@ const NOUNS: Readonly<Record<ChangeAction, string>> = {
   delete: "deletion",
   move: "move",
   undelete: "restore",
+};
+
+const UNDELIVERED: Readonly<Record<UndeliveredReason, string>> = {
+  "talk-page-deleted": "Not delivered: talk page deleted",
 };
 
 const NO_AUTHOR = { userId: null, classicName: null, ip: null, label: null };
@@ -114,6 +125,7 @@ function toRow(entry: ConflictLogEntry, shown: Map<string, string>): ConflictLog
       who: whoOf(mark.key, entry.overwritten),
       channel: mark.channel,
       at: mark.at,
+      undelivered: mark.undelivered ? UNDELIVERED[mark.undelivered] : null,
     })),
     trail: trailOf(entry.trailRevisionId, shown),
   };

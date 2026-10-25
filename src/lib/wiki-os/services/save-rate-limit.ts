@@ -24,9 +24,11 @@ const TRUSTED_GROUPS: ReadonlySet<string> = new Set(["autoconfirmed", "confirmed
 
 /**
  * Takes one save from the caller's bucket; throws TOO_MANY_REQUESTS (api.php: `ratelimited`) when it is empty. A holder
- * of `noratelimit` is not counted.
+ * of `noratelimit` is not counted, and nothing is when the limiter is off (`RATE_LIMIT_ENABLED`).
  */
 export async function assertWikiSaveRate(ctx: WikiAuthContext): Promise<void> {
+  // with the limiter off every check passes: the rights need not be read for it
+  if (!rateLimiter.isEnabled()) return;
   const { groups, rights } = await getWikiPermissions(ctx);
   if (rights.has("noratelimit")) return;
   const bucket = groups.some((group) => TRUSTED_GROUPS.has(group)) ? "autoconfirmed" : "newbie";

@@ -578,6 +578,26 @@ describeEachWikiosMode(
       expect(notifyWatchers).not.toHaveBeenCalled();
     });
 
+    it("is no null edit when the head's text is hidden: the head read carries textDeleted", async () => {
+      mockUpsert.mockImplementation(async (args: { create: { title: string } }) =>
+        savedRow(args.create.title)
+      );
+      mockTxArticleFindUnique.mockResolvedValue(page);
+      mockRevisionFindFirst.mockResolvedValue({
+        id: "h1",
+        mwRevId: 41,
+        byteSize: 9,
+        textDeleted: true,
+      });
+      mockCount.mockResolvedValue(1);
+
+      const saved = await save();
+
+      expect(saved).toMatchObject({ nullEdit: false, revisionId: "r1" });
+      expect(mockRevisionFindFirst.mock.calls[0]?.[0].select).toMatchObject({ textDeleted: true });
+      expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
+    });
+
     it("is no null edit when the text changed", async () => {
       mockUpsert.mockImplementation(async (args: { create: { title: string } }) =>
         savedRow(args.create.title)
@@ -649,6 +669,29 @@ describe("ArticleRepository.recordTrailRevision (the classic winner's trail)", (
     await expect(trail()).resolves.toBeNull();
     expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
     expect(mockJobCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it("writes no trail on a page deleted before it got the lock: no revision, no job, nothing claimed", async () => {
+    // the first read finds the page, the read under the lock finds it deleted
+    mockTxArticleFindUnique
+      .mockResolvedValueOnce({ id: "a1", title: "Caphiria", source: "ixwiki" })
+      .mockResolvedValueOnce({ status: "ARCHIVED" });
+
+    await expect(trail()).resolves.toBeNull();
+
+    const order = [
+      mockQueryRaw.mock.invocationCallOrder[0]!,
+      mockTxArticleFindUnique.mock.invocationCallOrder[1]!,
+    ];
+    expect(order[0]).toBeLessThan(order[1]); // the status is read under the page's lock
+    expect(mockTxArticleFindUnique.mock.calls[1]?.[0]).toEqual({
+      where: { id: "a1" },
+      select: { status: true },
+    });
+    expect(mockRevisionCreate).not.toHaveBeenCalled();
+    expect(mockConflictUpdateMany).not.toHaveBeenCalled();
+    expect(mockJobCreate).not.toHaveBeenCalled();
+    expect(scheduleMirrorKick).not.toHaveBeenCalled();
   });
 
   it("a trail another writer claimed first answers null and enqueues no job", async () => {

@@ -380,6 +380,26 @@ describe("WikiEditBridge edit conflicts and drafts (WK-2)", () => {
       })
     );
   });
+  it("'Save anyway' that the save limit refuses shows the server's sentence (Task 14 M1)", async () => {
+    mockSave.mockResolvedValueOnce(conflictResult("rev-2"));
+    await openEditor();
+    await save("Text at the time of the conflict");
+    mockSave.mockRejectedValueOnce(
+      Object.assign(new Error("You are saving too fast. Wait a minute and try again."), {
+        data: { code: "TOO_MANY_REQUESTS" },
+      })
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "Save anyway" }));
+
+    await waitFor(() =>
+      expect(mockNotifyError).toHaveBeenCalledWith(
+        "Save Failed",
+        "You are saving too fast. Wait a minute and try again."
+      )
+    );
+    expect(onClose).not.toHaveBeenCalled();
+  });
   describe("'Load current version' against the real draft store", () => {
     async function conflictWithDraft(mode: "source" | "visual"): Promise<void> {
       mockSave.mockResolvedValueOnce(conflictResult("rev-2", "Their text"));

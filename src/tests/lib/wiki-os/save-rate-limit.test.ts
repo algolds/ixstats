@@ -17,6 +17,7 @@ jest.mock("~/lib/cache/rate-limiter", () => {
     __esModule: true,
     counts,
     rateLimiter: {
+      isEnabled: jest.fn(() => true),
       check: jest.fn(
         async (identifier: string, namespace: string, limits: { maxRequests: number }) => {
           const key = `${namespace}:${identifier}`;
@@ -129,6 +130,26 @@ describeEachWikiosMode("the wiki-save rate limit", () => {
   it("counts each account on its own", async () => {
     await expect(allowedOf(member("first", ["user"]), 9)).resolves.toBe(8);
     await expect(allowedOf(member("second", ["user"]), 1)).resolves.toBe(1);
+  });
+
+  it("asks neither the rights nor the limiter when the limiter is off (RATE_LIMIT_ENABLED unset)", async () => {
+    jest.mocked(rateLimiter.isEnabled).mockReturnValueOnce(false);
+    const ctx = member("newbie-off", ["user"]);
+
+    await expect(assertWikiSaveRate(ctx)).resolves.toBeUndefined();
+    expect(getWikiPermissions).not.toHaveBeenCalled();
+    expect(rateLimiter.check).not.toHaveBeenCalled();
+  });
+
+  it("an upload's File: page is not counted: uploads have their own limit", async () => {
+    const ctx = member("uploader", ["user"]);
+
+    for (let n = 0; n < 12; n++) {
+      await commitWikitextSave(ctx, { ...save, title: `File:F${n}.png`, uploadPage: true });
+    }
+
+    expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(12);
+    expect(rateLimiter.check).not.toHaveBeenCalled();
   });
 
   it("noratelimit holders are never limited", async () => {

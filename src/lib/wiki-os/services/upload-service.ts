@@ -324,6 +324,8 @@ async function descriptionPageId(
     wikitext: upload.wikitext,
     summary: upload.comment,
     minor: false,
+    // counted by the upload limit, not the wiki-save limit
+    uploadPage: true,
   });
   return saved.article.id;
 }

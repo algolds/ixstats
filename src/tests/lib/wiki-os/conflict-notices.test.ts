@@ -67,6 +67,7 @@ import { createFakeMediaWikiSite } from "~/tests/helpers/fake-mediawiki-site";
 import { API_URL } from "~/tests/helpers/fake-mediawiki";
 import type { createFakeWikiDb } from "~/tests/helpers/fake-wiki-db";
 import { describeEachWikiosMode } from "~/tests/helpers/wikios-modes";
+import { conflictLogPage } from "~/lib/wiki-os/services/conflict-log-view";
 
 const { fake } = jest.requireMock("~/server/db") as { fake: ReturnType<typeof createFakeWikiDb> };
 const { tables } = fake;
@@ -472,15 +473,14 @@ describeEachWikiosMode("settleConflicts", () => {
     expect(revisionsOf("Caphiria")).toHaveLength(1);
   });
 
-  it("a deleted talk page takes no note, and the row does not try it again", async () => {
+  it("an IP loser whose talk page is deleted is marked not delivered: the row settles, nothing is written, the log says so", async () => {
     seedCaphiria();
-    const foo = site.editAs("Foo", "Caphiria", "Caphiria is a republic.");
     const id = await collide(change("wikios", wikiosHead("Caphiria is an empire."), author({})), [
-      change("classic", String(foo.revid), author({ classicName: "Foo" })),
+      change("classic", "4242", author({ ip: "10.0.0.7" })),
     ]);
     const talk = tables.wikiArticle.insert({
-      title: "User talk:Foo",
-      slug: "user_talk:foo",
+      title: "User talk:10.0.0.7",
+      slug: "user_talk:10.0.0.7",
       namespace: 3,
       wikitext: "Old talk.",
       status: "ARCHIVED",
@@ -498,14 +498,36 @@ describeEachWikiosMode("settleConflicts", () => {
     const first = await settleConflicts();
     const second = await settleConflicts();
 
-    expect(first.pending).toBe(0);
+    expect(first).toEqual({ notified: 0, trails: 0, pending: 0 });
     expect(second).toEqual({ notified: 0, trails: 0, pending: 0 });
-    expect(revisionsOf("User talk:Foo")).toHaveLength(1);
-    expect(article("User talk:Foo")).toMatchObject({ status: "ARCHIVED", wikitext: "Old talk." });
-    expect(jobs()).toEqual([]);
+    expect(conflictRow(id).notified).toEqual([
+      expect.objectContaining({
+        key: "ip:10.0.0.7",
+        channel: "talk-page",
+        undelivered: "talk-page-deleted",
+      }),
+    ]);
     expect(conflictRow(id).settledAt).not.toBeNull();
-    expect(warn).not.toHaveBeenCalled();
+    // the page stays deleted: no note, no revision, no job
+    expect(revisionsOf("User talk:10.0.0.7")).toHaveLength(1);
+    expect(article("User talk:10.0.0.7")).toMatchObject({
+      status: "ARCHIVED",
+      wikitext: "Old talk.",
+    });
+    expect(jobs()).toEqual([]);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0]![0])).toContain("talk page User talk:10.0.0.7 is deleted");
     warn.mockRestore();
+
+    const { items } = await conflictLogPage({ limit: 10 });
+    expect(items[0]!.notices).toEqual([
+      {
+        who: "10.0.0.7",
+        channel: "talk-page",
+        at: expect.any(String),
+        undelivered: "Not delivered: talk page deleted",
+      },
+    ]);
   });
 
   it("a talk page edited meanwhile leaves the note pending for the next run", async () => {

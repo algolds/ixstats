@@ -25,7 +25,8 @@ export interface TrailRevisionInput {
 /**
  * The trail of a conflict classic MediaWiki won: a revision with the head's text (parented on the head, byte delta 0),
  * by `CONFLICT_NOTICE_AUTHOR`, and its mirror job, so the trail reaches both wikis. Made under the page's lock, and it
- * claims the conflict's trail in the same transaction: null when the conflict already has one. A system write: no
+ * claims the conflict's trail in the same transaction: null when the conflict already has one or the page is deleted
+ * (read under the lock; the caller settles the row without a trail either way). A system write: no
  * permission check, no rate limit, never skipped as a null edit; the text does not change, so no render and no watchers.
  */
 export async function recordTrailRevision(
@@ -39,6 +40,12 @@ export async function recordTrailRevision(
       });
       if (!article) throw new Error(`No article ${input.articleId} to record a trail on`);
       await lockPageForSave(tx, article.source, article.title);
+      // a page deleted before the lock takes no trail: its mirror job would bring the page back on classic
+      const live = await tx.wikiArticle.findUnique({
+        where: { id: article.id },
+        select: { status: true },
+      });
+      if (live?.status === "ARCHIVED") return null;
       const conflict = await tx.wikiConflict.findUnique({
         where: { id: input.conflictId },
         select: { trailRevisionId: true },

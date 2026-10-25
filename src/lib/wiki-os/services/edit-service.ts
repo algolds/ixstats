@@ -104,6 +104,11 @@ export interface WikitextSave {
    * never from a request.
    */
   authorLabel?: string;
+  /**
+   * The File: description page an upload creates: the upload's own limit counts it (as in MediaWiki), the wiki-save
+   * limit does not. Set only by the upload service, never from a request.
+   */
+  uploadPage?: true;
 }
 
 /** `ArticleRepository.saveArticle`, with a page deleted under the save answered as `deletedPage()`. */
@@ -122,13 +127,14 @@ async function saveArticleOrRefuse(...args: Parameters<typeof ArticleRepository.
  * one transaction, `ArticleRepository.saveArticle`, which also makes the edit-conflict check of
  * `save.expectedHeadRef`), then the edge-cache purge. Throws `EditConflictError` for a save based on a revision that is no longer the head,
  * and, before anything is written, PRECONDITION_FAILED for a player with no handle or a page deleted meanwhile and
- * TOO_MANY_REQUESTS for a player over the wiki-save limit (`assertWikiSaveRate`; a system save is not counted). A null
+ * TOO_MANY_REQUESTS for a player over the wiki-save limit (`assertWikiSaveRate`; a system save and an upload's page
+ * are not counted). A null
  * edit (the page has this text already) writes nothing and answers the head with `nullEdit`.
  */
 export async function commitWikitextSave(ctx: WikiAuthContext, save: WikitextSave) {
   const { title, wikitext, summary, minor, expectedHeadRef } = save;
   const authorName = save.authorLabel ?? requireWikiAuthorName(ctx);
-  if (save.authorLabel === undefined) await assertWikiSaveRate(ctx);
+  if (save.authorLabel === undefined && !save.uploadPage) await assertWikiSaveRate(ctx);
 
   // 1. Primary Save: Direct to PostgreSQL
   const saveResult = await saveArticleOrRefuse(

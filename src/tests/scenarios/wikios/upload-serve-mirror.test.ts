@@ -74,6 +74,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { NextRequest } from "next/server";
 import sharp from "sharp";
+import { TRPCError } from "@trpc/server";
 import { POST } from "~/app/api/wiki/upload/route";
 import { GET as getFile } from "~/app/api/wiki/file/[...name]/route";
 import { MAX_UPLOAD_BYTES } from "~/lib/wiki-os/config";
@@ -405,6 +406,25 @@ describe("the upload and file routes refuse what they must", () => {
       (await upload("filename=Flag.png", streamOf(MAX_UPLOAD_BYTES + 1), "image/png")).status
     ).toBe(413);
     expect(tables.wikiAsset.rows).toEqual([]);
+  });
+
+  it("answers a rate-limit refusal from the services with 429 and ratelimited, not a 500", async () => {
+    as("member");
+    const limited = jest
+      .spyOn(tables.wikiAsset, "findMany")
+      .mockRejectedValue(
+        new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: "You are saving too fast. Wait a minute and try again.",
+        })
+      );
+    const response = await upload("filename=Flag.png", flag, "image/png");
+    limited.mockRestore();
+    expect(response.status).toBe(429);
+    expect(await response.json()).toEqual({
+      error: "You are saving too fast. Wait a minute and try again.",
+      code: "ratelimited",
+    });
   });
 
   it("answers a failure it does not know with a 500 and no detail", async () => {

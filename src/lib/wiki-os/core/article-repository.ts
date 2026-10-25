@@ -259,7 +259,7 @@ function loadHeadForSave(
   return tx.wikiRevision.findFirst({
     where: { ...(articleId ? { articleId } : { article: { source, title } }), parked: false },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    select: { id: true, mwRevId: true, byteSize: true },
+    select: { id: true, mwRevId: true, byteSize: true, textDeleted: true },
   });
 }
 
@@ -412,7 +412,8 @@ export class ArticleRepository {
         const textUnchanged =
           (await tx.wikiArticle.count({ where: { source, title, wikitext } })) > 0;
         // A null edit: the head has this text already. No revision, no mirror job, no render; the row is left alone.
-        if (textUnchanged && previous && locked) {
+        // A head whose text is hidden is not one: the save brings the text back as a revision anyone can read.
+        if (textUnchanged && previous && !previous.textDeleted && locked) {
           return { nullEdit: true as const, row: { ...locked, wikitext }, head: previous };
         }
         const resolvedDbUserId = await resolveDbUserId(tx, authorId);

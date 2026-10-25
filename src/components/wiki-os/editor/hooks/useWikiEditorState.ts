@@ -6,6 +6,7 @@ import { api } from "~/trpc/react";
 import { SaveCancelled } from "~/hooks/useHandleGate";
 import { useNotify } from "~/hooks/useNotify";
 import { clearDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
+import { SAVE_FAILED, saveFailureMessage } from "~/lib/wiki-os/editor/save-failure";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import type { StashEntity, StashItemEntity, WikimediaImageMeta, SaveActionType } from "../types";
 import type { EditorModalState } from "../context/EditorModalContext";
@@ -162,7 +163,7 @@ export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
       } catch (err) {
         if (err instanceof SaveCancelled) return false;
         console.error("Save failed:", err);
-        notify.error("Save Failed", "Could not save article changes.");
+        notify.error("Save Failed", err instanceof Error ? saveFailureMessage(err) : SAVE_FAILED);
         return false;
       } finally {
         setSaving(false);

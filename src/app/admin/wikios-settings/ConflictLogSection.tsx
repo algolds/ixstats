@@ -1,8 +1,8 @@
 "use client";
 // src/app/admin/wikios-settings/ConflictLogSection.tsx
 // The conflict log: every collision between WikiOS and classic MediaWiki, newest first. Each row shows the page, the
-// change that was kept and on which wiki (with its trail), what it overwrote and by whom, who was told on which channel,
-// and whether the settling is done. Old parks are history only: nobody was told of them.
+// change that was kept and on which wiki (with its trail), what it overwrote and by whom, who was told on which channel
+// (and any notice that could not be delivered), and whether the settling is done. Old parks are history only: nobody was told of them.
 
 import { GitMerge } from "iconoir-react";
 import { Badge, type BadgeVariant } from "~/components/ui/badge";
@@ -70,6 +70,7 @@ function ConflictLogRowView({ row }: { row: ConflictRow }) {
           {row.notices.map((notice) => (
             <li key={`${notice.who}/${notice.channel}`}>
               {notice.who}, {CHANNELS[notice.channel]}
+              {notice.undelivered && <div className="text-destructive">{notice.undelivered}</div>}
             </li>
           ))}
         </ul>

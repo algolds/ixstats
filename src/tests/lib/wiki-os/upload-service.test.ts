@@ -31,6 +31,28 @@ jest.mock("~/lib/wiki-os/services/watchlist-notify", () => ({
 jest.mock("~/lib/wiki-os/guardian/cloudflare-guardian", () => ({
   CloudflareGuardian: { purgeArticleEdgeCache: jest.fn() },
 }));
+// an enabled limiter that counts, as Redis or the in-memory fallback does (the wiki-save limit must not see uploads)
+jest.mock("~/lib/cache/rate-limiter", () => {
+  const counts = new Map<string, number>();
+  return {
+    __esModule: true,
+    counts,
+    rateLimiter: {
+      isEnabled: () => true,
+      check: jest.fn(
+        async (identifier: string, namespace: string, limits: { maxRequests: number }) => {
+          const key = `${namespace}:${identifier}`;
+          counts.set(key, (counts.get(key) ?? 0) + 1);
+          return {
+            success: counts.get(key)! <= limits.maxRequests,
+            remaining: 0,
+            resetAt: new Date(),
+          };
+        }
+      ),
+    },
+  };
+});
 
 import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -142,6 +164,28 @@ describe("a new file", () => {
     expect(tables.wikiArticle.rows).toHaveLength(1);
     expect(tables.wikiArticle.rows[0]?.wikitext).toBe("old text");
     expect(jobs().map((job) => job.kind)).toEqual(["upload"]);
+  });
+});
+
+describe("the wiki-save limit (Task 14 fix round 1)", () => {
+  it("a newbie's 9th upload in a minute succeeds: the File: page an upload makes is not a wiki save", async () => {
+    const { rateLimiter } = jest.requireMock("~/lib/cache/rate-limiter") as {
+      rateLimiter: { check: jest.Mock };
+    };
+    rateLimiter.check.mockClear();
+
+    for (let n = 1; n <= 9; n++) {
+      const result = await uploadFile(
+        request({ bytes: png(640, 480, n), filename: `Flag ${n}.png` })
+      );
+      expect(result.result).toBe("Success");
+    }
+
+    expect(
+      tables.wikiArticle.rows.filter((row) => String(row.title).startsWith("File:"))
+    ).toHaveLength(9);
+    const namespaces = rateLimiter.check.mock.calls.map((call) => String(call[1]));
+    expect(namespaces.filter((namespace) => namespace.startsWith("wiki_save"))).toEqual([]);
   });
 });
 
