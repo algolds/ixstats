@@ -38,6 +38,13 @@ jest.mock("~/server/modules/defense", () => {
     ),
   };
 });
+// The combat model (seeded resolution, losses, effects) is tested on its own; here it is a seam.
+jest.mock("~/server/modules/combat", () => ({
+  concludePvP: jest.fn(async () => ({ winner: "country_1", result: { band: "success" } })),
+  newBattleId: () => "op_new",
+  sealIntervention: jest.fn(async () => ({})),
+  resolveIntervention: jest.fn(async () => null),
+}));
 jest.mock("~/server/shared/realm-time", () => ({
   clockForCountry: jest.fn(async () => ({ now: () => 5e12, multiplier: 2, paused: false })),
   // Effect drafts are stamped per realm (storyteller-effects): every realm reads the same fixed clock here.
@@ -52,6 +59,7 @@ import {
   seedStarterBranches,
   setBranchAllocation,
 } from "~/server/modules/defense";
+import { concludePvP } from "~/server/modules/combat";
 import { FORCE_LIMITS } from "~/lib/military/force-structure";
 import { notificationAPI } from "~/lib/notifications/api";
 import { createCallerFactory } from "~/server/api/trpc";
@@ -432,20 +440,11 @@ describe("security.concludePvPConflict", () => {
     db.storytellerEffect.createMany.mockResolvedValue({ count: 2 });
   });
 
-  it("resolves a due conflict once: writes the outcome, ends it, damages both economies", async () => {
+  it("resolves a due conflict through the combat model and tells both sides", async () => {
     const res = await conclude("user_2", "country_2", "country_2");
 
-    expect(res.status).toBe("resolved");
-    expect(["country_1", "country_2"]).toContain(res.winner);
-    expect(db.militaryConflict.updateMany).toHaveBeenCalledWith({
-      where: { id: "conflict_1", status: "active" },
-      data: expect.objectContaining({
-        status: "resolved",
-        winner: res.winner,
-        endDate: expect.any(Date),
-      }),
-    });
-    expect(db.storytellerEffect.createMany.mock.calls[0]![0].data).toHaveLength(2);
+    expect(res).toMatchObject({ status: "resolved", winner: "country_1", outcomeBand: "success" });
+    expect(concludePvP).toHaveBeenCalledWith(db, expect.objectContaining({ id: "conflict_1" }));
     expect(mockNotify).toHaveBeenCalledTimes(2);
     expect(mockNews).toHaveBeenCalledTimes(2);
   });
@@ -455,7 +454,7 @@ describe("security.concludePvPConflict", () => {
     await expect(conclude("user_1", "country_1", "country_1")).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
-    expect(db.militaryConflict.updateMany).not.toHaveBeenCalled();
+    expect(concludePvP).not.toHaveBeenCalled();
   });
 
   it("refuses a country that is not a party, and a caller who does not own the party", async () => {
@@ -465,16 +464,15 @@ describe("security.concludePvPConflict", () => {
     await expect(conclude("user_3", "country_3", "country_1")).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
-    expect(db.militaryConflict.updateMany).not.toHaveBeenCalled();
+    expect(concludePvP).not.toHaveBeenCalled();
   });
 
   it("does not resolve twice when the conflict was concluded concurrently", async () => {
-    db.militaryBranch.findMany.mockResolvedValue([]);
-    db.militaryConflict.updateMany.mockResolvedValue({ count: 0 });
+    (concludePvP as jest.Mock).mockResolvedValueOnce(null);
     await expect(conclude("user_1", "country_1", "country_1")).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
-    expect(db.storytellerEffect.createMany).not.toHaveBeenCalled();
+    expect(mockNotify).not.toHaveBeenCalled();
   });
 });
 

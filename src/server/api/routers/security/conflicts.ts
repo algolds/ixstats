@@ -23,13 +23,17 @@ import {
   countriesWithWriteAccess,
 } from "~/server/shared/country-authorization";
 import { redactConflictCosts } from "~/lib/military/owner-redaction";
-import { createStorytellerEffects } from "~/lib/economy/storyteller-effects";
+import { pvpConflictEndsAt, pvpDurationDays } from "~/lib/military/conflict-outcome";
+import { MAX_ENGAGEMENT_DAYS, MIN_COMMITMENT, TERRAIN_CLASSES, formatDeclaredTerrain } from "~/lib/military/combat";
 import {
-  computeConflictOutcome,
-  conflictEconomicEffects,
-  pvpConflictEndsAt,
-} from "~/lib/military/conflict-outcome";
-import { nationalCombatPower } from "~/server/modules/defense";
+  combatOdds,
+  commitStrike,
+  concludePvP,
+  normaliseOrders,
+  sealPvP,
+} from "~/server/modules/combat";
+import { syncDefense } from "~/server/modules/defense";
+import { assertRealmsMatch } from "~/server/shared/same-realm-guard";
 import { clockForCountry, type RealmClockReader } from "~/server/shared/realm-time";
 import {
   EXPIRED_PVP_DATA,
@@ -76,7 +80,8 @@ async function assertStrikeAllowed(
       select: { createdAt: true },
     }),
   ]);
-  if (!relation || initiator.realmId !== target.realmId) {
+  assertRealmsMatch(initiator.realmId, target.realmId);
+  if (!relation) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "Strikes target NPC nations you have diplomatic relations with in your realm.",
@@ -132,6 +137,26 @@ async function relatedCountries(db: PrismaClient, clerkUserId: string, playerOwn
   });
 }
 
+/** The caller's nation, or UNAUTHORIZED. */
+async function callerCountryId(db: PrismaClient, clerkUserId: string): Promise<string> {
+  const profile = await db.user.findUnique({ where: { clerkUserId }, select: { countryId: true } });
+  if (!profile?.countryId) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "Not associated with a country." });
+  }
+  return profile.countryId;
+}
+
+/**
+ * A conflict row without what stays on the server: the inputs snapshot (true values of both sides) and the orders,
+ * and the seed until the battle is resolved (knowing it early would reveal the roll).
+ */
+function withoutServerOnly<T extends { status: string; inputSnapshot?: string | null; orders?: string | null; seed?: string | null }>(
+  conflict: T
+): Omit<T, "inputSnapshot" | "orders"> {
+  const { inputSnapshot: _snapshot, orders: _orders, ...rest } = conflict;
+  return { ...rest, seed: conflict.status === "resolved" ? (conflict.seed ?? null) : null };
+}
+
 export const securityConflictsRouter = createTRPCRouter({
   // Propose a PvP conflict (requires mutual acceptance)
   proposePvPConflict: premiumMutationProcedure
@@ -146,6 +171,8 @@ export const securityConflictsRouter = createTRPCRouter({
             stakes: z.string(),
           })
           .optional(),
+        /** Share of the challenger's theatre forces committed (hashed into the seed at acceptance). */
+        commitment: z.number().min(MIN_COMMITMENT).max(1).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -168,11 +195,16 @@ export const securityConflictsRouter = createTRPCRouter({
       // Only a player nation can answer a challenge; NPC nations are struck via PvNPC.
       const defenderCountry = await ctx.db.country.findUnique({
         where: { id: input.defenderId },
-        select: { ownerUserId: true, owner: { select: { clerkUserId: true } } },
+        select: { ownerUserId: true, realmId: true, owner: { select: { clerkUserId: true } } },
       });
       if (!defenderCountry) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
       }
+      const initiatorCountry = await ctx.db.country.findUnique({
+        where: { id: userProfile.countryId },
+        select: { realmId: true },
+      });
+      if (initiatorCountry) assertRealmsMatch(initiatorCountry.realmId, defenderCountry.realmId);
       if (!defenderCountry.ownerUserId) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -214,6 +246,15 @@ export const securityConflictsRouter = createTRPCRouter({
           defenderApproved: false,
           reason: input.reason,
           pvpRules: input.pvpRules ? JSON.stringify(input.pvpRules) : null,
+          orders: JSON.stringify(
+            normaliseOrders({
+              mode: "pvp",
+              attackerId: userProfile.countryId,
+              defenderId: input.defenderId,
+              commitment: input.commitment,
+              days: input.pvpRules?.maxDuration ?? pvpDurationDays(null),
+            })
+          ),
         },
         include: {
           initiator: { select: { id: true, name: true } },
@@ -336,14 +377,17 @@ export const securityConflictsRouter = createTRPCRouter({
         return declined;
       }
 
+      // The seed is fixed now, from the battle, the moment and the challenger's orders: nothing rerolls it.
       const clock = await clockForCountry(ctx.db, conflict.defenderId);
+      const startClockMs = clock.now();
       const accepted = await ctx.db.militaryConflict.update({
         where: { id: input.conflictId },
         data: {
           defenderApproved: true,
           status: "active",
           startDate: new Date(),
-          startClockMs: clock.now(),
+          startClockMs,
+          ...sealPvP(conflict, startClockMs),
         },
         include: {
           initiator: { select: { id: true, name: true } },
@@ -455,45 +499,16 @@ export const securityConflictsRouter = createTRPCRouter({
         });
       }
 
-      // D3 seam: each side's national combat power on its realm clock feeds the resolver.
-      const strengths = await nationalCombatPower(ctx.db, [
-        conflict.initiatorId,
-        conflict.defenderId,
-      ]);
-      const outcome = computeConflictOutcome(
-        strengths[conflict.initiatorId] ?? 0,
-        strengths[conflict.defenderId] ?? 0
-      );
-      const winnerId = outcome.initiatorWins ? conflict.initiatorId : conflict.defenderId;
-
-      // Claim atomically so a repeated call cannot resolve (and damage economies) twice.
-      const claimed = await ctx.db.militaryConflict.updateMany({
-        where: { id: conflict.id, status: "active" },
-        data: {
-          status: "resolved",
-          endDate: new Date(),
-          winner: winnerId,
-          initiatorCasualties: outcome.initiatorCasualties,
-          defenderCasualties: outcome.defenderCasualties,
-          economicDamage: outcome.economicDamage,
-        },
-      });
-      if (claimed.count === 0) {
+      // The combat model resolves on the seed fixed at acceptance, claims the row once, then applies the losses,
+      // war damage and casualties.
+      const concluded = await concludePvP(ctx.db, conflict);
+      if (!concluded) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Conflict is no longer active." });
       }
+      const winnerId = concluded.winner;
+      const initiatorWon = winnerId === conflict.initiatorId;
 
-      await createStorytellerEffects(
-        ctx.db,
-        conflictEconomicEffects({
-          initiator: conflict.initiator,
-          defender: conflict.defender,
-          outcome,
-          createdBy: ctx.user?.id ?? "system",
-          defenderWinLabel: "victory",
-        })
-      );
-
-      const winnerName = outcome.initiatorWins ? conflict.initiator.name : conflict.defender.name;
+      const winnerName = initiatorWon ? conflict.initiator.name : conflict.defender.name;
       for (const side of [conflict.initiator, conflict.defender]) {
         void generateDiplomaticNews(ctx.db as any, side.id, "pvnpc_conflict_resolved", {
           countryName: conflict.initiator.name,
@@ -525,7 +540,12 @@ export const securityConflictsRouter = createTRPCRouter({
         console.warn("[Conflicts] Resolution notification failed for conflict", conflict.id, err);
       }
 
-      return { conflictId: conflict.id, status: "resolved" as const, winner: winnerId };
+      return {
+        conflictId: conflict.id,
+        status: "resolved" as const,
+        winner: winnerId,
+        outcomeBand: concluded.result.band,
+      };
     }),
 
   // Get conflicts involving a country. Casualties and economic damage go to the parties only.
@@ -548,7 +568,7 @@ export const securityConflictsRouter = createTRPCRouter({
         conflicts.flatMap((c) => [c.initiatorId, c.defenderId])
       );
       const clock = await clockForCountry(ctx.db, input.countryId);
-      const rows = conflicts.map(withPvPExpiry).map((c) => ({
+      const rows = conflicts.map(withPvPExpiry).map(withoutServerOnly).map((c) => ({
         ...c,
         // When an active PvP conflict may be concluded (concludePvPConflict), on the realm clock;
         // null while the realm is paused.
@@ -592,6 +612,7 @@ export const securityConflictsRouter = createTRPCRouter({
       z.object({
         targetCountryId: z.string(),
         reason: z.string().optional(),
+        commitment: z.number().min(MIN_COMMITMENT).max(1).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -633,53 +654,15 @@ export const securityConflictsRouter = createTRPCRouter({
       }
       await assertStrikeAllowed(ctx.db, initiator, defender, await clockForCountry(ctx.db, initiator));
 
-      // D3 seam: national combat power on each side's realm clock; the NPC defends with forces
-      // derived from its economy (created on first touch).
-      const strengths = await nationalCombatPower(ctx.db, [initiator.id, defender.id]);
-      const outcome = computeConflictOutcome(
-        strengths[initiator.id] ?? 0,
-        strengths[defender.id] ?? 0
-      );
-      const {
-        initiatorWins,
-        initiatorCasualties,
-        defenderCasualties,
-        economicDamage: econDamage,
-      } = outcome;
-
-      const conflict = await ctx.db.militaryConflict.create({
-        data: {
-          type: "pvnpc",
-          initiatorId: userProfile.countryId,
-          defenderId: input.targetCountryId,
-          status: "resolved",
-          initiatorApproved: true,
-          defenderApproved: true,
-          reason: input.reason,
-          startDate: new Date(),
-          endDate: new Date(),
-          winner: initiatorWins ? userProfile.countryId : input.targetCountryId,
-          initiatorCasualties,
-          defenderCasualties,
-          economicDamage: econDamage,
-        },
-        include: {
-          initiator: { select: { id: true, name: true } },
-          defender: { select: { id: true, name: true } },
-        },
+      // The combat model: committed with a seed bound to the orders, resolved on both nations' derived forces (the
+      // NPC defends with forces from its economy), losses and economic effects applied.
+      const { conflict, result } = await commitStrike(ctx.db, {
+        attackerId: initiator.id,
+        defenderId: defender.id,
+        commitment: input.commitment,
+        reason: input.reason,
       });
-
-      // Create storyteller effects for economic damage
-      await createStorytellerEffects(
-        ctx.db,
-        conflictEconomicEffects({
-          initiator,
-          defender,
-          outcome,
-          createdBy: userProfile.id,
-          defenderWinLabel: "defense",
-        })
-      );
+      const initiatorWins = result.objectiveReached;
 
       const winnerName = initiatorWins ? initiator.name : defender.name;
 
@@ -697,6 +680,59 @@ export const securityConflictsRouter = createTRPCRouter({
         winner: winnerName,
       });
 
-      return conflict;
+      return withoutServerOnly(conflict);
+    }),
+
+  // The odds screen: the caller's view of an engagement it is considering (estimates of the enemy, never true values).
+  getCombatOdds: premiumProcedure
+    .input(
+      z.object({
+        targetCountryId: z.string(),
+        mode: z.enum(["strike", "pvp"]),
+        commitment: z.number().min(MIN_COMMITMENT).max(1).optional(),
+        days: z.number().int().min(1).max(MAX_ENGAGEMENT_DAYS).optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const countryId = await callerCountryId(ctx.db, ctx.auth.userId);
+      if (countryId === input.targetCountryId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Choose another nation." });
+      }
+      return combatOdds(ctx.db, {
+        attackerId: countryId,
+        defenderId: input.targetCountryId,
+        mode: input.mode,
+        commitment: input.commitment,
+        days: input.days ?? (input.mode === "strike" ? 3 : pvpDurationDays(null)),
+      });
+    }),
+
+  // The defender's declared terrain, used where the realm map has no data for an attack on it.
+  setDeclaredTerrain: premiumMutationProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        terrain: z.enum(TERRAIN_CLASSES).nullable(),
+        riverLine: z.boolean().default(false),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+      await syncDefense(ctx.db, input.countryId);
+      const terrainProfile = input.terrain
+        ? formatDeclaredTerrain({ terrain: input.terrain, riverLine: input.riverLine })
+        : null;
+      await ctx.db.defensePolicy.update({ where: { countryId: input.countryId }, data: { terrainProfile } });
+      return { countryId: input.countryId, terrainProfile };
+    }),
+
+  getDeclaredTerrain: premiumProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const policy = await ctx.db.defensePolicy.findUnique({
+        where: { countryId: input.countryId },
+        select: { terrainProfile: true },
+      });
+      return { countryId: input.countryId, terrainProfile: policy?.terrainProfile ?? null };
     }),
 });

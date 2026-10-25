@@ -14,6 +14,10 @@ jest.mock("~/components/mycountry/domains/defense/operations/PvPConflictPanel", 
   PvPConflictPanel: () => null,
 }));
 
+jest.mock("~/components/mycountry/domains/defense/operations/DeclaredTerrainCard", () => ({
+  DeclaredTerrainCard: () => null,
+}));
+
 import { OperationsPanel } from "~/components/mycountry/domains/defense/OperationsPanel";
 
 const renderPanel = (canEdit: boolean) =>

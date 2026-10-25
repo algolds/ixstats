@@ -33,11 +33,13 @@ export function npcDefenseShare(input: {
 }
 
 /**
- * D3's hook: the Richardson step's change in burden (share of GDP) an NPC's threats call for. 0 until D3 lands:
- *   Δm = 0.10 × Σ Threat − 0.25 × (m − m_base) + grievance
+ * The burden (share of GDP) an NPC's Richardson response adds to its budget: the stored adjustment the defense
+ * feedback moves each month by the damped step Δx = 0.10 × ΣThreat − 0.25 × x + grievance (D3,
+ * `~/lib/military/economy/richardson`). Players never carry one.
  */
-export function threatBurdenAdjustment(_countryId: string): number {
-  return 0;
+export function threatBurdenAdjustment(policy: { npcBurdenAdjustment: number } | null | undefined): number {
+  const value = policy?.npcBurdenAdjustment ?? 0;
+  return Number.isFinite(value) ? value : 0;
 }
 
 /** Manpower and doctrine an NPC's government form favours (designer). */

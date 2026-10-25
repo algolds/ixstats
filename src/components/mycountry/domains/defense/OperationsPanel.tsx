@@ -4,6 +4,7 @@ import { Tournament as Swords } from "iconoir-react";
 import { DeploymentWizard } from "./operations/DeploymentWizard";
 import { ActiveOperations } from "./operations/ActiveOperations";
 import { PvPConflictPanel } from "./operations/PvPConflictPanel";
+import { DeclaredTerrainCard } from "./operations/DeclaredTerrainCard";
 import { api } from "~/trpc/react";
 import { useCanEdit } from "~/context/MyCountryEditModeContext";
 
@@ -33,6 +34,8 @@ export function OperationsPanel({ countryId }: OperationsPanelProps) {
       <ActiveOperations countryId={countryId} />
 
       <PvPConflictPanel countryId={countryId} />
+
+      <DeclaredTerrainCard countryId={countryId} />
     </div>
   );
 }

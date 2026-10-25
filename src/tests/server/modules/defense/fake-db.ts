@@ -8,18 +8,25 @@ type Where = Record<string, unknown>;
 let seq = 0;
 const nextId = (prefix: string) => `${prefix}_${++seq}`;
 
+function matchesCondition(value: unknown, cond: unknown): boolean {
+  if (cond && typeof cond === "object" && !Array.isArray(cond) && !(cond instanceof Date)) {
+    const c = cond as { in?: unknown[]; notIn?: unknown[]; not?: unknown; gt?: number; gte?: number };
+    if (c.in) return c.in.includes(value);
+    if (c.notIn) return !c.notIn.includes(value);
+    if ("not" in c) return value !== c.not;
+    if (c.gt !== undefined) return typeof value === "number" && value > c.gt;
+    if (c.gte !== undefined) return typeof value === "number" && value >= c.gte;
+  }
+  return value === cond;
+}
+
 function matches(row: Row, where: Where | undefined): boolean {
   if (!where) return true;
   return Object.entries(where).every(([key, cond]) => {
     if (key === "branch" || key === "operation") return true; // relation filters: callers pre-scope rows
-    const value = row[key];
-    if (cond && typeof cond === "object" && !Array.isArray(cond)) {
-      const c = cond as { in?: unknown[]; not?: unknown; gt?: number };
-      if (c.in) return c.in.includes(value);
-      if ("not" in c) return value !== c.not;
-      if (c.gt !== undefined) return typeof value === "number" && value > c.gt;
-    }
-    return value === cond;
+    if (key === "AND") return (cond as Where[]).every((w) => matches(row, w));
+    if (key === "OR") return (cond as Where[]).some((w) => matches(row, w));
+    return matchesCondition(row[key], cond);
   });
 }
 
@@ -76,6 +83,10 @@ function table(prefix: string, rows: Row[]) {
       }
       return row;
     },
+    createMany: async ({ data }: { data: Record<string, unknown>[] }) => {
+      for (const d of data) rows.push({ id: nextId(prefix), ...d });
+      return { count: data.length };
+    },
     updateMany: async ({ where, data }: { where: Where; data: Record<string, unknown> }) => {
       const hit = rows.filter((r) => matches(r, where));
       for (const row of hit) Object.assign(row, data);
@@ -123,6 +134,14 @@ export function fakeDefenseDb(countries: FakeCountry[]) {
     militaryEquipmentCatalog: table("catalog", []),
     governmentBudget: table("gb", []),
     governmentStructure: table("gs", []),
+    militaryOperation: table("operation", []),
+    militaryConflict: table("conflict", []),
+    foreignPolicyAction: table("fp", []),
+    diplomaticRelation: table("relation", []),
+    storytellerEffect: table("effect", []),
+    realm: table("realm", []),
+    // No map: spatial queries find nothing, so the combat theatre falls back to the declared terrain.
+    $queryRawUnsafe: async () => [],
     $transaction: async (arg: unknown): Promise<unknown> =>
       typeof arg === "function" ? (arg as (tx: unknown) => Promise<unknown>)(db) : Promise.all(arg as Promise<unknown>[]),
   };

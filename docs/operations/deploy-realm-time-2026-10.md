@@ -16,9 +16,9 @@ run_sql() { docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ER
 | 1 | First | The MyCountry runbook, then the checks |
 | 2 | Before the window | Backup, stop cron |
 | 3 | Before the window, old build still serving | T1 clocks, the schema read-out |
-| 4 | Deploy window (old build stopped) | T3, t3b, D2a and the starter forces, D1, D2b and D3 placeholders |
+| 4 | Deploy window (old build stopped) | T3, t3b, D2a and the starter forces, D1, D2b placeholder, D3 combat columns |
 | 5 | Deploy window | The code deploy and the IxWorld rebuild |
-| 6 | After the code | Nothing required (D1 moved into step 4); D2b and D3 placeholders |
+| 6 | After the code | Nothing required (D1 moved into step 4); D2b placeholder |
 | 7 | After the code | Cron back on, job by job |
 | 8 | After the first runs | Smoke checks |
 | – | If needed | Rollback |
@@ -120,8 +120,13 @@ several minutes): announce the window. `ixstats-cron` is already stopped (step 2
    0. D1 was written to run after the code deploy (the old build reads these tables), but the old build is stopped
    here and the push in step 5 would abort on the non-empty tables, so it runs now.
 6. **D2b, the Defense page.** _Placeholder: any SQL D2b adds to `scripts/migrations/2026-10-realm-time/` goes here._
-7. **D3, combat and economic feedback.** _Placeholder: any SQL D3 adds (theatre, intel, war damage, casualties) goes
-   here, in its file's order._
+7. **D3, combat and economic feedback.** `run_sql scripts/migrations/2026-10-realm-time/d3-combat.sql` (after 4.3,
+   which creates `DefensePolicy`). Additive and idempotent: `DefensePolicy.terrainProfile` (a nation's declared
+   terrain, used where the realm map has no data) and `npcBurdenAdjustment` (an NPC's Richardson response, default
+   0); on `MilitaryConflict` the orders, their hash, the commit time, the HMAC seed, the inputs snapshot and the
+   result (`outcomeBand`, `margin`, `engagementDays`); on `MilitaryOperation` an intervention's orders, hash, commit
+   time, seed, snapshot and band. No data moves. Optional: set `COMBAT_SEED_SECRET` in `.env.production.local`
+   (without it seeds use `CRON_SECRET`); changing either later only changes seeds of battles committed after.
 8. Re-run the step 3.2 read-out: no `DROP` on military or security tables may remain.
 
 ## 5. The code deploy
@@ -146,8 +151,9 @@ If `ixstats-ws` was stopped in step 4 and the deploy script did not start it, ru
 No realm-time SQL is left for after the code: D1, first planned here, runs in step 4 (see 4.5).
 
 - **D2b.** _Placeholder: a post-deploy data step D2b adds goes here._
-- **D3.** _Placeholder: a post-deploy data step D3 adds (for example a backfill of the new combat columns) goes
-  here._
+- **D3.** Nothing: the combat columns need no backfill. PvP conflicts accepted before the deploy have no seed; they
+  seal from their start when concluded. The economic feedback (crowd-out, R&D spillover, labour hit, NPC
+  Richardson burden) writes its keyed levels on each nation's next in-game month as its defense syncs.
 
 ## 7. Cron back on
 
@@ -199,7 +205,11 @@ cooldowns. To read the clocks: `SELECT id, slug, settings->'clock' FROM realms;`
    proposal rows are off with "Both nations must be in the same realm"; the embassy and exchange pickers list only
    Ixnay's nations. Following and messages still work.
 6. **Defense.** An owned nation's Defense page shows its starter force and a budget read from its Defense department
-   line. _Placeholder: D2b's and D3's checks (levers, procurement, odds preview) go here._
+   line. _Placeholder: D2b's checks (levers, procurement) go here._ D3: Operations → PvNPC strike → pick a related
+   NPC: the odds screen shows the factor breakdown, odds and band probabilities as ranges, and the preview (1,000
+   runs); commit and the result shows the seed, band and losses; the target NPC's alert reads High afterwards.
+   `SELECT "createdBy", value FROM "StorytellerEffect" WHERE "createdBy" LIKE 'defense:%' ORDER BY "createdAt" DESC
+   LIMIT 10;` lists crowd-out levels for nations above 2% of GDP once their defense has ticked a month.
 
 ## Rollback
 

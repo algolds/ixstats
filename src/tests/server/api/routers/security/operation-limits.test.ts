@@ -13,6 +13,17 @@ jest.mock("~/server/db", () => ({
   isDatabaseReadOnly: false,
 }));
 
+// The combat model and its persistence are tested on their own; here the strike is a seam.
+jest.mock("~/server/modules/combat", () => ({
+  newBattleId: () => "op_new",
+  sealIntervention: jest.fn(async () => ({})),
+  resolveIntervention: jest.fn(async () => null),
+  commitStrike: jest.fn(async () => ({
+    conflict: { id: "c_1", status: "resolved", winner: "country_1", seed: "abc", inputSnapshot: "{}", orders: "{}" },
+    result: { objectiveReached: true, band: "success" },
+  })),
+}));
+
 import { newsGenerator } from "~/lib/diplomacy/news-generator";
 import { notificationAPI } from "~/lib/notifications/api";
 import { createCallerFactory } from "~/server/api/trpc";
@@ -101,6 +112,52 @@ describe("peacekeeping", () => {
   });
 });
 
+describe("operations on the combat model", () => {
+  beforeEach(() => {
+    db.country.findUnique.mockImplementation(async ({ where }: { where: { id: string } }) => ({
+      id: where.id,
+      name: where.id,
+      realmId: where.id === "country_far" ? "other_realm" : "default",
+      currentGdpPerCapita: 50_000,
+      currentPopulation: 10_000_000,
+    }));
+    db.militaryOperation.findFirst.mockResolvedValue(null);
+  });
+
+  it("refuses an operation against a nation in another realm", async () => {
+    await expect(
+      operations().createOperation({
+        countryId: OWN,
+        operationType: "blockade",
+        name: "Far Reach",
+        targetCountryId: "country_far",
+        personnelDeployed: 100,
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST", message: "Both nations must be in the same realm" });
+    expect(db.militaryOperation.create).not.toHaveBeenCalled();
+  });
+
+  it("costs its personnel at the type's rate of GDP per capita from the O&M line, not a GDP effect", async () => {
+    await operations().createOperation({
+      countryId: OWN,
+      operationType: "blockade",
+      name: "Iron Gate",
+      targetCountryId: "country_2",
+      personnelDeployed: 1_000,
+    });
+    const data = db.militaryOperation.create.mock.calls[0]![0].data;
+    // 1,000 people × 1.5 × 50,000 / 365 a day (was a flat $200 a head).
+    expect(data.dailyCost).toBeCloseTo((1_000 * 1.5 * 50_000) / 365, 6);
+    expect(db.storytellerEffect.create).not.toHaveBeenCalled();
+  });
+
+  it("an intervention needs a target", async () => {
+    await expect(
+      operations().createOperation({ countryId: OWN, operationType: "intervention", name: "Nowhere", personnelDeployed: 10 })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+});
+
 describe("PvNPC strikes", () => {
   const strike = () => conflicts().resolvePvNPCConflict({ targetCountryId: "country_npc" });
   const country = (id: string, realmId: string) => ({
@@ -123,8 +180,11 @@ describe("PvNPC strikes", () => {
     db.storytellerEffect.createMany.mockResolvedValue({ count: 2 });
   });
 
-  it("strikes a related NPC nation in the same realm", async () => {
-    await expect(strike()).resolves.toMatchObject({ id: "c_1" });
+  it("strikes a related NPC nation in the same realm, never returning the battle's inputs", async () => {
+    const conflict = await strike();
+    expect(conflict).toMatchObject({ id: "c_1", seed: "abc" });
+    expect(conflict).not.toHaveProperty("inputSnapshot");
+    expect(conflict).not.toHaveProperty("orders");
   });
 
   it("refuses a nation with no relation", async () => {
@@ -137,7 +197,10 @@ describe("PvNPC strikes", () => {
     db.country.findUnique.mockImplementation(async ({ where }: { where: { id: string } }) =>
       country(where.id, where.id === OWN ? "default" : "other_realm")
     );
-    await expect(strike()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(strike()).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Both nations must be in the same realm",
+    });
     expect(db.militaryConflict.create).not.toHaveBeenCalled();
   });
 

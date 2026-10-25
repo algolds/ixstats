@@ -66,6 +66,9 @@ export const env = createEnv({
     // token and any request that carries a session cookie (it never signs or accepts one with a fallback or
     // short key), logs one warning, and keeps serving anonymous reads.
     WIKIOS_API_SESSION_SECRET: z.string().optional(),
+    // HMAC key for combat seeds (src/server/modules/combat/combat.seed.ts). Optional: without it the seeds use
+    // CRON_SECRET (required in production), and a fixed development key outside production.
+    COMBAT_SEED_SECRET: z.string().optional(),
     // cron-runner.mjs job allowlist: comma-separated names from src/server/cron/jobs.ts, or "*".
     // Unset/empty schedules nothing.
     CRON_ENABLED_JOBS: z.string().optional(),
@@ -220,6 +223,7 @@ export const env = createEnv({
     CRON_SECRET: process.env.CRON_SECRET,
     WIKI_SYNC_WEBHOOK_SECRET: process.env.WIKI_SYNC_WEBHOOK_SECRET,
     WIKIOS_API_SESSION_SECRET: process.env.WIKIOS_API_SESSION_SECRET,
+    COMBAT_SEED_SECRET: process.env.COMBAT_SEED_SECRET,
     CRON_ENABLED_JOBS: process.env.CRON_ENABLED_JOBS,
     WS_ALLOWED_ORIGINS: process.env.WS_ALLOWED_ORIGINS,
     SYSTEM_OWNER_IDS: process.env.SYSTEM_OWNER_IDS,

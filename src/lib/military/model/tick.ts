@@ -115,7 +115,8 @@ function planMonth(state: NationState, econ: EconomyInputs, clockMs: number): Mo
     0
   );
   const funding = omFunding({
-    omMonthly: lines.om,
+    // Operations under way are paid first; what is left funds maintenance and training.
+    omMonthly: Math.max(0, lines.om - (econ.operationsMonthly ?? 0)),
     maintenanceRequired,
     trainingRequired,
     priority: policy.omPriority,

@@ -15,6 +15,11 @@ jest.mock("~/server/db", () => ({
 }));
 
 jest.mock("~/server/modules/defense", () => ({ applyOperationReadiness: jest.fn(async () => 1) }));
+jest.mock("~/server/modules/combat", () => ({
+  newBattleId: () => "op_new",
+  sealIntervention: jest.fn(async () => ({})),
+  resolveIntervention: jest.fn(async () => null),
+}));
 const REALM_NOW = 2.1e12;
 jest.mock("~/server/shared/realm-time", () => ({
   clockForCountry: jest.fn(async () => ({ now: () => REALM_NOW, multiplier: 2, paused: false })),
@@ -78,7 +83,8 @@ beforeEach(() => {
     currentGdpPerCapita: 50_000,
     currentPopulation: 10_000_000,
   });
-  db.militaryOperation.update.mockImplementation(async ({ data }: { data: object }) => data);
+  db.militaryOperation.update.mockImplementation(async ({ data }: { data: object }) => ({ status: "completed", ...data }));
+  db.militaryOperation.updateMany.mockResolvedValue({ count: 1 });
   db.governmentComponent.findMany.mockResolvedValue([]);
 });
 
@@ -112,7 +118,7 @@ describe("endOperation", () => {
       change: "trainingEnded",
       generalsMultiplier: 1,
     });
-    expect(db.militaryOperation.update.mock.calls[0]![0].data.endIxTime).toBe(REALM_NOW);
+    expect(db.militaryOperation.updateMany.mock.calls[0]![0].data.endIxTime).toBe(REALM_NOW);
   });
 
   it("leaves a reset bill after any other operation", async () => {
@@ -137,16 +143,23 @@ describe("endOperation", () => {
     });
   });
 
+  it("ends once: a concurrent end finds it claimed and fights nothing", async () => {
+    db.militaryOperation.findUnique.mockResolvedValue(operation("blockade", 30));
+    db.militaryOperation.updateMany.mockResolvedValue({ count: 0 });
+    await expect(operations().endOperation({ operationId: "op_1" })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+    expect(db.militaryOperation.update).not.toHaveBeenCalled();
+  });
+
   it("rates the outcome on the server, ignoring a client rating", async () => {
     db.militaryOperation.findUnique.mockResolvedValue(operation("blockade", 3));
     await operations().endOperation({
       operationId: "op_1",
       successRating: "success",
     } as { operationId: string });
-    expect(db.militaryOperation.update.mock.calls[0]![0].data).toMatchObject({
-      status: "completed",
-      successRating: "failure",
-    });
+    expect(db.militaryOperation.updateMany.mock.calls[0]![0].data).toMatchObject({ status: "completed" });
+    expect(db.militaryOperation.update.mock.calls[0]![0].data).toMatchObject({ successRating: "failure" });
   });
 });
 

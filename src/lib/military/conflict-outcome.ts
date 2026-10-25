@@ -1,88 +1,68 @@
 /**
- * Battle outcome for a military conflict (Plan 163 / 191), shared by the instant PvNPC strike
- * and the PvP resolution once a conflict's duration has run.
+ * What a resolved engagement leaves on the economies (realm time D3; research §7.7, owner decision: realistic). The
+ * battle itself is resolved by the combat model (`~/lib/military/combat`: seeded odds, losses, breakpoints); this turns
+ * its result into level effects written through `createStorytellerEffects`, stamped on each country's realm clock:
  *
- * Realm time D2a: each side's strength is its national combat power from the defense model
- * (`nationalCombatPower` in `~/server/modules/defense`, CP = Σ R × CEV × Q̄ × A × K^α N^(1−α) on
- * its realm clock), and NPCs field forces derived from their economy. SEAM FOR D3: this resolver
- * is still the old swing-and-ratio one, only fed the new strength; D3 replaces
- * `computeConflictOutcome` with the seeded, odds-shown TNDM-lite resolution (research §7.5).
+ * - war damage on the defender's soil, −30% × intensity × the engagement's share of five years, and −10% of that for
+ *   the defender's neighbours (phased over the engagement, at least a quarter year);
+ * - deaths (25% of casualties) off each side's population, plus civilian deaths on the war site (0.5 per military
+ *   death at full intensity).
  */
+import { CIVILIAN_DEATHS_PER_MILITARY, type EngagementResult } from "~/lib/military/combat";
 import { StorytellerEffectType } from "~/lib/economy/calculations";
 import type { StorytellerEffectDraft } from "~/lib/economy/storyteller-effects";
+import { populationLevel, warDamageLevels, warIntensity } from "~/lib/military/economy/feedback";
 
-export interface ConflictOutcome {
-  initiatorWins: boolean;
-  initiatorCasualties: number;
-  defenderCasualties: number;
-  /** Share of GDP lost; the loser bears 1.5x and the winner 0.5x of it. */
-  economicDamage: number;
+/** Shortest phase-in of war damage, in years (designer: a strike's damage still shows over a season). */
+const MIN_DAMAGE_PHASE_YEARS = 0.25;
+const MIN_EFFECT = 1e-6;
+
+interface EffectSide {
+  id: string;
+  name: string;
+  population: number;
 }
 
-export function computeConflictOutcome(
-  initiatorStrength: number,
-  defenderStrength: number,
-  random: () => number = Math.random
-): ConflictOutcome {
-  const totalStrength = initiatorStrength + defenderStrength || 1;
-
-  // Random swing factor (10-30%)
-  const swing = 0.1 + random() * 0.2;
-  const effectiveRatio = initiatorStrength / totalStrength + (random() > 0.5 ? swing : -swing);
-
-  const initiatorWins = effectiveRatio > 0.5;
-  const marginOfVictory = Math.abs(effectiveRatio - 0.5);
-
-  // Casualties proportional to strength ratio
-  const baseCasualties = Math.round((initiatorStrength + defenderStrength) * 0.05);
-  const initiatorCasualties = Math.round(
-    baseCasualties * (initiatorWins ? 0.3 : 0.7) * (1 + random() * 0.3)
-  );
-  const defenderCasualties = Math.round(
-    baseCasualties * (initiatorWins ? 0.7 : 0.3) * (1 + random() * 0.3)
-  );
-
-  // Economic damage: closer fights cost more
-  const economicDamage = marginOfVictory < 0.1 ? 0.02 : marginOfVictory < 0.2 ? 0.01 : 0.005;
-
-  return { initiatorWins, initiatorCasualties, defenderCasualties, economicDamage };
-}
-
-/** IxTime years over which a conflict's GDP loss phases in. */
-const CONFLICT_DAMAGE_YEARS = 2;
-
-/**
- * The GDP level effects a resolved conflict leaves on both nations: each loses its share of
- * `economicDamage` from GDP per capita, phased in over CONFLICT_DAMAGE_YEARS and kept after.
- */
-export function conflictEconomicEffects(input: {
-  initiator: { id: string; name: string };
-  defender: { id: string; name: string };
-  outcome: ConflictOutcome;
-  createdBy: string;
-  /** How a winning defender's effect reads: "defense" for an NPC, "victory" for a player. */
-  defenderWinLabel: "defense" | "victory";
+/** The level effects an engagement leaves: war damage at home and next door, deaths off population. */
+export function engagementEffectDrafts(input: {
+  /** Key prefix of the battle (`conflict:<id>` or `operation:<id>`). */
+  battleKey: string;
+  attacker: EffectSide;
+  defender: EffectSide;
+  /** The defender's neighbours (the attacker included when it borders the defender). */
+  neighbourIds: readonly string[];
+  result: Pick<EngagementResult, "days" | "attacker" | "defender">;
 }): StorytellerEffectDraft[] {
-  const { initiator, defender, outcome } = input;
-  const won = outcome.initiatorWins;
+  const { attacker, defender, result } = input;
+  const intensity = warIntensity(result.attacker.engaged + result.defender.engaged, defender.population);
+  const damage = warDamageLevels(intensity, result.days);
+  const phase = Math.max(MIN_DAMAGE_PHASE_YEARS, result.days / 365.25);
+  const civilians =
+    CIVILIAN_DEATHS_PER_MILITARY * intensity * (result.attacker.deaths + result.defender.deaths);
+  const gdp = (countryId: string, value: number, description: string): StorytellerEffectDraft => ({
+    countryId,
+    inputType: StorytellerEffectType.GDP_LEVEL_ADJUSTMENT,
+    value,
+    duration: phase,
+    description,
+    createdBy: `${input.battleKey}:war-damage`,
+  });
+  const deaths = (side: EffectSide, count: number): StorytellerEffectDraft => ({
+    countryId: side.id,
+    inputType: StorytellerEffectType.POPULATION_LEVEL_ADJUSTMENT,
+    value: populationLevel(count, side.population),
+    duration: null,
+    description: `War dead: fighting between ${attacker.name} and ${defender.name}`,
+    createdBy: `${input.battleKey}:casualties`,
+  });
   return [
-    {
-      countryId: initiator.id,
-      inputType: StorytellerEffectType.GDP_LEVEL_ADJUSTMENT,
-      value: -outcome.economicDamage * (won ? 0.5 : 1.5),
-      description: `Military conflict with ${defender.name}: ${won ? "victory" : "defeat"}`,
-      duration: CONFLICT_DAMAGE_YEARS,
-      createdBy: input.createdBy,
-    },
-    {
-      countryId: defender.id,
-      inputType: StorytellerEffectType.GDP_LEVEL_ADJUSTMENT,
-      value: -outcome.economicDamage * (won ? 1.5 : 0.5),
-      description: `Military conflict with ${initiator.name}: ${won ? "defeat" : input.defenderWinLabel}`,
-      duration: CONFLICT_DAMAGE_YEARS,
-      createdBy: input.createdBy,
-    },
-  ];
+    gdp(defender.id, damage.home, `War damage: ${attacker.name} attacked ${defender.name}`),
+    ...input.neighbourIds
+      .filter((id) => id !== defender.id)
+      .map((id) => gdp(id, damage.neighbour, `War next door: ${attacker.name} attacked ${defender.name}`)),
+    deaths(attacker, result.attacker.deaths),
+    deaths(defender, result.defender.deaths + civilians),
+  ].filter((d) => Math.abs(d.value) >= MIN_EFFECT);
 }
 
 /** In-game days a PvP conflict runs when its rules set no `maxDuration`. */
@@ -96,7 +76,8 @@ interface PvPClock {
   multiplier: number;
 }
 
-function pvpDurationDays(pvpRules: string | null): number {
+/** A PvP conflict's planned in-game days: its rules' `maxDuration`, else 14. */
+export function pvpDurationDays(pvpRules: string | null): number {
   try {
     const rules = pvpRules ? JSON.parse(pvpRules) : null;
     if (typeof rules?.maxDuration === "number" && rules.maxDuration > 0) return rules.maxDuration;

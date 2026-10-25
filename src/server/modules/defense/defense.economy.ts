@@ -109,8 +109,12 @@ export async function loadDefenseBudget(
       country.totalGovernmentSpending ?? (structure?.totalBudget ? structure.totalBudget : null),
   });
   if (!npc || budget.source === "defenseDepartment") return budget;
-  // D3's Richardson response moves an NPC's burden; 0 until it lands.
-  return { ...budget, amount: Math.max(0, budget.amount + threatBurdenAdjustment(country.id) * gdp) };
+  // The NPC's Richardson response to threats (stored on its policy by the defense feedback).
+  const policy = await db.defensePolicy.findUnique({
+    where: { countryId: country.id },
+    select: { npcBurdenAdjustment: true },
+  });
+  return { ...budget, amount: Math.max(0, budget.amount + threatBurdenAdjustment(policy) * gdp) };
 }
 
 /** Everything the model reads for one nation now. */
@@ -119,9 +123,13 @@ export async function loadEconomy(
   country: DefenseCountry,
   clock: RealmClockReader
 ): Promise<{ econ: EconomyInputs; budgetSource: DefenseBudgetSource }> {
-  const [budget, median] = await Promise.all([
+  const [budget, median, operations] = await Promise.all([
     loadDefenseBudget(db, country, clock),
     realmMedianGdpPerCapita(db, country.realmId),
+    db.militaryOperation.findMany({
+      where: { countryId: country.id, status: "active" },
+      select: { dailyCost: true },
+    }),
   ]);
   return {
     econ: {
@@ -131,6 +139,8 @@ export async function loadEconomy(
       defenseBudget: budget.amount,
       realmMedianGdpPerCapita: median,
       frontierYear: frontierYearAt(clock.now()),
+      // Operations are paid from the O&M line at their daily rates (an in-game month is 365.25 / 12 days).
+      operationsMonthly: (operations.reduce((sum, o) => sum + o.dailyCost, 0) * 365.25) / 12,
     },
     budgetSource: budget.source,
   };

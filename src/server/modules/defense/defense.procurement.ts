@@ -87,6 +87,7 @@ export async function orderProcurement(
     }
     const capacity = domesticCapacity({
       gdp: snapshot.econ.gdp,
+      manufacturingShare: snapshot.econ.manufacturingShare,
       surgeMonths: surging ? (now - policy.surgeStartedClockMs!) / MONTH_MS : null,
       priceIndex: policy.priceIndex,
     });
