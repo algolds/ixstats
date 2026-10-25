@@ -8,6 +8,7 @@ import {
   assertCountryWriteAccess,
   countriesWithWriteAccess,
 } from "~/server/shared/country-authorization";
+import { assertSameRealm } from "~/server/shared/same-realm-guard";
 
 export const meetingsMeetingsRouter = createTRPCRouter({
   // ==================== CABINET MEETINGS ====================
@@ -29,6 +30,7 @@ export const meetingsMeetingsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
       const { targetCountryId, intentId, ...rest } = input;
+      if (targetCountryId) await assertSameRealm(ctx.db, input.countryId, targetCountryId);
       const status = targetCountryId ? "pending" : "scheduled";
       const meeting = await ctx.db.cabinetMeeting.create({
         data: {

@@ -12,6 +12,7 @@ import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { computeForeignPolicyImpact } from "~/lib/statecraft/foreign-policy";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { clocksForRealms, pickClock } from "~/server/shared/realm-time";
+import { assertRealmsMatch, assertSameRealm } from "~/server/shared/same-realm-guard";
 import {
   COOPERATIVE_FP_TYPES,
   PROPOSAL_STATUS,
@@ -293,7 +294,13 @@ export async function openForeignPolicyAction(db: PrismaClient, input: OpenForei
     [initiatorId, input.targetId].map((id) =>
       db.country.findUnique({
         where: { id },
-        select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
+        select: {
+          id: true,
+          name: true,
+          realmId: true,
+          currentGdpPerCapita: true,
+          currentPopulation: true,
+        },
       })
     )
   );
@@ -301,6 +308,7 @@ export async function openForeignPolicyAction(db: PrismaClient, input: OpenForei
   if (!initiator || !target) {
     throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
   }
+  assertRealmsMatch(initiator.realmId, target.realmId);
 
   // Target-scaled impact (shared pure fn — see plans/statecraft-stage2.md).
   const impact = computeForeignPolicyImpact({
@@ -560,7 +568,8 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
         return { status: "declined" as const };
       }
 
-      // Accept: enact the stored effects.
+      // Accept: enact the stored effects (declining stays open across realms, so an old proposal can be turned down).
+      await assertSameRealm(ctx.db, action.initiatorId, action.targetId);
       const enacted = await enactForeignPolicyEffects(
         ctx.db as PrismaClient,
         action.id,

@@ -5,7 +5,7 @@
 import { TRPCError } from "@trpc/server";
 import type { CumulativeEffects } from "~/lib/diplomacy/choice-tracker";
 import { parsePrismaError } from "~/lib/prisma-error";
-import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { sameRealm } from "~/lib/realms/same-realm";
 import { NPCPersonalitySystem } from "~/lib/diplomacy/npc-personality";
 import {
   buildNpcObservableData,
@@ -32,7 +32,7 @@ export async function assertAllianceRealm(
     select: { realmId: true },
   });
   if (!alliance) throw new TRPCError({ code: "NOT_FOUND", message: "Alliance not found." });
-  if ((alliance.realmId ?? DEFAULT_REALM_ID) !== (countryRealmId ?? DEFAULT_REALM_ID)) {
+  if (!sameRealm(alliance.realmId, countryRealmId)) {
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: "Alliances are realm-scoped: only nations of the alliance's realm can join it.",

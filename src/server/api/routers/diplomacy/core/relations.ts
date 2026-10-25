@@ -5,6 +5,7 @@ import { TRPCError } from "@trpc/server";
 
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { groupIncidentsByCountry } from "~/lib/diplomacy/incidents";
+import { assertSameRealm } from "~/server/shared/same-realm-guard";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 export const diplomaticCoreRelationsRouter = createTRPCRouter({
@@ -132,6 +133,7 @@ export const diplomaticCoreRelationsRouter = createTRPCRouter({
           message: "You do not have permission to update this relationship's goals.",
         });
       }
+      await assertSameRealm(ctx.db, relation.country1, relation.country2);
 
       const updateData: any = {};
       if (isCountry1) {

@@ -7,6 +7,7 @@ import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
 
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { assertSameRealm } from "~/server/shared/same-realm-guard";
 
 /** Joining needs a running public exchange the nation is not hosting or in already, with room left. */
 function assertJoinable(
@@ -77,6 +78,9 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.hostCountryId);
+      if (input.participantCountryId) {
+        await assertSameRealm(ctx.db, input.hostCountryId, input.participantCountryId);
+      }
 
       // Validate embassy mission if provided
       if (input.embassyMissionId) {
@@ -119,7 +123,7 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
         }
       }
 
-      // realm-time: the host nation's clock; an exchange between nations of two realms is T5's to block.
+      // The host nation's clock; every nation in the exchange shares its realm.
       const hostClock = await clockForCountry(ctx.db, input.hostCountryId);
       const hostNow = hostClock.now();
 
@@ -189,11 +193,12 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
       // Auto-create cultural_outreach embassy missions if enabled
       if (input.autoCreateMissions) {
         try {
-          // Find all embassies where this country is the guest (owns embassies in other countries)
+          // The host's active embassies in nations of its own realm (one from before the realm rule gets no mission)
           const embassies = await ctx.db.embassy.findMany({
             where: {
               guestCountryId: input.hostCountryId,
               status: "active",
+              hostCountry: { realmId: hostClock.realmId },
             },
           });
 
@@ -278,6 +283,7 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
         },
       });
       assertJoinable(exchange, input.countryId);
+      await assertSameRealm(ctx.db, input.countryId, exchange.hostCountryId);
 
       const participant = await ctx.db.culturalExchangeParticipant.create({
         data: {
@@ -311,7 +317,6 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
           exchangeTitle: exchange.title,
           role: input.role,
         },
-        // realm-time: the joining nation's clock; an exchange between nations of two realms is T5's to block.
         ixTimeTimestamp: (await clockForCountry(ctx.db, input.countryId)).now(),
       });
 

@@ -13,6 +13,7 @@ import {
 } from "~/lib/diplomacy/proposal-lifecycle";
 import { notifyCountryOwners } from "./notify";
 import { openForeignPolicyAction } from "./foreignPolicy";
+import { assertSameRealm } from "~/server/shared/same-realm-guard";
 import { allianceInviteProcedures } from "./alliance-invite-procedures";
 import {
   allianceNameTaken,
@@ -30,10 +31,11 @@ type TargetedAllianceAction = keyof typeof TARGETED_ALLIANCE_ACTIONS;
 const isTargetedAction = (type: string): type is TargetedAllianceAction =>
   type in TARGETED_ALLIANCE_ACTIONS;
 
-/** A targeted action needs a target: a real nation that is not in the alliance. */
+/** A targeted action needs a target: a real nation of the proposer's realm that is not in the alliance. */
 async function assertValidAllianceTarget(
   db: PrismaClient,
   allianceId: string,
+  proposerId: string,
   targetId: string | undefined
 ): Promise<void> {
   if (!targetId) {
@@ -53,12 +55,14 @@ async function assertValidAllianceTarget(
       message: "An alliance cannot act against one of its own members.",
     });
   }
+  await assertSameRealm(db, proposerId, targetId);
 }
 
 /**
  * Carries out an approved targeted action: every voting member opens the foreign-policy action through the same path
  * a player's own proposal takes. A sanction is enacted at once (effects on both sides); a free trade offer waits for
- * the target's consent. A member that already has one in force, or whose relation forbids it, is skipped.
+ * the target's consent. A member that already has one in force, whose relation forbids it, or of another realm
+ * than the target, is skipped.
  */
 async function executeTargetedAllianceAction(
   db: PrismaClient,
@@ -465,7 +469,12 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
       }
 
       if (isTargetedAction(input.actionType)) {
-        await assertValidAllianceTarget(ctx.db as PrismaClient, input.allianceId, input.targetId);
+        await assertValidAllianceTarget(
+          ctx.db as PrismaClient,
+          input.allianceId,
+          ctx.user.countryId,
+          input.targetId
+        );
       }
 
       // Calculate required votes: simple majority of voting members
