@@ -115,6 +115,8 @@ Cards refresh one-offs. Each is a dry run that prints its plan and writes nothin
 | Script | Purpose & Command |
 | :--- | :--- |
 | [`scripts/migrations/mark-match-revenue-collected.ts`](migrations/mark-match-revenue-collected.ts) | `bun run db:mark-match-revenue-collected [-- --apply]` — one-off SL-14 fix: marks matches completed before per-match revenue tracking as collected, so the first `collectMatchRevenue` after the deploy doesn't pay a club's whole history. Dry run by default; run once after the schema push. |
+| [`scripts/cron/dry-run-stat-progression.ts`](cron/dry-run-stat-progression.ts) | `DATABASE_URL=<copy> bun scripts/cron/dry-run-stat-progression.ts` — read-only: what the first `stat-progression` run would write (rows, tier changes, largest GDP moves). Run on a production copy before enabling the job ([deploy-mycountry-2026-10.md](../docs/operations/deploy-mycountry-2026-10.md) step 7). |
+| [`scripts/migrations/2026-10-mycountry/`](migrations/2026-10-mycountry/) | Idempotent SQL for the MyCountry fix plan, run in the order of [deploy-mycountry-2026-10.md](../docs/operations/deploy-mycountry-2026-10.md). |
 
 **Retired 2026-10-21** (deleted, not archived; recover one from git with
 `git log --diff-filter=D --oneline -- <path>` and `git checkout <commit>^ -- <path>`):
