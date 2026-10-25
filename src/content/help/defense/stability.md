@@ -1,6 +1,6 @@
 ---
 title: Internal Stability
-description: Your stability score, what moves it, and security events.
+description: Your stability score and what moves it.
 badge: Defense
 prevHref: /help/defense/equipment
 prevLabel: The Equipment Catalog
@@ -33,11 +33,7 @@ Inequality, unemployment, poverty and political polarisation push the measures d
 
 The panel also shows a trend: improving, stable, declining or critical.
 
-## Security events
-
-Security events such as protests, strikes and crime waves are listed in the Internal Stability tab. Resolving them needs [Premium](/help/getting-started/premium).
-
 ## Tips
 
-- Stability is visible to every player even without Premium; you only need Premium to manage security events.
+- Stability is visible to every player, with or without Premium.
 - If stability is falling, look at recent issue responses in your change log first; they are the most common cause.

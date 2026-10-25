@@ -190,7 +190,7 @@ const STARTER_ACTIVE_SHARE = 0.005;
 /** Defense spending as a share of GDP when the builder recorded none. */
 const STARTER_GDP_SHARE = 0.02;
 
-export type StarterBudgetSource = "builder" | "defenseBudget" | "estimate" | "none";
+export type StarterBudgetSource = "defenseDepartment" | "builder" | "estimate" | "none";
 
 /**
  * The Defense amount from `GovernmentBudget.spendingCategories`, which the builder stores either as
@@ -231,14 +231,15 @@ export interface StarterBranch {
 
 /**
  * Army, navy and air force sized from population (0.5% active duty, reserves half that) and
- * funded from the builder's Defense spending, else the stored defense budget, else 2% of GDP.
- * A defense figure above half of GDP is treated as bad data and skipped.
+ * funded from the Defense department's allocation in the budget in effect (the defense budget),
+ * else the builder's Defense spending, else 2% of GDP. A defense figure above half of GDP is
+ * treated as bad data and skipped.
  */
 export function planStarterForce(input: {
   population: number | null | undefined;
   totalGdp: number | null | undefined;
+  defenseAllocation: number | null | undefined;
   builderDefenseSpending: number | null;
-  defenseBudgetTotal: number | null | undefined;
 }): { branches: StarterBranch[]; budgetSource: StarterBudgetSource } {
   const gdp = input.totalGdp && input.totalGdp > 0 ? input.totalGdp : 0;
   const plausible = (amount: number | null | undefined) =>
@@ -246,12 +247,12 @@ export function planStarterForce(input: {
 
   let budget = 0;
   let budgetSource: StarterBudgetSource = "none";
-  if (plausible(input.builderDefenseSpending)) {
+  if (plausible(input.defenseAllocation)) {
+    budget = input.defenseAllocation!;
+    budgetSource = "defenseDepartment";
+  } else if (plausible(input.builderDefenseSpending)) {
     budget = input.builderDefenseSpending!;
     budgetSource = "builder";
-  } else if (plausible(input.defenseBudgetTotal)) {
-    budget = input.defenseBudgetTotal!;
-    budgetSource = "defenseBudget";
   } else if (gdp > 0) {
     budget = gdp * STARTER_GDP_SHARE;
     budgetSource = "estimate";

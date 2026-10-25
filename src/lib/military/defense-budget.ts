@@ -1,75 +1,96 @@
 /**
- * The defense budget: one `DefenseBudget` row per nation, written by its owner through
- * `security.upsertDefenseBudget`. Until a row exists the Defense tab shows an estimate (2% of GDP,
- * split by the typical category shares), labelled as an estimate.
+ * The defense budget is the National budget's Defense department line (realm time design, owner
+ * decision): the Defense department's allocation in the budget in effect. The Defense page reads
+ * it from the government budget and edits it through `government.setAllocation`.
  */
+import { latestBudgetYearUpTo } from "~/lib/government/budget-year";
+import type { DepartmentCategory } from "~/types/government";
 
-/** The five spending categories, with the share each gets in the estimate. */
-export const DEFENSE_BUDGET_CATEGORIES = [
-  { key: "personnelCosts", estimateShare: 0.4 },
-  { key: "operationsMaintenance", estimateShare: 0.3 },
-  { key: "procurement", estimateShare: 0.15 },
-  { key: "rdteCosts", estimateShare: 0.1 },
-  { key: "militaryConstruction", estimateShare: 0.05 },
-] as const;
+/** The department category whose allocation is the defense budget. */
+export const DEFENSE_CATEGORY = "Defense" satisfies DepartmentCategory;
 
-export type DefenseBudgetCategoryKey = (typeof DEFENSE_BUDGET_CATEGORIES)[number]["key"];
-
-export type DefenseBudgetAmounts = { totalBudget: number } & Record<
-  DefenseBudgetCategoryKey,
-  number
->;
-
-/** Share of GDP the estimate assumes. */
-export const ESTIMATE_GDP_SHARE = 0.02;
-
-/** The estimate shown before a nation saves a budget. */
-export function estimateDefenseBudget(gdp: number): DefenseBudgetAmounts {
-  const totalBudget = Math.max(0, gdp) * ESTIMATE_GDP_SHARE;
-  const amounts = { totalBudget } as DefenseBudgetAmounts;
-  for (const c of DEFENSE_BUDGET_CATEGORIES) amounts[c.key] = totalBudget * c.estimateShare;
-  return amounts;
+interface AllocationLike {
+  departmentId: string;
+  budgetYear: number;
+  allocatedAmount: number;
+  allocatedPercent: number;
 }
 
-/** Sum of the category amounts. */
-export function allocatedDefenseBudget(amounts: DefenseBudgetAmounts): number {
-  return DEFENSE_BUDGET_CATEGORIES.reduce((sum, c) => sum + amounts[c.key], 0);
+interface DepartmentLike {
+  id: string;
+  name: string;
+  category: string;
 }
 
-/** True when the categories add up to more than the total (a cent of float slack allowed). */
-export function isOverAllocated(amounts: DefenseBudgetAmounts): boolean {
-  return allocatedDefenseBudget(amounts) > amounts.totalBudget + 0.01;
+/** A budget line with its department's category, as `loadEffectiveBudget` returns it. */
+interface CategorisedLine {
+  allocatedAmount: number;
+  allocatedPercent: number;
+  department: { category: string };
 }
+
+export type DefenseLine =
+  | { kind: "no-structure" }
+  | { kind: "no-department" }
+  | {
+      kind: "line";
+      departmentId: string;
+      departmentName: string;
+      allocatedAmount: number;
+      allocatedPercent: number;
+      totalBudget: number;
+      /** The budget in effect, or null when no year has allocations yet. */
+      budgetYear: number | null;
+    };
 
 /**
- * The categories' share of the total, in percent. Float drift in saved amounts (450000000.0000001)
- * never reads as over 100%: past 100 only when `isOverAllocated`.
+ * The defense line of a government: its Defense department with the largest share of the budget
+ * in effect (the latest year at or before `currentYear`), the same line directives nudge. A
+ * Defense department with no allocation that year reads as 0. No departments at all is
+ * "no-structure"; departments but none of category Defense is "no-department".
  */
-export function defenseAllocationPercent(amounts: DefenseBudgetAmounts): number {
-  if (amounts.totalBudget <= 0) return 0;
-  const percent = (allocatedDefenseBudget(amounts) / amounts.totalBudget) * 100;
-  return isOverAllocated(amounts) ? percent : Math.min(percent, 100);
-}
+export function defenseLineOf(
+  government:
+    | {
+        totalBudget?: number | null;
+        departments?: readonly DepartmentLike[] | null;
+        budgetAllocations?: readonly AllocationLike[] | null;
+      }
+    | null
+    | undefined,
+  currentYear: number
+): DefenseLine {
+  const departments = government?.departments ?? [];
+  if (departments.length === 0) return { kind: "no-structure" };
+  const defense = departments.filter((d) => d.category === DEFENSE_CATEGORY);
+  if (defense.length === 0) return { kind: "no-department" };
 
-/** Share of GDP and per-capita figures stored with a saved budget. */
-export function defenseBudgetRatios(
-  totalBudget: number,
-  gdp: number | null | undefined,
-  population: number | null | undefined
-): { gdpPercent: number; perCapita: number } {
+  const allocations = government?.budgetAllocations ?? [];
+  const budgetYear = latestBudgetYearUpTo(
+    allocations.map((a) => a.budgetYear),
+    currentYear
+  );
+  const lineFor = (departmentId: string) =>
+    allocations.find((a) => a.departmentId === departmentId && a.budgetYear === budgetYear);
+  const shareOf = (departmentId: string) => lineFor(departmentId)?.allocatedPercent ?? 0;
+
+  const best = defense.reduce((top, dept) => (shareOf(dept.id) > shareOf(top.id) ? dept : top));
+  const line = lineFor(best.id);
   return {
-    gdpPercent: gdp && gdp > 0 ? (totalBudget / gdp) * 100 : 0,
-    perCapita: population && population > 0 ? totalBudget / population : 0,
+    kind: "line",
+    departmentId: best.id,
+    departmentName: best.name,
+    allocatedAmount: line?.allocatedAmount ?? 0,
+    allocatedPercent: line?.allocatedPercent ?? 0,
+    totalBudget: government?.totalBudget ?? 0,
+    budgetYear,
   };
 }
 
-/** A whole-currency amount as the edit field shows it: "5,668,857,676". */
-export function formatAmountInput(value: number): string {
-  return Number.isFinite(value) ? Math.round(value).toLocaleString("en-US") : "0";
-}
-
-/** The amount typed in an edit field; separators and other non-digits are ignored. */
-export function parseAmountInput(text: string): number {
-  const digits = text.replace(/[^0-9]/g, "");
-  return digits === "" ? 0 : Number(digits);
+/** The largest Defense allocation among one year's budget lines, or null when there is none. */
+export function defenseAllocationAmount(lines: readonly CategorisedLine[]): number | null {
+  const defense = lines.filter((line) => line.department.category === DEFENSE_CATEGORY);
+  if (defense.length === 0) return null;
+  return defense.reduce((top, line) => (line.allocatedPercent > top.allocatedPercent ? line : top))
+    .allocatedAmount;
 }

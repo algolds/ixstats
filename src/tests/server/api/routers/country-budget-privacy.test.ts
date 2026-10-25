@@ -37,7 +37,6 @@ import { governmentCrudRouter } from "~/server/api/routers/government/crud";
 import { governmentBudgetRouter } from "~/server/api/routers/government/budget";
 import { myCountryDashboardRouter } from "~/server/api/routers/mycountry/dashboard";
 import { electionsBrokersRouter } from "~/server/api/routers/elections/brokers";
-import { securityDefenseRouter } from "~/server/api/routers/security/defense";
 import { securityMilitaryRouter } from "~/server/api/routers/security/military";
 import { diplomaticEmbassiesQueriesEmbassyListingsRouter } from "~/server/api/routers/diplomacy/embassies/queries/embassyListings";
 import { transportRouteQueriesRouter } from "~/server/api/routers/transport/routeQueries";
@@ -173,7 +172,6 @@ function makeDb({ ownerUserId = "owner_db" }: { ownerUserId?: string } = {}) {
         { allocatedPercent: 40, department: { category: "Defense" } },
       ]),
     },
-    defenseBudget: { findUnique: jest.fn(async () => ({ totalBudget: 9e9 })) },
     transportRoute: {
       findMany: jest.fn(async () => [
         {
@@ -294,7 +292,6 @@ const government = createCallerFactory(governmentCrudRouter);
 const governmentBudget = createCallerFactory(governmentBudgetRouter);
 const mycountry = createCallerFactory(myCountryDashboardRouter);
 const brokers = createCallerFactory(electionsBrokersRouter);
-const defense = createCallerFactory(securityDefenseRouter);
 const military = createCallerFactory(securityMilitaryRouter);
 const embassies = createCallerFactory(diplomaticEmbassiesQueriesEmbassyListingsRouter);
 const transport = createCallerFactory(transportRouteQueriesRouter);
@@ -395,11 +392,6 @@ const OWNER_ONLY: Array<[string, Call, (db: Db) => jest.Mock]> = [
     "elections.getPowerBrokers",
     (ctx) => brokers(ctx).getPowerBrokers({ countryId: COUNTRY }),
     (db) => db.budgetAllocation.findMany,
-  ],
-  [
-    "security.getDefenseBudget",
-    (ctx) => defense(ctx).getDefenseBudget({ countryId: COUNTRY }),
-    (db) => db.defenseBudget.findUnique,
   ],
   [
     "government.getPolicyMaintenance",

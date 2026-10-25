@@ -1,5 +1,5 @@
 "use client";
-// src/components/defense/CommandPanel.tsx
+// src/components/mycountry/domains/defense/CommandPanel.tsx
 
 import { useDefenseBudget } from "~/hooks/useDefenseBudget";
 import { BudgetManagementCard } from "~/components/mycountry/domains/defense/command";
@@ -10,31 +10,20 @@ interface CommandPanelProps {
 }
 
 export function CommandPanel({ countryId }: CommandPanelProps) {
-  const {
-    editingBudget,
-    setEditingBudget,
-    budgetData,
-    isEstimate,
-    isSaving,
-    handleSaveBudget,
-    handleTotalBudgetChange,
-    handleCategoryChange,
-    allocationPercent,
-  } = useDefenseBudget({ countryId });
+  const budget = useDefenseBudget({ countryId });
 
   return (
     <div className="space-y-6">
       <ForceStructurePanel countryId={countryId} />
       <BudgetManagementCard
-        budgetData={budgetData}
-        isEstimate={isEstimate}
-        isSaving={isSaving}
-        editingBudget={editingBudget}
-        setEditingBudget={setEditingBudget}
-        handleSaveBudget={handleSaveBudget}
-        handleTotalBudgetChange={handleTotalBudgetChange}
-        handleCategoryChange={handleCategoryChange}
-        allocationPercent={allocationPercent}
+        countryId={countryId}
+        line={budget.line}
+        isLoading={budget.isLoading}
+        isSaving={budget.isSaving}
+        editingBudget={budget.editingBudget}
+        setEditingBudget={budget.setEditingBudget}
+        onSaveShare={budget.saveShare}
+        onAddDefenseDepartment={budget.addDefenseDepartment}
       />
     </div>
   );

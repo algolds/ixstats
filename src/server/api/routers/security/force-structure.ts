@@ -22,6 +22,8 @@ import {
   planStarterForce,
   populationPersonnelCap,
 } from "~/lib/military/force-structure";
+import { defenseAllocationAmount } from "~/lib/military/defense-budget";
+import { loadEffectiveBudget } from "~/lib/government/budget-allocations";
 
 // ===========================
 // Input Validation Schemas
@@ -331,7 +333,7 @@ export const securityForceStructureRouter = createTRPCRouter({
 });
 
 async function loadStarterPlan(db: Db, countryId: string) {
-  const [country, governmentBudget, defenseBudget] = await Promise.all([
+  const [country, governmentBudget, effectiveBudget] = await Promise.all([
     db.country.findUnique({
       where: { id: countryId },
       select: { currentPopulation: true, currentTotalGdp: true },
@@ -340,13 +342,13 @@ async function loadStarterPlan(db: Db, countryId: string) {
       where: { countryId },
       select: { spendingCategories: true },
     }),
-    db.defenseBudget.findUnique({ where: { countryId }, select: { totalBudget: true } }),
+    loadEffectiveBudget(db, countryId),
   ]);
   if (!country) throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
   return planStarterForce({
     population: country.currentPopulation,
     totalGdp: country.currentTotalGdp,
+    defenseAllocation: defenseAllocationAmount(effectiveBudget.allocations),
     builderDefenseSpending: builderDefenseSpending(governmentBudget?.spendingCategories),
-    defenseBudgetTotal: defenseBudget?.totalBudget,
   });
 }

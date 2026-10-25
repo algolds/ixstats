@@ -11,11 +11,11 @@ nextLabel: The Equipment Catalog
 The Defense section of MyCountry ([/mycountry/defense](/mycountry/defense)) models your armed forces and internal security: military branches, units and equipment, readiness, border threats, operations, conflicts with other nations, and your stability score. It has five tabs: **Branches & Readiness**, **Threat Vectors**, **Forces & Arsenal**, **Special Operations** and **Internal Stability**.
 
 > [!WARNING]
-> **Defense is a MyCountry Premium feature.** Every player can open it, but without [Premium](/help/getting-started/premium) it's a read-only preview: creating assets, planning operations, conflicts and resolving security events need Premium.
+> **Defense is a MyCountry Premium feature.** Every player can open it, but without [Premium](/help/getting-started/premium) it's a read-only preview: creating assets, planning operations, conflicts and editing the defense budget need Premium.
 
 ## Branches & Readiness
 
-Your branches (army, navy, air force and so on), their readiness and your overall defense posture, plus your defense budget. Deployments lower a unit's readiness by 10; recalling it restores 5.
+Your branches (army, navy, air force and so on), their readiness and your overall defense posture, plus your defense budget. The defense budget is your Defense department's line in the [National budget](/help/mycountry/economy): changing its share here changes that line, and the other way round. A nation with no government structure or no Defense department is offered one first. Deployments lower a unit's readiness by 10; recalling it restores 5.
 
 ## Threat Vectors
 
@@ -41,7 +41,7 @@ You can also propose a conflict with another player's nation (they're notified a
 
 ## Internal Stability
 
-Your stability score and the security events (protests, crime waves and similar) that affect it. Resolve events from here. See [Internal Stability](/help/defense/stability).
+Your stability score and what moves it. See [Internal Stability](/help/defense/stability).
 
 ## Good to know
 

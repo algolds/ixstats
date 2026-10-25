@@ -12,7 +12,7 @@ Models: **<!-- BEGIN_DOCS:COUNT:models -->383<!-- END_DOCS:COUNT:models -->** (p
 | Intelligence & Diplomacy (`intelligence.prisma`, `diplomacy.prisma`) | `IntelligenceBriefing`, `IntelligenceTemplate`, `DiplomaticRelation`, `DiplomaticEvent`, `Embassy`, `EmbassyMission`, `Alliance`, `ForeignPolicyAction`, `NPCPersonality` |
 | Economy & Tax (`economy.prisma`) | `EconomicProfile`, `EconomicIndicator`, `LaborMarket`, `FiscalSystem`, `TaxSystem`, `EconomicComponent`, `TaxComponent`, `CrossBuilderSynergy` |
 | Government, Politics & Issues (`government.prisma`) | `GovernmentComponent`, `ComponentSynergy`, `GovernmentStructure`, `PoliticalParty`, `Legislature`, `Election`, `ElectionResult`, `NationalIssue`, `StorytellerEffect`, `Intent` |
-| Defense & Security (`military.prisma`) | `MilitaryBranch`, `MilitaryUnit`, `DefenseBudget`, `SecurityThreat`, `SecurityEvent`, `MilitaryEquipmentCatalog` |
+| Defense & Security (`military.prisma`) | `MilitaryBranch`, `MilitaryUnit`, `MilitaryAsset`, `InternalStabilityMetrics`, `MilitaryEquipmentCatalog` |
 | Social & Collaboration (`social.prisma`, `social-follows.prisma`, `realm-boards.prisma`) | `ThinkpagesAccount`, `ThinkpagesPost`, `ThinktankGroup`, `ThinkshareConversation`, `ActivityFeed`, `Poll`, `ThinkpagesFollow`, `ThinkpagesPersonalAccount`, `RealmBoard` |
 | Achievements & Notifications (`core.prisma`) | `Achievement`, `UserAchievement`, `Notification`, `NotificationEventConfig` |
 | Users, Roles & Logging (`core.prisma`, `identity.prisma`) | `User`, `Role`, `Permission`, `RolePermission`, `UserSession`, `AuditLog`, `AdminAuditLog`, `SystemLog`, `PassportPreference` |

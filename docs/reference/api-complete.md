@@ -451,30 +451,30 @@ api.npcPersonalities.assignPersonalityToCountry.useMutation() // { personalityId
 
 ## Defense & Security
 
-### security Router (17 procedures)
+### security Router (15 procedures)
 
 ```typescript
-// Queries (8)
+// Queries (7)
 api.security.getSecurityAssessment.useQuery({ countryId })
 api.security.getMilitaryBranches.useQuery({ countryId })
-api.security.getDefenseBudget.useQuery({ countryId, fiscalYear? })
 api.security.getInternalStability.useQuery({ countryId })
 api.security.getBorderSecurity.useQuery({ countryId })
 api.security.getOperations.useQuery({ countryId, includeCompleted? })
 api.security.getConflicts.useQuery({ countryId })
 api.security.getPvNPCTargets.useQuery()
 
-// Mutations (9)
+// Mutations (8)
 api.security.createMilitaryAsset.useMutation() // { branchId, asset }
 api.security.updateMilitaryAsset.useMutation() // { id, asset }
 api.security.deleteMilitaryAsset.useMutation() // { id }
-api.security.resolveSecurityEvent.useMutation() // { id, resolutionNotes? }
 api.security.createOperation.useMutation() // { countryId, operationType, name, description?, targetCountryId?, personnelDeployed?, unitIds?, assetIds?, duration? }
 api.security.endOperation.useMutation() // { operationId, successRating? }
 api.security.proposePvPConflict.useMutation() // { defenderId, reason?, pvpRules? }
 api.security.respondToConflict.useMutation() // { conflictId, accept }
 api.security.resolvePvNPCConflict.useMutation() // { targetCountryId, reason? }
 ```
+
+The defense budget is the National budget's Defense department line: read it from `government.getFullByCountryId` and set its share with `government.setAllocation`.
 
 ### militaryEquipment Router (10 procedures)
 

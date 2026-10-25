@@ -8,7 +8,6 @@ import {
   Activity,
   Heart,
   Eye,
-  WarningTriangle as AlertTriangle,
   HelpCircle,
   InfoCircle as Info,
 } from "iconoir-react";
@@ -188,57 +187,6 @@ export const StabilityHelpDialog = React.memo(function StabilityHelpDialog() {
                   Corruption in law enforcement is particularly damaging.
                 </p>
               </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-2">
-            <h4 className="flex items-center gap-2 font-semibold">
-              <AlertTriangle className="h-4 w-4" />
-              Automatic security event system
-            </h4>
-            <p className="text-label-secondary">
-              <strong>Events are generated automatically</strong> based on your country's actual
-              metrics using advanced Markov chains and NPC threat actor personalities. The system
-              continuously monitors stability conditions and triggers events when thresholds are
-              crossed or conditions align.
-            </p>
-            <div className="text-footnote mt-2 space-y-2 pl-4">
-              <p className="font-medium">Automatic Triggers:</p>
-              <p>
-                • <strong>Threshold Triggers:</strong> Critical instability (score &lt;30), severe
-                crime (&gt;800), high riot risk (&gt;70%), ethnic tensions (&gt;75%), weak borders,
-                cyber vulnerability
-              </p>
-              <p>
-                • <strong>Cascade Triggers:</strong> Multiple crisis conditions converging (Perfect
-                Storm, Security Vacuum, Failed State scenarios)
-              </p>
-              <p>
-                • <strong>Cooldown System:</strong> Prevents event spam with 2-day minimum cooldown
-                between events, 7-day category cooldown, max 5 events per 30 days
-              </p>
-              <p className="mt-2 font-medium">Event Severity:</p>
-              <p>
-                • <strong>Critical/Existential:</strong> 50-500 casualties, massive economic impact,
-                immediate response required
-              </p>
-              <p>
-                • <strong>High Severity:</strong> 10-100 casualties, significant disruption
-              </p>
-              <p>
-                • <strong>Moderate:</strong> 2-20 casualties, localized impact
-              </p>
-              <p>
-                • <strong>Low:</strong> Minimal casualties, routine incidents
-              </p>
-              <p className="mt-2 font-medium">NPC Threat Actors:</p>
-              <p>
-                Each event features unique threat actors with personalities: Jihadist Cells,
-                Separatist Movements, Organized Crime, Cyber Attackers, Foreign Agents, Lone Wolves.
-                Their behavior adapts to your country's conditions.
-              </p>
             </div>
           </div>
 

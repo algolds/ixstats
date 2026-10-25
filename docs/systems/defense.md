@@ -20,13 +20,13 @@ Under MyCountry's Command Surface architecture (`CommandSurface.tsx`), defense i
 - `src/components/mycountry/shell/rails/DefenseRail.tsx` – Defense context rail
 - `src/components/mycountry/domains/defense/` – `DefenseCommandPanel`, `CommandPanel`, `AssetManager`, `OperationsPanel`, `StabilityPanel`, `BorderThreatPanel`
 - `src/components/mycountry/domains/defense/forces/` – `ForceStructurePanel` (totals, combat strength, branch list; the Branches and readiness tab), `BranchCard`, `BranchSheet`, `UnitSheet`, `StarterForceDialog`, and `ArsenalPanel` (branch picker for `AssetManager`; the Forces and arsenal tab)
-- `src/components/mycountry/domains/defense/command/` – `ReadinessOverviewCard` (DEFCON posture), `BudgetManagementCard`
+- `src/components/mycountry/domains/defense/command/` – `ReadinessOverviewCard` (DEFCON posture), `BudgetManagementCard` (the Defense department line of the National budget, `useDefenseBudget`)
 - `src/components/mycountry/domains/defense/assets/` – Asset cards/dialogs and `EquipmentBrowser`
 - `src/components/mycountry/domains/defense/operations/` – `ActiveOperations`, `DeploymentWizard`, `PvPConflictPanel`
 - `src/components/mycountry/domains/defense/stability/` – Stability metrics and security events
 
 ### Backend Routers
-- `src/server/api/routers/security/` (`assessment.ts`, `borders.ts`, `conflicts.ts`, `defense.ts`, `force-structure.ts`, `military.ts`, `operations.ts`, `stability.ts`) – Security assessment, border security, PvP/PvNPC conflicts, defense budget, branch and unit authoring, order of battle and assets, operations, internal stability & security events
+- `src/server/api/routers/security/` (`assessment.ts`, `borders.ts`, `conflicts.ts`, `force-structure.ts`, `military.ts`, `operations.ts`, `stability.ts`) – Security assessment and border security (derived on read), PvP/PvNPC conflicts, branch and unit authoring, order of battle and assets, operations, internal stability
 - `src/server/api/routers/militaryEquipment/` – Military hardware catalog, manufacturers, analytics (aircraft, naval, armor)
 - `src/server/api/routers/smallArmsEquipment/` – Infantry weapons and manufacturer catalogs
 
@@ -36,11 +36,10 @@ Under MyCountry's Command Surface architecture (`CommandSurface.tsx`), defense i
 
 Defined in `prisma/schema/military.prisma`:
 - `MilitaryBranch`, `MilitaryUnit`, `MilitaryAsset`: Force structure, unit readiness, and owned hardware
-- `DefenseBudget`: Defense spending allocation
-- `SecurityThreat`, `ThreatIncident`, `SecurityAssessment`, `NeighborThreatAssessment`, `BorderSecurity`: Threat and border posture
-- `InternalStabilityMetrics`, `SecurityEvent`: Domestic stability and incidents
+- `InternalStabilityMetrics`: Domestic stability
+- The defense budget is not a model of its own: it is the Defense department's `BudgetAllocation` in the budget in effect (realm time design). The Defense page reads it from `government.getFullByCountryId` and edits its share through `government.setAllocation` (owner-checked; editing from the Defense page also needs Premium, the National budget tab does not). The threat picture, security assessment and border security are derived on read (`src/lib/military/threat-picture.ts`); the old `SecurityAssessment`, `BorderSecurity`, `NeighborThreatAssessment`, `SecurityThreat`, `ThreatIncident`, `SecurityEvent` and `DefenseBudget` tables were dropped in October 2026.
 
-`security.getInternalStability` computes stability from the formula (`src/lib/statecraft/stability-formulas.ts`) on every view through `computeInternalStability` (`src/lib/statecraft/stability-store.ts`), without writing (MC-13). Each row stores the formula values it was last computed from (`formulaSnapshot`); on recalculation, the gap between a stored field and its snapshot value (the delta that national issues or other events wrote through `CountryEventSpine`) is added to the new formula value, bounded to 0-100 (rates: at least 0). Rows are written by the issue path (`ensureInternalStabilityMetrics`) and re-persisted by the `stat-progression` job (`refreshStoredInternalStability`). A row without a snapshot keeps its stored values until that job first recalculates it, then tracks the formula. The formula's recent-policy term reads active policies enacted in the last 90 IxTime days. Its other inputs still use placeholder budgets and several defaulted fields. `security.getBorderSecurity` returns schema defaults for a country with no row instead of creating one.
+`security.getInternalStability` computes stability from the formula (`src/lib/statecraft/stability-formulas.ts`) on every view through `computeInternalStability` (`src/lib/statecraft/stability-store.ts`), without writing (MC-13). Each row stores the formula values it was last computed from (`formulaSnapshot`); on recalculation, the gap between a stored field and its snapshot value (the delta that national issues or other events wrote through `CountryEventSpine`) is added to the new formula value, bounded to 0-100 (rates: at least 0). Rows are written by the issue path (`ensureInternalStabilityMetrics`) and re-persisted by the `stat-progression` job (`refreshStoredInternalStability`). A row without a snapshot keeps its stored values until that job first recalculates it, then tracks the formula. The formula's recent-policy term reads active policies enacted in the last 90 IxTime days. Its other inputs still use placeholder budgets and several defaulted fields.
 - `MilitaryOperation`, `Deployment`, `MilitaryConflict`: Operations, deployments, and PvP/PvNPC conflicts
 - `MilitaryEquipmentCatalog` / `DefenseManufacturer` / `SmallArmsEquipment` / `SmallArmsManufacturer` / `WeaponEra`: Equipment catalogs
 
@@ -56,7 +55,6 @@ graph TD
     C -->|Manage Assets| D[security.create/update/deleteMilitaryAsset]
     C -->|Deploy Forces| E[DeploymentWizard → security.createOperation]
     C -->|PvP / PvNPC Conflict| F[security.proposePvPConflict / resolvePvNPCConflict]
-    C -->|Resolve Incident| G[security.resolveSecurityEvent]
     F --> H[Notification + ThinkPages News]
 ```
 
@@ -64,7 +62,7 @@ graph TD
 2. **Posture & Readiness**: DEFCON-style posture and branch/unit readiness; deployments drain unit readiness (−10) and recalls restore part of it (+5 per unit).
 3. **Operations & Deployments**: Peacekeeping, defense pact, blockade, intervention, and training operations deploy units/assets and carry a daily operating cost (personnel × $200/day + 1.5× asset maintenance) while active. `DeploymentWizard` lists the nation's units and assets by branch and sets deployed personnel from the selected units; `security.createOperation` refuses unit or asset ids outside the nation's active branches.
 4. **Equipment Management**: Assets are added from the equipment catalog via `EquipmentBrowser`, which lists the active `MilitaryEquipmentCatalog` rows edited at `/admin/military-equipment` (`militaryEquipment.getPlayerCatalog`).
-5. **Conflicts & Crises**: PvP conflict proposals notify the defender and publish news. An accepted PvP conflict runs for its rules' `maxDuration` (default 14 IxTime days); after that either side resolves it with `security.concludePvPConflict`, which uses the same strength calculation as a PvNPC strike (`src/lib/military/conflict-outcome.ts`). Security events are resolved from the stability panel. Defense actions are not yet routed through `CountryEventSpine`.
+5. **Conflicts & Crises**: PvP conflict proposals notify the defender and publish news. An accepted PvP conflict runs for its rules' `maxDuration` (default 14 IxTime days); after that either side resolves it with `security.concludePvPConflict`, which uses the same strength calculation as a PvNPC strike (`src/lib/military/conflict-outcome.ts`). Defense actions are not yet routed through `CountryEventSpine`.
 
 ---
 
@@ -81,7 +79,7 @@ Plan 312 deleted branch and unit CRUD, which left every nation at zero strength 
 
 All mutations are `premiumMutationProcedure`. Bounds live in `FORCE_LIMITS` (`src/lib/military/force-structure.ts`): at most 20 active branches per nation, 200 units and 500 assets per branch; active duty up to 10M, reserves 20M, civilian staff 5M and unit personnel 1M per row; budgets up to 1e14; levels 0 to 100; text fields length-capped and image URLs http(s) only. Two cross-row rules: active duty plus reserves across a nation's active branches may not exceed 25% of its population, and a branch's units may not hold more personnel than its active duty plus reserves (shrinking a branch below its units is refused too).
 
-**Starter force:** the empty state offers "Start from my nation's data". It creates an army, navy and air force with 0.5% of the population on active duty (split 55/25/20, reserves half of active duty), funded from the builder's Defense line in `GovernmentBudget.spendingCategories` (either storage shape), else the stored `DefenseBudget.totalBudget`, else 2% of GDP. A Defense figure above half of GDP is ignored as bad data.
+**Starter force:** the empty state offers "Start from my nation's data". It creates an army, navy and air force with 0.5% of the population on active duty (split 55/25/20, reserves half of active duty), funded from the Defense department's allocation in the budget in effect, else the builder's Defense line in `GovernmentBudget.spendingCategories` (either storage shape), else 2% of GDP. A Defense figure above half of GDP is ignored as bad data.
 
 **Combat strength** (`militaryStrength` in `src/lib/military/force-structure.ts`, re-exported from `conflict-outcome.ts`) is the sum over active branches of:
 
@@ -89,7 +87,7 @@ All mutations are `premiumMutationProcedure`. Bounds live in `FORCE_LIMITS` (`sr
 - assets: for each non-retired asset, min(operational, quantity) × 10 × (0.5 + modernization);
 - times a quality factor of 0.75 + mean(technology, training, morale) / 2, so 0.75 to 1.25 and 1.0 at the default 50s.
 
-PvNPC strikes and `security.concludePvPConflict` feed both sides' strength to `computeConflictOutcome`. The force-structure panel, each branch card and the Defense rail show the same figure, computed client-side from `getMilitaryBranches` with the same function. `SecurityAssessment.militaryStrength` is a separate 0 to 100 index that nothing writes yet; it does not feed battles.
+PvNPC strikes and `security.concludePvPConflict` feed both sides' strength to `computeConflictOutcome`. The force-structure panel, each branch card and the Defense rail show the same figure, computed client-side from `getMilitaryBranches` with the same function. The derived assessment's `militaryStrength` (`threat-picture.ts`) is a separate 0 to 100 index; it does not feed battles.
 
 ---
 

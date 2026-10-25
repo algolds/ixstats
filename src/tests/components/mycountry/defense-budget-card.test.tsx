@@ -1,6 +1,7 @@
 /**
- * P0-05 / P1-09: the Defense budget card labels the 2% of GDP figure as an estimate, edits with a
- * formatted amount (not a raw float), and offers no Edit budget in the free (locked) preview.
+ * Realm time D1: the Defense budget card shows the National budget's Defense department line
+ * (amount, share, national total), edits its share, offers the create-structure or
+ * add-department action when there is no line, and is read-only in the free (locked) preview.
  */
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
@@ -8,55 +9,106 @@ import { fireEvent, render, screen } from "@testing-library/react";
 jest.mock("~/components/ui/number-flow", () => ({
   NumberFlowDisplay: ({ value }: { value: number }) => <span>{value}</span>,
 }));
+jest.mock("~/components/mycountry/domains/government/CreateGovernmentStructureButton", () => ({
+  CreateGovernmentStructureButton: () => <button>Create government structure</button>,
+}));
 
 import { MyCountryEditModeProvider } from "~/context/MyCountryEditModeContext";
 import { BudgetManagementCard } from "~/components/mycountry/domains/defense/command/BudgetManagementCard";
+import type { DefenseLine } from "~/lib/military/defense-budget";
 
-const budgetData = {
-  totalBudget: 5668857676.361599,
-  gdpPercent: 2,
-  personnelCosts: 2267543070.5,
-  operationsMaintenance: 1700657302.9,
-  procurement: 850328651.4,
-  rdteCosts: 566885767.6,
-  militaryConstruction: 283442883.8,
+const defenseLine: DefenseLine = {
+  kind: "line",
+  departmentId: "d_def",
+  departmentName: "Ministry of Defence",
+  allocatedAmount: 8e9,
+  allocatedPercent: 8,
+  totalBudget: 100e9,
+  budgetYear: 2040,
 };
 
-function renderCard(opts: { canEdit: boolean; editing: boolean; isEstimate: boolean }) {
-  const onTotal = jest.fn();
+function renderCard(opts: { line?: DefenseLine; canEdit?: boolean; editing?: boolean }) {
+  const onSaveShare = jest.fn();
+  const onAddDefenseDepartment = jest.fn();
+  const setEditingBudget = jest.fn();
   render(
-    <MyCountryEditModeProvider canEdit={opts.canEdit}>
+    <MyCountryEditModeProvider canEdit={opts.canEdit ?? true}>
       <BudgetManagementCard
-        budgetData={budgetData}
-        isEstimate={opts.isEstimate}
+        countryId="c1"
+        line={opts.line ?? defenseLine}
+        isLoading={false}
         isSaving={false}
-        editingBudget={opts.editing}
-        setEditingBudget={jest.fn()}
-        handleSaveBudget={jest.fn()}
-        handleTotalBudgetChange={onTotal}
-        handleCategoryChange={jest.fn()}
-        allocationPercent={100}
+        editingBudget={opts.editing ?? false}
+        setEditingBudget={setEditingBudget}
+        onSaveShare={onSaveShare}
+        onAddDefenseDepartment={onAddDefenseDepartment}
       />
     </MyCountryEditModeProvider>
   );
-  return { onTotal };
+  return { onSaveShare, onAddDefenseDepartment, setEditingBudget };
 }
 
-it("labels the figure an estimate until a budget is saved", () => {
-  renderCard({ canEdit: true, editing: false, isEstimate: true });
-  expect(screen.getByText("Estimated defense budget")).toBeTruthy();
-  expect(screen.getByText(/Estimate: 2% of GDP/)).toBeTruthy();
+it("shows the Defense department line of the national budget", () => {
+  renderCard({});
+  expect(
+    screen.getByText(/The Ministry of Defence line of the national budget for FY2040/)
+  ).toBeTruthy();
+  expect(screen.getByText("8000000000")).toBeTruthy();
+  expect(screen.getByText("100000000000")).toBeTruthy();
+  expect(screen.getByText("Share of the national budget")).toBeTruthy();
+  expect(screen.queryByText(/2% of GDP/)).toBeNull();
+  expect(screen.queryByText("Procurement")).toBeNull();
 });
 
-it("offers no Edit budget in the locked preview", () => {
-  renderCard({ canEdit: false, editing: false, isEstimate: false });
-  expect(screen.queryByRole("button", { name: /Edit budget/ })).toBeNull();
+it("opens the share editor for the owner", () => {
+  const { setEditingBudget } = renderCard({ editing: false });
+  fireEvent.click(screen.getByRole("button", { name: /Edit share/ }));
+  expect(setEditingBudget).toHaveBeenCalledWith(true);
 });
 
-it("edits the total as a formatted whole amount", () => {
-  const { onTotal } = renderCard({ canEdit: true, editing: true, isEstimate: false });
-  const input = screen.getByLabelText("Total defense budget") as HTMLInputElement;
-  expect(input.value).toBe("5,668,857,676");
-  fireEvent.change(input, { target: { value: "9,000,000,000" } });
-  expect(onTotal).toHaveBeenCalledWith(9e9);
+it("saves the typed share in percent", () => {
+  const { onSaveShare } = renderCard({ editing: true });
+  const input = screen.getByLabelText("Defense share of the national budget") as HTMLInputElement;
+  expect(input.value).toBe("8");
+  fireEvent.change(input, { target: { value: "12.5" } });
+  expect(screen.getByText(/= \$12,500,000,000/)).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: /Save share/ }));
+  expect(onSaveShare).toHaveBeenCalledWith(12.5);
+});
+
+it("refuses a share over 100%", () => {
+  const { onSaveShare } = renderCard({ editing: true });
+  fireEvent.change(screen.getByLabelText("Defense share of the national budget"), {
+    target: { value: "140" },
+  });
+  const save = screen.getByRole("button", { name: /Save share/ }) as HTMLButtonElement;
+  expect(save.disabled).toBe(true);
+  fireEvent.click(save);
+  expect(onSaveShare).not.toHaveBeenCalled();
+});
+
+it("offers no editing in the locked preview", () => {
+  renderCard({ canEdit: false, editing: true });
+  expect(screen.queryByRole("button", { name: /Edit share/ })).toBeNull();
+  expect(screen.queryByLabelText("Defense share of the national budget")).toBeNull();
+});
+
+it("offers to create the government structure when there are no departments", () => {
+  renderCard({ line: { kind: "no-structure" } });
+  expect(screen.getByRole("status").textContent).toMatch(/no departments yet/);
+  expect(screen.getByRole("button", { name: "Create government structure" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: /Edit share/ })).toBeNull();
+});
+
+it("offers to add a Defense department when there is none", () => {
+  const { onAddDefenseDepartment } = renderCard({ line: { kind: "no-department" } });
+  expect(screen.getByRole("status").textContent).toMatch(/no Defense department/);
+  fireEvent.click(screen.getByRole("button", { name: /Add a Defense department/ }));
+  expect(onAddDefenseDepartment).toHaveBeenCalled();
+});
+
+it("shows the empty state without actions in the locked preview", () => {
+  renderCard({ line: { kind: "no-department" }, canEdit: false });
+  expect(screen.getByRole("status")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: /Add a Defense department/ })).toBeNull();
 });

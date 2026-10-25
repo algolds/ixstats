@@ -1,302 +1,276 @@
 "use client";
-// src/components/defense/command/BudgetManagementCard.tsx
+// src/components/mycountry/domains/defense/command/BudgetManagementCard.tsx
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Dollar as DollarSign,
-  Group as Users,
-  Wrench,
-  Package,
-  Microscope,
-  Building,
   EditPencil as Edit,
   FloppyDisk as Save,
   HelpCircle,
   InfoCircle as Info,
+  Plus,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
 import { Progress } from "~/components/ui/progress";
-import { Separator } from "~/components/ui/separator";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "~/components/ui/sheet";
-import { cn } from "~/lib/utils";
-import { type BudgetData, BUDGET_CATEGORIES } from "~/hooks/useDefenseBudget";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { useCanEdit } from "~/context/MyCountryEditModeContext";
-import {
-  formatAmountInput,
-  parseAmountInput,
-  type DefenseBudgetCategoryKey,
-} from "~/lib/military/defense-budget";
+import { CreateGovernmentStructureButton } from "~/components/mycountry/domains/government/CreateGovernmentStructureButton";
+import { ALLOCATION_PERCENT_MAX } from "~/lib/government/budget-math";
+import type { DefenseLine } from "~/lib/military/defense-budget";
 
-/** Map icon name strings to iconoir components */
-const ICON_MAP = {
-  Users,
-  Wrench,
-  Package,
-  Microscope,
-  Building,
-} as const;
+type LineData = Extract<DefenseLine, { kind: "line" }>;
 
 interface BudgetManagementCardProps {
-  budgetData: BudgetData;
-  /** True when no budget is saved yet and the figures are the 2% of GDP estimate. */
-  isEstimate: boolean;
+  countryId: string;
+  line: DefenseLine;
+  isLoading: boolean;
   isSaving: boolean;
   editingBudget: boolean;
   setEditingBudget: (editing: boolean) => void;
-  handleSaveBudget: () => void;
-  handleTotalBudgetChange: (value: number) => void;
-  handleCategoryChange: (key: DefenseBudgetCategoryKey, value: number) => void;
-  allocationPercent: number;
+  /** Saves the Defense department's share of the national budget, in percent. */
+  onSaveShare: (allocatedPercent: number) => void;
+  onAddDefenseDepartment: () => void;
 }
 
-/** A whole-currency amount, shown with separators ("5,668,857,676") while it is edited. */
-function AmountInput({
-  value,
-  onChange,
-  label,
-  className,
-}: {
-  value: number;
-  onChange: (value: number) => void;
-  label: string;
-  className?: string;
-}) {
+/** Typical shares of a defense budget, shown as a read-only guide. */
+const TYPICAL_SPLIT = [
+  ["Personnel", "35 to 45%", "pay, benefits and pensions"],
+  ["Operations and maintenance", "25 to 35%", "exercises, training and upkeep"],
+  ["Procurement", "10 to 20%", "new equipment, vehicles, ships and aircraft"],
+  ["Research and development", "5 to 15%", "the next generation of equipment"],
+  ["Military construction", "3 to 8%", "bases and installations"],
+] as const;
+
+function BudgetGuide() {
   return (
-    <Input
-      type="text"
-      inputMode="numeric"
-      aria-label={label}
-      value={formatAmountInput(value)}
-      onChange={(e) => onChange(parseAmountInput(e.target.value))}
-      className={cn("tabular-nums", className)}
-    />
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0"
+          aria-label="About the defense budget"
+        >
+          <HelpCircle className="text-label-secondary h-4 w-4" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent size="wide" className="overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <Info aria-hidden="true" className="text-label-secondary h-5 w-5" />
+            Defense budget guide
+          </SheetTitle>
+        </SheetHeader>
+        <div className="text-body space-y-4">
+          <div>
+            <h4 className="mb-2 font-semibold">Where it comes from</h4>
+            <p className="text-label-secondary">
+              Your defense budget is the Defense department&apos;s line in the National budget. A
+              change here changes that line, and a change in the National budget shows here.
+            </p>
+          </div>
+          <div>
+            <h4 className="mb-2 font-semibold">A typical split, as a guide</h4>
+            <p className="text-label-secondary mb-2">
+              Most nations spend their defense budget roughly like this. It is a guide only; the
+              budget is set as one line.
+            </p>
+            <ul className="text-label-secondary list-inside list-disc space-y-1">
+              {TYPICAL_SPLIT.map(([label, share, what]) => (
+                <li key={label}>
+                  <strong>{label}</strong> ({share}): {what}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+/** The share field while editing; it starts from the saved share each time it opens. */
+function ShareEditor({
+  line,
+  isSaving,
+  onCancel,
+  onSave,
+}: {
+  line: LineData;
+  isSaving: boolean;
+  onCancel: () => void;
+  onSave: (allocatedPercent: number) => void;
+}) {
+  const [draft, setDraft] = useState(String(line.allocatedPercent));
+  const percent = Number(draft);
+  const valid = draft.trim() !== "" && percent >= 0 && percent <= ALLOCATION_PERCENT_MAX;
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <Input
+          type="number"
+          inputMode="decimal"
+          min={0}
+          max={ALLOCATION_PERCENT_MAX}
+          step={0.1}
+          aria-label="Defense share of the national budget"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          className="w-28 tabular-nums"
+        />
+        <span className="text-label-secondary text-body tabular-nums">
+          % of ${Math.round(line.totalBudget).toLocaleString("en-US")}
+          {valid && ` = $${Math.round((line.totalBudget * percent) / 100).toLocaleString("en-US")}`}
+        </span>
+      </div>
+      <div className="flex gap-2">
+        <Button size="sm" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button size="sm" onClick={() => onSave(percent)} disabled={!valid || isSaving}>
+          <Save className="mr-2 h-4 w-4" />
+          {isSaving ? "Saving…" : "Save share"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function LineFigures({ line }: { line: LineData }) {
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <span className="text-caption text-label-secondary block">Defense budget</span>
+          <div className="text-title-1 mt-1 tabular-nums">
+            $<NumberFlowDisplay value={line.allocatedAmount} format="compact" />
+          </div>
+        </div>
+        <div>
+          <span className="text-caption text-label-secondary block">National budget</span>
+          <div className="text-title-1 mt-1 tabular-nums">
+            $<NumberFlowDisplay value={line.totalBudget} format="compact" />
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-body">Share of the national budget</span>
+          <span className="text-body font-medium tabular-nums">
+            <NumberFlowDisplay
+              value={line.allocatedPercent}
+              format="percentage"
+              decimalPlaces={1}
+            />
+          </span>
+        </div>
+        <Progress value={Math.min(line.allocatedPercent, 100)} className="h-2" />
+      </div>
+    </div>
+  );
+}
+
+function EmptyState({
+  line,
+  countryId,
+  canEdit,
+  isSaving,
+  onAddDefenseDepartment,
+}: {
+  line: Exclude<DefenseLine, LineData>;
+  countryId: string;
+  canEdit: boolean;
+  isSaving: boolean;
+  onAddDefenseDepartment: () => void;
+}) {
+  const noStructure = line.kind === "no-structure";
+  return (
+    <div
+      role="status"
+      className="rounded-control border-separator flex flex-wrap items-center justify-between gap-3 border px-4 py-3"
+    >
+      <p className="text-label text-body">
+        {noStructure
+          ? "Your government has no departments yet. Create its structure to set a defense budget."
+          : "Your government has no Defense department. Add one to set a defense budget."}
+      </p>
+      {canEdit &&
+        (noStructure ? (
+          <CreateGovernmentStructureButton countryId={countryId} />
+        ) : (
+          <Button size="sm" onClick={onAddDefenseDepartment} disabled={isSaving}>
+            <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+            Add a Defense department
+          </Button>
+        ))}
+    </div>
   );
 }
 
 export const BudgetManagementCard = React.memo(function BudgetManagementCard({
-  budgetData,
-  isEstimate,
+  countryId,
+  line,
+  isLoading,
   isSaving,
   editingBudget,
   setEditingBudget,
-  handleSaveBudget,
-  handleTotalBudgetChange,
-  handleCategoryChange,
-  allocationPercent,
+  onSaveShare,
+  onAddDefenseDepartment,
 }: BudgetManagementCardProps) {
   // The free Defense preview shows the budget read-only.
   const { canEdit } = useCanEdit();
+  const hasLine = line.kind === "line";
   return (
-    <Card>
+    <Card content="data">
       <CardHeader className="p-5 pb-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <DollarSign aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
               <h3 className="text-label text-title-3">Defense budget</h3>
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 shrink-0"
-                    aria-label="About the defense budget"
-                  >
-                    <HelpCircle className="text-label-secondary h-4 w-4" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent size="wide" className="overflow-y-auto">
-                  <SheetHeader>
-                    <SheetTitle className="flex items-center gap-2">
-                      <Info aria-hidden="true" className="text-label-secondary h-5 w-5" />
-                      Defense budget guide
-                    </SheetTitle>
-                  </SheetHeader>
-                  <div className="text-body space-y-4">
-                    <div>
-                      <h4 className="mb-2 font-semibold">Budget allocation</h4>
-                      <p className="text-label-secondary">
-                        Your defense budget should total 100% allocated across all categories. The
-                        system will warn you if you're over or under budget.
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className="mb-2 font-semibold">Budget categories explained</h4>
-                      <ul className="text-label-secondary list-inside list-disc space-y-1">
-                        <li>
-                          <strong>Personnel (typically 35-45%):</strong> Salaries, benefits,
-                          pensions for military and civilian staff
-                        </li>
-                        <li>
-                          <strong>Operations & Maintenance (25-35%):</strong> Day-to-day operations,
-                          training exercises, facility upkeep
-                        </li>
-                        <li>
-                          <strong>Procurement (10-20%):</strong> Purchase of new equipment,
-                          vehicles, ships, aircraft, and weapons
-                        </li>
-                        <li>
-                          <strong>R&D (5-15%):</strong> Research and development of next-generation
-                          military technology
-                        </li>
-                        <li>
-                          <strong>Military Construction (3-8%):</strong> Building and upgrading
-                          bases, installations, and infrastructure
-                        </li>
-                      </ul>
-                    </div>
-                    <div>
-                      <h4 className="mb-2 font-semibold">GDP percentage</h4>
-                      <p className="text-label-secondary">
-                        Typical defense spending ranges from 1-4% of GDP. Higher percentages
-                        indicate a strong military focus, while lower percentages suggest
-                        prioritizing other sectors.
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className="mb-2 font-semibold">Tips</h4>
-                      <ul className="text-label-secondary list-inside list-disc space-y-1">
-                        <li>
-                          Balance current needs (personnel, operations) with future capabilities
-                          (procurement, R&D)
-                        </li>
-                        <li>
-                          Changing total budget maintains proportional allocations automatically
-                        </li>
-                        <li>
-                          Monitor branch budgets to ensure they sum to your total defense budget
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
+              <BudgetGuide />
             </div>
             <p className="text-label-secondary text-body mt-1">
-              {isEstimate
-                ? "Estimate: 2% of GDP split by typical shares. Save a budget to set your own."
-                : "Allocate resources across defense categories"}
+              {hasLine
+                ? `The ${line.departmentName} line of the national budget${
+                    line.budgetYear !== null ? ` for FY${line.budgetYear}` : ""
+                  }`
+                : "The Defense department's line of the national budget"}
             </p>
           </div>
-          {canEdit &&
-            (editingBudget ? (
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => setEditingBudget(false)}>
-                  Cancel
-                </Button>
-                <Button size="sm" onClick={handleSaveBudget} disabled={isSaving}>
-                  <Save className="mr-2 h-4 w-4" />
-                  {isSaving ? "Saving…" : "Save budget"}
-                </Button>
-              </div>
-            ) : (
-              <Button size="sm" variant="outline" onClick={() => setEditingBudget(true)}>
-                <Edit className="mr-2 h-4 w-4" />
-                Edit budget
-              </Button>
-            ))}
+          {canEdit && hasLine && !editingBudget && (
+            <Button size="sm" variant="outline" onClick={() => setEditingBudget(true)}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit share
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-6 px-5 pb-5">
-        <div className="border-separator rounded-control border p-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Eyebrow className="block">
-                {isEstimate ? "Estimated defense budget" : "Total defense budget"}
-              </Eyebrow>
-              {editingBudget && canEdit ? (
-                <AmountInput
-                  label="Total defense budget"
-                  value={budgetData.totalBudget}
-                  onChange={handleTotalBudgetChange}
-                  className="mt-1"
-                />
-              ) : (
-                <div className="text-title-1 mt-1 tabular-nums">
-                  $
-                  <NumberFlowDisplay value={budgetData.totalBudget} format="compact" />
-                </div>
-              )}
-            </div>
-            <div>
-              <span className="text-caption text-label-secondary block">% of GDP</span>
-              <div className="text-title-1 mt-1 tabular-nums">
-                <NumberFlowDisplay
-                  value={budgetData.gdpPercent}
-                  format="percentage"
-                  decimalPlaces={2}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div className="mb-2 flex items-center justify-between">
-            <Label className="text-body">Budget allocation</Label>
-            <span
-              className={cn(
-                "text-body font-medium",
-                allocationPercent > 100
-                  ? "text-destructive"
-                  : allocationPercent < 95
-                    ? "text-yellow"
-                    : "text-green"
-              )}
-            >
-              <NumberFlowDisplay value={allocationPercent} format="percentage" decimalPlaces={1} />{" "}
-              Allocated
-            </span>
-          </div>
-          <Progress value={Math.min(allocationPercent, 100)} className="h-2" />
-          {allocationPercent > 100 && (
-            <p className="text-destructive text-footnote mt-1">Over budget! Reduce allocations.</p>
-          )}
-        </div>
-
-        <Separator />
-
-        <div className="space-y-4">
-          {BUDGET_CATEGORIES.map((category) => {
-            const Icon = ICON_MAP[category.iconName];
-            const value = budgetData[category.key];
-            const percent = budgetData.totalBudget > 0 ? (value / budgetData.totalBudget) * 100 : 0;
-
-            return (
-              <div key={category.key} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Icon aria-hidden="true" className="text-label-secondary h-4 w-4" />
-                    <Label className="text-body">{category.label}</Label>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-label-secondary text-footnote w-12 text-right">
-                      <NumberFlowDisplay value={percent} format="percentage" decimalPlaces={1} />
-                    </span>
-                    {editingBudget && canEdit ? (
-                      <AmountInput
-                        label={category.label}
-                        value={value}
-                        onChange={(v) => handleCategoryChange(category.key, v)}
-                        className="text-body h-8 w-36"
-                      />
-                    ) : (
-                      <span className="text-body w-32 text-right font-medium">
-                        $<NumberFlowDisplay value={value} format="compact" />
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <Progress value={percent} className="h-1" />
-              </div>
-            );
-          })}
-        </div>
+        {isLoading ? null : hasLine ? (
+          <>
+            <LineFigures line={line} />
+            {canEdit && editingBudget && (
+              <ShareEditor
+                line={line}
+                isSaving={isSaving}
+                onCancel={() => setEditingBudget(false)}
+                onSave={onSaveShare}
+              />
+            )}
+          </>
+        ) : (
+          <EmptyState
+            line={line}
+            countryId={countryId}
+            canEdit={canEdit}
+            isSaving={isSaving}
+            onAddDefenseDepartment={onAddDefenseDepartment}
+          />
+        )}
       </CardContent>
     </Card>
   );
