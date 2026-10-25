@@ -124,9 +124,12 @@ export const WizardStepReview = React.memo(function WizardStepReview({
           <div className="grid grid-cols-2 gap-4">
             <ReviewDetail
               label="Start date"
-              value={new Date(data.startDate).toLocaleDateString()}
+              value={new Date(data.startDate).toLocaleDateString(undefined, { timeZone: "UTC" })}
             />
-            <ReviewDetail label="End date" value={new Date(data.endDate).toLocaleDateString()} />
+            <ReviewDetail
+              label="End date"
+              value={new Date(data.endDate).toLocaleDateString(undefined, { timeZone: "UTC" })}
+            />
             <ReviewDetail label="Max participants" value={data.maxParticipants} />
             <ReviewDetail label="Visibility" value={data.isPublic ? "Public" : "Private"} />
           </div>

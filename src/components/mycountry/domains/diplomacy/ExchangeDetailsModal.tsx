@@ -398,8 +398,11 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>((props
                 <DetailRow label="Duration">
                   <span className="text-label flex items-center gap-1">
                     <Calendar className="h-3.5 w-3.5" />
-                    {new Date(exchange.startDate).toLocaleDateString()} –{" "}
-                    {new Date(exchange.endDate).toLocaleDateString()}
+                    {new Date(exchange.startDate).toLocaleDateString(undefined, {
+                      timeZone: "UTC",
+                    })}{" "}
+                    –{" "}
+                    {new Date(exchange.endDate).toLocaleDateString(undefined, { timeZone: "UTC" })}
                   </span>
                 </DetailRow>
                 <DetailRow label="Visibility">
