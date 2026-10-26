@@ -16,6 +16,7 @@ import {
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { usePaidMutateAsync } from "~/components/sports/core/usePaidActionRequestId";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -60,14 +61,13 @@ export function LeagueCreator({
 }: LeagueCreatorProps) {
   const notify = useNotify();
 
-  // Presets query
   const { data: presets, isLoading: presetsLoading } = api.sports.getSportPresets.useQuery(
     undefined,
     { enabled: open }
   );
 
-  // Create league mutation
   const createMutation = api.sports.createLeague.useMutation();
+  const charter = usePaidMutateAsync(createMutation.mutateAsync); // one charge per press
 
   // Wizard state
   const [currentStep, setCurrentStep] = useState(1);
@@ -226,7 +226,7 @@ export function LeagueCreator({
     settings.matchIntervalDays = matchIntervalDays;
 
     try {
-      const result = await createMutation.mutateAsync({
+      const result = await charter({
         name: leagueName.trim(),
         sportPreset: selectedPreset.key,
         teamCount,
@@ -254,7 +254,7 @@ export function LeagueCreator({
     isDivisionConference,
     isBoxing,
     isCircuit,
-    createMutation,
+    charter,
     notify,
     onCreated,
     coverImage,

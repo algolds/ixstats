@@ -8,6 +8,7 @@ import { buttonVariants } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Button } from "~/components/ui/button";
+import { usePaidActionRequestId } from "~/components/sports/core/usePaidActionRequestId";
 
 interface PlayerTrainingButtonProps {
   playerId: string;
@@ -28,8 +29,10 @@ export function PlayerTrainingButton({
 }: PlayerTrainingButtonProps) {
   const [open, setOpen] = useState(false);
 
+  const trainingRequest = usePaidActionRequestId();
   const trainPlayer = api.sports.trainPlayer.useMutation({
     onSuccess: () => {
+      trainingRequest.done();
       onTrained?.();
     },
   });
@@ -52,7 +55,11 @@ export function PlayerTrainingButton({
                 key={attr}
                 disabled={trainPlayer.isPending}
                 onClick={() => {
-                  trainPlayer.mutate({ playerId, attributeFocus: attr });
+                  trainPlayer.mutate({
+                    playerId,
+                    attributeFocus: attr,
+                    requestId: trainingRequest.idFor(`${playerId}:${attr}`),
+                  });
                   setOpen(false);
                 }}
                 className="text-body text-label h-auto w-full justify-between px-2 py-2 font-normal"
