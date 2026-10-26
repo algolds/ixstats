@@ -43,11 +43,14 @@ function headingIn(node: ChildNode): Element | null {
 
 const levelOf = (heading: Element): number => Number(HEADING_TAG.exec(heading.tagName)?.[1]);
 
-/** The names a heading answers to (`headingKey`): its anchor (without the render's `sister-` prefix) and its text. */
+/**
+ * The names a heading answers to (`headingKey`): its anchor (without the render's `sister-` prefix) and its text. The
+ * anchor is the heading's id, else (an older page's heading, which has none) the id of the span.mw-headline inside it,
+ * as the TOC reads it (html-transformer.ts).
+ */
 function namesOf(heading: Element): string[] {
-  const id = heading.id.startsWith(SISTER_ID_PREFIX)
-    ? heading.id.slice(SISTER_ID_PREFIX.length)
-    : heading.id;
+  const anchor = heading.id || (heading.querySelector("span.mw-headline[id]")?.id ?? "");
+  const id = anchor.startsWith(SISTER_ID_PREFIX) ? anchor.slice(SISTER_ID_PREFIX.length) : anchor;
   return [headingKey(id), headingKey(heading.textContent ?? "")].filter(
     (name): name is string => name !== null
   );

@@ -315,14 +315,15 @@ interface Headline {
 /**
  * The `id` of the first `<span class="mw-headline" id="…">` between `from` and `to` (a heading's content), or null:
  * where MediaWiki before 1.43 put a heading's anchor, as older Fandom pages still have it (the heading itself has no
- * id). Each `mw-headline` is found once and its span read once (within TAG_BODY before it), however many headings
- * around it ask, so the calls cost the page's length, not its headings times it.
+ * id). An `mw-headline` that is not such a span (a `mw-headline-number`, a headline span without an id) is passed over.
+ * Each `mw-headline` is read once (its span within TAG_BODY before it), and remembers the first span with an id at or
+ * after it, however many headings around it ask, so the calls cost the page's length, not its headings times it.
  */
 function headlineIdFinder(scan: HtmlScan): (from: number, to: number) => string | null {
   const { lower } = scan;
   const nextHeadline = forwardFinder(lower, "mw-headline");
-  let readAt = -1;
-  let read: Headline | null = null;
+  /** Per `mw-headline` read: the first span.mw-headline with an id at or after it (null: none in the page). */
+  const firstWithIdFrom = new Map<number, Headline | null>();
   const headlineAt = (at: number): Headline | null => {
     const windowStart = Math.max(0, at - TAG_BODY);
     const opener = lower.slice(windowStart, at).lastIndexOf("<span");
@@ -333,14 +334,30 @@ function headlineIdFinder(scan: HtmlScan): (from: number, to: number) => string 
     const isHeadline = hasClass(scan, tag, '"', /(?:^|\s)mw-headline(?:\s|$)/);
     return { ...tag, id: isHeadline ? lastAttribute(scan, tag, "id") : null };
   };
+  const firstWithId = (from: number): Headline | null => {
+    const walked: number[] = [];
+    let found: Headline | null = null;
+    for (let at = from; at !== -1; at = lower.indexOf("mw-headline", at + 1)) {
+      const known = firstWithIdFrom.get(at);
+      if (known !== undefined) {
+        found = known;
+        break;
+      }
+      walked.push(at);
+      const headline = headlineAt(at);
+      if (headline?.id) {
+        found = headline;
+        break;
+      }
+    }
+    for (const at of walked) firstWithIdFrom.set(at, found);
+    return found;
+  };
   return (from, to) => {
     const at = nextHeadline(from);
     if (at === -1 || at >= to) return null;
-    if (at !== readAt) {
-      readAt = at;
-      read = headlineAt(at);
-    }
-    return read && read.start >= from && read.end <= to ? read.id : null;
+    const found = firstWithId(at);
+    return found && found.start >= from && found.end <= to ? found.id : null;
   };
 }
 

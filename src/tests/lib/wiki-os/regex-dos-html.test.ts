@@ -321,6 +321,27 @@ describe("html-transformer: a heading's id on its span.mw-headline", () => {
       { id: "own", text: "Own", level: 2 },
     ]);
   });
+
+  it("is the first span.mw-headline with an id in the heading, past any other mw-headline before it", () => {
+    const toc = (body: string) => transformArticleHtml(`<div class="mw-parser-output">${body}</div>`, "/wiki", "althistory").toc;
+    expect(
+      toc('<h2><span class="mw-headline-number">1</span><span class="mw-headline" id="Two">Two</span></h2>')
+    ).toEqual([{ id: "Two", text: "1Two", level: 2 }]);
+    expect(toc('<h2><span class="mw-headline">x</span><span class="mw-headline" id="Y">Y</span></h2>')).toEqual([
+      { id: "Y", text: "xY", level: 2 },
+    ]);
+    expect(toc('<h2><span class="mw-headline-number">1</span></h2><h2><span class="mw-headline" id="Next">N</span></h2>')).toEqual([
+      { id: "Next", text: "N", level: 2 },
+    ]);
+  });
+
+  it("reads each mw-headline once, however many open headings ask past ones without an id", () => {
+    const html = `<div class="mw-parser-output">${"<h2>".repeat(20_000)}${'<span class="mw-headline-number">1</span>'.repeat(20_000)}<span class="mw-headline" id="A">A</span></h2></div>`;
+    const started = performance.now();
+    const { toc } = transformArticleHtml(html, "/wiki", "althistory");
+    expect(performance.now() - started).toBeLessThan(1_000 * TIMING_BUDGET_SCALE);
+    expect(toc[0]?.id).toBe("A");
+  });
 });
 
 // ---- main-page/featured-article ---------------------------------------------------------------------------

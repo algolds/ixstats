@@ -408,6 +408,15 @@ describe("the part slicers", () => {
     expect(sectionOf(html, "Z")).toBeNull();
   });
 
+  it("sectionOf matches an older page's anchor, on the span.mw-headline inside a heading with no id", () => {
+    const html =
+      '<h2><span class="mw-headline" id="sister-History_2">History</span></h2><p>x</p><h2 id="sister-Next">Next</h2>';
+    expect(sectionOf(html, "History_2")).toBe(
+      '<h2><span class="mw-headline" id="sister-History_2">History</span></h2><p>x</p>'
+    );
+    expect(sectionOf(html, "History")).not.toBeNull();
+  });
+
   it("sectionOf matches a prefixed anchor and an encoded one", () => {
     const html = '<h2 id="sister-%C3%89cole">Old</h2><p>x</p>';
     expect(sectionOf(html, "école")).toBe(html);
