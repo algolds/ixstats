@@ -34,6 +34,7 @@ import {
   stripSelfClosingRefs,
   stripTagBlocks,
   stripUnclosedTemplateTail,
+  stripWikitextTables,
   unpackExternalLinks,
 } from "~/lib/wiki-os/transformers/clean-markup-passes";
 import {
@@ -1182,7 +1183,10 @@ const cleanLegacy = {
   },
 };
 
-/** The whole of `cleanWikiMarkup` (and the template pass of the parser) as it was, minus the ceiling. */
+/**
+ * The whole of `cleanWikiMarkup` (and the template pass of the parser) as it was, minus the ceiling, plus the table
+ * pass it gained after the sweep (`stripWikitextTables`, already linear).
+ */
 function legacyClean(rawText: string): string {
   let text = rawText;
   text = text.replace(/^\[blurb:[^\]]+\]\s*/gi, "");
@@ -1194,7 +1198,7 @@ function legacyClean(rawText: string): string {
   text = cleanLegacy.category(text);
   text = cleanLegacy.templateLink(text);
   text = text.replace(/(?:Template|template)\s*:[^\n.<|\]}]*/gi, "");
-  text = legacyTemplates(text);
+  text = stripWikitextTables(legacyTemplates(text));
   text = text.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1");
   text = cleanLegacy.externalBare(cleanLegacy.externalLabelled(text));
   text = cleanLegacy.htmlTags(text);
@@ -1382,6 +1386,37 @@ describe("cleanWikiMarkup of a whole page (maxLength 0)", () => {
   it("cleans all of a long page, not its first 20,000 characters", () => {
     const text = "Lead. ".repeat(10_000) + "[[Treaty|the treaty]] {{flag|Urcea}} <ref>x</ref> END";
     expect(cleanWikiMarkup(text).endsWith("the treaty Urcea END")).toBe(true);
+  });
+});
+
+describe("an excerpt is prose only", () => {
+  it("leaves out a table the page starts with, and the tables nested in it, so a tooltip never shows table wikitext", () => {
+    const wikitext = [
+      '{| class="wikitable" style="float:right"',
+      "|+ Aurelia at a glance",
+      "|-",
+      "! Capital",
+      "| [[Port Elara]]",
+      "|-",
+      "| colspan=2 |",
+      '  {| class="inner"',
+      "  | {{flag|Aurelia}} || 1,234",
+      "  |}",
+      "|}",
+      "'''Aurelia''' is a country on the [[Western Sea]].{{efn|note}}",
+      ':{| class="indented"',
+      "| x",
+      "|}",
+      "It is a monarchy.",
+    ].join("\n");
+    expect(cleanWikitextExcerpt(wikitext, 300)).toBe(
+      "Aurelia is a country on the Western Sea. It is a monarchy."
+    );
+  });
+
+  it("keeps a line that only mentions the markup, and drops the rest of a table that never closes", () => {
+    expect(cleanWikiMarkup("Use {| to open a table.\nNext.")).toBe("Use {| to open a table. Next.");
+    expect(cleanWikiMarkup("Lead.\n{|\n| a\n| b")).toBe("Lead.");
   });
 });
 

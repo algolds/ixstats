@@ -14,6 +14,7 @@ import {
   stripSelfClosingRefs,
   stripTagBlocks,
   stripUnclosedTemplateTail,
+  stripWikitextTables,
   unpackExternalLinks,
   unpackInternalLinks,
 } from "./clean-markup-passes";
@@ -537,6 +538,9 @@ export function cleanWikiMarkup(rawText: string | null | undefined, maxLength: n
 
   // 9. Iteratively strip nested templates: {{...}}
   text = stripWikitextTemplates(text);
+
+  // 9b. Strip tables: {| ... |}, nested ones included
+  text = stripWikitextTables(text);
 
   // 10. Unpack internal links: [[Target|Label]] -> Label, [[Target]] -> Target
   text = unpackInternalLinks(text);

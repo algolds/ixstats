@@ -340,3 +340,27 @@ export function nextFileOpener(text: string, from: number): number {
   }
   return -1;
 }
+
+/** A line that opens a wikitext table (`{|`, after any indent of spaces, tabs or `:`), or closes one (`|}`). */
+const TABLE_OPEN = /^[ \t:]*\{\|/;
+const TABLE_CLOSE = /^[ \t:]*\|\}/;
+
+/**
+ * `text` without its wikitext tables: from a line that opens one to the line that closes it, the tables nested inside
+ * included (a table that never closes takes the rest of the text, as MediaWiki reads it). A table is never prose: in an
+ * excerpt it would show its pipes and attributes. One pass over the lines.
+ */
+export function stripWikitextTables(text: string): string {
+  if (!text.includes("{|")) return text;
+  const kept: string[] = [];
+  let depth = 0;
+  for (const line of text.split("\n")) {
+    if (TABLE_OPEN.test(line)) depth++;
+    else if (depth > 0 && TABLE_CLOSE.test(line)) {
+      depth--;
+      continue;
+    }
+    if (depth === 0) kept.push(line);
+  }
+  return kept.join("\n");
+}
