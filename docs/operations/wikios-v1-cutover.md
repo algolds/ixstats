@@ -197,8 +197,10 @@ docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 -
   failed before any read of it succeeded. A switch row already on shows as "On, waiting for the protections import" and
   can still be turned off (written and audited as usual).
 - **Turning it off.** New WikiOS edits are refused; jobs already in the outbox keep draining to MediaWiki. To make them
-  wait instead, set `SKIP_MEDIAWIKI_SYNC=true` (then `pm2 restart ixstats-cron --update-env` and
-  `pm2 restart "$IXAPP" --update-env`) or drop `wiki-mirror` from `CRON_ENABLED_JOBS`.
+  wait instead, set `SKIP_MEDIAWIKI_SYNC=true` in `.env.production.local` (then `pm2 restart ixstats-cron --update-env`
+  and `pm2 restart "$IXAPP" --update-env`: both read the file at start), or drop `wiki-mirror` from `CRON_ENABLED_JOBS`
+  in `ecosystem.config.cjs` and restart `ixstats-cron` from the file (Conventions): `( cd "$IX" && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save`,
+  then read the list back with `pm2 jlist | jq -r '.[] | select(.name == "ixstats-cron") | .pm2_env.CRON_ENABLED_JOBS'`.
 
 Files the launch installs (all in the IxStats checkout, `/ixwiki/public/projects/ixstats/`, which step 0b brings to the
 release and step 2 deploys):
@@ -1395,7 +1397,11 @@ grep -n 'RATE_LIMIT_ENABLED' "$IX/ecosystem.config.cjs"                         
 ```
 
 If a line says anything else, change it to `RATE_LIMIT_ENABLED=true` (back the file up with `bk` first). Then restart
-`ixstats-cron` (`pm2 restart ixstats-cron --update-env`) and IxStates (`pm2 restart "$IXAPP" --update-env`).
+IxStates (`pm2 restart "$IXAPP" --update-env`) and `ixstats-cron`: by name (`pm2 restart ixstats-cron --update-env`)
+after a fix to an env file, which it reads at start; from the file after a fix to `ecosystem.config.cjs`, since a
+restart by name keeps PM2's stored environment (Conventions): `( cd "$IX" && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save`,
+then read it back with `pm2 jlist | jq -r '.[] | select(.name == "ixstats-cron") | .pm2_env.RATE_LIMIT_ENABLED'`
+(`null` when the file does not set it, or `true`).
 
 **Story chains aimed at a `MediaWiki:` page.** An approved story chain whose wiki section is not written yet
 (`wikiSyncedAt` is null) is retried by the story-chain cron job. A chain whose page is a `MediaWiki:` page is now skipped:
@@ -1464,7 +1470,9 @@ embed.
 holds the old list). WikiOS
 follows the editing toggle again (read-only unless it is on: turn it off in `/admin/wikios-settings` too). Jobs already
 in the outbox keep draining to MediaWiki while `wiki-mirror` runs; to make them wait there, also set
-`SKIP_MEDIAWIKI_SYNC=true` in the same file before the restarts, or drop `wiki-mirror` from `CRON_ENABLED_JOBS`.
+`SKIP_MEDIAWIKI_SYNC=true` in the same file before the restarts, or drop `wiki-mirror` from `CRON_ENABLED_JOBS` in
+`ecosystem.config.cjs` (back it up first) and restart `ixstats-cron` from the file, `( cd "$IX" && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save`,
+then read the list back with `pm2 jlist | jq -r '.[] | select(.name == "ixstats-cron") | .pm2_env.CRON_ENABLED_JOBS'`.
 
 ## 6c. Bots on `/w/api.php` (after steps 1c and 6b)
 
