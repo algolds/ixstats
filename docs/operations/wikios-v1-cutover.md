@@ -735,8 +735,8 @@ It must print four lines: `data-sister-wiki="iiwiki"`, `data-sister-title="Caphi
 file: compare the page's text on classic with the file, and stop and ask the owner if they match and the attributes are
 still missing. Without them WikiOS shows the plain link box and no embed.
 
-A command-line edit does not call the webhook; the `wiki-recentchanges` job brings the page into WikiOS within 10
-minutes. **Rollback:** delete `Template:Sister` on classic. Pages that use it then show a red template link on both
+A command-line edit does not call the webhook. The `wiki-recentchanges` job brings the page into WikiOS, but that job
+starts only at step 6b: the page arrives within about 10 minutes of that step, which says to check it. **Rollback:** delete `Template:Sister` on classic. Pages that use it then show a red template link on both
 wikis.
 
 ### 3e. The sister interwiki prefixes on classic (owner decision 2026-10-25)
@@ -1362,6 +1362,10 @@ The newest `[Cron] ✓` lines must name `wiki-mirror`, `wiki-render-stale` and `
 start: fix the list and restart from the file again. If the `jq` line still shows the old list, PM2 did not read the
 file: stop and ask the owner.
 
+Now run step 4c's `api.php` proxy check, which waits for this step. About 10 minutes after the restart,
+`wiki-recentchanges` has brought `Template:Sister` (step 3d) into WikiOS; step 7d checks that a page using it shows the
+embed.
+
 **Rollback:** `sudo cp -a "$BK/env.production.local.step6b" "$IX/.env.production.local"`, the same two restarts
 (`ixstats-cron` from the file). The cron list stays as it is, so the outbox keeps draining (`ecosystem.config.cjs.6b`
 holds the old list). WikiOS
@@ -1700,6 +1704,11 @@ and check that `wiki-mirror` is in `CRON_ENABLED_JOBS` (step 6b). Fix it before 
 
 **Classic to WikiOS.** Step 6's own check: one web edit on classic to a sandbox page, and the two revision ids match
 within seconds. If step 6's check has passed already, it stands; otherwise run it now. It is not repeated here.
+
+**Sister wikis.** If step 4c's `api.php` proxy check has not run since step 6b, run it now. Then open a page that uses
+`{{Sister|...}}` in the reader (`$IXSTATES_URL/wiki/<page>`): the box shows the live embed, or "<Wiki> could not be
+reached just now" when that wiki is down. A plain link box with no embed means `Template:Sister` is not in WikiOS yet:
+wait for `wiki-recentchanges` (step 6b, every 10 minutes) and check again, then repeat step 3d's attribute check.
 
 **Rollback:** revert the two test edits: the WikiOS one in WikiOS's page history (the mirror copies the revert to
 classic), the classic one on classic (the webhook brings the revert over).
