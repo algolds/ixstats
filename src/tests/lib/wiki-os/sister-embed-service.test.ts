@@ -89,7 +89,8 @@ function answer(url: URL): Response {
       },
     });
   }
-  if (action === "parse" && apiError) return Response.json({ error: { code: apiError, info: "x" } });
+  if (action === "parse" && apiError)
+    return Response.json({ error: { code: apiError, info: "x" } });
   if (action === "parse" && unrenderable) return Response.json({ parse: { title: page?.title } });
   if (action === "parse") return Response.json({ parse: { title: page?.title, text: parsedHtml } });
   throw new Error(`unexpected fetch of ${url.href}`);

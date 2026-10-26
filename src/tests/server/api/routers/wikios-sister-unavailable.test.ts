@@ -439,10 +439,12 @@ describe("per-caller limits on sister reads", () => {
     const searchInput = { query: "Bashan", wikiSource: "althistory" };
     const introInput = { title: "Bashan", wiki: "althistory" };
 
-    expect(await clientErrorOf(wikiosSearchRouter, "search", searchInput, visitor())).toMatchObject({
-      status: 429,
-      code: "TOO_MANY_REQUESTS",
-    });
+    expect(await clientErrorOf(wikiosSearchRouter, "search", searchInput, visitor())).toMatchObject(
+      {
+        status: 429,
+        code: "TOO_MANY_REQUESTS",
+      }
+    );
     expect(
       await clientErrorOf(wikiosPageContentRouter, "getIntro", introInput, visitor())
     ).toMatchObject({ status: 429, code: "TOO_MANY_REQUESTS" });

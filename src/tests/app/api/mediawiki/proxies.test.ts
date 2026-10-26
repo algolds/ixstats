@@ -267,15 +267,16 @@ describe("the api.php proxy", () => {
     expect(wikiosRead.status).toBe(200);
   });
 
-  it.each([
-    ["a wiki's own 404", async () => Response.json({ error: "nope" }, { status: 404 })],
-  ])("an unexpected failure is 502 with no-store, not 500 (%s)", async (_case, answer) => {
-    fetchMock.mockImplementation(answer);
-    const res = await apiPhp("iiwiki", "action=query&titles=Bashan");
-    expect(res.status).toBe(502);
-    expect(await res.json()).toEqual({ error: "Failed to proxy request to IIWiki" });
-    expect(res.headers.get("cache-control")).toBe("no-store");
-  });
+  it.each([["a wiki's own 404", async () => Response.json({ error: "nope" }, { status: 404 })]])(
+    "an unexpected failure is 502 with no-store, not 500 (%s)",
+    async (_case, answer) => {
+      fetchMock.mockImplementation(answer);
+      const res = await apiPhp("iiwiki", "action=query&titles=Bashan");
+      expect(res.status).toBe(502);
+      expect(await res.json()).toEqual({ error: "Failed to proxy request to IIWiki" });
+      expect(res.headers.get("cache-control")).toBe("no-store");
+    }
+  );
 
   it("the rate-limit, invalid-action and unknown-wiki answers are not cacheable", async () => {
     const invalid = await apiPhp("iiwiki", "action=edit");
