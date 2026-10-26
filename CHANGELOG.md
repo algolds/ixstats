@@ -58,7 +58,8 @@ known Next.js RCE was reachable. This block fixes what the audit found.
   - The Discord and NationStates image proxies are image-only, size-capped and rate-limited, and re-check the host on
     every redirect. The bot-token refresh runs only for the IxTwitter channel.
   - Equipment image resolution is admin-only.
-  - Cross-origin framing is allowed only for `/maps?embed=true`.
+  - Any site may frame only `/maps?embed=true`; on the maps host, IxWiki alone may frame every page but the
+    signed-in tools, which nothing may frame.
   - Uploads take their type from their bytes.
   - The hardcoded Giphy key is gone.
 - **Economy.**
