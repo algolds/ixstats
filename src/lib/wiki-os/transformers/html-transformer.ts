@@ -4,6 +4,7 @@
 import { withBasePath } from "~/lib/base-path";
 import { mapSrcsetUrls } from "~/lib/wiki-os/transformers/srcset";
 import { sisterMediaPath } from "~/lib/wiki-os/sister-media";
+import { SISTER_EMBED_CLASS } from "~/lib/wiki-os/sister-dom";
 import { mediaWikiHostPattern, mediaWikiOrigin } from "~/lib/wiki-os/config";
 import { skipBlanks } from "../wikitext/blank";
 import { forwardFinder, forwardSearch } from "../wikitext/forward-finder";
@@ -522,6 +523,8 @@ export function appendSectionEditLinks(root: Element | DocumentFragment, slug: s
   if (!document) return;
 
   for (const heading of Array.from(root.querySelectorAll("h2, h3"))) {
+    // a live sister embed's headings are another wiki's (SisterEmbed.tsx): nothing here edits them
+    if (heading.closest(`.${SISTER_EMBED_CLASS}`)) continue;
     const text = (heading.textContent ?? "").trim();
     if (!text || heading.querySelector(".wikios-section-edit-link")) continue;
 

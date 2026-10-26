@@ -5,6 +5,7 @@
  */
 import type { Config } from "dompurify";
 import { stripClassTokens } from "~/lib/thinkpages-forum/strip-positioning";
+import { SISTER_ID_PREFIX } from "~/lib/wiki-os/sister-dom";
 import { isSisterMediaPath, sisterMediaPath } from "~/lib/wiki-os/sister-media";
 import { filterSrcset } from "~/lib/wiki-os/transformers/srcset";
 import type { SisterReaderId } from "~/lib/wiki-os/wiki-hosts";
@@ -16,6 +17,8 @@ import {
 import { cleanStyleDeclarations, type StylePolicy } from "./scope-template-styles";
 
 type Purifier = ReturnType<typeof createArticlePurifier>;
+
+export { SISTER_ID_PREFIX };
 
 /** What `position` may be in a sister page: nothing that leaves the article (`fixed`, `sticky`, a `var()`, ...). */
 const IN_FLOW_POSITIONS = new Set([
@@ -30,8 +33,6 @@ const IN_FLOW_POSITIONS = new Set([
 const POSITION_PROPERTY = /^(?:-[a-z]+-)?position$/;
 /** Position keywords that take an element out of the article: a custom property holding one is dropped too. */
 const OUT_OF_FLOW_POSITIONS = new Set(["fixed", "sticky", "-webkit-sticky"]);
-/** The prefix of every id of a sister reader page, so none can collide with (or clobber) an id of the app. */
-export const SISTER_ID_PREFIX = "sister-";
 /** Attributes whose value is a list of ids: they name the prefixed ids too. */
 const ID_REFERENCE_ATTRIBUTES = new Set([
   "headers",

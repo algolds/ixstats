@@ -86,11 +86,19 @@ jest.mock("~/components/wiki-os/reader/ArticleModals", () => ({
   QuickHistoryModal: () => null,
   QuickBacklinksModal: () => null,
 }));
+const mockInject = jest.fn((html: string) => html);
+const mockExtractStatKeys = jest.fn((_html: string): string[] => []);
 jest.mock("~/components/wiki-os/reader/ArticlePlaceholders", () => ({
-  injectPlaceholderElements: (html: string) => html,
-  extractStatKeys: () => [],
-  CoordsPill: () => null,
+  injectPlaceholderElements: (html: string) => mockInject(html),
+  extractStatKeys: (html: string) => mockExtractStatKeys(html),
+  CoordsPill: () => <span data-testid="coords-pill" />,
   DynamicStatSpan: () => null,
+}));
+// a live embed reports the request it was mounted with
+jest.mock("~/components/wiki-os/reader/SisterEmbed", () => ({
+  SisterEmbed: (props: { request: { wiki: string; title: string } }) => (
+    <span data-testid="sister-embed">{`${props.request.wiki}:${props.request.title}`}</span>
+  ),
 }));
 jest.mock("~/components/wiki-os/reader/useStatValues", () => ({ useStatValues: () => ({}) }));
 jest.mock("~/components/wiki-os/reader/ArticleCategories", () => ({ CategoriesBar: () => null }));
@@ -267,5 +275,171 @@ describe("lean first response (plan 413, item 8c)", () => {
 
     expect(container.textContent).not.toContain("wikios-lean");
     expect(container.querySelector(".wikios-article-body")?.textContent ?? "").toBe("");
+  });
+});
+
+describe("Template:Sister boxes become live embeds (C4b)", () => {
+  /** A box as classic's Template:Sister renders it. */
+  const box = (title: string, wiki = "iiwiki") =>
+    `<div class="sister-link" data-sister-wiki="${wiki}" data-sister-title="${title}" data-sister-mode="page" ` +
+    `data-sister-section="">From IIWiki: <a href="https://iiwiki.com/wiki/${title}">${title}</a></div>`;
+  const boxes = (container: HTMLElement) => Array.from(container.querySelectorAll(".sister-link"));
+  const embeds = () => screen.queryAllByTestId("sister-embed");
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockMarginOpen = false;
+  });
+
+  it("a Template:Sister box becomes a live embed", () => {
+    const { container } = renderArticle("ixwiki", {
+      contentHtml: `<p>Intro</p>${box("Caphiria")}`,
+    });
+
+    const [target] = boxes(container);
+    expect(target?.querySelector("a")).toBeNull(); // the link box was emptied once, for the embed
+    expect(target?.textContent).toBe("iiwiki:Caphiria");
+    expect(embeds()).toHaveLength(1);
+  });
+
+  it("the eleventh box stays a link box", () => {
+    const html = Array.from({ length: 11 }, (_, i) => box(`Page_${i + 1}`)).join("");
+    const { container } = renderArticle("ixwiki", { contentHtml: html });
+
+    expect(embeds()).toHaveLength(10);
+    const all = boxes(container);
+    expect(all[9]?.textContent).toBe("iiwiki:Page_10");
+    expect(all[10]?.querySelector("a")).toHaveAttribute("href", "https://iiwiki.com/wiki/Page_11");
+  });
+
+  it("a box naming no wiki WikiOS reads stays a link box and does not count toward the ten", () => {
+    const html =
+      box("Elsewhere", "commons") + Array.from({ length: 10 }, (_, i) => box(`P${i}`)).join("");
+    const { container } = renderArticle("ixwiki", { contentHtml: html });
+
+    expect(embeds()).toHaveLength(10);
+    expect(boxes(container)[0]?.querySelector("a")).not.toBeNull();
+  });
+
+  it("a box inside an embed is not hydrated", () => {
+    const html = `<div class="wikios-sister-embed">${box("Inner")}</div>`;
+    const { container } = renderArticle("ixwiki", { contentHtml: html });
+
+    expect(embeds()).toHaveLength(0);
+    expect(boxes(container)[0]?.querySelector("a")).not.toBeNull();
+  });
+
+  it("a sister page hydrates no embed and no IxStates widget, and skips the placeholder pass", () => {
+    const html =
+      box("Caphiria") +
+      '<span class="wikios-coords-placeholder" data-lat="1" data-lng="2" data-zoom="4">Here</span>';
+    const sister = renderArticle("iiwiki", { contentHtml: html });
+
+    expect(embeds()).toHaveLength(0);
+    expect(screen.queryByTestId("coords-pill")).toBeNull();
+    expect(boxes(sister.container)[0]?.querySelector("a")).not.toBeNull();
+    expect(mockInject).not.toHaveBeenCalled();
+    expect(mockExtractStatKeys).not.toHaveBeenCalled();
+    // the viewer's country is read only for an IxWiki page's coordinate pills
+    expect(api.users.getCurrentUserWithRole.useQuery).toHaveBeenLastCalledWith(
+      undefined,
+      expect.objectContaining({ enabled: false })
+    );
+    sister.unmount();
+
+    renderArticle("ixwiki", { contentHtml: html });
+    expect(embeds()).toHaveLength(1);
+    expect(screen.getByTestId("coords-pill")).toBeInTheDocument();
+    expect(mockInject).toHaveBeenCalled();
+    expect(mockExtractStatKeys).toHaveBeenCalled();
+    expect(api.users.getCurrentUserWithRole.useQuery).toHaveBeenLastCalledWith(
+      undefined,
+      expect.objectContaining({ enabled: true })
+    );
+  });
+
+  it("an embed survives a re-render that reads the targets again: its box is emptied only once", () => {
+    const props = {
+      title: "Portal:Eurth",
+      contentHtml: box("Caphiria"),
+      noticesHtml: null,
+      toc: [],
+      categories: [],
+      lastModified: null,
+      wikiSource: "ixwiki" as const,
+      authorInfo: null,
+    };
+    const { container, rerender } = render(<ArticleRenderer {...props} infoboxHtml={null} />);
+    expect(boxes(container)[0]?.textContent).toBe("iiwiki:Caphiria");
+
+    rerender(<ArticleRenderer {...props} infoboxHtml="<p>Capital: Aurelia</p>" />);
+    expect(boxes(container)[0]?.textContent).toBe("iiwiki:Caphiria");
+    expect(embeds()).toHaveLength(1);
+  });
+});
+
+describe("section links into a sister page (C4b, ids prefixed sister-)", () => {
+  const sisterContent = '<h2 id="sister-History">History</h2><p>Long ago.</p>';
+  const scrolled = jest.fn();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    Element.prototype.scrollIntoView = function (this: Element) {
+      scrolled(this.id);
+    };
+  });
+  afterEach(() => window.history.replaceState(null, "", "/"));
+
+  it("an incoming #History lands on sister-History", () => {
+    window.history.replaceState(null, "", "/wiki/Caphiria?source=iiwiki#History");
+    renderArticle("iiwiki", { contentHtml: sisterContent });
+
+    expect(window.location.hash).toBe("#sister-History");
+    expect(window.location.search).toBe("?source=iiwiki");
+    expect(scrolled).toHaveBeenCalledWith("sister-History");
+  });
+
+  it("a later hash change lands there too", () => {
+    renderArticle("iiwiki", { contentHtml: sisterContent });
+    expect(scrolled).not.toHaveBeenCalled();
+
+    act(() => {
+      window.history.replaceState(null, "", "#History");
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    });
+    expect(window.location.hash).toBe("#sister-History");
+    expect(scrolled).toHaveBeenCalledWith("sister-History");
+  });
+
+  it("a hash that already names a prefixed id, or no section, is left alone", () => {
+    window.history.replaceState(null, "", "/wiki/Caphiria?source=iiwiki#sister-History");
+    renderArticle("iiwiki", { contentHtml: sisterContent });
+    expect(window.location.hash).toBe("#sister-History");
+
+    window.history.replaceState(null, "", "/wiki/Caphiria?source=iiwiki#Nowhere");
+    renderArticle("iiwiki", { contentHtml: sisterContent });
+    expect(window.location.hash).toBe("#Nowhere");
+    expect(scrolled).not.toHaveBeenCalled();
+  });
+
+  it("an id outside the article is not a section of it", () => {
+    const outside = document.createElement("div");
+    outside.id = "sister-Elsewhere";
+    document.body.append(outside);
+    try {
+      window.history.replaceState(null, "", "/wiki/Caphiria?source=iiwiki#Elsewhere");
+      renderArticle("iiwiki", { contentHtml: sisterContent });
+      expect(window.location.hash).toBe("#Elsewhere");
+      expect(scrolled).not.toHaveBeenCalled();
+    } finally {
+      outside.remove();
+    }
+  });
+
+  it("an IxWiki page's hash is not rewritten", () => {
+    window.history.replaceState(null, "", "/wiki/Caphiria#History");
+    renderArticle("ixwiki", { contentHtml: sisterContent });
+    expect(window.location.hash).toBe("#History");
+    expect(scrolled).not.toHaveBeenCalled();
   });
 });

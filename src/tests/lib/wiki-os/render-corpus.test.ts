@@ -996,6 +996,16 @@ describe("section edit links", () => {
       expect(root.querySelectorAll(".wikios-section-edit-link")).toHaveLength(1);
       expect(root.querySelector("p")?.textContent).toBe("text");
     });
+    test("no Edit link on a heading inside a sister embed", () => {
+      const out = addSectionEditLinks(
+        '<h2>Own</h2><div class="wikios-sister-embed"><div><h2>History</h2><h3>Early years</h3></div></div>',
+        "Foo"
+      );
+
+      expect(out).toContain('<h2>Own<a class="wikios-section-edit-link"');
+      expect(out).toContain("<h2>History</h2><h3>Early years</h3>");
+      expect(out.match(/wikios-section-edit-link/g)).toHaveLength(1);
+    });
   });
 
   describe("removeSectionEditLinks", () => {

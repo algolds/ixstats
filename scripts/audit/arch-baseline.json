@@ -27,7 +27,6 @@
   "src/components/mycountry/shared/modals/metric-details/PopulationDetailsModal.tsx": 737,
   "src/lib/maps/province-importer/parse-provinces.ts": 726,
   "src/app/admin/_components/IxTimeVisualizer.tsx": 718,
-  "src/components/wiki-os/reader/ArticleRenderer.tsx": 714,
   "src/lib/maps/geo-analytics.ts": 710,
   "src/app/admin/vault/VaultStoreControl.tsx": 708,
   "src/lib/achievements/service.ts": 701,

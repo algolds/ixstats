@@ -1,6 +1,5 @@
 "use client";
 import React, { useRef, useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import {
   appendSectionEditLinks,
   removeSectionEditLinks,
@@ -28,13 +27,8 @@ import type { ArticleAuthorInfo } from "~/lib/wiki-os/types/canonical";
 import { WikiOSHeader } from "./ArticleHeader";
 import { normalizeAuthorInfo } from "./author-info";
 import { QuickHistoryModal, QuickBacklinksModal } from "./ArticleModals";
-import {
-  injectPlaceholderElements,
-  extractStatKeys,
-  CoordsPill,
-  DynamicStatSpan,
-} from "./ArticlePlaceholders";
-import { useStatValues } from "./useStatValues";
+import { ArticleWidgetPortals, useWidgetHtml } from "./ArticleWidgets";
+import { useSisterHash } from "./useSisterHash";
 import { useHydrated } from "~/hooks/useHydrated";
 import { useScrollSpy } from "./useScrollSpy";
 import { leanElementId, parseLeanMarker, resolveLeanHtml } from "~/lib/wiki-os/lean-article";
@@ -47,7 +41,6 @@ import { SourceWikiNote } from "./SourceWikiNote";
 import { useEmbedAssets } from "./useEmbedAssets";
 import { useArticleAnnotations } from "./useArticleAnnotations";
 import {
-  CoordinatesMapEmbed,
   MarginGutterPins,
   MarginShareModal,
   SelectionCapsule,
@@ -94,23 +87,6 @@ interface ArticleRendererProps {
 }
 
 const AUTHORS_STALE_MS = 10 * 60 * 1000;
-
-type PortalTarget =
-  | {
-      element: Element;
-      type: "coords";
-      data: { lat: number; lng: number; zoom: number; label: string };
-    }
-  | {
-      element: Element;
-      type: "map-embed";
-      data: { lat: number; lng: number; zoom: number; options: string };
-    }
-  | {
-      element: Element;
-      type: "stat";
-      data: { key: string };
-    };
 
 export function ArticleRenderer({
   title,
@@ -243,40 +219,16 @@ export function ArticleRenderer({
 
   const [sharePayload, setSharePayload] = useState<SelectionPayload | null>(null);
 
-  // --- Portal & Dynamic Widgets Setup ---
-  const statKeys = useMemo(
-    () => extractStatKeys(infoboxHtml ? `${contentHtml}${infoboxHtml}` : contentHtml),
-    [contentHtml, infoboxHtml]
-  );
-
-  const statsData = useStatValues(statKeys);
-
-  const { data: currentUserData } = api.users.getCurrentUserWithRole.useQuery(undefined, {
-    enabled: isAuthenticated,
-  });
-  const { data: viewerCountryData } = api.countries.getByIdBasic.useQuery(
-    { id: currentUserData?.user?.country?.id || "" },
-    { enabled: !!currentUserData?.user?.country?.id }
-  );
-  const viewerCentroid = useMemo(() => {
-    if (!viewerCountryData?.centroid) return null;
-    const c = viewerCountryData.centroid as { lat: number; lng: number } | [number, number];
-    if (Array.isArray(c)) {
-      return { lng: c[0] || 0, lat: c[1] || 0 };
-    }
-    return { lat: c.lat || 0, lng: c.lng || 0 };
-  }, [viewerCountryData]);
-
   useEmbedAssets(contentHtml, infoboxHtml);
 
   // The placeholder pass needs a DOM, so the server renders the article as it is. The browser's
   // hydrating pass must start from that same HTML (it does until `hydrated`), and the pass is applied
   // straight after: a mismatch would leave the server's HTML in place with no placeholders mounted.
+  // Another wiki's page gets no pass: it mounts no IxStates widget (ArticleWidgets.tsx).
   const hydrated = useHydrated();
-  const processedHtml = useMemo(() => {
-    if (!hydrated) return contentHtml;
-    return injectPlaceholderElements(contentHtml);
-  }, [hydrated, contentHtml]);
+  const processedHtml = useWidgetHtml(contentHtml, hydrated && !readOnly);
+  const processedInfoboxHtml = useWidgetHtml(infoboxHtml, hydrated && !readOnly);
+  useSisterHash(contentRef, readOnly, processedHtml);
 
   // A signed-in reader's section edit links are added to the live article, in place: signing in
   // resolves after hydration, and the article's HTML is never written again for it. Signing out
@@ -293,43 +245,6 @@ export function ArticleRenderer({
   // the base path there (`withAppHrefs`), after the placeholder pass above read them bare.
   const bodyMarkup = useHtmlMarkup(processedHtml);
   const noticesMarkup = useHtmlMarkup(noticesHtml ?? "");
-  const processedInfoboxHtml = useMemo(() => {
-    if (!infoboxHtml) return null;
-    return hydrated ? injectPlaceholderElements(infoboxHtml) : infoboxHtml;
-  }, [hydrated, infoboxHtml]);
-
-  const [portalTargets, setPortalTargets] = useState<PortalTarget[]>([]);
-
-  useEffect(() => {
-    const container = contentRef.current;
-    if (!container) return;
-
-    const targets: PortalTarget[] = [];
-    const mapAttrs = (el: Element) => ({
-      lat: parseFloat(el.getAttribute("data-lat") || "0"),
-      lng: parseFloat(el.getAttribute("data-lng") || "0"),
-      zoom: parseInt(el.getAttribute("data-zoom") || "4", 10),
-    });
-
-    container.querySelectorAll(".wikios-coords-placeholder").forEach((element) => {
-      const label = element.getAttribute("data-label") || "Location";
-      targets.push({ element, type: "coords", data: { ...mapAttrs(element), label } });
-    });
-    container.querySelectorAll(".wikios-map-embed-placeholder").forEach((element) => {
-      const options = element.getAttribute("data-options") || "";
-      targets.push({ element, type: "map-embed", data: { ...mapAttrs(element), options } });
-    });
-    container.querySelectorAll(".wikios-stat-placeholder").forEach((element) => {
-      targets.push({
-        element,
-        type: "stat",
-        data: { key: element.getAttribute("data-key") || "" },
-      });
-    });
-
-    setPortalTargets(targets);
-    // oxlint-disable-next-line
-  }, [processedHtml, processedInfoboxHtml]);
 
   const { data: countryData } = api.countries.getByIdBasic.useQuery(heroCardInputs(title).country, {
     enabled: mayNameCountry(title),
@@ -541,42 +456,16 @@ export function ArticleRenderer({
               className={ARTICLE_STYLE_ROOT_CLASS}
               dangerouslySetInnerHTML={bodyMarkup}
             />
-            {/* Render portals into injected placeholder nodes */}
-            {portalTargets.map((target, _idx) => {
-              if (target.type === "coords") {
-                return createPortal(
-                  <CoordsPill
-                    lat={target.data.lat}
-                    lng={target.data.lng}
-                    zoom={target.data.zoom}
-                    label={target.data.label}
-                    viewerCentroid={viewerCentroid}
-                  />,
-                  target.element
-                );
-              }
-              if (target.type === "map-embed") {
-                return createPortal(
-                  <CoordinatesMapEmbed
-                    lat={target.data.lat}
-                    lng={target.data.lng}
-                    zoom={target.data.zoom}
-                    options={target.data.options}
-                  />,
-                  target.element
-                );
-              }
-              if (target.type === "stat") {
-                return createPortal(
-                  <DynamicStatSpan
-                    placeholderKey={target.data.key}
-                    data={statsData[target.data.key]}
-                  />,
-                  target.element
-                );
-              }
-              return null;
-            })}
+            {/* Widgets and sister embeds mounted into the article's placeholder nodes */}
+            <ArticleWidgetPortals
+              contentRef={contentRef}
+              source={source}
+              isAuthenticated={isAuthenticated}
+              contentHtml={contentHtml}
+              infoboxHtml={infoboxHtml}
+              renderedHtml={processedHtml}
+              renderedInfoboxHtml={processedInfoboxHtml}
+            />
           </div>
 
           {categories.length > 0 && <CategoriesBar categories={categories} />}

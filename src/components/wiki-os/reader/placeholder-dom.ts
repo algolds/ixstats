@@ -5,6 +5,14 @@
 // `<` and `>` unescaped in attribute values, so a regex that looks for `<a ...>(.*?)</a>` can be
 // made to end inside an attribute and publish the rest of it as live markup).
 
+import type { WikiSource } from "~/lib/wiki-os/config";
+import {
+  MAX_SISTER_EMBEDS,
+  SISTER_EMBED_SELECTOR,
+  sisterEmbedRequestOf,
+  type SisterEmbedRequest,
+} from "~/lib/wiki-os/sister-embed";
+import { SISTER_EMBED_CLASS } from "~/lib/wiki-os/sister-dom";
 import { parseInert } from "~/lib/wiki-os/transformers/inert-dom";
 import { safeDecodeURI } from "~/lib/wiki-os/transformers/safe-decode";
 
@@ -138,4 +146,60 @@ export function extractStatKeys(html: string): string[] {
   }
   keys.delete("");
   return Array.from(keys);
+}
+
+/** A node of the live article the reader mounts a React widget on (`ArticleWidgetPortals`). */
+export type PortalTarget =
+  | {
+      element: Element;
+      type: "coords";
+      data: { lat: number; lng: number; zoom: number; label: string };
+    }
+  | {
+      element: Element;
+      type: "map-embed";
+      data: { lat: number; lng: number; zoom: number; options: string };
+    }
+  | { element: Element; type: "stat"; data: { key: string } }
+  | { element: Element; type: "sister"; data: SisterEmbedRequest };
+
+function mapAttrs(element: Element): { lat: number; lng: number; zoom: number } {
+  return {
+    lat: parseFloat(element.getAttribute("data-lat") || "0"),
+    lng: parseFloat(element.getAttribute("data-lng") || "0"),
+    zoom: parseInt(element.getAttribute("data-zoom") || "4", 10),
+  };
+}
+
+/** The first `MAX_SISTER_EMBEDS` `Template:Sister` boxes that ask for an embed WikiOS can show, outside any embed. */
+function sisterTargets(container: Element): PortalTarget[] {
+  const targets: PortalTarget[] = [];
+  for (const element of Array.from(container.querySelectorAll(SISTER_EMBED_SELECTOR))) {
+    if (targets.length === MAX_SISTER_EMBEDS) break;
+    if (element.closest(`.${SISTER_EMBED_CLASS}`)) continue;
+    const request = sisterEmbedRequestOf(element);
+    if (request) targets.push({ element, type: "sister", data: request });
+  }
+  return targets;
+}
+
+/**
+ * The widget placeholders and `Template:Sister` boxes of the live article. Only an IxWiki page has any: another
+ * wiki's page never mounts IxStates widgets or embeds (its HTML is that wiki's, read-only), so it has none.
+ */
+export function readPortalTargets(container: Element, source: WikiSource): PortalTarget[] {
+  if (source !== "ixwiki") return [];
+  const targets: PortalTarget[] = [];
+  for (const element of Array.from(container.querySelectorAll(".wikios-coords-placeholder"))) {
+    const label = element.getAttribute("data-label") || "Location";
+    targets.push({ element, type: "coords", data: { ...mapAttrs(element), label } });
+  }
+  for (const element of Array.from(container.querySelectorAll(".wikios-map-embed-placeholder"))) {
+    const options = element.getAttribute("data-options") || "";
+    targets.push({ element, type: "map-embed", data: { ...mapAttrs(element), options } });
+  }
+  for (const element of Array.from(container.querySelectorAll(".wikios-stat-placeholder"))) {
+    targets.push({ element, type: "stat", data: { key: element.getAttribute("data-key") || "" } });
+  }
+  return [...targets, ...sisterTargets(container)];
 }

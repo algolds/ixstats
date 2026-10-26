@@ -8,11 +8,17 @@ import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 import { VirtualAnchorPopover } from "~/components/ui/popover";
 import { useWikiSetting } from "~/components/wiki-os/shared/useWikiSetting";
 import { useLinkTargetPreference } from "./useLinkTargetPreference";
+import { SISTER_ID_PREFIX } from "~/lib/wiki-os/sister-dom";
+
+/** A citation link's note id: `cite_note-…`, or `sister-cite_note-…` on a sister reader page (sister-dom.ts). */
+const CITE_NOTE_HREF = new RegExp(`#((?:${SISTER_ID_PREFIX})?cite_note-.+)`);
 
 interface TooltipState {
   html: string;
   /** The citation link the tooltip points at (a virtual anchor: found by delegation). */
   anchor: HTMLElement;
+  /** Another wiki's note: its HTML is boxed in as the article is (`.wikios-sister-article`). */
+  sister: boolean;
 }
 
 export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
@@ -37,10 +43,9 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
       if (!anchor) return;
 
       const href = anchor.getAttribute("href") ?? "";
-      const match = href.match(/#(cite_note-.+)/);
-      if (!match) return;
+      const noteId = CITE_NOTE_HREF.exec(href)?.[1];
+      if (!noteId) return;
 
-      const noteId = match[1];
       const container = contentRef.current;
       if (!container) return;
 
@@ -56,7 +61,7 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
       if (!html) return;
 
       // Shown above the reference link
-      setTooltip({ html, anchor });
+      setTooltip({ html, anchor, sister: noteId.startsWith(SISTER_ID_PREFIX) });
       setOpen(true);
     },
     [contentRef]
@@ -111,7 +116,7 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
 
   // The tooltip: a popover above the citation (flips below near the top of the viewport). The
   // popover overlay is the only surface; the inner `.wikios-cite-tooltip-inner` just sets the
-  // reading-face footnote type.
+  // reading-face footnote type. Another wiki's note sits in the article's containment (content.css).
   return createElement(
     VirtualAnchorPopover,
     {
@@ -129,7 +134,9 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
     },
     tooltip
       ? createElement("div", {
-          className: "wikios-cite-tooltip-inner",
+          className: tooltip.sister
+            ? "wikios-cite-tooltip-inner wikios-sister-article"
+            : "wikios-cite-tooltip-inner",
           dangerouslySetInnerHTML: tooltipMarkup,
         })
       : null
