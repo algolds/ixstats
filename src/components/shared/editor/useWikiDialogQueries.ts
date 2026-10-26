@@ -1,7 +1,7 @@
 "use client";
 // src/components/shared/editor/useWikiDialogQueries.ts
-// What the composer's wiki dialog asks the wikis: its search across every wiki and its embed preview, once typing
-// pauses; and picking a search result.
+// What the composer asks the wikis: the wiki dialog's search across every wiki and its embed preview, and the @ menu's
+// wiki rows, each once typing pauses; and picking a dialog search result.
 
 import { useCallback, useEffect, useState } from "react";
 import { useDebounce } from "~/hooks/useDebounce";
@@ -9,7 +9,7 @@ import { api } from "~/trpc/react";
 import type { WikiSource } from "~/lib/wiki-os/config";
 import { pickableEmbedImages } from "~/lib/wiki-os/embed-image";
 
-/** How long typing must pause before the dialog asks the wikis (a search asks every wiki). */
+/** How long typing must pause before the composer asks the wikis (a search asks every wiki). */
 export const WIKI_DIALOG_SEARCH_DELAY = 300;
 /** The search's own limit on a query (`wikios.search`). */
 const MAX_QUERY_LENGTH = 200;
@@ -79,4 +79,20 @@ export function useWikiDialogQueries({
     [setTarget, setSource]
   );
   return { search, selectResult, title, intro, images };
+}
+
+/**
+ * The @ menu's wiki rows: a search across every wiki for the name typed after the `@`, trimmed and clamped to the
+ * search's limit, once typing pauses (`WIKI_DIALOG_SEARCH_DELAY`), never for one character, and not at all unless
+ * `enabled` (a forum's own mention source replaces these rows).
+ */
+export function useWikiMentionSearch(mentionQuery: string, enabled: boolean) {
+  const query = useDebounce(mentionQuery.trim(), WIKI_DIALOG_SEARCH_DELAY).slice(
+    0,
+    MAX_QUERY_LENGTH
+  );
+  return api.wikios.search.useQuery(
+    { query, limit: 3, wikiSource: "all" },
+    { enabled: enabled && query.length > 1, staleTime: 10_000 }
+  );
 }

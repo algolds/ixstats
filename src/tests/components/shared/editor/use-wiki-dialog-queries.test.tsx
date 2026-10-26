@@ -8,6 +8,7 @@ import { act, renderHook } from "@testing-library/react";
 import {
   WIKI_DIALOG_SEARCH_DELAY,
   useWikiDialogQueries,
+  useWikiMentionSearch,
 } from "~/components/shared/editor/useWikiDialogQueries";
 import type { WikiSource } from "~/lib/wiki-os/config";
 
@@ -224,5 +225,51 @@ describe("useWikiDialogQueries: the embed preview", () => {
     const { setImage, wait } = setup("Gallambria", embed);
     wait(300);
     expect(setImage).toHaveBeenLastCalledWith("");
+  });
+});
+
+describe("useWikiMentionSearch: the @ menu's wiki rows", () => {
+  function mention(initial: string, enabled = true) {
+    const hook = renderHook(
+      ({ query, on }: { query: string; on: boolean }) => useWikiMentionSearch(query, on),
+      { initialProps: { query: initial, on: enabled } }
+    );
+    const type = (query: string, on = enabled) => hook.rerender({ query, on });
+    const wait = (ms: number) => act(() => jest.advanceTimersByTime(ms));
+    return { type, wait };
+  }
+
+  it("searches all wikis only once typing pauses for 300 ms, for the last name typed", () => {
+    const { type, wait } = mention("");
+    for (const typed of ["G", "Ga", "Gal", "Gall"]) {
+      type(typed);
+      wait(100);
+    }
+    expect(sent("search")).toEqual([]);
+    wait(199);
+    expect(sent("search")).toEqual([]);
+    wait(1);
+    expect(sent("search")).toEqual(["Gall"]);
+    expect(lastOf("search").input).toEqual({ query: "Gall", limit: 3, wikiSource: "all" });
+  });
+
+  it("trims, clamps to 200 characters, and sends nothing for one character", () => {
+    const { type, wait } = mention("");
+    type(" Ga ");
+    wait(300);
+    expect(lastOf("search").input.query).toBe("Ga");
+    type("x".repeat(300));
+    wait(300);
+    expect(lastOf("search").input.query).toBe("x".repeat(200));
+    expect(lastOf("search").enabled).toBe(true);
+    type("G");
+    wait(300);
+    expect(lastOf("search").enabled).toBe(false);
+  });
+
+  it("sends nothing when a mention source replaces the wiki rows", () => {
+    const { wait } = mention("Gallambria", false);
+    wait(300);
+    expect(sent("search")).toEqual([]);
   });
 });
