@@ -155,11 +155,16 @@ async function claimDailyCard(db: PrismaClient, vault: DailyVault, now: Date) {
       source: "DAILY_CLAIM",
     });
     await grantCardXp(tx, copy.id, "DAILY_CLAIM", JSON.stringify({ cardId: card.id }), now);
+    // The balance as it stands in this transaction, not as read before it began
+    const { credits } = await tx.myVault.findUniqueOrThrow({
+      where: { id: vault.id },
+      select: { credits: true },
+    });
     await tx.vaultTransaction.create({
       data: {
         vaultId: vault.id,
         credits: 0,
-        balanceAfter: vault.credits,
+        balanceAfter: credits,
         type: "EARN_ACTIVE",
         source: "DAILY_LOGIN_CARD",
         metadata: JSON.stringify({ cardId: card.id, cardTitle: card.title, finish: copy.finish }),

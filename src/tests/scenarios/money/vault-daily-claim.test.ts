@@ -180,6 +180,23 @@ describe("vault-daily-claim (memory)", () => {
     ]);
   });
 
+  // Regression: the card claim's ledger marker wrote balanceAfter from the vault read before the transaction, so a
+  // balance that moved in between (a sale, a purchase) left a marker disagreeing with the ledger around it
+  it("marks the card claim with the balance inside its transaction, not one read before it", async () => {
+    await db.myVault.update({ where: { userId: w.dee.id }, data: { credits: 40 } });
+    const upsert = db.myVault.upsert.bind(db.myVault);
+    jest.spyOn(db.myVault, "upsert").mockImplementationOnce((async (args: never) => ({
+      ...(await upsert(args)),
+      credits: 999,
+    })) as never);
+
+    await claim(w, "CARD");
+
+    expect(await ledgerOf(db as never, w.dee.id)).toEqual([
+      { credits: 0, balanceAfter: 40, type: "EARN_ACTIVE", source: "DAILY_LOGIN_CARD" },
+    ]);
+  });
+
   it("keeps the slot at a full collection and says to make room, so the credits can still be taken", async () => {
     await db.systemConfig.create({ data: { key: "card_system_max_inventory_cards", value: "0" } });
     await expect(claim(w, "CARD")).rejects.toThrow(

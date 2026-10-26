@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
+import { getVaultConfig } from "~/lib/vault/vault-perks";
 
 /** Team fields shown on fixture and standings rows. */
 export const TEAM_BADGE = {
@@ -19,4 +20,19 @@ export async function requireOwnedTeam(
     throw new TRPCError({ code: "FORBIDDEN", message: `You do not ${verb} this team` });
   }
   return team;
+}
+
+/**
+ * Refuse a MyClub ₷ move while the vault economy is in maintenance mode, which blocks every
+ * write. The Exchange flag (`vault_isExchangeEnabled`) deliberately does not gate MyClub
+ * (exchange-economy spec §6), so this is not `assertExchangeOpen`.
+ */
+export async function assertSportsEconomyOpen(db: Pick<PrismaClient, "systemConfig">) {
+  const cfg = await getVaultConfig(db);
+  if (cfg.isMaintenanceMode) {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message: "The vault economy is in maintenance mode.",
+    });
+  }
 }

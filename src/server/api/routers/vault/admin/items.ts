@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
-import { countStorePurchases, purchasedItemId } from "~/lib/vault/store-purchases";
+import {
+  countStorePurchases,
+  isRevokedPurchase,
+  purchasedItemId,
+  revokedPurchaseMetadata,
+} from "~/lib/vault/store-purchases";
+import { clearUserPerksCache } from "~/lib/vault/vault-perks";
 import { toggleEquippedCosmetic } from "../_equippedCosmetics";
 
 export const vaultAdminItemsRouter = createTRPCRouter({
@@ -136,46 +142,80 @@ export const vaultAdminItemsRouter = createTRPCRouter({
     }),
 
   /**
-   * Admin: Revoke a storefront item from a user (deletes its purchase transaction)
+   * Admin: Revoke a storefront item from a user. The purchase rows stay in the ledger (so it
+   * still sums to the balance and the audit trail keeps them), marked revoked so they grant
+   * nothing; a zero-credit ADMIN_ADJUSTMENT row records the revoke, and the item is unequipped.
+   * Nothing is refunded (the admin console offers none); a refund is a separate adjustment.
    */
   adminRevokeStoreItem: adminProcedure
     .input(z.object({ userId: z.string().min(1), itemId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const vault = await ctx.db.myVault.findUnique({
-          where: { userId: input.userId },
+        const user = await ctx.db.user.findUnique({
+          where: { id: input.userId },
+          select: { clerkUserId: true },
         });
-        if (!vault) throw new Error("User vault not found");
-
-        const transactions = await ctx.db.vaultTransaction.findMany({
-          where: {
-            vaultId: vault.id,
-            type: { in: ["SPEND_COSMETIC", "SPEND_BOOST"] },
-          },
+        const item = await ctx.db.vaultStoreItem.findUnique({
+          where: { id: input.itemId },
+          select: { name: true },
         });
+        await ctx.db.$transaction(async (tx) => {
+          const found = await tx.myVault.findUnique({
+            where: { userId: input.userId },
+            select: { id: true },
+          });
+          if (!found) throw new Error("User vault not found");
+          // Lock the vault so the balance and the equipped list below are current
+          await tx.$queryRaw`SELECT id FROM "my_vault" WHERE id = ${found.id} FOR UPDATE`;
+          const vault = await tx.myVault.findUniqueOrThrow({ where: { id: found.id } });
 
-        const toDeleteIds: string[] = [];
-        for (const tx of transactions) {
-          let meta = tx.metadata;
-          if (typeof meta === "string") {
-            try {
-              meta = JSON.parse(meta);
-            } catch {
-              // non-JSON metadata — treated as no item match
-            }
+          const purchases = (
+            await tx.vaultTransaction.findMany({
+              where: { vaultId: vault.id, type: { in: ["SPEND_COSMETIC", "SPEND_BOOST"] } },
+              select: { id: true, metadata: true },
+            })
+          ).filter(
+            (row) =>
+              purchasedItemId(row.metadata) === input.itemId && !isRevokedPurchase(row.metadata)
+          );
+          if (purchases.length === 0) {
+            throw new Error("User does not own this item");
           }
-          if (meta && typeof meta === "object" && (meta as any).itemId === input.itemId) {
-            toDeleteIds.push(tx.id);
+
+          const adminUserId = ctx.auth?.userId ?? null;
+          for (const row of purchases) {
+            await tx.vaultTransaction.update({
+              where: { id: row.id },
+              data: { metadata: revokedPurchaseMetadata(row.metadata, adminUserId) },
+            });
           }
-        }
+          await tx.vaultTransaction.create({
+            data: {
+              vaultId: vault.id,
+              credits: 0,
+              balanceAfter: vault.credits,
+              type: "ADMIN_ADJUSTMENT",
+              source: `Admin Revoke: ${item?.name ?? input.itemId}`,
+              metadata: JSON.stringify({
+                revokedItemId: input.itemId,
+                sourceTransactionIds: purchases.map((row) => row.id),
+                adminUserId,
+              }),
+            },
+          });
 
-        if (toDeleteIds.length === 0) {
-          throw new Error("User does not own this item");
-        }
-
-        await ctx.db.vaultTransaction.deleteMany({
-          where: { id: { in: toDeleteIds } },
+          // Equipped cosmetics also read as owned, so take it off
+          const equipped = (vault.equippedCosmetics ?? "").split(",").filter(Boolean);
+          if (equipped.includes(input.itemId)) {
+            await tx.myVault.update({
+              where: { id: vault.id },
+              data: { equippedCosmetics: equipped.filter((id) => id !== input.itemId).join(",") },
+            });
+          }
         });
+        // Perks (capacity, yield) are cached per user id and per Clerk id
+        clearUserPerksCache(input.userId);
+        if (user?.clerkUserId) clearUserPerksCache(user.clerkUserId);
 
         return { success: true, message: "Successfully revoked item from user." };
       } catch (error) {
