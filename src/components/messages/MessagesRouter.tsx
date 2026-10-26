@@ -214,8 +214,9 @@ function MessagesRouterInner() {
   };
 
   const addParticipantMutation = api.messages.addParticipant.useMutation({
-    onSuccess: () => {
-      notify.success("Participant added");
+    onSuccess: (result) => {
+      // Someone who left, or who filters message requests, gets the group as a request to accept.
+      notify.success(result.pending ? "Invitation sent as a message request" : "Participant added");
       if (selectedConversationId) {
         void utils.messages.getConversationMessages.invalidate({
           conversationId: selectedConversationId,

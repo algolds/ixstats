@@ -6,6 +6,7 @@
  */
 
 import {
+  MAX_GROUP_PARTICIPANTS,
   type CreateConversationInput,
   type AddParticipantInput,
   type LeaveConversationInput,
@@ -29,6 +30,7 @@ import { recipientAccepts } from "~/lib/notifications/recipient-preferences";
 import { deliverNotification } from "~/lib/notifications/delivery/deliver";
 
 const DM_REFUSED_MESSAGE = "This user is not accepting direct messages from you";
+const GROUP_FULL_MESSAGE = `A group conversation holds at most ${MAX_GROUP_PARTICIPANTS} people`;
 
 export class MessagingConversationOperations {
   private db: any;
@@ -43,6 +45,9 @@ export class MessagingConversationOperations {
     const allParticipants = [...new Set([actorId, ...input.participantIds])];
     if (allParticipants.length < 2) {
       throw new MessagingValidationError("A conversation requires at least 2 participants");
+    }
+    if (allParticipants.length > MAX_GROUP_PARTICIPANTS) {
+      throw new MessagingValidationError(GROUP_FULL_MESSAGE);
     }
 
     const isGroup = allParticipants.length > 2;
@@ -99,6 +104,13 @@ export class MessagingConversationOperations {
     });
   }
 
+  /**
+   * Adds someone to a group conversation, with the checks createConversation makes: not someone
+   * who blocked the actor, nor someone whose direct-message setting excludes them (SL-4) unless
+   * they filter message requests, in which case the group waits in their Requests folder. A
+   * former member who left or was removed comes back only as a request they accept; one who
+   * declined it is not asked again. The group stays within MAX_GROUP_PARTICIPANTS.
+   */
   public async addParticipant(actorId: string, input: AddParticipantInput) {
     const conv = await this.db.thinkshareConversation.findUnique({
       where: { id: input.conversationId },
@@ -110,6 +122,25 @@ export class MessagingConversationOperations {
     if (!myP) throw new MessagingForbiddenError();
     // A direct message stays between its two people, and a ThinkTank's chat follows its membership (invites, joins)
     if (conv.type === "direct" || conv.source === "thinktank") throw new MessagingForbiddenError();
+
+    const target = input.targetUserId;
+    const existing = conv.participants.find((p: any) => p.userId === target);
+    if (existing?.isActive) return { success: true, pending: existing.requestStatus === "pending" };
+    if (existing?.requestStatus === "declined") throw new MessagingBlockedError(DM_REFUSED_MESSAGE);
+    if (conv.participants.filter((p: any) => p.isActive).length >= MAX_GROUP_PARTICIPANTS) {
+      throw new MessagingValidationError(GROUP_FULL_MESSAGE);
+    }
+    if ((await recipientsBlockingSender(this.db, actorId, [target])).length > 0) {
+      throw new MessagingBlockedError();
+    }
+    let pending = !!existing;
+    const refusing = await recipientsRefusing(this.db, actorId, [target], "directMessages");
+    if (refusing.length > 0) {
+      const { requests, refused } = await splitDirectMessageRefusals(this.db, refusing);
+      if (refused.length > 0) throw new MessagingBlockedError(DM_REFUSED_MESSAGE);
+      if (requests.length > 0) pending = true;
+    }
+    const requestStatus = pending ? "pending" : "none";
 
     await this.db.conversationParticipant.upsert({
       where: {
@@ -123,14 +154,17 @@ export class MessagingConversationOperations {
         userId: input.targetUserId,
         role: input.role || "member",
         isActive: true,
+        requestStatus,
       },
       update: {
         isActive: true,
         role: input.role || "member",
+        requestStatus,
+        leftAt: null,
       },
     });
 
-    return { success: true };
+    return { success: true, pending };
   }
 
   public async leaveConversation(actorId: string, input: LeaveConversationInput) {

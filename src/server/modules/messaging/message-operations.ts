@@ -109,14 +109,16 @@ export class MessagingMessageOperations {
     });
 
     // Recipients holding the conversation as a message request are not notified or pushed it;
-    // it waits in their Requests folder.
+    // it waits in their Requests folder. Nor is anyone who declined it.
     let otherParticipants: Array<{ userId: string; requestStatus?: string }> = (
       await this.db.conversationParticipant.findMany({
         where: { conversationId: targetConvId, userId: { not: actorId }, isActive: true },
       })
     ).filter(
       (p: { userId: string; requestStatus?: string }) =>
-        p.requestStatus !== "pending" && !newlyPending.has(p.userId)
+        p.requestStatus !== "pending" &&
+        p.requestStatus !== "declined" &&
+        !newlyPending.has(p.userId)
     );
     // Group members who blocked the sender are not notified or pushed the message.
     if ((conv ?? participant.conversation)?.type !== "direct" && otherParticipants.length > 0) {
