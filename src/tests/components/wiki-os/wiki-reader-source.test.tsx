@@ -211,7 +211,7 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
       expect(refetch).toHaveBeenCalledTimes(1);
     });
   });
-  it("a wiki that fails to answer is not called a missing page: the reader offers to try again", () => {
+  it("a page the wiki could not render is neither missing nor an outage: it could not be shown here, with no retry", () => {
     mockUseQuery.mockReturnValue({
       data: undefined,
       isLoading: false,
@@ -222,7 +222,9 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
     });
     render(<Reader wikiSource="iiwiki" />);
     expect(screen.queryByText(/does not exist/)).not.toBeInTheDocument();
-    expect(screen.getByText("IIWiki could not be reached")).toBeInTheDocument();
+    expect(screen.getByText("“Portal:Eurth” could not be shown here")).toBeInTheDocument();
+    expect(screen.queryByText(/could not be reached/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /open on iiwiki/i })).toHaveAttribute(
       "href",
       "https://iiwiki.com/wiki/Portal:Eurth"
