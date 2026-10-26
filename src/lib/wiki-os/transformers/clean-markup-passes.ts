@@ -345,22 +345,49 @@ export function nextFileOpener(text: string, from: number): number {
 const TABLE_OPEN = /^[ \t:]*\{\|/;
 const TABLE_CLOSE = /^[ \t:]*\|\}/;
 
+/** Per line, the index of the first blank line at or after it (`lines.length` when none). */
+function nextBlankLines(lines: readonly string[]): Int32Array {
+  const next = new Int32Array(lines.length);
+  let blank = lines.length;
+  for (let at = lines.length - 1; at >= 0; at--) {
+    if (!lines[at].trim()) blank = at;
+    next[at] = blank;
+  }
+  return next;
+}
+
 /**
  * `text` without its wikitext tables: from a line that opens one to the line that closes it, the tables nested inside
- * included (a table that never closes takes the rest of the text, as MediaWiki reads it). A table is never prose: in an
- * excerpt it would show its pipes and attributes. One pass over the lines.
+ * included. A table that never closes ends at the next blank line (MediaWiki would read it to the end of the text, but
+ * an excerpt keeps the prose after it). A table is never prose: in an excerpt it would show its pipes and attributes.
+ * Linear: a stack pairs openers with closers, and the cut lines are counted with a difference array.
  */
 export function stripWikitextTables(text: string): string {
   if (!text.includes("{|")) return text;
-  const kept: string[] = [];
-  let depth = 0;
-  for (const line of text.split("\n")) {
-    if (TABLE_OPEN.test(line)) depth++;
-    else if (depth > 0 && TABLE_CLOSE.test(line)) {
-      depth--;
-      continue;
+  const lines = text.split("\n");
+  const cuts = new Int32Array(lines.length + 1); // +1 where a cut starts, -1 after where it ends
+  const open: number[] = [];
+  lines.forEach((line, at) => {
+    if (TABLE_OPEN.test(line)) open.push(at);
+    else if (open.length > 0 && TABLE_CLOSE.test(line)) {
+      cuts[open.pop() ?? at] += 1;
+      cuts[at + 1] -= 1;
     }
-    if (depth === 0) kept.push(line);
+  });
+  if (open.length > 0) {
+    const nextBlank = nextBlankLines(lines);
+    for (const at of open) {
+      cuts[at] += 1;
+      cuts[nextBlank[at]] -= 1;
+    }
   }
-  return kept.join("\n");
+  let depth = 0;
+  return lines.filter((_line, at) => (depth += cuts[at]) === 0).join("\n");
 }
+
+/** The blocks whose text is shown as written: a `{|` inside one is not a table. */
+const VERBATIM_TAGS = ["pre", "nowiki", "syntaxhighlight", "source", "code"] as const;
+
+/** `text` without its `<pre>`, `<nowiki>`, `<syntaxhighlight>`, `<source>` and `<code>` blocks (never an excerpt's prose). */
+export const stripVerbatimBlocks = (text: string): string =>
+  VERBATIM_TAGS.reduce(stripTagBlocks, text);

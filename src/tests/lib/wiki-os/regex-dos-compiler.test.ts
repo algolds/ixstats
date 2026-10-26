@@ -1183,10 +1183,7 @@ const cleanLegacy = {
   },
 };
 
-/**
- * The whole of `cleanWikiMarkup` (and the template pass of the parser) as it was, minus the ceiling, plus the table
- * pass it gained after the sweep (`stripWikitextTables`, already linear).
- */
+/** The whole of `cleanWikiMarkup` (and the template pass of the parser) as it was, minus the ceiling. */
 function legacyClean(rawText: string): string {
   let text = rawText;
   text = text.replace(/^\[blurb:[^\]]+\]\s*/gi, "");
@@ -1198,7 +1195,7 @@ function legacyClean(rawText: string): string {
   text = cleanLegacy.category(text);
   text = cleanLegacy.templateLink(text);
   text = text.replace(/(?:Template|template)\s*:[^\n.<|\]}]*/gi, "");
-  text = stripWikitextTables(legacyTemplates(text));
+  text = legacyTemplates(text);
   text = text.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1");
   text = cleanLegacy.externalBare(cleanLegacy.externalLabelled(text));
   text = cleanLegacy.htmlTags(text);
@@ -1414,9 +1411,35 @@ describe("an excerpt is prose only", () => {
     );
   });
 
-  it("keeps a line that only mentions the markup, and drops the rest of a table that never closes", () => {
-    expect(cleanWikiMarkup("Use {| to open a table.\nNext.")).toBe("Use {| to open a table. Next.");
-    expect(cleanWikiMarkup("Lead.\n{|\n| a\n| b")).toBe("Lead.");
+  it("keeps a line that only mentions the markup, and a table that never closes ends at the next blank line", () => {
+    expect(cleanWikitextExcerpt("Use {| to open a table.\nNext.")).toBe(
+      "Use {| to open a table. Next."
+    );
+    expect(cleanWikitextExcerpt("Lead.\n{|\n| a\n| b")).toBe("Lead.");
+    expect(cleanWikitextExcerpt("Lead.\n{|\n| a\n\nAfter the table.")).toBe(
+      "Lead. After the table."
+    );
+  });
+
+  it("does not read a {| in a <pre>, <nowiki>, <syntaxhighlight> or <code> block as a table", () => {
+    for (const tag of ["pre", "nowiki", "syntaxhighlight", "code"]) {
+      const wikitext = `Lead.\n<${tag} lang="x">\n{| class="wikitable"\n| a\n</${tag}>\nThe rest of the page.`;
+      expect(cleanWikitextExcerpt(wikitext)).toBe("Lead. The rest of the page.");
+    }
+  });
+
+  it("reads 100,000 tables that never close in one pass", () => {
+    const started = performance.now();
+    expect(stripWikitextTables("{|\n| a\n\nprose\n".repeat(100_000))).toBe(
+      "\nprose\n".repeat(100_000)
+    );
+    expect(performance.now() - started).toBeLessThan(500 * TIMING_BUDGET_SCALE);
+  });
+
+  it("leaves a whole text's tables to the caller (a forum post's action link in a table cell is kept)", () => {
+    expect(cleanWikiMarkup("Join us.\n{|\n| [ixaction=abc123]\n|}")).toContain(
+      "[ixaction=abc123]"
+    );
   });
 });
 

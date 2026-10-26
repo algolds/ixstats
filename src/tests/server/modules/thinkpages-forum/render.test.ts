@@ -5,6 +5,7 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
 import { renderArticleViaMediaWiki } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import { buildViewBundle } from "~/lib/wiki-os/services/view-bundle";
 import { ForumError } from "~/server/modules/thinkpages-forum/errors";
+import { assertTokensArePlainText } from "~/server/modules/thinkpages-forum/writes-body";
 import {
   composePostHtml,
   FORUM_RENDERER_VERSION,
@@ -48,6 +49,16 @@ it("falls back in-process when MediaWiki is unavailable, marked stale", async ()
   expect(out.renderedAt).toBeNull();
   expect(out.contentHtml).toContain("Bold");
   expect(out.templates).toEqual([]);
+});
+
+it("keeps an action link inside a table in the plain text, so the post is accepted", async () => {
+  render.mockResolvedValue({
+    html: '<div class="mw-parser-output"><table class="wikitable"><tbody><tr><td>[ixaction=abc123]</td></tr></tbody></table></div>',
+    metadata: meta,
+  });
+  const out = await renderPostWikitext('{| class="wikitable"\n| [ixaction=abc123]\n|}', "t1", "u1");
+  expect(out.plainText).toContain("[ixaction=abc123]");
+  expect(() => assertTokensArePlainText(out.contentHtml, out.plainText)).not.toThrow();
 });
 
 it("refuses guarded input as a BAD_REQUEST without calling MediaWiki", async () => {

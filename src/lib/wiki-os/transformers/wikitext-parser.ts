@@ -14,6 +14,7 @@ import {
   stripSelfClosingRefs,
   stripTagBlocks,
   stripUnclosedTemplateTail,
+  stripVerbatimBlocks,
   stripWikitextTables,
   unpackExternalLinks,
   unpackInternalLinks,
@@ -539,8 +540,9 @@ export function cleanWikiMarkup(rawText: string | null | undefined, maxLength: n
   // 9. Iteratively strip nested templates: {{...}}
   text = stripWikitextTemplates(text);
 
-  // 9b. Strip tables: {| ... |}, nested ones included
-  text = stripWikitextTables(text);
+  // 9b. An excerpt is prose: strip verbatim blocks (<pre>, <nowiki>, ...) and then tables ({| ... |}, nested ones
+  // included). A whole text keeps them: a forum post's plain text must keep the action links in its table cells.
+  if (maxLength > 0) text = stripWikitextTables(stripVerbatimBlocks(text));
 
   // 10. Unpack internal links: [[Target|Label]] -> Label, [[Target]] -> Target
   text = unpackInternalLinks(text);
