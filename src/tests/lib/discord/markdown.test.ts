@@ -67,6 +67,35 @@ describe("Discord wiki embeds carry the source", () => {
     expect(markdown).not.toContain("](");
   });
 
+  it.each([
+    ["the XML path", ""],
+    ["the regex fallback", BROKEN],
+  ])(
+    "a title's brackets, parentheses, backslashes and emphasis are escaped, so the link stays whole (%s)",
+    (_label, prefix) => {
+      jest.spyOn(console, "warn").mockImplementation(() => undefined);
+      const title = "A] (x) [b](https://evil.example) \\*c*_d_~e~ `f` ||g||";
+      const markdown = htmlToDiscordMarkdown(
+        prefix + embed("iiwiki").replace("Pax Atomica", title)
+      );
+      const escaped =
+        "A\\] \\(x\\) \\[b\\]\\(https://evil.example\\) \\\\\\*c\\*\\_d\\_\\~e\\~ \\`f\\` \\|\\|g\\|\\|";
+      const url = `${APP}/wiki/A%5D_%28x%29_%5Bb%5D%28https%3A%2F%2Fevil.example%29_%5C*c*_d_~e~_%60f%60_%7C%7Cg%7C%7C?source=iiwiki`;
+      expect(markdown).toContain(`**Wiki Embed: [${escaped}](${url})**`);
+      jest.restoreAllMocks();
+    }
+  );
+
+  it("a title with parentheses keeps them inside the URL, percent-encoded", () => {
+    const markdown = htmlToDiscordMarkdown(embed("ixwiki").replace("Pax Atomica", "Foo (bar)"));
+    expect(markdown).toContain(`[Foo \\(bar\\)](${APP}/wiki/Foo_%28bar%29)`);
+  });
+
+  it("a title named with no link is escaped too", () => {
+    const markdown = htmlToDiscordMarkdown(embed("iiwiki").replace("Pax Atomica", "../*x*"));
+    expect(markdown).toContain(String.raw`**Wiki Embed: ../\*x\***`);
+  });
+
   it("a composer link to a sister page keeps its ?source= on the app URL", () => {
     expect(
       htmlToDiscordMarkdown('<p><a href="/wiki/Gallambria?source=iiwiki">G</a></p>')

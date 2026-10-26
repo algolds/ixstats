@@ -85,14 +85,23 @@ export function htmlToDiscordMarkdown(html: string): string {
 /** Site-relative links become absolute so they work outside IxStates. */
 const absoluteUrl = (href: string) => (href.startsWith("/") ? appUrl(href) : href);
 
+/** Discord's inline markdown characters (link brackets, emphasis, code, spoilers), and the backslash escaping them. */
+const MARKDOWN_CHARACTER = /[\\[\]()*_~`|]/g;
+
+/** `text` with every markdown character escaped, so a page title reads as text, inside link text or out. */
+const escapeMarkdown = (text: string) => text.replace(MARKDOWN_CHARACTER, "\\$&");
+
 /**
  * A wiki embed: the page in the WikiOS reader on the app URL (`appUrl(wikiReaderPath)`, `?source=` for a sister wiki),
- * naming its wiki. A title that would climb out of `/wiki/` (`readerLinkPath`) is named with no link.
+ * naming its wiki. A title that would climb out of `/wiki/` (`readerLinkPath`) is named with no link. The title is
+ * escaped, and the URL carries `(` and `)` percent-encoded (`encodeURIComponent` leaves them), so neither can end the
+ * link early.
  */
 const wikiEmbedMarkdown = (title: string, summary: string, source: string) => {
   const wiki = parseWikiSource(source);
   const path = readerLinkPath(title, wiki);
-  const name = path ? `[${title}](${appUrl(path)})` : title;
+  const url = path && appUrl(path).replaceAll("(", "%28").replaceAll(")", "%29");
+  const name = url ? `[${escapeMarkdown(title)}](${url})` : escapeMarkdown(title);
   return `\n**Wiki Embed: ${name}**\n*Source: ${WIKI_SOURCES[wiki].name}*\n> ${summary}\n`;
 };
 

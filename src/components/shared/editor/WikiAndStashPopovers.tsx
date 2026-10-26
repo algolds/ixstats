@@ -10,6 +10,20 @@ import { Label } from "~/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { EmojiPicker } from "~/components/thinkpages/EmojiPicker";
 import { cn } from "~/lib/utils";
+import { WIKI_SOURCES, type WikiSource } from "~/lib/wiki-os/config";
+
+/** The wikis the dialog links and embeds from, as its selector names them. */
+const WIKI_SOURCE_OPTIONS: ReadonlyArray<{ source: WikiSource; label: string }> = [
+  { source: "ixwiki", label: "Wiki" },
+  { source: "iiwiki", label: "IIWiki" },
+  { source: "althistory", label: "AltHistory" },
+];
+
+/** A search result across every wiki: the article and the wiki it is on. */
+export interface WikiSearchResult {
+  title: string;
+  source: WikiSource;
+}
 
 interface WikiAndStashPopoversProps {
   disabled?: boolean;
@@ -17,13 +31,13 @@ interface WikiAndStashPopoversProps {
   setIsWikiOpen: (val: boolean) => void;
   wikiInsertMode: "link" | "embed";
   setWikiInsertMode: (mode: "link" | "embed") => void;
-  wikiSource: "ixwiki" | "iiwiki" | "althistory";
-  setWikiSource: (source: "ixwiki" | "iiwiki" | "althistory") => void;
+  wikiSource: WikiSource;
+  setWikiSource: (source: WikiSource) => void;
   wikiTarget: string;
   setWikiTarget: (target: string) => void;
   wikiLabel: string;
   setWikiLabel: (label: string) => void;
-  wikiSearchResults: any[];
+  wikiSearchResults: readonly WikiSearchResult[];
   isSearchingWiki: boolean;
   wikiIntroQuery: any;
   wikiImagesQuery: any;
@@ -136,31 +150,23 @@ export function WikiAndStashPopovers({
             </div>
 
             {/* Source selector */}
-            <div className="flex gap-1">
-              <button
-                type="button"
-                onClick={() => setWikiSource("ixwiki")}
-                className={cn(
-                  "flex-1 rounded-lg border py-1 text-center text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                  wikiSource === "ixwiki"
-                    ? "border-wiki/50 bg-wiki/10 text-wiki"
-                    : "border-neutral-200 text-neutral-500 hover:bg-neutral-50 dark:border-white/5 dark:text-slate-400 dark:hover:bg-white/5"
-                )}
-              >
-                Wiki
-              </button>
-              <button
-                type="button"
-                onClick={() => setWikiSource("iiwiki")}
-                className={cn(
-                  "flex-1 rounded-lg border py-1 text-center text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                  wikiSource === "iiwiki"
-                    ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                    : "border-neutral-200 text-neutral-500 hover:bg-neutral-50 dark:border-white/5 dark:text-slate-400 dark:hover:bg-white/5"
-                )}
-              >
-                IIWiki
-              </button>
+            <div className="flex gap-1" role="group" aria-label="Wiki">
+              {WIKI_SOURCE_OPTIONS.map(({ source, label }) => (
+                <button
+                  key={source}
+                  type="button"
+                  aria-pressed={wikiSource === source}
+                  onClick={() => setWikiSource(source)}
+                  className={cn(
+                    "flex-1 rounded-lg border py-1 text-center text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                    wikiSource === source
+                      ? "border-wiki/50 bg-wiki/10 text-wiki"
+                      : "border-border text-muted-foreground hover:bg-muted"
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
 
             <div className="space-y-1">
@@ -180,14 +186,21 @@ export function WikiAndStashPopovers({
               )}
               {wikiSearchResults.length > 0 && (
                 <div className="max-h-24 overflow-y-auto rounded-lg border border-neutral-200/60 bg-neutral-50/50 p-1 dark:border-white/5 dark:bg-white/5">
-                  {wikiSearchResults.map((res: any) => (
+                  {wikiSearchResults.map((res) => (
                     <button
-                      key={res.title}
+                      key={`${res.source}:${res.title}`}
                       type="button"
-                      onClick={() => setWikiTarget(res.title)}
-                      className="w-full truncate rounded px-1.5 py-1 text-left text-xs hover:bg-neutral-200/50 dark:hover:bg-white/10"
+                      onClick={() => {
+                        // A result from any wiki is inserted from its own wiki, whatever the selector says.
+                        setWikiTarget(res.title);
+                        setWikiSource(res.source);
+                      }}
+                      className="flex w-full items-baseline gap-2 rounded px-1.5 py-1 text-left text-xs hover:bg-neutral-200/50 dark:hover:bg-white/10"
                     >
-                      {res.title}
+                      <span className="min-w-0 flex-1 truncate">{res.title}</span>
+                      <span className="text-muted-foreground shrink-0">
+                        {WIKI_SOURCES[res.source].name}
+                      </span>
                     </button>
                   ))}
                 </div>

@@ -8,7 +8,7 @@ import { cn } from "~/lib/utils";
 import { currentProfileHref } from "~/lib/wiki-os/legacy-profile-links";
 import { entityKinds, mentionQueries } from "~/lib/wiki-os/mention-target";
 import { WIKI_SOURCES, parseWikiSource, type WikiSource } from "~/lib/wiki-os/config";
-import { sisterMediaPath } from "~/lib/wiki-os/sister-media";
+import { embedImageSrc } from "~/lib/wiki-os/embed-image";
 import { readerLinkPath } from "~/lib/wiki-os/wiki-link-target";
 import {
   HoverCard,
@@ -127,14 +127,6 @@ function renderWikiLink(
 
 const renderChildren = (element: HTMLElement, missing: ReadonlySet<string>) =>
   Array.from(element.childNodes).map((child, childIdx) => domNodeToReact(child, childIdx, missing));
-
-/**
- * Where an embed card's image loads from: IxWiki's as stored; a sister wiki's only through that wiki's media proxy
- * (`sisterMediaPath`), and none when it is on any other host.
- */
-function embedImageSrc(imageUrl: string, source: WikiSource): string | null {
-  return source === "ixwiki" ? imageUrl : sisterMediaPath(imageUrl, source);
-}
 
 const EMBED_CARD_CLASS =
   "rounded-card border-separator bg-fill-4 hover:border-separator flex items-center gap-4 border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200";

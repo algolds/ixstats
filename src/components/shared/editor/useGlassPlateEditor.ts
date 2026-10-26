@@ -92,14 +92,13 @@ export function useGlassPlateEditor({
   const [wikiText, setWikiText] = useState("");
   const [selectedWikiSource, setSelectedWikiSource] = useState<WikiSource>("ixwiki");
   const [selectedWikiImageUrl, setSelectedWikiImageUrl] = useState("");
-  const [wikiSearchQuery, setWikiSearchQuery] = useState("");
 
   const [isEmojiOpen, setIsEmojiOpen] = useState(false);
 
-  // Wiki search queries
+  // Wiki search: what is typed in the dialog's title field, across every wiki (a result carries its wiki).
   const wikiSearch = api.wikios.search.useQuery(
-    { query: wikiSearchQuery, limit: 5, wikiSource: "all" },
-    { enabled: isWikiOpen && wikiSearchQuery.trim().length > 1, staleTime: 10_000 }
+    { query: wikiTarget, limit: 5, wikiSource: "all" },
+    { enabled: isWikiOpen && wikiTarget.trim().length > 1, staleTime: 10_000 }
   );
 
   const wikiIntroQuery = api.wikios.getIntro.useQuery(
@@ -119,12 +118,6 @@ export function useGlassPlateEditor({
       setSelectedWikiImageUrl("");
     }
   }, [wikiImagesQuery.data]);
-
-  useEffect(() => {
-    if (!isWikiOpen) {
-      setWikiSearchQuery("");
-    }
-  }, [isWikiOpen]);
 
   // Mention State
   const [mentionQuery, setMentionQuery] = useState("");
@@ -577,8 +570,6 @@ export function useGlassPlateEditor({
     setSelectedWikiSource,
     selectedWikiImageUrl,
     setSelectedWikiImageUrl,
-    wikiSearchQuery,
-    setWikiSearchQuery,
     wikiSearch,
     wikiIntroQuery,
     wikiImagesQuery,

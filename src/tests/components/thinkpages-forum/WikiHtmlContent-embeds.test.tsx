@@ -157,6 +157,20 @@ describe("WikiHtmlContent wiki embed cards", () => {
     expect(container.querySelector("a")).toBeNull();
   });
 
+  it.each([
+    ["another host", "https://evil.example/track.png"],
+    ["a sister host", "https://iiwiki.com/images/a/ab/Flag.png"],
+    ["IxWiki's host outside its files", "https://ixwiki.com/projects/ixstates/api/x"],
+  ])("an IxWiki embed image on %s is not shown", async (_label, imageUrl) => {
+    const card = await mountedCard(embedHtml("ixwiki", imageUrl));
+    expect(card.querySelector("img")).toBeNull();
+  });
+
+  it("an IxWiki embed image that is a same-origin upload loads from the app", async () => {
+    const card = await mountedCard(embedHtml("ixwiki", "/images/uploads/uploaded_1.png"));
+    expect(card.querySelector("img")?.getAttribute("src")).toBe("/images/uploads/uploaded_1.png");
+  });
+
   it("an embed whose source the reader does not know renders as IxWiki's", async () => {
     const card = await mountedCard(embedHtml("evil", ""));
     expect(card.getAttribute("href")).toBe("/wiki/Pax_Atomica");
