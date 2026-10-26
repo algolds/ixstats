@@ -59,7 +59,9 @@ function relationDelegate(strength: number | null) {
   };
 }
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 
 describe("embassies", () => {
   it("are never opened in their own nation, and opening one starts a neutral relation", async () => {
@@ -202,9 +204,11 @@ describe("cultural exchanges", () => {
         counts: [0, 0, 0],
       },
     ];
-    const updateMany = jest.fn(async ({ where }: { where: { id: string } }) => ({
-      count: where.id === "racing" ? 0 : 1,
-    }));
+    const updateMany = jest.fn(
+      async ({ where }: { where: { id: string; status: string }; data: object }) => ({
+        count: where.id === "racing" ? 0 : 1,
+      })
+    );
     const db = {
       culturalExchange: {
         findMany: jest.fn(async () =>

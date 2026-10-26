@@ -36,7 +36,9 @@ const elections = createCallerFactory(electionsRouter);
 const legislation = createCallerFactory(legislationRouter);
 const meetings = createCallerFactory(meetingsRouter);
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 
 describe("parties", () => {
   const party = { id: "p1", countryId: CALLER_COUNTRY, name: "Greens", currentSupport: 31 };

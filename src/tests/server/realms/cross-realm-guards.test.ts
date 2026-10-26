@@ -74,7 +74,9 @@ function realmContext(db: Record<string, object>) {
   });
 }
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 
 describe("the rule", () => {
   it("compares realms, counting a missing realm as Ixnay's", () => {
@@ -354,7 +356,7 @@ describe("relations, scenarios and summits", () => {
       culturalScenario: { create },
       auditLog: { create: jest.fn().mockResolvedValue({}) },
     });
-    ctx.user!.role = { name: "admin" };
+    ctx.user!.role = { ...ctx.user!.role!, name: "admin" };
     await expect(
       createCallerFactory(diplomaticScenariosRouter)(ctx as never).createScenario({
         type: "festival",

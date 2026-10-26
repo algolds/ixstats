@@ -47,6 +47,9 @@ import { DefenseOverview } from "~/components/mycountry/domains/defense/overview
 import { BranchCard, type BranchActions } from "~/components/mycountry/domains/defense/branches/BranchCard";
 import type { ForceBranch } from "~/components/mycountry/domains/defense/forces/force-fields";
 
+/** The owner's row: the full branch with its model state (others get the redacted variant). */
+type OwnerForceBranch = Extract<ForceBranch, { capital: number }>;
+
 beforeAll(stubResizeObserver);
 beforeEach(() => {
   overviewState.owner = null;
@@ -115,25 +118,58 @@ describe("the owner's free preview", () => {
 });
 
 describe("a branch card", () => {
-  const row = {
+  const at = new Date(0);
+  const row: OwnerForceBranch = {
     id: "b-land",
-    name: "Royal Army",
+    countryId: "c1",
     domain: "land",
+    name: "Royal Army",
     motto: null,
+    imageUrl: null,
+    description: null,
+    established: null,
+    activeDuty: 0,
+    reserves: 0,
+    civilianStaff: 0,
+    effortShare: 0,
+    targetActive: null,
+    capital: 0,
+    readinessPersonnel: 0,
+    readinessEquipment: 0,
+    readinessCondition: 0,
+    readinessTraining: 0,
+    reserveTraining: 0,
+    mobilisationOrder: 0,
+    mobilisationOrderedClockMs: null,
+    mobilised: 0,
+    lastTickClockMs: 0,
+    isActive: true,
+    createdAt: at,
+    updatedAt: at,
+    derived: null,
     units: [],
     assets: [
       {
         id: "a1",
+        branchId: "b-land",
+        unitId: null,
         name: "Leopard 2A7",
+        assetType: "vehicle",
         category: "vehicle",
         status: "operational",
         quantity: 40,
         operational: 40,
         acquisitionCost: 10e6,
+        maintenanceCost: 0,
+        catalogKey: null,
         designYear: 2016,
+        capability: null,
+        imageUrl: null,
+        createdAt: at,
+        updatedAt: at,
       },
     ],
-  } as ForceBranch;
+  };
   const actions = (): BranchActions => ({
     toggle: jest.fn(),
     edit: jest.fn(),

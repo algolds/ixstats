@@ -649,7 +649,7 @@ describe("the embassy mission sweep", () => {
       (where.culturalExchange ? m.exchangeStatus === where.culturalExchange.is.status : true) &&
       (where.culturalExchangeId ? m.culturalExchangeId != null : true) &&
       (where.completesAt ? m.completesAt.getTime() <= where.completesAt.lte.getTime() : true);
-    const missionDb = {
+    const tables = {
       embassyMission: {
         findMany: jest.fn(async ({ where }: { where: Where }) =>
           rows.filter((m) => matches(m, where)).map((m) => ({ ...m }))
@@ -679,7 +679,10 @@ describe("the embassy mission sweep", () => {
           }
         ),
       },
-      $transaction: jest.fn(async (work: (tx: unknown) => unknown) => work(missionDb)),
+    };
+    const missionDb = {
+      ...tables,
+      $transaction: jest.fn(<T,>(work: (tx: typeof tables) => Promise<T>) => work(tables)),
     };
     expect(await closeDueEmbassyMissions(missionDb as never, now)).toEqual({
       missionsCompleted: 1,

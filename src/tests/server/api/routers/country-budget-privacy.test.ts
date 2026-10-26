@@ -148,6 +148,14 @@ const embassyRow = (id: string, hostCountryId: string, guestCountryId: string) =
   location: null,
 });
 
+/** A BudgetAllocation row as the routers select it: the percent (budget views) or the amount (transport). */
+type AllocationRow = {
+  budgetYear?: number;
+  allocatedAmount?: number;
+  allocatedPercent?: number;
+  department: { name?: string; category: string };
+};
+
 function makeDb({ ownerUserId = "owner_db" }: { ownerUserId?: string } = {}) {
   return {
     user: {
@@ -178,7 +186,7 @@ function makeDb({ ownerUserId = "owner_db" }: { ownerUserId?: string } = {}) {
     taxComponent: { findMany: jest.fn(async () => []) },
     budgetAllocation: {
       findFirst: jest.fn(async () => ({ budgetYear: 2040 })),
-      findMany: jest.fn(async () => [
+      findMany: jest.fn(async (): Promise<AllocationRow[]> => [
         { allocatedPercent: 40, department: { category: "Defense" } },
       ]),
     },

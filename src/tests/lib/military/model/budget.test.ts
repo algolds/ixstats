@@ -4,15 +4,17 @@
  */
 import {
   DEFAULT_SHARES,
+  SHARE_KEYS,
   SHARE_PRESETS,
   defenseLinesTotal,
   monthlyLines,
   normaliseShares,
   resolveDefenseBudget,
   shareWarnings,
+  type BudgetShares,
 } from "~/lib/military/model";
 
-const sum = (s: Record<string, number>) => Object.values(s).reduce((a, b) => a + b, 0);
+const sum = (s: BudgetShares) => SHARE_KEYS.reduce((total, key) => total + s[key], 0);
 
 describe("budget split", () => {
   it("defaults and presets each sum to 1", () => {

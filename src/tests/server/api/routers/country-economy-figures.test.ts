@@ -78,7 +78,9 @@ describe("country economy reads show the engine's figures", () => {
     clearTrpcMemoryCache();
     jest.spyOn(IxTime, "getCurrentIxTime").mockReturnValue(NOW);
   });
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
 
   it("getByIdWithEconomicData: GDP growth is the capped, diminished rate", async () => {
     const read = (await caller(makeDb()).getByIdWithEconomicData({ id: "aurum" })) as EconomicRead;
