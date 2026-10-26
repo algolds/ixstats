@@ -2,6 +2,7 @@
 // MediaWiki's HTML, loading a stored one (re-sanitizing an outdated one, with its profile links made current) and the
 // in-process fallback view.
 
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
@@ -41,6 +42,8 @@ export const viewBundleSchema = z.object({
    * and on bundles stored before it was recorded. Not part of the shape a render builds, so it needs no new version.
    */
   mediaErrorSince: z.string().optional(),
+  /** Which text `mediaErrorSince` is about (`mediaErrorTextKey`): a new revision starts its own record. */
+  mediaErrorText: z.string().optional(),
 });
 
 export type ViewBundle = z.infer<typeof viewBundleSchema>;
@@ -109,22 +112,35 @@ function hasMediaError(bundle: ViewBundle): boolean {
   );
 }
 
-const mediaErrorRecordSchema = z.object({ mediaErrorSince: z.string() });
+const mediaErrorRecordSchema = z.object({
+  mediaErrorSince: z.string(),
+  mediaErrorText: z.string(),
+});
+
+/** A short key of the wikitext a media-error record is about. */
+export const mediaErrorTextKey = (wikitext: string): string =>
+  createHash("sha1").update(wikitext).digest("hex").slice(0, 16);
 
 /**
- * `bundle` (a new render, stored at `renderedAt`) with the record of since when the page could not show a file: none
- * for a clean render; the earlier time when the page's previous bundle (`previous`, the stored JSON, any version)
- * already had one; else `renderedAt`, this render being the first broken one.
+ * `bundle` (a new render of `wikitext`, stored at `renderedAt`) with the record of since when the page could not show a
+ * file: none for a clean render; the earlier time when the page's previous bundle (`previous`, the stored JSON, any
+ * version) already had one for the same text; else `renderedAt`, this render being the first broken one (a new
+ * revision's own failed lookup gets the one-day retry, not the backoff an older missing file earned).
  */
 export function recordMediaError(
   bundle: ViewBundle,
   previous: unknown,
-  renderedAt: Date
+  renderedAt: Date,
+  wikitext: string
 ): ViewBundle {
   if (!hasMediaError(bundle)) return bundle;
+  const text = mediaErrorTextKey(wikitext);
   const earlier = mediaErrorRecordSchema.safeParse(previous);
-  const since = earlier.success ? earlier.data.mediaErrorSince : renderedAt.toISOString();
-  return { ...bundle, mediaErrorSince: since };
+  const since =
+    earlier.success && earlier.data.mediaErrorText === text
+      ? earlier.data.mediaErrorSince
+      : renderedAt.toISOString();
+  return { ...bundle, mediaErrorSince: since, mediaErrorText: text };
 }
 
 /**

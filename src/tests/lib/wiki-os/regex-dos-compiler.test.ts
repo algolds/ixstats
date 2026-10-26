@@ -1428,6 +1428,13 @@ describe("an excerpt is prose only", () => {
     }
   });
 
+  it("keeps the text of an inline <code> or <nowiki> in an excerpt", () => {
+    expect(cleanWikitextExcerpt("The <code>foo</code> command runs.")).toBe(
+      "The foo command runs."
+    );
+    expect(cleanWikitextExcerpt("Type <nowiki>[[</nowiki> to link.")).toBe("Type [[ to link.");
+  });
+
   it("reads 100,000 tables that never close in one pass", () => {
     const started = performance.now();
     expect(stripWikitextTables("{|\n| a\n\nprose\n".repeat(100_000))).toBe(
@@ -1437,9 +1444,7 @@ describe("an excerpt is prose only", () => {
   });
 
   it("leaves a whole text's tables to the caller (a forum post's action link in a table cell is kept)", () => {
-    expect(cleanWikiMarkup("Join us.\n{|\n| [ixaction=abc123]\n|}")).toContain(
-      "[ixaction=abc123]"
-    );
+    expect(cleanWikiMarkup("Join us.\n{|\n| [ixaction=abc123]\n|}")).toContain("[ixaction=abc123]");
   });
 });
 

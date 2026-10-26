@@ -139,7 +139,7 @@ function unresolvedAssetSrcs(file: string, source: string): string[] {
           if (!ts.isJsxAttribute(attr) || attr.name.getText(sf) !== "src") continue;
           const init = attr.initializer;
           const expr = init && ts.isJsxExpression(init) ? init.expression : undefined;
-          const literal = init && ts.isStringLiteral(init) && UPLOAD_LITERAL.test(init.getText(sf));
+          const literal = init && ts.isStringLiteral(init) && IMAGE_LITERAL.test(init.getText(sf));
           if (literal || (expr && isUnresolved(expr, sf, names))) report(attr);
         }
       }
@@ -164,6 +164,7 @@ describe("the detector", () => {
     ["<img src={post.mediaUrls[0]} />"],
     ["<motion.img src={lightboxMedia.url} />"],
     ['<img src="/images/uploads/x.png" />'],
+    ['<img src="/images/sportyblocks/player-1.png" />'],
     ["<img src={`/images/uploads/${name}`} />"],
     ["<img src={normalizeFlagUrl(c.flag) ?? undefined} />"],
     ['<img src={"/images/sportyblocks/player-1.png"} />'],

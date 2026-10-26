@@ -210,7 +210,8 @@ export async function renderArticle(articleId: string): Promise<RenderResult> {
         renderedView: recordMediaError(
           buildViewBundle(rendered.html),
           article.renderedView,
-          renderedAt
+          renderedAt,
+          article.wikitext
         ),
         htmlSyncedAt: renderedAt,
       },

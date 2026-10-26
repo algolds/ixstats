@@ -856,6 +856,8 @@ describe("wikiosTreeKey", () => {
       "src/lib/thinkpages-forum/forum-quote.ts",
       "src/lib/thinkpages-forum/post-html.ts",
       "src/lib/base-path.ts",
+      "scripts/setup/base-path.cjs",
+      "scripts/setup/postcss-base-path-urls.cjs",
       "src/server/shared/wiki-placeholders.ts",
       "src/lib/realms/realm-ids.ts",
       "src/server/shared/ixstats-template-provider.ts",

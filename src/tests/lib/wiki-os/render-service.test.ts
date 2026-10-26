@@ -55,7 +55,7 @@ jest.mock("~/lib/utils/sanitize-html", () => {
 
 import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { buildViewBundle, enqueueRender, ensureRendered, invalidateDependents, loadViewBundle, renderArticle, RENDERER_VERSION, renderFallbackView, renderInBackground, renderStaleBatch } from "~/lib/wiki-os/services/render-service";
-import { MEDIA_ERROR_BACKOFF_MS, MEDIA_ERROR_RERENDER_MS, mediaErrorRerenderDue } from "~/lib/wiki-os/services/view-bundle";
+import { MEDIA_ERROR_BACKOFF_MS, MEDIA_ERROR_RERENDER_MS, mediaErrorRerenderDue, mediaErrorTextKey } from "~/lib/wiki-os/services/view-bundle";
 import { wikiArticleSanitizerFingerprint } from "~/lib/utils/sanitize-html";
 
 interface Deferred<T> {
@@ -481,15 +481,32 @@ describe("loadViewBundle", () => {
         }
       });
 
-      it("a re-render still broken keeps the earlier time, so it waits a week", async () => {
+      it("a re-render of the same text still broken keeps the earlier time, so it waits a week", async () => {
         const id = freshId();
         const since = new Date("2026-10-01T00:00:00Z");
-        stubArticle(id, { renderedView: broken(since) });
+        stubArticle(id, {
+          renderedView: { ...broken(since), mediaErrorText: mediaErrorTextKey("the wikitext") },
+        });
         mockRenderViaMediaWiki.mockResolvedValue(missingFile);
         await renderArticle(id);
         expect(storedView().mediaErrorSince).toBe(since.toISOString());
         expect(mediaErrorRerenderDue(storedView(), storedAt(), storedAt().getTime() + 6 * DAY)).toBe(false);
         expect(mediaErrorRerenderDue(storedView(), storedAt(), storedAt().getTime() + 7 * DAY)).toBe(true);
+      });
+
+      it("a new revision's broken render starts its own record (a day, not the older file's week)", async () => {
+        const id = freshId();
+        stubArticle(id, {
+          wikitext: "the new wikitext",
+          renderedView: {
+            ...broken(new Date("2026-10-01T00:00:00Z")),
+            mediaErrorText: mediaErrorTextKey("the wikitext"),
+          },
+        });
+        mockRenderViaMediaWiki.mockResolvedValue(missingFile);
+        await renderArticle(id);
+        expect(storedView().mediaErrorSince).toBe(storedAt().toISOString());
+        expect(storedView().mediaErrorText).toBe(mediaErrorTextKey("the new wikitext"));
       });
 
       it("a clean render clears it", async () => {
@@ -498,6 +515,7 @@ describe("loadViewBundle", () => {
         await renderArticle(id);
         expect(storedView()).toEqual(buildViewBundle(PARSED));
         expect(storedView()).not.toHaveProperty("mediaErrorSince");
+        expect(storedView()).not.toHaveProperty("mediaErrorText");
       });
     });
   });

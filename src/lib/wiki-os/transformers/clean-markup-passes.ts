@@ -386,8 +386,20 @@ export function stripWikitextTables(text: string): string {
 }
 
 /** The blocks whose text is shown as written: a `{|` inside one is not a table. */
-const VERBATIM_TAGS = ["pre", "nowiki", "syntaxhighlight", "source", "code"] as const;
+const VERBATIM_BLOCK_TAGS = ["pre", "syntaxhighlight", "source"] as const;
+/** Tags as often inline (`<code>foo</code>`, `<nowiki>[[</nowiki>`) as around a block: dropped only when they hold one. */
+const VERBATIM_INLINE_TAGS = ["nowiki", "code"] as const;
 
-/** `text` without its `<pre>`, `<nowiki>`, `<syntaxhighlight>`, `<source>` and `<code>` blocks (never an excerpt's prose). */
+/** Inline verbatim text stays (an excerpt reads "the foo command"); a block of several lines, or one with a table, goes. */
+const keepInline = (inside: string): string =>
+  inside.includes("\n") || inside.includes("{|") ? "" : inside;
+
+/**
+ * `text` without its `<pre>`, `<syntaxhighlight>` and `<source>` blocks, and without the `<nowiki>` and `<code>` ones
+ * that span lines or hold a table (never an excerpt's prose); an inline `<code>` or `<nowiki>` keeps its text.
+ */
 export const stripVerbatimBlocks = (text: string): string =>
-  VERBATIM_TAGS.reduce(stripTagBlocks, text);
+  VERBATIM_INLINE_TAGS.reduce(
+    (out, tag) => replaceTagBlocks(out, tag, keepInline),
+    VERBATIM_BLOCK_TAGS.reduce(stripTagBlocks, text)
+  );
