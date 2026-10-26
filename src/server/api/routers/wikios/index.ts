@@ -20,6 +20,7 @@
  *  - page-admin:            move, delete, undelete, protect, block, user groups, log
  *  - bot-passwords:         Special:BotPasswords (api.php credentials)
  *  - repository-files:      image repository file browser (paged wiki, forum and own-upload files)
+ *  - sister:                live Template:Sister embeds of IIWiki and AltHistory pages (sisterEmbed)
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { wikiosPageContentRouter } from "./page-content";
@@ -37,6 +38,7 @@ import { wikiosPageViewsRouter } from "./page-views";
 import { wikiosPageAdminRouter } from "./page-admin";
 import { wikiosBotPasswordsRouter } from "./bot-passwords";
 import { wikiosRepositoryFilesRouter } from "./repository-files";
+import { wikiosSisterRouter } from "./sister";
 
 export const wikiosRouter = mergeRouters(
   wikiosPageContentRouter,
@@ -53,5 +55,6 @@ export const wikiosRouter = mergeRouters(
   wikiosPageViewsRouter,
   wikiosPageAdminRouter,
   wikiosBotPasswordsRouter,
-  wikiosRepositoryFilesRouter
+  wikiosRepositoryFilesRouter,
+  wikiosSisterRouter
 );
