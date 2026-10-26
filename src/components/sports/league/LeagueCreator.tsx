@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -27,7 +27,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "~/components/ui/dialog";
-import { withBasePath } from "~/lib/base-path";
+import { assetUrl } from "~/lib/base-path";
+import { useLeagueCoverImage } from "~/hooks/useLeagueCoverImage";
 import { springSmooth } from "~/lib/design/motion";
 import type { ArchetypeType } from "~/lib/sports";
 import { DEFAULT_MATCH_INTERVAL_DAYS } from "~/lib/sports/scheduler";
@@ -66,16 +67,6 @@ const cardVariants = {
   tap: { scale: 0.98 },
 };
 
-const SPORT_COMMONS_CATEGORIES: Record<string, string> = {
-  soccer: "Association football stadiums",
-  football: "American football stadiums",
-  hockey: "Ice hockey arenas",
-  basketball: "Basketball venues",
-  baseball: "Baseball stadiums",
-  f1: "Formula One circuits",
-  boxing: "Boxing matches",
-};
-
 /** "12 hours", "1 day", "3.5 days". */
 function intervalLabel(days: number): string {
   if (days < 1) return `${Math.round(days * 24)} hours`;
@@ -112,67 +103,17 @@ export function LeagueCreator({
   const [raceCount, setRaceCount] = useState(20);
   const [matchIntervalDays, setMatchIntervalDays] = useState(DEFAULT_MATCH_INTERVAL_DAYS);
 
-  // Cover image suggestion states
-  const [coverImage, setCoverImage] = useState<string | null>(null);
-  const [autoSelectedForPreset, setAutoSelectedForPreset] = useState<string | null>(null);
+  // Cover image: a Commons suggestion for the sport, shuffle, remove, or a picked file
+  const {
+    coverImage,
+    setCoverImage,
+    commonsData,
+    commonsLoading,
+    handleShuffleCover,
+    handleRemoveCover,
+    resetCover,
+  } = useLeagueCoverImage({ open, selectedPresetKey, currentStep });
   const [mediaSearchOpen, setMediaSearchOpen] = useState(false);
-
-  // Commons category query
-  const activeCategory = selectedPresetKey ? SPORT_COMMONS_CATEGORIES[selectedPresetKey] : null;
-  const { data: commonsData, isLoading: commonsLoading } = api.commons.getCategoryFiles.useQuery(
-    {
-      category: activeCategory ?? "",
-      limit: 35,
-    },
-    {
-      enabled: !!open && !!activeCategory && currentStep >= 2,
-    }
-  );
-
-  useEffect(() => {
-    if (selectedPresetKey !== autoSelectedForPreset) {
-      setAutoSelectedForPreset(null);
-    }
-  }, [selectedPresetKey, autoSelectedForPreset]);
-
-  useEffect(() => {
-    if (
-      commonsData?.images &&
-      commonsData.images.length > 0 &&
-      selectedPresetKey &&
-      autoSelectedForPreset !== selectedPresetKey &&
-      !coverImage
-    ) {
-      const randomIndex = Math.floor(Math.random() * commonsData.images.length);
-      const suggestedImage = commonsData.images[randomIndex]?.url ?? null;
-      if (suggestedImage) {
-        setCoverImage(suggestedImage);
-        setAutoSelectedForPreset(selectedPresetKey);
-      }
-    }
-  }, [commonsData, selectedPresetKey, autoSelectedForPreset, coverImage]);
-
-  const handleShuffleCover = useCallback(() => {
-    if (!commonsData?.images || commonsData.images.length === 0) return;
-    const available = commonsData.images.filter((img) => img.url !== coverImage);
-    if (available.length > 0) {
-      const randomIndex = Math.floor(Math.random() * available.length);
-      const newUrl = available[randomIndex]?.url;
-      if (newUrl) {
-        setCoverImage(newUrl);
-      }
-    } else {
-      const randomIndex = Math.floor(Math.random() * commonsData.images.length);
-      const newUrl = commonsData.images[randomIndex]?.url;
-      if (newUrl) {
-        setCoverImage(newUrl);
-      }
-    }
-  }, [commonsData, coverImage]);
-
-  const handleRemoveCover = useCallback(() => {
-    setCoverImage(null);
-  }, []);
 
   // Derived
   const selectedPreset = useMemo(() => {
@@ -216,10 +157,9 @@ export function LeagueCreator({
     setDivisions(2);
     setWeightClassesRaw("");
     setRaceCount(20);
-    setCoverImage(null);
-    setAutoSelectedForPreset(null);
+    resetCover();
     setMediaSearchOpen(false);
-  }, []);
+  }, [resetCover]);
 
   const handleCreateAnother = useCallback(() => {
     resetForm();
@@ -547,7 +487,7 @@ export function LeagueCreator({
         ) : coverImage ? (
           <div className="group border-separator rounded-control relative h-40 w-full overflow-hidden border">
             <img
-              src={withBasePath(coverImage)}
+              src={assetUrl(coverImage) ?? undefined}
               alt="Suggested cover"
               className="h-full w-full object-cover"
             />
@@ -652,7 +592,7 @@ export function LeagueCreator({
           {coverImage && (
             <div className="relative h-36 w-full overflow-hidden">
               <img
-                src={withBasePath(coverImage)}
+                src={assetUrl(coverImage) ?? undefined}
                 alt="League cover"
                 className="h-full w-full object-cover"
               />

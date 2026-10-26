@@ -125,7 +125,10 @@ async function relatedCountries(db: PrismaClient, clerkUserId: string, playerOwn
     select: { id: true, name: true, realmId: true },
     orderBy: { name: "asc" },
   });
-  return nationsInRealm(partners, userProfile.country?.realmId ?? null).map(({ id, name }) => ({ id, name }));
+  return nationsInRealm(partners, userProfile.country?.realmId ?? null).map(({ id, name }) => ({
+    id,
+    name,
+  }));
 }
 
 /** The caller's nation, or UNAUTHORIZED. */
@@ -141,9 +144,14 @@ async function callerCountryId(db: PrismaClient, clerkUserId: string): Promise<s
  * A conflict row without what stays on the server: the inputs snapshot (true values of both sides) and the orders,
  * and the seed until the battle is resolved (knowing it early would reveal the roll).
  */
-function withoutServerOnly<T extends { status: string; inputSnapshot?: string | null; orders?: string | null; seed?: string | null }>(
-  conflict: T
-): Omit<T, "inputSnapshot" | "orders"> {
+function withoutServerOnly<
+  T extends {
+    status: string;
+    inputSnapshot?: string | null;
+    orders?: string | null;
+    seed?: string | null;
+  },
+>(conflict: T): Omit<T, "inputSnapshot" | "orders"> {
   const { inputSnapshot: _snapshot, orders: _orders, ...rest } = conflict;
   return { ...rest, seed: conflict.status === "resolved" ? (conflict.seed ?? null) : null };
 }
@@ -169,29 +177,32 @@ export const securityConflictReadsRouter = createTRPCRouter({
         conflicts.flatMap((c) => [c.initiatorId, c.defenderId])
       );
       const clock = await clockForCountry(ctx.db, input.countryId);
-      const rows = conflicts.map(withPvPExpiry).map(withoutServerOnly).map((c) => ({
-        ...c,
-        // When an active PvP conflict may be concluded (concludePvPConflict), on the realm clock;
-        // null while the realm is paused.
-        endsAt:
-          c.type === "pvp" && c.status === "active"
-            ? (pvpConflictEndsAt(c, clock)?.endsAt ?? null)
+      const rows = conflicts
+        .map(withPvPExpiry)
+        .map(withoutServerOnly)
+        .map((c) => ({
+          ...c,
+          // When an active PvP conflict may be concluded (concludePvPConflict), on the realm clock;
+          // null while the realm is paused.
+          endsAt:
+            c.type === "pvp" && c.status === "active"
+              ? (pvpConflictEndsAt(c, clock)?.endsAt ?? null)
+              : null,
+          initiator: c.initiator
+            ? {
+                id: c.initiator.id,
+                name: c.initiator.name,
+                flagUrl: c.initiator.flag,
+              }
             : null,
-        initiator: c.initiator
-          ? {
-              id: c.initiator.id,
-              name: c.initiator.name,
-              flagUrl: c.initiator.flag,
-            }
-          : null,
-        defender: c.defender
-          ? {
-              id: c.defender.id,
-              name: c.defender.name,
-              flagUrl: c.defender.flag,
-            }
-          : null,
-      }));
+          defender: c.defender
+            ? {
+                id: c.defender.id,
+                name: c.defender.name,
+                flagUrl: c.defender.flag,
+              }
+            : null,
+        }));
       return rows.map((c) =>
         parties.has(c.initiatorId) || parties.has(c.defenderId) ? c : redactConflictCosts(c)
       );
@@ -253,7 +264,12 @@ export const securityConflictReadsRouter = createTRPCRouter({
       if (!initiator || !defender) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
       }
-      await assertStrikeAllowed(ctx.db, initiator, defender, await clockForCountry(ctx.db, initiator));
+      await assertStrikeAllowed(
+        ctx.db,
+        initiator,
+        defender,
+        await clockForCountry(ctx.db, initiator)
+      );
 
       // The combat model: committed with a seed bound to the orders, resolved on both nations' derived forces (the
       // NPC defends with forces from its economy), losses and economic effects applied.
@@ -323,7 +339,10 @@ export const securityConflictReadsRouter = createTRPCRouter({
       const terrainProfile = input.terrain
         ? formatDeclaredTerrain({ terrain: input.terrain, riverLine: input.riverLine })
         : null;
-      await ctx.db.defensePolicy.update({ where: { countryId: input.countryId }, data: { terrainProfile } });
+      await ctx.db.defensePolicy.update({
+        where: { countryId: input.countryId },
+        data: { terrainProfile },
+      });
       return { countryId: input.countryId, terrainProfile };
     }),
 

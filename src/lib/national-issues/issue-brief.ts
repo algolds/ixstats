@@ -60,7 +60,11 @@ export function formatReveal(r: ReconRevealItem): string {
 const URGENT_REAL_MS = 1.5 * DAY_MS;
 
 /** The deadline badge: in-world days left on the nation's clock, "Paused" while its realm is stopped. */
-export function deadlineBadgeOf(deadline: number, now: number | null, clock: RealmClockReader | null) {
+export function deadlineBadgeOf(
+  deadline: number,
+  now: number | null,
+  clock: RealmClockReader | null
+) {
   if (now === null || !clock) return { text: CLOCK_PENDING, urgent: false };
   const daysRemaining = (deadline - now) / DAY_MS;
   if (daysRemaining <= 0) return { text: "Deadline passed", urgent: true };

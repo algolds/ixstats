@@ -33,7 +33,13 @@ import {
   TableHead,
   TableCell,
 } from "~/components/ui/table";
-import { EVENT_TYPES, STEPS, defaultForm, type EventTypeValue, type WizardFormState } from "./event-wizard-config";
+import {
+  EVENT_TYPES,
+  STEPS,
+  defaultForm,
+  type EventTypeValue,
+  type WizardFormState,
+} from "./event-wizard-config";
 
 interface EventWizardProps {
   onCreated?: () => void;

@@ -8,7 +8,12 @@ import {
   reconArrivalOf,
 } from "~/lib/national-issues/issue-brief";
 import { CLOCK_PENDING } from "~/lib/realms/nation-time";
-import { CLOCK_NOW, ixnayReader, pausedReader, sixTimesReader } from "~/tests/fixtures/realm-readers";
+import {
+  CLOCK_NOW,
+  ixnayReader,
+  pausedReader,
+  sixTimesReader,
+} from "~/tests/fixtures/realm-readers";
 
 describe("parseOptions", () => {
   it("reads the stored options and falls back to none", () => {
@@ -34,8 +39,14 @@ describe("formatReveal", () => {
 
 describe("deadlineBadgeOf", () => {
   it("waits for the clock", () => {
-    expect(deadlineBadgeOf(CLOCK_NOW, null, ixnayReader())).toEqual({ text: CLOCK_PENDING, urgent: false });
-    expect(deadlineBadgeOf(CLOCK_NOW, CLOCK_NOW, null)).toEqual({ text: CLOCK_PENDING, urgent: false });
+    expect(deadlineBadgeOf(CLOCK_NOW, null, ixnayReader())).toEqual({
+      text: CLOCK_PENDING,
+      urgent: false,
+    });
+    expect(deadlineBadgeOf(CLOCK_NOW, CLOCK_NOW, null)).toEqual({
+      text: CLOCK_PENDING,
+      urgent: false,
+    });
   });
 
   it("says a deadline at or before now has passed, even while paused", () => {
@@ -72,7 +83,9 @@ describe("deadlineBadgeOf", () => {
 
 describe("reconArrivalOf", () => {
   it("waits for the clock, then reports paused or whole days (at least one)", () => {
-    expect(reconArrivalOf(CLOCK_NOW, null, ixnayReader())).toBe(`Findings arrive in ${CLOCK_PENDING}.`);
+    expect(reconArrivalOf(CLOCK_NOW, null, ixnayReader())).toBe(
+      `Findings arrive in ${CLOCK_PENDING}.`
+    );
     expect(reconArrivalOf(CLOCK_NOW, CLOCK_NOW, null)).toBe(`Findings arrive in ${CLOCK_PENDING}.`);
     expect(reconArrivalOf(CLOCK_NOW + DAY_MS, CLOCK_NOW, pausedReader())).toBe(
       "Paused: findings arrive when the realm resumes."
@@ -80,7 +93,11 @@ describe("reconArrivalOf", () => {
     expect(reconArrivalOf(CLOCK_NOW + 2.2 * DAY_MS, CLOCK_NOW, ixnayReader())).toBe(
       "Findings arrive in 3 day(s)."
     );
-    expect(reconArrivalOf(CLOCK_NOW - DAY_MS, CLOCK_NOW, ixnayReader())).toBe("Findings arrive in 1 day(s).");
-    expect(reconArrivalOf(undefined, CLOCK_NOW, ixnayReader())).toBe("Findings arrive in 1 day(s).");
+    expect(reconArrivalOf(CLOCK_NOW - DAY_MS, CLOCK_NOW, ixnayReader())).toBe(
+      "Findings arrive in 1 day(s)."
+    );
+    expect(reconArrivalOf(undefined, CLOCK_NOW, ixnayReader())).toBe(
+      "Findings arrive in 1 day(s)."
+    );
   });
 });
