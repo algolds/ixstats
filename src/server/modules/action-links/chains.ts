@@ -84,7 +84,7 @@ export async function removePostFromChain(db: ChainsDb, input: PostInChain): Pro
   });
 }
 
-/** The owner names the wiki page; their edit right is checked now, so approval never writes where they couldn't. */
+/** The owner names the wiki page; their edit right is checked now, and again before the write (wiki-sync.ts). */
 export async function submitChain(
   db: ChainsDb,
   ctx: WikiAuthContext,

@@ -1,11 +1,14 @@
 /**
  * Writes an approved story chain to its wiki page as a new section, authored under the chain's country name
  * (a system save: no signed-in player makes it, so it names its own author with `authorLabel`). The owner's
- * edit right was checked at submit. A chain whose page is a `MediaWiki:` page (classic's, spec A8) is skipped and marked
- * done with a warning. Failures leave `wikiSyncedAt` null; `syncPendingChainWikis` (cron
- * "story-chain-wiki-sync") retries them.
+ * edit right was checked at submit and is checked again before the write (`editRefusal`): by approval, or a cron
+ * retry, WikiOS editing may be off, the page protected or deleted, or the owner blocked. While editing is off the
+ * chain waits; any other refusal stamps it done, with the reason added to `reviewNote` and a warning. A chain whose
+ * page is a `MediaWiki:` page (classic's, spec A8) is skipped and marked done with a warning. Other failures leave
+ * `wikiSyncedAt` null; `syncPendingChainWikis` (cron "story-chain-wiki-sync") retries them.
  */
 import type { PrismaClient } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 import { chainWikiSection } from "~/lib/action-links";
 import { appUrl } from "~/lib/app-url";
 import { clockTimeAt } from "~/lib/realms/realm-time-convert";
@@ -14,9 +17,10 @@ import { postHref } from "~/lib/thinkpages-forum/links";
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { getHeadRevisionRefs } from "~/lib/wiki-os/core/edit-conflict";
 import { classicOwnsTitle } from "~/lib/wiki-os/namespace-policy";
-import { commitWikitextSave } from "~/lib/wiki-os/services/edit-service";
+import type { WikiAuthContext } from "~/lib/wiki-os/auth";
+import { assertCanEditArticle, commitWikitextSave } from "~/lib/wiki-os/services/edit-service";
 
-export type WikiSyncDb = Pick<PrismaClient, "storyline"> & CountryTimeDb;
+export type WikiSyncDb = Pick<PrismaClient, "storyline" | "user"> & CountryTimeDb;
 
 const PENDING = {
   kind: "chain",
@@ -30,11 +34,84 @@ function postUrl(postId: string): string {
   return appUrl(postHref(postId));
 }
 
+const OWNER_SELECT = {
+  id: true,
+  clerkUserId: true,
+  handle: true,
+  countryId: true,
+  createdAt: true,
+  role: { select: { id: true, name: true, level: true } },
+} as const;
+
+/** The chain's player as the wiki knows them: the country's owner, else whoever has it active (as at submit). */
+async function chainOwnerContext(
+  db: WikiSyncDb,
+  chain: { countryId: string; country: { ownerUserId: string | null } }
+): Promise<WikiAuthContext | null> {
+  const user = chain.country.ownerUserId
+    ? await db.user.findUnique({ where: { id: chain.country.ownerUserId }, select: OWNER_SELECT })
+    : await db.user.findFirst({ where: { countryId: chain.countryId }, select: OWNER_SELECT });
+  return user ? { auth: { userId: user.clerkUserId }, user } : null;
+}
+
+/**
+ * A refusal the chain's owner would have to act on (blocked, the page protected or deleted, a title no longer valid),
+ * as its message; null for any other error, which is worth retrying. WikiOS editing being off (`readonly`) is not
+ * one: the chain waits for it to come back.
+ */
+function ownerRefusal(error: unknown): string | null {
+  if (!(error instanceof TRPCError)) return null;
+  if (error.code === "FORBIDDEN") return error.message.startsWith("readonly:") ? null : error.message;
+  return error.code === "PRECONDITION_FAILED" || error.code === "BAD_REQUEST" ? error.message : null;
+}
+
+type WikiChain = {
+  id: string;
+  countryId: string;
+  wikiPageTitle: string;
+  reviewNote: string | null;
+  country: { ownerUserId: string | null };
+};
+
+/**
+ * Whether the chain's owner may still write its page, as at submit (`assertCanEditArticle`: the editing switch, a
+ * block, the namespace, protection, a deleted page): "ok", "paused" while WikiOS editing is off, else the reason.
+ */
+async function editRefusal(
+  db: WikiSyncDb,
+  chain: WikiChain
+): Promise<"ok" | "paused" | { reason: string }> {
+  const owner = await chainOwnerContext(db, chain);
+  if (!owner) return { reason: "its nation has no player to write it for" };
+  try {
+    await assertCanEditArticle(owner, chain.wikiPageTitle);
+    return "ok";
+  } catch (error) {
+    const reason = ownerRefusal(error);
+    if (reason) return { reason };
+    if (error instanceof TRPCError && error.code === "FORBIDDEN") return "paused";
+    throw error;
+  }
+}
+
+/** Stamps a chain whose section will not be written, so the cron stops retrying it, and says why in its note. */
+async function markNotWritten(db: WikiSyncDb, chain: WikiChain, reason: string): Promise<void> {
+  console.warn(`[wiki-sync] story chain ${chain.id} not written to ${chain.wikiPageTitle}: ${reason}`);
+  const note = `Not written to ${chain.wikiPageTitle}: ${reason}`;
+  await db.storyline.update({
+    where: { id: chain.id },
+    data: {
+      wikiSyncedAt: new Date(),
+      reviewNote: chain.reviewNote ? `${chain.reviewNote}\n\n${note}` : note,
+    },
+  });
+}
+
 export async function appendChainToWiki(db: WikiSyncDb, storylineId: string): Promise<boolean> {
   const chain = await db.storyline.findFirst({
     where: { id: storylineId, ...PENDING },
     include: {
-      country: { select: { name: true, realmId: true } },
+      country: { select: { name: true, realmId: true, ownerUserId: true } },
       actionLinks: {
         orderBy: { chainOrder: "asc" },
         include: {
@@ -72,6 +149,14 @@ export async function appendChainToWiki(db: WikiSyncDb, storylineId: string): Pr
     return true;
   }
 
+  const wikiChain = { ...chain, wikiPageTitle: chain.wikiPageTitle };
+  const gate = await editRefusal(db, wikiChain);
+  if (gate === "paused") return false;
+  if (gate !== "ok") {
+    await markNotWritten(db, wikiChain, gate.reason);
+    return true;
+  }
+
   const marker = `<!-- story-chain:${chain.id} -->`;
   const section = `${marker}\n${chainWikiSection({
     title: chain.title,
@@ -87,17 +172,25 @@ export async function appendChainToWiki(db: WikiSyncDb, storylineId: string): Pr
     throw new Error(`could not read the current text of ${chain.wikiPageTitle}`);
   }
   if (!existing?.wikitext?.includes(marker)) {
-    await commitWikitextSave(
-      {},
-      {
-        title: chain.wikiPageTitle,
-        authorLabel: chain.country.name,
-        wikitext: existing?.wikitext ? `${existing.wikitext}\n\n${section}` : section,
-        summary: `Story chain: ${chain.title}`,
-        minor: false,
-        expectedHeadRef: head?.revisionRef ?? null,
-      }
-    );
+    try {
+      await commitWikitextSave(
+        {},
+        {
+          title: chain.wikiPageTitle,
+          authorLabel: chain.country.name,
+          wikitext: existing?.wikitext ? `${existing.wikitext}\n\n${section}` : section,
+          summary: `Story chain: ${chain.title}`,
+          minor: false,
+          expectedHeadRef: head?.revisionRef ?? null,
+        }
+      );
+    } catch (error) {
+      // The page deleted since the check (PRECONDITION_FAILED) is as final as a refusal at the check.
+      const reason = ownerRefusal(error);
+      if (!reason) throw error;
+      await markNotWritten(db, wikiChain, reason);
+      return true;
+    }
   }
   await db.storyline.update({ where: { id: chain.id }, data: { wikiSyncedAt: new Date() } });
   return true;
