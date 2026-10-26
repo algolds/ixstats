@@ -170,8 +170,12 @@ overridden. After the PM2 reload the deploy runs
 **When to rerun the local proof:** after any committed change under the WikiOS paths (`WIKIOS_PROOF_PATHS` in
 `scripts/lib/wikios-proof-gate.ts`): `src/lib/wiki-os`, `src/components/wiki-os`, `src/server/api/routers/wikios`,
 `src/app/(wiki-os)`, `src/app/w`, `src/app/api/wiki`, `src/app/api/mediawiki`, `src/lib/utils/sanitize-html.ts`,
-`src/lib/utils/scope-template-styles.ts`, `scripts/ops/mediawiki` and `prisma/schema/wiki.prisma`. Tests and the harness
-scripts are left out on purpose.
+`src/lib/utils/scope-template-styles.ts`, `scripts/ops/mediawiki` and `prisma/schema/wiki.prisma`; the modules outside
+those that the render, sanitize, serialize and view-bundle code imports and that change what it outputs
+(`src/lib/utils/sanitize-sister-html.ts` and the `src/lib/thinkpages-forum/strip-positioning.ts` it runs,
+`src/lib/thinkpages-forum/forum-quote.ts`, `src/lib/base-path.ts`, `src/server/shared/wiki-placeholders.ts`,
+`src/server/shared/ixstats-template-provider.ts`); and `bun.lock`, since DOMPurify, jsdom and the parsers are
+dependencies. A new import of that kind belongs in the list too. Tests and the harness scripts are left out on purpose.
 
 ## Where the reports live
 

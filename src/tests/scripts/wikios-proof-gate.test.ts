@@ -850,8 +850,15 @@ describe("wikiosTreeKey", () => {
       "src/app/api/mediawiki",
       "src/lib/utils/sanitize-html.ts",
       "src/lib/utils/scope-template-styles.ts",
+      "src/lib/utils/sanitize-sister-html.ts",
+      "src/lib/thinkpages-forum/strip-positioning.ts",
+      "src/lib/thinkpages-forum/forum-quote.ts",
+      "src/lib/base-path.ts",
+      "src/server/shared/wiki-placeholders.ts",
+      "src/server/shared/ixstats-template-provider.ts",
       "scripts/ops/mediawiki",
       "prisma/schema/wiki.prisma",
+      "bun.lock",
     ]);
     expect(
       WIKIOS_PROOF_PATHS.some((path) => path.startsWith("src/tests") || path.includes("audit"))

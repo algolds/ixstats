@@ -459,7 +459,12 @@ export function evaluateBench(
 // Tree key
 // ---------------------------------------------------------------------------
 
-/** The WikiOS product code a proof covers. Tests and the harness scripts are left out on purpose. */
+/**
+ * The WikiOS product code a proof covers: the WikiOS directories, then the modules outside them that the render,
+ * sanitize, serialize and view-bundle code imports and whose change changes what it outputs (base-path links, the
+ * template placeholders, the forum quote block, the sister sanitizer and its class stripping), and the lockfile
+ * (DOMPurify, jsdom and the parsers are dependencies). Tests and the harness scripts are left out on purpose.
+ */
 export const WIKIOS_PROOF_PATHS: readonly string[] = [
   "src/lib/wiki-os",
   "src/components/wiki-os",
@@ -470,8 +475,15 @@ export const WIKIOS_PROOF_PATHS: readonly string[] = [
   "src/app/api/mediawiki",
   "src/lib/utils/sanitize-html.ts",
   "src/lib/utils/scope-template-styles.ts",
+  "src/lib/utils/sanitize-sister-html.ts",
+  "src/lib/thinkpages-forum/strip-positioning.ts",
+  "src/lib/thinkpages-forum/forum-quote.ts",
+  "src/lib/base-path.ts",
+  "src/server/shared/wiki-placeholders.ts",
+  "src/server/shared/ixstats-template-provider.ts",
   "scripts/ops/mediawiki",
   "prisma/schema/wiki.prisma",
+  "bun.lock",
 ];
 
 /** sha256 hex of `git ls-tree -r HEAD -- ...WIKIOS_PROOF_PATHS` (the committed tree). An empty listing throws. */
