@@ -2,7 +2,7 @@
 
 /** The wiki article search in the suggest-a-card dialog: pick the article a lore card is suggested for. */
 
-import React, { useState, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { debounce } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { cardSourceLabel, type CardArticleSource } from "~/lib/cards/card-sources";
@@ -29,15 +29,19 @@ export function ArticleSearch({ id, wikiSource, onSelect }: ArticleSearchProps) 
   const [showSuggestions, setShowSuggestions] = useState(false);
   /** The last search failed, so its empty list is an outage and not "no articles". */
   const [failed, setFailed] = useState(false);
+  /** The id of the newest search; an answer to an older one (or one for an old query or wiki) is dropped. */
+  const latestRequest = useRef(0);
 
   const utils = api.useUtils();
 
   // Uses WikiBridge via tRPC (PostgreSQL for ixwiki)
   const runSearch = useCallback(
     async (query: string) => {
+      const request = ++latestRequest.current;
       setFailed(false);
       if (!query || query.length < 3) {
         setSuggestions([]);
+        setLoading(false);
         return;
       }
 
@@ -49,14 +53,16 @@ export function ArticleSearch({ id, wikiSource, onSelect }: ArticleSearchProps) 
           limit: 10,
           wiki: wikiSource,
         });
+        if (request !== latestRequest.current) return;
 
         setSuggestions(results.map((r: { title: string }) => ({ title: r.title, snippet: "" })));
       } catch (error) {
+        if (request !== latestRequest.current) return;
         console.error("Article search error:", error);
         setSuggestions([]);
         setFailed(true);
       } finally {
-        setLoading(false);
+        if (request === latestRequest.current) setLoading(false);
       }
     },
     [wikiSource, utils]
@@ -65,10 +71,16 @@ export function ArticleSearch({ id, wikiSource, onSelect }: ArticleSearchProps) 
 
   useEffect(() => {
     searchArticles(searchQuery);
+    return () => {
+      // A new query, a new wiki or unmounting: drop the pending call and any answer still on its way.
+      searchArticles.cancel();
+      latestRequest.current++;
+    };
   }, [searchQuery, searchArticles]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
+    setFailed(false);
     setSearchQuery(newValue);
     setShowSuggestions(true);
   };
