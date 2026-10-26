@@ -131,7 +131,6 @@
     "typecheck:tests": "bun scripts/verification/run-typecheck.ts tsconfig.tests.json",
     "typecheck:trpc": "bun scripts/verification/run-typecheck.ts tsconfig.trpc.json",
     "typecheck:ui": "bun scripts/verification/run-typecheck.ts tsconfig.ui.json",
-    "validate:migrations": "bun scripts/audit/validate-migration-safety.ts",
     "validate:schemas": "bun scripts/audit/validate-schema-alignment.ts",
     "validate:script-targets": "bun scripts/audit/validate-script-targets.ts",
     "validate:servers": "./scripts/validate-server-config.sh",
