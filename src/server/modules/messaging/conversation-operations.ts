@@ -172,8 +172,14 @@ export class MessagingConversationOperations {
       where: { conversationId: input.conversationId, userId: actorId },
       data: { isActive: false },
     });
+    this.evictFromRoom(actorId, input.conversationId);
 
     return { success: true };
+  }
+
+  /** The actor's open sockets stop receiving a conversation they are no longer in. */
+  private evictFromRoom(actorId: string, conversationId: string) {
+    this.websocket?.evictFromRoom?.({ type: "room:evict", clerkUserId: actorId, conversationId });
   }
 
   /**
@@ -199,6 +205,7 @@ export class MessagingConversationOperations {
         ? { requestStatus: "accepted" }
         : { requestStatus: "declined", isActive: false, leftAt: new Date() },
     });
+    if (!input.accept) this.evictFromRoom(actorId, input.conversationId);
     return { success: true, accepted: input.accept };
   }
 

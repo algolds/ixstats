@@ -7,6 +7,7 @@
  * - a reply quotes a live message of the same conversation;
  * - a member who declined is never notified of the group's messages;
  * - a sender's flood prunes only their own messages, never the rest of the group's history;
+ * - leaving or declining takes the user's open sockets out of the conversation's room;
  * - message bodies are bounded and unsafe HTML is refused, and a new group's size is capped at the router.
  */
 jest.mock("~/lib/notifications/api", () => ({
@@ -36,13 +37,15 @@ const EVE = clerk("eve");
 
 let db: MemoryPrisma;
 let notifications: { create: jest.Mock };
+let websocket: { broadcastToUsers: jest.Mock; evictFromRoom: jest.Mock };
 
 function service() {
   notifications = { create: jest.fn().mockResolvedValue("n") };
+  websocket = { broadcastToUsers: jest.fn(), evictFromRoom: jest.fn() };
   return createMessagingService({
     db: db as never,
     notifications: notifications as never,
-    websocket: { broadcastToUsers: jest.fn() } as never,
+    websocket: websocket as never,
   });
 }
 
@@ -146,6 +149,23 @@ describe("messages.addParticipant", () => {
         participantIds: Array.from({ length: MAX_GROUP_PARTICIPANTS }, (_, i) => `p-${i}`),
       } as never)
     ).rejects.toMatchObject({ name: "MessagingValidationError" });
+  });
+});
+
+describe("sockets after leaving", () => {
+  it("evicts a member who leaves, or who declines the group as a request", async () => {
+    const svc = service();
+    const { id } = await group(svc);
+    await svc.leaveConversation(CY, { conversationId: id });
+    expect(websocket.evictFromRoom).toHaveBeenCalledWith({
+      type: "room:evict",
+      clerkUserId: CY,
+      conversationId: id,
+    });
+
+    await svc.addParticipant(BEN, { conversationId: id, targetUserId: CY });
+    await svc.respondToRequest(CY, { conversationId: id, accept: false });
+    expect(websocket.evictFromRoom).toHaveBeenCalledTimes(2);
   });
 });
 

@@ -62,6 +62,8 @@ export interface NotificationCollaborator {
 export interface WebSocketCollaborator {
   broadcastMessage?(payload: any): void;
   broadcastToUsers?(userIds: string[], event: string, payload: any): void;
+  /** Takes a user's sockets out of a conversation room they left or declined. */
+  evictFromRoom?(event: { type: "room:evict"; clerkUserId: string; conversationId: string }): void;
 }
 
 export interface BridgeCollaborator {
