@@ -251,7 +251,10 @@ serves only the deferred takeover. Its table is in the deferred section.
   IxStates is started: every restart and log line below assumes PM2. If the app is listed as stopped, ask the owner
   before the first restart, because a restart starts it.
 - **Restarting IxStates** is always `pm2 restart "$IXAPP" --update-env`, so it reads its env files again. `ixstats-cron`
-  restarts the same way: `pm2 restart ixstats-cron --update-env`.
+  restarts the same way: `pm2 restart ixstats-cron --update-env`. After an edit to `ecosystem.config.cjs` (its
+  `CRON_ENABLED_JOBS`), restart it from the file instead, because PM2 keeps a process's stored environment across a
+  restart by name: `( cd "$IX" && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save`.
+  Steps 6b, 7b and 7e then check which jobs the runner scheduled.
 - **IxStates' logs** are read with `pm2 logs "$IXAPP" --lines <n> --nostream`, piped to `grep`.
 - **Backups.** Every file a step edits is copied into `$BK` first (`bk <file> <name>`), and the step's rollback line
   restores from there. `$BK` is mode 0700 because it holds copies of env files.
@@ -1340,15 +1343,28 @@ the overwritten editor is told (step 10d).
 bk "$IX/.env.production.local" env.production.local.step6b
 grep -q '^WIKIOS_V1_ENABLED=' "$IX/.env.production.local" || ( umask 077; printf '\nWIKIOS_V1_ENABLED=true\n' >> "$IX/.env.production.local" )
 grep -c '^WIKIOS_V1_ENABLED=true$' "$IX/.env.production.local"          # expect 1
-pm2 restart ixstats-cron --update-env
+# the cron jobs the launch needs (step 7b explains the render backlog): wiki-mirror, wiki-render-stale, wiki-recentchanges
+bk "$IX/ecosystem.config.cjs" ecosystem.config.cjs.6b
+grep -n 'CRON_ENABLED_JOBS' "$IX/ecosystem.config.cjs"             # the ixstats-cron list; skip the edit if it is "*" or names all three
+"${EDITOR:-nano}" "$IX/ecosystem.config.cjs"                       # add whichever of the three is missing
+# restart from the file, so ixstats-cron reads the new list and the env line above
+( cd "$IX" && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save
+# read-only: the list PM2 now hands the runner, and the jobs it scheduled at this start ("[Cron] ✓ <job> (<schedule>)")
+pm2 jlist | jq -r '.[] | select(.name == "ixstats-cron") | .pm2_env.CRON_ENABLED_JOBS'
+pm2 logs ixstats-cron --lines 60 --nostream | grep -E '\[Cron\] (✓|Standalone cron runner started|FATAL|CRON_ENABLED_JOBS is empty)'
 pm2 restart "$IXAPP" --update-env
 # IxStates' own api.php, on loopback under its base path (use /projects/ixstats instead if that is the one that answers):
 curl -s 'http://127.0.0.1:3550/projects/ixstates/w/api.php?action=query&meta=siteinfo&format=json' | jq -r '.error.code // "ok"'   # not "readonly"
 ```
 
-Then add `wiki-mirror` and `wiki-render-stale` to `CRON_ENABLED_JOBS` (step 7b explains the render backlog).
+The newest `[Cron] ✓` lines must name `wiki-mirror`, `wiki-render-stale` and `wiki-recentchanges`, followed by
+`Standalone cron runner started`. A `FATAL: unknown job name(s)` line means a misspelt name, and the runner did not
+start: fix the list and restart from the file again. If the `jq` line still shows the old list, PM2 did not read the
+file: stop and ask the owner.
 
-**Rollback:** `sudo cp -a "$BK/env.production.local.step6b" "$IX/.env.production.local"`, the same two restarts. WikiOS
+**Rollback:** `sudo cp -a "$BK/env.production.local.step6b" "$IX/.env.production.local"`, the same two restarts
+(`ixstats-cron` from the file). The cron list stays as it is, so the outbox keeps draining (`ecosystem.config.cjs.6b`
+holds the old list). WikiOS
 follows the editing toggle again (read-only unless it is on: turn it off in `/admin/wikios-settings` too). Jobs already
 in the outbox keep draining to MediaWiki while `wiki-mirror` runs; to make them wait there, also set
 `SKIP_MEDIAWIKI_SYNC=true` in the same file before the restarts, or drop `wiki-mirror` from `CRON_ENABLED_JOBS`.
@@ -1533,8 +1549,16 @@ inbound sync) in the same list. The job runs inside `ixstats-cron`, so that proc
 
 ```bash
 grep -n 'CRON_ENABLED_JOBS' "$IX/ecosystem.config.cjs"                    # the list for ixstats-cron: it must name wiki-render-stale
-pm2 restart ixstats-cron --update-env && pm2 logs ixstats-cron --lines 30 --nostream
+# after a change to either file, restart from the file (Conventions): a restart by name keeps PM2's old list
+( cd "$IX" && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save
+# read-only: the list PM2 hands the runner, and the jobs it scheduled at this start ("[Cron] ✓ <job> (<schedule>)")
+pm2 jlist | jq -r '.[] | select(.name == "ixstats-cron") | .pm2_env.CRON_ENABLED_JOBS'
+pm2 logs ixstats-cron --lines 60 --nostream | grep -E '\[Cron\] (✓|Standalone cron runner started|FATAL|CRON_ENABLED_JOBS is empty)'
 ```
+
+The newest `[Cron] ✓` lines must name `wiki-render-stale`, `wiki-mirror` and `wiki-recentchanges`. A
+`CRON_ENABLED_JOBS is empty` or `FATAL` line, or a `jq` line without them, means they are not scheduled: fix the list
+(step 6b) and restart from the file again.
 
 **How long it will take.** Count what is left (`unrendered` counts the stale pages, `outdated` the ones that have a current-looking
 timestamp and an older bundle; no page is in both), then divide by the rates above (never-rendered first, at 20 a minute,
@@ -2004,7 +2028,7 @@ Every one of them is copied into `$BK` before its first edit (classic's database
 | `/ixwiki/public/projects/ixstats/.env.production.local` | `WIKIOS_API_SESSION_SECRET` (1c); `WIKIOS_MEDIAWIKI_BOT_USER`, `WIKIOS_MEDIAWIKI_BOT_TOKEN` (3c); `WIKIOS_MEDIAWIKI_INTERNAL_URL` (never `NEXT_PUBLIC_WIKIOS_STANDALONE`; `WIKIOS_MEDIAWIKI_API` absent or private, 4); `WIKIOS_UPLOAD_DIR` (plan 411, 4d); `WIKIOS_IMPORT_MAX_BYTES`, only when raised (5c); `NEXT_PUBLIC_APP_URL` / `APP_URL` `https://ixwiki.com`, base path absent or `/projects/ixstates`, the same in `.env.production` (6a); `RATE_LIMIT_ENABLED` unset or `true` (6a); `WIKIOS_V1_ENABLED=true` (6b); `WIKIOS_PROOF_DIR=/ixwiki/private/logs/wikios-proof`, after the first passing launch proof (7e); `WIKIOS_TEMPLATESTYLES=0`, only when the lever is pulled (10c) | 1c, 3c, 4, 4d, 5c, 6a, 6b, 7e, 10c |
 | `/ixwiki/shared/wikios-uploads/` | new directory (750): the staging directory of uploads waiting for the mirror; in the backups until none is waiting | 4d |
 | `/ixwiki/private/logs/wikios-proof/` | new directory (750, owned by the user the deploy and `ixstats-cron` run as): the launch and weekly proof runs, pruned to the newest 12 by the CLI, and the newest 12 predeploy reports; the old predeploy reports in `$IX/.bench-out/proof` are removed once it is set | 7e |
-| `/ixwiki/public/projects/ixstats/ecosystem.config.cjs` | `CRON_ENABLED_JOBS` for `ixstats-cron` names `wiki-render-stale`, `wiki-mirror` and `wiki-recentchanges` (then `pm2 restart ixstats-cron --update-env`) (6b, 7b); `wikios-proof`, after the first passing launch proof (then 7e's restart from the file) (7e) | 6b, 7b, 7e |
+| `/ixwiki/public/projects/ixstats/ecosystem.config.cjs` | `CRON_ENABLED_JOBS` for `ixstats-cron` names `wiki-render-stale`, `wiki-mirror` and `wiki-recentchanges` (backup `ecosystem.config.cjs.6b`; then, in `$IX`, `pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env && pm2 save`, and the read-only check of the scheduled jobs) (6b, 7b); `wikios-proof`, after the first passing launch proof (then 7e's restart from the file) (7e) | 6b, 7b, 7e |
 | `/ixwiki/config/LocalSettings.php` | `require_once` of the snippet; never a `WIKIOS_TAKEOVER` define | 3a |
 | `/ixwiki/config/wikios-localsettings.php` | new, copy of the tracked snippet (mode 644) | 3a |
 | `/etc/php/8.4/fpm/conf.d/99-wikios-import.ini` | new: `upload_max_filesize` and `post_max_size` 16M | 3a |
