@@ -190,7 +190,9 @@ export function WikiAndStashPopovers({
                       className="hover:bg-muted flex w-full items-baseline gap-2 rounded px-1.5 py-1 text-left text-xs"
                     >
                       <span className="min-w-0 flex-1 truncate">{res.title}</span>
-                      <span className="text-muted-foreground shrink-0">{WIKI_SOURCES[res.source].name}</span>
+                      <span className="text-muted-foreground shrink-0">
+                        {WIKI_SOURCES[res.source].name}
+                      </span>
                     </button>
                   ))}
                 </div>

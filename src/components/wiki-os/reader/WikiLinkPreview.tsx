@@ -147,7 +147,9 @@ function renderWikiEmbed(element: HTMLElement, index: number): React.ReactNode {
       <div className="min-w-0 flex-1 text-left">
         <div className="mb-1 flex items-center gap-2">
           <WikiOSLogomark className="text-tint h-3.5 w-3.5 shrink-0" />
-          <span className="text-footnote text-label-secondary">From {WIKI_SOURCES[source].name}</span>
+          <span className="text-footnote text-label-secondary">
+            From {WIKI_SOURCES[source].name}
+          </span>
         </div>
         <h4 className="text-headline text-label truncate leading-snug">{title}</h4>
         <p className="text-footnote text-label-secondary mt-0.5 line-clamp-2 leading-normal">
