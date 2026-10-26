@@ -445,8 +445,8 @@ describe("S7: template preview is signed-in, bounded, sanitised and SHA-256 keye
     const first = previewCacheKey("T", { a: "Aa" });
     const second = previewCacheKey("T", { a: "BB" });
 
-    expect(first).toMatch(/^tplprev:v2:[0-9a-f]{64}$/);
-    expect(second).toMatch(/^tplprev:v2:[0-9a-f]{64}$/);
+    expect(first).toMatch(/^tplprev:v3:[0-9a-f]{64}$/);
+    expect(second).toMatch(/^tplprev:v3:[0-9a-f]{64}$/);
     expect(first).not.toBe(second);
     expect(previewCacheKey("T", { a: "1", b: "2" })).toBe(previewCacheKey("T", { b: "2", a: "1" }));
   });
