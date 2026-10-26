@@ -3,6 +3,7 @@
 
 import { env } from "~/env";
 import type { BotTimeResponse, BotEndpointStatusResponse } from "~/types/ixstats";
+import { postBotCommand, type BotCommandResult } from "./bot-control";
 
 /** The part of the Discord bot's reported state that decides the local clock. */
 type BotClockState = Pick<
@@ -370,96 +371,23 @@ export class IxTime {
     }
   }
 
-  static async setBotTimeOverride(
-    ixTime: number,
-    multiplier?: number
-  ): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await fetch(`${this.BOT_API_URL}/ixtime/override`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ixTimeMs: ixTime, multiplier }),
-        signal: AbortSignal.timeout(5000),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Bot API returned ${response.status}`);
-      }
-
-      const result = await response.json();
-      return { success: true, message: result.message };
-    } catch (error) {
-      return {
-        success: false,
-        message: `Failed to set bot time override: ${error instanceof Error ? error.message : "Unknown error"}`,
-      };
-    }
+  static setBotTimeOverride(ixTime: number, multiplier?: number): Promise<BotCommandResult> {
+    return postBotCommand(this.BOT_API_URL, "override", "set bot time override", {
+      ixTimeMs: ixTime,
+      multiplier,
+    });
   }
 
-  static async clearBotOverrides(): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await fetch(`${this.BOT_API_URL}/ixtime/clear`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: AbortSignal.timeout(5000),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Bot API returned ${response.status}`);
-      }
-
-      const result = await response.json();
-      return { success: true, message: result.message };
-    } catch (error) {
-      return {
-        success: false,
-        message: `Failed to clear bot overrides: ${error instanceof Error ? error.message : "Unknown error"}`,
-      };
-    }
+  static clearBotOverrides(): Promise<BotCommandResult> {
+    return postBotCommand(this.BOT_API_URL, "clear", "clear bot overrides");
   }
 
-  static async pauseBotTime(): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await fetch(`${this.BOT_API_URL}/ixtime/pause`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: AbortSignal.timeout(5000),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Bot API returned ${response.status}`);
-      }
-
-      const result = await response.json();
-      return { success: true, message: result.message };
-    } catch (error) {
-      return {
-        success: false,
-        message: `Failed to pause bot time: ${error instanceof Error ? error.message : "Unknown error"}`,
-      };
-    }
+  static pauseBotTime(): Promise<BotCommandResult> {
+    return postBotCommand(this.BOT_API_URL, "pause", "pause bot time");
   }
 
-  static async resumeBotTime(): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await fetch(`${this.BOT_API_URL}/ixtime/resume`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: AbortSignal.timeout(5000),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Bot API returned ${response.status}`);
-      }
-
-      const result = await response.json();
-      return { success: true, message: result.message };
-    } catch (error) {
-      return {
-        success: false,
-        message: `Failed to resume bot time: ${error instanceof Error ? error.message : "Unknown error"}`,
-      };
-    }
+  static resumeBotTime(): Promise<BotCommandResult> {
+    return postBotCommand(this.BOT_API_URL, "resume", "resume bot time");
   }
 
   /** The override state, for sharing the clock with other processes (lib/ixtime/shared-clock). */
