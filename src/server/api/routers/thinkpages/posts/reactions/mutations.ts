@@ -4,7 +4,7 @@ import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trp
 import { TRPCError } from "@trpc/server";
 // Import the wiki search service
 import { notificationHooks } from "~/lib/notifications/hooks";
-import { invalidateFeeds, personaDisplayName } from "../../post-utils";
+import { canViewPost, invalidateFeeds, personaDisplayName } from "../../post-utils";
 import { recipientsBlockingSender } from "~/server/shared/user-blocks";
 
 /**
@@ -21,13 +21,17 @@ function countersData(reactionCounts: Record<string, number>) {
 /**
  * Checks the caller owns `accountId`, then loads the post's tally and the account's existing
  * reaction on it. Throws UNAUTHORIZED / FORBIDDEN / NOT_FOUND like the mutations always did.
+ * With `mustRead`, a post the caller can't read (canViewPost) is NOT_FOUND too: reacting to a
+ * private post would notify its author and touch its Discord message. Removing one's own
+ * reaction stays possible after the post turns private.
  */
 async function loadReactionState(
   db: PrismaClient,
   clerkUserId: string | null | undefined,
   postId: string,
   accountId: string,
-  unauthorizedMessage: string
+  unauthorizedMessage: string,
+  mustRead = false
 ) {
   if (!clerkUserId) {
     throw new TRPCError({ code: "UNAUTHORIZED", message: unauthorizedMessage });
@@ -44,9 +48,14 @@ async function loadReactionState(
 
   const post = await db.thinkpagesPost.findUnique({
     where: { id: postId },
-    select: { reactionCounts: true, content: true },
+    select: {
+      reactionCounts: true,
+      content: true,
+      visibility: true,
+      account: { select: { clerkUserId: true } },
+    },
   });
-  if (!post) {
+  if (!post || (mustRead && !canViewPost(post, clerkUserId))) {
     throw new TRPCError({ code: "NOT_FOUND", message: "Post not found" });
   }
 
@@ -88,7 +97,8 @@ export const thinkpagesPostsReactionsMutationsRouter = createTRPCRouter({
         clerkUserId,
         input.postId,
         input.accountId,
-        "You must be logged in to react to posts"
+        "You must be logged in to react to posts",
+        true
       );
 
       if (existingReaction) {

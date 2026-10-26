@@ -302,6 +302,20 @@ describe("blocks on likes and follows", () => {
     expect(mockOnThinkPageActivity).not.toHaveBeenCalled();
   });
 
+  it("refuses a reaction to a post the reactor can't read", async () => {
+    const db = createMockPrisma();
+    db.thinkpagesAccount.findUnique.mockResolvedValue({ id: "acc_me", clerkUserId: ME });
+    db.thinkpagesPost.findUnique.mockResolvedValue(post({ visibility: "private" }));
+    await expect(
+      createCallerFactory(thinkpagesPostsReactionsMutationsRouter)(ctxFor(db)).addReaction({
+        postId: "p1",
+        accountId: "acc_me",
+        reactionType: "like",
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(db.postReaction.create).not.toHaveBeenCalled();
+  });
+
   const target = { id: "acc_owner", clerkUserId: OWNER, username: "owner", isActive: true };
   const mine = { id: "acc_me", clerkUserId: ME, username: "me", displayName: "Me", isActive: true };
   function followDb() {
