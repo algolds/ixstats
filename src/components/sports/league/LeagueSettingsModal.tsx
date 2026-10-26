@@ -38,6 +38,7 @@ interface LeagueSettingsModalProps {
     promotionCount?: number;
     relegationCount?: number;
     sportPreset?: string;
+    createdByUserId?: string;
     archetype?: string;
     settings?: any;
     wikiSlug?: string | null;
