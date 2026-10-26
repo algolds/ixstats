@@ -8,6 +8,7 @@ import { useOptionalPlateWikiCallbacks } from "./PlateRawHtmlElement";
 import { resolveImageUrl } from "~/lib/wiki-os/transformers/image-url";
 import { Button } from "~/components/ui/button";
 import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
+import { assetUrl } from "~/lib/base-path";
 
 /** Stashed/Commons media block — original figure HTML or AST-resolved image rendered. */
 export function PlateMediaElement({
@@ -67,7 +68,7 @@ export function PlateMediaElement({
           >
             {imageUrl ? (
               <img
-                src={imageUrl}
+                src={assetUrl(imageUrl) ?? undefined}
                 alt={caption || filename}
                 className="rounded-control h-auto w-full object-contain"
                 loading="lazy"

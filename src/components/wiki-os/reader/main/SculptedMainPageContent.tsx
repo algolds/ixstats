@@ -23,6 +23,7 @@ import {
 import { cn } from "~/lib/utils";
 import type { MainPageContentProps } from "./types";
 import { CountriesSection, RecentActivitySection } from "./MainPageSections";
+import { assetUrl } from "~/lib/base-path";
 
 const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Countries: IconoirGlobe,
@@ -149,7 +150,7 @@ export function SculptedMainPageContent({
                     {almanacSpotlight.thumbnail ? (
                       <>
                         <img
-                          src={almanacSpotlight.thumbnail}
+                          src={assetUrl(almanacSpotlight.thumbnail) ?? undefined}
                           alt={almanacSpotlight.title}
                           loading="lazy"
                           className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover/img:scale-105"

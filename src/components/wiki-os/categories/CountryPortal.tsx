@@ -201,7 +201,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
                   >
                     {m.imageUrl ? (
                       <img
-                        src={m.imageUrl}
+                        src={assetUrl(m.imageUrl) ?? undefined}
                         alt=""
                         className="wikios-portal-card-img"
                         loading="lazy"

@@ -22,6 +22,7 @@ import { SISTER_EMBED_CLASS } from "~/lib/wiki-os/sister-dom";
 import type { SisterEmbedRequest } from "~/lib/wiki-os/sister-embed";
 import type { SisterReaderId } from "~/lib/wiki-os/wiki-hosts";
 import { isWikiOutage, unreachableText } from "~/lib/wiki-os/wiki-outage";
+import { assetUrl } from "~/lib/base-path";
 
 const EMBED_STALE_MS = 3_600_000;
 /** The article's containment for another wiki's HTML (content.css): layout and paint containment, isolation. */
@@ -96,7 +97,7 @@ function CardEmbed({
     >
       {answer.imageUrl && (
         <img
-          src={answer.imageUrl}
+          src={assetUrl(answer.imageUrl) ?? undefined}
           loading="lazy"
           referrerPolicy="no-referrer"
           alt=""

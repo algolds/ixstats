@@ -10,6 +10,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover
 import { WatchButton } from "../WatchButton";
 import { TocButton } from "../ArticleToc";
 import { AwardTrophyLinks } from "../AwardTrophyLinks";
+import { assetUrl } from "~/lib/base-path";
 
 interface EditorialMastheadProps extends ArticleHeaderProps {
   primaryAward: any;
@@ -37,7 +38,7 @@ function PersonLink({
       {avatar ? (
         <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10">
           <img
-            src={avatar}
+            src={assetUrl(avatar) ?? undefined}
             alt={name}
             className="aspect-square size-full object-cover"
             onError={(e) => {

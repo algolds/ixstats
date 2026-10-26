@@ -41,18 +41,8 @@ const RESOLVING_TAGS = new Set([
   "PillImage",
 ]);
 const EXEMPT_DIRS = [path.join("src", "lib", "og"), path.join("src", "tests")];
-const FLAGGISH = /flag/i;
 const PICTURISH =
   /flag|avatar|profileImage|imageUrl|banner|logo|cover|thumbnail|photo|heroImage|selectedImage|mediaUrl|media\.url/i;
-/**
- * WikiOS surfaces are held to the flag rule, and their picture srcs to a count that only falls (mostly wiki
- * thumbnails and Clerk avatars, which are absolute, but a stored relative one would 404).
- */
-const WIKIOS_DIRS = [
-  path.join("src", "components", "wiki-os"),
-  path.join("src", "app", "(wiki-os)"),
-];
-const WIKIOS_UNRESOLVED_PICTURES_ALLOWED = 10;
 const UPLOAD_LITERAL = /["'`]\/images\/uploads\//;
 
 function walk(dir: string, visit: (file: string) => void): void {
@@ -92,20 +82,15 @@ function resolvedNames(sf: ts.SourceFile): Set<string> {
   return names;
 }
 
-function isUnresolved(
-  expr: ts.Expression,
-  sf: ts.SourceFile,
-  resolved: Set<string>,
-  names: RegExp
-): boolean {
+function isUnresolved(expr: ts.Expression, sf: ts.SourceFile, resolved: Set<string>): boolean {
   if (callsResolver(expr)) return false;
   if (ts.isIdentifier(expr) && resolved.has(expr.text)) return false;
   const text = expr.getText(sf);
-  return names.test(text) || UPLOAD_LITERAL.test(text);
+  return PICTURISH.test(text) || UPLOAD_LITERAL.test(text);
 }
 
-/** The `src={…}` attributes in `source` that match `names` (or hold an upload) without resolving it, as `file:line`. */
-function unresolvedAssetSrcs(file: string, source: string, names: RegExp = PICTURISH): string[] {
+/** The `src={…}` attributes in `source` that name a picture (or hold an upload) without resolving it, as `file:line`. */
+function unresolvedAssetSrcs(file: string, source: string): string[] {
   const sf = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const resolved = resolvedNames(sf);
   const found: string[] = [];
@@ -117,7 +102,7 @@ function unresolvedAssetSrcs(file: string, source: string, names: RegExp = PICTU
           const init = attr.initializer;
           const expr = init && ts.isJsxExpression(init) ? init.expression : undefined;
           const literal = init && ts.isStringLiteral(init) && UPLOAD_LITERAL.test(init.getText(sf));
-          if (literal || (expr && isUnresolved(expr, sf, resolved, names))) {
+          if (literal || (expr && isUnresolved(expr, sf, resolved))) {
             const { line } = sf.getLineAndCharacterOfPosition(attr.getStart(sf));
             found.push(`${path.relative(process.cwd(), file)}:${line + 1}`);
           }
@@ -177,21 +162,14 @@ describe("flag and upload srcs carry the base path", () => {
   walk(SRC, (file) => {
     if (!inside(file, EXEMPT_DIRS)) files.push(file);
   });
-  const app = files.filter((file) => !inside(file, WIKIOS_DIRS));
-  const wikiOs = files.filter((file) => inside(file, WIKIOS_DIRS));
-  const scanAll = (list: string[], names: RegExp) =>
-    list.flatMap((file) => unresolvedAssetSrcs(file, fs.readFileSync(file, "utf8"), names));
 
-  it("every .tsx under src outside WikiOS resolves a flag, picture or upload src", () => {
-    expect(app.length).toBeGreaterThan(1000); // the walk found the app
-    expect(scanAll(app, PICTURISH)).toEqual([]);
-  });
-
-  it("every WikiOS .tsx resolves a flag or upload src, and its unresolved picture srcs only fall", () => {
-    expect(wikiOs.length).toBeGreaterThan(50);
-    expect(scanAll(wikiOs, FLAGGISH)).toEqual([]);
-    expect(scanAll(wikiOs, PICTURISH).length).toBeLessThanOrEqual(
-      WIKIOS_UNRESOLVED_PICTURES_ALLOWED
+  it("every .tsx under src, WikiOS included, resolves a flag, picture or upload src", () => {
+    expect(files.length).toBeGreaterThan(1000); // the walk found the app
+    expect(files.some((file) => inside(file, [path.join("src", "components", "wiki-os")]))).toBe(
+      true
     );
+    expect(
+      files.flatMap((file) => unresolvedAssetSrcs(file, fs.readFileSync(file, "utf8")))
+    ).toEqual([]);
   });
 });

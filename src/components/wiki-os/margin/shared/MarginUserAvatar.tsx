@@ -4,6 +4,7 @@
 
 import React, { useState, memo } from "react";
 import { cn } from "~/lib/utils";
+import { assetUrl } from "~/lib/base-path";
 
 /** All the server tells a reader about an author (plan 416): never an id, a role or a country. */
 export interface CommentAuthor {
@@ -57,7 +58,7 @@ export const MarginUserAvatar = memo(function MarginUserAvatar({
       >
         {avatarUrl ? (
           <img
-            src={avatarUrl}
+            src={assetUrl(avatarUrl) ?? undefined}
             alt={author.username}
             onError={() => setImgError(true)}
             className="h-full w-full object-cover"

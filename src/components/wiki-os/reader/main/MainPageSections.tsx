@@ -79,7 +79,7 @@ export function RecentActivitySection({
                   className="hover:bg-fill-4 group rounded-card flex flex-1 items-start justify-between gap-3 px-3 py-3 transition-colors duration-150"
                 >
                   <div className="flex min-w-0 flex-1 items-start gap-2">
-                    <ActivityItemThumbnail src={rc.thumbnail} title={rc.title} />
+                    <ActivityItemThumbnail src={assetUrl(rc.thumbnail)} title={rc.title} />
 
                     <div className="flex min-w-0 flex-1 flex-col">
                       <div className="flex items-center gap-2">

@@ -18,6 +18,7 @@ import { cn } from "~/lib/utils";
 import { pageEditHref } from "~/lib/wiki-os/page-tools";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
+import { assetUrl } from "~/lib/base-path";
 
 interface HeroSpotlightSearchProps {
   className?: string;
@@ -306,7 +307,7 @@ export function HeroSpotlightSearch({
                         {item.thumbnail ? (
                           <div className="rounded-control border-separator bg-fill-4 relative h-10 w-10 shrink-0 overflow-hidden border">
                             <img
-                              src={item.thumbnail}
+                              src={assetUrl(item.thumbnail) ?? undefined}
                               alt={displayTitle}
                               className="h-full w-full object-cover"
                               loading="lazy"

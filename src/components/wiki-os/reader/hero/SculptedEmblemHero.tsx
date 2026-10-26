@@ -26,6 +26,7 @@ import { HeroSpotlightSearch } from "./HeroSpotlightSearch";
 import { FeaturedArticleCard, FeaturedThumbnailFrame } from "./FeaturedArticle";
 import type { WikiHeroProps } from "./types";
 import { Button } from "~/components/ui/button";
+import { assetUrl } from "~/lib/base-path";
 
 const CANON_CHRONICLE_EVENTS = [
   {
@@ -402,7 +403,9 @@ export function SculptedEmblemHero({
                       <span className="flex items-center gap-1">
                         {featuredArticleData?.authorInfo?.creatorAvatar ? (
                           <img
-                            src={featuredArticleData.authorInfo.creatorAvatar}
+                            src={
+                              assetUrl(featuredArticleData.authorInfo.creatorAvatar) ?? undefined
+                            }
                             alt={creatorName}
                             className="border-separator h-3.5 w-3.5 rounded-full border object-cover"
                           />

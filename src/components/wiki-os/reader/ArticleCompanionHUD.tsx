@@ -16,6 +16,7 @@ import { cn } from "~/lib/utils";
 import type { ArticleAuthorInfo } from "./ArticleHeader";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
+import { assetUrl } from "~/lib/base-path";
 
 interface ArticleCompanionHUDProps {
   contentHtml: string;
@@ -100,8 +101,7 @@ function IxWikiPageTools({
   );
 }
 
-const userHref = (name: string) =>
-  `/wiki/User:${encodeURIComponent(name.replace(/ /g, "_"))}`;
+const userHref = (name: string) => `/wiki/User:${encodeURIComponent(name.replace(/ /g, "_"))}`;
 
 // One locale and time zone, so the server's date and the browser's are the same text.
 const shortDate = new Intl.DateTimeFormat("en-US", {
@@ -184,7 +184,13 @@ function UserRow({
         title={`${titlePrefix}${name}`}
       >
         {avatar ? (
-          <img src={avatar} alt="" className={AVATAR_CLASS} loading="lazy" decoding="async" />
+          <img
+            src={assetUrl(avatar) ?? undefined}
+            alt=""
+            className={AVATAR_CLASS}
+            loading="lazy"
+            decoding="async"
+          />
         ) : (
           <span className="text-label-secondary bg-fill-4 text-caption flex h-4 w-4 shrink-0 items-center justify-center rounded-full leading-none font-semibold">
             {name.charAt(0).toUpperCase()}
