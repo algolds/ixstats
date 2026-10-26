@@ -409,7 +409,9 @@ describe("per-caller limits on sister reads", () => {
     }) as never);
   });
 
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
 
   it("a search of one sister or of all wikis counts against sistersearch (30 a minute); an IxWiki search does not", async () => {
     answers = { iiwiki: opensearch(["Bashan"]), althistory: opensearch([]) };
