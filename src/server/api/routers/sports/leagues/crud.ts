@@ -19,11 +19,8 @@ import {
   assertOwnsLeague,
   viewerCanManageLeague,
 } from "~/server/api/routers/sports/league-access";
-import {
-  assertSportsEconomyOpen,
-  chargeSportsFeeTx,
-  sportsRequestId,
-} from "~/server/api/routers/sports/_shared";
+import { assertSportsEconomyOpen, sportsRequestId } from "~/server/api/routers/sports/_shared";
+import { chargeSportsFeeTx } from "~/server/api/routers/sports/fees";
 import { refundOpenPredictionsTx, refundTransferBidTx } from "~/server/api/routers/sports/escrow";
 
 /** Most clubs a league holds: the largest league a charter founds. */

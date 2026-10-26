@@ -108,6 +108,7 @@ async function openStream() {
   const abort = new AbortController();
   const response = (await mapUpdates({
     signal: abort.signal,
+    headers: new Headers(),
   } as Request)) as unknown as StreamResponse;
   const reader = response.body.getReader();
   const decoder = new TextDecoder();

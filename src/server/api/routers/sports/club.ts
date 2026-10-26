@@ -20,10 +20,10 @@ import { createStorytellerEffect } from "~/lib/economy/storyteller-effects";
 import type { LiveTraceEvent } from "~/lib/sports/live-match";
 import {
   assertSportsEconomyOpen,
-  chargeSportsFeeTx,
   requireOwnedTeam,
   sportsRequestId,
 } from "~/server/api/routers/sports/_shared";
+import { chargeSportsFeeTx } from "~/server/api/routers/sports/fees";
 
 const TEAM_OVERVIEW_INCLUDE = {
   players: { where: { isActive: true }, orderBy: { position: "asc" } },
