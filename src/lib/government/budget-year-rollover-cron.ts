@@ -5,7 +5,7 @@
  * six real months; a faster realm's sooner, a date jump's at once). When it rolls over, each owned country's
  * latest budget stays in effect (see ./budget-allocations), and its owner gets one notification
  * per new year asking them to set the new year's budget from the Economy console, where
- * "Start FY<year> budget" copies the budget in effect forward.
+ * "Start FY <year> budget" copies the budget in effect forward. Years read as the nation's calendar labels them.
  *
  * Idempotent: a country is notified at most once per budget year, and never once it has an
  * allocation for the current year. Each realm's year is read once per run.
@@ -13,7 +13,8 @@
 import type { PrismaClient } from "@prisma/client";
 import { db as defaultDb } from "~/server/db";
 import { notificationAPI } from "~/lib/notifications";
-import { realmClocks, realmNowsOnce } from "~/server/shared/realm-time";
+import { formatBudgetYear } from "~/lib/realms/realm-year";
+import { pickClock, realmClocks, realmNowsOnce } from "~/server/shared/realm-time";
 import { currentBudgetYear } from "./budget-year";
 
 const BUDGET_YEAR_NOTIFICATION_SOURCE = "budgetYear";
@@ -74,7 +75,11 @@ export async function runBudgetYearRollover(
     failed: 0,
   };
 
-  const nowOf = realmNowsOnce(await realmClocks(db));
+  const clocks = await realmClocks(db);
+  const nowOf = realmNowsOnce(clocks);
+  // A budget year as the nation's calendar labels it ("FY 1203 AE"), at the run's time of its realm.
+  const fy = (year: number, realmId: string) =>
+    `FY ${formatBudgetYear(year, { now: () => nowOf(realmId), calendar: pickClock(clocks, realmId).calendar })}`;
   const countries = await findCountriesNeedingBudget(db, (realmId) =>
     currentBudgetYear(nowOf(realmId))
   );
@@ -97,8 +102,8 @@ export async function runBudgetYearRollover(
       }
 
       await notificationAPI.create({
-        title: `FY${budgetYear} budget needed`,
-        message: `A new fiscal year has begun. Your FY${latestYear} budget stays in effect until you set the FY${budgetYear} budget.`,
+        title: `${fy(budgetYear, realmId)} budget needed`,
+        message: `A new fiscal year has begun. Your ${fy(latestYear, realmId)} budget stays in effect until you set the ${fy(budgetYear, realmId)} budget.`,
         countryId,
         category: "economic",
         type: "info",

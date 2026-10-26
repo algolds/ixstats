@@ -101,3 +101,14 @@ it("reminds each nation for its realm's year, and a forward jump rolls the pause
     })
   );
 });
+
+it("names the year in the nation's own calendar", async () => {
+  await runBudgetYearRollover(db as never);
+  const byCountry = new Map(notify.mock.calls.map(([n]) => [n.countryId, n]));
+  // Realm "fast" read 1 January 1200 AE when its shared-timeline year was 2044: its 2041 budget falls years before.
+  expect(byCountry.get("swiftland")).toMatchObject({
+    title: "FY 1200 AE budget needed",
+    message: expect.stringMatching(/Your FY 119\d AE budget stays in effect until you set the FY 1200 AE budget\.$/),
+  });
+  expect(byCountry.get("ixland")).toMatchObject({ title: "FY 2042 budget needed" });
+});
