@@ -9,6 +9,7 @@ import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from 
 import { TRPCError } from "@trpc/server";
 import { exchangeService } from "~/lib/vault/exchange-service";
 import { isSystemOwner } from "~/lib/auth";
+import { assertSportsEconomyOpen } from "~/server/api/routers/sports/_shared";
 
 export const sportsTeamsRouter = createTRPCRouter({
   getTeam: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
@@ -148,23 +149,33 @@ export const sportsTeamsRouter = createTRPCRouter({
           }
         }
 
-        const spend = await exchangeService.spend(
-          ctx.user.id,
-          50,
-          "CHARTER_FEE",
-          `TEAM_CLAIM:${input.teamId}`,
-          ctx.db
-        );
-        if (!spend.success) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: spend.message ?? "Insufficient balance to claim team",
+        await assertSportsEconomyOpen(ctx.db);
+        return await ctx.db.$transaction(async (tx) => {
+          // Take the club only while it is still unowned, in the transaction that charges for
+          // it: of two concurrent claimers one matches nothing, pays nothing and is refused
+          const claimed = await tx.sportTeam.updateMany({
+            where: { id: input.teamId, ownerUserId: null },
+            data: { ownerUserId: ctx.user.id },
           });
-        }
+          if (claimed.count !== 1) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "Team is already claimed" });
+          }
 
-        return ctx.db.sportTeam.update({
-          where: { id: input.teamId },
-          data: { ownerUserId: ctx.user.id },
+          const spend = await exchangeService.spend(
+            ctx.user.id,
+            50,
+            "CHARTER_FEE",
+            `TEAM_CLAIM:${input.teamId}`,
+            tx
+          );
+          if (!spend.success) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: spend.message ?? "Insufficient balance to claim team",
+            });
+          }
+
+          return tx.sportTeam.findUniqueOrThrow({ where: { id: input.teamId } });
         });
       } catch (error) {
         if (error instanceof TRPCError) throw error;
