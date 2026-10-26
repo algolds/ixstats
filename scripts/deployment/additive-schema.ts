@@ -46,6 +46,23 @@ export interface AdditivePlan {
 
 const IDENT = String.raw`(?:"public"\.|public\.)?"?([A-Za-z_][A-Za-z0-9_]*)"?`;
 
+/**
+ * The kept statements in the two batches they must run in. PostgreSQL refuses to use an enum value in the transaction
+ * that added it ("unsafe use of new value"), so `ALTER TYPE ... ADD VALUE` commits on its own before the tables and
+ * columns that may default to the new value.
+ */
+export function applyBatches(statements: readonly string[]): {
+  enumValues: string[];
+  rest: string[];
+} {
+  const isAddValue = (statement: string) =>
+    new RegExp(`^ALTER TYPE ${IDENT} ADD VALUE`, "i").test(statement);
+  return {
+    enumValues: statements.filter(isAddValue),
+    rest: statements.filter((statement) => !isAddValue(statement)),
+  };
+}
+
 /** Splits SQL into statements on top-level semicolons, dropping comments; quotes and $$ bodies stay intact. */
 export function splitStatements(sql: string): string[] {
   const statements: string[] = [];
@@ -238,8 +255,10 @@ export function planAdditive(
     if (createTable) {
       const table = createTable[1]!;
       const blocked = usesBlockedType(statement);
-      if (deferred.tables.has(table)) skip(statement, `table "${table}" is created by the deploy SQL`);
-      else if (blocked) skip(statement, `uses type "${blocked}", which waits for the deploy SQL or the push`);
+      if (deferred.tables.has(table))
+        skip(statement, `table "${table}" is created by the deploy SQL`);
+      else if (blocked)
+        skip(statement, `uses type "${blocked}", which waits for the deploy SQL or the push`);
       else {
         newTables.add(table);
         keep(statement);

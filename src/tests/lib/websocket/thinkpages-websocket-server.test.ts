@@ -256,6 +256,21 @@ describe("ThinkPagesWebSocketServer evictions", () => {
     expect(await silent).toBe(true);
   });
 
+  it("delivers a room's broadcasts in the order they were sent, though the first waits on the re-check", async () => {
+    const member = await joinedMember();
+    const received: string[] = [];
+    member.on("message:update", (payload: { data: ThinkPagesMessageEvent }) =>
+      received.push(payload.data.type)
+    );
+    const sent = wsServer.broadcastMessage(message);
+    void wsServer.broadcastMessage({ ...message, type: "message:deleted" });
+    await sent;
+    for (let i = 0; i < 100 && received.length < 2; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    expect(received).toEqual(["message:new", "message:deleted"]);
+  });
+
   it("re-checks membership before delivering, in case an eviction was missed", async () => {
     const member = await joinedMember();
     mockConv1Members.delete("user_a");

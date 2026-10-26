@@ -293,7 +293,6 @@ describe("clearOwnHistory", () => {
     const db = createMockPrisma();
     db.notification.deleteMany.mockReturnValue(Promise.resolve({ count: 3 }));
     db.messageReadReceipt.deleteMany.mockReturnValue(Promise.resolve({ count: 5 }));
-    db.notificationReceipt.deleteMany.mockReturnValue(Promise.resolve({ count: 2 }));
     db.$transaction.mockImplementation((ops: Promise<unknown>[]) => Promise.all(ops));
     await recordHeartbeat("clerk_1");
 
@@ -307,9 +306,8 @@ describe("clearOwnHistory", () => {
     expect(db.messageReadReceipt.deleteMany).toHaveBeenCalledWith({
       where: { userId: "clerk_1" },
     });
-    expect(db.notificationReceipt.deleteMany).toHaveBeenCalledWith({
-      where: { userId: "clerk_1" },
-    });
+    // Marks on shared notices stay, or every dismissed notice would come back unread
+    expect(db.notificationReceipt.deleteMany).not.toHaveBeenCalled();
     expect((await visibleOnlineUserIds(dbWithConfigs({}) as never, ["clerk_1"])).size).toBe(0);
   });
 });

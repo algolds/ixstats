@@ -110,6 +110,36 @@ describe("transfer bids", () => {
     expect((await db.sportPlayer.findUniqueOrThrow({ where: { id: star } })).teamId).toBe("south");
   });
 
+  it("locks every wallet an accept pays in user-id order before moving any", async () => {
+    const listing = await market(cleo).listPlayerForTransfer({ playerId: star, price: 300 });
+    const winning = await market(dev).placeTransferBid({
+      listingId: listing.id,
+      amount: 300,
+      bidderTeamId: "south",
+    });
+    await market(ben).placeTransferBid({
+      listingId: listing.id,
+      amount: 200,
+      bidderTeamId: "west",
+    });
+    const locked: string[] = [];
+    db.store.onRaw(/SELECT id FROM "exchange_wallets" WHERE id = \? FOR UPDATE/, ([id]) => {
+      locked.push(id as string);
+      return [{ id }];
+    });
+
+    await market(cleo).respondToTransferBid({ bidId: winning.id, action: "accept" });
+
+    const walletUser = new Map(
+      (await db.exchangeWallet.findMany({ select: { id: true, userId: true } })).map((w) => [
+        w.id,
+        w.userId,
+      ])
+    );
+    const payees = [cleo.id, ben.id].sort();
+    expect(locked.slice(0, 2).map((id) => walletUser.get(id))).toEqual(payees);
+  });
+
   it("refunds the bidder once when two rejects race, under the bid's refund key", async () => {
     const listing = await market(cleo).listPlayerForTransfer({ playerId: star, price: 300 });
     const bid = await market(dev).placeTransferBid({

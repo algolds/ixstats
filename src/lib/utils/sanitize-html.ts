@@ -672,13 +672,13 @@ export function validateNoXSS(content: string): { valid: boolean; reason?: strin
     return { valid: false, reason: "Script tags are not allowed" };
   }
 
-  // Check for javascript: protocol
-  if (/javascript:/i.test(content)) {
+  // Check for javascript: protocol, inside a tag or a markdown link (prose that names "javascript:" is fine)
+  if (/<[^>]*javascript:/i.test(content) || /\]\(\s*javascript:/i.test(content)) {
     return { valid: false, reason: "JavaScript protocols are not allowed" };
   }
 
-  // Check for event handlers
-  if (/on\w+\s*=/i.test(content)) {
+  // Check for event handlers, as attributes inside a tag ("bonus=50" or "condition = met" in prose is fine)
+  if (/<[^>]*\son\w+\s*=/i.test(content)) {
     return { valid: false, reason: "Event handlers are not allowed" };
   }
 

@@ -149,11 +149,6 @@ const notOnSale = (rarities: string) =>
  */
 export async function purchasePack(db: PrismaClient, userId: string, packId: string) {
   return db.$transaction(async (tx) => {
-    // Purchases of one pack run one at a time, so the per-user limit and the sold count
-    // below can't both pass for two buyers (or two requests) at once.
-    // $executeRaw, not $queryRaw: Prisma cannot deserialize the void pg_advisory_xact_lock returns
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${PACK_PURCHASE_LOCK_NAMESPACE}::int, hashtext(${packId}))`;
-
     // 1. Get pack details (maintenance / packs-disabled switches are enforced by the ledger)
     const pack = await tx.cardPack.findUnique({
       where: { id: packId },
@@ -161,6 +156,16 @@ export async function purchasePack(db: PrismaClient, userId: string, packId: str
 
     if (!pack) {
       throw new PackError("NOT_FOUND", "Pack not found");
+    }
+
+    // Serialise only what the counts below need: every purchase of a limited-stock pack (the sold
+    // count), else one buyer's purchases of a per-user-limited pack (their count). Unlimited packs
+    // take no lock, so a busy drop doesn't queue every buyer behind one another.
+    // $executeRaw, not $queryRaw: Prisma cannot deserialize the void pg_advisory_xact_lock returns
+    const hasStock = pack.limitedQuantity !== null && pack.limitedQuantity !== undefined;
+    if (hasStock || pack.purchaseLimit) {
+      const lockKey = hasStock ? packId : `${packId}:${userId}`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${PACK_PURCHASE_LOCK_NAMESPACE}::int, hashtext(${lockKey}))`;
     }
 
     // 2. Validate availability

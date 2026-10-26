@@ -11,10 +11,10 @@ import next from "next";
 
 loadEnvVariables("[Server]");
 
-// A rejection or exception nothing handled leaves the process in an unknown state: log it and exit, PM2 restarts it.
+// An uncaught exception leaves the process in an unknown state: log it and exit, PM2 restarts it. A stray
+// rejected promise in one request is only logged: exiting would drop every other in-flight request.
 process.on("unhandledRejection", (reason) => {
-  console.error("[Server] Unhandled rejection, exiting:", reason);
-  process.exit(1);
+  console.error("[Server] Unhandled rejection:", reason);
 });
 process.on("uncaughtException", (error) => {
   console.error("[Server] Uncaught exception, exiting:", error);

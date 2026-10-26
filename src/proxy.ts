@@ -60,20 +60,45 @@ const CSP_TEMPLATE_APP = buildCSPTemplate(false);
 const CSP_TEMPLATE_STANDALONE = buildCSPTemplate(true);
 
 /**
- * Who may frame a page (clickjacking), on either host (the maps.ixwiki.com check trusts `x-forwarded-host`, so the
- * host never widens this):
+ * Who may frame a page (clickjacking):
  * - `*`: the chromeless, read-only map viewer (`/maps?embed=true`), which IxWiki, WikiOS (wiki-embed-shared.ts,
  *   ArticlePlaceholders) and other sites embed;
- * - `'self'` (X-Frame-Options SAMEORIGIN): the rest of the map viewer, WikiOS articles and country pages, which
- *   IxWiki's own origin may still frame;
+ * - IxWiki's origins: on the maps.ixwiki.com host, every page but the signed-in tools. IxWiki (ixwiki.com, another
+ *   origin) frames maps-host pages and root-level nation slugs without `embed=true`. No third-party site may frame
+ *   them, so the host header (trusted from `x-forwarded-host`) can widen this only to IxWiki itself;
+ * - `'self'` (X-Frame-Options SAMEORIGIN): on the app host, the rest of the map viewer, WikiOS articles and country
+ *   pages, which IxWiki shares an origin with;
  * - `'none'` (DENY): everything else, the signed-in tools (/admin, /settings, /mycountry, the map editors) included.
  */
-type FrameAncestors = "*" | "'self'" | "'none'";
+const IXWIKI_FRAME_ANCESTORS = "'self' https://ixwiki.com https://*.ixwiki.com";
+type FrameAncestors = "*" | typeof IXWIKI_FRAME_ANCESTORS | "'self'" | "'none'";
+
+/** Signed-in tools no other page may frame, whatever the host. */
+const SIGNED_IN_PREFIXES = [
+  "/admin",
+  "/settings",
+  "/mycountry",
+  "/dashboard",
+  "/builder",
+  "/vault",
+  "/messages",
+  "/setup",
+  "/sign-in",
+  "/sign-up",
+  "/stashes",
+  "/myclub",
+  "/myleague",
+];
 
 function frameAncestorsFor(req: NextRequest): FrameAncestors {
   const { pathname, searchParams } = req.nextUrl;
   const isMapViewer = pathname === "/maps" || pathname === "/maps/";
   if (isMapViewer && searchParams.get("embed") === "true") return "*";
+  const signedInTool = SIGNED_IN_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+  if (signedInTool) return "'none'";
+  if (isStandaloneRequest(req.headers)) return IXWIKI_FRAME_ANCESTORS;
   if (isMapViewer || pathname.startsWith("/wiki/") || pathname.startsWith("/countries/")) {
     return "'self'";
   }
@@ -111,7 +136,8 @@ function nextWithSecurityHeaders(req: NextRequest): NextResponse {
 
   // Security headers
   response.headers.set("X-Content-Type-Options", "nosniff");
-  if (frameAncestors !== "*") {
+  // X-Frame-Options can't name IxWiki's origins, so those pages rely on frame-ancestors alone
+  if (frameAncestors === "'self'" || frameAncestors === "'none'") {
     response.headers.set("X-Frame-Options", frameAncestors === "'self'" ? "SAMEORIGIN" : "DENY");
   }
   response.headers.set("X-XSS-Protection", "1; mode=block");

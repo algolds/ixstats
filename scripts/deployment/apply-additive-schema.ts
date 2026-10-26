@@ -15,7 +15,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DEFAULT_ENV_FILES, loadEnvFiles } from "../lib/env-files";
-import { deferredObjects, planAdditive } from "./additive-schema";
+import { applyBatches, deferredObjects, planAdditive } from "./additive-schema";
 
 const DEPLOY_SCRIPT = "scripts/deploy-production.sh";
 const SCHEMA = "prisma/schema";
@@ -48,38 +48,67 @@ function main(): number {
     return 1;
   }
 
-  const diff = prisma(["migrate", "diff", "--from-url", url, "--to-schema-datamodel", SCHEMA, "--script"]);
+  const diff = prisma([
+    "migrate",
+    "diff",
+    "--from-url",
+    url,
+    "--to-schema-datamodel",
+    SCHEMA,
+    "--script",
+  ]);
   if (diff.status !== 0) {
     console.error(`[additive-schema] prisma migrate diff failed:\n${diff.stderr}`);
     return 1;
   }
   const files = deploySqlBeforePush(readFileSync(DEPLOY_SCRIPT, "utf8"));
-  const plan = planAdditive(diff.stdout, deferredObjects(files.map((f) => readFileSync(f, "utf8"))));
+  const plan = planAdditive(
+    diff.stdout,
+    deferredObjects(files.map((f) => readFileSync(f, "utf8")))
+  );
 
   const kept = plan.changes.filter((c) => c.kept);
   const left = plan.changes.filter((c) => !c.kept);
-  console.log(`[additive-schema] ${kept.length} additive change(s), ${left.length} left to the deploy SQL and db push`);
+  console.log(
+    `[additive-schema] ${kept.length} additive change(s), ${left.length} left to the deploy SQL and db push`
+  );
   for (const change of kept) console.log(`  + ${change.source}`);
-  for (const change of left) console.log(`  - ${change.source.slice(0, 160)}\n      (${change.reason})`);
+  for (const change of left)
+    console.log(`  - ${change.source.slice(0, 160)}\n      (${change.reason})`);
 
   if (plan.statements.length === 0) {
     console.log("[additive-schema] Nothing to apply");
     return 0;
   }
   if (!apply) {
-    console.log("[additive-schema] Dry run: nothing written (--apply applies the + lines in one transaction)");
+    console.log(
+      "[additive-schema] Dry run: nothing written (--apply applies the + lines: new enum values first, then the rest in one transaction)"
+    );
     return 0;
   }
 
+  // New enum values commit first: a column or table may default to one, and PostgreSQL refuses a value in the
+  // transaction that added it. Added values on their own are harmless if the second batch then fails.
+  const { enumValues, rest } = applyBatches(plan.statements);
   const dir = mkdtempSync(join(tmpdir(), "additive-schema-"));
-  const file = join(dir, "additive.sql");
   try {
-    writeFileSync(file, `BEGIN;\n${plan.statements.map((s) => `${s};`).join("\n")}\nCOMMIT;\n`);
-    const run = prisma(["db", "execute", "--schema", SCHEMA, "--file", file]);
-    process.stdout.write(run.stdout);
-    if (run.status !== 0) {
-      console.error(`[additive-schema] Applying failed; nothing was changed:\n${run.stderr}`);
-      return 1;
+    for (const [name, batch] of [
+      ["enum values", enumValues],
+      ["tables and columns", rest],
+    ] as const) {
+      if (batch.length === 0) continue;
+      const file = join(dir, `${name.replace(/ /g, "-")}.sql`);
+      writeFileSync(file, `BEGIN;\n${batch.map((s) => `${s};`).join("\n")}\nCOMMIT;\n`);
+      const run = prisma(["db", "execute", "--schema", SCHEMA, "--file", file]);
+      process.stdout.write(run.stdout);
+      if (run.status !== 0) {
+        const kept =
+          name === "enum values"
+            ? "nothing was changed"
+            : `the ${enumValues.length} enum value(s) stay added`;
+        console.error(`[additive-schema] Applying the ${name} failed; ${kept}:\n${run.stderr}`);
+        return 1;
+      }
     }
   } finally {
     rmSync(dir, { recursive: true, force: true });

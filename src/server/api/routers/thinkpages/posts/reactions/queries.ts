@@ -32,18 +32,25 @@ async function discordReactions(
   const cached = await globalCache.get<any[]>(cacheKey);
   if (cached) return cached;
   const fetched = await fetchDiscordReactions(db, post, discordMsgId, counts, reactionType);
-  if (fetched) await globalCache.set(cacheKey, fetched, { ttl: DISCORD_REACTIONS_TTL_SECONDS });
-  return fetched ?? [];
+  // Only a complete read is cached: a 429 or 5xx on any emoji would otherwise hide its reactors
+  // from every viewer for the whole TTL
+  if (fetched?.complete) {
+    await globalCache.set(cacheKey, fetched.reactors, { ttl: DISCORD_REACTIONS_TTL_SECONDS });
+  }
+  return fetched?.reactors ?? [];
 }
 
-/** The uncached Discord read; null when it could not be made (no token, or Discord failed). */
+/**
+ * The uncached Discord read; null when it could not be made (no token, or Discord failed), and
+ * `complete: false` when some emoji's reactor list came back with an error status.
+ */
 async function fetchDiscordReactions(
   db: ReactionsDb,
   post: { id: string; createdAt: Date },
   discordMsgId: string,
   counts: Record<string, number>,
   reactionType: string | undefined
-): Promise<any[] | null> {
+): Promise<{ reactors: any[]; complete: boolean } | null> {
   const discordBotToken = process.env.DISCORD_BOT_TOKEN;
   const channelId = process.env.DISCORD_IXTWITTER_CHANNEL_ID || "557223534418722818";
   if (!discordBotToken) return null;
@@ -53,6 +60,7 @@ async function fetchDiscordReactions(
       .filter((type) => (counts[type] || 0) > 0)
       .slice(0, DISCORD_REACTION_TYPES_LIMIT);
 
+    let complete = true;
     // Fetch reactors for all active emoji types in parallel
     const fetchPromises = activeTypes.map(async (type) => {
       // Map reaction type to Discord emoji format
@@ -105,6 +113,7 @@ async function fetchDiscordReactions(
         const users = (await res.json()) as any[];
         return users.map((u) => ({ ...u, type }));
       }
+      complete = false;
       return [];
     });
 
@@ -226,7 +235,7 @@ async function fetchDiscordReactions(
     });
 
     const processedReactions = await Promise.all(memberPromises);
-    return processedReactions;
+    return { reactors: processedReactions, complete };
   } catch (e) {
     console.error("Failed to fetch reactions from Discord API:", e);
     return null;

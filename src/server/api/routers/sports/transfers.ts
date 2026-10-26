@@ -18,7 +18,7 @@ import {
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { exchangeService } from "~/lib/vault/exchange-service";
+import { exchangeService, lockWallet } from "~/lib/vault/exchange-service";
 import { assertSportsEconomyOpen } from "~/server/api/routers/sports/_shared";
 import {
   MAX_TRANSFER_SOVEREIGNS,
@@ -196,6 +196,14 @@ export const sportsTransfersRouter = createTRPCRouter({
             throw new TRPCError({ code: "BAD_REQUEST", message: "Listing not active" });
           }
 
+          // Every wallet this accept pays, locked in one global order (user id) before any move: two
+          // accepts that each pay the other's seller a refund would otherwise deadlock
+          const otherBids = await tx.sportTransferBid.findMany({
+            where: { listingId: listing.id, status: "pending" },
+          });
+          const payees = new Set([ctx.user.id, ...otherBids.map((other) => other.bidderUserId)]);
+          for (const userId of [...payees].sort()) await lockWallet(tx, userId);
+
           // Pay out seller
           const payout = `TRANSFER_ACCEPT:${bid.id}`;
           const earnResult = await exchangeService.earn(
@@ -221,9 +229,6 @@ export const sportsTransfersRouter = createTRPCRouter({
           });
 
           // Reject other bids and refund escrow
-          const otherBids = await tx.sportTransferBid.findMany({
-            where: { listingId: listing.id, status: "pending" },
-          });
           for (const other of otherBids) {
             await refundTransferBidTx(tx, other, "rejected");
           }

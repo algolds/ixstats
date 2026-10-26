@@ -6,6 +6,7 @@
  */
 import { readFileSync } from "node:fs";
 import {
+  applyBatches,
   NEVER_EARLY,
   deferredObjects,
   planAdditive,
@@ -101,13 +102,19 @@ describe("planAdditive", () => {
     expect(reasonFor(`"cards_title_key"`)).toMatch(/existing table "cards"/);
     expect(reasonFor(`"Country_ownerUserId_idx"`)).toMatch(/existing table "Country"/);
     expect(reasonFor(`"cards_realmId_fkey"`)).toMatch(/foreign key touching an existing table/);
-    expect(reasonFor(`"realm_pages_ownerId_fkey"`)).toMatch(/foreign key touching an existing table/);
+    expect(reasonFor(`"realm_pages_ownerId_fkey"`)).toMatch(
+      /foreign key touching an existing table/
+    );
   });
 
   it("leaves required columns without a default, and type changes Prisma writes as drop and add", () => {
-    expect(reasonFor(`"realmId" TEXT NOT NULL`)).toBe("cards.realmId is required without a default");
+    expect(reasonFor(`"realmId" TEXT NOT NULL`)).toBe(
+      "cards.realmId is required without a default"
+    );
     expect(reasonFor(`"slug" TEXT NOT NULL`)).toBe("Country.slug is required without a default");
-    expect(reasonFor(`ADD COLUMN "rarity"`)).toBe("cards.rarity changes type (dropped and re-added)");
+    expect(reasonFor(`ADD COLUMN "rarity"`)).toBe(
+      "cards.rarity changes type (dropped and re-added)"
+    );
   });
 
   it("leaves every statement of an enum rewrite, and anything new that uses the rewritten type", () => {
@@ -124,8 +131,12 @@ describe("planAdditive", () => {
     expect(reasonFor(`ALTER TYPE "CardFinish" ADD VALUE`)).toMatch(/deploy SQL/);
     expect(reasonFor(`CREATE TABLE "ns_import_ledger"`)).toMatch(/created by the deploy SQL/);
     expect(reasonFor(`"ns_import_ledger_id_idx"`)).toMatch(/existing table/);
-    expect(reasonFor(`"listingFee"`)).toBe("CardAuction.listingFee is added or converted by the deploy SQL");
-    expect(reasonFor(`"finish" "CardFinish"`)).toBe("CardOwnership.finish is added or converted by the deploy SQL");
+    expect(reasonFor(`"listingFee"`)).toBe(
+      "CardAuction.listingFee is added or converted by the deploy SQL"
+    );
+    expect(reasonFor(`"finish" "CardFinish"`)).toBe(
+      "CardOwnership.finish is added or converted by the deploy SQL"
+    );
   });
 
   it("never adds wiki_revisions.origin before the WikiOS conflicts SQL labels the revisions", () => {
@@ -137,6 +148,20 @@ describe("planAdditive", () => {
 
   it("has nothing to apply when the database already matches", () => {
     expect(planAdditive("", deferredObjects([]))).toEqual({ changes: [], statements: [] });
+  });
+});
+
+describe("applyBatches", () => {
+  it("commits new enum values before the statements that may use them", () => {
+    const statements = [
+      'CREATE TABLE "a" ("id" TEXT NOT NULL)',
+      `ALTER TYPE "Status" ADD VALUE 'ARCHIVED'`,
+      `ALTER TABLE "b" ADD COLUMN "status" "Status" DEFAULT 'ARCHIVED'`,
+    ];
+    expect(applyBatches(statements)).toEqual({
+      enumValues: [`ALTER TYPE "Status" ADD VALUE 'ARCHIVED'`],
+      rest: [statements[0], statements[2]],
+    });
   });
 });
 

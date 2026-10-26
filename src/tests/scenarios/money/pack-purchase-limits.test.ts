@@ -1,9 +1,10 @@
 /** @jest-environment node */
 /**
- * A pack's purchase limits hold under concurrency: the per-pack purchase lock (7341, keyed by the pack) is the first
- * thing a purchase takes, before it counts the buyer's purchases and the packs sold and before the ledger's vault row,
- * so of two buyers racing for the last limited pack one gets it, and a buyer's two requests at a one-per-player pack
- * buy one. On Postgres: the same two races, for real.
+ * A pack's purchase limits hold under concurrency: a purchase takes the pack purchase lock (7341) before it counts the
+ * buyer's purchases and the packs sold and before the ledger's vault row, keyed by the pack when its stock is limited
+ * and by pack and buyer when only a per-player limit applies (an unlimited pack takes none). So of two buyers racing
+ * for the last limited pack one gets it, and a buyer's two requests at a one-per-player pack buy one. On Postgres: the
+ * same two races, for real.
  *
  * Regression: purchasePack counted `purchaseLimit` and `limitedQuantity` under READ COMMITTED with no lock, so N
  * parallel purchases all passed the counts and oversold.
@@ -109,6 +110,19 @@ describe("pack purchase limits (memory)", () => {
       .filter((e) => e.startsWith("lock") || e === "MyVault" || e === "UserPack");
     expect(order[0]).toBe(`lock 7341:${w.pack}`);
     expect(order).toContain("MyVault");
+  });
+
+  it("locks a per-player-limited pack per buyer, and an unlimited pack not at all", async () => {
+    const locks = async () => {
+      const start = db.store.log.length;
+      await buy(w, w.ana);
+      return db.store.log
+        .slice(start)
+        .flatMap((e) => (e.kind === "advisory" ? [`lock ${e.ns}:${e.key}`] : []));
+    };
+    expect(await locks()).toEqual([]);
+    await db.cardPack.update({ where: { id: w.pack }, data: { purchaseLimit: 5 } });
+    expect(await locks()).toEqual([`lock 7341:${w.pack}:${w.ana.id}`]);
   });
 
   it("sells the last limited pack once", async () => {

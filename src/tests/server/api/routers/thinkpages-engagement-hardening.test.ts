@@ -416,6 +416,27 @@ describe("thinkpages.getPostReactions", () => {
       fetchSpy.mockRestore();
     }
   });
+  it("does not cache a read where Discord refused an emoji (429)", async () => {
+    process.env.DISCORD_BOT_TOKEN = "token";
+    const fetchSpy = jest
+      .spyOn(global, "fetch")
+      .mockResolvedValue(new Response("rate limited", { status: 429 }));
+    try {
+      const db = createMockPrisma();
+      db.thinkpagesPost.findUnique.mockResolvedValue(
+        post({ content: "hi\n\n[DiscordMsg:42]", reactionCounts: JSON.stringify({ like: 3 }) })
+      );
+      await read(db);
+      expect(mockCacheSet).not.toHaveBeenCalledWith(
+        "thinkpages_discord_reactions:42:all",
+        expect.anything(),
+        expect.anything()
+      );
+    } finally {
+      delete process.env.DISCORD_BOT_TOKEN;
+      fetchSpy.mockRestore();
+    }
+  });
 });
 
 describe("public responses carry no Clerk ids", () => {

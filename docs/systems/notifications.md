@@ -43,8 +43,8 @@ The tray list, the unread count and the read and dismiss mutations all use it.
 one shared row, so each user's marks on it live in `NotificationReceipt`, and one player's "Read all" or dismissal no
 longer changes anyone else's tray. The shared row's own `read` and `dismissed` columns are frozen: a mark from before
 receipts applied to everyone, so a shared row with either set stays read (or dismissed) for every viewer, and nothing
-writes them any more. Clearing history (Settings, privacy) deletes the user's receipts with their personal
-notifications; the shared rows stay.
+writes them any more. Clearing history (Settings, privacy) deletes the user's personal notifications but keeps their
+receipts and the shared rows, so notices they dismissed don't come back.
 
 ## 2. Categories and events
 

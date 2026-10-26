@@ -216,6 +216,15 @@ describe("framing (clickjacking)", () => {
     }
   });
 
+  it.each(["/maps", "/maps?lat=1&lng=2", "/caphiria", "/wiki/Caphiria"])(
+    "lets IxWiki, and no other site, frame %s on the maps host",
+    async (path) => {
+      const res = await run(path, MAPS_HOST);
+      expect(frameAncestors(res)).toBe("'self' https://ixwiki.com https://*.ixwiki.com");
+      expect(res.headers.get("x-frame-options")).toBeNull();
+    }
+  );
+
   it("does not take ?embed=true on another path as a reason to allow framing", async () => {
     const res = await run("/mycountry?embed=true", MAPS_HOST);
     expect(frameAncestors(res)).toBe("'none'");
