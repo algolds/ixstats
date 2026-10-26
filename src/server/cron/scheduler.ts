@@ -10,22 +10,39 @@
 
 type FieldBounds = readonly [number, number];
 
-/** minute, hour, day-of-month, month, day-of-week (0 = Sunday). */
+/** minute, hour, day-of-month, month, day-of-week (0 and 7 = Sunday). */
 const FIELD_BOUNDS: readonly FieldBounds[] = [
   [0, 59],
   [0, 23],
   [1, 31],
   [1, 12],
-  [0, 6],
+  [0, 7],
 ];
+const DAY_OF_WEEK = 4;
 
-const FIELD_PATTERN = /^(\*|\d+(-\d+)?)(\/\d+)?(,(\*|\d+(-\d+)?)(\/\d+)?)*$/;
+const PART_PATTERN = /^(?:\*|(\d+)(?:-(\d+))?)(?:\/(\d+))?$/;
 const MINUTE_MS = 60_000;
 const TICK_SLACK_MS = 250;
 
+/** One comma-separated part: `*`, `n` or `a-b` inside the field's bounds (a <= b), with an optional `/step` >= 1. */
+function isValidPart(part: string, [min, max]: FieldBounds): boolean {
+  const match = PART_PATTERN.exec(part);
+  if (!match) return false;
+  const [, start, end, step] = match;
+  if (step !== undefined && Number(step) < 1) return false;
+  if (start === undefined) return true;
+  const lo = Number(start);
+  const hi = end === undefined ? lo : Number(end);
+  return lo >= min && hi <= max && lo <= hi;
+}
+
+/** A 5-field pattern whose every value is in range: `99 * * * *` or `0 24 * * *` is refused, not silently never run. */
 export function isValidCronPattern(pattern: string): boolean {
   const fields = pattern.trim().split(/\s+/);
-  return fields.length === FIELD_BOUNDS.length && fields.every((f) => FIELD_PATTERN.test(f));
+  return (
+    fields.length === FIELD_BOUNDS.length &&
+    fields.every((field, i) => field.split(",").every((part) => isValidPart(part, FIELD_BOUNDS[i]!)))
+  );
 }
 
 function partRange(base: string, bounds: FieldBounds, hasStep: boolean): FieldBounds {
@@ -57,7 +74,14 @@ export function matchesCron(pattern: string, date: Date): boolean {
     .trim()
     .split(/\s+/)
     .every((field, i) =>
-      field.split(",").some((part) => matchesPart(part, values[i], FIELD_BOUNDS[i]))
+      field
+        .split(",")
+        .some(
+          (part) =>
+            matchesPart(part, values[i], FIELD_BOUNDS[i]) ||
+            // Sunday is 0 or 7
+            (i === DAY_OF_WEEK && values[i] === 0 && matchesPart(part, 7, FIELD_BOUNDS[i]))
+        )
     );
 }
 

@@ -203,6 +203,13 @@ function corpusTitles(): Promise<string[]> {
   });
 }
 
+/**
+ * A database without job_leases yet (db push creates it): no weekly proof can hold a lease there. The deploy's additive
+ * schema step creates the table before this check, so this only matters when the check runs on its own.
+ */
+const isMissingLeaseTable = (error: unknown): boolean =>
+  error instanceof Error && /job_leases/.test(error.message) && /does not exist/.test(error.message);
+
 /** Takes the proof's lease for the deploy, first dropping a failed deploy's leftover hold. */
 async function takeDeployLease(): Promise<DeployLease> {
   try {
@@ -220,12 +227,20 @@ async function takeDeployLease(): Promise<DeployLease> {
       };
     });
   } catch (error) {
+    if (isMissingLeaseTable(error)) {
+      console.log("No job_leases table yet: no weekly proof can be running, so there is no lease to take");
+      return { state: "taken" };
+    }
     return { state: "error", message: message(error instanceof Error ? error : String(error)) };
   }
 }
 
 const releaseDeployLease = (): Promise<void> =>
-  withPrisma((prisma) => releaseJobLease(prisma, WIKIOS_PROOF_LOCK, DEPLOY_HOLDER));
+  withPrisma((prisma) => releaseJobLease(prisma, WIKIOS_PROOF_LOCK, DEPLOY_HOLDER)).catch(
+    (error: unknown) => {
+      if (!isMissingLeaseTable(error)) throw error;
+    }
+  );
 
 /** Evaluates, writes summary.json and summary.md, prints the checks; true when the proof passed. */
 function writeSummary(

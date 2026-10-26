@@ -13,6 +13,8 @@
 # - Graceful `pm2 startOrReload` instead of delete/start. (D2)
 # - HTTP health probe against the running app before declaring success. (D4)
 # - Log rotation so the deploy log does not grow without bound. (D7)
+# - Run by deploy-production.sh (IXSTATS_DEPLOY_COMMIT set), it builds that commit and does not sync git; run on its
+#   own on the production checkout, it syncs to the latest commit of the branch first.
 
 set -euo pipefail
 
@@ -72,8 +74,16 @@ done
 
 cd "$IXSTATS_DIR"
 
+# Run from deploy-production.sh (which exports the commit it built): build that same commit and never sync git
+# again, or IxWorld, cron and the websockets (reloaded right after) could run a newer commit than the web app.
+if [ -n "${IXSTATS_DEPLOY_COMMIT:-}" ]; then
+    if [ "$(git rev-parse HEAD 2>/dev/null)" != "$IXSTATS_DEPLOY_COMMIT" ]; then
+        log "ERROR: The checkout is at $(git rev-parse --short HEAD 2>/dev/null || echo unknown), not the commit deploy-production.sh built ($IXSTATS_DEPLOY_COMMIT); refusing to build another commit"
+        exit 1
+    fi
+    log "Building commit $IXSTATS_DEPLOY_COMMIT (from deploy-production.sh; no git sync)"
 # Auto git sync if in production VPS directory
-if [ "$(pwd)" = "/ixwiki/public/projects/ixstats" ]; then
+elif [ "$(pwd)" = "/ixwiki/public/projects/ixstats" ]; then
     log "Production directory detected. Force-syncing with the latest git commit..."
     CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "master")
     if [ -z "$CURRENT_BRANCH" ]; then
@@ -180,7 +190,8 @@ pm2 save --silent &>/dev/null
 log "Running health check against $HEALTH_URL ..."
 healthy=false
 for i in $(seq 1 "$HEALTH_RETRIES"); do
-    code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$HEALTH_URL" || echo 000)"
+    # curl prints 000 itself when it cannot connect; `|| echo` would append a second 000 that reads as healthy
+    code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$HEALTH_URL" 2>/dev/null)" || code="000"
     # Any non-5xx, non-000 response means the server is up and routing.
     if [ "$code" != "000" ] && [ "$code" -lt 500 ]; then
         log "Health check passed (HTTP $code) on attempt $i."
