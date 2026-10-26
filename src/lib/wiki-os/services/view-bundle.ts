@@ -82,13 +82,35 @@ export function describeRenderProblem(rawHtml: string, wikitext: string): string
   return null;
 }
 
+/**
+ * A file MediaWiki could not show when it rendered: `mw:Error` on the media element (a missing file, whose link goes to
+ * `Special:Upload&wpDestFile=`, or "Error creating thumbnail"). Classic's lookup of a Commons file can fail for one
+ * render and work for the next, while its own page keeps the images.
+ */
+const MEDIA_ERROR = /typeof="[^"]*\bmw:Error\b|[?&;]wpDestFile=/;
+
+/** A render with a media error is rendered again at most this often, on a read (see `mediaErrorRerenderDue`). */
+export const MEDIA_ERROR_RERENDER_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Whether a current bundle with a media error (`MEDIA_ERROR`) is due another render: its render is a day old or more.
+ * The new render resets `htmlSyncedAt`, so a file that is really missing costs one render a day, never a loop.
+ */
+export function mediaErrorRerenderDue(bundle: ViewBundle, htmlSyncedAt: Date | null, now = Date.now()): boolean {
+  if (!htmlSyncedAt || now - htmlSyncedAt.getTime() < MEDIA_ERROR_RERENDER_MS) return false;
+  return [bundle.bodyHtml, bundle.infoboxHtml, bundle.noticesHtml].some(
+    (html) => html !== null && MEDIA_ERROR.test(html)
+  );
+}
+
 /** The bundle and freshness of an article, and whether an earlier renderer version built the bundle. */
 export interface LoadedViewBundle {
   bundle: ViewBundle;
   htmlSyncedAt: Date | null;
   /**
    * Built by another renderer version (or another sanitizer): worth showing, since it shows the page, but
-   * it is not what a render would produce now. Its HTML has been through the current sanitizer.
+   * it is not what a render would produce now. Its HTML has been through the current sanitizer. A current
+   * bundle whose render a day or more ago could not show a file (`mediaErrorRerenderDue`) is outdated too.
    */
   outdated: boolean;
 }
@@ -118,7 +140,8 @@ function resanitizeViewBundle(bundle: ViewBundle): ViewBundle | null {
 }
 
 /**
- * The bundle and freshness of an article. A bundle of this renderer version is returned as it is. One
+ * The bundle and freshness of an article. A bundle of this renderer version is returned as it is (`outdated` when
+ * `mediaErrorRerenderDue`). One
  * that only differs in its renderer version (an older transform or sanitizer built it) is returned
  * `outdated`, re-sanitized by the current sanitizer so an older bundle never gets past a tightened rule, and with
  * its old profile links already pointing at the current pages while the page waits to be rendered again.
@@ -134,7 +157,8 @@ export async function loadViewBundle(articleId: string): Promise<LoadedViewBundl
 
   const current = viewBundleSchema.safeParse(row.renderedView);
   if (current.success) {
-    return { bundle: current.data, htmlSyncedAt: row.htmlSyncedAt, outdated: false };
+    const outdated = mediaErrorRerenderDue(current.data, row.htmlSyncedAt);
+    return { bundle: current.data, htmlSyncedAt: row.htmlSyncedAt, outdated };
   }
   const outdated = outdatedViewBundleSchema.safeParse(row.renderedView);
   if (!outdated.success) return null;

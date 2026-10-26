@@ -55,6 +55,7 @@ jest.mock("~/lib/utils/sanitize-html", () => {
 
 import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { buildViewBundle, enqueueRender, ensureRendered, invalidateDependents, loadViewBundle, renderArticle, RENDERER_VERSION, renderFallbackView, renderInBackground, renderStaleBatch } from "~/lib/wiki-os/services/render-service";
+import { MEDIA_ERROR_RERENDER_MS, mediaErrorRerenderDue } from "~/lib/wiki-os/services/view-bundle";
 import { wikiArticleSanitizerFingerprint } from "~/lib/utils/sanitize-html";
 
 interface Deferred<T> {
@@ -394,6 +395,37 @@ describe("loadViewBundle", () => {
     mockFindUnique.mockResolvedValue({ renderedView: bundle, htmlSyncedAt: syncedAt });
 
     await expect(loadViewBundle("a")).resolves.toMatchObject({ outdated: true });
+  });
+
+  describe("a render that could not show a file", () => {
+    const missingFile =
+      '<div class="mw-parser-output"><p>Intro.</p><span typeof="mw:Error mw:File/Frameless">' +
+      '<a href="https://ixwiki.com/index.php?title=Special:Upload&amp;wpDestFile=Bing_Crosby_1942.jpg" class="new">' +
+      "File:Bing Crosby 1942.jpg</a></span></div>";
+    const thumbnailError =
+      '<div class="mw-parser-output"><span typeof="mw:Error mw:File"><a href="/wiki/File:Kit_body.png">' +
+      "<span>Error creating thumbnail: </span></a></span></div>";
+    const now = new Date("2026-10-26T12:00:00Z").getTime();
+    const dayOld = new Date(now - MEDIA_ERROR_RERENDER_MS);
+    const hourOld = new Date(now - 60 * 60 * 1000);
+
+    it("is due another render once its render is a day old: a missing file or a failed thumbnail", () => {
+      expect(mediaErrorRerenderDue(buildViewBundle(missingFile), dayOld, now)).toBe(true);
+      expect(mediaErrorRerenderDue(buildViewBundle(thumbnailError), dayOld, now)).toBe(true);
+    });
+
+    it("is not due within a day of its render, nor when it is unsynced; a clean render never is", () => {
+      expect(mediaErrorRerenderDue(buildViewBundle(missingFile), hourOld, now)).toBe(false);
+      expect(mediaErrorRerenderDue(buildViewBundle(missingFile), null, now)).toBe(false);
+      expect(mediaErrorRerenderDue(buildViewBundle(PARSED), new Date(0), now)).toBe(false);
+    });
+
+    it("is loaded outdated, so the reader is served it stale while a background render replaces it", async () => {
+      mockFindUnique.mockResolvedValue({ renderedView: buildViewBundle(missingFile), htmlSyncedAt: new Date(0) });
+      await expect(loadViewBundle("a")).resolves.toMatchObject({ outdated: true });
+      mockFindUnique.mockResolvedValue({ renderedView: buildViewBundle(missingFile), htmlSyncedAt: new Date() });
+      await expect(loadViewBundle("a")).resolves.toMatchObject({ outdated: false });
+    });
   });
 
   describe("a bundle of another renderer version", () => {

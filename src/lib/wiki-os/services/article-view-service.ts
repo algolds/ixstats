@@ -6,9 +6,9 @@
  * authorship lookup on a fresh article. Only an article that was never rendered (or is stale and
  * has no bundle) waits, bounded, for its render; if even that fails the reader gets what there is
  * (the previous bundle, else a locally compiled fallback) marked `stale`, and asks again soon.
- * A bundle that an older renderer version built is never waited for: it is served at once, marked
- * `stale`, while a background render replaces it. Per-viewer template chips are filled in last, per
- * request, into the bundle's inert markers.
+ * A bundle that an older renderer version built, or a day-old one whose render could not show a file, is
+ * never waited for: it is served at once, marked `stale`, while a background render replaces it.
+ * Per-viewer template chips are filled in last, per request, into the bundle's inert markers.
  */
 
 import { ByteBoundedCache } from "~/lib/cache/byte-bounded-cache";
