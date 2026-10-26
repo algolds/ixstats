@@ -46,10 +46,12 @@ interface GifPickerProps {
   disabled?: boolean;
 }
 
-const GIPHY_API_KEY = process.env.NEXT_PUBLIC_GIPHY_API_KEY || "1FCCq4KmjQjC6FdopmB3tr6UUqLepZ0F";
+// The deployment's own key (src/env.ts); without one the picker stays disabled rather than borrowing a shared key.
+const GIPHY_API_KEY = process.env.NEXT_PUBLIC_GIPHY_API_KEY ?? "";
 
 export const GifPicker = React.forwardRef<HTMLButtonElement, GifPickerProps>(
-  ({ onSelectGif, trigger, disabled = false }, ref) => {
+  ({ onSelectGif, trigger, disabled: disabledProp = false }, ref) => {
+    const disabled = disabledProp || !GIPHY_API_KEY;
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -68,7 +70,7 @@ export const GifPicker = React.forwardRef<HTMLButtonElement, GifPickerProps>(
 
     // Fetch GIFs from Giphy API
     useEffect(() => {
-      if (!isOpen) return;
+      if (!isOpen || !GIPHY_API_KEY) return;
 
       const fetchGifs = async () => {
         setIsLoading(true);
@@ -119,6 +121,7 @@ export const GifPicker = React.forwardRef<HTMLButtonElement, GifPickerProps>(
               size="sm"
               disabled={disabled}
               aria-label="Insert GIF"
+              title={GIPHY_API_KEY ? undefined : "GIFs are not set up on this server"}
               className="text-tint hover:bg-tint-fill hover:text-tint size-8 p-0"
             >
               <GifIcon className="size-5" />
