@@ -80,7 +80,9 @@ function makeDb(
       })),
       update: jest.fn(async () => ({})),
       // The refresh job's list: countries with a row, plus owned ones (`owned`).
-      findMany: jest.fn(async () => (state.row || state.owned ? [{ id: COUNTRY }] : [])),
+      findMany: jest.fn(async (_args?: unknown) =>
+        state.row || state.owned ? [{ id: COUNTRY }] : []
+      ),
     },
     economicProfile: { findUnique: jest.fn(async () => null) },
     demographics: { findUnique: jest.fn(async () => null) },
@@ -172,17 +174,17 @@ describe("stability event deltas", () => {
     // The formula moves (economy changed) and the panel recalculates: the -3 is carried over.
     formulaMock.mockReturnValue(formula(72, { trustInGovernment: 55 }));
     const first = await viewDefensePanel(db);
-    expect(first.metrics.stabilityScore).toBe(69);
-    expect(first.metrics.trustInGovernment).toBe(55);
+    expect(first.metrics?.stabilityScore).toBe(69);
+    expect(first.metrics?.trustInGovernment).toBe(55);
 
     // Recalculating again with the same inputs does not drift.
     const second = await viewDefensePanel(db);
-    expect(second.metrics.stabilityScore).toBe(69);
+    expect(second.metrics?.stabilityScore).toBe(69);
 
     // The job persists the same values; the panel then reads them back unchanged.
     await refreshStoredInternalStability(db as any);
     expect(db.state.row?.stabilityScore).toBe(69);
-    expect((await viewDefensePanel(db)).metrics.stabilityScore).toBe(69);
+    expect((await viewDefensePanel(db)).metrics?.stabilityScore).toBe(69);
   });
 
   it("never writes when the panel is viewed", async () => {
@@ -244,10 +246,10 @@ describe("stability event deltas", () => {
     const db = makeDb(legacy);
 
     formulaMock.mockReturnValue(formula(72));
-    expect((await viewDefensePanel(db)).metrics.stabilityScore).toBe(55);
+    expect((await viewDefensePanel(db)).metrics?.stabilityScore).toBe(55);
     await refreshStoredInternalStability(db as any);
 
     formulaMock.mockReturnValue(formula(74));
-    expect((await viewDefensePanel(db)).metrics.stabilityScore).toBe(57);
+    expect((await viewDefensePanel(db)).metrics?.stabilityScore).toBe(57);
   });
 });

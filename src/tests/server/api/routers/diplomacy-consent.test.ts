@@ -679,7 +679,9 @@ describe("the embassy mission sweep", () => {
           }
         ),
       },
-      $transaction: jest.fn(async (work: (tx: unknown) => unknown) => work(missionDb)),
+      $transaction: jest.fn(async (work: (tx: unknown) => unknown): Promise<unknown> =>
+        work(missionDb)
+      ),
     };
     expect(await closeDueEmbassyMissions(missionDb as never, now)).toEqual({
       missionsCompleted: 1,

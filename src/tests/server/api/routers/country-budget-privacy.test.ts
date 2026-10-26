@@ -178,7 +178,7 @@ function makeDb({ ownerUserId = "owner_db" }: { ownerUserId?: string } = {}) {
     taxComponent: { findMany: jest.fn(async () => []) },
     budgetAllocation: {
       findFirst: jest.fn(async () => ({ budgetYear: 2040 })),
-      findMany: jest.fn(async () => [
+      findMany: jest.fn(async (): Promise<object[]> => [
         { allocatedPercent: 40, department: { category: "Defense" } },
       ]),
     },
