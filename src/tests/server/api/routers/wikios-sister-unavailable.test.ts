@@ -267,7 +267,7 @@ describe("getIntro of a sister title", () => {
         missing: false,
       });
     } finally {
-      jest.mocked(db.wikiArticle.findUnique).mockImplementation(async () => null);
+      jest.mocked(db.wikiArticle.findUnique).mockImplementation((async () => null) as never);
     }
   });
 
