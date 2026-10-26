@@ -26,10 +26,17 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useClockNow, useNationClock } from "~/hooks/useNationClock";
-import { CLOCK_PENDING, realMsUntil } from "~/lib/realms/nation-time";
-import type { RealmClockReader } from "~/lib/realms/realm-clock";
 import { useNotify } from "~/hooks/useNotify";
 import { Card } from "~/components/ui/card";
+import type { RealmClockReader } from "~/lib/realms/realm-clock";
+import {
+  deadlineBadgeOf,
+  formatReveal,
+  parseOptions,
+  reconArrivalOf,
+  type ReconOptionItem,
+  type ResponseOption,
+} from "~/lib/national-issues/issue-brief";
 
 const DOMAIN_CONFIG: Record<string, { icon: typeof TrendingUp; label: string }> = {
   economic: { icon: TrendingUp, label: "Economic" },
@@ -40,39 +47,6 @@ const DOMAIN_CONFIG: Record<string, { icon: typeof TrendingUp; label: string }> 
   infrastructure: { icon: Building, label: "Infrastructure" },
   environmental: { icon: Leaf, label: "Environmental" },
 };
-
-interface ReconRevealItem {
-  targetField: string;
-  value?: number | null;
-  operation?: string;
-  state?: "greyed" | "questioned" | "revealed" | string;
-  reason?: string | null;
-}
-
-interface ReconOptionItem {
-  optionId: string;
-  label: string;
-  reveals: ReconRevealItem[];
-}
-
-interface ResponseOption {
-  id: string;
-  label: string;
-  description: string;
-  previewEffects: {
-    publicApproval?: number;
-    economicImpact?: string;
-    stabilityImpact?: string;
-    diplomaticImpact?: string;
-  };
-  outcomeText: string;
-  isRisky?: boolean;
-  partyAlignment?: string;
-  brokerAlignment?: string;
-  costMessage?: string;
-  requiredPolicyKey?: string;
-  recommendedDirective?: string;
-}
 
 /**
  * A national issue brief. Renders inside the drill sheet with recon, respond and dismiss, and a
@@ -87,53 +61,10 @@ interface IssueDetailBriefProps {
 type Issue = NonNullable<RouterOutputs["nationalIssues"]["getIssue"]>;
 type ReconData = NonNullable<RouterOutputs["nationalIssues"]["getReconReveal"]>;
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-function parseOptions(raw: string | null | undefined): ResponseOption[] {
-  if (!raw) return [];
-  try {
-    return JSON.parse(raw) as ResponseOption[];
-  } catch {
-    return [];
-  }
-}
-
-function formatReveal(r: ReconRevealItem): string {
-  if (r.value == null) return "—";
-  if (r.operation === "multiply") return `×${r.value}`;
-  if (r.operation === "set") return `=${r.value}`;
-  return `${r.operation === "subtract" ? "-" : "+"}${Math.abs(r.value)}`;
-}
-
 const REVEAL_TONE: Record<string, string> = {
   greyed: "text-label-tertiary",
   questioned: "text-yellow",
 };
-
-/** A deadline is urgent with a day and a half of real time left at the realm's speed (three in-world days on ×2). */
-const URGENT_REAL_MS = 1.5 * DAY_MS;
-
-/** The deadline badge: in-world days left on the nation's clock, "Paused" while its realm is stopped. */
-function deadlineBadgeOf(deadline: number, now: number | null, clock: RealmClockReader | null) {
-  if (now === null || !clock) return { text: CLOCK_PENDING, urgent: false };
-  const daysRemaining = (deadline - now) / DAY_MS;
-  if (daysRemaining <= 0) return { text: "Deadline passed", urgent: true };
-  if (clock.paused) return { text: "Paused", urgent: false };
-  const realLeft = realMsUntil(deadline, now, clock.multiplier) ?? Infinity;
-  return { text: `${Math.ceil(daysRemaining)} days remaining`, urgent: realLeft < URGENT_REAL_MS };
-}
-
-/** When cabinet research reports, in in-world days on the nation's clock. */
-function reconArrivalOf(
-  readyIxTime: number | null | undefined,
-  now: number | null,
-  clock: RealmClockReader | null
-) {
-  if (now === null || !clock) return `Findings arrive in ${CLOCK_PENDING}.`;
-  if (clock.paused) return "Paused: findings arrive when the realm resumes.";
-  const days = Math.max(1, Math.ceil(((readyIxTime ?? 0) - now) / DAY_MS));
-  return `Findings arrive in ${days} day(s).`;
-}
 
 function IssueHero({
   issue,
