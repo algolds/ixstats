@@ -5,7 +5,8 @@
  * received or relies on:
  *
  * - their personal notifications: `Notification` rows addressed to them (by Clerk id or internal
- *   user id). Country-wide and global notices are shared, so they stay;
+ *   user id). Country-wide and global notices are shared, so they stay, but the user's own
+ *   read/dismiss marks on them (`NotificationReceipt`) are deleted;
  * - their message read receipts (`MessageReadReceipt` rows they wrote);
  * - their online-status heartbeat (presence.ts), so they stop showing as recently online.
  *
@@ -25,7 +26,10 @@ export interface ClearHistoryResult {
 }
 
 export async function clearOwnHistory(
-  db: Pick<PrismaClient, "notification" | "messageReadReceipt" | "$transaction">,
+  db: Pick<
+    PrismaClient,
+    "notification" | "notificationReceipt" | "messageReadReceipt" | "$transaction"
+  >,
   clerkUserId: string,
   internalUserId?: string | null
 ): Promise<ClearHistoryResult> {
@@ -33,6 +37,7 @@ export async function clearOwnHistory(
   const [notifications, readReceipts] = await db.$transaction([
     db.notification.deleteMany({ where: { userId: { in: recipientIds } } }),
     db.messageReadReceipt.deleteMany({ where: { userId: clerkUserId } }),
+    db.notificationReceipt.deleteMany({ where: { userId: clerkUserId } }),
   ]);
   await clearPresence(clerkUserId);
   return { notifications: notifications.count, readReceipts: readReceipts.count };
