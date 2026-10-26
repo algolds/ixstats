@@ -16,7 +16,7 @@ run_sql() { docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ER
 | 1 | First | The MyCountry runbook, then the checks |
 | 2 | Before the window | Backup, stop cron |
 | 3 | Before the window, old build still serving | T1 clocks, the schema read-out |
-| 4 | Deploy window (old build stopped) | T3, t3b, D2a, D3 combat columns, the starter forces, D1, D2b placeholder |
+| 4 | Deploy window (old build stopped) | T3, t3b, D2a, D3 combat columns, the starter forces, D1, D2b placeholder, catalog duplicates |
 | 5 | Deploy window | The code deploy and the IxWorld rebuild |
 | 6 | After the code | Nothing required (D1 moved into step 4); D2b placeholder |
 | 7 | After the code | Cron back on, job by job |
@@ -134,7 +134,14 @@ several minutes): announce the window. `ixstats-cron` is already stopped (step 2
    0. D1 was written to run after the code deploy (the old build reads these tables), but the old build is stopped
    here and the push in step 5 would abort on the non-empty tables, so it runs now.
 7. **D2b, the Defense page.** _Placeholder: any SQL D2b adds to `scripts/migrations/2026-10-realm-time/` goes here._
-8. Re-run the step 3.2 read-out: no `DROP` on military or security tables may remain.
+8. **R3, catalog duplicates.** `run_sql scripts/migrations/2026-10-realm-time/r3-catalog-duplicates.sql` (after 4.3,
+   which adds the catalog keys on orders and assets). The equipment catalog listed five items twice under two keys
+   ("Eurofighter Typhoon", "THAAD", "Iron Dome", "BGM-109 Tomahawk", "Aegis Combat System"); the seed now keeps the
+   first of each name. This moves orders and assets on a retired key (`EUROFIGHTER`, `THAAD_SYSTEM`,
+   `IRON_DOME_BATTERY`, `TOMAHAWK_CRUISE`, `AEGIS_COMBAT`) to the kept one, adds the usage counts, deletes the retired
+   rows, and prints the names still listed twice (expect none). Idempotent. Dry run on the clone (2026-10-25, rolled
+   back): 0 orders and 0 assets moved, 5 rows deleted, no name left twice; a second pass changed nothing.
+9. Re-run the step 3.2 read-out: no `DROP` on military or security tables may remain.
 
 ## 5. The code deploy
 

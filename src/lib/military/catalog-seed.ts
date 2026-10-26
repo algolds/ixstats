@@ -223,13 +223,17 @@ function weaponRow(key: string, item: EquipmentSource): EquipmentCatalogSeedRow 
 }
 
 /**
- * Every built-in equipment item as a catalog row, keyed uniquely. Where two groups share a
- * key the first one wins (the extended aircraft groups before the base aircraft list).
+ * Every built-in equipment item as a catalog row, keyed and named uniquely. Where two groups share a
+ * key or a name the first one wins (the extended aircraft groups before the base aircraft list; the
+ * base weapons before the extended ones), so no item is listed twice under two keys.
  */
 export function buildEquipmentCatalogSeed(): EquipmentCatalogSeedRow[] {
   const rows = new Map<string, EquipmentCatalogSeedRow>();
+  const names = new Set<string>();
   const add = (row: EquipmentCatalogSeedRow) => {
-    if (!rows.has(row.key)) rows.set(row.key, row);
+    if (rows.has(row.key) || names.has(row.name)) return;
+    rows.set(row.key, row);
+    names.add(row.name);
   };
 
   const aircraftGroups: Array<[EquipmentGroup, string]> = [
