@@ -55,6 +55,16 @@ describe("the base-path pass over the stylesheets", () => {
       })
     ).toBe("");
   });
+
+  it("reads BASE_PATH even when it is unset, so Turbopack keys its cached CSS on it", () => {
+    const read = new Set<string | symbol>();
+    const env = new Proxy<Record<string, string | undefined>>(
+      { NODE_ENV: "development" },
+      { get: (target, prop) => (read.add(prop), Reflect.get(target, prop)) }
+    );
+    expect(resolveBasePath(env)).toBe("");
+    expect(read).toContain("BASE_PATH");
+  });
 });
 
 describe("the reader's font preloads", () => {

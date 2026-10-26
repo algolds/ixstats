@@ -21,9 +21,12 @@ const resolveBasePath = (env = process.env) => {
   if (env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true") {
     return "";
   }
-  const hasBasePathEnv = Object.prototype.hasOwnProperty.call(env, "BASE_PATH");
-  const rawBasePath = hasBasePathEnv
-    ? env.BASE_PATH
+  // read, not looked up with hasOwnProperty: Turbopack's PostCSS worker records the env vars a transform reads (a
+  // proxy's get), and only those key its cached CSS, so a dev run without BASE_PATH must still read it, or a later run
+  // with it set is served the unprefixed CSS from .next/dev/cache
+  const rawBasePathEnv = env.BASE_PATH;
+  const rawBasePath = rawBasePathEnv !== undefined
+    ? rawBasePathEnv
     : env.NODE_ENV === "production"
       ? "/projects/ixstates"
       : "";
