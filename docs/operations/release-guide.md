@@ -324,11 +324,8 @@ After a restore, spot-check it:
 To restore by hand instead, `bun run db:restore` lists `backups/` and prints the `pg_restore` command; add `--yes
 --i-know-this-is-production` to run it ([deployment.md](deployment.md#backups-and-restore)).
 
-The copied script runs the old checkout's own files, so the old commit must have what it calls. A commit older than
-the WikiOS proof CLI (`scripts/audit/wikios-proof.ts`, added 2026-10-25) stops at the proof check, and
-`WIKIOS_PROOF_OVERRIDE=1` does not help when the file is missing. For such a target, restore by hand and build and
-start the old commit by hand (`bun install --frozen-lockfile`, `bun run db:generate`, `bun run build`,
-`./scripts/deploy-ixworld.sh`, `pm2 startOrReload ecosystem.config.cjs --update-env`, then the web app).
+The copied script runs the old checkout's own files. A commit older than the WikiOS proof CLI
+(`scripts/audit/wikios-proof.ts`, added 2026-10-25) has no proof to check, so the script skips that step and says so.
 
 Then revert or fix on `master` (via `development`), deploy `master` again, re-run the A5 checks, watch the logs for a
 while, and write down what failed and why.
@@ -342,8 +339,7 @@ The 1.4 plan (PRs #44 and #45) was never completed on production. On 2026-09-27 
 2026-08-04, maps.ixwiki.com) served every page, and `ixstats-cron` and `ixstats-ws` ran with `NODE_ENV=development`
 and a read-only database ([MyCountry runbook](deploy-mycountry-2026-10.md)). So 1.5 brings everything since: the
 September plan wave, roadmap M0, the cards refresh, IxnayID, MyCountry fixes, realm time, native lore and WikiOS data
-safety. Its SQL drops and converts data, so **a rollback to pre-1.5 code is a restore** (`--restore`), and a target
-commit older than 2026-10-25 also needs the hand path of the [rollback section](#rollback).
+safety. Its SQL drops and converts data, so **a rollback to pre-1.5 code is a restore** (`--restore`).
 
 This part gives the order. The detail stays in each runbook:
 
@@ -453,12 +449,8 @@ Do A3 first (the checkout does not touch the running servers), load the producti
    `bun scripts/realms/backfill-foundation.ts` (dry run), resolve each collision, the Caphiria fix, then `--apply`
    ([5a](deploy-rose-garden-2026-09.md#5a-realms-schema--ownership-backfill-before-the-deploy-script)). It must run
    before the deploy: the deploy's `f-defense.sql` and the starter-force reset treat a nation with no owner as an NPC.
-   `--apply` writes through the new Prisma client, which reads back every `Country` and `realms` column the schema
-   declares; columns that only deploy SQL adds (`Country."ownedSince"` from the Vault hub file, `realms."isSystem"`
-   from the cards foundations file, the realm board columns from `20261014120000_thinkpages_realm_board`) do not exist
-   yet, and `--apply` fails on the first one with "column does not exist", writing nothing. The rehearsal shows which
-   are missing on production's schema. Apply those files by hand first (each is idempotent and the deploy runs it
-   again; the forum file needs the forum files before it, in order), then `--apply`.
+   Its writes read back only the row id, so columns that only the deploy SQL adds (`Country."ownedSince"`,
+   `realms."isSystem"`, the realm board columns) may still be missing when it runs.
 9. **MyCountry and realm-time SQL:** the deploy runs them in the runbooks' order, after the steps above. Running the
    runbooks' `run_sql` steps by hand first also works once steps 4 and 8 are done (the deploy re-runs each as a
    no-op); see the [realm-time runbook](deploy-realm-time-2026-10.md#4-the-deploy-window-old-build-stopped).

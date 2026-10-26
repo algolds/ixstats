@@ -191,8 +191,13 @@ fi
 # lease it holds until the PM2 reload below, so the weekly proof never runs mid-deploy (a refusal releases it, and a
 # deploy that dies on the way leaves it to expire in 2 hours). It runs after the backup and the additive step, which
 # creates job_leases on a database that lacks it. WIKIOS_PROOF_OVERRIDE=1 deploys anyway.
-echo "🧪 Checking the WikiOS proof..."
-bun scripts/audit/wikios-proof.ts predeploy || exit 1
+# A rollback runs this script against an older checkout; one from before the proof existed has no proof to check.
+if [ -f scripts/audit/wikios-proof.ts ]; then
+    echo "🧪 Checking the WikiOS proof..."
+    bun scripts/audit/wikios-proof.ts predeploy || exit 1
+else
+    echo "⏭️  No scripts/audit/wikios-proof.ts in this checkout (older than the WikiOS proof): proof check skipped"
+fi
 
 if [ "${SKIP_SCHEMA_SYNC:-}" = "1" ]; then
     echo "⏭️  SKIP_SCHEMA_SYNC=1: the additive step, the deploy SQL and db push are skipped; the schema stays as it is"
@@ -412,7 +417,7 @@ fi
 
 # The weekly WikiOS proof may run again: release the lease the proof check took. A failed release only means the lease
 # expires on its own, 2 hours after the check.
-bun scripts/audit/wikios-proof.ts deployed || true
+[ -f scripts/audit/wikios-proof.ts ] && { bun scripts/audit/wikios-proof.ts deployed || true; }
 
 # Display production configuration
 echo ""
