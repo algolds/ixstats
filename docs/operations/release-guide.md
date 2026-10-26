@@ -222,7 +222,9 @@ restarted at step 11; in the foreground it is stopped at step 12.
 **When it fails.**
 
 - **Steps 1–8:** the live build is untouched. The schema may be partly changed (the additive step, some SQL files):
-  fix the cause and run the deploy again; every step is idempotent. The backup of step 4 is the way back.
+  fix the cause and run the deploy again; every step is idempotent. The backup of step 4 is the way back. The old server
+  only keeps working if the SQL that ran changed nothing it reads; a release whose SQL converts such data (1.5) stops
+  the app before the deploy (Part B).
 - **Build, IxWorld or PM2 reload (steps 9–11), or `Ctrl+C`:** an exit trap moves `.next.prev` back to `.next`, so the
   old build is in place again. Its server serves again if it is still running; start it if it was stopped.
 - **The deploy was killed outright** (the box rebooted, `kill -9`): `.next.prev` stays. The next deploy puts it back
@@ -338,9 +340,10 @@ while, and write down what failed and why.
 The 1.4 plan (PRs #44 and #45) was never completed on production. On 2026-09-27 production's checkout was
 `development` @ `7877d620`, and on 2026-10-25 the main app on port 3550 had no build: the IxWorld standalone (built
 2026-08-04, maps.ixwiki.com) served every page, and `ixstats-cron` and `ixstats-ws` ran with `NODE_ENV=development`
-and a read-only database ([MyCountry runbook](deploy-mycountry-2026-10.md)). So 1.5 brings everything since: the September plan wave, roadmap
-M0, the cards refresh, IxnayID, MyCountry fixes, realm time, native lore and WikiOS data safety. Its SQL drops and
-converts data, so **a rollback to pre-1.5 code is a restore** (`--restore`).
+and a read-only database ([MyCountry runbook](deploy-mycountry-2026-10.md)). So 1.5 brings everything since: the
+September plan wave, roadmap M0, the cards refresh, IxnayID, MyCountry fixes, realm time, native lore and WikiOS data
+safety. Its SQL drops and converts data, so **a rollback to pre-1.5 code is a restore** (`--restore`), and a target
+commit older than 2026-10-25 also needs the hand path of the [rollback section](#rollback).
 
 This part gives the order. The detail stays in each runbook:
 
