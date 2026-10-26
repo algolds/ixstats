@@ -16,6 +16,8 @@
  */
 
 import { createHash } from "node:crypto";
+import { join } from "node:path";
+import { parseArgs } from "node:util";
 import { z } from "zod";
 import {
   METRIC_ORDER,
@@ -24,7 +26,16 @@ import {
   type MetricSample,
   type System,
 } from "./wikios-bench-summary";
-import { mean, needsSettling, percentile } from "./wikios-harness";
+import {
+  isIxwikiHost,
+  isLocalDatabaseUrl,
+  mean,
+  needsSettling,
+  parseHttpUrl,
+  percentile,
+  samplePages,
+  stripTrailingSlashes,
+} from "./wikios-harness";
 
 export type ProofProfile = "local" | "launch" | "recurring";
 
@@ -57,7 +68,8 @@ export const roundTripReportSchema = z.object({
 export type RoundTripReport = z.infer<typeof roundTripReportSchema>;
 
 export const parityReportSchema = z.object({
-  meta: z.object({ titles: z.array(z.string()) }),
+  /** `settleMs` is absent from reports written before the settle retries, which recorded no render state. */
+  meta: z.object({ titles: z.array(z.string()), settleMs: z.number().optional() }),
   pages: z.array(
     z.object({
       title: z.string(),
@@ -513,7 +525,8 @@ function renderHeader(summary: ProofSummary): string[] {
   ];
 }
 
-function renderChecks(checks: readonly Check[]): string[] {
+/** The checks as a Markdown table (the summary's, and what the CLI prints). */
+export function renderChecks(checks: readonly Check[]): string[] {
   return [
     "## Checks",
     "",
@@ -631,4 +644,559 @@ export function checkCommittedProof(
     );
   }
   return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// CLI (scripts/audit/wikios-proof.ts): profiles, environment, harness commands, arguments
+// ---------------------------------------------------------------------------
+
+/** The environment a profile reads; `process.env` fits. */
+export type ProofEnv = Readonly<Record<string, string | undefined>>;
+
+export type PageCount = number | "all";
+
+export interface ProfileConfig {
+  outDir: string;
+  corpusFile: string;
+  benchPagesFile: string;
+  /** The api.php parity compares against. */
+  mwApi: string;
+  /** IxStates as the parity script reads it (`wikios.getArticleHtml`). */
+  wikios: string;
+  /** MediaWiki's public origin: the bench's MediaWiki side. */
+  mw: string;
+  /** IxStates' public URL: the bench's WikiOS side, so both sides come through the same front door. */
+  wikiosPublic: string;
+  paritySample: PageCount;
+  parityIntervalMs: number;
+  /** "defaults" is scripts/bench/pages.default.json alone. */
+  benchPages: PageCount | "defaults";
+  benchRuns: number;
+  benchIntervalMs: number;
+}
+
+export type ProfileDefaults = Omit<ProfileConfig, "outDir" | "corpusFile" | "benchPagesFile">;
+
+export type RunOverrides = Partial<
+  Pick<
+    ProfileConfig,
+    "mwApi" | "wikios" | "mw" | "wikiosPublic" | "paritySample" | "parityIntervalMs" | "benchRuns"
+  > & { benchPages: PageCount }
+>;
+
+const FALLBACK_MEDIAWIKI = "https://ixwiki.com";
+const LOCAL_WIKIOS = "http://localhost:3200";
+/** Classic's public api.php is asked at most once every 2 s from this machine (plan Global Constraints). */
+const LOCAL_MIN_INTERVAL_MS = 2000;
+const SERVER_BENCH_INTERVAL_MS = 1000;
+
+const SERVER_SAMPLING = {
+  launch: { paritySample: "all", parityIntervalMs: 200, benchPages: 200, benchRuns: 2 },
+  recurring: { paritySample: 200, parityIntervalMs: 500, benchPages: 50, benchRuns: 1 },
+} as const;
+
+/** The trimmed value, or undefined when it is unset or blank. */
+const filled = (value: string | undefined): string | undefined => {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+};
+
+const parsedUrl = (value: string | undefined): URL | null =>
+  value !== undefined && URL.canParse(value) ? new URL(value) : null;
+
+const mediaWikiBase = (env: ProofEnv): string =>
+  stripTrailingSlashes(filled(env.NEXT_PUBLIC_MEDIAWIKI_URL) ?? FALLBACK_MEDIAWIKI);
+
+function localDefaults(env: ProofEnv): ProfileDefaults {
+  const base = mediaWikiBase(env);
+  return {
+    mwApi: `${base}/api.php`,
+    wikios: LOCAL_WIKIOS,
+    mw: new URL(base).origin,
+    wikiosPublic: LOCAL_WIKIOS,
+    paritySample: 500,
+    parityIntervalMs: LOCAL_MIN_INTERVAL_MS,
+    benchPages: "defaults",
+    benchRuns: 2,
+    benchIntervalMs: LOCAL_MIN_INTERVAL_MS,
+  };
+}
+
+/** IxStates' public URL: the origin of APP_URL (else NEXT_PUBLIC_APP_URL) plus the base path. */
+function appPublicUrl(env: ProofEnv, basePath: string): string {
+  const url = parsedUrl(filled(env.APP_URL) ?? filled(env.NEXT_PUBLIC_APP_URL));
+  if (!url) {
+    throw new Error(
+      "APP_URL or NEXT_PUBLIC_APP_URL must be IxStates' public URL: the bench measures WikiOS through it"
+    );
+  }
+  return `${url.origin}${basePath}`;
+}
+
+function serverDefaults(profile: "launch" | "recurring", env: ProofEnv): ProfileDefaults {
+  const basePath = stripTrailingSlashes(env.BASE_PATH ?? "");
+  const internal = filled(env.WIKIOS_MEDIAWIKI_INTERNAL_URL);
+  if (!internal)
+    throw new Error(`the ${profile} proof needs WIKIOS_MEDIAWIKI_INTERNAL_URL (runbook step 4)`);
+  return {
+    mwApi: internal,
+    wikios: `http://127.0.0.1:${filled(env.PORT) ?? "3550"}${basePath}`,
+    mw: new URL(mediaWikiBase(env)).origin,
+    wikiosPublic: appPublicUrl(env, basePath),
+    ...SERVER_SAMPLING[profile],
+    benchIntervalMs: SERVER_BENCH_INTERVAL_MS,
+  };
+}
+
+/** What a profile measures, and against which URLs. */
+export function profileDefaults(profile: ProofProfile, env: ProofEnv): ProfileDefaults {
+  return profile === "local" ? localDefaults(env) : serverDefaults(profile, env);
+}
+
+const LOCAL_HOSTS: ReadonlySet<string> = new Set(["localhost", "127.0.0.1"]);
+
+/** host:port/database, never the credentials. */
+const databaseLabel = (url: URL | null): string =>
+  url ? `${url.hostname}:${url.port || "(no port)"}${url.pathname}` : "nothing usable";
+
+function assertLocalEnvironment(env: ProofEnv): void {
+  const url = parsedUrl(env.DATABASE_URL);
+  const proofClone =
+    url !== null &&
+    LOCAL_HOSTS.has(url.hostname) &&
+    url.port === "5433" &&
+    url.pathname === "/ixstats_proof";
+  if (!proofClone) {
+    throw new Error(
+      `the local proof reads only the ixstats_proof clone on localhost:5433; DATABASE_URL names ${databaseLabel(url)}`
+    );
+  }
+}
+
+function assertServerEnvironment(profile: ProofProfile, env: ProofEnv): void {
+  if (env.NODE_ENV !== "production") {
+    throw new Error(
+      `the ${profile} proof runs on the production server: NODE_ENV must be production`
+    );
+  }
+  const internal = parsedUrl(filled(env.WIKIOS_MEDIAWIKI_INTERNAL_URL));
+  if (!internal || isIxwikiHost(internal.hostname)) {
+    throw new Error(
+      "WIKIOS_MEDIAWIKI_INTERNAL_URL must name the loopback renderer's api.php (runbook step 4), not the public wiki"
+    );
+  }
+  if (!isLocalDatabaseUrl(env.DATABASE_URL ?? "")) {
+    throw new Error(
+      "DATABASE_URL must be the server's own database (localhost, not the 15433 tunnel)"
+    );
+  }
+}
+
+/**
+ * Refuses a profile in the wrong place: the local proof reads only the ixstats_proof clone (never the dev copy, the
+ * e2e clone or the 15433 tunnel to production); the server proofs need production and the loopback renderer.
+ */
+export function assertProfileEnvironment(profile: ProofProfile, env: ProofEnv): void {
+  if (profile === "local") assertLocalEnvironment(env);
+  else assertServerEnvironment(profile, env);
+}
+
+export type HarnessName = "roundtrip" | "parity" | "bench";
+
+/** `argv` starts with the script, relative to the repository root; spawn it with `process.execPath`. */
+export interface HarnessCommand {
+  name: HarnessName;
+  argv: string[];
+  out: string;
+}
+
+export const HARNESS_SCRIPTS: Readonly<Record<HarnessName, string>> = {
+  roundtrip: "scripts/audit/wikios-roundtrip.ts",
+  parity: "scripts/audit/wikios-render-parity.ts",
+  bench: "scripts/bench/wikios-bench.ts",
+};
+
+/** The full round trip: the database, every namespace, no sampling. */
+export function roundTripCommand(out: string): HarnessCommand {
+  return {
+    name: "roundtrip",
+    out,
+    argv: [
+      HARNESS_SCRIPTS.roundtrip,
+      "--source",
+      "db",
+      "--namespaces",
+      "all",
+      "--limit",
+      "1000000",
+      "--out",
+      out,
+    ],
+  };
+}
+
+export function profileCommands(cfg: ProfileConfig): HarnessCommand[] {
+  const parityOut = join(cfg.outDir, "parity.json");
+  const benchOut = join(cfg.outDir, "bench.json");
+  const sample = cfg.paritySample === "all" ? [] : ["--sample", String(cfg.paritySample)];
+  return [
+    roundTripCommand(join(cfg.outDir, "roundtrip.json")),
+    {
+      name: "parity",
+      out: parityOut,
+      argv: [
+        HARNESS_SCRIPTS.parity,
+        "--mw-api",
+        cfg.mwApi,
+        "--wikios",
+        cfg.wikios,
+        "--pages",
+        cfg.corpusFile,
+        ...sample,
+        "--interval-ms",
+        String(cfg.parityIntervalMs),
+        "--out",
+        parityOut,
+      ],
+    },
+    {
+      name: "bench",
+      out: benchOut,
+      argv: [
+        HARNESS_SCRIPTS.bench,
+        "--mw",
+        cfg.mw,
+        "--wikios",
+        cfg.wikiosPublic,
+        "--pages",
+        cfg.benchPagesFile,
+        "--runs",
+        String(cfg.benchRuns),
+        "--interval-ms",
+        String(cfg.benchIntervalMs),
+        "--out",
+        benchOut,
+      ],
+    },
+  ];
+}
+
+/** The profile's defaults under the flags, every URL checked, and the run's files in `outDir`. */
+export function resolveRunConfig(
+  profile: ProofProfile,
+  overrides: RunOverrides,
+  env: ProofEnv,
+  outDir: string
+): ProfileConfig {
+  const merged: ProfileDefaults = { ...profileDefaults(profile, env), ...overrides };
+  if (profile === "local" && merged.parityIntervalMs < LOCAL_MIN_INTERVAL_MS) {
+    throw new Error(
+      `the local profile asks classic MediaWiki at most once every ${LOCAL_MIN_INTERVAL_MS} ms: --parity-interval-ms must be >= ${LOCAL_MIN_INTERVAL_MS}`
+    );
+  }
+  return {
+    ...merged,
+    mwApi: parseHttpUrl(merged.mwApi, "--mw-api"),
+    wikios: parseHttpUrl(merged.wikios, "--wikios"),
+    mw: parseHttpUrl(merged.mw, "--mw"),
+    wikiosPublic: parseHttpUrl(merged.wikiosPublic, "--wikios-public"),
+    outDir,
+    corpusFile: join(outDir, "corpus-titles.json"),
+    benchPagesFile: join(outDir, "bench-pages.json"),
+  };
+}
+
+/** The bench's pages: the defaults first, then an even sample of the rest of the corpus, up to `pages`. */
+export function benchPageList(
+  defaults: readonly string[],
+  corpus: readonly string[],
+  pages: ProfileConfig["benchPages"]
+): string[] {
+  if (pages === "defaults") return [...defaults];
+  const known = new Set(defaults);
+  const rest = corpus.filter((title) => !known.has(title));
+  if (pages === "all") return [...defaults, ...rest];
+  return [...defaults.slice(0, pages), ...samplePages(rest, Math.max(0, pages - defaults.length))];
+}
+
+/** `yyyymmdd-HHMM` in UTC: the run directory's stamp. */
+export function proofStamp(date: Date): string {
+  const iso = date.toISOString();
+  return `${iso.slice(0, 4)}${iso.slice(5, 7)}${iso.slice(8, 10)}-${iso.slice(11, 13)}${iso.slice(14, 16)}`;
+}
+
+const SERVER_RUN = /^\d{8}-\d{4}-(?:launch|recurring)$/;
+
+/** The server run directories to delete, oldest first, keeping the newest `keep`; local runs and predeploy files never. */
+export function runsToPrune(dirNames: readonly string[], keep: number): string[] {
+  const runs = dirNames.filter((name) => SERVER_RUN.test(name)).sort();
+  return runs.slice(0, Math.max(0, runs.length - keep));
+}
+
+export interface GitOutput {
+  /** Exit status; null when git could not run. */
+  status: number | null;
+  stdout: string;
+}
+
+export interface TreeState {
+  commit: string;
+  treeKey: string;
+  dirty: boolean;
+}
+
+/**
+ * The commit, tree key and dirty flag from `git ls-tree -r HEAD`, `git status --porcelain` (both over
+ * WIKIOS_PROOF_PATHS) and `git rev-parse HEAD`. Outside a git checkout: key "no-git" and dirty.
+ */
+export function treeState(lsTree: GitOutput, status: GitOutput, head: GitOutput): TreeState {
+  if ([lsTree, status, head].some((output) => output.status !== 0)) {
+    return { commit: "no-git", treeKey: "no-git", dirty: true };
+  }
+  return {
+    commit: head.stdout.trim(),
+    treeKey: wikiosTreeKey(lsTree.stdout),
+    dirty: isTreeDirty(status.stdout),
+  };
+}
+
+export type CliCommand =
+  | { command: "help" }
+  | {
+      command: "run";
+      profile: ProofProfile;
+      overrides: RunOverrides;
+      outDir: string | null;
+      keep: number;
+    }
+  | {
+      command: "gate";
+      profile: ProofProfile;
+      roundtrip: string;
+      parity: string;
+      bench: string | null;
+      outDir: string | null;
+    }
+  | { command: "predeploy" };
+
+const RUN_FLAGS = [
+  "profile",
+  "out-dir",
+  "mw-api",
+  "wikios",
+  "mw",
+  "wikios-public",
+  "parity-sample",
+  "parity-interval-ms",
+  "bench-pages",
+  "bench-runs",
+  "keep",
+] as const;
+const GATE_FLAGS = ["profile", "roundtrip", "parity", "bench", "out-dir"] as const;
+const COMMAND_FLAGS: Readonly<Record<"run" | "gate" | "predeploy", readonly string[]>> = {
+  run: RUN_FLAGS,
+  gate: GATE_FLAGS,
+  predeploy: [],
+};
+const DEFAULT_KEEP = 12;
+
+type Flags = Partial<Record<string, string>>;
+
+/** The command's flags (another command's flag, a positional or a repeated value throws), or null for --help. */
+function readFlags(args: string[], names: readonly string[]): Flags | null {
+  const options: Record<string, { type: "string" | "boolean" }> = { help: { type: "boolean" } };
+  for (const name of names) options[name] = { type: "string" };
+  const { values } = parseArgs({ args, options, strict: true, allowPositionals: false });
+  if (values.help === true) return null;
+  const flags: Flags = {};
+  for (const name of names) {
+    const value = values[name];
+    if (typeof value === "string") flags[name] = value;
+  }
+  return flags;
+}
+
+function parseProfile(value: string | undefined): ProofProfile {
+  const profile = PROOF_PROFILES.find((name) => name === value);
+  if (!profile) throw new Error("--profile must be local, launch or recurring");
+  return profile;
+}
+
+function wholeNumber(value: string, flag: string, min: number): number {
+  const parsed = /^\d+$/.test(value) ? Number(value) : Number.NaN;
+  if (!(parsed >= min)) throw new Error(`${flag} must be a whole number >= ${min}`);
+  return parsed;
+}
+
+const pageCount = (value: string, flag: string): PageCount =>
+  value === "all" ? "all" : wholeNumber(value, flag, 1);
+
+const optional = <T>(value: string | undefined, read: (raw: string) => T): T | undefined =>
+  value === undefined ? undefined : read(value);
+
+function runOverrides(flags: Flags): RunOverrides {
+  const all: RunOverrides = {
+    mwApi: flags["mw-api"],
+    wikios: flags.wikios,
+    mw: flags.mw,
+    wikiosPublic: flags["wikios-public"],
+    paritySample: optional(flags["parity-sample"], (raw) => pageCount(raw, "--parity-sample")),
+    parityIntervalMs: optional(flags["parity-interval-ms"], (raw) =>
+      wholeNumber(raw, "--parity-interval-ms", 0)
+    ),
+    benchPages: optional(flags["bench-pages"], (raw) => pageCount(raw, "--bench-pages")),
+    benchRuns: optional(flags["bench-runs"], (raw) => wholeNumber(raw, "--bench-runs", 1)),
+  };
+  // Only the flags given: an undefined value would hide the profile's default when spread over it.
+  const given: RunOverrides = {};
+  for (const [key, value] of Object.entries(all)) {
+    if (value !== undefined) Object.assign(given, { [key]: value });
+  }
+  return given;
+}
+
+function requiredFlag(flags: Flags, name: string): string {
+  const value = flags[name];
+  if (!value) throw new Error(`gate needs --${name} <report.json>`);
+  return value;
+}
+
+/** Reads the CLI's arguments: `run`, `gate`, `predeploy`, or help. Throws a message for the usage line. */
+export function parseCli(argv: readonly string[]): CliCommand {
+  const [command, ...rest] = argv;
+  if (command === undefined || command === "help" || command === "--help")
+    return { command: "help" };
+  if (command !== "run" && command !== "gate" && command !== "predeploy") {
+    throw new Error(`unknown command "${command}": use run, gate or predeploy`);
+  }
+  const flags = readFlags(rest, COMMAND_FLAGS[command]);
+  if (flags === null) return { command: "help" };
+  if (command === "predeploy") return { command };
+  const profile = parseProfile(flags.profile);
+  const outDir = flags["out-dir"] ?? null;
+  if (command === "run") {
+    const keep = flags.keep === undefined ? DEFAULT_KEEP : wholeNumber(flags.keep, "--keep", 1);
+    return { command, profile, overrides: runOverrides(flags), outDir, keep };
+  }
+  const roundtrip = requiredFlag(flags, "roundtrip");
+  const parity = requiredFlag(flags, "parity");
+  return { command, profile, roundtrip, parity, bench: flags.bench ?? null, outDir };
+}
+
+// ---------------------------------------------------------------------------
+// CLI: the checks around the gate
+// ---------------------------------------------------------------------------
+
+export interface HarnessExit {
+  name: HarnessName;
+  /** Exit code; null when the child was killed by a signal. */
+  code: number | null;
+}
+
+/** A harness that exited non-zero is a failed check of its own (its report may be partial or missing). */
+function harnessChecks(exits: readonly HarnessExit[]): Check[] {
+  return exits
+    .filter((exit) => exit.code !== 0)
+    .map((exit) => ({
+      name: `harness.${exit.name}`,
+      passed: false,
+      skipped: null,
+      measured: exit.code === null ? "killed" : `exit ${exit.code}`,
+      threshold: "exit 0",
+    }));
+}
+
+const missingReport = (name: "roundTrip" | "parity"): Check => ({
+  name: `${name}.report`,
+  passed: false,
+  skipped: null,
+  measured: "no readable report",
+  threshold: "a report",
+});
+
+/** A proof covers every namespace: a namespace-0 run must not pass once the page floor is set. */
+function namespacesCheck(report: RoundTripReport): Check {
+  const { namespaces } = report.meta;
+  return {
+    name: "roundTrip.namespaces",
+    passed: namespaces === "all",
+    skipped: null,
+    measured: namespaces === undefined || namespaces === null ? "not recorded" : String(namespaces),
+    threshold: "all",
+  };
+}
+
+/** A parity report from before the settle retries recorded no render state, so its fallback count means nothing. */
+function settleCheck(report: ParityReport): Check {
+  const { settleMs } = report.meta;
+  return {
+    name: "parity.settleMs",
+    passed: settleMs !== undefined,
+    skipped: null,
+    measured:
+      settleMs === undefined
+        ? "not recorded (a report from before the settle retries has no render state)"
+        : `${settleMs} ms`,
+    threshold: "recorded",
+  };
+}
+
+function roundTripChecks(
+  report: RoundTripReport | null,
+  t: ProofThresholds,
+  everyNamespace: boolean
+): Check[] {
+  if (!report) return [missingReport("roundTrip")];
+  return [...(everyNamespace ? [namespacesCheck(report)] : []), ...evaluateRoundTrip(report, t)];
+}
+
+/** Every check of a `run` or `gate`: harness exits, then round trip, parity and bench. */
+export function evaluateProof(
+  profile: ProofProfile,
+  reports: ProofReports,
+  t: ProofThresholds,
+  exits: readonly HarnessExit[]
+): Check[] {
+  const parity = reports.parity;
+  return [
+    ...harnessChecks(exits),
+    ...roundTripChecks(reports.roundTrip, t, PROVING_PROFILES.has(profile)),
+    ...(parity ? [settleCheck(parity), ...evaluateParity(parity, t)] : [missingReport("parity")]),
+    ...evaluateBench(reports.bench, t, profile),
+  ];
+}
+
+/** The pre-deploy checks: the committed proof covers this tree, and the full round trip is lossless. */
+export function evaluatePredeploy(
+  committed: CommittedProofResult,
+  report: RoundTripReport | null,
+  t: ProofThresholds,
+  exit: HarnessExit
+): Check[] {
+  const proof: Check = {
+    name: "proof.committed",
+    passed: committed.ok,
+    skipped: null,
+    measured: committed.ok ? "covers this commit's WikiOS tree" : committed.reason,
+    threshold: "a clean, passing local or launch proof of this WikiOS tree",
+  };
+  return [proof, ...harnessChecks([exit]), ...roundTripChecks(report, t, true)];
+}
+
+const PREDEPLOY_FIX = `run the local proof, ${README}`;
+
+/** One line per check; exit 1 on any failure unless overridden, which marks each failure line instead. A skipped check does not count. */
+export function predeployReport(
+  checks: readonly Check[],
+  override: boolean
+): { lines: string[]; exitCode: 0 | 1 } {
+  const lines = checks.map((check) => {
+    if (check.skipped !== null) return `skip ${check.name}: ${check.measured} (${check.skipped})`;
+    if (check.passed) return `ok   ${check.name}: ${check.measured}`;
+    const line = `FAIL ${check.name}: ${check.measured} (needs ${check.threshold}). Fix: ${PREDEPLOY_FIX}`;
+    return override ? `WIKIOS PROOF OVERRIDDEN: ${line}` : line;
+  });
+  // A skipped check does not count, as in buildSummary.
+  const failed = checks.some((check) => !check.passed && check.skipped === null);
+  return { lines, exitCode: failed && !override ? 1 : 0 };
 }
