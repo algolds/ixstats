@@ -79,12 +79,13 @@ function branchView(input: {
 }): BranchView {
   const { branch, state, econ } = input;
   const own = input.assets.filter((a) => a.branchId === branch.id);
-  const mobilised = mobilisedCount({
+  // Whole reservists report: the count shown, the strength added and the supplement paid all floor alike.
+  const mobilised = Math.floor(mobilisedCount({
     order: branch.mobilisationOrder,
     orderedClockMs: branch.mobilisationOrderedClockMs,
     nowClockMs: input.nowClockMs,
     doctrine: state.policy.doctrine,
-  });
+  }));
   const personnel = branch.active + mobilised;
   const training =
     personnel > 0

@@ -18,7 +18,9 @@ import {
   stepHeadcount,
   stepReserves,
   branchSplits,
+  deriveNation,
 } from "~/lib/military/model";
+import { T0, economy, starter } from "./fixtures";
 
 describe("pay from GDP per capita", () => {
   it("pays a volunteer 2.2× and a conscript 0.6× GDP per capita, mixed in between", () => {
@@ -114,5 +116,24 @@ describe("mobilisation", () => {
     expect(at(5, "defensive")).toBeGreaterThan(at(5));
     expect(at(5, "expeditionary")).toBeLessThan(at(5));
     expect(at(1)).toBeLessThan(0.1);
+  });
+});
+
+describe("reported reservists in the nation view", () => {
+  it("counts whole people, and pays the supplement for exactly those", () => {
+    const econ = economy();
+    const s = starter(econ);
+    const branch = s.branches[0]!;
+    // An hour after a 5,000 order: a fraction of one reservist has "arrived".
+    const ordered = { ...branch, mobilisationOrder: 5_000, mobilisationOrderedClockMs: T0 };
+    const early = deriveNation({ ...s, branches: [ordered, ...s.branches.slice(1)] }, econ, [], T0 + 60_000);
+    expect(early.branches[0]!.mobilised).toBe(0);
+    expect(early.mobilisationSupplement).toBe(0);
+
+    const later = deriveNation({ ...s, branches: [ordered, ...s.branches.slice(1)] }, econ, [], T0 + 5 * DAY_MS);
+    const reported = later.branches[0]!.mobilised;
+    expect(Number.isInteger(reported)).toBe(true);
+    expect(reported).toBeGreaterThan(0);
+    expect(later.mobilisationSupplement).toBeCloseTo(reported * memberPay(s.policy.volunteerShare, econ.gdpPerCapita), 6);
   });
 });
