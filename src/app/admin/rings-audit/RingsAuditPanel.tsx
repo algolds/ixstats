@@ -11,6 +11,7 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { Activity, StatsReport as BarChart3, Heart, Shield } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Card } from "~/components/ui/card";
+import { assetUrl } from "~/lib/base-path";
 
 const RING_META = [
   { key: "economicVitality", label: "Economic", color: "var(--color-chart-3)", icon: BarChart3 },
@@ -63,7 +64,11 @@ function CountryRingsCard({
     <Card className="overflow-hidden">
       <div className="border-separator bg-fill-4 flex items-center gap-3 border-b px-4 py-3">
         {flagUrl && (
-          <img src={flagUrl} alt="" className="rounded-control-sm h-6 w-10 object-cover" />
+          <img
+            src={assetUrl(flagUrl) ?? undefined}
+            alt=""
+            className="rounded-control-sm h-6 w-10 object-cover"
+          />
         )}
         <div>
           <span className="text-label font-semibold">{countryName}</span>

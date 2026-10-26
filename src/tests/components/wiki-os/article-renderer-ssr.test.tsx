@@ -21,7 +21,10 @@ const CONTENT =
   '<p>Aurelia is a country of Eurth. See <a href="/wiki/Template:Coords:12.5,40.2,6" title="x">the capital</a> and <span class="wikios-stat-placeholder" data-key="MyCountry:gdp"></span>.</p><h2 id="Geography">Geography</h2><p>Coastal.</p>';
 
 /** The (wiki-os) layout's providers and the root layout's, around the reader. */
-export function serverRender(lastModified: string): string {
+export function serverRender(
+  lastModified: string,
+  parts: { infoboxHtml?: string; noticesHtml?: string } = {}
+): string {
   return renderToString(
     <AuthProvider>
       <MediaContextProvider>
@@ -29,8 +32,8 @@ export function serverRender(lastModified: string): string {
           <ArticleRenderer
             title="Aurelia"
             contentHtml={CONTENT}
-            infoboxHtml={null}
-            noticesHtml={null}
+            infoboxHtml={parts.infoboxHtml ?? null}
+            noticesHtml={parts.noticesHtml ?? null}
             toc={[{ id: "Geography", text: "Geography", level: 2 }]}
             categories={["Countries"]}
             lastModified={lastModified}
@@ -72,6 +75,25 @@ describe("ArticleRenderer on the server", () => {
     } finally {
       if (saved === undefined) delete process.env.TZ;
       else process.env.TZ = saved;
+    }
+  });
+
+  it("puts the base path on the article's, the notices' and the infobox's app links, once", () => {
+    const saved = process.env.NEXT_PUBLIC_BASE_PATH;
+    process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstates";
+    try {
+      const html = serverRender("2026-09-01T23:30:00.000Z", {
+        noticesHtml: '<div class="ambox"><a href="/wiki/Notice_page">notice</a></div>',
+        infoboxHtml:
+          '<table class="infobox"><tr><td><a href="/wiki/Capital_city">capital</a></td></tr></table>',
+      });
+      expect(html).toContain('href="/projects/ixstates/wiki/Template:Coords:12.5,40.2,6"');
+      expect(html).toContain('href="/projects/ixstates/wiki/Notice_page"');
+      expect(html).toContain('href="/projects/ixstates/wiki/Capital_city"');
+      expect(html).not.toContain("/projects/ixstates/projects/ixstates");
+    } finally {
+      if (saved === undefined) delete process.env.NEXT_PUBLIC_BASE_PATH;
+      else process.env.NEXT_PUBLIC_BASE_PATH = saved;
     }
   });
 });

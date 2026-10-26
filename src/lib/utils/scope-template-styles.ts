@@ -429,10 +429,33 @@ function urlIsAllowed(raw: string, ownOrigin: string | undefined): boolean {
   }
 }
 
-/** Whether every `url()` in `declaration` stays on the page or the wiki's own origin. */
-function urlsAreAllowed(masked: string, strings: readonly string[], ownOrigin: string | undefined): boolean {
+/**
+ * What a sheet's declarations may hold beyond the rules every sheet follows (the blocked properties, values and
+ * functions above). The default (`scopeTemplateStyles`) lets a `url()` name the page or the wiki's own origin; a
+ * stricter caller (the sister wikis' sanitizer) names its own targets and drops declarations of its own.
+ */
+export interface StylePolicy {
+  /** Whether the target of a `url()`, as the tokenizer delimits it and unescaped, may stay. */
+  readonly allowsUrl: (target: string) => boolean;
+  /** Whether a declaration may stay: its property and its value, escapes resolved, lowercased, comments a space. */
+  readonly allowsDeclaration?: (property: string, value: string) => boolean;
+}
+
+function originPolicy(ownOrigin: string | undefined): StylePolicy {
+  return { allowsUrl: (raw) => urlIsAllowed(raw, ownOrigin) };
+}
+
+/** Whether every `url()` in `declaration` names what the policy allows. */
+function urlsAreAllowed(masked: string, strings: readonly string[], policy: StylePolicy): boolean {
   const targets = urlTargets(masked, strings);
-  return targets !== null && targets.every((raw) => urlIsAllowed(raw, ownOrigin));
+  return targets !== null && targets.every((raw) => policy.allowsUrl(raw));
+}
+
+/** Whether the policy's own rule (when it has one) keeps the declaration `judged` (unescaped, lowercased). */
+function policyKeeps(judged: string, policy: StylePolicy): boolean {
+  if (!policy.allowsDeclaration) return true;
+  const colon = judged.indexOf(":");
+  return policy.allowsDeclaration(judged.slice(0, colon).trim(), judged.slice(colon + 1).trim());
 }
 
 function isAllowedDeclaration(
@@ -440,7 +463,7 @@ function isAllowedDeclaration(
   declaration: string,
   masked: string,
   strings: readonly string[],
-  ownOrigin: string | undefined
+  policy: StylePolicy
 ): boolean {
   const judged = unescapeCss(declaration).toLowerCase();
   return (
@@ -448,7 +471,8 @@ function isAllowedDeclaration(
     !BLOCKED_PROPERTY.test(unescapeCss(property).toLowerCase()) &&
     !BLOCKED_VALUE.test(judged) &&
     !BLOCKED_FUNCTION.test(judged) &&
-    urlsAreAllowed(masked, strings, ownOrigin) &&
+    urlsAreAllowed(masked, strings, policy) &&
+    policyKeeps(judged, policy) &&
     !declaration.includes("<") &&
     !endsInEscape(declaration) // trimmed, it would escape the ";" or "}" written after it
   );
@@ -458,7 +482,7 @@ function isAllowedDeclaration(
 function cleanDeclarations(
   body: string,
   strings: readonly string[],
-  ownOrigin: string | undefined
+  policy: StylePolicy
 ): string[] | null {
   if (body.includes("{") || body.includes("}")) return null; // a nested rule: not read, so not kept
   const parts = splitTopLevel(body, ";");
@@ -469,7 +493,7 @@ function cleanDeclarations(
     if (colon < 1) continue;
     const property = part.slice(0, colon).trim();
     const declaration = inflate(part, strings).trim();
-    if (isAllowedDeclaration(property, declaration, part, strings, ownOrigin)) kept.push(declaration);
+    if (isAllowedDeclaration(property, declaration, part, strings, policy)) kept.push(declaration);
   }
   return kept;
 }
@@ -477,11 +501,11 @@ function cleanDeclarations(
 function scopeQualifiedRule(
   rule: RawRule,
   strings: readonly string[],
-  ownOrigin: string | undefined
+  policy: StylePolicy
 ): string {
   if (rule.body === null) return "";
   const selectors = scopeSelectors(rule.prelude, strings);
-  const declarations = selectors === null ? null : cleanDeclarations(rule.body, strings, ownOrigin);
+  const declarations = selectors === null ? null : cleanDeclarations(rule.body, strings, policy);
   return selectors && declarations && declarations.length > 0
     ? `${selectors}{${declarations.join(";")}}`
     : "";
@@ -491,13 +515,13 @@ function scopeAtRule(
   rule: RawRule,
   strings: readonly string[],
   depth: number,
-  ownOrigin: string | undefined
+  policy: StylePolicy
 ): string {
   // `@media` only, spelled plainly: an escaped at-keyword is not read
   const query = /^@media(?=[\s(])([\s\S]*)$/i.exec(rule.prelude.trim())?.[1]?.trim();
   const inner = rule.body !== null && depth < MAX_AT_RULE_DEPTH ? parseRules(rule.body) : null;
   if (query === undefined || !inner || !MEDIA_QUERY.test(query) || BLOCKED_MEDIA.test(query)) return "";
-  const scoped = scopeRules(inner, strings, depth + 1, ownOrigin);
+  const scoped = scopeRules(inner, strings, depth + 1, policy);
   return scoped ? `@media ${query}{${scoped}}` : "";
 }
 
@@ -505,15 +529,15 @@ function scopeRules(
   rules: readonly RawRule[],
   strings: readonly string[],
   depth: number,
-  ownOrigin: string | undefined
+  policy: StylePolicy
 ): string {
   let out = "";
   for (const rule of rules) {
     const prelude = rule.prelude.trim();
     if (!prelude) continue;
     out += prelude.startsWith("@")
-      ? scopeAtRule(rule, strings, depth, ownOrigin)
-      : scopeQualifiedRule(rule, strings, ownOrigin);
+      ? scopeAtRule(rule, strings, depth, policy)
+      : scopeQualifiedRule(rule, strings, policy);
   }
   return out;
 }
@@ -529,11 +553,25 @@ export function cssIdentifiers(css: string): Set<string> {
 /**
  * The CSS of a TemplateStyles block as it may appear in an article: scoped under the article root and
  * stripped of everything that could load, run or reach outside it. An empty string when nothing is left.
- * `ownOrigin` is the wiki's origin (`https://host`): the one absolute origin a `url()` may name.
+ * `ownOrigin` is the wiki's origin (`https://host`): the one absolute origin a `url()` may name; or a policy that
+ * names what a `url()` may target and drops declarations of its own (StylePolicy).
  */
-export function scopeTemplateStyles(css: string, ownOrigin?: string): string {
+export function scopeTemplateStyles(css: string, ownOrigin?: string | StylePolicy): string {
   if (css.length > MAX_CSS_LENGTH) return "";
+  const policy = typeof ownOrigin === "object" ? ownOrigin : originPolicy(ownOrigin);
   const lexed = lex(css.replace(CONTROL_MARKS, "�"));
   const rules = lexed ? parseRules(lexed.masked) : null;
-  return lexed && rules ? scopeRules(rules, lexed.strings, 0, ownOrigin) : "";
+  return lexed && rules ? scopeRules(rules, lexed.strings, 0, policy) : "";
+}
+
+/**
+ * A `style` attribute's declarations that `policy` and the rules every sheet follows let stay, joined by `;`; an empty
+ * string when none does, or when the text cannot be read with certainty (an unterminated string, unbalanced brackets,
+ * a brace, a bad url): what is not judged is not kept.
+ */
+export function cleanStyleDeclarations(style: string, policy: StylePolicy): string {
+  if (style.length > MAX_CSS_LENGTH) return "";
+  const lexed = lex(style.replace(CONTROL_MARKS, "�"));
+  const kept = lexed ? cleanDeclarations(lexed.masked, lexed.strings, policy) : null;
+  return kept ? kept.join(";") : "";
 }

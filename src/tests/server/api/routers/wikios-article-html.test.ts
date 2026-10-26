@@ -51,6 +51,10 @@ jest.mock("~/lib/utils/sanitize-html", () => ({
   sanitizeWikiArticleHtml: jest.fn((html: string) => html),
   wikiArticleSanitizerFingerprint: () => "test",
 }));
+jest.mock("~/lib/utils/sanitize-sister-html", () => ({
+  __esModule: true,
+  sanitizeSisterHtml: jest.fn((html: string) => html),
+}));
 jest.mock("~/lib/wiki-os/services/auto-sync-service", () => ({
   __esModule: true,
   syncSinglePage: jest.fn(),
@@ -97,12 +101,18 @@ const rendered = (html: string) => ({
     properties: {},
   },
 });
-import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
+import { sanitizeSisterHtml } from "~/lib/utils/sanitize-sister-html";
 import { syncSinglePage } from "~/lib/wiki-os/services/auto-sync-service";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 import { registerTemplateProvider } from "~/lib/wiki-os/templates/template-resolver";
 import { buildViewBundle } from "~/lib/wiki-os/services/render-service";
 import { getArticleView } from "~/lib/wiki-os/services/article-view-service";
+import { clientErrorOf } from "~/tests/helpers/trpc-client-error";
+
+/** The bridge's real reader of another wiki's wikitext (the barrel is mocked above): it goes through the guard. */
+const realGetArticleWikitext = jest.requireActual<
+  typeof import("~/lib/wiki-os/adapters/mediawiki/bridge/dispatchers")
+>("~/lib/wiki-os/adapters/mediawiki/bridge/dispatchers").getArticleWikitext;
 
 const syncSinglePageMockReset = () => jest.mocked(syncSinglePage).mockClear();
 const caller = () =>
@@ -501,7 +511,7 @@ describe("getArticleHtml for another wiki's page is sanitized like any other (pl
   const realFetch = globalThis.fetch;
   afterEach(() => {
     globalThis.fetch = realFetch;
-    jest.mocked(sanitizeWikiArticleHtml).mockImplementation((html: string) => html);
+    jest.mocked(sanitizeSisterHtml).mockImplementation((html: string) => html);
   });
 
   it("passes the body, the infobox and the notices through the sanitizer before serving them", async () => {
@@ -516,18 +526,21 @@ describe("getArticleHtml for another wiki's page is sanitized like any other (pl
       '<div class="mw-parser-output"><div class="hatnote">Notice <script>n()</script></div>' +
       '<table class="infobox"><tr><td>Box <script>i()</script></td></tr></table>' +
       "<p>Body <script>b()</script></p></div>";
-    globalThis.fetch = jest.fn(
-      async () =>
-        new Response(JSON.stringify({ parse: { title: "Eurth", text: parsed } }), { status: 200 })
+    // A JSON answer: the upstream guard treats any other body as a wiki that could not be reached.
+    globalThis.fetch = jest.fn(async () =>
+      Response.json({ parse: { title: "Eurth", text: parsed } })
     ) as typeof fetch;
-    jest.mocked(sanitizeWikiArticleHtml).mockImplementation((html: string) => `SANITIZED(${html})`);
+    jest.mocked(sanitizeSisterHtml).mockImplementation((html: string) => `SANITIZED(${html})`);
 
     const result = await caller().getArticleHtml({ title: "Eurth", wikiSource: "iiwiki" });
 
     expect(result.contentHtml).toMatch(/^SANITIZED\(/);
     expect(result.infoboxHtml).toMatch(/^SANITIZED\(.*Box/);
     expect(result.noticesHtml).toMatch(/^SANITIZED\(.*Notice/);
-    expect(sanitizeWikiArticleHtml).toHaveBeenCalledTimes(3);
+    expect(sanitizeSisterHtml).toHaveBeenCalledTimes(3);
+    expect(
+      jest.mocked(sanitizeSisterHtml).mock.calls.map(([, wiki, options]) => [wiki, options])
+    ).toEqual(Array.from({ length: 3 }, () => ["iiwiki", { embed: false }]));
     expect(result).toMatchObject({ wikiSource: "iiwiki", stale: false, renderQuality: "rendered" });
   });
 
@@ -549,5 +562,80 @@ describe("getArticleHtml for another wiki's page is sanitized like any other (pl
 
     expect(result).toMatchObject({ title: "Bashan Protectorate", resolvedFrom: "Bashan" });
     expect(getArticleAuthors).toHaveBeenCalledWith("Bashan Protectorate", "iiwiki");
+  });
+});
+
+describe("getArticleHtml for another wiki's page that wiki cannot serve (plan 2026-10-25 sister wikis, C3c)", () => {
+  let fetchSpy: jest.SpiedFunction<typeof fetch>;
+  const visitor = () => createMockRouterContext({ auth: null, user: null }) as never;
+  /** A gateway error page: the upstream guard reads it as a wiki that could not be reached. */
+  const down = () =>
+    new Response("<html>502 Bad Gateway</html>", {
+      status: 502,
+      headers: { "content-type": "text/html" },
+    });
+
+  beforeEach(() => {
+    fetchSpy = jest.spyOn(global, "fetch");
+    jest.mocked(getArticleAuthors).mockResolvedValue({ creator: null } as never);
+  });
+  afterEach(() => fetchSpy.mockRestore());
+
+  it("a sister page whose wiki is unreachable is SERVICE_UNAVAILABLE, not NOT_FOUND", async () => {
+    jest.mocked(getArticleWikitext).mockImplementation(realGetArticleWikitext);
+    fetchSpy.mockImplementation(async () => down());
+
+    const error = await clientErrorOf(
+      wikiosPageContentRouter,
+      "getArticleHtml",
+      { title: "Unreachable Bashan", wikiSource: "iiwiki" },
+      visitor()
+    );
+
+    expect(error).toEqual({
+      status: 503,
+      code: "SERVICE_UNAVAILABLE",
+      message: "IIWiki could not be reached just now.",
+    });
+  });
+
+  it("a missing sister page is still NOT_FOUND", async () => {
+    jest.mocked(getArticleWikitext).mockImplementation(realGetArticleWikitext);
+    fetchSpy.mockImplementation(async () =>
+      Response.json({ query: { pages: { "-1": { title: "Nowhere", missing: "" } } } })
+    );
+
+    const error = await clientErrorOf(
+      wikiosPageContentRouter,
+      "getArticleHtml",
+      { title: "Nowhere", wikiSource: "iiwiki" },
+      visitor()
+    );
+
+    expect(error).toMatchObject({ status: 404, code: "NOT_FOUND" });
+  });
+
+  it("a sister page whose wiki stops answering before it renders is SERVICE_UNAVAILABLE, not BAD_GATEWAY", async () => {
+    jest.mocked(getArticleWikitext).mockResolvedValue({
+      title: "Half Bashan",
+      wikitext: "text",
+      pageId: 7,
+      length: 4,
+      revId: 1234,
+    });
+    fetchSpy.mockImplementation(async () => down());
+
+    const error = await clientErrorOf(
+      wikiosPageContentRouter,
+      "getArticleHtml",
+      { title: "Half Bashan", wikiSource: "althistory" },
+      visitor()
+    );
+
+    expect(error).toEqual({
+      status: 503,
+      code: "SERVICE_UNAVAILABLE",
+      message: "AltHistory Wiki could not be reached just now.",
+    });
   });
 });

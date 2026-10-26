@@ -10,6 +10,7 @@ import { Badge } from "~/components/ui/badge";
 import { User, OpenBook as BookOpen } from "iconoir-react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { BlurbsNav } from "~/components/thinkpages/blurbs/BlurbsNav";
+import { assetUrl } from "~/lib/base-path";
 
 function MyBlurbsList() {
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
@@ -54,7 +55,11 @@ function MyBlurbsList() {
           <div className="mb-2 flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
               {r.country?.flag && (
-                <img src={r.country.flag} alt="" className="h-3.5 w-5 rounded-sm object-cover" />
+                <img
+                  src={assetUrl(r.country.flag) ?? undefined}
+                  alt=""
+                  className="h-3.5 w-5 rounded-sm object-cover"
+                />
               )}
               <span className="text-muted-foreground truncate text-xs font-medium">
                 {r.prompt.title}

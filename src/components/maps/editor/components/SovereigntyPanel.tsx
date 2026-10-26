@@ -12,6 +12,7 @@ import type {
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { Slider } from "~/components/ui/slider";
 import { Card } from "~/components/ui/card";
+import { assetUrl } from "~/lib/base-path";
 
 interface SovereigntyPanelProps {
   filteredRelations: SovereigntyRelation[];
@@ -220,7 +221,7 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
                 <div className="flex items-center gap-2">
                   {rel.sovereignFlag && (
                     <img
-                      src={rel.sovereignFlag}
+                      src={assetUrl(rel.sovereignFlag) ?? undefined}
                       alt=""
                       className="border-separator h-3 w-4.5 rounded-xs border object-cover"
                     />

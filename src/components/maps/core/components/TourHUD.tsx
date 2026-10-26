@@ -31,6 +31,7 @@ interface TourHUDProps {
 
 import { formatPopulation, formatCurrency } from "~/lib/utils/format-utils";
 import { Card } from "~/components/ui/card";
+import { assetUrl } from "~/lib/base-path";
 
 const STALE_TIME = { staleTime: 30 * 60_000 };
 
@@ -107,7 +108,7 @@ export function TourHUD({
                 <Skeleton className="rounded-control-sm h-5 w-8" />
               ) : stats?.flagUrl ? (
                 <img
-                  src={stats.flagUrl}
+                  src={assetUrl(stats.flagUrl) ?? undefined}
                   alt={`${currentStepData.name} Flag`}
                   className="border-separator rounded-control-sm h-5 w-8 border object-cover"
                 />

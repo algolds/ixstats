@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Globe as IconoirGlobe } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { formatNumber, formatCurrency } from "~/lib/utils/format-utils";
+import { assetUrl } from "~/lib/base-path";
 
 interface SovereignNationsGridProps {
   countries: any[];
@@ -30,7 +31,7 @@ export function SovereignNationsGrid({ countries, searchQuery }: SovereignNation
           >
             {country.flagUrl ? (
               <img
-                src={country.flagUrl}
+                src={assetUrl(country.flagUrl) ?? undefined}
                 alt=""
                 className="border-separator rounded-control-sm h-7 w-11 shrink-0 border object-cover"
                 loading="lazy"

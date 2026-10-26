@@ -10,6 +10,7 @@ import { formatCompactCurrency, formatCompactNumber } from "~/lib/utils/format-u
 import { Skeleton } from "~/components/ui/skeleton";
 import { GeoProfileSkeleton } from "./components/GeoProfileSkeleton";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { assetUrl } from "~/lib/base-path";
 
 const COUNTRY_TABS = [
   { value: "overview", label: "Overview" },
@@ -111,7 +112,7 @@ export function CountryPeekContent({ state }: { state: PanelState }) {
     <div className="flex items-center gap-3">
       {state.flagUrl ? (
         <img
-          src={state.flagUrl}
+          src={assetUrl(state.flagUrl) ?? undefined}
           alt=""
           className="border-separator rounded-control-sm h-8 w-12 border object-cover"
         />

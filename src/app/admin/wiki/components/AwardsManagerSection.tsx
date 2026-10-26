@@ -24,6 +24,8 @@ import {
 import { cn } from "~/lib/utils";
 import { getIconComponent, getColorClass, getColorHex } from "./types";
 import { Textarea } from "~/components/ui/textarea";
+import { createUrl } from "~/lib/utils/url-utils";
+import { wikiReaderPath } from "~/lib/wiki-os/config";
 import { ValueSelect } from "~/components/ui/value-select";
 import {
   Table,
@@ -534,7 +536,7 @@ export function AwardsManagerSection() {
                         <TableCell className="text-footnote px-4">
                           {winner.winnerPage ? (
                             <a
-                              href={`/wiki/${winner.winnerPage}`}
+                              href={createUrl(wikiReaderPath(winner.winnerPage))}
                               target="_blank"
                               rel="noreferrer"
                               className="text-yellow flex items-center gap-1 font-semibold hover:underline"

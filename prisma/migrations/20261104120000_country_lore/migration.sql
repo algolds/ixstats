@@ -27,11 +27,15 @@ CREATE TABLE IF NOT EXISTS "country_lore_pages" (
     "type" TEXT NOT NULL,
     "pinned" BOOLEAN NOT NULL DEFAULT false,
     "hidden" BOOLEAN NOT NULL DEFAULT false,
+    "ownerAdded" BOOLEAN NOT NULL DEFAULT false,
     "addedById" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     CONSTRAINT "country_lore_pages_pkey" PRIMARY KEY ("id")
 );
+-- A page the owner added (addExistingPiece) lists without the lore category; a recorded piece only with it. For a
+-- table made before the flag (the clone), added here.
+ALTER TABLE "country_lore_pages" ADD COLUMN IF NOT EXISTS "ownerAdded" BOOLEAN NOT NULL DEFAULT false;
 CREATE UNIQUE INDEX IF NOT EXISTS "country_lore_pages_countryId_title_key" ON "country_lore_pages"("countryId", "title");
 CREATE INDEX IF NOT EXISTS "country_lore_pages_countryId_idx" ON "country_lore_pages"("countryId");
 

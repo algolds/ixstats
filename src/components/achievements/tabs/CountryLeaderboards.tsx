@@ -26,6 +26,7 @@ import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { Card } from "~/components/ui/card";
 import { PodiumCard, Row } from "./leaderboard-parts";
+import { assetUrl } from "~/lib/base-path";
 import { LeaderboardRealmSelect } from "./LeaderboardRealmSelect";
 import { isUnlistedRankingRealm } from "~/lib/realms/realm-scope-select";
 
@@ -98,7 +99,7 @@ function FlagGraphic({ countryName, flag }: { countryName: string; flag?: string
   if (flag && (flag.startsWith("/") || flag.startsWith("http"))) {
     return (
       <img
-        src={flag}
+        src={assetUrl(flag) ?? undefined}
         alt={`Flag of ${countryName}`}
         className="border-separator h-5 w-7 shrink-0 rounded-xs border object-cover"
       />

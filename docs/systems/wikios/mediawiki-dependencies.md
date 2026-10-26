@@ -155,7 +155,7 @@ same `uploadFile` service as the browser's upload (mirror section above): it nam
 URL of a lead picture with no asset row), `src/lib/system/wikios-standalone.ts` (the paths WikiOS's own host serves, among them
 `/api.php`), `src/lib/wiki-os/guardian/cloudflare-guardian.ts` (the origin of a Cloudflare cache purge; the request goes to
 Cloudflare), `src/lib/site-metadata.ts` (the page-metadata origin when `NEXT_PUBLIC_APP_URL` is unset),
-`src/lib/discord/site-url.ts` (the origin of the IxStates links sent to Discord when `APP_URL` is unset),
+`src/lib/app-url.ts` (in dev, the origin of the IxStates links in feeds, Discord and purges when neither `APP_URL` nor `NEXT_PUBLIC_APP_URL` is set),
 `src/components/maps/core/MapWelcomeModal.tsx` (a link). `src/lib/wiki-os/v1-switch.ts` and
 `src/lib/wiki-os/permissions.ts` (`assertWikiosWritable`) only name `api.php` in comments: while the WikiOS v1 switch is off,
 `/w/api.php` answers `readonly`.

@@ -209,6 +209,40 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
       "https://iiwiki.com/wiki/Portal:Eurth"
     );
   });
+  describe("an unreachable sister wiki (SERVICE_UNAVAILABLE, plan 2026-10-25 sister wikis C3c)", () => {
+    const unavailable = Object.assign(new Error("IIWiki could not be reached just now."), {
+      data: { code: "SERVICE_UNAVAILABLE" },
+    });
+
+    it("an unreachable sister wiki shows could not be reached and Open on IIWiki, never not found", () => {
+      mockUseQuery.mockReturnValue({
+        data: undefined,
+        isLoading: false,
+        error: unavailable,
+        refetch: jest.fn(),
+      });
+      render(<Reader title="Bashan" wikiSource="iiwiki" />);
+
+      expect(screen.getByText("IIWiki could not be reached")).toBeInTheDocument();
+      expect(screen.getByText(/could not be loaded from IIWiki just now/)).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Open on IIWiki" })).toHaveAttribute(
+        "href",
+        "https://iiwiki.com/wiki/Bashan"
+      );
+      expect(screen.queryByText(/does not exist|not found/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /create this page/i })).not.toBeInTheDocument();
+    });
+
+    it("does not retry an unreachable wiki on its own: the guard already rests it", () => {
+      found();
+      render(<Reader title="Bashan" wikiSource="iiwiki" />);
+      const options = mockUseQuery.mock.calls[0]![1] as {
+        retry: (failures: number, error: typeof unavailable) => boolean;
+      };
+
+      expect(options.retry(0, unavailable)).toBe(false);
+    });
+  });
   it("says which redirect of another wiki the reader came from, linking to that redirect on its own wiki", () => {
     mockUseQuery.mockReturnValue({
       data: { ...article, title: "Bashan Protectorate", resolvedFrom: "Bashan" },

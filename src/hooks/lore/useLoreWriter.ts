@@ -108,6 +108,8 @@ export function useLoreWriter({
   const [restoredDraft, setRestoredDraft] = useState(false);
   /** Changes when the editor must open again from scratch (the draft was discarded). */
   const [editorKey, setEditorKey] = useState(0);
+  /** The author's text, when the browser refused to keep it as a draft on the way out. */
+  const [unkept, setUnkept] = useState<{ text: string; leaving: "close" | "wikios" } | null>(null);
   const savedRef = useRef(false);
 
   /** The editor's text when the author changed it (or always, with `always`), else null. */
@@ -146,7 +148,11 @@ export function useLoreWriter({
     // The editor's reader is gone once it closed, so only an open, unsaved editor's text is kept.
     const text = target && !savedRef.current ? editorText(false) : null;
     if (target && text !== null) {
-      keepAsDraft(target.title, text);
+      // A browser that refuses the draft (storage full or blocked) keeps the writer open instead.
+      if (!keepAsDraft(target.title, text)) {
+        setUnkept({ text, leaving: "close" });
+        return;
+      }
       notify.info(
         "Draft kept",
         `Your text is kept as a draft of ${target.title}. It opens again when you write under this title.`
@@ -165,8 +171,10 @@ export function useLoreWriter({
     saveError,
     record,
     words: editor.words,
-    restoredDraft,
+    // Gone once the author writes: discarding the draft would take their new text with it.
+    restoredDraft: restoredDraft && !editor.edited,
     editorKey,
+    unkept,
     setTitle,
     setFields,
     chooseType: (next: LoreType) => {
@@ -203,16 +211,31 @@ export function useLoreWriter({
     },
     requestClose,
     /** "Open in WikiOS": a new page's text always goes over as the author's draft, an existing page's once edited. */
-    handOverToWikiOS: () => {
+    handOverToWikiOS: (): boolean => {
       const text = target ? editorText(target.prefill !== undefined) : null;
-      if (target && text !== null) keepAsDraft(target.title, text);
+      if (!target || text === null || keepAsDraft(target.title, text)) return true;
+      setUnkept({ text, leaving: "wikios" });
+      return false;
     },
-    /** Discard the restored draft (the author confirmed) and open the editor again on the form's text. */
+    copyUnkept: () => {
+      if (!unkept) return;
+      navigator.clipboard.writeText(unkept.text).then(
+        () => notify.success("Copied", "Your text is on the clipboard."),
+        () => notify.error("Copy failed", "Select the text in the editor and copy it from there.")
+      );
+    },
+    dismissUnkept: () => setUnkept(null),
+    closeWithoutKeeping: onClose,
+    /**
+     * Discard the restored draft (the author confirmed) and open the editor again on the form's text; never once the
+     * author has written in this editor (an editor that reports nothing is asked here).
+     */
     discardDraft: () => {
       if (!target) return;
+      setRestoredDraft(false);
+      if (editorText(false) !== null) return;
       clearDraft(userId, target.title);
       editor.reset();
-      setRestoredDraft(false);
       setEditorKey((key) => key + 1);
     },
     retryRecord: () => {
@@ -225,6 +248,8 @@ export function useLoreWriter({
     bridge: {
       onSerializedWikitext: editor.onSerializedWikitext,
       registerContentReader: editor.registerContentReader,
+      onModeChange: editor.onModeChange,
+      onEditorOpened: editor.onEditorOpened,
       onSaveError: (error: Error) => setSaveError(saveRefusalMessage(error)),
       onSaveStart: () => setSaveError(null),
       onSaveSuccess: () => {

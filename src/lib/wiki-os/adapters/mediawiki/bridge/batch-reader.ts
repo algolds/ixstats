@@ -5,8 +5,14 @@
  * MediaWiki API call (`action=query&titles=Page1|Page2|...&prop=revisions`).
  */
 
-import { type WikiArticle, type WikiSource, cacheGet, cacheSet } from "./types";
-import { iiwikiApiCall, althistoryApiCall, pagesOf } from "./http-reader";
+import {
+  type SisterWikiSource,
+  type WikiArticle,
+  type WikiSource,
+  cacheGet,
+  cacheSet,
+} from "./types";
+import { pagesOf, sisterApiCall } from "./http-reader";
 import { ixwikiGetWikitext } from "./pg-reader";
 import { intelligentLoreCache } from "~/lib/wiki-os/core/intelligent-lore-cache";
 
@@ -44,20 +50,22 @@ async function loadIxwikiArticles(titles: string[], results: Map<string, WikiArt
   );
 }
 
-/** One pipe-delimited `action=query` request to a sister wiki (IIWiki / AltHistory). */
+/**
+ * One pipe-delimited `action=query` request to a sister wiki (IIWiki / AltHistory). A wiki that cannot be reached
+ * throws WikiUnavailableError, so its titles are never remembered as missing.
+ */
 async function loadSisterWikiChunk(
   chunk: string[],
-  wiki: WikiSource,
+  wiki: SisterWikiSource,
   results: Map<string, WikiArticle>
 ) {
-  const apiCall = wiki === "althistory" ? althistoryApiCall : iiwikiApiCall;
-  const response = (await apiCall({
+  const response = await sisterApiCall<MediaWikiQueryBatchResponse>(wiki, {
     action: "query",
     titles: chunk.join("|"),
     prop: "revisions",
     rvprop: "content",
     rvslots: "main",
-  })) as MediaWikiQueryBatchResponse | null;
+  });
 
   const returnedTitles = new Set<string>();
   for (const page of pagesOf(response?.query?.pages)) {

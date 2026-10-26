@@ -1,5 +1,5 @@
 "use client";
-// Compact Right Sidebar Inspector for WikiOS (Threads, Markup, Live Sim Fact Inspect)
+// Compact Right Sidebar Inspector for WikiOS (Threads, Markup)
 // Signature Highlighter Yellow / Warm Amber branding for Margin.
 
 import React, { useState, useEffect, useRef } from "react";
@@ -24,11 +24,10 @@ import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 
 import { MarginThreadsTab } from "./tabs/MarginThreadsTab";
 import { MarginMarkupTab } from "./tabs/MarginMarkupTab";
-import { MarginInspectTab } from "./tabs/MarginInspectTab";
 import { MarginHelpModal } from "./modals/MarginHelpModal";
 import { MarginRaceChip } from "./MarginRaceChip";
 
-type MarginTab = "threads" | "markup" | "inspect";
+type MarginTab = "threads" | "markup";
 
 interface ThemeColors {
   primary: string;
@@ -76,7 +75,6 @@ export function WikiMarginDrawer({
   const [isExpandedFull, setIsExpandedFull] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [proposedEditDraft, setProposedEditDraft] = useState<string | null>(null);
   const dragStartX = useRef(0);
   const dragStartTime = useRef(0);
 
@@ -146,7 +144,6 @@ export function WikiMarginDrawer({
     }
   };
 
-  // Note: "inspect" tab is hidden for now pending UI revisit.
   const tabs = [
     {
       id: "threads" as MarginTab,
@@ -159,13 +156,7 @@ export function WikiMarginDrawer({
       label: "Markup",
       icon: Highlighter,
     },
-    // TODO (Revisit): "inspect" tab parked for dedicated redesign pass.
   ];
-
-  const handleProposeInspectEdit = (originalText: string, _suggestedText: string) => {
-    setProposedEditDraft(originalText);
-    setActiveTab("threads");
-  };
 
   if (!mounted) return null;
 
@@ -294,11 +285,8 @@ export function WikiMarginDrawer({
                   threads={threads as any}
                   isLoading={isLoading}
                   activeAnchor={activeAnchor}
-                  draftQuote={proposedEditDraft || draftQuote}
-                  onClearDraftQuote={() => {
-                    setProposedEditDraft(null);
-                    onClearDraftQuote?.();
-                  }}
+                  draftQuote={draftQuote}
+                  onClearDraftQuote={() => onClearDraftQuote?.()}
                   selectedThreadId={selectedThreadId}
                   onSelectThread={onSelectThread}
                   isAuthenticated={isAuthenticated}
@@ -317,14 +305,6 @@ export function WikiMarginDrawer({
                   isAuthenticated={isAuthenticated}
                   selectedAnnotationId={selectedAnnotationId}
                   onSelectAnnotation={onSelectAnnotation}
-                />
-              )}
-
-              {activeTab === "inspect" && (
-                <MarginInspectTab
-                  articleTitle={articleTitle}
-                  onProposeEdit={handleProposeInspectEdit}
-                  isAuthenticated={isAuthenticated}
                 />
               )}
             </div>

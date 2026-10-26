@@ -5,18 +5,25 @@ import { Check, EditPencil, Crown } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import type { ProfileOwnerLayer } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
 import { CoverOptions, type HeroCover } from "./HeroMedia";
+import { LoreTeam } from "./LoreTeam";
 import { OwnerLayer } from "./OwnerLayer";
 
 /**
  * CountryBackFace — the back of the country document's face, the owner's side (turned to with
- * Manage, like the passport's Edit): the private owner strip, the cover choice, MyCountry and the editor.
+ * Manage, like the passport's Edit): the private owner strip, the cover choice, the lore team,
+ * MyCountry and the editor.
  */
 export function CountryBackFace({
+  countryId,
+  shown,
   name,
   cover,
   owner,
   onDone,
 }: {
+  countryId: string;
+  /** The back face is turned to: what it holds may load. */
+  shown: boolean;
   name: string;
   cover: HeroCover | null;
   owner: ProfileOwnerLayer | null;
@@ -47,6 +54,7 @@ export function CountryBackFace({
       </div>
       <OwnerLayer owner={owner} />
       {cover?.onChange && <CoverOptions cover={{ ...cover, onChange: cover.onChange }} />}
+      <LoreTeam countryId={countryId} active={shown} />
     </section>
   );
 }

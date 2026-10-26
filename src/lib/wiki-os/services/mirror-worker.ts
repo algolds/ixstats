@@ -12,7 +12,8 @@
  *
  * It runs from the `wiki-mirror` cron job (src/server/cron/jobs.ts, which holds the job lock) and in-process
  * shortly after a write (`scheduleMirrorKick`, which takes the same lock through `runMirrorCycleLocked`), so only
- * one runner works at a time across processes. `SKIP_MEDIAWIKI_SYNC=true` stops the worker; jobs accumulate. Once an hour a cycle
+ * one runner works at a time across processes. `SKIP_MEDIAWIKI_SYNC=true` stops the worker; jobs accumulate. So does
+ * production with nowhere private to write (`mirrorWriteUrlMissing`, config.ts). Once an hour a cycle
  * also deletes the orphaned staged upload files (staged-uploads.ts).
  */
 
@@ -50,6 +51,7 @@ import {
 import { invalidateTemplateDependents } from "./render-service";
 import { sweepStagedOrphansIfDue } from "./staged-uploads";
 import { refreshWikiosEditingFlag } from "~/lib/wiki-os/editing-switch";
+import { mirrorWriteUrlMissing } from "~/lib/wiki-os/config";
 
 const DEFAULT_MAX_JOBS = 50;
 /** No new batch starts after this long (the cron job's lock allows a cycle `MAX_CYCLE_MS`). */
@@ -75,7 +77,10 @@ export interface MirrorCycleOptions {
 }
 
 export interface MirrorCycleResult {
-  /** `SKIP_MEDIAWIKI_SYNC=true`: nothing was run. */
+  /**
+   * Nothing was run: `SKIP_MEDIAWIKI_SYNC=true`, production with nowhere the mirror may write (`mirrorWriteUrlMissing`),
+   * or editing is off with nothing left to drain. The jobs wait as they were.
+   */
   skipped: boolean;
   done: number;
   /** Attempts that failed: the job waits for its backoff, or went dead. */
@@ -188,7 +193,10 @@ export async function runMirrorCycle({
   deadlineMs = DEFAULT_DEADLINE_MS,
 }: MirrorCycleOptions = {}): Promise<MirrorCycleResult> {
   const result: MirrorCycleResult = { skipped: false, done: 0, failed: 0, dead: 0 };
-  if (process.env.SKIP_MEDIAWIKI_SYNC === "true") return { ...result, skipped: true };
+  // Stopped, or production without the private render engine (B3): no job is touched, so none fails or spends an
+  // attempt; they run once the variable is set.
+  if (process.env.SKIP_MEDIAWIKI_SYNC === "true" || mirrorWriteUrlMissing())
+    return { ...result, skipped: true };
   // Editing off (editing-switch.ts): the mirror still drains what was queued while it was on.
   if (!(await refreshWikiosEditingFlag()) && (await outboxWaiting()) === 0)
     return { ...result, skipped: true };

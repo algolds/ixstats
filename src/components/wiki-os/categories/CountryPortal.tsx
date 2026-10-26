@@ -39,6 +39,7 @@ interface CountryPortalProps {
 }
 
 import { formatNumber, formatCurrency } from "~/lib/utils/format-utils";
+import { assetUrl } from "~/lib/base-path";
 
 export function CountryPortal({ country, subcategories, pages }: CountryPortalProps) {
   const { data: summary } = api.mycountry.getNationalSummary.useQuery(
@@ -64,7 +65,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
           <div className="flex items-start gap-5 sm:items-center">
             {country.flagUrl ? (
               <img
-                src={country.flagUrl}
+                src={assetUrl(country.flagUrl) ?? undefined}
                 alt=""
                 className="border-separator rounded-card shadow-card h-14 w-22 shrink-0 border object-cover sm:h-16 sm:w-26"
               />

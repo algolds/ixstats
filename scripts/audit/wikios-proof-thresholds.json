@@ -1,0 +1,18 @@
+{
+  "roundTrip": { "minPages": 11000, "maxNonIdentical": 0, "maxIncomplete": 0, "maxErrors": 0 },
+  "parity": {
+    "minPages": 200,
+    "maxWikiosFailures": 0,
+    "maxFallbackRenders": 0,
+    "maxMediaWikiMissingPercent": 2,
+    "minAtLeast98Percent": 95,
+    "minMeanScore": 97,
+    "maxBelow70Pages": 0,
+    "knownLowPages": []
+  },
+  "bench": {
+    "maxFailurePercent": 1,
+    "p95Ms": { "page+data.totalMs": 1500, "data.totalMs": 800, "search.totalMs": 500, "history.totalMs": 800 },
+    "maxP95RatioToMediaWiki": { "page+data.totalMs": 1.0, "search.totalMs": 1.0, "history.totalMs": 1.0 }
+  }
+}

@@ -34,6 +34,7 @@ import {
 } from "~/components/ui/sheet";
 import { Card } from "~/components/ui/card";
 import type { CulturalExchange, ExchangeTypeConfig } from "./cultural-exchange-types";
+import { assetUrl } from "~/lib/base-path";
 
 /** Optional program details (columns on the CulturalExchange model). */
 type ExchangeDetails = CulturalExchange & {
@@ -145,7 +146,7 @@ function CountryHeader({
     <div className="mb-2 flex items-center gap-2">
       {flagUrl && (
         <img
-          src={flagUrl}
+          src={assetUrl(flagUrl) ?? undefined}
           alt={`${name} flag`}
           className="border-separator h-3 w-5 rounded-xs border object-cover"
         />

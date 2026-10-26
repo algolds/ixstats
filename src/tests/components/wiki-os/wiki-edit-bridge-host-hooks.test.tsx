@@ -17,6 +17,8 @@ type EditorProps = {
   onSave: (text: string, summary: string, minor: boolean) => Promise<void>;
   onSerializedWikitext?: (result: WikitextSerializeResult) => void;
   registerContentReader?: (read: Reader) => void;
+  onSwitchToSource?: (dirty: boolean, content: string) => void;
+  onSwitchToVisual?: (dirty: boolean, wikitext: string) => void;
 };
 
 const MISSING = { wikitext: "", revid: null, timestamp: null, revisionRef: null, revisionRefs: [] };
@@ -92,6 +94,8 @@ interface HostHooks {
   registerContentReader?: (read: Reader) => void;
   onSaveError?: (error: Error) => void;
   onSaveStart?: () => void;
+  onModeChange?: (mode: "source" | "visual") => void;
+  onEditorOpened?: (opened: { wikitext: string; mode: "source" | "visual" }) => void;
 }
 
 async function renderBridge(mode: "source" | "visual", hooks: HostHooks) {
@@ -103,6 +107,55 @@ describe("WikiEditBridge host hooks", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     window.localStorage.clear();
+  });
+
+  it("tells the host once the text and editor it opened on, not again on a switch", async () => {
+    const onEditorOpened = jest.fn();
+    await renderBridge("source", { onEditorOpened });
+    expect(onEditorOpened).toHaveBeenCalledTimes(1);
+    expect(onEditorOpened).toHaveBeenCalledWith({ wikitext: "", mode: "source" });
+
+    act(() => lastProps(mockSource).onSwitchToVisual?.(true, "Venceia, written."));
+    await screen.findByTestId("visual");
+    expect(onEditorOpened).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports a restored draft as the text it opened on, in the draft's editor", async () => {
+    window.localStorage.clear();
+    const { saveDraft } = jest.requireActual<typeof import("~/lib/wiki-os/editor/draft-store")>(
+      "~/lib/wiki-os/editor/draft-store"
+    );
+    saveDraft("user_alice", {
+      title: "Venceia",
+      source: "ixwiki",
+      mode: "source",
+      wikitext: "My draft.",
+    });
+    const onEditorOpened = jest.fn();
+    render(
+      <WikiEditBridge
+        title="Venceia"
+        initialMode="visual"
+        onClose={jest.fn()}
+        onEditorOpened={onEditorOpened}
+      />
+    );
+    await screen.findByTestId("source");
+    expect(onEditorOpened).toHaveBeenCalledWith({ wikitext: "My draft.", mode: "source" });
+  });
+
+  it("tells the host which editor is showing, as it opens and on each switch", async () => {
+    const onModeChange = jest.fn();
+    await renderBridge("visual", { onModeChange });
+    expect(onModeChange).toHaveBeenLastCalledWith("visual");
+
+    act(() => lastProps(mockVisual).onSwitchToSource?.(false, "Venceia is old."));
+    await screen.findByTestId("source");
+    expect(onModeChange).toHaveBeenLastCalledWith("source");
+
+    act(() => lastProps(mockSource).onSwitchToVisual?.(false, "Venceia is old."));
+    await screen.findByTestId("visual");
+    expect(onModeChange).toHaveBeenLastCalledWith("visual");
   });
 
   it("passes each serialization of the visual editor to the host", async () => {

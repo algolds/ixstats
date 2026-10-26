@@ -44,14 +44,11 @@ export function installFetchGuard(sister?: SisterAnswer): FetchGuard {
     }
     if (!sister) throw new Error(`unexpected request to ${url.toString()}`);
     const body = await sister(url, init);
-    return {
-      ok: true,
+    // A real Response: the upstream guard (upstream-guard.ts) takes only a Response for an answer.
+    return new Response(JSON.stringify(body), {
       status: 200,
-      statusText: "OK",
-      headers: new Headers({ "content-type": "application/json" }),
-      json: async () => body,
-      text: async () => JSON.stringify(body),
-    } as Response;
+      headers: { "content-type": "application/json" },
+    });
   }) as typeof fetch;
 
   return {

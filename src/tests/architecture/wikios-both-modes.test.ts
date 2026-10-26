@@ -57,10 +57,11 @@ const EXEMPT: Record<string, string> = {
   "lib/wiki-os/mirror-history.test.ts": "reads classic's log only",
   // saveFailureMessage maps an error to the editor's sentence
   "lib/wiki-os/editor/save-failure.test.ts": "pure error-to-message mapping",
-  // the three below render a component over a mocked tRPC client: no database, no switch reaches them
+  // the four below render a component over a mocked tRPC client: no database, no switch reaches them
   "components/wiki-os/revert-conflict.test.tsx": "UI over mocked tRPC",
   "components/wiki-os/conflict-log-section.test.tsx": "UI over mocked tRPC",
   "components/wiki-os/inbound-quarantine-section.test.tsx": "UI over mocked tRPC",
+  "components/wiki-os/mirror-status-section.test.tsx": "UI over mocked tRPC",
 };
 
 const SUITE = /\.test\.tsx?$/;

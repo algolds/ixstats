@@ -14,6 +14,8 @@ import { InspectorSection, ReadoutRow } from "./InspectorPrimitives";
 import { getFeatureIcon } from "../featureTypeIcons";
 import { CITY_TYPES } from "../../optionLists";
 import { resolveRouteBaseSpeed } from "~/lib/economy/travel-time";
+import { createUrl } from "~/lib/utils/url-utils";
+import { wikiReaderPath } from "~/lib/wiki-os/config";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useMapRealm } from "~/components/maps/core/MapRealmContext";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
@@ -413,7 +415,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
 
         {fields.wikiPageTitle && (
           <a
-            href={`/wiki/${encodeURIComponent(fields.wikiPageTitle)}`}
+            href={createUrl(wikiReaderPath(fields.wikiPageTitle))}
             target="_blank"
             rel="noreferrer"
             className="border-separator bg-surface hover:bg-fill-3 text-label rounded-control text-caption flex items-center justify-center gap-2 border py-2 transition-[color,background-color,border-color,box-shadow,opacity]"

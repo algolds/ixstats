@@ -17,7 +17,7 @@
 import { db } from "~/server/db";
 import { notificationAPI } from "~/lib/notifications/api";
 import { sendDiscordDm } from "~/lib/discord/user-dm";
-import { APP_URL, CLEAN_BASE_PATH } from "~/lib/discord/site-url";
+import { appUrl } from "~/lib/app-url";
 import { ArticleRepository } from "../core/article-repository";
 import { toRevisionRef } from "../core/domain-types";
 import { DeletedPageError, EditConflictError } from "../core/edit-conflict-error";
@@ -195,7 +195,7 @@ async function tellOnDiscord(
 ): Promise<Delivery> {
   const user = await accountOf(recipient.userId);
   if (!user?.discordUserId) return "skipped";
-  const link = `${APP_URL}${CLEAN_BASE_PATH}${noticeHref(context, recipient)}`;
+  const link = appUrl(noticeHref(context, recipient));
   const { message } = copyOf(context, recipient);
   return (await sendDiscordDm(user.discordUserId, `${message}\n${link}`)) ? "sent" : "open";
 }

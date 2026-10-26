@@ -87,7 +87,10 @@ function collectWikiLinkTitles(root: Element): string[] {
   return Array.from(titles).slice(0, 200);
 }
 
-/** Wiki link; links to pages that do not exist render as red links. */
+/**
+ * Wiki link, as a Next `<Link>` with the bare `/wiki/…` path (Next adds the base path); links to pages that do not
+ * exist render as red links.
+ */
 function renderWikiLink(
   element: HTMLElement,
   index: number,
@@ -102,7 +105,7 @@ function renderWikiLink(
       "text-tint hover:text-wiki-hover font-semibold underline transition-colors";
 
   return (
-    <a
+    <Link
       key={index}
       href={href}
       className={className}
@@ -111,7 +114,7 @@ function renderWikiLink(
       {Array.from(element.childNodes).map((child, childIdx) =>
         domNodeToReact(child, childIdx, missing)
       )}
-    </a>
+    </Link>
   );
 }
 
@@ -278,11 +281,7 @@ function domNodeToReact(
     // General relative link: intercept full page reloads for client routes
     if (href.startsWith("/") && !element.getAttribute("target")) {
       return (
-        <Link
-          key={index}
-          href={ixstatesLinkHref(href.replace(/^\/projects\/ixstates/, ""))}
-          className={element.className}
-        >
+        <Link key={index} href={ixstatesLinkHref(href)} className={element.className}>
           {renderChildren(element, missing)}
         </Link>
       );

@@ -119,6 +119,68 @@ export const wikiosConfig: WikiosConfig = buildWikiosConfig({
   templateStyles: process.env.WIKIOS_TEMPLATESTYLES,
 });
 
+/**
+ * Whether production has no private render engine: `NODE_ENV=production` and `WIKIOS_MEDIAWIKI_INTERNAL_URL` unset,
+ * blank, on the public wiki's host (`isMediaWikiUrl`) or IxStates itself (`isIxStatesUrl`), so server-side calls would
+ * load the public `api.php` or loop back into WikiOS (plan 2026-10-25 B3, "Loopback required").
+ * Renders (`renderArticleViaMediaWiki`, the editor preview, the stale-render batch) and mirror writes (unless
+ * `WIKIOS_MEDIAWIKI_API` names a private write URL itself, `mirrorWriteUrlProblem`) then refuse rather than load the public wiki.
+ * The low-volume reads (inbound sync, lore cards, the Lorewards fallback, account proof) keep the public fallback, so
+ * an ordinary deploy without the runbook's step 4 stays safe. Dev and test never count as missing.
+ * Read from `env` at call time, not from the frozen `wikiosConfig`. Server-side only.
+ */
+export function loopbackRendererMissing(
+  env: Readonly<Record<string, string | undefined>> = process.env
+): boolean {
+  if (env.NODE_ENV !== "production") return false;
+  const internal = env.WIKIOS_MEDIAWIKI_INTERNAL_URL?.trim();
+  // On the public wiki's host it is not private, and IxStates itself would parse through WikiOS's own api.php and
+  // recurse: either counts as missing.
+  return !internal || isMediaWikiUrl(internal) || isIxStatesUrl(internal, env);
+}
+
+/** Hosts that only this server reaches (`URL.hostname` is lower-case and brackets IPv6). */
+const LOOPBACK_HOST = /^(?:localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)$/;
+
+/**
+ * Whether `url` is IxStates itself, where a mirror write would land in WikiOS (its `/w/api.php`): a path under the
+ * app's base path (at a segment boundary), or a loopback host on the app's port (`PORT`, else production's 3550 from
+ * start-production.sh). An unparseable URL is not.
+ */
+function isIxStatesUrl(url: string, env: Readonly<Record<string, string | undefined>>): boolean {
+  if (!URL.canParse(url, "http://relative.invalid")) return false;
+  const { hostname, port, pathname } = new URL(url, "http://relative.invalid");
+  const base = (env.NEXT_PUBLIC_BASE_PATH || env.BASE_PATH || "").trim().replace(/\/+$/, "");
+  if (base && (pathname === base || pathname.startsWith(`${base}/`))) return true;
+  return LOOPBACK_HOST.test(hostname) && port === (env.PORT?.trim() || "3550");
+}
+
+/** The setting that leaves the mirror nowhere it may write in production (`mirrorWriteUrlProblem`). */
+export type MirrorWriteUrlProblem = "WIKIOS_MEDIAWIKI_INTERNAL_URL" | "WIKIOS_MEDIAWIKI_API";
+
+/**
+ * Why the mirror may not write in production (plan 2026-10-25 B3), or null when it may. The write URL is
+ * WIKIOS_MEDIAWIKI_API when set, else the internal one: so a WIKIOS_MEDIAWIKI_API on the public wiki's host is refused
+ * whether or not the internal URL is set, and without it the private render engine must be configured
+ * (`loopbackRendererMissing`). A write URL that is IxStates itself (`isIxStatesUrl`) is refused too, or the mirror
+ * would write into WikiOS. Dev and test are never refused. Read from `env` at call time. Server-side only.
+ */
+export function mirrorWriteUrlProblem(
+  env: Readonly<Record<string, string | undefined>> = process.env
+): MirrorWriteUrlProblem | null {
+  if (env.NODE_ENV !== "production") return null;
+  const api = env.WIKIOS_MEDIAWIKI_API?.trim();
+  if (api) return isMediaWikiUrl(api) || isIxStatesUrl(api, env) ? "WIKIOS_MEDIAWIKI_API" : null;
+  return loopbackRendererMissing(env) ? "WIKIOS_MEDIAWIKI_INTERNAL_URL" : null;
+}
+
+/** Whether the mirror has nowhere it may write: the worker then skips every cycle and the jobs wait. */
+export function mirrorWriteUrlMissing(
+  env: Readonly<Record<string, string | undefined>> = process.env
+): boolean {
+  return mirrorWriteUrlProblem(env) !== null;
+}
+
 /** The public origin, with no trailing slash: where a browser reaches the wiki. */
 export function mediaWikiOrigin(): string {
   return wikiosConfig.publicBaseUrl;

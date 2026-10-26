@@ -28,6 +28,7 @@ import {
   TableHead,
   TableCell,
 } from "~/components/ui/table";
+import { assetUrl } from "~/lib/base-path";
 
 export function CountryAdminPanel() {
   const notify = useNotify();
@@ -221,7 +222,7 @@ export function CountryAdminPanel() {
                     <Skeleton className="rounded-control-sm h-6 w-10" />
                   ) : flagUrl ? (
                     <img
-                      src={flagUrl}
+                      src={assetUrl(flagUrl) ?? undefined}
                       alt={country.name}
                       className="rounded-control-sm h-6 w-10 border object-cover"
                     />

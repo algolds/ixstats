@@ -7,6 +7,7 @@ import { Badge } from "~/components/ui/badge";
 import { SearchField } from "~/components/ui/search-field";
 import { Card } from "~/components/ui/card";
 import { realmHref } from "./realm-directory";
+import { assetUrl } from "~/lib/base-path";
 
 type NationHit = RouterOutputs["realms"]["searchNations"][number];
 
@@ -18,7 +19,11 @@ function NationRow({ nation }: { nation: NationHit }) {
   return (
     <li className="flex items-center gap-3 py-2">
       {nation.flag ? (
-        <img src={nation.flag} alt="" className="h-4 w-6 shrink-0 rounded-sm object-cover" />
+        <img
+          src={assetUrl(nation.flag) ?? undefined}
+          alt=""
+          className="h-4 w-6 shrink-0 rounded-sm object-cover"
+        />
       ) : (
         <span className="bg-fill-3 h-4 w-6 shrink-0 rounded-sm" aria-hidden="true" />
       )}

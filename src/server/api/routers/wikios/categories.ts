@@ -19,6 +19,7 @@ import {
 import { CategoryService } from "~/lib/wiki-os/core/category-service";
 import { db } from "~/server/db";
 import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
+import { spacedTitle } from "~/lib/wiki-os/core/title";
 import { assertTitleVisible } from "~/lib/wiki-os/permissions";
 import {
   extractLeadImagePath,
@@ -40,8 +41,6 @@ const SISTER_CACHE_TTL_MS = 300_000;
 const sisterJson = <T>(url: string) =>
   fetchMediaWikiJson<T>(url, { userAgent: DEFAULT_USER_AGENT, cacheTtlMs: SISTER_CACHE_TTL_MS });
 
-const spaced = (title: string) => title.replace(/_/g, " ");
-
 function leadImageOf(art: { leadImageUrl: string | null; wikitext: string | null }) {
   return resolveStoredImageUrl(art.leadImageUrl || extractLeadImagePath(art.wikitext));
 }
@@ -54,7 +53,7 @@ async function attachMemberImages(members: CategoryListMember[]) {
   const titles = pageMembers.map((m) => m.title);
   const imageMap = new Map<string, string>();
   const lookup = (title: string) =>
-    imageMap.get(title) ?? imageMap.get(toArticleSlug(title)) ?? imageMap.get(spaced(title));
+    imageMap.get(title) ?? imageMap.get(toArticleSlug(title)) ?? imageMap.get(spacedTitle(title));
 
   try {
     const articles = await db.wikiArticle.findMany({
@@ -62,7 +61,7 @@ async function attachMemberImages(members: CategoryListMember[]) {
         status: "PUBLISHED",
         OR: [
           { title: { in: titles } },
-          { title: { in: titles.map(spaced) } },
+          { title: { in: titles.map(spacedTitle) } },
           { slug: { in: titles.map((t) => toArticleSlug(t)) } },
         ],
       },
@@ -279,14 +278,14 @@ export const wikiosCategoriesRouter = createTRPCRouter({
       const normalizedTo = new Map((data.query?.normalized ?? []).map((n) => [n.from, n.to]));
       const filesByTitle = new Map<string, number>();
       for (const page of Object.values(data.query?.pages ?? {})) {
-        filesByTitle.set(spaced(page.title ?? ""), page.categoryinfo?.files ?? 0);
+        filesByTitle.set(spacedTitle(page.title ?? ""), page.categoryinfo?.files ?? 0);
       }
 
       // A category the wiki did not answer for is left out: the client reads a missing key as "no count".
       const results: Record<string, number> = {};
       for (const cat of input.categories) {
         const asked = `Category:${cat.replace(/ /g, "_")}`;
-        const count = filesByTitle.get(spaced(normalizedTo.get(asked) ?? asked));
+        const count = filesByTitle.get(spacedTitle(normalizedTo.get(asked) ?? asked));
         if (count !== undefined) results[cat] = count;
       }
       return results;

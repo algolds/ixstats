@@ -23,8 +23,9 @@ function articleTitle(raw: string): string | null {
 export function useLoreTitleCheck(raw: string): LoreTitleCheck {
   const typed = articleTitle(raw.trim());
   const settled = useDebounce(typed, CHECK_DELAY_MS);
+  // Live pages only, as every lore read: a deleted title is not a page the owner could add to the Lore tab.
   const query = api.wikios.checkPageExists.useQuery(
-    { title: settled ?? "" },
+    { title: settled ?? "", liveOnly: true },
     { enabled: settled !== null, staleTime: 0, retry: false }
   );
 

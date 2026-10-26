@@ -8,7 +8,11 @@
 
 import { z } from "zod";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
-import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
+import {
+  DEFAULT_USER_AGENT,
+  getMediaWikiApiUrl,
+  loopbackRendererMissing,
+} from "~/lib/wiki-os/config";
 
 /**
  * What MediaWiki reports about a page it rendered: the same facts its own link tables are built from.
@@ -88,6 +92,23 @@ function toMetadata(
   };
 }
 
+let warnedNoLoopback = false;
+
+/**
+ * Whether a render may go to MediaWiki: not in production without the private render engine (config.ts,
+ * `loopbackRendererMissing`), which says so once per process.
+ */
+function mayRenderThroughMediaWiki(): boolean {
+  if (!loopbackRendererMissing()) return true;
+  if (!warnedNoLoopback) {
+    warnedNoLoopback = true;
+    console.warn(
+      "[WikiOS:render] WIKIOS_MEDIAWIKI_INTERNAL_URL is not set: WikiOS does not render through the public MediaWiki."
+    );
+  }
+  return false;
+}
+
 /**
  * Render an article's Postgres wikitext through MediaWiki `action=parse` (`text=`, with the title as
  * context) so templates, parser functions and Lua expand. MediaWiki's own copy of the page is never
@@ -95,12 +116,13 @@ function toMetadata(
  * SKIP_MEDIAWIKI_SYNC). `wikitext` must not be blank (the render service never sends a blank page).
  * The same request asks for the page's links, templates, images, categories and properties
  * (`RenderMetadata`): the render is the only place WikiOS learns them. Returns null when MediaWiki is
- * unreachable or returns nothing.
+ * unreachable or returns nothing, and without a request in production with no private render engine.
  */
 export async function renderArticleViaMediaWiki(
   wikitext: string,
   title: string
 ): Promise<RenderedPage | null> {
+  if (!mayRenderThroughMediaWiki()) return null;
   try {
     const res = await fetch(getMediaWikiApiUrl("ixwiki"), {
       method: "POST",
@@ -134,11 +156,13 @@ export async function renderArticleViaMediaWiki(
 /**
  * Convert wikitext to HTML with 100% MediaWiki compliancy.
  * Queries MediaWiki Action API action=parse to expand all templates, parser functions (#if, #switch),
- * Lua Scribunto modules, and wikitables. Falls back gracefully to native AST compiler.
+ * Lua Scribunto modules, and wikitables. Falls back gracefully to native AST compiler, which is all it uses in
+ * production with no private render engine.
  */
 export async function wikitextToHtml(wikitext: string, title = "Preview"): Promise<string> {
   if (!wikitext || !wikitext.trim()) return "";
   const cleanTitle = title.replace(/^Template:/i, "").trim() || "Preview";
+  if (!mayRenderThroughMediaWiki()) return parseWikitextToHtml(wikitext, "ixwiki");
 
   try {
     const mwApi = getMediaWikiApiUrl("ixwiki");

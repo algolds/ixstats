@@ -139,7 +139,6 @@ const config = {
 
   async rewrites() {
     const baseRewrites = [
-      { source: "/api/ixwiki-proxy/:path*", destination: "https://ixwiki.com/:path*" },
       // IxnayID passports: /@handle (the page strips a leading @)
       { source: "/@:handle", destination: "/id/:handle" },
     ];

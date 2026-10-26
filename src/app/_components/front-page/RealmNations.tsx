@@ -6,6 +6,7 @@ import { Badge } from "~/components/ui/badge";
 import { formatCurrency, formatPopulation } from "~/lib/utils";
 import type { RouterOutputs } from "~/trpc/react";
 import { Pane, PaneBody, type PaneQuery } from "./Pane";
+import { assetUrl } from "~/lib/base-path";
 
 type FrontPage = RouterOutputs["frontPage"]["get"];
 
@@ -77,7 +78,7 @@ export function RealmNations({
                   >
                     {nation.flagUrl && (
                       <img
-                        src={nation.flagUrl}
+                        src={assetUrl(nation.flagUrl) ?? undefined}
                         alt=""
                         width={18}
                         height={12}

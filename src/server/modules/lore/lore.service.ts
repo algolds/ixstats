@@ -15,10 +15,11 @@ import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { resolveRedirect } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { categoryLinks } from "~/lib/wiki-os/api-compat/scan";
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
-import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
+import { canonicalizeTitle, spacedTitle } from "~/lib/wiki-os/core/title";
 import { refreshWikiosEditingFlag } from "~/lib/wiki-os/editing-switch";
 import { loadCategoryMembers } from "~/lib/wiki-os/services/category-members";
 import { readVisiblePage } from "~/lib/wiki-os/services/visible-page";
+import { mapWithConcurrency } from "~/lib/utils/map-with-concurrency";
 import { db } from "~/server/db";
 import { hasCountryWriteAccess } from "~/server/shared/country-authorization";
 import { inferLoreType } from "./lore.infer";
@@ -61,6 +62,10 @@ export interface LoreIdentity {
 
 /** The most lore category pages listed. */
 const CATEGORY_LIMIT = 500;
+/** Wiki reads (redirect, visibility, text) a listing runs at once. */
+const READ_CONCURRENCY = 8;
+/** Lore lists live pages only: a deleted page is never a piece, whoever reads. */
+const LIVE_PAGES = { includeArchived: false } as const;
 
 const forbidden = (message: string) => new TRPCError({ code: "FORBIDDEN", message });
 const noSuchPage = () =>
@@ -115,7 +120,7 @@ async function requireLore(ctx: LoreCtx, countryId: string, need: "own" | "write
     throw forbidden("Only the country's owner can do this.");
   }
   if (!access.canWrite || !userId) throw forbidden("You cannot write this country's lore.");
-  return { userId, ownerUserId, countryName };
+  return { userId, ownerUserId, countryName, isOwner: access.isOwner };
 }
 
 /** The most category links of a page read when checking it carries the lore category. */
@@ -146,16 +151,22 @@ interface Curation {
   type: string;
   pinned: boolean;
   hidden: boolean;
+  ownerAdded: boolean;
 }
 
 /** A page the candidates lead to, with the curation rows that name it (by its own title or a redirect to it). */
 interface ListedPage {
   wikitext: string;
   rows: Curation[];
+  /** One of the titles that lead to it is in the lore category. */
+  inCategory: boolean;
 }
 
-const spaced = (title: string) => title.replace(/_/g, " ");
-
+/**
+ * A piece of the Lore tab, or null. A page is listed while it is in the lore category, or when the owner added it: a
+ * recorded piece's row alone never keeps a page that left the category (a co-author could otherwise add the
+ * category, record the page, and take the category off again).
+ */
 function toPiece(
   title: string,
   page: ListedPage,
@@ -163,6 +174,7 @@ function toPiece(
   hidden: ReadonlySet<string>
 ) {
   if (hidden.has(title)) return null;
+  if (!page.inCategory && !page.rows.some((row) => row.ownerAdded)) return null;
   const row = curation.get(title) ?? page.rows[0];
   const type = row && isLoreType(row.type) ? row.type : inferLoreType(page.wikitext);
   return { title, type, pinned: row?.pinned ?? false };
@@ -174,10 +186,36 @@ function toPiece(
  */
 async function hiddenTitles(rows: readonly Curation[]): Promise<Set<string>> {
   const titles = rows.filter((row) => row.hidden).map((row) => row.title);
-  const resolved = await Promise.all(
-    titles.map(async (title) => (await resolveRedirect(title)).title)
+  const resolved = await mapWithConcurrency(
+    titles,
+    READ_CONCURRENCY,
+    async (title) => (await resolveRedirect(title)).title
   );
   return new Set([...titles, ...resolved]);
+}
+
+/** The pages the candidates lead to, each once, with the rows naming it and whether it is in the category. */
+function collectPages(
+  reads: readonly { title: string; page: { resolvedTitle: string; wikitext: string | null } }[],
+  curation: ReadonlyMap<string, Curation>,
+  inCategory: ReadonlySet<string>
+): Map<string, ListedPage> {
+  const pages = new Map<string, ListedPage>();
+  for (const { title, page } of reads) {
+    if (page.wikitext === null) continue;
+    const listed = pages.get(page.resolvedTitle) ?? {
+      wikitext: page.wikitext,
+      rows: [],
+      inCategory: false,
+    };
+    for (const row of [curation.get(page.resolvedTitle), curation.get(title)]) {
+      if (row && !listed.rows.includes(row)) listed.rows.push(row);
+    }
+    // Every category member is read under its own title, so the title read is the one to look up.
+    listed.inCategory ||= inCategory.has(title);
+    pages.set(page.resolvedTitle, listed);
+  }
+  return pages;
 }
 
 const byPinThenTitle = (a: LorePiece, b: LorePiece) =>
@@ -199,30 +237,20 @@ export async function listLorePieces(ctx: LoreCtx, countryId: string): Promise<L
     }),
     db.countryLorePage.findMany({
       where: { countryId },
-      select: { title: true, type: true, pinned: true, hidden: true },
+      select: { title: true, type: true, pinned: true, hidden: true, ownerAdded: true },
     }),
   ]);
   const curation = new Map(rows.map((row) => [row.title, row]));
   const hidden = await hiddenTitles(rows);
-  const candidates = new Set([
-    ...members.map((member) => spaced(member.title)),
-    ...rows.map((row) => row.title),
-  ]);
-  const reads = await Promise.all(
-    [...candidates]
-      .filter((title) => !hidden.has(title))
-      .map(async (title) => ({ title, page: await readVisiblePage(ctx, title) }))
+  const inCategory = new Set(members.map((member) => spacedTitle(member.title)));
+  // Every row is read, not only the owner's: a renamed piece's row still names it, and keeps its pin and type.
+  const candidates = [...new Set([...inCategory, ...rows.map((row) => row.title)])];
+  const reads = await mapWithConcurrency(
+    candidates.filter((title) => !hidden.has(title)),
+    READ_CONCURRENCY,
+    async (title) => ({ title, page: await readVisiblePage(ctx, title, LIVE_PAGES) })
   );
-
-  const pages = new Map<string, ListedPage>();
-  for (const { title, page } of reads) {
-    if (page.wikitext === null) continue;
-    const listed = pages.get(page.resolvedTitle) ?? { wikitext: page.wikitext, rows: [] };
-    for (const row of [curation.get(page.resolvedTitle), curation.get(title)]) {
-      if (row && !listed.rows.includes(row)) listed.rows.push(row);
-    }
-    pages.set(page.resolvedTitle, listed);
-  }
+  const pages = collectPages(reads, curation, inCategory);
   return [...pages]
     .map(([title, page]) => toPiece(title, page, curation, hidden))
     .filter((piece): piece is LorePiece => piece !== null)
@@ -233,16 +261,17 @@ export async function listLorePieces(ctx: LoreCtx, countryId: string): Promise<L
 
 /**
  * Record a piece the caller (owner or lore team) just wrote, with its type, under the title it leads to. The page must
- * carry the country's lore category: adding any other page is the owner's `addExistingPiece`. Recording again sets
- * only the type, so a piece the owner hid stays hidden.
+ * carry the country's lore category: adding any other page is the owner's `addExistingPiece`. Recording a piece that
+ * has a record already changes only its type, and only for the owner: a co-author never retypes a piece, unhides one
+ * the owner hid, or marks one as the owner's.
  */
 export async function recordPiece(
   ctx: LoreCtx,
   countryId: string,
   input: { title: string; type: LoreType }
 ): Promise<{ title: string }> {
-  const { userId, countryName } = await requireLore(ctx, countryId, "write");
-  const page = await readVisiblePage(ctx, canonicalTitleOf(input.title));
+  const { userId, countryName, isOwner } = await requireLore(ctx, countryId, "write");
+  const page = await readVisiblePage(ctx, canonicalTitleOf(input.title), LIVE_PAGES);
   if (page.wikitext === null) throw noSuchPage();
   if (!carriesLoreCategory(page.wikitext, countryName)) {
     throw new TRPCError({
@@ -254,7 +283,7 @@ export async function recordPiece(
   await db.countryLorePage.upsert({
     where: titleKey(countryId, title),
     create: { countryId, title, type: input.type, addedById: userId },
-    update: { type: input.type },
+    update: isOwner ? { type: input.type } : {},
   });
   return { title };
 }
@@ -276,7 +305,7 @@ export async function setCuration(
     await db.countryLorePage.update({ where: titleKey(countryId, title), data: changes });
     return { title };
   }
-  const page = await readVisiblePage(ctx, title);
+  const page = await readVisiblePage(ctx, title, LIVE_PAGES);
   if (page.wikitext === null) throw noSuchPage();
   await db.countryLorePage.upsert({
     where: titleKey(countryId, page.resolvedTitle),
@@ -293,20 +322,23 @@ export async function setCuration(
   return { title: page.resolvedTitle };
 }
 
-/** The owner adds an existing wiki page to the Lore tab (no wiki edit), under the title it leads to. */
+/**
+ * The owner adds an existing wiki page to the Lore tab (no wiki edit), under the title it leads to. It stays listed
+ * without the lore category (`ownerAdded`), and shows again if it was hidden.
+ */
 export async function addExistingPiece(
   ctx: LoreCtx,
   countryId: string,
   input: { title: string; type: LoreType }
 ): Promise<{ title: string }> {
   const { userId } = await requireLore(ctx, countryId, "own");
-  const page = await readVisiblePage(ctx, canonicalTitleOf(input.title));
+  const page = await readVisiblePage(ctx, canonicalTitleOf(input.title), LIVE_PAGES);
   if (page.wikitext === null) throw noSuchPage();
   const title = page.resolvedTitle;
   await db.countryLorePage.upsert({
     where: titleKey(countryId, title),
-    create: { countryId, title, type: input.type, addedById: userId },
-    update: { type: input.type, hidden: false },
+    create: { countryId, title, type: input.type, ownerAdded: true, addedById: userId },
+    update: { type: input.type, hidden: false, ownerAdded: true },
   });
   return { title };
 }

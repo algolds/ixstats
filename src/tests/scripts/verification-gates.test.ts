@@ -88,8 +88,8 @@ describe("verification-gates", () => {
     });
   });
 
-  // next.config.js is git-ignored (each environment keeps its own copy), so this gate checks
-  // the local copy where one exists and the committed template (next.config.example.js) in CI.
+  // next.config.js is tracked, and next.config.example.js is the committed template. This gate
+  // checks the local copy where one exists and the template otherwise.
   const localNextConfig = path.resolve(rootDir, "next.config.js");
   const nextConfigPath = fs.existsSync(localNextConfig)
     ? localNextConfig
@@ -104,6 +104,18 @@ describe("verification-gates", () => {
     it("does not ignore TypeScript build errors (ignoreBuildErrors: false)", () => {
       expect(nextConfigContent).toMatch(/ignoreBuildErrors:\s*false/);
       expect(nextConfigContent).not.toMatch(/ignoreBuildErrors:\s*true/);
+    });
+  });
+
+  describe("no rewrite proxies a path to another host", () => {
+    const configFiles = ["next.config.js", "next.config.example.js"].filter((name) =>
+      fs.existsSync(path.resolve(rootDir, name))
+    );
+
+    it.each(configFiles)("%s has no external rewrite destination", (name) => {
+      const text = fs.readFileSync(path.resolve(rootDir, name), "utf-8");
+      expect(text).not.toMatch(/destination:\s*[`'"](?:https?:)?\/\//);
+      expect(text).not.toContain("ixwiki-proxy");
     });
   });
 });

@@ -18,7 +18,7 @@ import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 import { appendSectionEditLinks, removeSectionEditLinks, transformArticleHtml, transformImages } from "~/lib/wiki-os/transformers/html-transformer";
 import { mapSrcsetUrls } from "~/lib/wiki-os/transformers/srcset";
 import { slimArticleHtml, templateStyleIdentifiers } from "~/lib/wiki-os/transformers/slim-html";
-import { buildViewBundle } from "~/lib/wiki-os/services/render-service";
+import { buildViewBundle, RENDERER_VERSION } from "~/lib/wiki-os/services/render-service";
 import { extractLeadImage, extractLeadImageFromHtml, extractLeadImageFromWikitext, extractLeadImagePath, getImagePath, getImageUrl, getMd5ShardPath, HERO_IMAGE_WIDTH, heroImage, isNoticeOrUtilityIcon, resolveStoredImageUrl } from "~/lib/wiki-os/transformers/image-url";
 import { currentProfileHref, currentProfileLinks } from "~/lib/wiki-os/legacy-profile-links";
 import { articleSeo, descriptionFromHtml, leadImageUrl } from "~/lib/wiki-os/article-seo";
@@ -80,6 +80,14 @@ const IXWIKI_ARTICLE =
     '<a href="/index.php?action=edit&amp;redlink=1" class="new">y</a>',
     '<a href="/wiki/Gallambria" title="Gallambria">Gallambria</a> <a href="/wiki/Gallambria#History" title="Gallambria">history</a>',
     '<a href="/wiki/File:Map.png" class="mw-file-description">map</a> <a href="/wiki/Special:Random">random</a>',
+    '<a href="/wiki/File%3AFlag.svg">flag</a> <a href="/wiki/Special%3ARecentChanges">rc</a>',
+    '<a href="/wiki/Special:WhatLinksHere/Gallambria">w</a> <a href="/wiki/Special:WhatLinksHere?target=Gallambria&amp;namespace=0">wq</a>',
+    '<a href="/wiki/Special:FilePath/Map.png">fp</a> <a href="/wiki/Special:FilePath?file=Map.png">fpq</a>',
+    '<a href="/wiki/Special:Nonexistent">x</a> <a href="/wiki/Special:Diff/abc/def/ghi">bad diff</a> <a href="/wiki/Special:Constructor">proto</a>',
+    '<a href="/wiki/special:Nonexistent">lc</a> <a href="/wiki/Special%3aNonexistent">esc</a>',
+    '<a href="/wiki/Special:AllPages?namespace=99999">ns past cap</a> <a href="/wiki/Special:AllPages?namespace=4">ns</a>',
+    '<a href="/wiki/Special:Move?wpReason=x&amp;target=A%7CB">bad move</a> <a href="/wiki/Special:Move?wpReason=x&amp;target=Gallambria">move</a>',
+    '<a href="https://ixwiki.com/wiki/File:Map.png">abs file</a> <a href="//evil.example/wiki/Special:Random">pr</a> <a href="https://evil.example/wiki/Special:Random">ext</a>',
     '<a href="/wiki/User:Kir" title="User:Kir">Kir</a>',
     '<a href="/thinkpages/profile/jane">Jane</a>',
   ].join(" ") +
@@ -139,14 +147,50 @@ const IXWIKI_ARTICLE_EXPECTED: Array<[string, Expectation[]]> = [
     ],
   ],
   [
-    "articles and user pages are read in-app; files and special pages open on IxWiki; no source parameter",
+    "articles and user pages are read in-app; no source parameter",
     [
       ["content", "+", 'href="/wiki/Gallambria"'],
       ["content", "+", 'href="/wiki/Gallambria#History"'],
       ["content", "+", 'href="/wiki/User:Kir"'],
-      ["content", "+", `href="${ORIGIN}/wiki/File:Map.png" rel="noreferrer"`],
-      ["content", "+", `href="${ORIGIN}/wiki/Special:Random" rel="noreferrer"`],
       ["content", "-", "source="],
+    ],
+  ],
+  [
+    "files and the special pages WikiOS has are read in-app",
+    [
+      ["content", "+", 'href="/wiki/File:Map.png" class="mw-file-description"'],
+      ["content", "+", 'href="/wiki/File%3AFlag.svg">'],
+      ["content", "+", 'href="/wiki/Special:Random">'],
+      ["content", "+", 'href="/wiki/Special%3ARecentChanges">'],
+      ["content", "+", 'href="/wiki/Special:WhatLinksHere/Gallambria">'],
+      ["content", "+", 'href="/wiki/Special:WhatLinksHere?target=Gallambria&amp;namespace=0">'],
+      ["content", "+", 'href="/wiki/Special:Move?wpReason=x&amp;target=Gallambria">'],
+      ["content", "+", 'href="/wiki/Special:AllPages?namespace=4">'],
+      ["content", "-", `${ORIGIN}/wiki/File:Map.png" rel`],
+      ["content", "-", `${ORIGIN}/wiki/Special:Random"`],
+      ["content", "-", `${ORIGIN}/wiki/Special:WhatLinksHere`],
+    ],
+  ],
+  [
+    "Special:FilePath and a special WikiOS lacks stay on IxWiki",
+    [
+      ["content", "+", `href="${ORIGIN}/wiki/Special:FilePath/Map.png" rel="noreferrer"`],
+      ["content", "+", `href="${ORIGIN}/wiki/Special:FilePath?file=Map.png" rel="noreferrer"`],
+      ["content", "+", `href="${ORIGIN}/wiki/Special:Nonexistent" rel="noreferrer"`],
+      ["content", "+", `href="${ORIGIN}/wiki/Special:Diff/abc/def/ghi" rel="noreferrer"`],
+      ["content", "+", `href="${ORIGIN}/wiki/Special:Constructor" rel="noreferrer"`],
+      ["content", "+", `href="${ORIGIN}/wiki/special:Nonexistent" rel="noreferrer"`],
+      ["content", "+", `href="${ORIGIN}/wiki/Special%3aNonexistent" rel="noreferrer"`],
+      ["content", "+", `href="${ORIGIN}/wiki/Special:AllPages?namespace=99999" rel="noreferrer"`],
+      ["content", "+", `href="${ORIGIN}/wiki/Special:Move?wpReason=x&amp;target=A%7CB" rel="noreferrer"`],
+    ],
+  ],
+  [
+    "links that are not classic's own root-relative /wiki/ path are left as they were",
+    [
+      ["content", "+", '<a href="https://ixwiki.com/wiki/File:Map.png">abs file</a>'],
+      ["content", "+", '<a href="//evil.example/wiki/Special:Random">pr</a>'],
+      ["content", "+", '<a href="https://evil.example/wiki/Special:Random">ext</a>'],
     ],
   ],
   [
@@ -162,6 +206,18 @@ const IXWIKI_ARTICLE_EXPECTED: Array<[string, Expectation[]]> = [
 describe("MediaWiki's HTML of an IxWiki article", () => {
   const out = parts(transformArticleHtml(IXWIKI_ARTICLE, "", "ixwiki"));
   it.each(IXWIKI_ARTICLE_EXPECTED)("%s", (_behaviour, expectations) => check(out, expectations));
+
+  it("files and in-app specials take the base path they are given; FilePath stays on IxWiki", () => {
+    const html = '<a href="/wiki/File:Map.png">m</a> <a href="/wiki/Special:Random">r</a> <a href="/wiki/Special:FilePath/Map.png">f</a>';
+    const content = transformArticleHtml(html, "/projects/ixstates", "ixwiki").contentHtml;
+    expect(content).toContain('href="/projects/ixstates/wiki/File:Map.png"');
+    expect(content).toContain('href="/projects/ixstates/wiki/Special:Random"');
+    expect(content).toContain(`href="${ORIGIN}/wiki/Special:FilePath/Map.png" rel="noreferrer"`);
+  });
+
+  it("the renderer version changed, so stored bundles re-render", () => {
+    expect(RENDERER_VERSION.startsWith("6:")).toBe(true);
+  });
 });
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -231,6 +287,165 @@ describe("another wiki's page", () => {
 });
 
 // ---------------------------------------------------------------------------------------------------------------
+// Absolute links to a wiki WikiOS reads (external links and the iiwiki:/althistory: interwiki prefixes)
+// ---------------------------------------------------------------------------------------------------------------
+
+const content = (html: string, source: "ixwiki" | "iiwiki" | "althistory", basePath = "") =>
+  transformArticleHtml(`<div class="mw-parser-output"><p>${html}</p></div>`, basePath, source).contentHtml;
+
+describe("absolute links to a wiki WikiOS reads", () => {
+  it("an external link to an iiwiki or althistory article opens in the reader with ?source=, its fragment kept and its external styling dropped", () => {
+    const out = content(
+      '<a rel="nofollow" class="external text" href="https://iiwiki.com/wiki/Gallambria#History" target="_blank">G</a> ' +
+        '<a class="external free" rel="nofollow noopener" href="https://www.iiwiki.com/wiki/Caf%C3%A9_Royale">c</a> ' +
+        '<a rel="nofollow" class="external autonumber" href="https://althistory.fandom.com/index.php?title=New+World&amp;">[1]</a> ' +
+        '<a rel="nofollow" class="external autonumber" href="https://iiwiki.com/wiki/Eurth">[2]</a> ' +
+        '<a rel="nofollow" class="external text" href="//althistory.fandom.com/index.php?title=New_World">n</a> ' +
+        '<a class="external text plainlinks" href="https://althistory.fandom.com/wiki/Napoleon%27s_World#a$&amp;b">n</a>',
+      "ixwiki"
+    );
+    expect(out).toContain('<a href="/wiki/Gallambria?source=iiwiki#History">G</a>');
+    expect(out).toContain('<a href="/wiki/Caf%C3%A9_Royale?source=iiwiki">c</a>');
+    expect(out).toContain('<a href="/wiki/New_World?source=althistory">n</a>');
+    expect(out).toContain('<a class="plainlinks" href="/wiki/Napoleon\'s_World?source=althistory#a$&amp;b">n</a>');
+    // title=X& is a query of more than the title: it stays where it points
+    expect(out).toContain('href="https://althistory.fandom.com/index.php?title=New+World&amp;"');
+    expect(out).toContain('<a href="/wiki/Eurth?source=iiwiki">[2]</a>');
+    expect(out.match(/nofollow/gu)).toHaveLength(1); // the [1] that stays
+    expect(out).not.toContain("_blank");
+    expect(out).not.toContain("external text");
+  });
+
+  it("an interwiki link classic rendered from [[iiwiki:X]] or [[althistory:X]] (class extiw, title iiwiki:X) opens in the reader with ?source=, its extiw class dropped", () => {
+    const out = content(
+      '<a href="https://iiwiki.com/wiki/Gallambria" class="extiw" title="iiwiki:Gallambria">Gallambria</a> ' +
+        '<a href="https://althistory.fandom.com/wiki/Napoleon%27s_World#Map" class="extiw" title="althistory:Napoleon\'s World">NW</a>',
+      "ixwiki",
+      "/projects/ixstates"
+    );
+    expect(out).toContain(
+      '<a href="/projects/ixstates/wiki/Gallambria?source=iiwiki" title="iiwiki:Gallambria">Gallambria</a>'
+    );
+    expect(out).toContain(
+      '<a href="/projects/ixstates/wiki/Napoleon\'s_World?source=althistory#Map" title="althistory:Napoleon\'s World">NW</a>'
+    );
+    expect(out).not.toContain("extiw");
+  });
+
+  it("a link to a sister file, special or user page stays on that wiki", () => {
+    const links = [
+      '<a rel="nofollow" class="external text" href="https://iiwiki.com/wiki/File:Flag.png">f</a>',
+      '<a href="https://iiwiki.com/wiki/Special:Random" class="extiw" title="iiwiki:Special:Random">r</a>',
+      '<a rel="nofollow" class="external text" href="https://althistory.fandom.com/wiki/User:Kir">u</a>',
+      '<a rel="nofollow" class="external text" href="https://althistory.fandom.com/wiki/User_talk:Kir">ut</a>',
+      '<a rel="nofollow" class="external text" href="https://iiwiki.com/index.php?title=Category:Eurth">c</a>',
+      '<a rel="nofollow" class="external text" href="https://iiwiki.com/wiki/Template%3AInfobox">t</a>',
+    ];
+    for (const source of ["ixwiki", "iiwiki"] as const) {
+      const out = content(links.join(" "), source);
+      for (const link of links) expect(out).toContain(link);
+    }
+  });
+
+  it("a link whose title climbs out of /wiki/ with dot segments, its slashes escaped or not, stays where it points", () => {
+    const links = [
+      '<a rel="nofollow" class="external text" href="https://iiwiki.com/wiki/a%2F..%2F..%2F..%2Fapi%2Fadmin">a</a>',
+      '<a rel="nofollow" class="external text" href="https://iiwiki.com/wiki/a%2f%2E%2E%2fapi">b</a>',
+      '<a rel="nofollow" class="external text" href="https://althistory.fandom.com/index.php?title=..%2Fapi">c</a>',
+      '<a href="https://ixwiki.com/wiki/%2E%2E" class="extiw" title="ixwiki:..">d</a>',
+    ];
+    for (const source of ["ixwiki", "iiwiki"] as const) {
+      const out = content(links.join(" "), source, "/p");
+      for (const link of links) expect(out).toContain(link);
+      expect(out).not.toContain("/p/wiki/");
+    }
+  });
+
+  it("a fragment's character references are read as the browser reads them, and written back encoded", () => {
+    const out = content(
+      '<a class="external text" href="https://iiwiki.com/wiki/Gallambria#Foo_&quot;bar&quot;">q</a> ' +
+        '<a class="external text" href="https://iiwiki.com/wiki/Gallambria#a&#039;b&#39;c&lt;d&gt;&#x27;&QUOT;">e</a> ' +
+        '<a class="external text" href="https://iiwiki.com/wiki/Gallambria#&amp;quot;">l</a>',
+      "ixwiki"
+    );
+    expect(out).toContain('<a href="/wiki/Gallambria?source=iiwiki#Foo_%22bar%22">q</a>');
+    expect(out).toContain('<a href="/wiki/Gallambria?source=iiwiki#a\'b\'c%3Cd%3E\'%22">e</a>');
+    // &amp;quot; is the text &quot;, not a quote: one decode, never two
+    expect(out).toContain('<a href="/wiki/Gallambria?source=iiwiki#&amp;quot;">l</a>');
+  });
+
+  it("a link to a multi-word talk namespace stays on that wiki; a project page opens in the reader", () => {
+    const talk = '<a rel="nofollow" class="external text" href="https://althistory.fandom.com/wiki/Alternate_History_talk:Foo">t</a>';
+    const out = content(
+      `${talk} <a rel="nofollow" class="external text" href="https://iiwiki.com/wiki/IIWiki:Policy">p</a>`,
+      "ixwiki"
+    );
+    expect(out).toContain(talk);
+    expect(out).toContain('<a href="/wiki/IIWiki:Policy?source=iiwiki">p</a>');
+  });
+
+  it("a link with a query stays where it points", () => {
+    const links = [
+      '<a rel="nofollow" class="external text" href="https://iiwiki.com/wiki/Gallambria?action=history">h</a>',
+      '<a rel="nofollow" class="external text" href="https://iiwiki.com/index.php?title=Gallambria&amp;oldid=12">o</a>',
+      '<a rel="nofollow" class="external text" href="https://althistory.fandom.com/index.php?curid=4">c</a>',
+      '<a rel="nofollow" class="external text" href="https://ixwiki.com/wiki/Burgundie?source=iiwiki">s</a>',
+      '<a rel="nofollow" class="external text" href="https://example.com/wiki/Gallambria">x</a>',
+      '<a rel="nofollow" class="external text" href="https://iiwiki.com.evil.test/wiki/Gallambria">e</a>',
+      '<a rel="nofollow" class="external text" href="https://iiwiki.com/wiki/100%_Foo">m</a>',
+      "<a rel=\"nofollow\" class=\"external text\" href='https://iiwiki.com/wiki/Gallambria'>q</a>",
+    ];
+    for (const source of ["ixwiki", "iiwiki", "althistory"] as const) {
+      const out = content(links.join(" "), source);
+      for (const link of links) expect(out).toContain(link);
+    }
+  });
+
+  it("an iiwiki page's absolute link to IxWiki or AltHistory opens in the reader", () => {
+    const out = content(
+      '<a rel="nofollow" class="external text" href="https://ixwiki.com/wiki/Burgundie#Economy">B</a> ' +
+        '<a rel="nofollow" class="external text" href="https://www.ixwiki.com/index.php?title=Burgundie">B2</a> ' +
+        '<a href="https://althistory.fandom.com/wiki/Napoleon%27s_World" class="extiw" title="althistory:Napoleon\'s World">NW</a> ' +
+        '<a rel="nofollow" class="external text" href="https://iiwiki.com/wiki/Gallambria">G</a>',
+      "iiwiki"
+    );
+    expect(out).toContain('<a href="/wiki/Burgundie#Economy">B</a>');
+    expect(out).toContain('<a href="/wiki/Burgundie">B2</a>');
+    expect(out).toContain('<a href="/wiki/Napoleon\'s_World?source=althistory" title="althistory:Napoleon\'s World">NW</a>');
+    expect(out).toContain('<a href="/wiki/Gallambria?source=iiwiki">G</a>');
+  });
+
+  it("an IxWiki page's own index.php?title= link, title alone, opens in the reader; one with a query stays on IxWiki", () => {
+    const out = content(
+      '<a href="/index.php?title=Burgundie">b</a> <a href="/index.php?title=Burgundie&amp;action=history">h</a>',
+      "ixwiki"
+    );
+    expect(out).toContain('<a href="/wiki/Burgundie">b</a>');
+    expect(out).toContain(`href="${ORIGIN}/index.php?title=Burgundie&amp;action=history" rel="noreferrer"`);
+  });
+
+  it("a page of absolute links, or one tag of endless attributes, is rewritten in linear time", () => {
+    const links = '<a rel="nofollow" class="external text" href="https://iiwiki.com/wiki/A#b">a</a>'.repeat(20_000);
+    const attributes = `<a href="https://iiwiki.com/wiki/A"${' rel="x" target="y" class="extiw"'.repeat(20_000)}>a</a>`;
+    const unclosed = '<a href="https://iiwiki.com/wiki/A'.repeat(20_000);
+    const began = performance.now();
+    const out = content(links, "ixwiki");
+    content(attributes, "iiwiki");
+    content(unclosed, "althistory");
+    expect(performance.now() - began).toBeLessThan(500 * TIMING_BUDGET_SCALE);
+    expect(out).not.toContain("iiwiki.com");
+  });
+
+  it("a class of nothing but external styling goes; other attributes stay in place", () => {
+    const out = content(
+      '<a data-rel="x" class="extiw" href="https://iiwiki.com/wiki/Gallambria" data-class="y" id="g">G</a>',
+      "ixwiki"
+    );
+    expect(out).toContain('<a data-rel="x" href="/wiki/Gallambria?source=iiwiki" data-class="y" id="g">G</a>');
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------------
 // Pictures: srcset, the eager first picture, the lead image and the hero
 // ---------------------------------------------------------------------------------------------------------------
 
@@ -295,10 +510,10 @@ describe("pictures", () => {
       "/api/mediawiki/iiwiki/images/thumb/a/ab/F.png/450px-F.png 1.5x, /api/mediawiki/iiwiki/images/thumb/a/ab/F.png/600px-F.png 2x, /api/mediawiki/iiwiki/images/thumb/c/cd/G.png/300px-G.png 3x",
     ],
     [
-      "a candidate already proxied, or on a CDN, is left alone",
+      "another wiki's proxied candidate is left alone (the sanitizer drops it); its own CDN file goes through Special:FilePath",
       "althistory",
       "/api/mediawiki/iiwiki/images/a/ab/F.png 1x, https://static.wikia.nocookie.net/althistory/images/a/ab/F.png 2x",
-      "/api/mediawiki/iiwiki/images/a/ab/F.png 1x, https://static.wikia.nocookie.net/althistory/images/a/ab/F.png 2x",
+      "/api/mediawiki/iiwiki/images/a/ab/F.png 1x, /api/mediawiki/althistory/wiki/Special:FilePath/F.png 2x",
     ],
   ])("srcset: %s", (_behaviour, wiki, srcset, expected) => {
     const out = transformImages(withSrcset(srcset), wiki);
@@ -306,6 +521,16 @@ describe("pictures", () => {
     expect(out).not.toMatch(/images\/?https?:/);
     expect(out).not.toContain(`${ORIGIN}${ORIGIN}`);
     expect(transformImages(out, wiki)).toBe(out); // idempotent
+  });
+
+  it("a sister page's src goes through its media proxy; data-src and another host's src are left to the sanitizer", () => {
+    const out = transformImages(
+      '<img src="https://iiwiki.com/images/a/ab/F.png" data-src="/images/b/bc/G.png"><img src="https://evil.test/x.png">',
+      "iiwiki"
+    );
+    expect(out).toContain('src="/api/mediawiki/iiwiki/images/a/ab/F.png"');
+    expect(out).toContain('data-src="/images/b/bc/G.png"');
+    expect(out).toContain('src="https://evil.test/x.png"');
   });
 
   const img = (name: string, attrs = "") => `<img src="https://ixwiki.com/images/a/ab/${name}" ${attrs}>`;

@@ -21,6 +21,7 @@ import { RealmDayInput } from "~/components/realms/RealmDayInput";
 import { INTENT_TEMPLATES } from "./meeting-scheduler-intents";
 import { atNineAm, type TimePreset } from "./meeting-scheduler-logic";
 import type { IntentTemplate, MeetingSchedulerProps } from "./meeting-scheduler-types";
+import { assetUrl } from "~/lib/base-path";
 
 const EYEBROW = "text-label-secondary text-eyebrow";
 
@@ -135,7 +136,11 @@ export function GuestCountrySelect({
             <SelectItem key={c.id} value={c.id}>
               <span className="flex items-center gap-2">
                 {c.flagUrl && (
-                  <img src={c.flagUrl} alt="" className="h-3 w-4 rounded-xs object-cover" />
+                  <img
+                    src={assetUrl(c.flagUrl) ?? undefined}
+                    alt=""
+                    className="h-3 w-4 rounded-xs object-cover"
+                  />
                 )}
                 {c.name}
               </span>

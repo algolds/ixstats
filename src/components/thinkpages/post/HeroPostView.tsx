@@ -33,6 +33,7 @@ import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { cn } from "~/lib/utils";
 import type { PostState, PostViewContext } from "./postViewTypes";
 import { AccountAvatar, AccountTypeIcon, accountTypeColor } from "./ThinkpagesPostUtils";
+import { assetUrl } from "~/lib/base-path";
 
 interface HeroPostViewProps {
   post: any;
@@ -146,7 +147,7 @@ export function HeroPostView({ post, ctx, state }: HeroPostViewProps) {
                     <span className="border-separator bg-fill-4 text-label-secondary rounded-control-sm text-caption inline-flex items-center gap-1 border px-2 py-0.5">
                       {account.country.flag && (
                         <img
-                          src={normalizeFlagUrl(account.country.flag) ?? undefined}
+                          src={assetUrl(normalizeFlagUrl(account.country.flag)) ?? undefined}
                           alt=""
                           className="rounded-control-sm h-2.5 w-3.5 object-cover"
                           onError={(e) => {

@@ -16,6 +16,7 @@ import {
 } from "~/components/ui/select";
 import type { BaseModalProps } from "./types";
 import { TemplateModalShell } from "./TemplateModalShell";
+import { assetUrl } from "~/lib/base-path";
 
 const STAT_FIELDS = [
   { value: "population", label: "Population" },
@@ -119,7 +120,7 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
                     leading={
                       c.flagUrl ? (
                         <img
-                          src={c.flagUrl}
+                          src={assetUrl(c.flagUrl) ?? undefined}
                           alt=""
                           className="border-separator rounded-control-sm h-3 w-5 border object-cover"
                         />

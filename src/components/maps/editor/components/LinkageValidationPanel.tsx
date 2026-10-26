@@ -11,6 +11,7 @@ import type { LinkageValidationData } from "../types/editor-state";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Card } from "~/components/ui/card";
 import { AutoMatchReviewDialog } from "./AutoMatchReviewDialog";
+import { assetUrl } from "~/lib/base-path";
 
 const VALIDATION_TABS = [
   { value: "issues", label: "Issues" },
@@ -34,7 +35,7 @@ function CountryLabel({ name, flag }: { name: string; flag?: string | null }) {
     <div className="flex items-center gap-2 truncate">
       {flag && (
         <img
-          src={flag}
+          src={assetUrl(flag) ?? undefined}
           alt=""
           className="border-separator h-3.5 w-5 rounded-xs border object-cover"
         />

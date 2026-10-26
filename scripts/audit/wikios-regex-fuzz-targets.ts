@@ -421,6 +421,10 @@ export const TARGETS: readonly Target[] = [
     const m = await import("~/lib/wiki-os/transformers/html-transformer");
     return (s) => m.transformImages(s);
   }),
+  html("transformers/html-transformer#transformImages@sister", async () => {
+    const m = await import("~/lib/wiki-os/transformers/html-transformer");
+    return (s) => m.transformImages(s, "althistory");
+  }),
   html("transformers/html-transformer#stripConflictingStyles", async () => {
     const m = await import("~/lib/wiki-os/transformers/html-transformer");
     return (s) => m.stripConflictingStyles(s);
@@ -559,10 +563,6 @@ export const TARGETS: readonly Target[] = [
       why: "jsdom builds a DOM at a few microseconds an element in Bun and about 20 in Node: 200,000 characters of one-character elements (`<br>`) take a second in the Jest gate on a quiet machine and two under contention, and the depth guard parses the same page once more (parse5, as jsdom does): at the gate's 100 KB the worst families (`<a>`, `<p>`, `<li>`) take 1.8 to 2.3 s, which fails the 12 times allowance (1.8 s) in the gate, so it is allowed 20 times the budget: the DOM and its parse are the work",
     }
   ),
-  wikitext("transformers/url-compat#titleToWikiOSPath", async () => {
-    const m = await import("~/lib/wiki-os/transformers/url-compat");
-    return (s) => m.titleToWikiOSPath(s);
-  }),
   wikitext(
     "transformers/url-compat#titleToWikiOSRoute",
     async () => {
@@ -571,9 +571,37 @@ export const TARGETS: readonly Target[] = [
     },
     linear(2, "encodeURIComponent writes nine characters for each of these, and that is the work")
   ),
-  html("transformers/url-compat#transformWikiLinks", async () => {
-    const m = await import("~/lib/wiki-os/transformers/url-compat");
-    return (s) => m.transformWikiLinks(s);
+  html("reader-hrefs#withAppHrefs", async () => {
+    const m = await import("~/lib/wiki-os/reader-hrefs");
+    return (s) => m.withAppHrefs(s);
+  }),
+  // A hovered link's href is page text too (a sanitized article's <a href>): read under the base path, as an
+  // absolute link to a sister reader and as a legacy /w/ link.
+  html("wiki-link-target#wikiLinkTarget@app-href", async () => {
+    const m = await import("~/lib/wiki-os/wiki-link-target");
+    return (s) =>
+      m.wikiLinkTarget(`/projects/ixstates/wiki/${s}?source=iiwiki`, "/projects/ixstates");
+  }),
+  html("wiki-link-target#wikiLinkTarget@reader-href", async () => {
+    const m = await import("~/lib/wiki-os/wiki-link-target");
+    return (s) => m.wikiLinkTarget(`https://www.iiwiki.com/wiki/${s}`, "/projects/ixstates");
+  }),
+  html("wiki-link-target#wikiLinkTarget@legacy-href", async () => {
+    const m = await import("~/lib/wiki-os/wiki-link-target");
+    return (s) => m.wikiLinkTarget(`/w/${s}`, "");
+  }),
+  html("wiki-link-target#absoluteReaderTarget", async () => {
+    const m = await import("~/lib/wiki-os/wiki-link-target");
+    return (s) => m.absoluteReaderTarget(`https://althistory.fandom.com/index.php?title=${s}`);
+  }),
+  // The link pass of each wiki's page, alone: every anchor of the page is read for an absolute reader link.
+  html("transformers/html-links#transformLinks@ixwiki", async () => {
+    const m = await import("~/lib/wiki-os/transformers/html-links");
+    return (s) => m.transformLinks(s, "/projects/ixstates", "ixwiki");
+  }),
+  html("transformers/html-links#transformLinks@sister", async () => {
+    const m = await import("~/lib/wiki-os/transformers/html-links");
+    return (s) => m.transformLinks(s, "", "iiwiki");
   }),
   wikitext(
     "transformers/wiki-ast-converter#wikitextToAst",
@@ -799,6 +827,23 @@ export const TARGETS: readonly Target[] = [
       why: "DOMPurify builds a DOM, about 2.6 microseconds a character in Bun and about 5 in Node on a page of one-character elements (and the depth guard parses the page once more: `<a>` takes 2.3 s at the gate's 100 KB, which fails a 12 times allowance): the DOM and its parse are the work. Elements that share an id are quadratic (jsdom's named properties: 29,000 `<h2 id=\"a\">` took 4.3 s), which is why the run stops at 200,000 characters; its depth is bounded (past 400 the source is shown escaped)",
     }
   ),
+  markup(
+    "lib/utils/sanitize-sister-html#sanitizeSisterHtml",
+    async () => {
+      const m = await import("~/lib/utils/sanitize-sister-html");
+      return (s) => m.sanitizeSisterHtml(s, "althistory", { embed: false });
+    },
+    {
+      maxChars: 200_000,
+      scale: 0.5,
+      slowFactor: 20,
+      why: "sanitizeWikiArticleHtml's DOM and depth guard (see it), plus a URL parse per src, srcset candidate and link, and a lex of each style attribute, each linear in its value",
+    }
+  ),
+  wikitext("sister-media#sisterMediaPath", async () => {
+    const m = await import("~/lib/wiki-os/sister-media");
+    return (s) => m.sisterMediaPath(`https://static.wikia.nocookie.net/althistory/images/a/ab/${s}`, "althistory");
+  }),
 
   // ---- templates/ ------------------------------------------------------------------------------
   html("templates/chip-markers#markTemplateChips", async () => {
@@ -929,6 +974,10 @@ export const TARGETS: readonly Target[] = [
   html("transformers/srcset#mapSrcsetUrls", async () => {
     const m = await import("~/lib/wiki-os/transformers/srcset");
     return (s) => m.mapSrcsetUrls(s, (url) => url);
+  }),
+  html("transformers/srcset#filterSrcset", async () => {
+    const m = await import("~/lib/wiki-os/transformers/srcset");
+    return (s) => m.filterSrcset(s, (url) => (url.length % 2 === 0 ? url : null));
   }),
 
   // ---- api-compat/ (the api.php surface reads page text and request strings) -----------------------

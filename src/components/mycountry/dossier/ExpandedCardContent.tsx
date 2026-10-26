@@ -4,6 +4,7 @@ import React, { useCallback, useState } from "react";
 import { FadeIn } from "~/components/ui/text-reveal";
 import { useNotify } from "~/hooks/useNotify";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { cn } from "~/lib/utils";
 import {
   UserPlus,
@@ -16,7 +17,7 @@ import {
   Tournament as Swords,
   SystemRestart as Loader2,
   Globe,
-  OpenNewWindow as ExternalLink,
+  NavArrowRight,
   Crown,
   Calendar,
 } from "iconoir-react";
@@ -24,6 +25,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { MeetingScheduler } from "~/components/executive/actions/MeetingScheduler";
+import { wikiReaderPath } from "~/lib/wiki-os/config";
 import { type CountryCardData } from "./CountryFocusCard";
 import { useCountryDiplomacyActions, type ForeignPolicyType } from "./useCountryDiplomacyActions";
 
@@ -262,14 +264,11 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
               <div className="space-y-2">
                 <Eyebrow className="block px-1">Quick links</Eyebrow>
                 <Button asChild variant="outline" size="lg" className={actionClass}>
-                  <a
-                    href={`/wiki/${encodeURIComponent(country.name.replace(/ /g, "_"))}`}
-                    onClick={(e) => e.stopPropagation()}
-                  >
+                  <Link href={wikiReaderPath(country.name)} onClick={(e) => e.stopPropagation()}>
                     <Globe className="text-label-secondary h-3.5 w-3.5" />
                     View on the wiki
-                    <ExternalLink className="text-label-secondary ml-auto h-3 w-3" />
-                  </a>
+                    <NavArrowRight className="text-label-secondary ml-auto h-3 w-3" />
+                  </Link>
                 </Button>
               </div>
             </div>

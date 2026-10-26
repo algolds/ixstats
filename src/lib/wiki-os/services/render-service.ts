@@ -30,6 +30,7 @@ import { CategoryService } from "../core/category-service";
 import { LinkGraphService } from "../core/link-graph-service";
 import { canonicalizeTitle } from "../core/title";
 import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
+import { loopbackRendererMissing } from "~/lib/wiki-os/config";
 import {
   CURRENT_REVISION,
   RENDERER_VERSION,
@@ -620,8 +621,9 @@ async function renderQueue(
  */
 export async function renderStaleBatch(limit = 20): Promise<StaleBatchResult> {
   // Before the cutover there is no private render engine: the background queue would send every page to the
-  // public MediaWiki. Readers still render the pages they open (v1-switch.ts).
-  if (!isWikiosV1Enabled()) return { rendered: 0, failed: 0 };
+  // public MediaWiki. Readers still render the pages they open (v1-switch.ts). In production with no private render
+  // engine nothing renders (config.ts); returning before the query keeps every page out of the failure backoff.
+  if (!isWikiosV1Enabled() || loopbackRendererMissing()) return { rendered: 0, failed: 0 };
   const now = Date.now();
   const backingOff = [...staleFailures].flatMap(([id, failure]) =>
     failure.retryAt > now ? [id] : []

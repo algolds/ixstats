@@ -2,7 +2,8 @@
  * cache-service.ts — Wiki Cache Service (Optimized Façade)
  *
  * Lightweight bridge wrapping PostgreSQL WikiArticle repository and WikiBridge.
- * Provides high-speed (<2ms) reads for country profiles, infoboxes, and sections.
+ * Provides high-speed (<2ms) reads for country profiles, infoboxes, and sections. A sister wiki that cannot be
+ * reached reads as a missing page here (`unlessUnavailable`), as it always has.
  */
 
 import { getArticleWikitext, type WikiSource } from "~/lib/wiki-os/adapters/mediawiki/bridge";
@@ -11,6 +12,7 @@ import { cleanWikiMarkup } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
 import { Cache } from "~/lib/cache";
 import { sameTitle } from "~/lib/wiki-os/core/title";
+import { unlessUnavailable } from "~/lib/wiki-os/upstream-guard";
 
 export function cleanWikitextForDisplay(raw: string): string {
   return cleanWikiMarkup(raw);
@@ -69,7 +71,7 @@ export class WikiCacheService {
 
     // 2. Fallback to WikiBridge
     if (!wikitext) {
-      const articleData = await getArticleWikitext(countryName, wikiSource);
+      const articleData = await unlessUnavailable(getArticleWikitext(countryName, wikiSource));
       wikitext = articleData?.wikitext ?? null;
     }
 
@@ -129,7 +131,7 @@ export class WikiCacheService {
       }
     }
 
-    const res = await getArticleWikitext(title, wikiSource);
+    const res = await unlessUnavailable(getArticleWikitext(title, wikiSource));
     if (!res) return null;
 
     return { content: res.wikitext, lastFetched: Date.now(), source: "bridge" };
@@ -150,7 +152,7 @@ export class WikiCacheService {
     templateName: string,
     wikiSource: WikiSource = "ixwiki"
   ): Promise<string | null> {
-    const res = await getArticleWikitext(`Template:${templateName}`, wikiSource);
+    const res = await unlessUnavailable(getArticleWikitext(`Template:${templateName}`, wikiSource));
     return res?.wikitext ?? null;
   }
 

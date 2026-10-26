@@ -3,6 +3,7 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { reactionLabel } from "~/lib/thinkpages-forum/reactions";
 import { ForumAvatar } from "../ForumAvatar";
 import { ReactionGlyph, type EmojiList } from "./ReactionGlyph";
+import { assetUrl } from "~/lib/base-path";
 
 export interface Reactor {
   id: string;
@@ -33,7 +34,7 @@ export function ReactorRow({ reactor, type, emojis }: ReactorRowProps) {
           <span className="text-headline text-label min-w-0 truncate">{reactor.name}</span>
           {reactor.flagUrl ? (
             <img
-              src={reactor.flagUrl}
+              src={assetUrl(reactor.flagUrl) ?? undefined}
               alt=""
               width={18}
               height={12}

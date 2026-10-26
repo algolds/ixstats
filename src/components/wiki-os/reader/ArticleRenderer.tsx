@@ -10,6 +10,7 @@ import { StickyToc } from "~/components/wiki-os/reader/StickyToc";
 import { Sheet, SheetContent, SheetTitle } from "~/components/ui/sheet";
 import { useMediaQuery } from "~/hooks/useMediaQuery";
 import { useWikiSetting } from "~/components/wiki-os/shared/useWikiSetting";
+import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 import { InfoboxWithMap } from "~/components/wiki-os/reader/InfoboxWithMap";
 import { useImageLightbox } from "~/components/wiki-os/reader/ImageLightbox";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
@@ -286,14 +287,11 @@ export function ArticleRenderer({
     if (canEdit) appendSectionEditLinks(container, slug);
     else removeSectionEditLinks(container);
   }, [canEdit, slug, processedHtml]);
-  // React writes a `dangerouslySetInnerHTML` element's HTML again whenever the prop is a new object,
-  // even for the same string (React 19): built here once per HTML, so a re-render (a section change in
-  // the scroll spy, a query settling) leaves the article's DOM, its images and its added links alone.
-  const bodyMarkup = useMemo(() => ({ __html: processedHtml }), [processedHtml]);
-  const noticesMarkup = useMemo(
-    () => (noticesHtml ? { __html: noticesHtml } : null),
-    [noticesHtml]
-  );
+  // One markup object per HTML (useHtmlMarkup), so a re-render (a section change in the scroll spy, a query
+  // settling) leaves the article's DOM, its images and its added links alone (React 19). Its app links get
+  // the base path there (`withAppHrefs`), after the placeholder pass above read them bare.
+  const bodyMarkup = useHtmlMarkup(processedHtml);
+  const noticesMarkup = useHtmlMarkup(noticesHtml ?? "");
   const processedInfoboxHtml = useMemo(() => {
     if (!infoboxHtml) return null;
     return hydrated ? injectPlaceholderElements(infoboxHtml) : infoboxHtml;
@@ -519,7 +517,7 @@ export function ArticleRenderer({
         })()}
 
         {/* Page-top notices (WIP, stub, hatnotes) */}
-        {noticesMarkup && (
+        {noticesHtml && (
           <div
             id={leanToken ? leanElementId(leanToken, "notices") : undefined}
             className={`wikios-notices ${ARTICLE_STYLE_ROOT_CLASS}`}

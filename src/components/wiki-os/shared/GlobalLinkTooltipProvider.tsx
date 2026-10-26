@@ -3,9 +3,9 @@
 /**
  * GlobalLinkTooltips — Intercepts ALL link hovers across the entire app.
  *
- * Uses document-level event delegation to detect any <a> pointing to:
- * - ixwiki.com/wiki/*       → Wiki article preview tooltip (the article opens in WikiOS)
- * - iiwiki.com/wiki/*       → IIWiki article preview tooltip (the article opens in WikiOS)
+ * Uses document-level event delegation to detect any <a> whose href is a wiki article WikiOS can preview
+ * (`wikiLinkTarget`): an app link `/wiki/Title` under the base path (with `?source=` for a sister wiki), or an
+ * absolute link to IxWiki, IIWiki or AltHistory. The preview's link opens the article in WikiOS.
  *
  * Mount once in the root layout as a sibling (it wraps nothing) — every link gets
  * tooltips automatically, no per-component wrapping needed. Future wiki links
@@ -19,49 +19,20 @@ import { VirtualAnchorHoverCard } from "~/components/ui/hover-card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { OpenBook as BookOpen } from "iconoir-react";
-import { WIKI_SOURCES, mediaWikiHostPattern, wikiReaderPath } from "~/lib/wiki-os/config";
-
-/** A hovered link's wiki article. */
-interface DetectedLink {
-  title: string;
-  wiki: "ixwiki" | "iiwiki";
-}
-
-/** Namespaces and special pages that have no useful preview. */
-const NO_PREVIEW_TITLE = /^(?:(?:special|file|category)[:/]|(?:template|help|user|talk|wiki):)/i;
-
-function wikiLink(match: RegExpMatchArray, wiki: "ixwiki" | "iiwiki"): DetectedLink | null {
-  const title = decodeURIComponent(match[1]!).replace(/_/g, " ");
-  return NO_PREVIEW_TITLE.test(title) ? null : { title, wiki };
-}
-/** An absolute link to an article of the wiki, by the configured public host. */
-const ABSOLUTE_WIKI_LINK = new RegExp(
-  `(?:https?:\\/\\/)?${mediaWikiHostPattern()}\\/wiki\\/([^#?]+)`
-);
-
-/** Parse a link href and return detection info, or null if not a recognized link */
-function detectLink(href: string): DetectedLink | null {
-  // Wiki links: <public host>/wiki/Title, /wiki/Title (relative), or /wiki/Title (WikiOS)
-  const ixMatch =
-    href.match(ABSOLUTE_WIKI_LINK) ??
-    href.match(/^(?:\/[^/]+)?\/wiki\/([^#?]+)/) ??
-    href.match(/^(?:\/[^/]+)?\/w\/([^#?]+)/);
-  if (ixMatch) return wikiLink(ixMatch, "ixwiki");
-
-  const iiMatch = href.match(/(?:https?:\/\/)?iiwiki\.(?:com|us)\/wiki\/([^#?]+)/);
-  return iiMatch ? wikiLink(iiMatch, "iiwiki") : null;
-}
+import { getBasePath } from "~/lib/base-path";
+import { WIKI_SOURCES, wikiReaderPath } from "~/lib/wiki-os/config";
+import { wikiLinkTarget, type WikiLinkTarget } from "~/lib/wiki-os/wiki-link-target";
 
 export function GlobalLinkTooltips() {
   // The detected link and the <a> it came from (the hover card's virtual anchor). Kept after the
   // card closes so its content stays put during the exit animation.
-  const [active, setActive] = useState<{ link: DetectedLink; el: HTMLElement } | null>(null);
+  const [active, setActive] = useState<{ link: WikiLinkTarget; el: HTMLElement } | null>(null);
   const [open, setOpen] = useState(false);
   const showTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const activeElementRef = useRef<HTMLElement | null>(null);
 
-  const show = useCallback((link: DetectedLink, el: HTMLElement) => {
+  const show = useCallback((link: WikiLinkTarget, el: HTMLElement) => {
     clearTimeout(hideTimeoutRef.current);
     clearTimeout(showTimeoutRef.current);
     activeElementRef.current = el;
@@ -95,7 +66,7 @@ export function GlobalLinkTooltips() {
       const href = link.getAttribute("href") ?? "";
       if (!href) return;
 
-      const detected = detectLink(href);
+      const detected = wikiLinkTarget(href, getBasePath());
       if (!detected) return;
 
       // Don't re-trigger for the same element
@@ -155,7 +126,7 @@ export function GlobalLinkTooltips() {
   );
 }
 
-function WikiTooltipBody({ title, wiki }: { title: string; wiki: "ixwiki" | "iiwiki" }) {
+function WikiTooltipBody({ title, wiki }: WikiLinkTarget) {
   const { data: intro } = api.wikios.getIntro.useQuery({ title, wiki }, { staleTime: 30 * 60_000 });
 
   return (

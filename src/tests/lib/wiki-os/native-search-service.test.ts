@@ -5,18 +5,28 @@
  * applied the old queries answer.
  */
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
+import { getArticleSummaryFromShadow } from "~/lib/wiki-os/core/native-search-service";
+import { WikiUnavailableError } from "~/lib/wiki-os/upstream-guard";
 
 const mockQueryRaw = jest.fn();
 const mockFindMany = jest.fn();
 const mockCount = jest.fn();
+const mockFindFirst = jest.fn();
+const mockBridgeWikitext = jest.fn();
 jest.mock("~/server/db", () => ({
   db: {
     wikiArticle: {
+      findFirst: (...args: unknown[]) => mockFindFirst(...args),
       findMany: (...args: unknown[]) => mockFindMany(...args),
       count: (...args: unknown[]) => mockCount(...args),
     },
     $queryRawUnsafe: (...args: unknown[]) => mockQueryRaw(...args),
   },
+}));
+
+// The intro fallback's bridge (a sister wiki's own page).
+jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
+  getArticleWikitext: (...args: unknown[]) => mockBridgeWikitext(...args),
 }));
 
 type Service = typeof import("~/lib/wiki-os/core/native-search-service");
@@ -276,5 +286,47 @@ describe("spotlightSearch (title typeahead)", () => {
       readingTime: true,
       leadImageUrl: true,
     });
+  });
+});
+
+describe("getArticleSummaryFromShadow: a sister page with no stored copy reads its own wiki", () => {
+  let error: jest.SpyInstance;
+  beforeEach(() => {
+    mockFindFirst.mockResolvedValue(null);
+    error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+  });
+
+  it("gives the intro its wiki answers", async () => {
+    mockBridgeWikitext.mockResolvedValue({
+      title: "Gylias",
+      pageId: 3,
+      wikitext: "'''Gylias''' is a country in Eurth, on the northern coast of the continent.",
+      length: 80,
+    });
+
+    await expect(getArticleSummaryFromShadow("Gylias", "iiwiki")).resolves.toMatchObject({
+      title: "Gylias",
+      intro: expect.stringContaining("Gylias is a country"),
+    });
+    expect(mockBridgeWikitext).toHaveBeenCalledWith("Gylias", "iiwiki");
+  });
+
+  it("throws WikiUnavailableError when that wiki cannot be reached, never an empty intro", async () => {
+    mockBridgeWikitext.mockRejectedValue(new WikiUnavailableError("IIWiki", "unreachable"));
+
+    await expect(getArticleSummaryFromShadow("Gylias", "iiwiki")).rejects.toBeInstanceOf(
+      WikiUnavailableError
+    );
+  });
+
+  it("logs and swallows any other error, as an empty intro", async () => {
+    mockBridgeWikitext.mockRejectedValue(new Error("boom"));
+
+    await expect(getArticleSummaryFromShadow("Gylias", "iiwiki")).resolves.toEqual({
+      title: "Gylias",
+      intro: "",
+      leadImageUrl: null,
+    });
+    expect(error).toHaveBeenCalled();
   });
 });

@@ -5,6 +5,7 @@ import { useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
+import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 
@@ -82,7 +83,7 @@ export default function SearchPage() {
             <p className="text-body text-label-secondary mt-2">
               Try a different search term, or{" "}
               <a
-                href={`/wiki/index.php?search=${encodeURIComponent(searchTerm)}`}
+                href={`${mediaWikiOrigin()}/index.php?search=${encodeURIComponent(searchTerm)}`}
                 className="text-tint underline"
               >
                 search on MediaWiki

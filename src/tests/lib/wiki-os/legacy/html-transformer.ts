@@ -1,5 +1,7 @@
 // The HTML transformer as the integration branch has it (515ca3c72, after plans 411 and 415), before the regex-DoS sweep (plan F15), verbatim:
 // regex-dos-html.test.ts holds the scanning rewrite against it. Not used by any code.
+// One amendment, a link policy rather than a scan (B4a, 2026-10-25): files and the special pages WikiOS serves are read
+// in-app; only Special:FilePath and the specials WikiOS lacks still open on IxWiki (step 1 of transformIxWikiLinks).
 
 // src/lib/wiki-os/html-transformer.ts
 // Transforms MediaWiki Action API HTML into WikiOS-ready content.
@@ -7,6 +9,7 @@
 
 import { withBasePath } from "~/lib/base-path";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
+import { resolveWikiPath } from "~/lib/wiki-os/wiki-path";
 import { mapSrcsetUrls } from "~/lib/wiki-os/transformers/srcset";
 import {
   getWikiBaseUrl,
@@ -310,13 +313,15 @@ function transformIxWikiLinks(html: string, basePath: string): string {
 
   // 1. Transform /wiki/Title links to /wiki/Title (with basePath)
   let result = html.replace(WIKI_LINK_HREF_REGEX, (_match, path: string) => {
-    if (
-      path.startsWith("Special:") ||
-      path.startsWith("Special%3A") ||
-      path.startsWith("File:") ||
-      path.startsWith("File%3A")
-    ) {
-      return `href="${origin}/wiki/${path}" rel="noreferrer"`;
+    if (/^special(?::|%3a)/iu.test(path)) {
+      const bare = path.replace(/#.*/su, "");
+      const at = bare.indexOf("?");
+      const name = at === -1 ? bare : bare.slice(0, at);
+      const query = at === -1 ? "" : bare.slice(at + 1);
+      const target = resolveWikiPath(name.split("/"), new URLSearchParams(query.replace(/&amp;/gu, "&")));
+      const inApp =
+        target.kind === "special" && !["unknown", "file-path"].includes(target.action.type);
+      if (!inApp) return `href="${origin}/wiki/${path}" rel="noreferrer"`;
     }
     return `href="${basePath}/wiki/${path}"`;
   });

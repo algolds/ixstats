@@ -221,7 +221,6 @@ const TITLE_TARGETS: ReadonlySet<string> = new Set([
   "core/title#canonicalizeTitle",
   "core/title#sameTitle",
   "core/title#decodeTitleParam",
-  "transformers/url-compat#titleToWikiOSPath",
   "transformers/url-compat#titleToWikiOSRoute",
   "api-compat/modules/list-common#canonicalTitle",
   "namespace-policy#checkEditPolicy",

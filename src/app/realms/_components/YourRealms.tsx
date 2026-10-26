@@ -7,6 +7,7 @@ import { PlayAsNation } from "~/app/r/[realm]/_components/PlayAsNation";
 import { RealmCrest } from "~/components/cards/face/RealmCrest";
 import { Card } from "~/components/ui/card";
 import { plural, realmBadge, realmHref, type DirectoryRealm } from "./realm-directory";
+import { assetUrl } from "~/lib/base-path";
 
 type MyRealm = RouterOutputs["realms"]["myNations"]["realms"][number];
 
@@ -58,7 +59,11 @@ function YourRealmRow({
               className="text-label text-body flex min-w-0 flex-1 items-center gap-2 hover:underline"
             >
               {nation.flag && (
-                <img src={nation.flag} alt="" className="h-4 w-6 rounded-sm object-cover" />
+                <img
+                  src={assetUrl(nation.flag) ?? undefined}
+                  alt=""
+                  className="h-4 w-6 rounded-sm object-cover"
+                />
               )}
               <span className="truncate">{nation.name}</span>
             </Link>

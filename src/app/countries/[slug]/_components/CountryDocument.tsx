@@ -156,6 +156,8 @@ export function CountryDocument({ initialTab }: { initialTab: CountryTab }) {
         back={
           isOwner ? (
             <CountryBackFace
+              countryId={country.id}
+              shown={flipped}
               name={country.name.replace(/_/g, " ")}
               cover={cover}
               owner={layer.owner}

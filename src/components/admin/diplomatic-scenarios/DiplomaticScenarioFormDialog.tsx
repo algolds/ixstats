@@ -30,6 +30,7 @@ import {
   TIME_FRAMES,
 } from "~/lib/admin/diplomatic-scenario-transforms";
 import { DiplomaticChoiceEditor } from "./DiplomaticChoiceEditor";
+import { assetUrl } from "~/lib/base-path";
 
 interface DiplomaticScenarioFormDialogProps {
   isOpen: boolean;
@@ -241,7 +242,7 @@ function GeneralTab({
                   <div className="flex items-center gap-2">
                     {selectedCountry1.flagUrl && (
                       <img
-                        src={selectedCountry1.flagUrl}
+                        src={assetUrl(selectedCountry1.flagUrl) ?? undefined}
                         alt={selectedCountry1.name}
                         className="h-4 w-6 object-cover"
                       />
@@ -272,7 +273,7 @@ function GeneralTab({
                       <div className="flex items-center gap-2">
                         {country.flagUrl && (
                           <img
-                            src={country.flagUrl}
+                            src={assetUrl(country.flagUrl) ?? undefined}
                             alt={country.name}
                             className="h-4 w-6 object-cover"
                           />
@@ -306,7 +307,7 @@ function GeneralTab({
                   <div className="flex items-center gap-2">
                     {selectedCountry2.flagUrl && (
                       <img
-                        src={selectedCountry2.flagUrl}
+                        src={assetUrl(selectedCountry2.flagUrl) ?? undefined}
                         alt={selectedCountry2.name}
                         className="h-4 w-6 object-cover"
                       />
@@ -337,7 +338,7 @@ function GeneralTab({
                       <div className="flex items-center gap-2">
                         {country.flagUrl && (
                           <img
-                            src={country.flagUrl}
+                            src={assetUrl(country.flagUrl) ?? undefined}
                             alt={country.name}
                             className="h-4 w-6 object-cover"
                           />

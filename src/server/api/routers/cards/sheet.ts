@@ -22,18 +22,22 @@ export const cardsSheetRouter = createTRPCRouter({
     ),
 
   /**
-   * Fetch wiki article wikitext/excerpt on-demand for lore cards
+   * Fetch wiki article wikitext/excerpt on-demand for lore cards. A wiki that cannot be reached reads as a missing
+   * page (`unlessUnavailable`): the About section shows no excerpt.
    */
   getWikiArticleExcerpt: publicProcedure
     .input(z.object({ articleTitle: z.string().min(1), wikiSource: cardArticleSourceSchema }))
     .query(async ({ input }) => {
       const { getArticleWikitext, getArticleIntro } =
         await import("~/lib/wiki-os/adapters/mediawiki/bridge");
-      const article = await getArticleWikitext(input.articleTitle, input.wikiSource);
+      const { unlessUnavailable } = await import("~/lib/wiki-os/upstream-guard");
+      const article = await unlessUnavailable(
+        getArticleWikitext(input.articleTitle, input.wikiSource)
+      );
       if (article?.wikitext) {
         return { extract: article.wikitext, wikitext: article.wikitext };
       }
-      const result = await getArticleIntro(input.articleTitle, input.wikiSource);
+      const result = await unlessUnavailable(getArticleIntro(input.articleTitle, input.wikiSource));
       return { extract: result?.text ?? null, wikitext: result?.text ?? null };
     }),
 });

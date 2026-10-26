@@ -4,7 +4,18 @@
  * The wiki harness the benches and parity scripts share: it never hits one wiki host faster than once a second (and
  * ixwiki.com at least a second apart, with the allowlisted IxStats-Builder agent), and reads only a local database.
  */
-import { isLocalDatabaseUrl, throttledFetch } from "../../../scripts/lib/wikios-harness";
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import {
+  fetchUntilSettled,
+  isLocalDatabaseUrl,
+  needsSettling,
+  parseNamespaces,
+  throttledFetch,
+  type Parsed,
+} from "../../../scripts/lib/wikios-harness";
 describe("throttledFetch", () => {
   let fetchSpy: jest.SpiedFunction<typeof fetch>;
   let starts: Array<{ url: string; at: number; init: RequestInit | undefined }>;
@@ -59,5 +70,128 @@ describe("page lists and URLs", () => {
     expect(isLocalDatabaseUrl("postgresql://u:p@127.0.0.1:5433/ixstats")).toBe(true);
     expect(isLocalDatabaseUrl("postgresql://u:p@db.example.com:5432/ixstats")).toBe(false);
     expect(isLocalDatabaseUrl("")).toBe(false);
+  });
+
+  it("localhost:15433 is not local; localhost:5433 is", () => {
+    expect(isLocalDatabaseUrl("postgresql://u:p@localhost:5433/ixstats_proof")).toBe(true);
+    expect(isLocalDatabaseUrl("postgresql://u:p@localhost/ixstats_proof")).toBe(true);
+    expect(isLocalDatabaseUrl("postgresql://u:p@localhost:15433/ixstats")).toBe(false);
+    expect(isLocalDatabaseUrl("postgresql://u:p@127.0.0.1:15433/ixstats?schema=public")).toBe(false);
+    expect(isLocalDatabaseUrl("postgresql://u:p@[::1]:15433/ixstats")).toBe(false);
+    expect(isLocalDatabaseUrl("postgresql://u:p@localhost:015433/ixstats")).toBe(false);
+  });
+});
+
+describe("the round trip's database guard", () => {
+  const script = resolve(__dirname, "../../../scripts/audit/wikios-roundtrip.ts");
+  const tunnel = "postgresql://nobody:nothing@localhost:15433/none";
+  let cwd: string;
+
+  beforeEach(() => {
+    cwd = mkdtempSync(join(tmpdir(), "wikios-roundtrip-guard-"));
+  });
+
+  afterEach(() => {
+    rmSync(cwd, { recursive: true, force: true });
+  });
+
+  // Bun loads .env and .env.local itself; the script adds .env.local.dev. Each must be checked.
+  it.each([".env.local.dev", ".env.local", ".env"])(
+    "refuses the production tunnel port when DATABASE_URL comes from %s",
+    (file) => {
+      writeFileSync(join(cwd, file), `DATABASE_URL="${tunnel}"\n`);
+      const env: NodeJS.ProcessEnv = { ...process.env };
+      delete env.DATABASE_URL;
+      const out = join(cwd, "out.json");
+      const result = spawnSync(
+        "bun",
+        [script, "--source", "db", "--namespaces", "all", "--limit", "5", "--out", out],
+        { cwd, env, encoding: "utf-8", timeout: 60_000 }
+      );
+      expect(result.status).toBe(1);
+      expect(result.stderr).toMatch(/refusing to read it/);
+      expect(existsSync(out)).toBe(false);
+    },
+    90_000
+  );
+});
+
+describe("parseNamespaces", () => {
+  it("parseNamespaces reads all, a list, and the default 0; rejects junk", () => {
+    expect(parseNamespaces(undefined)).toEqual([0]);
+    expect(parseNamespaces("all")).toBe("all");
+    expect(parseNamespaces("0,10,14")).toEqual([0, 10, 14]);
+    expect(parseNamespaces("4")).toEqual([4]);
+    for (const junk of ["", "ALL", "0,", ",0", "0,,10", "a", "-1", "1.5", "0;10", " 0"]) {
+      expect(() => parseNamespaces(junk)).toThrow("--namespaces must be all or a comma list of namespace numbers");
+    }
+  });
+});
+
+describe("settling a WikiOS view", () => {
+  type View = { html: string; renderQuality?: string; stale?: boolean };
+
+  it("needsSettling is true for fallback or stale, false for a rendered fresh view", () => {
+    expect(needsSettling({ renderQuality: "fallback" })).toBe(true);
+    expect(needsSettling({ renderQuality: "rendered", stale: true })).toBe(true);
+    expect(needsSettling({ stale: true })).toBe(true);
+    expect(needsSettling({ renderQuality: "rendered", stale: false })).toBe(false);
+    expect(needsSettling({ renderQuality: "rendered" })).toBe(false);
+    expect(needsSettling({})).toBe(false);
+  });
+
+  const sequence = (views: Array<Parsed<View>>) => {
+    let call = 0;
+    return jest.fn(async (): Promise<Parsed<View>> => views[Math.min(call++, views.length - 1)]);
+  };
+
+  it("a fallback or stale view is refetched, waiting between tries, until it is rendered and fresh", async () => {
+    const fetchOnce = sequence([
+      { ok: true, data: { html: "a", renderQuality: "fallback", stale: true } },
+      { ok: true, data: { html: "b", renderQuality: "rendered", stale: true } },
+      { ok: true, data: { html: "c", renderQuality: "rendered", stale: false } },
+      { ok: true, data: { html: "d", renderQuality: "rendered", stale: false } },
+    ]);
+    const wait = jest.fn(async (_ms: number) => undefined);
+    const result = await fetchUntilSettled(fetchOnce, { settleMs: 8000, settleTries: 3, wait });
+    expect(result).toEqual({ ok: true, data: { html: "c", renderQuality: "rendered", stale: false } });
+    expect(fetchOnce).toHaveBeenCalledTimes(3);
+    expect(wait.mock.calls).toEqual([[8000], [8000]]);
+  });
+
+  it("one still unsettled after the tries is returned as such", async () => {
+    const fetchOnce = sequence([{ ok: true, data: { html: "a", renderQuality: "fallback", stale: true } }]);
+    const wait = jest.fn(async (_ms: number) => undefined);
+    const result = await fetchUntilSettled(fetchOnce, { settleMs: 5, settleTries: 3, wait });
+    expect(result).toEqual({ ok: true, data: { html: "a", renderQuality: "fallback", stale: true } });
+    expect(fetchOnce).toHaveBeenCalledTimes(4);
+    expect(wait).toHaveBeenCalledTimes(3);
+  });
+
+  it("a fresh view and a failure are not refetched; no tries means one fetch", async () => {
+    const wait = jest.fn(async (_ms: number) => undefined);
+    const fresh = sequence([{ ok: true, data: { html: "a", renderQuality: "rendered", stale: false } }]);
+    await fetchUntilSettled(fresh, { settleMs: 5, settleTries: 3, wait });
+    expect(fresh).toHaveBeenCalledTimes(1);
+    const failed = sequence([{ ok: false, error: "WikiOS HTTP 500: boom" }]);
+    expect(await fetchUntilSettled(failed, { settleMs: 5, settleTries: 3, wait })).toEqual({
+      ok: false,
+      error: "WikiOS HTTP 500: boom",
+    });
+    expect(failed).toHaveBeenCalledTimes(1);
+    const noTries = sequence([{ ok: true, data: { html: "a", renderQuality: "fallback" } }]);
+    await fetchUntilSettled(noTries, { settleMs: 5, settleTries: 0, wait });
+    expect(noTries).toHaveBeenCalledTimes(1);
+    expect(wait).not.toHaveBeenCalled();
+  });
+
+  it("a refetch that fails is returned as the failure", async () => {
+    const fetchOnce = sequence([
+      { ok: true, data: { html: "a", renderQuality: "fallback" } },
+      { ok: false, error: "WikiOS unreachable" },
+    ]);
+    const result = await fetchUntilSettled(fetchOnce, { settleMs: 5, settleTries: 3, wait: async () => undefined });
+    expect(result).toEqual({ ok: false, error: "WikiOS unreachable" });
+    expect(fetchOnce).toHaveBeenCalledTimes(2);
   });
 });

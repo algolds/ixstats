@@ -186,3 +186,72 @@ describe("renderArticle stores what MediaWiki reported", () => {
     warn.mockRestore();
   });
 });
+
+describe("in production with no internal URL (B3: the loopback renderer is required)", () => {
+  const parsoid = jest.requireActual<typeof import("~/lib/wiki-os/adapters/mediawiki/parsoid")>(
+    "~/lib/wiki-os/adapters/mediawiki/parsoid"
+  );
+  let fetchSpy: jest.SpyInstance;
+  let warn: jest.SpyInstance;
+
+  beforeEach(() => {
+    jest.replaceProperty(process, "env", {
+      ...process.env,
+      NODE_ENV: "production",
+      WIKIOS_MEDIAWIKI_INTERNAL_URL: "",
+    });
+    fetchSpy = jest.spyOn(globalThis, "fetch").mockRejectedValue(new Error("no request expected"));
+    warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+  });
+  afterEach(() => jest.restoreAllMocks());
+
+  it("a render sends no request and returns null, and says why once per process", async () => {
+    // a fresh module: whether an earlier case already warned must not matter
+    let fresh!: typeof parsoid;
+    jest.isolateModules(() => {
+      fresh = jest.requireActual<typeof parsoid>("~/lib/wiki-os/adapters/mediawiki/parsoid");
+    });
+    expect(fresh).not.toBe(parsoid);
+    await parsoid.renderArticleViaMediaWiki("[[Eurth]] text", "Aurelia");
+    warn.mockClear();
+
+    await expect(fresh.renderArticleViaMediaWiki("[[Eurth]] text", "Aurelia")).resolves.toBeNull();
+    await expect(fresh.renderArticleViaMediaWiki("[[Eurth]] text", "Aurelia")).resolves.toBeNull();
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    const named = warn.mock.calls.filter(([message]) =>
+      String(message).includes("WIKIOS_MEDIAWIKI_INTERNAL_URL is not set")
+    );
+    expect(named).toHaveLength(1);
+  });
+
+  it("an editor preview sends no request either: it is compiled locally", async () => {
+    const html = await parsoid.wikitextToHtml("'''Bold''' text", "Aurelia");
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(html).toContain("Bold");
+  });
+
+  it("the render stores nothing: no empty HTML, not marked rendered, the previous view stays", async () => {
+    const id = stubArticle();
+    mockRender.mockImplementation(parsoid.renderArticleViaMediaWiki);
+
+    await expect(renderArticle(id)).resolves.toEqual({ ok: false });
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(mockUpdateMany).not.toHaveBeenCalled();
+    expect(mockTransaction).not.toHaveBeenCalled();
+  });
+
+  it("outside production the render still goes to MediaWiki", async () => {
+    jest.replaceProperty(process, "env", { ...process.env, NODE_ENV: "development" });
+    fetchSpy.mockResolvedValue(
+      new Response(JSON.stringify({ parse: { text: HTML } }), { status: 200 })
+    );
+
+    await expect(parsoid.renderArticleViaMediaWiki("[[Eurth]] text", "Aurelia")).resolves.toMatchObject({
+      html: HTML,
+    });
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+});

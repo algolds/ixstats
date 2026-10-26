@@ -7,13 +7,12 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { chainWikiSection } from "~/lib/action-links";
+import { appUrl } from "~/lib/app-url";
 import { clockTimeAt } from "~/lib/realms/realm-time-convert";
 import { clockForCountry, type CountryTimeDb } from "~/server/shared/realm-time";
 import { postHref } from "~/lib/thinkpages-forum/links";
-import { createAbsoluteUrl } from "~/lib/utils/url-utils";
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { getHeadRevisionRefs } from "~/lib/wiki-os/core/edit-conflict";
-import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 import { classicOwnsTitle } from "~/lib/wiki-os/namespace-policy";
 import { commitWikitextSave } from "~/lib/wiki-os/services/edit-service";
 
@@ -28,7 +27,7 @@ const PENDING = {
 
 /** A native post's permalink (`/thinkpages/post/<id>`) as an absolute IxStates URL. */
 function postUrl(postId: string): string {
-  return `${mediaWikiOrigin()}${createAbsoluteUrl(postHref(postId))}`;
+  return appUrl(postHref(postId));
 }
 
 export async function appendChainToWiki(db: WikiSyncDb, storylineId: string): Promise<boolean> {

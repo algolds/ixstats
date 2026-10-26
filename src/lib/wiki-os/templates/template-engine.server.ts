@@ -13,7 +13,6 @@
 import "server-only";
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
 import { renderArticleViaMediaWiki } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
-import { transformWikiLinks } from "~/lib/wiki-os/transformers/url-compat";
 import { transformImages, stripConflictingStyles } from "~/lib/wiki-os/transformers/html-transformer";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import {
@@ -182,9 +181,9 @@ export async function getTemplatePreview(
 
   const rendered = await renderArticleViaMediaWiki(wikitext, PREVIEW_PAGE_TITLE);
   if (rendered) {
-    return transformWikiLinks(transformImages(stripConflictingStyles(rendered.html), "ixwiki"));
+    return transformImages(stripConflictingStyles(rendered.html), "ixwiki");
   }
 
   const localHtml = parseWikitextToHtml(wikitext, "ixwiki");
-  return transformWikiLinks(transformImages(localHtml, "ixwiki"));
+  return transformImages(localHtml, "ixwiki");
 }

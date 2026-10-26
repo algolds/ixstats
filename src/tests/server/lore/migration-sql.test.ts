@@ -32,6 +32,15 @@ describe("the country-lore migration SQL", () => {
     );
   });
 
+  it("adds the owner-added flag, on a fresh table and on one made before it, idempotently", () => {
+    expect(body).toMatch(
+      /CREATE TABLE IF NOT EXISTS "country_lore_pages" \([^;]*"ownerAdded" BOOLEAN NOT NULL DEFAULT false/
+    );
+    expect(body).toContain(
+      'ALTER TABLE "country_lore_pages" ADD COLUMN IF NOT EXISTS "ownerAdded" BOOLEAN NOT NULL DEFAULT false;'
+    );
+  });
+
   it("indexes the lookups", () => {
     expect(body).toMatch(/CREATE INDEX IF NOT EXISTS "country_lore_authors_userId_idx"/);
     expect(body).toMatch(/CREATE INDEX IF NOT EXISTS "country_lore_pages_countryId_idx"/);

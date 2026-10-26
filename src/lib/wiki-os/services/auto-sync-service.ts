@@ -423,11 +423,6 @@ async function runCycle(limit: number): Promise<void> {
     lastStats.pagesUpdated = done.updated;
     lastStats.revisionsCreated = done.created;
     lastStats.eventsApplied = done.applied;
-    if (done.created + done.applied > 0) {
-      console.log(
-        `[WikiAutoSync] Synced ${done.created} revisions and ${done.applied} log events from MediaWiki into PostgreSQL.`
-      );
-    }
   } catch (err) {
     console.error("[WikiAutoSync] Cycle failed:", errorMessage(err));
     recordFailure("cycle", err);

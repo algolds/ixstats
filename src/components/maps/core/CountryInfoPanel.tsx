@@ -13,6 +13,7 @@ import dynamic from "next/dynamic";
 
 import { useCountryInfoPanelState } from "~/components/maps/core/hooks/useCountryInfoPanelState";
 import { ImageLightbox } from "~/components/maps/core/components/ImageLightbox";
+import { assetUrl } from "~/lib/base-path";
 
 // Lazy so the metric modals stay out of the initial map bundle
 const GdpDetailsModal = dynamic(
@@ -68,7 +69,7 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({
           <div className="flex items-center gap-2 overflow-hidden">
             {state.flagUrl ? (
               <img
-                src={state.flagUrl}
+                src={assetUrl(state.flagUrl) ?? undefined}
                 alt=""
                 className="border-separator rounded-control-sm h-6 w-9 border object-cover"
               />

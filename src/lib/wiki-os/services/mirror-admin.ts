@@ -9,6 +9,7 @@
 
 import { db } from "~/server/db";
 import { mirrorBotName } from "../adapters/mediawiki/csrf-cache";
+import { mirrorWriteUrlProblem } from "../config";
 import { PageOperationError } from "../core/page-management-service";
 import { canonicalizeTitle } from "../core/title";
 import { MIRROR_SOURCE, scheduleMirrorKick } from "./mirror-outbox";
@@ -32,6 +33,13 @@ export interface DeadMirrorJob {
 export interface MirrorStatus {
   /** SKIP_MEDIAWIKI_SYNC=true: the worker is stopped and the jobs accumulate. */
   paused: boolean;
+  /**
+   * Production with no private render engine (WIKIOS_MEDIAWIKI_INTERNAL_URL) and no write URL of its own
+   * (WIKIOS_MEDIAWIKI_API): the worker waits rather than write to the public wiki, and the jobs accumulate.
+   */
+  loopbackMissing: boolean;
+  /** Production with WIKIOS_MEDIAWIKI_API on the public wiki's host: the worker waits the same way. */
+  publicWriteUrl: boolean;
   /** Whether the bot account (WIKIOS_MEDIAWIKI_BOT_USER and _TOKEN) is configured: without it every job fails. */
   botConfigured: boolean;
   counts: Record<MirrorState, number>;
@@ -99,8 +107,11 @@ export async function getMirrorStatus(now = new Date()): Promise<MirrorStatus> {
     const state = STATES.find((candidate) => candidate === row.state);
     if (state) counts[state] = row._count._all;
   }
+  const writeUrl = mirrorWriteUrlProblem();
   return {
     paused: process.env.SKIP_MEDIAWIKI_SYNC === "true",
+    loopbackMissing: writeUrl === "WIKIOS_MEDIAWIKI_INTERNAL_URL",
+    publicWriteUrl: writeUrl === "WIKIOS_MEDIAWIKI_API",
     botConfigured: mirrorBotName() !== null && Boolean(process.env.WIKIOS_MEDIAWIKI_BOT_TOKEN),
     counts,
     oldestPendingSeconds: oldest
@@ -113,13 +124,21 @@ export async function getMirrorStatus(now = new Date()): Promise<MirrorStatus> {
   };
 }
 
+/** How the missing settings name a WIKIOS_MEDIAWIKI_API on the public wiki's host or on IxStates itself. */
+const PUBLIC_WRITE_URL =
+  "WIKIOS_MEDIAWIKI_API (it points at the public wiki or at IxStates itself)";
+
 /** The settings the mirror needs before WikiOS may take edits; empty when it can write to MediaWiki. */
 export function mirrorMissingSettings(): string[] {
   const missing: string[] = [];
   // Read from the environment, not wikiosConfig (frozen at module load), so the answer follows the current process.
-  // The api.php the mirror writes to is not asked for: without WIKIOS_MEDIAWIKI_API it is the internal one.
+  // The api.php the mirror writes to is not asked for: without WIKIOS_MEDIAWIKI_API it is the internal one, which
+  // production must have, and in production WIKIOS_MEDIAWIKI_API must not be the public wiki (`mirrorWriteUrlProblem`).
   if (!process.env.WIKIOS_MEDIAWIKI_BOT_USER?.trim()) missing.push("WIKIOS_MEDIAWIKI_BOT_USER");
   if (!process.env.WIKIOS_MEDIAWIKI_BOT_TOKEN) missing.push("WIKIOS_MEDIAWIKI_BOT_TOKEN");
+  const writeUrl = mirrorWriteUrlProblem();
+  if (writeUrl === "WIKIOS_MEDIAWIKI_INTERNAL_URL") missing.push(writeUrl);
+  if (writeUrl === "WIKIOS_MEDIAWIKI_API") missing.push(PUBLIC_WRITE_URL);
   return missing;
 }
 

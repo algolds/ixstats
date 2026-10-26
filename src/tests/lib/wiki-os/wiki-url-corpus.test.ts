@@ -11,13 +11,13 @@
 import { getArticleRoute, isNonArticlePath } from "~/lib/wiki-os/article-route";
 import { pageEditHref, pageTalkPair } from "~/lib/wiki-os/page-tools";
 import { isSamePage, pageRefPath, recentArticlesSchema } from "~/lib/wiki-os/page-ref";
-import { articleHtmlInput, parseWikiSource, wikiReaderPath } from "~/lib/wiki-os/config";
+import { articleHtmlInput, mediaWikiOrigin, parseWikiSource, wikiReaderPath } from "~/lib/wiki-os/config";
 import { diffNeedsHistory, resolveDiffRefs } from "~/lib/wiki-os/diff-refs";
 import { appendNewSection, NEW_SECTION_HEADING } from "~/lib/wiki-os/wikitext/new-section";
 import { findSectionLine } from "~/lib/wiki-os/wikitext/section-locator";
 import { mentionQueries } from "~/lib/wiki-os/mention-target";
 import { heroCardInputs, mayNameCountry } from "~/lib/wiki-os/hero-card";
-import { isStashedArticle, isStashedForumThread, nativeThreadIdOf, nativeThreadTitle, stashContentTypeForTitle } from "~/lib/wiki-os/stash-content-type";
+import { imageStashTitle, isStashedArticle, isStashedForumThread, nativeThreadIdOf, nativeThreadTitle, stashContentTypeForTitle } from "~/lib/wiki-os/stash-content-type";
 import { formatMWTimeAgo, parseMWDateObject, parseMWTimestamp } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import { canonicalizeTitle, decodeTitleParam, storedNamespace } from "~/lib/wiki-os/core/title";
 import { canonicalPathRedirect, resolveWikiPath, type WikiPathTarget } from "~/lib/wiki-os/wiki-path";
@@ -179,6 +179,19 @@ describe("mentions and stashes", () => {
     ["Rome", "wiki"],
   ])("a stash types %s as %s", (title, type) => {
     expect(stashContentTypeForTitle(title)).toBe(type);
+  });
+
+  it.each([
+    ["/wiki/File:Flag_X.png", "File:Flag X.png"],
+    ["/projects/ixstates/wiki/File:Flag_X.png", "File:Flag X.png"],
+    [`${mediaWikiOrigin()}/wiki/File:Flag_X.png`, "File:Flag X.png"],
+    ["https://iiwiki.com/wiki/File:Flag_X.png", "iiwiki:File:Flag X.png"],
+    ["https://commons.wikimedia.org/wiki/File:Flag_X.png", "commons:File:Flag X.png"],
+    ["//evil.example/wiki/File:Flag_X.png", "commons:File:Flag X.png"],
+    ["/\\evil.example/wiki/File:Flag_X.png", "commons:File:Flag X.png"],
+    ["", "commons:File:Flag X.png"],
+  ])("the lightbox stashes an image whose file page is %j as %s", (fileUrl, title) => {
+    expect(imageStashTitle(fileUrl, "Flag X.png")).toBe(title);
   });
 
   it("reads a native thread's id back from its title only, and keeps native threads out of the articles", () => {

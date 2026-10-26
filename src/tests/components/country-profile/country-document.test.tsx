@@ -29,6 +29,11 @@ jest.mock("~/components/country-profile/ProfileFace", () => ({
     </div>
   ),
 }));
+jest.mock("~/components/country-profile/LoreTeam", () => ({
+  LoreTeam: ({ countryId, active }: { countryId: string; active: boolean }) => (
+    <section aria-label="Lore team" data-country={countryId} data-active={String(active)} />
+  ),
+}));
 jest.mock("~/components/country-profile/factbook/FactbookTab", () => ({
   FactbookTab: () => <p>Factbook panel</p>,
 }));
@@ -132,6 +137,17 @@ describe("CountryDocument", () => {
       "href",
       "/mycountry/editor"
     );
+  });
+
+  it("puts the lore team on the owner's back face, active only while it is shown", () => {
+    setup("factbook", true);
+    const team = () => screen.getByRole("region", { name: "Lore team" });
+    expect(team()).toHaveAttribute("data-country", "c1");
+    expect(team()).toHaveAttribute("data-active", "false");
+    fireEvent.click(screen.getByRole("button", { name: "Manage" }));
+    expect(team()).toHaveAttribute("data-active", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    expect(team()).toHaveAttribute("data-active", "false");
   });
 
   it("lets the owner flip the face to manage it, and returns focus on Done", () => {

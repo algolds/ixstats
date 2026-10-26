@@ -57,7 +57,6 @@ wfLoadExtensions( [
 ] );
 $wgScribuntoDefaultEngine = 'luastandalone';
 
-// Keep the test wiki's own article paths (/index.php/Title): only the rest of the production snippet
-// (canonical URL, `wikios-mirror` group, bot passwords, sync webhook) is being exercised here.
-define( 'WIKIOS_KEEP_WIKI_ARTICLE_PATH', true );
+// The production snippet, loaded the way production loads it: the `wikios-mirror` group, bot passwords, the
+// file types and the sync webhook. WIKIOS_TAKEOVER is not defined, so the article path and canonical URLs stay.
 require_once '/config/wikios-localsettings.php';

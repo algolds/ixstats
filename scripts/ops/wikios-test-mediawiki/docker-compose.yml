@@ -16,15 +16,20 @@ services:
     restart: "no"
     ports:
       - "127.0.0.1:8089:80"
+    # Lets the sync webhook reach a WikiOS dev server on the host (Docker Desktop has this name already).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       # MediaWiki reads its config from here, so the installer (which refuses to run when
       # $IP/LocalSettings.php exists) can be run first; see setup.sh.
       MW_CONFIG_FILE: /config/LocalSettings.php
       # Read by LocalSettings.php; the values come from .env.test-mediawiki via `--env-file`.
       WIKIOS_TEST_MW_SECRET_KEY: ${WIKIOS_TEST_MW_SECRET_KEY:?run ./setup.sh first}
-      # Left empty on purpose: the sync-webhook hook in wikios-localsettings.php does nothing without
-      # a secret. Set it (same value as WIKI_SYNC_WEBHOOK_SECRET in the WikiOS env) to test the webhook.
+      # Left empty on purpose: the sync-webhook hook in wikios-localsettings.php sends nothing unless
+      # it has both. Set the secret (same value as WIKI_SYNC_WEBHOOK_SECRET in the WikiOS env) and the
+      # URL of the WikiOS under test (see README.md) to test the webhook.
       WIKIOS_WEBHOOK_SECRET: ${WIKIOS_WEBHOOK_SECRET:-}
+      WIKIOS_WEBHOOK_URL: ${WIKIOS_WEBHOOK_URL:-}
     volumes:
       - wikios-test-mw-data:/var/www/data
       - wikios-test-mw-images:/var/www/html/images

@@ -6,6 +6,9 @@
  * only know a title (the article page's stash button, Margin annotations) mean the type the title's
  * prefix implies — an ordinary title is a wiki article.
  */
+
+import { isMediaWikiUrl } from "~/lib/wiki-os/config";
+
 export type StashContentType = "wiki" | "image" | "forum_thread";
 
 /** The content type of a stashed forum thread, native or legacy. */
@@ -31,6 +34,20 @@ export function nativeThreadTitle(threadId: string): string {
 /** Whether a stash title names a forum thread, native or legacy. */
 export function isForumThreadTitle(pageTitle: string): boolean {
   return pageTitle.startsWith(NATIVE_THREAD_PREFIX) || pageTitle.startsWith(LEGACY_THREAD_PREFIX);
+}
+
+/** A root-relative URL (`/wiki/File:X`, with or without the base path): this site's own page. `//` and `/\` are not. */
+const ROOT_RELATIVE = /^\/(?![/\\])/u;
+
+/**
+ * The stash title of an image the lightbox shows, from the link to its file page and its `File:` name (without the
+ * prefix): an IxWiki file when the link is root-relative (the reader's own `/wiki/File:X`) or on the wiki's host, an
+ * IIWiki file, else a Commons one.
+ */
+export function imageStashTitle(fileUrl: string, fileName: string): string {
+  if (ROOT_RELATIVE.test(fileUrl) || isMediaWikiUrl(fileUrl)) return `File:${fileName}`;
+  if (fileUrl.includes("iiwiki.com")) return `iiwiki:File:${fileName}`;
+  return `commons:File:${fileName}`;
 }
 
 /** The content type a bare stash title stands for. */

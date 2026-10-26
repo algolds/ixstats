@@ -9,6 +9,7 @@ import { ixstatesLinkHref } from "~/lib/system/wikios-standalone";
 import { formatMWTimeAgo } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import { formatNumber, formatCurrency } from "~/lib/utils/format-utils";
 import type { MainPageContentProps } from "./types";
+import { assetUrl } from "~/lib/base-path";
 
 function ActivityItemThumbnail({ src, title }: { src?: string | null; title?: string | null }) {
   const [hasError, setHasError] = useState(false);
@@ -209,7 +210,7 @@ export function CountriesSection({ countries }: Pick<MainPageContentProps, "coun
               <div className="bg-fill-4 border-separator rounded-row relative mb-2 h-16 w-full overflow-hidden border">
                 {c.flagUrl ? (
                   <img
-                    src={c.flagUrl}
+                    src={assetUrl(c.flagUrl) ?? undefined}
                     alt={c.name}
                     className="h-full w-full object-cover transition-transform duration-300"
                     loading="lazy"

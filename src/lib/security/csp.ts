@@ -26,7 +26,7 @@ export function buildCSPTemplate(standalone: boolean): string {
     scriptSrc,
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     // Production drops plain http:/ws: (upgrade-insecure-requests rewrites them to https/wss
-    // anyway); development keeps ws: for the local sockets.
+    // anyway); development keeps ws: for the local sockets. Sister wiki HTML never carries an off-origin image (sanitizeSisterHtml).
     isDevelopment ? `img-src 'self' data: blob: https: http:` : `img-src 'self' data: blob: https:`,
     `font-src 'self' https://fonts.gstatic.com data:`,
     // blob: lets MapLibre's worker read the world editor's draft GeoJSON through source.setData(blobUrl)

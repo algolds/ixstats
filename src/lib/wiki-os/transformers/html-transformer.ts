@@ -3,6 +3,7 @@
 
 import { withBasePath } from "~/lib/base-path";
 import { mapSrcsetUrls } from "~/lib/wiki-os/transformers/srcset";
+import { sisterMediaPath } from "~/lib/wiki-os/sister-media";
 import { mediaWikiHostPattern, mediaWikiOrigin } from "~/lib/wiki-os/config";
 import { skipBlanks } from "../wikitext/blank";
 import { forwardFinder, forwardSearch } from "../wikitext/forward-finder";
@@ -106,7 +107,8 @@ const COMMON_IMAGE_SOURCE = new RegExp(
 const LEGACY_ORIGIN_SOURCE = `(?:http:)?\\/\\/${MEDIAWIKI_HOST}\\/`;
 const LEGACY_SRC_ORIGIN_REGEX = new RegExp(`src="${LEGACY_ORIGIN_SOURCE}`, "gu");
 const LEGACY_ORIGIN_START_REGEX = new RegExp(`^${LEGACY_ORIGIN_SOURCE}`, "u");
-const SISTER_FILE_URL_REGEX = /^https?:\/\/(?:www\.)?iiwiki\.com\/images\//u;
+/** A `src` attribute (not `data-src`) and its double-quoted value. */
+const SRC_ATTRIBUTE_REGEX = /(?<![\w-])src="([^"]*)"/gu;
 
 // ---------------------------------------------------------------------------
 // Main transformer
@@ -404,15 +406,6 @@ function absoluteIxWikiSrcsetUrl(url: string, origin: string): string {
   return url;
 }
 
-/** One `srcset` candidate URL of another wiki's page: its files go through that wiki's media proxy; the rest is untouched. */
-function proxiedSourceSrcsetUrl(url: string, proxyBase: string): string {
-  if (SISTER_FILE_URL_REGEX.test(url))
-    return url.replace(SISTER_FILE_URL_REGEX, `${proxyBase}/images/`);
-  if (url.startsWith("/images/") || url.startsWith("/data/")) return `${proxyBase}${url}`;
-  if (url.startsWith("/thumb/")) return `${proxyBase}/images${url}`;
-  return url;
-}
-
 /**
  * `html` with `attribute` (`loading="lazy"`: what `render` makes of the tag's text) put in each `<img` whose tag does
  * not have one already (what `/<img(?![^>]*loading=)/g` found): the tag ends at the first `>` and holds the
@@ -467,25 +460,15 @@ export function transformImages(
           `srcset="${mapSrcsetUrls(srcset, (url) => absoluteIxWikiSrcsetUrl(url, origin))}"`
       );
   } else {
-    // For iiwiki and althistory, map relative /images/ to proxy
+    // A sister wiki's files, relative or absolute (its origin, its upload CDN), go through its media proxy
+    // (sister-media.ts); anything else is left for sanitizeSisterHtml, which drops it.
+    const wiki = wikiSource;
+    const proxied = (url: string) => sisterMediaPath(url, wiki) ?? url;
     result = result
-      .replace(/src="\/images\//gu, `src="${proxyBase}/images/`)
-      .replace(/src="\/thumb\//gu, `src="${proxyBase}/images/thumb/`)
-      .replace(/src="\/data\//gu, `src="${proxyBase}/data/`)
-      .replace(/src="\/load\.php/gu, `src="${origin}/load.php`)
-      .replace(/src="https?:\/\/(?:www\.)?iiwiki\.com\/images\//gu, `src="${proxyBase}/images/`)
-      .replace(
-        /src="https?:\/\/(?:www\.)?iiwiki\.com\/wiki\/Special:FilePath\//gu,
-        `src="${proxyBase}/wiki/Special:FilePath/`
-      )
-      .replace(
-        /src="https?:\/\/(?:www\.)?althistory\.fandom\.com\/wiki\/Special:FilePath\//gu,
-        `src="${proxyBase}/wiki/Special:FilePath/`
-      )
+      .replace(SRC_ATTRIBUTE_REGEX, (_match, src: string) => `src="${proxied(src)}"`)
       .replace(
         /srcset="([^"]*)"/gu,
-        (_match, srcset: string) =>
-          `srcset="${mapSrcsetUrls(srcset, (url) => proxiedSourceSrcsetUrl(url, proxyBase))}"`
+        (_match, srcset: string) => `srcset="${mapSrcsetUrls(srcset, proxied)}"`
       );
   }
 

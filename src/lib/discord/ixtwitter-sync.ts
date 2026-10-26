@@ -19,7 +19,8 @@ import { buildDiscordPollObject } from "./poll";
 import { ordinal, parseSportsBulletin, type SportsBulletinData } from "~/lib/sports/feed-bulletins";
 import { cleanPostContent } from "./thinkpages-feed";
 import { htmlToDiscordMarkdown } from "./markdown";
-import { APP_URL, CLEAN_BASE_PATH } from "./site-url";
+import { appUrl } from "~/lib/app-url";
+import { withBasePath } from "~/lib/base-path";
 import { APP_TINTS } from "~/lib/design/tokens";
 
 // Callers and tests import the converter from here.
@@ -54,7 +55,7 @@ async function downloadDiscordImage(
     const filename = `discord_${messageId}_${index}.${ext}`;
     const filePath = path.join(DISCORD_IMAGE_DIR, filename);
 
-    if (existsSync(filePath)) return `${CLEAN_BASE_PATH}/images/discord/${filename}`;
+    if (existsSync(filePath)) return withBasePath(`/images/discord/${filename}`);
 
     const response = await fetch(url, {
       headers: {
@@ -68,7 +69,7 @@ async function downloadDiscordImage(
     const buffer = Buffer.from(await response.arrayBuffer());
     writeFileSync(filePath, buffer);
 
-    return `${CLEAN_BASE_PATH}/images/discord/${filename}`;
+    return withBasePath(`/images/discord/${filename}`);
   } catch {
     return url;
   }
@@ -664,10 +665,11 @@ function formatCodeBlockTable(results: any[]): string {
   return `\`\`\`\n${lines.join("\n")}\n\`\`\``;
 }
 
-const FEED_FOOTER = {
+/** Built per embed, not at import: the app URL is read when a link is made (app-url.ts). */
+const feedFooter = () => ({
   text: "Shared from IxStats",
-  icon_url: `${APP_URL}${CLEAN_BASE_PATH}/thinkpages-logo.svg`,
-};
+  icon_url: appUrl("/thinkpages-logo.svg"),
+});
 
 const SPORT_EMBED_COLORS: Record<string, number> = {
   "⚽": 0x22c55e,
@@ -678,7 +680,8 @@ const SPORT_EMBED_COLORS: Record<string, number> = {
 
 /** The embed plus one image-only embed per extra media URL (Discord shows several images that way). */
 function withMedia(embed: Record<string, any>, mediaUrls?: string[]): any[] {
-  const urls = (mediaUrls ?? []).map((u) => (u.startsWith("http") ? u : `${APP_URL}${u}`));
+  // appUrl keeps an absolute URL and gives a root path the base path once (uploads are stored without it).
+  const urls = (mediaUrls ?? []).map((u) => appUrl(u));
   if (urls.length === 0) return [embed];
   embed.image = { url: urls[0] };
   return [embed, ...urls.slice(1).map((image) => ({ url: embed.url, image: { url: image } }))];
@@ -734,13 +737,11 @@ export function formatThinkPagesEmbed(
   },
   mediaUrls?: string[]
 ): any[] {
-  const url = `${APP_URL}${CLEAN_BASE_PATH}/dashboard/post/${post.id}`;
+  const url = appUrl(`/dashboard/post/${post.id}`);
   const author = {
     name: `${account.displayName} (@${account.username})${account.verified ? " \u2705" : ""}`,
     icon_url: account.profileImageUrl
-      ? account.profileImageUrl.startsWith("http")
-        ? account.profileImageUrl
-        : `${APP_URL}${account.profileImageUrl}`
+      ? appUrl(account.profileImageUrl)
       : "https://via.placeholder.com/150/4F46E5/FFFFFF?text=User",
     url,
   };
@@ -750,9 +751,7 @@ export function formatThinkPagesEmbed(
 
   const sports = parseSportsBulletin(post.content);
   if (sports?.league?.name) {
-    const leagueUrl = sports.league.id
-      ? `${APP_URL}${CLEAN_BASE_PATH}/myleague/${sports.league.id}`
-      : url;
+    const leagueUrl = sports.league.id ? appUrl(`/myleague/${sports.league.id}`) : url;
     const { description, fields } = sportsEmbedBody(sports);
     const link = `🔗 [View Matchday & Standings on IxStates](${leagueUrl})`;
     return withMedia(
@@ -765,7 +764,7 @@ export function formatThinkPagesEmbed(
         color: sports.isPlayoffBulletin
           ? 0x06b6d4 // cyan
           : (SPORT_EMBED_COLORS[sports.sportEmoji] ?? 0xf59e0b), // default gold
-        footer: FEED_FOOTER,
+        footer: feedFooter(),
         timestamp,
       },
       mediaUrls
@@ -775,7 +774,7 @@ export function formatThinkPagesEmbed(
   let description = htmlToDiscordMarkdown(cleanPostContent(post.content));
   if (description.length > 4000) description = description.slice(0, 3997) + "...";
   return withMedia(
-    { url, author, description, color: THINKPAGES_EMBED_COLOR, footer: FEED_FOOTER, timestamp },
+    { url, author, description, color: THINKPAGES_EMBED_COLOR, footer: feedFooter(), timestamp },
     mediaUrls
   );
 }

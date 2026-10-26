@@ -262,6 +262,19 @@ describe("checkPageExists", () => {
   });
 });
 
+describe("checkPageExists, live pages only (the lore writer)", () => {
+  it("reads live pages only when asked, and deleted ones for a sysop otherwise", async () => {
+    await content("admin").checkPageExists({ title: "Caphiria", liveOnly: true });
+    expect(getArticleWikitextShadow).toHaveBeenLastCalledWith("Caphiria", "ixwiki", {
+      includeArchived: false,
+    });
+    await content("admin").checkPageExists({ title: "Caphiria" });
+    expect(getArticleWikitextShadow).toHaveBeenLastCalledWith("Caphiria", "ixwiki", {
+      includeArchived: true,
+    });
+  });
+});
+
 describe("getArticleThumbnails", () => {
   it("asks only for the pages the reader may see", async () => {
     await content("user").getArticleThumbnails({ titles: ["Caphiria", "urcea", "Elsewhere"] });
