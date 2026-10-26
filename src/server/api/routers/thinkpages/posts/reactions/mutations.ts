@@ -5,6 +5,7 @@ import { TRPCError } from "@trpc/server";
 // Import the wiki search service
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { invalidateFeeds, personaDisplayName } from "../../post-utils";
+import { recipientsBlockingSender } from "~/server/shared/user-blocks";
 
 /**
  * Post update for a new reaction tally: the JSON tally plus `likeCount`, which mirrors the
@@ -215,9 +216,18 @@ export const thinkpagesPostsReactionsMutationsRouter = createTRPCRouter({
           });
 
           // Notifications are keyed by Clerk user id, so target the owning user of the author
-          // persona (not the persona id), and skip likes on the caller's own personas.
+          // persona (not the persona id), and skip likes on the caller's own personas and
+          // authors who blocked the caller.
           const authorClerkUserId = postWithAuthor?.account?.clerkUserId;
-          if (postWithAuthor && authorClerkUserId && authorClerkUserId !== clerkUserId) {
+          const blocking = authorClerkUserId
+            ? await recipientsBlockingSender(db, account.clerkUserId, [authorClerkUserId])
+            : [];
+          if (
+            postWithAuthor &&
+            authorClerkUserId &&
+            authorClerkUserId !== clerkUserId &&
+            blocking.length === 0
+          ) {
             await notificationHooks
               .onThinkPageActivity({
                 thinkpageId: input.postId,

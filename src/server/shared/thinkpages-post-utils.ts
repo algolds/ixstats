@@ -19,6 +19,30 @@ export function canViewPost(
   return !!viewerClerkUserId && post.account?.clerkUserId === viewerClerkUserId;
 }
 
+/** The IxTwitter sync's `[DiscordMsg:<id>]` marker, in any case and with or without an id. */
+const DISCORD_MARKER = /\s*\[DiscordMsg:[^\]]*\]/gi;
+
+/**
+ * Removes any `[DiscordMsg:<id>]` marker from user-supplied post content. Only the IxTwitter sync
+ * may set one (edit, delete and reactions act on the Discord message it names), so a forged
+ * marker would let a post act on someone else's Discord message.
+ */
+export function stripDiscordMarker(content: string): string {
+  return content.replace(DISCORD_MARKER, "");
+}
+
+/**
+ * The post with its embedded parent and repost dropped when the viewer couldn't read them on
+ * their own (a public reply to, or repost of, a private post).
+ */
+export function withVisibleEmbeds<
+  T extends { parentPost?: unknown; repostOf?: unknown } | null | undefined,
+>(post: T, viewerClerkUserId?: string | null): T {
+  if (!post) return post;
+  const visible = (p: any) => (p && canViewPost(p, viewerClerkUserId) ? p : null);
+  return { ...post, parentPost: visible(post.parentPost), repostOf: visible(post.repostOf) };
+}
+
 /**
  * Reaction tally for a post.
  *
@@ -166,7 +190,7 @@ export async function invalidateFeeds() {
 }
 
 /**
- * Loads a post (with its account) for an edit or delete. The owner may always act; a moderator
+ * Loads a post (with its account) for an edit, delete or pin. The owner may always act; a moderator
  * may when their role level is 10 or lower, or 20 or lower and not below the post owner's.
  */
 export async function loadPostForModeration(
@@ -174,7 +198,7 @@ export async function loadPostForModeration(
   clerkUserId: string | null | undefined,
   roleLevel: number | null | undefined,
   postId: string,
-  action: "update" | "delete"
+  action: "update" | "delete" | "pin"
 ) {
   if (!clerkUserId) {
     throw new TRPCError({

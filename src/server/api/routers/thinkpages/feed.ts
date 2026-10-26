@@ -4,7 +4,7 @@ import { TRPCError } from "@trpc/server";
 import type { Prisma } from "@prisma/client";
 // Import the wiki search service
 import { globalCache } from "~/lib/cache";
-import { postInclude, transformPost } from "./post-utils";
+import { postInclude, transformPost, withVisibleEmbeds } from "./post-utils";
 import { realmFeedWhere } from "./realm-feed";
 import { hiddenThinkpagesAccountIds } from "~/server/shared/user-blocks";
 import { mutedKeywords } from "~/server/shared/privacy-permissions";
@@ -177,7 +177,9 @@ export const thinkpagesFeedRouter = createTRPCRouter({
         skip: input.cursor ? 1 : 0,
       });
 
-      const transformedPosts = posts.map(transformPost);
+      // The feed is cached for every viewer, so an embedded private parent or original is dropped
+      // even for its owner (they still see it on the post page).
+      const transformedPosts = posts.map((post) => transformPost(withVisibleEmbeds(post, null)));
 
       const nextCursor = posts.length === input.limit ? posts[posts.length - 1]?.id : null;
 

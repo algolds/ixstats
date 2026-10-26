@@ -4,7 +4,7 @@ import {
   protectedProcedure,
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
-import { canViewPost, postInclude, transformPost } from "../post-utils";
+import { canViewPost, postInclude, transformPost, withVisibleEmbeds } from "../post-utils";
 
 export const thinkpagesPostsBookmarksRouter = createTRPCRouter({
   // Bookmark or unbookmark a post
@@ -35,8 +35,8 @@ export const thinkpagesPostsBookmarksRouter = createTRPCRouter({
 
   /**
    * The caller's saved posts (SL-10), most recently saved first. Posts deleted since, and posts
-   * the caller can no longer read (made private by their author), are left out. Paginated by
-   * bookmark id.
+   * the caller can no longer read (made private by their author), are left out, as is an
+   * embedded parent or original they can't read. Paginated by bookmark id.
    */
   getBookmarkedPosts: protectedProcedure
     .input(
@@ -73,7 +73,8 @@ export const thinkpagesPostsBookmarksRouter = createTRPCRouter({
         posts: page.flatMap((bookmark) => {
           const post = byId.get(bookmark.postId);
           if (!post || !canViewPost(post as any, userId)) return [];
-          return [{ ...transformPost(post), bookmarkedAt: bookmark.createdAt }];
+          const readable = withVisibleEmbeds(post, userId);
+          return [{ ...transformPost(readable), bookmarkedAt: bookmark.createdAt }];
         }),
         nextCursor,
       };
