@@ -16,6 +16,7 @@ import {
 import { TRPCError } from "@trpc/server";
 import { exchangeService } from "~/lib/vault/exchange-service";
 import { teamWageBill } from "~/lib/sports";
+import { MAX_TICKET_PRICE } from "~/lib/sports/match-revenue";
 import { createStorytellerEffect } from "~/lib/economy/storyteller-effects";
 import type { LiveTraceEvent } from "~/lib/sports/live-match";
 import { assertSportsEconomyOpen, requireOwnedTeam } from "~/server/api/routers/sports/_shared";
@@ -127,7 +128,7 @@ export const sportsClubRouter = createTRPCRouter({
     }),
 
   setTicketPrice: rateLimitedMutationProcedure
-    .input(z.object({ teamId: z.string(), price: z.number().min(1) }))
+    .input(z.object({ teamId: z.string(), price: z.number().min(1).max(MAX_TICKET_PRICE) }))
     .mutation(async ({ ctx, input }) => {
       try {
         await requireOwnedTeam(ctx.db, input.teamId, ctx.user.id, "manage");
