@@ -2199,9 +2199,10 @@ of the checkout and `node_modules`; that was judged not worth the risk of an unt
 **The IxStates URL.** Use the one the launch found (Conventions, "The IxStates URL") as `IXSTATES_URL`; the WikiOS
 build has no default and refuses to start a redirect without it.
 
-`next.config.js` is tracked in git, and it does not carry the WikiOS edits yet: make the edits of
-`deploy/wikios/next-config-snippet.md` (WikiOS branch in `resolveBasePath()`, early `return []` in `rewrites()`) in a
-commit that this release carries. Do not edit the server's copy by hand: `deploy-production.sh` runs `git reset --hard`
+`next.config.js` and `scripts/setup/base-path.cjs` are tracked in git, and they do not carry the WikiOS edits yet:
+make the edits of `deploy/wikios/next-config-snippet.md` (WikiOS branch in `resolveBasePath()` in
+`scripts/setup/base-path.cjs`, which the stylesheets' PostCSS base-path pass follows too; early `return []` in
+`next.config.js`'s `rewrites()`) in a commit that this release carries. Do not edit the server's copy by hand: `deploy-production.sh` runs `git reset --hard`
 and `git clean -fd` in `$IX`, so the next IxStates deploy would undo it. Check the file, then install the PM2 file, the
 runtime env and the **build** env, and deploy.
 
@@ -2531,7 +2532,7 @@ To also stop WikiOS: `pm2 delete wikios && pm2 save`.
 
 | File | Edit | Step |
 |------|------|------|
-| `/ixwiki/public/projects/ixstats/next.config.js` | tracked: `resolveBasePath()` WikiOS branch; `rewrites()` early return; `"iconoir-react"` and `"motion/react"` in `experimental.optimizePackageImports` | T5 |
+| `/ixwiki/public/projects/ixstats/next.config.js` and `scripts/setup/base-path.cjs` | tracked: `resolveBasePath()` WikiOS branch (base-path.cjs); `rewrites()` early return; `"iconoir-react"` and `"motion/react"` in `experimental.optimizePackageImports` | T5 |
 | `/ixwiki/public/projects/ixstats/public/fonts/HostGrotesk/HostGrotesk[wght].ttf` | tracked since 2026-10-06; must exist: `next/font/local` fails the build without it | T5 |
 | `/ixwiki/public/wikios/ecosystem.wikios.config.cjs` | new, from the `.example`; `WIKIOS_LEAN_FLIGHT: "1"` added to `env` in T9a | T5, T9a |
 | `/ixwiki/public/wikios/.env.wikios-build` | new: `NEXT_PUBLIC_IXSTATES_URL` (build-time, WikiOS only) | T5 |

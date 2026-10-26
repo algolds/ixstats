@@ -9,8 +9,8 @@
 # Deferred takeover only (deferred step T5 of docs/operations/wikios-v1-cutover.md); the launch does not run it.
 #
 # Prerequisites (one-time, see deferred step T5):
-# - The server's next.config.js resolveBasePath() honours NEXT_PUBLIC_WIKIOS_STANDALONE
-#   (deploy/wikios/next-config-snippet.md).
+# - resolveBasePath() in scripts/setup/base-path.cjs (next.config.js and the stylesheets' PostCSS
+#   base-path pass both use it) honours NEXT_PUBLIC_WIKIOS_STANDALONE (deploy/wikios/next-config-snippet.md).
 # - $WIKIOS_DIR/ecosystem.wikios.config.cjs exists (copy of
 #   deploy/wikios/ecosystem.wikios.config.cjs.example) and $WIKIOS_DIR/.env.production.local holds
 #   the runtime environment. Both are preserved across deploys.
@@ -182,7 +182,7 @@ if [ -d ".next" ]; then
 fi
 
 log "[2/4] Building Next.js application (WikiOS standalone)..."
-# next.config.js resolveBasePath() returns "" for NEXT_PUBLIC_WIKIOS_STANDALONE=true
+# resolveBasePath() (scripts/setup/base-path.cjs) returns "" for NEXT_PUBLIC_WIKIOS_STANDALONE=true
 # (deploy/wikios/next-config-snippet.md); the empty BASE_PATH values keep the proxy and the
 # client in step with it.
 export BASE_PATH=""

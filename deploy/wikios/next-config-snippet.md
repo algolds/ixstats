@@ -1,28 +1,29 @@
-# next.config.js changes for the WikiOS standalone build
+# next.config.js and base-path changes for the WikiOS standalone build
 
 `next.config.js` is tracked in git, and it does not carry these edits yet. They belong to the deferred
 ixwiki.com takeover build (deferred step T5 of `docs/operations/wikios-v1-cutover.md`), which the IxStates-only launch
 does not run. Make them in a commit before that build, not by hand on the server: `scripts/deploy-production.sh`
 runs `git reset --hard` and `git clean -fd` in the production checkout, so a hand edit there is undone by the next
-IxStates deploy. Edit 1 goes beside the IxWorld branch at the top of `resolveBasePath()`.
+IxStates deploy. Edit 1 goes beside the IxWorld branch at the top of `resolveBasePath()`, which lives in
+`scripts/setup/base-path.cjs` (next.config.js imports it). The PostCSS pass that puts the base path in front of the
+stylesheets' font URLs (`scripts/setup/postcss-base-path-urls.cjs`) calls the same function, so the edit covers it too.
 
 `scripts/deploy-wikios.sh` builds with `NEXT_PUBLIC_WIKIOS_STANDALONE=true`, `BASE_PATH=` and
 `NEXT_PUBLIC_BASE_PATH=` (all empty base path). Without edit 1 the production build would fall through to
-`/projects/ixstates` and WikiOS would serve its assets from the wrong prefix.
+`/projects/ixstates` whenever `BASE_PATH` is not exported, and WikiOS would serve its assets (and its stylesheets'
+fonts) from the wrong prefix.
 
-## 1. Required: empty base path in `resolveBasePath()`
+## 1. Required: empty base path in `resolveBasePath()` (`scripts/setup/base-path.cjs`)
 
-Add a WikiOS branch next to the IxWorld one, at the top of the function:
+Add a WikiOS branch next to the IxWorld one, at the top of the function (it reads `env`, `process.env` by default):
 
 ```js
-const resolveBasePath = () => {
+const resolveBasePath = (env = process.env) => {
   // WikiOS standalone (ixwiki.com/wiki/*, plan 417): ALWAYS use an empty base path
-  if (process.env.NEXT_PUBLIC_WIKIOS_STANDALONE === "true") {
+  if (env.NEXT_PUBLIC_WIKIOS_STANDALONE === "true") {
     return "";
   }
-
-  // If explicitly building for IxWorld standalone (maps.ixwiki.com), ALWAYS use empty base path
-  if (process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true") {
+  if (env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true") {
     return "";
   }
 
