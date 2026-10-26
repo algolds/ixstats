@@ -22,38 +22,44 @@ import {
 /** How long a sister wiki's answer is waited for, unless the call says otherwise. */
 const SISTER_TIMEOUT_MS = 12_000;
 
-/**
- * GET `url`, a sister wiki's JSON API call, through the upstream guard. Throws WikiUnavailableError for a timeout, a
- * network error, HTTP 403, 429 or 5xx, a 2xx that is not JSON, or a circuit at rest. A 4xx the wiki answered (404,
- * 400) comes back: check `response.ok`. Never for IxWiki's loopback, file bytes or `action=raw`.
- */
-export function fetchExternalWiki(
-  url: string,
-  timeoutMs: number = SISTER_TIMEOUT_MS
-): Promise<Response> {
-  return upstreamGuard.fetch(url, { timeoutMs });
+/** The API errors (in a 200) by which a wiki asks to be called less: busy, not down. */
+const BUSY_API_ERRORS: ReadonlySet<string> = new Set(["ratelimited", "maxlag"]);
+const NO_PAGE_ERRORS: ReadonlySet<string> = new Set();
+
+/** What any api.php answer may carry besides its data: an API error, in a 200. */
+interface ApiAnswer {
+  error?: { code?: string } | null;
+}
+
+/** The `error.code` an api.php answer carries in a 200 ("" when it names none), or null when it carries no error. */
+function apiErrorCode(answer: ApiAnswer | null): string | null {
+  if (!answer?.error) return null;
+  return typeof answer.error.code === "string" ? answer.error.code : "";
 }
 
 /**
- * The parsed JSON answer to `url`, a sister wiki's API call. Throws WikiUnavailableError when there is no usable
- * answer: the guard's failures, a status that is not OK (api.php answers 200, even for a missing page), or a body that
- * does not parse.
+ * The parsed JSON answer to `url`, a sister wiki's API call, through the upstream guard. Throws WikiUnavailableError
+ * when there is no usable answer: the guard's failures (a timeout, a network error, HTTP 403, 429 or 5xx, a 2xx that
+ * is not JSON or does not parse, a circuit at rest), a status that is not OK (api.php answers 200, even for a missing
+ * page), or an API error in the 200 (`busy` for `ratelimited` and `maxlag`), so a refusal is never read as a missing
+ * page or an empty list. Only the codes in `pageErrors` are the page's own answer, handed back for the caller to read.
+ * Never for IxWiki's loopback, file bytes or `action=raw`.
  */
 export async function readSisterJson<T>(
   url: string,
-  timeoutMs: number = SISTER_TIMEOUT_MS
+  timeoutMs: number = SISTER_TIMEOUT_MS,
+  pageErrors: ReadonlySet<string> = NO_PAGE_ERRORS
 ): Promise<T> {
-  const response = await fetchExternalWiki(url, timeoutMs);
-  const unusable = () => new WikiUnavailableError(wikiNameForUrl(url), "unreachable");
+  const response = await upstreamGuard.fetch(url, { timeoutMs });
+  const wiki = wikiNameForUrl(url);
   if (!response.ok) {
     await response.body?.cancel().catch(() => undefined);
-    throw unusable();
+    throw new WikiUnavailableError(wiki, "unreachable");
   }
-  try {
-    return (await response.json()) as T;
-  } catch {
-    throw unusable();
-  }
+  const answer = (await response.json()) as T;
+  const code = apiErrorCode(answer as ApiAnswer | null);
+  if (code === null || pageErrors.has(code)) return answer;
+  throw new WikiUnavailableError(wiki, BUSY_API_ERRORS.has(code) ? "busy" : "unreachable");
 }
 
 /** The pages of an `action=query` response, whether it came back as an array or an id-keyed map. */

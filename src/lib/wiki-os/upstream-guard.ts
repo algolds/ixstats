@@ -4,7 +4,7 @@
 //
 // Per host (`new URL(url).host`), two things stand between a caller and the wiki:
 //   - A breaker. Five failures in a row (a thrown fetch, a timeout, HTTP 403, 429 or 5xx, or a 2xx that is not JSON,
-//     which is how a Cloudflare challenge looks) open it for 30 s; meanwhile every call fails fast with no request.
+//     which is how a Cloudflare challenge looks, or whose body is cut short or does not parse) open it for 30 s; meanwhile every call fails fast with no request.
 //     Then exactly one probe goes out while other calls keep failing fast. A successful probe closes the breaker and
 //     resets it; a failed one reopens it for twice as long as last time, never more than 5 minutes. One `console.warn`
 //     when a circuit opens and one when it closes; those name the host, which stays on the server.
@@ -25,7 +25,9 @@
 // not a listed wiki is "The wiki" (`wikiNameForUrl`).
 //
 // JSON API calls only. A non-JSON 2xx is a failure (that is how a challenge page is caught), so file bytes or
-// `action=raw` routed through here would trip the breaker on healthy wikis.
+// `action=raw` routed through here would trip the breaker on healthy wikis. A 2xx body is read inside the call (it
+// holds its in-flight slot until then), so a body that does not parse is a failure too, never a success the caller
+// then cannot read.
 //
 // State is per process, in memory, and costs no timer: time is read from the clock when a call arrives, so nothing
 // keeps the process alive and nothing leaks between tests. Production runs the Next server and server.mjs's cron jobs;
@@ -116,7 +118,7 @@ export interface GuardedRequest {
 /** The timeout of a request whose `timeoutMs` is not a positive finite number. */
 export const DEFAULT_TIMEOUT_MS = 12_000;
 /** The longest a request may wait. */
-export const MAX_TIMEOUT_MS = 30_000;
+const MAX_TIMEOUT_MS = 30_000;
 
 function timeoutOf(timeoutMs: number): number {
   return Number.isFinite(timeoutMs) && timeoutMs > 0
@@ -200,6 +202,19 @@ function verdictOf(response: Response): "ok" | "unreachable" | "busy" {
   return wikiAnswered ? "ok" : "unreachable";
 }
 
+/** A 2xx answer read whole: the same answer, still readable, when its body parses as JSON; else `unreachable`. */
+async function parsedAnswer(response: Response): Promise<Response | "unreachable"> {
+  try {
+    const text = await response.text();
+    JSON.parse(text);
+    const { status, statusText, headers } = response;
+    return new Response(text, { status, statusText, headers });
+  } catch {
+    // a body cut short (the timeout fired while it was read) or JSON that does not parse
+    return "unreachable";
+  }
+}
+
 /** The wiki's answer, or why there is none. */
 async function send(url: string, request: GuardedRequest): Promise<Response | UnavailableReason> {
   const userAgent = request.userAgent ?? DEFAULT_USER_AGENT;
@@ -214,7 +229,7 @@ async function send(url: string, request: GuardedRequest): Promise<Response | Un
     return "unreachable";
   }
   const verdict = verdictOf(response);
-  if (verdict === "ok") return response;
+  if (verdict === "ok") return response.ok ? parsedAnswer(response) : response;
   // Nobody reads a failed answer: release its connection.
   await response.body?.cancel().catch(() => undefined);
   return verdict;
@@ -237,8 +252,9 @@ export class HostGuard {
   }
 
   /**
-   * GET `url`, a JSON API call. Returns the response for a 2xx JSON answer or a 4xx other than 403/429. Never route
-   * file bytes or `action=raw` through it: a non-JSON answer counts as a failure and would trip the breaker.
+   * GET `url`, a JSON API call. Returns the response for a 2xx JSON answer whose body parses or a 4xx other than
+   * 403/429. Never route file bytes or `action=raw` through it: a non-JSON answer counts as a failure and would trip
+   * the breaker.
    */
   async fetch(url: string, request: GuardedRequest): Promise<Response> {
     const wiki = wikiNameForUrl(url);

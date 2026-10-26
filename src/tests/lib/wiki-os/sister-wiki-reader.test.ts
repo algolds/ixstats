@@ -13,7 +13,6 @@ jest.mock("~/lib/wiki-os/core/article-repository", () => ({
 
 import { afterEach, beforeEach, describe, expect, it } from "@jest/globals";
 import {
-  fetchExternalWiki,
   fetchMediaWikiPageAuthorsAndRevisions,
   fetchPageImagesHttp,
   httpGetCategoryMembers,
@@ -189,6 +188,28 @@ describe("a missing page and an unreachable wiki", () => {
     expect(error).toBeInstanceOf(WikiUnavailableError);
     expect(error).toMatchObject({ wiki: "AltHistory Wiki", reason: "unreachable" });
   });
+
+  it.each([
+    ["ratelimited", "busy"],
+    ["maxlag", "busy"],
+    ["readapidenied", "unreachable"],
+    ["", "unreachable"],
+  ])(
+    "an API error in a 200 (%p) is WikiUnavailableError (%s), never a missing page or an empty list",
+    async (code, reason) => {
+      fetchSpy.mockImplementation(async () => Response.json({ error: { code, info: "x" } }));
+
+      for (const read of [
+        readSisterWikitext("iiwiki", "Nowhere Land"),
+        searchSisterWiki("iiwiki", "Gyl"),
+        httpGetCategoryMembers("Eurth", 10, undefined, "iiwiki"),
+      ]) {
+        const error = await read.catch((e: Error) => e);
+        expect(error).toBeInstanceOf(WikiUnavailableError);
+        expect(error).toMatchObject({ wiki: "IIWiki", reason });
+      }
+    }
+  );
 
   it("a search with no match is empty; an unreachable wiki throws", async () => {
     fetchSpy.mockImplementation(async () => Response.json(["Zzyzx", [], [], []]));
@@ -404,11 +425,8 @@ describe("the request", () => {
     await expect(readSisterWikitext("iiwiki", "Nowhere")).resolves.toBeNull();
   });
 
-  it.each([
-    ["an API error", { error: { code: "badvalue" } }],
-    ["null", null],
-  ])("a search answered with %s finds nothing", async (_case, body) => {
-    fetchSpy.mockImplementation(async () => Response.json(body));
+  it("a search answered with null finds nothing (an API error throws: see above)", async () => {
+    fetchSpy.mockImplementation(async () => Response.json(null));
 
     await expect(searchSisterWiki("althistory", "Anything")).resolves.toEqual([]);
   });
@@ -572,12 +590,12 @@ describe("the dispatchers", () => {
 describe("a host that refuses (403)", () => {
   it("one 403 does not take the host offline (one Cloudflare challenge is not an outage)", async () => {
     fetchSpy.mockImplementation(async () => new Response("Just a moment...", { status: 403 }));
-    await expect(fetchExternalWiki("https://once.example/api.php?a")).rejects.toBeInstanceOf(
-      WikiUnavailableError
-    );
+    await expect(
+      upstreamGuard.fetch("https://once.example/api.php?a", { timeoutMs: 1000 })
+    ).rejects.toBeInstanceOf(WikiUnavailableError);
 
     fetchSpy.mockImplementation(async () => Response.json({ ok: true }));
-    const second = await fetchExternalWiki("https://once.example/api.php?b");
+    const second = await upstreamGuard.fetch("https://once.example/api.php?b", { timeoutMs: 1000 });
 
     expect(second.ok).toBe(true);
     expect(fetchSpy).toHaveBeenCalledTimes(2);

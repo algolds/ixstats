@@ -53,8 +53,10 @@ let now = 1_000_000;
 let page: { title: string; revId: number } | null;
 let parsedHtml = PAGE;
 let down = false;
-/** The wiki answers the parse with an error of its own (it cannot render the page). */
+/** The wiki answers the parse with no parse result (it cannot render the page). */
 let unrenderable = false;
+/** The wiki answers the parse with this API error in a 200, or none. */
+let apiError: string | null = null;
 
 let counter = 0;
 /** A request for a title of its own, so the module-level caches never link two tests. */
@@ -87,7 +89,8 @@ function answer(url: URL): Response {
       },
     });
   }
-  if (action === "parse" && unrenderable) return Response.json({ error: { info: "Lua error" } });
+  if (action === "parse" && apiError) return Response.json({ error: { code: apiError, info: "x" } });
+  if (action === "parse" && unrenderable) return Response.json({ parse: { title: page?.title } });
   if (action === "parse") return Response.json({ parse: { title: page?.title, text: parsedHtml } });
   throw new Error(`unexpected fetch of ${url.href}`);
 }
@@ -98,6 +101,7 @@ beforeEach(() => {
   now += 3_600_000;
   down = false;
   unrenderable = false;
+  apiError = null;
   parsedHtml = PAGE;
   dateSpy = jest.spyOn(Date, "now").mockImplementation(() => now);
   fetchSpy = jest
@@ -242,6 +246,17 @@ describe("getSisterEmbed: the wiki is asked rarely", () => {
     expect(asked).toBeGreaterThan(0);
 
     down = false;
+    expect(await getSisterEmbed(req)).toMatchObject({ status: "ok" });
+    expect(calls()).toBeGreaterThan(asked);
+  });
+
+  it("an API error in the parse answer that is not the page's (maxlag) is busy, and nothing is cached", async () => {
+    const req = request();
+    apiError = "maxlag";
+    await expect(getSisterEmbed(req)).rejects.toMatchObject({ reason: "busy" });
+    const asked = calls();
+
+    apiError = null;
     expect(await getSisterEmbed(req)).toMatchObject({ status: "ok" });
     expect(calls()).toBeGreaterThan(asked);
   });

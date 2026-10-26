@@ -8,10 +8,11 @@
  * The wiki is called through the upstream guard (plan 2026-10-25 sister wikis, C3d) on its own `proxy` lane: a limiter
  * of its own, so anonymous traffic never spends WikiOS's budget, and the host's breaker, shared with WikiOS. The guard
  * asks for JSON only, which suits this proxy: `format=json` is forced and no callback (JSONP) is forwarded, so any
- * other answer, a Cloudflare challenge page included, is the wiki failing. A success is cacheable for five minutes
- * and varies by Origin (the CORS header echoes a listed one). An unreachable wiki or an open circuit is 503 and a busy
- * one 429, each with Retry-After; those and every other answer but a success are `no-store`, so no cache keeps an
- * error.
+ * other answer, a Cloudflare challenge page included, and a body cut short or that does not parse, is the wiki
+ * failing (the guard counts it against the breaker). A success is cacheable for five minutes and varies by Origin
+ * (the CORS header echoes a listed one). A 200 that carries a MediaWiki API error (`maxlag`, `ratelimited`, a bad
+ * parameter) is passed on as it is but is no success. An unreachable wiki or an open circuit is 503 and a busy one
+ * 429, each with Retry-After; those and every other answer but a success are `no-store`, so no cache keeps an error.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimiter } from "~/lib/cache";
@@ -54,7 +55,7 @@ function forwardedParams(url: URL): URLSearchParams {
 }
 
 /** The wiki's JSON answer to `params`; throws WikiUnavailableError, or an Error for anything else unusable. */
-async function readWiki(wiki: WikiConfig, params: URLSearchParams): Promise<object> {
+async function readWiki(wiki: WikiConfig, params: URLSearchParams): Promise<object | null> {
   const response = await upstreamGuard.fetch(`${wiki.apiUrl()}?${params.toString()}`, {
     timeoutMs: UPSTREAM_TIMEOUT_MS,
     lane: "proxy",
@@ -63,7 +64,7 @@ async function readWiki(wiki: WikiConfig, params: URLSearchParams): Promise<obje
     await response.body?.cancel().catch(() => undefined);
     throw new Error(`HTTP ${response.status}`);
   }
-  return (await response.json()) as object;
+  return (await response.json()) as object | null;
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ wiki: string }> }) {
@@ -113,7 +114,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const body = await readWiki(wiki, forwardedParams(url));
-    return NextResponse.json(body, { headers: { ...corsHeaders, "Cache-Control": CACHEABLE } });
+    const apiError = body !== null && "error" in body;
+    return NextResponse.json(body, {
+      headers: apiError ? errorHeaders : { ...corsHeaders, "Cache-Control": CACHEABLE },
+    });
   } catch (error) {
     if (error instanceof WikiUnavailableError) return unavailableAnswer(error, corsHeaders);
     console.error(`[${wiki.label} Proxy] api.php error:`, error);

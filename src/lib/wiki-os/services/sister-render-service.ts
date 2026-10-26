@@ -47,6 +47,18 @@ export class SisterRenderError extends Error {
 }
 
 const RENDER_TIMEOUT_MS = 15_000;
+/**
+ * The API errors of `action=parse` that are the page's own answer (`SisterRenderError`); any other (`maxlag`, an
+ * internal error) is the wiki failing to answer (WikiUnavailableError, never cached).
+ */
+const PAGE_REFUSALS: ReadonlySet<string> = new Set([
+  "missingtitle",
+  "nosuchpageid",
+  "nosuchrevid",
+  "invalidtitle",
+  "permissiondenied",
+  "pagecannotexist",
+]);
 
 const renders = new Cache<SisterRender>({ maxSize: 200, defaultTtlMs: 10 * 60 * 1000 });
 /** Renders under way, so two readers of the same revision at once cost one request. */
@@ -77,7 +89,11 @@ async function renderOnItsWiki(
   source: SisterWikiSource,
   article: WikiArticle
 ): Promise<SisterRender> {
-  const answer = await readSisterJson<ParseAnswer>(parseUrl(source, article), RENDER_TIMEOUT_MS);
+  const answer = await readSisterJson<ParseAnswer>(
+    parseUrl(source, article),
+    RENDER_TIMEOUT_MS,
+    PAGE_REFUSALS
+  );
   const html = answer?.parse?.text;
   if (!html) throw new SisterRenderError(source, answer?.error?.info ?? "no parse result");
   if (answer.parse?.title !== article.title) {

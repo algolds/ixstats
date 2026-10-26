@@ -139,6 +139,16 @@ describe("the request", () => {
     expect(signal.aborted).toBe(true);
   });
 
+  it("a 2xx answer is read inside the call and handed back still readable, with its status and headers", async () => {
+    fetchSpy.mockImplementation(async () =>
+      Response.json({ query: { pages: [] } }, { headers: { "x-served-by": "mw1" } })
+    );
+    const response = await guard().fetch(IIWIKI, { timeoutMs: 1000 });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-served-by")).toBe("mw1");
+    expect(await response.json()).toEqual({ query: { pages: [] } });
+  });
+
   it("returns a 4xx answer other than 403 and 429 as the wiki's own answer, and it counts as a success", async () => {
     const g = guard({ failureThreshold: 2 });
     fetchSpy.mockImplementation(async () => status(503));
@@ -190,6 +200,10 @@ describe("the breaker", () => {
     ],
     ["a 500", () => status(500)],
     ["a 301 that was not followed", () => new Response(null, { status: 301 })],
+    [
+      "a 200 JSON answer whose body does not parse (cut short)",
+      () => new Response('{"query":', { headers: { "content-type": "application/json" } }),
+    ],
   ])(
     "a Cloudflare challenge page (403, or 200 with text/html) counts as a failure: %s",
     async (_label, answer) => {

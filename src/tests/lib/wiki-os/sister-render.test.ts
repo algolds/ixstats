@@ -236,6 +236,25 @@ describe("renderSisterArticle: the answer", () => {
   });
 
   it.each([
+    ["maxlag", "busy"],
+    ["ratelimited", "busy"],
+    ["internal_api_error_DBQueryError", "unreachable"],
+  ])(
+    "an API error that is not the page's own (%s) is WikiUnavailableError (%s), not SisterRenderError, and nothing is cached",
+    async (code, reason) => {
+      const page = article();
+      fetchSpy.mockImplementation(async () => Response.json({ error: { code, info: "x" } }));
+      const error = await renderSisterArticle("iiwiki", page).catch((e: Error) => e);
+      expect(error).toBeInstanceOf(WikiUnavailableError);
+      expect(error).toMatchObject({ wiki: "IIWiki", reason });
+
+      fetchSpy.mockImplementation(async () => answer());
+      await expect(renderSisterArticle("iiwiki", page)).resolves.toMatchObject({ toc: [] });
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+    }
+  );
+
+  it.each([
     ["no parse and no error", {}],
     ["null", null],
   ])("an answer with %s says no parse result", async (_case, body) => {

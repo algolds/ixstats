@@ -155,6 +155,15 @@ describe("the api.php proxy", () => {
     expect(res.headers.get("access-control-allow-origin")).toBe("https://www.iiwiki.com");
   });
 
+  it("a 200 that carries a MediaWiki API error is passed on as it is, never cached", async () => {
+    const error = { error: { code: "maxlag", info: "Waiting for a database server" } };
+    fetchMock.mockImplementation(async () => Response.json(error));
+    const res = await apiPhp("iiwiki", "action=query&titles=Bashan");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual(error);
+    expect(res.headers.get("cache-control")).toBe("no-store");
+  });
+
   it("never reflects an origin it does not list; a wiki open to every origin answers *", async () => {
     fetchMock.mockImplementation(async () => Response.json({ query: { pages: [] } }));
     const evil = { origin: "https://evil.example" };
@@ -184,6 +193,10 @@ describe("the api.php proxy", () => {
       async (): Promise<Response> => {
         throw new TypeError("fetch failed");
       },
+    ],
+    [
+      "a JSON body cut short",
+      async () => new Response('{"query":', { headers: { "content-type": "application/json" } }),
     ],
   ])(
     "an unreachable wiki is 503 with no-store and Retry-After, never 500 (%s)",
@@ -256,10 +269,6 @@ describe("the api.php proxy", () => {
 
   it.each([
     ["a wiki's own 404", async () => Response.json({ error: "nope" }, { status: 404 })],
-    [
-      "a JSON answer that does not parse",
-      async () => new Response('{"query":', { headers: { "content-type": "application/json" } }),
-    ],
   ])("an unexpected failure is 502 with no-store, not 500 (%s)", async (_case, answer) => {
     fetchMock.mockImplementation(answer);
     const res = await apiPhp("iiwiki", "action=query&titles=Bashan");

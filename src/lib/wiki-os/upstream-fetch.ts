@@ -3,8 +3,9 @@
  *
  * Every call goes through the upstream guard (upstream-guard.ts: a timeout, a breaker and a limiter per host) and
  * gets a real error, never an empty result that looks like "no results":
- *   - a timeout, a network error, HTTP 403 or 5xx, or an answer that is not JSON (a Cloudflare challenge) is
- *     WikiUnavailableError (SERVICE_UNAVAILABLE); HTTP 429, or our own limiter, is its `busy` form (TOO_MANY_REQUESTS);
+ *   - a timeout, a network error, HTTP 403 or 5xx, or an answer that is not JSON (a Cloudflare challenge) or does not
+ *     parse is WikiUnavailableError (SERVICE_UNAVAILABLE); HTTP 429, or our own limiter, is its `busy` form
+ *     (TOO_MANY_REQUESTS);
  *   - another status the wiki answered is BAD_GATEWAY;
  *   - an API error in a 200 is TOO_MANY_REQUESTS for `ratelimited` and `maxlag`, BAD_GATEWAY otherwise.
  * An optional short-lived in-process cache keeps a hot query from hitting the upstream twice; a failure is never cached.
@@ -14,7 +15,7 @@
 import { TRPCError } from "@trpc/server";
 import { Cache } from "~/lib/cache/cache";
 import { DEFAULT_USER_AGENT, mediaWikiApiUrl } from "~/lib/wiki-os/config";
-import { upstreamGuard, WikiUnavailableError, wikiNameForUrl } from "~/lib/wiki-os/upstream-guard";
+import { upstreamGuard } from "~/lib/wiki-os/upstream-guard";
 
 const DEFAULT_TIMEOUT_MS = 8000;
 
@@ -62,12 +63,8 @@ async function requestJson(url: string, userAgent: string, timeoutMs: number): P
       message: `Upstream wiki responded with HTTP ${res.status}`,
     });
   }
-  try {
-    return (await res.json()) as ApiAnswer;
-  } catch {
-    // A body cut short (the timeout fired while it was read) or JSON that does not parse: no usable answer.
-    throw new WikiUnavailableError(wikiNameForUrl(url), "unreachable");
-  }
+  // (a body cut short or JSON that does not parse is the guard's failure: WikiUnavailableError)
+  return (await res.json()) as ApiAnswer;
 }
 
 /** GET `url` and return its parsed JSON, or throw an error that says what went wrong (see the header). */
