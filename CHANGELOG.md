@@ -58,7 +58,11 @@ is deployed; WikiOS editing launches with WikiOS v1.
   - `scripts/audit/wikios-proof.ts` runs the editor round trip, render parity and the bench under a local, launch or
     recurring profile, and checks them against `scripts/audit/wikios-proof-thresholds.json`.
   - The weekly `wikios-proof` cron job runs it on the server. Every deploy refuses a release whose WikiOS code has no
-    committed passing proof ([docs/audits/wikios-proof/](docs/audits/wikios-proof/README.md); first report pending).
+    committed passing proof ([docs/audits/wikios-proof/](docs/audits/wikios-proof/README.md)). The local proof passed
+    on 2026-10-26: 12,706 of 12,706 pages byte-identical through the editor, and 99.2% of a 497-page parity sample at
+    98 or more (mean 99.88, none below 70). The bench's gated run is the launch run.
+  - A render in which MediaWiki could not show a file (a missing-file link or a failed thumbnail, which classic's
+    Commons lookup can produce for one render and not the next) is rendered again once it is a day old.
   - The unreachable Margin Inspect tab and a stray log line are gone.
   - SYSTEM_STATUS, WIKIOS.md and the MediaWiki dependencies doc describe the launch shape.
 

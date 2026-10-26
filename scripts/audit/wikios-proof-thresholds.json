@@ -1,12 +1,12 @@
 {
-  "roundTrip": { "minPages": 11000, "maxNonIdentical": 0, "maxIncomplete": 0, "maxErrors": 0 },
+  "roundTrip": { "minPages": 11435, "maxNonIdentical": 0, "maxIncomplete": 0, "maxErrors": 0 },
   "parity": {
     "minPages": 200,
     "maxWikiosFailures": 0,
     "maxFallbackRenders": 0,
     "maxMediaWikiMissingPercent": 2,
-    "minAtLeast98Percent": 95,
-    "minMeanScore": 97,
+    "minAtLeast98Percent": 97.1,
+    "minMeanScore": 98,
     "maxBelow70Pages": 0,
     "knownLowPages": []
   },

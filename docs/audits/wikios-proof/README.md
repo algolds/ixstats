@@ -10,7 +10,13 @@ The CLI is [`scripts/audit/wikios-proof.ts`](../../../scripts/audit/wikios-proof
 [WIKIOS.md, Proof and gates](../../systems/wikios/WIKIOS.md#proof-and-gates) and the
 [launch hardening spec](../../superpowers/specs/2026-10-24-wikios-launch-hardening-design.md) (Workstream D).
 
-**Reports so far:** none. The first report is pending (the local proof).
+**Reports so far:**
+
+- [2026-10-26, local](2026-10-26-local.md) (commit `72b282b77`, `latest.json`): passed. The round trip kept 12,706 of
+  12,706 pages byte-identical, in every namespace. Parity compared a sample of 497 pages, each at the revision WikiOS
+  holds: 99.2% of the 495 scored pages score 98 or more, the mean is 99.88 and none is below 70 (two pages failed on
+  classic's side with an internal error; three `sanitized-css` pages were left out as not articles). The bench is
+  reference only on a dev server; the gated bench is the launch run.
 
 ## What each harness measures
 
@@ -58,7 +64,8 @@ these, each harness must exit cleanly, a proving round trip must cover every nam
 parity report must record its settle wait (`parity.settleMs`) and have parsed the revision WikiOS holds
 (`parity.byRevision`).
 
-- `roundTrip.pages`: at least 11,000 pages measured, so an empty or wrong corpus cannot pass.
+- `roundTrip.pages`: at least 11,435 pages measured (90% of the first proof's 12,706), so an empty or wrong corpus
+  cannot pass.
 - `roundTrip.nonIdentical`: 0 pages whose output differs from their input by any byte.
 - `roundTrip.incomplete`: 0 pages the serializer could not finish.
 - `roundTrip.errors`: 0 pages that threw.
@@ -67,8 +74,8 @@ parity report must record its settle wait (`parity.settleMs`) and have parsed th
 - `parity.fallbackRenders`: 0 scored pages still a fallback or stale render after the settle retries.
 - `parity.mediawikiMissing`: at most 2% of requested pages missing on MediaWiki, or whose held revision MediaWiki has
   deleted or hidden (corpus drift between the two copies).
-- `parity.atLeast98`: at least 95% of scored pages score 98 or more.
-- `parity.meanScore`: a mean score of at least 97.
+- `parity.atLeast98`: at least 97.1% of scored pages score 98 or more (the first proof measured 99.2%).
+- `parity.meanScore`: a mean score of at least 98 (the first proof measured 99.88).
 - `parity.below70`: 0 pages below 70, except pages listed in `knownLowPages` with a reason.
 - `bench.failures.<system>`: at most 1% of requests failed, per system.
 - `bench.p95.<metric>`: p95 caps of 1,500 ms for `page+data.totalMs` (the article page and its data call), 800 ms for

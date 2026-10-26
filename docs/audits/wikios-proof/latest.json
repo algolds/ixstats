@@ -1,0 +1,176 @@
+{
+  "profile": "local",
+  "generatedAt": "2026-10-26T06:23:18.487Z",
+  "commit": "72b282b77eb6255b251c3686edd01c3df2e2cfcf",
+  "treeKey": "10179cd66b38fe3ed9325f5547f4d6bf889480e261e0f8dffdbcd7ffd86b5b82",
+  "dirty": false,
+  "corpus": {
+    "roundTripPages": 12706,
+    "parityPages": 497,
+    "benchPages": 25
+  },
+  "checks": [
+    {
+      "name": "roundTrip.namespaces",
+      "passed": true,
+      "skipped": null,
+      "measured": "all",
+      "threshold": "all"
+    },
+    {
+      "name": "roundTrip.pages",
+      "passed": true,
+      "skipped": null,
+      "measured": "12706",
+      "threshold": ">= 11435"
+    },
+    {
+      "name": "roundTrip.nonIdentical",
+      "passed": true,
+      "skipped": null,
+      "measured": "0",
+      "threshold": "<= 0"
+    },
+    {
+      "name": "roundTrip.incomplete",
+      "passed": true,
+      "skipped": null,
+      "measured": "0",
+      "threshold": "<= 0"
+    },
+    {
+      "name": "roundTrip.errors",
+      "passed": true,
+      "skipped": null,
+      "measured": "0",
+      "threshold": "<= 0"
+    },
+    {
+      "name": "parity.settleMs",
+      "passed": true,
+      "skipped": null,
+      "measured": "8000 ms",
+      "threshold": "recorded"
+    },
+    {
+      "name": "parity.byRevision",
+      "passed": true,
+      "skipped": null,
+      "measured": "496 of 497 pages",
+      "threshold": "the revision WikiOS holds"
+    },
+    {
+      "name": "parity.pages",
+      "passed": true,
+      "skipped": null,
+      "measured": "495 answered of 497 requested (497 in the report)",
+      "threshold": ">= 200 answered, every requested page reported"
+    },
+    {
+      "name": "parity.wikiosFailures",
+      "passed": true,
+      "skipped": null,
+      "measured": "0",
+      "threshold": "<= 0"
+    },
+    {
+      "name": "parity.mediawikiMissing",
+      "passed": true,
+      "skipped": null,
+      "measured": "0.0%",
+      "threshold": "<= 2% of requested pages"
+    },
+    {
+      "name": "parity.fallbackRenders",
+      "passed": true,
+      "skipped": null,
+      "measured": "0",
+      "threshold": "<= 0"
+    },
+    {
+      "name": "parity.atLeast98",
+      "passed": true,
+      "skipped": null,
+      "measured": "99.2%",
+      "threshold": ">= 97.1% of scored pages"
+    },
+    {
+      "name": "parity.meanScore",
+      "passed": true,
+      "skipped": null,
+      "measured": "99.88",
+      "threshold": ">= 98"
+    },
+    {
+      "name": "parity.below70",
+      "passed": true,
+      "skipped": null,
+      "measured": "0",
+      "threshold": "<= 0"
+    },
+    {
+      "name": "bench.failures.mediawiki",
+      "passed": true,
+      "skipped": "dev server: reference only",
+      "measured": "0.00% (0 of 150)",
+      "threshold": "<= 1%"
+    },
+    {
+      "name": "bench.failures.wikios",
+      "passed": false,
+      "skipped": "dev server: reference only",
+      "measured": "25.00% (50 of 200)",
+      "threshold": "<= 1%"
+    },
+    {
+      "name": "bench.p95.page+data.totalMs",
+      "passed": false,
+      "skipped": "dev server: reference only",
+      "measured": "no samples",
+      "threshold": "<= 1500 ms"
+    },
+    {
+      "name": "bench.p95.data.totalMs",
+      "passed": true,
+      "skipped": "dev server: reference only",
+      "measured": "45 ms",
+      "threshold": "<= 800 ms"
+    },
+    {
+      "name": "bench.p95.search.totalMs",
+      "passed": true,
+      "skipped": "dev server: reference only",
+      "measured": "43 ms",
+      "threshold": "<= 500 ms"
+    },
+    {
+      "name": "bench.p95.history.totalMs",
+      "passed": true,
+      "skipped": "dev server: reference only",
+      "measured": "38 ms",
+      "threshold": "<= 800 ms"
+    },
+    {
+      "name": "bench.ratio.page+data.totalMs",
+      "passed": false,
+      "skipped": "dev server: reference only",
+      "measured": "no page measured on both systems",
+      "threshold": "<= 1"
+    },
+    {
+      "name": "bench.ratio.search.totalMs",
+      "passed": true,
+      "skipped": "dev server: reference only",
+      "measured": "0.45 (n=50)",
+      "threshold": "<= 1"
+    },
+    {
+      "name": "bench.ratio.history.totalMs",
+      "passed": true,
+      "skipped": "dev server: reference only",
+      "measured": "0.38 (n=50)",
+      "threshold": "<= 1"
+    }
+  ],
+  "passed": true
+}
