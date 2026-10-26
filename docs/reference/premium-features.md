@@ -344,7 +344,7 @@ export const militaryRouter = createTRPCRouter({
 });
 ```
 
-Current `premiumProcedure` users: `security/military.ts`, `security/operations.ts`, `security/conflicts.ts`, `security/stability.ts`.
+Current `premiumProcedure` users: `security/military.ts`, `security/operations.ts`, `security/conflicts/`, `security/stability.ts`.
 
 ---
 

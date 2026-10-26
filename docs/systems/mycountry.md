@@ -84,7 +84,7 @@ All under `src/components/mycountry/shell/` unless noted.
 
 A foundational rule of the platform:
 - **Frontend (UI)**: **Directives** is the universal user-facing brand across all UI components, buttons, and dialogs (`"Declare Directive"`, `"Tune Custom Directive"`, `"Executive Directives Agenda"`).
-- **Backend (Engine)**: The **Statecraft Simulation Engine** (`src/lib/statecraft/*.ts`, `src/lib/intent/*.ts`, `src/server/api/routers/intent.ts`) powers intent parsing, power broker alignments, civil capacity throughput, and recon research.
+- **Backend (Engine)**: The **Statecraft Simulation Engine** (`src/lib/statecraft/*.ts`, `src/lib/intent/*.ts`, `src/server/api/routers/intent/`) powers intent parsing, power broker alignments, civil capacity throughput, and recon research.
 
 ```mermaid
 sequenceDiagram

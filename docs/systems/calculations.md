@@ -84,7 +84,7 @@ National-issue resolution (`src/lib/national-issues/projection-effects.ts`) crea
 | `currentTotalGdp` / `currentGdpPerCapita` multiply m | `gdp_level_adjustment`, no duration | `m − 1`, capped at ±3% |
 | `currentPopulation` multiply m | `population_level_adjustment`, no duration | `m − 1`, capped at ±1% |
 
-Growth directives (`routers/intent.ts`) also create a `gdp_level_adjustment`, phased in over 1 IxTime year: `growthModifierToLevelShift(m, 1)` = `(1 + g(1+m)) / (1+g) − 1` at the reference growth `g = 3%` (`REFERENCE_GDP_GROWTH`), where `m` is the package's growth modifier (capped at 0.05).
+Growth directives (`routers/intent/directives.ts`) also create a `gdp_level_adjustment`, phased in over 1 IxTime year: `growthModifierToLevelShift(m, 1)` = `(1 + g(1+m)) / (1+g) − 1` at the reference growth `g = 3%` (`REFERENCE_GDP_GROWTH`), where `m` is the package's growth modifier (capped at 0.05).
 
 Any other operation on those fields (`set`, an absolute add to GDP) is dropped: it is not applied, not listed in the issue's consequence log, and not shown in the recon preview.
 
