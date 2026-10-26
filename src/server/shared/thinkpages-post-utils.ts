@@ -43,6 +43,29 @@ export function withVisibleEmbeds<
   return { ...post, parentPost: visible(post.parentPost), repostOf: visible(post.repostOf) };
 }
 
+/** A persona as other players see it: the owner's Clerk id stays on the server. */
+function withoutOwnerId(account: any) {
+  if (!account || typeof account !== "object") return account;
+  const { clerkUserId: _owner, ...rest } = account;
+  return rest;
+}
+
+/**
+ * A post whose personas (its own, its parent's and its original's) carry no owner Clerk id.
+ * canViewPost reads that id, so it runs before this.
+ */
+export function withoutOwnerIds<T>(post: T): T {
+  if (!post || typeof post !== "object") return post;
+  const p = post as any;
+  const embed = (e: any) => (e ? { ...e, account: withoutOwnerId(e.account) } : e);
+  return {
+    ...p,
+    account: withoutOwnerId(p.account),
+    parentPost: embed(p.parentPost),
+    repostOf: embed(p.repostOf),
+  };
+}
+
 /**
  * Reaction tally for a post.
  *
@@ -126,7 +149,7 @@ export const pollInclude = {
   },
 };
 
-/** Persona fields shown next to a post or comment. */
+/** Persona fields shown next to a post or comment; `clerkUserId` is for canViewPost and never sent (transformPost drops it). */
 const accountSelect = {
   id: true,
   username: true,
@@ -158,13 +181,16 @@ export const postInclude = {
   _count: { select: { replies: true, reposts: true } },
 };
 
-/** Post as the client reads it: parsed hashtags and reaction counts, formatted poll and a display timestamp. */
+/**
+ * Post as the client reads it: parsed hashtags and reaction counts, formatted poll and a display
+ * timestamp, and no owner Clerk ids on its personas.
+ */
 export function transformPost(p: any) {
   if (!p) return p;
   const reactionCounts = resolveReactionCounts(p.reactionCounts, p.reactions);
 
   return {
-    ...p,
+    ...withoutOwnerIds(p),
     poll: formatPollForClient(p.poll),
     hashtags: p.hashtags
       ? typeof p.hashtags === "string"

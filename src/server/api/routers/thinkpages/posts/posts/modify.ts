@@ -7,6 +7,7 @@ import {
   loadPostForModeration,
   postAuthorsInclude,
   stripDiscordMarker,
+  withoutOwnerIds,
 } from "../../post-utils";
 import { ownHashtags, storedPseudoTags } from "~/server/shared/realm-board";
 import { deleteThinkpagesPost } from "~/server/shared/thinkpages-post-delete";
@@ -84,7 +85,7 @@ export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
 
       await invalidateFeeds();
 
-      return updatedPost;
+      return withoutOwnerIds(updatedPost);
     }),
 
   // Delete a post (hard delete; see deleteThinkpagesPost)

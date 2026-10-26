@@ -10,6 +10,7 @@ import {
   personaDisplayName,
   postAuthorsInclude,
   stripDiscordMarker,
+  withoutOwnerIds,
 } from "../../post-utils";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { ownHashtags } from "~/server/shared/realm-board";
@@ -435,6 +436,6 @@ export const thinkpagesPostsPostsCreateRouter = createTRPCRouter({
       queueAchievementCheck(clerkUserId);
       await invalidateFeeds();
 
-      return post;
+      return withoutOwnerIds(post);
     }),
 });

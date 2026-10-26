@@ -145,7 +145,7 @@ function FeedPostPage({ postId }: { postId: string }) {
     { countryId: userProfile?.countryId || "" },
     { enabled: !!userProfile?.countryId }
   );
-  const currentAccount = accounts?.[0];
+  const currentAccount = accounts?.find((account) => account.isMine);
 
   // The post comes with its replies pre-fetched
   const {
