@@ -6,7 +6,7 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
-import { withJobLock } from "~/lib/system/job-lock";
+import { acquireJobLease, releaseJobLease, withJobLock } from "~/lib/system/job-lock";
 
 /** A fake table: the upsert returns our holder only when the lease is free. */
 function makeDb(initiallyHeldBy?: string) {
@@ -61,6 +61,20 @@ describe("withJobLock", () => {
         throw new Error("boom");
       })
     ).rejects.toThrow("boom");
+    expect(leases.size).toBe(0);
+  });
+});
+
+describe("acquireJobLease / releaseJobLease (a lease held across processes, as the deploy holds wikios-proof)", () => {
+  it("takes a free lease once, for the lease length asked, and only its holder releases it", async () => {
+    const { db, leases, $queryRaw } = makeDb();
+    await expect(acquireJobLease(db, "wikios-proof", "deploy", 7_200_000)).resolves.toBe(true);
+    expect($queryRaw.mock.calls[0]?.slice(1)).toEqual(["wikios-proof", "deploy", 7200]);
+    await expect(acquireJobLease(db, "wikios-proof", "cron", 60_000)).resolves.toBe(false);
+
+    await releaseJobLease(db, "wikios-proof", "cron");
+    expect(leases.get("wikios-proof")).toBe("deploy");
+    await releaseJobLease(db, "wikios-proof", "deploy");
     expect(leases.size).toBe(0);
   });
 });

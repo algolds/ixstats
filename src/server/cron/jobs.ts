@@ -244,6 +244,19 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     load: async () => (await import("~/lib/wiki-os/services/render-service")).renderStaleBatch,
   },
   {
+    // Weekly gold proof against the live site: render parity sample, full editor round trip, bench sample
+    // (docs/audits/wikios-proof/README.md). The deploy's predeploy check holds the same lease, so it never runs
+    // mid-deploy; the module kills the CLI after 80 minutes, inside the 90-minute lease.
+    name: "wikios-proof",
+    defaultSchedule: "30 5 * * 1",
+    scheduleConfigKey: "cronSchedule_wikiosProof",
+    lockName: "wikios-proof",
+    timeoutMs: 90 * MINUTE,
+    modulePath: "~/server/cron/wikios-proof-cron",
+    exportName: "runWikiosProof",
+    load: async () => (await import("~/server/cron/wikios-proof-cron")).runWikiosProof,
+  },
+  {
     // Re-renders forum posts left with a fallback render, an older pipeline, or an older template (forum foundation §3).
     name: "forum-render-stale",
     defaultSchedule: "*/2 * * * *",

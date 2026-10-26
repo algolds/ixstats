@@ -144,6 +144,24 @@ describe.each(["start-development.sh", "scripts/refresh-local-db.sh"])("%s", (fi
   });
 });
 
+describe("the WikiOS proof check", () => {
+  const check = script.indexOf("bun scripts/audit/wikios-proof.ts predeploy || exit 1");
+
+  it("the proof check runs after db:generate and before db:backup and any migration", () => {
+    expect(check).toBeGreaterThan(script.indexOf("bun run db:generate"));
+    expect(script.indexOf("bun run db:generate")).toBeGreaterThan(0);
+    expect(check).toBeLessThan(backup);
+    expect(check).toBeLessThan(Math.min(...runs.map((run) => run.at)));
+    expect(check).toBeLessThan(push);
+  });
+
+  it("releases the proof's lease after the PM2 reload, and a failed release never fails the deploy", () => {
+    const release = script.indexOf("bun scripts/audit/wikios-proof.ts deployed || true");
+    expect(release).toBeGreaterThan(script.indexOf("pm2 startOrReload ecosystem.config.cjs"));
+    expect(release).toBeLessThan(script.indexOf("./start-production.sh"));
+  });
+});
+
 describe("deploy-ixworld.sh, which the deploy runs", () => {
   it("excludes the default tile folder from the data/ rsync, which has no --delete", () => {
     expect(script).toContain("./scripts/deploy-ixworld.sh");

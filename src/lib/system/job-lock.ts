@@ -27,7 +27,31 @@ export async function withJobLock<T>(
   opts: JobLockOptions = {}
 ): Promise<JobLockOutcome<T>> {
   const holder = `${hostname()}:${process.pid}:${randomUUID()}`;
-  const leaseSeconds = (opts.timeoutMs ?? DEFAULT_TIMEOUT_MS) / 1000;
+  if (!(await acquireJobLease(db, name, holder, opts.timeoutMs ?? DEFAULT_TIMEOUT_MS))) {
+    return { ran: false };
+  }
+
+  try {
+    return { ran: true, result: await fn() };
+  } finally {
+    await releaseJobLease(db, name, holder).catch((error: unknown) =>
+      console.warn(`[job-lock] Failed to release lease "${name}":`, error)
+    );
+  }
+}
+
+/**
+ * Takes the lease `name` for `holder` when it is absent or expired, for `timeoutMs`; true when `holder` now holds it.
+ * For a lease that outlives one process (the deploy holds `wikios-proof` from its predeploy check to its PM2 reload);
+ * within one process, use withJobLock.
+ */
+export async function acquireJobLease(
+  db: PrismaClient,
+  name: string,
+  holder: string,
+  timeoutMs: number
+): Promise<boolean> {
+  const leaseSeconds = timeoutMs / 1000;
   const rows = await db.$queryRaw<Array<{ holder: string }>>`
     INSERT INTO "job_leases" ("name", "holder", "acquiredAt", "expiresAt")
     VALUES (${name}, ${holder}, now(), now() + make_interval(secs => ${leaseSeconds}::double precision))
@@ -37,13 +61,14 @@ export async function withJobLock<T>(
           "expiresAt" = EXCLUDED."expiresAt"
       WHERE "job_leases"."expiresAt" < now()
     RETURNING "holder"`;
-  if (rows[0]?.holder !== holder) return { ran: false };
+  return rows[0]?.holder === holder;
+}
 
-  try {
-    return { ran: true, result: await fn() };
-  } finally {
-    await db.$executeRaw`DELETE FROM "job_leases" WHERE "name" = ${name} AND "holder" = ${holder}`.catch(
-      (error: unknown) => console.warn(`[job-lock] Failed to release lease "${name}":`, error)
-    );
-  }
+/** Deletes the lease `name` if `holder` still holds it. */
+export async function releaseJobLease(
+  db: PrismaClient,
+  name: string,
+  holder: string
+): Promise<void> {
+  await db.$executeRaw`DELETE FROM "job_leases" WHERE "name" = ${name} AND "holder" = ${holder}`;
 }

@@ -933,6 +933,51 @@ export function runsToPrune(dirNames: readonly string[], keep: number): string[]
   return runs.slice(0, Math.max(0, runs.length - keep));
 }
 
+const PREDEPLOY_FILE = /^predeploy-(\d{8}-\d{4})\.(?:json|txt)$/;
+const predeployStamp = (name: string): string | null => PREDEPLOY_FILE.exec(name)?.[1] ?? null;
+
+/**
+ * The predeploy reports and logs to delete, oldest first, keeping the newest `keep` runs (a report is about 4 MB, so
+ * every deploy would otherwise add 4 MB to the server's disk). A run's report and log go together; nothing else is touched.
+ */
+export function predeployFilesToPrune(names: readonly string[], keep: number): string[] {
+  const stamps = [...new Set(names.map(predeployStamp).filter((stamp) => stamp !== null))].sort();
+  const old = new Set(stamps.slice(0, Math.max(0, stamps.length - keep)));
+  return names.filter((name) => old.has(predeployStamp(name) ?? "")).sort();
+}
+
+/** The job lease the weekly `wikios-proof` cron job runs under (src/server/cron/jobs.ts), which predeploy holds for the deploy. */
+export const WIKIOS_PROOF_LOCK = "wikios-proof";
+
+/** What predeploy got when it asked for the lease. */
+export type DeployLease =
+  | { state: "taken" }
+  | { state: "held"; holder: string; expiresAt: string }
+  | { state: "error"; message: string };
+
+function leaseMeasured(lease: DeployLease): string {
+  if (lease.state === "taken") return "taken for this deploy";
+  if (lease.state === "held") {
+    return `the weekly proof is running (lease held by ${lease.holder} until ${lease.expiresAt}); deploy once it finishes`;
+  }
+  return `could not take the lease: ${lease.message}`;
+}
+
+/** A refused deploy changes nothing: predeploy gives back a lease it took when it exits non-zero. */
+export const releasesLease = (exitCode: number, lease: DeployLease): boolean =>
+  exitCode !== 0 && lease.state === "taken";
+
+/** The deploy holds the proof's lease, so the weekly proof never runs while the deploy migrates and restarts IxStates. */
+export function leaseCheck(lease: DeployLease): Check {
+  return {
+    name: "proof.lease",
+    passed: lease.state === "taken",
+    skipped: null,
+    measured: leaseMeasured(lease),
+    threshold: "free: no weekly proof running",
+  };
+}
+
 export interface GitOutput {
   /** Exit status; null when git could not run. */
   status: number | null;
@@ -977,7 +1022,8 @@ export type CliCommand =
       bench: string | null;
       outDir: string | null;
     }
-  | { command: "predeploy" };
+  | { command: "predeploy" }
+  | { command: "deployed" };
 
 const RUN_FLAGS = [
   "profile",
@@ -993,12 +1039,15 @@ const RUN_FLAGS = [
   "keep",
 ] as const;
 const GATE_FLAGS = ["profile", "roundtrip", "parity", "bench", "out-dir"] as const;
-const COMMAND_FLAGS: Readonly<Record<"run" | "gate" | "predeploy", readonly string[]>> = {
+const COMMANDS = ["run", "gate", "predeploy", "deployed"] as const;
+const COMMAND_FLAGS: Readonly<Record<(typeof COMMANDS)[number], readonly string[]>> = {
   run: RUN_FLAGS,
   gate: GATE_FLAGS,
   predeploy: [],
+  deployed: [],
 };
-const DEFAULT_KEEP = 12;
+/** Server runs, and predeploy runs, kept in the proof directory. */
+export const DEFAULT_KEEP = 12;
 
 type Flags = Partial<Record<string, string>>;
 
@@ -1061,17 +1110,17 @@ function requiredFlag(flags: Flags, name: string): string {
   return value;
 }
 
-/** Reads the CLI's arguments: `run`, `gate`, `predeploy`, or help. Throws a message for the usage line. */
+/** Reads the CLI's arguments: `run`, `gate`, `predeploy`, `deployed`, or help. Throws a message for the usage line. */
 export function parseCli(argv: readonly string[]): CliCommand {
-  const [command, ...rest] = argv;
-  if (command === undefined || command === "help" || command === "--help")
-    return { command: "help" };
-  if (command !== "run" && command !== "gate" && command !== "predeploy") {
-    throw new Error(`unknown command "${command}": use run, gate or predeploy`);
+  const [first, ...rest] = argv;
+  if (first === undefined || first === "help" || first === "--help") return { command: "help" };
+  const command = COMMANDS.find((name) => name === first);
+  if (command === undefined) {
+    throw new Error(`unknown command "${first}": use run, gate, predeploy or deployed`);
   }
   const flags = readFlags(rest, COMMAND_FLAGS[command]);
   if (flags === null) return { command: "help" };
-  if (command === "predeploy") return { command };
+  if (command === "predeploy" || command === "deployed") return { command };
   const profile = parseProfile(flags.profile);
   const outDir = flags["out-dir"] ?? null;
   if (command === "run") {

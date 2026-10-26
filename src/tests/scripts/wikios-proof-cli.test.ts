@@ -9,6 +9,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
+  DEFAULT_KEEP,
   HARNESS_SCRIPTS,
   assertProfileEnvironment,
   benchPageList,
@@ -16,9 +17,12 @@ import {
   evaluatePredeploy,
   evaluateProof,
   parseCli,
+  leaseCheck,
   parseThresholds,
+  predeployFilesToPrune,
   predeployReport,
   profileCommands,
+  releasesLease,
   profileDefaults,
   proofStamp,
   resolveRunConfig,
@@ -441,6 +445,7 @@ describe("parseCli", () => {
       outDir: "o",
     });
     expect(parseCli(["predeploy"])).toEqual({ command: "predeploy" });
+    expect(parseCli(["deployed"])).toEqual({ command: "deployed" });
   });
 
   it("help with no command, --help or help", () => {
@@ -458,6 +463,7 @@ describe("parseCli", () => {
     expect(() => parseCli(["gate", "--profile", "local", "--parity", "p"])).toThrow(/--roundtrip/);
     expect(() => parseCli(["gate", "--profile", "local", "--roundtrip", "r"])).toThrow(/--parity/);
     expect(() => parseCli(["predeploy", "--profile", "local"])).toThrow();
+    expect(() => parseCli(["deployed", "--profile", "local"])).toThrow();
     expect(() => parseCli(["run", "--profile", "local", "--keep", "0"])).toThrow(/--keep/);
     expect(() => parseCli(["run", "--profile", "local", "--bench-runs", "1.5"])).toThrow(
       /--bench-runs/
@@ -555,6 +561,75 @@ describe("runsToPrune", () => {
     expect(runsToPrune(shuffled, 15)).toEqual([]);
     expect(runsToPrune(shuffled, 20)).toEqual([]);
     expect(runsToPrune(others, 0)).toEqual([]);
+  });
+});
+
+describe("predeployFilesToPrune", () => {
+  it("keeps the newest 12 predeploy runs, report and log together, and never anything else", () => {
+    const stamps = Array.from(
+      { length: 14 },
+      (_, i) => `202610${String(i + 1).padStart(2, "0")}-0912`
+    );
+    const files = stamps.flatMap((stamp) => [`predeploy-${stamp}.json`, `predeploy-${stamp}.txt`]);
+    const others = [
+      "20260901-0530-recurring",
+      "20260901-0530-local",
+      "predeploy-notes.txt",
+      "predeploy-20260901-0912.json.bak",
+      "launch.out",
+    ];
+    // A report without its log (or the reverse) still counts as a run.
+    const shuffled = [...others, ...files, "predeploy-20260930-2359.txt"].reverse();
+    expect(DEFAULT_KEEP).toBe(12);
+    expect(predeployFilesToPrune(shuffled, 12)).toEqual([
+      "predeploy-20260930-2359.txt",
+      "predeploy-20261001-0912.json",
+      "predeploy-20261001-0912.txt",
+      "predeploy-20261002-0912.json",
+      "predeploy-20261002-0912.txt",
+    ]);
+    expect(predeployFilesToPrune(shuffled, 15)).toEqual([]);
+    expect(predeployFilesToPrune(shuffled, 16)).toEqual([]);
+    expect(predeployFilesToPrune(others, 0)).toEqual([]);
+  });
+});
+
+describe("leaseCheck", () => {
+  it("passes when the deploy took the wikios-proof lease", () => {
+    expect(leaseCheck({ state: "taken" })).toEqual({
+      name: "proof.lease",
+      passed: true,
+      skipped: null,
+      measured: "taken for this deploy",
+      threshold: "free: no weekly proof running",
+    });
+  });
+
+  it("fails while the weekly proof holds it, saying until when", () => {
+    const check = leaseCheck({
+      state: "held",
+      holder: "ixwiki:4242:abc",
+      expiresAt: "2026-10-26T07:00:00.000Z",
+    });
+    expect(check.passed).toBe(false);
+    expect(check.measured).toBe(
+      "the weekly proof is running (lease held by ixwiki:4242:abc until 2026-10-26T07:00:00.000Z); deploy once it finishes"
+    );
+  });
+
+  it("fails when the lease cannot be read or taken", () => {
+    const check = leaseCheck({ state: "error", message: "relation job_leases does not exist" });
+    expect(check.passed).toBe(false);
+    expect(check.measured).toBe("could not take the lease: relation job_leases does not exist");
+  });
+});
+describe("releasesLease", () => {
+  it("a refused predeploy gives back the lease it took, and only then", () => {
+    const held = { state: "held", holder: "x", expiresAt: "t" } as const;
+    expect(releasesLease(1, { state: "taken" })).toBe(true);
+    expect(releasesLease(0, { state: "taken" })).toBe(false);
+    expect(releasesLease(1, held)).toBe(false);
+    expect(releasesLease(1, { state: "error", message: "down" })).toBe(false);
   });
 });
 

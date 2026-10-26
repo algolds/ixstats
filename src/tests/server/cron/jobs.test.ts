@@ -23,6 +23,7 @@ import {
   type ScheduledTask,
 } from "~/server/cron/scheduler";
 import { recordCronRun } from "~/lib/system/cron-runs";
+import { WIKIOS_PROOF_LOCK } from "../../../../scripts/lib/wikios-proof-gate";
 
 const rootDir = path.resolve(__dirname, "../../../..");
 const moduleFile = (modulePath: string): string =>
@@ -42,6 +43,22 @@ describe("CRON_JOBS", () => {
     expect(lockOf("lorewards-full-sync")).toBe("lorewards");
     expect(lockOf("lorewards-ool-backfill")).toBe("lorewards");
     expect(lockOf("lorewards-state-sync")).toBeUndefined();
+    // The deploy's predeploy check holds this lease, so the weekly proof never runs mid-deploy.
+    expect(lockOf("wikios-proof")).toBe(WIKIOS_PROOF_LOCK);
+  });
+
+  it("runs the WikiOS proof weekly, off until enabled, with a lease that outlasts its 80-minute kill", () => {
+    expect(CRON_JOBS.find((job) => job.name === "wikios-proof")).toMatchObject({
+      defaultSchedule: "30 5 * * 1",
+      scheduleConfigKey: "cronSchedule_wikiosProof",
+      timeoutMs: 90 * 60_000,
+    });
+    expect(resolveEnabledJobs("wiki-mirror").enabled.map((job) => job.name)).not.toContain(
+      "wikios-proof"
+    );
+    expect(resolveEnabledJobs("wikios-proof").enabled.map((job) => job.name)).toEqual([
+      "wikios-proof",
+    ]);
   });
   it("points every job at an existing module and export, the specifier its load() imports", () => {
     const source = fs.readFileSync(path.join(rootDir, "src/server/cron/jobs.ts"), "utf-8");

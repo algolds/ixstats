@@ -5,8 +5,9 @@
  *
  * Everything decidable is pure and tested in scripts/lib/wikios-proof-gate.ts; this file only reads and writes files,
  * runs git and the harness scripts, and asks the database for the corpus titles inside a READ ONLY transaction.
- * Nothing here writes to a database. The harnesses keep their own guards (the round trip refuses a non-local
- * DATABASE_URL and the 15433 tunnel); they get this process's environment unchanged.
+ * The one database write is the `wikios-proof` job lease (job_leases), which predeploy takes so the weekly proof
+ * never runs mid-deploy and `deployed` releases. The harnesses keep their own guards (the round trip refuses a
+ * non-local DATABASE_URL and the 15433 tunnel); they get this process's environment unchanged.
  *
  * Run it from the repository root. Usage: see USAGE below, or `bun scripts/audit/wikios-proof.ts --help`.
  * Docs: docs/audits/wikios-proof/README.md.
@@ -25,10 +26,14 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { PrismaClient } from "@prisma/client";
 import type { z } from "zod";
+import { acquireJobLease, releaseJobLease } from "../../src/lib/system/job-lock";
 import { DEFAULT_ENV_FILES, loadEnvFiles } from "../lib/env-files";
 import { exitWithError, loadPageList } from "../lib/wikios-harness";
 import {
+  DEFAULT_KEEP,
+  WIKIOS_PROOF_LOCK,
   WIKIOS_PROOF_PATHS,
   assertProfileEnvironment,
   benchPageList,
@@ -38,12 +43,15 @@ import {
   corpusCounts,
   evaluatePredeploy,
   evaluateProof,
+  leaseCheck,
   parityReportSchema,
   parseCli,
   parseProofSummary,
   parseThresholds,
+  predeployFilesToPrune,
   predeployReport,
   profileCommands,
+  releasesLease,
   proofStamp,
   renderChecks,
   renderProofSummary,
@@ -54,6 +62,7 @@ import {
   treeState,
   type CliCommand,
   type CommittedProofResult,
+  type DeployLease,
   type GitOutput,
   type HarnessCommand,
   type HarnessExit,
@@ -70,6 +79,7 @@ const USAGE = `Usage:
   bun scripts/audit/wikios-proof.ts gate --profile local|launch|recurring --roundtrip f --parity f [--bench f]
       [--out-dir d]
   bun scripts/audit/wikios-proof.ts predeploy
+  bun scripts/audit/wikios-proof.ts deployed
 
 Profiles:
   local      DATABASE_URL must be the ixstats_proof clone on localhost:5433. Parity samples 500 corpus pages
@@ -86,15 +96,21 @@ run      Writes <WIKIOS_PROOF_DIR or .bench-out/proof>/<yyyymmdd-HHMM UTC>-<prof
          unless every check passed.
 gate     Checks existing reports against scripts/audit/wikios-proof-thresholds.json and writes the summary to
          --out-dir (default: <the parity report's directory>/regated).
-predeploy  Checks docs/audits/wikios-proof/latest.json against this commit's WikiOS tree and runs the full round
-         trip into <WIKIOS_PROOF_DIR or .bench-out/proof>/predeploy-<stamp>.json. Exits 1 on a failure;
-         WIKIOS_PROOF_OVERRIDE=1 prints each failure as overridden and exits 0.
+predeploy  Takes the wikios-proof job lease for the deploy (2 hours; refused while the weekly proof holds it), checks
+         docs/audits/wikios-proof/latest.json against this commit's WikiOS tree and runs the full round trip into
+         <WIKIOS_PROOF_DIR or .bench-out/proof>/predeploy-<stamp>.json, keeping the newest 12 predeploy runs. Exits 1
+         on a failure, releasing the lease; WIKIOS_PROOF_OVERRIDE=1 prints each failure as overridden and exits 0.
+deployed Releases the lease predeploy took (the deploy runs it after its PM2 reload).
 
-Run from the repository root. Nothing is written to any database. See docs/audits/wikios-proof/README.md.`;
+Run from the repository root. Nothing is written to any database but the wikios-proof job lease. See
+docs/audits/wikios-proof/README.md.`;
 
 const THRESHOLDS_FILE = fileURLToPath(new URL("./wikios-proof-thresholds.json", import.meta.url));
 const DEFAULT_BENCH_PAGES = fileURLToPath(new URL("../bench/pages.default.json", import.meta.url));
 const COMMITTED_PROOF = "docs/audits/wikios-proof/latest.json";
+/** The deploy's hold on the proof's lease. Deploys never overlap, so a new one takes over a failed one's leftover hold. */
+const DEPLOY_HOLDER = "deploy";
+const DEPLOY_LEASE_MS = 2 * 60 * 60_000;
 /** The files the production entry points load (load-env.mjs), first file wins. */
 const PRODUCTION_ENV_FILES = [".env.production.local", ".env.local", ".env.production", ".env"];
 
@@ -162,11 +178,19 @@ function readReport<T>(file: string, schema: z.ZodType<T>): T | null {
   }
 }
 
-/** Published IxWiki articles with text that are not redirects, by title. Read only, enforced by Postgres. */
-async function corpusTitles(): Promise<string[]> {
+async function withPrisma<T>(fn: (prisma: PrismaClient) => Promise<T>): Promise<T> {
   const { PrismaClient } = await import("@prisma/client");
   const prisma = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } });
   try {
+    return await fn(prisma);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+/** Published IxWiki articles with text that are not redirects, by title. Read only, enforced by Postgres. */
+function corpusTitles(): Promise<string[]> {
+  return withPrisma(async (prisma) => {
     const rows = await prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SET TRANSACTION READ ONLY`;
       return tx.$queryRaw<Array<{ title: string }>>`
@@ -176,10 +200,32 @@ async function corpusTitles(): Promise<string[]> {
         ORDER BY "title"`;
     });
     return rows.map((row) => row.title);
-  } finally {
-    await prisma.$disconnect();
+  });
+}
+
+/** Takes the proof's lease for the deploy, first dropping a failed deploy's leftover hold. */
+async function takeDeployLease(): Promise<DeployLease> {
+  try {
+    return await withPrisma(async (prisma) => {
+      await releaseJobLease(prisma, WIKIOS_PROOF_LOCK, DEPLOY_HOLDER);
+      if (await acquireJobLease(prisma, WIKIOS_PROOF_LOCK, DEPLOY_HOLDER, DEPLOY_LEASE_MS)) {
+        return { state: "taken" };
+      }
+      const [row] = await prisma.$queryRaw<Array<{ holder: string; expiresAt: Date }>>`
+        SELECT "holder", "expiresAt" FROM "job_leases" WHERE "name" = ${WIKIOS_PROOF_LOCK}`;
+      return {
+        state: "held",
+        holder: row?.holder ?? "another run",
+        expiresAt: row?.expiresAt.toISOString() ?? "now",
+      };
+    });
+  } catch (error) {
+    return { state: "error", message: message(error instanceof Error ? error : String(error)) };
   }
 }
+
+const releaseDeployLease = (): Promise<void> =>
+  withPrisma((prisma) => releaseJobLease(prisma, WIKIOS_PROOF_LOCK, DEPLOY_HOLDER));
 
 /** Evaluates, writes summary.json and summary.md, prints the checks; true when the proof passed. */
 function writeSummary(
@@ -270,26 +316,35 @@ function committedProof(treeKey: string): CommittedProofResult {
 
 async function predeploy(): Promise<number> {
   const t = thresholds();
+  const lease = await takeDeployLease();
   const committed = committedProof(currentTree().treeKey);
   const dir = proofDir();
   mkdirSync(dir, { recursive: true });
   const stamp = proofStamp(new Date());
   const command = roundTripCommand(join(dir, `predeploy-${stamp}.json`));
   const exit = await runHarness(command, join(dir, `predeploy-${stamp}.txt`));
-  const checks = evaluatePredeploy(
-    committed,
-    readReport(command.out, roundTripReportSchema),
-    t,
-    exit
-  );
+  const checks = [
+    leaseCheck(lease),
+    ...evaluatePredeploy(committed, readReport(command.out, roundTripReportSchema), t, exit),
+  ];
+  for (const name of predeployFilesToPrune(readdirSync(dir), DEFAULT_KEEP))
+    rmSync(join(dir, name), { force: true });
   const { lines, exitCode } = predeployReport(checks, process.env.WIKIOS_PROOF_OVERRIDE === "1");
   for (const line of lines) console.log(line);
+  if (releasesLease(exitCode, lease)) await releaseDeployLease();
   return exitCode;
+}
+
+async function deployed(): Promise<number> {
+  await releaseDeployLease();
+  console.log(`Released the ${WIKIOS_PROOF_LOCK} lease`);
+  return 0;
 }
 
 function dispatch(command: Exclude<CliCommand, { command: "help" }>): Promise<number> | number {
   if (command.command === "run") return run(command);
   if (command.command === "gate") return gate(command);
+  if (command.command === "deployed") return deployed();
   return predeploy();
 }
 

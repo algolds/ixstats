@@ -149,6 +149,13 @@ bun install --frozen-lockfile
 echo "🗄️ Generating Prisma client..."
 bun run db:generate
 
+# WikiOS gold proof (docs/audits/wikios-proof/README.md): refuses a release whose WikiOS code has no committed passing
+# proof, or whose editor round trip changes a byte of the production corpus. Reads only, besides the wikios-proof job
+# lease it holds until the PM2 reload below, so the weekly proof never runs mid-deploy (a refusal releases it, and a
+# deploy that dies on the way leaves it to expire in 2 hours). WIKIOS_PROOF_OVERRIDE=1 deploys anyway.
+echo "🧪 Checking the WikiOS proof..."
+bun scripts/audit/wikios-proof.ts predeploy || exit 1
+
 # Back up the database before the schema sync; never push the schema without a dump
 echo "💾 Backing up production database (backups/ixstats-<UTC timestamp>.dump)..."
 if bun run db:backup; then
@@ -271,6 +278,10 @@ else
     # A failed reload aborts the deploy instead of leaving stale cron/ws processes running silently.
     pm2 startOrReload ecosystem.config.cjs --update-env --silent
 fi
+
+# The weekly WikiOS proof may run again: release the lease the proof check took. A failed release only means the lease
+# expires on its own, 2 hours after the check.
+bun scripts/audit/wikios-proof.ts deployed || true
 
 # Display production configuration
 echo ""
