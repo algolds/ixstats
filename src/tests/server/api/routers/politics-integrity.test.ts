@@ -26,6 +26,7 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { electionsRouter } from "~/server/api/routers/elections";
 import { legislationRouter } from "~/server/api/routers/legislation";
 import { meetingsRouter } from "~/server/api/routers/meetings";
+import { quickActionsRouter } from "~/server/api/routers/quickactions";
 import { applyPolicyEffect } from "~/lib/policies";
 import {
   CALLER_COUNTRY,
@@ -36,6 +37,7 @@ import {
 const elections = createCallerFactory(electionsRouter);
 const legislation = createCallerFactory(legislationRouter);
 const meetings = createCallerFactory(meetingsRouter);
+const quickActions = createCallerFactory(quickActionsRouter);
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -220,7 +222,7 @@ describe("government officials", () => {
     const ctx = createIdorContext({
       governmentOfficial: { findMany },
       governmentStructure: {
-        findUnique: jest.fn().mockResolvedValue({ countryId: structureCountry }),
+        findUnique: jest.fn().mockResolvedValue({ id: "gs1", countryId: structureCountry }),
       },
     });
     return { ctx, findMany };
@@ -246,5 +248,29 @@ describe("government officials", () => {
     expect(
       await meetings(foreign.ctx as never).getOfficials({ governmentStructureId: "gs1" })
     ).toEqual([{ ...official, email: null, phone: null }]);
+  });
+
+  it("quickActions.getOfficials also keeps contact details to the owner, and is bounded", async () => {
+    const read = async (countryId: string, structureCountry: string, structureId?: string) => {
+      const { ctx, findMany } = ctxFor(structureCountry);
+      const [row] = await quickActions(ctx as never).getOfficials({
+        countryId,
+        governmentStructureId: structureId,
+      });
+      return { row, take: findMany.mock.calls[0]![0].take };
+    };
+    expect(await read(CALLER_COUNTRY, CALLER_COUNTRY)).toMatchObject({
+      row: { email: "ada@gov", phone: "555" },
+      take: 100,
+    });
+    expect((await read(FOREIGN_COUNTRY, FOREIGN_COUNTRY)).row).toMatchObject({
+      email: null,
+      phone: null,
+    });
+    // Naming your own country with another government's structure doesn't unlock its contacts.
+    expect((await read(CALLER_COUNTRY, FOREIGN_COUNTRY, "gs_foreign")).row).toMatchObject({
+      email: null,
+      phone: null,
+    });
   });
 });
