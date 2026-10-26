@@ -3,11 +3,13 @@
 // Wiki Link Status table & filtering overview.
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Search, Link as Link2, CheckCircle, XmarkCircle as XCircle } from "iconoir-react";
-import type { FilterTab } from "./types";
+import { countryRows, type CountriesData, type FilterTab } from "./types";
+import { parseWikiSource, WIKI_SOURCES, wikiReaderPath } from "~/lib/wiki-os/config";
 import {
   Table,
   TableHeader,
@@ -22,23 +24,13 @@ export function WikiLinkStatusSection({
   countriesData,
   isLoading,
 }: {
-  countriesData: any;
+  countriesData: CountriesData;
   isLoading: boolean;
 }) {
   const [filter, setFilter] = useState<FilterTab>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const countries = useMemo(() => {
-    const list = countriesData?.countries ?? countriesData ?? [];
-    if (!Array.isArray(list)) return [];
-    return list as Array<{
-      id: string;
-      name: string;
-      wikiPageTitle?: string | null;
-      wikiSource?: string | null;
-      wikiLastSynced?: string | Date | null;
-    }>;
-  }, [countriesData]);
+  const countries = useMemo(() => countryRows(countriesData), [countriesData]);
 
   const filtered = useMemo(() => {
     let result = countries;
@@ -125,19 +117,31 @@ export function WikiLinkStatusSection({
               <TableRow key={country.id}>
                 <TableCell className="text-label px-4 font-semibold">{country.name}</TableCell>
                 <TableCell className="text-label-secondary max-w-[12rem] truncate px-4">
-                  {country.wikiPageTitle ?? <span className="italic opacity-50">Not linked</span>}
+                  {country.wikiPageTitle ? (
+                    <Link
+                      href={wikiReaderPath(
+                        country.wikiPageTitle,
+                        parseWikiSource(country.wikiSource)
+                      )}
+                      className="hover:text-tint hover:underline"
+                    >
+                      {country.wikiPageTitle}
+                    </Link>
+                  ) : (
+                    <span className="italic opacity-50">Not linked</span>
+                  )}
                 </TableCell>
                 <TableCell className="hidden px-4 sm:table-cell">
-                  {country.wikiSource ? (
-                    <Badge variant="outline">{country.wikiSource}</Badge>
-                  ) : (
-                    <span className="text-label-secondary opacity-50">—</span>
+                  {country.wikiPageTitle && (
+                    <Badge variant="outline">
+                      {WIKI_SOURCES[parseWikiSource(country.wikiSource)].name}
+                    </Badge>
                   )}
                 </TableCell>
                 <TableCell className="text-label-secondary text-footnote hidden px-4 md:table-cell">
                   {country.wikiLastSynced
                     ? new Date(country.wikiLastSynced).toLocaleDateString()
-                    : "—"}
+                    : "Never"}
                 </TableCell>
                 <TableCell className="px-4 text-right">
                   {country.wikiPageTitle ? (

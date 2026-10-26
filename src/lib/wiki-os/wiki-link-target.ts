@@ -126,6 +126,17 @@ function readerWiki(origin: string): WikiSource | null {
   return SISTER_READER_IDS.find(onReader) ?? null;
 }
 
+/**
+ * The wiki whose public host an absolute (or protocol-relative) http(s) URL is on: IxWiki's, a sister reader's (or
+ * an alias), or null for any other host and for a relative URL. Only the host is read, never the path.
+ */
+export function readerWikiOfUrl(href: string): WikiSource | null {
+  // A relative URL resolves onto RELATIVE_HOST, which is no wiki's.
+  const url = parseHref(href);
+  if (!url || (url.protocol !== "https:" && url.protocol !== "http:")) return null;
+  return readerWiki(url.origin);
+}
+
 /** The title part of `index.php?title=<title>` when it is the query's only parameter, `+` read as a space. */
 function indexPhpTitle(search: string): string | null {
   if (!search.startsWith("?title=") || search.includes("&")) return null;

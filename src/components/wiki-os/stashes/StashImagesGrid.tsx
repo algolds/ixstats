@@ -20,6 +20,7 @@ import { WikiZoomDialog } from "~/components/wiki-os/shared/WikiZoomDialog";
 import {
   CopyFormatSelector,
   copyFormatText,
+  copyFormatsFor,
   type CopyFormat,
 } from "~/components/wiki-os/media-search/CopyFormatSelector";
 import type { CommonsImage } from "~/components/wiki-os/media-search/types";
@@ -105,6 +106,7 @@ export function StashImagesGrid({ items, resolvedImagesMap, onUnstash }: StashIm
 
       {selectedImage && (
         <StashedImageModal
+          key={selectedImage.url}
           image={selectedImage}
           onClose={() => setSelectedImage(null)}
           onUnstash={() => {
@@ -126,7 +128,9 @@ function StashedImageModal({
   onClose: () => void;
   onUnstash: () => void;
 }) {
-  const [format, setFormat] = useState<CopyFormat>("thumb");
+  // The modal is keyed by the image, so a new image starts again on its first allowed format.
+  const formats = copyFormatsFor(image);
+  const [format, setFormat] = useState<CopyFormat>(formats[0]);
   const [copied, setCopied] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
   const [copiedImage, setCopiedImage] = useState(false);
@@ -259,7 +263,7 @@ function StashedImageModal({
           )}
         </dl>
 
-        <CopyFormatSelector value={format} onValueChange={setFormat} />
+        <CopyFormatSelector formats={formats} value={format} onValueChange={setFormat} />
 
         <div className="flex flex-col gap-2">
           <div className="grid grid-cols-3 gap-2">

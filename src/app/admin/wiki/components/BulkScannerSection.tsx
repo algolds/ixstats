@@ -3,6 +3,8 @@
 // Bulk heuristic scanner for automated wiki page linking.
 
 import { useState, useMemo, useCallback } from "react";
+import Link from "next/link";
+import { TRPCClientError } from "@trpc/client";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Badge } from "~/components/ui/badge";
@@ -16,7 +18,20 @@ import {
   WarningTriangle as AlertTriangle,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import type { ScanResult } from "./types";
+import {
+  countryRows,
+  isWikiOutage,
+  unreachableText,
+  type CountriesData,
+  type CountryLinkRow,
+  type ScanResult,
+} from "./types";
+import {
+  parseWikiSource,
+  WIKI_SOURCES,
+  wikiReaderPath,
+  type WikiSource,
+} from "~/lib/wiki-os/config";
 import {
   Table,
   TableHeader,
@@ -27,21 +42,61 @@ import {
 } from "~/components/ui/table";
 import { Card } from "~/components/ui/card";
 
-export function BulkScannerSection({ countriesData }: { countriesData: any }) {
+/** The wiki the scanner searches. */
+const SCAN_WIKI: WikiSource = "ixwiki";
+
+interface SearchHit {
+  title: string;
+  source: string;
+}
+
+type SearchTitles = (input: { query: string; wiki: WikiSource }) => Promise<readonly SearchHit[]>;
+
+/** One country's search: its best match, none, or an outage of the wiki searched (which says nothing of a match). */
+type CountryScan = { kind: "match"; result: ScanResult } | { kind: "none" } | { kind: "outage" };
+
+async function scanCountry(country: CountryLinkRow, search: SearchTitles): Promise<CountryScan> {
+  try {
+    const first = (await search({ query: country.name, wiki: SCAN_WIKI }))[0];
+    if (!first) return { kind: "none" };
+    const isExact = first.title.toLowerCase() === country.name.toLowerCase();
+    return {
+      kind: "match",
+      result: {
+        countryId: country.id,
+        countryName: country.name,
+        matchedTitle: first.title,
+        source: parseWikiSource(first.source),
+        confidence: isExact ? "exact" : "partial",
+        selected: isExact,
+      },
+    };
+  } catch (error) {
+    return error instanceof TRPCClientError && isWikiOutage(error)
+      ? { kind: "outage" }
+      : { kind: "none" };
+  }
+}
+
+/** The scan stopped because the wiki did not answer: `skipped` countries were not searched. */
+interface ScanOutage {
+  wiki: WikiSource;
+  skipped: number;
+}
+
+function outageText({ wiki, skipped }: ScanOutage): string {
+  const countries = skipped === 1 ? "1 country was" : `${skipped} countries were`;
+  return `${unreachableText(wiki)} ${countries} not scanned. Try again.`;
+}
+
+export function BulkScannerSection({ countriesData }: { countriesData: CountriesData }) {
   const [isScanning, setIsScanning] = useState(false);
   const [scanResults, setScanResults] = useState<ScanResult[]>([]);
   const [scanProgress, setScanProgress] = useState({ current: 0, total: 0 });
   const [scanComplete, setScanComplete] = useState(false);
+  const [scanOutage, setScanOutage] = useState<ScanOutage | null>(null);
 
-  const countries = useMemo(() => {
-    const list = countriesData?.countries ?? countriesData ?? [];
-    if (!Array.isArray(list)) return [];
-    return list as Array<{
-      id: string;
-      name: string;
-      wikiPageTitle?: string | null;
-    }>;
-  }, [countriesData]);
+  const countries = useMemo(() => countryRows(countriesData), [countriesData]);
 
   const unlinkedCountries = useMemo(() => countries.filter((c) => !c.wikiPageTitle), [countries]);
 
@@ -63,37 +118,23 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
     setIsScanning(true);
     setScanResults([]);
     setScanComplete(false);
+    setScanOutage(null);
     setScanProgress({ current: 0, total: unlinkedCountries.length });
 
     const results: ScanResult[] = [];
+    const search: SearchTitles = (input) => utils.wikios.searchArticles.fetch(input);
 
     for (let i = 0; i < unlinkedCountries.length; i++) {
       const country = unlinkedCountries[i]!;
       setScanProgress({ current: i + 1, total: unlinkedCountries.length });
 
-      try {
-        const searchResult = await utils.wikios.searchArticles.fetch({
-          query: country.name,
-        });
-
-        if (searchResult && Array.isArray(searchResult) && searchResult.length > 0) {
-          const first = searchResult[0]!;
-          const title = first.title ?? country.name;
-          const source = first.source ?? "ixwiki";
-          const isExact = title.toLowerCase() === country.name.toLowerCase();
-
-          results.push({
-            countryId: country.id,
-            countryName: country.name,
-            matchedTitle: title,
-            source,
-            confidence: isExact ? "exact" : "partial",
-            selected: isExact,
-          });
-        }
-      } catch {
-        // Skip countries with no matches
+      const scan = await scanCountry(country, search);
+      if (scan.kind === "outage") {
+        // Every later search would meet the same outage: stop, and keep what was found.
+        setScanOutage({ wiki: SCAN_WIKI, skipped: unlinkedCountries.length - i });
+        break;
       }
+      if (scan.kind === "match") results.push(scan.result);
     }
 
     setScanResults(results);
@@ -123,7 +164,7 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
           links: chunk.map((r) => ({
             countryId: r.countryId,
             wikiPageTitle: r.matchedTitle,
-            wikiSource: r.source as "ixwiki" | "iiwiki",
+            wikiSource: r.source,
           })),
         });
       }
@@ -164,7 +205,7 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
             ) : (
               <Search className="mr-2 h-3.5 w-3.5" />
             )}
-            {isScanning ? "Scanning..." : "Scan Unlinked Countries"}
+            {isScanning ? "Scanning..." : "Scan unlinked countries"}
           </Button>
 
           {scanResults.length > 0 && (
@@ -178,7 +219,7 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
               ) : (
                 <Link2 className="mr-2 h-3.5 w-3.5" />
               )}
-              {isLinking ? "Linking..." : `Link Selected (${selectedCount})`}
+              {isLinking ? "Linking..." : `Link selected (${selectedCount})`}
             </Button>
           )}
         </div>
@@ -204,7 +245,17 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
           </div>
         )}
 
-        {scanComplete && scanResults.length === 0 && (
+        {scanOutage && (
+          <div
+            role="status"
+            className="rounded-row border-yellow/30 bg-yellow/10 text-footnote text-yellow flex items-center gap-2 border p-3"
+          >
+            <AlertTriangle className="text-yellow h-4 w-4 shrink-0" />
+            {outageText(scanOutage)}
+          </div>
+        )}
+
+        {scanComplete && !scanOutage && scanResults.length === 0 && (
           <div className="rounded-row border-yellow/30 bg-yellow/10 text-footnote text-yellow flex items-center gap-2 border p-3">
             <AlertTriangle className="text-yellow h-4 w-4 shrink-0" />
             No wiki matches found for unlinked countries.
@@ -242,10 +293,15 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
                     {result.countryName}
                   </TableCell>
                   <TableCell className="text-label-secondary max-w-[10rem] truncate px-3">
-                    {result.matchedTitle}
+                    <Link
+                      href={wikiReaderPath(result.matchedTitle, result.source)}
+                      className="hover:text-tint hover:underline"
+                    >
+                      {result.matchedTitle}
+                    </Link>
                   </TableCell>
                   <TableCell className="hidden px-3 sm:table-cell">
-                    <Badge variant="outline">{result.source}</Badge>
+                    <Badge variant="outline">{WIKI_SOURCES[result.source].name}</Badge>
                   </TableCell>
                   <TableCell className="px-3 text-right">
                     <span

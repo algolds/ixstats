@@ -19,21 +19,42 @@ import {
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Card } from "~/components/ui/card";
+import type { WikiSource } from "~/lib/wiki-os/config";
+import {
+  countryRows,
+  isWikiOutage,
+  unreachableText,
+  WIKI_SOURCE_OPTIONS,
+  type CountriesData,
+} from "./types";
 
-export function ManualLinkEditorSection({ countriesData }: { countriesData: any }) {
+/** What testing a link found: the page (with its intro), no such page, or a wiki that did not answer. */
+type TestResult =
+  | { status: "found"; intro: string }
+  | { status: "missing" }
+  | { status: "unreachable"; wiki: WikiSource };
+
+interface IntroRead {
+  data?: { intro: string } | null;
+  error?: { data?: { code?: string } | null } | null;
+}
+
+/** An outage is not "not found": the page may well exist. */
+function testResultOf(read: IntroRead, wiki: WikiSource): TestResult {
+  if (read.data) return { status: "found", intro: read.data.intro };
+  return isWikiOutage(read.error) ? { status: "unreachable", wiki } : { status: "missing" };
+}
+
+export function ManualLinkEditorSection({ countriesData }: { countriesData: CountriesData }) {
   const [countrySearch, setCountrySearch] = useState("");
   const [selectedCountryId, setSelectedCountryId] = useState<string | null>(null);
   const [wikiPageTitle, setWikiPageTitle] = useState("");
-  const [wikiSource, setWikiSource] = useState<"ixwiki" | "iiwiki">("ixwiki");
-  const [testResult, setTestResult] = useState<{ success: boolean; intro?: string } | null>(null);
+  const [wikiSource, setWikiSource] = useState<WikiSource>("ixwiki");
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const countries = useMemo(() => {
-    const list = countriesData?.countries ?? countriesData ?? [];
-    if (!Array.isArray(list)) return [];
-    return list as Array<{ id: string; name: string }>;
-  }, [countriesData]);
+  const countries = useMemo(() => countryRows(countriesData), [countriesData]);
 
   const filteredCountries = useMemo(() => {
     if (!countrySearch.trim()) return countries.slice(0, 20);
@@ -62,22 +83,13 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
     setIsTesting(true);
     setTestResult(null);
     try {
-      const result = (await wikiIntroQuery.refetch()) as any;
-      if (result.data) {
-        setTestResult({
-          success: true,
-          intro:
-            typeof result.data === "string" ? result.data : (result.data.text ?? "Article found"),
-        });
-      } else {
-        setTestResult({ success: false });
-      }
+      setTestResult(testResultOf(await wikiIntroQuery.refetch(), wikiSource));
     } catch {
-      setTestResult({ success: false });
+      setTestResult({ status: "missing" });
     } finally {
       setIsTesting(false);
     }
-  }, [wikiPageTitle, wikiIntroQuery]);
+  }, [wikiPageTitle, wikiIntroQuery, wikiSource]);
 
   const handleSave = useCallback(() => {
     if (!selectedCountryId || !wikiPageTitle.trim()) return;
@@ -142,10 +154,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
               aria-label="Wiki source"
               value={wikiSource}
               onValueChange={setWikiSource}
-              options={[
-                { value: "ixwiki", label: "Wiki" },
-                { value: "iiwiki", label: "IIWiki" },
-              ]}
+              options={WIKI_SOURCE_OPTIONS}
             />
           </div>
 
@@ -173,7 +182,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
             ) : (
               <ExternalLink className="mr-2 h-3.5 w-3.5" />
             )}
-            Test Link
+            Test link
           </Button>
 
           <Button
@@ -191,12 +200,12 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
           <div
             className={cn(
               "rounded-row text-footnote border p-3",
-              testResult.success
+              testResult.status === "found"
                 ? "text-label border-green/30 bg-green/10"
                 : "border-red/30 bg-red/10 text-red"
             )}
           >
-            {testResult.success ? (
+            {testResult.status === "found" ? (
               <div className="space-y-2">
                 <div className="text-green flex items-center gap-2 font-semibold">
                   <CheckCircle className="h-4 w-4" />
@@ -211,7 +220,9 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
             ) : (
               <div className="flex items-center gap-2">
                 <XCircle className="h-4 w-4" />
-                Article not found. Check the title and source.
+                {testResult.status === "unreachable"
+                  ? `${unreachableText(testResult.wiki)} Try again.`
+                  : "Article not found. Check the title and source."}
               </div>
             )}
           </div>

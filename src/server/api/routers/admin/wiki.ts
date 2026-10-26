@@ -18,6 +18,7 @@ import { adminActor } from "~/server/shared/admin-actor";
 import { overrideLorewardEntry } from "~/server/modules/cards/cards.trophies";
 import { searchLegacyNames } from "~/server/modules/identity/identity.name-search";
 import { fetchClassicWikiUsers } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import type { WikiSource } from "~/lib/wiki-os/config";
 import { writeConfigKeys } from "./_config-kv";
 
 /** The scorer's tunable weights (WK-8): prose weight is a 0-1 blend, the rest bonuses/multipliers. */
@@ -30,13 +31,18 @@ const TunableWeightsInput = z.object({
   minorOnlyPenalty: z.number().min(0).max(5),
 }) satisfies z.ZodType<Record<(typeof TUNABLE_WEIGHTS)[number], number>>;
 
+/** The wiki a country's page is on: any wiki WikiOS reads (the reader procedures' `wikiSourceSchema`). */
+const linkSourceSchema = z
+  .enum(["ixwiki", "iiwiki", "althistory"] as const satisfies readonly WikiSource[])
+  .default("ixwiki");
+
 export const adminWikiRouter = createTRPCRouter({
   setWikiLink: adminProcedure
     .input(
       z.object({
         countryId: z.string(),
         wikiPageTitle: z.string().nullable(),
-        wikiSource: z.enum(["ixwiki", "iiwiki"]).default("ixwiki"),
+        wikiSource: linkSourceSchema,
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -61,7 +67,7 @@ export const adminWikiRouter = createTRPCRouter({
             z.object({
               countryId: z.string(),
               wikiPageTitle: z.string(),
-              wikiSource: z.enum(["ixwiki", "iiwiki"]).default("ixwiki"),
+              wikiSource: linkSourceSchema,
             })
           )
           .max(100),

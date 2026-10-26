@@ -22,6 +22,7 @@ import { isMediaWikiUrl } from "~/lib/wiki-os/config";
 import {
   CopyFormatSelector,
   copyFormatText,
+  copyFormatsFor,
   type CopyFormat,
 } from "~/components/wiki-os/media-search/CopyFormatSelector";
 import type { CommonsImage } from "~/components/wiki-os/media-search/types";
@@ -68,7 +69,9 @@ function DetailPanelBody({ image, onClose }: CommonsDetailPanelProps) {
   const [copied, setCopied] = useState(false);
   const [attributionCopied, setAttributionCopied] = useState(false);
   const [copyImageState, setCopyImageState] = useState<CopyImageState>("idle");
-  const [format, setFormat] = useState<CopyFormat>("thumb");
+  // The panel is keyed by the image, so a new image starts again on its first allowed format.
+  const formats = copyFormatsFor(image);
+  const [format, setFormat] = useState<CopyFormat>(formats[0]);
   const [isZoomed, setIsZoomed] = useState(false);
   const [previewStage, setPreviewStage] = useState<PreviewStage>("sized");
   const rootRef = useRef<HTMLDivElement>(null);
@@ -259,7 +262,7 @@ function DetailPanelBody({ image, onClose }: CommonsDetailPanelProps) {
         <span role="status" className="sr-only">
           {copied || attributionCopied ? "Copied" : copyImageState === "idle" ? "" : copyImageLabel}
         </span>
-        <CopyFormatSelector value={format} onValueChange={setFormat} />
+        <CopyFormatSelector formats={formats} value={format} onValueChange={setFormat} />
 
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => void handleCopy()} className="flex-1">

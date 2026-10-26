@@ -12,6 +12,7 @@ import {
   Check,
   Sparks as Sparkles,
 } from "iconoir-react";
+import { WIKI_SOURCES, type WikiSource } from "~/lib/wiki-os/config";
 
 export type FilterTab = "all" | "linked" | "unlinked";
 
@@ -19,9 +20,49 @@ export interface ScanResult {
   countryId: string;
   countryName: string;
   matchedTitle: string;
-  source: string;
+  source: WikiSource;
   confidence: "exact" | "partial";
   selected: boolean;
+}
+
+/** A country as the wiki link tools read it (a row of `countries.getAll`). */
+export interface CountryLinkRow {
+  id: string;
+  name: string;
+  wikiPageTitle?: string | null;
+  wikiSource?: string | null;
+  wikiLastSynced?: string | Date | null;
+}
+
+/** `countries.getAll`'s answer (or a bare list of rows); undefined while it loads. */
+export type CountriesData =
+  { countries: readonly CountryLinkRow[] } | readonly CountryLinkRow[] | null | undefined;
+
+export function countryRows(data: CountriesData): readonly CountryLinkRow[] {
+  if (!data) return [];
+  return "countries" in data ? data.countries : data;
+}
+
+/** The wiki sources the link tools offer, in `WIKI_SOURCES` order, named as people see them. */
+export const WIKI_SOURCE_OPTIONS = (Object.keys(WIKI_SOURCES) as WikiSource[]).map((value) => ({
+  value,
+  label: WIKI_SOURCES[value].name,
+}));
+
+/**
+ * Whether a failed wiki read was an outage, not an answer: the wiki could not be reached (SERVICE_UNAVAILABLE) or
+ * it, or our limiter, said busy (TOO_MANY_REQUESTS). An outage says nothing about whether a page exists.
+ */
+export function isWikiOutage(
+  error: { data?: { code?: string } | null } | null | undefined
+): boolean {
+  const code = error?.data?.code;
+  return code === "SERVICE_UNAVAILABLE" || code === "TOO_MANY_REQUESTS";
+}
+
+/** "<Wiki> could not be reached just now." */
+export function unreachableText(source: WikiSource): string {
+  return `${WIKI_SOURCES[source].name} could not be reached just now.`;
 }
 
 const ICON_COMPONENTS = {
