@@ -30,8 +30,8 @@ import {
 } from "~/components/ui/dialog";
 import { ReactionsDialog } from "../ReactionsDialog";
 import type { PostState } from "./postViewTypes";
-
 import { assetUrl } from "~/lib/base-path";
+
 interface PostModalsProps {
   post: any;
   state: PostState;

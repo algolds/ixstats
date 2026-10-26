@@ -3,8 +3,8 @@
 import { AvatarGlow } from "~/components/vault/AvatarGlow";
 import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
 import type { PublicCosmetics } from "~/lib/vault/public-cosmetics";
-
 import { assetUrl } from "~/lib/base-path";
+
 interface PassportPortraitProps {
   displayName: string;
   avatarUrl: string | null;

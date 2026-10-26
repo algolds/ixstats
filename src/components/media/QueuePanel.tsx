@@ -6,8 +6,8 @@ import { useIxMediaActions, useIxMediaState } from "./MediaContext";
 import { Play, Trash as Trash2, XmarkCircle as XCircle } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
-
 import { assetUrl } from "~/lib/base-path";
+
 export function QueuePanel() {
   const { queue, currentIndex } = useIxMediaState();
   const { playTrack, removeFromQueue, clearQueue } = useIxMediaActions();

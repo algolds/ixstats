@@ -11,8 +11,8 @@ import { useCountryImage } from "~/hooks/useCountryImage";
 import { useCountryData } from "../CountryDataProvider";
 import { extractCountryImageData, type ImageContext } from "~/lib/media";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
-
 import { assetUrl } from "~/lib/base-path";
+
 interface SectorData {
   id: string;
   name: string;

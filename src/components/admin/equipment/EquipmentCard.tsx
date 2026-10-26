@@ -16,8 +16,8 @@ import {
 import { CATEGORY_ICONS } from "~/lib/military/catalog-utils";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils/cn";
-
 import { assetUrl } from "~/lib/base-path";
+
 interface EquipmentCardProps {
   equipment: any;
   isSelected: boolean;

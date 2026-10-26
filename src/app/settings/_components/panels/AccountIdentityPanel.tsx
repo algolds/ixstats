@@ -37,8 +37,8 @@ import { Input } from "~/components/ui/input";
 import { formatMembershipTier } from "~/lib/tier-utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { Card } from "~/components/ui/card";
-
 import { assetUrl } from "~/lib/base-path";
+
 interface AccountIdentityPanelProps {
   user: UserResource | null | undefined;
 }

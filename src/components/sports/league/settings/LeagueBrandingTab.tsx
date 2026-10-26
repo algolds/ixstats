@@ -9,8 +9,8 @@ import {
   MediaImage as ImageIcon,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
-
 import { assetUrl } from "~/lib/base-path";
+
 interface LeagueBrandingTabProps {
   name: string;
   setName: (v: string) => void;

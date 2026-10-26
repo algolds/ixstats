@@ -13,8 +13,8 @@ import { Trophy, Group as Users, ArrowRight, Shield } from "iconoir-react";
 import { HeroHelpModal, type HeroHelpStep } from "~/components/ui/hero-help-modal";
 import { SPORT_EMOJIS, type SportPresetKey } from "~/lib/sports/presets";
 import { Card } from "~/components/ui/card";
-
 import { assetUrl } from "~/lib/base-path";
+
 const MYCLUB_HELP_STEPS: HeroHelpStep[] = [
   {
     title: "Welcome to MyClub",

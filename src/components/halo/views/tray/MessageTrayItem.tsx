@@ -11,8 +11,8 @@ import { SwipeableRow, SwipeActionButton } from "~/components/ui/facet/swipeable
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { cn } from "~/lib/utils";
-
 import { assetUrl } from "~/lib/base-path";
+
 export interface MessageTrayConversation {
   id: string;
   title?: string | null;

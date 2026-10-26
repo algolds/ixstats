@@ -32,8 +32,8 @@ import { motion } from "motion/react";
 import type { ViewMode } from "~/components/halo/types";
 import { springSnappy } from "~/lib/design/motion";
 import { effectiveGrowthOf } from "~/lib/economy/effective-growth";
-
 import { assetUrl } from "~/lib/base-path";
+
 /** A decimal rate (0.03) as the signed percent GrowthArrow shows (3). */
 const asPercent = (rate: number | null | undefined) =>
   rate != null && Number.isFinite(rate) ? rate * 100 : 0;

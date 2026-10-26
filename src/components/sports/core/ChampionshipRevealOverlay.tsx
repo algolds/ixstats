@@ -8,8 +8,8 @@ import { Badge } from "~/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "~/components/ui/dialog";
 import { springGentle } from "~/lib/design/motion";
 import { getSportTheme } from "~/lib/sports/theming";
-
 import { assetUrl } from "~/lib/base-path";
+
 interface ChampionshipRevealOverlayProps {
   isOpen: boolean;
   championName: string;

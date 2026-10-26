@@ -32,8 +32,8 @@ import {
 import { Button, buttonVariants } from "~/components/ui/button";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
-
 import { assetUrl } from "~/lib/base-path";
+
 interface MessagesChatHeaderProps {
   conversation: ThinkShareConversation;
   currentUserId: string;

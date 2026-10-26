@@ -25,8 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-
 import { assetUrl } from "~/lib/base-path";
+
 export function FullPlayer({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const {
     activeTrack,

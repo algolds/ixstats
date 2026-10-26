@@ -7,8 +7,8 @@ import { FacetMaterial } from "~/components/ui/facet";
 import { Play, Pause, FastArrowRight as SkipForward, Expand as Maximize2 } from "iconoir-react";
 import dynamic from "next/dynamic";
 import { useMountOnFirstOpen } from "~/components/wiki-os/shared/useMountOnFirstOpen";
-
 import { assetUrl } from "~/lib/base-path";
+
 // The full-screen player is opened from the mini bar: its chunk is fetched then.
 const FullPlayer = dynamic(() => import("./FullPlayer").then((m) => m.FullPlayer), { ssr: false });
 

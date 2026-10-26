@@ -22,8 +22,8 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { getCardImagePreset, type CardImageType } from "~/lib/cards/image-presets";
 import { cn } from "~/lib/utils";
-
 import { assetUrl } from "~/lib/base-path";
+
 // Dynamic import for heavy media search modal
 const MediaSearchModal = dynamic(
   () =>

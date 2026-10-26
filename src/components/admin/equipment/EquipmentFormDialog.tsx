@@ -39,8 +39,8 @@ import {
   ERAS,
   type EquipmentFormData,
 } from "~/lib/military/catalog-utils";
-
 import { assetUrl } from "~/lib/base-path";
+
 interface EquipmentFormDialogProps {
   isOpen: boolean;
   isEditing: boolean;

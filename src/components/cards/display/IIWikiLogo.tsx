@@ -2,8 +2,8 @@
 
 import { cn } from "~/lib/utils";
 import { IIWIKI_LOGO_URL } from "~/lib/cards/realm-logos";
-
 import { assetUrl } from "~/lib/base-path";
+
 interface IIWikiLogoProps {
   className?: string;
   size?: "xs" | "sm" | "md" | "lg";

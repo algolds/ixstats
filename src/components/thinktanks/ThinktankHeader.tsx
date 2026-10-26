@@ -19,8 +19,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-
 import { assetUrl } from "~/lib/base-path";
+
 export type ThinktankTab = "feed" | "roster" | "docs" | "chat";
 
 interface ThinktankHeaderProps {

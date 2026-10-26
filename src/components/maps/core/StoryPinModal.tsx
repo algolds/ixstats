@@ -30,8 +30,8 @@ import { Eyebrow } from "~/components/ui/eyebrow";
 import { FACET_PROSE } from "~/components/maps/shared/facet-prose";
 import { cn } from "~/lib/utils/cn";
 import { Card } from "~/components/ui/card";
-
 import { assetUrl } from "~/lib/base-path";
+
 const ReactMarkdown = dynamic(() => import("react-markdown"), { ssr: false });
 
 type StoryPinData = NonNullable<ReturnType<typeof useStoryPinModalState>["data"]>;

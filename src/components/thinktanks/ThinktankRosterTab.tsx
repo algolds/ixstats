@@ -5,8 +5,8 @@ import { Search, User, Crown, Shield } from "iconoir-react";
 import { Input } from "~/components/ui/input";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Badge } from "~/components/ui/badge";
-
 import { assetUrl } from "~/lib/base-path";
+
 interface Member {
   id: string;
   userId: string;

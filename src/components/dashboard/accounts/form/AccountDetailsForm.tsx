@@ -11,8 +11,8 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import type { ThinkpagesAccountInput } from "../account-types";
-
 import { assetUrl } from "~/lib/base-path";
+
 interface AccountDetailsFormProps {
   formData: {
     firstName: string;

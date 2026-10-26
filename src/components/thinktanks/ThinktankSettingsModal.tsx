@@ -31,8 +31,8 @@ import { api } from "~/trpc/react";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
 import { THINKTANK_CATEGORIES, ThinktankDialogHeader, ThinktankField } from "./ThinktankFormParts";
-
 import { assetUrl } from "~/lib/base-path";
+
 interface ThinktankSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;

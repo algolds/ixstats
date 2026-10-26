@@ -20,8 +20,8 @@ import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { PreText } from "~/components/ui/pretext";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { springSnappy } from "~/lib/design/motion";
-
 import { assetUrl } from "~/lib/base-path";
+
 function CompactViewComponent({
   mode,
   isSticky,

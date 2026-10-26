@@ -20,8 +20,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { generateMatchAnalysisFacts, type MatchAnalysisFacts } from "~/lib/sports/analysis";
 import { cn } from "~/lib/utils";
 import { Card } from "~/components/ui/card";
-
 import { assetUrl } from "~/lib/base-path";
+
 interface MatchCenterProps {
   matchId: string;
   onClose?: () => void;

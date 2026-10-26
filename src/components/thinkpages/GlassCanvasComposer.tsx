@@ -23,8 +23,8 @@ import { ComposerActionBar } from "./composer/ComposerActionBar";
 import { ComposerPollModal } from "./composer/ComposerPollModal";
 import { usePostAsYourself, isPersonalAccount } from "./composer/usePostAsYourself";
 import { Card } from "~/components/ui/card";
-
 import { assetUrl } from "~/lib/base-path";
+
 const MediaSearchModal = dynamic(
   () =>
     import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),

@@ -42,8 +42,8 @@ import {
   SELECT_ROWS,
   type SwitchRowSpec,
 } from "./privacy-rows";
-
 import { assetUrl } from "~/lib/base-path";
+
 /*
  * Every control here is enforced on the server (SL-4; src/server/shared/privacy-permissions.ts,
  * user-blocks.ts, presence.ts, clear-history.ts). See docs/systems/settings.md for what each does.
