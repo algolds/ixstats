@@ -69,13 +69,19 @@ async function visibleNotificationFilters(db: NotificationDb, userId: string) {
 /**
  * Global and country-wide notifications are single shared rows, so their read/dismiss state is
  * per viewer (NotificationReceipt, keyed by the caller's auth id); a personal row keeps its own
- * columns. The shared row's `read`/`dismissed` columns are never written or read for a viewer.
+ * columns. A shared row's `read`/`dismissed` columns are legacy state, frozen: from before
+ * receipts, a mark on a shared row set them for everyone, so a row with one set stays read (or
+ * dismissed) for every viewer, and nothing writes them any more.
  */
 function unreadFor(viewer: string): Prisma.NotificationWhereInput {
   return {
     OR: [
       { userId: { not: null }, read: false },
-      { userId: null, receipts: { none: { userId: viewer, readAt: { not: null } } } },
+      {
+        userId: null,
+        read: false,
+        receipts: { none: { userId: viewer, readAt: { not: null } } },
+      },
     ],
   };
 }
@@ -84,7 +90,11 @@ function notDismissedFor(viewer: string): Prisma.NotificationWhereInput {
   return {
     OR: [
       { userId: { not: null }, dismissed: false },
-      { userId: null, receipts: { none: { userId: viewer, dismissedAt: { not: null } } } },
+      {
+        userId: null,
+        dismissed: false,
+        receipts: { none: { userId: viewer, dismissedAt: { not: null } } },
+      },
     ],
   };
 }
@@ -103,11 +113,18 @@ type WithReceipts<T> = T & {
   receipts?: { readAt: Date | null; dismissedAt: Date | null }[];
 };
 
-/** A notification as this viewer sees it: a shared row's read/dismissed come from their receipt. */
+/**
+ * A notification as this viewer sees it: a shared row is read/dismissed by its frozen legacy
+ * column or the viewer's receipt.
+ */
 function withViewerState<T>({ receipts, ...notification }: WithReceipts<T>) {
   if (notification.userId) return notification;
   const receipt = receipts?.[0];
-  return { ...notification, read: !!receipt?.readAt, dismissed: !!receipt?.dismissedAt };
+  return {
+    ...notification,
+    read: notification.read || !!receipt?.readAt,
+    dismissed: notification.dismissed || !!receipt?.dismissedAt,
+  };
 }
 
 /** Mark a notification the user can see; unauthenticated callers and foreign notifications are rejected. */

@@ -95,6 +95,41 @@ describe("shared notifications keep read/dismiss state per user", () => {
     ]);
   });
 
+  it("keeps a shared row marked before receipts read or dismissed for everyone, and never writes it", async () => {
+    await db.notification.create({
+      data: { id: "legacy-read", title: "Old global, read", read: true },
+    });
+    await db.notification.create({
+      data: {
+        id: "legacy-dismissed",
+        title: "Old country, dismissed",
+        countryId: "c1",
+        dismissed: true,
+      },
+    });
+
+    for (const who of ["alice", "bob"]) {
+      const list = await as(who).getUserNotifications();
+      expect(list.notifications.find((n) => n.id === "legacy-read")?.read).toBe(true);
+      expect(ids(list)).not.toContain("legacy-dismissed");
+      expect(ids(await as(who).getUserNotifications({ unreadOnly: true }))).not.toContain(
+        "legacy-read"
+      );
+    }
+    expect((await as("alice").getUnreadCount()).count).toBe(3);
+
+    await as("alice").markAllAsRead({});
+    await as("alice").dismissNotification({ notificationId: "legacy-read" });
+    expect(await db.notificationReceipt.count({ where: { notificationId: "legacy-read" } })).toBe(
+      1
+    );
+    expect(await db.notification.findUnique({ where: { id: "global" } })).toMatchObject({
+      read: false,
+      dismissed: false,
+    });
+    expect(ids(await as("bob").getUserNotifications())).toContain("legacy-read");
+  });
+
   it("refuses another user's personal notification", async () => {
     await expect(as("alice").markAsRead({ notificationId: "bob-own" })).rejects.toMatchObject({
       code: "NOT_FOUND",
