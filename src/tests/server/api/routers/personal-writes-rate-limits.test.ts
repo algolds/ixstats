@@ -67,7 +67,7 @@ describe("WikiOS personal writes are limited per procedure, before they touch an
     ["watchPage", (ctx) => annotations(ctx).watchPage({ pageTitle: "Caphiria" })],
     ["unwatchPage", (ctx) => annotations(ctx).unwatchPage({ pageTitle: "Caphiria" })],
     ["markAllWatchedVisited", (ctx) => annotations(ctx).markAllWatchedVisited()],
-    ["createStash", (ctx) => stash(ctx).createStash({ name: "Reading" })],
+    ["createStash", (ctx) => stash(ctx).createStash({ name: "Reading", color: "blue" })],
     ["updateStash", (ctx) => stash(ctx).updateStash({ id: "s1", name: "Later" })],
     ["deleteStash", (ctx) => stash(ctx).deleteStash({ id: "s1" })],
     ["unstashPage", (ctx) => stash(ctx).unstashPage({ pageTitle: "Caphiria" })],
@@ -130,12 +130,14 @@ describe("popularity counters", () => {
       model === "governmentComponentData" ? "PROFESSIONAL_BUREAUCRACY" : "FREE_MARKET_SYSTEM"
     ) as never;
 
-    const ana = createCallerFactory(router)(member(db).ctx);
+    // the two catalogs' routers differ only in what else they hold
+    const callerOf = createCallerFactory(router as typeof governmentComponentsCatalogRouter);
+    const ana = callerOf(member(db).ctx);
     await ana.incrementComponentUsage({ componentType });
     await ana.incrementComponentUsage({ componentType });
     expect(table.update).toHaveBeenCalledTimes(1);
 
-    await createCallerFactory(router)(member(db).ctx).incrementComponentUsage({ componentType });
+    await callerOf(member(db).ctx).incrementComponentUsage({ componentType });
     expect(table.update).toHaveBeenCalledTimes(2);
   });
 

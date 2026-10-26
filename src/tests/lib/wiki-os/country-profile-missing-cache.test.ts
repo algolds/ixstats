@@ -20,6 +20,12 @@ import {
 import { WikiUnavailableError } from "~/lib/wiki-os/upstream-guard";
 
 const read = jest.mocked(getArticleWikitext);
+const page = (title: string, wikitext: string) => ({
+  title,
+  wikitext,
+  pageId: 1,
+  length: wikitext.length,
+});
 let now = 1_000_000;
 let dateSpy: jest.SpyInstance<number, []>;
 
@@ -46,7 +52,7 @@ describe("getCountryProfile of a name with no page", () => {
     read.mockRejectedValueOnce(new WikiUnavailableError("IIWiki", "unreachable"));
     expect(await wikiCacheService.getCountryProfile("Elsewhere", "iiwiki")).toBeNull();
 
-    read.mockResolvedValueOnce({ title: "Elsewhere", wikitext: "'''Elsewhere''' is a land." });
+    read.mockResolvedValueOnce(page("Elsewhere", "'''Elsewhere''' is a land."));
     expect(await wikiCacheService.getCountryProfile("Elsewhere", "iiwiki")).toMatchObject({
       countryName: "Elsewhere",
     });
@@ -55,7 +61,7 @@ describe("getCountryProfile of a name with no page", () => {
   it("forgets the missing page when the name is invalidated", async () => {
     await wikiCacheService.getCountryProfile("New land", "ixwiki");
     wikiCacheService.clearCountryCache("new_land", "ixwiki");
-    read.mockResolvedValueOnce({ title: "New land", wikitext: "'''New land''' was founded." });
+    read.mockResolvedValueOnce(page("New land", "'''New land''' was founded."));
 
     expect(await wikiCacheService.getCountryProfile("New land", "ixwiki")).toMatchObject({
       countryName: "New land",
