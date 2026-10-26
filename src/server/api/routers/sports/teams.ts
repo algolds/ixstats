@@ -9,6 +9,7 @@ import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from 
 import { TRPCError } from "@trpc/server";
 import { exchangeService } from "~/lib/vault/exchange-service";
 import { isSystemOwner } from "~/lib/auth";
+import { countStorePurchases } from "~/lib/vault/store-purchases";
 import { assertSportsEconomyOpen } from "~/server/api/routers/sports/_shared";
 
 export const sportsTeamsRouter = createTRPCRouter({
@@ -105,27 +106,18 @@ export const sportsTeamsRouter = createTRPCRouter({
           });
         }
 
-        // Fetch user's SPEND_BOOST transactions to verify purchased store upgrades
+        // Fetch user's SPEND_BOOST transactions to verify purchased store upgrades (a purchase
+        // an admin revoked no longer counts)
         const userTxs = await ctx.db.vaultTransaction.findMany({
           where: {
             vault: { userId: ctx.user.id },
             type: "SPEND_BOOST",
           },
+          select: { metadata: true },
         });
-
-        const checkUpgradeOwned = (upgradeId: string): boolean => {
-          return userTxs.some((tx) => {
-            let meta = tx.metadata;
-            if (typeof meta === "string") {
-              try {
-                meta = JSON.parse(meta);
-              } catch {
-                // non-JSON metadata — treated as no item match
-              }
-            }
-            return meta && typeof meta === "object" && (meta as { itemId?: string }).itemId === upgradeId;
-          });
-        };
+        const upgradesOwned = countStorePurchases(userTxs);
+        const checkUpgradeOwned = (upgradeId: string): boolean =>
+          (upgradesOwned[upgradeId] ?? 0) > 0;
 
         // 1. Verify MyClub Team License
         const ownsClubLicense = checkUpgradeOwned("upgrade_myclub_license");
