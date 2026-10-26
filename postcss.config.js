@@ -1,10 +1,19 @@
-import basePathUrls from "./scripts/setup/postcss-base-path-urls.cjs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+// The base-path pass as an absolute path: Next's webpack loader takes only a plugin's name or path (an object or a
+// function is refused), and Turbopack requires a relative one from its own build directory, so neither takes
+// "./scripts/…". Both require an absolute path, and call it with no options (the base path then follows
+// scripts/setup/base-path.cjs).
+const basePathUrls = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "scripts/setup/postcss-base-path-urls.cjs"
+);
 
 export default {
   plugins: [
     "@tailwindcss/postcss",
-    // after Tailwind, which inlines the @imported sheets (typography.css's @font-face URLs); a function, since
-    // Turbopack resolves a plugin named by a path from its own build directory
-    basePathUrls(),
+    // after Tailwind, which inlines the @imported sheets (typography.css's @font-face URLs)
+    basePathUrls,
   ],
 };
