@@ -28,7 +28,13 @@ import { getArticleWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge/disp
 import type { WikiArticle } from "~/lib/wiki-os/adapters/mediawiki/bridge/types";
 import { canonicalOrTrimmedTitle } from "~/lib/wiki-os/core/title";
 import type { SisterEmbedRequest } from "~/lib/wiki-os/sister-embed";
-import { cardOf, headingKey, renderSectionOf, trimHtml } from "~/lib/wiki-os/sister-embed-parts";
+import {
+  cardOf,
+  headingKey,
+  renderSectionOf,
+  trimHtml,
+  withoutInPageNavigation,
+} from "~/lib/wiki-os/sister-embed-parts";
 import {
   renderSisterArticle,
   SisterRenderError,
@@ -49,7 +55,7 @@ const EMBED_TTL_MS = 3_600_000;
 /** How long a missing or unrenderable page is believed. */
 const ABSENT_TTL_MS = 600_000;
 /** What the embed cache may hold, in bytes (as `entryBytes` counts them). */
-export const EMBED_CACHE_BYTES = 32 * 1024 * 1024;
+const EMBED_CACHE_BYTES = 32 * 1024 * 1024;
 const ENTRY_OVERHEAD_BYTES = 256;
 
 const embeds = new ByteBoundedCache<SisterEmbed>({
@@ -62,11 +68,14 @@ const entryBytes = (key: string, embed: SisterEmbed): number =>
 /** Embeds being read, so readers asking for one at once share its read. */
 const inFlight = new Map<string, Promise<SisterEmbed>>();
 
-/** The part of `render` the request asks for, as its HTML; null when the page has no such part. */
+/**
+ * The part of `render` the request asks for, as its HTML; null when the page has no such part. The whole page leaves
+ * out its table of contents and in-page links (`withoutInPageNavigation`).
+ */
 function htmlPart(request: SisterEmbedRequest, render: SisterRender): string | null {
   if (request.mode === "infobox") return render.infoboxHtml;
   if (request.mode === "section") return renderSectionOf(render, request.section ?? "");
-  return (render.infoboxHtml ?? "") + render.contentHtml;
+  return withoutInPageNavigation((render.infoboxHtml ?? "") + render.contentHtml);
 }
 
 /** The page rendered by its wiki; null when the wiki answered but could not render it (`SisterRenderError`). */

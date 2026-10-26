@@ -25,7 +25,7 @@ jest.mock("~/lib/wiki-os/transformers/server-dom", () => {
 
 import { afterEach, beforeEach, describe, expect, it } from "@jest/globals";
 import { getSisterEmbed, MAX_EMBED_HTML_CHARS } from "~/lib/wiki-os/services/sister-embed-service";
-import { cardOf, sectionOf, trimHtml } from "~/lib/wiki-os/sister-embed-parts";
+import { cardOf, renderSectionOf, trimHtml } from "~/lib/wiki-os/sister-embed-parts";
 import { WikiUnavailableError } from "~/lib/wiki-os/upstream-guard";
 import type { SisterEmbedRequest } from "~/lib/wiki-os/sister-embed";
 import { parseInertOnServer } from "~/lib/wiki-os/transformers/server-dom";
@@ -133,6 +133,21 @@ describe("getSisterEmbed: the parts", () => {
     expect(html).not.toMatch(/<style/i);
     expect(html).not.toMatch(/\sid=/);
     expect(html).toContain('src="/api/mediawiki/iiwiki/images/a/ab/Flag_of_Caphiria.png"');
+  });
+
+  it("the whole page leaves out its table of contents, and an in-page link keeps only its text (an embed has no ids)", async () => {
+    parsedHtml = PAGE.replace(
+      SECTIONS,
+      '<div class="mw-toc"><ul><li><a href="#History">History</a></li></ul></div>' +
+        '<div class="toc">Contents</div>' +
+        SECTIONS
+    );
+    const html = await htmlOf(request());
+
+    expect(html).not.toMatch(/toc|Contents/);
+    expect(html).not.toMatch(/href="#/);
+    expect(html).toContain("[1]");
+    expect(html).toContain("Geography body.");
   });
 
   it("the title is the page's own, after its redirect", async () => {
@@ -351,6 +366,10 @@ describe("getSisterEmbed: the wiki is asked rarely", () => {
 });
 
 describe("the part slicers", () => {
+  /** The section of a render whose body is `html` (a fresh render each time, so its headings are read afresh). */
+  const sectionOf = (html: string, heading: string) =>
+    renderSectionOf({ contentHtml: html, infoboxHtml: null, noticesHtml: null, toc: [] }, heading);
+
   it("sectionOf finds a bare heading, and stops at a higher one", () => {
     const html = '<h3 id="sister-A">A</h3><p>a</p><h4>B</h4><p>b</p><h2>C</h2><p>c</p>';
     expect(sectionOf(html, "A")).toBe('<h3 id="sister-A">A</h3><p>a</p><h4>B</h4><p>b</p>');

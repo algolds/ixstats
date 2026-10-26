@@ -1,6 +1,7 @@
 /**
  * sister-embed-parts.ts: the parts of a rendered sister page (sister-render-service.ts) a `Template:Sister` embed can
- * show: one section (`sectionOf`, `renderSectionOf`), a card (`cardOf`), and a size cap for any HTML part (`trimHtml`).
+ * show: one section (`renderSectionOf`), a card (`cardOf`), the whole page without its in-page navigation
+ * (`withoutInPageNavigation`), and a size cap for any HTML part (`trimHtml`).
  *
  * Server only: it parses with jsdom (`parseInertOnServer`). The input is the render service's sanitized HTML (ids
  * prefixed `sister-`, images through the media proxy); what this returns is sanitized again for embedding by the caller.
@@ -90,20 +91,16 @@ function sectionIn(index: SectionIndex, heading: string): string | null {
   return index.nodes.slice(found.at, next?.at).join("");
 }
 
-/**
- * The section of `html` under `heading`: the first h2 to h6 (bare, or inside `div.mw-heading`) at the top level whose
- * anchor or text is `heading` (compared decoded, `_` as space, whitespace collapsed, in any case), with the top-level
- * nodes after it up to the next heading of the same or a higher level (so its subsections stay inside). Null when
- * there is no such heading, or `heading` is blank.
- */
-export function sectionOf(html: string, heading: string): string | null {
-  return sectionIn(sectionIndexOf(html), heading);
-}
-
 /** Each render's section index, read on the first section asked of it (a render the service caches is one object). */
 const sectionIndexes = new WeakMap<SisterRender, SectionIndex>();
 
-/** `sectionOf` the render's body, its headings read once per render: a second section, or a miss, is a lookup. */
+/**
+ * The section of the render's body under `heading`: the first h2 to h6 (bare, or inside `div.mw-heading`) at the top
+ * level whose anchor or text is `heading` (compared decoded, `_` as space, whitespace collapsed, in any case), with
+ * the top-level nodes after it up to the next heading of the same or a higher level (so its subsections stay inside).
+ * Null when there is no such heading, or `heading` is blank. Its headings are read once per render: a second section,
+ * or a miss, is a lookup.
+ */
 export function renderSectionOf(render: SisterRender, heading: string): string | null {
   let index = sectionIndexes.get(render);
   if (!index) {
@@ -156,6 +153,23 @@ export function cardOf(
     imageUrl:
       firstProxiedImage(render.infoboxHtml, wiki) ?? firstProxiedImage(render.contentHtml, wiki),
   };
+}
+
+/** MediaWiki's table of contents, in each of its spellings. */
+const TOC_SELECTOR = "#toc, .toc, .mw-toc";
+
+/**
+ * `html` without the navigation that only works on a page of its own: its table of contents is dropped and each
+ * in-page link (`href="#…"`) gives way to its text. An embed has no ids (the sanitizer's embed mode), so both would
+ * lead nowhere.
+ */
+export function withoutInPageNavigation(html: string): string {
+  const { template, content } = parseInertOnServer(html);
+  for (const toc of Array.from(content.querySelectorAll(TOC_SELECTOR))) toc.remove();
+  for (const link of Array.from(content.querySelectorAll('a[href^="#"]'))) {
+    link.replaceWith(...Array.from(link.childNodes));
+  }
+  return template.innerHTML;
 }
 
 /**
