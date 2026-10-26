@@ -27,6 +27,7 @@ import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag
 import { Card } from "~/components/ui/card";
 import { PodiumCard, Row } from "./leaderboard-parts";
 import { LeaderboardRealmSelect } from "./LeaderboardRealmSelect";
+import { isUnlistedRankingRealm } from "~/lib/realms/realm-scope-select";
 
 const CATEGORIES = [
   { id: "all", label: "All categories" },
@@ -119,10 +120,13 @@ export function CountryLeaderboards() {
   const [limit, setLimit] = useState<number>(25);
   // ?realm=<slug> ranks that realm (the selector sets it); without it the server uses the viewer's active nation's realm.
   const realm = useSearchParams().get("realm") ?? undefined;
+  const { data: realms } = api.realms.directory.useQuery(undefined, { staleTime: 5 * 60_000 });
+  // A draft or unlisted realm named by link has no public ranking: say so instead of ranking nothing.
+  const unlisted = isUnlistedRankingRealm(realms, realm);
 
   const { data: effectiveAchievements } = api.achievements.getLeaderboard.useQuery(
     { limit, realm },
-    { enabled: filter === "achievements" }
+    { enabled: filter === "achievements" && !unlisted }
   );
 
   const { data: countryBoard, isLoading } = api.achievements.getCountryLeaderboard.useQuery(
@@ -132,7 +136,7 @@ export function CountryLeaderboards() {
       searchQuery: searchQuery.trim() || undefined,
       realm,
     },
-    { enabled: filter !== "achievements" }
+    { enabled: filter !== "achievements" && !unlisted }
   );
 
   const active = FILTERS.find((f) => f.id === filter)!;
@@ -252,7 +256,13 @@ export function CountryLeaderboards() {
         </div>
       )}
 
-      {filter === "achievements" ? (
+      {unlisted ? (
+        <EmptyState
+          compact
+          title="This realm isn't ranked"
+          message="Only listed realms have leaderboards. Pick one from the realm menu."
+        />
+      ) : filter === "achievements" ? (
         filteredAchievements && filteredAchievements.length > 0 ? (
           <FacetList>
             <FacetListSection

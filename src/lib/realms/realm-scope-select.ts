@@ -23,3 +23,14 @@ export function selectedRankingRealm<T extends ListedRealm>(
   }
   return realms.find((r) => r.id === (viewerRealmId ?? DEFAULT_REALM_ID));
 }
+
+/**
+ * Whether `?realm=` names a realm the directory does not list (a draft, or an unlisted realm opened by link): such a
+ * realm has no public ranking. False while the directory loads or when no realm is named.
+ */
+export function isUnlistedRankingRealm(
+  realms: readonly ListedRealm[] | undefined,
+  realmParam: string | undefined
+): boolean {
+  return !!realms && !!realmParam && !selectedRankingRealm(realms, realmParam, undefined);
+}

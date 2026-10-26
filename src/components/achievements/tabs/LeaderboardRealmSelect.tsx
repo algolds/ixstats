@@ -14,7 +14,8 @@ import {
 
 /**
  * Picks the realm the leaderboards rank (`?realm=`). Realms run at their own speeds, so nations are only ranked
- * against their own realm's; the viewer's realm is shown until they pick another.
+ * against their own realm's; the viewer's realm is shown until they pick another, and "Pick a realm" when `?realm=`
+ * names one the directory does not list.
  */
 export function LeaderboardRealmSelect({ realmParam }: { realmParam: string | undefined }) {
   const router = useRouter();
@@ -34,7 +35,7 @@ export function LeaderboardRealmSelect({ realmParam }: { realmParam: string | un
   return (
     <Select value={selected?.slug} onValueChange={pick}>
       <SelectTrigger size="sm" className="w-full sm:w-48" aria-label="Realm">
-        <SelectValue placeholder="Realm" />
+        <SelectValue placeholder="Pick a realm" />
       </SelectTrigger>
       <SelectContent>
         {realms.map((realm) => (
