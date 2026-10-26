@@ -171,12 +171,22 @@ function mapAttrs(element: Element): { lat: number; lng: number; zoom: number } 
   };
 }
 
-/** The first `MAX_SISTER_EMBEDS` `Template:Sister` boxes that ask for an embed WikiOS can show, outside any embed. */
+/** The elements matching `selector` that are not a live embed's content (nested embeds mount nothing). */
+function outsideEmbeds(container: Element, selector: string): Element[] {
+  return Array.from(container.querySelectorAll(selector)).filter(
+    (element) => !element.closest(`.${SISTER_EMBED_CLASS}`)
+  );
+}
+
+/**
+ * The first `MAX_SISTER_EMBEDS` `Template:Sister` boxes that ask for an embed WikiOS can show, outside any embed and
+ * not nested inside another box.
+ */
 function sisterTargets(container: Element): PortalTarget[] {
   const targets: PortalTarget[] = [];
-  for (const element of Array.from(container.querySelectorAll(SISTER_EMBED_SELECTOR))) {
+  for (const element of outsideEmbeds(container, SISTER_EMBED_SELECTOR)) {
     if (targets.length === MAX_SISTER_EMBEDS) break;
-    if (element.closest(`.${SISTER_EMBED_CLASS}`)) continue;
+    if (element.parentElement?.closest(SISTER_EMBED_SELECTOR)) continue;
     const request = sisterEmbedRequestOf(element);
     if (request) targets.push({ element, type: "sister", data: request });
   }
@@ -184,21 +194,22 @@ function sisterTargets(container: Element): PortalTarget[] {
 }
 
 /**
- * The widget placeholders and `Template:Sister` boxes of the live article. Only an IxWiki page has any: another
- * wiki's page never mounts IxStates widgets or embeds (its HTML is that wiki's, read-only), so it has none.
+ * The widget placeholders and `Template:Sister` boxes of the live article, outside any live embed. Only an IxWiki
+ * page has any: another wiki's page never mounts IxStates widgets or embeds (its HTML is that wiki's, read-only), so
+ * it has none.
  */
 export function readPortalTargets(container: Element, source: WikiSource): PortalTarget[] {
   if (source !== "ixwiki") return [];
   const targets: PortalTarget[] = [];
-  for (const element of Array.from(container.querySelectorAll(".wikios-coords-placeholder"))) {
+  for (const element of outsideEmbeds(container, ".wikios-coords-placeholder")) {
     const label = element.getAttribute("data-label") || "Location";
     targets.push({ element, type: "coords", data: { ...mapAttrs(element), label } });
   }
-  for (const element of Array.from(container.querySelectorAll(".wikios-map-embed-placeholder"))) {
+  for (const element of outsideEmbeds(container, ".wikios-map-embed-placeholder")) {
     const options = element.getAttribute("data-options") || "";
     targets.push({ element, type: "map-embed", data: { ...mapAttrs(element), options } });
   }
-  for (const element of Array.from(container.querySelectorAll(".wikios-stat-placeholder"))) {
+  for (const element of outsideEmbeds(container, ".wikios-stat-placeholder")) {
     targets.push({ element, type: "stat", data: { key: element.getAttribute("data-key") || "" } });
   }
   return [...targets, ...sisterTargets(container)];
