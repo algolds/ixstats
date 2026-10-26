@@ -8,7 +8,8 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
+import { globalCache } from "~/lib/cache";
 import { ComponentType } from "@prisma/client";
 
 import { getAllComponentsSchema, listCatalogComponents } from "~/server/shared/component-catalog";
@@ -23,6 +24,17 @@ const componentTypeSchema = z.nativeEnum(ComponentType);
 const incrementUsageSchema = z.object({
   componentType: componentTypeSchema,
 });
+
+/**
+ * Whether `userId` already counted the government component `id` today. A pick counts once a day per player, so nobody can inflate the
+ * popularity counters by calling the mutation over and over.
+ */
+async function countedToday(userId: string, id: string): Promise<boolean> {
+  const key = `usage:government-component:${userId}:${id}:${new Date().toISOString().slice(0, 10)}`;
+  if (await globalCache.get(key)) return true;
+  await globalCache.set(key, true, { ttl: 86_400 });
+  return false;
+}
 
 // ============================================================================
 // Helper Functions
@@ -92,9 +104,9 @@ export const governmentComponentsCatalogRouter = createTRPCRouter({
 
   /**
    * Increment component usage count
-   * This tracks how often components are used across all countries
+   * This tracks how often components are used across all countries: signed in, once a day per player and component
    */
-  incrementComponentUsage: rateLimitedPublicProcedure
+  incrementComponentUsage: rateLimitedMutationProcedure
     .input(incrementUsageSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -110,6 +122,13 @@ export const governmentComponentsCatalogRouter = createTRPCRouter({
             componentType: input.componentType,
             newUsageCount: 0,
             message: "Component not found in database",
+          };
+        }
+        if (await countedToday(ctx.user.id, input.componentType)) {
+          return {
+            success: true,
+            componentType: input.componentType,
+            newUsageCount: existing.usageCount,
           };
         }
 

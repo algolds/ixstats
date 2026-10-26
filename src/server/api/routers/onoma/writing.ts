@@ -7,6 +7,9 @@ import {
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 
+/** A language pack anyone may build on; a draft is its owner's alone (as the marketplace's fork rule has it). */
+const SHARED_PACK_VISIBILITIES = ["public", "unlisted"];
+
 export const onomaWritingRouter = createTRPCRouter({
   /**
    * List all writing systems for the current user.
@@ -49,6 +52,20 @@ export const onomaWritingRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.user.id;
+
+      // The pack it belongs to: the caller's own, or one shared with everyone; another user's draft is missing
+      if (input.languagePackId) {
+        const pack = await ctx.db.languagePack.findFirst({
+          where: {
+            id: input.languagePackId,
+            OR: [{ userId }, { visibility: { in: SHARED_PACK_VISIBILITIES } }],
+          },
+          select: { id: true },
+        });
+        if (!pack) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Language pack not found" });
+        }
+      }
 
       const data = {
         userId,

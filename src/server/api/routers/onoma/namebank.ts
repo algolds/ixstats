@@ -396,7 +396,8 @@ export const onomaNameBankRouter = createTRPCRouter({
     }),
 
   /**
-   * Clone a public dictionary preset into the user's global Stash folder.
+   * Clone a public dictionary preset (or one of the caller's own) into the user's global Stash folder. Another
+   * user's private dictionary is missing to the caller.
    */
   cloneDictionary: rateLimitedMutationProcedure
     .input(
@@ -408,8 +409,8 @@ export const onomaNameBankRouter = createTRPCRouter({
       const { db } = ctx;
       const userId = ctx.auth.userId;
 
-      const source = await db.nameBank.findUnique({
-        where: { id: input.id },
+      const source = await db.nameBank.findFirst({
+        where: { id: input.id, OR: [{ isPublic: true }, { userId: ctx.user.id }] },
       });
 
       if (!source) {

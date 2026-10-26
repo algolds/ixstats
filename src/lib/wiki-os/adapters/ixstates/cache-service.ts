@@ -3,7 +3,9 @@
  *
  * Lightweight bridge wrapping PostgreSQL WikiArticle repository and WikiBridge.
  * Provides high-speed (<2ms) reads for country profiles, infoboxes, and sections. A sister wiki that cannot be
- * reached reads as a missing page here (`unlessUnavailable`), as it always has.
+ * reached reads as a missing page here (`unlessUnavailable`), as it always has. A page the wiki says it does not
+ * have is remembered as missing for `MISSING_PROFILE_TTL_MS` (never an outage), so a title that does not exist
+ * does not reach WikiBridge on every call.
  */
 
 import { getArticleWikitext, type WikiSource } from "~/lib/wiki-os/adapters/mediawiki/bridge";
@@ -12,7 +14,7 @@ import { cleanWikiMarkup } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
 import { Cache } from "~/lib/cache";
 import { sameTitle } from "~/lib/wiki-os/core/title";
-import { unlessUnavailable } from "~/lib/wiki-os/upstream-guard";
+import { unlessUnavailable, WikiUnavailableError } from "~/lib/wiki-os/upstream-guard";
 
 export function cleanWikitextForDisplay(raw: string): string {
   return cleanWikiMarkup(raw);
@@ -48,6 +50,11 @@ const profileMemoryCache = new Cache<any>({
   maxSize: 150,
 });
 
+/** How long a country page the wiki does not have is believed missing. */
+export const MISSING_PROFILE_TTL_MS = 2 * 60 * 1000;
+/** Profiles found missing (`<wiki>:<name>`): their own cache, so a run of unknown names never evicts a real profile. */
+const missingProfiles = new Cache<true>({ defaultTtlMs: MISSING_PROFILE_TTL_MS, maxSize: 1000 });
+
 export class WikiCacheService {
   /**
    * Get parsed country profile with infobox and sections
@@ -59,6 +66,7 @@ export class WikiCacheService {
     const cacheKey = `${wikiSource}:${countryName}`;
     const cached = profileMemoryCache.get(cacheKey);
     if (cached) return cached;
+    if (missingProfiles.has(cacheKey)) return null;
 
     // 1. Try authoritative PostgreSQL article repository (<2ms)
     let wikitext: string | null = null;
@@ -69,13 +77,20 @@ export class WikiCacheService {
       }
     }
 
-    // 2. Fallback to WikiBridge
+    // 2. Fallback to WikiBridge: a wiki that cannot be reached is a missing page now, never remembered as one
     if (!wikitext) {
-      const articleData = await unlessUnavailable(getArticleWikitext(countryName, wikiSource));
-      wikitext = articleData?.wikitext ?? null;
+      try {
+        wikitext = (await getArticleWikitext(countryName, wikiSource))?.wikitext ?? null;
+      } catch (error) {
+        if (error instanceof WikiUnavailableError) return null;
+        throw error;
+      }
     }
 
-    if (!wikitext) return null;
+    if (!wikitext) {
+      missingProfiles.set(cacheKey, true);
+      return null;
+    }
 
     const infobox = parseInfoboxWithTemplates(wikitext, countryName);
     const sections: WikiProfileSection[] = [
@@ -226,6 +241,14 @@ export class WikiCacheService {
         profileMemoryCache.delete(key);
       }
     }
+    for (const key of missingProfiles.keys()) {
+      if (
+        key.startsWith(prefixes[0]!) &&
+        sameTitle(key.slice(prefixes[0]!.length), title, wikiSource)
+      ) {
+        missingProfiles.delete(key);
+      }
+    }
   }
 
   /**
@@ -233,6 +256,7 @@ export class WikiCacheService {
    */
   clearCache(): void {
     profileMemoryCache.clear();
+    missingProfiles.clear();
   }
 
   /**

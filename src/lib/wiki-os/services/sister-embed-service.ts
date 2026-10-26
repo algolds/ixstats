@@ -17,8 +17,10 @@
  * (`headingKey`) is one entry. A wiki that cannot be reached throws WikiUnavailableError, which is never cached. The
  * cache is an LRU bounded in bytes (`EMBED_CACHE_BYTES`, 32 MB, each entry counted at two bytes a character of its
  * JSON and key plus 256), and an HTML part holds at most `MAX_EMBED_HTML_CHARS`. The page cap (`MAX_SISTER_EMBEDS`) is the reader's: this server cannot tell which page
- * asks, so a client that skips it is bounded by the `sisterwiki` rate limit per caller (120 a minute), this cache and
- * single flight per embed, and the per-host guard (8 in flight, 240 a minute) on everything that leaves for the wiki.
+ * asks, so a client that skips it is bounded by the `sisterwiki` rate limit per caller (120 a minute), a lower limit
+ * per caller on the embeds that are not cached (`admitRead`, the router's: the reads that cost the wiki a call),
+ * this cache and single flight per embed, and the per-host guard (8 in flight, 240 a minute) on everything that
+ * leaves for the wiki.
  *
  * Server only: it calls the sister wikis.
  */
@@ -105,16 +107,25 @@ async function readEmbed(request: SisterEmbedRequest): Promise<SisterEmbed> {
 /**
  * The embed `request` asks for: the part as sanitized HTML, a card, `missing` (no such page), `unrenderable` (its wiki
  * could not render it) or `no-part` (no such section, or no infobox). Throws WikiUnavailableError when the wiki cannot
- * be reached (never cached).
+ * be reached (never cached). `admitRead` runs only before a read of the wiki (an embed neither cached nor being read)
+ * and refuses it by throwing.
  */
-export async function getSisterEmbed(asked: SisterEmbedRequest): Promise<SisterEmbed> {
+export async function getSisterEmbed(
+  asked: SisterEmbedRequest,
+  admitRead?: () => Promise<void>
+): Promise<SisterEmbed> {
   const request = { ...asked, title: canonicalOrTrimmedTitle(asked.title, asked.wiki) };
   const section = headingKey(request.section ?? "") ?? "";
   const key = [request.wiki, request.title, request.mode, section].join("\u0000");
-  const cached = embeds.get(key);
+  const shared = () => embeds.get(key) ?? inFlight.get(key);
+  const cached = shared();
   if (cached) return cached;
-  const pending = inFlight.get(key);
-  if (pending) return pending;
+  if (admitRead) {
+    await admitRead();
+    // another reader may have started (or finished) the read meanwhile
+    const meanwhile = shared();
+    if (meanwhile) return meanwhile;
+  }
 
   const reading = readEmbed(request)
     .then((embed) => {
