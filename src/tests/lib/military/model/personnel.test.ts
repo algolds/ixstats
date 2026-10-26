@@ -19,6 +19,7 @@ import {
   stepReserves,
   branchSplits,
   deriveNation,
+  setEffortShare,
 } from "~/lib/military/model";
 import { T0, economy, starter } from "./fixtures";
 
@@ -135,5 +136,19 @@ describe("reported reservists in the nation view", () => {
     expect(Number.isInteger(reported)).toBe(true);
     expect(reported).toBeGreaterThan(0);
     expect(later.mobilisationSupplement).toBeCloseTo(reported * memberPay(s.policy.volunteerShare, econ.gdpPerCapita), 6);
+  });
+});
+
+describe("setEffortShare", () => {
+  it("sets one branch and splits the rest in proportion, summing to 1", () => {
+    const next = setEffortShare([0.55, 0.25, 0.2], 2, 0.4);
+    expect(next[2]).toBeCloseTo(0.4, 12);
+    expect(next[0]! / next[1]!).toBeCloseTo(0.55 / 0.25, 12);
+    expect(next.reduce((s, e) => s + e, 0)).toBeCloseTo(1, 12);
+  });
+
+  it("splits the rest evenly when the others have none, and gives a lone branch everything", () => {
+    expect(setEffortShare([0, 0, 0.3], 2, 0.4)).toEqual([0.3, 0.3, 0.4]);
+    expect(setEffortShare([0.2], 0, 0.2)).toEqual([1]);
   });
 });

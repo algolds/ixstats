@@ -9,10 +9,12 @@ import { TRPCError } from "@trpc/server";
 import {
   DOMAIN_PARAMS,
   deriveNation,
+  normaliseEffort,
   npcPolicy,
+  setEffortShare,
   starterBranchName,
+  starterBranchSpecs,
   starterNation,
-  STARTER_DOMAINS,
   type BranchDomain,
 } from "~/lib/military/model";
 import { clockForCountry } from "~/server/shared/realm-time";
@@ -53,48 +55,87 @@ export async function previewStarterForce(db: PrismaClient, countryId: string) {
   };
 }
 
-/** A new, empty branch (it grows from the budget on the realm clock). */
-export async function createEmptyBranch(
-  db: PrismaClient,
-  input: {
-    countryId: string;
-    domain: BranchDomain;
-    name: string;
-    effortShare?: number;
-    identity?: {
-      motto?: string | null;
-      description?: string | null;
-      established?: string | null;
-      imageUrl?: string | null;
-      civilianStaff?: number;
-    };
-  }
-) {
+interface NewBranch {
+  countryId: string;
+  domain: BranchDomain;
+  name: string;
+  effortShare?: number;
+  identity?: {
+    motto?: string | null;
+    description?: string | null;
+    established?: string | null;
+    imageUrl?: string | null;
+    civilianStaff?: number;
+  };
+}
+
+/** The effort share a new branch of a domain asks for. */
+const newBranchEffort = (input: NewBranch) =>
+  input.effortShare ?? (DOMAIN_PARAMS[input.domain].starterEffort || 0.1);
+
+const branchRow = (input: NewBranch, effortShare: number, lastTickClockMs: number) => ({
+  countryId: input.countryId,
+  domain: input.domain,
+  name: input.name,
+  ...input.identity,
+  effortShare,
+  readinessCondition: 1,
+  lastTickClockMs,
+});
+
+/**
+ * A new, empty branch (it grows from the budget on the realm clock). It takes its effort share and the other branches
+ * keep theirs in proportion to the rest, so the shares still sum to 1.
+ */
+export async function createEmptyBranch(db: PrismaClient, input: NewBranch) {
   const snapshot = await syncDefense(db, input.countryId);
-  return db.militaryBranch.create({
-    data: {
-      countryId: input.countryId,
-      domain: input.domain,
-      name: input.name,
-      ...input.identity,
-      effortShare: input.effortShare ?? (DOMAIN_PARAMS[input.domain].starterEffort || 0.1),
-      readinessCondition: 1,
-      lastTickClockMs: snapshot.state.lastTickClockMs,
-    },
+  const others = snapshot.state.branches;
+  const efforts = setEffortShare(
+    [...others.map((b) => b.effortShare), 0],
+    others.length,
+    newBranchEffort(input)
+  );
+  return db.$transaction(async (tx) => {
+    for (const [i, branch] of others.entries()) {
+      await tx.militaryBranch.update({ where: { id: branch.id }, data: { effortShare: efforts[i]! } });
+    }
+    return tx.militaryBranch.create({
+      data: branchRow(input, efforts[others.length]!, snapshot.state.lastTickClockMs),
+    });
+  });
+}
+
+/** Delete a branch (units, assets and orders cascade); the remaining branches' shares are scaled back to sum 1. */
+export async function deleteBranch(db: PrismaClient, input: { countryId: string; branchId: string }) {
+  const remaining = await db.militaryBranch.findMany({
+    where: { countryId: input.countryId, isActive: true, id: { not: input.branchId } },
+    select: { id: true, effortShare: true },
+    orderBy: { createdAt: "asc" },
+  });
+  const efforts = normaliseEffort(remaining.map((b) => b.effortShare));
+  return db.$transaction(async (tx) => {
+    await tx.militaryBranch.delete({ where: { id: input.branchId } });
+    for (const [i, branch] of remaining.entries()) {
+      await tx.militaryBranch.update({ where: { id: branch.id }, data: { effortShare: efforts[i]! } });
+    }
+    return { id: input.branchId };
   });
 }
 
 /**
  * The Defense page's "start from a starter force": a nation's forces exist from its first read, so this ensures them
- * and, when every branch was deleted, adds empty army, navy and air force branches.
+ * and, when every branch was deleted, adds empty army, navy and air force branches with the starter split.
  */
 export async function seedStarterBranches(db: PrismaClient, countryId: string) {
   const snapshot = await syncDefense(db, countryId);
   if (snapshot.state.branches.length > 0) {
     return { created: 0, budgetSource: snapshot.budgetSource };
   }
-  for (const domain of STARTER_DOMAINS) {
-    await createEmptyBranch(db, { countryId, domain, name: starterBranchName(domain) });
+  const specs = starterBranchSpecs();
+  const efforts = normaliseEffort(specs.map((spec) => spec.effortShare));
+  for (const [i, spec] of specs.entries()) {
+    const input = { countryId, domain: spec.domain, name: starterBranchName(spec.domain) };
+    await db.militaryBranch.create({ data: branchRow(input, efforts[i]!, snapshot.state.lastTickClockMs) });
   }
-  return { created: STARTER_DOMAINS.length, budgetSource: snapshot.budgetSource };
+  return { created: specs.length, budgetSource: snapshot.budgetSource };
 }

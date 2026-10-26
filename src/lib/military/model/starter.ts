@@ -23,6 +23,7 @@ import {
   branchHeadcountTarget,
   branchSplits,
   manpowerPool,
+  normaliseEffort,
   nationalHeadcountTarget,
   reserveInflowRate,
   reserveRetention,
@@ -149,10 +150,12 @@ export function starterNation(input: {
   const people = personnelEquilibrium(policy, econ);
   const capital = steadyCapital(policy, econ, specs);
   const { labour } = branchSplits(specs);
+  // Stored shares sum to 1 (the model normalises them anyway; a nation with only an army and a navy gets 69/31).
+  const efforts = normaliseEffort(specs.map((spec) => spec.effortShare));
   const branches: BranchState[] = specs.map((spec, i) => ({
     id: spec.id,
     domain: spec.domain,
-    effortShare: spec.effortShare,
+    effortShare: efforts[i]!,
     targetActive: null,
     active: branchHeadcountTarget(people.active, labour[i]!, null),
     reserves: people.reserves * labour[i]!,

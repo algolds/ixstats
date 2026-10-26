@@ -9,6 +9,7 @@ import {
   effectiveAlert,
   normaliseShares,
   presetShares,
+  setEffortShare,
   type AlertLevel,
   type BudgetShares,
   type Doctrine,
@@ -108,20 +109,36 @@ export async function setSurge(db: PrismaClient, input: { countryId: string; sur
   });
 }
 
-/** A branch's effort share and desired strength (null follows the budget). */
+/**
+ * A branch's effort share and desired strength (null follows the budget). A new share keeps the shares summing to 1:
+ * the other branches split the rest in their current proportions.
+ */
 export async function setBranchAllocation(
   db: PrismaClient,
   input: { countryId: string; branchId: string; effortShare?: number; targetActive?: number | null }
 ) {
   const snapshot = await syncDefense(db, input.countryId);
-  if (!snapshot.state.branches.some((b) => b.id === input.branchId)) {
+  const { branches } = snapshot.state;
+  const index = branches.findIndex((b) => b.id === input.branchId);
+  if (index === -1) {
     throw new TRPCError({ code: "NOT_FOUND", message: "Military branch not found" });
   }
-  return db.militaryBranch.update({
-    where: { id: input.branchId },
-    data: {
-      ...(input.effortShare !== undefined ? { effortShare: input.effortShare } : {}),
-      ...(input.targetActive !== undefined ? { targetActive: input.targetActive } : {}),
-    },
+  const efforts =
+    input.effortShare === undefined
+      ? null
+      : setEffortShare(branches.map((b) => b.effortShare), index, input.effortShare);
+  return db.$transaction(async (tx) => {
+    for (const [i, branch] of branches.entries()) {
+      if (efforts && i !== index) {
+        await tx.militaryBranch.update({ where: { id: branch.id }, data: { effortShare: efforts[i]! } });
+      }
+    }
+    return tx.militaryBranch.update({
+      where: { id: input.branchId },
+      data: {
+        ...(efforts ? { effortShare: efforts[index]! } : {}),
+        ...(input.targetActive !== undefined ? { targetActive: input.targetActive } : {}),
+      },
+    });
   });
 }

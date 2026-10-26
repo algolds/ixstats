@@ -9,7 +9,7 @@ import { formatCount, formatPercent } from "../forces/force-fields";
 
 interface BranchPlanEditorProps {
   branchId: string;
-  /** The branch's own effort weight (0–1) and its share once every branch's weight is scaled to 100%. */
+  /** The branch's stored effort share (0–1; shares sum to 1) and its share of the total as the model reads it. */
   effortShare: number;
   effortOfTotal: number;
   targetActive: number | null;
@@ -46,7 +46,7 @@ export function BranchPlanEditor({
     <div className="space-y-3">
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1">
-          <Label htmlFor={`effort-${branchId}`}>Effort weight (%)</Label>
+          <Label htmlFor={`effort-${branchId}`}>Share of effort (%)</Label>
           <Input
             id={`effort-${branchId}`}
             type="number"
@@ -74,7 +74,7 @@ export function BranchPlanEditor({
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-label-secondary text-footnote min-w-0 flex-1">
-          {summary} Weights are scaled so all branches add up to 100%.
+          {summary} The other branches share the rest in their current proportions.
         </p>
         <Button
           size="sm"

@@ -30,6 +30,7 @@ import {
   cancelProcurementOrder,
   createEmptyBranch,
   defenseOverview,
+  deleteBranch,
   demobiliseReserves,
   mobiliseReserves,
   orderProcurement,
@@ -289,6 +290,43 @@ describe("policy levers", () => {
     db.militaryBranch.rows.splice(0);
     expect(await seedStarterBranches(D(), "c1")).toMatchObject({ created: 3 });
     expect(db.militaryBranch.rows.every((b) => b.capital === 0 && b.activeDuty === 0)).toBe(true);
+  });
+});
+
+describe("effort shares stay normalised", () => {
+  const shares = () =>
+    Object.fromEntries(db.militaryBranch.rows.map((b) => [b.domain as string, b.effortShare as number]));
+  const total = () => db.militaryBranch.rows.reduce((sum, b) => sum + (b.effortShare as number), 0);
+
+  it("starts at the starter split, summing to 1", () => {
+    expect(total()).toBeCloseTo(1, 12);
+    expect(shares()).toEqual({ land: 0.55, sea: 0.25, air: 0.2 });
+  });
+
+  it("normalises a reset nation's existing branches (an army and a navy only)", async () => {
+    db = fakeDefenseDb([{ id: "c2", currentPopulation: 5e6, currentGdpPerCapita: 30_000 }]);
+    for (const domain of ["land", "sea"]) {
+      await db.militaryBranch.create({ data: { countryId: "c2", domain, name: domain } });
+    }
+    await syncDefense(D(), "c2");
+    expect(total()).toBeCloseTo(1, 12);
+    expect(shares().land).toBeCloseTo(0.55 / 0.8, 12);
+  });
+
+  it("keeps the sum at 1 when a branch is added, re-weighted or deleted", async () => {
+    const marines = await createEmptyBranch(D(), { countryId: "c1", domain: "marines", name: "Marines" });
+    expect(marines.effortShare).toBeCloseTo(0.1, 12);
+    expect(total()).toBeCloseTo(1, 12);
+    expect(shares().land).toBeCloseTo(0.55 * 0.9, 12);
+
+    await setBranchAllocation(D(), { countryId: "c1", branchId: branchOf("air").id as string, effortShare: 0.4 });
+    expect(total()).toBeCloseTo(1, 12);
+    expect(shares().air).toBeCloseTo(0.4, 12);
+    expect(shares().land / shares().sea).toBeCloseTo(0.55 / 0.25, 9);
+
+    await deleteBranch(D(), { countryId: "c1", branchId: marines.id });
+    expect(db.militaryBranch.rows.some((b) => b.id === marines.id)).toBe(false);
+    expect(total()).toBeCloseTo(1, 12);
   });
 });
 

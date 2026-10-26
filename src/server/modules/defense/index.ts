@@ -32,5 +32,5 @@ export { mobiliseReserves, demobiliseReserves } from "./defense.mobilisation";
 export { applyOperationReadiness, type OperationReadinessChange } from "./defense.operations";
 export { defenseOverview, publicDefenseOverview, branchDetail, type DefenseOverview } from "./defense.views";
 export { threatPictureFor } from "./defense.threat-picture";
-export { previewStarterForce, createEmptyBranch, seedStarterBranches } from "./defense.starter";
+export { previewStarterForce, createEmptyBranch, deleteBranch, seedStarterBranches } from "./defense.starter";
 export { scrapAsset } from "./defense.assets";

@@ -15,6 +15,7 @@ import {
 import { BRANCH_DOMAINS, FORCE_LIMITS } from "~/lib/military/force-structure";
 import {
   createEmptyBranch,
+  deleteBranch,
   previewStarterForce,
   seedStarterBranches,
   setBranchAllocation,
@@ -194,8 +195,7 @@ export const securityForceStructureRouter = createTRPCRouter({
     .input(z.object({ id: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       const branch = await loadWritableBranch(ctx, input.id);
-      await ctx.db.militaryBranch.delete({ where: { id: branch.id } });
-      return { id: branch.id };
+      return deleteBranch(ctx.db, { countryId: branch.countryId, branchId: branch.id });
     }),
 
   createMilitaryUnit: premiumMutationProcedure

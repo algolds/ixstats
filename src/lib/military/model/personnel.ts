@@ -77,6 +77,21 @@ export function normaliseEffort(efforts: readonly number[]): number[] {
 }
 
 /**
+ * Stored effort shares after branch `index` is set to `share`: the other branches split the rest in their current
+ * proportions (evenly when they have none), so the shares sum to 1. A lone branch takes everything.
+ */
+export function setEffortShare(efforts: readonly number[], index: number, share: number): number[] {
+  if (efforts.length <= 1) return efforts.map(() => 1);
+  const own = Math.min(1, Math.max(0, share));
+  const others = efforts.map((effort, i) => (i === index ? 0 : Math.max(0, effort)));
+  const rest = others.reduce((sum, effort) => sum + effort, 0);
+  return others.map((effort, i) => {
+    if (i === index) return own;
+    return rest > 0 ? (effort / rest) * (1 - own) : (1 - own) / (efforts.length - 1);
+  });
+}
+
+/**
  * How a national line splits across branches: labour by effort × (1 − α), capital by effort × α (the Cobb–Douglas
  * cost shares, so capital-intensive domains take more of procurement and less of personnel).
  */

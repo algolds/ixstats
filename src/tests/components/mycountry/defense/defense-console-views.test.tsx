@@ -164,7 +164,7 @@ describe("a branch card", () => {
   it("saves a plan with an effort weight and a strength cap", () => {
     const a = actions();
     render(<BranchCard row={row} state={ownerBranch()} effortOfTotal={0.6} expanded canEdit pending={false} actions={a} />);
-    fireEvent.change(screen.getByLabelText("Effort weight (%)"), { target: { value: "70" } });
+    fireEvent.change(screen.getByLabelText("Share of effort (%)"), { target: { value: "70" } });
     fireEvent.change(screen.getByLabelText("Strength cap (optional)"), { target: { value: "100000" } });
     fireEvent.click(screen.getByRole("button", { name: "Save plan" }));
     expect(a.savePlan).toHaveBeenCalledWith({ id: "b-land", effortShare: 0.7, targetActive: 100_000 });
