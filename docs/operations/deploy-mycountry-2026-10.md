@@ -196,8 +196,9 @@ change before enabling the job.
 
 ## 8. Turn the jobs on
 
-Add one name per full cycle to `CRON_ENABLED_JOBS` in `ecosystem.config.cjs` and run
-`pm2 restart ixstats-cron --update-env`; watch `pm2 logs ixstats-cron` and `/api/health` (CronRun rows) through one run
+Add one name per full cycle to `CRON_ENABLED_JOBS` in `ecosystem.config.cjs`, restart the runner from the ecosystem file,
+`( cd /ixwiki/public/projects/ixstats && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save` (a restart by name keeps the environment PM2 stored, so the runner would not read the new list), read back the list it got,
+`pm2 jlist | jq -r '.[] | select(.name == "ixstats-cron") | .pm2_env.CRON_ENABLED_JOBS'`, and watch `pm2 logs ixstats-cron` and `/api/health` (CronRun rows) through one run
 before adding the next. `cron-runner.mjs` exits on an unknown name (`resolveEnabledJobs`, `src/server/cron/jobs.ts`);
 `src/tests/architecture/runbook-cron-jobs.test.ts` checks that every name in this file and in the rose-garden list
 exists. Bring the old runner's jobs back first, in the rose-garden step 7 order, then the MyCountry jobs in this order:
@@ -250,5 +251,6 @@ If every row is already 2041 or later, skip the remap.
 ## Rollback
 
 Restore the step 1 backup if a data step went wrong (the a1/a2 conversions are not reversible in place). The schema
-step is additive and can stay. To stop a job, remove its name from `CRON_ENABLED_JOBS` and
-`pm2 restart ixstats-cron --update-env`.
+step is additive and can stay. To stop a job, remove its name from `CRON_ENABLED_JOBS`, run
+`( cd /ixwiki/public/projects/ixstats && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save` (not a restart by name, which
+keeps the old list) and read the list back with `pm2 jlist | jq -r '.[] | select(.name == "ixstats-cron") | .pm2_env.CRON_ENABLED_JOBS'`.

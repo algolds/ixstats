@@ -463,7 +463,10 @@ Do these in this order. The hub's SQL (step 5a) and the cron swap (before the de
    - **Trophy cards** mint one card per recorded Loreward place back to 2017 (about 2,800 places on the local clone),
      with no IxCredits, and give each to its winner when that wiki account has a verified IxWiki link; the rest wait
      unowned and are granted by the Lorewards sync once the account is linked.
-3. **Restart**, last: `pm2 restart ixstats-cron --update-env`, and the web app and `ixstats-ws` as in the deploy. The
+3. **Restart**, last: the cron runner from the ecosystem file,
+   `( cd /ixwiki/public/projects/ixstats && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save` (a restart by name keeps the environment PM2 stored, so the runner would not read the new list),
+   then read back the list it got, `pm2 jlist | jq -r '.[] | select(.name == "ixstats-cron") | .pm2_env.CRON_ENABLED_JOBS'`;
+   and the web app and `ixstats-ws` as in the deploy. The
    achievement sync at boot (`syncAchievements`) marks the 47 Legacy definitions inactive and creates the new ones; until
    it has run, `achievements.getAllWithStatus` also re-syncs when it finds the table behind the registry.
 
@@ -571,7 +574,9 @@ Full detail and player instructions: [`docs/systems/realms-eurth-onboarding.md`]
 
 The cron runner starts with no jobs. Before enabling the money jobs, size the backlog with the read-only queries in
 plan 327 (auctions, trades, crafting charges). Then add one name per full cycle to `CRON_ENABLED_JOBS` in
-`ecosystem.config.cjs` and run `pm2 restart ixstats-cron --update-env`:
+`ecosystem.config.cjs`, restart the runner from the ecosystem file,
+`( cd /ixwiki/public/projects/ixstats && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save` (a restart by name keeps the environment PM2 stored, so the runner would not read the new list), and read back the list it got,
+`pm2 jlist | jq -r '.[] | select(.name == "ixstats-cron") | .pm2_env.CRON_ENABLED_JOBS'`:
 
 `wiki-recentchanges` → `lore-card-generation` → `card-values` → `sports-season-advance` → `national-issues` →
 `politics-drift` → `diplomatic-drift` → `elections` → `trade-expiry` → `auction-completion` →

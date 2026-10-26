@@ -163,8 +163,9 @@ release's.
 ### A7. Cron jobs
 
 `cron-runner.mjs` (PM2 `ixstats-cron`) runs only the jobs named in `CRON_ENABLED_JOBS` (comma-separated, or `*`).
-Add new jobs one per cycle, edit `ecosystem.config.cjs`, then `pm2 restart ixstats-cron --update-env` and read its
-log. The job table is `src/server/cron/jobs.ts` (21 jobs, listed in
+Add new jobs one per cycle, edit `ecosystem.config.cjs`, then restart the runner from the ecosystem file,
+`( cd /ixwiki/public/projects/ixstats && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save` (a restart by name keeps the environment PM2 stored, so the runner would not read the new list), read back the list it got,
+`pm2 jlist | jq -r '.[] | select(.name == "ixstats-cron") | .pm2_env.CRON_ENABLED_JOBS'`, and read its log. The job table is `src/server/cron/jobs.ts` (21 jobs, listed in
 [events.md](../reference/events.md#scheduled--batch-jobs)); the order to enable them is in the
 [September runbook, step 7](deploy-rose-garden-2026-09.md#7-turn-cron-jobs-on-one-per-cycle), ending with
 `thinkpages-trending` → `achievements-evaluate` → `stat-progression`. After each change, check the job's last run in

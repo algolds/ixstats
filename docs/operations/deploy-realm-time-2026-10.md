@@ -171,8 +171,9 @@ No realm-time SQL is left for after the code: D1, first planned here, runs in st
 
 ## 7. Cron back on
 
-Add one name per full cycle to `CRON_ENABLED_JOBS` in `ecosystem.config.cjs`, run
-`pm2 restart ixstats-cron --update-env`, and watch `pm2 logs ixstats-cron` and `/api/health` (CronRun rows) through
+Add one name per full cycle to `CRON_ENABLED_JOBS` in `ecosystem.config.cjs`, restart the runner from the ecosystem file,
+`( cd /ixwiki/public/projects/ixstats && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save` (a restart by name keeps the environment PM2 stored, so the runner would not read the new list), read back the list it got,
+`pm2 jlist | jq -r '.[] | select(.name == "ixstats-cron") | .pm2_env.CRON_ENABLED_JOBS'`, and watch `pm2 logs ixstats-cron` and `/api/health` (CronRun rows) through
 one run before adding the next. `cron-runner.mjs` exits on an unknown name; the runbook test checks every name in the
 line below. Bring back the rose-garden list first (rose-garden step 7), then the MyCountry jobs in MyCountry step 8's
 order, with these realm-time notes:
@@ -244,6 +245,7 @@ cooldowns. To read the clocks: `SELECT id, slug, settings->'clock' FROM realms;`
   restore the dump into an emptied `ixstats` database (`psql` for a plain dump, `pg_restore` for a custom-format one),
   check out the pre-realm-time commit and run the deploy script again. A partial window (some of step 4 applied, no
   code deploy) is restored the same way.
-- **After the code, a job misbehaves:** remove its name from `CRON_ENABLED_JOBS` and
-  `pm2 restart ixstats-cron --update-env`. A realm clock set wrong is fixed in Manage → Time (its speed, or a jump),
+- **After the code, a job misbehaves:** remove its name from `CRON_ENABLED_JOBS`, run
+  `( cd /ixwiki/public/projects/ixstats && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save` (not a restart by name,
+  which keeps the old list) and read the list back with `pm2 jlist | jq -r '.[] | select(.name == "ixstats-cron") | .pm2_env.CRON_ENABLED_JOBS'`. A realm clock set wrong is fixed in Manage → Time (its speed, or a jump),
   never by editing `settings.clock` in SQL while the app runs (each process caches clocks for 30 seconds).

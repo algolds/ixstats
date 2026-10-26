@@ -340,7 +340,9 @@ release is checked out on the server (plan A's step 1; the running app is not to
 4. **Deploy.** `scripts/deploy-production.sh`, with plan A's steps (plan B adds no SQL).
 
 5. **Cron.** The deploy script's `pm2 startOrReload ecosystem.config.cjs --update-env` starts the cron runner with the
-   list from step 2 (if it did not, `pm2 restart ixstats-cron --update-env`). The OOL backfill runs hourly at
+   list from step 2 (if it did not,
+   `( cd /ixwiki/public/projects/ixstats && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save`, not a restart by name, which keeps the old list; read it back with
+   `pm2 jlist | jq -r '.[] | select(.name == "ixstats-cron") | .pm2_env.CRON_ENABLED_JOBS'`). The OOL backfill runs hourly at
    `20 * * * *` (the current year's OOL page, then it settles what it wrote); the full sync runs at 06:00 UTC. An old
    name left in the list is only reported as unknown.
 
