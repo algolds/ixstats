@@ -36,6 +36,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { useCanEdit } from "~/context/MyCountryEditModeContext";
 import { formatCurrency } from "~/lib/utils/format-utils";
 import { TARGETED_OPERATIONS, operationDailyCost, type OperationType } from "~/lib/military/combat";
+import { operationTargets } from "~/lib/military/operation-rules";
 import { useCountryData } from "~/components/mycountry/shared/primitives/CountryDataProvider";
 
 interface DeploymentWizardProps {
@@ -154,16 +155,7 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
   const allAssets =
     branches?.flatMap((b) => (b.assets ?? []).map((a) => ({ ...a, branchName: b.name }))) ?? [];
 
-  const targetCountries = relationships
-    ? [
-        ...new Map(
-          relationships.map((r) => [
-            r.targetCountryId,
-            { id: r.targetCountryId, name: r.targetCountry ?? r.targetCountryId },
-          ])
-        ).values(),
-      ]
-    : [];
+  const targetCountries = operationTargets(relationships ?? []);
 
   // Cost estimate: paid from the Defense budget's O&M line (assets add their upkeep on the server).
   const estimatedDailyCost = operationDailyCost({

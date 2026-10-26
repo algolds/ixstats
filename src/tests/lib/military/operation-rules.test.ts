@@ -1,6 +1,11 @@
 /** @jest-environment node */
 /** P1-22 / realm time D2a: operations are rated on the realm clock; cooldown windows follow its speed. */
-import { ixDaysAgo, ixDaysLater, operationSuccessRating } from "~/lib/military/operation-rules";
+import {
+  ixDaysAgo,
+  ixDaysLater,
+  operationSuccessRating,
+  operationTargets,
+} from "~/lib/military/operation-rules";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -31,5 +36,21 @@ describe("realm-clock windows", () => {
   it("never closes a window on a paused realm", () => {
     expect(ixDaysAgo(30, { multiplier: 0 }, now).getTime()).toBe(0);
     expect(ixDaysLater(now, 30, { multiplier: 0 })).toBeNull();
+  });
+});
+
+describe("operationTargets", () => {
+  it("offers each related nation once, and none of another realm", () => {
+    expect(
+      operationTargets([
+        { targetCountryId: "a", targetCountry: "Alpha", sameRealm: true },
+        { targetCountryId: "a", targetCountry: "Alpha", sameRealm: true },
+        { targetCountryId: "b", targetCountry: "Bravoland", sameRealm: false },
+        { targetCountryId: "c", targetCountry: null, sameRealm: true },
+      ])
+    ).toEqual([
+      { id: "a", name: "Alpha" },
+      { id: "c", name: "c" },
+    ]);
   });
 });

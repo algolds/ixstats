@@ -59,3 +59,18 @@ export function operationSuccessRating(input: {
   if (share >= 1) return "success";
   return share >= 0.5 ? "partial" : "failure";
 }
+
+/**
+ * The nations an operation may target, from the caller's relations: one per nation, only those in the caller's realm
+ * (relations made before the cross-realm rule remain, but the server refuses a target in another realm).
+ */
+export function operationTargets(
+  relations: readonly { targetCountryId: string; targetCountry?: string | null; sameRealm: boolean }[]
+): { id: string; name: string }[] {
+  const byId = new Map<string, { id: string; name: string }>();
+  for (const r of relations) {
+    if (r.sameRealm && !byId.has(r.targetCountryId))
+      byId.set(r.targetCountryId, { id: r.targetCountryId, name: r.targetCountry ?? r.targetCountryId });
+  }
+  return [...byId.values()];
+}

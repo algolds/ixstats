@@ -180,6 +180,20 @@ it("security.getPvPTargets lists only related player nations", async () => {
   );
 });
 
+it("security.getPvPTargets and getPvNPCTargets leave out related nations of another realm", async () => {
+  db.user.findUnique.mockResolvedValue({ id: "u_1", countryId: "country_1", country: { realmId: "default" } });
+  db.diplomaticRelation.findMany.mockResolvedValue([
+    { country1: "country_1", country2: "country_2" },
+    { country1: "country_4", country2: "country_1" },
+  ]);
+  db.country.findMany.mockResolvedValue([
+    { id: "country_2", name: "Defenderland", realmId: "default" },
+    { id: "country_4", name: "Elsewhere", realmId: "advertland" },
+  ]);
+  expect(await conflicts("challenger").getPvPTargets()).toEqual([{ id: "country_2", name: "Defenderland" }]);
+  expect(await conflicts("challenger").getPvNPCTargets()).toEqual([{ id: "country_2", name: "Defenderland" }]);
+});
+
 it("security.getConflicts shows an unanswered challenge past its window as expired", async () => {
   db.militaryConflict.findMany.mockResolvedValue([
     { ...proposed(30), initiator: null, defender: null },

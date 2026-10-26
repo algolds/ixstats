@@ -34,6 +34,7 @@ import {
 } from "~/server/modules/combat";
 import { syncDefense } from "~/server/modules/defense";
 import { assertRealmsMatch } from "~/server/shared/same-realm-guard";
+import { nationsInRealm } from "~/lib/realms/same-realm";
 import { clockForCountry, type RealmClockReader } from "~/server/shared/realm-time";
 import {
   EXPIRED_PVP_DATA,
@@ -113,10 +114,14 @@ const PVP_CHALLENGE_HREF = "/mycountry/defense?tab=operations";
  * Nations the caller has diplomatic relations with: player-owned ones (PvP challenge targets) or
  * unclaimed ones (PvNPC strike targets).
  */
+/**
+ * Related nations of the caller's realm (player-owned or unclaimed): relations made before the cross-realm rule still
+ * exist, but a nation of another realm is no target (the commit would refuse it).
+ */
 async function relatedCountries(db: PrismaClient, clerkUserId: string, playerOwned: boolean) {
   const userProfile = await db.user.findUnique({
     where: { clerkUserId },
-    select: { countryId: true },
+    select: { countryId: true, country: { select: { realmId: true } } },
   });
   const countryId = userProfile?.countryId;
   if (!countryId) return [];
@@ -130,11 +135,12 @@ async function relatedCountries(db: PrismaClient, clerkUserId: string, playerOwn
   ];
   if (partnerIds.length === 0) return [];
 
-  return db.country.findMany({
+  const partners = await db.country.findMany({
     where: { id: { in: partnerIds }, ownerUserId: playerOwned ? { not: null } : null },
-    select: { id: true, name: true },
+    select: { id: true, name: true, realmId: true },
     orderBy: { name: "asc" },
   });
+  return nationsInRealm(partners, userProfile.country?.realmId ?? null).map(({ id, name }) => ({ id, name }));
 }
 
 /** The caller's nation, or UNAUTHORIZED. */
