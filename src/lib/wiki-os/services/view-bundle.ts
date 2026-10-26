@@ -36,6 +36,11 @@ export const viewBundleSchema = z.object({
   noticesHtml: z.string().nullable(),
   toc: z.array(tocEntrySchema),
   rendererVersion: z.literal(RENDERER_VERSION),
+  /**
+   * When renders of the page first could not show a file (ISO time; see `recordMediaError`). Absent on a clean render,
+   * and on bundles stored before it was recorded. Not part of the shape a render builds, so it needs no new version.
+   */
+  mediaErrorSince: z.string().optional(),
 });
 
 export type ViewBundle = z.infer<typeof viewBundleSchema>;
@@ -87,37 +92,60 @@ export function describeRenderProblem(rawHtml: string, wikitext: string): string
  * link's `href` goes to `Special:Upload&wpDestFile=`, or "Error creating thumbnail"). Classic's lookup of a Commons file
  * can fail for one render and work for the next, while its own page keeps the images. Markup only: each is looked for
  * inside a tag's attribute, so page text that quotes `wpDestFile=` or `mw:Error` never matches (the text's `<` is
- * escaped).
+ * escaped). `[^<>]*`, not `[^>]*`: an attribute value may hold raw `<`, and each one must not rescan to the next `>`.
  */
-const MEDIA_ERROR = /<[a-z][^>]*\s(?:typeof="[^"]*\bmw:Error\b|href="[^"]*[?&;]wpDestFile=)/i;
+const MEDIA_ERROR = /<[a-z][^<>]*\s(?:typeof="[^"]*\bmw:Error\b|href="[^"]*[?&;]wpDestFile=)/i;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-/** A first render with a media error (made within a day of its revision) is rendered again after this long. */
+/** A first broken render (the page could not show a file since less than a day) is rendered again after this long. */
 export const MEDIA_ERROR_RERENDER_MS = DAY_MS;
-/** A render with a media error that was already a later render is rendered again after this long. */
+/** A re-render that still could not show the file is rendered again after this long. */
 export const MEDIA_ERROR_BACKOFF_MS = 7 * DAY_MS;
 
+/** Whether MediaWiki could not show a file in this bundle (`MEDIA_ERROR` in any HTML part). */
+function hasMediaError(bundle: ViewBundle): boolean {
+  return [bundle.bodyHtml, bundle.infoboxHtml, bundle.noticesHtml].some(
+    (html) => html !== null && MEDIA_ERROR.test(html)
+  );
+}
+
+const mediaErrorRecordSchema = z.object({ mediaErrorSince: z.string() });
+
 /**
- * Whether a current bundle with a media error (`MEDIA_ERROR`) is due another render. A render made within a day of the
- * revision it renders (`revisionAt`) is the page's first: a failed Commons lookup is likely passing, so it is due a
- * day after it was made. A later render that still could not show the file (or one whose revision time is unknown) is
- * likely a file that is really missing: due a week after it was made. The new render resets `htmlSyncedAt`, so a
- * missing file costs one render a week, never a loop.
+ * `bundle` (a new render, stored at `renderedAt`) with the record of since when the page could not show a file: none
+ * for a clean render; the earlier time when the page's previous bundle (`previous`, the stored JSON, any version)
+ * already had one; else `renderedAt`, this render being the first broken one.
+ */
+export function recordMediaError(
+  bundle: ViewBundle,
+  previous: unknown,
+  renderedAt: Date
+): ViewBundle {
+  if (!hasMediaError(bundle)) return bundle;
+  const earlier = mediaErrorRecordSchema.safeParse(previous);
+  const since = earlier.success ? earlier.data.mediaErrorSince : renderedAt.toISOString();
+  return { ...bundle, mediaErrorSince: since };
+}
+
+/**
+ * Whether a current bundle with a media error (`MEDIA_ERROR`) is due another render. A first broken render (the page
+ * could not show the file since less than a day before this render, or a bundle stored before the record) is due a day
+ * after it was made: a failed Commons lookup is likely passing. A re-render that still could not show it is likely a
+ * file that is really missing: due a week after it was made. The new render resets `htmlSyncedAt`, so a missing file
+ * costs one render a week, never a loop. The record is the bundle's own (`recordMediaError`), never the revision time:
+ * an imported revision carries MediaWiki's time, and a renderer bump re-renders old revisions.
  */
 export function mediaErrorRerenderDue(
   bundle: ViewBundle,
   htmlSyncedAt: Date | null,
-  revisionAt: Date | null,
   now = Date.now()
 ): boolean {
   if (!htmlSyncedAt) return false;
   const renderedAt = htmlSyncedAt.getTime();
-  const firstRender = revisionAt !== null && renderedAt - revisionAt.getTime() <= DAY_MS;
-  const wait = firstRender ? MEDIA_ERROR_RERENDER_MS : MEDIA_ERROR_BACKOFF_MS;
-  if (now - renderedAt < wait) return false;
-  return [bundle.bodyHtml, bundle.infoboxHtml, bundle.noticesHtml].some(
-    (html) => html !== null && MEDIA_ERROR.test(html)
-  );
+  const since = bundle.mediaErrorSince ? Date.parse(bundle.mediaErrorSince) : Number.NaN;
+  const firstBroken = Number.isNaN(since) || renderedAt - since < DAY_MS;
+  const wait = firstBroken ? MEDIA_ERROR_RERENDER_MS : MEDIA_ERROR_BACKOFF_MS;
+  return now - renderedAt >= wait && hasMediaError(bundle);
 }
 
 /** The bundle and freshness of an article, and whether an earlier renderer version built the bundle. */
@@ -158,17 +186,14 @@ function resanitizeViewBundle(bundle: ViewBundle): ViewBundle | null {
 
 /**
  * The bundle and freshness of an article. A bundle of this renderer version is returned as it is (`outdated` when
- * `mediaErrorRerenderDue`, given `revisionAt`, the time of the page's current revision). One
+ * `mediaErrorRerenderDue`). One
  * that only differs in its renderer version (an older transform or sanitizer built it) is returned
  * `outdated`, re-sanitized by the current sanitizer so an older bundle never gets past a tightened rule, and with
  * its old profile links already pointing at the current pages while the page waits to be rendered again.
  * Null when the article has no bundle, or one whose shape is not a bundle's at all, or one the sanitizer
  * throws on, or one too big or too deep to sanitize on a read (resanitizeViewBundle).
  */
-export async function loadViewBundle(
-  articleId: string,
-  revisionAt: Date | null
-): Promise<LoadedViewBundle | null> {
+export async function loadViewBundle(articleId: string): Promise<LoadedViewBundle | null> {
   const row = await db.wikiArticle.findUnique({
     where: { id: articleId },
     select: { renderedView: true, htmlSyncedAt: true },
@@ -177,7 +202,7 @@ export async function loadViewBundle(
 
   const current = viewBundleSchema.safeParse(row.renderedView);
   if (current.success) {
-    const outdated = mediaErrorRerenderDue(current.data, row.htmlSyncedAt, revisionAt);
+    const outdated = mediaErrorRerenderDue(current.data, row.htmlSyncedAt);
     return { bundle: current.data, htmlSyncedAt: row.htmlSyncedAt, outdated };
   }
   const outdated = outdatedViewBundleSchema.safeParse(row.renderedView);

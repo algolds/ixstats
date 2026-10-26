@@ -1628,9 +1628,10 @@ only once every page has rendered; how fast that happens depends on which kind o
 
 **A render that could not show a file** (`mw:Error` in a media element's `typeof`: a missing-file link whose `href` goes
 to `Special:Upload` with `wpDestFile=`, or "Error creating thumbnail") is outdated too once it is due, but only when a
-reader opens the page: it is served at once, marked stale, while a background render replaces it. A first render (made
-within a day of the page's current revision) is due a day after it was made; a later render that still could not show
-the file, or one whose revision time is unknown, a week after. Classic's own lookup of a Commons file can fail for one
+reader opens the page: it is served at once, marked stale, while a background render replaces it. The bundle records since
+when the page could not show a file (`mediaErrorSince`): a first broken render (broken since less than a day before it,
+or a bundle stored before this release, which has no record) is due a day after it was made; a re-render that still
+could not show the file a week after; a clean render drops the record. Classic's own lookup of a Commons file can fail for one
 render and work for the next, and this heals the pages whose images came out broken. Neither `wiki-render-stale`'s scan
 nor the SQL below sees these pages (both compare renderer versions only), so they never count in `outdated`. A file that
 is really missing costs one render a week per page read, never a loop. Only markup matches: page text that quotes

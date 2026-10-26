@@ -161,9 +161,12 @@ ratchet rule:
   could not show a file (`mw:Error` in a media element's `typeof`: a missing-file link whose `href` goes to
   `Special:Upload&wpDestFile=`, or "Error creating thumbnail") counts as outdated once it is due, so a reader gets it at
   once, marked stale, while a background render replaces it. Classic's own lookup of a Commons file can fail for one
-  render and work for the next. A first render (made within a day of the revision it renders, the page's current
-  revision time) is due a day after it was made; a later render that still could not show the file, or one whose
-  revision time is unknown, is due a week after. It fires only on a read: `wiki-render-stale`'s scan compares renderer
+  render and work for the next. The render records in the bundle since when the page could not show a file
+  (`mediaErrorSince`, `recordMediaError`): a first broken render records its own time, a re-render still broken keeps
+  the earlier time, and a clean render drops it. A first broken render (broken since less than a day before it, or a
+  bundle stored before the record) is due a day after it was made; a re-render that still could not show the file is
+  due a week after. The revision time is never used: imported revisions carry MediaWiki's times, and a renderer bump
+  re-renders old revisions. It fires only on a read: `wiki-render-stale`'s scan compares renderer
   versions only and never finds these pages. A file that is really missing costs one render a week per page read,
   never a loop. Only markup matches (the two attributes inside a tag), so page text that quotes `wpDestFile=` or
   `mw:Error` never does.

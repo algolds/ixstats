@@ -37,6 +37,7 @@ import {
   buildViewBundle,
   describeRenderProblem,
   isBlanked,
+  recordMediaError,
 } from "./view-bundle";
 
 export {
@@ -189,6 +190,8 @@ export async function renderArticle(articleId: string): Promise<RenderResult> {
         contentHtml: true,
         // tells a page an edit blanked from one that only has stored HTML (see `isBlanked`)
         revisions: CURRENT_REVISION,
+        // carries over since when the page could not show a file (see `recordMediaError`)
+        renderedView: true,
       },
     });
     if (!article) return FAILED;
@@ -199,12 +202,17 @@ export async function renderArticle(articleId: string): Promise<RenderResult> {
     const problem = describeRenderProblem(rendered.html, article.wikitext);
     if (problem) console.warn(`[WikiOS:render] "${article.title}": ${problem}; stored anyway.`);
 
+    const renderedAt = new Date();
     const stored = await db.wikiArticle.updateMany({
       where: { id: articleId, wikitext: article.wikitext },
       data: {
         contentHtml: rendered.html,
-        renderedView: buildViewBundle(rendered.html),
-        htmlSyncedAt: new Date(),
+        renderedView: recordMediaError(
+          buildViewBundle(rendered.html),
+          article.renderedView,
+          renderedAt
+        ),
+        htmlSyncedAt: renderedAt,
       },
     });
     if (stored.count > 0) {
