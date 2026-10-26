@@ -10,6 +10,7 @@ import {
 } from "./realm-calendar";
 import {
   formatRealmDate,
+  formatRealmSpeed,
   realmClockNow,
   type RealmCalendar,
   type RealmClockReader,
@@ -33,6 +34,22 @@ export function formatClockDate(
   return typeof clockMs === "number" && Number.isFinite(clockMs)
     ? formatRealmDate(clockMs, reader.calendar)
     : fallback;
+}
+
+/** The usual speed (Ixnay's): a date line names the speed only when it differs. */
+const USUAL_SPEED = 2;
+
+/**
+ * The nation's date line: "30 Emberwane 2043 AE · ×6", "7 July 2042 · Paused", or the bare date at the usual ×2;
+ * `CLOCK_PENDING` while the clock loads.
+ */
+export function formatNationDateLine(
+  clockMs: number | null,
+  reader: Pick<RealmClockReader, "calendar" | "multiplier"> | null
+): string {
+  if (!reader || clockMs === null) return CLOCK_PENDING;
+  const date = formatRealmDate(clockMs, reader.calendar);
+  return reader.multiplier === USUAL_SPEED ? date : `${date} · ${formatRealmSpeed(reader.multiplier)}`;
 }
 
 /**

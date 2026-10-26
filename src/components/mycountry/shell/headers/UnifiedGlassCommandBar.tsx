@@ -13,6 +13,7 @@ import { CountryIdentityStrip } from "~/components/country-profile/CountryIdenti
 import { FlagTile } from "~/components/country-profile/HeroMedia";
 import { CountryOwnerRibbonRack } from "~/components/achievements/FloatingRibbonRack";
 import { stripHtml } from "~/lib/utils/sanitize-html";
+import { NationDateLine } from "~/components/realms/NationDateLine";
 import { EditMorphButton } from "./EditMorphButton";
 import { FlagBanner } from "./FlagBanner";
 
@@ -106,6 +107,7 @@ export function UnifiedGlassCommandBar({
             </p>
           )}
           {governmentType && <p className="text-footnote">{humanizeEnum(governmentType)}</p>}
+          <NationDateLine className="text-footnote" />
         </div>
       }
       actions={({ collapsed }) => (
