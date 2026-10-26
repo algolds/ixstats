@@ -3,37 +3,14 @@
  * for Docker builds.
  */
 
+import { resolveBasePath } from "./scripts/setup/base-path.cjs";
+
 // Skip env validation in next.config.js to avoid TypeScript import issues
 // The env validation will be handled by the application at runtime
 // This is a common pattern when using TypeScript env files with JavaScript config files
 
-// Normalize base path so we can deploy under https://ixwiki.com/projects/ixstates
-const normalizeBasePath = (value) => {
-  if (!value) {
-    return "";
-  }
-  let normalized = value.startsWith("/") ? value : `/${value}`;
-  if (normalized.length > 1 && normalized.endsWith("/")) {
-    normalized = normalized.slice(0, -1);
-  }
-  return normalized;
-};
-
-const resolveBasePath = () => {
-  // If explicitly building for IxWorld standalone (maps.ixwiki.com), ALWAYS use empty base path
-  if (process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true") {
-    return "";
-  }
-
-  const hasBasePathEnv = Object.prototype.hasOwnProperty.call(process.env, "BASE_PATH");
-  const rawBasePath = hasBasePathEnv
-    ? process.env.BASE_PATH
-    : process.env.NODE_ENV === "production"
-      ? "/projects/ixstates"
-      : "";
-  return normalizeBasePath(rawBasePath);
-};
-
+// The base path (deploy under https://ixwiki.com/projects/ixstates): the rule is shared with the stylesheets' PostCSS
+// pass (scripts/setup/postcss-base-path-urls.cjs), so their font URLs carry the same one.
 const basePath = resolveBasePath();
 const assetPrefix = basePath || undefined;
 

@@ -612,12 +612,14 @@ well, and every later IxStates release carries its WikiOS code the same way.
 above. The proof check has none of its own: it reads only, and its lease is given back on a refusal and released after
 the PM2 reload.
 
-## 2a. Fonts and uploads at the site root (read-only, after step 2)
+## 2a. Fonts under the base path, uploads at the site root (read-only, after step 2)
 
-Some of IxStates' files are asked for at the root of ixwiki.com, without the base path: the reader's fonts
-(`src/styles/typography.css` and the font preloads load `/fonts/…`), and uploaded flags and pictures where a page still
-shows the stored path (`/images/uploads/…`, kept without the base path). This release gives the WikiOS pages' uploads the
-base path, but the fonts still load from the root. Check from the server that both answer (read-only).
+The reader's fonts load under the base path now: the stylesheets' `url("/fonts/…")` (`src/styles/typography.css`) get
+it from a PostCSS pass at build time (`scripts/setup/postcss-base-path-urls.cjs`, the same rule as next.config.js's
+`basePath`), and the font preloads ask for the same URLs, so they are `/projects/ixstates/fonts/…`, served by IxStates
+from its `public/fonts`, and the root `/fonts/` is no longer asked for. Uploaded flags and pictures where a page still
+shows the stored path (`/images/uploads/…`, kept without the base path) are still asked for at the root of ixwiki.com.
+Check from the server that both answer (read-only).
 
 This step runs before 4b lets the server's own requests through Cloudflare, so ask the local nginx directly:
 `--resolve` sends `ixwiki.com` to `127.0.0.1` and skips Cloudflare. `-k` is there because the origin's certificate may
@@ -630,7 +632,7 @@ UPDIR="$IX/public/images/uploads"          # or the UPLOAD_DIR value the grep pr
 UP=$(ls -p "$UPDIR" 2>/dev/null | grep -v / | head -1); echo "upload: '$UP'"
 [ -n "$UP" ] || echo "STOP: no upload file found in $UPDIR"
 LOCAL='--resolve ixwiki.com:443:127.0.0.1 -k'
-curl -s -o /dev/null $LOCAL -A IxStats-Builder -w '%{http_code} %{content_type}\n' 'https://ixwiki.com/fonts/Schibsted%20Grotesk-500.ttf'
+curl -s -o /dev/null $LOCAL -A IxStats-Builder -w '%{http_code} %{content_type}\n' 'https://ixwiki.com/projects/ixstates/fonts/Schibsted%20Grotesk-500.ttf'
 curl -s -o /dev/null $LOCAL -A IxStats-Builder -w '%{http_code} %{content_type}\n' "https://ixwiki.com/images/uploads/$UP"
 ```
 
@@ -642,10 +644,15 @@ first, and `200` with an `image/…` type for the second.
 - **`000`** (nothing listens for `ixwiki.com` on the server's port 443, so the request never left): run the two `curl`
   lines again without `$LOCAL`, through Cloudflare. There a `403` with `text/html` is Cloudflare's challenge or the bot
   defense, not missing files: finish step 4b first, then repeat this check.
-- **A `404`, or a `text/html` answer** (classic MediaWiki's page, or a redirect to it): stop and ask the owner. The usual
-  fix is an nginx `location` in the `ixwiki.com` server block that serves the checkout's files, for example
-  `location ^~ /fonts/ { alias /ixwiki/public/projects/ixstats/public/fonts/; }` (and the same for `/images/uploads/`).
-  The owner decides: do not edit nginx for this yourself.
+- **A `404`, or a `text/html` answer, for the font**: IxStates did not serve it (`$IX/public/fonts` is missing the file,
+  or nginx does not send `/projects/ixstates/` to IxStates). Stop and ask the owner.
+- **The stylesheet** must ask for the same URL: in the browser, an IxStates page's stylesheet has `@font-face` URLs that
+  start `/projects/ixstates/fonts/`, and the network tab shows no request to the root `/fonts/`. A root URL there means
+  the build ran without the base path (no `BASE_PATH`, or the IxWorld standalone flag): stop and ask the owner.
+- **A `404`, or a `text/html` answer, for the upload** (classic MediaWiki's page, or a redirect to it): stop and ask the
+  owner. The usual fix is an nginx `location` in the `ixwiki.com` server block that serves the checkout's files, for
+  example `location ^~ /images/uploads/ { alias /ixwiki/public/projects/ixstats/public/images/uploads/; }`. The owner
+  decides: do not edit nginx for this yourself.
 
 The `schibsted-punct-*.woff2` fonts are tracked in git now, so the deploy carries them: they no longer need copying by
 hand.
