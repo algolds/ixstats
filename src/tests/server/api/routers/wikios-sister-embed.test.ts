@@ -67,11 +67,18 @@ describe("wikios.sisterEmbed", () => {
       section: "History",
     });
     await caller().sisterEmbed({ wiki: "iiwiki", title: "Caphiria", mode: "section" });
+    await caller().sisterEmbed({
+      wiki: "iiwiki",
+      title: "Caphiria",
+      mode: "section",
+      section: " Rule ",
+    });
 
     expect(embed.mock.calls.map((call) => call[0])).toEqual([
       { wiki: "althistory", title: "Main Page", mode: "section", section: "History" },
       { wiki: "iiwiki", title: "Caphiria", mode: "card", section: null },
       { wiki: "iiwiki", title: "Caphiria", mode: "page", section: null },
+      { wiki: "iiwiki", title: "Caphiria", mode: "section", section: "Rule" },
     ]);
   });
 
@@ -83,11 +90,20 @@ describe("wikios.sisterEmbed", () => {
       { wiki: "iiwiki", title: "" },
       { wiki: "iiwiki", title: "Caphiria", mode: "gallery" },
       { wiki: "iiwiki", title: "Caphiria", mode: "section", section: "x".repeat(256) },
+      { wiki: "iiwiki", title: "Caphiria", mode: "section", section: "" },
+      { wiki: "iiwiki", title: "Caphiria", mode: "section", section: "   " },
     ];
     for (const input of bad) {
       expect(await codeOf(caller().sisterEmbed(input as never))).toBe("BAD_REQUEST");
     }
     expect(embed).not.toHaveBeenCalled();
+  });
+
+  it("hands an unrenderable page back as it is", async () => {
+    embed.mockResolvedValue({ status: "unrenderable" });
+    expect(await caller().sisterEmbed({ wiki: "iiwiki", title: "Caphiria" })).toEqual({
+      status: "unrenderable",
+    });
   });
 
   it("an unreachable wiki is SERVICE_UNAVAILABLE", async () => {

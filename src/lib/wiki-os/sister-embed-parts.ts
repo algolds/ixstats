@@ -1,6 +1,6 @@
 /**
  * sister-embed-parts.ts: the parts of a rendered sister page (sister-render-service.ts) a `Template:Sister` embed can
- * show: one section (`sectionOf`), a card (`cardOf`), and a size cap for any HTML part (`trimHtml`).
+ * show: one section (`sectionOf`, `renderSectionOf`), a card (`cardOf`), and a size cap for any HTML part (`trimHtml`).
  *
  * Server only: it parses with jsdom (`parseInertOnServer`). The input is the render service's sanitized HTML (ids
  * prefixed `sister-`, images through the media proxy); what this returns is sanitized again for embedding by the caller.
@@ -15,15 +15,19 @@ const HEADING_TAG = /^H([2-6])$/;
 const MAX_SUMMARY_LENGTH = 300;
 const ELLIPSIS = "…";
 
-/** `value` decoded (percent-encoding), `_` as space, whitespace collapsed, lowercased: how headings are compared. */
-function headingKey(value: string): string {
+/**
+ * `value` decoded (percent-encoding), `_` as space, whitespace collapsed, lowercased: how headings are compared (and
+ * how the embed cache keys a section). Null when nothing is left, so a blank name never matches a heading with no text.
+ */
+export function headingKey(value: string): string | null {
   let decoded = value;
   try {
     decoded = decodeURIComponent(value);
   } catch {
-    // not percent-encoded: compared as written
+    // not percent-encoding: compared as written
   }
-  return decoded.replace(/_/g, " ").replace(/\s+/g, " ").trim().toLowerCase();
+  const key = decoded.replace(/_/g, " ").replace(/\s+/g, " ").trim().toLowerCase();
+  return key === "" ? null : key;
 }
 
 /** The heading element a top-level node is (bare, or inside `div.mw-heading`), or null. */
@@ -38,41 +42,75 @@ function headingIn(node: ChildNode): Element | null {
 
 const levelOf = (heading: Element): number => Number(HEADING_TAG.exec(heading.tagName)?.[1]);
 
-/** Whether `heading` is the one named `key` (`headingKey`), by its anchor or its text. */
-function isNamed(heading: Element, key: string): boolean {
+/** The names a heading answers to (`headingKey`): its anchor (without the render's `sister-` prefix) and its text. */
+function namesOf(heading: Element): string[] {
   const id = heading.id.startsWith(SISTER_ID_PREFIX)
     ? heading.id.slice(SISTER_ID_PREFIX.length)
     : heading.id;
-  return (id !== "" && headingKey(id) === key) || headingKey(heading.textContent ?? "") === key;
+  return [headingKey(id), headingKey(heading.textContent ?? "")].filter(
+    (name): name is string => name !== null
+  );
 }
 
-/** How a node serializes. */
-const htmlOf = (node: ChildNode): string =>
-  node.nodeType === 1 ? (node as Element).outerHTML : (node.textContent ?? "");
+/** How a node serializes (the HTML serialization of an element, a text or a comment; anything else is nothing). */
+function htmlOf(node: ChildNode): string {
+  if (node.nodeType === 1) return (node as Element).outerHTML;
+  const text = node.textContent ?? "";
+  if (node.nodeType === 8) return `<!--${text}-->`;
+  if (node.nodeType !== 3) return "";
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/\u00a0/g, "&nbsp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+/** A page's top level read once: each node's HTML, and where its headings are, their level and names. */
+interface SectionIndex {
+  nodes: string[];
+  headings: Array<{ at: number; level: number; names: string[] }>;
+}
+
+function sectionIndexOf(html: string): SectionIndex {
+  const nodes = Array.from(parseInertOnServer(html).content.childNodes);
+  const headings = nodes.flatMap((node, at) => {
+    const heading = headingIn(node);
+    return heading ? [{ at, level: levelOf(heading), names: namesOf(heading) }] : [];
+  });
+  return { nodes: nodes.map(htmlOf), headings };
+}
+
+function sectionIn(index: SectionIndex, heading: string): string | null {
+  const key = headingKey(heading);
+  // (a heading's names are never null: a blank `heading` matches none)
+  const start = index.headings.findIndex((h) => h.names.some((name) => name === key));
+  const found = index.headings[start];
+  if (!found) return null;
+  const next = index.headings.slice(start + 1).find((h) => h.level <= found.level);
+  return index.nodes.slice(found.at, next?.at).join("");
+}
 
 /**
  * The section of `html` under `heading`: the first h2 to h6 (bare, or inside `div.mw-heading`) at the top level whose
  * anchor or text is `heading` (compared decoded, `_` as space, whitespace collapsed, in any case), with the top-level
  * nodes after it up to the next heading of the same or a higher level (so its subsections stay inside). Null when
- * there is no such heading.
+ * there is no such heading, or `heading` is blank.
  */
 export function sectionOf(html: string, heading: string): string | null {
-  const key = headingKey(heading);
-  const nodes = Array.from(parseInertOnServer(html).content.childNodes);
-  const start = nodes.findIndex((node) => {
-    const found = headingIn(node);
-    return found !== null && isNamed(found, key);
-  });
-  if (start < 0) return null;
+  return sectionIn(sectionIndexOf(html), heading);
+}
 
-  const level = levelOf(headingIn(nodes[start]!)!);
-  const after = nodes.slice(start + 1);
-  const end = after.findIndex((node) => {
-    const next = headingIn(node);
-    return next !== null && levelOf(next) <= level;
-  });
-  const section = [nodes[start]!, ...(end < 0 ? after : after.slice(0, end))];
-  return section.map(htmlOf).join("");
+/** Each render's section index, read on the first section asked of it (a render the service caches is one object). */
+const sectionIndexes = new WeakMap<SisterRender, SectionIndex>();
+
+/** `sectionOf` the render's body, its headings read once per render: a second section, or a miss, is a lookup. */
+export function renderSectionOf(render: SisterRender, heading: string): string | null {
+  let index = sectionIndexes.get(render);
+  if (!index) {
+    index = sectionIndexOf(render.contentHtml);
+    sectionIndexes.set(render, index);
+  }
+  return sectionIn(index, heading);
 }
 
 /** `text` whitespace-collapsed and cut at a word to at most 300 characters, ending "…" when cut. */
@@ -131,7 +169,7 @@ export function trimHtml(html: string, maxChars: number): string {
   while (container.childNodes.length === 1 && container.firstElementChild !== null) {
     container = container.firstElementChild;
   }
-  // A text node counts its text, never more than it serializes to: the estimate stays at or above the real size.
+  // `htmlOf` is how each dropped node serialized, so the running size is the page's.
   let size = template.innerHTML.length;
   while (size > maxChars && container.lastChild) {
     size -= htmlOf(container.lastChild).length;

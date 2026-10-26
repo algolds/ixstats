@@ -4,8 +4,10 @@
  * Classic's `Template:Sister` (scripts/ops/mediawiki/Template-Sister.wikitext) renders a link box that carries
  * `data-sister-wiki`, `data-sister-title`, `data-sister-mode` and `data-sister-section`. The reader finds each box
  * (`SISTER_EMBED_SELECTOR`), reads it with `sisterEmbedRequestOf` and asks `wikios.sisterEmbed` for that request, for
- * at most `MAX_SISTER_EMBEDS` boxes per page; the rest stay link boxes. Nothing read from the attributes is ever
- * spliced into HTML: the request is data, validated here and again by the procedure's input schema.
+ * at most `MAX_SISTER_EMBEDS` boxes per page; the rest stay link boxes. The template writes the title and the section
+ * percent-encoded (`{{urlencode:…|PATH}}`), so a quote in them cannot end the attribute; they are decoded here. Nothing
+ * read from the attributes is ever spliced into HTML: the request is data, validated here and again by the procedure's
+ * input schema.
  *
  * Client-safe: pure, no wiki call.
  */
@@ -59,16 +61,26 @@ function usableSection(section: string): string | null {
   return section.length > 0 && section.length <= MAX_SECTION_LENGTH ? section : null;
 }
 
-/** The embed a `Template:Sister` box asks for, or null when it names no wiki WikiOS reads or no valid title. */
+/** A percent-encoded attribute value decoded and trimmed; null when an escape in it is malformed. */
+function decoded(value: string): string | null {
+  try {
+    return decodeURIComponent(value).trim();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The embed a `Template:Sister` box asks for, or null when it names no wiki WikiOS reads, no valid title, or carries
+ * a malformed escape in its title or section.
+ */
 export function sisterEmbedRequestOf(element: Element): SisterEmbedRequest | null {
-  const read = (name: string) => (element.getAttribute(`data-sister-${name}`) ?? "").trim();
-  const wiki = read("wiki").toLowerCase();
-  const title = read("title");
-  if (!isSisterReaderId(wiki) || !isSisterEmbedTitle(title)) return null;
-  const mode = read("mode");
-  return {
-    wiki,
-    title,
-    ...embedPart(isEmbedMode(mode) ? mode : "page", usableSection(read("section"))),
-  };
+  const read = (name: string) => element.getAttribute(`data-sister-${name}`) ?? "";
+  const wiki = read("wiki").trim().toLowerCase();
+  const title = decoded(read("title"));
+  const section = decoded(read("section"));
+  if (!isSisterReaderId(wiki) || title === null || section === null) return null;
+  if (!isSisterEmbedTitle(title)) return null;
+  const mode = read("mode").trim();
+  return { wiki, title, ...embedPart(isEmbedMode(mode) ? mode : "page", usableSection(section)) };
 }

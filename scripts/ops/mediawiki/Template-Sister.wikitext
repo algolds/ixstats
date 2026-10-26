@@ -1,4 +1,4 @@
-<includeonly><div class="sister-link" data-sister-wiki="{{lc:{{{1|}}}}}" data-sister-title="{{{2|}}}" data-sister-mode="{{#if:{{{card|}}}|card|{{#if:{{{infobox|}}}|infobox|{{#if:{{{section|}}}|section|page}}}}}}" data-sister-section="{{{section|}}}">From {{#switch:{{lc:{{{1|}}}}}
+<includeonly><div class="sister-link" data-sister-wiki="{{lc:{{{1|}}}}}" data-sister-title="{{urlencode:{{{2|}}}|PATH}}" data-sister-mode="{{#if:{{{card|}}}|card|{{#if:{{{infobox|}}}|infobox|{{#if:{{{section|}}}|section|page}}}}}}" data-sister-section="{{urlencode:{{{section|}}}|PATH}}">From {{#switch:{{lc:{{{1|}}}}}
  |iiwiki=IIWiki: [https://iiwiki.com/wiki/{{urlencode:{{{2|}}}|WIKI}}{{#if:{{{section|}}}|#{{anchorencode:{{{section|}}}}}}} {{{2|}}}]
  |althistory=AltHistory Wiki: [https://althistory.fandom.com/wiki/{{urlencode:{{{2|}}}|WIKI}}{{#if:{{{section|}}}|#{{anchorencode:{{{section|}}}}}}} {{{2|}}}]
  |#default={{{1|}}}: {{{2|}}}

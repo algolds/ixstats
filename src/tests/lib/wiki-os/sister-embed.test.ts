@@ -1,8 +1,9 @@
 /**
  * `sisterEmbedRequestOf` (sister-embed.ts): what the WikiOS reader asks the server for, read from a `Template:Sister`
  * box's four data attributes. Only a wiki WikiOS reads and a title MediaWiki could hold make a request; an unknown
- * mode, or a section mode with no usable section, reads as the whole page. Nothing from the attributes is spliced
- * into HTML: the request is plain data.
+ * mode, or a section mode with no usable section, reads as the whole page. The template writes the title and the
+ * section percent-encoded (`{{urlencode:…|PATH}}`, so a quote cannot end the attribute); they are decoded here, and a
+ * malformed escape is no request. Nothing from the attributes is spliced into HTML: the request is plain data.
  */
 import { describe, expect, it } from "@jest/globals";
 import {
@@ -78,6 +79,36 @@ describe("sisterEmbedRequestOf", () => {
       mode: "page",
       section: null,
     });
+  });
+
+  it("decodes the title and the section the template percent-encoded", () => {
+    expect(
+      sisterEmbedRequestOf(
+        box({
+          wiki: "iiwiki",
+          title: "The%20%22Red%22%20Army%20%26%20Navy%27s%20100%25",
+          mode: "section",
+          section: "War%20of%20%2722%20%22Bread%22",
+        })
+      )
+    ).toEqual({
+      wiki: "iiwiki",
+      title: `The "Red" Army & Navy's 100%`,
+      mode: "section",
+      section: `War of '22 "Bread"`,
+    });
+  });
+
+  it("a malformed escape in the title or the section is no request; an escaped forbidden character is refused", () => {
+    expect(sisterEmbedRequestOf(box({ wiki: "iiwiki", title: "100%" }))).toBeNull();
+    expect(sisterEmbedRequestOf(box({ wiki: "iiwiki", title: "A%E0%A4%A" }))).toBeNull();
+    expect(
+      sisterEmbedRequestOf(
+        box({ wiki: "iiwiki", title: "Caphiria", mode: "section", section: "50%" })
+      )
+    ).toBeNull();
+    expect(sisterEmbedRequestOf(box({ wiki: "iiwiki", title: "A%7CB" }))).toBeNull();
+    expect(sisterEmbedRequestOf(box({ wiki: "iiwiki", title: "%5B%5BA%5D%5D" }))).toBeNull();
   });
 
   it("a section of exactly 255 characters is kept", () => {

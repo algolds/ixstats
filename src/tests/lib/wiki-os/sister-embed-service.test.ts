@@ -5,7 +5,9 @@
  * asked for: the whole page (infobox and body), one section, the infobox, or a card (lead paragraph and first image).
  * HTML is sanitized for embedding (no `<style>`, no `id`) and size-capped. One embed is asked for once an hour (a
  * missing page every 10 minutes), two readers at once share one read, and a wiki that cannot be reached throws
- * WikiUnavailableError and is never cached (Review Focus 5).
+ * WikiUnavailableError and is never cached (Review Focus 5). A page its wiki answers for but cannot render is
+ * `unrenderable`, kept 10 minutes like a missing one. Every spelling of one title, and of one section, is one entry,
+ * and a render's headings are read once however many sections are asked of it.
  *
  * The reads are real (bridge, http-reader, upstream guard, render service); only `fetch` is spied, answering by the
  * request's `action`.
@@ -14,12 +16,19 @@ jest.mock("~/lib/wiki-os/core/article-repository", () => ({
   __esModule: true,
   ArticleRepository: { getArticleBySlug: jest.fn() },
 }));
+jest.mock("~/lib/wiki-os/transformers/server-dom", () => {
+  const actual = jest.requireActual<typeof import("~/lib/wiki-os/transformers/server-dom")>(
+    "~/lib/wiki-os/transformers/server-dom"
+  );
+  return { __esModule: true, parseInertOnServer: jest.fn(actual.parseInertOnServer) };
+});
 
 import { afterEach, beforeEach, describe, expect, it } from "@jest/globals";
 import { getSisterEmbed, MAX_EMBED_HTML_CHARS } from "~/lib/wiki-os/services/sister-embed-service";
 import { cardOf, sectionOf, trimHtml } from "~/lib/wiki-os/sister-embed-parts";
 import { WikiUnavailableError } from "~/lib/wiki-os/upstream-guard";
 import type { SisterEmbedRequest } from "~/lib/wiki-os/sister-embed";
+import { parseInertOnServer } from "~/lib/wiki-os/transformers/server-dom";
 
 const INFOBOX =
   '<table class="infobox"><tr><td><img src="/images/a/ab/Flag_of_Caphiria.png" width="100" height="60"> Caphiria</td></tr></table>';
@@ -44,6 +53,8 @@ let now = 1_000_000;
 let page: { title: string; revId: number } | null;
 let parsedHtml = PAGE;
 let down = false;
+/** The wiki answers the parse with an error of its own (it cannot render the page). */
+let unrenderable = false;
 
 let counter = 0;
 /** A request for a title of its own, so the module-level caches never link two tests. */
@@ -76,6 +87,7 @@ function answer(url: URL): Response {
       },
     });
   }
+  if (action === "parse" && unrenderable) return Response.json({ error: { info: "Lua error" } });
   if (action === "parse") return Response.json({ parse: { title: page?.title, text: parsedHtml } });
   throw new Error(`unexpected fetch of ${url.href}`);
 }
@@ -85,6 +97,7 @@ const calls = () => fetchSpy.mock.calls.length;
 beforeEach(() => {
   now += 3_600_000;
   down = false;
+  unrenderable = false;
   parsedHtml = PAGE;
   dateSpy = jest.spyOn(Date, "now").mockImplementation(() => now);
   fetchSpy = jest
@@ -109,7 +122,7 @@ describe("getSisterEmbed: the parts", () => {
     const req = request();
     const embed = await getSisterEmbed(req);
 
-    expect(embed).toMatchObject({ status: "ok", kind: "html", title: req.title });
+    expect(embed).toMatchObject({ status: "ok", kind: "html", title: req.title, truncated: false });
     const html = embed.status === "ok" && embed.kind === "html" ? embed.html : "";
     expect(html.indexOf('class="infobox"')).toBeLessThan(html.indexOf("officially the Imperium"));
     expect(html).toContain("Geography body.");
@@ -191,10 +204,28 @@ describe("getSisterEmbed: the parts", () => {
     expect(calls()).toBe(1);
   });
 
+  it("a page its wiki cannot render is unrenderable, asked about again after ten minutes, not before", async () => {
+    const req = request();
+    unrenderable = true;
+    expect(await getSisterEmbed(req)).toEqual({ status: "unrenderable" });
+    expect(calls()).toBe(2);
+
+    now += 599_000;
+    expect(await getSisterEmbed(req)).toEqual({ status: "unrenderable" });
+    expect(calls()).toBe(2);
+
+    now += 2_000;
+    unrenderable = false;
+    expect(await getSisterEmbed(req)).toMatchObject({ status: "ok" });
+    expect(calls()).toBe(4);
+  });
+
   it("an embed over the size cap keeps its first blocks, under the cap", async () => {
     const block = `<p>${"word ".repeat(200)}</p>`;
     parsedHtml = `<div class="mw-parser-output">${block.repeat(200)}</div>`;
-    const html = await htmlOf(request());
+    const embed = await getSisterEmbed(request());
+    expect(embed).toMatchObject({ status: "ok", kind: "html", truncated: true });
+    const html = embed.status === "ok" && embed.kind === "html" ? embed.html : "";
 
     expect(html.length).toBeLessThanOrEqual(MAX_EMBED_HTML_CHARS);
     expect(html.length).toBeGreaterThan(MAX_EMBED_HTML_CHARS - block.length * 2);
@@ -255,6 +286,46 @@ describe("getSisterEmbed: the wiki is asked rarely", () => {
     expect(geography).not.toEqual(section);
   });
 
+  it("every spelling of one title is one entry, and the wiki is asked for its canonical title", async () => {
+    const req = request();
+    const first = await getSisterEmbed({
+      ...req,
+      title: `${req.title.toLowerCase().replace(" ", "_")}`,
+    });
+    expect(new URL(String(fetchSpy.mock.calls[0]![0])).searchParams.get("titles")).toBe(req.title);
+
+    for (const title of [
+      req.title,
+      `${req.title}_`,
+      ` ${req.title}`,
+      req.title.replace(" ", "  "),
+    ]) {
+      expect(await getSisterEmbed({ ...req, title })).toBe(first);
+    }
+    expect(calls()).toBe(2);
+  });
+
+  it("every spelling of one section is one entry", async () => {
+    const req = request({ mode: "section", section: "Early period" });
+    const first = await getSisterEmbed(req);
+    for (const section of ["early period", "EARLY_PERIOD", " Early  period "]) {
+      expect(await getSisterEmbed({ ...req, section })).toBe(first);
+    }
+    expect(calls()).toBe(2);
+  });
+
+  it("several section misses on one render parse it once", async () => {
+    const req = request();
+    await getSisterEmbed(req);
+    const parse = jest.mocked(parseInertOnServer);
+    parse.mockClear();
+
+    for (const section of ["Economy", "Culture", "Military", "History"]) {
+      await getSisterEmbed({ ...req, mode: "section", section });
+    }
+    expect(parse).toHaveBeenCalledTimes(1);
+  });
+
   it("two readers at once cost one request", async () => {
     const req = request();
     const [a, b] = await Promise.all([getSisterEmbed(req), getSisterEmbed({ ...req })]);
@@ -281,6 +352,24 @@ describe("the part slicers", () => {
     expect(sectionOf("<h2>Growth of 100%</h2><p>x</p>", "Growth of 100%")).toBe(
       "<h2>Growth of 100%</h2><p>x</p>"
     );
+  });
+
+  it("sectionOf serializes top-level text and comments as they were", () => {
+    const html = "<h2>A</h2>a &lt;b&gt; &amp;&nbsp;c<!-- note --><p>x</p><h2>B</h2>";
+    expect(sectionOf(html, "A")).toBe("<h2>A</h2>a &lt;b&gt; &amp;&nbsp;c<!-- note --><p>x</p>");
+  });
+
+  it("trimHtml counts text and comments as they serialize, so it never goes over", () => {
+    const html = `${"&lt;&amp;&nbsp;".repeat(20)}<!--${"c".repeat(40)}--><p>${"y".repeat(30)}</p>`;
+    for (const max of [50, 100, 120, 150]) {
+      expect(trimHtml(html, max).length).toBeLessThanOrEqual(max);
+    }
+  });
+
+  it("sectionOf never matches a blank heading, even a heading with no text", () => {
+    expect(sectionOf("<h2></h2><p>x</p>", "  ")).toBeNull();
+    expect(sectionOf("<h2></h2><p>x</p>", "")).toBeNull();
+    expect(sectionOf('<h2 id="sister-"> </h2><p>x</p>', "_")).toBeNull();
   });
 
   it("sectionOf reads an underscore as a space in the text too", () => {

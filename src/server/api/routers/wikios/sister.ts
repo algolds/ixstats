@@ -17,7 +17,7 @@ export const wikiosSisterRouter = createTRPCRouter({
         wiki: z.enum(["iiwiki", "althistory"]),
         title: z.string().refine(isSisterEmbedTitle, "Not a page title"),
         mode: z.enum(SISTER_EMBED_MODES).default("page"),
-        section: z.string().min(1).max(255).optional(),
+        section: z.string().trim().min(1).max(255).optional(),
       })
     )
     .query(({ input }) =>

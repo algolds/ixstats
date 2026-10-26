@@ -4,7 +4,8 @@
  * the box carries `data-sister-wiki`, `-title`, `-mode` and `-section`, and the WikiOS reader mounts a live embed over
  * it from exactly those four attributes (`sisterEmbedRequestOf`). This pins the contract between the template's
  * output and what the reader reads: the opening tag is expanded here as MediaWiki would (positional and named
- * parameters, `{{lc:}}`, `{{#if:}}`) and handed to `sisterEmbedRequestOf`.
+ * parameters, `{{lc:}}`, `{{#if:}}`, `{{urlencode:…|PATH}}`) and handed to `sisterEmbedRequestOf`. The title and the
+ * section are written percent-encoded, so a quote, an ampersand or a percent sign in them round-trips exactly.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -32,21 +33,37 @@ const openingTag = (): string => {
 
 type Params = Record<string, string>;
 
-/** What MediaWiki makes of `text` with `params`: parameters with an empty default, `{{lc:}}` and `{{#if:}}`. */
+/** PHP's `rawurlencode`, which `{{urlencode:…|PATH}}` is: every byte but `A-Z a-z 0-9 - _ . ~` escaped. */
+const rawUrlEncode = (value: string): string =>
+  encodeURIComponent(value).replace(
+    /[!'()*]/g,
+    (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`
+  );
+
+/**
+ * What MediaWiki makes of `text` with `params`: parameters with an empty default, `{{lc:}}`, `{{#if:}}` and
+ * `{{urlencode:…|PATH}}`. A parameter's value goes in as a placeholder until the end, so a quote or a brace in it is
+ * never read as markup.
+ */
 function expand(text: string, params: Params): string {
-  let out = text.replace(/\{\{\{([^{}|]+)\|\}\}\}/g, (_, name: string) => params[name] ?? "");
-  const innermost = /\{\{(?:lc:([^{}|]*)|#if:([^{}|]*)\|([^{}|]*)\|([^{}|]*))\}\}/;
+  const values: string[] = [];
+  let out = text.replace(/\{\{\{([^{}|]+)\|\}\}\}/g, (_, name: string) => {
+    values.push(params[name] ?? "");
+    return `\u0000${values.length - 1}\u0000`;
+  });
+  const real = (placeheld: string) =>
+    placeheld.replace(/\u0000(\d+)\u0000/g, (_, i: string) => values[Number(i)] ?? "");
+  const innermost =
+    /\{\{(?:lc:([^{}|]*)|urlencode:([^{}|]*)\|PATH|#if:([^{}|]*)\|([^{}|]*)\|([^{}|]*))\}\}/;
   for (let match = innermost.exec(out); match; match = innermost.exec(out)) {
-    const [whole, lower, condition, then = "", otherwise = ""] = match;
-    const value =
-      lower !== undefined
-        ? lower.trim().toLowerCase()
-        : (condition ?? "").trim() !== ""
-          ? then
-          : otherwise;
-    out = out.replace(whole, value);
+    const [whole, lower, encode, condition, then = "", otherwise = ""] = match;
+    let value: string;
+    if (lower !== undefined) value = real(lower).trim().toLowerCase();
+    else if (encode !== undefined) value = rawUrlEncode(real(encode));
+    else value = real(condition ?? "").trim() !== "" ? then : otherwise;
+    out = out.replace(whole, () => value);
   }
-  return out;
+  return real(out);
 }
 
 /** The box classic renders for `params`, parsed. */
@@ -63,9 +80,9 @@ describe("Template:Sister", () => {
     const tag = openingTag();
     expect(tag).toContain('class="sister-link"');
     expect(tag).toContain('data-sister-wiki="{{lc:{{{1|}}}}}"');
-    expect(tag).toContain('data-sister-title="{{{2|}}}"');
+    expect(tag).toContain('data-sister-title="{{urlencode:{{{2|}}}|PATH}}"');
     expect(tag).toMatch(/data-sister-mode="\{\{#if:/);
-    expect(tag).toContain('data-sister-section="{{{section|}}}"');
+    expect(tag).toContain('data-sister-section="{{urlencode:{{{section|}}}|PATH}}"');
     expect(TEMPLATE.indexOf("data-sister-")).toBeGreaterThan(TEMPLATE.indexOf("<includeonly>"));
     expect(TEMPLATE.lastIndexOf("data-sister-")).toBeLessThan(TEMPLATE.indexOf("</includeonly>"));
     expect([...tag.matchAll(/data-sister-[a-z]+/g)].map((m) => m[0])).toEqual([
@@ -111,6 +128,22 @@ describe("Template:Sister", () => {
     expect(
       sisterEmbedRequestOf(renderedBox({ "1": "iiwiki", "2": "Caphiria", card: "yes" }))
     ).toEqual({ wiki: "iiwiki", title: "Caphiria", mode: "card", section: null });
+  });
+
+  it.each([
+    [`The "Red" Army`, `War of "1922"`],
+    ["Fish & Chips", "Salt & vinegar"],
+    ["100% Club", "Growth of 100%"],
+    ["Rome's Fall", "Rome's legacy"],
+    ["Kingdom of  Urcea (1850–1900)", "Early  period"],
+    [`It's "50%" & more`, `"Q&A" 'quoted'`],
+  ])("the title %j and the section %j round-trip exactly", (title, section) => {
+    expect(sisterEmbedRequestOf(renderedBox({ "1": "iiwiki", "2": title, section }))).toEqual({
+      wiki: "iiwiki",
+      title,
+      mode: "section",
+      section,
+    });
   });
 
   it("a box for a wiki WikiOS does not read is no request", () => {
