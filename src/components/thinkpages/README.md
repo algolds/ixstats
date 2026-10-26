@@ -49,7 +49,7 @@ The canonical editor suite has been promoted to `src/components/shared/editor/` 
 - `EditorToolbar.tsx` (158 lines) — Formatting toolbar (Bold, Italic, Underline, Lists, Links).
 - `WikiAndStashPopovers.tsx` (368 lines) — Popovers for inserting Wiki links, Wiki embeds, and Lore Stash media.
 - `MentionMenuPortal.tsx` (97 lines) — Portal dropdown for `@` mention autocomplete (citizens, leagues, clubs, wikis).
-- `SlateSerializer.ts` (347 lines) — Bi-directional serializer for Slate AST to HTML, Parsoid HTML, and XenForo BBCode.
+- `SlateSerializer.ts` (354 lines) — Serializes the Slate AST to HTML and reads Parsoid HTML back into Slate, with the composer's wiki link helpers and the mark and block toggles.
 - `useGlassPlateEditor.ts` (580 lines) — React hook managing Plate instance, selection state, and autocompletion.
 
 ---
