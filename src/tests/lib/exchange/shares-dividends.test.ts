@@ -259,6 +259,42 @@ describe("dividends", () => {
     expect(company().capital).toBe(400);
     expect(sov("bob")).toBe(5300);
   });
+
+  // Regression: withdrawals refused while new shares were on sale at a price set from the capital, but a dividend
+  // didn't, so the founder could take the capital out through a dividend while the issue still sold at that price
+  it("is refused while a primary issue is on sale, and paid once it is cancelled", async () => {
+    setup({ alice: 900, bob: 100 });
+    const issued = await issueShares(fake.client, {
+      userId: "alice",
+      companyId: "co",
+      shares: 100,
+      requestId: rid(),
+    });
+    const before = { capital: company().capital, alice: sov("alice"), bob: sov("bob") };
+
+    await expect(
+      declareDividend(fake.client, {
+        userId: "alice",
+        companyId: "co",
+        amount: 500,
+        requestId: rid(),
+      })
+    ).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: expect.stringMatching(/cancel the issue/),
+    });
+    expect({ capital: company().capital, alice: sov("alice"), bob: sov("bob") }).toEqual(before);
+    expect(fake.tables.companyDividend ?? []).toHaveLength(0);
+
+    await cancelListing(fake.client, { userId: "alice", listingId: issued.listing.id });
+    await declareDividend(fake.client, {
+      userId: "alice",
+      companyId: "co",
+      amount: 100,
+      requestId: rid(),
+    });
+    expect(company().capital).toBe(before.capital - 100);
+  });
 });
 
 describe("dissolving a company with outside shareholders", () => {
