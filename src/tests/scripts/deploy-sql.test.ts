@@ -19,6 +19,7 @@ const runs = [
   at: m.index,
 }));
 const backup = script.indexOf("bun run db:backup");
+const additive = script.indexOf("bun scripts/deployment/apply-additive-schema.ts --apply || exit 1");
 const push = script.indexOf("bun run db:push:force");
 const build = script.indexOf("bun run build");
 
@@ -174,10 +175,10 @@ describe.each(["start-development.sh", "scripts/refresh-local-db.sh"])("%s", (fi
 describe("the WikiOS proof check", () => {
   const check = script.indexOf("bun scripts/audit/wikios-proof.ts predeploy || exit 1");
 
-  it("the proof check runs after db:generate and before db:backup and any migration", () => {
-    expect(check).toBeGreaterThan(script.indexOf("bun run db:generate"));
+  it("the proof check runs after the backup and the additive step (which creates job_leases), before any SQL", () => {
     expect(script.indexOf("bun run db:generate")).toBeGreaterThan(0);
-    expect(check).toBeLessThan(backup);
+    expect(check).toBeGreaterThan(backup);
+    expect(check).toBeGreaterThan(additive);
     expect(check).toBeLessThan(Math.min(...runs.map((run) => run.at)));
     expect(check).toBeLessThan(push);
   });
@@ -189,7 +190,127 @@ describe("the WikiOS proof check", () => {
   });
 });
 
+describe("the schema steps", () => {
+  const at = (needle: string) => script.indexOf(needle);
+
+  it("applies the additive schema after the backup and before the first SQL file", () => {
+    expect(additive).toBeGreaterThan(backup);
+    expect(additive).toBeLessThan(Math.min(...runs.map((run) => run.at)));
+  });
+
+  it("drops world_configs and territory_claims after the backup and before the push", () => {
+    const drop = at("scripts/migrations/2026-10-realms/drop-world-configs.sql");
+    expect(drop).toBeGreaterThan(backup);
+    expect(drop).toBeLessThan(push);
+    expect(sql("scripts/migrations/2026-10-realms/drop-world-configs.sql")).toMatch(
+      /DROP TABLE IF EXISTS "territory_claims".*DROP TABLE IF EXISTS "world_configs"/
+    );
+  });
+
+  it("runs every ThinkPages forum migration before the push, in order, and before forum_readers is dropped", () => {
+    const forum = [
+      "20261008120000_thinkpages_forum",
+      "20261009120000_thinkpages_forum_realms",
+      "20261010030000_uploaded_assets",
+      "20261010120000_thinkpages_forum_moderation",
+      "20261011120000_thinkpages_forum_import",
+      "20261012120000_thinkpages_forum_followups",
+      "20261013120000_thinkpages_forum_foundation",
+      "20261014120000_thinkpages_realm_board",
+      "20261015120000_thinkpages_forum_engagement",
+      "20261016120000_thinkpages_forum_reactions",
+      "20261017120000_action_link_rewards",
+      "20261018120000_thinkpages_realm_adverts",
+    ].map((dir) => at(`prisma/migrations/${dir}/migration.sql`));
+    expect(forum.every((index) => index > 0)).toBe(true);
+    expect([...forum].sort((a, b) => a - b)).toEqual(forum);
+    expect(forum.at(-1)).toBeLessThan(at("20261027120000_drop_forum_readers/migration.sql"));
+    expect(forum.at(-1)).toBeLessThan(push);
+  });
+
+  it("skips the additive step, the SQL and the push under SKIP_SCHEMA_SYNC=1, but never the backup", () => {
+    const blocks = [...script.matchAll(/if \[ "\$\{SKIP_SCHEMA_SYNC:-\}" (!?=) "1" \]; then/g)];
+    expect(blocks.map((m) => m[1])).toEqual(["!=", "="]);
+    const [skipAdditive, skipSql] = blocks.map((m) => m.index);
+    expect(skipAdditive).toBeGreaterThan(backup);
+    expect(skipAdditive).toBeLessThan(additive);
+    expect(skipSql).toBeLessThan(Math.min(...runs.map((run) => run.at)));
+    // the SQL and the push sit in that block's else branch, which closes before the build
+    const close = script.indexOf("\nfi\n", push);
+    expect(close).toBeLessThan(build);
+    expect(Math.max(...runs.map((run) => run.at))).toBeLessThan(close);
+  });
+});
+
+describe("the live build", () => {
+  const at = (needle: string) => script.indexOf(needle);
+
+  it("is never deleted up front: no `bun run clean`, and nothing touches .next before the push", () => {
+    expect(script).not.toContain("bun run clean");
+    expect(script.slice(0, push)).not.toMatch(/^\s*(rm|mv|cp)\b.*\.next\b/m);
+    expect(at('mv .next "$NEXT_PREV"')).toBeGreaterThan(push);
+    expect(at('mv .next "$NEXT_PREV"')).toBeLessThan(build);
+  });
+
+  it("moves aside before the build and comes back if the deploy stops before the new server answers", () => {
+    expect(at("trap restore_previous_build EXIT")).toBeGreaterThan(at('mv .next "$NEXT_PREV"'));
+    expect(at("trap restore_previous_build EXIT")).toBeLessThan(build);
+    expect(script).toMatch(/restore_previous_build\(\) \{[\s\S]*?rm -rf \.next\n\s*mv "\$NEXT_PREV" \.next/);
+  });
+
+  it("is deleted only after the new server answers, under PM2 or in the foreground", () => {
+    const deletes = [...script.matchAll(/rm -rf "\$NEXT_PREV"/g)].map((m) => m.index);
+    // the leftover of an earlier deploy (when .next is a finished build), then the two server paths
+    expect(deletes).toHaveLength(3);
+    for (const index of deletes.slice(1)) {
+      expect(script.lastIndexOf("if wait_for_web; then", index)).toBeGreaterThan(build);
+      expect(index - script.lastIndexOf("if wait_for_web; then", index)).toBeLessThan(40);
+    }
+  });
+
+  it("starts the web app under PM2 when the ecosystem file defines ixstats-web, else in the foreground", () => {
+    expect(script).toContain('a.name === "ixstats-web"');
+    expect(at('if [ "$WEB_UNDER_PM2" = "1" ]; then')).toBeLessThan(at("pm2 startOrReload ecosystem.config.cjs"));
+    expect(at("exec ./start-production.sh")).toBeGreaterThan(at("pm2 startOrReload ecosystem.config.cjs"));
+  });
+
+  it("stops the old server with SIGTERM, waits, and only then sends SIGKILL", () => {
+    expect(script).not.toContain("kill -9");
+    expect(script).not.toContain("fuser -k");
+    const stop = script.slice(at("stop_port() {"), at("stop_port() {") + 900);
+    expect(stop.indexOf("kill -TERM")).toBeGreaterThan(0);
+    expect(stop.indexOf("sleep 1")).toBeGreaterThan(stop.indexOf("kill -TERM"));
+    expect(stop.indexOf("kill -KILL")).toBeGreaterThan(stop.indexOf("sleep 1"));
+  });
+});
+
+describe("rollback-deployment.sh", () => {
+  const rollback = readFileSync("scripts/deployment/rollback-deployment.sh", "utf8");
+
+  it("runs this release's deploy script, copied before the checkout, with no schema sync", () => {
+    expect(rollback.indexOf("cp scripts/deploy-production.sh")).toBeGreaterThan(0);
+    expect(rollback.indexOf("cp scripts/deploy-production.sh")).toBeLessThan(rollback.indexOf("git checkout"));
+    expect(rollback).toMatch(/ALLOW_NON_MASTER_DEPLOY=1 SKIP_SCHEMA_SYNC=1 exec "\$DEPLOY_SCRIPT"/);
+    expect(rollback).not.toContain("exec ./scripts/deploy-production.sh");
+  });
+});
+
 describe("deploy-ixworld.sh, which the deploy runs", () => {
+  const ixworld = readFileSync("scripts/deploy-ixworld.sh", "utf8");
+
+  it("builds the commit deploy-production.sh built, without syncing git again", () => {
+    expect(script).toMatch(/IXSTATS_DEPLOY_COMMIT="\$\(git rev-parse HEAD/);
+    expect(script.indexOf("export IXSTATS_DEPLOY_COMMIT")).toBeLessThan(script.indexOf("./scripts/deploy-ixworld.sh"));
+    const pinned = ixworld.indexOf('if [ -n "${IXSTATS_DEPLOY_COMMIT:-}" ]; then');
+    expect(pinned).toBeGreaterThan(0);
+    // the git reset lives only in the elif branch taken when the variable is unset
+    expect(ixworld.indexOf("git reset --hard FETCH_HEAD")).toBeGreaterThan(ixworld.indexOf("elif ", pinned));
+  });
+
+  it("does not read a refused connection as healthy (curl prints 000 itself)", () => {
+    expect(ixworld).not.toContain("|| echo 000");
+  });
+
   it("excludes the default tile folder from the data/ rsync, which has no --delete", () => {
     expect(script).toContain("./scripts/deploy-ixworld.sh");
     const line = readFileSync("scripts/deploy-ixworld.sh", "utf8")
