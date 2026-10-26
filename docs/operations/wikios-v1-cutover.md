@@ -20,11 +20,13 @@ build described in step 5.
 **Order matters.** Every production command in this runbook is launch-time: run by hand, step by step, in this order.
 None has been run yet.
 
-- **Launch steps (this launch):** 0, 1, 1b, 1c, 2, 2a, 3, 4, 4b, 5b, 6, 6a, 6b, 6c, 6d, 7b, and the IxStates rows of 10
-  with 10d. Two parts of them run before step 2's deploy: step 4's loopback server with its env line, and step 6a's app
-  URL check (step 2 says why). Few of these steps change what the public sees on ixwiki.com: loading the snippet in
-  step 3 changes neither classic's article path nor its canonical link, though it lets every uploader on classic upload
-  SVG and PDF files (3a), and step 6d only adds IxStates' rules to classic's `robots.txt`. Step 6b lets the wiki inside IxStates take edits, and step 6c moves the bots to it.
+- **Launch steps (this launch):** 0, 1, 1b, 1c, 2, 2a, 3 (3a to 3d, and 3e, the sister interwiki prefixes), 4, 4b, 4c
+  (the sister wikis answer the server), 5b, 6, 6a, 6b, 6c, 6d, 7b, and the IxStates rows of 10 with 10d. Two parts of
+  them run before step 2's deploy: step 4's loopback server with its env line, and step 6a's app URL check (step 2 says
+  why). Few of these steps change what the public sees on ixwiki.com: loading the snippet in step 3 changes neither
+  classic's article path nor its canonical link, though it lets every uploader on classic upload SVG and PDF files (3a);
+  step 3e lets classic's editors write `[[iiwiki:...]]` and `[[althistory:...]]` links; and step 6d only adds IxStates'
+  rules to classic's `robots.txt`. Step 6b lets the wiki inside IxStates take edits, and step 6c moves the bots to it.
 - **Deferred takeover steps (not run at this launch):** 5 (the separate `wikios` process on `127.0.0.1:3560`), 7 (its
   checks), 8 (the cutover: nginx first, then one `LocalSettings.php` line), 9, 9a, 10a and 10b (they prepare step 8),
   11 and 12 (the full rollback). Every `:3560` line in this runbook belongs to them.
@@ -615,30 +617,123 @@ on `Special:BotPasswords` while logged in as `WikiOSMirror` (or block the accoun
 
 ### 3d. Create `Template:Sister` on classic
 
-Cross-wiki transclusion is written as an ordinary template, `{{Sister|iiwiki|Title}}` (spec C4). Classic shows it as a
-small link box ("From iiwiki: Title"); WikiOS's live embed is part of the sister-wiki work (spec Workstream C), not of this
-release, and until it ships WikiOS shows the same link box. The template namespace is admin-only, so an administrator
-creates the page on classic. Write the text to a file and save it with MediaWiki's `edit` script (or paste it on classic
-as an administrator):
+Cross-wiki transclusion is written as an ordinary template, `{{Sister|iiwiki|Title}}` (spec C4), optionally with
+`section=Heading`, `infobox=yes` or `card=yes`. Classic shows it as a small link box ("From IIWiki: Title"). WikiOS shows
+the live embed over the same box: it reads that wiki's page through the wiki's own parser, keeps it about an hour, and
+says "<Wiki> could not be reached just now" in its place when the wiki does not answer. The box carries four
+attributes, `data-sister-wiki`, `data-sister-title`, `data-sister-mode` and `data-sister-section`, and the WikiOS reader
+mounts the embed from exactly those (`src/tests/scripts/template-sister.test.ts` pins the contract). WikiOS renders
+through classic, so the template must exist there.
+
+The text is the tracked file `scripts/ops/mediawiki/Template-Sister.wikitext`, which step 2 deployed with the checkout.
+The template namespace is admin-only, so save it as an administrator with MediaWiki's `edit` script (launch-time), or
+paste the file's text on classic as an administrator:
 
 ```bash
-cat > /tmp/sister.wikitext <<'EOF'
-<div class="sister-link">From {{{1|}}}: {{#switch:{{{1|}}}
- |iiwiki=[https://iiwiki.com/wiki/{{urlencode:{{{2|}}}|WIKI}} {{{2|}}}]
- |althistory=[https://althistory.fandom.com/wiki/{{urlencode:{{{2|}}}|WIKI}} {{{2|}}}]
- |#default={{{2|}}}
-}}</div><noinclude>
-Usage: <code><nowiki>{{Sister|iiwiki|Title}}</nowiki></code>, optionally with <code>section=</code>,
-<code>infobox=yes</code> or <code>card=yes</code>. Classic shows this link box; WikiOS renders the embed.
-</noinclude>
-EOF
-mwmaint edit --user '<your admin name>' --summary 'Sister wiki link box' Template:Sister < /tmp/sister.wikitext
-rm /tmp/sister.wikitext
-curl -s 'https://ixwiki.com/api.php?action=parse&text=%7B%7BSister%7Ciiwiki%7CCaphiria%7D%7D&contentmodel=wikitext&format=json' | jq -r '.parse.text["*"]' | head -5
+mwmaint edit --user '<your admin name>' --summary 'Sister wiki link box' Template:Sister < "$IX/scripts/ops/mediawiki/Template-Sister.wikitext"
 ```
 
+Check what classic renders (read-only). The title is not looked up here, so any title will do:
+
+```bash
+curl -s 'https://ixwiki.com/api.php?action=parse&text=%7B%7BSister%7Ciiwiki%7CCaphiria%7Csection%3DHistory%7D%7D&contentmodel=wikitext&format=json' \
+  | jq -r '.parse.text["*"]' | grep -o 'data-sister-[a-z]*="[^"]*"'
+```
+
+It must print four lines: `data-sister-wiki="iiwiki"`, `data-sister-title="Caphiria"`, `data-sister-mode="section"` and
+`data-sister-section="History"`. Fewer lines mean classic dropped the attributes, or the saved page is not the tracked
+file: compare the page's text on classic with the file, and stop and ask the owner if they match and the attributes are
+still missing. Without them WikiOS shows the plain link box and no embed.
+
 A command-line edit does not call the webhook; the `wiki-recentchanges` job brings the page into WikiOS within 10
-minutes. **Rollback:** delete `Template:Sister` on classic.
+minutes. **Rollback:** delete `Template:Sister` on classic. Pages that use it then show a red template link on both
+wikis.
+
+### 3e. The sister interwiki prefixes on classic (owner decision 2026-10-25)
+
+Classic gets two interwiki prefixes, so editors can write `[[iiwiki:Title]]` and `[[althistory:Title]]`. Classic renders
+them as `extiw` links to the same absolute URLs an external link uses, and WikiOS opens both forms in its own reader.
+Pages written with external links before this step keep working. Everything here is launch-time.
+
+Check first (read-only). This must print nothing:
+
+```bash
+curl -s 'https://ixwiki.com/api.php?action=query&meta=siteinfo&siprop=interwikimap&format=json' \
+  | jq -r '.query.interwikimap[] | select(.prefix=="iiwiki" or .prefix=="althistory") | "\(.prefix) \(.url)"'
+```
+
+If it prints a prefix with the URL given below (`https://iiwiki.com/wiki/$1` or `https://althistory.fandom.com/wiki/$1`),
+skip that one. If it prints a prefix with any other URL, stop and ask the owner: editors already use that prefix.
+
+Then read how classic keeps its interwikis, as MediaWiki itself sees its settings (read-only). The one line of PHP goes
+to the `eval` script on stdin:
+
+```bash
+echo '$c = MediaWiki\MediaWikiServices::getInstance()->getMainConfig(); echo json_encode( [ "InterwikiCache" => $c->get( "InterwikiCache" ), "InterwikiExpiry" => $c->get( "InterwikiExpiry" ), "MainCacheType" => $c->get( "MainCacheType" ), "MainWANCache" => $c->get( "MainWANCache" ), "DBname" => $c->get( "DBname" ), "DBprefix" => $c->get( "DBprefix" ) ] ), "\n";' | mwmaint eval
+curl -s 'https://ixwiki.com/api.php?action=query&meta=siteinfo&siprop=extensions|usergroups&format=json' \
+  | jq -r '"Interwiki extension: \([.query.extensions[] | select(.name=="Interwiki")] | length)", "groups with the interwiki right: \([.query.usergroups[] | select(.rights | index("interwiki")) | .name] | join(" "))"'
+```
+
+- **`InterwikiCache` is not `false`:** stop and ask the owner. Classic then reads its interwikis from a fixed file or
+  array, not from the `interwiki` table, so neither way below has any effect.
+- **The Interwiki extension is loaded (`1`) and a group you belong to has the `interwiki` right:** add both entries on
+  classic's `Special:Interwiki`. Prefix `iiwiki`, URL `https://iiwiki.com/wiki/$1`, API `https://iiwiki.com/api.php`.
+  Prefix `althistory`, URL `https://althistory.fandom.com/wiki/$1`, API `https://althistory.fandom.com/api.php`. Leave
+  "forward" and "transclude" unticked, and the wiki ID empty. The form clears the interwiki cache itself, so go
+  straight to the verification below. (The form keeps its own log, and you take no dump.)
+- **Otherwise** (no extension, or nobody holds the right), insert the rows through the wiki's database client. Do not
+  grant the right in `LocalSettings.php` for this. The commands below use `mysql ixwiki`, as step 7 does: the database
+  name is the `DBname` printed above, and if `DBprefix` is not empty, put it in front of `interwiki`. The client takes
+  its credentials from your `~/.my.cnf` (or use `sudo mysql` with socket authentication); never pass `-p<password>`.
+
+  ```bash
+  ( umask 077; mysqldump --single-transaction ixwiki interwiki > "$BK/interwiki.3e.sql" ) && ls -l "$BK/interwiki.3e.sql"
+  mysql ixwiki <<'SQL'
+  INSERT INTO interwiki (iw_prefix, iw_url, iw_api, iw_wikiid, iw_local, iw_trans) VALUES
+    ('iiwiki', 'https://iiwiki.com/wiki/$1', 'https://iiwiki.com/api.php', '', 0, 0),
+    ('althistory', 'https://althistory.fandom.com/wiki/$1', 'https://althistory.fandom.com/api.php', '', 0, 0);
+  SQL
+  ```
+
+  Leave out the row of a prefix the first check said to skip. Then clear the interwiki cache. MediaWiki keeps each
+  prefix's lookup, a miss included, in its main object cache for `InterwikiExpiry` seconds (printed above; 10800, three
+  hours, is the default). The lookup's own `invalidateCache` deletes those keys:
+
+  ```bash
+  echo '$l = MediaWiki\MediaWikiServices::getInstance()->getInterwikiLookup(); foreach ( [ "iiwiki", "althistory" ] as $p ) { $l->invalidateCache( $p ); } echo "cleared\n";' | mwmaint eval
+  ```
+
+  That reaches the web requests' cache when it is shared with the command line: memcached (`MainCacheType` 2, or a
+  memcached name), the database (1) or Redis. If `MainCacheType` printed 3 (`CACHE_ACCEL`) or names APCu, the web
+  requests keep their own cache in PHP-FPM's memory, which the command line cannot reach: reload PHP-FPM as well,
+  `sudo php-fpm8.4 -t && sudo systemctl reload php8.4-fpm`. With 0 (`CACHE_NONE`) nothing is cached. If the
+  verification below still fails after this, wait `InterwikiExpiry` seconds and check again; if it fails then, stop and
+  ask the owner.
+
+Verify (read-only). The siteinfo check at the top of this step now prints both prefixes with their URLs, and classic
+renders both links as `extiw` links to the sister wikis:
+
+```bash
+curl -s 'https://ixwiki.com/api.php?action=parse&text=%5B%5Biiwiki%3ACaphiria%5D%5D%20%5B%5Balthistory%3AMain%20Page%5D%5D&contentmodel=wikitext&format=json' \
+  | jq -r '.parse.text["*"]' | grep -o '<a [^>]*class="extiw"[^>]*>'
+#   two links: href="https://iiwiki.com/wiki/Caphiria" and href="https://althistory.fandom.com/wiki/Main_Page"
+```
+
+A page that already held `[[iiwiki:...]]` or `[[althistory:...]]` was rendered as a red link to a local page, and keeps
+that render until it is edited or purged. List them (read-only; MediaWiki 1.45 keeps link targets in `linktarget`):
+
+```bash
+mysql ixwiki -e "SELECT DISTINCT p.page_namespace, p.page_title FROM pagelinks pl
+  JOIN linktarget lt ON lt.lt_id = pl.pl_target_id JOIN page p ON p.page_id = pl.pl_from
+  WHERE lt.lt_namespace = 0 AND (lt.lt_title LIKE 'Iiwiki:%' OR lt.lt_title LIKE 'Althistory:%')"
+```
+
+Purge each page it lists (`?action=purge` on classic). WikiOS needs nothing more: its copies re-render after step 6b
+anyway (step 7b), through classic, which knows the prefixes by then.
+
+**Rollback:** delete the two entries on `Special:Interwiki`, or through the database client
+(`DELETE FROM interwiki WHERE iw_prefix IN ('iiwiki','althistory');`, the dump in `$BK/interwiki.3e.sql` shows the table
+as it was), then clear the cache the same way. Links written with the prefixes meanwhile show as red links again.
 
 ## 4. Private render engine on loopback
 
@@ -793,6 +888,71 @@ renders nothing through MediaWiki without it, and the mirror waits.
 **Rollback:** `sudo cp -a "$BK/ixwiki-defense.conf.4b" /etc/ixwiki-defense.conf && sudo systemctl restart ixwiki-bot-defense`, and
 `sudo cp -a "$BK/ixwiki-bots.jail.conf.4b" /etc/fail2ban/jail.d/ixwiki-bots.conf && sudo fail2ban-client reload`. Delete
 any Cloudflare IP Access Rule added here in the dashboard.
+
+## 4c. The sister wikis answer the server (read-only)
+
+IxStates reads IIWiki and the AltHistory Wiki from the server: their pages, previews and embeds, and the public
+`api.php` proxy. Everything here is read-only, and launch-time.
+
+Production reads iiwiki directly. The relay at maps.ixwiki.com is for development only, so no production env file may
+name it (each must print nothing):
+
+```bash
+grep -n '^IIWIKI_DEV_PROXY_URL=' "$IX/.env.production" "$IX/.env.production.local" 2>/dev/null
+grep -n 'IIWIKI_DEV_PROXY_URL' "$IX/ecosystem.config.cjs"
+```
+
+If a line prints, stop and ask the owner before removing it.
+
+From the server, with the server's user agent:
+
+```bash
+for u in 'https://iiwiki.com/api.php' 'https://althistory.fandom.com/api.php'; do
+  curl -s -o /dev/null -w "%{http_code} %{content_type} $u\n" -A IxStats-Builder "$u?action=query&meta=siteinfo&format=json"
+done
+```
+
+Each line must start `200 application/json`.
+
+- **A `403`, or `text/html`, from iiwiki** is its Cloudflare challenge: the server's egress address (printed in step 4b) is
+  not allowlisted there. Stop and tell the owner, who asks iiwiki's administrators to allow that address with the
+  `IxStats-Builder` agent. Nothing on this server changes. The launch can go on meanwhile: WikiOS says "IIWiki could not
+  be reached just now" on iiwiki pages, previews and embeds, and its breaker keeps the attempts down to one probe every
+  few minutes (step 10).
+- **Anything else that is not `200 application/json` from the AltHistory Wiki:** tell the owner the same way. Fandom
+  answers the server directly, with nothing to allowlist, so a failure there is usually Fandom's own.
+
+After step 6b, IxStates' `api.php` proxy, on loopback under its base path (use `/projects/ixstats` instead if that is the
+one that answered in step 6):
+
+```bash
+for w in iiwiki althistory; do
+  echo "== $w"
+  curl -s -D - -o /dev/null "http://127.0.0.1:3550/projects/ixstates/api/mediawiki/$w/api.php?action=query&titles=Main_Page&format=json" \
+    | grep -iE '^(HTTP/|cache-control|vary|retry-after):'
+done
+```
+
+Each must show a `200`, `Cache-Control: public, max-age=300, s-maxage=300, stale-while-revalidate=600`, and a `Vary` line
+that names `Origin`: a success is cached for five minutes and never handed to another origin. A failure is never cached:
+
+- **`503`** with `Cache-Control: no-store` and `Retry-After: 30`: the wiki could not be reached, or its breaker is open.
+  Repeat the server check above.
+- **`429`** with `Cache-Control: no-store` and a `Retry-After`: the wiki said busy, or the proxy's own limit refused the
+  call. Wait the seconds it names and try once more.
+
+Then open one iiwiki page in the reader, `$IXSTATES_URL/wiki/<an iiwiki title>?source=iiwiki` (step 6a says how to set
+`IXSTATES_URL`): it renders. A title that does not exist on iiwiki says not found. Neither says "could not be reached".
+
+**Rollback:** nothing to roll back (read-only).
+
+**Note (no launch step): the development relay.** The `api.php` proxy that IxWorld serves at maps.ixwiki.com, the relay
+development uses for iiwiki, gets the guard and the cache headers above at IxWorld's next ordinary deploy
+(`scripts/deploy-ixworld.sh`). `deploy-production.sh` runs that script, so step 2's deploy normally brings them along;
+nothing in the launch depends on it, and `ALLOWED_API_PARAMS` is unchanged. That list does not
+carry `rvlimit` or `rvdir`, so the relay drops them, and an iiwiki page's author line in development shows only its
+latest revision. Production reads iiwiki directly and is not affected. Fixing it in development means adding both to
+`ALLOWED_API_PARAMS` (`src/app/api/mediawiki/_config.ts`) in a later release and deploying IxWorld; the owner decides.
 
 ## 5. Build and start the WikiOS process
 
@@ -1628,6 +1788,7 @@ and the article is there.
 | Discord DMs | disk alert, PHP-FPM watchdog and bot-defense alerts reach the admin through `ixwiki-notify.sh` |
 | Disk | `df -h /` (WikiOS logs go to `/var/log/pm2/`, rotated at 50M x 5; nginx logs rotate through `/etc/logrotate.d/nginx`) |
 | Conflicts and queues | `/admin/wikios-settings`: Conflict log, Inbound sync quarantine and MediaWiki Mirror Outbox (step 10d) |
+| Sister wikis | IxStates' own log (as for the webhook) and `pm2 logs ixstats-cron --lines 500 --nostream`, through `grep -iE 'circuit (open\|closed)\|could not be reached'`. `[upstream-guard] <Wiki> (<host>): circuit open after N failures in a row` and `... circuit closed; requests resume.` cover WikiOS's reads and the `api.php` proxy alike; a search across all wikis also warns `<Wiki> could not be reached`, at most once a minute per wiki. A breaker that opens and never closes means that wiki, or the server's route to it, is down: repeat step 4c's server check |
 
 ### 10a. PHP-FPM watchdog: make it probe MediaWiki, not WikiOS (before step 8)
 
@@ -1867,6 +2028,7 @@ arrive in a commit, never as a hand edit on the server (`deploy-production.sh` r
 | `/etc/fail2ban/jail.d/ixwiki-bots.conf` | `ignoreip` in the three ixwiki jails | 4b |
 | `/etc/ixwiki-defense.conf`, `/etc/fail2ban/jail.d/ixwiki-bots.conf` | per-IP limit 240; `maxretry` x 4 | 10b |
 | `/ixwiki/shared/bots/discord/.env` | MediaWiki API URL on IxStates' loopback `/w/api.php`; the new bot password | 6c |
+| classic's database, table `interwiki` (not a file; dumped to `$BK/interwiki.3e.sql` first) | rows for `iiwiki` and `althistory`, when they are not added on `Special:Interwiki` | 3e |
 | classic's `robots.txt` (`$DOCROOT/robots.txt`) | IxStates' 13 `Allow` / `Disallow` lines in its `User-agent: *` group and each named crawler group that does not block the whole site | 6d |
 
 ## Later
