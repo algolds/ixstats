@@ -653,6 +653,23 @@ export function needsSettling(view: SettleView): boolean {
   return view.renderQuality === "fallback" || view.stale === true;
 }
 
+/**
+ * WikiOS's render-failure cool-down (`FAILURE_COOLDOWN_MS` in src/lib/wiki-os/services/render-service.ts): after a
+ * render fails, every read of that page is a fallback with no new render for this long. Copied, not imported: that
+ * module loads the database client. A test checks the copy against the source.
+ */
+export const WIKIOS_RENDER_FAILURE_COOLDOWN_MS = 30_000;
+/** How long a reader waits for a render before it is given a fallback (`RENDER_WAIT_MS` in article-view-service.ts). */
+export const WIKIOS_READER_RENDER_WAIT_MS = 6_000;
+/** Parity's wait before each refetch of a view that still `needsSettling`. */
+export const DEFAULT_SETTLE_MS = 10_000;
+/**
+ * Refetches after the first fetch. The window (tries × wait, 40 s) outlasts a failed render's cool-down plus the
+ * reader's wait for that render (36 s), so one transient render failure is retried by WikiOS before parity scores
+ * the page; a page still a fallback after the window fails.
+ */
+export const DEFAULT_SETTLE_TRIES = 4;
+
 export interface SettleOptions {
   /** Wait before each refetch. */
   settleMs: number;

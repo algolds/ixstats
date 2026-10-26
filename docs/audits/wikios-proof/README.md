@@ -34,7 +34,8 @@ The CLI is [`scripts/audit/wikios-proof.ts`](../../../scripts/audit/wikios-proof
   since WikiOS's copy is not scored as a difference; a revision MediaWiki has deleted or hidden since counts as corpus
   drift. A page whose revision is not wikitext (a `sanitized-css` page in the main namespace, say) is left out of the
   sample by its content model: it is not an article. A WikiOS view that is still a fallback or a stale render is
-  fetched again after a wait, up to three times. A page that fails records which side failed.
+  fetched again every 10 s, up to four times: the 40 s window outlasts WikiOS's 30 s render-failure cool-down, so a
+  first render that failed once is tried again before the page is scored. A page that fails records which side failed.
 - **Bench** ([`scripts/bench/wikios-bench.ts`](../../../scripts/bench/wikios-bench.ts)). For each page it times the
   MediaWiki article page, the WikiOS article page and its data call, title search on both, and history on both. The
   comparison is p95 over every run.

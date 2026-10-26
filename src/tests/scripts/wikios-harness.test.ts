@@ -5,10 +5,14 @@
  * ixwiki.com at least a second apart, with the allowlisted IxStats-Builder agent), and reads only a local database.
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import {
+  DEFAULT_SETTLE_MS,
+  DEFAULT_SETTLE_TRIES,
+  WIKIOS_READER_RENDER_WAIT_MS,
+  WIKIOS_RENDER_FAILURE_COOLDOWN_MS,
   fetchUntilSettled,
   isLocalDatabaseUrl,
   chunked,
@@ -286,5 +290,29 @@ describe("parity by revision", () => {
   it("slices rev ids for the API's 50 a request", () => {
     expect(chunked([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
     expect(chunked([], 50)).toEqual([]);
+  });
+});
+
+describe("the settle window", () => {
+  /** A `const NAME = 30_000;` in a product module, as a number. */
+  const constantIn = (path: string, name: string): number => {
+    const match = new RegExp(`const ${name} = ([\\d_]+);`).exec(readFileSync(resolve(path), "utf8"));
+    if (!match) throw new Error(`${name} not found in ${path}`);
+    return Number(match[1].replace(/_/g, ""));
+  };
+
+  it("copies WikiOS's render-failure cool-down and reader wait exactly", () => {
+    expect(constantIn("src/lib/wiki-os/services/render-service.ts", "FAILURE_COOLDOWN_MS")).toBe(
+      WIKIOS_RENDER_FAILURE_COOLDOWN_MS
+    );
+    expect(constantIn("src/lib/wiki-os/services/article-view-service.ts", "RENDER_WAIT_MS")).toBe(
+      WIKIOS_READER_RENDER_WAIT_MS
+    );
+  });
+
+  it("outlasts a failed render's cool-down plus the reader's wait, so WikiOS renders the page again first", () => {
+    expect(DEFAULT_SETTLE_MS * DEFAULT_SETTLE_TRIES).toBeGreaterThan(
+      WIKIOS_RENDER_FAILURE_COOLDOWN_MS + WIKIOS_READER_RENDER_WAIT_MS
+    );
   });
 });

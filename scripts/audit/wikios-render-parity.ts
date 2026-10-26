@@ -9,8 +9,9 @@
  * pages, which is where render fidelity breaks.
  *
  * A WikiOS view that is a locally compiled fallback (`renderQuality: "fallback"`) or a stale bundle
- * (`stale: true`) is not MediaWiki's render yet, so it is fetched again after `--settle-ms` (default 8000), at
- * most `--settle-tries` times (default 3). A scored page keeps the last view's `renderQuality` and `stale`; the
+ * (`stale: true`) is not MediaWiki's render yet, so it is fetched again after `--settle-ms` (default 10000), at
+ * most `--settle-tries` times (default 4): the window outlasts WikiOS's render-failure cool-down (see
+ * `DEFAULT_SETTLE_TRIES`), so a page whose first render failed once is rendered again before it is scored. A scored page keeps the last view's `renderQuality` and `stale`; the
  * aggregate counts the scored pages still unsettled as `fallbackRenders`. A page that could not be scored has
  * an `error` and `failedOn` ("mediawiki" or "wikios"), the side that failed.
  *
@@ -25,7 +26,7 @@
  * Usage:
  *   bun scripts/audit/wikios-render-parity.ts --mw-api <MediaWiki api.php URL> [--wikios http://localhost:3000] \
  *     [--pages scripts/bench/pages.default.json] [--sample N] [--out .bench-out/parity.json] [--interval-ms 1000] \
- *     [--settle-ms 8000] [--settle-tries 3] [--revisions corpus-revisions.json]
+ *     [--settle-ms 10000] [--settle-tries 4] [--revisions corpus-revisions.json]
  *
  * `--mw-api` is required (there is no production default). Requests are throttled (>= 1 s per host,
  * IxStats-Builder User-Agent for ixwiki.com). The exit code is 0 unless the arguments or the page list are
@@ -38,6 +39,8 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { z } from "zod";
 import {
+  DEFAULT_SETTLE_MS,
+  DEFAULT_SETTLE_TRIES,
   chunked,
   ensureParentDir,
   exitWithError,
@@ -186,8 +189,8 @@ function parseConfig(argv: string[]): Config {
     sample,
     out: values.out ?? DEFAULT_OUT,
     intervalMs,
-    settleMs: nonNegativeInt(values["settle-ms"], 8000, "--settle-ms"),
-    settleTries: nonNegativeInt(values["settle-tries"], 3, "--settle-tries"),
+    settleMs: nonNegativeInt(values["settle-ms"], DEFAULT_SETTLE_MS, "--settle-ms"),
+    settleTries: nonNegativeInt(values["settle-tries"], DEFAULT_SETTLE_TRIES, "--settle-tries"),
     revisions: values.revisions ?? null,
   };
 }
