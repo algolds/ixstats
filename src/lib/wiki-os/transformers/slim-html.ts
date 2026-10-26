@@ -7,7 +7,7 @@
 //   - classes MediaWiki and its citation templates put everywhere and nothing here styles or reads
 //     (a test checks every one against the stylesheets and the code);
 //   - class/style/title attributes left empty;
-//   - whitespace between block elements, and in a table's or list's structure.
+//   - whitespace between block elements and in a table's structure; in a list's, it becomes one space.
 
 import { cssIdentifiers } from "~/lib/utils/scope-template-styles";
 import { leavesAlone } from "./dom-depth";
@@ -80,7 +80,7 @@ export function templateStyleIdentifiers(...htmls: string[]): Set<string> {
 /** Attributes that say nothing when empty. */
 const REMOVABLE_WHEN_EMPTY = ["class", "style", "title"] as const;
 
-/** Elements whose children are laid out as a structure: whitespace between them is never text. */
+/** Elements whose children are laid out as a structure: whitespace between them is never text (in LISTS, one space). */
 const STRUCTURAL_PARENTS: ReadonlySet<string> = new Set([
   "UL",
   "OL",
@@ -133,6 +133,12 @@ const BLOCK_ELEMENTS: ReadonlySet<string> = new Set([
   "TR",
   "UL",
 ]);
+
+/**
+ * Lists: the whitespace in one is one space, not nothing. A TemplateStyles class (hlist) can lay its items out inline,
+ * and the slimmer only reads inline styles, so the space between them may show; between block items it never does.
+ */
+const LISTS: ReadonlySet<string> = new Set(["UL", "OL"]);
 
 /** Text in these keeps its whitespace exactly. */
 const WHITESPACE_SENSITIVE = "pre, textarea, code, script, style, svg, [style*='white-space']";
@@ -218,12 +224,16 @@ export function slimArticleHtml(html: string, styled: ReadonlySet<string> = NO_C
 
   const walker = document.createTreeWalker(content, SHOW_TEXT);
   const removable: Text[] = [];
+  const spaced: Text[] = [];
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    if (isLayoutWhitespace(node as Text)) removable.push(node as Text);
+    const text = node as Text;
+    if (!isLayoutWhitespace(text)) continue;
+    (LISTS.has(text.parentElement?.tagName ?? "") ? spaced : removable).push(text);
   }
   // `data = ""`, not `remove()`: jsdom's remove is linear in the parent's children, and a page of a hundred
   // thousand `<p>…</p>` lines is one parent. An empty text node serializes to nothing.
   for (const text of removable) text.data = "";
+  for (const text of spaced) text.data = " ";
 
   return template.innerHTML;
 }

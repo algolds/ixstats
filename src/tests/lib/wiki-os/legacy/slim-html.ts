@@ -1,5 +1,5 @@
 // The HTML slimmer as the integration branch has it (515ca3c72), before the regex-DoS sweep (plan F15), verbatim apart from its
-// import paths: regex-dos-html.test.ts holds the empty-the-text rewrite against it. Not used by any code.
+// import paths and the list space (2026-10-26): regex-dos-html.test.ts holds the empty-the-text rewrite against it. Not used by any code.
 
 // src/lib/wiki-os/transformers/slim-html.ts
 // Takes weight out of a view bundle's HTML at render time, once per revision, so every reader's
@@ -223,7 +223,11 @@ export function slimArticleHtml(html: string, styled: ReadonlySet<string> = NO_C
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
     if (isLayoutWhitespace(node as Text)) removable.push(node as Text);
   }
-  for (const text of removable) text.remove();
+  // (2026-10-26: whitespace in a list is one space in the slimmer now, so here too; the rest is as it was)
+  for (const text of removable) {
+    if (text.parentElement?.tagName === "UL" || text.parentElement?.tagName === "OL") text.data = " ";
+    else text.remove();
+  }
 
   return template.innerHTML;
 }

@@ -624,9 +624,18 @@ describe("slimming", () => {
     ],
     ["empty class, style and title go; an empty alt stays", '<p class="" style=" " title="">x</p><img alt="" src="/a.png">', '<p>x</p><img alt="" src="/a.png">'],
     [
-      "whitespace between blocks, in tables and lists goes, never between inline elements",
+      "whitespace between blocks and in tables goes, in lists it is one space, never between inline elements",
       "<div>\n  <p>a</p>\n  <p>b</p>\n</div>\n<ul>\n  <li>one</li>\n  <li>two</li>\n</ul>\n<table>\n <tbody>\n  <tr>\n   <td>x</td>\n   <td>y</td>\n  </tr>\n </tbody>\n</table>\n<p><b>bold</b> <i>italic</i> <span> </span><a href='/wiki/X'>x</a></p>",
-      '<div><p>a</p><p>b</p></div><ul><li>one</li><li>two</li></ul><table><tbody><tr><td>x</td><td>y</td></tr></tbody></table><p><b>bold</b> <i>italic</i> <span> </span><a href="/wiki/X">x</a></p>',
+      '<div><p>a</p><p>b</p></div><ul> <li>one</li> <li>two</li> </ul><table><tbody><tr><td>x</td><td>y</td></tr></tbody></table><p><b>bold</b> <i>italic</i> <span> </span><a href="/wiki/X">x</a></p>',
+    ],
+    [
+      "a list a TemplateStyles class lays out inline (hlist) keeps one space between its items; a row keeps none",
+      STYLE(".mw-parser-output .hlist li{display:inline}") +
+        '<div class="hlist"><ul>\n<li><a href="/wiki/A">A</a></li>\n<li><a href="/wiki/B">B</a></li>\n</ul><ol>\t<li>1</li>  <li>2</li></ol></div>' +
+        "<table><tr>\n<td>x</td>\n<td>y</td>\n</tr></table>",
+      STYLE(".mw-parser-output .hlist li{display:inline}") +
+        '<div class="hlist"><ul> <li><a href="/wiki/A">A</a></li> <li><a href="/wiki/B">B</a></li> </ul><ol> <li>1</li> <li>2</li></ol></div>' +
+        "<table><tbody><tr><td>x</td><td>y</td></tr></tbody></table>",
     ],
     [
       "a no-break space is content (an &nbsp; spacer, other Unicode spaces), plain whitespace is not",
