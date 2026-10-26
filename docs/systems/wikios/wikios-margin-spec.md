@@ -248,7 +248,7 @@ read by `getArticleMarginData`, but nothing writes it.
 
 1. **Drawer & Gutter Pins**: Implemented in `src/components/wiki-os/margin/WikiMarginDrawer.tsx` and `MarginGutterPins.tsx`.
 2. **Selection Capsule**: Implemented in `src/components/wiki-os/margin/SelectionCapsule.tsx`.
-3. **Pillar Tabs**: The drawer shows two tabs, Threads (`tabs/MarginThreadsTab.tsx`) and Markup (`tabs/MarginMarkupTab.tsx`). The planned **📑 Stash** tab was never built (there is no `MarginStashTab.tsx`); stashing happens from the selection capsule and the reader's `StashButton`. A third **Inspect** tab (`tabs/MarginInspectTab.tsx`) exists but is hidden in `WikiMarginDrawer.tsx` pending a redesign.
+3. **Pillar Tabs**: The drawer shows two tabs, Threads (`tabs/MarginThreadsTab.tsx`) and Markup (`tabs/MarginMarkupTab.tsx`). The planned **📑 Stash** tab was never built (there is no `MarginStashTab.tsx`); stashing happens from the selection capsule and the reader's `StashButton`. A third **Inspect** tab was hidden and unreachable; it was deleted on 2026-10-25.
 4. **Backend Router**: Implemented in `src/server/api/routers/wikios/discussions.ts` and registered in `src/server/api/routers/wikios/index.ts`.
 5. **Reader Integration**: Mounted in `src/components/wiki-os/reader/ArticleRenderer.tsx` with hotkeys `T` / `I`.
 6. **Route Forwarding**: `/wiki/<title>?margin=threads` opens Margin on the subject page; the talk page is `/wiki/Talk:<title>`. `?margin` is honored only for IxWiki pages; pages opened with `?source=` (another wiki) stay read-only.

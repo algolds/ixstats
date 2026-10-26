@@ -1,6 +1,6 @@
 # What still talks to MediaWiki, and why
 
-Status: written for plan 418 ("retire MediaWiki read tethers"). Last full audit: 2026-09-30.
+Status: written for plan 418 ("retire MediaWiki read tethers"). Last full audit: 2026-10-25 (launch hardening).
 
 WikiOS owns IxWiki's pages. PostgreSQL holds every page, revision, link, category, image link, asset record, user
 group and log entry (`wiki_articles`, `wiki_revisions`, `wiki_links`, `wiki_category_members`, `wiki_image_links`,
@@ -13,10 +13,11 @@ people's wikis and are read where they live.
 Nothing else may call an IxWiki MediaWiki. A read that is not on the list below goes to Postgres, and when
 Postgres has nothing, the answer is "nothing", never a retry against MediaWiki.
 
-This document is enforced: `src/tests/architecture/mediawiki-dependencies-doc.test.ts` fails when a source file that
-names a MediaWiki endpoint (`getMediaWikiApiUrl`, the `config.ts` URL helpers `mediaWikiOrigin` / `mediaWikiApiUrl` /
-`mediaWikiImageUrl` / `publicArticleUrl` / `isMediaWikiUrl` / `mediaWikiHostPattern`, `api.php`, `NEXT_PUBLIC_MEDIAWIKI_URL`,
-`WIKIOS_MEDIAWIKI*`) is not mentioned here. Adding a call site means adding a row.
+Every source file that names a MediaWiki endpoint (`getMediaWikiApiUrl`, the `config.ts` URL helpers `mediaWikiOrigin` /
+`mediaWikiApiUrl` / `mediaWikiImageUrl` / `publicArticleUrl` / `isMediaWikiUrl` / `mediaWikiHostPattern`, `api.php`,
+`NEXT_PUBLIC_MEDIAWIKI_URL`, `WIKIOS_MEDIAWIKI*`) must be mentioned here. Adding a call site means adding a row. The test that
+enforced this, `src/tests/architecture/mediawiki-dependencies-doc.test.ts`, was deleted with other tests on 2026-10-21
+(`f5bf69fa9`); until it is restored, the commands under "How to re-check" are the check.
 
 **One config object (plan 415, v1 decision D14).** The wiki's host, its endpoints and its name are read from the environment
 once, in `src/lib/wiki-os/config.ts` (`wikiosConfig`, frozen). `NEXT_PUBLIC_MEDIAWIKI_URL` is the public origin (default
@@ -143,7 +144,11 @@ These files implement or link to the MediaWiki-compatible API that WikiOS **serv
 `src/lib/wiki-os/api-compat/store-lists.ts`,
 `src/lib/wiki-os/api-compat/store-types.ts`,
 `src/lib/wiki-os/api-compat/store.ts`,
-`src/lib/wiki-os/api-compat/types.ts`.
+`src/lib/wiki-os/api-compat/types.ts`,
+`src/lib/wiki-os/api-compat/store-users.ts` (api.php's accounts are passport handles).
+`src/lib/wiki-os/services/revert-service.ts`, `src/lib/wiki-os/services/rollback-plan.ts` and
+`src/lib/wiki-os/services/save-rate-limit.ts` name `api.php` only in comments: its `action=rollback` and its saves go through
+the same revert, rollback and save rate limit as the editor.
 `action=upload` (`api-compat/modules/upload.ts`, the file as a multipart part read by `src/app/w/api.php/route.ts`) goes to the
 same `uploadFile` service as the browser's upload (mirror section above): it names no MediaWiki endpoint and sends no request.
 
@@ -158,7 +163,8 @@ Cloudflare), `src/lib/site-metadata.ts` (the page-metadata origin when `NEXT_PUB
 `src/lib/app-url.ts` (in dev, the origin of the IxStates links in feeds, Discord and purges when neither `APP_URL` nor `NEXT_PUBLIC_APP_URL` is set),
 `src/components/maps/core/MapWelcomeModal.tsx` (a link). `src/lib/wiki-os/v1-switch.ts` and
 `src/lib/wiki-os/permissions.ts` (`assertWikiosWritable`) only name `api.php` in comments: while the WikiOS v1 switch is off,
-`/w/api.php` answers `readonly`.
+`/w/api.php` answers `readonly`. `src/lib/wiki-os/namespace-policy.ts` names classic ixwiki.com in a comment, as the
+authority for `MediaWiki:` pages.
 
 A browser calls none of this: `src/tests/architecture/client-server-entrypoints.test.ts` fails if client code imports a module that
 calls MediaWiki or names a MediaWiki URL helper. `src/lib/wiki-os/templates/template-registry.ts` (types and pure helpers) is
@@ -191,12 +197,13 @@ addresses only (url-only); iiwiki's development proxy stays in `config.ts` `getM
 | `src/lib/realms/sources/wiki-discovery-client.ts` (the reader), `src/lib/realms/sources/iiwiki-discovery.ts`, `src/lib/realms/sources/wiki-file-info.ts`, `src/server/modules/realms/realms.wiki.ts` (callers: `routers/realms/wiki.ts`) | a realm's world on its own sister wiki (`Realm.settings.wiki`): the roster's `categorymembers`, nation pages' `revisions`, map categories' files, the portal's `images` and `pageimages`, and `imageinfo` with `url\|size\|mime\|sha1\|extmetadata`. Started by a site admin or the realm's founder (world discovery, "Use this map", Re-check, the infobox hints export). One request at a time, a pause between, a cap per step, Retry-After honoured; a 403 or a challenge page ends that discovery with what it gathered and **never** marks the host offline for the rest of the app (it does not go through `fetchExternalWiki`). |
 | `src/lib/realms/sources/wiki-file-original.ts` | the original bytes of one file of a realm's wiki (its `imageinfo` URL), straight from the wiki (never wsrv.nl, which may re-encode), through `_media-response.ts` `fetchFromAllowedHost` with every hop narrowed to that wiki's own hosts; image only, 40 MB, the SHA-1 imageinfo gave, 64 megapixels read from the header. Media-bytes. |
 | `src/server/api/routers/commons.ts`, `src/server/services/wikimedia-equipment-image-resolver.ts` | Commons search and file URLs. |
+| `src/lib/wiki-os/upstream-guard.ts` (plan 2026-10-25 sister wikis, C3) | no request of its own: the per-host breaker and limiter every sister-wiki and Commons API call above passes through, with a second, smaller lane for the public api.php proxy. A failure throws `WikiUnavailableError` (503, or 429 when busy), so WikiOS says "could not be reached", never "not found". |
+| `src/lib/wiki-os/sister-media.ts` | url-only: the `/api/mediawiki/<wiki>/...` media proxy path for an image in a sister page (a Fandom CDN file becomes `Special:FilePath/<File>`, which the proxy resolves through that wiki's `api.php`). |
 | `src/lib/wiki-os/upstream-fetch.ts` (`fetchMediaWikiJson`, used by `commons.ts`, `wikios/search.ts` and `wikios/categories.ts`) | the shared fetch for Commons and sister-wiki `api.php` calls: a timeout (8 seconds by default), a thrown error in place of an empty result, user agent `IxStats-Builder`, and an optional short in-process cache by URL. It names no wiki itself; the callers pass the address. |
 
 ### Files that only build or recognise an IxWiki address (no request to MediaWiki)
 
-`src/tests/architecture/mediawiki-dependencies-doc.test.ts` also matches the `config.ts` URL helpers and the literals
-`ixwiki.com`, `index.php` and `rest.php`. None of these files calls IxWiki's MediaWiki; the address comes from the one
+The check also matches the `config.ts` URL helpers and the literals `ixwiki.com`, `index.php` and `rest.php`. None of these files calls IxWiki's MediaWiki; the address comes from the one
 configuration object, never from a literal:
 
 - **Links and display URLs** to public IxWiki pages and files, built into an `href` or text (`publicArticleUrl`, `mediaWikiImageUrl`,
@@ -208,7 +215,11 @@ configuration object, never from a literal:
   `src/components/wiki-os/margin/modals/MarginShareModal.tsx`, `src/components/wiki-os/margin/tabs/MarginMarkupTab.tsx`,
   `src/components/wiki-os/media-search/MyStashTab.tsx` (a stash image's IxWiki file page), `src/components/wiki-os/media-search/WikiRepositoryTab.tsx`, `src/components/wiki-os/media-search/types.ts`, `src/components/wiki-os/reader/ImageLightbox.tsx`, `src/components/wiki-os/reader/ImageLightboxModal.tsx`,
   `src/lib/wiki-os/xml/export-writer.ts` (the dump's `siteinfo`), `src/lib/wiki-os/sitemap-xml.ts`,
-  `src/lib/wiki-os/wiki-path.ts`, `src/server/modules/identity/identity.vault.ts`.
+  `src/lib/wiki-os/wiki-path.ts`, `src/server/modules/identity/identity.vault.ts`,
+  `src/app/(wiki-os)/wiki/[...slug]/ArticlePageClient.tsx` (a sister page's "Open on" link when it cannot be read),
+  `src/components/wiki-os/reader/RedirectNotice.tsx` (a redirect on its own wiki),
+  `src/components/wiki-os/shared/WikiTooltipBody.tsx` (a sister page's link from a preview when its wiki could not be
+  reached), `src/components/shared/editor/SlateSerializer.ts` (a composer link to a page the reader does not open).
 - **Absolute post links written into wiki text** (`mediaWikiOrigin()`, no request): `src/server/modules/action-links/wiki-sync.ts`
   `appendChainToWiki` builds each linked post's absolute URL inside the section an approved story chain appends to its
   wiki page. The save itself is WikiOS's own (`edit-service.ts` `commitWikitextSave`), which the mirror then exports.
@@ -219,13 +230,18 @@ configuration object, never from a literal:
   `src/components/thinkpages/post/PostInlineLinkPreview.tsx`, `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`,
   `src/lib/cards/ns-image-proxy.ts`, `src/lib/wiki-os/main-page/featured-article.ts`,
   `src/lib/thinkpages-forum/post-html.ts` (the thread page's "Related on the wiki" panel reads the article titles a post links to),
-  `src/lib/wiki-os/legacy-profile-links.ts` (old IxStates profile links on the wiki's host, rewritten to the current pages).
+  `src/lib/wiki-os/legacy-profile-links.ts` (old IxStates profile links on the wiki's host, rewritten to the current pages),
+  `src/lib/wiki-os/wiki-link-target.ts` (an absolute link to an IxWiki or sister article, opened in the reader),
+  `src/lib/wiki-os/stash-content-type.ts` (a stashed image that is an IxWiki file),
+  `src/lib/wiki-os/embed-image.ts` (an embed's stored image is kept only when it is one of IxWiki's files, rebuilt on the
+  configured origin).
 - **The one absolute origin a TemplateStyles `url()` may name** (`mediaWikiOrigin()`, handed to the scoper and part of the sanitizer
   fingerprint; a relative URL stays allowed, any other host is dropped): `src/lib/utils/sanitize-html.ts`.
 - **Static files on the MediaWiki host loaded by a browser as an image `src`** (media-bytes, no API): `src/components/dashboard/accounts/AccountCreationModal.tsx`,
   `src/lib/sports/transition.ts`.
 - **URL rewriting and referrer comments**: `src/app/(wiki-os)/wiki/layout.tsx`, `src/lib/wiki-os/transformers/fix-editor-images.ts`,
-  `src/lib/wiki-os/transformers/resolve-highres-image.ts`.
+  `src/lib/wiki-os/transformers/resolve-highres-image.ts`, `src/lib/wiki-os/reader-hrefs.ts` (names `/api.php` among the paths
+  it never rewrites into the reader).
 - **`User-Agent` strings** sent to other services: `src/lib/demo-seed/sports/sports-helpers.ts`, `src/lib/discord/ixtwitter-sync.ts`,
   `src/lib/discord/thinkpages-feed.ts`, `src/lib/nationstates/api-client.ts`, `src/server/cron/validate-equipment-images.ts`.
 - **Other hosts under ixwiki.com that are not MediaWiki.** The old forum (`forum.ixwiki.com`, XenForo, retired in ThinkPages
@@ -248,15 +264,25 @@ or a subdomain that is not MediaWiki (above).
 The mirror (`csrf-cache.ts`, `write-service.ts`) reads `wikiosConfig.mediawiki.writeApiUrl` (`WIKIOS_MEDIAWIKI_API`, else the
 internal URL, else the public one) and `wikiosConfig.mediawiki.botUser`; the bot password stays an environment variable
 (`WIKIOS_MEDIAWIKI_BOT_TOKEN`), since the config object holds no secret. The inbound sync (`inbound-mediawiki.ts`) reads
-`mediaWikiApiUrl({ internal: true })`. With only `WIKIOS_MEDIAWIKI_INTERNAL_URL` set (the production cutover's setting), both now go to
-that loopback `api.php`; they used to go to the public host, which after the takeover is WikiOS's own `/api.php`.
+`mediaWikiApiUrl({ internal: true })`. With only `WIKIOS_MEDIAWIKI_INTERNAL_URL` set (the launch setting), both now go to
+that loopback `api.php`; they used to go to the public host, which would be WikiOS's own `/api.php` if the deferred takeover
+is ever applied.
 
 ## 3. Scripts (operator-run, outside `src/`)
 
 Never on a request path: `scripts/sync-ixwiki-live.ts`, `scripts/sync-ixwiki-media.ts`, `scripts/wikios-fetch-export.ts` (with
 `src/lib/wiki-os/xml/fetch-dump.ts`: an export-0.11 dump through the Action API), `scripts/wikios-import-rights.ts`,
 `scripts/audit/*` (parity audits against live MediaWiki), `scripts/bench/wikios-bench.ts`,
-`scripts/ops/verify-wikios-takeover.ts`, `scripts/deployment/*`, and the archived migrations under `scripts/archive/`.
+`scripts/ops/verify-wikios-takeover.ts` (the deferred takeover only), `scripts/deployment/*`, and the archived migrations under
+`scripts/archive/`.
+
+`scripts/audit/wikios-proof.ts`, the gold proof, spawns the parity, round-trip and bench harnesses
+(`scripts/audit/wikios-render-parity.ts`, `scripts/audit/wikios-roundtrip.ts`, `scripts/bench/wikios-bench.ts`). Parity reads
+classic's `api.php` (`action=parse`), and the bench times classic's article, search and history pages. The weekly
+`wikios-proof` cron job (`src/server/cron/wikios-proof-cron.ts`, which spawns the CLI and names no endpoint) runs it on the
+server against the loopback renderer (`WIKIOS_MEDIAWIKI_INTERNAL_URL`); the local proof asks classic's public `api.php` at
+most once every 2 s. The deploy's `predeploy` check runs only the round trip, which reads Postgres. See
+[docs/audits/wikios-proof/](../../audits/wikios-proof/README.md).
 
 ## 4. What plan 418 moved to Postgres
 
@@ -300,9 +326,9 @@ Already gone before 418, checked: the `getArticleHtml` Main Page `action=parse&p
 grep -rn "getMediaWikiApiUrl\|mediaWikiApiUrl\|api\.php" src --include=*.ts --include=*.tsx | grep -v "^src/tests"
 grep -rlE "mediaWikiOrigin|mediaWikiApiUrl|mediaWikiImageUrl|publicArticleUrl|isMediaWikiUrl|mediaWikiHostPattern|NEXT_PUBLIC_MEDIAWIKI_URL|WIKIOS_MEDIAWIKI" src --include=*.ts --include=*.tsx | grep -v "^src/tests"
 grep -rn "ixwiki\.com" src --include=*.ts --include=*.tsx | grep -v "^src/tests"   # the literals that remain: see "The literals that remain"
-bun run test -- src/tests/architecture/mediawiki-dependencies-doc.test.ts --maxWorkers=1
 ```
 
-Every hit must be a row above. The "no fetch" tests of plan 418 (`src/tests/**/*no-mediawiki*.test.ts`,
+Every hit must be a row above (the test that checked this, `mediawiki-dependencies-doc.test.ts`, was deleted in
+`f5bf69fa9`). The "no fetch" tests of plan 418 (`src/tests/**/*no-mediawiki*.test.ts`,
 `src/tests/**/mediawiki-tethers-*.test.ts`, `src/tests/lib/cards/lore-card-ixwiki.test.ts`) install a `fetch` that records and
 rejects any request to IxWiki (`src/tests/helpers/fetch-guard.ts`) and assert there was none.

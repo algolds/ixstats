@@ -10,9 +10,56 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased] — `rose-garden` (1.5)
 
-Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (the Cards mark and trophy art, 2026-10-24) is
-listed first, then the ThinkPages forum refresh (2026-10-17), then realm nations (2026-10-15), then the Vault collectathon hub (2026-10-14), then the work back to 2026-09-30 → 2026-10-05, then 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22
+Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (the WikiOS launch hardening, 2026-10-24 → 10-25) is
+listed first, then the Cards mark and trophy art (2026-10-24), then the ThinkPages forum refresh (2026-10-17), then realm nations (2026-10-15), then the Vault collectathon hub (2026-10-14), then the work back to 2026-09-30 → 2026-10-05, then 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22
 work. The version registry (`src/lib/buildVersion.ts`) reads 1.5.0 (the Vault collectathon hub below); the next release candidate is not cut yet.
+
+### 📖 WikiOS launch hardening (2026-10-24 → 10-25)
+
+No version or capability integer moves (owner to confirm).
+
+WikiOS launches as the wiki inside IxStates, and ixwiki.com stays classic MediaWiki, public and editable
+([spec](docs/superpowers/specs/2026-10-24-wikios-launch-hardening-design.md)). The ixwiki.com takeover is deferred:
+its MediaWiki parts apply only with `define( 'WIKIOS_TAKEOVER', true )`, which nothing in the launch sets. None of this
+is deployed; WikiOS editing launches with WikiOS v1.
+
+- **Data safety: last writer wins, never silent.** When WikiOS and classic both change a page from the same base, the
+  later save stands on both wikis; a tie within the same second goes to classic. This covers edits, deletes, moves and
+  undeletes, and replaces "park".
+  - One decision function (`services/conflict-rule.ts`) judges the mirror and the inbound sync, in every mode.
+  - Every overwritten editor is told: an in-app notice (and a Discord DM when linked) with the diff and "Restore my
+    text", a note on their classic talk page, and an edit-summary trail on the winning revision. Each collision is a row
+    of the Conflict log in `/admin/wikios-settings`.
+  - An older classic revision never replaces a newer head. Writes wait for the protections import. An inbound step
+    that keeps failing is quarantined so the sync moves on. Dead mirror jobs leave the queue for an admin to requeue or
+    discard, with an alert when the queue fills.
+  - Rollback and revert save on top of the head the editor read. Saves have their own rate limit per group (8 a minute
+    for new accounts, 30 for autoconfirmed).
+  - Classic is the authority for blocks, groups and `MediaWiki:` messages: no save writes a `MediaWiki:` page, and an
+    XML import accepts only classic's own dumps. The suite runs both modes.
+- **Hosts:**
+  - The sync webhook reaches IxStates. The open `/api/ixwiki-proxy/` reverse proxy is gone.
+  - Server-side MediaWiki calls need the loopback renderer.
+  - In-app wiki links and uploaded images stay under the base path. Feeds, Discord and permalinks are built on the app
+    URL.
+  - IxStates' robots rules cover only its own paths and keep `?source=` pages out of the index, with canonical URLs on
+    classic.
+  - The runbook covers bots on `/w/api.php`.
+- **Sister wikis (iiwiki, AltHistory):**
+  - One per-host breaker and limiter guards every outbound wiki call. A wiki that does not answer shows as "could not be
+    reached", never as "not found" or an empty list.
+  - One sanitizer is the trust boundary for their HTML.
+  - Absolute links to their articles open in the in-app reader with `?source=`, as do the composer's, Discord's, the
+    admin link tools' and media search's.
+  - Hover previews work for sister pages.
+  - `{{Sister|iiwiki|Title}}` shows as a link box on classic. WikiOS's live, cached embed of it is still being built.
+- **Proof and docs:**
+  - `scripts/audit/wikios-proof.ts` runs the editor round trip, render parity and the bench under a local, launch or
+    recurring profile, and checks them against `scripts/audit/wikios-proof-thresholds.json`.
+  - The weekly `wikios-proof` cron job runs it on the server. Every deploy refuses a release whose WikiOS code has no
+    committed passing proof ([docs/audits/wikios-proof/](docs/audits/wikios-proof/README.md); first report pending).
+  - The unreachable Margin Inspect tab and a stray log line are gone.
+  - SYSTEM_STATUS, WIKIOS.md and the MediaWiki dependencies doc describe the launch shape.
 
 ### 🃏 The Cards Mark, and Trophy Art (2026-10-24)
 

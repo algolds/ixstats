@@ -1,21 +1,115 @@
 # WikiOS native architecture
 
-**Last updated:** 2026-10-23 (the former `systems/wikios.md` overview is merged in)
-**WikiOS v1:** PR #52 is merged into `rose-garden` (D20, 2026-10-06) and ships switched off: until `WIKIOS_V1_ENABLED=true`
-(step 6b of the [cutover runbook](../../operations/wikios-v1-cutover.md)) WikiOS reads but refuses every write with
-`readonly`, `/w/api.php` answers `readonly`, and the mirror and background renders do nothing (`src/lib/wiki-os/v1-switch.ts`).  
-**Status:** Release candidate (Plan 170 & Plan 191 complete; platform 1.4.0)  
+**Last updated:** 2026-10-25 (launch hardening: conflicts, classic authority, sister wikis, proof)
+**Launch shape:** WikiOS is the wiki inside IxStates (ixwiki.com/projects/ixstates); ixwiki.com stays classic MediaWiki,
+public and editable, and canonical and share URLs stay on classic. WikiOS v1 (PR #52, D20) is merged and ships switched
+off; the launch turns `WIKIOS_V1_ENABLED` on (step 6b of the [launch runbook](../../operations/wikios-v1-cutover.md)). The
+ixwiki.com takeover is deferred. See [Launch shape and modes](#launch-shape-and-modes).  
+**Status:** Release candidate, platform 1.5.0  
 **Package:** `src/lib/wiki-os/` (in-repo module, imported as `~/lib/wiki-os`; not a published package)  
 **Runtime:** TypeScript 7.0, Next.js 16 App Router  
 **Versions** (`src/lib/buildVersion.ts`): WikiOS app `WIKIOS_VERSION = 1`; Canvas editor `CANVAS_VERSION = 1`; Stash
 `STASH_VERSION = 1`; Image Repository `REPOSITORY_VERSION = 2`. Lorewards and article awards (`WikiArticleAward`) are
-versioned with Achievements.  
+versioned with Achievements. The launch hardening moves none of them (owner question: `WIKIOS_VERSION` at launch).  
 **Routes:** `/wiki/*` (one catch-all route: the reader, `?action=edit`, `?action=history`, `Talk:` pages, `?source=` foreign-wiki pages), `/util/*` (utility pages, including
 `/util/repository` and `/util/lorewards`), `/stashes`  
 **Related:** [style guide](style-guide.md) · [Margin spec](wikios-margin-spec.md) ·
-[Stage 3 config plan](wikios-stage3-config-plan.md) · [Stash](../stash.md) · [Lore lifecycle](../lore-lifecycle.md)
+[Stage 3 config plan](wikios-stage3-config-plan.md) (superseded) · [Stash](../stash.md) · [Lore lifecycle](../lore-lifecycle.md) ·
+[gold proof reports](../../audits/wikios-proof/README.md) · [launch hardening spec](../../superpowers/specs/2026-10-24-wikios-launch-hardening-design.md)
 
 WikiOS is the knowledge engine and structured worldbuilding platform for IxStates. PostgreSQL is the primary database for article content (4,685+ articles), append-only revisions, directed link graphs (48,200+ edges), taxonomies, and 7,555+ media assets (`wiki_assets`). Saves commit to PostgreSQL first (target under 10ms); rendering still goes through MediaWiki (see below).
+
+---
+
+## Launch shape and modes
+
+The owner chose the launch shape on 2026-10-24 ([launch hardening spec](../../superpowers/specs/2026-10-24-wikios-launch-hardening-design.md)).
+IxStates stays at ixwiki.com/projects/ixstates (`BASE_PATH=/projects/ixstates`) and WikiOS is its wiki. ixwiki.com stays
+classic MediaWiki, public and editable. Canonical and share URLs point at classic, and IxStates' robots rules cover only
+its own paths and keep `?source=` pages out of the index. Bots move to WikiOS's `/w/api.php` with signed bot passwords
+(runbook step 6c), and their edits mirror out to classic. The takeover kit (the standalone `wikios` process,
+`wikios-takeover.conf`, the `/classic/` article path) is deferred: its MediaWiki parts apply only with
+`define( 'WIKIOS_TAKEOVER', true )`, which nothing in the launch sets, and its steps are the deferred section of the
+[launch runbook](../../operations/wikios-v1-cutover.md).
+
+Two switches decide what WikiOS does: `WIKIOS_V1_ENABLED` (`src/lib/wiki-os/v1-switch.ts`) and the admin editing switch
+(`src/lib/wiki-os/editing-switch.ts`, in `/admin/wikios-settings`). The inbound sync from classic and the conflict rule
+below run in every mode.
+
+| Mode | Writes | Mirror to classic | v1 readers: background renders, indexed search, lore cards, the Lorewards sync |
+|---|---|---|---|
+| Off (`WIKIOS_V1_ENABLED` off, the default) | Reads only. Writes follow the editing switch, which is off by default: refused with `readonly`, and `/w/api.php` answers `readonly` | Idle once its queue drains | Off: renders do nothing, search uses the older query, and lore cards and Lorewards read IxWiki from MediaWiki |
+| Editing switch on, v1 off | On: edits, uploads, `/w/api.php` | On | Off, as above |
+| v1 on (the launch mode) | On | On | On, from WikiOS's tables. The admin switch is redundant in this mode |
+
+Turning editing on in either way refuses writes until the protections import has run: the rights import of runbook
+step 1b writes the marker it waits for, after checking step 1's backfill.
+
+### Conflicts with classic
+
+Both wikis stay editable, so both can change a page from the same base. The later save, by its actual save time on its
+own wiki, stands on both wikis; a tie within the same second goes to classic, and imports, undeletes and restores count
+at the moment they happened. This covers edits, deletes, moves and undeletes. One decision function,
+[`services/conflict-rule.ts`](../../../src/lib/wiki-os/services/conflict-rule.ts), judges every collision, inbound and
+outbound, so the mirror and the inbound cycle always agree. Nothing is overwritten silently. Every overwritten editor
+is told:
+
+- an in-app notice (and a Discord DM when their account is linked) with the diff and a "Restore my text" button that
+  saves their text as a new edit;
+- a short note on their classic user talk page;
+- an edit-summary trail on the winning revision, on both wikis.
+
+Each collision is one row of the Conflict log in `/admin/wikios-settings`, and the overwritten revision stays in both
+histories. This replaces "park". A revert or rollback saves on top of the head the editor read, so an edit that landed
+meanwhile makes it an edit conflict (`services/revert-service.ts`). Saves have their own rate limit per group
+(`services/save-rate-limit.ts`). An inbound step that keeps failing is quarantined so the sync moves on, and a mirror job
+that fails eight times is dead; both have admin tools. The operator's view, with the known limits, is runbook step 10d.
+
+### Classic authority
+
+Classic is the authority for blocks, user groups and `MediaWiki:` interface messages. The rights import (runbook
+step 1b, `scripts/wikios-import-rights.ts`) brings classic's groups, protections and blocks over once, and the inbound sync then
+applies classic's block and rights log events (`services/inbound-log-events.ts`). WikiOS refuses every save to a
+`MediaWiki:` page, a system save included (`services/edit-service.ts`), and an XML import into WikiOS accepts only a dump
+of classic itself (`xml/import-origin.ts`), since anything else would never mirror. Whether the unused
+`editsite*` and `editinterface` rights stay in the group table is an open owner decision.
+
+### Sister wikis
+
+IIWiki and AltHistory are other people's wikis, read where they live. `http-reader.ts` reads them (through the
+maps.ixwiki.com relay in development), and a sister page is rendered by its own wiki (`action=parse&oldid=`, see
+[mediawiki-dependencies.md](mediawiki-dependencies.md)). A country of another wiki (an Eurth nation on IIWiki) reads its
+own page there everywhere: the dossier, the map panel, the profile's lore and the `countries.getWiki*` readers
+(`src/server/modules/countries/countries.wiki.ts`). On a `?source=` page, links stay on that wiki, and editing, Watch,
+`?margin` and the Halo follow the page's wiki. Searching with `wikiSource: "all"` queries all three wikis and is best
+effort: an unreachable sister adds no results. Sister reader pages are not indexed. The pieces:
+
+- **Guard** ([`upstream-guard.ts`](../../../src/lib/wiki-os/upstream-guard.ts)): every outbound wiki API call goes
+  through a per-host breaker (five failures in a row open it for 30 s, then one probe) and a limiter (8 in flight,
+  240 a minute; the public api.php proxy has its own smaller lane). A failure is a typed `WikiUnavailableError`, which the
+  reader, previews and search show as "IIWiki could not be reached just now", never as "not found" or an empty list.
+- **Sanitizer** ([`sanitize-sister-html.ts`](../../../src/lib/utils/sanitize-sister-html.ts)): the trust boundary for a
+  sister wiki's HTML. Images load only through the media proxy, no style may leave the article, app class names and ids
+  are stripped or prefixed, and the article sits in its own contained box.
+- **Link rule** ([`wiki-link-target.ts`](../../../src/lib/wiki-os/wiki-link-target.ts)): an absolute link to an article
+  on any wiki WikiOS reads (IxWiki, iiwiki, althistory) opens in the in-app reader with `?source=`, from IxWiki pages and
+  sister pages alike; a link with a query string stays where it points. The composer, Discord markdown, admin link tools
+  and media search carry the source, and hover previews work for sister pages.
+- **`Template:Sister` embed**: `{{Sister|iiwiki|Title}}` (optionally `section=`, `infobox=yes` or `card=yes`) is plain
+  wikitext on both wikis, so it round-trips and mirrors unchanged. Classic renders it as a small link box ("From iiwiki:
+  Title"; runbook step 3d creates the template). WikiOS's live, cached embed of the real page is still being built
+  (sister wikis plan, Tasks 10 and 11, not landed); until then WikiOS shows the same link box.
+
+### Proof and gates
+
+Gold is measured, not asserted. `scripts/audit/wikios-proof.ts` runs the three harnesses (the editor round trip, render
+parity with MediaWiki and the bench) under a profile (local, launch or recurring) and checks their reports against
+`scripts/audit/wikios-proof-thresholds.json`. Its summary is keyed to a hash of the WikiOS source it measured. The
+committed proof (`docs/audits/wikios-proof/latest.json`) gates every deploy: `deploy-production.sh` runs the `predeploy`
+check, which refuses a release whose WikiOS code changed since the committed passing proof, or whose editor round trip
+changes a byte of the production corpus. The weekly `wikios-proof` cron job runs the recurring profile on the server.
+Numbers: first report pending. How to run it, each threshold and the ratchet rule:
+[docs/audits/wikios-proof/](../../audits/wikios-proof/README.md).
 
 ---
 
@@ -28,7 +122,7 @@ WikiOS is the knowledge engine and structured worldbuilding platform for IxState
 - **No direct MariaDB connection.** The MariaDB pool (`mysql-pool.ts` / `mysql-reader.ts`) was removed on 2026-08-25 (`80eee985d`). Bridge reads are PostgreSQL (`bridge/pg-*.ts`) plus the MediaWiki HTTP Action API.
 - **Inbound recent-changes sync.** `services/auto-sync-service.ts` (`runAutoSyncCycle`) pulls edits made directly on classic MediaWiki into PostgreSQL, from the `wiki-recentchanges` cron job and the `/api/wikios/inbound-sync` webhook.
 - **Outbound mirror (`services/mirror-worker.ts`, plan 407).** A durable outbox (`wiki_mirror_jobs`, written in the same transaction as the edit, move, delete, undelete or protection) applied per title in order by the dedicated `WikiOSMirror` bot: revisions go through `action=import` with `assignknownusers=1`, so MediaWiki credits the author's first shown claimed old IxWiki name, and anyone else's edit goes out as `wikios>handle`; failures back off and end `dead` after 8 attempts for an administrator to requeue.
-- **Multi-wiki reader.** `?source=iiwiki|althistory` opens another wiki's page read-only (Sept 2026).
+- **Multi-wiki reader.** `?source=iiwiki|althistory` opens another wiki's page read-only (Sept 2026); see [Sister wikis](#sister-wikis).
 - **Article sanitizer (`src/lib/utils/sanitize-html.ts`, plan 415).** `sanitizeWikiArticleHtml` keeps the tags and attributes MediaWiki's own Sanitizer allows (legacy `{| border=1 bgcolor=… |}` tables, `<font>`, `<center>`, `<del>`/`<ins>`, ruby, `<bdo>`, `<data>`, list `type`/`start`/`reversed`) and blocks scripts, frames, forms, event handlers and `javascript:`/`data:` URLs. A `<style>` stays only when it is TemplateStyles' own (`data-mw-deduplicate`), and then as CSS confined to `.mw-parser-output` by `scope-template-styles.ts`: the reader gives that class, MediaWiki's own, to each element whose innerHTML is a part of the article (body, infobox, notices, the editors' previews), so a template's CSS never reaches the header, toolbar or margin around it; a selector that asks for the root's siblings is dropped, only `@media` at-rules survive, and `@import`, a `url()` to any host but the wiki's own origin (relative URLs stay), `attr()`, `expression()`, `behavior` and `-moz-binding` are stripped; anything the splitter cannot read with certainty is dropped. `WIKIOS_TEMPLATESTYLES=0` is the emergency lever: it removes every `<style>` again (on when unset, empty, `1`, `true`, `on` or `yes`, off for any other value; part of the sanitizer fingerprint; runbook step 10c in [wikios-v1-cutover.md](../../operations/wikios-v1-cutover.md)). The scoper is tested against an exact oracle (lightningcss): `bun run audit:template-styles` for a deep run.
 - **Cloudflare edge defense (`src/lib/wiki-os/guardian/`).** Non-blocking Cloudflare Zone edge cache purges on save
   (not on revert or rollback). There is no CAPTCHA step (plan 416 removed the unused Turnstile check): editing needs a
@@ -67,13 +161,8 @@ WikiOS is the knowledge engine and structured worldbuilding platform for IxState
 - **Export switch and bot.** `SKIP_MEDIAWIKI_SYNC=true` stops the export worker. Upstream edits use the bot in
   `WIKIOS_MEDIAWIKI_BOT_USER` (default `Heku@WikiOS`, a bot password on a personal account); there is no dedicated
   bridge account.
-- **Sister wikis.** `http-reader.ts` reads IIWiki and AltHistory (redirects followed), through iiwiki's development
-  relay in development; a host that refuses twice in a row (403) is skipped for a minute (one refusal is often a
-  single Cloudflare challenge). A sister page is rendered by its own wiki (`action=parse&oldid=`, see
-  [mediawiki-dependencies.md](mediawiki-dependencies.md)). A country of another wiki (an Eurth nation on IIWiki)
-  reads its own page there everywhere: the dossier, the map panel, the profile's lore and the `countries.getWiki*`
-  readers (`src/server/modules/countries/countries.wiki.ts`, given the country's id). On a `?source=` page, links
-  stay on that wiki, and editing, Watch, `?margin` and the Halo follow the page's wiki (Sept 2026 rulings E-l/E-m). Searching with `wikiSource: "all"` queries all three wikis at once.
+- **Sister wikis.** See [Sister wikis](#sister-wikis) above: the guard, the sanitizer, the link rule and
+  `Template:Sister`.
 
 ---
 
@@ -199,7 +288,7 @@ src/lib/wiki-os/
 | Image search | `ImageSearchGrid`: the IxWiki tab searches IxWiki's files (`wikios.searchFiles`, each tile with its BlurHash placeholder); the Commons tab searches Wikimedia Commons (`commons.search`, through `editor/hooks/useCommonsImageSearch.ts`: debounced, 2 characters minimum, pages of 30 with "Load more", images only, no automatic retry so a spent `commons` rate-limit bucket is not drained further) and shows each file's licence and author, with a link to its Commons page. A Commons file is inserted as `[[File:Name]]` like an IxWiki one (IxWiki shows it through InstantCommons). Searching works with `WIKIOS_V1_ENABLED` off |
 | Mode toggle | Switch between visual and source editor modes |
 | Edit summary | Summary input field and minor edit checkbox |
-| Rollback | Reads the revision history, then saves the old revision as a new one via `saveArticle` (two steps, not one transaction; no cache purge) |
+| Rollback | Undoes the last editor's consecutive edits by saving the older text as a new edit through the one save path, on top of the head the editor read: an edit that landed meanwhile makes it an edit conflict (`services/revert-service.ts`) |
 
 ### Margin and discussions
 

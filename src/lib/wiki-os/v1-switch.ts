@@ -9,7 +9,7 @@
  * refused with MediaWiki's `readonly` error and idle (after draining its queue) while that is off. The rest:
  *   - the background renders (`wiki-render-stale`) do nothing;
  *   - the lore-card generator reads IxWiki pages from MediaWiki, not from the tables renders fill.
- * On, WikiOS v1 runs as built: step 7a of docs/operations/wikios-v1-cutover.md turns it on.
+ * On, WikiOS v1 runs as built: step 6b of docs/operations/wikios-v1-cutover.md turns it on.
  *
  * The inbound sync does not depend on it: a MediaWiki edit that collides with a WikiOS edit goes through the same
  * conflict rule (services/conflict-rule.ts) in every mode, so a WikiOS edit is never silently overwritten.
