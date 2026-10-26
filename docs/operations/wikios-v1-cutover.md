@@ -698,7 +698,7 @@ Then read how classic keeps its interwikis, as MediaWiki itself sees its setting
 to the `eval` script on stdin:
 
 ```bash
-echo '$c = MediaWiki\MediaWikiServices::getInstance()->getMainConfig(); echo json_encode( [ "InterwikiCache" => $c->get( "InterwikiCache" ), "InterwikiExpiry" => $c->get( "InterwikiExpiry" ), "MainCacheType" => $c->get( "MainCacheType" ), "MainWANCache" => $c->get( "MainWANCache" ), "DBname" => $c->get( "DBname" ), "DBprefix" => $c->get( "DBprefix" ) ] ), "\n";' | mwmaint eval
+echo '$c = MediaWiki\MediaWikiServices::getInstance()->getMainConfig(); echo json_encode( [ "InterwikiCache" => $c->get( "InterwikiCache" ), "InterwikiExpiry" => $c->get( "InterwikiExpiry" ), "MainCacheType" => $c->get( "MainCacheType" ), "DBname" => $c->get( "DBname" ), "DBprefix" => $c->get( "DBprefix" ) ] ), "\n";' | mwmaint eval
 curl -s 'https://ixwiki.com/api.php?action=query&meta=siteinfo&siprop=extensions|usergroups&format=json' \
   | jq -r '"Interwiki extension: \([.query.extensions[] | select(.name=="Interwiki")] | length)", "groups with the interwiki right: \([.query.usergroups[] | select(.rights | index("interwiki")) | .name] | join(" "))"'
 ```
