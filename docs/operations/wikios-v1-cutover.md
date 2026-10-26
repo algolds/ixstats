@@ -31,6 +31,7 @@ IxWorld (port 3002) is untouched.
 - 6, 6a, the `/images/` headers of 7c, then 10b. All of them come before 6b.
 - 6b, then 6c and 6d.
 - 7b, then 7c's upload check.
+- 7d, then 7e (off-peak, about 2 hours). 7e turns the weekly proof job on only after its launch proof has passed.
 - 10 (monitor), with 10c and 10d as references.
 
 Few of these steps change what the public sees on ixwiki.com: loading the snippet in step 3 changes neither classic's
@@ -442,6 +443,62 @@ get `sessionsecretmissing` again and nothing else changes.
    until it is set ("Before the launch" above).
 2. Step 6a's app URL check. `NEXT_PUBLIC_APP_URL` is written into the build, so a value fixed after the build needs
    this deploy again, not only a restart.
+3. The two read-only checks of the WikiOS proof check, below.
+
+**The WikiOS proof check (launch time).** The deploy runs `bun scripts/audit/wikios-proof.ts predeploy` right after
+`db:generate`, before its database backup and before any migration or `db push`
+([the proof's README](../audits/wikios-proof/README.md)). It takes the `wikios-proof` job lease, checks that
+`docs/audits/wikios-proof/latest.json` is a clean, passing proof of this release's WikiOS files (its tree key), and runs
+the editor round trip over every page of the production database (about 15 seconds). It prints one line per check,
+`ok   <check>: ...` or `FAIL <check>: ... Fix: ...`, and the deploy stops on any `FAIL`. A refused deploy changes
+nothing: the check runs before the backup, reads only, and gives its lease back. Its reports are `predeploy-<stamp>.json`
+and `.txt`, in `$IX/.bench-out/proof` until step 7e sets `WIKIOS_PROOF_DIR`, and in `/ixwiki/private/logs/wikios-proof`
+after.
+
+Read first (read-only, besides the fetch, which the deploy runs anyway and which changes no file of the checkout):
+
+```bash
+B=$(git -C "$IX" branch --show-current); echo "$B"       # the branch the deploy fetches (master)
+git -C "$IX" fetch master "$B"                           # the deploy's own fetch (scripts/deploy-production.sh): moves FETCH_HEAD only
+git -C "$IX" show FETCH_HEAD:docs/audits/wikios-proof/latest.json | jq '{profile, passed, dirty, commit, treeKey}'
+git -C "$IX" show FETCH_HEAD:scripts/audit/wikios-proof-thresholds.json | jq '.roundTrip.minPages'    # the page floor
+# the columns the round trip reads: id, source, namespace, title, wikitext
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -c \
+  "select count(id) as pages, count(*) filter (where namespace = 0) as articles, count(wikitext) as with_text
+     from wiki_articles where source = 'ixwiki' and title is not null"
+```
+
+- **`latest.json`** must show `profile` `local` or `launch`, `passed` true and `dirty` false. A `fatal: path ... does
+  not exist` means the release carries no proof, and the deploy would refuse it: stop and tell the owner. The deploy
+  compares the tree key itself.
+- **The query prints counts and `pages` is at or above the floor:** deploy as usual (below).
+- **The query errors with `column "..." does not exist`:** production's `wiki_articles` is older than this release's
+  schema (the 2026-09-03 database lacks a column the check reads), and the deploy's own `db push` adds it only after the
+  check. This is the one case for the override, and only for this first launch deploy:
+  `( cd "$IX" && WIKIOS_PROOF_OVERRIDE=1 bun run deploy:prod )`. Every failing line then starts
+  `WIKIOS PROOF OVERRIDDEN:`. Expect only `harness.roundtrip` and `roundTrip.*` lines among them; if `proof.committed` or
+  `proof.lease` is there too, tell the owner at once. After the deploy, run the query again: it must print counts now.
+  Step 7e's launch proof then runs the full round trip on the pushed database. Never set the override because a deploy
+  was refused without first reading which check failed.
+- **`pages` is below the floor:** every deploy and every weekly run would fail `roundTrip.pages`. Stop and ask the
+  owner; do not override.
+
+If the deploy refuses:
+
+- **`FAIL proof.committed`:** this release's WikiOS files differ from the committed proof's, or there is no proof. The
+  fix is a new local proof, committed, then the deploy again (the README says how). Ask the owner before ever
+  overriding it.
+- **`FAIL proof.lease: the weekly proof is running (lease held by ... until ...)`:** the weekly job (Monday 05:30 UTC,
+  once step 7e has turned it on) is in progress. Wait for it to finish (at most 80 minutes;
+  `pm2 logs ixstats-cron --lines 100 --nostream | grep -i wikios-proof`) and deploy again, or deploy with
+  `WIKIOS_PROOF_OVERRIDE=1`: the PM2 reload ends the weekly run, and its lease lapses on its own within 90 minutes.
+- **`FAIL harness.roundtrip` or `FAIL roundTrip.*` while the query above prints counts:** the new editor code would
+  change saved text. Stop and give the owner the `predeploy-<stamp>.json` in the reports directory above. Do not
+  override.
+
+A deploy that dies after the check leaves the lease to lapse within 2 hours (a weekly run in that window is recorded
+as `skipped`), and the next deploy takes it over. A finished deploy prints `Released the wikios-proof lease` after
+its PM2 reload.
 
 ```bash
 ( cd "$IX" && bun run deploy:prod )     # scripts/deploy-production.sh (master only; takes its own db backup)
@@ -463,7 +520,8 @@ stops on the unique-constraint prompt, run `bun run db:push:force` by hand and a
 This also runs `deploy-ixworld.sh`. WikiOS is part of IxStates at this launch, so this deploy is WikiOS's deploy as
 well, and every later IxStates release carries its WikiOS code the same way.
 
-**Rollback:** the usual IxStates rollback (`bun run deploy:rollback`).
+**Rollback:** the usual IxStates rollback (`bun run deploy:rollback`). The proof check has none of its own: it reads
+only, and its lease is given back on a refusal and released after the PM2 reload.
 
 ## 2a. Fonts and uploads at the site root (read-only, after step 2)
 
@@ -1586,6 +1644,176 @@ mirror section with MediaWiki's answer.
 
 **Rollback:** the test file can stay. To remove it, delete it in WikiOS; the mirror repeats the deletion on classic.
 
+## 7d. End to end inside IxStates (after steps 6b to 6d)
+
+Everything here is launch-time and read-only, except two test edits to a sandbox page. First the reader, through the
+public URL (`IXSTATES_URL` is set in Conventions):
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' "$IXSTATES_URL/wiki/Main_Page"                 # 200
+curl -s "$IXSTATES_URL/wiki/Main_Page" | grep -oE '<link[^>]*rel="canonical"[^>]*>'      # href="https://ixwiki.com/wiki/Main_Page"
+```
+
+A canonical link that names IxStates' URL, or none, means search engines would index the copy instead of classic: stop
+and ask the owner.
+
+**WikiOS to classic.** The owner, signed in to IxStates, saves one small change to a sandbox page in WikiOS
+(`$IXSTATES_URL/wiki/<page>`, then edit). Within about a minute the mirror has copied it to classic. Compare WikiOS's
+newest revision of that page with classic's, the two queries of step 6 with the revision's origin added (`<page>` is the
+title with spaces in the SQL, with underscores in the URL):
+
+```bash
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -c \
+  "select r.origin, r.\"revId\", r.\"mwRevId\", r.\"createdAt\" from wiki_revisions r join wiki_articles a on a.id = r.\"articleId\"
+    where a.source = 'ixwiki' and a.title = '<page>' order by r.\"createdAt\" desc limit 1"
+curl -s 'http://127.0.0.1:8081/api.php?action=query&prop=revisions&titles=<page>&rvprop=ids&format=json' \
+  | jq -r '.query.pages[].revisions[0].revid'
+```
+
+Expect `origin` `wikios` and a `mwRevId` equal to the revision id classic prints. If `mwRevId` is still empty after a few
+minutes, the mirror has not run: open `/admin/wikios-settings`, MediaWiki Mirror Outbox (the job and MediaWiki's answer),
+and check that `wiki-mirror` is in `CRON_ENABLED_JOBS` (step 6b). Fix it before step 7e.
+
+**Classic to WikiOS.** Step 6's own check: one web edit on classic to a sandbox page, and the two revision ids match
+within seconds. If step 6's check has passed already, it stands; otherwise run it now. It is not repeated here.
+
+**Rollback:** revert the two test edits: the WikiOS one in WikiOS's page history (the mirror copies the revert to
+classic), the classic one on classic (the webhook brings the revert over).
+
+## 7e. The gold proof at launch (after step 7b, off-peak)
+
+The proof's launch profile ([the proof's README](../audits/wikios-proof/README.md)) measures the live site from the
+server: the editor round trip over every page of the production database, render parity over the whole corpus (IxStates
+on loopback against the private MediaWiki of step 4), and the bench, 200 pages × 2 runs through the public URLs. It
+takes about 2 hours: about 1 hour of parity, then about 1 hour of bench. Everything here is launch-time.
+
+Run it only when step 7b shows `unrendered` and `outdated` at 0 (a page still waiting for its render is scored as a
+fallback and fails parity), and off-peak (the bench times public pages). Do not deploy or restart IxStates while it
+runs: this run holds no lease, and a restart in the middle fails it. The bench's requests leave the server with
+`User-Agent: IxStats-Builder`, which step 4b let through.
+
+**The reports directory** is `/ixwiki/private/logs/wikios-proof`, outside the checkout. The deploy (its proof check)
+and `ixstats-cron` (the weekly job) both write there, so it must belong to the user both run as. Check that it is you
+(read-only), the same check as step 4d:
+
+```bash
+ps -o user= -p "$(pm2 pid ixstats-cron)"; whoami      # the same name twice: the deploy and ixstats-cron run as you
+```
+
+If the two names differ, stop and ask the owner who should own the directory. Otherwise:
+
+```bash
+sudo install -d -m 750 -o "$USER" -g "$(id -gn)" /ixwiki/private/logs/wikios-proof
+stat -c '%U:%G %a %n' /ixwiki/private/logs/wikios-proof     # you, 750
+df -h /                                                       # a few hundred MB free at least
+```
+
+**What the run and `ixstats-cron` read (read-only).** The proof loads the same env files, in the same order, as
+`ixstats-cron` (`load-env.mjs`'s production list: the first file that sets a name wins), so nothing is sourced or
+printed by hand. It needs `WIKIOS_MEDIAWIKI_INTERNAL_URL` (step 4), `APP_URL` or `NEXT_PUBLIC_APP_URL` (step 6a) and,
+for the weekly job, `WIKIOS_PROOF_DIR` (below). None of them is a secret:
+
+```bash
+grep -nE '^(WIKIOS_MEDIAWIKI_INTERNAL_URL|APP_URL|NEXT_PUBLIC_APP_URL|WIKIOS_PROOF_DIR|PORT|BASE_PATH)=' \
+  "$IX/.env.production.local" "$IX/.env.local" "$IX/.env.production" "$IX/.env" 2>/dev/null
+grep -lE '^DATABASE_URL=' "$IX/.env.production.local" "$IX/.env.local" "$IX/.env.production" "$IX/.env" 2>/dev/null   # file names only
+# what PM2 itself hands ixstats-cron: its directory and these names only, never the rest of its environment
+pm2 jlist | jq '.[] | select(.name == "ixstats-cron") | .pm2_env | {cwd: .pm_cwd, NODE_ENV, CRON_ENABLED_JOBS,
+  WIKIOS_MEDIAWIKI_INTERNAL_URL, APP_URL, NEXT_PUBLIC_APP_URL, WIKIOS_PROOF_DIR, DATABASE_URL_set: (.DATABASE_URL != null)}'
+```
+
+- `WIKIOS_MEDIAWIKI_INTERNAL_URL` is `http://127.0.0.1:8081/api.php`.
+- The first file that sets `APP_URL` gives `https://ixwiki.com`; if no file sets it, the first that sets
+  `NEXT_PUBLIC_APP_URL` does. `.env.example` ships `APP_URL="http://localhost:3000"`, and a loopback value there sends
+  the bench to the wrong host (the CLI refuses a missing one).
+- `cwd` is `$IX` and `NODE_ENV` is `production`: the weekly job runs the CLI from the runner's directory.
+- If a name the run needs is set only in PM2's environment (the `jq` line shows it, no file has it), or no file sets
+  `DATABASE_URL`, stop and ask the owner: a run by hand would not see it.
+- A `PORT` or `BASE_PATH` line does not matter: the run below and the weekly job both set port 3550 and
+  `/projects/ixstates` themselves.
+
+**The run.** `PORT` and `BASE_PATH` are set on the line because `.env` may carry a development `PORT=3000`; use
+`/projects/ixstats` instead if that is the base path that answered in Conventions:
+
+```bash
+( cd "$IX" || exit 1
+  NODE_ENV=production PORT=3550 BASE_PATH=/projects/ixstates WIKIOS_PROOF_DIR=/ixwiki/private/logs/wikios-proof \
+    nohup bun scripts/audit/wikios-proof.ts run --profile launch > /ixwiki/private/logs/wikios-proof/launch.out 2>&1 &
+  echo "proof pid $!" )
+tail -f /ixwiki/private/logs/wikios-proof/launch.out          # Ctrl-C stops the tail, not the proof
+uptime                                                        # every few minutes: a load above 2.0 means stop it (below)
+```
+
+If the load stays above 2.0, `kill <proof pid>` (the CLI stops its running harness and exits), wait a minute (a new run
+refuses a directory that exists, and the directory is named to the minute), and start it again with
+`--parity-interval-ms 1000` after `--profile launch` (the default is 200). If the CLI refuses to start (a
+`DATABASE_URL` that is not local, or a missing variable), it says which: stop and ask the owner.
+
+The run ends with its checks table, `PASSED` or `FAILED`, and `Proof written to <dir>`:
+
+```bash
+D=$(sed -n 's/^Proof written to //p' /ixwiki/private/logs/wikios-proof/launch.out); echo "$D"
+jq '{profile, passed, dirty, corpus}' "$D/summary.json"
+```
+
+- **`passed` true and `dirty` false:** go on.
+- **A failing round-trip or parity check:** stop. Give the owner the summary's lowest pages and templates (`$D/summary.md`)
+  and leave the weekly job off: it would fail every week.
+- **A failing bench check only:** give the owner the p95 table from `$D/summary.md`. Going on is the owner's call.
+- **`dirty` true:** the server checkout has uncommitted WikiOS changes. Stop and ask the owner.
+
+Bring the summary to the dev machine, read-only on the server (run this on the dev machine, in the repository):
+
+```bash
+scp ixwiki:/ixwiki/private/logs/wikios-proof/<dir>/summary.md docs/audits/wikios-proof/<yyyy-mm-dd>-launch.md
+```
+
+It is committed later from the dev machine, never on the server (the next deploy's `reset --hard` would drop it).
+
+**Then the weekly job,** only after a launch proof has passed. It stays off until `wikios-proof` is in
+`CRON_ENABLED_JOBS`. First the reports directory for the deploy and the weekly job, then the job:
+
+```bash
+bk "$IX/.env.production.local" env.production.local.7e
+grep -c '^WIKIOS_PROOF_DIR=' "$IX/.env.production.local"          # 0 = not set yet; 1 = already there, skip the next line
+( umask 077; printf '\nWIKIOS_PROOF_DIR=/ixwiki/private/logs/wikios-proof\n' >> "$IX/.env.production.local" )
+ls -l "$IX/.env.production.local"                                  # same mode as before (-rw-------)
+bk "$IX/ecosystem.config.cjs" ecosystem.config.cjs.7e
+grep -n 'CRON_ENABLED_JOBS' "$IX/ecosystem.config.cjs"             # the ixstats-cron list; skip the edit if it is "*"
+"${EDITOR:-nano}" "$IX/ecosystem.config.cjs"                       # add wikios-proof to that list
+# PM2 keeps a process's environment across a plain restart: restart from the file so the new list is read
+( cd "$IX" && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save
+pm2 logs ixstats-cron --lines 60 --nostream | grep -i wikios-proof    # scheduled: 30 5 * * 1 (Monday 05:30 UTC)
+```
+
+The weekly job pins IxStates at `PORT=3550` and `BASE_PATH=/projects/ixstates` (`src/server/cron/wikios-proof-cron.ts`).
+If production moves off port 3550, or `/projects/ixstats` is the base path that answered in Conventions, change that pin
+in a release first and keep the job off until then: it would measure the wrong server and fail every week. The
+SystemConfig key `cronSchedule_wikiosProof` moves the schedule (restart `ixstats-cron` after changing it).
+
+**Old predeploy reports.** Step 2's deploy ran before `WIKIOS_PROOF_DIR` was set, so its proof check wrote its reports
+into the checkout. From the next deploy on they go to `/ixwiki/private/logs/wikios-proof`. List what is left in the
+checkout (read-only), then keep a copy and remove it:
+
+```bash
+ls -la "$IX/.bench-out/proof" 2>/dev/null       # predeploy-<stamp>.json and .txt files only
+bk "$IX/.bench-out/proof" bench-out-proof.7e
+rm -r "$IX/.bench-out/proof"
+```
+
+If the listing shows anything else (a run directory, another file), leave the directory and ask the owner.
+
+**Optional, overnight:** the full-corpus bench, about 9 hours, with the same line as the run above but
+`run --profile launch --parity-sample 1 --bench-pages all --bench-runs 1` and its own output file
+(`launch-full-bench.out`). Its parity part is a token one-page run, so its summary reads `FAILED` on the parity page
+floor by design: read only its bench rows. It never replaces the launch proof. Once the weekly job is on, do not start it
+on a Sunday night: it would overlap Monday's 05:30 UTC run.
+
+**Rollback:** `sudo cp -a "$BK/ecosystem.config.cjs.7e" "$IX/ecosystem.config.cjs"` and
+`sudo cp -a "$BK/env.production.local.7e" "$IX/.env.production.local"`, then
+`( cd "$IX" && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save`: the weekly job is off
+again, and the deploy's reports go back into the checkout. The reports are files only; the directory can stay.
+
 ## 10. Monitor (first 24 hours)
 
 | Watch | How |
@@ -1599,6 +1827,8 @@ mirror section with MediaWiki's answer.
 | Discord DMs | disk alert, PHP-FPM watchdog and bot-defense alerts reach the admin through `ixwiki-notify.sh` |
 | Disk | `df -h /` (the PM2 logs of IxStates and `ixstats-cron` go to `/var/log/pm2/`, rotated at 50M x 5; nginx logs rotate through `/etc/logrotate.d/nginx`) |
 | Conflicts and queues | `/admin/wikios-settings`: Conflict log, Inbound sync quarantine and MediaWiki Mirror Outbox (step 10d) |
+| Proof | the weekly `wikios-proof` job, once step 7e has turned it on (Monday 05:30 UTC): `pm2 logs ixstats-cron --lines 500 --nostream \| grep -i wikios-proof`. A failure posts `Cron job failed: wikios-proof` with the failing checks to the admin webhook and leaves its report in `/ixwiki/private/logs/wikios-proof/`. The job pins IxStates at port 3550 and `/projects/ixstates` (step 7e) |
+| Deploys | a refused deploy prints the WikiOS proof check's `FAIL <check>: ...` lines and stops before its backup; an overridden one prints `WIKIOS PROOF OVERRIDDEN:` lines and goes on (step 2). `FAIL proof.lease` means the weekly proof is running |
 | Sister wikis | `pm2 logs "$IXAPP" --lines 500 --nostream` and `pm2 logs ixstats-cron --lines 500 --nostream`, through `grep -iE 'circuit (open\|closed)\|could not be reached'`. `[upstream-guard] <Wiki> (<host>): circuit open after N failures in a row` and `... circuit closed; requests resume.` cover WikiOS's reads and the `api.php` proxy alike; a search across all wikis also warns `<Wiki> could not be reached`, at most once a minute per wiki. A breaker that opens and never closes means that wiki, or the server's route to it, is down: repeat step 4c's server check |
 
 ### 10b. Bot defense and fail2ban: room for IxStates' readers (before step 6b)
@@ -1771,9 +2001,10 @@ Every one of them is copied into `$BK` before its first edit (classic's database
 
 | File | Edit | Step |
 |------|------|------|
-| `/ixwiki/public/projects/ixstats/.env.production.local` | `WIKIOS_API_SESSION_SECRET` (1c); `WIKIOS_MEDIAWIKI_BOT_USER`, `WIKIOS_MEDIAWIKI_BOT_TOKEN` (3c); `WIKIOS_MEDIAWIKI_INTERNAL_URL` (never `NEXT_PUBLIC_WIKIOS_STANDALONE`; `WIKIOS_MEDIAWIKI_API` absent or private, 4); `WIKIOS_UPLOAD_DIR` (plan 411, 4d); `WIKIOS_IMPORT_MAX_BYTES`, only when raised (5c); `NEXT_PUBLIC_APP_URL` / `APP_URL` `https://ixwiki.com`, base path absent or `/projects/ixstates`, the same in `.env.production` (6a); `RATE_LIMIT_ENABLED` unset or `true` (6a); `WIKIOS_V1_ENABLED=true` (6b); `WIKIOS_TEMPLATESTYLES=0`, only when the lever is pulled (10c) | 1c, 3c, 4, 4d, 5c, 6a, 6b, 10c |
+| `/ixwiki/public/projects/ixstats/.env.production.local` | `WIKIOS_API_SESSION_SECRET` (1c); `WIKIOS_MEDIAWIKI_BOT_USER`, `WIKIOS_MEDIAWIKI_BOT_TOKEN` (3c); `WIKIOS_MEDIAWIKI_INTERNAL_URL` (never `NEXT_PUBLIC_WIKIOS_STANDALONE`; `WIKIOS_MEDIAWIKI_API` absent or private, 4); `WIKIOS_UPLOAD_DIR` (plan 411, 4d); `WIKIOS_IMPORT_MAX_BYTES`, only when raised (5c); `NEXT_PUBLIC_APP_URL` / `APP_URL` `https://ixwiki.com`, base path absent or `/projects/ixstates`, the same in `.env.production` (6a); `RATE_LIMIT_ENABLED` unset or `true` (6a); `WIKIOS_V1_ENABLED=true` (6b); `WIKIOS_PROOF_DIR=/ixwiki/private/logs/wikios-proof`, after the first passing launch proof (7e); `WIKIOS_TEMPLATESTYLES=0`, only when the lever is pulled (10c) | 1c, 3c, 4, 4d, 5c, 6a, 6b, 7e, 10c |
 | `/ixwiki/shared/wikios-uploads/` | new directory (750): the staging directory of uploads waiting for the mirror; in the backups until none is waiting | 4d |
-| `/ixwiki/public/projects/ixstats/ecosystem.config.cjs` | `CRON_ENABLED_JOBS` for `ixstats-cron` names `wiki-render-stale`, `wiki-mirror` and `wiki-recentchanges` (then `pm2 restart ixstats-cron --update-env`) | 6b, 7b |
+| `/ixwiki/private/logs/wikios-proof/` | new directory (750, owned by the user the deploy and `ixstats-cron` run as): the launch and weekly proof runs, pruned to the newest 12 by the CLI, and the newest 12 predeploy reports; the old predeploy reports in `$IX/.bench-out/proof` are removed once it is set | 7e |
+| `/ixwiki/public/projects/ixstats/ecosystem.config.cjs` | `CRON_ENABLED_JOBS` for `ixstats-cron` names `wiki-render-stale`, `wiki-mirror` and `wiki-recentchanges` (then `pm2 restart ixstats-cron --update-env`) (6b, 7b); `wikios-proof`, after the first passing launch proof (then 7e's restart from the file) (7e) | 6b, 7b, 7e |
 | `/ixwiki/config/LocalSettings.php` | `require_once` of the snippet; never a `WIKIOS_TAKEOVER` define | 3a |
 | `/ixwiki/config/wikios-localsettings.php` | new, copy of the tracked snippet (mode 644) | 3a |
 | `/etc/php/8.4/fpm/conf.d/99-wikios-import.ini` | new: `upload_max_filesize` and `post_max_size` 16M | 3a |
