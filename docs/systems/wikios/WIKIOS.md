@@ -97,8 +97,9 @@ effort: an unreachable sister adds no results. Sister reader pages are not index
   and media search carry the source, and hover previews work for sister pages.
 - **`Template:Sister` embed**: `{{Sister|iiwiki|Title}}` (optionally `section=`, `infobox=yes` or `card=yes`) is plain
   wikitext on both wikis, so it round-trips and mirrors unchanged. Classic renders it as a small link box ("From iiwiki:
-  Title"; runbook step 3d creates the template). WikiOS's live, cached embed of the real page is still being built
-  (sister wikis plan, Tasks 10 and 11, not landed); until then WikiOS shows the same link box.
+  Title"; runbook step 3d creates the template). WikiOS replaces the box with a live embed of the real page (the whole
+  page, a section, the infobox or a card), cached about an hour, up to ten a page; the rest stay link boxes. A wiki that
+  cannot be reached says so, and a page its wiki cannot render is offered as a link to it there.
 
 ### Proof and gates
 

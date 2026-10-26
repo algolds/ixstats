@@ -52,7 +52,8 @@ is deployed; WikiOS editing launches with WikiOS v1.
   - Absolute links to their articles open in the in-app reader with `?source=`, as do the composer's, Discord's, the
     admin link tools' and media search's.
   - Hover previews work for sister pages.
-  - `{{Sister|iiwiki|Title}}` shows as a link box on classic. WikiOS's live, cached embed of it is still being built.
+  - `{{Sister|iiwiki|Title}}` shows as a link box on classic. WikiOS shows it as a live embed of the page, a section,
+    the infobox or a card, cached about an hour and up to ten a page; the rest stay link boxes.
 - **Proof and docs:**
   - `scripts/audit/wikios-proof.ts` runs the editor round trip, render parity and the bench under a local, launch or
     recurring profile, and checks them against `scripts/audit/wikios-proof-thresholds.json`.
