@@ -97,8 +97,13 @@ effort: an unreachable sister adds no results. Sister reader pages are not index
   and media search carry the source, and hover previews work for sister pages.
 - **`Template:Sister` embed**: `{{Sister|iiwiki|Title}}` (optionally `section=`, `infobox=yes` or `card=yes`) is plain
   wikitext on both wikis, so it round-trips and mirrors unchanged. Classic renders it as a small link box ("From iiwiki:
-  Title"; runbook step 3d creates the template). WikiOS's live, cached embed of the real page is still being built
-  (sister wikis plan, Tasks 10 and 11, not landed); until then WikiOS shows the same link box.
+  Title"; runbook step 3d creates the template). WikiOS embeds the real page live: the reader asks `wikios.sisterEmbed`
+  for each box, and `getSisterEmbed` caches each embed for an hour (one read in flight per page). Cached embeds count
+  only against the `sisterwiki` bucket; an embed that has to be read from the sister wiki costs it up to two calls, so
+  those reads have a per-caller limit of their own, 20 a minute (60 signed in).
+- **Size limits**: a sister wiki's answer is read up to 16 MB (`MAX_SISTER_RESPONSE_BYTES`; refused by
+  `Content-Length` or cut off once the stream passes it) and then fails as "could not be reached"; a render that big is
+  cached as unrenderable. The sister render cache holds at most 64 MB (`RENDER_CACHE_BYTES`, two bytes a character).
 
 ### Proof and gates
 
@@ -344,7 +349,7 @@ WikiOS Margin is an inspector docked to the reader, on top of MediaWiki-style ta
 ### WikiOS router (`src/server/api/routers/wikios/`)
 
 **Page content** (`page-content.ts`):
-`getArticleHtml`, `getWikitext`, `getIntro`, `getInfobox`, `getSectionContent`, `getPageImages`, `getArticleThumbnails`, `getArticleAuthors`, `checkPageExists`, `getMissingPages`, `resolveWikiPlaceholders`, `downloadFile`
+`getArticleHtml`, `getWikitext`, `getIntro`, `getInfobox`, `getPageImages`, `getArticleThumbnails`, `getArticleAuthors`, `checkPageExists`, `getMissingPages`, `resolveWikiPlaceholders`, `downloadFile`
 
 **History** (`history-diff.ts`):
 `getHistory`, `getDiff`, `getRevisionContent`
@@ -375,3 +380,12 @@ WikiOS Margin is an inspector docked to the reader, on top of MediaWiki-style ta
 
 **Maintenance** (`utilities.ts`):
 `getOrphanArticles`, `getDeadEndArticles`, `getBrokenRedirects`, `getLongestArticles`, `getShortestArticles`, `getArchivedArticles`, `getAuditLogs`, `getHealthTelemetry`
+
+**Sister wikis** (`sister.ts`):
+`sisterEmbed` (see [Sister wikis](#sister-wikis))
+
+### Wiki cache router (`src/server/api/routers/wikiCache.ts`)
+
+`getCountryProfile` reads a country's wiki profile through the database-native cache (`services/cache-service.ts`). It
+is public on the rate-limited bucket, the name is capped at 255 characters, and a page the wiki says it does not have is
+remembered for two minutes in a cache of its own. `refreshCountryCache` drops a cache entry and is admin-only.

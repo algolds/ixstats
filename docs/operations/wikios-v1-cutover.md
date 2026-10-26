@@ -23,7 +23,8 @@ None has been run yet.
 - **Launch steps (this launch):** 0, 1, 1b, 1c, 2, 2a, 3 (3a to 3d, and 3e, the sister interwiki prefixes), 4, 4b, 4c
   (the sister wikis answer the server), 5b, 6, 6a, 6b, 6c, 6d, 7b, and the IxStates rows of 10 with 10d. Two parts of
   them run before step 2's deploy: step 4's loopback server with its env line, and step 6a's app URL check (step 2 says
-  why). Few of these steps change what the public sees on ixwiki.com: loading the snippet in step 3 changes neither
+  why). Steps 0 and 1 run before it too, `2026-09-30-wikios-api.sql` above all (see "The data-safety SQL runs before
+  the push"), and so does step 1b's `verifiedById` fix-up while the IxnayID identity deploy has not run. Few of these steps change what the public sees on ixwiki.com: loading the snippet in step 3 changes neither
   classic's article path nor its canonical link, though it lets every uploader on classic upload SVG and PDF files (3a);
   step 3e lets classic's editors write `[[iiwiki:...]]` and `[[althistory:...]]` links; and step 6d only adds IxStates'
   rules to classic's `robots.txt`. Step 6b lets the wiki inside IxStates take edits, and step 6c moves the bots to it.
@@ -35,21 +36,25 @@ Every step has a rollback line that names the backup it restores.
 
 ## Before the cutover
 
-The WikiOS v1 code reaches production in an ordinary IxStates release (`scripts/deploy-production.sh`: `prisma db push`,
-build, PM2 reload). That deploy runs none of the steps below: no manual SQL, no environment variables, no MediaWiki
-configuration, no nginx takeover. The code is safe without them because of one switch, **`WIKIOS_V1_ENABLED`, off
-unless set to `true`** (`src/lib/wiki-os/v1-switch.ts`). Step 6b turns it on.
+The WikiOS v1 code reaches production in an ordinary IxStates release (`scripts/deploy-production.sh`: the additive
+schema step, its SQL files, `prisma db push`, build, PM2 reload; [release guide A4](release-guide.md#a4-build-and-deploy)).
+That deploy runs none of the steps below: no manual SQL from `prisma/manual-migrations/`, no environment variables, no
+MediaWiki configuration, no nginx takeover. The code is safe without them because of one switch,
+**`WIKIOS_V1_ENABLED`, off unless set to `true`** (`src/lib/wiki-os/v1-switch.ts`). Step 6b turns it on. One of them is
+not optional for the deploy itself: step 1's `2026-09-30-wikios-api.sql` must run before it (below).
 
 **Safe while the switch is off (the state after an ordinary deploy):**
 
-- **Schema.** Every table and column WikiOS v1 reads is in the Prisma schema, so `db push` creates them. The push asks to
-  confirm five unique constraints: `wiki_articles (source, pageId)`, `wiki_revisions (source, revId)`, `wiki_logs.logId`,
-  `wiki_logs.mwLogId`, and `lore_stash_items (stashId, contentType, pageTitle)` in place of `(stashId, pageTitle)`. None can
-  fail: the four columns are new and empty (NULLs are never duplicates), and the stash key is weaker than the old one. Run
-  `bun run db:push:force` by hand first and answer yes, as for the Realms push in the rose-garden runbook (5a); the deploy
-  script's own push then has nothing to do. Pushed alone, a deploy script stops at that prompt without changing anything.
-  Before any hand push of a release with the data-safety plan in it, read "The data-safety SQL runs before the push"
-  below: three files must run first.
+- **Schema.** Every table and column WikiOS v1 reads is in the Prisma schema, so the deploy's additive step and `db push`
+  create them. Five unique constraints would make the push ask for confirmation: `wiki_articles (source, pageId)`,
+  `wiki_revisions (source, revId)`, `wiki_logs.logId`, `wiki_logs.mwLogId`, and
+  `lore_stash_items (stashId, contentType, pageTitle)` in place of `(stashId, pageTitle)`. None can fail: the four columns
+  are new and empty (NULLs are never duplicates), and the stash key is weaker than the old one. Step 1's files create all
+  five (`2026-09-30-wikios-api.sql`, `2026-09-30-wikios-sync-v1.sql`, `2026-09-30-wikios-stash-key.sql`), and step 1 runs
+  before the deploy, so the push has none of them to ask. **Never push the schema by hand before the deploy**: a push
+  before the deploy has run `20261105120000_wikios_conflicts` creates `wiki_revisions.origin` itself and skips its
+  labelling (below). If the deploy's own push stops on a warning, the data-safety SQL has already run, so a hand push is
+  safe then (step 2).
 - **Reading.** Articles, history, diffs, categories, Special pages and search work. Full-text search uses the old query,
   because the search vector stays empty until step 1's `search-indexes.sql`.
 - **No writes, unless an administrator turns editing on.** With the switch off, WikiOS writes follow a second switch,
@@ -68,10 +73,10 @@ unless set to `true`** (`src/lib/wiki-os/v1-switch.ts`). Step 6b turns it on.
 
 - With no background render, WikiOS fills its link, template and image tables only for pages someone opens. "What links
   here" and page images stay incomplete until step 7b; feed cards then fall back to the picture in the article's intro.
-- The manual SQL of step 1 is not run: integer ids for api.php (`pageId`, `revId`, `logId` sequences, triggers and
-  backfills), the generated search vector and its GIN and trigram indexes, the redirect backfill and the default
-  protections. Every file is idempotent and safe to apply before the switch; `2026-09-30-wikios-stash-key.sql` can run at
-  any time.
+- Until step 1's manual SQL runs (before the deploy), these are missing: integer ids for api.php (`pageId`, `revId`,
+  `logId` sequences, triggers and backfills), the generated search vector and its GIN and trigram indexes, the redirect
+  backfill and the default protections. Every file is idempotent and safe to apply before the switch;
+  `2026-09-30-wikios-stash-key.sql` can run at any time.
 
 **Unsafe before the cutover:**
 
@@ -119,11 +124,18 @@ order, and all before `db push`:
 A wrong label does not lose text, but every revision wrongly marked `wikios` makes later classic edits to its page look
 like collisions: conflict rows and notices for edits that did not conflict.
 
-How `scripts/deploy-production.sh` really runs them: after its database backup it runs a fixed list of migration files
-with `bunx prisma db execute` (Atlas Studio, Vault hub, the forum readers drop, the cards phases, IxnayID), then
-`20261105120000_wikios_conflicts`, then `20261105120001_wikios_sync_dead_letters`, then `bun run db:push:force`. So inside
-the deploy, files 2 and 3 run before the push, in that order. The deploy runs nothing from `prisma/manual-migrations/`, so
-file 1 is yours to run first (step 1), and no hand push may run before the deploy has run file 2.
+How `scripts/deploy-production.sh` really runs them: after its database backup it runs the additive schema step
+(`scripts/deployment/apply-additive-schema.ts --apply`), then a fixed list of migration files with
+`bunx prisma db execute` (the Realms drop, the forum, Atlas Studio, Vault hub, the forum readers drop, the cards phases,
+IxnayID, native lore), then `20261105120000_wikios_conflicts`, then `20261105120001_wikios_sync_dead_letters`, then the
+2026-10 MyCountry and realm-time files, then `bun run db:push:force`. So inside the deploy, files 2 and 3 run before the
+push, in that order. The additive step never adds `wiki_revisions.origin` (it is excluded by name, so file 2 always
+adds it and labels), but it does add `revId` when the database lacks it: nullable and empty, which is exactly the case
+where every row would stay `wikios`. The deploy runs nothing from `prisma/manual-migrations/`, so **file 1 is yours to run
+before the deploy** (step 1; it fills `revId` whether or not the column already exists), and no hand push may run before
+the deploy has run file 2. The [release guide](release-guide.md#b3-the-window-the-app-stopped) puts these in order for
+1.5. If file 1 stops on a column it reads that the database does not have yet, run the additive step by hand first
+(`bun scripts/deployment/apply-additive-schema.ts --apply`; the deploy runs it again and finds nothing), then file 1.
 
 Check before that deploy (read-only):
 
@@ -136,13 +148,12 @@ docker exec -i ixstats-postgres psql -U postgres -d ixstats -c \
   "select column_name from information_schema.columns where table_name = 'wiki_revisions' and column_name = 'origin'"
 ```
 
-If you need the hand push for the unique-constraint prompt (above), run files 2 and 3 by hand first, after file 1, then
-push:
+If the deploy's push stops on a warning, files 2 and 3 have already run, so a hand `bun run db:push:force` is safe then
+(step 2). Running files 2 and 3 by hand, after file 1, is also safe:
 
 ```bash
 docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 < "$IX/prisma/migrations/20261105120000_wikios_conflicts/migration.sql"
 docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 < "$IX/prisma/migrations/20261105120001_wikios_sync_dead_letters/migration.sql"
-( cd "$IX" && bun run db:push:force )
 ```
 
 Both files are idempotent, so the deploy running them again changes nothing. Both are additive (new tables, a new
@@ -402,6 +413,9 @@ get `sessionsecretmissing` again and nothing else changes.
 
 ## 2. Deploy IxStates as usual
 
+**Before this deploy:** step 1 (at least `2026-09-30-wikios-api.sql`, see "The data-safety SQL runs before the push"),
+and step 1b's `verifiedById` fix-up if the IxnayID identity deploy has not run (the deploy's conversion reads it).
+
 **Before this deploy (launch time), when the release carries the integration and hosts work (plan 2026-10-25):**
 
 1. Step 4's loopback server and its `WIKIOS_MEDIAWIKI_INTERNAL_URL` line. They use plan 417's files, which the checkout
@@ -427,7 +441,9 @@ pm2 logs ixstats-cron --lines 2000 --nostream | grep -c 'WIKIOS_MEDIAWIKI_INTERN
 A hit means a process started without the variable: fix the env file (step 4) and restart that process.
 
 The release arrives with `WIKIOS_V1_ENABLED` off (see "Before the cutover"); leave it off until step 6b. If `db push`
-stops on the unique-constraint prompt, run `bun run db:push:force` by hand and answer yes, then run the deploy again.
+stops on a unique-constraint warning, the deploy has already run its SQL, the data-safety files included, and left the
+live build untouched: read every line, run `bun run db:push:force` by hand and answer yes only if each is an expected
+unique constraint on a new column, then run the deploy again.
 
 This also runs `deploy-ixworld.sh`. It does **not** deploy WikiOS: the `wikios` process built in step 5 keeps
 serving the code it was built from until `scripts/deploy-wikios.sh` runs again, so run that script after every

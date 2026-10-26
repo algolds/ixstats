@@ -3,7 +3,8 @@
  * Politics writes keep their history and their invariants (WP-DE: P1-06, P2-04, P2-03). A party edit cannot set its
  * support (drift and elections own it); a party that stood in an election is deactivated instead of deleted (its
  * candidates and results cascade from it); a bill is voted once even when two votes race; the whip count and a
- * meeting's notes and decisions are the owning government's alone; reconfiguring the legislature writes the chamber
+ * meeting's notes, decisions, action items and attendance notes, and officials' contact details, are the owning
+ * government's alone, and neither list is unbounded; reconfiguring the legislature writes the chamber
  * and its seats in one transaction.
  */
 jest.mock("~/lib/notifications/api", () => ({
@@ -25,6 +26,7 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { electionsRouter } from "~/server/api/routers/elections";
 import { legislationRouter } from "~/server/api/routers/legislation";
 import { meetingsRouter } from "~/server/api/routers/meetings";
+import { quickActionsRouter } from "~/server/api/routers/quickactions";
 import { applyPolicyEffect } from "~/lib/policies";
 import {
   CALLER_COUNTRY,
@@ -35,8 +37,11 @@ import {
 const elections = createCallerFactory(electionsRouter);
 const legislation = createCallerFactory(legislationRouter);
 const meetings = createCallerFactory(meetingsRouter);
+const quickActions = createCallerFactory(quickActionsRouter);
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 
 describe("parties", () => {
   const party = { id: "p1", countryId: CALLER_COUNTRY, name: "Greens", currentSupport: 31 };
@@ -179,18 +184,17 @@ describe("cabinet meetings", () => {
     targetCountryId: null,
     title: "Spring cabinet",
     notes: "Agreed to cut the port budget",
-    attendances: [],
+    attendances: [{ id: "at1", attendeeName: "Minister", notes: "Argued against" }],
     agendaItems: [{ id: "a1", title: "Port", outcome: "Approved" }],
     decisions: [{ id: "d1", title: "Port cut" }],
-    actionItems: [],
+    actionItems: [{ id: "ai1", title: "Draft the cut" }],
   });
 
-  it("notes, decisions and agenda outcomes are the host's alone", async () => {
-    const ctx = createIdorContext({
-      cabinetMeeting: {
-        findMany: jest.fn().mockResolvedValue([meeting(CALLER_COUNTRY), meeting(FOREIGN_COUNTRY)]),
-      },
-    });
+  it("notes, decisions, action items and agenda outcomes are the host's alone", async () => {
+    const findMany = jest
+      .fn()
+      .mockResolvedValue([meeting(CALLER_COUNTRY), meeting(FOREIGN_COUNTRY)]);
+    const ctx = createIdorContext({ cabinetMeeting: { findMany } });
     (ctx.db as { country: Record<string, jest.Mock> }).country.findMany = jest
       .fn()
       .mockResolvedValue([]);
@@ -198,12 +202,77 @@ describe("cabinet meetings", () => {
     expect(own).toMatchObject({
       notes: "Agreed to cut the port budget",
       decisions: [{ id: "d1" }],
+      actionItems: [{ id: "ai1" }],
+      attendances: [{ notes: "Argued against" }],
     });
     expect(foreign).toMatchObject({
       notes: null,
       decisions: [],
+      actionItems: [],
+      attendances: [{ attendeeName: "Minister", notes: null }],
       agendaItems: [{ id: "a1", outcome: null }],
       title: "Spring cabinet",
+    });
+    expect(findMany.mock.calls[0]![0].take).toBe(50);
+  });
+});
+
+describe("government officials", () => {
+  const official = { id: "o1", name: "Ada", email: "ada@gov", phone: "555" };
+  const ctxFor = (structureCountry: string) => {
+    const findMany = jest.fn().mockResolvedValue([official]);
+    const ctx = createIdorContext({
+      governmentOfficial: { findMany },
+      governmentStructure: {
+        findUnique: jest.fn().mockResolvedValue({ id: "gs1", countryId: structureCountry }),
+      },
+    });
+    return { ctx, findMany };
+  };
+
+  it("refuses a read with no government to list", async () => {
+    await expect(
+      meetings(ctxFor(CALLER_COUNTRY).ctx as never).getOfficials({})
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("shows contact details to the owning government only, and lists a bounded page", async () => {
+    const own = ctxFor(CALLER_COUNTRY);
+    expect(await meetings(own.ctx as never).getOfficials({ governmentStructureId: "gs1" })).toEqual(
+      [official]
+    );
+    expect(own.findMany.mock.calls[0]![0]).toMatchObject({
+      where: { governmentStructureId: "gs1" },
+      take: 100,
+    });
+
+    const foreign = ctxFor(FOREIGN_COUNTRY);
+    expect(
+      await meetings(foreign.ctx as never).getOfficials({ governmentStructureId: "gs1" })
+    ).toEqual([{ ...official, email: null, phone: null }]);
+  });
+
+  it("quickActions.getOfficials also keeps contact details to the owner, and is bounded", async () => {
+    const read = async (countryId: string, structureCountry: string, structureId?: string) => {
+      const { ctx, findMany } = ctxFor(structureCountry);
+      const [row] = await quickActions(ctx as never).getOfficials({
+        countryId,
+        governmentStructureId: structureId,
+      });
+      return { row, take: findMany.mock.calls[0]![0].take };
+    };
+    expect(await read(CALLER_COUNTRY, CALLER_COUNTRY)).toMatchObject({
+      row: { email: "ada@gov", phone: "555" },
+      take: 100,
+    });
+    expect((await read(FOREIGN_COUNTRY, FOREIGN_COUNTRY)).row).toMatchObject({
+      email: null,
+      phone: null,
+    });
+    // Naming your own country with another government's structure doesn't unlock its contacts.
+    expect((await read(CALLER_COUNTRY, FOREIGN_COUNTRY, "gs_foreign")).row).toMatchObject({
+      email: null,
+      phone: null,
     });
   });
 });

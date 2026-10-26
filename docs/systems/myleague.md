@@ -1,6 +1,6 @@
 # 🧪 MyLeague & MyClub — Sports Simulation Studio (Labs)
 
-**Last updated:** 2026-09-30
+**Last updated:** 2026-10-26
 
 **Parent Layer:** Labs (Experimental & Incubation Studio)  
 **Subsystems:** League Workspace, Franchise Management (MyClub), Match Simulation Engine, Athlete Cards  
@@ -47,12 +47,15 @@ Split into domain sub-routers:
 
 ## Economic Integration
 
-- **Ticket Revenue** (per completed home match): $\text{capacity} \times \text{ticketPrice} \times 0.6 \times (\text{popularity} / 100)$
+- **Ticket Revenue** (per completed home match): $\text{capacity} \times \text{ticketPrice} \times 0.6 \times (\text{popularity} / 100)$. The ticket price is capped at 100 ₷, and revenue and its preview clamp a stored price to 0–100
 - **Sponsor Income**: the sponsor's base fee per completed home match and its `winBonus` per win, home or away
 - **Collecting**: `collectMatchRevenue` pays each completed match once (`SportMatch.homeRevenueCollectedAt` / `awayRevenueCollectedAt`); `previewMatchRevenue` shows what's waiting (`src/lib/sports/match-revenue.ts`)
 - **Franchise Claiming**: Requires the **MyClub Team License Token** (Vault Store, 5,000 credits); canonical leagues additionally require the **MyLeague Franchise Pass** (2,500 credits)
 - **Player Training**: Individual drills (25c), team sessions (100c) via `exchangeService`
 - **Patron Saint Invocation**: 100c; writes a `sports_saint_blessing` StorytellerEffect
+- **Maintenance mode**: every MyClub move of Sovereigns (charter, club claim, stadium, patron saint, training, predictions, transfer bids and answers) refuses in vault maintenance mode before moving anything. The Exchange's on/off switch does not gate MyClub
+- **Transfers**: asking prices and bids are whole Sovereigns from 1 to 10,000,000, and a club cannot bid on a player its owner already owns. A bid's escrow, its answer and its payout or refund run once under the bid's key, however many requests race
+- **Leagues**: a club moves only into a league its owner runs, of the same sport, with room under the 64-club ceiling, and with no season in progress in either league. `deleteLeague` refuses while another player owns one of its clubs; before a permitted delete it refunds the pending transfer bids and open predictions the delete would take
 
 ---
 

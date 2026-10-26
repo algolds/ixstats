@@ -30,7 +30,8 @@ export interface AuctionListing {
 export interface Bid {
   id: string;
   auctionId: string;
-  bidderId: string;
+  /** Server-side only: the market socket does not broadcast it. */
+  bidderId?: string;
   bidderName: string;
   amount: number;
   timestamp: number; // realtime epoch ms (Date.now), NOT IxTime

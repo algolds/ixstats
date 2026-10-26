@@ -8,12 +8,11 @@
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure, readOnlyProcedure } from "~/server/api/trpc";
 import { categorizeTemplate, isNoiseTemplate } from "~/lib/wiki-os/templates/template-registry";
-import { readTemplateData } from "~/lib/wiki-os/templates/template-data-reader";
+import { templateDataFor } from "~/lib/wiki-os/templates/template-data-cache";
 import { renderTemplateWithRedisCache } from "~/lib/wiki-os/templates/preview-service.server";
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { templatePreviewInput } from "./_shared";
 import { db } from "~/server/db";
-import type { Prisma } from "@prisma/client";
 
 /**
  * Master Polymorphic Canonical Templates Registry.
@@ -1116,7 +1115,7 @@ export const wikiosTemplatesRouter = createTRPCRouter({
       });
 
       for (const t of localTemplates) {
-        const key = t.name.toLowerCase();
+        const key = t.name.replace(/_/g, " ").trim().toLowerCase(); // rows keyed by raw spellings before
         if (isNoiseTemplate(t.name) || templateMap.has(key)) continue;
         templateMap.set(key, {
           name: t.name,
@@ -1212,70 +1211,8 @@ export const wikiosTemplatesRouter = createTRPCRouter({
         };
       }
 
-      // 1. Check local DB cache
-      let cached = await db.wikiTemplate.findUnique({
-        where: { name: templateName },
-      });
-
-      if (cached?.canonicalTarget) {
-        const target = await db.wikiTemplate.findUnique({
-          where: { name: cached.canonicalTarget },
-        });
-        if (target) cached = target;
-      }
-
-      if (cached?.templateData) {
-        return {
-          name: cached.name,
-          description: cached.description,
-          category: cached.category,
-          isCanonical: cached.isCanonical,
-          templateData: cached.templateData as Record<string, unknown>,
-          cached: true,
-        };
-      }
-
-      // 2. Read the TemplateData block from the template's own stored wikitext (or its /doc subpage)
-      const tdMap = await readTemplateData([templateName]);
-      const data = tdMap.get(templateName);
-      if (!data) {
-        return {
-          name: templateName,
-          description: null,
-          category: categorizeTemplate(templateName),
-          templateData: null,
-          cached: false,
-        };
-      }
-
-      // 3. Cache in DB for future requests
-      const category = categorizeTemplate(templateName, data.description);
-      const paramCount = data.params ? Object.keys(data.params).length : 0;
-
-      await db.wikiTemplate.upsert({
-        where: { name: templateName },
-        create: {
-          name: templateName,
-          description: data.description ?? null,
-          category,
-          templateData: (data ?? null) as unknown as Prisma.InputJsonValue,
-          paramCount,
-        },
-        update: {
-          description: data.description ?? null,
-          category,
-          templateData: (data ?? null) as unknown as Prisma.InputJsonValue,
-          paramCount,
-        },
-      });
-
-      return {
-        name: templateName,
-        description: data.description ?? null,
-        category,
-        templateData: data as unknown as Record<string, unknown>,
-        cached: false,
-      };
+      // The registry row, refreshed from the template's stored wikitext once its pages changed
+      return templateDataFor(templateName);
     }),
 
   /**

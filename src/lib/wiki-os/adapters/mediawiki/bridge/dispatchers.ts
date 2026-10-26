@@ -2,6 +2,7 @@
 // Public dispatchers routing requests across PostgreSQL (IxWiki) and HTTP (IIWiki/AltHistory).
 
 import { parseInfobox, parseCoordTemplate } from "~/lib/wiki-os/transformers/infobox-parser";
+import { matchHeading } from "~/lib/wiki-os/wikitext/line-patterns";
 import {
   type WikiSource,
   type WikiSearchResult,
@@ -152,20 +153,21 @@ export async function getPageSections(
 ): Promise<WikiSection[]> {
   const article = await getArticleWikitext(title, wiki);
   if (!article) return [];
+  return extractSectionsFromWikitext(article.wikitext);
+}
 
+/**
+ * The `== Heading ==` lines (levels 2 to 6) of `wikitext`, in order. A line at a time, without a regular
+ * expression: `/^(={2,6})\s*(.+?)\s*\1$/gm` read a line of `==` and a long blank run cubically many times
+ * over (4,000 blanks took 26 s).
+ */
+export function extractSectionsFromWikitext(wikitext: string): WikiSection[] {
   const sections: WikiSection[] = [];
-  const headingRegex = /^(={2,6})\s*(.+?)\s*\1$/gm;
-  let match;
-  let index = 0;
-
-  while ((match = headingRegex.exec(article.wikitext)) !== null) {
-    sections.push({
-      level: match[1]!.length,
-      title: match[2]!.trim(),
-      index: index++,
-    });
+  for (const line of wikitext.split("\n")) {
+    const heading = matchHeading(line, 2, true);
+    if (!heading) continue;
+    sections.push({ level: heading.level, title: heading.title, index: sections.length });
   }
-
   return sections;
 }
 

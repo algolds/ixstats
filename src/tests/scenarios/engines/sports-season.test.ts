@@ -166,7 +166,10 @@ describe("sports-season (memory)", () => {
   beforeEach(async () => {
     db = createMemoryPrisma();
     db.store.onRaw(/SELECT pg_advisory_xact_lock\(hashtext\(\?\)\)/, () => 1);
-    db.store.onRaw(/SELECT id FROM "sport_teams" WHERE id = \? FOR UPDATE/, ([id]) => [{ id }]);
+    db.store.onRaw(/SELECT id FROM "sport_teams" WHERE id = \? FOR (UPDATE|SHARE)/, ([id]) => [
+      { id },
+    ]);
+    db.store.onRaw(/SELECT id FROM "sport_players" WHERE id = \? FOR UPDATE/, ([id]) => [{ id }]);
     db.store.onRaw(/SELECT id FROM "exchange_wallets" WHERE id = \? FOR UPDATE/, ([id]) => [
       { id },
     ]);

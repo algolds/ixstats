@@ -11,6 +11,16 @@ import next from "next";
 
 loadEnvVariables("[Server]");
 
+// An uncaught exception leaves the process in an unknown state: log it and exit, PM2 restarts it. A stray
+// rejected promise in one request is only logged: exiting would drop every other in-flight request.
+process.on("unhandledRejection", (reason) => {
+  console.error("[Server] Unhandled rejection:", reason);
+});
+process.on("uncaughtException", (error) => {
+  console.error("[Server] Uncaught exception, exiting:", error);
+  process.exit(1);
+});
+
 const dev = process.env.NODE_ENV !== "production";
 const hostname = process.env.HOSTNAME || "localhost";
 // Default to port 3550 in production, 3003 for dev to avoid clashing with production
@@ -48,6 +58,7 @@ app
       marketWS: { status: "skipped", detail: "" },
     };
     let marketWsInstance = null;
+    let shutdownThinkPages = null;
 
     // ──────────────────────────────────────────────
     // WebSocket: ThinkPages (production only)
@@ -57,8 +68,10 @@ app
         subsystems.thinkpagesWS = { status: "disabled", detail: "dev mode" };
         console.log("[Server] ⚠ ThinkPages WebSocket disabled in development mode");
       } else {
-        const { initializeWebSocketServer } = await import("./src/server/websocket-server.js");
+        const { initializeWebSocketServer, shutdownWebSocketServer } =
+          await import("./src/server/websocket-server.js");
         await initializeWebSocketServer(httpServer);
+        shutdownThinkPages = shutdownWebSocketServer;
         subsystems.thinkpagesWS = { status: "ok", detail: "initialized" };
         console.log("[Server] ✓ ThinkPages WebSocket initialized");
       }
@@ -115,8 +128,17 @@ app
     // ──────────────────────────────────────────────
     // Graceful shutdown (await WS cleanup)
     // ──────────────────────────────────────────────
+    let shuttingDown = false;
     const shutdown = async () => {
+      if (shuttingDown) return;
+      shuttingDown = true;
       console.log("\n[Server] Graceful shutdown initiated...");
+
+      // Force exit after 10 seconds if graceful shutdown hangs
+      setTimeout(() => {
+        console.error("[Server] Forced exit after shutdown timeout");
+        process.exit(1);
+      }, 10000).unref();
 
       // 1. Close WebSocket servers first (allows clients to reconnect elsewhere)
       try {
@@ -131,17 +153,26 @@ app
         console.error("[Server] Error closing Market WebSocket:", err.message);
       }
 
-      // 2. Close the HTTP server
-      httpServer.close(() => {
+      // The HTTP server's close ends the process. Listen before step 2, which can start the close itself.
+      httpServer.once("close", () => {
         console.log("[Server] HTTP server closed");
         process.exit(0);
       });
 
-      // Force exit after 10 seconds if graceful shutdown hangs
-      setTimeout(() => {
-        console.error("[Server] Forced exit after shutdown timeout");
-        process.exit(1);
-      }, 10000).unref();
+      // 2. The ThinkPages Socket.IO server: its open sockets would hold the HTTP server open until the forced exit.
+      // Closing it also starts closing the HTTP server.
+      try {
+        if (shutdownThinkPages) {
+          await Promise.race([shutdownThinkPages(), new Promise((r) => setTimeout(r, 3000))]);
+          console.log("[Server] ThinkPages WebSocket closed");
+        }
+      } catch (err) {
+        console.error("[Server] Error closing ThinkPages WebSocket:", err.message);
+      }
+
+      // 3. Close the HTTP server: it closes once in-flight requests finish; idle keep-alive sockets close now
+      if (httpServer.listening) httpServer.close();
+      httpServer.closeIdleConnections?.();
     };
 
     process.on("SIGTERM", shutdown);

@@ -196,8 +196,9 @@ describe("another user's drafts stay hidden", () => {
 
 it("markAllAsRead marks the caller's notifications, never those of a userId the client sends (IDOR)", async () => {
   const updateMany = jest.fn().mockResolvedValue({ count: 0 });
+  const findMany = jest.fn().mockResolvedValue([]);
   const ctx = createIdorContext({
-    notification: { updateMany },
+    notification: { updateMany, findMany },
     user: {
       findFirst: jest.fn().mockResolvedValue(null),
       findUnique: jest.fn().mockResolvedValue(null),
@@ -207,6 +208,8 @@ it("markAllAsRead marks the caller's notifications, never those of a userId the 
   const where = JSON.stringify(updateMany.mock.calls[0]![0].where);
   expect(where).not.toContain("user_victim");
   expect(where).toContain(CALLER_CLERK_ID);
+  const sharedWhere = JSON.stringify(findMany.mock.calls[0]![0].where);
+  expect(sharedWhere).not.toContain("user_victim");
 });
 
 describe("renderAchievementImage", () => {

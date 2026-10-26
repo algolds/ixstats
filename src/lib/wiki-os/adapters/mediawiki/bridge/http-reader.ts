@@ -35,9 +35,53 @@ export function fetchExternalWiki(
 }
 
 /**
+ * The most bytes of an answer read from another wiki: far more than a page at MediaWiki's 2 MB limit takes as JSON
+ * wikitext or as parsed HTML, so only a broken or hostile upstream reaches it.
+ */
+export const MAX_SISTER_RESPONSE_BYTES = 16 * 1024 * 1024;
+
+/**
+ * A sister wiki's answer was longer than `MAX_SISTER_RESPONSE_BYTES` and was not read to the end. To a reader it is
+ * the wiki giving no usable answer (`unreachable`); a render turns it into SisterRenderError.
+ */
+export class SisterResponseTooLargeError extends WikiUnavailableError {
+  constructor(wiki: string) {
+    super(wiki, "unreachable");
+    this.name = "SisterResponseTooLargeError";
+  }
+}
+
+/**
+ * The body of `response` as text, or null (the body cancelled) once it is longer than `limit` bytes: by its
+ * Content-Length before reading, else as it streams in, so an answer that never ends is never buffered.
+ */
+async function readCappedText(response: Response, limit: number): Promise<string | null> {
+  if (Number(response.headers.get("content-length")) > limit) {
+    await response.body?.cancel().catch(() => undefined);
+    return null;
+  }
+  const reader = response.body?.getReader();
+  if (!reader) return "";
+  const decoder = new TextDecoder();
+  let total = 0;
+  let text = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > limit) {
+      await reader.cancel().catch(() => undefined);
+      return null;
+    }
+    text += decoder.decode(value, { stream: true });
+  }
+  return text + decoder.decode();
+}
+
+/**
  * The parsed JSON answer to `url`, a sister wiki's API call. Throws WikiUnavailableError when there is no usable
  * answer: the guard's failures, a status that is not OK (api.php answers 200, even for a missing page), or a body that
- * does not parse.
+ * does not parse; SisterResponseTooLargeError (one) for a body over `MAX_SISTER_RESPONSE_BYTES`.
  */
 export async function readSisterJson<T>(
   url: string,
@@ -49,8 +93,15 @@ export async function readSisterJson<T>(
     await response.body?.cancel().catch(() => undefined);
     throw unusable();
   }
+  let text: string | null;
   try {
-    return (await response.json()) as T;
+    text = await readCappedText(response, MAX_SISTER_RESPONSE_BYTES);
+  } catch {
+    throw unusable();
+  }
+  if (text === null) throw new SisterResponseTooLargeError(wikiNameForUrl(url));
+  try {
+    return JSON.parse(text) as T;
   } catch {
     throw unusable();
   }
@@ -405,7 +456,9 @@ export async function fetchMediaWikiImageBatch(
       });
 
       if (!resp.ok) continue;
-      const data = (await resp.json()) as {
+      const body = await readCappedText(resp, MAX_SISTER_RESPONSE_BYTES);
+      if (body === null) continue;
+      const data = JSON.parse(body) as {
         query?: {
           pages?: Array<{
             title?: string;

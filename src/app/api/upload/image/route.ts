@@ -4,9 +4,10 @@
  * SECURITY:
  * - Requires Clerk authentication
  * - Rate limited to prevent abuse (10 uploads per minute per user)
- * - File type validation (whitelist)
+ * - File type from the file's own bytes (`sniffFile`), never the client's MIME type or name: PNG, JPEG, GIF,
+ *   WebP or SVG, anything else refused
  * - File size validation (5MB max)
- * - Safe filename generation
+ * - Safe filename generation, with the extension of the sniffed type
  * - SVG files are sanitized to remove potential XSS vectors
  */
 import { NextRequest, NextResponse } from "next/server";
@@ -18,35 +19,45 @@ import { rateLimiter } from "~/lib/cache";
 import { uploadsDir as getUploadsDir, UPLOADS_URL_PREFIX } from "~/server/shared/upload-storage";
 import { registerUploadedAsset } from "~/server/shared/uploaded-assets";
 import { sanitizeSvg } from "~/lib/media/svg-sanitize";
+import { sniffFile } from "~/lib/wiki-os/core/file-sniff";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
-// SECURITY: Only allow specific image types
-// Note: SVG support is limited due to XSS risks - consider removing if not needed
-const ALLOWED_TYPES = [
-  "image/png",
-  "image/jpeg",
-  "image/jpg",
-  "image/gif",
-  "image/webp",
-  // SVG is allowed but sanitized - see sanitizeSvg in ~/lib/media/svg-sanitize
-  "image/svg+xml",
-  "image/svg",
-];
+// SECURITY: Only these types, as the bytes say; SVG is sanitized (sanitizeSvg in ~/lib/media/svg-sanitize)
+const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp", "image/svg+xml"];
 
-function generateSafeFileName(originalName: string, userId: string): string {
+/** What the upload is stored as, by its sniffed type: the extension and the MIME type it is served with. */
+const STORED_AS = {
+  png: { ext: "png", mime: "image/png" },
+  jpeg: { ext: "jpg", mime: "image/jpeg" },
+  gif: { ext: "gif", mime: "image/gif" },
+  webp: { ext: "webp", mime: "image/webp" },
+  svg: { ext: "svg", mime: "image/svg+xml" },
+} as const;
+
+/**
+ * The upload's type from its first bytes. An SVG the sniffer finds unsafe (a script, an event handler, ...) is still an
+ * SVG: sanitizeSvg cleans it. Null for anything else, whatever its declared type or name (HTML, PDF, a renamed file).
+ */
+function sniffUploadType(bytes: Uint8Array): keyof typeof STORED_AS | null {
+  const sniffed = sniffFile(bytes);
+  if (!sniffed.ok) return sniffed.code === "unsafe-svg" ? "svg" : null;
+  return sniffed.file.kind === "pdf" ? null : sniffed.file.kind;
+}
+
+function generateSafeFileName(originalName: string, userId: string, ext: string): string {
   // Create a hash combining user ID and timestamp for uniqueness
   const hash = crypto
     .createHash("md5")
     .update(`${userId}-${Date.now()}-${originalName}`)
     .digest("hex");
   const timestamp = Date.now();
-  // Sanitize original name
-  const safeName = originalName
-    .replace(/[^a-zA-Z0-9.-]/g, "_")
-    .replace(/\.{2,}/g, ".")
+  // Sanitize original name; the extension is the sniffed type's, never the client's
+  const dot = originalName.lastIndexOf(".");
+  const safeName = (dot > 0 ? originalName.slice(0, dot) : originalName)
+    .replace(/[^a-zA-Z0-9-]/g, "_")
     .substring(0, 50);
-  return `uploaded_${timestamp}_${hash.substring(0, 8)}_${safeName}`;
+  return `uploaded_${timestamp}_${hash.substring(0, 8)}_${safeName}.${ext}`;
 }
 
 export async function POST(request: NextRequest) {
@@ -75,17 +86,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "No file provided" }, { status: 400 });
     }
 
-    // Validate file type
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid file type. Allowed types: PNG, JPG, GIF, WEBP, SVG",
-        },
-        { status: 400 }
-      );
-    }
-
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
@@ -94,19 +94,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get file content
+    const bytes = await file.arrayBuffer();
+    if (bytes.byteLength > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { success: false, error: "File size exceeds 5MB limit" },
+        { status: 400 }
+      );
+    }
+    let buffer = Buffer.from(bytes);
+
+    // Validate file type by its bytes: the declared MIME type and the name are the client's to choose
+    const kind = sniffUploadType(new Uint8Array(bytes));
+    if (!kind) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid file type. Allowed types: PNG, JPG, GIF, WEBP, SVG",
+        },
+        { status: 400 }
+      );
+    }
+    const stored = STORED_AS[kind];
+
     // Generate safe file name and ensure no directory traversal
-    const fileName = path.basename(generateSafeFileName(file.name, userId));
+    const fileName = path.basename(generateSafeFileName(file.name, userId, stored.ext));
 
     // Ensure uploads directory exists
     const uploadsDir = getUploadsDir();
     await mkdir(uploadsDir, { recursive: true });
 
-    // Get file content
-    const bytes = await file.arrayBuffer();
-    let buffer = Buffer.from(bytes);
-
     // SECURITY: Sanitize SVG files to remove XSS vectors
-    const isSvg = file.type === "image/svg+xml" || file.type === "image/svg";
+    const isSvg = kind === "svg";
     if (isSvg) {
       const svgContent = buffer.toString("utf-8");
       const sanitizedSvg = sanitizeSvg(svgContent);
@@ -131,7 +150,7 @@ export async function POST(request: NextRequest) {
     await registerUploadedAsset({
       filePath,
       url: publicUrl,
-      mimeType: isSvg ? "image/svg+xml" : file.type === "image/jpg" ? "image/jpeg" : file.type,
+      mimeType: stored.mime,
       source: "upload",
       uploaderClerkId: userId,
       title: file.name,
@@ -146,8 +165,8 @@ export async function POST(request: NextRequest) {
       url: publicUrl,
       fileName: fileName,
       originalFileName: file.name,
-      fileSize: file.size,
-      fileType: file.type,
+      fileSize: buffer.length,
+      fileType: stored.mime,
       uploadedAt: Date.now(),
     });
   } catch (error) {

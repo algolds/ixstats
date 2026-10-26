@@ -3,7 +3,10 @@
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
-import { assertCountryResourceWriteAccess } from "~/server/shared/country-authorization";
+import {
+  assertCountryResourceWriteAccess,
+  hasCountryWriteAccess,
+} from "~/server/shared/country-authorization";
 import {
   resolveDepartmentCountryId,
   resolveOfficialCountryId,
@@ -46,13 +49,20 @@ export const meetingsGovernmentRouter = createTRPCRouter({
       });
     }),
 
+  // One government's officials (a structure or a department is required: never the whole
+  // table). Contact details are the owning government's: redacted for everyone else.
   getOfficials: publicProcedure
     .input(
-      z.object({
-        governmentStructureId: z.string().optional(),
-        departmentId: z.string().optional(),
-        active: z.boolean().optional(),
-      })
+      z
+        .object({
+          governmentStructureId: z.string().optional(),
+          departmentId: z.string().optional(),
+          active: z.boolean().optional(),
+          limit: z.number().int().min(1).max(200).default(100),
+        })
+        .refine((v) => !!v.governmentStructureId || !!v.departmentId, {
+          message: "A government structure or department is required",
+        })
     )
     .query(async ({ ctx, input }) => {
       const where: any = {};
@@ -60,13 +70,19 @@ export const meetingsGovernmentRouter = createTRPCRouter({
       if (input.departmentId) where.departmentId = input.departmentId;
       if (input.active !== undefined) where.isActive = input.active;
 
-      return await ctx.db.governmentOfficial.findMany({
+      const officials = await ctx.db.governmentOfficial.findMany({
         where,
         include: {
           department: true,
         },
         orderBy: [{ title: "asc" }],
+        take: input.limit,
       });
+      const countryId = input.governmentStructureId
+        ? await resolveStructureCountryId(ctx.db, input.governmentStructureId)
+        : await resolveDepartmentCountryId(ctx.db, input.departmentId!);
+      if (countryId && (await hasCountryWriteAccess(ctx, countryId))) return officials;
+      return officials.map((official) => ({ ...official, email: null, phone: null }));
     }),
 
   removeOfficial: rateLimitedMutationProcedure

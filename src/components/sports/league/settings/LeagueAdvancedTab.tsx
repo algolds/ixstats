@@ -34,6 +34,8 @@ interface PendingConfirm {
 interface LeagueAdvancedTabProps {
   league: {
     id: string;
+    sportPreset?: string;
+    createdByUserId?: string;
     teams?: Array<{ id: string; name: string }>;
   };
   activeSeason: {
@@ -390,8 +392,14 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
                 <SelectValue placeholder="Target league..." />
               </SelectTrigger>
               <SelectContent>
+                {/* transferTeam only accepts a same-sport league its manager also runs */}
                 {otherLeagues
-                  ?.filter((l) => l.id !== league.id)
+                  ?.filter(
+                    (l) =>
+                      l.id !== league.id &&
+                      (!league.sportPreset || l.sportPreset === league.sportPreset) &&
+                      (!league.createdByUserId || l.createdByUserId === league.createdByUserId)
+                  )
                   ?.map((l) => (
                     <SelectItem key={l.id} value={l.id}>
                       {l.name}

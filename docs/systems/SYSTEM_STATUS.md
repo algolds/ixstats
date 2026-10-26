@@ -64,7 +64,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 |---|:---:|---|---|:---:|---|
 | Native lore engine | WikiOS v1 | `/wiki/*`, `/util/*` | `wikios/`, `src/lib/wiki-os/` | ✅ Live | PostgreSQL store with inbound MediaWiki recent-changes sync; no MariaDB path. Rendering, templates and Lua still come from MediaWiki. **Launch shape** (owner, 2026-10-24): WikiOS serves the wiki inside IxStates at ixwiki.com/projects/ixstates, and ixwiki.com stays classic MediaWiki, public and editable, with canonical and share URLs on classic. WikiOS v1 (#52, D20) is merged and switched off (`WIKIOS_V1_ENABLED`): WikiOS reads but takes no edits, uploads or api.php requests until the launch turns it on (runbook step 6b). Editing (the env switch or the admin editing switch, `src/lib/wiki-os/editing-switch.ts`) is built and not on in production; it launches with WikiOS v1, which is not deployed. When both wikis change a page, the last writer wins on both and the overwritten editor is always told (`services/conflict-rule.ts`). Classic is the authority for blocks, user groups and `MediaWiki:` messages ([WIKIOS.md](wikios/WIKIOS.md#launch-shape-and-modes), [launch runbook](../operations/wikios-v1-cutover.md)) |
 | Native lore pieces | — | `/countries/[slug]/lore` | `countryLore.ts`, `src/server/modules/lore/`, `components/country-profile/lore/` | 🟡 Built, writing off | A country's people, places, events and organisations as ordinary wiki pages, written from the country page by the owner and a lore team, listed on the Lore tab by `Category:<Country> lore` with owner pins and hides ([explore-and-country-profiles.md](explore-and-country-profiles.md#native-lore)). Built on `rose-garden` (2026-10-25). Reading is on once deployed: pages already in `Category:<Country> lore` show on the Lore tab. Writing (entry points, curation, lore team) follows WikiOS editing, so it launches with WikiOS v1. Needs the `country_lore` SQL (runbook on that page) |
-| Multi-wiki reading | — | `/wiki/[slug]?source=` | `wikios/`, `src/lib/wiki-os/upstream-guard.ts`, `src/lib/utils/sanitize-sister-html.ts` | 🟡 Partial | Other wikis' pages (iiwiki, AltHistory) are read-only. Built on `rose-garden` (2026-10-25): links to them open in the reader with `?source=` (rendered articles, the composer, Discord, admin link tools, media search), hover previews, a per-host breaker and limiter, a typed "could not be reached" answer instead of an empty one, and one sanitizer for their HTML. Classic shows `{{Sister}}` as a link box (runbook step 3d). Not landed yet: WikiOS's live, cached `{{Sister}}` embed (sister wikis plan, Tasks 10 and 11) ([WIKIOS.md](wikios/WIKIOS.md#sister-wikis)) |
+| Multi-wiki reading | — | `/wiki/[slug]?source=` | `wikios/`, `src/lib/wiki-os/upstream-guard.ts`, `src/lib/utils/sanitize-sister-html.ts` | 🟡 Partial | Other wikis' pages (iiwiki, AltHistory) are read-only. Built on `rose-garden` (2026-10-25): links to them open in the reader with `?source=` (rendered articles, the composer, Discord, admin link tools, media search), hover previews, a per-host breaker and limiter, a typed "could not be reached" answer instead of an empty one, and one sanitizer for their HTML. Classic shows `{{Sister}}` as a link box (runbook step 3d). WikiOS turns `{{Sister}}` into a live, cached embed (`wikios.sisterEmbed`, up to ten a page, 2026-10-26) ([WIKIOS.md](wikios/WIKIOS.md#sister-wikis)) |
 | Canvas editor (Plate) | Canvas v1 | `/wiki/<title>?action=edit` | `wikios/editing.ts`, `components/wiki-os/editor/plate/` | ✅ Live | WikiAST, slash menu, TemplateData forms |
 | MediaWiki export | — | — | `services/mirror-worker.ts` (+ `mirror-outbox.ts`, `mirror-queue.ts`) | ✅ Live | Durable outbox (`wiki_mirror_jobs`), per-title FIFO, backoff and dead letter; revisions imported with the real author (plan 407) |
 | Margin | — | `/wiki/*?margin` | `components/wiki-os/margin/` | 🟡 Partial | No comment reactions or deletion; no Stash tab |
@@ -141,16 +141,40 @@ found several that are partly built, read-only, or broken, so each row now carri
 
 ## Known blockers on `rose-garden`
 
-- **M0 follow-ups (code audit 2026-09-30).** The exploit and authorization fixes are merged ([#36](https://github.com/algolds/ixstats/pull/36), [#37](https://github.com/algolds/ixstats/pull/37), [#38](https://github.com/algolds/ixstats/pull/38), [#39](https://github.com/algolds/ixstats/pull/39)).
-  Still open: rate limits on the remaining protected mutations, removing the nginx CSP override (the nonce itself is
-  fixed), and
-  these ops steps (besides the password rotation below): run `db:backup` and test a restore; run
-  `db:mark-match-revenue-collected` right after the schema push; run the budget-year remap (`db:remap-budget-years`, retired 2026-10-21: restore it from git first, see the release guide's B4);
-  review `audit:vault-exploits` and run `audit:vault-exploits:apply`; review `audit:forum-links`; enable `db-backup`,
-  `log-retention` and `budget-year-rollover` in `CRON_ENABLED_JOBS`; set `DISCORD_GUILD_ID`. Plan: [ROADMAP M0](../roadmap/ROADMAP.md#m0--integrity-security--economy-exploits).
-- **`audit:arch` is still non-blocking in CI, and fails.** Its baseline was rebuilt on 2026-10-05 with real line
-  counts (38 files), so the size ratchet now fires. On 2026-10-05 it reports 14 violations: 8 files over their ceiling
-  and not in the baseline (largest `routers/wikios/templates.ts`, 1,295 lines), `auction-service.ts` grown past its
-  baseline, and 5 cross-router imports. Fix them or add files to `RELAXED_FILES`, then make it blocking.
+Updated 2026-10-26, after the pre-production audit fixes (`claude/preprod-audit-fixes`).
+
+**Fixed on this branch:**
+
+- **The architecture guard is green and blocking again.** The oversized files were split (`intent.ts`,
+  `security/conflicts.ts`, `EventWizard.tsx`, `IssueDetailBrief.tsx`, `ixtime/core.ts` and three components grown past
+  their baseline), and `bun run audit:arch` passes. In CI it is an ordinary blocking step.
+- **CI runs every gate.** The job used to stop at the first red step, so lint, the typechecks and the docs check had not
+  run for seven pushes. Every gate after the unit tests now runs whenever setup succeeded, and the job fails if any of
+  them fails. A new step typechecks `tsconfig.json`, the config `next build` checks, so a build-breaking type error the
+  partitioned configs miss cannot land unseen.
+- **The deploy.** A failed deploy keeps the live site serving: nothing touches `.next` before the build, the build
+  moves it to `.next.prev` and puts it back on failure, and `bun run clean` is gone. An additive schema step breaks the
+  cycle between the hand SQL and `db push`; the Realms drop and all twelve forum files run before the push; IxWorld,
+  cron and the websockets run the commit the web app was built from; the web app can run under PM2 (`ixstats-web`);
+  old servers get `SIGTERM`, then `SIGKILL` after 30 seconds; `f-defense.sql` survives D2a; the legacy notification
+  links are rewritten once the new server answers; a rollback never pushes an older schema. See the
+  [release guide](../operations/release-guide.md#a4-build-and-deploy).
+
+**Still open, code:** rate limits on the remaining protected mutations, and removing the nginx CSP override (the nonce
+itself is fixed; [release guide B6](../operations/release-guide.md#b6-csp-remove-the-nginx-override)). Plan:
+[ROADMAP M0](../roadmap/ROADMAP.md#m0--integrity-security--economy-exploits).
+
+**Still open, ops work** (owner; the [release guide's Part B](../operations/release-guide.md#b5-ops-prerequisites-still-open)
+puts each in the 1.5 order):
+
 - **Rotate the `ixstats_readonly` Postgres password** (plan 325): the old one is in git history since 2026-05-31.
   The script no longer contains it.
+- **Run `db:backup` and test a restore** into a scratch database.
+- **Review `audit:vault-exploits`, then run `audit:vault-exploits:apply`.**
+- **Review `audit:forum-links`.**
+- **Enable `db-backup`, `log-retention` and `budget-year-rollover` in `CRON_ENABLED_JOBS`** (`budget-year-rollover`
+  only after the remap below).
+- **Set `DISCORD_GUILD_ID`.**
+- **Run `db:mark-match-revenue-collected`** right after the schema push.
+- **Run the budget-year remap.** Its tool `db:remap-budget-years` was retired on 2026-10-21; restore it from
+  `65fd9dcdc^` first ([MyCountry runbook, step 8](../operations/deploy-mycountry-2026-10.md#8-turn-the-jobs-on)).

@@ -11,6 +11,7 @@
  */
 import type { Prisma } from "@prisma/client";
 import { isJsonObject } from "~/lib/cards/ns-facts";
+import { isRevokedPurchase } from "~/lib/vault/store-purchases";
 
 export const RETIRED_STORE_ITEM_IDS: readonly string[] = ["upgrade_archetype_proposal"];
 
@@ -88,6 +89,8 @@ export function planRetiredItemRefunds(
 
   const refunds: RetiredItemRefund[] = [];
   for (const row of purchases) {
+    // An admin-revoked purchase no longer grants its item; the revoke already settled it.
+    if (isRevokedPurchase(row.metadata)) continue;
     const itemId = ledgerMetadata(row.metadata).itemId;
     if (typeof itemId !== "string" || !isRetiredStoreItem(itemId)) continue;
     const amount = round2(-row.credits - (correctedBy.get(row.id) ?? 0));

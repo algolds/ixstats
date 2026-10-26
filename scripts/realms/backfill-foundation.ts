@@ -43,7 +43,13 @@ async function planOwners(): Promise<OwnerPlan> {
 async function backfillOwners(plan: OwnerPlan) {
   if (!apply) return;
   for (const a of plan.assign) {
-    await db.country.update({ where: { id: a.countryId }, data: { ownerUserId: a.userId } });
+    // select id: before the deploy, columns only the deploy SQL adds (Country.ownedSince) don't exist yet,
+    // and a plain update reads every column back
+    await db.country.update({
+      where: { id: a.countryId },
+      data: { ownerUserId: a.userId },
+      select: { id: true },
+    });
   }
 }
 
@@ -67,7 +73,11 @@ async function backfillRealms(realm: { slug: string }) {
   console.log(`private realms → unlisted: ${privateCount}`);
   if (!apply) return;
   if (realm.slug !== "ixnay")
-    await db.realm.update({ where: { id: DEFAULT_REALM_ID }, data: { slug: "ixnay" } });
+    await db.realm.update({
+      where: { id: DEFAULT_REALM_ID },
+      data: { slug: "ixnay" },
+      select: { id: true },
+    });
   await db.realm.updateMany({ where: { visibility: "private" }, data: { visibility: "unlisted" } });
 }
 

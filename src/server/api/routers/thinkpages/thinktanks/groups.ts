@@ -57,6 +57,7 @@ import {
   type GroupMemberRow,
 } from "./group-helpers";
 import { ensurePersonalAccount } from "../personal-account";
+import { stripDiscordMarker } from "../post-utils";
 
 type GroupDb = Pick<
   PrismaClient,
@@ -628,7 +629,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       const post = await db.thinkpagesPost.create({
         data: {
           accountId: targetAccountId,
-          content: input.content,
+          content: stripDiscordMarker(input.content), // only the IxTwitter sync sets one
           hashtags: JSON.stringify(allTags),
           visibility: "thinktank",
           // Forum posts are stamped with real time, like every other feed post.

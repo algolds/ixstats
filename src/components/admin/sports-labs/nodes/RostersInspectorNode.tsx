@@ -9,6 +9,7 @@ import { PositionTooltip } from "~/components/sports/PositionTooltip";
 import { Undo as RotateCcw } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useUserCountry } from "~/hooks/useUserCountry";
+import { usePaidActionRequestId } from "~/components/sports/core/usePaidActionRequestId";
 import { generateTeamRoster, generateCoach, type SportPresetKey } from "~/lib/sports";
 import { LeagueSeasonPicker } from "./LeagueSeasonPicker";
 import { getPlayerOverall } from "../sports-labs-utils";
@@ -82,8 +83,10 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
   const { userProfile } = useUserCountry();
   const isOwner = dbTeam && userProfile && dbTeam.ownerUserId === userProfile.id;
 
+  const saintRequest = usePaidActionRequestId();
   const invokeSaintMutation = api.sports.invokePatronSaint.useMutation({
     onSuccess: () => {
+      saintRequest.done();
       alert("Patron Saint successfully invoked! Blessing created.");
       void refetchTeam();
     },
@@ -94,7 +97,11 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
 
   const handleInvokeSaint = () => {
     if (!dbTeam) return;
-    invokeSaintMutation.mutate({ teamId: dbTeam.id, saintName: selectedSaint });
+    invokeSaintMutation.mutate({
+      teamId: dbTeam.id,
+      saintName: selectedSaint,
+      requestId: saintRequest.idFor(`${dbTeam.id}:${selectedSaint}`),
+    });
   };
 
   const handleGenerateRoster = () => {

@@ -17,8 +17,7 @@ import {
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { currentBudgetYear } from "~/lib/government/budget-year";
-import { formatRealmDate } from "~/lib/realms/realm-clock";
-import { clockForCountry, type RealmClockReader } from "~/server/shared/realm-time";
+import { clockForCountry } from "~/server/shared/realm-time";
 import { CountryEventSpine } from "~/lib/activity";
 import {
   declareDirectiveActivity,
@@ -50,11 +49,9 @@ import {
 import { generateIntentSummationDraft } from "~/lib/intent/intent-summation";
 import { growthModifierToLevelShift, StorytellerEffectType } from "~/lib/economy/calculations";
 import { createStorytellerEffect } from "~/lib/economy/storyteller-effects";
+import { WEEK_MS, assertUnderWeeklyCap, cooldownStatus } from "~/server/modules/intent/weekly-cap";
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-const WEEK_MS = 7 * DAY_MS;
 const COOLDOWN_MS = WEEK_MS; // decided: weekly cooldown between intents
-const WEEKLY_CAP = 3; // safety ceiling on directives committed per week of the nation's realm clock
 /** Advisory-lock namespace serialising one nation's directive commits ($executeRaw: the lock returns void). */
 const DIRECTIVE_CAP_LOCK_NAMESPACE = 51001;
 const BUDGET_PCT_MAX = 60; // clamp a single department's allocatedPercent
@@ -102,41 +99,6 @@ function alignedBroker(brokers: ActiveBroker[], category: Category): ActiveBroke
   return id ? brokers.find((b) => b.id === id) : undefined;
 }
 
-/**
- * Weekly slots: every directive committed in the last week of the nation's realm clock (`now`) uses one, whatever its
- * status now. Abandoning (or completing) a directive releases its executive bandwidth but not its slot, so
- * declare → abandon → redeclare cannot exceed the cap. Drafts (`tier: "proposed"`, never
- * committed) don't use a slot. This is the one server value the UI slot counters read
- * (`getStatus`).
- */
-async function cooldownStatus(db: PrismaClient, countryId: string, now: number) {
-  const weekAgo = now - WEEK_MS;
-  const recent = await db.intent.findMany({
-    where: {
-      countryId,
-      tier: { not: "proposed" },
-      createdIxTime: { gte: weekAgo },
-    },
-    orderBy: { createdIxTime: "asc" },
-    select: { createdIxTime: true },
-  });
-  const usedThisWeek = recent.length;
-  const onCooldown = usedThisWeek >= WEEKLY_CAP;
-
-  let cooldownUntil: number | null = null;
-  if (onCooldown && recent.length > 0 && recent[0]?.createdIxTime != null) {
-    cooldownUntil = recent[0].createdIxTime + WEEK_MS;
-  }
-
-  return {
-    onCooldown,
-    cooldownUntil,
-    usedThisWeek,
-    cap: WEEKLY_CAP,
-    canCommit: !onCooldown,
-  };
-}
-
 type IntentPackage = ReturnType<typeof assemblePackages>["packages"][number];
 
 /** The draft being upgraded must be this country's and still a draft. */
@@ -156,23 +118,6 @@ async function assertCommittableDraft(db: PrismaClient, intentId: string, countr
       message: "Only a proposed intent can be committed.",
     });
   }
-}
-
-async function assertUnderWeeklyCap(
-  db: PrismaClient,
-  countryId: string,
-  clock: RealmClockReader,
-  now: number
-) {
-  const status = await cooldownStatus(db, countryId, now);
-  if (status.canCommit) return;
-  const until = status.cooldownUntil
-    ? ` Next available around ${formatRealmDate(status.cooldownUntil, clock.calendar)}.`
-    : "";
-  throw new TRPCError({
-    code: "TOO_MANY_REQUESTS",
-    message: `Your government is still executing this week's agenda (${status.usedThisWeek}/${status.cap}).${until}`,
-  });
 }
 
 /** Creates the active intent, or upgrades the proposed draft (conditionally, so concurrent commits cannot both apply). */

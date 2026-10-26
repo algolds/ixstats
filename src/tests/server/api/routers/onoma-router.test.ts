@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
  * Onoma router guards (and the public usage counters audited with them, PL-3): Kokoro is reached only by a
- * signed-in caller, the usage counters are rate-limited, the Kokoro API key never leaves the server and a blank
+ * signed-in caller, the usage counters take only signed-in callers and are rate-limited, the Kokoro API key never leaves the server and a blank
  * field never erases it; another user's language pack is missing to you and never forked, and an invalid pack is
  * not published (SL-18).
  *
@@ -117,7 +117,19 @@ describe("refused without effect", () => {
       error: { message: expect.stringMatching(/Authentication required/) },
     },
     {
-      name: "a public usage counter bumped past its rate limit",
+      name: "a usage counter bumped anonymously",
+      refusal: () => {
+        jest.spyOn(console, "warn").mockImplementation(() => {});
+        const db = createMockPrisma();
+        const call = createCallerFactory(economicArchetypesPublicRouter)(
+          anonymous(db)
+        ).incrementArchetypeUsage({ archetypeId: "a1" });
+        return { call, effects: [db.economicArchetype.updateMany] };
+      },
+      error: { message: expect.stringMatching(/Authentication required/) },
+    },
+    {
+      name: "a usage counter bumped past its rate limit",
       refusal: () => {
         jest.spyOn(rateLimiter, "isEnabled").mockReturnValue(true);
         jest.spyOn(rateLimiter, "check").mockResolvedValue({
@@ -128,7 +140,7 @@ describe("refused without effect", () => {
         jest.spyOn(console, "warn").mockImplementation(() => {});
         const db = createMockPrisma();
         const call = createCallerFactory(economicArchetypesPublicRouter)(
-          anonymous(db)
+          packOwner(db)
         ).incrementArchetypeUsage({ archetypeId: "a1" });
         return { call, effects: [db.economicArchetype.updateMany] };
       },

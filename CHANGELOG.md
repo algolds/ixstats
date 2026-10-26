@@ -10,9 +10,95 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased] — `rose-garden` (1.5)
 
-Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (the WikiOS launch hardening, 2026-10-24 → 10-25) is
-listed first, then the Cards mark and trophy art (2026-10-24), then the ThinkPages forum refresh (2026-10-17), then realm nations (2026-10-15), then the Vault collectathon hub (2026-10-14), then the work back to 2026-09-30 → 2026-10-05, then 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22
+Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (the pre-production audit fixes, 2026-10-26) is listed
+first, then the WikiOS launch hardening (2026-10-24 → 10-25), then the Cards mark and trophy art (2026-10-24), then the ThinkPages forum refresh (2026-10-17), then realm nations (2026-10-15), then the Vault collectathon hub (2026-10-14), then the work back to 2026-09-30 → 2026-10-05, then 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22
 work. The version registry (`src/lib/buildVersion.ts`) reads 1.5.0 (the Vault collectathon hub below); the next release candidate is not cut yet.
+
+### 🛡️ Pre-production audit fixes (2026-10-26)
+
+No version or capability integer moves. A full audit of `rose-garden` @ `d913a1e` found the branch could not ship:
+the production build failed, CI had been red for seven pushes, the deploy script broke itself on a second run, and a
+known Next.js RCE was reachable. This block fixes what the audit found.
+
+- **Build and CI.**
+  - The 21 test type errors are fixed (they broke `next build`, which typechecks `tsconfig.json`). The audit-arch
+    fixtures leave the root tsconfig.
+  - CI runs every gate even after one fails, and adds "Typecheck (Next build config)" (`tsc -p tsconfig.json`).
+  - The arch guard is green: eight files are split.
+  - `validate:migrations` is deleted (it read a missing schema file and called `db push --accept-data-loss`).
+  - `package.json` reads 1.5.0.
+- **Deploy** (`scripts/deploy-production.sh`; the [release guide](docs/operations/release-guide.md) has the new order).
+  - Every step that can fail runs before the live build is touched. The build moves `.next` to `.next.prev` and puts
+    it back if the build, IxWorld or the reload fails. No more `bun run clean`.
+  - **Additive schema step.** `scripts/deployment/apply-additive-schema.ts` applies only the purely additive part of
+    `prisma migrate diff --from-url` (dry run by default). This breaks the cycle where the pre-push SQL needs tables only
+    the push creates, and the push needs the SQL.
+  - `f-defense.sql` skips the readiness clamp once D2a has dropped the column, so the deploy can run again.
+  - `world_configs` and `territory_claims` are dropped by SQL, and the twelve ThinkPages forum files run before the
+    push.
+  - The legacy notification-link rewrite runs once the new server answers.
+  - `SKIP_SCHEMA_SYNC=1` skips the schema steps. Rollback uses it and never pushes an older schema.
+  - `deploy-ixworld.sh` is pinned to the deploy's commit.
+  - The web server can run under PM2 (`ixstats-web` in `ecosystem.config.example.cjs`). Old servers get SIGTERM before
+    SIGKILL.
+- **Realtime and processes.**
+  - The market socket no longer aborts Socket.IO's websocket upgrades, so ThinkPages realtime (DMs, presence, typing,
+    realm boards) connects again.
+  - The market socket checks Origin, is capped, and no longer broadcasts the bidder's user or Clerk id.
+  - Entry points exit non-zero on failure and on unhandled rejections, so PM2 restarts them.
+  - Cron patterns are bounds-checked.
+  - Map-update SSE streams are capped per process and per client.
+- **Security.**
+  - next 16.4.3, dompurify 3.4.17, and patched sharp, zod, socket.io and engine.io: `bun audit` went from 27 to 6
+    advisories, the rest dev-only or major bumps.
+  - The image optimizer takes no SVGs and only the bundled `/images/*`. This is in both `next.config.js` and the
+    template.
+  - Wiki excerpts in lore cards and feed previews are sanitized; third-party wikitext could draw full-screen overlays.
+  - User HTML (posts, DMs, ThinkTank docs) and first-party article styles lose fixed and overlay positioning.
+  - The Discord and NationStates image proxies are image-only, size-capped and rate-limited, and re-check the host on
+    every redirect. The bot-token refresh runs only for the IxTwitter channel.
+  - Equipment image resolution is admin-only.
+  - Any site may frame only `/maps?embed=true`; on the maps host, IxWiki alone may frame every page but the
+    signed-in tools, which nothing may frame.
+  - Uploads take their type from their bytes.
+  - The hardcoded Giphy key is gone.
+- **Economy.**
+  - Transfer bids settle once under concurrency; parallel accepts or rejects minted Sovereigns. Bids are whole numbers
+    from 1 to 10,000,000, with no bidding on your own player.
+  - Club claims are atomic.
+  - League moves need the target's manager. Deleting a league refunds escrow and prediction stakes, and refuses while
+    other players own clubs; season resets refund stakes.
+  - MyClub ₷ moves honour vault maintenance mode, and its fees charge and write in one transaction (with a per-press
+    request id).
+  - Ticket price is capped at 100.
+  - Pack purchases are serialised per pack, so limits hold.
+  - Dividends are refused during an open primary issue.
+  - Single-choice polls hold under concurrency.
+  - Admin revokes keep the ledger (`revokedAt`).
+- **Privacy and social.**
+  - Shared notifications keep per-user read and dismiss state in `NotificationReceipt` (new table, created by the
+    push). The legacy shared columns are frozen.
+  - Pins need the post's owner or a moderator.
+  - Group adds respect blocks and message settings, and someone who left must accept to come back.
+  - Groups are capped at 50 people and messages at 10,000 characters. Mentions count only names in the text (at most
+    50).
+  - Replies, reposts, reactions and feeds never surface posts the viewer can't read. A reply must be to a message in the
+    same conversation.
+  - Sockets leave a conversation or ThinkTank room when the user does.
+  - One participant can no longer erase a group's history.
+  - Public responses carry no Clerk ids. Blocks stop engagement notices, and new-follower notices are deduplicated for
+    30 days.
+  - Officials' contact details and meeting notes are owner-only.
+  - The public reactions list is rate-limited and cached.
+- **WikiOS and limits.**
+  - The unused public `wikios.getSectionContent` is removed: its heading regex blocked the server for minutes on one
+    crafted line. The section scan behind `countries.getWikiSections` is linear too.
+  - Approved story chains re-check edit rights before writing the wiki.
+  - Sister answers are capped at 16 MB, the render cache at 64 MB, and cache-miss embed reads per caller.
+  - Template preview and TemplateData caches are keyed by the canonical title and refresh after edits.
+  - Rate limits or sign-in on the remaining unthrottled writes (annotations, watchlist, stash, usage counters,
+    `getCountryProfile`). `refreshCountryCache` is admin-only.
+  - Onoma clones respect private work.
 
 ### 📖 WikiOS launch hardening (2026-10-24 → 10-25)
 
@@ -1971,8 +2057,8 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 ### Refactored & Added (Country Profile & Countries Directory Apple Design Redesign)
 
 - **Country Profile & Directory HIG Redesign (/apple-design)**:
-  - **Country Profile Navigation & Header (`/countries/[slug]`)**: Redesigned country header ([CountryHeader.tsx](src/app/countries/[slug]/_components/CountryHeader.tsx)) and tabs ([CountryTabs.tsx](src/app/countries/[slug]/_components/CountryTabs.tsx)) using Apple design principles, eliminating double-stacked pill containers, introducing translucent glass surfaces (`backdrop-blur-2xl`), optical typography tracking, and streamlined 4-tab layout (_Overview_, _Factbook_, _Governance_, _Community_).
-  - **Factbook & Activity Panel Overhaul**: Redesigned `FactbookSidebar.tsx` (since removed) and [CountryActivityPanel.tsx](src/app/countries/[slug]/_components/CountryActivityPanel.tsx) with unified card hierarchy, responsive grid view, and type-safe data transformers (`src/app/countries/[slug]/_utils/countryDataTransformers.ts`).
+  - **Country Profile Navigation & Header (`/countries/[slug]`)**: Redesigned country header (`CountryHeader.tsx`) and tabs (`CountryTabs.tsx`) (both since removed) using Apple design principles, eliminating double-stacked pill containers, introducing translucent glass surfaces (`backdrop-blur-2xl`), optical typography tracking, and streamlined 4-tab layout (_Overview_, _Factbook_, _Governance_, _Community_).
+  - **Factbook & Activity Panel Overhaul**: Redesigned `FactbookSidebar.tsx` (since removed) and `CountryActivityPanel.tsx` (since removed) with unified card hierarchy, responsive grid view, and type-safe data transformers (`src/app/countries/[slug]/_utils/countryDataTransformers.ts`).
   - **Countries Directory Hub (`/countries`)**: Upgraded `CountriesHeader.tsx`, `CountriesFocusGridModular.tsx`, and `CountryFocusCard.tsx` with smooth spring transitions, Apple-style search & filter pills, and clean metric badges.
   - **Design Specs**: Documented full architecture spec in `2026-08-10-countries-apple-design-redesign.md`.
 

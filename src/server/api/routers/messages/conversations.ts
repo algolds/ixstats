@@ -8,6 +8,7 @@ import {
   protectedProcedure,
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
+import { MAX_GROUP_PARTICIPANTS } from "~/server/modules/messaging";
 import { mapMessagingErrors, messagingFor } from "./_service";
 
 const MessageFolderSchema = z.enum([
@@ -98,7 +99,11 @@ export const messagesConversationsRouter = createTRPCRouter({
   createConversation: rateLimitedMutationProcedure
     .input(
       z.object({
-        participantIds: z.array(z.string().min(1)),
+        // The creator is added on top, so a group holds at most MAX_GROUP_PARTICIPANTS.
+        participantIds: z
+          .array(z.string().min(1))
+          .min(1)
+          .max(MAX_GROUP_PARTICIPANTS - 1),
         source: MessageSourceSchema.optional().default("thinkshare"),
         name: z.string().optional(),
         conversationType: z.enum(["personal", "diplomatic", "official"]).optional(),

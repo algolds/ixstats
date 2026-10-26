@@ -454,9 +454,10 @@ export class AuctionService {
 
       // 8. Broadcast bid event via WebSocket
       {
+        // The public name a bidder already shows elsewhere (nation, else Passport handle); never an account id.
         const bidder = await db.user.findUnique({
           where: { id: params.userId },
-          select: { clerkUserId: true },
+          select: { handle: true, country: { select: { name: true } } },
         });
         await broadcastMarket({
           type: "bid",
@@ -464,7 +465,7 @@ export class AuctionService {
             id: `bid_${Date.now()}`,
             auctionId: params.auctionId,
             bidderId: params.userId,
-            bidderName: bidder?.clerkUserId ?? params.userId,
+            bidderName: bidder?.country?.name ?? (bidder?.handle ? `@${bidder.handle}` : "A bidder"),
             amount: params.amount,
             timestamp: Date.now(),
             isAutoBid: false,

@@ -8,6 +8,12 @@
  * `awayRevenueCollectedAt`), so collecting again pays nothing until new matches finish.
  */
 
+/**
+ * Highest ticket price a club may set (the MyClub price field's own limit). Revenue reads the
+ * price clamped to it too, so a stored price above it can't inflate a budget.
+ */
+export const MAX_TICKET_PRICE = 100;
+
 interface RevenueTeam {
   id: string;
   stadiumCapacity: number;
@@ -41,7 +47,10 @@ function sponsorTerms(sponsor: unknown): { baseFee: number; winBonus: number } {
 
 /** Ticket revenue for one home match at the club's current stadium, prices and popularity. */
 function ticketRevenuePerHomeMatch(team: RevenueTeam): number {
-  return team.stadiumCapacity * team.ticketPrice * 0.6 * (team.popularity / 100);
+  const price = Number.isFinite(team.ticketPrice)
+    ? Math.min(Math.max(team.ticketPrice, 0), MAX_TICKET_PRICE)
+    : 0;
+  return team.stadiumCapacity * price * 0.6 * (team.popularity / 100);
 }
 
 /** What `team` earns from these completed, not-yet-collected matches. */

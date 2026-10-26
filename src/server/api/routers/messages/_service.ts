@@ -14,7 +14,7 @@ export function messagingFor(ctx: { db: Parameters<typeof createMessagingService
   });
 }
 
-/** Run a messaging call, turning the service's not-found / forbidden errors into TRPCErrors. */
+/** Run a messaging call, turning the service's not-found / forbidden / invalid errors into TRPCErrors. */
 export async function mapMessagingErrors<T>(
   call: () => Promise<T>,
   messages: { forbidden: string; notFound?: string }
@@ -30,6 +30,9 @@ export async function mapMessagingErrors<T>(
     }
     if (err.name === "MessagingForbiddenError") {
       throw new TRPCError({ code: "FORBIDDEN", message: messages.forbidden });
+    }
+    if (err.name === "MessagingValidationError") {
+      throw new TRPCError({ code: "BAD_REQUEST", message: err.message });
     }
     throw err;
   }

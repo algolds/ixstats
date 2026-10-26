@@ -45,12 +45,10 @@ describe("wikios.sisterEmbed", () => {
     expect(await caller().sisterEmbed({ wiki: "iiwiki", title: "Caphiria" })).toEqual({
       status: "missing",
     });
-    expect(embed).toHaveBeenCalledWith({
-      wiki: "iiwiki",
-      title: "Caphiria",
-      mode: "page",
-      section: null,
-    });
+    expect(embed).toHaveBeenCalledWith(
+      { wiki: "iiwiki", title: "Caphiria", mode: "page", section: null },
+      expect.any(Function)
+    );
   });
 
   it("passes a section in section mode only, and a section mode with no section reads the page", async () => {

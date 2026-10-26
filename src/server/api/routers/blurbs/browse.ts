@@ -72,10 +72,10 @@ export const blurbsBrowseRouter = createTRPCRouter({
           : { createdAt: "desc" },
         ...cursorPageArgs(input),
         include: {
+          // Public: no Clerk id.
           user: {
             select: {
               id: true,
-              clerkUserId: true,
               country: COUNTRY_BADGE,
             },
           },
@@ -102,12 +102,7 @@ export const blurbsBrowseRouter = createTRPCRouter({
         ...cursorPageArgs(input),
         include: {
           prompt: PROMPT_SUMMARY,
-          user: {
-            select: {
-              id: true,
-              clerkUserId: true,
-            },
-          },
+          user: { select: { id: true } }, // public: no Clerk id
         },
       });
 

@@ -13,6 +13,7 @@ import { requireWikiAuthId, requireWikiUserId } from "~/lib/wiki-os/auth";
 import { findWikiUserByAuthId } from "~/lib/wiki-os/storage";
 import { db } from "~/server/db";
 import { TRPCError } from "@trpc/server";
+import { stripDiscordMarker } from "~/server/shared/thinkpages-post-utils";
 import {
   cursorPageInput,
   cursorPageArgs,
@@ -209,8 +210,8 @@ async function crossPostToThinkPages(
   // Embed structured metadata prefix for ThinkPages to render distinctively
   const prefix = `[blurb:${promptSlug}|${promptTitle}]\n\n`;
   const maxContent = 280 - prefix.length;
-  const truncated =
-    content.length > maxContent ? content.slice(0, maxContent - 3) + "..." : content;
+  const body = stripDiscordMarker(content); // only the IxTwitter sync may mark a post
+  const truncated = body.length > maxContent ? body.slice(0, maxContent - 3) + "..." : body;
 
   const post = await db.thinkpagesPost.create({
     data: {

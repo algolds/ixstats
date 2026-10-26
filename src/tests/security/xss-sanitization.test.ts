@@ -201,6 +201,22 @@ describe("XSS Sanitization Test Suite", () => {
       expect(result.reason).toContain("Iframe tags");
     });
 
+    it("allows plain prose that only looks like an attribute or a protocol", () => {
+      for (const text of [
+        "bonus=50",
+        "Monday = holiday",
+        "condition = met",
+        "a post about javascript: URLs",
+      ]) {
+        expect(validateNoXSS(text).valid).toBe(true);
+      }
+    });
+
+    it("detects a javascript: markdown link and an unquoted event handler", () => {
+      expect(validateNoXSS("[click](javascript:alert(1))").valid).toBe(false);
+      expect(validateNoXSS("<img src=x onerror=alert(1)>").valid).toBe(false);
+    });
+
     it("allows safe content", () => {
       const result = validateNoXSS("<p>Safe text with <strong>formatting</strong></p>");
 

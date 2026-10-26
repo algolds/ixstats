@@ -448,11 +448,29 @@ model Notification {
   deliveryMethod String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  /// Per-user read/dismiss state for a shared (global or country-wide, userId null) row; a personal
+  /// row keeps its own `read`/`dismissed` columns.
+  receipts       NotificationReceipt[]
 
   @@index([userId, read, dismissed])
   @@index([countryId, read, dismissed])
   @@index([createdAt])
   @@index([priority, read])
+}
+
+/// One user's read/dismiss state for a shared notification. `userId` is the Clerk id (as in PushSubscription).
+model NotificationReceipt {
+  id             String       @id @default(cuid())
+  notificationId String
+  userId         String
+  readAt         DateTime?
+  dismissedAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@unique([notificationId, userId])
+  @@index([userId])
 }
 
 model UserPreferences {

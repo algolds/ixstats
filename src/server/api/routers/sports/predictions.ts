@@ -12,6 +12,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { exchangeService } from "~/lib/vault/exchange-service";
 import { MAX_PREDICTION_STAKE, MIN_PREDICTION_STAKE } from "~/lib/sports/predictions";
+import { assertSportsEconomyOpen } from "~/server/api/routers/sports/_shared";
 
 const outcomeSchema = z.enum(["home", "away", "draw"]);
 
@@ -68,6 +69,7 @@ export const sportsPredictionsRouter = createTRPCRouter({
         throw new TRPCError({ code: "FORBIDDEN", message: "Your account is inactive" });
       }
 
+      await assertSportsEconomyOpen(ctx.db);
       return ctx.db.$transaction(async (tx) => {
         // Serialize this user's placements so two parallel requests can't both pass the
         // one-per-match check (or both pass the wallet balance check).

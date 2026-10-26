@@ -10,9 +10,10 @@ import {
   normaliseShares,
   resolveDefenseBudget,
   shareWarnings,
+  type BudgetShares,
 } from "~/lib/military/model";
 
-const sum = (s: Record<string, number>) => Object.values(s).reduce((a, b) => a + b, 0);
+const sum = (s: BudgetShares) => Object.values(s).reduce((a, b) => a + b, 0);
 
 describe("budget split", () => {
   it("defaults and presets each sum to 1", () => {

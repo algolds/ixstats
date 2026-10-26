@@ -116,14 +116,6 @@ const READERS: Array<[string, (role: string | null, title: string) => Promise<un
     (r, t) => createCallerFactory(wikiosPageContentRouter)(ctxOf(r)).getInfobox({ title: t }),
   ],
   [
-    "wikios.getSectionContent",
-    (r, t) =>
-      createCallerFactory(wikiosPageContentRouter)(ctxOf(r)).getSectionContent({
-        title: t,
-        section: "x",
-      }),
-  ],
-  [
     "wikios.getArticleHtml",
     (r, t) => createCallerFactory(wikiosPageContentRouter)(ctxOf(r)).getArticleHtml({ title: t }),
   ],

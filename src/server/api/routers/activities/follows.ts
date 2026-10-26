@@ -12,6 +12,10 @@ import {
   findPersonalAccount,
 } from "~/server/shared/thinkpages-personal-account";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { recipientsBlockingSender } from "~/server/shared/user-blocks";
+
+/** A persona's owner hears about the same follower at most once in this window (follow/unfollow loops). */
+const FOLLOW_NOTICE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 
 /** Persona follow input: the persona to follow, and optionally which of the caller's personas follows. */
 const PersonaFollowInput = z.object({
@@ -34,6 +38,27 @@ async function requireOwnedActivePersona(
     });
   }
   return account;
+}
+
+/**
+ * Whether the owner was already told about this follower persona following this persona in the
+ * window. The key is built from database ids only, so the LIKE match can't be steered by a caller.
+ */
+async function alreadyToldOfFollow(
+  db: Pick<PrismaClient, "notification">,
+  ownerClerkId: string,
+  followKey: string
+) {
+  const earlier = await db.notification.findFirst({
+    where: {
+      userId: ownerClerkId,
+      source: "thinkpages",
+      metadata: { contains: `"followKey":"${followKey}"` },
+      createdAt: { gte: new Date(Date.now() - FOLLOW_NOTICE_WINDOW_MS) },
+    },
+    select: { id: true },
+  });
+  return earlier !== null;
 }
 
 /** Drop the caller's cached Following feed so a follow shows up on the next load. */
@@ -110,6 +135,10 @@ export const activitiesFollowsRouter = createTRPCRouter({
       if (target.clerkUserId === clerkUserId) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "You can't follow your own accounts" });
       }
+      // Someone who blocked you can't be followed (nor notified of it).
+      if ((await recipientsBlockingSender(ctx.db, clerkUserId, [target.clerkUserId])).length > 0) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You can't follow this account" });
+      }
 
       const follower = input.followerAccountId
         ? await requireOwnedActivePersona(ctx.db, clerkUserId, input.followerAccountId)
@@ -143,10 +172,15 @@ export const activitiesFollowsRouter = createTRPCRouter({
 
       await invalidateFollowingFeed(clerkUserId);
 
-      // Notify the followed persona's owner (notifications are keyed by Clerk id). Imported
-      // IxTwitter personas belong to "system_" ids with no user behind them.
+      // Notify the followed persona's owner (notifications are keyed by Clerk id), once per
+      // follower in the window. Imported IxTwitter personas belong to "system_" ids with no user
+      // behind them.
+      const followKey = `${follower.id}:${target.id}`;
       if (!target.clerkUserId.startsWith("system_")) {
         try {
+          if (await alreadyToldOfFollow(ctx.db, target.clerkUserId, followKey)) {
+            return { success: true, alreadyFollowing: false, followerAccountId: follower.id };
+          }
           await notificationAPI.create({
             title: "New follower",
             message: `${follower.displayName} (@${follower.username}) followed @${target.username}`,
@@ -157,7 +191,7 @@ export const activitiesFollowsRouter = createTRPCRouter({
             href: `/dashboard/profile/${follower.username}`,
             source: "thinkpages",
             actionable: false,
-            metadata: { followerAccountId: follower.id, followedAccountId: target.id },
+            metadata: { followerAccountId: follower.id, followedAccountId: target.id, followKey },
           });
         } catch (error) {
           console.error("[Follows] Failed to send follow notification:", error);

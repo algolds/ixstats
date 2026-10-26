@@ -133,7 +133,7 @@ describe("a branch card", () => {
         designYear: 2016,
       },
     ],
-  } as ForceBranch;
+  } as unknown as ForceBranch;
   const actions = (): BranchActions => ({
     toggle: jest.fn(),
     edit: jest.fn(),

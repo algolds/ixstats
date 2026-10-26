@@ -107,7 +107,7 @@ describe("evaluateThresholds", () => {
   it("reads militaryStrength from the derived threat picture", async () => {
     const db = makeDb(null, "militaryStrength");
     await evaluateThresholds(db, "c1", "u1");
-    expect(loadThreatPicture).toHaveBeenCalledWith(db, "c1");
+    expect(loadThreatPicture as jest.Mock).toHaveBeenCalledWith(db, "c1");
     expect(db.intelligenceAlert.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({

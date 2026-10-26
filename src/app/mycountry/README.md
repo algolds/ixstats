@@ -58,7 +58,7 @@ Verified `api.*` calls used by this route (`src/app/mycountry`, `src/components/
 - **Politics:** `api.elections.getElections` / `getCurrentParliament` / `getLegislature` / `getParties`
 - **Government:** `api.government.getByCountryId` / `getFullByCountryId`, plus the National budget writes (`createStructure`, `setAllocation`, `addDepartment`, `removeDepartment`, `getPolicyMaintenance`)
 - **Map editor:** `api.countryGeo.sampleTerrainAt` / `upsertSubdivision`, `api.geoCore.*` (country geometry, features, linkage, geo profile, point info), `api.geoFeatures.*` (feature, city, POI, label and storyline edits), `api.cardImages.*`. Rollup mode and "Rebase stats from map" live in Settings (`CountryNationPanel`)
-- **System:** `api.system.getCurrentIxTime`, `api.users.getProfile` / `getMembershipStatus`, `api.admin.getNavigationSettings`, `api.wikios.getSectionContent`
+- **System:** `api.system.getCurrentIxTime`, `api.users.getProfile` / `getMembershipStatus`, `api.admin.getNavigationSettings`
 
 ## Connections to Other Systems
 

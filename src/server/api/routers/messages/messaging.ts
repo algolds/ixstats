@@ -10,7 +10,18 @@ import {
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 import { validateNoXSS } from "~/lib/utils";
+import { MAX_MESSAGE_LENGTH } from "~/server/modules/messaging";
 import { messagingFor, mapMessagingErrors } from "./_service";
+
+/** A message body: bounded like a ThinkPages post, and refused (BAD_REQUEST) when it carries unsafe HTML. */
+const MessageContent = z
+  .string()
+  .min(1)
+  .max(MAX_MESSAGE_LENGTH)
+  .refine((content) => validateNoXSS(content).valid, {
+    message:
+      "Message contains potentially unsafe HTML. Please avoid using script tags, javascript: URLs, or event handlers.",
+  });
 
 export const messagesMessagingRouter = createTRPCRouter({
   /**
@@ -103,7 +114,7 @@ export const messagesMessagingRouter = createTRPCRouter({
       z.object({
         conversationId: z.string(),
         userId: z.string().optional().default(""),
-        content: z.string().min(1),
+        content: MessageContent,
         messageType: z.enum(["text", "image", "file", "system"]).default("text"),
         replyToId: z.string().optional(),
         mentions: z.array(z.string()).optional(),
@@ -126,8 +137,6 @@ export const messagesMessagingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      validateNoXSS(input.content);
-
       const messagingService = messagingFor(ctx);
 
       return await mapMessagingErrors(
@@ -150,12 +159,10 @@ export const messagesMessagingRouter = createTRPCRouter({
     .input(
       z.object({
         messageId: z.string(),
-        content: z.string().min(1),
+        content: MessageContent,
       })
     )
     .mutation(async ({ ctx, input }) => {
-      validateNoXSS(input.content);
-
       const messagingService = messagingFor(ctx);
 
       return await mapMessagingErrors(

@@ -9,3 +9,4 @@ export {
   MessagingValidationError,
 } from "./errors";
 export { recordMessagingTelemetry } from "./telemetry";
+export { MAX_GROUP_PARTICIPANTS, MAX_MESSAGE_LENGTH } from "./contracts";

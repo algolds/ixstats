@@ -109,8 +109,13 @@ export const PLAY_AS_MONEY_ROUTES = [
   "sports.invokePatronSaint",
   "sports.trainPlayer",
   "sports.teamTraining",
+  "sports.listPlayerForTransfer",
   "sports.placeTransferBid",
   "sports.respondToTransferBid",
+  // Escrow and prediction refunds when a league is deleted or its season reset or rescheduled
+  "sports.deleteLeague",
+  "sports.resetSeason",
+  "sports.regenerateSchedule",
   "sports.placePrediction",
   "sports.simulateMatchDay",
   "sports.simulateSingleMatch",
