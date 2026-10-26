@@ -60,17 +60,24 @@ const CSP_TEMPLATE_APP = buildCSPTemplate(false);
 const CSP_TEMPLATE_STANDALONE = buildCSPTemplate(true);
 
 /**
- * Paths that should be embeddable via iframe from any origin:
- * - /maps — map pages with ?embed=true
- * - /wiki/ — WikiOS article pages
- * - /countries/ — country detail pages
+ * Who may frame a page (clickjacking), on either host (the maps.ixwiki.com check trusts `x-forwarded-host`, so the
+ * host never widens this):
+ * - `*`: the chromeless, read-only map viewer (`/maps?embed=true`), which IxWiki, WikiOS (wiki-embed-shared.ts,
+ *   ArticlePlaceholders) and other sites embed;
+ * - `'self'` (X-Frame-Options SAMEORIGIN): the rest of the map viewer, WikiOS articles and country pages, which
+ *   IxWiki's own origin may still frame;
+ * - `'none'` (DENY): everything else, the signed-in tools (/admin, /settings, /mycountry, the map editors) included.
  */
-function isEmbeddablePathFn(pathname: string): boolean {
-  return (
-    pathname.startsWith("/maps") ||
-    pathname.startsWith("/wiki/") ||
-    pathname.startsWith("/countries/")
-  );
+type FrameAncestors = "*" | "'self'" | "'none'";
+
+function frameAncestorsFor(req: NextRequest): FrameAncestors {
+  const { pathname, searchParams } = req.nextUrl;
+  const isMapViewer = pathname === "/maps" || pathname === "/maps/";
+  if (isMapViewer && searchParams.get("embed") === "true") return "*";
+  if (isMapViewer || pathname.startsWith("/wiki/") || pathname.startsWith("/countries/")) {
+    return "'self'";
+  }
+  return "'none'";
 }
 
 /**
@@ -87,13 +94,11 @@ function nextWithSecurityHeaders(req: NextRequest): NextResponse {
   const nonce = Buffer.from(requestId).toString("base64");
 
   // Content Security Policy — select template by hostname, inject nonce
-  const isEmbeddablePath =
-    isEmbeddablePathFn(req.nextUrl.pathname) || isStandaloneRequest(req.headers);
+  const frameAncestors = frameAncestorsFor(req);
   const cspTemplate = isStandaloneRequest(req.headers) ? CSP_TEMPLATE_STANDALONE : CSP_TEMPLATE_APP;
   let csp = renderCsp(cspTemplate, nonce);
-  if (isEmbeddablePath) {
-    // Allow iframe embedding from any origin for maps, wiki articles, and country pages
-    csp = csp.replace("frame-ancestors 'none'", "frame-ancestors *");
+  if (frameAncestors !== "'none'") {
+    csp = csp.replace("frame-ancestors 'none'", `frame-ancestors ${frameAncestors}`);
   }
 
   const requestHeaders = new Headers(req.headers);
@@ -106,8 +111,8 @@ function nextWithSecurityHeaders(req: NextRequest): NextResponse {
 
   // Security headers
   response.headers.set("X-Content-Type-Options", "nosniff");
-  if (!isEmbeddablePath) {
-    response.headers.set("X-Frame-Options", "DENY");
+  if (frameAncestors !== "*") {
+    response.headers.set("X-Frame-Options", frameAncestors === "'self'" ? "SAMEORIGIN" : "DENY");
   }
   response.headers.set("X-XSS-Protection", "1; mode=block");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");

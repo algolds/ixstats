@@ -177,3 +177,47 @@ describe("the WikiOS standalone build", () => {
     expect(res.status).toBe(403);
   });
 });
+
+describe("framing (clickjacking)", () => {
+  const frameAncestors = (res: Response) =>
+    /frame-ancestors ([^;]+)/.exec(res.headers.get("content-security-policy") ?? "")?.[1];
+  const MAPS_HOST = { host: "maps.ixwiki.com", "x-forwarded-host": "maps.ixwiki.com" };
+
+  it.each([{}, MAPS_HOST])(
+    "lets any site embed the chromeless map viewer (%o)",
+    async (headers) => {
+      const res = await run("/maps?embed=true&lat=1&lng=2&zoom=3", headers);
+      expect(frameAncestors(res)).toBe("*");
+      expect(res.headers.get("x-frame-options")).toBeNull();
+    }
+  );
+
+  it.each(["/maps", "/maps?embed=false", "/wiki/Caphiria", "/countries/caphiria"])(
+    "lets only the app's own origin frame %s",
+    async (path) => {
+      const res = await run(path);
+      expect(frameAncestors(res)).toBe("'self'");
+      expect(res.headers.get("x-frame-options")).toBe("SAMEORIGIN");
+    }
+  );
+
+  it.each([
+    "/admin",
+    "/settings",
+    "/mycountry",
+    "/mycountry/map-editor",
+    "/admin/maps/editor",
+    "/dashboard",
+  ])("refuses every frame on %s, on the maps host too", async (path) => {
+    for (const headers of [{}, MAPS_HOST]) {
+      const res = await run(path, headers);
+      expect([path, frameAncestors(res)]).toEqual([path, "'none'"]);
+      expect(res.headers.get("x-frame-options")).toBe("DENY");
+    }
+  });
+
+  it("does not take ?embed=true on another path as a reason to allow framing", async () => {
+    const res = await run("/mycountry?embed=true", MAPS_HOST);
+    expect(frameAncestors(res)).toBe("'none'");
+  });
+});
