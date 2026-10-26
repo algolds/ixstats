@@ -57,6 +57,7 @@ import { thinkpagesPostsReactionsMutationsRouter } from "~/server/api/routers/th
 import { thinkpagesFeedRouter } from "~/server/api/routers/thinkpages/feed";
 import { thinkpagesAccountsRouter } from "~/server/api/routers/thinkpages/accounts";
 import { activitiesFollowsRouter } from "~/server/api/routers/activities/follows";
+import { activitiesFeedGlobalRouter } from "~/server/api/routers/activities/feed/global";
 import { usersAdminRouter } from "~/server/api/routers/users/admin";
 import { usersProfileRouter } from "~/server/api/routers/users/profile";
 import { stripDiscordMarker } from "~/server/shared/thinkpages-post-utils";
@@ -417,6 +418,31 @@ describe("public responses carry no Clerk ids", () => {
       { id: "a1", username: "owner", isMine: false },
       { id: "a2", username: "me", isMine: true },
     ]);
+  });
+
+  it("the global activity feed selects no persona Clerk id and drops embedded private posts", async () => {
+    const db = createMockPrisma();
+    db.postReaction.groupBy.mockResolvedValue([]);
+    const feedPost = (over: Record<string, unknown>) => ({
+      ...post(over),
+      account: { id: "acc_owner", username: "owner", country: null },
+      mediaAttachments: [],
+      poll: null,
+    });
+    db.thinkpagesPost.findMany.mockResolvedValue([
+      feedPost({
+        id: "r1",
+        repostOf: { ...post({ id: "secret", visibility: "private", content: "s3cret" }) },
+      }),
+    ]);
+    const { activities } = await createCallerFactory(activitiesFeedGlobalRouter)(
+      ctxFor(db, null)
+    ).getGlobalFeed({ filter: "social", limit: 10 } as never);
+    const include = db.thinkpagesPost.findMany.mock.calls[0]![0].include;
+    expect(JSON.stringify(include)).not.toContain("clerkUserId");
+    const item = activities.find((a: any) => a.source === "thinkpages") as any;
+    expect(item.rawPost.repostOf).toBeNull();
+    expect(JSON.stringify(activities)).not.toContain("s3cret");
   });
 
   it("users.getActiveUsers names members by nation, with no last-active time", async () => {

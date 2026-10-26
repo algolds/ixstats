@@ -5,7 +5,7 @@ import { getRecentChanges as getWikiBridgeRecentChanges } from "~/lib/wiki-os/ad
 import { latestPublicThreadPreviews } from "~/server/modules/thinkpages-forum";
 import { globalCache } from "~/lib/cache";
 import { hiddenThinkpagesAccountIds } from "~/server/shared/user-blocks";
-import { formatPollForClient } from "~/server/shared/thinkpages-post-utils";
+import { formatPollForClient, withVisibleEmbeds } from "~/server/shared/thinkpages-post-utils";
 import {
   activityFeedItem,
   countryFeedUser,
@@ -95,18 +95,15 @@ async function attachViewerEngagement<T extends { source?: string; rawPost?: { i
   });
 }
 
-const ACCOUNT_WITH_CLERK = {
-  ...FEED_ACCOUNT_SELECT,
-  clerkUserId: true,
-} satisfies Prisma.ThinkpagesAccountSelect;
+// The feed is public: personas carry no owner Clerk id.
 const QUOTED_POST_INCLUDE = {
-  include: { account: { select: ACCOUNT_WITH_CLERK } },
+  include: { account: { select: FEED_ACCOUNT_SELECT } },
 } satisfies Prisma.ThinkpagesPostDefaultArgs;
 
 const THINKPAGES_INCLUDE = {
   account: {
     select: {
-      ...ACCOUNT_WITH_CLERK,
+      ...FEED_ACCOUNT_SELECT,
       country: { select: { id: true, name: true, flag: true } },
     },
   },
@@ -204,7 +201,8 @@ async function thinkpagesRowItems(db: PrismaClient, mergeCap: number) {
     ...thinkpagesFeedItem(post),
     poll: post.poll ? formatPollForClient(post.poll) : null,
     rawPost: {
-      ...post,
+      // The feed is cached for everyone: an embedded private parent or original is dropped.
+      ...withVisibleEmbeds(post, null),
       hashtags: post.hashtags ? JSON.parse(post.hashtags) : [],
       reactionCounts: mergeReactionCounts(post.reactionCounts, reactionTally.get(post.id)),
       reactions: [],
