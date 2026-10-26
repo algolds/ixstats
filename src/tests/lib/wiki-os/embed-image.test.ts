@@ -3,7 +3,7 @@
  * An embed card's stored image (user content) loads only as its wiki's images are served: a sister's through its
  * media proxy, IxWiki's from IxWiki's own host or as a same-origin upload. Anything else is no image.
  */
-import { embedImageSrc } from "~/lib/wiki-os/embed-image";
+import { embedImageSrc, pickableEmbedImages } from "~/lib/wiki-os/embed-image";
 import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 
 const KEYS = ["NEXT_PUBLIC_BASE_PATH", "BASE_PATH", "NEXT_PUBLIC_IXWORLD_STANDALONE"] as const;
@@ -98,5 +98,37 @@ describe("embedImageSrc for a sister wiki", () => {
     );
     expect(embedImageSrc(`${ORIGIN}/images/a/ab/Port.png`, "iiwiki")).toBeNull();
     expect(embedImageSrc("https://evil.example/a.png", "althistory")).toBeNull();
+  });
+});
+
+describe("pickableEmbedImages", () => {
+  const listed = [
+    { title: "File:Track.png", url: "https://evil.example/track.png", thumbUrl: "" },
+    {
+      title: "File:Flag.png",
+      url: "https://iiwiki.com/images/a/ab/Flag.png",
+      thumbUrl: "https://iiwiki.com/images/thumb/a/ab/Flag.png/300px-Flag.png",
+    },
+    { title: "File:Seal.png", url: "https://iiwiki.com/images/b/bc/Seal.png", thumbUrl: "" },
+  ];
+
+  it("keeps the images a card can show, in order, as stored (the thumbnail, else the URL) and as loaded", () => {
+    expect(pickableEmbedImages(listed, "iiwiki")).toEqual([
+      {
+        name: "Flag.png",
+        stored: "https://iiwiki.com/images/thumb/a/ab/Flag.png/300px-Flag.png",
+        src: "/api/mediawiki/iiwiki/images/thumb/a/ab/Flag.png/300px-Flag.png",
+      },
+      {
+        name: "Seal.png",
+        stored: "https://iiwiki.com/images/b/bc/Seal.png",
+        src: "/api/mediawiki/iiwiki/images/b/bc/Seal.png",
+      },
+    ]);
+  });
+
+  it("is empty for no list", () => {
+    expect(pickableEmbedImages(null, "iiwiki")).toEqual([]);
+    expect(pickableEmbedImages(undefined, "ixwiki")).toEqual([]);
   });
 });

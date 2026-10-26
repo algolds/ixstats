@@ -118,6 +118,41 @@ describe("WikiEmbedPreview", () => {
     expect(onSelectImage).toHaveBeenLastCalledWith("");
   });
 
+  it("offers four images a card can show, even when the first ones listed cannot be shown", () => {
+    const offHost = Array.from({ length: 4 }, (_, i) => image(`https://evil.example/${i}.png`));
+    const own = Array.from({ length: 5 }, (_, i) =>
+      image(`https://iiwiki.com/images/a/ab/F${i}.png`)
+    );
+    const { container } = show({
+      introQuery: { ...idle, data: intro({ text: "t" }) },
+      imagesQuery: { ...idle, data: [...offHost, ...own] },
+    });
+    expect(
+      Array.from(container.querySelectorAll("img")).map((img) => img.getAttribute("src"))
+    ).toEqual([0, 1, 2, 3].map((i) => `/api/mediawiki/iiwiki/images/a/ab/F${i}.png`));
+  });
+
+  it("each image is a button, named and pressed when picked, so the keyboard can pick it", () => {
+    const { onSelectImage } = show({
+      introQuery: { ...idle, data: intro({ text: "t" }) },
+      imagesQuery: {
+        ...idle,
+        data: [
+          { ...image("https://iiwiki.com/images/a/ab/Flag.png"), title: "File:Flag.png" },
+          { ...image("https://iiwiki.com/images/b/bc/Seal.png"), title: "File:Seal.png" },
+        ],
+      },
+      selectedImageUrl: "https://iiwiki.com/images/b/bc/Seal.png",
+    });
+    const flag = screen.getByRole("button", { name: "Use Flag.png on the card" });
+    const seal = screen.getByRole("button", { name: "Use Seal.png on the card" });
+    expect(flag.getAttribute("aria-pressed")).toBe("false");
+    expect(seal.getAttribute("aria-pressed")).toBe("true");
+    expect(flag.getAttribute("type")).toBe("button");
+    fireEvent.click(flag);
+    expect(onSelectImage).toHaveBeenCalledWith("https://iiwiki.com/images/a/ab/Flag.png");
+  });
+
   it("shows no image list for a missing page", () => {
     const { container } = show({
       introQuery: { ...idle, data: intro({ missing: true }) },

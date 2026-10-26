@@ -63,3 +63,32 @@ export function embedImageSrc(url: string, source: WikiSource): string | null {
   const rootRelative = trimmed.startsWith("/") && !/^[/\\]{2}/.test(trimmed);
   return rootRelative ? uploadSrc(trimmed) : wikiFileSrc(trimmed);
 }
+
+/** A page image as `wikios.getPageImages` lists it: its file title, URL and thumbnail. */
+interface ListedImage {
+  title: string;
+  url: string;
+  thumbUrl?: string;
+}
+
+/** A page image an embed card can show: its file name, what the embed stores, and where it loads from. */
+export interface PickableEmbedImage {
+  name: string;
+  stored: string;
+  src: string;
+}
+
+/**
+ * The page images an embed card on `source` can show, in their order: each one's thumbnail (else its URL) as the
+ * embed stores it, where it loads from (`embedImageSrc`) and its file name. An image no card can load is left out.
+ */
+export function pickableEmbedImages(
+  images: readonly ListedImage[] | null | undefined,
+  source: WikiSource
+): PickableEmbedImage[] {
+  return (images ?? []).flatMap((image) => {
+    const stored = image.thumbUrl || image.url;
+    const src = embedImageSrc(stored, source);
+    return src ? [{ name: image.title.replace(/^File:/i, ""), stored, src }] : [];
+  });
+}

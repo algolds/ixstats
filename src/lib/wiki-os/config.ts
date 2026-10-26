@@ -242,9 +242,14 @@ export function wikiTitleFromArticleUrl(url: string | null | undefined): string 
   }
 }
 
+/**
+ * The wikis WikiOS reads. `name` is how a label names the wiki an article is from ("From Wiki", "Source: Wiki",
+ * "Wiki could not be reached"): IxWiki is "Wiki" (owner, 2026-10-25), a sister wiki keeps its own name. The product
+ * brand is `siteName` (page titles, chrome), not this. Behaviour keys on the source id, never on `name`.
+ */
 export const WIKI_SOURCES: Record<WikiSource, WikiSourceConfig> = {
   ixwiki: {
-    name: wikiosConfig.siteName,
+    name: "Wiki",
     baseUrl: wikiosConfig.publicBaseUrl,
     apiEndpoint: "/api.php",
     description:

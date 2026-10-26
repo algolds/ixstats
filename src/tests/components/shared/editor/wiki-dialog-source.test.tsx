@@ -5,7 +5,7 @@
 import React, { useState } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { WikiAndStashPopovers } from "~/components/shared/editor/WikiAndStashPopovers";
-import type { WikiSearchResult } from "~/components/shared/editor/useWikiDialogSearch";
+import type { WikiSearchResult } from "~/components/shared/editor/useWikiDialogQueries";
 import type { WikiSource } from "~/lib/wiki-os/config";
 
 jest.mock("~/components/thinkpages/EmojiPicker", () => ({ EmojiPicker: () => null }));
@@ -72,19 +72,19 @@ const pressed = () =>
   screen
     .getAllByRole("button", { pressed: true })
     .map((button) => button.textContent)
-    .filter((text) => ["IxWiki", "IIWiki", "AltHistory Wiki"].includes(text ?? ""));
+    .filter((text) => ["Wiki", "IIWiki", "AltHistory Wiki"].includes(text ?? ""));
 
 describe("the composer's wiki dialog", () => {
   it("offers all three wikis by their names, AltHistory included", () => {
     const onInsert = jest.fn();
     render(<Harness onInsert={onInsert} />);
-    const group = screen.getByRole("group", { name: "Wiki" });
+    const group = screen.getByRole("group", { name: "Choose a wiki" });
     expect(Array.from(group.querySelectorAll("button")).map((b) => b.textContent)).toEqual([
-      "IxWiki",
+      "Wiki",
       "IIWiki",
       "AltHistory Wiki",
     ]);
-    expect(pressed()).toEqual(["IxWiki"]);
+    expect(pressed()).toEqual(["Wiki"]);
     fireEvent.click(screen.getByRole("button", { name: "AltHistory Wiki" }));
     expect(pressed()).toEqual(["AltHistory Wiki"]);
   });
@@ -93,7 +93,7 @@ describe("the composer's wiki dialog", () => {
     ["Gallambria Republic", "iiwiki", "IIWiki"],
     ["Pax Atomica", "althistory", "AltHistory Wiki"],
   ] as const)(
-    "clicking %s in a search of all wikis picks it from %s, though the selector said IxWiki",
+    "clicking %s in a search of all wikis picks it from %s, though the selector said Wiki",
     (title, source, name) => {
       const onInsert = jest.fn();
       const onSelect = jest.fn();
@@ -107,11 +107,11 @@ describe("the composer's wiki dialog", () => {
     }
   );
 
-  it("an IxWiki result is labelled IxWiki and switches a sister selector back to IxWiki", () => {
+  it("an IxWiki result is labelled Wiki and switches a sister selector back to IxWiki", () => {
     const onInsert = jest.fn();
     render(<Harness onInsert={onInsert} />);
     expect(screen.getByRole("button", { name: /^Port of Ixnay/ }).textContent).toBe(
-      "Port of IxnayIxWiki"
+      "Port of IxnayWiki"
     );
     fireEvent.click(screen.getByRole("button", { name: "IIWiki" }));
     fireEvent.click(screen.getByRole("button", { name: /^Port of Ixnay/ }));

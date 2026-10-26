@@ -10,9 +10,8 @@ import { Label } from "~/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { EmojiPicker } from "~/components/thinkpages/EmojiPicker";
 import { cn } from "~/lib/utils";
-import type { WikiSource } from "~/lib/wiki-os/config";
-import { wikiName } from "~/lib/wiki-os/wiki-name";
-import type { WikiSearchResult } from "./useWikiDialogSearch";
+import { WIKI_SOURCES, type WikiSource } from "~/lib/wiki-os/config";
+import type { WikiSearchResult } from "./useWikiDialogQueries";
 import { WikiEmbedPreview, type WikiEmbedPreviewProps } from "./WikiEmbedPreview";
 
 /** The wikis the dialog links and embeds from, in the selector's order. */
@@ -146,7 +145,7 @@ export function WikiAndStashPopovers({
             </div>
 
             {/* Source selector */}
-            <div className="flex gap-1" role="group" aria-label="Wiki">
+            <div className="flex gap-1" role="group" aria-label="Choose a wiki">
               {WIKI_SOURCE_OPTIONS.map((source) => (
                 <button
                   key={source}
@@ -160,7 +159,7 @@ export function WikiAndStashPopovers({
                       : "border-border text-muted-foreground hover:bg-muted"
                   )}
                 >
-                  {wikiName(source)}
+                  {WIKI_SOURCES[source].name}
                 </button>
               ))}
             </div>
@@ -191,7 +190,7 @@ export function WikiAndStashPopovers({
                       className="hover:bg-muted flex w-full items-baseline gap-2 rounded px-1.5 py-1 text-left text-xs"
                     >
                       <span className="min-w-0 flex-1 truncate">{res.title}</span>
-                      <span className="text-muted-foreground shrink-0">{wikiName(res.source)}</span>
+                      <span className="text-muted-foreground shrink-0">{WIKI_SOURCES[res.source].name}</span>
                     </button>
                   ))}
                 </div>

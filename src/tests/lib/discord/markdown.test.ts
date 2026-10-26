@@ -56,7 +56,7 @@ describe("Discord wiki embeds carry the source", () => {
     (source) => {
       const markdown = htmlToDiscordMarkdown(embed(source));
       expect(markdown).toContain(`**Wiki Embed: [Pax Atomica](${APP}/wiki/Pax_Atomica)**`);
-      expect(markdown).toContain("*Source: IxWiki*");
+      expect(markdown).toContain("*Source: Wiki*");
       expect(markdown).not.toContain("source=");
     }
   );

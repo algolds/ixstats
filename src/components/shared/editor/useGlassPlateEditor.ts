@@ -27,7 +27,7 @@ import {
 } from "./SlateSerializer";
 import { WIKI_SOURCES, type WikiSource } from "~/lib/wiki-os/config";
 import { userMentionItems, type MentionSource } from "./mention-source";
-import { useWikiDialogSearch } from "./useWikiDialogSearch";
+import { useWikiDialogQueries } from "./useWikiDialogQueries";
 
 function getMentionItemIcon(name: string, type: "league" | "club") {
   const lower = name.toLowerCase();
@@ -96,31 +96,22 @@ export function useGlassPlateEditor({
 
   const [isEmojiOpen, setIsEmojiOpen] = useState(false);
 
-  // Wiki search: what is typed in the dialog's title field, across every wiki, once typing pauses.
-  const { search: wikiSearch, selectResult: selectWikiResult } = useWikiDialogSearch({
+  // The dialog's search across every wiki and its embed preview, asked once typing pauses (useWikiDialogQueries).
+  const {
+    search: wikiSearch,
+    selectResult: selectWikiResult,
+    title: settledWikiTitle,
+    intro: wikiIntroQuery,
+    images: wikiImagesQuery,
+  } = useWikiDialogQueries({
     target: wikiTarget,
+    source: selectedWikiSource,
     open: isWikiOpen,
+    embed: wikiInsertMode === "embed",
     setTarget: setWikiTarget,
     setSource: setSelectedWikiSource,
+    setImage: setSelectedWikiImageUrl,
   });
-
-  const wikiIntroQuery = api.wikios.getIntro.useQuery(
-    { title: wikiTarget, wiki: selectedWikiSource },
-    { enabled: isWikiOpen && wikiInsertMode === "embed" && !!wikiTarget.trim(), staleTime: 30_000 }
-  );
-
-  const wikiImagesQuery = api.wikios.getPageImages.useQuery(
-    { title: wikiTarget, wiki: selectedWikiSource },
-    { enabled: isWikiOpen && wikiInsertMode === "embed" && !!wikiTarget.trim(), staleTime: 30_000 }
-  );
-
-  useEffect(() => {
-    if (wikiImagesQuery.data && wikiImagesQuery.data.length > 0) {
-      setSelectedWikiImageUrl(wikiImagesQuery.data[0].thumbUrl || wikiImagesQuery.data[0].url);
-    } else {
-      setSelectedWikiImageUrl("");
-    }
-  }, [wikiImagesQuery.data]);
 
   // Mention State
   const [mentionQuery, setMentionQuery] = useState("");
@@ -480,13 +471,15 @@ export function useGlassPlateEditor({
   const insertWikiLink = useCallback(() => {
     if (!wikiTarget.trim()) return;
     if (wikiInsertMode === "embed") {
+      // The preview's summary and image are this title's only once typing has settled on it.
+      const previewed = settledWikiTitle === wikiTarget.trim();
       Transforms.insertNodes(
         editor as any,
         {
           type: "wikiembed",
           title: wikiTarget.trim(),
-          summary: wikiIntroQuery.data?.intro || "",
-          imageUrl: selectedWikiImageUrl || "",
+          summary: (previewed && wikiIntroQuery.data?.intro) || "",
+          imageUrl: (previewed && selectedWikiImageUrl) || "",
           source: selectedWikiSource,
           children: [{ text: "" }],
         } as any
@@ -510,6 +503,7 @@ export function useGlassPlateEditor({
     selectedWikiImageUrl,
     selectedWikiSource,
     wikiText,
+    settledWikiTitle,
   ]);
 
   const insertImageUrl = useCallback(

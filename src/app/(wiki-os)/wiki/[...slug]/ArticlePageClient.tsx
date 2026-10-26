@@ -21,6 +21,7 @@ import {
   getWikiBaseUrl,
   publicArticleUrl,
   WIKI_SOURCES,
+  wikiosConfig,
   type WikiSource,
 } from "~/lib/wiki-os/config";
 import type { ArticleMode } from "~/lib/wiki-os/types";
@@ -190,7 +191,8 @@ export default function ArticlePageClient({
       document.title = "WikiOS";
     } else if (article?.title) {
       const prefix = mode !== "reading" ? `Editing ${article.title}` : article.title;
-      document.title = `${prefix} | ${WIKI_SOURCES[wikiSource].name}`;
+      // An IxWiki page's title carries the product's name; another wiki's page names its wiki.
+      document.title = `${prefix} | ${isIxWiki ? wikiosConfig.siteName : WIKI_SOURCES[wikiSource].name}`;
       if (isIxWiki) return;
       let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
       if (!canonical) {
