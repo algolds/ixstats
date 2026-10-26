@@ -1,7 +1,7 @@
 // Client-safe wiki and Wikimedia Commons image URL resolution utilities.
 
 import { createHash } from "crypto";
-import { withBasePath } from "~/lib/base-path";
+import { getBasePath, withBasePath } from "~/lib/base-path";
 import { isMediaWikiUrl, mediaWikiImageUrl, type WikiSource } from "../config";
 import { forwardFinder } from "../wikitext/forward-finder";
 import {
@@ -214,9 +214,9 @@ export function normalizeWikiImageUrl(rawUrl: string | null | undefined): string
     return withBasePath(`/api/mediawiki/ixwiki/${subpath}`);
   }
 
-  // Relative path on IxWiki
+  // Relative path on IxWiki; an image already proxied (a sister page's, with the base path) stays as it is
   if (url.startsWith("/")) {
-    if (url.startsWith("/api/mediawiki/")) {
+    if (url.startsWith("/api/mediawiki/") || url.startsWith(`${getBasePath()}/api/mediawiki/`)) {
       return url;
     }
     const cleanPath = url.replace(/^\/+/, "");
