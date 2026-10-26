@@ -1,7 +1,8 @@
 -- Country editor (docs/specs/2026-10-15-country-builder-editor-redesign-design.md, identity and renaming): the
 -- national animal the builder always asked for and never saved, and the old addresses of renamed countries, which
 -- `/countries/<slug>` redirects from. Additive, and everything here is in the Prisma schema too, so `db push` adds it
--- as well; this file is idempotent and safe to re-run by hand:
+-- as well; this file is idempotent and safe to re-run by hand. Covered by `db push`, with no data step:
+-- scripts/deploy-production.sh does not run it (its additive step and push create all of it):
 --
 --   docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
 --     < prisma/migrations/20261026120000_national_animal/migration.sql

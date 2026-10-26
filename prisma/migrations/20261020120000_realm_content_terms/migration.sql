@@ -1,5 +1,9 @@
 -- Realm content terms (ToS §2.6–§2.8): the consent a claim records, the owner's inactivity notice, and the material a
 -- released nation holds hidden until its former holder reclaims it or the hold is purged.
+-- Covered by `db push`: every column, the table, its index and its foreign key are in the Prisma schema
+-- (maps.prisma RealmClaim and NationMaterialHold, core.prisma Country), and there is no data step, so
+-- scripts/deploy-production.sh does not run this file (its additive step and push create all of it). Prisma-generated
+-- and not idempotent: do not run it by hand on a database that has any of it.
 ALTER TABLE "realm_claims" ADD COLUMN "consentVersion" TEXT;
 ALTER TABLE "realm_claims" ADD COLUMN "consentAt" TIMESTAMP(3);
 ALTER TABLE "realm_claims" ADD COLUMN "consentBasis" TEXT;

@@ -5,7 +5,7 @@
 #
 # Order: git sync and checks; dependencies and the Prisma client; the database backup; the additive schema step, the
 # WikiOS proof check, the hand-written SQL, db push and the post-push SQL; the build; IxWorld and the PM2 reload; the
-# web server. Nothing before the build touches the live build (.next), so a failure there leaves the site serving. The
+# web server, and once it answers the post-deploy data SQL (run_post_deploy_sql). Nothing before the build touches the live build (.next), so a failure there leaves the site serving. The
 # build moves .next to .next.prev first and puts it back if anything fails before the new server answers; .next.prev
 # is deleted once it does.
 #
@@ -355,6 +355,15 @@ wait_for_web() {
     return 1
 }
 
+# Data SQL that must wait until the new code is live, because it points rows at pages the old build cannot serve. Run
+# once the new server answers, idempotent, and never under SKIP_SCHEMA_SYNC (a rollback's old code lacks those
+# pages). A failure only warns: the release is already up; run the file again by hand.
+run_post_deploy_sql() {
+    [ "${SKIP_SCHEMA_SYNC:-}" = "1" ] && return 0
+    # Rose-garden runbook 5e: stored notification links to legacy URLs whose redirects the new code dropped.
+    bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261028120000_rewrite_legacy_notification_links/migration.sql || echo "⚠️  Rewriting the legacy notification links failed: run prisma/migrations/20261028120000_rewrite_legacy_notification_links/migration.sql by hand"
+}
+
 # The PIDs listening on a TCP port.
 port_pids() {
     { lsof -t -iTCP:"$1" -sTCP:LISTEN 2>/dev/null || fuser "$1"/tcp 2>/dev/null; } | xargs
@@ -424,6 +433,7 @@ if [ "$WEB_UNDER_PM2" = "1" ]; then
     if wait_for_web; then
         rm -rf "$NEXT_PREV"
         echo "✅ ixstats-web is up under PM2: https://ixwiki.com$BASE_PATH (pm2 logs ixstats-web)"
+        run_post_deploy_sql
         exit 0
     fi
     echo "❌ ixstats-web did not answer on port $PORT: check pm2 logs ixstats-web. The previous build is kept in $NEXT_PREV."
@@ -446,6 +456,7 @@ trap - EXIT
 (
     if wait_for_web; then
         rm -rf "$NEXT_PREV"
+        run_post_deploy_sql
     else
         echo "⚠️  The server did not answer on port $PORT within 2 minutes; the previous build is kept in $NEXT_PREV"
     fi

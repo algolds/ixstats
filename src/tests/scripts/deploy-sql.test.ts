@@ -43,8 +43,13 @@ const UNSAFE = [
   /RENAME (COLUMN|TO)/i,
 ];
 
+/** The data SQL that waits for the new code to be live (run_post_deploy_sql); every other file runs before the build. */
+const postDeployAt = script.indexOf("run_post_deploy_sql() {");
+const postDeploy = runs.filter((run) => run.at > postDeployAt && postDeployAt > 0);
+const schemaRuns = runs.filter((run) => !postDeploy.includes(run));
+
 describe("the SQL the deploy runs", () => {
-  it.each(runs)(
+  it.each(schemaRuns)(
     "$file runs after the backup and before the build, and a failure stops the deploy",
     (run) => {
       expect(existsSync(run.file)).toBe(true);
@@ -238,7 +243,29 @@ describe("the schema steps", () => {
     // the SQL and the push sit in that block's else branch, which closes before the build
     const close = script.indexOf("\nfi\n", push);
     expect(close).toBeLessThan(build);
-    expect(Math.max(...runs.map((run) => run.at))).toBeLessThan(close);
+    expect(Math.max(...schemaRuns.map((run) => run.at))).toBeLessThan(close);
+  });
+});
+
+describe("the post-deploy data SQL", () => {
+  const calls = [...script.matchAll(/^\s*run_post_deploy_sql$/gm)].map((m) => m.index);
+
+  it("rewrites the legacy notification links only after the new server answers, and only then", () => {
+    expect(postDeploy.map((run) => run.file)).toEqual([
+      "prisma/migrations/20261028120000_rewrite_legacy_notification_links/migration.sql",
+    ]);
+    // once in each server path, each right after the new server answered
+    expect(calls).toHaveLength(2);
+    for (const index of calls) {
+      expect(index).toBeGreaterThan(build);
+      expect(script.lastIndexOf("if wait_for_web; then", index)).toBeGreaterThan(index - 300);
+    }
+  });
+
+  it("never fails the live release, and never runs under SKIP_SCHEMA_SYNC (a rollback's old code)", () => {
+    for (const run of postDeploy) expect(run.rest).toMatch(/^ \|\| echo /);
+    const body = script.slice(postDeployAt, script.indexOf("\n}\n", postDeployAt));
+    expect(body).toContain('[ "${SKIP_SCHEMA_SYNC:-}" = "1" ] && return 0');
   });
 });
 
