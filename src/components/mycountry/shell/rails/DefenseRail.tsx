@@ -14,6 +14,7 @@ import { api } from "~/trpc/react";
 import type { CLevel } from "~/lib/military/model";
 import { nationalSubScores, worstSubScore } from "~/lib/military/defense-console";
 import { useDefenseOverview, type OwnerDefense, type RedactedDefense } from "~/hooks/useDefenseConsole";
+import { formatStrengthBand } from "~/lib/military/owner-redaction";
 import {
   ALERT_COPY,
   C_LEVEL_COPY,
@@ -118,7 +119,9 @@ function BranchRows({ owner, redacted }: { owner: OwnerDefense | null; redacted:
       {(redacted?.branches ?? []).slice(0, 5).map((b) => (
         <RailRow key={b.id} className="flex items-center justify-between gap-2">
           <span className="text-label min-w-0 truncate font-medium">{b.name}</span>
-          <span className="text-label-secondary shrink-0 tabular-nums">{fmt(b.active)} active</span>
+          <span className="text-label-secondary shrink-0 tabular-nums">
+            {formatStrengthBand(b.strength)} active
+          </span>
         </RailRow>
       ))}
     </>
