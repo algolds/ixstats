@@ -1,7 +1,7 @@
 /**
  * sister-embed-parts.ts: the parts of a rendered sister page (sister-render-service.ts) a `Template:Sister` embed can
- * show: one section (`renderSectionOf`), a card (`cardOf`), the whole page without its in-page navigation
- * (`withoutInPageNavigation`), and a size cap for any HTML part (`trimHtml`).
+ * show: one section (`renderSectionOf`), a card (`cardOf`), any part without its in-page navigation (a section always,
+ * the whole page and the infobox through `withoutInPageNavigation`), and a size cap for any HTML part (`trimHtml`).
  *
  * Server only: it parses with jsdom (`parseInertOnServer`). The input is the render service's sanitized HTML (ids
  * prefixed `sister-`, images through the media proxy); what this returns is sanitized again for embedding by the caller.
@@ -73,7 +73,9 @@ interface SectionIndex {
 }
 
 function sectionIndexOf(html: string): SectionIndex {
-  const nodes = Array.from(parseInertOnServer(html).content.childNodes);
+  const { content } = parseInertOnServer(html);
+  dropInPageNavigation(content);
+  const nodes = Array.from(content.childNodes);
   const headings = nodes.flatMap((node, at) => {
     const heading = headingIn(node);
     return heading ? [{ at, level: levelOf(heading), names: namesOf(heading) }] : [];
@@ -95,9 +97,10 @@ function sectionIn(index: SectionIndex, heading: string): string | null {
 const sectionIndexes = new WeakMap<SisterRender, SectionIndex>();
 
 /**
- * The section of the render's body under `heading`: the first h2 to h6 (bare, or inside `div.mw-heading`) at the top
- * level whose anchor or text is `heading` (compared decoded, `_` as space, whitespace collapsed, in any case), with
- * the top-level nodes after it up to the next heading of the same or a higher level (so its subsections stay inside).
+ * The section of the render's body under `heading`, without its in-page navigation (`dropInPageNavigation`): the first
+ * h2 to h6 (bare, or inside `div.mw-heading`) at the top level whose anchor or text is `heading` (compared decoded, `_`
+ * as space, whitespace collapsed, in any case), with the top-level nodes after it up to the next heading of the same or
+ * a higher level (so its subsections stay inside).
  * Null when there is no such heading, or `heading` is blank. Its headings are read once per render: a second section,
  * or a miss, is a lookup.
  */
@@ -159,16 +162,21 @@ export function cardOf(
 const TOC_SELECTOR = ".toc, .mw-toc";
 
 /**
- * `html` without the navigation that only works on a page of its own: its table of contents is dropped and each
- * in-page link (`href="#…"`) gives way to its text. An embed has no ids (the sanitizer's embed mode), so both would
- * lead nowhere.
+ * `content` without the navigation that only works on a page of its own: its table of contents is dropped and each
+ * in-page link (`href="#…"`, a footnote mark too) gives way to its text. An embed has no ids (the sanitizer's embed
+ * mode), so both would lead nowhere.
  */
-export function withoutInPageNavigation(html: string): string {
-  const { template, content } = parseInertOnServer(html);
+function dropInPageNavigation(content: DocumentFragment): void {
   for (const toc of Array.from(content.querySelectorAll(TOC_SELECTOR))) toc.remove();
   for (const link of Array.from(content.querySelectorAll('a[href^="#"]'))) {
     link.replaceWith(...Array.from(link.childNodes));
   }
+}
+
+/** `html` without its in-page navigation (`dropInPageNavigation`): the whole page's and the infobox's embeds. */
+export function withoutInPageNavigation(html: string): string {
+  const { template, content } = parseInertOnServer(html);
+  dropInPageNavigation(content);
   return template.innerHTML;
 }
 

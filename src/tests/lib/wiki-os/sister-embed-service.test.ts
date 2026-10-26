@@ -169,6 +169,20 @@ describe("getSisterEmbed: the parts", () => {
     expect(html).not.toMatch(/\sid=/);
   });
 
+  it("a section's and an infobox's in-page links (footnote marks) keep only their text: an embed has no ids", async () => {
+    parsedHtml = PAGE.replace(
+      "<p>History body.</p>",
+      '<p>History body.<sup class="reference"><a href="#cite_note-2">[2]</a></sup></p>'
+    ).replace(" Caphiria</td>", ' Caphiria<sup><a href="#cite_note-3">[3]</a></sup></td>');
+
+    const section = await htmlOf(request({ mode: "section", section: "History" }));
+    const infobox = await htmlOf(request({ mode: "infobox" }));
+
+    expect(section).toContain("[2]");
+    expect(infobox).toContain("[3]");
+    expect(`${section}${infobox}`).not.toMatch(/href="#/);
+  });
+
   it("a section is found by its anchor too, in any case, with underscores", async () => {
     const html = await htmlOf(request({ mode: "section", section: "early_PERIOD" }));
     expect(html).toContain("Early body.");

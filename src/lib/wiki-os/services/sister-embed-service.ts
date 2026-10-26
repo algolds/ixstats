@@ -69,12 +69,15 @@ const entryBytes = (key: string, embed: SisterEmbed): number =>
 const inFlight = new Map<string, Promise<SisterEmbed>>();
 
 /**
- * The part of `render` the request asks for, as its HTML; null when the page has no such part. The whole page leaves
- * out its table of contents and in-page links (`withoutInPageNavigation`).
+ * The part of `render` the request asks for, as its HTML, without its table of contents and in-page links (an embed has
+ * no ids, so a footnote mark would lead nowhere): a section comes so from `renderSectionOf`, the infobox and the whole
+ * page through `withoutInPageNavigation`. Null when the page has no such part.
  */
 function htmlPart(request: SisterEmbedRequest, render: SisterRender): string | null {
-  if (request.mode === "infobox") return render.infoboxHtml;
   if (request.mode === "section") return renderSectionOf(render, request.section ?? "");
+  if (request.mode === "infobox") {
+    return render.infoboxHtml === null ? null : withoutInPageNavigation(render.infoboxHtml);
+  }
   return withoutInPageNavigation((render.infoboxHtml ?? "") + render.contentHtml);
 }
 
