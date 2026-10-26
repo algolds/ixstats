@@ -27,7 +27,12 @@ const TTL_SECONDS = 60 * 60 * 24; // 24h
 
 /** The template's page as MediaWiki titles it ("infobox_country" is "Template:Infobox country"). */
 export function templatePageTitle(templateName: string): string {
-  return canonicalOrTrimmedTitle(`Template:${templateName.replace(/^Template:/i, "").trim()}`);
+  return canonicalOrTrimmedTitle(
+    `Template:${templateName
+      .trim()
+      .replace(/^Template:/i, "")
+      .trim()}`
+  );
 }
 
 /**
