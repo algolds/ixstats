@@ -99,9 +99,7 @@ describe("renderSisterArticle", () => {
     fetchSpy = jest.spyOn(global, "fetch").mockImplementation(async () => endless());
     const article = { title: "Huge", pageId: 1, wikitext: "x", length: 1, revId: 99 };
 
-    await expect(renderSisterArticle("iiwiki", article)).rejects.toBeInstanceOf(
-      SisterRenderError
-    );
+    await expect(renderSisterArticle("iiwiki", article)).rejects.toBeInstanceOf(SisterRenderError);
   });
 
   it("caches a render counted in bytes, at two bytes a character of what it holds", async () => {

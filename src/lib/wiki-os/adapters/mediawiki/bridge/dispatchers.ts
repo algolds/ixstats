@@ -165,7 +165,8 @@ export function extractSectionsFromWikitext(wikitext: string): WikiSection[] {
   const sections: WikiSection[] = [];
   for (const line of wikitext.split("\n")) {
     const heading = matchHeading(line, 2, true);
-    if (heading) sections.push({ level: heading.level, title: heading.title, index: sections.length });
+    if (!heading) continue;
+    sections.push({ level: heading.level, title: heading.title, index: sections.length });
   }
   return sections;
 }

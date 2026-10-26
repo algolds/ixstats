@@ -61,8 +61,11 @@ async function chainOwnerContext(
  */
 function ownerRefusal(error: unknown): string | null {
   if (!(error instanceof TRPCError)) return null;
-  if (error.code === "FORBIDDEN") return error.message.startsWith("readonly:") ? null : error.message;
-  return error.code === "PRECONDITION_FAILED" || error.code === "BAD_REQUEST" ? error.message : null;
+  const final =
+    error.code === "FORBIDDEN"
+      ? !error.message.startsWith("readonly:")
+      : error.code === "PRECONDITION_FAILED" || error.code === "BAD_REQUEST";
+  return final ? error.message : null;
 }
 
 type WikiChain = {
@@ -96,7 +99,9 @@ async function editRefusal(
 
 /** Stamps a chain whose section will not be written, so the cron stops retrying it, and says why in its note. */
 async function markNotWritten(db: WikiSyncDb, chain: WikiChain, reason: string): Promise<void> {
-  console.warn(`[wiki-sync] story chain ${chain.id} not written to ${chain.wikiPageTitle}: ${reason}`);
+  console.warn(
+    `[wiki-sync] story chain ${chain.id} not written to ${chain.wikiPageTitle}: ${reason}`
+  );
   const note = `Not written to ${chain.wikiPageTitle}: ${reason}`;
   await db.storyline.update({
     where: { id: chain.id },
