@@ -1,6 +1,11 @@
 import { z } from "zod/v4";
 import type { PrismaClient } from "@prisma/client";
-import { createTRPCRouter, lightMutationProcedure, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  lightMutationProcedure,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { requireWikiUserId, requireWikiUserIds } from "~/lib/wiki-os/auth";
 import { assertPageVisible, requireNotBlocked } from "~/lib/wiki-os/permissions";
 import { stashContentTypeForTitle } from "~/lib/wiki-os/stash-content-type";
@@ -21,7 +26,7 @@ const findIxwikiArticleId = (client: PrismaClient, pageTitle: string) =>
 
 export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
   /** Add a text-selection annotation to a stashed page (or directly by pageTitle). */
-  addAnnotation: protectedProcedure
+  addAnnotation: rateLimitedMutationProcedure
     .input(
       z.object({
         itemId: z.string().max(64).optional(),
@@ -81,7 +86,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
     }),
 
   /** Delete an annotation. */
-  deleteAnnotation: protectedProcedure
+  deleteAnnotation: rateLimitedMutationProcedure
     .input(z.object({ id: z.string().max(64) }))
     .mutation(async ({ input, ctx }) => {
       const ann = await db.stashAnnotation.findUnique({
@@ -127,7 +132,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
   /**
    * Add a page to the user's watchlist (both native WikiWatchlist and Stash).
    */
-  watchPage: protectedProcedure
+  watchPage: rateLimitedMutationProcedure
     .input(z.object({ pageTitle: z.string().max(512) }))
     .mutation(async ({ ctx, input }) => {
       const userId = requireWikiUserId(ctx);
@@ -179,7 +184,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
   /**
    * Remove a page from the user's watchlist.
    */
-  unwatchPage: protectedProcedure
+  unwatchPage: rateLimitedMutationProcedure
     .input(z.object({ pageTitle: z.string().max(512) }))
     .mutation(async ({ ctx, input }) => {
       const userId = requireWikiUserId(ctx);
@@ -319,7 +324,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
    * Mark all watched articles as visited (clearing unread indicator dots and the "already
    * notified" mark, so the next change to any of them notifies again).
    */
-  markAllWatchedVisited: protectedProcedure.mutation(async ({ ctx }) => {
+  markAllWatchedVisited: rateLimitedMutationProcedure.mutation(async ({ ctx }) => {
     const userId = requireWikiUserId(ctx);
     await ctx.db.wikiWatchlist.updateMany({
       where: { userId },
