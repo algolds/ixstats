@@ -5,7 +5,7 @@
 The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
 <!-- BEGIN_DOCS:API_INVENTORY -->
-### Live tRPC API Inventory (78 Routers, 1047 Endpoints)
+### Live tRPC API Inventory (79 Routers, 1082 Endpoints)
 
 | Router Namespace | Q | M | Sub | Total | Primary Source |
 | :--- | :---: | :---: | :---: | :---: | :--- |
@@ -25,14 +25,15 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.cards`** | 13 | 12 | 0 | **25** | `src/server/api/routers/cards/index.ts` |
 | **`api.commons`** | 6 | 0 | 0 | **6** | `src/server/api/routers/commons.ts` |
 | **`api.countries`** | 0 | 0 | 0 | **1** | `src/server/api/routers/countries/index.ts` |
-| **`api.countryGeo`** | 3 | 6 | 0 | **9** | `src/server/api/routers/countryGeo.ts` |
+| **`api.countryGeo`** | 2 | 4 | 0 | **6** | `src/server/api/routers/countryGeo.ts` |
+| **`api.countryLore`** | 3 | 5 | 0 | **8** | `src/server/api/routers/countryLore.ts` |
 | **`api.crafting`** | 2 | 3 | 0 | **5** | `src/server/api/routers/crafting/index.ts` |
 | **`api.crisisEvents`** | 2 | 0 | 0 | **2** | `src/server/api/routers/crisis-events.ts` |
 | **`api.demoMode`** | 1 | 0 | 0 | **1** | `src/server/api/routers/demo-mode.ts` |
 | **`api.diplomaticCore`** | 4 | 3 | 0 | **7** | `src/server/api/routers/diplomacy/core/index.ts` |
 | **`api.diplomaticCultural`** | 2 | 8 | 0 | **10** | `src/server/api/routers/diplomacy/cultural/index.ts` |
-| **`api.diplomaticEmbassies`** | 3 | 5 | 0 | **8** | `src/server/api/routers/diplomacy/embassies/index.ts` |
-| **`api.diplomaticPolicies`** | 5 | 8 | 0 | **13** | `src/server/api/routers/diplomacy/policies/index.ts` |
+| **`api.diplomaticEmbassies`** | 2 | 5 | 0 | **7** | `src/server/api/routers/diplomacy/embassies/index.ts` |
+| **`api.diplomaticPolicies`** | 5 | 9 | 0 | **14** | `src/server/api/routers/diplomacy/policies/index.ts` |
 | **`api.diplomaticScenarios`** | 4 | 4 | 0 | **8** | `src/server/api/routers/diplomaticScenarios/index.ts` |
 | **`api.economicArchetypes`** | 2 | 4 | 0 | **6** | `src/server/api/routers/economicArchetypes/index.ts` |
 | **`api.economicComponents`** | 3 | 1 | 0 | **4** | `src/server/api/routers/economicComponents/index.ts` |
@@ -52,11 +53,11 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.heraldry`** | 6 | 6 | 0 | **12** | `src/server/api/routers/heraldry/index.ts` |
 | **`api.historical`** | 1 | 0 | 0 | **1** | `src/server/api/routers/historical/index.ts` |
 | **`api.intelligence`** | 2 | 6 | 0 | **8** | `src/server/api/routers/intelligence/index.ts` |
-| **`api.intent`** | 5 | 3 | 0 | **8** | `src/server/api/routers/intent.ts` |
+| **`api.intent`** | 5 | 3 | 0 | **8** | `src/server/api/routers/intent/index.ts` |
 | **`api.ixnayid`** | 11 | 9 | 0 | **20** | `src/server/api/routers/ixnayid/index.ts` |
 | **`api.legislation`** | 2 | 2 | 0 | **4** | `src/server/api/routers/legislation.ts` |
 | **`api.loreCards`** | 0 | 0 | 0 | **0** | `src/server/api/routers/lore-cards/index.ts` |
-| **`api.lorewards`** | 11 | 4 | 0 | **15** | `src/server/api/routers/lorewards/index.ts` |
+| **`api.lorewards`** | 12 | 5 | 0 | **17** | `src/server/api/routers/lorewards/index.ts` |
 | **`api.meetings`** | 2 | 6 | 0 | **8** | `src/server/api/routers/meetings/index.ts` |
 | **`api.messages`** | 6 | 14 | 0 | **20** | `src/server/api/routers/messages/index.ts` |
 | **`api.militaryEquipment`** | 5 | 6 | 0 | **11** | `src/server/api/routers/militaryEquipment/index.ts` |
@@ -69,9 +70,9 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.policies`** | 2 | 2 | 0 | **4** | `src/server/api/routers/policies/index.ts` |
 | **`api.polls`** | 2 | 5 | 0 | **7** | `src/server/api/routers/polls/index.ts` |
 | **`api.quickActions`** | 1 | 1 | 0 | **2** | `src/server/api/routers/quickactions/index.ts` |
-| **`api.realms`** | 11 | 5 | 0 | **22** | `src/server/api/routers/realms/index.ts` |
+| **`api.realms`** | 12 | 5 | 0 | **23** | `src/server/api/routers/realms/index.ts` |
 | **`api.resources`** | 1 | 0 | 0 | **1** | `src/server/api/routers/resources.ts` |
-| **`api.security`** | 9 | 17 | 0 | **26** | `src/server/api/routers/security/index.ts` |
+| **`api.security`** | 15 | 28 | 0 | **43** | `src/server/api/routers/security/index.ts` |
 | **`api.smallArmsEquipment`** | 2 | 0 | 0 | **2** | `src/server/api/routers/smallArmsEquipment/index.ts` |
 | **`api.sports`** | 30 | 33 | 0 | **63** | `src/server/api/routers/sports/index.ts` |
 | **`api.system`** | 1 | 0 | 0 | **1** | `src/server/api/routers/system.ts` |
@@ -86,8 +87,8 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.users`** | 11 | 12 | 0 | **23** | `src/server/api/routers/users/index.ts` |
 | **`api.vault`** | 17 | 12 | 0 | **29** | `src/server/api/routers/vault/index.ts` |
 | **`api.wikiCache`** | 1 | 1 | 0 | **2** | `src/server/api/routers/wikiCache.ts` |
-| **`api.wikios`** | 70 | 33 | 0 | **105** | `src/server/api/routers/wikios/index.ts` |
-| **TOTALS** | **495** | **538** | **0** | **1047** | **78 registered namespaces** |
+| **`api.wikios`** | 74 | 39 | 0 | **115** | `src/server/api/routers/wikios/index.ts` |
+| **TOTALS** | **507** | **561** | **0** | **1082** | **79 registered namespaces** |
 <!-- END_DOCS:API_INVENTORY -->
 
 > **Generator caveat (2026-09-29):** `docs:sync` counts procedures by static analysis and misses routers built by spreading procedure objects or `mergeRouters`. Counting `appRouter._def.procedures` at runtime gives **77 namespaces / 958 procedures** — the table undercounts `countries` (29, shown as 1), `geoCore` (23, shown as 0), `intelligence` (4, shown as 0) and `sports` (63, shown as 61). Fix the generator rather than editing the table by hand. It also does not follow a router nested inside `mergeRouters` (2026-10-17): `cards` shows 23, and its 64 `cards.admin.*` procedures are listed under [cards Router](#cards-router-87-procedures). It does not follow a re-exported router either: `loreCards` shows 0 for its one procedure, `getCardAuthorInfo`.
